@@ -39,9 +39,9 @@
 #ifdef HAVE_NOX_ML_EPETRA
 #include "Epetra_Map.h" // This appears to be needed to precede the ml include
 #include "ml_epetra_preconditioner.h"
+#endif
 #include "NOX_Parameter_Arbitrary.H"
 #include "Teuchos_ParameterList.hpp"
-#endif
 
 // Forward declares
 namespace NOX {
@@ -445,7 +445,6 @@ protected:
   */
   virtual bool createIfpackPreconditioner(NOX::Parameter::List& p) const;
 
-#ifdef HAVE_NOX_ANY
   /*! 
     \brief 
     Allocates the objects required for using the new version of ifpack preconditioners via the Ifpack Create factory.
@@ -459,7 +458,6 @@ protected:
     Allocates the objects required for using ML preconditioners
   */
   virtual bool createMLPreconditioner(NOX::Parameter::List& p) const;
-#endif
 #endif
 
   /*! 

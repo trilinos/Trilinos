@@ -82,17 +82,8 @@ EPETRANEW = \
 	$(srcdir)/NOX_EpetraNew_BroydenOperator.C \
 	$(srcdir)/NOX_EpetraNew_Scaling.C
 
-if BUILD_NOX_MULTIVECS
-
 EPETRA_MULTIVECS_H = $(srcdir)/NOX_Epetra_MultiVector.H
 EPETRA_MULTIVECS = $(srcdir)/NOX_Epetra_MultiVector.C
-
-else
-
-EPETRA_MULTIVECS_H = 
-EPETRA_MULTIVECS = 
-
-endif
 
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
@@ -101,7 +92,18 @@ endif
 libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H) $(EPETRANEW) $(EPETRANEW_H) \
 			 $(EPETRA_MULTIVECS_H) $(EPETRA_MULTIVECS)
 
-libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
+else
+EXPORT_INCLUDES = $(NOX_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 # ------------------------------------------------------------------------
 # When to turn it on

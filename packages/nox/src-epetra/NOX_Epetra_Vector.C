@@ -32,11 +32,7 @@
 
 #include "NOX_Epetra_Vector.H"
 
-// Included multivector declarations if requested
-#ifdef HAVE_NOX_MULTIVECS
 #include "NOX_Epetra_MultiVector.H"
-#endif
-
 #include "Epetra_Vector.h"
 
 NOX::Epetra::Vector::Vector(Epetra_Vector& source, NOX::CopyType type,
@@ -223,8 +219,6 @@ NOX::Abstract::Vector* NOX::Epetra::Vector::clone(CopyType type) const
   return newVec;
 }
 
-#ifdef HAVE_NOX_MULTIVECS
-
 NOX::Abstract::MultiVector* 
 NOX::Epetra::Vector::createMultiVector(
 				    const NOX::Abstract::Vector* const* vecs,
@@ -288,8 +282,6 @@ NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
 
   return mv;
 }
-
-#endif
 
 double NOX::Epetra::Vector::norm(NOX::Abstract::Vector::NormType type) const
 {

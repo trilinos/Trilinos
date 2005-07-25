@@ -31,13 +31,7 @@
 #define NOX_PARAMETER_TEUCHOS2NOX_H
 
 #include "NOX_Common.H" // for NOX_Config.h
-
-
 #include "NOX_Parameter_List.H"		
-
-
-#ifdef HAVE_NOX_ANY
-
 #include "Teuchos_ParameterList.hpp"
 
 namespace NOX {
@@ -63,9 +57,5 @@ namespace NOX {
     }; // class Teuchos2NOX
   } // namespace Parameter
 } // namespace NOX
-
-
-#endif // HAVE_NOX_ANY
-
 
 #endif // NOX_PARAMETER_TEUCHOS2NOX_H

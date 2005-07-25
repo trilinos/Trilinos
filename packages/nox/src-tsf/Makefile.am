@@ -53,10 +53,23 @@ NOX_TSF = \
 	$(srcdir)/TSFNOXSolver.C
 
 # ------------------------------------------------------------------------
-# Noxblas library specifications
+# Noxtsf library specifications
 # ------------------------------------------------------------------------
 
 libnoxtsf_a_SOURCES = $(NOX_TSF) $(NOX_TSF_H) 
+
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
+else
+EXPORT_INCLUDES = $(NOX_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 libnoxtsf_a_CXXFLAGS = \
 	-I$(top_srcdir)/src-loca/src \
@@ -81,8 +94,7 @@ libnoxtsf_a_CXXFLAGS = \
 	-I$(top_srcdir)/../TSFCore/src/utilities/Core \
 	-I$(top_srcdir)/../TSFCore/src/adapters/epetra \
 	-I$(top_srcdir)/../TSFCore/src/adapters/mpi-base \
-	-I$(top_srcdir)/../TSFCore/src/interfaces/Core \
-	$(TRILINOS_CXXFLAGS) 
+	-I$(top_srcdir)/../TSFCore/src/interfaces/Core 
 
 # ------------------------------------------------------------------------
 # When to turn it on

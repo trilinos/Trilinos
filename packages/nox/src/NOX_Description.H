@@ -57,6 +57,16 @@
   \f$F:\Re^n\times\Re^m\rightarrow\Re^n\f$.  For %LOCA specific information, 
   see \ref loca_overview.
 
+  \section announcements Announcements
+
+  7/22/2005: IMPORTANT!  Over the next few months, NOX will be undergoing a major refactor.  Some changes that you will see in the development branch and (possibly) in the release of Trilinos 6.0 in September 2005 include:
+<ul>  
+<li> Makefile.export support.  All packages in Trilinos are switching over to supply users with Makefiles that users can include in their own projects to quikly link to NOX/LOCA.
+<li> Non-optional dependence of NOX on another Trilinos package called Teuchos. Teuchos is a very light-weight and portable utility library that supplies reference counted smart pointers and a parameter list among other things.  As a result of this dependency, we ask that from now on, you download and build nox Trilinos instead of just building the nox library separately.  This requirement is further needed since the new testing tools sit at the top Trilinos level.  As we switch to the new tools, users will need Trilinos scripts to run the nox tests.
+<li> Multivector support will be not be an option, but will be a permanent part of the library.
+<li> Build options will change.  please run "configure --help" to see the new options.  
+<\ul>
+
   \section user_information User Information
 
   See \ref nox_user_information
@@ -77,16 +87,7 @@
 
   \section downloads Downloads
 
-  You may download %NOX (which includes %LOCA) in one of two ways.
-
-  %NOX only:
-
-  <ul>
-  <li> 
-  <a href="http://software.sandia.gov/nox/downloads/nox-4.0-dev.tar.gz">Latest Development Version</a>, updated nightly
-  </ul>
-
-  Trilinos (includes %NOX as well as other packages such as Epetra, Ifpack, and more):
+  NOX is packaged and released as part of the Trilinos Solver Framework.  You may download %NOX (which includes %LOCA) by downloading a copy of Trilinos.  Click on the Downloads reference in the left sidebar from the Trilinos Home page:
 
   <ul>
   <li> <a href="http://software.sandia.gov/trilinos">Trilinos Home Page</a>

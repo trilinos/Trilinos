@@ -29,6 +29,18 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
+else
+EXAMPLE_LIBS     = $(LOCA_LIBS)
+EXAMPLE_INCLUDES = $(LOCA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+
 if BUILD_LOCA_EPETRA_EXAMPLES
 
 EXAMPLE = example
@@ -48,18 +60,7 @@ example_DEPENDENCIES = \
 	$(top_builddir)/src-loca/src/libloca.la \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
 
-example_CXXFLAGS = $(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS) \
-		   -I$(top_srcdir)/src \
-                   -I$(top_srcdir)/src-epetra \
-		   -I$(top_srcdir)/src-loca/src \
-                   -I$(top_srcdir)/src-loca/src-epetra
-
-example_LDADD = \
-	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
-	$(top_builddir)/src-loca/src/libloca.la \
-	-L$(top_builddir)/src-epetra -lnoxepetra \
-	-L$(top_builddir)/src -lnox \
-	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+example_LDADD = $(EXAMPLE_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

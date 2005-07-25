@@ -27,10 +27,7 @@
 // ************************************************************************
 //@HEADER
 
-
 #include "NOX_Parameter_Teuchos2NOX.H"
-
-#ifdef HAVE_NOX_ANY
 
 using namespace NOX::Parameter;
 
@@ -75,7 +72,5 @@ List Teuchos2NOX::toNOX(const ParameterList& p) const
   return rtn;
 }
 
-
-#endif // HAVE_NOX_ANY
 
 

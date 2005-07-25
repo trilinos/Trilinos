@@ -36,15 +36,11 @@
 #include "NOX_Common.H"  // for NOX_Config.h
 
 // Forward declaration of MultiVector class
-#ifdef HAVE_NOX_MULTIVECS
-
 namespace NOX {
   namespace Abstract {
     class MultiVector;
   }
 }
-
-#endif
 
 //! Nonlinear solvers package namespace
 namespace NOX {
@@ -207,8 +203,6 @@ public:
   */
   virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
 
-#ifdef HAVE_NOX_MULTIVECS
-
   /*! 
    * \brief Create a MultiVector with \c numVecs+1 columns out of an array of 
    * Vectors.  The vector stored under \c this will be the first column with
@@ -229,7 +223,6 @@ public:
    */
   virtual NOX::Abstract::MultiVector* 
   createMultiVector(int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
-#endif
 
   //@}
 

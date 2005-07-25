@@ -57,7 +57,20 @@ PETSC = \
 
 libnoxpetsc_a_SOURCES = $(PETSC) $(PETSC_H)
 
-libnoxpetsc_a_CXXFLAGS = -I$(top_srcdir)/src $(PETSC_CXXFLAGS)
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
+else
+EXPORT_INCLUDES = $(NOX_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES) $(PETSC_CXXFLAGS)
+
+##libnoxpetsc_a_CXXFLAGS = -I$(top_srcdir)/src $(PETSC_CXXFLAGS)
 
 # ------------------------------------------------------------------------
 # When to turn it on

@@ -84,11 +84,17 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_nox_interface.m4 \
+	$(top_srcdir)/config/tac_arg_trilinos_header_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
+	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
-	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
+	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -101,32 +107,29 @@ CONFIG_CLEAN_FILES =
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@am__EXEEXT_3 = brusselatorHopfContinuation$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_brusselatorContinuation_OBJECTS =  \
-	brusselatorContinuation-BrusselatorContinuation.$(OBJEXT) \
-	brusselatorContinuation-BrusselatorProblemInterface.$(OBJEXT)
+	BrusselatorContinuation.$(OBJEXT) \
+	BrusselatorProblemInterface.$(OBJEXT)
 brusselatorContinuation_OBJECTS =  \
 	$(am_brusselatorContinuation_OBJECTS)
 am__DEPENDENCIES_1 =
-am_brusselatorHopf_OBJECTS =  \
-	brusselatorHopf-BrusselatorHopf.$(OBJEXT) \
-	brusselatorHopf-BrusselatorProblemInterface.$(OBJEXT)
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(LOCA_LIBS))
+am_brusselatorHopf_OBJECTS = BrusselatorHopf.$(OBJEXT) \
+	BrusselatorProblemInterface.$(OBJEXT)
 brusselatorHopf_OBJECTS = $(am_brusselatorHopf_OBJECTS)
-am__DEPENDENCIES_2 =  \
-	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
-	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_brusselatorHopfContinuation_OBJECTS = brusselatorHopfContinuation-BrusselatorHopfContinuation.$(OBJEXT) \
-	brusselatorHopfContinuation-BrusselatorProblemInterface.$(OBJEXT)
+am_brusselatorHopfContinuation_OBJECTS =  \
+	BrusselatorHopfContinuation.$(OBJEXT) \
+	BrusselatorProblemInterface.$(OBJEXT)
 brusselatorHopfContinuation_OBJECTS =  \
 	$(am_brusselatorHopfContinuation_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BrusselatorContinuation.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/BrusselatorHopf.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/BrusselatorHopfContinuation.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/BrusselatorProblemInterface.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -153,14 +156,21 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ADDON_belos_EXAMPLES = @ADDON_belos_EXAMPLES@
+ADDON_epetra_EXAMPLES = @ADDON_epetra_EXAMPLES@
 ADDON_epetra_TESTS = @ADDON_epetra_TESTS@
+ADDON_lapack_EXAMPLES = @ADDON_lapack_EXAMPLES@
 ADDON_lapack_TESTS = @ADDON_lapack_TESTS@
+ADDON_loca_epetra_EXAMPLES = @ADDON_loca_epetra_EXAMPLES@
 ADDON_loca_epetra_TESTS = @ADDON_loca_epetra_TESTS@
+ADDON_loca_lapack_EXAMPLES = @ADDON_loca_lapack_EXAMPLES@
 ADDON_loca_lapack_TESTS = @ADDON_loca_lapack_TESTS@
 ADDON_loca_petsc_TESTS = @ADDON_loca_petsc_TESTS@
 ADDON_loca_python_TESTS = @ADDON_loca_python_TESTS@
+ADDON_petsc_EXAMPLES = @ADDON_petsc_EXAMPLES@
 ADDON_petsc_TESTS = @ADDON_petsc_TESTS@
 ADDON_python_TESTS = @ADDON_python_TESTS@
+ADDON_tsf_EXAMPLES = @ADDON_tsf_EXAMPLES@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -213,10 +223,10 @@ BUILD_LOCA_PETSC_TESTS_FALSE = @BUILD_LOCA_PETSC_TESTS_FALSE@
 BUILD_LOCA_PETSC_TESTS_TRUE = @BUILD_LOCA_PETSC_TESTS_TRUE@
 BUILD_LOCA_PYTHON_TESTS_FALSE = @BUILD_LOCA_PYTHON_TESTS_FALSE@
 BUILD_LOCA_PYTHON_TESTS_TRUE = @BUILD_LOCA_PYTHON_TESTS_TRUE@
-BUILD_NOX_ANY_FALSE = @BUILD_NOX_ANY_FALSE@
-BUILD_NOX_ANY_TRUE = @BUILD_NOX_ANY_TRUE@
-BUILD_NOX_MULTIVECS_FALSE = @BUILD_NOX_MULTIVECS_FALSE@
-BUILD_NOX_MULTIVECS_TRUE = @BUILD_NOX_MULTIVECS_TRUE@
+BUILD_NOX_EPETRAEXT_SUPPORT_FALSE = @BUILD_NOX_EPETRAEXT_SUPPORT_FALSE@
+BUILD_NOX_EPETRAEXT_SUPPORT_TRUE = @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@
+BUILD_NOX_EPETRA_ML_SUPPORT_FALSE = @BUILD_NOX_EPETRA_ML_SUPPORT_FALSE@
+BUILD_NOX_EPETRA_ML_SUPPORT_TRUE = @BUILD_NOX_EPETRA_ML_SUPPORT_TRUE@
 BUILD_PETSC_EXAMPLES_FALSE = @BUILD_PETSC_EXAMPLES_FALSE@
 BUILD_PETSC_EXAMPLES_TRUE = @BUILD_PETSC_EXAMPLES_TRUE@
 BUILD_PETSC_TESTS_FALSE = @BUILD_PETSC_TESTS_FALSE@
@@ -227,6 +237,8 @@ BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
 BUILD_PYTHON_TESTS_FALSE = @BUILD_PYTHON_TESTS_FALSE@
 BUILD_PYTHON_TESTS_TRUE = @BUILD_PYTHON_TESTS_TRUE@
 BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
+BUILD_TESTUTILS_FALSE = @BUILD_TESTUTILS_FALSE@
+BUILD_TESTUTILS_TRUE = @BUILD_TESTUTILS_TRUE@
 BUILD_TSF_EXAMPLES_FALSE = @BUILD_TSF_EXAMPLES_FALSE@
 BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
@@ -255,12 +267,13 @@ GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_DOXYGEN_DOT = @HAVE_DOXYGEN_DOT@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
-HAVE_NOX_ANY_SUBST = @HAVE_NOX_ANY_SUBST@
-HAVE_NOX_MULTIVECS_SUBST = @HAVE_NOX_MULTIVECS_SUBST@
+HAVE_PERL = @HAVE_PERL@
 HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
 HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 IMPORT_EPETRA = @IMPORT_EPETRA@
 IMPORT_LAPACK = @IMPORT_LAPACK@
+INSIDE_TRILINOS_FALSE = @INSIDE_TRILINOS_FALSE@
+INSIDE_TRILINOS_TRUE = @INSIDE_TRILINOS_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -285,8 +298,6 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
-MF_INCDIR = @MF_INCDIR@
-MF_LIBDIR = @MF_LIBDIR@
 MPI_CC_EXISTS = @MPI_CC_EXISTS@
 MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
@@ -301,6 +312,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 PYTHON = @PYTHON@
 PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
@@ -319,9 +331,14 @@ SWIG = @SWIG@
 SWIG_LIB = @SWIG_LIB@
 SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
 SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
-TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
 abs_builddir = @abs_builddir@
@@ -376,6 +393,11 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(LOCA_LIBS)
+@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_LIBS))
+@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(LOCA_INCLUDES)
+@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@BRUSSELATORCONT = brusselatorContinuation
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@BRUSSELATORHOPF = brusselatorHopf
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@BRUSSELATORHOPFCONTINUATION = brusselatorHopfContinuation
@@ -399,25 +421,9 @@ brusselatorContinuation_DEPENDENCIES = \
 
 brusselatorHopf_DEPENDENCIES = $(brusselatorContinuation_DEPENDENCIES)
 brusselatorHopfContinuation_DEPENDENCIES = $(brusselatorContinuation_DEPENDENCIES)
-brusselatorContinuation_CXXFLAGS = \
-	$(TRILINOS_CXXFLAGS) \
-	$(LIBTOOL_COMPILER_FLAGS)\
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src-lapack \
-	-I$(top_srcdir)/src-loca/src \
-        -I$(top_srcdir)/src-loca/src-lapack
-
-brusselatorHopf_CXXFLAGS = $(brusselatorContinuation_CXXFLAGS)
-brusselatorHopfContinuation_CXXFLAGS = $(brusselatorContinuation_CXXFLAGS)
-brusselatorContinuation_LDADD = \
-	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
-	$(top_builddir)/src-loca/src/libloca.la \
-	-L$(top_builddir)/src-lapack -lnoxlapack \
-	-L$(top_builddir)/src -lnox \
-	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
-
-brusselatorHopf_LDADD = $(brusselatorContinuation_LDADD)
-brusselatorHopfContinuation_LDADD = $(brusselatorContinuation_LDADD)
+brusselatorContinuation_LDADD = $(EXAMPLE_LIBS)
+brusselatorHopf_LDADD = $(EXAMPLE_LIBS)
+brusselatorHopfContinuation_LDADD = $(EXAMPLE_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -484,12 +490,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BrusselatorContinuation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BrusselatorHopf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BrusselatorHopfContinuation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BrusselatorProblemInterface.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -515,149 +519,101 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
-brusselatorContinuation-BrusselatorContinuation.o: $(srcdir)/BrusselatorContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorContinuation_CXXFLAGS) $(CXXFLAGS) -MT brusselatorContinuation-BrusselatorContinuation.o -MD -MP -MF "$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Tpo" -c -o brusselatorContinuation-BrusselatorContinuation.o `test -f '$(srcdir)/BrusselatorContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Tpo" "$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Po"; else rm -f "$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorContinuation.C' object='brusselatorContinuation-BrusselatorContinuation.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Po' tmpdepfile='$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.TPo' @AMDEPBACKSLASH@
+BrusselatorContinuation.o: $(srcdir)/BrusselatorContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BrusselatorContinuation.o -MD -MP -MF "$(DEPDIR)/BrusselatorContinuation.Tpo" -c -o BrusselatorContinuation.o `test -f '$(srcdir)/BrusselatorContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorContinuation.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BrusselatorContinuation.Tpo" "$(DEPDIR)/BrusselatorContinuation.Po"; else rm -f "$(DEPDIR)/BrusselatorContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorContinuation.C' object='BrusselatorContinuation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BrusselatorContinuation.Po' tmpdepfile='$(DEPDIR)/BrusselatorContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorContinuation_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorContinuation-BrusselatorContinuation.o `test -f '$(srcdir)/BrusselatorContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorContinuation.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BrusselatorContinuation.o `test -f '$(srcdir)/BrusselatorContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorContinuation.C
 
-brusselatorContinuation-BrusselatorContinuation.obj: $(srcdir)/BrusselatorContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorContinuation_CXXFLAGS) $(CXXFLAGS) -MT brusselatorContinuation-BrusselatorContinuation.obj -MD -MP -MF "$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Tpo" -c -o brusselatorContinuation-BrusselatorContinuation.obj `if test -f '$(srcdir)/BrusselatorContinuation.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorContinuation.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Tpo" "$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Po"; else rm -f "$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorContinuation.C' object='brusselatorContinuation-BrusselatorContinuation.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Po' tmpdepfile='$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.TPo' @AMDEPBACKSLASH@
+BrusselatorContinuation.obj: $(srcdir)/BrusselatorContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BrusselatorContinuation.obj -MD -MP -MF "$(DEPDIR)/BrusselatorContinuation.Tpo" -c -o BrusselatorContinuation.obj `if test -f '$(srcdir)/BrusselatorContinuation.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorContinuation.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BrusselatorContinuation.Tpo" "$(DEPDIR)/BrusselatorContinuation.Po"; else rm -f "$(DEPDIR)/BrusselatorContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorContinuation.C' object='BrusselatorContinuation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BrusselatorContinuation.Po' tmpdepfile='$(DEPDIR)/BrusselatorContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorContinuation_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorContinuation-BrusselatorContinuation.obj `if test -f '$(srcdir)/BrusselatorContinuation.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorContinuation.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BrusselatorContinuation.obj `if test -f '$(srcdir)/BrusselatorContinuation.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorContinuation.C'; fi`
 
-brusselatorContinuation-BrusselatorContinuation.lo: $(srcdir)/BrusselatorContinuation.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorContinuation_CXXFLAGS) $(CXXFLAGS) -MT brusselatorContinuation-BrusselatorContinuation.lo -MD -MP -MF "$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Tpo" -c -o brusselatorContinuation-BrusselatorContinuation.lo `test -f '$(srcdir)/BrusselatorContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Tpo" "$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Plo"; else rm -f "$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorContinuation.C' object='brusselatorContinuation-BrusselatorContinuation.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.Plo' tmpdepfile='$(DEPDIR)/brusselatorContinuation-BrusselatorContinuation.TPlo' @AMDEPBACKSLASH@
+BrusselatorContinuation.lo: $(srcdir)/BrusselatorContinuation.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BrusselatorContinuation.lo -MD -MP -MF "$(DEPDIR)/BrusselatorContinuation.Tpo" -c -o BrusselatorContinuation.lo `test -f '$(srcdir)/BrusselatorContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorContinuation.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BrusselatorContinuation.Tpo" "$(DEPDIR)/BrusselatorContinuation.Plo"; else rm -f "$(DEPDIR)/BrusselatorContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorContinuation.C' object='BrusselatorContinuation.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BrusselatorContinuation.Plo' tmpdepfile='$(DEPDIR)/BrusselatorContinuation.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorContinuation_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorContinuation-BrusselatorContinuation.lo `test -f '$(srcdir)/BrusselatorContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorContinuation.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BrusselatorContinuation.lo `test -f '$(srcdir)/BrusselatorContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorContinuation.C
 
-brusselatorContinuation-BrusselatorProblemInterface.o: $(srcdir)/BrusselatorProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorContinuation_CXXFLAGS) $(CXXFLAGS) -MT brusselatorContinuation-BrusselatorProblemInterface.o -MD -MP -MF "$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Tpo" -c -o brusselatorContinuation-BrusselatorProblemInterface.o `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Tpo" "$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Po"; else rm -f "$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorProblemInterface.C' object='brusselatorContinuation-BrusselatorProblemInterface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Po' tmpdepfile='$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.TPo' @AMDEPBACKSLASH@
+BrusselatorProblemInterface.o: $(srcdir)/BrusselatorProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BrusselatorProblemInterface.o -MD -MP -MF "$(DEPDIR)/BrusselatorProblemInterface.Tpo" -c -o BrusselatorProblemInterface.o `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BrusselatorProblemInterface.Tpo" "$(DEPDIR)/BrusselatorProblemInterface.Po"; else rm -f "$(DEPDIR)/BrusselatorProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorProblemInterface.C' object='BrusselatorProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BrusselatorProblemInterface.Po' tmpdepfile='$(DEPDIR)/BrusselatorProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorContinuation_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorContinuation-BrusselatorProblemInterface.o `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BrusselatorProblemInterface.o `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C
 
-brusselatorContinuation-BrusselatorProblemInterface.obj: $(srcdir)/BrusselatorProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorContinuation_CXXFLAGS) $(CXXFLAGS) -MT brusselatorContinuation-BrusselatorProblemInterface.obj -MD -MP -MF "$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Tpo" -c -o brusselatorContinuation-BrusselatorProblemInterface.obj `if test -f '$(srcdir)/BrusselatorProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorProblemInterface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Tpo" "$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Po"; else rm -f "$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorProblemInterface.C' object='brusselatorContinuation-BrusselatorProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Po' tmpdepfile='$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.TPo' @AMDEPBACKSLASH@
+BrusselatorProblemInterface.obj: $(srcdir)/BrusselatorProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BrusselatorProblemInterface.obj -MD -MP -MF "$(DEPDIR)/BrusselatorProblemInterface.Tpo" -c -o BrusselatorProblemInterface.obj `if test -f '$(srcdir)/BrusselatorProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorProblemInterface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BrusselatorProblemInterface.Tpo" "$(DEPDIR)/BrusselatorProblemInterface.Po"; else rm -f "$(DEPDIR)/BrusselatorProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorProblemInterface.C' object='BrusselatorProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BrusselatorProblemInterface.Po' tmpdepfile='$(DEPDIR)/BrusselatorProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorContinuation_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorContinuation-BrusselatorProblemInterface.obj `if test -f '$(srcdir)/BrusselatorProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorProblemInterface.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BrusselatorProblemInterface.obj `if test -f '$(srcdir)/BrusselatorProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorProblemInterface.C'; fi`
 
-brusselatorContinuation-BrusselatorProblemInterface.lo: $(srcdir)/BrusselatorProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorContinuation_CXXFLAGS) $(CXXFLAGS) -MT brusselatorContinuation-BrusselatorProblemInterface.lo -MD -MP -MF "$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Tpo" -c -o brusselatorContinuation-BrusselatorProblemInterface.lo `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Tpo" "$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Plo"; else rm -f "$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorProblemInterface.C' object='brusselatorContinuation-BrusselatorProblemInterface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.Plo' tmpdepfile='$(DEPDIR)/brusselatorContinuation-BrusselatorProblemInterface.TPlo' @AMDEPBACKSLASH@
+BrusselatorProblemInterface.lo: $(srcdir)/BrusselatorProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BrusselatorProblemInterface.lo -MD -MP -MF "$(DEPDIR)/BrusselatorProblemInterface.Tpo" -c -o BrusselatorProblemInterface.lo `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BrusselatorProblemInterface.Tpo" "$(DEPDIR)/BrusselatorProblemInterface.Plo"; else rm -f "$(DEPDIR)/BrusselatorProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorProblemInterface.C' object='BrusselatorProblemInterface.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BrusselatorProblemInterface.Plo' tmpdepfile='$(DEPDIR)/BrusselatorProblemInterface.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorContinuation_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorContinuation-BrusselatorProblemInterface.lo `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BrusselatorProblemInterface.lo `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C
 
-brusselatorHopf-BrusselatorHopf.o: $(srcdir)/BrusselatorHopf.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopf_CXXFLAGS) $(CXXFLAGS) -MT brusselatorHopf-BrusselatorHopf.o -MD -MP -MF "$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Tpo" -c -o brusselatorHopf-BrusselatorHopf.o `test -f '$(srcdir)/BrusselatorHopf.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopf.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Tpo" "$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Po"; else rm -f "$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorHopf.C' object='brusselatorHopf-BrusselatorHopf.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Po' tmpdepfile='$(DEPDIR)/brusselatorHopf-BrusselatorHopf.TPo' @AMDEPBACKSLASH@
+BrusselatorHopf.o: $(srcdir)/BrusselatorHopf.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BrusselatorHopf.o -MD -MP -MF "$(DEPDIR)/BrusselatorHopf.Tpo" -c -o BrusselatorHopf.o `test -f '$(srcdir)/BrusselatorHopf.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopf.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BrusselatorHopf.Tpo" "$(DEPDIR)/BrusselatorHopf.Po"; else rm -f "$(DEPDIR)/BrusselatorHopf.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorHopf.C' object='BrusselatorHopf.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BrusselatorHopf.Po' tmpdepfile='$(DEPDIR)/BrusselatorHopf.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopf_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorHopf-BrusselatorHopf.o `test -f '$(srcdir)/BrusselatorHopf.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopf.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BrusselatorHopf.o `test -f '$(srcdir)/BrusselatorHopf.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopf.C
 
-brusselatorHopf-BrusselatorHopf.obj: $(srcdir)/BrusselatorHopf.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopf_CXXFLAGS) $(CXXFLAGS) -MT brusselatorHopf-BrusselatorHopf.obj -MD -MP -MF "$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Tpo" -c -o brusselatorHopf-BrusselatorHopf.obj `if test -f '$(srcdir)/BrusselatorHopf.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorHopf.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorHopf.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Tpo" "$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Po"; else rm -f "$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorHopf.C' object='brusselatorHopf-BrusselatorHopf.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Po' tmpdepfile='$(DEPDIR)/brusselatorHopf-BrusselatorHopf.TPo' @AMDEPBACKSLASH@
+BrusselatorHopf.obj: $(srcdir)/BrusselatorHopf.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BrusselatorHopf.obj -MD -MP -MF "$(DEPDIR)/BrusselatorHopf.Tpo" -c -o BrusselatorHopf.obj `if test -f '$(srcdir)/BrusselatorHopf.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorHopf.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorHopf.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BrusselatorHopf.Tpo" "$(DEPDIR)/BrusselatorHopf.Po"; else rm -f "$(DEPDIR)/BrusselatorHopf.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorHopf.C' object='BrusselatorHopf.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BrusselatorHopf.Po' tmpdepfile='$(DEPDIR)/BrusselatorHopf.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopf_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorHopf-BrusselatorHopf.obj `if test -f '$(srcdir)/BrusselatorHopf.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorHopf.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorHopf.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BrusselatorHopf.obj `if test -f '$(srcdir)/BrusselatorHopf.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorHopf.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorHopf.C'; fi`
 
-brusselatorHopf-BrusselatorHopf.lo: $(srcdir)/BrusselatorHopf.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopf_CXXFLAGS) $(CXXFLAGS) -MT brusselatorHopf-BrusselatorHopf.lo -MD -MP -MF "$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Tpo" -c -o brusselatorHopf-BrusselatorHopf.lo `test -f '$(srcdir)/BrusselatorHopf.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopf.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Tpo" "$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Plo"; else rm -f "$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorHopf.C' object='brusselatorHopf-BrusselatorHopf.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorHopf-BrusselatorHopf.Plo' tmpdepfile='$(DEPDIR)/brusselatorHopf-BrusselatorHopf.TPlo' @AMDEPBACKSLASH@
+BrusselatorHopf.lo: $(srcdir)/BrusselatorHopf.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BrusselatorHopf.lo -MD -MP -MF "$(DEPDIR)/BrusselatorHopf.Tpo" -c -o BrusselatorHopf.lo `test -f '$(srcdir)/BrusselatorHopf.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopf.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BrusselatorHopf.Tpo" "$(DEPDIR)/BrusselatorHopf.Plo"; else rm -f "$(DEPDIR)/BrusselatorHopf.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorHopf.C' object='BrusselatorHopf.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BrusselatorHopf.Plo' tmpdepfile='$(DEPDIR)/BrusselatorHopf.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopf_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorHopf-BrusselatorHopf.lo `test -f '$(srcdir)/BrusselatorHopf.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopf.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BrusselatorHopf.lo `test -f '$(srcdir)/BrusselatorHopf.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopf.C
 
-brusselatorHopf-BrusselatorProblemInterface.o: $(srcdir)/BrusselatorProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopf_CXXFLAGS) $(CXXFLAGS) -MT brusselatorHopf-BrusselatorProblemInterface.o -MD -MP -MF "$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Tpo" -c -o brusselatorHopf-BrusselatorProblemInterface.o `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Tpo" "$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Po"; else rm -f "$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorProblemInterface.C' object='brusselatorHopf-BrusselatorProblemInterface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Po' tmpdepfile='$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.TPo' @AMDEPBACKSLASH@
+BrusselatorHopfContinuation.o: $(srcdir)/BrusselatorHopfContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BrusselatorHopfContinuation.o -MD -MP -MF "$(DEPDIR)/BrusselatorHopfContinuation.Tpo" -c -o BrusselatorHopfContinuation.o `test -f '$(srcdir)/BrusselatorHopfContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopfContinuation.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BrusselatorHopfContinuation.Tpo" "$(DEPDIR)/BrusselatorHopfContinuation.Po"; else rm -f "$(DEPDIR)/BrusselatorHopfContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorHopfContinuation.C' object='BrusselatorHopfContinuation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BrusselatorHopfContinuation.Po' tmpdepfile='$(DEPDIR)/BrusselatorHopfContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopf_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorHopf-BrusselatorProblemInterface.o `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BrusselatorHopfContinuation.o `test -f '$(srcdir)/BrusselatorHopfContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopfContinuation.C
 
-brusselatorHopf-BrusselatorProblemInterface.obj: $(srcdir)/BrusselatorProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopf_CXXFLAGS) $(CXXFLAGS) -MT brusselatorHopf-BrusselatorProblemInterface.obj -MD -MP -MF "$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Tpo" -c -o brusselatorHopf-BrusselatorProblemInterface.obj `if test -f '$(srcdir)/BrusselatorProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorProblemInterface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Tpo" "$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Po"; else rm -f "$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorProblemInterface.C' object='brusselatorHopf-BrusselatorProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Po' tmpdepfile='$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.TPo' @AMDEPBACKSLASH@
+BrusselatorHopfContinuation.obj: $(srcdir)/BrusselatorHopfContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BrusselatorHopfContinuation.obj -MD -MP -MF "$(DEPDIR)/BrusselatorHopfContinuation.Tpo" -c -o BrusselatorHopfContinuation.obj `if test -f '$(srcdir)/BrusselatorHopfContinuation.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorHopfContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorHopfContinuation.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BrusselatorHopfContinuation.Tpo" "$(DEPDIR)/BrusselatorHopfContinuation.Po"; else rm -f "$(DEPDIR)/BrusselatorHopfContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorHopfContinuation.C' object='BrusselatorHopfContinuation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BrusselatorHopfContinuation.Po' tmpdepfile='$(DEPDIR)/BrusselatorHopfContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopf_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorHopf-BrusselatorProblemInterface.obj `if test -f '$(srcdir)/BrusselatorProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorProblemInterface.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BrusselatorHopfContinuation.obj `if test -f '$(srcdir)/BrusselatorHopfContinuation.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorHopfContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorHopfContinuation.C'; fi`
 
-brusselatorHopf-BrusselatorProblemInterface.lo: $(srcdir)/BrusselatorProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopf_CXXFLAGS) $(CXXFLAGS) -MT brusselatorHopf-BrusselatorProblemInterface.lo -MD -MP -MF "$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Tpo" -c -o brusselatorHopf-BrusselatorProblemInterface.lo `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Tpo" "$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Plo"; else rm -f "$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorProblemInterface.C' object='brusselatorHopf-BrusselatorProblemInterface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.Plo' tmpdepfile='$(DEPDIR)/brusselatorHopf-BrusselatorProblemInterface.TPlo' @AMDEPBACKSLASH@
+BrusselatorHopfContinuation.lo: $(srcdir)/BrusselatorHopfContinuation.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BrusselatorHopfContinuation.lo -MD -MP -MF "$(DEPDIR)/BrusselatorHopfContinuation.Tpo" -c -o BrusselatorHopfContinuation.lo `test -f '$(srcdir)/BrusselatorHopfContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopfContinuation.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BrusselatorHopfContinuation.Tpo" "$(DEPDIR)/BrusselatorHopfContinuation.Plo"; else rm -f "$(DEPDIR)/BrusselatorHopfContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorHopfContinuation.C' object='BrusselatorHopfContinuation.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BrusselatorHopfContinuation.Plo' tmpdepfile='$(DEPDIR)/BrusselatorHopfContinuation.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopf_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorHopf-BrusselatorProblemInterface.lo `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C
-
-brusselatorHopfContinuation-BrusselatorHopfContinuation.o: $(srcdir)/BrusselatorHopfContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopfContinuation_CXXFLAGS) $(CXXFLAGS) -MT brusselatorHopfContinuation-BrusselatorHopfContinuation.o -MD -MP -MF "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Tpo" -c -o brusselatorHopfContinuation-BrusselatorHopfContinuation.o `test -f '$(srcdir)/BrusselatorHopfContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopfContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Tpo" "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Po"; else rm -f "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorHopfContinuation.C' object='brusselatorHopfContinuation-BrusselatorHopfContinuation.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Po' tmpdepfile='$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopfContinuation_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorHopfContinuation-BrusselatorHopfContinuation.o `test -f '$(srcdir)/BrusselatorHopfContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopfContinuation.C
-
-brusselatorHopfContinuation-BrusselatorHopfContinuation.obj: $(srcdir)/BrusselatorHopfContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopfContinuation_CXXFLAGS) $(CXXFLAGS) -MT brusselatorHopfContinuation-BrusselatorHopfContinuation.obj -MD -MP -MF "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Tpo" -c -o brusselatorHopfContinuation-BrusselatorHopfContinuation.obj `if test -f '$(srcdir)/BrusselatorHopfContinuation.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorHopfContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorHopfContinuation.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Tpo" "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Po"; else rm -f "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorHopfContinuation.C' object='brusselatorHopfContinuation-BrusselatorHopfContinuation.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Po' tmpdepfile='$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopfContinuation_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorHopfContinuation-BrusselatorHopfContinuation.obj `if test -f '$(srcdir)/BrusselatorHopfContinuation.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorHopfContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorHopfContinuation.C'; fi`
-
-brusselatorHopfContinuation-BrusselatorHopfContinuation.lo: $(srcdir)/BrusselatorHopfContinuation.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopfContinuation_CXXFLAGS) $(CXXFLAGS) -MT brusselatorHopfContinuation-BrusselatorHopfContinuation.lo -MD -MP -MF "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Tpo" -c -o brusselatorHopfContinuation-BrusselatorHopfContinuation.lo `test -f '$(srcdir)/BrusselatorHopfContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopfContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Tpo" "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Plo"; else rm -f "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorHopfContinuation.C' object='brusselatorHopfContinuation-BrusselatorHopfContinuation.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.Plo' tmpdepfile='$(DEPDIR)/brusselatorHopfContinuation-BrusselatorHopfContinuation.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopfContinuation_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorHopfContinuation-BrusselatorHopfContinuation.lo `test -f '$(srcdir)/BrusselatorHopfContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopfContinuation.C
-
-brusselatorHopfContinuation-BrusselatorProblemInterface.o: $(srcdir)/BrusselatorProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopfContinuation_CXXFLAGS) $(CXXFLAGS) -MT brusselatorHopfContinuation-BrusselatorProblemInterface.o -MD -MP -MF "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Tpo" -c -o brusselatorHopfContinuation-BrusselatorProblemInterface.o `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Tpo" "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Po"; else rm -f "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorProblemInterface.C' object='brusselatorHopfContinuation-BrusselatorProblemInterface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Po' tmpdepfile='$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopfContinuation_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorHopfContinuation-BrusselatorProblemInterface.o `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C
-
-brusselatorHopfContinuation-BrusselatorProblemInterface.obj: $(srcdir)/BrusselatorProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopfContinuation_CXXFLAGS) $(CXXFLAGS) -MT brusselatorHopfContinuation-BrusselatorProblemInterface.obj -MD -MP -MF "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Tpo" -c -o brusselatorHopfContinuation-BrusselatorProblemInterface.obj `if test -f '$(srcdir)/BrusselatorProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorProblemInterface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Tpo" "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Po"; else rm -f "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorProblemInterface.C' object='brusselatorHopfContinuation-BrusselatorProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Po' tmpdepfile='$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopfContinuation_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorHopfContinuation-BrusselatorProblemInterface.obj `if test -f '$(srcdir)/BrusselatorProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/BrusselatorProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BrusselatorProblemInterface.C'; fi`
-
-brusselatorHopfContinuation-BrusselatorProblemInterface.lo: $(srcdir)/BrusselatorProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopfContinuation_CXXFLAGS) $(CXXFLAGS) -MT brusselatorHopfContinuation-BrusselatorProblemInterface.lo -MD -MP -MF "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Tpo" -c -o brusselatorHopfContinuation-BrusselatorProblemInterface.lo `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Tpo" "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Plo"; else rm -f "$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BrusselatorProblemInterface.C' object='brusselatorHopfContinuation-BrusselatorProblemInterface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.Plo' tmpdepfile='$(DEPDIR)/brusselatorHopfContinuation-BrusselatorProblemInterface.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselatorHopfContinuation_CXXFLAGS) $(CXXFLAGS) -c -o brusselatorHopfContinuation-BrusselatorProblemInterface.lo `test -f '$(srcdir)/BrusselatorProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorProblemInterface.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BrusselatorHopfContinuation.lo `test -f '$(srcdir)/BrusselatorHopfContinuation.C' || echo '$(srcdir)/'`$(srcdir)/BrusselatorHopfContinuation.C
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -836,6 +792,9 @@ uninstall-am: uninstall-info-am
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-info-am
 
+
+# Include NOX export makefile
+include $(top_builddir)/Makefile.export.nox
 
 # ------------------------------------------------------------------------
 # Include global libtool definitions

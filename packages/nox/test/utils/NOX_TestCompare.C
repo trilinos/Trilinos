@@ -127,7 +127,6 @@ int NOX::TestCompare::testVector(const NOX::Abstract::Vector& vec,
     return 1;
 }
 
-#ifdef HAVE_NOX_MULTIVECS
 int 
 NOX::TestCompare::testMatrix(
 		 const NOX::Abstract::MultiVector::DenseMatrix& mat, 
@@ -215,7 +214,6 @@ NOX::TestCompare::testMultiVector(
   else
     return 1;
 }
-#endif
 
 double NOX::TestCompare::computeVectorNorm(
 				   const NOX::Abstract::Vector& vec, 

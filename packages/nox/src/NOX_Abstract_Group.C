@@ -32,9 +32,7 @@
 
 #include "NOX_Abstract_Group.H"
 
-#ifdef HAVE_NOX_MULTIVECS
 #include "NOX_Abstract_MultiVector.H"
-#endif
 
 NOX::Abstract::Group::ReturnType 
 NOX::Abstract::Group::computeJacobian()
@@ -85,8 +83,6 @@ NOX::Abstract::Group::applyRightPreconditioning(bool useTranspose,
 {
   return NOX::Abstract::Group::NotDefined;
 }
-
-#ifdef HAVE_NOX_MULTIVECS
 
 NOX::Abstract::Group::ReturnType
 NOX::Abstract::Group::applyJacobianMultiVector(
@@ -179,8 +175,6 @@ NOX::Abstract::Group::applyRightPreconditioningMultiVector(
 
   return finalStatus;
 }
-
-#endif
 
 bool NOX::Abstract::Group::isJacobian() const
 {

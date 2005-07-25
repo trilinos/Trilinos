@@ -35,9 +35,6 @@
 
 #include "NOX_StatusTest_Generic.H" // base class
 #include "NOX_Common.H"		// class data element (vector)
-
-#ifdef HAVE_NOX_ANY
-
 #include "Teuchos_RefCountPtr.hpp"
 
 namespace NOX {
@@ -179,7 +176,5 @@ namespace NOX {
 
   } // namespace Status
 } // namespace NOX
-
-#endif // HAVE_NOX_ANY
 
 #endif

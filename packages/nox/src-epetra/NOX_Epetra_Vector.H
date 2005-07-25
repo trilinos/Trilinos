@@ -132,8 +132,6 @@ class Vector : public virtual NOX::Abstract::Vector {
   // derived
   virtual NOX::Abstract::Vector* clone(CopyType type = DeepCopy) const;
 
-#ifdef HAVE_NOX_MULTIVECS
-
   /*! 
    * \brief Create a MultiVector with \c numVecs+1 columns out of an array of 
    * Vectors.  The vector stored under \c this will be the first column with
@@ -154,7 +152,6 @@ class Vector : public virtual NOX::Abstract::Vector {
    */
   virtual NOX::Abstract::MultiVector* 
   createMultiVector(int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
-#endif
 
   //@}
 

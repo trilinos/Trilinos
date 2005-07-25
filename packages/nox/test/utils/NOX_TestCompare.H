@@ -97,7 +97,6 @@ namespace NOX {
 		   const NOX::Abstract::Vector& vec_expected, 
 		   double rtol, double atol, const std::string& name);
 
-#ifdef HAVE_NOX_MULTIVECS
     //! Compare two matrices
     /*!
      * @param \c mat [in] Computed matrix
@@ -131,7 +130,6 @@ namespace NOX {
     int testMultiVector(const NOX::Abstract::MultiVector& mvec, 
 			const NOX::Abstract::MultiVector& mvec_expected, 
 			double rtol, double atol, const std::string& name);
-#endif
 
   protected:
     

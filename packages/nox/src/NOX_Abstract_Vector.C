@@ -32,10 +32,8 @@
 
 #include "NOX_Abstract_Vector.H"
 
-// Included multivector declarations if requested
-#ifdef HAVE_NOX_MULTIVECS
+// Included multivector declarations
 #include "NOX_MultiVector.H"
-#endif
 
 NOX::Abstract::Vector& NOX::Abstract::Vector::random(bool useSeed, int seed) 
 {
@@ -48,8 +46,6 @@ void NOX::Abstract::Vector::print() const
 {
   return;
 }
-
-#ifdef HAVE_NOX_MULTIVECS
 
 NOX::Abstract::MultiVector* 
 NOX::Abstract::Vector::createMultiVector(
@@ -87,5 +83,3 @@ NOX::Abstract::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
 
   return new NOX::MultiVector(*this, numVecs, type);
 }
-
-#endif

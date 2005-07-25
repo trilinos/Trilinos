@@ -29,6 +29,18 @@
 # ************************************************************************
 #@HEADER
 
+# Include NOX export makefile
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
+else
+EXAMPLE_LIBS     = $(NOX_LIBS)
+EXAMPLE_INCLUDES = $(NOX_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
 EXAMPLE = example
 
@@ -42,11 +54,5 @@ example_SOURCES = $(srcdir)/Example.C \
 example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a
 
-example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
-	-I$(top_srcdir)/src -I$(top_srcdir)/src-epetra
-
-example_LDADD = \
-        $(top_builddir)/src-epetra/libnoxepetra.a \
-        $(top_builddir)/src/libnox.a \
-        $(LIBS)
+example_LDADD = $(EXAMPLE_LIBS)
 

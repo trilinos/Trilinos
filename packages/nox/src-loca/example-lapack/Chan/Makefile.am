@@ -29,6 +29,19 @@
 # ************************************************************************
 #@HEADER
 
+# Include NOX export makefile
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
+else
+EXAMPLE_LIBS     = $(LOCA_LIBS)
+EXAMPLE_INCLUDES = $(LOCA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+
 if BUILD_LOCA_LAPACK_EXAMPLES
 
 CHANCONT = chanContinuation
@@ -61,18 +74,7 @@ chanContinuation_DEPENDENCIES = \
 	$(top_builddir)/src-loca/src/libloca.la \
         $(top_builddir)/src-loca/src-lapack/liblocalapack.la
 
-chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS) \
-		   -I$(top_srcdir)/src \
-		   -I$(top_srcdir)/src-lapack \
-		   -I$(top_srcdir)/src-loca/src \
-                   -I$(top_srcdir)/src-loca/src-lapack
-
-chanContinuation_LDADD = \
-	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
-	$(top_builddir)/src-loca/src/libloca.la \
-	-L$(top_builddir)/src-lapack -lnoxlapack \
-	-L$(top_builddir)/src -lnox \
-	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+chanContinuation_LDADD = $(EXAMPLE_LIBS)
 
 chanTP_SOURCES = $(srcdir)/ChanTP.C \
 		$(srcdir)/ChanProblemInterface.H \
@@ -80,9 +82,7 @@ chanTP_SOURCES = $(srcdir)/ChanTP.C \
 
 chanTP_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
-chanTP_CXXFLAGS = $(chanContinuation_CXXFLAGS)
-
-chanTP_LDADD = $(chanContinuation_LDADD)
+chanTP_LDADD = $(EXAMPLE_LIBS)
 
 chanTPContinuation_SOURCES = $(srcdir)/ChanTPContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
@@ -90,9 +90,7 @@ chanTPContinuation_SOURCES = $(srcdir)/ChanTPContinuation.C \
 
 chanTPContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
-chanTPContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS)
-
-chanTPContinuation_LDADD = $(chanContinuation_LDADD)
+chanTPContinuation_LDADD = $(EXAMPLE_LIBS)
 
 chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C \
 		$(srcdir)/ChanProblemInterface.H \
@@ -100,9 +98,7 @@ chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C \
 
 chanHomotopy_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
-chanHomotopy_CXXFLAGS = $(chanContinuation_CXXFLAGS)
-
-chanHomotopy_LDADD = $(chanContinuation_LDADD)
+chanHomotopy_LDADD = $(EXAMPLE_LIBS)
 
 chanTP_ModifiedBordering_SOURCES = $(srcdir)/ChanTP_ModifiedBordering.C \
 		$(srcdir)/ChanProblemInterface.H \
@@ -110,9 +106,7 @@ chanTP_ModifiedBordering_SOURCES = $(srcdir)/ChanTP_ModifiedBordering.C \
 
 chanTP_ModifiedBordering_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
-chanTP_ModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
-
-chanTP_ModifiedBordering_LDADD = $(chanContinuation_LDADD)
+chanTP_ModifiedBordering_LDADD = $(EXAMPLE_LIBS)
 
 chanTPContinuation_ModifiedBordering_SOURCES = \
 		$(srcdir)/ChanTPContinuation_ModifiedBordering.C \
@@ -122,9 +116,7 @@ chanTPContinuation_ModifiedBordering_SOURCES = \
 chanTPContinuation_ModifiedBordering_DEPENDENCIES = \
 	$(chanContinuation_DEPENDENCIES)
 
-chanTPContinuation_ModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
-
-chanTPContinuation_ModifiedBordering_LDADD = $(chanContinuation_LDADD)
+chanTPContinuation_ModifiedBordering_LDADD = $(EXAMPLE_LIBS)
 
 chanTP_NicDayModifiedBordering_SOURCES = \
 		$(srcdir)/ChanTP_NicDayModifiedBordering.C \
@@ -133,9 +125,7 @@ chanTP_NicDayModifiedBordering_SOURCES = \
 
 chanTP_NicDayModifiedBordering_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
-chanTP_NicDayModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
-
-chanTP_NicDayModifiedBordering_LDADD = $(chanContinuation_LDADD)
+chanTP_NicDayModifiedBordering_LDADD = $(EXAMPLE_LIBS)
 
 chanTPContinuation_NicDayModifiedBordering_SOURCES = \
 		$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C \
@@ -145,9 +135,7 @@ chanTPContinuation_NicDayModifiedBordering_SOURCES = \
 chanTPContinuation_NicDayModifiedBordering_DEPENDENCIES = \
 	$(chanContinuation_DEPENDENCIES)
 
-chanTPContinuation_NicDayModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
-
-chanTPContinuation_NicDayModifiedBordering_LDADD = $(chanContinuation_LDADD)
+chanTPContinuation_NicDayModifiedBordering_LDADD = $(EXAMPLE_LIBS)
 
 chanMultiContinuation_SOURCES = $(srcdir)/ChanMultiContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
@@ -158,13 +146,7 @@ chanMultiContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES) \
                                  $(MF_LIBDIR)/libExpCmp.a \
                                  $(MF_LIBDIR)/libMF.a
 
-chanMultiContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS) \
-                                    -I$(top_srcdir)/src-loca/src-mf \
-                                    -I$(MF_INCDIR)
-
-chanMultiContinuation_LDADD = $(top_builddir)/src-loca/src-mf/liblocamf.la \
-                              -L$(MF_LIBDIR) -lMF -lExpCmp \
-                              $(chanContinuation_LDADD)
+chanMultiContinuation_LDADD = $(EXMAPLE_LIBS)
 
 chanContinuation_Constraints_SOURCES = \
 	$(srcdir)/ChanContinuation_Constraints.C \
@@ -176,11 +158,7 @@ chanContinuation_Constraints_SOURCES = \
 chanContinuation_Constraints_DEPENDENCIES = \
 	$(chanContinuation_DEPENDENCIES)
 
-chanContinuation_Constraints_CXXFLAGS = \
-	$(chanContinuation_CXXFLAGS) 
-
-chanContinuation_Constraints_LDADD = \
-	$(chanContinuation_LDADD)
+chanContinuation_Constraints_LDADD = $(EXAMPLE_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

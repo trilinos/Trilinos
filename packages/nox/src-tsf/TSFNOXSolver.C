@@ -35,8 +35,6 @@
 #include "NOX_Parameter_Teuchos2NOX.H"         
 #include "TSFLinearSolverBuilder.hpp"
 
-#ifdef HAVE_NOX_ANY
-
 using namespace NOX;
 using namespace NOX::TSF;
 using namespace Teuchos;
@@ -120,5 +118,3 @@ NOX::StatusTest::StatusType NOXSolver::solve() const
 
   return rtn;
 }
-
-#endif

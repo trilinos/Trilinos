@@ -29,6 +29,19 @@
 # ************************************************************************
 #@HEADER
 
+# Include NOX export makefile
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
+else
+EXAMPLE_LIBS     = $(LOCA_LIBS)
+EXAMPLE_INCLUDES = $(LOCA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+
 if BUILD_LOCA_LAPACK_EXAMPLES
 
 BRUSSELATORCONT = brusselatorContinuation
@@ -61,28 +74,11 @@ brusselatorHopf_DEPENDENCIES = $(brusselatorContinuation_DEPENDENCIES)
 
 brusselatorHopfContinuation_DEPENDENCIES = $(brusselatorContinuation_DEPENDENCIES)
 
-brusselatorContinuation_CXXFLAGS = \
-	$(TRILINOS_CXXFLAGS) \
-	$(LIBTOOL_COMPILER_FLAGS)\
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src-lapack \
-	-I$(top_srcdir)/src-loca/src \
-        -I$(top_srcdir)/src-loca/src-lapack
+brusselatorContinuation_LDADD = $(EXAMPLE_LIBS)
 
-brusselatorHopf_CXXFLAGS = $(brusselatorContinuation_CXXFLAGS)
+brusselatorHopf_LDADD = $(EXAMPLE_LIBS)
 
-brusselatorHopfContinuation_CXXFLAGS = $(brusselatorContinuation_CXXFLAGS)
-
-brusselatorContinuation_LDADD = \
-	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
-	$(top_builddir)/src-loca/src/libloca.la \
-	-L$(top_builddir)/src-lapack -lnoxlapack \
-	-L$(top_builddir)/src -lnox \
-	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
-
-brusselatorHopf_LDADD = $(brusselatorContinuation_LDADD)
-
-brusselatorHopfContinuation_LDADD = $(brusselatorContinuation_LDADD)
+brusselatorHopfContinuation_LDADD = $(EXAMPLE_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

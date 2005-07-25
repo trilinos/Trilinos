@@ -36,10 +36,8 @@
 #include "NOX_Common.H"		 // class data element (string)
 #include "NOX_Parameter_Entry.H" // class data element 
 
-#ifdef HAVE_NOX_ANY
 #include "NOX_Parameter_AnyPtr.H"
 #include "NOX_Parameter_Rcp.H"
-#endif
 
 namespace NOX {
 namespace Parameter {
@@ -94,7 +92,6 @@ public:
   */
   //@{
 
-#ifdef HAVE_NOX_ANY
   template <typename T> 
   void setParameter(const string& name, T* value);
 
@@ -103,7 +100,6 @@ public:
 
   template <typename T> 
   void setParameter(const string& name, const Teuchos::RefCountPtr<T>& value);
-#endif // HAVE_NOX_ANY
 
   void setParameter(const string& name, bool value);
   void setParameter(const string& name, int value);
@@ -155,7 +151,6 @@ public:
   const NOX::Parameter::Arbitrary& 
   getArbitraryParameter(const string& name) const;
 
-#ifdef HAVE_NOX_ANY
   template <typename T> 
   T* getAnyPtrParameter(const string& name) const;
 
@@ -164,7 +159,6 @@ public:
 
   template <typename T>
   Teuchos::RefCountPtr<T> getRcpParameter(const string& name) const;
-#endif // HAVE_NOX_ANY
 
   //@}
 
@@ -183,10 +177,8 @@ public:
   bool isParameterString(const string& name) const;
   bool isParameterSublist(const string& name) const;
   bool isParameterArbitrary(const string& name) const;
-#ifdef HAVE_NOX_ANY
   template <typename T> bool isParameterAnyPtr(const string& name) const;
   template <typename T> bool isParameterRcp(const string& name) const;
-#endif // HAVE_NOX_ANY
   //@}
 
   /** @name Is Parameter Equal Value?
@@ -237,7 +229,6 @@ private:
 //
 // Template definitions here
 //
-#ifdef HAVE_NOX_ANY
 
 template <typename T> 
 void NOX::Parameter::List::setParameter(const string& name, T* value)
@@ -363,8 +354,6 @@ bool NOX::Parameter::List::isParameterRcp(const string& name) const
 
   return false;
 }
-
-#endif // HAVE_NOX_ANY
 
 #endif
 

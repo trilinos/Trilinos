@@ -37,18 +37,13 @@
  #include "NOX_Common.H" // for string 
 
  namespace NOX {
- namespace Parameter {
- class List;
+   namespace Parameter {
+     class List;
+   }
+   namespace Abstract {
+     class MultiVector;
+   }
  }
- }
-
- #ifdef HAVE_NOX_MULTIVECS
- namespace NOX {
- namespace Abstract {
- class MultiVector;
- }
- }
- #endif
 
  namespace NOX { 
  namespace Abstract { 
@@ -373,7 +368,6 @@
 			     NOX::Abstract::Vector& result) const;
   //@}
 
-#ifdef HAVE_NOX_MULTIVECS
    /** @name Block Jacobian operations.
 
    Operations using the Jacobian matrix. 
@@ -426,7 +420,6 @@
 				    NOX::Abstract::MultiVector& result) const;
 
    //@}
-#endif
 
   /** @name "Is" functions.
    

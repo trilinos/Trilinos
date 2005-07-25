@@ -37,7 +37,9 @@ NOX_TEST_UTILS = \
 	$(srcdir)/NOX_TestUtils.C \
 	$(srcdir)/NOX_TestCompare.C
 
+if BUILD_TESTUTILS
 lib_LIBRARIES = libnoxtestutils.a
+endif
 
 # ------------------------------------------------------------------------
 # Noxtestutils library specifications
@@ -50,8 +52,18 @@ libnoxtestutils_a_CXXFLAGS = \
 	-I$(top_srcdir)/src \
 	$(TRILINOS_CXXFLAGS) 
 
-#lib_LIBRARIES = libnoxtestutils.a
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.nox
 
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
+else
+EXPORT_INCLUDES = $(NOX_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 # ------------------------------------------------------------------------
 # For using a special archiver

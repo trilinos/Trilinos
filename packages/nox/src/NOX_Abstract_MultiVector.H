@@ -35,11 +35,7 @@
 
 #include "NOX_Common.H"  // for NOX_Config.h
 
-#ifdef HAVE_NOX_MULTIVECS
-
-#ifdef HAVE_NOX_TEUCHOS
 #include "Teuchos_SerialDenseMatrix.hpp"
-#endif // HAVE_NOX_TEUCHOS
 
 #include "NOX_Abstract_Vector.H"
 
@@ -222,7 +218,5 @@ namespace NOX {
     }; // class MultiVector
   } // namespace Abstract
 } // namespace NOX
-
-#endif // HAVE_NOX_MULTIVECS
 
 #endif // NOX_ABSTRACT_MULTIVECTOR_H

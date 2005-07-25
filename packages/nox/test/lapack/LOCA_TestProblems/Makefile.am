@@ -46,17 +46,25 @@ LOCA_TESTPROBLEMS = \
 	$(srcdir)/NormConstraint.C
 
 # ------------------------------------------------------------------------
+# Include NOX export makefile
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_LAPACK_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_LAPACK_TEST_INCLUDES))
+else
+TEST_LIBS     = $(LOCA_LAPACK_TEST_LIBS)
+TEST_INCLUDES = $(LOCA_LAPACK_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(TEST_INCLUDES)
+
+# ------------------------------------------------------------------------
 # localapack library specifications
 # ------------------------------------------------------------------------
 
 liblocatestproblems_la_SOURCES = $(LOCA_TESTPROBLEMS) $(LOCA_TESTPROBLEMS_H)
-
-liblocatestproblems_la_CXXFLAGS = \
-	-I$(top_srcdir)/src-loca/src \
-	-I$(top_srcdir)/src-loca/src-lapack \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src-lapack \
-	$(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS)
 
 liblocatestproblems_la_LIBADD = \
 	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \

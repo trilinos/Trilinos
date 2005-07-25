@@ -29,48 +29,44 @@
 # ************************************************************************
 # @HEADER
 
-if BUILD_LAPACK_EXAMPLES
+# Include NOX export makefile
+include $(top_builddir)/Makefile.export.nox
 
-EXAMPLES = rosenbrock broyden $(PRERELEASE_EXAMPLES)
-
+if USING_GNUMAKE
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
+else
+EXAMPLE_LIBS     = $(NOX_LIBS)
+EXAMPLE_INCLUDES = $(NOX_INCLUDES)
 endif
 
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+
+
+if BUILD_LAPACK_EXAMPLES
+EXAMPLES = rosenbrock broyden $(PRERELEASE_EXAMPLES)
+endif
 noinst_PROGRAMS = $(EXAMPLES)
 
+# Rosenbrock Example
 rosenbrock_SOURCES = $(srcdir)/Rosenbrock.C
-
 rosenbrock_DEPENDENCIES = $(top_builddir)/src-lapack/libnoxlapack.a \
                           $(top_builddir)/src/libnox.a 
+rosenbrock_LDADD = $(EXAMPLE_LIBS)
 
-rosenbrock_CXXFLAGS = -I$(top_srcdir)/src \
-                      -I$(top_srcdir)/src-lapack \
-                        $(TRILINOS_CXXFLAGS)
-
-rosenbrock_LDADD = $(top_builddir)/src-lapack/libnoxlapack.a \
-                   $(top_builddir)/src/libnox.a \
-		   $(LIBS)
-
+# Broyden Example
 broyden_SOURCES = $(srcdir)/Broyden.C
-
 broyden_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
+broyden_LDADD = $(EXAMPLE_LIBS)
 
-broyden_CXXFLAGS = $(rosenbrock_CXXFLAGS)
-
-broyden_LDADD = $(rosenbrock_LDADD)
-
+# Prerelease Linear Example
 if BUILD_PRERELEASE
-
 PRERELEASE_EXAMPLES = linear
-
 endif
-
 nodist_linear_SOURCES = $(srcdir)/Linear.C
-
-linear_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
-
-linear_CXXFLAGS = $(rosenbrock_CXXFLAGS)
-
-linear_LDADD = $(rosenbrock_LDADD)
+linear_DEPENDENCIES = $(top_builddir)/src-lapack/libnoxlapack.a \
+                      $(top_builddir)/src/libnox.a 
+linear_LDADD = $(EXAMPLE_LIBS)
 
 # ------------------------------------------------------------------------
 # For using a special archiver

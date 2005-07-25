@@ -29,6 +29,18 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_EPETRA_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_EPETRA_TEST_INCLUDES))
+else
+TEST_LIBS     = $(LOCA_EPETRA_TEST_LIBS)
+TEST_INCLUDES = $(LOCA_EPETRA_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(TEST_INCLUDES)
+
 noinst_PROGRAMS = pitchfork_exe
 
 pitchfork_exe_SOURCES = \
@@ -42,24 +54,7 @@ pitchfork_exe_DEPENDENCIES = \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
 	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.la
 
-pitchfork_exe_CXXFLAGS = \
-	$(TRILINOS_CXXFLAGS) \
-	$(LIBTOOL_COMPILER_FLAGS) \
-	-I$(top_srcdir)/src \
-        -I$(top_srcdir)/src-epetra \
-	-I$(top_srcdir)/src-loca/src \
-        -I$(top_srcdir)/src-loca/src-epetra \
-	-I$(top_srcdir)/test/utils \
-	-I$(top_srcdir)/test/epetra/LOCA_TestProblems
-
-pitchfork_exe_LDADD = \
-	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.la \
-	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
-	$(top_builddir)/src-loca/src/libloca.la \
-	$(top_builddir)/test/utils/libnoxtestutils.a \
-	$(top_builddir)/src-epetra/libnoxepetra.a \
-	$(top_builddir)/src/libnox.a \
-	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+pitchfork_exe_LDADD = $(TEST_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

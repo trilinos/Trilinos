@@ -27,6 +27,18 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES))
+else
+TEST_LIBS     = $(NOX_TEST_LIBS)
+TEST_INCLUDES = $(NOX_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(TEST_INCLUDES)
+
 EXEEXT = .exe
 
 INTERFACE = $(srcdir)/Interface.C \
@@ -43,16 +55,7 @@ testNonlinear_DEPENDENCIES = \
                              $(top_builddir)/src/libnox.a \
                              $(top_builddir)/src-epetra/libnoxepetra.a
 
-testNonlinear_CXXFLAGS = \
-                         -I$(top_srcdir)/src \
-                         -I$(top_srcdir)/src-epetra \
-                         -I$(top_srcdir)/test/utils \
-                         $(TRILINOS_CXXFLAGS)
-
-testNonlinear_LDADD = \
-                      -L$(top_builddir)/src-epetra -lnoxepetra \
-                      -L$(top_builddir)/src -lnox $(LIBS) \
-	              $(BLAS_LIBS) $(FLIBS)
+testNonlinear_LDADD = $(TEST_LIBS)
 
 INTERFACE_EPETRANEW = $(srcdir)/Interface_EpetraNew.C \
 	              $(srcdir)/Interface_EpetraNew.H
@@ -65,16 +68,7 @@ testNonlinear_EpetraNew_DEPENDENCIES = \
                              $(top_builddir)/src/libnox.a \
                              $(top_builddir)/src-epetra/libnoxepetra.a
 
-testNonlinear_EpetraNew_CXXFLAGS = \
-                         -I$(top_srcdir)/src \
-                         -I$(top_srcdir)/src-epetra \
-                         -I$(top_srcdir)/test/utils \
-                         $(TRILINOS_CXXFLAGS)
-
-testNonlinear_EpetraNew_LDADD = \
-                      -L$(top_builddir)/src-epetra -lnoxepetra \
-                      -L$(top_builddir)/src -lnox $(LIBS) \
-	              $(BLAS_LIBS) $(FLIBS)
+testNonlinear_EpetraNew_LDADD = $(TEST_LIBS)
 
 testNonlinear_trans_SOURCES = \
                         $(INTERFACE_EPETRANEW) \
@@ -84,14 +78,5 @@ testNonlinear_trans_DEPENDENCIES = \
                              $(top_builddir)/src/libnox.a \
                              $(top_builddir)/src-epetra/libnoxepetra.a
 
-testNonlinear_trans_CXXFLAGS = \
-                         -I$(top_srcdir)/src \
-                         -I$(top_srcdir)/src-epetra \
-                         -I$(top_srcdir)/test/utils \
-                         $(TRILINOS_CXXFLAGS)
-
-testNonlinear_trans_LDADD = \
-                      -L$(top_builddir)/src-epetra -lnoxepetra \
-                      -L$(top_builddir)/src -lnox $(LIBS) \
-	              $(BLAS_LIBS) $(FLIBS)
+testNonlinear_trans_LDADD = $(TEST_LIBS)
 

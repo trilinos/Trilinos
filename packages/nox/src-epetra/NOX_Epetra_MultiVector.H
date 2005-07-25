@@ -35,8 +35,6 @@
 
 #include "NOX_Abstract_MultiVector.H" // base class
 
-#ifdef HAVE_NOX_MULTIVECS
-
 // Forward declaration
 class Epetra_MultiVector;
 
@@ -281,7 +279,5 @@ namespace NOX {
     };
   } // namespace Epetra
 } // namespace NOX
-
-#endif // HAVE_NOX_MULTIVECS
 
 #endif // NOX_EPETRA_MULTIVECTOR_H

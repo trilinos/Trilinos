@@ -69,6 +69,19 @@ LOCA_EPETRANEW = \
 	$(srcdir)/LOCA_Epetra_Factory.C
 
 # ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
+else
+EXPORT_INCLUDES = $(LOCA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+# ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
 
@@ -78,15 +91,15 @@ liblocaepetra_la_SOURCES = \
 	$(LOCA_EPETRANEW) \
 	$(LOCA_EPETRANEW_H)
 
-liblocaepetra_la_CXXFLAGS = \
-	-I$(top_srcdir)/src-loca/src \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src-epetra \
-	$(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS)
+#liblocaepetra_la_CXXFLAGS = \
+#	-I$(top_srcdir)/src-loca/src \
+#	-I$(top_srcdir)/src \
+#	-I$(top_srcdir)/src-epetra \
+#	$(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS)
 
-liblocaepetra_la_LIBADD = \
-	$(top_builddir)/src-loca/src/libloca.la \
-	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS)
+#liblocaepetra_la_LIBADD = \
+#	$(top_builddir)/src-loca/src/libloca.la \
+#	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS)
 
 # ------------------------------------------------------------------------
 # When to turn it on

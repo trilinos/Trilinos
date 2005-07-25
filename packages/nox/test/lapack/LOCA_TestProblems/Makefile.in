@@ -90,11 +90,17 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_nox_interface.m4 \
+	$(top_srcdir)/config/tac_arg_trilinos_header_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
+	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
-	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
+	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -107,16 +113,15 @@ liblocatestproblems_la_DEPENDENCIES =  \
 	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
 	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am__objects_1 = liblocatestproblems_la-ChanProblemInterface.lo \
-	liblocatestproblems_la-NormConstraint.lo
+am__objects_1 = ChanProblemInterface.lo NormConstraint.lo
 am__objects_2 =
 am_liblocatestproblems_la_OBJECTS = $(am__objects_1) $(am__objects_2)
 liblocatestproblems_la_OBJECTS = $(am_liblocatestproblems_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/liblocatestproblems_la-NormConstraint.Plo
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ChanProblemInterface.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/NormConstraint.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -139,14 +144,21 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ADDON_belos_EXAMPLES = @ADDON_belos_EXAMPLES@
+ADDON_epetra_EXAMPLES = @ADDON_epetra_EXAMPLES@
 ADDON_epetra_TESTS = @ADDON_epetra_TESTS@
+ADDON_lapack_EXAMPLES = @ADDON_lapack_EXAMPLES@
 ADDON_lapack_TESTS = @ADDON_lapack_TESTS@
+ADDON_loca_epetra_EXAMPLES = @ADDON_loca_epetra_EXAMPLES@
 ADDON_loca_epetra_TESTS = @ADDON_loca_epetra_TESTS@
+ADDON_loca_lapack_EXAMPLES = @ADDON_loca_lapack_EXAMPLES@
 ADDON_loca_lapack_TESTS = @ADDON_loca_lapack_TESTS@
 ADDON_loca_petsc_TESTS = @ADDON_loca_petsc_TESTS@
 ADDON_loca_python_TESTS = @ADDON_loca_python_TESTS@
+ADDON_petsc_EXAMPLES = @ADDON_petsc_EXAMPLES@
 ADDON_petsc_TESTS = @ADDON_petsc_TESTS@
 ADDON_python_TESTS = @ADDON_python_TESTS@
+ADDON_tsf_EXAMPLES = @ADDON_tsf_EXAMPLES@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -199,10 +211,10 @@ BUILD_LOCA_PETSC_TESTS_FALSE = @BUILD_LOCA_PETSC_TESTS_FALSE@
 BUILD_LOCA_PETSC_TESTS_TRUE = @BUILD_LOCA_PETSC_TESTS_TRUE@
 BUILD_LOCA_PYTHON_TESTS_FALSE = @BUILD_LOCA_PYTHON_TESTS_FALSE@
 BUILD_LOCA_PYTHON_TESTS_TRUE = @BUILD_LOCA_PYTHON_TESTS_TRUE@
-BUILD_NOX_ANY_FALSE = @BUILD_NOX_ANY_FALSE@
-BUILD_NOX_ANY_TRUE = @BUILD_NOX_ANY_TRUE@
-BUILD_NOX_MULTIVECS_FALSE = @BUILD_NOX_MULTIVECS_FALSE@
-BUILD_NOX_MULTIVECS_TRUE = @BUILD_NOX_MULTIVECS_TRUE@
+BUILD_NOX_EPETRAEXT_SUPPORT_FALSE = @BUILD_NOX_EPETRAEXT_SUPPORT_FALSE@
+BUILD_NOX_EPETRAEXT_SUPPORT_TRUE = @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@
+BUILD_NOX_EPETRA_ML_SUPPORT_FALSE = @BUILD_NOX_EPETRA_ML_SUPPORT_FALSE@
+BUILD_NOX_EPETRA_ML_SUPPORT_TRUE = @BUILD_NOX_EPETRA_ML_SUPPORT_TRUE@
 BUILD_PETSC_EXAMPLES_FALSE = @BUILD_PETSC_EXAMPLES_FALSE@
 BUILD_PETSC_EXAMPLES_TRUE = @BUILD_PETSC_EXAMPLES_TRUE@
 BUILD_PETSC_TESTS_FALSE = @BUILD_PETSC_TESTS_FALSE@
@@ -213,6 +225,8 @@ BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
 BUILD_PYTHON_TESTS_FALSE = @BUILD_PYTHON_TESTS_FALSE@
 BUILD_PYTHON_TESTS_TRUE = @BUILD_PYTHON_TESTS_TRUE@
 BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
+BUILD_TESTUTILS_FALSE = @BUILD_TESTUTILS_FALSE@
+BUILD_TESTUTILS_TRUE = @BUILD_TESTUTILS_TRUE@
 BUILD_TSF_EXAMPLES_FALSE = @BUILD_TSF_EXAMPLES_FALSE@
 BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
@@ -241,12 +255,13 @@ GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_DOXYGEN_DOT = @HAVE_DOXYGEN_DOT@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
-HAVE_NOX_ANY_SUBST = @HAVE_NOX_ANY_SUBST@
-HAVE_NOX_MULTIVECS_SUBST = @HAVE_NOX_MULTIVECS_SUBST@
+HAVE_PERL = @HAVE_PERL@
 HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
 HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 IMPORT_EPETRA = @IMPORT_EPETRA@
 IMPORT_LAPACK = @IMPORT_LAPACK@
+INSIDE_TRILINOS_FALSE = @INSIDE_TRILINOS_FALSE@
+INSIDE_TRILINOS_TRUE = @INSIDE_TRILINOS_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -271,8 +286,6 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
-MF_INCDIR = @MF_INCDIR@
-MF_LIBDIR = @MF_LIBDIR@
 MPI_CC_EXISTS = @MPI_CC_EXISTS@
 MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
@@ -287,6 +300,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 PYTHON = @PYTHON@
 PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
@@ -305,9 +319,14 @@ SWIG = @SWIG@
 SWIG_LIB = @SWIG_LIB@
 SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
 SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
-TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
 abs_builddir = @abs_builddir@
@@ -370,18 +389,16 @@ LOCA_TESTPROBLEMS = \
 	$(srcdir)/ChanProblemInterface.C \
 	$(srcdir)/NormConstraint.C
 
+@USING_GNUMAKE_FALSE@TEST_LIBS = $(LOCA_LAPACK_TEST_LIBS)
+@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_LAPACK_TEST_LIBS))
+@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(LOCA_LAPACK_TEST_INCLUDES)
+@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_LAPACK_TEST_INCLUDES))
+AM_CPPFLAGS = $(TEST_INCLUDES)
 
 # ------------------------------------------------------------------------
 # localapack library specifications
 # ------------------------------------------------------------------------
 liblocatestproblems_la_SOURCES = $(LOCA_TESTPROBLEMS) $(LOCA_TESTPROBLEMS_H)
-liblocatestproblems_la_CXXFLAGS = \
-	-I$(top_srcdir)/src-loca/src \
-	-I$(top_srcdir)/src-loca/src-lapack \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src-lapack \
-	$(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS)
-
 liblocatestproblems_la_LIBADD = \
 	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
 	$(top_builddir)/src-loca/src/libloca.la \
@@ -449,8 +466,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocatestproblems_la-NormConstraint.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ChanProblemInterface.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NormConstraint.Plo@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -476,53 +493,53 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
-liblocatestproblems_la-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo" -c -o liblocatestproblems_la-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo" "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='liblocatestproblems_la-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/ChanProblemInterface.Tpo" -c -o ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanProblemInterface.Tpo" "$(DEPDIR)/ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
 
-liblocatestproblems_la-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo" -c -o liblocatestproblems_la-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo" "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='liblocatestproblems_la-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/ChanProblemInterface.Tpo" -c -o ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanProblemInterface.Tpo" "$(DEPDIR)/ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
 
-liblocatestproblems_la-ChanProblemInterface.lo: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-ChanProblemInterface.lo -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo" -c -o liblocatestproblems_la-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo" "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Plo"; else rm -f "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='liblocatestproblems_la-ChanProblemInterface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Plo' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.TPlo' @AMDEPBACKSLASH@
+ChanProblemInterface.lo: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanProblemInterface.lo -MD -MP -MF "$(DEPDIR)/ChanProblemInterface.Tpo" -c -o ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanProblemInterface.Tpo" "$(DEPDIR)/ChanProblemInterface.Plo"; else rm -f "$(DEPDIR)/ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='ChanProblemInterface.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanProblemInterface.Plo' tmpdepfile='$(DEPDIR)/ChanProblemInterface.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
 
-liblocatestproblems_la-NormConstraint.o: $(srcdir)/NormConstraint.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-NormConstraint.o -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" -c -o liblocatestproblems_la-NormConstraint.o `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NormConstraint.C' object='liblocatestproblems_la-NormConstraint.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.TPo' @AMDEPBACKSLASH@
+NormConstraint.o: $(srcdir)/NormConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NormConstraint.o -MD -MP -MF "$(DEPDIR)/NormConstraint.Tpo" -c -o NormConstraint.o `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NormConstraint.Tpo" "$(DEPDIR)/NormConstraint.Po"; else rm -f "$(DEPDIR)/NormConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NormConstraint.C' object='NormConstraint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NormConstraint.Po' tmpdepfile='$(DEPDIR)/NormConstraint.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-NormConstraint.o `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NormConstraint.o `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C
 
-liblocatestproblems_la-NormConstraint.obj: $(srcdir)/NormConstraint.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-NormConstraint.obj -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" -c -o liblocatestproblems_la-NormConstraint.obj `if test -f '$(srcdir)/NormConstraint.C'; then $(CYGPATH_W) '$(srcdir)/NormConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NormConstraint.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NormConstraint.C' object='liblocatestproblems_la-NormConstraint.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.TPo' @AMDEPBACKSLASH@
+NormConstraint.obj: $(srcdir)/NormConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NormConstraint.obj -MD -MP -MF "$(DEPDIR)/NormConstraint.Tpo" -c -o NormConstraint.obj `if test -f '$(srcdir)/NormConstraint.C'; then $(CYGPATH_W) '$(srcdir)/NormConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NormConstraint.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NormConstraint.Tpo" "$(DEPDIR)/NormConstraint.Po"; else rm -f "$(DEPDIR)/NormConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NormConstraint.C' object='NormConstraint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NormConstraint.Po' tmpdepfile='$(DEPDIR)/NormConstraint.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-NormConstraint.obj `if test -f '$(srcdir)/NormConstraint.C'; then $(CYGPATH_W) '$(srcdir)/NormConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NormConstraint.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NormConstraint.obj `if test -f '$(srcdir)/NormConstraint.C'; then $(CYGPATH_W) '$(srcdir)/NormConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NormConstraint.C'; fi`
 
-liblocatestproblems_la-NormConstraint.lo: $(srcdir)/NormConstraint.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-NormConstraint.lo -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" -c -o liblocatestproblems_la-NormConstraint.lo `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo" "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Plo"; else rm -f "$(DEPDIR)/liblocatestproblems_la-NormConstraint.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NormConstraint.C' object='liblocatestproblems_la-NormConstraint.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.Plo' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-NormConstraint.TPlo' @AMDEPBACKSLASH@
+NormConstraint.lo: $(srcdir)/NormConstraint.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NormConstraint.lo -MD -MP -MF "$(DEPDIR)/NormConstraint.Tpo" -c -o NormConstraint.lo `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NormConstraint.Tpo" "$(DEPDIR)/NormConstraint.Plo"; else rm -f "$(DEPDIR)/NormConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NormConstraint.C' object='NormConstraint.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NormConstraint.Plo' tmpdepfile='$(DEPDIR)/NormConstraint.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-NormConstraint.lo `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NormConstraint.lo `test -f '$(srcdir)/NormConstraint.C' || echo '$(srcdir)/'`$(srcdir)/NormConstraint.C
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -701,6 +718,11 @@ uninstall-am: uninstall-info-am
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-info-am
 
+
+# ------------------------------------------------------------------------
+# Include NOX export makefile
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.nox
 
 # ------------------------------------------------------------------------
 # Include global libtool definitions

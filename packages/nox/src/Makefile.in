@@ -72,7 +72,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 subdir = src
-DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
+DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/NOX_Config.h.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
@@ -88,11 +88,17 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_nox_interface.m4 \
+	$(top_srcdir)/config/tac_arg_trilinos_header_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
+	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
-	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
+	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -105,40 +111,6 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libnox_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__libnox_a_SOURCES_DIST = $(srcdir)/NOX_Abstract_Vector.C \
-	$(srcdir)/NOX_Abstract_Group.C \
-	$(srcdir)/NOX_LineSearch_Utils_Slope.C \
-	$(srcdir)/NOX_LineSearch_Utils_Printing.C \
-	$(srcdir)/NOX_LineSearch_Utils_Counters.C \
-	$(srcdir)/NOX_LineSearch_FullStep.C \
-	$(srcdir)/NOX_LineSearch_Backtrack.C \
-	$(srcdir)/NOX_LineSearch_Manager.C \
-	$(srcdir)/NOX_LineSearch_MoreThuente.C \
-	$(srcdir)/NOX_LineSearch_Polynomial.C \
-	$(srcdir)/NOX_Direction_Manager.C \
-	$(srcdir)/NOX_Direction_Generic.C \
-	$(srcdir)/NOX_Direction_Newton.C \
-	$(srcdir)/NOX_Direction_SteepestDescent.C \
-	$(srcdir)/NOX_Parameter_Entry.C \
-	$(srcdir)/NOX_Parameter_PrePostOperator.C \
-	$(srcdir)/NOX_Parameter_List.C \
-	$(srcdir)/NOX_Parameter_Teuchos2NOX.C \
-	$(srcdir)/NOX_Solver_Manager.C \
-	$(srcdir)/NOX_Solver_LineSearchBased.C \
-	$(srcdir)/NOX_Solver_TrustRegionBased.C \
-	$(srcdir)/NOX_Solver_TensorBased.C \
-	$(srcdir)/NOX_Solver_PrePostOperator.C \
-	$(srcdir)/NOX_StatusTest_Generic.C \
-	$(srcdir)/NOX_StatusTest_NormF.C \
-	$(srcdir)/NOX_StatusTest_FiniteValue.C \
-	$(srcdir)/NOX_StatusTest_NormUpdate.C \
-	$(srcdir)/NOX_StatusTest_Combo.C \
-	$(srcdir)/NOX_StatusTest_MaxIters.C \
-	$(srcdir)/NOX_StatusTest_NormWRMS.C \
-	$(srcdir)/NOX_StatusTest_Stagnation.C \
-	$(srcdir)/NOX_StatusTest_Divergence.C $(srcdir)/NOX_Utils.C \
-	$(srcdir)/NOX_Random.C $(srcdir)/NOX_Version.C \
-	$(srcdir)/NOX_MultiVector.C
 am__objects_1 = libnox_a-NOX_Abstract_Vector.$(OBJEXT) \
 	libnox_a-NOX_Abstract_Group.$(OBJEXT)
 am__objects_2 = libnox_a-NOX_LineSearch_Utils_Slope.$(OBJEXT) \
@@ -173,8 +145,7 @@ am__objects_6 = libnox_a-NOX_StatusTest_Generic.$(OBJEXT) \
 	libnox_a-NOX_StatusTest_Divergence.$(OBJEXT)
 am__objects_7 = libnox_a-NOX_Utils.$(OBJEXT) \
 	libnox_a-NOX_Random.$(OBJEXT) libnox_a-NOX_Version.$(OBJEXT)
-@BUILD_NOX_MULTIVECS_TRUE@am__objects_8 =  \
-@BUILD_NOX_MULTIVECS_TRUE@	libnox_a-NOX_MultiVector.$(OBJEXT)
+am__objects_8 = libnox_a-NOX_MultiVector.$(OBJEXT)
 am_libnox_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8)
@@ -244,52 +215,16 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libnox_a_SOURCES) $(nodist_libnox_a_SOURCES)
-DIST_SOURCES = $(am__libnox_a_SOURCES_DIST)
-am__include_HEADERS_DIST = $(srcdir)/NOX.H $(srcdir)/NOX_Common.H \
-	$(srcdir)/NOX_Abstract_Vector.H $(srcdir)/NOX_Abstract_Group.H \
-	$(srcdir)/NOX_LineSearch_Generic.H \
-	$(srcdir)/NOX_LineSearch_Utils_Slope.H \
-	$(srcdir)/NOX_LineSearch_Utils_Printing.H \
-	$(srcdir)/NOX_LineSearch_Utils_Counters.H \
-	$(srcdir)/NOX_LineSearch_FullStep.H \
-	$(srcdir)/NOX_LineSearch_Backtrack.H \
-	$(srcdir)/NOX_LineSearch_Manager.H \
-	$(srcdir)/NOX_LineSearch_MoreThuente.H \
-	$(srcdir)/NOX_LineSearch_Polynomial.H \
-	$(srcdir)/NOX_Direction_Generic.H \
-	$(srcdir)/NOX_Direction_Manager.H \
-	$(srcdir)/NOX_Direction_Newton.H \
-	$(srcdir)/NOX_Direction_SteepestDescent.H \
-	$(srcdir)/NOX_Parameter_Entry.H \
-	$(srcdir)/NOX_Parameter_Arbitrary.H \
-	$(srcdir)/NOX_Parameter_UserNorm.H \
-	$(srcdir)/NOX_Parameter_MeritFunction.H \
-	$(srcdir)/NOX_Parameter_PrePostOperator.H \
-	$(srcdir)/NOX_Parameter_DirectionConstructor.H \
-	$(srcdir)/NOX_Parameter_DirectionConstructorT.H \
-	$(srcdir)/NOX_Parameter_LineSearchConstructor.H \
-	$(srcdir)/NOX_Parameter_LineSearchConstructorT.H \
-	$(srcdir)/NOX_Parameter_AnyPtr.H $(srcdir)/NOX_Parameter_Rcp.H \
-	$(srcdir)/NOX_Parameter_List.H \
-	$(srcdir)/NOX_Parameter_Teuchos2NOX.H \
-	$(srcdir)/NOX_Solver_Generic.H $(srcdir)/NOX_Solver_Manager.H \
-	$(srcdir)/NOX_Solver_LineSearchBased.H \
-	$(srcdir)/NOX_Solver_TrustRegionBased.H \
-	$(srcdir)/NOX_Solver_TensorBased.H \
-	$(srcdir)/NOX_Solver_PrePostOperator.H \
-	$(srcdir)/NOX_StatusTest_Generic.H \
-	$(srcdir)/NOX_StatusTest_NormF.H \
-	$(srcdir)/NOX_StatusTest_FiniteValue.H \
-	$(srcdir)/NOX_StatusTest_NormUpdate.H \
-	$(srcdir)/NOX_StatusTest_Combo.H \
-	$(srcdir)/NOX_StatusTest_MaxIters.H \
-	$(srcdir)/NOX_StatusTest_NormWRMS.H \
-	$(srcdir)/NOX_StatusTest_Stagnation.H \
-	$(srcdir)/NOX_StatusTest_Divergence.H $(srcdir)/NOX_Utils.H \
-	$(srcdir)/NOX_SharedObjectTemplate.H $(srcdir)/NOX_Random.H \
-	$(srcdir)/NOX_Version.H $(srcdir)/NOX_Abstract_MultiVector.H \
-	$(srcdir)/NOX_MultiVector.H
+DIST_SOURCES = $(libnox_a_SOURCES)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_includeHEADERS_INSTALL = $(INSTALL_HEADER)
@@ -299,14 +234,21 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ADDON_belos_EXAMPLES = @ADDON_belos_EXAMPLES@
+ADDON_epetra_EXAMPLES = @ADDON_epetra_EXAMPLES@
 ADDON_epetra_TESTS = @ADDON_epetra_TESTS@
+ADDON_lapack_EXAMPLES = @ADDON_lapack_EXAMPLES@
 ADDON_lapack_TESTS = @ADDON_lapack_TESTS@
+ADDON_loca_epetra_EXAMPLES = @ADDON_loca_epetra_EXAMPLES@
 ADDON_loca_epetra_TESTS = @ADDON_loca_epetra_TESTS@
+ADDON_loca_lapack_EXAMPLES = @ADDON_loca_lapack_EXAMPLES@
 ADDON_loca_lapack_TESTS = @ADDON_loca_lapack_TESTS@
 ADDON_loca_petsc_TESTS = @ADDON_loca_petsc_TESTS@
 ADDON_loca_python_TESTS = @ADDON_loca_python_TESTS@
+ADDON_petsc_EXAMPLES = @ADDON_petsc_EXAMPLES@
 ADDON_petsc_TESTS = @ADDON_petsc_TESTS@
 ADDON_python_TESTS = @ADDON_python_TESTS@
+ADDON_tsf_EXAMPLES = @ADDON_tsf_EXAMPLES@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -359,10 +301,10 @@ BUILD_LOCA_PETSC_TESTS_FALSE = @BUILD_LOCA_PETSC_TESTS_FALSE@
 BUILD_LOCA_PETSC_TESTS_TRUE = @BUILD_LOCA_PETSC_TESTS_TRUE@
 BUILD_LOCA_PYTHON_TESTS_FALSE = @BUILD_LOCA_PYTHON_TESTS_FALSE@
 BUILD_LOCA_PYTHON_TESTS_TRUE = @BUILD_LOCA_PYTHON_TESTS_TRUE@
-BUILD_NOX_ANY_FALSE = @BUILD_NOX_ANY_FALSE@
-BUILD_NOX_ANY_TRUE = @BUILD_NOX_ANY_TRUE@
-BUILD_NOX_MULTIVECS_FALSE = @BUILD_NOX_MULTIVECS_FALSE@
-BUILD_NOX_MULTIVECS_TRUE = @BUILD_NOX_MULTIVECS_TRUE@
+BUILD_NOX_EPETRAEXT_SUPPORT_FALSE = @BUILD_NOX_EPETRAEXT_SUPPORT_FALSE@
+BUILD_NOX_EPETRAEXT_SUPPORT_TRUE = @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@
+BUILD_NOX_EPETRA_ML_SUPPORT_FALSE = @BUILD_NOX_EPETRA_ML_SUPPORT_FALSE@
+BUILD_NOX_EPETRA_ML_SUPPORT_TRUE = @BUILD_NOX_EPETRA_ML_SUPPORT_TRUE@
 BUILD_PETSC_EXAMPLES_FALSE = @BUILD_PETSC_EXAMPLES_FALSE@
 BUILD_PETSC_EXAMPLES_TRUE = @BUILD_PETSC_EXAMPLES_TRUE@
 BUILD_PETSC_TESTS_FALSE = @BUILD_PETSC_TESTS_FALSE@
@@ -373,6 +315,8 @@ BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
 BUILD_PYTHON_TESTS_FALSE = @BUILD_PYTHON_TESTS_FALSE@
 BUILD_PYTHON_TESTS_TRUE = @BUILD_PYTHON_TESTS_TRUE@
 BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
+BUILD_TESTUTILS_FALSE = @BUILD_TESTUTILS_FALSE@
+BUILD_TESTUTILS_TRUE = @BUILD_TESTUTILS_TRUE@
 BUILD_TSF_EXAMPLES_FALSE = @BUILD_TSF_EXAMPLES_FALSE@
 BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
@@ -401,12 +345,13 @@ GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_DOXYGEN_DOT = @HAVE_DOXYGEN_DOT@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
-HAVE_NOX_ANY_SUBST = @HAVE_NOX_ANY_SUBST@
-HAVE_NOX_MULTIVECS_SUBST = @HAVE_NOX_MULTIVECS_SUBST@
+HAVE_PERL = @HAVE_PERL@
 HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
 HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 IMPORT_EPETRA = @IMPORT_EPETRA@
 IMPORT_LAPACK = @IMPORT_LAPACK@
+INSIDE_TRILINOS_FALSE = @INSIDE_TRILINOS_FALSE@
+INSIDE_TRILINOS_TRUE = @INSIDE_TRILINOS_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -425,8 +370,6 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
-MF_INCDIR = @MF_INCDIR@
-MF_LIBDIR = @MF_LIBDIR@
 MPI_CC_EXISTS = @MPI_CC_EXISTS@
 MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
@@ -441,6 +384,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 PYTHON = @PYTHON@
 PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
@@ -459,9 +403,14 @@ SWIG = @SWIG@
 SWIG_LIB = @SWIG_LIB@
 SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
 SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
-TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
 abs_builddir = @abs_builddir@
@@ -601,6 +550,7 @@ nodist_execinclude_HEADERS = NOX_Config.h
 # ------------------------------------------------------------------------
 ABSTRACT = \
 	$(srcdir)/NOX_Abstract_Vector.C \
+	$(srcdir)/NOX_Abstract_MultiVector.H \
 	$(srcdir)/NOX_Abstract_Group.C
 
 ABSTRACT_H = \
@@ -709,15 +659,15 @@ UTILS = \
 	$(srcdir)/NOX_Random.C \
         $(srcdir)/NOX_Version.C
 
-@BUILD_NOX_MULTIVECS_FALSE@MULTIVECS_H = 
-@BUILD_NOX_MULTIVECS_TRUE@MULTIVECS_H = \
-@BUILD_NOX_MULTIVECS_TRUE@	$(srcdir)/NOX_Abstract_MultiVector.H \
-@BUILD_NOX_MULTIVECS_TRUE@	$(srcdir)/NOX_MultiVector.H
+MULTIVECS_H = \
+	$(srcdir)/NOX_MultiVector.H
 
-@BUILD_NOX_MULTIVECS_FALSE@MULTIVECS = 
-@BUILD_NOX_MULTIVECS_TRUE@MULTIVECS = \
-@BUILD_NOX_MULTIVECS_TRUE@	$(srcdir)/NOX_MultiVector.C
+MULTIVECS = \
+	$(srcdir)/NOX_MultiVector.C
 
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(NOX_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 @USE_ALTERNATE_AR_FALSE@libnox_a_AR = $(AR) cru
 
 # ------------------------------------------------------------------------
@@ -744,6 +694,24 @@ MAINTAINERCLEANFILES = Makefile.in
 # Files to be deleted by 'make clean'
 # ------------------------------------------------------------------------
 MOSTLYCLEANFILES = $(CXXREPOS)
+@BUILD_LIBNOXEPETRA_FALSE@BUILDNOX_EPETRA_LIBS = 
+
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+@BUILD_LIBNOXEPETRA_TRUE@BUILDNOX_EPETRA_LIBS = cd $(top_builddir)/../epetra ; $(MAKE) all-libs
+@BUILD_LIBNOXEPETRA_FALSE@BUILDNOX_AZTECOO_LIBS = 
+@BUILD_LIBNOXEPETRA_TRUE@BUILDNOX_AZTECOO_LIBS = cd $(top_builddir)/../aztecoo ; $(MAKE) all-libs
+@BUILD_LIBNOXEPETRA_FALSE@BUILDNOX_IFPACK_LIBS = 
+@BUILD_LIBNOXEPETRA_TRUE@BUILDNOX_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; $(MAKE) all-libs
+@BUILD_NOX_EPETRAEXT_SUPPORT_FALSE@BUILDNOX_EPETRAEXT_LIBS = 
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@BUILDNOX_EPETRAEXT_LIBS = cd $(top_builddir)/../epetraext ; $(MAKE) all-libs
+@BUILD_NOX_EPETRA_ML_SUPPORT_FALSE@BUILDNOX_ML_LIBS = 
+@BUILD_NOX_EPETRA_ML_SUPPORT_TRUE@BUILDNOX_ML_LIBS = cd $(top_builddir)/../ml ; $(MAKE) all-libs
+@BUILD_LIBNOXBELOS_FALSE@BUILDNOX_BELOS_LIBS = 
+@BUILD_LIBNOXBELOS_TRUE@BUILDNOX_BELOS_LIBS = cd $(top_builddir)/../belos ; $(MAKE) all-libs
+@BUILD_LOCAANASAZI_FALSE@BUILDNOX_BELOS_LIBS = 
+@BUILD_LOCAANASAZI_TRUE@BUILDNOX_BELOS_LIBS = cd $(top_builddir)/../anasazi ; $(MAKE) all-libs
 all: NOX_Config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -2223,6 +2191,21 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-nodist_execincludeHEADERS \
 	uninstall-nodist_includeHEADERS
 
+
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.nox
+
+all-libs:
+	$(MAKE) libnox.a
+	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
+	$(BUILDNOX_EPETRA_LIBS)
+	$(BUILDNOX_EPETRAEXT_LIBS)
+	$(BUILDNOX_AZTECOO_LIBS)
+	$(BUILDNOX_IFPACK_LIBS)
+	$(BUILDNOX_ML_LIBS)
+	$(BUILDNOX_BELOS_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -29,6 +29,18 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
+else
+EXAMPLE_LIBS     = $(LOCA_LIBS)
+EXAMPLE_INCLUDES = $(LOCA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+
 if BUILD_LOCA_EPETRA_EXAMPLES
 
 EXAMPLE = example
@@ -57,18 +69,7 @@ example_DEPENDENCIES = \
 	$(top_builddir)/src-loca/src/libloca.la \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
 
-example_CXXFLAGS = $(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS) \
-		   -I$(top_srcdir)/src \
-                   -I$(top_srcdir)/src-epetra \
-		   -I$(top_srcdir)/src-loca/src \
-                   -I$(top_srcdir)/src-loca/src-epetra
-
-example_LDADD = \
-	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
-	$(top_builddir)/src-loca/src/libloca.la \
-	-L$(top_builddir)/src-epetra -lnoxepetra \
-	-L$(top_builddir)/src -lnox \
-	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+example_LDADD = $(EXAMPLE_LIBS)
 
 exampleTP_SOURCES = $(srcdir)/ExampleTP.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
@@ -76,8 +77,6 @@ exampleTP_SOURCES = $(srcdir)/ExampleTP.C \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
 
 exampleTP_DEPENDENCIES = $(example_DEPENDENCIES)
-
-exampleTP_CXXFLAGS = $(example_CXXFLAGS)
 
 exampleTP_LDADD = $(example_LDADD)
 
@@ -88,8 +87,6 @@ exampleTPContinuation_SOURCES = $(srcdir)/ExampleTPContinuation.C \
 
 exampleTPContinuation_DEPENDENCIES = $(example_DEPENDENCIES)
 
-exampleTPContinuation_CXXFLAGS = $(example_CXXFLAGS)
-
 exampleTPContinuation_LDADD = $(example_LDADD)
 
 exampleTP_ModifiedBordering_SOURCES = $(srcdir)/ExampleTP_ModifiedBordering.C \
@@ -98,8 +95,6 @@ exampleTP_ModifiedBordering_SOURCES = $(srcdir)/ExampleTP_ModifiedBordering.C \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
 
 exampleTP_ModifiedBordering_DEPENDENCIES = $(example_DEPENDENCIES)
-
-exampleTP_ModifiedBordering_CXXFLAGS = $(example_CXXFLAGS)
 
 exampleTP_ModifiedBordering_LDADD = $(example_LDADD)
 
@@ -110,8 +105,6 @@ exampleTPContinuation_ModifiedBordering_SOURCES = \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
 
 exampleTPContinuation_ModifiedBordering_DEPENDENCIES = $(example_DEPENDENCIES)
-
-exampleTPContinuation_ModifiedBordering_CXXFLAGS = $(example_CXXFLAGS)
 
 exampleTPContinuation_ModifiedBordering_LDADD = $(example_LDADD)
 
@@ -124,10 +117,6 @@ exampleMultiContinuation_DEPENDENCIES = $(example_DEPENDENCIES) \
                                  $(top_builddir)/src-loca/src-mf/liblocamf.la \
                                  $(MF_LIBDIR)/libExpCmp.a \
                                  $(MF_LIBDIR)/libMF.a
-
-exampleMultiContinuation_CXXFLAGS = $(example_CXXFLAGS) \
-                                    -I$(top_srcdir)/src-loca/src-mf \
-                                    -I$(MF_INCDIR)
 
 exampleMultiContinuation_LDADD = $(top_builddir)/src-loca/src-mf/liblocamf.la \
                                  -L$(MF_LIBDIR) -lMF -lExpCmp \

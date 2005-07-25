@@ -29,6 +29,19 @@
 # ************************************************************************
 #@HEADER
 
+# Include NOX export makefile
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_LAPACK_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_LAPACK_TEST_INCLUDES))
+else
+TEST_LIBS     = $(LOCA_LAPACK_TEST_LIBS)
+TEST_INCLUDES = $(LOCA_LAPACK_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(TEST_INCLUDES) -I$(top_srcdir)/test/lapack/LOCA_TestProblems
+
 #EXEEXT = .exe
 
 CHANCONT = chanContinuation_exe
@@ -47,41 +60,19 @@ chanContinuation_exe_DEPENDENCIES = \
         $(top_builddir)/src-loca/src-lapack/liblocalapack.la \
 	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.la
 
-chanContinuation_exe_CXXFLAGS = \
-	$(TRILINOS_CXXFLAGS) \
-	$(LIBTOOL_COMPILER_FLAGS) \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src-lapack \
-	-I$(top_srcdir)/src-loca/src \
-        -I$(top_srcdir)/src-loca/src-lapack \
-        -I$(top_srcdir)/test/utils \
-	-I$(top_srcdir)/test/lapack/LOCA_TestProblems
-
-chanContinuation_exe_LDADD = \
-	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.la \
-        $(top_builddir)/src-loca/src-lapack/liblocalapack.la \
-        $(top_builddir)/src-loca/src/libloca.la \
-	-L$(top_builddir)/src \
-	-L$(top_builddir)/src-lapack \
-	-L$(top_builddir)/test/utils \
-        -lnoxtestutils -lnoxlapack -lnox \
-        $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+chanContinuation_exe_LDADD = $(TEST_LIBS)
 
 chanTPContinuation_exe_SOURCES = $(srcdir)/ChanTPContinuation.C 
 
 chanTPContinuation_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
 
-chanTPContinuation_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
-
-chanTPContinuation_exe_LDADD = $(chanContinuation_exe_LDADD)
+chanTPContinuation_exe_LDADD = $(TEST_LIBS)
 
 chanHomotopy_exe_SOURCES = $(srcdir)/ChanHomotopy.C 
 
 chanHomotopy_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
 
-chanHomotopy_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
-
-chanHomotopy_exe_LDADD = $(chanContinuation_exe_LDADD)
+chanHomotopy_exe_LDADD = $(TEST_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

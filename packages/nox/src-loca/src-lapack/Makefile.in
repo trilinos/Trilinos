@@ -91,11 +91,17 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_nox_interface.m4 \
+	$(top_srcdir)/config/tac_arg_trilinos_header_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
+	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
-	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
+	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -105,24 +111,20 @@ CONFIG_CLEAN_FILES =
 am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
-am__DEPENDENCIES_1 =
-liblocalapack_la_DEPENDENCIES =  \
-	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am__objects_1 = liblocalapack_la-LOCA_LAPACK_Group.lo \
-	liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.lo \
-	liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.lo \
-	liblocalapack_la-LOCA_LAPACK_Factory.lo
+liblocalapack_la_LIBADD =
+am__objects_1 = LOCA_LAPACK_Group.lo LOCA_Eigensolver_DGGEVStrategy.lo \
+	LOCA_BorderedSystem_LAPACKDirectSolve.lo \
+	LOCA_LAPACK_Factory.lo
 am__objects_2 =
 am_liblocalapack_la_OBJECTS = $(am__objects_1) $(am__objects_2)
 liblocalapack_la_OBJECTS = $(am_liblocalapack_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Plo
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/LOCA_LAPACK_Factory.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/LOCA_LAPACK_Group.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -153,14 +155,21 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ADDON_belos_EXAMPLES = @ADDON_belos_EXAMPLES@
+ADDON_epetra_EXAMPLES = @ADDON_epetra_EXAMPLES@
 ADDON_epetra_TESTS = @ADDON_epetra_TESTS@
+ADDON_lapack_EXAMPLES = @ADDON_lapack_EXAMPLES@
 ADDON_lapack_TESTS = @ADDON_lapack_TESTS@
+ADDON_loca_epetra_EXAMPLES = @ADDON_loca_epetra_EXAMPLES@
 ADDON_loca_epetra_TESTS = @ADDON_loca_epetra_TESTS@
+ADDON_loca_lapack_EXAMPLES = @ADDON_loca_lapack_EXAMPLES@
 ADDON_loca_lapack_TESTS = @ADDON_loca_lapack_TESTS@
 ADDON_loca_petsc_TESTS = @ADDON_loca_petsc_TESTS@
 ADDON_loca_python_TESTS = @ADDON_loca_python_TESTS@
+ADDON_petsc_EXAMPLES = @ADDON_petsc_EXAMPLES@
 ADDON_petsc_TESTS = @ADDON_petsc_TESTS@
 ADDON_python_TESTS = @ADDON_python_TESTS@
+ADDON_tsf_EXAMPLES = @ADDON_tsf_EXAMPLES@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -213,10 +222,10 @@ BUILD_LOCA_PETSC_TESTS_FALSE = @BUILD_LOCA_PETSC_TESTS_FALSE@
 BUILD_LOCA_PETSC_TESTS_TRUE = @BUILD_LOCA_PETSC_TESTS_TRUE@
 BUILD_LOCA_PYTHON_TESTS_FALSE = @BUILD_LOCA_PYTHON_TESTS_FALSE@
 BUILD_LOCA_PYTHON_TESTS_TRUE = @BUILD_LOCA_PYTHON_TESTS_TRUE@
-BUILD_NOX_ANY_FALSE = @BUILD_NOX_ANY_FALSE@
-BUILD_NOX_ANY_TRUE = @BUILD_NOX_ANY_TRUE@
-BUILD_NOX_MULTIVECS_FALSE = @BUILD_NOX_MULTIVECS_FALSE@
-BUILD_NOX_MULTIVECS_TRUE = @BUILD_NOX_MULTIVECS_TRUE@
+BUILD_NOX_EPETRAEXT_SUPPORT_FALSE = @BUILD_NOX_EPETRAEXT_SUPPORT_FALSE@
+BUILD_NOX_EPETRAEXT_SUPPORT_TRUE = @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@
+BUILD_NOX_EPETRA_ML_SUPPORT_FALSE = @BUILD_NOX_EPETRA_ML_SUPPORT_FALSE@
+BUILD_NOX_EPETRA_ML_SUPPORT_TRUE = @BUILD_NOX_EPETRA_ML_SUPPORT_TRUE@
 BUILD_PETSC_EXAMPLES_FALSE = @BUILD_PETSC_EXAMPLES_FALSE@
 BUILD_PETSC_EXAMPLES_TRUE = @BUILD_PETSC_EXAMPLES_TRUE@
 BUILD_PETSC_TESTS_FALSE = @BUILD_PETSC_TESTS_FALSE@
@@ -227,6 +236,8 @@ BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
 BUILD_PYTHON_TESTS_FALSE = @BUILD_PYTHON_TESTS_FALSE@
 BUILD_PYTHON_TESTS_TRUE = @BUILD_PYTHON_TESTS_TRUE@
 BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
+BUILD_TESTUTILS_FALSE = @BUILD_TESTUTILS_FALSE@
+BUILD_TESTUTILS_TRUE = @BUILD_TESTUTILS_TRUE@
 BUILD_TSF_EXAMPLES_FALSE = @BUILD_TSF_EXAMPLES_FALSE@
 BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
@@ -255,12 +266,13 @@ GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_DOXYGEN_DOT = @HAVE_DOXYGEN_DOT@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
-HAVE_NOX_ANY_SUBST = @HAVE_NOX_ANY_SUBST@
-HAVE_NOX_MULTIVECS_SUBST = @HAVE_NOX_MULTIVECS_SUBST@
+HAVE_PERL = @HAVE_PERL@
 HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
 HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 IMPORT_EPETRA = @IMPORT_EPETRA@
 IMPORT_LAPACK = @IMPORT_LAPACK@
+INSIDE_TRILINOS_FALSE = @INSIDE_TRILINOS_FALSE@
+INSIDE_TRILINOS_TRUE = @INSIDE_TRILINOS_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -285,8 +297,6 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
-MF_INCDIR = @MF_INCDIR@
-MF_LIBDIR = @MF_LIBDIR@
 MPI_CC_EXISTS = @MPI_CC_EXISTS@
 MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
@@ -301,6 +311,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 PYTHON = @PYTHON@
 PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
@@ -319,9 +330,14 @@ SWIG = @SWIG@
 SWIG_LIB = @SWIG_LIB@
 SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
 SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
-TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
 abs_builddir = @abs_builddir@
@@ -395,16 +411,9 @@ LOCA_LAPACK = \
 # localapack library specifications
 # ------------------------------------------------------------------------
 liblocalapack_la_SOURCES = $(LOCA_LAPACK) $(LOCA_LAPACK_H)
-liblocalapack_la_CXXFLAGS = \
-	-I$(top_srcdir)/src-loca/src \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src-lapack \
-	$(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS)
-
-liblocalapack_la_LIBADD = \
-	$(top_builddir)/src-loca/src/libloca.la \
-	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS)
-
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(LOCA_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 # ------------------------------------------------------------------------
 # When to turn it on
@@ -494,10 +503,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_LAPACK_Factory.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_LAPACK_Group.Plo@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -523,101 +532,101 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
-liblocalapack_la-LOCA_LAPACK_Group.o: $(srcdir)/LOCA_LAPACK_Group.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_LAPACK_Group.o -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Tpo" -c -o liblocalapack_la-LOCA_LAPACK_Group.o `test -f '$(srcdir)/LOCA_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Group.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Po"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Group.C' object='liblocalapack_la-LOCA_LAPACK_Group.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Po' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.TPo' @AMDEPBACKSLASH@
+LOCA_LAPACK_Group.o: $(srcdir)/LOCA_LAPACK_Group.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_LAPACK_Group.o -MD -MP -MF "$(DEPDIR)/LOCA_LAPACK_Group.Tpo" -c -o LOCA_LAPACK_Group.o `test -f '$(srcdir)/LOCA_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Group.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_LAPACK_Group.Tpo" "$(DEPDIR)/LOCA_LAPACK_Group.Po"; else rm -f "$(DEPDIR)/LOCA_LAPACK_Group.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Group.C' object='LOCA_LAPACK_Group.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_LAPACK_Group.Po' tmpdepfile='$(DEPDIR)/LOCA_LAPACK_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_LAPACK_Group.o `test -f '$(srcdir)/LOCA_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Group.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_LAPACK_Group.o `test -f '$(srcdir)/LOCA_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Group.C
 
-liblocalapack_la-LOCA_LAPACK_Group.obj: $(srcdir)/LOCA_LAPACK_Group.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_LAPACK_Group.obj -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Tpo" -c -o liblocalapack_la-LOCA_LAPACK_Group.obj `if test -f '$(srcdir)/LOCA_LAPACK_Group.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_LAPACK_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_LAPACK_Group.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Po"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Group.C' object='liblocalapack_la-LOCA_LAPACK_Group.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Po' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.TPo' @AMDEPBACKSLASH@
+LOCA_LAPACK_Group.obj: $(srcdir)/LOCA_LAPACK_Group.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_LAPACK_Group.obj -MD -MP -MF "$(DEPDIR)/LOCA_LAPACK_Group.Tpo" -c -o LOCA_LAPACK_Group.obj `if test -f '$(srcdir)/LOCA_LAPACK_Group.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_LAPACK_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_LAPACK_Group.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_LAPACK_Group.Tpo" "$(DEPDIR)/LOCA_LAPACK_Group.Po"; else rm -f "$(DEPDIR)/LOCA_LAPACK_Group.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Group.C' object='LOCA_LAPACK_Group.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_LAPACK_Group.Po' tmpdepfile='$(DEPDIR)/LOCA_LAPACK_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_LAPACK_Group.obj `if test -f '$(srcdir)/LOCA_LAPACK_Group.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_LAPACK_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_LAPACK_Group.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_LAPACK_Group.obj `if test -f '$(srcdir)/LOCA_LAPACK_Group.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_LAPACK_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_LAPACK_Group.C'; fi`
 
-liblocalapack_la-LOCA_LAPACK_Group.lo: $(srcdir)/LOCA_LAPACK_Group.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_LAPACK_Group.lo -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Tpo" -c -o liblocalapack_la-LOCA_LAPACK_Group.lo `test -f '$(srcdir)/LOCA_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Group.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Plo"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Group.C' object='liblocalapack_la-LOCA_LAPACK_Group.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Plo' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.TPlo' @AMDEPBACKSLASH@
+LOCA_LAPACK_Group.lo: $(srcdir)/LOCA_LAPACK_Group.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_LAPACK_Group.lo -MD -MP -MF "$(DEPDIR)/LOCA_LAPACK_Group.Tpo" -c -o LOCA_LAPACK_Group.lo `test -f '$(srcdir)/LOCA_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Group.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_LAPACK_Group.Tpo" "$(DEPDIR)/LOCA_LAPACK_Group.Plo"; else rm -f "$(DEPDIR)/LOCA_LAPACK_Group.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Group.C' object='LOCA_LAPACK_Group.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_LAPACK_Group.Plo' tmpdepfile='$(DEPDIR)/LOCA_LAPACK_Group.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_LAPACK_Group.lo `test -f '$(srcdir)/LOCA_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Group.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_LAPACK_Group.lo `test -f '$(srcdir)/LOCA_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Group.C
 
-liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.o: $(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.o -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo" -c -o liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Po"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' object='liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Po' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.TPo' @AMDEPBACKSLASH@
+LOCA_Eigensolver_DGGEVStrategy.o: $(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Eigensolver_DGGEVStrategy.o -MD -MP -MF "$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Tpo" -c -o LOCA_Eigensolver_DGGEVStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Tpo" "$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Po"; else rm -f "$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' object='LOCA_Eigensolver_DGGEVStrategy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Po' tmpdepfile='$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Eigensolver_DGGEVStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
 
-liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.obj: $(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.obj -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo" -c -o liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Po"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' object='liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Po' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.TPo' @AMDEPBACKSLASH@
+LOCA_Eigensolver_DGGEVStrategy.obj: $(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Eigensolver_DGGEVStrategy.obj -MD -MP -MF "$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Tpo" -c -o LOCA_Eigensolver_DGGEVStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Tpo" "$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Po"; else rm -f "$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' object='LOCA_Eigensolver_DGGEVStrategy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Po' tmpdepfile='$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Eigensolver_DGGEVStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; fi`
 
-liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.lo: $(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.lo -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo" -c -o liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.lo `test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Plo"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' object='liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Plo' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.TPlo' @AMDEPBACKSLASH@
+LOCA_Eigensolver_DGGEVStrategy.lo: $(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Eigensolver_DGGEVStrategy.lo -MD -MP -MF "$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Tpo" -c -o LOCA_Eigensolver_DGGEVStrategy.lo `test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Tpo" "$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Plo"; else rm -f "$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' object='LOCA_Eigensolver_DGGEVStrategy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Plo' tmpdepfile='$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.lo `test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Eigensolver_DGGEVStrategy.lo `test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
 
-liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.o: $(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.o -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" -c -o liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.o `test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Po"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' object='liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Po' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.TPo' @AMDEPBACKSLASH@
+LOCA_BorderedSystem_LAPACKDirectSolve.o: $(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_BorderedSystem_LAPACKDirectSolve.o -MD -MP -MF "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" -c -o LOCA_BorderedSystem_LAPACKDirectSolve.o `test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Po"; else rm -f "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' object='LOCA_BorderedSystem_LAPACKDirectSolve.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Po' tmpdepfile='$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.o `test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_BorderedSystem_LAPACKDirectSolve.o `test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C
 
-liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.obj: $(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.obj -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" -c -o liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.obj `if test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Po"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' object='liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Po' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.TPo' @AMDEPBACKSLASH@
+LOCA_BorderedSystem_LAPACKDirectSolve.obj: $(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_BorderedSystem_LAPACKDirectSolve.obj -MD -MP -MF "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" -c -o LOCA_BorderedSystem_LAPACKDirectSolve.obj `if test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Po"; else rm -f "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' object='LOCA_BorderedSystem_LAPACKDirectSolve.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Po' tmpdepfile='$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.obj `if test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_BorderedSystem_LAPACKDirectSolve.obj `if test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; fi`
 
-liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.lo: $(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.lo -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" -c -o liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.lo `test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Plo"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' object='liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.Plo' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.TPlo' @AMDEPBACKSLASH@
+LOCA_BorderedSystem_LAPACKDirectSolve.lo: $(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_BorderedSystem_LAPACKDirectSolve.lo -MD -MP -MF "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" -c -o LOCA_BorderedSystem_LAPACKDirectSolve.lo `test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Plo"; else rm -f "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' object='LOCA_BorderedSystem_LAPACKDirectSolve.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Plo' tmpdepfile='$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_BorderedSystem_LAPACKDirectSolve.lo `test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_BorderedSystem_LAPACKDirectSolve.lo `test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C
 
-liblocalapack_la-LOCA_LAPACK_Factory.o: $(srcdir)/LOCA_LAPACK_Factory.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_LAPACK_Factory.o -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Tpo" -c -o liblocalapack_la-LOCA_LAPACK_Factory.o `test -f '$(srcdir)/LOCA_LAPACK_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Factory.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Po"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Factory.C' object='liblocalapack_la-LOCA_LAPACK_Factory.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Po' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.TPo' @AMDEPBACKSLASH@
+LOCA_LAPACK_Factory.o: $(srcdir)/LOCA_LAPACK_Factory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_LAPACK_Factory.o -MD -MP -MF "$(DEPDIR)/LOCA_LAPACK_Factory.Tpo" -c -o LOCA_LAPACK_Factory.o `test -f '$(srcdir)/LOCA_LAPACK_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Factory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_LAPACK_Factory.Tpo" "$(DEPDIR)/LOCA_LAPACK_Factory.Po"; else rm -f "$(DEPDIR)/LOCA_LAPACK_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Factory.C' object='LOCA_LAPACK_Factory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_LAPACK_Factory.Po' tmpdepfile='$(DEPDIR)/LOCA_LAPACK_Factory.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_LAPACK_Factory.o `test -f '$(srcdir)/LOCA_LAPACK_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Factory.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_LAPACK_Factory.o `test -f '$(srcdir)/LOCA_LAPACK_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Factory.C
 
-liblocalapack_la-LOCA_LAPACK_Factory.obj: $(srcdir)/LOCA_LAPACK_Factory.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_LAPACK_Factory.obj -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Tpo" -c -o liblocalapack_la-LOCA_LAPACK_Factory.obj `if test -f '$(srcdir)/LOCA_LAPACK_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_LAPACK_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_LAPACK_Factory.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Po"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Factory.C' object='liblocalapack_la-LOCA_LAPACK_Factory.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Po' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.TPo' @AMDEPBACKSLASH@
+LOCA_LAPACK_Factory.obj: $(srcdir)/LOCA_LAPACK_Factory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_LAPACK_Factory.obj -MD -MP -MF "$(DEPDIR)/LOCA_LAPACK_Factory.Tpo" -c -o LOCA_LAPACK_Factory.obj `if test -f '$(srcdir)/LOCA_LAPACK_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_LAPACK_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_LAPACK_Factory.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_LAPACK_Factory.Tpo" "$(DEPDIR)/LOCA_LAPACK_Factory.Po"; else rm -f "$(DEPDIR)/LOCA_LAPACK_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Factory.C' object='LOCA_LAPACK_Factory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_LAPACK_Factory.Po' tmpdepfile='$(DEPDIR)/LOCA_LAPACK_Factory.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_LAPACK_Factory.obj `if test -f '$(srcdir)/LOCA_LAPACK_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_LAPACK_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_LAPACK_Factory.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_LAPACK_Factory.obj `if test -f '$(srcdir)/LOCA_LAPACK_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_LAPACK_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_LAPACK_Factory.C'; fi`
 
-liblocalapack_la-LOCA_LAPACK_Factory.lo: $(srcdir)/LOCA_LAPACK_Factory.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_LAPACK_Factory.lo -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Tpo" -c -o liblocalapack_la-LOCA_LAPACK_Factory.lo `test -f '$(srcdir)/LOCA_LAPACK_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Factory.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Plo"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Factory.C' object='liblocalapack_la-LOCA_LAPACK_Factory.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.Plo' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Factory.TPlo' @AMDEPBACKSLASH@
+LOCA_LAPACK_Factory.lo: $(srcdir)/LOCA_LAPACK_Factory.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_LAPACK_Factory.lo -MD -MP -MF "$(DEPDIR)/LOCA_LAPACK_Factory.Tpo" -c -o LOCA_LAPACK_Factory.lo `test -f '$(srcdir)/LOCA_LAPACK_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Factory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_LAPACK_Factory.Tpo" "$(DEPDIR)/LOCA_LAPACK_Factory.Plo"; else rm -f "$(DEPDIR)/LOCA_LAPACK_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Factory.C' object='LOCA_LAPACK_Factory.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_LAPACK_Factory.Plo' tmpdepfile='$(DEPDIR)/LOCA_LAPACK_Factory.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_LAPACK_Factory.lo `test -f '$(srcdir)/LOCA_LAPACK_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Factory.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_LAPACK_Factory.lo `test -f '$(srcdir)/LOCA_LAPACK_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Factory.C
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -817,6 +826,11 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLTLIBRARIES
 
+
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.nox
 
 # ------------------------------------------------------------------------
 # Include global libtool definitions

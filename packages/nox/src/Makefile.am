@@ -130,6 +130,7 @@ nodist_execinclude_HEADERS = NOX_Config.h
 
 ABSTRACT = \
 	$(srcdir)/NOX_Abstract_Vector.C \
+	$(srcdir)/NOX_Abstract_MultiVector.H \
 	$(srcdir)/NOX_Abstract_Group.C
 
 ABSTRACT_H = \
@@ -238,22 +239,25 @@ UTILS = \
 	$(srcdir)/NOX_Random.C \
         $(srcdir)/NOX_Version.C
 
-if BUILD_NOX_MULTIVECS
-
 MULTIVECS_H = \
-	$(srcdir)/NOX_Abstract_MultiVector.H \
 	$(srcdir)/NOX_MultiVector.H
 
 MULTIVECS = \
 	$(srcdir)/NOX_MultiVector.C
 
+
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
 else
-
-MULTIVECS_H =
-MULTIVECS =
-
+EXPORT_INCLUDES = $(NOX_INCLUDES)
 endif
 
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 # ------------------------------------------------------------------------
 # For using a special archiver
@@ -292,6 +296,61 @@ MAINTAINERCLEANFILES = Makefile.in
 
 MOSTLYCLEANFILES = $(CXXREPOS)
 
+
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+if BUILD_LIBNOXEPETRA
+BUILDNOX_EPETRA_LIBS = cd $(top_builddir)/../epetra ; $(MAKE) all-libs
+else
+BUILDNOX_EPETRA_LIBS =
+endif
+
+if BUILD_LIBNOXEPETRA
+BUILDNOX_AZTECOO_LIBS = cd $(top_builddir)/../aztecoo ; $(MAKE) all-libs
+else
+BUILDNOX_AZTECOO_LIBS =
+endif
+
+if BUILD_LIBNOXEPETRA
+BUILDNOX_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; $(MAKE) all-libs
+else
+BUILDNOX_IFPACK_LIBS =
+endif
+
+if BUILD_NOX_EPETRAEXT_SUPPORT
+BUILDNOX_EPETRAEXT_LIBS = cd $(top_builddir)/../epetraext ; $(MAKE) all-libs
+else
+BUILDNOX_EPETRAEXT_LIBS =
+endif
+
+if BUILD_NOX_EPETRA_ML_SUPPORT
+BUILDNOX_ML_LIBS = cd $(top_builddir)/../ml ; $(MAKE) all-libs
+else
+BUILDNOX_ML_LIBS =
+endif
+
+if BUILD_LIBNOXBELOS
+BUILDNOX_BELOS_LIBS = cd $(top_builddir)/../belos ; $(MAKE) all-libs
+else
+BUILDNOX_BELOS_LIBS =
+endif
+
+if BUILD_LOCAANASAZI
+BUILDNOX_BELOS_LIBS = cd $(top_builddir)/../anasazi ; $(MAKE) all-libs
+else
+BUILDNOX_BELOS_LIBS =
+endif
+
+all-libs:
+	$(MAKE) libnox.a
+	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
+	$(BUILDNOX_EPETRA_LIBS)
+	$(BUILDNOX_EPETRAEXT_LIBS)
+	$(BUILDNOX_AZTECOO_LIBS)
+	$(BUILDNOX_IFPACK_LIBS)
+	$(BUILDNOX_ML_LIBS)
+	$(BUILDNOX_BELOS_LIBS)
 
 
 

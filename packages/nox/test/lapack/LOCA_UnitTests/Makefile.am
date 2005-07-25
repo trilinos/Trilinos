@@ -29,6 +29,19 @@
 # ************************************************************************
 #@HEADER
 
+# Include NOX export makefile
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_LAPACK_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_LAPACK_TEST_INCLUDES))
+else
+TEST_LIBS     = $(LOCA_LAPACK_TEST_LIBS)
+TEST_INCLUDES = $(LOCA_LAPACK_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(TEST_INCLUDES)
+
 if BUILD_LOCAANASAZI
 
 ANASAZIJACOBIANINVERSE = anasaziJacobianInverse_exe
@@ -58,25 +71,7 @@ anasaziJacobianInverse_exe_DEPENDENCIES = \
         $(top_builddir)/src-loca/src-lapack/liblocalapack.la \
 	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.la
 
-anasaziJacobianInverse_exe_CXXFLAGS = \
-	$(TRILINOS_CXXFLAGS) \
-	$(LIBTOOL_COMPILER_FLAGS) \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src-lapack \
-	-I$(top_srcdir)/src-loca/src \
-        -I$(top_srcdir)/src-loca/src-lapack \
-        -I$(top_srcdir)/test/utils \
-	-I$(top_srcdir)/test/lapack/LOCA_TestProblems
-
-anasaziJacobianInverse_exe_LDADD = \
-	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.la \
-        $(top_builddir)/src-loca/src-lapack/liblocalapack.la \
-        $(top_builddir)/src-loca/src/libloca.la \
-	-L$(top_builddir)/src \
-	-L$(top_builddir)/src-lapack \
-	-L$(top_builddir)/test/utils \
-        -lnoxtestutils -lnoxlapack -lnox \
-        $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+anasaziJacobianInverse_exe_LDADD = $(TEST_LIBS)
 
 borderedSolveNonContiguous_exe_SOURCES = \
 	$(srcdir)/BorderedSolveNonContiguous.C
@@ -84,11 +79,7 @@ borderedSolveNonContiguous_exe_SOURCES = \
 borderedSolveNonContiguous_exe_DEPENDENCIES = \
 	$(anasaziJacobianInverse_exe_DEPENDENCIES)
 
-borderedSolveNonContiguous_exe_CXXFLAGS = \
-	$(anasaziJacobianInverse_exe_CXXFLAGS)
-
-borderedSolveNonContiguous_exe_LDADD = \
-	$(anasaziJacobianInverse_exe_LDADD)
+borderedSolveNonContiguous_exe_LDADD = $(TEST_LIBS)
 
 borderedSolveContiguous_exe_SOURCES = \
 	$(srcdir)/BorderedSolveContiguous.C
@@ -96,11 +87,7 @@ borderedSolveContiguous_exe_SOURCES = \
 borderedSolveContiguous_exe_DEPENDENCIES = \
 	$(anasaziJacobianInverse_exe_DEPENDENCIES)
 
-borderedSolveContiguous_exe_CXXFLAGS = \
-	$(anasaziJacobianInverse_exe_CXXFLAGS)
-
-borderedSolveContiguous_exe_LDADD = \
-	$(anasaziJacobianInverse_exe_LDADD)
+borderedSolveContiguous_exe_LDADD = $(TEST_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

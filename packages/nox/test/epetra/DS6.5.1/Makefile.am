@@ -27,6 +27,18 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES))
+else
+TEST_LIBS     = $(NOX_TEST_LIBS)
+TEST_INCLUDES = $(NOX_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(TEST_INCLUDES)
+
 EXEEXT = .exe
 
 EXAMPLE = DS6_5_1
@@ -43,13 +55,4 @@ DS6_5_1_DEPENDENCIES = \
                        $(top_builddir)/src/libnox.a \
                        $(top_builddir)/src-epetra/libnoxepetra.a
 
-DS6_5_1_CXXFLAGS = \
-                      -I$(top_srcdir)/src \
-                      -I$(top_srcdir)/src-epetra \
-                      -I$(top_srcdir)/test/utils \
-                      $(TRILINOS_CXXFLAGS)
-
-DS6_5_1_LDADD = \
-                   -L$(top_builddir)/src-epetra -lnoxepetra \
-                   -L$(top_builddir)/src -lnox $(LIBS) \
-	           $(BLAS_LIBS) $(FLIBS)
+DS6_5_1_LDADD = $(TEST_LIBS)

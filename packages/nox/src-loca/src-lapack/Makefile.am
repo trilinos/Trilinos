@@ -57,15 +57,18 @@ LOCA_LAPACK = \
 
 liblocalapack_la_SOURCES = $(LOCA_LAPACK) $(LOCA_LAPACK_H)
 
-liblocalapack_la_CXXFLAGS = \
-	-I$(top_srcdir)/src-loca/src \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src-lapack \
-	$(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS)
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.nox
 
-liblocalapack_la_LIBADD = \
-	$(top_builddir)/src-loca/src/libloca.la \
-	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS)
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
+else
+EXPORT_INCLUDES = $(LOCA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 # ------------------------------------------------------------------------
 # When to turn it on

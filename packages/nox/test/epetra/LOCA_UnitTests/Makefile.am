@@ -29,6 +29,18 @@
 # ************************************************************************
 # @HEADER
 
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_EPETRA_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_EPETRA_TEST_INCLUDES))
+else
+TEST_LIBS     = $(LOCA_EPETRA_TEST_LIBS)
+TEST_INCLUDES = $(LOCA_EPETRA_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(TEST_INCLUDES)
+
 HOUSEHOLDERBORDEREDSOLVE = householderBorderedSolve_exe
 HOUSEHOLDERBORDEREDSOLVECONTIGUOUS = householderBorderedSolveContiguous_exe
 COMPOSITECONSTRAINT = compositeConstraint_exe
@@ -51,34 +63,13 @@ householderBorderedSolve_exe_DEPENDENCIES = \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
 	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.la
 
-householderBorderedSolve_exe_CXXFLAGS = \
-	$(TRILINOS_CXXFLAGS) \
-	$(LIBTOOL_COMPILER_FLAGS) \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src-epetra \
-	-I$(top_srcdir)/src-loca/src \
-        -I$(top_srcdir)/src-loca/src-epetra \
-        -I$(top_srcdir)/test/utils \
-	-I$(top_srcdir)/test/epetra/LOCA_TestProblems
-
-householderBorderedSolve_exe_LDADD = \
-	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.la \
-        $(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
-        $(top_builddir)/src-loca/src/libloca.la \
-	-L$(top_builddir)/src \
-	-L$(top_builddir)/src-epetra \
-	-L$(top_builddir)/test/utils \
-        -lnoxtestutils -lnoxepetra -lnox \
-        $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+householderBorderedSolve_exe_LDADD = $(TEST_LIBS)
 
 householderBorderedSolveContiguous_exe_SOURCES = \
 	$(srcdir)/HouseholderBorderedSolveContiguous.C 
 
 householderBorderedSolveContiguous_exe_DEPENDENCIES = \
 	$(householderBorderedSolve_exe_DEPENDENCIES)
-
-householderBorderedSolveContiguous_exe_CXXFLAGS = \
-	$(householderBorderedSolve_exe_CXXFLAGS)
 
 householderBorderedSolveContiguous_exe_LDADD = \
 	$(householderBorderedSolve_exe_LDADD)
@@ -89,9 +80,6 @@ compositeConstraint_exe_SOURCES = \
 compositeConstraint_exe_DEPENDENCIES = \
 	$(householderBorderedSolve_exe_DEPENDENCIES)
 
-compositeConstraint_exe_CXXFLAGS = \
-	$(householderBorderedSolve_exe_CXXFLAGS)
-
 compositeConstraint_exe_LDADD = \
 	$(householderBorderedSolve_exe_LDADD)
 
@@ -100,9 +88,6 @@ compositeConstraintMVDX_exe_SOURCES = \
 
 compositeConstraintMVDX_exe_DEPENDENCIES = \
 	$(householderBorderedSolve_exe_DEPENDENCIES)
-
-compositeConstraintMVDX_exe_CXXFLAGS = \
-	$(householderBorderedSolve_exe_CXXFLAGS)
 
 compositeConstraintMVDX_exe_LDADD = \
 	$(householderBorderedSolve_exe_LDADD)

@@ -58,12 +58,7 @@
 // User's application specific files 
 #include "Interface_EpetraNew.H" 
 
-#ifdef HAVE_NOX_ML_EPETRA
 #include "Teuchos_ParameterList.hpp"
-#endif
-#ifdef HAVE_NOX_ANY
-#include "Teuchos_ParameterList.hpp"
-#endif
 
 using namespace std;
 
@@ -171,10 +166,11 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Preconditioner", "AztecOO");
   lsParams.setParameter("Preconditioner", "Ifpack");
   lsParams.setParameter("Max Age Of Prec", 5);
-#ifdef HAVE_NOX_ANY
+
+  // New Ifpack interface
   //lsParams.setParameter("Preconditioner", "New Ifpack");
   Teuchos::ParameterList IfpackList;
-#endif
+
 
 #ifdef HAVE_NOX_ML_EPETRA
   // Comment out the previous Preconditioner spec and uncomment this line
@@ -189,14 +185,12 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Preconditioner Operator", "Finite Difference");
 
   // Set specific Preconditioning Package options if valid
-#ifdef HAVE_NOX_ANY
   if( lsParams.getParameter("Preconditioner", "None") == "New Ifpack" ) {
     lsParams.setParameter("Ifpack Preconditioner", "ILU");
     // Can fill Ifpack options into IfpackList here
 
     lsParams.setParameter("Ifpack Teuchos Parameter List", &IfpackList);
   }
-#endif
 
 #ifdef HAVE_NOX_ML_EPETRA
   if( lsParams.getParameter("Preconditioner", "None") == "ML" ) {

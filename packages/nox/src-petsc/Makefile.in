@@ -91,11 +91,17 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_nox_interface.m4 \
+	$(top_srcdir)/config/tac_arg_trilinos_header_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
+	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
-	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
+	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -108,20 +114,18 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libnoxpetsc_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__objects_1 = libnoxpetsc_a-NOX_Petsc_Vector.$(OBJEXT) \
-	libnoxpetsc_a-NOX_Petsc_Group.$(OBJEXT) \
-	libnoxpetsc_a-NOX_Petsc_SharedJacobian.$(OBJEXT) \
-	libnoxpetsc_a-NOX_Petsc_Options.$(OBJEXT)
+am__objects_1 = NOX_Petsc_Vector.$(OBJEXT) NOX_Petsc_Group.$(OBJEXT) \
+	NOX_Petsc_SharedJacobian.$(OBJEXT) NOX_Petsc_Options.$(OBJEXT)
 am__objects_2 =
 am_libnoxpetsc_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libnoxpetsc_a_OBJECTS = $(am_libnoxpetsc_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/NOX_Petsc_Group.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NOX_Petsc_Options.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NOX_Petsc_SharedJacobian.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NOX_Petsc_Vector.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -150,14 +154,21 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ADDON_belos_EXAMPLES = @ADDON_belos_EXAMPLES@
+ADDON_epetra_EXAMPLES = @ADDON_epetra_EXAMPLES@
 ADDON_epetra_TESTS = @ADDON_epetra_TESTS@
+ADDON_lapack_EXAMPLES = @ADDON_lapack_EXAMPLES@
 ADDON_lapack_TESTS = @ADDON_lapack_TESTS@
+ADDON_loca_epetra_EXAMPLES = @ADDON_loca_epetra_EXAMPLES@
 ADDON_loca_epetra_TESTS = @ADDON_loca_epetra_TESTS@
+ADDON_loca_lapack_EXAMPLES = @ADDON_loca_lapack_EXAMPLES@
 ADDON_loca_lapack_TESTS = @ADDON_loca_lapack_TESTS@
 ADDON_loca_petsc_TESTS = @ADDON_loca_petsc_TESTS@
 ADDON_loca_python_TESTS = @ADDON_loca_python_TESTS@
+ADDON_petsc_EXAMPLES = @ADDON_petsc_EXAMPLES@
 ADDON_petsc_TESTS = @ADDON_petsc_TESTS@
 ADDON_python_TESTS = @ADDON_python_TESTS@
+ADDON_tsf_EXAMPLES = @ADDON_tsf_EXAMPLES@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -210,10 +221,10 @@ BUILD_LOCA_PETSC_TESTS_FALSE = @BUILD_LOCA_PETSC_TESTS_FALSE@
 BUILD_LOCA_PETSC_TESTS_TRUE = @BUILD_LOCA_PETSC_TESTS_TRUE@
 BUILD_LOCA_PYTHON_TESTS_FALSE = @BUILD_LOCA_PYTHON_TESTS_FALSE@
 BUILD_LOCA_PYTHON_TESTS_TRUE = @BUILD_LOCA_PYTHON_TESTS_TRUE@
-BUILD_NOX_ANY_FALSE = @BUILD_NOX_ANY_FALSE@
-BUILD_NOX_ANY_TRUE = @BUILD_NOX_ANY_TRUE@
-BUILD_NOX_MULTIVECS_FALSE = @BUILD_NOX_MULTIVECS_FALSE@
-BUILD_NOX_MULTIVECS_TRUE = @BUILD_NOX_MULTIVECS_TRUE@
+BUILD_NOX_EPETRAEXT_SUPPORT_FALSE = @BUILD_NOX_EPETRAEXT_SUPPORT_FALSE@
+BUILD_NOX_EPETRAEXT_SUPPORT_TRUE = @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@
+BUILD_NOX_EPETRA_ML_SUPPORT_FALSE = @BUILD_NOX_EPETRA_ML_SUPPORT_FALSE@
+BUILD_NOX_EPETRA_ML_SUPPORT_TRUE = @BUILD_NOX_EPETRA_ML_SUPPORT_TRUE@
 BUILD_PETSC_EXAMPLES_FALSE = @BUILD_PETSC_EXAMPLES_FALSE@
 BUILD_PETSC_EXAMPLES_TRUE = @BUILD_PETSC_EXAMPLES_TRUE@
 BUILD_PETSC_TESTS_FALSE = @BUILD_PETSC_TESTS_FALSE@
@@ -224,6 +235,8 @@ BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
 BUILD_PYTHON_TESTS_FALSE = @BUILD_PYTHON_TESTS_FALSE@
 BUILD_PYTHON_TESTS_TRUE = @BUILD_PYTHON_TESTS_TRUE@
 BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
+BUILD_TESTUTILS_FALSE = @BUILD_TESTUTILS_FALSE@
+BUILD_TESTUTILS_TRUE = @BUILD_TESTUTILS_TRUE@
 BUILD_TSF_EXAMPLES_FALSE = @BUILD_TSF_EXAMPLES_FALSE@
 BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
@@ -252,12 +265,13 @@ GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_DOXYGEN_DOT = @HAVE_DOXYGEN_DOT@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
-HAVE_NOX_ANY_SUBST = @HAVE_NOX_ANY_SUBST@
-HAVE_NOX_MULTIVECS_SUBST = @HAVE_NOX_MULTIVECS_SUBST@
+HAVE_PERL = @HAVE_PERL@
 HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
 HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 IMPORT_EPETRA = @IMPORT_EPETRA@
 IMPORT_LAPACK = @IMPORT_LAPACK@
+INSIDE_TRILINOS_FALSE = @INSIDE_TRILINOS_FALSE@
+INSIDE_TRILINOS_TRUE = @INSIDE_TRILINOS_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -276,8 +290,6 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
-MF_INCDIR = @MF_INCDIR@
-MF_LIBDIR = @MF_LIBDIR@
 MPI_CC_EXISTS = @MPI_CC_EXISTS@
 MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
@@ -292,6 +304,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 PYTHON = @PYTHON@
 PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
@@ -310,9 +323,14 @@ SWIG = @SWIG@
 SWIG_LIB = @SWIG_LIB@
 SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
 SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
-TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
 abs_builddir = @abs_builddir@
@@ -386,7 +404,9 @@ PETSC = \
 # Noxpetsc library specifications
 # ------------------------------------------------------------------------
 libnoxpetsc_a_SOURCES = $(PETSC) $(PETSC_H)
-libnoxpetsc_a_CXXFLAGS = -I$(top_srcdir)/src $(PETSC_CXXFLAGS)
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(NOX_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INCLUDES) $(PETSC_CXXFLAGS)
 
 # ------------------------------------------------------------------------
 # When to turn it on
@@ -496,10 +516,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Petsc_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Petsc_Options.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Petsc_SharedJacobian.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Petsc_Vector.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -525,101 +545,101 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
-libnoxpetsc_a-NOX_Petsc_Vector.o: $(srcdir)/NOX_Petsc_Vector.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxpetsc_a-NOX_Petsc_Vector.o -MD -MP -MF "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Tpo" -c -o libnoxpetsc_a-NOX_Petsc_Vector.o `test -f '$(srcdir)/NOX_Petsc_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Vector.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Tpo" "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Po"; else rm -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Vector.C' object='libnoxpetsc_a-NOX_Petsc_Vector.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.TPo' @AMDEPBACKSLASH@
+NOX_Petsc_Vector.o: $(srcdir)/NOX_Petsc_Vector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Petsc_Vector.o -MD -MP -MF "$(DEPDIR)/NOX_Petsc_Vector.Tpo" -c -o NOX_Petsc_Vector.o `test -f '$(srcdir)/NOX_Petsc_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Vector.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Petsc_Vector.Tpo" "$(DEPDIR)/NOX_Petsc_Vector.Po"; else rm -f "$(DEPDIR)/NOX_Petsc_Vector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Vector.C' object='NOX_Petsc_Vector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Petsc_Vector.Po' tmpdepfile='$(DEPDIR)/NOX_Petsc_Vector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_Vector.o `test -f '$(srcdir)/NOX_Petsc_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Vector.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Petsc_Vector.o `test -f '$(srcdir)/NOX_Petsc_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Vector.C
 
-libnoxpetsc_a-NOX_Petsc_Vector.obj: $(srcdir)/NOX_Petsc_Vector.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxpetsc_a-NOX_Petsc_Vector.obj -MD -MP -MF "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Tpo" -c -o libnoxpetsc_a-NOX_Petsc_Vector.obj `if test -f '$(srcdir)/NOX_Petsc_Vector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_Vector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_Vector.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Tpo" "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Po"; else rm -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Vector.C' object='libnoxpetsc_a-NOX_Petsc_Vector.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.TPo' @AMDEPBACKSLASH@
+NOX_Petsc_Vector.obj: $(srcdir)/NOX_Petsc_Vector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Petsc_Vector.obj -MD -MP -MF "$(DEPDIR)/NOX_Petsc_Vector.Tpo" -c -o NOX_Petsc_Vector.obj `if test -f '$(srcdir)/NOX_Petsc_Vector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_Vector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_Vector.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Petsc_Vector.Tpo" "$(DEPDIR)/NOX_Petsc_Vector.Po"; else rm -f "$(DEPDIR)/NOX_Petsc_Vector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Vector.C' object='NOX_Petsc_Vector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Petsc_Vector.Po' tmpdepfile='$(DEPDIR)/NOX_Petsc_Vector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_Vector.obj `if test -f '$(srcdir)/NOX_Petsc_Vector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_Vector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_Vector.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Petsc_Vector.obj `if test -f '$(srcdir)/NOX_Petsc_Vector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_Vector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_Vector.C'; fi`
 
-libnoxpetsc_a-NOX_Petsc_Vector.lo: $(srcdir)/NOX_Petsc_Vector.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxpetsc_a-NOX_Petsc_Vector.lo -MD -MP -MF "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Tpo" -c -o libnoxpetsc_a-NOX_Petsc_Vector.lo `test -f '$(srcdir)/NOX_Petsc_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Vector.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Tpo" "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Plo"; else rm -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Vector.C' object='libnoxpetsc_a-NOX_Petsc_Vector.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Plo' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.TPlo' @AMDEPBACKSLASH@
+NOX_Petsc_Vector.lo: $(srcdir)/NOX_Petsc_Vector.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Petsc_Vector.lo -MD -MP -MF "$(DEPDIR)/NOX_Petsc_Vector.Tpo" -c -o NOX_Petsc_Vector.lo `test -f '$(srcdir)/NOX_Petsc_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Vector.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Petsc_Vector.Tpo" "$(DEPDIR)/NOX_Petsc_Vector.Plo"; else rm -f "$(DEPDIR)/NOX_Petsc_Vector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Vector.C' object='NOX_Petsc_Vector.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Petsc_Vector.Plo' tmpdepfile='$(DEPDIR)/NOX_Petsc_Vector.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_Vector.lo `test -f '$(srcdir)/NOX_Petsc_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Vector.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Petsc_Vector.lo `test -f '$(srcdir)/NOX_Petsc_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Vector.C
 
-libnoxpetsc_a-NOX_Petsc_Group.o: $(srcdir)/NOX_Petsc_Group.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxpetsc_a-NOX_Petsc_Group.o -MD -MP -MF "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Tpo" -c -o libnoxpetsc_a-NOX_Petsc_Group.o `test -f '$(srcdir)/NOX_Petsc_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Group.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Tpo" "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Po"; else rm -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Group.C' object='libnoxpetsc_a-NOX_Petsc_Group.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Po' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.TPo' @AMDEPBACKSLASH@
+NOX_Petsc_Group.o: $(srcdir)/NOX_Petsc_Group.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Petsc_Group.o -MD -MP -MF "$(DEPDIR)/NOX_Petsc_Group.Tpo" -c -o NOX_Petsc_Group.o `test -f '$(srcdir)/NOX_Petsc_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Group.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Petsc_Group.Tpo" "$(DEPDIR)/NOX_Petsc_Group.Po"; else rm -f "$(DEPDIR)/NOX_Petsc_Group.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Group.C' object='NOX_Petsc_Group.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Petsc_Group.Po' tmpdepfile='$(DEPDIR)/NOX_Petsc_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_Group.o `test -f '$(srcdir)/NOX_Petsc_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Group.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Petsc_Group.o `test -f '$(srcdir)/NOX_Petsc_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Group.C
 
-libnoxpetsc_a-NOX_Petsc_Group.obj: $(srcdir)/NOX_Petsc_Group.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxpetsc_a-NOX_Petsc_Group.obj -MD -MP -MF "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Tpo" -c -o libnoxpetsc_a-NOX_Petsc_Group.obj `if test -f '$(srcdir)/NOX_Petsc_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_Group.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Tpo" "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Po"; else rm -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Group.C' object='libnoxpetsc_a-NOX_Petsc_Group.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Po' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.TPo' @AMDEPBACKSLASH@
+NOX_Petsc_Group.obj: $(srcdir)/NOX_Petsc_Group.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Petsc_Group.obj -MD -MP -MF "$(DEPDIR)/NOX_Petsc_Group.Tpo" -c -o NOX_Petsc_Group.obj `if test -f '$(srcdir)/NOX_Petsc_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_Group.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Petsc_Group.Tpo" "$(DEPDIR)/NOX_Petsc_Group.Po"; else rm -f "$(DEPDIR)/NOX_Petsc_Group.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Group.C' object='NOX_Petsc_Group.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Petsc_Group.Po' tmpdepfile='$(DEPDIR)/NOX_Petsc_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_Group.obj `if test -f '$(srcdir)/NOX_Petsc_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_Group.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Petsc_Group.obj `if test -f '$(srcdir)/NOX_Petsc_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_Group.C'; fi`
 
-libnoxpetsc_a-NOX_Petsc_Group.lo: $(srcdir)/NOX_Petsc_Group.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxpetsc_a-NOX_Petsc_Group.lo -MD -MP -MF "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Tpo" -c -o libnoxpetsc_a-NOX_Petsc_Group.lo `test -f '$(srcdir)/NOX_Petsc_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Group.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Tpo" "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Plo"; else rm -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Group.C' object='libnoxpetsc_a-NOX_Petsc_Group.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Plo' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.TPlo' @AMDEPBACKSLASH@
+NOX_Petsc_Group.lo: $(srcdir)/NOX_Petsc_Group.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Petsc_Group.lo -MD -MP -MF "$(DEPDIR)/NOX_Petsc_Group.Tpo" -c -o NOX_Petsc_Group.lo `test -f '$(srcdir)/NOX_Petsc_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Group.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Petsc_Group.Tpo" "$(DEPDIR)/NOX_Petsc_Group.Plo"; else rm -f "$(DEPDIR)/NOX_Petsc_Group.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Group.C' object='NOX_Petsc_Group.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Petsc_Group.Plo' tmpdepfile='$(DEPDIR)/NOX_Petsc_Group.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_Group.lo `test -f '$(srcdir)/NOX_Petsc_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Group.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Petsc_Group.lo `test -f '$(srcdir)/NOX_Petsc_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Group.C
 
-libnoxpetsc_a-NOX_Petsc_SharedJacobian.o: $(srcdir)/NOX_Petsc_SharedJacobian.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxpetsc_a-NOX_Petsc_SharedJacobian.o -MD -MP -MF "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Tpo" -c -o libnoxpetsc_a-NOX_Petsc_SharedJacobian.o `test -f '$(srcdir)/NOX_Petsc_SharedJacobian.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_SharedJacobian.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Tpo" "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Po"; else rm -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_SharedJacobian.C' object='libnoxpetsc_a-NOX_Petsc_SharedJacobian.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Po' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.TPo' @AMDEPBACKSLASH@
+NOX_Petsc_SharedJacobian.o: $(srcdir)/NOX_Petsc_SharedJacobian.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Petsc_SharedJacobian.o -MD -MP -MF "$(DEPDIR)/NOX_Petsc_SharedJacobian.Tpo" -c -o NOX_Petsc_SharedJacobian.o `test -f '$(srcdir)/NOX_Petsc_SharedJacobian.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_SharedJacobian.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Petsc_SharedJacobian.Tpo" "$(DEPDIR)/NOX_Petsc_SharedJacobian.Po"; else rm -f "$(DEPDIR)/NOX_Petsc_SharedJacobian.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_SharedJacobian.C' object='NOX_Petsc_SharedJacobian.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Petsc_SharedJacobian.Po' tmpdepfile='$(DEPDIR)/NOX_Petsc_SharedJacobian.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_SharedJacobian.o `test -f '$(srcdir)/NOX_Petsc_SharedJacobian.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_SharedJacobian.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Petsc_SharedJacobian.o `test -f '$(srcdir)/NOX_Petsc_SharedJacobian.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_SharedJacobian.C
 
-libnoxpetsc_a-NOX_Petsc_SharedJacobian.obj: $(srcdir)/NOX_Petsc_SharedJacobian.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxpetsc_a-NOX_Petsc_SharedJacobian.obj -MD -MP -MF "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Tpo" -c -o libnoxpetsc_a-NOX_Petsc_SharedJacobian.obj `if test -f '$(srcdir)/NOX_Petsc_SharedJacobian.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_SharedJacobian.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_SharedJacobian.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Tpo" "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Po"; else rm -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_SharedJacobian.C' object='libnoxpetsc_a-NOX_Petsc_SharedJacobian.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Po' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.TPo' @AMDEPBACKSLASH@
+NOX_Petsc_SharedJacobian.obj: $(srcdir)/NOX_Petsc_SharedJacobian.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Petsc_SharedJacobian.obj -MD -MP -MF "$(DEPDIR)/NOX_Petsc_SharedJacobian.Tpo" -c -o NOX_Petsc_SharedJacobian.obj `if test -f '$(srcdir)/NOX_Petsc_SharedJacobian.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_SharedJacobian.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_SharedJacobian.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Petsc_SharedJacobian.Tpo" "$(DEPDIR)/NOX_Petsc_SharedJacobian.Po"; else rm -f "$(DEPDIR)/NOX_Petsc_SharedJacobian.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_SharedJacobian.C' object='NOX_Petsc_SharedJacobian.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Petsc_SharedJacobian.Po' tmpdepfile='$(DEPDIR)/NOX_Petsc_SharedJacobian.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_SharedJacobian.obj `if test -f '$(srcdir)/NOX_Petsc_SharedJacobian.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_SharedJacobian.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_SharedJacobian.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Petsc_SharedJacobian.obj `if test -f '$(srcdir)/NOX_Petsc_SharedJacobian.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_SharedJacobian.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_SharedJacobian.C'; fi`
 
-libnoxpetsc_a-NOX_Petsc_SharedJacobian.lo: $(srcdir)/NOX_Petsc_SharedJacobian.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxpetsc_a-NOX_Petsc_SharedJacobian.lo -MD -MP -MF "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Tpo" -c -o libnoxpetsc_a-NOX_Petsc_SharedJacobian.lo `test -f '$(srcdir)/NOX_Petsc_SharedJacobian.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_SharedJacobian.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Tpo" "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Plo"; else rm -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_SharedJacobian.C' object='libnoxpetsc_a-NOX_Petsc_SharedJacobian.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Plo' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.TPlo' @AMDEPBACKSLASH@
+NOX_Petsc_SharedJacobian.lo: $(srcdir)/NOX_Petsc_SharedJacobian.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Petsc_SharedJacobian.lo -MD -MP -MF "$(DEPDIR)/NOX_Petsc_SharedJacobian.Tpo" -c -o NOX_Petsc_SharedJacobian.lo `test -f '$(srcdir)/NOX_Petsc_SharedJacobian.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_SharedJacobian.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Petsc_SharedJacobian.Tpo" "$(DEPDIR)/NOX_Petsc_SharedJacobian.Plo"; else rm -f "$(DEPDIR)/NOX_Petsc_SharedJacobian.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_SharedJacobian.C' object='NOX_Petsc_SharedJacobian.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Petsc_SharedJacobian.Plo' tmpdepfile='$(DEPDIR)/NOX_Petsc_SharedJacobian.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_SharedJacobian.lo `test -f '$(srcdir)/NOX_Petsc_SharedJacobian.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_SharedJacobian.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Petsc_SharedJacobian.lo `test -f '$(srcdir)/NOX_Petsc_SharedJacobian.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_SharedJacobian.C
 
-libnoxpetsc_a-NOX_Petsc_Options.o: $(srcdir)/NOX_Petsc_Options.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxpetsc_a-NOX_Petsc_Options.o -MD -MP -MF "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Tpo" -c -o libnoxpetsc_a-NOX_Petsc_Options.o `test -f '$(srcdir)/NOX_Petsc_Options.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Options.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Tpo" "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Po"; else rm -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Options.C' object='libnoxpetsc_a-NOX_Petsc_Options.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Po' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.TPo' @AMDEPBACKSLASH@
+NOX_Petsc_Options.o: $(srcdir)/NOX_Petsc_Options.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Petsc_Options.o -MD -MP -MF "$(DEPDIR)/NOX_Petsc_Options.Tpo" -c -o NOX_Petsc_Options.o `test -f '$(srcdir)/NOX_Petsc_Options.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Options.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Petsc_Options.Tpo" "$(DEPDIR)/NOX_Petsc_Options.Po"; else rm -f "$(DEPDIR)/NOX_Petsc_Options.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Options.C' object='NOX_Petsc_Options.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Petsc_Options.Po' tmpdepfile='$(DEPDIR)/NOX_Petsc_Options.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_Options.o `test -f '$(srcdir)/NOX_Petsc_Options.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Options.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Petsc_Options.o `test -f '$(srcdir)/NOX_Petsc_Options.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Options.C
 
-libnoxpetsc_a-NOX_Petsc_Options.obj: $(srcdir)/NOX_Petsc_Options.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxpetsc_a-NOX_Petsc_Options.obj -MD -MP -MF "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Tpo" -c -o libnoxpetsc_a-NOX_Petsc_Options.obj `if test -f '$(srcdir)/NOX_Petsc_Options.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_Options.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_Options.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Tpo" "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Po"; else rm -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Options.C' object='libnoxpetsc_a-NOX_Petsc_Options.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Po' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.TPo' @AMDEPBACKSLASH@
+NOX_Petsc_Options.obj: $(srcdir)/NOX_Petsc_Options.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Petsc_Options.obj -MD -MP -MF "$(DEPDIR)/NOX_Petsc_Options.Tpo" -c -o NOX_Petsc_Options.obj `if test -f '$(srcdir)/NOX_Petsc_Options.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_Options.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_Options.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Petsc_Options.Tpo" "$(DEPDIR)/NOX_Petsc_Options.Po"; else rm -f "$(DEPDIR)/NOX_Petsc_Options.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Options.C' object='NOX_Petsc_Options.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Petsc_Options.Po' tmpdepfile='$(DEPDIR)/NOX_Petsc_Options.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_Options.obj `if test -f '$(srcdir)/NOX_Petsc_Options.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_Options.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_Options.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Petsc_Options.obj `if test -f '$(srcdir)/NOX_Petsc_Options.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Petsc_Options.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Petsc_Options.C'; fi`
 
-libnoxpetsc_a-NOX_Petsc_Options.lo: $(srcdir)/NOX_Petsc_Options.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxpetsc_a-NOX_Petsc_Options.lo -MD -MP -MF "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Tpo" -c -o libnoxpetsc_a-NOX_Petsc_Options.lo `test -f '$(srcdir)/NOX_Petsc_Options.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Options.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Tpo" "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Plo"; else rm -f "$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Options.C' object='libnoxpetsc_a-NOX_Petsc_Options.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.Plo' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Options.TPlo' @AMDEPBACKSLASH@
+NOX_Petsc_Options.lo: $(srcdir)/NOX_Petsc_Options.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Petsc_Options.lo -MD -MP -MF "$(DEPDIR)/NOX_Petsc_Options.Tpo" -c -o NOX_Petsc_Options.lo `test -f '$(srcdir)/NOX_Petsc_Options.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Options.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Petsc_Options.Tpo" "$(DEPDIR)/NOX_Petsc_Options.Plo"; else rm -f "$(DEPDIR)/NOX_Petsc_Options.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Petsc_Options.C' object='NOX_Petsc_Options.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Petsc_Options.Plo' tmpdepfile='$(DEPDIR)/NOX_Petsc_Options.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_Options.lo `test -f '$(srcdir)/NOX_Petsc_Options.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Options.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Petsc_Options.lo `test -f '$(srcdir)/NOX_Petsc_Options.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Options.C
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -817,6 +837,11 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	tags uninstall uninstall-am uninstall-includeHEADERS \
 	uninstall-info-am uninstall-libLIBRARIES
 
+
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.nox
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -35,8 +35,6 @@
 
 #include "NOX_Common.H" // for NOX_Config.h
 
-#ifdef HAVE_NOX_ANY
-
 #include "NOX_Parameter_Arbitrary.H"		// base class
 #include "Teuchos_any.hpp"                      // for "any" class
 #include "Teuchos_RefCountPtr.hpp"              // for ref-count pointer
@@ -108,6 +106,4 @@ namespace NOX {
   } // namespace Parameter
 } // namespace NOX
 
-#endif // HAVE_NOX_ANY
-
-#endif // NOX_PARAMETER_ANYPTR_H
+#endif // NOX_PARAMETER_RCP_H

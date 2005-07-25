@@ -27,6 +27,19 @@
 # ************************************************************************
 #@HEADER
 
+# Include NOX export makefile
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES))
+else
+TEST_LIBS     = $(NOX_TEST_LIBS)
+TEST_INCLUDES = $(NOX_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(TEST_INCLUDES)
+
 noinst_PROGRAMS = rosenbrock broyden
 
 rosenbrock_SOURCES = \
@@ -36,24 +49,11 @@ rosenbrock_DEPENDENCIES = $(top_builddir)/src/libnox.a \
 			$(top_builddir)/src-lapack/libnoxlapack.a \
 			$(top_builddir)/test/utils/libnoxtestutils.a
 
-rosenbrock_CXXFLAGS = -I$(top_srcdir)/src \
-			-I$(top_srcdir)/src-lapack \
-			-I$(top_srcdir)/test/utils \
-			$(TRILINOS_CXXFLAGS)
-
-rosenbrock_LDADD = $(top_builddir)/src-lapack/libnoxlapack.a \
-			$(top_builddir)/src/libnox.a \
-			$(top_builddir)/test/utils/libnoxtestutils.a \
-			$(LIBS) 
+rosenbrock_LDADD = $(TEST_LIBS)
 
 broyden_SOURCES = \
 			$(srcdir)/Broyden.C
 
 broyden_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
 
-broyden_CXXFLAGS = $(rosenbrock_CXXFLAGS)
-
-broyden_LDADD = $(rosenbrock_LDADD) \
-			$(top_builddir)/src/libnox.a \
-			$(top_builddir)/test/utils/libnoxtestutils.a \
-			$(LIBS) 
+broyden_LDADD = $(TEST_LIBS)

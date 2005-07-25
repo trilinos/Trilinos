@@ -35,8 +35,6 @@
 
 #include "NOX_Abstract_MultiVector.H" // base class
 
-#ifdef HAVE_NOX_MULTIVECS
-
 namespace NOX {
 
   /*!
@@ -258,7 +256,5 @@ namespace NOX {
 
   }; // class MultiVector
 } // namespace NOX
-
-#endif // HAVE_NOX_MULTIVECS
 
 #endif // NOX_MULTIVECTOR_H

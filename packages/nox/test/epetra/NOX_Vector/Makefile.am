@@ -27,6 +27,18 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES))
+else
+TEST_LIBS     = $(NOX_TEST_LIBS)
+TEST_INCLUDES = $(NOX_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(TEST_INCLUDES)
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = NOX_Vector
@@ -38,15 +50,5 @@ NOX_Vector_DEPENDENCIES = \
                           $(top_builddir)/src-epetra/libnoxepetra.a \
                           $(top_builddir)/test/utils/libnoxtestutils.a
 
-NOX_Vector_CXXFLAGS = \
-                      -I$(top_srcdir)/src \
-                      -I$(top_srcdir)/src-epetra \
-                      -I$(top_srcdir)/test/utils \
-                      $(TRILINOS_CXXFLAGS)
-
 #Unsure why this test need to link to the BLAS on an IBM.
-NOX_Vector_LDADD = \
-                   -L$(top_builddir)/src-epetra -lnoxepetra \
-                   -L$(top_builddir)/test/utils -lnoxtestutils\
-                   -L$(top_builddir)/src -lnox $(LIBS) \
-	           $(BLAS_LIBS) $(FLIBS)
+NOX_Vector_LDADD = $(TEST_LIBS)

@@ -85,11 +85,17 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_nox_interface.m4 \
+	$(top_srcdir)/config/tac_arg_trilinos_header_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
+	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
-	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
+	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -103,72 +109,51 @@ CONFIG_CLEAN_FILES =
 @BUILD_LOCA_EPETRA_EXAMPLES_TRUE@am__EXEEXT_5 = exampleTPContinuation_ModifiedBordering$(EXEEXT)
 @BUILD_LIBLOCAMF_TRUE@@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@am__EXEEXT_6 = exampleMultiContinuation$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_example_OBJECTS = example-Example.$(OBJEXT) \
-	example-FiniteElementProblem.$(OBJEXT) example-Basis.$(OBJEXT) \
-	example-Problem_Interface.$(OBJEXT)
+am_example_OBJECTS = Example.$(OBJEXT) FiniteElementProblem.$(OBJEXT) \
+	Basis.$(OBJEXT) Problem_Interface.$(OBJEXT)
 example_OBJECTS = $(am_example_OBJECTS)
 am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(LOCA_LIBS))
 am_exampleMultiContinuation_OBJECTS =  \
-	exampleMultiContinuation-ExampleMultiContinuation.$(OBJEXT) \
-	exampleMultiContinuation-FiniteElementProblem.$(OBJEXT) \
-	exampleMultiContinuation-Basis.$(OBJEXT) \
-	exampleMultiContinuation-Problem_Interface.$(OBJEXT)
+	ExampleMultiContinuation.$(OBJEXT) \
+	FiniteElementProblem.$(OBJEXT) Basis.$(OBJEXT) \
+	Problem_Interface.$(OBJEXT)
 exampleMultiContinuation_OBJECTS =  \
 	$(am_exampleMultiContinuation_OBJECTS)
-am__DEPENDENCIES_2 =  \
-	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
-	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_exampleTP_OBJECTS = exampleTP-ExampleTP.$(OBJEXT) \
-	exampleTP-FiniteElementProblem.$(OBJEXT) \
-	exampleTP-Basis.$(OBJEXT) \
-	exampleTP-Problem_Interface.$(OBJEXT)
+am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
+am_exampleTP_OBJECTS = ExampleTP.$(OBJEXT) \
+	FiniteElementProblem.$(OBJEXT) Basis.$(OBJEXT) \
+	Problem_Interface.$(OBJEXT)
 exampleTP_OBJECTS = $(am_exampleTP_OBJECTS)
-am_exampleTPContinuation_OBJECTS =  \
-	exampleTPContinuation-ExampleTPContinuation.$(OBJEXT) \
-	exampleTPContinuation-FiniteElementProblem.$(OBJEXT) \
-	exampleTPContinuation-Basis.$(OBJEXT) \
-	exampleTPContinuation-Problem_Interface.$(OBJEXT)
+am_exampleTPContinuation_OBJECTS = ExampleTPContinuation.$(OBJEXT) \
+	FiniteElementProblem.$(OBJEXT) Basis.$(OBJEXT) \
+	Problem_Interface.$(OBJEXT)
 exampleTPContinuation_OBJECTS = $(am_exampleTPContinuation_OBJECTS)
-am_exampleTPContinuation_ModifiedBordering_OBJECTS = exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.$(OBJEXT) \
-	exampleTPContinuation_ModifiedBordering-FiniteElementProblem.$(OBJEXT) \
-	exampleTPContinuation_ModifiedBordering-Basis.$(OBJEXT) \
-	exampleTPContinuation_ModifiedBordering-Problem_Interface.$(OBJEXT)
+am_exampleTPContinuation_ModifiedBordering_OBJECTS =  \
+	ExampleTPContinuation_ModifiedBordering.$(OBJEXT) \
+	FiniteElementProblem.$(OBJEXT) Basis.$(OBJEXT) \
+	Problem_Interface.$(OBJEXT)
 exampleTPContinuation_ModifiedBordering_OBJECTS =  \
 	$(am_exampleTPContinuation_ModifiedBordering_OBJECTS)
-am_exampleTP_ModifiedBordering_OBJECTS = exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.$(OBJEXT) \
-	exampleTP_ModifiedBordering-FiniteElementProblem.$(OBJEXT) \
-	exampleTP_ModifiedBordering-Basis.$(OBJEXT) \
-	exampleTP_ModifiedBordering-Problem_Interface.$(OBJEXT)
+am_exampleTP_ModifiedBordering_OBJECTS =  \
+	ExampleTP_ModifiedBordering.$(OBJEXT) \
+	FiniteElementProblem.$(OBJEXT) Basis.$(OBJEXT) \
+	Problem_Interface.$(OBJEXT)
 exampleTP_ModifiedBordering_OBJECTS =  \
 	$(am_exampleTP_ModifiedBordering_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/example-Basis.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/example-Example.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/example-FiniteElementProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/example-Problem_Interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleMultiContinuation-Basis.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTP-Basis.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTP-ExampleTP.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTP-FiniteElementProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTP-Problem_Interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation-Basis.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation-Problem_Interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Basis.Po ./$(DEPDIR)/Example.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ExampleMultiContinuation.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ExampleTP.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ExampleTPContinuation.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ExampleTP_ModifiedBordering.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/FiniteElementProblem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Problem_Interface.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -197,14 +182,21 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ADDON_belos_EXAMPLES = @ADDON_belos_EXAMPLES@
+ADDON_epetra_EXAMPLES = @ADDON_epetra_EXAMPLES@
 ADDON_epetra_TESTS = @ADDON_epetra_TESTS@
+ADDON_lapack_EXAMPLES = @ADDON_lapack_EXAMPLES@
 ADDON_lapack_TESTS = @ADDON_lapack_TESTS@
+ADDON_loca_epetra_EXAMPLES = @ADDON_loca_epetra_EXAMPLES@
 ADDON_loca_epetra_TESTS = @ADDON_loca_epetra_TESTS@
+ADDON_loca_lapack_EXAMPLES = @ADDON_loca_lapack_EXAMPLES@
 ADDON_loca_lapack_TESTS = @ADDON_loca_lapack_TESTS@
 ADDON_loca_petsc_TESTS = @ADDON_loca_petsc_TESTS@
 ADDON_loca_python_TESTS = @ADDON_loca_python_TESTS@
+ADDON_petsc_EXAMPLES = @ADDON_petsc_EXAMPLES@
 ADDON_petsc_TESTS = @ADDON_petsc_TESTS@
 ADDON_python_TESTS = @ADDON_python_TESTS@
+ADDON_tsf_EXAMPLES = @ADDON_tsf_EXAMPLES@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -257,10 +249,10 @@ BUILD_LOCA_PETSC_TESTS_FALSE = @BUILD_LOCA_PETSC_TESTS_FALSE@
 BUILD_LOCA_PETSC_TESTS_TRUE = @BUILD_LOCA_PETSC_TESTS_TRUE@
 BUILD_LOCA_PYTHON_TESTS_FALSE = @BUILD_LOCA_PYTHON_TESTS_FALSE@
 BUILD_LOCA_PYTHON_TESTS_TRUE = @BUILD_LOCA_PYTHON_TESTS_TRUE@
-BUILD_NOX_ANY_FALSE = @BUILD_NOX_ANY_FALSE@
-BUILD_NOX_ANY_TRUE = @BUILD_NOX_ANY_TRUE@
-BUILD_NOX_MULTIVECS_FALSE = @BUILD_NOX_MULTIVECS_FALSE@
-BUILD_NOX_MULTIVECS_TRUE = @BUILD_NOX_MULTIVECS_TRUE@
+BUILD_NOX_EPETRAEXT_SUPPORT_FALSE = @BUILD_NOX_EPETRAEXT_SUPPORT_FALSE@
+BUILD_NOX_EPETRAEXT_SUPPORT_TRUE = @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@
+BUILD_NOX_EPETRA_ML_SUPPORT_FALSE = @BUILD_NOX_EPETRA_ML_SUPPORT_FALSE@
+BUILD_NOX_EPETRA_ML_SUPPORT_TRUE = @BUILD_NOX_EPETRA_ML_SUPPORT_TRUE@
 BUILD_PETSC_EXAMPLES_FALSE = @BUILD_PETSC_EXAMPLES_FALSE@
 BUILD_PETSC_EXAMPLES_TRUE = @BUILD_PETSC_EXAMPLES_TRUE@
 BUILD_PETSC_TESTS_FALSE = @BUILD_PETSC_TESTS_FALSE@
@@ -271,6 +263,8 @@ BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
 BUILD_PYTHON_TESTS_FALSE = @BUILD_PYTHON_TESTS_FALSE@
 BUILD_PYTHON_TESTS_TRUE = @BUILD_PYTHON_TESTS_TRUE@
 BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
+BUILD_TESTUTILS_FALSE = @BUILD_TESTUTILS_FALSE@
+BUILD_TESTUTILS_TRUE = @BUILD_TESTUTILS_TRUE@
 BUILD_TSF_EXAMPLES_FALSE = @BUILD_TSF_EXAMPLES_FALSE@
 BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
@@ -299,12 +293,13 @@ GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_DOXYGEN_DOT = @HAVE_DOXYGEN_DOT@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
-HAVE_NOX_ANY_SUBST = @HAVE_NOX_ANY_SUBST@
-HAVE_NOX_MULTIVECS_SUBST = @HAVE_NOX_MULTIVECS_SUBST@
+HAVE_PERL = @HAVE_PERL@
 HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
 HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 IMPORT_EPETRA = @IMPORT_EPETRA@
 IMPORT_LAPACK = @IMPORT_LAPACK@
+INSIDE_TRILINOS_FALSE = @INSIDE_TRILINOS_FALSE@
+INSIDE_TRILINOS_TRUE = @INSIDE_TRILINOS_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -329,8 +324,6 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
-MF_INCDIR = @MF_INCDIR@
-MF_LIBDIR = @MF_LIBDIR@
 MPI_CC_EXISTS = @MPI_CC_EXISTS@
 MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
@@ -345,6 +338,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 PYTHON = @PYTHON@
 PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
@@ -363,9 +357,14 @@ SWIG = @SWIG@
 SWIG_LIB = @SWIG_LIB@
 SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
 SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
-TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
 abs_builddir = @abs_builddir@
@@ -420,6 +419,11 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(LOCA_LIBS)
+@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_LIBS))
+@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(LOCA_INCLUDES)
+@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 @BUILD_LOCA_EPETRA_EXAMPLES_TRUE@EXAMPLE = example
 @BUILD_LOCA_EPETRA_EXAMPLES_TRUE@EXAMPLETP = exampleTP
 @BUILD_LOCA_EPETRA_EXAMPLES_TRUE@EXAMPLETPCONT = exampleTPContinuation
@@ -437,26 +441,13 @@ example_DEPENDENCIES = \
 	$(top_builddir)/src-loca/src/libloca.la \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
 
-example_CXXFLAGS = $(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS) \
-		   -I$(top_srcdir)/src \
-                   -I$(top_srcdir)/src-epetra \
-		   -I$(top_srcdir)/src-loca/src \
-                   -I$(top_srcdir)/src-loca/src-epetra
-
-example_LDADD = \
-	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
-	$(top_builddir)/src-loca/src/libloca.la \
-	-L$(top_builddir)/src-epetra -lnoxepetra \
-	-L$(top_builddir)/src -lnox \
-	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
-
+example_LDADD = $(EXAMPLE_LIBS)
 exampleTP_SOURCES = $(srcdir)/ExampleTP.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
 
 exampleTP_DEPENDENCIES = $(example_DEPENDENCIES)
-exampleTP_CXXFLAGS = $(example_CXXFLAGS)
 exampleTP_LDADD = $(example_LDADD)
 exampleTPContinuation_SOURCES = $(srcdir)/ExampleTPContinuation.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
@@ -464,7 +455,6 @@ exampleTPContinuation_SOURCES = $(srcdir)/ExampleTPContinuation.C \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
 
 exampleTPContinuation_DEPENDENCIES = $(example_DEPENDENCIES)
-exampleTPContinuation_CXXFLAGS = $(example_CXXFLAGS)
 exampleTPContinuation_LDADD = $(example_LDADD)
 exampleTP_ModifiedBordering_SOURCES = $(srcdir)/ExampleTP_ModifiedBordering.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
@@ -472,7 +462,6 @@ exampleTP_ModifiedBordering_SOURCES = $(srcdir)/ExampleTP_ModifiedBordering.C \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
 
 exampleTP_ModifiedBordering_DEPENDENCIES = $(example_DEPENDENCIES)
-exampleTP_ModifiedBordering_CXXFLAGS = $(example_CXXFLAGS)
 exampleTP_ModifiedBordering_LDADD = $(example_LDADD)
 exampleTPContinuation_ModifiedBordering_SOURCES = \
 	$(srcdir)/ExampleTPContinuation_ModifiedBordering.C \
@@ -481,7 +470,6 @@ exampleTPContinuation_ModifiedBordering_SOURCES = \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
 
 exampleTPContinuation_ModifiedBordering_DEPENDENCIES = $(example_DEPENDENCIES)
-exampleTPContinuation_ModifiedBordering_CXXFLAGS = $(example_CXXFLAGS)
 exampleTPContinuation_ModifiedBordering_LDADD = $(example_LDADD)
 exampleMultiContinuation_SOURCES = $(srcdir)/ExampleMultiContinuation.C \
         $(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
@@ -492,10 +480,6 @@ exampleMultiContinuation_DEPENDENCIES = $(example_DEPENDENCIES) \
                                  $(top_builddir)/src-loca/src-mf/liblocamf.la \
                                  $(MF_LIBDIR)/libExpCmp.a \
                                  $(MF_LIBDIR)/libMF.a
-
-exampleMultiContinuation_CXXFLAGS = $(example_CXXFLAGS) \
-                                    -I$(top_srcdir)/src-loca/src-mf \
-                                    -I$(MF_INCDIR)
 
 exampleMultiContinuation_LDADD = $(top_builddir)/src-loca/src-mf/liblocamf.la \
                                  -L$(MF_LIBDIR) -lMF -lExpCmp \
@@ -576,30 +560,15 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Basis.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Example.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-FiniteElementProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Problem_Interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleMultiContinuation-Basis.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP-Basis.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP-ExampleTP.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP-FiniteElementProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP-Problem_Interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation-Basis.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation-Problem_Interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Basis.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ExampleMultiContinuation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ExampleTP.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ExampleTPContinuation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ExampleTP_ModifiedBordering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FiniteElementProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Problem_Interface.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -625,581 +594,221 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
-example-Example.o: $(srcdir)/Example.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Example.o -MD -MP -MF "$(DEPDIR)/example-Example.Tpo" -c -o example-Example.o `test -f '$(srcdir)/Example.C' || echo '$(srcdir)/'`$(srcdir)/Example.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Example.Tpo" "$(DEPDIR)/example-Example.Po"; else rm -f "$(DEPDIR)/example-Example.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example.C' object='example-Example.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Example.Po' tmpdepfile='$(DEPDIR)/example-Example.TPo' @AMDEPBACKSLASH@
+Example.o: $(srcdir)/Example.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example.o -MD -MP -MF "$(DEPDIR)/Example.Tpo" -c -o Example.o `test -f '$(srcdir)/Example.C' || echo '$(srcdir)/'`$(srcdir)/Example.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Example.Tpo" "$(DEPDIR)/Example.Po"; else rm -f "$(DEPDIR)/Example.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example.C' object='Example.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Example.Po' tmpdepfile='$(DEPDIR)/Example.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example.o `test -f '$(srcdir)/Example.C' || echo '$(srcdir)/'`$(srcdir)/Example.C
+
+Example.obj: $(srcdir)/Example.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example.obj -MD -MP -MF "$(DEPDIR)/Example.Tpo" -c -o Example.obj `if test -f '$(srcdir)/Example.C'; then $(CYGPATH_W) '$(srcdir)/Example.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Example.Tpo" "$(DEPDIR)/Example.Po"; else rm -f "$(DEPDIR)/Example.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example.C' object='Example.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Example.Po' tmpdepfile='$(DEPDIR)/Example.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example.obj `if test -f '$(srcdir)/Example.C'; then $(CYGPATH_W) '$(srcdir)/Example.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example.C'; fi`
+
+Example.lo: $(srcdir)/Example.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example.lo -MD -MP -MF "$(DEPDIR)/Example.Tpo" -c -o Example.lo `test -f '$(srcdir)/Example.C' || echo '$(srcdir)/'`$(srcdir)/Example.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Example.Tpo" "$(DEPDIR)/Example.Plo"; else rm -f "$(DEPDIR)/Example.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example.C' object='Example.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Example.Plo' tmpdepfile='$(DEPDIR)/Example.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example.lo `test -f '$(srcdir)/Example.C' || echo '$(srcdir)/'`$(srcdir)/Example.C
+
+FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FiniteElementProblem.o -MD -MP -MF "$(DEPDIR)/FiniteElementProblem.Tpo" -c -o FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FiniteElementProblem.Tpo" "$(DEPDIR)/FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/FiniteElementProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
+
+FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FiniteElementProblem.obj -MD -MP -MF "$(DEPDIR)/FiniteElementProblem.Tpo" -c -o FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FiniteElementProblem.Tpo" "$(DEPDIR)/FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/FiniteElementProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`
+
+FiniteElementProblem.lo: $(srcdir)/FiniteElementProblem.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FiniteElementProblem.lo -MD -MP -MF "$(DEPDIR)/FiniteElementProblem.Tpo" -c -o FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FiniteElementProblem.Tpo" "$(DEPDIR)/FiniteElementProblem.Plo"; else rm -f "$(DEPDIR)/FiniteElementProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='FiniteElementProblem.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FiniteElementProblem.Plo' tmpdepfile='$(DEPDIR)/FiniteElementProblem.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
+
+Basis.o: $(srcdir)/Basis.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Basis.o -MD -MP -MF "$(DEPDIR)/Basis.Tpo" -c -o Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Basis.Tpo" "$(DEPDIR)/Basis.Po"; else rm -f "$(DEPDIR)/Basis.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='Basis.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Basis.Po' tmpdepfile='$(DEPDIR)/Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
+
+Basis.obj: $(srcdir)/Basis.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Basis.obj -MD -MP -MF "$(DEPDIR)/Basis.Tpo" -c -o Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Basis.Tpo" "$(DEPDIR)/Basis.Po"; else rm -f "$(DEPDIR)/Basis.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='Basis.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Basis.Po' tmpdepfile='$(DEPDIR)/Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`
+
+Basis.lo: $(srcdir)/Basis.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Basis.lo -MD -MP -MF "$(DEPDIR)/Basis.Tpo" -c -o Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Basis.Tpo" "$(DEPDIR)/Basis.Plo"; else rm -f "$(DEPDIR)/Basis.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='Basis.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Basis.Plo' tmpdepfile='$(DEPDIR)/Basis.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
+
+Problem_Interface.o: $(srcdir)/Problem_Interface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Problem_Interface.o -MD -MP -MF "$(DEPDIR)/Problem_Interface.Tpo" -c -o Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Problem_Interface.Tpo" "$(DEPDIR)/Problem_Interface.Po"; else rm -f "$(DEPDIR)/Problem_Interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Problem_Interface.Po' tmpdepfile='$(DEPDIR)/Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
+
+Problem_Interface.obj: $(srcdir)/Problem_Interface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Problem_Interface.obj -MD -MP -MF "$(DEPDIR)/Problem_Interface.Tpo" -c -o Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Problem_Interface.Tpo" "$(DEPDIR)/Problem_Interface.Po"; else rm -f "$(DEPDIR)/Problem_Interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Problem_Interface.Po' tmpdepfile='$(DEPDIR)/Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`
+
+Problem_Interface.lo: $(srcdir)/Problem_Interface.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Problem_Interface.lo -MD -MP -MF "$(DEPDIR)/Problem_Interface.Tpo" -c -o Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Problem_Interface.Tpo" "$(DEPDIR)/Problem_Interface.Plo"; else rm -f "$(DEPDIR)/Problem_Interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='Problem_Interface.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Problem_Interface.Plo' tmpdepfile='$(DEPDIR)/Problem_Interface.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
+
+ExampleMultiContinuation.o: $(srcdir)/ExampleMultiContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleMultiContinuation.o -MD -MP -MF "$(DEPDIR)/ExampleMultiContinuation.Tpo" -c -o ExampleMultiContinuation.o `test -f '$(srcdir)/ExampleMultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleMultiContinuation.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleMultiContinuation.Tpo" "$(DEPDIR)/ExampleMultiContinuation.Po"; else rm -f "$(DEPDIR)/ExampleMultiContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleMultiContinuation.C' object='ExampleMultiContinuation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleMultiContinuation.Po' tmpdepfile='$(DEPDIR)/ExampleMultiContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Example.o `test -f '$(srcdir)/Example.C' || echo '$(srcdir)/'`$(srcdir)/Example.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleMultiContinuation.o `test -f '$(srcdir)/ExampleMultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleMultiContinuation.C
 
-example-Example.obj: $(srcdir)/Example.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Example.obj -MD -MP -MF "$(DEPDIR)/example-Example.Tpo" -c -o example-Example.obj `if test -f '$(srcdir)/Example.C'; then $(CYGPATH_W) '$(srcdir)/Example.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Example.Tpo" "$(DEPDIR)/example-Example.Po"; else rm -f "$(DEPDIR)/example-Example.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example.C' object='example-Example.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Example.Po' tmpdepfile='$(DEPDIR)/example-Example.TPo' @AMDEPBACKSLASH@
+ExampleMultiContinuation.obj: $(srcdir)/ExampleMultiContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleMultiContinuation.obj -MD -MP -MF "$(DEPDIR)/ExampleMultiContinuation.Tpo" -c -o ExampleMultiContinuation.obj `if test -f '$(srcdir)/ExampleMultiContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ExampleMultiContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleMultiContinuation.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleMultiContinuation.Tpo" "$(DEPDIR)/ExampleMultiContinuation.Po"; else rm -f "$(DEPDIR)/ExampleMultiContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleMultiContinuation.C' object='ExampleMultiContinuation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleMultiContinuation.Po' tmpdepfile='$(DEPDIR)/ExampleMultiContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Example.obj `if test -f '$(srcdir)/Example.C'; then $(CYGPATH_W) '$(srcdir)/Example.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleMultiContinuation.obj `if test -f '$(srcdir)/ExampleMultiContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ExampleMultiContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleMultiContinuation.C'; fi`
 
-example-Example.lo: $(srcdir)/Example.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Example.lo -MD -MP -MF "$(DEPDIR)/example-Example.Tpo" -c -o example-Example.lo `test -f '$(srcdir)/Example.C' || echo '$(srcdir)/'`$(srcdir)/Example.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Example.Tpo" "$(DEPDIR)/example-Example.Plo"; else rm -f "$(DEPDIR)/example-Example.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example.C' object='example-Example.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Example.Plo' tmpdepfile='$(DEPDIR)/example-Example.TPlo' @AMDEPBACKSLASH@
+ExampleMultiContinuation.lo: $(srcdir)/ExampleMultiContinuation.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleMultiContinuation.lo -MD -MP -MF "$(DEPDIR)/ExampleMultiContinuation.Tpo" -c -o ExampleMultiContinuation.lo `test -f '$(srcdir)/ExampleMultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleMultiContinuation.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleMultiContinuation.Tpo" "$(DEPDIR)/ExampleMultiContinuation.Plo"; else rm -f "$(DEPDIR)/ExampleMultiContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleMultiContinuation.C' object='ExampleMultiContinuation.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleMultiContinuation.Plo' tmpdepfile='$(DEPDIR)/ExampleMultiContinuation.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Example.lo `test -f '$(srcdir)/Example.C' || echo '$(srcdir)/'`$(srcdir)/Example.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleMultiContinuation.lo `test -f '$(srcdir)/ExampleMultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleMultiContinuation.C
 
-example-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-FiniteElementProblem.o -MD -MP -MF "$(DEPDIR)/example-FiniteElementProblem.Tpo" -c -o example-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-FiniteElementProblem.Tpo" "$(DEPDIR)/example-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/example-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='example-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/example-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+ExampleTP.o: $(srcdir)/ExampleTP.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleTP.o -MD -MP -MF "$(DEPDIR)/ExampleTP.Tpo" -c -o ExampleTP.o `test -f '$(srcdir)/ExampleTP.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleTP.Tpo" "$(DEPDIR)/ExampleTP.Po"; else rm -f "$(DEPDIR)/ExampleTP.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTP.C' object='ExampleTP.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleTP.Po' tmpdepfile='$(DEPDIR)/ExampleTP.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleTP.o `test -f '$(srcdir)/ExampleTP.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP.C
 
-example-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-FiniteElementProblem.obj -MD -MP -MF "$(DEPDIR)/example-FiniteElementProblem.Tpo" -c -o example-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-FiniteElementProblem.Tpo" "$(DEPDIR)/example-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/example-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='example-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/example-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+ExampleTP.obj: $(srcdir)/ExampleTP.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleTP.obj -MD -MP -MF "$(DEPDIR)/ExampleTP.Tpo" -c -o ExampleTP.obj `if test -f '$(srcdir)/ExampleTP.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTP.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTP.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleTP.Tpo" "$(DEPDIR)/ExampleTP.Po"; else rm -f "$(DEPDIR)/ExampleTP.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTP.C' object='ExampleTP.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleTP.Po' tmpdepfile='$(DEPDIR)/ExampleTP.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleTP.obj `if test -f '$(srcdir)/ExampleTP.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTP.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTP.C'; fi`
 
-example-FiniteElementProblem.lo: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-FiniteElementProblem.lo -MD -MP -MF "$(DEPDIR)/example-FiniteElementProblem.Tpo" -c -o example-FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-FiniteElementProblem.Tpo" "$(DEPDIR)/example-FiniteElementProblem.Plo"; else rm -f "$(DEPDIR)/example-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='example-FiniteElementProblem.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-FiniteElementProblem.Plo' tmpdepfile='$(DEPDIR)/example-FiniteElementProblem.TPlo' @AMDEPBACKSLASH@
+ExampleTP.lo: $(srcdir)/ExampleTP.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleTP.lo -MD -MP -MF "$(DEPDIR)/ExampleTP.Tpo" -c -o ExampleTP.lo `test -f '$(srcdir)/ExampleTP.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleTP.Tpo" "$(DEPDIR)/ExampleTP.Plo"; else rm -f "$(DEPDIR)/ExampleTP.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTP.C' object='ExampleTP.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleTP.Plo' tmpdepfile='$(DEPDIR)/ExampleTP.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleTP.lo `test -f '$(srcdir)/ExampleTP.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP.C
 
-example-Basis.o: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Basis.o -MD -MP -MF "$(DEPDIR)/example-Basis.Tpo" -c -o example-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Basis.Tpo" "$(DEPDIR)/example-Basis.Po"; else rm -f "$(DEPDIR)/example-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='example-Basis.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Basis.Po' tmpdepfile='$(DEPDIR)/example-Basis.TPo' @AMDEPBACKSLASH@
+ExampleTPContinuation.o: $(srcdir)/ExampleTPContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleTPContinuation.o -MD -MP -MF "$(DEPDIR)/ExampleTPContinuation.Tpo" -c -o ExampleTPContinuation.o `test -f '$(srcdir)/ExampleTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleTPContinuation.Tpo" "$(DEPDIR)/ExampleTPContinuation.Po"; else rm -f "$(DEPDIR)/ExampleTPContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTPContinuation.C' object='ExampleTPContinuation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleTPContinuation.Po' tmpdepfile='$(DEPDIR)/ExampleTPContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleTPContinuation.o `test -f '$(srcdir)/ExampleTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation.C
 
-example-Basis.obj: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Basis.obj -MD -MP -MF "$(DEPDIR)/example-Basis.Tpo" -c -o example-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Basis.Tpo" "$(DEPDIR)/example-Basis.Po"; else rm -f "$(DEPDIR)/example-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='example-Basis.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Basis.Po' tmpdepfile='$(DEPDIR)/example-Basis.TPo' @AMDEPBACKSLASH@
+ExampleTPContinuation.obj: $(srcdir)/ExampleTPContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleTPContinuation.obj -MD -MP -MF "$(DEPDIR)/ExampleTPContinuation.Tpo" -c -o ExampleTPContinuation.obj `if test -f '$(srcdir)/ExampleTPContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTPContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTPContinuation.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleTPContinuation.Tpo" "$(DEPDIR)/ExampleTPContinuation.Po"; else rm -f "$(DEPDIR)/ExampleTPContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTPContinuation.C' object='ExampleTPContinuation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleTPContinuation.Po' tmpdepfile='$(DEPDIR)/ExampleTPContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleTPContinuation.obj `if test -f '$(srcdir)/ExampleTPContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTPContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTPContinuation.C'; fi`
 
-example-Basis.lo: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Basis.lo -MD -MP -MF "$(DEPDIR)/example-Basis.Tpo" -c -o example-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Basis.Tpo" "$(DEPDIR)/example-Basis.Plo"; else rm -f "$(DEPDIR)/example-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='example-Basis.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Basis.Plo' tmpdepfile='$(DEPDIR)/example-Basis.TPlo' @AMDEPBACKSLASH@
+ExampleTPContinuation.lo: $(srcdir)/ExampleTPContinuation.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleTPContinuation.lo -MD -MP -MF "$(DEPDIR)/ExampleTPContinuation.Tpo" -c -o ExampleTPContinuation.lo `test -f '$(srcdir)/ExampleTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleTPContinuation.Tpo" "$(DEPDIR)/ExampleTPContinuation.Plo"; else rm -f "$(DEPDIR)/ExampleTPContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTPContinuation.C' object='ExampleTPContinuation.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleTPContinuation.Plo' tmpdepfile='$(DEPDIR)/ExampleTPContinuation.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleTPContinuation.lo `test -f '$(srcdir)/ExampleTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation.C
 
-example-Problem_Interface.o: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Problem_Interface.o -MD -MP -MF "$(DEPDIR)/example-Problem_Interface.Tpo" -c -o example-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Problem_Interface.Tpo" "$(DEPDIR)/example-Problem_Interface.Po"; else rm -f "$(DEPDIR)/example-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='example-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/example-Problem_Interface.TPo' @AMDEPBACKSLASH@
+ExampleTPContinuation_ModifiedBordering.o: $(srcdir)/ExampleTPContinuation_ModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleTPContinuation_ModifiedBordering.o -MD -MP -MF "$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Tpo" -c -o ExampleTPContinuation_ModifiedBordering.o `test -f '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation_ModifiedBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Tpo" "$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' object='ExampleTPContinuation_ModifiedBordering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleTPContinuation_ModifiedBordering.o `test -f '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation_ModifiedBordering.C
 
-example-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Problem_Interface.obj -MD -MP -MF "$(DEPDIR)/example-Problem_Interface.Tpo" -c -o example-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Problem_Interface.Tpo" "$(DEPDIR)/example-Problem_Interface.Po"; else rm -f "$(DEPDIR)/example-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='example-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/example-Problem_Interface.TPo' @AMDEPBACKSLASH@
+ExampleTPContinuation_ModifiedBordering.obj: $(srcdir)/ExampleTPContinuation_ModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleTPContinuation_ModifiedBordering.obj -MD -MP -MF "$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Tpo" -c -o ExampleTPContinuation_ModifiedBordering.obj `if test -f '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTPContinuation_ModifiedBordering.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Tpo" "$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' object='ExampleTPContinuation_ModifiedBordering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleTPContinuation_ModifiedBordering.obj `if test -f '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTPContinuation_ModifiedBordering.C'; fi`
 
-example-Problem_Interface.lo: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-Problem_Interface.lo -MD -MP -MF "$(DEPDIR)/example-Problem_Interface.Tpo" -c -o example-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-Problem_Interface.Tpo" "$(DEPDIR)/example-Problem_Interface.Plo"; else rm -f "$(DEPDIR)/example-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='example-Problem_Interface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Problem_Interface.Plo' tmpdepfile='$(DEPDIR)/example-Problem_Interface.TPlo' @AMDEPBACKSLASH@
+ExampleTPContinuation_ModifiedBordering.lo: $(srcdir)/ExampleTPContinuation_ModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleTPContinuation_ModifiedBordering.lo -MD -MP -MF "$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Tpo" -c -o ExampleTPContinuation_ModifiedBordering.lo `test -f '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation_ModifiedBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Tpo" "$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Plo"; else rm -f "$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' object='ExampleTPContinuation_ModifiedBordering.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.Plo' tmpdepfile='$(DEPDIR)/ExampleTPContinuation_ModifiedBordering.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleTPContinuation_ModifiedBordering.lo `test -f '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation_ModifiedBordering.C
 
-exampleMultiContinuation-ExampleMultiContinuation.o: $(srcdir)/ExampleMultiContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleMultiContinuation-ExampleMultiContinuation.o -MD -MP -MF "$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Tpo" -c -o exampleMultiContinuation-ExampleMultiContinuation.o `test -f '$(srcdir)/ExampleMultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleMultiContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Tpo" "$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Po"; else rm -f "$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleMultiContinuation.C' object='exampleMultiContinuation-ExampleMultiContinuation.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Po' tmpdepfile='$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.TPo' @AMDEPBACKSLASH@
+ExampleTP_ModifiedBordering.o: $(srcdir)/ExampleTP_ModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleTP_ModifiedBordering.o -MD -MP -MF "$(DEPDIR)/ExampleTP_ModifiedBordering.Tpo" -c -o ExampleTP_ModifiedBordering.o `test -f '$(srcdir)/ExampleTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP_ModifiedBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleTP_ModifiedBordering.Tpo" "$(DEPDIR)/ExampleTP_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/ExampleTP_ModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTP_ModifiedBordering.C' object='ExampleTP_ModifiedBordering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleTP_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/ExampleTP_ModifiedBordering.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleMultiContinuation-ExampleMultiContinuation.o `test -f '$(srcdir)/ExampleMultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleMultiContinuation.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleTP_ModifiedBordering.o `test -f '$(srcdir)/ExampleTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP_ModifiedBordering.C
 
-exampleMultiContinuation-ExampleMultiContinuation.obj: $(srcdir)/ExampleMultiContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleMultiContinuation-ExampleMultiContinuation.obj -MD -MP -MF "$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Tpo" -c -o exampleMultiContinuation-ExampleMultiContinuation.obj `if test -f '$(srcdir)/ExampleMultiContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ExampleMultiContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleMultiContinuation.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Tpo" "$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Po"; else rm -f "$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleMultiContinuation.C' object='exampleMultiContinuation-ExampleMultiContinuation.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Po' tmpdepfile='$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.TPo' @AMDEPBACKSLASH@
+ExampleTP_ModifiedBordering.obj: $(srcdir)/ExampleTP_ModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleTP_ModifiedBordering.obj -MD -MP -MF "$(DEPDIR)/ExampleTP_ModifiedBordering.Tpo" -c -o ExampleTP_ModifiedBordering.obj `if test -f '$(srcdir)/ExampleTP_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTP_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTP_ModifiedBordering.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleTP_ModifiedBordering.Tpo" "$(DEPDIR)/ExampleTP_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/ExampleTP_ModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTP_ModifiedBordering.C' object='ExampleTP_ModifiedBordering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleTP_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/ExampleTP_ModifiedBordering.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleMultiContinuation-ExampleMultiContinuation.obj `if test -f '$(srcdir)/ExampleMultiContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ExampleMultiContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleMultiContinuation.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleTP_ModifiedBordering.obj `if test -f '$(srcdir)/ExampleTP_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTP_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTP_ModifiedBordering.C'; fi`
 
-exampleMultiContinuation-ExampleMultiContinuation.lo: $(srcdir)/ExampleMultiContinuation.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleMultiContinuation-ExampleMultiContinuation.lo -MD -MP -MF "$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Tpo" -c -o exampleMultiContinuation-ExampleMultiContinuation.lo `test -f '$(srcdir)/ExampleMultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleMultiContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Tpo" "$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Plo"; else rm -f "$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleMultiContinuation.C' object='exampleMultiContinuation-ExampleMultiContinuation.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.Plo' tmpdepfile='$(DEPDIR)/exampleMultiContinuation-ExampleMultiContinuation.TPlo' @AMDEPBACKSLASH@
+ExampleTP_ModifiedBordering.lo: $(srcdir)/ExampleTP_ModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExampleTP_ModifiedBordering.lo -MD -MP -MF "$(DEPDIR)/ExampleTP_ModifiedBordering.Tpo" -c -o ExampleTP_ModifiedBordering.lo `test -f '$(srcdir)/ExampleTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP_ModifiedBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExampleTP_ModifiedBordering.Tpo" "$(DEPDIR)/ExampleTP_ModifiedBordering.Plo"; else rm -f "$(DEPDIR)/ExampleTP_ModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTP_ModifiedBordering.C' object='ExampleTP_ModifiedBordering.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExampleTP_ModifiedBordering.Plo' tmpdepfile='$(DEPDIR)/ExampleTP_ModifiedBordering.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleMultiContinuation-ExampleMultiContinuation.lo `test -f '$(srcdir)/ExampleMultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleMultiContinuation.C
-
-exampleMultiContinuation-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleMultiContinuation-FiniteElementProblem.o -MD -MP -MF "$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Tpo" -c -o exampleMultiContinuation-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleMultiContinuation-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleMultiContinuation-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
-
-exampleMultiContinuation-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleMultiContinuation-FiniteElementProblem.obj -MD -MP -MF "$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Tpo" -c -o exampleMultiContinuation-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleMultiContinuation-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleMultiContinuation-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`
-
-exampleMultiContinuation-FiniteElementProblem.lo: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleMultiContinuation-FiniteElementProblem.lo -MD -MP -MF "$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Tpo" -c -o exampleMultiContinuation-FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Plo"; else rm -f "$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleMultiContinuation-FiniteElementProblem.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.Plo' tmpdepfile='$(DEPDIR)/exampleMultiContinuation-FiniteElementProblem.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleMultiContinuation-FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
-
-exampleMultiContinuation-Basis.o: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleMultiContinuation-Basis.o -MD -MP -MF "$(DEPDIR)/exampleMultiContinuation-Basis.Tpo" -c -o exampleMultiContinuation-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleMultiContinuation-Basis.Tpo" "$(DEPDIR)/exampleMultiContinuation-Basis.Po"; else rm -f "$(DEPDIR)/exampleMultiContinuation-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleMultiContinuation-Basis.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleMultiContinuation-Basis.Po' tmpdepfile='$(DEPDIR)/exampleMultiContinuation-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleMultiContinuation-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
-
-exampleMultiContinuation-Basis.obj: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleMultiContinuation-Basis.obj -MD -MP -MF "$(DEPDIR)/exampleMultiContinuation-Basis.Tpo" -c -o exampleMultiContinuation-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleMultiContinuation-Basis.Tpo" "$(DEPDIR)/exampleMultiContinuation-Basis.Po"; else rm -f "$(DEPDIR)/exampleMultiContinuation-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleMultiContinuation-Basis.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleMultiContinuation-Basis.Po' tmpdepfile='$(DEPDIR)/exampleMultiContinuation-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleMultiContinuation-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`
-
-exampleMultiContinuation-Basis.lo: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleMultiContinuation-Basis.lo -MD -MP -MF "$(DEPDIR)/exampleMultiContinuation-Basis.Tpo" -c -o exampleMultiContinuation-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleMultiContinuation-Basis.Tpo" "$(DEPDIR)/exampleMultiContinuation-Basis.Plo"; else rm -f "$(DEPDIR)/exampleMultiContinuation-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleMultiContinuation-Basis.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleMultiContinuation-Basis.Plo' tmpdepfile='$(DEPDIR)/exampleMultiContinuation-Basis.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleMultiContinuation-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
-
-exampleMultiContinuation-Problem_Interface.o: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleMultiContinuation-Problem_Interface.o -MD -MP -MF "$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Tpo" -c -o exampleMultiContinuation-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Tpo" "$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Po"; else rm -f "$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleMultiContinuation-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleMultiContinuation-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleMultiContinuation-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
-
-exampleMultiContinuation-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleMultiContinuation-Problem_Interface.obj -MD -MP -MF "$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Tpo" -c -o exampleMultiContinuation-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Tpo" "$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Po"; else rm -f "$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleMultiContinuation-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleMultiContinuation-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleMultiContinuation-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`
-
-exampleMultiContinuation-Problem_Interface.lo: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleMultiContinuation-Problem_Interface.lo -MD -MP -MF "$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Tpo" -c -o exampleMultiContinuation-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Tpo" "$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Plo"; else rm -f "$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleMultiContinuation-Problem_Interface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleMultiContinuation-Problem_Interface.Plo' tmpdepfile='$(DEPDIR)/exampleMultiContinuation-Problem_Interface.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleMultiContinuation-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
-
-exampleTP-ExampleTP.o: $(srcdir)/ExampleTP.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -MT exampleTP-ExampleTP.o -MD -MP -MF "$(DEPDIR)/exampleTP-ExampleTP.Tpo" -c -o exampleTP-ExampleTP.o `test -f '$(srcdir)/ExampleTP.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP-ExampleTP.Tpo" "$(DEPDIR)/exampleTP-ExampleTP.Po"; else rm -f "$(DEPDIR)/exampleTP-ExampleTP.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTP.C' object='exampleTP-ExampleTP.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP-ExampleTP.Po' tmpdepfile='$(DEPDIR)/exampleTP-ExampleTP.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-ExampleTP.o `test -f '$(srcdir)/ExampleTP.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP.C
-
-exampleTP-ExampleTP.obj: $(srcdir)/ExampleTP.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -MT exampleTP-ExampleTP.obj -MD -MP -MF "$(DEPDIR)/exampleTP-ExampleTP.Tpo" -c -o exampleTP-ExampleTP.obj `if test -f '$(srcdir)/ExampleTP.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTP.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTP.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP-ExampleTP.Tpo" "$(DEPDIR)/exampleTP-ExampleTP.Po"; else rm -f "$(DEPDIR)/exampleTP-ExampleTP.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTP.C' object='exampleTP-ExampleTP.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP-ExampleTP.Po' tmpdepfile='$(DEPDIR)/exampleTP-ExampleTP.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-ExampleTP.obj `if test -f '$(srcdir)/ExampleTP.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTP.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTP.C'; fi`
-
-exampleTP-ExampleTP.lo: $(srcdir)/ExampleTP.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -MT exampleTP-ExampleTP.lo -MD -MP -MF "$(DEPDIR)/exampleTP-ExampleTP.Tpo" -c -o exampleTP-ExampleTP.lo `test -f '$(srcdir)/ExampleTP.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP-ExampleTP.Tpo" "$(DEPDIR)/exampleTP-ExampleTP.Plo"; else rm -f "$(DEPDIR)/exampleTP-ExampleTP.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTP.C' object='exampleTP-ExampleTP.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP-ExampleTP.Plo' tmpdepfile='$(DEPDIR)/exampleTP-ExampleTP.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-ExampleTP.lo `test -f '$(srcdir)/ExampleTP.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP.C
-
-exampleTP-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -MT exampleTP-FiniteElementProblem.o -MD -MP -MF "$(DEPDIR)/exampleTP-FiniteElementProblem.Tpo" -c -o exampleTP-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleTP-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/exampleTP-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTP-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTP-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
-
-exampleTP-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -MT exampleTP-FiniteElementProblem.obj -MD -MP -MF "$(DEPDIR)/exampleTP-FiniteElementProblem.Tpo" -c -o exampleTP-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleTP-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/exampleTP-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTP-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTP-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`
-
-exampleTP-FiniteElementProblem.lo: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -MT exampleTP-FiniteElementProblem.lo -MD -MP -MF "$(DEPDIR)/exampleTP-FiniteElementProblem.Tpo" -c -o exampleTP-FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleTP-FiniteElementProblem.Plo"; else rm -f "$(DEPDIR)/exampleTP-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTP-FiniteElementProblem.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP-FiniteElementProblem.Plo' tmpdepfile='$(DEPDIR)/exampleTP-FiniteElementProblem.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
-
-exampleTP-Basis.o: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -MT exampleTP-Basis.o -MD -MP -MF "$(DEPDIR)/exampleTP-Basis.Tpo" -c -o exampleTP-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP-Basis.Tpo" "$(DEPDIR)/exampleTP-Basis.Po"; else rm -f "$(DEPDIR)/exampleTP-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleTP-Basis.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTP-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
-
-exampleTP-Basis.obj: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -MT exampleTP-Basis.obj -MD -MP -MF "$(DEPDIR)/exampleTP-Basis.Tpo" -c -o exampleTP-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP-Basis.Tpo" "$(DEPDIR)/exampleTP-Basis.Po"; else rm -f "$(DEPDIR)/exampleTP-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleTP-Basis.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTP-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`
-
-exampleTP-Basis.lo: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -MT exampleTP-Basis.lo -MD -MP -MF "$(DEPDIR)/exampleTP-Basis.Tpo" -c -o exampleTP-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP-Basis.Tpo" "$(DEPDIR)/exampleTP-Basis.Plo"; else rm -f "$(DEPDIR)/exampleTP-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleTP-Basis.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP-Basis.Plo' tmpdepfile='$(DEPDIR)/exampleTP-Basis.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
-
-exampleTP-Problem_Interface.o: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -MT exampleTP-Problem_Interface.o -MD -MP -MF "$(DEPDIR)/exampleTP-Problem_Interface.Tpo" -c -o exampleTP-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP-Problem_Interface.Tpo" "$(DEPDIR)/exampleTP-Problem_Interface.Po"; else rm -f "$(DEPDIR)/exampleTP-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleTP-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTP-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
-
-exampleTP-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -MT exampleTP-Problem_Interface.obj -MD -MP -MF "$(DEPDIR)/exampleTP-Problem_Interface.Tpo" -c -o exampleTP-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP-Problem_Interface.Tpo" "$(DEPDIR)/exampleTP-Problem_Interface.Po"; else rm -f "$(DEPDIR)/exampleTP-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleTP-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTP-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`
-
-exampleTP-Problem_Interface.lo: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -MT exampleTP-Problem_Interface.lo -MD -MP -MF "$(DEPDIR)/exampleTP-Problem_Interface.Tpo" -c -o exampleTP-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP-Problem_Interface.Tpo" "$(DEPDIR)/exampleTP-Problem_Interface.Plo"; else rm -f "$(DEPDIR)/exampleTP-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleTP-Problem_Interface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP-Problem_Interface.Plo' tmpdepfile='$(DEPDIR)/exampleTP-Problem_Interface.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
-
-exampleTPContinuation-ExampleTPContinuation.o: $(srcdir)/ExampleTPContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation-ExampleTPContinuation.o -MD -MP -MF "$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Tpo" -c -o exampleTPContinuation-ExampleTPContinuation.o `test -f '$(srcdir)/ExampleTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Tpo" "$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTPContinuation.C' object='exampleTPContinuation-ExampleTPContinuation.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-ExampleTPContinuation.o `test -f '$(srcdir)/ExampleTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation.C
-
-exampleTPContinuation-ExampleTPContinuation.obj: $(srcdir)/ExampleTPContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation-ExampleTPContinuation.obj -MD -MP -MF "$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Tpo" -c -o exampleTPContinuation-ExampleTPContinuation.obj `if test -f '$(srcdir)/ExampleTPContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTPContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTPContinuation.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Tpo" "$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTPContinuation.C' object='exampleTPContinuation-ExampleTPContinuation.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-ExampleTPContinuation.obj `if test -f '$(srcdir)/ExampleTPContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTPContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTPContinuation.C'; fi`
-
-exampleTPContinuation-ExampleTPContinuation.lo: $(srcdir)/ExampleTPContinuation.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation-ExampleTPContinuation.lo -MD -MP -MF "$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Tpo" -c -o exampleTPContinuation-ExampleTPContinuation.lo `test -f '$(srcdir)/ExampleTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Tpo" "$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Plo"; else rm -f "$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTPContinuation.C' object='exampleTPContinuation-ExampleTPContinuation.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Plo' tmpdepfile='$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-ExampleTPContinuation.lo `test -f '$(srcdir)/ExampleTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation.C
-
-exampleTPContinuation-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation-FiniteElementProblem.o -MD -MP -MF "$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Tpo" -c -o exampleTPContinuation-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTPContinuation-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
-
-exampleTPContinuation-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation-FiniteElementProblem.obj -MD -MP -MF "$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Tpo" -c -o exampleTPContinuation-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTPContinuation-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`
-
-exampleTPContinuation-FiniteElementProblem.lo: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation-FiniteElementProblem.lo -MD -MP -MF "$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Tpo" -c -o exampleTPContinuation-FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Plo"; else rm -f "$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTPContinuation-FiniteElementProblem.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Plo' tmpdepfile='$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
-
-exampleTPContinuation-Basis.o: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation-Basis.o -MD -MP -MF "$(DEPDIR)/exampleTPContinuation-Basis.Tpo" -c -o exampleTPContinuation-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation-Basis.Tpo" "$(DEPDIR)/exampleTPContinuation-Basis.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleTPContinuation-Basis.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
-
-exampleTPContinuation-Basis.obj: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation-Basis.obj -MD -MP -MF "$(DEPDIR)/exampleTPContinuation-Basis.Tpo" -c -o exampleTPContinuation-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation-Basis.Tpo" "$(DEPDIR)/exampleTPContinuation-Basis.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleTPContinuation-Basis.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`
-
-exampleTPContinuation-Basis.lo: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation-Basis.lo -MD -MP -MF "$(DEPDIR)/exampleTPContinuation-Basis.Tpo" -c -o exampleTPContinuation-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation-Basis.Tpo" "$(DEPDIR)/exampleTPContinuation-Basis.Plo"; else rm -f "$(DEPDIR)/exampleTPContinuation-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleTPContinuation-Basis.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation-Basis.Plo' tmpdepfile='$(DEPDIR)/exampleTPContinuation-Basis.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
-
-exampleTPContinuation-Problem_Interface.o: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation-Problem_Interface.o -MD -MP -MF "$(DEPDIR)/exampleTPContinuation-Problem_Interface.Tpo" -c -o exampleTPContinuation-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation-Problem_Interface.Tpo" "$(DEPDIR)/exampleTPContinuation-Problem_Interface.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleTPContinuation-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
-
-exampleTPContinuation-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation-Problem_Interface.obj -MD -MP -MF "$(DEPDIR)/exampleTPContinuation-Problem_Interface.Tpo" -c -o exampleTPContinuation-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation-Problem_Interface.Tpo" "$(DEPDIR)/exampleTPContinuation-Problem_Interface.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleTPContinuation-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`
-
-exampleTPContinuation-Problem_Interface.lo: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation-Problem_Interface.lo -MD -MP -MF "$(DEPDIR)/exampleTPContinuation-Problem_Interface.Tpo" -c -o exampleTPContinuation-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation-Problem_Interface.Tpo" "$(DEPDIR)/exampleTPContinuation-Problem_Interface.Plo"; else rm -f "$(DEPDIR)/exampleTPContinuation-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleTPContinuation-Problem_Interface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation-Problem_Interface.Plo' tmpdepfile='$(DEPDIR)/exampleTPContinuation-Problem_Interface.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
-
-exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.o: $(srcdir)/ExampleTPContinuation_ModifiedBordering.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.o -MD -MP -MF "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Tpo" -c -o exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.o `test -f '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation_ModifiedBordering.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Tpo" "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' object='exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.o `test -f '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation_ModifiedBordering.C
-
-exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.obj: $(srcdir)/ExampleTPContinuation_ModifiedBordering.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.obj -MD -MP -MF "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Tpo" -c -o exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.obj `if test -f '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTPContinuation_ModifiedBordering.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Tpo" "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' object='exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.obj `if test -f '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTPContinuation_ModifiedBordering.C'; fi`
-
-exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.lo: $(srcdir)/ExampleTPContinuation_ModifiedBordering.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.lo -MD -MP -MF "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Tpo" -c -o exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.lo `test -f '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation_ModifiedBordering.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Tpo" "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Plo"; else rm -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' object='exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Plo' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.lo `test -f '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation_ModifiedBordering.C
-
-exampleTPContinuation_ModifiedBordering-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation_ModifiedBordering-FiniteElementProblem.o -MD -MP -MF "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Tpo" -c -o exampleTPContinuation_ModifiedBordering-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTPContinuation_ModifiedBordering-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
-
-exampleTPContinuation_ModifiedBordering-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation_ModifiedBordering-FiniteElementProblem.obj -MD -MP -MF "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Tpo" -c -o exampleTPContinuation_ModifiedBordering-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTPContinuation_ModifiedBordering-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`
-
-exampleTPContinuation_ModifiedBordering-FiniteElementProblem.lo: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation_ModifiedBordering-FiniteElementProblem.lo -MD -MP -MF "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Tpo" -c -o exampleTPContinuation_ModifiedBordering-FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Plo"; else rm -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTPContinuation_ModifiedBordering-FiniteElementProblem.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Plo' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
-
-exampleTPContinuation_ModifiedBordering-Basis.o: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation_ModifiedBordering-Basis.o -MD -MP -MF "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Tpo" -c -o exampleTPContinuation_ModifiedBordering-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Tpo" "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleTPContinuation_ModifiedBordering-Basis.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
-
-exampleTPContinuation_ModifiedBordering-Basis.obj: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation_ModifiedBordering-Basis.obj -MD -MP -MF "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Tpo" -c -o exampleTPContinuation_ModifiedBordering-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Tpo" "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleTPContinuation_ModifiedBordering-Basis.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`
-
-exampleTPContinuation_ModifiedBordering-Basis.lo: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation_ModifiedBordering-Basis.lo -MD -MP -MF "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Tpo" -c -o exampleTPContinuation_ModifiedBordering-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Tpo" "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Plo"; else rm -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleTPContinuation_ModifiedBordering-Basis.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Plo' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
-
-exampleTPContinuation_ModifiedBordering-Problem_Interface.o: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation_ModifiedBordering-Problem_Interface.o -MD -MP -MF "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Tpo" -c -o exampleTPContinuation_ModifiedBordering-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Tpo" "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleTPContinuation_ModifiedBordering-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
-
-exampleTPContinuation_ModifiedBordering-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation_ModifiedBordering-Problem_Interface.obj -MD -MP -MF "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Tpo" -c -o exampleTPContinuation_ModifiedBordering-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Tpo" "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Po"; else rm -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleTPContinuation_ModifiedBordering-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`
-
-exampleTPContinuation_ModifiedBordering-Problem_Interface.lo: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTPContinuation_ModifiedBordering-Problem_Interface.lo -MD -MP -MF "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Tpo" -c -o exampleTPContinuation_ModifiedBordering-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Tpo" "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Plo"; else rm -f "$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleTPContinuation_ModifiedBordering-Problem_Interface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Plo' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
-
-exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.o: $(srcdir)/ExampleTP_ModifiedBordering.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.o -MD -MP -MF "$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Tpo" -c -o exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.o `test -f '$(srcdir)/ExampleTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP_ModifiedBordering.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Tpo" "$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTP_ModifiedBordering.C' object='exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.o `test -f '$(srcdir)/ExampleTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP_ModifiedBordering.C
-
-exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.obj: $(srcdir)/ExampleTP_ModifiedBordering.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.obj -MD -MP -MF "$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Tpo" -c -o exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.obj `if test -f '$(srcdir)/ExampleTP_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTP_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTP_ModifiedBordering.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Tpo" "$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTP_ModifiedBordering.C' object='exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.obj `if test -f '$(srcdir)/ExampleTP_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ExampleTP_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ExampleTP_ModifiedBordering.C'; fi`
-
-exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.lo: $(srcdir)/ExampleTP_ModifiedBordering.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.lo -MD -MP -MF "$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Tpo" -c -o exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.lo `test -f '$(srcdir)/ExampleTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP_ModifiedBordering.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Tpo" "$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Plo"; else rm -f "$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ExampleTP_ModifiedBordering.C' object='exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Plo' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.lo `test -f '$(srcdir)/ExampleTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP_ModifiedBordering.C
-
-exampleTP_ModifiedBordering-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTP_ModifiedBordering-FiniteElementProblem.o -MD -MP -MF "$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Tpo" -c -o exampleTP_ModifiedBordering-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTP_ModifiedBordering-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
-
-exampleTP_ModifiedBordering-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTP_ModifiedBordering-FiniteElementProblem.obj -MD -MP -MF "$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Tpo" -c -o exampleTP_ModifiedBordering-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTP_ModifiedBordering-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.C'; fi`
-
-exampleTP_ModifiedBordering-FiniteElementProblem.lo: $(srcdir)/FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTP_ModifiedBordering-FiniteElementProblem.lo -MD -MP -MF "$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Tpo" -c -o exampleTP_ModifiedBordering-FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Tpo" "$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Plo"; else rm -f "$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTP_ModifiedBordering-FiniteElementProblem.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Plo' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-FiniteElementProblem.lo `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
-
-exampleTP_ModifiedBordering-Basis.o: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTP_ModifiedBordering-Basis.o -MD -MP -MF "$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Tpo" -c -o exampleTP_ModifiedBordering-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Tpo" "$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Po"; else rm -f "$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleTP_ModifiedBordering-Basis.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
-
-exampleTP_ModifiedBordering-Basis.obj: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTP_ModifiedBordering-Basis.obj -MD -MP -MF "$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Tpo" -c -o exampleTP_ModifiedBordering-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Tpo" "$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Po"; else rm -f "$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleTP_ModifiedBordering-Basis.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`
-
-exampleTP_ModifiedBordering-Basis.lo: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTP_ModifiedBordering-Basis.lo -MD -MP -MF "$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Tpo" -c -o exampleTP_ModifiedBordering-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Tpo" "$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Plo"; else rm -f "$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='exampleTP_ModifiedBordering-Basis.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Plo' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-Basis.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
-
-exampleTP_ModifiedBordering-Problem_Interface.o: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTP_ModifiedBordering-Problem_Interface.o -MD -MP -MF "$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Tpo" -c -o exampleTP_ModifiedBordering-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Tpo" "$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Po"; else rm -f "$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleTP_ModifiedBordering-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
-
-exampleTP_ModifiedBordering-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTP_ModifiedBordering-Problem_Interface.obj -MD -MP -MF "$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Tpo" -c -o exampleTP_ModifiedBordering-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Tpo" "$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Po"; else rm -f "$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleTP_ModifiedBordering-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`
-
-exampleTP_ModifiedBordering-Problem_Interface.lo: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT exampleTP_ModifiedBordering-Problem_Interface.lo -MD -MP -MF "$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Tpo" -c -o exampleTP_ModifiedBordering-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Tpo" "$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Plo"; else rm -f "$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='exampleTP_ModifiedBordering-Problem_Interface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Plo' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExampleTP_ModifiedBordering.lo `test -f '$(srcdir)/ExampleTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP_ModifiedBordering.C
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -1378,6 +987,8 @@ uninstall-am: uninstall-info-am
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export.nox
 
 # ------------------------------------------------------------------------
 # Include global libtool definitions

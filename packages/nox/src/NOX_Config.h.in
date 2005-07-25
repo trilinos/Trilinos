@@ -44,11 +44,17 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
+/* Define if you want to build export makefiles. */
+#undef HAVE_EXPORT_MAKEFILES
+
 /* Define to 1 if you have the <fstream> header file. */
 #undef HAVE_FSTREAM
 
 /* Define to 1 if you have the <fstream.h> header file. */
 #undef HAVE_FSTREAM_H
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#undef HAVE_GNUMAKE
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -77,6 +83,9 @@
 /* Define if you have LAPACK DGGEV/DGEGV. */
 #undef HAVE_LAPACK_GENEV
 
+/* Define if want to build libcheck */
+#undef HAVE_LIBCHECK
+
 /* define that anasazi is activated in loca */
 #undef HAVE_LOCA_ANASAZI
 
@@ -98,26 +107,14 @@
 /* define if the compiler implements namespaces */
 #undef HAVE_NAMESPACES
 
-/* Define if want to build with amesos enabled */
-#undef HAVE_NOX_AMESOS
-
-/* define that Techos::any support is activated in nox */
-#undef HAVE_NOX_ANY
-
 /* define that Belos is activated in nox */
 #undef HAVE_NOX_BELOS
 
-/* define that epetraext is activated in nox */
+/* Define if want to build with nox enabled */
 #undef HAVE_NOX_EPETRAEXT
 
-/* define that ml is activated in nox */
+/* Define if want to build with nox enabled */
 #undef HAVE_NOX_ML_EPETRA
-
-/* define that multivector support is activated in nox */
-#undef HAVE_NOX_MULTIVECS
-
-/* define that Teuchos is activated in nox */
-#undef HAVE_NOX_TEUCHOS
 
 /* Define to 1 if you have the `pow' function. */
 #undef HAVE_POW

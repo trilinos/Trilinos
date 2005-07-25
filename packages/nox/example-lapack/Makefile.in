@@ -83,11 +83,17 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_nox_interface.m4 \
+	$(top_srcdir)/config/tac_arg_trilinos_header_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
+	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
-	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
+	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -98,21 +104,21 @@ CONFIG_CLEAN_FILES =
 @BUILD_LAPACK_EXAMPLES_TRUE@am__EXEEXT_2 = rosenbrock$(EXEEXT) \
 @BUILD_LAPACK_EXAMPLES_TRUE@	broyden$(EXEEXT) $(am__EXEEXT_1)
 PROGRAMS = $(noinst_PROGRAMS)
-am_broyden_OBJECTS = broyden-Broyden.$(OBJEXT)
+am_broyden_OBJECTS = Broyden.$(OBJEXT)
 broyden_OBJECTS = $(am_broyden_OBJECTS)
 am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 = $(top_builddir)/src-lapack/libnoxlapack.a \
-	$(top_builddir)/src/libnox.a $(am__DEPENDENCIES_1)
-nodist_linear_OBJECTS = linear-Linear.$(OBJEXT)
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(NOX_LIBS))
+nodist_linear_OBJECTS = Linear.$(OBJEXT)
 linear_OBJECTS = $(nodist_linear_OBJECTS)
-am_rosenbrock_OBJECTS = rosenbrock-Rosenbrock.$(OBJEXT)
+am_rosenbrock_OBJECTS = Rosenbrock.$(OBJEXT)
 rosenbrock_OBJECTS = $(am_rosenbrock_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/broyden-Broyden.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/linear-Linear.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/rosenbrock-Rosenbrock.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Broyden.Po ./$(DEPDIR)/Linear.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Rosenbrock.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -128,14 +134,21 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ADDON_belos_EXAMPLES = @ADDON_belos_EXAMPLES@
+ADDON_epetra_EXAMPLES = @ADDON_epetra_EXAMPLES@
 ADDON_epetra_TESTS = @ADDON_epetra_TESTS@
+ADDON_lapack_EXAMPLES = @ADDON_lapack_EXAMPLES@
 ADDON_lapack_TESTS = @ADDON_lapack_TESTS@
+ADDON_loca_epetra_EXAMPLES = @ADDON_loca_epetra_EXAMPLES@
 ADDON_loca_epetra_TESTS = @ADDON_loca_epetra_TESTS@
+ADDON_loca_lapack_EXAMPLES = @ADDON_loca_lapack_EXAMPLES@
 ADDON_loca_lapack_TESTS = @ADDON_loca_lapack_TESTS@
 ADDON_loca_petsc_TESTS = @ADDON_loca_petsc_TESTS@
 ADDON_loca_python_TESTS = @ADDON_loca_python_TESTS@
+ADDON_petsc_EXAMPLES = @ADDON_petsc_EXAMPLES@
 ADDON_petsc_TESTS = @ADDON_petsc_TESTS@
 ADDON_python_TESTS = @ADDON_python_TESTS@
+ADDON_tsf_EXAMPLES = @ADDON_tsf_EXAMPLES@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -188,10 +201,10 @@ BUILD_LOCA_PETSC_TESTS_FALSE = @BUILD_LOCA_PETSC_TESTS_FALSE@
 BUILD_LOCA_PETSC_TESTS_TRUE = @BUILD_LOCA_PETSC_TESTS_TRUE@
 BUILD_LOCA_PYTHON_TESTS_FALSE = @BUILD_LOCA_PYTHON_TESTS_FALSE@
 BUILD_LOCA_PYTHON_TESTS_TRUE = @BUILD_LOCA_PYTHON_TESTS_TRUE@
-BUILD_NOX_ANY_FALSE = @BUILD_NOX_ANY_FALSE@
-BUILD_NOX_ANY_TRUE = @BUILD_NOX_ANY_TRUE@
-BUILD_NOX_MULTIVECS_FALSE = @BUILD_NOX_MULTIVECS_FALSE@
-BUILD_NOX_MULTIVECS_TRUE = @BUILD_NOX_MULTIVECS_TRUE@
+BUILD_NOX_EPETRAEXT_SUPPORT_FALSE = @BUILD_NOX_EPETRAEXT_SUPPORT_FALSE@
+BUILD_NOX_EPETRAEXT_SUPPORT_TRUE = @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@
+BUILD_NOX_EPETRA_ML_SUPPORT_FALSE = @BUILD_NOX_EPETRA_ML_SUPPORT_FALSE@
+BUILD_NOX_EPETRA_ML_SUPPORT_TRUE = @BUILD_NOX_EPETRA_ML_SUPPORT_TRUE@
 BUILD_PETSC_EXAMPLES_FALSE = @BUILD_PETSC_EXAMPLES_FALSE@
 BUILD_PETSC_EXAMPLES_TRUE = @BUILD_PETSC_EXAMPLES_TRUE@
 BUILD_PETSC_TESTS_FALSE = @BUILD_PETSC_TESTS_FALSE@
@@ -202,6 +215,8 @@ BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
 BUILD_PYTHON_TESTS_FALSE = @BUILD_PYTHON_TESTS_FALSE@
 BUILD_PYTHON_TESTS_TRUE = @BUILD_PYTHON_TESTS_TRUE@
 BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
+BUILD_TESTUTILS_FALSE = @BUILD_TESTUTILS_FALSE@
+BUILD_TESTUTILS_TRUE = @BUILD_TESTUTILS_TRUE@
 BUILD_TSF_EXAMPLES_FALSE = @BUILD_TSF_EXAMPLES_FALSE@
 BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
@@ -230,12 +245,13 @@ GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_DOXYGEN_DOT = @HAVE_DOXYGEN_DOT@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
-HAVE_NOX_ANY_SUBST = @HAVE_NOX_ANY_SUBST@
-HAVE_NOX_MULTIVECS_SUBST = @HAVE_NOX_MULTIVECS_SUBST@
+HAVE_PERL = @HAVE_PERL@
 HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
 HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 IMPORT_EPETRA = @IMPORT_EPETRA@
 IMPORT_LAPACK = @IMPORT_LAPACK@
+INSIDE_TRILINOS_FALSE = @INSIDE_TRILINOS_FALSE@
+INSIDE_TRILINOS_TRUE = @INSIDE_TRILINOS_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -254,8 +270,6 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
-MF_INCDIR = @MF_INCDIR@
-MF_LIBDIR = @MF_LIBDIR@
 MPI_CC_EXISTS = @MPI_CC_EXISTS@
 MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
@@ -270,6 +284,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 PYTHON = @PYTHON@
 PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
@@ -288,9 +303,14 @@ SWIG = @SWIG@
 SWIG_LIB = @SWIG_LIB@
 SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
 SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
-TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
 abs_builddir = @abs_builddir@
@@ -345,28 +365,32 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(NOX_LIBS)
+@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_LIBS))
+@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(NOX_INCLUDES)
+@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 @BUILD_LAPACK_EXAMPLES_TRUE@EXAMPLES = rosenbrock broyden $(PRERELEASE_EXAMPLES)
+
+# Rosenbrock Example
 rosenbrock_SOURCES = $(srcdir)/Rosenbrock.C
 rosenbrock_DEPENDENCIES = $(top_builddir)/src-lapack/libnoxlapack.a \
                           $(top_builddir)/src/libnox.a 
 
-rosenbrock_CXXFLAGS = -I$(top_srcdir)/src \
-                      -I$(top_srcdir)/src-lapack \
-                        $(TRILINOS_CXXFLAGS)
+rosenbrock_LDADD = $(EXAMPLE_LIBS)
 
-rosenbrock_LDADD = $(top_builddir)/src-lapack/libnoxlapack.a \
-                   $(top_builddir)/src/libnox.a \
-		   $(LIBS)
-
+# Broyden Example
 broyden_SOURCES = $(srcdir)/Broyden.C
 broyden_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
-broyden_CXXFLAGS = $(rosenbrock_CXXFLAGS)
-broyden_LDADD = $(rosenbrock_LDADD)
+broyden_LDADD = $(EXAMPLE_LIBS)
+
+# Prerelease Linear Example
 @BUILD_PRERELEASE_TRUE@PRERELEASE_EXAMPLES = linear
 nodist_linear_SOURCES = $(srcdir)/Linear.C
-linear_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
-linear_CXXFLAGS = $(rosenbrock_CXXFLAGS)
-linear_LDADD = $(rosenbrock_LDADD)
+linear_DEPENDENCIES = $(top_builddir)/src-lapack/libnoxlapack.a \
+                      $(top_builddir)/src/libnox.a 
+
+linear_LDADD = $(EXAMPLE_LIBS)
 @USE_ALTERNATE_AR_FALSE@libnoxexample_a_AR = $(AR) cru
 
 # ------------------------------------------------------------------------
@@ -435,9 +459,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/broyden-Broyden.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linear-Linear.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rosenbrock-Rosenbrock.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Broyden.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Linear.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rosenbrock.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -463,77 +487,77 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
-broyden-Broyden.o: $(srcdir)/Broyden.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(broyden_CXXFLAGS) $(CXXFLAGS) -MT broyden-Broyden.o -MD -MP -MF "$(DEPDIR)/broyden-Broyden.Tpo" -c -o broyden-Broyden.o `test -f '$(srcdir)/Broyden.C' || echo '$(srcdir)/'`$(srcdir)/Broyden.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/broyden-Broyden.Tpo" "$(DEPDIR)/broyden-Broyden.Po"; else rm -f "$(DEPDIR)/broyden-Broyden.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Broyden.C' object='broyden-Broyden.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/broyden-Broyden.Po' tmpdepfile='$(DEPDIR)/broyden-Broyden.TPo' @AMDEPBACKSLASH@
+Broyden.o: $(srcdir)/Broyden.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Broyden.o -MD -MP -MF "$(DEPDIR)/Broyden.Tpo" -c -o Broyden.o `test -f '$(srcdir)/Broyden.C' || echo '$(srcdir)/'`$(srcdir)/Broyden.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Broyden.Tpo" "$(DEPDIR)/Broyden.Po"; else rm -f "$(DEPDIR)/Broyden.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Broyden.C' object='Broyden.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Broyden.Po' tmpdepfile='$(DEPDIR)/Broyden.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(broyden_CXXFLAGS) $(CXXFLAGS) -c -o broyden-Broyden.o `test -f '$(srcdir)/Broyden.C' || echo '$(srcdir)/'`$(srcdir)/Broyden.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Broyden.o `test -f '$(srcdir)/Broyden.C' || echo '$(srcdir)/'`$(srcdir)/Broyden.C
 
-broyden-Broyden.obj: $(srcdir)/Broyden.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(broyden_CXXFLAGS) $(CXXFLAGS) -MT broyden-Broyden.obj -MD -MP -MF "$(DEPDIR)/broyden-Broyden.Tpo" -c -o broyden-Broyden.obj `if test -f '$(srcdir)/Broyden.C'; then $(CYGPATH_W) '$(srcdir)/Broyden.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Broyden.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/broyden-Broyden.Tpo" "$(DEPDIR)/broyden-Broyden.Po"; else rm -f "$(DEPDIR)/broyden-Broyden.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Broyden.C' object='broyden-Broyden.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/broyden-Broyden.Po' tmpdepfile='$(DEPDIR)/broyden-Broyden.TPo' @AMDEPBACKSLASH@
+Broyden.obj: $(srcdir)/Broyden.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Broyden.obj -MD -MP -MF "$(DEPDIR)/Broyden.Tpo" -c -o Broyden.obj `if test -f '$(srcdir)/Broyden.C'; then $(CYGPATH_W) '$(srcdir)/Broyden.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Broyden.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Broyden.Tpo" "$(DEPDIR)/Broyden.Po"; else rm -f "$(DEPDIR)/Broyden.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Broyden.C' object='Broyden.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Broyden.Po' tmpdepfile='$(DEPDIR)/Broyden.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(broyden_CXXFLAGS) $(CXXFLAGS) -c -o broyden-Broyden.obj `if test -f '$(srcdir)/Broyden.C'; then $(CYGPATH_W) '$(srcdir)/Broyden.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Broyden.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Broyden.obj `if test -f '$(srcdir)/Broyden.C'; then $(CYGPATH_W) '$(srcdir)/Broyden.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Broyden.C'; fi`
 
-broyden-Broyden.lo: $(srcdir)/Broyden.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(broyden_CXXFLAGS) $(CXXFLAGS) -MT broyden-Broyden.lo -MD -MP -MF "$(DEPDIR)/broyden-Broyden.Tpo" -c -o broyden-Broyden.lo `test -f '$(srcdir)/Broyden.C' || echo '$(srcdir)/'`$(srcdir)/Broyden.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/broyden-Broyden.Tpo" "$(DEPDIR)/broyden-Broyden.Plo"; else rm -f "$(DEPDIR)/broyden-Broyden.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Broyden.C' object='broyden-Broyden.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/broyden-Broyden.Plo' tmpdepfile='$(DEPDIR)/broyden-Broyden.TPlo' @AMDEPBACKSLASH@
+Broyden.lo: $(srcdir)/Broyden.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Broyden.lo -MD -MP -MF "$(DEPDIR)/Broyden.Tpo" -c -o Broyden.lo `test -f '$(srcdir)/Broyden.C' || echo '$(srcdir)/'`$(srcdir)/Broyden.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Broyden.Tpo" "$(DEPDIR)/Broyden.Plo"; else rm -f "$(DEPDIR)/Broyden.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Broyden.C' object='Broyden.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Broyden.Plo' tmpdepfile='$(DEPDIR)/Broyden.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(broyden_CXXFLAGS) $(CXXFLAGS) -c -o broyden-Broyden.lo `test -f '$(srcdir)/Broyden.C' || echo '$(srcdir)/'`$(srcdir)/Broyden.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Broyden.lo `test -f '$(srcdir)/Broyden.C' || echo '$(srcdir)/'`$(srcdir)/Broyden.C
 
-linear-Linear.o: $(srcdir)/Linear.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linear_CXXFLAGS) $(CXXFLAGS) -MT linear-Linear.o -MD -MP -MF "$(DEPDIR)/linear-Linear.Tpo" -c -o linear-Linear.o `test -f '$(srcdir)/Linear.C' || echo '$(srcdir)/'`$(srcdir)/Linear.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/linear-Linear.Tpo" "$(DEPDIR)/linear-Linear.Po"; else rm -f "$(DEPDIR)/linear-Linear.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Linear.C' object='linear-Linear.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/linear-Linear.Po' tmpdepfile='$(DEPDIR)/linear-Linear.TPo' @AMDEPBACKSLASH@
+Linear.o: $(srcdir)/Linear.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Linear.o -MD -MP -MF "$(DEPDIR)/Linear.Tpo" -c -o Linear.o `test -f '$(srcdir)/Linear.C' || echo '$(srcdir)/'`$(srcdir)/Linear.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Linear.Tpo" "$(DEPDIR)/Linear.Po"; else rm -f "$(DEPDIR)/Linear.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Linear.C' object='Linear.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Linear.Po' tmpdepfile='$(DEPDIR)/Linear.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linear_CXXFLAGS) $(CXXFLAGS) -c -o linear-Linear.o `test -f '$(srcdir)/Linear.C' || echo '$(srcdir)/'`$(srcdir)/Linear.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Linear.o `test -f '$(srcdir)/Linear.C' || echo '$(srcdir)/'`$(srcdir)/Linear.C
 
-linear-Linear.obj: $(srcdir)/Linear.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linear_CXXFLAGS) $(CXXFLAGS) -MT linear-Linear.obj -MD -MP -MF "$(DEPDIR)/linear-Linear.Tpo" -c -o linear-Linear.obj `if test -f '$(srcdir)/Linear.C'; then $(CYGPATH_W) '$(srcdir)/Linear.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Linear.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/linear-Linear.Tpo" "$(DEPDIR)/linear-Linear.Po"; else rm -f "$(DEPDIR)/linear-Linear.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Linear.C' object='linear-Linear.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/linear-Linear.Po' tmpdepfile='$(DEPDIR)/linear-Linear.TPo' @AMDEPBACKSLASH@
+Linear.obj: $(srcdir)/Linear.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Linear.obj -MD -MP -MF "$(DEPDIR)/Linear.Tpo" -c -o Linear.obj `if test -f '$(srcdir)/Linear.C'; then $(CYGPATH_W) '$(srcdir)/Linear.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Linear.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Linear.Tpo" "$(DEPDIR)/Linear.Po"; else rm -f "$(DEPDIR)/Linear.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Linear.C' object='Linear.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Linear.Po' tmpdepfile='$(DEPDIR)/Linear.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linear_CXXFLAGS) $(CXXFLAGS) -c -o linear-Linear.obj `if test -f '$(srcdir)/Linear.C'; then $(CYGPATH_W) '$(srcdir)/Linear.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Linear.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Linear.obj `if test -f '$(srcdir)/Linear.C'; then $(CYGPATH_W) '$(srcdir)/Linear.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Linear.C'; fi`
 
-linear-Linear.lo: $(srcdir)/Linear.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linear_CXXFLAGS) $(CXXFLAGS) -MT linear-Linear.lo -MD -MP -MF "$(DEPDIR)/linear-Linear.Tpo" -c -o linear-Linear.lo `test -f '$(srcdir)/Linear.C' || echo '$(srcdir)/'`$(srcdir)/Linear.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/linear-Linear.Tpo" "$(DEPDIR)/linear-Linear.Plo"; else rm -f "$(DEPDIR)/linear-Linear.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Linear.C' object='linear-Linear.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/linear-Linear.Plo' tmpdepfile='$(DEPDIR)/linear-Linear.TPlo' @AMDEPBACKSLASH@
+Linear.lo: $(srcdir)/Linear.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Linear.lo -MD -MP -MF "$(DEPDIR)/Linear.Tpo" -c -o Linear.lo `test -f '$(srcdir)/Linear.C' || echo '$(srcdir)/'`$(srcdir)/Linear.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Linear.Tpo" "$(DEPDIR)/Linear.Plo"; else rm -f "$(DEPDIR)/Linear.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Linear.C' object='Linear.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Linear.Plo' tmpdepfile='$(DEPDIR)/Linear.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linear_CXXFLAGS) $(CXXFLAGS) -c -o linear-Linear.lo `test -f '$(srcdir)/Linear.C' || echo '$(srcdir)/'`$(srcdir)/Linear.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Linear.lo `test -f '$(srcdir)/Linear.C' || echo '$(srcdir)/'`$(srcdir)/Linear.C
 
-rosenbrock-Rosenbrock.o: $(srcdir)/Rosenbrock.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rosenbrock_CXXFLAGS) $(CXXFLAGS) -MT rosenbrock-Rosenbrock.o -MD -MP -MF "$(DEPDIR)/rosenbrock-Rosenbrock.Tpo" -c -o rosenbrock-Rosenbrock.o `test -f '$(srcdir)/Rosenbrock.C' || echo '$(srcdir)/'`$(srcdir)/Rosenbrock.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/rosenbrock-Rosenbrock.Tpo" "$(DEPDIR)/rosenbrock-Rosenbrock.Po"; else rm -f "$(DEPDIR)/rosenbrock-Rosenbrock.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rosenbrock.C' object='rosenbrock-Rosenbrock.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/rosenbrock-Rosenbrock.Po' tmpdepfile='$(DEPDIR)/rosenbrock-Rosenbrock.TPo' @AMDEPBACKSLASH@
+Rosenbrock.o: $(srcdir)/Rosenbrock.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rosenbrock.o -MD -MP -MF "$(DEPDIR)/Rosenbrock.Tpo" -c -o Rosenbrock.o `test -f '$(srcdir)/Rosenbrock.C' || echo '$(srcdir)/'`$(srcdir)/Rosenbrock.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Rosenbrock.Tpo" "$(DEPDIR)/Rosenbrock.Po"; else rm -f "$(DEPDIR)/Rosenbrock.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rosenbrock.C' object='Rosenbrock.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Rosenbrock.Po' tmpdepfile='$(DEPDIR)/Rosenbrock.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rosenbrock_CXXFLAGS) $(CXXFLAGS) -c -o rosenbrock-Rosenbrock.o `test -f '$(srcdir)/Rosenbrock.C' || echo '$(srcdir)/'`$(srcdir)/Rosenbrock.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rosenbrock.o `test -f '$(srcdir)/Rosenbrock.C' || echo '$(srcdir)/'`$(srcdir)/Rosenbrock.C
 
-rosenbrock-Rosenbrock.obj: $(srcdir)/Rosenbrock.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rosenbrock_CXXFLAGS) $(CXXFLAGS) -MT rosenbrock-Rosenbrock.obj -MD -MP -MF "$(DEPDIR)/rosenbrock-Rosenbrock.Tpo" -c -o rosenbrock-Rosenbrock.obj `if test -f '$(srcdir)/Rosenbrock.C'; then $(CYGPATH_W) '$(srcdir)/Rosenbrock.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rosenbrock.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/rosenbrock-Rosenbrock.Tpo" "$(DEPDIR)/rosenbrock-Rosenbrock.Po"; else rm -f "$(DEPDIR)/rosenbrock-Rosenbrock.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rosenbrock.C' object='rosenbrock-Rosenbrock.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/rosenbrock-Rosenbrock.Po' tmpdepfile='$(DEPDIR)/rosenbrock-Rosenbrock.TPo' @AMDEPBACKSLASH@
+Rosenbrock.obj: $(srcdir)/Rosenbrock.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rosenbrock.obj -MD -MP -MF "$(DEPDIR)/Rosenbrock.Tpo" -c -o Rosenbrock.obj `if test -f '$(srcdir)/Rosenbrock.C'; then $(CYGPATH_W) '$(srcdir)/Rosenbrock.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rosenbrock.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Rosenbrock.Tpo" "$(DEPDIR)/Rosenbrock.Po"; else rm -f "$(DEPDIR)/Rosenbrock.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rosenbrock.C' object='Rosenbrock.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Rosenbrock.Po' tmpdepfile='$(DEPDIR)/Rosenbrock.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rosenbrock_CXXFLAGS) $(CXXFLAGS) -c -o rosenbrock-Rosenbrock.obj `if test -f '$(srcdir)/Rosenbrock.C'; then $(CYGPATH_W) '$(srcdir)/Rosenbrock.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rosenbrock.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rosenbrock.obj `if test -f '$(srcdir)/Rosenbrock.C'; then $(CYGPATH_W) '$(srcdir)/Rosenbrock.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rosenbrock.C'; fi`
 
-rosenbrock-Rosenbrock.lo: $(srcdir)/Rosenbrock.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rosenbrock_CXXFLAGS) $(CXXFLAGS) -MT rosenbrock-Rosenbrock.lo -MD -MP -MF "$(DEPDIR)/rosenbrock-Rosenbrock.Tpo" -c -o rosenbrock-Rosenbrock.lo `test -f '$(srcdir)/Rosenbrock.C' || echo '$(srcdir)/'`$(srcdir)/Rosenbrock.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/rosenbrock-Rosenbrock.Tpo" "$(DEPDIR)/rosenbrock-Rosenbrock.Plo"; else rm -f "$(DEPDIR)/rosenbrock-Rosenbrock.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rosenbrock.C' object='rosenbrock-Rosenbrock.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/rosenbrock-Rosenbrock.Plo' tmpdepfile='$(DEPDIR)/rosenbrock-Rosenbrock.TPlo' @AMDEPBACKSLASH@
+Rosenbrock.lo: $(srcdir)/Rosenbrock.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rosenbrock.lo -MD -MP -MF "$(DEPDIR)/Rosenbrock.Tpo" -c -o Rosenbrock.lo `test -f '$(srcdir)/Rosenbrock.C' || echo '$(srcdir)/'`$(srcdir)/Rosenbrock.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Rosenbrock.Tpo" "$(DEPDIR)/Rosenbrock.Plo"; else rm -f "$(DEPDIR)/Rosenbrock.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rosenbrock.C' object='Rosenbrock.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Rosenbrock.Plo' tmpdepfile='$(DEPDIR)/Rosenbrock.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rosenbrock_CXXFLAGS) $(CXXFLAGS) -c -o rosenbrock-Rosenbrock.lo `test -f '$(srcdir)/Rosenbrock.C' || echo '$(srcdir)/'`$(srcdir)/Rosenbrock.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rosenbrock.lo `test -f '$(srcdir)/Rosenbrock.C' || echo '$(srcdir)/'`$(srcdir)/Rosenbrock.C
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -711,6 +735,9 @@ uninstall-am: uninstall-info-am
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-info-am
 
+
+# Include NOX export makefile
+include $(top_builddir)/Makefile.export.nox
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -84,11 +84,17 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_nox_interface.m4 \
+	$(top_srcdir)/config/tac_arg_trilinos_header_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
+	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
-	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
+	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -96,29 +102,29 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am__objects_1 = testNonlinear-Interface.$(OBJEXT)
-am_testNonlinear_OBJECTS = $(am__objects_1) \
-	testNonlinear-testNonlinear.$(OBJEXT)
+am__objects_1 = Interface.$(OBJEXT)
+am_testNonlinear_OBJECTS = $(am__objects_1) testNonlinear.$(OBJEXT)
 testNonlinear_OBJECTS = $(am_testNonlinear_OBJECTS)
 am__DEPENDENCIES_1 =
-am__objects_2 = testNonlinear_EpetraNew-Interface_EpetraNew.$(OBJEXT)
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(NOX_TEST_LIBS))
+am__objects_2 = Interface_EpetraNew.$(OBJEXT)
 am_testNonlinear_EpetraNew_OBJECTS = $(am__objects_2) \
-	testNonlinear_EpetraNew-testNonlinear_EpetraNew.$(OBJEXT)
+	testNonlinear_EpetraNew.$(OBJEXT)
 testNonlinear_EpetraNew_OBJECTS =  \
 	$(am_testNonlinear_EpetraNew_OBJECTS)
-am__objects_3 = testNonlinear_trans-Interface_EpetraNew.$(OBJEXT)
-am_testNonlinear_trans_OBJECTS = $(am__objects_3) \
-	testNonlinear_trans-testNonlinear_trans.$(OBJEXT)
+am_testNonlinear_trans_OBJECTS = $(am__objects_2) \
+	testNonlinear_trans.$(OBJEXT)
 testNonlinear_trans_OBJECTS = $(am_testNonlinear_trans_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/testNonlinear-Interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/testNonlinear-testNonlinear.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Interface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Interface_EpetraNew.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/testNonlinear.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/testNonlinear_EpetraNew.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/testNonlinear_trans.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -144,14 +150,21 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ADDON_belos_EXAMPLES = @ADDON_belos_EXAMPLES@
+ADDON_epetra_EXAMPLES = @ADDON_epetra_EXAMPLES@
 ADDON_epetra_TESTS = @ADDON_epetra_TESTS@
+ADDON_lapack_EXAMPLES = @ADDON_lapack_EXAMPLES@
 ADDON_lapack_TESTS = @ADDON_lapack_TESTS@
+ADDON_loca_epetra_EXAMPLES = @ADDON_loca_epetra_EXAMPLES@
 ADDON_loca_epetra_TESTS = @ADDON_loca_epetra_TESTS@
+ADDON_loca_lapack_EXAMPLES = @ADDON_loca_lapack_EXAMPLES@
 ADDON_loca_lapack_TESTS = @ADDON_loca_lapack_TESTS@
 ADDON_loca_petsc_TESTS = @ADDON_loca_petsc_TESTS@
 ADDON_loca_python_TESTS = @ADDON_loca_python_TESTS@
+ADDON_petsc_EXAMPLES = @ADDON_petsc_EXAMPLES@
 ADDON_petsc_TESTS = @ADDON_petsc_TESTS@
 ADDON_python_TESTS = @ADDON_python_TESTS@
+ADDON_tsf_EXAMPLES = @ADDON_tsf_EXAMPLES@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -204,10 +217,10 @@ BUILD_LOCA_PETSC_TESTS_FALSE = @BUILD_LOCA_PETSC_TESTS_FALSE@
 BUILD_LOCA_PETSC_TESTS_TRUE = @BUILD_LOCA_PETSC_TESTS_TRUE@
 BUILD_LOCA_PYTHON_TESTS_FALSE = @BUILD_LOCA_PYTHON_TESTS_FALSE@
 BUILD_LOCA_PYTHON_TESTS_TRUE = @BUILD_LOCA_PYTHON_TESTS_TRUE@
-BUILD_NOX_ANY_FALSE = @BUILD_NOX_ANY_FALSE@
-BUILD_NOX_ANY_TRUE = @BUILD_NOX_ANY_TRUE@
-BUILD_NOX_MULTIVECS_FALSE = @BUILD_NOX_MULTIVECS_FALSE@
-BUILD_NOX_MULTIVECS_TRUE = @BUILD_NOX_MULTIVECS_TRUE@
+BUILD_NOX_EPETRAEXT_SUPPORT_FALSE = @BUILD_NOX_EPETRAEXT_SUPPORT_FALSE@
+BUILD_NOX_EPETRAEXT_SUPPORT_TRUE = @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@
+BUILD_NOX_EPETRA_ML_SUPPORT_FALSE = @BUILD_NOX_EPETRA_ML_SUPPORT_FALSE@
+BUILD_NOX_EPETRA_ML_SUPPORT_TRUE = @BUILD_NOX_EPETRA_ML_SUPPORT_TRUE@
 BUILD_PETSC_EXAMPLES_FALSE = @BUILD_PETSC_EXAMPLES_FALSE@
 BUILD_PETSC_EXAMPLES_TRUE = @BUILD_PETSC_EXAMPLES_TRUE@
 BUILD_PETSC_TESTS_FALSE = @BUILD_PETSC_TESTS_FALSE@
@@ -218,6 +231,8 @@ BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
 BUILD_PYTHON_TESTS_FALSE = @BUILD_PYTHON_TESTS_FALSE@
 BUILD_PYTHON_TESTS_TRUE = @BUILD_PYTHON_TESTS_TRUE@
 BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
+BUILD_TESTUTILS_FALSE = @BUILD_TESTUTILS_FALSE@
+BUILD_TESTUTILS_TRUE = @BUILD_TESTUTILS_TRUE@
 BUILD_TSF_EXAMPLES_FALSE = @BUILD_TSF_EXAMPLES_FALSE@
 BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
@@ -246,12 +261,13 @@ GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_DOXYGEN_DOT = @HAVE_DOXYGEN_DOT@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
-HAVE_NOX_ANY_SUBST = @HAVE_NOX_ANY_SUBST@
-HAVE_NOX_MULTIVECS_SUBST = @HAVE_NOX_MULTIVECS_SUBST@
+HAVE_PERL = @HAVE_PERL@
 HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
 HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 IMPORT_EPETRA = @IMPORT_EPETRA@
 IMPORT_LAPACK = @IMPORT_LAPACK@
+INSIDE_TRILINOS_FALSE = @INSIDE_TRILINOS_FALSE@
+INSIDE_TRILINOS_TRUE = @INSIDE_TRILINOS_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -270,8 +286,6 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
-MF_INCDIR = @MF_INCDIR@
-MF_LIBDIR = @MF_LIBDIR@
 MPI_CC_EXISTS = @MPI_CC_EXISTS@
 MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
@@ -286,6 +300,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 PYTHON = @PYTHON@
 PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
@@ -304,9 +319,14 @@ SWIG = @SWIG@
 SWIG_LIB = @SWIG_LIB@
 SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
 SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
-TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
 abs_builddir = @abs_builddir@
@@ -361,6 +381,11 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@USING_GNUMAKE_FALSE@TEST_LIBS = $(NOX_TEST_LIBS)
+@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_TEST_LIBS))
+@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(NOX_TEST_INCLUDES)
+@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES))
+AM_CPPFLAGS = $(TEST_INCLUDES)
 INTERFACE = $(srcdir)/Interface.C \
 	$(srcdir)/Interface.H
 
@@ -372,17 +397,7 @@ testNonlinear_DEPENDENCIES = \
                              $(top_builddir)/src/libnox.a \
                              $(top_builddir)/src-epetra/libnoxepetra.a
 
-testNonlinear_CXXFLAGS = \
-                         -I$(top_srcdir)/src \
-                         -I$(top_srcdir)/src-epetra \
-                         -I$(top_srcdir)/test/utils \
-                         $(TRILINOS_CXXFLAGS)
-
-testNonlinear_LDADD = \
-                      -L$(top_builddir)/src-epetra -lnoxepetra \
-                      -L$(top_builddir)/src -lnox $(LIBS) \
-	              $(BLAS_LIBS) $(FLIBS)
-
+testNonlinear_LDADD = $(TEST_LIBS)
 INTERFACE_EPETRANEW = $(srcdir)/Interface_EpetraNew.C \
 	              $(srcdir)/Interface_EpetraNew.H
 
@@ -394,17 +409,7 @@ testNonlinear_EpetraNew_DEPENDENCIES = \
                              $(top_builddir)/src/libnox.a \
                              $(top_builddir)/src-epetra/libnoxepetra.a
 
-testNonlinear_EpetraNew_CXXFLAGS = \
-                         -I$(top_srcdir)/src \
-                         -I$(top_srcdir)/src-epetra \
-                         -I$(top_srcdir)/test/utils \
-                         $(TRILINOS_CXXFLAGS)
-
-testNonlinear_EpetraNew_LDADD = \
-                      -L$(top_builddir)/src-epetra -lnoxepetra \
-                      -L$(top_builddir)/src -lnox $(LIBS) \
-	              $(BLAS_LIBS) $(FLIBS)
-
+testNonlinear_EpetraNew_LDADD = $(TEST_LIBS)
 testNonlinear_trans_SOURCES = \
                         $(INTERFACE_EPETRANEW) \
                         $(srcdir)/testNonlinear_trans.C
@@ -413,17 +418,7 @@ testNonlinear_trans_DEPENDENCIES = \
                              $(top_builddir)/src/libnox.a \
                              $(top_builddir)/src-epetra/libnoxepetra.a
 
-testNonlinear_trans_CXXFLAGS = \
-                         -I$(top_srcdir)/src \
-                         -I$(top_srcdir)/src-epetra \
-                         -I$(top_srcdir)/test/utils \
-                         $(TRILINOS_CXXFLAGS)
-
-testNonlinear_trans_LDADD = \
-                      -L$(top_builddir)/src-epetra -lnoxepetra \
-                      -L$(top_builddir)/src -lnox $(LIBS) \
-	              $(BLAS_LIBS) $(FLIBS)
-
+testNonlinear_trans_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -480,12 +475,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testNonlinear-Interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testNonlinear-testNonlinear.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Interface_EpetraNew.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testNonlinear.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testNonlinear_EpetraNew.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testNonlinear_trans.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -511,149 +505,125 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
-testNonlinear-Interface.o: $(srcdir)/Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear-Interface.o -MD -MP -MF "$(DEPDIR)/testNonlinear-Interface.Tpo" -c -o testNonlinear-Interface.o `test -f '$(srcdir)/Interface.C' || echo '$(srcdir)/'`$(srcdir)/Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear-Interface.Tpo" "$(DEPDIR)/testNonlinear-Interface.Po"; else rm -f "$(DEPDIR)/testNonlinear-Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface.C' object='testNonlinear-Interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear-Interface.Po' tmpdepfile='$(DEPDIR)/testNonlinear-Interface.TPo' @AMDEPBACKSLASH@
+Interface.o: $(srcdir)/Interface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Interface.o -MD -MP -MF "$(DEPDIR)/Interface.Tpo" -c -o Interface.o `test -f '$(srcdir)/Interface.C' || echo '$(srcdir)/'`$(srcdir)/Interface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Interface.Tpo" "$(DEPDIR)/Interface.Po"; else rm -f "$(DEPDIR)/Interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface.C' object='Interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Interface.Po' tmpdepfile='$(DEPDIR)/Interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear-Interface.o `test -f '$(srcdir)/Interface.C' || echo '$(srcdir)/'`$(srcdir)/Interface.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Interface.o `test -f '$(srcdir)/Interface.C' || echo '$(srcdir)/'`$(srcdir)/Interface.C
 
-testNonlinear-Interface.obj: $(srcdir)/Interface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear-Interface.obj -MD -MP -MF "$(DEPDIR)/testNonlinear-Interface.Tpo" -c -o testNonlinear-Interface.obj `if test -f '$(srcdir)/Interface.C'; then $(CYGPATH_W) '$(srcdir)/Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Interface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear-Interface.Tpo" "$(DEPDIR)/testNonlinear-Interface.Po"; else rm -f "$(DEPDIR)/testNonlinear-Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface.C' object='testNonlinear-Interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear-Interface.Po' tmpdepfile='$(DEPDIR)/testNonlinear-Interface.TPo' @AMDEPBACKSLASH@
+Interface.obj: $(srcdir)/Interface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Interface.obj -MD -MP -MF "$(DEPDIR)/Interface.Tpo" -c -o Interface.obj `if test -f '$(srcdir)/Interface.C'; then $(CYGPATH_W) '$(srcdir)/Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Interface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Interface.Tpo" "$(DEPDIR)/Interface.Po"; else rm -f "$(DEPDIR)/Interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface.C' object='Interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Interface.Po' tmpdepfile='$(DEPDIR)/Interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear-Interface.obj `if test -f '$(srcdir)/Interface.C'; then $(CYGPATH_W) '$(srcdir)/Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Interface.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Interface.obj `if test -f '$(srcdir)/Interface.C'; then $(CYGPATH_W) '$(srcdir)/Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Interface.C'; fi`
 
-testNonlinear-Interface.lo: $(srcdir)/Interface.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear-Interface.lo -MD -MP -MF "$(DEPDIR)/testNonlinear-Interface.Tpo" -c -o testNonlinear-Interface.lo `test -f '$(srcdir)/Interface.C' || echo '$(srcdir)/'`$(srcdir)/Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear-Interface.Tpo" "$(DEPDIR)/testNonlinear-Interface.Plo"; else rm -f "$(DEPDIR)/testNonlinear-Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface.C' object='testNonlinear-Interface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear-Interface.Plo' tmpdepfile='$(DEPDIR)/testNonlinear-Interface.TPlo' @AMDEPBACKSLASH@
+Interface.lo: $(srcdir)/Interface.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Interface.lo -MD -MP -MF "$(DEPDIR)/Interface.Tpo" -c -o Interface.lo `test -f '$(srcdir)/Interface.C' || echo '$(srcdir)/'`$(srcdir)/Interface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Interface.Tpo" "$(DEPDIR)/Interface.Plo"; else rm -f "$(DEPDIR)/Interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface.C' object='Interface.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Interface.Plo' tmpdepfile='$(DEPDIR)/Interface.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear-Interface.lo `test -f '$(srcdir)/Interface.C' || echo '$(srcdir)/'`$(srcdir)/Interface.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Interface.lo `test -f '$(srcdir)/Interface.C' || echo '$(srcdir)/'`$(srcdir)/Interface.C
 
-testNonlinear-testNonlinear.o: $(srcdir)/testNonlinear.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear-testNonlinear.o -MD -MP -MF "$(DEPDIR)/testNonlinear-testNonlinear.Tpo" -c -o testNonlinear-testNonlinear.o `test -f '$(srcdir)/testNonlinear.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear-testNonlinear.Tpo" "$(DEPDIR)/testNonlinear-testNonlinear.Po"; else rm -f "$(DEPDIR)/testNonlinear-testNonlinear.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear.C' object='testNonlinear-testNonlinear.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear-testNonlinear.Po' tmpdepfile='$(DEPDIR)/testNonlinear-testNonlinear.TPo' @AMDEPBACKSLASH@
+testNonlinear.o: $(srcdir)/testNonlinear.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear.o -MD -MP -MF "$(DEPDIR)/testNonlinear.Tpo" -c -o testNonlinear.o `test -f '$(srcdir)/testNonlinear.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear.Tpo" "$(DEPDIR)/testNonlinear.Po"; else rm -f "$(DEPDIR)/testNonlinear.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear.C' object='testNonlinear.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear.Po' tmpdepfile='$(DEPDIR)/testNonlinear.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear-testNonlinear.o `test -f '$(srcdir)/testNonlinear.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear.o `test -f '$(srcdir)/testNonlinear.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear.C
 
-testNonlinear-testNonlinear.obj: $(srcdir)/testNonlinear.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear-testNonlinear.obj -MD -MP -MF "$(DEPDIR)/testNonlinear-testNonlinear.Tpo" -c -o testNonlinear-testNonlinear.obj `if test -f '$(srcdir)/testNonlinear.C'; then $(CYGPATH_W) '$(srcdir)/testNonlinear.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/testNonlinear.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear-testNonlinear.Tpo" "$(DEPDIR)/testNonlinear-testNonlinear.Po"; else rm -f "$(DEPDIR)/testNonlinear-testNonlinear.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear.C' object='testNonlinear-testNonlinear.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear-testNonlinear.Po' tmpdepfile='$(DEPDIR)/testNonlinear-testNonlinear.TPo' @AMDEPBACKSLASH@
+testNonlinear.obj: $(srcdir)/testNonlinear.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear.obj -MD -MP -MF "$(DEPDIR)/testNonlinear.Tpo" -c -o testNonlinear.obj `if test -f '$(srcdir)/testNonlinear.C'; then $(CYGPATH_W) '$(srcdir)/testNonlinear.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/testNonlinear.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear.Tpo" "$(DEPDIR)/testNonlinear.Po"; else rm -f "$(DEPDIR)/testNonlinear.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear.C' object='testNonlinear.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear.Po' tmpdepfile='$(DEPDIR)/testNonlinear.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear-testNonlinear.obj `if test -f '$(srcdir)/testNonlinear.C'; then $(CYGPATH_W) '$(srcdir)/testNonlinear.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/testNonlinear.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear.obj `if test -f '$(srcdir)/testNonlinear.C'; then $(CYGPATH_W) '$(srcdir)/testNonlinear.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/testNonlinear.C'; fi`
 
-testNonlinear-testNonlinear.lo: $(srcdir)/testNonlinear.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear-testNonlinear.lo -MD -MP -MF "$(DEPDIR)/testNonlinear-testNonlinear.Tpo" -c -o testNonlinear-testNonlinear.lo `test -f '$(srcdir)/testNonlinear.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear-testNonlinear.Tpo" "$(DEPDIR)/testNonlinear-testNonlinear.Plo"; else rm -f "$(DEPDIR)/testNonlinear-testNonlinear.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear.C' object='testNonlinear-testNonlinear.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear-testNonlinear.Plo' tmpdepfile='$(DEPDIR)/testNonlinear-testNonlinear.TPlo' @AMDEPBACKSLASH@
+testNonlinear.lo: $(srcdir)/testNonlinear.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear.lo -MD -MP -MF "$(DEPDIR)/testNonlinear.Tpo" -c -o testNonlinear.lo `test -f '$(srcdir)/testNonlinear.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear.Tpo" "$(DEPDIR)/testNonlinear.Plo"; else rm -f "$(DEPDIR)/testNonlinear.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear.C' object='testNonlinear.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear.Plo' tmpdepfile='$(DEPDIR)/testNonlinear.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear-testNonlinear.lo `test -f '$(srcdir)/testNonlinear.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear.lo `test -f '$(srcdir)/testNonlinear.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear.C
 
-testNonlinear_EpetraNew-Interface_EpetraNew.o: $(srcdir)/Interface_EpetraNew.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_EpetraNew_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_EpetraNew-Interface_EpetraNew.o -MD -MP -MF "$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Tpo" -c -o testNonlinear_EpetraNew-Interface_EpetraNew.o `test -f '$(srcdir)/Interface_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/Interface_EpetraNew.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Tpo" "$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Po"; else rm -f "$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface_EpetraNew.C' object='testNonlinear_EpetraNew-Interface_EpetraNew.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Po' tmpdepfile='$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.TPo' @AMDEPBACKSLASH@
+Interface_EpetraNew.o: $(srcdir)/Interface_EpetraNew.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Interface_EpetraNew.o -MD -MP -MF "$(DEPDIR)/Interface_EpetraNew.Tpo" -c -o Interface_EpetraNew.o `test -f '$(srcdir)/Interface_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/Interface_EpetraNew.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Interface_EpetraNew.Tpo" "$(DEPDIR)/Interface_EpetraNew.Po"; else rm -f "$(DEPDIR)/Interface_EpetraNew.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface_EpetraNew.C' object='Interface_EpetraNew.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Interface_EpetraNew.Po' tmpdepfile='$(DEPDIR)/Interface_EpetraNew.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_EpetraNew_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_EpetraNew-Interface_EpetraNew.o `test -f '$(srcdir)/Interface_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/Interface_EpetraNew.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Interface_EpetraNew.o `test -f '$(srcdir)/Interface_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/Interface_EpetraNew.C
 
-testNonlinear_EpetraNew-Interface_EpetraNew.obj: $(srcdir)/Interface_EpetraNew.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_EpetraNew_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_EpetraNew-Interface_EpetraNew.obj -MD -MP -MF "$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Tpo" -c -o testNonlinear_EpetraNew-Interface_EpetraNew.obj `if test -f '$(srcdir)/Interface_EpetraNew.C'; then $(CYGPATH_W) '$(srcdir)/Interface_EpetraNew.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Interface_EpetraNew.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Tpo" "$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Po"; else rm -f "$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface_EpetraNew.C' object='testNonlinear_EpetraNew-Interface_EpetraNew.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Po' tmpdepfile='$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.TPo' @AMDEPBACKSLASH@
+Interface_EpetraNew.obj: $(srcdir)/Interface_EpetraNew.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Interface_EpetraNew.obj -MD -MP -MF "$(DEPDIR)/Interface_EpetraNew.Tpo" -c -o Interface_EpetraNew.obj `if test -f '$(srcdir)/Interface_EpetraNew.C'; then $(CYGPATH_W) '$(srcdir)/Interface_EpetraNew.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Interface_EpetraNew.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Interface_EpetraNew.Tpo" "$(DEPDIR)/Interface_EpetraNew.Po"; else rm -f "$(DEPDIR)/Interface_EpetraNew.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface_EpetraNew.C' object='Interface_EpetraNew.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Interface_EpetraNew.Po' tmpdepfile='$(DEPDIR)/Interface_EpetraNew.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_EpetraNew_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_EpetraNew-Interface_EpetraNew.obj `if test -f '$(srcdir)/Interface_EpetraNew.C'; then $(CYGPATH_W) '$(srcdir)/Interface_EpetraNew.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Interface_EpetraNew.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Interface_EpetraNew.obj `if test -f '$(srcdir)/Interface_EpetraNew.C'; then $(CYGPATH_W) '$(srcdir)/Interface_EpetraNew.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Interface_EpetraNew.C'; fi`
 
-testNonlinear_EpetraNew-Interface_EpetraNew.lo: $(srcdir)/Interface_EpetraNew.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_EpetraNew_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_EpetraNew-Interface_EpetraNew.lo -MD -MP -MF "$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Tpo" -c -o testNonlinear_EpetraNew-Interface_EpetraNew.lo `test -f '$(srcdir)/Interface_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/Interface_EpetraNew.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Tpo" "$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Plo"; else rm -f "$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface_EpetraNew.C' object='testNonlinear_EpetraNew-Interface_EpetraNew.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Plo' tmpdepfile='$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.TPlo' @AMDEPBACKSLASH@
+Interface_EpetraNew.lo: $(srcdir)/Interface_EpetraNew.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Interface_EpetraNew.lo -MD -MP -MF "$(DEPDIR)/Interface_EpetraNew.Tpo" -c -o Interface_EpetraNew.lo `test -f '$(srcdir)/Interface_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/Interface_EpetraNew.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Interface_EpetraNew.Tpo" "$(DEPDIR)/Interface_EpetraNew.Plo"; else rm -f "$(DEPDIR)/Interface_EpetraNew.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface_EpetraNew.C' object='Interface_EpetraNew.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Interface_EpetraNew.Plo' tmpdepfile='$(DEPDIR)/Interface_EpetraNew.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_EpetraNew_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_EpetraNew-Interface_EpetraNew.lo `test -f '$(srcdir)/Interface_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/Interface_EpetraNew.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Interface_EpetraNew.lo `test -f '$(srcdir)/Interface_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/Interface_EpetraNew.C
 
-testNonlinear_EpetraNew-testNonlinear_EpetraNew.o: $(srcdir)/testNonlinear_EpetraNew.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_EpetraNew_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_EpetraNew-testNonlinear_EpetraNew.o -MD -MP -MF "$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Tpo" -c -o testNonlinear_EpetraNew-testNonlinear_EpetraNew.o `test -f '$(srcdir)/testNonlinear_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_EpetraNew.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Tpo" "$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Po"; else rm -f "$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear_EpetraNew.C' object='testNonlinear_EpetraNew-testNonlinear_EpetraNew.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Po' tmpdepfile='$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.TPo' @AMDEPBACKSLASH@
+testNonlinear_EpetraNew.o: $(srcdir)/testNonlinear_EpetraNew.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_EpetraNew.o -MD -MP -MF "$(DEPDIR)/testNonlinear_EpetraNew.Tpo" -c -o testNonlinear_EpetraNew.o `test -f '$(srcdir)/testNonlinear_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_EpetraNew.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_EpetraNew.Tpo" "$(DEPDIR)/testNonlinear_EpetraNew.Po"; else rm -f "$(DEPDIR)/testNonlinear_EpetraNew.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear_EpetraNew.C' object='testNonlinear_EpetraNew.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_EpetraNew.Po' tmpdepfile='$(DEPDIR)/testNonlinear_EpetraNew.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_EpetraNew_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_EpetraNew-testNonlinear_EpetraNew.o `test -f '$(srcdir)/testNonlinear_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_EpetraNew.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_EpetraNew.o `test -f '$(srcdir)/testNonlinear_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_EpetraNew.C
 
-testNonlinear_EpetraNew-testNonlinear_EpetraNew.obj: $(srcdir)/testNonlinear_EpetraNew.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_EpetraNew_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_EpetraNew-testNonlinear_EpetraNew.obj -MD -MP -MF "$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Tpo" -c -o testNonlinear_EpetraNew-testNonlinear_EpetraNew.obj `if test -f '$(srcdir)/testNonlinear_EpetraNew.C'; then $(CYGPATH_W) '$(srcdir)/testNonlinear_EpetraNew.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/testNonlinear_EpetraNew.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Tpo" "$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Po"; else rm -f "$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear_EpetraNew.C' object='testNonlinear_EpetraNew-testNonlinear_EpetraNew.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Po' tmpdepfile='$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.TPo' @AMDEPBACKSLASH@
+testNonlinear_EpetraNew.obj: $(srcdir)/testNonlinear_EpetraNew.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_EpetraNew.obj -MD -MP -MF "$(DEPDIR)/testNonlinear_EpetraNew.Tpo" -c -o testNonlinear_EpetraNew.obj `if test -f '$(srcdir)/testNonlinear_EpetraNew.C'; then $(CYGPATH_W) '$(srcdir)/testNonlinear_EpetraNew.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/testNonlinear_EpetraNew.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_EpetraNew.Tpo" "$(DEPDIR)/testNonlinear_EpetraNew.Po"; else rm -f "$(DEPDIR)/testNonlinear_EpetraNew.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear_EpetraNew.C' object='testNonlinear_EpetraNew.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_EpetraNew.Po' tmpdepfile='$(DEPDIR)/testNonlinear_EpetraNew.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_EpetraNew_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_EpetraNew-testNonlinear_EpetraNew.obj `if test -f '$(srcdir)/testNonlinear_EpetraNew.C'; then $(CYGPATH_W) '$(srcdir)/testNonlinear_EpetraNew.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/testNonlinear_EpetraNew.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_EpetraNew.obj `if test -f '$(srcdir)/testNonlinear_EpetraNew.C'; then $(CYGPATH_W) '$(srcdir)/testNonlinear_EpetraNew.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/testNonlinear_EpetraNew.C'; fi`
 
-testNonlinear_EpetraNew-testNonlinear_EpetraNew.lo: $(srcdir)/testNonlinear_EpetraNew.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_EpetraNew_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_EpetraNew-testNonlinear_EpetraNew.lo -MD -MP -MF "$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Tpo" -c -o testNonlinear_EpetraNew-testNonlinear_EpetraNew.lo `test -f '$(srcdir)/testNonlinear_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_EpetraNew.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Tpo" "$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Plo"; else rm -f "$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear_EpetraNew.C' object='testNonlinear_EpetraNew-testNonlinear_EpetraNew.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Plo' tmpdepfile='$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.TPlo' @AMDEPBACKSLASH@
+testNonlinear_EpetraNew.lo: $(srcdir)/testNonlinear_EpetraNew.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_EpetraNew.lo -MD -MP -MF "$(DEPDIR)/testNonlinear_EpetraNew.Tpo" -c -o testNonlinear_EpetraNew.lo `test -f '$(srcdir)/testNonlinear_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_EpetraNew.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_EpetraNew.Tpo" "$(DEPDIR)/testNonlinear_EpetraNew.Plo"; else rm -f "$(DEPDIR)/testNonlinear_EpetraNew.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear_EpetraNew.C' object='testNonlinear_EpetraNew.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_EpetraNew.Plo' tmpdepfile='$(DEPDIR)/testNonlinear_EpetraNew.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_EpetraNew_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_EpetraNew-testNonlinear_EpetraNew.lo `test -f '$(srcdir)/testNonlinear_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_EpetraNew.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_EpetraNew.lo `test -f '$(srcdir)/testNonlinear_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_EpetraNew.C
 
-testNonlinear_trans-Interface_EpetraNew.o: $(srcdir)/Interface_EpetraNew.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_trans-Interface_EpetraNew.o -MD -MP -MF "$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Tpo" -c -o testNonlinear_trans-Interface_EpetraNew.o `test -f '$(srcdir)/Interface_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/Interface_EpetraNew.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Tpo" "$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Po"; else rm -f "$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface_EpetraNew.C' object='testNonlinear_trans-Interface_EpetraNew.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Po' tmpdepfile='$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.TPo' @AMDEPBACKSLASH@
+testNonlinear_trans.o: $(srcdir)/testNonlinear_trans.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_trans.o -MD -MP -MF "$(DEPDIR)/testNonlinear_trans.Tpo" -c -o testNonlinear_trans.o `test -f '$(srcdir)/testNonlinear_trans.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_trans.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_trans.Tpo" "$(DEPDIR)/testNonlinear_trans.Po"; else rm -f "$(DEPDIR)/testNonlinear_trans.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear_trans.C' object='testNonlinear_trans.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_trans.Po' tmpdepfile='$(DEPDIR)/testNonlinear_trans.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_trans-Interface_EpetraNew.o `test -f '$(srcdir)/Interface_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/Interface_EpetraNew.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_trans.o `test -f '$(srcdir)/testNonlinear_trans.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_trans.C
 
-testNonlinear_trans-Interface_EpetraNew.obj: $(srcdir)/Interface_EpetraNew.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_trans-Interface_EpetraNew.obj -MD -MP -MF "$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Tpo" -c -o testNonlinear_trans-Interface_EpetraNew.obj `if test -f '$(srcdir)/Interface_EpetraNew.C'; then $(CYGPATH_W) '$(srcdir)/Interface_EpetraNew.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Interface_EpetraNew.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Tpo" "$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Po"; else rm -f "$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface_EpetraNew.C' object='testNonlinear_trans-Interface_EpetraNew.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Po' tmpdepfile='$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.TPo' @AMDEPBACKSLASH@
+testNonlinear_trans.obj: $(srcdir)/testNonlinear_trans.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_trans.obj -MD -MP -MF "$(DEPDIR)/testNonlinear_trans.Tpo" -c -o testNonlinear_trans.obj `if test -f '$(srcdir)/testNonlinear_trans.C'; then $(CYGPATH_W) '$(srcdir)/testNonlinear_trans.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/testNonlinear_trans.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_trans.Tpo" "$(DEPDIR)/testNonlinear_trans.Po"; else rm -f "$(DEPDIR)/testNonlinear_trans.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear_trans.C' object='testNonlinear_trans.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_trans.Po' tmpdepfile='$(DEPDIR)/testNonlinear_trans.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_trans-Interface_EpetraNew.obj `if test -f '$(srcdir)/Interface_EpetraNew.C'; then $(CYGPATH_W) '$(srcdir)/Interface_EpetraNew.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Interface_EpetraNew.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_trans.obj `if test -f '$(srcdir)/testNonlinear_trans.C'; then $(CYGPATH_W) '$(srcdir)/testNonlinear_trans.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/testNonlinear_trans.C'; fi`
 
-testNonlinear_trans-Interface_EpetraNew.lo: $(srcdir)/Interface_EpetraNew.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_trans-Interface_EpetraNew.lo -MD -MP -MF "$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Tpo" -c -o testNonlinear_trans-Interface_EpetraNew.lo `test -f '$(srcdir)/Interface_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/Interface_EpetraNew.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Tpo" "$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Plo"; else rm -f "$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Interface_EpetraNew.C' object='testNonlinear_trans-Interface_EpetraNew.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Plo' tmpdepfile='$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.TPlo' @AMDEPBACKSLASH@
+testNonlinear_trans.lo: $(srcdir)/testNonlinear_trans.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_trans.lo -MD -MP -MF "$(DEPDIR)/testNonlinear_trans.Tpo" -c -o testNonlinear_trans.lo `test -f '$(srcdir)/testNonlinear_trans.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_trans.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_trans.Tpo" "$(DEPDIR)/testNonlinear_trans.Plo"; else rm -f "$(DEPDIR)/testNonlinear_trans.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear_trans.C' object='testNonlinear_trans.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_trans.Plo' tmpdepfile='$(DEPDIR)/testNonlinear_trans.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_trans-Interface_EpetraNew.lo `test -f '$(srcdir)/Interface_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/Interface_EpetraNew.C
-
-testNonlinear_trans-testNonlinear_trans.o: $(srcdir)/testNonlinear_trans.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_trans-testNonlinear_trans.o -MD -MP -MF "$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Tpo" -c -o testNonlinear_trans-testNonlinear_trans.o `test -f '$(srcdir)/testNonlinear_trans.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_trans.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Tpo" "$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Po"; else rm -f "$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear_trans.C' object='testNonlinear_trans-testNonlinear_trans.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Po' tmpdepfile='$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_trans-testNonlinear_trans.o `test -f '$(srcdir)/testNonlinear_trans.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_trans.C
-
-testNonlinear_trans-testNonlinear_trans.obj: $(srcdir)/testNonlinear_trans.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_trans-testNonlinear_trans.obj -MD -MP -MF "$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Tpo" -c -o testNonlinear_trans-testNonlinear_trans.obj `if test -f '$(srcdir)/testNonlinear_trans.C'; then $(CYGPATH_W) '$(srcdir)/testNonlinear_trans.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/testNonlinear_trans.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Tpo" "$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Po"; else rm -f "$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear_trans.C' object='testNonlinear_trans-testNonlinear_trans.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Po' tmpdepfile='$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_trans-testNonlinear_trans.obj `if test -f '$(srcdir)/testNonlinear_trans.C'; then $(CYGPATH_W) '$(srcdir)/testNonlinear_trans.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/testNonlinear_trans.C'; fi`
-
-testNonlinear_trans-testNonlinear_trans.lo: $(srcdir)/testNonlinear_trans.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -MT testNonlinear_trans-testNonlinear_trans.lo -MD -MP -MF "$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Tpo" -c -o testNonlinear_trans-testNonlinear_trans.lo `test -f '$(srcdir)/testNonlinear_trans.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_trans.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Tpo" "$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Plo"; else rm -f "$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testNonlinear_trans.C' object='testNonlinear_trans-testNonlinear_trans.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Plo' tmpdepfile='$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_trans-testNonlinear_trans.lo `test -f '$(srcdir)/testNonlinear_trans.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_trans.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_trans.lo `test -f '$(srcdir)/testNonlinear_trans.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_trans.C
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -829,6 +799,8 @@ uninstall-am: uninstall-info-am
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export.nox
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
