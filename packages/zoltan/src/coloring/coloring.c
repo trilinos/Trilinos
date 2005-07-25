@@ -38,7 +38,6 @@ int ParallelColoring(ZZ *, int, int *, int *, int *, int *, int *, int, int *, i
 int Conflict(ZZ *, int, int *, int *, int *, int *, int *, int *, int *, int *);
 int D1coloring(ZZ *, char, char, char, int, int, int, int *, int *, int **, int **, int *, int *);
 static int color_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
-                    int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
                     int, int, char, char, char, float *);
     
 /*****************************************************************************/
@@ -119,11 +118,10 @@ int Zoltan_Color(
                            zz->Debug_Proc);
 
   /* Initializations in case of early exit. */
-  *num_imp = -1;  
-  *num_exp = -1;  
+  *num_imp = -1;  /* not computed */
+  *num_exp = -1;  /* not computed */
     
   return color_fn(zz, num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
-                  num_exp, exp_gids, exp_lids, exp_procs, exp_to_part,
                   distance, ss, comm_pattern, color_order, color_method,
                   part_sizes);
 
@@ -141,12 +139,6 @@ int color_fn(
   int **imp_procs,      /* list of processors to import from */
   int **imp_to_part,    /* list of partitions to which imported objects are 
                            assigned.  */
-  int *num_exp,         /* number of objects to be exported */
-  ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
-  ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
-  int **exp_procs,      /* list of processors to export to */
-  int **exp_to_part,    /* list of partitions to which exported objects are
-                           assigned. */
   int distance,         /* Input: which coloring to perform;
                            currently only supports D1 and D2 coloring */
   int ss,               /* Superstep size: detemines how many vertices are
@@ -396,23 +388,25 @@ int D1coloring(
     nTotConflict = 0;
             
     /* Color boundary vertices */
-    do {
-        int *tp = visit;
-        memset(mark, 0xff, (gVtx+1) * sizeof(int));
-        ParallelColoring(zz, nConflict, global_ids, visit, xadj, adj, isbound, ss,
-                         &nColor, color, newcolored, mark, color_method, comm_pattern,
-                         rreqfrom, replies, sreqs, rreqs, stats);
-        nConflict = Conflict(zz, nConflict, global_ids, visit, xadj, xbadj, adj,
-                             color, conflicts, rand_key);
-        /* swap conflicts list with visit list so that if there are conflicts,
-           next coloring will color them */
-        visit = conflicts;
-        conflicts = tp;
-        confCont = 0;
-        MPI_Allreduce(&nConflict, &confCont, 1, MPI_INT, MPI_SUM, zz->Communicator);
-        nTotConflict += confCont;
-        ++nRound;
-    } while (confCont);
+    if (zz->Num_Proc >= 2) {
+        do {
+            int *tp = visit;
+            memset(mark, 0xff, (gVtx+1) * sizeof(int));
+            ParallelColoring(zz, nConflict, global_ids, visit, xadj, adj, isbound, ss,
+                             &nColor, color, newcolored, mark, color_method, comm_pattern,
+                             rreqfrom, replies, sreqs, rreqs, stats);
+            nConflict = Conflict(zz, nConflict, global_ids, visit, xadj, xbadj, adj,
+                                 color, conflicts, rand_key);
+            /* swap conflicts list with visit list so that if there are conflicts,
+               next coloring will color them */
+            visit = conflicts;
+            conflicts = tp;
+            confCont = 0;
+            MPI_Allreduce(&nConflict, &confCont, 1, MPI_INT, MPI_SUM, zz->Communicator);
+            nTotConflict += confCont;
+            ++nRound;
+        } while (confCont);
+    }
 
     if (get_times) times[4] = Zoltan_Time(zz->Timer);
     /* Color internal vertices after boundaries if boundary first ordering */
