@@ -52,7 +52,7 @@
     # be compared to the gold copy in baselineX.
     ARG-MASTER-PAIRS  = ml_inputfile1:baseline1, ml_inputfile2:baseline2,
                         ml_inputfile3:baseline3, ml_inputfile5:baseline5,
-                        ml_inputfile6:baseline6, ml_inputfile7:baseline7;
+                        ml_inputfile6:baseline6;
 }
 
 #
