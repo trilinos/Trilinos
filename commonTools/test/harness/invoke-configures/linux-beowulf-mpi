@@ -20,7 +20,7 @@ FFLAGS=-O3 \
 --enable-epetraext-inout \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
---disable-ifpack \
+--enable-ifpack \
 --enable-kokkos \
 --enable-komplex \
 --enable-loca \
