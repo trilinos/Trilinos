@@ -364,9 +364,6 @@ int Zoltan_PHG_Partition (
       ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_refine,
                         hg->comm->Communicator);
 
-if (hg->info == 9)
-  Zoltan_PHG_Plot (0, hg->nVtx, 1, hg->vindex, hg->vedge, NULL, "");
-
                           
     if (hgp->output_level >= PHG_DEBUG_LIST)     
       uprintf(hgc, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
