@@ -823,6 +823,17 @@ which means that checking will only be performed in a debug build
 
 \begin{enumerate}
 
+\item {\bf Initializing a \texttt{RefCountPtr<>} object to NULL}
+\label{rcpqs:apdx:qs:null}
+%
+{\small\begin{verbatim}
+RefCountPtr<C> c_ptr;
+\end{verbatim}}
+or
+{\small\begin{verbatim}
+RefCountPtr<C> c_ptr = null;
+\end{verbatim}}
+
 \item {\bf Creating a \texttt{RefCountPtr<>} object using \texttt{new}}
 \label{rcpqs:apdx:qs:new}
 %
@@ -837,17 +848,6 @@ RefCountPtr<C> c_ptr = rcp(new C);
 RefCountPtr<C> c_ptr = rcp(new C[n],DeallocArrayDelete<C>(),true);
 \end{verbatim}}
 %
-\item {\bf Initializing a \texttt{RefCountPtr<>} object to NULL}
-\label{rcpqs:apdx:qs:null}
-%
-{\small\begin{verbatim}
-RefCountPtr<C> c_ptr;
-\end{verbatim}}
-or
-{\small\begin{verbatim}
-RefCountPtr<C> c_ptr = null;
-\end{verbatim}}
-%
 \item {\bf Initializing a \texttt{RefCountPtr<>} object to an object
        \underline{not} allocated with \texttt{new}}
 \label{rcpqs:apdx:qs:not-new}
@@ -857,6 +857,13 @@ C              c;
 RefCountPtr<C> c_ptr = rcp(&c,false);
 \end{verbatim}}
 %
+\item {\bf Copy constructor (implicit casting)}
+%
+{\small\begin{verbatim}
+RefCountPtr<C>       c_ptr  = rcp(new C); // No cast
+RefCountPtr<A>       a_ptr  = c_ptr;      // Cast to base class
+RefCountPtr<const A> ca_ptr = a_ptr;      // Cast from non-const to const
+\end{verbatim}}
 %
 \item {\bf Representing constantness and non-constantness}
 %
@@ -884,14 +891,6 @@ const RefCountPtr<const C> c_ptr;
 %
 \end{enumerate}
 %
-\item {\bf Copy constructor (implicit casting)}
-%
-{\small\begin{verbatim}
-RefCountPtr<C>       c_ptr  = rcp(new C); // No cast
-RefCountPtr<A>       a_ptr  = c_ptr;      // Cast to base class
-RefCountPtr<const A> ca_ptr = a_ptr;      // Cast from non-const to const
-\end{verbatim}}
-%
 \end{enumerate}
 
 \item {\bf Reinitialization of \texttt{RefCountPtr<>} objects (using assignment operator)}
@@ -902,22 +901,22 @@ RefCountPtr<const A> ca_ptr = a_ptr;      // Cast from non-const to const
 %
 {\small\begin{verbatim}
 RefCountPtr<A> a_ptr;
-a_ptr = rcp(new C());
+a_ptr = rcp(new A());
 \end{verbatim}}
 %
 \item {\bf Resetting to null}
 %
 {\small\begin{verbatim}
-RefCountPtr<A> a_ptr = rcp(new C());
-a_ptr = null; // The C object will be deleted here
+RefCountPtr<A> a_ptr = rcp(new A());
+a_ptr = null; // The A object will be deleted here
 \end{verbatim}}
 %
 \item {\bf Assigning from a \texttt{RefCountPtr<>} object}
 %
 {\small\begin{verbatim}
 RefCountPtr<A> a_ptr1;
-RefCountPtr<A> a_ptr2 = rcp(new C());
-a_ptr1 = a_ptr2; // Now a_ptr1 and a_ptr2 point to same C object
+RefCountPtr<A> a_ptr2 = rcp(new A());
+a_ptr1 = a_ptr2; // Now a_ptr1 and a_ptr2 point to same A object
 \end{verbatim}}
 %
 \end{enumerate}
@@ -990,6 +989,20 @@ if( is_null(a_ptr) ) std::cout << "a_ptr is null!\n";
 %
 \item {\bf Implicit casting (see copy constructor above)}
 %
+\begin{enumerate}
+%
+\item {\bf Using copy constructor (see above)}
+%
+\item {\bf Using conversion function}
+%
+{\small\begin{verbatim}
+RefCountPtr<C>       c_ptr  = rcp(new C);                       // No cast
+RefCountPtr<A>       a_ptr  = rcp_implicit_cast<A>(c_ptr);      // To base
+RefCountPtr<const A> ca_ptr = rcp_implicit_cast<const A>(a_ptr);// To const
+\end{verbatim}}
+%
+\end{enumerate}
+%
 \item {\bf Casting away \texttt{const}}
 %
 {\small\begin{verbatim}
@@ -1023,6 +1036,8 @@ RefCountPtr<B1> b1_ptr2 = rcp_dynamic_cast<B1>(a_ptr2,true); // Throw std::bad_c
 \end{verbatim}}
 %
 \end{enumerate}
+
+\pagebreak
 
 \item {\bf Managing extra data}
 \label{rcpqs:apdx:qs:extra-data}
@@ -1155,7 +1170,7 @@ allocated with operator {}\texttt{new} into a
 \begin{commandment}\label{rcp:cmnd:converstion}
 Thou shall only cast between {}\texttt{Ref\-Count\-Ptr<>} objects
 using the default copy constructor (for implicit conversions) and the
-nonmember template functions
+nonmember template functions {}\texttt{rcp\-\_implicit\-\_cast<>(\-...)},
 {}\texttt{rcp\-\_static\-\_cast<>(\-...)},
 {}\texttt{rcp\-\_const\-\_cast<>(\-...)} and
 {}\texttt{rcp\-\_dynamic\-\_cast<>(\-...)}  (see item
