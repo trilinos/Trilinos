@@ -18,6 +18,9 @@
   --with-gnumake \
   --disable-default-packages \
   --disable-examples \
+  --enable-ifpack-examples \
+  --enable-amesos-examples \
+  --enable-ml-examples \
   --disable-tests \
   --enable-python \
   --enable-teuchos \

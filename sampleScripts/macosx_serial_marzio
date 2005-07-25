@@ -13,20 +13,24 @@
 /Users/marzio/Trilinos/$1/configure \
   -C \
   CC=gcc CXX=g++ F77=/usr/local/bin/fc \
+  CFLAGS="-O3" CXXFLAGS="-O3" FFLAGS="-O2" \
   --prefix=/Users/marzio/Trilinos/G4_SERIAL \
   --with-install="/usr/bin/install -p" \
   --with-gnumake \
   --disable-default-packages \
   --disable-examples \
+  --enable-ifpack-examples \
+  --enable-amesos-examples \
+  --enable-ml-examples \
   --disable-tests \
   --enable-python \
   --enable-teuchos \
   --enable-epetra \
   --enable-epetraext \
   --enable-triutils \
+  --enable-amesos \
   --enable-ifpack \
   --enable-aztecoo \
-  --enable-amesos \
   --enable-ml \
   --with-ldflags="-Wl,-multiply_defined -Wl,suppress" \
   --with-libs="-framework vecLib -lf2c"
