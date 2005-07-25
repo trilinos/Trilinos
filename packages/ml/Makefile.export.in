@@ -7,7 +7,8 @@ ML_LIBS = -L$(ML_BUILD_DIRECTORY)/src -lml \
                     $(TEUCHOS_LIBS) \
                     $(EPETRAEXT_LIBS) \
                     $(TRIUTILS_LIBS) \
-                    $(EPETRA_LIBS)
+                    $(EPETRA_LIBS) \
+                    @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ 
 
 ML_INCLUDES = $(ML_BUILD_LIB_INCLUDES) \
                   $(AZTECOO_INCLUDES)  \
