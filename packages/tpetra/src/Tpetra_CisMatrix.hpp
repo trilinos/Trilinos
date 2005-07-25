@@ -40,7 +40,6 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
-#include "../test/tpetra_test_util.hpp"
 
 namespace Tpetra {
 
@@ -284,7 +283,6 @@ namespace Tpetra {
     
 			// create secondary distribution if we need to
 			if(!data().haveSecondary_) {
-				/// --- start of new fix ---
 				// first create elementspace
 				std::vector<OrdinalType> secondaryIndices(data().indx_); // cpy ctr
 				std::sort(secondaryIndices.begin(), secondaryIndices.end()); // sort it so we can use unique
@@ -302,13 +300,17 @@ namespace Tpetra {
 				VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformS);
       
 				data().secondary_ = vectorspace;
-				/// --- end of new fix ---
 
-					data().haveSecondary_ = true;
-					if(isRowOriented())
-						data().haveCol_ = true;
-					else
-						data().haveRow_ = true;
+				data().haveSecondary_ = true;
+				if(isRowOriented())
+					data().haveCol_ = true;
+				else
+					data().haveRow_ = true;
+
+				// fix indx_ array to match the new distribution we just created
+				for(typename std::vector<OrdinalType>::iterator i = data().indx_.begin(); i != data().indx_.end(); i++) {
+					*i = elementspace.getLID(*i);
+				}
 			}
 
 			// initialize Kokkos::HbMatrix (Classical form)
@@ -398,52 +400,14 @@ namespace Tpetra {
 			if(errorcode) 
 				throw reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 
-			/*comm().barrier();
-			comm().barrier();
-			if(comm().getMyImageID() == 0)
-				cout << "^^ Before Import" << endl;
-			comm().barrier();
-			comm().barrier();
-			cout << x << endl;
-			comm().barrier();
-			comm().barrier();
-			cout << x2 << endl;*/
-
 			// do import on x if needed
 			if(data().haveImporter_)
 				x2.doImport(x, *(data().importer_), Insert);
-	
-			/*comm().barrier();
-			comm().barrier();
-			if(comm().getMyImageID() == 0)
-				cout << "^^ After Import" << endl;
-			comm().barrier();
-			comm().barrier();
-			cout << x << endl;
-			comm().barrier();
-			comm().barrier();
-			cout << x2 << endl;
-
-			comm().barrier();
-			comm().barrier();
-			if(comm().getMyImageID() == 0)
-				cout << "^^ Before Apply" << endl;
-			comm().barrier();
-			comm().barrier();
-			cout << y << endl;*/
 
 			// do Kokkos apply operation
 			errorcode = data().axy_.apply(data().kx_, data().ky_);
 			if(errorcode) 
 				throw reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
-
-			/*comm().barrier();
-			comm().barrier();
-			if(comm().getMyImageID() == 0)
-				cout << "^^ After Apply" << endl;
-			comm().barrier();
-			comm().barrier();
-			cout << y << endl;*/
 
 			// do export on y if needed
 			if(data().haveExporter_)

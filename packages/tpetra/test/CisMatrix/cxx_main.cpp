@@ -44,8 +44,6 @@
 
 // function prototype
 template <typename OrdinalType, typename ScalarType>
-int codeCoverage(bool verbose, bool debug, int myImageID, int numImages);
-template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages);
 
 int main(int argc, char* argv[]) {
@@ -73,133 +71,30 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-#ifdef TPETRA_MPI
-	if(verbose) cout << "MPI Startup: Image " << myImageID << " of " << numImages << " is alive." << endl;
-	MPI_Barrier(MPI_COMM_WORLD);
-#endif // TPETRA_MPI
-  
 	// change verbose to only be true on Image 0
 	verbose = (verbose && (myImageID == 0));
   
 	// start the testing
-	if(verbose) {
-		cout << "\n****************************************\n" 
-			 << "Starting CisMatrixTest..." << endl
-			 << Tpetra::Tpetra_Version() << endl
-			 << "****************************************\n";
-	}  
-  
-	// call test routines
+	if(verbose) outputStartMessage("CisMatrix");
 	int ierr = 0;
-	//ierr += codeCoverage<int, double>(verbose, debug, myImageID, numImages);
+  
+	// call the actual test routines
 	ierr += unitTests<int, double>(verbose, debug, myImageID, numImages);
 
 	// finish up
 #ifdef TPETRA_MPI
 	MPI_Finalize();
 #endif // TPETRA_MPI
-	if(verbose)
-		if(ierr == 0)
-			cout << "CisMatrix test successful." << endl;
-		else
-			cout << "CisMatrix test failed." << endl;
+	if(verbose) outputEndMessage("CisMatrix", (ierr == 0));
 	return(ierr);
 }
 
 //======================================================================
 template <typename OrdinalType, typename ScalarType>
-int codeCoverage(bool verbose, bool debug, int myImageID, int numImages) {
-	std::string OTName = Teuchos::OrdinalTraits<OrdinalType>::name();
-	std::string STName = Teuchos::ScalarTraits<ScalarType>::name();
-
-	if(verbose) cout << "Starting code coverage for CisMatrix<" << OTName << "," << STName << ">." << endl;
-
-	if(verbose) cout << "Constructors..." << endl;
-	// have to create ElementSpace and VectorSpace first
-#ifdef TPETRA_MPI
-	const Tpetra::MpiPlatform<OrdinalType, OrdinalType> platformE(MPI_COMM_WORLD);
-	const Tpetra::MpiPlatform<OrdinalType, ScalarType> platformV(MPI_COMM_WORLD);
-#else
-	const Tpetra::SerialPlatform <OrdinalType, OrdinalType> platformE;
-	const Tpetra::SerialPlatform <OrdinalType, ScalarType> platformV;
-#endif // TPETRA_MPI
-	Tpetra::ElementSpace<OrdinalType> elementspace(10, 0, platformE);
-	Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformV);
-	// constructor taking one VectorSpace
-	Tpetra::CisMatrix<OrdinalType, ScalarType> sm(vectorspace);
-	// constructor taking two VectorSpaces
-	Tpetra::CisMatrix<OrdinalType, ScalarType> sm2(vectorspace, vectorspace);
-	// copy constructor
-	Tpetra::CisMatrix<OrdinalType, ScalarType> smClone(sm);
-
-	// submissions
-	if(verbose) cout << "Submitting entries..." << endl;
-	if(vectorspace.isMyGlobalIndex(0)) {
-		sm.submitEntry(Tpetra::Replace, 0, 5, 1);
-		sm.submitEntry(Tpetra::Replace, 0, 2, 2);
-	}
-	if(vectorspace.isMyGlobalIndex(1)) {
-		sm.submitEntry(Tpetra::Replace, 1, 8, 0);
-		sm.submitEntry(Tpetra::Replace, 1, 6, 3);
-	}
-	if(vectorspace.isMyGlobalIndex(2)) {
-		sm.submitEntry(Tpetra::Replace, 2, 3, 2);
-	}
-	if(vectorspace.isMyGlobalIndex(3)) {
-		sm.submitEntry(Tpetra::Replace, 3, 4, 0);
-		sm.submitEntry(Tpetra::Replace, 3, 11, 1);
-		sm.submitEntry(Tpetra::Replace, 3, 1, 2);
-		sm.submitEntry(Tpetra::Add, 3, 1, 1);
-	}
-
-	if(debug) cout << sm << endl;
-
-	// scale
-	if(verbose) cout << "scale..." << endl;
-	sm.scale(2.0);
-	if(debug) cout << sm << endl;
-
-	// setAllToScalar
-	if(verbose) cout << "setAllToScalar..." << endl;
-	sm.setAllToScalar(6.0);
-	if(debug) cout << sm << endl;
-
-	// get attributes
-	if(verbose) cout << "getNumGlobalNonzeros..." << endl;
-	sm.getNumGlobalNonzeros(); // throw away output
-	if(verbose) cout << "getNumMyNonzeros..." << endl;
-	sm.getNumMyNonzeros(); // throw away output
-	if(verbose) cout << "getNumGlobalDiagonals..." << endl;
-	sm.getNumGlobalDiagonals(); // throw away output
-	if(verbose) cout << "getNumMyDiagonals..." << endl;
-	sm.getNumMyDiagonals(); // throw away output
-
-	// fillComplete
-	if(verbose) cout << "fillComplete..." << endl;
-	sm.fillComplete();
-  
-	// retrieve VectorSpaces
-	if(verbose) cout << "Retrieving VectorSpaces..." << endl;
-	if(verbose) cout << "sm.getPrimaryDist()" << endl;
-	sm.getPrimaryDist(); // throw away output
-	if(verbose) cout << "sm.getSecondaryDist()" << endl;
-	sm.getSecondaryDist(); // throw away output
-	if(verbose) cout << "sm.getDomainMap()" << endl;
-	sm.getDomainDist(); // throw away output
-	if(verbose) cout << "sm.getRangeMap()" << endl;
-	sm.getRangeDist(); // throw away output
-
-	// print
-	cout << sm << endl;
-  
-	if(verbose) cout << "Code coverage <" << OTName << ", " << STName << "> section finished." << endl;
-
-	return(0);
-}
-
-//======================================================================
-template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
+	std::string className = "CisMatrix<" + Teuchos::OrdinalTraits<OrdinalType>::name() 
+		+ "," + Teuchos::ScalarTraits<ScalarType>::name() + ">";
+	if(verbose) outputHeading("Stating unit tests for " + className);
 	int ierr = 0;
 	int returnierr = 0;
 
@@ -208,13 +103,17 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	OrdinalType const two = intToOrdinal<OrdinalType>(2);
 	OrdinalType const three = intToOrdinal<OrdinalType>(3);
 	OrdinalType const four = intToOrdinal<OrdinalType>(4);
-
-	if(verbose) cout << "Starting actual testing section..." << endl;
   
 	// do a simple matrix-vector multiplication
 	// the CisMatrix will be 4x4, and the vectors will be length 4
 
+	// ======================================================================
+	// code coverage section - just call functions, no testing
+	// ======================================================================
+
+	// ========================================
 	// create platform/es/vs we use
+	// ========================================
 	if(verbose) cout << "Creating and Initializing platform/es/ves..." << endl;
 #ifdef TPETRA_MPI
 	const Tpetra::MpiPlatform<OrdinalType, OrdinalType> platformO(MPI_COMM_WORLD);
@@ -231,8 +130,10 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 		cout << "Output of vectorspace:" << endl;
 		cout << vectorspace;
 	}
-  
+	
+	// ========================================
 	// create x vector and initialize values
+	// ========================================
 	// layout is: { 3 1 6 4 }
 	if(verbose) cout << "Creating and initializing x and y vectors..." << endl;
 	Tpetra::Vector<OrdinalType, ScalarType> x(vectorspace);
@@ -245,7 +146,9 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	if(vectorspace.isMyGlobalIndex(three))
 		x[vectorspace.getLocalIndex(three)] = intToScalar<ScalarType>(4);
 
+	// ========================================
 	// create y vector (don't need to initialize values)
+	// ========================================
 	Tpetra::Vector<OrdinalType, ScalarType> y(vectorspace);
 	if(debug) {
 		if(myImageID == 0) 
@@ -258,7 +161,9 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 		elementspace.comm().barrier();
 	}
 
+	// ========================================
 	// create A CisMatrix and initalize values
+	// ========================================
 	// Matrix layout is:
 	//  2  0  1  0
 	//  0  4  0  2
@@ -292,8 +197,15 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	// output current values
 	if(verbose) cout << "Finished creating & initializing." << endl;
 
-	// call apply
-	if(verbose) cout << "Calling apply..." << endl;
+	// ======================================================================
+	// actual testing section - affects return code
+	// ======================================================================
+
+	// ========================================
+	// test apply
+	// ========================================
+	if(verbose) cout << "Testing apply... ";
+	if(verbose && debug) cout << endl;
 	A.apply(x, y);
 	if(debug) {
 		if(myImageID == 0)
@@ -310,7 +222,6 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 		cout << y;
 	}
 
-	// check results
 	// layout of y should be: { 12 12 45 37 }
 	if(vectorspace.isMyGlobalIndex(zero)) {
 		if(y[vectorspace.getLocalIndex(zero)] != intToScalar<ScalarType>(12))
@@ -328,21 +239,25 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 		if(y[vectorspace.getLocalIndex(three)] != intToScalar<ScalarType>(37))
 			ierr++;
 	}
+	
+	if(verbose && debug) cout << "apply test ";
 	if(ierr != 0) {
-		returnierr += ierr;
-		ierr = 0;
+		if(verbose) cout << "failed" << endl;
 	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
 
+	// ========================================
 	// finish up
-	if(verbose)
+	// ========================================
+	elementspace.comm().barrier();
+	if(verbose) {
 		if(returnierr == 0)
-			cout << "Unit tests <" 
-			     << Teuchos::OrdinalTraits<OrdinalType>::name()  << ", " 
-			     << Teuchos::ScalarTraits<ScalarType>::name() << "> passed." << endl;
+			outputHeading("Unit tests for " + className + " passed.");
 		else
-			cout << "Unit Tests <" 
-			     << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
-			     << Teuchos::ScalarTraits<ScalarType>::name() << "> failed." << endl;
-  
+			outputHeading("Unit tests for " + className + " failed.");
+	}
 	return(returnierr);
 }
