@@ -1044,8 +1044,7 @@ Optional Features:
   --enable-libcheck       Check for third-party (non-Trilinos) libraries
                           including BLAS. LAPACK, and math library. If tests
                           or examples are enabled, this flag will be overriden
-                          and libchecks enabled. Default is no. (default is
-                          no)
+                          and libchecks enabled. (default is no)
   --enable-default-packages
 
   --enable-loca           Compile the loca libraries. Default is yes if part
@@ -1061,20 +1060,24 @@ Optional Features:
                           separately from other trilinos package tests
   --enable-tests          compile regression tests, will be ignored if
                           "--enable-nox-tests" is specified
-  --enable-nox-exampless  compile examples, over-rides the trilinos flag
+  --enable-nox-examples   compile examples, over-rides the trilinos flag
                           "--enable-examples" so that nox examples can be
                           built separately from other trilinos package
                           examples
   --enable-examples       compile examples, will be ignored if
                           "--enable-nox-examples" is specified
+  --enable-anasazi        Implicitly build anasazi support into the loca
+                          library. Can be overridden with
+                          --<en|dis>able-loca-anasazi.
+  --enable-loca-anasazi   Build anasazi support into the loca library.
   --enable-epetraext      Implicitly build epetraext support into the
                           noxepetra library. Can be overridden with
                           --<en|dis>able-nox-epetraext.
   --enable-nox-epetraext  Build epetraext support into the noxepetra library.
-  --enable-ml             Implicitly build epetraext support into the
-                          noxepetra library. Can be overridden with
+  --enable-ml             Implicitly build ml support into the noxepetra
+                          library. Can be overridden with
                           --<en|dis>able-nox-ml.
-  --enable-nox-ml         Build epetraext support into the noxepetra library.
+  --enable-nox-ml         Build ml support into the noxepetra library.
   --enable-python         Enable Python support. Default is no.
   --enable-shared[=PKGS]
                           build shared libraries [default=no]
@@ -1144,7 +1147,6 @@ Optional Packages:
                           will automatically be enabled. Defaults in NOX and
                           LOCA will be different depeneding on this flag.
                           Default is no.
-  --with-loca-anasazi     Compile anasazi support into libloca. Default is no.
   --with-loca-mf          Compile MF support into libloca. Default is no.
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
   --with-pic              try to use only PIC/non-PIC objects [default=use
@@ -4256,7 +4258,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4259:" \
+echo "$as_me:4261:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8643,27 +8645,56 @@ fi
 # ------------------------------------------------------------------------
 
 
-# Check whether --with-loca-anasazi or --without-loca-anasazi was given.
-if test "${with_loca_anasazi+set}" = set; then
-  withval="$with_loca_anasazi"
-  BUILD_LOCA_ANASAZI_SUPPORT=${withval}
+
+# Check whether --enable-anasazi or --disable-anasazi was given.
+if test "${enable_anasazi+set}" = set; then
+  enableval="$enable_anasazi"
+  ac_cv_implicit_use_anasazi=$enableval
 else
-  BUILD_LOCA_ANASAZI_SUPPORT=no
-
+  ac_cv_implicit_use_anasazi=no
 fi;
-echo "$as_me:$LINENO: checking whether we should build anasazi support into loca library" >&5
-echo $ECHO_N "checking whether we should build anasazi support into loca library... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${BUILD_LOCA_ANASAZI_SUPPORT}" >&5
-echo "${ECHO_T}${BUILD_LOCA_ANASAZI_SUPPORT}" >&6
+
+if test "Xyes" != "Xno"; then
+  ac_cv_loca_using_anasazi_default=$ac_cv_implicit_use_anasazi
+else
+  ac_cv_loca_using_anasazi_default=no
+fi
+
+# Check whether --enable-loca-anasazi or --disable-loca-anasazi was given.
+if test "${enable_loca_anasazi+set}" = set; then
+  enableval="$enable_loca_anasazi"
+  ac_cv_use_anasazi=$enableval
+else
+  ac_cv_use_anasazi=$ac_cv_loca_using_anasazi_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional anasazi dependent code in loca" >&5
+echo $ECHO_N "checking whether to build optional anasazi dependent code in loca... $ECHO_C" >&6
+
+if test "X$ac_cv_use_anasazi" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LOCA_ANASAZI 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
 
 
-if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
+
+if test "X$ac_cv_use_anasazi" = "Xyes"; then
   BUILD_LOCAANASAZI_TRUE=
   BUILD_LOCAANASAZI_FALSE='#'
 else
   BUILD_LOCAANASAZI_TRUE='#'
   BUILD_LOCAANASAZI_FALSE=
 fi
+
+
 
 
 # ------------------------------------------------------------------------
@@ -9809,7 +9840,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 9812 "configure"' > conftest.$ac_ext
+  echo '#line 9843 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -11266,11 +11297,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11269: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11300: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11273: \$? = $ac_status" >&5
+   echo "$as_me:11304: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -11509,11 +11540,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11512: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11543: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11516: \$? = $ac_status" >&5
+   echo "$as_me:11547: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -11569,11 +11600,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11572: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11603: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11576: \$? = $ac_status" >&5
+   echo "$as_me:11607: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13754,7 +13785,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 13757 "configure"
+#line 13788 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13852,7 +13883,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 13855 "configure"
+#line 13886 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -16046,11 +16077,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16049: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16080: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16053: \$? = $ac_status" >&5
+   echo "$as_me:16084: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -16106,11 +16137,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16109: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16140: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16113: \$? = $ac_status" >&5
+   echo "$as_me:16144: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -17467,7 +17498,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 17470 "configure"
+#line 17501 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -17565,7 +17596,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 17568 "configure"
+#line 17599 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18403,11 +18434,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18406: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18437: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:18410: \$? = $ac_status" >&5
+   echo "$as_me:18441: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -18463,11 +18494,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18466: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18497: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:18470: \$? = $ac_status" >&5
+   echo "$as_me:18501: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -20503,11 +20534,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:20506: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:20537: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:20510: \$? = $ac_status" >&5
+   echo "$as_me:20541: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -20746,11 +20777,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:20749: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:20780: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:20753: \$? = $ac_status" >&5
+   echo "$as_me:20784: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -20806,11 +20837,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:20809: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:20840: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:20813: \$? = $ac_status" >&5
+   echo "$as_me:20844: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -22991,7 +23022,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 22994 "configure"
+#line 23025 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -23089,7 +23120,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 23092 "configure"
+#line 23123 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -24391,7 +24422,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:24394: \"$ac_link\") >&5
+(eval echo $as_me:24425: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -24469,7 +24500,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:24472: \"$ac_link\") >&5
+(eval echo $as_me:24503: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -25470,7 +25501,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:25473: \"$ac_link\") >&5
+(eval echo $as_me:25504: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -25548,7 +25579,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:25551: \"$ac_link\") >&5
+(eval echo $as_me:25582: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -30040,7 +30071,7 @@ _ACEOF
 
 fi
 
-if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
+if test X${ac_cv_use_anasazi} = Xyes; then
 
   save_CPPFLAGS=$CPPFLAGS
   done=no
@@ -30370,11 +30401,6 @@ rm -f conftest.err conftest.$ac_ext
 echo "$as_me: error: Cannot find anasazi include directory containing AnasaziReturnType.hpp" >&2;}
    { (exit 1); exit 1; }; }
   fi
-
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_LOCA_ANASAZI 1
-_ACEOF
 
 fi
 

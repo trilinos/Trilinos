@@ -86,7 +86,7 @@
 /* Define if want to build libcheck */
 #undef HAVE_LIBCHECK
 
-/* define that anasazi is activated in loca */
+/* Define if want to build with anasazi enabled */
 #undef HAVE_LOCA_ANASAZI
 
 /* Define to 1 if you have the <map> header file. */
@@ -110,10 +110,10 @@
 /* define that Belos is activated in nox */
 #undef HAVE_NOX_BELOS
 
-/* Define if want to build with nox enabled */
+/* Define if want to build with epetraext enabled */
 #undef HAVE_NOX_EPETRAEXT
 
-/* Define if want to build with nox enabled */
+/* Define if want to build with ml enabled */
 #undef HAVE_NOX_ML_EPETRA
 
 /* Define to 1 if you have the `pow' function. */

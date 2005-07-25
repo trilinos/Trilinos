@@ -278,7 +278,7 @@ AC_C_INLINE
 # ------------------------------------------------------------------------
 #Sets the AC_DEFINE(HAVE_LIBCHECK)  and the ac variable ac_cv_use_libcheck
 
-TAC_ARG_ENABLE_FEATURE(libcheck, [Check for third-party (non-Trilinos) libraries including BLAS. LAPACK, and math library.  If tests or examples are enabled, this flag will be overriden and libchecks enabled. Default is no.], LIBCHECK, no)
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for third-party (non-Trilinos) libraries including BLAS. LAPACK, and math library.  If tests or examples are enabled, this flag will be overriden and libchecks enabled.], LIBCHECK, no)
 
 # ------------------------------------------------------------------------
 # Determine if nox is being built as part of Trilinos or as a stand-alone
@@ -469,7 +469,7 @@ REQUIRE_LIB_CHECK=no
   # See if examples are enabled
   AC_MSG_CHECKING(whether we should build the examples)
   AC_ARG_ENABLE(nox-examples,
-  [AC_HELP_STRING([--enable-nox-exampless],[compile examples, over-rides the trilinos flag "--enable-examples" so that nox examples can be built separately from other trilinos package examples])],
+  [AC_HELP_STRING([--enable-nox-examples],[compile examples, over-rides the trilinos flag "--enable-examples" so that nox examples can be built separately from other trilinos package examples])],
   [ADDON_EXAMPLES=$enableval],
   [
      AC_ARG_ENABLE(examples,
@@ -514,14 +514,7 @@ REQUIRE_LIB_CHECK=no
 # LOCA-Anasazi support
 # ------------------------------------------------------------------------
 
-AC_ARG_WITH(loca-anasazi,
-[AC_HELP_STRING([--with-loca-anasazi],[Compile anasazi support into libloca. Default is no.])],
-[BUILD_LOCA_ANASAZI_SUPPORT=${withval}],
-[BUILD_LOCA_ANASAZI_SUPPORT=no]
-)
-AC_MSG_CHECKING(whether we should build anasazi support into loca library)
-AC_MSG_RESULT([${BUILD_LOCA_ANASAZI_SUPPORT}])
-AM_CONDITIONAL(BUILD_LOCAANASAZI, test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(loca, anasazi, LOCA_ANASAZI, BUILD_LOCAANASAZI, yes, [Build anasazi support into the loca library.], [Implicitly build anasazi support into the loca library. Can be overridden with --<en|dis>able-loca-anasazi.])
 
 # ------------------------------------------------------------------------
 # LOCA-MF support (MF is NOT a Trilinos package - do not use the 
@@ -547,7 +540,7 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, epetraext, NOX_EPETRAEXT, BUILD_NOX_EPETRAEX
 # NOX-Epetra-ML support
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, ml, NOX_ML_EPETRA, BUILD_NOX_EPETRA_ML_SUPPORT, yes, [Build epetraext support into the noxepetra library.], [Implicitly build epetraext support into the noxepetra library.  Can be overridden with --<en|dis>able-nox-ml.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, ml, NOX_ML_EPETRA, BUILD_NOX_EPETRA_ML_SUPPORT, yes, [Build ml support into the noxepetra library.], [Implicitly build ml support into the noxepetra library.  Can be overridden with --<en|dis>able-nox-ml.])
 
 # ------------------------------------------------------------------------
 # NOX/LOCA-Python Check.
@@ -721,10 +714,9 @@ if test X${ADDON_belos} = Xyes; then
   AC_DEFINE(HAVE_NOX_BELOS,1,[define that Belos is activated in nox])
 fi
 
-if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
+if test X${ac_cv_use_anasazi} = Xyes; then
   TRILINOS_HEADER(anasazi,Anasazi_config.h,src)
   TRILINOS_HEADER(anasazi,AnasaziReturnType.hpp,src)
-  AC_DEFINE(HAVE_LOCA_ANASAZI,1,[define that anasazi is activated in loca])
 fi
 
 if test X${BUILD_PYTHON} = Xyes && test X${ADDON_epetra} = Xyes; then

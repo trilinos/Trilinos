@@ -88,7 +88,7 @@ AC_MSG_CHECKING(whether to build optional [$2] dependent code in [$1])
 
 if test "X$ac_cv_use_$2" != "Xno"; then
   AC_MSG_RESULT(yes)
-  AC_DEFINE([HAVE_$3],1,[Define if want to build with $1 enabled])
+  AC_DEFINE([HAVE_$3],1,[Define if want to build with $2 enabled])
 else
   AC_MSG_RESULT(no)
 fi
