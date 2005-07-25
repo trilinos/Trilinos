@@ -7,20 +7,13 @@
            Comm,
            Distributor,
            Directory,
+           DistObject,
            ElementSpace,
            BlockElementSpace,
            ImportExport,
            VectorSpace,
-           Vector;
+           Vector,
+           CisMatrix;
     ARGS = -v;
     COMM = SERIAL, MPI;
-}
-
-# Removing CisMatrix from MPI for now because it hangs the testharness.
-# (See Bugzilla #1468)
-
-(FRAMEWORK) {
-    DIRS = CisMatrix;
-    ARGS = -v;
-    COMM = SERIAL;
 }
