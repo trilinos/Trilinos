@@ -42,6 +42,7 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_PROC_SPLIT",                  NULL,  "INT",    0},  
   {"PHG_REDUCTION_LIMIT",             NULL,  "INT",    0},
   {"PHG_REDUCTION_METHOD",            NULL,  "STRING", 0},
+  {"PHG_REDUCTION_METHOD_FAST",       NULL,  "STRING", 0},
   {"PHG_REDUCTION_LOCAL_IMPROVEMENT", NULL,  "STRING", 0},
   {"PHG_VERTEX_VISIT_ORDER",          NULL,  "INT",    0},
   {"PHG_EDGE_SCALING",                NULL,  "INT",    0},
@@ -336,6 +337,7 @@ static int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_PROC_SPLIT", &hgp->proc_split);  
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT", &hgp->redl);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD", hgp->redm_str);
+  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD_FAST", hgp->redm_fast);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LOCAL_IMPROVEMENT", 
                                  hgp->redmo_str);  
   Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_VISIT_ORDER", &hgp->visit_order);
@@ -362,6 +364,7 @@ static int Zoltan_PHG_Initialize_Params(
   
   /* Set default values */
   strncpy(hgp->redm_str,            "ipm",   MAX_PARAM_STRING_LEN);
+  strncpy(hgp->redm_fast,           "l-ipm", MAX_PARAM_STRING_LEN);
   strncpy(hgp->redmo_str,           "no",    MAX_PARAM_STRING_LEN);  
   strncpy(hgp->coarsepartition_str, "gr0",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);

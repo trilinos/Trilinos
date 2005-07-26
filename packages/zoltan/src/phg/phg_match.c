@@ -23,10 +23,7 @@ extern "C" {
 static ZOLTAN_PHG_MATCHING_FN pmatching_local; /* function for local matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;   /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_col_ipm;   /* OLD column ipm, will be phased out */
-
-#ifdef ALT_IPM
 static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;   /* alternating ipm */
-#endif
 
 /*****************************************************************************/
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
@@ -54,10 +51,8 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
         hgp->matching = pmatching_col_ipm;          /* will be removed later */
     else if (!strcasecmp(hgp->redm_str, "ipm"))
         hgp->matching = pmatching_ipm;
-#ifdef ALT_IPM
     else if (!strcasecmp(hgp->redm_str, "alt-ipm"))
         hgp->matching = pmatching_alt_ipm;
-#endif
     else {
         exist = 0;
         hgp->matching = NULL;
@@ -462,12 +457,9 @@ static int pmatching_col_ipm(
     return ZOLTAN_OK;
 }
 
-#ifdef ALT_IPM
 /**************************************************************************
-  Alternating ipm method. Alternate between full ipm and c-ipm. 
+  Alternating ipm method. Alternate between full ipm and fast method. 
  *************************************************************************/
-#define DO_FULL_IPM 2         /* Do full ipm every 2 levels */
-                              /* This could be a parameter. */
 static int pmatching_alt_ipm(
   ZZ *zz,
   HGraph* hg,
@@ -476,26 +468,26 @@ static int pmatching_alt_ipm(
 )
 {
   int i;
-  char *str;
+  char redm_orig[MAX_PARAM_STRING_LEN];
   static int level=0;
 
-  ++level;  /* we don't have access to level data, so keep track this way */
+  strcpy(redm_orig, hgp->redm_str); /* save original parameter string */
 
-  str = hgp->redm_str; /* save original parameter string */
-
-  if (level%DO_FULL_IPM == 0) 
-    hgp->redm_str = "ipm";  // Need strcpy!
+  /* first level is 0 */
+  if ((level&1) == 0)  /* alternate even-odd levels */
+    strcpy(hgp->redm_str, hgp->redm_fast); /* fast method is c-ipm or l-ipm */
   else
-    hgp->redm_str = "c-ipm";
+    strcpy(hgp->redm_str, "ipm");  
 
   i = pmatching_ipm(zz, hg, match, hgp);
 
-  /* set redm parameter back to original (alt-ipm) */
-  hgp->redm_str = str;
+  ++level;  /* we don't have access to level data, so keep track this way */
+
+  /* set redm parameter back to original */
+  strcpy(hgp->redm_str, redm_orig);
   
   return i;
 }
-#endif
 
 /****************************************************************************
  * inner product matching
