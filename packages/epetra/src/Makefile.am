@@ -131,16 +131,16 @@ endif
 
 EXTRA_MPISMP_H = \
 	$(srcdir)/Epetra_MpiComm.h \
-	$(srcdir)/Epetra_MpiCommData.h \
-	$(srcdir)/Epetra_MpiSmpComm.h \
-	$(srcdir)/Epetra_MpiSmpCommData.h
+	$(srcdir)/Epetra_MpiCommData.h 
+#	$(srcdir)/Epetra_MpiSmpComm.h \
+#	$(srcdir)/Epetra_MpiSmpCommData.h
 
 
 EXTRA_MPISMP = \
 	$(srcdir)/Epetra_MpiComm.cpp \
-	$(srcdir)/Epetra_MpiCommData.cpp \
-	$(srcdir)/Epetra_MpiSmpComm.cpp \
-	$(srcdir)/Epetra_MpiSmpCommData.cpp
+	$(srcdir)/Epetra_MpiCommData.cpp 
+#	$(srcdir)/Epetra_MpiSmpComm.cpp \
+#	$(srcdir)/Epetra_MpiSmpCommData.cpp
 
 if HAVE_THREADS
 
