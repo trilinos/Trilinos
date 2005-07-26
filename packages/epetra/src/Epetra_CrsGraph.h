@@ -288,7 +288,12 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     \param NumIndices - (In) Number of Indices.
     \param Indices - (In) Global column indices to insert.
 
-    \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
+    \return Integer error code, set to 0 if successful. If the insertion requires
+     that additional memory be allocated for the row, a positive error code of 1
+     is returned. If the graph is a 'View'
+     mode graph, then a positive warning code of 2 will be returned if the 
+     specified row already exists. Returns 1 if underlying graph data is shared
+     by multiple graph instances.
 
     \pre IndicesAreGlobal()==true, StorageOptimized()==false
   */
@@ -323,7 +328,13 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     \param NumIndices - (In) Number of Indices.
     \param Indices - (In) Local column indices to insert.
 
-    \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
+    \return Integer error code, set to 0 if successful. If the insertion requires
+     that additional memory be allocated for the row, a positive error code of 1
+     is returned. If one or more of the indices is ignored (due to not being
+     contained in the column-map), then a positive warning code of 2 is returned.
+     If the graph is a 'View' mode graph, then a positive warning code of 3 will
+     be returned if the specified row already exists. Returns 1 if underlying
+     graph data is shared by multiple graph instances.
 
     \pre IndicesAreLocal()==true, StorageOptimized()==false
   */
