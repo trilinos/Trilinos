@@ -678,7 +678,7 @@ static void dgeev_interface(double **H, int n,
 	    &ldvl, vr, &ldvr, work, &lwork, &info);
   
   for( i=0 ; i<n ; i++ ) {
-    module = abs(Er[i]);
+    module = fabs(Er[i]);
     if( module>largest_A2 ) largest_A2 = module;
   }
 
