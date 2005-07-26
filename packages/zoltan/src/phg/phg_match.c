@@ -510,7 +510,31 @@ static int pmatching_alt_ipm(
 static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size, 
  int scale, int* send, int* reccnt, int* recsize, int* nRec, int** rec,
  MPI_Comm comm, int tag);
- 
+
+
+#define INNER_PRODUCT1(ARG)\
+  for (i = 0; i < count; r++, i++)\
+    for (j = hg->hindex [*r]; j < hg->hindex [*r + 1]; j++) {\
+      if (match[hg->hvertex[j]] == hg->hvertex[j])  {\
+        if (sums [hg->hvertex[j]] == 0.0)\
+          index [m++] = hg->hvertex[j];\
+        sums [hg->hvertex[j]] += (ARG);\
+      }\
+    }
+             
+#define INNER_PRODUCT2(ARG)\
+   for (i = hg->vindex[gno]; i < hg->vindex[gno+1]; i++)  {\
+     edge = hg->vedge[i];\
+     for (j = hg->hindex [edge]; j < hg->hindex [edge+1]; j++)  {\
+       if (match[hg->hvertex[j]] == hg->hvertex[j])    {\
+         if (sums [hg->hvertex[j]] == 0.0)\
+           index [m++] = hg->hvertex[j];\
+           sums [hg->hvertex[j]] += (ARG);\
+           }\
+         }\
+       }  
+
+       
 /****************************************************************************/
 /* Because this calculation is done in two locations it has been converted to
 ** a subroutine to assure it is always consistant. Inline is not yet legal! */
@@ -555,6 +579,8 @@ static int pmatching_ipm(
   int cFLAG, edge;                 /* column match only if user requested */
   static int development_timers[7] = {-1, -1, -1, -1, -1, -1, -1};
 
+int bobtemp=0;
+
 if (hgp->use_timers > 3)  {
   if (development_timers[0] < 0)
     development_timers[0] = Zoltan_Timer_Init(zz->ZTime, 0, "matching setup");
@@ -573,18 +599,26 @@ if (hgp->use_timers > 3)  {
 
   /* determine basic working parameters */
   /* ERIK: need to calculate nCandidates based on # of unmatched vertices */
-  nRounds     = hgc->nProc_x * ROUNDS_CONSTANT;
-  nCandidates = calc_nCandidates (hg->nVtx, hgc->nProc_x);
-  
+  nRounds     = cFLAG ? ROUNDS_CONSTANT : hgc->nProc_x * ROUNDS_CONSTANT;
+  nCandidates = cFLAG ? hg->nVtx/(2*ROUNDS_CONSTANT) 
+              : calc_nCandidates (hg->nVtx, hgc->nProc_x);
+    
   /* determine maximum global number of Vtx and Pins for storage allocation */
   /* determine initial sum of all candidates, nTotal for storage allocation */
-  MPI_Allreduce(&hg->nPins, &gmax_nPins, 1, MPI_INT, MPI_MAX, hgc->Communicator);
-  gmax_nVtx = nTotal = 0;
-  for (i = 0; i < hgc->nProc_x; i++)  {
-    count = hg->dist_x[i+1]-hg->dist_x[i];    /* number of vertices on proc i */
-    if (count > gmax_nVtx)
-       gmax_nVtx = count;
-    nTotal += calc_nCandidates (count, hgc->nProc_x);
+  if (cFLAG)  {
+    nTotal     = nCandidates;
+    gmax_nVtx  = hg->nVtx;
+    gmax_nPins = hg->nPins;
+  }
+  else  {
+    MPI_Allreduce(&hg->nPins, &gmax_nPins, 1, MPI_INT, MPI_MAX, hgc->Communicator);
+    gmax_nVtx = nTotal = 0;
+    for (i = 0; i < hgc->nProc_x; i++)  {
+      count = hg->dist_x[i+1]-hg->dist_x[i];    /* number of vertices on proc i */
+      if (count > gmax_nVtx)
+        gmax_nVtx = count;
+      nTotal += calc_nCandidates (count, hgc->nProc_x);
+    }
   }
                  
   /* allocate working and fixed sized array storage */
@@ -655,9 +689,13 @@ if (hgp->use_timers > 3)  {
 }  
   
     if (cFLAG)  {
-      for (nTotal = i = 0; i < hg->nVtx; i++)
+      j = 0;
+      for (i = round * nTotal; i < hg->nVtx && j < nTotal; i++)
         if (match[i] == i)
-          permute[nTotal++] = i;
+          permute[j++] = i;
+      nTotal = j;
+      if (nTotal == 0)
+         break;
       goto skip_phase1;
     } 
 
@@ -692,8 +730,11 @@ if (hgp->use_timers > 3)  {
     /* determine actual global number of candidates this round */
     MPI_Allreduce (&sendcnt, &nTotal, 1, MPI_INT, MPI_SUM, hgc->row_comm);     
 
-    if (nTotal == 0)
+    if (nTotal == 0)  {
+      if (hgp->use_timers > 3)
+         ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[1], hg->comm->Communicator);
       break;                            /* globally all work is done, so quit */
+      }
       
     /* communication to determine global size and displacements of rec buffer */
     MPI_Allgather (&sendsize, 1, MPI_INT, size, 1, MPI_INT, hgc->row_comm); 
@@ -732,15 +773,14 @@ if (hgp->use_timers > 3)  {
     
 skip_phase1:
 
-    /* Communication grouped candidates by processor, scramble them! */
+    /* Communication grouped candidates by processor, scramble them!      */
     /* Otherwise all candidates from proc column 0 will be matched first. */
-    if (hgc->nProc_x > 1 || cFLAG)  {
-      /* Future: Instead of Zoltan_Rand_Perm_Int, we could use 
-         Zoltan_PHG_Vertex_Visit_Order() to reorder the candidates
-         but that routine uses a local hg so won't work on the candidates. */
-      Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
-      Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));
-    }
+    /* Future: Instead of Zoltan_Rand_Perm_Int, we could use              */
+    /* Zoltan_PHG_Vertex_Visit_Order() to reorder the candidates          */
+    /* but that routine uses a local hg so won't work on the candidates.  */
+    Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
+    Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));
+
 
 if (hgp->use_timers > 3)
   ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[1], hg->comm->Communicator);
@@ -751,92 +791,41 @@ if (hgp->use_timers > 3)
     
 if (hgp->use_timers > 3)  {
   if (development_timers[2] < 0)
-    development_timers[2] = Zoltan_Timer_Init(zz->ZTime, 0, "matching kstart loop A");
+    development_timers[2] = Zoltan_Timer_Init(zz->ZTime, 0, "Matching kstart A");
   ZOLTAN_TIMER_START(zz->ZTime, development_timers[2], hg->comm->Communicator);
 }  
     
       sendsize = 0;                      /* position in send buffer */
       sendcnt = 0;                       /* count of messages in send buffer */
       s = send;                          /* start at send buffer origin */
-      for (k = kstart; k < nTotal; k++)   {   
-        r     = &edgebuf[permute[k]];     
-        gno   = *r++;                        /* gno of candidate vertex */
-        count = *r++;                        /* count of following hyperedges */
-        if (cFLAG) {
-          gno = permute[k];                  /* need to use next local vertex */
-          if (match[gno] != gno) continue;   /* Don't compute inner products
-                                                for already-matched candidates*/
+      for (k = kstart; k < nTotal; k++)   {  
+        if (!cFLAG) { 
+          r     = &edgebuf[permute[k]];     
+          gno   = *r++;                        /* gno of candidate vertex */
+          count = *r++;                        /* count of following hyperedges */
         }
+        else
+          gno = permute[k];                  /* need to use next local vertex */
                   
         /* now compute the row's nVtx inner products for kth candidate */
         m = 0;
-        if (!cFLAG && (hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
-          for (i = 0; i < count; r++, i++)
-            for (j = hg->hindex [*r]; j < hg->hindex [*r + 1]; j++) {
-              if (sums [hg->hvertex[j]] == 0.0) 
-                index [m++] = hg->hvertex[j];
-              sums [hg->hvertex[j]] += 1.0;
-            }
+        if      (!cFLAG && (hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
+          INNER_PRODUCT1(1.0)
         else if (!cFLAG && (hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
-          for (i = 0; i < count; r++, i++)
-            for (j = hg->hindex [*r]; j < hg->hindex [*r + 1]; j++) {
-              if (sums [hg->hvertex[j]] == 0.0)
-                index [m++] = hg->hvertex[j];
-              sums [hg->hvertex[j]] += hgp->vtx_scal[hg->hvertex[j]];
-            }
+          INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]])
         else if (!cFLAG && (hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
-          for (i = 0; i < count; r++, i++)
-            for (j = hg->hindex [*r]; j < hg->hindex [*r + 1]; j++)  {
-              if (sums [hg->hvertex[j]] == 0.0)
-                index [m++] = hg->hvertex[j];
-              sums [hg->hvertex[j]] += hg->ewgt [*r];
-            }
+          INNER_PRODUCT1(hg->ewgt[*r])
         else if (!cFLAG && (hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
-          for (i = 0; i < count; r++, i++)
-            for (j = hg->hindex [*r]; j < hg->hindex [*r + 1]; j++)  {
-              if (sums [hg->hvertex[j]] == 0.0)
-                index [m++] = hg->hvertex[j];
-              sums [hg->hvertex[j]] +=hgp->vtx_scal[hg->hvertex[j]]*hg->ewgt[*r];
-            }
-
-        else if (cFLAG && (hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
-          for (i = hg->vindex[gno]; i < hg->vindex[gno+1]; i++)  {
-            edge = hg->vedge[i];
-            for (j = hg->hindex [edge]; j < hg->hindex [edge+1]; j++) {
-              if (sums [hg->hvertex[j]] == 0.0)
-                index [m++] = hg->hvertex[j];
-              sums [hg->hvertex[j]] += 1.0;
-            }
-          }  
-        else if (cFLAG && (hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
-          for (i = hg->vindex[gno]; i < hg->vindex[gno+1]; i++)  {
-            edge = hg->vedge[i];
-            for (j = hg->hindex [edge]; j < hg->hindex [edge+1]; j++) {
-              if (sums [hg->hvertex[j]] == 0.0)
-                index [m++] = hg->hvertex[j];
-              sums [hg->hvertex[j]] += hgp->vtx_scal[hg->hvertex[j]];
-            }
-          }
-        else if (cFLAG && (hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
-          for (i = hg->vindex[gno]; i < hg->vindex[gno+1]; i++)  {
-            edge = hg->vedge[i];
-            for (j = hg->hindex [edge]; j < hg->hindex [edge+1]; j++) {
-              if (sums [hg->hvertex[j]] == 0.0)
-                index [m++] = hg->hvertex[j];
-              sums [hg->hvertex[j]] += hg->ewgt [edge];
-            }
-          }
-        else if (cFLAG && (hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
-          for (i = hg->vindex[gno]; i < hg->vindex[gno+1]; i++)  {
-            edge = hg->vedge[i];
-            for (j = hg->hindex [edge]; j < hg->hindex [edge+1]; j++) {
-              if (sums [hg->hvertex[j]] == 0.0)
-                index [m++] = hg->hvertex[j];
-              sums [hg->hvertex[j]] +=hgp->vtx_scal[hg->hvertex[j]]
-               *hg->ewgt[edge];
-            }
-          }
-    
+          INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[*r])
+                  
+        else if (cFLAG  && (hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
+          INNER_PRODUCT2(1.0)
+        else if (cFLAG  && (hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
+          INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]])
+        else if (cFLAG  && (hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
+          INNER_PRODUCT2(hg->ewgt [edge])
+        else if (cFLAG  && (hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
+          INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[edge])   
           
         /* if local vtx, remove self inner product (useless maximum) */
         if (cFLAG)
@@ -844,11 +833,11 @@ if (hgp->use_timers > 3)  {
         else if (VTX_TO_PROC_X (hg, gno) == hgc->myProc_x)
           sums [VTX_GNO_TO_LNO (hg, gno)] = 0.0;
          
-        /* count unmatched partial sums exceeding PSUM_THRESHOLD */   
+        /* count partial sums exceeding PSUM_THRESHOLD */   
         count = 0;
         for (i = 0; i < m; i++)  {
           lno = index[i];
-          if (match[lno] == lno  &&  sums[lno] > PSUM_THRESHOLD)
+          if (sums[lno] > PSUM_THRESHOLD)
             aux[count++] = lno;      /* save lno for significant partial sum */
           else {
             sums[lno] = 0.0;         /* clear unwanted entries */  
@@ -901,11 +890,11 @@ if (hgp->use_timers > 3)
         
 if (hgp->use_timers > 3)  {
   if (development_timers[6] < 0)
-    development_timers[6] = Zoltan_Timer_Init(zz->ZTime, 0, "Matching kstart loop B");
+    development_timers[6] = Zoltan_Timer_Init(zz->ZTime, 0, "Matching kstart B");
   ZOLTAN_TIMER_START(zz->ZTime, development_timers[6], hg->comm->Communicator);
 }           
-      
-            
+bobtemp++;
+                 
       /* synchronize all rows in this column to next kstart value */
       old_kstart = kstart;      
       MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
@@ -947,8 +936,7 @@ if (hgp->use_timers > 3)  {
 #ifdef RTHRTH        
         /* Not sure if this test makes any speedup ???, works without! */
         if (gno % hgc->nProc_y != hgc->myProc_y)
-          continue;                           /* this gno is not on this proc */
-        
+          continue;                           /* this gno is not on this proc */     
 #endif
 
         /* merge step: look for target gno from each row's data */
@@ -1030,18 +1018,18 @@ if (hgp->use_timers > 3)  {
           bestlno = -1;                    /* any negative value will do */
           for (i = 0; i < count; i++)  {
             lno =          *r++;
-            f   =  (float*) r++;       
-            if (cFLAG  && *f > bestsum  &&  match[lno] == lno)  {
+            f   =  (float*) r++;     
+            
+            if (cFLAG && *f > bestsum  &&  match[lno] == lno)  {
               bestsum = *f;
               bestlno = lno;
             }
-                                         
             if (!cFLAG && *f > bestsum  &&  cmatch[lno] == lno)  {
               bestsum = *f;
               bestlno = lno;
-            }
+            }            
           }
-
+         
           if (cFLAG  && match[gno] == gno && (bestsum > TSUM_THRESHOLD)) {
             match[bestlno] = gno;
             match[gno]     = bestlno;
@@ -1055,7 +1043,8 @@ if (hgp->use_timers > 3)  {
             *f = bestsum;
             master_procs[nmaster++] = VTX_TO_PROC_X (hg, gno);
           }
-        } 
+        }
+        
       if (cFLAG && hgc->nProc_y > 1)  {
         /* Broadcast what we matched so far */
         MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
@@ -1066,7 +1055,7 @@ if (hgp->use_timers > 3)
     }              /* DONE: kstart < nTotal loop */
       
     if (cFLAG)
-      break;      /* done, no more phases (3 or 4) or rounds */
+      continue;      /* no more phases (3 or 4), continue rounds */
         
 if (hgp->use_timers > 3)  {
   if (development_timers[3] < 0)
@@ -1189,7 +1178,8 @@ uprintf (hgc, "RTHRTH %d unmatched, %d external, %d local of %d\n",
  unmatched, global, local, hg->nVtx);
 }
 
-
+if (hgc->myProc_x==0 && hgc->myProc_y==0)
+  fprintf (stdout, "RTHRTH rounds %d, buffer loads %d\n", nRounds, bobtemp);
 
 if (0)
 {
