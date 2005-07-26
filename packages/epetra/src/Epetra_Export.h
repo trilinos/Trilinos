@@ -64,8 +64,8 @@ class Epetra_Export: public Epetra_Object {
          have GIDs that are owned by the calling processor, but at least the first element of this list is permuted.
 	 Even if subsequent elements are not permuted, they are included in this list.  The number of permuted elements
 	 is returned by NumPermutedIDs().  The list of elements (local IDs) in the source map that are permuted can be
-	 found in the list PermuteToLIDs().  The list of elements (local IDs) in the target map that are the new locations
-	 of the source elements can be found in the list PermuteFromLIDs().
+	 found in the list PermuteFromLIDs().  The list of elements (local IDs) in the target map that are the new locations
+	 of the source elements can be found in the list PermuteToLIDs().
     <li> All remaining elements of the target map correspond to global IDs that are owned by remote processors.  The number 
          of these elements is returned by NumRemoteIDs() and the list of these is returned by RemoteLIDs().
     </ol>
@@ -103,7 +103,7 @@ Suppose that the entries of this forcing vector are computed by integrating over
 
 \endverbatim
 
-In this case, PE 0 will make contributions to entries 0 through 3, PE 1 will make contributions to entries 3 through
+In this case, PE 0 will make contributions to entries 0 through 3, PE 1 will make contributions to entries 2 through
 6 and PE 2 will make contributions to entries 5 through 8.  A convenient way to compute these contributions is to create
 a forcing vector with replicated entries for the shared contributions.  Specifically the following SourceMap works for
 this scenario:

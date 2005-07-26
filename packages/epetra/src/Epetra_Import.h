@@ -64,8 +64,8 @@ class Epetra_Import: public Epetra_Object {
          have GIDs that are owned by the calling processor, but at least the first element of this list is permuted.
 	 Even if subsequent elements are not permuted, they are included in this list.  The number of permuted elements
 	 is returned by NumPermutedIDs().  The list of elements (local IDs) in the source map that are permuted can be
-	 found in the list PermuteToLIDs().  The list of elements (local IDs) in the target map that are the new locations
-	 of the source elements can be found in the list PermuteFromLIDs().
+	 found in the list PermuteFromLIDs().  The list of elements (local IDs) in the target map that are the new locations
+	 of the source elements can be found in the list PermuteToLIDs().
     <li> All remaining elements of the target map correspond to global IDs that are owned by remote processors.  The number 
          of these elements is returned by NumRemoteIDs() and the list of these is returned by RemoteLIDs().
     </ol>
