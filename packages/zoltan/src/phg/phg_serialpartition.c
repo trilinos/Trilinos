@@ -259,7 +259,8 @@ static int timer_total=-1, timer_cpart=-1, timer_gather=-1, timer_refine=-1;
     new_part = spart;
 
     for (i=0; i<hgp->num_coarse_iter; i++){
-
+        int savefmlooplimit=hgp->fm_loop_limit;
+        
       /* Overwrite worst partition with new candidate. */
       ierr = CoarsePartition(zz, shg, numPart, part_sizes, 
                new_part, hgp);
@@ -275,9 +276,11 @@ static int timer_total=-1, timer_cpart=-1, timer_gather=-1, timer_refine=-1;
         ZOLTAN_TIMER_START(zz->ZTime, timer_refine, phg->comm->Communicator);
       }
 
-      /* Refine new candidate. */
+      /* UVCUVC: Refine new candidate: only one pass is enough. */
+      hgp->fm_loop_limit = 1;
       Zoltan_PHG_Refinement(zz, shg, numPart, part_sizes, new_part, hgp);
-
+      hgp->fm_loop_limit = savefmlooplimit;
+      
       /* AKBAKBAKB stop refinement timer */
       if (hgp->use_timers > 1) {
         ZOLTAN_TIMER_STOP(zz->ZTime, timer_refine, phg->comm->Communicator);
@@ -390,7 +393,7 @@ int rootnpins, rootrank;
                        &rootnpins, &rootrank);
 
   if (hgc->myProc_y==rootrank)   /* only root of each column does this */
-    err = CoarsePartition(zz, hg, numPart, part_sizes, part, hgp); 
+    err = CoarsePartition(zz, hg, numPart, part_sizes, part, hgp);  
 
   MPI_Bcast(&err, 1, MPI_INT, rootrank, hgc->col_comm);
   if (!err)

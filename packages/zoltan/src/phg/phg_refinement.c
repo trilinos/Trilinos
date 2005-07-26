@@ -21,6 +21,8 @@ extern "C" {
 #include "phg.h"
 
 
+#define USE_SERIAL_REFINEMENT_ON_ONE_PROC
+
 
     /*
 #define _DEBUG        
@@ -67,12 +69,188 @@ static int refine_no (ZZ *zz,     /* Zoltan data structure */
 
 
 
+#ifdef USE_SERIAL_REFINEMENT_ON_ONE_PROC
+/****************************************************************************/
+/* Serial FM 2-way refinement, latest & greatest implementation.            */
+/****************************************************************************/
+static int serial_fm2 (ZZ *zz,
+    HGraph *hg,
+    int p,
+    float *part_sizes,
+    Partition part,
+    PHGPartParams *hgp,
+    float bal_tol)
+{
+int    i, j, vertex, edge, *cut[2], *locked = 0, *locked_list = 0, round = 0;
+double total_weight, part_weight[2], max_weight[2];
+double cutsize, best_cutsize, *gain = 0;
+HEAP   heap[2];
+int    steplimit;
+char   *yo="serial_fm2";
+
+double error, best_error;
+int    best_imbalance, imbalance;
+
+  if (p != 2) {
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "p!=2 not allowed for local_fm2.");
+     return ZOLTAN_FATAL;
+     }
+
+  if (hg->nEdge == 0)
+     return ZOLTAN_OK;
+
+  /* Calculate the weights in each partition and total, then maxima */
+  part_weight[0] = 0.0;
+  part_weight[1] = 0.0;
+  if (hg->vwgt)  {
+     for (i = 0; i < hg->nVtx; i++)
+        part_weight[part[i]] += hg->vwgt[i];
+     total_weight = part_weight[0] + part_weight[1];
+     }
+  else  {
+     total_weight = (double)(hg->nVtx);
+     for (i = 0; i < hg->nVtx; i++)
+        part_weight[part[i]] += 1.0;
+     }
+  max_weight[0] = total_weight * bal_tol * part_sizes[0];
+  max_weight[1] = total_weight * bal_tol * part_sizes[1];
+
+  if (!(cut[0]      = (int*)   ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
+   || !(locked      = (int*)   ZOLTAN_CALLOC    (hg->nVtx,  sizeof(int)))
+   || !(locked_list = (int*)   ZOLTAN_CALLOC    (hg->nVtx,  sizeof(int)))
+   || !(gain        = (double*)ZOLTAN_CALLOC    (hg->nVtx,  sizeof(double))) ) {
+         Zoltan_Multifree(__FILE__,__LINE__, 4, &cut[0], &locked, &locked_list,
+          &gain);
+         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+         return ZOLTAN_MEMERR;
+         }
+  cut[1] = &(cut[0][hg->nEdge]);
+
+  /* Initial calculation of the cut distribution and gain values */
+  for (i = 0; i < hg->nEdge; i++)
+     for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
+        (cut[part[hg->hvertex[j]]][i])++;
+  for (i = 0; i < hg->nVtx; i++)
+     for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)
+        {
+        edge = hg->vedge[j];
+        if (cut[part[i]][edge] == 1)
+           gain[i] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+        else if (cut[1-part[i]][edge] == 0)
+           gain[i] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
+        }
+
+  /* Initialize the heaps and fill them with the gain values */
+  Zoltan_Heap_Init(zz, &heap[0], hg->nVtx);
+  Zoltan_Heap_Init(zz, &heap[1], hg->nVtx);  
+  for (i = 0; i < hg->nVtx; i++)
+     Zoltan_Heap_Input(&heap[part[i]], i, gain[i]);
+  Zoltan_Heap_Make(&heap[0]);
+  Zoltan_Heap_Make(&heap[1]);
+
+  /* Initialize given partition as best partition */
+  best_cutsize = cutsize = Zoltan_HG_hcut_size_total(hg, part);
+  best_error = MAX (part_weight[0]-max_weight[0], part_weight[1]-max_weight[1]);
+  best_imbalance = (part_weight[0]>max_weight[0])||(part_weight[1]>max_weight[1]);
+  do {
+    int step = 0, no_better_steps = 0, number_locked = 0, best_locked = 0;
+    int sour, dest;
+    double akt_cutsize=best_cutsize;
+
+    round++;
+    cutsize = best_cutsize;
+    if (hgp->output_level > HG_DEBUG_LIST)
+      printf("ROUND %d:\nSTEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE\n",round);
+
+    steplimit = (hgp->fm_max_neg_move < 0) ? hg->nVtx : hgp->fm_max_neg_move;
+    /* steplimit = hg->nVtx/4;  Robsys previous choice */
+
+    while (step < hg->nVtx && no_better_steps < steplimit) {
+        step++;
+        no_better_steps++;
+
+        if (Zoltan_Heap_Empty(&heap[0]))
+           sour = 1;
+        else if (Zoltan_Heap_Empty(&heap[1]))
+           sour = 0;
+        else if (part_weight[0] > max_weight[0])
+           sour = 0;
+        else if (part_weight[1] > max_weight[1])
+           sour = 1;
+        else if (Zoltan_Heap_Max_Value(&heap[0])
+              >  Zoltan_Heap_Max_Value(&heap[1]))
+           sour = 0;
+        else
+           sour = 1;
+        dest = 1-sour;
+        vertex = Zoltan_Heap_Extract_Max(&heap[sour]);
+
+        locked[vertex] = part[vertex] + 1;
+        locked_list[number_locked++] = vertex;
+        akt_cutsize -= gain[vertex];
+
+        Zoltan_HG_move_vertex (hg, vertex, sour, dest, part, cut, gain, heap);
+        part_weight[sour] -= (hg->vwgt ? hg->vwgt[vertex] : 1.0);
+        part_weight[dest] += (hg->vwgt ? hg->vwgt[vertex] : 1.0);
+
+        error = MAX (part_weight[0]-max_weight[0],part_weight[1]-max_weight[1]);
+        imbalance = (part_weight[0]>max_weight[0])||(part_weight[1]>max_weight[1]);
+
+        if ( ( best_imbalance && (error < best_error))
+          || (!imbalance && (akt_cutsize < best_cutsize)))  {
+            best_error   = error;
+            best_imbalance = imbalance;
+            best_locked  = number_locked;
+            best_cutsize = akt_cutsize;
+            no_better_steps = 0;
+            }
+        if (hgp->output_level > HG_DEBUG_LIST+1)
+           printf ("%4d %6d %2d->%2d %7.2f %f %f\n", step, vertex, sour, dest,
+            error, akt_cutsize - cutsize, akt_cutsize);
+        }
+
+    /* rollback */
+     while (number_locked != best_locked) {
+        vertex = locked_list[--number_locked];
+        sour = part[vertex];
+        dest = locked[vertex] - 1;
+
+        Zoltan_HG_move_vertex (hg, vertex, sour, dest, part, cut, gain, heap);
+
+        part_weight[sour] -= (hg->vwgt ? hg->vwgt[vertex] : 1.0);
+        part_weight[dest] += (hg->vwgt ? hg->vwgt[vertex] : 1.0);
+        Zoltan_Heap_Input(&heap[dest], vertex, gain[vertex]);
+        locked[vertex] = 0;
+        }
+
+     /* only update data structures if we're going to do another pass */
+     if ((best_cutsize < cutsize) &&  (round < hgp->fm_loop_limit)) {         
+         while (number_locked) {
+             vertex = locked_list[--number_locked];
+             locked[vertex] = 0;
+             Zoltan_Heap_Input(&heap[part[vertex]], vertex, gain[vertex]);
+         }
+         
+         Zoltan_Heap_Make(&(heap[0]));
+         Zoltan_Heap_Make(&(heap[1]));
+     }
+  } while ((best_cutsize < cutsize) &&  (round < hgp->fm_loop_limit));
+
+  /* gain_check (hg, gain, part, cut); */
+  Zoltan_Multifree(__FILE__,__LINE__, 4, &cut[0], &locked, &locked_list, &gain);
+  Zoltan_Heap_Free(&heap[0]);
+  Zoltan_Heap_Free(&heap[1]);
+
+  return ZOLTAN_OK;
+}
+#endif
+
+
 /*****************************************************************************/
 /* 2-way Parallel FM refinement. No data movement between processors,
  * just relabeling of vertices. In each FM pass we only move in one
- * direction, from the heavier partition to the lighter one.
- */
-
+ * direction, from the heavier partition to the lighter one. */
+/*****************************************************************************/
 
 static void fm2_move_vertex_oneway(int v, HGraph *hg, Partition part, 
                                    float *gain, HEAP *heap,
@@ -171,114 +349,6 @@ static void fm2_move_vertex_oneway_nonroot(int v, HGraph *hg, Partition part,
 }
 
 
-#if 0
-
-typedef int  (*SelectFunc)(HEAP heap[2], double *weights, double *max_weight, double targetw0);
-
-static int fm2_select(HEAP heap[2], double *weights, double *max_weight, double targetw0)
-{
-    int from;
-    /* select a vertex with max gain; if possible */
-    if (Zoltan_Heap_Not_Empty(&heap[0]) && Zoltan_Heap_Not_Empty(&heap[1])) {
-        if (Zoltan_Heap_Max_Value(&heap[0])==Zoltan_Heap_Max_Value(&heap[1]))
-            from = (weights[0] < targetw0) ? 1 : 0;
-        else
-            from = (Zoltan_Heap_Max_Value(&heap[0])>Zoltan_Heap_Max_Value(&heap[1])) ? 0 : 1;
-    } else if (Zoltan_Heap_Empty(&heap[0])) {
-        if (Zoltan_Heap_Empty(&heap[1])) /* too bad both are empty */
-            return -1; /* nothing to select */
-        else
-            from = 1;
-    } else
-        from = 0;
-    return Zoltan_Heap_Extract_Max(&heap[from]);    
-}
-
-
-static void fm2_move_vertex(int v, HGraph *hg, Partition part, float *gain, 
-                            HEAP *heap, int *pins[2], int *lpins[2], 
-                            double *weights, double *lweights, 
-                            int *mark, int *adj)
-{
-    float oldgain=gain[v];
-    int   pno=part[v], vto=1-pno, adjsz=0, j, i;
-    
-    mark[v] = 1;
-    part[v] = vto;
-    weights[pno] -= (hg->vwgt ? hg->vwgt[v] : 1.0);
-    weights[vto] += (hg->vwgt ? hg->vwgt[v] : 1.0);
-    lweights[pno] -= (hg->vwgt ? hg->vwgt[v] : 1.0);
-    lweights[vto] += (hg->vwgt ? hg->vwgt[v] : 1.0);
-
-    for (j = hg->vindex[v]; j < hg->vindex[v+1]; j++) {
-        int n = hg->vedge[j];
-        float w = hg->ewgt ? hg->ewgt[n] : 1.0;
-    
-        --pins[pno][n];
-        --lpins[pno][n];
-#ifdef _DEBUG2
-        if (pins[pno][n] < 0)
-            errexit("move of %d makes pin[%d][%d]=%d", v, pno, n, pins[pno][n]);
-#endif
-
-        if (!pins[pno][n]) {  /* no pin in source part */ 
-            for (i = hg->hindex[n]; i < hg->hindex[n+1]; ++i) {
-                int u = hg->hvertex[i]; 
-                gain[u] -= w;
-                if (!mark[u]) {
-                    adj[adjsz++] = u;
-                    mark[u] = -1;
-		}
-	    }
-        } else if (pins[pno][n]==1) {
-            for (i = hg->hindex[n]; i < hg->hindex[n+1]; ++i) {
-                int u = hg->hvertex[i]; 
-                if (part[u]==pno) {
-                    gain[u] += w;
-                    if (!mark[u]) {
-                        adj[adjsz++] = u;
-                        mark[u] = -1;
-                    }
-                }
-            }
-        }
-
-        ++pins[vto][n];
-        ++lpins[vto][n];
-        if (pins[vto][n]==1) { /* now there is at least one pin here */
-            for (i = hg->hindex[n]; i < hg->hindex[n+1]; ++i) {
-                int u = hg->hvertex[i];
-                if (part[u]==pno) { 
-                    gain[u] += w;
-                    if (!mark[u]) {
-                        adj[adjsz++] = u;
-                        mark[u] = -1;
-                    }
-                }
-            }
-        } else if (pins[vto][n]==2)
-            for (i = hg->hindex[n]; i < hg->hindex[n+1]; ++i) {
-                int u = hg->hvertex[i];
-                if (part[u]==vto) { 
-                    gain[u] -= w;
-                    if (!mark[u]) {
-                        adj[adjsz++] = u;
-                        mark[u] = -1;
-                    }
-                }
-            }
-    }
-
-    gain[v] = -oldgain;    
-    for (i=0; i<adjsz; i++) {
-        int u=adj[i], p=part[u];
-        
-        mark[u] = 0;
-        if (Zoltan_Heap_Has_Elem(&heap[p], u))
-            Zoltan_Heap_Change_Value(&heap[p], u, gain[u]);
-    }
-}
-#endif
 
 static int refine_fm2 (ZZ *zz,
                        HGraph *hg,
@@ -308,15 +378,11 @@ static int refine_fm2 (ZZ *zz,
     
     ZOLTAN_TRACE_ENTER(zz, yo);
 
-    /*    SelectFunc select_func = fm2_select;*/
-    
-    
     if (p != 2) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "p!=2 not allowed for phg_fm2.");
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "p!=2 not allowed for refine_fm2.");
         ZOLTAN_TRACE_EXIT(zz, yo);
         return ZOLTAN_FATAL;
     }
-    
 
     /* return only if globally there is no edge or vertex */
     if (!hg->dist_y[hgc->nProc_y] || hg->dist_x[hgc->nProc_x] == 0) {
@@ -324,6 +390,12 @@ static int refine_fm2 (ZZ *zz,
         return ZOLTAN_OK;
     }
 
+#ifdef USE_SERIAL_REFINEMENT_ON_ONE_PROC
+    if (hgc->nProc==1) /* only one proc? use serial code */
+        return serial_fm2 (zz, hg, p, part_sizes, part, hgp, bal_tol);
+#endif
+
+    
     /* find the index of the proc in column group with 
        the most #nonzeros; it will be our root
        proc for computing moves since it has better 

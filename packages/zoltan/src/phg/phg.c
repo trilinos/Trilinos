@@ -390,7 +390,7 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->kway = 0;
   hgp->fm_loop_limit = 10;
   hgp->fm_max_neg_move = 250;  
-  hgp->num_coarse_iter = 10;
+  hgp->num_coarse_iter = (zz->Num_Proc<10) ? 1 + 9/zz->Num_Proc : 1;
   hgp->part_sizes = part_sizes;
   hgp->EdgeSizeThreshold = 0.5;  
 
