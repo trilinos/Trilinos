@@ -120,21 +120,20 @@ void ConvertVbrToCrs( Epetra_VbrMatrix* VbrIn, Epetra_CrsMatrix*& CrsOut ) {
 	}
       
 #if 0
-      assert( CrsOut->InsertGlobalValues( MyGlobalElements[LocalRow], 
-					      NumIndices, 
-					      &MatrixValues[0],
-					      &GlobalColumnIndices[0] )==0);
+      if ( CrsOut->InsertGlobalValues( MyGlobalElements[LocalRow], 
+				      NumIndices, 
+				      &MatrixValues[0],
+				      &GlobalColumnIndices[0] )!=0)abort();
 #else
-      assert( CrsOut->InsertMyValues( LocalRow, 
-					      NumIndices, 
-					      &MatrixValues[0],
-					      &LocalColumnIndices[0] )== 0 ) ;
+      if ( CrsOut->InsertMyValues( LocalRow, 
+				      NumIndices, 
+				      &MatrixValues[0],
+				      &LocalColumnIndices[0] )!= 0) abort();
 #endif
       
       
     }
     CrsOut->FillComplete();
-
 }
 
 //
@@ -1985,6 +1984,11 @@ int checkEarlyDelete(Epetra_Comm& comm, bool verbose)
 
     EPETRA_TEST_ERR( A->EndSubmitEntries(), ierr);
   }
+
+  //A call to BeginReplaceMyValues should produce an error at this
+  //point, since IndicesAreLocal should be false.
+  int errcode = A->BeginReplaceMyValues(0, 0, 0);
+  if (errcode == 0) EPETRA_TEST_ERR(-1, ierr);
 
   EPETRA_TEST_ERR( A->FillComplete(), ierr);
 
