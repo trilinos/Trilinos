@@ -207,8 +207,42 @@ int main(int argc, char *argv[])
   }
 
   
+  /////////////////////////////////////////////////////////////////////
+  // Now test that A.Multiply(false, x, y) produces the same result
+  // as y.Multiply('N','N', 1.0, A, x, 0.0).
+  /////////////////////////////////////////////////////////////////////
 
+  N = 10;
+  int M = 10;
+  LDA = N;
+  Epetra_SerialDenseMatrix smallA(N, M, false);
+  Epetra_SerialDenseMatrix x(N, 1, false);
+  Epetra_SerialDenseMatrix y1(N, 1, false);
+  Epetra_SerialDenseMatrix y2(N, 1, false);
 
+  for(i=0; i<N; ++i) {
+    for(j=0; j<M; ++j) {
+      smallA(i,j) = 1.0*i+2.0*j+1.0;
+    }
+    x(i,0) = 1.0;
+    y1(i,0) = 0.0;
+    y2(i,0) = 0.0;
+  }
+
+  int err1 = smallA.Multiply(false, x, y1);
+  int err2 = y2.Multiply('N','N', 1.0, smallA, x, 0.0);
+  if (err1 != 0 || err2 != 0) {
+    if (verbose) cout << "err in Epetra_SerialDenseMatrix::Multiply"<<endl;
+    return(err1+err2);
+  }
+
+  for(i=0; i<N; ++i) {
+    if (y1(i,0) != y2(i,0)) {
+      if (verbose) cout << "different versions of Multiply don't match."<<endl;
+      return(-99);
+    }
+  }
+ 
   /////////////////////////////////////////////////////////////////////
   // Now test for larger system, both correctness and performance.
   /////////////////////////////////////////////////////////////////////

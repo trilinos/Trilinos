@@ -205,6 +205,16 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
 							 const Epetra_SerialDenseMatrix& B,
 							 double ScalarThis);
 
+  //! Matrix-Vector multiplication, y = A*x, where 'this' == A.
+  /* This method is intended to imitate the semantics of the matrix-vector
+    multiplication provided by Epetra's sparse matrices. The 'vector' arguments
+    are actually matrices; this method will return an error if the
+    dimensions of 'x' are not compatible. 'y' will be reshaped if necessary.
+  */
+  int Multiply(bool transA,
+               const Epetra_SerialDenseMatrix& x,
+               Epetra_SerialDenseMatrix& y);
+
   //! Matrix-Matrix multiplication with a symmetric matrix A.
   /*! If SideA = 'L', compute \e this = ScalarThis*\e this + ScalarAB*A*B.
       If SideA = 'R', compute \e this = ScalarThis*\e this + ScalarAB*B*A.

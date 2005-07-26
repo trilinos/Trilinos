@@ -413,6 +413,42 @@ int  Epetra_SerialDenseMatrix::Multiply (char TransA, char TransB, double Scalar
 
   return(0);
 }
+
+//=========================================================================
+int  Epetra_SerialDenseMatrix::Multiply (bool transA,
+                                         const Epetra_SerialDenseMatrix& x,
+                                         Epetra_SerialDenseMatrix& y)
+{
+  int A_nrows = M();
+  int x_nrows = x.M();
+  int y_nrows = y.M();
+  int A_ncols = N();
+  int x_ncols = x.N();
+  int y_ncols = y.N();
+
+  if (transA) {
+    if (x_nrows != A_nrows) EPETRA_CHK_ERR(-1);
+    if (y_ncols != x_ncols || y_nrows != A_ncols) y.Reshape(A_ncols, x_ncols);
+  }
+  else {
+    if (x_nrows != A_ncols) EPETRA_CHK_ERR(-1);
+    if (y_ncols != x_ncols || y_nrows != A_nrows) y.Reshape(A_nrows, x_ncols);
+  }
+
+  double scalar0 = 0.0;
+  double scalar1 = 1.0;
+
+  int err = 0;
+  if (transA) {
+    err = y.Multiply('T', 'N', scalar1, *this, x, scalar0);
+  }
+  else {
+    err = y.Multiply('N', 'N', scalar1, *this, x, scalar0);
+  }
+
+  return(0);
+}
+
 //=========================================================================
 int  Epetra_SerialDenseMatrix::Multiply (char SideA, double ScalarAB, 
 				      const Epetra_SerialSymDenseMatrix& A, 
