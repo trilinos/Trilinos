@@ -19,7 +19,10 @@ extern "C" {
 #include <stdlib.h>
 #include "phg.h"
 
-
+    /*
+#define _DEBUG
+    */
+    
 static ZOLTAN_PHG_MATCHING_FN pmatching_local; /* function for local matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;   /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_col_ipm;   /* OLD column ipm, will be phased out */
@@ -71,7 +74,7 @@ int Zoltan_PHG_Matching (
   PHGPartParams *hgp)
 {
 float *old_ewgt = NULL, *new_ewgt = NULL;
-int   err = ZOLTAN_OK;
+int   ierr = ZOLTAN_OK;
 char  *yo = "Zoltan_PHG_Matching";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -79,11 +82,8 @@ char  *yo = "Zoltan_PHG_Matching";
   /* Scale the weight of the edges */
   if (hgp->edge_scaling) {
      if (hg->nEdge && !(new_ewgt = (float*) 
-                      ZOLTAN_MALLOC (hg->nEdge * sizeof(float)))) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-        err = ZOLTAN_MEMERR;
-        goto End;
-     }
+                      ZOLTAN_MALLOC (hg->nEdge * sizeof(float))))
+         MEMORY_ERROR;
  
      Zoltan_PHG_Scale_Edges (zz, hg, new_ewgt, hgp);
      old_ewgt = hg->ewgt;
@@ -91,13 +91,48 @@ char  *yo = "Zoltan_PHG_Matching";
   }
 
   /* Create/update scale vector for vertices for inner product */
-  if (hgp->vtx_scaling) {
+  if (hgp->vtx_scaling) 
      Zoltan_PHG_Scale_Vtx (zz, hg, hgp);
-  }
-
+  
+  
   /* Do the matching */
-  if (hgp->matching) 
-     err = hgp->matching (zz, hg, match, hgp);
+  if (hgp->matching) {
+      int v=-1, i, *ldeg, *deg;
+#ifdef _DEBUG
+      int cnt=0;
+#endif
+
+      if (hg->nVtx && !(ldeg = (int*)  ZOLTAN_MALLOC(2*hg->nVtx*sizeof(int))))
+        MEMORY_ERROR;
+      deg = ldeg + hg->nVtx;
+      /* first match isolated vertices.
+         UVCUVC: right now we match in the natural order,
+         I don't think we need random matching but if needed
+         we can match in random order */
+      for (i=0; i<hg->nVtx; ++i)
+          ldeg[i] = hg->vindex[i+1] - hg->vindex[i];
+      MPI_Allreduce(ldeg, deg, hg->nVtx, MPI_INT, MPI_SUM, hg->comm->col_comm);
+      
+      for (i=0; i<hg->nVtx; ++i)
+          if (!deg[i]) { /* isolated vertex */
+#ifdef _DEBUG
+              ++cnt;
+#endif
+              if (v==-1)
+                  v = i;
+              else {
+                  match[v] = i;
+                  match[i] = v;
+                  v = -1;
+              }
+          }
+#ifdef _DEBUG
+      if (cnt)
+          uprintf(hg->comm, "Local H(%d, %d, %d) and there were %d isolated vertices\n", hg->nVtx, hg->nEdge, hg->nPins, cnt);           
+#endif
+      ZOLTAN_FREE(&ldeg);
+      ierr = hgp->matching (zz, hg, match, hgp);
+  }
 
 End: 
 
@@ -107,7 +142,7 @@ End:
 
   ZOLTAN_FREE ((void**) &new_ewgt);
   ZOLTAN_TRACE_EXIT (zz, yo);
-  return err;
+  return ierr;
 }
 
 
