@@ -555,7 +555,6 @@ static int pmatching_ipm(
   int cFLAG, edge;                 /* column match only if user requested */
   static int development_timers[7] = {-1, -1, -1, -1, -1, -1, -1};
 
-
 if (hgp->use_timers > 3)  {
   if (development_timers[0] < 0)
     development_timers[0] = Zoltan_Timer_Init(zz->ZTime, 0, "matching setup");
@@ -763,8 +762,11 @@ if (hgp->use_timers > 3)  {
         r     = &edgebuf[permute[k]];     
         gno   = *r++;                        /* gno of candidate vertex */
         count = *r++;                        /* count of following hyperedges */
-        if (cFLAG)
+        if (cFLAG) {
           gno = permute[k];                  /* need to use next local vertex */
+          if (match[gno] != gno) continue;   /* Don't compute inner products
+                                                for already-matched candidates*/
+        }
                   
         /* now compute the row's nVtx inner products for kth candidate */
         m = 0;
@@ -848,8 +850,9 @@ if (hgp->use_timers > 3)  {
           lno = index[i];
           if (match[lno] == lno  &&  sums[lno] > PSUM_THRESHOLD)
             aux[count++] = lno;      /* save lno for significant partial sum */
-          else
+          else {
             sums[lno] = 0.0;         /* clear unwanted entries */  
+          }
         }     
         if (count == 0)
           continue;
