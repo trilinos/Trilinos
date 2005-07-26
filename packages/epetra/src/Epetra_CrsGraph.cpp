@@ -212,11 +212,21 @@ int Epetra_CrsGraph::InsertGlobalIndices(int Row, int NumIndices, int* Indices) 
 //==============================================================================
 int Epetra_CrsGraph::InsertMyIndices(int Row, int NumIndices, int* Indices) {
 
-  if(IndicesAreGlobal()) 
+  if(IndicesAreGlobal()) {
     EPETRA_CHK_ERR(-2); // Cannot insert local indices into a global graph
+  }
   if(IndicesAreContiguous()) 
     EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and newed
-  SetIndicesAreLocal(true);
+
+  if (CrsGraphData_->HaveColMap_) {
+    SetIndicesAreLocal(true);
+  }
+  else {
+     if (!IndicesAreLocal()) {
+       EPETRA_CHK_ERR(-4);
+     }
+  }
+
   EPETRA_CHK_ERR(InsertIndices(Row, NumIndices, Indices));
 
   if(CrsGraphData_->ReferenceCount() > 1)
