@@ -168,10 +168,6 @@ int main(int argc, char *argv[])
   MLList.set("coarse: type","Jacobi");
 #endif
 
-  MLList.set("energy minimization: enable", true);
-  MLList.set("energy minimization: type", 3);
-  MLList.set("aggregation: damping factor", 0.0);
-
   // Creates the preconditioning object. We suggest to use `new' and
   // `delete' because the destructor contains some calls to MPI (as
   // required by ML and possibly Amesos). This is an issue only if the
