@@ -517,6 +517,8 @@ int Epetra_VbrMatrix::BeginReplaceGlobalValues(int BlockRow, int NumBlockEntries
 //==========================================================================
 int Epetra_VbrMatrix::BeginReplaceMyValues(int BlockRow, int NumBlockEntries, int *BlockIndices) {
 
+  if (!Graph_->IndicesAreLocal()) EPETRA_CHK_ERR(-1);
+
   bool IndicesAreLocal = true;
   EPETRA_CHK_ERR(BeginReplaceValues(BlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal));
   return(0);
