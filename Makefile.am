@@ -64,12 +64,17 @@ EXTRA_DIST = \
 	sampleScripts/linux_serial_codecov \
 	sampleScripts/macosx_mpi_paul sampleScripts/macosx_serial_paul \
 	sampleScripts/macosx_serial_samt5980 \
+	sampleScripts/macosx_mpi_marzio \
+	sampleScripts/macosx_serial_marzio \
+	sampleScripts/linux_mpi_marzio \
+	sampleScripts/dec_mpi_marzio \
 	sampleScripts/scyld_mpi_beowulf sampleScripts/sgi64_mpi_atlantis \
 	sampleScripts/sgi64_serial_atlantis \
 	sampleScripts/solaris_mpi_conejo sampleScripts/solaris_serial_paul \
 	sampleScripts/README config/AutotoolsVersionInfo \
 	sampleScripts/cygwin_icl.pl sampleScripts/stratus_ar.pl \
-	doc/Tutorial/README RELEASE_NOTES
+	doc/Tutorial/README RELEASE_NOTES \
+	doc/check_installation.txt
 
 ## #######################################################################
 ## Tools in the auxillary directory 
@@ -127,3 +132,29 @@ runtests-mpi :
   --category=FRAMEWORK \
   --output-dir=@abs_top_builddir@/runtests-results
 
+run-examples: all-am
+	@if [ -d packages/epetra    ]; then cd packages/epetra;    make run-examples; fi
+	@if [ -d packages/epetraext ]; then cd packages/epetraext; make run-examples; fi
+	@if [ -d packages/aztecoo   ]; then cd packages/aztecoo;   make run-examples; fi
+	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    make run-examples; fi
+	@if [ -d packages/amesos    ]; then cd packages/amesos;    make run-examples; fi
+	@if [ -d packages/ml        ]; then cd packages/ml;        make run-examples; fi
+	@if [ -d packages/didasko   ]; then cd packages/didasko;   make run-examples; fi
+
+run-tests: all-am
+	@if [ -d packages/epetra    ]; then cd packages/epetra;    make run-tests; fi
+	@if [ -d packages/epetraext ]; then cd packages/epetraext; make run-tests; fi
+	@if [ -d packages/aztecoo   ]; then cd packages/aztecoo;   make run-tests; fi
+	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    make run-tests; fi
+	@if [ -d packages/amesos    ]; then cd packages/amesos;    make run-tests; fi
+	@if [ -d packages/ml        ]; then cd packages/ml;        make run-tests; fi
+	@if [ -d packages/didasko   ]; then cd packages/didasko;   make run-tests; fi
+
+run-pyexamples: all-am
+	@if [ -d packages/epetra    ]; then cd packages/epetra;    make run-pyexamples; fi
+	@if [ -d packages/epetraext ]; then cd packages/epetraext; make run-pyexamples; fi
+	@if [ -d packages/aztecoo   ]; then cd packages/aztecoo;   make run-pyexamples; fi
+	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    make run-pyexamples; fi
+	@if [ -d packages/amesos    ]; then cd packages/amesos;    make run-pyexamples; fi
+	@if [ -d packages/ml        ]; then cd packages/ml;        make run-pyexamples; fi
+	@if [ -d packages/didasko   ]; then cd packages/didasko;   make run-pyexamples; fi
