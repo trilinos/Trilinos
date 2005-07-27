@@ -2,7 +2,7 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK) {
+(FRAMEWORK, EpetraExtTests) {
     DIRS = MatrixMatrix,
            Permutation,
            Transpose,
@@ -13,9 +13,14 @@
 
 # Removed MapColoring & MatrixMatrix from MPI for now because they always seem to hang.
 
-(FRAMEWORK) {
+(FRAMEWORK, EpetraExtTests) {
     DIRS = MatrixMatrix,
            MapColoring;
     ARGS = -v;
     COMM = SERIAL;
+}
+
+(FRAMEWORK, EpetraExtPyExamples) {
+        DIRS = ../python/example;
+        COMM = SERIAL, MPI(1);
 }
