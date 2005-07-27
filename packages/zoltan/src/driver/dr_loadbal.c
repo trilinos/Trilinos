@@ -442,10 +442,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   int num_lid_entries;           /* Number of array entries in a local ID.   */
 
   int i;                         /* Loop index                               */
-  int ierr;
-  int *order;			 /* Ordering vector(s) */
-  ZOLTAN_ID_PTR order_gids = NULL;  /* List of all gids for ordering */
-  ZOLTAN_ID_PTR order_lids = NULL;  /* List of all lids for ordering */
+  int ierr=ZOLTAN_OK;
   double stime = 0.0, mytime = 0.0, maxtime = 0.0;
   char fname[128];
 
@@ -567,7 +564,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
         printf("DRIVER %d DIM: %d BOX: (%e,%e,%e) -- (%e,%e,%e)\n",
                Proc, ndim, xmin, ymin, zmin, xmax, ymax, zmax);
     }
-
+    
     /* Clean up */
     Zoltan_LB_Free_Part(&import_gids, &import_lids,
                         &import_procs, &import_to_part);
@@ -576,11 +573,26 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   }
 
   if (Driver_Action & 2){
-    /* Only do ordering if this was specified in the driver input file */
-    order = (int *) malloc (2*(mesh->num_elems) * sizeof(int));
-    order_gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
-    order_lids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
+      /* Only do ordering if this was specified in the driver input file */
+      
+      int *order = NULL;		/* Ordering vector(s) */
+      ZOLTAN_ID_PTR order_gids = NULL;  /* List of all gids for ordering */
+      ZOLTAN_ID_PTR order_lids = NULL;  /* List of all lids for ordering */
 
+      order = (int *) malloc (2*(mesh->num_elems) * sizeof(int));
+      order_gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
+      order_lids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
+
+      if (!order || !order_gids || !order_lids) {
+          /* Free order data */
+          safe_free((void **) &order);
+          safe_free((void **) &order_gids);
+          safe_free((void **) &order_lids);
+          Gen_Error(0, "memory alloc failed for Zoltan_Order\n");
+          return 0;
+      }
+          
+          
     /* Evaluate the old ordering */
     if (Debug_Driver > 0) {
       if (Proc == 0) printf("\nBEFORE ordering\n");
@@ -613,6 +625,51 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     safe_free((void **) &order_lids);
   }
 
+
+  if (Driver_Action & 4) {
+      int *color = NULL;          /* Color vector */
+      ZOLTAN_ID_PTR gids = NULL;  /* List of all gids for ordering */
+      ZOLTAN_ID_PTR lids = NULL;  /* List of all lids for ordering */
+
+      color = (int *) malloc (mesh->num_elems * sizeof(int));
+      gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
+      lids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
+
+      if (!color || !gids || !lids) {
+          safe_free((void **) &color);
+          safe_free((void **) &gids);
+          safe_free((void **) &lids); 
+          Gen_Error(0, "memory alloc failed for Zoltan_Color\n");
+          return 0;
+      }
+      
+      /* Only do coloring if this was specified in the driver input file */
+      /* Do coloring after load balancing */        
+      if (Debug_Driver > 0) {
+          if (Proc == 0) printf("\nBEFORE coloring\n");
+          /* Not yet impl. */
+      }
+      /* Color array is allocated within the Zoltan_Color. */
+      if (Zoltan_Color(zz, &num_gid_entries, &num_lid_entries,
+                       mesh->num_elems, gids, lids, color) == ZOLTAN_FATAL) {
+          Gen_Error(0, "fatal:  error returned from Zoltan_Color()\n");
+          return 0;
+      }
+
+
+      /* UVCUVC: TODO check coloring!!!! */
+      if (Debug_Driver > 0) {
+          if (Proc == 0) printf("\nAFTER coloring\n");
+          /* Not yet impl. */
+      }
+      
+      /* Free color data */
+      safe_free((void **) &color);
+      safe_free((void **) &gids);
+      safe_free((void **) &lids);                
+    }
+
+  
   DEBUG_TRACE_END(Proc, yo);
   return 1;
 }

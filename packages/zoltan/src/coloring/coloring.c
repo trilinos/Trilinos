@@ -20,6 +20,7 @@ extern "C" {
 
 #include <limits.h>
 #include <ctype.h>
+#include "zoltan_mem.h"    
 #include "zz_const.h"
 #include "coloring.h"
 #include "params_const.h"
@@ -27,8 +28,12 @@ extern "C" {
 #include "parmetis_jostle.h"
 
 #define SWAP(a,b) tmp=(a);(a)=(b);(b)=tmp;
-#define _DEBUG
 
+#define MEMORY_ERROR { \
+  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
+  ierr = ZOLTAN_MEMERR; \
+  goto End; \
+}
     
 /* function prototypes */
 int ReorderGraph(ZZ *, int, int **, int **, int **, int *, int *, int *, int *);
@@ -37,8 +42,6 @@ int IntColoring(ZZ *, int *, int, int, int *, int *, int *, int *, int *, int *,
 int ParallelColoring(ZZ *, int, int *, int *, int *, int *, int *, int, int *, int *, int **, int *, char, char, int *, int *, MPI_Request *, MPI_Request *, MPI_Status *);
 int Conflict(ZZ *, int, int *, int *, int *, int *, int *, int *, int *, int *);
 int D1coloring(ZZ *, char, char, char, int, int, int, int *, int *, int **, int **, int *, int *);
-static int color_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
-                    int, int, char, char, char, float *);
     
 /*****************************************************************************/
 /*  Parameters structure for Color method.  Used in  */
@@ -66,28 +69,23 @@ char *val			/* value of variable */
 
     return(status);
 }
+
     
-/***********************************************************************/
-/* Wrapper routine to set parameter values and call the real coloring. */
-/***********************************************************************/
+/**********************************************************/
+/* Interface routine for Graph Coloring                   */
+/**********************************************************/    
 int Zoltan_Color(
-  ZZ *zz,               /* Zoltan structure  */
-  float *part_sizes,    /* Array of size zz->LB.Num_Global_Parts
-                            containing the percentage of work to be
-                            assigned to each partition.               */
-  int *num_imp,         /* Number of objects to be imported */
-  ZOLTAN_ID_PTR *imp_gids, /* global ids of objects to be imported */
-  ZOLTAN_ID_PTR *imp_lids, /* global ids of objects to be imported */
-  int **imp_procs,      /* list of processors to import from */
-  int **imp_to_part,    /* list of partitions to which imported objects are 
-                           assigned.  */
-  int *num_exp,         /* number of objects to be exported */
-  ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
-  ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
-  int **exp_procs,      /* list of processors to export to */
-  int **exp_to_part     /* list of partitions to which exported objects are
-                           assigned. */
-)
+    ZZ *zz,                   /* Zoltan structure */
+    int *num_gid_entries,     /* # of entries for a global id */
+    int *num_lid_entries,     /* # of entries for a local id */
+    int num_obj,              /* Input: number of objects */
+    ZOLTAN_ID_PTR global_ids, /* Input: global ids of the vertices */
+                              /* The application must allocate enough space */    
+    ZOLTAN_ID_PTR local_ids,  /* Input: local ids of the vertices */
+                              /* The application must allocate enough space */
+    int *color_exp            /* Output: Colors assigned to local vertices */
+                              /* The application must allocate enough space */
+) 
 {
   int distance;         /* Input: which coloring to perform;
                            currently only supports D1 and D2 coloring */
@@ -99,6 +97,17 @@ int Zoltan_Color(
                            (B) boundary vertices first (U) interleaved */
   char color_method;    /* Coloring method. (F) First fit
                            (S) staggered first fit (L) load balancing */
+
+  static char *yo = "color_fn";
+  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *partvec;
+  int *adjproc, nvtx=num_obj, gVtx;
+  int *input_parts;                   /* Initial partitions for objects. */
+  float *ewgts, *float_vwgt;
+  int *color;
+  int graph_type, check_graph;
+  int i, j;
+  int obj_wgt_dim, edge_wgt_dim;
+  int ierr = ZOLTAN_OK;
 
       
   Zoltan_Bind_Param(Color_params, "DISTANCE", (void *) &distance);
@@ -117,81 +126,57 @@ int Zoltan_Color(
   Zoltan_Assign_Param_Vals(zz->Params, Color_params, zz->Debug_Level, zz->Proc,
                            zz->Debug_Proc);
 
-  /* Initializations in case of early exit. */
-  *num_imp = -1;  /* not computed */
-  *num_exp = -1;  /* not computed */
-    
-  return color_fn(zz, num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
-                  distance, ss, comm_pattern, color_order, color_method,
-                  part_sizes);
+  /* Compute Max number of array entries per ID over all processors.
+     This is a sanity-maintaining step; we don't want different
+     processors to have different values for these numbers. */
+/*    comm[0] = zz->Num_GID;
+    comm[1] = zz->Num_LID;
+    MPI_Allreduce(comm, gcomm, 2, MPI_INT, MPI_MAX, zz->Communicator);
+    zz->Num_GID = *num_gid_entries = gcomm[0];
+    zz->Num_LID = *num_lid_entries = gcomm[1];
+*/
+   /* Return if this processor is not in the Zoltan structure's
+      communicator. */
+  if (ZOLTAN_PROC_NOT_IN_COMMUNICATOR(zz)) {
+      return ZOLTAN_OK;
+  }
+  /* Check that the user has allocated space for the return args. */
+  if (!color_exp)
+      ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Output argument is NULL. Please allocate all required arrays before calling this routine.");
 
-}
-
-/**********************************************************/
-/* Interface routine for Graph Coloring                   */
-/**********************************************************/    
-/*** DB: Remove redundant parameters, if any and check if colors will be exported */
-int color_fn( 
-  ZZ *zz,               /* Zoltan structure  */
-  int *num_imp,         /* Number of objects to be imported */
-  ZOLTAN_ID_PTR *imp_gids, /* global ids of objects to be imported */
-  ZOLTAN_ID_PTR *imp_lids, /* global ids of objects to be imported */
-  int **imp_procs,      /* list of processors to import from */
-  int **imp_to_part,    /* list of partitions to which imported objects are 
-                           assigned.  */
-  int distance,         /* Input: which coloring to perform;
-                           currently only supports D1 and D2 coloring */
-  int ss,               /* Superstep size: detemines how many vertices are
-                           locally colored before the next color
-                           information exchange */
-  char comm_pattern,    /* (A) asynchronous (S) synchronous supersteps*/
-  char color_order,     /* (I) interior vertices first
-                           (B) boundary vertices first (U) interleaved */
-  char color_method,    /* Coloring method. (F) First fit
-                           (S) staggered first fit (L) load balancing */
-  float *part_sizes     /* Array of size zz->LB.Num_Global_Parts
-                           containing the percentage of work to be
-                           assigned to each partition.               */  
-)
-{
-  static char *yo = "color_fn";
-  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *partvec;
-  int *adjproc;
-  int *input_parts;                   /* Initial partitions for objects. */
-  float *ewgts, *float_vwgt;
-  int graph_type, check_graph;
-  int i, j;
-  int num_obj, obj_wgt_dim, edge_wgt_dim;
-  int ierr;
-  int gVtx;
-  int *color;
-  ZOLTAN_ID_PTR local_ids;
-  ZOLTAN_ID_PTR global_ids;   
-
+  /* Construct the heterogenous machine description. */
+  /*  ierr = Zoltan_Build_Machine_Desc(zz);
+      if (ierr == ZOLTAN_FATAL)
+      ZOLTAN_COLOR_ERROR(ierr, "Error in constructing heterogeneous machine description.");
+  */
   
   /* Initialize all local pointers to NULL. This is necessary
      because we free all non-NULL pointers upon errors. */
   vtxdist = xadj = adjncy = vwgt = adjwgt = adjproc = NULL;
   ewgts = float_vwgt = NULL;
   input_parts = NULL;
-  local_ids = global_ids = NULL;
 
   /* Default graph type is GLOBAL. */
   graph_type = GLOBAL_GRAPH;
   check_graph = 1;
-  global_ids = *imp_gids;
-  local_ids = *imp_lids;    
   obj_wgt_dim = 0; /* We do not use weights */
   edge_wgt_dim = 0;
 
   /* Get object ids and part information */
-  ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids,
+  ierr = Zoltan_Get_Obj_List(zz, &nvtx, &global_ids, &local_ids,
                              obj_wgt_dim, &float_vwgt, &input_parts);
   if (ierr) { /* Return error */      
       ZOLTAN_COLOR_ERROR(ierr, "Get_Obj_List returned error.");
   }
+
+#if 0
+  printf("after Get_Obj_list\n");
+  for (i=0; i<nvtx; ++i)
+      printf("%d: gid=%d lid=%d part=%d\n", i, global_ids[i], local_ids[i], input_parts[i]);
+#endif
+  
   /* Build ParMetis data structures, or just get vtxdist. */
-  ierr = Zoltan_Build_Graph(zz, graph_type, check_graph, num_obj,
+  ierr = Zoltan_Build_Graph(zz, graph_type, check_graph, nvtx,
          global_ids, local_ids, obj_wgt_dim, edge_wgt_dim,
          &vtxdist, &xadj, &adjncy, &ewgts, &adjproc);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -199,41 +184,46 @@ int color_fn(
   }
 
   /* Vertex IDs start from 0 */
-  for (i=0; i<num_obj; i++)
+  for (i=0; i<nvtx; i++)
       global_ids[i] = global_ids[i]-1;
   /* Determine the global number of vertices */
-  MPI_Allreduce(&num_obj, &gVtx, 1, MPI_INT, MPI_SUM, zz->Communicator);
+  MPI_Allreduce(&nvtx, &gVtx, 1, MPI_INT, MPI_SUM, zz->Communicator);
 
   /* create part vector */
-  partvec = (int *) ZOLTAN_CALLOC(gVtx, sizeof(int));
-  /*memset(partvec, 0xff, gVtx * sizeof(int));*/
-  for (i=0; i<xadj[num_obj]; i++)
+  partvec = (int *) ZOLTAN_MALLOC(gVtx*sizeof(int));
+  if (!partvec)
+      MEMORY_ERROR;
+  for (i=0; i<xadj[nvtx]; i++)
       partvec[adjncy[i]] = adjproc[i];
 
-#ifdef _DEBUG2
-  printf("GRAPH: nvtx:%d Proc:%d\n", num_obj, zz->Proc);
-  for (i=0; i < num_obj; i++) {
+#if 0
+  printf("GRAPH: nvtx:%d Proc:%d\n", nvtx, zz->Proc);
+  for (i=0; i < nvtx; i++) {
       printf("%d :: ", global_ids[i]);
       for (j=xadj[i]; j < xadj[i+1]; j++)
           printf("%d ", adjncy[j]);
       printf("\n");
   }
 #endif
-
+  
   /* Allocate color array. Local and D1 neighbor colors will be stored here. */ 
-  color = (int *) ZOLTAN_MALLOC(gVtx * sizeof(int));
-  memset(color, 0, gVtx * sizeof(int));
+  if (!(color = (int *) ZOLTAN_CALLOC(gVtx, sizeof(int))))
+      MEMORY_ERROR;
 
   if (distance == 1)  
-      D1coloring(zz, color_order, color_method, comm_pattern, ss, num_obj, gVtx, global_ids, vtxdist, &xadj, &adjncy, partvec, color);
+      D1coloring(zz, color_order, color_method, comm_pattern, ss, nvtx, gVtx, global_ids, vtxdist, &xadj, &adjncy, partvec, color);
   else {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Coloring with requested distance is not implemented. Using Distance-1 coloring.");
-      D1coloring(zz, color_order, color_method, comm_pattern, ss, num_obj, gVtx, global_ids, vtxdist, &xadj, &adjncy, partvec, color);
+      D1coloring(zz, color_order, color_method, comm_pattern, ss, nvtx, gVtx, global_ids, vtxdist, &xadj, &adjncy, partvec, color);
   }
 
-#ifdef _DEBUG2
+  /* fill the return array */
+  for (i=0; i<nvtx; i++)
+      color_exp[i] = color[global_ids[i]]; 
+  
+#if 0
   printf("P%d: Vtx colors: ", zz->Proc);
-  for (i=0; i<num_obj; i++) {
+  for (i=0; i<nvtx; i++) {
       int gu = global_ids[i];
       printf("%d->%d  ", gu, color[gu]);
   }
@@ -242,7 +232,7 @@ int color_fn(
   
   /* Check if there is an error in coloring */
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) { /* DB: ZOLTAN_DEBUG_ALL)*/
-      for (i=0; i<num_obj; i++) {
+      for (i=0; i<nvtx; i++) {
           int gu = global_ids[i];
           for (j = xadj[i]; j < xadj[i+1]; j++) {
               int gv = adjncy[j];
@@ -250,29 +240,16 @@ int color_fn(
                   printf("Error in coloring! u:%d, v:%d, cu:%d, cv:%d\n", gu, gv, color[gu], color[gv]);
           }
       }
-  }
-  
-  ierr = ZOLTAN_OK;
+  }  
 
  End:
-
-  ZOLTAN_FREE(&vtxdist);
-  ZOLTAN_FREE(&xadj);
-  ZOLTAN_FREE(&adjncy);
-  ZOLTAN_FREE(&adjproc);
-  ZOLTAN_FREE(&global_ids);
-  ZOLTAN_FREE(&local_ids);
-  ZOLTAN_FREE(&input_parts);
-  ZOLTAN_FREE(&partvec);
-  ZOLTAN_FREE(&color);
+  Zoltan_Multifree(__FILE__,__LINE__, 7, &vtxdist, &xadj, &adjncy, &adjproc,
+                   &input_parts, &partvec, &color);
   
   return ierr;
 }
 
 
-#ifdef __cplusplus
-}
-#endif
 
 
 
@@ -374,6 +351,8 @@ int D1coloring(
         nConflict = nVtx;
         for (i=0; i<nVtx; i++)
             visit[i] = i;
+        if (zz->Num_Proc==1)
+            IntColoring(zz, &nColor, nVtx, gVtx, visit, xadj, adj, global_ids, color, mark, color_method);
     }
     else if (color_order == 'I') {
         IntColoring(zz, &nColor, nVtx - nbound, gVtx, visit + nbound, xadj, adj, global_ids, color, mark, color_method);
@@ -759,3 +738,8 @@ int Conflict(ZZ *zz, int nConflict, int *global_ids, int *visit, int *xadj, int 
     }
     return conflict;
 }
+
+
+#ifdef __cplusplus
+}
+#endif
