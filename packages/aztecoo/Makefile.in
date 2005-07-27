@@ -287,6 +287,10 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @BUILD_TESTS_TRUE@EXAMPLE_SUBDIR = example
 @PYTHON_USE_TRUE@PYTHON_SUBDIR = python
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
+TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
+TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
+@HAVE_MPI_FALSE@AZTECOO_CHECK_COMM = serial
+@HAVE_MPI_TRUE@AZTECOO_CHECK_COMM = mpi
 all: all-recursive
 
 .SUFFIXES:
@@ -691,7 +695,12 @@ uninstall-info: uninstall-info-recursive
 #The following line helps the test harness recover from build errors.
 
 all-local:
+	@echo ""
 	@echo "Trilinos package aztecoo built successfully"
+	@echo "To check the installation, simply type \"make run-examples\"."
+	@echo "For more details, please refer to the instructions"
+	@echo "contained in Trilinos/doc/check_installation.txt"
+	@echo ""
 
 all-libs:
 	cd src ; make all-libs
@@ -714,6 +723,60 @@ all-libs:
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 
 @USING_EXPORT_MAKEFILES_FALSE@uninstall-hook:
+
+run-examples:
+	@echo
+	@echo "==============================="
+	@echo "Running the AztecOO examples..."
+	@echo "==============================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(AZTECOO_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=AztecOOExamples \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=aztecoo
+
+run-tests:
+	@echo
+	@echo "============================"
+	@echo "Running the AztecOO tests..."
+	@echo "============================"
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(AZTECOO_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=FRAMEWORK \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=aztecoo
+
+run-pyexamples:
+	@echo
+	@echo "====================================="
+	@echo "Testing the Python/AztecOO wrapper..."
+	@echo "====================================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(AZTECOO_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=AztecOOPyExamples \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=aztecoo
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
