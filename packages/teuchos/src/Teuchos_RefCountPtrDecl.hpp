@@ -846,7 +846,7 @@ T1& get_extra_data( RefCountPtr<T2>& p, const std::string& name );
 template<class T1, class T2>
 const T1& get_extra_data( const RefCountPtr<T2>& p, const std::string& name );
 
-/** \brief Get a non-const pointer to extra data (if it exists) associated
+/** \brief Get a pointer to non-const extra data (if it exists) associated
  * with a <tt>RefCountPtr</tt> object.
  *
  * @param  p    [in] Smart pointer object that extra data is being extraced from.
@@ -856,9 +856,12 @@ const T1& get_extra_data( const RefCountPtr<T2>& p, const std::string& name );
  *
  * Preconditions:<ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * </ul>
+ *
+ * Postconditions:<ul>
  * <li> If <tt>name</tt> and <tt>T1</tt> have been used in a previous
- *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>)
-        then <tt>return !=NULL</tt> and otherwise <tt>return == NULL</tt>.
+ *      call to <tt>set_extra_data()</tt> then <tt>return !=NULL</tt>
+ *      and otherwise <tt>return == NULL</tt>.
  * </ul>
  *
  * Note, this function must be a non-member function since the client
@@ -867,7 +870,7 @@ const T1& get_extra_data( const RefCountPtr<T2>& p, const std::string& name );
 template<class T1, class T2>
 T1* get_optional_extra_data( RefCountPtr<T2>& p, const std::string& name );
 
-/** \brief Get a const pointer to extra data (if it exists) associated with a <tt>RefCountPtr</tt> object.
+/** \brief Get a pointer to const extra data (if it exists) associated with a <tt>RefCountPtr</tt> object.
  *
  * @param  p    [in] Smart pointer object that extra data is being extraced from.
  * @param  name [in] Name of the extra data.
@@ -876,9 +879,12 @@ T1* get_optional_extra_data( RefCountPtr<T2>& p, const std::string& name );
  *
  * Preconditions:<ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * </ul>
+ *
+ * Postconditions:<ul>
  * <li> If <tt>name</tt> and <tt>T1</tt> have been used in a previous
- *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>)
-        then <tt>return !=NULL</tt> and otherwise <tt>return == NULL</tt>.
+ *      call to <tt>set_extra_data()</tt> then <tt>return !=NULL</tt>
+ *      and otherwise <tt>return == NULL</tt>.
  * </ul>
  *
  * Note, this function must be a non-member function since the client
@@ -922,6 +928,43 @@ Dealloc_T& get_dealloc( RefCountPtr<T>& p );
  */
 template<class Dealloc_T, class T>
 const Dealloc_T& get_dealloc( const RefCountPtr<T>& p );
+
+/** \brief Return a pointer to the underlying non-<tt>const</tt> deallocator
+ * object if it exists.
+ *
+ * Preconditions:<ul>
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * </ul>
+ *
+ * Postconditions:<ul>
+ * <li> If the deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
+ *      then <tt>return!=NULL</tt>, otherwise <tt>return==NULL</tt>
+ * </ul>
+ */
+template<class Dealloc_T, class T>
+Dealloc_T* get_optional_dealloc( RefCountPtr<T>& p );
+
+/** \brief Return a pointer to the underlying <tt>const</tt> deallocator
+ * object if it exists.
+ *
+ * Preconditions:<ul>
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * </ul>
+ *
+ * Postconditions:<ul>
+ * <li> If the deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
+ *      then <tt>return!=NULL</tt>, otherwise <tt>return==NULL</tt>
+ * </ul>
+ *
+ * Note that the <tt>const</tt> version of this function provides only
+ * a very ineffective attempt to avoid accidental changes to the
+ * deallocation object.  A client can always just create a new
+ * non-<tt>const</tt> <tt>RefCountPtr<T></tt> object from any
+ * <tt>const</tt> <tt>RefCountPtr<T></tt> object and then call the
+ * non-<tt>const</tt> version of this function.
+ */
+template<class Dealloc_T, class T>
+const Dealloc_T* get_optional_dealloc( const RefCountPtr<T>& p );
 
 //@}
 

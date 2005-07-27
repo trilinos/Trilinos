@@ -197,6 +197,7 @@ int main( int argc, char* argv[] ) {
 	using Teuchos::get_extra_data;
 	using Teuchos::get_optional_extra_data;
 	using Teuchos::get_dealloc;
+	using Teuchos::get_optional_dealloc;
 	using Teuchos::CommandLineProcessor;
 	
 	bool verbose = true;
@@ -455,6 +456,8 @@ int main( int argc, char* argv[] ) {
 		// Test out getting the deallocator object
 		a_ptr1 = rcp( new C, DeallocDelete<C>(), true );
 		get_dealloc<DeallocDelete<C> >(a_ptr1);
+    TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<C> >(a_ptr1)==NULL );
+    TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<A> >(a_ptr1)!=NULL );
     
 		// Test storing extra data and then getting it out again
 		TEST_FOR_EXCEPT( get_optional_extra_data<RefCountPtr<B1> >(a_ptr1,"blahblah") != NULL );

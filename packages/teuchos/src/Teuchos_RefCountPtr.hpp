@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_REFCOUNTPTR_H
-#define TEUCHOS_REFCOUNTPTR_H
+#ifndef TEUCHOS_REFCOUNTPTR_HPP
+#define TEUCHOS_REFCOUNTPTR_HPP
 
 /*! \file Teuchos_RefCountPtr.hpp
     \brief Reference-counted pointer class and non-member templated function implementations.
@@ -498,4 +498,25 @@ Teuchos::get_dealloc( const Teuchos::RefCountPtr<T>& p )
 	return get_dealloc<Dealloc_T>(const_cast<RefCountPtr<T>&>(p));
 }
 
-#endif	// REFCOUNTPTR_H
+template<class Dealloc_T, class T>
+REFCOUNTPTR_INLINE
+Dealloc_T*
+Teuchos::get_optional_dealloc( RefCountPtr<T>& p )
+{
+	p.assert_not_null();
+	PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
+		*dnode = dynamic_cast<PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
+  if(dnode)
+    return &dnode->get_dealloc();
+  return NULL;
+}
+
+template<class Dealloc_T, class T>
+inline
+const Dealloc_T& 
+Teuchos::get_optional_dealloc( const Teuchos::RefCountPtr<T>& p )
+{
+	return get_optional_dealloc<Dealloc_T>(const_cast<RefCountPtr<T>&>(p));
+}
+
+#endif // TEUCHOS_REFCOUNTPTR_HPP
