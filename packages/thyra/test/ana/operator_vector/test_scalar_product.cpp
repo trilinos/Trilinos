@@ -26,6 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
+#ifndef __sun
+
 #include "Thyra_SerialVectorSpaceStd.hpp"
 #include "Thyra_SerialMultiVectorStd.hpp"
 #include "Thyra_LinearOpScalarProd.hpp"
@@ -164,12 +166,16 @@ bool run_scalar_product_tests(
 
 } // end run_scalar_product_tests() [Doxygen looks for this!]
 
-int main( int argc, char* argv[] ) {
+#endif // __sun
 
-  using Teuchos::CommandLineProcessor;
+int main( int argc, char* argv[] ) {
 
   bool success = true;
   bool verbose = true;
+
+#ifndef __sun
+
+  using Teuchos::CommandLineProcessor;
 
   std::ostream &out = std::cout;
 
@@ -221,6 +227,8 @@ int main( int argc, char* argv[] ) {
     else
       out << "\nOh no! at least one of the test failed!\n";	
   }
+
+#endif // __sun
   
   return success ? 0 : 1;
 
