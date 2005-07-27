@@ -43,8 +43,8 @@ namespace Tpetra {
 		// default constructor
 		ImportData(ElementSpace<OrdinalType> const& source, ElementSpace<OrdinalType> const& target)
 			: Object("Tpetra::ImportData")
-				  // permuteToLIDs_, permuteFromLIDs_, remoteLIDs_, remoteGIDs_, exportLIDs_, and exportImageIDs_ 
-				  // don't need/use a member initialization. (These are all std::vector's.)
+			// permuteToLIDs_, permuteFromLIDs_, remoteLIDs_, remoteGIDs_, exportLIDs_, and exportImageIDs_ 
+			// don't need/use a member initialization. (These are all std::vector's.)
 			, numSameIDs_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, numPermuteIDs_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, numRemoteIDs_(Teuchos::OrdinalTraits<OrdinalType>::zero())

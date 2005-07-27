@@ -44,11 +44,14 @@ namespace Tpetra {
   
 	/*! Import is used to construct a communication plan that can be called repeatedly by computational
         classes such the Tpetra CisMatrix and Vector classes to efficiently import elements from other
-		images.
+		images. An importer is used when we start out with a uniquely-owned distribution,
+		and want to distribute that into a multiple-ownership distribution.
     
 		This class currently has one constructor, taking two ElementSpace objects.
 		The first ElementSpace specifies the distribution we have now. The second 
 		ElementSpace specifies the distribution we want to have after importing.
+
+		NOTE: Behavior is undefined if the source ElementSpace is not uniquely-owned.
 	*/
   
 	template <typename OrdinalType>
