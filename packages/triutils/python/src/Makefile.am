@@ -26,15 +26,11 @@
 # ************************************************************************
 # @HEADER
 
+include $(top_builddir)/Makefile.export.triutils
+
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = -I$(srcdir) \
-                -I$(top_srcdir)/src \
-                -I$(top_builddir)/src \
-                -I$(top_srcdir)/../epetra/src \
-                -I$(top_builddir)/../epetra/src \
-                -I$(top_srcdir)/../triutils/src \
-                -I$(top_builddir)/../triutils/src \
+SWIG_CXXFLAGS = -I$(TRIUTILS_INCLUDES) \
                 -I$(top_srcdir)/../epetra/python/src
 
 EXTRA_DIST = Triutils.i setup.py
@@ -59,20 +55,15 @@ PROXIES    = $(INTERFACES:.i=.py      )
 # python script
 setup.txt: $(srcdir)/Makefile.am
 	@echo "creating $@"
-	@echo "{"                                   >  $@
+	@echo "{"                                      >  $@
 	@echo "  'top_builddir' : '$(top_builddir)',"  >> $@
-	@echo "  'top_srcdir'   : '$(top_srcdir)',"  >> $@
-	@echo "  'srcdir'       : '$(srcdir)',"      >> $@
-	@echo "  'CC'           : '$(CC)',"          >> $@
-	@echo "  'CXX'          : '$(CXX)',"         >> $@
-	@echo "  'LDFLAGS'      : '$(LDFLAGS)',"     >> $@
-	@echo "  'LAPACK_LIBS'  : '$(LAPACK_LIBS)'," >> $@
-	@echo "  'BLAS_LIBS'    : '$(BLAS_LIBS)',"   >> $@
-	@echo "  'FLIBS'        : '$(FLIBS)',"       >> $@
-	@echo "  'LIBS'         : '$(LIBS)',"        >> $@
-	@echo "  'AMESOS_LIBS'  : '$(AMESOS_LIBS)',"        >> $@
-	@echo "  'PYTHON'       : '$(PYTHON)'"       >> $@
-	@echo "}"                                   >> $@
+	@echo "  'top_srcdir'   : '$(top_srcdir)',"    >> $@
+	@echo "  'srcdir'       : '$(srcdir)',"        >> $@
+	@echo "  'CC'           : '$(CC)',"            >> $@
+	@echo "  'CXX'          : '$(CXX)',"           >> $@
+	@echo "  'TRIUTILS_LIBS': '$(TRIUTILS_LIBS)'," >> $@
+	@echo "  'PYTHON'       : '$(PYTHON)'"         >> $@
+	@echo "}"                                      >> $@
 
 build: $(WRAPPERS) setup.txt $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
