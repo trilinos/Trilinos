@@ -24,3 +24,8 @@
     ARGS = -v;
     COMM = SERIAL, MPI(1-4);
 }
+
+(FRAMEWORK, IFPACKPyExamples) {
+    DIRS = ../python/example;
+    COMM = SERIAL, MPI;
+}
