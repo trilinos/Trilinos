@@ -2,7 +2,7 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK) {
+(FRAMEWORK, EpetraTests) {
     DIRS = BlockMap,
           Comm,
          CrsGraph,
@@ -25,6 +25,25 @@
          Vector;
     ARGS = -v;
     COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK, EpetraExamples) {
+    DIRS = ../example/my_example;
+    COMM = SERIAL, MPI(1-4);
+}
+
+(FRAMEWORK, EpetraExamples) {
+    DIRS = ../example/UG_Ex1,
+           ../example/UG_ExMaps,
+           ../example/petra_power_method,
+           ../example/verySimple;
+    ARGS = 100;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK, EpetraPyExamples) {
+      DIRS = ../python/example;
+      COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK) {
