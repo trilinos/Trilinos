@@ -550,7 +550,7 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 #define INNER_PRODUCT1(ARG)\
   for (i = 0; i < count; r++, i++)\
     for (j = hg->hindex [*r]; j < hg->hindex [*r + 1]; j++) {\
-      if (match[hg->hvertex[j]] == hg->hvertex[j])  {\
+      if (cmatch[hg->hvertex[j]] == hg->hvertex[j])  {\
         if (sums [hg->hvertex[j]] == 0.0)\
           index [m++] = hg->hvertex[j];\
         sums [hg->hvertex[j]] += (ARG);\
@@ -561,18 +561,18 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
    for (i = hg->vindex[gno]; i < hg->vindex[gno+1]; i++)  {\
      edge = hg->vedge[i];\
      for (j = hg->hindex [edge]; j < hg->hindex [edge+1]; j++)  {\
-       if (match[hg->hvertex[j]] == hg->hvertex[j])    {\
+       if (cmatch[hg->hvertex[j]] == hg->hvertex[j])    {\
          if (sums [hg->hvertex[j]] == 0.0)\
            index [m++] = hg->hvertex[j];\
-           sums [hg->hvertex[j]] += (ARG);\
-           }\
-         }\
-       }  
+         sums [hg->hvertex[j]] += (ARG);\
+       }\
+     }\
+   }  
 
        
 /****************************************************************************/
-/* Because this calculation is done in two locations it has been converted to
-** a subroutine to assure it is always consistant. Inline is not yet legal! */
+/* Because this calculation is done in two locations it has been converted to a
+** subroutine to assure it is consistant. Inline is not yet always available! */
 static int calc_nCandidates (int num_vtx, int procs)
 {
 /* 2 below because each match pairs 2 vertices */
@@ -588,17 +588,15 @@ static int pmatching_ipm(
   PHGPartParams *hgp
 )
 {
-  int i, j, k, n, m, round, pvisit, kstart, *r, *s;   /* loop counters */
+  int i, j, k, n, m, round, pvisit, kstart, *r, *s;   /* loop counters  */
   int lno, gno, count, old_kstart;                    /* temp variables */
-  int sendcnt, sendsize, reccnt, recsize, msgsize;        /* temp variables */
-  int nRounds;                   /* # of matching rounds to be performed; 
-                                    identical on all procs in 
-                                    hgc->Communicator.*/
-  int nCandidates;               /* # of candidates on this proc; identical
-                                    on all procs in hgc->col_comm. */
-  int nTotal;                    /* Total # of candidates; sum of nCandidates
-                                    across proc rows. */
-  int *send, *dest, *size, *rec, *index, *aux; /* working buffers */
+  int sendcnt, sendsize, reccnt, recsize, msgsize;    /* temp variables */
+  int nRounds;         /* # of matching rounds to be performed;       */
+                       /* identical on all procs in hgc->Communicator.*/
+  int nCandidates;     /* # of candidates on this proc; identical     */
+                       /* on all procs in hgc->col_comm.              */
+  int nTotal;          /* sum of nCandidates across proc rows.        */
+  int *send, *dest, *size, *rec, *index, *aux; /* working buffers     */
   int nSend, nDest, nSize, nRec, nIndex, nAux; /* currently allocated size of
                                                   the above working buffers */
   float *sums, *f, bestsum;                           /* working buffer, float*/
@@ -608,12 +606,12 @@ static int pmatching_ipm(
   int err = ZOLTAN_OK, old_row, row, col;
   int gmax_nPins, gmax_nVtx;     /* Global max # pins/proc and vtx/proc */
   int **rows = NULL;             /* used only in merging process */
-  int bestlno, vertex, nselect;
-  char *yo = "pmatching_ipm";
+  int bestlno, vertex, nselect, edge;
   int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
-  int cFLAG, edge;                 /* column match only if user requested */
-  static int development_timers[7] = {-1, -1, -1, -1, -1, -1, -1};
-
+  int cFLAG;                       /* if set, do only a column matching */
+  char *yo = "pmatching_ipm";
+  
+static int development_timers[7] = {-1, -1, -1, -1, -1, -1, -1};
 int bobtemp=0;
 
 if (hgp->use_timers > 3)  {
@@ -622,7 +620,7 @@ if (hgp->use_timers > 3)  {
   ZOLTAN_TIMER_START(zz->ZTime, development_timers[0], hg->comm->Communicator);
 }   
    
-  /* this restriction will be removed later, but for now NOTE this test */
+  /* this restriction may be removed later, but for now NOTE this test */
   if (sizeof(int) < sizeof (float))  {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Code must be modified before using");
     err = ZOLTAN_FATAL;
@@ -635,8 +633,8 @@ if (hgp->use_timers > 3)  {
   /* determine basic working parameters */
   /* ERIK: need to calculate nCandidates based on # of unmatched vertices */
   nRounds     = cFLAG ? ROUNDS_CONSTANT : hgc->nProc_x * ROUNDS_CONSTANT;
-  nCandidates = cFLAG ? hg->nVtx/(2*ROUNDS_CONSTANT) 
-              : calc_nCandidates (hg->nVtx, hgc->nProc_x);
+  nCandidates = cFLAG ? 1+ hg->nVtx/(2*ROUNDS_CONSTANT) 
+   : calc_nCandidates (hg->nVtx, hgc->nProc_x);
     
   /* determine maximum global number of Vtx and Pins for storage allocation */
   /* determine initial sum of all candidates, nTotal for storage allocation */
@@ -646,10 +644,10 @@ if (hgp->use_timers > 3)  {
     gmax_nPins = hg->nPins;
   }
   else  {
-    MPI_Allreduce(&hg->nPins, &gmax_nPins, 1, MPI_INT, MPI_MAX, hgc->Communicator);
+    MPI_Allreduce(&hg->nPins,&gmax_nPins, 1, MPI_INT,MPI_MAX,hgc->Communicator);
     gmax_nVtx = nTotal = 0;
     for (i = 0; i < hgc->nProc_x; i++)  {
-      count = hg->dist_x[i+1]-hg->dist_x[i];    /* number of vertices on proc i */
+      count = hg->dist_x[i+1]-hg->dist_x[i];  /* number of vertices on proc i */
       if (count > gmax_nVtx)
         gmax_nVtx = count;
       nTotal += calc_nCandidates (count, hgc->nProc_x);
@@ -723,23 +721,22 @@ if (hgp->use_timers > 3)  {
   ZOLTAN_TIMER_START(zz->ZTime, development_timers[1], hg->comm->Communicator);
 }  
   
-    if (cFLAG)  {
-      j = 0;
-      for (i = round * nTotal; i < hg->nVtx && j < nTotal; i++)
-        if (match[i] == i)
-          permute[j++] = i;
-      nTotal = j;
-      if (nTotal == 0)
-         break;
-      goto skip_phase1;
-    } 
-
     
     /************************ PHASE 1: ***************************************/
     
     mp = master_data;
     nmaster = 0;                   /* count of data accumulted in master row */    
     memcpy (cmatch, match, hg->nVtx * sizeof(int));  /* for temporary locking */
+    
+    /* Select upto nCandidates unmatched vertices to locally match */
+    if (cFLAG)  {
+      for (nTotal=0 ; nTotal < nCandidates && pvisit < hg->nVtx; pvisit++)
+        if (cmatch[visit[pvisit]] == visit[pvisit])  {         /* unmatched */
+          permute[nTotal++] = visit[pvisit];      /* select it as a candidate */
+          cmatch[visit[pvisit]] = -1;            /* mark it as a pending match */
+        }
+      goto skip_phase1;
+    }     
                 
     /* Select upto nCandidates unmatched vertices to globally match. */
     for (sendcnt = 0; sendcnt < nCandidates && pvisit < hg->nVtx; pvisit++) {
@@ -805,8 +802,6 @@ if (hgp->use_timers > 3)  {
       count      = edgebuf[i++];    /* count of edges */
       i += count;                   /* skip over count edges */
     }
-    
-skip_phase1:
 
     /* Communication grouped candidates by processor, scramble them!      */
     /* Otherwise all candidates from proc column 0 will be matched first. */
@@ -815,6 +810,8 @@ skip_phase1:
     /* but that routine uses a local hg so won't work on the candidates.  */
     Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
     Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));
+
+skip_phase1:
 
 
 if (hgp->use_timers > 3)
@@ -1054,15 +1051,10 @@ bobtemp++;
           for (i = 0; i < count; i++)  {
             lno =          *r++;
             f   =  (float*) r++;     
-            
-            if (cFLAG && *f > bestsum  &&  match[lno] == lno)  {
+            if (*f > bestsum  &&  cmatch[lno] == lno)  {
               bestsum = *f;
               bestlno = lno;
-            }
-            if (!cFLAG && *f > bestsum  &&  cmatch[lno] == lno)  {
-              bestsum = *f;
-              bestlno = lno;
-            }            
+            }      
           }
          
           if (cFLAG  && match[gno] == gno && (bestsum > TSUM_THRESHOLD)) {
