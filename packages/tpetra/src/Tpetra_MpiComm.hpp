@@ -466,7 +466,7 @@ namespace Tpetra {
 		         On exit, contains the values exported to us. (imports will be resized
 				 if necessary, and any existing values will be overwritten.)
 		*/
-		void doReversePostsAndWaits(Distributor<OrdinalType>& distributor,
+		void doReversePostsAndWaits(Distributor<OrdinalType> const& distributor,
 									std::vector<PacketType>& exports,
 									OrdinalType packetSize,
 									std::vector<PacketType>& imports) 
@@ -475,7 +475,7 @@ namespace Tpetra {
 		}
 
 		//! doReversePosts
-		void doReversePosts(Distributor<OrdinalType>& distributor,
+		void doReversePosts(Distributor<OrdinalType> const& distributor,
 							std::vector<PacketType>& exports,
 							OrdinalType packetSize,
 							std::vector<PacketType>& imports)
@@ -484,7 +484,7 @@ namespace Tpetra {
 		}
 
 		//! doReverseWaits
-		void doReverseWaits(Distributor<OrdinalType>& distributor)
+		void doReverseWaits(Distributor<OrdinalType> const& distributor)
 		{
 			// ...
 		}
