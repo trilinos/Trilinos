@@ -471,7 +471,8 @@ namespace Tpetra {
 									OrdinalType packetSize,
 									std::vector<PacketType>& imports) 
 		{
-			// ...
+			doReversePosts(distributor, exports, packetSize, imports);
+			doReverseWaits(distributor);
 		}
 
 		//! doReversePosts
@@ -480,13 +481,20 @@ namespace Tpetra {
 							OrdinalType packetSize,
 							std::vector<PacketType>& imports)
 		{
-			// ...
+			if(!distributor.getIndicesTo().empty())
+				throw reportError("Can only do reverse comm when original data is blocked by image", -99);
+			
+			// Distributor.getReverse() is logically const but not bitwise const.
+			Distributor<OrdinalType>& nc_distrib = const_cast<Distributor<OrdinalType>&>(distributor);
+			doPosts(nc_distrib.getReverse(), exports, packetSize, imports);
 		}
 
 		//! doReverseWaits
 		void doReverseWaits(Distributor<OrdinalType> const& distributor)
 		{
-			// ...
+			// Distributor.getReverse() is logically const but not bitwise const.
+			Distributor<OrdinalType>& nc_distrib = const_cast<Distributor<OrdinalType>&>(distributor);
+			doWaits(nc_distrib.getReverse());
 		}
 
 		//@}
