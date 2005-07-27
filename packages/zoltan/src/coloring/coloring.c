@@ -26,7 +26,8 @@ extern "C" {
 #include "params_const.h"
 #include "zz_util_const.h"
 #include "parmetis_jostle.h"
-
+#include "all_allo_const.h"
+    
 #define SWAP(a,b) tmp=(a);(a)=(b);(b)=tmp;
 
 #define MEMORY_ERROR { \
@@ -79,9 +80,9 @@ int Zoltan_Color(
     int *num_gid_entries,     /* # of entries for a global id */
     int *num_lid_entries,     /* # of entries for a local id */
     int num_obj,              /* Input: number of objects */
-    ZOLTAN_ID_PTR global_ids, /* Input: global ids of the vertices */
+    ZOLTAN_ID_PTR imp_gids, /* Input: global ids of the vertices */
                               /* The application must allocate enough space */    
-    ZOLTAN_ID_PTR local_ids,  /* Input: local ids of the vertices */
+    ZOLTAN_ID_PTR imp_lids,  /* Input: local ids of the vertices */
                               /* The application must allocate enough space */
     int *color_exp            /* Output: Colors assigned to local vertices */
                               /* The application must allocate enough space */
@@ -98,6 +99,7 @@ int Zoltan_Color(
   char color_method;    /* Coloring method. (F) First fit
                            (S) staggered first fit (L) load balancing */
 
+  ZOLTAN_ID_PTR global_ids;
   static char *yo = "color_fn";
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *partvec;
   int *adjproc, nvtx=num_obj, gVtx;
@@ -163,7 +165,7 @@ int Zoltan_Color(
   edge_wgt_dim = 0;
 
   /* Get object ids and part information */
-  ierr = Zoltan_Get_Obj_List(zz, &nvtx, &global_ids, &local_ids,
+  ierr = Zoltan_Get_Obj_List(zz, &nvtx, &imp_gids, &imp_lids,
                              obj_wgt_dim, &float_vwgt, &input_parts);
   if (ierr) { /* Return error */      
       ZOLTAN_COLOR_ERROR(ierr, "Get_Obj_List returned error.");
@@ -172,30 +174,37 @@ int Zoltan_Color(
 #if 0
   printf("after Get_Obj_list\n");
   for (i=0; i<nvtx; ++i)
-      printf("%d: gid=%d lid=%d part=%d\n", i, global_ids[i], local_ids[i], input_parts[i]);
+      printf("%d: gid=%d lid=%d part=%d\n", i, imp_gids[i], imp_lids[i], input_parts[i]);
 #endif
   
   /* Build ParMetis data structures, or just get vtxdist. */
   ierr = Zoltan_Build_Graph(zz, graph_type, check_graph, nvtx,
-         global_ids, local_ids, obj_wgt_dim, edge_wgt_dim,
+         imp_gids, imp_lids, obj_wgt_dim, edge_wgt_dim,
          &vtxdist, &xadj, &adjncy, &ewgts, &adjproc);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_COLOR_ERROR(ierr, "Zoltan_Build_Graph returned error.");
   }
 
-  /* Vertex IDs start from 0 */
-  for (i=0; i<nvtx; i++)
-      global_ids[i] = global_ids[i]-1;
+  /* Use new GIDs conforming to the adj list */
+  /* Original GIDs are returned in imp_gids */
+  global_ids = ZOLTAN_MALLOC_GID_ARRAY(zz, nvtx);
+  if (!global_ids)
+      MEMORY_ERROR;
+  for (i=0; i<nvtx; i++) 
+      global_ids[i] = vtxdist[zz->Proc] + i;
+
+
   /* Determine the global number of vertices */
   MPI_Allreduce(&nvtx, &gVtx, 1, MPI_INT, MPI_SUM, zz->Communicator);
 
-  /* create part vector */
+  /* Create part vector */
   partvec = (int *) ZOLTAN_MALLOC(gVtx*sizeof(int));
   if (!partvec)
       MEMORY_ERROR;
   for (i=0; i<xadj[nvtx]; i++)
       partvec[adjncy[i]] = adjproc[i];
 
+  
 #if 0
   printf("GRAPH: nvtx:%d Proc:%d\n", nvtx, zz->Proc);
   for (i=0; i < nvtx; i++) {
@@ -222,10 +231,10 @@ int Zoltan_Color(
       color_exp[i] = color[global_ids[i]]; 
   
 #if 0
-  printf("P%d: Vtx colors: ", zz->Proc);
+  printf("[%d]: Vtx colors: ", zz->Proc);
   for (i=0; i<nvtx; i++) {
-      int gu = global_ids[i];
-      printf("%d->%d  ", gu, color[gu]);
+      int gu = global_ids[i], ogu = imp_gids[i];
+      printf("%d(%d)->%d  ", gu, ogu, color[gu]);
   }
   printf("\n");
 #endif
@@ -245,6 +254,7 @@ int Zoltan_Color(
  End:
   Zoltan_Multifree(__FILE__,__LINE__, 7, &vtxdist, &xadj, &adjncy, &adjproc,
                    &input_parts, &partvec, &color);
+  Zoltan_Special_Free(zz, (void **) &global_ids, ZOLTAN_SPECIAL_MALLOC_GID);
   
   return ierr;
 }
