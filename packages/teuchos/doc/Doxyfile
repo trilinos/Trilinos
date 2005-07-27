@@ -57,6 +57,7 @@ EXAMPLE_PATH           =  ../example/BLAS/cxx_main.cpp \
                           ../example/CommandLineProcessor/cxx_main.cpp \
                           ../example/LAPACK/cxx_main.cpp \
                           ../example/ParameterList/cxx_main.cpp \
+                          ../test/RefCountPtr/cxx_main.cpp \
                           ../example/RefCountPtr/cxx_main.cpp \
                           ../example/DenseMatrix/cxx_main.cpp \
                           ../example/TimeMonitor/cxx_main.cpp

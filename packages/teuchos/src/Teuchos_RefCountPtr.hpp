@@ -32,8 +32,11 @@
 /*! \file Teuchos_RefCountPtr.hpp
     \brief Reference-counted pointer class and non-member templated function implementations.
 */
-/** \example RefCountPtr/cxx_main.cpp
-    This is an example of how to use the Teuchos::RefCountPtr class.
+/** \example example/RefCountPtr/cxx_main.cpp
+    This is an example of how to use the <tt>Teuchos::RefCountPtr</tt> class.
+*/
+/** \example test/RefCountPtr/cxx_main.cpp
+    This is a more detailed testing program that uses all of the <tt>Teuchos::RefCountPtr</tt> class.
 */
 
 #include "Teuchos_RefCountPtrDecl.hpp"

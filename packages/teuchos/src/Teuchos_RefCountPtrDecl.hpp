@@ -116,7 +116,7 @@ where the macro _DEBUG is defined at compile time).
 RefCountPtr<C> c_ptr = rcp(new C);
 \endcode
 
-<li> <b>Creating a <tt>RefCountPtr<></tt> object to an array allocated using <tt>new[n]</tt></b>
+<li> <b>Creating a <tt>RefCountPtr<></tt> object to an array allocated using <tt>new[n]</tt></b> : <tt>Teuchos::DeallocArrayDelete</tt>
 
 \code
 
@@ -141,6 +141,13 @@ C              c;
 RefCountPtr<C> c_ptr = rcp(&c,false);
 \endcode
 
+<li> <b>Copy constructor (implicit casting)</b>
+
+\code
+RefCountPtr<C>       c_ptr  = rcp(new C); // No cast
+RefCountPtr<A>       a_ptr  = c_ptr;      // Cast to base class
+RefCountPtr<const A> ca_ptr = a_ptr;      // Cast from non-const to const
+\endcode
 
 <li> <b>Representing constantness and non-constantness</b>
 
@@ -167,14 +174,6 @@ const RefCountPtr<const C> c_ptr;
 \endcode
 
 </ol>
-
-<li> <b>Copy constructor (implicit casting)</b>
-
-\code
-RefCountPtr<C>       c_ptr  = rcp(new C); // No cast
-RefCountPtr<A>       a_ptr  = c_ptr;      // Cast to base class
-RefCountPtr<const A> ca_ptr = a_ptr;      // Cast from non-const to const
-\endcode
 
 </ol>
 
@@ -210,31 +209,31 @@ a_ptr1 = a_ptr2; // Now a_ptr1 and a_ptr2 point to same C object
 
 <ol>
 
-<li> <b>Access to object reference (debug runtime checked)</b> : <tt>RefCountPtr::operator*()</tt> 
+<li> <b>Access to object reference (debug runtime checked)</b> : <tt>Teuchos::RefCountPtr::operator*()</tt> 
 
 \code
 C &c_ref = *c_ptr;
 \endcode
 
-<li> <b>Access to object pointer (unchecked, may return <tt>NULL</tt>)</b> : <tt>RefCountPtr::get()</tt>
+<li> <b>Access to object pointer (unchecked, may return <tt>NULL</tt>)</b> : <tt>Teuchos::RefCountPtr::get()</tt>
 
 \code
 C *c_rptr = c_ptr.get();
 \endcode
 
-<li> <b>Access to object pointer (debug runtime checked, will not return <tt>NULL</tt>)</b> : <tt>RefCountPtr::operator*()</tt>
+<li> <b>Access to object pointer (debug runtime checked, will not return <tt>NULL</tt>)</b> : <tt>Teuchos::RefCountPtr::operator*()</tt>
 
 \code
 C *c_rptr = &*c_ptr;
 \endcode
 
-<li> <b>Access of object's member (debug runtime checked)</b> : <tt>RefCountPtr::operator->()</tt>
+<li> <b>Access of object's member (debug runtime checked)</b> : <tt>Teuchos::RefCountPtr::operator->()</tt>
 
 \code
 c_ptr->f();
 \endcode
 
-<li> <b>Testing for non-null</b>
+<li> <b>Testing for non-null</b> : <tt>Teuchos::RefCountPtr::get()</tt>, <tt>Teuchos::operator==()</tt>, <tt>Teuchos::operator!=()</tt>
 
 \code
 if( a_ptr.get() ) std::cout << "a_ptr is not null!\n";
@@ -274,6 +273,20 @@ if( is_null(a_ptr) ) std::cout << "a_ptr is null!\n";
 
 <li> <b>Implicit casting (see copy constructor above)</b>
 
+<ol>
+
+<li> <b>Using copy constructor (see above)</b>
+
+<li> <b>Using conversion function</b>
+
+\code
+RefCountPtr<C>       c_ptr  = rcp(new C);                       // No cast
+RefCountPtr<A>       a_ptr  = rcp_implicit_cast<A>(c_ptr);      // To base
+RefCountPtr<const A> ca_ptr = rcp_implicit_cast<const A>(a_ptr);// To const
+\endcode
+
+</ol>
+
 <li> <b>Casting away <tt>const</tt></b> : <tt>rcp_const_cast()</tt>
 
 \code
@@ -308,32 +321,68 @@ RefCountPtr<B1>    b1_ptr2 = rcp_dynamic_cast<B1>(a_ptr2,true);  // Throw std::b
 
 </ol>
 
+
+<li> <b>Customized deallocators</b>
+
+<ol>
+
+<li> <b>Creating a <tt>RefCountPtr<></tt> object with a custom deallocator</b> : <tt>Teuchos::DeallocArrayDelete</tt>
+
+\code
+RefCountPtr<C> c_ptr = rcp(new C[N],DeallocArrayDelete<C>(),true);
+\endcode
+
+<li> <b>Access customized deallocator (runtime checked, throws on failure)</b> : <tt>Teuchos::get_dealloc()</tt>
+
+\code
+const DeallocArrayDelete<C>
+  &dealloc = get_dealloc<DeallocArrayDelete<C> >(c_ptr);
+\endcode
+
+<li> <b>Access optional customized deallocator</b> : <tt>Teuchos::get_optional_dealloc()</tt>
+
+\code
+const DeallocArrayDelete<C>
+  *dealloc = get_optional_dealloc<DeallocArrayDelete<C> >(c_ptr);
+if(dealloc) std::cout << "This deallocator exits!\n";
+\endcode
+
+</ol>
+
 <li> <b>Managing extra data</b>
 
 <ol>
 
-<li> <b>Adding extra data (post destruction of extra data)</b> : <tt>set_extra_data()</tt>
+<li> <b>Adding extra data (post destruction of extra data)</b> : <tt>Teuchos::set_extra_data()</tt>
 
 \code
 set_extra_data(rcp(new B1),"A:B1",&a_ptr);
 \endcode
 
-<li> <b>Adding extra data (pre destruction of extra data)</b> : <tt>get_extra_data()</tt>
+<li> <b>Adding extra data (pre destruction of extra data)</b> : <tt>Teuchos::get_extra_data()</tt>
 
 \code
 set_extra_data(rcp(new B1),"A:B1",&a_ptr,PRE_DESTORY);
 \endcode
 
-<li> <b>Retrieving extra data</b> : <tt>get_extra_data()</tt>
+<li> <b>Retrieving extra data</b> : <tt>Teuchos::get_extra_data()</tt>
 
 \code
 get_extra_data<RefCountPtr<B1> >(a_ptr,"A:B1")->f();
 \endcode
 
-<li> <b>Resetting extra data</b> : <tt>get_extra_data()</tt>
+<li> <b>Resetting extra data</b> : <tt>Teuchos::get_extra_data()</tt>
 
 \code
 get_extra_data<RefCountPtr<B1> >(a_ptr,"A:B1") = rcp(new C);
+\endcode
+
+<li> <b>Retrieving optional extra data</b> : <tt>Teuchos::get_optional_extra_data()</tt>
+
+\code
+const RefCountPtr<B1>
+  *b1 = get_optional_extra_data<RefCountPtr<B1> >(a_ptr,"A:B1");
+if(b1) (*b1)->f();
 \endcode
 
 </ol>
@@ -343,13 +392,13 @@ get_extra_data<RefCountPtr<B1> >(a_ptr,"A:B1") = rcp(new C);
  */
 //@{
 
-/// Used to initialize a <tt>RefCountPtr</tt> object to NULL using an implicit conversion!
+/** \brief Used to initialize a <tt>RefCountPtr</tt> object to NULL using an implicit conversion! */
 enum ENull { null };
 
-/// Used to specify a pre or post destruction of extra data
+/** \brief Used to specify a pre or post destruction of extra data */
 enum EPrePostDestruction { PRE_DESTROY, POST_DESTROY };
 
-/// Deallocator for <tt>new</tt> which calls <tt>delete</tt>
+/** \brief  Deallocator for <tt>new</tt> which calls <tt>delete</tt> */
 template<class T>
 class DeallocDelete
 {
@@ -360,7 +409,7 @@ public:
 	void free( T* ptr ) { if(ptr) delete ptr; }
 };
 
-/// Deallocator for <tt>new []</tt> which calls <tt>delete []</tt>
+/** \brief Deallocator for <tt>new []</tt> which calls <tt>delete []</tt> */
 template<class T>
 class DeallocArrayDelete
 {
@@ -657,13 +706,13 @@ template<class T>
 bool operator!=( const RefCountPtr<T> &p, ENull );
 
 /** \brief Return true if two <tt>RefCountPtr</tt> objects point to the same
- * referenced-counted object.
+ * referenced-counted object and have the same node.
  */
 template<class T1, class T2>
 bool operator==( const RefCountPtr<T1> &p1, const RefCountPtr<T2> &p2 );
 
 /** \brief Return true if two <tt>RefCountPtr</tt> objects do not point to the
- * same referenced-counted object.
+ * same referenced-counted object and have the same node.
  */
 template<class T1, class T2>
 bool operator!=( const RefCountPtr<T1> &p1, const RefCountPtr<T2> &p2 );
