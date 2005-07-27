@@ -34,7 +34,66 @@ that the 'Epetra_' prefix has been stripped from all Epetra objects,
 but that if imported with 'from PyTrilinos import Epetra', these
 objects exist in the 'Epetra' python namespace.  Use the python help()
 facility for local documentation on classes and methods, or see the
-on-line documentation for more in-depth information."
+on-line documentation for more in-depth information.
+
+
+*) Brief Description
+
+The Epetra module offers a suite of serial and distributed linear algebra
+objects, like vectors, multivectors, sparse matrices. Serial dense vectors and
+matrices are also supported. Using Epetra, several BLAS and LAPACK routines
+can be easily accessed through Python. The Epetra communicator is the basic
+intra-processor class of Trilinos.
+
+The most important classes of the Epetra module is:
+- PyComm: basic serial or parallel communicator
+- SerialDenseVector: serial vector, to be used with a serial dense matrix
+- SerialDenseMatrix: serial matrix, allocated as dense
+- SerialDenseProblem: to solve serial dense problems
+- Map: layout of distributed objects across processors
+- Vector: distributed vector
+- MultiVector: series of Vector's with the same Map
+- CrsMatrix: distributed matrix with row access
+- LinearProblem: to solve distributed linear systems
+- Time: utility class to track CPU times
+- Import: to easily redistribute distributed objects
+
+
+*) Example of usage: Creating a Distributed Matrix
+
+The following example builds a distributed tridiagonal matrix. The matrix has
+size 10 and the elements are distributed linearly among the processors.  It can be run is serial or parallel, depending on how Trilinos was configured. 
+
+from PyTrilinos import Epetra
+Epetra.Init()
+Comm  = Epetra.PyComm()
+NumGlobalRows = 10
+Map   = Epetra.Map(NumGlobalRows, 0, Comm)
+A     = Epetra.CrsMatrix(Epetra.Copy, Map, 0);
+NumMyRows = Map.NumMyElements()
+# Loop over all local rows to create a tridiagonal matrix
+for ii in xrange(0, NumMyRows):
+  # `i' is the global ID of local ID `ii'
+  i = Map.GID(ii)
+  if i != NumGlobalRows - 1:
+    Indices = [i, i + 1]
+    Values = [2.0, -1.0]
+  else:
+    Indices = [i]
+    Values = [2.0];
+  A.InsertGlobalValues(i, Values, Indices);
+# transform the matrix into local representation -- no entries
+# can be added after this point. However, existing entries can be
+# modified.
+ierr = A.FillComplete();
+Epetra.Finalize()
+
+
+*) Notes
+
+An Epetra.Vector object is at the same time a NumPy vector, and it can
+therefore be used everywhere NumPy vectors are accepted.
+"
 %enddef
 
 %module(package="PyTrilinos", docstring=EPETRA_DOCSTRING) Epetra
