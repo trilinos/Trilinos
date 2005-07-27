@@ -572,7 +572,8 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
        
 /****************************************************************************/
 /* Because this calculation is done in two locations it has been converted to a
-** subroutine to assure it is consistant. Inline is not yet always available! */
+** subroutine to assure it is consistant. Inline is not yet always available!
+** ERIK: need to calculate nCandidates based on # of unmatched vertices */
 static int calc_nCandidates (int num_vtx, int procs)
 {
 /* 2 below because each match pairs 2 vertices */
@@ -627,14 +628,12 @@ if (hgp->use_timers > 3)  {
     goto fini;
   }
 
-  /* test if user only wants a column matching */
+  /* if user only wants a column matching, set cFLAG */
   cFLAG = strcasecmp(hgp->redm_str, "c-ipm") ? 0 : 1;
 
   /* determine basic working parameters */
-  /* ERIK: need to calculate nCandidates based on # of unmatched vertices */
   nRounds     = cFLAG ? ROUNDS_CONSTANT : hgc->nProc_x * ROUNDS_CONSTANT;
-  nCandidates = cFLAG ? 1+ hg->nVtx/(2*ROUNDS_CONSTANT) 
-   : calc_nCandidates (hg->nVtx, hgc->nProc_x);
+  nCandidates = calc_nCandidates (hg->nVtx, cFLAG ? 1 : hgc->nProc_x); 
     
   /* determine maximum global number of Vtx and Pins for storage allocation */
   /* determine initial sum of all candidates, nTotal for storage allocation */
@@ -732,8 +731,8 @@ if (hgp->use_timers > 3)  {
     if (cFLAG)  {
       for (nTotal=0 ; nTotal < nCandidates && pvisit < hg->nVtx; pvisit++)
         if (cmatch[visit[pvisit]] == visit[pvisit])  {         /* unmatched */
-          permute[nTotal++] = visit[pvisit];      /* select it as a candidate */
-          cmatch[visit[pvisit]] = -1;            /* mark it as a pending match */
+          permute[nTotal++] = visit[pvisit];    /* select it as a candidate */
+          cmatch[visit[pvisit]] = -1;           /* mark it as a pending match */
         }
       goto skip_phase1;
     }     
@@ -803,14 +802,16 @@ if (hgp->use_timers > 3)  {
       i += count;                   /* skip over count edges */
     }
 
-    /* Communication grouped candidates by processor, scramble them!      */
-    /* Otherwise all candidates from proc column 0 will be matched first. */
-    /* Future: Instead of Zoltan_Rand_Perm_Int, we could use              */
-    /* Zoltan_PHG_Vertex_Visit_Order() to reorder the candidates          */
-    /* but that routine uses a local hg so won't work on the candidates.  */
-    Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
-    Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));
-
+    /* Communication is no grouped candidates by processor, scramble them!  */
+    /* Otherwise all candidates from proc column 0 will be matched first... */
+    /* Future: Instead of Zoltan_Rand_Perm_Int, we could use                */
+    /* Zoltan_PHG_Vertex_Visit_Order() to reorder the candidates            */
+    /* but that routine uses a local hg so won't work on the candidates.    */
+    if (hgc->nProc_x > 1) {
+      Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
+      Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));
+    }
+    
 skip_phase1:
 
 
@@ -832,9 +833,9 @@ if (hgp->use_timers > 3)  {
       s = send;                          /* start at send buffer origin */
       for (k = kstart; k < nTotal; k++)   {  
         if (!cFLAG) { 
-          r     = &edgebuf[permute[k]];     
-          gno   = *r++;                        /* gno of candidate vertex */
-          count = *r++;                        /* count of following hyperedges */
+          r     = &edgebuf[permute[k]];
+          gno   = *r++;                      /* gno of candidate vertex */
+          count = *r++;                      /* count of following hyperedges */
         }
         else
           gno = permute[k];                  /* need to use next local vertex */
@@ -876,7 +877,7 @@ if (hgp->use_timers > 3)  {
           }
         }     
         if (count == 0)
-          continue;
+          continue;         /* no partial sums to append to message */
 
         /* HEADER_COUNT (row, col, gno, count of <lno, psum> pairs) */                    
         msgsize = HEADER_COUNT + 2 * count;
@@ -959,17 +960,15 @@ bobtemp++;
         rows[i] = &rec[recsize];       /* in case no data came from a row */
       rows[i] = &rec[recsize];         /* sentinel */
       
-      /* merge partial i.p. sum data to compute total inner products */ 
+      /* merge partial i.p. sum data to compute total inner products */
       s = send; 
       for (n = old_kstart; n < kstart; n++)  {
         m = 0;        
         gno = (cFLAG) ? permute[n] : edgebuf [permute[n]];
-        
-#ifdef RTHRTH        
+               
         /* Not sure if this test makes any speedup ???, works without! */
         if (gno % hgc->nProc_y != hgc->myProc_y)
-          continue;                           /* this gno is not on this proc */     
-#endif
+          continue;                           /* this gno is not on this proc */   
 
         /* merge step: look for target gno from each row's data */
         for (i = 0; i < hgc->nProc_y; i++)  {
@@ -981,11 +980,11 @@ bobtemp++;
                 aux[m++] = lno;           /* then save the lno */          
               sums[lno] += *(float*) (++rows[i]);    /* sum the psums */
             }
-            rows[i] += 3;                 /* skip past current lno, row, col */              
+            rows[i] += 3;                 /* skip past current lno, row, col */       
           }
         }
           
-        /* determine how many total inner products exceed threshold */  
+        /* determine how many total inner products exceed threshold */
         count = 0;
         for (i = 0; i < m; i++)
           if (sums[aux[i]] > TSUM_THRESHOLD)
@@ -1057,9 +1056,11 @@ bobtemp++;
             }      
           }
          
-          if (cFLAG  && match[gno] == gno && (bestsum > TSUM_THRESHOLD)) {
+          if (cFLAG && (bestsum > TSUM_THRESHOLD))  {
             match[bestlno] = gno;
             match[gno]     = bestlno;
+cmatch[bestlno] = -1;
+cmatch[gno]     = -1;            
           }
                         
           if (!cFLAG && bestsum > TSUM_THRESHOLD)  {
@@ -1072,8 +1073,7 @@ bobtemp++;
           }
         }
         
-      if (cFLAG && hgc->nProc_y > 1)  {
-        /* Broadcast what we matched so far */
+      if (cFLAG)  {  /* Broadcast what we matched so far */
         MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
       }       
       
@@ -1082,7 +1082,7 @@ if (hgp->use_timers > 3)
     }              /* DONE: kstart < nTotal loop */
       
     if (cFLAG)
-      continue;      /* no more phases (3 or 4), continue rounds */
+      continue;      /* skip phases 3 and 4, continue rounds */
         
 if (hgp->use_timers > 3)  {
   if (development_timers[3] < 0)
@@ -1192,7 +1192,7 @@ if (hgp->use_timers > 3)  {
 }               
   
      
-if (0 && hgc->myProc_x == 0 && hgc->myProc_y == 0)
+if (1 && hgc->myProc_x == 0 && hgc->myProc_y == 0)
 {
 int local = 0, global = 0, unmatched = 0;
 for (i = 0; i < hg->nVtx; i++)
