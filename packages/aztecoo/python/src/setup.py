@@ -64,15 +64,8 @@ stdLibs        = []
 stdLibraryLibs = []
 extraArgs      = []
 
-# Create the extra arguments list and complete the standard libraries list.  This
-# is accomplished by looping over the arguments in LDFLAGS, FLIBS and LIBS and
-# adding them to the appropriate list.
-am_libs     = makeInfo.get("LDFLAGS"      ,"").split() + \
-              makeInfo.get("AZTECOO_LIBS" ,"").split() + \
-              makeInfo.get("BLAS_LIBS"    ,"").split() + \
-              makeInfo.get("LAPACK_LIBS"  ,"").split() + \
-              makeInfo.get("FLIBS"        ,"").split() + \
-              makeInfo.get("LIBS"         ,"").split()
+# Create the extra arguments list and complete the standard libraries list. 
+am_libs     = makeInfo.get("AZTECOO_LIBS" ,"").split() 
 am_includes = makeInfo.get("AZTECOO_INCLUDES" ,"").split()
 
 for lib in am_libs:

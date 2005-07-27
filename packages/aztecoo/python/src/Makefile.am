@@ -26,13 +26,15 @@
 # ************************************************************************
 # @HEADER
 
+# basic definitions for AztecOO
+include  $(top_builddir)/Makefile.export.aztecoo
+
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 SWIG_CXXFLAGS = $(AZTECOO_INCLUDES) \
                 -I$(top_srcdir)/../epetra/python/src
 
-# basic definitions for AztecOO
-include  $(top_builddir)/Makefile.export
+EXTRA_DIST = AztecOO.i setup.py
 
 # Default make target
 all-am: build
@@ -57,21 +59,16 @@ PROXIES    = $(INTERFACES:.i=.py      )
 
 setup.txt: $(srcdir)/Makefile.am
 	@echo "creating $@"
-	@echo "{"                                   >  $@
-	@echo "  'top_builddir' : '$(top_builddir)',">> $@
-	@echo "  'top_srcdir'   : '$(top_srcdir)',"  >> $@
-	@echo "  'srcdir'       : '$(srcdir)',"      >> $@
-	@echo "  'CC'           : '$(CC)',"          >> $@
-	@echo "  'CXX'          : '$(CXX)',"         >> $@
-	@echo "  'LDFLAGS'      : '$(LDFLAGS)',"     >> $@
-	@echo "  'LAPACK_LIBS'  : '$(LAPACK_LIBS)'," >> $@
-	@echo "  'BLAS_LIBS'    : '$(BLAS_LIBS)',"   >> $@
-	@echo "  'FLIBS'        : '$(FLIBS)',"       >> $@
-	@echo "  'LIBS'         : '$(LIBS)',"        >> $@
-	@echo "  'PYTHON'       : '$(PYTHON)',"      >> $@
-	@echo "  'AZTECOO_LIBS'     : '$(AZTECOO_LIBS)',"   >> $@
-	@echo "  'AZTECOO_INCLUDES' : '$(AZTECOO_INCLUDES)',"   >> $@
-	@echo "}"                                               >> $@
+	@echo "{"                                             >  $@
+	@echo "  'top_builddir'     : '$(top_builddir)',"     >> $@
+	@echo "  'top_srcdir'       : '$(top_srcdir)',"       >> $@
+	@echo "  'srcdir'           : '$(srcdir)',"           >> $@
+	@echo "  'CC'               : '$(CC)',"               >> $@
+	@echo "  'CXX'              : '$(CXX)',"              >> $@
+	@echo "  'AZTECOO_LIBS'     : '$(AZTECOO_LIBS)',"     >> $@
+	@echo "  'AZTECOO_INCLUDES' : '$(AZTECOO_INCLUDES)'," >> $@
+	@echo "  'PYTHON'           : '$(PYTHON)',"           >> $@
+	@echo "}"                                             >> $@
 
 build: $(WRAPPERS) setup.txt $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build

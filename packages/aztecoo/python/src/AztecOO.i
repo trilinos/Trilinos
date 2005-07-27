@@ -29,16 +29,54 @@
 // @HEADER
 
 %define AZTECOO_DOCSTRING
-"The AztecOO module allows access to The Trilinos package AztecOO.  Note
+"""
+The AztecOO module allows access to The Trilinos package AztecOO.  Note
 that the 'AztecOO_' prefix has been stripped from all AztecOO objects,
 but that if imported with 'from PyTrilinos import AztecOO', these
 objects exist in the 'AztecOO' python namespace.  Use the python help()
 facility for local documentation on classes and methods, or see the
 on-line documentation for more in-depth information.
 
-The most important classes of the AztecOO module are:
+The AztecOO module cannot be used without the Epetra module. You might
+want to consider the IFPACK and ML modules to extend the preconditioning
+capabilities of AztecOO.
+
+
+*) Brief Description
+
+AztecOO offers a suite of Krylov accelerators (like CG and GMRES), plus
+several domain decomposition preconditioners with inexact local solvers. The
+overlap among the subdomains can be specified by the user; each subdomain is
+assigneed to a different processor.
+
+The most important classes of the AztecOO module is:
 - AztecOO
-"
+
+
+*) Example of usage
+
+An example of usage of AztecOO is as follows. The linear system matrix is
+defined as a 5-pt Laplacian on a 2D Cartesian grid. The problem has size
+10000, and the corresponding linear system is solved using CG with incomplete
+Cholesky preconditioner. This example can be used in serial and parallel
+environments, depending on how Trilinos was configured.
+
+from PyTrilinos import Epetra, AztecOO, Triutils
+Epetra.Init()
+Comm = Epetra.PyComm()
+Gallery = Triutils.CrsMatrixGallery(\"laplace_2d\", Comm)
+Gallery.Set(\"problem_size\", 100 * 100)
+Matrix = Gallery.GetMatrix()
+LHS = Gallery.GetStartingSolution()
+RHS = Gallery.GetRHS()
+Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
+Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
+Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_dom_decomp)
+Solver.SetAztecOption(AztecOO.AZ_subdomain_solve, AztecOO.AZ_icc)
+Solver.SetAztecOption(AztecOO.AZ_output, 16)
+Solver.Iterate(1550, 1e-5)
+Epetra.Finalize()
+"""
 %enddef
 
 %module(package="PyTrilinos", docstring=AZTECOO_DOCSTRING) AztecOO
