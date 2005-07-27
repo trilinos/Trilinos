@@ -56,6 +56,7 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_USE_TIMERS",                  NULL,  "INT",    0},    
   {"USE_TIMERS",                      NULL,  "INT",    0},    
   {"EDGE_SIZE_THRESHOLD",             NULL,  "FLOAT",  0},
+  {"PHG_BAL_TOL_ADJUSTMENT",          NULL,  "FLOAT",  0},  
   {"PARKWAY_SERPART",                 NULL,  "STRING", 0},
   {NULL,                              NULL,  NULL,     0}     
 };
@@ -205,7 +206,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
               uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %s/%s/%s p=%d "
                       "bal=%.2f cutl=%.2f\n", hg->info, hg->nVtx, hg->nEdge, hg->nPins,
                       hgp.redm_str, hgp.coarsepartition_str, hgp.refinement_str, p,
-                      Zoltan_PHG_Compute_Balance(zz, hg, p, parts),
+                      Zoltan_PHG_Compute_Balance(zz, hg, hgp.part_sizes, p, parts),
                       Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p, &err));
           
           if (err != ZOLTAN_OK)  {
@@ -253,7 +254,7 @@ End:
     static double balsum = 0.0, cutlsum = 0.0, cutnsum = 0.0;
     static double balmax = 0.0, cutlmax = 0.0, cutnmax = 0.0;
     static double balmin = 1e100, cutlmin = 1e100, cutnmin = 1e100;
-    double bal = Zoltan_PHG_Compute_Balance(zz, hg, zz->LB.Num_Global_Parts,
+    double bal = Zoltan_PHG_Compute_Balance(zz, hg, hgp.part_sizes, zz->LB.Num_Global_Parts,
                                             parts);
     double cutl;   /* Connnectivity cuts:  sum_over_edges((npart-1)*ewgt) */
     double cutn;   /* Net cuts:  sum_over_edges((nparts>1)*ewgt) */
@@ -358,6 +359,8 @@ static int Zoltan_PHG_Initialize_Params(
                                  (void*) &hgp->use_timers);  
   Zoltan_Bind_Param(PHG_params, "EDGE_SIZE_THRESHOLD",
                                  (void*) &hgp->EdgeSizeThreshold);  
+  Zoltan_Bind_Param(PHG_params, "PHG_BAL_TOL_ADJUSTMENT",
+                                 (void*) &hgp->bal_tol_adjustment);  
 
   Zoltan_Bind_Param(PHG_params, "PARKWAY_SERPART",
                     hgp->parkway_serpart);  
@@ -382,6 +385,7 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->visit_order = 1;  /* Random */
   hgp->check_graph = 0;
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
+  hgp->bal_tol_adjustment = 1.0;
   hgp->redl = MAX(2*zz->LB.Num_Global_Parts, 100);
   hgp->output_level = PHG_DEBUG_LIST;
   hgp->final_output = 0;

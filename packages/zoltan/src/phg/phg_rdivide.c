@@ -28,7 +28,7 @@ static int split_hypergraph (int *pins[2], HGraph*, HGraph*, Partition, int, ZZ*
 static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
                                 PHGPartParams *hgp, int level,
                                 int *proclist, int *sendbuf, int *dest, int *map, int *nsend);
-
+static float balanceTol(PHGPartParams *hgp, int pno, float ratios[2], float tot, float pw);
 
 /* Recursively divides both the problem and the processes (if enabled)
    into 2 parts until all parts are found */
@@ -51,6 +51,7 @@ int Zoltan_PHG_rdivide(
   int    *proclist=NULL, *sendbuf=NULL, *recvbuf=NULL, nsend, msg_tag=7777;
   PHGComm *hgc = hg->comm;
   double leftw=0.0, rightw=0.0;
+  float  bal_tol = hgp->bal_tol;
   float  bisec_part_sizes[2]={0.0,0.0};   /* Target partition sizes; dimension is 2 
                                         because we are doing bisection */
   static int timer_rdivide=-1;      /* Timer; declared static to accumulate
@@ -91,7 +92,17 @@ int Zoltan_PHG_rdivide(
   if (hgp->use_timers > 1)  /* Don't include partitioning time in rdivide */
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hg->comm->Communicator);
 
+  if (hgp->bal_tol_adjustment>1.0) {
+      float ntol = (float) pow (bal_tol, 1.0 / ceil (log((double)1+hi-lo) / log(2.0)));
+      uprintf(hgc, "for k=%d bal_tol=%.3f   ntol=%.3f\n", 1+hi-lo, bal_tol, ntol);
+      hgp->bal_tol = 1.0 + hgp->bal_tol_adjustment*(ntol-1.0);
+  } else 
+      hgp->bal_tol = 1.0 + hgp->bal_tol_adjustment*(bal_tol-1.0);
+
+  uprintf(hgc, "OLD MAxImbal: %.3f   New MaxImbal: %.3f\n", bal_tol, hgp->bal_tol);
+
   ierr = Zoltan_PHG_Partition (zz, hg, 2, bisec_part_sizes, part, hgp, level);
+  hgp->bal_tol = bal_tol;
   if (ierr != ZOLTAN_OK)
       goto End;
 
@@ -202,8 +213,7 @@ int Zoltan_PHG_rdivide(
               ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide,
                                 hg->comm->Communicator);
 
-          hgp->bal_tol = (leftw==0.0) ? 0.0 : ((leftw+rightw) * hgp->bal_tol * bisec_part_sizes[0]) / leftw;
-/*          uprintf(hgc, "LEFT: W=(%.1lf, %.1lf) old_tol=%.2f  part_s=(%.3f, %.3f) p=%d and new tol=%.2f\n", leftw, rightw, save_bal_tol, bisec_part_sizes[0], bisec_part_sizes[1], p, hgp->bal_tol);*/
+          hgp->bal_tol = balanceTol(hgp, 0, bisec_part_sizes, leftw+rightw, leftw);
           ierr = rdivide_and_prepsend (lo, mid, part, zz, &newleft, hgp, 
                                        level+1, proclist, sendbuf, 
                                        leftdest, leftvmap, &nsend);
@@ -221,9 +231,8 @@ int Zoltan_PHG_rdivide(
           if (hgp->use_timers > 1)  /* Stop timer before recursion */
               ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide,
                                 hg->comm->Communicator);
-          
-          hgp->bal_tol = (rightw==0.0) ? 0.0 : ((leftw+rightw) * hgp->bal_tol * bisec_part_sizes[1]) / rightw;
-/*          uprintf(hgc, "RIGHT: W=(%.1lf, %.1lf) old_tol=%.2f  part_s=(%.3f, %.3f) p=%d and new tol=%.2f\n", leftw, rightw, save_bal_tol, bisec_part_sizes[0], bisec_part_sizes[1], p, hgp->bal_tol);*/
+
+          hgp->bal_tol = balanceTol(hgp, 1, bisec_part_sizes, leftw+rightw, rightw);
           ierr |= rdivide_and_prepsend (mid+1, hi, part, zz, &newright, hgp, 
                                         level+1, proclist, sendbuf, 
                                         rightdest, rightvmap, &nsend);
@@ -279,9 +288,8 @@ int Zoltan_PHG_rdivide(
           if (hgp->use_timers > 1)  /* Stop timer before recursion */
               ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide,
                                 hg->comm->Communicator);
-          
-          hgp->bal_tol = (leftw==0.0) ? 0.0 : ((leftw+rightw) * hgp->bal_tol * bisec_part_sizes[0]) / leftw;
-/*          uprintf(hgc, "LEFT: W=(%.1lf, %.1lf) old_tol=%.2f  part_s=(%.3f, %.3f) p=%d and new tol=%.2f\n", leftw, rightw, save_bal_tol, bisec_part_sizes[0], bisec_part_sizes[1], p, hgp->bal_tol);          */
+
+          hgp->bal_tol = balanceTol(hgp, 0, bisec_part_sizes, leftw+rightw, leftw);
           ierr = Zoltan_PHG_rdivide (lo, mid, final, zz, left, hgp, level+1);
           hgp->bal_tol = save_bal_tol;
                     
@@ -299,10 +307,10 @@ int Zoltan_PHG_rdivide(
               ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide,
                                 hg->comm->Communicator);
           
-          hgp->bal_tol = (rightw==0.0) ? 0.0 : ((leftw+rightw) * hgp->bal_tol * bisec_part_sizes[1]) / rightw;
-/*          uprintf(hgc, "RIGHT: W=(%.1lf, %.1lf) old_tol=%.2f  part_s=(%.3f, %.3f) p=%d and new tol=%.2f\n", leftw, rightw, save_bal_tol, bisec_part_sizes[0], bisec_part_sizes[1], p, hgp->bal_tol);*/
+          hgp->bal_tol = balanceTol(hgp, 1, bisec_part_sizes, leftw+rightw, rightw);
           ierr |= Zoltan_PHG_rdivide(mid+1, hi, final, zz, right, hgp, level+1);
           hgp->bal_tol = save_bal_tol;
+          
           if (hgp->use_timers > 1)  /* Restart timer after recursion */
               ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, 
                                 hg->comm->Communicator);
@@ -396,8 +404,7 @@ int Zoltan_PHG_rdivide_NoProcSplit(int lo, int hi, Partition final, ZZ *zz, HGra
   bisec_part_sizes[0] = bisec_part_sizes[1] = 0.;
   for (i = lo; i <= mid; i++)  bisec_part_sizes[0] += hgp->part_sizes[i];
   for (i = lo; i <= hi;  i++)  bisec_part_sizes[1] += hgp->part_sizes[i];
-  hg->ratio = (double) bisec_part_sizes[0] / (double) bisec_part_sizes[1];
-  bisec_part_sizes[0] = hg->ratio;
+  bisec_part_sizes[0] = (double) bisec_part_sizes[0] / (double) bisec_part_sizes[1];
   bisec_part_sizes[1] = 1. - bisec_part_sizes[0];
 
   ierr = Zoltan_PHG_Partition (zz, hg, 2, bisec_part_sizes, part, hgp, level);
@@ -589,4 +596,13 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
  End:
   ZOLTAN_FREE (&tmap);
   return ierr;
+}
+
+
+static float balanceTol(PHGPartParams *hgp, int pno, float ratios[2], float tot, float pw)
+{
+    float ntol=(pw==0.0) ? 0.0 : (tot*hgp->bal_tol*ratios[pno])/pw;
+    
+    printf("%s: TW=%.1lf pw=%.1lf (%.3lf) old_tol=%.2f  part_s=(%.3f, %.3f) and new tol=%.2f\n", (pno==0) ? "LEFT" : "RIGHT", tot, pw, pw/tot, hgp->bal_tol, ratios[0], ratios[1], ntol);
+    return ntol;
 }

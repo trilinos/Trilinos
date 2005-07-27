@@ -82,6 +82,11 @@ typedef int ZOLTAN_PHG_REFINEMENT_FN(ZZ*, HGraph*, int, float *, Partition,
 /******************************************/
 struct PHGPartParamsStruct {
   float bal_tol;                 /* Balance tolerance in % of average */
+  float bal_tol_adjustment;      /* balance tolerance adjustment;
+                                    between [0-1.0]: it is % of bal_tol
+                                    > 1.0: it is a multiplier to
+                                      q-th square root of bal_tol, where q
+                                      is the number of recursion levels */
   float *part_sizes;             /* Pointer to part_sizes array passed to
                                     Zoltan_PHG; lists part_sizes (%ages) 
                                     for all requested partitions. */
@@ -217,7 +222,7 @@ extern double Zoltan_PHG_Compute_ConCut(PHGComm*, HGraph*, Partition, int,
                                         int*);    
 extern int Zoltan_PHG_Removed_Cuts(ZZ *, ZHG *, double *, double *);
 
-extern double Zoltan_PHG_Compute_Balance(ZZ*, HGraph*, int, Partition);
+extern double Zoltan_PHG_Compute_Balance(ZZ*, HGraph*, float *, int, Partition);
 
 extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZHG**, Partition*, PHGPartParams*);
 extern void Zoltan_PHG_Plot(int, int, int, int*, int*, int*, char*);

@@ -370,7 +370,7 @@ int Zoltan_PHG_Partition (
       uprintf(hgc, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
               hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
               hgp->coarsepartition_str, hgp->refinement_str, p,
-              Zoltan_PHG_Compute_Balance(zz, hg, p, vcycle->Part),
+              Zoltan_PHG_Compute_Balance(zz, hg, part_sizes, p, vcycle->Part),
               Zoltan_PHG_Compute_ConCut(hgc, hg, vcycle->Part, p, &err));
 
     if (hgp->output_level >= PHG_DEBUG_PLOT)
@@ -623,12 +623,13 @@ End:
 double Zoltan_PHG_Compute_Balance (
   ZZ *zz,
   HGraph *hg,
+  float *part_sizes,
   int p,
   Partition part
 )
 {
   int i;
-  double *lsize_w, *size_w, max_size_w, tot_w;
+  double *lsize_w, *size_w, max_imbal, tot_w;
   char *yo = "Zoltan_PHG_Compute_Balance";
   
   if (!hg || !hg->comm || !hg->comm->row_comm)  {
@@ -651,16 +652,20 @@ double Zoltan_PHG_Compute_Balance (
         
   MPI_Allreduce(lsize_w, size_w, p, MPI_DOUBLE, MPI_SUM, hg->comm->row_comm);
   
-  max_size_w = tot_w = 0.0;
-  for (i = 0; i < p; i++) {
-    if (size_w[i] > max_size_w)
-      max_size_w = size_w[i];
-    tot_w += size_w[i];
+  max_imbal = tot_w = 0.0;
+  for (i = 0; i < p; i++) 
+      tot_w += size_w[i];
+  if (tot_w) {
+      for (i = 0; i < p; i++) {
+          double ib= (size_w[i]-part_sizes[i]*tot_w)/(part_sizes[i]*tot_w);
+          if (ib>max_imbal)
+              max_imbal = ib;
+      }
   }
 
   Zoltan_Multifree(__FILE__,__LINE__, 2, &size_w, &lsize_w);
 
-  return tot_w ? max_size_w * p / tot_w : 1.0;
+  return  1.0+max_imbal;
 }
 
 
