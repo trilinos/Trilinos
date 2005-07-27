@@ -69,16 +69,16 @@ all-local:
 	@echo "        +----------------------------------------------------+"
 	@echo "        | Trilinos package amesos built successfully         |"
 	@echo "        |                                                    |"
-	@echo "        | You might want to type \"make check\" to verify that |"
-	@echo "        | all the Amesos examples run successfully, or type  |"
-	@echo "        | \"make check-all\" to run the test suite of Amesos   |"
-	@echo "        | (this may take some time).                         |"
+	@echo "        | You might want to type \"make run-examples\" to      |"
+	@echo "        | verify that all the Amesos examples run            |"
+	@echo "        | successfully. For more details, please refer to    |"
+	@echo "        | Trilinos/doc/check_installation.txt.               |"
 	@echo "        |                                                    |"
 	@echo "        | The Amesos Users' Guide is located in              |"
 	@echo "        | Trilinos/packages/amesos/doc/AmesosReferenceGuide. |"
 	@echo "        | Also you can consult the Amesos web page.          |"
 	@echo "        |                                                    |"
-	@echo "        | You can send questions/comments to:                |"
+	@echo "        | Please send questions/comments to:                 |"
 	@echo "        | - amesos-users@software.sandia.gov                 |"
 	@echo "        | - amesos-developers@software.sandia.gov            |"
 	@echo "        |                                                    |"
@@ -149,31 +149,22 @@ TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR=@abs_top_builddir@/../..
 
 if HAVE_MPI
-ML_CHECK_COMM=mpi
+AMESOS_CHECK_COMM=mpi
 else
-ML_CHECK_COMM=serial
+AMESOS_CHECK_COMM=serial
 endif
 
-check-local:
-	@cd example; make
+run-examples:
 	@echo
-	@echo "============================="
-	@echo "Testing the Amesos package..."
-	@echo "============================="
+	@echo "=============================="
+	@echo "Running the Amesos examples..."
+	@echo "=============================="
 	@echo
-	@echo "You are now running (most of) the executables in the"
-	@echo "example subdirectory."
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
-if HAVE_MPI
-	@echo "By default, the MPI command is set to \"mpirun -np \"."
-	@echo "You can change it by setting the environmental variable"
-	@echo "TRILINOS_MPI_GO, for example in bash you might need"
-	@echo "> export TRILINOS_MPI_GO=\"prun -n \""
-	@echo
-endif
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
   	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(ML_CHECK_COMM) \
+	--comm=$(AMESOS_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
 	--category=AmesosExamples \
@@ -181,30 +172,38 @@ endif
 	--verbosity=1 \
 	--packages=amesos
 
-check-all:
-	@cd test; make
+run-tests:
 	@echo
-	@echo "============================="
-	@echo "Testing the Amesos package..."
-	@echo "============================="
+	@echo "==========================="
+	@echo "Running the Amesos tests..."
+	@echo "==========================="
 	@echo
-	@echo "You are now running the complete Amesos test suite (this may"
-	@echo "test the executables in the example subdirectory)."
-	@echo "The test suite may take several minutes to complete..."
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
-if HAVE_MPI
-	@echo "By default, the MPI command is set to \"mpirun -np \"."
-	@echo "You can change it by setting the environmental variable"
-	@echo "TRILINOS_MPI_GO, for example in bash you might need"
-	@echo "> export TRILINOS_MPI_GO=\"prun -n \""
-	@echo
-endif
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
   	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(ML_CHECK_COMM) \
+	--comm=$(AMESOS_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=FRAMEWORK \
+	--category=AmesosTests \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=amesos
+
+run-pyexamples:
+	@echo
+	@echo "====================================="
+	@echo "Running the Python/Amesos examples..."
+	@echo "====================================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(AMESOS_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=AmesosPyExamples \
 	--output-dir=@abs_top_builddir@/test/runtests-results \
 	--verbosity=1 \
 	--packages=amesos
