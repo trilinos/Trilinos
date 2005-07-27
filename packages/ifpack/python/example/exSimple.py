@@ -3,19 +3,32 @@ try:
   from PyTrilinos import IFPACK, Triutils, AztecOO, Epetra
 except:
   raise ImportError, "error w/ IFPACK or Triutils or AztecOO or Epetra"
+import sys
 
-
-# read the matrix from file, here `bcsstk01.rsa' in HB format
+# read the matrix from file in H/B format. The filename is specified by the
+# first argument in the compile line. If no filename is specified, then the
+# code build a matrix using matrix gallery.
 Epetra.Init()
 Comm = Epetra.PyComm();
-Map, Matrix, LHS, RHS, Exact = Triutils.ReadHB("bcsstk01.rsa", Comm);
+
+args = sys.argv[1:]
+if len(args) == 0:
+  Gallery = Triutils.CrsMatrixGallery("recirc_2d", Comm)
+  Gallery.Set("nx", 100)
+  Gallery.Set("ny", 100)
+  Matrix = Gallery.GetMatrix()
+  Exact = Gallery.GetExactSolution()
+  LHS = Gallery.GetStartingSolution()
+  RHS = Gallery.GetRHS()
+else:
+  Map, Matrix, LHS, RHS, Exact = Triutils.ReadHB(args[0], Comm);
 
 # Creates the IFPACK preconditioner, in this case an incomplete
 # Cholesky factorization, with fill-in of 5
 Factory = IFPACK.Factory();
-Prec = Factory.Create("IC", Matrix);
+Prec = Factory.Create("ILU", Matrix);
 IFPACKList = {
-  "fact: level-of-fill": 5
+  "fact: level-of-fill": 1
 }
 Prec.SetParameters(IFPACKList);
 Prec.Initialize();

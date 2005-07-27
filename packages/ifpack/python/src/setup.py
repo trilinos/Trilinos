@@ -64,23 +64,15 @@ stdLibs        = []
 stdLibraryLibs = []
 extraArgs      = []
 
-# Create the extra arguments list and complete the standard libraries list.  This
-# is accomplished by looping over the arguments in LDFLAGS, FLIBS and LIBS and
-# adding them to the appropriate list.
-am_libs     = makeInfo.get("LDFLAGS"      ,"").split() + \
-              makeInfo.get("IFPACK_LIBS" ,"").split()
-am_includes = makeInfo.get("IFPACK_INCLUDES" ,"").split()
+# Create the extra arguments list and complete the standard libraries list. 
+# This is accomplished by looping over the arguments in PYTHON_LIBS
+am_libs     = makeInfo.get("PYTHON_LIBS"     ,"").split() 
+am_includes = makeInfo.get("PYTHON_INCLUDES" ,"").split()
 
 for lib in am_libs:
     if lib[:2] == "-l":
         stdLibs.append(lib[2:])
     elif lib[:2] == "-L":
-        stdLibraryLibs.append(lib[2:])
-    else:
-        extraArgs.append(lib)
-
-for lib in makeInfo.get("LIBS","").split():
-    if lib[:2] == "-L":
         stdLibraryLibs.append(lib[2:])
     else:
         extraArgs.append(lib)

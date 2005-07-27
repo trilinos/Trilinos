@@ -28,12 +28,16 @@
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
+include $(top_builddir)/Makefile.export
+
+PYTHON_LIBS     = $(EXTRA_LIBS) $(IFPACK_LIBS)
+PYTHON_INCLUDES = $(IFPACK_INCLUDES)
+
 SWIG_CXXFLAGS = -I$(srcdir) \
-                $(IFPACK_INCLUDES) \
+                $(PYTHON_INCLUDES) \
                 -I$(top_srcdir)/../epetra/python/src
 
-# basic definitions for IFPACK
-include  $(top_builddir)/Makefile.export.ifpack
+EXTRA_DIST = IFPACK.i setup.py
 
 # Default make target
 all-am: build
@@ -61,13 +65,8 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "  'srcdir'          : '$(srcdir)',"          >> $@
 	@echo "  'CC'              : '$(CC)',"              >> $@
 	@echo "  'CXX'             : '$(CXX)',"             >> $@
-	@echo "  'LDFLAGS'         : '$(LDFLAGS)',"         >> $@
-	@echo "  'LAPACK_LIBS'     : '$(LAPACK_LIBS)',"     >> $@
-	@echo "  'BLAS_LIBS'       : '$(BLAS_LIBS)',"       >> $@
-	@echo "  'FLIBS'           : '$(FLIBS)',"           >> $@
-	@echo "  'LIBS'            : '$(LIBS)',"            >> $@
-	@echo "  'IFPACK_LIBS'     : '$(IFPACK_LIBS)',"     >> $@
-	@echo "  'IFPACK_INCLUDES' : '$(IFPACK_INCLUDES)'," >> $@
+	@echo "  'PYTHON_LIBS'     : '$(PYTHON_LIBS)',"     >> $@
+	@echo "  'PYTHON_INCLUDES' : '$(PYTHON_INCLUDES)'," >> $@
 	@echo "  'PYTHON'          : '$(PYTHON)'"           >> $@
 	@echo "}"                                           >> $@
 
