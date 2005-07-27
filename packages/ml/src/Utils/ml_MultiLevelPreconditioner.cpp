@@ -931,15 +931,17 @@ ComputePreconditioner(const bool CheckPreconditioner)
     
     if (List_.get("repartition: enable",false))
     {
-#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
       ML_Repartition_Activate(ml_);
 
-      double minmax = List_.get("repartition: min max ratio", 1.1);
+      double minmax = List_.get("repartition: max min ratio", 1.1);
       ML_Repartition_Set_LargestMinMaxRatio(ml_,minmax);
       int minperproc = List_.get("repartition: min per proc", 512);
       ML_Repartition_Set_MinPerProc(ml_,minperproc);
 
+#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
       ML_Repartition_Set_Partitioner(ml_,ML_USEPARMETIS);
+#elif defined(HAVE_ML_ZOLTAN)
+      ML_Repartition_Set_Partitioner(ml_,ML_USEZOLTAN);
 #else
       if (verbose_)
       {
@@ -1031,12 +1033,12 @@ ComputePreconditioner(const bool CheckPreconditioner)
       ML_Repartition_Activate(ml_);
       ML_Repartition_Activate(ml_nodes_);
 
-      double minmax = List_.get("repartition: node min max ratio", 1.1);
+      double minmax = List_.get("repartition: node max min ratio", 1.1);
       ML_Repartition_Set_LargestMinMaxRatio(ml_nodes_,minmax);
       int minperproc = List_.get("repartition: node min per proc", 20);
       ML_Repartition_Set_MinPerProc(ml_nodes_,minperproc);
 
-      minmax = List_.get("repartition: edge min max ratio", 1.1);
+      minmax = List_.get("repartition: edge max min ratio", 1.1);
       ML_Repartition_Set_LargestMinMaxRatio(ml_,minmax);
       minperproc = List_.get("repartition: edge min per proc", 20);
       ML_Repartition_Set_MinPerProc(ml_,minperproc);
