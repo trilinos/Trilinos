@@ -228,7 +228,11 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
  
   // Note: The following call to FillComplete is currently necessary because
   //       some global constants that are needed by the Export () are computed in this routine
-  EPETRA_CHK_ERR(TempTransA1.FillComplete());
+
+  const Epetra_Map& domain_map = OrigMatrix_->OperatorDomainMap();
+  const Epetra_Map& range_map = OrigMatrix_->OperatorRangeMap();
+
+  EPETRA_CHK_ERR(TempTransA1.FillComplete(range_map, domain_map));
 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
@@ -241,7 +245,7 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
 
   EPETRA_CHK_ERR(TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add));
   
-  EPETRA_CHK_ERR(TransposeMatrix_->FillComplete());
+  EPETRA_CHK_ERR(TransposeMatrix_->FillComplete(range_map, domain_map));
 
   if (MakeDataContiguous) {
     EPETRA_CHK_ERR(TransposeMatrix_->MakeDataContiguous());
@@ -315,7 +319,10 @@ int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixW
  
   // Note: The following call to FillComplete is currently necessary because
   //       some global constants that are needed by the Export () are computed in this routine
-  EPETRA_CHK_ERR(TempTransA1.FillComplete());
+  const Epetra_Map& domain_map = OrigMatrix_->OperatorDomainMap();
+  const Epetra_Map& range_map = OrigMatrix_->OperatorRangeMap();
+
+  EPETRA_CHK_ERR(TempTransA1.FillComplete(range_map, domain_map));
 
   // Now that transpose matrix with shared rows is entered, update values of target transpose matrix
 
