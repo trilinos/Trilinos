@@ -1,15 +1,12 @@
 #! /usr/bin/env python
 try:
-  import setpath
-  import Triutils, EpetraExt, Epetra
-except:
-  try:
-    from PyTrilinos import Triutils, EpetraExt, Epetra
-  except ImportError:
-    raise ImportError, "error w/ Triutils or EpetraExt or Epetra"
+  from PyTrilinos import EpetraExt, Epetra
+except ImportError:
+  raise ImportError, "error w/ EpetraExt or Epetra"
 
+Epetra.Init()
+Comm = Epetra.PyComm()
 n = 10
-Comm = Epetra.SerialComm()
 Map = Epetra.Map(10, 0, Comm)
 
 # ================================================================= #
@@ -51,3 +48,4 @@ C = B;
 
 EpetraExt.Add(A, False, 1.0, B, 1.0)
 print B
+Epetra.Finalize()

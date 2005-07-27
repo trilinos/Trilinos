@@ -1,15 +1,13 @@
 #! /usr/bin/env python
-try:
-  import setpath
-  import EpetraExt, Epetra
-except:
-  try:
-    from PyTrilinos import EpetraExt, Epetra
-  except ImportError:
-    raise ImportError, "error w/ EpetraExt or Epetra"
 
+try:
+  from PyTrilinos import EpetraExt, Epetra
+except ImportError:
+  raise ImportError, "error w/ EpetraExt or Epetra"
+
+Epetra.Init()
+Comm = Epetra.PyComm()
 n = 10
-Comm = Epetra.SerialComm()
 Map = Epetra.Map(10, 0, Comm)
 X = Epetra.Vector(Map)
 X.Random()
@@ -69,3 +67,5 @@ if B.NormInf() == 0.0:
   print "I/O for CrsMatrix worked!"
 else:
   print "I/O for CrsMatrix failed!"
+
+Epetra.Finalize()
