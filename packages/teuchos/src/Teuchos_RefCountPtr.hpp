@@ -516,7 +516,7 @@ Teuchos::get_optional_dealloc( RefCountPtr<T>& p )
 
 template<class Dealloc_T, class T>
 inline
-const Dealloc_T& 
+const Dealloc_T*
 Teuchos::get_optional_dealloc( const Teuchos::RefCountPtr<T>& p )
 {
 	return get_optional_dealloc<Dealloc_T>(const_cast<RefCountPtr<T>&>(p));
