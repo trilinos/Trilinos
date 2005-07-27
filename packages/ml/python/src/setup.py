@@ -56,6 +56,7 @@ buildDir   = makeInfo.get("top_builddir","")
 pakDir     = makeInfo.get("top_srcdir","")
 srcDir     = makeInfo.get("srcdir","")
 CXX        = makeInfo.get("CXX")
+CXXFLAGS   = makeInfo.get("CXXFLAGS")
 
 
 # Define the epetra include path, library directory and library name
@@ -67,14 +68,8 @@ stdLibs        = []
 stdLibraryLibs = []
 extraArgs      = []
 
-# Create the extra arguments list and complete the standard libraries list.  This
-# is accomplished by looping over the arguments in LDFLAGS, FLIBS and LIBS and
-# adding them to the appropriate list.
-am_libs     = makeInfo.get("LDFLAGS"      ,"").split() + \
-              makeInfo.get("ML_LIBS" ,"").split() + \
-              makeInfo.get("BLAS_LIBS"    ,"").split() + \
-              makeInfo.get("LAPACK_LIBS"  ,"").split() + \
-              makeInfo.get("FLIBS"        ,"").split()
+# Create the extra arguments list and complete the standard libraries list.
+am_libs     = makeInfo.get("ML_LIBS"      ,"").split() 
 am_includes = makeInfo.get("ML_INCLUDES" ,"").split()
 
 for lib in am_libs:
@@ -108,7 +103,9 @@ wrapML          = "ML_wrap.cpp"
 # compiler and linker
 sysconfig.get_config_vars()
 config_vars = sysconfig._config_vars;
-config_vars['CC'] = CXX
+config_vars['CC']  = CXX
+config_vars['CXX'] = CXX
+config_vars['OPT'] = CXXFLAGS
 
 # _ML  extension module
 _ML = Extension("PyTrilinos._ML",

@@ -35,6 +35,8 @@ SWIG_CXXFLAGS = -I$(srcdir) \
                 $(ML_INCLUDES) \
                 -I$(top_srcdir)/../epetra/python/src
 
+EXTRA_DIST = ML.i setup.py
+
 # Default make target
 all-am: build
 
@@ -61,11 +63,7 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "  'srcdir'       : '$(srcdir)',"       >> $@
 	@echo "  'CC'           : '$(CC)',"           >> $@
 	@echo "  'CXX'          : '$(CXX)',"          >> $@
-	@echo "  'LDFLAGS'      : '$(LDFLAGS)',"      >> $@
-	@echo "  'LAPACK_LIBS'  : '$(LAPACK_LIBS)',"  >> $@
-	@echo "  'BLAS_LIBS'    : '$(BLAS_LIBS)',"    >> $@
-	@echo "  'FLIBS'        : '$(FLIBS)',"        >> $@
-	@echo "  'LIBS'         : '$(LIBS)',"         >> $@
+	@echo "  'CXXFLAGS'     : '$(CXXFLAGS)',"     >> $@
 	@echo "  'ML_INCLUDES'  : '$(ML_INCLUDES)',"  >> $@
 	@echo "  'ML_LIBS'      : '$(ML_LIBS)',"      >> $@
 	@echo "  'PYTHON'       : '$(PYTHON)'"        >> $@
