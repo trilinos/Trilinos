@@ -58,6 +58,10 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
                                                                                 
 all-local:
 	@echo "Trilinos package epetraext built successfully"
+	@echo "To check the installation, simply type \"make run-examples\"."
+	@echo "For more details, please refer to the instructions"
+	@echo "contained in Trilinos/doc/check_installation.txt"
+
 
 ## #######################################################################
 ## Subdirectories to be make'd recursively
@@ -111,3 +115,71 @@ install-exec-hook:
 uninstall-hook:
 
 endif
+
+## #######################################################################
+
+TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
+TRILINOS_BUILD_DIR=@abs_top_builddir@/../..
+
+if HAVE_MPI
+EPETRAEXT_CHECK_COMM=mpi
+else
+EPETRAEXT_CHECK_COMM=serial
+endif
+
+run-examples:
+	@echo
+	@echo "================================="
+	@echo "Running the EpetraExt examples..."
+	@echo "================================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(EPETRAEXT_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=EpetraExtExamples \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=epetraext
+
+run-tests:
+	@echo
+	@echo "=============================="
+	@echo "Running the EpetraExt tests..."
+	@echo "=============================="
+	@echo
+	@echo "You are now running the complete EpetraExt test suite (this may"
+	@echo "test the executables in the examples subdirectory)."
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(EPETRAEXT_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=FRAMEWORK \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=epetraext
+
+run-pyexamples:
+	@echo
+	@echo "========================================"
+	@echo "Running the Python/EpetraExt examples..."
+	@echo "========================================"
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(EPETRAEXT_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=EpetraExtPyExamples \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=epetraext
