@@ -1106,6 +1106,10 @@ with the symbol $\star$ (this symbol is not part of the parameter name).
 \subsubsection{General Options}
 %-----------------------------%
 
+\choicebox{\tt ML label}{[{\tt string}] An optional label that is appended
+to the existing multigrid label.  This makes differentiating between multiple
+solves easier.}
+
 \choicebox{\tt output}{[{\tt int}] Controls the amount of information printed
 to the screen. Ranges from 0 to 10 (0 is no output, and 10 is incredibly
 detailed output).  Default: 10.}
@@ -1295,7 +1299,7 @@ Default: {\tt false}.}
 to use. Can assume the following values: {\tt Zoltan, ParMETIS}. Default: {\tt
 Zoltan}.}
 
-\choicebox{\tt repartition: node min max ratio}{[{\tt double}] Specifies ratio
+\choicebox{\tt repartition: node max min ratio}{[{\tt double}] Specifies ratio
 of maximum
 nodes on a processor to minimum nodes on a processor.   If actual ratio is
 greater than this value, repartitioning occurs.  Otherwise, nothing is done.
@@ -1305,7 +1309,7 @@ Default: 1.1.}
 number of nodes that should be on a processor once repartitioning is done.
 Default: 20.}
 
-\choicebox{\tt repartition: edge min max ratio}{[{\tt double}] Maxwell-specific option.  Specifies ratio of maximum
+\choicebox{\tt repartition: edge max min ratio}{[{\tt double}] Maxwell-specific option.  Specifies ratio of maximum
 edges on a processor to minimum nodes on a processor.   If actual ratio is
 greater than this value, repartitioning occurs.  Otherwise, nothing is done.
 Default: 1.1.}

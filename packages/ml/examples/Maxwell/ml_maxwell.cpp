@@ -284,9 +284,9 @@ int main(int argc, char *argv[])
 
   // controls repartitioning (load-balancing) of multigrid operators in parallel
   MLList.set("repartition: enable",true);
-  MLList.set("repartition: node min max ratio",1.1);
+  MLList.set("repartition: node max min ratio",1.1);
   MLList.set("repartition: node min per proc",20);
-  MLList.set("repartition: edge min max ratio",1.1);
+  MLList.set("repartition: edge max min ratio",1.1);
   MLList.set("repartition: edge min per proc",20);
   MLList.set("repartition: partitioner","Zoltan");
   MLList.set("repartition: Zoltan dimensions",2);

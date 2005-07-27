@@ -744,7 +744,7 @@ int main(int argc, char *argv[])
   MLList.set("coarse: type","Amesos-KLU");
   MLList.set("analyze memory", true);
   MLList.set("repartition: enable", true);
-  MLList.set("repartition: min max ratio", 1.1);
+  MLList.set("repartition: max min ratio", 1.1);
   MLList.set("repartition: min per proc", 512);
   MLList.set("low memory usage", true);
   MLList.set("x-coordinates", (double*) A.XCoord());
