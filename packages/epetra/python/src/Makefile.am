@@ -34,6 +34,8 @@ SWIG_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir) \
                 -I$(top_builddir)/src \
 		$(MPI_FLAG)
 
+EXTRA_DIST = Epetra.i setup.py
+
 # Default make target
 all-am: build
 

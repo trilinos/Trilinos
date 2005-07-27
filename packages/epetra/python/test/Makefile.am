@@ -44,7 +44,7 @@ ACLOCAL	= aclocal -I config
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = \
-	setpath.py testBlockMap.py testComm.py testCsrGraph.py testMap.py \
+	setpath.py testBlockMap.py testComm.py testCrsGraph.py testMap.py \
 	testObject.py testSerialDense.py testVector.py
 
 ## #######################################################################
@@ -56,12 +56,12 @@ MAINTAINERCLEANFILES = Makefile.in
 TEST_SUITE = testObject testSerialDense testComm testBlockMap testMap \
 	     testVector testCrsGraph
 
-check-am: $(TEST_SUITE)
+all: $(TEST_SUITE)
 
-# Run the test script
-test%: $(srcdir)/test%.py $(srcdir)/setpath.py
-	cp $^ .
-	$(PYTHON) $@.py
+# Run the example script
+test%: $(srcdir)/test%.py
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
-# Clean target
-CLEANFILES = $(patsubst %, %.py, $(TEST_SUITE)) setpath.py setpath.pyc
+clean:
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
+	/bin/rm -f *.pyc
