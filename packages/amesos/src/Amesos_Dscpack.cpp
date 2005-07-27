@@ -49,17 +49,17 @@ Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob ) :
 }
 
 //=============================================================================
-Amesos_Dscpack::~Amesos_Dscpack(void) {
+Amesos_Dscpack::~Amesos_Dscpack(void) 
+{
+  // MS // print out some information if required by the user
+  if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
+  if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
 
   if ( MyDscRank>=0 && A_and_LU_built ) { 
     DSC_FreeAll( MyDSCObject_ ) ; 
     DSC_Close0( MyDSCObject_ ) ; 
   }
   DSC_End( MyDSCObject_ ) ; 
-
-  // MS // print out some information if required by the user
-  if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
-  if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
 }
 
 //=============================================================================
@@ -518,10 +518,7 @@ int Amesos_Dscpack::Solve()
 // ======================================================================
 void Amesos_Dscpack::PrintStatus() const
 {
-  if (Problem_->GetOperator() == 0)
-    return;
-
-  if (!Comm().MyPID())
+  if (Problem_->GetOperator() != 0 && Comm().MyPID() != 0)
   {
     string p = "Amesos_Dscpack : ";
     PrintLine();
@@ -542,7 +539,8 @@ void Amesos_Dscpack::PrintStatus() const
          << TotalMemory_ << " Mbytes" << endl; 
   }
 
-  DSC_DoStats( MyDSCObject_ );
+  if ( MyDscRank >= 0 ) 
+    DSC_DoStats( MyDSCObject_ );
 
   if (!Comm().MyPID())
     PrintLine();
