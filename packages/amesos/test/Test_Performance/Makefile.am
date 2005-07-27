@@ -16,7 +16,7 @@ TEST = Test_Performance
 
 noinst_PROGRAMS = $(TEST)
 
-Test_Performance_SOURCES      = $(srcdir)/cxx_main.cpp
+Test_Performance_SOURCES      = $(srcdir)/Amesos_Performance.cpp
 Test_Performance_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 Test_Performance_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 Test_Performance_LDADD        = $(EXAMPLE_LIBS)
