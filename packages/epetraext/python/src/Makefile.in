@@ -306,17 +306,10 @@ CLEANFILES = $(DEPDIR)/*.Pi setup.txt $(WRAPPERS) $(PROXIES)
 
 # Define the SWIGCOMPILE macro
 SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
+SWIG_CXXFLAGS = $(EPETRAEXT_INCLUDES) \
+		-I$(top_srcdir)/../epetra/python/src
 
-# Include swig rules
-SWIG_CXXFLAGS = \
-	-I$(top_srcdir)/src           \
-	-I$(top_srcdir)/src/coloring  \
-	-I$(top_srcdir)/src/transform \
-	-I$(top_srcdir)/src/inout \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_srcdir)/../epetra/python/src \
-        -I$(srcdir)
-
+EXTRA_DIST = EpetraExt.i setup.py
 
 # Currently, this temporary directory is required to be present for the
 # setup.py script to work correctly
@@ -479,6 +472,9 @@ uninstall-am: uninstall-info-am
 	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am uninstall \
 	uninstall-am uninstall-info-am
 
+
+# Include swig rules
+include $(top_builddir)/Makefile.export.epetraext
 include $(DEPDIR)/dummy $(DEPFILES)
 
 # Wrapper and proxy targets
@@ -499,18 +495,14 @@ $(tempdir):
 # python script
 setup.txt: $(srcdir)/Makefile.am
 	@echo "creating $@"
-	@echo "{"                                   >  $@
-	@echo "  'top_srcdir'  : '$(top_srcdir)',"  >> $@
-	@echo "  'srcdir'      : '$(srcdir)',"      >> $@
-	@echo "  'CC'          : '$(CC)',"          >> $@
-	@echo "  'CXX'         : '$(CXX)',"         >> $@
-	@echo "  'LDFLAGS'     : '$(LDFLAGS)',"     >> $@
-	@echo "  'LAPACK_LIBS' : '$(LAPACK_LIBS)'," >> $@
-	@echo "  'BLAS_LIBS'   : '$(BLAS_LIBS)',"   >> $@
-	@echo "  'FLIBS'       : '$(FLIBS)',"       >> $@
-	@echo "  'LIBS'        : '$(LIBS)',"        >> $@
-	@echo "  'PYTHON'      : '$(PYTHON)'"       >> $@
-	@echo "}"                                   >> $@
+	@echo "{"                                         >  $@
+	@echo "  'top_srcdir'     : '$(top_srcdir)',"     >> $@
+	@echo "  'srcdir'         : '$(srcdir)',"         >> $@
+	@echo "  'CC'             : '$(CC)',"             >> $@
+	@echo "  'CXX'            : '$(CXX)',"            >> $@
+	@echo "  'EPETRAEXT_LIBS' : '$(EPETRAEXT_LIBS)'," >> $@
+	@echo "  'PYTHON'         : '$(PYTHON)'"          >> $@
+	@echo "}"                                         >> $@
 
 build: $(WRAPPERS) setup.txt $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build

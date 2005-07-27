@@ -270,16 +270,11 @@ AUTOMAKE_OPTIONS = foreign
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.
 #
-EXTRA_DIST = \
-	exInputOutput.py exMatrixMatrix.py setpath.py
-
+EXTRA_DIST = exInputOutput.py exMatrixMatrix.py
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of examples
 EXAMPLE_SUITE = exInputOutput exMatrixMatrix
-
-# Clean target
-CLEANFILES = $(patsubst %, %.py, $(EXAMPLE_SUITE)) setpath.py setpath.pyc
 all: all-am
 
 .SUFFIXES:
@@ -368,7 +363,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-rm -f $(CONFIG_CLEAN_FILES)
@@ -377,8 +371,6 @@ maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
-clean: clean-am
-
 clean-am: clean-generic mostlyclean-am
 
 distclean: distclean-am
@@ -433,12 +425,15 @@ uninstall-am: uninstall-info-am
 	uninstall-info-am
 
 
-check-am: $(EXAMPLE_SUITE)
+all: $(EXAMPLE_SUITE)
 
 # Run the example script
-ex%: $(srcdir)/ex%.py $(srcdir)/setpath.py
-	cp $^ .
-	$(PYTHON) $@.py
+ex%: $(srcdir)/ex%.py
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
+
+clean:
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm *.py ; fi
+	/bin/rm -f *.pyc
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
