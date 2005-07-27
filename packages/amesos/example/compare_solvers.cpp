@@ -94,8 +94,8 @@ int main(int argc, char *argv[])
   // underlying solver). Uncomment the following two lines
   // to let Amesos print out some timing and status information.
   Teuchos::ParameterList List;
-  // List.set("PrintTiming",true);
-  // List.set("PrintStatus",true);
+   List.set("PrintTiming",true);
+   List.set("PrintStatus",true);
   List.set("MaxProcs",Comm.NumProc());
 
   vector<string> SolverType;

@@ -13,3 +13,8 @@
     DIRS = ../example;
     COMM = SERIAL, MPI(1-4);
 }
+
+(FRAMEWORK, AmesosPyExamples) {
+    DIRS = ../python/example;
+    COMM = SERIAL, MPI;
+}
