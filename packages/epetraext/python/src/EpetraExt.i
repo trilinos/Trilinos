@@ -37,7 +37,7 @@ facility for local documentation on classes and methods, or see the
 on-line documentation for more in-depth information.
 
 The most important classes of the EpetraExt module are:
-*) Graph coloring:
+*) Graph coloring classes:
    - MapColoring
    - MapColoringIndex
 *) Input functions:
@@ -49,7 +49,7 @@ The most important classes of the EpetraExt module are:
    - BlockMapToMatrixMarketFile()
    - RowMatrixToMatrixMarketFile()
    - MultiVectorToMatrixMarketFile()
-*) Matrix-Matrix operations:
+*) Matrix-Matrix functions:
    - Add()
    - Multiply()
 "
