@@ -28,7 +28,33 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos") Amesos
+%define AMESOS_DOCSTRING
+"The Amesos module allows access to The Trilinos package Amesos.  Note
+that the 'Amesos_' prefix has been stripped from all Amesos objects,
+but that if imported with 'from PyTrilinos import Amesos', these
+objects exist in the 'Amesos' python namespace.  Use the python help()
+facility for local documentation on classes and methods, or see the
+on-line documentation for more in-depth information.
+
+The most important classes of the Amesos module are:
+- The factory class, Amesos.Factory
+- The LAPACK interface, Amesos.Lapack
+- The KLU interace, Amesos.Klu
+- The UMFPACK interace, Amesos.Umfpack
+- The SuperLU interace, Amesos.Superlu
+- The SuperLU_DIST interace, Amesos.Superludist
+- The DSCPACK interace, Amesos.Dscpack
+- The MUMPS interace, Amesos.Mumps
+
+Each specific interface may require Amesos to be configured with the
+appropriate --enable-<interface>. (Note that LAPACK and KLU are enabled
+by default.)
+
+For examples of usage, please consult the python/example subdirectory.
+"
+%enddef
+
+%module(package="PyTrilinos", docstring=AMESOS_DOCSTRING) Amesos
 
 %{
 // System includes

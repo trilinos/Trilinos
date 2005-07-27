@@ -54,6 +54,7 @@ buildDir = makeInfo.get("top_builddir","")
 pakDir   = makeInfo.get("top_srcdir","")
 srcDir   = makeInfo.get("srcdir","")
 CXX      = makeInfo.get("CXX")
+CXXFLAGS = makeInfo.get("CXXFLAGS")
 
 #solverLibs = makeInfo.get("LIBS", "");
 #if len(solverLibs) == 0: solverLibs = "amesos";
@@ -95,10 +96,7 @@ extraArgs      = []
 # Create the extra arguments list and complete the standard libraries list.  This
 # is accomplished by looping over the arguments in LDFLAGS, FLIBS and LIBS and
 # adding them to the appropriate list.
-libs = makeInfo.get("LDFLAGS"    ,"").split() + \
-       makeInfo.get("BLAS_LIBS"  ,"").split() + \
-       makeInfo.get("LAPACK_LIBS","").split() + \
-       makeInfo.get("FLIBS"      ,"").split()
+libs = makeInfo.get("LDFLAGS"    ,"").split() 
 for lib in libs:
     if lib[:2] == "-l":
         stdLibs.append(lib[2:])
@@ -124,11 +122,7 @@ if sysName == "Linux":
 # is accomplished by looping over the arguments in LDFLAGS, FLIBS and LIBS and
 # adding them to the appropriate list.
 extraArgs = []
-libs = makeInfo.get("LDFLAGS"    ,"").split() + \
-       makeInfo.get("BLAS_LIBS"  ,"").split() + \
-       makeInfo.get("LAPACK_LIBS","").split() + \
-       makeInfo.get("FLIBS"      ,"").split() + \
-       makeInfo.get("LIBS"       ,"").split()
+libs = makeInfo.get("LDFLAGS"    ,"").split() 
 for lib in libs:
     if lib[:2] == "-l":
         stdLibs.append(lib[2:])
@@ -141,7 +135,9 @@ amesosWrap = "Amesos_wrap.cpp"
 # compiler and linker
 sysconfig.get_config_vars()
 config_vars = sysconfig._config_vars;
-config_vars['CC'] = CXX
+config_vars['CC']  = CXX
+config_vars['CXX'] = CXX
+config_vars['OPT'] = CXXFLAGS
 
 # _Amesos extension module
 _Amesos = Extension("PyTrilinos._Amesos",

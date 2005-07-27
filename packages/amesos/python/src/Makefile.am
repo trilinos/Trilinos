@@ -28,15 +28,20 @@
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = -I$(srcdir) \
-                -I$(top_srcdir)/src \
-                -I$(top_builddir)/src \
-                -I$(top_srcdir)/../teuchos/src \
-                -I$(top_builddir)/../teuchos/src \
-                -I$(top_srcdir)/../epetra/src \
-                -I$(top_builddir)/../epetra/src \
-                -I$(top_srcdir)/../epetra/python/src
+include $(top_builddir)/Makefile.export.amesos
 
+if USING_GNUMAKE
+PYTHON_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS))
+PYTHON_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES))
+else
+PYTHON_LIBS     = $(AMESOS_LIBS)     $(AMESOS_EXTRA_LIBS)
+PYTHON_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
+endif
+
+SWIG_CXXFLAGS = $(PYTHON_INCLUDES) \
+		-I$(top_srcdir)/../epetra/python/src
+
+EXTRA_DIST = Amesos.i setup.py
 
 # Default make target
 all-am: build
@@ -64,13 +69,10 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "  'srcdir'       : '$(srcdir)',"      >> $@
 	@echo "  'CC'           : '$(CC)',"          >> $@
 	@echo "  'CXX'          : '$(CXX)',"         >> $@
-	@echo "  'LDFLAGS'      : '$(LDFLAGS)',"     >> $@
-	@echo "  'LAPACK_LIBS'  : '$(LAPACK_LIBS)'," >> $@
-	@echo "  'BLAS_LIBS'    : '$(BLAS_LIBS)',"   >> $@
-	@echo "  'FLIBS'        : '$(FLIBS)',"       >> $@
-	@echo "  'LIBS'         : '$(LIBS)',"        >> $@
+	@echo "  'CXXFLAGS'     : '$(CXXFLAGS)',"    >> $@
+	@echo "  'LDFLAGS'      : '$(PYTHON_LIBS)'," >> $@
 	@echo "  'PYTHON'       : '$(PYTHON)'"       >> $@
-	@echo "}"                                   >> $@
+	@echo "}"                                    >> $@
 
 build: $(WRAPPERS) setup.txt $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build

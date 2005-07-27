@@ -44,7 +44,7 @@ ACLOCAL	= aclocal -I config
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = \
-	setpath.py exSolvers.py exFactory.py
+	exSolvers.py exFactory.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -54,12 +54,11 @@ MAINTAINERCLEANFILES = Makefile.in
 # Define the suite of examples
 EXAMPLE_SUITE = exSolvers exFactory
 
-check-am: $(EXAMPLE_SUITE)
+all: $(EXAMPLE_SUITE)
 
-# Run the example script
-ex%: $(srcdir)/ex%.py $(srcdir)/setpath.py
-	cp $^ .
-	$(PYTHON) $@.py
+ex%:
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
-# Clean target
-CLEANFILES = $(patsubst %, %.py, $(EXAMPLE_SUITE)) setpath.py setpath.pyc
+clean:
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm *.py ; fi
+	/bin/rm -f *.pyc

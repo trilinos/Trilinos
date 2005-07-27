@@ -41,7 +41,7 @@ def PrintHelp():
   print ' '
   print 'Usage is: ./exSolvers.py <solver-type>'
   print 'where <solver-type> can be:'
-  print '- Amesos_Lapack'
+  print '- Amesos_Lapack (DEFAULT)'
   print '- Amesos_Klu'
   print '- Amesos_Umfpack'
   print '- Amesos_Pardiso'
@@ -59,10 +59,7 @@ def main():
 
   args = sys.argv[1:]
   if len(args) == 0:
-    if Comm.MyPID() == 0:
-      PrintHelp();
-    Epetra.Finalize()
-    sys.exit(-2);
+    Type = "Amesos_Lapack"
   else:
     Type = args[0];
 
@@ -131,7 +128,8 @@ def main():
   Solver.SetParameters(AmesosList);
   Solver.SymbolicFactorization();
   Solver.NumericFactorization();
-  Solver.Solve();
+  ierr = Solver.Solve();
+  print "Solver.Solve() return code = ", ierr
   del Solver
   Epetra.Finalize()
 

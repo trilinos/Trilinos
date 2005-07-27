@@ -28,77 +28,86 @@
 # ************************************************************************
 # @header
 
+# This example creates a (distributed) tridiagonal matrix, a vector for the
+# solution and one for the right-handi. Then, it solves the corresponding
+# linear system using Amesos' LAPACK. Note, however, that any Amesos supported
+# (and enabled at configure time) solver can be adopted; simply change the
+# value of the variable `Type'
+#
+# Last updated on 25-Jul-5
+# Author Marzio Sala, SNL 9214
+
 # PyTrilinos imports
 try:
   from PyTrilinos import Amesos, Epetra
 except ImportError:
   raise ImportError, "error w/ Amesos or Epetra"
 
-def main(Type):
-  # Initializes MPI (or do-nothing in serial)
-  Epetra.Init()
-  # dimension of the problem
-  NumGlobalRows = 10
-  Comm = Epetra.PyComm()
-  Map = Epetra.Map(NumGlobalRows, 0, Comm)
-  LHS_exact = Epetra.Vector(Map)
-  LHS = Epetra.Vector(Map)
-  RHS = Epetra.Vector(Map)
-  Matrix = Epetra.CrsMatrix(Epetra.Copy, Map, 0)
+# Initializes MPI (or do-nothing in serial)
+Epetra.Init()
+# dimension of the problem
+NumGlobalRows = 10
+Comm = Epetra.PyComm()
+Map = Epetra.Map(NumGlobalRows, 0, Comm)
+LHS_exact = Epetra.Vector(Map)
+LHS = Epetra.Vector(Map)
+RHS = Epetra.Vector(Map)
+Matrix = Epetra.CrsMatrix(Epetra.Copy, Map, 0)
 
-  NumLocalRows = Map.NumMyElements()
+NumLocalRows = Map.NumMyElements()
 
-  # Populates the matrix by inserting one row at-a-time. Indices and Values
-  # are defined as Python's lists (of the same length).
-  for ii in range(0, NumLocalRows):
-    i = Map.GID(ii)
-    if i == 0:
-      Indices = [i, i + 1];
-      Values  = [2.0, -1.0];
-    elif i == NumGlobalRows - 1:
-      Indices = [i, i - 1];
-      Values  = [2.0, -1.0];
-    else:
-      Indices = [  i,  i - 1, i + 1];
-      Values  = [2.0,   -1.0,  -1.0];
-    Matrix.InsertGlobalValues(i, Values, Indices);
-  ierr = Matrix.FillComplete();
- 
-  # Builds a solution that is `i' at node `i', then the
-  # corresponding right-hand side, then set the solution to 0
-  for i in range(0, NumLocalRows):
-    LHS[i] = i;
-  Matrix.Multiply(False, LHS, RHS);
-  LHS.PutScalar(0.0);
+# Populates the matrix by inserting one row at-a-time. Indices and Values
+# are defined as Python's lists (of the same length).
+for ii in range(0, NumLocalRows):
+  i = Map.GID(ii)
+  if i == 0:
+    Indices = [i, i + 1];
+    Values  = [2.0, -1.0];
+  elif i == NumGlobalRows - 1:
+    Indices = [i, i - 1];
+    Values  = [2.0, -1.0];
+  else:
+    Indices = [  i,  i - 1, i + 1];
+    Values  = [2.0,   -1.0,  -1.0];
+  Matrix.InsertGlobalValues(i, Values, Indices);
+ierr = Matrix.FillComplete();
 
-  Problem = Epetra.LinearProblem(Matrix, LHS, RHS);
-  Factory = Amesos.Factory();
+# Builds a solution that is `i' at node `i', then the
+# corresponding right-hand side, then set the solution to 0
+for i in range(0, NumLocalRows):
+  LHS[i] = i;
+Matrix.Multiply(False, LHS, RHS);
+LHS.PutScalar(0.0);
 
-  if Factory.Query(Type) == False:
-    print "Selected solver (%s) not supported" % (Type)
-    return;
+Problem = Epetra.LinearProblem(Matrix, LHS, RHS);
+Factory = Amesos.Factory();
 
-  Solver = Factory.Create(Type, Problem);
-  AmesosList = {
-    "PrintTiming":         True,
-    "PrintStatus":         True,
-    "ComputeTrueResidual": True
-  }
-  Solver.SetParameters(AmesosList);
-  ierr = Solver.Solve();
-  del Solver
+# Creates the solver using the Amesos' factory
+Type = "Amesos_Lapack"
+if Factory.Query(Type) == False:
+  print "Selected solver (%s) not supported" % (Type)
+  Epetra.Finalize()
+  raise "Solver not supported"
+Solver = Factory.Create(Type, Problem);
 
-  error = 0.0;
-  for i in range(0, NumLocalRows):
-    error = error + abs(LHS[i] - i);
-  print "Using %s, ||x - x_ex||_1 = %e" % (Type, error);
+# Setting parameters using a Python' dictionary. The list of supported
+# parameters can be found on the user's guide.
+AmesosList = {
+  "PrintTiming":         True,
+  "PrintStatus":         True,
+}
+Solver.SetParameters(AmesosList);
 
-  Epetra.Finalize();
+# Note: we don't check here the return parameters for brevity. 
+Solver.SymbolicFactorization()
+Solver.NumericFactorization()
+Solver.Solve();
 
-# This is a standard Python construct.  Put the code to be executed in a
-# function [typically main()] and then use the following logic to call the
-# function if the script has been called as an executable from the UNIX command
-# line.  This also allows, for example, this file to be imported from a python
-# debugger and main() called from there.
-if __name__ == "__main__":
-    main("Amesos_Klu")
+del Solver
+
+error = 0.0;
+for i in range(0, NumLocalRows):
+  error = error + abs(LHS[i] - i);
+print "Using %s, ||x - x_ex||_1 = %e" % (Type, error);
+
+Epetra.Finalize();
