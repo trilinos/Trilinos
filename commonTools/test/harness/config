@@ -122,6 +122,7 @@ RUN (stratus-nightly-serial) {
     BUILD-DIR           = SERIAL-NEW;
     COMM                = serial;
     INVOKE-CONFIGURE    = osf-stratus;
+    MAKE-COMMAND        = gmake;
     TEST-CATEGORY       = FRAMEWORK;
     TTR-DIR             = /projects/trilinos/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
@@ -139,6 +140,7 @@ RUN (stratus-nightly-mpi) {
     BUILD-DIR           = MPI-NEW;
     COMM                = mpi;
     INVOKE-CONFIGURE    = osf-stratus-mpi;
+    MAKE-COMMAND        = gmake;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 4;
     MPI-START           = lamboot;
@@ -160,6 +162,7 @@ RUN (atlantis-nightly-serial) {
     BUILD-DIR           = SERIAL-NEW;
     COMM                = serial;
     INVOKE-CONFIGURE    = sgi-atlantis;
+    MAKE-COMMAND        = /usr/freeware/bin/gmake;
     TEST-CATEGORY       = FRAMEWORK;
     TTR-DIR             = /scratch1/mnpheno/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
@@ -177,6 +180,7 @@ RUN (atlantis-nightly-mpi) {
     BUILD-DIR           = MPI-NEW;
     COMM                = mpi;
     INVOKE-CONFIGURE    = sgi-atlantis-mpi;
+    MAKE-COMMAND        = /usr/freeware/bin/gmake;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 5;
     TTR-DIR             = /scratch1/mnpheno/TrilinosTestResults;
