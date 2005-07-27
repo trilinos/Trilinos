@@ -1808,7 +1808,7 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
     Values = new double[MaxNumEntries]; // Must extract values even though we discard them
   }
   
-  //const Epetra_Map & RowMap = A.RowMatrixRowMap();
+  const Epetra_Map & RowMap = A.RowMatrixRowMap();
   const Epetra_Map & ColMap = A.RowMatrixColMap();
 
   // Do copy first
@@ -1816,15 +1816,21 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
     if (StaticGraph() || IndicesAreLocal()) {
       if( Indexor ) {
         for (i=0; i<NumSameIDs; i++) {
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(i, MaxNumEntries, NumEntries, Values, Indices));
           Row = GRID(i);
+          int AlocalRow = RowMap.LID(Row);
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(AlocalRow, MaxNumEntries, NumEntries, Values, Indices));
 	  ierr = ReplaceOffsetValues(Row, NumEntries, Values, Indexor->SameOffsets()[i]);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
       else {
         for (i=0; i<NumSameIDs; i++) {
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(i, MaxNumEntries, NumEntries, Values, Indices));
+          Row = GRID(i);
+          int AlocalRow = RowMap.LID(Row);
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(AlocalRow, MaxNumEntries, NumEntries, Values, Indices));
+          for(j=0; j<NumEntries; ++j) {
+            Indices[j] = LCID(ColMap.GID(Indices[j]));
+          }
 	  ierr = ReplaceMyValues(i, NumEntries, Values, Indices);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
@@ -1868,6 +1874,9 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
           FromRow = PermuteFromLIDs[i];
           EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, MaxNumEntries, NumEntries, Values, Indices));
           ToRow = GRID(PermuteToLIDs[i]);
+          for(j=0; j<NumEntries; ++j) {
+            Indices[j] = LCID(ColMap.GID(Indices[j]));
+          }
 	  ierr = ReplaceGlobalValues(ToRow, NumEntries, Values, Indices);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
