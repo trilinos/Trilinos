@@ -1,5 +1,6 @@
 ../configure \
 CXX=c++ \
+CXXFLAGS="-ansi -pedantic" \
 F77=g77 \
 RANLIB="ranlib -s" \
 --with-ldflags="-framework veclib" \
