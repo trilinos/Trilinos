@@ -31,6 +31,7 @@
 
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_Array.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Export.hpp"
 
@@ -43,8 +44,8 @@ namespace Tpetra {
 		// default constructor
 		ExportData(ElementSpace<OrdinalType> const& source, ElementSpace<OrdinalType> const& target)
 			: Object("Tpetra::ExportData")
-				  // permuteToLIDs_, permuteFromLIDs_, remoteLIDs_, remoteGIDs_, exportLIDs_, and exportImageIDs_ 
-				  // don't need/use a member initialization. (These are all std::vector's.)
+			// permuteToLIDs_, permuteFromLIDs_, remoteLIDs_, remoteGIDs_, exportLIDs_, exportGIDs_, 
+			// and exportImageIDs_ don't need/use a member initialization. (These are all STL vectors.)
 			, numSameIDs_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, numPermuteIDs_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, numRemoteIDs_(Teuchos::OrdinalTraits<OrdinalType>::zero())
@@ -60,12 +61,13 @@ namespace Tpetra {
     
 	protected:
 		// OT vectors
-		std::vector<OrdinalType> permuteToLIDs_;
-		std::vector<OrdinalType> permuteFromLIDs_;
-		std::vector<OrdinalType> remoteLIDs_;
-		std::vector<OrdinalType> remoteGIDs_;
-		std::vector<OrdinalType> exportLIDs_;
-		std::vector<OrdinalType> exportImageIDs_;
+		Teuchos::Array<OrdinalType> permuteToLIDs_;
+		Teuchos::Array<OrdinalType> permuteFromLIDs_;
+		Teuchos::Array<OrdinalType> remoteLIDs_;
+		Teuchos::Array<OrdinalType> remoteGIDs_;
+		Teuchos::Array<OrdinalType> exportLIDs_;
+		Teuchos::Array<OrdinalType> exportGIDs_;
+		Teuchos::Array<OrdinalType> exportImageIDs_;
     
 		// OTs
 		OrdinalType numSameIDs_;

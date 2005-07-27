@@ -44,11 +44,14 @@ namespace Tpetra {
   
 	/*! Export is used to construct a communication plan that can be called repeatedly by computational
         classes such the Tpetra CisMatrix and Vector classes to efficiently export elements to other
-		images.
+		images. An exporter is used when we start out with a multiple-ownership distribution,
+		and we want to merge that into a uniquely-owned distribution.
     
 		This class currently has one constructor, taking two ElementSpace objects.
 		The first ElementSpace specifies the distribution we have now. The second 
 		ElementSpace specifies the distribution we want to have after exporting.
+
+		NOTE: Behavior is undefined if the destination ElementSpace is not uniquely-owned.
 	*/
   
 	template <typename OrdinalType>
@@ -64,9 +67,9 @@ namespace Tpetra {
 			ExportData_ = Teuchos::rcp(new ExportData<OrdinalType>(source, target));
       
 			// call subfunctions
-			setupSamePermuteRemote();
+			setupSamePermuteExport();
 			if(source.isGlobal())
-				setupExport();
+				setupRemote();
 		}
     
 		//! copy constructor. 
@@ -148,15 +151,18 @@ namespace Tpetra {
 
 		// subfunctions used by constructor
 		//==============================================================================
-		// sets up numSameIDs_, numPermuteIDs_, and numRemoteIDs_
+		// sets up numSameIDs_, numPermuteIDs_, and numExportIDs_
 		// these variables are already initialized to 0 by the ImportData ctr.
-		// also sets up permuteToLIDs_, permuteFromLIDs_, and remoteLIDs_
-		void setupSamePermuteRemote() {
+		// also sets up permuteToLIDs_, permuteFromLIDs_, exportGIDs_, and exportLIDs_
+		void setupSamePermuteExport() {
+			OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+			OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
+			OrdinalType const negOne = zero - one;
 			ElementSpace<OrdinalType> const& source = getSourceSpace();
 			ElementSpace<OrdinalType> const& target = getTargetSpace();
 			std::vector<OrdinalType> const& sourceGIDs = source.getMyGlobalElements();
 			std::vector<OrdinalType> const& targetGIDs = target.getMyGlobalElements();
-      
+			
 			// -- compute numSameIDs_ ---
 			// go through GID lists of source and target. if the ith GID on both is the same, 
 			// increment numSameIDs_ and try the next. as soon as you come to a pair that don't
@@ -165,75 +171,79 @@ namespace Tpetra {
 			typename std::vector<OrdinalType>::const_iterator targetIter = targetGIDs.begin();
 			while((sourceIter != sourceGIDs.end()) && 
 				  (targetIter != targetGIDs.end()) && 
-				  (*sourceIter == *targetIter)) {
+				  (*targetIter == *sourceIter)) {
 				data().numSameIDs_++;
 				sourceIter++;
 				targetIter++;
 			}
-			// targetIter should now point to the GID of the first non-same entry
+			// sourceIter should now point to the GID of the first non-same entry
       
 			// -- compute numPermuteIDs and numRemoteIDs --
 			// -- fill permuteToLIDs_, permuteFromLIDs_, remoteGIDs_, and remoteLIDs_ --
-			// go through remaining entries in targetGIDs. if source owns that GID, 
+			// go through remaining entries in sourceGIDs. if target owns that GID, 
 			// increment numPermuteIDs_, and add entries to permuteToLIDs_ and permuteFromLIDs_.
-			// otherwise increment numRemoteIDs_ and add entries to remoteLIDs_ and remoteGIDs_.
-			for(; targetIter != targetGIDs.end(); targetIter++) {
-				if(source.isMyGID(*targetIter)) {
+			// otherwise increment numExportIDs_ and add entries to exportLIDs_ and exportGIDs_.
+			for(; sourceIter != sourceGIDs.end(); sourceIter++) {
+				if(target.isMyGID(*sourceIter)) {
 					data().numPermuteIDs_++;
-					data().permuteToLIDs_.push_back(target.getLID(*targetIter));
-					data().permuteFromLIDs_.push_back(source.getLID(*targetIter));
+					data().permuteToLIDs_.push_back(target.getLID(*sourceIter));
+					data().permuteFromLIDs_.push_back(source.getLID(*sourceIter));
 				}
 				else {
-					data().numRemoteIDs_++;
-					data().remoteLIDs_.push_back(target.getLID(*targetIter));
-					data().remoteGIDs_.push_back(*targetIter);
+					data().numExportIDs_++;
+					data().exportLIDs_.push_back(source.getLID(*sourceIter));
+					data().exportGIDs_.push_back(*sourceIter);
 				}
 			}
+			
+			if((data().numExportIDs_ > zero) && (!source.isGlobal())) {
+				throw reportError("Source has export LIDs but is not distributed globally.", 1); 
+			    //*** what do we do here??? ***
+			}
 
-			if((data().numRemoteIDs_ > 0) && (!source.isGlobal()))
-				throw reportError("Target has remote LIDs but Source is not distributed globally.", 1); //*** what do we do here??? ***
-																												
-		};
+			// -- compute exportImageIDs_ --
+			// get list of images that own the GIDs in exportGIDs_ (in the target space)
+			// check exportImageIDs_ for any -1 entries (nobody owns that GID in the target space)
+			target.getRemoteIDList(data().exportGIDs_, data().exportImageIDs_);
+#ifdef HAVE_STD_NEW_COUNT_SYNTAX
+			OrdinalType count = std::count(data().exportImageIDs_.begin(), data().exportImageIDs_.end(), negOne);
+#else
+			OrdinalType count = zero;
+			std::count(data().exportImageIDs_.begin(), data().exportImageIDs_.end(), negOne, count);
+#endif
+			if(count > zero) {
+				throw reportError("Source has GIDs not found in Target.", 2);
+			}
+		}
 
 		//==============================================================================
-		void setupExport() {
-			ElementSpace<OrdinalType> const& source = getSourceSpace();
+		void setupRemote() {
+			OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+			OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
+			ElementSpace<OrdinalType> const& target = getTargetSpace();
 
-			// create remoteImageID list: for each entry remoteGIDs[i],
-			// remoteImageIDs[i] will contain the ImageID of the image that owns that GID.
-			std::vector<OrdinalType> remoteImageIDs(data().remoteGIDs_.size());
-			source.getRemoteIDList(data().remoteGIDs_, remoteImageIDs);
-      
-			// check for GIDs that exist in target but not in source
-			// getRemoteIDList will return -1 for the ImageID for any GIDs where this is the case
-			if(data().numRemoteIDs_ > Teuchos::OrdinalTraits<OrdinalType>::zero()) {
-				OrdinalType const negOne = Teuchos::OrdinalTraits<OrdinalType>::zero() - Teuchos::OrdinalTraits<OrdinalType>::one();
-#ifdef HAVE_STD_NEW_COUNT_SYNTAX
-				OrdinalType count = std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne);
-#else
-				OrdinalType count = 0;
-				std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne, count);
-#endif
-				if(count > Teuchos::OrdinalTraits<OrdinalType>::zero()) {
-					throw reportError("Target has GIDs not found in Source.", 1);
-				}
+			// make sure export IDs are ordered by image
+			// sort exportImageIDs_ in ascending order,
+			// and apply the same permutation to exportGIDs_ and exportLIDs_.
+			sortArrays(data().exportImageIDs_, data().exportGIDs_, data().exportLIDs_);
+			
+			// Construct list of elements that calling image needs to send as a result
+			// of everyone asking for what it needs to receive.
+			data().distributor_.createFromSends(data().numExportIDs_, data().exportImageIDs_, true, data().numRemoteIDs_);
+			// -- numRemoteIDs_ is now defined --
+			
+			// Use comm plan with ExportGIDs to find out who is sending to us and
+			// get proper ordering of GIDs for remote entries 
+			// (that we will convert to LIDs when done).
+			Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > comm = data().platform_->createOrdinalComm();
+			comm->doPostsAndWaits(data().distributor_, data().exportGIDs_, one, data().remoteGIDs_);
+			// -- remoteGIDs_ is now defined --
+			
+			// Remote IDs come in as GIDs, convert to LIDs
+			for(OrdinalType i = zero; i < data().numRemoteIDs_; i++) {
+				data().remoteLIDs_.push_back(target.getLID(data().remoteGIDs_[i]));
 			}
-
-			// sort remoteImageIDs in ascending order
-			// apply same permutation to remoteGIDs_
-			sortArrays(remoteImageIDs, data().remoteGIDs_);
-
-			// call Distributor.createFromRecvs()
-			// takes in numRemoteIDs_, remoteGIDs_, and remoteImageIDs_
-			// returns numExportIDs_, exportLIDs_, and exportImageIDs_
-			data().distributor_.createFromRecvs(data().numRemoteIDs_, data().remoteGIDs_, 
-												 remoteImageIDs, true, data().numExportIDs_, 
-												 data().exportLIDs_, data().exportImageIDs_);
-
-			// convert exportLIDs_ from GIDs to their LIDs in target
-			for(typename std::vector<OrdinalType>::iterator i = data().exportLIDs_.begin(); i != data().exportLIDs_.end(); i++)
-				*i = source.getLID(*i);
-		};
+		}
     
 		//==============================================================================
 	};
