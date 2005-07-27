@@ -110,3 +110,8 @@
     # be compared to the gold copy in baselineX.
     ARG-MASTER-PAIRS  = ml_inputfile7:baseline7;
 }
+
+(FRAMEWORK, MLPyExamples) {
+    DIRS = ../python/example;
+    COMM = SERIAL, MPI;
+}
