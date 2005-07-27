@@ -65,7 +65,6 @@ typedef enum Zoltan_LB_Method {
   PHG,
   PATOH,
   PARKWAY,
-  COLOR,
   ZOLTAN_LB_MAX_METHODS          /*  This entry should always be last.      */
 } ZOLTAN_LB_METHOD;
 
@@ -271,7 +270,6 @@ extern ZOLTAN_LB_FN Zoltan_RIB;
 extern ZOLTAN_LB_FN Zoltan_HSFC;
 extern ZOLTAN_LB_FN Zoltan_HG;
 extern ZOLTAN_LB_FN Zoltan_PHG;
-extern ZOLTAN_LB_FN Zoltan_Color; 
 
 /* FREE DATA_STRUCTURE FUNCTIONS */
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_RCB_Free_Structure;
