@@ -2,17 +2,26 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK) {
+(FRAMEWORK, AztecOOTests) {
     DIRS = AztecOO,
 	         AztecOO_SetParameters;
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK) {
+(FRAMEWORK, AztecOOExamples) {
     DIRS = ../example/AztecOO_UserOpUserMat;
     ARGS = 21 21;
     EXIT-STATUS = STRING-COMPARISON(Solver converged);
     COMM = SERIAL, MPI;
 }
 
+(FRAMEWORK, AztecOOExamples) {
+    DIRS = ../example/UG_Ex1;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK, AztecOOPyExamples) {
+    DIRS = ../python/example;
+    COMM = SERIAL, MPI;
+}
