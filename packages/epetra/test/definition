@@ -19,6 +19,7 @@
        # MapColoring, --> removed this, it's been hanging in MPI.
          MultiVector,
          Object,
+         RowMatrixTransposer,
          SerialDense,
          SerialSpdDense,
          VbrMatrix,
