@@ -601,7 +601,6 @@ distcleancheck: distclean
 	       $(distcleancheck_listfiles) ; \
 	       exit 1; } >&2
 check-am: all-am
-	$(MAKE) $(AM_MAKEFLAGS) check-local
 check: check-recursive
 all-am: Makefile all-local
 installdirs: installdirs-recursive
@@ -687,9 +686,9 @@ uninstall-am: uninstall-info-am
 uninstall-info: uninstall-info-recursive
 
 .PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am all-local \
-	am--refresh check check-am check-local clean clean-generic \
-	clean-recursive ctags ctags-recursive dist dist-all dist-bzip2 \
-	dist-gzip dist-shar dist-tarZ dist-zip distcheck distclean \
+	am--refresh check check-am clean clean-generic clean-recursive \
+	ctags ctags-recursive dist dist-all dist-bzip2 dist-gzip \
+	dist-shar dist-tarZ dist-zip distcheck distclean \
 	distclean-generic distclean-recursive distclean-tags \
 	distcleancheck distdir distuninstallcheck dvi dvi-am html \
 	html-am info info-am install install-am install-data \
@@ -709,16 +708,16 @@ all-local:
 	@echo "        +----------------------------------------------------+"
 	@echo "        | Trilinos package IFPACK built successfully         |"
 	@echo "        |                                                    |"
-	@echo "        | You might want to type \"make check\" to verify that |"
-	@echo "        | all the IFPACK examples run successfully, or type  |"
-	@echo "        | \"make check-all\" to run the test suite of IFPACK   |"
-	@echo "        | (this may take some time).                         |"
+	@echo "        | You might want to type \"make run-examples\" to      |"
+	@echo "        | verify that all the IFPACK examples run            |"
+	@echo "        | successfully. For more details, please refer to    |"
+	@echo "        | Trilinos/doc/check_installation.txt.               |"
 	@echo "        |                                                    |"
 	@echo "        | The IFPACK Users' Guide is located in              |"
 	@echo "        | Trilinos/packages/ifpack/doc/UsersGuide, or        |"
 	@echo "        | consult the IFPACK web site for more details.      |"
 	@echo "        |                                                    |"
-	@echo "        | You can send questions/comments to:                |"
+	@echo "        | Please send questions/comments to:                 |"
 	@echo "        | - ifpack-users@software.sandia.gov                 |"
 	@echo "        | - ifpack-developers@software.sandia.gov            |"
 	@echo "        |                                                    |"
@@ -748,21 +747,14 @@ all-libs:
 
 @USING_EXPORT_MAKEFILES_FALSE@uninstall-hook:
 
-check-local:
-	@cd example; make
+run-examples:
 	@echo
-	@echo "============================="
-	@echo "Testing the IFPACK package..."
-	@echo "============================="
+	@echo "=============================="
+	@echo "Running the IFPACK examples..."
+	@echo "=============================="
 	@echo
-	@echo "You are now running (most of) the executables in the"
-	@echo "example subdirectory."
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
-@HAVE_MPI_TRUE@	@echo "The MPI command is defaulted to \"mpirun -np \""
-@HAVE_MPI_TRUE@	@echo "You can change it by setting the environmental variable"
-@HAVE_MPI_TRUE@	@echo "TRILINOS_MPI_GO, for example in bash you might need"
-@HAVE_MPI_TRUE@	@echo "> export TRILINOS_MPI_GO=\"prun -n \""
-@HAVE_MPI_TRUE@	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
   	--trilinos-dir=$(TRILINOS_HOME_DIR) \
 	--comm=$(ML_CHECK_COMM) \
@@ -773,27 +765,38 @@ check-local:
 	--verbosity=1 \
 	--packages=ifpack
 
-check-all:
-	@cd test; make
+run-tests:
 	@echo
-	@echo "============================="
-	@echo "Testing the IFPACK package..."
-	@echo "============================="
+	@echo "==========================="
+	@echo "Running the IFPACK tests..."
+	@echo "==========================="
 	@echo
-	@echo "You are now running the complete IFPACK test suite (this may"
-	@echo "test the executables in the examples subdirectory)."
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
-@HAVE_MPI_TRUE@	@echo "By default, the MPI command is set to \"mpirun -np \"."
-@HAVE_MPI_TRUE@	@echo "You can change it by setting the environmental variable"
-@HAVE_MPI_TRUE@	@echo "TRILINOS_MPI_GO, for example in bash you might need"
-@HAVE_MPI_TRUE@	@echo "> export TRILINOS_MPI_GO=\"prun -n \""
-@HAVE_MPI_TRUE@	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
   	--trilinos-dir=$(TRILINOS_HOME_DIR) \
 	--comm=$(ML_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
 	--category=FRAMEWORK \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=ifpack
+
+run-pyexamples:
+	@echo
+	@echo "====================================="
+	@echo "Running the Python/IFPACK examples..."
+	@echo "====================================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(ML_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=IFPACKPyExamples \
 	--output-dir=@abs_top_builddir@/test/runtests-results \
 	--verbosity=1 \
 	--packages=ifpack
