@@ -36,15 +36,10 @@ AUTOMAKE_OPTIONS = foreign
 ## #######################################################################
 ACLOCAL	= aclocal -I config
 
-#
-#       I believe that by switching to AUX_DIR(../../config) one 
-#       could get rid of these.
-#
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = \
-	setpath.py exSimple.py 
+EXTRA_DIST = exSimple.py 
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -52,14 +47,13 @@ EXTRA_DIST = \
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of examples
-EXAMPLE_SUITE = exSolver exFactory
+EXAMPLE_SUITE = exSimple
 
-check-am: $(EXAMPLE_SUITE)
+all: $(EXAMPLE_SUITE)
 
-# Run the example script
-ex%: $(srcdir)/ex%.py $(srcdir)/setpath.py
-	cp $^ .
-	$(PYTHON) $@.py
+exSimple:
+	if [ $(srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
-# Clean target
-CLEANFILES = $(patsubst %, %.py, $(EXAMPLE_SUITE)) setpath.py setpath.pyc
+clean:
+	if [ $(srcdir) != @abs_top_builddir@ ]; then /bin/rm exSimple.py ; fi
+	/bin/rm -f *.pyc

@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 try:
   import setpath
-  import Triutils, AztecOO, Epetra
+  import Epetra, AztecOO, Triutils
 except:
   try:
-    from PyTrilinos import Triutils, AztecOO, Epetra
+    from PyTrilinos import Epetra, AztecOO, Triutils
   except ImportError:
-    raise ImportError, "error w/ ML or Triutils or AztecOO or Epetra"
+    raise ImportError, "error w/ Epetra or AztecOO or Triutils"
 
 Epetra.Init()
 nx = 100
