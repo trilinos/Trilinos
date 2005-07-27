@@ -1,0 +1,42 @@
+This file explains a possible way to check the Trilinos installation.
+
+After you have configured and compiled Trilinos (that is, typed "make"), you 
+can execute most of the compiled examples by typing:
+
+$ make run-examples                                                  (1)
+
+At present, this command is supported by the following packages:
+Epetra, EpetraExt, AztecOO, IFPACK, Amesos, and ML. Note that command (1)
+will *not* compile any example, therefore if you have configured Trilinos
+with --disable-examples, nothing will be run. 
+
+If you have configured Trilinos with MPI support, you might need to initialize
+the MPI deamon (for example, LAM/MPI requires a call to lamboot). By default,
+Trilinos supposed that an MPI executable is ran using
+
+$ mpirun -np <num-procs> <executable-name>
+
+If no, you can specify the command to be used instead of "mpirun -np "
+by setting the environmental variable TRILINOS_MPI_GO. For example, some DEC
+machines require the following (using BASH):
+
+$ export TRILINOS_MPI_GO="prun -n "
+
+Command (1) should run relatively fast. If you want a more accurate test,
+simply type
+
+$ make run-tests                                                     (2)
+
+Command (2) will run most of the test harness suite of Trilinos, and might
+take some time.
+
+If you have configured Trilinos with Python support, you can also try
+
+$ make run-pyexamples                                                 (3)
+
+Command (3) will check the Python modules of Trilinos. This command requires:
+- you have already installed Trilinos by typing "make install"
+- you have already set the envirnomental variable PYTHONPATH, so that
+  Python can find the PyTrilinos module.
+
+
