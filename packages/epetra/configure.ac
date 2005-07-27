@@ -403,6 +403,8 @@ AC_CONFIG_FILES([
 		test/MultiVector/Makefile.include
 		test/Object/Makefile
 		test/Object/Makefile.include
+		test/RowMatrixTransposer/Makefile
+		test/RowMatrixTransposer/Makefile.include
 		test/SerialDense/Makefile
 		test/SerialDense/Makefile.include
 		test/SerialSpdDense/Makefile

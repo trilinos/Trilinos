@@ -29,7 +29,7 @@
 SUBDIRS = src BlockMap CrsGraph CrsMatrix CrsRectMatrix Directory \
 FECrsGraph FECrsMatrix FEVbrMatrix FEVector ImportExport \
 IntSerialDense Map MapColoring \
-MultiVector Object SerialDense SerialSpdDense \
+MultiVector Object RowMatrixTransposer SerialDense SerialSpdDense \
 VbrMatrix Vector Comm scripts BasicPerfTest
 
 TESTS = \
@@ -49,6 +49,7 @@ Map/Map_test.exe \
 MapColoring/MapColoring_test.exe \
 MultiVector/MultiVector_test.exe \
 Object/Object_test.exe \
+RowMatrixTransposer/RowMatrixTransposer_test.exe \
 SerialDense/SerialDense_test.exe \
 SerialSpdDense/SerialSpdDense_test.exe \
 VbrMatrix/VbrMatrix_test.exe \

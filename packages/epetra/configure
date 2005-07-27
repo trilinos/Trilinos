@@ -1772,7 +1772,7 @@ else
 echo "$as_me: WARNING: \`missing' script is too old or missing" >&2;}
 fi
 
-if mkdir -p -- . 2>/dev/null; then
+if mkdir -p --version . >/dev/null 2>&1 && test ! -d ./--version; then
   # Keeping the `.' argument allows $(mkdir_p) to be used without
   # argument.  Indeed, we sometimes output rules like
   #   $(mkdir_p) $(somedir)
@@ -1785,7 +1785,7 @@ else
   # recognize any option.  It will interpret all options as
   # directories to create, and then abort because `.' already
   # exists.
-  for d in ./-p ./--;
+  for d in ./-p ./--version;
   do
     test -d $d && rmdir $d
   done
@@ -3233,7 +3233,9 @@ else
     : > sub/conftest.c
     for i in 1 2 3 4 5 6; do
       echo '#include "conftst'$i'.h"' >> sub/conftest.c
-      : > sub/conftst$i.h
+      # Using `: > sub/conftst$i.h' creates only sub/conftst1.h with
+      # Solaris 8's {/usr,}/bin/sh.
+      touch sub/conftst$i.h
     done
     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
 
@@ -3690,7 +3692,9 @@ else
     : > sub/conftest.c
     for i in 1 2 3 4 5 6; do
       echo '#include "conftst'$i'.h"' >> sub/conftest.c
-      : > sub/conftst$i.h
+      # Using `: > sub/conftst$i.h' creates only sub/conftst1.h with
+      # Solaris 8's {/usr,}/bin/sh.
+      touch sub/conftst$i.h
     done
     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
 
@@ -3843,7 +3847,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3846:" \
+echo "$as_me:3850:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8380,7 +8384,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8383: \"$ac_link\") >&5
+(eval echo $as_me:8387: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8458,7 +8462,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8461: \"$ac_link\") >&5
+(eval echo $as_me:8465: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11333,7 +11337,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11336: \"$ac_link\") >&5
+(eval echo $as_me:11340: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11411,7 +11415,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11414: \"$ac_link\") >&5
+(eval echo $as_me:11418: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11627,7 +11631,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 ##
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.epetra src/Makefile test/Makefile test/BasicPerfTest/Makefile test/BasicPerfTest/Makefile.include test/BlockMap/Makefile test/BlockMap/Makefile.include test/Comm/Makefile test/Comm/Makefile.include test/CrsGraph/Makefile test/CrsGraph/Makefile.include test/CrsMatrix/Makefile test/CrsMatrix/Makefile.include test/CrsRectMatrix/Makefile test/CrsRectMatrix/Makefile.include test/Directory/Makefile test/Directory/Makefile.include test/FECrsGraph/Makefile test/FECrsGraph/Makefile.include test/FECrsMatrix/Makefile test/FECrsMatrix/Makefile.include test/FEVbrMatrix/Makefile test/FEVbrMatrix/Makefile.include test/FEVector/Makefile test/FEVector/Makefile.include test/ImportExport/Makefile test/ImportExport/Makefile.include test/IntSerialDense/Makefile test/IntSerialDense/Makefile.include test/Map/Makefile test/Map/Makefile.include test/MapColoring/Makefile test/MapColoring/Makefile.include test/MultiVector/Makefile test/MultiVector/Makefile.include test/Object/Makefile test/Object/Makefile.include test/SerialDense/Makefile test/SerialDense/Makefile.include test/SerialSpdDense/Makefile test/SerialSpdDense/Makefile.include test/VbrMatrix/Makefile test/VbrMatrix/Makefile.include test/Vector/Makefile test/Vector/Makefile.include test/src/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile example/UG_Ex1/Makefile example/UG_ExMaps/Makefile example/my_example/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/mpi/run_epetra_thyra_tests.pl test/scripts/daily/serial/Makefile test/scripts/daily/serial/run_epetra_thyra_tests.pl test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile python/Makefile python/src/Makefile python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.epetra src/Makefile test/Makefile test/BasicPerfTest/Makefile test/BasicPerfTest/Makefile.include test/BlockMap/Makefile test/BlockMap/Makefile.include test/Comm/Makefile test/Comm/Makefile.include test/CrsGraph/Makefile test/CrsGraph/Makefile.include test/CrsMatrix/Makefile test/CrsMatrix/Makefile.include test/CrsRectMatrix/Makefile test/CrsRectMatrix/Makefile.include test/Directory/Makefile test/Directory/Makefile.include test/FECrsGraph/Makefile test/FECrsGraph/Makefile.include test/FECrsMatrix/Makefile test/FECrsMatrix/Makefile.include test/FEVbrMatrix/Makefile test/FEVbrMatrix/Makefile.include test/FEVector/Makefile test/FEVector/Makefile.include test/ImportExport/Makefile test/ImportExport/Makefile.include test/IntSerialDense/Makefile test/IntSerialDense/Makefile.include test/Map/Makefile test/Map/Makefile.include test/MapColoring/Makefile test/MapColoring/Makefile.include test/MultiVector/Makefile test/MultiVector/Makefile.include test/Object/Makefile test/Object/Makefile.include test/RowMatrixTransposer/Makefile test/RowMatrixTransposer/Makefile.include test/SerialDense/Makefile test/SerialDense/Makefile.include test/SerialSpdDense/Makefile test/SerialSpdDense/Makefile.include test/VbrMatrix/Makefile test/VbrMatrix/Makefile.include test/Vector/Makefile test/Vector/Makefile.include test/src/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile example/UG_Ex1/Makefile example/UG_ExMaps/Makefile example/my_example/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/mpi/run_epetra_thyra_tests.pl test/scripts/daily/serial/Makefile test/scripts/daily/serial/run_epetra_thyra_tests.pl test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile python/Makefile python/src/Makefile python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -12386,6 +12390,8 @@ do
   "test/MultiVector/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/MultiVector/Makefile.include" ;;
   "test/Object/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Object/Makefile" ;;
   "test/Object/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/Object/Makefile.include" ;;
+  "test/RowMatrixTransposer/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/RowMatrixTransposer/Makefile" ;;
+  "test/RowMatrixTransposer/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/RowMatrixTransposer/Makefile.include" ;;
   "test/SerialDense/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/SerialDense/Makefile" ;;
   "test/SerialDense/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/SerialDense/Makefile.include" ;;
   "test/SerialSpdDense/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/SerialSpdDense/Makefile" ;;
@@ -13247,14 +13253,14 @@ echo X"$mf" |
   grep '^DEP_FILES *= *[^ #]' < "$mf" > /dev/null || continue
   # Extract the definition of DEP_FILES from the Makefile without
   # running `make'.
-  DEPDIR=`sed -n -e '/^DEPDIR = / s///p' < "$mf"`
+  DEPDIR=`sed -n 's/^DEPDIR = //p' < "$mf"`
   test -z "$DEPDIR" && continue
   # When using ansi2knr, U may be empty or an underscore; expand it
-  U=`sed -n -e '/^U = / s///p' < "$mf"`
+  U=`sed -n 's/^U = //p' < "$mf"`
   test -d "$dirpart/$DEPDIR" || mkdir "$dirpart/$DEPDIR"
   # We invoke sed twice because it is the simplest approach to
   # changing $(DEPDIR) to its actual value in the expansion.
-  for file in `sed -n -e '
+  for file in `sed -n '
     /^DEP_FILES = .*\\\\$/ {
       s/^DEP_FILES = //
       :loop

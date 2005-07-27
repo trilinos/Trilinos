@@ -107,13 +107,16 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Epetra_config.h
 CONFIG_CLEAN_FILES = Makefile
 PROGRAMS = $(noinst_PROGRAMS)
-am_RowMatrixTransposer_test_OBJECTS = RowMatrixTransposer_test-cxx_main.$(OBJEXT)
-RowMatrixTransposer_test_OBJECTS = $(am_RowMatrixTransposer_test_OBJECTS)
+am_RowMatrixTransposer_test_OBJECTS =  \
+	RowMatrixTransposer_test-cxx_main.$(OBJEXT)
+RowMatrixTransposer_test_OBJECTS =  \
+	$(am_RowMatrixTransposer_test_OBJECTS)
 am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/RowMatrixTransposer_test-cxx_main.Po
+@AMDEP_TRUE@DEP_FILES =  \
+@AMDEP_TRUE@	./$(DEPDIR)/RowMatrixTransposer_test-cxx_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
