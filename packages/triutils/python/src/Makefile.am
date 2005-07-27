@@ -37,6 +37,7 @@ SWIG_CXXFLAGS = -I$(srcdir) \
                 -I$(top_builddir)/../triutils/src \
                 -I$(top_srcdir)/../epetra/python/src
 
+EXTRA_DIST = Triutils.i setup.py
 
 # Default make target
 all-am: build
@@ -62,6 +63,8 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "  'top_builddir' : '$(top_builddir)',"  >> $@
 	@echo "  'top_srcdir'   : '$(top_srcdir)',"  >> $@
 	@echo "  'srcdir'       : '$(srcdir)',"      >> $@
+	@echo "  'CC'           : '$(CC)',"          >> $@
+	@echo "  'CXX'          : '$(CXX)',"         >> $@
 	@echo "  'LDFLAGS'      : '$(LDFLAGS)',"     >> $@
 	@echo "  'LAPACK_LIBS'  : '$(LAPACK_LIBS)'," >> $@
 	@echo "  'BLAS_LIBS'    : '$(BLAS_LIBS)',"   >> $@

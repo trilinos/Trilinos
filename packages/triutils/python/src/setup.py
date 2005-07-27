@@ -53,6 +53,7 @@ except IOError:
 buildDir   = makeInfo.get("top_builddir","")
 pakDir     = makeInfo.get("top_srcdir","")
 srcDir     = makeInfo.get("srcdir","")
+CXX        = makeInfo.get("CXX")
 
 # Define the teuchos include path, library directory and library name
 TriutilsSrcDir   = os.path.join(pakDir, "../triutils", "src")
@@ -91,6 +92,12 @@ for lib in libs:
 
 # Define the strings that refer to the required source files.
 wrapTriutils = "Triutils_wrap.cpp"
+
+# compiler and linker
+sysconfig.get_config_vars()
+config_vars = sysconfig._config_vars;
+config_vars['CC']  = CXX
+config_vars['CXX'] = CXX
 
 # _Triutils  extension module
 _Triutils = Extension("PyTrilinos._Triutils",
