@@ -92,7 +92,7 @@ int Amesos_Klu::ExportToSerial()
 {
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ 
        << " UseDataInPlace_ = " << UseDataInPlace_ 
-       << " iam = " << iam 
+       << " MyPID = " << MyPID_ 
        << endl ; 
 
   if ( numentries_ != RowMatrixA_->NumGlobalNonzeros()) { 
@@ -100,18 +100,18 @@ int Amesos_Klu::ExportToSerial()
     AMESOS_CHK_ERR( -2 );
   }
   if (UseDataInPlace_ != 1) {
-    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
     assert ( RowMatrixA_ != 0 ) ; 
     assert ( ImportToSerial_.get() != 0 ) ; 
-    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
     AMESOS_CHK_ERR(SerialCrsMatrixA_->Import(*StdIndexMatrix_, 
 					     *ImportToSerial_, Insert ));
 
-    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
     
     AMESOS_CHK_ERR(SerialCrsMatrixA_->FillComplete());
     AMESOS_CHK_ERR(SerialCrsMatrixA_->OptimizeStorage());
-    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
 
     if( numentries_ != SerialMatrix_->NumGlobalNonzeros()) {
       cerr << " Amesos_Klu cannot handle this matrix.  " ;
@@ -136,7 +136,6 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
 
   RowMatrixA_ = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   if (RowMatrixA_ == 0) AMESOS_CHK_ERR(-1);
-  iam = Comm().MyPID() ;
 
   const Epetra_Map &OriginalMatrixMap = RowMatrixA_->RowMatrixRowMap() ;
   const Epetra_Map &OriginalDomainMap = 
@@ -152,23 +151,23 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
   //
   //  Create a serial matrix
   //
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
   assert( NumGlobalElements_ == OriginalMatrixMap.NumGlobalElements() ) ;
   int NumMyElements_ = 0 ;
-  if (iam==0) NumMyElements_ = NumGlobalElements_;
+  if (MyPID_==0) NumMyElements_ = NumGlobalElements_;
   //
   //  UseDataInPlace_ is set to 1 (true) only if everything is perfectly
   //  normal.  Anything out of the ordinary reverts to the more expensive
   //  path. 
   //
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
   UseDataInPlace_ = ( OriginalMatrixMap.NumMyElements() ==
 	       OriginalMatrixMap.NumGlobalElements() )?1:0;
   if ( ! OriginalRangeMap.SameAs( OriginalMatrixMap ) ) UseDataInPlace_ = 0 ; 
   if ( ! OriginalDomainMap.SameAs( OriginalMatrixMap ) ) UseDataInPlace_ = 0 ; 
   Comm().Broadcast( &UseDataInPlace_, 1, 0 ) ;
 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
   //
   //  Reindex matrix if necessary (and possible - i.e. CrsMatrix for now)
   //
@@ -182,16 +181,16 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
     if (CrsMatrixA_ == 0)
       AMESOS_CHK_ERR(-4);
   }
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
   if  ( Reindex_ ) {
 #ifdef HAVE_AMESOS_EPETRAEXT
     const Epetra_Map& OriginalMap = CrsMatrixA_->RowMap();
     StdIndex_ = rcp( new Amesos_StandardIndex( OriginalMap  ) );
-    const Epetra_Map& OriginalColMap = CrsMatrixA_->RowMap();
+    //const Epetra_Map& OriginalColMap = CrsMatrixA_->RowMap();
     StdIndexDomain_ = rcp( new Amesos_StandardIndex( OriginalDomainMap  ) );
     StdIndexRange_ = rcp( new Amesos_StandardIndex( OriginalRangeMap  ) );
 
-    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
     StdIndexMatrix_ = StdIndex_->StandardizeIndex( CrsMatrixA_ );
 #else
     cerr << "Amesos_Klu requires EpetraExt to reindex matrices." << endl 
@@ -206,7 +205,7 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
   //
   //  Convert Original Matrix to Serial (if it is not already)
   //
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " UseDataInPlace_ = " << UseDataInPlace_ << endl ; 
   if (UseDataInPlace_ == 1) {
     SerialMatrix_ = StdIndexMatrix_;
@@ -214,22 +213,22 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
     if ( debug_ ) cout << __FILE__ << "::" << __LINE__ 
 		     << " NumGlobalElements_ = " << NumGlobalElements_
 		     << " NumMyElements_ = " << NumMyElements_
-		     << " iam = " << iam << endl ; 
+		     << " iam = " << MyPID_ << endl ; 
     SerialMap_ = rcp(new Epetra_Map(NumGlobalElements_, NumMyElements_, 0, Comm()));
     
-    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
     ImportToSerial_ = rcp(new Epetra_Import ( *SerialMap_, StdIndexMatrix_->RowMatrixRowMap() ) );
     if (ImportToSerial_.get() == 0) AMESOS_CHK_ERR(-5);
 
-    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
     SerialCrsMatrixA_ = rcp( new Epetra_CrsMatrix(Copy, *SerialMap_, 0) ) ;
-    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
     SerialMatrix_ = &*SerialCrsMatrixA_ ;
-    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+    if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
   }
 AddTime("matrix redistribution");
 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
 return 0;
 }
 
@@ -266,7 +265,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime)
   //  Convert matrix to the form that Klu expects (Ap, VecAi, VecAval)
   //
 
-  if (iam==0) {
+  if (MyPID_==0) {
     assert( NumGlobalElements_ == SerialMatrix_->NumGlobalRows());
     assert( NumGlobalElements_ == SerialMatrix_->NumGlobalCols());
     assert( numentries_ == SerialMatrix_->NumGlobalNonzeros()) ;
@@ -421,7 +420,7 @@ int Amesos_Klu::PerformSymbolicFactorization()
 {
   ResetTime();
 
-  if (iam == 0) {
+  if (MyPID_ == 0) {
     if (PrivateKluData_->Symbolic_) {
 	klu_btf_free_symbolic (&(PrivateKluData_->Symbolic_)) ;
     }
@@ -441,7 +440,7 @@ int Amesos_Klu::PerformNumericFactorization( )
 {
   ResetTime();
 
-  if (iam == 0) {
+  if (MyPID_ == 0) {
 
     bool factor_with_pivoting = true ;
 
@@ -522,9 +521,10 @@ bool Amesos_Klu::MatrixShapeOK() const {
 //=============================================================================
 int Amesos_Klu::SymbolicFactorization() 
 {
+  MyPID_    = Comm().MyPID();
+  NumProcs_ = Comm().NumProc();
 
-  iam = Comm().MyPID();
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Entering SymbolicFactorization()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_  << " Entering SymbolicFactorization()" << endl ; 
 
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
@@ -533,23 +533,23 @@ int Amesos_Klu::SymbolicFactorization()
 
   NumSymbolicFact_++;
 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
   AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
   assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols() );
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
 
   AMESOS_CHK_ERR( ExportToSerial() );
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
 
   AMESOS_CHK_ERR( ConvertToKluCRS(true) );
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
 
   AMESOS_CHK_ERR( PerformSymbolicFactorization() );
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_ << endl ; 
 
   IsSymbolicFactorizationOK_ = true;
   
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Leaving SymbolicFactorization()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_  << " Leaving SymbolicFactorization()" << endl ; 
   return 0;
 }
 
@@ -557,7 +557,7 @@ int Amesos_Klu::SymbolicFactorization()
 int Amesos_Klu::NumericFactorization() 
 {
 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Entering NumericFactorization()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_  << " Entering NumericFactorization()" << endl ; 
   IsNumericFactorizationOK_ = false;
   if (IsSymbolicFactorizationOK_ == false)
     AMESOS_CHK_ERR(SymbolicFactorization());
@@ -581,7 +581,7 @@ int Amesos_Klu::NumericFactorization()
 
   IsNumericFactorizationOK_ = true;
   
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Leaving NumericFactorization()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_  << " Leaving NumericFactorization()" << endl ; 
   return 0;
 }
 
@@ -589,7 +589,7 @@ int Amesos_Klu::NumericFactorization()
 int Amesos_Klu::Solve() 
 {
 
- if ( debug_ )     cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Entering Solve()" << endl ; 
+ if ( debug_ )     cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_  << " Entering Solve()" << endl ; 
   if (IsNumericFactorizationOK_ == false)
     AMESOS_CHK_ERR(NumericFactorization());
   
@@ -671,7 +671,7 @@ int Amesos_Klu::Solve()
 
   if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << endl ; 
   int SerialXlda ;
-  if (iam == 0) {
+  if (MyPID_ == 0) {
     AMESOS_CHK_ERR(SerialX->ExtractView(&SerialXvalues,&SerialXlda ));
 
     if (SerialXlda != NumGlobalElements_)
@@ -716,7 +716,7 @@ int Amesos_Klu::Solve()
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*vecX, *vecB, "Amesos_Klu");
 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << iam  << " Leaving Solve()" << endl ; 
+  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " iam = " << MyPID_  << " Leaving Solve()" << endl ; 
   return(0) ;
 }
 
@@ -725,7 +725,7 @@ int Amesos_Klu::Solve()
 void Amesos_Klu::PrintStatus() const
 {
 
-  if (iam) return;
+  if (MyPID_) return;
 
   PrintLine();
 
@@ -747,7 +747,7 @@ void Amesos_Klu::PrintStatus() const
 
 void Amesos_Klu::PrintTiming() const
 {
-  if (iam) return;
+  if (MyPID_) return;
 
   double ConTime = GetTime("matrix conversion");
   double MatTime = GetTime("matrix redistribution");

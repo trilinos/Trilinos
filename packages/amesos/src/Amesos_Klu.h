@@ -269,10 +269,6 @@ private:
   double* Aval;
   int *Ai;
 
-  //! Process number (i.e. Comm().MyPID()).
-  int iam;
-  //! Number of processes in computation.
-  int NumProcs_;
   //! 1 if Problem_->GetOperator() is stored entirely on process 0
   int UseDataInPlace_;
   //! Number of non-zero entries in Problem_->GetOperator()

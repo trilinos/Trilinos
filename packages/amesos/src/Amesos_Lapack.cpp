@@ -111,13 +111,16 @@ int Amesos_Lapack::SymbolicFactorization()
   InitTime(Comm()); // Initialize timer
   ResetTime();
 
-  if (Comm().NumProc() == 1)
+  MyPID_ = Comm().MyPID();
+  NumProcs_ = Comm().NumProc();
+
+  if (NumProcs_ == 1)
     SerialMap_ = rcp(const_cast<Epetra_Map*>(&(Matrix()->RowMatrixRowMap())), 
                      false);
   else
   {
     int NumElements = 0;
-    if (Comm().MyPID() == 0)
+    if (MyPID_ == 0)
       NumElements = NumGlobalRows();
 
     SerialMap_ = rcp(new Epetra_Map(-1, NumElements, 0, Comm()));
@@ -146,7 +149,7 @@ int Amesos_Lapack::NumericFactorization()
     AMESOS_CHK_ERR(SymbolicFactorization());
 
   // Only on processor 0 define the dense matrix.
-  if (Comm().MyPID() == 0)
+  if (MyPID_ == 0)
     AMESOS_CHK_ERR(DenseMatrix_.Shape(NumGlobalRows(),NumGlobalRows()));
 
   AMESOS_CHK_ERR(DistributedToSerial());
@@ -175,7 +178,7 @@ int Amesos_Lapack::Solve()
 
   // Timing are set inside each Solve().
   int ierr;
-  if (Comm().NumProc() == 1)
+  if (NumProcs_ == 1)
     ierr = SolveSerial(*X,*B);
   else
     ierr = SolveDistributed(*X,*B);
@@ -228,7 +231,7 @@ int Amesos_Lapack::SolveDistributed(Epetra_MultiVector& X,
   AddTime("vector redistribution");
   ResetTime();
 
-  if (Comm().MyPID() == 0) {
+  if (MyPID_ == 0) {
     Epetra_SerialDenseMatrix DenseX(NumGlobalRows(),NumVectors);
     Epetra_SerialDenseMatrix DenseB(NumGlobalRows(),NumVectors);
 
@@ -258,7 +261,7 @@ int Amesos_Lapack::SolveDistributed(Epetra_MultiVector& X,
 //=============================================================================
 int Amesos_Lapack::SerialToDense()
 {
-  if (Comm().MyPID())
+  if (MyPID_)
     return(0);
 
   ResetTime();
@@ -301,7 +304,7 @@ int Amesos_Lapack::DistributedToSerial()
 {
   ResetTime();
 
-  if (Comm().NumProc() == 1)
+  if (NumProcs_ == 1)
     SerialMatrix_ = rcp(const_cast<Epetra_RowMatrix*>(Matrix()), false);
   else
   {
@@ -322,7 +325,7 @@ int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
   if (IsSymbolicFactorizationOK_ == false)
     AMESOS_CHK_ERR(SymbolicFactorization());
 
-  if (Comm().MyPID() == 0)
+  if (MyPID_ == 0)
     AMESOS_CHK_ERR(DenseMatrix_.Shape(NumGlobalRows(),NumGlobalRows()));
 
   AMESOS_CHK_ERR(DistributedToSerial());
@@ -331,7 +334,7 @@ int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
   Teuchos::RefCountPtr<Epetra_Vector> LocalEr;
   Teuchos::RefCountPtr<Epetra_Vector> LocalEi;
 
-  if (Comm().NumProc() == 1)
+  if (NumProcs_ == 1)
   {
     LocalEr = Teuchos::rcp(&Er, false);
     LocalEi = Teuchos::rcp(&Ei, false);
@@ -342,7 +345,7 @@ int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
     LocalEi = Teuchos::rcp(new Epetra_Vector(*SerialMap_));
   }
 
-  if (Comm().MyPID() == 0) 
+  if (MyPID_ == 0) 
   {
     int n = NumGlobalRows();
     char jobvl = 'N'; /* V/N to calculate/not calculate left eigenvectors
@@ -378,7 +381,7 @@ int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
       AMESOS_CHK_ERR(info);
   }
 
-  if (Comm().NumProc() != 1)
+  if (NumProcs_ != 1)
   {
     // I am not really sure that exporting the results make sense... 
     // It is just to be coherent with the other parts of the code.
@@ -394,7 +397,7 @@ int Amesos_Lapack::DenseToFactored()
 {
   ResetTime();
 
-  if (Comm().MyPID() == 0) {
+  if (MyPID_ == 0) {
     AMESOS_CHK_ERR(DenseSolver_.SetMatrix(DenseMatrix_));
     AMESOS_CHK_ERR(DenseSolver_.Factor());
   }
@@ -406,7 +409,7 @@ int Amesos_Lapack::DenseToFactored()
 // ================================================ ====== ==== ==== == =
 void Amesos_Lapack::PrintStatus()
 {
-  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
+  if (Problem_->GetOperator() == 0 || MyPID_ != 0)
     return;
 
   PrintLine();
@@ -431,7 +434,7 @@ void Amesos_Lapack::PrintStatus()
 // ================================================ ====== ==== ==== == =
 void Amesos_Lapack::PrintTiming()
 {
-  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
+  if (Problem_->GetOperator() == 0 || MyPID_ != 0)
     return;
 
   double ConTime = GetTime("matrix conversion");

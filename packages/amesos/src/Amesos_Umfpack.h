@@ -218,8 +218,6 @@ private:
   vector <int> Ai;
   vector <double> Aval;
 
-  //! Process number (i.e. Comm().MyPID() )
-  int iam;
   //! 1 if Problem_->GetOperator() is stored entirely on process 0
   int IsLocal_;
   //! Number of non-zero entries in Problem_->GetOperator()

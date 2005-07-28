@@ -74,8 +74,6 @@ int Amesos_Umfpack::ConvertToSerial(const bool FirstTime)
 { 
   ResetTime();
   
-  iam = Comm().MyPID() ;
-
   const Epetra_Map &OriginalMap = Matrix()->RowMatrixRowMap() ; 
 
   NumGlobalElements_ = Matrix()->NumGlobalRows();
@@ -83,7 +81,7 @@ int Amesos_Umfpack::ConvertToSerial(const bool FirstTime)
   assert (NumGlobalElements_ == Matrix()->NumGlobalCols());
 
   int NumMyElements_ = 0 ;
-  if (iam==0) NumMyElements_ = NumGlobalElements_;
+  if (MyPID_ == 0) NumMyElements_ = NumGlobalElements_;
 
   IsLocal_ = ( OriginalMap.NumMyElements() == 
 	       OriginalMap.NumGlobalElements() )?1:0;
@@ -146,7 +144,7 @@ int Amesos_Umfpack::ConvertToUmfpackCRS()
   Indices.resize(NumEntries);
   Values.resize(NumEntries);
   
-  if (iam == 0) {
+  if (MyPID_ == 0) {
 
     int NumEntriesThisRow;
     int Ai_index = 0 ; 
@@ -210,7 +208,7 @@ int Amesos_Umfpack::PerformSymbolicFactorization()
   
   if (Symbolic) 
     umfpack_di_free_symbolic (&Symbolic) ;
-  if (iam== 0) {
+  if (MyPID_== 0) {
     (void) umfpack_di_symbolic (NumGlobalElements_, NumGlobalElements_, &Ap[0], 
 				&Ai[0], &Aval[0], 
 				&Symbolic, Control, Info) ;
@@ -227,7 +225,7 @@ int Amesos_Umfpack::PerformNumericFactorization( )
   ResetTime();
 
   RcondValidOnAllProcs_ = false ; 
-  if (iam == 0) {
+  if (MyPID_ == 0) {
     vector<double> Control(UMFPACK_CONTROL);
     vector<double> Info(UMFPACK_INFO);
     umfpack_di_defaults( &Control[0] ) ; 
@@ -315,6 +313,9 @@ int Amesos_Umfpack::SymbolicFactorization()
   IsNumericFactorizationOK_ = false;
 
   InitTime(Comm());
+
+  MyPID_    = Comm().MyPID();
+  NumProcs_ = Comm().NumProc();
 
   NumSymbolicFact_++;  
 
@@ -411,7 +412,7 @@ int Amesos_Umfpack::Solve()
   int UmfpackRequest = UseTranspose()?UMFPACK_A:UMFPACK_At ;
   int status = 0;
 
-  if ( iam == 0 ) {
+  if ( MyPID_ == 0 ) {
     int ierr;
     ierr = SerialB->ExtractView(&SerialBvalues, &SerialBlda);
     assert (ierr == 0);
@@ -465,7 +466,7 @@ int Amesos_Umfpack::Solve()
 // ====================================================================== 
 void Amesos_Umfpack::PrintStatus() const
 {
-  if (iam != 0) return;
+  if (MyPID_ != 0) return;
 
   PrintLine();
 
@@ -485,7 +486,7 @@ void Amesos_Umfpack::PrintStatus() const
 // ====================================================================== 
 void Amesos_Umfpack::PrintTiming() const
 {
-  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
+  if (Problem_->GetOperator() == 0 || MyPID_ != 0)
     return;
 
   double ConTime = GetTime("conversion");
