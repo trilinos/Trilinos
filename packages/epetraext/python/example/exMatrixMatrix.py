@@ -1,8 +1,13 @@
 #! /usr/bin/env python
+
 try:
-  from PyTrilinos import EpetraExt, Epetra
+  import setpath
+  import Epetra, EpetraExt
 except ImportError:
-  raise ImportError, "error w/ EpetraExt or Epetra"
+  try:
+    from PyTrilinos import Epetra, EpetraExt
+  except ImportError:
+    raise ImportError, "error w/ Epetra or EpetraExt"
 
 Comm = Epetra.PyComm()
 n = 10
