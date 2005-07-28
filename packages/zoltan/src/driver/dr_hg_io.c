@@ -195,8 +195,8 @@ int read_hypergraph_file(
       else {
         /* read the coordinates in on processor 0 */
         ch_assignments = (short *) malloc(nvtxs * sizeof(short));
-        if (!ch_assignments) {
-          Gen_Error(0, "fatal: insufficient memory");
+        if (nvtxs && !ch_assignments) {
+          Gen_Error(0, "fatal: memory error in read_hypergraph_file");
           return 0;
         }
         if (chaco_input_assign(fp, filename, ch_nvtxs, ch_assignments) != 0){
@@ -396,14 +396,33 @@ int hedge_init_dist_type;
 
   /* Initialize */
   if (*gnhedges == 0) {
-    *hindex = NULL;
+    *hindex = (int *) malloc(sizeof(int));
+    if (!(*hindex)) {
+      Gen_Error(0, "fatal: insufficient memory");
+      return 0;
+    }
+    (*hindex)[0] = 0;
     *hvertex = NULL;
     *hvertex_proc = NULL;
     return 1;
   }
  
-  /* Store pointers to original data */
+  if (nprocs == 1) {
+    *nhedges = *gnhedges;
+    *hgid = (int *) malloc(*gnhedges * sizeof(int));
+    *hvertex_proc = (int *) malloc((*hindex)[*gnhedges] * sizeof(int));
+    if ((*gnhedges && !(*hgid)) || ((*hindex)[*gnhedges] && !(*hvertex_proc))) {
+      Gen_Error(0, "fatal: insufficient memory");
+      return 0;
+    }
+    for (h = 0; h < *gnhedges; h++)
+      (*hgid)[h] = h;
+    for (h = 0; h < (*hindex)[*gnhedges]; h++)
+      (*hvertex_proc)[h] = 0;
+    return 1;
+  }
   if (myproc == host_proc) {
+    /* Store pointers to original data */
     old_hindex  = *hindex;
     old_hvertex = *hvertex;
     old_hewgts = *hewgts;
@@ -413,8 +432,18 @@ int hedge_init_dist_type;
     size = (int *) calloc(2 * nprocs, sizeof(int));
     num_send = size + nprocs;
     send = (int **) malloc(nprocs * sizeof(int *));
-    for (i = 0; i < nprocs; i++)
+    if ((old_hindex[*gnhedges] && !old_hvertex_proc) || !size || !send) {
+      Gen_Error(0, "fatal: insufficient memory");
+      return 0;
+    }
+
+    for (i = 0; i < nprocs; i++) {
       send[i] = (int *) calloc(*gnhedges, sizeof(int));
+      if (*gnhedges && !send[i]) {
+        Gen_Error(0, "fatal: memory error in dist_hyperedges");
+        return 0;
+      }
+    }
 
     /* Determine to which processors hyperedges should be sent */
     for (h = 0; h < *gnhedges; h++) {
@@ -445,6 +474,12 @@ int hedge_init_dist_type;
     send_hvertex_proc = (int *) malloc(max_size * sizeof(int));
     if (*hewgt_dim)
       send_hewgts = (float *) malloc(max_num_send*(*hewgt_dim)*sizeof(float));
+    if ((max_num_send && !send_hgid) || !send_hindex || 
+        (max_size && (!send_hvertex || !send_hvertex_proc)) ||
+        (max_num_send && *hewgt_dim && !send_hewgts)) {
+      Gen_Error(0, "fatal: memory error in dist_hyperedges");
+      return 0;
+    }
 
     /* Load and send data */
     for (p = 0; p < nprocs; p++) {
@@ -496,6 +531,12 @@ int hedge_init_dist_type;
     *hvertex_proc = (int *) malloc(size[myproc] * sizeof(int));
     if (*hewgt_dim)
       *hewgts = (float *) malloc(*nhedges * *hewgt_dim * sizeof(float));
+    if ((*nhedges && !(*hgid)) || !(*hindex) || 
+        (size[myproc] && (!(*hvertex) || !(*hvertex_proc))) ||
+        (*nhedges && *hewgt_dim && !(*hewgt_dim))) {
+      Gen_Error(0, "fatal: memory error in dist_hyperedges");
+      return 0;
+    }
 
     hecnt = 0;
     hvcnt = 0;
@@ -535,6 +576,12 @@ int hedge_init_dist_type;
     *hvertex_proc = (int *) malloc(hcnt[1] * sizeof(int));
     if (*hewgt_dim)
       *hewgts = (float *) malloc(hcnt[0] * *hewgt_dim * sizeof(float));
+    if ((hcnt[0] && !(*hgid)) || !(*hindex) || 
+        (hcnt[1] && (!(*hvertex) || !(*hvertex_proc))) ||
+        (hcnt[0] && *hewgt_dim && !(*hewgt_dim))) {
+      Gen_Error(0, "fatal: memory error in dist_hyperedges");
+      return 0;
+    }
     MPI_Recv(*hgid, hcnt[0], MPI_INT, host_proc, 2, comm, &status);
     MPI_Recv(*hindex, hcnt[0]+1, MPI_INT, host_proc, 3, comm, &status);
     MPI_Recv(*hvertex, hcnt[1], MPI_INT, host_proc, 4, comm, &status);
