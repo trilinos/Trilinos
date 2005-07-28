@@ -1266,7 +1266,7 @@ Argument purpose
 & Persisting \\
 \hline
 \hline
-non-mutable object (required$^1$)
+non-changeable object (required$^1$)
 & \begin{minipage}{12ex}
     \begin{center}
     {\tiny .}\\
@@ -1280,19 +1280,19 @@ non-mutable object (required$^1$)
   \end{minipage}
 & {}\texttt{const RefCountPtr<const S> \&s} \\
 \hline
-non-mutable object (optional$^2$)
+non-changeable object (optional$^2$)
 & {}\texttt{const S *s}
 & {}\texttt{const RefCountPtr<const S> \&s} \\
 \hline
-mutable object
+changeable object
 & {}\texttt{S *s}
 & {}\texttt{const RefCountPtr<S> \&s} \\
 \hline
-array of non-mutable objects
+array of non-changeable objects
 & {}\texttt{const S s[]}
 & {}\texttt{const RefCountPtr<const S> s[]} \\
 \hline
-array of mutable objects
+array of changeable objects
 & {}\texttt{S s[]}
 & {}\texttt{const RefCountPtr<S> s[]} \\
 \hline
@@ -1318,23 +1318,23 @@ Argument purpose
 & Persisting \\
 \hline
 \hline
-non-mutable object (required$^1$)
+non-changeable object (required$^1$)
 & {}\texttt{const A \&a}
 & {}\texttt{const RefCountPtr<const A> \&a} \\
 \hline
-non-mutable object (optional$^2$)
+non-changeable object (optional$^2$)
 & {}\texttt{const A *a}
 & {}\texttt{const RefCountPtr<const A> \&a} \\
 \hline
-mutable object
+changeable object
 & {}\texttt{A *a}
 & {}\texttt{const RefCountPtr<A> \&a} \\
 \hline
-array of non-mutable objects
+array of non-changeable objects
 & {}\texttt{const A* a[]}
 & {}\texttt{const RefCountPtr<const A> a[]} \\
 \hline
-array of mutable objects
+array of changeable objects
 & {}\texttt{A* a[]}
 & {}\texttt{const RefCountPtr<A> a[]} \\
 \hline
