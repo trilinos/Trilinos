@@ -474,11 +474,8 @@ simply be defined using a PyComm object:
 which returns an Epetra.SerialComm if PyTrilinos has been compiled in serial
 mode, or an Epetra.MpiComm if PyTrilinos has support for MPI, using the
 MPI\_COMM\_WORLD communicator. Start-up operations like a call to MPI\_Init()
-  are performed by method Epetra.Init(). MPI is finalized by method
-  Epetra.Finalize(). These two methods are empty functions for non-MPI runs,
-  therefore we suggest to insert a call to Epetra.Init() as first instruction
-  before the construction of the communicator, and to call Epetra.Finalize()
-  as last Python instruction in all PyTrilinos scripts. Using this approach, 
+  are automatically performed when loading method Epetra. MPI is automatically
+  finalized by the Epetra module. Using this approach, 
 PyTrilinos scripts are virtually identical for both serial and
 parallel runs. A pictorial representation of how communication are handled in
 the case of two  processors is given in Figure~\ref{fig:distributed}.
@@ -516,7 +513,6 @@ processor 0, and elements 2, 3, 4, 7 and 8 to processor 1. We can create a
 script file, here called {\tt exMap.py} as follows:
 \begin{verbatim}
 from PyTrilinos import  Epetra
-Epetra.Init()
 Comm = Epetra.PyComm()
 if Comm.NumProc() != 2:
   raise Exception, "Must run w/ two processors"
@@ -527,7 +523,6 @@ else:
   MyGlobalElements = [2, 3, 4, 7, 8];
 Map = Epetra.Map(-1, MyGlobalElements, 0, Comm);
 print Map
-Epetra.Finalize()
 \end{verbatim}
 By executing the program, we get:
 \begin{verbatim}
@@ -1098,7 +1093,6 @@ Harwell/Boeing format~\cite{hb}. The following lines read matrix {\tt
   fidap05}, which is freely available from the Matrix Market web site.
 \begin{verbatim}
 >>> from PyTrilinos import Triutils, Epetra
->>> Epetra.Init()
 >>> Comm = Epetra.PyComm();
 >>> Map, Matrix, LHS, RHS, Exact = Triutils.ReadHB("fidap05.rsa", Comm);
 \end{verbatim}
