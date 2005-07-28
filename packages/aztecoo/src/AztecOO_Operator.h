@@ -128,10 +128,18 @@ class AztecOO_Operator: public virtual Epetra_Operator {
   const Epetra_Comm & Comm() const{return(solver_->GetUserOperator()->Comm());};
   
   //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-  const Epetra_Map & OperatorDomainMap() const {return(solver_->GetUserOperator()->OperatorDomainMap());};
+  const Epetra_Map & OperatorDomainMap() const
+  {
+    if (UseTranspose()) return(solver_->GetUserOperator()->OperatorRangeMap());
+    else return(solver_->GetUserOperator()->OperatorDomainMap());
+  }
   
   //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-  const Epetra_Map & OperatorRangeMap() const {return(solver_->GetUserOperator()->OperatorRangeMap());};
+  const Epetra_Map & OperatorRangeMap() const
+  {
+    if (UseTranspose()) return(solver_->GetUserOperator()->OperatorDomainMap());
+    else return(solver_->GetUserOperator()->OperatorRangeMap());
+  }
   //@}
   
  protected:
@@ -142,3 +150,4 @@ class AztecOO_Operator: public virtual Epetra_Operator {
 };
 
 #endif /* _AZTECOO_OPERATOR_H_ */
+

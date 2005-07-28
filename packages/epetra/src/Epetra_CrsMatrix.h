@@ -948,10 +948,18 @@ or if the number of entries in this row exceed the Length parameter.
 	bool UseTranspose() const {return(UseTranspose_);}
 	
 	//! Returns the Epetra_Map object associated with the domain of this matrix operator.
-	const Epetra_Map& OperatorDomainMap() const {return(DomainMap());}
+	const Epetra_Map& OperatorDomainMap() const
+        {
+          if (UseTranspose()) return(RangeMap());
+          else return(DomainMap());
+        }
 	
 	//! Returns the Epetra_Map object associated with the range of this matrix operator.
-	const Epetra_Map& OperatorRangeMap() const {return(RangeMap());}
+	const Epetra_Map& OperatorRangeMap() const
+        {
+          if (UseTranspose()) return(DomainMap());
+          else return(RangeMap());
+        }
 
   //@}
   //@{ \name Additional methods required to implement Epetra_RowMatrix interface.

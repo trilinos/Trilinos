@@ -1058,11 +1058,19 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
 
     //! Returns the Epetra_Map object associated with the domain of this matrix operator.
     const Epetra_Map & OperatorDomainMap() const 
-			{ if (!HavePointObjects_) GeneratePointObjects(); return(*OperatorDomainMap_); };
+    {
+      if (!HavePointObjects_) GeneratePointObjects();
+      if (UseTranspose()) return(*OperatorRangeMap_);
+      else return(*OperatorDomainMap_);
+    }
 
     //! Returns the Epetra_Map object associated with the range of this matrix operator.
     const Epetra_Map & OperatorRangeMap() const 
-			{ if (!HavePointObjects_) GeneratePointObjects(); return(*OperatorRangeMap_); };
+    {
+      if (!HavePointObjects_) GeneratePointObjects();
+      if (UseTranspose()) return(*OperatorDomainMap_);
+      else return(*OperatorRangeMap_);
+    }
 
   //@}
   //@{ \name Additional methods required to implement RowMatrix interface.
