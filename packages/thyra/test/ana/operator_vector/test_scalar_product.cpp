@@ -26,6 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Teuchos_CommandLineProcessor.hpp"
+
 #ifndef __sun
 
 #include "Thyra_SerialVectorSpaceStd.hpp"
@@ -41,7 +43,6 @@
 #include "Thyra_ScaledAdjointLinearOp.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_LinearOpTester.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
 
 /** \brief Main test driver function for scalar products
  */
@@ -173,8 +174,6 @@ int main( int argc, char* argv[] ) {
   bool success = true;
   bool verbose = true;
 
-#ifndef __sun
-
   using Teuchos::CommandLineProcessor;
 
   std::ostream &out = std::cout;
@@ -195,6 +194,8 @@ int main( int argc, char* argv[] ) {
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
+#ifndef __sun
+
     //
     // Run the tests
     //
@@ -209,6 +210,8 @@ int main( int argc, char* argv[] ) {
     if( !run_scalar_product_tests<mpf_class>(n,mpf_class(1e-14),dumpAll,verbose?&out:NULL) ) success = false;
 #endif
 
+#endif // ifndef __sun
+
   } // end try
   catch( const std::exception &excpt ) {
     if(verbose)
@@ -221,15 +224,25 @@ int main( int argc, char* argv[] ) {
     success = false;
   }
 
+#ifndef __sun
+
   if(verbose) {
     if(success)
       out << "\nAll of the tests seem to have run successfully!\n";
     else
       out << "\nOh no! at least one of the test failed!\n";	
   }
-
-#endif // __sun
   
   return success ? 0 : 1;
+
+#else // ifndef __sun
+
+  if (verbose) {
+    std::cout << "\nError, the test was never run since __sun was defined and this test does not build on the Sun compiler!\n";
+  }
+  
+  return 1;
+
+#endif //ifndef __sun
 
 } // end main() [Doxygen looks for this!]

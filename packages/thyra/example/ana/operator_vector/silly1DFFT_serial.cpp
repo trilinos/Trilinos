@@ -26,6 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Teuchos_CommandLineProcessor.hpp"
+
 #ifndef __sun
 
 #include "ComplexFFTLinearOp.hpp"
@@ -36,7 +38,6 @@
 #include "Thyra_ListedMultiVectorRandomizer.hpp"
 #include "Thyra_SerialVectorSpaceConverterStd.hpp"
 #include "Teuchos_arrayArg.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
@@ -178,8 +179,6 @@ int main(int argc, char *argv[])
 
   bool success = true;
 
-#ifndef __sun
-
   using Teuchos::CommandLineProcessor;
 
   bool verbose = true;
@@ -205,6 +204,8 @@ int main(int argc, char *argv[])
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
+#ifndef __sun
+
     TEST_FOR_EXCEPTION( N < 0, std::logic_error, "Error, N=" << N << " < 1 is not allowed!" );
 
     // Run using float
@@ -223,6 +224,8 @@ int main(int argc, char *argv[])
 
 #endif // HAVE_TEUCHOS_GNU_MP
 
+#endif // ifndef __sun
+
   }
   catch( const std::exception &excpt ) {
     std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
@@ -233,13 +236,24 @@ int main(int argc, char *argv[])
     success = false;
   }
 
+#ifndef __sun
+
   if (verbose) {
     if(success)   std::cout << "\nCongratulations! All of the tests checked out!\n";
     else          std::cout << "\nOh no! At least one of the tests failed!\n";
   }
-
-#endif // __sun
   
   return success ? 0 : 1;
+
+#else // ifndef __sun
+
+
+  if (verbose) {
+    std::cout << "\nError, the test was never run since __sun was defined and this test does not build on the Sun compiler!\n";
+  }
+  
+  return 1;
+
+#endif // __sun
 
 } // end main()
