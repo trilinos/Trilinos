@@ -315,6 +315,9 @@ float *tmpwgts = NULL;
   /* Get hyperedge information from application through query functions. */
   /***********************************************************************/
 
+  app.nEdge = 0;
+  app.nPins = 0;
+  app.GnEdge = 0;
   if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_HG_Edge_Info)
     ierr = Zoltan_HG_Hypergraph_Callbacks(zz, zhg,
                                           app.GnVtx, hgp->EdgeSizeThreshold,
@@ -336,9 +339,6 @@ float *tmpwgts = NULL;
 
   else {
     /* Partition without edge information?  Or return an error? */
-    app.nEdge = 0;
-    app.nPins = 0;
-    app.GnEdge = 0;
   }
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
