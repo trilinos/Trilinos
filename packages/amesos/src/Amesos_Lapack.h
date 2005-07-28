@@ -221,6 +221,5 @@ protected:
   int NumNumericFact_;
   //! Number of calls to Solver().
   int NumSolve_;
-
 };  // End of  class Amesos_Lapack
 #endif /* AMESOS_LAPACK_H */

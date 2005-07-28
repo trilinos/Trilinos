@@ -92,6 +92,9 @@ int Amesos_Dscpack::SetParameters(Teuchos::ParameterList &ParameterList)
 int Amesos_Dscpack::PerformSymbolicFactorization()
 {
   ResetTime();
+
+  MyPID_    = Comm().MyPID();
+  NumProcs_ = Comm().NumProc();
   
   Epetra_RowMatrix *RowMatrixA = Problem_->GetMatrix();
   if (RowMatrixA == 0)
@@ -198,11 +201,11 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   // optimal value for MaxProcs == -1
   
   int OptNumProcs1 = 1+EPETRA_MAX( NumRows/10000, NumGlobalNonzeros/1000000 );
-  OptNumProcs1 = EPETRA_MIN(Comm().NumProc(),OptNumProcs1 );
+  OptNumProcs1 = EPETRA_MIN(NumProcs_,OptNumProcs1 );
 
   // optimal value for MaxProcs == -2
 
-  int OptNumProcs2 = (int)sqrt(1.0*Comm().NumProc());
+  int OptNumProcs2 = (int)sqrt(1.0 * NumProcs_);
   if( OptNumProcs2 < 1 ) OptNumProcs2 = 1;
 
   // fix the value of MaxProcs
@@ -210,13 +213,13 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   switch (MaxProcs_) 
   {
   case -1:
-    MaxProcs_ = EPETRA_MIN(OptNumProcs1, Comm().NumProc());
+    MaxProcs_ = EPETRA_MIN(OptNumProcs1, NumProcs_);
     break;
   case -2:
-    MaxProcs_ = EPETRA_MIN(OptNumProcs2, Comm().NumProc());
+    MaxProcs_ = EPETRA_MIN(OptNumProcs2, NumProcs_);
     break;
   case -3:
-    MaxProcs_ = Comm().NumProc();
+    MaxProcs_ = NumProcs_;
     break;
   }
 
@@ -243,7 +246,7 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   
   NumLocalCols = 0 ; // This is for those processes not in the Dsc grid
   if ( MyDscRank >= 0 ) { 
-    assert( Comm().MyPID() == MyDscRank ) ; 
+    assert( MyPID_ == MyDscRank ) ; 
     AMESOS_CHK_ERR( DSC_Order ( MyDSCObject_, OrderCode, numrows, &Ap[0], &Ai[0], 
 				&Replicates[0], &NumGlobalCols, &NumLocalStructs, 
 				&NumLocalCols, &NumLocalNonz, 
@@ -518,7 +521,7 @@ int Amesos_Dscpack::Solve()
 // ======================================================================
 void Amesos_Dscpack::PrintStatus() const
 {
-  if (Problem_->GetOperator() != 0 && Comm().MyPID() != 0)
+  if (Problem_->GetOperator() != 0 && MyPID_ != 0)
   {
     string p = "Amesos_Dscpack : ";
     PrintLine();
@@ -532,9 +535,9 @@ void Amesos_Dscpack::PrintStatus() const
          << 1.0 *  nnz / n << endl;
     cout << p << "Percentage of nonzero elements = "
          << 100.0 * nnz /(pow(n,2.0)) << endl;
-    cout << p << "Available process(es) = " << Comm().NumProc() << endl;
+    cout << p << "Available process(es) = " << NumProcs_ << endl;
     cout << p << "Process(es) used = " << DscNumProcs
-         << ", idle = " << Comm().NumProc() - DscNumProcs << endl;
+         << ", idle = " << NumProcs_ - DscNumProcs << endl;
     cout << p << "Estimated total memory for factorization =  " 
          << TotalMemory_ << " Mbytes" << endl; 
   }
@@ -542,7 +545,7 @@ void Amesos_Dscpack::PrintStatus() const
   if ( MyDscRank >= 0 ) 
     DSC_DoStats( MyDSCObject_ );
 
-  if (!Comm().MyPID())
+  if (!MyPID_)
     PrintLine();
 
   return;
@@ -551,7 +554,7 @@ void Amesos_Dscpack::PrintStatus() const
 // ====================================================================== 
 void Amesos_Dscpack::PrintTiming() const
 {
-  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
+  if (Problem_->GetOperator() == 0 || MyPID_ != 0)
     return;
 
   double ConTime = GetTime("conversion");
