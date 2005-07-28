@@ -1,26 +1,28 @@
 1. Everything should be in namespace Tpetra.
 
 2. When more than one template argument is used, they should be ordered from most general to most specific: PacketType, OrdinalType, ScalarType.
-		Right: <OrdinalType, ScalarType>
-		Wrong: <ScalarType, PacketType>
+	Right: <OrdinalType, ScalarType>
+	Wrong: <ScalarType, PacketType>
 
-3. All header files should be bracketed with a preprocessor directive to prevent multiple inclusion. This should be the name of the file, in all uppercase, with an underscore between words, as well as at the beginning and end. Example:
-		#ifndef _TPETRA_SOMEHEADER_HPP_
-		#define _TPETRA_SOMEHEADER_HPP_
+3. All header files should be bracketed with a preprocessor directive to prevent multiple inclusion. This should be the name of the file, in all uppercase, with an underscore between words. Example:
+	#ifndef TPETRA_SOMEHEADER_HPP
+	#define TPETRA_SOMEHEADER_HPP
 
-		...
+	...
 
-		#endif // _TPETRA_SOMEHEADER_HPP_
+	#endif // TPETRA_SOMEHEADER_HPP
 
-4. When multiple closing braces occur in sequence, add comments to make it easier to determine which goes with which.
+4. When multiple closing braces occur in sequence, add comments if it is not immediately obvious which scoping blocks those braces are closing.
+
+4.5. Placement of * and &:
 
 5. Placement of const: For consistency, and so that certain macro-expansions work, const is to follow whatever is being made const.
 
-		variable:												int const 				someVar
-		reference to variable:					int const & 			someRef
-		non-const pointer to const obj:	int const * 			somePtr
-		const pointer to non-const obj:	int 			* const somePtr
-		const pointer to const obj:			int const * const somePtr
+	variable:						int const someVar
+	reference to variable:			int const& someRef
+	non-const pointer to const obj:	int const* somePtr
+	const pointer to non-const obj:	int* const somePtr
+	const pointer to const obj:		int const* const somePtr
 
 This also makes const usage consistent with functions and function return types.
 
@@ -48,4 +50,4 @@ This also makes const usage consistent with functions and function return types.
 	{
 		// constructor body
 
-15. Indents should be 2 characters wide.
+15. Indents should be 4 characters wide. Indents should be done using spaces (ASCII 32), not tabs (ASCII 09). The tab character is interpreted differently by different applications. On the other hand, a space is a space is a space. Most editors can be set so that hitting the tab key will generate a series of spaces instead of a tab.
