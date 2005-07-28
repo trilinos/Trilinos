@@ -97,7 +97,7 @@ int Zoltan_PHG_rdivide(
       /* uprintf(hgc, "for k=%d q=%.1f\n", 1+hi-lo, q);*/
       hgp->bal_tol = MIN(bal_tol, 1.0 + hgp->bal_tol_adjustment*(bal_tol-1.0)/q);
   } else 
-      hgp->bal_tol = 1.0 + hgp->bal_tol_adjustment*(bal_tol-1.0);
+      hgp->bal_tol = (hi==lo+1) ? bal_tol : 1.0 + hgp->bal_tol_adjustment*(bal_tol-1.0);
 
   /*uprintf(hgc, "OLD MAxImbal: %.3f   New MaxImbal: %.3f\n", bal_tol, hgp->bal_tol);*/
 
