@@ -479,18 +479,19 @@ double Zoltan_PHG_Compute_NetCut(
  * which span more than one part. Time O(|H|). 
  * Results are returned on all processors of hgc->Communicator. 
  */
-  int i, j, *netpart, *allparts;    
+  int i, j, *netpart = NULL, *allparts = NULL;    
   double cut = 0.0, totalcut=0.0;
   char *yo = "Zoltan_PHG_Compute_NetCut";
 
-  if (!(netpart = (int*) ZOLTAN_CALLOC (hg->nEdge, sizeof(int)))) {
-    ZOLTAN_PRINT_ERROR (hgc->myProc, yo, "Insufficient memory.");
+  if (hg->nEdge && !(netpart = (int*) ZOLTAN_CALLOC (hg->nEdge, sizeof(int)))) {
+    ZOLTAN_PRINT_ERROR (hgc->myProc, yo, "Memory error.");
     return ZOLTAN_MEMERR;
   }
 
   if (!hgc->myProc_x)
-    if (!(allparts = (int*) ZOLTAN_CALLOC (hgc->nProc_x*hg->nEdge, sizeof(int)))) {
-      ZOLTAN_PRINT_ERROR (hgc->myProc, yo, "Insufficient memory.");
+    if (hg->nEdge && 
+       !(allparts = (int*) ZOLTAN_CALLOC(hgc->nProc_x*hg->nEdge,sizeof(int)))) {
+      ZOLTAN_PRINT_ERROR (hgc->myProc, yo, "Memory error.");
       return ZOLTAN_MEMERR;
     }
 
@@ -505,7 +506,9 @@ double Zoltan_PHG_Compute_NetCut(
            netpart[i] = -2;
     }
 
-  MPI_Gather(netpart, hg->nEdge, MPI_INT, allparts, hg->nEdge, MPI_INT, 0, hgc->row_comm);
+  if (hg->nEdge)
+    MPI_Gather(netpart, hg->nEdge, MPI_INT, allparts, hg->nEdge, MPI_INT, 0, 
+               hgc->row_comm);
   ZOLTAN_FREE (&netpart);
 
   if (!hgc->myProc_x) { 
@@ -559,13 +562,13 @@ double Zoltan_PHG_Compute_ConCut(
         nEdge = MIN(MAXMEMORYALLOC / (2*sizeof(int)*p), hg->nEdge);
 
         if (!(cuts = (int*) ZOLTAN_MALLOC (p * nEdge * sizeof(int)))) {
-            ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Insufficient memory.");
+            ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Memory error.");
             *ierr = ZOLTAN_MEMERR;
             goto End;
         }   
         if (!hgc->myProc_x)
             if (!(rescuts = (int*) ZOLTAN_MALLOC (p * nEdge * sizeof(int)))) {
-                ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Insufficient memory.");
+                ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Memory error.");
                 *ierr = ZOLTAN_MEMERR;
                 goto End;
             }
@@ -639,7 +642,7 @@ double Zoltan_PHG_Compute_Balance (
   
   if (!(lsize_w = (double*) ZOLTAN_CALLOC (p, sizeof(double))) 
    || !(size_w  = (double*) ZOLTAN_CALLOC (p, sizeof(double)))) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
       return ZOLTAN_MEMERR;
   }
   
