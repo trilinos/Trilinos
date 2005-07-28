@@ -124,9 +124,9 @@ namespace Tpetra {
 		//@{ \name Post-Construction Modification Routines
 
 		//! Submit entries. Values submitted will be summed with existing values.
-		void submitEntries(OrdinalType numEntries, OrdinalType* indices, ScalarType* values) {
+		void submitEntries(OrdinalType numEntries, OrdinalType const* indices, ScalarType const* values) {
 			OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-			for(OrdinalType i = 0; i < numEntries; i++)
+			for(OrdinalType i = ordinalZero; i < numEntries; i++)
 				VectorData_->scalarArray_[indices[i]] = values[i];
 		}
 
@@ -622,11 +622,17 @@ namespace Tpetra {
 							 std::vector<ScalarType> const& imports,
 							 Distributor<OrdinalType> const& distor,
 							 CombineMode const CM) {
-			// copy values from scalarExports
-			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numImportIDs; i++)
-				scalarArray().at(importLIDs[i]) = imports[i];
-
-			// ** QUESTION: What to do about CombineMode??
+			if(CM == Insert || CM == Replace) {
+				// copy values from scalarExports
+				for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numImportIDs; i++)
+					scalarArray().at(importLIDs[i]) = imports[i];
+			}
+			else if(CM == Add) {
+				// sum values from scalarExports
+				submitEntries(numImportIDs, &importLIDs.front(), &imports.front());
+			}
+			else
+				throw Object::reportError("Unknown CombineMode", -99);
 
 			return(0);
 		}

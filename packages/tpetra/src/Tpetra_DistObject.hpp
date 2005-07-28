@@ -157,7 +157,7 @@ namespace Tpetra {
 			if(sourceObj.elementspace() != exporter.getSourceSpace())
 				throw reportError("Source ElementSpaces don't match", -2);
 
-			// copy variables from importer
+			// copy variables from exporter
 			OrdinalType numSameIDs = exporter.getNumSameIDs();
 			OrdinalType numPermuteIDs = exporter.getNumPermuteIDs();
 			OrdinalType numRemoteIDs = exporter.getNumRemoteIDs();
@@ -175,7 +175,63 @@ namespace Tpetra {
 			return(0);
 		}
 
-		// ** TO DO: Add the two other forms of doImport/doExport **
+		//! Import (using an Exporter)
+		int doImport(DistObject<OrdinalType, ScalarType> const& sourceObj,
+					 Export<OrdinalType> const& exporter, CombineMode CM)
+		{
+			// throw exception -1 if my ElementSpace != exporter.getSourceSpace()
+			if(elementspace() != exporter.getSourceSpace())
+				throw reportError("Target ElementSpaces don't match", -1);
+			// throw exception -2 if sourceObj's ElementSpace != exporter.getTargetSpace()
+			if(sourceObj.elementspace() != exporter.getTargetSpace())
+				throw reportError("Source ElementSpaces don't match", -2);
+
+			// copy variables from exporter
+			OrdinalType numSameIDs = exporter.getNumSameIDs();
+			OrdinalType numPermuteIDs = exporter.getNumPermuteIDs();
+			OrdinalType numRemoteIDs = exporter.getNumRemoteIDs();
+			OrdinalType numExportIDs = exporter.getNumExportIDs();
+			std::vector<OrdinalType> const& exportLIDs = exporter.getExportLIDs();
+			std::vector<OrdinalType> const& remoteLIDs = exporter.getRemoteLIDs();
+			std::vector<OrdinalType> const& permuteToLIDs = exporter.getPermuteToLIDs();
+			std::vector<OrdinalType> const& permuteFromLIDs = exporter.getPermuteFromLIDs();
+
+			// call doTransfer
+			doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
+					   permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+					   imports_, exports_, exporter.getDistributor(), true);
+
+			return(0);
+		}
+
+		//! Export (using an Importer)
+		int doExport(DistObject<OrdinalType, ScalarType> const& sourceObj,
+					 Import<OrdinalType> const& importer, CombineMode CM)
+		{
+			// throw exception -1 if my ElementSpace != importer.getSourceSpace()
+			if(elementspace() != importer.getSourceSpace())
+				throw reportError("Target ElementSpaces don't match", -1);
+			// throw exception -2 if sourceObj's ElementSpace != importer.getTargetSpace()
+			if(sourceObj.elementspace() != importer.getTargetSpace())
+				throw reportError("Source ElementSpaces don't match", -2);
+
+			// copy variables from importer
+			OrdinalType numSameIDs = importer.getNumSameIDs();
+			OrdinalType numPermuteIDs = importer.getNumPermuteIDs();
+			OrdinalType numRemoteIDs = importer.getNumRemoteIDs();
+			OrdinalType numExportIDs = importer.getNumExportIDs();
+			std::vector<OrdinalType> const& exportLIDs = importer.getExportLIDs();
+			std::vector<OrdinalType> const& remoteLIDs = importer.getRemoteLIDs();
+			std::vector<OrdinalType> const& permuteToLIDs = importer.getPermuteToLIDs();
+			std::vector<OrdinalType> const& permuteFromLIDs = importer.getPermuteFromLIDs();
+
+			// call doTransfer
+			doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
+					   permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+					   imports_, exports_, importer.getDistributor(), true);
+
+			return(0);
+		}
 
 		//@}
 
@@ -241,7 +297,7 @@ namespace Tpetra {
 					if(varSizes)
 						throw reportError("var-sized doReversePostsAndWaits not implemented yet", -99);
 					else
-						throw reportError("doReversePostsAndWaits not implemented yet", -99);
+						Comm_->doReversePostsAndWaits(distor, exports, packetSize, imports);
 				}
 				else {
 					if(varSizes)
