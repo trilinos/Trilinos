@@ -286,6 +286,7 @@ using namespace std;
 #else /* fallback for the amazingly unlikely event we have no HAVE_CONFIG_H! */
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -294,6 +295,10 @@ using namespace std;
 #include <sstream>
 #include <stdexcept>
 #include <typeinfo>
+
+#include <sstream>
+typedef std::ostringstream TeuchosOStringStream;
+#define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str().c_str()
 
 #if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT)
 
