@@ -385,7 +385,7 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->visit_order = 1;  /* Random */
   hgp->check_graph = 0;
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
-  hgp->bal_tol_adjustment = 1.0;
+  hgp->bal_tol_adjustment = 0.7;
   hgp->redl = MAX(2*zz->LB.Num_Global_Parts, 100);
   hgp->output_level = PHG_DEBUG_LIST;
   hgp->final_output = 0;

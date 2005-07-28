@@ -546,11 +546,6 @@ static int refine_fm2 (ZZ *zz,
             printf("%s FM Pass %d (%d->%d) Cut=%.2lf W[%5.0lf, %5.0lf] I= %.2lf LW[%5.0lf, %5.0lf] LI= %.2lf\n", uMe(hgc), passcnt, from, to, cutsize, weights[0], weights[1], imbal, lweights[0], lweights[1], limbal);
 
 
-        /* EBEB: Can we let all procs do local FM, then
-           pick the best one in each proc column as the "root"?
-           One difficulty is that "best" depends on what the
-           other processors do, and we can't try all combinations. */
-
         if (hgc->myProc_y==root.rank) {
             /* those are the lucky ones; each proc in column-group
                could have compute the same moves concurrently; but for this

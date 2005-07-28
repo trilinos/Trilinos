@@ -1192,7 +1192,7 @@ if (hgp->use_timers > 3)  {
 }               
   
      
-if (1 && hgc->myProc_x == 0 && hgc->myProc_y == 0)
+if (0 && hgc->myProc_x == 0 && hgc->myProc_y == 0)
 {
 int local = 0, global = 0, unmatched = 0;
 for (i = 0; i < hg->nVtx; i++)
@@ -1205,7 +1205,7 @@ uprintf (hgc, "RTHRTH %d unmatched, %d external, %d local of %d\n",
  unmatched, global, local, hg->nVtx);
 }
 
-if (hgc->myProc_x==0 && hgc->myProc_y==0)
+if (0 && hgc->myProc_x==0 && hgc->myProc_y==0)
   fprintf (stdout, "RTHRTH rounds %d, buffer loads %d\n", nRounds, bobtemp);
 
 if (0)

@@ -84,9 +84,7 @@ struct PHGPartParamsStruct {
   float bal_tol;                 /* Balance tolerance in % of average */
   float bal_tol_adjustment;      /* balance tolerance adjustment;
                                     between [0-1.0]: it is % of bal_tol
-                                    > 1.0: it is a multiplier to
-                                      q-th square root of bal_tol, where q
-                                      is the number of recursion levels */
+                                    > 1.0: it is a multiplier to bal_tol/log(k) */
   float *part_sizes;             /* Pointer to part_sizes array passed to
                                     Zoltan_PHG; lists part_sizes (%ages) 
                                     for all requested partitions. */

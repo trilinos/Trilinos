@@ -93,13 +93,13 @@ int Zoltan_PHG_rdivide(
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hg->comm->Communicator);
 
   if (hgp->bal_tol_adjustment>1.0) {
-      float ntol = (float) pow (bal_tol, 1.0 / ceil (log((double)1+hi-lo) / log(2.0)));
-      uprintf(hgc, "for k=%d bal_tol=%.3f   ntol=%.3f\n", 1+hi-lo, bal_tol, ntol);
-      hgp->bal_tol = 1.0 + hgp->bal_tol_adjustment*(ntol-1.0);
+      float q = (float) ceil(log((double)1+hi-lo) / log(2.0));
+      /* uprintf(hgc, "for k=%d q=%.1f\n", 1+hi-lo, q);*/
+      hgp->bal_tol = 1.0 + hgp->bal_tol_adjustment*(bal_tol-1.0)/q;
   } else 
       hgp->bal_tol = 1.0 + hgp->bal_tol_adjustment*(bal_tol-1.0);
 
-  uprintf(hgc, "OLD MAxImbal: %.3f   New MaxImbal: %.3f\n", bal_tol, hgp->bal_tol);
+  /*uprintf(hgc, "OLD MAxImbal: %.3f   New MaxImbal: %.3f\n", bal_tol, hgp->bal_tol);*/
 
   ierr = Zoltan_PHG_Partition (zz, hg, 2, bisec_part_sizes, part, hgp, level);
   hgp->bal_tol = bal_tol;
@@ -603,6 +603,6 @@ static float balanceTol(PHGPartParams *hgp, int pno, float ratios[2], float tot,
 {
     float ntol=(pw==0.0) ? 0.0 : (tot*hgp->bal_tol*ratios[pno])/pw;
     
-    printf("%s: TW=%.1lf pw=%.1lf (%.3lf) old_tol=%.2f  part_s=(%.3f, %.3f) and new tol=%.2f\n", (pno==0) ? "LEFT" : "RIGHT", tot, pw, pw/tot, hgp->bal_tol, ratios[0], ratios[1], ntol);
+/*    printf("%s: TW=%.1lf pw=%.1lf (%.3lf) old_tol=%.2f  part_s=(%.3f, %.3f) and new tol=%.2f\n", (pno==0) ? "LEFT" : "RIGHT", tot, pw, pw/tot, hgp->bal_tol, ratios[0], ratios[1], ntol);*/
     return ntol;
 }
