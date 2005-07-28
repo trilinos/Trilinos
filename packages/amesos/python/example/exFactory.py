@@ -43,8 +43,6 @@ try:
 except ImportError:
   raise ImportError, "error w/ Amesos or Epetra"
 
-# Initializes MPI (or do-nothing in serial)
-Epetra.Init()
 # dimension of the problem
 NumGlobalRows = 10
 Comm = Epetra.PyComm()
@@ -108,6 +106,5 @@ del Solver
 error = 0.0;
 for i in range(0, NumLocalRows):
   error = error + abs(LHS[i] - i);
-print "Using %s, ||x - x_ex||_1 = %e" % (Type, error);
-
-Epetra.Finalize();
+if Comm.MyPID() == 0:
+  print "Using %s, ||x - x_ex||_1 = %e" % (Type, error);

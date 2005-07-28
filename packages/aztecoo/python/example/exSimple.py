@@ -8,7 +8,6 @@ except:
   except ImportError:
     raise ImportError, "error w/ Epetra or AztecOO or Triutils"
 
-Epetra.Init()
 nx = 100
 ny = 100
 Comm = Epetra.PyComm()
@@ -31,4 +30,3 @@ Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_dom_decomp)
 Solver.SetAztecOption(AztecOO.AZ_subdomain_solve, AztecOO.AZ_icc)
 Solver.SetAztecOption(AztecOO.AZ_output, 16)
 Solver.Iterate(1550, 1e-5)
-Epetra.Finalize()

@@ -8,7 +8,6 @@ import sys
 # read the matrix from file in H/B format. The filename is specified by the
 # first argument in the compile line. If no filename is specified, then the
 # code build a matrix using matrix gallery.
-Epetra.Init()
 Comm = Epetra.PyComm();
 
 args = sys.argv[1:]
@@ -50,5 +49,3 @@ norm = LHS.Norm2()[1] / RHS.Norm2()[1]
 if Comm.MyPID() == 0:
   print "After solution of the linear system:"
   print "||x - x_exact||_2 / ||b||_2 = ", norm
-
-Epetra.Finalize()

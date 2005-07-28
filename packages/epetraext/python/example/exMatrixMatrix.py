@@ -4,7 +4,6 @@ try:
 except ImportError:
   raise ImportError, "error w/ EpetraExt or Epetra"
 
-Epetra.Init()
 Comm = Epetra.PyComm()
 n = 10
 Map = Epetra.Map(10, 0, Comm)
@@ -48,4 +47,3 @@ C = B;
 
 EpetraExt.Add(A, False, 1.0, B, 1.0)
 print B
-Epetra.Finalize()

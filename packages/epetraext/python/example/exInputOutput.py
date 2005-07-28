@@ -5,7 +5,6 @@ try:
 except ImportError:
   raise ImportError, "error w/ EpetraExt or Epetra"
 
-Epetra.Init()
 Comm = Epetra.PyComm()
 n = 10
 Map = Epetra.Map(10, 0, Comm)
@@ -67,5 +66,3 @@ if B.NormInf() == 0.0:
   print "I/O for CrsMatrix worked!"
 else:
   print "I/O for CrsMatrix failed!"
-
-Epetra.Finalize()

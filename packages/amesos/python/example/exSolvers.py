@@ -52,9 +52,6 @@ def PrintHelp():
   print '- Amesos_Mumps'
 
 def main():
-  # Initialize the communicator (does nothing in serial)
-  # and creates an Epetra communicator
-  Epetra.Init()
   Comm = Epetra.PyComm();
 
   args = sys.argv[1:]
@@ -131,7 +128,6 @@ def main():
   ierr = Solver.Solve();
   print "Solver.Solve() return code = ", ierr
   del Solver
-  Epetra.Finalize()
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

@@ -8,8 +8,6 @@ except:
   except ImportError:
     raise ImportError, "error w/ ML or Triutils or AztecOO or Epetra"
 
-Epetra.Init()
-
 # builds the linear system matrix and sets up starting solution and
 # right-hand side
 nx = 100
@@ -43,5 +41,3 @@ Solver.SetPrecOperator(Prec)
 Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg);
 Solver.SetAztecOption(AztecOO.AZ_output, 16);
 Solver.Iterate(1550, 1e-5)
-
-Epetra.Finalize()
