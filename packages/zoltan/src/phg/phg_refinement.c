@@ -20,7 +20,7 @@ extern "C" {
 #include <float.h>
 #include "phg.h"
 
-
+#define HANDLE_ISOLATED_VERTICES    
 #define USE_SERIAL_REFINEMENT_ON_ONE_PROC
 
 
@@ -83,10 +83,16 @@ static int serial_fm2 (ZZ *zz,
 {
 int    i, j, vertex, edge, *cut[2], *locked = 0, *locked_list = 0, round = 0;
 double total_weight, part_weight[2], max_weight[2];
-double cutsize, best_cutsize, *gain = 0;
+double cutsize_beforepass, best_cutsize, *gain = 0;
 HEAP   heap[2];
 int    steplimit;
 char   *yo="serial_fm2";
+#ifdef HANDLE_ISOLATED_VERTICES    
+ int    isocnt=0;
+#endif
+#ifdef _DEBUG
+ double tw0, imbal, cutsize;
+#endif
 
 double error, best_error;
 int    best_imbalance, imbalance;
@@ -115,6 +121,10 @@ int    best_imbalance, imbalance;
   max_weight[0] = total_weight * bal_tol * part_sizes[0];
   max_weight[1] = total_weight * bal_tol * part_sizes[1];
 
+#ifdef _DEBUG
+  tw0 = total_weight * part_sizes[0];
+#endif
+  
   if (!(cut[0]      = (int*)   ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
    || !(locked      = (int*)   ZOLTAN_CALLOC    (hg->nVtx,  sizeof(int)))
    || !(locked_list = (int*)   ZOLTAN_CALLOC    (hg->nVtx,  sizeof(int)))
@@ -143,13 +153,21 @@ int    best_imbalance, imbalance;
   /* Initialize the heaps and fill them with the gain values */
   Zoltan_Heap_Init(zz, &heap[0], hg->nVtx);
   Zoltan_Heap_Init(zz, &heap[1], hg->nVtx);  
-  for (i = 0; i < hg->nVtx; i++)
-     Zoltan_Heap_Input(&heap[part[i]], i, gain[i]);
+  for (i = 0; i < hg->nVtx; i++) {
+#ifdef HANDLE_ISOLATED_VERTICES          
+      if (hg->vindex[i+1]==hg->vindex[i]) { /* isolated vertex */
+          part_weight[part[i]] -= hg->vwgt ? hg->vwgt[i] : 1.0;
+          part[i] = -(part[i]+1); /* remove those vertices from that part*/
+          ++isocnt;
+      } else
+#endif
+          Zoltan_Heap_Input(&heap[part[i]], i, gain[i]);
+  }
   Zoltan_Heap_Make(&heap[0]);
   Zoltan_Heap_Make(&heap[1]);
 
   /* Initialize given partition as best partition */
-  best_cutsize = cutsize = Zoltan_HG_hcut_size_total(hg, part);
+  best_cutsize = cutsize_beforepass = Zoltan_HG_hcut_size_total(hg, part);
   best_error = MAX (part_weight[0]-max_weight[0], part_weight[1]-max_weight[1]);
   best_imbalance = (part_weight[0]>max_weight[0])||(part_weight[1]>max_weight[1]);
   do {
@@ -158,7 +176,7 @@ int    best_imbalance, imbalance;
     double akt_cutsize=best_cutsize;
 
     round++;
-    cutsize = best_cutsize;
+    cutsize_beforepass = best_cutsize;
     if (hgp->output_level > HG_DEBUG_LIST)
       printf("ROUND %d:\nSTEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE\n",round);
 
@@ -184,12 +202,26 @@ int    best_imbalance, imbalance;
            sour = 1;
         dest = 1-sour;
         vertex = Zoltan_Heap_Extract_Max(&heap[sour]);
+        if (vertex<0)
+            break;
 
         locked[vertex] = part[vertex] + 1;
         locked_list[number_locked++] = vertex;
-        akt_cutsize -= gain[vertex];
-
+        akt_cutsize -= gain[vertex];        
+        
         Zoltan_HG_move_vertex (hg, vertex, sour, dest, part, cut, gain, heap);
+
+#ifdef _DEBUG
+        imbal = (tw0==0.0) ? 0.0 : (part_weight[0]-tw0)/tw0;
+        uprintf(hg->comm, "%4d: moving %4d from %d to %d cut=%6.0lf bal=%.3lf\n", step, vertex, sour, dest, akt_cutsize, imbal);
+        /* Just for debugging */
+        cutsize = Zoltan_PHG_Compute_NetCut(hg->comm, hg, part, p);
+        if (akt_cutsize!=cutsize) {
+            errexit("%s: after move cutsize=%.2lf Verify: total=%.2lf\n", uMe(hg->comm), akt_cutsize,
+                    cutsize);
+        }
+#endif
+        
         part_weight[sour] -= (hg->vwgt ? hg->vwgt[vertex] : 1.0);
         part_weight[dest] += (hg->vwgt ? hg->vwgt[vertex] : 1.0);
 
@@ -206,9 +238,13 @@ int    best_imbalance, imbalance;
             }
         if (hgp->output_level > HG_DEBUG_LIST+1)
            printf ("%4d %6d %2d->%2d %7.2f %f %f\n", step, vertex, sour, dest,
-            error, akt_cutsize - cutsize, akt_cutsize);
+            error, akt_cutsize - cutsize_beforepass, akt_cutsize);
         }
 
+#ifdef _DEBUG
+    uprintf(hg->comm, "Best CUT=%6.0lf at move %d\n", best_cutsize, best_locked);
+#endif
+    
     /* rollback */
      while (number_locked != best_locked) {
         vertex = locked_list[--number_locked];
@@ -224,7 +260,7 @@ int    best_imbalance, imbalance;
         }
 
      /* only update data structures if we're going to do another pass */
-     if ((best_cutsize < cutsize) &&  (round < hgp->fm_loop_limit)) {         
+     if ((best_cutsize < cutsize_beforepass) &&  (round < hgp->fm_loop_limit)) {         
          while (number_locked) {
              vertex = locked_list[--number_locked];
              locked[vertex] = 0;
@@ -234,8 +270,32 @@ int    best_imbalance, imbalance;
          Zoltan_Heap_Make(&(heap[0]));
          Zoltan_Heap_Make(&(heap[1]));
      }
-  } while ((best_cutsize < cutsize) &&  (round < hgp->fm_loop_limit));
+  } while ((best_cutsize < cutsize_beforepass) &&  (round < hgp->fm_loop_limit));
 
+#ifdef HANDLE_ISOLATED_VERTICES
+  if (isocnt) {
+#ifdef _DEBUG      
+      double isoimbalbefore, isoimbal;
+#endif
+      double targetw0;
+      
+      targetw0 = total_weight * part_sizes[0];
+#ifdef _DEBUG      
+      isoimbalbefore = (targetw0==0) ? 0.0 : (part_weight[0] - targetw0)/ targetw0;
+#endif
+      for (i=0; i < hg->nVtx; ++i)
+          if (hg->vindex[i+1]==hg->vindex[i])  { /* go over isolated vertices */
+              int npno = (part_weight[0] <  targetw0) ? 0 : 1;
+              part_weight[npno] += hg->vwgt ? hg->vwgt[i] : 1.0;                
+              part[i] = npno;
+          }
+#ifdef _DEBUG      
+      isoimbal = (targetw0==0) ? 0.0 : (part_weight[0] - targetw0)/ targetw0;
+      uprintf(hg->comm, "%d isolated vertices, balance before: %.3lf  after: %.3lf\n", isocnt, isoimbalbefore, isoimbal);
+#endif
+  }
+#endif  
+  
   /* gain_check (hg, gain, part, cut); */
   Zoltan_Multifree(__FILE__,__LINE__, 4, &cut[0], &locked, &locked_list, &gain);
   Zoltan_Heap_Free(&heap[0]);
@@ -329,14 +389,11 @@ static void fm2_move_vertex_oneway(int v, HGraph *hg, Partition part,
 
 
 static void fm2_move_vertex_oneway_nonroot(int v, HGraph *hg, Partition part, 
-                                           int *lpins[2],
-                                           double *weights, double *lweights)
+                                           int *lpins[2], double *lweights)
 {
     int   pno=part[v], vto=1-pno, j;
     
     part[v] = vto;
-    weights[pno] -= (hg->vwgt ? hg->vwgt[v] : 1.0);
-    weights[vto] += (hg->vwgt ? hg->vwgt[v] : 1.0);
     lweights[pno] -= (hg->vwgt ? hg->vwgt[v] : 1.0);
     lweights[vto] += (hg->vwgt ? hg->vwgt[v] : 1.0);
 
@@ -367,9 +424,17 @@ static int refine_fm2 (ZZ *zz,
         max_weight[2], lmax_weight[2];
     double targetw0, ltargetw0, minvw=DBL_MAX;
     double cutsize, best_cutsize, 
-        best_imbal, best_limbal, imbal, limbal;
+        best_limbal, imbal, limbal;
     HEAP   heap[2];
     char   *yo="refine_fm2";
+#ifdef HANDLE_ISOLATED_VERTICES    
+    int    isomovecnt, isocnt=hg->nVtx; /* only root uses isocnt, isolated vertices
+                                           are kept at the end of moves array */
+    int    *deg=NULL, *ldeg=NULL;
+#if 0
+    double best_imbal;
+#endif
+#endif
     PHGComm *hgc=hg->comm;
     struct {
         int nPins; 
@@ -461,7 +526,7 @@ static int refine_fm2 (ZZ *zz,
         if (hg->nVtx &&
             (!(mark     = (int*)   ZOLTAN_CALLOC(hg->nVtx, sizeof(int)))
              || !(adj   = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))   
-             || !(gain  = (float*) ZOLTAN_CALLOC(hg->nVtx, sizeof(float)))))
+             || !(gain  = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float)))))
             MEMORY_ERROR;
         Zoltan_Heap_Init(zz, &heap[0], hg->nVtx);
         Zoltan_Heap_Init(zz, &heap[1], hg->nVtx);  
@@ -472,6 +537,38 @@ static int refine_fm2 (ZZ *zz,
         for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
             ++(lpins[part[hg->hvertex[j]]][i]);
 
+#ifdef HANDLE_ISOLATED_VERTICES        
+    /* first compute vertex degree to find any isolated vertices
+       we use lgain and gain, as ldeg, deg.*/
+    ldeg = (int *) lgain;
+    deg = (int *) gain;
+    for (i = 0; i < hg->nVtx; ++i)
+        ldeg[i] = hg->vindex[i+1] - hg->vindex[i];
+    MPI_Reduce(ldeg, deg, hg->nVtx, MPI_INT, MPI_SUM, root.rank,
+               hg->comm->col_comm);
+
+#if 0
+    for (i=0; i<hg->nVtx; ++i)
+        if (part[i]<0 || part[i]>1)
+            errexit("before isolated vertex check; part[%d]=%d", i, part[i]);
+    if (hgc->myProc_y==root.rank) { /* root marks isolated vertices */
+        for (i=0; i<hg->nVtx; ++i)
+            if (!gain[i]) {
+                moves[--isocnt] = i;
+                part[i] = -(part[i]+1); /* remove those vertices from that part*/
+            }
+        for (i=0; i<hg->nEdge; ++i)
+            for (j=hg->hindex[i]; j<hg->hindex[i+1]; ++j) {
+                int v = hg->hvertex[j];
+                if (part[v]<0 || part[v]>1) 
+                    errexit("vertex %d (part %d) has degree %d but it is in edge list of net %d\n", v, part[v], gain[v], i);
+            }
+        
+    }
+    
+#endif
+#endif
+    
     do {
         int v=1, movecnt=0, neggaincnt=0, from, to;
         int maxneggain = (hgp->fm_max_neg_move < 0) ? hg->nVtx : hgp->fm_max_neg_move;
@@ -491,8 +588,6 @@ static int refine_fm2 (ZZ *zz,
         MPI_Allreduce(&cutsize, &best_cutsize, 1, MPI_DOUBLE, MPI_SUM, hgc->col_comm);
         cutsize = best_cutsize;
 
-        best_imbal = imbal = (targetw0==0.0) ? 0.0
-            : fabs(weights[0]-targetw0)/targetw0;
         best_limbal = limbal = (ltargetw0==0.0) ? 0.0
             : fabs(lweights[0]-ltargetw0)/ltargetw0;
 
@@ -551,6 +646,17 @@ static int refine_fm2 (ZZ *zz,
                could have compute the same moves concurrently; but for this
                version we'll do it in the root procs and broadcast */
 
+#ifdef HANDLE_ISOLATED_VERTICES                
+            for (i=isocnt; i < hg->nVtx; ++i) { /* go over isolated vertices */
+                int u = moves[i], pno=-part[u]-1;
+
+                if (pno<0 || pno>1)
+                    errexit("heeeey pno=%d", pno);
+                /* let's remove it from its part */
+                lweights[pno] -= hg->vwgt ? hg->vwgt[u] : 1.0; 
+            }
+#endif
+            
             /* Initialize the heaps and fill them with the gain values */
             Zoltan_Heap_Clear(&heap[from]);  
             for (i = 0; i < hg->nVtx; ++i)
@@ -558,7 +664,7 @@ static int refine_fm2 (ZZ *zz,
                     Zoltan_Heap_Input(&heap[from], i, gain[i]);
             Zoltan_Heap_Make(&heap[from]);
             
-            while ((v>=0) && (neggaincnt < maxneggain) && ((lweights[to]+minvw) <= lmax_weight[to]) ) {
+            while ((neggaincnt < maxneggain) && ((lweights[to]+minvw) <= lmax_weight[to]) ) {
                 if (Zoltan_Heap_Empty(&heap[from])) /* too bad it is empty */
                     break;
                 v = Zoltan_Heap_Extract_Max(&heap[from]);    
@@ -584,10 +690,9 @@ static int refine_fm2 (ZZ *zz,
                     moves[movecnt++] = -(v+1);
                     continue;
                 } 
-	
-                /* Positive value means we actually moved the vertex. 
-                   Offset by one not really necessary here? */
-                moves[movecnt] = (v+1);
+
+                    
+                moves[movecnt] = v;
                 ++neggaincnt;
                 cutsize -= gain[v];
 
@@ -628,14 +733,12 @@ static int refine_fm2 (ZZ *zz,
                 int v = moves[i];
                 if (v<0)
                     v = -v-1;
-                else {
-                    --v;
+                else 
                     fm2_move_vertex_oneway(v, hg, part, gain, heap, pins, lpins, weights, lweights, mark, adj);
-                }
                 mark[v] = 0;
             }
             for (i=0; i<best_cutsizeat; ++i){
-                int v = (moves[i] < 0 ) ? -moves[i] - 1 : moves[i]-1;
+                int v = (moves[i] < 0 ) ? -moves[i] - 1 : moves[i];
                 mark[v] = 0;
             }                
         }
@@ -646,12 +749,8 @@ static int refine_fm2 (ZZ *zz,
         if (hgc->myProc_y!=root.rank) { /* now non-root does move simulation */
             for (i=0; i<best_cutsizeat; ++i) {
                 int v = moves[i];
-                if (v<0)
-                    v = -v-1;
-                else {
-                    --v;
-                    fm2_move_vertex_oneway_nonroot(v, hg, part, lpins, weights, lweights);
-                }
+                if (v>=0)
+                    fm2_move_vertex_oneway_nonroot(v, hg, part, lpins, lweights);
             }
         }
 
@@ -667,9 +766,53 @@ static int refine_fm2 (ZZ *zz,
         }
 #endif
 
+
+#ifdef HANDLE_ISOLATED_VERTICES            
+#if 0
+        MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);        
+        best_imbal = (targetw0==0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;
+        if (hgc->myProc_y==root.rank)             
+            uprintf(hgc, "BEFORE ISOLATED VERTEX HANDLING WE *THINK* GLOBAL IMBALANCE is %.3lf\n", best_imbal);
+#endif
+        
+        isomovecnt = 0;
+        if (hgc->myProc_y==root.rank) {
+            best_limbal = (ltargetw0==0.0) ? 0.0
+                : fabs(lweights[0]-ltargetw0)/ltargetw0;
+            
+            for (i=isocnt; i < hg->nVtx; ++i) { /* go over isolated vertices */
+                int u = moves[i], pno=-part[u]-1, npno;
+
+                npno = (lweights[0] < ltargetw0) ? 0 : 1;
+                if (npno!=pno)
+                    moves[isomovecnt++] = u;
+                lweights[npno] += hg->vwgt ? hg->vwgt[u] : 1.0;                
+                part[u] = -(npno+1); /* move to npno (might be same as pno;
+                                        so it may not be a real move */
+            }
+            limbal = (ltargetw0==0.0) ? 0.0
+                : fabs(lweights[0]-ltargetw0)/ltargetw0;
+#if 0            
+            uprintf(hgc, "before binpacking of %d isolated vertices balance was: %.3lf now: %.3lf\n", hg->nVtx-isocnt, best_limbal, limbal);
+#endif
+        }
+
+        MPI_Bcast(&isomovecnt, 1, MPI_INT, root.rank, hgc->col_comm);
+        MPI_Bcast(moves, isomovecnt, MPI_INT, root.rank, hgc->col_comm);
+        if (hgc->myProc_y!=root.rank) { /* now non-root needs to move isolated vertices */
+            for (i=0; i<isomovecnt; ++i) /* we just need to update partno and lweights;
+                                            following function will do both for us */
+                    fm2_move_vertex_oneway_nonroot(moves[i], hg, part, lpins, lweights);
+        }
+#endif        
         
         MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
-
+#if 0       
+        best_imbal = (targetw0==0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;
+        if (hgc->myProc_y==root.rank)             
+            uprintf(hgc, "NEW GLOBAL IMBALANCE is %.3lf\n", best_imbal);
+#endif
+        
         if (weights[0]==0.0) 
             ltargetw0 = lmax_weight[0] = 0.0;
         else {
@@ -702,6 +845,12 @@ static int refine_fm2 (ZZ *zz,
     } while (successivefails<2 &&  (++passcnt < hgp->fm_loop_limit));
 
     if (hgc->myProc_y==root.rank) { /* only root needs mark, adj, gain and heaps*/
+#ifdef HANDLE_ISOLATED_VERTICES    
+        for (i=isocnt; i < hg->nVtx; ++i) { /* go over isolated vertices */
+            int u = moves[i], pno=-part[u]-1;
+            part[u] = pno; 
+        }
+#endif
         Zoltan_Multifree(__FILE__,__LINE__, 3, &mark, &adj, &gain);
         Zoltan_Heap_Free(&heap[0]);
         Zoltan_Heap_Free(&heap[1]);        

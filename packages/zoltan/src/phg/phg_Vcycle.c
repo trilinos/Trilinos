@@ -640,11 +640,11 @@ double Zoltan_PHG_Compute_Balance (
     return 1.0;
   }  
   
-  if (!(lsize_w = (double*) ZOLTAN_CALLOC (p, sizeof(double))) 
-   || !(size_w  = (double*) ZOLTAN_CALLOC (p, sizeof(double)))) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+  if (!(lsize_w = (double*) ZOLTAN_CALLOC (2*p, sizeof(double)))) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
   }
+  size_w = lsize_w + p;
   
   if (hg->vwgt)
     for (i = 0; i < hg->nVtx; i++)
@@ -666,7 +666,7 @@ double Zoltan_PHG_Compute_Balance (
       }
   }
 
-  Zoltan_Multifree(__FILE__,__LINE__, 2, &size_w, &lsize_w);
+  ZOLTAN_FREE (&lsize_w);
 
   return  1.0+max_imbal;
 }

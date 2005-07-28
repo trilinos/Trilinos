@@ -65,8 +65,6 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
 }
 
 
-
-#define _DEBUG
 /*****************************************************************************/
 int Zoltan_PHG_Matching (
   ZZ *zz,
