@@ -248,6 +248,8 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_RawMPITraits.hpp \
 	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
 	$(srcdir)/Teuchos_RefCountPtr.hpp \
+	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversionsDecl.hpp \
+	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
 	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
 	$(srcdir)/Teuchos_SerialDenseVector.hpp \
@@ -320,6 +322,8 @@ FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
+HAVE_TEUCHOS_BOOST_FALSE = @HAVE_TEUCHOS_BOOST_FALSE@
+HAVE_TEUCHOS_BOOST_TRUE = @HAVE_TEUCHOS_BOOST_TRUE@
 HAVE_TEUCHOS_COMPLEX_FALSE = @HAVE_TEUCHOS_COMPLEX_FALSE@
 HAVE_TEUCHOS_COMPLEX_TRUE = @HAVE_TEUCHOS_COMPLEX_TRUE@
 HAVE_TEUCHOS_EXTENDED_FALSE = @HAVE_TEUCHOS_EXTENDED_FALSE@
@@ -457,6 +461,8 @@ CORE_H = \
 	$(srcdir)/Teuchos_RawMPITraits.hpp \
 	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
 	$(srcdir)/Teuchos_RefCountPtr.hpp \
+	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversionsDecl.hpp \
+	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
 	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
 	$(srcdir)/Teuchos_SerialDenseVector.hpp \

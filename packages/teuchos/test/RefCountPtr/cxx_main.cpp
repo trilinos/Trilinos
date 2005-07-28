@@ -32,7 +32,11 @@
 #include "Teuchos_Version.hpp"
 
 #ifdef HAVE_MPI
-#include "mpi.h"
+#  include "mpi.h"
+#endif
+
+#ifdef HAVE_TEUCHOS_BOOST
+#  include "Teuchos_RefCountPtrBoostSharedPtrConversions.hpp"
 #endif
 
 // Return constants from class functions
@@ -220,6 +224,9 @@ int main( int argc, char* argv[] ) {
 
     if (verbose)
       std::cout << std::endl << Teuchos::Teuchos_Version() << std::endl;
+
+		if(verbose)
+			std::cout << "\nTesting basic RefCountPtr functionality ...\n";
 
 		// Create some smart pointers
 
@@ -489,8 +496,26 @@ int main( int argc, char* argv[] ) {
     TEST_FOR_EXCEPT( a_f_return != A_f_return ); // Should be been called in destructor of a_ptr1 but before the A object is destroyed!
 #endif
 
+#ifdef HAVE_TEUCHOS_BOOST
+
 		if(verbose)
-			std::cout << "RefCountPtr<...> seems to check out!\n";
+			std::cout << "\nTesting basic RefCountPtr compatibility with boost::shared_ptr ...\n";
+
+    boost::shared_ptr<A>  a_sptr1(new C());
+    RefCountPtr<A>        a_rsptr1 = rcp(a_sptr1);
+		TEST_FOR_EXCEPT( a_rsptr1.get() != a_sptr1.get() );
+    boost::shared_ptr<A>  a_sptr2 = shared_pointer(a_rsptr1);
+		TEST_FOR_EXCEPT( a_sptr2.get() != a_sptr1.get() );
+    RefCountPtr<A>        a_rsptr2 = rcp(a_sptr2);
+		TEST_FOR_EXCEPT( a_rsptr2.get() != a_rsptr1.get() );
+		//TEST_FOR_EXCEPT( a_rsptr2 != a_rsptr1 );  // This should work if boost::get_deleter() works correctly!
+    boost::shared_ptr<A>  a_sptr3 = shared_pointer(a_rsptr2);
+		TEST_FOR_EXCEPT( a_sptr3.get() != a_rsptr2.get() );
+
+#endif // HAVE_TEUCHOS_BOOST
+
+		if(verbose)
+			std::cout << "\nAll tests for RefCountPtr seem to check out!\n";
 
 	} // end try
 	catch( const std::exception &excpt ) {

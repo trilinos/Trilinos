@@ -575,6 +575,14 @@ if test "X${HAVE_TEUCHOS_LIBXML2}" = "Xyes"; then
   fi  
 fi
 
+
+#
+#  --enable-teuchos-boost
+#
+
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, boost, [Enable support for some of boost], TEUCHOS_BOOST, no)
+AM_CONDITIONAL(HAVE_TEUCHOS_BOOST, [test "X$ac_cv_use_teuchos_boost" != "Xno"])
+
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------

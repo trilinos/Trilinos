@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR USE_ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_TEUCHOS_COMPLEX_TRUE HAVE_TEUCHOS_COMPLEX_FALSE HAVE_TEUCHOS_EXTENDED_TRUE HAVE_TEUCHOS_EXTENDED_FALSE FLIBS BLAS_LIBS LAPACK_LIBS USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE TRILINOS_TEMPLATE_OBJS ac_aux_dir TEUCHOS_BUILD_DIRECTORY MPI_LIBS MPI_LIBDIR MPI_INC MPI_DIR LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR USE_ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_TEUCHOS_COMPLEX_TRUE HAVE_TEUCHOS_COMPLEX_FALSE HAVE_TEUCHOS_EXTENDED_TRUE HAVE_TEUCHOS_EXTENDED_FALSE HAVE_TEUCHOS_BOOST_TRUE HAVE_TEUCHOS_BOOST_FALSE FLIBS BLAS_LIBS LAPACK_LIBS USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE TRILINOS_TEMPLATE_OBJS ac_aux_dir TEUCHOS_BUILD_DIRECTORY MPI_LIBS MPI_LIBDIR MPI_INC MPI_DIR LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -904,6 +904,7 @@ Optional Features:
   --enable-teuchos-libxml2
                           Enable Teuchos interface support for the LibXML2
                           Library (default is no)
+  --enable-teuchos-boost  Enable support for some of boost (default is no)
   --enable-export-makefiles
                           Creates export makefiles in the install (prefix)
                           directory. This option requires perl to be set in
@@ -3836,7 +3837,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3839:" \
+echo "$as_me:3840:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -9516,6 +9517,47 @@ echo "$as_me: error: You have specified both Expat and LibXML2. Please enable on
   fi
 fi
 
+
+#
+#  --enable-teuchos-boost
+#
+
+
+# Check whether --enable-teuchos-boost or --disable-teuchos-boost was given.
+if test "${enable_teuchos_boost+set}" = set; then
+  enableval="$enable_teuchos_boost"
+  ac_cv_use_teuchos_boost=$enableval
+else
+  ac_cv_use_teuchos_boost=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use teuchos-boost" >&5
+echo $ECHO_N "checking whether to use teuchos-boost... $ECHO_C" >&6
+
+if test "X$ac_cv_use_teuchos_boost" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TEUCHOS_BOOST
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_teuchos_boost" != "Xno"; then
+  HAVE_TEUCHOS_BOOST_TRUE=
+  HAVE_TEUCHOS_BOOST_FALSE='#'
+else
+  HAVE_TEUCHOS_BOOST_TRUE='#'
+  HAVE_TEUCHOS_BOOST_FALSE=
+fi
+
+
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
@@ -9575,7 +9617,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9578: \"$ac_link\") >&5
+(eval echo $as_me:9620: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9653,7 +9695,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9656: \"$ac_link\") >&5
+(eval echo $as_me:9698: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12657,7 +12699,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:12660: \"$ac_link\") >&5
+(eval echo $as_me:12702: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12735,7 +12777,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:12738: \"$ac_link\") >&5
+(eval echo $as_me:12780: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13161,6 +13203,13 @@ if test -z "${HAVE_TEUCHOS_EXTENDED_TRUE}" && test -z "${HAVE_TEUCHOS_EXTENDED_F
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_TEUCHOS_EXTENDED\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_TEUCHOS_EXTENDED\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_TEUCHOS_BOOST_TRUE}" && test -z "${HAVE_TEUCHOS_BOOST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_TEUCHOS_BOOST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_TEUCHOS_BOOST\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -13830,6 +13879,8 @@ s,@HAVE_TEUCHOS_COMPLEX_TRUE@,$HAVE_TEUCHOS_COMPLEX_TRUE,;t t
 s,@HAVE_TEUCHOS_COMPLEX_FALSE@,$HAVE_TEUCHOS_COMPLEX_FALSE,;t t
 s,@HAVE_TEUCHOS_EXTENDED_TRUE@,$HAVE_TEUCHOS_EXTENDED_TRUE,;t t
 s,@HAVE_TEUCHOS_EXTENDED_FALSE@,$HAVE_TEUCHOS_EXTENDED_FALSE,;t t
+s,@HAVE_TEUCHOS_BOOST_TRUE@,$HAVE_TEUCHOS_BOOST_TRUE,;t t
+s,@HAVE_TEUCHOS_BOOST_FALSE@,$HAVE_TEUCHOS_BOOST_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
