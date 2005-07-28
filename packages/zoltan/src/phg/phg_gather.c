@@ -99,10 +99,10 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
 
   shg->EdgeWeightDim = phg->EdgeWeightDim;
   shg->VtxWeightDim = phg->VtxWeightDim;
-  if (shg->VtxWeightDim)
+  if (shg->VtxWeightDim && shg->nVtx)
     shg->vwgt = (float *) ZOLTAN_MALLOC(shg->nVtx * shg->VtxWeightDim 
                                                   * sizeof(float));
-  if (shg->EdgeWeightDim)
+  if (shg->EdgeWeightDim && shg->nEdge)
     shg->ewgt = (float *) ZOLTAN_MALLOC(shg->nEdge * shg->EdgeWeightDim 
                                                   * sizeof(float));
   
@@ -116,8 +116,8 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
   send_buf = (int *) ZOLTAN_MALLOC(send_size * sizeof(int));
   
 
-  if ((shg->VtxWeightDim && !shg->vwgt) ||
-      (shg->EdgeWeightDim && !shg->ewgt) || !recv_size ||
+  if ((shg->VtxWeightDim && shg->nVtx && !shg->vwgt) ||
+      (shg->EdgeWeightDim && shg->nEdge && !shg->ewgt) || !recv_size ||
       (send_size && !send_buf)) 
     MEMORY_ERROR;
   
