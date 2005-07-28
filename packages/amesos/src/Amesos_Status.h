@@ -31,6 +31,8 @@ public:
     NumNumericFact_ = 0;
     NumSolve_ = 0;  
     Threshold_ = 0.0;
+    MyPID_ = 0;
+    NumProcs_ = 1;
   }
 
   //! Default destructor.
@@ -65,6 +67,9 @@ public:
   int NumSolve_;  
 
   double Threshold_;
+
+  int MyPID_;
+  int NumProcs_;
 };
 
 #endif
