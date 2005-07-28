@@ -363,8 +363,12 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   
 
   //! Signal that data entry is complete.  Perform transformations to local index space.
-  /* This version of FillComplete assumes that the domain and range distributions are
-     identical to the matrix row distributions.
+  /* This version of FillComplete assumes that the domain and range
+     distributions are identical to the matrix row distributions.
+     \return error code, 0 if successful. Returns a positive warning code of 3
+        if the matrix is rectangular (meaning that the other overloading of
+        FillComplete should have been called, with differen domain-map and
+        range-map specified).
   */
   int FillComplete();
 
@@ -1151,6 +1155,8 @@ or if the number of entries in this row exceed the Length parameter.
   mutable Epetra_MultiVector* ExportVector_;
 
   Epetra_DataAccess CV_;
+
+  bool squareFillCompleteCalled_;
  private:
 
   // These are the pre-5.0 versions of solve.  They are still faster that generic 5.0 solves, so we keep them around

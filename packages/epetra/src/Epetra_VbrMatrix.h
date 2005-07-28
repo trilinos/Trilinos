@@ -402,8 +402,12 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     int ReplaceDiagonalValues(const Epetra_Vector & Diagonal);
 
     //! Signal that data entry is complete, perform transformations to local index space.
-    /* This version of FillComplete assumes that the domain and range distributions are
-       identical to the matrix row distributions.
+    /* This version of FillComplete assumes that the domain and range
+       distributions are identical to the matrix row distributions.
+       \return error code, 0 if successful. Returns a positive warning code of 3
+        if the matrix is rectangular (meaning that the other overloading of
+        FillComplete should have been called, with differen domain-map and
+        range-map specified).
     */
     int FillComplete();
 
@@ -1342,6 +1346,7 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
   // bool to indicate if above four point maps and importer have already been created
   mutable bool HavePointObjects_;
 
+  bool squareFillCompleteCalled_;
 };
 
 #endif /* EPETRA_VBRMATRIX_H */

@@ -48,7 +48,8 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
     NumMyBlockRows_(RowMap.NumMyElements()),
-    CV_(CV)
+    CV_(CV),
+    squareFillCompleteCalled_(false)
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, RowMap, NumBlockEntriesPerRow);
@@ -67,7 +68,8 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
     NumMyBlockRows_(RowMap.NumMyElements()),
-    CV_(CV)
+    CV_(CV),
+    squareFillCompleteCalled_(false)
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, RowMap, NumBlockEntriesPerRow);
@@ -86,7 +88,8 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
     NumMyBlockRows_(RowMap.NumMyElements()),
-    CV_(CV)
+    CV_(CV),
+    squareFillCompleteCalled_(false)
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap, NumBlockEntriesPerRow);
@@ -106,7 +109,8 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
     NumMyBlockRows_(RowMap.NumMyElements()),
-    CV_(CV)
+    CV_(CV),
+    squareFillCompleteCalled_(false)
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap, NumBlockEntriesPerRow);
@@ -124,7 +128,8 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph &
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
     NumMyBlockRows_(Graph.RowMap().NumMyElements()),
-    CV_(CV)
+    CV_(CV),
+    squareFillCompleteCalled_(false)
 {
   constructedWithFilledGraph_ = Graph.Filled();
   InitializeDefaults();
@@ -145,7 +150,8 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix & Source)
     matrixFillCompleteCalled_(Source.matrixFillCompleteCalled_),
     NumMyBlockRows_(0),
     CV_(Copy),
-    HavePointObjects_(false)
+    HavePointObjects_(false),
+    squareFillCompleteCalled_(false)
  {
 
   InitializeDefaults();
@@ -781,13 +787,14 @@ int Epetra_VbrMatrix::CopyMat(double * A, int LDA, int NumRows, int NumCols,
 }
 //==========================================================================
 int Epetra_VbrMatrix::FillComplete() {
+  squareFillCompleteCalled_ = true;
   EPETRA_CHK_ERR(FillComplete(RowMap(), RowMap()));
   return(0);
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::FillComplete(const Epetra_BlockMap& DomainMap,
-				   const Epetra_BlockMap& RangeMap)
+int Epetra_VbrMatrix::FillComplete(const Epetra_BlockMap& domain_map,
+				   const Epetra_BlockMap& range_map)
 {
   int returnValue = 0;
 
@@ -798,19 +805,27 @@ int Epetra_VbrMatrix::FillComplete(const Epetra_BlockMap& DomainMap,
   }
 
  if(!StaticGraph()) {
-    EPETRA_CHK_ERR(Graph_->MakeIndicesLocal(DomainMap, RangeMap));
+    EPETRA_CHK_ERR(Graph_->MakeIndicesLocal(domain_map, range_map));
   }
 
   SortEntries();  // Sort column entries from smallest to largest
   MergeRedundantEntries(); // Get rid of any redundant index values
 
   if(!StaticGraph()) {
-    EPETRA_CHK_ERR(Graph_->FillComplete(DomainMap, RangeMap));
+    EPETRA_CHK_ERR(Graph_->FillComplete(domain_map, range_map));
   }
 
   // NumMyCols_ = Graph_->NumMyCols(); // Redefine based on local number of cols
 
   matrixFillCompleteCalled_ = true;
+
+  if (squareFillCompleteCalled_) {
+    if (DomainMap().NumGlobalElements() != RangeMap().NumGlobalElements()) {
+      returnValue = 3;
+    }
+    squareFillCompleteCalled_ = false;
+    EPETRA_CHK_ERR(returnValue);
+  }
 
   return(returnValue);
 }
