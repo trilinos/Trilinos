@@ -85,6 +85,7 @@ RUN (paunchy-nightly-serial) {
     BUILD-DIR           = SERIAL-NEW;
     COMM                = serial;
     INVOKE-CONFIGURE    = sunos-paunchy;
+    MAKE-COMMAND        = /Net/local/gnu/bin/gmake;
     TEST-CATEGORY       = FRAMEWORK;
     TTR-DIR             = /local/proj/trilinos/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
@@ -102,6 +103,7 @@ RUN (paunchy-nightly-mpi) {
     BUILD-DIR           = MPI-NEW;
     COMM                = mpi;
     INVOKE-CONFIGURE    = sunos-paunchy-mpi;
+    MAKE-COMMAND        = /Net/local/gnu/bin/gmake;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 4;
     MPI-START           = lamboot;

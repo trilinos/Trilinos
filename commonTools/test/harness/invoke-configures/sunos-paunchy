@@ -5,6 +5,7 @@
 -I/local/proj/trilinos/Trilinos3PL/prebuilt/superlu-3.0" \
 LDFLAGS="-xlic_lib=sunperf" \
 CXXFLAGS="-g -pto" \
+--with-gnumake \
 --cache-file=config.cache \
 --disable-default-packages \
 --enable-amesos \

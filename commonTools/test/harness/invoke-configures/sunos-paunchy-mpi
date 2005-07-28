@@ -11,6 +11,7 @@ CXXFLAGS="-g -pto" \
 --with-mpi-libdir=/local/arch/sun/solaris/mpi/build/solaris/ch_p4/lib \
 CPPFLAGS="-I/local/arch/sun/sunos/mpi/mpich/lib/sun4/ch_p4 \
 -I/local/arch/sun/sunos/mpi/mpich/lib/sun4/ch_p4" \
+--with-gnumake \
 --cache-file=config.cache \
 --disable-default-packages \
 --enable-amesos \
