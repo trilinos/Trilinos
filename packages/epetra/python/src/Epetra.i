@@ -61,8 +61,10 @@ The most important classes of the Epetra module is:
 
 *) Example of usage: Creating a Distributed Matrix
 
-The following example builds a distributed tridiagonal matrix. The matrix has
-size 10 and the elements are distributed linearly among the processors.  It can be run is serial or parallel, depending on how Trilinos was configured. 
+The following example builds a distributed tridiagonal matrix. The
+matrix has size 10 and the elements are distributed linearly among the
+processors.  It can be run is serial or parallel, depending on how
+Trilinos was configured.
 
 from PyTrilinos import Epetra
 Epetra.Init()
@@ -88,11 +90,10 @@ for ii in xrange(0, NumMyRows):
 ierr = A.FillComplete();
 Epetra.Finalize()
 
-
 *) Notes
 
-An Epetra.Vector object is at the same time a NumPy vector, and it can
-therefore be used everywhere NumPy vectors are accepted.
+An Epetra.Vector object is at the same time a Numeric vector, and it
+can therefore be used everywhere Numeric vectors are accepted.
 "
 %enddef
 
@@ -799,15 +800,29 @@ fail:
   }
 }
 
-// Python code.  Here we declare classes that inherit both from Epetra
-// objects and UserArrays, to give users additional functionality.
+// MPI stuff
+PyObject* Init_Argv(PyObject *args);
+PyObject* Finalize();
+#ifdef HAVE_MPI
+MPI_Comm CommWorld();
+#endif
+
+// Python code.  Here we set the __version__ string, call MPI_Init()
+// and arrange for MPI_Finalize to be called (if appropriate), and
+// declare classes that inherit both from Epetra objects and
+// UserArrays, to give users additional functionality.
 %pythoncode %{
 
-def Init():
-  import sys
-  Init_Argv(sys.argv)
-
 __version__ = Version().split()[2]
+
+# Call MPI_Init if appropriate
+import sys
+Init_Argv(sys.argv)
+del sys
+
+# Arrange for MPI_Finalize to be called at exit, if appropriate
+import atexit
+atexit.register(Finalize)
 
 from UserArray import *
 
@@ -836,10 +851,4 @@ def PyComm():
 def PyComm():
   return MpiComm(CommWorld());
 %}
-#endif
-
-PyObject* Init_Argv(PyObject *args);
-PyObject* Finalize();
-#ifdef HAVE_MPI
-MPI_Comm CommWorld();
 #endif

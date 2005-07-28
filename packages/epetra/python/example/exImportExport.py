@@ -52,7 +52,6 @@ except:
 # Initializes the communicator (or do-nothing in serial runs), then
 # creates a communicator (Epetra.SerialComm in serial, or Epetra.MpiComm
 # in parallel).
-Epetra.Init()
 Comm  = Epetra.PyComm()
 
 NumGlobalRows = 10
@@ -87,6 +86,3 @@ X1_bis.Update(-1.0, X1, 1.0)
 (ierr, Norm) = X1_bis.Norm2()
 if Comm.MyPID() == 0:
   print '||X1 - X1_bis||_2 = ', Norm
-
-# Finalizes the communicator (or do-nothing in serial runs)
-Epetra.Finalize()

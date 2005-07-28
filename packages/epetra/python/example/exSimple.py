@@ -46,7 +46,6 @@ except:
     raise ImportError, "error w/ Epetra"
 
 def main():
-    Epetra.Init()
     print Epetra.Version()
     comm  = Epetra.PyComm()
     nElem = 1000
@@ -59,7 +58,6 @@ def main():
     (status,bNorm) = b.Norm2()
     print "2 norm of x =", xNorm
     print "2 norm of b =", bNorm
-    Epetra.Finalize()
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

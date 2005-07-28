@@ -167,7 +167,7 @@ run-examples:
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
 	--comm=$(EPETRA_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
@@ -185,7 +185,7 @@ run-tests:
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
 	--comm=$(EPETRA_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
@@ -203,7 +203,7 @@ run-pyexamples:
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
 	--comm=$(EPETRA_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \

@@ -40,9 +40,6 @@ except:
     raise ImportError, "error w/ Epetra"
 
 def main():
-    # Initializes MPI if Epetra has been configured with 
-    # MPI support, or do-nothing otherwise
-    Epetra.Init()
     # Creates an Epetra.SerialComm in serial mode, or an Epetra.MpiComm
     # if configured with MPI support
     Comm  = Epetra.PyComm()
@@ -70,10 +67,6 @@ def main():
     NormInf = A.NormInf()
     if Comm.MyPID() == 0:
       print "inf norm of A =", NormInf
-
-    # Calls MPI_Finalize() if Epetra has been configured with MPI support,
-    # do-nothing otherwise
-    Epetra.Finalize()
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

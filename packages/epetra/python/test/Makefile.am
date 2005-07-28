@@ -56,7 +56,10 @@ MAINTAINERCLEANFILES = Makefile.in
 TEST_SUITE = testObject testSerialDense testComm testBlockMap testMap \
 	     testVector testCrsGraph
 
+SETPATH_PY = setpath.py
+
 all: $(TEST_SUITE)
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH_PY) . ; fi
 
 # Run the example script
 test%: $(srcdir)/test%.py

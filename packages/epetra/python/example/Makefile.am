@@ -53,7 +53,10 @@ MAINTAINERCLEANFILES = Makefile.in
 # Define the suite of examples
 EXAMPLE_SUITE = exSimple exCrsMatrix exImportExport
 
+SETPATH_PY = setpath.py
+
 all: $(EXAMPLE_SUITE)
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH_PY) . ; fi
 
 # Run the example script
 ex%: $(srcdir)/ex%.py

@@ -42,6 +42,11 @@
     COMM = SERIAL;
 }
 
+(FRAMEWORK, EpetraPyTests) {
+      DIRS = ../python/test;
+      COMM = SERIAL, MPI;
+}
+
 (FRAMEWORK, EpetraPyExamples) {
       DIRS = ../python/example;
       COMM = SERIAL, MPI;
