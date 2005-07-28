@@ -335,12 +335,13 @@
  *
  ******************************************************************************/
 
-#define AZ_all             -3 /* Print out everything including matrix        */
+#define AZ_all             -4 /* Print out everything including matrix        */
 /* Must be lowest value so that AZ_check_input()*/
 /* works properly.                              */
 /* #define AZ_none          0    Print out no results (not even warnings)     */
 #define AZ_last            -1 /* Print out final residual and warnings        */
-#define AZ_warnings        -2 /* Print out only warning messages              */
+#define AZ_summary         -2 /* Print out summary, final residual and warnings*/
+#define AZ_warnings        -3 /* Print out only warning messages              */
 
 /*******************************************************************************
  *
@@ -467,6 +468,7 @@
 #define AZ_ignore_scaling      23
 #define AZ_check_update_size   24
 #define AZ_extreme             25
+#define AZ_diagnostics         26
 
 /*******************************************************************************
  *

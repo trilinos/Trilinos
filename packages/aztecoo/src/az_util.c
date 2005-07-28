@@ -1331,7 +1331,7 @@ void AZ_p_error(char *str, int proc)
 /******************************************************************************/
 
 int AZ_get_new_eps(double *epsilon, double recursive, double actual,
-                   int proc_config[])
+                   int options[], int proc_config[])
 
 /*******************************************************************************
 
@@ -1358,6 +1358,8 @@ int AZ_get_new_eps(double *epsilon, double recursive, double actual,
                    and actual should be the same value. However, due to rounding
                    errors these two might differ.
 
+  options:         Aztec options array: used to test output state.
+
   proc_config:     Machine configuration.  proc_config[AZ_node] is the node
                    number.  proc_config[AZ_N_procs] is the number of processors.
 
@@ -1378,7 +1380,7 @@ int AZ_get_new_eps(double *epsilon, double recursive, double actual,
     while (*epsilon < 0.0) *epsilon += .1*difference;
    }
 
-  if (proc_config[AZ_node] == 0)
+  if (proc_config[AZ_node] == 0 && options[AZ_output]!=AZ_none)
     (void) printf("\n\t\tTrying to reduce actual residual "
                   "further\n\t\t     (recursive = %e, actual = %e)\n\n",
                   recursive, actual);
@@ -2376,6 +2378,17 @@ void AZ_set_precond_print_string(struct AZ_PREC_STRUCT *precond, const char str[
    sprintf(precond->print_string,"%s",str);
 }
 
+void AZ_set_matrix_print_string(AZ_MATRIX *Amat, const char str[])
+{
+   if ( Amat->print_string != NULL) AZ_free( Amat->print_string);
+   Amat->print_string = (char *) AZ_allocate( (strlen(str)+1)*sizeof(char));
+   if (Amat->print_string == NULL) {
+      printf("AZ_set_matrix_print_string: Not enough space to allocate string\n");
+      exit(1);
+   }
+   sprintf(Amat->print_string,"%s",str);
+}
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -2527,6 +2540,7 @@ void AZ_matrix_init(AZ_MATRIX *Amat, int local)
    Amat->N_nz        = -1;
    Amat->max_per_row = -1;
    Amat->largest_band= -1;
+   Amat->print_string = NULL;
 } 
 /* Begin Aztec 2.1 mheroux mod */
 void AZ_set_MSR(AZ_MATRIX *Amat, int bindx[], double val[], int
@@ -2580,6 +2594,7 @@ void AZ_matrix_destroy(AZ_MATRIX **Amat)
       AZ_free((*Amat)->data_org);
       (*Amat)->data_org = NULL;
    }
+   if ( (*Amat)->print_string != NULL) AZ_free( (*Amat)->print_string);
    AZ_free(*Amat);
    *Amat = NULL;
 }

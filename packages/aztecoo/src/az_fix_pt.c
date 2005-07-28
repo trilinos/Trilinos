@@ -166,6 +166,7 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
 
   if ((options[AZ_output] != AZ_none) &&
       (options[AZ_output] != AZ_last) &&
+      (options[AZ_output] != AZ_summary) &&
       (options[AZ_output] != AZ_warnings) && (proc == 0))
     (void) fprintf(stdout, "%siter:    0           residual = %e\n",
                    prefix,scaled_r_norm);

@@ -198,8 +198,9 @@ NOTE: Users can still invoke AZ_solve() in the old Aztec way. AZ_solve
     }
   }
 
-  AZ_flop_rates(Amat->data_org,Amat->indx,Amat->bpntr, Amat->bindx,
-                options, status, total_time, proc_config);
+  if (options[AZ_diagnostics]==AZ_all) 
+    AZ_flop_rates(Amat->data_org,Amat->indx,Amat->bpntr, Amat->bindx,
+		  options, status, total_time, proc_config);
 
   AZ_iterate_finish(options, Amat, precond);
 
@@ -315,7 +316,7 @@ void AZ_solve(double x[], double b[], int options[], double params[],
 
   /* output solver, scaling, and preconditioning options */
 
-  AZ_print_call_iter_solve(options, params, proc_config[AZ_node], 0, precond);
+  AZ_print_call_iter_solve(options, params, proc_config[AZ_node], 0, Amat, precond);
 
 
   AZ_sync(proc_config);
@@ -333,8 +334,9 @@ void AZ_solve(double x[], double b[], int options[], double params[],
     }
   }
 
-  AZ_flop_rates(data_org,indx,bpntr, bindx, options, status, total_time,
-                proc_config);
+  if (options[AZ_diagnostics]==AZ_all) 
+    AZ_flop_rates(data_org,indx,bpntr, bindx, options, status, total_time,
+		  proc_config);
 
   if (options[AZ_keep_info] == 0)
     (void) AZ_manage_memory(0,AZ_CLEAR,(Amat->data_org)[AZ_name],(char *) 0,
@@ -858,7 +860,7 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
 /******************************************************************************/
 
 void AZ_print_call_iter_solve(int options[], double params[], int az_proc,
-                              int recur, AZ_PRECOND *precond)
+                              int recur, AZ_MATRIX * Amat, AZ_PRECOND *precond)
 
      /*******************************************************************************
 
@@ -905,9 +907,20 @@ void AZ_print_call_iter_solve(int options[], double params[], int az_proc,
     (void) printf("\n\t\t****************************************"
                   "***************\n");
 
+  /* First print problem description (if available) */
+
   (void) printf(prefix);
 
-  /* first, print out chosen solver */
+  if (Amat != NULL) {
+    if (Amat->print_string != NULL) {
+      (void) printf("Problem: ");
+      (void) printf("%s\n",Amat->print_string);
+    }
+  }
+
+  (void) printf(prefix);
+
+  /* next, print out chosen solver */
 
   switch (options[AZ_solver]) {
 
@@ -1620,7 +1633,7 @@ int AZ_oldsolve_setup(double x[], double b[], int options[], double params[],
     if  (i == AZ_warnings) toptions[AZ_print_freq] =toptions[AZ_max_iter] + 10;
     else if (i == AZ_none) toptions[AZ_print_freq] =toptions[AZ_max_iter] + 10;
     else if (i == AZ_all ) toptions[AZ_print_freq] = 1;
-    else if (i == AZ_last) toptions[AZ_print_freq] =toptions[AZ_max_iter] + 1;
+    else if (i == AZ_last || i == AZ_summary) toptions[AZ_print_freq] =toptions[AZ_max_iter] + 1;
     else                   toptions[AZ_print_freq] =toptions[AZ_output];
     if ((i != AZ_none) && (i != AZ_warnings) &&
         (proc_config[AZ_node] == 0)) printf("\n");
@@ -1769,7 +1782,7 @@ NOTE: User's can still invoke AZ_solve() in the old Aztec way. AZ_solve
 
   /* output solver, scaling, and preconditioning options */
 
-  AZ_print_call_iter_solve(options, params, proc_config[AZ_node], 0, precond);
+  AZ_print_call_iter_solve(options, params, proc_config[AZ_node], 0, Amat, precond);
 }
 
 void AZ_iterate_finish(int options[], AZ_MATRIX *Amat, AZ_PRECOND *precond)

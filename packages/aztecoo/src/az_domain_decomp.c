@@ -294,7 +294,7 @@ int *garbage;
 */
         AZ_factor_subdomain(context, N, N_nz, &nz_used);
 
-       if (options[AZ_output] > 0) {
+       if (options[AZ_output] > 0 && options[AZ_diagnostics]!=AZ_none) {
           printf("\n*********************************************************************\n");
 	  condest = AZ_condest(N, context);
           printf("*****  Condition number estimate for subdomain preconditioner on PE %d = %.4e\n",
@@ -414,7 +414,7 @@ void AZ_print_header(int options[], int mem_overlapped,
 {
 if ((options[AZ_overlap] < 1) && 
     (options[AZ_subdomain_solve] != AZ_ilut)) return;
-   if ((options[AZ_output] != AZ_none ) && (options[AZ_output] != AZ_warnings)){
+ if ((options[AZ_output] != AZ_none ) && (options[AZ_output] != AZ_warnings) && (options[AZ_diagnostics]==AZ_all)){
       printf("\n\t\t*******************************************************\n");
       if (options[AZ_overlap] > 0) {
          printf("\t\t*****       Subdomain overlapping requires %.3e times\n", 

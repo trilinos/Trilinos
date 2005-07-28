@@ -112,6 +112,7 @@ void AztecOO_initialize_maps()
   azoo_value_map["AZ_INF_NOSCALED"] = AZ_inf_noscaled;
   azoo_value_map["AZ_ALL"] = AZ_all;
   azoo_value_map["AZ_LAST"] = AZ_last;
+  azoo_value_map["AZ_SUMMARY"] = AZ_summary;
   azoo_value_map["AZ_WARNINGS"] = AZ_warnings;
   azoo_value_map["AZ_INPUT_FORM"] = AZ_input_form;
   azoo_value_map["AZ_GLOBAL_MAT"] = AZ_global_mat;

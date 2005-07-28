@@ -250,6 +250,7 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
   if ((options[AZ_output] != AZ_none) &&
       (options[AZ_output] != AZ_last) &&
       (options[AZ_output] != AZ_warnings) &&
+      (options[AZ_output] != AZ_summary) &&
       (options[AZ_conv]!=AZTECOO_conv_test) && (proc == 0))
     {
       (void) fprintf(stdout, "%siter:    0           residual = %e\n",
@@ -401,7 +402,7 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
       if (!(convergence_info->converged) && options[AZ_conv]!=AZTECOO_conv_test) {
 
 	if (AZ_get_new_eps(&(convergence_info->epsilon), scaled_r_norm, true_scaled_r,
-			   proc_config) == AZ_QUIT) {
+			   options, proc_config) == AZ_QUIT) {
 
 	  /*
 	   * Computed residual has converged, actual residual has not converged,
@@ -560,7 +561,7 @@ static void compute_condnum_tridiag_sym( int N, double *diag, double *offdiag,
 
   if( proc_config[AZ_node] != 0 ) return;
   
-  if ( (options[AZ_output] != AZ_none) && (options[AZ_output] != AZ_last) &&
+  if ( (options[AZ_output] != AZ_none) && (options[AZ_output] != AZ_last) && (options[AZ_output] != AZ_summary) &&
        (options[AZ_output] != AZ_warnings) && (proc_config[AZ_node] == 0) ) {
 
     printf("\n%s-----------------------------------------------------\n",

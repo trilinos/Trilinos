@@ -191,8 +191,10 @@ void AZ_pcgs(double b [], double x[], double weight[], int options[],
                             convergence_info);
   true_scaled_r = scaled_r_norm;
 
-  if ((options[AZ_output] != AZ_none) && (options[AZ_output] != AZ_last) &&
+  if ((options[AZ_output] != AZ_none) && 
+      (options[AZ_output] != AZ_last) &&
       (options[AZ_output] != AZ_warnings) &&
+      (options[AZ_output] != AZ_summary) &&
       (options[AZ_conv]!=AZTECOO_conv_test) && (proc == 0))
     (void) fprintf(stdout, "%siter:    0           residual = %e\n",prefix,scaled_r_norm);
 
@@ -317,7 +319,7 @@ void AZ_pcgs(double b [], double x[], double weight[], int options[],
 
       if (!(convergence_info->converged) && options[AZ_conv]!=AZTECOO_conv_test) {
 	if (AZ_get_new_eps(&(convergence_info->epsilon), scaled_r_norm, true_scaled_r,
-			   proc_config) == AZ_QUIT) {
+			   options, proc_config) == AZ_QUIT) {
 	  
 	  /*
 	   * Computed residual has converged, actual residual has not converged,

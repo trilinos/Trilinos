@@ -409,6 +409,11 @@ int AztecOO::SetUserOperator(Epetra_Operator * UserOperator) {
   if (UserOperator->HasNormInf())
     AZ_set_MATFREE_matrix_norm(Amat_, UserOperator->NormInf()); 
 
+  // Set operator label
+   const char * label = UserOperator->Label();
+   if (label!=0)
+     AZ_set_matrix_print_string(Amat_,label);
+
   return(0);
 }
 
@@ -427,6 +432,11 @@ int AztecOO::SetUserMatrix(Epetra_RowMatrix * UserMatrix) {
   int N_ghost = UserMatrix->NumMyCols() - UserMatrix->NumMyRows();
   AZ_set_MATFREE_getrow(Amat_, (void *) UserMatrixData_, Epetra_Aztec_getrow,
 			Epetra_Aztec_comm_wrapper,N_ghost,proc_config_);
+
+  // Set matrix label
+   const char * label = UserMatrix->Label();
+   if (label!=0)
+     AZ_set_matrix_print_string(Amat_,label);
 
   // If preconditioner not defined, set up to possibly use native Aztec precons
   if (Prec_==0) EPETRA_CHK_ERR(SetPrecMatrix(UserMatrix));
@@ -740,8 +750,10 @@ int AztecOO::recursiveIterate(int MaxIters, double Tolerance)
   else if (status_[AZ_why]==AZ_maxits) return(1);
   else throw B_->ReportError("Internal AztecOO Error", -5);
 
-  EPETRA_CHK_ERR(ierr);
-  return(0);
+  if (options_[AZ_diagnostics]!=AZ_none ) {
+    EPETRA_CHK_ERR(ierr);
+  }
+  return(ierr);
 }
 //=============================================================================
 int AztecOO::Iterate(int MaxIters, double Tolerance)
@@ -793,8 +805,11 @@ int AztecOO::Iterate(int MaxIters, double Tolerance)
   else if (status_[AZ_why]==AZ_maxits) return(1);
   else throw B_->ReportError("Internal AztecOO Error", -5);
 
-  EPETRA_CHK_ERR(ierr);
-  return(0);
+  if (options_[AZ_diagnostics]!=AZ_none ) {
+    EPETRA_CHK_ERR(ierr);
+  }
+
+  return(ierr);
 }
 
 //=============================================================================

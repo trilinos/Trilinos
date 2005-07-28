@@ -430,7 +430,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
     if (proc_config[AZ_node] == 0) { 
       if (options[AZ_output]==AZ_none || options[AZ_output]==AZ_warnings)
 	print_info = -1; /* Never print */
-      else if (options[AZ_output]==AZ_last)
+      else if (options[AZ_output]==AZ_last || options[AZ_output]==AZ_summary)
 	print_info = 0; /* Print only if converged */
       else if (options[AZ_output]==AZ_all)
 	print_info = 1; /* Print always */

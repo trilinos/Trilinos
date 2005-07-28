@@ -437,6 +437,7 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
            if (proc_config[AZ_node] == 0) {
               if ((j==0) && (options[AZ_output] != AZ_none) &&
                   (options[AZ_output] != AZ_last) &&
+                  (options[AZ_output] != AZ_summary) &&
                   (options[AZ_output] != AZ_warnings))
                   printf("   %d  %e\n",j, norm1);
               else if ((j==options[AZ_poly_ord]-1) && 

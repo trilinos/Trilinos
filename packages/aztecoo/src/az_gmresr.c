@@ -212,7 +212,9 @@ char *T2 = "N";
 
   converged = scaled_r_norm < epsilon;
 
-  if ( (options[AZ_output] != AZ_none) && (options[AZ_output] != AZ_last) &&
+  if ( (options[AZ_output] != AZ_none) && 
+       (options[AZ_output] != AZ_last) &&
+       (options[AZ_output] != AZ_summary) &&
        (options[AZ_output] != AZ_warnings) && (proc == 0) )
     (void) fprintf(stdout, "%siter:    0           residual = %e\n",
                            prefix,scaled_r_norm);
@@ -325,7 +327,7 @@ char *T2 = "N";
 
         if (!converged && (AZ_get_new_eps(&epsilon, scaled_r_norm,
                                           true_scaled_r,
-                                          proc_config) == AZ_QUIT)) {
+                                          options, proc_config) == AZ_QUIT)) {
 
           /*
            * Computed residual has converged, actual residual has not

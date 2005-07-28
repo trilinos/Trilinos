@@ -203,6 +203,7 @@ struct AZ_MATRIX_STRUCT {
   /* ONLY used for matrix-free         */
 
   struct AZ_CONVERGE_STRUCT * conv_info;
+  char *print_string; /* Description of problem */
 };
 
 struct grid_level {
@@ -972,7 +973,7 @@ void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
 
   extern unsigned int AZ_get_sol_param_size(void);
 
-  extern int    AZ_get_new_eps(double *epsilon, double, double,
+  extern int    AZ_get_new_eps(double *epsilon, double, double, int options[],
                                int proc_config[]);
 
   extern void   AZ_get_poly_coefficients(int power, double b, double c[],
@@ -1156,8 +1157,7 @@ void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
   extern void   AZ_pqmrs(double *, double *, double *, int *, double * , int * ,
                          double *, AZ_MATRIX *, AZ_PRECOND *, struct AZ_CONVERGE_STRUCT *);
 
-  extern void   AZ_print_call_iter_solve(int * , double *, int , int,
-                                         AZ_PRECOND *);
+  extern void   AZ_print_call_iter_solve(int * , double *, int , int, AZ_MATRIX *, AZ_PRECOND *);
 
   extern void   AZ_print_error(int error_code);
 
@@ -1280,6 +1280,8 @@ void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
   extern void AZ_set_comm(int proc_config[], MPI_AZComm );
 
   extern void AZ_set_MATFREE_name(AZ_MATRIX *Amat, int name);
+
+  extern void AZ_set_matrix_print_string(AZ_MATRIX *Amat,const char str[]);
 
   extern void AZ_set_MATFREE_matrix_norm(AZ_MATRIX *Amat, double mat_norm);
 

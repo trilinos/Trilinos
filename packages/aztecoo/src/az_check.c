@@ -901,6 +901,7 @@ void AZ_defaults(int options[], double params[])
   options[AZ_ignore_scaling] = AZ_FALSE;
   options[AZ_check_update_size] = AZ_FALSE;
   options[AZ_extreme] = AZ_high;
+  options[AZ_diagnostics] = AZ_all;
 
   params[AZ_tol]  = 1.0e-06;
   params[AZ_drop] = 0.0;
