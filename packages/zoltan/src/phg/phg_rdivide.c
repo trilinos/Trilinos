@@ -95,7 +95,7 @@ int Zoltan_PHG_rdivide(
   if (hgp->bal_tol_adjustment>1.0) {
       float q = (float) ceil(log((double)1+hi-lo) / log(2.0));
       /* uprintf(hgc, "for k=%d q=%.1f\n", 1+hi-lo, q);*/
-      hgp->bal_tol = 1.0 + hgp->bal_tol_adjustment*(bal_tol-1.0)/q;
+      hgp->bal_tol = MIN(bal_tol, 1.0 + hgp->bal_tol_adjustment*(bal_tol-1.0)/q);
   } else 
       hgp->bal_tol = 1.0 + hgp->bal_tol_adjustment*(bal_tol-1.0);
 
