@@ -367,7 +367,7 @@ static int Zoltan_PHG_Initialize_Params(
   
   /* Set default values */
   strncpy(hgp->redm_str,            "ipm",   MAX_PARAM_STRING_LEN);
-  strncpy(hgp->redm_fast,           "l-ipm", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->redm_fast,           "c-ipm", MAX_PARAM_STRING_LEN);
   strncpy(hgp->redmo_str,           "no",    MAX_PARAM_STRING_LEN);  
   strncpy(hgp->coarsepartition_str, "gr0",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);

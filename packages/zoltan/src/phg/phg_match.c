@@ -66,6 +66,7 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
 
 
 
+#define _DEBUG
 /*****************************************************************************/
 int Zoltan_PHG_Matching (
   ZZ *zz,
@@ -502,26 +503,33 @@ static int pmatching_alt_ipm(
   PHGPartParams *hgp
 )
 {
-  int i;
+  int ierr = ZOLTAN_OK;
   char redm_orig[MAX_PARAM_STRING_LEN];
   static int level=0;
+  static int old_nvtx=0;
 
   strcpy(redm_orig, hgp->redm_str); /* save original parameter string */
 
+  if (hg->nVtx > old_nvtx){
+    /* larger hgraph; must have started new bisection v-cycle */
+    level= 0;
+  }
+
   /* first level is 0 */
   if ((level&1) == 0)  /* alternate even-odd levels */
-    strcpy(hgp->redm_str, hgp->redm_fast); /* fast method is c-ipm or l-ipm */
+    strcpy(hgp->redm_str, hgp->redm_fast); /* fast method is c-ipm for now */
   else
     strcpy(hgp->redm_str, "ipm");  
 
-  i = pmatching_ipm(zz, hg, match, hgp);
+  ierr = pmatching_ipm(zz, hg, match, hgp);  /* only works for ipm and c-ipm! */
 
   ++level;  /* we don't have access to level data, so keep track this way */
+  old_nvtx = hg->nVtx;
 
   /* set redm parameter back to original */
   strcpy(hgp->redm_str, redm_orig);
   
-  return i;
+  return ierr;
 }
 
 /****************************************************************************
