@@ -34,8 +34,14 @@
 # use "import ..." for Trilinos modules.  This prevents us from accidentally
 # picking up a system-installed version and ensures that we are testing the
 # build module.
-import setpath
-import Epetra
+try:
+    import setpath
+    import Epetra
+except ImportError:
+    from PyTrilinos import Epetra
+    print "Using system-installed Epetra"
+
+import sys
 import unittest
 from   Numeric    import *
 
@@ -64,10 +70,16 @@ class EpetraCrsGraphTestCase(unittest.TestCase):
     def testInsertMyIndices(self):
         "Test Epetra.CrsGraph InsertMyIndices method"
         crsg = Epetra.CrsGraph(Epetra.Copy, self.map, 3)
-        crsg.InsertMyIndices(0,2,array([0,1]))
+        # The following FillComplete() call creates a column map for crsg, which
+        # is required when using local indices
+        crsg.FillComplete()
+        self.assert_(crsg.InsertMyIndices(0,2,array([0,1])) >= 0)
         for i in range(1,self.size-1):
-            crsg.InsertMyIndices(i,3,array([i-1,i,i+1]))
-        crsg.InsertMyIndices(self.size-1,2,array([self.size-2,self.size-1]))
+            self.assert_(crsg.InsertMyIndices(i,3,array([i-1,i,i+1])) >= 0)
+        self.assert_(crsg.InsertMyIndices(self.size-1,2,
+                                          array([self.size-2,self.size-1])) >= 0)
+        crsg.FillComplete()
+        print crsg
 
 ##########################################################################
 
@@ -80,5 +92,6 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(EpetraCrsGraphTestCase))
 
     # Run the test suite
-    print "\n***********************\nTesting Epetra.CrsGraph\n***********************\n"
+    print >>sys.stderr, \
+          "\n***********************\nTesting Epetra.CrsGraph\n***********************\n"
     unittest.TextTestRunner(verbosity=2).run(suite)
