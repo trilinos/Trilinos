@@ -511,10 +511,10 @@ static int refine_fm2 (ZZ *zz,
 #endif
 
     
-    if ((hg->nEdge && (!(pins[0]    = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
+    if ((hg->nEdge && (!(pins[0]    = (int*) ZOLTAN_MALLOC(2 * hg->nEdge * sizeof(int)))
                       || !(lpins[0] = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int))))) ||
         (hg->nVtx && (!(moves   = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
-                     || !(lgain = (float*) ZOLTAN_CALLOC(hg->nVtx, sizeof(float))))))
+                     || !(lgain = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float))))))
         MEMORY_ERROR;
 
     if (hg->nEdge) {
@@ -606,9 +606,9 @@ static int refine_fm2 (ZZ *zz,
 #endif
 
         /* compute only the gains of the vertices from 'from' part */
-        for (i = 0; i < hg->nVtx; ++i) 
-            if (part[i]==from) {
-                lgain[i] = 0;
+        for (i = 0; i < hg->nVtx; ++i) {
+            lgain[i] = 0.0;
+            if (part[i]==from) 
                 for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++) {
                     int edge = hg->vedge[j];
                     if ((pins[0][edge]+pins[1][edge])>1) { /* if they have at least 2 pins :) */
@@ -618,7 +618,7 @@ static int refine_fm2 (ZZ *zz,
                             lgain[i] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
                     }
                 }
-            }
+        }
         /* now sum up all gains on only root proc */
         if (hg->nVtx)
             MPI_Reduce(lgain, gain, hg->nVtx, MPI_FLOAT, MPI_SUM, root.rank, 
