@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
 
    // set parameters
    Prec.SetNonlinearMethod(islinearPrec,maxlevel,
-                           matrixfree,matfreelev0); 
+                           matrixfree,matfreelev0,false); 
 
    Prec.SetNonlinearSolvers(usenlnCG_fine,usenlnCG,usenlnCG_coarse,useBroyden,
                             nitersCG_fine,nitersCG,nitersCG_coarse);
