@@ -34,14 +34,15 @@
 # use "import ..." for Trilinos modules.  This prevents us from accidentally
 # picking up a system-installed version and ensures that we are testing the
 # build module.
+import sys
+
 try:
     import setpath
     import Epetra
 except ImportError:
     from PyTrilinos import Epetra
-    print "Using system-installed Epetra"
+    print >>sys.stderr, "Using system-installed Epetra"
 
-import sys
 import unittest
 from   Numeric    import *
 
