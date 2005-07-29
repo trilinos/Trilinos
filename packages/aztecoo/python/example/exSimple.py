@@ -1,12 +1,10 @@
 #! /usr/bin/env python
 try:
   import setpath
-  import Epetra, AztecOO, Triutils
-except:
-  try:
-    from PyTrilinos import Epetra, AztecOO, Triutils
-  except ImportError:
-    raise ImportError, "error w/ Epetra or AztecOO or Triutils"
+  import Epetra, Triutils, AztecOO
+except ImportError:
+  from PyTrilinos import Epetra, Triutils, AztecOO
+  print "Using system-installed Epetra, Triutils, AztecOO"
 
 nx = 100
 ny = 100

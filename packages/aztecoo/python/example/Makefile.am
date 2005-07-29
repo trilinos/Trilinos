@@ -49,11 +49,14 @@ MAINTAINERCLEANFILES = Makefile.in
 # Define the suite of examples
 EXAMPLE_SUITE = exSimple
 
+SETPATH = setpath.py
+
 all: $(EXAMPLE_SUITE)
+	if [ $(srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
 exSimple:
 	if [ $(srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
 clean:
-	if [ $(srcdir) != @abs_top_builddir@ ]; then /bin/rm exSimple.py ; fi
+	if [ $(srcdir) != @abs_top_builddir@ ]; then /bin/rm *.py ; fi
 	/bin/rm -f *.pyc
