@@ -17,7 +17,7 @@ typedef char MM_typecode[4];
 
 namespace EpetraExt {
 
-char *mm_typecode_to_str(MM_typecode matcode);
+  void mm_typecode_to_str(MM_typecode matcode, char * buffer);
 
 int mm_read_banner(FILE *f, MM_typecode *matcode);
 int mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz);

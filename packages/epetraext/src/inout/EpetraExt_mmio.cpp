@@ -45,9 +45,10 @@ int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
     if ( !(mm_is_real(matcode) && mm_is_matrix(matcode) &&
             mm_is_sparse(matcode)))
     {
-        fprintf(stderr, "Sorry, this application does not support ");
-        fprintf(stderr, "Market Market type: [%s]\n",
-                mm_typecode_to_str(matcode));
+      char buffer[MM_MAX_LINE_LENGTH];
+      mm_typecode_to_str(matcode, buffer);
+      fprintf(stderr, "Sorry, this application does not support ");
+      fprintf(stderr, "Market Market type: [%s]\n",buffer);
         return -1;
     }
  
@@ -396,12 +397,14 @@ int mm_read_mtx_crd(char *fname, int *M, int *N, int *nz, int **I, int **J,
 
 int mm_write_banner(FILE *f, MM_typecode matcode)
 {
-    char *str = mm_typecode_to_str(matcode);
-    int ret_code;
+  char buffer[MM_MAX_LINE_LENGTH];
 
-    ret_code = fprintf(f, "%s %s\n", MatrixMarketBanner, str);
-    //free(str);
-    delete [] str;
+  mm_typecode_to_str(matcode, buffer);
+  int ret_code;
+  
+  ret_code = fprintf(f, "%s %s\n", MatrixMarketBanner, buffer);
+  //free(str);
+  //delete [] str;
     return 0;
 }
 
@@ -418,8 +421,10 @@ int mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], int J[],
         return MM_COULD_NOT_WRITE_FILE;
     
     /* print banner followed by typecode */
+    char buffer[MM_MAX_LINE_LENGTH];
+    mm_typecode_to_str(matcode, buffer);
     fprintf(f, "%s ", MatrixMarketBanner);
-    fprintf(f, "%s\n", mm_typecode_to_str(matcode));
+    fprintf(f, "%s\n", buffer);
 
     /* print matrix sizes and nonzeros */
     fprintf(f, "%d %d %d\n", M, N, nz);
@@ -449,9 +454,8 @@ int mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], int J[],
 }
     
 
-char  *mm_typecode_to_str(MM_typecode matcode)
+ void mm_typecode_to_str(MM_typecode matcode, char * buffer)
 {
-    char buffer[MM_MAX_LINE_LENGTH];
     char *types[4];
     int error =0;
 
@@ -468,7 +472,7 @@ char  *mm_typecode_to_str(MM_typecode matcode)
     if (mm_is_dense(matcode))
         types[1] = MM_DENSE_STR;
     else
-        return NULL;
+        return;
 
     /* check for element data type */
     if (mm_is_real(matcode))
@@ -483,7 +487,7 @@ char  *mm_typecode_to_str(MM_typecode matcode)
     if (mm_is_integer(matcode))
         types[2] = MM_INT_STR;
     else
-        return NULL;
+        return;
 
 
     /* check for symmetry type */
@@ -499,10 +503,10 @@ char  *mm_typecode_to_str(MM_typecode matcode)
     if (mm_is_skew(matcode))
         types[3] = MM_SKEW_STR;
     else
-        return NULL;
+        return;
 
     sprintf(buffer,"%s %s %s %s", types[0], types[1], types[2], types[3]);
-    return strdup(buffer);
+    return;
 
 }
 } // namespace EpetraExt
