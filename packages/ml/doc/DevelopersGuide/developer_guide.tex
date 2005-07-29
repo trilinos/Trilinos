@@ -1216,7 +1216,7 @@ This GDB was configured as "i386-redhat-linux-gnu".
 (gdb) r
 ... output of the code ...
 \end{verbatim}
-Unfortunatly, most debuggers (like \verb!gdb!) cannot directly run
+Unfortunately, most debuggers (like \verb!gdb!) cannot directly run
 parallel applications. In this case, one can still attach to the desired
 process (or possibly to more than one), in a very simple way:
 \begin{enumerate}
@@ -1225,13 +1225,12 @@ process (or possibly to more than one), in a very simple way:
 \begin{verbatim}
 ML_PauseForDebugger(Comm);
 \end{verbatim}
-where \verb!Comm! is an \verb!ML_Comm! structure;
-\item Define the environmental variable \verb!ML_BREAK_FOR_DEBUGGER!,
-  for instance (using BASH)
-\begin{verbatim}
-$ export ML_BREAK_FOR_DEBUGGER=1
-\end{verbatim}
-\item Alternatively, if using class MultiLevelPreconditioner, create a file
+where \verb!Comm! is an \verb!ML_Comm! structure.
+(This step is unnecessary if you are using the class MultiLevelPreconditioner.)
+\item Define the environmental variable \verb!ML_BREAK_FOR_DEBUGGER!.
+  In the Bash shell, for instance:\\
+{\tt export ML\_BREAK\_FOR\_DEBUGGER=1}.\\
+Alternatively, create a file
 called \verb!ML_debug_now! in the working directory.
 \item Run the code as required,
 \begin{verbatim}
