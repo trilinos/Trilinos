@@ -93,7 +93,7 @@ PREDEFINED            += HAVE_ML_TEUCHOS HAVE_MPI HAVE_ML_MPI ML_MPI HAVE_ML_TRI
 PREDEFINED            += HAVE_ML_METIS HAVE_ML_PARMETIS2X HAVE_ML_PARMETIS3X 
 PREDEFINED            += HAVE_ML_AMESOS HAVE_ML_AZTECOO ML_WITH_EPETRA
 PREDEFINED            += HAVE_ML_MLAPI
-PREDEFINED            += HAVE_ML_NOX
+PREDEFINED            += HAVE_ML_NOX HAVE_ML_EPETRAEXT
 
 TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html
 TAGFILES              += ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html
