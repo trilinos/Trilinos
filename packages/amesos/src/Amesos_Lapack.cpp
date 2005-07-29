@@ -111,8 +111,11 @@ int Amesos_Lapack::SymbolicFactorization()
   InitTime(Comm()); // Initialize timer
   ResetTime();
 
-  MyPID_ = Comm().MyPID();
-  NumProcs_ = Comm().NumProc();
+  MyPID_             = Comm().MyPID();
+  NumProcs_          = Comm().NumProc();
+  NumGlobalRows_     = Matrix()->NumGlobalRows();
+  NumGlobalNonzeros_ = Matrix()->NumGlobalNonzeros();
+
 
   if (NumProcs_ == 1)
     SerialMap_ = rcp(const_cast<Epetra_Map*>(&(Matrix()->RowMatrixRowMap())), 
@@ -409,21 +412,24 @@ int Amesos_Lapack::DenseToFactored()
 // ================================================ ====== ==== ==== == =
 void Amesos_Lapack::PrintStatus()
 {
-  if (Problem_->GetOperator() == 0 || MyPID_ != 0)
-    return;
+  if (MyPID_) return;
 
   PrintLine();
   string p = "Amesos_Lapack : ";
+ 
+  int percentage = 0;
+  if (NumGlobalRows_ != 0)
+    percentage = NumGlobalNonzeros_ / (NumGlobalRows_ * NumGlobalRows_);
 
-  int NumGlobalElements = Matrix()->NumGlobalRows();
-  int numentries        = Matrix()->NumGlobalNonzeros();
-
-  cout << p << "Matrix has " << NumGlobalElements << " rows"
-       << " and " << numentries << " nonzeros" << endl;
-  cout << p << "Nonzero elements per row = "
-       << 1.0 * numentries / NumGlobalElements << endl;
-  cout << p << "Percentage of nonzero elements = "
-       << 100.0 * numentries / (pow(NumGlobalElements,2.0)) << endl;
+  cout << p << "Matrix has " << NumGlobalRows_ << " rows"
+       << " and " << NumGlobalNonzeros_ << " nonzeros" << endl;
+  if (NumGlobalRows_ != 0)
+  {
+    cout << p << "Nonzero elements per row = "
+         << 1.0 * NumGlobalNonzeros_ / NumGlobalRows_ << endl;
+    cout << p << "Percentage of nonzero elements = "
+         << 100.0 * percentage  << endl;
+  }
   cout << p << "Use transpose = " << UseTranspose_ << endl;
 
   PrintLine();
@@ -434,8 +440,7 @@ void Amesos_Lapack::PrintStatus()
 // ================================================ ====== ==== ==== == =
 void Amesos_Lapack::PrintTiming()
 {
-  if (Problem_->GetOperator() == 0 || MyPID_ != 0)
-    return;
+  if (MyPID_ != 0) return;
 
   double ConTime = GetTime("matrix conversion");
   double MatTime = GetTime("matrix redistribution");
