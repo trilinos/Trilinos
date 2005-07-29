@@ -1,4 +1,4 @@
-#include "ml_include.h"
+#include "ml_common.h"
 #if defined(HAVE_ML_MLAPI)
 #include "Epetra_Comm.h"
 #ifdef HAVE_MPI

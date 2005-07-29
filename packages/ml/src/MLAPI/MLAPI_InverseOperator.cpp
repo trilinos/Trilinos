@@ -1,4 +1,5 @@
 #include "ml_common.h"
+#ifdef HAVE_ML_MLAPI
 #include "ml_RowMatrix.h"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Epetra_Vector.h"
@@ -323,3 +324,4 @@ void InverseOperator::Destroy()
 }
 
 } // namespace MLAPI
+#endif

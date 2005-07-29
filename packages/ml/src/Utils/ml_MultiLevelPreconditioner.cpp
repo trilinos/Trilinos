@@ -2104,9 +2104,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
 
   } else if( CoarseSolution == "SuperLU" ) 
     ML_Gen_CoarseSolverSuperLU( ml_, LevelID_[NumLevels_-1]);
+  else if( CoarseSolution == "Amesos-LAPACK" ) {
+    ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
+                           ML_AMESOS_LAPACK, MaxProcs, AddToDiag);
+  }
   else if( CoarseSolution == "Amesos-KLU" ) {
-    // commented out, Amesos output is already printed on screen
-    // cout << "\n\nCreating AMESOS smoother\n\n" << endl;
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
                            ML_AMESOS_KLU, MaxProcs, AddToDiag);
   } else if( CoarseSolution == "Amesos-UMFPACK" )
