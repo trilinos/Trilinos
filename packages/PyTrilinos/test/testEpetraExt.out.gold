@@ -1,9 +1,0 @@
-----
-Test EpetraExt interface
-----
-Test the EpetraExt MapColoring-to-ColorMapIndex transform ... ok
-Test the EpetraExt CrsGraph-to-MapColoring transform ... ok
-
-----------------------------------------------------------------------
-
-OK
