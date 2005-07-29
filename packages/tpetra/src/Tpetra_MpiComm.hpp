@@ -34,7 +34,6 @@
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Comm.hpp"
 #include "Tpetra_MpiTraits.hpp"
-#include "Tpetra_PacketTraits.hpp"
 #include "Tpetra_MpiData.hpp"
 #include "Tpetra_Distributor.hpp"
 
@@ -54,8 +53,8 @@ namespace Tpetra {
 		</ol>
 	*/
 
-	template<typename PacketType, typename OrdinalType>
-	class MpiComm : public Object, public virtual Comm<PacketType, OrdinalType> {
+	template<typename OrdinalType, typename PacketType>
+	class MpiComm : public Object, public virtual Comm<OrdinalType, PacketType> {
 	public:
     
 		//@{ \name Constructor/Destructor Methods
@@ -90,7 +89,7 @@ namespace Tpetra {
 		}
 
 		//! copy constructor
-		MpiComm(MpiComm<PacketType, OrdinalType> const& comm) 
+		MpiComm(MpiComm<OrdinalType, PacketType> const& comm) 
 			: Object(comm.label())
 			, MpiData_(comm.MpiData_)
 			   //, tag_(-1)

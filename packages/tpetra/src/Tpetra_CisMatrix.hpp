@@ -691,7 +691,7 @@ namespace Tpetra {
 		CisMatrixData<OrdinalType, ScalarType> const& data() const {return(*CisMatrixData_);}
 
 		// convenience functions for comm instances
-		Comm<ScalarType, OrdinalType> const& comm() const {return(*data().comm_);}
+		Comm<OrdinalType, ScalarType> const& comm() const {return(*data().comm_);}
 		Comm<OrdinalType, OrdinalType> const& ordinalComm() const {return(*data().ordinalComm_);}
 
 		// convenience function for doing Comm::sumAll on one OT variable

@@ -126,7 +126,7 @@ namespace Tpetra {
 
 		// Platform & Comm
 		Teuchos::RefCountPtr<Platform<OrdinalType, ScalarType> const> platform_;
-		Teuchos::RefCountPtr<Comm<ScalarType, OrdinalType> const> comm_;
+		Teuchos::RefCountPtr<Comm<OrdinalType, ScalarType> const> comm_;
 		Teuchos::RefCountPtr<Comm<OrdinalType, OrdinalType> const> ordinalComm_;
 
 	private:

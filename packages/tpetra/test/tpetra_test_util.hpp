@@ -32,7 +32,6 @@
 #include "Tpetra_ConfigDefs.hpp" // for iostream, etc.
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
-#include "Tpetra_PacketTraits.hpp"
 #include "Tpetra_Util.hpp" // for toString
 #include "Tpetra_Version.hpp"
 #include "sys/types.h"

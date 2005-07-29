@@ -70,9 +70,9 @@ namespace Tpetra {
 		//@{ \name Class Creation and Accessor Methods
 
 		//! Comm Instances
-		Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > createScalarComm() const {
-			Teuchos::RefCountPtr< SerialComm<ScalarType, OrdinalType> > comm;
-			comm = Teuchos::rcp(new SerialComm<ScalarType, OrdinalType>());
+		Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> > createScalarComm() const {
+			Teuchos::RefCountPtr< SerialComm<OrdinalType, ScalarType> > comm;
+			comm = Teuchos::rcp(new SerialComm<OrdinalType, ScalarType>());
 			return(comm);
 		};
 		Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const {

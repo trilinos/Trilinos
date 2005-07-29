@@ -35,9 +35,9 @@
 #include "Tpetra_Util.hpp"
 
 namespace Tpetra {
-  
+	
 	// forward declaration of Comm (needed to break circular dependency)
-	template <typename PacketType, typename OrdinalType>
+	template <typename OrdinalType, typename ScalarType>
 	class Comm;
 
 	//! Tpetra::Distributor:  The Tpetra Gather/Scatter Setup Class.

@@ -156,8 +156,8 @@ namespace Tpetra {
 
 			The new Comm instance will be pointed to by the RefCountPtr passed in.
 		*/
-		template <typename PacketType, typename OrdinalType>
-		void createComm(Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> >& comm, CommType ct = GENERIC) const {
+		template <typename OrdinalType, typename ScalarType>
+		void createComm(Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> >& comm, CommType ct = GENERIC) const {
 			if(!isEnabled(ct))
 				throw reportError("That CommType is not enabled", -1);
 
@@ -199,23 +199,23 @@ namespace Tpetra {
 	private:
 		// private member functions - used by createComm
 
-		template <typename PacketType, typename OrdinalType>
-		void createSerialComm(Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> >& comm) const {
+		template <typename OrdinalType, typename ScalarType>
+		void createSerialComm(Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> >& comm) const {
 			// serial is always enabled - no need for an #ifdef
-			comm = Teuchos::rcp(new SerialComm<PacketType, OrdinalType>());
+			comm = Teuchos::rcp(new SerialComm<OrdinalType, ScalarType>());
 		}
 
-		template <typename PacketType, typename OrdinalType>
-		void createMpiComm(Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> >& comm) const {
+		template <typename OrdinalType, typename ScalarType>
+		void createMpiComm(Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> >& comm) const {
 #ifdef TPETRA_MPI
-			comm = Teuchos::rcp(new MpiComm<PacketType, OrdinalType>(data().MpiComm_));
+			comm = Teuchos::rcp(new MpiComm<OrdinalType, ScalarType>(data().MpiComm_));
 #else
 			throw reportError("MPI is not enabled.", -1);
 #endif
 		}
 
-		template <typename PacketType, typename OrdinalType>
-		void createThreadedMpiComm(Teuchos::RefCountPtr< Comm<PacketType, OrdinalType> >& comm) const {
+		template <typename OrdinalType, typename ScalarType>
+		void createThreadedMpiComm(Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> >& comm) const {
 #ifdef TPETRA_THREADED_MPI
 			// -- creation of a Tpetra::ThreadedMpiComm would go here --
 #else

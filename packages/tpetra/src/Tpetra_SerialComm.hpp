@@ -29,7 +29,7 @@
 #ifndef TPETRA_SERIALCOMM_HPP
 #define TPETRA_SERIALCOMM_HPP
 
-#include "Teuchos_OrdinalTraits.hpp"
+#include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_Comm.hpp"
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Distributor.hpp"
@@ -41,8 +41,8 @@ namespace Tpetra {
 	    information and services needed for other Tpetra classes to run on a serial computer.
 	*/
 
-	template<typename PacketType, typename OrdinalType>
-	class SerialComm : public Object, public virtual Comm<PacketType, OrdinalType> {
+	template<typename OrdinalType, typename PacketType>
+	class SerialComm : public Object, public virtual Comm<OrdinalType, PacketType> {
 	public:
 
 		//@{ \name Constructor/Destructor Methods
@@ -58,7 +58,7 @@ namespace Tpetra {
 		//! Copy constructor
 		/*! Makes an exact copy of an existing SerialComm instance.
 		 */
-		SerialComm(SerialComm<PacketType, OrdinalType> const& comm) : Object(comm.label()) {}
+		SerialComm(SerialComm<OrdinalType, PacketType> const& comm) : Object(comm.label()) {}
   
 		//! Destructor.
 		/*! Completely deletes a SerialComm object.  

@@ -37,7 +37,7 @@
 #include "Tpetra_SerialComm.hpp"
 #endif // TPETRA_MPI
 
-template<typename PacketType, typename OrdinalType>
+template<typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages);
 
 int main(int argc, char* argv[]) {
@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
 
 	// call the actual test routines
 	ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
-	ierr += unitTests<double, int>(verbose, debug, myImageID, numImages);
+	ierr += unitTests<int, double>(verbose, debug, myImageID, numImages);
   
 	// finish up
 #ifdef TPETRA_MPI
@@ -87,9 +87,9 @@ int main(int argc, char* argv[]) {
 }
 
 //======================================================================
-template<typename PacketType, typename OrdinalType>
+template<typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
-	std::string className = "Distributor<" + Tpetra::PacketTraits<PacketType>::name() + "," + Teuchos::OrdinalTraits<OrdinalType>::name() + ">";
+	std::string className = "Distributor<" + Teuchos::OrdinalTraits<OrdinalType>::name() + "," + Teuchos::ScalarTraits<ScalarType>::name() + ">";
 	if(verbose) outputHeading("Stating unit tests for " + className);
 
 	int ierr = 0;
@@ -99,11 +99,11 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	// code coverage section - just call functions, no testing
 	// ======================================================================
 #ifdef TPETRA_MPI
-	Tpetra::MpiPlatform<OrdinalType, PacketType> platform(MPI_COMM_WORLD);
-	Tpetra::MpiComm<PacketType, OrdinalType> comm(MPI_COMM_WORLD);
+	Tpetra::MpiPlatform<OrdinalType, ScalarType> platform(MPI_COMM_WORLD);
+	Tpetra::MpiComm<OrdinalType, ScalarType> comm(MPI_COMM_WORLD);
 #else
-	Tpetra::SerialPlatform<OrdinalType, PacketType> platform;
-	Tpetra::SerialComm<PacketType, OrdinalType> comm;
+	Tpetra::SerialPlatform<OrdinalType, ScalarType> platform;
+	Tpetra::SerialComm<OrdinalType, ScalarType> comm;
 	ierr = returnierr + ierr; // dummy usage of ierr so gcc doesn't complain about unused variable (this is only needed in serial mode)
 #endif // TPETRA_MPI
 
@@ -209,8 +209,8 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	comm.barrier();
 
 	OrdinalType const objectSize = Teuchos::OrdinalTraits<OrdinalType>::one();
-	std::vector<PacketType> imports;
-	std::vector<PacketType> exports;
+	std::vector<ScalarType> imports;
+	std::vector<ScalarType> exports;
 	generateColumn(exports, myImageID, numImages);
 	if(debug) {
 		if(verbose) cout << endl;

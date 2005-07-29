@@ -73,7 +73,7 @@ namespace Tpetra {
 		//@{ \name Class Creation and Accessor Methods
 
 		//! Comm Instances
-		virtual Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > createScalarComm() const = 0;
+		virtual Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> > createScalarComm() const = 0;
 		virtual Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const = 0;
 
 		//@}

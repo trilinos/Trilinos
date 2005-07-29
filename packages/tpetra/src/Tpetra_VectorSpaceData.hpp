@@ -61,7 +61,7 @@ namespace Tpetra {
 		OrdinalType const numMyEntries_;
 		OrdinalType const numGlobalEntries_;
 		Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> const > Platform_;
-		Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> const > Comm_; // Comm is <ST, OT> because ST represents PT
+		Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> const > Comm_; // Comm is <ST, OT> because ST represents PT
 		Teuchos::RefCountPtr< ElementSpace<OrdinalType> const > ElementSpace_;
 		Teuchos::RefCountPtr< BlockElementSpace<OrdinalType> const > BlockElementSpace_;
 

@@ -36,7 +36,7 @@
 #include "Tpetra_SerialPlatform.hpp"
 #include "Tpetra_SerialComm.hpp"
 
-template <typename PacketType, typename OrdinalType>
+template <typename OrdinalType, typename ScalarType>
 int unitTests(bool const verbose, bool const debug, int const myImageID, int const numImages);
 
 int main(int argc, char* argv[]) {
@@ -83,9 +83,9 @@ int main(int argc, char* argv[]) {
 
 	// call the actual test routines
 	//ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
-	//ierr += unitTests<double, int>(verbose, debug, myImageID, numImages);
-	//ierr += unitTests<complex<double>, int>(verbose, debug, myImageID, numImages);
-	//ierr += unitTests<complex<float>, int>(verbose, debug, myImageID, numImages);
+	//ierr += unitTests<int, double>(verbose, debug, myImageID, numImages);
+	//ierr += unitTests<int, complex<double> >(verbose, debug, myImageID, numImages);
+	//ierr += unitTests<int, complex<float> >(verbose, debug, myImageID, numImages);
   
 	// finish up
 #ifdef TPETRA_MPI
@@ -96,9 +96,9 @@ int main(int argc, char* argv[]) {
 }
 
 //======================================================================
-template <typename PacketType, typename OrdinalType>
+template <typename OrdinalType, typename ScalarType>
 int unitTests(bool const verbose, bool const debug, int const myImageID, int const numImages) {
-	std::string className = "Comm<" + Tpetra::PacketTraits<PacketType>::name() + "," + Teuchos::OrdinalTraits<OrdinalType>::name() + ">";
+	std::string className = "Comm<" + Teuchos::OrdinalTraits<OrdinalType>::name() + "," + Teuchos::ScalarTraits<ScalarType>::name() + ">";
 	if(verbose) outputHeading("Stating unit tests for " + className);
 
 	int ierr = 0;
@@ -111,17 +111,17 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 #ifdef TPETRA_MPI
 	// default constructor
 	if(verbose) cout << "Calling MpiComm default constructor..." << endl;
-	Tpetra::MpiComm<PacketType, OrdinalType> comm(MPI_COMM_WORLD);
+	Tpetra::MpiComm<OrdinalType, ScalarType> comm(MPI_COMM_WORLD);
 	// copy constructor
 	if(verbose) cout << "Calling MpiComm copy constructor..." << endl;
-	Tpetra::MpiComm<PacketType, OrdinalType> comm2(comm);
+	Tpetra::MpiComm<OrdinalType, ScalarType> comm2(comm);
 #else
 	// default constructor
 	if(verbose) cout << "Calling SerialComm default constructor..." << endl;
-	Tpetra::SerialComm<PacketType, OrdinalType> comm;
+	Tpetra::SerialComm<OrdinalType, ScalarType> comm;
 	// copy constructor
 	if(verbose) cout << "Calling SerialComm copy constructor..." << endl;
-	Tpetra::SerialComm<PacketType, OrdinalType> comm2(comm);
+	Tpetra::SerialComm<OrdinalType, ScalarType> comm2(comm);
 #endif
   
 	// ======================================================================
@@ -131,9 +131,9 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 	// fixtures
 	int const root = 0; // root image for broadcast
 	OrdinalType const length = 5; // length of arrays used for Comm operations
-	std::vector<PacketType> myVals(length);
-	std::vector<PacketType> allVals(length);
-	std::vector<PacketType> expected(length);
+	std::vector<ScalarType> myVals(length);
+	std::vector<ScalarType> allVals(length);
+	std::vector<ScalarType> expected(length);
 
 	// test getMyImageID
 	if(verbose) cout << "Testing getMyImageID... ";
@@ -239,7 +239,7 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 	if(verbose) cout << "Testing sumAllAndScatter... ";
 	generateColumn(myVals, myImageID, numImages);
 	std::vector<int> recvCounts(numImages, 1);
-	PacketType receivedSum = Teuchos::ScalarTraits<OrdinalType>::zero();
+	ScalarType receivedSum = Teuchos::ScalarTraits<OrdinalType>::zero();
 	comm.sumAllAndScatter(&myVals.front(), &receivedSum, &recvCounts.front());
 	generateRowSums(expected, 0, numImages-1, numImages);
 	if(debug) {

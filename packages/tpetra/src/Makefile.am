@@ -50,7 +50,6 @@ CORE =
 
 UTIL_H = \
 	$(srcdir)/Tpetra_ConfigDefs.hpp \
-	$(srcdir)/Tpetra_PacketTraits.hpp \
 	$(srcdir)/Tpetra_Version.hpp \
 	$(srcdir)/Tpetra_Util.hpp
 

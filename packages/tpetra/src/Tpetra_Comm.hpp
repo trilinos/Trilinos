@@ -47,7 +47,7 @@ namespace Tpetra {
 		to the appropriate interface based on argument typing.
 	*/
 
-	template<typename PacketType, typename OrdinalType>
+	template<typename OrdinalType, typename PacketType>
 	class Comm {
 	public:
 

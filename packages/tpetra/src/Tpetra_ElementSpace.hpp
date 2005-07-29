@@ -40,7 +40,7 @@
 namespace Tpetra {
 
 	// forward declarations
-	template<typename PacketType, typename OrdinalType> class Comm;
+	template<typename OrdinalType, typename ScalarType> class Comm;
 	template<typename OrdinalType> class ElementSpaceData;
   
 	//! Tpetra::ElementSpace: A class for constructing and using template<ordinalType> ElementSpaces.

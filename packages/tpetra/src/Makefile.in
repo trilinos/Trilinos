@@ -139,8 +139,8 @@ am__include_HEADERS_DIST = $(srcdir)/Tpetra_Object.hpp \
 	$(srcdir)/Tpetra_OmniPlatformData.hpp \
 	$(srcdir)/Tpetra_Comm.hpp $(srcdir)/Tpetra_Distributor.hpp \
 	$(srcdir)/Tpetra_Directory.hpp $(srcdir)/Tpetra_ConfigDefs.hpp \
-	$(srcdir)/Tpetra_PacketTraits.hpp $(srcdir)/Tpetra_Version.hpp \
-	$(srcdir)/Tpetra_Util.hpp $(srcdir)/Tpetra_CombineMode.hpp \
+	$(srcdir)/Tpetra_Version.hpp $(srcdir)/Tpetra_Util.hpp \
+	$(srcdir)/Tpetra_CombineMode.hpp \
 	$(srcdir)/Tpetra_SerialPlatform.hpp \
 	$(srcdir)/Tpetra_SerialComm.hpp \
 	$(srcdir)/Tpetra_ElementSpace.hpp \
@@ -293,7 +293,6 @@ CORE_H = \
 CORE = 
 UTIL_H = \
 	$(srcdir)/Tpetra_ConfigDefs.hpp \
-	$(srcdir)/Tpetra_PacketTraits.hpp \
 	$(srcdir)/Tpetra_Version.hpp \
 	$(srcdir)/Tpetra_Util.hpp
 

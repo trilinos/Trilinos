@@ -79,7 +79,7 @@ namespace Tpetra {
 
 		//! constructor
 		DistObject(ElementSpace<OrdinalType> const elementspace, 
-				   Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > comm)
+				   Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> > comm)
 			: Object("Tpetra::DistObject")
 			, ElementSpace_(elementspace)
 			, Comm_(comm)
@@ -90,7 +90,7 @@ namespace Tpetra {
 
 		//! constructor, taking label
 		DistObject(ElementSpace<OrdinalType> const elementspace, 
-				   Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > comm,
+				   Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> > comm,
 				   std::string const& label)
 			: Object(label)
 			, ElementSpace_(elementspace)
@@ -388,7 +388,7 @@ namespace Tpetra {
 	private:
 		
 		ElementSpace<OrdinalType> const ElementSpace_;
-		Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > Comm_;
+		Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> > Comm_;
 		std::vector<ScalarType> imports_;
 		std::vector<ScalarType> exports_;
 		std::vector<OrdinalType> sizes_;

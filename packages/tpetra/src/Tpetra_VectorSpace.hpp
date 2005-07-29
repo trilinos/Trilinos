@@ -224,8 +224,7 @@ namespace Tpetra {
 	
 		//! Access functions for the Tpetra::Platform and Tpetra::Comm communicators.
 		Platform<OrdinalType, ScalarType> const& platform() const {return(*VectorSpaceData_->Platform_);};
-		// Comm is <ST, OT> because ST represents PT
-		Comm<ScalarType, OrdinalType> const& comm() const {return(*VectorSpaceData_->Comm_);}; 
+		Comm<OrdinalType, ScalarType> const& comm() const {return(*VectorSpaceData_->Comm_);}; 
 
 		//! Access function for the ElementSpace used by this VectorSpace
 		ElementSpace<OrdinalType> const& elementSpace() const {return(*VectorSpaceData_->ElementSpace_);};
