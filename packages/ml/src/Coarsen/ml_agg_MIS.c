@@ -1749,8 +1749,9 @@ Here is how we do all this:
    if( Amatrix->to->Grid->Grid != NULL ) {
 
      if( comm->ML_nprocs > 1 ) {
-       fprintf( stderr,
-	       "*ML*WRN* visualization for MIS works only in serial...\n");
+       if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 0)
+         fprintf( stderr,
+	              "*ML*WRN* visualization for MIS works only in serial...\n");
      }
 
      /* prints out in serial only */
