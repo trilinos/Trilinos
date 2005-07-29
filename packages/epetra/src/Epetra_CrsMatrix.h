@@ -351,7 +351,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 		
     \param Diagonal - (In) New values to be placed in the main diagonal.
 		
-    \return Integer error code, set to 0 if successful, 1 of one or more diagonal entries not present in matrix.
+    \return Integer error code, set to 0 if successful, set to 1 on the calling processor if one or more diagonal entries not present in matrix.
     \pre Filled()==true
     \post Diagonal values have been replaced with the values of Diagonal.
   */
