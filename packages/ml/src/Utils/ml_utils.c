@@ -2606,7 +2606,7 @@ void ML_PauseForDebugger(ML_Comm *comm)
     if (mypid == 0) printf("Host and Process Ids for tasks\n");
     for (i = 0; i < nproc; i++) {
       if (i == mypid) {
-#ifdef COUGAR
+#if defined(TFLOP) || defined(JANUS_STLPORT) || defined(COUGAR)
         sprintf(buf, "Host: %s   PID: %d", "janus", getpid());
 #else
         gethostname(hostname, sizeof(hostname));

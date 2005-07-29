@@ -101,7 +101,7 @@ void Init()
     if (GetMyPID()  == 0) cout << "Host and Process Ids for tasks" << endl;
     for (i = 0; i < GetNumProcs() ; i++) {
       if (i == GetMyPID() ) {
-#ifdef COUGAR
+#if defined(TFLOP) || defined(JANUS_STLPORT) || defined(COUGAR)
         sprintf(buf, "Host: %s   PID: %d", "janus", getpid());
 #else
         gethostname(hostname, sizeof(hostname));
