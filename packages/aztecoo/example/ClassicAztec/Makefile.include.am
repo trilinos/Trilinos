@@ -28,10 +28,15 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = ClassicAztec
+noinst_PROGRAMS = ClassicAztec Dummy
+
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(srcdir)/inputToClassicAztec  inputToClassicAztec
+
 
 ClassicAztec_SOURCES = $(srcdir)/main.c $(srcdir)/az_app_utils.c $(srcdir)/az_examples.c
 
+Dummy_SOURCES = Dummy
 
 ClassicAztec_CFLAGS = -I$(top_srcdir)/src
 

@@ -632,7 +632,7 @@ int AztecOO::SetProblemOptions(ProblemDifficultyLevel PDL,
         SetAztecOption(AZ_overlap, 1);
         SetAztecParam(AZ_ilut_fill, 3.0);
         SetAztecParam(AZ_drop, 0.01);
-        SetAztecOption(AZ_kspace, 1000);
+        //SetAztecOption(AZ_kspace, 1000);
       }
     }
 

@@ -909,10 +909,10 @@ void AZ_print_call_iter_solve(int options[], double params[], int az_proc,
 
   /* First print problem description (if available) */
 
-  (void) printf(prefix);
 
   if (Amat != NULL) {
     if (Amat->print_string != NULL) {
+      (void) printf(prefix);
       (void) printf("Problem: ");
       (void) printf("%s\n",Amat->print_string);
     }

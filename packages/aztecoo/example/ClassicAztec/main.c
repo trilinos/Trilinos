@@ -255,7 +255,6 @@ int main(int argc, char *argv[])
 
   /* solve the system of equations using ax as the right hand side */
 
-  options[AZ_solver] = AZ_cg_condnum;
   AZ_solve(x,ax, options, params, indx, bindx, rpntr, cpntr, bpntr, val,
            data_org, status, proc_config);
 

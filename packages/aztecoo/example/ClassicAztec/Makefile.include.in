@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(ClassicAztec_SOURCES)
+SOURCES = $(ClassicAztec_SOURCES) $(Dummy_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = ClassicAztec$(EXEEXT)
+noinst_PROGRAMS = ClassicAztec$(EXEEXT) Dummy$(EXEEXT)
 subdir = example/ClassicAztec
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.include.am \
 	$(srcdir)/Makefile.include.in
@@ -112,6 +112,9 @@ am__DEPENDENCIES_1 =
 ClassicAztec_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
+am_Dummy_OBJECTS =
+Dummy_OBJECTS = $(am_Dummy_OBJECTS)
+Dummy_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -122,8 +125,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(ClassicAztec_SOURCES)
-DIST_SOURCES = $(ClassicAztec_SOURCES)
+SOURCES = $(ClassicAztec_SOURCES) $(Dummy_SOURCES)
+DIST_SOURCES = $(ClassicAztec_SOURCES) $(Dummy_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -269,6 +272,7 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 ClassicAztec_SOURCES = $(srcdir)/main.c $(srcdir)/az_app_utils.c $(srcdir)/az_examples.c
+Dummy_SOURCES = Dummy
 ClassicAztec_CFLAGS = -I$(top_srcdir)/src
 ClassicAztec_LDADD = $(AZTECOO_LIBS) \
 	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
@@ -551,6 +555,9 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(srcdir)/inputToClassicAztec  inputToClassicAztec
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
