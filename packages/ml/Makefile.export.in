@@ -39,6 +39,7 @@ ML_BUILD_LIB_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/src/Include  \
 			-I$(ML_SOURCE_DIRECTORY)/src/Smoother \
 			-I$(ML_SOURCE_DIRECTORY)/src/Utils    \
 			-I$(ML_SOURCE_DIRECTORY)/src/MLAPI    \
+			-I$(ML_SOURCE_DIRECTORY)/src/NonlinML \
 			-I$(ML_SOURCE_DIRECTORY)/src/         \
 			-I$(ML_BUILD_DIRECTORY)/src
 
@@ -86,7 +87,7 @@ NOX_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../nox
 @ML_USING_ANASAZI_TRUE@ANASAZI_LIBS = -L$(ANASAZI_BUILD_DIRECTORY)/src -lanasazi
 
 @ML_USING_NOX_TRUE@NOX_LIBS = -L$(NOX_BUILD_DIRECTORY)/src-epetra \
-                  -L$(NOX_BUILD_DIRECTORY)/src-lnoxepetra -lnox
+                  -L$(NOX_BUILD_DIRECTORY)/src -lnoxepetra -lnox
 
 ##########################################################################
 # Other Trilinos package include directories
