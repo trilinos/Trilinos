@@ -16,7 +16,6 @@
 #include "Epetra_Time.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_SerialDenseVector.h"
 
@@ -96,8 +95,21 @@ int main(int argc, char *argv[])
 
   if( comm.MyPID() == 0 ) {
 
-    //  buf[0]=12;
-    // buf[1]=2;
+
+    // Check for commandline input 
+
+     if (argc > 1) {
+       // argv[1] should be size of matrix
+       buf[0] = atoi(argv[1]);
+       if (argc > 2) {
+          // argv[2] should be #procs per row
+          buf[1] = atoi(argv[2]);
+       }
+       else
+          // default is 1, but sqrt(p) would be better 
+          buf[1] = 1;
+     }
+     else {
 
     // Input Data about matrix and distribution
 
@@ -110,6 +122,7 @@ int main(int argc, char *argv[])
 	  cin >> buf[1];
 	}
 
+     }
 
 	cout << " Matrix Size "<< buf[0] <<"\n";
 
@@ -164,8 +177,8 @@ int main(int argc, char *argv[])
 
    MPI_Comm_split(MPI_COMM_WORLD,my_row,my_col,&rowcomm); 
  
-   if( comm.MyPID() == 0 ){
-     cout << " ------ PARALLEL Distribution Info for : ---------" <<endl;
+   //if( comm.MyPID() == 0 ){
+   cout << " ------ PARALLEL Distribution Info for : ---------" <<endl;
 
    cout << "   Processor  " << comm.MyPID() << endl
         << "    my rows  " << my_rows << endl
@@ -177,7 +190,7 @@ int main(int argc, char *argv[])
         << "    num procs row   " << nprocs_row << endl
         << "    my_col  " << my_col << endl;
 
-   }
+   //}
    
    //  Local size -- my_rows  * (my_cols + my_rhs)
 
@@ -193,7 +206,7 @@ int main(int argc, char *argv[])
      double* temp4 = new double[matrix_size];
 
 
-     num_my_length = my_rows *(my_rhs + my_cols+ 1) ;
+     num_my_length = my_rows *(my_rhs + my_cols+6) ;
 
 
      num_global_length = -1 ;
@@ -275,7 +288,7 @@ int main(int argc, char *argv[])
 
      }
 
-     delete temp4;
+     delete [ ] temp4;
 
 
     // Now Solve the Problem
@@ -448,6 +461,19 @@ int main(int argc, char *argv[])
 
       
      }
+
+
+     //  Delete all the vectors used
+
+
+     delete [] temp2;
+
+     delete [] temp;
+ 
+     delete [] rhs;
+ 
+     delete [] temp3;
+
 
 
   MPI_Finalize() ;
