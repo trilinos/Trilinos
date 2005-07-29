@@ -138,12 +138,16 @@ int main(int argc, char *argv[])
          << "NumNodesY         - Number of mesh nodes in Y direction per processor" << endl
          << "NumProcX          - Number of processors to use in X direction" << endl
          << "NumProcY          - Number of processors to use in Y direction" << endl
-         << "NumPoints         - Number of points to use in stencil (5 or 9 only)" << endl
+         << "NumPoints         - Number of points to use in stencil (5, 9 or 25 only)" << endl
          << "-v|-s             - (Optional) Run in verbose mode if -v present or summary mode if -s present" << endl
-         << " NOTES: NumProcX*NumProcY must equal the number of processors used to run the problem. Example:" << endl
-         << "mpirun -np 32 " << argv[0] << " 10 12 4 8 -v" << endl
-	 << " Run this program on 32 processors putting a 10 X 12 subgrid on each processor using 4 processors "<< endl
-	 << " in the X direction and 8 in the Y direction.  Total grid size is 40 points in X and 96 in Y."<< endl
+         << " NOTES: NumProcX*NumProcY must equal the number of processors used to run the problem." << endl << endl
+	 << " Serial example:" << endl
+         << argv[0] << " 16 12 1 1 25 -v" << endl
+	 << " Run this program in verbose mode on 1 processor using a 16 X 12 grid with a 25 point stencil."<< endl <<endl
+	 << " MPI example:" << endl
+         << "mpirun -np 32 " << argv[0] << " 10 12 4 8 9 -v" << endl
+	 << " Run this program in verbose mode on 32 processors putting a 10 X 12 subgrid on each processor using 4 processors "<< endl
+	 << " in the X direction and 8 in the Y direction.  Total grid size is 40 points in X and 96 in Y with a 9 point stencil."<< endl
          << endl;
     return(1);
 
@@ -585,7 +589,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 	if (colID==rowID)
 	  values[numIndices++] = dnumPoints - value; // Make diagonal dominant
 	else
-	  values[numIndices++] = -value;
+	  values[numIndices++] = value;
       }
     }
     //cout << "Building row " << rowID << endl;
