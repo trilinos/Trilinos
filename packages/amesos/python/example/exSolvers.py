@@ -33,9 +33,11 @@ import sys
 
 # PyTrilinos imports
 try:
-  from PyTrilinos import Amesos, Epetra
+  import setpath
+  import Epetra, Amesos
 except ImportError:
-  raise ImportError, "error w/ Amesos or Epetra"
+  from PyTrilinos import Epetra, Amesos
+  print "Using system-installed Epetra, Amesos"
 
 def PrintHelp():
   print ' '
