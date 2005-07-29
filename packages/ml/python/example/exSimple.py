@@ -1,43 +1,47 @@
 #! /usr/bin/env python
 try:
   import setpath
-  import ML, Triutils, AztecOO, Epetra
-except:
-  try:
-    from PyTrilinos import ML, Triutils, AztecOO, Epetra
-  except ImportError:
-    raise ImportError, "error w/ ML or Triutils or AztecOO or Epetra"
+  import Epetra, Triutils, AztecOO, ML
+except ImportError:
+  from PyTrilinos import Epetra, Triutils, AztecOO, ML
+  print "Using system-installed Epetra, Triutils, AztecOO, ML"
 
-# builds the linear system matrix and sets up starting solution and
-# right-hand side
-nx = 100
-ny = 100
-Comm = Epetra.PyComm()
+def main():
 
-Gallery = Triutils.CrsMatrixGallery("laplace_2d", Comm)
-Gallery.Set("nx", nx)
-Gallery.Set("ny", ny)
-Matrix = Gallery.GetMatrix()
-LHS = Gallery.GetStartingSolution()
-RHS = Gallery.GetRHS()
+  # builds the linear system matrix and sets up starting solution and
+  # right-hand side
+  nx = 100
+  ny = 100
+  Comm = Epetra.PyComm()
 
-# sets up the parameters for ML using a python dictionary
-MLList = {
-  "max levels"        : 3, 
-  "output"            : 10,
-  "smoother: type"    : "symmetric Gauss-Seidel",
-  "aggregation: type" : "Uncoupled"
-}
+  Gallery = Triutils.CrsMatrixGallery("laplace_2d", Comm)
+  Gallery.Set("nx", nx)
+  Gallery.Set("ny", ny)
+  Matrix = Gallery.GetMatrix()
+  LHS = Gallery.GetStartingSolution()
+  RHS = Gallery.GetRHS()
 
-# creates the preconditioner and computes it
-Prec = ML.MultiLevelPreconditioner(Matrix, False)
-Prec.SetParameterList(MLList)
-Prec.ComputePreconditioner()
+  # sets up the parameters for ML using a python dictionary
+  MLList = {
+    "max levels"        : 3, 
+    "output"            : 10,
+    "smoother: type"    : "symmetric Gauss-Seidel",
+    "aggregation: type" : "Uncoupled"
+    }
 
-# sets up the solver, specifies Prec as preconditioner, and
-# solves using CG.
-Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
-Solver.SetPrecOperator(Prec)
-Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg);
-Solver.SetAztecOption(AztecOO.AZ_output, 16);
-Solver.Iterate(1550, 1e-5)
+  # creates the preconditioner and computes it
+  Prec = ML.MultiLevelPreconditioner(Matrix, False)
+  Prec.SetParameterList(MLList)
+  Prec.ComputePreconditioner()
+
+  # sets up the solver, specifies Prec as preconditioner, and
+  # solves using CG.
+  Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
+  Solver.SetPrecOperator(Prec)
+  Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg);
+  Solver.SetAztecOption(AztecOO.AZ_output, 16);
+  Solver.Iterate(1550, 1e-5)
+
+
+if __name__ == "__main__":
+  main()

@@ -43,7 +43,7 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = exSimple.py
+EXTRA_DIST = setpath.py exSimple.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -53,7 +53,10 @@ MAINTAINERCLEANFILES = Makefile.in
 # Define the suite of examples
 EXAMPLE_SUITE = exSimple
 
+SETPATH = setpath.py
+
 all: $(EXAMPLE_SUITE)
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then cp $(srcdir)/$(SETPATH) . ; fi
 
 ex%: $(srcdir)/ex%.py 
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then cp $(srcdir)/$@.py . ; fi
