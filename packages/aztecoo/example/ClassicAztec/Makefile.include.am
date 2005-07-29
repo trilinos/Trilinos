@@ -26,14 +26,14 @@
 # ************************************************************************
 #@HEADER
 
-#SUBDIRS = azoo_iterate_hb aztec_app aztec_hb AztecOO AztecOO_UserOpUserMat \
-#	IfpackAztecOO simple_epetra_aztecoo
-# note that simple_epetra_aztecoo, any AztecOO*, and azoo should not be built when "core Aztec" is 
-# being built
+EXEEXT = .exe
 
-#if BUILD_TRIUTILS
-USER_OP_USER_MAT_SUBDIR=AztecOO_UserOpUserMat
-AZTECOO_SUBDIR=AztecOO
-#endif
+noinst_PROGRAMS = ClassicAztec
 
-SUBDIRS = $(AZTECOO_SUBDIR) $(USER_OP_USER_MAT_SUBDIR) simple_epetra_aztecoo UG_Ex1 ClassicAztec
+ClassicAztec_SOURCES = $(srcdir)/main.c $(srcdir)/az_app_utils.c $(srcdir)/az_examples.c
+
+
+ClassicAztec_CFLAGS = -I$(top_srcdir)/src
+
+ClassicAztec_LDADD = $(AZTECOO_LIBS) \
+	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
