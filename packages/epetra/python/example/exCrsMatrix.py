@@ -34,10 +34,8 @@ try:
   import setpath
   import Epetra
 except:
-  try:
-    from PyTrilinos import Epetra
-  except ImportError:
-    raise ImportError, "error w/ Epetra"
+  from PyTrilinos import Epetra
+  print "Using system-installed Epetra"
 
 def main():
     # Creates an Epetra.SerialComm in serial mode, or an Epetra.MpiComm
@@ -45,23 +43,23 @@ def main():
     Comm  = Epetra.PyComm()
     NumGlobalRows = 5
     Map   = Epetra.Map(NumGlobalRows, 0, Comm)
-    A     = Epetra.CrsMatrix(Epetra.Copy, Map, 0);
+    A     = Epetra.CrsMatrix(Epetra.Copy, Map, 0)
     NumMyRows = Map.NumMyElements()
     # Loop over all local rows to create a tridiagonal matrix
-    for ii in xrange(0, NumMyRows):
+    for ii in xrange(NumMyRows):
       # `i' is the global ID of local ID `ii'
       i = Map.GID(ii)
       if i != NumGlobalRows - 1:
         Indices = [i, i + 1]
-        Values = [2.0, -1.0]
+        Values  = [2.0, -1.0]
       else:
         Indices = [i]
-        Values = [2.0];
-      A.InsertGlobalValues(i, Values, Indices);
+        Values  = [2.0]
+      A.InsertGlobalValues(i, Values, Indices)
     # transform the matrix into local representation -- no entries
     # can be added after this point. However, existing entries can be
     # modified.
-    ierr = A.FillComplete();
+    ierr = A.FillComplete()
 
     print A
     NormInf = A.NormInf()
