@@ -39,11 +39,9 @@
 try:
   import setpath
   import Epetra
-except:
-  try:
-    from PyTrilinos import Epetra
-  except ImportError:
-    raise ImportError, "error w/ Epetra"
+except ImportError:
+  from PyTrilinos import Epetra
+  print "Using system-installed Epetra"
 
 def main():
     print Epetra.Version()

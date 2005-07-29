@@ -43,46 +43,49 @@
 try:
   import setpath
   import Epetra
-except:
-  try:
-    from PyTrilinos import Epetra
-  except ImportError:
-    raise ImportError, "error w/ Epetra"
+except ImportError:
+  from PyTrilinos import Epetra
+  print "Using system-installed Epetra"
 
-# Initializes the communicator (or do-nothing in serial runs), then
-# creates a communicator (Epetra.SerialComm in serial, or Epetra.MpiComm
-# in parallel).
-Comm  = Epetra.PyComm()
+def main():
 
-NumGlobalRows = 10
-if Comm.MyPID() == 0:
-  i = NumGlobalRows
-else:
-  i = 0
+  # Initializes the communicator (or do-nothing in serial runs), then
+  # creates a communicator (Epetra.SerialComm in serial, or Epetra.MpiComm
+  # in parallel).
+  Comm  = Epetra.PyComm()
 
-# Map1 contains all the elements on processor 0, Map2 is a linear map
-# with elements on all processes
-Map1 = Epetra.Map(-1, range(0, i), 0, Comm)
-Map2 = Epetra.Map(NumGlobalRows, 0, Comm)
+  NumGlobalRows = 10
+  if Comm.MyPID() == 0:
+    i = NumGlobalRows
+  else:
+    i = 0
 
-# Creates an importer from Map1 to Map2
-Importer = Epetra.Import(Map2, Map1)
-# Defines two vectors, X1 defined on Map1, and X2 defined on Map2,
-# then fix the values of X1, and let X2 import the values of X1
-X1 = Epetra.Vector(Map1)
-X1.Random()
-X2 = Epetra.Vector(Map2)
-X2.Import(X1, Importer, Epetra.Insert)
-print X2
+  # Map1 contains all the elements on processor 0, Map2 is a linear map
+  # with elements on all processes
+  Map1 = Epetra.Map(-1, range(0, i), 0, Comm)
+  Map2 = Epetra.Map(NumGlobalRows, 0, Comm)
 
-# We now do exactly the same thing, but using an export element,
-# and X1_bis should be equivalent to X1. The printed norm should
-# be zero
-Exporter = Epetra.Export(Map2, Map1)
-X1_bis = Epetra.Vector(Map1)
-X1_bis.Export(X2, Exporter, Epetra.Insert)
+  # Creates an importer from Map1 to Map2
+  Importer = Epetra.Import(Map2, Map1)
+  # Defines two vectors, X1 defined on Map1, and X2 defined on Map2,
+  # then fix the values of X1, and let X2 import the values of X1
+  X1 = Epetra.Vector(Map1)
+  X1.Random()
+  X2 = Epetra.Vector(Map2)
+  X2.Import(X1, Importer, Epetra.Insert)
+  print X2
 
-X1_bis.Update(-1.0, X1, 1.0)
-(ierr, Norm) = X1_bis.Norm2()
-if Comm.MyPID() == 0:
-  print '||X1 - X1_bis||_2 = ', Norm
+  # We now do exactly the same thing, but using an export element,
+  # and X1_bis should be equivalent to X1. The printed norm should
+  # be zero
+  Exporter = Epetra.Export(Map2, Map1)
+  X1_bis = Epetra.Vector(Map1)
+  X1_bis.Export(X2, Exporter, Epetra.Insert)
+
+  X1_bis.Update(-1.0, X1, 1.0)
+  (ierr, Norm) = X1_bis.Norm2()
+  if Comm.MyPID() == 0:
+    print '||X1 - X1_bis||_2 = ', Norm
+
+if __name__ == "__main__":
+  main()
