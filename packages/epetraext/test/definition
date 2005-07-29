@@ -24,3 +24,8 @@
         DIRS = ../python/example;
         COMM = SERIAL, MPI(1);
 }
+
+(FRAMEWORK, EpetraExtPyTests) {
+        DIRS = ../python/test;
+        COMM = SERIAL, MPI(1);
+}

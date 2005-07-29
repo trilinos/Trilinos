@@ -43,7 +43,7 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = exInputOutput.py exMatrixMatrix.py
+EXTRA_DIST = setpath.py exInputOutput.py exMatrixMatrix.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -53,7 +53,10 @@ MAINTAINERCLEANFILES = Makefile.in
 # Define the suite of examples
 EXAMPLE_SUITE = exInputOutput exMatrixMatrix
 
+SETPATH = setpath.py
+
 all: $(EXAMPLE_SUITE)
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
 # Run the example script
 ex%: $(srcdir)/ex%.py

@@ -54,12 +54,16 @@ MAINTAINERCLEANFILES = Makefile.in
 # Define the suite of tests
 TEST_SUITE = testColoring
 
-check-am: $(TEST_SUITE)
+SETPATH = setpath.py
 
-# Run the test script
-test%: $(srcdir)/test%.py $(srcdir)/setpath.py
-	cp $^ .
-	$(PYTHON) $@.py
+all: $(TEST_SUITE)
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
+
+# Copy the test script
+test%: $(srcdir)/test%.py
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
 # Clean target
-CLEANFILES = $(patsubst %, %.py, $(TEST_SUITE)) setpath.py setpath.pyc
+clean:
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
+	/bin/rm -f *.pyc
