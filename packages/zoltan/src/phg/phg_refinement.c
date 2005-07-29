@@ -547,26 +547,13 @@ static int refine_fm2 (ZZ *zz,
     MPI_Reduce(ldeg, deg, hg->nVtx, MPI_INT, MPI_SUM, root.rank,
                hg->comm->col_comm);
 
-#if 0
-    for (i=0; i<hg->nVtx; ++i)
-        if (part[i]<0 || part[i]>1)
-            errexit("before isolated vertex check; part[%d]=%d", i, part[i]);
     if (hgc->myProc_y==root.rank) { /* root marks isolated vertices */
         for (i=0; i<hg->nVtx; ++i)
-            if (!gain[i]) {
+            if (!deg[i]) {
                 moves[--isocnt] = i;
                 part[i] = -(part[i]+1); /* remove those vertices from that part*/
-            }
-        for (i=0; i<hg->nEdge; ++i)
-            for (j=hg->hindex[i]; j<hg->hindex[i+1]; ++j) {
-                int v = hg->hvertex[j];
-                if (part[v]<0 || part[v]>1) 
-                    errexit("vertex %d (part %d) has degree %d but it is in edge list of net %d\n", v, part[v], gain[v], i);
-            }
-        
-    }
-    
-#endif
+            }        
+    }   
 #endif
     
     do {
