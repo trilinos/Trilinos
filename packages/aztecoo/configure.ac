@@ -378,6 +378,8 @@ AC_CONFIG_FILES([
                 example/AztecOO_UserOpUserMat/Makefile.include
                 example/AztecOO/Makefile
                 example/AztecOO/Makefile.include
+                example/ClassicAztec/Makefile
+                example/ClassicAztec/Makefile.include
 		test/Makefile
 		test/AztecOO/Makefile
 		test/AztecOO_SetParameters/Makefile
