@@ -25,6 +25,7 @@ FFLAGS=-O3 \
 --with-loca-anasazi \
 --enable-meros \
 --enable-ml \
+--enable-ml_multiple_rhs=4 \
 --with-ml-64bit-integer="long long" \
 --enable-new_package \
 --enable-new_swahili \
