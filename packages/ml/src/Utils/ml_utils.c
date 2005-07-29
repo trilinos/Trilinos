@@ -2588,12 +2588,18 @@ void ML_PauseForDebugger(ML_Comm *comm)
   char hostname[80];
   char go = ' ';
   char *str;
+  FILE * ML_capture_flag;
 
   str = (char *) getenv("ML_BREAK_FOR_DEBUGGER");
   i = 0;
   if (str != NULL) i++;
-  str = (char *) getenv("ML_PAUSE_FOR_DEBUGGER");
-  if (str != NULL) i++;
+
+  ML_capture_flag = fopen("ML_debug_now","r");
+  if(ML_capture_flag) {
+    i++;
+    fclose(ML_capture_flag);
+  }
+
   ML_gsum_scalar_int(&i, &j, comm);
   if (i != 0)
   {
@@ -2613,7 +2619,8 @@ void ML_PauseForDebugger(ML_Comm *comm)
     }
     if(mypid == 0) {
       printf("\n");
-      printf("** Pausing because environment variable ML_BREAK_FOR_DEBUGGER has been set.\n");
+      printf("** Pausing because environment variable ML_BREAK_FOR_DEBUGGER\n");
+      printf("** has been set, or file ML_debug_now exists.\n");
       printf("**\n");
       printf("** You may now attach debugger to the processes listed above.\n");
       printf( "**\n");
