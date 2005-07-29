@@ -200,6 +200,16 @@ void generateRowSums(std::vector<T>& vector, int const firstx, int const lastx, 
 			vector[y] += generateValue(intToScalar<T>(x), intToScalar<T>(y));
 }
 
+// puts the sum of (firstx, i) to (lastx, i) into vector[i], for i = firsty to lasty
+template <typename T>
+void generateRowSums(std::vector<T>& vector, int const firstx, int const lastx, int const firsty, int const lasty) {
+	vector.assign((lasty - firsty + 1), Teuchos::ScalarTraits<T>::zero());
+	for(int x = firstx; x <= lastx; x++)
+		for(int y = firsty; y <= lasty; y++)
+			vector[y - firsty] += generateValue(intToScalar<T>(x), intToScalar<T>(y));
+}
+
+
 template <typename T>
 void generateRowMaxs(std::vector<T>& vector, int const firstx, int const lastx, int const length) {
 	generateColumn(vector, lastx, length); // for this generator, row max is right-most entry

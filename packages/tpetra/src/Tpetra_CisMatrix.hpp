@@ -360,7 +360,7 @@ namespace Tpetra {
 		//@{ \name Computational Methods
   
 		//! Computes the matrix-vector multiplication y = Ax
-		void apply(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType>& y) {
+		void apply(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType>& y, bool transpose = false) {
 			if(!isFillCompleted())
 				throw reportError("Cannot apply until after fillComplete.", 4);
 
@@ -405,7 +405,7 @@ namespace Tpetra {
 				x2.doImport(x, *(data().importer_), Insert);
 
 			// do Kokkos apply operation
-			errorcode = data().axy_.apply(data().kx_, data().ky_);
+			errorcode = data().axy_.apply(data().kx_, data().ky_, transpose);
 			if(errorcode) 
 				throw reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
 

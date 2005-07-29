@@ -38,6 +38,7 @@
 #include <Teuchos_BLAS.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include "../test/tpetra_test_util.hpp"
 
 namespace Tpetra {
 
@@ -127,7 +128,7 @@ namespace Tpetra {
 		void submitEntries(OrdinalType numEntries, OrdinalType const* indices, ScalarType const* values) {
 			OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 			for(OrdinalType i = ordinalZero; i < numEntries; i++)
-				VectorData_->scalarArray_[indices[i]] = values[i];
+				VectorData_->scalarArray_[indices[i]] += values[i];
 		}
 
 		//! Set all entries to scalarValue.
@@ -593,6 +594,7 @@ namespace Tpetra {
 			// next, do permutations
 			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numPermuteIDs; i++)
 				(*this)[permuteToLIDs[i]] = sourceVector[permuteFromLIDs[i]];
+			
 			
 			return(0);
 		}
