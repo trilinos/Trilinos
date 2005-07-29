@@ -368,10 +368,6 @@ AC_CONFIG_FILES([
 		Makefile 
 		example/Makefile
 		src/Makefile
-		src/__init__.py
-		src/.deps/dummy
-		src/.deps/NOX/dummy
-		src/NOX/__init__.py
 		test/Makefile
 		])
 
@@ -381,3 +377,10 @@ AC_OUTPUT()
 echo "--------------------------------------------"
 echo "Finished Running PyTrilinos Configure Script"
 echo "--------------------------------------------"
+
+# Removed AC_CONFIG_FILES:
+#
+#		src/__init__.py
+#		src/.deps/dummy
+#		src/.deps/NOX/dummy
+#		src/NOX/__init__.py

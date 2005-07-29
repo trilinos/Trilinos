@@ -3,6 +3,6 @@
 #
 
 (FRAMEWORK) {
-    TESTS = testEpetra.py, testEpetraExt.py, testExample.py, testNOX.py;
+    TESTS = ;
     COMM = SERIAL, MPI;
 }

@@ -55,15 +55,8 @@ MAINTAINERCLEANFILES = Makefile.in
 ## #######################################################################
 ## Files to be cleaned by 'make clean'
 ## #######################################################################
-CLEANFILES = $(patsubst %, %.py, $(TEST_SUITE)) setpath.py setpath.pyc
+CLEANFILES = 
 
 ## #######################################################################
 ## Define the suite of tests
 ## #######################################################################
-TEST_SUITE = testEpetra testEpetraExt testNOX testExample
-check-am: $(TEST_SUITE)
-
-# Run the test script
-test%: $(srcdir)/test%.py $(srcdir)/setpath.py
-	cp $^ .
-	$(PYTHON) $@.py
