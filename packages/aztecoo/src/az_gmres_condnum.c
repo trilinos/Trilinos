@@ -65,7 +65,7 @@ static void dgeev_interface(double **H, int n,
 			    double *smallest, double *largest );
 static void print_condnum( int options[], int proc,
 			   char *prefix, int i, double **hh, double *condnum,
-			   int flag);
+			   int flag, int kspace);
 
 void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
 			double params[], int proc_config[], double status[], AZ_MATRIX *Amat,
@@ -419,8 +419,8 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
                                   true_scaled_r, actual_residual, options,
                                   proc_config);
 
-	print_condnum( options, proc, prefix, itemp, hh2,
-		       &condnum, (iter>kspace) );
+	print_condnum(options, proc, prefix, itemp, hh2, &condnum, 
+                      (iter>kspace), kspace_p1);
 	status[AZ_condnum] = condnum;
         return;
       }
@@ -470,7 +470,8 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
                                   true_scaled_r, actual_residual, options,
                                   proc_config);
 
-	print_condnum( options, proc, prefix, i, hh2,&condnum, (iter>kspace) );
+	print_condnum(options, proc, prefix, i, hh2,&condnum, 
+                      (iter>kspace), kspace_p1);
 	status[AZ_condnum] = condnum;
 	    
         return;
@@ -511,7 +512,8 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
 				      true_scaled_r, actual_residual, options,
 				      proc_config);
 
-	    print_condnum( options, proc, prefix, i, hh2, &condnum, (iter>kspace) );
+	    print_condnum(options, proc, prefix, i, hh2, &condnum, 
+                          (iter>kspace), kspace_p1);
 	    status[AZ_condnum] = condnum;
 	    
 	    return;
@@ -557,11 +559,15 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
                             scaled_r_norm, actual_residual, options,
                             proc_config);
 
-  print_condnum( options, proc, prefix, itemp, hh2, &condnum, (iter>kspace) );
+  print_condnum(options, proc, prefix, itemp, hh2, &condnum, (iter>kspace),
+                kspace_p1);
   status[AZ_condnum] = condnum;
 	    
-  for (k = 0; k < kspace+1; k++) free( (void*) hh2[k]);
-  free( (void *) hh2 );
+  /* This memory is free'd in print_condnum(), since we alqyas return
+   * after calling it. Note that the hh2 pointer is not set to
+   * NULL anywhere -- but we don't use it anymore. */
+  /* for (k = 0; k < kspace+1; k++) free( (void*) hh2[k]);
+     free( (void *) hh2 ); */
   
 } /* AZ_pgmres_condnum */
 
@@ -740,9 +746,9 @@ static void dgeev_interface(double **H, int n,
 
 static void print_condnum( int options[], int proc,
 			   char *prefix, int i, double **hh, double *condnum,
-			   int flag)
+			   int flag, int kspace)
 {
-  
+  int k;
   double smallest, largest;
   int flag2 = 0;
   
@@ -790,6 +796,9 @@ static void print_condnum( int options[], int proc,
 	   prefix);
   }
   
+  for (k = 0; k < kspace; k++) free( (void*) hh[k]);
+  free((void *) hh);
+
   return;
   
 } /* print_condnum */
