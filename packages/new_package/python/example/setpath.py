@@ -34,32 +34,31 @@ import commands
 import os
 import string
 import sys
+from   distutils.util import get_platform
+
+# Consruct the setup.txt file name
+myDir,myName = os.path.split(__file__)
+setup_txt    = os.path.normpath(os.path.join(myDir, "..", "src", "setup.txt"))
 
 # Obtain the dictionary of make information
-setup_filename = "../src/setup.txt"
-try:
-    f = open(setup_filename)
-    makeInfo = f.readlines()
-    f.close()
-    makeInfo = eval(string.join(makeInfo))
-except IOError:
-    print "WARNING: %s not found" % setup_filename
-    makeInfo = { }
+f = open(setup_txt)
+makeInfo = f.readlines()
+f.close()
+makeInfo = eval(string.join(makeInfo))
 
-# Build the command to get the build library name
-cmd = "%s %s/../PyTrilinos/pyLocate --build" % (makeInfo.get("PYTHON"    ,""),
-                                                makeInfo.get("top_srcdir",""))
-(status,output) = commands.getstatusoutput(cmd)
-if status != 0:
-    raise RuntimeError, "\n\tUNIX command '%s' gives\n\t%s" % (cmd,output)
+# Construct the the build library directory name
+libDir = "lib.%s-%s" % (get_platform(), sys.version[0:3])
 
-# Get the path to the build directories
-libDir = os.path.join("..", "src", output, "PyTrilinos")
-epetraLibDir = os.path.join("..", "..", "..", "epetra", "python", "src", output,
-                            "PyTrilinos")
+# Get the full path to the build directory
+fullPath = os.path.normpath(os.path.join(myDir, "..", "src", "build", libDir,
+                                         "PyTrilinos"))
+epetraPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "epetra",
+                                           "python", "src", "build", libDir,
+                                           "PyTrilinos"))
 
-# Insert the library directory name at the beginning of
-# the python search path
-if libDir:
-    sys.path.insert(0,libDir      )
-    sys.path.insert(1,epetraLibDir)
+# Insert the full path to the build library directory
+# at the beginning of the python search path
+if fullPath:
+    sys.path.insert(0,fullPath)
+if epetraPath:
+    sys.path.insert(1,epetraPath)
