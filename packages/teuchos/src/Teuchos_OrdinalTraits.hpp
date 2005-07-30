@@ -36,6 +36,8 @@
    \brief Defines basic traits for the ordinal field type 
 */
 
+#include "Teuchos_ConfigDefs.hpp"
+
 /*! \struct Teuchos::OrdinalTraits
     \brief This structure defines some basic traits for the ordinal field type.
 
