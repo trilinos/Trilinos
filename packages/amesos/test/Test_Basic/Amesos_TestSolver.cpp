@@ -444,12 +444,13 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       //	ParamList.set("OutputLevel",2);
       Amesos_Klu A_klu( Problem ); 
       ParamList.set( "MaxProcs", -3 );
-      EPETRA_CHK_ERR( A_klu.SetParameters( ParamList ) ); 
+      //      ParamList.set( "TrustMe", true );
       EPETRA_CHK_ERR( A_klu.SetParameters( ParamList ) ) ; 
       EPETRA_CHK_ERR( A_klu.SetUseTranspose( transpose ) ); 
       EPETRA_CHK_ERR( A_klu.SymbolicFactorization(  ) ); 
       EPETRA_CHK_ERR( A_klu.NumericFactorization(  ) ); 
-      EPETRA_CHK_ERR( A_klu.Solve(  ) ); 
+      //      for ( int i=0; i<100000 ; i++ ) 
+	EPETRA_CHK_ERR( A_klu.Solve(  ) ); 
 
 #endif
     } else { 
