@@ -1,0 +1,92 @@
+\documentclass[10pt,relax]{TpetraDesign}
+% ---------------------------------------------------------------------------- %
+%
+% Set the title, author, and date
+%
+\title{The Design and Evolution of Tpetra}
+\SANDsubtitle{}
+
+\author{Paul M. Sexton and Michael A. Heroux \\
+       Sandia National Laboratories\\
+       P.O. Box 5800\\
+       Albuquerque, NM 87185-1110
+     }
+
+% There is a "Printed" date on the title page of a SAND report, so
+% the generic \date should generally be empty.
+\date{}
+
+
+\SANDnum{SAND2005-xxxx} \SANDprintDate{August 2005}
+\SANDauthor{Paul M. Sexton \\
+Computational Mathematics and Algorithms Department \\
+ \\
+Michael A. Heroux \\
+Computational Mathematics and Algorithms Department \\
+ \\
+Sandia National Laboratories \\
+P.O. Box 5800 \\
+Albuquerque, NM 87185-1110}
+
+
+
+\SANDreleaseType{Unlimited Release}
+
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This paper describes the design and implementation of Tpetra,
+a C++ library for basic linear algebra computations on high-performance
+distributed node systems. We first provide a brief overview of
+the package and its uses. We then discuss in detail both how
+Tpetra is designed and implemented, but also the considerations
+and decisions that led to those designs being chosen.
+\end{abstract}
+
+\clearpage
+\section*{Acknowledgement}
+The authors would like to acknowledge the support of the ASCI and LDRD programs
+that funded development of Trilinos.
+
+\newpage
+
+\section{Introduction}
+
+
+Many numerical algorithms for the solution of problems in
+scientific and engineering applications use vectors and
+matrices as basic elements.   Generally, the exact details
+of how these mathematical objects are stored, or how computations
+are performed using them, is not of primary importance for the
+algorithm designer.  Because of this, using abstract object models
+that describe the attributes and methods associated with each
+object class, and defining the relationship between classes, is an
+effective way to separate algorithm design and implementation from
+vector and matrix design.
+
+The practical importance of this separation comes from the fact
+that there are many different data structures used to store
+vectors and matrices and correspondingly many different ways
+to implement basic matrix and vector operations.  The variety
+of vector matrix data structures and implementations is, to
+some extent, a result of arbitrary choices made by application
+designers.  However, often there are sound reasons for choosing
+particular data structures, either because of the intended
+computer architecture or because of the specifics of the
+application.  Abstraction of the vector and matrix objects
+leverages the investment in sophisticated algorithm implementations
+across many different vector and matrix implementations and
+provides a convenient generic programming framework for new
+algorithm development.
+
+In this paper we present a detailed object model for vectors
+and matrices that are intended for use in a parallel, distributed
+memory computing environment.  We present a brief overview of
+the classes, followed by a UML object model, in the next section.
+In subsequent sections we present a collection of pure virtual
+classes, two C++ implementations of this model and a Java
+implementation.
+
+\end{document}
