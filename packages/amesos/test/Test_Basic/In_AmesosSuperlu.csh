@@ -148,7 +148,7 @@ $mpigo 4 amesos_test.exe SUPERLU   ImpcolA.rua 1 1 -2 1 1e-9  1e-11  >>SST.stdou
 #
 #  Test blocked right hand sides
 #
-$mpigo 1 amesos_test.exe SUPERLU   ImpcolA.rua 0 1 2 0 1e-9  1e-11 >>SST.stdout
+# COMMENT $mpigo 1 amesos_test.exe SUPERLU   ImpcolA.rua 0 1 2 0 1e-9  1e-11 >>SST.stdout
 $mpigo 5 amesos_test.exe SUPERLU   ImpcolB.rua 0 1 4 0 1e-10 1e-12  >>SST.stdout
 $mpigo 2 amesos_test.exe SUPERLU   ImpcolE.rua 0 1 6 0 1e-9  1e-10  >>SST.stdout
 $mpigo 2 amesos_test.exe SUPERLU   ImpcolE.rua 0 1 6 1 1e-9  1e-10  >>SST.stdout
@@ -219,7 +219,7 @@ echo "COMMENT End Amesos_Superlu.exe" >> SST.summary
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep mpigo Amesos_Superlu.csh | grep -v COMMENT | wc`
+set expected_lines = `grep mpigo AmesosSuperlu.csh | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 
