@@ -559,7 +559,8 @@ static int refine_fm2 (ZZ *zz,
     do {
         int v=1, movecnt=0, neggaincnt=0, from, to;
         int maxneggain = (hgp->fm_max_neg_move < 0) ? hg->nVtx : hgp->fm_max_neg_move;
-
+        int notfeasible=(weights[0]>max_weight[0]) || (weights[1]>max_weight[1]);
+    
         /* now compute global pin distribution */
         if (hg->nEdge)
             MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, 
@@ -689,11 +690,12 @@ static int refine_fm2 (ZZ *zz,
                 limbal = (ltargetw0==0.0) ? 0.0
                     : fabs(lweights[0]-ltargetw0)/ltargetw0;
 
-                if ((cutsize<best_cutsize) || (cutsize==best_cutsize && limbal < best_limbal)) {
+                if ((cutsize<best_cutsize) || (cutsize==best_cutsize && limbal < best_limbal)
+                    || notfeasible) {
 #ifdef _DEBUG2                    
                     printf("%s %4d: %6d (g: %5.1lf), p:%2d W[%4.0lf, %4.0lf] I:%.2lf LW[%4.0lf, %4.0lf] LI:%.2lf C:%.1lf<-- Best\n", uMe(hgc), movecnt, v, gain[v], from, weights[0], weights[1], imbal, lweights[0], lweights[1], limbal, cutsize); /* after move gain is -oldgain */
 #endif
-                    
+                    notfeasible = 0;
                     best_cutsize = cutsize;
                     best_cutsizeat = movecnt+1;
                     best_limbal = limbal;
@@ -824,9 +826,6 @@ static int refine_fm2 (ZZ *zz,
         best_cutsize = Zoltan_PHG_Compute_NetCut(hgc, hg, part, p);
         imbal = (targetw0 == 0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;
         printf("%s End of Pass %d Comp.Cut=%.2lf RealCut=%.2lf W[%5.0lf, %5.0lf] Imbal=%.2lf\n", uMe(hgc), passcnt, cutsize, best_cutsize, weights[0], weights[1], imbal);
-        if (cutsize<best_cutsize) {
-            errexit("*** HEY HEY Invalid cut!!!");
-        }
         /* debuggging code ends here */
 #endif
     } while (successivefails<2 &&  (++passcnt < hgp->fm_loop_limit));
