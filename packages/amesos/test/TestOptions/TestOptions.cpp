@@ -387,6 +387,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		      Level = EPETRA_MIN( 1, MaxLevel );
 		      MaxError = Rcond*Rcond1*Rcond2;
 		    }
+		    int NumTheseTests = 0 ; 
 		    int Error = TestAllClasses( AmesosClasses, EpetraMatrixType, 
 						 AmesosClassesInstalled, 
 						 Cmat, 
@@ -404,9 +405,10 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 						 filename,
 						 error, 
 						 residual, 
-						 NumTests ) ;
+						 NumTheseTests ) ;
+		    NumTests += NumTheseTests ;
 		    NumErrors += Error ;
-		    if ( Comm.MyPID() == 0  && ( verbose || Error ) ) {
+		    if ( Comm.MyPID() == 0  && ( ( verbose && NumTheseTests ) || Error ) ) {
 		      cout << " Testing  " << filename 
 			   << __FILE__ << "::"  << __LINE__
 			   << " EpetraMatrixType = " <<  EpetraMatrixType 
@@ -466,13 +468,13 @@ int NextMain( int argc, char *argv[] ) {
   Epetra_SerialComm Comm;
 #endif
 
-#ifdef HAVE_AMESOS_KLU
-  AmesosClasses.push_back( "Amesos_Klu" );
+#ifdef HAVE_AMESOS_TAUCS
+  AmesosClasses.push_back( "Amesos_Taucs" );
 #endif
 
 #if 1
-#ifdef HAVE_AMESOS_TAUCS
-  AmesosClasses.push_back( "Amesos_Taucs" );
+#ifdef HAVE_AMESOS_KLU
+  AmesosClasses.push_back( "Amesos_Klu" );
 #endif
 
 #ifdef HAVE_AMESOS_SUPERLU

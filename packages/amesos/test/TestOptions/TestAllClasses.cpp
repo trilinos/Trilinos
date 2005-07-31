@@ -43,13 +43,14 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
   for (int i=0; i < NumAmesosClasses; i++ ) {
     if ( AmesosClassesInstalled[i] ) { 
+      int Errors = 0 ; 
       if ( AmesosClasses[i] == "Amesos_Scalapack") { 
 	bool RunScalapackTest = true;
 	if ( ReindexRowMap || ReindexColMap ) RunScalapackTest = false ;   //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
 	  RunScalapackTest = false ;   //  Bug #1403
 	if ( RunScalapackTest && verbose) cout << " Testing SCALAPACK " << endl ; 
-	if ( RunScalapackTest )	errors += TestScalapack( Amat, 
+	if ( RunScalapackTest )	Errors = TestScalapack( Amat, 
 							 EpetraMatrixType,
 							 transpose, 
 							 verbose, 
@@ -68,7 +69,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
 	if ( RunUmfpackTest && verbose) cout << " Testing UMFPACK " << endl ; 
 	
-	if ( RunUmfpackTest ) errors += TestOtherClasses("Amesos_Umfpack",
+	if ( RunUmfpackTest ) Errors = TestOtherClasses("Amesos_Umfpack",
 							 EpetraMatrixType,
 							 Amat, 
 							 transpose, 
@@ -87,10 +88,11 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
 	  RunTaucsTest = false ;   //  Bug #1403
 	if ( MissingADiagonal ) RunTaucsTest = false ; // Bug #1449
+	if ( transpose ) RunTaucsTest = false ; // Bug #1579
 
 	if ( RunTaucsTest && verbose) cout << " Testing TAUCS " << endl ; 
 	
-	if ( RunTaucsTest ) errors += TestOtherClasses("Amesos_Taucs",
+	if ( RunTaucsTest ) Errors = TestOtherClasses("Amesos_Taucs",
 							 EpetraMatrixType,
 							 Amat, 
 							 transpose, 
@@ -111,7 +113,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
 	if ( RunPardisoTest && verbose) cout << " Testing PARDISO " << endl ; 
 	
-	if ( RunPardisoTest ) errors += TestOtherClasses("Amesos_Pardiso",
+	if ( RunPardisoTest ) Errors = TestOtherClasses("Amesos_Pardiso",
 							 EpetraMatrixType,
 							 Amat, 
 							 transpose, 
@@ -131,7 +133,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if (  RunMumpsTest && verbose) cout << " Testing MUMPS " << endl ; 
 	if ( MissingADiagonal ) RunMumpsTest = false ; // Bug #1435
 
-	if ( RunMumpsTest ) errors += TestOtherClasses("Amesos_Mumps",
+	if ( RunMumpsTest ) Errors = TestOtherClasses("Amesos_Mumps",
 							 EpetraMatrixType,
 						       Amat, 
 						       transpose, 
@@ -155,7 +157,6 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if ( ReindexRowMap != 0 )  ParamList.set( "Reindex", true );
 	if ( ( RangeMapType != 0 || DomainMapType != 0 || distribute ) ) 
 	  ParamList.set( "DontTrustMe", true );
-	int Errors = 0 ; 
 	if ( RunKluTest ) Errors = TestKlu( Amat, 
 					    EpetraMatrixType,
 					    transpose, 
@@ -168,9 +169,8 @@ int TestAllClasses( const vector<string> AmesosClasses,
 					    maxrelresidual, 
 					    NumTests ) ;
   
-	errors += Errors ;
 	if ( Amat->Comm().MyPID() == 0 && Errors ) 
-	  cout << " FAILURE in "  // bug change to &&
+	  cout << " FAILURE in "  
 	       << __FILE__ << "::"  << __LINE__
 	       << " Amesos_Klu" 
 	       << " EpetraMatrixType = " <<  EpetraMatrixType 
@@ -195,7 +195,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
 	if ( RunSuperluTest ) {
 	  if ( verbose) cout << " Testing SUPERLU " << endl ; 
-	  errors += TestOtherClasses("Amesos_Superlu",
+	  Errors = TestOtherClasses("Amesos_Superlu",
 							 EpetraMatrixType,
 				     Amat, 
 				     transpose, 
@@ -207,6 +207,22 @@ int TestAllClasses( const vector<string> AmesosClasses,
 				     maxrelresidual, 
 				     NumTests ) ;
 	}
+	if ( Amat->Comm().MyPID() == 0 && Errors ) 
+	  cout << " FAILURE in " 
+	       << __FILE__ << "::"  << __LINE__
+	       << " Amesos_Superlu" 
+	       << " EpetraMatrixType = " <<  EpetraMatrixType 
+	       << " transpose = " <<  transpose 
+	       << " symmetric = " <<  symmetric 
+	       << " Levels = " <<  Levels 
+	       << " Diagonal = " <<  Diagonal 
+	       << " ReindexRowMap = " <<  ReindexRowMap 
+	       << " ReindexColMap = " <<  ReindexColMap 
+	       << " DomainMapType = " <<  DomainMapType 
+	       << " RangeMapType = " <<  RangeMapType 
+	       << " distribute = " <<  distribute 
+	       << " filename = " <<  filename 
+	       << " Errors = " <<  Errors << endl ;  
       } else if ( AmesosClasses[i] == "Amesos_Pastix" ) {
 	bool RunPastixTest = true;
 	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && Amat->Comm().NumProc() > 1  )  //  Bug #969
@@ -217,7 +233,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
 	if ( RunPastixTest ) {
 	  if ( verbose) cout << " Testing Pastix " << endl ; 
-	  errors += TestOtherClasses("Amesos_Pastix",
+	  Errors = TestOtherClasses("Amesos_Pastix",
 							 EpetraMatrixType,
 				     Amat, 
 				     transpose, 
@@ -240,7 +256,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
 	if ( RunParakleteTest ) {
 	  if ( verbose) cout << " Testing Paraklete " << endl ; 
-	  errors += TestOtherClasses("Amesos_Paraklete",
+	  Errors = TestOtherClasses("Amesos_Paraklete",
 							 EpetraMatrixType,
 				     Amat, 
 				     transpose, 
@@ -252,7 +268,6 @@ int TestAllClasses( const vector<string> AmesosClasses,
 				     maxrelresidual, 
 				     NumTests ) ;
 	}
-
       } else if ( AmesosClasses[i] == "Amesos_Dscpack" ) {
 	//
 	//  A quick sanity check - make sure symmetric is the same on all processes
@@ -270,7 +285,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if ( RunDscpackTest ) { 
 	  if ( verbose) cout << " Testing DSCPACK " << endl ; 
     
-	  errors += TestOtherClasses("Amesos_Dscpack",
+	  Errors = TestOtherClasses("Amesos_Dscpack",
 							 EpetraMatrixType,
 				     Amat, 
 				     transpose, 
@@ -297,7 +312,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if ( RunSuperludistTest ) { 
 	  if ( verbose) cout << " Testing Superludist " << endl ; 
   
-	  errors += TestSuperludist(Amat, 
+	  Errors = TestSuperludist(Amat, 
 							 EpetraMatrixType,
 				    transpose, 
 				    verbose, 
@@ -308,6 +323,23 @@ int TestAllClasses( const vector<string> AmesosClasses,
 				    NumTests ) ;
 	}
       }
+      if ( Amat->Comm().MyPID() == 0 && Errors ) 
+	cout << " FAILURE in "  // bug change to &&
+	     << __FILE__ << "::"  << __LINE__
+	     << " " << AmesosClasses[i] << " "  
+	     << " EpetraMatrixType = " <<  EpetraMatrixType 
+	     << " transpose = " <<  transpose 
+	     << " symmetric = " <<  symmetric 
+	     << " Levels = " <<  Levels 
+	     << " Diagonal = " <<  Diagonal 
+	     << " ReindexRowMap = " <<  ReindexRowMap 
+	     << " ReindexColMap = " <<  ReindexColMap 
+	     << " DomainMapType = " <<  DomainMapType 
+	     << " RangeMapType = " <<  RangeMapType 
+	     << " distribute = " <<  distribute 
+	     << " filename = " <<  filename 
+	     << " Errors = " <<  Errors << endl ;  
+	errors += Errors ;
     }
   }
 	  

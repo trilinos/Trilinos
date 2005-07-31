@@ -19,7 +19,8 @@ int TestOtherClasses( const char* AmesosClass,
 		      double &maxrelerror, 
 		      double &maxrelresidual,
 		      int &NumTests ) {
-  
+
+  int iam = Amat->Comm().MyPID() ;  
   int NumErrors = 0 ;
   maxrelerror = 0.0;
   maxrelresidual = 0.0;
@@ -56,7 +57,10 @@ int TestOtherClasses( const char* AmesosClass,
 					relerror, 
 					relresidual ) ; 
 
-    if (verbose) cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass << endl ; 
+    if (verbose  || ( Errors && iam==0 )  ) cout << __FILE__ << "::" << __LINE__ 
+				  << " AmesosClass= " << AmesosClass 
+				  << " Errors = " << Errors 
+				  << endl ; 
 
     if ( Errors < 0 ) {
       NumErrors++;
@@ -78,7 +82,7 @@ int TestOtherClasses( const char* AmesosClass,
 
     }
     if (verbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
-    if ( verbose && Errors > 0 ) {
+    if ( verbose && Errors ) {
       cout << AmesosClass << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
     }
@@ -109,6 +113,11 @@ int TestOtherClasses( const char* AmesosClass,
 					relresidual ) ; 
 
 
+    if (verbose  || ( Errors && iam==0 )  ) cout << __FILE__ << "::" << __LINE__ 
+				  << " AmesosClass= " << AmesosClass 
+				  << " Errors = " << Errors 
+				  << endl ; 
+
     if ( Errors < 0 ) {
       NumErrors++;
       NumTests++ ; 
@@ -129,7 +138,7 @@ int TestOtherClasses( const char* AmesosClass,
 
     }
     if (verbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
-    if ( verbose && Errors > 0 ) {
+    if ( verbose && Errors ) {
       cout << AmesosClass << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
     }
@@ -150,8 +159,6 @@ int TestOtherClasses( const char* AmesosClass,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Test 2) no fail yet " << endl ; 
-
     int Errors = PerformOneSolveAndTest(AmesosClass,
 					EpetraMatrixType,
 					Comm, 
@@ -164,7 +171,10 @@ int TestOtherClasses( const char* AmesosClass,
 					relerror, 
 					relresidual ) ; 
       
-    if ( verbose ) cout << " Test 2) no fail down here " << endl ; 
+    if (verbose  || ( Errors && iam==0 )  ) cout << __FILE__ << "::" << __LINE__ 
+				  << " AmesosClass= " << AmesosClass 
+				  << " Errors = " << Errors 
+				  << endl ; 
 
     if (Errors < 0 ) {
       if (verbose ) cout << AmesosClass << " not built in this executable " << endl ; 
@@ -183,7 +193,7 @@ int TestOtherClasses( const char* AmesosClass,
 	
     }
     if (verbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
-    if ( verbose && Errors > 0 ) {
+    if ( verbose && Errors ) {
       cout << AmesosClass << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
     }

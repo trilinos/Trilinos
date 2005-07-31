@@ -68,8 +68,8 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
-  int NumGlobalElements = 1000;
-  int NumVectors = 7;
+  int NumGlobalElements =5;
+  int NumVectors = 1;
   
   // =================== //
   // create a random map //
