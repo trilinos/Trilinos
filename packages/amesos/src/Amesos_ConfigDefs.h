@@ -77,7 +77,7 @@
 // prints out an error message if variable is not zero,
 // and return this value.
 #define AMESOS_CHK_ERR(amesos_err) \
-{ if (amesos_err < 0) { \
+{ if (amesos_err != 0) { \
   std::cerr << "AMESOS ERROR " << amesos_err << ", " \
     << __FILE__ << ", line " << __LINE__ << std::endl; \
     return(amesos_err);  } }
@@ -85,7 +85,7 @@
 // prints out an error message if variable is not zero,
 // returns void
 #define AMESOS_CHK_ERRV(amesos_err) \
-{ if (amesos_err < 0) { \
+{ if (amesos_err != 0) { \
   std::cerr << "AMESOS ERROR " << amesos_err << ", " \
     << __FILE__ << ", line " << __LINE__ << std::endl; \
     return;  } }
@@ -94,7 +94,7 @@
 // returns void
 #define AMESOS_RETURN(amesos_err) \
 { \
-  if (amesos_err < 0) \
+  if (amesos_err != 0) \
     std::cerr << "AMESOS ERROR " << amesos_err << ", " \
       << __FILE__ << ", line " << __LINE__ << std::endl; \
   return(amesos_err);  }

@@ -153,7 +153,8 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
 	Teuchos::ParameterList ParamList;
 	if ( ReindexRowMap != 0 )  ParamList.set( "Reindex", true );
-
+	if ( ( RangeMapType != 0 || DomainMapType != 0 || distribute ) ) 
+	  ParamList.set( "DontTrustMe", true );
 	int Errors = 0 ; 
 	if ( RunKluTest ) Errors = TestKlu( Amat, 
 					    EpetraMatrixType,
@@ -168,20 +169,22 @@ int TestAllClasses( const vector<string> AmesosClasses,
 					    NumTests ) ;
   
 	errors += Errors ;
-	if ( Amat->Comm().MyPID() == 0 && Errors ) cout << " FAILURE in "  // bug change to &&
-			   << __FILE__ << "::"  << __LINE__
-			   << " EpetraMatrixType = " <<  EpetraMatrixType 
-			   << " transpose = " <<  transpose 
-			   << " symmetric = " <<  symmetric 
-			   << " Levels = " <<  Levels 
-			   << " Diagonal = " <<  Diagonal 
-			   << " ReindexRowMap = " <<  ReindexRowMap 
-			   << " ReindexColMap = " <<  ReindexColMap 
-			   << " DomainMapType = " <<  DomainMapType 
-			   << " RangeMapType = " <<  RangeMapType 
-			   << " distribute = " <<  distribute 
-			   << " filename = " <<  filename 
-			   << " Errors = " <<  Errors << endl ;  
+	if ( Amat->Comm().MyPID() == 0 && Errors ) 
+	  cout << " FAILURE in "  // bug change to &&
+	       << __FILE__ << "::"  << __LINE__
+	       << " Amesos_Klu" 
+	       << " EpetraMatrixType = " <<  EpetraMatrixType 
+	       << " transpose = " <<  transpose 
+	       << " symmetric = " <<  symmetric 
+	       << " Levels = " <<  Levels 
+	       << " Diagonal = " <<  Diagonal 
+	       << " ReindexRowMap = " <<  ReindexRowMap 
+	       << " ReindexColMap = " <<  ReindexColMap 
+	       << " DomainMapType = " <<  DomainMapType 
+	       << " RangeMapType = " <<  RangeMapType 
+	       << " distribute = " <<  distribute 
+	       << " filename = " <<  filename 
+	       << " Errors = " <<  Errors << endl ;  
       } else if ( AmesosClasses[i] == "Amesos_Superlu" ) {
 	bool RunSuperluTest = true;
 	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && Amat->Comm().NumProc() > 1  )  //  Bug #969

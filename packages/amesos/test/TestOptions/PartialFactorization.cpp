@@ -162,6 +162,9 @@ int PartialFactorization( const char* AmesosClass,
 			  Epetra_CrsMatrix *& Amat, 
 			  double Rcond ) {
 
+  double relerror = 0 ; 
+  double relresidual = 0 ; 
+
   for( int i =0 ; i < MaxNumSteps ; i ++ ) {
     string AC = AmesosClass ; 
 
@@ -173,14 +176,14 @@ int PartialFactorization( const char* AmesosClass,
     //  Hence we do not test Amesos_Dscpack with 3 or more steps here.
     //    if ( AC != "Amesos_Dscpack" || i < 3 ) { 
     {
-      PartialFactorizationOneStep( AmesosClass,
-				   Comm, 
-				   transpose, 
-				   verbose, 
-				   ParamList, 
-				   Amat, 
-				   Rcond,
-				   i ) ;
+      OUR_CHK_ERR( PartialFactorizationOneStep( AmesosClass,
+						   Comm, 
+						   transpose, 
+						   verbose, 
+						   ParamList, 
+						   Amat, 
+						   Rcond,
+						   i ) ) ;
     }
   }
   return(0);

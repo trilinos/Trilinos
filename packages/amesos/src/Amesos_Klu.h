@@ -180,20 +180,17 @@ private:
   CreateLocalMatrixAndExporters - Prepare to convert matrix and vectors to serial 
     Preconditions:
       Problem_ must be set 
-      SerialMap and SerialCrsMatrix must either be 0 or be pointers to 
-        appropriatly allocate objects.  If they are non-zero, those objects
-	will be deleted (and possibly recreated).  
 	
     Postconditions:
       UseDataInPlace_ is set to 1 if the input matrix can be used in place, i.e.
         1)  is entirely stored on process 0
-        2)  is storage optimized
-        3)  AddToDiag_ is not set
-      SerialMap points to a serial map if UseDataInPlace_==1
-      SerialCrsMatrix contains a serial version of the matrix A if UseDataInPlace_==1
-      SerialMatrix points to a serial copy of the matrix
-      NumGlobalElements_   is set to the number of rows in the matrix
-      numentries_ is set to the number of non-zeroes in the matrix 
+        2)  range map and domain map are same as the row map
+      The following are only set if (! UseDataInPlace_ )"
+        SerialMap_ 
+	ImportToSerial_
+	SerialCrsMatrixA_ 
+
+      SerialMatrix_ 
    */
   int CreateLocalMatrixAndExporters() ;
   /*
@@ -201,18 +198,16 @@ private:
     Preconditions:
        UseDataInPlace_ must be set
        ImportToSerial and SerialCrsMatrixA_ must be set if UseDataInPlace_ != 1
-       AddToDiag_ 
     Postconditions
        SerialMatrix_ points to a serial version of the matrix
-         With AddToDiag_ added to the diagonal if AddToDiag_ is non-zero 
    */
   int ExportToSerial() ;
   /*
     ConvertToKluCRS - Convert matrix to form expected by Klu: Ai, Ap, Aval
     Preconditions:
-      numentries_, NumGloalElements_ and SerialMatrix_ must be set.
+      numentries_, RowMatrixA_, ImportToSerial_, StdIndexMatrix_, Reindex_ 
     Postconditions:
-      Ai, Ap, and Aval piont to a compressed row storage version of the input matrix A.
+      SerialCrsMatrixA_
   */
   int ConvertToKluCRS(bool firsttime);     
 
@@ -246,15 +241,13 @@ private:
 
   // @}
   
-  //! Creates SerialMap_
-  int CreateSerialMap();
-
+  int SerialXlda_ ;
   int *Lp, *Li, *Up, *Ui, *P ;	
   double *Lx, *Ux ;
   //
   //  KSS - I hope to convert both of these to teuchos RefCountPtrs  bug #1501
   //
-  Amesos_Klu_Pimpl *PrivateKluData_; 
+  Teuchos::RefCountPtr<Amesos_Klu_Pimpl> PrivateKluData_; 
   Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndex_; 
   Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndexRange_; 
   Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndexDomain_; 
@@ -298,6 +291,22 @@ private:
   Epetra_MultiVector* StdIndexRangeVector_ ; 
   //! Points to a Serial Copy of A 
   Epetra_RowMatrix* SerialMatrix_ ; 
+
+  //! If \c true, no checks are made and the matrix is assume to be distributed 
+  //  serially, StorageOptimized, the LHS and RHS are assumed to be available 
+  //  when SymbolicFactorization is called and not to change (address or number
+  //  of vectors) thereafter.  
+  bool TrustMe_;
+  //! Number of vectors in RHS and LHS
+  int NumVectors_; 
+  //! Pointer to the actual values in the serial version of X and B
+  double *SerialXBvalues_ ;
+  //! Serial versions of the LHS and RHS (may point to the original vector if serial)
+  Epetra_MultiVector* SerialB_ ;
+  Epetra_MultiVector* SerialX_ ;
+  //! Serial versions of the LHS and RHS (if necessary)
+  Teuchos::RefCountPtr<Epetra_MultiVector> SerialXextract_;
+  Teuchos::RefCountPtr<Epetra_MultiVector> SerialBextract_;
 
   //! If \c true, the transpose of A is used.
   bool UseTranspose_;

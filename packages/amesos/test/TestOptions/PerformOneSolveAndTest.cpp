@@ -75,11 +75,10 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 			    double& relresidual )
 {
 
+  bool TrustMe = ParamList.get( "TrustMe", false );
 
   RefCountPtr<Epetra_CrsMatrix> MyMat ; 
   RefCountPtr<Epetra_CrsMatrix> MyMatWithDiag ; 
-
-  PartialFactorization( AmesosClass, Comm, transpose, verbose, ParamList, InMat, Rcond );
 
   MyMat = rcp( new Epetra_CrsMatrix( *InMat ) ); 
 
@@ -98,8 +97,16 @@ int PerformOneSolveAndTest( const char* AmesosClass,
   case 2:
     MyMat->OptimizeStorage(); 
     MyRowMat = &*MyMat ; 
+    bool OptStorage = MyMat->StorageOptimized();
+    assert( OptStorage) ; 
     break;
   }
+  bool OptStorage = MyMat->StorageOptimized();
+  
+  Epetra_CrsMatrix* MatPtr = &*MyMat ;
+
+  OUR_CHK_ERR ( PartialFactorization( AmesosClass, Comm, transpose, verbose, 
+				      ParamList, MatPtr, Rcond ) );
 
   if (ParamList.isParameter("AddToDiag")) { 
     //
@@ -152,6 +159,9 @@ int PerformOneSolveAndTest( const char* AmesosClass,
   Epetra_Vector sAAx(*DomainMap);
   Epetra_Vector kAAx(*DomainMap);
 
+  Epetra_Vector FixedLHS(*DomainMap);
+  Epetra_Vector FixedRHS(*RangeMap);
+
   Epetra_Vector b(*RangeMap);
   Epetra_Vector bcheck(*RangeMap);
 
@@ -188,6 +198,12 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     if (verbose) ParamList.set( "DebugLevel", 1 );
     if (verbose) ParamList.set( "OutputLevel", 1 );
     OUR_CHK_ERR( Abase->SetParameters( ParamList ) ); 
+
+    if ( TrustMe ) {
+      Problem.SetLHS( &FixedLHS );
+      Problem.SetRHS( &FixedRHS );
+      assert( OptStorage) ;
+    }
     OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
 
@@ -247,21 +263,30 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     //
     //  Solve A sAAx = b 
     //
-    Problem.SetLHS( &sAAx );
-    Problem.SetRHS( &b );
+    if ( TrustMe ) { 
+      FixedRHS = b;
+    } else { 
+      Problem.SetLHS( &sAAx );
+      Problem.SetRHS( &b );
+    }
 
 
     OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
     OUR_CHK_ERR( Abase->SymbolicFactorization(  ) );     // This should be irrelevant, but should nonetheless be legal 
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
     OUR_CHK_ERR( Abase->Solve(  ) ); 
+    if ( TrustMe ) sAAx = FixedLHS ; 
     if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 
     if ( Levels >= 2 ) 
       {
         OUR_CHK_ERR( Abase->SetUseTranspose( transpose ) ); 
-	Problem.SetLHS( &sAx );
-	Problem.SetRHS( &sAAx );
+	if ( TrustMe ) { 
+	  FixedRHS = sAAx ;
+	} else { 
+	  Problem.SetLHS( &sAx );
+	  Problem.SetRHS( &sAAx );
+	}
 	val[0] =  Value ; 
 	if ( MyMat->MyGRID( 0 ) )
 	  MyMat->SumIntoMyValues( 0, 1, val, ind ) ; 
@@ -271,6 +296,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	//      We do not presently handle null lists.
 	//	OUR_CHK_ERR( Abase->SetParameters( *NullList ) );   // Make sure we handle null lists 
 	OUR_CHK_ERR( Abase->Solve(  ) ); 
+	if ( TrustMe ) sAx = FixedLHS ; 
 	if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 	
       }
@@ -281,9 +307,14 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 
     if ( Levels >= 3 ) 
       {
-	Problem.SetLHS( &x );
-	Problem.SetRHS( &sAx );
+	if ( TrustMe ) { 
+	  FixedRHS = sAx ;
+	} else { 
+	  Problem.SetLHS( &x );
+	  Problem.SetRHS( &sAx );
+	}
 	OUR_CHK_ERR( Abase->Solve(  ) ); 
+	if ( TrustMe ) x = FixedLHS ;
 	if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
       }
     else
@@ -401,157 +432,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	errors += 1 ; 
       }
     }
-
-
-    //  #define FACTOR_B
-#ifdef FACTOR_B
-
-
-    garbage;
-
-    //
-    //  Now we check to make sure that we can change the problem and 
-    //  re-factorize.  
-    //
-
-
-
-
-    int BNumPoints;
-    const Epetra_Map* BMap ; 
-    string Aclass = AmesosClass ;
-    const bool AllowDiffProbSize = ( Aclass != "Amesos_Superludist" ) ;
-    if ( AllowDiffProbSize ) { 
-      BNumPoints = 6;  // Must be between 2 and 100 (on large matrices,
-      // the problem is quite ill-conditioned) 
-    
-      // Construct a Map that puts approximately the same number of 
-      // equations on each processor.
-      BMap = new Epetra_Map(BNumPoints, 0, Comm);
-    }  else {
-      BMap = Map ;
-      BNumPoints = BMap->NumGlobalElements();
-    }
-    
-      
-    //  Create an empty EpetraCrsMatrix 
-    Epetra_CrsMatrix B(Copy, (*BMap), 0);
-
-    //
-    //  Populate A with a [-1,2,-1] tridiagonal matrix WITH -1 in the
-    //  off diagonal corners.
-    //  See CreateTridi.cpp in this directory 
-    CreateTridiPlus( B ) ; 
-
-    Epetra_Vector Bx2((*BMap)), Bx1((*BMap)), Bx((*BMap)), Bb((*BMap)), Bresidual((*BMap)), Btemp((*BMap));
-
-    //
-
-    //
-    //  Factor B
-    //
-    Problem.SetOperator( &B );
-    OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
-    OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
-
-    Bb.Random();
-    Bb.PutScalar(1.0);
-    //
-    //  Solve B x = b 
-    //
-    Problem.SetLHS( &Bx );
-    Problem.SetRHS( &Bb );
-    OUR_CHK_ERR( Abase->Solve(  ) ); 
-
-    ind[0] = 0;
-    val[0] = 1 ; 
-    if ( B.MyGRID( 0 ) )
-      B.SumIntoMyValues( 0, 1, val, ind ) ; 
-
-    //  if (verbose) cout << " B' = " << B << endl ; 
-    OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
-
-    //
-    //  Solve B' x1 = x 
-    //
-    Problem.SetLHS( &Bx1 );
-    Problem.SetRHS( &Bx );
-    OUR_CHK_ERR( Abase->Solve(  ) ); 
-
-    if ( B.MyGRID( 0 ) )
-      B.SumIntoMyValues( 0, 1, val, ind ) ; 
-
-    //  if (verbose) cout << " B'' = " << B << endl ; 
-    OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
-
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
-    //
-    //  Solve B" x2 = x1
-    //
-    Problem.SetLHS( &Bx2 );
-    Problem.SetRHS( &Bx1 );
-    OUR_CHK_ERR( Abase->Solve(  ) ); 
-
-    //
-    //  Compute the residual: B B' B" x2 - b
-    //
-
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
-    B.Multiply( transpose, Bx2, Btemp ) ; //  temp = B x2
-
-    //  if (verbose) cout << " temp = " << temp << endl ; 
-
-    val[0] = -val[0] ; 
-    if ( B.MyGRID( 0 ) )
-      B.SumIntoMyValues( 0, 1, val, ind ) ; 
-    B.Multiply( transpose, Btemp, Bx2 ) ; //  x2 = B' B" x2
-
-
-
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
-    //  if (verbose) cout << " x2 = " << x2 << endl ; 
-
-
-    if ( B.MyGRID( 0 ) )
-      B.SumIntoMyValues( 0, 1, val, ind ) ; 
-    B.Multiply( transpose, Bx2, Btemp ) ; //  temp = B B' B'' x2
-
-
-    //  if (verbose) cout << " temp = " << temp << endl ; 
-    //  if (verbose) cout << " b = " << b << endl ; 
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
-
-
-
-
-    Bresidual.Update( 1.0, Btemp, -1.0, Bb, 0.0 ) ;
-    //  if (verbose) cout << " residual = " << residual << endl ; 
-
-    double norm_residual;
-    Bresidual.Norm2( &norm_residual ) ; 
-
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
-    if (iam == 0 ) {
-      if (verbose) cout << " norm2(B B' B'' x-b) = " << norm_residual << endl ; 
-      //
-      //  This is an ill-conditioned problem
-      //
-      if ( norm_residual < (1e-15)*(1.0*BNumPoints*BNumPoints*BNumPoints*
-				    BNumPoints*BNumPoints*BNumPoints) ) {
-	if (verbose) cout << " Test 2 Passed " << endl ;
-      } else {
-	cout 
-	  << __FILE__ << "::"  << __LINE__ 
-	  << " TEST 2 FAILED " << endl ;
-	errors += 1 ; 
-      }
-    }
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
-    if ( AllowDiffProbSize ) {
-      delete BMap;
-    }
-#endif
 
     delete Abase;
   }

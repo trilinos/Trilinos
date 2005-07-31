@@ -35,13 +35,15 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
   maxrelresidual = 0.0;
   const Epetra_Comm& Comm = Amat->Comm();
 
+  if ( verbose ) ParamList.set( "DebugLevel", 1 );
+  if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
+  else ParamList.set( "OutputLevel", 1 );
+
   //
   //     1)  no parameters
 
   {
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
-    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 1 );
+    Teuchos::ParameterList InternalParamList = ParamList ; 
       
     double relerror;
     double relresidual;
@@ -51,7 +53,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					Comm, 
 					transpose, 
 					verbose,
-					ParamList, 
+					InternalParamList, 
 					Amat, 
 					Levels,
 					Rcond, 
@@ -89,10 +91,12 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     }
   }
 
+  //
+  //     2)  Refactorize = true 
   {
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
-    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 1 );
+    Teuchos::ParameterList InternalParamList = ParamList ; 
+
+    InternalParamList.set( "Refactorize", true );
       
     double relerror;
     double relresidual;
@@ -102,15 +106,14 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					Comm, 
 					transpose, 
 					verbose,
-					ParamList, 
+					InternalParamList, 
 					Amat, 
 					Levels,
 					Rcond, 
 					relerror, 
 					relresidual ) ; 
-
       
-    if ( Amat->Comm().MyPID() == 0 && Errors ) {
+    if (  Amat->Comm().MyPID() == 0 && Errors ) {
       cout << __FILE__ << "::"  << __LINE__ 
 	   << "Amesos_Klu failed with error code " << Errors<< endl ; 
       }
@@ -124,29 +127,31 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestKlu 2nd relresidual = " <<relresidual << endl ; 
+      if (verbose) cout << " TestKlu relresidual = " <<relresidual << endl ; 
       if (verbose) cout << " TestKlu relerror = " << relerror << endl ; 
       if (verbose) cout << " TestKlu maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestKlu 2nd maxrelerror = " << maxrelerror << endl ; 
+      if (verbose) cout << " TestKlu maxrelerror = " << maxrelerror << endl ; 
 	
     }
     if (verbose)  cout << " TestKlu NumErrors = " << NumErrors << endl ; 
     if (  Amat->Comm().MyPID() == 0 && Errors > 0 ) {
-      cout 
-	<< __FILE__ << "::"  << __LINE__ 
+      cout << "Amesos_Klu" 
+	   << __FILE__ << "::"  << __LINE__ 
 	   << " Errors = " <<  Errors 
-	<< "Amesos_Klu" << " failed with transpose = " << 
+	   << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
     }
   }
-
   //
-  //     2)  Refactorize = true 
-  {
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
-    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 1 );
-    ParamList.set( "Refactorize", true );
+  //     2a) TrustMe = true 
+  //         Note:  Requires Optimized Storage (i.e. EpetraMatrixType == 2 ) 
+  //                and does not support reindexing
+  bool ReIndex = ParamList.get( "Reindex", false );
+  bool DontTrustMe = ParamList.get( "DontTrustMe", false );
+  if ( EpetraMatrixType == 2 && ! ReIndex && ! DontTrustMe ) {
+    Teuchos::ParameterList InternalParamList = ParamList ; 
+
+    InternalParamList.set( "TrustMe", true );
       
     double relerror;
     double relresidual;
@@ -156,7 +161,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					Comm, 
 					transpose, 
 					verbose,
-					ParamList, 
+					InternalParamList, 
 					Amat, 
 					Levels,
 					Rcond, 
@@ -195,11 +200,9 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
   //
   //     2A)  AddToDiag 
   if (RowMapEqualsColMap ) {
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
-    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 1 );
-    ParamList.set( "Refactorize", true );
-    ParamList.set( "AddToDiag", 1e-2 );
+    Teuchos::ParameterList InternalParamList = ParamList ; 
+    InternalParamList.set( "Refactorize", true );
+    InternalParamList.set( "AddToDiag", 1e-2 );
 
     double relerror;
     double relresidual;
@@ -209,7 +212,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					Comm, 
 					transpose, 
 					verbose,
-					ParamList, 
+					InternalParamList, 
 					Amat, 
 					Levels,
 					Rcond, 
@@ -262,7 +265,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					Comm, 
 					transpose, 
 					verbose,
-					ParamList, 
+					InternalParamList, 
 					Amat, 
 					Levels,
 					Rcond, 
@@ -314,7 +317,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					Comm, 
 					transpose, 
 					verbose,
-					ParamList, 
+					InternalParamList, 
 					Amat, 
 					Levels,
 					Rcond, 

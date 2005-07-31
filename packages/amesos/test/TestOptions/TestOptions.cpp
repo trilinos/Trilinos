@@ -264,8 +264,8 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
   //
   //  These tests are all disabled in TestAllClasses.cpp
   //
-  const int RowindexMax = 3;   // should be three ( 1 based, 3 based, non contiguous )
-  const int ColindexMax = 2;   // should be two:  ( row map, 4 based )
+  const int RowindexMax = 3;   // bug should be three ( 1 based, 3 based, non contiguous )
+  const int ColindexMax = 2;   // bug should be two:  ( row map, 4 based )
 
   //
   //  Rangemap and Domainmap control the Range and Domain maps used in the call to FillComplete
@@ -274,8 +274,8 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
   //
   //  These tests are all disabled in TestAllClasses.cpp
   //
-  int RangemapMax = 4; // should be four:  ( no change, serial, bizarre dist, replicated )
-  int DomainmapMax = 4; // should be four:  ( no change, serial, bizarre dist, replicated )
+  int RangemapMax = 4; // bug should be four:  ( no change, serial, bizarre dist, replicated )
+  int DomainmapMax = 4; // bug should be four:  ( no change, serial, bizarre dist, replicated )
 
   //
   //  DiagonalOpts controls whether diagonal elements are left alone,
