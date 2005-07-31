@@ -84,7 +84,7 @@ int CompareBlockOverlap(CrsMatrixGallery& Gallery, int Overlap)
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
   AztecOOSolver.SetPrecOperator(&Prec);
 
-  AztecOOSolver.Iterate(1550,1e-8);
+  AztecOOSolver.Iterate(1550,1e-5);
 
   return(AztecOOSolver.NumIters());
 }
@@ -123,7 +123,7 @@ int CompareBlockSizes(string PrecType,
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
   AztecOOSolver.SetPrecOperator(&Prec);
 
-  AztecOOSolver.Iterate(1550,1e-8);
+  AztecOOSolver.Iterate(1550,1e-5);
 
   return(AztecOOSolver.NumIters());
 }
@@ -170,7 +170,7 @@ bool ComparePointAndBlock(string PrecType,
       AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Point);
 
-    AztecOOSolver.Iterate(1550,1e-8);
+    AztecOOSolver.Iterate(1550,1e-5);
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     ItersPoint = AztecOOSolver.NumIters();
@@ -202,7 +202,7 @@ bool ComparePointAndBlock(string PrecType,
       AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Block);
 
-    AztecOOSolver.Iterate(1550,1e-8);
+    AztecOOSolver.Iterate(1550,1e-5);
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     ItersBlock = AztecOOSolver.NumIters();
@@ -266,7 +266,7 @@ bool KrylovTest(string PrecType,
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Point);
 
-    AztecOOSolver.Iterate(1550,1e-8);
+    AztecOOSolver.Iterate(1550,1e-5);
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     // some output
@@ -291,7 +291,7 @@ bool KrylovTest(string PrecType,
     AztecOOSolver.SetAztecOption(AZ_solver,Solver);
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Point);
-    AztecOOSolver.Iterate(1550,1e-8);
+    AztecOOSolver.Iterate(1550,1e-5);
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     // some output
