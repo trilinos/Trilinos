@@ -159,6 +159,11 @@ using namespace std;
 
 #endif /*HAVE_CONFIG_H*/
 
+/* Define some macros */
+#define ANASAZI_MAX(x,y) (( (x) > (y) ) ? (x)  : (y) )     /* max function  */
+#define ANASAZI_MIN(x,y) (( (x) < (y) ) ? (x)  : (y) )     /* min function  */
+#define ANASAZI_SGN(x)   (( (x) < 0.0 ) ? -1.0 : 1.0 )     /* sign function */
+
 /*
  * Anasazi_Version() method 
  */

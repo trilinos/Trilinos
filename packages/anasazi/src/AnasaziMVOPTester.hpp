@@ -866,7 +866,7 @@ namespace Anasazi {
         }
         return Failed;
       }
-      for (i=0; i<min(p,q); i++) {
+      for (i=0; i<ANASAZI_MIN(p,q); i++) {
         if ( SCT::magnitude(iprods[i]) 
              > SCT::magnitude(normsB[i]*normsC[i]) ) {
           if ( om->isVerbosityAndPrint(Warning) ) {
