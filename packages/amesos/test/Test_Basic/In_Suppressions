@@ -645,3 +645,20 @@
    fun:MPI_Comm_split
    fun:blacs_gridmap__
 }
+
+{
+   <Taucs memory leak bug #1580 >
+   Memcheck:Addr4
+   fun:recursive_multifrontal_supernodal_factor_llt
+   fun:recursive_multifrontal_supernodal_factor_llt_caller
+   fun:taucs_dccs_factor_llt_numeric
+   fun:taucs_ccs_factor_llt_numeric
+}
+{
+   <superludist memory leak #3 bug #1459 >
+   Memcheck:Leak
+   fun:malloc
+   fun:at_plus_a_dist
+   fun:get_perm_c_dist
+   fun:pdgssvx
+}
