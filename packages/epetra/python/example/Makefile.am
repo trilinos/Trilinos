@@ -43,7 +43,8 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = setpath.py exSimple.py exCrsMatrix.py exImportExport.py
+EXTRA_DIST = setpath.py exSimple.py exCrsMatrix_Easy.py \
+             exCrsMatrix_Efficient.py exImportExport.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -51,7 +52,8 @@ EXTRA_DIST = setpath.py exSimple.py exCrsMatrix.py exImportExport.py
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of examples
-EXAMPLE_SUITE = exSimple exCrsMatrix exImportExport
+EXAMPLE_SUITE = exSimple exCrsMatrix_Easy exCrsMatrix_Efficient \
+                exImportExport
 
 SETPATH_PY = setpath.py
 
