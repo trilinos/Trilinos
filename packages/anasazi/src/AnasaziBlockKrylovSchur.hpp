@@ -173,6 +173,7 @@ namespace Anasazi {
     // Counters
     //
     int _count_ApplyOp;
+
     // Information obtained from the eigenproblem
     Teuchos::RefCountPtr<OP> _Op;
     Teuchos::RefCountPtr<OP> _MOp;
@@ -305,7 +306,7 @@ namespace Anasazi {
         _os <<"Computed Eigenvalues: "<<endl;
       } 
       else {
-        if (_exit_flg && _iter != _maxBlocks+_restarts*(_maxBlocks-_nevblock)) {
+        if (_exit_flg) {
           _os <<"ERROR: Complete orthogonal basis could not be computed"<<endl;
         }
         else if (_error_flg) {
@@ -655,10 +656,14 @@ namespace Anasazi {
           _numRestarts++;
           _isdecompcurrent = false;
         }
+	//
         // Output current information if necessary
         if (_om->isVerbosity( IterationDetails )) {
           currentStatus();
         }
+	//
+	// Check for convergence, return if converged
+	if (_schurerror < _residual_tolerance) { return; }
       }
     }
   }
@@ -1498,11 +1503,6 @@ namespace Anasazi {
         //
         Teuchos::SerialDenseMatrix<int,ScalarType> sub_block_b2(Teuchos::View, sub_block_b, _blockSize, _nev);
         _schurerror = sub_block_b2.normFrobenius();
-        //
-        // Determine whether we need to continue with the computations.
-        //
-        if (_schurerror < _residual_tolerance )
-          _exit_flg = true;
       }
       if (apply) {
         //
