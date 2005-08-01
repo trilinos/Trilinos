@@ -300,7 +300,8 @@ SWIG_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir) \
 EXTRA_DIST = Epetra.i setup.py \
 	     Epetra_NumPyVector.cpp FileStream.h      NumPyWrapper.h    \
 	     Epetra_NumPyVector.h   NumPyArray.cpp    numeric_include.h \
-	     Epetra_PyOperator.h    NumPyArray.h
+	     Epetra_PyOperator.h    NumPyArray.h                        \
+	     Epetra_PyRowMatrix.h   NumPyWrapper.cpp
 
 
 # Currently, this temporary directory is required to be present for the
@@ -472,7 +473,6 @@ include $(DEPDIR)/dummy $(DEPFILES)
 %_wrap.cpp: $(srcdir)/%.i
 	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
 	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
-	     Epetra_PyRowMatrix.h   NumPyWrapper.cpp
 
 # Default make target
 all-am: build
