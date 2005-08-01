@@ -180,7 +180,7 @@ $mpigo 2 amesos_test.exe SUPERLU   ImpcolE.rua 1 1 6 0 1e-9  1e-10  >>SST.stdout
 #
 #  Test multiple right hand sides with distributed matrix input
 #
-tion $mpigo 1 amesos_test.exe SUPERLU   ImpcolC.rua 1 1 -2 0 1e-12 1e-13 >>SST.stdout
+$mpigo 1 amesos_test.exe SUPERLU   ImpcolC.rua 1 1 -2 0 1e-12 1e-13 >>SST.stdout
 $mpigo 5 amesos_test.exe SUPERLU   ImpcolD.rua 1 1 -3 1 1e-12 5e-13  >>SST.stdout
 $mpigo 5 amesos_test.exe SUPERLU   ImpcolD.rua 1 1 -3 0 1e-12 5e-13  >>SST.stdout
 $mpigo 2 amesos_test.exe SUPERLU   ImpcolE.rua 1 1 -1 0 1e-9  1e-10  >>SST.stdout
