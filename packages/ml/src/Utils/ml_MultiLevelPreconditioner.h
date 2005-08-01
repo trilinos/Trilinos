@@ -351,7 +351,7 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
   int ReComputePreconditioner();
 
   //! Print the individual operators in the multigrid hierarchy.
-  void Print();
+  void Print(const char *whichHierarchy = "main");
 
   int ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
                                     double* TentativeNullSpace);
