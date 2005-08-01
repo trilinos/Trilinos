@@ -1,7 +1,8 @@
  \documentclass[12pt,relax]{AztecOOUserGuide}
  \usepackage{fancyvrb}
 \SANDsubtitle{}
-\title{\AztecOOTM{} User Guide}
+\title{\AztecOOTM{} User Guide\footnote{For \AztecOOTM{} Version 3.4 in \TrilinosTM{} Release
+6.0}}
 
 \author{Michael A. Heroux}
 
@@ -11,7 +12,7 @@
 
 
 \SANDnum{SAND2004-3796}
-\SANDprintDate{Printed July 2004}
+\SANDprintDate{Updated August 2005}
 \SANDauthor{Michael A. Heroux \\
     Computational Mathematics and Algorithms Department \\
      Sandia National Laboratories \\
@@ -746,11 +747,20 @@ SetAztecParam() method: \vspace{2em}
    component of the weight vector is stored in the location
    {\it params}[{\sf AZ\_weights}+i].}
 \optionbox{params[{\sf AZ\_rthresh}]}{Parameter used to modify the
-diagonal entries of the matrix that is used to compute any of the
-incomplete factorization preconditioners. When {\it params}[{\sf AZ\_omega}] is set to zero, RILU
-   corresponds to ILU(k). When it is set to one, RILU corresponds to
-   MILU(k) where k is given by {\it options}[{\sf AZ\_graph\_fill}].
-   \cite{milu}\\ DEFAULT: 1.}
+relative magnitude of the diagonal entries of the matrix that is
+used to compute any of the incomplete factorization preconditioners.
+When {\it params}[{\sf AZ\_rthresh}] is set to zero, no relative perturbation is performed.
+See Section~\ref{Sect:DiagonalPerturbations} and the discussion of
+{\it params}[{\sf AZ\_athresh}] for more information.\\
+DEFAULT: 0.0}
+\optionbox{params[{\sf AZ\_athresh}]}{Parameter used
+to modify the absolute magnitude of the diagonal entries of the
+matrix that is used to compute any of the incomplete factorization
+preconditioners. When {\it params}[{\sf AZ\_athresh}] is set to
+zero, no absolute perturbation is performed. See
+Section~\ref{Sect:DiagonalPerturbations} and the discussion of
+{\it params}[{\sf AZ\_rthresh}] for more information.\\
+DEFAULT: 0.0}
 
 \subsection{ParameterList Interface\label{parameterlist}}
 The AztecOO method SetParameters() allows options and parameters to be set
@@ -841,13 +851,13 @@ The contents of {\it status} are described below.  \vspace{2em}
  the current computed solution as an initial guess.
 
 \section{Diagonal Perturbations and Incomplete Factorizations}
-
-One of the new features in AztecOO that was not part of Aztec 2.1 is
-the ability compute incomplete factorizations of perturbed systems.
-One attribute of coupled multi-physics problems is
-that incomplete factorizations can be difficult to compute,
-even if the original matrix $A$ is well-conditioned.  A few sources of
-difficulty are:
+\label{Sect:DiagonalPerturbations}
+ One of the new features in AztecOO
+that was not part of Aztec 2.1 is the ability compute incomplete
+factorizations of perturbed systems. One attribute of coupled
+multi-physics problems is that incomplete factorizations can be
+difficult to compute, even if the original matrix $A$ is
+well-conditioned.  A few sources of difficulty are:
 \begin{enumerate}
 \item Zero diagonal entries.  In this case, unless fill-in occurs prior
 to dividing by the zero diagonal, or we perform some type of pivoting, the
