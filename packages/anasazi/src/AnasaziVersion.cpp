@@ -35,7 +35,7 @@
 namespace Anasazi {
 
 	string Anasazi_Version() { 
-		return("Anasazi Version 1.1 - 8/1/2005"); 
+		return("Anasazi Version 1.2d - 8/1/2005"); 
 	}
 
 } // namespace Anasazi
