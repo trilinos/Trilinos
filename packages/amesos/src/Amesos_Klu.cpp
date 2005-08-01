@@ -403,7 +403,7 @@ int Amesos_Klu::PerformSymbolicFactorization()
 //=============================================================================
 int Amesos_Klu::PerformNumericFactorization( ) 
 {
-  ResetTime();
+  if (! TrustMe_ )   ResetTime();
 
   if (MyPID_ == 0) {
 
@@ -464,7 +464,7 @@ int Amesos_Klu::PerformNumericFactorization( )
 
   }
 
-  AddTime("numeric");
+  if ( !TrustMe_ ) AddTime("numeric");
 
   return 0;
 }
@@ -515,6 +515,10 @@ int Amesos_Klu::SymbolicFactorization()
      SerialB_ = Problem_->GetRHS() ;
      SerialX_ = Problem_->GetLHS() ;
      NumVectors_ = SerialX_->NumVectors();
+     if (MyPID_ == 0) {
+       AMESOS_CHK_ERR(SerialX_->ExtractView(&SerialXBvalues_,&SerialXlda_ ));
+       AMESOS_CHK_ERR(SerialB_->ExtractView(&SerialBvalues_,&SerialXlda_ ));
+     }
   }
 
   AMESOS_CHK_ERR( ExportToSerial() );
@@ -637,17 +641,15 @@ int Amesos_Klu::Solve()
     
     ResetTime();
     if (MyPID_ == 0) {
+      AMESOS_CHK_ERR(SerialB_->ExtractView(&SerialBvalues_,&SerialXlda_ ));
       AMESOS_CHK_ERR(SerialX_->ExtractView(&SerialXBvalues_,&SerialXlda_ ));
       if (SerialXlda_ != NumGlobalElements_)
 	AMESOS_CHK_ERR(-1);
     }
   }
-  SerialX_->Scale(1.0, *SerialB_) ;    // X = B (Klu overwrites B with X)
-  if (MyPID_ == 0) {
-    AMESOS_CHK_ERR(SerialX_->ExtractView(&SerialXBvalues_,&SerialXlda_ ));
-  }
-
-  if (MyPID_ == 0) {
+  if ( MyPID_ == 0) {
+    for ( int i = 0 ; i < NumGlobalElements_ ; i++ ) 
+      SerialXBvalues_[i] = SerialBvalues_[i] ;
     if (UseTranspose()) {
       klu_btf_solve( PrivateKluData_->Symbolic_, PrivateKluData_->Numeric_,
 		     SerialXlda_, NumVectors_, &SerialXBvalues_[0] );

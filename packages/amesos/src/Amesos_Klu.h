@@ -301,6 +301,7 @@ private:
   int NumVectors_; 
   //! Pointer to the actual values in the serial version of X and B
   double *SerialXBvalues_ ;
+  double *SerialBvalues_ ;
   //! Serial versions of the LHS and RHS (may point to the original vector if serial)
   Epetra_MultiVector* SerialB_ ;
   Epetra_MultiVector* SerialX_ ;
