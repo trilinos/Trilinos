@@ -164,7 +164,8 @@ EXTRA_DIST = $(srcdir)/662_bus.rsa \
 	$(srcdir)/In_AmesosMumps.csh \
 	$(srcdir)/In_AmesosKluSerial.csh  $(srcdir)/In_AmesosSuperluSerial.csh \
 	$(srcdir)/In_AmesosUmfpackSerial.csh \
-	$(srcdir)/In_Suppressions
+	$(srcdir)/In_Suppressions \
+	$(srcdir)/In_count_coverage 
 
 clean:  clean-am
 	rm -f  662_bus_out.rsa \
@@ -201,6 +202,7 @@ clean:  clean-am
 	AmesosMumps.csh \
 	AmesosKluSerial.csh  AmesosSuperluSerial.csh \
 	AmesosUmfpackSerial.csh \
+	count_coverage \
 	Suppressions \
 	SST.* \
 	AME.* 
