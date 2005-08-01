@@ -214,6 +214,73 @@ PyObject* Finalize()
 }
 #endif
 
+PyObject * Epetra_RowMatrix_GetEntries(const Epetra_RowMatrix& Matrix,
+                                       int GlobalRow) 
+{
+  if (!Matrix.Filled())
+  {
+    cout << "Matrix not FillComplete()'d" << endl;
+    Py_INCREF(Py_None);
+    return Py_None;
+  }
+  int ierr;
+  PyObject* res;
+  PyObject* PyIndices;
+  PyObject* PyValues;
+  int NumEntries, Length;
+  Length = Matrix.MaxNumEntries();
+  vector<int>    Indices(Length);
+  vector<double> Values(Length);
+  int MyRow = Matrix.RowMatrixRowMap().LID(GlobalRow);
+  ierr = Matrix.ExtractMyRowCopy(MyRow, Length, NumEntries, &Values[0],
+                                 &Indices[0]);
+  if (ierr < 0)
+  {
+    Py_INCREF(Py_None);
+    return Py_None;
+  }
+
+  PyIndices = PyList_New(NumEntries);
+  PyValues  = PyList_New(NumEntries);
+
+  // return global indices
+  for (int i = 0 ; i < NumEntries ; ++i)
+  {
+    int GID = Matrix.RowMatrixColMap().GID(Indices[i]);
+    PyList_SetItem(PyIndices, i, PyInt_FromLong(GID));
+    PyList_SetItem(PyValues,  i, PyFloat_FromDouble(Values[i]));
+  }
+  res = PyTuple_New(2);
+  PyTuple_SetItem(res, 0, PyIndices);
+  PyTuple_SetItem(res, 1, PyValues);
+  return(res);
+}
+
+PyObject* Epetra_RowMatrix_GetEntry(Epetra_RowMatrix& Matrix, 
+                                    int GlobalRow, int GlobalCol)
+{
+  int NumEntries, Length, ierr;
+  double val = 0.0;
+  Length = Matrix.MaxNumEntries();
+  vector<int>    Indices(Length);
+  vector<double> Values(Length);
+  int MyRow = Matrix.RowMatrixRowMap().LID(GlobalRow);
+  int MyCol = Matrix.RowMatrixColMap().LID(GlobalCol);
+
+  ierr = Matrix.ExtractMyRowCopy(MyRow, Length, NumEntries, &Values[0], 
+                                 &Indices[0]);
+  if (ierr) NumEntries = 0;
+  for (int i = 0 ; i < Length ; ++i)
+  {
+    if (Indices[i] == MyCol)
+    {
+      val = Values[i];
+      break;
+    }
+  }
+  return(PyFloat_FromDouble(val));
+}
+
 extern "C" {
   // on some MAC OS X with LAM/MPI _environ() is not found,
   // need to specify -Wl,-i_environ:_fake_environ as LDFLAGS
@@ -542,8 +609,35 @@ using namespace std;
 }
 
 %extend Epetra_CrsMatrix {
-  double * __getitem__(int i) {
-    return self->operator[](i);
+  void __setitem__(PyObject* args, double val) 
+  {
+    int Row, Col;
+    if (!PyArg_ParseTuple(args, "ii", &Row, &Col)) {
+      PyErr_SetString(PyExc_IndexError, "Invalid index");
+      return;
+    }
+
+    if (self->ReplaceGlobalValues(Row, 1, &val, &Col))
+      self->InsertGlobalValues(Row, 1, &val, &Col);
+  }
+
+  PyObject* __getitem__(PyObject* args) 
+  {
+    int Row, Col;
+    if (PyInt_Check(args))
+    {
+      return(Epetra_RowMatrix_GetEntries(*self, PyLong_AsLong(args)));
+    }
+    else if (PyArg_ParseTuple(args, "ii", &Row, &Col))
+    {
+      return(Epetra_RowMatrix_GetEntry(*self, Row, Col));
+    }
+    else
+    {
+      PyErr_SetString(PyExc_IndexError, "Input argument not supported");
+      Py_INCREF(Py_None);
+      return Py_None;
+    }
   }
 
   int InsertGlobalValues(const int Row, const int Size, 
