@@ -74,18 +74,11 @@ int main(int argc, char* argv[]) {
 
 	//mpiBreakpoint(myImageID);
 
-	Tpetra::SerialPlatform<int, int> serialplatform;
-	Teuchos::RefCountPtr<Tpetra::Comm<int, int> > scomm1 = serialplatform.createScalarComm();
-#ifdef TPETRA_MPI
-	Tpetra::MpiPlatform<int, int> mpiplatform(MPI_COMM_WORLD);
-	Teuchos::RefCountPtr<Tpetra::Comm<int, int> > mcomm1 = mpiplatform.createScalarComm();
-#endif
-
 	// call the actual test routines
-	//ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
-	//ierr += unitTests<int, double>(verbose, debug, myImageID, numImages);
-	//ierr += unitTests<int, complex<double> >(verbose, debug, myImageID, numImages);
-	//ierr += unitTests<int, complex<float> >(verbose, debug, myImageID, numImages);
+	ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
+	ierr += unitTests<int, double>(verbose, debug, myImageID, numImages);
+	ierr += unitTests<int, complex<double> >(verbose, debug, myImageID, numImages);
+	ierr += unitTests<int, complex<float> >(verbose, debug, myImageID, numImages);
   
 	// finish up
 #ifdef TPETRA_MPI
