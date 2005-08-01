@@ -272,7 +272,7 @@ namespace Teuchos
 	\note This method should give parameters for good, but not optimal, performance on many currently 
 	available computers.
     */
-    int ILAENV( const int ispec, const string NAME, const string OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
+    OrdinalType ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1 = -1, const OrdinalType N2 = -1, const OrdinalType N3 = -1, const OrdinalType N4 = -1 ) const;
     //@}
 
     //@{ \name Miscellaneous Utilities.
@@ -493,7 +493,7 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
-  int LAPACK<OrdinalType, ScalarType>::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
+  OrdinalType LAPACK<OrdinalType, ScalarType>::ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1, const OrdinalType N2, const OrdinalType N3, const OrdinalType N4 ) const
   {
     return UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -581,7 +581,7 @@ namespace Teuchos
 
     // Machine characteristics.
     float LAMCH(const char CMACH) const;
-    int ILAENV( const int ispec, const string NAME, const string OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
+    OrdinalType ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1 = -1, const OrdinalType N2 = -1, const OrdinalType N3 = -1, const OrdinalType N4 = -1 ) const;
 
 
     // Miscellaneous routines.
@@ -809,15 +809,15 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
-  int LAPACK<OrdinalType, float>::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
+  OrdinalType LAPACK<OrdinalType, float>::ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1, const OrdinalType N2, const OrdinalType N3, const OrdinalType N4 ) const
   {
     unsigned int opts_length = OPTS.length();
-    string temp_NAME = "s" + NAME;
+    std::string temp_NAME = "s" + NAME;
     unsigned int name_length = temp_NAME.length();
 #if defined (INTEL_CXML)
     return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
 #else
-    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
+    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4 );
 #endif
   }
  
@@ -890,7 +890,7 @@ namespace Teuchos
 
     // Machine characteristic routines.
     double LAMCH(const char CMACH) const;
-    int ILAENV( const int ispec, const string NAME, const string OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
+    OrdinalType ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1 = -1, const OrdinalType N2 = -1, const OrdinalType N3 = -1, const OrdinalType N4 = -1 ) const;
 
     // Miscellaneous routines.
     double LAPY2(const double x, const double y) const;
@@ -1118,15 +1118,15 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
-  int LAPACK<OrdinalType, double>::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
+  OrdinalType LAPACK<OrdinalType, double>::ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1, const OrdinalType N2, const OrdinalType N3, const OrdinalType N4 ) const
   {
     unsigned int opts_length = OPTS.length();
-    string temp_NAME = "d" + NAME;
+    std::string temp_NAME = "d" + NAME;
     unsigned int name_length = temp_NAME.length();
 #if defined (INTEL_CXML)
     return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
 #else
-    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
+    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4 );
 #endif
   }
  
@@ -1190,7 +1190,7 @@ namespace Teuchos
     void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, complex<float>* v ) const;    
 
     // Machine characteristics
-    int ILAENV( const int ispec, const string NAME, const string OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
+    OrdinalType ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1 = -1, const OrdinalType N2 = -1, const OrdinalType N3 = -1, const OrdinalType N4 = -1 ) const;
 
   };
 
@@ -1361,15 +1361,15 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
-  int LAPACK<OrdinalType, complex<float> >::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
+  OrdinalType LAPACK<OrdinalType, complex<float> >::ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1, const OrdinalType N2, const OrdinalType N3, const OrdinalType N4 ) const
   {
     unsigned int opts_length = OPTS.length();
-    string temp_NAME = "c" + NAME;
+    std::string temp_NAME = "c" + NAME;
     unsigned int name_length = temp_NAME.length();
 #if defined (INTEL_CXML)
     return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
 #else
-    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
+    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4 );
 #endif
   }
 
@@ -1425,7 +1425,7 @@ namespace Teuchos
     void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, complex<double>* v ) const;    
 
     // Machine characteristics
-    int ILAENV( const int ispec, const string NAME, const string OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
+    OrdinalType ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1 = -1, const OrdinalType N2 = -1, const OrdinalType N3 = -1, const OrdinalType N4 = -1 ) const;
 
   };
 
@@ -1596,15 +1596,15 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
-  int LAPACK<OrdinalType, complex<double> >::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
+  OrdinalType LAPACK<OrdinalType, complex<double> >::ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1, const OrdinalType N2, const OrdinalType N3, const OrdinalType N4 ) const
   {
     unsigned int opts_length = OPTS.length();
-    string temp_NAME = "z" + NAME;
+    std::string temp_NAME = "z" + NAME;
     unsigned int name_length = temp_NAME.length();
 #if defined (INTEL_CXML)
     return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
 #else
-    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
+    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4 );
 #endif
   }
 

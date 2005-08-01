@@ -38,7 +38,6 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_map.hpp"
-#include <typeinfo>
 
 /*! \class Teuchos::ParameterList
     \brief The Teuchos::ParameterList class provides a templated parameter list.

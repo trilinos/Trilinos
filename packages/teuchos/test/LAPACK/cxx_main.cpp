@@ -99,8 +99,12 @@ int main(int argc, char* argv[])
     numberFailedTests++;
   }  
     
+  // Check ILAENV with similarity transformation routine:  dsytrd
+  // NOTE:  Do not need to put floating point specifier [s,d,c,z] before routine name, 
+  //        this is handled through templating.
   if (verbose) cout << "ILAENV test ... ";
-  int size = L.ILAENV(1, "dsytrd", "u", size, -1, -1, -1);
+  int n1 = 100;
+  int size = L.ILAENV(1, "sytrd", "u", n1);
   if (size > 0) {
     if (verbose) cout << "passed!" << endl;
   } else {
