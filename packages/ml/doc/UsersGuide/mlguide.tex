@@ -4,6 +4,14 @@
 \usepackage{fancyhdr, tabularx, verbatim, epsfig}
 \usepackage{amssymb,psboxit}
 \usepackage{rotating}
+\usepackage[pdftex,
+            pdfpagemode=none,
+            pdfstartview=FitH]{hyperref}
+
+\hypersetup{
+  pdfauthor = {Marzio Sala, Michael Gee, Jonathan Hu, Ray Tuminaro},
+  pdftitle = {ML 4.0 Smoothed Aggregation User's Guide}
+}
 
 \setlength{\oddsidemargin}{0.1\oddsidemargin}
 \setlength{\evensidemargin}{0.5\evensidemargin}
@@ -106,7 +114,7 @@ Printed September 2004
 \vspace{0.2in}
 
 \begin{center}
-{\Large {\bf ML 3.1 Smoothed Aggregation User's Guide}}
+{\Large {\bf ML 4.0 Smoothed Aggregation User's Guide}}
 %\footnote{ Sandia is a multiprogram laboratory operated by Sandia Corporation,
 %a Lockheed Martin Company, for the United States Department of Energy's
 %National Nuclear Security Administration under contract DE-AC04-94AL85000.}}}
@@ -120,6 +128,10 @@ Printed September 2004
 
 \vspace*{0.8in}
 Marzio  Sala \\
+Computational Math \& Algorithms \\
+Sandia National Laboratories\\
+P.O.~Box 5800 \\
+Michael Gee\\
 Computational Math \& Algorithms \\
 Sandia National Laboratories\\
 P.O.~Box 5800 \\
@@ -1847,7 +1859,7 @@ Results are as reported in figure~\ref{fig:viz:aggr}.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=12cm]{aggregate_decomposition.ps}
+\includegraphics[width=12cm]{aggregate_decomposition}
 \caption{Decomposition into aggregates. Uniform colors between blue spheres
   represent the interior of aggregates.}
 \label{fig:viz:aggr}
@@ -1917,8 +1929,8 @@ the application of the ML cycle, for equation \verb!X! at finest level.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=7cm]{before_cycle.ps} \hspace{0.5cm}
-\includegraphics[width=7cm]{after_cycle.ps}
+\includegraphics[width=7cm]{before_cycle} \hspace{0.5cm}
+\includegraphics[width=7cm]{after_cycle}
 \caption{Starting solution (left) and solution after 10 \ML~cycles (right).}
 \label{fig:viz:cycle}
 \end{figure}

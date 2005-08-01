@@ -1,6 +1,7 @@
 #
 
-TEX = latex
+#TEX = latex
+TEX = pdflatex
 
 BTEX = bibtex
 
@@ -39,14 +40,13 @@ force:
 ${PAPER}.ps:    ${PAPER}.dvi
 	dvips -Ppdf -o ${PAPER}.ps ${PAPER}
 
-${PAPER}.pdf:    ${PAPER}.ps
-	ps2pdf ${PAPER}.ps ${PAPER}.pdf
+${PAPER}.pdf:    ${PAPER}.dvi
 
 tarfile:
 	tar chvf ${PAPER}.tar Makefile ${PARTS} ${PICTURES} ${BIBFILE} ${SIAM}
 	compress ${PAPER}.tar
 
 clean:
-	/bin/rm -f *.pdf ${PAPER}.ps ${PAPER}.dj ${PAPER}.dvi *.aux *.bbl *.blg *.log *.lof *.lot *.toc *.tar *.tar.Z
+	/bin/rm -f ${PAPER}.pdf ${PAPER}.ps ${PAPER}.dj ${PAPER}.dvi *.aux *.bbl *.blg *.log *.lof *.lot *.toc *.tar *.tar.Z
 
 
