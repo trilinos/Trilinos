@@ -51,7 +51,7 @@ EXTRA_DIST = setpath.py exSimple.py
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of examples
-EXAMPLE_SUITE = exSimple
+EXAMPLE_SUITE = exSimple exPyOperator exPyRowMatrix
 
 SETPATH = setpath.py
 
