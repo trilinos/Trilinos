@@ -70,6 +70,9 @@ Finally, the following functions are avaiable in the IFPACK module:
 #include "Epetra_NumPyVector.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Operator.h"
+#include "Epetra_PyOperator.h"
+#include "Epetra_PyRowMatrix.h"
+
 #include "Teuchos_ParameterList.hpp"
 
 // Amesos includes

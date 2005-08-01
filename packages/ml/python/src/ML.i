@@ -70,6 +70,8 @@ Example of usage:
 #include "Epetra_NumPyVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_PyOperator.h"
+#include "Epetra_PyRowMatrix.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "Teuchos_ParameterList.hpp"
 

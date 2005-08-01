@@ -62,7 +62,6 @@ Cholesky preconditioner. This example can be used in serial and parallel
 environments, depending on how Trilinos was configured.
 
 from PyTrilinos import Epetra, AztecOO, Triutils
-Epetra.Init()
 Comm = Epetra.PyComm()
 Gallery = Triutils.CrsMatrixGallery(\"laplace_2d\", Comm)
 Gallery.Set(\"problem_size\", 100 * 100)
@@ -75,7 +74,6 @@ Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_dom_decomp)
 Solver.SetAztecOption(AztecOO.AZ_subdomain_solve, AztecOO.AZ_icc)
 Solver.SetAztecOption(AztecOO.AZ_output, 16)
 Solver.Iterate(1550, 1e-5)
-Epetra.Finalize()
 """
 %enddef
 
@@ -91,6 +89,8 @@ Epetra.Finalize()
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_NumPyVector.h"
+#include "Epetra_PyOperator.h"
+#include "Epetra_PyRowMatrix.h"
 
 // AztecOO includes
 #include "AztecOO.h"

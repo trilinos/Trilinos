@@ -70,6 +70,8 @@ The most important classes of the EpetraExt module are:
 #include "Epetra_IntVector.h"
 #include "Epetra_MapColoring.h"
 #include "Epetra_NumPyVector.h"
+#include "Epetra_PyOperator.h"
+#include "Epetra_PyRowMatrix.h"
 
 // EpetraExt includes
 #include "EpetraExt_Version.h"

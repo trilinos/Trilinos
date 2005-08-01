@@ -77,6 +77,8 @@ For examples of usage, please consult the python/example subdirectory.
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_DataAccess.h"
+#include "Epetra_PyOperator.h"
+#include "Epetra_PyRowMatrix.h"
 
 // Local includes
 #include "Epetra_NumPyVector.h"
