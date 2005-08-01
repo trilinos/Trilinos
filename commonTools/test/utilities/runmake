@@ -426,7 +426,7 @@ exit $exitStatus;
         # beginning of the list.  Grab the last instance of "built
         # successfully" output string.
         my $lastSuccessfulPackage = "first";
-        $makeOutput =~ m/.*^Trilinos package (\w*?) built successfully/ms;        
+        $makeOutput =~ m/.*Trilinos package (\w*?) built successfully/ms;        
         if ($1) { $lastSuccessfulPackage = $1; }
         
         # Convert package name to the format found in subdir list.
