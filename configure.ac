@@ -83,6 +83,24 @@ TAC_ARG_ENABLE_FEATURE(pliris, [Build pliris], PLIRIS, no)
 
 TAC_ARG_ENABLE_FEATURE(pytrilinos, [Build PyTrilinos], PYTRILINOS, no)
 
+TAC_ARG_ENABLE_FEATURE(python, [Build PyTrilinos], EPYTHON, no)
+
+if test "X$ac_cv_use_python" != "Xno"; then
+  ac_hold_python="yes"
+fi
+
+TAC_ARG_WITH_PACKAGE(python, [Build PyTrilinos], WPYTHON, no)
+
+#We need to do this to support with and enable options with the same argument.
+#Eventually, we should maybe change the base m4's if this situation becomes
+#common.
+
+if test "X$ac_cv_use_python" != "Xyes" && test "X$ac_hold_python" != "Xyes"; then
+  ac_cv_use_python="no"
+else
+  ac_cv_use_python="yes"
+fi
+
 TAC_ARG_ENABLE_FEATURE(rythmos, [Build rythmos], RYTHMOS, no)
 
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos], TEUCHOS, no)
@@ -398,7 +416,8 @@ AM_CONDITIONAL(BUILD_CAPO, test "X$BUILD_CAPO" != "Xno")
 
 
 
-if test "X$ac_cv_use_pytrilinos" != "Xno"; then
+if test "X$ac_cv_use_pytrilinos" != "Xno" ||
+	test "X$ac_cv_use_python" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/PyTrilinos])
   BUILD_PYTRILINOS=yes
   if test "X$ac_cv_use_pytrilinos_explicit" != "Xyes"; then

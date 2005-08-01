@@ -30,6 +30,9 @@
 /* Define if want to build epetraext */
 #undef HAVE_EPETRAEXT
 
+/* Define if want to build python */
+#undef HAVE_EPYTHON
+
 /* Define if want to build ifpack */
 #undef HAVE_IFPACK
 
@@ -86,6 +89,9 @@
 
 /* Define if want to build tsfextended */
 #undef HAVE_TSFEXTENDED
+
+/* Define if want to build with python enabled */
+#undef HAVE_WPYTHON
 
 /* Name of package */
 #undef PACKAGE
