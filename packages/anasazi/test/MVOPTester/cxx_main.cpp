@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
   // Create an Epetra_Matrix
   Teuchos::RefCountPtr<Epetra_CrsMatrix> A 
     = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, NumNz) );
-  
+   
   // Add  rows one-at-a-time
   // Need some vectors to help
   // Off diagonal Values will always be -1
@@ -144,15 +144,13 @@ int main(int argc, char *argv[])
   assert(ierr==0);
 
   // Issue several useful typedefs;
-  // The MultiVecTraits class is for defining ....
-  typedef Epetra_MultiVector MV;
-  typedef Epetra_Operator OP;
-  typedef Anasazi::OperatorTraits<double, MV, OP> OPT;
+  typedef Anasazi::MultiVec<double> MV;
+  typedef Anasazi::Operator<double> OP;
 
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note that this needs to have the same number of columns as the blocksize.
-  Teuchos::RefCountPtr<MV> ivec 
-    = Teuchos::rcp( new MV(Map, blockSize) );
+  Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec 
+    = Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blockSize) );
   ivec->Random();
 
   // Create an output manager to handle the I/O from the solver
@@ -180,7 +178,9 @@ int main(int argc, char *argv[])
 
 
   // test the operator class
-  ierr = Anasazi::TestOperatorTraits<double,MV,OP>(MyOM,ivec,A);
+  Teuchos::RefCountPtr<Anasazi::EpetraSymOp> op 
+   = Teuchos::rcp(new Anasazi::EpetraSymOp(A));
+  ierr = Anasazi::TestOperatorTraits<double,MV,OP>(MyOM,ivec,op);
   switch (ierr) {
   case Anasazi::Ok:
     if ( verbose && MyPID==0 ) {
