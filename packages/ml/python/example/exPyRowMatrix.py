@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+#
 # Example of 1D Laplacian on one processor.
 # 
 # This example shows how to derive class Epetra_RowMatrix in Python.

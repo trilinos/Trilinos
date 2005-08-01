@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+# 
 # Example of how to define an Epetra_Operator derived class in Python
 #
 # An Epetra_Operator is an object that can be applied to vectors to
