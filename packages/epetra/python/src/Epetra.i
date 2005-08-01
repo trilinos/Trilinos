@@ -97,7 +97,7 @@ can therefore be used everywhere Numeric vectors are accepted.
 "
 %enddef
 
-%module(package="PyTrilinos", docstring=EPETRA_DOCSTRING) Epetra
+%module(package="PyTrilinos", directors="1", docstring=EPETRA_DOCSTRING) Epetra
 
 %{
 // System includes
@@ -223,7 +223,12 @@ extern "C" {
   }
 }
 
+#include "Epetra_PyOperator.h"
+#include "Epetra_PyRowMatrix.h"
 %}
+
+%feature("director") PyOperator;
+%feature("director") PyRowMatrix;
 
 // Ignore directives
 %ignore operator<<(ostream &, const Epetra_Object &);// From python, use __str__
@@ -852,3 +857,6 @@ def PyComm():
   return MpiComm(CommWorld());
 %}
 #endif
+
+%include "Epetra_PyOperator.h"
+%include "Epetra_PyRowMatrix.h"
