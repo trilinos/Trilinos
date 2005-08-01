@@ -433,7 +433,7 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
   loc_ML_Kn = ML_Operator_Create(ml_comm);
   AZ_convert_aztec_matrix_2ml_matrix(AZ_NodeMatrix,loc_ML_Kn,proc_config);
   ML_Operator2EpetraCrsMatrix(loc_ML_Kn, NodeMatrix,MaxNumNonzeros,
-                  true,CPUTime);
+                  false,CPUTime);
 
   // some sanity checks
   if (! TMatrix->OperatorDomainMap().SameAs(NodeMatrix->OperatorRangeMap()) ) {
@@ -644,7 +644,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   int OutputLevel = List_.get("output", 10);  
   ML_Set_PrintLevel(OutputLevel);
 
-  verbose_ = (5 < ML_Get_PrintLevel() && Comm().MyPID() == 0);
+  verbose_ = ( (5 < ML_Get_PrintLevel()) && (Comm().MyPID() == 0) );
 
   if( verbose_ ) 
     ML_print_line("-",78);
@@ -1336,13 +1336,14 @@ ComputePreconditioner(const bool CheckPreconditioner)
     int smooth_flag = ML_YES;
     string DampingType = List_.get("R and P smoothing: damping", "default");
     if (DampingType == "non-smoothed") smooth_flag = ML_NO;
+    double enrichBeta = List_.get("R and P smoothing: enrich beta",0.0);
     
     NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_,&ml_nodes_,
-                            //LevelID_[0], Direction,agg_,agg_edge_,
                             LevelID_[0], Direction,agg_,
                             TMatrixML_,TMatrixTransposeML_, 
                             &Tmat_array,&Tmat_trans_array, 
-                            smooth_flag, ML_DDEFAULT); 
+                            smooth_flag, ML_DDEFAULT,
+                            enrichBeta);
 
   }
 
@@ -1525,7 +1526,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // print unused parameters
   if (List_.isParameter("print unused")) {
     int ProcID = List_.get("print unused",-2);
-    if (Comm().MyPID() == ProcID || ProcID == -1 && verbose_) PrintUnused();
+    if ((Comm().MyPID() == ProcID || ProcID == -1) && verbose_) PrintUnused();
   }
 
   // ===================================================================== //
@@ -1701,7 +1702,7 @@ ReComputePreconditioner()
 // ================================================ ====== ==== ==== == =
 
 void ML_Epetra::MultiLevelPreconditioner::
-Print()
+Print(const char *whichHierarchy)
 {
   // ====================================================================== //
   // One may decide to print out the entire hierarchy (to be analyzed in    //
@@ -1725,25 +1726,36 @@ Print()
        << PrintMsg_ << "MATLAB can be used to load the matrices, using spconvert()" << endl;
       cout << endl;
 
+    ML* mlptr;
+    char auxSuffix[100];
+    if ( (strcmp(whichHierarchy,"main") != 0) && SolvingMaxwell_) {
+      mlptr = ml_nodes_;
+      strncpy(auxSuffix,whichHierarchy,80);
+    }
+    else {
+      mlptr = ml_;
+      sprintf(auxSuffix,"");
+    }
+
     // Amat (one for each level)
     for( int i=0 ; i<NumLevels_ ; ++i ) {
       char name[80];
-      sprintf(name,"Amat_%d", LevelID_[i]);
-      ML_Operator_Print(&(ml_->Amat[LevelID_[i]]), name);
+      sprintf(name,"Amat_%d%s", LevelID_[i],auxSuffix);
+      ML_Operator_Print(&(mlptr->Amat[LevelID_[i]]), name);
     }
     
     // Pmat (one for each level, except last)
     for( int i=1 ; i<NumLevels_ ; ++i ) {
       char name[80];
-      sprintf(name,"Pmat_%d", LevelID_[i]);
-      ML_Operator_Print(&(ml_->Pmat[LevelID_[i]]), name);
+      sprintf(name,"Pmat_%d%s", LevelID_[i],auxSuffix);
+      ML_Operator_Print(&(mlptr->Pmat[LevelID_[i]]), name);
     }
 
     // Rmat (one for each level, except first)
     for( int i=0 ; i<NumLevels_-1 ; ++i ) {
       char name[80];
-      sprintf(name,"Rmat_%d", LevelID_[i]);
-      ML_Operator_Print(&(ml_->Rmat[LevelID_[i]]), name);
+      sprintf(name,"Rmat_%d%s", LevelID_[i],auxSuffix);
+      ML_Operator_Print(&(mlptr->Rmat[LevelID_[i]]), name);
     }
 
     // Tmat (one for each level, except first)
@@ -1838,10 +1850,10 @@ int ML_Epetra::MultiLevelPreconditioner::CreateLabel()
 
   if( SolvingMaxwell_ == false ) 
     sprintf(Label_,"ML (L=%d, %s, %s)", 
-	    ml_->ML_num_actual_levels, finest, coarsest);
+     ml_->ML_num_actual_levels, finest, coarsest);
   else
     sprintf(Label_,"ML (Maxwell, L=%d, %s, %s)", 
-	    ml_->ML_num_actual_levels, finest, coarsest);
+     ml_->ML_num_actual_levels, finest, coarsest);
   
   return 0;
     
@@ -2067,7 +2079,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       // only MLS and SGS are currently supported
       if (SubSmootherType == "MLS")
       {
-        cout << "\n\n\n***** order = " << MLSPolynomialOrder << "\n****\n\n";
         nodal_smoother=(void *) ML_Gen_Smoother_MLS;
         // set polynomial degree
         ML_Smoother_Arglist_Set(nodal_args_, 0, &MLSPolynomialOrder);
