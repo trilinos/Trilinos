@@ -661,12 +661,12 @@ namespace Kokkos {
     if (!haveValues_) return(-1); // Can't compute without values!
     if (conjA) return(-2); // Unsupported at this time
 	if(!transA) {
-		if (x.getLength()!=numCols_) return(-3); // Number of cols in A not same as number of rows in x
-		if (y.getLength()!=numRows_) return(-4); // Number of rows in A not same as number of rows in y
+		if (x.getNumRows()!=numCols_) return(-3); // Number of cols in A not same as number of rows in x
+		if (y.getNumRows()!=numRows_) return(-4); // Number of rows in A not same as number of rows in y
 	}
 	else {
-		if (x.getLength()!=numRows_) return(-3); // Number of cols in A^T not same as number of rows in x
-		if (y.getLength()!=numCols_) return(-4); // Number of rows in A^T not same as number of rows in y
+		if (x.getNumRows()!=numRows_) return(-3); // Number of cols in A^T not same as number of rows in x
+		if (y.getNumRows()!=numCols_) return(-4); // Number of rows in A^T not same as number of rows in y
 	}
     OrdinalType numVectors = x.getNumCols();
     if (numVectors!=y.getNumCols()) return(-5); // Not the same number of vectors in x and y
@@ -730,12 +730,12 @@ namespace Kokkos {
 						    bool transA, bool conjA) const {
     if (!haveValues_) return(-1); // Can't compute without values!
 	if(!transA) {
-		if (x.getLength()!=numCols_) return(-3); // Number of cols in A not same as number of rows in x
-		if (y.getLength()!=numRows_) return(-4); // Number of rows in A not same as number of rows in y
+		if (x.getNumRows()!=numCols_) return(-3); // Number of cols in A not same as number of rows in x
+		if (y.getNumRows()!=numRows_) return(-4); // Number of rows in A not same as number of rows in y
 	}
 	else {
-		if (x.getLength()!=numRows_) return(-3); // Number of cols in A^T not same as number of rows in x
-		if (y.getLength()!=numCols_) return(-4); // Number of rows in A^T not same as number of rows in y
+		if (x.getNumRows()!=numRows_) return(-3); // Number of cols in A^T not same as number of rows in x
+		if (y.getNumRows()!=numCols_) return(-4); // Number of rows in A^T not same as number of rows in y
 	}
     int numVectors = x.getNumCols();
     if (numVectors!=y.getNumCols()) return(-5); // Not the same number of vectors in x and y
