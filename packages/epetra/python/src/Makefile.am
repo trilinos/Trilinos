@@ -34,7 +34,12 @@ SWIG_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir) \
                 -I$(top_builddir)/src \
 		$(MPI_FLAG)
 
-EXTRA_DIST = Epetra.i setup.py
+EXTRA_DIST = Epetra.i setup.py \
+	     Epetra_NumPyVector.cpp FileStream.h      NumPyWrapper.h    \
+	     Epetra_NumPyVector.h   NumPyArray.cpp    numeric_include.h \
+	     Epetra_PyOperator.h    NumPyArray.h
+	     Epetra_PyRowMatrix.h   NumPyWrapper.cpp
+
 
 # Default make target
 all-am: build
