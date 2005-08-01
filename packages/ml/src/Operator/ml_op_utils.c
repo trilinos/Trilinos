@@ -1999,7 +1999,7 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
     minnzs = ML_gmin_int(k, comm);
     minproc = ML_gmax_int((minnzs == mat->N_nonzeros ? mypid:0), comm);
     if (mypid == 0) {
-       printf("================================================================================\n");
+       printf("= =========================================================================== =\n");
        printf("Operator %s: %d rows, %d cols, %d global nonzeros\n",
               mat->label,Nglobrows,Nglobcols, j);
        printf("Operator %s: %e avg nbrs, %d active proc\n",
@@ -2200,7 +2200,7 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
 
     } /* if perfAndCommStats == ML_TRUE*/
     if (mypid == 0) {
-       printf("================================================================================\n");
+       printf("= =========================================================================== =\n");
        fflush(stdout);
     }
   }
