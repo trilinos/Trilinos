@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
   // variable needed for iteration
   double lambda = 0.0;
   int niters = NumGlobalElements*10;
-  double tolerance = 1.0e-3;
+  double tolerance = 1.0e-2;
 
   // Iterate
   Epetra_Flops counter;
