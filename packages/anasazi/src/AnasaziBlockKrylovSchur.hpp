@@ -367,9 +367,8 @@ namespace Anasazi {
       _timerCompEvec->reset();
       _timerQRFact ->reset();
       _timerOrtho->reset();
+      _count_ApplyOp = 0;
     }
-
-    _count_ApplyOp = 0;
 
     //
     // Check the Anasazi::Eigenproblem was set by user, if not, return failed.

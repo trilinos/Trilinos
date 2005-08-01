@@ -297,11 +297,10 @@ namespace Anasazi {
       _timerCompRes->reset();
       _timerRestart->reset();
       _timerOrtho->reset();
+      _count_ApplyOp = 0;
+      _count_ApplyM = 0;
+      _count_ApplyPrec = 0;
     }
-
-    _count_ApplyOp = 0;
-    _count_ApplyM = 0;
-    _count_ApplyPrec = 0;
 
     //
     // Check the Anasazi::Eigenproblem was set by user, if not, return failed.

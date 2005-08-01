@@ -203,7 +203,10 @@ namespace Anasazi {
     _timerSortEval(Teuchos::TimeMonitor::getNewTimer("Sort evals")),
     _timerDS(Teuchos::TimeMonitor::getNewTimer("Direct solve time")),
     _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Orthogonalization time")),
-    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time"))
+    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time")),
+    _count_ApplyOp(0),
+    _count_ApplyM(0),
+    _count_ApplyPrec(0)
   {     
     //
     // Define dense local matrices and arrays
@@ -277,6 +280,9 @@ namespace Anasazi {
       _timerSortEval->reset();
       _timerDS->reset();
       _timerOrtho->reset();
+      _count_ApplyOp = 0;
+      _count_ApplyM = 0;
+      _count_ApplyPrec = 0;
     }
 
     //
