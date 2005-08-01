@@ -194,4 +194,10 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
   return (ok == Abstract::Group::Ok);
 }
 
+bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
+                          const Solver::LineSearchBased& solver)
+{
+  return NOX::Direction::Generic::compute( dir, soln, solver );
+}
+
 #endif

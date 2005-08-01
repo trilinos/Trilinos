@@ -128,6 +128,13 @@ bool NOX::Direction::ModifiedNewton::compute(NOX::Abstract::Vector& dir,
   return true;
 }
 
+bool NOX::Direction::ModifiedNewton::compute(NOX::Abstract::Vector& dir, 
+                                             NOX::Abstract::Group& soln, 
+                                             const NOX::Solver::LineSearchBased& solver)
+{
+  return NOX::Direction::Generic::compute( dir, soln, solver );
+}
+
 bool  NOX::Direction::ModifiedNewton::rescueBadNewtonSolve(const NOX::Abstract::Group& grp) const
 {
   //! Check if the "rescue" option has been selected

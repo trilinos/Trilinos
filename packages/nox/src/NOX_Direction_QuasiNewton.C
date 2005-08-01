@@ -238,6 +238,13 @@ bool NOX::Direction::QuasiNewton::compute(NOX::Abstract::Vector& dir,
   return true;
 }
 
+bool NOX::Direction::QuasiNewton::compute(NOX::Abstract::Vector& dir, 
+					  NOX::Abstract::Group& soln, 
+					  const Solver::LineSearchBased& solver)
+{
+  return NOX::Direction::Generic::compute( dir, soln, solver );
+}
+
 void NOX::Direction::QuasiNewton::throwError(const string& functionName, const string& errorMsg)
 {
     if (utils.isPrintProcessAndType(Utils::Error))

@@ -160,6 +160,10 @@ public:
   virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
                        const Solver::Generic& solver);
 
+  // derived
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
+		       const NOX::Solver::LineSearchBased& solver);
+
 private:
   
   //! Printing Utils

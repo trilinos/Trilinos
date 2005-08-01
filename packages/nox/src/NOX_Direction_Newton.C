@@ -157,6 +157,12 @@ bool NOX::Direction::Newton::compute(NOX::Abstract::Vector& dir,
   return true;
 }
 
+bool NOX::Direction::Newton::compute(NOX::Abstract::Vector& dir, 
+				     NOX::Abstract::Group& soln, 
+				     const NOX::Solver::LineSearchBased& solver)
+{
+  return NOX::Direction::Generic::compute( dir, soln, solver );
+}
 
 // protected
 bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
@@ -262,8 +268,8 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       }
       
       // Impose safeguard and constraints ...
-      const double alpha = (1.0 + sqrt(5.0)) / 2.0;
-      const double eta_km1_alpha = pow(eta_km1, alpha);
+      const double tmp_alpha = (1.0 + sqrt(5.0)) / 2.0;
+      const double eta_km1_alpha = pow(eta_km1, tmp_alpha);
       if (eta_km1_alpha > 0.1) 
 	eta_k = NOX_MAX(eta_k, eta_km1_alpha);
       eta_k = NOX_MAX(eta_k, eta_min);

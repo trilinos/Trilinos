@@ -158,6 +158,12 @@ bool NOX::Direction::SteepestDescent::compute(Abstract::Vector& dir,
   return true;
 }
 
+bool NOX::Direction::SteepestDescent::compute(Abstract::Vector& dir, 
+				 Abstract::Group& soln, 
+				 const Solver::LineSearchBased& solver) 
+{
+  return NOX::Direction::Generic::compute( dir, soln, solver );
+}
 
 void NOX::Direction::SteepestDescent::throwError(const string& functionName, 
 						 const string& errorMsg)

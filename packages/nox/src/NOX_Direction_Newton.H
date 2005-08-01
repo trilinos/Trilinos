@@ -201,6 +201,10 @@ public:
   virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
 		       const NOX::Solver::Generic& solver);
 
+  // derived
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
+		       const NOX::Solver::LineSearchBased& solver);
+
 protected:
 
   //! Called each iteration to reset the forcing term (ie, the
