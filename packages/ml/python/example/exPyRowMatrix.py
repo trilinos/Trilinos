@@ -232,8 +232,7 @@ def main():
   LHS. PutScalar(0.0)
   RHS. PutScalar(1.0)
   
-  Problem = Epetra.LinearProblem(Matrix, LHS, RHS)
-  Solver = AztecOO.AztecOO(Problem)
+  Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
   
   Solver.SetAztecOption(AztecOO.AZ_solver,AztecOO.AZ_gmres)
   Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_Jacobi)
