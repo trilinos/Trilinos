@@ -535,7 +535,11 @@ void PREFIX DLARNV_F77(const int* idist, int* seed, const int* n, double* v);
 float PREFIX SLAMCH_F77(Teuchos_fcd);
 double PREFIX DLAMCH_F77(Teuchos_fcd);
 
-int PREFIX ILAENV_F77( const int* ispec, Teuchos_fcd, Teuchos_fcd, const int* N1, const int* N2, const int* N3, const int* N4 );
+#if defined(INTEL_CXML)
+int PREFIX ILAENV_F77( const int* ispec, const char* name, unsigned int name_length, const char* opts, unsigned int opts_length, const int* N1, const int* N2, const int* N3, const int* N4 );
+#else
+int PREFIX ILAENV_F77( const int* ispec, const char* name, const char* opts, const int* N1, const int* N2, const int* N3, const int* N4, unsigned int name_length, unsigned int opts_length );
+#endif
 
 float PREFIX SLAPY2_F77(const float* x, const float* y);
 double PREFIX DLAPY2_F77(const double* x, const double* y);
