@@ -30,6 +30,7 @@
 #define THYRA_MPI_VECTOR_STD_HPP
 
 #include "Thyra_MPIVectorStdDecl.hpp"
+#include "Thyra_MPIVectorBase.hpp"
 #include "Thyra_MPIVectorSpaceBase.hpp"
 
 namespace Thyra {
