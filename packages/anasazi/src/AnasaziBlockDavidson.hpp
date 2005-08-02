@@ -229,7 +229,7 @@ namespace Anasazi {
   {
     int i;
     if (_om->doPrint()) {
-      _os.setf(ios::scientific+ios::showpos, ios::floatfield);
+      _os.setf(ios::scientific, ios::floatfield);
       _os.precision(6);
       _os <<endl;
       _os <<"******************* CURRENT STATUS *******************"<<endl;
