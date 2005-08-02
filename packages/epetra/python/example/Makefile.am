@@ -45,7 +45,7 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 EXTRA_DIST = setpath.py exSimple.py exCrsMatrix_Easy.py \
              exCrsMatrix_Efficient.py exImportExport.py \
-	     exComm.py
+	     exComm.py exFECrsMatrix_Easy.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -54,7 +54,7 @@ MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of examples
 EXAMPLE_SUITE = exSimple exCrsMatrix_Easy exCrsMatrix_Efficient \
-                exImportExport exComm
+                exImportExport exComm exFECrsMatrix_Easy
 
 SETPATH_PY = setpath.py
 
