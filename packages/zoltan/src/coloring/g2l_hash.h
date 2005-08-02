@@ -11,33 +11,34 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifndef __COLORING_H
-#define __COLORING_H
+#ifndef _COLOR_HASH_H_
+#define _COLOR_HASH_H_
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
+/* Structure used for hashing */
+struct G2L_Hash_Node {
+    int gno;           /* Global number */
+    int lno;           /* Mapped id of gno*/
+    struct G2L_Hash_Node * next;
+};
 
-#include <ctype.h>
-#include "zz_const.h"
-#include "zz_util_const.h"
-#include "coloring_const.h"
+typedef struct G2L_Hash_Node G2LHashNode;
 
-#define SWAP(a,b) tmp=(a);(a)=(b);(b)=tmp;
-
-/* Macros for error handling */
-#define ZOLTAN_COLOR_ERROR(error,str) {ierr = error ; \
- ZOLTAN_PRINT_ERROR(zz->Proc, yo, str) ; goto End ;}
-
-#define MEMORY_ERROR { \
-  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
-  ierr = ZOLTAN_MEMERR; \
-  goto End; \
-}
-
+struct G2L_Hash {
+    int   size;
+    int   lastlno;
     
-#ifdef __cplusplus
-}
+    G2LHashNode **table;
+    G2LHashNode *nodes;
+};
+
+typedef struct G2L_Hash G2LHash;
+
+
+int Zoltan_G2LHash_Create(G2LHash *hash, int size);
+int Zoltan_G2LHash_Destroy(G2LHash *hash);
+int Zoltan_G2LHash_G2L(G2LHash *hash, int gno);
+#define Zoltan_G2LHash_L2G(hash, lno) ((hash)->nodes[lno].gno)
+
+
 #endif
-#endif
+
