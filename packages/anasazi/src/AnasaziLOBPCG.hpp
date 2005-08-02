@@ -245,41 +245,49 @@ namespace Anasazi {
       cout.setf(ios::scientific, ios::floatfield);  
       cout.precision(6);
       _os <<endl;
-      _os <<"********************CURRENT STATUS********************"<<endl;
-      _os <<"Iterations :\t"<<_iter<<endl;
-      _os <<"Restarts :\t"<<_numRestarts<<endl;
-      _os <<"Block Size :\t"<<_blockSize<<endl;
-      _os <<"Requested Eigenvalues : "<<_nev<<endl;
-      _os <<"Computed Eigenvalues : "<<_knownEV<<endl;
-      _os <<"Residual Tolerance : "<<_residual_tolerance<<endl;
-      _os <<"Operator applications:" << endl
-          <<"    Op: " << _count_ApplyOp << endl
-          <<"     M: " << _count_ApplyM << endl
-          <<"  Prec: " << _count_ApplyPrec << endl;
-      _os <<"------------------------------------------------------"<<endl;
-      _os <<"Computed Eigenvalues: "<<endl;
-      _os <<"------------------------------------------------------"<<endl;
-      _os <<"Eigenvalue\tResidual"<<endl;
+      _os <<"******************* CURRENT STATUS *******************"<<endl;
+      _os <<"The number of iterations performed thus far is " <<_iter<<endl;
+      _os <<"The number of restarts performed thus far is "<<_numRestarts<<endl;
+      _os <<"The current block size is "<<_blockSize<<endl;
+      _os <<"The number of eigenvalues requested is "<<_nev<<endl;
+      _os <<"The number of eigenvalues computed thus far is "<<_knownEV<<endl;
+      _os <<"The requested residual tolerance is "<<_residual_tolerance<<endl;
+      _os <<"The number of operations Op*x   thus far is "<<_count_ApplyOp<<endl;
+      _os <<"The number of operations M*x    thus far is "<<_count_ApplyM<<endl;
+      _os <<"The number of operations Prec*x thus far is "<<_count_ApplyPrec<<endl;
+      _os << endl;
+      _os <<"                 COMPUTED EIGENVALUES                 "<<endl;
+      _os << std::setw(16) << std::right << "Eigenvalue" 
+          << std::setw(16) << std::right << "Ritz Residual"
+          << endl;
       _os <<"------------------------------------------------------"<<endl;
       if ( _knownEV > 0 ) {
-        for (i=0; i<_knownEV; i++)
-          _os <<(*_evals)[i]<<"\t"<<_resids[i]<<endl;
-      } else {
+        for (i=0; i<_knownEV; i++) {
+          _os << std::setw(16) << std::right << (*_evals)[i] 
+              << std::setw(16) << std::right << _resids[i] 
+              << endl;
+        }
+      } 
+      else {
         _os <<"[none computed]"<<endl;
       }
-      _os <<"------------------------------------------------------"<<endl;
-      _os <<"Current Eigenvalue Estimates (Ritz Values): "<<endl;
-      _os <<"------------------------------------------------------"<<endl;
-      _os <<"Ritz Value\tResidual"<<endl;
+      _os <<endl;
+      _os <<"             CURRENT EIGENVALUE ESTIMATES             "<<endl;
+      _os << std::setw(16) << std::right << "Ritz value" 
+          << std::setw(16) << std::right << "Residual"
+          << endl;
       _os <<"------------------------------------------------------"<<endl;
       if ( _iter > 0 || _nevLocal > 0 ) {
-        for (i=0; i<_blockSize; i++)
-          _os <<_theta[i]<<"\t"<<_normR[i]<<endl;
-      } else {
+        for (i=0; i<_blockSize; i++) {
+          _os << std::setw(16) << std::right << _theta[i] 
+              << std::setw(16) << std::right << _normR[i] 
+              << endl;
+        }
+      } 
+      else {
         _os <<"[none computed]"<<endl;
       }
-      _os <<endl<<"------------------------------------------------------"<<endl;
-      _os <<"******************************************************"<<endl;  
+      _os << "******************************************************"<<endl;  
       _os << endl;
     }
   }
@@ -787,7 +795,7 @@ namespace Anasazi {
       */      
       
       // Print information on current iteration
-      if (_om->isVerbosityAndPrint( IterationDetails )) {
+      if (_om->isVerbosity( IterationDetails )) {
         currentStatus();
       }
       

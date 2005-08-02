@@ -67,9 +67,21 @@ int main(int argc, char *argv[])
   
   bool testFailed = false;
   bool verbose = 0;
+  std::string which("SM");
   if (argc>1) {
     if (argv[1][0]=='-' && argv[1][1]=='v') {
       verbose = true;
+    }
+    else {
+      which = argv[1];
+    }
+  }
+  if (argc>2) {
+    if (argv[2][0]=='-' && argv[2][1]=='v') {
+      verbose = true;
+    }
+    else {
+      which = argv[2];
     }
   }
 
@@ -98,7 +110,6 @@ int main(int argc, char *argv[])
   }
 
   // Create the sort manager
-  std::string which("SM");
   Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
      Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
 

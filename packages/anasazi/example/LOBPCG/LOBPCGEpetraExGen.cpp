@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
   info = Kvec.Norm2( &normV[0] );
   assert( info==0 );
 
-  if (MyPID == 0) {
+  if (MyOM->doPrint()) {
     cout<<"Actual Residuals"<<endl;
     cout<<"------------------------------------------------------"<<endl;
     cout<<"Eigenvalue"<<"\t\t"<<"Direct Residual"<<endl;

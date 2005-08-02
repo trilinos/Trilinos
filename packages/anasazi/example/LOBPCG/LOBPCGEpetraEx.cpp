@@ -313,8 +313,6 @@ int main(int argc, char *argv[]) {
   Teuchos::SerialDenseMatrix<int,double> T(nev, nev);
   Epetra_MultiVector tempAevec( Map, nev );
   std::vector<double> normA(nev);
-  cout<<endl<< "Actual Residuals"<<endl;
-  cout<<"------------------------------------------------------"<<endl;
   T.putScalar(0.0); 
   for (i=0; i<nev; i++) {
     T(i,i) = (*evals)[i]; 
@@ -322,9 +320,10 @@ int main(int argc, char *argv[]) {
   A->Apply( *evecs, tempAevec );
   MVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, tempAevec );
   MVT::MvNorm( tempAevec, &normA );
-
   
   if (MyOM->doPrint()) {
+    cout<<"Actual Residuals"<<endl;
+    cout<<"------------------------------------------------------"<<endl;
     cout<<"Eigenvalue"<<"\t"<<"Direct Residual"<<endl;
     cout<<"------------------------------------------------------"<<endl;
     for (i=0; i<nev; i++) {

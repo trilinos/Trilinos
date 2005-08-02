@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
       verbose = true;
     }
     else {
-      which = &argv[1][1];
+      which = argv[1];
     }
   }
   if (argc>2) {
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
       verbose = true;
     }
     else {
-      which = &argv[2][1];
+      which = argv[2];
     }
   }
   

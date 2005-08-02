@@ -287,27 +287,25 @@ namespace Anasazi {
   void BlockKrylovSchur<ScalarType,MV,OP>::currentStatus() {
     int i;
     if (_om->doPrint()) {
-      _os <<" "<<endl;
-      _os <<"********************CURRENT STATUS********************"<<endl;
-      _os <<"Iterations :\t"<<_iter<<endl;
-      
-      if (_numRestarts > _restarts) 
-        _os <<"Restarts :\t"<<_numRestarts-1<<" of\t"<< _restarts<<endl;
-      else
-        _os <<"Restarts :\t"<<_numRestarts<<" of\t"<< _restarts<<endl;
-      
-      _os <<"Block Size :\t"<<_blockSize<<endl;
-      _os <<"Requested Eigenvalues : "<<_nev<<endl;
-      _os <<"Residual Tolerance : "<<_residual_tolerance<<endl;        
-      _os <<"Error for the partial Schur decomposition is : "<< _schurerror <<endl;
-      _os <<"Operator applications:" << endl
-          <<"    Op: " << _count_ApplyOp << endl;
+      _os.setf(ios::scientific, ios::floatfield);
+      _os.precision(6);
+      _os <<endl;
+      _os <<"******************* CURRENT STATUS *******************"<<endl;
+      _os <<"The number of iterations performed thus far is " <<_iter<<endl;
+      _os <<"The number of restarts performed thus far is " 
+          << (_numRestarts>_restarts ? _numRestarts-1 : _numRestarts) 
+          << " of " << _restarts << endl;
+      _os <<"The current block size is "<<_blockSize<<endl;
+      _os <<"The number of eigenvalues requested is "<<_nev<<endl;
+      _os <<"The requested residual tolerance is "<<_residual_tolerance<<endl;        
+      _os <<"The error for the partial Schur decomposition is "<< _schurerror <<endl;
+      _os <<"The number of operations Op*x thus far is "<<_count_ApplyOp<<endl;
       //
       //  Determine status of solver and output information correctly.
       //
       if ( _schurerror < _residual_tolerance ) {
-        _os <<"------------------------------------------------------"<<endl;
-        _os <<"Computed Eigenvalues: "<<endl;
+        _os <<endl;
+        _os <<"                COMPUTED EIGENVALUES                  "<<endl;
       } 
       else {
         if (_exit_flg) {
@@ -316,8 +314,8 @@ namespace Anasazi {
         else if (_error_flg) {
           _os << "ERROR: Encountered unrecoverable error" << endl;
         }
-        _os <<"------------------------------------------------------"<<endl;
-        _os <<"Current Eigenvalue Estimates: "<<endl;
+        _os <<endl;
+        _os <<"            CURRENT EIGENVALUE ESTIMATES              "<<endl;
       }
       //
       //  Print out current computed eigenvalues.  If we don't have all the requested
@@ -327,30 +325,35 @@ namespace Anasazi {
       if (_jstart < _nevblock) { _nevtemp = _jstart*_blockSize; }
       //
       if (_problem->IsSymmetric()) {
-        _os <<"Eigenvalue\tRitz Residual"<<endl;
+        _os << std::setw(16) << std::right << "Eigenvalue" 
+            << std::setw(16) << std::right << "Ritz Residual"
+            << endl;
         _os <<"------------------------------------------------------"<<endl;
         if ( _nevtemp == 0 ) {
           _os <<"[none computed]"<<endl;
         } else {
           for (i=0; i<_nevtemp; i++) {
-            _os.width(10);
-            _os <<(*_evals)[i]<<"\t"<<(*_ritzresiduals)[i]<<endl;
+            _os << std::setw(16) << std::right << (*_evals)[i]
+                << std::setw(16) << std::right << (*_ritzresiduals)[i]
+                << endl;
           }
         }
-        _os <<"------------------------------------------------------"<<endl;
-      } else {
-        _os <<"Real Part\tImag Part\tRitz Residual"<<endl;
+      } 
+      else {
+        _os << std::setw(16) << std::right << "Real Part"
+            << std::setw(16) << std::right << "Imag Part" 
+            << std::setw(16) << std::right << "Ritz Residual"
+            << endl;
         _os <<"------------------------------------------------------"<<endl;
         if ( _nevtemp == 0 ) {
           _os <<"[none computed]"<<endl;
         } else {
           for (i=0; i<_nevtemp; i++) {
-            _os.width(10);
-            _os <<(*_evals)[i]<<"\t"<<(*_evals)[_nev+i]<<"\t\t"<<(*_ritzresiduals)[i]<<endl;
+            _os << std::setw(16) << std::right << (*_evals)[i]
+                << std::setw(16) << std::right << (*_evals)[_nev+i]
+                << std::setw(16) << std::right << (*_ritzresiduals)[i]<<endl;
           }
         }
-        _os <<"------------------------------------------------------"<<endl;
-        _os <<" "<<endl;
       }
       _os <<"******************************************************"<<endl << endl;;
     }        

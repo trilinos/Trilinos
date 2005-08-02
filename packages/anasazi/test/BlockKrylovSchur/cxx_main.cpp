@@ -70,7 +70,25 @@ int main(int argc, char *argv[])
 
   bool testFailed = false;
   bool verbose = 0;
-  if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
+  std::string which("SM");
+
+  if (argc>1) {
+    if (argv[1][0]=='-' && argv[1][1]=='v') {
+      verbose = true;
+    }
+    else {
+      which = argv[1];
+    }
+  }
+  if (argc>2) {
+    if (argv[2][0]=='-' && argv[2][1]=='v') {
+      verbose = true;
+    }
+    else {
+      which = argv[2];
+    }
+  }
+  
   
   if (verbose && MyPID == 0)
     cout << Anasazi::Anasazi_Version() << endl << endl;
@@ -108,7 +126,6 @@ int main(int argc, char *argv[])
   int maxBlocks = 10;
   int maxRestarts = 500;
   double tol = tolCG * 10.0;
-  std::string which = "SM";  
   
   // Create parameter list to pass into solver
 
