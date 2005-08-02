@@ -476,9 +476,16 @@ int main(int argc, char *argv[])
 
 #endif
 
-  // Check to see if any tests have failed
-  if (numberFailedTests)
-    return numberFailedTests;
-  
+ if (numberFailedTests) {
+    if (verbose && MyPID==0)
+      cout << "End Result: TEST FAILED" << endl;	
+    return -1;
+  }
+  //
+  // Default return value
+  //
+  if (verbose && MyPID==0)
+    cout << "End Result: TEST PASSED" << endl;
   return 0;
+
 }	

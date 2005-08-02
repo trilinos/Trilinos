@@ -1,8 +1,9 @@
 //@HEADER
 // ************************************************************************
 // 
-//               Epetra: Linear Algebra Services Package 
-//                 Copyright (2001) Sandia Corporation
+//
+//                 Anasazi: Block Eigensolvers Package
+//                 Copyright (2004) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -29,13 +30,6 @@
 //  This test uses the MVOPTester.hpp functions to test the Anasazi adapter
 //  to Epetra.
 //
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <assert.h>
-#include <string.h>
-#include <math.h>
 
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
@@ -172,7 +166,6 @@ int main(int argc, char *argv[])
     if ( verbose && MyPID==0 ) {
       cout << "*** FAILED TestMultiVecTraits() ***" << endl;
     }
-    return ierr;
     break;
   }
 
@@ -191,7 +184,6 @@ int main(int argc, char *argv[])
     if ( verbose && MyPID==0 ) {
       cout << "*** FAILED TestOperatorTraits() ***" << endl;
     }
-    return ierr;
     break;
   }
 
@@ -205,5 +197,16 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
 
-  return ierr;
+  if (ierr) {
+    if (verbose && MyPID==0)
+      cout << "End Result: TEST FAILED" << endl;	
+    return -1;
+  }
+  //
+  // Default return value
+  //
+  if (verbose && MyPID==0)
+    cout << "End Result: TEST PASSED" << endl;
+  return 0;
+
 }
