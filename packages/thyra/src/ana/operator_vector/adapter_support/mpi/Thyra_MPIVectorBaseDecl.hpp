@@ -36,65 +36,67 @@ namespace Thyra {
 
 /** \brief Base class for MPI-based SPMD vectors.
  *
- * By inheriting from this base class, vector implementations allow
- * their vector objects to be seamlessly combined with other MPI-based
- * vector objects (of different concrete types) in <tt>applyOp()</tt>.
- * A big part of this protocol is that every vector object can expose
- * an <tt>MPIVectorSpaceBase</tt> object through the virtual function
+ * By inheriting from this base class, vector implementations allow their
+ * vector objects to be seamlessly combined with other MPI-based vector
+ * objects (of different concrete types) in <tt>applyOp()</tt>.  A big part of
+ * this protocol is that every vector object can expose an
+ * <tt>MPIVectorSpaceBase</tt> object through the virtual function
  * <tt>mpiSpace()</tt>.
  *
- * This base class contains an implementation of <tt>applyOp()</tt>
- * that relies on implementations of the methods (<tt>const</tt>)
- * <tt>getSubVector()</tt>, <tt>freeSubVector()</tt>,
- * (non-<tt>const</tt>) <tt>getSubVector()</tt> and
- * <tt>commitSubVector()</tt> (which all have default implementations
- * in this subclass).  In essence, this implementation will only call
- * the <tt>getSubVector()</tt> methods using a range of (global)
- * indexes for elements that exist on the local processor.  As long as
- * the number of local elements on each processor is fairly large, the
- * virtual function call overhead will be minimal and this will result
- * in a near optimal implementation.
+ * This base class contains an implementation of <tt>applyOp()</tt> that
+ * relies on implementations of the methods (<tt>const</tt>)
+ * <tt>getSubVector()</tt>, <tt>freeSubVector()</tt>, (non-<tt>const</tt>)
+ * <tt>getSubVector()</tt> and <tt>commitSubVector()</tt> (which all have
+ * default implementations in this subclass).  In essence, this implementation
+ * will only call the <tt>getSubVector()</tt> methods using a range of
+ * (global) indexes for elements that exist on the local processor.  As long
+ * as the number of local elements on each processor is fairly large, the
+ * virtual function call overhead will be minimal and this will result in a
+ * near optimal implementation.
  *
  * <b>Notes to subclass developers</b>
  *
- * Concrete subclasses must override only two functions:
- * <tt>mpiSpace()</tt> and <tt>getLocalData(Scalar**,Index*)</tt>.
- * The default implementation of <tt>getLocalData(cons
- * Scalar**,Index*)</tt> should rarely need to be overridden as it
- * just calls the pure-virtual non-<tt>const</tt> version.  Note that
- * providing an implementation for <tt>mpiSpace()</tt> of course means
- * having to implement or use a pre-implemented
+ * Concrete subclasses must override only two functions: <tt>mpiSpace()</tt>
+ * and <tt>getLocalData(Scalar**,Index*)</tt>.  The default implementation of
+ * <tt>getLocalData(cons Scalar**,Index*)</tt> should rarely need to be
+ * overridden as it just calls the pure-virtual non-<tt>const</tt> version.
+ * Note that providing an implementation for <tt>mpiSpace()</tt> of course
+ * means having to implement or use a pre-implemented
  * <tt>MPIVectorSpaceBase</tt> subclass.
  *
- * If the <tt>getSubVector()</tt> methods are ever called with index
- * ranges outside of those of the local processor, then the default
- * implementations in <tt>VectorBase</tt> of all of the methods
- * (<tt>const</tt>) <tt>getSubVector()</tt>, <tt>freeSubVector()</tt>,
- * (non-<tt>const</tt>) <tt>getSubVector()</tt> and
- * <tt>commitSubVector()</tt> are called in instead.  Alternatively, a
- * subclass could provide more specialized implementations of these
- * methods (for more efficient gather/scatter operations) if desired
- * but this should not be needed for most use cases.
+ * Vector subclasses must also call the protected function
+ * <tt>updateMpiState()</tt> whenever the state of <tt>*this->mpiSpace()</tt>
+ * vector space changes.  This function gathers some cached data that makes
+ * the rest of the class more efficient.  This function must be called in a
+ * constructor or any other function that changes the state of the vector
+ * space.
  *
- * It is interesting to note that in the above use case, the explicit
- * subvector access methods call on its default implementation defined
- * in <tt>VectorBase</tt> (which calls on <tt>applyOp()</tt>), the
- * operator will be properly applied since the version of
- * <tt>applyOp()</tt> implemented in this class will only request
- * local vector data and hence there will only be two levels of
- * recursion for any call to an explicit subvector access method.
- * This is a truly elegant result.
+ * If the <tt>getSubVector()</tt> methods are ever called with index ranges
+ * outside of those of the local processor, then the default implementations
+ * in <tt>VectorBase</tt> of all of the methods (<tt>const</tt>)
+ * <tt>getSubVector()</tt>, <tt>freeSubVector()</tt>, (non-<tt>const</tt>)
+ * <tt>getSubVector()</tt> and <tt>commitSubVector()</tt> are called instead.
+ * Alternatively, a subclass could provide more specialized implementations of
+ * these methods (for more efficient gather/scatter operations) if desired but
+ * this should not be needed for most use cases.
  *
- * As described in the documentation for <tt>MPIVectorSpaceBase</tt>,
- * it is possible that at runtime it may be discovered that the
- * mapping of vector data to processors does not fall under this
- * design in which case the method <tt>applyOp()</tt> should be
- * overridden to handle this which will of course remove the
- * possibility of interoperability with other MPI-based vector
- * objects.
+ * It is interesting to note that in the above use case when the explicit
+ * subvector access methods call on its default implementation defined in
+ * <tt>VectorBase</tt> (which calls on <tt>applyOp()</tt>), the operator will
+ * be properly applied since the version of <tt>applyOp()</tt> implemented in
+ * this class will only request local vector data and hence there will only be
+ * two levels of recursion for any call to an explicit subvector access
+ * method.  This is a truly elegant result.
  *
- * Note that vector subclass derived from this node interface class
- * must only be directly used in SPMD mode for this to work properly.
+ * As described in the documentation for <tt>MPIVectorSpaceBase</tt>, it is
+ * possible that at runtime it may be discovered that the mapping of vector
+ * data to processors does not fall under this design in which case the method
+ * <tt>applyOp()</tt> should be overridden to handle this which will of course
+ * remove the possibility of interoperability with other MPI-based vector
+ * objects.  This, however, should never be the case.
+ *
+ * Note that vector subclass derived from this node interface class must only
+ * be directly used in SPMD mode to work properly.
  *
  * \ingroup Thyra_Op_Vec_adapters_MPI_support_grp
  */
@@ -247,8 +249,8 @@ public:
 
 protected:
 
-  /** \brief Subclasses must should call this function whenever the
-   * structure of the VectorSpaceBase changes.
+  /** \brief Subclasses must call this function whenever the structure of the
+   * VectorSpaceBase changes.
    */
   virtual void updateMpiSpace();
 
