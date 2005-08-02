@@ -96,12 +96,13 @@ char  *yo = "Zoltan_PHG_Matching";
   
   /* Do the matching */
   if (hgp->matching) {
-      int v=-1, i, *ldeg, *deg;
+    int v=-1, i, *ldeg, *deg;
 #ifdef _DEBUG
-      int cnt=0;
+    int cnt=0;
 #endif
 
-      if (hg->nVtx && !(ldeg = (int*)  ZOLTAN_MALLOC(2*hg->nVtx*sizeof(int))))
+    if (hg->nVtx) {
+      if (!(ldeg = (int*)  ZOLTAN_MALLOC(2*hg->nVtx*sizeof(int))))
         MEMORY_ERROR;
       deg = ldeg + hg->nVtx;
       /* first match isolated vertices.
@@ -130,7 +131,8 @@ char  *yo = "Zoltan_PHG_Matching";
           uprintf(hg->comm, "Local H(%d, %d, %d) and there were %d isolated vertices\n", hg->nVtx, hg->nEdge, hg->nPins, cnt);           
 #endif
       ZOLTAN_FREE(&ldeg);
-      ierr = hgp->matching (zz, hg, match, hgp);
+    }
+    ierr = hgp->matching (zz, hg, match, hgp);
   }
 
 End: 
@@ -713,7 +715,6 @@ if (hgp->use_timers > 3)  {
    *
    * No conflict resolution required because temp locking prevents conflicts. */
 
-
 if (hgp->use_timers > 3)
   ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[0], hg->comm->Communicator);
             
@@ -766,12 +767,11 @@ if (hgp->use_timers > 3)  {
     
     /* determine actual global number of candidates this round */
     MPI_Allreduce (&sendcnt, &nTotal, 1, MPI_INT, MPI_SUM, hgc->row_comm);     
-
-    if (nTotal == 0)  {
+    if (nTotal == 0) {
       if (hgp->use_timers > 3)
          ZOLTAN_TIMER_STOP(zz->ZTime, development_timers[1], hg->comm->Communicator);
       break;                            /* globally all work is done, so quit */
-      }
+    }
       
     /* communication to determine global size and displacements of rec buffer */
     MPI_Allgather (&sendsize, 1, MPI_INT, size, 1, MPI_INT, hgc->row_comm); 
@@ -876,8 +876,9 @@ if (hgp->use_timers > 3)  {
         count = 0;
         for (i = 0; i < m; i++)  {
           lno = index[i];
-          if (sums[lno] > PSUM_THRESHOLD)
+          if (sums[lno] > PSUM_THRESHOLD) {
             aux[count++] = lno;      /* save lno for significant partial sum */
+          }
           else {
             sums[lno] = 0.0;         /* clear unwanted entries */  
           }
@@ -974,7 +975,7 @@ bobtemp++;
                
         /* Not sure if this test makes any speedup ???, works without! */
         if (gno % hgc->nProc_y != hgc->myProc_y)
-          continue;                           /* this gno is not on this proc */   
+          continue;                           /* this gno is not on this proc */
 
         /* merge step: look for target gno from each row's data */
         for (i = 0; i < hgc->nProc_y; i++)  {
@@ -1079,7 +1080,7 @@ cmatch[gno]     = -1;
           }
         }
         
-      if (cFLAG)  {  /* Broadcast what we matched so far */
+      if (cFLAG) {  /* Broadcast what we matched so far */
         MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
       }       
       
@@ -1197,7 +1198,6 @@ if (hgp->use_timers > 3)  {
   ZOLTAN_TIMER_START(zz->ZTime, development_timers[5], hg->comm->Communicator);
 }               
   
-     
 if (0 && hgc->myProc_x == 0 && hgc->myProc_y == 0)
 {
 int local = 0, global = 0, unmatched = 0;
@@ -1207,8 +1207,8 @@ for (i = 0; i < hg->nVtx; i++)
   else if (match[i] < 0)   global++;
   else                     local++;
   }
-uprintf (hgc, "RTHRTH %d unmatched, %d external, %d local of %d\n",
- unmatched, global, local, hg->nVtx);
+uprintf (hgc, "%d RTHRTH %d unmatched, %d external, %d local of %d\n",
+ hg->info, unmatched, global, local, hg->nVtx);
 }
 
 if (0 && hgc->myProc_x==0 && hgc->myProc_y==0)
