@@ -610,7 +610,7 @@ namespace Anasazi {
     // a restart or hit the number of maximum iterations (restarts).  
     //
     while(tempsteps > 0 && _numRestarts <= _restarts 
-          && !_exit_flg && !_error_flg) {
+          && !_exit_flg && !_error_flg && _schurerror > _residual_tolerance) {
       _isevecscurrent = false;
       // If we don't need to restart, just get it over with and return.
       if (_jstart+tempsteps < _maxBlocks) {
@@ -661,9 +661,6 @@ namespace Anasazi {
         if (_om->isVerbosity( IterationDetails )) {
           currentStatus();
         }
-	//
-	// Check for convergence, return if converged
-	if (_schurerror < _residual_tolerance) { return; }
       }
     }
   }
