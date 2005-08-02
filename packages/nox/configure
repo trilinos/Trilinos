@@ -30428,7 +30428,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#include "NumPyWrapper.h"
+#include "FileStream.h"
 
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
@@ -30476,7 +30476,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#include "NumPyWrapper.h"
+#include "FileStream.h"
 
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
@@ -30528,7 +30528,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#include "NumPyWrapper.h"
+#include "FileStream.h"
 
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
@@ -30565,11 +30565,11 @@ rm -f conftest.err conftest.$ac_ext
 
   if test $done = no; then
     echo "------"
-    echo "Cannot preprocess the include file NumPyWrapper.h, part of the PyTrilinos package."
+    echo "Cannot preprocess the include file FileStream.h, part of the PyTrilinos package."
     echo "Try --with-incdir=\"-I<dir1> -I<dir2>\""
     echo "------"
-    { { echo "$as_me:$LINENO: error: Cannot find PyTrilinos include directory containing NumPyWrapper.h" >&5
-echo "$as_me: error: Cannot find PyTrilinos include directory containing NumPyWrapper.h" >&2;}
+    { { echo "$as_me:$LINENO: error: Cannot find PyTrilinos include directory containing FileStream.h" >&5
+echo "$as_me: error: Cannot find PyTrilinos include directory containing FileStream.h" >&2;}
    { (exit 1); exit 1; }; }
   fi
 
