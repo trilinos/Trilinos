@@ -216,6 +216,7 @@ int main( int argc, char* argv[] ) {
 #ifdef HAVE_MPI
 			MPI_Finalize();
 #endif
+			cout << "End Result: TEST FAILED" << endl;
 			return parse_return;
 		}
 
@@ -539,8 +540,13 @@ int main( int argc, char* argv[] ) {
     } // end if( procRank == 0 )
 	// Finalize the MPI session if we are running in parallel.
 	MPI_Finalize();
-	if (procRank == 0) return 0;	
-#else
-	return 0;
 #endif
+
+    cout << "End Result: TEST PASSED" << endl;	
+
+#ifdef HAVE_MPI
+    if ( procRank == 0 )
+#endif
+	return 0;
+
 }

@@ -113,9 +113,12 @@ int main(int argc, char* argv[])
   MPI_Finalize();
 #endif
 
-  if (FailedTests == 0 && procRank==0)
-    cout << "End Result: TEST PASSED" << endl;
+  if (FailedTests != 0) {
+    cout << "End Result: TEST FAILED" << endl;
+    return -1;
+  }
 
+  cout << "End Result: TEST PASSED" << endl;
   return FailedTests;
 }
 

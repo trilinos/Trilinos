@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
+    cout << "End Result: TEST FAILED" << endl;
     return parse_return;
   }
 
@@ -465,7 +466,10 @@ int main(int argc, char *argv[])
     MPI_Finalize();  
 #endif
 
-  if ( FailedTests > 0 ) { return (-1); }
+  if ( FailedTests > 0 ) { 
+    cout << "End Result: TEST FAILED" << endl;
+    return (-1); 
+  }
 
   if ( FailedTests == 0 )
     cout << "End Result: TEST PASSED" << endl;

@@ -1543,6 +1543,7 @@ int main(int argc, char *argv[])
     return 0;
   }
 
+  cout << "End Result: TEST FAILED" << endl;
   return (TotalTestCount-GoodTestCount-1);
 }
 

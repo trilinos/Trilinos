@@ -116,6 +116,7 @@ int main(int argc, char* argv[])
     {
       if (verbose) {
         cout << "Number of failed tests: " << numberFailedTests << endl;
+        cout << "End Result: TEST FAILED" << endl;
         return -1;
       }
     }
