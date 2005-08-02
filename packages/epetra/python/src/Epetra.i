@@ -156,6 +156,13 @@ can therefore be used everywhere Numeric vectors are accepted.
 #include "mpi.h"
 PyObject* Init_Argv(PyObject *args) 
 {  
+  /*
+  int flag = 0;
+  // check that MPI_Init has not already been called 
+  MPI_Initialized(&flag);
+  if (flag)
+    return Py_BuildValue("");
+   */
 
   int i, error, myid, size;
   int argc = 0;  
@@ -824,8 +831,35 @@ using namespace std;
 }
 
 %extend Epetra_FECrsMatrix {
-  double * __getitem__(int i) {
-    return self->operator[](i);
+  void __setitem__(PyObject* args, double val) 
+  {
+    int Row, Col;
+    if (!PyArg_ParseTuple(args, "ii", &Row, &Col)) {
+      PyErr_SetString(PyExc_IndexError, "Invalid index");
+      return;
+    }
+
+    if (self->ReplaceGlobalValues(1, &Row, 1, &Col, &val))
+      self->InsertGlobalValues(1, &Row, 1, &Col, &val);
+  }
+
+  PyObject* __getitem__(PyObject* args) 
+  {
+    int Row, Col;
+    if (PyInt_Check(args))
+    {
+      return(Epetra_RowMatrix_GetEntries(*self, PyLong_AsLong(args)));
+    }
+    else if (PyArg_ParseTuple(args, "ii", &Row, &Col))
+    {
+      return(Epetra_RowMatrix_GetEntry(*self, Row, Col));
+    }
+    else
+    {
+      PyErr_SetString(PyExc_IndexError, "Input argument not supported");
+      Py_INCREF(Py_None);
+      return Py_None;
+    }
   }
 
   int InsertGlobalValues(const int Row, const int Size, 
