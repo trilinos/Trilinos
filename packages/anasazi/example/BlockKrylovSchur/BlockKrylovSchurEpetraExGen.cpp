@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
 	int blockSize = 1;  
 	int maxBlocks = 3*nev/blockSize;
 	int maxRestarts = 5;
-	int step = 5;
+	//int step = 5;
 	double tol = 1.0e-6;
 	string which="LM";
 	//
@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
 	MyPL.set( "Max Blocks", maxBlocks );
 	MyPL.set( "Max Restarts", maxRestarts );
 	MyPL.set( "Tol", tol );
-	MyPL.set( "Step Size", step );
+	//MyPL.set( "Step Size", step );
 	
 	typedef Anasazi::MultiVec<double> MV;
 	typedef Anasazi::Operator<double> OP;

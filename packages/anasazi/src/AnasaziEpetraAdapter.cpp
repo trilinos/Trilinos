@@ -251,7 +251,7 @@ namespace Anasazi {
   EpetraGenOp::EpetraGenOp(const Teuchos::RefCountPtr<Epetra_Operator> &AOp,
 			   const Teuchos::RefCountPtr<Epetra_Operator> &MOp,
 			   bool isAInverse_) 
-    : Epetra_AOp(AOp), Epetra_MOp(MOp), isAInverse( isAInverse_ ) 
+    : isAInverse( isAInverse_ ), Epetra_AOp(AOp), Epetra_MOp(MOp) 
   {
   }
     

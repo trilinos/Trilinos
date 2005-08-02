@@ -130,17 +130,6 @@ namespace Anasazi {
     Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sm; 
     Teuchos::ParameterList _pl;
     //
-    // Internal timers
-    //
-    bool _restartTimers;
-    Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerMOp, _timerPrec,
-                                        _timerSortEval, _timerDS,
-                                        _timerOrtho, _timerTotal;
-    //
-    // Counters
-    //
-    int _count_ApplyOp, _count_ApplyM, _count_ApplyPrec;
-    //
     // Information obtained from the eigenproblem
     //
     Teuchos::RefCountPtr<OP> _Op;
@@ -160,10 +149,24 @@ namespace Anasazi {
     //
     ModalSolverUtils<ScalarType,MV,OP> _MSUtils;
     std::vector<ScalarType> _theta, _normR, _resids;
-
+    //
     // Output stream from the output manager
+    //
     std::ostream& _os;
-
+    //
+    // Internal timers
+    //
+    bool _restartTimers;
+    Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerMOp, _timerPrec,
+                                        _timerSortEval, _timerDS,
+                                        _timerOrtho, _timerTotal;
+    //
+    // Counters
+    //
+    int _count_ApplyOp, _count_ApplyM, _count_ApplyPrec;
+    //
+    // Convenience typedefs
+    //
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
   };
@@ -178,8 +181,8 @@ namespace Anasazi {
                                                  ):
     _problem(problem), 
     _om(om),
-    _pl(pl),
     _sm(sm),
+    _pl(pl),
     _Op(_problem->GetOperator()),
     _MOp(_problem->GetM()),
     _Prec(_problem->GetPrec()),
@@ -190,13 +193,13 @@ namespace Anasazi {
     _blockSize(_pl.get("Block Size", 1)),
     _residual_tolerance(_pl.get("Tol", 1.0e-6)),
     _numBlocks(_pl.get("Max Blocks", 25)), 
-    _restartTimers(_pl.get("Restart Timers", false)),
     _numRestarts(0), 
     _iter(0), 
     _dimSearch(_blockSize*_numBlocks),    
     _knownEV(0),
     _MSUtils(om),
     _os(_om->GetOStream()),
+    _restartTimers(_pl.get("Restart Timers", false)),
     _timerOp(Teuchos::TimeMonitor::getNewTimer("Op operator time")),
     _timerMOp(Teuchos::TimeMonitor::getNewTimer("M operator time")),
     _timerPrec(Teuchos::TimeMonitor::getNewTimer("Preconditioner time")),

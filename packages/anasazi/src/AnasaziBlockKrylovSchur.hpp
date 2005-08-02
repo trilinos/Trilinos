@@ -160,21 +160,9 @@ namespace Anasazi {
     Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sm; 
     Teuchos::RefCountPtr<OutputManager<ScalarType> > _om; 
     Teuchos::ParameterList &_pl;
-
     //
-    // Internal timers
-    //
-    bool _restartTimers;
-    Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerSortEval,
-                                        _timerCompSF, _timerSortSF,
-                                        _timerCompEvec, _timerQRFact, 
-                                        _timerOrtho, _timerTotal;
-    //
-    // Counters
-    //
-    int _count_ApplyOp;
-
     // Information obtained from the eigenproblem
+    //
     Teuchos::RefCountPtr<OP> _Op;
     Teuchos::RefCountPtr<OP> _MOp;
     Teuchos::RefCountPtr<MV> _evecs;
@@ -192,13 +180,29 @@ namespace Anasazi {
     Teuchos::RefCountPtr<MV> _basisvecs;
     Teuchos::SerialDenseMatrix<int,ScalarType> _hessmatrix;
     Teuchos::RefCountPtr<std::vector<ScalarType> > _ritzresiduals, _ritzvalues;
-
+    //
     // Pointer to dummy function required by lapack.GEES/TREVC call
+    //
     int (*dummyFunc)(ScalarType*, ScalarType*);
-
+    //
     // Output stream from the output manager
+    //
     std::ostream& _os;
-
+    //
+    // Internal timers
+    //
+    bool _restartTimers;
+    Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerSortEval,
+                                        _timerCompSF, _timerSortSF,
+                                        _timerCompEvec, _timerQRFact, 
+                                        _timerOrtho, _timerTotal;
+    //
+    // Counters
+    //
+    int _count_ApplyOp;
+    //
+    // Convenience typedefs
+    //
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
   };
@@ -226,7 +230,6 @@ namespace Anasazi {
     _restarts(_pl.get("Max Restarts", 0)),
     _blockSize(_pl.get("Block Size", 1 )),
     _stepSize(_pl.get("Step Size", _maxBlocks*(_restarts+1)*_blockSize)),
-    _restartTimers(_pl.get("Restart Timers", false)),
     _residual_tolerance(_pl.get("Tol", 1.0e-6)),
     _numRestarts(0), 
     _iter(0), 
@@ -239,14 +242,15 @@ namespace Anasazi {
     _isdecompcurrent(false),
     _isevecscurrent(false),
     _exit_flg(false),
-    _error_flg(false),
     _dep_flg(false),
+    _error_flg(false),
     _schurerror(1.0), 
     _dep_tol(1.0), 
     _blk_tol(1.0),
     _sing_tol(1.0),
     _def_tol(1.0),
     _os(_om->GetOStream()),
+    _restartTimers(_pl.get("Restart Timers", false)),
     _timerOp(Teuchos::TimeMonitor::getNewTimer("Op operator time")),
     _timerSortEval(Teuchos::TimeMonitor::getNewTimer("Sort evals")),
     _timerCompSF(Teuchos::TimeMonitor::getNewTimer("Compute Schur form time")),

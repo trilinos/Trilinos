@@ -49,10 +49,8 @@
 
 int main(int argc, char *argv[]) 
 {
-  int i, ierr;
+  int i;
   int info = 0;
-  double zero = 0.0;
-  double one = 1.0;
   
 #ifdef EPETRA_MPI
   

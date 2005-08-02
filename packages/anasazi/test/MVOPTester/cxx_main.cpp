@@ -66,7 +66,6 @@ int main(int argc, char *argv[])
 
   // PID info
   int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
   bool verbose = 0;
 
   if (argc>1) {

@@ -72,7 +72,6 @@ int main(int argc, char *argv[])
 
   // PID info
   int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.

@@ -146,20 +146,6 @@ namespace Anasazi {
     const Teuchos::RefCountPtr<OutputManager<ScalarType> > _om; 
     Teuchos::ParameterList _pl;
     //
-    // Internal timers
-    //
-    bool _restartTimers;
-    Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerMOp, _timerPrec,
-                                        _timerSortEval, 
-                                        _timerLocalProj, _timerDS,
-                                        _timerLocalUpdate, _timerCompRes,
-                                        _timerOrtho, 
-                                        _timerRestart, _timerTotal;
-    //
-    // Counters
-    //
-    int _count_ApplyOp, _count_ApplyM, _count_ApplyPrec;
-    //
     // Information obtained from the eigenproblem
     //
     Teuchos::RefCountPtr<OP> _Op;
@@ -182,8 +168,25 @@ namespace Anasazi {
     ModalSolverUtils<ScalarType,MV,OP> _MSUtils;
     //
     // Output stream from the output manager
+    //
     std::ostream& _os;
-
+    //
+    // Internal timers
+    //
+    bool _restartTimers;
+    Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerMOp, _timerPrec,
+                                        _timerSortEval, 
+                                        _timerLocalProj, _timerDS,
+                                        _timerLocalUpdate, _timerCompRes,
+                                        _timerOrtho, 
+                                        _timerRestart, _timerTotal;
+    //
+    // Counters
+    //
+    int _count_ApplyOp, _count_ApplyM, _count_ApplyPrec;
+    //
+    // Convenience typedefs
+    //
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
   };
@@ -209,14 +212,14 @@ namespace Anasazi {
     _maxIter(_pl.get("Max Iters", 300)),
     _blockSize(_pl.get("Block Size", 1)),
     _residual_tolerance(_pl.get("Tol", 1.0e-6)),
-    _restartTimers(_pl.get("Restart Timers",false)),
     _numRestarts(0), 
-    _error_flg(false),
     _iter(0), 
     _knownEV(0),
     _nevLocal(0),
+    _error_flg(false),
     _MSUtils(om),
     _os(_om->GetOStream()),
+    _restartTimers(_pl.get("Restart Timers",false)),
     _timerOp(Teuchos::TimeMonitor::getNewTimer("Op operator time")),
     _timerMOp(Teuchos::TimeMonitor::getNewTimer("M operator time")),
     _timerPrec(Teuchos::TimeMonitor::getNewTimer("Preconditioner time")),
@@ -359,8 +362,7 @@ namespace Anasazi {
     // Necessary variables
     //
     int i, j;
-    int info, nb, leftOver;
-    int bStart = 0, offSet = 0;
+    int info = 0, leftOver;
     bool reStart = false;
     bool criticalExit = false;
     bool haveMass = (_MOp.get()!=0);
@@ -457,7 +459,7 @@ namespace Anasazi {
     MVT::MvRandom( *X );
     //
     // Miscellaneous definitions
-    int localSize;
+    int localSize = 0;
     const int twoBlocks = 2*_blockSize;
     const int threeBlocks = 3*_blockSize;
     int _nFound = _blockSize;
