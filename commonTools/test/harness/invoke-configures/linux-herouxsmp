@@ -1,5 +1,5 @@
 ../configure \
-CXXFLAGS=-O3 \
+CXXFLAGS="-O3 -ansi -pedantic" \
 CFLAGS=-O3 \
 FFLAGS=-O3 \
 --with-libs="/u/TrilinosTestHarness/Trilinos3PL/prebuilt/dscpack-1.0/dsclibdbl_linux_lam.a \
