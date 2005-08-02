@@ -43,7 +43,7 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = setpath.py exSimple.py
+EXTRA_DIST = setpath.py exSimple.py exPyOperator.py exPyRowMatrix.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
