@@ -199,7 +199,6 @@ int main(int argc, char *argv[])
   BLAS<int, SType2> SType2BLAS;
   SType1 SType1zero = ScalarTraits<SType1>::zero();
   SType1 SType1one = ScalarTraits<SType1>::one();
-  SType2 SType2zero = ScalarTraits<SType2>::zero();
   SType2 SType2one = ScalarTraits<SType2>::one();
   SType1* SType1A;
   SType1* SType1B;
