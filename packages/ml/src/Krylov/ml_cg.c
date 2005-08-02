@@ -246,46 +246,47 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    colInd = (int    *) ML_allocate( allocated * sizeof(int) );
    colVal = (double *) ML_allocate( allocated * sizeof(double) );
    Nbc = 0;  /* rst to handle nonsymmetric (due to BCs) matrices */
-   if (scale_by_diag) {
-   for ( i = 0; i < length; i++ )
+   if (scale_by_diag)
    {
-      while(ML_Operator_Getrow(matrix,1,&i,allocated,colInd,colVal,&ncnt)==0)
-      {
-         allocated *= 2;
-         ML_free(colInd); ML_free(colVal);
-         colInd = (int    *) ML_allocate( allocated * sizeof(int) );
-         colVal = (double *) ML_allocate( allocated * sizeof(double) );
-      }
-
-      sum = 0.0;
-      for ( j = 0; j < ncnt; j++ )
-      {
-         if ( colInd[j] == i ) diag[i] = colVal[j];
-         else sum += ML_dabs(colVal[j]);
-      }
-      /* kludging this in to handle Dirichlet BC's */
-      if ( sum == 0.0) { rhs[i] = 0.; Nbc++; diag[i] = 1.;}
-      else {
-         if ( diag[i] == 0.0 ) 
-         {
-	   if (level != -1) 
-            printf("%d : diagonal[%d] == 0.0 for matrix stored on level %d within MG hierarchy\n", comm->ML_mypid, i, level);
-	   else
-	     printf("%d : diagonal[%d] == 0.0\n", comm->ML_mypid, i);
-	   diag[i] = 1.;
-         }
-         else if ( diag[i] < 0.0 )
-         {
-	   if (level != -1) 
-            printf("%d : diagonal[%d] = %e < 0 for matrix stored on level %d within MG hierarchy\n", comm->ML_mypid, i, diag[i], level);
-	   else
-            printf("%d : diagonal[%d] = %e < 0.0.\n", comm->ML_mypid, i, diag[i]);
-         }
-	 else {
-	   diag[i] = 1.0 / sqrt(ML_dabs(diag[i]));
-	 }
-      }
-   }
+     for ( i = 0; i < length; i++ )
+     {
+        while(ML_Operator_Getrow(matrix,1,&i,allocated,colInd,colVal,&ncnt)==0)
+        {
+           allocated *= 2;
+           ML_free(colInd); ML_free(colVal);
+           colInd = (int    *) ML_allocate( allocated * sizeof(int) );
+           colVal = (double *) ML_allocate( allocated * sizeof(double) );
+        }
+  
+        sum = 0.0;
+        for ( j = 0; j < ncnt; j++ ) {
+           if ( colInd[j] == i ) diag[i] = colVal[j];
+           else sum += ML_dabs(colVal[j]);
+        }
+        /* kludging this in to handle Dirichlet BC's */
+        if ( sum == 0.0) {
+           rhs[i] = 0.; Nbc++; diag[i] = 1.;
+        } else {
+           if ( diag[i] == 0.0 ) 
+           {
+             if (ML_Get_PrintLevel() > 0) {
+               if (level != -1) 
+                 printf("%d : diagonal[%d] == 0.0 for matrix stored on level %d within MG hierarchy\n", comm->ML_mypid, i, level);
+               else
+                 printf("%d : diagonal[%d] == 0.0\n", comm->ML_mypid, i);
+             }
+             diag[i] = 1.;
+           } else if ( diag[i] < 0.0 ) {
+             if (ML_Get_PrintLevel() > 0) {
+               if (level != -1) 
+                 printf("%d : diagonal[%d] = %e < 0 for matrix stored on level %d within MG hierarchy\n", comm->ML_mypid, i, diag[i], level);
+               else
+                 printf("%d : diagonal[%d] = %e < 0.0.\n", comm->ML_mypid, i, diag[i]);
+             }
+           } else
+               diag[i] = 1.0 / sqrt(ML_dabs(diag[i]));
+        } /* if ( sum == 0.0) */
+     }
    }
    else {
      for (i = 0; i < length; i++) diag[i] = 1.;
@@ -336,7 +337,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
      if (rnorm_array != NULL) ML_free(rnorm_array);
      if (Tmat != NULL) {
           for ( i = 0; i <= original_maxiter; i++ ) ML_free(Tmat[i]);
-	  ML_free(Tmat);
+      ML_free(Tmat);
      }
 
      return 1;
@@ -371,7 +372,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
      if (rnorm_array != NULL) ML_free(rnorm_array);
      if (Tmat != NULL) {
           for ( i = 0; i <= original_maxiter; i++ ) ML_free(Tmat[i]);
-	  ML_free(Tmat);
+      ML_free(Tmat);
      }
 
      return 1;
@@ -398,9 +399,9 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
       sigma = ML_gdot(length, p, ap, comm);
       if ( fabs(sigma) < 1.0E-12 )
       {
-	alpha_array[its] = sigma;
-	maxiter = its + 1;
-	break;
+    alpha_array[its] = sigma;
+    maxiter = its + 1;
+    break;
       }
       alpha  = rho / sigma;
       alpha_array[its] = sigma;
@@ -586,47 +587,48 @@ int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    colInd = (int    *) ML_allocate( allocated * sizeof(int) );
    colVal = (double *) ML_allocate( allocated * sizeof(double) );
    Nbc = 0;  /* rst to handle nonsymmetric (due to BCs) matrices */
-   if (scale_by_diag) {
-   for ( i = 0; i < length; i++ )
+   if (scale_by_diag)
    {
-      while(ML_Operator_Getrow(matrix,1,&i,allocated,colInd,colVal,&ncnt)==0)
-      {
-         allocated *= 2;
-         ML_free(colInd); ML_free(colVal);
-         colInd = (int    *) ML_allocate( allocated * sizeof(int) );
-         colVal = (double *) ML_allocate( allocated * sizeof(double) );
-      }
+     for ( i = 0; i < length; i++ )
+     {
+        while(ML_Operator_Getrow(matrix,1,&i,allocated,colInd,colVal,&ncnt)==0)
+        {
+           allocated *= 2;
+           ML_free(colInd); ML_free(colVal);
+           colInd = (int    *) ML_allocate( allocated * sizeof(int) );
+           colVal = (double *) ML_allocate( allocated * sizeof(double) );
+        }
 
-      sum = 0.0;
-      for ( j = 0; j < ncnt; j++ )
-      {
-         if ( colInd[j] == i ) diag[i] = colVal[j];
-         else sum += ML_dabs(colVal[j]);
-      }
-      /* kludging this in to handle Dirichlet BC's */
-      if ( sum == 0.0) { p[i] = 0.; Nbc++; diag[i] = 1.;}
-
-      else {
-         if ( diag[i] == 0.0 ) 
-         {
-	   if (level != -1) 
-            printf("%d : diagonal[%d] == 0.0 for matrix stored on level %d within MG hierarchy\n", comm->ML_mypid, i, level);
-	   else
-	     printf("%d : diagonal[%d] == 0.0\n", comm->ML_mypid, i);
-	   diag[i] = 1.;
-         }
-         else if ( diag[i] < 0.0 )
-         {
-	   if (level != -1) 
-            printf("%d : diagonal[%d] = %e < 0 for matrix stored on level %d within MG hierarchy\n", comm->ML_mypid, i, diag[i], level);
-	   else
-            printf("%d : diagonal[%d] = %e < 0.0.\n", comm->ML_mypid, i, diag[i]);
-         }
-	 else {
-	   diag[i] = 1.0 / (ML_dabs(diag[i]));
-	 }
-      }
-   }
+        sum = 0.0;
+        for ( j = 0; j < ncnt; j++ ) {
+           if ( colInd[j] == i ) diag[i] = colVal[j];
+           else sum += ML_dabs(colVal[j]);
+        }
+        /* kludging this in to handle Dirichlet BC's */
+        if ( sum == 0.0) {
+          p[i] = 0.; Nbc++; diag[i] = 1.;
+        } else {
+           if ( diag[i] == 0.0 ) {
+             if (ML_Get_PrintLevel() > 0) {
+               if (level != -1)
+                 printf("%d : diagonal[%d] == 0.0 for matrix stored on level %d within MG hierarchy\n", comm->ML_mypid, i, level);
+               else
+                 printf("%d : diagonal[%d] == 0.0\n", comm->ML_mypid, i);
+             }
+             diag[i] = 1.;
+           }
+           else if ( diag[i] < 0.0 ) {
+             if (ML_Get_PrintLevel() > 0) {
+               if (level != -1) 
+                 printf("%d : diagonal[%d] = %e < 0 for matrix stored on level %d within MG hierarchy\n", comm->ML_mypid, i, diag[i], level);
+               else
+                 printf("%d : diagonal[%d] = %e < 0.0.\n", comm->ML_mypid, i, diag[i]);
+               }
+           }
+           else
+             diag[i] = 1.0 / (ML_dabs(diag[i]));
+        } /*if ( sum == 0.0) */
+     } /*for ( i = 0; i < length; i++ )*/
    }
    else {
      for (i = 0; i < length; i++) diag[i] = 1.;
