@@ -101,6 +101,8 @@ ANA_RTOP_OPS_LIB_H = \
   $(srcdir)/ana/rtop/ops_lib/RTOpPack_TOpAssignScalar.hpp
 
 ANA_OPERATOR_VECTOR_INTERFACES_H = \
+  $(srcdir)/ana/operator_vector/interfaces/Thyra_describeLinearOpDecl.hpp \
+  $(srcdir)/ana/operator_vector/interfaces/Thyra_describeLinearOp.hpp \
   $(srcdir)/ana/operator_vector/interfaces/Thyra_AssertOp.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_LinearOpBase.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_LinearOpBaseDecl.hpp\
