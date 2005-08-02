@@ -198,6 +198,130 @@ PyObject* Finalize() {
   return Py_BuildValue("");
 } 
 
+#define SUMALL    0
+#define MINALL    1
+#define MAXALL    2
+#define GATHERALL 3
+#define SCANSUM   4
+#define BROADCAST 5
+
+PyObject* Epetra_Comm_InterfaceInt(const Epetra_Comm& Comm,
+                                   int action, PyObject* input,
+                                   int root)
+{
+  PyObject* result;
+
+  int len = PyList_Size(input);
+  vector<int> orig(len);
+  vector<int> dest(len);
+
+  for (int i = 0 ; i < len ; ++i)
+  {
+    PyObject* value;
+    value = PyList_GetItem(input, i);
+
+    if (PyInt_Check(value) == 0)
+    {
+      cerr << "Indices must be integers" << endl;
+      Py_INCREF(Py_None);
+      return Py_None;
+    }
+    orig[i] = PyLong_AsLong(value);
+  }
+
+  // communicate here
+  switch (action) {
+  case SUMALL:
+    Comm.SumAll(&orig[0], &dest[0], len);
+    break;
+  case MINALL:
+    Comm.MinAll(&orig[0], &dest[0], len);
+    break;
+  case MAXALL:
+    Comm.MaxAll(&orig[0], &dest[0], len);
+    break;
+  case GATHERALL:
+    Comm.GatherAll(&orig[0], &dest[0], len);
+    break;
+  case SCANSUM:
+    Comm.ScanSum(&orig[0], &dest[0], len);
+    break;
+  case BROADCAST:
+    Comm.Broadcast(&orig[0], len, root);
+    for (int i = 0 ; i < len ; ++i)
+      dest[i] = orig[i];
+    break;
+  }
+
+  // now insert in the result
+  result = PyList_New(len);
+  for (int i = 0 ; i < len ; ++i)
+  {
+    PyObject* value;
+    value = PyLong_FromLong(dest[i]);
+    PyList_SetItem(result, i, value);
+  }
+  return(result);
+}
+
+PyObject* Epetra_Comm_InterfaceDouble(const Epetra_Comm& Comm,
+                                      int action, PyObject* input,
+                                      int root)
+{
+  PyObject* result;
+
+  int len = PyList_Size(input);
+  vector<double> orig(len);
+  vector<double> dest(len);
+
+  for (int i = 0 ; i < len ; ++i)
+  {
+    PyObject* value;
+    value = PyList_GetItem(input, i);
+
+    if (PyFloat_Check(value) == 0)
+    {
+      cerr << "Indices must be doubles" << endl;
+      Py_INCREF(Py_None);
+      return Py_None;
+    }
+    orig[i] = PyFloat_AsDouble(value);
+  }
+
+  // communicate here
+  switch (action) {
+  case SUMALL:
+    Comm.SumAll(&orig[0], &dest[0], len);
+    break;
+  case MINALL:
+    Comm.MinAll(&orig[0], &dest[0], len);
+    break;
+  case MAXALL:
+    Comm.MaxAll(&orig[0], &dest[0], len);
+    break;
+  case GATHERALL:
+    Comm.GatherAll(&orig[0], &dest[0], len);
+    break;
+  case SCANSUM:
+    Comm.ScanSum(&orig[0], &dest[0], len);
+    break;
+  case BROADCAST:
+    Comm.Broadcast(&orig[0], len, root);
+    for (int i = 0 ; i < len ; ++i)
+      dest[i] = orig[i];
+    break;
+  }
+
+  // now insert in the result
+  result = PyList_New(len);
+  for (int i = 0 ; i < len ; ++i)
+  {
+    PyObject* value;
+    value = PyFloat_FromDouble(dest[i]);
+    PyList_SetItem(result, i, value);
+  }
+  return(result);
+}
 MPI_Comm CommWorld()
 {
   return(MPI_COMM_WORLD);
@@ -896,6 +1020,54 @@ fail:
     self->print(os);                  // Put the output in os
     string s = os.str();              // Extract the string from os
     return s.substr(0,s.length()-1);  // Return the string minus trailing \n
+  }
+}
+
+// must be as defined above
+#define SUMALL    0
+#define MINALL    1
+#define MAXALL    2
+#define GATHERALL 3
+#define SCANSUM   4
+#define BROADCAST 5
+
+#ifndef HAVE_MPI
+%extend Epetra_SerialComm {
+#else
+%extend Epetra_MpiComm {
+#endif
+  // works for INTs and DOUBLEs, like Epetra_Comm
+  PyObject* GlobalOp(int action, PyObject* input, int root = 0)
+  {
+    char what;
+
+    if (PyList_Check(input) == 0)
+    {
+      cerr << "Input object is not a list" << endl;
+      Py_INCREF(Py_None);
+      return Py_None;
+    }
+
+    // get the first object to understand the type
+    PyObject* value = PyList_GetItem(input, 0);
+
+    if (PyInt_Check(value))
+      what = 'I';
+    else if (PyFloat_Check(value))
+      what = 'D';
+    else
+    {
+      cerr << "Only integers and doubles are supported" << endl;
+      Py_INCREF(Py_None);
+      return Py_None;
+    }
+
+    PyObject* result;
+    if (what == 'I')
+      result = Epetra_Comm_InterfaceInt(*self, action, input, root);
+    else
+      result = Epetra_Comm_InterfaceDouble(*self, action, input, root);
+    return(result);
   }
 }
 
