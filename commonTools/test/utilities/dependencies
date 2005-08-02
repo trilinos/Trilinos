@@ -77,6 +77,11 @@ nox = \
 --enable-loca \
 --enable-ml
 
+nox/loca = \
+--enable-nox \
+--enable-loca \
+--enable-ml
+
 loca = \
 --enable-loca
 
