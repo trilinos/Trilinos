@@ -723,7 +723,7 @@ if test X${BUILD_PYTHON} = Xyes && test X${ADDON_epetra} = Xyes; then
 # Commenting out the check for PyTrilinos_config.h for right now since
 # PyTrilinos is configured after NOX, so this file may not exist
 #  TRILINOS_HEADER(PyTrilinos,PyTrilinos_config.h,src)
-  TRILINOS_HEADER(PyTrilinos,PyTrilinos.h,src)
+  TRILINOS_HEADER(PyTrilinos,NumPyWrapper.h,src)
 fi
 
 # ------------------------------------------------------------------------
