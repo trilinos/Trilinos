@@ -199,7 +199,7 @@ public:
 
   std::string description() const
     {
-      return (std::string("SerialTridiagLinearOp<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
+      return (std::string("MPITridiagLinearOp<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
     }
 
 protected:
