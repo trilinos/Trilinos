@@ -352,6 +352,7 @@ exit $exitStatus;
             my $cvsDirContents = `ls $trilinosDir/CVS`;
             if ($cvsDirContents =~ m/Tag/) {
                 $branchTag = `cat $trilinosDir/CVS/Tag`;
+                $branchTag =~ s/^T//;
             } else {
                 $branchTag = "development";
             }      
