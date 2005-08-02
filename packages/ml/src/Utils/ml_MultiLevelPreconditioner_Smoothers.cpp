@@ -543,6 +543,51 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
                  edge_smoother, edge_args_, nodal_smoother, nodal_args_,
                  hiptmair_type);
 
+      bool indefiniteProblem = List_.get("negative conductivity",false);
+      /* This corrects for the case of negative sigma */
+      if (indefiniteProblem && SubSmootherType == "MLS")
+      {
+        if (verbose_ && Comm().MyPID() == 0)
+          cout << "ML*WRN* "
+             << "Resetting nodal smoother on level " << logical_level << endl
+             << "ML*WRN* to account for negative mass matrix." << endl;
+        //pre-smoother
+        ML* ml_ptr = ml_;
+        ML_Sm_Hiptmair_Data *hiptmairSmData =
+           (ML_Sm_Hiptmair_Data *) ml_->pre_smoother[logical_level].smoother->data;
+        ML *ml_subproblem = hiptmairSmData->ml_nodal;
+                                                                                
+        struct MLSthing *widget =
+                       (struct MLSthing *) ml_subproblem->pre_smoother->smoother->data;
+        double eig_ratio = widget->eig_ratio;
+        int degree = widget->mlsDeg;
+        ml_subproblem->pre_smoother->data_destroy(
+                                 ml_subproblem->pre_smoother->smoother->data);
+        ML_Operator *Amat = ml_subproblem->Amat;
+        double tmp = Amat->lambda_max;
+        Amat->lambda_max = fabs(Amat->lambda_min);
+        Amat->lambda_min = fabs(tmp);
+                                                                                
+        ML_Gen_Smoother_MLS(ml_subproblem,0,ML_PRESMOOTHER,eig_ratio,degree);
+                                                                                
+        //post-smoother
+        hiptmairSmData = (ML_Sm_Hiptmair_Data *)
+                          ml_->post_smoother[logical_level].smoother->data;
+        ml_subproblem = hiptmairSmData->ml_nodal;
+                                                                                
+        // Note:  this is correct because the pre_smoother is the only one
+        // used in the subproblem
+        widget = (struct MLSthing *) ml_subproblem->pre_smoother->smoother->data;
+        eig_ratio = widget->eig_ratio;
+        degree = widget->mlsDeg;
+        ml_subproblem->pre_smoother->data_destroy(
+               ml_subproblem->pre_smoother->smoother->data);
+        Amat = ml_subproblem->Amat;
+                                                                                
+        ML_Gen_Smoother_MLS(ml_subproblem,0,ML_PRESMOOTHER,eig_ratio,degree);
+      }
+
+
     } else if( Smoother == "do-nothing" ) {
 
       // ======================== //
