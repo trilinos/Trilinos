@@ -625,13 +625,13 @@ int Amesos_Klu::Solve()
 	SerialXextract_ = rcp( new Epetra_MultiVector(*SerialMap_,NumVectors_));
 	SerialBextract_ = rcp (new Epetra_MultiVector(*SerialMap_,NumVectors_));
       }
-    if (NumVectors_ != vecB->NumVectors())
-      AMESOS_CHK_ERR(-1); // internal error 
+      if (NumVectors_ != vecB->NumVectors())
+	AMESOS_CHK_ERR(-1); // internal error 
       
       ImportRangeToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecB->Map() ) );
       if ( SerialBextract_->Import(*vecB,*ImportRangeToSerial_,Insert) )
 	AMESOS_CHK_ERR( -1 ) ; // internal error
-
+      
       SerialB_ = &*SerialBextract_ ;
       SerialX_ = &*SerialXextract_ ;
     }
@@ -648,8 +648,12 @@ int Amesos_Klu::Solve()
     }
   }
   if ( MyPID_ == 0) {
-    for ( int i = 0 ; i < NumGlobalElements_ ; i++ ) 
-      SerialXBvalues_[i] = SerialBvalues_[i] ;
+    if ( NumVectors_ == 1 ) {
+      for ( int i = 0 ; i < NumGlobalElements_ ; i++ ) 
+	SerialXBvalues_[i] = SerialBvalues_[i] ;
+    } else {
+      SerialX_->Scale(1.0, *SerialB_ ) ;    // X = B (Klu overwrites B with X)
+    }
     if (UseTranspose()) {
       klu_btf_solve( PrivateKluData_->Symbolic_, PrivateKluData_->Numeric_,
 		     SerialXlda_, NumVectors_, &SerialXBvalues_[0] );
