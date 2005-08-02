@@ -5,6 +5,7 @@
 (FRAMEWORK) {
     DIRS = BlockDavidson,
            BlockKrylovSchur,
+           LOBPCG,
            ModalSolverUtils,
            MVOPTester;
     EXIT-STATUS = STRING-COMPARISON;
