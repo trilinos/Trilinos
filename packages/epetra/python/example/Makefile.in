@@ -255,13 +255,14 @@ AUTOMAKE_OPTIONS = foreign
 #       could get rid of these.
 #
 EXTRA_DIST = setpath.py exSimple.py exCrsMatrix_Easy.py \
-             exCrsMatrix_Efficient.py exImportExport.py
+             exCrsMatrix_Efficient.py exImportExport.py \
+	     exComm.py
 
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of examples
 EXAMPLE_SUITE = exSimple exCrsMatrix_Easy exCrsMatrix_Efficient \
-                exImportExport
+                exImportExport exComm
 
 SETPATH_PY = setpath.py
 all: all-am
