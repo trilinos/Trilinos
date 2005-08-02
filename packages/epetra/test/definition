@@ -61,6 +61,6 @@
 
 (FRAMEWORK) {
     TESTS = ../thyra/test/test_epetra_adapters.exe;
-    ARGS = --max-flop-rate=1 --verbose;
+    ARGS = --verbose;
     COMM = SERIAL, MPI;
 }
