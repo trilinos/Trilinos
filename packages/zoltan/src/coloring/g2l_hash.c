@@ -41,7 +41,7 @@ int Zoltan_G2LHash_G2L(G2LHash *hash, int gno)
     int i, lno;
     G2LHashNode *ptr;
 
-    i = Zoltan_Hash(&gno, 1, (unsigned int) hash->size);
+    i = Zoltan_Hash((ZOLTAN_ID_PTR) &gno, 1, (unsigned int) hash->size);
     for (ptr=hash->table[i]; ptr && ptr->gno!=gno; ptr = ptr->next);
     if (!ptr) {
         lno = hash->lastlno++;
