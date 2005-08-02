@@ -63,7 +63,6 @@ int main(int argc, char *argv[])
     cout << "Processor "<< procRank <<", parse_return "<< parse_return << endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
-    //    MPI_Abort( MPI_COMM_WORLD, parse_return );
 #endif
     return parse_return;
   }
