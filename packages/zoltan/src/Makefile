@@ -208,8 +208,8 @@ RCB_CSRC	= rcb.c rcb_util.c rcb_box.c box_assign.c point_assign.c \
                   inertial1d.c inertial2d.c inertial3d.c shared.c
 RCB_INC		= rcb_const.h create_proc_list.h rib_const.h shared_const.h
 
-COLOR_CSRC      = coloring.c
-COLOR_INC       = coloring.h
+COLOR_CSRC      = coloring.c g2l_hash.c
+COLOR_INC       = coloring.h g2l_hash.h
 
 ifdef ZOLTAN_OCT
 OCT_CSRC	= msg.c octant.c oct_util.c octupdate.c dfs.c costs.c migoct.c \
