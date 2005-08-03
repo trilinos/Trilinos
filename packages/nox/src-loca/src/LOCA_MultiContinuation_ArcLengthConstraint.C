@@ -52,9 +52,11 @@ LOCA::MultiContinuation::ArcLengthConstraint::ArcLengthConstraint(
   globalData(source.globalData),
   arcLengthGroup(),
   constraints(source.constraints),
-  isValidConstraints(source.isValidConstraints),
+  isValidConstraints(false),
   conParamIDs(source.conParamIDs)
 {
+  if (source.isValidConstraints && type == NOX::DeepCopy)
+    isValidConstraints = true;
 }
 
 LOCA::MultiContinuation::ArcLengthConstraint::~ArcLengthConstraint()
