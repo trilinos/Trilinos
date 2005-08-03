@@ -291,21 +291,21 @@ namespace Anasazi {
       _os.precision(6);
       _os <<endl;
       _os <<"******************* CURRENT STATUS *******************"<<endl;
-      _os <<"The number of iterations performed thus far is " <<_iter<<endl;
-      _os <<"The number of restarts performed thus far is " 
+      _os <<"The number of iterations performed is " <<_iter<<endl;
+      _os <<"The number of restarts performed is " 
           << (_numRestarts>_restarts ? _numRestarts-1 : _numRestarts) 
           << " of " << _restarts << endl;
       _os <<"The current block size is "<<_blockSize<<endl;
       _os <<"The number of eigenvalues requested is "<<_nev<<endl;
       _os <<"The requested residual tolerance is "<<_residual_tolerance<<endl;        
       _os <<"The error for the partial Schur decomposition is "<< _schurerror <<endl;
-      _os <<"The number of operations Op*x thus far is "<<_count_ApplyOp<<endl;
+      _os <<"The number of operations Op*x is "<<_count_ApplyOp<<endl;
       //
       //  Determine status of solver and output information correctly.
       //
       if ( _schurerror < _residual_tolerance ) {
         _os <<endl;
-        _os <<"                COMPUTED EIGENVALUES                  "<<endl;
+        _os <<"COMPUTED EIGENVALUES                  "<<endl;
       } 
       else {
         if (_exit_flg) {
@@ -315,7 +315,7 @@ namespace Anasazi {
           _os << "ERROR: Encountered unrecoverable error" << endl;
         }
         _os <<endl;
-        _os <<"            CURRENT EIGENVALUE ESTIMATES              "<<endl;
+        _os <<"CURRENT EIGENVALUE ESTIMATES              "<<endl;
       }
       //
       //  Print out current computed eigenvalues.  If we don't have all the requested

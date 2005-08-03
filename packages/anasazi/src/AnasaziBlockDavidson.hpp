@@ -233,17 +233,17 @@ namespace Anasazi {
       _os.precision(6);
       _os <<endl;
       _os <<"******************* CURRENT STATUS *******************"<<endl;
-      _os <<"The number of iterations performed thus far is " <<_iter<<endl;
-      _os <<"The number of restarts performed thus far is "<<_numRestarts<<endl;
+      _os <<"The number of iterations performed is " <<_iter<<endl;
+      _os <<"The number of restarts performed is "<<_numRestarts<<endl;
       _os <<"The current block size is "<<_blockSize<<endl;
       _os <<"The number of eigenvalues requested is "<<_nev<<endl;
-      _os <<"The number of eigenvalues computed thus far is "<<_knownEV<<endl;
+      _os <<"The number of eigenvalues computed is "<<_knownEV<<endl;
       _os <<"The requested residual tolerance is "<<_residual_tolerance<<endl;
-      _os <<"The number of operations Op*x   thus far is "<<_count_ApplyOp<<endl;
-      _os <<"The number of operations M*x    thus far is "<<_count_ApplyM<<endl;
-      _os <<"The number of operations Prec*x thus far is "<<_count_ApplyPrec<<endl;
+      _os <<"The number of operations Op*x   is "<<_count_ApplyOp<<endl;
+      _os <<"The number of operations M*x    is "<<_count_ApplyM<<endl;
+      _os <<"The number of operations Prec*x is "<<_count_ApplyPrec<<endl;
       _os <<endl;
-      _os <<"                 COMPUTED EIGENVALUES                 "<<endl;
+      _os <<"COMPUTED EIGENVALUES                 "<<endl;
       _os << std::setw(16) << std::right << "Eigenvalue" 
           << std::setw(16) << std::right << "Ritz Residual"
           << endl;
@@ -259,7 +259,7 @@ namespace Anasazi {
         _os <<"[none computed]"<<endl;
       }
       _os <<endl;
-      _os <<"             CURRENT EIGENVALUE ESTIMATES             "<<endl;
+      _os <<"CURRENT EIGENVALUE ESTIMATES             "<<endl;
       _os << std::setw(16) << std::right << "Ritz value" 
           << std::setw(16) << std::right << "Residual"
           << endl;
