@@ -229,6 +229,67 @@ LOCA::DerivUtils::computeDJnDp(LOCA::Continuation::AbstractGroup& grp,
 }
 
 NOX::Abstract::Group::ReturnType 
+LOCA::DerivUtils::computeDJnDp(LOCA::Continuation::AbstractGroup& grp, 
+			       const vector<int>& paramIDs, 
+			       const NOX::Abstract::Vector& nullVector,
+			       NOX::Abstract::MultiVector& result,
+			       bool isValid) const
+{
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDJnDp()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
+  // Views of Jn, d(Jn)/dp
+  NOX::Abstract::Vector *Jn = &result[0];
+  NOX::Abstract::Vector *dJndp = NULL;
+
+  // Compute base residual F
+  if (!isValid) {
+    finalStatus = grp.computeJacobian();
+    LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+
+    status = grp.applyJacobian(nullVector, *Jn);
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+  else
+    finalStatus = NOX::Abstract::Group::Ok;
+
+  double param;
+  double eps;
+
+  // Loop over each parameter
+  for (unsigned int i=0; i<paramIDs.size(); i++) {
+
+    // Perturb single parameter in this group, and return perturbation, eps
+    eps = perturbParam(grp, param, paramIDs[i]);
+
+    // Fill perturbed Jn vector
+    status = grp.computeJacobian();
+    finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+
+    dJndp = &result[i+1];
+    status = grp.applyJacobian(nullVector, *dJndp);
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+
+    // Difference perturbed and base vector 
+    dJndp->update(-1.0, *Jn, 1.0);
+    dJndp->scale(1.0/eps);
+    
+    // Restore original parameter value
+    grp.setParam(paramIDs[i], param);
+
+  }
+
+  return finalStatus;
+}
+
+NOX::Abstract::Group::ReturnType 
 LOCA::DerivUtils::computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
 				const NOX::Abstract::Vector& nullVector,
 				const NOX::Abstract::Vector& aVector,

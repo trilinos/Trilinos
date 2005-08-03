@@ -111,6 +111,14 @@ public:
 	       const NOX::Abstract::Vector& JnVector,
 	       NOX::Abstract::Vector& result) const;
 
+  //! Compute derivative of Jn with respect to particular parameter param_id
+  virtual NOX::Abstract::Group::ReturnType 
+  computeDJnDp(LOCA::Continuation::AbstractGroup&,
+	       const vector<int>& paramIDs, 
+	       const NOX::Abstract::Vector& nullVector,
+	       NOX::Abstract::MultiVector& result,
+	       bool isValid) const;
+
   //! Compute vector (Jn)_{x}a  given vector a
   virtual NOX::Abstract::Group::ReturnType 
   computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
