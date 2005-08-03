@@ -126,6 +126,13 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
   borderedSolver = globalData->locaFactory->createBorderedSystemStrategy(
 				   parsedParams,
 				   constraintParams);
+
+  if (type == NOX::ShapeCopy) {
+    isValidF = false;
+    isValidJacobian = false;
+    isValidNewton = false;
+    isValidGradient = false;
+  }
 }
 
 
@@ -150,7 +157,8 @@ LOCA::MultiContinuation::ConstrainedGroup::operator=(
     fMultiVec = source.fMultiVec;
     newtonMultiVec = source.newtonMultiVec;
     gradientMultiVec = source.gradientMultiVec;
-    borderedSolver = source.borderedSolver;
+    index_f = source.index_f;
+    index_dfdp = source.index_dfdp;
     constraintParamIDs = source.constraintParamIDs;
     isValidF = source.isValidF;
     isValidJacobian = source.isValidJacobian;
@@ -820,7 +828,7 @@ LOCA::MultiContinuation::ConstrainedGroup::projectToDraw(
 
   grpPtr->projectToDraw(mx.getXVec(), px);
   for (int i=0; i<numParams; i++) {
-    px[numParams+i] = mx.getScalar(i);
+    px[grpPtr->projectToDrawDimension()+i] = mx.getScalar(i);
   }
 }
 
