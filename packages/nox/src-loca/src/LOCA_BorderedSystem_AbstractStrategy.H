@@ -140,6 +140,19 @@ namespace LOCA {
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC) = 0;
+
+      //! Set blocks with multivector constraint
+      /*!
+       * This is a version of setMatrixBlocks that takes a multivector for
+       * \c blockB.  This method has a default implementation to generate
+       * a LOCA::MultiContinuation::MultiVecConstraint from \c blockB which
+       * is then passed to the setMatrixBlocks() method.
+       */
+      virtual void setMatrixBlocksMultiVecConstraint(
+	  const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
+	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockB,
+	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
   
       /*! 
        * \brief Computed extended matrix-multivector product
