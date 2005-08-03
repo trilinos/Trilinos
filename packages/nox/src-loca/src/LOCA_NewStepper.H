@@ -39,7 +39,6 @@
 #include "LOCA_Factory.H"              // class data element
 #include "NOX_Parameter_List.H"	       // class data element
 #include "NOX_Solver_Manager.H"	       // class data element
-#include "LOCA_Bifurcation_Manager.H"  // class data element
 #include "LOCA_StepSize_Manager.H"     // class data element
 #include "NOX_StatusTest_Generic.H"    // for enum StatusType
 #include "NOX_Common.H"                // for <string> class
@@ -190,9 +189,6 @@ namespace LOCA {
 
     //! Eigensolver for computing eigenvalues after each continuation
     Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> eigensolver;
-
-    //! Bifurcation group manager
-    LOCA::Bifurcation::Manager* bifGroupManagerPtr;
 
     //! Pointer to bifurcation group
     Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> bifGroupPtr;

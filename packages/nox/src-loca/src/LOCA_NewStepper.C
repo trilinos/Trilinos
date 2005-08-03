@@ -63,7 +63,6 @@ LOCA::NewStepper::NewStepper(
   curGroupPtr(),
   prevGroupPtr(),
   eigensolver(),
-  bifGroupManagerPtr(NULL),
   bifGroupPtr(),
   statusTestPtr(),
   paramListPtr(),
@@ -94,7 +93,6 @@ LOCA::NewStepper::NewStepper(
   curGroupPtr(),
   prevGroupPtr(),
   eigensolver(),
-  bifGroupManagerPtr(NULL),
   bifGroupPtr(),
   statusTestPtr(),
   paramListPtr(),
@@ -112,7 +110,6 @@ LOCA::NewStepper::NewStepper(
 
 LOCA::NewStepper::~NewStepper()
 {
-  delete bifGroupManagerPtr;
   delete stepSizeManagerPtr;
   delete curPredictorPtr;
   delete prevPredictorPtr;
@@ -125,7 +122,6 @@ LOCA::NewStepper::reset(const Teuchos::RefCountPtr<LOCA::MultiContinuation::Abst
 {
   delete curPredictorPtr;
   delete prevPredictorPtr;
-  delete bifGroupManagerPtr;
   delete stepSizeManagerPtr;
 
   paramListPtr = p;
@@ -178,8 +174,6 @@ LOCA::NewStepper::reset(const Teuchos::RefCountPtr<LOCA::MultiContinuation::Abst
   LOCA::Abstract::Iterator::resetIterator(*stepperList);
 
   // Reset group, predictor, step-size managers
-  bifGroupManagerPtr =
-    new LOCA::Bifurcation::Manager(*parsedParams->getSublist("Bifurcation"));
   stepSizeManagerPtr =
     new LOCA::StepSize::Manager(*parsedParams->getSublist("Step Size"));
 
@@ -251,7 +245,11 @@ LOCA::NewStepper::reset(const Teuchos::RefCountPtr<LOCA::MultiContinuation::Abst
     = buildConstrainedGroup(initialGuess);
 
   // Create bifurcation group
-  bifGroupPtr =  Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::AbstractGroup*>(bifGroupManagerPtr->createBifurcationGroup(*constraintsGrp)));
+  Teuchos::RefCountPtr<NOX::Parameter::List> bifurcationParams = 
+    parsedParams->getSublist("Bifurcation");
+  bifGroupPtr = locaFactory->createBifurcationStrategy(parsedParams,
+						       bifurcationParams,
+						       constraintsGrp);
 
   // Create continuation strategy
   curGroupPtr = locaFactory->createContinuationStrategy(parsedParams,
