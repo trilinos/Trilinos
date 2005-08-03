@@ -114,7 +114,8 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 libcapo_a_DEPENDENCIES =
 am__objects_1 = Capo_Parameter_List.$(OBJEXT) Capo_Npgs.$(OBJEXT) \
-	Capo_Rpm.$(OBJEXT) Capo_Unp.$(OBJEXT) Capo_Stepper.$(OBJEXT)
+	Capo_Rpm.$(OBJEXT) Capo_Unp.$(OBJEXT) Capo_Stepper.$(OBJEXT) \
+	Capo_NppD.$(OBJEXT)
 am__objects_2 =
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
 am_libcapo_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -125,6 +126,7 @@ DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Capo_Npgs.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Capo_NppD.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Capo_Parameter_List.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Capo_Rpm.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Capo_Stepper.Po \
@@ -262,10 +264,11 @@ target_vendor = @target_vendor@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = Capo_Integrator.hpp Capo_Parameter_List.hpp Capo_Solver.hpp \
-	Capo_Npgs.hpp Capo_Rpm.hpp Capo_Unp.hpp Capo_Stepper.hpp
+	Capo_Npgs.hpp Capo_Rpm.hpp Capo_Unp.hpp Capo_Stepper.hpp \
+	Capo_NppD.hpp
 
 CORE = Capo_Parameter_List.cpp Capo_Npgs.cpp Capo_Rpm.cpp Capo_Unp.cpp \
-	Capo_Stepper.cpp
+	Capo_Stepper.cpp Capo_NppD.cpp
 
 UTIL_H = 
 UTIL = 
@@ -525,6 +528,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Capo_Npgs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Capo_NppD.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Capo_Parameter_List.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Capo_Rpm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Capo_Stepper.Po@am__quote@
