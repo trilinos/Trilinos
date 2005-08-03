@@ -44,10 +44,11 @@ AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 if BUILD_LOCA_EPETRA_EXAMPLES
 
 EXAMPLE = example
+EXAMPLETPCONT = exampleTPContinuation
 
 endif
 
-noinst_PROGRAMS = $(EXAMPLE) 
+noinst_PROGRAMS = $(EXAMPLE) $(EXAMPLETPCONT) 
 
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
@@ -61,6 +62,21 @@ example_DEPENDENCIES = \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
 
 example_LDADD = $(EXAMPLE_LIBS)
+
+exampleTPContinuation_SOURCES = \
+	$(srcdir)/ExampleTPContinuation.C \
+	$(srcdir)/FiniteElementProblem.C \
+	$(srcdir)/FiniteElementProblem.H \
+	$(srcdir)/Basis.C \
+	$(srcdir)/Basis.H \
+	$(srcdir)/Problem_Interface.C \
+	$(srcdir)/Problem_Interface.H
+
+exampleTPContinuation_DEPENDENCIES = $(example_DEPENDENCIES)
+
+exampleTPContinuation_CXXFLAGS = $(example_CXXFLAGS)
+
+exampleTPContinuation_LDADD = $(example_LDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
