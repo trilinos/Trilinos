@@ -65,6 +65,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
 	$(srcdir)/Teuchos_map.hpp \
 	$(srcdir)/Teuchos_oblackholestream.hpp \
+	$(srcdir)/Teuchos_MPIReductionOpBase.hpp \
 	$(srcdir)/Teuchos_Object.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
@@ -94,6 +95,7 @@ CORE = \
 	$(srcdir)/Teuchos_Describable.cpp \
 	$(srcdir)/Teuchos_dyn_cast.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
+	$(srcdir)/Teuchos_MPIReductionOpBase.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
 	$(srcdir)/Teuchos_ParameterList.cpp \

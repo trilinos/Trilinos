@@ -270,7 +270,6 @@ void MPIMultiVectorBase<Scalar>::commitSubMultiVector(
 
 // protected
 
-
 template<class Scalar>
 void MPIMultiVectorBase<Scalar>::euclideanApply(
   const ETransp                     M_trans
@@ -281,6 +280,7 @@ void MPIMultiVectorBase<Scalar>::euclideanApply(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef Teuchos::RawMPITraits<Scalar> RMT;
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
 
@@ -507,12 +507,12 @@ void MPIMultiVectorBase<Scalar>::euclideanApply(
       Workspace<Scalar> Y_local_final_buff(wss,Y_local.subDim()*Y_local.numSubCols(),false);
       // Perform the reduction
       MPI_Allreduce(
-        Y_local_tmp.values()                     // sendbuff
-        ,&Y_local_final_buff[0]                  // recvbuff
-        ,Y_local_final_buff.size()               // count
-        ,Teuchos::RawMPITraits<Scalar>::type()   // datatype
-        ,MPI_SUM                                 // op
-        ,mpiComm                                 // comm
+        Y_local_tmp.values()                           // sendbuff
+        ,&Y_local_final_buff[0]                        // recvbuff
+        ,RMT::adjustCount(Y_local_final_buff.size())   // count
+        ,RMT::type()                                   // datatype
+        ,RMT::sumOp()                                  // op
+        ,mpiComm                                       // comm
         );
       // Load Y_local_final_buff back into Y_local
       const Scalar *Y_local_final_buff_ptr = &Y_local_final_buff[0];

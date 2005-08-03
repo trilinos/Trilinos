@@ -100,6 +100,7 @@ void MPIVectorSpaceBase<Scalar>::updateState( const Index globalDim )
   const MPI_Comm mpiComm  = MPI_COMM_NULL;
   if( localSubDim > 0 ) {
 #ifdef RTOp_USE_MPI
+    typedef Teuchos::RawMPITraits<Index> IRMT;
     MPI_Comm mpiComm = this->mpiComm();
     int numProc = 1;
     int procRank = 0;
@@ -121,9 +122,9 @@ void MPIVectorSpaceBase<Scalar>::updateState( const Index globalDim )
       MPI_Allreduce(
         &localCode                              // sendbuf
         ,&mapCode_                              // recvbuf
-        ,1                                      // count
-        ,Teuchos::RawMPITraits<Index>::type()   // datatype
-        ,MPI_SUM                                // op
+        ,IRMT::adjustCount(1)                   // count
+        ,IRMT::type()                           // datatype
+        ,IRMT::sumOp()                          // op
         ,mpiComm                                // comm
         );
       // Set the default localOffset automatically
@@ -131,9 +132,9 @@ void MPIVectorSpaceBase<Scalar>::updateState( const Index globalDim )
       MPI_Scan(
         &localOffset                            // sendbuf
         ,&defaultLocalOffset_                   // recvbuf
-        ,1                                      // count
-        ,Teuchos::RawMPITraits<Index>::type()   // datatype
-        ,MPI_SUM                                // op
+        ,IRMT::adjustCount(1)                   // count
+        ,IRMT::type()                           // datatype
+        ,IRMT::sumOp()                          // op
         ,mpiComm                                // comm
         );
       defaultLocalOffset_ -= localSubDim;
@@ -146,9 +147,9 @@ void MPIVectorSpaceBase<Scalar>::updateState( const Index globalDim )
         MPI_Allreduce(
           (void*)&localSubDim                     // sendbuf
           ,&defaultGlobalDim_                     // recvbuf
-          ,1                                      // count
-          ,Teuchos::RawMPITraits<Index>::type()   // datatype
-          ,MPI_SUM                                // op
+          ,IRMT::adjustCount(1)                   // count
+          ,IRMT::type()                           // datatype
+          ,IRMT::sumOp()                          // op
           ,mpiComm                                // comm
           );
       }

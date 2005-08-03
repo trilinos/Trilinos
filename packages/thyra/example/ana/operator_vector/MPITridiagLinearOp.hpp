@@ -265,14 +265,15 @@ void MPITridiagLinearOp<Scalar>::communicate(
     // Get the types so allow interaction with MPI
     typedef Teuchos::PrimitiveTypeTraits<Scalar>  PTT;
     typedef typename PTT::primitiveType           PT;
-    MPI_Datatype primMPIType = Teuchos::RawMPITraits<PT>::type();
+    typedef Teuchos::RawMPITraits<PT>             PRMT;
+    MPI_Datatype primMPIType = PRMT::type();
     const int numPrimObjs = PTT::numPrimitiveObjs();
     MPI_Status status;
     // Setup buffer
     std::vector<PT> buff(numPrimObjs);
     // Send and receive x[localDim_-1] forward and copy into x_km1
     if(last) {
-      MPI_Recv( &buff[0], numPrimObjs, primMPIType, procRank_-1, 0, mpiComm_, &status );
+      MPI_Recv( &buff[0], PRMT::adjustCount(numPrimObjs), primMPIType, procRank_-1, 0, mpiComm_, &status );
       PTT::loadPrimitiveObjs( numPrimObjs, &buff[0], x_km1 );
     }
     else {

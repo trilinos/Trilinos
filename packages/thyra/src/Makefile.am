@@ -60,8 +60,7 @@ ANA_RTOP_BASE_H = \
   $(srcdir)/ana/rtop/base/RTOpPack_RTOpT.hpp\
   $(srcdir)/ana/rtop/base/RTOpPack_TOpUnaryFuncPtr.hpp
 
-ANA_RTOP_BASE = \
-  $(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp
+ANA_RTOP_BASE = 
 
 ANA_RTOP_BASE_C_H = \
   $(srcdir)/ana/rtop/base/RTOp_config.h\

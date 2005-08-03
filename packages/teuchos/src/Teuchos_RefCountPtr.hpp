@@ -313,7 +313,7 @@ typename RefCountPtr<T>::node_t* RefCountPtr<T>::access_node() const
 }	// end namespace Teuchos
 
 // /////////////////////////////////////////////////////////////////////////////////
-// Inline member functions for conversions for RefCountPtr<...>.
+// Inline non-member functions for RefCountPtr
 
 template<class T>
 inline

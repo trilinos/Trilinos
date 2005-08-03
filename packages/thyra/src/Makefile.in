@@ -110,7 +110,7 @@ LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libthyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 = Thyra_Range1D.$(OBJEXT)
-am__objects_2 = RTOpPack_MPI_apply_op.$(OBJEXT)
+am__objects_2 =
 am__objects_3 = RTOp_mpi.$(OBJEXT) RTOp_parallel_helpers.$(OBJEXT)
 am_libthyra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3)
@@ -118,8 +118,7 @@ libthyra_a_OBJECTS = $(am_libthyra_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/RTOpPack_MPI_apply_op.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/RTOp_mpi.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/RTOp_mpi.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/RTOp_parallel_helpers.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Thyra_Range1D.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -278,9 +277,7 @@ ANA_RTOP_BASE_H = \
   $(srcdir)/ana/rtop/base/RTOpPack_RTOpT.hpp\
   $(srcdir)/ana/rtop/base/RTOpPack_TOpUnaryFuncPtr.hpp
 
-ANA_RTOP_BASE = \
-  $(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp
-
+ANA_RTOP_BASE = 
 ANA_RTOP_BASE_C_H = \
   $(srcdir)/ana/rtop/base/RTOp_config.h\
   $(srcdir)/ana/rtop/base/RTOp_mpi.h\
@@ -624,7 +621,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOpPack_MPI_apply_op.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOp_mpi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOp_parallel_helpers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_Range1D.Po@am__quote@
@@ -708,22 +704,6 @@ Thyra_Range1D.obj: $(srcdir)/utils/Thyra_Range1D.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_Range1D.Po' tmpdepfile='$(DEPDIR)/Thyra_Range1D.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_Range1D.obj `if test -f '$(srcdir)/utils/Thyra_Range1D.cpp'; then $(CYGPATH_W) '$(srcdir)/utils/Thyra_Range1D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/utils/Thyra_Range1D.cpp'; fi`
-
-RTOpPack_MPI_apply_op.o: $(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RTOpPack_MPI_apply_op.o -MD -MP -MF "$(DEPDIR)/RTOpPack_MPI_apply_op.Tpo" -c -o RTOpPack_MPI_apply_op.o `test -f '$(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp' || echo '$(srcdir)/'`$(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RTOpPack_MPI_apply_op.Tpo" "$(DEPDIR)/RTOpPack_MPI_apply_op.Po"; else rm -f "$(DEPDIR)/RTOpPack_MPI_apply_op.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp' object='RTOpPack_MPI_apply_op.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/RTOpPack_MPI_apply_op.Po' tmpdepfile='$(DEPDIR)/RTOpPack_MPI_apply_op.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RTOpPack_MPI_apply_op.o `test -f '$(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp' || echo '$(srcdir)/'`$(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp
-
-RTOpPack_MPI_apply_op.obj: $(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RTOpPack_MPI_apply_op.obj -MD -MP -MF "$(DEPDIR)/RTOpPack_MPI_apply_op.Tpo" -c -o RTOpPack_MPI_apply_op.obj `if test -f '$(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp'; then $(CYGPATH_W) '$(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RTOpPack_MPI_apply_op.Tpo" "$(DEPDIR)/RTOpPack_MPI_apply_op.Po"; else rm -f "$(DEPDIR)/RTOpPack_MPI_apply_op.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp' object='RTOpPack_MPI_apply_op.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/RTOpPack_MPI_apply_op.Po' tmpdepfile='$(DEPDIR)/RTOpPack_MPI_apply_op.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RTOpPack_MPI_apply_op.obj `if test -f '$(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp'; then $(CYGPATH_W) '$(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ana/rtop/base/RTOpPack_MPI_apply_op.cpp'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)

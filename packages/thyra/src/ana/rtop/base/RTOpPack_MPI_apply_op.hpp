@@ -32,56 +32,16 @@
 #include "RTOpPack_MPI_apply_op_decl.hpp"
 #include "Teuchos_RawMPITraits.hpp"
 #include "Teuchos_Workspace.hpp"
-
-//
-// More interfaces
-//
-
-extern "C" {
-
-// MPI-compatible reduction operator
-void RTOpPack_MPI_apply_op_reduction_op(
-  void              *invec
-  ,void             *inoutvec
-  ,int              *len
-  ,RTOp_Datatype    *datatype
-  );
-
-} // extern "C"
+#ifdef RTOp_USE_MPI
+#  include "Teuchos_MPIReductionOpBase.hpp"
+#endif
 
 namespace RTOpPack {
 
-class MPIReductionOpBase;
-
-void set_reduct_op( const Teuchos::RefCountPtr<const MPIReductionOpBase>& reduct_op );
-
-Teuchos::RefCountPtr<const MPIReductionOpBase> get_reduct_op();
-
-// Destructor class set_reduct_op(Teuchos::null)
-template<class Scalar>
-class ReductionOpSetter {
-public:
-  ReductionOpSetter( const Teuchos::RefCountPtr<const MPIReductionOpBase>& reduct_op ) { set_reduct_op(reduct_op); }
-  ~ReductionOpSetter() { set_reduct_op(Teuchos::null); }
-private:
-  ReductionOpSetter(); // Not defined!
-};
-
-class MPIReductionOpBase {
-public:
-  /** \brief . */
-  virtual ~MPIReductionOpBase() {}
-  /** \brief . */
-  virtual void reduce_reduct_objs(
-    void              *invec
-    ,void             *inoutvec
-    ,int              *len
-    ,RTOp_Datatype    *datatype
-    ) const = 0;
-};
+#ifdef RTOp_USE_MPI
 
 template<class Scalar>
-class MPIReductionOp : public MPIReductionOpBase {
+class MPIReductionOp : public Teuchos::MPIReductionOpBase {
 public:
 
   MPIReductionOp(
@@ -90,7 +50,7 @@ public:
     : op_(op)
     { *op; }
 
-  void reduce_reduct_objs(
+  void reduce(
     void              *invec
     ,void             *inoutvec
     ,int              *len
@@ -132,6 +92,9 @@ private:
   MPIReductionOp<Scalar>& operator=(const MPIReductionOp<Scalar>&);
 };
 
+
+#endif // RTOp_USE_MPI
+
 } // namespace RTOpPack
 
 //
@@ -154,7 +117,7 @@ public:
   ~call_free_func()
     {
       if(*opaque_obj_ != null_value_)
-        free_func_ptr_(opaque_obj_);				
+        free_func_ptr_(opaque_obj_);
     }
 private:
   T*                opaque_obj_;
@@ -185,7 +148,7 @@ void RTOpPack::MPI_type_signature(
   displacements[k] = 0;
   datatypes[k]     = Teuchos::RawMPITraits<primitive_value_type>::type();
   ++k;
-  off += (3 + num_values) * sizeof(primitive_value_type);
+  off += Teuchos::RawMPITraits<primitive_value_type>::adjustCount(3 + num_values) * sizeof(primitive_value_type);
   // indexes
   if( num_indexes ) {
     block_lengths[k] = num_indexes;
@@ -399,26 +362,6 @@ void RTOpPack::MPI_all_reduce(
     ,std::logic_error,"Error!"
     );
   //
-  // Setup the mpi-compatible global function object for this
-  // reduction operator.
-  //
-  ReductionOpSetter<Scalar>
-    reduct_op_setter( Teuchos::rcp(new MPIReductionOp<Scalar>(Teuchos::rcp(&op,false))) ); // Destructor will release!
-  //
-  // Create the MPI reduction operator object
-  //
-  MPI_Op mpi_op = MPI_OP_NULL;
-  TEST_FOR_EXCEPTION(
-    0!=MPI_Op_create(
-      &RTOpPack_MPI_apply_op_reduction_op
-      ,1                                        // Assume op is commutative?
-      ,&mpi_op
-      )
-    ,std::logic_error,"Error!"
-    );
-  call_free_func<MPI_Op>
-    free_mpi_op(&mpi_op,MPI_OP_NULL,MPI_Op_free);
-  //
   // Create external contiguous representations for the intermediate
   // reduction objects that MPI can use.  This is very low level but
   // at least the user does not have to do it.
@@ -456,20 +399,28 @@ void RTOpPack::MPI_all_reduce(
         ,&i_reduct_objs_tmp[0]+kc*reduct_obj_ext_size
         );
     }
-//#define HACK_TESTING
-#ifdef HACK_TESTING
-    int dummy_len = num_cols;
-    RTOpPack_MPI_apply_op_reduction_op( &i_reduct_objs_ext[0], &i_reduct_objs_tmp[0], &dummy_len, &mpi_reduct_ext_type );
-#else
-    TEST_FOR_EXCEPTION(
+#ifdef RTOp_USE_MPI
+    //
+    // Setup the mpi-compatible global function object for this
+    // reduction operator and create the MPI_Op object.
+    //
+    Teuchos::MPIReductionOpCreator
+      mpi_op_setter( Teuchos::rcp(new MPIReductionOp<Scalar>(Teuchos::rcp(&op,false))) ); // Destructor will release everything!
+    //
+    // Call MPI
+    //
+    TEST_FOR_EXCEPT(
       0!=MPI_Allreduce(
         &i_reduct_objs_ext[0], &i_reduct_objs_tmp[0]
         ,num_cols, mpi_reduct_ext_type
-        ,mpi_op, comm
+        ,mpi_op_setter.mpi_op()
+        ,comm
         )
-      ,std::logic_error,"Error!"
       );
-#endif
+#else // RTOp_USE_MPI
+    for( int k = 0; k < reduct_obj_ext_size; ++k )
+      i_reduct_objs_tmp[k] = i_reduct_objs_ext[k];
+#endif // RTOp_USE_MPI
     // Load the updated state of the reduction target object and reduce.
     if(1) {
       Teuchos::RefCountPtr<ReductTarget> tmp_reduct_obj = op.reduct_obj_create();

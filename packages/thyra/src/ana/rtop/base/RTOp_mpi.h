@@ -54,6 +54,9 @@ typedef int MPI_Comm;
 #define MPI_COMM_NULL      ((MPI_Comm)0)
 typedef int MPI_Op;
 #define MPI_OP_NULL        ((MPI_Op)0)
+#define MPI_MAX    (MPI_Op)(100)
+#define MPI_MIN    (MPI_Op)(101)
+#define MPI_SUM    (MPI_Op)(102)
 #define MPI_DATATYPE_NULL  ((MPI_Datatype)0)
 typedef struct { int MPI_SOURCE; int MPI_TAG; int MPI_ERROR; } MPI_Status;
 typedef void (MPI_User_function) ( void *, void *, int *, MPI_Datatype * ); 
