@@ -259,6 +259,9 @@ in NOX::Abstract::Group
   //! Return the Linear System.
   virtual const NOX::EpetraNew::LinearSystem& getLinearSystem() const;
 
+  //! Return the Linear System.
+  virtual NOX::EpetraNew::LinearSystem& getLinearSystem();
+
   /* \brief Computes the condition number of the Jacobian matrix.
 
      Uses GMRES to estimate the condtion number.  The tolerance and

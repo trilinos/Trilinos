@@ -399,11 +399,17 @@ public:
   //! Jacobian Epetra_Operator accessor
   virtual const Epetra_Operator& getJacobianOperator() const;
 
+  //! Jacobian Epetra_Operator accessor
+  virtual Epetra_Operator& getJacobianOperator();
+
   //! Preconditioner Epetra_Operator accessor (only the base matrix if using an internal preconditioner - aztecoo or ifpack). 
   virtual const Epetra_Operator& getPrecOperator() const;
 
   //! Return preconditioner operator generated and stored in AztecOO
   virtual const Epetra_Operator& getGeneratedPrecOperator() const;
+
+  //! Return preconditioner operator generated and stored in AztecOO
+  virtual Epetra_Operator& getGeneratedPrecOperator();
 
   //virtual void getNormLastLinearSolveResidual(double & residual) const;
 
@@ -416,6 +422,10 @@ public:
   //! Set Jacobian operator for solve
   virtual void 
   setJacobianOperatorForSolve(const Epetra_Operator& solveJacOp);
+
+  //! Set preconditioner operator for solve
+  virtual void 
+  setPrecOperatorForSolve(const Epetra_Operator& solvePrecOp);
 
 protected:
 

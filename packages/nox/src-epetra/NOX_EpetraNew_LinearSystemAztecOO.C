@@ -1292,6 +1292,12 @@ NOX::EpetraNew::LinearSystemAztecOO::getJacobianOperator() const
   return *jacPtr;
 }
 
+Epetra_Operator& 
+NOX::EpetraNew::LinearSystemAztecOO::getJacobianOperator()
+{
+  return *jacPtr;
+}
+
 //***********************************************************************
 const Epetra_Operator& 
 NOX::EpetraNew::LinearSystemAztecOO::getPrecOperator() const
@@ -1302,6 +1308,13 @@ NOX::EpetraNew::LinearSystemAztecOO::getPrecOperator() const
 //***********************************************************************
 const Epetra_Operator&
 NOX::EpetraNew::LinearSystemAztecOO::getGeneratedPrecOperator() const
+{
+  return *(aztecSolverPtr->GetPrecOperator());
+}
+
+//***********************************************************************
+Epetra_Operator&
+NOX::EpetraNew::LinearSystemAztecOO::getGeneratedPrecOperator()
 {
   return *(aztecSolverPtr->GetPrecOperator());
 }
@@ -1383,4 +1396,12 @@ NOX::EpetraNew::LinearSystemAztecOO::setJacobianOperatorForSolve(
 
   if( prevPrecOperator )
     aztecSolverPtr->SetPrecOperator(prevPrecOperator);
+}
+
+void
+NOX::EpetraNew::LinearSystemAztecOO::setPrecOperatorForSolve(
+					 const Epetra_Operator& solvePrecOp)
+{
+  Epetra_Operator* solvePrecOpPtr = const_cast<Epetra_Operator*>(&solvePrecOp);
+  aztecSolverPtr->SetPrecOperator(solvePrecOpPtr);
 }

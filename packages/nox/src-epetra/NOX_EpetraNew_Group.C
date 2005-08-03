@@ -584,6 +584,11 @@ const NOX::EpetraNew::LinearSystem& Group::getLinearSystem() const
   return sharedLinearSystem.getObject();
 }
 
+NOX::EpetraNew::LinearSystem& Group::getLinearSystem()
+{
+  return sharedLinearSystem.getObject(this);
+}
+
 bool Group::computeNormNewtonSolveResidual ()
 {
   // Make sure value is not already calculated

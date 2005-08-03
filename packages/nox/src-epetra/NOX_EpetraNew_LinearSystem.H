@@ -163,12 +163,22 @@ public:
   //! Return Jacobian operator
   virtual const Epetra_Operator& getJacobianOperator() const = 0;
 
+  //! Return Jacobian operator
+  virtual Epetra_Operator& getJacobianOperator() = 0;
+
   //! Return preconditioner operator
   virtual const Epetra_Operator& getGeneratedPrecOperator() const = 0;
+
+  //! Return preconditioner operator
+  virtual Epetra_Operator& getGeneratedPrecOperator() = 0;
 
   //! Set Jacobian operator for solve
   virtual void 
   setJacobianOperatorForSolve(const Epetra_Operator& solveJacOp) = 0;
+
+  //! Set preconditioner operator for solve
+  virtual void 
+  setPrecOperatorForSolve(const Epetra_Operator& solvePrecOp) = 0;
 };
 
 } // namespace EpetraNew
