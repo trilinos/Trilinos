@@ -94,6 +94,10 @@ namespace LOCA {
       template <class ValueType>
       void setParameterValue(const string& name, const ValueType& value);
 
+      //! Get parameter given by \em name
+      template <class ValueType>
+      ValueType getParameterValue(const string& name) const;
+
       //! Add a new parameter to library using the default setting mechanism
       /*!
        * Returns true if successful in adding entry to library, false 
@@ -137,6 +141,12 @@ namespace LOCA {
        */
       ParameterMapIterator getEntryMapIterator(const string& name);
 
+      /*! 
+       * \brief Finds the set of entries corresponding to parameter \em name 
+       * and sets the iterator \em it to point to it.  
+       */
+      ParameterMapConstIterator getEntryMapIterator(const string& name) const;
+
       /*!
        * \brief Finds the entry corresponding to entry \em valueTypeString for 
        * parameter corresponding to \em paramIterator and sets the iterator
@@ -147,6 +157,16 @@ namespace LOCA {
 				   const string& valueTypeString, 
 				   const ParameterMapIterator& paramIterator);
 
+      /*!
+       * \brief Finds the entry corresponding to entry \em valueTypeString for 
+       * parameter corresponding to \em paramIterator and sets the iterator
+       * \em valueIterator to point to it.  Returns false if there
+       * is no entry for type given by \em valueTypeString.
+       */
+      ValueTypeMapConstIterator getEntryIterator(
+			 const string& valueTypeString, 
+			 const ParameterMapConstIterator& paramIterator) const;
+
       /*! 
        * \brief Gets the entry corresponding to parameter name \em name and 
        * type \em ValueType
@@ -154,8 +174,15 @@ namespace LOCA {
       template <class ValueType>
       Entry<ValueType>& getEntry(const string& name);
 
+      /*! 
+       * \brief Gets the entry corresponding to parameter name \em name and 
+       * type \em ValueType
+       */
+      template <class ValueType>
+      const Entry<ValueType>& getEntry(const string& name) const;
+
       //! Returns a string representation of type \em ValueType
-      template <class ValueType> string getTypeName();
+      template <class ValueType> string getTypeName() const;
 
     protected:
 

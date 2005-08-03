@@ -72,6 +72,9 @@ namespace LOCA {
       //! Set parameter this object represents to \em value
       virtual void setValue(const ValueType& value) = 0;
 
+      //! Get parameter value this object represents
+      virtual ValueType getValue() const = 0;
+
       //! Informs entry that it is now stored in the library
       /*!
        * This is used primarily for informing the entry on how to delete
@@ -110,6 +113,9 @@ namespace LOCA {
 
       //! Set parameter this object represents to \em value
       virtual void setValue(const ValueType& value) { func->set(value); }
+
+      //! Get parameter value this object represents
+      virtual ValueType getValue() const { return func->get(); }
 
       //! Informs entry that it is now stored in the library
       /*!
@@ -159,6 +165,9 @@ namespace LOCA {
 
       //! Set parameter using object and data member pointer
       void set(const ValueType& value) { obj.*obj_val_ptr = value; }
+
+       //! Get parameter value this object represents
+      virtual ValueType get() const { return obj.*obj_val_ptr; }
 
     protected:
 

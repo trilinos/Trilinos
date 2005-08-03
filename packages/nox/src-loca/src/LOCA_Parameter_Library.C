@@ -70,9 +70,21 @@ LOCA::Parameter::Library::getEntryMapIterator(const string& name) {
   return library.find(name);
 }
 
+LOCA::Parameter::Library::ParameterMapConstIterator
+LOCA::Parameter::Library::getEntryMapIterator(const string& name) const {
+  return library.find(name);
+}
+
 LOCA::Parameter::Library::ValueTypeMapIterator
 LOCA::Parameter::Library::getEntryIterator(
 				   const string& valueTypeString, 
 				   const ParameterMapIterator& paramIterator) {
+  return (*paramIterator).second->find(valueTypeString);
+}
+
+LOCA::Parameter::Library::ValueTypeMapConstIterator
+LOCA::Parameter::Library::getEntryIterator(
+		       const string& valueTypeString, 
+		       const ParameterMapConstIterator& paramIterator) const {
   return (*paramIterator).second->find(valueTypeString);
 }

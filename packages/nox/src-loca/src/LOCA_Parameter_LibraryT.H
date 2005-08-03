@@ -44,6 +44,17 @@ LOCA::Parameter::Library::setParameterValue(const string& name,
   entry.setValue(value);
 }
 
+template <class ValueType>
+ValueType
+LOCA::Parameter::Library::getParameterValue(const string& name) const {
+
+  // Get entry 
+  const LOCA::Parameter::Entry<ValueType>& entry = getEntry<ValueType>(name);
+
+  // Call entry's getValue method to get value
+  return entry.getValue();
+}
+
 template <class ObjectType, class ValueType>
 bool
 LOCA::Parameter::Library::addParameterEntry(
@@ -134,7 +145,7 @@ LOCA::Parameter::Library::addParameterEntry(
 
 template <class ValueType>
 string
-LOCA::Parameter::Library::getTypeName() {
+LOCA::Parameter::Library::getTypeName() const {
   return typeid(ValueType).name();
 }   
 
@@ -169,6 +180,48 @@ LOCA::Parameter::Library::getEntry(const string& name) {
   // Cast entry to LOCA::Parameter::Entry<ValueType>
   LOCA::Parameter::Entry<ValueType>* entry = 
     dynamic_cast<LOCA::Parameter::Entry<ValueType>*>((*valueIterator).second);
+  if (entry == NULL) {
+    LOCA::ErrorCheck::throwError(
+	   func,
+	   string("Parameter entry for parameter ") + name + 
+	   string(" and type ") + valueTypeString + 
+	   string(" is not of the right type!"));
+  }
+
+  return *entry;
+}
+
+template <class ValueType>
+const LOCA::Parameter::Entry<ValueType>&
+LOCA::Parameter::Library::getEntry(const string& name) const {
+
+  const char *func = "LOCA::Parameter::Library::getEntry()";
+
+  // Find map for this parameter name
+  ParameterMapConstIterator paramIterator = getEntryMapIterator(name);
+  if (paramIterator == library.end()) {
+    LOCA::ErrorCheck::throwError(
+	   func,
+	   string("Parameter library has no set of entries for parameter ") + 
+	   name);
+  }
+
+  // Convert typename ValueType to string
+  string valueTypeString = getTypeName<ValueType>();
+
+  // Find entry corresponding to this ValueType
+  ValueTypeMapConstIterator valueIterator = getEntryIterator(valueTypeString, 
+							     paramIterator);
+  if (valueIterator == (*paramIterator).second->end()) {
+    LOCA::ErrorCheck::throwError(
+	   func,
+	   string("Parameter library has no entry for parameter ") + 
+	   name + string(" of type ") + valueTypeString);
+  }
+
+  // Cast entry to LOCA::Parameter::Entry<ValueType>
+  const LOCA::Parameter::Entry<ValueType>* entry = 
+    dynamic_cast<const LOCA::Parameter::Entry<ValueType>*>((*valueIterator).second);
   if (entry == NULL) {
     LOCA::ErrorCheck::throwError(
 	   func,
