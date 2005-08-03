@@ -39,9 +39,11 @@
 
 #include "LOCA_MultiPredictor_Factory.H"
 #include "LOCA_MultiContinuation_Factory.H"
+#include "LOCA_Bifurcation_Factory.H"
 #include "LOCA_BorderedSystem_Factory.H"
 #include "LOCA_Eigensolver_Factory.H"
 #include "LOCA_EigenvalueSort_Factory.H"
+#include "LOCA_TurningPoint_MooreSpence_SolverFactory.H"
 
 // Forward declarations
 namespace NOX {
@@ -132,6 +134,19 @@ namespace LOCA {
       const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs);
 
+    //! Create bifurcation strategy
+    /*!
+     * Instantiates a bifurcation strategy based on the "Method" 
+     * parameter of the "Bifurcation" sublist.  See 
+     * LOCA::Bifurcation::Factory for a description of available 
+     * strategies.
+     */
+    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+    createBifurcationStrategy(
+      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& bifurcationParams,
+      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp);
+
     //! Create bordered system solver strategy
     /*!
      * Instantiates an bordered system solver strategy based on the 
@@ -166,6 +181,18 @@ namespace LOCA {
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
 
+    //! Create Moore-Spence turning point solver strategy
+    /*!
+     * Instantiates a solver strategy based on the 
+     * "Solver Method" parameter of the "Bifurcation" sublist.  See
+     * LOCA::TurningPoint::MooreSpence::SolverFactory for a description of 
+     * available strategies.
+     */
+    Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>
+    createMooreSpenceSolverStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+
     //@}
 
   private:
@@ -193,6 +220,9 @@ namespace LOCA {
     //! Continuation factory
     LOCA::MultiContinuation::Factory continuationFactory;
 
+    //! Bifurcation factory
+    LOCA::Bifurcation::Factory bifurcationFactory;
+
     //! Bordered system factory
     LOCA::BorderedSystem::Factory borderedFactory;
 
@@ -201,6 +231,9 @@ namespace LOCA {
 
     //! EigenvalueSort factory
     LOCA::EigenvalueSort::Factory eigenvalueSortFactory;
+
+    //! Moore-Spence solver factory
+    LOCA::TurningPoint::MooreSpence::SolverFactory mooreSpenceSolverFactory;
     
   }; // Class Factory
 

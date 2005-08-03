@@ -64,6 +64,11 @@ namespace LOCA {
   namespace EigenvalueSort {
     class AbstractStrategy;
   }
+  namespace TurningPoint {
+    namespace MooreSpence {
+      class SolverStrategy;
+    }
+  }
 }
 
 namespace LOCA {
@@ -127,6 +132,15 @@ namespace LOCA {
       const vector<int>& paramIDs,
       Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>& strategy);
 
+      //! Create bifurcation strategy
+      virtual bool
+      createBifurcationStrategy(
+      const string& strategyName,
+      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& bifurcationParams,
+      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& strategy);
+
       //! Create bordered system solver strategy
       virtual bool
       createBorderedSystemStrategy(
@@ -150,6 +164,14 @@ namespace LOCA {
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
        Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy);
+
+      //! Create Moore-Spence turning point solver strategy
+      virtual bool
+      createMooreSpenceSolverStrategy(
+       const string& strategyName,
+       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+       Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>& strategy);
 
       //@}
     

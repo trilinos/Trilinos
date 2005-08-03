@@ -36,9 +36,6 @@
 #include "LOCA_Factory.H"
 #include "LOCA_Abstract_Factory.H"
 
-// Factories
-#include "LOCA_Eigensolver_Factory.H"
-
 LOCA::Factory::Factory(
 	  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) :
   globalData(global_data),
@@ -46,9 +43,11 @@ LOCA::Factory::Factory(
   haveFactory(false),
   predictorFactory(global_data),
   continuationFactory(global_data),
+  bifurcationFactory(global_data),
   borderedFactory(global_data),
   eigensolverFactory(global_data),
-  eigenvalueSortFactory(global_data)
+  eigenvalueSortFactory(global_data),
+  mooreSpenceSolverFactory(global_data)
 {
   // Set the factory member of the global data
   globalData->locaFactory = Teuchos::rcp(this, false);
@@ -62,9 +61,11 @@ LOCA::Factory::Factory(
   haveFactory(true),
   predictorFactory(global_data),
   continuationFactory(global_data),
+  bifurcationFactory(global_data),
   borderedFactory(global_data),
   eigensolverFactory(global_data),
-  eigenvalueSortFactory(global_data)
+  eigenvalueSortFactory(global_data),
+  mooreSpenceSolverFactory(global_data)
 {
   // Initialize user-defined factory
   factory->init(globalData);
@@ -130,6 +131,33 @@ LOCA::Factory::createContinuationStrategy(
 
   strategy = continuationFactory.create(topParams, stepperParams, grp, pred,
 					paramIDs);
+
+  return strategy;
+}
+
+Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+LOCA::Factory::createBifurcationStrategy(
+      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& bifurcationParams,
+      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp)
+{
+  string methodName = "LOCA::Factory::createBifurcationStrategy()";
+  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> strategy;
+
+  // If we have a user-provided factory, first try creating the strategy
+  // using it
+  if (haveFactory) {
+    const string& strategyName = 
+      bifurcationFactory.strategyName(*bifurcationParams);
+    bool created = factory->createBifurcationStrategy(strategyName,
+						      topParams,
+						      bifurcationParams,
+						      grp, strategy);
+    if (created)
+      return strategy;
+  }
+
+  strategy = bifurcationFactory.create(topParams, bifurcationParams, grp);
 
   return strategy;
 }
@@ -208,6 +236,32 @@ LOCA::Factory::createEigenvalueSortStrategy(
   }
 
   strategy = eigenvalueSortFactory.create(topParams, eigenParams);
+
+  return strategy;
+}
+
+Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>
+LOCA::Factory::createMooreSpenceSolverStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams)
+{
+  string methodName = "LOCA::Factory::createMooreSpenceSolverStrategy()";
+  Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy> strategy;
+
+  // If we have a user-provided factory, first try creating the strategy
+  // using it
+  if (haveFactory) {
+    const string& strategyName = 
+      mooreSpenceSolverFactory.strategyName(*solverParams);
+    bool created = factory->createMooreSpenceSolverStrategy(strategyName,
+							    topParams,
+							    solverParams,
+							    strategy);
+    if (created)
+      return strategy;
+  }
+
+  strategy = mooreSpenceSolverFactory.create(topParams, solverParams);
 
   return strategy;
 }

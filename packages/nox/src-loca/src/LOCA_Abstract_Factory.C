@@ -56,6 +56,17 @@ LOCA::Abstract::Factory::createContinuationStrategy(
 }
 
 bool
+LOCA::Abstract::Factory::createBifurcationStrategy(
+    const string& strategyName,
+    const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RefCountPtr<NOX::Parameter::List>& bifurcationParams,
+    const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
+    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& strategy)
+{
+  return false;
+}
+
+bool
 LOCA::Abstract::Factory::createBorderedSystemStrategy(
         const string& strategyName,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
@@ -81,6 +92,16 @@ LOCA::Abstract::Factory::createEigenvalueSortStrategy(
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
 	Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy)
+{
+  return false;
+}
+
+bool
+LOCA::Abstract::Factory::createMooreSpenceSolverStrategy(
+       const string& strategyName,
+       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+       Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>& strategy)
 {
   return false;
 }
