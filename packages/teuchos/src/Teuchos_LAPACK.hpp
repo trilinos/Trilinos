@@ -118,7 +118,7 @@ namespace Teuchos
     inline LAPACK(void) {};
 
     //! Copy Constructor.
-    inline LAPACK(const LAPACK<OrdinalType, ScalarType>& LAPACK) {};
+    inline LAPACK(const LAPACK<OrdinalType, ScalarType>& lapack) {};
 
     //! Destructor.
     inline virtual ~LAPACK(void) {};
@@ -527,7 +527,7 @@ namespace Teuchos
   {    
   public:
     inline LAPACK(void) {};
-    inline LAPACK(const LAPACK<OrdinalType, float>& LAPACK) {};
+    inline LAPACK(const LAPACK<OrdinalType, float>& lapack) {};
     inline virtual ~LAPACK(void) {};
 
     // Symmetric positive definite linear system routines
@@ -836,7 +836,7 @@ namespace Teuchos
   {    
   public:
     inline LAPACK(void) {};
-    inline LAPACK(const LAPACK<OrdinalType, double>& LAPACK) {};
+    inline LAPACK(const LAPACK<OrdinalType, double>& lapack) {};
     inline virtual ~LAPACK(void) {};
 
     // Symmetric positive definite linear system routines
@@ -1147,7 +1147,7 @@ namespace Teuchos
   {    
   public:
     inline LAPACK(void) {};
-    inline LAPACK(const LAPACK<OrdinalType, complex<float> >& LAPACK) {};
+    inline LAPACK(const LAPACK<OrdinalType, complex<float> >& lapack) {};
     inline virtual ~LAPACK(void) {};
 
     // Symmetric positive definite linear system routines
@@ -1382,7 +1382,7 @@ namespace Teuchos
   {    
   public:
     inline LAPACK(void) {};
-    inline LAPACK(const LAPACK<OrdinalType, complex<double> >& LAPACK) {};
+    inline LAPACK(const LAPACK<OrdinalType, complex<double> >& lapack) {};
     inline virtual ~LAPACK(void) {};
 
     // Symmetric positive definite linear system routines
