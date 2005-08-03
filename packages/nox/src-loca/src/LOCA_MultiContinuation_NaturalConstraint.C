@@ -55,6 +55,8 @@ LOCA::MultiContinuation::NaturalConstraint::NaturalConstraint(
   isValidConstraints(source.isValidConstraints),
   conParamIDs(source.conParamIDs)
 {
+  if (source.isValidConstraints && type == NOX::DeepCopy)
+    isValidConstraints = true;
 }
 
 LOCA::MultiContinuation::NaturalConstraint::~NaturalConstraint()
