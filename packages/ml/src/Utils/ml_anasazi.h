@@ -123,7 +123,12 @@ namespace ML_Anasazi {
 
 #endif
 
-extern "C" {
+#ifndef ML_CPP
+#ifdef __cplusplus
+extern "C"
+{  
+#endif
+#endif
 
   //! Interface from C code to Anasazi to compute the field of values. 
   extern int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
@@ -136,6 +141,10 @@ extern "C" {
 						 int IsProblemSymmetric,
 						 int UseDiagonalScaling,
 						 double* LambdaMax );
+#ifndef ML_CPP
+#ifdef __cplusplus
 }
+#endif
+#endif
 
 #endif /* #ifndef _ML_ANASAZI_H_ */
