@@ -58,9 +58,9 @@ namespace LOCA {
     */
     class ExtendedVector : public LOCA::Extended::Vector {
 
-      //! Declare LOCA::Continuation::ExtendedMultiVector as a friend class
-      /*!
-       * So it can call protected methods.
+      /*! 
+       * \brief Declare LOCA::MultiContinuation::ExtendedMultiVector as a 
+       * friend class so it can call protected methods.
        */
       friend class ExtendedMultiVector;
 
@@ -106,7 +106,7 @@ namespace LOCA {
       //! generate an extended multi-vector
       /*!
        * Returns an empty multivector of type 
-       * LOCA::Continuation::ExtendedMultiVector
+       * LOCA::MultiContinuation::ExtendedMultiVector
        */
       virtual LOCA::Extended::MultiVector*
       generateMultiVector(int nColumns, int nVectorRows, 
