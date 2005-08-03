@@ -430,7 +430,7 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
 
   if (MLZ_dim == 0) {
     if (Amatrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 0) 
-      printf("ML_DecomposeGraph_with_Zoltan: No coordinates given\n");
+      printf("ML*WRN* ML_DecomposeGraph_with_Zoltan: No coordinates given.\nML*WRN* Giving up on repartitioning.\n");
     return(-1);
   }
 

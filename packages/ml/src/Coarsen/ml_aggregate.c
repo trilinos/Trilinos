@@ -2118,6 +2118,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   ML_Partitioner which_partitioner;
   ML_Aggregate_Viz_Stats *grid_info;
   int N_dimensions;
+  int haveCoordinates = 0;
 
   if (ML_Repartition_Status(ml) == ML_FALSE)
     return NULL;
@@ -2158,18 +2159,26 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   if (flag == 0) return NULL;
 
   grid_info = (ML_Aggregate_Viz_Stats *) ml->Grid[coarse].Grid;
+  which_partitioner = ML_Repartition_Get_Partitioner(ml);
   /* no coordinates supplied */
   if (grid_info == NULL) {
-    if (ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4)
-      printf("\n*ML*WRN* No grid structure found. Cannot repartition from level %d to %d.\n\n",fine,coarse);
-    return NULL;
+    haveCoordinates = 0;
+    if ((ml->comm->ML_mypid == 0)
+        && (ML_Get_PrintLevel() > 0)
+        && (which_partitioner == ML_USEZOLTAN)
+        && (Nprocs_ToUse > 1))
+      printf("ML*WRN* No grid structure found. This is not necessarily an\nML*WRN* error, but repartitioning with Zoltan is impossible.\n\n");
   }
-  else if (grid_info->x == NULL) {
-    if (ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4)
-      printf("\n*ML*WRN* No x-coordinates supplied. Cannot repartition from level %d to %d.\n\n",fine,coarse);
-    return NULL;
+  else if (grid_info->x == NULL || grid_info->y == NULL) {
+    haveCoordinates = 0;
+    if ((ml->comm->ML_mypid == 0)
+        && (ML_Get_PrintLevel() > 0)
+        && (which_partitioner == ML_USEZOLTAN)
+        && (Nprocs_ToUse > 1))
+      printf("ML*WRN* Either x- or y-coordinates are missing. This is not necessarily an\nML*WRN* error, but repartitioning with Zoltan is impossible.\n\n");
   }
   else {
+     haveCoordinates = 1;
 /*
     j = ((int) fabs((double)(ag->begin_level - ag->cur_level))) + 1;
     printf("(pid %d, level %d):  ag->begin_level = %d, ag->cur_level = %d, j = %d\n",
@@ -2179,8 +2188,15 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     ycoord = grid_info->y;
     zcoord = grid_info->z;
     N_dimensions = grid_info->Ndim;
-    if (N_dimensions < 1 || N_dimensions > 3)
-      pr_error("ML_repartition_Acoarse: problem dimension is not set.\n");
+    if (N_dimensions < 1 || N_dimensions > 3) {
+      N_dimensions = 0;
+      if (xcoord != NULL) N_dimensions++;
+      if (ycoord != NULL) N_dimensions++;
+      if (zcoord != NULL) N_dimensions++;
+      grid_info->Ndim = N_dimensions;
+      if ((ml->comm->ML_mypid == 0) && (ML_Get_PrintLevel() > 0))
+        printf("ML*WRN* ML_repartition_Acoarse: problem dimension was not previously set.\nML*WRN* Now setting dimension to %d.\n",N_dimensions);
+    }
 /*
     printf("(pid %d, level %d) (x,y,z) = %p, %p, %p\n",ml->comm->ML_mypid, fine,xcoord,ycoord,zcoord);
     printf("(pid %d, level 0) (x,y,z) = %p, %p, %p\n",ml->comm->ML_mypid, 
@@ -2190,7 +2206,6 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
 */
   }
 
-  which_partitioner = ML_Repartition_Get_Partitioner(ml);
   /* Turn off implicit transpose because the getrow is needed to apply
      the permutation matrices. */
   if (ReturnPerm == ML_TRUE) UseImplicitTranspose = ML_FALSE;
