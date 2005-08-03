@@ -545,35 +545,7 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, ml, NOX_ML_EPETRA, BUILD_NOX_EPETRA_ML_SUPPO
 # ------------------------------------------------------------------------
 # NOX/LOCA-Python Check.
 # ------------------------------------------------------------------------
-AC_ARG_ENABLE(python,
- [AC_HELP_STRING([--enable-python],[Enable Python support.  Default is no.])],
- [ADDON_python=$enableval],
- [ADDON_python=no]
-)
-
-AC_MSG_CHECKING(whether we should build the python support)
-if test X${ADDON_python} = Xyes; then
-  BUILD_PYTHON=yes
-  AC_MSG_RESULT(yes)
-  AM_CONDITIONAL(BUILD_PYTHON, true)
-
-  # Get python include/lib paths
-  AC_PYTHON_DEVEL
-
-  # Check that Python.h is available
-  save_CPPFLAGS=$CPPFLAGS
-  CPPFLAGS="$save_CPPFLAGS $PYTHON_CPPFLAGS"
-  AC_LANG([C++])
-  AC_CHECK_HEADER(
-  [Python.h],
-  break,
-  AC_MSG_ERROR([You must have Python.h in order to build the Python support!!]))
-  CPPFLAGS="$save_CPPFLAGS"
-else
-  AC_MSG_RESULT(no)
-  BUILD_PYTHON=no
-  AM_CONDITIONAL(BUILD_PYTHON, false)
-fi
+TAC_ENABLE_PYTHON
 
 # Determine which addon libraries to support in Python
 IMPORT_LAPACK=0
@@ -585,9 +557,6 @@ AC_SUBST(IMPORT_LAPACK)
 IMPORT_EPETRA=0
 if test X${BUILD_PYTHON} = Xyes && test X${ADDON_epetra} = Xyes; then
   IMPORT_EPETRA=1
-
-  # Check for Numeric when building the Epetra module
-  AC_PYTHON_MODULE(Numeric,yes)
 fi
 AC_SUBST(IMPORT_EPETRA)
 
@@ -610,29 +579,6 @@ if test X${BUILD_LIBLOCA} = Xyes || test X${BUILD_PYTHON} = Xyes; then
   # Configure libtool
   AC_PROG_LIBTOOL
 
-fi
-
-# ------------------------------------------------------------------------
-# Configure swig
-# ------------------------------------------------------------------------
-
-AC_ARG_WITH(swig,
-	    [AC_HELP_STRING([--with-swig],[Enable swig and set swig binary. Default is no.])],
-	    [WITH_SWIG=yes
-	     if test X${withval} != Xyes ; then
-	     	SWIG=$withval
-	     fi],
-            [WITH_SWIG=no])
-AC_MSG_CHECKING(whether we should enable swig support)
-AC_MSG_RESULT([${WITH_SWIG}])
-AM_CONDITIONAL(HAVE_SWIG,test X${WITH_SWIG} = Xyes)
-AC_SUBST(GNU_HAVE_SWIG, ${WITH_SWIG})
-
-if test X${BUILD_PYTHON} = Xyes && test X${WITH_SWIG} = Xyes; then
-  AC_PROG_SWIG(1.3.23)
-  SWIG_ENABLE_CXX
-  SWIG_MULTI_MODULE_SUPPORT
-  SWIG_PYTHON
 fi
 
 # ------------------------------------------------------------------------

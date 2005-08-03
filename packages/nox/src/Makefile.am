@@ -128,14 +128,14 @@ nodist_execinclude_HEADERS = NOX_Config.h
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
-ABSTRACT = \
-	$(srcdir)/NOX_Abstract_Vector.C \
-	$(srcdir)/NOX_Abstract_MultiVector.H \
-	$(srcdir)/NOX_Abstract_Group.C
-
 ABSTRACT_H = \
 	$(srcdir)/NOX_Abstract_Vector.H \
+	$(srcdir)/NOX_Abstract_MultiVector.H \
 	$(srcdir)/NOX_Abstract_Group.H
+
+ABSTRACT = \
+	$(srcdir)/NOX_Abstract_Vector.C \
+	$(srcdir)/NOX_Abstract_Group.C
 
 LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Generic.H \

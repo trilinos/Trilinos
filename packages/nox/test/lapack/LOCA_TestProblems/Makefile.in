@@ -81,12 +81,12 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
 	$(top_srcdir)/config/ac_libtoolize_flags.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
-	$(top_srcdir)/config/ac_python_devel.m4 \
 	$(top_srcdir)/config/ac_python_module.m4 \
 	$(top_srcdir)/config/acinclude.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_dggev.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
+	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
@@ -101,6 +101,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
 	$(top_srcdir)/config/tac_arg_with_perl.m4 \
+	$(top_srcdir)/config/tac_enable_python.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -303,14 +304,12 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL_EXE = @PERL_EXE@
 PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 PYTHON = @PYTHON@
-PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
-PYTHON_EXEC_PREFIX = @PYTHON_EXEC_PREFIX@
-PYTHON_EXTRA_LIBS = @PYTHON_EXTRA_LIBS@
-PYTHON_LDFLAGS = @PYTHON_LDFLAGS@
-PYTHON_PLATFORM = @PYTHON_PLATFORM@
+PYTHON_CSPEC = @PYTHON_CSPEC@
+PYTHON_EXECPREFIX = @PYTHON_EXECPREFIX@
+PYTHON_LSPEC = @PYTHON_LSPEC@
 PYTHON_PREFIX = @PYTHON_PREFIX@
-PYTHON_SITE_PKG = @PYTHON_SITE_PKG@
-PYTHON_VERSION = @PYTHON_VERSION@
+PYTHON_USE_FALSE = @PYTHON_USE_FALSE@
+PYTHON_USE_TRUE = @PYTHON_USE_TRUE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -329,6 +328,7 @@ USING_PERL_FALSE = @USING_PERL_FALSE@
 USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
+WITH_SWIG = @WITH_SWIG@
 abs_builddir = @abs_builddir@
 abs_top_builddir = @abs_top_builddir@
 ac_aux_dir = @ac_aux_dir@
@@ -367,12 +367,8 @@ localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
-pkgpyexecdir = @pkgpyexecdir@
-pkgpythondir = @pkgpythondir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
-pyexecdir = @pyexecdir@
-pythondir = @pythondir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
