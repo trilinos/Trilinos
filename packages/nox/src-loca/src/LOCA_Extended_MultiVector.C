@@ -615,7 +615,7 @@ LOCA::Extended::MultiVector::print() const
 const NOX::Abstract::MultiVector&
 LOCA::Extended::MultiVector::getMultiVector(int i) const
 {
-  checkIndex("LOCA::Extended::MultiVector::getMultiVector()", i);
+  checkVectorRowIndex("LOCA::Extended::MultiVector::getMultiVector()", i);
 
   return *(multiVectorPtrs[i]);
 }
@@ -623,7 +623,7 @@ LOCA::Extended::MultiVector::getMultiVector(int i) const
 NOX::Abstract::MultiVector&
 LOCA::Extended::MultiVector::getMultiVector(int i)
 {
-  checkIndex("LOCA::Extended::MultiVector::getMultiVector()", i);
+  checkVectorRowIndex("LOCA::Extended::MultiVector::getMultiVector()", i);
 
   return *(multiVectorPtrs[i]);
 }
@@ -731,7 +731,7 @@ LOCA::Extended::MultiVector::setMultiVectorPtr(
 					 int i, 
 					 NOX::Abstract::MultiVector* v)
 {
-  checkIndex("LOCA::Extended::MultiVector::setMultiVectorPtr()", i);
+  checkVectorRowIndex("LOCA::Extended::MultiVector::setMultiVectorPtr()",i);
 
   multiVectorPtrs[i] = v;
 }
@@ -755,6 +755,13 @@ LOCA::Extended::MultiVector::checkIndex(const string& callingFunction,
     LOCA::ErrorCheck::throwError(callingFunction, "Invalid column index");
 }
 
+void 
+LOCA::Extended::MultiVector::checkVectorRowIndex(const string& callingFunction,
+						 int i) const 
+{
+  if ( i < 0 || i >= numMultiVecRows)
+    LOCA::ErrorCheck::throwError(callingFunction, "Invalid vector row index");
+}
 void 
 LOCA::Extended::MultiVector::checkIndex(const string& callingFunction,
 					int i, int j) const 

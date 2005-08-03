@@ -305,6 +305,9 @@ namespace LOCA {
       //! Checks validity of column index
       void checkIndex(const string& callingFunction, int i) const;
 
+      //! Checks validity of vector row index
+      void checkVectorRowIndex(const string& callingFunction, int i) const;
+
       //! Checks validity of column and row index for scalars
       void checkIndex(const string& callingFunction, int i, int j) const;
 
