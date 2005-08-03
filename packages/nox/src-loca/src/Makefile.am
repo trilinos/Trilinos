@@ -66,6 +66,7 @@ LOCA_BORDERED_SYSTEM_H = \
 
 LOCA_BORDERED_SYSTEM = \
 	$(srcdir)/LOCA_BorderedSystem_Bordering.C \
+	$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C \
 	$(srcdir)/LOCA_BorderedSystem_Factory.C
 
 LOCA_CONTINUATION_H = \
@@ -95,6 +96,7 @@ LOCA_MULTICONTINUATION_H = \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterface.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.H \
+	$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.H \
 	$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.H \
 	$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.H \
@@ -112,6 +114,7 @@ LOCA_MULTICONTINUATION = \
 	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.C \
+	$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C \
 	$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C \
 	$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C \
 	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C \
@@ -152,7 +155,17 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.H \
-	$(srcdir)/LOCA_Bifurcation_Manager.H
+	$(srcdir)/LOCA_Bifurcation_Manager.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_AbstractGroup.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverStrategy.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.H \
+	$(srcdir)/LOCA_Bifurcation_Factory.H
 
 LOCA_BIFURCATION = \
         $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.C \
@@ -169,7 +182,15 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.C \
-	$(srcdir)/LOCA_Bifurcation_Manager.C
+	$(srcdir)/LOCA_Bifurcation_Manager.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C \
+	$(srcdir)/LOCA_Bifurcation_Factory.C
 
 LOCA_HOMOTOPY_H = \
 	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \

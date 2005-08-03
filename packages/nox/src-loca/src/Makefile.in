@@ -82,12 +82,12 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
 	$(top_srcdir)/config/ac_libtoolize_flags.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
-	$(top_srcdir)/config/ac_python_devel.m4 \
 	$(top_srcdir)/config/ac_python_module.m4 \
 	$(top_srcdir)/config/acinclude.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_dggev.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
+	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
@@ -102,6 +102,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
 	$(top_srcdir)/config/tac_arg_with_perl.m4 \
+	$(top_srcdir)/config/tac_enable_python.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -135,6 +136,7 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterface.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.H \
+	$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.H \
 	$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.H \
 	$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.H \
@@ -173,6 +175,16 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.H \
 	$(srcdir)/LOCA_Bifurcation_Manager.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_AbstractGroup.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverStrategy.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.H \
+	$(srcdir)/LOCA_Bifurcation_Factory.H \
 	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \
 	$(srcdir)/LOCA_Homotopy_Group.H $(srcdir)/LOCA_DerivUtils.H \
 	$(srcdir)/LOCA_Utils.H $(srcdir)/LOCA_ErrorCheck.H \
@@ -223,6 +235,7 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Extended_AbstractGroup.C \
 	$(srcdir)/LOCA_Extended_MultiAbstractGroup.C \
 	$(srcdir)/LOCA_BorderedSystem_Bordering.C \
+	$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C \
 	$(srcdir)/LOCA_BorderedSystem_Factory.C \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.C \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.C \
@@ -237,6 +250,7 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.C \
+	$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C \
 	$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C \
 	$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C \
 	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C \
@@ -272,6 +286,14 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.C \
 	$(srcdir)/LOCA_Bifurcation_Manager.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C \
+	$(srcdir)/LOCA_Bifurcation_Factory.C \
 	$(srcdir)/LOCA_Homotopy_Group.C $(srcdir)/LOCA_DerivUtils.C \
 	$(srcdir)/LOCA_Utils.C $(srcdir)/LOCA_ErrorCheck.C \
 	$(srcdir)/LOCA_Parameter_Vector.C \
@@ -324,6 +346,7 @@ am__objects_3 = libloca_la-LOCA_Extended_Vector.lo \
 	libloca_la-LOCA_Extended_AbstractGroup.lo \
 	libloca_la-LOCA_Extended_MultiAbstractGroup.lo
 am__objects_4 = libloca_la-LOCA_BorderedSystem_Bordering.lo \
+	libloca_la-LOCA_BorderedSystem_AbstractStrategy.lo \
 	libloca_la-LOCA_BorderedSystem_Factory.lo
 am__objects_5 = libloca_la-LOCA_Continuation_ExtendedVector.lo \
 	libloca_la-LOCA_Continuation_AbstractGroup.lo \
@@ -338,6 +361,7 @@ am__objects_6 = libloca_la-LOCA_MultiContinuation_ExtendedVector.lo \
 	libloca_la-LOCA_MultiContinuation_AbstractGroup.lo \
 	libloca_la-LOCA_MultiContinuation_FiniteDifferenceGroup.lo \
 	libloca_la-LOCA_MultiContinuation_ConstraintInterfaceMVDX.lo \
+	libloca_la-LOCA_MultiContinuation_MultiVecConstraint.lo \
 	libloca_la-LOCA_MultiContinuation_CompositeConstraint.lo \
 	libloca_la-LOCA_MultiContinuation_CompositeConstraintMVDX.lo \
 	libloca_la-LOCA_MultiContinuation_ConstrainedGroup.lo \
@@ -373,7 +397,15 @@ am__objects_9 = libloca_la-LOCA_Bifurcation_TPBord_ExtendedVector.lo \
 	libloca_la-LOCA_Bifurcation_HopfBord_AbstractGroup.lo \
 	libloca_la-LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.lo \
 	libloca_la-LOCA_Bifurcation_HopfBord_ExtendedGroup.lo \
-	libloca_la-LOCA_Bifurcation_Manager.lo
+	libloca_la-LOCA_Bifurcation_Manager.lo \
+	libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.lo \
+	libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.lo \
+	libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.lo \
+	libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.lo \
+	libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.lo \
+	libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.lo \
+	libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.lo \
+	libloca_la-LOCA_Bifurcation_Factory.lo
 am__objects_10 = libloca_la-LOCA_Homotopy_Group.lo
 am__objects_11 = libloca_la-LOCA_DerivUtils.lo
 am__objects_12 = libloca_la-LOCA_Utils.lo \
@@ -441,6 +473,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_AnasaziOperator_JacobianInverse.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_AnasaziOperator_Manager.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_AnasaziOperator_ShiftInvert.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_HopfBord_AbstractGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_HopfBord_ExtendedGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_HopfBord_ExtendedVector.Plo \
@@ -460,6 +493,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_SingularSolveGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Bordering.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Continuation_AbstractGroup.Plo \
@@ -498,6 +532,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedVector.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_FiniteDifferenceGroup.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Plo \
@@ -530,6 +565,13 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_StepSize_Manager.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Stepper.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_TimeDependent_AbstractGroup.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Utils.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -571,6 +613,7 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterface.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.H \
+	$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.H \
 	$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.H \
 	$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.H \
@@ -609,6 +652,16 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.H \
 	$(srcdir)/LOCA_Bifurcation_Manager.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_AbstractGroup.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverStrategy.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.H \
+	$(srcdir)/LOCA_Bifurcation_Factory.H \
 	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \
 	$(srcdir)/LOCA_Homotopy_Group.H $(srcdir)/LOCA_DerivUtils.H \
 	$(srcdir)/LOCA_Utils.H $(srcdir)/LOCA_ErrorCheck.H \
@@ -819,14 +872,12 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL_EXE = @PERL_EXE@
 PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 PYTHON = @PYTHON@
-PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
-PYTHON_EXEC_PREFIX = @PYTHON_EXEC_PREFIX@
-PYTHON_EXTRA_LIBS = @PYTHON_EXTRA_LIBS@
-PYTHON_LDFLAGS = @PYTHON_LDFLAGS@
-PYTHON_PLATFORM = @PYTHON_PLATFORM@
+PYTHON_CSPEC = @PYTHON_CSPEC@
+PYTHON_EXECPREFIX = @PYTHON_EXECPREFIX@
+PYTHON_LSPEC = @PYTHON_LSPEC@
 PYTHON_PREFIX = @PYTHON_PREFIX@
-PYTHON_SITE_PKG = @PYTHON_SITE_PKG@
-PYTHON_VERSION = @PYTHON_VERSION@
+PYTHON_USE_FALSE = @PYTHON_USE_FALSE@
+PYTHON_USE_TRUE = @PYTHON_USE_TRUE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -845,6 +896,7 @@ USING_PERL_FALSE = @USING_PERL_FALSE@
 USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
+WITH_SWIG = @WITH_SWIG@
 abs_builddir = @abs_builddir@
 abs_top_builddir = @abs_top_builddir@
 ac_aux_dir = @ac_aux_dir@
@@ -883,12 +935,8 @@ localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
-pkgpyexecdir = @pkgpyexecdir@
-pkgpythondir = @pkgpythondir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
-pyexecdir = @pyexecdir@
-pythondir = @pythondir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
@@ -926,6 +974,7 @@ LOCA_BORDERED_SYSTEM_H = \
 
 LOCA_BORDERED_SYSTEM = \
 	$(srcdir)/LOCA_BorderedSystem_Bordering.C \
+	$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C \
 	$(srcdir)/LOCA_BorderedSystem_Factory.C
 
 LOCA_CONTINUATION_H = \
@@ -955,6 +1004,7 @@ LOCA_MULTICONTINUATION_H = \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterface.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.H \
+	$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.H \
 	$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.H \
 	$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.H \
 	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.H \
@@ -972,6 +1022,7 @@ LOCA_MULTICONTINUATION = \
 	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.C \
+	$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C \
 	$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C \
 	$(srcdir)/LOCA_MultiContinuation_CompositeConstraintMVDX.C \
 	$(srcdir)/LOCA_MultiContinuation_ConstrainedGroup.C \
@@ -1012,7 +1063,17 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.H \
-	$(srcdir)/LOCA_Bifurcation_Manager.H
+	$(srcdir)/LOCA_Bifurcation_Manager.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_AbstractGroup.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverStrategy.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.H \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.H \
+	$(srcdir)/LOCA_Bifurcation_Factory.H
 
 LOCA_BIFURCATION = \
         $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.C \
@@ -1029,7 +1090,15 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.C \
-	$(srcdir)/LOCA_Bifurcation_Manager.C
+	$(srcdir)/LOCA_Bifurcation_Manager.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C \
+	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C \
+	$(srcdir)/LOCA_Bifurcation_Factory.C
 
 LOCA_HOMOTOPY_H = \
 	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \
@@ -1337,6 +1406,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_AnasaziOperator_JacobianInverse.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_AnasaziOperator_Manager.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_AnasaziOperator_ShiftInvert.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_HopfBord_AbstractGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_HopfBord_ExtendedGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_HopfBord_ExtendedVector.Plo@am__quote@
@@ -1356,6 +1426,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_SingularSolveGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Bordering.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Continuation_AbstractGroup.Plo@am__quote@
@@ -1394,6 +1465,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ExtendedVector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_Factory.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_FiniteDifferenceGroup.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalConstraint.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiContinuation_NaturalGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_MultiPredictor_AbstractStrategy.Plo@am__quote@
@@ -1426,6 +1498,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_StepSize_Manager.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Stepper.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_TimeDependent_AbstractGroup.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Utils.Plo@am__quote@
 
 .C.o:
@@ -1571,6 +1650,30 @@ libloca_la-LOCA_BorderedSystem_Bordering.lo: $(srcdir)/LOCA_BorderedSystem_Borde
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Bordering.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Bordering.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_BorderedSystem_Bordering.lo `test -f '$(srcdir)/LOCA_BorderedSystem_Bordering.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_Bordering.C
+
+libloca_la-LOCA_BorderedSystem_AbstractStrategy.o: $(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_BorderedSystem_AbstractStrategy.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Tpo" -c -o libloca_la-LOCA_BorderedSystem_AbstractStrategy.o `test -f '$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Tpo" "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C' object='libloca_la-LOCA_BorderedSystem_AbstractStrategy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_BorderedSystem_AbstractStrategy.o `test -f '$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C
+
+libloca_la-LOCA_BorderedSystem_AbstractStrategy.obj: $(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_BorderedSystem_AbstractStrategy.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Tpo" -c -o libloca_la-LOCA_BorderedSystem_AbstractStrategy.obj `if test -f '$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Tpo" "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C' object='libloca_la-LOCA_BorderedSystem_AbstractStrategy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_BorderedSystem_AbstractStrategy.obj `if test -f '$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C'; fi`
+
+libloca_la-LOCA_BorderedSystem_AbstractStrategy.lo: $(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_BorderedSystem_AbstractStrategy.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Tpo" -c -o libloca_la-LOCA_BorderedSystem_AbstractStrategy.lo `test -f '$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Tpo" "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C' object='libloca_la-LOCA_BorderedSystem_AbstractStrategy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_BorderedSystem_AbstractStrategy.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_BorderedSystem_AbstractStrategy.lo `test -f '$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C
 
 libloca_la-LOCA_BorderedSystem_Factory.o: $(srcdir)/LOCA_BorderedSystem_Factory.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_BorderedSystem_Factory.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_BorderedSystem_Factory.Tpo" -c -o libloca_la-LOCA_BorderedSystem_Factory.o `test -f '$(srcdir)/LOCA_BorderedSystem_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_Factory.C; \
@@ -1907,6 +2010,30 @@ libloca_la-LOCA_MultiContinuation_ConstraintInterfaceMVDX.lo: $(srcdir)/LOCA_Mul
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstraintInterfaceMVDX.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_ConstraintInterfaceMVDX.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_ConstraintInterfaceMVDX.lo `test -f '$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_ConstraintInterfaceMVDX.C
+
+libloca_la-LOCA_MultiContinuation_MultiVecConstraint.o: $(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_MultiVecConstraint.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Tpo" -c -o libloca_la-LOCA_MultiContinuation_MultiVecConstraint.o `test -f '$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C' object='libloca_la-LOCA_MultiContinuation_MultiVecConstraint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_MultiVecConstraint.o `test -f '$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C
+
+libloca_la-LOCA_MultiContinuation_MultiVecConstraint.obj: $(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_MultiVecConstraint.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Tpo" -c -o libloca_la-LOCA_MultiContinuation_MultiVecConstraint.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C' object='libloca_la-LOCA_MultiContinuation_MultiVecConstraint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_MultiVecConstraint.obj `if test -f '$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C'; fi`
+
+libloca_la-LOCA_MultiContinuation_MultiVecConstraint.lo: $(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_MultiVecConstraint.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Tpo" -c -o libloca_la-LOCA_MultiContinuation_MultiVecConstraint.lo `test -f '$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Tpo" "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C' object='libloca_la-LOCA_MultiContinuation_MultiVecConstraint.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_MultiContinuation_MultiVecConstraint.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_MultiContinuation_MultiVecConstraint.lo `test -f '$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_MultiVecConstraint.C
 
 libloca_la-LOCA_MultiContinuation_CompositeConstraint.o: $(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_MultiContinuation_CompositeConstraint.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_MultiContinuation_CompositeConstraint.Tpo" -c -o libloca_la-LOCA_MultiContinuation_CompositeConstraint.o `test -f '$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiContinuation_CompositeConstraint.C; \
@@ -2771,6 +2898,198 @@ libloca_la-LOCA_Bifurcation_Manager.lo: $(srcdir)/LOCA_Bifurcation_Manager.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_Manager.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_Manager.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_Manager.lo `test -f '$(srcdir)/LOCA_Bifurcation_Manager.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_Manager.C
+
+libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.o: $(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C
+
+libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.obj: $(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C'; fi`
+
+libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.lo: $(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.lo `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedVector.lo `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C
+
+libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.o: $(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C
+
+libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.obj: $(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C'; fi`
+
+libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.lo: $(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.lo `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.lo `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C
+
+libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.o: $(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C
+
+libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.obj: $(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C'; fi`
+
+libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.lo: $(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.lo `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.lo `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C
+
+libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.o: $(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C
+
+libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.obj: $(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C'; fi`
+
+libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.lo: $(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.lo `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_ExtendedGroup.lo `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedGroup.C
+
+libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.o: $(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C
+
+libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.obj: $(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C'; fi`
+
+libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.lo: $(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.lo `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_SalingerBordering.lo `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C
+
+libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.o: $(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C
+
+libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.obj: $(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C'; fi`
+
+libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.lo: $(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.lo `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_PhippsBordering.lo `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C
+
+libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.o: $(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C
+
+libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.obj: $(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C'; fi`
+
+libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.lo: $(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Tpo" -c -o libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.lo `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Tpo" "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C' object='libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_TurningPoint_MooreSpence_SolverFactory.lo `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C
+
+libloca_la-LOCA_Bifurcation_Factory.o: $(srcdir)/LOCA_Bifurcation_Factory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_Factory.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Tpo" -c -o libloca_la-LOCA_Bifurcation_Factory.o `test -f '$(srcdir)/LOCA_Bifurcation_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_Factory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_Factory.C' object='libloca_la-LOCA_Bifurcation_Factory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_Factory.o `test -f '$(srcdir)/LOCA_Bifurcation_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_Factory.C
+
+libloca_la-LOCA_Bifurcation_Factory.obj: $(srcdir)/LOCA_Bifurcation_Factory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_Factory.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Tpo" -c -o libloca_la-LOCA_Bifurcation_Factory.obj `if test -f '$(srcdir)/LOCA_Bifurcation_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_Factory.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_Factory.C' object='libloca_la-LOCA_Bifurcation_Factory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_Factory.obj `if test -f '$(srcdir)/LOCA_Bifurcation_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_Factory.C'; fi`
+
+libloca_la-LOCA_Bifurcation_Factory.lo: $(srcdir)/LOCA_Bifurcation_Factory.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_Factory.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Tpo" -c -o libloca_la-LOCA_Bifurcation_Factory.lo `test -f '$(srcdir)/LOCA_Bifurcation_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_Factory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_Factory.C' object='libloca_la-LOCA_Bifurcation_Factory.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_Factory.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_Factory.lo `test -f '$(srcdir)/LOCA_Bifurcation_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_Factory.C
 
 libloca_la-LOCA_Homotopy_Group.o: $(srcdir)/LOCA_Homotopy_Group.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Homotopy_Group.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Homotopy_Group.Tpo" -c -o libloca_la-LOCA_Homotopy_Group.o `test -f '$(srcdir)/LOCA_Homotopy_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Homotopy_Group.C; \
