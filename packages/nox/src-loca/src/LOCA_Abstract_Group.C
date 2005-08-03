@@ -37,7 +37,7 @@
 LOCA::Abstract::Group::Group(const LOCA::DerivUtils& d)
   : LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(d),
     LOCA::Bifurcation::TPBord::SingularSolveGroup(),
-    LOCA::MultiContinuation::FiniteDifferenceGroup(d)
+    LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d)
 {
 }
 
@@ -45,7 +45,7 @@ LOCA::Abstract::Group::Group(NOX::Parameter::List& params,
 			     const LOCA::DerivUtils& d)
   : LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(d),
     LOCA::Bifurcation::TPBord::SingularSolveGroup(params),
-    LOCA::MultiContinuation::FiniteDifferenceGroup(d)
+    LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d)
 {
 }
 
@@ -53,7 +53,7 @@ LOCA::Abstract::Group::Group(const LOCA::Abstract::Group& source,
 			     NOX::CopyType type)
   : LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(source, type),
     LOCA::Bifurcation::TPBord::SingularSolveGroup(source, type),
-    LOCA::MultiContinuation::FiniteDifferenceGroup(source, type)
+    LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(source, type)
 {
 }
 
@@ -132,7 +132,7 @@ LOCA::Abstract::Group::operator=(const LOCA::Abstract::Group& source)
   // Copy parent classes
   LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup::operator=(source);
   LOCA::Bifurcation::TPBord::SingularSolveGroup::operator=(source);
-  
+  LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::operator=(source);
   return *this;
 }
 
@@ -203,6 +203,20 @@ LOCA::Abstract::Group::setParamsMulti(const vector<int>& paramIDs,
 LOCA::MultiContinuation::FiniteDifferenceGroup&
 LOCA::Abstract::Group::operator=(
 		 const LOCA::MultiContinuation::FiniteDifferenceGroup& source)
+{
+  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+}
+
+LOCA::TurningPoint::MooreSpence::AbstractGroup&
+LOCA::Abstract::Group::operator=(
+	 const LOCA::TurningPoint::MooreSpence::AbstractGroup& source)
+{
+  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+}
+
+LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup&
+LOCA::Abstract::Group::operator=(
+	 const LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup& source)
 {
   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
 }

@@ -36,7 +36,7 @@
 #include "LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H"  // base class
 #include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"       // base class
 #include "LOCA_Homotopy_AbstractGroup.H"                      // base class
-#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"     // base class
+#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"// base class
 
 namespace LOCA { 
 
@@ -60,7 +60,7 @@ namespace LOCA {
       public LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup,
       public LOCA::Bifurcation::TPBord::SingularSolveGroup,
       public virtual LOCA::Homotopy::AbstractGroup,
-      public LOCA::MultiContinuation::FiniteDifferenceGroup
+      public LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup
     {
 
     public:
@@ -276,6 +276,28 @@ namespace LOCA {
       //! Assignment operator
       virtual LOCA::MultiContinuation::FiniteDifferenceGroup& 
       operator=(const LOCA::MultiContinuation::FiniteDifferenceGroup& source);
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::TurningPoint::MooreSpence::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Assignment operator
+      virtual LOCA::TurningPoint::MooreSpence::AbstractGroup& 
+      operator=(const LOCA::TurningPoint::MooreSpence::AbstractGroup& source);
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup virtual methods.
+       */
+      //@{
+
+      //! Assignment operator
+      virtual LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup& 
+      operator=(const LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup& source);
 
       //@}
       
