@@ -934,7 +934,7 @@ namespace Anasazi {
       leftOver = 0;
       if (_nFound > 0) {
         if ( _knownEV + _nFound  > _nev ) {
-          leftOver = _knownEV + _nFound -_nev;
+          leftOver = _knownEV + _nFound - _nev;
         }
         blas.COPY( _nFound-leftOver, &_theta[0], 1, &(*_evals)[_knownEV], 1 ); 
         blas.COPY( _nFound-leftOver, &_normR[0], 1, &_resids[_knownEV], 1 );
@@ -943,7 +943,7 @@ namespace Anasazi {
       //
       // Compute and store the converged eigenvectors 
       //
-      if (_nFound) {
+      if (_nFound > 0) {
 
         // Get a view of the eigenvector storage where the new eigenvectors will be put.
         std::vector<int> index2( _nFound - leftOver );
@@ -967,21 +967,19 @@ namespace Anasazi {
         //
         // Sort the computed eigenvalues, eigenvectors, and residuals
         //
-        if ((info==0) && (_knownEV > 0)) {
-          _order.resize(_knownEV);
-          _timerSortEval->start();
-          ret = _sm->sort( this, _knownEV, &(*_evals)[0], &_order);
-          _timerSortEval->stop();
-          if (ret != Ok) {
-            if (_om->isVerbosityAndPrint(Error)) {
-              _os << "ERROR : Sorting in solve()" << endl;
-            }
-            _error_flg = true;
-            break;
+        _order.resize(_knownEV+_nFound-leftOver);
+        _timerSortEval->start();
+        ret = _sm->sort( this, _knownEV+_nFound-leftOver, &(*_evals)[0], &_order);
+        _timerSortEval->stop();
+        if (ret != Ok) {
+          if (_om->isVerbosityAndPrint(Error)) {
+            _os << "ERROR : Sorting in solve()" << endl;
           }
-          // use _order to permute _evecs and _resids
-          _MSUtils.permuteVectors(_knownEV,_order,*_evecs,&_resids);
+          _error_flg = true;
+          break;
         }
+        // use _order to permute _evecs and _resids
+        _MSUtils.permuteVectors(_knownEV+_nFound-leftOver,_order,*_evecs,&_resids);
         
         // Increment number of known eigenpairs.
         _knownEV += (_nFound-leftOver);
@@ -994,41 +992,52 @@ namespace Anasazi {
       // Define the restarting vectors
       _timerRestart->start();
       leftOver = (_nevLocal < _blockSize + _nFound) ? _nevLocal - _nFound : _blockSize;
+
+      // Grab a view of the restarting vectors (a subview of X)
+      std::vector<int> index2( leftOver );
+      for (j=0; j<leftOver; j++) {
+        index2[j] = j;
+      }
+      Teuchos::RefCountPtr<MV>  Xtmp = MVT::CloneView( *X, index2 );
+      Teuchos::RefCountPtr<MV> KXtmp = MVT::CloneView(*KX, index2 );
+      Teuchos::RefCountPtr<MV> MXtmp = MVT::CloneView(*MX, index2 );
+
       Teuchos::SerialDenseMatrix<int,ScalarType> S11new( Teuchos::View, S, _blockSize, leftOver, 0, _nFound );
       
       MVT::MvAddMv( one, *X, zero, *X, *R );
-      MVT::MvTimesMatAddMv( one, *R, S11new, zero, *X );
+      MVT::MvTimesMatAddMv( one, *R, S11new, zero, *Xtmp );
       
       MVT::MvAddMv( one, *KX, zero, *KX, *R );
-      MVT::MvTimesMatAddMv( one, *R, S11new, zero, *KX );
+      MVT::MvTimesMatAddMv( one, *R, S11new, zero, *KXtmp );
       
       if (haveMass) {
         MVT::MvAddMv( one, *MX, zero, *MX, *R );
-        MVT::MvTimesMatAddMv( one, *R, S11new, zero, *MX );
+        MVT::MvTimesMatAddMv( one, *R, S11new, zero, *MXtmp );
       }
 
       if (localSize >= twoBlocks) {
         Teuchos::SerialDenseMatrix<int,ScalarType> S21new( Teuchos::View, S, _blockSize, leftOver, _blockSize, _nFound );        
-        MVT::MvTimesMatAddMv( one, *H, S21new, one, *X );
-        MVT::MvTimesMatAddMv( one, *KH, S21new, one, *KX );
-        if (haveMass) 
-          MVT::MvTimesMatAddMv( one, *MH, S21new, one, *MX );
+        MVT::MvTimesMatAddMv( one, *H, S21new, one, *Xtmp );
+        MVT::MvTimesMatAddMv( one, *KH, S21new, one, *KXtmp );
+        if (haveMass) {
+          MVT::MvTimesMatAddMv( one, *MH, S21new, one, *MXtmp );
+        }
         
         if (localSize >= threeBlocks) {
           Teuchos::SerialDenseMatrix<int,ScalarType> S31new( Teuchos::View, S, _blockSize, leftOver, twoBlocks, _nFound );
-          MVT::MvTimesMatAddMv( one, *P, S31new, one, *X );
-          MVT::MvTimesMatAddMv( one, *KP, S31new, one, *KX );
+          MVT::MvTimesMatAddMv( one, *P, S31new, one, *Xtmp );
+          MVT::MvTimesMatAddMv( one, *KP, S31new, one, *KXtmp );
           if (haveMass) {
-            MVT::MvTimesMatAddMv( one, *MP, S31new, one, *MX );
+            MVT::MvTimesMatAddMv( one, *MP, S31new, one, *MXtmp );
           }
         }
       }
       if (_nevLocal < _blockSize + _nFound) {
         // Put new random vectors at the end of the block
-        std::vector<int> index2( _blockSize - leftOver );
+        index2.resize( _blockSize - leftOver );
         for (j=0; j<_blockSize-leftOver; j++)
           index2[j] = leftOver + j;
-        Teuchos::RefCountPtr<MV> Xtmp = MVT::CloneView( *X, index2 );
+        Xtmp = MVT::CloneView( *X, index2 );
         MVT::MvRandom( *Xtmp );
       }
       else {
@@ -1056,9 +1065,12 @@ namespace Anasazi {
         _os <<"******************************************************"<<endl;
     }
 
-    if (info != 0)
+    if (info != 0) {
       return Failed;
-
+    }
+    else if (_knownEV != _nev) {
+      return Unconverged;
+    }
     return Ok;
   }
   
