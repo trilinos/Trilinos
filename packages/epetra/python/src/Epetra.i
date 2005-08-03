@@ -205,6 +205,22 @@ PyObject* Finalize() {
   return Py_BuildValue("");
 } 
 
+MPI_Comm CommWorld()
+{
+  return(MPI_COMM_WORLD);
+}
+#else
+PyObject* Init_Argv(PyObject *args) 
+{
+  return Py_BuildValue("");
+}
+
+PyObject* Finalize()
+{
+  return Py_BuildValue("");
+}
+#endif
+
 #define SUMALL    0
 #define MINALL    1
 #define MAXALL    2
@@ -329,21 +345,6 @@ PyObject* Epetra_Comm_InterfaceDouble(const Epetra_Comm& Comm,
   }
   return(result);
 }
-MPI_Comm CommWorld()
-{
-  return(MPI_COMM_WORLD);
-}
-#else
-PyObject* Init_Argv(PyObject *args) 
-{
-  return Py_BuildValue("");
-}
-
-PyObject* Finalize()
-{
-  return Py_BuildValue("");
-}
-#endif
 
 PyObject * Epetra_RowMatrix_GetEntries(const Epetra_RowMatrix& Matrix,
                                        int GlobalRow) 
