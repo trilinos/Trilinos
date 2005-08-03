@@ -121,4 +121,4 @@ namespace LOCA {
 
 } // Namespace LOCA
 
-#endif // LOCA_EIGENSOLVER_FACTORY_H
+#endif // LOCA_MULTICONTINUATION_FACTORY_H
