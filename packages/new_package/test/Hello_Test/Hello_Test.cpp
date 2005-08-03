@@ -1,4 +1,3 @@
-
 //@HEADER
 // ***********************************************************************
 // 
@@ -27,52 +26,52 @@
 // ***********************************************************************
 //@HEADER
 
-#include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
 #include "Newp_Hello.h"
-#include <iostream>
 #include <sstream>
-#include <istream>
-#include <ostream>
-#include <string>
+
 #ifdef HAVE_MPI
 #include "mpi.h"
 #endif
 
 int main(int argc, char *argv[]){
 
-// This is not really an mpi test, but we throw this in so that we can
-// have an example mpi test script for the test harness. 
 #ifdef HAVE_MPI
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
+  MPI_Init(&argc, &argv);
 #endif
 
   using namespace std;
-  Epetra_SerialComm esc;
-  Epetra_Comm * ec;
-  ec = dynamic_cast<Epetra_Comm*>(&esc);
-  stringbuf stringb;
-  streambuf * sb;
-  sb = dynamic_cast<streambuf*>(&stringb);
-  iostream io(sb);
-  ostream * os;
-  os = dynamic_cast<ostream*>(&io);
-  Newp_Hello nph(*ec);
-  nph.Print(*os);
-  char results[100];
-  io.readsome(results, 99);
-  char * expected1 = "This will print out one line for each of the 1 processes";
-  char * expected2 = "Hello.  I am process 0";
-  if(strstr(results, expected1) == NULL || strstr(results, expected2) == NULL){
-    cout << "Test failed!" << endl;
-    cout << "Expected:" << endl << expected1 << endl << expected2 << endl;
-    cout << "Got:" << endl << results << endl;
+
+  // Get an Epetra_Comm
+  Epetra_SerialComm epetra_serial_comm;
+  Epetra_Comm * epetra_comm;
+  epetra_comm = dynamic_cast<Epetra_Comm*>(&epetra_serial_comm);
+
+  //Create an ostream that Newp_Hello can write to and that we can read from
+  stringbuf string_buf;
+  streambuf * stream_buf;
+  stream_buf = dynamic_cast<streambuf*>(&string_buf);
+  iostream io_stream(stream_buf);
+  ostream * o_stream;
+  o_stream = dynamic_cast<ostream*>(&io_stream);
+  
+  //Create a Newp_Hello to test
+  Newp_Hello new_package_hello(*epetra_comm);
+  new_package_hello.Print(*o_stream);
+
+  //Read from the io_stream
+  char temp[83];
+  io_stream.getline(temp, 83, 0);
+    
+  char * expected = "This will print out one line for each of the 1 processes \n\nHello.  I am process 0\n";
+
+  if(strcmp(temp, expected) != 0){
+    cout << "Test Failed!" << endl << "     Got::" << strlen(temp) << "::" << temp << "::" << endl << "Expected::" << strlen(expected) << "::" << expected << "::" << endl;
     return 1;
   }
   cout << "Test passed!" << endl;
-#ifdef EPETRA_MPI
-  MPI_Finalize() ;
-#endif
+  #ifdef EPETRA_MPI
+  MPI_Finalize();
+  #endif
   return 0;
 }
