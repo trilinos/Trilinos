@@ -30,16 +30,17 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_BorderedSystem_EpetraHouseholder.H"
+#include "LOCA_BorderedSystem_EpetraAugmented.H"
 #include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
 #include "NOX_Epetra_MultiVector.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
 #include "LOCA_EpetraNew_Group.H"
-#include "LOCA_Epetra_CompactWYOp.H"
+#include "LOCA_Epetra_AugmentedOp.H"
 
-LOCA::BorderedSystem::EpetraHouseholder::EpetraHouseholder(
+LOCA::BorderedSystem::EpetraAugmented::EpetraAugmented(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& slvrParams): 
@@ -50,42 +51,40 @@ LOCA::BorderedSystem::EpetraHouseholder::EpetraHouseholder(
   B(),
   C(),
   constraints(),
-  house_x(),
-  house_p(),
-  T(),
-  R(),
-  v_x(),
   numConstraints(0),
   isZeroA(true),
   isZeroB(true),
   isZeroC(true),
-  isContiguous(false),
-  dblas()
+  isContiguous(false)
 {
 }
 
-LOCA::BorderedSystem::EpetraHouseholder::~EpetraHouseholder()
+LOCA::BorderedSystem::EpetraAugmented::~EpetraAugmented()
 {
 }
 
 void
-LOCA::BorderedSystem::EpetraHouseholder::setIsContiguous(bool flag)
+LOCA::BorderedSystem::EpetraAugmented::setIsContiguous(bool flag)
 {
   isContiguous = flag;
 }
 
 void
-LOCA::BorderedSystem::EpetraHouseholder::setMatrixBlocks(
+LOCA::BorderedSystem::EpetraAugmented::setMatrixBlocks(
 	 const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
 	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	 const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
   string callingFunction = 
-    "LOCA::BorderedSystem::EpetraHouseholder::setMatrixBlocks";
+    "LOCA::BorderedSystem::EpetraAugmented::setMatrixBlocks";
+
+  // Cast away const
+  Teuchos::RefCountPtr<NOX::Abstract::Group> non_const_group = 
+    Teuchos::rcp_const_cast<NOX::Abstract::Group>(group);
 
   // Cast group to an EpetraNew group
-  grp = Teuchos::rcp_dynamic_cast<const LOCA::EpetraNew::Group>(group);
+  grp = Teuchos::rcp_dynamic_cast<LOCA::EpetraNew::Group>(non_const_group);
   if (grp.get() == NULL)
     globalData->locaErrorCheck->throwError(
 				    callingFunction,
@@ -125,7 +124,7 @@ LOCA::BorderedSystem::EpetraHouseholder::setMatrixBlocks(
   else
     numConstraints = B->numVectors();
 
-  // We only use the Householder technique if A and B are nonzero 
+  // We only use the augmented technique if A and B are nonzero 
   // (otherwise we use a block elimination).  If C is zero, we just create
   // a matrix of zeros and apply the standard algorithm
   if (isZeroC && !isZeroA && !isZeroB) {
@@ -139,14 +138,10 @@ LOCA::BorderedSystem::EpetraHouseholder::setMatrixBlocks(
     isZeroC = false;
   }
 
-  // factor constraints
-  if (!isZeroA && !isZeroB)
-    factorConstraints();
-
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::BorderedSystem::EpetraHouseholder::apply(
+LOCA::BorderedSystem::EpetraAugmented::apply(
 			  const NOX::Abstract::MultiVector& X,
 			  const NOX::Abstract::MultiVector::DenseMatrix& Y,
 			  NOX::Abstract::MultiVector& U,
@@ -179,7 +174,7 @@ LOCA::BorderedSystem::EpetraHouseholder::apply(
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::BorderedSystem::EpetraHouseholder::applyTranspose(
+LOCA::BorderedSystem::EpetraAugmented::applyTranspose(
 			  const NOX::Abstract::MultiVector& X,
 			  const NOX::Abstract::MultiVector::DenseMatrix& Y,
 			  NOX::Abstract::MultiVector& U,
@@ -212,7 +207,7 @@ LOCA::BorderedSystem::EpetraHouseholder::applyTranspose(
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::BorderedSystem::EpetraHouseholder::applyInverse(
+LOCA::BorderedSystem::EpetraAugmented::applyInverse(
 			      NOX::Parameter::List& params,
 			      const NOX::Abstract::MultiVector* F,
 			      const NOX::Abstract::MultiVector::DenseMatrix* G,
@@ -220,7 +215,7 @@ LOCA::BorderedSystem::EpetraHouseholder::applyInverse(
 			      NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
   string callingFunction = 
-    "LOCA::BorderedSystem::EpetraHouseholder::applyInverse()";
+    "LOCA::BorderedSystem::EpetraAugmented::applyInverse()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
 
@@ -288,326 +283,97 @@ LOCA::BorderedSystem::EpetraHouseholder::applyInverse(
      finalStatus = solveBZero(params, ca.get(), C.get(), cf.get(), G, *x, Y);
 
    else {
+   
+     // Get underlying Epetra vectors
+     Teuchos::RefCountPtr<const NOX::Epetra::MultiVector> nox_epetra_a = 
+       Teuchos::rcp_dynamic_cast<const NOX::Epetra::MultiVector>(ca);
+     Teuchos::RefCountPtr<const NOX::Epetra::MultiVector> nox_epetra_b = 
+       Teuchos::rcp_dynamic_cast<const NOX::Epetra::MultiVector>(B);
+     Teuchos::RefCountPtr<NOX::Epetra::MultiVector> nox_epetra_x = 
+       Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(x);
+     Teuchos::RefCountPtr<const NOX::Epetra::MultiVector> nox_epetra_f = 
+       Teuchos::rcp_dynamic_cast<const NOX::Epetra::MultiVector>(cf);
+     Teuchos::RefCountPtr<const Epetra_MultiVector> epetra_a = 
+       Teuchos::rcp(&(nox_epetra_a->getEpetraMultiVector()), false);
+     Teuchos::RefCountPtr<const Epetra_MultiVector> epetra_b = 
+       Teuchos::rcp(&(nox_epetra_b->getEpetraMultiVector()), false);
+     Teuchos::RefCountPtr<Epetra_MultiVector> epetra_x = 
+       Teuchos::rcp(&(nox_epetra_x->getEpetraMultiVector()), false);
+     Teuchos::RefCountPtr<const Epetra_MultiVector> epetra_f = 
+       Teuchos::rcp(&(nox_epetra_f->getEpetraMultiVector()), false);
+     
+     // Get linear system
+     NOX::EpetraNew::LinearSystem& linSys = grp->getLinearSystem();
 
-     Teuchos::RefCountPtr<NOX::Abstract::MultiVector> RHS;
-     Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> cRHS;
-     Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp_x;
-     Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> Z_y;
-     Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> tmp_y;
+     // Get Jacobian
+     Teuchos::RefCountPtr<Epetra_Operator> jac =
+       Teuchos::rcp(&linSys.getJacobianOperator(), false);
 
-     if (!isZeroG) {
+     // Set Jacobian
+     linSys.setJacobianOperatorForSolve(*jac);
 
-       tmp_x = Teuchos::rcp(x->clone(NOX::ShapeCopy));
-       tmp_y = 
-	 Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(
-							       G->numRows(),
-							       G->numCols()));
-       RHS = Teuchos::rcp(x->clone(NOX::ShapeCopy));
+     // Create the preconditioner
+     linSys.destroyPreconditioner();
+     linSys.createPreconditioner(*((*epetra_x)(0)), params, false);
 
-       // Compute Z_y = R^-T * G
-       Y.assign(*G);
-       dblas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, 
-		  Teuchos::NON_UNIT_DIAG,
-		  G->numRows(), G->numCols(), 1.0, R.values(), 
-		  R.numRows(), Y.values(), Y.numRows());
+     // Get preconditioner
+     Teuchos::RefCountPtr<Epetra_Operator> prec =
+       Teuchos::rcp(&linSys.getGeneratedPrecOperator(), false);
 
-       // Compute P*[Z_y; 0]
-       applyCompactWY(NULL, &Y, *tmp_x, *tmp_y, false);
+     // Create augmented operators
+     LOCA::Epetra::AugmentedOp extended_jac(globalData, jac, epetra_a, 
+					    epetra_b, C);
+     LOCA::Epetra::AugmentedOp extended_prec(globalData, prec, epetra_a, 
+					     epetra_b, C);
 
-       // Compute -[A J]*P*[Z_y 0]
-       status = grp->applyJacobianMultiVector(*tmp_x, *RHS);
+     // Set augmented operator in linear system
+     linSys.setJacobianOperatorForSolve(extended_jac);
+     linSys.setPrecOperatorForSolve(extended_prec);
+
+     // Create augmented Epetra vectors for x, f
+     Teuchos::RefCountPtr<Epetra_MultiVector> epetra_augmented_x = 
+       extended_jac.buildEpetraAugmentedMultiVec(*epetra_x, &Y, false);
+     Teuchos::RefCountPtr<Epetra_MultiVector> epetra_augmented_f = 
+       extended_jac.buildEpetraAugmentedMultiVec(*epetra_f, G, true);
+
+     // Create augmented NOX::Epetra::MultiVectors as views
+     NOX::Epetra::MultiVector nox_epetra_augmented_x(*epetra_augmented_x,
+						     NOX::DeepCopy, true);
+     NOX::Epetra::MultiVector nox_epetra_augmented_f(*epetra_augmented_f,
+						     NOX::DeepCopy, true);
+
+     // Solve for each RHS
+     int m = nox_epetra_augmented_x.numVectors();
+     for (int i=0; i<m; i++) {
+       extended_jac.init(*((*epetra_f)(i)));
+       extended_prec.init(*((*epetra_f)(i)));
+       bool stat = 
+	 linSys.applyJacobianInverse(
+		params, 
+		dynamic_cast<NOX::Epetra::Vector&>(nox_epetra_augmented_f[i]),
+		dynamic_cast<NOX::Epetra::Vector&>(nox_epetra_augmented_x[i]));
+       if (stat == true)
+	 status = NOX::Abstract::Group::Ok;
+       else
+	 status = NOX::Abstract::Group::NotConverged;
        finalStatus = 
 	 LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						      callingFunction);
-       RHS->update(Teuchos::NO_TRANS, -1.0, *A, *tmp_y, -1.0);
-
-       // Compute F - [A J]*P*[Z_y 0]
-       if (!isZeroF) 
-	 RHS->update(1.0, *cf, 1.0);
-
-       cRHS = RHS;
      }
-     else
-       cRHS = cf;
-   
-     Teuchos::RefCountPtr<const NOX::Epetra::MultiVector> nox_epetra_a = 
-       Teuchos::rcp_dynamic_cast<const NOX::Epetra::MultiVector>(ca);
-     Teuchos::RefCountPtr<const NOX::Epetra::MultiVector> nox_epetra_x = 
-       Teuchos::rcp_dynamic_cast<const NOX::Epetra::MultiVector>(x);
-     Teuchos::RefCountPtr<const NOX::Epetra::MultiVector> nox_epetra_house_x = 
-       Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(house_x);
-     Teuchos::RefCountPtr<const Epetra_MultiVector> epetra_a = 
-       Teuchos::rcp(&(nox_epetra_a->getEpetraMultiVector()), false);
-     Teuchos::RefCountPtr<const Epetra_MultiVector> epetra_x = 
-       Teuchos::rcp(&(nox_epetra_x->getEpetraMultiVector()), false);
-      Teuchos::RefCountPtr<const Epetra_MultiVector> epetra_house_x = 
-       Teuchos::rcp(&(nox_epetra_house_x->getEpetraMultiVector()), false);
-     
-     const NOX::EpetraNew::LinearSystem& linSys = grp->getLinearSystem();
-     Teuchos::RefCountPtr<const Epetra_Operator> jac =
-       Teuchos::rcp(&linSys.getJacobianOperator(), false);
 
-     LOCA::Epetra::CompactWYOp op(jac, epetra_a, epetra_house_x,
-				  Teuchos::rcp(&house_p, false),
-				  Teuchos::rcp(&T, false));
+     // Set results
+     extended_jac.init(*epetra_x);
+     extended_jac.setEpetraAugmentedMultiVec(*epetra_x, Y,
+					     *epetra_augmented_x);
 
-     op.init(*epetra_x);
-
-     grp->setJacobianOperatorForSolve(op);
-
-     status = grp->applyJacobianInverseMultiVector(params, *cRHS, *x);
-     finalStatus = 
-       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						    callingFunction);
-
-     applyCompactWY(*x, Y, false, isZeroG, false);
-
-     op.finish();
-
-     grp->setJacobianOperatorForSolve(*jac);
+     // Set original Jacobian in linear system
+     linSys.setJacobianOperatorForSolve(*jac);
+     linSys.destroyPreconditioner();
+     //linSys.setPrecOperatorForSolve(*prec);
    }
 
    return finalStatus;
 
-}
-
-void
-LOCA::BorderedSystem::EpetraHouseholder::factorConstraints()
-{
-  double beta;
-
-  // Allocate house_x, house_p, beta if necesary, and copy dg/dx into house_x
-  if (house_x.get() == NULL || house_x->numVectors() != numConstraints) {
-    house_x = Teuchos::rcp(B->clone(NOX::DeepCopy));
-    house_p.reshape(numConstraints, numConstraints);
-    house_p.putScalar(0.0);
-    T.reshape(numConstraints, numConstraints);
-    T.putScalar(0.0);
-    R.reshape(numConstraints, numConstraints);
-    v_x = Teuchos::rcp(B->clone(1));
-  }
-  else 
-    *house_x = *B;
-
-  // Copy transpose of dg/dp into R
-  for (int i=0; i<numConstraints; i++)
-    for (int j=0; j<numConstraints; j++)
-      R(i,j) = (*C)(j,i);
-
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> v_p;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> h_x;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> h_p;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> y_x;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> y_p;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> z;
-  vector<int> h_idx;
-  vector<int> y_idx;
-  y_idx.reserve(numConstraints);
-
-  for (int i=0; i<numConstraints; i++) {
-
-    // Create view of column i of house_p starting at row i
-    v_p = 
-      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(
-							 Teuchos::View, 
-							 house_p, 
-							 numConstraints-i, 
-							 1, i, i));
-
-    // Create view of columns i through numConstraints-1 of house_x
-    h_idx.resize(numConstraints-i);
-    for (unsigned int j=0; j<h_idx.size(); j++)
-      h_idx[j] = i+j;
-    h_x = Teuchos::rcp(house_x->subView(h_idx));
-
-    // Create view of columns i thru numConstraints-1 of R, starting at row i
-    h_p = 
-      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(
-							 Teuchos::View, 
-							 R,
-							 numConstraints-i,
-							 numConstraints-i,
-							 i, i));
-
-    if (i > 0) {
-
-      // Create view of columns 0 through i-1 of house_x
-      y_idx.push_back(i-1);
-      y_x = Teuchos::rcp(house_x->subView(y_idx));
-      
-      // Create view of columns 0 through i-1 of house_p, starting at row i
-      y_p = 
-	Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(
-							 Teuchos::View, 
-							 house_p,
-							 numConstraints-i,
-							 i, i, 0));
-
-      // Create view of column i, row 0 through i-1 of T
-      z = 
-	Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(
-							 Teuchos::View, 
-							 T, i, 1, 0, i));
-    }
-
-    // Compute Householder Vector
-    computeHouseholderVector(i, *house_x, R, *v_x, *v_p, beta);
-
-    // Apply Householder reflection
-    applyHouseholderVector(*v_x, *v_p, beta, *h_x, *h_p);
-
-    // Copy v_x into house_x
-    (*house_x)[i] = (*v_x)[0];
-    
-    T(i,i) = -beta;
-
-    if (i > 0) {
-
-      // Compute z = y_x^T * v_x
-      v_x->multiply(1.0, *y_x, *z);
-
-      // Compute z = -beta * (z + y_p^T * v_p)
-      z->multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -beta, *y_p, *v_p, -beta);
-
-      // Compute z = T * z
-      dblas.TRMV(Teuchos::UPPER_TRI, Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
-		 i, T.values(), numConstraints, z->values(), 1);
-
-    }
-  }
-
-}
-
-void
-LOCA::BorderedSystem::EpetraHouseholder::computeHouseholderVector(
-			  int col,
-			  const NOX::Abstract::MultiVector& A_x,
-			  const NOX::Abstract::MultiVector::DenseMatrix& A_p,
-			  NOX::Abstract::MultiVector& V_x,
-			  NOX::Abstract::MultiVector::DenseMatrix& V_p,
-			  double& beta)
-{
-  double houseP = A_p(col,col);
-  
-  V_p(0,0) = 1.0;
-  V_x[0] = A_x[col];
-
-  double sigma = A_x[col].dot(A_x[col]);
-  for (int i=col+1; i<A_p.numRows(); i++)    
-    sigma += A_p(i,col)*A_p(i,col);
-
-  if (sigma == 0.0)
-    beta = 0.0;
-  else {
-    double mu = sqrt(houseP*houseP + sigma);
-    if (houseP <= 0.0)
-      houseP = houseP - mu;
-    else
-      houseP = -sigma / (houseP + mu);
-    beta = 2.0*houseP*houseP/(sigma + houseP*houseP);
-    
-    V_x.scale(1.0/houseP);
-    for (int i=1; i<V_p.numRows(); i++)
-      V_p(i,0) = A_p(i+col,col) / houseP;
-  }
-
-
-  return;
-}
-
-void
-LOCA::BorderedSystem::EpetraHouseholder::applyHouseholderVector(
-			   const NOX::Abstract::MultiVector& V_x,
-			   const NOX::Abstract::MultiVector::DenseMatrix& V_p,
-			   double beta,
-			   NOX::Abstract::MultiVector& A_x,
-			   NOX::Abstract::MultiVector::DenseMatrix& A_p)
-{
-  int nColsA = A_x.numVectors();
-
-  // Compute u = V_x^T * A_x
-  NOX::Abstract::MultiVector::DenseMatrix u(1, nColsA);
-  A_x.multiply(1.0, V_x, u);
-
-  // Compute u = u + V_p^T * A_P
-  u.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, V_p, A_p, 1.0);
-
-  // Compute A_p = A_p - b*V_p*u
-  A_p.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, -beta, V_p, u, 1.0);
-
-  // Compute A_x = A_x - b*V_x*u
-  A_x.update(Teuchos::NO_TRANS, -beta, V_x, u, 1.0);
-}
-
-void
-LOCA::BorderedSystem::EpetraHouseholder::applyCompactWY(
-				   NOX::Abstract::MultiVector& x,
-				   NOX::Abstract::MultiVector::DenseMatrix& y,
-				   bool isZeroX, bool isZeroY,
-				   bool useTranspose) const
-{
-  if (isZeroX && isZeroY) {
-    x.init(0.0);
-    y.putScalar(0.0);
-    return;
-  }
-
-  Teuchos::ETransp T_flag;
-  if (useTranspose)
-    T_flag = Teuchos::TRANS;
-  else
-    T_flag = Teuchos::NO_TRANS;
-
-  NOX::Abstract::MultiVector::DenseMatrix tmp(numConstraints, x.numVectors());
-
-  // Compute Y_p^T*y + Y_x^T*x
-  if (!isZeroX)
-    x.multiply(1.0, *house_x, tmp);
-
-  // Opportunity for optimization here since house_p is a lower-triangular
-  // matrix with unit diagonal
-  if (!isZeroX && !isZeroY)
-    tmp.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, house_p, y, 1.0);
-  else if (!isZeroY)
-    tmp.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, house_p, y, 0.0);
-
-  // Compute op(T)*(Y_p^T*y + Y_x^T*x)
-  dblas.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, T_flag, 
-	     Teuchos::NON_UNIT_DIAG, tmp.numRows(), tmp.numCols(), 1.0, 
-	     T.values(), T.numRows(), tmp.values(), tmp.numRows());
-
-  // Compute y = y + Y_p*op(T)*(Y_p^T*y + Y_x^T*x)
-  // Opportunity for optimization here since house_p is a lower-triangular
-  // matrix with unit diagonal
-  if (isZeroY)
-    y.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, house_p, tmp, 0.0);
-  else
-    y.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, house_p, tmp, 1.0);
-
-  // Compute x = x + Y_p*op(T)*(Y_p^T*y + Y_x^T*x)
-  if (isZeroX)
-    x.update(Teuchos::NO_TRANS, 1.0, *house_x, tmp, 0.0);
-  else
-    x.update(Teuchos::NO_TRANS, 1.0, *house_x, tmp, 1.0); 
-}
-
-void
-LOCA::BorderedSystem::EpetraHouseholder::applyCompactWY(
-		     const NOX::Abstract::MultiVector* input_x,
-		     const NOX::Abstract::MultiVector::DenseMatrix* input_y,
-		     NOX::Abstract::MultiVector& result_x,
-		     NOX::Abstract::MultiVector::DenseMatrix& result_y,
-		     bool useTranspose) const
-{
-  bool isZeroX = (input_x == NULL);
-  bool isZeroY = (input_y == NULL);
-
-  if (!isZeroX)
-    result_x = *input_x;
-  if (!isZeroY)
-    result_y.assign(*input_y);
-
-  applyCompactWY(result_x, result_y, isZeroX, isZeroY, useTranspose);
 }
 
 // This function solves
@@ -616,7 +382,7 @@ LOCA::BorderedSystem::EpetraHouseholder::applyCompactWY(
 // via:  X = J^-1 * F, Y = C^-1 * (G - B^T*X), where special cases of B,F,G=0
 // are taken into account
 NOX::Abstract::Group::ReturnType 
-LOCA::BorderedSystem::EpetraHouseholder::solveAZero(
+LOCA::BorderedSystem::EpetraAugmented::solveAZero(
 		       NOX::Parameter::List& params,
 		       const LOCA::MultiContinuation::ConstraintInterface* BB,
 		       const NOX::Abstract::MultiVector::DenseMatrix* CC,
@@ -626,7 +392,7 @@ LOCA::BorderedSystem::EpetraHouseholder::solveAZero(
 		       NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
   string callingFunction = 
-    "LOCA::BorderedSystem::EpetraHouseholder::solveAZero()";
+    "LOCA::BorderedSystem::EpetraAugmented::solveAZero()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
@@ -690,7 +456,7 @@ LOCA::BorderedSystem::EpetraHouseholder::solveAZero(
 // via:  Y = C^-1 * G, X = J^-1 * (F - A*Y), where special cases of A,F,G=0
 // are taken into account
 NOX::Abstract::Group::ReturnType 
-LOCA::BorderedSystem::EpetraHouseholder::solveBZero(
+LOCA::BorderedSystem::EpetraAugmented::solveBZero(
 			    NOX::Parameter::List& params,
 			    const NOX::Abstract::MultiVector* AA,
 			    const NOX::Abstract::MultiVector::DenseMatrix* CC,
@@ -700,7 +466,7 @@ LOCA::BorderedSystem::EpetraHouseholder::solveBZero(
 			    NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
   string callingFunction = 
-    "LOCA::BorderedSystem::EpetraHouseholder::solveBZero()";
+    "LOCA::BorderedSystem::EpetraAugmented::solveBZero()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 

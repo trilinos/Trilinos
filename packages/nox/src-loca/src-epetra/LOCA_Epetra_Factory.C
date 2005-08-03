@@ -35,6 +35,7 @@
 #include "LOCA_Epetra_Factory.H"
 #include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_BorderedSystem_EpetraHouseholder.H"
+#include "LOCA_BorderedSystem_EpetraAugmented.H"
 
 LOCA::Epetra::Factory::Factory() :
   globalData()
@@ -65,6 +66,14 @@ LOCA::Epetra::Factory::createBorderedSystemStrategy(
       Teuchos::rcp(new LOCA::BorderedSystem::EpetraHouseholder(globalData,
 							       topParams,
 							       solverParams));
+    return true;
+  }
+  // Instantiate augmented strategy if requested
+  else if (strategyName == "Augmented") {
+    strategy = 
+      Teuchos::rcp(new LOCA::BorderedSystem::EpetraAugmented(globalData,
+							     topParams,
+							     solverParams));
     return true;
   }
   else

@@ -84,7 +84,8 @@ namespace LOCA {
       NOX::EpetraNew::Group computeF() and computeJacobian().
     */
 
-    class Group : public NOX::EpetraNew::Group, public LOCA::Abstract::Group {
+    class Group : public virtual NOX::EpetraNew::Group, 
+		  public virtual LOCA::Abstract::Group {
 
     public:
       //! Constructor with NO linear system (VERY LIMITED).
