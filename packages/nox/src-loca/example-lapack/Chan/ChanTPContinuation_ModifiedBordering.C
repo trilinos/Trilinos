@@ -42,7 +42,7 @@ int main()
     double alpha = 4.0;
     double beta = 0.0;
     double scale = 1.0;
-    int maxNewtonIters = 20;
+    int maxNewtonIters = 10;
     //int maxNewtonIters = 6;
 
     // Create output file to save solutions
@@ -143,7 +143,7 @@ int main()
 			       LOCA::Utils::StepperDetails +
 			       LOCA::Utils::Solver +
 			       LOCA::Utils::SolverDetails);
-    locaUtilsList.setParameter("Output Precision", 10);
+    //locaUtilsList.setParameter("Output Precision", 10);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     NOX::Parameter::List& nlParams = paramList.sublist("NOX");
@@ -153,11 +153,11 @@ int main()
     nlPrintParams.setParameter("Output Information", 
 			       NOX::Utils::OuterIteration + 
 			       NOX::Utils::OuterIterationStatusTest + 
-			       //NOX::Utils::InnerIteration +
-			       //NOX::Utils::Parameters +
-			       //NOX::Utils::Details + 
+			       NOX::Utils::InnerIteration +
+			       NOX::Utils::Parameters +
+			       NOX::Utils::Details + 
 			       NOX::Utils::Warning);
-    nlPrintParams.setParameter("Output Precision", 10);
+    //nlPrintParams.setParameter("Output Precision", 10);
 
     // Create the "Line Search" sublist for the "Line Search Based" solver
     NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
