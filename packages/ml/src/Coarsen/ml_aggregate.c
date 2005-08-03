@@ -2219,9 +2219,6 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   {
     if (ag !=NULL)
     {
-      /* repartition the coordinates if they are present */
-      if (ag->nullspace_dim != 1)
-        pr_error("repartitioning of coordinates does not work with null space greater than one.\n");
 /*
        for (i = 0; i < perm->invec_leng; i++)
          printf("(pid %d, level %d): old coords(%d) =  %e %e\n",perm->comm->ML_mypid,j,i,
@@ -2251,9 +2248,11 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
      } /* if (ag->nullspace_vect != NULL) */
     } /* if (ag !=NULL) */
 
-    /*
-    printf("repartitioning coords %u %u %u\n",xcoord,ycoord,zcoord);
-    */
+    if (ag !=NULL) {
+      if ( (ag->nullspace_dim != 1) && haveCoordinates)
+        pr_error("Repartitioning of coordinates does not work with null space greater than one.\n");
+    }
+
     if (xcoord != NULL) {
       new_xcoord = (double *) ML_allocate(sizeof(double)*(N_dimensions)*
                                         (perm->outvec_leng +1));
