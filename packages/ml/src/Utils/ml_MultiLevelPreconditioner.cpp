@@ -119,6 +119,7 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   
   // may need to clean up after visualization and statistics
   ML_Aggregate_VizAndStats_Clean(ml_);
+  if (ml_nodes_ != 0) ML_Aggregate_VizAndStats_Clean(ml_nodes_);
 
   // destroy aggregate information
   if ((agg_)->aggr_info != NULL) {
