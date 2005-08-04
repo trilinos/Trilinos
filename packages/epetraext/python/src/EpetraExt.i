@@ -125,6 +125,67 @@ using namespace std;
 // Epetra interface import
 %import "Epetra.i"
 
+// Typemaps
+%typemap(argout) Epetra_BlockMap*& OutBlockMap {
+  PyObject *o1, *oBlockMap;
+  oBlockMap = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_BlockMap, 1);
+  if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
+  if (result >= 0)
+    o1 = Py_BuildValue("(O)", oBlockMap);
+  else
+    o1 = Py_BuildValue("(i)", 0);
+  $result = PySequence_Concat($result,o1);
+}
+
+%typemap(in,numinputs=0) Epetra_BlockMap *&OutBlockMap(Epetra_BlockMap* _BlockMap) {
+  $1 = &_BlockMap;
+}
+
+%typemap(argout) Epetra_MultiVector*& OutVector {
+  PyObject *o1, *oVector;
+  oVector = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_MultiVector, 1);
+  if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
+  if (!result) 
+    o1 = Py_BuildValue("(O)", oVector);
+  else
+    o1 = Py_BuildValue("(i)", 0);
+  $result = PySequence_Concat($result, o1);
+}
+
+%typemap(in,numinputs=0) Epetra_MultiVector *&OutVector(Epetra_MultiVector* _Vector) {
+  $1 = &_Vector;
+}
+
+%typemap(argout) Epetra_Vector*& OutVector {
+  PyObject *o1, *oVector;
+  oVector = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_Vector, 1);
+  if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
+  if (!result) 
+    o1 = Py_BuildValue("(O)",oVector);
+  else
+    o1 = Py_BuildValue("(i)", 0);
+  $result = PySequence_Concat($result, o1);
+}
+
+%typemap(in,numinputs=0) Epetra_Vector *&OutVector(Epetra_Vector* _Vector) {
+  $1 = &_Vector;
+}
+
+%typemap(argout) Epetra_CrsMatrix*& OutCrsMatrix {
+  PyObject *o1, *oCrsMatrix;
+  oCrsMatrix = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_CrsMatrix, 1);
+  if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
+  if (!result) 
+    o1 = Py_BuildValue("(O)", oCrsMatrix);
+  else
+    o1 = Py_BuildValue("(i)", 0);
+  $result = PySequence_Concat($result, o1);
+}
+
+%typemap(in,numinputs=0) Epetra_CrsMatrix *&OutCrsMatrix(Epetra_CrsMatrix* _CrsMatrix) {
+  $1 = &_CrsMatrix;
+}
+
 // EpetraExt interface includes
 %include "EpetraExt_Version.h"
 %include "EpetraExt_Transform.h"
@@ -164,108 +225,15 @@ namespace EpetraExt
                                  const char *mapDescription=0,
                                  bool writeHeader=true);
 
-  %typemap(argout) (Epetra_BlockMap*& OutBlockMap)
-  {
-    PyObject *o3, *oBlockMap;
-    oBlockMap = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_BlockMap, 1);
-
-    if (!PyTuple_Check($result)) {
-      PyObject *o2 = $result;
-      $result = PyTuple_New(1);
-      PyTuple_SetItem($target,0,o2);
-    }
-
-    o3 = PyTuple_New(1);
-    // add matrix
-    if (result >= 0) 
-      PyTuple_SetItem(o3,0,oBlockMap);
-    else
-      PyTuple_SetItem(o3,0,PyInt_FromLong(0));
-
-    $result = PySequence_Concat($result,o3);
-  }
-
-  %typemap(in,numinputs=0) Epetra_BlockMap *&OutBlockMap(Epetra_BlockMap* _BlockMap) {
-    $1 = &_BlockMap;
-  }
   int MatrixMarketFileToBlockMap(const char *filename, const Epetra_Comm &
                                  comm, Epetra_BlockMap * & OutBlockMap);
 
-  %typemap(argout) (Epetra_MultiVector*& OutVector)
-  {
-    PyObject *o3, *oVector;
-    oVector = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_MultiVector, 1);
-
-    if (!PyTuple_Check($result)) {
-      PyObject *o2 = $result;
-      $result = PyTuple_New(1);
-      PyTuple_SetItem($target,0,o2);
-    }
-
-    o3 = PyTuple_New(1);
-    // add vector to the tuple
-    if (!result) 
-      PyTuple_SetItem(o3,0,oVector);
-    else
-      PyTuple_SetItem(o3,0,PyInt_FromLong(0));
-    $result = PySequence_Concat($result,o3);
-  }
-
-  %typemap(in,numinputs=0) Epetra_MultiVector *&OutVector(Epetra_MultiVector* _Vector) {
-    $1 = &_Vector;
-  }
   int MatrixMarketFileToMultiVector(const char *filename, const Epetra_BlockMap & map, 
                                Epetra_MultiVector * & OutVector);
 
-  %typemap(argout) (Epetra_Vector*& OutVector)
-  {
-    PyObject *o3, *oVector;
-    oVector = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_Vector, 1);
-
-    if (!PyTuple_Check($result)) {
-      PyObject *o2 = $result;
-      $result = PyTuple_New(1);
-      PyTuple_SetItem($target,0,o2);
-    }
-
-    o3 = PyTuple_New(1);
-    // add vector to the tuple
-    if (!result) 
-      PyTuple_SetItem(o3,0,oVector);
-    else
-      PyTuple_SetItem(o3,0,PyInt_FromLong(0));
-    $result = PySequence_Concat($result,o3);
-  }
-
-  %typemap(in,numinputs=0) Epetra_Vector *&OutVector(Epetra_Vector* _Vector) {
-    $1 = &_Vector;
-  }
   int MatrixMarketFileToVector(const char *filename, const Epetra_BlockMap & map, 
                                Epetra_Vector * & OutVector);
 
-  %typemap(argout) (Epetra_CrsMatrix*& OutCrsMatrix)
-  {
-    PyObject *o3, *oCrsMatrix;
-    oCrsMatrix = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_CrsMatrix, 1);
-
-    if (!PyTuple_Check($result)) {
-      PyObject *o2 = $result;
-      $result = PyTuple_New(1);
-      PyTuple_SetItem($target,0,o2);
-    }
-
-    o3 = PyTuple_New(1);
-    // add vector to the tuple
-    if (!result) 
-      PyTuple_SetItem(o3,0,oCrsMatrix);
-    else
-      PyTuple_SetItem(o3,0,PyInt_FromLong(0));
-    $result = PySequence_Concat($result,o3);
-  }
-
-  %typemap(in,numinputs=0) Epetra_CrsMatrix *&OutCrsMatrix(Epetra_CrsMatrix* _CrsMatrix) {
-    $1 = &_CrsMatrix;
-  }
   int MatrixMarketFileToCrsMatrix(const char *filename, const Epetra_BlockMap & map, 
                                Epetra_CrsMatrix * & OutCrsMatrix);
   int MatrixMarketFileToCrsMatrix(const char *filename, const Epetra_Map & map, 
