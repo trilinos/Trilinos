@@ -115,7 +115,7 @@ void ZoltanTestSpace::Driver::init()
 {
   int ans ;
 
-  ans = read_cmd_file( pInpFile->value, &prob, &pio_info) ;  
+  ans = read_cmd_file( pInpFile->value, &prob, &pio_info, NULL) ;  
   if ( ans != 1 ) 
   { 
     error_report("ZoltanTestSpace::Driver::init()", __LINE__, __FILE__) ;

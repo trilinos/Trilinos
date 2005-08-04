@@ -133,7 +133,7 @@ void ZoltanTestSpace::Mesh::init()
 
   int ans ;
   char *cc = const_cast< char * >  ( cmd_filename.c_str() ) ;
-  ans = read_cmd_file( cc, &prob, &pio_info) ;
+  ans = read_cmd_file( cc, &prob, &pio_info, NULL) ;
   if ( ans != 1 ) 
   { 
     std::cerr << " ZoltanTestSpace::Mesh::init() Error report 1 " << std::endl ;
