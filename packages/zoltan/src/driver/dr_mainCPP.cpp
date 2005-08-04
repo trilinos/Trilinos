@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
   error = 0;
   if (Proc == 0) {
     cout << "\n\nReading the command file, " << cmd_file << endl;
-    if (!read_cmd_file(cmd_file, &prob, &pio_info)) {
+    if (!read_cmd_file(cmd_file, &prob, &pio_info, NULL)) {
       sprintf(cmesg,"fatal: Could not read in the command file"
               " \"%s\"!\n", cmd_file);
       Gen_Error(0, cmesg);
