@@ -540,20 +540,22 @@ static int refine_fm2 (ZZ *zz,
 #ifdef HANDLE_ISOLATED_VERTICES        
     /* first compute vertex degree to find any isolated vertices
        we use lgain and gain, as ldeg, deg.*/
-    ldeg = (int *) lgain;
-    deg = (int *) gain;
-    for (i = 0; i < hg->nVtx; ++i)
-        ldeg[i] = hg->vindex[i+1] - hg->vindex[i];
-    MPI_Reduce(ldeg, deg, hg->nVtx, MPI_INT, MPI_SUM, root.rank,
-               hg->comm->col_comm);
+    if (hg->nVtx) {
+        ldeg = (int *) lgain;
+        deg = (int *) gain;
+        for (i = 0; i < hg->nVtx; ++i)
+            ldeg[i] = hg->vindex[i+1] - hg->vindex[i];
+        MPI_Reduce(ldeg, deg, hg->nVtx, MPI_INT, MPI_SUM, root.rank,
+                   hg->comm->col_comm);
 
-    if (hgc->myProc_y==root.rank) { /* root marks isolated vertices */
-        for (i=0; i<hg->nVtx; ++i)
-            if (!deg[i]) {
-                moves[--isocnt] = i;
-                part[i] = -(part[i]+1); /* remove those vertices from that part*/
-            }        
-    }   
+        if (hgc->myProc_y==root.rank) { /* root marks isolated vertices */
+            for (i=0; i<hg->nVtx; ++i)
+                if (!deg[i]) {
+                    moves[--isocnt] = i;
+                    part[i] = -(part[i]+1); /* remove those vertices from that part*/
+                }        
+        }   
+    }
 #endif
     
     do {
