@@ -70,7 +70,6 @@ extern void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits);
 extern void ML_Operator_Profile_SetIterations(int numits);
 extern int ML_Operator_Profile_GetIterations();
 extern int ML_Operator_Get_Nnz(ML_Operator *A);
-extern int ML_Operator_Scale(ML_Operator *A, double scalar);
 
 #ifndef ML_CPP
 #ifdef __cplusplus
