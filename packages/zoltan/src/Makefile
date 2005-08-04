@@ -166,7 +166,7 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #
 SUB_VPATH	= ../include ../Utilities/shared \
 		  ../zz ../all ../lb ../par ../rcb ../coloring ../oct ../bsfc ../hsfc \
-		  ../phg  ../hg \
+		  ../phg  ../hg ../util \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
                   ../order ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory \
@@ -303,6 +303,12 @@ CH_CSRC		= ch_dist_graph.c ch_input_assign.c ch_input_geom.c \
 
 CH_INC		= ch_input_const.h ch_init_dist_const.h
 
+# source code and defines for vtk_view
+
+VIEW_SRC        = vtk_view.cpp dr_input.c dr_err.c
+
+VIEW_INC        = dr_input_const.h
+
 
 # object files for the Fortran interface
 
@@ -338,6 +344,15 @@ ZCPPDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
 	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) \
 		  $(MPI_LIBPATH) $(MPI_LIB) -lm 
 ZCPPDRIVE_DEPS	= $(ZDRIVE_DEPS)
+
+VIEW_OBJ        = vtk_view.o dr_input.o  dr_err.o
+
+VIEW_LIBS       = -L. $(VTK_LIBPATH) $(MPI_LIBPATH) $(X_LIBPATH) $(GL_LIBPATH) \
+   -lvtkHybrid -lvtkParallel -lvtkRendering -lvtkIO -lvtkGraphics -lvtkImaging \
+   $(GL_LIBS) $(X_LIBS) -lvtkftgl -lvtkfreetype \
+   -lvtkFiltering -lvtkCommon \
+   -lvtkpng -lvtktiff -lvtkzlib -lvtkjpeg -lvtkexpat \
+   -lpthread -lvtkexoIIc -lvtkNetCDF $(MPI_LIB)
 
 CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS)
 F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
@@ -435,6 +450,21 @@ zoltan:
 	@if [ $(ZOLTAN_OBJ_DIR) != $(ZOLTAN_LIB_DIR) ]; 		\
 	then cp -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR); 	\
 	fi
+
+vtk_view:
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
+	$(MAKE) vtk_view                        \
+	"ZTARGET=vtk_view"			\
+	"CC=$(CPPCOMP) "  	\
+	"OBJ_FILES=$(VIEW_OBJ)"		          \
+	"VPATH=$(ZOLTAN_VPATH)"                   \
+	"DEFS=$(GDEFINES) $(DEFS) $(VTK_INCPATH)" \
+	"MAIN_OBJ=$(VIEW_OBJ)"  		\
+	"LNK_LIBS=$(VIEW_LIBS)" 		\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
+	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)"
 
 zdrive:
 	$(MAKE) zoltan
