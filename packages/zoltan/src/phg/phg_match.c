@@ -667,7 +667,11 @@ if (hgp->use_timers > 3)  {
   permute = edgebuf = NULL;
   nPermute = nIndex = nAux = 1 + MAX(nTotal, gmax_nVtx);
   nDest = nSize = 1 + MAX (hgc->nProc_x, MAX(nTotal, gmax_nVtx));
-  nSend = nRec = nEdgebuf = MAX (1000, MAX(gmax_nPins, gmax_nVtx+2));
+  nRec = MAX (1000, MAX(gmax_nPins, gmax_nVtx+2));
+  /* nSend/nEdgebuf are used for candidate exchange.  Candidates are
+   * sent as <gno, #pins, pin_list>, so nSend/nEdgebuf must have
+   * storage for 2 ints + nPins for each candidate. */
+  nSend = nEdgebuf = 2*gmax_nVtx + MAX (1000, MAX(gmax_nPins, gmax_nVtx+2));
   
 
   if (hg->nVtx)  
