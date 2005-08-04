@@ -2313,3 +2313,25 @@ int ML_Operator_Get_Nnz(ML_Operator *A)
   }
   return A->N_nonzeros; 
 }
+
+/* Scale an ML Operator. */
+
+int ML_Operator_Scale(ML_Operator *A, double scalar)
+{
+  int i, j, Nrows, allocated = 0, *columns = NULL, row_length;
+  double *values = NULL;
+                                                                                
+  if (A->data == NULL)
+    return 1;
+                                                                                
+  if (A->getrow == NULL) return(1);
+  Nrows = A->getrow->Nrows;
+                                                                                
+  for (i = 0 ; i < Nrows; i++) {
+    ML_get_matrix_row(A, 1, &i, &allocated, &columns, &values,
+                        &row_length, 0);
+    for (j=0; j<row_length; j++) values[j] *= scalar;
+  }
+                                                                                
+  return 0;
+}

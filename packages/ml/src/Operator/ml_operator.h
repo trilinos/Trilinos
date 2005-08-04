@@ -97,7 +97,7 @@ void ML_Aux_Data_Create(ML_Aux_Data** ptr);
 
 void ML_Aux_Data_Destroy(ML_Aux_Data** ptr);
 
-void ML_Aux_Data_Clone(ML_Aux_Data* clone, ML_Aux_Data* original);
+ML_Aux_Data* ML_Aux_Data_Clone(ML_Aux_Data* original);
 
 /* -------------------------------------------------------------------- */
 /** This data structure defines an enriched operator class for the       

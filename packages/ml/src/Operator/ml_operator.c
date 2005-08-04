@@ -344,8 +344,7 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->lambda_min = original->lambda_min;
    mat->subspace            = original->subspace;
    ML_Aux_Data_Destroy(&(mat->aux_data));
-   ML_Aux_Data_Create(&(mat->aux_data));
-   ML_Aux_Data_Clone(mat->aux_data, original->aux_data);
+   mat->aux_data = ML_Aux_Data_Clone(original->aux_data);
 
    return 1;
 }
@@ -375,6 +374,7 @@ int ML_Operator_halfClone_Clean( ML_Operator *mat)
    /* changed this so that we allocate a new label if the original */
    /* matrix had a label */
    if (mat->label != NULL) ML_free(mat->label);
+   if (mat->aux_data != NULL) ML_Aux_Data_Destroy(&(mat->aux_data));
    mat->halfclone  = ML_FALSE;
    return 0;
 }
@@ -1944,29 +1944,21 @@ void ML_Aux_Data_Create(ML_Aux_Data** ptr)
   (*ptr)->filter_size = -1;
 }
 
-void ML_Aux_Data_Clone(ML_Aux_Data* clone, ML_Aux_Data* original)
+ML_Aux_Data* ML_Aux_Data_Clone(ML_Aux_Data* original)
 {
   int i,j, *ptr;
+  ML_Aux_Data *clone;
+
+  ML_Aux_Data_Create(&clone);
+
   clone->threshold = original->threshold;
   clone->aux_func_ptr = original->aux_func_ptr;
   clone->enable = original->enable;
   clone->max_level = original->max_level;
-  if (clone->filter != NULL) {
-    for (i=0; i<clone->filter_size; i++)
-      if (clone->filter[i] != NULL)
-         ML_free(clone->filter[i]);
-    ML_free(clone->filter);
-  }
+  clone->filter = original->filter;
   clone->filter_size = original->filter_size;
-  if (original->filter != NULL) {
-    clone->filter = (int **) ML_allocate(clone->filter_size * sizeof(int));
-    for (i=0; i<clone->filter_size; i++) {
-      clone->filter[i] = (int *) ML_allocate( (original->filter[i][0] + 1)
-                                              *sizeof(int)                 );
-      for (j=0; j<original->filter[i][0]+1; j++)
-        clone->filter[i][j] = original->filter[i][j];
-    }
-  }
+
+  return clone;
 }
 
 void ML_Aux_Data_Destroy(ML_Aux_Data** ptr)
