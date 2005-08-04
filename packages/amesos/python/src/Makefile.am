@@ -48,7 +48,7 @@ all-am: build
 
 # Currently, this temporary directory is required to be present for the
 # setup.py script to work correctly
-tempdir = $(shell $(PYTHON) $(top_srcdir)/../PyTrilinos/pyLocate --temp)
+tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_platform; print os.path.join('build','temp.%s-%s'%(get_platform(),sys.version[0:3]))")
 
 $(tempdir):
 	@echo "Creating directory $@"
@@ -63,16 +63,16 @@ PROXIES    = $(INTERFACES:.i=.py      )
 # python script
 setup.txt: $(srcdir)/Makefile.am
 	@echo "creating $@"
-	@echo "{"                                   >  $@
-	@echo "  'top_builddir' : '$(top_builddir)',"  >> $@
-	@echo "  'top_srcdir'   : '$(top_srcdir)',"  >> $@
-	@echo "  'srcdir'       : '$(srcdir)',"      >> $@
-	@echo "  'CC'           : '$(CC)',"          >> $@
-	@echo "  'CXX'          : '$(CXX)',"         >> $@
-	@echo "  'CXXFLAGS'     : '$(CXXFLAGS)',"    >> $@
-	@echo "  'LDFLAGS'      : '$(PYTHON_LIBS)'," >> $@
-	@echo "  'PYTHON'       : '$(PYTHON)'"       >> $@
-	@echo "}"                                    >> $@
+	@echo "{"                                     >  $@
+	@echo "  'top_builddir' : '$(top_builddir)'," >> $@
+	@echo "  'top_srcdir'   : '$(top_srcdir)',"   >> $@
+	@echo "  'srcdir'       : '$(srcdir)',"       >> $@
+	@echo "  'CC'           : '$(CC)',"           >> $@
+	@echo "  'CXX'          : '$(CXX)',"          >> $@
+	@echo "  'CXXFLAGS'     : '$(CXXFLAGS)',"     >> $@
+	@echo "  'LDFLAGS'      : '$(PYTHON_LIBS)',"  >> $@
+	@echo "  'PYTHON'       : '$(PYTHON)'"        >> $@
+	@echo "}"                                     >> $@
 
 build: $(WRAPPERS) setup.txt $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build

@@ -46,7 +46,7 @@ all-am: build
 
 # Currently, this temporary directory is required to be present for the
 # setup.py script to work correctly
-tempdir = $(shell $(PYTHON) $(top_srcdir)/../PyTrilinos/pyLocate --temp)
+tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_platform; print os.path.join('build','temp.%s-%s'%(get_platform(),sys.version[0:3]))")
 
 $(tempdir):
 	@echo "Creating directory $@"
