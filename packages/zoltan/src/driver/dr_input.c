@@ -14,6 +14,7 @@
 #include <mpi.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
@@ -44,7 +45,8 @@ extern "C" {
 int read_cmd_file (
  const char *filename,            /* The name of the command file. */
  PROB_INFO_PTR prob,
- PARIO_INFO_PTR pio_info)   /* pio_info - parallel I/O information. */
+ PARIO_INFO_PTR pio_info,   /* pio_info - parallel I/O information. */
+ UNDEFINED_INFO_PTR undef)  /* optional list for unrecognized commands */
 {
   FILE *file_cmd;
   char  line[MAX_INPUT_STR_LN + 1], *pline, *pmax;
@@ -55,10 +57,14 @@ int read_cmd_file (
 
   
   /* Open the file */
-  if ((file_cmd = fopen (filename, "r")) == NULL)
-    return 0;
+  if ((file_cmd = fopen (filename, "r")) == NULL) {
+      return 0;
+  }
 
   /* Begin parsing the input file */
+  if (undef){
+    undef->list_size = 0;
+  }
   prob->num_params = 0;
   prob->params = (Parameter_Pair*) malloc (sizeof(Parameter_Pair));
   while (fgets (line, MAX_INPUT_STR_LN, file_cmd)) {
@@ -418,9 +424,23 @@ int read_cmd_file (
 
     else {
       char buffer[200];
-      sprintf (buffer, "fatal error, unrecognized command line: %s\n", line);
-      Gen_Error(0, buffer);
-      return 0;
+      buffer[0] = '\0';
+      if (undef){
+        if (undef->list_size < UNDEFINED_LIST_MAX){
+          strncpy((char *)(undef->line + undef->list_size), line, UNDEFINED_LENGTH_MAX-1);
+          undef->list_size++;
+        }
+        else{
+          sprintf (buffer, "fatal error, too many unrecognized commands: %s\n", line);
+        }
+      }
+      else{
+        sprintf (buffer, "fatal error, unrecognized command line: %s\n", line);
+      }
+      if (buffer[0]){
+        Gen_Error(0, buffer);
+        return 0;
+      }
     }
   }
 

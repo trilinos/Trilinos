@@ -86,12 +86,29 @@ struct Parallel_IO
 typedef struct Parallel_IO  PARIO_INFO;
 typedef struct Parallel_IO *PARIO_INFO_PTR;
 
+/* 
+ * Generic list of options for programs that want to use
+ * zdrive style of input file.
+ */
+
+#define UNDEFINED_LIST_MAX    10
+#define UNDEFINED_LENGTH_MAX 128
+
+struct ParameterList
+{
+  int list_size;
+  char line[UNDEFINED_LIST_MAX][UNDEFINED_LENGTH_MAX];
+};
+typedef struct ParameterList UNDEFINED_INFO;
+typedef struct ParameterList *UNDEFINED_INFO_PTR;
+
 
 /* Function prototypes */
 extern int read_cmd_file(
   const char *filename,
   PROB_INFO_PTR prob,
-  PARIO_INFO_PTR pio_info
+  PARIO_INFO_PTR pio_info,
+  UNDEFINED_INFO_PTR undef
 );
 
 extern int check_inp(
