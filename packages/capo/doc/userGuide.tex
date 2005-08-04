@@ -1,0 +1,477 @@
+\documentclass[11pt]{article}
+
+\providecommand{\abs}[1]{\lvert#1\rvert}
+\providecommand{\norm}[1]{\lVert#1\rVert}
+
+\newcommand{\R}{\mathbb{R}}
+\usepackage{amsmath,amsthm,amssymb,amsbsy}
+
+\newcommand{\K}{\mathbf{K}}
+\newcommand{\M}{\mathbf{M}}
+
+
+\font\ss=cmss10                   %10 pt sans serif 
+\font\ssseven=cmss7               %7 pt sans serif
+\font\sseight=cmss8               %8 pt sans serif 
+\font\ssnine=cmss9                %9 pt sans serif 
+\font\ssit=cmssi10                %10 pt sans serif italic 
+\font\ssbf=cmssbx10               %10 pt sans serif bold 
+\font\ssbftwelve=cmssbx10 at 12pt % 12 pt sans serif bold 
+\font\ssbfsixteen=cmssbx10 at 16pt % 16 pt sans serif bold
+\itshape
+\def\ssbfhuge{\ssbfsixteen}
+
+\def\tn{\tiny}
+
+\newenvironment{algorithm}[2]
+{\medbreak\narrower\noindent{\bf Algorithm\ #1:}\hspace*{.25em}{\rm #2}
+\sc \smallskip}{\par\medbreak}
+
+\def\centerframe#1{\centerline{\hbox{\vrule\vbox{\hrule\hbox 
+spread 36pt{\hfil\vbox spread 36pt{\vfil #1 \vfil}\hfil}\hrule}\vrule}}}
+
+\def\fill{\hskip 12pt}
+\def\ffill{\hskip 24pt}
+\def\fffill{\hskip 36pt}
+\def\ffffill{\hskip 48pt}
+\def\fffffill{\hskip 60pt}
+\def\ffffffill{\hskip 72pt}
+
+\def\step#1{\vskip 2pt\hbox{\fill #1}}
+\def\sstep#1{\vskip 2pt\hbox{\ffill #1}}
+\def\ssstep#1{\vskip 2pt\hbox{\fffill #1}}
+\def\sssstep#1{\vskip 2pt\hbox{\ffffill #1}}
+\def\ssssstep#1{\vskip 2pt\hbox{\fffffill #1}}
+\def\sssssstep#1{\vskip 2pt\hbox{\ffffffill #1}}
+\def\medstep#1{\vskip 4pt\hbox{\fill #1}}
+\def\medsstep#1{\vskip 4pt\hbox{\ffill #1}}
+\def\bigstep#1{\vskip 6pt\hbox{\fill #1}}
+\def\bigsstep#1{\vskip 6pt\hbox{\ffill #1}}
+
+\def\sline{\hbox to\hsize}
+
+\def\bang{\par\noindent\hangindent20pt\hskip20pt\llap{$\bullet$\enspace}\ignorespaces}
+\def\ddash{\par\noindent\hangindent40pt\hskip40pt\llap{---\enspace}\ignorespaces}
+\def\dis{\par\noindent\hangindent20pt\hskip20pt\llap{$\bullet$\enspace}\ignorespaces}
+\def\ldis{\par\noindent\hangindent4pt\hskip4pt\llap{$\bullet$\enspace}\ignorespaces}
+\def\tri{\par\noindent\hangindent20pt\hskip20pt\llap{$\triangleright$\enspace}\ignorespaces}
+\def\ttri{\par\noindent\hangindent40pt\hskip40pt\llap{$\triangleright$\enspace}\ignorespaces}
+
+\def\ds{\displaystyle}
+
+\def\norm#1{\|#1\|}
+
+\def\ared{{\it ared}}
+\def\argmin{{{\rm arg}\,\min}}
+\def\deltaMin{{\delta_{\rm min}}}
+\def\eCP{{\eta^{\rm CP}}}
+\def\etaBar{{\bar \eta}}
+\def\etaMax{{\eta_{\rm max}}}
+\def\etat{{\tilde \eta}}
+\def\gDL{{\Gamma^{\it DL}}}
+\def\gf{{\nabla f}} 
+\def\hf{{\nabla^2f}}
+\def\Kc{{\cal K}}
+\def\Lc{{\cal L}}
+\def\MT{{Mor{\rm \'e}--Thuente\ }}
+\def\pred{{\it pred}}
+\def\RR{\it I\hskip-3.9pt R}
+\def\Rn{{\RR}^n}
+\def\Rnp{{\RR}^{n\times p}}
+\def\Rnq{{\RR}^{n\times (n-p)}}
+\def\Rp{{\RR}^{p}}
+\def\Rq{{\RR}^{n-p}}
+\def\Ro{{{\RR}^1}}
+\def\rCP{{r^{\it CP}}}
+\def\sCP{{s^{\it CP}}}
+\def\sN{{s^{\it N}}}
+\def\sIN{{s^{\it IN}}}
+\def\skIN{{s_k^{\it IN}}}
+\def\thetaMax{\theta_{\rm max}}
+\def\thetaMin{\theta_{\rm min}}
+
+
+
+\begin{document}\title{Continuation Algorithms with Picard Operators}
+\author{J. Simonis}\date{\today}\maketitle
+
+The purpose of this document is to describe the algorithms used within Capo
+and provide documentation on how to use the code.
+\section{The Problem}
+Given a parameter 
+dependent PDE, determine how some property or solution of the system  varies as the parameter is changed.  Often times knowledge of how a limit cycle (or
+fixed point) changes, or a particular bifurcation needs to be tracked.\\
+\textbf{Problem}: Given
+\begin{equation}
+\frac{dx}{dt}=f(x,\lambda),\ \ x\in\Rn,\ \lambda\in\RR, 
+\end{equation}
+Find $x(0)\in\Rn$ and $T\in\RR$ such that 
+\begin{center}
+$\begin{array}{ccc}
+\varphi(x(0),T,\lambda_i)-x(0)&=&0
+\end{array}$,
+$\forall \lambda_i \in [\lambda_0,\lambda_N]$
+\end{center}
+
+$\varphi(x(0),T,\lambda)$ is the solution of the initial value problem
+\begin{equation}
+\frac{dy}{dt}=f(y,\lambda),\ \ y_0=x(0),\ t=[0,T] 
+\end{equation}\\
+$\varphi(x(0),T,\lambda)$ is assumed 
+to be twice differentiable with 
+respect to $x(0)$, $T$, and $\lambda$.  A function which
+finds $\varphi(x(0),T,\lambda)$ is the only input need
+for any of the solvers listed below.
+
+
+
+
+\section{The Continuation Methods}
+The general formulation of the continuation problem is:\\
+Find $x(0)\in\Rn$ and $T\in\RR$ such that 
+\begin{center}
+$\left[
+\begin{array}{ccc}
+\varphi(x(0),T,\lambda_i)-x(0)&=&0\\
+s(x(0),T,\lambda_i)&=&0\\
+n(x(0),T,\lambda_i)&=&0
+\end{array}\right]
+$,
+$\forall \lambda_i \in [\lambda_0,\lambda_N]$
+\end{center}
+
+Let $s(x(0),T,\lambda)$ denote a phase condition needed to eliminate the translational invariance of periodic
+solutions.  For example
+\begin{equation}
+s(x(0),T,\lambda)\equiv f(x(0)^{(0)},\lambda)^T(x(0)-x(0)^{(0)})
+\end{equation}\\
+
+Let $n(x(0),T,\lambda)$ denote a pseudo-arclength continuation equation.  For example
+\begin{equation}
+n(x(0),T,\lambda)\equiv (x(0)-x_p(0))^Tx_s(0)+\theta_T(T-T_p)T_s+\theta_\lambda(\lambda-\lambda_p)\lambda_s)
+\end{equation}\\
+
+The functions $\varphi$, $s$ and $n$ are assumed 
+to be twice differentiable with 
+respect to $x(0)$, $T$, and $\lambda$.
+
+Capo solves the above problem using a predictor corrector method.
+\subsection{Predictor}
+The current predictor is a straight forward secant predictor.\\
+$
+\begin{array}{ccl}
+x(0)_{n+1} & = & \alpha(x(0)_n-x(0)_{n-1}) \\
+T_{n+1} & = & \alpha(T_n-T_{n-1}) \\
+\lambda_{n+1} & = & \alpha(\lambda_n-\lambda_{n-1})
+\end{array}
+$\\
+$\alpha$ is a constant which begins at $1$ for each continuation
+step.  If the continuation step fails for a particular nonlinear solve
+then $\alpha$ is halved and the nonlinear solve is attempted again.  
+\subsection{Corrector}
+The corrector used by Capo is a Newton--Picard method.  For detailed
+information on these methods and how they work see 
+[REFERENCE LUST PAPER].\\
+
+The linear system to be solved looks like:\\
+$
+\left[
+\begin{array}{cccc}
+V_q^T(\frac{\partial\varphi}{\partial x}-I)V_q & V_q^T(\frac{\partial\varphi}{\partial x}-I)V_p & V_q^T(\frac{\partial\varphi}{\partial T}) & V_q^T(\frac{\partial\varphi}{\partial T}) \\
+V_p^T(\frac{\partial\varphi}{\partial x}-I)V_q & V_p^T(\frac{\partial\varphi}{\partial x}-I)V_p & V_p^T(\frac{\partial\varphi}{\partial T}) & V_p^T(\frac{\partial\varphi}{\partial \lambda}) \\
+\frac{\partial s}{\partial x}V_q & \frac{\partial s}{\partial x}V_p & \frac{\partial s}{\partial T} &\frac{\partial s}{\partial \lambda}\\
+\frac{\partial n}{\partial x}V_q & \frac{\partial n}{\partial x}V_p & \frac{\partial n}{\partial T} &\frac{\partial n}{\partial \lambda}
+\end{array}
+\right]
+\left[
+\begin{array}{c}
+\Delta q \\ \Delta p \\ \Delta T \\ \Delta\lambda
+\end{array}
+\right]=-
+\left[
+\begin{array}{c}
+V_q^Tr \\ V_p^Tr \\ s \\n
+\end{array}
+\right]
+$\\
+If we assume that the basis $V_p$ is exact, than the term 
+$V_q^T(\frac{\partial\varphi}{\partial x}-I)V_p$ is equal to $0$.  Also
+$\frac{\partial\varphi}{\partial T}$ at the solution is exactly the direction
+of the eigenvector associated with the floquet multiplier of value $1$.  Therefore
+near the solution $\frac{\partial\varphi}{\partial T}$ is very near a direction
+in $\mathcal{U}$.  Thus $V_q^T(\frac{\partial\varphi}{\partial T})\approx 0$.  So the linear
+system has the form:\\
+$
+\left[
+\begin{array}{cccc}
+V_q^T(\frac{\partial\varphi}{\partial x}-I)V_q & 0 & 0 & V_q^T(\frac{\partial\varphi}{\partial T}) \\
+V_p^T(\frac{\partial\varphi}{\partial x}-I)V_q & V_p^T(\frac{\partial\varphi}{\partial x}-I)V_p & V_p^T(\frac{\partial\varphi}{\partial T}) & V_p^T(\frac{\partial\varphi}{\partial \lambda}) \\
+\frac{\partial s}{\partial x}V_q & \frac{\partial s}{\partial x}V_p & \frac{\partial s}{\partial T} &\frac{\partial s}{\partial \lambda}\\
+\frac{\partial n}{\partial x}V_q & \frac{\partial n}{\partial x}V_p & \frac{\partial n}{\partial T} &\frac{\partial n}{\partial \lambda}
+\end{array}
+\right]
+\left[
+\begin{array}{c}
+\Delta q \\ \Delta p \\ \Delta T \\ \Delta\lambda
+\end{array}
+\right]=-
+\left[
+\begin{array}{c}
+V_q^Tr \\ V_p^Tr \\ s \\n
+\end{array}
+\right]
+$\\
+
+
+The linear equation solved by the different methods are as follows:\\
+(NPJ)\\
+$
+\left[
+\begin{array}{cccc}
+V_q^T(\frac{\partial\varphi}{\partial x}-I)V_q & 0 & 0 & 0 \\
+0 & V_p^T(\frac{\partial\varphi}{\partial x}-I)V_p & V_p^T(\frac{\partial\varphi}{\partial T}) & 0 \\
+0 & \frac{\partial s}{\partial x}V_p & \frac{\partial s}{\partial T} &0\\
+0&0&0&0
+\end{array}
+\right]
+\left[
+\begin{array}{c}
+\Delta q \\ \Delta p \\ \Delta T  \\ 0
+\end{array}
+\right]=-
+\left[
+\begin{array}{c}
+V_q^Tr \\ V_p^Tr \\ s \\0
+\end{array}
+\right]
+$\\
+(NPGS)\\
+$
+\left[
+\begin{array}{cccc}
+V_q^T(\frac{\partial\varphi}{\partial x}-I)V_q & 0 & 0& 0 \\
+V_p^T(\frac{\partial\varphi}{\partial x}-I)V_q & V_p^T(\frac{\partial\varphi}{\partial x}-I)V_p & V_p^T(\frac{\partial\varphi}{\partial T}) &0 \\
+\frac{\partial s}{\partial x}V_q & \frac{\partial s}{\partial x}V_p & \frac{\partial s}{\partial T} &0\\
+0&0&0&0
+\end{array}
+\right]
+\left[
+\begin{array}{c}
+\Delta q \\ \Delta p \\ \Delta T \\ 0
+\end{array}
+\right]=-
+\left[
+\begin{array}{c}
+V_q^Tr \\ V_p^Tr \\ s \\0
+\end{array}
+\right]
+$\\
+(CNPGS)\\
+$
+\left[
+\begin{array}{cccc}
+V_q^T(\frac{\partial\varphi}{\partial x}-I)V_q & 0 & 0 & V_q^T(\frac{\partial\varphi}{\partial T}) \\
+0& V_p^T(\frac{\partial\varphi}{\partial x}-I)V_p & V_p^T(\frac{\partial\varphi}{\partial T}) & V_p^T(\frac{\partial\varphi}{\partial \lambda}) \\
+0 & \frac{\partial s}{\partial x}V_p & \frac{\partial s}{\partial T} &\frac{\partial s}{\partial \lambda}\\
+0 & \frac{\partial n}{\partial x}V_p & \frac{\partial n}{\partial T} &\frac{\partial n}{\partial \lambda}
+\end{array}
+\right]
+\left[
+\begin{array}{c}
+\Delta q \\ \Delta p \\ \Delta T \\ \Delta\lambda
+\end{array}
+\right]=-
+\left[
+\begin{array}{c}
+V_q^Tr \\ V_p^Tr \\ s \\n
+\end{array}
+\right]
+$\\
+(CNP)\\
+$
+\left[
+\begin{array}{cccc}
+V_q^T(\frac{\partial\varphi}{\partial x}-I)V_q & 0 & 0 & V_q^T(\frac{\partial\varphi}{\partial T}) \\
+V_p^T(\frac{\partial\varphi}{\partial x}-I)V_q & V_p^T(\frac{\partial\varphi}{\partial x}-I)V_p & V_p^T(\frac{\partial\varphi}{\partial T}) & V_p^T(\frac{\partial\varphi}{\partial \lambda}) \\
+\frac{\partial s}{\partial x}V_q & \frac{\partial s}{\partial x}V_p & \frac{\partial s}{\partial T} &\frac{\partial s}{\partial \lambda}\\
+\frac{\partial n}{\partial x}V_q & \frac{\partial n}{\partial x}V_p & \frac{\partial n}{\partial T} &\frac{\partial n}{\partial \lambda}
+\end{array}
+\right]
+\left[
+\begin{array}{c}
+\Delta q \\ \Delta p \\ \Delta T \\ \Delta\lambda
+\end{array}
+\right]=-
+\left[
+\begin{array}{c}
+V_q^Tr \\ V_p^Tr \\ s \\n
+\end{array}
+\right]
+$
+
+\section{Bifurcation Tracking}
+Currently the only implemented bifurcation tracking method is 
+a period doubling bifurcation tracker.   For detailed
+information on these methods and how they work see 
+[REFERENCE ENGELBORGHS PAPER].The system solved is:
+\begin{center}
+$\left[
+\begin{array}{ccc}
+\varphi(x(0),T,\lambda_i)-x(0)&=&0\\
+s(x(0),T,\lambda_i)&=&0\\
+(\frac{\partial\varphi}{\partial x}(x(0),T,\lambda_i)+I)v&=&0\\
+d^Tv-1&=&0
+\end{array}\right]
+$,
+$\forall \lambda_i \in [\lambda_0,\lambda_N]$
+\end{center}
+THIS METHOD HAS NOT YET BEEN TESTED!
+\section{Using Capo}
+
+\subsection{Compiling}
+Compiling Capo is a straight forward process.  It requires the same
+versions of compilers as all other Trilinos packages.  In general one 
+can use the Trilinos instructions for compiling any package within
+it.  Capo does rely on other Trilinos packages:
+\begin{enumerate}
+\item Aztec00
+\item Epetra
+\item Ifpack
+\item Thyra
+\item Teuchos
+\end{enumerate}
+
+It is recomended that a seperate build directory is created for each
+machine on which Capo is to be compiled.  To compile first create the
+build directory.
+\begin{center}
+$\%mkdir\ Trilinos/build/computername$
+\end{center}
+Next a configure script is required.  A simple executable text
+file with the following command is sufficient.  Put this file
+in the newly created directory.\\
+$../../configure\ \ --enable-aztecoo\ \ --enable-ifpack$\\
+$--enable-epetra\ \ --enable-epetra-thyra\ \ --enable-thyra$\\
+$--disable-default-packages\ \ --enable-capo\ \ --enable-teuchos$\\
+
+Run the new script from within the directory.  After the packages
+are configured, make the packages using the command
+\begin{center}
+$\%make$
+\end{center}
+from the build directory, or make an individual package from the top
+directory of the package.  For example
+\begin{center}
+$Trilinos/build/computername/packages/capo\%make$
+\end{center}
+
+\subsection{Integrator}
+In order to use Capo to solve a continuation problem, 
+the user only need to provide a single
+function.  This function is a ``black-box'' integrator.  It 
+is a function which takes as input, the current state of 
+the system ($x(0)$), a time ($T$) and a parameter value ($\lambda$).
+The output of the function is a single state vector representing
+the state of the system at time $T$, denoted $x(T)$.  This function
+must be a concrete implementation of the virtual class declared in
+\textit{Capo\_Integrator.hpp}.  An outline of the class is given
+below.\\
+$
+\#include\ "Capo\_Integrator.hpp"\\
+\#include\ "Thyra\_VectorBase.hpp"\\
+class\ Problem\_Integrator\ :\ public\ CAPO::Integrator\\
+\{ \\
+  typedef\ double\ Scalar;\\
+public:\\
+  //!Constructor:\\
+  Problem\_Integrator();\\
+    //! Destructor\\
+  \sim Problem\_Integrator() \{\};\\
+    // Integrate\ function\\
+  bool\ Integrate\\
+  (const\ Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >\& y,\\
+		 const\ Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >\& x, \\
+		 const\ double\ T,\\
+		 const\ double\ lambda);\\
+\};\\
+$\\
+This class declaration along with an implementation of the declared
+functions creates the required integrator for a Capo run. 
+\subsection{Parameter List}
+Different parameters for a Capo run can be set via the parameter 
+list.  Currently this list is a work in progress, with new parameters 
+being added as needed.  Each parameter can be set and its
+value to retrieved.
+
+\begin{itemize}
+    \item int MaxOuterIts--The number continuation steps to take.
+    \item int MaxInnerIts--The maximum allowed number of
+      nonlinear iterations.
+    \item double tol--The nonlinear solve tolerance.
+    \item int printproc--if ($printproc>0$) then additional information
+      is printed during the solves.  Currently I don't believe this
+      is actually used.
+    \item double lambda\_stepsize--The initial stepsize for lambda, if
+      lambda is fixed, this remains throughout the problem.
+    \item int lambda\_extend\_tol--If the nonlinear solve converges in 
+      fewer iterations than this value, the lambda stepsize is increased.
+    \item double lambda\_max--The maximum lambda step.
+    \item double lambda\_min--The minimum lambda step.
+    \item bool EnablePeriodicity--Solve for a periodic orbit.
+    \item bool EnableArclength--Enable Arc-Length continuation.
+    \item int SubspaceIterations--The number of subspace iterations.
+    \item double FloquetTolerence--If a Floquet multiplier is
+      larger than this tolerance, its associated schur vector
+      is added to the subspace $\mathcal{U}$.
+    \item int NumberXtraVecsSubspace--The number of additional
+      vectors in the subspace $\mathcal{U}$.
+\end{itemize}
+To set a parameter, use the set\_param function:\\
+$set\_param(``Parameter\_Name'',Parameter\_Value)$ \\
+and to retrieve the value of a particular parameter, the 
+functions all have the same format:\\
+$get\_(Parameter\_Name)();$  
+
+\subsection{Problem Input File}
+To use Capo, one must create a capo stepper object which requires
+a parameter list, a capo solver and initial guesses for the solution.
+A generic problem would take the following format:\\
+$
+\#include\ "Thyra\_EpetraLinearOp.hpp"\\
+\#include\ "bruss\_integrator.hpp"\\
+\#include\ "Capo\_Integrator.hpp"\\
+\#include\ "Capo\_Parameter_List.hpp"\\
+\#include\ "Capo\_Npgs.hpp"\\
+\#include\ "Capo\_Stepper.hpp"\\
+int\ main(int\ argc,\ char\ *argv[])\\
+\{\\
+// Create\ x\ vector\\
+Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >\ x  = Thyra::createMember(thyra\_vs);\\
+// Create\ initial\ T\ and\ lambda.\\
+double lambda0 = .5655;\\
+double T0 = 3.017;\\
+\\
+// Build\ the\ Problem\ Integrator\\
+Teuchos::RefCountPtr<Problem\_Integrator>\ prob\_integrator;\\
+prob\_integrator = Teuchos::rcp(new Problem\_Integrator());\\
+\\
+// Build\ a\ parameter\ list\\
+Teuchos::RefCountPtr<CAPO::Parameter\_List> PL;\\
+PL = Teuchos::rcp(new CAPO::Parameter\_List);\\
+\\
+// Set\ all\ of\ the\ parameters\ in\ the\ list.\\
+\\
+// Build\ Solver\\
+Teuchos::RefCountPtr<CAPO::Npgs>\ MySolver;\\
+MySolver = Teuchos::rcp(new CAPO::Npgs(PL,prob\_integrator,x,Param0,t0));\\
+\\
+// Build\ a\ Stepper\\
+Teuchos::RefCountPtr<CAPO::Stepper>\ MyStepper;\\
+MyStepper = Teuchos::rcp(new CAPO::Stepper(PL,MySolver));\\
+\\
+// Solve\\
+MyStepper->Run();\\
+\};
+$
+
+\end{document}

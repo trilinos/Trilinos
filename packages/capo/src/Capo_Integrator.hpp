@@ -33,10 +33,14 @@
 #include "Thyra_VectorBase.hpp"
 
 namespace CAPO {
+  /** \brief 
+      The integrator class.  In order to use Capo, an implementation
+      of this class must be provided by the user.
+  */
 
   class Integrator {
   public:
-    //! Construct an Integrator function. 
+    //! Constructor for an Integrator function. 
     Integrator() {};
     
     //! Destructor for the Integrator.

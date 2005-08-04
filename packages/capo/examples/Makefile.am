@@ -26,4 +26,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = Simple Brusselator Reed VanderPol Rpm_Test Tcubed
+SUBDIRS = Simple Brusselator Reed VanderPol Rpm_Test Tcubed Elezgaray

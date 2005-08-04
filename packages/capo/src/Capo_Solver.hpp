@@ -52,7 +52,11 @@ namespace CAPO {
   class Integrator;
   class Parameter_List;
 
-  /**** Solver Class ****/
+  /** \brief 
+      This is the virtual Solver class.  Any future additional
+      solvers added to Capo must be implementations of this 
+      class.
+  */
   class Solver {
   public:
 
@@ -67,7 +71,8 @@ namespace CAPO {
 	   Teuchos::RefCountPtr<Integrator> App_Int, \
 	   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x0, \
 	   double lambda0, double T0);
-    
+
+    //! Default Constructor
     Solver() {}
 
     //! Destructor

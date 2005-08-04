@@ -61,7 +61,7 @@
 #include "Tcubed_FiniteElementProblem.H"              
 #include "Capo_Integrator.hpp"
 #include "Capo_Parameter_List.hpp"
-#include "Capo_Npgs.hpp"
+#include "Capo_Rpm.hpp"
 #include "Capo_Stepper.hpp"
 using namespace std;
 
@@ -154,9 +154,9 @@ int main(int argc, char *argv[])
   temp_string ="printproc";
   PL->set_param(temp_string,1);
   temp_string ="lambda_stepsize";
-  PL->set_param(temp_string,.005);
+  PL->set_param(temp_string,.01);
   temp_string ="MaxOuterIts";
-  PL->set_param(temp_string,90);
+  PL->set_param(temp_string,130);
   temp_string ="EnablePeriodicity";
   PL->set_param(temp_string, false);
   temp_string ="EnableArclength";
@@ -170,8 +170,8 @@ int main(int argc, char *argv[])
   cerr << "Created the Integrator Interface." << endl;
 
   // Build Solver
-  Teuchos::RefCountPtr<CAPO::Npgs> MySolver;
-  MySolver = Teuchos::rcp(new CAPO::Npgs(PL,Integrator_Interface,x,Param0,dummy_time));
+  Teuchos::RefCountPtr<CAPO::Rpm> MySolver;
+  MySolver = Teuchos::rcp(new CAPO::Rpm(PL,Integrator_Interface,x,Param0,dummy_time));
   cerr << "Built the Solver." << endl;
 
   // Build a Stepper

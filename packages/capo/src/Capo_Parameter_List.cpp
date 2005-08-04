@@ -65,15 +65,10 @@ Parameter_List::Parameter_List()
   EnablePeriodicity = false;
   EnableArclength = false;
 
-  // Parameters for Newton-Picard Gauss-Seidel
   SubspaceIterations = 10;
   FloquetTolerence = .5;
   NumberXtraVecsSubspace = 4;
   
-  // Parameters for Recursive Projection Method
-  Mplus2tol = .1;
-  ModifiedNewtFlag = 0;
-  UpdateBasisFreq =2;
   cerr << "Finished with Parameter_List constructor." << endl;
 }
 
@@ -108,16 +103,6 @@ void Parameter_List::set_param(string& name, int value)
   if (name=="NumberXtraVecsSubspace")
     {
       NumberXtraVecsSubspace = value;
-      found = true;
-    }
-  if (name=="ModifiedNewtFlag")
-    {
-      ModifiedNewtFlag = value;
-      found = true;
-    }
-  if (name=="UpdateBasisFreq")
-    {
-      UpdateBasisFreq = value;
       found = true;
     }
   if (name=="MaxOuterIts")
@@ -189,11 +174,6 @@ void Parameter_List::set_param(string& name, double value)
       FloquetTolerence = value;
       found = true;
     }
-  if (name=="Mplus2tol")
-    {
-      Mplus2tol = value;
-      found = true;
-    }
   if (name=="tol")
     {
       tol = value;
@@ -251,12 +231,6 @@ int Parameter_List::get_NumberXtraVecsSubspace()
 int Parameter_List::get_lambda_extend_tol()
 {return lambda_extend_tol;}
 
-double Parameter_List::get_Mplus2tol()
-{ return Mplus2tol;}
-int Parameter_List::get_ModifiedNewtFlag()
-{ return ModifiedNewtFlag;}
-int Parameter_List::get_UpdateBasisFreq()
-{ return UpdateBasisFreq;}
 
 //-----------------------------------------------------------------
 // Function      : Parameter_List::Periodic

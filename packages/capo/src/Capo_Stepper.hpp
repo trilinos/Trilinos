@@ -49,7 +49,13 @@ namespace CAPO {
   class Integrator;
   class Parameter_List;
 
-  /**** Stepper Class ****/
+  /** \brief
+     This class provides the main driver of the Capo program.  Once 
+     all of the parameters are set, the integrator is built, and
+     a solver is chosen.  This class runs the problem by calling
+     the predictor function of the solver, and then the corrector
+     alternatively until the maximum number of steps has been taken.
+  */
   class Stepper {
 
   public:

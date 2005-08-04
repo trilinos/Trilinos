@@ -32,8 +32,8 @@
 
 /************************************************************ 
 File:      Capo_NppD.hpp
-Purpose:   The Newton--Picard Gauss--Seidel Solver method
-Date:      6-13-05
+Purpose:   The Newton--Picard Period Doubling Solver method
+Date:      7-29-05
 Author:    Joseph Simonis
 **************************************************************/
 
@@ -49,6 +49,9 @@ namespace CAPO {
   class Integrator;
   class Parameter_List;
 
+  /** \brief
+      Solver for tracking period doubling bifurcations.
+  */
   class NppD : public Solver
   {
   public:
@@ -57,13 +60,13 @@ namespace CAPO {
 	 const Teuchos::RefCountPtr<Integrator>& App_Int, \
 	 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x0,\
 	 double lambda0, double T0);
-    
+
+    //! Default Constructor
     NppD() {}
 
     //! Destructor
     virtual ~NppD() {}
 
-    //! Member Functions
 
     /*!
       Setup the solver.
@@ -154,9 +157,23 @@ namespace CAPO {
       The d-vector in Algorithm 2 of Engelborghs et al.
     */
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > dvector;
+
+    /*! 
+      Algorithm 2 of Engelborghs et al. requires an extra
+      vector "nu" within it.  This is its current state.
+    */
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > nucurrent;
+    /*!
+      The final updated version of nu.
+    */
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > nufinal;
+    /*!
+      The last step in nu taken.
+    */
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > nustep;
+    /*!
+      The previous version of nu.
+    */
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > nuprevious;
 
 
@@ -235,7 +252,9 @@ namespace CAPO {
     bool UpdateVe(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We,
 		  const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se);
 
-
+    /*!
+      Calculate the Newton step on the low dimensional subspace.
+    */
     bool Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& xq1,
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& xq2,
@@ -290,7 +309,7 @@ namespace CAPO {
 
 
 
-
+    /*
     bool ShermanMorrison(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq,
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dp,
@@ -299,6 +318,7 @@ namespace CAPO {
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& finit,
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& r,
 			 double& deltaT, double& deltalambda);
+    */
 
     //! The step taken from the previous solution to the guess at this
     //! continuation step.

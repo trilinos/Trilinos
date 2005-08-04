@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
   temp_string ="lambda_stepsize";
   PL->set_param(temp_string,.01);
   temp_string ="MaxOuterIts";
-  PL->set_param(temp_string,300);
+  PL->set_param(temp_string,325);
   temp_string ="EnablePeriodicity";
   PL->set_param(temp_string, true);
   temp_string ="EnableArclength";

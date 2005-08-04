@@ -48,7 +48,14 @@ namespace CAPO {
   
   class Integrator;
   class Parameter_List;
-  
+
+  /** \brief
+      The Recursive Projective Methods of Shroff and Keller.  This class 
+      provides two different solvers. If the parameter EnableArclength 
+      is false, this solver is the NPJ method. If instead EnableArclength 
+      is true, then this solver is the CNPGS method. For descriptions of 
+      these methods, see the User's Guide.
+  */  
   class Rpm : public CAPO::Solver
   {
   public:
@@ -58,12 +65,12 @@ namespace CAPO {
 	const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x0,\
 	double lambda0, double T0);
 
+    //! Default Constructor
     Rpm() {}
 
     //! Destructor
     virtual ~Rpm() {}
 
-    //! Member Functions
 
     /*!
       Setup the solver.
@@ -216,7 +223,10 @@ namespace CAPO {
     */
     bool UpdateVe(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We,
 		  const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se);
-
+    /*!
+      This function calculates the Newton Step in the low dimensional
+      subspace for the NPJ algorithm.
+    */
     bool Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq,
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dp,
@@ -256,6 +266,10 @@ namespace CAPO {
       (1/eps)*(\phi(x,T,lambda+eps)-\phi(x,T,lambda))
     */
     bool dphi_dlambda(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& f);
+    /*!
+      This function calculates the Newton Step in the low dimensional
+      subspace for the CNPGS algorithm.
+    */
     bool ShermanMorrison(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq,
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dp,

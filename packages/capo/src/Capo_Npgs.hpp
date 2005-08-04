@@ -49,6 +49,15 @@ namespace CAPO {
   class Integrator;
   class Parameter_List;
 
+
+  /** \brief
+      The Newton-Picard Gauss-Seidel Solver.  This class
+      provides two different solvers.  If the parameter
+      EnableArclength is false, this solver is the NPGS
+      method.  If instead EnableArclength is true, then
+      this solver is the CNP method.  For descriptions
+      of these methods, see the User's Guide.
+  */
   class Npgs : public Solver
   {
   public:
@@ -219,7 +228,10 @@ namespace CAPO {
     bool UpdateVe(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We,
 		  const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se);
 
-
+    /*!
+      This function calculates the step to take in the low-dimensional
+      subspace for the NPGS algorithm.
+    */
     bool Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq,
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dp,
@@ -260,7 +272,10 @@ namespace CAPO {
       (1/eps)*(\phi(x,T,lambda+eps)-\phi(x,T,lambda))
     */
     bool dphi_dlambda(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& f);
-
+    /*!
+      This function calculates the step to take in the low-dimensional
+      subspace for the CNP algorithm.
+    */
     bool ShermanMorrison(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq,
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dp,

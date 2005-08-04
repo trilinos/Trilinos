@@ -49,6 +49,14 @@ namespace CAPO {
   class Integrator;
   class Parameter_List;
 
+  /** \brief
+      The underdetermined Newton-Picard method.  This class
+      contains two solvers similar to the Npgs class.  Here
+      the two methods are exactly like NPGS and CNP except
+      there are no explicit functions for a phase condition
+      or an arc length parameterization.  Thus the linear
+      system to solve for the Newton step is underdetermined.
+  */
   class Unp : public Solver
   {
   public:
@@ -57,13 +65,12 @@ namespace CAPO {
 	 const Teuchos::RefCountPtr<Integrator>& App_Int, \
 	 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& x0,\
 	 double lambda0, double T0);
-    
+    //! Default Constructor
     Unp() {}
 
     //! Destructor
     virtual ~Unp() {}
 
-    //! Member Functions
 
     /*!
       Setup the solver.
@@ -203,7 +210,10 @@ namespace CAPO {
     bool UpdateVe(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& We,
 		  const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se);
 
-
+    /*!
+      This function calculates the step to take in the low-dimensional
+      subspace for the underdetermined NPGS algorithm.
+    */
     bool Calculatedp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq,
 		     const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dp,
@@ -244,6 +254,10 @@ namespace CAPO {
     */
     bool dphi_dlambda(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& f);
 
+    /*!
+      This function calculates the step to take in the low-dimensional
+      subspace for the underdetermined CNP algorithm.
+    */
     bool ShermanMorrison(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Vp,
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dq,
 			 const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& dp,
