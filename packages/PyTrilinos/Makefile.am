@@ -1,8 +1,3 @@
-#np# Typically the only line that needs to be edited in this file is the last 
-#np# line.  Set 'SUBDIRS= (list all subdirectories that are autotool'ed here)'
-#np# List all subdirectories even if one or more are configured/built only
-#np# conditionally.
-
 # @HEADER
 # ************************************************************************
 # 
@@ -53,7 +48,6 @@ ACLOCAL	= aclocal -I config
 #np# new package so that the files can be used in creating the 
 #np# configure script for other packages. 
 EXTRA_DIST = \
-pyLocate \
 config/ac_cxx_bool.m4                   config/depcomp \
 config/ac_cxx_have_std.m4               config/install-sh \
 config/ac_cxx_have_stl.m4               config/missing \
