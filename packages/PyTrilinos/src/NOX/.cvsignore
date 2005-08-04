@@ -1,9 +1,0 @@
-.DS_Store
-Makefile
-*~
-*_wrap.cxx
-Abstract.py
-Epetra.py
-Parameter.py
-Solver.py
-StatusTest.py
