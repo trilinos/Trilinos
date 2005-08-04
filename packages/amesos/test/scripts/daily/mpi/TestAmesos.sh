@@ -30,6 +30,14 @@
 #
 #  Tests that have been made quiet are now tested by TestQuietAmesos.sh 
 #
+#  Bugs:  This test can fail if $mpigo returns a zero value in spite of 
+#  a failure.  This can happen on some machines in two cases:
+#  1)  mpigo is not set correctly
+#  2)  the executable is not found
+#  In this case, the test reports success even though no test has been performed.
+#  AmesosQuietTest.csh is more robust.  Files that can be moved there should 
+#  be moved there. 
+#
 #
 ## NOTE: Those wishing to cusomize this script to run test exe's
 ## that have already been autotool'ed should read lines beginning with '##'
