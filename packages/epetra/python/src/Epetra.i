@@ -652,13 +652,9 @@ using namespace std;
     double result[n];
     int numVectors[1] = {n};
     int status        = self->Norm1(result);
-    PyObject * output;
-    if (n == 1) {
-      output = Py_BuildValue("(id)", status, result[0]);
-    } else {
-      output = Py_BuildValue("(iO)", status, PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
-								     (char *)result));
-    }
+    PyObject * output = Py_BuildValue("(iO)", status, 
+				      PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
+							      (char *)result));
     return output;
   }
 
@@ -696,13 +692,9 @@ using namespace std;
     double result[n];
     int numVectors[1] = {n};
     int status        = self->Norm2(result);
-    PyObject * output;
-    if (n == 1) {
-      output = Py_BuildValue("(id)", status, result[0]);
-    } else {
-      output = Py_BuildValue("(iO)", status, PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
-								     (char *)result));
-    }
+    PyObject * output = Py_BuildValue("(iO)", status,
+				      PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
+							      (char *)result));
     return output;
   }
 
@@ -711,15 +703,52 @@ using namespace std;
     double result[n];
     int numVectors[1] = {n};
     int status        = self->NormInf(result);
-    PyObject * output;
-    if (n == 1) {
-      output = Py_BuildValue("(id)", status, result[0]);
-    } else {
-      output = Py_BuildValue("(iO)", status, PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
-								     (char *)result));
-    }
+    PyObject * output = Py_BuildValue("(iO)", status,
+				      PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
+							      (char *)result));
     return output;
   }
+
+   PyObject * Dot(const Epetra_MultiVector& A){
+    int n = self->NumVectors();
+    double result[n];
+    int numVectors[1] = {n};
+    int status        = self->Dot(A, result);
+    PyObject * output = Py_BuildValue("(iO)", status,
+				      PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
+							      (char *)result));
+    return output;
+   }
+}
+
+%extend Epetra_Vector{
+
+  PyObject * Norm1() {
+    double result[1];
+    int status        = self->Norm1(result);
+    PyObject * output = Py_BuildValue("(id)", status, result[0]);
+    return output;
+  }
+
+ PyObject * Norm2() {
+    double result[1];
+    int status        = self->Norm2(result);
+    PyObject * output = Py_BuildValue("(id)", status, result[0]);
+    return output;
+  }
+
+  PyObject * NormInf() {
+    double result[1];
+    int status        = self->NormInf(result);
+    PyObject * output = Py_BuildValue("(id)", status, result[0]);    
+    return output;
+  }
+   PyObject * Dot(const Epetra_MultiVector& A){
+    double result[1];
+    int status        = self->Dot(A, result);
+    PyObject * output = Py_BuildValue("(id)", status, result[0]);
+    return output;
+   }
 }
 
 %extend Epetra_IntVector {
