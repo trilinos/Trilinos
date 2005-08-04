@@ -146,14 +146,16 @@ static char **fileNamesBase;
 // Number of processes that ran zdrive.  This is also the number of
 // zdrive output files, and in the case of Exodus files, the number
 // of input Exodus files.  If this is not provided in the input
-// parameter file, vtk_view will try to figure it out from the
-// input file names.
+// parameter file, vtk_view will try to figure it by looking in the 
+// dirctory where the input files are.  If there are no zdrive output 
+// files, vtk_view will just display the geometry.
 
-static int numZdriveProcs; 
+static int numZdriveProcs = 0; 
+static int numNemesisFiles = 0; 
 static int lastPartition = 0; 
 
 static int read_broadcast_input_options(int &argc, char **argv);
-static int get_number_of_zdrive_processes(char *fname, char **disks);
+static int set_number_of_zdrive_processes(char *fname, char **disks);
 static int set_nemesis_file_names_or_pattern(char *baseName,
   int numDisks, int diskListSize, int *diskList, int diskOffset, int useZeros,
   char *dirRoot, char *subDir);
@@ -161,7 +163,7 @@ static int check_partition_numbers(vtkUnstructuredGrid *ug);
 static int assign_partition_numbers(vtkUnstructuredGrid *ug);
 static void Run(vtkMultiProcessController *contr, void *arg);
 static int checkAllrc(int rc, vtkMPICommunicator *comm);
-static char *captionText();
+static char *captionText(char *p, char *c);
 static char *get_zdrive_output_file_name();
 
 static int *realloc(int *buf, int newsize, int oldsize)
@@ -212,9 +214,9 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  numZdriveProcs = 0;
   if (vis_opt_values[option_zdrive_count][0]){
     sscanf(vis_opt_values[option_zdrive_count], "%d", &numZdriveProcs);
+    numNemesisFiles = numZdriveProcs;
   }
 
   if (fname_opts.file_type == NEMESIS_FILE){
@@ -241,22 +243,30 @@ int main(int argc, char **argv)
   }
   else if (fname_opts.file_type == CHACO_FILE){
 
-    // The chaco base name is in fname_opts.pexo_fname, but we
-    // need to know how many zdrive processes there were.
+    // The chaco base name is in fname_opts.pexo_fname, but if we
+    // are to read the zdrive output files, we need to know how many
+    // zdrive processes there were.
   
-    if (numZdriveProcs <= 0){
+    if (numZdriveProcs == 0){
       
       if (Proc == 0){
-        numZdriveProcs = 
-          get_number_of_zdrive_processes(fname_opts.pexo_fname, NULL);
+        rc = set_number_of_zdrive_processes(fname_opts.pexo_fname, NULL);
       }
   
       if (NumProcs > 1){
-        Comm->Broadcast(&numZdriveProcs, 1, 0);
+        int vals[2];
+        vals[0] = rc;
+        vals[1] = numZdriveProcs;
+        Comm->Broadcast(vals, 2, 0);
+ 
+        if (Proc > 0){
+          rc = vals[0];
+          numZdriveProcs = vals[1];
+        }
       }
-  
-      if (numZdriveProcs < 1){
-        return 1;
+
+      if (rc){
+        return 1; 
       }
     }
   }
@@ -266,7 +276,7 @@ int main(int argc, char **argv)
       cout << " or \"File Type = Chaco\"" << endl;
       cout << "in parameter file" << endl;
     }
-    return 0;
+    return 1;
   }
 
   // Run parallel method, VTK-style.
@@ -282,7 +292,9 @@ int main(int argc, char **argv)
 
 static void Run(vtkMultiProcessController *contr, void *arg)
 {
-  // Read in the chaco or distributed Nemesis (exodusII) files
+  // Read in the chaco or distributed Nemesis (exodusII) files.
+  // Include at least one field array in the event we will not
+  // have partition numbers to display.
 
   vtkUnstructuredGrid *ug = vtkUnstructuredGrid::New();
 
@@ -299,6 +311,22 @@ static void Run(vtkMultiProcessController *contr, void *arg)
     rdr->GetOutput()->SetUpdatePiece(Proc);
     rdr->GetOutput()->SetUpdateNumberOfPieces(NumProcs);
 
+    rdr->UpdateInformation();  // get the file metadata
+
+    int nvweights = rdr->GetNumberOfVertexWeights();
+    if (nvweights > 0){
+      rdr->GenerateVertexWeightArraysOn();
+    }
+    else{
+      int neweights = rdr->GetNumberOfEdgeWeights();
+      if (neweights > 0){
+        rdr->GenerateEdgeWeightArraysOn();
+       }
+    }
+
+    rdr->GetOutput()->SetUpdatePiece(Proc);
+    rdr->GetOutput()->SetUpdateNumberOfPieces(NumProcs);
+
     rdr->Update(); // read in the files
     ug->DeepCopy(rdr->GetOutput());
     rdr->Delete();
@@ -311,7 +339,7 @@ static void Run(vtkMultiProcessController *contr, void *arg)
     vtkPExodusReader *rdr = vtkPExodusReader::New();
 
     if (fileNames){
-      rdr->SetFileNames(numZdriveProcs, (const char **)fileNames);
+      rdr->SetFileNames(numNemesisFiles, (const char **)fileNames);
     }
     else{
       rdr->SetFilePrefix(filePrefix); 
@@ -324,6 +352,24 @@ static void Run(vtkMultiProcessController *contr, void *arg)
     rdr->GetOutput()->SetUpdatePiece(Proc);
     rdr->GetOutput()->SetUpdateNumberOfPieces(NumProcs);
     rdr->SetTimeStep(0);
+
+    rdr->UpdateInformation();   // get the metadata
+
+    // These counts don't include GlobalNodeIdArray or GlobalElementIdArray
+
+    int nparrays = rdr->GetNumberOfPointArrays();
+    if (nparrays > 0){
+      rdr->SetPointArrayStatus(0, 1); 
+    }
+    else{
+      int ncarrays = rdr->GetNumberOfCellArrays();
+      if (ncarrays > 0){
+        rdr->SetCellArrayStatus(0, 1); 
+      }
+    }
+
+    rdr->GetOutput()->SetUpdatePiece(Proc);
+    rdr->GetOutput()->SetUpdateNumberOfPieces(NumProcs);
 
     rdr->Update(); // read in the files
     ug->DeepCopy(rdr->GetOutput());
@@ -339,34 +385,98 @@ static void Run(vtkMultiProcessController *contr, void *arg)
     return;
   }
 
-  // Find the partition number for each "cell" in my subgrid.  This
-  // requires reading the zdrive output files.  We name the
-  // resulting element or point array "Partition".
+  // If we were processing zdrive output files, we'll visualize the
+  // partition number assigned by zdrive.  If not, and there are
+  // point or cell arrays other than global ID arrays, we'll visualize 
+  // one of those.  If all else fails, we'll visualize the global element ID.
 
-  int rc = assign_partition_numbers(ug);
+  char cellArray[128], pointArray[128];
+  cellArray[0] = '\0';
+  pointArray[0] = '\0';
+  double range[2];
 
-  if (NumProcs > 1){
-    rc = checkAllrc(rc, Comm);
+  if (numZdriveProcs > 0){
+    // Find the partition number for each "cell" in my subgrid.  This
+    // requires reading the zdrive output files.  We name the
+    // resulting element or point array "Partition".
+
+    if (fname_opts.file_type == CHACO_FILE){
+      strcpy(pointArray, "Partition");
+    }
+    else{
+      strcpy(cellArray, "Partition");
+    }
+
+    int rc = assign_partition_numbers(ug);
+  
+    if (NumProcs > 1){
+      rc = checkAllrc(rc, Comm);
+    }
+  
+    if (rc > 0){
+      ug->Delete();
+      return;
+    }
+  
+    rc = check_partition_numbers(ug);
+  
+    if (rc){
+      cout << Proc << " failed to obtain all partition numbers" << endl;
+    }
+  
+    if (NumProcs > 1){
+      rc = checkAllrc(rc, Comm);
+    }
+  
+    if (rc > 0){
+      ug->Delete();
+      return;
+    }
+
+    range[0] = 0;
+    range[1] = lastPartition;
   }
+  else{
+    int nparrays = ug->GetPointData()->GetNumberOfArrays();
 
-  if (rc > 0){
-    ug->Delete();
-    return;
-  }
+    if (nparrays > 1){
+      const char *nm = ug->GetPointData()->GetArrayName(0);
+      if (!strcmp(nm, "GlobalNodeId")){
+        nm = ug->GetPointData()->GetArrayName(1);
+      }
+      strcpy(pointArray, nm);
 
-  rc = check_partition_numbers(ug);
+      ug->GetPointData()->GetArray(pointArray)->GetRange(range);
+    }
+    else{
+      int ncarrays = ug->GetCellData()->GetNumberOfArrays();
 
-  if (rc){
-    cout << Proc << " failed to obtain all partition numbers" << endl;
-  }
+      if (ncarrays > 1){
+        const char *nm = ug->GetCellData()->GetArrayName(0);
+        if (!strcmp(nm, "GlobalElementId")){
+          nm = ug->GetCellData()->GetArrayName(1);
+        }
+        strcpy(cellArray, nm);
+      }
+      else{
+        strcpy(cellArray, "GlobalElementId");
+      }
 
-  if (NumProcs > 1){
-    rc = checkAllrc(rc, Comm);
-  }
+      ug->GetCellData()->GetArray(cellArray)->GetRange(range);
+    }
 
-  if (rc > 0){
-    ug->Delete();
-    return;
+    if (NumProcs > 1){
+      double extreme;
+      Comm->ReduceMin(range, &extreme, 1, 0);
+      Comm->Broadcast(&extreme, 1, 0);
+
+      range[0] = extreme;
+
+      Comm->ReduceMax(range + 1, &extreme, 1, 0);
+      Comm->Broadcast(&extreme, 1, 0);
+
+      range[1] = extreme;
+    }
   }
 
   // Redistribute the cells for more load balanced rendering.  This
@@ -390,31 +500,38 @@ static void Run(vtkMultiProcessController *contr, void *arg)
 
   mapper->SetColorModeToMapScalars();
 
-  if (fname_opts.file_type == CHACO_FILE){
+  if (pointArray[0]){
     mapper->SetScalarModeToUsePointFieldData();
+    mapper->SelectColorArray(pointArray);
   }
   else{
     mapper->SetScalarModeToUseCellFieldData();
+    mapper->SelectColorArray(cellArray);
   }
-  mapper->SelectColorArray("Partition");
-  mapper->SetScalarRange(0, lastPartition);
 
-  // Scalar bar, associating colors to partition numbers
+  mapper->SetScalarRange(range[0], range[1]);
 
-  vtkScalarBarActor *sb = vtkScalarBarActor::New();
-  sb->SetOrientationToVertical();
-  sb->SetTitle("Partition");
-  sb->SetLookupTable(mapper->GetLookupTable());
-  sb->SetMaximumNumberOfColors(lastPartition + 1);
-  if (lastPartition < 20)
-    sb->SetNumberOfLabels(lastPartition + 1);
-  else
-    sb->SetNumberOfLabels(10);
+  vtkScalarBarActor *sb = NULL;
+
+  if (Proc == 0){
+  
+    sb = vtkScalarBarActor::New();
+    sb->SetOrientationToVertical();
+    if (pointArray[0]){
+      sb->SetTitle(pointArray);
+    }
+    else{
+      sb->SetTitle(cellArray);
+    }
+    sb->SetLookupTable(mapper->GetLookupTable());
+//    sb->SetMaximumNumberOfColors(lastPartition + 1);
+    sb->SetNumberOfLabels(4);
+  }
 
   // Helpful text
 
   vtkTextActor *capActor = vtkTextActor::New();
-  char *info = captionText();
+  char *info = captionText(pointArray, cellArray);
   capActor->SetInput(info);
   delete [] info;
 
@@ -424,9 +541,6 @@ static void Run(vtkMultiProcessController *contr, void *arg)
   capActor->GetTextProperty()->SetFontSize(16);
   capActor->GetTextProperty()->BoldOn();
   capActor->GetTextProperty()->SetLineSpacing(1.2);
-
-
-  // The mesh display, colored by partition number
 
   vtkActor *actor = vtkActor::New();
   actor->SetMapper(mapper);
@@ -439,7 +553,9 @@ static void Run(vtkMultiProcessController *contr, void *arg)
   renderer->AddActor(actor);
 
   if (Proc == 0){
-    renderer->AddActor(sb);
+    if (sb){
+      renderer->AddActor(sb);
+    }
     renderer->AddViewProp(capActor);
   }
 
@@ -473,7 +589,9 @@ static void Run(vtkMultiProcessController *contr, void *arg)
 
   mapper->Delete();
   actor->Delete();
-  sb->Delete();
+  if (sb){
+    sb->Delete();
+  }
   capActor->Delete();
   renderer->Delete();
   renWin->Delete();
@@ -634,8 +752,9 @@ static int set_nemesis_file_names_or_pattern(char *baseName,
   int diskOffset, int useZeros,
   char *dirRoot, char *subDir)
 {
-char **disks=NULL;
-int nzeros, len;
+  char **disks=NULL;
+  int nzeros, len, rc, num;
+  int retVal = 0;
 
   fileNames = NULL;
   fileNamesBase = NULL;
@@ -668,36 +787,51 @@ int nzeros, len;
     }
   }
 
-  if (numZdriveProcs <= 0){
+  if (numZdriveProcs == 0){
     
     if (Proc == 0){
-      numZdriveProcs = get_number_of_zdrive_processes(baseName, disks);
+      // also sets numNemesisFiles, which is usually the same
+      rc = set_number_of_zdrive_processes(baseName, disks);
     }
 
     if (NumProcs > 1){
-      Comm->Broadcast(&numZdriveProcs, 1, 0);
+      int counts[3];
+      counts[0] = rc;
+      counts[1] = numZdriveProcs;
+      counts[2] = numNemesisFiles;
+      Comm->Broadcast(counts, 3, 0);
+
+      if (Proc > 0){
+        rc = counts[0];
+        numZdriveProcs = counts[1];
+        numNemesisFiles = counts[2];
+      } 
     }
 
-    if (numZdriveProcs < 1){
-      return 1;
+    if ((numNemesisFiles == 0) && (Proc == 0)){
+      cerr << "Error: Unable to locate input Exodus/Nemesis files" << endl;
+    }
+    if ((numNemesisFiles == 0) || rc){
+      retVal = 1;
+      goto done2;
     }
   }
 
-  int num = 1+(int)(std::log10((float)numZdriveProcs));
+  num = 1+(int)(std::log10((float)numNemesisFiles));
 
   if (numDisks > 1){
 
     // We need to provide the VTK reader with a list of all file names.
     
-    fileNames = new char *[numZdriveProcs];
-    fileNamesBase = new char *[numZdriveProcs];
+    fileNames = new char *[numNemesisFiles];
+    fileNamesBase = new char *[numNemesisFiles];
     len += (sizeof(baseName) + 64);
 
-    for (int i=0; i<numZdriveProcs; i++){
+    for (int i=0; i<numNemesisFiles; i++){
       fileNames[i] = new char[len];
       fileNamesBase[i] = new char[len];
       sprintf(fileNamesBase[i],"%s/%s", disks[i%numDisks], baseName);
-      sprintf(fileNames[i],"%s.%d.%0*d", fileNamesBase[i], numZdriveProcs, num, i);
+      sprintf(fileNames[i],"%s.%d.%0*d", fileNamesBase[i], numNemesisFiles, num, i);
     }
   }
   else{
@@ -705,17 +839,19 @@ int nzeros, len;
     // Sufficient to provide just the file name prefix, pattern and range.
     
     fileRange[0] = 0;
-    fileRange[1] = numZdriveProcs - 1;
+    fileRange[1] = numNemesisFiles - 1;
 
     if (numDisks == 1){
       strcpy(filePrefix, disks[0]);
-      sprintf(filePattern, "%%s/%s.%d.%%0%dd", baseName, numZdriveProcs, num);
+      sprintf(filePattern, "%%s/%s.%d.%%0%dd", baseName, numNemesisFiles, num);
     }
     else{
       strcpy(filePrefix, baseName);
-      sprintf(filePattern, "%%s.%d.%%0%dd", numZdriveProcs, num);
+      sprintf(filePattern, "%%s.%d.%%0%dd", numNemesisFiles, num);
     }
   }
+
+done2:
 
   if (disks){
     for (int i=0; i<numDisks; i++){
@@ -724,13 +860,23 @@ int nzeros, len;
     delete [] disks;
   }
 
-  return 0;
+  return retVal;
 }
 
-static int get_number_of_zdrive_processes(char *fname, char **disks)
+// Look for the zdrive output files.  The file name tells us how many
+// zdrive output files there are.  If the input file is Exodus/Nemesis,
+// this number is also the number of Exodus/Nemesis files.
+//
+// If there are no zdrive output files, we'll just display the input
+// file geometry without partition numbers.  If the input file is
+// Exodus/Nemesis however, we still need to find out how many input
+// files there are.
+
+static int set_number_of_zdrive_processes(char *fname, char **disks)
 {
   char *dn = new char[ZMAXPATH];
   char *fn = new char[ZMAXPATH];
+  int verbose = (Proc == 0);
 
   if (disks){
     strcpy(dn, disks[0]);
@@ -748,10 +894,12 @@ static int get_number_of_zdrive_processes(char *fname, char **disks)
     }
 
     if (len < 0){
-      cout << "invalid file name " << fname << endl;
+      if (verbose){
+        cout << "invalid file name " << fname << endl;
+      }
       delete [] dn;
       delete [] fn;
-      return 0;
+      return 1;
     }
 
     // find the rightmost slash, which separates directory from file name
@@ -771,12 +919,13 @@ static int get_number_of_zdrive_processes(char *fname, char **disks)
   DIR *dir = opendir(dn);
 
   if (dir == NULL){
-    if (Proc == 0){
-      cout << "zdrive output file directory: " << dn << " " << strerror(errno) << endl;
+    if (verbose){
+      cout << "zdrive output file directory: " << dn;
+      cout << " " << strerror(errno) << endl;
     }
     delete [] dn;
     delete [] fn;
-    return 0;
+    return 1;
   }
 
   int fileno;
@@ -797,17 +946,43 @@ static int get_number_of_zdrive_processes(char *fname, char **disks)
     }
   }
 
+  if (count > 0){
+    numZdriveProcs = count;
+    numNemesisFiles = count;
+  }
+  else if (fname_opts.file_type == NEMESIS_FILE){
+    // we must have a count for the number of input files
+    rewinddir(dir);
+    while ((de = readdir(dir)) != NULL){
+      if (strncmp(fn, de->d_name, len) == 0){
+        char *c = de->d_name + len;
+  
+        if (*c == '.'){
+          int nmatches = sscanf(c, ".%d.%d", &count, &fileno);
+  
+          if (nmatches == 2){
+            break;
+          }
+        }
+      }
+    }
+
+    numZdriveProcs = 0;
+    numNemesisFiles = count;
+  }
+
   closedir(dir);
 
-  if (count == 0){
+  if ((numZdriveProcs == 0) && verbose){
     cerr << "Unable to locate zdrive output file(s) ";
     cerr << dn << "/" << fn << ".out.{numfiles}.{fileno}" << endl;
+    cerr << "We'll just show you the geometry of the input files." << endl;
   }
 
   delete [] dn;
   delete [] fn;
 
-  return count;
+  return 0;
 }
 //----------------------------------------------------------------
 // Functions to read the zdrive output files, and to create an
@@ -1165,80 +1340,101 @@ static int checkAllrc(int rc, vtkMPICommunicator *comm)
 
   return allrc;
 }
-static char *captionText()
+static char *captionText(char *pnm, char *cnm)
 {
   char *buf1 = new char [LINELEN  + 1];
   char *buf = new char [LINELEN * 3 + 1];
-
-  int dtype = fname_opts.init_dist_type;
-  if ((fname_opts.file_type == CHACO_FILE) && (dtype != INITIAL_FILE)) {
-    snprintf(buf1, LINELEN, "Chaco: %s, %s initial distribution, %s",
-      fname_opts.pexo_fname, 
-      (dtype == INITIAL_LINEAR ? 
-         "linear" : 
-         (dtype == INITIAL_CYCLIC ? "cyclic" : "owner")),
-      prob_opts.method);
-  }
-  else{
-    snprintf(buf1, LINELEN, "%s: %s, %s",
-      (fname_opts.file_type == CHACO_FILE ? "Chaco" : "Exodus/Nemesis"),
-      fname_opts.pexo_fname, 
-      prob_opts.method);
-  }
-
-  int used = snprintf(buf, LINELEN+1, "%s\n", buf1);
-
-  char *c = buf + used;
-  int lenleft = LINELEN * 3 - used;
+  char *c = buf;
+  int lenleft = LINELEN * 3;
   int linelen = 0;
 
-  if (prob_opts.num_params > 0)
-    {
-    for (int i=0; i<prob_opts.num_params; i++)
-      {
-      Parameter_Pair p = prob_opts.params[i];
-      used = snprintf(buf1, LINELEN, "%s(%s) ", p.Name, p.Val);
+  strcpy(buf, "(key \"t\" toggles interaction mode, \"r\" resets, \"q\" quits)\n");
 
-      if (used >= 80){
-        continue;  // skip it, too long to write onto image
-      }
-      if (used > lenleft){  
-        snprintf(c, lenleft, "...");
-        break;  // that's all we have room for
-      }
+  int used = strlen(buf);
+  lenleft -= used;
+  c += used;
 
-      if (linelen + used >= 80){
-        *c++ = '\n';
-        linelen = 0;
-        lenleft--;
-      }
-   
-      strncpy(c, buf1, lenleft);
-      c += used;
+  if (numZdriveProcs == 0){
+    used = snprintf(buf1, LINELEN, "%s: %s\n",
+      (fname_opts.file_type == CHACO_FILE ? "Chaco" : "Exodus/Nemesis"),
+      fname_opts.pexo_fname);
+
+    if (used <= lenleft){
+      strcpy(c, buf1);
       lenleft -= used;
-      linelen += used;
+      c += used;
+
+      used = snprintf(buf1, LINELEN, "displaying %s array: %s\n",
+        pnm[0] ? "point" : "cell",
+        pnm[0] ? pnm : cnm);
+
+      if (used <= lenleft){
+        strcpy(c, buf1);
+        lenleft -= used;
+        c += used;
+      }
+    }
+  }
+  else {
+
+    // We had zdrive output files.  Display pertinent info about zdrive run
+
+    int dtype = fname_opts.init_dist_type;
+    if ((fname_opts.file_type == CHACO_FILE) && (dtype != INITIAL_FILE)) {
+      snprintf(buf1, LINELEN, "Chaco: %s, %s initial distribution, %s",
+        fname_opts.pexo_fname, 
+        (dtype == INITIAL_LINEAR ? 
+           "linear" : 
+           (dtype == INITIAL_CYCLIC ? "cyclic" : "owner")),
+        prob_opts.method);
+    }
+    else{
+      snprintf(buf1, LINELEN, "%s: %s, %s",
+        (fname_opts.file_type == CHACO_FILE ? "Chaco" : "Exodus/Nemesis"),
+        fname_opts.pexo_fname, 
+        prob_opts.method);
+    }
+  
+    used = snprintf(c, LINELEN+1, "%s\n", buf1);
+  
+    c += used;
+    lenleft -= used;
+    linelen = 0;
+  
+    if (prob_opts.num_params > 0) {
+      for (int i=0; i<prob_opts.num_params; i++) {
+        Parameter_Pair p = prob_opts.params[i];
+        used = snprintf(buf1, LINELEN, "%s(%s) ", p.Name, p.Val);
+  
+        if (used >= lenleft){  
+          snprintf(c, lenleft, "...");
+          break;  // that's all we have room for
+        }
+  
+        if (linelen + used >= LINELEN){
+          *c++ = '\n';
+          linelen = 0;
+          lenleft--;
+        }
+     
+        strcpy(c, buf1);
+        c += used;
+        lenleft -= used;
+        linelen += used;
       }
     }
 
-  strcpy(buf1, "(key \"t\" toggles interaction mode, \"r\" resets, \"q\" quits)");
-
-  int len = strlen(buf1) + 1;
-  if (lenleft > len){
-    sprintf(c, "\n%s", buf1);
-    lenleft -= len;
-    c += len;
+    char *nm = get_zdrive_output_file_name();
+    used = strlen(nm) + 1;
+  
+    if (lenleft > used){
+      sprintf(c, "\n%s", nm);
+      lenleft -= used;
+      c += used;
+    }
+  
+    delete [] nm;
   }
-
-  char *nm = get_zdrive_output_file_name();
-  len = strlen(nm) + 1;
-
-  if (lenleft > len){
-    sprintf(c, "\n%s", nm);
-    lenleft -= len;
-    c += len;
-  }
-
-  delete [] nm;
 
   return buf;
 }
