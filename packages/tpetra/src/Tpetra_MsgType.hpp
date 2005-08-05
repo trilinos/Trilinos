@@ -42,7 +42,7 @@ namespace Tpetra {
 	enum MsgType {	
 		Signature = 0x1,     /*!< Signature: brief, unique identification information */
 		Summary = 0x2,	     /*!< Summary information */
-		Watch = 0x4, 	     /*!< Print notification anytime the object is modified */
+		Watch = 0x4 	     /*!< Print notification anytime the object is modified */
 	};
   
 }
