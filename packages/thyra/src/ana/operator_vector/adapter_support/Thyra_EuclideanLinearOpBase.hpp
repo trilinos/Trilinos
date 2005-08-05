@@ -43,13 +43,13 @@ void EuclideanLinearOpBase<RangeScalar,DomainScalar>::euclideanApplyTranspose(
   const EConj                            conj
   ,const MultiVectorBase<RangeScalar>    &X
   ,MultiVectorBase<DomainScalar>         *Y
-  ,const Scalar                          alpha
-  ,const Scalar                          beta
+  ,const DomainScalar                    alpha
+  ,const DomainScalar                    beta
   ) const
 {
   TEST_FOR_EXCEPTION(
     true,std::logic_error
-    ,"EuclideanLinearOpBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::applyTranspose(...): "
+    ,"EuclideanLinearOpBase<"<<Teuchos::ScalarTraits<RangeScalar>::name()<<","<<Teuchos::ScalarTraits<RangeScalar>::name()<<">::applyTranspose(...): "
     "Error, the concrete subclass described as { " << this->description() << " } "
     " with this->applyTransposeSupports("<<toString(conj)<<")="<<this->applyTransposeSupports(conj)
     << " did not override this function and does not support transposes."
@@ -79,8 +79,8 @@ void EuclideanLinearOpBase<RangeScalar,DomainScalar>::apply(
   const EConj                            conj
   ,const MultiVectorBase<DomainScalar>   &X
   ,MultiVectorBase<RangeScalar>          *Y
-  ,const Scalar                          alpha
-  ,const Scalar                          beta
+  ,const RangeScalar                     alpha
+  ,const RangeScalar                     beta
   ) const
 {
   euclidean_apply_impl(conj,X,Y,alpha,beta);
@@ -91,8 +91,8 @@ void EuclideanLinearOpBase<RangeScalar,DomainScalar>::applyTranspose(
   const EConj                            conj
   ,const MultiVectorBase<RangeScalar>    &X
   ,MultiVectorBase<DomainScalar>         *Y
-  ,const Scalar                          alpha
-  ,const Scalar                          beta
+  ,const DomainScalar                    alpha
+  ,const DomainScalar                    beta
   ) const
 {
   euclidean_applyTranspose_impl(conj,X,Y,alpha,beta);
@@ -105,8 +105,8 @@ void EuclideanLinearOpBase<RangeScalar,DomainScalar>::euclidean_apply_impl(
   const EConj                            conj
   ,const MultiVectorBase<DomainScalar>   &X
   ,MultiVectorBase<RangeScalar>          *Y
-  ,const Scalar                          alpha
-  ,const Scalar                          beta
+  ,const RangeScalar                     alpha
+  ,const RangeScalar                     beta
   ) const
 {
   this->domainScalarProdVecSpc()->getScalarProd()->apply(*this,applyConjToTrans(conj),X,Y,alpha,beta);
@@ -117,8 +117,8 @@ void EuclideanLinearOpBase<RangeScalar,DomainScalar>::euclidean_applyTranspose_i
   const EConj                            conj
   ,const MultiVectorBase<RangeScalar>    &X
   ,MultiVectorBase<DomainScalar>         *Y
-  ,const Scalar                          alpha
-  ,const Scalar                          beta
+  ,const DomainScalar                    alpha
+  ,const DomainScalar                    beta
   ) const
 {
   this->rangeScalarProdVecSpc()->getScalarProd()->apply(*this,applyTransposeConjToTrans(conj),X,Y,alpha,beta);

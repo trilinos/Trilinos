@@ -1,5 +1,5 @@
 ../configure \
-CXXFLAGS="-O3 -ansi -pedantic" \
+CXXFLAGS=-O3 \
 CFLAGS=-O3 \
 FFLAGS=-O3 \
 --cache-file=config.cache \

@@ -49,8 +49,8 @@ public:
   typedef std::complex<RealScalar>                                                 RangeScalar;
   /** \brief . */
   typedef RealScalar                                                               DomainScalar;
-  /** \brief . */
-  typedef typename Thyra::LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar  Scalar;
+  /** \brief .*/
+  typedef typename Teuchos::PromotionTraits<RangeScalar,DomainScalar>::promote     Scalar;
 
   /** \brief . */
   RealComplexFFTLinearOp( const int N );

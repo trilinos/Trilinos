@@ -48,9 +48,6 @@ template<class RangeScalar, class DomainScalar>
 class EuclideanLinearOpBase : virtual public LinearOpBase<RangeScalar,DomainScalar> {
 public:
 
-  /** \brief .*/
-  typedef typename LinearOpBase<RangeScalar,DomainScalar>::Scalar Scalar;
-
   /** @name Pure virtual functions to override in subclasses */
   //@{
 
@@ -72,8 +69,8 @@ public:
     const EConj                            conj
     ,const MultiVectorBase<DomainScalar>   &X
     ,MultiVectorBase<RangeScalar>          *Y
-    ,const Scalar                          alpha
-    ,const Scalar                          beta
+    ,const RangeScalar                     alpha
+    ,const RangeScalar                     beta
     ) const = 0;
 
   //@}
@@ -96,8 +93,8 @@ public:
     const EConj                            conj
     ,const MultiVectorBase<RangeScalar>    &X
     ,MultiVectorBase<DomainScalar>         *Y
-    ,const Scalar                          alpha
-    ,const Scalar                          beta
+    ,const DomainScalar                    alpha
+    ,const DomainScalar                    beta
     ) const;
 
   //@}
@@ -122,8 +119,8 @@ public:
     const EConj                            conj
     ,const MultiVectorBase<DomainScalar>   &X
     ,MultiVectorBase<RangeScalar>          *Y
-    ,const Scalar                          alpha
-    ,const Scalar                          beta
+    ,const RangeScalar                     alpha
+    ,const RangeScalar                     beta
     ) const;
 
   /** \brief Apply the transposed linear operator to a multi-vector using
@@ -135,8 +132,8 @@ public:
     const EConj                            conj
     ,const MultiVectorBase<RangeScalar>    &X
     ,MultiVectorBase<DomainScalar>         *Y
-    ,const Scalar                          alpha
-    ,const Scalar                          beta
+    ,const DomainScalar                    alpha
+    ,const DomainScalar                    beta
     ) const;
 
   //@}
@@ -147,16 +144,16 @@ protected:
     const EConj                            conj
     ,const MultiVectorBase<DomainScalar>   &X
     ,MultiVectorBase<RangeScalar>          *Y
-    ,const Scalar                          alpha
-    ,const Scalar                          beta
+    ,const RangeScalar                     alpha
+    ,const RangeScalar                     beta
     ) const;
   
   void euclidean_applyTranspose_impl(
     const EConj                            conj
     ,const MultiVectorBase<RangeScalar>    &X
     ,MultiVectorBase<DomainScalar>         *Y
-    ,const Scalar                          alpha
-    ,const Scalar                          beta
+    ,const DomainScalar                    alpha
+    ,const DomainScalar                    beta
     ) const;
 
 }; // end class EuclideanLinearOpBase<Scalar>

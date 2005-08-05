@@ -115,9 +115,9 @@ namespace Thyra {
  * arguments:
 
  \code
-    ,const int                            numBlocks             = 0
-    ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]  = NULL
-    ,SolveStatus<Scalar>                  blockSolveStatus[]    = NULL
+    ,const int                                    numBlocks             = 0
+    ,const BlockSolveCriteria<PromotedScalar>     blockSolveCriteria[]  = NULL
+    ,SolveStatus<PromotedScalar>                  blockSolveStatus[]    = NULL
  \endcode
  *
  * The array arguments <tt>blockSolveCriteria[]</tt> and
@@ -314,8 +314,8 @@ template <class RangeScalar, class DomainScalar = RangeScalar>
 class LinearOpWithSolveBase : virtual public LinearOpBase<RangeScalar,DomainScalar> {
 public:
 
-  /** \brief .*/
-  typedef typename Teuchos::PromotionTraits<RangeScalar,DomainScalar>::promote  Scalar;
+  /** \brief Local typedef for promoted scalar type.*/
+  typedef typename Teuchos::PromotionTraits<RangeScalar,DomainScalar>::promote PromotedScalar;
   
   /** @name Pure virtual functions that must be overridden in subclasses */
   //@{
@@ -376,12 +376,12 @@ public:
    * <tt>blockSolveCriteria[]</tt> and <tt>blockSolveStatus[]</tt>.
    */
   virtual void solve(
-    const EConj                           conj
-    ,const MultiVectorBase<RangeScalar>   &B
-    ,MultiVectorBase<DomainScalar>        *X
-    ,const int                            numBlocks             = 0
-    ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]  = NULL
-    ,SolveStatus<Scalar>                  blockSolveStatus[]    = NULL
+    const EConj                                   conj
+    ,const MultiVectorBase<RangeScalar>           &B
+    ,MultiVectorBase<DomainScalar>                *X
+    ,const int                                    numBlocks             = 0
+    ,const BlockSolveCriteria<PromotedScalar>     blockSolveCriteria[]  = NULL
+    ,SolveStatus<PromotedScalar>                  blockSolveStatus[]    = NULL
     ) const = 0;
 
   //@}
@@ -479,12 +479,12 @@ public:
    * <tt>blockSolveCriteria[]</tt> and <tt>blockSolveStatus[]</tt>.
    */
   virtual void solveTranspose(
-    const EConj                           conj
-    ,const MultiVectorBase<DomainScalar>  &B
-    ,MultiVectorBase<RangeScalar>         *X
-    ,const int                            numBlocks             = 0
-    ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]  = NULL
-    ,SolveStatus<Scalar>                  blockSolveStatus[]    = NULL
+    const EConj                                   conj
+    ,const MultiVectorBase<DomainScalar>          &B
+    ,MultiVectorBase<RangeScalar>                 *X
+    ,const int                                    numBlocks             = 0
+    ,const BlockSolveCriteria<PromotedScalar>     blockSolveCriteria[]  = NULL
+    ,SolveStatus<PromotedScalar>                  blockSolveStatus[]    = NULL
     ) const;
 
   //@}
@@ -556,21 +556,21 @@ solve(
  * \ingroup Thyra_LinearOpWithSolveBase_helper_grp
  */
 template<class RangeScalar, class DomainScalar>
-SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>
+SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
 solve(
   const LinearOpWithSolveBase<RangeScalar,DomainScalar>   &A
   ,const EConj                                            conj
   ,const MultiVectorBase<RangeScalar>                     &B
   ,MultiVectorBase<DomainScalar>                          *X
-  ,const SolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>
+  ,const SolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
                                                           *solveCriteria
 #ifndef __sun
                                                                           = NULL
 #endif
   )
 {
-  typedef BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>  BSC;
-  typedef SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>         BSS;
+  typedef BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>  BSC;
+  typedef SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>         BSS;
   BSC blockSolveCriteria[1];
   BSS blockSolveStatus[1];
   if(solveCriteria)
@@ -586,7 +586,7 @@ solve(
 #ifdef __sun
 
 template<class RangeScalar, class DomainScalar>
-SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>
+SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
 solve(
   const LinearOpWithSolveBase<RangeScalar,DomainScalar>   &A
   ,const EConj                                            conj
@@ -607,21 +607,21 @@ solve(
  * \ingroup Thyra_LinearOpWithSolveBase_helper_grp
  */
 template <class RangeScalar, class DomainScalar>
-SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>
+SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
 solveTranspose(
   const LinearOpWithSolveBase<RangeScalar,DomainScalar>   &A
   ,const EConj                                            conj
   ,const MultiVectorBase<DomainScalar>                    &B
   ,MultiVectorBase<RangeScalar>                           *X
-  ,const SolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>
+  ,const SolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
                                                           *solveCriteria
 #ifndef __sun
                                                                           = NULL
 #endif
   )
 {
-  typedef BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>  BSC;
-  typedef SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>         BSS;
+  typedef BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>  BSC;
+  typedef SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>         BSS;
   BSC blockSolveCriteria[1];
   BSS blockSolveStatus[1];
   if(solveCriteria)
@@ -637,7 +637,7 @@ solveTranspose(
 #ifdef __sun
 
 template <class RangeScalar, class DomainScalar>
-SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>
+SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
 solveTranspose(
   const LinearOpWithSolveBase<RangeScalar,DomainScalar>   &A
   ,const EConj                                            conj
@@ -664,12 +664,12 @@ void solve(
   ,const MultiVectorBase<RangeScalar>                     &B
   ,MultiVectorBase<DomainScalar>                          *X
   ,const int                                              numBlocks
-  ,const BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>
+  ,const BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
                                                           blockSolveCriteria[]
 #ifndef __sun
                                                                                 = NULL
 #endif
-  ,SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>
+  ,SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
                                                           blockSolveStatus[]
 #ifndef __sun
                                                                                 = NULL
@@ -688,7 +688,7 @@ void solve(
   ,const MultiVectorBase<RangeScalar>                     &B
   ,MultiVectorBase<DomainScalar>                          *X
   ,const int                                              numBlocks
-  ,const BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>
+  ,const BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
                                                           blockSolveCriteria[]
   )
 {
@@ -723,12 +723,12 @@ void solveTranspose(
   ,const MultiVectorBase<DomainScalar>                    &B
   ,MultiVectorBase<RangeScalar>                           *X
   ,const int                                              numBlocks
-  ,const BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>
+  ,const BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
                                                           blockSolveCriteria[]
 #ifndef __sun
                                                                                 = NULL
 #endif
-  ,SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>
+  ,SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
                                                           blockSolveStatus[]
 #ifndef __sun
                                                                                 = NULL
@@ -747,7 +747,7 @@ void solveTranspose(
   ,const MultiVectorBase<DomainScalar>                    &B
   ,MultiVectorBase<RangeScalar>                           *X
   ,const int                                              numBlocks
-  ,const BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::Scalar>
+  ,const BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
                                                           blockSolveCriteria[]
   )
 {

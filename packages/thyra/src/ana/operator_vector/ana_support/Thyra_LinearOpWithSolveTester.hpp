@@ -285,7 +285,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         oss <<endl<<li<<is<< "v3 = inv(Op)*v2 ...\n" ;
         Teuchos::RefCountPtr<VectorBase<DomainScalar> > v3 = createMember(domain);
         SolveCriteria<Scalar> solveCriteria(SOLVE_TOL_REL_RESIDUAL_NORM,forward_residual_solve_tol());
-        SolveStatus<Scalar> solveStatus = solve(op,NONCONJ_ELE,*v2,&*v3,&solveCriteria);
+        SolveStatus<Scalar> solveStatus = solve<RangeScalar,DomainScalar>(op,NONCONJ_ELE,*v2,&*v3,&solveCriteria);
         if(dump_all()) oss <<endl<<li<<is<< "v3 =\n" << describe(*v3,verbLevel,li,is);
         oss
           <<endl<<li<<is<< "solve status:"

@@ -42,7 +42,7 @@ namespace Thyra {
 template<class RangeScalar, class DomainScalar>
 bool LinearOpBase<RangeScalar,DomainScalar>::applySupports( const EConj conj ) const
 {
-  return ( Teuchos::ScalarTraits<Scalar>::isComplex ? conj==NONCONJ_ELE : true );
+  return ( Teuchos::ScalarTraits<RangeScalar>::isComplex ? conj==NONCONJ_ELE : true );
 }
 
 template<class RangeScalar, class DomainScalar>

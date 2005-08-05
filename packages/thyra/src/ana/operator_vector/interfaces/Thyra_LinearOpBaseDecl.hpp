@@ -120,9 +120,6 @@ template<class RangeScalar, class DomainScalar>
 class LinearOpBase : virtual public Teuchos::Describable {
 public:
 
-  /** \brief .*/
-  typedef typename Teuchos::PromotionTraits<RangeScalar,DomainScalar>::promote  Scalar;
-
   /** @name Pure virtual functions (must be overridden by subclass) */
   //@{
 

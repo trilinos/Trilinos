@@ -212,7 +212,6 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
 {
 
   using std::endl;
-  typedef typename LinearOpBase<RangeScalar,DomainScalar>::Scalar Scalar;
   typedef Teuchos::ScalarTraits<RangeScalar>  RST;
   typedef Teuchos::ScalarTraits<DomainScalar> DST;
   bool success = true, result;
@@ -569,7 +568,6 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
 
   using std::endl;
   using Teuchos::arrayArg;
-  typedef typename LinearOpBase<RangeScalar,DomainScalar>::Scalar Scalar;
   typedef Teuchos::ScalarTraits<RangeScalar>  RST;
   typedef Teuchos::ScalarTraits<DomainScalar> DST;
   bool success = true, result;

@@ -75,16 +75,13 @@ class LinearOpWithSolveTester {
 public:
 
   /** \brief . */
-  typedef typename Teuchos::ScalarTraits<RangeScalar>::magnitudeType RangeScalarMag;
-
+  typedef typename Teuchos::ScalarTraits<RangeScalar>::magnitudeType              RangeScalarMag;
   /** \brief . */
-  typedef typename Teuchos::ScalarTraits<DomainScalar>::magnitudeType DomainScalarMag;
-
+  typedef typename Teuchos::ScalarTraits<DomainScalar>::magnitudeType             DomainScalarMag;
   /** \brief . */
-  typedef typename Teuchos::PromotionTraits<RangeScalar,DomainScalar>::promote Scalar;
-
+  typedef typename Teuchos::PromotionTraits<RangeScalar,DomainScalar>::promote    Scalar;
   /** \brief . */
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType                   ScalarMag;
 
   /** \brief Default constructor which sets default parameter values.
    *

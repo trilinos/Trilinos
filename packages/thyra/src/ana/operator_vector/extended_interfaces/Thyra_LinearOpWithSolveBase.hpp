@@ -60,17 +60,17 @@ bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveTransposeSupportsSolv
 
 template <class RangeScalar, class DomainScalar>
 void LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveTranspose(
-  const EConj                           conj
-  ,const MultiVectorBase<DomainScalar>  &B
-  ,MultiVectorBase<RangeScalar>         *X
-  ,const int                            numBlocks
-  ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]
-  ,SolveStatus<Scalar>                  blockSolveStatus[]
+  const EConj                                   conj
+  ,const MultiVectorBase<DomainScalar>          &B
+  ,MultiVectorBase<RangeScalar>                 *X
+  ,const int                                    numBlocks
+  ,const BlockSolveCriteria<PromotedScalar>     blockSolveCriteria[]
+  ,SolveStatus<PromotedScalar>                  blockSolveStatus[]
   ) const
 {
   TEST_FOR_EXCEPTION(
     true,std::logic_error
-    ,"LinearOpWithSolveBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::solveTranspose(...): "
+    ,"LinearOpWithSolveBase<"<<Teuchos::ScalarTraits<RangeScalar>::name()<<","<<Teuchos::ScalarTraits<DomainScalar>::name()<<">::solveTranspose(...): "
     "Error, the concrete subclass described as { " << this->description() << " } "
     " with this->solveTransposeSupportsConj("<<toString(conj)<<")="<<this->solveTransposeSupportsConj(conj)
     << " did not override this function and does not support transposes."

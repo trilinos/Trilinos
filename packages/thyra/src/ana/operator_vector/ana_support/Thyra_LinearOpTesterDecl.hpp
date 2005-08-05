@@ -56,8 +56,11 @@ template<class RangeScalar, class DomainScalar = RangeScalar>
 class LinearOpTester {
 public:
 
-  /** \brief Local typedef for scalar magnitude */
-  typedef typename Teuchos::ScalarTraits<typename LinearOpBase<RangeScalar,DomainScalar>::Scalar>::magnitudeType ScalarMag;
+  /** \brief Local typedef for promoted scalar type .*/
+  typedef typename Teuchos::PromotionTraits<RangeScalar,DomainScalar>::promote Scalar;
+
+  /** \brief Local typedef for promoted scalar magnitude */
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
   /** \brief Default constructor which sets default parameter values.
    *
