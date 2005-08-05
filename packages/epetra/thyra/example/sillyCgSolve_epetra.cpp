@@ -159,11 +159,11 @@ int main(int argc, char *argv[])
 		
 	}
 	catch( const std::exception &excpt ) {
-		std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
+		std::cerr << "p="<<procRank<<": *** Caught standard exception : " << excpt.what() << std::endl;
 		success = false;
 	}
 	catch( ... ) {
-		std::cerr << "*** Caught an unknown exception\n";
+		std::cerr << "p="<<procRank<<": *** Caught an unknown exception\n";
 		success = false;
 	}
 	

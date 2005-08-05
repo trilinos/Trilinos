@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 		// (C) Read in commandline options
 		//
 
-		int    globalDim                  = 4;
+		int    globalDim                  = 500;
 		bool   dumpAll                    = false;
 
 		CommandLineProcessor  clp(false); // Don't throw exceptions
@@ -169,11 +169,11 @@ int main(int argc, char *argv[])
 		
 	}
 	catch( const std::exception &excpt ) {
-		std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
+		std::cerr << "p="<<procRank<<": *** Caught standard exception : " << excpt.what() << std::endl;
 		success = false;
 	}
 	catch( ... ) {
-		std::cerr << "*** Caught an unknown exception\n";
+		std::cerr << "p="<<procRank<<": *** Caught an unknown exception\n";
 		success = false;
 	}
 	

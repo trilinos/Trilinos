@@ -80,18 +80,15 @@ Thyra::create_MPIVectorSpaceBase(
 			new MPIVectorSpaceStd<double>(
 				mpiComm
 				,localSubDim
-#ifdef _DEBUG
-				,-1                              // If debugging let MPI_All_reduce(...) be called for check!
-#else
-				,epetra_map->NumGlobalElements() // If not debugging avoid an MPI_All_reduce(...)!
-#endif
+				,epetra_map->NumGlobalElements()
 				)
 			);
 #ifndef _DEBUG
 			TEST_FOR_EXCEPTION(
 				vs->dim() != epetra_map->NumGlobalElements(), std::logic_error
-				,"create_MPIVectorSpaceBase(...): Error, the Epetra_BlockMap did not return the correct dimension!"
-				);
+				,"create_MPIVectorSpaceBase(...): Error, vs->dim() = "<<vs->dim()<<" != "
+        "epetra_map->NumGlobalElements() = "<<epetra_map->NumGlobalElements()<<"!"
+        );
 #endif		
 	Teuchos::set_extra_data( epetra_map, "epetra_map", &vs );
 	return vs;
