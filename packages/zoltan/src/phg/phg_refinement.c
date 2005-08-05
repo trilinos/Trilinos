@@ -24,11 +24,11 @@ extern "C" {
 #define USE_SERIAL_REFINEMENT_ON_ONE_PROC
 
 
-    /*
+/*
 #define _DEBUG        
 #define _DEBUG2
 #define _DEBUG3
-    */
+*/
     
 static ZOLTAN_PHG_REFINEMENT_FN refine_no;
 static ZOLTAN_PHG_REFINEMENT_FN refine_fm2;
@@ -420,7 +420,7 @@ static int refine_fm2 (ZZ *zz,
     int    *moves=NULL, *mark=NULL, *adj=NULL, passcnt=0;
     float  *gain=NULL, *lgain=NULL;
     int    best_cutsizeat, cont, successivefails=0;
-    double total_weight, weights[2], lweights[2],
+    double total_weight, weights[2], lweights[2], lwadjust[2],
         max_weight[2], lmax_weight[2];
     double targetw0, ltargetw0, minvw=DBL_MAX;
     double cutsize, best_cutsize, 
@@ -428,8 +428,8 @@ static int refine_fm2 (ZZ *zz,
     HEAP   heap[2];
     char   *yo="refine_fm2";
 #ifdef HANDLE_ISOLATED_VERTICES    
-    int    isomovecnt, isocnt=hg->nVtx; /* only root uses isocnt, isolated vertices
-                                           are kept at the end of moves array */
+    int    isocnt=hg->nVtx; /* only root uses isocnt, isolated vertices
+                               are kept at the end of moves array */
     int    *deg=NULL, *ldeg=NULL;
 #if 0
     double best_imbal;
@@ -542,7 +542,7 @@ static int refine_fm2 (ZZ *zz,
        we use lgain and gain, as ldeg, deg.*/
     if (hg->nVtx) {
         ldeg = (int *) lgain;
-        deg = (int *) gain;
+        deg = (int *) gain; /* null for non-root but that is fine */
         for (i = 0; i < hg->nVtx; ++i)
             ldeg[i] = hg->vindex[i+1] - hg->vindex[i];
         MPI_Reduce(ldeg, deg, hg->nVtx, MPI_INT, MPI_SUM, root.rank,
@@ -595,11 +595,11 @@ static int refine_fm2 (ZZ *zz,
         to = 1-from;
         
 #ifdef _DEBUG
-    /* Just for debugging */
+        /* Just for debugging */
         best_cutsize = Zoltan_PHG_Compute_NetCut(hgc, hg, part, p);
         if (best_cutsize!=cutsize) {
             errexit("%s: Initial cutsize=%.2lf Verify: total=%.2lf\n", uMe(hgc), cutsize,
-               best_cutsize);
+                    best_cutsize);
         }
         if (hgc->myProc_y==root.rank)
             for (i = 0; i< hg->nVtx; ++i)
@@ -636,15 +636,19 @@ static int refine_fm2 (ZZ *zz,
                could have compute the same moves concurrently; but for this
                version we'll do it in the root procs and broadcast */
 
-#ifdef HANDLE_ISOLATED_VERTICES                
+#ifdef HANDLE_ISOLATED_VERTICES
+            lwadjust[0] = lwadjust[1] = 0.0;
             for (i=isocnt; i < hg->nVtx; ++i) { /* go over isolated vertices */
-                int u = moves[i], pno=-part[u]-1;
+                int   u=moves[i], pno=-part[u]-1;
+                float w=hg->vwgt ? hg->vwgt[u] : 1.0;
 
                 if (pno<0 || pno>1)
                     errexit("heeeey pno=%d", pno);
                 /* let's remove it from its part */
-                lweights[pno] -= hg->vwgt ? hg->vwgt[u] : 1.0; 
+                lwadjust[pno] -= w;                
             }
+            lweights[0] += lwadjust[0];
+            lweights[1] += lwadjust[1];
 #endif
             
             /* Initialize the heaps and fill them with the gain values */
@@ -712,11 +716,11 @@ static int refine_fm2 (ZZ *zz,
 
 #ifdef _DEBUG
 	    if (v<0)
-	      uprintf(hgc, "EOLB @ %d there was no vertex to select: v=%d\n", movecnt, v);
+                uprintf(hgc, "EOLB @ %d there was no vertex to select: v=%d\n", movecnt, v);
 	    else if (neggaincnt >= maxneggain) 
-	      uprintf(hgc, "EOLB @ %d max neg move reached neggaincnt(%d) >= maxneggain\n", movecnt, neggaincnt, maxneggain);
+                uprintf(hgc, "EOLB @ %d max neg move reached neggaincnt(%d) >= maxneggain\n", movecnt, neggaincnt, maxneggain);
 	    else 
-	      uprintf(hgc, "EOLB @ %d balance constraint LW[%.1lf, %.1lf] and MAXW[%.1lf, %.1lf]\n", movecnt, lweights[0], lweights[1], lmax_weight[0], lmax_weight[1]);
+                uprintf(hgc, "EOLB @ %d balance constraint LW[%.1lf, %.1lf] and MAXW[%.1lf, %.1lf]\n", movecnt, lweights[0], lweights[1], lmax_weight[0], lmax_weight[1]);
 #endif
             
             /* roll back the moves without any improvement */
@@ -766,35 +770,32 @@ static int refine_fm2 (ZZ *zz,
             uprintf(hgc, "BEFORE ISOLATED VERTEX HANDLING WE *THINK* GLOBAL IMBALANCE is %.3lf\n", best_imbal);
 #endif
         
-        isomovecnt = 0;
         if (hgc->myProc_y==root.rank) {
             best_limbal = (ltargetw0==0.0) ? 0.0
                 : fabs(lweights[0]-ltargetw0)/ltargetw0;
             
             for (i=isocnt; i < hg->nVtx; ++i) { /* go over isolated vertices */
-                int u = moves[i], pno=-part[u]-1, npno;
+                int u = moves[i], npno;
+                float w=hg->vwgt ? hg->vwgt[u] : 1.0;
 
                 npno = (lweights[0] < ltargetw0) ? 0 : 1;
-                if (npno!=pno)
-                    moves[isomovecnt++] = u;
-                lweights[npno] += hg->vwgt ? hg->vwgt[u] : 1.0;                
+                lweights[npno] += w;
+                lwadjust[npno] += w;
                 part[u] = -(npno+1); /* move to npno (might be same as pno;
                                         so it may not be a real move */
             }
             limbal = (ltargetw0==0.0) ? 0.0
                 : fabs(lweights[0]-ltargetw0)/ltargetw0;
-#if 0            
+#if 0           
             uprintf(hgc, "before binpacking of %d isolated vertices balance was: %.3lf now: %.3lf\n", hg->nVtx-isocnt, best_limbal, limbal);
 #endif
         }
 
-        MPI_Bcast(&isomovecnt, 1, MPI_INT, root.rank, hgc->col_comm);
-        MPI_Bcast(moves, isomovecnt, MPI_INT, root.rank, hgc->col_comm);
-        if (hgc->myProc_y!=root.rank) { /* now non-root needs to move isolated vertices */
-            for (i=0; i<isomovecnt; ++i) /* we just need to update partno and lweights;
-                                            following function will do both for us */
-                    fm2_move_vertex_oneway_nonroot(moves[i], hg, part, lpins, lweights);
-        }
+        MPI_Bcast(lwadjust, 2, MPI_DOUBLE, root.rank, hgc->col_comm);
+        if (hgc->myProc_y!=root.rank) {
+            lweights[0] += lwadjust[0];
+            lweights[1] += lwadjust[1];
+        }            
 #endif        
         
         MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
@@ -824,7 +825,7 @@ static int refine_fm2 (ZZ *zz,
         else
             successivefails = 0; 
 #ifdef _DEBUG
-    /* Just for debugging */
+        /* Just for debugging */
         best_cutsize = Zoltan_PHG_Compute_NetCut(hgc, hg, part, p);
         imbal = (targetw0 == 0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;
         printf("%s End of Pass %d Comp.Cut=%.2lf RealCut=%.2lf W[%5.0lf, %5.0lf] Imbal=%.2lf\n", uMe(hgc), passcnt, cutsize, best_cutsize, weights[0], weights[1], imbal);
@@ -832,21 +833,34 @@ static int refine_fm2 (ZZ *zz,
 #endif
     } while (successivefails<2 &&  (++passcnt < hgp->fm_loop_limit));
 
-    if (hgc->myProc_y==root.rank) { /* only root needs mark, adj, gain and heaps*/
-#ifdef HANDLE_ISOLATED_VERTICES    
-        for (i=isocnt; i < hg->nVtx; ++i) { /* go over isolated vertices */
-            int u = moves[i], pno=-part[u]-1;
-            part[u] = pno; 
-        }
+
+#ifdef HANDLE_ISOLATED_VERTICES
+    /* now root sneds the final part no's of isolated vertices; if any */
+    MPI_Bcast(&isocnt, 1, MPI_INT, root.rank, hgc->col_comm);
+    if (isocnt<hg->nVtx) {
+        deg = (int *) lgain; /* we'll use for part no's of isolated vertices */
+        if (hgc->myProc_y==root.rank) 
+            for (i=isocnt; i < hg->nVtx; ++i) { /* go over isolated vertices */
+                int u = moves[i];
+                deg[i] = part[u] = -part[u]-1; 
+            }
+            
+        MPI_Bcast(&moves[isocnt], hg->nVtx-isocnt, MPI_INT, root.rank, hgc->col_comm);
+        MPI_Bcast(&deg[isocnt], hg->nVtx-isocnt, MPI_INT, root.rank, hgc->col_comm);
+        if (hgc->myProc_y!=root.rank) 
+            for (i=isocnt; i < hg->nVtx; ++i)  /* go over isolated vertices */
+                part[moves[i]] = deg[i];
+    }
+    
 #endif
+    if (hgc->myProc_y==root.rank) { /* only root needs mark, adj, gain and heaps*/        
         Zoltan_Multifree(__FILE__,__LINE__, 3, &mark, &adj, &gain);
         Zoltan_Heap_Free(&heap[0]);
         Zoltan_Heap_Free(&heap[1]);        
     }
     
  End:    
-    Zoltan_Multifree(__FILE__, __LINE__, 7, &pins[0], &lpins[0], &moves, &lgain,
-                     &mark, &adj, &gain);
+    Zoltan_Multifree(__FILE__, __LINE__, 4, &pins[0], &lpins[0], &moves, &lgain);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_OK;
 }
