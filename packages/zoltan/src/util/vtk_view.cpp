@@ -52,6 +52,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include <map>
 #include <iostream>
@@ -687,7 +688,7 @@ int read_broadcast_input_options(int &argc, char **argv)
               char *c = strchr(extra_options.line[i], '=');
               if (c){
                 c++;
-                while (*c && isblank(*c)) c++;
+                while (*c && !isgraph(*c)) c++;
                 if (*c){
                   strncpy(vis_opt_values[j], c, MAXVAL-1);
                   input_ok = 1;
