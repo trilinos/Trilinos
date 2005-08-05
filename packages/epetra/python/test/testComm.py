@@ -43,6 +43,7 @@ except ImportError:
     from PyTrilinos import Epetra
     print >>sys.stderr, "Using system-installed Epetra"
 
+import os
 import unittest
 from   Numeric    import *
 
@@ -52,7 +53,12 @@ class EpetraSerialCommTestCase(unittest.TestCase):
     "TestCase class for SerialComm communicator objects"
 
     def setUp(self):
-        self.comm = Epetra.SerialComm()
+        self.comm     = Epetra.SerialComm()
+        self.filename = os.path.splitext(os.path.split(__file__)[1])[0] + ".dat"
+        self.file     = open(self.filename, 'w')
+
+    def tearDown(self):
+        self.file.close()
 
     def testMyPID(self):
         "Test Epetra.SerialComm MyPID method"
@@ -61,6 +67,18 @@ class EpetraSerialCommTestCase(unittest.TestCase):
     def testNumProc(self):
         "Test Epetra.SerialComm NumProc method"
         self.assertEqual(self.comm.NumProc(), 1)
+
+    def testStr(self):
+        "Test Epetra.SerialComm __str__ method"
+        self.assertEqual(str(self.comm), "::Processor 0 of 1 total processors")
+
+    def testPrint(self):
+        "Test Epetra.SerialComm Print method"
+        self.comm.Print(self.file)
+        self.file.close()
+        ifile = open(self.filename,'r')
+        self.assertEqual(ifile.read(), "::Processor 0 of 1 total processors.")
+        ifile.close()
 
 ##########################################################################
 
