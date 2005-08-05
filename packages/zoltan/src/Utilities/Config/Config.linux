@@ -140,20 +140,20 @@ NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/linux/include
 #----------------------------------------------------------------
 # Definitions required to build vtk_view, the VTK application that
 # can be used to view Chaco and Exodus test files that have been
-# partitioned by zdrive.  This is a parallel C++ application and 
-# it requires MPI.  vtk_view requires VTK version 5.0, which is
-# not released at this time (August 2005).  When it is, it will be
-# available at www.vtk.org.  (The Chaco reader, the Exodus reader,
-# and the Exodus and netCDF libraries are new in version 5.0.)
-# Until then you can obtain the VTK nightly release at the same place.
+# partitioned by zdrive.  vtk_view is a parallel C++ application.
+# A pre-built version of vtk_view may be found on SNL's LAN in the
+# architecture specific "bin" directory.  To rebuild, you need
+# to provide paths to VTK libraries and include files.  There are
+# versions of these as well on the LAN.  The latest version VTK
+# may be obtained from www.vtk.org. 
 #
 # The location of the VTK libraries
 #
-VTK_LIBPATH = -L/usr/local/vtk/local/lib/vtk
+VTK_LIBPATH = -L/Net/local/proj/zoltan/arch/linux/lib/vtk
 
 # The location of the VTK header files
 #
-VTK_INCPATH = -I/usr/local/vtk/local/include/vtk
+VTK_INCPATH = -I/Net/local/proj/zoltan/arch/linux/include/vtk
 
 # The location of the X libraries, and the X libraries required, if any
 #
