@@ -51,10 +51,10 @@ except IOError:
 
 # Certain directory paths are needed by setup.py.  pakDir is the path for the
 # epetra package directory, and srcDir is the path for the python source directory
-pakDir   = makeInfo.get("top_srcdir","")
-srcDir   = makeInfo.get("srcdir"    ,"")
-buildDir = makeInfo.get("top_builddir"    ,"")
-CXX      = makeInfo.get("CXX")
+pakDir   = makeInfo.get("top_srcdir",  "")
+srcDir   = makeInfo.get("srcdir"    ,  "")
+buildDir = makeInfo.get("top_builddir","")
+CXX      = makeInfo.get("CXX",         "")
 
 # Obtain the version from the package version function, using regular
 # expressions.  This assumes that the function returns a string constant of the
@@ -74,11 +74,16 @@ try:
 except IOError:
     pass
 
+# Define the PyTrilinos include path, library directory and library name
+pytrilinosInc    = os.path.join(pakDir,   "..", "PyTrilinos", "src")
+pytrilinosLibDir = os.path.join(buildDir, "..", "PyTrilinos", "src")
+pytrilinosLib    = "pytrilinos"
+
 # Define the epetra include path, library directory and library name
-epetraInc    = os.path.join(pakDir, "src")
-epetraBuildInc    = os.path.join(buildDir, "src")
-epetraLibDir = os.path.join("..", "..", "src")
-epetraLib    = "epetra"
+epetraInc      = os.path.join(pakDir, "src")
+epetraBuildInc = os.path.join(buildDir, "src")
+epetraLibDir   = os.path.join("..", "..", "src")
+epetraLib      = "epetra"
 
 # Standard libraries.  This is currently a hack.  The library "stdc++" is added
 # to the standard library list for a case where we know it needs it.
@@ -90,7 +95,7 @@ if sysName == "Linux":
 # Create the extra arguments list and complete the standard libraries list.  This
 # is accomplished by looping over the arguments in LDFLAGS, FLIBS and LIBS and
 # adding them to the appropriate list.
-extraArgs = []
+extraArgs = [ ]
 libs = makeInfo.get("LDFLAGS"    ,"").split() + \
        makeInfo.get("BLAS_LIBS"  ,"").split() + \
        makeInfo.get("LAPACK_LIBS","").split() + \
@@ -105,8 +110,8 @@ for lib in libs:
 # Define the strings that refer to the required source files.
 wrapEpetra         = "Epetra_wrap.cpp"
 epetraNumPyVector  = os.path.join(srcDir,"Epetra_NumPyVector.cpp" )
-numPyArray         = os.path.join(srcDir,"NumPyArray.cpp"         )
-numPyWrapper       = os.path.join(srcDir,"NumPyWrapper.cpp"       )
+#numPyArray         = os.path.join(srcDir,"NumPyArray.cpp"         )
+#numPyWrapper       = os.path.join(srcDir,"NumPyWrapper.cpp"       )
 
 # compiler and linker
 sysconfig.get_config_vars()
@@ -117,13 +122,12 @@ config_vars['CXX'] = CXX
 # _Epetra extension module
 _Epetra = Extension("PyTrilinos._Epetra",
                     [wrapEpetra,
-                     epetraNumPyVector,
-                     numPyArray,
-                     numPyWrapper      ],
+                     epetraNumPyVector #, numPyArray, numPyWrapper
+                     ],
                     define_macros   = [('HAVE_CONFIG_H', '1')],
-                    include_dirs    = [epetraInc, epetraBuildInc, srcDir],
-                    library_dirs    = [epetraLibDir],
-                    libraries       = [epetraLib] + stdLibs,
+                    include_dirs    = [pytrilinosInc, epetraInc, epetraBuildInc, srcDir],
+                    library_dirs    = [pytrilinosLibDir, epetraLibDir],
+                    libraries       = [pytrilinosLib, epetraLib] + stdLibs,
                     extra_link_args = extraArgs
                     )
 

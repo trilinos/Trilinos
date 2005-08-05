@@ -30,16 +30,17 @@
 include $(top_srcdir)/config/swig.am
 @HAVE_MPI_TRUE@MPI_FLAG = -DHAVE_MPI
 
-SWIG_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir) \
-                -I$(top_builddir)/src \
+SWIG_CXXFLAGS = -I$(top_srcdir)/src               \
+	        -I$(srcdir)                       \
+                -I$(top_builddir)/src             \
+	        -I$(top_srcdir)/../PyTrilinos/src \
 		$(MPI_FLAG)
 
-EXTRA_DIST = Epetra.i setup.py \
-	     Epetra_NumPyVector.cpp FileStream.h      NumPyWrapper.h    \
-	     Epetra_NumPyVector.h   NumPyArray.cpp    numeric_include.h \
-	     Epetra_PyOperator.h    NumPyArray.h                        \
-	     Epetra_PyRowMatrix.h   NumPyWrapper.cpp
-
+EXTRA_DIST = Epetra.i setup.py      \
+	     Epetra_NumPyVector.cpp \
+	     Epetra_NumPyVector.h   \
+	     Epetra_PyOperator.h    \
+	     Epetra_PyRowMatrix.h
 
 # Default make target
 all-am: build
