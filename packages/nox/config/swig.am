@@ -34,30 +34,19 @@
 # dependency tracking for swig interface files is implemented.
 # ------------------------------------------------------------------------
 
+# Clean target.  Put the generated dependency files in the list of files to
+# be removed with a "make clean"
 CLEANFILES = $(DEPDIR)/*.Pi
-
-$(srcdir)/%.py: $(srcdir)/wrap_%.C
-
-if HAVE_SWIG
-
-#$(srcdir)/wrap_%.C: $(srcdir)/%.i 
-#	$(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS) -o $@ $<
 
 SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 
-$(srcdir)/wrap_%.C: $(srcdir)/%.i 
+# Wrapper and proxy targets
+%.py: %_wrap.cpp
+	mv %.py $@
+
+%_wrap.cpp: $(srcdir)/%.i 
 	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
 	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
 
-else
-
-$(srcdir)/wrap_%.C: $(srcdir)/%.i 
-	@echo 'Error swig is not enabled and'
-	@echo '$@ is out-of-date with respect to $<.'
-	@echo 'Rerun configure with --with-swig=[path-to-swig].'
-	@exit 1
-
-endif
-
 swigclean:
-	rm -f $(srcdir)/wrap_* $(WRAPPERS) 
+	rm -f $(srcdir)/*_wrap.cpp $(WRAPPERS) 

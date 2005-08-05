@@ -63,103 +63,25 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-#SUBDIRS = aztecoo epetra ifpack komplex petra tpetra triutils tsf TSF epetraext
-
-if BUILD_KOKKOS
-KOKKOS_SUBDIR = kokkos
-endif
-
-if BUILD_TSFCORE
-TSFCORE_SUBDIR = TSFCore
-endif
-
-if BUILD_TSFEXTENDED
-TSFEXTENDED_SUBDIR = TSFExtended
-endif
-
-if BUILD_TSFCOREUTILS
-TSFCOREUTILS_SUBDIR = TSFCoreUtils
-endif
-
-if BUILD_EPETRAEXT
-EPETRAEXT_SUBDIR = epetraext
-endif
 
 if BUILD_AMESOS
 AMESOS_SUBDIR = amesos
-endif
-
-if BUILD_BELOS
-BELOS_SUBDIR = belos
 endif
 
 if BUILD_ANASAZI
 ANASAZI_SUBDIR = anasazi
 endif
 
-## #np# - Copy the next three lines, and change the name
-if BUILD_NEW_PACKAGE
-NEW_PACKAGE_SUBDIR = new_package
-endif
-
-if BUILD_PYTRILINOS
-PYTRILINOS_SUBDIR = PyTrilinos 
-endif
-
-if BUILD_PLIRIS
-PLIRIS_SUBDIR = pliris
-endif
-
-if BUILD_RYTHMOS
-RYTHMOS_SUBDIR = rythmos
-endif
-
-if BUILD_TPETRA
-TPETRA_SUBDIR = tpetra
-endif
-
-if BUILD_TEUCHOS
-TEUCHOS_SUBDIR = teuchos
-endif
-
-if BUILD_THYRA
-THYRA_SUBDIR = thyra
-endif
-
-if BUILD_NOX
-NOX_SUBDIR = nox
-endif
-
-if BUILD_KOMPLEX
-KOMPLEX_SUBDIR = komplex
-endif
-
 if BUILD_AZTECOO
 AZTECOO_SUBDIR = aztecoo
 endif
 
-if BUILD_IFPACK
-IFPACK_SUBDIR = ifpack
+if BUILD_BELOS
+BELOS_SUBDIR = belos
 endif
 
-if BUILD_TRIUTILS
-TRIUTILS_SUBDIR = triutils
-endif
-
-if BUILD_EPETRA
-EPETRA_SUBDIR = epetra
-endif
-
-if BUILD_TSF
-TSF_SUBDIR = TSF
-endif
-
-if BUILD_MEROS
-MEROS_SUBDIR = meros
-endif
-
-if BUILD_ML
-ML_SUBDIR = ml
+if BUILD_CAPO
+CAPO_SUBDIR = capo
 endif
 
 if BUILD_CLAPS
@@ -170,23 +92,112 @@ if BUILD_DIDASKO
 DIDASKO_SUBDIR = didasko
 endif
 
-if BUILD_CAPO
-CAPO_SUBDIR = capo
+if BUILD_EPETRA
+EPETRA_SUBDIR = epetra
+endif
+
+if BUILD_EPETRAEXT
+EPETRAEXT_SUBDIR = epetraext
+endif
+
+if BUILD_IFPACK
+IFPACK_SUBDIR = ifpack
+endif
+
+if BUILD_KOKKOS
+KOKKOS_SUBDIR = kokkos
+endif
+
+if BUILD_KOMPLEX
+KOMPLEX_SUBDIR = komplex
+endif
+
+if BUILD_MEROS
+MEROS_SUBDIR = meros
+endif
+
+if BUILD_ML
+ML_SUBDIR = ml
+endif
+
+if BUILD_NEW_PACKAGE
+NEW_PACKAGE_SUBDIR = new_package
+endif
+
+if BUILD_NOX
+NOX_SUBDIR = nox
+endif
+
+if BUILD_PLIRIS
+PLIRIS_SUBDIR = pliris
+endif
+
+if BUILD_PYTRILINOS
+PYTRILINOS_SUBDIR = PyTrilinos 
+endif
+
+if BUILD_RYTHMOS
+RYTHMOS_SUBDIR = rythmos
+endif
+
+if BUILD_TEUCHOS
+TEUCHOS_SUBDIR = teuchos
+endif
+
+if BUILD_THYRA
+THYRA_SUBDIR = thyra
+endif
+
+if BUILD_TPETRA
+TPETRA_SUBDIR = tpetra
+endif
+
+if BUILD_TRIUTILS
+TRIUTILS_SUBDIR = triutils
+endif
+
+if BUILD_TSF
+TSF_SUBDIR = TSF
+endif
+
+if BUILD_TSFCORE
+TSFCORE_SUBDIR = TSFCore
+endif
+
+if BUILD_TSFCOREUTILS
+TSFCOREUTILS_SUBDIR = TSFCoreUtils
+endif
+
+if BUILD_TSFEXTENDED
+TSFEXTENDED_SUBDIR = TSFExtended
 endif
 
 # Must list the packages in the order that they are built!
-## #np# - Add your subdir, i.e. $(NEW_PACKAGE_SUBDIR) which is defined 
-## above, to this list
-SUBDIRS = $(TEUCHOS_SUBDIR) $(THYRA_SUBDIR) $(KOKKOS_SUBDIR) $(EPETRA_SUBDIR) \
-	  $(TRIUTILS_SUBDIR) $(TPETRA_SUBDIR) $(AZTECOO_SUBDIR) \
-	  $(EPETRAEXT_SUBDIR) $(AMESOS_SUBDIR) \
-	  $(IFPACK_SUBDIR) $(KOMPLEX_SUBDIR) \
-	  $(CLAPS_SUBDIR) $(TSFCOREUTILS_SUBDIR) $(TSFCORE_SUBDIR) \
-          $(BELOS_SUBDIR) $(ANASAZI_SUBDIR) $(PLIRIS_SUBDIR) \
-	  $(ML_SUBDIR) \
-	  $(TSF_SUBDIR) $(TSFEXTENDED_SUBDIR) \
-	  $(MEROS_SUBDIR) $(NEW_PACKAGE_SUBDIR) \
-          $(NOX_SUBDIR) $(PYTRILINOS_SUBDIR) $(DIDASKO_SUBDIR) \
-	  $(CAPO_SUBDIR) $(RYTHMOS_SUBDIR) 
-
-
+SUBDIRS = \
+	$(TEUCHOS_SUBDIR)      \
+	$(PYTRILINOS_SUBDIR)   \
+	$(THYRA_SUBDIR)        \
+	$(KOKKOS_SUBDIR)       \
+	$(EPETRA_SUBDIR)       \
+	$(TRIUTILS_SUBDIR)     \
+	$(TPETRA_SUBDIR)       \
+	$(AZTECOO_SUBDIR)      \
+	$(EPETRAEXT_SUBDIR)    \
+	$(AMESOS_SUBDIR)       \
+	$(IFPACK_SUBDIR)       \
+	$(KOMPLEX_SUBDIR)      \
+	$(CLAPS_SUBDIR)        \
+	$(TSFCOREUTILS_SUBDIR) \
+	$(TSFCORE_SUBDIR)      \
+	$(BELOS_SUBDIR)        \
+	$(ANASAZI_SUBDIR)      \
+	$(PLIRIS_SUBDIR)       \
+	$(ML_SUBDIR)           \
+	$(TSF_SUBDIR)          \
+	$(TSFEXTENDED_SUBDIR)  \
+	$(MEROS_SUBDIR)        \
+	$(NOX_SUBDIR)          \
+	$(CAPO_SUBDIR)         \
+	$(RYTHMOS_SUBDIR)      \
+	$(NEW_PACKAGE_SUBDIR)  \
+	$(DIDASKO_SUBDIR)

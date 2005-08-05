@@ -65,10 +65,13 @@ all-local:
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
+if BUILD_PYTHON
+PYTHON_SUBDIR=python
+endif
+
 SUBDIRS = doc src src-lapack src-epetra src-tsf src-petsc src-belos \
           example-lapack example-epetra example-petsc example-belos \
-          example-tsf python src-loca \
-          test
+          example-tsf $(PYTHON_SUBDIR) src-loca test
 
 ## #######################################################################
 ## Documentation
