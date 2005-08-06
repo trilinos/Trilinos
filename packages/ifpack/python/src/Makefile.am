@@ -33,9 +33,10 @@ include $(top_builddir)/Makefile.export
 PYTHON_LIBS     = $(EXTRA_LIBS) $(IFPACK_LIBS)
 PYTHON_INCLUDES = $(IFPACK_INCLUDES)
 
-SWIG_CXXFLAGS = -I$(srcdir) \
-                $(PYTHON_INCLUDES) \
-                -I$(top_srcdir)/../epetra/python/src
+SWIG_CXXFLAGS = -I$(srcdir)                          \
+                $(PYTHON_INCLUDES)                   \
+                -I$(top_srcdir)/../epetra/python/src \
+		-I$(top_srcdir)/../PyTrilinos/src
 
 EXTRA_DIST = IFPACK.i setup.py
 

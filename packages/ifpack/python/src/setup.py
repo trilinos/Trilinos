@@ -55,14 +55,19 @@ pakDir   = makeInfo.get("top_srcdir","")
 srcDir   = makeInfo.get("srcdir","")
 CXX      = makeInfo.get("CXX")
 
+# Define the PyTrilinos include path, library directory and library name
+pytrilinosInc    = os.path.join(pakDir,   "..", "PyTrilinos", "src")
+pytrilinosLibDir = os.path.join(buildDir, "..", "PyTrilinos", "src")
+pytrilinosLib    = "pytrilinos"
+
 # Define the epetra include path, library directory and library name
 PyEpetraDir   = os.path.join(pakDir, "../epetra/python", "src")
 
 # setup standard information for includes, libraries, and extra agrs
-stdIncludes    = [srcDir, PyEpetraDir];
-stdLibs        = []
-stdLibraryLibs = []
-extraArgs      = []
+stdIncludes    = [srcDir, pytrilinosInc, PyEpetraDir];
+stdLibraryDirs = [pytrilinosLibDir]
+stdLibs        = [pytrilinosLib]
+extraArgs      = [ ]
 
 # Create the extra arguments list and complete the standard libraries list. 
 # This is accomplished by looping over the arguments in PYTHON_LIBS
@@ -73,7 +78,7 @@ for lib in am_libs:
     if lib[:2] == "-l":
         stdLibs.append(lib[2:])
     elif lib[:2] == "-L":
-        stdLibraryLibs.append(lib[2:])
+        stdLibraryDirs.append(lib[2:])
     else:
         extraArgs.append(lib)
 
@@ -83,7 +88,7 @@ for include in am_includes:
     else:
         extraArgs.append(include)
 
-# hack to fix linking under linux
+# Hack to fix linking under linux
 sysName = os.uname()[0]
 if sysName == "Linux":
     extraArgs.append("-lstdc++")
@@ -102,7 +107,7 @@ _IFPACK = Extension("PyTrilinos._IFPACK",
                     [wrapIFPACK],
                     define_macros=[('HAVE_CONFIG_H', '1')],
                     include_dirs    = stdIncludes,
-                    library_dirs    = stdLibraryLibs,
+                    library_dirs    = stdLibraryDirs,
                     libraries       = stdLibs,
                     extra_link_args = extraArgs
                     )
