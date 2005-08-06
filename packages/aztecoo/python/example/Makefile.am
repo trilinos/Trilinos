@@ -58,5 +58,5 @@ exSimple:
 	if [ $(srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
 clean:
-	if [ $(srcdir) != @abs_top_builddir@ ]; then /bin/rm *.py ; fi
+	if [ $(srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
 	/bin/rm -f *.pyc

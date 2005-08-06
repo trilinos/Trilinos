@@ -3,7 +3,7 @@
 # @HEADER
 # ************************************************************************
 #
-#              PyTrilinos.Amesos : Python Interface to Amesos 
+#             PyTrilinos.AztecOO: Python Interface to AztecOO
 #                   Copyright (2005) Sandia Corporation
 #
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -55,14 +55,19 @@ pakDir     = makeInfo.get("top_srcdir","")
 srcDir     = makeInfo.get("srcdir","")
 CXX        = makeInfo.get("CXX")
 
+# Define the PyTrilinos include path, library directory and library name
+pytrilinosInc    = os.path.join(pakDir,   "..", "PyTrilinos", "src")
+pytrilinosLibDir = os.path.join(buildDir, "..", "PyTrilinos", "src")
+pytrilinosLib    = "pytrilinos"
+
 # Define the epetra include path, library directory and library name
-PyEpetraDir   = os.path.join(pakDir, "../epetra/python", "src")
+PyEpetraDir   = os.path.join(pakDir, "..", "epetra", "python", "src")
 
 # setup standard information for includes, libraries, and extra agrs
-stdIncludes    = [srcDir, PyEpetraDir];
-stdLibs        = []
-stdLibraryLibs = []
-extraArgs      = []
+stdIncludes = [srcDir, pytrilinosInc, PyEpetraDir];
+stdLibDirs  = [pytrilinosLibDir]
+stdLibs     = [pytrilinosLib]
+extraArgs   = [ ]
 
 # Create the extra arguments list and complete the standard libraries list. 
 am_libs     = makeInfo.get("AZTECOO_LIBS" ,"").split() 
@@ -72,7 +77,7 @@ for lib in am_libs:
     if lib[:2] == "-l":
         stdLibs.append(lib[2:])
     elif lib[:2] == "-L":
-        stdLibraryLibs.append(lib[2:])
+        stdLibDirs.append(lib[2:])
     else:
         extraArgs.append(lib)
 
@@ -82,15 +87,15 @@ for include in am_includes:
     else:
         extraArgs.append(include)
 
-# hack to fix linking under linux
+# Hack to fix linking under linux
 sysName = os.uname()[0]
 if sysName == "Linux":
     extraArgs.append("-lstdc++")
 
 # Define the strings that refer to the required source files.
-wrapAztecOO          = "AztecOO_wrap.cpp"
+wrapAztecOO = "AztecOO_wrap.cpp"
 
-# compiler and linker
+# Compiler and linker
 sysconfig.get_config_vars()
 config_vars = sysconfig._config_vars;
 config_vars['CC'] = CXX
@@ -101,7 +106,7 @@ _AztecOO = Extension("PyTrilinos._AztecOO",
                     [wrapAztecOO],
                     define_macros=[('HAVE_CONFIG_H', '1')],
                     include_dirs    = stdIncludes,
-                    library_dirs    = stdLibraryLibs,
+                    library_dirs    = stdLibDirs,
                     libraries       = stdLibs,
                     extra_link_args = extraArgs
                     )

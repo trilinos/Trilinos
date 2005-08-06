@@ -31,8 +31,9 @@ include  $(top_builddir)/Makefile.export.aztecoo
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = $(AZTECOO_INCLUDES) \
-                -I$(top_srcdir)/../epetra/python/src
+SWIG_CXXFLAGS = $(AZTECOO_INCLUDES)                  \
+                -I$(top_srcdir)/../epetra/python/src \
+		-I$(top_srcdir)/../PyTrilinos/src
 
 EXTRA_DIST = AztecOO.i setup.py
 
