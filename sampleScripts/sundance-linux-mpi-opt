@@ -11,20 +11,19 @@
 BUILD_DIR=`pwd`
 
 ../configure --enable-mpi --with-mpi-compilers \
-CXXFLAGS="-O3 -finline-functions -funroll-loops -Wreturn-type" \
+CXXFLAGS="-O3 -finline-functions -funroll-loops -Wreturn-type -ansi -pedantic " \
 --with-libs="-lexpat" \
+--disable-default-packages \
+--enable-teuchos --enable-teuchos-extended \
+--enable-teuchos-complex --enable-teuchos-expat \
+--enable-thyra \
+--enable-epetra --enable-epetra-thyra \
 --enable-tsfextended \
---enable-tsfcore \
---enable-tsfcore-epetra \
---enable-tsfcore-mpi \
---enable-tsfcore-aztecoo \
---enable-teuchos \
---enable-teuchos-expat \
 --enable-ml \
---enable-epetraext \
---enable-teuchos-extended \
---disable-new-package \
 --disable-ml-examples \
+--enable-epetraext \
+--enable-aztecoo \
+--enable-ifpack \
 --enable-nox \
 --enable-nox-tsf \
 --enable-nox-tsf-examples \

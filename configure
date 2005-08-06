@@ -3005,8 +3005,7 @@ else
 fi
 
 
-if test "X$ac_cv_use_tsfcore" != "Xno" ||
-	test "X$ac_cv_use_tsfextended" != "Xno"; then
+if test "X$ac_cv_use_tsfcore" != "Xno"; then
 
 
 subdirs="$subdirs packages/TSFCore"
@@ -3053,7 +3052,6 @@ fi
 
 
 if test "X$ac_cv_use_tsfcore" != "Xno" ||
-        test "X$ac_cv_use_tsfextended" != "Xno" ||
 	test "X$ac_cv_use_tsfcoreutils" != "Xno"; then
 
 

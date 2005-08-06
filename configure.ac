@@ -276,8 +276,7 @@ else
 fi
 AM_CONDITIONAL(BUILD_TSF, test "X$BUILD_TSF" != "Xno")
 
-if test "X$ac_cv_use_tsfcore" != "Xno" ||
-	test "X$ac_cv_use_tsfextended" != "Xno"; then
+if test "X$ac_cv_use_tsfcore" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/TSFCore])
   BUILD_TSFCORE=yes
   if test "X$ac_cv_use_tsfcore_explicit" != "Xyes"; then
@@ -300,7 +299,6 @@ fi
 AM_CONDITIONAL(BUILD_TSFEXTENDED, test "X$BUILD_TSFEXTENDED" != "Xno")
 
 if test "X$ac_cv_use_tsfcore" != "Xno" || 
-        test "X$ac_cv_use_tsfextended" != "Xno" ||
 	test "X$ac_cv_use_tsfcoreutils" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/TSFCoreUtils])
   BUILD_TSFCOREUTILS=yes

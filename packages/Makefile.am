@@ -173,6 +173,7 @@ TSFEXTENDED_SUBDIR = TSFExtended
 endif
 
 # Must list the packages in the order that they are built!
+
 SUBDIRS = \
 	$(TEUCHOS_SUBDIR)      \
 	$(PYTRILINOS_SUBDIR)   \
@@ -194,10 +195,10 @@ SUBDIRS = \
 	$(PLIRIS_SUBDIR)       \
 	$(ML_SUBDIR)           \
 	$(TSF_SUBDIR)          \
-	$(TSFEXTENDED_SUBDIR)  \
 	$(MEROS_SUBDIR)        \
 	$(NOX_SUBDIR)          \
 	$(CAPO_SUBDIR)         \
 	$(RYTHMOS_SUBDIR)      \
 	$(NEW_PACKAGE_SUBDIR)  \
+	$(TSFEXTENDED_SUBDIR)  \
 	$(DIDASKO_SUBDIR)

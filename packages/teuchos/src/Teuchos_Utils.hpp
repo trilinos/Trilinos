@@ -71,15 +71,15 @@ namespace Teuchos
        */
       static string toString(const unsigned int& x);
 
-      /**
-       * IEEE positive infinity
-       */
-      static double infinity() {return HUGE_VAL;}
+//       /**
+//        * IEEE positive infinity
+//        */
+//       static double infinity() {return HUGE_VAL;}
 
-      /**
-       * IEEE negative infinity
-       */
-      static double negativeInfinity() {return -HUGE_VAL;}
+//       /**
+//        * IEEE negative infinity
+//        */
+//       static double negativeInfinity() {return -HUGE_VAL;}
 
       /**
        * pi.
