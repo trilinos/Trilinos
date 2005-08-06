@@ -858,8 +858,6 @@ AC_CONFIG_FILES([
 		src/Makefile
                 src-lapack/Makefile
 		example-lapack/Makefile
-		src-tsf/Makefile
-		example-tsf/Makefile
 		src-epetra/Makefile
 		example-epetra/Makefile
 		example-epetra/1Dfem_linear/Makefile
