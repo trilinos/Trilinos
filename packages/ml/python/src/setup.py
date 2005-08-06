@@ -3,7 +3,7 @@
 # @HEADER
 # ************************************************************************
 #
-#              PyTrilinos.Amesos : Python Interface to Amesos 
+#                  PyTrilinos.ML: Python Interface to ML
 #                   Copyright (2005) Sandia Corporation
 #
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -59,30 +59,35 @@ CXX        = makeInfo.get("CXX")
 CXXFLAGS   = makeInfo.get("CXXFLAGS")
 
 
+# Define the pytrilinos include path, library directory and library name
+pytrilinosInc    = os.path.join(pakDir,   "..", "PyTrilinos", "src")
+pytrilinosLibDir = os.path.join(buildDir, "..", "PyTrilinos", "src")
+pytrilinosLib    = "pytrilinos"
+
 # Define the epetra include path, library directory and library name
-PyEpetraDir   = os.path.join(pakDir, "../epetra/python", "src")
+PyEpetraDir   = os.path.join(pakDir, "..", "epetra", "python", "src")
 
 # setup standard information for includes, libraries, and extra agrs
-stdIncludes    = [srcDir, PyEpetraDir];
-stdLibs        = []
-stdLibraryLibs = []
-extraArgs      = []
+stdIncludes = [srcDir, pytrilinosInc, PyEpetraDir];
+stdLibs     = [pytrilinosLib]
+stdLibDirs  = [pytrilinosLibDir]
+extraArgs   = [ ]
 
 # Create the extra arguments list and complete the standard libraries list.
-am_libs     = makeInfo.get("ML_LIBS"      ,"").split() 
-am_includes = makeInfo.get("ML_INCLUDES" ,"").split()
+am_libs     = makeInfo.get("ML_LIBS",     "").split() 
+am_includes = makeInfo.get("ML_INCLUDES", "").split()
 
 for lib in am_libs:
     if lib[:2] == "-l":
         stdLibs.append(lib[2:])
     elif lib[:2] == "-L":
-        stdLibraryLibs.append(lib[2:])
+        stdLibDirs.append(lib[2:])
     else:
         extraArgs.append(lib)
 
 for lib in makeInfo.get("LIBS","").split():
     if lib[:2] == "-L":
-        stdLibraryLibs.append(lib[2:])
+        stdLibDirs.append(lib[2:])
     else:
         extraArgs.append(lib)
 
@@ -112,7 +117,7 @@ _ML = Extension("PyTrilinos._ML",
                     [wrapML],
                     define_macros=[('HAVE_CONFIG_H', '1')],
                     include_dirs    = stdIncludes,
-                    library_dirs    = stdLibraryLibs,
+                    library_dirs    = stdLibDirs,
                     libraries       = stdLibs,
                     extra_link_args = extraArgs
                     )

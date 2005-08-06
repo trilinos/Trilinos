@@ -31,9 +31,10 @@ include  $(top_builddir)/Makefile.export
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = -I$(srcdir) \
-                $(ML_INCLUDES) \
-                -I$(top_srcdir)/../epetra/python/src
+SWIG_CXXFLAGS = -I$(srcdir)                          \
+                $(ML_INCLUDES)                       \
+                -I$(top_srcdir)/../epetra/python/src \
+		-I$(top_srcdir)/../PyTrilinos/src
 
 EXTRA_DIST = ML.i setup.py
 
