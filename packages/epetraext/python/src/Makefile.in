@@ -17,7 +17,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#              PyTrilinos.Epetra: Python Interface to Epetra
+#           PyTrilinos.EpetraExt: Python Interface to EpetraExt
 #                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -306,8 +306,9 @@ CLEANFILES = $(DEPDIR)/*.Pi setup.txt $(WRAPPERS) $(PROXIES)
 
 # Define the SWIGCOMPILE macro
 SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
-SWIG_CXXFLAGS = $(EPETRAEXT_INCLUDES) \
-		-I$(top_srcdir)/../epetra/python/src
+SWIG_CXXFLAGS = $(EPETRAEXT_INCLUDES)                \
+		-I$(top_srcdir)/../epetra/python/src \
+		-I$(top_srcdir)/../PyTrilinos/src
 
 EXTRA_DIST = EpetraExt.i setup.py
 

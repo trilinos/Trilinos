@@ -73,6 +73,11 @@ try:
 except IOError:
     pass
 
+# Define the PyTrilinos include path, library directory and library name
+pytrilinosInc    = os.path.join(pakDir, "..", "PyTrilinos", "src")
+pytrilinosLibDir = os.path.join("..", "..", "..", "PyTrilinos", "src")
+pytrilinosLib    = "pytrilinos"
+
 # Define the epetra include path, library directory and library name
 epetraInc    = os.path.join(pakDir, "..", "epetra", "src")
 epetraLibDir = os.path.join("..", "..", "..", "epetra", "src")
@@ -115,9 +120,12 @@ config_vars['CXX'] = CXX
 # _Epetra extension module
 _EpetraExt = Extension("PyTrilinos._EpetraExt",
                        [epetraExtWrap],
-                       include_dirs    =  epetraExtInc + [epetraInc, srcDir],
-                       library_dirs    = [epetraLibDir, epetraExtLibDir],
-                       libraries       = [epetraExtLib, epetraLib] + stdLibs,
+                       include_dirs    =  epetraExtInc + [pytrilinosInc,
+                                                          epetraInc, srcDir],
+                       library_dirs    = [pytrilinosLibDir, epetraLibDir,
+                                          epetraExtLibDir],
+                       libraries       = [pytrilinosLib, epetraLib,
+                                          epetraExtLib] + stdLibs,
                        extra_link_args = extraArgs
                        )
 

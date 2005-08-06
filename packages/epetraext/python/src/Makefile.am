@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#              PyTrilinos.Epetra: Python Interface to Epetra
+#           PyTrilinos.EpetraExt: Python Interface to EpetraExt
 #                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -29,8 +29,9 @@
 # Include swig rules
 include $(top_builddir)/Makefile.export.epetraext
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = $(EPETRAEXT_INCLUDES) \
-		-I$(top_srcdir)/../epetra/python/src
+SWIG_CXXFLAGS = $(EPETRAEXT_INCLUDES)                \
+		-I$(top_srcdir)/../epetra/python/src \
+		-I$(top_srcdir)/../PyTrilinos/src
 
 EXTRA_DIST = EpetraExt.i setup.py
 
