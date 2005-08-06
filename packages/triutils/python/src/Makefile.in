@@ -279,8 +279,9 @@ CLEANFILES = $(DEPDIR)/*.Pi setup.txt $(WRAPPERS) $(PROXIES)
 SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 
 # Include swig rules
-SWIG_CXXFLAGS = -I$(TRIUTILS_INCLUDES) \
-                -I$(top_srcdir)/../epetra/python/src
+SWIG_CXXFLAGS = -I$(TRIUTILS_INCLUDES)               \
+                -I$(top_srcdir)/../epetra/python/src \
+		-I$(top_srcdir)/../PyTrilinos/src
 
 EXTRA_DIST = Triutils.i setup.py
 

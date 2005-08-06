@@ -3,7 +3,7 @@
 # @HEADER
 # ************************************************************************
 #
-#              PyTrilinos.Amesos : Python Interface to Amesos 
+#            PyTrilinos.Triutils: Python Interface to Triutils
 #                   Copyright (2005) Sandia Corporation
 #
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -56,17 +56,20 @@ srcDir     = makeInfo.get("srcdir","")
 CXX        = makeInfo.get("CXX")
 
 # Define the teuchos include path, library directory and library name
-TriutilsSrcDir   = os.path.join(pakDir, "../triutils", "src")
-TriutilsBuildDir = os.path.join(buildDir, "../triutils", "src")
-TriutilsLibDir   = os.path.join("..", "../../triutils", "src")
+TriutilsSrcDir   = os.path.join(pakDir,   "..", "triutils", "src")
+TriutilsLibDir   = os.path.join(buildDir, "..", "triutils", "src")
 TriutilsLib      = "triutils"
 
+# Define the pytrilinos include path, library directory and library name
+PyTrilinosInc    = os.path.join(pakDir,   "..", "PyTrilinos", "src")
+PyTrilinosLibDir = os.path.join(buildDir, "..", "PyTrilinos", "src")
+PyTrilinosLib    = "pytrilinos"
+
 # Define the epetra include path, library directory and library name
-EpetraSrcDir   = os.path.join(pakDir, "../epetra", "src")
-EpetraBuildDir = os.path.join(buildDir, "../epetra", "src")
-EpetraLibDir   = os.path.join("..", "../../epetra", "src")
+EpetraSrcDir   = os.path.join(pakDir,   "..", "epetra", "src")
+EpetraLibDir   = os.path.join(buildDir, "..", "epetra", "src")
 EpetraLib      = "epetra"
-PyEpetraDir   = os.path.join(pakDir, "../epetra/python", "src")
+PyEpetraDir    = os.path.join(pakDir, "../epetra/python", "src")
 
 # Standard libraries.  This is currently a hack.  The library "stdc++" is added
 # to the standard library list for a case where we know it needs it.
@@ -97,12 +100,13 @@ config_vars['CXX'] = CXX
 _Triutils = Extension("PyTrilinos._Triutils",
                     [wrapTriutils],
                     define_macros=[('HAVE_CONFIG_H', '1')],
-                    include_dirs    = [EpetraSrcDir, EpetraBuildDir, 
-                                       PyEpetraDir, 
-                                       TriutilsSrcDir, TriutilsBuildDir],
-                    library_dirs    = [TriutilsLibDir, EpetraLibDir],
-                    libraries       = [TriutilsLib, EpetraLib] 
-                                       + stdLibs,
+                    include_dirs    = [PyTrilinosInc, EpetraSrcDir,
+                                       EpetraLibDir, PyEpetraDir,
+                                       TriutilsSrcDir, TriutilsLibDir],
+                    library_dirs    = [PyTrilinosLibDir, EpetraLibDir,
+                                       TriutilsLibDir],
+                    libraries       = [PyTrilinosLib, TriutilsLib, EpetraLib] + \
+                                      stdLibs, 
                     extra_link_args = extraArgs
                     )
 
