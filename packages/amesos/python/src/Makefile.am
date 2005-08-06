@@ -38,8 +38,9 @@ PYTHON_LIBS     = $(AMESOS_LIBS)     $(AMESOS_EXTRA_LIBS)
 PYTHON_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
 endif
 
-SWIG_CXXFLAGS = $(PYTHON_INCLUDES) \
-		-I$(top_srcdir)/../epetra/python/src
+SWIG_CXXFLAGS = $(PYTHON_INCLUDES)                   \
+		-I$(top_srcdir)/../epetra/python/src \
+		-I$(top_srcdir)/../PyTrilinos/src
 
 EXTRA_DIST = Amesos.i setup.py
 

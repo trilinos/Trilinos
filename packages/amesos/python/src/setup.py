@@ -56,42 +56,36 @@ srcDir   = makeInfo.get("srcdir","")
 CXX      = makeInfo.get("CXX")
 CXXFLAGS = makeInfo.get("CXXFLAGS")
 
-#solverLibs = makeInfo.get("LIBS", "");
-#if len(solverLibs) == 0: solverLibs = "amesos";
-
 # Define the teuchos include path, library directory and library name
-teuchosSrcDir   = os.path.join(pakDir, "..", "teuchos", "src")
-teuchosBuildDir = os.path.join(buildDir, "..", "teuchos", "src")
-teuchosIncDir = os.path.join(pakDir, "..", "teuchos", "src")
-teuchosLibDir = os.path.join("..", "..", "..", "teuchos", "src")
-teuchosLib    = "teuchos"
+teuchosInc    = os.path.join(pakDir,   "..", "teuchos", "src")
+teuchosLibDir = os.path.join(buildDir, "..", "teuchos", "src")
+teuchosLib     = "teuchos"
 
-# Define the triutils include path, library directory and library name
-triutilsSrcDir   = os.path.join(pakDir, "..", "triutils", "src")
-triutilsBuildDir = os.path.join(buildDir, "..", "triutils", "src")
-triutilsIncDir = os.path.join(pakDir, "..", "triutils", "src")
-triutilsLibDir = os.path.join("..", "..", "..", "triutils", "src")
-triutilsLib    = "triutils"
+# Define the pytrilinos include path, library directory and library name
+pytrilinosInc    = os.path.join(pakDir,   "..", "PyTrilinos", "src")
+pytrilinosLibDir = os.path.join(buildDir, "..", "PyTrilinos", "src")
+pytrilinosLib     = "pytrilinos"
 
 # Define the epetra include path, library directory and library name
-epetraSrcDir   = os.path.join(pakDir, "..", "epetra", "src")
-epetraBuildDir = os.path.join(buildDir, "..", "epetra", "src")
-epetraIncDir = os.path.join(pakDir, "src")
-epetraLibDir = os.path.join("..", "..", "..", "epetra", "src")
+epetraInc    = os.path.join(pakDir,   "..", "epetra", "src")
+epetraLibDir = os.path.join(buildDir, "..", "epetra", "src")
 epetraLib    = "epetra"
 PyEpetraDir  = os.path.join(pakDir, "..", "epetra", "python", "src")
 
+# Define the triutils include path, library directory and library name
+triutilsInc    = os.path.join(pakDir,   "..", "triutils", "src")
+triutilsLibDir = os.path.join(buildDir, "..", "triutils", "src")
+triutilsLib    = "triutils"
+
 # Define the amesos include path, library directory and library name
-amesosSrcDir   = os.path.join(pakDir, "src")
-amesosBuildDir = os.path.join(buildDir, "src")
-amesosIncDir = os.path.join(pakDir, "src")
-amesosLibDir = os.path.join("..", "..", "src")
+amesosInc   = os.path.join(pakDir, "src")
+amesosLibDir = os.path.join(buildDir, "src")
 amesosLib    = "amesos"
 
 # Standard libraries.  
-stdLibs = []
-stdLibraryLibs = []
-extraArgs      = []
+stdLibs        = [ ]
+stdLibraryLibs = [ ]
+extraArgs      = [ ]
 
 # Create the extra arguments list and complete the standard libraries list.  This
 # is accomplished by looping over the arguments in LDFLAGS, FLIBS and LIBS and
@@ -143,15 +137,15 @@ config_vars['OPT'] = CXXFLAGS
 _Amesos = Extension("PyTrilinos._Amesos",
                     [amesosWrap],
                     define_macros=[('HAVE_CONFIG_H', '1')],
-                    include_dirs    = [amesosSrcDir, amesosBuildDir,
-                                       epetraSrcDir, epetraBuildDir,
-                                       teuchosSrcDir, teuchosBuildDir,
-                                       triutilsSrcDir, triutilsBuildDir,
-                                       PyEpetraDir],
+                    include_dirs    = [amesosInc,     amesosLibDir,
+                                       epetraInc,     epetraLibDir,
+                                       teuchosInc,    teuchosLibDir,
+                                       triutilsInc,   triutilsLibDir,
+                                       pytrilinosInc, PyEpetraDir    ],
                     library_dirs    = [amesosLibDir, teuchosLibDir, 
-                                       epetraLibDir],
-                    libraries       = [amesosLib, teuchosLib, 
-                                       epetraLib] + stdLibs,
+                                       epetraLibDir, pytrilinosLibDir],
+                    libraries       = [teuchosLib, pytrilinosLib, epetraLib,
+                                       amesosLib] + stdLibs,
                     extra_link_args = extraArgs
                     )
 
