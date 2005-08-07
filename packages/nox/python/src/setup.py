@@ -211,18 +211,17 @@ NOX_StatusTest = Extension("PyTrilinos.NOX._StatusTest",
 
 # NOX_Epetra extension module
 NOX_Epetra = Extension("PyTrilinos.NOX._Epetra",
-                       [noxEpetraWrap, #callback, epetraVectorHelper,
-                                       #numPyArray, numPyWrapper,
-                        pyInterface],
+                       [noxEpetraWrap, epetraVectorHelper, pyInterface],
                        include_dirs       = [noxEpetraInc, noxInc, epetraInc,
                                              epetraPyInc, pytrilinosInc,
                                              srcDir],
                        library_dirs       = [noxEpetraLibDir, noxLibDir,
                                              aztecooLibDir, ifpackLibDir,
-                                             epetraLibDir, pytrilinosLibDir],
+                                             teuchosLibDir, pytrilinosLibDir,
+                                             epetraLibDir],
                        libraries          = [noxEpetraLib, noxLib, aztecooLib,
-                                             ifpackLib, epetraLib,
-                                             pytrilinosLib] + stdLibs,
+                                             ifpackLib, teuchosLib,
+                                             pytrilinosLib, epetraLib] + stdLibs,
                        extra_compile_args = extraCompileArgs,
                        extra_link_args    = extraLinkArgs
                        )
@@ -230,9 +229,12 @@ NOX_Epetra = Extension("PyTrilinos.NOX._Epetra",
 # NOX_LAPACK extension module
 NOX_LAPACK = Extension("PyTrilinos.NOX._LAPACK",
                        [noxLAPACKWrap],
-                       include_dirs       = [noxLAPACKInc, noxInc, srcDir],
-                       library_dirs       = [noxLAPACKLibDir, noxLibDir],
-                       libraries          = [noxLAPACKLib, noxLib] + stdLibs,
+                       include_dirs       = [teuchosInc, noxLAPACKInc, noxInc,
+                                             srcDir],
+                       library_dirs       = [teuchosLibDir, noxLAPACKLibDir,
+                                             noxLibDir],
+                       libraries          = [teuchosLib, noxLAPACKLib, noxLib] + \
+                                            stdLibs,
                        extra_compile_args = extraCompileArgs,
                        extra_link_args    = extraLinkArgs
                        )

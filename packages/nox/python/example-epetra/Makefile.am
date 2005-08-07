@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#         PyTrilinos.NOX.Epetra: Python Interface to NOX::Epetra
+#                 PyTrilinos.NOX: Python Interface to NOX
 #                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -27,10 +27,23 @@
 # @HEADER
 
 ## #######################################################################
+## Options to automake (rarely used - don't worry about it)
+## #######################################################################
+AUTOMAKE_OPTIONS = foreign
+
+## #######################################################################
+## Aclocal command (rarely used - don't worry about it)
+## #######################################################################
+ACLOCAL	= aclocal -I config
+
+#
+#       I believe that by switching to AUX_DIR(../../config) one 
+#       could get rid of these.
+#
+## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = \
-	setpath.py exNLDiffusion_1D.py
+EXTRA_DIST = setpath.py exNLDiffusion_1D.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -40,12 +53,15 @@ MAINTAINERCLEANFILES = Makefile.in
 # Define the suite of examples
 EXAMPLE_SUITE = exNLDiffusion_1D
 
-check-am: $(EXAMPLE_SUITE)
+SETPATH_PY = setpath.py
+
+all: $(EXAMPLE_SUITE)
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH_PY) . ; fi
 
 # Run the example script
-ex%: $(srcdir)/ex%.py $(srcdir)/setpath.py
-	cp $^ .
-	$(PYTHON) $@.py
+ex%: $(srcdir)/ex%.py
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
-# Clean target
-CLEANFILES = $(patsubst %, %.py, $(EXAMPLE_SUITE)) setpath.py setpath.pyc
+clean:
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm *.py ; fi
+	/bin/rm -f *.pyc
