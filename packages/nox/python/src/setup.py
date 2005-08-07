@@ -54,7 +54,6 @@ except IOError:
 pakDir   = makeInfo.get("top_srcdir",  "")
 srcDir   = makeInfo.get("srcdir",      "")
 buildDir = makeInfo.get("top_builddir","")
-#CXX      = makeInfo.get("CXX",         "")
 
 # Obtain the version from the package version function, using regular
 # expressions.  This assumes that the function returns a string constant of the
@@ -147,17 +146,8 @@ noxSolverWrap      = "NOX_Solver_wrap.cpp"
 noxStatusTestWrap  = "NOX_StatusTest_wrap.cpp"
 noxEpetraWrap      = "NOX_Epetra_wrap.cpp"
 noxLAPACKWrap      = "NOX_LAPACK_wrap.cpp"
-#callback           = os.path.join(srcDir, "Callback.cpp"           )
 epetraVectorHelper = os.path.join(srcDir, "Epetra_VectorHelper.cpp")
-#numPyArray         = os.path.join(srcDir, "NumPyArray.cpp"         )
-#numPyWrapper       = os.path.join(srcDir, "NumPyWrapper.cpp"       )
 pyInterface        = os.path.join(srcDir, "PyInterface.cpp"        )
-
-# Compiler and linker
-#sysconfig.get_config_vars()
-#config_vars = sysconfig._config_vars
-#config_vars['CC' ] = CXX
-#config_vars['CXX'] = CXX
 
 # NOX_TopLevel extension module
 NOX_TopLevel = Extension("PyTrilinos.NOX._TopLevel",
