@@ -1,9 +1,9 @@
 # @HEADER
 # ************************************************************************
 # 
-#              PyTrilinos.Epetra: Python Interface to Epetra
+#              PyTrilinos.Amesos: Python Interface to Amesos
 #                   Copyright (2005) Sandia Corporation
-# 
+#
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
 # 
@@ -62,5 +62,5 @@ ex%:
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
 clean:
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm *.py ; fi
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
 	/bin/rm -f *.pyc
