@@ -29,8 +29,7 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = doc src src-epetra src-lapack src-mf example-epetra example-lapack \
-	  python
+SUBDIRS = doc src src-epetra src-lapack src-mf example-epetra example-lapack
 
 ## #######################################################################
 ## Documentation

@@ -875,8 +875,15 @@ AC_CONFIG_FILES([
 		example-belos/epetra/Makefile
 		example-belos/epetra/1Dfem_nonlinear/Makefile
 		python/Makefile
-		python/GNUmakefile
-		python/__init__.py
+		python/src/Makefile
+		python/src/__init__.py
+		python/src/PyTrilinos/__init__.py
+		python/src/.deps/dummy
+		python/test/Makefile
+		python/test-epetra/Makefile
+		python/test-lapack/Makefile
+		python/example-epetra/Makefile
+		python/example-lapack/Makefile
 		src-loca/Makefile
 		src-loca/doc/Makefile
 		src-loca/src/Makefile
@@ -892,9 +899,6 @@ AC_CONFIG_FILES([
 		src-loca/example-lapack/Chan/Makefile
 		src-loca/example-lapack/1Dfd_pitchfork/Makefile
 		src-loca/example-lapack/Brusselator/Makefile
-		src-loca/python/Makefile
-		src-loca/python/GNUmakefile
-		src-loca/python/__init__.py
                 test/Makefile
                 test/scripts/Makefile
                 test/scripts/daily/Makefile
@@ -910,8 +914,6 @@ AC_CONFIG_FILES([
 		test/lapack/LOCA_TestProblems/Makefile
 		test/lapack/LOCA_UnitTests/Makefile
                 test/lapack/LOCA_ChanProblem/Makefile
-		test/lapack/LOCA_python/Makefile
-		test/lapack/LOCA_python/setpath.py
                 test/epetra/Makefile
                 test/epetra/NOX_NewTest/Makefile
                 test/epetra/NOX_Vector/Makefile
@@ -928,12 +930,18 @@ AC_CONFIG_FILES([
 
 AC_OUTPUT
 
+#		python/GNUmakefile
+#		python/__init__.py
+#		src-loca/python/Makefile
+#		src-loca/python/GNUmakefile
+#		src-loca/python/__init__.py
+#		test/lapack/LOCA_python/Makefile
+#		test/lapack/LOCA_python/setpath.py
 
 # ------------------------------------------------------------------------
 # Bye World!
 # ------------------------------------------------------------------------
 
-echo "----------------------------------------"
+echo "------------------------------------------"
 echo "Finished Running NOX/LOCA Configure Script"
-echo "----------------------------------------"
-
+echo "------------------------------------------"
