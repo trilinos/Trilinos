@@ -58,26 +58,26 @@ INTEL_LIB=${INTEL_DIR}/../lib
 --with-mpi-incdir="/usr/local/include" \
 CXX="/usr/local/intel/bin/icc" \
 CC="/usr/local/intel/bin/icc" \
-CXXFLAGS="-g -cxxlib-gcc -I/usr/local/include" \
+CXXFLAGS="-g -cxxlib-gcc -I/usr/local/include -wd1476,1572,1505" \
 --with-ldflags="-L/usr/local/intel/lib" \
 FLIBS="-lfrtbegin -lg2c -lm -lgcc_s -lstdc++ -lgcc" \
 --with-libs="-lexpat" \
+--disable-default-packages \
 --enable-tsfextended \
---enable-tsfcore \
---enable-tsfcore-epetra \
---enable-tsfcore-mpi \
---enable-tsfcore-aztecoo \
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-teuchos-expat \
---disable-ml \
 --enable-teuchos-extended \
 --disable-new-package \
 --disable-ml-examples \
 --enable-nox \
---enable-nox-tsf \
---enable-nox-tsf-examples \
+--enable-ml \
 --disable-loca \
+--enable-thyra \
+--enable-epetraext \
+--enable-aztecoo \
+--enable-ifpack \
+--enable-epetra \
 --with-install="/usr/bin/install -c -p" \
 --prefix=$BUILD_DIR
 

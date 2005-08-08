@@ -57,26 +57,27 @@ INTEL_LIB=${INTEL_DIR}/../lib
 --with-mpi-incdir="/usr/local/include" \
 CXX=${INTEL_CXX} \
 CC=${INTEL_CC} \
-CXXFLAGS="-O3 -finline-functions -cxxlib-gcc -I/usr/local/include" \
+CXXFLAGS="-O3 -finline-functions -cxxlib-gcc -I/usr/local/include -wd1476,1572,1505" \
 --with-ldflags=-L${INTEL_LIB} \
 FLIBS="-lfrtbegin -lg2c -lm -lgcc_s -lstdc++ -lgcc" \
 --with-blas="-L/usr/local/intel/mkl70/lib/32 -lmkl_lapack -lmkl_ia32" \
 --with-libs="-lexpat" \
+--disable-default-packages \
 --enable-tsfextended \
---enable-tsfcore \
---enable-tsfcore-epetra \
---enable-tsfcore-mpi \
---enable-tsfcore-aztecoo \
 --enable-teuchos \
+--enable-teuchos-abc \
 --enable-teuchos-expat \
---disable-ml \
 --enable-teuchos-extended \
 --disable-new-package \
 --disable-ml-examples \
 --enable-nox \
---enable-nox-tsf \
---enable-nox-tsf-examples \
+--enable-ml \
 --disable-loca \
+--enable-thyra \
+--enable-epetraext \
+--enable-aztecoo \
+--enable-ifpack \
+--enable-epetra \
 --with-install="/usr/bin/install -c -p" \
 --prefix=$BUILD_DIR
 
