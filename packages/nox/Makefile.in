@@ -371,6 +371,10 @@ SUBDIRS = doc src src-lapack src-epetra src-petsc src-belos \
 					example-lapack example-epetra example-petsc example-belos \
 					$(PYTHON_SUBDIR) src-loca test
 
+TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
+TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
+@HAVE_MPI_FALSE@NOX_CHECK_COMM = serial
+@HAVE_MPI_TRUE@NOX_CHECK_COMM = mpi
 all: all-recursive
 
 .SUFFIXES:
@@ -823,6 +827,78 @@ all-libs:
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 
 @USING_EXPORT_MAKEFILES_FALSE@uninstall-hook:
+
+run-examples:
+	@echo
+	@echo "==========================="
+	@echo "Running the NOX examples..."
+	@echo "==========================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(NOX_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=NOXExamples \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=nox
+
+run-tests:
+	@echo
+	@echo "========================"
+	@echo "Running the NOX tests..."
+	@echo "========================"
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(NOX_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=FRAMEWORK \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=nox
+
+run-pyexamples:
+	@echo
+	@echo "=================================="
+	@echo "Running the Python/NOX examples..."
+	@echo "=================================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(NOX_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=NOXPyExamples \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=nox
+
+run-pytests:
+	@echo
+	@echo "==============================="
+	@echo "Running the Python/NOX tests..."
+	@echo "==============================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(NOX_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=NOXPyTests \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=nox
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

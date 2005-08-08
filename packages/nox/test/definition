@@ -17,6 +17,18 @@
     COMM = SERIAL, MPI;
 }
 
+# NOX Python tests
+(FRAMEWORK,NOXPyTests) {
+    DIRS = ../python/test;
+    COMM = SERIAL, MPI;
+}
+
+# NOX Python examples
+(FRAMEWORK,NOXPyExamples) {
+    DIRS = ../python/example-epetra;
+    COMM = SERIAL, MPI;
+}
+
 # LOCA Epetra tests
 (FRAMEWORK) {
     DIRS = epetra/LOCA_UnitTests,
