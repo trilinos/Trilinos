@@ -48,8 +48,6 @@ try:
 except IOError:
     makeInfo = { }
 
-print makeInfo
-
 # Certain directory paths are needed by setup.py.  pakDir is the path for the
 # epetra package directory, and srcDir is the path for the python source directory
 buildDir   = makeInfo.get("top_builddir","")
