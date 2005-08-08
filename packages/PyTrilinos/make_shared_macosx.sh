@@ -112,6 +112,7 @@ cd ../../../..
 #
 cd packages/amesos/src
 g++ -dynamiclib -o libamesos.dylib *.o \
+  ~/Trilinos/G4_MPI/packages/epetraext/src/libepetraext.dylib \
   ~/Trilinos/G4_MPI/packages/epetra/src/libepetra.dylib \
   ~/Trilinos/G4_MPI/packages/teuchos/src/libteuchos.dylib \
   -framework vecLib \
@@ -128,6 +129,7 @@ cd ../../../..
 #
 cd packages/ifpack/src
 g++ -dynamiclib -o libifpack.dylib *.o \
+  ~/Trilinos/G4_MPI/packages/epetraext/src/libepetraext.dylib \
   ~/Trilinos/G4_MPI/packages/epetra/src/libepetra.dylib \
   ~/Trilinos/G4_MPI/packages/aztecoo/src/libaztecoo.dylib \
   ~/Trilinos/G4_MPI/packages/amesos/src/libamesos.dylib \
@@ -144,12 +146,13 @@ cd ../../../..
 # -- #
 #
 cd packages/ml/src
-g++ -dynamiclib -o libifpack.dylib *.o \
+g++ -dynamiclib -o libml.dylib *.o \
   ~/Trilinos/G4_MPI/packages/epetra/src/libepetra.dylib \
-  ~/Trilinos/G4_MPI/packages/epetra/src/libepetraext.dylib \
+  ~/Trilinos/G4_MPI/packages/epetraext/src/libepetraext.dylib \
+  ~/Trilinos/G4_MPI/packages/triutils/src/libtriutils.dylib \
   ~/Trilinos/G4_MPI/packages/aztecoo/src/libaztecoo.dylib \
   ~/Trilinos/G4_MPI/packages/amesos/src/libamesos.dylib \
-  ~/Trilinos/G4_MPI/packages/amesos/src/libifpack.dylib \
+  ~/Trilinos/G4_MPI/packages/ifpack/src/libifpack.dylib \
   ~/Trilinos/G4_MPI/packages/teuchos/src/libteuchos.dylib \
   -framework vecLib -lmpi -llam -single_module -lf2c
 cp libml.dylib $INSTALL_LIB/lib
