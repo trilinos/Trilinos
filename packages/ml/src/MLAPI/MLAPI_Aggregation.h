@@ -2,7 +2,6 @@
 #define MLAPI_AGGREGATION_H
 
 #include "ml_common.h"
-#ifdef HAVE_ML_MLAPI
 
 /*!
 \file MLAPI_Aggregation.h
@@ -34,7 +33,5 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
 void GetPtent(const Operator& A, Teuchos::ParameterList& List, Operator& Ptent);
 
 } // namespace MLAPI
-
-#endif // HAVE_ML_MLAPI
 
 #endif // MLAPI_AGGREGATION_H

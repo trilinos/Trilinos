@@ -2,7 +2,6 @@
 #define MLAPI_MATLABSTREAM_H
 
 #include "ml_common.h"
-#ifdef HAVE_ML_MLAPI
 
 #include "MLAPI_Error.h"
 #include "MLAPI_Operator.h"
@@ -258,7 +257,5 @@ private:
 }; // class MATLABStream
 
 } // namespace MLAPI
-
-#endif // HAVE_ML_MLAPI
 
 #endif

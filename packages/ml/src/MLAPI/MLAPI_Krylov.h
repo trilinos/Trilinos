@@ -2,7 +2,6 @@
 #define MLAPI_KRYLOV
 
 #include "ml_common.h"
-#ifdef HAVE_ML_MLAPI
 
 namespace Teuchos {
   class List;
@@ -29,7 +28,5 @@ void Krylov(const Operator& A, const MultiVector& LHS,
             Teuchos::ParameterList& List);
 
 } // namespace MLAPI
-
-#endif // HAVE_ML_MLAPI
 
 #endif // ifdef MLAPI_KRYLOV

@@ -28,7 +28,7 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
   /* old version
   int    NodesPerAggr    = List.get("aggregation: per aggregate", 64);
   */
-  double Threshold       = List.get("aggregation:", 0.0);
+  double Threshold       = List.get("aggregation: threshold", 0.0);
   int    NumPDEEquations = List.get("PDE equations", 1);
 
   ML_Aggregate* agg_object;

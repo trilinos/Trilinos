@@ -2,7 +2,6 @@
 #define ML_OPERATOR_UTILS_H
 
 #include "ml_common.h"
-#ifdef HAVE_ML_MLAPI
 
 #include "ml_include.h"
 #include <iostream>
@@ -81,7 +80,5 @@ Operator GetScaledOperator(const Operator& A, const double alpha);
 Operator Duplicate(const Operator& A);
 
 } // namespace MLAPI
-
-#endif // HAVE_ML_MLAPI
 
 #endif // ML_OPERATOR_UTILS_H

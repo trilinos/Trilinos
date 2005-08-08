@@ -2,7 +2,6 @@
 #define MLAPI_SAMIS_H
 
 #include "ml_common.h"
-#ifdef HAVE_ML_MLAPI
 
 #include "ml_include.h"
 #include <iostream>
@@ -36,7 +35,5 @@ class Operator;
            const int limKer=-1 /* -in- limit num of kernels used */);
 
 } // namespace MLAPI
-
-#endif // HAVE_ML_MLAPI
 
 #endif  // MLAPI_SAMIS_H

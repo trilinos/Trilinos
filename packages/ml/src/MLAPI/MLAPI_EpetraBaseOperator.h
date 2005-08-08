@@ -2,7 +2,6 @@
 #define MLAPI_EPETRAPRECONDITIONER_H
 
 #include "ml_common.h"
-#ifdef HAVE_ML_MLAPI
 
 #include "Epetra_Operator.h"
 #include "MLAPI_Error.h"
@@ -163,7 +162,5 @@ private:
 }; // Epetra_MultiVector
 
 } // namespace MLAPI
-
-#endif // HAVE_ML_MLAPI
 
 #endif

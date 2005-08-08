@@ -2,7 +2,6 @@
 #define MLAPI_SERIALMATRIX_H
 
 #include "ml_common.h"
-#ifdef HAVE_ML_MLAPI
 
 #include "ml_include.h"
 //#include "ml_lapack.h"
@@ -385,5 +384,4 @@ private:
 
 } // namespace MLAPI
 
-#endif // ifdef HAVE_ML_MLAPI
 #endif // ifndef MLAPI_SERIALMATRIX_H

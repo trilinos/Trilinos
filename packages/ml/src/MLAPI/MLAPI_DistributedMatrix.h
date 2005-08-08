@@ -2,7 +2,6 @@
 #define MLAPI_DISTRIBUTEDMATRIX_H
 
 #include "ml_common.h"
-#ifdef HAVE_ML_MLAPI
 
 #include "MLAPI_Error.h"
 #include "MLAPI_BaseObject.h"
@@ -291,5 +290,4 @@ private:
 
 } // namespace MLAPI
 
-#endif // ifdef HAVE_ML_MLAPI
 #endif // ifndef MLAPI_DISTRIBUTEDMATRIX_H

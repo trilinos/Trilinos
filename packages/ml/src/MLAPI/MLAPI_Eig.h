@@ -2,7 +2,6 @@
 #define MLAPI_EIG_H
 
 #include "ml_common.h"
-#ifdef HAVE_ML_MLAPI
 
 namespace MLAPI {
 
@@ -28,7 +27,5 @@ void Eigs(const Operator& A, int NumEigenvalues,
           MultiVector& ER, MultiVector& EI);
 
 } // namespace MLAPI
-
-#endif // HAVE_ML_MLAPI
 
 #endif // MLAPI_EIG_H

@@ -2,7 +2,6 @@
 #define MLAPI_GALLERY_H
 
 #include "ml_common.h"
-#ifdef HAVE_ML_MLAPI
 
 #include "ml_include.h"
 #include <iostream>
@@ -66,7 +65,5 @@ namespace MLAPI {
   Teuchos::ParameterList ReadParameterList(const char* FileName);
 
 }
-
-#endif // HAVE_ML_MLAPI
 
 #endif // MLAPI_GALLERY_H
