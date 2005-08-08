@@ -139,6 +139,7 @@ run-examples: all-am
 	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    make run-examples; fi
 	@if [ -d packages/amesos    ]; then cd packages/amesos;    make run-examples; fi
 	@if [ -d packages/ml        ]; then cd packages/ml;        make run-examples; fi
+	@if [ -d packages/nox       ]; then cd packages/nox;       make run-examples; fi
 	@if [ -d packages/didasko   ]; then cd packages/didasko;   make run-examples; fi
 
 run-tests: all-am
@@ -148,6 +149,7 @@ run-tests: all-am
 	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    make run-tests; fi
 	@if [ -d packages/amesos    ]; then cd packages/amesos;    make run-tests; fi
 	@if [ -d packages/ml        ]; then cd packages/ml;        make run-tests; fi
+	@if [ -d packages/nox       ]; then cd packages/nox;       make run-tests; fi
 	@if [ -d packages/didasko   ]; then cd packages/didasko;   make run-tests; fi
 
 run-pyexamples: all-am
@@ -157,4 +159,10 @@ run-pyexamples: all-am
 	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    make run-pyexamples; fi
 	@if [ -d packages/amesos    ]; then cd packages/amesos;    make run-pyexamples; fi
 	@if [ -d packages/ml        ]; then cd packages/ml;        make run-pyexamples; fi
+	@if [ -d packages/nox       ]; then cd packages/nox;       make run-pyexamples; fi
 	@if [ -d packages/didasko   ]; then cd packages/didasko;   make run-pyexamples; fi
+
+run-pytests: all-am
+	@if [ -d packages/epetra    ]; then cd packages/epetra;    make run-pytests; fi
+	@if [ -d packages/epetraext ]; then cd packages/epetraext; make run-pytests; fi
+	@if [ -d packages/nox       ]; then cd packages/nox;       make run-pytests; fi
