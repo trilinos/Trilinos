@@ -213,7 +213,11 @@ bool ComparePointAndBlock(string PrecType,
     }
   }
 
-  if (ItersPoint != ItersBlock) {
+  int diff = ItersPoint - ItersBlock;
+  if (diff < 0) diff = -diff;
+    
+  if (diff > 10)
+  {
     if (verbose)
       cout << "TEST FAILED!" << endl;
     return(false);
