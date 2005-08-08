@@ -257,17 +257,24 @@ int main(int argc, char *argv[])
 
 #else
 
-#include <stdlib.h>
-#include <stdio.h>
+#include "ml_include.h"
 
 int main(int argc, char *argv[])
 {
+#ifdef HAVE_MPI
+  MPI_Init(&argc,&argv);
+#endif
+
   puts("The ML API requires the following configuration options:");
   puts("\t--enable-epetra");
   puts("\t--enable-teuchos");
   puts("\t--enable-ifpack");
   puts("\t--enable-amesos");
   puts("Please check your configure line.");
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
 
   return(0);
 }
