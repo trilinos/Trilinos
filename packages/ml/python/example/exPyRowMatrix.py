@@ -28,10 +28,7 @@ try:
   import setpath
   import Epetra, AztecOO
 except:
-  try:
-    from PyTrilinos import Epetra, AztecOO
-  except ImportError:
-    raise ImportError, "error w/ Epetra or AztecOO"
+  from PyTrilinos import Epetra, AztecOO
 
 class Laplace1D(Epetra.PyRowMatrix):
   def __init__(self, n, Comm):

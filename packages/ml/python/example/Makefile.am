@@ -43,7 +43,10 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = setpath.py exSimple.py exPyOperator.py exPyRowMatrix.py
+EXTRA_DIST = setpath.py \
+	     exSimple.py         exPyOperator.py     exPyRowMatrix.py \
+	     exMLAPI.py          exMLAPI_Iterate.py  exMLAPI_Smoother.py \
+	     exMLAPI_AztecOO.py  exMLAPI_PyMatrix.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -51,7 +54,9 @@ EXTRA_DIST = setpath.py exSimple.py exPyOperator.py exPyRowMatrix.py
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of examples
-EXAMPLE_SUITE = exSimple exPyOperator exPyRowMatrix
+EXAMPLE_SUITE = exSimple         exPyOperator     exPyRowMatrix \
+		exMLAPI          exMLAPI_Iterate  exMLAPI_Smoother \
+		exMLAPI_AztecOO  exMLAPI_PyMatrix
 
 SETPATH = setpath.py
 

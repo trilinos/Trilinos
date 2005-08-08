@@ -2,7 +2,7 @@
 try:
   import setpath
   import Epetra, Triutils, AztecOO, ML
-except ImportError:
+except:
   from PyTrilinos import Epetra, Triutils, AztecOO, ML
   print "Using system-installed Epetra, Triutils, AztecOO, ML"
 

@@ -41,7 +41,10 @@ myDir,myName = os.path.split(__file__)
 setup_txt    = os.path.normpath(os.path.join(myDir, "..", "src", "setup.txt"))
 
 # Obtain the dictionary of make information
-f = open(setup_txt)
+try:
+  f = open(setup_txt)
+except:
+  raise "File not found"
 makeInfo = f.readlines()
 f.close()
 makeInfo = eval(string.join(makeInfo))
