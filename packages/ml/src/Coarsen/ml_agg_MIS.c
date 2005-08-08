@@ -1746,7 +1746,8 @@ Here is how we do all this:
    /* allocated using ML_Aggregate_Info_Setup(ml,MaxNumLevels)               */
    /* ********************************************************************** */
 
-   if( Amatrix->to->Grid->Grid != NULL ) {
+   if( Amatrix->to != NULL && Amatrix->to->Grid != NULL &&
+       Amatrix->to->Grid->Grid != NULL ) {
 
      if( comm->ML_nprocs > 1 ) {
        if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 0)
