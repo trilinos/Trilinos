@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
   Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
   
-  if (verbose)
+  if (verbose && returnCode == Anasazi::Ok)
     info = testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
   
   // Compute the direct residual
