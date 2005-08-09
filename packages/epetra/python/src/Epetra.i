@@ -37,7 +37,8 @@ facility for local documentation on classes and methods, or see the
 on-line documentation for more in-depth information.
 
 
-*) Brief Description
+Brief Description
+=================
 
 The Epetra module offers a suite of serial and distributed linear algebra
 objects, like vectors, multivectors, sparse matrices. Serial dense vectors and
@@ -59,7 +60,8 @@ The most important classes of the Epetra module is:
 - Import: to easily redistribute distributed objects
 
 
-*) Example of usage: Creating a Distributed Matrix
+Example of usage: Creating a Distributed Matrix (1)
+===================================================
 
 The following example builds a distributed tridiagonal matrix. The
 matrix has size 10 and the elements are distributed linearly among the
@@ -67,7 +69,36 @@ processors.  It can be run is serial or parallel, depending on how
 Trilinos was configured.
 
 from PyTrilinos import Epetra
-Epetra.Init()
+Comm  = Epetra.PyComm()
+NumGlobalRows = 10
+Map   = Epetra.Map(NumGlobalRows, 0, Comm)
+A     = Epetra.CrsMatrix(Epetra.Copy, Map, 0);
+MyGlobalElements = Map.MyGlobalElements()
+# Loop over all local rows to create a tridiagonal matrix
+for i in MyGlobalElements:
+  if i != 0:
+    A[i, i - 1] = -1.0
+  if i != NumGlobalRows - 1:
+    A[i, i + 1] = -1.0
+  A[i, i] = 2.0
+
+# transform the matrix into local representation -- no entries
+# can be added after this point. However, existing entries can be
+# modified.
+ierr = A.FillComplete();
+
+# Now accessing the matrix nonzeros on each row
+for i in MyGlobalElements:
+  Indices, Values = A[i]
+  print Indices, Values
+
+
+Example of usage: Creating a Distributed Matrix (2)
+===================================================
+
+As in the previous example, but more efficiently.
+
+from PyTrilinos import Epetra
 Comm  = Epetra.PyComm()
 NumGlobalRows = 10
 Map   = Epetra.Map(NumGlobalRows, 0, Comm)
@@ -77,20 +108,49 @@ NumMyRows = Map.NumMyElements()
 for ii in xrange(0, NumMyRows):
   # `i' is the global ID of local ID `ii'
   i = Map.GID(ii)
+  if i != 0:
+    Indices = [i, i - 1]
+    Values = [2.0, -1.0]
   if i != NumGlobalRows - 1:
     Indices = [i, i + 1]
     Values = [2.0, -1.0]
   else:
-    Indices = [i]
-    Values = [2.0];
+    Indices = [i, i - 1, i + 1]
+    Values = [2.0, -1.0, -1.0];
   A.InsertGlobalValues(i, Values, Indices);
+
 # transform the matrix into local representation -- no entries
 # can be added after this point. However, existing entries can be
 # modified.
 ierr = A.FillComplete();
-Epetra.Finalize()
 
-*) Notes
+
+Example of usage: Matrix-Vector product
+=======================================
+
+This example show how to multiply a matrix (diagonal here for simplicity) by a
+vector.
+
+from PyTrilinos import Epetra
+Comm  = Epetra.PyComm()
+NumGlobalRows = 10
+Map   = Epetra.Map(NumGlobalRows, 0, Comm)
+A     = Epetra.CrsMatrix(Epetra.Copy, Map, 0);
+MyGlobalElements = Map.MyGlobalElements()
+for i in MyGlobalElements:
+  A[i, i] = 1.0 + i
+
+A.FillComplete()
+
+X = Epetra.Vector(Map); X.Random()
+Y = Epetra.Vector(Map)
+
+UseTranspose = False
+A.Multiply(UseTranspose, X, Y)
+  
+
+Notes
+=====
 
 An Epetra.Vector object is at the same time a Numeric vector, and it
 can therefore be used everywhere Numeric vectors are accepted.
@@ -151,6 +211,14 @@ can therefore be used everywhere Numeric vectors are accepted.
 #include "Epetra_NumPyVector.h"
 #include "NumPyArray.h"
 #include "NumPyWrapper.h"
+#include "PyEpetra_Utils.h"  
+
+#define SUMALL    0
+#define MINALL    1
+#define MAXALL    2
+#define GATHERALL 3
+#define SCANSUM   4
+#define BROADCAST 5
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -191,11 +259,14 @@ PyObject* Init_Argv(PyObject *args)
   return Py_BuildValue("");  
 } 
   
-PyObject* Finalize() {  
+PyObject* Finalize() 
+{
   int error, myid;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);  
   
+  // FIXME: add if finalized!
+
   error = MPI_Finalize();
   if (error != 0) {
     PyErr_SetString(PyExc_RuntimeError, "error");    //raise ValueError, errmsg
@@ -220,13 +291,6 @@ PyObject* Finalize()
   return Py_BuildValue("");
 }
 #endif
-
-#define SUMALL    0
-#define MINALL    1
-#define MAXALL    2
-#define GATHERALL 3
-#define SCANSUM   4
-#define BROADCAST 5
 
 PyObject* Epetra_Comm_InterfaceInt(const Epetra_Comm& Comm,
                                    int action, PyObject* input,
@@ -344,82 +408,6 @@ PyObject* Epetra_Comm_InterfaceDouble(const Epetra_Comm& Comm,
     PyList_SetItem(result, i, value);
   }
   return(result);
-}
-
-PyObject * Epetra_RowMatrix_GetEntries(const Epetra_RowMatrix& Matrix,
-                                       int GlobalRow) 
-{
-  if (!Matrix.Filled())
-  {
-    cout << "Matrix not FillComplete()'d" << endl;
-    Py_INCREF(Py_None);
-    return Py_None;
-  }
-  int ierr;
-  PyObject* res;
-  PyObject* PyIndices;
-  PyObject* PyValues;
-  int NumEntries, Length;
-  Length = Matrix.MaxNumEntries();
-  vector<int>    Indices(Length);
-  vector<double> Values(Length);
-  int MyRow = Matrix.RowMatrixRowMap().LID(GlobalRow);
-  ierr = Matrix.ExtractMyRowCopy(MyRow, Length, NumEntries, &Values[0],
-                                 &Indices[0]);
-  if (ierr < 0)
-  {
-    Py_INCREF(Py_None);
-    return Py_None;
-  }
-
-  PyIndices = PyList_New(NumEntries);
-  PyValues  = PyList_New(NumEntries);
-
-  // return global indices
-  for (int i = 0 ; i < NumEntries ; ++i)
-  {
-    int GID = Matrix.RowMatrixColMap().GID(Indices[i]);
-    PyList_SetItem(PyIndices, i, PyInt_FromLong(GID));
-    PyList_SetItem(PyValues,  i, PyFloat_FromDouble(Values[i]));
-  }
-  res = PyTuple_New(2);
-  PyTuple_SetItem(res, 0, PyIndices);
-  PyTuple_SetItem(res, 1, PyValues);
-  return(res);
-}
-
-PyObject* Epetra_RowMatrix_GetEntry(Epetra_RowMatrix& Matrix, 
-                                    int GlobalRow, int GlobalCol)
-{
-  int NumEntries, Length, ierr;
-  double val = 0.0;
-  Length = Matrix.MaxNumEntries();
-  vector<int>    Indices(Length);
-  vector<double> Values(Length);
-  int MyRow = Matrix.RowMatrixRowMap().LID(GlobalRow);
-  int MyCol = Matrix.RowMatrixColMap().LID(GlobalCol);
-
-  ierr = Matrix.ExtractMyRowCopy(MyRow, Length, NumEntries, &Values[0], 
-                                 &Indices[0]);
-  if (ierr) NumEntries = 0;
-  for (int i = 0 ; i < Length ; ++i)
-  {
-    if (Indices[i] == MyCol)
-    {
-      val = Values[i];
-      break;
-    }
-  }
-  return(PyFloat_FromDouble(val));
-}
-
-extern "C" {
-  // on some MAC OS X with LAM/MPI _environ() is not found,
-  // need to specify -Wl,-i_environ:_fake_environ as LDFLAGS
-  void fake_environ()
-  {
-    exit(EXIT_FAILURE);
-  }
 }
 
 #include "Epetra_PyOperator.h"
