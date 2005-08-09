@@ -26,36 +26,30 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Tpetra_ConfigDefs.hpp"
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
+#include "../tpetra_test_util.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_VectorSpace.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_Version.hpp"
-
 #ifdef TPETRA_MPI
-#include <mpi.h>
 #include "Tpetra_MpiPlatform.hpp"
 #else
 #include "Tpetra_SerialPlatform.hpp"
 #endif // TPETRA_MPI
 
-// function prototype
 template <typename OrdinalType, typename ScalarType>
-int unitTests(bool verbose, bool debug);
+int unitTests(bool verbose, bool debug, int myImageID, int numImages);
 
 int main(int argc, char* argv[]) {
-  int rank = 0; // assume we are on serial
-  int size = 1; // if MPI, will be reset later
+	int myImageID = 0; // assume we are on serial
+	int numImages = 1; // if MPI, will be reset later
   
-  // initialize MPI if needed
+	// initialize MPI if needed
 #ifdef TPETRA_MPI
-  size = -1;
-  rank = -1;
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	numImages = -1;
+	myImageID = -1;
+	MPI_Init(&argc, &argv);
+	MPI_Comm_size(MPI_COMM_WORLD, &numImages);
+	MPI_Comm_rank(MPI_COMM_WORLD, &myImageID);
 #endif // TPETRA_MPI
 
 	// initialize verbose & debug flags
@@ -69,73 +63,72 @@ int main(int argc, char* argv[]) {
 			verbose = true;
 		}
 	}
-
-#ifdef TPETRA_MPI
-  if(verbose) cout << "MPI Startup: Image " << rank << " of " << size << " is alive." << endl;
-  MPI_Barrier(MPI_COMM_WORLD);
-#endif // TPETRA_MPI
   
-  // change verbose to only be true on Image 0
-  verbose = (verbose && (rank == 0));
+	// change verbose to only be true on Image 0
+	verbose = (verbose && (myImageID == 0));
   
-  // start the testing
-	if(verbose) {
-    cout << "\n****************************************\n" 
-    << "Starting VectorSpaceTest..." << endl
-    << Tpetra::Tpetra_Version() << endl
-    << "****************************************\n";
-  }
-  int ierr = 0;
+	// start the testing
+	if(verbose) outputStartMessage("VectorSpace");
+	int ierr = 0;
   
-	ierr += unitTests<int, float>(verbose, debug);
-	ierr += unitTests<int, double>(verbose, debug);
+	// call the actual test routines
+	ierr += unitTests<int, float>(verbose, debug, myImageID, numImages);
+	ierr += unitTests<int, double>(verbose, debug, myImageID, numImages);
 
 	// finish up
 #ifdef TPETRA_MPI
-  MPI_Finalize();
-#endif // TPETRA_MPI
-  
-	if(verbose) 
-		if(ierr == 0)
-			cout << "VectorSpace test passed." << endl;
-		else
-			cout << "VectorSpace test failed." << endl;
+	MPI_Finalize();
+#endif
+	if(verbose) outputEndMessage("VectorSpace", (ierr == 0));
 	return(ierr);
 }
 
+//======================================================================
 template <typename OrdinalType, typename ScalarType>
-int unitTests(bool verbose, bool debug) {
+int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
+	std::string className = "Import<" + Teuchos::OrdinalTraits<OrdinalType>::name() + ", " + Teuchos::ScalarTraits<ScalarType>::name() + ">";
+	if(verbose) outputHeading("Stating unit tests for " + className);
+
 	int ierr = 0;
 	int returnierr = 0;
-#ifdef TPETRA_MPI
-  const Tpetra::MpiPlatform<OrdinalType, OrdinalType> platformE(MPI_COMM_WORLD);
-  const Tpetra::MpiPlatform<OrdinalType, ScalarType> platformV(MPI_COMM_WORLD);
-#else
-  const Tpetra::SerialPlatform <OrdinalType, OrdinalType> platformE;
-	const Tpetra::SerialPlatform <OrdinalType, ScalarType> platformV;
-#endif // TPETRA_MPI  
-	if(verbose) cout << "Starting unit tests for VectorSpace<" 
-			 << Teuchos::OrdinalTraits<OrdinalType>::name() << "," 
-			 << Teuchos::ScalarTraits<ScalarType>::name() << ">." << endl;
 
-	//
+	OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+	OrdinalType const negOne = zero - Teuchos::OrdinalTraits<OrdinalType>::one();
+
+	// ======================================================================
 	// code coverage section - just call functions, no testing
-	//
-	if(verbose) cout << "Starting code coverage section..." << endl;
+	// ======================================================================
+	
+	// create Platform and Comm
+#ifdef TPETRA_MPI
+	Tpetra::MpiPlatform<OrdinalType, ScalarType> platformV(MPI_COMM_WORLD);
+	Tpetra::MpiPlatform<OrdinalType, OrdinalType> platformE(MPI_COMM_WORLD);
+	Tpetra::MpiComm<OrdinalType, ScalarType> comm(MPI_COMM_WORLD);
+#else
+	Tpetra::SerialPlatform<OrdinalType, ScalarType> platformV;
+	Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformE;
+	Tpetra::SerialComm<OrdinalType, ScalarType> comm;
+#endif
+	// create ElementSpace and BlockElementSpace
+	OrdinalType const numGlobalElements = intToOrdinal<OrdinalType>(10);
+	OrdinalType const indexBase = intToOrdinal<OrdinalType>(2);
+	OrdinalType const numPoints = intToOrdinal<OrdinalType>(3);
+	Tpetra::ElementSpace<OrdinalType> es(numGlobalElements, indexBase, platformE);
+	Tpetra::BlockElementSpace<OrdinalType> bes(es, numPoints);
+
 	// constructors
-	if(verbose) cout << "Constructors..." << endl;
-	// taking an ElementSpace
-	Tpetra::ElementSpace<OrdinalType> elementspace(10, 2, platformE);
-	Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformV);
-	// taking a BlockElementSpace
-	const Tpetra::BlockElementSpace<OrdinalType> blockelementspace(elementspace, 3);
-	Tpetra::VectorSpace<OrdinalType, ScalarType> blockvectorspace(blockelementspace, platformV);
-	// cpy ctr
+	if(verbose) cout << "VectorSpace constructor (taking an ElementSpace)..." << endl;
+	Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(es, platformV);
+ 
+	if(verbose) cout << "VectorSpace constructor (taking a BlockElementSpace)..." << endl;
+	Tpetra::VectorSpace<OrdinalType, ScalarType> blockvectorspace(bes, platformV);
+
+	if(verbose) cout << "VectorSpace copy constructor..." << endl;
 	Tpetra::VectorSpace<OrdinalType, ScalarType> v2(vectorspace);
 
 	// print
 	if(debug) {
-		cout << "Overloaded << operator..." << endl;
+		if(verbose) cout << "Overloaded << operator..." << endl;
 		cout << vectorspace << endl;
 	}
 	
@@ -162,83 +155,97 @@ int unitTests(bool verbose, bool debug) {
 	Tpetra::Vector<OrdinalType, ScalarType>* vecptr = vectorspace.createVector();
 	temp = vecptr->getNumMyEntries();
 	delete vecptr;
-	
-	// accessors to other classes
-	if(verbose) cout << "Class member accessors..." << endl;
-	if(verbose) v2.platform().printInfo(cout);
-	temp = v2.comm().getNumImages();
 
-	if(verbose) cout << "Code coverage section finished." << endl;
-
-	//
+	// ======================================================================
 	// actual testing section - affects return code
-	//
-	
-	if(verbose) cout << "Starting actual testing section..." << endl;
+	// ======================================================================
 
+	bool result = false; // fixture
+
+	// ========================================
 	// isCompatible
+	// ========================================
 	if(verbose) cout << "Testing isCompatible... ";
-	const Tpetra::ElementSpace<OrdinalType> compatibleES(10,0, platformE);
+	if(verbose && debug) cout << endl;
+	const Tpetra::ElementSpace<OrdinalType> compatibleES(intToOrdinal<OrdinalType>(10),
+														 intToOrdinal<OrdinalType>(0),
+														 platformE);
 	Tpetra::VectorSpace<OrdinalType, ScalarType> compatibleVS(compatibleES, platformV);
-	if(!vectorspace.isCompatible(compatibleVS))
+	result = vectorspace.isCompatible(compatibleVS);
+	if(debug)
+		outputData(myImageID, numImages, "with compatibleVS: " + Tpetra::toString(result));
+	if(result == false)
 		ierr++;
-	const Tpetra::ElementSpace<OrdinalType> differentES(15, 2, platformE);
+	const Tpetra::ElementSpace<OrdinalType> differentES(intToOrdinal<OrdinalType>(15),
+														intToOrdinal<OrdinalType>(2),
+														platformE);
 	Tpetra::VectorSpace<OrdinalType, ScalarType> differentVS(differentES, platformV);
-	if(differentVS.isCompatible(vectorspace))
+	result = differentVS.isCompatible(vectorspace);
+	if(debug)
+		outputData(myImageID, numImages, "with differentVS: " + Tpetra::toString(result));
+	if(result == true)
 		ierr++;
-	if(verbose)
-		if(ierr == 0) 
-			cout << "Passed" << endl;
-		else
+
+	if(verbose && debug) cout << "isCompatible test ";
+	if(verbose) {
+		if(ierr != 0) 
 			cout << "Failed" << endl;
+		else 
+			cout << "Passed" << endl;
+	}
 	returnierr += ierr;
 	ierr = 0;
 	
+	// ========================================
 	// isSameAs
+	// ========================================
 	if(verbose) cout << "Testing isSameAs... ";
-	bool same = vectorspace.isSameAs(v2);
-	if(!same)
+	result = vectorspace.isSameAs(v2);
+	if(result == false)
 		ierr++;
-	same = vectorspace.isSameAs(differentVS);
-	if(same)
+	result = vectorspace.isSameAs(differentVS);
+	if(result == true)
 		ierr++;
-	if(verbose)
-		if(ierr == 0) 
-			cout << "Passed" << endl;
-		else
+
+	if(verbose) {
+		if(ierr != 0) 
 			cout << "Failed" << endl;
+		else 
+			cout << "Passed" << endl;
+	}
 	returnierr += ierr;
 	ierr = 0;
 
-  // assignment operator
-  if(verbose) cout << "Testing asignment operator... ";
-  same = vectorspace.isSameAs(differentVS);
-  if(same)
-    ierr++;
-  differentVS = vectorspace;
-  same = vectorspace.isSameAs(differentVS);
-  if(!same)
-    ierr++;
-	if(verbose)
-		if(ierr == 0) 
-			cout << "Passed" << endl;
-		else
+	// ========================================
+	// assignment operator
+	// ========================================
+	if(verbose) cout << "Testing asignment operator... ";
+	result = vectorspace.isSameAs(differentVS);
+	if(result == true)
+		ierr++;
+	differentVS = vectorspace;
+	result = vectorspace.isSameAs(differentVS);
+	if(result == false)
+		ierr++;
+
+	if(verbose) {
+		if(ierr != 0) 
 			cout << "Failed" << endl;
+		else 
+			cout << "Passed" << endl;
+	}
 	returnierr += ierr;
 	ierr = 0;
 	
-	
+	// ======================================================================
 	// finish up
-	//char const * OTName = Teuchos::OrdinalTraits<OrdinalType>::name();
-	//char const * STName = Teuchos::ScalarTraits<ScalarType>::name();
-	if(verbose)
+	// ======================================================================
+  
+	if(verbose) {
 		if(returnierr == 0)
-			cout << "VectorSpaceTest <" 
-			     << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
-			     << Teuchos::ScalarTraits<ScalarType>::name()  << "> passed." << endl;
+			outputHeading("Unit tests for " + className + " passed.");
 		else
-			cout << "VectorSpaceTest <" 
-			     << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
-			     << Teuchos::ScalarTraits<ScalarType>::name() << ">failed." << endl;
+			outputHeading("Unit tests for " + className + " failed.");
+	}
 	return(returnierr);
 }

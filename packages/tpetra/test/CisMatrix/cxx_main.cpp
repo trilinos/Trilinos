@@ -26,25 +26,23 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Tpetra_ConfigDefs.hpp" // for <iostream> and <stdlib>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
+#include "../tpetra_test_util.hpp"
 #include "Tpetra_CisMatrix.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_VectorSpace.hpp"
 #include "Tpetra_CombineMode.hpp"
-#include "Tpetra_Version.hpp"
 #ifdef TPETRA_MPI
-#include <mpi.h>
 #include "Tpetra_MpiPlatform.hpp"
 #else
 #include "Tpetra_SerialPlatform.hpp"
 #endif // TPETRA_MPI
-#include "../tpetra_test_util.hpp"
+
 
 // function prototype
 template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages);
+template <typename OrdinalType, typename ScalarType>
+int testApply(bool verbose, bool debug, int myImageID, int numImages, bool isRowOriented, bool doTranspose);
 
 int main(int argc, char* argv[]) {
 	int myImageID = 0; // assume we are on serial
@@ -77,9 +75,11 @@ int main(int argc, char* argv[]) {
 	// start the testing
 	if(verbose) outputStartMessage("CisMatrix");
 	int ierr = 0;
+
+	//mpiBreakpoint(myImageID);
   
 	// call the actual test routines
-	ierr += unitTests<int, double>(verbose, debug, myImageID, numImages);
+	ierr += unitTests<int, float>(verbose, debug, myImageID, numImages);
 
 	// finish up
 #ifdef TPETRA_MPI
@@ -98,18 +98,101 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	int ierr = 0;
 	int returnierr = 0;
 
+	// ======================================================================
+	// code coverage section - just call functions, no testing
+	// ======================================================================
+
+	// ...
+
+	// ======================================================================
+	// actual testing section - affects return code
+	// ======================================================================
+	
+	// ========================================
+	// test apply - row-oriented
+	// ========================================
+	if(verbose) cout << "Testing apply (row-oriented, non-transpose)... ";
+	if(verbose && debug) cout << endl;
+	ierr = testApply<OrdinalType, ScalarType>((verbose && debug), debug, myImageID, numImages, true, false);
+	
+	if(verbose && debug) cout << "apply test ";
+	if(ierr != 0) {
+		if(verbose) cout << "failed" << endl;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
+	
+	// ========================================
+	// test apply - row-oriented, transpose
+	// ========================================
+	if(verbose) cout << "Testing apply (row-oriented, transpose)... ";
+	if(verbose && debug) cout << endl;
+	ierr = testApply<OrdinalType, ScalarType>((verbose && debug), debug, myImageID, numImages, true, true);
+	
+	if(verbose && debug) cout << "apply test ";
+	if(ierr != 0) {
+		if(verbose) cout << "failed" << endl;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
+	
+	// ========================================
+	// test apply - column-oriented
+	// ========================================
+	if(verbose) cout << "Testing apply (column-oriented, non-transpose)... ";
+	if(verbose && debug) cout << endl;
+	ierr = testApply<OrdinalType, ScalarType>((verbose && debug), debug, myImageID, numImages, false, false);
+	
+	if(verbose && debug) cout << "apply test ";
+	if(ierr != 0) {
+		if(verbose) cout << "failed" << endl;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
+	
+	// ========================================
+	// test apply - column-oriented, transpose
+	// ========================================
+	if(verbose) cout << "Testing apply (column-oriented, transpose)... ";
+	if(verbose && debug) cout << endl;
+	ierr = testApply<OrdinalType, ScalarType>((verbose && debug), debug, myImageID, numImages, false, true);
+	
+	if(verbose && debug) cout << "apply test ";
+	if(ierr != 0) {
+		if(verbose) cout << "failed" << endl;
+	}
+	else
+		if(verbose) cout << "passed" << endl;
+	returnierr += ierr;
+	ierr = 0;
+	
+	// ========================================
+	// finish up
+	// ========================================
+	if(verbose) {
+		if(returnierr == 0)
+			outputHeading("Unit tests for " + className + " passed.");
+		else
+			outputHeading("Unit tests for " + className + " failed.");
+	}
+	return(returnierr);
+}
+
+//======================================================================
+template <typename OrdinalType, typename ScalarType>
+int testApply(bool verbose, bool debug, int myImageID, int numImages, bool isRowOriented, bool doTranspose) {
 	OrdinalType const zero = intToOrdinal<OrdinalType>(0);
 	OrdinalType const one = intToOrdinal<OrdinalType>(1);
 	OrdinalType const two = intToOrdinal<OrdinalType>(2);
 	OrdinalType const three = intToOrdinal<OrdinalType>(3);
-	OrdinalType const four = intToOrdinal<OrdinalType>(4);
-  
-	// do a simple matrix-vector multiplication
-	// the CisMatrix will be 4x4, and the vectors will be length 4
 
-	// ======================================================================
-	// code coverage section - just call functions, no testing
-	// ======================================================================
+	int ierr = 0;
 
 	// ========================================
 	// create platform/es/vs we use
@@ -122,142 +205,138 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	const Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformO;
 	const Tpetra::SerialPlatform<OrdinalType, ScalarType> platformV;
 #endif // TPETRA_MPI
-	Tpetra::ElementSpace<OrdinalType> elementspace(four, zero, platformO);
-	Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformV);
-	if(debug) {
-		cout << "Output of elementspace:" << endl;
-		cout << elementspace;
-		cout << "Output of vectorspace:" << endl;
-		cout << vectorspace;
+	Tpetra::ElementSpace<OrdinalType> rowES(two, zero, platformO);
+	Tpetra::ElementSpace<OrdinalType> colES(three, zero, platformO);
+	Tpetra::VectorSpace<OrdinalType, ScalarType> primary(rowES, platformV);
+	Tpetra::VectorSpace<OrdinalType, ScalarType> secondary(colES, platformV);
+
+	// ========================================
+	// create CisMatrix and initalize values
+	// ========================================
+	// Matrix layout is:
+	//  3  2  4
+	//  0  1  0
+	if(verbose) cout << "Creating A matrix..." << endl;
+	Teuchos::RefCountPtr< Tpetra::CisMatrix<OrdinalType, ScalarType> > A;
+	if(isRowOriented)
+		A = Teuchos::rcp(new Tpetra::CisMatrix<OrdinalType, ScalarType>(primary));
+	else
+		A = Teuchos::rcp(new Tpetra::CisMatrix<OrdinalType, ScalarType>(secondary, false));
+
+	if(verbose) cout << "Submitting values..." << endl;
+	if(isRowOriented) {
+		if(primary.isMyGlobalIndex(zero)) {
+			A->submitEntry(Tpetra::Insert, zero, intToScalar<ScalarType>(3), zero); // CombineMode, Row Number, Value, Col Index
+			A->submitEntry(Tpetra::Insert, zero, intToScalar<ScalarType>(2), one); 
+			A->submitEntry(Tpetra::Insert, zero, intToScalar<ScalarType>(4), two); 
+		}
+		if(primary.isMyGlobalIndex(one)) {
+			A->submitEntry(Tpetra::Insert, one, intToScalar<ScalarType>(1), one);
+		}
+	}
+	else {
+		if(secondary.isMyGlobalIndex(zero)) {
+			A->submitEntry(Tpetra::Insert, zero, intToScalar<ScalarType>(3), zero); // CombineMode, Col Number, Value, Row Index
+		}
+		if(secondary.isMyGlobalIndex(one)) {
+			A->submitEntry(Tpetra::Insert, one, intToScalar<ScalarType>(2), zero); 
+			A->submitEntry(Tpetra::Insert, one, intToScalar<ScalarType>(1), one); 
+		}
+		if(secondary.isMyGlobalIndex(two)) {
+			A->submitEntry(Tpetra::Insert, two, intToScalar<ScalarType>(4), zero);
+		}
 	}
 	
+	if(verbose) cout << "Calling fillComplete..." << endl;
+	A->fillComplete(secondary, primary);
+	if(debug)
+		cout << *A;
+
 	// ========================================
 	// create x vector and initialize values
 	// ========================================
-	// layout is: { 3 1 6 4 }
-	if(verbose) cout << "Creating and initializing x and y vectors..." << endl;
-	Tpetra::Vector<OrdinalType, ScalarType> x(vectorspace);
-	if(vectorspace.isMyGlobalIndex(zero))
-		x[vectorspace.getLocalIndex(zero)] = intToScalar<ScalarType>(3);
-	if(vectorspace.isMyGlobalIndex(one))
-		x[vectorspace.getLocalIndex(one)] = intToScalar<ScalarType>(1);
-	if(vectorspace.isMyGlobalIndex(two))
-		x[vectorspace.getLocalIndex(two)] = intToScalar<ScalarType>(6);
-	if(vectorspace.isMyGlobalIndex(three))
-		x[vectorspace.getLocalIndex(three)] = intToScalar<ScalarType>(4);
+	// layout is: { 5 1 2 } for non-transpose, { 5 6 } for transpose
+	if(verbose) cout << "Creating and initializing x vector..." << endl;
+	Teuchos::RefCountPtr< Tpetra::Vector<OrdinalType, ScalarType> > x;
+	if(!doTranspose) { // non-transpose
+		x = Teuchos::rcp(new Tpetra::Vector<OrdinalType, ScalarType>(secondary));
+		if(secondary.isMyGlobalIndex(zero))
+			(*x)[secondary.getLocalIndex(zero)] = intToScalar<ScalarType>(5);
+		if(secondary.isMyGlobalIndex(one))
+			(*x)[secondary.getLocalIndex(one)] = intToScalar<ScalarType>(1);
+		if(secondary.isMyGlobalIndex(two))
+			(*x)[secondary.getLocalIndex(two)] = intToScalar<ScalarType>(2);
+	}
+	else { // transpose
+		x = Teuchos::rcp(new Tpetra::Vector<OrdinalType, ScalarType>(primary));
+		if(primary.isMyGlobalIndex(zero))
+			(*x)[primary.getLocalIndex(zero)] = intToScalar<ScalarType>(5);
+		if(primary.isMyGlobalIndex(one))
+			(*x)[primary.getLocalIndex(one)] = intToScalar<ScalarType>(6);
+	}
+	if(debug) {
+		if(verbose) 
+			cout << "Output of x:" << endl;
+		cout << *x;
+		rowES.comm().barrier();
+	}
 
+	
 	// ========================================
 	// create y vector (don't need to initialize values)
 	// ========================================
-	Tpetra::Vector<OrdinalType, ScalarType> y(vectorspace);
-	if(debug) {
-		if(myImageID == 0) 
-			cout << "Output of x:" << endl;
-		cout << x;
-		elementspace.comm().barrier();
-		if(myImageID == 0) 
-			cout << "\nOutput of y:" << endl;
-		cout << y;
-		elementspace.comm().barrier();
-	}
-
-	// ========================================
-	// create A CisMatrix and initalize values
-	// ========================================
-	// Matrix layout is:
-	//  2  0  1  0
-	//  0  4  0  2
-	//  3  0  6  0
-	//  0  5  0  8
-	if(verbose) cout << "Creating A matrix..." << endl;
-	Tpetra::CisMatrix<OrdinalType, ScalarType> A(vectorspace);
-	if(debug) cout << A;
-	if(verbose) cout << "Submitting values..." << endl;
-	if(vectorspace.isMyGlobalIndex(zero)) {
-		A.submitEntry(Tpetra::Insert, zero, intToScalar<ScalarType>(2), zero); // CombineMode, Row/Col Number, Value, Index
-		A.submitEntry(Tpetra::Insert, zero, intToScalar<ScalarType>(1), two); 
-	}
-	if(vectorspace.isMyGlobalIndex(one)) {
-		A.submitEntry(Tpetra::Insert, one, intToScalar<ScalarType>(4), one);
-		A.submitEntry(Tpetra::Insert, one, intToScalar<ScalarType>(2), three);
-	}
-	if(vectorspace.isMyGlobalIndex(two)) {
-		A.submitEntry(Tpetra::Insert, two, intToScalar<ScalarType>(3), zero);
-		A.submitEntry(Tpetra::Insert, two, intToScalar<ScalarType>(6), two);
-	}
-	if(vectorspace.isMyGlobalIndex(three)) {
-		A.submitEntry(Tpetra::Insert, three, intToScalar<ScalarType>(5), one);
-		A.submitEntry(Tpetra::Insert, three, intToScalar<ScalarType>(8), three);
-	}
-	if(debug) cout << A;
-	if(verbose) cout << "Calling fillComplete..." << endl;
-	A.fillComplete();
-	if(debug) cout << A;
-
-	// output current values
-	if(verbose) cout << "Finished creating & initializing." << endl;
-
-	// ======================================================================
-	// actual testing section - affects return code
-	// ======================================================================
-
-	// ========================================
-	// test apply
-	// ========================================
-	if(verbose) cout << "Testing apply... ";
-	if(verbose && debug) cout << endl;
-	A.apply(x, y);
-	if(debug) {
-		if(myImageID == 0)
-			cout << "\nOutput of A:" << endl;
-		elementspace.comm().barrier();
-		cout << A;
-		if(myImageID == 0)
-			cout << "\nOutput of x:" << endl;
-		elementspace.comm().barrier();
-		cout << x;
-		if(myImageID == 0)
-			cout << "\nOutput of y:" << endl;
-		elementspace.comm().barrier();
-		cout << y;
-	}
-
-	// layout of y should be: { 12 12 45 37 }
-	if(vectorspace.isMyGlobalIndex(zero)) {
-		if(y[vectorspace.getLocalIndex(zero)] != intToScalar<ScalarType>(12))
-			ierr++;
-	}
-	if(vectorspace.isMyGlobalIndex(one)) {
-		if(y[vectorspace.getLocalIndex(one)] != intToScalar<ScalarType>(12))
-			ierr++;
-	}
-	if(vectorspace.isMyGlobalIndex(two)) {
-		if(y[vectorspace.getLocalIndex(two)] != intToScalar<ScalarType>(45))
-			ierr++;
-	}
-	if(vectorspace.isMyGlobalIndex(three)) {
-		if(y[vectorspace.getLocalIndex(three)] != intToScalar<ScalarType>(37))
-			ierr++;
-	}
-	
-	if(verbose && debug) cout << "apply test ";
-	if(ierr != 0) {
-		if(verbose) cout << "failed" << endl;
-	}
+	// layout is: { 0 0 } for non-transpose, { 0 0 0 } for transpose
+	// (y should be set to all zeros by default)
+	if(verbose) cout << "Creating and initializing y vector..." << endl;
+	Teuchos::RefCountPtr< Tpetra::Vector<OrdinalType, ScalarType> > y;
+	if(!doTranspose)
+		y = Teuchos::rcp(new Tpetra::Vector<OrdinalType, ScalarType>(primary));
 	else
-		if(verbose) cout << "passed" << endl;
-	returnierr += ierr;
-	ierr = 0;
+		y = Teuchos::rcp(new Tpetra::Vector<OrdinalType, ScalarType>(secondary));
+	
+	// ========================================
+	// call apply
+	// ========================================
+
+	if(verbose) cout << "Calling apply..." << endl;
+	A->apply(*x, *y, doTranspose);
+	if(debug) {
+		if(verbose) 
+			cout << "\nOutput of y:" << endl;
+		cout << *y;
+		rowES.comm().barrier();
+	}
 
 	// ========================================
-	// finish up
+	// check results
 	// ========================================
-	elementspace.comm().barrier();
-	if(verbose) {
-		if(returnierr == 0)
-			outputHeading("Unit tests for " + className + " passed.");
-		else
-			outputHeading("Unit tests for " + className + " failed.");
+	
+	if(!doTranspose) {
+		// layout of y should be: { 25 1 }
+		if(primary.isMyGlobalIndex(zero)) {
+			if((*y)[primary.getLocalIndex(zero)] != intToScalar<ScalarType>(25))
+				ierr++;
+		}
+		if(primary.isMyGlobalIndex(one)) {
+			if((*y)[primary.getLocalIndex(one)] != intToScalar<ScalarType>(1))
+				ierr++;
+		}
 	}
-	return(returnierr);
+	else {
+		// layout of y should be: { 15 16 20 }
+		if(secondary.isMyGlobalIndex(zero)) {
+			if((*y)[secondary.getLocalIndex(zero)] != intToScalar<ScalarType>(15))
+				ierr++;
+		}
+		if(secondary.isMyGlobalIndex(one)) {
+			if((*y)[secondary.getLocalIndex(one)] != intToScalar<ScalarType>(16))
+				ierr++;
+		}
+		if(secondary.isMyGlobalIndex(two)) {
+			if((*y)[secondary.getLocalIndex(two)] != intToScalar<ScalarType>(20))
+				ierr++;
+		}
+	}
+
+	return(ierr);
 }

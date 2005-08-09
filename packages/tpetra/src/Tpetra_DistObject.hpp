@@ -187,14 +187,15 @@ namespace Tpetra {
 				throw reportError("Source ElementSpaces don't match", -2);
 
 			// copy variables from exporter
+			// note that some of them are swapped
 			OrdinalType numSameIDs = exporter.getNumSameIDs();
 			OrdinalType numPermuteIDs = exporter.getNumPermuteIDs();
-			OrdinalType numRemoteIDs = exporter.getNumRemoteIDs();
-			OrdinalType numExportIDs = exporter.getNumExportIDs();
-			std::vector<OrdinalType> const& exportLIDs = exporter.getExportLIDs();
-			std::vector<OrdinalType> const& remoteLIDs = exporter.getRemoteLIDs();
-			std::vector<OrdinalType> const& permuteToLIDs = exporter.getPermuteToLIDs();
-			std::vector<OrdinalType> const& permuteFromLIDs = exporter.getPermuteFromLIDs();
+			OrdinalType numRemoteIDs = exporter.getNumExportIDs();
+			OrdinalType numExportIDs = exporter.getNumRemoteIDs();
+			std::vector<OrdinalType> const& exportLIDs = exporter.getRemoteLIDs();
+			std::vector<OrdinalType> const& remoteLIDs = exporter.getExportLIDs();
+			std::vector<OrdinalType> const& permuteToLIDs = exporter.getPermuteFromLIDs();
+			std::vector<OrdinalType> const& permuteFromLIDs = exporter.getPermuteToLIDs();
 
 			// call doTransfer
 			doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
@@ -216,14 +217,15 @@ namespace Tpetra {
 				throw reportError("Source ElementSpaces don't match", -2);
 
 			// copy variables from importer
+			// note that some of them are swapped
 			OrdinalType numSameIDs = importer.getNumSameIDs();
 			OrdinalType numPermuteIDs = importer.getNumPermuteIDs();
-			OrdinalType numRemoteIDs = importer.getNumRemoteIDs();
-			OrdinalType numExportIDs = importer.getNumExportIDs();
-			std::vector<OrdinalType> const& exportLIDs = importer.getExportLIDs();
-			std::vector<OrdinalType> const& remoteLIDs = importer.getRemoteLIDs();
-			std::vector<OrdinalType> const& permuteToLIDs = importer.getPermuteToLIDs();
-			std::vector<OrdinalType> const& permuteFromLIDs = importer.getPermuteFromLIDs();
+			OrdinalType numRemoteIDs = importer.getNumExportIDs();
+			OrdinalType numExportIDs = importer.getNumRemoteIDs();
+			std::vector<OrdinalType> const& exportLIDs = importer.getRemoteLIDs();
+			std::vector<OrdinalType> const& remoteLIDs = importer.getExportLIDs();
+			std::vector<OrdinalType> const& permuteToLIDs = importer.getPermuteFromLIDs();
+			std::vector<OrdinalType> const& permuteFromLIDs = importer.getPermuteToLIDs();
 
 			// call doTransfer
 			doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,

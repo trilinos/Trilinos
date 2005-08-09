@@ -30,7 +30,6 @@
 #include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_OmniPlatform.hpp"
 #ifdef TPETRA_MPI
-#include <mpi.h>
 #include "Tpetra_MpiPlatform.hpp"
 #include "Tpetra_MpiComm.hpp"
 #else
@@ -39,11 +38,9 @@
 #endif // TPETRA_MPI
 
 template <typename OrdinalType, typename ScalarType>
-int omniTest(bool verbose, bool debug, int myImageID, int numImages);
-template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages);
 template <typename OrdinalType, typename ScalarType>
-void codeCoverage(bool verbose, bool debug, int myImageID, int numImages);
+int omniTest(bool verbose, bool debug, int myImageID, int numImages);
 
 int main(int argc, char* argv[]) {
 	int myImageID = 0; // assume we are on serial
@@ -91,6 +88,67 @@ int main(int argc, char* argv[]) {
 #endif
 	if(verbose) outputEndMessage("Platform", (ierr == 0));
 	return(ierr);
+}
+
+//======================================================================
+template <typename OrdinalType, typename ScalarType>
+int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
+	std::string className = "Platform<" + Teuchos::OrdinalTraits<OrdinalType>::name() + "," + Teuchos::ScalarTraits<ScalarType>::name() + ">";
+	if(verbose) outputHeading("Stating unit tests for " + className);
+
+	//int ierr = 0; // unused now that there's no actual tests
+	int returnierr = 0;
+
+	// ======================================================================
+	// code coverage section - just call functions, no testing
+	// ======================================================================
+
+#ifdef TPETRA_MPI
+	// default constructor
+	if(verbose) cout << "MpiPlatform default constructor..." << endl;
+	Tpetra::MpiPlatform<OrdinalType, ScalarType> platform(MPI_COMM_WORLD);
+	// copy constructor
+	if(verbose) cout << "MpiPlatform copy constructor..." << endl;
+	Tpetra::MpiPlatform<OrdinalType, ScalarType> platform2(platform);
+#else
+	// default constructor
+	if(verbose) cout << "SerialPlatform default constructor..." << endl;
+	Tpetra::SerialPlatform<OrdinalType, ScalarType> platform;
+	// copy constructor
+	if(verbose) cout << "SerialPlatform copy constructor..." << endl;
+	Tpetra::SerialPlatform<OrdinalType, ScalarType> platform2(platform);
+#endif
+
+	// clone
+	if(verbose) cout << "clone..." << endl;
+	Teuchos::RefCountPtr< Tpetra::Platform<OrdinalType, ScalarType> > platform3 = platform.clone();
+
+	// createScalarComm
+	if(verbose) cout << "createScalarComm..." << endl;
+	Teuchos::RefCountPtr< Tpetra::Comm<OrdinalType, ScalarType> > comm1 = platform.createScalarComm();
+  
+	// createOrdinalComm
+	if(verbose) cout << "createOrdinalComm..." << endl;
+	Teuchos::RefCountPtr< Tpetra::Comm<OrdinalType, OrdinalType> > comm2 = platform.createOrdinalComm();
+	
+	// ======================================================================
+	// actual testing section - affects return code
+	// ======================================================================
+
+	// ... none to do ...
+
+	// ======================================================================
+	// finish up
+	// ======================================================================
+  
+	comm1->barrier();
+	if(verbose) {
+		if(returnierr == 0)
+			outputHeading("Unit tests for " + className + " passed.");
+		else
+			outputHeading("Unit tests for " + className + " failed.");
+	}
+	return(returnierr);
 }
 
 //======================================================================
@@ -199,80 +257,4 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 	if(verbose) cout << "Finished OmniPlatform testing." << endl;
 
 	return(0);
-}
-
-//======================================================================
-template <typename OrdinalType, typename ScalarType>
-int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
-	std::string className = "Platform<" + Teuchos::OrdinalTraits<OrdinalType>::name() + "," + Teuchos::ScalarTraits<ScalarType>::name() + ">";
-	if(verbose) outputHeading("Stating unit tests for " + className);
-
-	//int ierr = 0; // unused now that there's no actual tests
-	int returnierr = 0;
-
-	// ======================================================================
-	// code coverage section - just call functions, no testing
-	// ======================================================================
-	codeCoverage<OrdinalType, ScalarType>(verbose, debug, myImageID, numImages);
-	
-	// ======================================================================
-	// actual testing section - affects return code
-	// ======================================================================
-
-	if(verbose && debug) outputSubHeading("Starting actual testing section...");
-
-#ifdef TPETRA_MPI
-	Tpetra::MpiPlatform<OrdinalType, ScalarType> platform(MPI_COMM_WORLD);
-	Tpetra::MpiComm<OrdinalType, ScalarType> comm(MPI_COMM_WORLD);
-#else
-	Tpetra::SerialPlatform<OrdinalType, ScalarType> platform;
-	Tpetra::SerialComm<OrdinalType, ScalarType> comm;
-#endif
-
-	// ======================================================================
-	// finish up
-	// ======================================================================
-  
-	comm.barrier();
-	if(verbose) {
-		if(returnierr == 0)
-			outputHeading("Unit tests for " + className + " passed.");
-		else
-			outputHeading("Unit tests for " + className + " failed.");
-	}
-	return(returnierr);
-}
-
-//======================================================================
-template <typename OrdinalType, typename ScalarType>
-void codeCoverage(bool verbose, bool debug, int myImageID, int numImages) { 
-	if(verbose) outputSubHeading("Starting code coverage section...");
-
-#ifdef TPETRA_MPI
-	// default constructor
-	if(verbose) cout << "MpiPlatform default constructor..." << endl;
-	Tpetra::MpiPlatform<OrdinalType, ScalarType> platform(MPI_COMM_WORLD);
-	// copy constructor
-	if(verbose) cout << "MpiPlatform copy constructor..." << endl;
-	Tpetra::MpiPlatform<OrdinalType, ScalarType> platform2(platform);
-#else
-	// default constructor
-	if(verbose) cout << "SerialPlatform default constructor..." << endl;
-	Tpetra::SerialPlatform<OrdinalType, ScalarType> platform;
-	// copy constructor
-	if(verbose) cout << "SerialPlatform copy constructor..." << endl;
-	Tpetra::SerialPlatform<OrdinalType, ScalarType> platform2(platform);
-#endif
-
-	// clone
-	if(verbose) cout << "clone..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Platform<OrdinalType, ScalarType> > platform3 = platform.clone();
-
-	// createScalarComm
-	if(verbose) cout << "createScalarComm..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Comm<OrdinalType, ScalarType> > comm1 = platform.createScalarComm();
-  
-	// createOrdinalComm
-	if(verbose) cout << "createOrdinalComm..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Comm<OrdinalType, OrdinalType> > comm2 = platform.createOrdinalComm();
 }

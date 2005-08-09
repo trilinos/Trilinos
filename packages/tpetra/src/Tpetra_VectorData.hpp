@@ -29,6 +29,8 @@
 #ifndef TPETRA_VECTORDATA_HPP
 #define TPETRA_VECTORDATA_HPP
 
+#include <Teuchos_Array.hpp>
+
 namespace Tpetra {
 
 	template<typename OrdinalType, typename ScalarType>
@@ -49,7 +51,7 @@ namespace Tpetra {
 	protected:
 		Teuchos::BLAS<OrdinalType, ScalarType> BLAS_;
 		VectorSpace<OrdinalType, ScalarType> VectorSpace_;
-		std::vector<ScalarType> scalarArray_;
+		Teuchos::Array<ScalarType> scalarArray_;
 		ScalarType seed_;
 	
 	private:

@@ -28,13 +28,10 @@
 
 #include "../tpetra_test_util.hpp"
 #ifdef TPETRA_MPI
-#include <mpi.h>
-#include "Tpetra_MpiPlatform.hpp"
 #include "Tpetra_MpiComm.hpp"
-#include "Tpetra_MpiTraits.hpp"
-#endif // TPETRA_MPI
-#include "Tpetra_SerialPlatform.hpp"
+#else
 #include "Tpetra_SerialComm.hpp"
+#endif // TPETRA_MPI
 
 template <typename OrdinalType, typename ScalarType>
 int unitTests(bool const verbose, bool const debug, int const myImageID, int const numImages);
@@ -71,8 +68,6 @@ int main(int argc, char* argv[]) {
 	// start the testing
 	if(verbose) outputStartMessage("Comm");
 	int ierr = 0;
-
-	//mpiBreakpoint(myImageID);
 
 	// call the actual test routines
 	ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
@@ -318,7 +313,7 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 	ierr = 0;
 	
 
-	#ifdef TPETRA_MPI
+#ifdef TPETRA_MPI
 
 	// test send and receive
 	cout.flush();

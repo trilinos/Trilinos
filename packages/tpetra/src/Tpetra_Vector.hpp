@@ -538,10 +538,16 @@ namespace Tpetra {
 
 		// Returns pointer to ScalarType array inside of scalarArray
 		ScalarType* scalarPointer() {
-			return(&VectorData_->scalarArray_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
+			if(VectorData_->scalarArray_.empty())
+				return(0);
+			else
+				return(&VectorData_->scalarArray_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
 		}
 		ScalarType const* scalarPointer() const {
-			return(&VectorData_->scalarArray_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
+			if(VectorData_->scalarArray_.empty())
+				return(0);
+			else
+				return(&VectorData_->scalarArray_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
 		}
 
 		//@}

@@ -32,7 +32,6 @@ Albuquerque, NM 87185-1110}
 
 \SANDreleaseType{Unlimited Release}
 
-
 \begin{document}
 \maketitle
 
@@ -50,43 +49,198 @@ and decisions that led to those designs being chosen.
 The authors would like to acknowledge the support of the ASCI and LDRD programs
 that funded development of Trilinos.
 
+\clearpage
+\tableofcontents
+
+\newpage
+\
+\vspace{3.5in}
+\begin{center}Intentionally Left Blank\end{center}
+
 \newpage
 
+% ---------------------------------------------------------------------- %
+% Introduction
+%
 \section{Introduction}
 
+Tpetra is an object-oriented C++ library for creating and managing basic linear algebra objects, such as Vectors, MultiVectors, and Sparse Matrices. It implements the Petra Object Model~\cite{Petra-Object-Model}.
 
-Many numerical algorithms for the solution of problems in
-scientific and engineering applications use vectors and
-matrices as basic elements.   Generally, the exact details
-of how these mathematical objects are stored, or how computations
-are performed using them, is not of primary importance for the
-algorithm designer.  Because of this, using abstract object models
-that describe the attributes and methods associated with each
-object class, and defining the relationship between classes, is an
-effective way to separate algorithm design and implementation from
-vector and matrix design.
+% ---------------------------------------------------------------------- %
+%     Scalars and Ordinals
+%
+\subsection{Scalars and Ordinals}
+A fundamental concept of Tpetra is that of OrdinalType and ScalarType. Tpetra is templated throughout on these two types. (A full discussion of templates is well beyond the scope of this document. Any good C++ book will give you an overview of templates. For an exhaustive reference, see \cite{Templates-Complete-Guide}.)
 
-The practical importance of this separation comes from the fact
-that there are many different data structures used to store
-vectors and matrices and correspondingly many different ways
-to implement basic matrix and vector operations.  The variety
-of vector matrix data structures and implementations is, to
-some extent, a result of arbitrary choices made by application
-designers.  However, often there are sound reasons for choosing
-particular data structures, either because of the intended
-computer architecture or because of the specifics of the
-application.  Abstraction of the vector and matrix objects
-leverages the investment in sophisticated algorithm implementations
-across many different vector and matrix implementations and
-provides a convenient generic programming framework for new
-algorithm development.
+The ScalarType is the type of our actual data. In Epetra, the ScalarType is always double. In Tpetra, it could be float, double, complex$<$float$>$, complex$<$double$>$, or almost any other type. A user could use a 3x3 dense matrix as a ScalarType if they wanted to. The OrdinalType is primarily an ordering type. For example, we use it as the datatype for element IDs. OrdinalType is also used as a counting type. We use it to store information on how many of something we have. In Epetra, the OrdinalType is always int. In Tpetra, it will most likely be an int or a long. However, it could be any type that is mathematically countable - a type who's values have a one-to-one correspondence to the integers.
 
-In this paper we present a detailed object model for vectors
-and matrices that are intended for use in a parallel, distributed
-memory computing environment.  We present a brief overview of
-the classes, followed by a UML object model, in the next section.
-In subsequent sections we present a collection of pure virtual
-classes, two C++ implementations of this model and a Java
-implementation.
+Because we don't know which type we're using, it's very important that we don't make the assumption that we can use literals in Tpetra. While \texttt{someVar = 5.0} will evaluate correctly if the variable is a float or double, there's no guarantee that the implicit conversion will succeed if it's an arbitrary-precision object or a vector or matrix.
+
+To solve this problem, we use a design pattern known as traits\footnote{For more information on traits and policies, see Chapter 15 ``Traits and Policy Classes'' in \cite{Templates-Complete-Guide}.}. We use two Teuchos\cite{Teuchos} classes, ScalarTraits and OrdinalTraits. ScalarTraits defines many traits, but most of them, such as machine epsilon, the largest exponent before overflow, etc., are not of interest to us. We are primarily interested in two traits that both ScalarTraits and OrdinalTraits define: one and zero. Zero is the mathematical zero; it is the value such that for all $x$, $x * 0 = 0$. One is unity, or identity; it is the value such that for all $x$, $x * 1 = x$.
+
+\fbox{Add table with sample entries?}
+
+If a type has these traits defined, and defines the basic operators such as =, +, -, *, /, we can use it as a ScalarType or OrdinalType. Using these, we can do anything we want to. For example, consider this slightly-contrived function that returns the sign of a variable: -1 for negative, +1 for positive, and 0 for zero:
+\begin{quote}
+\begin{verbatim}
+template <typename OrdinalType>
+OrdinalType getSign(OrdinalType const& foo) {
+    OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
+    OrdinalType const negOne = zero - one;
+    
+    if(foo > zero)
+        return(one);
+    else if(foo < zero)
+        return(negOne);
+    else
+        return(zero);
+}
+\end{verbatim}
+\end{quote}
+Note that the comparisons are done using equivalence, not equality. This is something that a Tpetra developer must be kept in mind\footnote{For the distinction between equivalence and equality, see Item 19 in \cite{Effective-STL}.}. 
+
+Also note that we consider an OrdinalType to have a domain of $\left( -\infty, \infty \right)$. As a result of this, while it is perfectly legal to use an unsigned type as an OrdinalType, for instance \texttt{unsigned int}, it may produce some unexpected results. One such consequence is negative one, which we often use as a placeholder or as an error code in situations where non-negative values are valid. In the case of a 32-bit unsigned int, $-1 = 0 - 1 = 2^{32} - 1$. While odd, this will work fine. It just means that the effective range is now $\left[ 0, 2^{32} - 2 \right]$ instead of $\left[ 0, 2^{32} - 1 \right]$. (We are not concerned with exceeding the domain of an OrdinalType, and we don't check for it. If a user's computations are overflowing, they should switch to a larger type.)
+
+% ---------------------------------------------------------------------- %
+%     Communication
+%
+\section{Communication}
+Parallel communication is done using Tpetra::Comm, the Tpetra Communicator class. This is the same as is done in Epetra. Comm provides an insulating layer between the actual communications library being used and the rest of Tpetra. Whether we are using serial, MPI, shared memory, or some other setup is only relevant to the Comm class. 
+
+\subsection{Comm}
+Tpetra::Comm provides the same collective communication operations that Epetra::Comm does: barrier, broadcast, gather all, global sum, global min, global max, and scanSum (parallel prefix sum). In addition, it provides several point-to-point operations that while present in Epetra, they were not part of Comm. The new operations are sumAllAndScatter, blocking send, blocking receive, and the doPostsAndWaits family of functions.
+
+These new functions are the result of a design decision made by the Tpetra team in July 2005. In Epetra, Distributor is a communications class. There is a Distributor abstract base class, and SerialDistributor and MpiDistributor implementations. This means that MPI code exists both in Epetra::MpiComm and in Epetra::MpiDistributor. In Tpetra, all MPI interaction is done through the Comm class. Tpetra::Distributor is just another Tpetra class that depends on Comm for communication.
+
+Epetra::MpiDistributor did most of the MPI calls in the doPosts and doWaits functions. But some communication was done in the setup functions. The blocking send, blocking receive, and sumAllAndScatter functions were added to Tpetra::Comm so that these setup functions in Distributor could be implementation-independent. 
+
+The doPosts and doWaits functions in Epetra::MpiDistributor perform specialized and somewhat complicated operations that do not need to be generally available. This is one reason why they were moved entirely into Comm, instead of having wrappers added for the specific MPI calls they made. 
+
+Distributor now functions much like Import and Export do. They do the initial setup, but when the actual communication is done, it is done by a different class, with the setup class given as a parameter. In the case of Import and Export, the actual communication is done by the DistObject class, with an Import or Export object passed into the doImport or doExport member function of DistObject. In the case of Distributor, it is passed as a parameter to the doPosts, doWaits, doPostsAndWaits, doReversePosts, doReverseWaits, and doReversePostsAndWaits member functions of Comm.
+
+\textbf{Epetra Migration Note:} The Epetra Distributor functions ``do'' and ``doReverse'' have been renamed ``doPostsAndWaits'' and ``doReversePostsAndWaits'', respectively. Their functionality is unchanged.
+
+\subsection{MPI}
+In Epetra, dealing with MPI was straightforward. Ints and doubles were passed directly, using the MPI\_INT and MPI\_DOUBLE datatypes. When a DistObject was transmitted, it was packed into a buffer and treated as a char* array, using the MPI\_CHAR datatype. In Tpetra, it's not that simple. When doing a simple collective operation, such as sumAll, we don't know what datatype we're using, since the Comm class is templated. And when communicating a DistObject, we can't assume anything about the memory layout of the ScalarType or OrdinalType we're using. It may contain pointers to heap arrays, or any number of things.
+
+Once again, our solution involves traits. The Tpetra::MpiTraits class works very similarly to OrdinalTraits and ScalarTraits. It provides four traits: datatype, count, sumOp, maxOp, and minOp.
+\begin{description}
+
+\item[datatype] This returns a variable of type MPI\_Datatype. This is the datatype that MPI thinks it is receiving. For example, MPI\_BYTE, MPI\_FLOAT, or MPI\_INT.
+
+\item[count] This returns a variable of type int. This is the number of objects that MPI thinks it is receiving. This is a multiple of userCount, a parameter passed to the count function. userCount is the number of objects that the caller thinks it is sending to Tpetra::Comm.
+
+\item[sumOp] This returns a variable of type MPI\_Op. For the built-in datatypes, this is MPI\_SUM. But for non-built in datatypes, such as complex$<$T$>$, or a matrix or vector, we need to define our own sum operation, and this trait is how we pass that into MPI.
+
+\item[maxOp] This functions the same way that sumOp does, except that it returns the operation for finding the global maximum value. For complex$<$T$>$, we compare the objects by their magnitude, since there is no such thing as less than or greater than for a complex value. We still need to return a complex$<$T$>$ variable, so we return the first one we encountered that had the largest magnitude.
+
+\item[minOp] This functions the same way that maxOp does (including its handling of complex values), except that it returns the operation for finding the global minimum value.
+\end{description}
+
+Defining the datatype and count traits for a new datatype are quite straightforward. Defining the sumOp, maxOp, and minOp traits are fairly involved, since they involve defining new functions for MPI to use. The traits defined for complex$<$T$>$ should provide a decent template to copy. If that is not enough, refer to \cite{MPI}.
+
+\textbf{Warning:} The way we handle complex values is to tell MPI we're passing it two values of type T for each value of type complex$<$T$>$ the user passes us. This works quite well, and allows us to not have to define a new datatype, since MPI already supports arrays. However, this assumes that a complex variable's memory layout consists only of the two T variables. (In other words: This assumes that if we take the address of a complex$<$T$>$ variable, cast it to a T* pointer, and pass that pointer into MPI, MPI will find a T variable there. Furthermore, incrementing that pointer must produce a seconed T variable.) 
+
+This has been the case on every machine the author has tested it on, and it is possible that such a layout is required by the C++ Standard. However, as of this writing, we do not know that for sure. So it is possible that there is a machine on which this will break. In which case we will just have to declare a custom datatype, which can be handled by the existing datatype trait.
+
+It does not matter in which order the real and imaginary components occur, as long as all nodes use that same layout.
+
+% ---------------------------------------------------------------------- %
+% Defining a Distribution
+%
+\section{Defining a Distribution}
+One of the main functions of Tpetra is to define the distribution of data across the parallel machine. This is accomplished by using several classes in conjunction.
+
+\textbf{Epetra Migration Note:} Tpetra's ElementSpace and BlockElementSpace are functionally equivalent to Epetra's Map and BlockMap classes, respectively. However, in Epetra, Map \emph{isA} BlockMap, and is implemented as a BlockMap with a single point per block. In Tpetra, the relationship is reversed. ElementSpace is a stand-alone class, and BlockElementSpace \emph{hasA} ElementSpace. BlockElementSpace is implemented by storing the number of points for each element in the ElementSpace.
+
+\textbf{Rationale:} A block distribution involves storing additional data, and creates an additional overhead. Even though most applications will not need it, Epetra imposes that extra overhead on all users by making Map inherit from BlockMap. In Tpetra, only the applications that need a block distribution will use a BlockElementSpace, and only they will bear the additional burden.
+
+% ---------------------------------------------------------------------- %
+%     ElementSpace
+%
+\subsection{ElementSpace}
+ElementSpace defines a parallel distribution of data. The atomic unit for an ElementSpace is an Element. Given an array of Elements, ElementSpace will assign a GID and an LID to each Element. Code that uses an ElementSpace can query it to find out what elements they own, as well as finding out who owns a specified GID.
+
+There are three ElementSpace constructors:
+
+\begin{enumerate}
+\item \textbf{Uniform Contiguous Distribution}
+The first constructor will create a Tpetra-defined contiguous distribution. The caller specifies how many global elements there are, and ElementSpace will assign GIDs to each element, and distribute them to one of the images. Global IDs will be in the range [indexBase, indexBase + numGlobalElements). Each image will be given (numGlobalElements / numImages) elements. If there are any leftover elements, one additional element will be given to each of the first (numGlobalElements \% numImages) images.
+Each element is guaranteed to be uniquely-owned. (In other words, for every GID existing in the ElementSpace, exactly one image will own it.)
+
+\item \textbf{User-Defined Contiguous Distribution}
+The second constructor will create a user-defined contiguous distribution. The caller specifies how many global elements there are, and how many are owned by this image. ElementSpace will assign GIDs to each element, and attempt to distribute them the way the caller requested. If the global sum of numMyElements does not equal numGlobalElements on any image, an exception will be thrown. (The caller can have ElementSpace compute numGlobalElements by passing -1 as that parameter.)
+
+As with the uniform contiguous distribution, Global IDs will still be given out in the range [indexBase, indexBase + numGlobalElements), and each element is still guaranteed to be uniquely-owned.
+
+\item \textbf{Non-Contiguous Distribution}
+The third constructor will create a user-defined non-contiguous distribution. The caller specifies how many global elements there are, how many are owned by this image, and an STL vector containing the GIDs owned by this image. The myGIDs array does not need to be in a sorted order. However, LIDs will be assigned in order - myGIDs[i] will have LID i.
+
+Unlike the first two constructors, there are almost no restrictions on the GIDs. A GID can be owned by one or more images, and can have any value, provided it is not less that indexBase.
+
+\end{enumerate}
+
+Note that the distributions generated by the different constructors are not mutually exclusive. Any distribution that can be created in the second constructor can also be created in the third constructor, and any distribution that can be created in the first constructor can also be created in either the second or third constructor.
+
+ElementSpace is a static class, meaning that after construction, it will not change state at all. All of the member functions return information; none of them change class data members. Thus, it is possible to have a ElementSpace object declared as const, since there are no non-const member functions (with the exception of the assignment operator.)
+
+\textbf{Future Work:} We would like to provide the user with the ability to find out if any of the elements in their ElementSpace object are multiply-owned, and if so, which. This will involve refactoring both ElementSpace and Directory, but it should not be too much work. This will provide additional functionality to Tpetra, as well as to the user. For example, in Tpetra::Import, we could throw an exception if the caller specified a source distribution that was multiply-owned.
+
+\subsection{BlockElementSpace}
+
+\subsection{VectorSpace}
+
+\subsection{Directory}
+
+\section{Parallel Data Redistribution}
+
+\subsection{Distributor}
+
+\subsection{Import}
+
+\subsection{Export}
+
+\subsection{DistObject}
+
+\section{Linear Algebra Objects}
+
+\subsection{CompObject}
+All Tpetra classes that represent a linear algebra object inherit from \texttt{Teuchos::CompObject}. This provides us with the functionality to keep a flops count for that object. The flops count of a CompObject represents the number of floating-point operations that have occured on this image --- it is not a global counter.
+
+\subsection{Vector}
+
+\subsection{CisMatrix}
+CisMatrix is a generalization of the compressed-row sparse matrix found in Epetra\_CrsMatrix. A Tpetra::CisMatrix can be either row-oriented or column-oriented. This property is set at construction.
+
+Due to this generalization, CisMatrix does not deal just with the row distribution and the column distribution. Instead, we use the concept of the primary distribution and the secondary distribution. In a row-oriented matrix, the primary distribution is the row distribution. In a column-oriented matrix, the primary distribution is the column distribution. Almost all of CisMatrix deals with the primary and secondary distributions instead of dealing with the row and column  distributions directly. This is what allows us to support both orientations with the same code.
+
+The one exception to this orientation-agnostic policy is when we are doing a matrix-vector multiplication, implemented in the \texttt{apply} method. This is because regardless of the orientation, the mathematical matrix represented by the class is the same. In either case, the x vector will need to match the matrix's column dimensions, and the y vector will need to match the matrix's row dimensions. (If we are doing an apply on the transpose of the matrix, these matchups are reversed.)
+
+There are four possible cases for an apply, but we can get by with having only two routines. The matrix may be row-oriented or column-oriented, and we may or may not be doing a transpose. Because a Kokkos::CisMatrix can have either orientation, our apply function does not need to take that into account. All we need to worry about is whether or not we are doing a transpose, which is slightly more complex than a non-transpose apply.
+
+\subsubsection{Non-Transpose}
+
+\section{Tpetra Dependencies}
+
+\subsection{Kokkos}
+Tpetra depends on Kokkos\cite{Kokkos} for serial kernels. At present, we are only using one of the Kokkos routines, sparse matrix vector multiplication. Our reason for doing this is to seperate the kernels from the surrounding code, so that more optimized kernels can be developed and used without affecting Tpetra.
+
+Note that the Kokkos routines are purely serial. As such, if we are running in a parallel environment, any redistributions that are needed before or after the computation must be handled by Tpetra.
+
+\subsection{Teuchos}
+Tpetra depends on Teuchos\cite{Teuchos} for many different things. We use the traits mechanisms in Teuchos::OrdinalTraits and Teuchos::ScalarTraits. We use Teuchos::RefCountPtr throughout Tpetra to manage dynamic storage for us. And we utilize the Teuchos BLAS wrappers for the same reasons that we use Kokkos; it provides a templated interface to the BLAS routines, insulating us from development of more advanced and more optimized BLAS kernels.
+
+\subsection{C++ Standard Library}
+Tpetra makes extensive use of the C++ Standard Template Library (STL), which are now incorporated into the C++ Standard Library. We use vectors and maps throughout Tpetra, and call on the STL algorithms quite frequently as well. (Some Tpetra classes use a \texttt{Teuchos::Array} in place of a \texttt{std::vector} as a data member. This is done mainly so that we have the ability to do array bounds checking. This could be done using vector's \texttt{at} member function, but the bounds checking in Teuchos Array can be turned on and off at configure time. This is not possible with the \texttt{at} member function.)
+
+% ---------------------------------------------------------------------- %
+% References
+%
+\clearpage
+\bibliographystyle{plain}
+\bibliography{TpetraDesign}
+\addcontentsline{toc}{section}{References}
+
 
 \end{document}

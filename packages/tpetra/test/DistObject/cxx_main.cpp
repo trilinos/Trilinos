@@ -27,20 +27,17 @@
 // @HEADER
 
 #include "../tpetra_test_util.hpp"
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_VectorSpace.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_CombineMode.hpp"
-#include "Tpetra_Util.hpp"
 #ifdef TPETRA_MPI
-#include <mpi.h>
 #include "Tpetra_MpiPlatform.hpp"
 #else
 #include "Tpetra_SerialPlatform.hpp"
 #endif // TPETRA_MPI
+#include <Teuchos_Array.hpp>
 
 template <typename OrdinalType, typename ScalarType>
 int unitTests(bool const verbose, bool const debug, int const myImageID, int const numImages);
@@ -216,7 +213,7 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 		cout << v4;
 
 	// do the export
-	if(debug && verbose) cout << "Calling doExport... " << endl;
+	if(debug && verbose) cout << "Calling doExport(using exporter)... " << endl;
 	Tpetra::Export<OrdinalType> exporter(replicatedES, uniqueES);
 	v4.doExport(v3, exporter, Tpetra::Add);
 
@@ -240,6 +237,39 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 			cout << "passed" << endl;
 	returnierr += ierr;
 	ierr = 0;
+	
+	// ========================================
+	// Tpetra::Vector, reverse importing
+	// uniquely owned -> replicated
+	// ========================================
+	/*
+	// *** THIS TEST IS NOT FINISHED YET ***
+	Tpetra::ElementSpace<OrdinalType> sourceES((one + one), zero, esPlatform);
+	Tpetra::VectorSpace<OrdinalType, ScalarType> sourceVS(sourceES, platform);
+	Teuchos::Array<OrdinalType> targetGIDs;
+	if(myImageID == 0)
+		targetGIDs = Teuchos::tuple(zero, one);
+	else if(myImageID == 1)
+		targetGIDs = Teuchos::tuple(zero);
+	Tpetra::ElementSpace<OrdinalType> targetES(negOne, targetGIDs.size(), targetGIDs, zero, esPlatform);
+	Tpetra::VectorSpace<OrdinalType, ScalarType> targetVS(targetES, platform);
+
+	Tpetra::Export<OrdinalType> temp(targetES, sourceES);
+	exporter = temp;
+	
+	Tpetra::Vector<OrdinalType, ScalarType> target(targetVS);
+	target.setAllToScalar(scalarZero);
+	Tpetra::Vector<OrdinalType, ScalarType> source(sourceVS);
+	OrdinalType index = zero;
+	ScalarType value;
+	if(myImageID == 0)
+		value = intToScalar<ScalarType>(5);
+	else if(myImageID == 1)
+		value = intToScalar<ScalarType>(6);
+	source.submitEntries(one, &index, &value);
+
+	target.doImport(source, exporter, Tpetra::Insert);
+	*/
 
 	// ======================================================================
 	// finish up

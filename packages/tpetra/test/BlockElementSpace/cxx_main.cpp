@@ -26,39 +26,33 @@
 // ***********************************************************************
 // @HEADER
 
-#define ORDINALTYPE int
-
-#include <iostream>
-#include <iomanip>
+#include "../tpetra_test_util.hpp"
+#include <Teuchos_Array.hpp>
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_BlockElementSpace.hpp"
-#include "Tpetra_Version.hpp"
-
 #ifdef TPETRA_MPI
-#include <mpi.h>
 #include "Tpetra_MpiPlatform.hpp"
 #else
 #include "Tpetra_SerialPlatform.hpp"
 #endif // TPETRA_MPI
 
+template <typename OrdinalType>
+int unitTests(bool verbose, bool debug, int myImageID, int numImages);
+
 int main(int argc, char* argv[]) {
-
-	const ORDINALTYPE INDEXBASE = 0;
-	const ORDINALTYPE NUMELEMENTS = 5;
-	const ORDINALTYPE ELEMENTSIZE = 2;
-
-  int rank = 0; // assume we are on serial
-  int size = 1; // if MPI, will be reset later
+	int myImageID = 0; // assume we are on serial
+	int numImages = 1; // if MPI, will be reset later
   
-  // initialize MPI if needed
+	// initialize MPI if needed
 #ifdef TPETRA_MPI
-  size = -1;
-  rank = -1;
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	numImages = -1;
+	myImageID = -1;
+	MPI_Init(&argc, &argv);
+	MPI_Comm_size(MPI_COMM_WORLD, &numImages);
+	MPI_Comm_rank(MPI_COMM_WORLD, &myImageID);
 #endif // TPETRA_MPI
 
+	// initialize verbose & debug flags
 	bool verbose = false;
 	bool debug = false;
 	if(argc > 1) {
@@ -69,88 +63,139 @@ int main(int argc, char* argv[]) {
 			verbose = true;
 		}
 	}
+  
+	// change verbose to only be true on Image 0
+	verbose = (verbose && (myImageID == 0));
+  
+	// start the testing
+	if(verbose) outputStartMessage("BlockElementSpace");
+	int ierr = 0;
+  
+	// call the actual test routines
+	ierr += unitTests<int>(verbose, debug, myImageID, numImages);
 
+	// finish up
 #ifdef TPETRA_MPI
-  if(verbose) cout << "MPI Startup: Image " << rank << " of " << size << " is alive." << endl;
-  MPI_Barrier(MPI_COMM_WORLD);
-#endif // TPETRA_MPI
+	MPI_Finalize();
+#endif
+	if(verbose) outputEndMessage("BlockElementSpace", (ierr == 0));
+	return(ierr);
+}
+
+//======================================================================
+template <typename OrdinalType>
+int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
+	std::string className = "BlockElementSpace<" + Teuchos::OrdinalTraits<OrdinalType>::name() + ">";
+	if(verbose) outputHeading("Stating unit tests for " + className);
+
+	int ierr = 0;
+	int returnierr = 0;
+
+	OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+	OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
+	OrdinalType const negOne = zero - one;
+
+	// fixtures
+	OrdinalType const numElements = intToOrdinal<OrdinalType>(5);
+	OrdinalType const indexBase = intToOrdinal<OrdinalType>(0);
+	OrdinalType const elementSize = intToOrdinal<OrdinalType>(2);
+	bool result = false;
   
-  // change verbose to only be true on Image 0
-  verbose = (verbose && (rank == 0));
-  
-  // start the testing
-	if(verbose) {
-    cout << "\n****************************************\n" 
-         << "Starting BlockElementSpaceTest..." << endl
-         << Tpetra::Tpetra_Version() << endl
-         << "****************************************\n";
-  }
-  
-  // Platform
-  if(verbose) cout << "Creating platform" << endl;
+	// ======================================================================
+	// code coverage section - just call functions, no testing
+	// ======================================================================
+
+	// create Platform
 #ifdef TPETRA_MPI
-  Tpetra::MpiPlatform<ORDINALTYPE, ORDINALTYPE> platform(MPI_COMM_WORLD);
+	Tpetra::MpiPlatform<OrdinalType, OrdinalType> platform(MPI_COMM_WORLD);
 #else
-  Tpetra::SerialPlatform<ORDINALTYPE, ORDINALTYPE> platform;
+	Tpetra::SerialPlatform<OrdinalType, OrdinalType> platform;
 #endif // TPETRA_MPI
 
+	// create ElementSpace objects (3 of them, 1 for each ES ctr)
+	Tpetra::ElementSpace<OrdinalType> es1(numElements, indexBase, platform);
+	Tpetra::ElementSpace<OrdinalType> es2(negOne, numElements, indexBase, platform);
+	Teuchos::Array<OrdinalType> gidList;
+	generateColumn(gidList, myImageID, numElements);
+	Tpetra::ElementSpace<OrdinalType> es3(negOne, numElements, gidList, indexBase, platform);
 
-  // ElementSpace
-	// commented out lines are for creating alternate es objects.
-  if(verbose) cout << "Creating es, constructor1" << endl;
-  Tpetra::ElementSpace<ORDINALTYPE> es(NUMELEMENTS, INDEXBASE, platform);
-  //if(verbose) cout << "Creating es, constructor2" << endl;
-  //Tpetra::ElementSpace<ORDINALTYPE> es(-1, NUMELEMENTS, INDEXBASE, platform);
-  //if(verbose) cout << "Creating es, constructor3" << endl;
-  //ORDINALTYPE gidList[NUMELEMENTS] = {1,4,7,8,9};//,15,22,54,55,58};
-  //Tpetra::ElementSpace<ORDINALTYPE> es(-1, NUMELEMENTS, gidList, INDEXBASE, platform);
-  //if(debug) cout << es;
+	// fixed-size ctr
+	if(verbose) cout << "BlockElementSpace constructor (fixed-size)...";
+	Tpetra::BlockElementSpace<OrdinalType> bes1(es1, elementSize);
+	if(debug) 
+		cout << bes1;
 
-  //BlockElementSpace
-  if(verbose) cout << "Creating bes1(fixed-size)...";
-  Tpetra::BlockElementSpace<ORDINALTYPE> bes1(es, ELEMENTSIZE);
-  if(verbose) cout << "Successful." << endl;
-  if(debug) cout << bes1;
-
-	if(verbose) cout << "Creating bes2(variable-sized)...";
-	ORDINALTYPE* esizelist = new ORDINALTYPE[NUMELEMENTS];
-	esizelist[0] = 1;
-	esizelist[1] = 1;
-	esizelist[2] = 2;
-	esizelist[3] = 3;
-	esizelist[4] = 5;
-	Tpetra::BlockElementSpace<ORDINALTYPE> bes2(es, esizelist);
-	delete[] esizelist;
-	esizelist = 0;
-  if(verbose) cout << "Successful." << endl;
+	// variable-sized ctr
+	if(verbose) cout << "BlockElementSpace constructor (variable-sized)...";
+	Teuchos::Array<OrdinalType> eSizeList = Teuchos::tuple(one, one, one+one, one+one+one, one+one+one+one+one);
+	Tpetra::BlockElementSpace<OrdinalType> bes2(es1, &eSizeList.front());
 	if(debug) cout << bes2;
 
-  if(verbose) cout <<"Creating bes3(copy constructor)...";
-  Tpetra::BlockElementSpace<ORDINALTYPE> bes3(bes1);
-  if(verbose) cout << "Successful." << endl;
-  if(debug) cout << bes3;
+	// copy ctr
+	if(verbose) cout <<"BlockElementSpace copy constructor...";
+	Tpetra::BlockElementSpace<OrdinalType> bes3(bes1);
+	if(debug) cout << bes3;
 
-  if(verbose) cout << "Checking isSameAs...";
-  Tpetra::BlockElementSpace<ORDINALTYPE> bes4(es, ELEMENTSIZE+1);
-  assert(bes1.isSameAs(bes3) == true);
-  assert(bes1.isSameAs(bes4) == false);
-  if(verbose) cout << "Successful." << endl;
-
-  if(verbose) cout << "Checking assignment operator...";
-  assert(bes1.isSameAs(bes4) == false);
-  bes4 = bes1;
-  assert(bes1.isSameAs(bes4) == true);
-  if(verbose) cout << "Successful." << endl;
-
-	if(verbose) cout << "Creating compatible ElementSpace" << endl;
-	Tpetra::ElementSpace<ORDINALTYPE> const* bes2es = bes2.generateCompatibleElementSpace();
+	if(verbose) cout << "Creating compatible ElementSpace..." << endl;
+	Tpetra::ElementSpace<OrdinalType> const* bes2es = bes2.generateCompatibleElementSpace();
 	if(debug) cout << (*bes2es);
 	delete bes2es;
 
-#ifdef TPETRA_MPI
-  MPI_Finalize();
-#endif // TPETRA_MPI
+	// ======================================================================
+	// actual testing section - affects return code
+	// ======================================================================
+
+	// ========================================
+	// isSameAs
+	// ========================================
+	if(verbose) cout << "Testing isSameAs... ";
+	Tpetra::BlockElementSpace<OrdinalType> bes4(es1, elementSize + one);
+	result = bes1.isSameAs(bes3);
+	if(result == false)
+		ierr++;
+	result = bes1.isSameAs(bes4);
+	if(result == true)
+		ierr++;
+
+	if(verbose) {
+		if(ierr != 0) 
+			cout << "Failed" << endl;
+		else 
+			cout << "Passed" << endl;
+	}
+	returnierr += ierr;
+	ierr = 0;
+
+	// ========================================
+	// assignment operator
+	// ========================================
+	if(verbose) cout << "Checking assignment operator...";
+	result = bes1.isSameAs(bes4);
+	if(result == true)
+		ierr++;
+	bes4 = bes1;
+	result = bes1.isSameAs(bes4);
+	if(result == false)
+		ierr++;
+
+	if(verbose) {
+		if(ierr != 0) 
+			cout << "Failed" << endl;
+		else 
+			cout << "Passed" << endl;
+	}
+	returnierr += ierr;
+	ierr = 0;
+
+	// ======================================================================
+	// finish up
+	// ======================================================================
   
-	if(verbose) cout << "BlockElementSpace testing successful." << endl;
-  return(0); 
+	if(verbose) {
+		if(returnierr == 0)
+			outputHeading("Unit tests for " + className + " passed.");
+		else
+			outputHeading("Unit tests for " + className + " failed.");
+	}
+	return(returnierr);
 }

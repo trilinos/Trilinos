@@ -29,7 +29,6 @@
 #include "../tpetra_test_util.hpp"
 #include "Tpetra_Distributor.hpp"
 #ifdef TPETRA_MPI
-#include <mpi.h>
 #include "Tpetra_MpiPlatform.hpp"
 #include "Tpetra_MpiComm.hpp"
 #else

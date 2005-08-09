@@ -29,9 +29,7 @@
 #include "../tpetra_test_util.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_Directory.hpp"
-#include "Tpetra_Util.hpp"
 #ifdef TPETRA_MPI
-#include <mpi.h>
 #include "Tpetra_MpiPlatform.hpp"
 #else
 #include "Tpetra_SerialPlatform.hpp"

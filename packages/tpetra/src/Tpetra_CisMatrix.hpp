@@ -97,6 +97,7 @@ namespace Tpetra {
 		<li> +3  Requested distribution is not currently defined.
 		<li> +4  Cannot call that method until after fillComplete.
 		<li> +5  Cannot call that method after fillComplete.
+		<li> +6  Distribution mismatch.
 		<li> -99 Internal CisMatrix error. Contact developer.
 		</ol>
 		
@@ -132,9 +133,6 @@ namespace Tpetra {
 			: Object(Source.label())
 			, CisMatrixData_(Source.CisMatrixData_)
 		{}
-
-		//! destructor.
-		~CisMatrix() {}
   
 		//@}
   
@@ -234,7 +232,7 @@ namespace Tpetra {
 		}
   
 		//! Signals that data entry is complete. Matrix data is converted into a more optimized form.
-		/*! The domain distribution and range distribution will be set equal to the primary distribution. 
+		/*! The domain and range distributions will be set equal to the primary distribution.
 		    NOTE: After calling fillComplete, no insertions or modifications are allowed. */
 		void fillComplete() {
 			fillComplete(getPrimaryDist(), getPrimaryDist());
@@ -335,6 +333,7 @@ namespace Tpetra {
 				throw reportError("axy.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 
 			// setup Import and Export objects if we need to
+			// importer: DomainDist->ColumnDist
 			if(!getColumnDist().isCompatible(getDomainDist())) {
 				// Column and Domain Distributions don't match, need Importer
 				if(!data().haveImporter_) {
@@ -343,75 +342,46 @@ namespace Tpetra {
 					data().haveImporter_ = true;
 				}
 			}
+			// exporter: RowDist->RangeDist
 			if(!getRowDist().isCompatible(getRangeDist())) {
 				// Row and Range Distributions don't match, need Exporter
 				if(!data().haveExporter_) {
-					data().exporter_ = Teuchos::rcp(new Export<OrdinalType>(getRangeDist().elementSpace(),
-																			getRowDist().elementSpace()));
+					data().exporter_ = Teuchos::rcp(new Export<OrdinalType>(getRowDist().elementSpace(),
+																			getRangeDist().elementSpace()));
 					data().haveExporter_ = true;
 				}
 			}
 
 			data().fillCompleted_ = true;
 		}
-  
+		
 		//@}
   
 		//@{ \name Computational Methods
   
 		//! Computes the matrix-vector multiplication y = Ax
-		void apply(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType>& y, bool transpose = false) {
+		void apply(Vector<OrdinalType, ScalarType>& x, Vector<OrdinalType, ScalarType>& y, bool transpose = false) {
 			if(!isFillCompleted())
 				throw reportError("Cannot apply until after fillComplete.", 4);
 
-			// temp vectors in case we need to import or export
-			Vector<OrdinalType, ScalarType> x2(getColumnDist());
-			Vector<OrdinalType, ScalarType> y2(getRowDist());
+			if(!transpose) { // non-transpose case (A and C)
+				// x must match domain, y must match range
+				if(!getDomainDist().isCompatible(x.vectorSpace()))
+					throw reportError("Distribution of x is not compatible with domain distribution", 6);
+				if(!getRangeDist().isCompatible(y.vectorSpace()))
+					throw reportError("Distribution of y is not compatible with range distribution", 6);
 
-			// declare variables kokkos needs
-			OrdinalType kx_length = Teuchos::OrdinalTraits<OrdinalType>::zero();
-			OrdinalType ky_length = Teuchos::OrdinalTraits<OrdinalType>::zero();
-			ScalarType* kx_values = 0;
-			ScalarType* ky_values = 0;
-			if(data().haveImporter_) {
-				kx_length = x2.getNumMyEntries();
-				kx_values = x2.scalarPointer();
+				applyA(x, y);
 			}
-			else {
-				kx_length = x.getNumMyEntries();
-				kx_values = const_cast<ScalarType*>(x.scalarPointer());
-			}
-			if(data().haveExporter_) {
-				ky_length = y2.getNumMyEntries();
-				ky_values = y2.scalarPointer();
-			}
-			else {
-				ky_length = y.getNumMyEntries();
-				ky_values = y.scalarPointer();
-			}
-			
-			// setup kokkos x vector
-			int errorcode = data().kx_.initializeValues(kx_length, kx_values); 		
-			if(errorcode) 
-				throw reportError("kx.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
-		
-			// setup kokkos y vector
-			errorcode = data().ky_.initializeValues(ky_length, ky_values);
-			if(errorcode) 
-				throw reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
+			else { // transpose case (B and D)
+				// x must match range, y must match domain
+				if(!getDomainDist().isCompatible(y.vectorSpace()))
+					throw reportError("Distribution of y is not compatible with domain distribution", 6);
+				if(!getRangeDist().isCompatible(x.vectorSpace()))
+					throw reportError("Distribution of x is not compatible with range distribution", 6);
 
-			// do import on x if needed
-			if(data().haveImporter_)
-				x2.doImport(x, *(data().importer_), Insert);
-
-			// do Kokkos apply operation
-			errorcode = data().axy_.apply(data().kx_, data().ky_, transpose);
-			if(errorcode) 
-				throw reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
-
-			// do export on y if needed
-			if(data().haveExporter_)
-				y.doExport(y2, *(data().exporter_), Insert);
+				applyB(x, y);
+			}
 
 			// update flops counter: 2 * nnz
 			updateFlops(data().numMyNonzeros_ + data().numMyNonzeros_);
@@ -756,6 +726,94 @@ namespace Tpetra {
 			updateFlops(getNumMyNonzeros() - getSecondaryDist().getNumMyEntries());
 
 			return(globalMax);
+		}
+
+		// apply subfunction for non-transpose
+		void applyA(Vector<OrdinalType, ScalarType>& x, Vector<OrdinalType, ScalarType>& y) {
+			// temp vectors in case we need to import or export
+			Vector<OrdinalType, ScalarType> x2(getColumnDist());
+			Vector<OrdinalType, ScalarType> y2(getRowDist());
+
+			// do import if needed
+			if(data().haveImporter_)
+				x2.doImport(x, *(data().importer_), Insert);
+			
+			// setup variables Kokkos will use
+			OrdinalType kx_length = x.getNumMyEntries();
+			OrdinalType ky_length = y.getNumMyEntries();
+			ScalarType* kx_values = x.scalarPointer();
+			ScalarType* ky_values = y.scalarPointer();
+			if(data().haveImporter_) {
+				kx_length = x2.getNumMyEntries();
+				kx_values = x2.scalarPointer();
+			}
+			if(data().haveExporter_) {
+				ky_length = y2.getNumMyEntries();
+				ky_values = y2.scalarPointer();
+			}
+
+			// setup kokkos x vector
+			int errorcode = data().kx_.initializeValues(kx_length, kx_values); 		
+			if(errorcode) 
+				throw reportError("kx.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
+		
+			// setup kokkos y vector
+			errorcode = data().ky_.initializeValues(ky_length, ky_values);
+			if(errorcode) 
+				throw reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
+
+			// do Kokkos apply operation
+			errorcode = data().axy_.apply(data().kx_, data().ky_, false);
+			if(errorcode) 
+				throw reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
+
+			// do export if needed
+			if(data().haveExporter_)
+				y.doExport(y2, *(data().exporter_), Add);
+		}
+
+		// apply subfunction for transpose
+		void applyB(Vector<OrdinalType, ScalarType>& x, Vector<OrdinalType, ScalarType>& y) {
+			// temp vectors in case we need to import or export
+			Vector<OrdinalType, ScalarType> x2(getRowDist());
+			Vector<OrdinalType, ScalarType> y2(getColumnDist());
+			
+			// do import if needed
+			if(data().haveExporter_)
+				x2.doImport(x, *(data().exporter_), Insert);
+
+			// setup variables Kokkos will use
+			OrdinalType kx_length = x.getNumMyEntries();
+			OrdinalType ky_length = y.getNumMyEntries();
+			ScalarType* kx_values = x.scalarPointer();
+			ScalarType* ky_values = y.scalarPointer();
+			if(data().haveExporter_) {
+				kx_length = x2.getNumMyEntries();
+				kx_values = x2.scalarPointer();
+			}
+			if(data().haveImporter_) {
+				ky_length = y2.getNumMyEntries();
+				ky_values = y2.scalarPointer();
+			}
+
+			// setup kokkos x vector
+			int errorcode = data().kx_.initializeValues(kx_length, kx_values); 		
+			if(errorcode) 
+				throw reportError("kx.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
+		
+			// setup kokkos y vector
+			errorcode = data().ky_.initializeValues(ky_length, ky_values);
+			if(errorcode) 
+				throw reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
+			
+			// do Kokkos apply operation
+			errorcode = data().axy_.apply(data().kx_, data().ky_, true);
+			if(errorcode) 
+				throw reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
+			
+			// do export if needed
+			if(data().haveImporter_)
+				y.doExport(y2, *(data().importer_), Add);
 		}
 
 	}; // CisMatrix class
