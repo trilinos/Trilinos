@@ -844,8 +844,8 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
                    int *update[], int proc_config[])
 {
    int    i, j, k, nprocs, nprocs_1d, mypid, mypid_x, mypid_y;
-   int    icnt, offset, nelmnt_1d, nelmnt_part_xy, estart_x; 
-   ml_big_int *intlist;
+   int    icnt, offset, *intlist, nelmnt_1d, nelmnt_part_xy, estart_x; 
+   ml_big_int *big_intlist;
    int    estart_y, nelmnt_local, nstart_x, nstart_y, index, eend_x, eend_y;
    int    nnode_1d, nnode_local_x, nnode_local_y, nnode_local;
    int    nnode_expand, nnode_x, nnode_y, **square;
@@ -891,7 +891,7 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
 
    /* generate the global element numbers of the local elements */
 
-   ML_memory_alloc((void**) &intlist, nelmnt_local * sizeof(ml_big_int), "AP1");
+   ML_memory_alloc((void**) &big_intlist, nelmnt_local * sizeof(ml_big_int), "AP1");
    estart_x  = nelmnt_part_xy * mypid_x;
    estart_y  = nelmnt_part_xy * mypid_y;
    eend_x    = estart_x + nelmnt_part_xy - 1;
@@ -900,9 +900,9 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
 
    for (k = estart_y; k <= eend_y; k++) 
       for (j = estart_x; j <= eend_x; j++) 
-         intlist[icnt++] = j + k * nelmnt_1d;
-   ML_GridAGX_Load_ElmntGlobalNum(mesh, nelmnt_local, intlist);
-   ML_memory_free( (void **) &intlist);
+         big_intlist[icnt++] = j + k * nelmnt_1d;
+   ML_GridAGX_Load_ElmntGlobalNum(mesh, nelmnt_local, big_intlist);
+   ML_memory_free( (void **) &big_intlist);
 
    /* generate the local computational grid */
 
@@ -965,7 +965,7 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
 
    /* finally construct the element-to-node lists */
 
-   ML_memory_alloc((void**) &intlist, 4 * sizeof(ml_big_int), "AP7");
+   ML_memory_alloc((void**) &intlist, 4 * sizeof(int), "AP7");
 
    k = (eend_y - estart_y + 1) * (eend_x - estart_x + 1);
    for (k = estart_y; k <= eend_y; k++) 
