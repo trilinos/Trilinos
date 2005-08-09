@@ -29,28 +29,73 @@
 // @HEADER
 
 %define ML_DOCSTRING
-"The ML module allows access to The Trilinos package ML.  Note
+"The ML module allows access to The Trilinos package ML/MLAPI. Note
 that the 'ML_' prefix has been stripped from all ML objects,
 but that if imported with 'from PyTrilinos import ML', these
 objects exist in the 'ML' python namespace.  Use the python help()
 facility for local documentation on classes and methods, or see the
 on-line documentation for more in-depth information.
 
-The most important class of the ML module is:
+
+Brief Description
+=================
+
+The ML module offers most of ML and MLAPI through Python.
+
+The most important classes of the ML/MLAPI module are:
 - MultiLevelPreconditioner
+- PyMatrix
+- MultiVector
+- BaseOperator
+- Operator
+- InverseOperator
+- EpetraBaseOperator
+- <Operator> + <Operator>
+- <Operator> * <Operator>
+- <Operator> * <MultiVector>
+- GetIdentity, GetTranspose, Iterate, ...
 
-Example of usage:
-1) Creates an ML preconditioner for the already created Epetra.CrsMatrix 
-   Matrix. The parameters are set using a dictionary. 
 
-   Prec = ML.MultiLevelPreconditioner(Matrix, False)
-   MLList = {
-     \"max levels\"        : 3,
-     \"smoother: type\"    : \"symmetric Gauss-Seidel\",
-     \"aggregation: type\" : \"Uncoupled\"
-   }
-   Prec.SetParameterList(MLList)
-   Prec.ComputePreconditioner()
+Example of usage: The MultiLevelPreconditioner class
+====================================================
+
+Creates an ML preconditioner for the already created Epetra.CrsMatrix 
+Matrix. The parameters are set using a dictionary. 
+
+from PyTrilinos Epetra, ML
+<create here Matrix>
+Prec = ML.MultiLevelPreconditioner(Matrix, False)
+MLList = {
+  \"max levels\"        : 3,
+  \"smoother: type\"    : \"symmetric Gauss-Seidel\",
+  \"aggregation: type\" : \"Uncoupled\"
+}
+Prec.SetParameterList(MLList)
+Prec.ComputePreconditioner()
+
+
+Example of usage: The MLAPI Interface
+=====================================
+
+from PyTrilinos import Epetra, ML
+n = 1000
+Space = ML.Space(n)
+        
+A = ML.PyMatrix(Space, Space)
+      
+for i in Space.GetMyGlobalElements():
+  if i > 0:
+    A[i, i - 1] = -1.
+  if i < n - 1:
+    A[i, i + 1] = -1.
+  A[i, i] = 2.0
+                               
+A.FillComplete()
+
+x = ML.MultiVector(Space); x.Random()
+y = ML.MultiVector(Space)
+r = y - A * x
+print r.Norm2()
 "
 %enddef
 
@@ -76,169 +121,8 @@ Example of usage:
 #include "Teuchos_ParameterList.hpp"
 #include "MLAPI.h"
 #include "MLAPI_PyMatrix.h"
-
-Teuchos::ParameterList* CreateList(PyObject* obj)
-{
-  int i;
-  Teuchos::ParameterList* List;
-  if (!PyDict_Check(obj)) {
-    PyErr_SetString(PyExc_ValueError, "Expecting a dictionary");
-    return NULL;
-  }
-  List = new Teuchos::ParameterList;
-
-  int size = PyDict_Size(obj);
-  PyObject* Keys = PyDict_Keys(obj);
-  PyObject* Values = PyDict_Values(obj);
-
-  for (i = 0; i < size ; i++) 
-  {
-    PyObject *s = PyList_GetItem(Keys,i);
-    PyObject *t = PyList_GetItem(Values,i);
-
-    // Get the parameter name
-    if (!PyString_Check(s)) {
-        PyErr_SetString(PyExc_ValueError, "Dictionary keys must be strings");
-        return NULL;
-    }
-    string ParameterName = PyString_AsString(s);
-
-    // now parse for the parameter value and type
-    // This can be a "int", "double", "string", or a tuple
-    // for more general types
-
-    if (PyBool_Check(t)) 
-    {
-      if (t == Py_True)
-        List->set(ParameterName, true);
-      else
-        List->set(ParameterName, false);
-    }
-    else if (PyInt_Check(t)) 
-    {
-      int ParameterValue = PyInt_AsLong(t);
-      List->set(ParameterName, ParameterValue);
-    }
-    else if (PyFloat_Check(t)) 
-    {
-      double ParameterValue = PyFloat_AsDouble(t);
-      List->set(ParameterName, ParameterValue);
-    }
-    else if (PyString_Check(t)) 
-    {
-      string ParameterValue = PyString_AsString(t);
-      List->set(ParameterName, ParameterValue);
-    }
-    else if (PyTuple_Check(t)) 
-    {
-      if (!PyString_Check(PyTuple_GetItem(t, 0)) ||
-          !PyString_Check(PyTuple_GetItem(t, 1))) {
-        PyErr_SetString(PyExc_ValueError, "tuples must contain strings");
-        return NULL;
-      }
-      string ParameterType = PyString_AsString(PyTuple_GetItem(t, 0));
-      string ParameterValue = PyString_AsString(PyTuple_GetItem(t, 1));
-      if (ParameterType == "bool") 
-      {
-        if (ParameterValue == "true")
-          List->set(ParameterName, true);
-        else
-          List->set(ParameterName, false);
-      }
-      else if (ParameterType == "int") 
-      {
-        List->set(ParameterName, (int)atoi(ParameterValue.c_str()));
-      }
-      else if (ParameterType == "double") 
-      {
-        List->set(ParameterName, (double)atof(ParameterValue.c_str()));
-      }
-      else if (ParameterType == "string") 
-      {
-        List->set(ParameterName, string(ParameterValue));
-      }
-      else 
-      {
-        PyErr_SetString(PyExc_ValueError, "type in tuple not recognized");
-        return NULL;
-      }
-    }
-    else
-    {
-      PyErr_SetString(PyExc_ValueError, "Type in list not recognized");
-      return NULL;
-    }
-  }
-
-  return(List);
-}
-
-PyObject * Epetra_RowMatrix_GetEntries(const Epetra_RowMatrix& Matrix,
-                                       int GlobalRow) 
-{
-  if (!Matrix.Filled())
-  {
-    cout << "Matrix not FillComplete()'d" << endl;
-    Py_INCREF(Py_None);
-    return Py_None;
-  }
-  int ierr;
-  PyObject* res;
-  PyObject* PyIndices;
-  PyObject* PyValues;
-  int NumEntries, Length;
-  Length = Matrix.MaxNumEntries();
-  vector<int>    Indices(Length);
-  vector<double> Values(Length);
-  int MyRow = Matrix.RowMatrixRowMap().LID(GlobalRow);
-  ierr = Matrix.ExtractMyRowCopy(MyRow, Length, NumEntries, &Values[0],
-                                 &Indices[0]);
-  if (ierr < 0)
-  {
-    Py_INCREF(Py_None);
-    return Py_None;
-  }
-
-  PyIndices = PyList_New(NumEntries);
-  PyValues  = PyList_New(NumEntries);
-
-  // return global indices
-  for (int i = 0 ; i < NumEntries ; ++i)
-  {
-    int GID = Matrix.RowMatrixColMap().GID(Indices[i]);
-    PyList_SetItem(PyIndices, i, PyInt_FromLong(GID));
-    PyList_SetItem(PyValues,  i, PyFloat_FromDouble(Values[i]));
-  }
-  res = PyTuple_New(2);
-  PyTuple_SetItem(res, 0, PyIndices);
-  PyTuple_SetItem(res, 1, PyValues);
-  return(res);
-}
-
-PyObject* Epetra_RowMatrix_GetEntry(Epetra_RowMatrix& Matrix, 
-                                    int GlobalRow, int GlobalCol)
-{
-  int NumEntries, Length, ierr;
-  double val = 0.0;
-  Length = Matrix.MaxNumEntries();
-  vector<int>    Indices(Length);
-  vector<double> Values(Length);
-  int MyRow = Matrix.RowMatrixRowMap().LID(GlobalRow);
-  int MyCol = Matrix.RowMatrixColMap().LID(GlobalCol);
-
-  ierr = Matrix.ExtractMyRowCopy(MyRow, Length, NumEntries, &Values[0], 
-                                 &Indices[0]);
-  if (ierr) NumEntries = 0;
-  for (int i = 0 ; i < Length ; ++i)
-  {
-    if (Indices[i] == MyCol)
-    {
-      val = Values[i];
-      break;
-    }
-  }
-  return(PyFloat_FromDouble(val));
-}
+#include "PyEpetra_utils.h"
+#include "PyTeuchos_utils.h"
 
 MLAPI::Operator GetPNonSmoothed(const MLAPI::Operator& A,
                                 const MLAPI::MultiVector& ThisNS,
@@ -263,15 +147,6 @@ bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
   Krylov(A, LHS, RHS, Prec, *List);
   delete List;
   return(true);
-}
-
-extern "C" {
-  // on some MAC OS X with LAM/MPI _environ() is not found,
-  // need to specify -Wl,-i_environ:_fake_environ as LDFLAGS
-  void fake_environ()
-  {
-    exit(EXIT_FAILURE);
-  }
 }
 
 %}
