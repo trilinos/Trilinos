@@ -103,6 +103,7 @@ int read_hypergraph_file(
   float *ch_x = NULL, *ch_y = NULL, *ch_z = NULL;
   int    ch_no_geom = TRUE;   /* Assume no geometry info is given; reset if
                                  it is provided. */
+  int    file_error = 0;
 
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -121,16 +122,23 @@ int read_hypergraph_file(
         return 0;
     }
 
-    if ((fp = fopen(filename, "r")) == NULL){
+    if ((fp = fopen(filename, "r")) == NULL) {
       /* If that didn't work, try without any suffix */
       sprintf(filename, "%s", pio_info->pexo_fname);
       fp = fopen(filename, "r");
-      if (fp == NULL) {
-        sprintf(cmesg, "fatal:  Could not open hypergraph file %s", filename);
-        Gen_Error(0, cmesg);
-        return 0;
-      }
     }
+    file_error = (fp == NULL);
+  }
+
+  MPI_Bcast(&file_error, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  if (file_error) {
+    sprintf(cmesg, "fatal:  Could not open hypergraph file %s", filename);
+    Gen_Error(0, cmesg);
+    return 0;
+  }
+
+  if (Proc == 0) {
 
     /* read the array in on processor 0 */
     if (pio_info->file_type == HYPERGRAPH_FILE) {

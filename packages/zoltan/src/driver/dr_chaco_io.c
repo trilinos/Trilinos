@@ -64,6 +64,7 @@ int read_chaco_file(int Proc,
   short *assignments = NULL;
 
   FILE  *fp;
+  int    file_error = 0;
 /***************************** BEGIN EXECUTION ******************************/
 
   DEBUG_TRACE_START(Proc, yo);
@@ -76,13 +77,19 @@ int read_chaco_file(int Proc,
     /* Open and read the Chaco graph file. */
     sprintf(chaco_fname, "%s.graph", pio_info->pexo_fname);   
     fp = fopen(chaco_fname, "r");
-    if (fp == NULL) {
-      sprintf(cmesg, "fatal:  Could not open Chaco graph file %s",
-              chaco_fname);
-      Gen_Error(0, cmesg);
-      return 0;
-    }
+    file_error = (fp == NULL);
+  }
 
+  MPI_Bcast(&file_error, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  if (file_error) {
+    sprintf(cmesg, "fatal:  Could not open Chaco graph file %s",
+            chaco_fname);
+    Gen_Error(0, cmesg);
+    return 0;
+  }
+
+  if (Proc == 0) {
     /* read the array in on processor 0 */
     if (chaco_input_graph(fp, chaco_fname, &start, &adj, &nvtxs,
                            &vwgt_dim, &vwgts, &ewgt_dim, &ewgts) != 0) {
