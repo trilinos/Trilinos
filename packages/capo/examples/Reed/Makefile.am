@@ -25,65 +25,37 @@
 # 
 # ************************************************************************
 #@HEADER
-
-#np# This file is an example of a typical Makefile.am to build an example exe. 
-
 EXEEXT = .exe
 
-#np# List the names of all exe's in this directory here
+#
+# Actual programs
+#
+
 noinst_PROGRAMS = reed
-
-#np# One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
-#np# of the  following primaries that the pattern is 
-#np# "(Exe_name)_(PRIMARY_NAME) = ").
-#np# List all source files needed to compile the exe.
 reed_SOURCES = $(srcdir)/reed_main.cpp $(srcdir)/reed_integrator.cpp $(srcdir)/reed_interface.cpp
+reed_DEPENDENCIES = $(common_dependencies)
+reed_LDADD = $(common_ldadd)
 
-#np# One DEPENDENCIES primary is needed for each exe listed above.  List any
-#np# libraries that the exe depends on.  (This primary is not absolutely
-#np# essential.)
-reed_DEPENDENCIES = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/src/libepetra.a
+#
+# Common stuff
+#
 
-#np# One CXXFLAGS primary can be defined for each exe listed above.  Include 
-#np# any -I's necessary for building the exe.
-reed_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)/.. \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../thyra/src \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_srcdir)/../thyra/src/ana/rtop \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/base \
-	-I$(top_srcdir)/../thyra/src/utils \
-	-I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_builddir)/../thyra/src/ana/rtop \
-	-I$(top_builddir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_builddir)/../thyra/src/ana/rtop/base \
-	-I$(top_builddir)/../thyra/src/utils \
-	-I$(top_builddir)/../teuchos/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../thyra/src			
+common_dependencies = \
+  $(top_builddir)/src/libcapo.a
 
-#np# One LDADD primary can be defined for each exe listed above.  Include any
-#np# LDFLAGS  necessary for building the exe.
-reed_LDADD = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
-	$(top_builddir)/../thyra/src/libthyra.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	-llapack -lblas -lg2c
+include $(top_builddir)/Makefile.export.capo
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(CAPO_EXTRA_LIBS) $(CAPO_LIBS))
+else
+EXPORT_INCLUDES = $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES)
+EXPORT_LIBS = $(CAPO_EXTRA_LIBS) $(CAPO_LIBS)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+common_ldadd = $(EXPORT_LIBS)
+
+# This is already added part of CAPO_LIBS and therefore automake does not need to add this again!
+LIBS =

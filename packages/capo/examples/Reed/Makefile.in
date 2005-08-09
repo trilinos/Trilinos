@@ -14,36 +14,6 @@
 
 @SET_MAKE@
 
-#@HEADER
-# ************************************************************************
-# 
-#                     New_Package Example Package
-#                 Copyright (2004) Sandia Corporation
-# 
-# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-# license for use of this work by or on behalf of the U.S. Government.
-# 
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
-#  
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#  
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-# 
-# ************************************************************************
-#@HEADER
-
-#np# This file is an example of a typical Makefile.am to build an example exe. 
-
 SOURCES = $(reed_SOURCES)
 
 srcdir = @srcdir@
@@ -101,15 +71,20 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/capo_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_reed_OBJECTS = reed-reed_main.$(OBJEXT) \
-	reed-reed_integrator.$(OBJEXT) reed-reed_interface.$(OBJEXT)
+am_reed_OBJECTS = reed_main.$(OBJEXT) reed_integrator.$(OBJEXT) \
+	reed_interface.$(OBJEXT)
 reed_OBJECTS = $(am_reed_OBJECTS)
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(CAPO_LIBS))
+am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/reed-reed_integrator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/reed-reed_interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/reed-reed_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/reed_integrator.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/reed_interface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/reed_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -147,19 +122,50 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+
+#@HEADER
+# ************************************************************************
+# 
+#                     New_Package Example Package
+#                 Copyright (2004) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# 
+# ************************************************************************
+#@HEADER
 EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERL = @HAVE_PERL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@
+
+# This is already added part of CAPO_LIBS and therefore automake does not need to add this again!
+LIBS = 
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -178,12 +184,19 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
@@ -230,64 +243,22 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-
-#np# One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
-#np# of the  following primaries that the pattern is 
-#np# "(Exe_name)_(PRIMARY_NAME) = ").
-#np# List all source files needed to compile the exe.
 reed_SOURCES = $(srcdir)/reed_main.cpp $(srcdir)/reed_integrator.cpp $(srcdir)/reed_interface.cpp
+reed_DEPENDENCIES = $(common_dependencies)
+reed_LDADD = $(common_ldadd)
 
-#np# One DEPENDENCIES primary is needed for each exe listed above.  List any
-#np# libraries that the exe depends on.  (This primary is not absolutely
-#np# essential.)
-reed_DEPENDENCIES = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/src/libepetra.a
+#
+# Common stuff
+#
+common_dependencies = \
+  $(top_builddir)/src/libcapo.a
 
-
-#np# One CXXFLAGS primary can be defined for each exe listed above.  Include 
-#np# any -I's necessary for building the exe.
-reed_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)/.. \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../thyra/src \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_srcdir)/../thyra/src/ana/rtop \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/base \
-	-I$(top_srcdir)/../thyra/src/utils \
-	-I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_builddir)/../thyra/src/ana/rtop \
-	-I$(top_builddir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_builddir)/../thyra/src/ana/rtop/base \
-	-I$(top_builddir)/../thyra/src/utils \
-	-I$(top_builddir)/../teuchos/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../thyra/src			
-
-
-#np# One LDADD primary can be defined for each exe listed above.  Include any
-#np# LDFLAGS  necessary for building the exe.
-reed_LDADD = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
-	$(top_builddir)/../thyra/src/libthyra.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	-llapack -lblas -lg2c
-
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(CAPO_EXTRA_LIBS) $(CAPO_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(CAPO_EXTRA_LIBS) $(CAPO_LIBS))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+common_ldadd = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -334,9 +305,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reed-reed_integrator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reed-reed_interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reed-reed_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reed_integrator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reed_interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reed_main.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -354,53 +325,53 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-reed-reed_main.o: $(srcdir)/reed_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(reed_CXXFLAGS) $(CXXFLAGS) -MT reed-reed_main.o -MD -MP -MF "$(DEPDIR)/reed-reed_main.Tpo" -c -o reed-reed_main.o `test -f '$(srcdir)/reed_main.cpp' || echo '$(srcdir)/'`$(srcdir)/reed_main.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/reed-reed_main.Tpo" "$(DEPDIR)/reed-reed_main.Po"; else rm -f "$(DEPDIR)/reed-reed_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/reed_main.cpp' object='reed-reed_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/reed-reed_main.Po' tmpdepfile='$(DEPDIR)/reed-reed_main.TPo' @AMDEPBACKSLASH@
+reed_main.o: $(srcdir)/reed_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT reed_main.o -MD -MP -MF "$(DEPDIR)/reed_main.Tpo" -c -o reed_main.o `test -f '$(srcdir)/reed_main.cpp' || echo '$(srcdir)/'`$(srcdir)/reed_main.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/reed_main.Tpo" "$(DEPDIR)/reed_main.Po"; else rm -f "$(DEPDIR)/reed_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/reed_main.cpp' object='reed_main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/reed_main.Po' tmpdepfile='$(DEPDIR)/reed_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(reed_CXXFLAGS) $(CXXFLAGS) -c -o reed-reed_main.o `test -f '$(srcdir)/reed_main.cpp' || echo '$(srcdir)/'`$(srcdir)/reed_main.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o reed_main.o `test -f '$(srcdir)/reed_main.cpp' || echo '$(srcdir)/'`$(srcdir)/reed_main.cpp
 
-reed-reed_main.obj: $(srcdir)/reed_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(reed_CXXFLAGS) $(CXXFLAGS) -MT reed-reed_main.obj -MD -MP -MF "$(DEPDIR)/reed-reed_main.Tpo" -c -o reed-reed_main.obj `if test -f '$(srcdir)/reed_main.cpp'; then $(CYGPATH_W) '$(srcdir)/reed_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/reed_main.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/reed-reed_main.Tpo" "$(DEPDIR)/reed-reed_main.Po"; else rm -f "$(DEPDIR)/reed-reed_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/reed_main.cpp' object='reed-reed_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/reed-reed_main.Po' tmpdepfile='$(DEPDIR)/reed-reed_main.TPo' @AMDEPBACKSLASH@
+reed_main.obj: $(srcdir)/reed_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT reed_main.obj -MD -MP -MF "$(DEPDIR)/reed_main.Tpo" -c -o reed_main.obj `if test -f '$(srcdir)/reed_main.cpp'; then $(CYGPATH_W) '$(srcdir)/reed_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/reed_main.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/reed_main.Tpo" "$(DEPDIR)/reed_main.Po"; else rm -f "$(DEPDIR)/reed_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/reed_main.cpp' object='reed_main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/reed_main.Po' tmpdepfile='$(DEPDIR)/reed_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(reed_CXXFLAGS) $(CXXFLAGS) -c -o reed-reed_main.obj `if test -f '$(srcdir)/reed_main.cpp'; then $(CYGPATH_W) '$(srcdir)/reed_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/reed_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o reed_main.obj `if test -f '$(srcdir)/reed_main.cpp'; then $(CYGPATH_W) '$(srcdir)/reed_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/reed_main.cpp'; fi`
 
-reed-reed_integrator.o: $(srcdir)/reed_integrator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(reed_CXXFLAGS) $(CXXFLAGS) -MT reed-reed_integrator.o -MD -MP -MF "$(DEPDIR)/reed-reed_integrator.Tpo" -c -o reed-reed_integrator.o `test -f '$(srcdir)/reed_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/reed_integrator.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/reed-reed_integrator.Tpo" "$(DEPDIR)/reed-reed_integrator.Po"; else rm -f "$(DEPDIR)/reed-reed_integrator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/reed_integrator.cpp' object='reed-reed_integrator.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/reed-reed_integrator.Po' tmpdepfile='$(DEPDIR)/reed-reed_integrator.TPo' @AMDEPBACKSLASH@
+reed_integrator.o: $(srcdir)/reed_integrator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT reed_integrator.o -MD -MP -MF "$(DEPDIR)/reed_integrator.Tpo" -c -o reed_integrator.o `test -f '$(srcdir)/reed_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/reed_integrator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/reed_integrator.Tpo" "$(DEPDIR)/reed_integrator.Po"; else rm -f "$(DEPDIR)/reed_integrator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/reed_integrator.cpp' object='reed_integrator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/reed_integrator.Po' tmpdepfile='$(DEPDIR)/reed_integrator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(reed_CXXFLAGS) $(CXXFLAGS) -c -o reed-reed_integrator.o `test -f '$(srcdir)/reed_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/reed_integrator.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o reed_integrator.o `test -f '$(srcdir)/reed_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/reed_integrator.cpp
 
-reed-reed_integrator.obj: $(srcdir)/reed_integrator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(reed_CXXFLAGS) $(CXXFLAGS) -MT reed-reed_integrator.obj -MD -MP -MF "$(DEPDIR)/reed-reed_integrator.Tpo" -c -o reed-reed_integrator.obj `if test -f '$(srcdir)/reed_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/reed_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/reed_integrator.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/reed-reed_integrator.Tpo" "$(DEPDIR)/reed-reed_integrator.Po"; else rm -f "$(DEPDIR)/reed-reed_integrator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/reed_integrator.cpp' object='reed-reed_integrator.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/reed-reed_integrator.Po' tmpdepfile='$(DEPDIR)/reed-reed_integrator.TPo' @AMDEPBACKSLASH@
+reed_integrator.obj: $(srcdir)/reed_integrator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT reed_integrator.obj -MD -MP -MF "$(DEPDIR)/reed_integrator.Tpo" -c -o reed_integrator.obj `if test -f '$(srcdir)/reed_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/reed_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/reed_integrator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/reed_integrator.Tpo" "$(DEPDIR)/reed_integrator.Po"; else rm -f "$(DEPDIR)/reed_integrator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/reed_integrator.cpp' object='reed_integrator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/reed_integrator.Po' tmpdepfile='$(DEPDIR)/reed_integrator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(reed_CXXFLAGS) $(CXXFLAGS) -c -o reed-reed_integrator.obj `if test -f '$(srcdir)/reed_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/reed_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/reed_integrator.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o reed_integrator.obj `if test -f '$(srcdir)/reed_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/reed_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/reed_integrator.cpp'; fi`
 
-reed-reed_interface.o: $(srcdir)/reed_interface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(reed_CXXFLAGS) $(CXXFLAGS) -MT reed-reed_interface.o -MD -MP -MF "$(DEPDIR)/reed-reed_interface.Tpo" -c -o reed-reed_interface.o `test -f '$(srcdir)/reed_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/reed_interface.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/reed-reed_interface.Tpo" "$(DEPDIR)/reed-reed_interface.Po"; else rm -f "$(DEPDIR)/reed-reed_interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/reed_interface.cpp' object='reed-reed_interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/reed-reed_interface.Po' tmpdepfile='$(DEPDIR)/reed-reed_interface.TPo' @AMDEPBACKSLASH@
+reed_interface.o: $(srcdir)/reed_interface.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT reed_interface.o -MD -MP -MF "$(DEPDIR)/reed_interface.Tpo" -c -o reed_interface.o `test -f '$(srcdir)/reed_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/reed_interface.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/reed_interface.Tpo" "$(DEPDIR)/reed_interface.Po"; else rm -f "$(DEPDIR)/reed_interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/reed_interface.cpp' object='reed_interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/reed_interface.Po' tmpdepfile='$(DEPDIR)/reed_interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(reed_CXXFLAGS) $(CXXFLAGS) -c -o reed-reed_interface.o `test -f '$(srcdir)/reed_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/reed_interface.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o reed_interface.o `test -f '$(srcdir)/reed_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/reed_interface.cpp
 
-reed-reed_interface.obj: $(srcdir)/reed_interface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(reed_CXXFLAGS) $(CXXFLAGS) -MT reed-reed_interface.obj -MD -MP -MF "$(DEPDIR)/reed-reed_interface.Tpo" -c -o reed-reed_interface.obj `if test -f '$(srcdir)/reed_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/reed_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/reed_interface.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/reed-reed_interface.Tpo" "$(DEPDIR)/reed-reed_interface.Po"; else rm -f "$(DEPDIR)/reed-reed_interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/reed_interface.cpp' object='reed-reed_interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/reed-reed_interface.Po' tmpdepfile='$(DEPDIR)/reed-reed_interface.TPo' @AMDEPBACKSLASH@
+reed_interface.obj: $(srcdir)/reed_interface.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT reed_interface.obj -MD -MP -MF "$(DEPDIR)/reed_interface.Tpo" -c -o reed_interface.obj `if test -f '$(srcdir)/reed_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/reed_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/reed_interface.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/reed_interface.Tpo" "$(DEPDIR)/reed_interface.Po"; else rm -f "$(DEPDIR)/reed_interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/reed_interface.cpp' object='reed_interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/reed_interface.Po' tmpdepfile='$(DEPDIR)/reed_interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(reed_CXXFLAGS) $(CXXFLAGS) -c -o reed-reed_interface.obj `if test -f '$(srcdir)/reed_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/reed_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/reed_interface.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o reed_interface.obj `if test -f '$(srcdir)/reed_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/reed_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/reed_interface.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -564,6 +535,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export.capo
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

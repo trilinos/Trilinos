@@ -101,30 +101,28 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/capo_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_branch1_OBJECTS = branch1-bruss_main1.$(OBJEXT) \
-	branch1-bruss_integrator.$(OBJEXT) \
-	branch1-bruss_interface.$(OBJEXT)
+am_branch1_OBJECTS = bruss_main1.$(OBJEXT) bruss_integrator.$(OBJEXT) \
+	bruss_interface.$(OBJEXT)
 branch1_OBJECTS = $(am_branch1_OBJECTS)
-am_branch2_OBJECTS = branch2-bruss_main2.$(OBJEXT) \
-	branch2-bruss_integrator.$(OBJEXT) \
-	branch2-bruss_interface.$(OBJEXT)
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(CAPO_LIBS))
+am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
+am_branch2_OBJECTS = bruss_main2.$(OBJEXT) bruss_integrator.$(OBJEXT) \
+	bruss_interface.$(OBJEXT)
 branch2_OBJECTS = $(am_branch2_OBJECTS)
-am_branch3_OBJECTS = branch3-bruss_main3.$(OBJEXT) \
-	branch3-bruss_integrator.$(OBJEXT) \
-	branch3-bruss_interface.$(OBJEXT)
+am_branch3_OBJECTS = bruss_main3.$(OBJEXT) bruss_integrator.$(OBJEXT) \
+	bruss_interface.$(OBJEXT)
 branch3_OBJECTS = $(am_branch3_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/branch1-bruss_integrator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/branch1-bruss_interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/branch1-bruss_main1.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/branch2-bruss_integrator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/branch2-bruss_interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/branch2-bruss_main2.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/branch3-bruss_integrator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/branch3-bruss_interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/branch3-bruss_main3.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/bruss_integrator.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/bruss_interface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/bruss_main1.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/bruss_main2.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/bruss_main3.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -169,13 +167,16 @@ FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERL = @HAVE_PERL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@
+
+# This is already added part of CAPO_LIBS and therefore automake does not need to add this again!
+LIBS = 
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -194,12 +195,19 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
@@ -246,150 +254,28 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-
-#np# One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
-#np# of the  following primaries that the pattern is 
-#np# "(Exe_name)_(PRIMARY_NAME) = ").
-#np# List all source files needed to compile the exe.
 branch1_SOURCES = $(srcdir)/bruss_main1.cpp $(srcdir)/bruss_integrator.cpp $(srcdir)/bruss_interface.cpp
 branch2_SOURCES = $(srcdir)/bruss_main2.cpp $(srcdir)/bruss_integrator.cpp $(srcdir)/bruss_interface.cpp
 branch3_SOURCES = $(srcdir)/bruss_main3.cpp $(srcdir)/bruss_integrator.cpp $(srcdir)/bruss_interface.cpp
+branch1_DEPENDENCIES = $(common_dependencies)
+branch1_LDADD = $(common_ldadd)
+branch2_DEPENDENCIES = $(common_dependencies)
+branch2_LDADD = $(common_ldadd)
+branch3_DEPENDENCIES = $(common_dependencies)
+branch3_LDADD = $(common_ldadd)
 
-#np# One DEPENDENCIES primary is needed for each exe listed above.  List any
-#np# libraries that the exe depends on.  (This primary is not absolutely
-#np# essential.)
-branch1_DEPENDENCIES = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/src/libepetra.a
+#
+# Common stuff
+#
+common_dependencies = \
+  $(top_builddir)/src/libcapo.a
 
-branch2_DEPENDENCIES = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/src/libepetra.a
-
-branch3_DEPENDENCIES = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/src/libepetra.a
-
-
-#np# One CXXFLAGS primary can be defined for each exe listed above.  Include 
-#np# any -I's necessary for building the exe.
-branch1_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)/.. \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../thyra/src \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_srcdir)/../thyra/src/ana/rtop \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/base \
-	-I$(top_srcdir)/../thyra/src/utils \
-	-I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_builddir)/../thyra/src/ana/rtop \
-	-I$(top_builddir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_builddir)/../thyra/src/ana/rtop/base \
-	-I$(top_builddir)/../thyra/src/utils \
-	-I$(top_builddir)/../teuchos/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../thyra/src			
-
-branch2_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)/.. \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../thyra/src \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_srcdir)/../thyra/src/ana/rtop \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/base \
-	-I$(top_srcdir)/../thyra/src/utils \
-	-I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_builddir)/../thyra/src/ana/rtop \
-	-I$(top_builddir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_builddir)/../thyra/src/ana/rtop/base \
-	-I$(top_builddir)/../thyra/src/utils \
-	-I$(top_builddir)/../teuchos/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../thyra/src			
-
-branch3_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)/.. \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../thyra/src \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_srcdir)/../thyra/src/ana/rtop \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/base \
-	-I$(top_srcdir)/../thyra/src/utils \
-	-I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_builddir)/../thyra/src/ana/rtop \
-	-I$(top_builddir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_builddir)/../thyra/src/ana/rtop/base \
-	-I$(top_builddir)/../thyra/src/utils \
-	-I$(top_builddir)/../teuchos/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../thyra/src			
-
-
-#np# One LDADD primary can be defined for each exe listed above.  Include any
-#np# LDFLAGS  necessary for building the exe.
-branch1_LDADD = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
-	$(top_builddir)/../thyra/src/libthyra.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	-llapack -lblas -lg2c
-
-branch2_LDADD = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
-	$(top_builddir)/../thyra/src/libthyra.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	-llapack -lblas -lg2c
-
-branch3_LDADD = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
-	$(top_builddir)/../thyra/src/libthyra.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	-llapack -lblas -lg2c
-
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(CAPO_EXTRA_LIBS) $(CAPO_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(CAPO_EXTRA_LIBS) $(CAPO_LIBS))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+common_ldadd = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -442,15 +328,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/branch1-bruss_integrator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/branch1-bruss_interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/branch1-bruss_main1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/branch2-bruss_integrator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/branch2-bruss_interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/branch2-bruss_main2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/branch3-bruss_integrator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/branch3-bruss_interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/branch3-bruss_main3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bruss_integrator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bruss_interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bruss_main1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bruss_main2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bruss_main3.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -468,149 +350,85 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-branch1-bruss_main1.o: $(srcdir)/bruss_main1.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch1_CXXFLAGS) $(CXXFLAGS) -MT branch1-bruss_main1.o -MD -MP -MF "$(DEPDIR)/branch1-bruss_main1.Tpo" -c -o branch1-bruss_main1.o `test -f '$(srcdir)/bruss_main1.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_main1.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch1-bruss_main1.Tpo" "$(DEPDIR)/branch1-bruss_main1.Po"; else rm -f "$(DEPDIR)/branch1-bruss_main1.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_main1.cpp' object='branch1-bruss_main1.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch1-bruss_main1.Po' tmpdepfile='$(DEPDIR)/branch1-bruss_main1.TPo' @AMDEPBACKSLASH@
+bruss_main1.o: $(srcdir)/bruss_main1.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT bruss_main1.o -MD -MP -MF "$(DEPDIR)/bruss_main1.Tpo" -c -o bruss_main1.o `test -f '$(srcdir)/bruss_main1.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_main1.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bruss_main1.Tpo" "$(DEPDIR)/bruss_main1.Po"; else rm -f "$(DEPDIR)/bruss_main1.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_main1.cpp' object='bruss_main1.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bruss_main1.Po' tmpdepfile='$(DEPDIR)/bruss_main1.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch1_CXXFLAGS) $(CXXFLAGS) -c -o branch1-bruss_main1.o `test -f '$(srcdir)/bruss_main1.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_main1.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o bruss_main1.o `test -f '$(srcdir)/bruss_main1.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_main1.cpp
 
-branch1-bruss_main1.obj: $(srcdir)/bruss_main1.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch1_CXXFLAGS) $(CXXFLAGS) -MT branch1-bruss_main1.obj -MD -MP -MF "$(DEPDIR)/branch1-bruss_main1.Tpo" -c -o branch1-bruss_main1.obj `if test -f '$(srcdir)/bruss_main1.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_main1.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_main1.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch1-bruss_main1.Tpo" "$(DEPDIR)/branch1-bruss_main1.Po"; else rm -f "$(DEPDIR)/branch1-bruss_main1.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_main1.cpp' object='branch1-bruss_main1.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch1-bruss_main1.Po' tmpdepfile='$(DEPDIR)/branch1-bruss_main1.TPo' @AMDEPBACKSLASH@
+bruss_main1.obj: $(srcdir)/bruss_main1.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT bruss_main1.obj -MD -MP -MF "$(DEPDIR)/bruss_main1.Tpo" -c -o bruss_main1.obj `if test -f '$(srcdir)/bruss_main1.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_main1.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_main1.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bruss_main1.Tpo" "$(DEPDIR)/bruss_main1.Po"; else rm -f "$(DEPDIR)/bruss_main1.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_main1.cpp' object='bruss_main1.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bruss_main1.Po' tmpdepfile='$(DEPDIR)/bruss_main1.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch1_CXXFLAGS) $(CXXFLAGS) -c -o branch1-bruss_main1.obj `if test -f '$(srcdir)/bruss_main1.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_main1.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_main1.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o bruss_main1.obj `if test -f '$(srcdir)/bruss_main1.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_main1.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_main1.cpp'; fi`
 
-branch1-bruss_integrator.o: $(srcdir)/bruss_integrator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch1_CXXFLAGS) $(CXXFLAGS) -MT branch1-bruss_integrator.o -MD -MP -MF "$(DEPDIR)/branch1-bruss_integrator.Tpo" -c -o branch1-bruss_integrator.o `test -f '$(srcdir)/bruss_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_integrator.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch1-bruss_integrator.Tpo" "$(DEPDIR)/branch1-bruss_integrator.Po"; else rm -f "$(DEPDIR)/branch1-bruss_integrator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_integrator.cpp' object='branch1-bruss_integrator.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch1-bruss_integrator.Po' tmpdepfile='$(DEPDIR)/branch1-bruss_integrator.TPo' @AMDEPBACKSLASH@
+bruss_integrator.o: $(srcdir)/bruss_integrator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT bruss_integrator.o -MD -MP -MF "$(DEPDIR)/bruss_integrator.Tpo" -c -o bruss_integrator.o `test -f '$(srcdir)/bruss_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_integrator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bruss_integrator.Tpo" "$(DEPDIR)/bruss_integrator.Po"; else rm -f "$(DEPDIR)/bruss_integrator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_integrator.cpp' object='bruss_integrator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bruss_integrator.Po' tmpdepfile='$(DEPDIR)/bruss_integrator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch1_CXXFLAGS) $(CXXFLAGS) -c -o branch1-bruss_integrator.o `test -f '$(srcdir)/bruss_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_integrator.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o bruss_integrator.o `test -f '$(srcdir)/bruss_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_integrator.cpp
 
-branch1-bruss_integrator.obj: $(srcdir)/bruss_integrator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch1_CXXFLAGS) $(CXXFLAGS) -MT branch1-bruss_integrator.obj -MD -MP -MF "$(DEPDIR)/branch1-bruss_integrator.Tpo" -c -o branch1-bruss_integrator.obj `if test -f '$(srcdir)/bruss_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_integrator.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch1-bruss_integrator.Tpo" "$(DEPDIR)/branch1-bruss_integrator.Po"; else rm -f "$(DEPDIR)/branch1-bruss_integrator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_integrator.cpp' object='branch1-bruss_integrator.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch1-bruss_integrator.Po' tmpdepfile='$(DEPDIR)/branch1-bruss_integrator.TPo' @AMDEPBACKSLASH@
+bruss_integrator.obj: $(srcdir)/bruss_integrator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT bruss_integrator.obj -MD -MP -MF "$(DEPDIR)/bruss_integrator.Tpo" -c -o bruss_integrator.obj `if test -f '$(srcdir)/bruss_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_integrator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bruss_integrator.Tpo" "$(DEPDIR)/bruss_integrator.Po"; else rm -f "$(DEPDIR)/bruss_integrator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_integrator.cpp' object='bruss_integrator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bruss_integrator.Po' tmpdepfile='$(DEPDIR)/bruss_integrator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch1_CXXFLAGS) $(CXXFLAGS) -c -o branch1-bruss_integrator.obj `if test -f '$(srcdir)/bruss_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_integrator.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o bruss_integrator.obj `if test -f '$(srcdir)/bruss_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_integrator.cpp'; fi`
 
-branch1-bruss_interface.o: $(srcdir)/bruss_interface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch1_CXXFLAGS) $(CXXFLAGS) -MT branch1-bruss_interface.o -MD -MP -MF "$(DEPDIR)/branch1-bruss_interface.Tpo" -c -o branch1-bruss_interface.o `test -f '$(srcdir)/bruss_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_interface.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch1-bruss_interface.Tpo" "$(DEPDIR)/branch1-bruss_interface.Po"; else rm -f "$(DEPDIR)/branch1-bruss_interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_interface.cpp' object='branch1-bruss_interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch1-bruss_interface.Po' tmpdepfile='$(DEPDIR)/branch1-bruss_interface.TPo' @AMDEPBACKSLASH@
+bruss_interface.o: $(srcdir)/bruss_interface.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT bruss_interface.o -MD -MP -MF "$(DEPDIR)/bruss_interface.Tpo" -c -o bruss_interface.o `test -f '$(srcdir)/bruss_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_interface.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bruss_interface.Tpo" "$(DEPDIR)/bruss_interface.Po"; else rm -f "$(DEPDIR)/bruss_interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_interface.cpp' object='bruss_interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bruss_interface.Po' tmpdepfile='$(DEPDIR)/bruss_interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch1_CXXFLAGS) $(CXXFLAGS) -c -o branch1-bruss_interface.o `test -f '$(srcdir)/bruss_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_interface.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o bruss_interface.o `test -f '$(srcdir)/bruss_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_interface.cpp
 
-branch1-bruss_interface.obj: $(srcdir)/bruss_interface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch1_CXXFLAGS) $(CXXFLAGS) -MT branch1-bruss_interface.obj -MD -MP -MF "$(DEPDIR)/branch1-bruss_interface.Tpo" -c -o branch1-bruss_interface.obj `if test -f '$(srcdir)/bruss_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_interface.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch1-bruss_interface.Tpo" "$(DEPDIR)/branch1-bruss_interface.Po"; else rm -f "$(DEPDIR)/branch1-bruss_interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_interface.cpp' object='branch1-bruss_interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch1-bruss_interface.Po' tmpdepfile='$(DEPDIR)/branch1-bruss_interface.TPo' @AMDEPBACKSLASH@
+bruss_interface.obj: $(srcdir)/bruss_interface.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT bruss_interface.obj -MD -MP -MF "$(DEPDIR)/bruss_interface.Tpo" -c -o bruss_interface.obj `if test -f '$(srcdir)/bruss_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_interface.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bruss_interface.Tpo" "$(DEPDIR)/bruss_interface.Po"; else rm -f "$(DEPDIR)/bruss_interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_interface.cpp' object='bruss_interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bruss_interface.Po' tmpdepfile='$(DEPDIR)/bruss_interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch1_CXXFLAGS) $(CXXFLAGS) -c -o branch1-bruss_interface.obj `if test -f '$(srcdir)/bruss_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_interface.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o bruss_interface.obj `if test -f '$(srcdir)/bruss_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_interface.cpp'; fi`
 
-branch2-bruss_main2.o: $(srcdir)/bruss_main2.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch2_CXXFLAGS) $(CXXFLAGS) -MT branch2-bruss_main2.o -MD -MP -MF "$(DEPDIR)/branch2-bruss_main2.Tpo" -c -o branch2-bruss_main2.o `test -f '$(srcdir)/bruss_main2.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_main2.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch2-bruss_main2.Tpo" "$(DEPDIR)/branch2-bruss_main2.Po"; else rm -f "$(DEPDIR)/branch2-bruss_main2.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_main2.cpp' object='branch2-bruss_main2.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch2-bruss_main2.Po' tmpdepfile='$(DEPDIR)/branch2-bruss_main2.TPo' @AMDEPBACKSLASH@
+bruss_main2.o: $(srcdir)/bruss_main2.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT bruss_main2.o -MD -MP -MF "$(DEPDIR)/bruss_main2.Tpo" -c -o bruss_main2.o `test -f '$(srcdir)/bruss_main2.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_main2.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bruss_main2.Tpo" "$(DEPDIR)/bruss_main2.Po"; else rm -f "$(DEPDIR)/bruss_main2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_main2.cpp' object='bruss_main2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bruss_main2.Po' tmpdepfile='$(DEPDIR)/bruss_main2.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch2_CXXFLAGS) $(CXXFLAGS) -c -o branch2-bruss_main2.o `test -f '$(srcdir)/bruss_main2.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_main2.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o bruss_main2.o `test -f '$(srcdir)/bruss_main2.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_main2.cpp
 
-branch2-bruss_main2.obj: $(srcdir)/bruss_main2.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch2_CXXFLAGS) $(CXXFLAGS) -MT branch2-bruss_main2.obj -MD -MP -MF "$(DEPDIR)/branch2-bruss_main2.Tpo" -c -o branch2-bruss_main2.obj `if test -f '$(srcdir)/bruss_main2.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_main2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_main2.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch2-bruss_main2.Tpo" "$(DEPDIR)/branch2-bruss_main2.Po"; else rm -f "$(DEPDIR)/branch2-bruss_main2.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_main2.cpp' object='branch2-bruss_main2.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch2-bruss_main2.Po' tmpdepfile='$(DEPDIR)/branch2-bruss_main2.TPo' @AMDEPBACKSLASH@
+bruss_main2.obj: $(srcdir)/bruss_main2.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT bruss_main2.obj -MD -MP -MF "$(DEPDIR)/bruss_main2.Tpo" -c -o bruss_main2.obj `if test -f '$(srcdir)/bruss_main2.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_main2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_main2.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bruss_main2.Tpo" "$(DEPDIR)/bruss_main2.Po"; else rm -f "$(DEPDIR)/bruss_main2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_main2.cpp' object='bruss_main2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bruss_main2.Po' tmpdepfile='$(DEPDIR)/bruss_main2.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch2_CXXFLAGS) $(CXXFLAGS) -c -o branch2-bruss_main2.obj `if test -f '$(srcdir)/bruss_main2.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_main2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_main2.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o bruss_main2.obj `if test -f '$(srcdir)/bruss_main2.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_main2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_main2.cpp'; fi`
 
-branch2-bruss_integrator.o: $(srcdir)/bruss_integrator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch2_CXXFLAGS) $(CXXFLAGS) -MT branch2-bruss_integrator.o -MD -MP -MF "$(DEPDIR)/branch2-bruss_integrator.Tpo" -c -o branch2-bruss_integrator.o `test -f '$(srcdir)/bruss_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_integrator.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch2-bruss_integrator.Tpo" "$(DEPDIR)/branch2-bruss_integrator.Po"; else rm -f "$(DEPDIR)/branch2-bruss_integrator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_integrator.cpp' object='branch2-bruss_integrator.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch2-bruss_integrator.Po' tmpdepfile='$(DEPDIR)/branch2-bruss_integrator.TPo' @AMDEPBACKSLASH@
+bruss_main3.o: $(srcdir)/bruss_main3.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT bruss_main3.o -MD -MP -MF "$(DEPDIR)/bruss_main3.Tpo" -c -o bruss_main3.o `test -f '$(srcdir)/bruss_main3.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_main3.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bruss_main3.Tpo" "$(DEPDIR)/bruss_main3.Po"; else rm -f "$(DEPDIR)/bruss_main3.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_main3.cpp' object='bruss_main3.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bruss_main3.Po' tmpdepfile='$(DEPDIR)/bruss_main3.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch2_CXXFLAGS) $(CXXFLAGS) -c -o branch2-bruss_integrator.o `test -f '$(srcdir)/bruss_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_integrator.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o bruss_main3.o `test -f '$(srcdir)/bruss_main3.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_main3.cpp
 
-branch2-bruss_integrator.obj: $(srcdir)/bruss_integrator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch2_CXXFLAGS) $(CXXFLAGS) -MT branch2-bruss_integrator.obj -MD -MP -MF "$(DEPDIR)/branch2-bruss_integrator.Tpo" -c -o branch2-bruss_integrator.obj `if test -f '$(srcdir)/bruss_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_integrator.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch2-bruss_integrator.Tpo" "$(DEPDIR)/branch2-bruss_integrator.Po"; else rm -f "$(DEPDIR)/branch2-bruss_integrator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_integrator.cpp' object='branch2-bruss_integrator.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch2-bruss_integrator.Po' tmpdepfile='$(DEPDIR)/branch2-bruss_integrator.TPo' @AMDEPBACKSLASH@
+bruss_main3.obj: $(srcdir)/bruss_main3.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT bruss_main3.obj -MD -MP -MF "$(DEPDIR)/bruss_main3.Tpo" -c -o bruss_main3.obj `if test -f '$(srcdir)/bruss_main3.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_main3.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_main3.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bruss_main3.Tpo" "$(DEPDIR)/bruss_main3.Po"; else rm -f "$(DEPDIR)/bruss_main3.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_main3.cpp' object='bruss_main3.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bruss_main3.Po' tmpdepfile='$(DEPDIR)/bruss_main3.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch2_CXXFLAGS) $(CXXFLAGS) -c -o branch2-bruss_integrator.obj `if test -f '$(srcdir)/bruss_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_integrator.cpp'; fi`
-
-branch2-bruss_interface.o: $(srcdir)/bruss_interface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch2_CXXFLAGS) $(CXXFLAGS) -MT branch2-bruss_interface.o -MD -MP -MF "$(DEPDIR)/branch2-bruss_interface.Tpo" -c -o branch2-bruss_interface.o `test -f '$(srcdir)/bruss_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_interface.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch2-bruss_interface.Tpo" "$(DEPDIR)/branch2-bruss_interface.Po"; else rm -f "$(DEPDIR)/branch2-bruss_interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_interface.cpp' object='branch2-bruss_interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch2-bruss_interface.Po' tmpdepfile='$(DEPDIR)/branch2-bruss_interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch2_CXXFLAGS) $(CXXFLAGS) -c -o branch2-bruss_interface.o `test -f '$(srcdir)/bruss_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_interface.cpp
-
-branch2-bruss_interface.obj: $(srcdir)/bruss_interface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch2_CXXFLAGS) $(CXXFLAGS) -MT branch2-bruss_interface.obj -MD -MP -MF "$(DEPDIR)/branch2-bruss_interface.Tpo" -c -o branch2-bruss_interface.obj `if test -f '$(srcdir)/bruss_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_interface.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch2-bruss_interface.Tpo" "$(DEPDIR)/branch2-bruss_interface.Po"; else rm -f "$(DEPDIR)/branch2-bruss_interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_interface.cpp' object='branch2-bruss_interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch2-bruss_interface.Po' tmpdepfile='$(DEPDIR)/branch2-bruss_interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch2_CXXFLAGS) $(CXXFLAGS) -c -o branch2-bruss_interface.obj `if test -f '$(srcdir)/bruss_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_interface.cpp'; fi`
-
-branch3-bruss_main3.o: $(srcdir)/bruss_main3.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch3_CXXFLAGS) $(CXXFLAGS) -MT branch3-bruss_main3.o -MD -MP -MF "$(DEPDIR)/branch3-bruss_main3.Tpo" -c -o branch3-bruss_main3.o `test -f '$(srcdir)/bruss_main3.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_main3.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch3-bruss_main3.Tpo" "$(DEPDIR)/branch3-bruss_main3.Po"; else rm -f "$(DEPDIR)/branch3-bruss_main3.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_main3.cpp' object='branch3-bruss_main3.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch3-bruss_main3.Po' tmpdepfile='$(DEPDIR)/branch3-bruss_main3.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch3_CXXFLAGS) $(CXXFLAGS) -c -o branch3-bruss_main3.o `test -f '$(srcdir)/bruss_main3.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_main3.cpp
-
-branch3-bruss_main3.obj: $(srcdir)/bruss_main3.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch3_CXXFLAGS) $(CXXFLAGS) -MT branch3-bruss_main3.obj -MD -MP -MF "$(DEPDIR)/branch3-bruss_main3.Tpo" -c -o branch3-bruss_main3.obj `if test -f '$(srcdir)/bruss_main3.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_main3.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_main3.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch3-bruss_main3.Tpo" "$(DEPDIR)/branch3-bruss_main3.Po"; else rm -f "$(DEPDIR)/branch3-bruss_main3.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_main3.cpp' object='branch3-bruss_main3.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch3-bruss_main3.Po' tmpdepfile='$(DEPDIR)/branch3-bruss_main3.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch3_CXXFLAGS) $(CXXFLAGS) -c -o branch3-bruss_main3.obj `if test -f '$(srcdir)/bruss_main3.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_main3.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_main3.cpp'; fi`
-
-branch3-bruss_integrator.o: $(srcdir)/bruss_integrator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch3_CXXFLAGS) $(CXXFLAGS) -MT branch3-bruss_integrator.o -MD -MP -MF "$(DEPDIR)/branch3-bruss_integrator.Tpo" -c -o branch3-bruss_integrator.o `test -f '$(srcdir)/bruss_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_integrator.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch3-bruss_integrator.Tpo" "$(DEPDIR)/branch3-bruss_integrator.Po"; else rm -f "$(DEPDIR)/branch3-bruss_integrator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_integrator.cpp' object='branch3-bruss_integrator.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch3-bruss_integrator.Po' tmpdepfile='$(DEPDIR)/branch3-bruss_integrator.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch3_CXXFLAGS) $(CXXFLAGS) -c -o branch3-bruss_integrator.o `test -f '$(srcdir)/bruss_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_integrator.cpp
-
-branch3-bruss_integrator.obj: $(srcdir)/bruss_integrator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch3_CXXFLAGS) $(CXXFLAGS) -MT branch3-bruss_integrator.obj -MD -MP -MF "$(DEPDIR)/branch3-bruss_integrator.Tpo" -c -o branch3-bruss_integrator.obj `if test -f '$(srcdir)/bruss_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_integrator.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch3-bruss_integrator.Tpo" "$(DEPDIR)/branch3-bruss_integrator.Po"; else rm -f "$(DEPDIR)/branch3-bruss_integrator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_integrator.cpp' object='branch3-bruss_integrator.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch3-bruss_integrator.Po' tmpdepfile='$(DEPDIR)/branch3-bruss_integrator.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch3_CXXFLAGS) $(CXXFLAGS) -c -o branch3-bruss_integrator.obj `if test -f '$(srcdir)/bruss_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_integrator.cpp'; fi`
-
-branch3-bruss_interface.o: $(srcdir)/bruss_interface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch3_CXXFLAGS) $(CXXFLAGS) -MT branch3-bruss_interface.o -MD -MP -MF "$(DEPDIR)/branch3-bruss_interface.Tpo" -c -o branch3-bruss_interface.o `test -f '$(srcdir)/bruss_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_interface.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch3-bruss_interface.Tpo" "$(DEPDIR)/branch3-bruss_interface.Po"; else rm -f "$(DEPDIR)/branch3-bruss_interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_interface.cpp' object='branch3-bruss_interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch3-bruss_interface.Po' tmpdepfile='$(DEPDIR)/branch3-bruss_interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch3_CXXFLAGS) $(CXXFLAGS) -c -o branch3-bruss_interface.o `test -f '$(srcdir)/bruss_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/bruss_interface.cpp
-
-branch3-bruss_interface.obj: $(srcdir)/bruss_interface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch3_CXXFLAGS) $(CXXFLAGS) -MT branch3-bruss_interface.obj -MD -MP -MF "$(DEPDIR)/branch3-bruss_interface.Tpo" -c -o branch3-bruss_interface.obj `if test -f '$(srcdir)/bruss_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_interface.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/branch3-bruss_interface.Tpo" "$(DEPDIR)/branch3-bruss_interface.Po"; else rm -f "$(DEPDIR)/branch3-bruss_interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bruss_interface.cpp' object='branch3-bruss_interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/branch3-bruss_interface.Po' tmpdepfile='$(DEPDIR)/branch3-bruss_interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(branch3_CXXFLAGS) $(CXXFLAGS) -c -o branch3-bruss_interface.obj `if test -f '$(srcdir)/bruss_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_interface.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o bruss_main3.obj `if test -f '$(srcdir)/bruss_main3.cpp'; then $(CYGPATH_W) '$(srcdir)/bruss_main3.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bruss_main3.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -774,6 +592,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export.capo
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

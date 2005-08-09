@@ -101,19 +101,24 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/capo_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_vpl_OBJECTS = vpl-vpl_main.$(OBJEXT) vpl-vpl_integrator.$(OBJEXT) \
-	vpl-vpl_interface.$(OBJEXT) vpl-IntegratorT.$(OBJEXT) \
-	vpl-StiffIntegratorT.$(OBJEXT) vpl-decsol.$(OBJEXT)
+am_vpl_OBJECTS = vpl_main.$(OBJEXT) vpl_integrator.$(OBJEXT) \
+	vpl_interface.$(OBJEXT) IntegratorT.$(OBJEXT) \
+	StiffIntegratorT.$(OBJEXT) decsol.$(OBJEXT)
 vpl_OBJECTS = $(am_vpl_OBJECTS)
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(CAPO_LIBS))
+am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/vpl-IntegratorT.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/vpl-StiffIntegratorT.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/vpl-decsol.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/vpl-vpl_integrator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/vpl-vpl_interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/vpl-vpl_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/IntegratorT.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/StiffIntegratorT.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/decsol.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/vpl_integrator.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/vpl_interface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/vpl_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -157,13 +162,16 @@ FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERL = @HAVE_PERL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@
+
+# This is already added part of CAPO_LIBS and therefore automake does not need to add this again!
+LIBS = 
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -182,12 +190,19 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
@@ -234,64 +249,22 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-
-#np# One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
-#np# of the  following primaries that the pattern is 
-#np# "(Exe_name)_(PRIMARY_NAME) = ").
-#np# List all source files needed to compile the exe.
 vpl_SOURCES = $(srcdir)/vpl_main.cpp $(srcdir)/vpl_integrator.cpp $(srcdir)/vpl_interface.cpp $(srcdir)/IntegratorT.cpp $(srcdir)/StiffIntegratorT.cpp $(srcdir)/decsol.cpp
+vpl_DEPENDENCIES = $(common_dependencies)
+vpl_LDADD = $(common_ldadd)
 
-#np# One DEPENDENCIES primary is needed for each exe listed above.  List any
-#np# libraries that the exe depends on.  (This primary is not absolutely
-#np# essential.)
-vpl_DEPENDENCIES = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/src/libepetra.a
+#
+# Common stuff
+#
+common_dependencies = \
+  $(top_builddir)/src/libcapo.a
 
-
-#np# One CXXFLAGS primary can be defined for each exe listed above.  Include 
-#np# any -I's necessary for building the exe.
-vpl_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)/.. \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../thyra/src \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_srcdir)/../thyra/src/ana/rtop \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/base \
-	-I$(top_srcdir)/../thyra/src/utils \
-	-I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_builddir)/../thyra/src/ana/rtop \
-	-I$(top_builddir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_builddir)/../thyra/src/ana/rtop/base \
-	-I$(top_builddir)/../thyra/src/utils \
-	-I$(top_builddir)/../teuchos/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../thyra/src			
-
-
-#np# One LDADD primary can be defined for each exe listed above.  Include any
-#np# LDFLAGS  necessary for building the exe.
-vpl_LDADD = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
-	$(top_builddir)/../thyra/src/libthyra.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	-llapack -lblas -lg2c
-
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(CAPO_EXTRA_LIBS) $(CAPO_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(CAPO_EXTRA_LIBS) $(CAPO_LIBS))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+common_ldadd = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -338,12 +311,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpl-IntegratorT.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpl-StiffIntegratorT.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpl-decsol.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpl-vpl_integrator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpl-vpl_interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpl-vpl_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IntegratorT.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StiffIntegratorT.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/decsol.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpl_integrator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpl_interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpl_main.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -361,101 +334,101 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-vpl-vpl_main.o: $(srcdir)/vpl_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -MT vpl-vpl_main.o -MD -MP -MF "$(DEPDIR)/vpl-vpl_main.Tpo" -c -o vpl-vpl_main.o `test -f '$(srcdir)/vpl_main.cpp' || echo '$(srcdir)/'`$(srcdir)/vpl_main.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl-vpl_main.Tpo" "$(DEPDIR)/vpl-vpl_main.Po"; else rm -f "$(DEPDIR)/vpl-vpl_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vpl_main.cpp' object='vpl-vpl_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl-vpl_main.Po' tmpdepfile='$(DEPDIR)/vpl-vpl_main.TPo' @AMDEPBACKSLASH@
+vpl_main.o: $(srcdir)/vpl_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT vpl_main.o -MD -MP -MF "$(DEPDIR)/vpl_main.Tpo" -c -o vpl_main.o `test -f '$(srcdir)/vpl_main.cpp' || echo '$(srcdir)/'`$(srcdir)/vpl_main.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl_main.Tpo" "$(DEPDIR)/vpl_main.Po"; else rm -f "$(DEPDIR)/vpl_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vpl_main.cpp' object='vpl_main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl_main.Po' tmpdepfile='$(DEPDIR)/vpl_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -c -o vpl-vpl_main.o `test -f '$(srcdir)/vpl_main.cpp' || echo '$(srcdir)/'`$(srcdir)/vpl_main.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o vpl_main.o `test -f '$(srcdir)/vpl_main.cpp' || echo '$(srcdir)/'`$(srcdir)/vpl_main.cpp
 
-vpl-vpl_main.obj: $(srcdir)/vpl_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -MT vpl-vpl_main.obj -MD -MP -MF "$(DEPDIR)/vpl-vpl_main.Tpo" -c -o vpl-vpl_main.obj `if test -f '$(srcdir)/vpl_main.cpp'; then $(CYGPATH_W) '$(srcdir)/vpl_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vpl_main.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl-vpl_main.Tpo" "$(DEPDIR)/vpl-vpl_main.Po"; else rm -f "$(DEPDIR)/vpl-vpl_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vpl_main.cpp' object='vpl-vpl_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl-vpl_main.Po' tmpdepfile='$(DEPDIR)/vpl-vpl_main.TPo' @AMDEPBACKSLASH@
+vpl_main.obj: $(srcdir)/vpl_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT vpl_main.obj -MD -MP -MF "$(DEPDIR)/vpl_main.Tpo" -c -o vpl_main.obj `if test -f '$(srcdir)/vpl_main.cpp'; then $(CYGPATH_W) '$(srcdir)/vpl_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vpl_main.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl_main.Tpo" "$(DEPDIR)/vpl_main.Po"; else rm -f "$(DEPDIR)/vpl_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vpl_main.cpp' object='vpl_main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl_main.Po' tmpdepfile='$(DEPDIR)/vpl_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -c -o vpl-vpl_main.obj `if test -f '$(srcdir)/vpl_main.cpp'; then $(CYGPATH_W) '$(srcdir)/vpl_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vpl_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o vpl_main.obj `if test -f '$(srcdir)/vpl_main.cpp'; then $(CYGPATH_W) '$(srcdir)/vpl_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vpl_main.cpp'; fi`
 
-vpl-vpl_integrator.o: $(srcdir)/vpl_integrator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -MT vpl-vpl_integrator.o -MD -MP -MF "$(DEPDIR)/vpl-vpl_integrator.Tpo" -c -o vpl-vpl_integrator.o `test -f '$(srcdir)/vpl_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/vpl_integrator.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl-vpl_integrator.Tpo" "$(DEPDIR)/vpl-vpl_integrator.Po"; else rm -f "$(DEPDIR)/vpl-vpl_integrator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vpl_integrator.cpp' object='vpl-vpl_integrator.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl-vpl_integrator.Po' tmpdepfile='$(DEPDIR)/vpl-vpl_integrator.TPo' @AMDEPBACKSLASH@
+vpl_integrator.o: $(srcdir)/vpl_integrator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT vpl_integrator.o -MD -MP -MF "$(DEPDIR)/vpl_integrator.Tpo" -c -o vpl_integrator.o `test -f '$(srcdir)/vpl_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/vpl_integrator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl_integrator.Tpo" "$(DEPDIR)/vpl_integrator.Po"; else rm -f "$(DEPDIR)/vpl_integrator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vpl_integrator.cpp' object='vpl_integrator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl_integrator.Po' tmpdepfile='$(DEPDIR)/vpl_integrator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -c -o vpl-vpl_integrator.o `test -f '$(srcdir)/vpl_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/vpl_integrator.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o vpl_integrator.o `test -f '$(srcdir)/vpl_integrator.cpp' || echo '$(srcdir)/'`$(srcdir)/vpl_integrator.cpp
 
-vpl-vpl_integrator.obj: $(srcdir)/vpl_integrator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -MT vpl-vpl_integrator.obj -MD -MP -MF "$(DEPDIR)/vpl-vpl_integrator.Tpo" -c -o vpl-vpl_integrator.obj `if test -f '$(srcdir)/vpl_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/vpl_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vpl_integrator.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl-vpl_integrator.Tpo" "$(DEPDIR)/vpl-vpl_integrator.Po"; else rm -f "$(DEPDIR)/vpl-vpl_integrator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vpl_integrator.cpp' object='vpl-vpl_integrator.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl-vpl_integrator.Po' tmpdepfile='$(DEPDIR)/vpl-vpl_integrator.TPo' @AMDEPBACKSLASH@
+vpl_integrator.obj: $(srcdir)/vpl_integrator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT vpl_integrator.obj -MD -MP -MF "$(DEPDIR)/vpl_integrator.Tpo" -c -o vpl_integrator.obj `if test -f '$(srcdir)/vpl_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/vpl_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vpl_integrator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl_integrator.Tpo" "$(DEPDIR)/vpl_integrator.Po"; else rm -f "$(DEPDIR)/vpl_integrator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vpl_integrator.cpp' object='vpl_integrator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl_integrator.Po' tmpdepfile='$(DEPDIR)/vpl_integrator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -c -o vpl-vpl_integrator.obj `if test -f '$(srcdir)/vpl_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/vpl_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vpl_integrator.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o vpl_integrator.obj `if test -f '$(srcdir)/vpl_integrator.cpp'; then $(CYGPATH_W) '$(srcdir)/vpl_integrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vpl_integrator.cpp'; fi`
 
-vpl-vpl_interface.o: $(srcdir)/vpl_interface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -MT vpl-vpl_interface.o -MD -MP -MF "$(DEPDIR)/vpl-vpl_interface.Tpo" -c -o vpl-vpl_interface.o `test -f '$(srcdir)/vpl_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/vpl_interface.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl-vpl_interface.Tpo" "$(DEPDIR)/vpl-vpl_interface.Po"; else rm -f "$(DEPDIR)/vpl-vpl_interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vpl_interface.cpp' object='vpl-vpl_interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl-vpl_interface.Po' tmpdepfile='$(DEPDIR)/vpl-vpl_interface.TPo' @AMDEPBACKSLASH@
+vpl_interface.o: $(srcdir)/vpl_interface.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT vpl_interface.o -MD -MP -MF "$(DEPDIR)/vpl_interface.Tpo" -c -o vpl_interface.o `test -f '$(srcdir)/vpl_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/vpl_interface.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl_interface.Tpo" "$(DEPDIR)/vpl_interface.Po"; else rm -f "$(DEPDIR)/vpl_interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vpl_interface.cpp' object='vpl_interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl_interface.Po' tmpdepfile='$(DEPDIR)/vpl_interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -c -o vpl-vpl_interface.o `test -f '$(srcdir)/vpl_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/vpl_interface.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o vpl_interface.o `test -f '$(srcdir)/vpl_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/vpl_interface.cpp
 
-vpl-vpl_interface.obj: $(srcdir)/vpl_interface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -MT vpl-vpl_interface.obj -MD -MP -MF "$(DEPDIR)/vpl-vpl_interface.Tpo" -c -o vpl-vpl_interface.obj `if test -f '$(srcdir)/vpl_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/vpl_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vpl_interface.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl-vpl_interface.Tpo" "$(DEPDIR)/vpl-vpl_interface.Po"; else rm -f "$(DEPDIR)/vpl-vpl_interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vpl_interface.cpp' object='vpl-vpl_interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl-vpl_interface.Po' tmpdepfile='$(DEPDIR)/vpl-vpl_interface.TPo' @AMDEPBACKSLASH@
+vpl_interface.obj: $(srcdir)/vpl_interface.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT vpl_interface.obj -MD -MP -MF "$(DEPDIR)/vpl_interface.Tpo" -c -o vpl_interface.obj `if test -f '$(srcdir)/vpl_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/vpl_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vpl_interface.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl_interface.Tpo" "$(DEPDIR)/vpl_interface.Po"; else rm -f "$(DEPDIR)/vpl_interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vpl_interface.cpp' object='vpl_interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl_interface.Po' tmpdepfile='$(DEPDIR)/vpl_interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -c -o vpl-vpl_interface.obj `if test -f '$(srcdir)/vpl_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/vpl_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vpl_interface.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o vpl_interface.obj `if test -f '$(srcdir)/vpl_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/vpl_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vpl_interface.cpp'; fi`
 
-vpl-IntegratorT.o: $(srcdir)/IntegratorT.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -MT vpl-IntegratorT.o -MD -MP -MF "$(DEPDIR)/vpl-IntegratorT.Tpo" -c -o vpl-IntegratorT.o `test -f '$(srcdir)/IntegratorT.cpp' || echo '$(srcdir)/'`$(srcdir)/IntegratorT.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl-IntegratorT.Tpo" "$(DEPDIR)/vpl-IntegratorT.Po"; else rm -f "$(DEPDIR)/vpl-IntegratorT.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/IntegratorT.cpp' object='vpl-IntegratorT.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl-IntegratorT.Po' tmpdepfile='$(DEPDIR)/vpl-IntegratorT.TPo' @AMDEPBACKSLASH@
+IntegratorT.o: $(srcdir)/IntegratorT.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IntegratorT.o -MD -MP -MF "$(DEPDIR)/IntegratorT.Tpo" -c -o IntegratorT.o `test -f '$(srcdir)/IntegratorT.cpp' || echo '$(srcdir)/'`$(srcdir)/IntegratorT.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/IntegratorT.Tpo" "$(DEPDIR)/IntegratorT.Po"; else rm -f "$(DEPDIR)/IntegratorT.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/IntegratorT.cpp' object='IntegratorT.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/IntegratorT.Po' tmpdepfile='$(DEPDIR)/IntegratorT.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -c -o vpl-IntegratorT.o `test -f '$(srcdir)/IntegratorT.cpp' || echo '$(srcdir)/'`$(srcdir)/IntegratorT.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IntegratorT.o `test -f '$(srcdir)/IntegratorT.cpp' || echo '$(srcdir)/'`$(srcdir)/IntegratorT.cpp
 
-vpl-IntegratorT.obj: $(srcdir)/IntegratorT.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -MT vpl-IntegratorT.obj -MD -MP -MF "$(DEPDIR)/vpl-IntegratorT.Tpo" -c -o vpl-IntegratorT.obj `if test -f '$(srcdir)/IntegratorT.cpp'; then $(CYGPATH_W) '$(srcdir)/IntegratorT.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/IntegratorT.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl-IntegratorT.Tpo" "$(DEPDIR)/vpl-IntegratorT.Po"; else rm -f "$(DEPDIR)/vpl-IntegratorT.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/IntegratorT.cpp' object='vpl-IntegratorT.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl-IntegratorT.Po' tmpdepfile='$(DEPDIR)/vpl-IntegratorT.TPo' @AMDEPBACKSLASH@
+IntegratorT.obj: $(srcdir)/IntegratorT.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IntegratorT.obj -MD -MP -MF "$(DEPDIR)/IntegratorT.Tpo" -c -o IntegratorT.obj `if test -f '$(srcdir)/IntegratorT.cpp'; then $(CYGPATH_W) '$(srcdir)/IntegratorT.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/IntegratorT.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/IntegratorT.Tpo" "$(DEPDIR)/IntegratorT.Po"; else rm -f "$(DEPDIR)/IntegratorT.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/IntegratorT.cpp' object='IntegratorT.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/IntegratorT.Po' tmpdepfile='$(DEPDIR)/IntegratorT.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -c -o vpl-IntegratorT.obj `if test -f '$(srcdir)/IntegratorT.cpp'; then $(CYGPATH_W) '$(srcdir)/IntegratorT.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/IntegratorT.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IntegratorT.obj `if test -f '$(srcdir)/IntegratorT.cpp'; then $(CYGPATH_W) '$(srcdir)/IntegratorT.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/IntegratorT.cpp'; fi`
 
-vpl-StiffIntegratorT.o: $(srcdir)/StiffIntegratorT.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -MT vpl-StiffIntegratorT.o -MD -MP -MF "$(DEPDIR)/vpl-StiffIntegratorT.Tpo" -c -o vpl-StiffIntegratorT.o `test -f '$(srcdir)/StiffIntegratorT.cpp' || echo '$(srcdir)/'`$(srcdir)/StiffIntegratorT.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl-StiffIntegratorT.Tpo" "$(DEPDIR)/vpl-StiffIntegratorT.Po"; else rm -f "$(DEPDIR)/vpl-StiffIntegratorT.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/StiffIntegratorT.cpp' object='vpl-StiffIntegratorT.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl-StiffIntegratorT.Po' tmpdepfile='$(DEPDIR)/vpl-StiffIntegratorT.TPo' @AMDEPBACKSLASH@
+StiffIntegratorT.o: $(srcdir)/StiffIntegratorT.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT StiffIntegratorT.o -MD -MP -MF "$(DEPDIR)/StiffIntegratorT.Tpo" -c -o StiffIntegratorT.o `test -f '$(srcdir)/StiffIntegratorT.cpp' || echo '$(srcdir)/'`$(srcdir)/StiffIntegratorT.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/StiffIntegratorT.Tpo" "$(DEPDIR)/StiffIntegratorT.Po"; else rm -f "$(DEPDIR)/StiffIntegratorT.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/StiffIntegratorT.cpp' object='StiffIntegratorT.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/StiffIntegratorT.Po' tmpdepfile='$(DEPDIR)/StiffIntegratorT.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -c -o vpl-StiffIntegratorT.o `test -f '$(srcdir)/StiffIntegratorT.cpp' || echo '$(srcdir)/'`$(srcdir)/StiffIntegratorT.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o StiffIntegratorT.o `test -f '$(srcdir)/StiffIntegratorT.cpp' || echo '$(srcdir)/'`$(srcdir)/StiffIntegratorT.cpp
 
-vpl-StiffIntegratorT.obj: $(srcdir)/StiffIntegratorT.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -MT vpl-StiffIntegratorT.obj -MD -MP -MF "$(DEPDIR)/vpl-StiffIntegratorT.Tpo" -c -o vpl-StiffIntegratorT.obj `if test -f '$(srcdir)/StiffIntegratorT.cpp'; then $(CYGPATH_W) '$(srcdir)/StiffIntegratorT.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/StiffIntegratorT.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl-StiffIntegratorT.Tpo" "$(DEPDIR)/vpl-StiffIntegratorT.Po"; else rm -f "$(DEPDIR)/vpl-StiffIntegratorT.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/StiffIntegratorT.cpp' object='vpl-StiffIntegratorT.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl-StiffIntegratorT.Po' tmpdepfile='$(DEPDIR)/vpl-StiffIntegratorT.TPo' @AMDEPBACKSLASH@
+StiffIntegratorT.obj: $(srcdir)/StiffIntegratorT.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT StiffIntegratorT.obj -MD -MP -MF "$(DEPDIR)/StiffIntegratorT.Tpo" -c -o StiffIntegratorT.obj `if test -f '$(srcdir)/StiffIntegratorT.cpp'; then $(CYGPATH_W) '$(srcdir)/StiffIntegratorT.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/StiffIntegratorT.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/StiffIntegratorT.Tpo" "$(DEPDIR)/StiffIntegratorT.Po"; else rm -f "$(DEPDIR)/StiffIntegratorT.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/StiffIntegratorT.cpp' object='StiffIntegratorT.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/StiffIntegratorT.Po' tmpdepfile='$(DEPDIR)/StiffIntegratorT.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -c -o vpl-StiffIntegratorT.obj `if test -f '$(srcdir)/StiffIntegratorT.cpp'; then $(CYGPATH_W) '$(srcdir)/StiffIntegratorT.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/StiffIntegratorT.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o StiffIntegratorT.obj `if test -f '$(srcdir)/StiffIntegratorT.cpp'; then $(CYGPATH_W) '$(srcdir)/StiffIntegratorT.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/StiffIntegratorT.cpp'; fi`
 
-vpl-decsol.o: $(srcdir)/decsol.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -MT vpl-decsol.o -MD -MP -MF "$(DEPDIR)/vpl-decsol.Tpo" -c -o vpl-decsol.o `test -f '$(srcdir)/decsol.cpp' || echo '$(srcdir)/'`$(srcdir)/decsol.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl-decsol.Tpo" "$(DEPDIR)/vpl-decsol.Po"; else rm -f "$(DEPDIR)/vpl-decsol.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/decsol.cpp' object='vpl-decsol.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl-decsol.Po' tmpdepfile='$(DEPDIR)/vpl-decsol.TPo' @AMDEPBACKSLASH@
+decsol.o: $(srcdir)/decsol.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT decsol.o -MD -MP -MF "$(DEPDIR)/decsol.Tpo" -c -o decsol.o `test -f '$(srcdir)/decsol.cpp' || echo '$(srcdir)/'`$(srcdir)/decsol.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/decsol.Tpo" "$(DEPDIR)/decsol.Po"; else rm -f "$(DEPDIR)/decsol.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/decsol.cpp' object='decsol.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/decsol.Po' tmpdepfile='$(DEPDIR)/decsol.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -c -o vpl-decsol.o `test -f '$(srcdir)/decsol.cpp' || echo '$(srcdir)/'`$(srcdir)/decsol.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o decsol.o `test -f '$(srcdir)/decsol.cpp' || echo '$(srcdir)/'`$(srcdir)/decsol.cpp
 
-vpl-decsol.obj: $(srcdir)/decsol.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -MT vpl-decsol.obj -MD -MP -MF "$(DEPDIR)/vpl-decsol.Tpo" -c -o vpl-decsol.obj `if test -f '$(srcdir)/decsol.cpp'; then $(CYGPATH_W) '$(srcdir)/decsol.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/decsol.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vpl-decsol.Tpo" "$(DEPDIR)/vpl-decsol.Po"; else rm -f "$(DEPDIR)/vpl-decsol.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/decsol.cpp' object='vpl-decsol.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vpl-decsol.Po' tmpdepfile='$(DEPDIR)/vpl-decsol.TPo' @AMDEPBACKSLASH@
+decsol.obj: $(srcdir)/decsol.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT decsol.obj -MD -MP -MF "$(DEPDIR)/decsol.Tpo" -c -o decsol.obj `if test -f '$(srcdir)/decsol.cpp'; then $(CYGPATH_W) '$(srcdir)/decsol.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/decsol.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/decsol.Tpo" "$(DEPDIR)/decsol.Po"; else rm -f "$(DEPDIR)/decsol.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/decsol.cpp' object='decsol.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/decsol.Po' tmpdepfile='$(DEPDIR)/decsol.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vpl_CXXFLAGS) $(CXXFLAGS) -c -o vpl-decsol.obj `if test -f '$(srcdir)/decsol.cpp'; then $(CYGPATH_W) '$(srcdir)/decsol.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/decsol.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o decsol.obj `if test -f '$(srcdir)/decsol.cpp'; then $(CYGPATH_W) '$(srcdir)/decsol.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/decsol.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -619,6 +592,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export.capo
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

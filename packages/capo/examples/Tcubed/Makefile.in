@@ -101,17 +101,22 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/capo_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_Tcubed_OBJECTS = Tcubed-Basis.$(OBJEXT) \
-	Tcubed-Tcubed_FiniteElementProblem.$(OBJEXT) \
-	Tcubed-Tcubed_interface.$(OBJEXT) Tcubed-Tcubed_main.$(OBJEXT)
+am_Tcubed_OBJECTS = Basis.$(OBJEXT) \
+	Tcubed_FiniteElementProblem.$(OBJEXT) \
+	Tcubed_interface.$(OBJEXT) Tcubed_main.$(OBJEXT)
 Tcubed_OBJECTS = $(am_Tcubed_OBJECTS)
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(CAPO_LIBS))
+am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Tcubed-Basis.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Tcubed-Tcubed_FiniteElementProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Tcubed-Tcubed_interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Tcubed-Tcubed_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Basis.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Tcubed_FiniteElementProblem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Tcubed_interface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Tcubed_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -155,13 +160,16 @@ FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERL = @HAVE_PERL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@
+
+# This is already added part of CAPO_LIBS and therefore automake does not need to add this again!
+LIBS = 
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -180,12 +188,19 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
@@ -232,66 +247,24 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-
-#np# One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
-#np# of the  following primaries that the pattern is 
-#np# "(Exe_name)_(PRIMARY_NAME) = ").
-#np# List all source files needed to compile the exe.
 Tcubed_SOURCES = $(srcdir)/Basis.C $(srcdir)/Tcubed_FiniteElementProblem.C \
 	 $(srcdir)/Tcubed_interface.cpp $(srcdir)/Tcubed_main.cpp
 
+Tcubed_DEPENDENCIES = $(common_dependencies)
+Tcubed_LDADD = $(common_ldadd)
 
-#np# One DEPENDENCIES primary is needed for each exe listed above.  List any
-#np# libraries that the exe depends on.  (This primary is not absolutely
-#np# essential.)
-Tcubed_DEPENDENCIES = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/src/libepetra.a
+#
+# Common stuff
+#
+common_dependencies = \
+  $(top_builddir)/src/libcapo.a
 
-
-#np# One CXXFLAGS primary can be defined for each exe listed above.  Include 
-#np# any -I's necessary for building the exe.
-Tcubed_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)/.. \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../thyra/src \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_srcdir)/../thyra/src/ana/rtop \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/base \
-	-I$(top_srcdir)/../thyra/src/utils \
-	-I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_builddir)/../thyra/src/ana/rtop \
-	-I$(top_builddir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_builddir)/../thyra/src/ana/rtop/base \
-	-I$(top_builddir)/../thyra/src/utils \
-	-I$(top_builddir)/../teuchos/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../thyra/src			
-
-
-#np# One LDADD primary can be defined for each exe listed above.  Include any
-#np# LDFLAGS  necessary for building the exe.
-Tcubed_LDADD = $(top_builddir)/src/libcapo.a \
-	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
-	$(top_builddir)/../thyra/src/libthyra.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	-llapack -lblas -lg2c
-
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(CAPO_EXTRA_LIBS) $(CAPO_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(CAPO_EXTRA_LIBS) $(CAPO_LIBS))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+common_ldadd = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -338,10 +311,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tcubed-Basis.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tcubed-Tcubed_FiniteElementProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tcubed-Tcubed_interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tcubed-Tcubed_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Basis.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tcubed_FiniteElementProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tcubed_interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tcubed_main.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -359,69 +332,69 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-Tcubed-Basis.o: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -MT Tcubed-Basis.o -MD -MP -MF "$(DEPDIR)/Tcubed-Basis.Tpo" -c -o Tcubed-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Tcubed-Basis.Tpo" "$(DEPDIR)/Tcubed-Basis.Po"; else rm -f "$(DEPDIR)/Tcubed-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='Tcubed-Basis.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed-Basis.Po' tmpdepfile='$(DEPDIR)/Tcubed-Basis.TPo' @AMDEPBACKSLASH@
+Basis.o: $(srcdir)/Basis.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Basis.o -MD -MP -MF "$(DEPDIR)/Basis.Tpo" -c -o Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Basis.Tpo" "$(DEPDIR)/Basis.Po"; else rm -f "$(DEPDIR)/Basis.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='Basis.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Basis.Po' tmpdepfile='$(DEPDIR)/Basis.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
 
-Tcubed-Basis.obj: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -MT Tcubed-Basis.obj -MD -MP -MF "$(DEPDIR)/Tcubed-Basis.Tpo" -c -o Tcubed-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Tcubed-Basis.Tpo" "$(DEPDIR)/Tcubed-Basis.Po"; else rm -f "$(DEPDIR)/Tcubed-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='Tcubed-Basis.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed-Basis.Po' tmpdepfile='$(DEPDIR)/Tcubed-Basis.TPo' @AMDEPBACKSLASH@
+Basis.obj: $(srcdir)/Basis.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Basis.obj -MD -MP -MF "$(DEPDIR)/Basis.Tpo" -c -o Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Basis.Tpo" "$(DEPDIR)/Basis.Po"; else rm -f "$(DEPDIR)/Basis.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='Basis.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Basis.Po' tmpdepfile='$(DEPDIR)/Basis.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed-Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`
 
-Tcubed-Tcubed_FiniteElementProblem.o: $(srcdir)/Tcubed_FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -MT Tcubed-Tcubed_FiniteElementProblem.o -MD -MP -MF "$(DEPDIR)/Tcubed-Tcubed_FiniteElementProblem.Tpo" -c -o Tcubed-Tcubed_FiniteElementProblem.o `test -f '$(srcdir)/Tcubed_FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/Tcubed_FiniteElementProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Tcubed-Tcubed_FiniteElementProblem.Tpo" "$(DEPDIR)/Tcubed-Tcubed_FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/Tcubed-Tcubed_FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_FiniteElementProblem.C' object='Tcubed-Tcubed_FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed-Tcubed_FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/Tcubed-Tcubed_FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+Tcubed_FiniteElementProblem.o: $(srcdir)/Tcubed_FiniteElementProblem.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Tcubed_FiniteElementProblem.o -MD -MP -MF "$(DEPDIR)/Tcubed_FiniteElementProblem.Tpo" -c -o Tcubed_FiniteElementProblem.o `test -f '$(srcdir)/Tcubed_FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/Tcubed_FiniteElementProblem.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Tcubed_FiniteElementProblem.Tpo" "$(DEPDIR)/Tcubed_FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/Tcubed_FiniteElementProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_FiniteElementProblem.C' object='Tcubed_FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed_FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/Tcubed_FiniteElementProblem.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed-Tcubed_FiniteElementProblem.o `test -f '$(srcdir)/Tcubed_FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/Tcubed_FiniteElementProblem.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed_FiniteElementProblem.o `test -f '$(srcdir)/Tcubed_FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/Tcubed_FiniteElementProblem.C
 
-Tcubed-Tcubed_FiniteElementProblem.obj: $(srcdir)/Tcubed_FiniteElementProblem.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -MT Tcubed-Tcubed_FiniteElementProblem.obj -MD -MP -MF "$(DEPDIR)/Tcubed-Tcubed_FiniteElementProblem.Tpo" -c -o Tcubed-Tcubed_FiniteElementProblem.obj `if test -f '$(srcdir)/Tcubed_FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/Tcubed_FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed_FiniteElementProblem.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Tcubed-Tcubed_FiniteElementProblem.Tpo" "$(DEPDIR)/Tcubed-Tcubed_FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/Tcubed-Tcubed_FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_FiniteElementProblem.C' object='Tcubed-Tcubed_FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed-Tcubed_FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/Tcubed-Tcubed_FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+Tcubed_FiniteElementProblem.obj: $(srcdir)/Tcubed_FiniteElementProblem.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Tcubed_FiniteElementProblem.obj -MD -MP -MF "$(DEPDIR)/Tcubed_FiniteElementProblem.Tpo" -c -o Tcubed_FiniteElementProblem.obj `if test -f '$(srcdir)/Tcubed_FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/Tcubed_FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed_FiniteElementProblem.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Tcubed_FiniteElementProblem.Tpo" "$(DEPDIR)/Tcubed_FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/Tcubed_FiniteElementProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_FiniteElementProblem.C' object='Tcubed_FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed_FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/Tcubed_FiniteElementProblem.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed-Tcubed_FiniteElementProblem.obj `if test -f '$(srcdir)/Tcubed_FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/Tcubed_FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed_FiniteElementProblem.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed_FiniteElementProblem.obj `if test -f '$(srcdir)/Tcubed_FiniteElementProblem.C'; then $(CYGPATH_W) '$(srcdir)/Tcubed_FiniteElementProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed_FiniteElementProblem.C'; fi`
 
-Tcubed-Tcubed_interface.o: $(srcdir)/Tcubed_interface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -MT Tcubed-Tcubed_interface.o -MD -MP -MF "$(DEPDIR)/Tcubed-Tcubed_interface.Tpo" -c -o Tcubed-Tcubed_interface.o `test -f '$(srcdir)/Tcubed_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/Tcubed_interface.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Tcubed-Tcubed_interface.Tpo" "$(DEPDIR)/Tcubed-Tcubed_interface.Po"; else rm -f "$(DEPDIR)/Tcubed-Tcubed_interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_interface.cpp' object='Tcubed-Tcubed_interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed-Tcubed_interface.Po' tmpdepfile='$(DEPDIR)/Tcubed-Tcubed_interface.TPo' @AMDEPBACKSLASH@
+Tcubed_interface.o: $(srcdir)/Tcubed_interface.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Tcubed_interface.o -MD -MP -MF "$(DEPDIR)/Tcubed_interface.Tpo" -c -o Tcubed_interface.o `test -f '$(srcdir)/Tcubed_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/Tcubed_interface.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Tcubed_interface.Tpo" "$(DEPDIR)/Tcubed_interface.Po"; else rm -f "$(DEPDIR)/Tcubed_interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_interface.cpp' object='Tcubed_interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed_interface.Po' tmpdepfile='$(DEPDIR)/Tcubed_interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed-Tcubed_interface.o `test -f '$(srcdir)/Tcubed_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/Tcubed_interface.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed_interface.o `test -f '$(srcdir)/Tcubed_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/Tcubed_interface.cpp
 
-Tcubed-Tcubed_interface.obj: $(srcdir)/Tcubed_interface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -MT Tcubed-Tcubed_interface.obj -MD -MP -MF "$(DEPDIR)/Tcubed-Tcubed_interface.Tpo" -c -o Tcubed-Tcubed_interface.obj `if test -f '$(srcdir)/Tcubed_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/Tcubed_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed_interface.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Tcubed-Tcubed_interface.Tpo" "$(DEPDIR)/Tcubed-Tcubed_interface.Po"; else rm -f "$(DEPDIR)/Tcubed-Tcubed_interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_interface.cpp' object='Tcubed-Tcubed_interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed-Tcubed_interface.Po' tmpdepfile='$(DEPDIR)/Tcubed-Tcubed_interface.TPo' @AMDEPBACKSLASH@
+Tcubed_interface.obj: $(srcdir)/Tcubed_interface.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Tcubed_interface.obj -MD -MP -MF "$(DEPDIR)/Tcubed_interface.Tpo" -c -o Tcubed_interface.obj `if test -f '$(srcdir)/Tcubed_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/Tcubed_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed_interface.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Tcubed_interface.Tpo" "$(DEPDIR)/Tcubed_interface.Po"; else rm -f "$(DEPDIR)/Tcubed_interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_interface.cpp' object='Tcubed_interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed_interface.Po' tmpdepfile='$(DEPDIR)/Tcubed_interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed-Tcubed_interface.obj `if test -f '$(srcdir)/Tcubed_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/Tcubed_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed_interface.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed_interface.obj `if test -f '$(srcdir)/Tcubed_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/Tcubed_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed_interface.cpp'; fi`
 
-Tcubed-Tcubed_main.o: $(srcdir)/Tcubed_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -MT Tcubed-Tcubed_main.o -MD -MP -MF "$(DEPDIR)/Tcubed-Tcubed_main.Tpo" -c -o Tcubed-Tcubed_main.o `test -f '$(srcdir)/Tcubed_main.cpp' || echo '$(srcdir)/'`$(srcdir)/Tcubed_main.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Tcubed-Tcubed_main.Tpo" "$(DEPDIR)/Tcubed-Tcubed_main.Po"; else rm -f "$(DEPDIR)/Tcubed-Tcubed_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_main.cpp' object='Tcubed-Tcubed_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed-Tcubed_main.Po' tmpdepfile='$(DEPDIR)/Tcubed-Tcubed_main.TPo' @AMDEPBACKSLASH@
+Tcubed_main.o: $(srcdir)/Tcubed_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Tcubed_main.o -MD -MP -MF "$(DEPDIR)/Tcubed_main.Tpo" -c -o Tcubed_main.o `test -f '$(srcdir)/Tcubed_main.cpp' || echo '$(srcdir)/'`$(srcdir)/Tcubed_main.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Tcubed_main.Tpo" "$(DEPDIR)/Tcubed_main.Po"; else rm -f "$(DEPDIR)/Tcubed_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_main.cpp' object='Tcubed_main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed_main.Po' tmpdepfile='$(DEPDIR)/Tcubed_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed-Tcubed_main.o `test -f '$(srcdir)/Tcubed_main.cpp' || echo '$(srcdir)/'`$(srcdir)/Tcubed_main.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed_main.o `test -f '$(srcdir)/Tcubed_main.cpp' || echo '$(srcdir)/'`$(srcdir)/Tcubed_main.cpp
 
-Tcubed-Tcubed_main.obj: $(srcdir)/Tcubed_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -MT Tcubed-Tcubed_main.obj -MD -MP -MF "$(DEPDIR)/Tcubed-Tcubed_main.Tpo" -c -o Tcubed-Tcubed_main.obj `if test -f '$(srcdir)/Tcubed_main.cpp'; then $(CYGPATH_W) '$(srcdir)/Tcubed_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed_main.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Tcubed-Tcubed_main.Tpo" "$(DEPDIR)/Tcubed-Tcubed_main.Po"; else rm -f "$(DEPDIR)/Tcubed-Tcubed_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_main.cpp' object='Tcubed-Tcubed_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed-Tcubed_main.Po' tmpdepfile='$(DEPDIR)/Tcubed-Tcubed_main.TPo' @AMDEPBACKSLASH@
+Tcubed_main.obj: $(srcdir)/Tcubed_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Tcubed_main.obj -MD -MP -MF "$(DEPDIR)/Tcubed_main.Tpo" -c -o Tcubed_main.obj `if test -f '$(srcdir)/Tcubed_main.cpp'; then $(CYGPATH_W) '$(srcdir)/Tcubed_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed_main.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Tcubed_main.Tpo" "$(DEPDIR)/Tcubed_main.Po"; else rm -f "$(DEPDIR)/Tcubed_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tcubed_main.cpp' object='Tcubed_main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed_main.Po' tmpdepfile='$(DEPDIR)/Tcubed_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tcubed_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed-Tcubed_main.obj `if test -f '$(srcdir)/Tcubed_main.cpp'; then $(CYGPATH_W) '$(srcdir)/Tcubed_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed_main.obj `if test -f '$(srcdir)/Tcubed_main.cpp'; then $(CYGPATH_W) '$(srcdir)/Tcubed_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed_main.cpp'; fi`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -601,6 +574,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export.capo
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
