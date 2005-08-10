@@ -322,8 +322,10 @@ endif
 #  Architecture-independent definitions
 ##############################################################################
 
-ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(THIRD_PARTY_INCPATH)
-ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(COLOR_CSRC) $(PAR_CSRC) \
+ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(MPI_INCPATH) \
+		  $(THIRD_PARTY_INCPATH)
+ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) \
+		  $(COLOR_CSRC) $(PAR_CSRC) \
 		  $(ORDER_CSRC) $(OCT_CSRC) $(HSFC_CSRC) \
 		  $(PARAMS_CSRC) $(PARMETIS_CSRC) $(PHG_CSRC) $(HG_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) $(THIRD_PARTY_CSRC)
