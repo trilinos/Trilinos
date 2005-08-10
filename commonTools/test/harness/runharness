@@ -271,6 +271,55 @@ exit $exitStatus;
         if (!%buildOptions) {
             die "cannot find build-name $buildName in the config file $configFile, died";
         } 
+                                                
+        # Grab general information values for inclusion in machine info file. 
+        my $hostName = "";          my $dnsName = "";           my $ipAddress = "";     
+        my $operatingSystem = "";   my $kernelName = "";        my $kernelRelease = "";
+        my $kernelVersion = "";     my $processor = "";         my $machineHardware = "";
+        my $hardwarePlatform = "";  my $badCmd = 0;          
+        $badCmd = system('hostname -s > /dev/null 2>&1');
+        if (!$badCmd) { 
+            chomp($hostName=`hostname -s`); 
+        } else { 
+            $badCmd = system('uname -n > /dev/null 2>&1');
+            if (!$badCmd) { chomp($hostName=`uname -n`); }
+        }
+        $badCmd = system('hostname -d > /dev/null 2>&1');
+        if (!$badCmd) { chomp($dnsName=`hostname -d`); }
+        $badCmd = system('hostname -i > /dev/null 2>&1');
+        if (!$badCmd) { chomp($ipAddress=`hostname -i`); }
+        $badCmd = system('uname -o > /dev/null 2>&1');
+        if (!$badCmd) { chomp($operatingSystem=`uname -o`); }
+        $badCmd = system('uname -s > /dev/null 2>&1');
+        if (!$badCmd) { chomp($kernelName=`uname -s`); }
+        $badCmd = system('uname -r > /dev/null 2>&1');
+        if (!$badCmd) { chomp($kernelRelease=`uname -r`); }
+        $badCmd = system('uname -v > /dev/null 2>&1');
+        if (!$badCmd) { chomp($kernelVersion=`uname -v`); }
+        $badCmd = system('uname -p > /dev/null 2>&1');
+        if (!$badCmd) { chomp($processor=`uname -p`); }
+        $badCmd = system('uname -m > /dev/null 2>&1');
+        if (!$badCmd) { chomp($machineHardware=`uname -m`); }
+        $badCmd = system('uname -i > /dev/null 2>&1');
+        if (!$badCmd) { chomp($hardwarePlatform=`uname -i`); }
+            
+        # Create machine info file for database.
+        my $machineInfoFile = "$trilinosDir/commonTools/test/harness/results/$runStartTimeForFilename-build/machine.txt";
+        open (MACHINE_FILE, ">$machineInfoFile")
+            or die "can't open machine info file $machineInfoFile for writing, died";            
+        $string = "";        
+        $string .= "HOST_NAME            = $hostName\n";
+        $string .= "DNS_NAME             = $dnsName\n";
+        $string .= "IP_ADDRESS           = $ipAddress\n";
+        $string .= "OPERATING_SYSTEM     = $operatingSystem\n";
+        $string .= "KERNEL_NAME          = $kernelName\n";
+        $string .= "KERNEL_RELEASE       = $kernelRelease\n";
+        $string .= "KERNEL_VERSION       = $kernelVersion\n";
+        $string .= "PROCESSOR            = $processor\n";
+        $string .= "MACHINE_HARDWARE     = $machineHardware\n";
+        $string .= "HARDWARE_PLATFORM    = $hardwarePlatform\n";        
+        print MACHINE_FILE $string;        
+        close MACHINE_FILE;
         
         my $argVerbosity;
         if      ($verbosity == $v0) { $argVerbosity = 0; }
@@ -367,55 +416,6 @@ exit $exitStatus;
                 return 1;
             }
         }
-                                                
-        # Grab general information values for inclusion in machine info file. 
-        my $hostName = "";          my $dnsName = "";           my $ipAddress = "";     
-        my $operatingSystem = "";   my $kernelName = "";        my $kernelRelease = "";
-        my $kernelVersion = "";     my $processor = "";         my $machineHardware = "";
-        my $hardwarePlatform = "";  my $badCmd = 0;          
-        $badCmd = system('hostname -s > /dev/null 2>&1');
-        if (!$badCmd) { 
-            chomp($hostName=`hostname -s`); 
-        } else { 
-            $badCmd = system('uname -n > /dev/null 2>&1');
-            if (!$badCmd) { chomp($hostName=`uname -n`); }
-        }
-        $badCmd = system('hostname -d > /dev/null 2>&1');
-        if (!$badCmd) { chomp($dnsName=`hostname -d`); }
-        $badCmd = system('hostname -i > /dev/null 2>&1');
-        if (!$badCmd) { chomp($ipAddress=`hostname -i`); }
-        $badCmd = system('uname -o > /dev/null 2>&1');
-        if (!$badCmd) { chomp($operatingSystem=`uname -o`); }
-        $badCmd = system('uname -s > /dev/null 2>&1');
-        if (!$badCmd) { chomp($kernelName=`uname -s`); }
-        $badCmd = system('uname -r > /dev/null 2>&1');
-        if (!$badCmd) { chomp($kernelRelease=`uname -r`); }
-        $badCmd = system('uname -v > /dev/null 2>&1');
-        if (!$badCmd) { chomp($kernelVersion=`uname -v`); }
-        $badCmd = system('uname -p > /dev/null 2>&1');
-        if (!$badCmd) { chomp($processor=`uname -p`); }
-        $badCmd = system('uname -m > /dev/null 2>&1');
-        if (!$badCmd) { chomp($machineHardware=`uname -m`); }
-        $badCmd = system('uname -i > /dev/null 2>&1');
-        if (!$badCmd) { chomp($hardwarePlatform=`uname -i`); }
-            
-        # Create machine info file for database.
-        my $machineInfoFile = "$trilinosDir/commonTools/test/harness/results/$runStartTimeForFilename-build/machine.txt";
-        open (MACHINE_FILE, ">$machineInfoFile")
-            or die "can't open machine info file $machineInfoFile for writing, died";            
-        $string = "";        
-        $string .= "HOST_NAME            = $hostName\n";
-        $string .= "DNS_NAME             = $dnsName\n";
-        $string .= "IP_ADDRESS           = $ipAddress\n";
-        $string .= "OPERATING_SYSTEM     = $operatingSystem\n";
-        $string .= "KERNEL_NAME          = $kernelName\n";
-        $string .= "KERNEL_RELEASE       = $kernelRelease\n";
-        $string .= "KERNEL_VERSION       = $kernelVersion\n";
-        $string .= "PROCESSOR            = $processor\n";
-        $string .= "MACHINE_HARDWARE     = $machineHardware\n";
-        $string .= "HARDWARE_PLATFORM    = $hardwarePlatform\n";        
-        print MACHINE_FILE $string;        
-        close MACHINE_FILE;
                         
         # Run report
         $cmd  = "perl report ";
