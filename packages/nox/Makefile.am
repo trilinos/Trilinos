@@ -71,10 +71,8 @@ PYTHON_SUBDIR=python
 endif
 
 SUBDIRS = doc src src-lapack src-epetra src-petsc src-belos \
-					example-lapack example-epetra example-petsc example-belos \
-					$(PYTHON_SUBDIR) src-loca test
-
-
+	  example-lapack example-epetra example-petsc example-belos \
+	  src-loca test $(PYTHON_SUBDIR)
 
 ## #######################################################################
 ## Documentation
