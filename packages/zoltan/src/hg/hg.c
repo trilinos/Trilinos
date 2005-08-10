@@ -248,7 +248,8 @@ hgp.kway = ((!strcasecmp(hgp.local_str,"fmkway") || !strcasecmp(hgp.local_str,"g
     double *subtotal=NULL;
     double total, top;
     double cutl, cutn, bal; 
-    double remcutl, remcutn;
+    double rlocal[2];   /* local cut stats for removed edges */
+    double rglobal[2];  /* global cut stats for removed edges */
     static int nRuns=0;
     static double balsum = 0.0, cutlsum = 0.0, cutnsum = 0.0;
     static double balmax = 0.0, cutlmax = 0.0, cutnmax = 0.0;
@@ -285,17 +286,11 @@ hgp.kway = ((!strcasecmp(hgp.local_str,"fmkway") || !strcasecmp(hgp.local_str,"g
     cutn = Zoltan_HG_hcut_size_total(hg, output_parts);
   
     if (zoltan_hg->nRemove) {
-      //Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
-      
-      double rlocal[2];
-      double rglobal[2];
       ierr = Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, rlocal);
       MPI_Allreduce(rlocal, rglobal, 2, MPI_DOUBLE, MPI_SUM, zz->Communicator);
-      remcutl = rglobal[0];
-      remcutn = rglobal[1];
-
-      cutl += remcutl;
-      cutn += remcutn;
+    
+      cutl += rglobal[0];
+      cutn += rglobal[1];
     }
 
     cutlsum += cutl;

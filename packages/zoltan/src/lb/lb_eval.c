@@ -19,11 +19,10 @@ extern "C" {
 
 
 #include "zz_const.h"
-#include <limits.h>
-#include <float.h>
-//ABAB
 #include "zz_util_const.h"
 #include "phg.h"
+#include <limits.h>
+#include <float.h>
 
 #include "parmetis_jostle.h"
 #ifndef FLT_MAX /* just in case it's not defined */
@@ -109,6 +108,17 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   /* Arrays for partition data. */
   int *nobj_arr, *cut_arr, *bndry_arr, *commvol_arr, *all_arr, *all_arr_glob;
   float *vwgt_arr, *vwgt_arr_glob, *cutwgt_arr, *cutwgt_arr_glob;
+
+
+  int nedges = 0;
+  ZOLTAN_ID_PTR egids = NULL;
+  ZOLTAN_ID_PTR elids = NULL;
+  int* esizes = NULL;
+  int nwgt;
+  int ewgtdim = zz->Edge_Weight_Dim;
+  double hgraph_global_max[2];
+  double hgraph_global_min[2];
+  double hgraph_global_sum[2];
   
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -331,17 +341,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   
   if (have_hgraph_callbacks) {
 
-    /* Copied HGraph_Callbacks Code */
-    
-    int nedges = 0;
-    ZOLTAN_ID_PTR egids = NULL;
-    ZOLTAN_ID_PTR elids = NULL;
-    int* esizes = NULL;
-    int nwgt;
-    int ewgtdim = zz->Edge_Weight_Dim;
-    int num_gid_entries = zz->Num_GID;
-    int num_lid_entries = zz->Num_LID;
-    
+    /* Compute cutl and cutn statistics using Zoltan_PHG_Removed_Cuts on */
+    /* the hypergraph with all edges removed. */
     
     nedges = zz->Get_Num_HG_Edges(zz->Get_Num_HG_Edges_Data, &ierr);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -376,7 +377,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
             goto End;
         }
 
-        /* create and fill zhg structure */
+        /* create and fill zhg structure with all removed edges */
         ZHG* zhg;
         zhg = (ZHG*) ZOLTAN_MALLOC(sizeof(ZHG));
         if (zhg == NULL) {
@@ -397,18 +398,19 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         zhg->Output_Parts = part;
         zhg->nRecv_GNOs = 0;
 
+        /* Perform cut calculations and find global max, min and sum */
         double hgraph_local_stats[2];
-        double hgraph_global_stats[2];
         ierr = Zoltan_PHG_Removed_Cuts(zz, zhg, hgraph_local_stats);
         if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
             ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_PHG_Removed_Cuts failed!");
             
-        MPI_Allreduce(hgraph_local_stats, hgraph_global_stats, 2,
+        MPI_Allreduce(hgraph_local_stats, hgraph_global_sum, 2,
                 MPI_DOUBLE, MPI_SUM, zz->Communicator);
+        MPI_Allreduce(hgraph_local_stats, hgraph_global_max, 2,
+                MPI_DOUBLE, MPI_MAX, zz->Communicator);
+        MPI_Allreduce(hgraph_local_stats, hgraph_global_min, 2,
+                MPI_DOUBLE, MPI_MIN, zz->Communicator);
             
-        if (zz->Proc == 0)
-            printf("lb_cutl: %f\nlb_cutn: %f\n", 
-                    hgraph_global_stats[0], hgraph_global_stats[1]);
 
         ZOLTAN_FREE(&esizes);
         ZOLTAN_FREE(&egids);
@@ -417,11 +419,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         ZOLTAN_FREE(&zhg);
         
     }
-
-    
-  } else {
-    /* No graph query functions available */
-  }
+  }  
   
   if (print_stats){
     imin = 1;
@@ -518,6 +516,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         }
       }
       printf("\n");
+      
     }
   }
 
@@ -694,8 +693,21 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
           stats[isum*NUM_STATS+i], 
           imbal[i]);
       }
+
+      if (have_hgraph_callbacks) {
+        printf("%s  cutl             :  %8.0f %8.0f %8.0f\n", yo, 
+                hgraph_global_min[0], 
+                hgraph_global_max[0], 
+                hgraph_global_sum[0]);
+        printf("%s  cutn             :  %8.0f %8.0f %8.0f\n\n", yo,
+                hgraph_global_min[1], 
+                hgraph_global_max[1], 
+                hgraph_global_sum[1]);
+      }
+      
       printf("\n");
     }
+    
 
   }
 
