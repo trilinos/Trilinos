@@ -557,6 +557,7 @@ cleanUp();
             $resultsString .= "TYPE                 = ".$testListAoH[$i]{'type'}."\n";
             $resultsString .= "COMMAND              = ".$testListAoH[$i]{'command'}."\n";
             $resultsString .= "\n";
+            $resultsString .= "TEST_NUMBER          = $testNumber\n";
             $resultsString .= "START_TIME           = $testStartTime\n";
             $resultsString .= "STOP_TIME            = $testStopTime\n";
             $resultsString .= "RUN_TIME             = ".($runSeconds==0?"<1":$runSeconds)." seconds\n";
