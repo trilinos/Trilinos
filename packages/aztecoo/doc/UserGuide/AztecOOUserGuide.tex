@@ -477,9 +477,18 @@ SetAztecOption() method to change the behavior of the Iterate() method:
 %
 \optionbox{options[{\sf AZ\_solver}]}{Specifies solution
   algorithm. DEFAULT: \sf AZ\_gmres.}
-\choicebox{AZ\_cg}{Conjugate gradient (only
-  applicable to symmetric positive definite matrices).}
+\choicebox{AZ\_cg}{Conjugate gradient (Applicable to symmetric
+positive definite matrices, sometimes usable with mildly
+non-symmetric matrices).}
+
+\choicebox{AZ\_cg\_condnum}{Conjugate gradient with condition number
+estimation. (Similar to AZ\_cg. Additionally computes extreme
+eigenvalue estimates using the generated Lanczos matrix).}
+
 \choicebox{AZ\_gmres}{Restarted generalized minimal residual.}
+\choicebox{AZ\_gmres\_condnum}{Restarted GMRES with condition number
+estimation. (Similar to AZ\_gmres. Additionally computes extreme
+eigenvalues using the generated Hessenberg matrix.)}
 \choicebox{AZ\_cgs}{Conjugate gradient squared.}
 \choicebox{AZ\_tfqmr}{Transpose-free quasi-minimal residual.}
 \choicebox{AZ\_bicgstab}{Bi-conjugate gradient with
@@ -696,8 +705,11 @@ preconditioners, 1 for Jacobi and Gauss-Seidel preconditioners.}
 %
 \optionbox{options[{\sf AZ\_orthog}]}{GMRES orthogonalization scheme.\\
   DEFAULT: {\sf AZ\_classic}.}
-\choicebox{AZ\_classic}{2 steps of classical Gram-Schmidt orthogonalization.}
-\choicebox{AZ\_modified}{Modified Gram-Schmidt orthogonalization.}
+\choicebox{AZ\_classic}{2 steps of classical Gram-Schmidt
+orthogonalization.}
+
+\choicebox{AZ\_modified}{A single step of Modified Gram-Schmidt
+orthogonalization.}
 %
 \optionbox{options[{\sf AZ\_aux\_vec}]}{Determines $\tilde r$ (a required
   vector within some iterative methods). The convergence behavior varies
@@ -850,6 +862,119 @@ The contents of {\it status} are described below.  \vspace{2em}
  When AztecOO returns abnormally, the user may elect to restart using
  the current computed solution as an initial guess.
 
+\section{Choosing a Krylov Method}
+\label{Sect:KrylovMethods}
+
+Choosing a Krylov method is determined by many factors, some of
+which are very problem-specific.  However, there are some general
+guidelines worth mentioning.  Selection of a Krylov solver is done
+by setting the value of options[{\sf AZ\_solver}] as described in
+Section~\ref{Section:OptionsAndParams}.
+
+\subsection{Symmetric (Positive Definite) Problems}
+
+AztecOO provides two choices for solving symmetric positive definite
+(SPD) problems, both of which are conjugate gradient (CG) methods. A
+third option exists for some rare situations.
+\begin{enumerate}
+\item (AZ\_cg) The first is CG (AZ\_cg), which is the standard preconditioned CG
+method.  Note that, strictly speaking, CG assume the matrix is
+symmetric and positive semi-definite.  It does sometimes work for
+mildly non-symmetric problems.  Preconditioners for CG must also be
+symmetric.  Thus, it is usually ineffective to use incomplete LU
+type of preconditioners with CG.
+
+\item (AZ\_cg\_condnum) The second solver for symmetric problems is
+also a preconditioned CG solver, but in addition to computing the
+solution, this solver will construct the tridiagonal Lanczos matrix
+that provides good estimates of the extreme eigenvalues of the
+preconditioned\footnote{If you want to use AZ\_cg\_condnum to
+estimate the extreme eigenvalues of your original matrix, you should
+not use a preconditioner or scaling method when calling this solver.
+ In general, changing the preconditioner will also change the extreme eigenvalue estimates}
+ matrix.  This solver is more expensive than AZ\_cg, so it should
+ only be used when this information is needed.
+
+\item (AZ\_gmres and AZ\_gmres\_condnum)  Although there are
+specialized Krylov methods for symmetric indefinite problems,
+AztecOO does not implement them.  However, if such a solver is
+needed, AZ\_gmres can be very effective.  Note that, if a problem
+has many eigenvalues on either side of the imaginary access in the
+complex plane, then the size of the restart value (options[{\sf
+AZ\_kspace}] should be large.  For very difficult problems, it is
+best to set this value equal to the number of iterations performed.
+
+\end{enumerate}
+
+\subsection{Non-symmetric Problems}
+
+For SPD problems, CG is both optimal algorithmically and has fixed
+cost per iteration.  For non-symmetric problems there is no such
+solver.  It is well-known that GMRES without restart is an optimal
+solver.  In practice it is very robust, especially with a good
+preconditioner.  However, its cost can be prohibitive, both in
+memory and computation time.  As a result, literally dozens of
+non-optimal, but lower cost iterative methods have been developed
+for non-symmetric problems.  AztecOO has two implementations of
+GMRES and several lower cost sub-optimal methods.
+
+Of these options, only two are commonly used, and a third
+occasionally:
+\begin{enumerate}
+  \item (AZ\_gmres) Because AztecOO and its predecessor Aztec have
+  often been applied to very difficult non-symmetric systems, and
+  because GMRES is such an effective parallel Krylov method, GMRES is by far
+  the most common non-symmetric solver used in AztecOO.  The
+  effectiveness of GMRES can be strongly affected by the choice of
+  restart value and orthogonalization method.  We discuss these
+  issues below.
+  \item (AZ\_gmres\_condnum) This version of GMRES retains an
+  unfactored copy of the generated Hessenberg matrix and computes
+  its eigenvalues using LAPACK.  The extreme eigenvalues of this
+  Hessenberg
+  matrix are often a good approximation to the extreme eigenvalues
+  of the preconditioned matrix.
+  \item (AZ\_bicgstab) Among the many sub-optimal non-symmetric
+  Krylov methods, BiCGSTAB has proven to be the most robust for a
+  reasonable cost.  For problems that are well-conditioned, BiCGSTAB
+  can often be a much cheaper alternative to GMRES.  However, it is
+  still ineffective for difficult problems.  Furthermore, unlike
+  GMRES where the restart value can be increased, there are
+  no parameters that can be used to make it more robust.
+\end{enumerate}
+
+\subsection{More about GMRES}
+
+As mentioned above, GMRES is by far the most robust general-purpose
+Krylov method available.  Part of its robustness comes from the
+ability to tune two parameters, namely options[{\sf AZ\_kspace}] and
+options[{\sf AZ\_orthog}]. options[{\sf AZ\_kspace}] determines the
+number of Krylov vectors that will be used as part of the
+least-squares problem to generate the next approximate solution.
+Generally setting this value larger improves the robustness,
+decreases iteration count, but increases costs. This value is set to
+30 by default, but for challenging problems one should set it (much)
+higher, especially if memory is available on the computer.  For very
+difficult problems, we recommend setting options[{\sf AZ\_kspace}]
+equal to the maximum number of iterations.
+
+The parameter options[{\sf AZ\_orthog}] can be used to select the
+type of Gram-Schmidt algorithm to used.  We provide two options:
+\begin{enumerate}
+  \item Two steps of classical Gram-Schmidt (Double CGS).
+
+  \item One step of modified Gram-Schmidt. (Single MGS).
+\end{enumerate}
+
+For many years, (single) MGS was the preferred option for GMRES
+because of its superior numerical accuracy over single CGS. However,
+in the past several years it has been recognized that double CGS is
+more effective than single MGS, as effective as double MGS and has
+superior parallel performance.  As a result, AztecOO uses double CGS
+by default.  However, there may be instances where single MGS would
+be sufficient for robustness and it can have a lower cost in some
+situations.
+
 \section{Diagonal Perturbations and Incomplete Factorizations}
 \label{Sect:DiagonalPerturbations}
  One of the new features in AztecOO
@@ -885,6 +1010,23 @@ and extended to nonsymmetric matrices by van der
 Vorst~\cite{vanderVorst:81},
 Saad~\cite{Saad:94a} and Chow~\cite{Chow:97}.  It is used for
 block entry matrices in a package called BPKIT~\cite{ChowHeroux:98}.
+
+The incomplete factorization preconditioners in AztecOO (and in
+IFPACK~\cite{Ifpack-home-page}) are sensitive to two parameters:
+\begin{itemize}
+  \item {\it params}[{\sf AZ\_athresh}]: Absolute threshold $\alpha$.
+  \item {\it params}[{\sf AZ\_rthresh}]: Relative threshold $\rho$.
+\end{itemize}
+
+Given these two values, the preconditioner is computed for a matrix
+$B$ such that off-diagonal entries of $B$ are the same as the
+original matrix $A$ but the diagonals are replaced with:
+
+\begin{equation}\label{diagaonalperturbations}
+    b_{ii} \leftarrow \textrm{sign$(a_{ii})$}\alpha + (1+\rho)a_{ii}
+\end{equation}
+
+where sign() is the sign of the value, either $+1$ or $-1$.
 
 Since Krylov methods such as GMRES are invariant under scaling, and
 a very large diagonal
@@ -937,6 +1079,10 @@ estimate of $cond_\infty(LU)$ is performed by setting $y = e$, calling
 the solve kernel to compute $z$ and then
 computing $\|z\|_\infty$.
 
+AztecOO provides the ability to query the condition number of the
+preconditioner, if one is available.  This value is obtained by
+calling the Condest() method on an AztecOO object instance.
+
 
 \subsubsection{{\it A priori} Diagonal Perturbations}
 
@@ -987,19 +1133,19 @@ Figure~\ref{f:aprioristrategy}.
 \vspace{.1in}
 \begin{enumerate}
 \item Set the absolute threshold $\alpha = 0.0$ and the relative
-threshold $\rho = 1.0$ (equivalent to no perturbation).
+threshold $\rho = 0.0$ (equivalent to no perturbation).
 \item Define perturbed diagonal entries as $d_{i} = \sign(d_i)\alpha +
-d_i\rho$ and compute the incomplete factors $L$ and $U$.
+d_i(1+\rho)$ and compute the incomplete factors $L$ and $U$.
 \item Compute $condest = \|(LU)^{-1}e\|_\infty$ where $e = (1, 1,
 \ldots, 1)^T$.
 \item If failure ($condest > 10^{15}$ or convergence is poor), set $\alpha =
-10^{-5}$, $\rho = 1.0$.  Repeat Steps 2 and 3.
+10^{-5}$, $\rho = 0.0$.  Repeat Steps 2 and 3.
 \item If failure, set $\alpha =
-10^{-5}$, $\rho = 1.01$. Repeat Steps 2 and 3.
+10^{-5}$, $\rho = 0.01$. Repeat Steps 2 and 3.
 \item If failure, set $\alpha =
-10^{-2}$, $\rho = 1.0$. Repeat Steps 2 and 3.
+10^{-2}$, $\rho = 0.0$. Repeat Steps 2 and 3.
 \item If failure, set $\alpha =
-10^{-2}$, $\rho = 1.01$. Repeat Steps 2 and 3.
+10^{-2}$, $\rho = 0.01$. Repeat Steps 2 and 3.
 \item If still failing, continue alternate increases in
    the two threshold values.
 \end{enumerate}
@@ -1008,13 +1154,12 @@ d_i\rho$ and compute the incomplete factors $L$ and $U$.
 \caption{Simple {\it a priori} Threshold Strategy}
 \label{f:aprioristrategy}
 \end{figure}
-}
-Essentially, we replace the diagonal values $(d_1, d_2, \ldots, d_n)$
-with $d_i = \sign(d_i)\alpha + d_i\rho$, $i=1, 2, \ldots, n$, where
-$n$ is the matrix dimension and $\sign(d_i)$ returns
-the sign of the diagonal entry.  This has the effect of
-forcing the diagonal values to have minimal magnitude of $\alpha$ and
-to increase each by an amount proportional to $\rho$, and still keep
+} Essentially, we replace the diagonal values $(d_1, d_2, \ldots,
+d_n)$ with $d_i = \sign(d_i)\alpha + d_i(1+\rho)$, $i=1, 2, \ldots,
+n$, where $n$ is the matrix dimension and $\sign(d_i)$ returns the
+sign of the diagonal entry.  This has the effect of forcing the
+diagonal values to have minimal magnitude of $\alpha$ and to
+increase each by an amount proportional to $\rho$, and still keep
 the sign of the original diagonal entry.
 
 
@@ -1038,6 +1183,22 @@ preconditioners for use with AztecOO.  Once an \operator{}-compliant
 preconditioner is constructed, it can be registered with an AztecOO
 object as the preconditioner.  In this situation, the preconditioner
 will never be reset by AztecOO.  Instead, the user has this responsibility.
+
+\section{Accessing AztecOO from Thyra and Python}
+
+In addition to accessing AztecOO via its C++ interfaces, bindings
+exist that allow use via the Trilinos abstract interfaces in Thyra.
+Thyra is a package of abstract C++ interfaces for accessing one or
+more concrete solver capabilities via a single solver interface.
+
+AztecOO also is accessible via the PyTrilinos package using Python.
+Python provides an excellent interactive prototyping environment, as
+well as a flexible application development environment.  AztecOO,
+Epetra, ML, IFPACK and several other Trilinos packages are available
+to Python users via the PyTrilinos package.
+
+Detailed discussions of Thyra and PyTrilinos can be found by going
+to the Trilinos home page~\cite{Trilinos-home-page}.
 
 \clearpage
 \bibliographystyle{plain}

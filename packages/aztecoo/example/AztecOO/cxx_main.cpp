@@ -188,21 +188,23 @@ int main(int argc, char *argv[])
   //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
   solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
+  //solver.SetAztecOption(AZ_precond, AZ_none);
   //solver.SetAztecOption(AZ_scaling, 8);
-  solver.SetAztecOption(AZ_subdomain_solve, AZ_ilu); 
-  solver.SetAztecOption(AZ_output, 1);
-  solver.SetAztecOption(AZ_graph_fill, 0);
-  //solver.SetAztecOption(AZ_overlap, 1);
+  solver.SetAztecOption(AZ_subdomain_solve, AZ_ilut); 
+  //solver.SetAztecOption(AZ_output, 1);
+  //solver.SetAztecOption(AZ_reorder, 0);
+  solver.SetAztecOption(AZ_graph_fill, 3);
+  solver.SetAztecOption(AZ_overlap, 0);
   //solver.SetAztecOption(AZ_poly_ord, 9);
-  //solver.SetAztecParam(AZ_ilut_fill, 1.0);
-  //solver.SetAztecParam(AZ_drop, 0.0);
+  solver.SetAztecParam(AZ_ilut_fill, 4.0);
+  solver.SetAztecParam(AZ_drop, 0.0);
   //double rthresh = 1.4;
   //cout << "Rel threshold = " << rthresh << endl;
   //solver.SetAztecParam(AZ_rthresh, rthresh);
   //double athresh = 10.0;
   //cout << "Abs threshold = " << athresh << endl;
   //solver.SetAztecParam(AZ_athresh, athresh);
-  //solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e200);
+  solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e200);
 
 
   
@@ -210,7 +212,8 @@ int main(int argc, char *argv[])
   //solver.SetAztecOption(AZ_reorder, 2);
 
   int Niters = 320;
-  solver.SetAztecOption(AZ_kspace, 40);
+  solver.SetAztecOption(AZ_kspace, Niters);
+  /*
   AztecOO_StatusTestMaxIters maxItersTest1(100);
 
   AztecOO_StatusTestResNorm restest1(A, x, bb, 1.0E-10);
@@ -234,13 +237,16 @@ int main(int argc, char *argv[])
 
   comboTest2.AddStatusTest(restest3);
   solver.SetStatusTest(&comboTest2);
-   
+  */ 
   double norminf = A.NormInf();
   double normone = A.NormOne();
   if (comm.MyPID()==0) 
     cout << "\n Inf-norm of A before scaling = " << norminf 
 	 << "\n One-norm of A before scaling = " << normone<< endl << endl;
-  solver.Iterate(Niters, 1.0e-10);
+  Epetra_Vector rowsumsA(bb.Map());
+  A.InvRowSums(rowsumsA);
+  //problem.LeftScale(rowsumsA);
+  solver.Iterate(Niters, 1.0e-14);
   norminf = A.NormInf();
   normone = A.NormOne(); 
   if (comm.MyPID()==0) 
