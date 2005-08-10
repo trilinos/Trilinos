@@ -1116,9 +1116,9 @@ with the symbol $\star$ (this symbol is not part of the parameter name).
 \subsubsection{General Options}
 %-----------------------------%
 
-\choicebox{\tt ML label}{[{\tt string}] An optional label that is appended
-to the existing multigrid label.  This makes differentiating between multiple
-solves easier.}
+%\choicebox{\tt ML label}{[{\tt string}] An optional label that is appended
+%to the existing multigrid label.  This makes differentiating between multiple
+%solves easier.}
 
 \choicebox{\tt output}{[{\tt int}] Controls the amount of information printed
 to the screen. Ranges from 0 to 10 (0 is no output, and 10 is incredibly
@@ -1189,7 +1189,7 @@ schemes). Note: this value overwrites {\tt aggregation: global aggregates}.}
   value is 1 aggregate per process.}
 
 \choicebox{\tt aggregation: damping factor}{[{\tt double}] Damping factor for smoothed
-aggregation. Default: 0.0.}
+aggregation. Default: $4/3$.}
 
 \choicebox{\tt eigen-analysis: type}{[{\tt string}] Defines the numerical scheme to
 be used to compute an estimation of the maximum eigenvalue of $D^{-1}A$,
@@ -1324,7 +1324,7 @@ edges on a processor to minimum nodes on a processor.   If actual ratio is
 greater than this value, repartitioning occurs.  Otherwise, nothing is done.
 Default: 1.1.}
 
-\choicebox{\tt repartition: edge min per proc}{(Maxwell-specific option.)
+\choicebox{\tt repartition: edge min per proc}{[{\tt int}] Maxwell-specific option.
 Specifies the desired minimum number of
 edges that should be on a processor once repartitioning is done. Default: 20.}
 
