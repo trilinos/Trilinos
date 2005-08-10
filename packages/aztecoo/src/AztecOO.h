@@ -269,7 +269,7 @@ class AztecOO {
   */
   int DestroyPreconditioner();
 
-  //! Returns the condition number estimate for the current, if one exists, returns -1.0 if no estimate
+  //! Returns the condition number estimate for the current preconditioner, if one exists, returns -1.0 if no estimate.
   double Condest() const {return(condest_);};
   //@}
 

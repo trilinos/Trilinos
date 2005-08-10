@@ -55,7 +55,7 @@ extern int az_iterate_id;
 
 /* define AZ_CONDNUM_ESTIMATE to get an estimation of the condition
    number of the preconditioned operator based on the analysis of 
-   the Hessember matrix. Note that, in the case of restart, the
+   the Hessenberg matrix. Note that, in the case of restart, the
    estimation can be rather poor (ideally, to estimate the condition
    number, one should use Krylov spaces of dimension > 
    iterations_to_converge) */
@@ -155,7 +155,7 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
   char *T = "T";
   char *T2 = "N";
 
-/* h2 will hold non-rotated Hessemberg, used for eigen-analysis */
+/* h2 will hold non-rotated Hessenberg, used for eigen-analysis */
   double ** hh2 = NULL;
   double condnum;
   int itemp;
@@ -778,10 +778,10 @@ static void print_condnum( int options[], int proc,
 	      prefix, prefix, prefix );
       
     if( flag2 == 1 )
-      printf( "\n%sWarning : The Hessemberg matrix is too small\n",
+      printf( "\n%sWarning : The Hessenberg matrix is too small\n",
 	      prefix );
     
-    printf("\n%sAnalysis of the Hessember matrix:\n\n"
+    printf("\n%sAnalysis of the Hessenberg matrix:\n\n"
 	   "%ssmallest eigenvalue (in module) = %e\n"
 	   "%slargest eigenvalue (in module)  = %e\n"
 	   "\n%sestimated condition number      = %e\n",
