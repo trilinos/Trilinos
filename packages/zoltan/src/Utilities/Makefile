@@ -164,7 +164,7 @@ ZT_DRIVER_DEP  	= $(ZT_LIB) $(MEM_LIB)
 #  Architecture-independent definitions
 ##############################################################################
 
-INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) 
+INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(MPI_INCPATH)
 
 CCOMP		= $(CC) $(INC_PATH) $(CFLAGS) 
 
