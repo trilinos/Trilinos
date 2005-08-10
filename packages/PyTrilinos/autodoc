@@ -33,10 +33,13 @@ ignoreHeaders = ["Callback.h", "Epetra_NumPyVector.h", "Epetra_VectorHelper.h",
                  "NumPyArray.h", "NumPyWrapper.h", "PyInterface.h",
                  "PyTrilinos.h", "numeric_include.h"]
 
-# Define a regular expression
+# Define the regular expressions
 includeRE = re.compile(r"%include\s+['\"<](.+)['\">]")
 moduleRE  = re.compile(r"%module(\(.+\))?\s+(.+)")
-packageRE = re.compile(r"package\s*=\s*['\"](.+)['\"]")
+singleQuoteString = r"'[^']*'"
+doubleQuoteString = r'"[^"]*"'
+packageRE = re.compile(r"package\s*=\s*(" + singleQuoteString + r"|" +
+                       doubleQuoteString + r")")
 
 ######################################################
 
@@ -66,12 +69,19 @@ def main():
             print __doc__
             sys.exit()
 
+    # From the args list, form the list of filenames.  This will be all elements
+    # of args except those that contain wildcards.
+    filenames = [ ]
+    for filename in args:
+        if "*" not in filename and "?" not in filename:
+            filenames.append(filename)
+
     # We are going to create a dictionary whose keys are the module names of the
     # interface files, and whose values are a list of the %include files
     wrapperDict = { }
 
     # Loop over the arguments
-    for interfaceFile in args:
+    for interfaceFile in filenames:
 
         # Read in the interface file
         file = open(interfaceFile,"r")
@@ -95,7 +105,7 @@ def main():
                 if moduleOptions:
                     match = packageRE.search(moduleOptions)
                     if match:
-                        moduleName = match.group(1) + "." + moduleName
+                        moduleName = match.group(1)[1:-1] + "." + moduleName
 
             # Look for %include ...
             match = includeRE.search(line)
