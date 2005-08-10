@@ -21,6 +21,10 @@ extern "C" {
 #include "zz_const.h"
 #include <limits.h>
 #include <float.h>
+//ABAB
+#include "zz_util_const.h"
+#include "phg.h"
+
 #include "parmetis_jostle.h"
 #ifndef FLT_MAX /* just in case it's not defined */
 #define FLT_MAX (1e38) /* some large number */
@@ -98,6 +102,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int num_lid_entries = zz->Num_LID;
   int gid_off, lid_off;
   int have_graph_callbacks;
+  int have_hgraph_callbacks;
   int edge_list_size;
   int sum;
   char msg[256];
@@ -131,11 +136,16 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     return ierr;
   }
 
-  /* Have graph query functions? */
+  /* Have graph or hypergraph query functions? */
   have_graph_callbacks = 
        ((zz->Get_Num_Edges != NULL || zz->Get_Num_Edges_Multi != NULL) &&
         (zz->Get_Edge_List != NULL || zz->Get_Edge_List_Multi != NULL));
+  have_hgraph_callbacks = 
+        zz->Get_Num_HG_Edges != NULL && 
+        zz->Get_HG_Edge_Info != NULL &&
+        zz->Get_HG_Edge_List != NULL;
 
+        
   /* Compute statistics w.r.t. partitions? */
   compute_part = (zz->Get_Partition != NULL || zz->Get_Partition_Multi != NULL);
 
@@ -316,8 +326,100 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     /* Compute the number of adjacent procs */
     for (j=0; j<zz->Num_Proc; j++)
       if (proc_count[j]>=0) num_adj++;
+      
   }
-  else{
+  
+  if (have_hgraph_callbacks) {
+
+    /* Copied HGraph_Callbacks Code */
+    
+    int nedges = 0;
+    ZOLTAN_ID_PTR egids = NULL;
+    ZOLTAN_ID_PTR elids = NULL;
+    int* esizes = NULL;
+    int nwgt;
+    int ewgtdim = zz->Edge_Weight_Dim;
+    int num_gid_entries = zz->Num_GID;
+    int num_lid_entries = zz->Num_LID;
+    
+    
+    nedges = zz->Get_Num_HG_Edges(zz->Get_Num_HG_Edges_Data, &ierr);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                "Error returned from Get_Num_HG_Edges");
+        goto End;
+    }
+
+    if (nedges > 0) {
+
+        /* Get info about the edges:  GIDs, LIDs, sizes, edge weights */
+        egids = ZOLTAN_MALLOC_GID_ARRAY(zz, nedges);
+        elids = ZOLTAN_MALLOC_LID_ARRAY(zz, nedges);
+        esizes = (int *) ZOLTAN_MALLOC(nedges * sizeof(int));
+        nwgt = nedges * ewgtdim;
+        if (nwgt) 
+            ewgts = (float *) ZOLTAN_MALLOC(nwgt * sizeof(float));
+        if (!esizes || !egids || (num_lid_entries && !elids) ||
+                (nwgt && !ewgts))  {
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+            ierr = ZOLTAN_MEMERR;
+            goto End;
+        }
+
+        ierr = zz->Get_HG_Edge_Info(zz->Get_HG_Edge_Info_Data,
+                num_gid_entries, num_lid_entries,
+                nedges, ewgtdim, 
+                egids, elids, esizes, ewgts); 
+        if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                    "Error returned from Get_HG_Edge_Info");
+            goto End;
+        }
+
+        /* create and fill zhg structure */
+        ZHG* zhg;
+        zhg = (ZHG*) ZOLTAN_MALLOC(sizeof(ZHG));
+        if (zhg == NULL) {
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+            ierr = ZOLTAN_MEMERR;
+            goto End;
+        }
+
+        zhg->nObj = num_obj;
+        zhg->GIDs = global_ids;
+        zhg->LIDs = local_ids;
+        zhg->nRemove = nedges;
+        zhg->Remove_EGIDs = egids;
+        zhg->Remove_ELIDs = elids;
+        zhg->Remove_Ewgt = ewgts;
+        zhg->Remove_Esize = esizes;
+        zhg->Input_Parts = part;
+        zhg->Output_Parts = part;
+        zhg->nRecv_GNOs = 0;
+
+        double hgraph_local_stats[2];
+        double hgraph_global_stats[2];
+        ierr = Zoltan_PHG_Removed_Cuts(zz, zhg, hgraph_local_stats);
+        if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_PHG_Removed_Cuts failed!");
+            
+        MPI_Allreduce(hgraph_local_stats, hgraph_global_stats, 2,
+                MPI_DOUBLE, MPI_SUM, zz->Communicator);
+            
+        if (zz->Proc == 0)
+            printf("lb_cutl: %f\nlb_cutn: %f\n", 
+                    hgraph_global_stats[0], hgraph_global_stats[1]);
+
+        ZOLTAN_FREE(&esizes);
+        ZOLTAN_FREE(&egids);
+        ZOLTAN_FREE(&elids);
+        ZOLTAN_FREE(&ewgts);
+        ZOLTAN_FREE(&zhg);
+        
+    }
+
+    
+  } else {
     /* No graph query functions available */
   }
   

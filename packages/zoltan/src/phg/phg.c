@@ -273,7 +273,16 @@ End:
       MPI_Allreduce(&(zoltan_hg->nRemove), &gnremove, 1, MPI_INT, MPI_SUM,
                     zz->Communicator);
       if (gnremove) {
-        err = Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
+        
+        //err = Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
+
+        double rlocal[2];
+        double rglobal[2];
+        err = Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, rlocal);
+        MPI_Allreduce(rlocal, rglobal, 2, MPI_DOUBLE,MPI_SUM,zz->Communicator);
+        remcutl = rglobal[0];
+        remcutn = rglobal[1];
+        
         cutl += remcutl;
         cutn += remcutn;
       }

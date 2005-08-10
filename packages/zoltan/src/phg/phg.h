@@ -218,7 +218,7 @@ extern int Zoltan_PHG_Partition(ZZ*, HGraph*, int, float *, Partition,
 extern double Zoltan_PHG_Compute_NetCut(PHGComm*, HGraph*, Partition, int);
 extern double Zoltan_PHG_Compute_ConCut(PHGComm*, HGraph*, Partition, int, 
                                         int*);    
-extern int Zoltan_PHG_Removed_Cuts(ZZ *, ZHG *, double *, double *);
+extern int Zoltan_PHG_Removed_Cuts(ZZ *, ZHG *, double *);
 
 extern double Zoltan_PHG_Compute_Balance(ZZ*, HGraph*, float *, int, Partition);
 

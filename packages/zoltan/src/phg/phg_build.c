@@ -755,8 +755,9 @@ End:
 int Zoltan_PHG_Removed_Cuts(
   ZZ *zz,
   ZHG *zhg,
-  double *concut,   /* ConCut result: Sum_over_edges( (nparts-1)*ewgt ) */
-  double *netcut    /* NetCut result: Sum_over_edges( (nparts>1)*ewgt ) */
+  double *localcuts
+  //double *concut,   /* ConCut result: Sum_over_edges( (nparts-1)*ewgt ) */
+  //double *netcut    /* NetCut result: Sum_over_edges( (nparts>1)*ewgt ) */
 )
 {
 /* Function to compute the cuts of removed hyperedges.
@@ -790,8 +791,8 @@ double ewgt;
 
   /* Initialize results */
 
-  *concut = 0.;
-  *netcut = 0.;
+  //*concut = 0.;
+  //*netcut = 0.;
 
   /* Get pin information for removed hyperedges. */
 
@@ -964,10 +965,14 @@ double ewgt;
     }
   }
   
-  MPI_Allreduce(loccuts, globcuts, 2, MPI_DOUBLE, MPI_SUM, zz->Communicator);
+  printf("(%d) loccuts: %f, %f\n", zz->Proc, loccuts[0], loccuts[1]);
   
-  *concut = globcuts[0];
-  *netcut = globcuts[1];
+  //MPI_Allreduce(loccuts, globcuts, 2, MPI_DOUBLE, MPI_SUM, zz->Communicator);
+  //*concut = globcuts[0];
+  //*netcut = globcuts[1];
+  
+  localcuts[0] = loccuts[0];
+  localcuts[1] = loccuts[1];
 
 End:
 

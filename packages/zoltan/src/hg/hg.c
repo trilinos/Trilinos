@@ -285,7 +285,15 @@ hgp.kway = ((!strcasecmp(hgp.local_str,"fmkway") || !strcasecmp(hgp.local_str,"g
     cutn = Zoltan_HG_hcut_size_total(hg, output_parts);
   
     if (zoltan_hg->nRemove) {
-      Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
+      //Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
+      
+      double rlocal[2];
+      double rglobal[2];
+      ierr = Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, rlocal);
+      MPI_Allreduce(rlocal, rglobal, 2, MPI_DOUBLE, MPI_SUM, zz->Communicator);
+      remcutl = rglobal[0];
+      remcutn = rglobal[1];
+
       cutl += remcutl;
       cutn += remcutn;
     }
