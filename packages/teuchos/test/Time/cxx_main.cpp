@@ -49,15 +49,11 @@ static Time& factTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer(
 static Time& exceptTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("exception"); return *t;}
 
 
-
 int main(int argc, char* argv[])
 {
   bool verbose = 0;
   int procRank = 0;
   int FailedTests = 1; // This will be set to 0, if the exception is caught!
-
-  // Check for verbose flag.
-  if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
 #ifdef HAVE_MPI 
   /* initialize MPI if we are running in parallel */
@@ -65,6 +61,9 @@ int main(int argc, char* argv[])
   MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
 #endif      
   
+  // Check for verbose flag.
+  if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
+
   if (verbose && procRank==0)
     cout << Teuchos::Teuchos_Version() << endl << endl;
 
