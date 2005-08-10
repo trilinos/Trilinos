@@ -35,6 +35,7 @@ RANLIB="ranlib -s" \
 --enable-nox-lapack \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
+--enable-python \
 --enable-rythmos \
 --enable-teuchos \
 --enable-teuchos-abc \
@@ -43,4 +44,6 @@ RANLIB="ranlib -s" \
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
---enable-tsfextended
+--enable-tsfextended \
+--disable-amesos-thyra \
+--disable-aztecoo-thyra
