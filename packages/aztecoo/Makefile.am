@@ -87,7 +87,13 @@ if PYTHON_USE
 PYTHON_SUBDIR=python
 endif
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
+if ENABLE_AZTECOO_THYRA
+THYRA_SUBDIR=thyra
+else
+THYRA_SUBDIR=
+endif
+
+SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
 
 ## #######################################################################
 ## Target for circular dependencies
@@ -108,7 +114,7 @@ install-exec-hook:
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
-		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../teuchos
+		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../thyra:@abs_top_builddir@/../teuchos
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile aztecoo > $(exec_prefix)/include/Makefile.export.aztecoo.macros
 
 uninstall-hook:
@@ -145,7 +151,7 @@ run-examples:
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
 	--comm=$(AZTECOO_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
@@ -163,7 +169,7 @@ run-tests:
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
 	--comm=$(AZTECOO_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
@@ -181,7 +187,7 @@ run-pyexamples:
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
 	--comm=$(AZTECOO_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \

@@ -266,6 +266,15 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 TAC_ENABLE_PYTHON
 
 # ------------------------------------------------------------------------
+# Interfaces to other Trilinos packages
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  aztecoo, thyra, AZTECOO_THYRA, ENABLE_AZTECOO_THYRA, yes,
+  [Build the Thyra operator/vector adapater support in AztecOO.],
+  [Build the Thyra operator/vector adapater support in AztecOO.  Can be overridden with --disable-aztecoo-thyra.])
+
+# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -365,35 +374,40 @@ AC_SUBST(ac_aux_dir)
 #                example/aztec_hb/Makefile
 #
 AC_CONFIG_FILES([
-		Makefile
-		Makefile.export
-		Makefile.export.aztecoo
-                src/Makefile
-		example/Makefile
-                example/UG_Ex1/Makefile
-                example/UG_Ex1/Makefile.include
-                example/simple_epetra_aztecoo/Makefile
-                example/simple_epetra_aztecoo/Makefile.include
-                example/AztecOO_UserOpUserMat/Makefile
-                example/AztecOO_UserOpUserMat/Makefile.include
-                example/AztecOO/Makefile
-                example/AztecOO/Makefile.include
-                example/ClassicAztec/Makefile
-                example/ClassicAztec/Makefile.include
-		test/Makefile
-		test/AztecOO/Makefile
-		test/AztecOO_SetParameters/Makefile
-		test/AztecOO_SetParameters/Makefile.include
-		test/AztecOO_UserOpUserMat/Makefile
-		test/scripts/Makefile
-		test/scripts/daily/Makefile
-		test/scripts/daily/serial/Makefile
-                python/Makefile
-                python/src/Makefile
-                python/src/__init__.py
-                python/src/.deps/dummy
-                python/example/Makefile
-               ])
+    Makefile
+    Makefile.export
+    Makefile.export.aztecoo
+    src/Makefile
+    example/Makefile
+    example/UG_Ex1/Makefile
+    example/UG_Ex1/Makefile.include
+    example/simple_epetra_aztecoo/Makefile
+    example/simple_epetra_aztecoo/Makefile.include
+    example/AztecOO_UserOpUserMat/Makefile
+    example/AztecOO_UserOpUserMat/Makefile.include
+    example/AztecOO/Makefile
+    example/AztecOO/Makefile.include
+    example/ClassicAztec/Makefile
+    example/ClassicAztec/Makefile.include
+    test/Makefile
+    test/AztecOO/Makefile
+    test/AztecOO_SetParameters/Makefile
+    test/AztecOO_SetParameters/Makefile.include
+    test/AztecOO_UserOpUserMat/Makefile
+    test/scripts/Makefile
+    test/scripts/daily/Makefile
+    test/scripts/daily/serial/Makefile
+    python/Makefile
+    python/src/Makefile
+    python/src/__init__.py
+    python/src/.deps/dummy
+    python/example/Makefile
+    thyra/Makefile
+    thyra/src/Makefile
+    thyra/example/Makefile
+    thyra/test/Makefile
+    ])
+
 AC_OUTPUT
 
 # Bye World!

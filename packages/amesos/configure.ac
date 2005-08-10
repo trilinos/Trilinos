@@ -305,8 +305,6 @@ fi
 
 AM_CONDITIONAL(HAVE_AMESOS_EPETRAEXT, [test "X$ac_cv_use_epetraext" != "Xno"])
 
-
-
 AC_ARG_ENABLE(triutils,
  [AC_HELP_STRING([--enable-triutils],[Allow Amesos tests and examples to use Triutils to build matrices.   Default is no. Requires Triutils package.])],
  ac_cv_use_triutils=$enableval, ac_cv_use_triutils=no)
@@ -345,11 +343,11 @@ AC_F77_WRAPPERS
 # Interfaces to other Trilinos packages
 # ------------------------------------------------------------------------
 
-# TAC_ARG_ENABLE_CAN_USE_PACKAGE(triutils, [Enable TRIUTILS support. 
-# 				 Triutils, a Trilinos package, is used by
-# 				 some Amesos examples to construct the 
-# 				 linear system], AMESOS_TRIUTILS)
-# AM_CONDITIONAL(HAVE_TRIUTILS, test "X$ac_cv_use_triutils" = "Xyes")
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  amesos, thyra, AMESOS_THYRA, ENABLE_AMESOS_THYRA, yes,
+  [Build the Thyra operator/vector adapater support in Amesos.],
+  [Build the Thyra operator/vector adapater support in Amesos.  Can be overridden with --disable-amesos-thyra.]
+  )
 
 # ------------------------------------------------------------------------
 # Checks for libraries
@@ -911,6 +909,10 @@ AC_CONFIG_FILES([
 		python/src/__init__.py
 		python/src/.deps/dummy
 		python/example/Makefile
+		thyra/Makefile
+		thyra/src/Makefile
+		thyra/example/Makefile
+		thyra/test/Makefile
 		])
 
 AC_OUTPUT

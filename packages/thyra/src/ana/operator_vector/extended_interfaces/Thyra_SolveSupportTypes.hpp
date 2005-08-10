@@ -68,22 +68,34 @@ struct SolveCriteria {
   /** \brief . */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
   /** \brief . */
-  static const ScalarMag defaultTolerance() { return ScalarMag(-1); }
-  /** \brief The type of solve tolerance requested. */
+  static const ScalarMag unspecifiedTolerance() { return ScalarMag(-1); }
+  /** \brief . */
+  static const int unspecifiedMaxIterations() { return -1; }
+  /** \brief The type of solve tolerance requested as given in
+   * <tt>requestedTol</tt>.
+   */
   ESolveTolType    solveTolType;
   /** \brief The requested solve tolerance (what the client would like to see).
    *
    * A value of <tt>defaultTolerance()</tt> means that the solver
    * implementation can define convergence any way it sees fit.
    */
-  ScalarMag        requestedTol;  
+  ScalarMag        requestedTol;
+  /** \brief The maximum number of iterations the solver is allowed to take.
+   *
+   * Note that the interpretation of this integer is 100% implementation
+   * defined and should not be used in the most general setting.
+   */
+  int maxIterations;
   /** \brief . */
   SolveCriteria()
-    : solveTolType(SOLVE_TOL_REL_RESIDUAL_NORM), requestedTol(defaultTolerance())
+    :solveTolType(SOLVE_TOL_REL_RESIDUAL_NORM)
+    ,requestedTol(unspecifiedTolerance())
+     ,maxIterations(unspecifiedMaxIterations())
     {}
   /** \brief . */
-  SolveCriteria(ESolveTolType _solveTolType, ScalarMag _requestedTol)
-    : solveTolType(_solveTolType), requestedTol(_requestedTol)
+  SolveCriteria(ESolveTolType _solveTolType, ScalarMag _requestedTol, int _maxIterations = unspecifiedMaxIterations())
+    : solveTolType(_solveTolType), requestedTol(_requestedTol), maxIterations(_maxIterations)
     {}
 };
 
@@ -162,13 +174,13 @@ struct SolveStatus {
    * This number is totally implementation dependent and should only be used
    * for user diagnostics and not for any algorithmic purpose.
    */
-  int numIterations;
+  int iterations;
   /** \brief Return message from the linear solver */
   std::string message;
   /** \brief . */
   SolveStatus()
     :solveStatus(SOLVE_STATUS_UNKNOWN), achievedTol(unknownTolerance())
-     ,numIterations(1)
+     ,iterations(1)
     {}
 
   /** \brief Output the achieveTol field.
@@ -202,7 +214,7 @@ void accumulateSolveStatus(
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(overallSolveStatus==NULL);
 #endif
-  if( overallSolveCriteria.requestedTol == SolveCriteria<Scalar>::defaultTolerance() ) {
+  if( overallSolveCriteria.requestedTol == SolveCriteria<Scalar>::unspecifiedTolerance() ) {
     // There is nothing to accumulate, only a default return is given
     overallSolveStatus->solveStatus = SOLVE_STATUS_UNKNOWN;
     overallSolveStatus->achievedTol = SolveStatus<Scalar>::unknownTolerance();

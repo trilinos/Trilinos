@@ -158,7 +158,7 @@ SolveStatus<Scalar> DiagonalLinearOp<Scalar>::solve(
   assign(x,ST::zero());
   ele_wise_divide( Scalar(ST::one()/gamma_), b, *diag_, x );
   SolveStatus<Scalar> solveStatus;
-  if( solveCriteria && solveCriteria->requestedTol!=SolveCriteria<Scalar>::defaultTolerance() ) {
+  if( solveCriteria && solveCriteria->requestedTol!=SolveCriteria<Scalar>::unspecifiedTolerance() ) {
     const ScalarMag eps = relErrSmallNumber<SMT::hasMachineParameters,ScalarMag>::smallNumber();
     if( solveCriteria->requestedTol <= eps ) {
       solveStatus.solveStatus = SOLVE_STATUS_CONVERGED;
@@ -172,7 +172,7 @@ SolveStatus<Scalar> DiagonalLinearOp<Scalar>::solve(
     solveStatus.solveStatus = SOLVE_STATUS_UNKNOWN;
     solveStatus.achievedTol = SolveStatus<Scalar>::unknownTolerance();
   }
-  solveStatus.numIterations   = 1;
+  solveStatus.iterations = 1;
   return solveStatus;
 }
 

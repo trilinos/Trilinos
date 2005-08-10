@@ -209,14 +209,9 @@ ComplexFFTLinearOp<RealScalar>::solve(
   Thyra::apply( *this, M_trans==Thyra::NOTRANS?Thyra::CONJTRANS:Thyra::NOTRANS, b, x );
   typedef Thyra::SolveStatus< std::complex<RealScalar> >  SS;
   SS solveStatus;
-  if(solveCriteria) {
-    solveStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
-    solveStatus.achievedTol = SS::unknownTolerance();
-  }
-  else {
-    solveStatus.solveStatus = Thyra::SOLVE_STATUS_UNKNOWN;
-    solveStatus.achievedTol = SS::unknownTolerance();
-  }
+  solveStatus.solveStatus = ( solveCriteria ? Thyra::SOLVE_STATUS_CONVERGED : Thyra::SOLVE_STATUS_UNKNOWN );
+  solveStatus.achievedTol = SS::unknownTolerance();
+  solveStatus.iterations = 1;
   return solveStatus;
 }
 

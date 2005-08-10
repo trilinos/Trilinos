@@ -2,13 +2,23 @@
 include @abs_top_builddir@/../epetra/Makefile.export.epetra
 include @abs_top_builddir@/../triutils/Makefile.export.triutils
 
+# Optional dependancy on thyra
+@ENABLE_AZTECOO_THYRA_TRUE@include @abs_top_builddir@/../thyra/Makefile.export.thyra
+
+@ENABLE_AZTECOO_THYRA_TRUE@AZTECOO_THYRA_INCLUDES = \
+@ENABLE_AZTECOO_THYRA_TRUE@	-I@abs_top_srcdir@/thyra/src \
+@ENABLE_AZTECOO_THYRA_TRUE@	-I@abs_top_builddir@/thyra/src \
+@ENABLE_AZTECOO_THYRA_TRUE@	$(THYRA_INCLUDES)
+
+@ENABLE_AZTECOO_THYRA_TRUE@AZTECOO_THYRA_LIBS = -L@abs_top_builddir@/thyra/src -laztecoothyra $(THYRA_LIBS)
+
 ## Optional dependency on Teuchos
 @HAVE_AZTECOO_TEUCHOS_TRUE@include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 
 AZTECOO_INCLUDES = -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
 	           $(TRIUTILS_INCLUDES) $(EPETRA_INCLUDES) \
-                   $(TEUCHOS_INCLUDES) 
+                   $(AZTECOO_THYRA_INCLUDES) $(TEUCHOS_INCLUDES) 
 
-AZTECOO_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -laztecoo \
+AZTECOO_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src $(AZTECOO_THYRA_LIBS) -laztecoo \
 	       $(TRIUTILS_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) \
                @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@

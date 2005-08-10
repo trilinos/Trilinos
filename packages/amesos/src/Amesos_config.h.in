@@ -65,6 +65,9 @@
 /* Define if want to build amesos-tests */
 #undef HAVE_AMESOS_TESTS
 
+/* Define if want to build with amesos enabled */
+#undef HAVE_AMESOS_THYRA
+
 /* Define if you want to allow Amesos tests and examples to use Epetraext to
    build matrices */
 #undef HAVE_AMESOS_TRIUTILS

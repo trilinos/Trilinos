@@ -59,6 +59,12 @@ bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveTransposeSupportsSolv
 }
 
 template <class RangeScalar, class DomainScalar>
+int LinearOpWithSolveBase<RangeScalar,DomainScalar>::defaultMaxIterations() const
+{
+  return 1;
+}
+
+template <class RangeScalar, class DomainScalar>
 void LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveTranspose(
   const EConj                                   conj
   ,const MultiVectorBase<DomainScalar>          &B

@@ -291,6 +291,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           <<endl<<li<<is<< "solve status:"
           <<endl<<li<<is<<is<< "solveStatus = " << toString(solveStatus.solveStatus)
           <<endl<<li<<is<<is<< "achievedTol = " << SolveStatus<RangeScalar>::achievedTolToString(solveStatus.achievedTol)
+          <<endl<<li<<is<<is<< "iteratioins = " << solveStatus.iterations
           <<endl;
         if(solveStatus.achievedTol==SolveStatus<RangeScalar>::unknownTolerance())
           oss <<endl<<li<<is<<"achievedTol==unknownTolerance(): Setting achievedTol = forward_residual_solve_tol() = "<<forward_residual_solve_tol()<<endl;
@@ -381,6 +382,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           <<endl<<li<<is<< "solve status:"
           <<endl<<li<<is<<is<< "solveStatus = " << toString(solveStatus.solveStatus)
           <<endl<<li<<is<<is<< "achievedTol = " << SolveStatus<RangeScalar>::achievedTolToString(solveStatus.achievedTol)
+          <<endl<<li<<is<<is<< "iteratioins = " << solveStatus.iterations
           <<endl;
         if(solveStatus.achievedTol==SolveStatus<RangeScalar>::unknownTolerance())
           oss <<endl<<li<<is<<"achievedTol==unknownTolerance(): Setting achievedTol = forward_solution_error_solve_tol() = "<<forward_solution_error_solve_tol()<<endl;
@@ -541,6 +543,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           <<endl<<li<<is<< "solve status:"
           <<endl<<li<<is<<is<< "solveStatus = " << toString(solveStatus.solveStatus)
           <<endl<<li<<is<<is<< "achievedTol = " << SolveStatus<RangeScalar>::achievedTolToString(solveStatus.achievedTol)
+          <<endl<<li<<is<<is<< "iteratioins = " << solveStatus.iterations
           <<endl;
         if(solveStatus.achievedTol==SolveStatus<RangeScalar>::unknownTolerance())
           oss <<endl<<li<<is<<"achievedTol==unknownTolerance(): Setting achievedTol = adjoint_residual_solve_tol() = "<<adjoint_residual_solve_tol()<<endl;
@@ -631,6 +634,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           <<endl<<li<<is<< "solve status:"
           <<endl<<li<<is<<is<< "solveStatus = " << toString(solveStatus.solveStatus)
           <<endl<<li<<is<<is<< "achievedTol = " << SolveStatus<DomainScalar>::achievedTolToString(solveStatus.achievedTol)
+          <<endl<<li<<is<<is<< "iteratioins = " << solveStatus.iterations
           <<endl;
         if(solveStatus.achievedTol==SolveStatus<DomainScalar>::unknownTolerance())
           oss <<endl<<li<<is<<"achievedTol==unknownTolerance(): Setting achievedTol = adjoint_solution_error_solve_tol() = "<<adjoint_solution_error_solve_tol()<<endl;

@@ -169,19 +169,19 @@ namespace Thyra {
  * 
  * <ul>
  * 
- * <li> <b>Default tolerance</b> [
- * <tt>solveCriteria.requestedTol==SolveCriteria::defaultTolerance()</tt> ]:
- * In this mode, criteria for the solution tolerance is determined internally
- * by <tt>*this</tt> object.  Usually, it would be assumed that <tt>*this</tt>
- * would solve the linear systems to a sufficient tolerance for the given ANA
- * client.  This is the mode that many ANAs not designed to control
- * inexactness would work with.  In this mode, the solution criteria will be
- * determined in the end by the application or the user in an "appropriate"
- * manner.  In this case no meaningful solve status can be returned to the
- * client.
+ * <li> <b>Unspecified (Default) tolerance</b> [
+ * <tt>solveCriteria.requestedTol==SolveCriteria::unspecifiedTolerance()</tt>
+ * ]: In this mode, criteria for the solution tolerance is determined
+ * internally by <tt>*this</tt> object.  Usually, it would be assumed that
+ * <tt>*this</tt> would solve the linear systems to a sufficient tolerance for
+ * the given ANA client.  This is the mode that many ANAs not designed to
+ * control inexactness would work with.  In this mode, the solution criteria
+ * will be determined in the end by the application or the user in an
+ * "appropriate" manner.  In this case, no meaningful solve status can be
+ * returned to the client.
  * 
  * <li> <b>Residual tolerance</b> [
- * <tt>solveCriteria.requestedTol!=SolveCriteria::defaultTolerance() &&
+ * <tt>solveCriteria.requestedTol!=SolveCriteria::unspecifiedTolerance() &&
  * solveCriteria.solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt> ]: In this
  * mode, the solution algorithm would be requested to solve the block system
  * to the relative residual tolerance of
@@ -198,7 +198,7 @@ namespace Thyra {
  * to report the actual tolerance achieved.
  * 
  * <li> <b>Solution error tolerance</b> [
- * <tt>solveCriteria.requestedTol!=SolveCriteria::defaultTolerance() &&
+ * <tt>solveCriteria.requestedTol!=SolveCriteria::unspecifiedTolerance() &&
  * solveCriteria.solveTolType==SOLVE_TOL_REL_SOLUTION_ERR_NORM</tt> ]: In this
  * mode, the solution algorithm would be requested to solve the system to the
  * relative solution error tolerance of
@@ -291,7 +291,7 @@ namespace Thyra {
  * reasonable way that the linear solver algorithm can know now to compute or
  * estimate the requested tolerance.  This will also always be the return
  * status when
- * <tt>solveCriteria.requestedTol==SolveCriteria::defaultTolerance()</tt>
+ * <tt>solveCriteria.requestedTol==SolveCriteria::unspecifiedTolerance()</tt>
  * since the client would have no way to interpret this tolerance.
  * 
  * </ul>
@@ -421,6 +421,14 @@ public:
    * check for and enforce a tolerance on the residual.
    */
   virtual bool solveTransposeSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
+
+  /** \brief Return the implementation-defined maximum number of iterations that a standard solve
+   * is allowed to take.
+   *
+   * The default implementation returns 1 which would be consistent with a
+   * direct linear solver.
+   */
+  virtual int defaultMaxIterations() const;
 
   /** \brief Request the transpose (or adjoint) solution of a block system
    * with different targeted solution criteria.

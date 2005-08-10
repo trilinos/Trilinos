@@ -78,8 +78,8 @@ namespace Thyra {
  */
 template<class Scalar>
 class DiagonalLinearOp
-  : virtual public LinearOpWithSolveBase<Scalar>
-  , virtual protected SingleRhsLinearOpWithSolveBase<Scalar>
+  : virtual public LinearOpWithSolveBase<Scalar>               // Public interface
+  , virtual protected SingleRhsLinearOpWithSolveBase<Scalar>   // Implementation detail
 {
 public:
 
