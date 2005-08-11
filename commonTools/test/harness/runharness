@@ -307,7 +307,7 @@ exit $exitStatus;
         my $machineInfoFile = "$trilinosDir/commonTools/test/harness/results/$runStartTimeForFilename-build/machine.txt";
         open (MACHINE_FILE, ">$machineInfoFile")
             or die "can't open machine info file $machineInfoFile for writing, died";            
-        $string = "";        
+        my $string = "";        
         $string .= "HOST_NAME            = $hostName\n";
         $string .= "DNS_NAME             = $dnsName\n";
         $string .= "IP_ADDRESS           = $ipAddress\n";
@@ -372,7 +372,7 @@ exit $exitStatus;
         $buildInfoFile .= "/$runStartTimeForFilename-build/build.txt.tmp2";
         open (BUILD_FILE, ">>$buildInfoFile")
             or die "can't open build info file $buildInfoFile for writing, died";            
-        my $string = "";        
+        $string = "";        
         $string .= "BUILD_START_TIME     = $runStartTime\n";
         $string .= "BUILD_END_TIME       = $buildEndTime\n";
         $string .= "BUILD_DIR            = ".$buildOptions{'BUILD-DIR'}."\n";
