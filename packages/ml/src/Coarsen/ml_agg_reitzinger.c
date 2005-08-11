@@ -1221,7 +1221,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
          j = ml_edges->Pmat[grid_level+1].outvec_leng;
          temp = (double *) ML_allocate(sizeof(double)*(j+1));
-         printf("here we arrrrrrrrrrr %d\n",j);
          ML_Operator_Apply(&(ml_edges->Pmat[grid_level+1]), Nedge,
                   one_vec, j, temp);
          for (i = 0; i < j; i++) temp[i] *= Mdiag_est[i];
@@ -1244,7 +1243,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        csr_data = (struct ML_CSR_MSRdata *) Pe->data; 
        for (i = 0; i < Nedge; i++) {
          for (j= csr_data->rowptr[i]; j < csr_data->rowptr[i+1]; j++) {
-           csr_data->values[j] *= Mdiag_est[i];
+           if (Mdiag_est[i] != 0.0) csr_data->values[j] *= Mdiag_est[i];
          }
        }
        csr_data=(struct ML_CSR_MSRdata*)(*Tmat_trans_array)[grid_level+1]->data;
@@ -1262,7 +1261,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        /* restore Ttrans and Pe */
        for (i = 0; i < Nnode; i++) {
          for (j= csr_data->rowptr[i]; j < csr_data->rowptr[i+1]; j++) {
-           csr_data->values[j] *= diag[i];
+           if ( diag[i] != 0.0 ) csr_data->values[j] *= diag[i];
          }
        }
        csr_data = (struct ML_CSR_MSRdata *) Pe->data; 
