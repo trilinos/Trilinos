@@ -53,6 +53,7 @@ except IOError:
 # new_package directory, and srcDir is the path for the python source directory
 pakDir = makeInfo.get("top_srcdir","")
 srcDir = makeInfo.get("srcdir"    ,"")
+CXX    = makeInfo.get("CXX"       ,"")
 
 # Obtain the version from the package version function, using regular
 # expressions.  This assumes that the function returns a string constant of the
@@ -111,6 +112,12 @@ for lib in libs:
 
 # Define the strings that refer to the required source files.
 newPackageWrap = "New_Package_wrap.cpp"
+
+# Compiler and linker
+sysconfig.get_config_vars()
+config_vars = sysconfig._config_vars;
+config_vars['CC' ] = CXX
+config_vars['CXX'] = CXX
 
 # _New_Package extension module
 _New_Package = Extension("PyTrilinos._New_Package",

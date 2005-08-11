@@ -63,6 +63,11 @@ class NewPackageTestCase(unittest.TestCase):
 
     def setUp(self):
         self.comm = Epetra.PyComm()
+        self.comm.Barrier()
+
+    def tearDown(self):
+        # This will help tame the printing
+        self.comm.Barrier()
 
     def testHelloConstructor(self):
         "Test New_Package Hello constructor"
@@ -72,9 +77,14 @@ class NewPackageTestCase(unittest.TestCase):
     def testHelloPrint(self):
         "Test New_Package Hello print operator"
         hello = New_Package.Newp_Hello(self.comm)
+        if self.comm.MyPID() == 0:
+            result = "This will print out one line for each of the " + \
+                     str(self.comm.NumProc()) + " processes \n\n"
+        else:
+            result = ""
+        result += "Hello.  I am process %d" % self.comm.MyPID()
         string = hello.__str__()
-        self.assertEquals(string, "This will print out one line for each" +
-                          " of the 1 processes \n\nHello.  I am process 0")
+        self.assertEquals(string, result)
 
     if haveSwahili:
         def testJamboConstructor(self):
@@ -85,9 +95,14 @@ class NewPackageTestCase(unittest.TestCase):
         def testJamboPrint(self):
             "Test New_Package Jambo print operator"
             jambo = New_Package.Newp_Jambo(self.comm)
+            if self.comm.MyPID() == 0:
+                result = "This will print out one line for each of the " + \
+                         str(self.comm.NumProc()) + " processes \n\n"
+            else:
+                result = ""
+            result += "Jambo.  I am process %d" % self.comm.MyPID()
             string = jambo.__str__()
-            self.assertEquals(string, "This will print out one line for each" +
-                              " of the 1 processes \n\nJambo.  I am process 0")
+            self.assertEquals(string, result)
 
 ####################################################################
 
@@ -99,7 +114,11 @@ if __name__ == "__main__":
     # Add the test cases to the test suite
     suite.addTest(unittest.makeSuite(NewPackageTestCase))
 
+    # Create a communicator
+    comm = Epetra.PyComm()
+
     # Run the test suite
-    print >>sys.stderr, \
-          "\n*******************\nTesting New_Package\n*******************\n"
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    if comm.MyPID() == 0: print >>sys.stderr, \
+       "\n*******************\nTesting New_Package\n*******************\n"
+    verbosity = 2 * int(comm.MyPID() == 0)
+    unittest.TextTestRunner(verbosity=verbosity).run(suite)

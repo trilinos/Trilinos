@@ -35,11 +35,15 @@ else
   NEWP_SWAHILI      =
 endif
 
+# MPI support
+@HAVE_MPI_TRUE@MPI_FLAG = -DHAVE_MPI
+
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 SWIG_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	$(NEWP_SWAHILI_FLAG)
+	-I$(top_srcdir)/src  \
+	$(NEWP_SWAHILI_FLAG) \
+	$(MPI_FLAG)
 
 # Default make target
 all-am: build
@@ -64,6 +68,8 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "{"                                    >  $@
 	@echo "  'top_srcdir'   : '$(top_srcdir)',"  >> $@
 	@echo "  'srcdir'       : '$(srcdir)',"      >> $@
+	@echo "  'CC'           : '$(CC)',"          >> $@
+	@echo "  'CXX'          : '$(CXX)',"         >> $@
 	@echo "  'LDFLAGS'      : '$(LDFLAGS)',"     >> $@
 	@echo "  'LAPACK_LIBS'  : '$(LAPACK_LIBS)'," >> $@
 	@echo "  'BLAS_LIBS'    : '$(BLAS_LIBS)',"   >> $@

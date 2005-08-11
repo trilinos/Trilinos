@@ -264,6 +264,9 @@ target_vendor = @target_vendor@
 @HAVE_NEWP_SWAHILI_FALSE@NEWP_SWAHILI = 
 @HAVE_NEWP_SWAHILI_TRUE@NEWP_SWAHILI = 1
 
+# MPI support
+@HAVE_MPI_TRUE@MPI_FLAG = -DHAVE_MPI
+
 # Dependencies.  Obtain the list of dependencies by executing ls.  This could
 # be empty, so when we include the dependency files, we also include 'dummy',
 # an empty file used to trick configure into making the dependency directory.
@@ -278,8 +281,9 @@ SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 
 # Include swig rules
 SWIG_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	$(NEWP_SWAHILI_FLAG)
+	-I$(top_srcdir)/src  \
+	$(NEWP_SWAHILI_FLAG) \
+	$(MPI_FLAG)
 
 
 # Currently, this temporary directory is required to be present for the
@@ -466,6 +470,8 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "{"                                    >  $@
 	@echo "  'top_srcdir'   : '$(top_srcdir)',"  >> $@
 	@echo "  'srcdir'       : '$(srcdir)',"      >> $@
+	@echo "  'CC'           : '$(CC)',"          >> $@
+	@echo "  'CXX'          : '$(CXX)',"         >> $@
 	@echo "  'LDFLAGS'      : '$(LDFLAGS)',"     >> $@
 	@echo "  'LAPACK_LIBS'  : '$(LAPACK_LIBS)'," >> $@
 	@echo "  'BLAS_LIBS'    : '$(BLAS_LIBS)',"   >> $@
