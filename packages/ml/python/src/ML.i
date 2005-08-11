@@ -121,8 +121,8 @@ print r.Norm2()
 #include "Teuchos_ParameterList.hpp"
 #include "MLAPI.h"
 #include "MLAPI_PyMatrix.h"
-#include "PyEpetra_utils.h"
-#include "PyTeuchos_utils.h"
+#include "PyEpetra_Utils.h"
+#include "PyTeuchos_Utils.h"
 
 MLAPI::Operator GetPNonSmoothed(const MLAPI::Operator& A,
                                 const MLAPI::MultiVector& ThisNS,
