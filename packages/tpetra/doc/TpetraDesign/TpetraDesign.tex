@@ -250,6 +250,9 @@ Because inter-node communication is so expensive, it would be wasteful and possi
 %     BlockElementSpace
 %
 \subsection{BlockElementSpace}
+BlockElementSpace builds on top of ElementSpace. Given a global distribution of elements, it defines the distribution of points within each element. There are two types of BlockElementSpace objects that can be constructed. One has a constant element size, and one has variable element sizes.
+
+BlockElementSpace is functionally equivalent to Epetra::BlockMap, and its internal structure and implementation is nearly identical. The one new concept that does not exist in Epetra is that of compatibility. Compatibility was not an original aim, rather, it is a result of Tpetra having a VectorSpace class. (This will be explained more thoroughly in the section on VectorSpace.)
 
 \subsubsection*{Compatibility}
 A BlockElementSpace can generate a new ElementSpace object, known as a ``compatible ElementSpace'', using the member function \texttt{generateCompatibleElementSpace()}. This new ElementSpace will be templated on the same OrdinalType as the BlockElementSpace that created it.
@@ -285,9 +288,22 @@ This information is only needed in the functions inherited from DistObject. The 
 
 Redistributing data in a parallel environment is a multi-step process, involving several classes. We start out with a class that derives from the DistObject class. We define an Import or Export object, giving it the distribution we have now, and the distribution we want to end up with, as constructor parameters. We then call doImport or doExport on our DistObject. That is as far as the user sees it. There are still several more steps that take place inside that call to doImport or doExport.
 
+% ---------------------------------------------------------------------- %
+%     Distributor
+%
 \subsection{Distributor}
 
-Distributor is the workhorse of data redistribution. 
+Distributor is the workhorse of data redistribution. It is responsible for determining what to send, what to receive, and for actually doing to communication.
+
+There are two kinds of Distributor objects that the user can create. In one, we know what we want to receive, and we need to find out what we have to send to others. In the second, we know what we want to send, and we need to find out what we will be receiving from others. (These correspond to import and export operations, respectively.) This is not done by having two constructors. Instead, there is a single constructor that doesn't really do anything. Later, the user calls either \texttt{createFromSends} or \texttt{createFromRecvs}. This are the functions that really initialize the object.
+
+Distributor::createFromSends is the simpler case. We tell the Distributor how many elements we're exporting (numExportIDs), and which images to send those elements to (exportImageIDs). It tells us how many elements we'll be receiving (numRemoteIDs). Distributor::createFromRecvs is a more complicated case, since the Distributor has to determine what each image has to send for us to receive what we're asking for.
+
+After createFromSends or createFromRecvs has been called, the Distributor object is essentially static. It can be used to do multiple (identical) redistributions with no additional cost. This actual communication is done by calling doPosts, which sends all the data out, and by then calling doWaits, which will wait for all the data to show up (which may take awhile, since each image has to send data to multiple images.) The reason doPosts and doWaits are seperate functions is so we can do local computations in the interim that we would otherwise spend idle. If we are not concerned about this, or do not have any work we could be doing, we can call doPostsAndWaits, which combines the two for us.
+
+\textbf{Epetra Migration Note:} In Epetra, the Distributor class is responsible for the entire process. This is the way Tpetra's Distributor started as well. In the summer of 2005, Tpetra's Distributor was refactored. The doPosts, doWaits, doPostsAndWaits, doReversePosts, doReverseWaits, and doReversePostsAndWaits functions that used to be in Distributor are now in Comm. 
+
+\fbox{Add sample code here (old way vs. new way)}
 
 % ---------------------------------------------------------------------- %
 %     Import
