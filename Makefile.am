@@ -163,6 +163,7 @@ run-pyexamples: all-am
 	@if [ -d packages/didasko   ]; then cd packages/didasko;   make run-pyexamples; fi
 
 run-pytests: all-am
-	@if [ -d packages/epetra    ]; then cd packages/epetra;    make run-pytests; fi
-	@if [ -d packages/epetraext ]; then cd packages/epetraext; make run-pytests; fi
-	@if [ -d packages/nox       ]; then cd packages/nox;       make run-pytests; fi
+	@if [ -d packages/epetra      ]; then cd packages/epetra;      make run-pytests; fi
+	@if [ -d packages/epetraext   ]; then cd packages/epetraext;   make run-pytests; fi
+	@if [ -d packages/new_package ]; then cd packages/new_package; make run-pytests; fi
+	@if [ -d packages/nox         ]; then cd packages/nox;         make run-pytests; fi
