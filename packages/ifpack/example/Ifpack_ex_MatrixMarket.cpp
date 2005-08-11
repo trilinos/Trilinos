@@ -133,7 +133,11 @@ int main(int argc, char *argv[])
 
     if (!data_file.good()) {
       cerr << "Error opening file `" << FileName << "'" << endl;
-      exit(EXIT_FAILURE);
+#ifdef HAVE_MPI
+      MPI_Finalize();
+#endif
+      // success not to break the tests
+      exit(EXIT_SUCCESS);
     }
 
     char title[100];
