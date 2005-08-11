@@ -62,7 +62,7 @@ class NewPackageTestCase(unittest.TestCase):
         self.assertEquals(version[:len(front)], front)
 
     def setUp(self):
-        self.comm = Epetra.SerialComm()
+        self.comm = Epetra.PyComm()
 
     def testHelloConstructor(self):
         "Test New_Package Hello constructor"
