@@ -8,7 +8,7 @@
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK) {
+(FRAMEWORK,New_PackagePyTests) {
     DIRS = ../python/test;
     COMM = SERIAL, MPI;
 }
