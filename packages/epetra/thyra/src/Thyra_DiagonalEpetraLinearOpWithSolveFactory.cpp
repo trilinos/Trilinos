@@ -80,21 +80,26 @@ void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
   Teuchos::dyn_cast< DiagonalLinearOp<double> >(*Op).initialize(diag);
 }
 
-Teuchos::RefCountPtr<const LinearOpBase<double> >
-DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
-  LinearOpWithSolveBase<double> *Op
+void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
+  LinearOpWithSolveBase<double>                          *Op
+  ,Teuchos::RefCountPtr<const LinearOpBase<double> >     *fwdOp
   ) const
 {
   using Teuchos::get_extra_data;
   TEST_FOR_EXCEPT(Op==NULL);
   DiagonalLinearOp<double> &diagOp = Teuchos::dyn_cast<DiagonalLinearOp<double> >(*Op);
   Teuchos::RefCountPtr< const VectorBase<double> > diag = diagOp.diag();
-  if(diag.get()) {
-    return get_extra_data<Teuchos::RefCountPtr<const LinearOpBase<double> > >(
-      diag,"Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOp"
-      );
+  if( fwdOp ) {
+    if(diag.get()) {
+      *fwdOp =
+        get_extra_data<Teuchos::RefCountPtr<const LinearOpBase<double> > >(
+          diag,"Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOp"
+          );
+    }
   }
-  return Teuchos::null;
+  else {
+    *fwdOp = Teuchos::null;
+  }
 }
 
 } // namespace Thyra

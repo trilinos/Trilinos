@@ -205,6 +205,7 @@ int Amesos_Lapack::SolveSerial(Epetra_MultiVector& X,
       DenseB(i,j) = B[j][i];
 
   DenseSolver_.SetVectors(DenseX,DenseB);
+  DenseSolver_.SolveWithTranspose(UseTranspose());
   AMESOS_CHK_ERR(DenseSolver_.Solve());
 
   for (int i = 0 ; i < NumGlobalRows() ; ++i)
@@ -243,6 +244,7 @@ int Amesos_Lapack::SolveDistributed(Epetra_MultiVector& X,
 	DenseB(i,j) = SerialVector[j][i];
 
     DenseSolver_.SetVectors(DenseX,DenseB);
+    DenseSolver_.SolveWithTranspose(UseTranspose());
     AMESOS_CHK_ERR(DenseSolver_.Solve());
 
     for (int i = 0 ; i < NumGlobalRows() ; ++i)

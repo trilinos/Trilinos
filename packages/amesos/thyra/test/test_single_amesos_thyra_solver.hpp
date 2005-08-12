@@ -1,7 +1,8 @@
+/*
 // @HEADER
 // ***********************************************************************
 // 
-//    Thyra: Interfaces and Support for Abstract Numerical Algorithms
+//                Amesos: Direct Sparse Solver Package
 //                 Copyright (2004) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -25,49 +26,32 @@
 // 
 // ***********************************************************************
 // @HEADER
+*/
 
-#ifndef THYRA_DIAGONAL_EPETRA_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
-#define THYRA_DIAGONAL_EPETRA_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
+#ifndef TEST_SINGLE_AMESOS_THYRA_SOLVER_HPP
+#define TEST_SINGLE_AMESOS_THYRA_SOLVER_HPP
 
-#ifndef __sun
-
-#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
+#include "Thyra_AmesosTypes.hpp"
 
 namespace Thyra {
 
-/** \brief. */
-class DiagonalEpetraLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<double> {
-public:
-
-  /** @name Overridden from LinearOpWithSolveFactoryBase */
-  //@{
-
-  /** \brief . */
-  bool isCompatible( const LinearOpBase<double> &fwdOp ) const;
-
-  /** \brief . */
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<double> > createOp() const;
-
-  /** \brief . */
-  void initializeOp(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
-    ,LinearOpWithSolveBase<double>                             *Op
-    ) const;
-
-  /** \brief . */
-  void uninitializeOp(
-    LinearOpWithSolveBase<double>                         *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >    *fwdOp
-    ) const;
-
-  //@}
-
-};
-
-//@}
+/** \brief Testing function for a single amesos solver with a single matrix.
+ *
+ */
+bool test_single_amesos_thyra_solver(
+  const std::string                       matrixFile
+  ,const Amesos::ESolverType              solverType
+  ,const Amesos::ERefactorizationPolicy   refactorizationPolicy
+  ,const bool                             testTranspose
+  ,const int                              numRandomVectors
+  ,const double                           maxFwdError
+  ,const double                           maxError
+  ,const double                           maxResid
+  ,const bool                             showAllTests
+  ,const bool                             dumpAll
+  ,std::ostream                           *out
+  );
 
 } // namespace Thyra
 
-#endif // __sun
-
-#endif // THYRA_DIAGONAL_EPETRA_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
+#endif // TEST_SINGLE_AMESOS_THYRA_SOLVER_HPP

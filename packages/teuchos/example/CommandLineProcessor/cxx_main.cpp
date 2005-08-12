@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
   int NumIters = 1550;
   My_CLP.setOption("iterations", &NumIters, "Number of iterations");
   // Set a double-precision command line option.
-  double Tolerance = 1e-10;    
+  double Tolerance = 1e-10;
   My_CLP.setOption("tolerance", &Tolerance, "Tolerance");
   // Set a string command line option.
   string Solver = "GMRES";

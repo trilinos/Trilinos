@@ -94,7 +94,7 @@ LinearOpWithSolveTester<RangeScalar,DomainScalar>::LinearOpWithSolveTester(
 {}
 
 template<class RangeScalar, class DomainScalar>
-void LinearOpWithSolveTester<RangeScalar,DomainScalar>::trun_off_all_tests()
+void LinearOpWithSolveTester<RangeScalar,DomainScalar>::turn_off_all_tests()
 {
   check_forward_default_         = false;
   check_forward_residual_        = false;
@@ -147,7 +147,6 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
   using Teuchos::arrayArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   bool success = true, result;
-  const Scalar one = ST::one();
   const std::string &li = leadingIndent, &is = indentSpacer;
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
   

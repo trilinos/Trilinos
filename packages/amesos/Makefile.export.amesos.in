@@ -21,7 +21,6 @@ _AMESOS_INCLUDES = \
   -I@abs_top_srcdir@/src \
   -I@abs_top_builddir@/src
 
-
 _AMESOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src $(AMESOS_THYRA_LIBS) -lamesos $(EPETRA_LIBS) $(TEUCHOS_LIBS) @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ 
 
 @USING_GNUMAKE_TRUE@AMESOS_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_AMESOS_INCLUDES))

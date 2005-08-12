@@ -34,7 +34,6 @@
 #include "RealComplexFFTLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
-#include "Thyra_LinearOpTester.hpp"
 #include "Thyra_ListedMultiVectorRandomizer.hpp"
 #include "Thyra_SerialVectorSpaceConverterStd.hpp"
 #include "Teuchos_arrayArg.hpp"

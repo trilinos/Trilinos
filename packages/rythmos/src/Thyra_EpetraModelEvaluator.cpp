@@ -175,7 +175,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
   RefCountPtr<const LinearOpBase<double> >    fwdW;
   Teuchos::RefCountPtr<Epetra_Operator>       eW;
   if( outArgs.supports(OUT_ARG_W) && (W = outArgs.get_W()).get() ) {
-    fwdW = W_factory_->uninitializeOp(&*W);
+    W_factory_->uninitializeOp(&*W,&fwdW);
     if( fwdW.get() ) {
       eW = const_cast<EpetraLinearOp&>(Teuchos::dyn_cast<const EpetraLinearOp>(*fwdW)).epetra_op();
     }

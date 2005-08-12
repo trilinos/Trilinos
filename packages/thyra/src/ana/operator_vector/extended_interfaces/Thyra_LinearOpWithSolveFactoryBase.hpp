@@ -53,7 +53,7 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
 template <class RangeScalar, class DomainScalar = RangeScalar>
-class LinearOpWithSolveFactoryBase {
+class LinearOpWithSolveFactoryBase : virtual public Teuchos::Describable {
 public:
 
   /** \brief . */
@@ -94,6 +94,8 @@ public:
    * </ul>
    *
    * <b>Postconditions:</b><ul>
+   * <li>Throws <tt>CatastrophicSolveFailure</tt> if the underlying linear solver could
+   *     not be created sucessfully (do to a factorization failure or some other cause).
    * <li><tt>Op->range()->isCompatible(*fwdOp->range())==true</tt>
    * <li><tt>Op->domain()->isCompatible(*fwdOp->domain())==true</tt>
    * <li><tt>Op->apply()</tt> and <tt>Op->applyTranspose()</tt> must behave
@@ -115,6 +117,9 @@ public:
    *
    * \param  Op     [in/out] On input, <tt>*Op</tt> is an initialized or uninitialized
    *                object and on output is uninitialized.
+   * \param  fwdOp  [in/out] If <tt>fwdOp!=NULL</tt> on input, the on output, the
+   *                same forward operator passed into <tt>this->initailzeOp()</tt> will be
+   *                returned.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
@@ -124,14 +129,15 @@ public:
    * <b>Postconditions:</b><ul>
    * <li>If <tt>*Op</tt> on input was initialized through a call to <tt>this->initializeOp()</tt>
    *     then <tt>return.get()!=NULL</tt>.
-   * <li>If <tt>*Op</tt> was uninitialized on input then <tt>return.get()==NULL</tt>.
+   * <li>If <tt>*Op</tt> was uninitialized on input and <tt>fwdOp!=NULL</ttt> then <tt>fwdOp->get()==NULL</tt>.
    * <li>On output, <tt>*Op</tt> can be considered to be uninitialized and
-   *     it is save to modify the <tt>fwdOp</tt> returned from this function.
+   *     it is safe to modify the forward operator object <tt>*(*fwdOp)</tt> returned in <tt>fwdOp</tt>.
+   *     The default is <tt>fwdOp==NULL</tt> in which case the forward operator will not be returned in <tt>*fwdOp</tt>.
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >
-  uninitializeOp(
-    LinearOpWithSolveBase<RangeScalar,DomainScalar> *Op
+  virtual void uninitializeOp(
+    LinearOpWithSolveBase<RangeScalar,DomainScalar>                       *Op
+    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *fwdOp = NULL
     ) const = 0;
   
   //@}

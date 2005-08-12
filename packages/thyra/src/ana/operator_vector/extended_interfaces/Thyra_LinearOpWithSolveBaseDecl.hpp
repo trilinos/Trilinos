@@ -106,10 +106,11 @@ namespace Thyra {
  * This interface is meant to support direct and iterative linear solvers as
  * well as combinations of the two in a variety of configurations.  Because of
  * the almost infinite possible types of linear solver configurations
- * possible, this interface does not specify any particular solver-specific
- * types of control options, like maximum number of iterations.  These types
- * of control options can be specified in lower lever implementations but have
- * not place in this interface.
+ * possible, this interface tries not to specify any particular
+ * solver-specific types of control options.  The one exception is a maximum
+ * number of iterations which is totally implementation defined.  These types
+ * of control options are better specified in lower lever implementations and
+ * should be kept out of an interface such as this.
  *
  * The functions <tt>solve()</tt> and <tt>solveTranspose()</tt> both take the
  * arguments:
@@ -231,15 +232,24 @@ namespace Thyra {
 
  * whose solution criteria is specified by a <tt>SolveCriteria</tt> object, a
  * <tt>SolveStatus</tt> object can optionally be returned that lets the client
- * know the status of the linear solve.  If <tt>solveStatus</tt> is a
- * <tt>SolveStatus</tt> object returned for the above block linear system the
- * the following return status are significant:
+ * know the status of the linear solve.
+ *
+ * A note about direct solvers is in order.  The "inexact" solve feature of
+ * this interface is primarily designed to support "loose" solve tolerances
+ * that exploit the properties of iterative linear solvers.  With that said,
+ * any decent direct solver can assume that it has met the convergence
+ * criteria as requested by the client but does not have to return an estimate
+ * of the actual tolerance achieved.
+ *
+ * If <tt>solveStatus</tt> is a <tt>SolveStatus</tt> object returned for the
+ * above block linear system the the following return status are significant:
  * 
  * <ul>
  * 
  * <li><b>Converged</b> [
  * <tt>solveStatus.solveStatus==SOLVE_STATUS_CONVERGED</tt> ]: This status is
  * returned by the linear solver if the solution criteria was likely achieved.
+ * This should almost always be the return value for a direct linear solver.
  * The maximum actual tolerance achieved may or may not be returned in the
  * field <tt>solveStatus.achievedTol</tt>.  The two sub-cases are:
  * 
@@ -250,8 +260,12 @@ namespace Thyra {
  *   the maximum tolerance achieved.  An order-of-magnitude (or so) estimate
  *   of the achieved tolerance would likely be known by any iterative linear
  *   solver where when
- *   <tt>solveCriteria.solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt>.
- * 
+ *   <tt>solveCriteria.solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt>.  Most
+ *   direct linear solvers will not return a known tolerance except for the
+ *   case where
+ *   <tt>solveCriteria.solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt> and
+ *   iterative refinement is used.
+
  *   <li><b>Unknown tolerance</b> [
  *   <tt>solveStatus.achievedTol==SolveStatus::unknownTolerance()</tt> ] : The
  *   linear solver does not know the tolerance that was achieved but the
@@ -264,9 +278,12 @@ namespace Thyra {
  * 
  * <li><b>Unconverged</b> [
  * <tt>solveStatus.solveStatus==SOLVE_STATUS_UNCONVERGED</tt> ]: The linear
- * solver was most likely not able to achieve the requested tolerance.  The
- * linear solver may not be able to return the actual tolerance achieved and
- * the same to cases as for the <it>unconverged</it> case are possible:
+ * solver was most likely not able to achieve the requested tolerance.  A
+ * direct linear solver should almost never return this status except for in
+ * extreme cases (e.g. highly ill conditioned matrix and a tight requested
+ * tolerance).  The linear solver may not be able to return the actual
+ * tolerance achieved and the same to cases as for the <it>unconverged</it>
+ * case are possible and the two cases are:
  * 
  *   <ul>
  * 

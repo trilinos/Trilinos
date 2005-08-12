@@ -1,0 +1,1 @@
+@abs_top_builddir@/thyra/test/test_amesos_thyra_driver.exe --matrix-dir=@abs_top_srcdir@/test/Test_Basic --show-all-tests

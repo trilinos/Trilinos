@@ -208,7 +208,7 @@ public:
    * <li>
    * </ul>
    */
-  void trun_off_all_tests();
+  void turn_off_all_tests();
 
   /** \brief Set all the solve tolerances to the same value.
    *

@@ -155,23 +155,15 @@ SolveStatus<Scalar> DiagonalLinearOp<Scalar>::solve(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+  typedef SolveCriteria<Scalar> SC;
+  typedef SolveStatus<Scalar>   SS;
   assign(x,ST::zero());
   ele_wise_divide( Scalar(ST::one()/gamma_), b, *diag_, x );
-  SolveStatus<Scalar> solveStatus;
-  if( solveCriteria && solveCriteria->requestedTol!=SolveCriteria<Scalar>::unspecifiedTolerance() ) {
-    const ScalarMag eps = relErrSmallNumber<SMT::hasMachineParameters,ScalarMag>::smallNumber();
-    if( solveCriteria->requestedTol <= eps ) {
-      solveStatus.solveStatus = SOLVE_STATUS_CONVERGED;
-    }
-    else {
-      solveStatus.solveStatus = SOLVE_STATUS_UNCONVERGED;
-    }
-    solveStatus.achievedTol = ScalarMag(2)*relErrSmallNumber<SMT::hasMachineParameters,ScalarMag>::smallNumber();
-  }
-  else {
-    solveStatus.solveStatus = SOLVE_STATUS_UNKNOWN;
-    solveStatus.achievedTol = SolveStatus<Scalar>::unknownTolerance();
-  }
+  SS solveStatus;
+  solveStatus.solveStatus
+    = (solveCriteria && solveCriteria->requestedTol!=SC::unspecifiedTolerance()
+       ? SOLVE_STATUS_CONVERGED : SOLVE_STATUS_UNKNOWN );
+  solveStatus.achievedTol = SolveStatus<Scalar>::unknownTolerance();
   solveStatus.iterations = 1;
   return solveStatus;
 }

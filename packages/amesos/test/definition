@@ -2,6 +2,11 @@
 # FRAMEWORK group
 #
 
+(FRAMEWORK, AmesosThyraTests) {
+    TESTS = ../thyra/test/test_amesos_thyra.sh;
+    COMM = SERIAL, MPI;
+}
+
 (FRAMEWORK, AmesosTests) {   
     DIRS = scripts/daily/mpi;
     COMM = CUSTOM-MPI; 

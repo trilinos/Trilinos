@@ -349,6 +349,8 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   [Build the Thyra operator/vector adapater support in Amesos.  Can be overridden with --disable-amesos-thyra.]
   )
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE( amesos, thyra, AMESOS_THYRA, ENABLE_AMESOS_THYRA, yes, [Build the Thyra operator/vector adapater support in Amesos.], [Build the Thyra operator/vector adapater support in Amesos.  Can be overridden with --disable-amesos-thyra.])
+
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
@@ -913,6 +915,7 @@ AC_CONFIG_FILES([
 		thyra/src/Makefile
 		thyra/example/Makefile
 		thyra/test/Makefile
+		thyra/test/test_amesos_thyra.sh
 		])
 
 AC_OUTPUT

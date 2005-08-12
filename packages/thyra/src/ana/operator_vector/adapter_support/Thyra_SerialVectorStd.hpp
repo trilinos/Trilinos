@@ -168,7 +168,7 @@ SerialVectorStd<Scalar>::space() const
 template<class Scalar>
 std::string SerialVectorStd<Scalar>::description() const
 {
-  return (std::string("SerialVectorStd<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
+  return (std::string("Thyra::SerialVectorStd<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
 }
 
 } // end namespace Thyra
