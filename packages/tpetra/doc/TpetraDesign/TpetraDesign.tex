@@ -141,7 +141,7 @@ All Tpetra classes that represent a linear algebra object inherit from \texttt{T
 %     Vector
 %
 \subsection{Vector}
-The most basic unit of linear algebra is the vector. This is implemented in the \texttt{Tpetra::Vector} class. It functions in much the same way as \texttt{Epetra\_Vector}. For proper performance of the BLAS routines, it is necessary for the vector elements to be stored in a contiguous array. In Epetra, this is done by using a \texttt{double*} array. For storage, we use a \texttt{std::vector}. This is possible because the C++ Standard guarantees that a vector will store its data in contiguous form \footnote{See Section 6.2.3 in \cite{Josuttis99} and Item 16 in \cite{Effective-STL}.}.
+The most basic unit of linear algebra is the vector. This is implemented in the \texttt{Tpetra::Vector} class. It functions in much the same way as \texttt{Epetra\_Vector}. For proper performance of the BLAS routines, it is necessary for the vector elements to be stored in a contiguous array. In Epetra, this is done by using a \texttt{double*} array. For storage, we use a \texttt{std::vector}. This is possible because the C++ Standard guarantees that a vector will store its data in contiguous form\footnote{See Section 6.2.3 in \cite{Josuttis99} and Item 16 in \cite{Effective-STL}.}.
 
 Vector can be used to perform many mathematical operations, such as scaling, norms, dot products, and elementwise multiplies. But it is perhaps more useful in conjunction with another Tpetra class, CisMatrix.
 
@@ -195,6 +195,8 @@ y_{4}\\
 \right]
 \end{equation}
 
+\fbox{Add captions to this}
+
 The row distribution contains an entry for each row, and every image that has an non-zero in that row owns that entry. The column distribution works the same way. In a row-oriented matrix, each entry in the row distribution will (usually) be uniquely owned, and entries in the column distribution may be multiply owned. In a column-oriented matrix, the reverse is true. 
 
 The domain distribution specifies the distribution of an x vector that we are prepared to accept. The range distribution specifies the distribution of a y vector that we are prepared to accept. (Note that while they describe the x and y vectors, the domain and range distributions are properties of the matrix, not of the vectors.)
@@ -207,7 +209,9 @@ A CisMatrix object exists in two different phase during its lifetime. When it is
 
 It might seem more logical to have a default behavior that sets the domain equal to the column distribution, and the range equal to the row distribution. This would work with both square and rectangular matrices. But it's not possible, due to the way the functions are set up. The fillComplete function with no arguments (the default case) would have to call getRowDistribution() and getColumnDistribution(), and uses the reference returned as the parameters to the fillComplete function with two arguments (the non-default case). But the secondary distribution might not be defined yet, and trying to access it would throw an exception.
 
-\item The matrix data is converted into an optimized form for use with the Kokkos kernels. Prior to fillComplete, data is stored in a map of maps. After fillComplete, data is stored in Classical Harwell-Boeing form, using three std::vector objects to store the pntr, indx, and values arrays.
+\item The matrix data is converted into an optimized form for use with the Kokkos kernels. Prior to fillComplete, data is stored in a map of maps. After fillComplete, data is stored in Classical Harwell-Boeing form, using three std::vector objects to store the pntr, indx, and values arrays. 
+
+\fbox{Diagram showing pre- and post-fillComplete layouts (from thesis).}
 
 \item If the user did not specify a secondary distribution at construction, it will be generated now.
 
@@ -244,80 +248,16 @@ $column \rightarrow domain$
 (Remember that we can only deal with the distributions of $A$, as $A^T$ never really exists, and certainly never has any distributions defined for it.) We don't have any importers or exporters to handle these cases. But we can use the importer and exporter we do have to handle these cases by doing a reverse import and a reverse export. By doing an import using our exporter, we can import from the range distribution to the row distribution. And by doing an export using our importer, we can export from the column distribution to the domain distribution.
 
 % ---------------------------------------------------------------------- %
-% Communication
-%
-\section{Communication}
-Parallel communication is done using Tpetra::Comm, the Tpetra Communicator class. This is the same as is done in Epetra. Comm provides an insulating layer between the actual communications library being used and the rest of Tpetra. Whether we are using serial, MPI, shared memory, or some other setup is only relevant to the Comm class. 
-
-The most striking difference between Epetra and Tpetra with regard to communication is Processors vs. Images. In Epetra, nodes are referred to by their Processor ID (PID), and we keep track of the number of Processors in the communicator. In Tpetra, we have switched to a different nomenclature with nearly identical semantics. We recognize that a single processor may be running multiple MPI jobs, and that conversely, several processors may be running a single MPI job. A ``memory image'' is our concept for a virtual node. There is exactly one image for each copy of Tpetra code that is running concurrently. So instead of \texttt{myPID} and \texttt{numProcs}, we have \texttt{myImageID} and \texttt{numImages}. (ImageID should always be written out; it is not acceptable to abbreviate it IID.)
-
-% ---------------------------------------------------------------------- %
-%     Platform
-%
-\subsection{Platform}
-In Epetra, Comm is responsible for collective operations, managing PIDs, and creating Directory and Distributor instances. In Tpetra, we decided to split this up. We wrote a new class, Platform, to handle some of these tasks. Initially, Platform was responsible for managing ImageIDs, creating Comm instances, creating Distributor instances, and creating Directory instances. Recent refactoring has removed several of its duties, and now it is only responsible for creating Comm instances. (These changes will be explained in later sections.)
-
-We wanted to provide the same interface as Epetra, and use that same system of an abstract base class to hide whether we were using serial, MPI, etc., from the surrounding code. We also wanted to add templated support. The most logical way to do this would be to template the individual member functions. Then a user could have a single Comm object, but would be able to call functions like broadcast, sumAll, etc. with different types of data. Unfortunately, that is simply not possible\footnote{See Section 8.1.1, page 98, in \cite{Templates-Complete-Guide}}. Virtual member functions cannot be templated. We can template them at the class level, but not at the function level.
-
-We spent over a month puzzling over this problem. There seemed to simply be no solution. C++ had us backed into a corner. So we compromised, and templated Platform and Comm at the class level. This was a working solution, but it was awkward. The user almost always has to create two Platform objects - one templated on OrdinalType, ScalarType, and one templated on OrdinalType, OrdinalType. The OT, ST Platform is needed to create objects like VectorSpace and Vector that have a ScalarType defined. But we can't pass that Platform into a class like ElementSpace, because ElementSpace is templated only on the OrdinalType, not on the ScalarType. We definately didn't want to template ElementSpace on the ScalarType, because we want to be able to reuse a distribution with differently-typed VectorSpaces.
-
-\textbf{Future Work:} In the summer of 2005, we came up with a new approach. The problem was that virtual member functions and templates are mutually exclusive. Why not get rid of the inheritance and keep the templates? This was coded up in a new Tpetra class named OmniPlatform. The class is not templated, but the member functions are. We could pass a single Platform instance into every class, and allow those classes to have the OmniPlatform generate typed Comm instances for them. (This is only possible because Platform no longer has any role except to create Comms.) In place of the inheritance, we use preprocessor macros to include and exclude the routines for creating a SerialPlatform, a MpiPlatform, etc. 
-
-Initial testing shows that OmniPlatform seems to work very well. But preprocessor macros are ugly and brittle, and we were reluctant to depend on them for such a vital part of Tpetra. The version of Tpetra in Trilinos 6.0 does not use OmniPlatform. But we may switch to it in the future.
-
-% ---------------------------------------------------------------------- %
-%     Comm
-%
-\subsection{Comm}
-Tpetra::Comm provides the same collective communication operations that Epetra::Comm does: barrier, broadcast, gather all, global sum, global min, global max, and scanSum (parallel prefix sum). In addition, it provides several point-to-point operations that while present in Epetra, they were not part of Comm. The new operations are sumAllAndScatter, blocking send, blocking receive, and the doPostsAndWaits family of functions.
-
-These new functions are the result of a design decision made by the Tpetra team in July 2005. In Epetra, Distributor is a communications class. There is a Distributor abstract base class, and SerialDistributor and MpiDistributor implementations. This means that MPI code exists both in Epetra::MpiComm and in Epetra::MpiDistributor. In Tpetra, all MPI interaction is done through the Comm class. Tpetra::Distributor is just another Tpetra class that depends on Comm for communication.
-
-Epetra::MpiDistributor did most of the MPI calls in the doPosts and doWaits functions. But some communication was done in the setup functions. The blocking send, blocking receive, and sumAllAndScatter functions were added to Tpetra::Comm so that these setup functions in Distributor could be implementation-independent. 
-
-The doPosts and doWaits functions in Epetra::MpiDistributor perform specialized and somewhat complicated operations that do not need to be generally available. This is one reason why they were moved entirely into Comm, instead of having wrappers added for the specific MPI calls they made. 
-
-Distributor now functions much like Import and Export do. They do the initial setup, but when the actual communication is done, it is done by a different class, with the setup class given as a parameter. In the case of Import and Export, the actual communication is done by the DistObject class, with an Import or Export object passed into the doImport or doExport member function of DistObject. In the case of Distributor, it is passed as a parameter to the doPosts, doWaits, doPostsAndWaits, doReversePosts, doReverseWaits, and doReversePostsAndWaits member functions of Comm.
-
-\textbf{Epetra Migration Note:} The Epetra Distributor functions \texttt{do} and \texttt{doReverse} have been renamed \texttt{doPostsAndWaits} and \texttt{doReversePostsAndWaits}, respectively. Their functionality is unchanged.
-
-% ---------------------------------------------------------------------- %
-%     MPI
-%
-\subsection{MPI}
-In Epetra, dealing with MPI was straightforward. Ints and doubles were passed directly, using the MPI\_INT and MPI\_DOUBLE datatypes. When a DistObject was transmitted, it was packed into a buffer and treated as a char* array, using the MPI\_CHAR datatype. In Tpetra, it's not that simple. When doing a simple collective operation, such as sumAll, we don't know what datatype we're using, since the Comm class is templated. And when communicating a DistObject, we can't assume anything about the memory layout of the ScalarType or OrdinalType we're using. It may contain pointers to heap arrays, or any number of things.
-
-Once again, our solution involves traits. The Tpetra::MpiTraits class works very similarly to OrdinalTraits and ScalarTraits. It provides four traits: datatype, count, sumOp, maxOp, and minOp.
-\begin{description}
-
-\item[datatype] This returns a variable of type MPI\_Datatype. This is the datatype that MPI thinks it is receiving. For example, MPI\_BYTE, MPI\_FLOAT, or MPI\_INT.
-
-\item[count] This returns a variable of type int. This is the number of objects that MPI thinks it is receiving. This is a multiple of userCount, a parameter passed to the count function. userCount is the number of objects that the caller thinks it is sending to Tpetra::Comm.
-
-\item[sumOp] This returns a variable of type MPI\_Op. For the built-in datatypes, this is MPI\_SUM. But for non-built in datatypes, such as complex$<$T$>$, or a matrix or vector, we need to define our own sum operation, and this trait is how we pass that into MPI.
-
-\item[maxOp] This functions the same way that sumOp does, except that it returns the operation for finding the global maximum value. For complex$<$T$>$, we compare the objects by their magnitude, since there is no such thing as less than or greater than for a complex value. We still need to return a complex$<$T$>$ variable, so we return the first one we encountered that had the largest magnitude.
-
-\item[minOp] This functions the same way that maxOp does (including its handling of complex values), except that it returns the operation for finding the global minimum value.
-\end{description}
-
-Defining the datatype and count traits for a new datatype are quite straightforward. Defining the sumOp, maxOp, and minOp traits are fairly involved, since they involve defining new functions for MPI to use. The traits defined for complex$<$T$>$ should provide a decent template to copy. If that is not enough, refer to \cite{MPI}.
-
-\textbf{Warning:} The way we handle complex values is to tell MPI we're passing it two values of type T for each value of type complex$<$T$>$ the user passes us. This works quite well, and allows us to not have to define a new datatype, since MPI already supports arrays. However, this assumes that a complex variable's memory layout consists only of the two T variables. (In other words: This assumes that if we take the address of a complex$<$T$>$ variable, cast it to a T* pointer, and pass that pointer into MPI, MPI will find a T variable there. Furthermore, incrementing that pointer must produce a seconed T variable.) 
-
-This has been the case on every machine the author has tested it on, and it is possible that such a layout is required by the C++ Standard. However, as of this writing, we do not know that for sure. So it is possible that there is a machine on which this will break. In which case we will just have to declare a custom datatype, which can be handled by the existing datatype trait.
-
-It does not matter in which order the real and imaginary components occur, as long as all nodes use that same layout.
-
-% ---------------------------------------------------------------------- %
 % Defining a Distribution
 %
 \section{Defining a Distribution}
-One of the main functions of Tpetra is to define the distribution of data across the parallel machine. This is accomplished by using several classes in conjunction.
+In order to use our linear algebra objects on a parallel machine, it is necessary to specify how the data is distributed. Defining these distributions forms one of the foundations of Tpetra. We accomplish this by using several classes in conjunction.
 
 \textbf{Epetra Migration Note:} Tpetra's ElementSpace and BlockElementSpace are functionally equivalent to Epetra's Map and BlockMap classes, respectively. However, in Epetra, Map \emph{isA} BlockMap, and is implemented as a BlockMap with a single point per block. In Tpetra, the relationship is reversed. ElementSpace is a stand-alone class, and BlockElementSpace \emph{hasA} ElementSpace. BlockElementSpace is implemented by storing the number of points for each element in the ElementSpace.
 
-\textbf{Rationale:} A block distribution involves storing additional data, and creates an additional overhead. Even though most applications will not need it, Epetra imposes that extra overhead on all users by making Map inherit from BlockMap. In Tpetra, only the applications that need a block distribution will use a BlockElementSpace, and only they will bear the additional burden.
+Our rationale for this change is that a block distribution involves storing additional data, and creates an additional overhead. Even though most applications will not need it, Epetra imposes that extra overhead on all users by making Map inherit from BlockMap. In Tpetra, only the applications that need a block distribution will use a BlockElementSpace, and only they will bear the additional burden.
+
+The functionality found in Epetra\_LocalMap has been integrated into ElementSpace. An ElementSpace object will automatically determine if the distribution the user has specified to it is a global or local (replicated) distribution.
 
 % ---------------------------------------------------------------------- %
 %     ElementSpace
@@ -396,6 +336,72 @@ If a VectorSpace is built on an ElementSpace, there is a one-to-one corresponden
 To accomplish this, it is necessary for the DistObject to be aware of how its VectorSpace was constructed. In addition, it is necessary for the DistObject to be able to query the BlockElementSpace object. This is because it is not enough for the DistObject to know that some of its entries need to be redistributed as blocks. It needs to know which entries are part of which blocks.
 
 This information is only needed in the functions inherited from DistObject. The rest of the class should not depend on knowing about this, and should be written to work with a ``generic'' VectorSpace.
+
+% ---------------------------------------------------------------------- %
+% Communication
+%
+\section{Communication}
+Parallel communication is done using Tpetra::Comm, the Tpetra Communicator class. This is the same as is done in Epetra. Comm provides an insulating layer between the actual communications library being used and the rest of Tpetra. Whether we are using serial, MPI, shared memory, or some other setup is only relevant to the Comm class. 
+
+The most striking difference between Epetra and Tpetra with regard to communication is Processors vs. Images. In Epetra, nodes are referred to by their Processor ID (PID), and we keep track of the number of Processors in the communicator. In Tpetra, we have switched to a different nomenclature with nearly identical semantics. We recognize that a single processor may be running multiple MPI jobs, and that conversely, several processors may be running a single MPI job. A ``memory image'' is our concept for a virtual node. There is exactly one image for each copy of Tpetra code that is running concurrently. So instead of \texttt{myPID} and \texttt{numProcs}, we have \texttt{myImageID} and \texttt{numImages}. (ImageID should always be written out; it is not acceptable to abbreviate it IID.)
+
+% ---------------------------------------------------------------------- %
+%     Platform
+%
+\subsection{Platform}
+In Epetra, Comm is responsible for collective operations, managing PIDs, and creating Directory and Distributor instances. In Tpetra, we decided to split this up. We wrote a new class, Platform, to handle some of these tasks. Initially, Platform was responsible for managing ImageIDs, creating Comm instances, creating Distributor instances, and creating Directory instances. Recent refactoring has removed several of its duties, and now it is only responsible for creating Comm instances. (These changes will be explained in later sections.)
+
+We wanted to provide the same interface as Epetra, and use that same system of an abstract base class to hide whether we were using serial, MPI, etc., from the surrounding code. We also wanted to add templated support. The most logical way to do this would be to template the individual member functions. Then a user could have a single Comm object, but would be able to call functions like broadcast, sumAll, etc. with different types of data. Unfortunately, that is simply not possible\footnote{See Section 8.1.1, page 98, in \cite{Templates-Complete-Guide}}. Virtual member functions cannot be templated. We can template them at the class level, but not at the function level.
+
+We spent over a month puzzling over this problem. There seemed to simply be no solution. C++ had us backed into a corner. So we compromised, and templated Platform and Comm at the class level. This was a working solution, but it was awkward. The user almost always has to create two Platform objects - one templated on OrdinalType, ScalarType, and one templated on OrdinalType, OrdinalType. The OT, ST Platform is needed to create objects like VectorSpace and Vector that have a ScalarType defined. But we can't pass that Platform into a class like ElementSpace, because ElementSpace is templated only on the OrdinalType, not on the ScalarType. We definately didn't want to template ElementSpace on the ScalarType, because we want to be able to reuse a distribution with differently-typed VectorSpaces.
+
+\textbf{Future Work:} In the summer of 2005, we came up with a new approach. The problem was that virtual member functions and templates are mutually exclusive. Why not get rid of the inheritance and keep the templates? This was coded up in a new Tpetra class named OmniPlatform. The class is not templated, but the member functions are. We could pass a single Platform instance into every class, and allow those classes to have the OmniPlatform generate typed Comm instances for them. (This is only possible because Platform no longer has any role except to create Comms.) In place of the inheritance, we use preprocessor macros to include and exclude the routines for creating a SerialPlatform, a MpiPlatform, etc. 
+
+Initial testing shows that OmniPlatform seems to work very well. But preprocessor macros are ugly and brittle, and we were reluctant to depend on them for such a vital part of Tpetra. The version of Tpetra in Trilinos 6.0 does not use OmniPlatform. But we may switch to it in the future.
+
+% ---------------------------------------------------------------------- %
+%     Comm
+%
+\subsection{Comm}
+Tpetra::Comm provides the same collective communication operations that Epetra::Comm does: barrier, broadcast, gather all, global sum, global min, global max, and scanSum (parallel prefix sum). In addition, it provides several point-to-point operations that while present in Epetra, they were not part of Comm. The new operations are sumAllAndScatter, blocking send, blocking receive, and the doPostsAndWaits family of functions.
+
+These new functions are the result of a design decision made by the Tpetra team in July 2005. In Epetra, Distributor is a communications class. There is a Distributor abstract base class, and SerialDistributor and MpiDistributor implementations. This means that MPI code exists both in Epetra::MpiComm and in Epetra::MpiDistributor. In Tpetra, all MPI interaction is done through the Comm class. Tpetra::Distributor is just another Tpetra class that depends on Comm for communication.
+
+Epetra::MpiDistributor did most of the MPI calls in the doPosts and doWaits functions. But some communication was done in the setup functions. The blocking send, blocking receive, and sumAllAndScatter functions were added to Tpetra::Comm so that these setup functions in Distributor could be implementation-independent. 
+
+The doPosts and doWaits functions in Epetra::MpiDistributor perform specialized and somewhat complicated operations that do not need to be generally available. This is one reason why they were moved entirely into Comm, instead of having wrappers added for the specific MPI calls they made. 
+
+Distributor now functions much like Import and Export do. They do the initial setup, but when the actual communication is done, it is done by a different class, with the setup class given as a parameter. In the case of Import and Export, the actual communication is done by the DistObject class, with an Import or Export object passed into the doImport or doExport member function of DistObject. In the case of Distributor, it is passed as a parameter to the doPosts, doWaits, doPostsAndWaits, doReversePosts, doReverseWaits, and doReversePostsAndWaits member functions of Comm.
+
+\textbf{Epetra Migration Note:} The Epetra Distributor functions \texttt{do} and \texttt{doReverse} have been renamed \texttt{doPostsAndWaits} and \texttt{doReversePostsAndWaits}, respectively. Their functionality is unchanged.
+
+% ---------------------------------------------------------------------- %
+%     MPI
+%
+\subsection{MPI}
+In Epetra, dealing with MPI was straightforward. Ints and doubles were passed directly, using the MPI\_INT and MPI\_DOUBLE datatypes. When a DistObject was transmitted, it was packed into a buffer and treated as a char* array, using the MPI\_CHAR datatype. In Tpetra, it's not that simple. When doing a simple collective operation, such as sumAll, we don't know what datatype we're using, since the Comm class is templated. And when communicating a DistObject, we can't assume anything about the memory layout of the ScalarType or OrdinalType we're using. It may contain pointers to heap arrays, or any number of things.
+
+Once again, our solution involves traits. The Tpetra::MpiTraits class works very similarly to OrdinalTraits and ScalarTraits. It provides four traits: datatype, count, sumOp, maxOp, and minOp.
+\begin{description}
+
+\item[datatype] This returns a variable of type MPI\_Datatype. This is the datatype that MPI thinks it is receiving. For example, MPI\_BYTE, MPI\_FLOAT, or MPI\_INT.
+
+\item[count] This returns a variable of type int. This is the number of objects that MPI thinks it is receiving. This is a multiple of userCount, a parameter passed to the count function. userCount is the number of objects that the caller thinks it is sending to Tpetra::Comm.
+
+\item[sumOp] This returns a variable of type MPI\_Op. For the built-in datatypes, this is MPI\_SUM. But for non-built in datatypes, such as complex$<$T$>$, or a matrix or vector, we need to define our own sum operation, and this trait is how we pass that into MPI.
+
+\item[maxOp] This functions the same way that sumOp does, except that it returns the operation for finding the global maximum value. For complex$<$T$>$, we compare the objects by their magnitude, since there is no such thing as less than or greater than for a complex value. We still need to return a complex$<$T$>$ variable, so we return the first one we encountered that had the largest magnitude.
+
+\item[minOp] This functions the same way that maxOp does (including its handling of complex values), except that it returns the operation for finding the global minimum value.
+\end{description}
+
+Defining the datatype and count traits for a new datatype are quite straightforward. Defining the sumOp, maxOp, and minOp traits are fairly involved, since they involve defining new functions for MPI to use. The traits defined for complex$<$T$>$ should provide a decent template to copy. If that is not enough, refer to \cite{MPI}.
+
+\textbf{Warning:} The way we handle complex values is to tell MPI we're passing it two values of type T for each value of type complex$<$T$>$ the user passes us. This works quite well, and allows us to not have to define a new datatype, since MPI already supports arrays. However, this assumes that a complex variable's memory layout consists only of the two T variables. (In other words: This assumes that if we take the address of a complex$<$T$>$ variable, cast it to a T* pointer, and pass that pointer into MPI, MPI will find a T variable there. Furthermore, incrementing that pointer must produce a seconed T variable.) 
+
+This has been the case on every machine the author has tested it on, and it is possible that such a layout is required by the C++ Standard. However, as of this writing, we do not know that for sure. So it is possible that there is a machine on which this will break. In which case we will just have to declare a custom datatype, which can be handled by the existing datatype trait.
+
+It does not matter in which order the real and imaginary components occur, as long as all nodes use that same layout.
 
 % ---------------------------------------------------------------------- %
 % Parallel Data Redistribution
