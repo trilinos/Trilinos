@@ -34,11 +34,13 @@
 # use "import ..." for Trilinos modules.  This prevents us from accidentally
 # picking up a system-installed version and ensures that we are testing the
 # build module.
+import sys
+
 try:
     import setpath
     import NOX
 except ImportError:
-    print "Using system-installed NOX"
+    print >>sys.stderr, "Using system-installed NOX"
     from PyTrilinos import NOX
 
 import unittest
@@ -108,4 +110,9 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(ParameterTestCase ))
 
     # Run the test suite
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    print >>sys.stderr, \
+          "\n*********************\nTesting NOX.Parameter\n*********************\n"
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
+
+    # Exit with a code that indicates the total number of errors and failures
+    sys.exit(len(result.errors) + len(result.failures))
