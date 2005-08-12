@@ -26,7 +26,14 @@
 
 (FRAMEWORK) {
     TESTS = BLAS/BLAS_test.exe,
-            LAPACK/LAPACK_test.exe,
+    ARGS = -v;
+    X-HOST = paunchy;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK) {
+    TESTS = LAPACK/LAPACK_test.exe,
             DenseMatrix/DenseMatrix_test.exe;
     ARGS = -v;
     EXIT-STATUS = STRING-COMPARISON;
