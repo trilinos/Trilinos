@@ -1,7 +1,7 @@
 
 include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 
-THYRA_INCLUDES = \
+_THYRA_INCLUDES = \
   -I@abs_top_srcdir@/src/ana/operator_vector/adapter_support \
   -I@abs_top_srcdir@/src/ana/operator_vector/adapter_support/mpi \
   -I@abs_top_srcdir@/src/ana/operator_vector/adapter_support/serial \
@@ -15,4 +15,9 @@ THYRA_INCLUDES = \
   -I@abs_top_builddir@/src \
   $(TEUCHOS_INCLUDES)
 
-THYRA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lthyra $(TEUCHOS_LIBS) @LIBS@ @FLIBS@ 
+_THYRA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lthyra $(TEUCHOS_LIBS) @LIBS@ @FLIBS@ 
+
+@USING_GNUMAKE_TRUE@THYRA_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_THYRA_INCLUDES))
+@USING_GNUMAKE_TRUE@THYRA_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_THYRA_LIBS))
+@USING_GNUMAKE_FALSE@THYRA_INCLUDES = $(_THYRA_INCLUDES)
+@USING_GNUMAKE_FALSE@THYRA_LIBS     = $(_THYRA_LIBS)

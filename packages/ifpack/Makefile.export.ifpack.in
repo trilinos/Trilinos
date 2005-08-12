@@ -12,7 +12,7 @@ include @abs_top_builddir@/../epetra/Makefile.export.epetra
 @HAVE_IFPACK_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
 @HAVE_IFPACK_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
 
-IFPACK_INCLUDES= -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
+_IFPACK_INCLUDES= -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
 	         $(EPETRA_INCLUDES) \
 	         $(AZTECOO_INCLUDES) \
 	         $(TEUCHOS_INCLUDES) \
@@ -20,7 +20,7 @@ IFPACK_INCLUDES= -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
 	         $(EPETRAEXT_INCLUDES) \
 	         $(TRIUTILS_INCLUDES) 
 
-IFPACK_LIBS= -L@abs_top_builddir@/src/ -lifpack \
+_IFPACK_LIBS= -L@abs_top_builddir@/src/ -lifpack \
 	     $(AMESOS_LIBS) \
 	     $(AZTECOO_LIBS) \
 	     $(EPETRAEXT_LIBS) \
@@ -28,8 +28,18 @@ IFPACK_LIBS= -L@abs_top_builddir@/src/ -lifpack \
 	     $(EPETRA_LIBS) \
 	     $(TEUCHOS_LIBS)                            
 
-IFPACK_EXTRA_INCLUDES= $(EPETRAEXT_INCLUDES) \
+@USING_GNUMAKE_TRUE@IFPACK_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_IFPACK_INCLUDES))
+@USING_GNUMAKE_TRUE@IFPACK_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_IFPACK_LIBS))
+@USING_GNUMAKE_FALSE@IFPACK_INCLUDES = $(_IFPACK_INCLUDES)
+@USING_GNUMAKE_FALSE@IFPACK_LIBS     = $(_IFPACK_LIBS)
+
+_IFPACK_EXTRA_INCLUDES= $(EPETRAEXT_INCLUDES) \
 	               $(TRIUTILS_INCLUDES) 
 
-IFPACK_EXTRA_LIBS= $(EPETRAEXT_LIBS) \
+_IFPACK_EXTRA_LIBS= $(EPETRAEXT_LIBS) \
 	           $(TRIUTILS_LIBS)
+
+@USING_GNUMAKE_TRUE@IFPACK_EXTRA_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_IFPACK_EXTRA_INCLUDES))
+@USING_GNUMAKE_TRUE@IFPACK_EXTRA_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_IFPACK_EXTRA_LIBS))
+@USING_GNUMAKE_FALSE@IFPACK_EXTRA_INCLUDES = $(_IFPACK_EXTRA_INCLUDES)
+@USING_GNUMAKE_FALSE@IFPACK_EXTRA_LIBS     = $(_IFPACK_EXTRA_LIBS)

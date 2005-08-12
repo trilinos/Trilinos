@@ -14,7 +14,7 @@
 @ML_USING_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
 
 # These are the needed includes to build the library
-ML_BUILD_LIB_INCLUDES = \
+_ML_BUILD_LIB_INCLUDES = \
 	    -I@abs_top_srcdir@/src \
 	    -I@abs_top_builddir@/src \
             -I@abs_top_srcdir@/src/Comm \
@@ -36,7 +36,7 @@ ML_BUILD_LIB_INCLUDES = \
 	    $(EPETRAEXT_INCLUDES)
 
 # These are the needed includes to build the examples
-ML_INCLUDES = \
+_ML_INCLUDES = \
 	    -I@abs_top_srcdir@/src \
 	    -I@abs_top_builddir@/src \
             -I@abs_top_srcdir@/src/Comm \
@@ -53,7 +53,14 @@ ML_INCLUDES = \
 	    $(TEUCHOS_INCLUDES) \
 	    $(AZTECOO_INCLUDES)
 
-ML_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lml $(EPETRA_LIBS) $(AMESOS_LIBS) $(IFPACK_LIBS) $(TEUCHOS_LIBS) $(ANASAZI_LIBS) $(AZTECOO_LIBS) $(EPETRAEXT_LIBS) @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ 
+_ML_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lml $(EPETRA_LIBS) $(AMESOS_LIBS) $(IFPACK_LIBS) $(TEUCHOS_LIBS) $(ANASAZI_LIBS) $(AZTECOO_LIBS) $(EPETRAEXT_LIBS) @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ 
+
+@USING_GNUMAKE_TRUE@ML_BUILD_LIB_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_ML_BUILD_LIB_INCLUDES))
+@USING_GNUMAKE_TRUE@ML_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_ML_INCLUDES))
+@USING_GNUMAKE_TRUE@ML_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_ML_LIBS))
+@USING_GNUMAKE_FALSE@ML_BUILD_LIB_INCLUDES = $(_ML_BUILD_LIB_INCLUDES)
+@USING_GNUMAKE_FALSE@ML_INCLUDES = $(_ML_INCLUDES)
+@USING_GNUMAKE_FALSE@ML_LIBS     = $(_ML_LIBS)
 
 ###########################################################################
 # These variables define the include path and libraries that can be used in
@@ -63,9 +70,14 @@ ML_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lml $(EPETRA_LIBS) $(AMESOS_LIBS) 
 
 @ML_USING_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
 
-ML_EXTRA_INCLUDES = $(TRIUTILS_INCLUDES)
+_ML_EXTRA_INCLUDES = $(TRIUTILS_INCLUDES)
 
-ML_EXTRA_LIBS = $(TRIUTILS_LIBS)
+_ML_EXTRA_LIBS = $(TRIUTILS_LIBS)
+
+@USING_GNUMAKE_TRUE@ML_EXTRA_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_ML_EXTRA_INCLUDES))
+@USING_GNUMAKE_TRUE@ML_EXTRA_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_ML_EXTRA_LIBS))
+@USING_GNUMAKE_FALSE@ML_EXTRA_INCLUDES = $(_ML_EXTRA_INCLUDES)
+@USING_GNUMAKE_FALSE@ML_EXTRA_LIBS     = $(_ML_EXTRA_LIBS)
 
 #ML_LINK = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 ML_LINK = $(CXX) $(AM_LDFLAGS) $(LDFLAGS) -o $@
