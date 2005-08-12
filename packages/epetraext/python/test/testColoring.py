@@ -34,9 +34,16 @@
 # use "import ..." for Trilinos modules.  This prevents us from accidentally
 # picking up a system-installed version and ensures that we are testing the
 # build module.
-import setpath
-import Epetra
-import EpetraExt
+import sys
+
+try:
+    import setpath
+    import Epetra
+    import EpetraExt
+except ImportError:
+    from PyTrilinos import Epetra, EpetraExt
+    print >>sys.stderr, "Using system-installed Epetra, EpetraExt"
+
 from   Numeric  import *
 import unittest
 
@@ -91,4 +98,9 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(ColoringTestCase))
 
     # Run the test suite
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    print >>sys.stderr, \
+          "\n**************************\nTesting EpetraExt.Coloring\n**************************\n"
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
+
+    # Exit with a code that indicates the total number of errors and failures
+    sys.exit(len(result.errors) + len(result.failures))

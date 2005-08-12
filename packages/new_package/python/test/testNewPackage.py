@@ -121,4 +121,7 @@ if __name__ == "__main__":
     if comm.MyPID() == 0: print >>sys.stderr, \
        "\n*******************\nTesting New_Package\n*******************\n"
     verbosity = 2 * int(comm.MyPID() == 0)
-    unittest.TextTestRunner(verbosity=verbosity).run(suite)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
+
+    # Exit with a code that indicates the total number of errors and failures
+    sys.exit(len(result.errors) + len(result.failures))
