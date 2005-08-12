@@ -94,9 +94,9 @@ Tpetra makes extensive use of the C++ Standard Template Library (STL), which is 
 \subsection{Scalars and Ordinals}
 A fundamental concept of Tpetra is that of OrdinalType and ScalarType. Tpetra is templated throughout on these two types. (A full discussion of templates is well beyond the scope of this document. Any good C++ book will give you an overview of templates. For an exhaustive reference, see \cite{Templates-Complete-Guide}.)
 
-The ScalarType is the type of our actual data. In Epetra, the ScalarType is always double. In Tpetra, it could be float, double, complex$<$float$>$, complex$<$double$>$, or almost any other type. A user could use a 3x3 dense matrix as a ScalarType if they wanted to. The OrdinalType is primarily an ordering type. For example, we use it as the datatype for element IDs. OrdinalType is also used as a counting type. We use it to store information on how many of something we have. In Epetra, the OrdinalType is always int. In Tpetra, it will most likely be an int or a long. However, it could be any type that is mathematically countable - a type who's values have a one-to-one correspondence to the integers.
+The ScalarType is the type of our actual data. In Epetra, the ScalarType is always \texttt{double}. In Tpetra, it could be \texttt{float}, \texttt{double}, \texttt{complex$<$float$>$}, \texttt{complex$<$double$>$}, or almost any other type. A user could use a 3x3 dense matrix as a ScalarType if they wanted to. The OrdinalType is primarily an ordering type. For example, we use it as the datatype for element IDs. OrdinalType is also used as a counting type. We use it to store information on how many of something we have. In Epetra, the OrdinalType is always \texttt{int}. In Tpetra, it will most likely be an \texttt{int} or a \texttt{long}. However, it could be any type that is mathematically countable - a type who's values have a one-to-one correspondence to the integers.
 
-Because we don't know which type we're using, it's very important that we don't make the assumption that we can use literals in Tpetra. While \texttt{someVar = 5.0} will evaluate correctly if the variable is a float or double, there's no guarantee that the implicit conversion will succeed if it's an arbitrary-precision object or a vector or matrix.
+Because we don't know which type we're using, it's very important that we don't make the assumption that we can use literals in Tpetra. While \texttt{someVar = 5.0} will evaluate correctly if the variable is a \texttt{float} or \texttt{double}, there's no guarantee that the implicit conversion will succeed if it's an arbitrary-precision object or a vector or matrix.
 
 To solve this problem, we use a design pattern known as traits\footnote{For more information on traits and policies, see Chapter 15 ``Traits and Policy Classes'' in \cite{Templates-Complete-Guide}.}. We use two Teuchos classes, ScalarTraits and OrdinalTraits. ScalarTraits defines many traits, but most of them, such as machine epsilon, the largest exponent before overflow, etc., are not of interest to us. We are primarily interested in two traits that both ScalarTraits and OrdinalTraits define: one and zero. Zero is the mathematical zero; it is the value such that for all $x$, $x * 0 = 0$. One is unity, or identity; it is the value such that for all $x$, $x * 1 = x$.
 
@@ -467,25 +467,20 @@ Even though most linear algebra objects use VectorSpace to define distributions,
 
 It is possible that the user could try and create an Import or Export from mismatched ElementSpaces. For now we are not going to worry about that possibility, and will wait to see if that becomes a problem.
 
+% ---------------------------------------------------------------------- %
+%     DistObject
+%
 \subsection{DistObject}
 
 DistObject is a base class that all Tpetra objects that can redistribute their data derive from. DistObject defines the doImport and doExport functions that the user will call to execute a redistribution. These functions are not overridden by the derived class. 
 
 DistObject also defines four pure virtual functions that the derived class must implement. These contain the class-specific instructions for packing and unpacking the data in that class that is associated with an Element. (For example, in a Vector this is just the value. In a MultiVector or CisMatrix, this is the secondary index and the value.)
 \begin{itemize}
-\item checkSizes ?
+\item checkSizes This function will check that the source DistObject passed in can be used with the \texttt{this} object. This usually invoves doing a \texttt{dynamic\_cast} to test that both objects are of the same class (e.g. Vector).
 \item copyAndPermute This function will copy the same and permute entries from the souce object into the this object.
 \item packAndPrepare This function will take the elements we are exporting and pack them up into a buffer.
 \item unpackAndCombine This function will take in a buffer of packed elements, and unpack them. If any of the imported elements already exist, we will use the CombineMode specified to combine them together.
 \end{itemize}
-
-% ---------------------------------------------------------------------- %
-% Miscellaneous
-%
-\section{Miscellaneous}
-
-\subsection{Tpetra\_Util}
-\subsection{tpetra\_test\_util}
 
 % ---------------------------------------------------------------------- %
 % References
