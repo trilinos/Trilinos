@@ -70,7 +70,7 @@ class EpetraSerialCommTestCase(unittest.TestCase):
 
     def testStr(self):
         "Test Epetra.SerialComm __str__ method"
-        self.assertEqual(str(self.comm), "::Processor 0 of 1 total processors")
+        self.assertEqual(str(self.comm), "::Processor 0 of 1 total processors.")
 
     def testPrint(self):
         "Test Epetra.SerialComm Print method"
@@ -93,4 +93,7 @@ if __name__ == "__main__":
     # Run the test suite
     print >>sys.stderr, \
           "\n*******************\nTesting Epetra.Comm\n*******************\n"
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
+
+    # Exit with a code that indicates the total number of errors and failures
+    sys.exit(len(result.errors) + len(result.failures))

@@ -606,9 +606,12 @@ using namespace std;
   // object given to the python print command.
   string __str__() {
     stringstream os;
-    self->Print(os);                  // Put the output in os
-    string s = os.str();              // Extract the string from os
-    return s.substr(0,s.length()-1);  // Return the string minus trailing \n
+    self->Print(os);             // Put the output in os
+    string s = os.str();         // Extract the string from os
+    int last = s.length();       // Get the last index
+    if (s.substr(last) == "\n")
+      last-=1;                   // Ignore any trailing newline
+    return s.substr(0,last);     // Return the string
   }
 
   // The Epetra_Object::Print(ostream) method is ignored and replaced by a

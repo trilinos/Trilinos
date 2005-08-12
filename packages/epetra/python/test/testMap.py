@@ -151,4 +151,7 @@ if __name__ == "__main__":
     # Run the test suite
     print >>sys.stderr, \
           "\n******************\nTesting Epetra.Map\n******************\n"
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
+
+    # Exit with a code that indicates the total number of errors and failures
+    sys.exit(len(result.errors) + len(result.failures))
