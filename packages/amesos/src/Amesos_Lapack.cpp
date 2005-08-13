@@ -291,10 +291,7 @@ int Amesos_Lapack::SerialToDense()
       //      if (fabs(Values[k]) >= Threshold_)       Threshold not used yet - no consistent definition 
       //      Lapack would not be the first routine to use a threshold, as it confers no performance
       //      advantage
-	if (UseTranspose())
-	  DenseMatrix_(Indices[k],j) = Values[k];
-	else
-	  DenseMatrix_(j,Indices[k]) = Values[k];
+      DenseMatrix_(j,Indices[k]) = Values[k];
       if (Indices[k] == j)
 	DenseMatrix_(j,j) = Values[k] + AddToDiag_;
     }
