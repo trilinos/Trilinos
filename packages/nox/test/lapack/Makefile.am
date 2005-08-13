@@ -34,11 +34,11 @@ NOX_SUBDIRS =
 endif
 
 if BUILD_LOCA_LAPACK_TESTS
-if BUILD_PYTHON
-LOCA_PYTHON_SUBDIRS = LOCA_python
-else
+#if BUILD_PYTHON
+#LOCA_PYTHON_SUBDIRS = LOCA_python
+#else
 LOCA_PYTHON_SUBDIRS = 
-endif
+#endif
 LOCA_SUBDIRS = \
 	LOCA_TestProblems \
 	LOCA_UnitTests \
