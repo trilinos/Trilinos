@@ -52,20 +52,28 @@ class EpetraBlockMapTestCase(unittest.TestCase):
     "TestCase class for BlockMap objects"
 
     def setUp(self):
-        self.comm = Epetra.SerialComm()
-        self.map  = Epetra.BlockMap(2,2,0,self.comm)
+        self.comm        = Epetra.PyComm()
+        self.elementSize = 10
+        self.numLocalEl  = 4
+        self.numGlobalEl = self.comm.NumProc() * self.numLocalEl
+        self.map         = Epetra.BlockMap(self.numGlobalEl, self.elementSize,
+                                           0, self.comm)
+        self.comm.Barrier()
+
+    def tearDown(self):
+        self.comm.Barrier()
 
     def testNumGlobalElements(self):
         "Test Epetra.BlockMap NumGlobalElements method"
-        self.assertEqual(self.map.NumGlobalElements(), 2)
+        self.assertEqual(self.map.NumGlobalElements(), self.numGlobalEl)
 
     def testNumMyElements(self):
         "Test Epetra.BlockMap NumMyElements method"
-        self.assertEqual(self.map.NumMyElements(), 2)
+        self.assertEqual(self.map.NumMyElements(), self.numLocalEl)
 
     def testElementSize(self):
         "Test Epetra.BlockMap ElementSize method"
-        self.assertEqual(self.map.ElementSize(), 2)
+        self.assertEqual(self.map.ElementSize(), self.elementSize)
 
     def testIndexBase(self):
         "Test Epetra.BlockMap IndexBase method"
@@ -73,27 +81,29 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testNumGlobalPoints(self):
         "Test Epetra.BlockMap NumGlobalPoints method"
-        self.assertEqual(self.map.NumGlobalPoints(), 4)
+        self.assertEqual(self.map.NumGlobalPoints(), self.numGlobalEl *
+                         self.elementSize)
 
     def testNumMyPoints(self):
         "Test Epetra.BlockMap NumMyPoints method"
-        self.assertEqual(self.map.NumMyPoints(), 4)
+        self.assertEqual(self.map.NumMyPoints(), self.numLocalEl *
+                         self.elementSize)
 
     def testMinMyElementSize(self):
         "Test Epetra.BlockMap MinMyElementSize method"
-        self.assertEqual(self.map.MinMyElementSize(), self.map.ElementSize())
+        self.assertEqual(self.map.MinMyElementSize(), self.elementSize)
 
     def testMaxMyElementSize(self):
         "Test Epetra.BlockMap MaxMyElementSize method"
-        self.assertEqual(self.map.MaxMyElementSize(), self.map.ElementSize())
+        self.assertEqual(self.map.MaxMyElementSize(), self.elementSize)
 
     def testMinElementSize(self):
         "Test Epetra.BlockMap MinElementSize method"
-        self.assertEqual(self.map.MinElementSize(), self.map.ElementSize())
+        self.assertEqual(self.map.MinElementSize(), self.elementSize)
 
     def testMaxElementSize(self):
         "Test Epetra.BlockMap MaxElementSize method"
-        self.assertEqual(self.map.MaxElementSize(), self.map.ElementSize())
+        self.assertEqual(self.map.MaxElementSize(), self.elementSize)
 
     def testConstantElementSize(self):
         "Test Epetra.BlockMap ConstantElementSize method"
@@ -109,15 +119,15 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testMaxAllGID(self):
         "Test Epetra.BlockMap MaxAllGID method"
-        self.assertEqual(self.map.MaxAllGID(), 1)
+        self.assertEqual(self.map.MaxAllGID(), self.numGlobalEl-1)
 
     def testMinMyGID(self):
         "Test Epetra.BlockMap MinMyGID method"
-        self.assertEqual(self.map.MinMyGID(), 0)
+        self.assertEqual(self.map.MinMyGID(), self.comm.MyPID()*self.numLocalEl)
 
     def testMaxMyGID(self):
         "Test Epetra.BlockMap MaxMyGID method"
-        self.assertEqual(self.map.MaxMyGID(), 1)
+        self.assertEqual(self.map.MaxMyGID(), (self.comm.MyPID()+1)*self.numLocalEl-1)
 
     def testMinLID(self):
         "Test Epetra.BlockMap MinLID method"
@@ -125,14 +135,14 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testMaxLID(self):
         "Test Epetra.BlockMap MaxLID method"
-        self.assertEqual(self.map.MaxLID(), 1)
+        self.assertEqual(self.map.MaxLID(), self.numLocalEl-1)
 
     def testIDs(self):
         "Test Epetra.BlockMap local and global IDs"
         for i in range(self.map.NumMyElements()):
-            self.assertEqual(self.map.LID(i)  , self.map.GID(i))
-            self.assertEqual(self.map.MyGID(i), True           )
-            self.assertEqual(self.map.MyLID(i), True           )
+            self.assertEqual(self.map.LID(i)  , i   )
+            self.assertEqual(self.map.MyGID(i), True)
+            self.assertEqual(self.map.MyLID(i), True)
 
 ##########################################################################
 
@@ -144,10 +154,14 @@ if __name__ == "__main__":
     # Add the test cases to the test suite
     suite.addTest(unittest.makeSuite(EpetraBlockMapTestCase))
 
+    # Create a communicator
+    comm = Epetra.PyComm()
+
     # Run the test suite
-    print >>sys.stderr, \
-          "\n***********************\nTesting Epetra.BlockMap\n***********************\n"
-    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    if comm.MyPID() == 0: print >>sys.stderr, \
+       "\n***********************\nTesting Epetra.BlockMap\n***********************\n"
+    verbosity = 2 * int(comm.MyPID() == 0)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
     sys.exit(len(result.errors) + len(result.failures))

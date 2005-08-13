@@ -43,8 +43,8 @@ except ImportError:
     from PyTrilinos import Epetra
     print >>sys.stderr, "Using system-installed Epetra"
 
+from   Numeric  import *
 import unittest
-from   Numeric    import *
 
 ##########################################################################
 
