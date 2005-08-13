@@ -621,12 +621,15 @@ using namespace std;
     if (pf == NULL) {
       self->Print(std::cout);
     } else {
-      if (!PyFile_Check(pf)) return NULL;
-
-      std::FILE*   f = PyFile_AsFile(pf);
-      FileStream   buffer(f);
-      std::ostream os(&buffer);
-      self->Print(os);
+      if (!PyFile_Check(pf)) {
+	PyErr_SetString(PyExc_IOError, "Print() method expects file object");
+	return NULL;
+      } else {
+	std::FILE*   f = PyFile_AsFile(pf);
+	FileStream   buffer(f);
+	std::ostream os(&buffer);
+	self->Print(os);
+      }
     }
     Py_INCREF(Py_None);
     return Py_None;

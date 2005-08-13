@@ -52,16 +52,21 @@ class EpetraMapTestCase(unittest.TestCase):
     "TestCase class for Map objects"
 
     def setUp(self):
-        self.comm = Epetra.SerialComm()
-        self.map  = Epetra.Map(4,0,self.comm)
+        self.comm        = Epetra.PyComm()
+        self.numLocalEl  = 10
+        self.numGlobalEl = self.numLocalEl * self.comm.NumProc()
+        self.map         = Epetra.Map(self.numGlobalEl,0,self.comm)
+
+    def tearDown(self):
+        self.comm.Barrier()
 
     def testNumGlobalElements(self):
         "Test Epetra.Map NumGlobalElements method"
-        self.assertEqual(self.map.NumGlobalElements(), 4)
+        self.assertEqual(self.map.NumGlobalElements(), self.numGlobalEl)
 
     def testNumMyElements(self):
         "Test Epetra.Map NumMyElements method"
-        self.assertEqual(self.map.NumMyElements(), 4)
+        self.assertEqual(self.map.NumMyElements(), self.numLocalEl)
 
     def testElementSize(self):
         "Test Epetra.Map ElementSize method"
@@ -73,27 +78,27 @@ class EpetraMapTestCase(unittest.TestCase):
 
     def testNumGlobalPoints(self):
         "Test Epetra.Map NumGlobalPoints method"
-        self.assertEqual(self.map.NumGlobalPoints(), 4)
+        self.assertEqual(self.map.NumGlobalPoints(), self.numGlobalEl)
 
     def testNumMyPoints(self):
         "Test Epetra.Map NumMyPoints method"
-        self.assertEqual(self.map.NumMyPoints(), 4)
+        self.assertEqual(self.map.NumMyPoints(), self.numLocalEl)
 
     def testMinMyElementSize(self):
         "Test Epetra.Map MinMyElementSize method"
-        self.assertEqual(self.map.MinMyElementSize(), self.map.ElementSize())
+        self.assertEqual(self.map.MinMyElementSize(), 1)
 
     def testMaxMyElementSize(self):
         "Test Epetra.Map MaxMyElementSize method"
-        self.assertEqual(self.map.MaxMyElementSize(), self.map.ElementSize())
+        self.assertEqual(self.map.MaxMyElementSize(), 1)
 
     def testMinElementSize(self):
         "Test Epetra.Map MinElementSize method"
-        self.assertEqual(self.map.MinElementSize(), self.map.ElementSize())
+        self.assertEqual(self.map.MinElementSize(), 1)
 
     def testMaxElementSize(self):
         "Test Epetra.Map MaxElementSize method"
-        self.assertEqual(self.map.MaxElementSize(), self.map.ElementSize())
+        self.assertEqual(self.map.MaxElementSize(), 1)
 
     def testConstantElementSize(self):
         "Test Epetra.Map ConstantElementSize method"
@@ -105,7 +110,9 @@ class EpetraMapTestCase(unittest.TestCase):
 
     def testDistributedGlobal(self):
         "Test Epetra.Map DistributedGlobal method"
-        self.assertEqual(self.map.DistributedGlobal(), False)
+        distributedGlobal = (self.comm.Label() == "Epetra::MpiComm" and
+                             self.comm.NumProc() > 1)
+        self.assertEqual(self.map.DistributedGlobal(), distributedGlobal)
 
     def testMinAllGID(self):
         "Test Epetra.Map MinAllGID method"
@@ -113,15 +120,15 @@ class EpetraMapTestCase(unittest.TestCase):
 
     def testMaxAllGID(self):
         "Test Epetra.Map MaxAllGID method"
-        self.assertEqual(self.map.MaxAllGID(), 3)
+        self.assertEqual(self.map.MaxAllGID(), self.numGlobalEl-1)
 
     def testMinMyGID(self):
         "Test Epetra.Map MinMyGID method"
-        self.assertEqual(self.map.MinMyGID(), 0)
+        self.assertEqual(self.map.MinMyGID(), self.comm.MyPID()*self.numLocalEl)
 
     def testMaxMyGID(self):
         "Test Epetra.Map MaxMyGID method"
-        self.assertEqual(self.map.MaxMyGID(), 3)
+        self.assertEqual(self.map.MaxMyGID(), (self.comm.MyPID()+1)*self.numLocalEl-1)
 
     def testMinLID(self):
         "Test Epetra.Map MinLID method"
@@ -129,14 +136,42 @@ class EpetraMapTestCase(unittest.TestCase):
 
     def testMaxLID(self):
         "Test Epetra.Map MaxLID method"
-        self.assertEqual(self.map.MaxLID(), 3)
+        self.assertEqual(self.map.MaxLID(), self.numLocalEl-1)
 
     def testIDs(self):
         "Test Epetra.Map global and local IDs"
-        for i in range(self.map.NumMyElements()):
-            self.assertEqual(self.map.LID(i)  , self.map.GID(i))
-            self.assertEqual(self.map.MyGID(i), True           )
-            self.assertEqual(self.map.MyLID(i), True           )
+        myMinID = self.comm.MyPID() * self.numLocalEl
+        myMaxID = myMinID + self.numLocalEl - 1
+        for gid in range(self.map.NumGlobalElements()):
+            if myMinID <= gid and gid <= myMaxID:
+                lid = gid % self.numLocalEl
+            else:
+                lid = -1
+            self.assertEqual(self.map.LID(gid)  , lid        )
+            self.assertEqual(self.map.MyGID(gid), (lid != -1))
+            self.assertEqual(self.map.MyLID(lid), (lid != -1))
+
+    def testStr(self):
+        "Test Epetra.Map __str__ method"
+        lines   = 7 + self.numLocalEl
+        if self.comm.MyPID() == 0: lines += 7
+        s = str(self.map)
+        s = s.splitlines()
+        self.assertEquals(len(s), lines)
+
+    def testPrint(self):
+        "Test Epetra.Map Print method"
+        myPID = self.comm.MyPID()
+        filename = "testMap%d.dat" % myPID
+        f = open(filename, "w")
+        self.map.Print(f)
+        f.close()
+        f = open(filename, "r")
+        s = f.readlines()
+        f.close()
+        lines = 7 + self.numLocalEl
+        if myPID == 0: lines += 7
+        self.assertEquals(len(s), lines)
 
 ##########################################################################
 
@@ -148,10 +183,14 @@ if __name__ == "__main__":
     # Add the test cases to the test suite
     suite.addTest(unittest.makeSuite(EpetraMapTestCase))
 
+    # Create a communicator
+    comm = Epetra.PyComm()
+
     # Run the test suite
-    print >>sys.stderr, \
+    if comm.MyPID() == 0: print >>sys.stderr, \
           "\n******************\nTesting Epetra.Map\n******************\n"
-    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    verbosity = 2 * int(comm.MyPID() == 0)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
     sys.exit(len(result.errors) + len(result.failures))

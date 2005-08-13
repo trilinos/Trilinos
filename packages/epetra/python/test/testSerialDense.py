@@ -48,19 +48,36 @@ from   Numeric    import *
 
 ##########################################################################
 
-class EpetraSerialDenseTestCase(unittest.TestCase):
-    "TestCase class for Epetra SerialDense Vectors, Matrices and Solvers"
+class EpetraSerialDenseVectorTestCase(unittest.TestCase):
+    "TestCase class for Epetra SerialDense Vectors"
 
     def setUp(self):
+        self.comm = Epetra.PyComm()
         self.size = 4
         self.rows = 2
         self.cols = 4
 
-    def testDefaultVectorConstructor(self):
+    def tearDown(self):
+        self.comm.Barrier()
+
+    def testVectorDefaultConstructor(self):
         "Test Epetra.SerialDenseVector default constructor"
         sdv = Epetra.SerialDenseVector()
         self.assertEqual(sdv.CV(), Epetra.Copy)
         self.assertEqual(sdv.Length(), 0)
+
+    def testVectorPrint(self):
+        "Test Epetra.SerialDenseVector Print method"
+        sdv = Epetra.SerialDenseVector(self.size)
+        filename = "testSerialDense%d.dat" % self.comm.MyPID()
+        f = open(filename, "w")
+        sdv.Print(f)
+        f.close()
+        out = "Data access mode: Copy\nA_Copied: yes\nLength(M): %d\n" % \
+              self.size + self.size * "0 " + "\n"
+        f = open(filename, "r")
+        self.assertEqual(f.read(), out)
+        f.close()
 
     def testVectorSizeResize(self):
         "Test Epetra.SerialDenseVector Size and Resize methods"
@@ -87,6 +104,27 @@ class EpetraSerialDenseTestCase(unittest.TestCase):
         sdv = Epetra.SerialDenseVector(self.size)
         self.assertRaises(TypeError, sdv.__getitem__, 0,1)
         self.assertRaises(TypeError, sdv.__setitem__, 0,1,3.14)
+
+    def testVectorStr(self):
+        "Test Epetra.SerialDenseVector __str__ method"
+        sdv = Epetra.SerialDenseVector(self.size)
+        out = "Data access mode: Copy\nA_Copied: yes\nLength(M): %d\n" % \
+              self.size + self.size * "0 " + "\n"
+        self.assertEquals(str(sdv), out)
+
+##########################################################################
+
+class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
+    "TestCase class for Epetra SerialDense Matrices"
+
+    def setUp(self):
+        self.comm = Epetra.PyComm()
+        self.size = 4
+        self.rows = 2
+        self.cols = 4
+
+    def tearDown(self):
+        self.comm.Barrier()
 
     def testMatrixDefaultConstructor(self):
         "Test Epetra.SerialDenseMatrix default constructor"
@@ -135,6 +173,42 @@ class EpetraSerialDenseTestCase(unittest.TestCase):
         #self.assertRaises(TypeError, sdm.__getitem__, 0,1,2)
         self.assertRaises(TypeError, sdm.__setitem__, 0,1,2,3.14)
 
+    def testMatrixPrint(self):
+        "Test Epetra.SerialDenseMatrix Print method"
+        n   = self.size
+        sdm = Epetra.SerialDenseMatrix(n,n)
+        filename = "testSerialDense%d.dat" % self.comm.MyPID()
+        f = open(filename, "w")
+        sdm.Print(f)
+        f.close()
+        out = "\nData access mode: Copy\nA_Copied: yes\nRows(M): %d\nColumns(N): %d\nLDA: %d\n" \
+              % (n,n,n) + (n * "0 " + "\n") * n
+        f = open(filename, "r")
+        self.assertEqual(f.read(), out)
+        f.close()
+
+    def testMatrixStr(self):
+        "Test Epetra.SerialDenseMatrix __str__ method"
+        n   = self.size
+        sdv = Epetra.SerialDenseMatrix(n,n)
+        out = "\nData access mode: Copy\nA_Copied: yes\nRows(M): %d\nColumns(N): %d\nLDA: %d\n" \
+              % (n,n,n) + (n * "0 " + "\n") * n
+        self.assertEquals(str(sdv), out)
+
+##########################################################################
+
+class EpetraSerialDenseSolverTestCase(unittest.TestCase):
+    "TestCase class for Epetra SerialDense Solvers"
+
+    def setUp(self):
+        self.comm = Epetra.PyComm()
+        self.size = 4
+        self.rows = 2
+        self.cols = 4
+
+    def tearDown(self):
+        self.comm.Barrier()
+
     def testSolver(self):
         "Test Epetra.SerialDenseSolver"
         size = self.size
@@ -163,12 +237,18 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
 
     # Add the test cases to the test suite
-    suite.addTest(unittest.makeSuite(EpetraSerialDenseTestCase))
+    suite.addTest(unittest.makeSuite(EpetraSerialDenseVectorTestCase))
+    suite.addTest(unittest.makeSuite(EpetraSerialDenseMatrixTestCase))
+    suite.addTest(unittest.makeSuite(EpetraSerialDenseSolverTestCase))
+
+    # Create a communicator
+    comm = Epetra.PyComm()
 
     # Run the test suite
-    print >>sys.stderr, \
-          "\n**************************\nTesting Epetra.SerialDense\n**************************\n"
-    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    if comm.MyPID() == 0: print >>sys.stderr, \
+       "\n**************************\nTesting Epetra.SerialDense\n**************************\n"
+    verbosity = 2 * int(comm.MyPID() == 0)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
     sys.exit(len(result.errors) + len(result.failures))

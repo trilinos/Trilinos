@@ -45,40 +45,56 @@ except ImportError:
 
 import os
 import unittest
-from   Numeric    import *
+from   Numeric  import *
 
 ##########################################################################
 
-class EpetraSerialCommTestCase(unittest.TestCase):
+class EpetraPyCommTestCase(unittest.TestCase):
     "TestCase class for SerialComm communicator objects"
 
     def setUp(self):
-        self.comm     = Epetra.SerialComm()
-        self.filename = os.path.splitext(os.path.split(__file__)[1])[0] + ".dat"
-        self.file     = open(self.filename, 'w')
+        self.comm  = Epetra.PyComm()
+        if self.comm.Label() == "Epetra::MpiComm":
+            self.commType = "MPI"
+            self.output   = "  Processor %d of %d total processors" % \
+                            (self.comm.MyPID(), self.comm.NumProc()) 
+        else:
+            self.commType = "Serial"
+            self.output   = "::Processor 0 of 1 total processors."
+        self.comm.Barrier()
 
     def tearDown(self):
-        self.file.close()
+        self.comm.Barrier()
 
     def testMyPID(self):
-        "Test Epetra.SerialComm MyPID method"
-        self.assertEqual(self.comm.MyPID()  , 0)
+        "Test Epetra.PyComm MyPID method"
+        pid = self.comm.MyPID()
+        if self.commType == "Serial":
+            self.assertEqual(pid, 0)
+        else:
+            self.assert_(pid >= 0)
 
     def testNumProc(self):
-        "Test Epetra.SerialComm NumProc method"
-        self.assertEqual(self.comm.NumProc(), 1)
+        "Test Epetra.PyComm NumProc method"
+        n = self.comm.NumProc()
+        if self.commType == "Serial":
+            self.assertEqual(n, 1)
+        else:
+            self.assert_(n > 0)
 
     def testStr(self):
-        "Test Epetra.SerialComm __str__ method"
-        self.assertEqual(str(self.comm), "::Processor 0 of 1 total processors.")
+        "Test Epetra.PyComm __str__ method"
+        self.assertEqual(str(self.comm), self.output)
 
     def testPrint(self):
-        "Test Epetra.SerialComm Print method"
-        self.comm.Print(self.file)
-        self.file.close()
-        ifile = open(self.filename,'r')
-        self.assertEqual(ifile.read(), "::Processor 0 of 1 total processors.")
-        ifile.close()
+        "Test Epetra.PyComm Print method"
+        filename = "testComm%d.dat" % self.comm.MyPID()
+        f = open(filename, "w")
+        self.comm.Print(f)
+        f.close()
+        f = open(filename, "r")
+        self.assertEqual(f.read(), self.output)
+        f.close()
 
 ##########################################################################
 
@@ -88,12 +104,16 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
 
     # Add the test cases to the test suite
-    suite.addTest(unittest.makeSuite(EpetraSerialCommTestCase ))
+    suite.addTest(unittest.makeSuite(EpetraPyCommTestCase ))
 
+    # Create a communicator
+    comm = Epetra.PyComm()
+        
     # Run the test suite
-    print >>sys.stderr, \
+    if comm.MyPID() == 0: print >>sys.stderr, \
           "\n*******************\nTesting Epetra.Comm\n*******************\n"
-    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    verbosity = 2 * int(comm.MyPID() == 0)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
     sys.exit(len(result.errors) + len(result.failures))

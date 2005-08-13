@@ -111,7 +111,9 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testDistributedGlobal(self):
         "Test Epetra.BlockMap DistributedGlobal method"
-        self.assertEqual(self.map.DistributedGlobal(), False)
+        distributedGlobal = (self.comm.Label() == "Epetra::MpiComm" and
+                             self.comm.NumProc() > 1)
+        self.assertEqual(self.map.DistributedGlobal(), distributedGlobal)
 
     def testMinAllGID(self):
         "Test Epetra.BlockMap MinAllGID method"
@@ -139,10 +141,38 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testIDs(self):
         "Test Epetra.BlockMap local and global IDs"
-        for i in range(self.map.NumMyElements()):
-            self.assertEqual(self.map.LID(i)  , i   )
-            self.assertEqual(self.map.MyGID(i), True)
-            self.assertEqual(self.map.MyLID(i), True)
+        myMinID = self.comm.MyPID() * self.numLocalEl
+        myMaxID = myMinID + self.numLocalEl - 1
+        for gid in range(self.map.NumGlobalElements()):
+            if myMinID <= gid and gid <= myMaxID:
+                lid = gid % self.numLocalEl
+            else:
+                lid = -1
+            self.assertEqual(self.map.LID(gid)  , lid        )
+            self.assertEqual(self.map.MyGID(gid), (lid != -1))
+            self.assertEqual(self.map.MyLID(lid), (lid != -1))
+
+    def testStr(self):
+        "Test Epetra.BlockMap __str__ method"
+        lines   = 7 + self.numLocalEl
+        if self.comm.MyPID() == 0: lines += 7
+        s = str(self.map)
+        s = s.splitlines()
+        self.assertEquals(len(s), lines)
+
+    def testPrint(self):
+        "Test Epetra.BlockMap Print method"
+        myPID = self.comm.MyPID()
+        filename = "testBlockMap%d.dat" % myPID
+        f = open(filename, "w")
+        self.map.Print(f)
+        f.close()
+        f = open(filename, "r")
+        s = f.readlines()
+        f.close()
+        lines = 7 + self.numLocalEl
+        if myPID == 0: lines += 7
+        self.assertEquals(len(s), lines)
 
 ##########################################################################
 

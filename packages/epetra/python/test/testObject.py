@@ -52,7 +52,12 @@ class EpetraObjectTestCase(unittest.TestCase):
     "TestCase for Epetra_Objects"
 
     def setUp(self):
+        self.comm   = Epetra.PyComm()
         self.object = Epetra.Object()
+        self.comm.Barrier()
+
+    def tearDown(self):
+        self.comm.Barrier()
 
     def testLabel(self):
         "Test Epetra.Object Label method"
@@ -84,10 +89,14 @@ if __name__ == "__main__":
     # Add the test cases to the test suite
     suite.addTest(unittest.makeSuite(EpetraObjectTestCase))
 
+    # Create a communicator
+    comm = Epetra.PyComm()
+
     # Run the test suite
-    print >>sys.stderr, \
+    if comm.MyPID() == 0: print >>sys.stderr, \
           "\n*********************\nTesting Epetra.Object\n*********************\n"
-    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    verbosity = 2 * int(comm.MyPID() == 0)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
     sys.exit(len(result.errors) + len(result.failures))

@@ -52,9 +52,12 @@ class EpetraCrsGraphTestCase(unittest.TestCase):
     "TestCase class for Epetra CrsGraphs"
 
     def setUp(self):
-        self.size = 11
-        self.comm = Epetra.SerialComm()
+        self.comm = Epetra.PyComm()
+        self.size = 11 * self.comm.NumProc()
         self.map  = Epetra.Map(self.size, 0, self.comm)
+
+    def tearDown(self):
+        self.comm.Barrier()
 
     def testConstructor1(self):
         "Test Epetra.CrsGraph constructor with fixed number of indices per row"
@@ -62,25 +65,33 @@ class EpetraCrsGraphTestCase(unittest.TestCase):
 
     def testInsertGlobalIndices(self):
         "Test Epetra.CrsGraph InsertGlobalIndices method"
+        n    = self.size
         crsg = Epetra.CrsGraph(Epetra.Copy, self.map, 3)
-        crsg.InsertGlobalIndices(0,2,array([0,1]))
-        for i in range(1,self.size-1):
-            crsg.InsertGlobalIndices(i,3,array([i-1,i,i+1]))
-        crsg.InsertGlobalIndices(self.size-1,2,array([self.size-2,self.size-1]))
+        for lrid in range(crsg.NumMyRows()):
+            grid = crsg.GRID(lrid)
+            if   grid == 0  : indices = [0,1]
+            elif grid == n-1: indices = [n-2,n-1]
+            else            : indices = [grid-1,grid,grid+1]
+            crsg.InsertGlobalIndices(grid,len(indices),indices)
+#        crsg.InsertGlobalIndices(0,2,array([0,1]))
+#        for i in range(1,n-1):
+#            crsg.InsertGlobalIndices(i,3,array([i-1,i,i+1]))
+#        crsg.InsertGlobalIndices(n-1,2,array([n-2,n-1]))
+        crsg.FillComplete()
 
-    def testInsertMyIndices(self):
-        "Test Epetra.CrsGraph InsertMyIndices method"
-        crsg = Epetra.CrsGraph(Epetra.Copy, self.map, 3)
-        # The following FillComplete() call creates a column map for crsg, which
-        # is required when using local indices
-        crsg.FillComplete()
-        self.assert_(crsg.InsertMyIndices(0,2,array([0,1])) >= 0)
-        for i in range(1,self.size-1):
-            self.assert_(crsg.InsertMyIndices(i,3,array([i-1,i,i+1])) >= 0)
-        self.assert_(crsg.InsertMyIndices(self.size-1,2,
-                                          array([self.size-2,self.size-1])) >= 0)
-        crsg.FillComplete()
-        print crsg
+#    def testInsertMyIndices(self):
+#        "Test Epetra.CrsGraph InsertMyIndices method"
+#        crsg = Epetra.CrsGraph(Epetra.Copy, self.map, 3)
+#        # The following FillComplete() call creates a column map for crsg, which
+#        # is required when using local indices
+#        crsg.FillComplete()
+#        self.assert_(crsg.InsertMyIndices(0,2,array([0,1])) >= 0)
+#        for i in range(1,self.size-1):
+#            self.assert_(crsg.InsertMyIndices(i,3,array([i-1,i,i+1])) >= 0)
+#        self.assert_(crsg.InsertMyIndices(self.size-1,2,
+#                                          array([self.size-2,self.size-1])) >= 0)
+#        crsg.FillComplete()
+#        print crsg
 
 ##########################################################################
 
@@ -92,10 +103,14 @@ if __name__ == "__main__":
     # Add the test cases to the test suite
     suite.addTest(unittest.makeSuite(EpetraCrsGraphTestCase))
 
+    # Create a communicator
+    comm = Epetra.PyComm()
+
     # Run the test suite
-    print >>sys.stderr, \
-          "\n***********************\nTesting Epetra.CrsGraph\n***********************\n"
-    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    if comm.MyPID() == 0: print >>sys.stderr, \
+       "\n***********************\nTesting Epetra.CrsGraph\n***********************\n"
+    verbosity = 2 * int(comm.MyPID() == 0)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
     sys.exit(len(result.errors) + len(result.failures))
