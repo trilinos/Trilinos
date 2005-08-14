@@ -55,7 +55,7 @@ class EpetraVector1DTestCase(unittest.TestCase):
         self.length     = 9
         self.scale      = 1.0 / (self.length-1)
         self.comm       = Epetra.PyComm()
-        self.map        = Epetra.Map(self.length,0,self.comm)
+        self.map        = Epetra.Map(self.length*self.comm.NumProc(),0,self.comm)
         self.numPyArray = arange(self.length) * self.scale
         
     def tearDown(self):
@@ -125,7 +125,7 @@ class EpetraVector2DTestCase(unittest.TestCase):
         self.length     = 3 * 3
         self.scale      = 1.0 / (self.length-1)
         self.comm       = Epetra.PyComm()
-        self.map        = Epetra.Map(self.length,0,self.comm)
+        self.map        = Epetra.Map(self.length*self.comm.NumProc(),0,self.comm)
         self.numPyArray = arange(self.length) * self.scale
         self.numPyArray.shape = (3,self.length/3)
 
@@ -191,7 +191,7 @@ class EpetraVector3DTestCase(unittest.TestCase):
         self.length     = ni * nj * nk
         self.scale      = 1.0 / (self.length-1)
         self.comm       = Epetra.PyComm()
-        self.map        = Epetra.Map(self.length,0,self.comm)
+        self.map        = Epetra.Map(self.length*self.comm.NumProc(),0,self.comm)
         self.numPyArray = arange(self.length) * self.scale
         self.numPyArray.shape = (ni,nj,nk)
 
