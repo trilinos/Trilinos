@@ -54,10 +54,13 @@ class EpetraVector1DTestCase(unittest.TestCase):
     def setUp(self):
         self.length     = 9
         self.scale      = 1.0 / (self.length-1)
-        self.comm       = Epetra.SerialComm()
+        self.comm       = Epetra.PyComm()
         self.map        = Epetra.Map(self.length,0,self.comm)
         self.numPyArray = arange(self.length) * self.scale
         
+    def tearDown(self):
+        self.comm.Barrier()
+
     def testBlockMap(self):
         "Test Epetra.Vector 1D BlockMap constructor"
         epetraVector = Epetra.Vector(self.map)
@@ -106,9 +109,9 @@ class EpetraVector1DTestCase(unittest.TestCase):
         self.assertEqual(norm, 10.0)
 
     def testDot(self):
-        "Test Epetra.Vector 1D Dot() method"
-        epetraVector1 = Epetra.Vector([-1,2,-3,4])
-        epetraVector2 = Epetra.Vector([5,1,-8,-7])
+        "Test Epetra.Vector 1D Dot method"
+        epetraVector1 = Epetra.Vector([-1, 2,-3, 4])
+        epetraVector2 = Epetra.Vector([ 5, 1,-8,-7])
         (status,dot)  = epetraVector1.Dot(epetraVector2)
         self.assertEqual(status, 0)
         self.assertEqual(dot,   -7)
@@ -121,11 +124,14 @@ class EpetraVector2DTestCase(unittest.TestCase):
     def setUp(self):
         self.length     = 3 * 3
         self.scale      = 1.0 / (self.length-1)
-        self.comm       = Epetra.SerialComm()
+        self.comm       = Epetra.PyComm()
         self.map        = Epetra.Map(self.length,0,self.comm)
         self.numPyArray = arange(self.length) * self.scale
         self.numPyArray.shape = (3,self.length/3)
-        
+
+    def tearDown(self):
+        self.comm.Barrier()
+
     def testBlockMap(self):
         "Test Epetra.Vector 2D BlockMap constructor"
         epetraVector = Epetra.Vector(self.map)
@@ -184,10 +190,13 @@ class EpetraVector3DTestCase(unittest.TestCase):
         (ni,nj,nk)      = (2,3,4)
         self.length     = ni * nj * nk
         self.scale      = 1.0 / (self.length-1)
-        self.comm       = Epetra.SerialComm()
+        self.comm       = Epetra.PyComm()
         self.map        = Epetra.Map(self.length,0,self.comm)
         self.numPyArray = arange(self.length) * self.scale
         self.numPyArray.shape = (ni,nj,nk)
+
+    def tearDown(self):
+        self.comm.Barrier()
 
     def testBlockMap(self):
         "Test Epetra.Vector 3D BlockMap constructor"
@@ -278,10 +287,14 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(EpetraVector2DTestCase))
     suite.addTest(unittest.makeSuite(EpetraVector3DTestCase))
 
+    # Create a communicator
+    comm = Epetra.PyComm()
+
     # Run the test suite
-    print >>sys.stderr, \
-          "\n*********************\nTesting Epetra.Vector\n*********************\n"
-    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    if comm.MyPID() == 0: print >>sys.stderr, \
+       "\n*********************\nTesting Epetra.Vector\n*********************\n"
+    verbosity = 2 * int(comm.MyPID() == 0)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
     sys.exit(len(result.errors) + len(result.failures))
