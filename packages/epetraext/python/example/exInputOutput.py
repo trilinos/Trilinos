@@ -1,72 +1,82 @@
 #! /usr/bin/env python
 
+import sys
+
 try:
   import setpath
   import Epetra, EpetraExt
 except ImportError:
-  try:
     from PyTrilinos import Epetra, EpetraExt
-  except ImportError:
-    raise ImportError, "error w/ Epetra or EpetraExt"
+    print >>sys.stderr, "Using system-installed Epetra, EptraExt"
 
-Comm = Epetra.PyComm()
-n = 10
-Map = Epetra.Map(10, 0, Comm)
-X = Epetra.Vector(Map)
-X.Random()
+def main():
 
-# ==================================================== #
-# write vector X on file "x.mm" in MatrixMarket format #
-# read "map.mm", put it in Map2, then check that Map2  #
-# equals Map.                                          #
-# ==================================================== #
+  # Construct a vector x and populate with random values
+  comm = Epetra.PyComm()
+  n    = 10 * comm.NumProc()
+  map  = Epetra.Map(n, 0, comm)
+  x    = Epetra.Vector(map)
+  x.Random()
 
-EpetraExt.BlockMapToMatrixMarketFile("map.mm", Map)
+  # ==================================================== #
+  # Write map to file "map.mm" in MatrixMarket format,   #
+  # read "map.mm" into map2, then check that map2 equals #
+  # map.                                                 #
+  # ==================================================== #
 
-(ierr, Map2) = EpetraExt.MatrixMarketFileToBlockMap("map.mm", Comm)
+  if comm.MyPID() == 0: print "I/O for BlockMap ... ",
+  EpetraExt.BlockMapToMatrixMarketFile("map.mm", map)
+  (ierr, map2) = EpetraExt.MatrixMarketFileToBlockMap("map.mm", comm)
+  if map2.SameAs(map):
+    if comm.MyPID() == 0: print "ok"
+  else:
+    if comm.MyPID() == 0: print "FAILED"
+    sys.exit(1)
 
-if Map2.SameAs(Map):
-  print "I/O for BlockMap worked!"
-else:
-  print "I/O for BlockMap failed!"
+  # ===================================================== #
+  # Write vector x to file "x.mm" in MatrixMarket format, #
+  # read "x.mm" into y, then check that y equals x        #
+  # ===================================================== #
 
-# ==================================================== #
-# write vector X on file "x.mm" in MatrixMarket format #
-# read "x.mm", put it in Y, then check that Y equals X #
-# ==================================================== #
+  if comm.MyPID() == 0: print "I/O for MultiVector ... ",
+  EpetraExt.MultiVectorToMatrixMarketFile("x.mm", x)
+  (ierr, y) = EpetraExt.MatrixMarketFileToMultiVector("x.mm", map)
+  y.Update(1.0, x, -1.0)
+  (ierr,norm) = y.Norm2()
 
-EpetraExt.MultiVectorToMatrixMarketFile("x.mm", X)
+  if abs(norm) < 1.0e-12:
+    if comm.MyPID() == 0: print "ok"
+  else:
+    if comm.MyPID() == 0: print "FAILED"
+    sys.exit(1)
 
-(ierr, Y) = EpetraExt.MatrixMarketFileToMultiVector("x.mm", Map)
-Y.Update(1.0, X, -1.0)
+  # ===================================================== #
+  # Creates a simple CrsMatrix (diagonal) and             #
+  # write matrix A to file "A.mm" in MatrixMarket format, #
+  # read "A.mm" into B, then check that B equals A        #
+  # ===================================================== #
 
-if Y.Norm2()[1] == 0.0:
-  print "I/O for MultiVector worked!"
-else:
-  print "I/O for MultiVector failed!"
+  if comm.MyPID() == 0: print "I/O for CrsMatrix ... ",
+  A       = Epetra.CrsMatrix(Epetra.Copy, map, 0)
+  Indices = Epetra.IntSerialDenseVector(1)
+  Values  = Epetra.SerialDenseVector(1)
+  for lrid in range(A.NumMyRows()):
+    grid = A.GRID(lrid)
+    Indices[0] = grid
+    Values[0]  = grid
+    A.InsertGlobalValues(grid, 1, Values, Indices)
+  A.FillComplete()
+  EpetraExt.RowMatrixToMatrixMarketFile("A.mm", A)
+  (ierr, B) = EpetraExt.MatrixMarketFileToCrsMatrix("A.mm", map)
+  EpetraExt.Add(A, False, 1.0, B, -1.0)
+  norm = B.NormInf()
 
-# ==================================================== #
-# creates a simple CrsMatrix (diagonal)                #
-# write matrix A on file "A.mm" in MatrixMarket format #
-# read "A.mm", put it in B, then check that B equals A #
-# ==================================================== #
+  if abs(norm) < 1.0e-12:
+    if comm.MyPID() == 0: print "ok"
+  else:
+    if comm.MyPID() == 0: print "FAILED"
+    sys.exit(1)
 
-A = Epetra.CrsMatrix(Epetra.Copy, Map, 0);
-Indices = Epetra.IntSerialDenseVector(1);
-Values = Epetra.SerialDenseVector(1);
 
-for i in range(0, n):
-  Indices[0] = i
-  Values[0]  = i
-  A.InsertGlobalValues(i, 1, Values, Indices)
-A.FillComplete()
-
-EpetraExt.RowMatrixToMatrixMarketFile("A.mm", A)
-
-(ierr, B) = EpetraExt.MatrixMarketFileToCrsMatrix("A.mm", Map)
-EpetraExt.Add(A, False, 1.0, B, -1.0)
-
-if B.NormInf() == 0.0:
-  print "I/O for CrsMatrix worked!"
-else:
-  print "I/O for CrsMatrix failed!"
+if __name__ == "__main__":
+  main()
