@@ -428,10 +428,53 @@ namespace Anasazi {
     // S = Local eigenvectors                    (size: dimSearch x dimSearch)
     //
     Teuchos::SerialDenseMatrix<int,ScalarType> KK( _dimSearch, _dimSearch ), S( _dimSearch, _dimSearch );
+
     //
     // Initialize the workspace.
     //
-    MVT::MvRandom( *X );
+    {
+      // view vector into the basis
+      Teuchos::RefCountPtr<MV> tmpXinit;
+      // index vector
+      std::vector<int> index;
+
+      //
+      // Determine how many init vectors were specified by the user
+      //
+      int numIVecs = MVT::GetNumberVecs( *iVec );
+      if (numIVecs > _blockSize) {
+        numIVecs = _blockSize;
+      }
+
+      //
+      // Get a view into the basis
+      //
+      index.resize( numIVecs );
+      for (i=0; i<numIVecs; i++) {
+        index[i] = i;
+      }
+      tmpXinit = MVT::CloneView( *X, index );
+
+      //
+      // Copy the first numIVecs of the initial vectors into the first
+      // numIVecs vectors of the basis (any additional vectors in iVec are ignored)
+      //
+      MVT::SetBlock( *iVec, index, *tmpXinit );
+
+      //
+      // Augment the initial vectors with random vectors if necessary
+      //
+      int leftOver = _blockSize - numIVecs;
+      if (leftOver > 0) {
+        index.resize(leftOver);
+        for (i=0; i<leftOver; i++) {
+          index[i] = numIVecs + i;
+        }
+        tmpXinit = MVT::CloneView( *X, index );
+        MVT::MvRandom( *tmpXinit );
+      }
+    }
+
     //
     // Determine the maximum number of blocks for this factorization.
     // ( NOTE:  This will be the _numBlocks since we don't know about already converged vectors here )
