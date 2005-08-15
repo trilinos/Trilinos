@@ -11,6 +11,9 @@ except ImportError:
 
 def main():
 
+  failures = 0
+  tolerance = 1.0e-12
+
   # Construct a vector x and populate with random values
   comm = Epetra.PyComm()
   n    = 10 * comm.NumProc()
@@ -31,7 +34,7 @@ def main():
     if comm.MyPID() == 0: print "ok"
   else:
     if comm.MyPID() == 0: print "FAILED"
-    sys.exit(1)
+    failures += 1
 
   # ===================================================== #
   # Write vector x to file "x.mm" in MatrixMarket format, #
@@ -44,11 +47,11 @@ def main():
   y.Update(1.0, x, -1.0)
   (ierr,norm) = y.Norm2()
 
-  if abs(norm) < 1.0e-12:
+  if abs(norm) < tolerance:
     if comm.MyPID() == 0: print "ok"
   else:
     if comm.MyPID() == 0: print "FAILED"
-    sys.exit(1)
+    failures += 1
 
   # ===================================================== #
   # Creates a simple CrsMatrix (diagonal) and             #
@@ -71,12 +74,16 @@ def main():
   EpetraExt.Add(A, False, 1.0, B, -1.0)
   norm = B.NormInf()
 
-  if abs(norm) < 1.0e-12:
+  if abs(norm) < tolerance:
     if comm.MyPID() == 0: print "ok"
   else:
     if comm.MyPID() == 0: print "FAILED"
-    sys.exit(1)
+    failures += 1
 
+  return failures
+
+################################################################
 
 if __name__ == "__main__":
-  main()
+  failures = main()
+  sys.exit(failures)
