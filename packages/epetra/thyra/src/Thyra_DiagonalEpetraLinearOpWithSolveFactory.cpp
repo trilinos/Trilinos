@@ -44,8 +44,8 @@ bool DiagonalEpetraLinearOpWithSolveFactory::isCompatible(
   const LinearOpBase<double> &fwdOp
   ) const
 {
-  const EpetraLinearOp *eFwdOp = NULL;
-  if( ! (eFwdOp = dynamic_cast<const EpetraLinearOp*>(&fwdOp)) )
+  const EpetraLinearOpBase *eFwdOp = NULL;
+  if( ! (eFwdOp = dynamic_cast<const EpetraLinearOpBase*>(&fwdOp)) )
     return false;
   if( !dynamic_cast<const Epetra_RowMatrix*>(&*eFwdOp->epetra_op()) )
     return false;
@@ -64,7 +64,7 @@ void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
   ) const
 {
   TEST_FOR_EXCEPT(Op==NULL);
-  const EpetraLinearOp   &eFwdOp = Teuchos::dyn_cast<const EpetraLinearOp>(*fwdOp);
+  const EpetraLinearOpBase   &eFwdOp = Teuchos::dyn_cast<const EpetraLinearOpBase>(*fwdOp);
   const Epetra_RowMatrix &eRMOp  = Teuchos::dyn_cast<const Epetra_RowMatrix>(*(eFwdOp.epetra_op()));
   const Epetra_Map &map = eRMOp.OperatorDomainMap();
   Teuchos::RefCountPtr<Epetra_Vector>

@@ -29,8 +29,7 @@
 #ifndef THYRA_EPETRA_LINEAR_OP_HPP
 #define THYRA_EPETRA_LINEAR_OP_HPP
 
-#include "Thyra_EpetraTypes.hpp"
-#include "Thyra_SingleScalarEuclideanLinearOpBase.hpp"
+#include "Thyra_EpetraLinearOpBase.hpp"
 #include "Thyra_MPIVectorSpaceBase.hpp"
 
 namespace Thyra {
@@ -47,7 +46,7 @@ namespace Thyra {
  *
  * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
-class EpetraLinearOp : public SingleScalarEuclideanLinearOpBase<RTOp_value_type> {
+class EpetraLinearOp : virtual public EpetraLinearOpBase {
 public:
 
   /** \brief . */
@@ -162,17 +161,20 @@ public:
 	 */
 	Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> > mpiDomain() const;
 
-  /** \brief Return a smart pointer to the non-<tt>const</tt> <tt>Epetra_Operator</tt> object.
-	 */
+  //@}
+
+	/** @name Overridden from EpetraLinearOpBase */
+	//@{
+
+	/** \brief . */
 	Teuchos::RefCountPtr<Epetra_Operator> epetra_op();
 
-  /** \brief Return a smart pointer to the <tt>const</tt> <tt>Epetra_Operator</tt> object.
-	 */
+	/** \brief . */
 	Teuchos::RefCountPtr<const Epetra_Operator> epetra_op() const;
 
 	//@}
-	
-	/** @name Overridden from OpBase */
+
+	/** @name Overridden from SingleScalarLinearOpBase */
 	//@{
 
 	/** \brief . */

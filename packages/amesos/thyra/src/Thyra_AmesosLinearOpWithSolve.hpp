@@ -57,15 +57,17 @@ public:
 
   /** \brief Calls <tt>this->initialize()</tt>. */
   AmesosLinearOpWithSolve(
-    const Teuchos::RefCountPtr<const EpetraLinearOpBase>    &epetraFwdOp
-    ,const Teuchos::RefCountPtr<Epetra_LinearProblem>       &epetraLP
-    ,const Teuchos::RefCountPtr<Amesos_BaseSolver>          &amesosSolver
+    const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
+    ,const Teuchos::RefCountPtr<Epetra_LinearProblem>          &epetraLP
+    ,const Teuchos::RefCountPtr<Amesos_BaseSolver>             &amesosSolver
+    ,const ETransp                                             amesosSolverTransp
+    ,const double                                              amesosSolverScalar
     );
 
   /** \brief First initialization.
    *
-   * \param  epetraFwdOp   [in] The forward operator for which the factorization
-   *                    exists.
+   * \param  fwdOp
+   *                    [in] The forward operator for which the factorization exists.
    * \param  epetraLP   [in] The <tt>Epetra_LinearProblem</tt> object that was
    *                    used to create the <tt>Amesos_BaseSolver</tt> object
    *                    <tt>*amesosSolver</tt>.  Note that the RHS and the LHS
@@ -73,57 +75,64 @@ public:
    *                    here.
    * \param  amesosSolver
    *                    [in] Contains the factored, and ready to go, <tt>Amesos_BaseSolver</tt>
-   *                    object ready to solve linear system
-   *
+   *                    object ready to solve linear system.
+   * \param  amesosSolverTransp
+   *                    [in] Determines if the %Amesos solver should be used as its transpose or not.
+   * \param  amesosSolverScalar
+   *                    [in] Determines the scaling factor associated with the %Amesos solver.  The solution
+   *                    to the linear solve is scaled by <tt>1/amesosSolverScalar</tt>.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>epetraFwdOp.get()!=NULL</tt>
+   * <li><tt>fwdOp.get()!=NULL</tt>
    * <li><tt>epetraLP.get()!=NULL</tt>
    * <li><tt>amesosSolver.get()!=NULL</tt>
-   * <li><tt>epetraLP->GetOperator()==epetraFwdOp->epetra_op().get()</tt>
+   * <li><tt>*epetraLP->GetOperator()</tt> is compatible with <tt>*fwdOp</tt>
    * <li><tt>epetraLP->GetLHS()==NULL</tt>
    * <li><tt>epetraLP->GetRHS()==NULL</tt>
-   * <li><tt>*amesosSolver</tt> contains the factorization of <tt>*epetraFwdOp</tt> and is
+   * <li><tt>*amesosSolver</tt> contains the factorization of <tt>*fwdOp</tt> and is
    *     ready to solve linear systems!
    * </ul>
    * 
    * <b>Postconditions:</b><ul>
-   * <li><tt>this->get_epetraFwdOp().get() == epetraFwdOp.get()</tt>
+   * <li><tt>this->get_fwdOp().get() == fwdOp.get()</tt>
    * <li><tt>this->get_epetraLP().get() == epetraLP.get()</tt>
    * <li><tt>this->get_amesosSolver().get() == amesosSolver.get()</tt>
+   * <li><tt>this->get_amesosSolverTransp() == amesosSolverTransp</tt>
+   * <li><tt>this->get_amesosSolverScalar() == amesosSolverScalar</tt>
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const EpetraLinearOpBase>    &epetraFwdOp
-    ,const Teuchos::RefCountPtr<Epetra_LinearProblem>       &epetraLP
-    ,const Teuchos::RefCountPtr<Amesos_BaseSolver>          &amesosSolver
+    const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
+    ,const Teuchos::RefCountPtr<Epetra_LinearProblem>          &epetraLP
+    ,const Teuchos::RefCountPtr<Amesos_BaseSolver>             &amesosSolver
+    ,const ETransp                                             amesosSolverTransp
+    ,const double                                              amesosSolverScalar
     );
 
-  /** \brief Extract the <tt>EpetraLinearOpBase</tt> object so that it can be modified.
+  /** \brief Extract the <tt>LinearOpBase<double></tt> object so that it can be modified.
    * 
    * <b>Postconditions:</b><ul>
-   * <li><tt>return.get()</tt> is the same as <tt>this->get_epetraFwdOp().get()</tt> before call.
-   * <li><tt><tt>this->get_epetraFwdOp().get()==NULL</tt>
+   * <li><tt>return.get()</tt> is the same as <tt>this->get_fwdOp().get()</tt> before call.
+   * <li><tt><tt>this->get_fwdOp().get()==NULL</tt>
    * </ul>
    */
-  Teuchos::RefCountPtr<const EpetraLinearOpBase> extract_epetraFwdOp();
+  Teuchos::RefCountPtr<const LinearOpBase<double> > extract_fwdOp();
 
-  /** \brief Reset an extracted and modified <tt>EpetraLinearOpBase</tt> object.
+  /** \brief Reset an extracted and modified <tt>LinearOpBase<double></tt> object.
    * 
    * <b>Preconditions:</b><ul>
-   * <li><tt>epetraFwdOp.get()!=NULL</tt>
-   * <li><tt>this->get_epetraLP()->GetOperator() == epetraFwdOp->epetra_op().get()</tt>
+   * <li><tt>fwdOp.get()!=NULL</tt>
+   * <li><tt>*this->get_epetraLP()->GetOperator()</tt> is compatible with <tt>*fwdOp</tt>
    * </ul>
    *
    * <b>Postconditions:</b><ul>
-   * <li><tt>return.get()</tt> is the same as <tt>this->get_epetraFwdOp().get()</tt> before call.
-   * <li><tt><tt>this->get_epetraFwdOp().get()==NULL</tt>
+   * <li><tt><tt>this->get_fwdOp().get()==NULL</tt>
    * </ul>
    */
-  void reset_epetraFwdOp( const Teuchos::RefCountPtr<const EpetraLinearOpBase> &epetraFwdOp );
+  void reset_fwdOp( const Teuchos::RefCountPtr<const LinearOpBase<double> > &fwdOp );
 
   /** \brief . */
-  Teuchos::RefCountPtr<const EpetraLinearOpBase> get_epetraFwdOp() const;
+  Teuchos::RefCountPtr<const LinearOpBase<double> > get_fwdOp() const;
 
   /** \brief . */
   Teuchos::RefCountPtr<Epetra_LinearProblem> get_epetraLP() const;
@@ -131,12 +140,20 @@ public:
   /** \brief . */
   Teuchos::RefCountPtr<Amesos_BaseSolver> get_amesosSolver() const;
 
+  /** \brief . */
+  ETransp get_amesosSolverTransp() const;
+
+  /** \brief . */
+  double get_amesosSolverScalar() const;
+
   /** \brief Uninitialize.
    */
   void uninitialize(
-    Teuchos::RefCountPtr<const EpetraLinearOpBase>    *epetraFwdOp   = NULL
-    ,Teuchos::RefCountPtr<Epetra_LinearProblem>       *epetraLP      = NULL
-    ,Teuchos::RefCountPtr<Amesos_BaseSolver>          *amesosSolver  = NULL
+    Teuchos::RefCountPtr<const LinearOpBase<double> >    *fwdOp              = NULL
+    ,Teuchos::RefCountPtr<Epetra_LinearProblem>          *epetraLP           = NULL
+    ,Teuchos::RefCountPtr<Amesos_BaseSolver>             *amesosSolver       = NULL
+    ,ETransp                                             *amesosSolverTransp = NULL
+    ,double                                              *amesosSolverScalar = NULL
     );
   
   //@}
@@ -192,9 +209,11 @@ protected:
 
 private:
 
-  Teuchos::RefCountPtr<const EpetraLinearOpBase>  epetraFwdOp_;
-  Teuchos::RefCountPtr<Epetra_LinearProblem>      epetraLP_;
-  Teuchos::RefCountPtr<Amesos_BaseSolver>         amesosSolver_;
+  Teuchos::RefCountPtr<const LinearOpBase<double> >   fwdOp_;
+  Teuchos::RefCountPtr<Epetra_LinearProblem>          epetraLP_;
+  Teuchos::RefCountPtr<Amesos_BaseSolver>             amesosSolver_;
+  ETransp                                             amesosSolverTransp_;
+  double                                              amesosSolverScalar_;
 
   void assertInitialized() const;
 
@@ -204,10 +223,10 @@ private:
 // Inline members
 
 inline
-Teuchos::RefCountPtr<const EpetraLinearOpBase>
-AmesosLinearOpWithSolve::get_epetraFwdOp() const
+Teuchos::RefCountPtr<const LinearOpBase<double> >
+AmesosLinearOpWithSolve::get_fwdOp() const
 {
-  return epetraFwdOp_;
+  return fwdOp_;
 }
 
 inline
@@ -222,6 +241,18 @@ Teuchos::RefCountPtr<Amesos_BaseSolver>
 AmesosLinearOpWithSolve::get_amesosSolver() const
 {
   return amesosSolver_;
+}
+
+inline
+ETransp AmesosLinearOpWithSolve::get_amesosSolverTransp() const
+{
+  return amesosSolverTransp_;
+}
+
+inline
+double AmesosLinearOpWithSolve::get_amesosSolverScalar() const
+{
+  return amesosSolverScalar_;
 }
 
 } // namespace Thyra

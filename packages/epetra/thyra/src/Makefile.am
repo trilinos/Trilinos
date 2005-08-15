@@ -44,6 +44,7 @@
 SOURCE_H = \
 	$(srcdir)/Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp \
 	$(srcdir)/Thyra_EpetraTypes.hpp \
+	$(srcdir)/Thyra_EpetraLinearOpBase.hpp \
 	$(srcdir)/Thyra_EpetraLinearOp.hpp \
 	$(srcdir)/Thyra_EpetraThyraWrappers.hpp \
 	$(srcdir)/Thyra_get_Epetra_Operator.hpp

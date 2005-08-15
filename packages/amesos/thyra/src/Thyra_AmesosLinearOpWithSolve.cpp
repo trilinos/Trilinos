@@ -40,63 +40,71 @@ AmesosLinearOpWithSolve::AmesosLinearOpWithSolve()
 {}
 
 AmesosLinearOpWithSolve::AmesosLinearOpWithSolve(
-  const Teuchos::RefCountPtr<const EpetraLinearOpBase>    &epetraFwdOp
-  ,const Teuchos::RefCountPtr<Epetra_LinearProblem>       &epetraLP
-  ,const Teuchos::RefCountPtr<Amesos_BaseSolver>          &amesosSolver
+  const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
+  ,const Teuchos::RefCountPtr<Epetra_LinearProblem>          &epetraLP
+  ,const Teuchos::RefCountPtr<Amesos_BaseSolver>             &amesosSolver
+  ,const ETransp                                             amesosSolverTransp
+  ,const double                                              amesosSolverScalar
   )
 {
-  this->initialize(epetraFwdOp,epetraLP,amesosSolver);
+  this->initialize(fwdOp,epetraLP,amesosSolver,amesosSolverTransp,amesosSolverScalar);
 }
 
 void AmesosLinearOpWithSolve::initialize(
-  const Teuchos::RefCountPtr<const EpetraLinearOpBase>    &epetraFwdOp
-  ,const Teuchos::RefCountPtr<Epetra_LinearProblem>       &epetraLP
-  ,const Teuchos::RefCountPtr<Amesos_BaseSolver>          &amesosSolver
+  const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
+  ,const Teuchos::RefCountPtr<Epetra_LinearProblem>          &epetraLP
+  ,const Teuchos::RefCountPtr<Amesos_BaseSolver>             &amesosSolver
+  ,const ETransp                                             amesosSolverTransp
+  ,const double                                              amesosSolverScalar
   )
 {
 #ifdef _DEBUG
-  TEST_FOR_EXCEPT(epetraFwdOp.get()==NULL);
+  TEST_FOR_EXCEPT(fwdOp.get()==NULL);
   TEST_FOR_EXCEPT(epetraLP.get()==NULL);
   TEST_FOR_EXCEPT(amesosSolver.get()==NULL);
-  TEST_FOR_EXCEPT(epetraLP->GetOperator()!=epetraFwdOp->epetra_op().get());
   TEST_FOR_EXCEPT(epetraLP->GetLHS()!=NULL);
   TEST_FOR_EXCEPT(epetraLP->GetRHS()!=NULL);
 #endif
-  epetraFwdOp_  = epetraFwdOp;
-  epetraLP_     = epetraLP;
-  amesosSolver_ = amesosSolver;
+  fwdOp_              = fwdOp;
+  epetraLP_           = epetraLP;
+  amesosSolver_       = amesosSolver;
+  amesosSolverTransp_ = amesosSolverTransp;
+  amesosSolverScalar_ = amesosSolverScalar;
 }
 
-Teuchos::RefCountPtr<const EpetraLinearOpBase>
-AmesosLinearOpWithSolve::extract_epetraFwdOp()
+Teuchos::RefCountPtr<const LinearOpBase<double> >
+AmesosLinearOpWithSolve::extract_fwdOp()
 {
-  Teuchos::RefCountPtr<const EpetraLinearOpBase> _epetraFwdOp = epetraFwdOp_;
-  epetraFwdOp_ = Teuchos::null;
-  return _epetraFwdOp;
+  Teuchos::RefCountPtr<const LinearOpBase<double> > _fwdOp = fwdOp_;
+  fwdOp_ = Teuchos::null;
+  return _fwdOp;
 }
 
-void AmesosLinearOpWithSolve::reset_epetraFwdOp( const Teuchos::RefCountPtr<const EpetraLinearOpBase> &epetraFwdOp )
+void AmesosLinearOpWithSolve::reset_fwdOp( const Teuchos::RefCountPtr<const LinearOpBase<double> > &fwdOp )
 {
-#ifdef _DEBUG
-  TEST_FOR_EXCEPT(get_epetraLP()->GetOperator()!=epetraFwdOp->epetra_op().get());
-#endif
-  epetraFwdOp_ = epetraFwdOp;
+  fwdOp_ = fwdOp;
 }
 
 void AmesosLinearOpWithSolve::uninitialize(
-  Teuchos::RefCountPtr<const EpetraLinearOpBase>    *epetraFwdOp
-  ,Teuchos::RefCountPtr<Epetra_LinearProblem>       *epetraLP
-  ,Teuchos::RefCountPtr<Amesos_BaseSolver>          *amesosSolver
+  Teuchos::RefCountPtr<const LinearOpBase<double> >    *fwdOp
+  ,Teuchos::RefCountPtr<Epetra_LinearProblem>          *epetraLP
+  ,Teuchos::RefCountPtr<Amesos_BaseSolver>             *amesosSolver
+  ,ETransp                                             *amesosSolverTransp
+  ,double                                              *amesosSolverScalar
   )
 {
 
-  if(epetraFwdOp)  *epetraFwdOp  = epetraFwdOp_;
-  if(epetraLP)     *epetraLP     = epetraLP_;
-  if(amesosSolver) *amesosSolver = amesosSolver_;
+  if(fwdOp)              *fwdOp              = fwdOp_;
+  if(epetraLP)           *epetraLP           = epetraLP_;
+  if(amesosSolver)       *amesosSolver       = amesosSolver_;
+  if(amesosSolverTransp) *amesosSolverTransp = amesosSolverTransp_;
+  if(amesosSolverScalar) *amesosSolverScalar = amesosSolverScalar_;
 
-  epetraFwdOp_  = Teuchos::null;
-  epetraLP_     = Teuchos::null;
-  amesosSolver_ = Teuchos::null;
+  fwdOp_              = Teuchos::null;
+  epetraLP_           = Teuchos::null;
+  amesosSolver_       = Teuchos::null;
+  amesosSolverTransp_ = NOTRANS;
+  amesosSolverScalar_ = 0.0;
 
 }
 
@@ -105,13 +113,13 @@ void AmesosLinearOpWithSolve::uninitialize(
 Teuchos::RefCountPtr< const VectorSpaceBase<double> >
 AmesosLinearOpWithSolve::range() const
 {
-  return epetraFwdOp_->range();
+  return ( fwdOp_.get() ? fwdOp_->range() : Teuchos::null );
 }
 
 Teuchos::RefCountPtr< const VectorSpaceBase<double> >
 AmesosLinearOpWithSolve::domain() const
 {
-  return epetraFwdOp_->domain();
+  return  ( fwdOp_.get() ? fwdOp_->domain() : Teuchos::null );
 }
 
 Teuchos::RefCountPtr<const LinearOpBase<double> >
@@ -127,7 +135,7 @@ std::string AmesosLinearOpWithSolve::description() const
   std::ostringstream oss;
   oss << "Thyra::AmesosLinearOpWithSolve";
   if(amesosSolver_.get()) {
-    oss << "(epetraFwdOp=\'"<<typeid(*epetraFwdOp_->epetra_op()).name()<<"\'"
+    oss << "(fwdOp=\'"<<fwdOp_->description()<<"\'"
         << ",amesosSolver=\'"<<typeid(*amesosSolver_).name()<<"\')";
   }
   return oss.str();
@@ -150,7 +158,7 @@ void AmesosLinearOpWithSolve::apply(
   ,const double                     beta
   ) const
 {
-  Thyra::apply( *epetraFwdOp_, M_trans, X, Y, alpha, beta );
+  Thyra::apply( *fwdOp_, M_trans, X, Y, alpha, beta );
 }
 
 // Overridden from SingleScalarLinearOpWithSolveBase
@@ -185,13 +193,11 @@ void AmesosLinearOpWithSolve::solve(
   //
   // Get the op(...) range and domain maps
   //
+  const ETransp amesosOpTransp = real_trans(trans_trans(amesosSolverTransp_,M_trans));
+  const Epetra_Operator *amesosOp = epetraLP_->GetOperator();
   const Epetra_Map
-    &opRangeMap  = ( real_trans(M_trans) == NOTRANS
-                     ? epetraFwdOp_->epetra_op()->OperatorRangeMap()
-                     : epetraFwdOp_->epetra_op()->OperatorDomainMap() ),
-    &opDomainMap = ( real_trans(M_trans) == NOTRANS
-                     ? epetraFwdOp_->epetra_op()->OperatorDomainMap()
-                     : epetraFwdOp_->epetra_op()->OperatorRangeMap() );
+    &opRangeMap  = ( amesosOpTransp == NOTRANS ? amesosOp->OperatorRangeMap()  : amesosOp->OperatorDomainMap() ),
+    &opDomainMap = ( amesosOpTransp == NOTRANS ? amesosOp->OperatorDomainMap() : amesosOp->OperatorRangeMap()  );
   //
   // Get Epetra_MultiVector views of B and X
   //
@@ -208,17 +214,24 @@ void AmesosLinearOpWithSolve::solve(
   // Solve the linear system
   //
   const bool oldUseTranspose = amesosSolver_->UseTranspose();
-  amesosSolver_->SetUseTranspose(real_trans(M_trans)==TRANS);
+  amesosSolver_->SetUseTranspose(amesosOpTransp==TRANS);
   TEST_FOR_EXCEPTION(
     0!=amesosSolver_->Solve(), CatastrophicSolveFailure
     ,"Error, the Amesos solver of type \'"<<typeid(*amesosSolver_).name()<<"\' could not perform the solve!"
     );
   amesosSolver_->SetUseTranspose(oldUseTranspose);
   //
-  // Unset B and X in the linear problem
+  // Unset B and X
   //
   epetraLP_->SetLHS(NULL);
   epetraLP_->SetRHS(NULL);
+  epetra_X = Teuchos::null;
+  epetra_B = Teuchos::null;
+  //
+  // Scale X if needed
+  //
+  if(amesosSolverScalar_!=1.0)
+    Thyra::scale(1.0/amesosSolverScalar_,X);
   //
   // Set the solve status if requested
   //

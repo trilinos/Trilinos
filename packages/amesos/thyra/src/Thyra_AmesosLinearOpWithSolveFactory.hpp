@@ -41,7 +41,16 @@ namespace Thyra {
 
 /** \brief Concrete <tt>LinearOpWithSolveFactoryBase</tt> adapter subclass that uses
  * Amesos direct solvers.
- * 
+ *
+ * <b>Development notes:</b> This class has been designed to allow for "smart"
+ * <tt>EpetraLinearOpBase</tt> subclasses that can create an
+ * <tt>Epetra_Operator</tt> view on command.  However, the current
+ * implementation of at least some of the <tt>Amesos_BaseSolver</tt>
+ * subclasses do not allow the <tt>Epetra_Operator</tt> object to change after
+ * construction.  Therefore, this current flawed implementation requires that
+ * every call to the <tt>EpetraLinearOpBase::epetra_op()</tt> function return
+ * the same <tt>Epetra_Operator</tt> object.  Note that this is aways the case
+ * for the <tt>EpetraLinearOp</tt> subclass.
  */
 class AmesosLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<double> {
 public:
@@ -122,8 +131,6 @@ public:
   //@}
 
 };
-
-//@}
 
 } // namespace Thyra
 

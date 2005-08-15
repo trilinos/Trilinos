@@ -60,4 +60,32 @@ void Thyra::unwrap(
   }
 }
 
+template<class Scalar>
+void Thyra::unwrap(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >     &Op
+  ,Scalar                                                     *scalar
+  ,ETransp                                                    *transp
+  ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >          *origOp
+  )
+{
+#ifdef _DEBUG
+  TEST_FOR_EXCEPT( scalar==NULL );
+  TEST_FOR_EXCEPT( transp==NULL );
+  TEST_FOR_EXCEPT( origOp==NULL );
+#endif
+  typedef Teuchos::ScalarTraits<Scalar>  ST;
+  Teuchos::RefCountPtr<const ScaledAdjointLinearOpBase<Scalar> >
+    saOp = Teuchos::rcp_dynamic_cast<const ScaledAdjointLinearOpBase<Scalar> >(Op);
+  if(saOp.get()) {
+    *scalar = saOp->overallScalar();
+    *transp = saOp->overallTransp();
+    *origOp = saOp->getOrigOp();
+  }
+  else {
+    *scalar = ST::one();
+    *transp = NOTRANS;
+    *origOp = Op;
+  }
+}
+
 #endif	// THYRA_SCALED_ADJOINT_LINEAR_OP_BASE_HPP

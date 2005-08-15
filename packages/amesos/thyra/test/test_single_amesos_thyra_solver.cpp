@@ -78,7 +78,8 @@ bool Thyra::test_single_amesos_thyra_solver(
   Teuchos::RefCountPtr<Epetra_CrsMatrix> epetra_A;
   EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A );
 
-  Teuchos::RefCountPtr<LinearOpBase<double> > A = Teuchos::rcp(new EpetraLinearOp(epetra_A));
+  Teuchos::RefCountPtr<LinearOpBase<double> >
+    A = Teuchos::rcp(new EpetraLinearOp(epetra_A));
 
   if(out && dumpAll) *out << "\ndescribe(A) =\n" << describe(*A,Teuchos::VERB_EXTREME,indentSpacer,indentSpacer);
 
@@ -95,6 +96,8 @@ bool Thyra::test_single_amesos_thyra_solver(
   opFactory->initializeOp( A, &*nsA );
 
   if(out) *out << "\nD) Testing the LinearOpBase interface of nsA ...\n";
+
+  Thyra::seed_randomize<double>(0);
 
   LinearOpTester<double> linearOpTester;
   linearOpTester.check_adjoint(testTranspose);
@@ -134,13 +137,15 @@ bool Thyra::test_single_amesos_thyra_solver(
   result = linearOpWithSolveTester.check(*nsA,out,indentSpacer,indentSpacer);
   if(!result) success = false;
 
-  if(out) *out << "\nF) Uninitialize the matrix object, scale the matrix by 2.5, and then refactor it ...\n";
+  if(out) *out << "\nF) Uninitialize the matrix object nsA, scale the epetra_A object by 2.5, and then refactor nsA with epetra_A ...\n";
 
-  opFactory->uninitializeOp(&*nsA );
+  opFactory->uninitializeOp(&*nsA);
   epetra_A->Scale(2.5);
-  opFactory->initializeOp(A,&*nsA );
-
+  opFactory->initializeOp(A,&*nsA);
+  
   if(out) *out << "\nG) Testing the LinearOpBase interface of nsA ...\n";
+
+  Thyra::seed_randomize<double>(0);
 
   result = linearOpTester.check(*nsA,out,indentSpacer,indentSpacer);
   if(!result) success = false;
@@ -148,6 +153,55 @@ bool Thyra::test_single_amesos_thyra_solver(
   if(out) *out << "\nH) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
   result = linearOpWithSolveTester.check(*nsA,out,indentSpacer,indentSpacer);
+  if(!result) success = false;
+
+  if(out) *out << "\nI) Uninitialize the matrix object nsA, create a scaled (by 2.5) copy  epetra_A2 of epetra_A, and then refactor nsA with epetra_A2 ...\n";
+
+  Teuchos::RefCountPtr<Epetra_CrsMatrix>
+    epetra_A2 = Teuchos::rcp(new Epetra_CrsMatrix(*epetra_A));
+  epetra_A2->Scale(2.5);
+  Teuchos::RefCountPtr<LinearOpBase<double> >
+    A2 = Teuchos::rcp(new EpetraLinearOp(epetra_A2));
+  opFactory->uninitializeOp(&*nsA);
+  opFactory->initializeOp(A2,&*nsA);
+  
+  if(out) *out << "\nJ) Testing the LinearOpBase interface of nsA ...\n";
+
+  Thyra::seed_randomize<double>(0);
+
+  result = linearOpTester.check(*nsA,out,indentSpacer,indentSpacer);
+  if(!result) success = false;
+
+  if(out) *out << "\nK) Testing the LinearOpWithSolveBase interface of nsA ...\n";
+    
+  result = linearOpWithSolveTester.check(*nsA,out,indentSpacer,indentSpacer);
+  if(!result) success = false;
+
+  if(out) *out << "\nL) Create an implicitly scaled (by 2.5) and transposed matrix A3 = scale(2.5,transpose(A)) and initialize nsA2 ...\n";
+
+  Teuchos::RefCountPtr<const LinearOpBase<double> >
+    A3 = scale(2.5,transpose(A));
+  Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
+    nsA2 = createAndInitializeLinearOpWithSolve(*opFactory,A3);
+  
+  if(out) *out << "\nM) Testing the LinearOpBase interface of nsA2 ...\n";
+
+  Thyra::seed_randomize<double>(0);
+
+  result = linearOpTester.check(*nsA2,out,indentSpacer,indentSpacer);
+  if(!result) success = false;
+
+  if(out) *out << "\nN) Testing the LinearOpWithSolveBase interface of nsA2 ...\n";
+    
+  result = linearOpWithSolveTester.check(*nsA2,out,indentSpacer,indentSpacer);
+  if(!result) success = false;
+  
+  if(out) *out << "\nO) Testing that LinearOpBase interfaces of transpose(nsA) == nsA2 ...\n";
+
+  result = linearOpTester.compare(
+    *transpose(Teuchos::rcp_implicit_cast<const LinearOpBase<double> >(nsA)),*nsA2
+    ,out,indentSpacer,indentSpacer
+    );
   if(!result) success = false;
 
   return success;

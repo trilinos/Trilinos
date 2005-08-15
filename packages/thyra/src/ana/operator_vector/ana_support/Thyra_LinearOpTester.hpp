@@ -667,7 +667,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
         ,"sum(v3)", sum_v3
         ,"linear_properties_error_tol()", linear_properties_error_tol()
         ,"linear_properties_warning_tol()", linear_properties_warning_tol()
-        ,out,li+is
+        ,&oss,li+is
         );
       if(!result) these_results = false;
       

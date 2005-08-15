@@ -114,6 +114,8 @@ EpetraLinearOp::mpiDomain() const
 	return domain_;
 }
 
+// Overridden from EpetraLinearOpBase
+
 Teuchos::RefCountPtr<Epetra_Operator>
 EpetraLinearOp::epetra_op() 
 {
@@ -126,7 +128,7 @@ EpetraLinearOp::epetra_op() const
 	return op_;
 }
 
-// Overridden from OpBase
+// Overridden from SingleScalarLinearOpBase
 
 bool EpetraLinearOp::opSupported(ETransp M_trans) const
 {
@@ -155,10 +157,11 @@ void EpetraLinearOp::euclideanApply(
 	,const Scalar                     beta
 	) const
 {
+  const ETransp real_M_trans = real_trans(M_trans);
 #ifdef _DEBUG
 	// ToDo: Assert vector spaces!
 	TEST_FOR_EXCEPTION(
-		M_trans==TRANS && adjointSupport_==EPETRA_OP_ADJOINT_UNSUPPORTED
+		real_M_trans==TRANS && adjointSupport_==EPETRA_OP_ADJOINT_UNSUPPORTED
 		,Exceptions::OpNotSupported
 		,"EpetraLinearOp::apply(...): *this was informed that adjoints are not supported when initialized." 
 		);
@@ -168,14 +171,14 @@ void EpetraLinearOp::euclideanApply(
 	//
 	Teuchos::RefCountPtr<const Epetra_MultiVector>
 		X = get_Epetra_MultiVector(
-			real_trans(M_trans)==NOTRANS ? getDomainMap() : getRangeMap()
+			real_M_trans==NOTRANS ? getDomainMap() : getRangeMap()
 			,Teuchos::rcp(&X_in,false)
 			);
 	Teuchos::RefCountPtr<Epetra_MultiVector>
 		Y;
 	if( beta == 0 ) {
 		Y = get_Epetra_MultiVector(
-			M_trans==NOTRANS ? getRangeMap() : getDomainMap()
+			real_M_trans==NOTRANS ? getRangeMap() : getDomainMap()
 			,Teuchos::rcp(Y_inout,false)
 			);
 	}
@@ -187,7 +190,7 @@ void EpetraLinearOp::euclideanApply(
 	 * operator outside Thyra (in Aztec, for instance), it will remember
 	 * the transpose flag set here. */
 	bool oldState = op_->UseTranspose();
-	op_->SetUseTranspose( trans_trans(opTrans_,M_trans) == NOTRANS ? false : true );
+	op_->SetUseTranspose( real_trans(trans_trans(opTrans_,M_trans)) == NOTRANS ? false : true );
 	//
 	// Perform the operation
 	//
@@ -208,7 +211,7 @@ void EpetraLinearOp::euclideanApply(
 		else assign( Y_inout, 0.0 );
 		// T = M * X
 		Epetra_MultiVector T(
-			M_trans == NOTRANS ? op_->OperatorRangeMap() : op_->OperatorDomainMap()
+			real_M_trans == NOTRANS ? op_->OperatorRangeMap() : op_->OperatorDomainMap()
 			,X_in.domain()->dim()
 			,false
 			);

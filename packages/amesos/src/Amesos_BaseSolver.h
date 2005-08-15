@@ -153,7 +153,7 @@ different performance characteristics and will accept different
 parameters.
 
 
-<H2>Changing the underlying matrix operator.</H2> 
+<H2>Changing the values of the underlying matrix operator.</H2> 
 In the basic
 calling sequence (no calls to SymbolicFactorization() or
 NumericFactorization()), the underlying matrix can be modified
@@ -423,7 +423,12 @@ revert to their default values.
   */
   virtual int SetParameters( Teuchos::ParameterList &ParameterList ) = 0 ;
 
-  //! Returns the Epetra_LinearProblem
+  /** \brief Returns the Epetra_LinearProblem.
+   *
+   * <b>Warning!</b> Do not call <tt>return->SetOperator(...)</tt> to attempt
+   * to change the <tt>Epetra_Operator</tt> object (even if the new matrix has
+   * the same structure).  This new operator matrix will be ignored!
+   */
   virtual const Epetra_LinearProblem* GetProblem() const = 0;
 
   //! Returns true if the solver can handle this matrix shape 

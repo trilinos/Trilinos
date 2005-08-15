@@ -84,7 +84,9 @@ public:
    *                the output <tt>LinearOpWithSolveBase</tt> object.
    * \param  Op     [out] The output <tt>LinearOpWithSolveBase</tt> object.  This object must have
    *                be created first by <tt>this->createOp()</tt>.  The object may have also
-   *                already been passed through this function several times.
+   *                already been passed through this function several times.  Note that subclasses
+   *                should always first strip off the transpose and scaling by calling <tt>unwrap()</tt>
+   *                before attempting to dynamic cast the object.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>this->isCompatible(*fwdOp)==true</tt>

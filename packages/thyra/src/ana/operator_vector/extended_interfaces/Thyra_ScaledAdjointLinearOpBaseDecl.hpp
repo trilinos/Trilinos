@@ -120,6 +120,47 @@ void unwrap(
   ,const LinearOpBase<Scalar>*    *origOp
   );
 
+/** \brief Extract the <tt>overallScalar</tt>, <tt>overallTransp</tt> and
+ * <tt>Teuchos::RefCountPtr</tt> wrapped <tt>const</tt> <tt>origOp</tt> from a
+ * <tt>Teuchos::RefCountPtr</tt> wrapped <tt>const</tt> <tt>LinearOpBase</tt>
+ * object.
+ *
+ * \param  Op      [in] The input, possibly scaled and/or adjoined, linear operator
+ * \param  scalar  [out] The overall scaling factor.
+ * \param  transp  [out] The overall adjoint (transposition) enum.
+ * \param  origOp  [out] The underlying, non-scaled and non-adjoined linear operator.
+ *                 This pointer returns a non-persisting relationship that is to be
+ *                 used and then immediately forgotten.
+ *
+ * Preconditions:<ul>
+ * <li><tt>scalar!==NULL</tt>
+ * <li><tt>transp!==NULL</tt>
+ * <li><tt>origOp!==NULL</tt>
+ * </ul>
+ *
+ * Postconditions:<ul>
+ * <li><tt>*origOp!==NULL</tt>
+ * </ul>
+ *
+ * The purpose of this function is to strip off the
+ * <tt>ScaledAdjointLinearOpBase</tt> wrapper and get at the underlying linear
+ * operator for the purpose of further dynamic casting to some more derived
+ * interface.
+ *
+ * The implementation of this function is not too complicated and is
+ * appropriate for study.
+ *
+ * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp
+ */
+template<class Scalar>
+void unwrap(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >     &Op
+  ,Scalar                                                     *scalar
+  ,ETransp                                                    *transp
+  ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >          *origOp
+  );
+
 } // namespace Thyra
 
 #endif	// THYRA_SCALED_ADJOINT_LINEAR_OP_BASE_DECL_HPP

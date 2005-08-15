@@ -94,8 +94,6 @@ endif
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
-
-
 ## #######################################################################
 ## The below targets allow you to use the new
 ## testharness to run the test suite as make targets
