@@ -44,7 +44,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-#include "ModeLaplace1DQ1.h"
+#include "ModeLaplace2DQ2.h"
 
 int main(int argc, char *argv[]) 
 {
@@ -94,12 +94,20 @@ int main(int argc, char *argv[])
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
 
-  //  Problem information
-  int space_dim = 1;
+  // Problem information
+  // Number of dimension of the domain
+  int space_dim = 2;
+
+  // Size of each of the dimensions of the domain
   std::vector<double> brick_dim( space_dim );
   brick_dim[0] = 1.0;
+  brick_dim[1] = 1.0;
+
+  // Number of elements in each of the dimensions of the domain
   std::vector<int> elements( space_dim );
-  elements[0] = 100;
+  elements[0] = 10;
+  elements[1] = 10;
+  
 
   // Create default output manager 
   Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
@@ -114,7 +122,8 @@ int main(int argc, char *argv[])
      Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
 
   // Create problem
-  Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+  Teuchos::RefCountPtr<ModalProblem> testCase = 
+    Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
 
   // Get the stiffness and mass matrices
   Teuchos::RefCountPtr<Epetra_Operator> K = Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getStiffness()), false );
