@@ -32,11 +32,9 @@
 //
 //
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziBlockDavidson.hpp"
+#include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
 #include "AnasaziBasicSort.hpp"
 
 #ifdef EPETRA_MPI

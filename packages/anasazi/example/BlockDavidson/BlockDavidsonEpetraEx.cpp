@@ -29,13 +29,11 @@
 //  This example computes the specified eigenvalues of the discretized 2D Laplacian
 //  using the block Davidson.  
 
-#include "AnasaziBlockDavidson.hpp"
-#include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziConfigDefs.hpp"
+#include "AnasaziBlockDavidson.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "AnasaziBasicSort.hpp"
-#include "Teuchos_LAPACK.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
