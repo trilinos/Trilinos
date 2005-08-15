@@ -27,10 +27,12 @@
 # @HEADER
 
 SOURCE_H = \
+	$(srcdir)/Thyra_AmesosTypes.hpp \
 	$(srcdir)/Thyra_AmesosLinearOpWithSolve.hpp \
 	$(srcdir)/Thyra_AmesosLinearOpWithSolveFactory.hpp
 
 SOURCE = \
+	$(srcdir)/Thyra_AmesosTypes.cpp \
 	$(srcdir)/Thyra_AmesosLinearOpWithSolve.cpp \
 	$(srcdir)/Thyra_AmesosLinearOpWithSolveFactory.cpp
 

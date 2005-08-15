@@ -113,7 +113,8 @@ LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libamesosthyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am__objects_1 = Thyra_AmesosLinearOpWithSolve.$(OBJEXT) \
+am__objects_1 = Thyra_AmesosTypes.$(OBJEXT) \
+	Thyra_AmesosLinearOpWithSolve.$(OBJEXT) \
 	Thyra_AmesosLinearOpWithSolveFactory.$(OBJEXT)
 am_libamesosthyra_a_OBJECTS = $(am__objects_1)
 libamesosthyra_a_OBJECTS = $(am_libamesosthyra_a_OBJECTS)
@@ -121,7 +122,8 @@ DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Thyra_AmesosLinearOpWithSolve.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Thyra_AmesosLinearOpWithSolveFactory.Po
+@AMDEP_TRUE@	./$(DEPDIR)/Thyra_AmesosLinearOpWithSolveFactory.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Thyra_AmesosTypes.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -321,10 +323,12 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 SOURCE_H = \
+	$(srcdir)/Thyra_AmesosTypes.hpp \
 	$(srcdir)/Thyra_AmesosLinearOpWithSolve.hpp \
 	$(srcdir)/Thyra_AmesosLinearOpWithSolveFactory.hpp
 
 SOURCE = \
+	$(srcdir)/Thyra_AmesosTypes.cpp \
 	$(srcdir)/Thyra_AmesosLinearOpWithSolve.cpp \
 	$(srcdir)/Thyra_AmesosLinearOpWithSolveFactory.cpp
 
@@ -459,6 +463,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_AmesosLinearOpWithSolve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_AmesosLinearOpWithSolveFactory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_AmesosTypes.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -475,6 +480,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+Thyra_AmesosTypes.o: $(srcdir)/Thyra_AmesosTypes.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_AmesosTypes.o -MD -MP -MF "$(DEPDIR)/Thyra_AmesosTypes.Tpo" -c -o Thyra_AmesosTypes.o `test -f '$(srcdir)/Thyra_AmesosTypes.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_AmesosTypes.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Thyra_AmesosTypes.Tpo" "$(DEPDIR)/Thyra_AmesosTypes.Po"; else rm -f "$(DEPDIR)/Thyra_AmesosTypes.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_AmesosTypes.cpp' object='Thyra_AmesosTypes.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_AmesosTypes.Po' tmpdepfile='$(DEPDIR)/Thyra_AmesosTypes.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_AmesosTypes.o `test -f '$(srcdir)/Thyra_AmesosTypes.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_AmesosTypes.cpp
+
+Thyra_AmesosTypes.obj: $(srcdir)/Thyra_AmesosTypes.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_AmesosTypes.obj -MD -MP -MF "$(DEPDIR)/Thyra_AmesosTypes.Tpo" -c -o Thyra_AmesosTypes.obj `if test -f '$(srcdir)/Thyra_AmesosTypes.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_AmesosTypes.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_AmesosTypes.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Thyra_AmesosTypes.Tpo" "$(DEPDIR)/Thyra_AmesosTypes.Po"; else rm -f "$(DEPDIR)/Thyra_AmesosTypes.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_AmesosTypes.cpp' object='Thyra_AmesosTypes.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_AmesosTypes.Po' tmpdepfile='$(DEPDIR)/Thyra_AmesosTypes.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_AmesosTypes.obj `if test -f '$(srcdir)/Thyra_AmesosTypes.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_AmesosTypes.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_AmesosTypes.cpp'; fi`
 
 Thyra_AmesosLinearOpWithSolve.o: $(srcdir)/Thyra_AmesosLinearOpWithSolve.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_AmesosLinearOpWithSolve.o -MD -MP -MF "$(DEPDIR)/Thyra_AmesosLinearOpWithSolve.Tpo" -c -o Thyra_AmesosLinearOpWithSolve.o `test -f '$(srcdir)/Thyra_AmesosLinearOpWithSolve.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_AmesosLinearOpWithSolve.cpp; \

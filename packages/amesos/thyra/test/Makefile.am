@@ -32,30 +32,41 @@ EXEEXT = .exe
 # Actual programs
 #
 
-TEST_AMESOS_THYRA = test_amesos_thyra
+TEST_SINGLE_AMESOS_THYRA_SOLVER_DRIVER = test_single_amesos_thyra_solver_driver
+TEST_AMESOS_THYRA_DRIVER = test_amesos_thyra_driver
 
-noinst_PROGRAMS = $(TEST_AMESOS_THYRA)
+noinst_PROGRAMS = $(TEST_SINGLE_AMESOS_THYRA_SOLVER_DRIVER) $(TEST_AMESOS_THYRA_DRIVER) dummy
 
-test_amesos_thyra_SOURCES = $(srcdir)/test_amesos_thyra.cpp $(common_sources)
-test_amesos_thyra_DEPENDENCIES = $(common_dependencies)
-test_amesos_thyra_LDADD = $(common_ldadd)
+test_single_amesos_thyra_solver_driver_SOURCES = $(srcdir)/test_single_amesos_thyra_solver_driver.cpp $(common_sources)
+test_single_amesos_thyra_solver_driver_DEPENDENCIES = $(common_dependencies)
+test_single_amesos_thyra_solver_driver_LDADD = $(common_ldadd)
+
+test_amesos_thyra_driver_SOURCES = $(srcdir)/test_amesos_thyra_driver.cpp $(common_sources)
+test_amesos_thyra_driver_DEPENDENCIES = $(common_dependencies)
+test_amesos_thyra_driver_LDADD = $(common_ldadd)
+
+dummy.o:
+	echo "Dummy build for test_amesos_thyra.sh"
+
+dummy.exe:
+	chmod a+x test_amesos_thyra.sh
 
 #
 # Common stuff
 #
 
-common_sources = 
+common_sources = $(srcdir)/test_single_amesos_thyra_solver.cpp $(srcdir)/EpetraExt_readEpetraLinearSystem.cpp
 
 common_dependencies = $(top_builddir)/thyra/src/libamesosthyra.a $(top_builddir)/src/libamesos.a
 
 include $(top_builddir)/Makefile.export.amesos
 
 if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES))
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_LIBS))
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_EXTRA_INCLUDES) $(AMESOS_INCLUDES))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_EXTRA_LIBS) $(AMESOS_LIBS))
 else
-EXPORT_INCLUDES = $(AMESOS_INCLUDES)
-EXPORT_LIBS = $(AMESOS_LIBS)
+EXPORT_INCLUDES = $(AMESOS_EXTRA_INCLUDES) $(AMESOS_INCLUDES)
+EXPORT_LIBS = $(AMESOS_EXTRA_LIBS) $(AMESOS_LIBS)
 endif
 
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
