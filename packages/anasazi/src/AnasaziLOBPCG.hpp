@@ -393,7 +393,32 @@ namespace Anasazi {
     //
     // Initialize the workspace.
     //
-    MVT::MvRandom( *X );
+    {
+      int numIVecs = MVT::GetNumberVecs( *iVec );
+      if (numIVecs > _blockSize)
+        numIVecs = _blockSize;
+      std::vector<int> index( numIVecs );
+      for (i=0; i<numIVecs; i++) {
+        index[i] = i;
+      }
+      //
+      // Copy the first numIVecs of the initial vectors into the first
+      // numIVecs X (any additional vectors in iVec are ignored)
+      //
+      MVT::SetBlock( *iVec, index, *X );
+      //
+      // Augment the initial vectors with random vectors if necessary
+      //
+      int leftOver = _blockSize - numIVecs;
+      if (leftOver) {
+        index.resize(leftOver);
+        for (i=0; i<leftOver; i++)
+          index[i] = numIVecs + i;
+        Teuchos::RefCountPtr<MV> tmpIVec = MVT::CloneView( *X, index );
+        MVT::MvRandom( *tmpIVec );
+      }
+    }
+
     //
     // Check to see if there is a mass matrix, so we know how much space is required.
     // [ If there isn't a mass matrix we can use a view of X.]
@@ -461,10 +486,6 @@ namespace Anasazi {
     KK.shape( 3*_blockSize, 3*_blockSize );
     MM.shape( 3*_blockSize, 3*_blockSize );
     S.shape( 3*_blockSize, 3*_blockSize );        
-    //
-    // Initialize the workspace.
-    //
-    MVT::MvRandom( *X );
     //
     // Miscellaneous definitions
     int localSize = 0;
