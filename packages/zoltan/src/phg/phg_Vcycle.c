@@ -224,8 +224,10 @@ int Zoltan_PHG_Partition (
 #endif
       
       if (hgp->output_level >= PHG_DEBUG_LIST) {
-          uprintf(hgc,"START %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d...\n",
-                  hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
+          uprintf(hgc,
+                  "START %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d...\n",
+                  hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, 
+                  hgp->redm_str,
                   hgp->coarsepartition_str, hgp->refinement_str, p);
           if (hgp->output_level > PHG_DEBUG_LIST) {
               err = Zoltan_HG_Info(zz, hg);
@@ -316,8 +318,8 @@ int Zoltan_PHG_Partition (
 
   if (hgp->output_level >= PHG_DEBUG_LIST) {
     uprintf(hgc, "START %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d...\n",
-     hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
-     hgp->coarsepartition_str, hgp->refinement_str, p);
+     hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, 
+     hgp->redm_str, hgp->coarsepartition_str, hgp->refinement_str, p);
     if (hgp->output_level > PHG_DEBUG_LIST) {
       err = Zoltan_HG_Info(zz, hg);
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
@@ -367,8 +369,10 @@ int Zoltan_PHG_Partition (
 
                           
     if (hgp->output_level >= PHG_DEBUG_LIST)     
-      uprintf(hgc, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
-              hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
+      uprintf(hgc, 
+              "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
+              hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, 
+              hgp->redm_str,
               hgp->coarsepartition_str, hgp->refinement_str, p,
               Zoltan_PHG_Compute_Balance(zz, hg, part_sizes, p, vcycle->Part),
               Zoltan_PHG_Compute_ConCut(hgc, hg, vcycle->Part, p, &err));

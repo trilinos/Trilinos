@@ -241,7 +241,7 @@ int Zoltan_PHG_Coarsening
   c_hg->coor    = NULL;             /* currently we don't use coordinates */
   c_hg->nDim    = hg->nDim;    
   c_hg->vmap    = NULL;             /* only needed by rec-bisec */
-  c_hg->redl    = hg->redl;         /* to stop coarsening near desired count */
+  c_hg->redl    = hg->redl; /* to stop coarsening near desired count */
   c_hg->VtxWeightDim  = hg->VtxWeightDim;
   
   /* (over) estimate number of external matches that we need to send data to */
@@ -759,7 +759,7 @@ int Zoltan_PHG_Coarsening
   c_hg->coor    = NULL;             /* currently we don't use coordinates */
   c_hg->nDim    = hg->nDim;    
   c_hg->vmap    = NULL;             /* only needed by rec-bisec */
-  c_hg->redl    = hg->redl;         /* to stop coarsening near desired count */
+  c_hg->redl    = hg->redl;  /* to stop coarsening near desired count */
   c_hg->VtxWeightDim  = hg->VtxWeightDim;
   
   /* (over) estimate number of external matches that we need to send data to */

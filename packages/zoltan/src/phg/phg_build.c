@@ -755,7 +755,10 @@ End:
 int Zoltan_PHG_Removed_Cuts(
   ZZ *zz,
   ZHG *zhg,
-  double *localcuts
+  double *localcuts  /* Array of length 2. Upon return:
+                      * localcuts[0] = ConCut: Sum_over_edges( (nparts-1)*ewgt )
+                      * localcuts[1] = NetCut: Sum_over_edges( (nparts>1)*ewgt )
+                      */
 )
 {
 /* Function to compute the cuts of removed hyperedges.
@@ -779,7 +782,7 @@ int *outparts = NULL;            /* received partition info for pins */
 int *parts = NULL;               /* Array of size Num_Global_Parts indicating
                                     whether the current edge has a pin in
                                     parts[i] */
-double loccuts[2], globcuts[2];  /* Local and global cut values */
+double loccuts[2];               /* Local cut values: [0]=ConCut; [1]=NetCut */
 int nObj = zhg->nObj;
 ZOLTAN_ID_PTR gids = zhg->GIDs;
 int num_gid_entries = zz->Num_GID;
