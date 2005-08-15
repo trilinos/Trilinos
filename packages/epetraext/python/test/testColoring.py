@@ -53,31 +53,32 @@ class ColoringTestCase(unittest.TestCase):
     "TestCase class for EpetraExt coloring objects"
 
     def setUp(self):
-        self.size = 11
-        self.comm = Epetra.SerialComm()
+        self.comm = Epetra.PyComm()
+        self.size = 9 * self.comm.NumProc()
         self.map  = Epetra.Map(self.size,0,self.comm)
         self.crsg = Epetra.CrsGraph(Epetra.Copy, self.map, 3)
-        self.crsg.InsertGlobalIndices(0,2,array([0,1]))
-        for i in range(1,self.size-1):
-            self.crsg.InsertGlobalIndices(i,3,array([i-1,i,i+1]))
-        self.crsg.InsertGlobalIndices(self.size-1,2,array([self.size-2,self.size-1]))
+        n         = self.size
+        for lrid in range(self.crsg.NumMyRows()):
+            grid = self.crsg.GRID(lrid)
+            if   grid == 0  : indices = [0,1]
+            elif grid == n-1: indices = [n-2,n-1]
+            else            : indices = [grid-1,grid,grid+1]
+            self.crsg.InsertGlobalIndices(grid,len(indices),indices)
         self.crsg.FillComplete()
-        colors = array([3,2,1])
-        self.colors = resize(colors,(self.size,))
-        self.numEl  = [0,0,0,0]
-        for i in self.colors:
-            self.numEl[i] += 1
 
     def testMapColoring(self):
         "Test EpetraExt CrsGraph-to-MapColoring transform"
         mapColoring  = EpetraExt.CrsGraph_MapColoring(False)
         colorMap     = mapColoring(self.crsg)
+        #for p in range(self.comm.NumProc()):
+        #    if p == self.comm.MyPID(): print colorMap
+        #    self.comm.Barrier()
         numColors    = colorMap.NumColors()
         defaultColor = colorMap.DefaultColor()
-        self.assertEqual(numColors   , max(self.colors))
-        self.assertEqual(defaultColor, 0               )
+        self.assertEqual(numColors   , 3)
+        self.assertEqual(defaultColor, 0)
         for c in range(numColors):
-            self.assertEqual(colorMap.NumElementsWithColor(c+1), self.numEl[c+1])
+            self.assert_(colorMap.NumElementsWithColor(c+1) in (3,4))
 
     def testColorMapIndex(self):
         "Test EpetraExt MapColoring-to-ColorMapIndex transform"
@@ -97,10 +98,14 @@ if __name__ == "__main__":
     # Add the test cases to the test suite
     suite.addTest(unittest.makeSuite(ColoringTestCase))
 
+    # Create a communicator
+    comm = Epetra.PyComm()
+
     # Run the test suite
-    print >>sys.stderr, \
-          "\n**************************\nTesting EpetraExt.Coloring\n**************************\n"
-    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    if comm.MyPID() == 0: print >>sys.stderr, \
+       "\n**************************\nTesting EpetraExt.Coloring\n**************************\n"
+    verbosity = 2 * int(comm.MyPID() == 0)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
     sys.exit(len(result.errors) + len(result.failures))
