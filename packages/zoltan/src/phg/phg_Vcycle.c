@@ -135,7 +135,7 @@ static int allocVCycle(VCycle *v)
 
 
 static VCycle *newVCycle(ZZ *zz, HGraph *hg, Partition part, VCycle *finer,
-                         PHGPartParams *hgp)
+                         int vcycle_timing)
 {
   VCycle *vcycle;
     
@@ -149,7 +149,7 @@ static VCycle *newVCycle(ZZ *zz, HGraph *hg, Partition part, VCycle *finer,
   vcycle->LevelCnt = 0;
   vcycle->LevelSndCnt = 0;
   vcycle->comm_plan = NULL;
-  if (hgp->use_timers > 2)
+  if (vcycle_timing)
     vcycle->timer = Zoltan_Timer_Create(zz->Timer);
   else
     vcycle->timer = NULL;
@@ -197,15 +197,37 @@ int Zoltan_PHG_Partition (
   static int timer_match = -1,    /* Timers for various stages */
              timer_coarse = -1,   /* Declared static so we can accumulate */
              timer_refine = -1,   /* times over calls to Zoltan_PHG_Partition */
-             timer_project = -1;
+             timer_coarsepart = -1,
+             timer_project = -1,
+             timer_vcycle = -1;   /* times everything in Vcycle not included
+                                     in above timers */
+  int do_timing = (hgp->use_timers > 1);
+  int vcycle_timing = (hgp->use_timers > 2);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
     
-  if (!(vcycle = newVCycle(zz, hg, parts, NULL, hgp))) {
+  if (do_timing) {
+    if (timer_vcycle < 0) 
+      timer_vcycle = Zoltan_Timer_Init(zz->ZTime, 0, "Vcycle");
+    if (timer_match < 0) 
+      timer_match = Zoltan_Timer_Init(zz->ZTime, 1, "Matching");
+    if (timer_coarse < 0) 
+      timer_coarse = Zoltan_Timer_Init(zz->ZTime, 1, "Coarsening");
+    if (timer_coarsepart < 0)
+      timer_coarsepart = Zoltan_Timer_Init(zz->ZTime, 1,
+                                           "Total Coarse Partition");
+    if (timer_refine < 0) 
+      timer_refine = Zoltan_Timer_Init(zz->ZTime, 1, "Refinement");
+    if (timer_project < 0) 
+      timer_project = Zoltan_Timer_Init(zz->ZTime, 1, "Project Up");
+
+    ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hg->comm->Communicator);
+  }
+
+  if (!(vcycle = newVCycle(zz, hg, parts, NULL, vcycle_timing))) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "VCycle is NULL.");
     return ZOLTAN_MEMERR;
   }
-
 
   /****** Coarsening ******/    
   while ((hg->dist_x[hgc->nProc_x] > hg->redl)
@@ -239,12 +261,11 @@ int Zoltan_PHG_Partition (
         Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, NULL,
          "coarsening plot");
 
-      if (hgp->use_timers > 1) {
-        if (timer_match < 0) 
-          timer_match = Zoltan_Timer_Init(zz->ZTime, 1, "Matching");
+      if (do_timing) {
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hg->comm->Communicator);
         ZOLTAN_TIMER_START(zz->ZTime, timer_match, hg->comm->Communicator);
       }
-      if (hgp->use_timers > 2) {
+      if (vcycle_timing) {
         if (vcycle->timer_match < 0) {
           char str[80];
           sprintf(str, "VC Matching %d", hg->info);
@@ -255,7 +276,7 @@ int Zoltan_PHG_Partition (
       }
 
       /* Allocate and initialize Matching Array */
-      if (hg->nVtx && !(match = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
+      if (hg->nVtx && !(match = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: Matching array");
         return ZOLTAN_MEMERR;
       }
@@ -268,17 +289,15 @@ int Zoltan_PHG_Partition (
         ZOLTAN_FREE ((void**) &match);
         goto End;
       }
-      if (hgp->use_timers > 1)
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_match, hg->comm->Communicator);
-      if (hgp->use_timers > 2)
+      if (vcycle_timing)
         ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_match,
                           hg->comm->Communicator);
 
-      if (hgp->use_timers > 1) {
-        if (timer_coarse < 0) 
-          timer_coarse = Zoltan_Timer_Init(zz->ZTime, 1, "Coarsening");
+      if (do_timing) {
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_match, hg->comm->Communicator);
         ZOLTAN_TIMER_START(zz->ZTime, timer_coarse, hg->comm->Communicator);
       }
+
       if (hgp->use_timers > 2) {
         if (vcycle->timer_coarse < 0) {
           char str[80];
@@ -289,7 +308,7 @@ int Zoltan_PHG_Partition (
                            hg->comm->Communicator);
       }
             
-      if (!(coarser = newVCycle(zz, NULL, NULL, vcycle, hgp))) {
+      if (!(coarser = newVCycle(zz, NULL, NULL, vcycle, vcycle_timing))) {
         ZOLTAN_FREE ((void**) &match);
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "coarser is NULL.");
         goto End;
@@ -301,12 +320,15 @@ int Zoltan_PHG_Partition (
        &vcycle->comm_plan);
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN) 
         goto End;
-        
-      if (hgp->use_timers > 1)
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_coarse, hg->comm->Communicator);
-      if (hgp->use_timers > 2)
+
+      if (vcycle_timing)
         ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_coarse,
                           hg->comm->Communicator);
+        
+      if (do_timing) {
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_coarse, hg->comm->Communicator);
+        ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hg->comm->Communicator);
+      }
 
       ZOLTAN_FREE ((void**) &match);
 
@@ -333,10 +355,20 @@ int Zoltan_PHG_Partition (
   /* free array that may have been allocated in matching */
   if (hgp->vtx_scal) ZOLTAN_FREE(&(hgp->vtx_scal));
 
+  if (do_timing) {
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hg->comm->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer_coarsepart, hg->comm->Communicator);
+  }
+
   /****** Coarse Partitioning ******/
   err = Zoltan_PHG_CoarsePartition (zz, hg, p, part_sizes, vcycle->Part, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     goto End;
+
+  if (do_timing) {
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_coarsepart, hg->comm->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hg->comm->Communicator);
+  }
 
   del = vcycle;
   /****** Uncoarsening/Refinement ******/
@@ -344,9 +376,8 @@ int Zoltan_PHG_Partition (
     VCycle *finer = vcycle->finer;
     hg = vcycle->hg;
 
-    if (hgp->use_timers > 1) {
-      if (timer_refine < 0) 
-        timer_refine = Zoltan_Timer_Init(zz->ZTime, 1, "Refinement");
+    if (do_timing) {
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hg->comm->Communicator);
       ZOLTAN_TIMER_START(zz->ZTime, timer_refine, hg->comm->Communicator);
     }
     if (hgp->use_timers > 2) {
@@ -361,9 +392,11 @@ int Zoltan_PHG_Partition (
 
     err = Zoltan_PHG_Refinement (zz, hg, p, part_sizes, vcycle->Part, hgp);
         
-    if (hgp->use_timers > 1)
+    if (do_timing) {
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_refine, hg->comm->Communicator);
-    if (hgp->use_timers > 2)
+      ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hg->comm->Communicator);
+    }
+    if (vcycle_timing)
       ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_refine,
                         hg->comm->Communicator);
 
@@ -381,9 +414,8 @@ int Zoltan_PHG_Partition (
       Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, vcycle->Part,
        "partitioned plot");
         
-    if (hgp->use_timers > 1) {
-      if (timer_project < 0) 
-        timer_project = Zoltan_Timer_Init(zz->ZTime, 1, "Project Up");
+    if (do_timing) {
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hg->comm->Communicator);
       ZOLTAN_TIMER_START(zz->ZTime, timer_project, hg->comm->Communicator);
     }
     if (hgp->use_timers > 2) {
@@ -437,9 +469,11 @@ int Zoltan_PHG_Partition (
       ZOLTAN_FREE (&rbuffer);                  
       Zoltan_Comm_Destroy (&finer->comm_plan);                   
     }
-    if (hgp->use_timers > 1) 
+    if (do_timing) {
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_project, hg->comm->Communicator);
-    if (hgp->use_timers > 2)
+      ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hg->comm->Communicator);
+    }
+    if (vcycle_timing)
       ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_project,
                         hg->comm->Communicator);
 
@@ -466,6 +500,7 @@ End:
     ZOLTAN_FREE(&del);
   }
 
+  ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hg->comm->Communicator);
   ZOLTAN_TRACE_EXIT(zz, yo) ;
   return err;
 }

@@ -107,6 +107,9 @@ int **exp_to_part )         /* list of partitions to which exported objs
                                       runs, can accumulate times.  */
   static int timer_retlist=-1;
   static int timer_parkway=-1;
+  static int timer_finaloutput=-1;
+  static int timer_setupvmap=-1;
+  int do_timing = 0;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -124,14 +127,21 @@ int **exp_to_part )         /* list of partitions to which exported objs
   if (hgp.use_timers) {
     if (timer_all < 0) 
       timer_all = Zoltan_Timer_Init(zz->ZTime, 1, "Zoltan_PHG");
-    ZOLTAN_TIMER_START(zz->ZTime, timer_all, zz->Communicator);
   }
-    
+
   if (hgp.use_timers > 1) {
+    do_timing = 1;
     if (timer_build < 0) 
       timer_build = Zoltan_Timer_Init(zz->ZTime, 1, "Build");
-    ZOLTAN_TIMER_START(zz->ZTime, timer_build, zz->Communicator);
+    if (timer_setupvmap < 0) 
+      timer_setupvmap = Zoltan_Timer_Init(zz->ZTime, 1, "Setup Vmaps");
   }
+
+  if (hgp.use_timers) 
+    ZOLTAN_TIMER_START(zz->ZTime, timer_all, zz->Communicator);
+    
+  if (do_timing)
+    ZOLTAN_TIMER_START(zz->ZTime, timer_build, zz->Communicator);
     
   /* build initial Zoltan hypergraph from callback functions. */
   err = Zoltan_PHG_Build_Hypergraph (zz, &zoltan_hg, &parts, &hgp);
@@ -140,22 +150,22 @@ int **exp_to_part )         /* list of partitions to which exported objs
     goto End;
   }
 
-  if (hgp.use_timers > 1)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
-   
   zz->LB.Data_Structure = zoltan_hg;
   nVtx = zoltan_hg->HG.nVtx;
   zoltan_hg->HG.redl = hgp.redl;     /* redl needs to be dynamic */
   /* RTHRTH -- redl may need to be scaled by number of procs */
   /* EBEB -- at least make sure redl > #procs */
  
+  if (do_timing)
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
+   
 /*
   uprintf(zoltan_hg->HG.comm, "Zoltan_PHG kway=%d #parts=%d\n", hgp.kway, zz->LB.Num_Global_Parts);
 */
 
 
   if (zz->LB.Method == PARKWAY) {
-    if (hgp.use_timers > 1) {
+    if (do_timing) {
       if (timer_parkway < 0)
         timer_parkway = Zoltan_Timer_Init(zz->ZTime, 0, "PHG_ParKway");
       ZOLTAN_TIMER_START(zz->ZTime, timer_parkway, zz->Communicator);
@@ -164,7 +174,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
                              parts, &hgp);
     if (err != ZOLTAN_OK) 
         goto End;
-    if (hgp.use_timers > 1)
+    if (do_timing)
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_parkway, zz->Communicator);
   } else { /* it must be PHG */
       /* UVC: if it is bisection anyways; no need to create vmap etc; 
@@ -181,6 +191,8 @@ int **exp_to_part )         /* list of partitions to which exported objs
           int i, p=zz->LB.Num_Global_Parts;
           HGraph *hg = &zoltan_hg->HG;
           
+          if (do_timing) 
+            ZOLTAN_TIMER_START(zz->ZTime, timer_setupvmap, zz->Communicator);
           /* vmap associates original vertices to sub hypergraphs */
           if (!(hg->vmap = (int*) ZOLTAN_MALLOC(hg->nVtx*sizeof (int))))  {
               err = ZOLTAN_MEMERR;
@@ -190,6 +202,8 @@ int **exp_to_part )         /* list of partitions to which exported objs
           for (i = 0; i < hg->nVtx; ++i)
               hg->vmap[i] = i;
 
+          if (do_timing) 
+            ZOLTAN_TIMER_STOP(zz->ZTime, timer_setupvmap, zz->Communicator);
 
 #if 0
           /* UVCUVC: We now have "Adaptive Balance Adjustment" during
@@ -217,12 +231,16 @@ int **exp_to_part )         /* list of partitions to which exported objs
       }  
   }
         
-  if (hgp.use_timers > 1) {
+  if (do_timing) {
+    /* Initialize these timers here so their output is near end of printout */
     if (timer_retlist < 0) 
       timer_retlist = Zoltan_Timer_Init(zz->ZTime, 1, "Return Lists");
+    if (timer_finaloutput < 0) 
+      timer_finaloutput = Zoltan_Timer_Init(zz->ZTime, 1, "Final Output");
+
     ZOLTAN_TIMER_START(zz->ZTime, timer_retlist, zz->Communicator);
   }
-    
+
   /* Build Zoltan's Output_Parts, mapped from 2D distribution 
      to input distribution. */
 
@@ -232,7 +250,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   Zoltan_PHG_Return_Lists(zz, zoltan_hg, num_exp, exp_gids,
    exp_lids, exp_procs, exp_to_part);
     
-  if (hgp.use_timers > 1) 
+  if (do_timing)
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_retlist, zz->Communicator);
 
 End:
@@ -241,9 +259,6 @@ End:
   else if (err != ZOLTAN_OK)
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Error partitioning hypergraph.")
     
-  if (hgp.use_timers)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_all, zz->Communicator);
-
   /* KDDKDD The following code prints a final quality result even when
    * KDDKDD phg_output_level is zero.  It is useful for our tests and
    * KDDKDD data collection, but it should NOT be included in the released
@@ -254,8 +269,7 @@ End:
     static double balsum = 0.0, cutlsum = 0.0, cutnsum = 0.0;
     static double balmax = 0.0, cutlmax = 0.0, cutnmax = 0.0;
     static double balmin = 1e100, cutlmin = 1e100, cutnmin = 1e100;
-    double bal = Zoltan_PHG_Compute_Balance(zz, hg, hgp.part_sizes, zz->LB.Num_Global_Parts,
-                                            parts);
+    double bal; 
     double cutl;   /* Connnectivity cuts:  sum_over_edges((npart-1)*ewgt) */
     double cutn;   /* Net cuts:  sum_over_edges((nparts>1)*ewgt) */
 
@@ -263,6 +277,14 @@ End:
     double rglobal[2]; /* global cut stats for removed edges */
     int gnremove;
 
+    if (do_timing) {
+      /* Do not include final output time in partitioning time */
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer_all, zz->Communicator);
+      ZOLTAN_TIMER_START(zz->ZTime, timer_finaloutput, zz->Communicator);
+    }
+
+    bal = Zoltan_PHG_Compute_Balance(zz, hg, hgp.part_sizes,
+                                     zz->LB.Num_Global_Parts, parts);
     cutl= Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts,
                                     zz->LB.Num_Global_Parts, &err);
     cutn = Zoltan_PHG_Compute_NetCut(hg->comm, hg, parts,
@@ -304,14 +326,21 @@ End:
                 nRuns, cutn, cutnmax, cutnmin, cutnsum/nRuns);
       }
     }
+
+    if (do_timing) {
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer_finaloutput, zz->Communicator);
+      ZOLTAN_TIMER_START(zz->ZTime, timer_all, zz->Communicator);
+    }
   }
   /* KDDKDD  End of printing section. */
   
   ZOLTAN_FREE(&parts);
   Zoltan_HG_Free_Structure(zz);
 
-  if (hgp.use_timers)
+  if (hgp.use_timers) {
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_all, zz->Communicator);
     Zoltan_Timer_PrintAll(zz->ZTime, 0, zz->Communicator, stdout);
+  }
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return err;
