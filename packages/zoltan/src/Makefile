@@ -165,22 +165,24 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #   Paths to submodules
 #
 SUB_VPATH	= ../include ../Utilities/shared \
-		  ../zz ../all ../lb ../par ../rcb ../coloring ../oct ../bsfc ../hsfc \
+		  ../zz ../all ../lb ../par ../rcb ../coloring ../oct ../hsfc \
 		  ../phg  ../hg ../util \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
                   ../order ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory \
                   ../Utilities/DDirectory ../Utilities/Timer
 SUBINCPATH	= -I../include -I../Utilities/shared \
-		  -I../zz -I../all -I../lb -I../par -I../rcb -I../coloring -I../oct  \
-		  -I../order -I../bsfc -I../hsfc -I../phg -I../hg \
+		  -I../zz -I../all -I../lb -I../par -I../rcb \
+		  -I../coloring -I../oct  \
+		  -I../order -I../hsfc -I../phg -I../hg \
 		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch \
 		  -I../parmetis -I../timer \
                   -I../ha -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory -I../Utilities/Timer
-SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb coloring oct phg hg\
-                  bsfc hsfc parmetis params \
+SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb \
+		  coloring oct phg hg\
+                  hsfc parmetis params \
 		  timer ha  reftree include
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
 		  Utilities/Memory Utilities/DDirectory Utilities/Timer
@@ -377,7 +379,7 @@ endif
 LINT		= lint
 LINT_INC_PATH	= -Iinclude -Idriver$(ZOLTAN_OLD) -Ich -Izz -Iall -Ilb \
 		  -Iorder -Ipar -Ircb -Icoloring -Iparams \
-		  -Ioct -Ibsfc -Ihsfc -Iparmetis -Itimer -Iha -Ireftree \
+		  -Ioct -Ihsfc -Iparmetis -Itimer -Iha -Ireftree \
 		  -Iphg -Ihg \
 		  -IUtilities/shared -IUtilities/Memory \
 		  -IUtilities/Communication -IUtilities/DDirectory \
@@ -646,23 +648,41 @@ printout:
 	tps  $(INC) | lpr
 
 clean:
-	-for a in $(SUBDIRS); do \
+	@-for a in $(SUBDIRS); do \
 	 cd $$a; \
          echo $$a; \
 	 $(RM) -f *.o *.d *.d@ $(ZTARGET) $(ZTARGET).pure $(LIB_NAME); \
 	 cd ..; \
 	 done;
-	-for a in $(ALL_OBJ_DIRS); do \
+	@cd Utilities; $(MAKE) clean; cd .. ; 
+	@echo $(ZOLTAN_OBJ_DIR);
+	@$(RM) -rf $(ZOLTAN_OBJ_DIR)/*; 
+	@echo "fort"
+	@cd fort; $(MAKE) "ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" clean; cd ..;
+	@echo "fdriver"
+	@cd fdriver; $(MAKE) "ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" clean; cd ..;
+	@echo "fdriver_old"
+	@cd fdriver_old; $(MAKE) "ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" clean; cd ..;
+	 exit 0
+
+allclean:
+	@-for a in $(SUBDIRS); do \
+	 cd $$a; \
+         echo $$a; \
+	 $(RM) -f *.o *.d *.d@ $(ZTARGET) $(ZTARGET).pure $(LIB_NAME); \
+	 cd ..; \
+	 done;
+	@-for a in $(ALL_OBJ_DIRS); do \
          echo $$a; \
 	 cd fort; $(MAKE) "ZOLTAN_OBJ_DIR=$$a" clean; cd ..; \
 	 cd fdriver; $(MAKE) "ZOLTAN_OBJ_DIR=$$a" clean; cd ..; \
 	 cd fdriver_old; $(MAKE) "ZOLTAN_OBJ_DIR=$$a" clean; cd ..; \
 	 $(RM) -rf $$a/*; \
 	 done;
-	 cd Utilities; $(MAKE) clean; cd .. ; 
-	 @if [ -d ZoltanComponent ]; \
-         then cd ZoltanComponent ; $(MAKE) clean ; cd .. ; \
-	 fi;
+	@cd Utilities; $(MAKE) allclean; cd .. ; 
+#	 if [ -d ZoltanComponent ]; \
+#	 then cd ZoltanComponent ; $(MAKE) clean ; cd .. ; \
+#	 fi;
 	 exit 0
 
 cleantest:

@@ -57,13 +57,13 @@ endif
 
 include $(ZOLTAN_CONFIG)
 
-OBJ_DIR = Obj_$(ZOLTAN_ARCH)
+ZOLTAN_OBJ_DIR = Obj_$(ZOLTAN_ARCH)
 ALL_OBJ_DIRS := $(wildcard Obj_*)
 
 ifdef ZOLTAN_LIB_DIR
 LIB_DIR = $(ZOLTAN_LIB_DIR)
 else
-LIB_DIR = $(OBJ_DIR)
+LIB_DIR = $(ZOLTAN_OBJ_DIR)
 endif
 
 ifndef ZOLTAN_LIB
@@ -237,12 +237,12 @@ $(MEM_LIB):
 	@if [ ! -d $(LIB_DIR) ]; 		\
 	then mkdir $(LIB_DIR); 			\
 	fi
-	@if [ ! -d $(OBJ_DIR) ]; 		\
-	then mkdir $(OBJ_DIR); 			\
+	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 		\
+	then mkdir $(ZOLTAN_OBJ_DIR); 			\
 	fi
-	@rm -f $(OBJ_DIR)/Makefile
-	@cp Makefile_sub $(OBJ_DIR)/Makefile
-	@cd $(OBJ_DIR); 			\
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) $(MEM_LIB) 			\
 	"LIB_NAME=$(MEM_LIB)"			\
 	"CC=$(CCOMP)"				\
@@ -253,16 +253,16 @@ $(MEM_LIB):
 	"RANLIB=$(RANLIB)" 			\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
         "BUILD_DIR=./"
-	@if [ $(OBJ_DIR) != $(LIB_DIR) ];            \
-	then cp -f $(OBJ_DIR)/$(MEM_LIB) $(LIB_DIR); \
+	@if [ $(ZOLTAN_OBJ_DIR) != $(LIB_DIR) ];            \
+	then cp -f $(ZOLTAN_OBJ_DIR)/$(MEM_LIB) $(LIB_DIR); \
 	fi
 
 
 zdrive_mem mem:
 	$(MAKE) $(MEM_LIB) 
-	@rm -f $(OBJ_DIR)/Makefile
-	@cp Makefile_sub $(OBJ_DIR)/Makefile
-	@cd $(OBJ_DIR); 			\
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) zdrive_mem 			\
 	"DRIVER_NAME=zdrive_mem"		\
 	"CC=$(CCOMP)"				\
@@ -277,12 +277,12 @@ $(COMM_LIB):
 	@if [ ! -d $(LIB_DIR) ]; 		\
 	then mkdir $(LIB_DIR); 			\
 	fi
-	@if [ ! -d $(OBJ_DIR) ]; 		\
-	then mkdir $(OBJ_DIR); 			\
+	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 		\
+	then mkdir $(ZOLTAN_OBJ_DIR); 			\
 	fi
-	@rm -f $(OBJ_DIR)/Makefile
-	@cp Makefile_sub $(OBJ_DIR)/Makefile
-	@cd $(OBJ_DIR); 			\
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) $(COMM_LIB)			\
 	"LIB_NAME=$(COMM_LIB)"			\
 	"CC=$(CCOMP)"				\
@@ -293,16 +293,16 @@ $(COMM_LIB):
 	"RANLIB=$(RANLIB)" 			\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
         "BUILD_DIR=./"
-	@if [ $(OBJ_DIR) != $(LIB_DIR) ];                \
-	then cp -f $(OBJ_DIR)/$(COMM_LIB) $(LIB_DIR);    \
+	@if [ $(ZOLTAN_OBJ_DIR) != $(LIB_DIR) ];                \
+	then cp -f $(ZOLTAN_OBJ_DIR)/$(COMM_LIB) $(LIB_DIR);    \
 	fi
 
 zdrive_comm comm: 
 	$(MAKE) $(MEM_LIB)
 	$(MAKE) $(COMM_LIB)
-	@rm -f $(OBJ_DIR)/Makefile
-	@cp Makefile_sub $(OBJ_DIR)/Makefile
-	@cd $(OBJ_DIR); 			\
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) zdrive_comm 			\
 	"DRIVER_NAME=zdrive_comm"		\
 	"CC=$(CCOMP)"				\
@@ -316,9 +316,9 @@ zdrive_comm comm:
 zCPPdrive_comm: 
 	$(MAKE) $(MEM_LIB)
 	$(MAKE) $(COMM_LIB)
-	@rm -f $(OBJ_DIR)/Makefile
-	@cp Makefile_sub $(OBJ_DIR)/Makefile
-	@cd $(OBJ_DIR); 			\
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) zCPPdrive_comm 			\
 	"DRIVER_NAME=zCPPdrive_comm"		\
 	"CC=$(CPPCOMP)"				\
@@ -333,12 +333,12 @@ $(DD_LIB):
 	@if [ ! -d $(LIB_DIR) ]; 		\
 	then mkdir $(LIB_DIR); 			\
 	fi
-	@if [ ! -d $(OBJ_DIR) ]; 		\
-	then mkdir $(OBJ_DIR); 			\
+	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 		\
+	then mkdir $(ZOLTAN_OBJ_DIR); 			\
 	fi
-	@rm -f $(OBJ_DIR)/Makefile
-	@cp Makefile_sub $(OBJ_DIR)/Makefile
-	@cd $(OBJ_DIR); 			\
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) $(DD_LIB) 			\
 	"LIB_NAME=$(DD_LIB)"			\
 	"CC=$(CCOMP)"				\
@@ -349,17 +349,17 @@ $(DD_LIB):
 	"RANLIB=$(RANLIB)" 			\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
         "BUILD_DIR=./"
-	@if [ $(OBJ_DIR) != $(LIB_DIR) ];            \
-	then cp -f $(OBJ_DIR)/$(DD_LIB) $(LIB_DIR); \
+	@if [ $(ZOLTAN_OBJ_DIR) != $(LIB_DIR) ];            \
+	then cp -f $(ZOLTAN_OBJ_DIR)/$(DD_LIB) $(LIB_DIR); \
 	fi
 
 zdrive_dd dd:
 	$(MAKE) $(MEM_LIB)
 	$(MAKE) $(COMM_LIB)
 	$(MAKE) $(DD_LIB) 
-	@rm -f $(OBJ_DIR)/Makefile
-	@cp Makefile_sub $(OBJ_DIR)/Makefile
-	@cd $(OBJ_DIR); 			\
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) zdrive_dd 			\
 	"DRIVER_NAME=zdrive_dd"		\
 	"CC=$(CCOMP)"				\
@@ -374,9 +374,9 @@ zCPPdrive_dd:
 	$(MAKE) $(MEM_LIB)
 	$(MAKE) $(COMM_LIB)
 	$(MAKE) $(DD_LIB) 
-	@rm -f $(OBJ_DIR)/Makefile
-	@cp Makefile_sub $(OBJ_DIR)/Makefile
-	@cd $(OBJ_DIR); 			\
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) zCPPdrive_dd 			\
 	"DRIVER_NAME=zCPPdrive_dd"		\
 	"CC=$(CPPCOMP)"				\
@@ -391,12 +391,12 @@ $(ZT_LIB):
 	@if [ ! -d $(LIB_DIR) ]; 		\
 	then mkdir $(LIB_DIR); 			\
 	fi
-	@if [ ! -d $(OBJ_DIR) ]; 		\
-	then mkdir $(OBJ_DIR); 			\
+	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 		\
+	then mkdir $(ZOLTAN_OBJ_DIR); 			\
 	fi
-	@rm -f $(OBJ_DIR)/Makefile
-	@cp Makefile_sub $(OBJ_DIR)/Makefile
-	@cd $(OBJ_DIR); 			\
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) $(ZT_LIB) 			\
 	"LIB_NAME=$(ZT_LIB)"			\
 	"CC=$(CCOMP)"				\
@@ -407,16 +407,16 @@ $(ZT_LIB):
 	"RANLIB=$(RANLIB)" 			\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
         "BUILD_DIR=./"
-	@if [ $(OBJ_DIR) != $(LIB_DIR) ];            \
-	then cp -f $(OBJ_DIR)/$(ZT_LIB) $(LIB_DIR); \
+	@if [ $(ZOLTAN_OBJ_DIR) != $(LIB_DIR) ];            \
+	then cp -f $(ZOLTAN_OBJ_DIR)/$(ZT_LIB) $(LIB_DIR); \
 	fi
 
 zdrive_timer timer:
 	$(MAKE) $(MEM_LIB)
 	$(MAKE) $(ZT_LIB) 
-	@rm -f $(OBJ_DIR)/Makefile
-	@cp Makefile_sub $(OBJ_DIR)/Makefile
-	@cd $(OBJ_DIR); 			\
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) zdrive_timer 			\
 	"DRIVER_NAME=zdrive_timer"		\
 	"CC=$(CCOMP)"				\
@@ -431,9 +431,9 @@ zCPPdrive_timer:
 	$(MAKE) $(MEM_LIB)
 	$(MAKE) $(COMM_LIB)
 	$(MAKE) $(ZT_LIB) 
-	@rm -f $(OBJ_DIR)/Makefile
-	@cp Makefile_sub $(OBJ_DIR)/Makefile
-	@cd $(OBJ_DIR); 			\
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) zCPPdrive_timer 			\
 	"DRIVER_NAME=zCPPdrive_timer"		\
 	"CC=$(CPPCOMP)"				\
@@ -449,16 +449,16 @@ $(ZOLTAN):
 	$(MAKE) $(COMM_LIB)
 	$(MAKE) $(DD_LIB) 
 	$(MAKE) $(ZT_LIB) 
-	@rm -f $(OBJ_DIR)/Makefile
-	@cp Makefile_sub $(OBJ_DIR)/Makefile
-	@cd $(OBJ_DIR); 			\
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) $(ZOLTAN_LIB) 			\
 	"LIB_NAME=$(ZOLTAN_LIB)"		\
 	"OBJ_FILES=$(DD_CSRC:.c=.o) $(UTIL_CSRC:.c=.o) $(MEM_CSRC:.c=.o) $(COMM_CSRC:.c=.o) $(ZT_CSRC:.c=.o)" \
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
-        "BUILD_DIR=../../$(OBJ_DIR)/"
+        "BUILD_DIR=../../$(ZOLTAN_OBJ_DIR)/"
 
 zscript:
 	@echo "Building Utilities zoltan_script..."
@@ -558,15 +558,27 @@ lint_timer: $(MEM_CSRC) $(ZT_CSRC) $(UTIL_CSRC) $(ZT_DRIVER_CSRC)
 #
 
 clean:
-	-for a in $(SUBDIRS); do \
+	@-for a in $(SUBDIRS); do \
 	 cd $$a; \
          echo $$a; \
 	 $(RM) -f *.o *.d *.d@ lib*; \
 	 cd ..; \
 	 done;
-	-for a in $(ALL_OBJ_DIRS); do \
+	@echo $(ZOLTAN_OBJ_DIR)
+	@$(RM) -rf $(ZOLTAN_OBJ_DIR)/*
+	@$(RM) $(LINT_TARGET)
+	 exit 0
+
+allclean:
+	@-for a in $(SUBDIRS); do \
+	 cd $$a; \
+         echo $$a; \
+	 $(RM) -f *.o *.d *.d@ lib*; \
+	 cd ..; \
+	 done;
+	@-for a in $(ALL_OBJ_DIRS); do \
          echo $$a; \
 	 $(RM) -rf $$a/*; \
 	 done;
-	 $(RM) $(LINT_TARGET)
+	@$(RM) $(LINT_TARGET)
 	 exit 0

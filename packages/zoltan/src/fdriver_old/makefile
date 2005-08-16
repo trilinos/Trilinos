@@ -64,7 +64,7 @@ $(ZOD)/mpistring.o: 	mpistring.c
 	/bin/mv *.o $(ZOD)
 
 clean:
-	rm -f $(ZOD)/libzoltan.a $(ZOD)/fdr*.o $(ZOD)/farg.o \
+	@rm -f $(ZOD)/libzoltan.a $(ZOD)/fdr*.o $(ZOD)/farg.o \
 	      $(ZOD)/mpi_h.o $(ZOD)/lampmpi.o $(ZOD)/mpistring.o\
 	      $(ZOD)/*.mod debug V* *.vo *.dbg $(ZOD)/zfdrive
-	rm -Rf album
+	@rm -Rf album

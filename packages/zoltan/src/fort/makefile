@@ -117,7 +117,7 @@ $(ZOD)/sppr: sppr.f90
 	$(LOCAL_F90) -o $(ZOD)/sppr sppr.f90
 
 clean:
-	rm -f $(ZOD)/*.f90 $(ZOD)/*.mod debug V* $(ZOD)/*.vo \
+	@rm -f $(ZOD)/*.f90 $(ZOD)/*.mod debug V* $(ZOD)/*.vo \
 	      $(ZOD)/cwrap.o \
 	      $(ZOD)/fwrap.o \
 	      $(ZOD)/ztypes.o \
@@ -125,4 +125,4 @@ clean:
 	      $(ZOD)/lb_user_const.o \
               sppr_header *.vo *.mod *.dbg \
 	      $(ZOD)/zfdrive $(ZOD)/sppr $(ZOD)/sppr_header
-	rm -Rf album
+	@rm -Rf album
