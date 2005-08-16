@@ -36,6 +36,7 @@
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "AnasaziBasicSort.hpp"
+#include "AnasaziBasicEigenproblem.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
