@@ -171,8 +171,8 @@ if (out_level > 1) printf("%d: Comm_Do_Reverse returned error code %d\n", my_pro
 
 
 	/* Free up data structures */
-	ZOLTAN_FREE((void *) &reverse_data);
-	ZOLTAN_FREE((void *) &recv_data);
+	ZOLTAN_FREE(&reverse_data);
+	ZOLTAN_FREE(&recv_data);
 
 	free_comm_data(&data, &my_send_data, &true_answer);
 
@@ -551,19 +551,19 @@ struct Data *data,
 struct Data *my_data,
 struct Answer *true_answer)
 {
-    ZOLTAN_FREE((void *) &data->vals);
-    ZOLTAN_FREE((void *) &data->sizes);
-    ZOLTAN_FREE((void *) &data->proc_dest);
-    ZOLTAN_FREE((void *) &data->proc_owner);
+    ZOLTAN_FREE(&data->vals);
+    ZOLTAN_FREE(&data->sizes);
+    ZOLTAN_FREE(&data->proc_dest);
+    ZOLTAN_FREE(&data->proc_owner);
 
-    ZOLTAN_FREE((void *) &my_data->vals);
-    ZOLTAN_FREE((void *) &my_data->sizes);
-    ZOLTAN_FREE((void *) &my_data->proc_dest);
-    ZOLTAN_FREE((void *) &my_data->proc_owner);
+    ZOLTAN_FREE(&my_data->vals);
+    ZOLTAN_FREE(&my_data->sizes);
+    ZOLTAN_FREE(&my_data->proc_dest);
+    ZOLTAN_FREE(&my_data->proc_owner);
 
-    ZOLTAN_FREE((void *) &true_answer->vals);
-    ZOLTAN_FREE((void *) &true_answer->sizes);
-    ZOLTAN_FREE((void *) &true_answer->proc_sender);
+    ZOLTAN_FREE(&true_answer->vals);
+    ZOLTAN_FREE(&true_answer->sizes);
+    ZOLTAN_FREE(&true_answer->proc_sender);
 }
 
 

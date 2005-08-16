@@ -66,8 +66,8 @@ MPI_Comm  comm)			/* communicator */
 
     MPI_Allreduce((void *) &out_of_mem, (void *) &i, 1, MPI_INT, MPI_MAX, comm);
     if (i) {
-	ZOLTAN_FREE((void **) &counts);
-	ZOLTAN_FREE((void **) &msg_count);
+	ZOLTAN_FREE(&counts);
+	ZOLTAN_FREE(&msg_count);
 	return(ZOLTAN_MEMERR);
     }
 
@@ -91,8 +91,8 @@ MPI_Comm  comm)			/* communicator */
     MPI_Reduce(msg_count, counts, nprocs, MPI_INT, MPI_SUM, 0, comm);
     MPI_Scatter(counts, 1, MPI_INT, &nrecvs, 1, MPI_INT, 0, comm);
 
-    ZOLTAN_FREE((void **) &counts);
-    ZOLTAN_FREE((void **) &msg_count);
+    ZOLTAN_FREE(&counts);
+    ZOLTAN_FREE(&msg_count);
 
     lengths_from = (int *) ZOLTAN_MALLOC(nrecvs*sizeof(int));
     procs_from = (int *) ZOLTAN_MALLOC(nrecvs*sizeof(int));

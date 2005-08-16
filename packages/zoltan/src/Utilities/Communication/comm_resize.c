@@ -67,13 +67,13 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	return(ZOLTAN_FATAL);
     }
 
-    ZOLTAN_FREE((void *) &plan->sizes);
-    ZOLTAN_FREE((void *) &plan->sizes_to);
-    ZOLTAN_FREE((void *) &plan->sizes_from);
-    ZOLTAN_FREE((void *) &plan->starts_to_ptr);
-    ZOLTAN_FREE((void *) &plan->starts_from_ptr);
-    ZOLTAN_FREE((void *) &plan->indices_to_ptr);
-    ZOLTAN_FREE((void *) &plan->indices_from_ptr);
+    ZOLTAN_FREE(&plan->sizes);
+    ZOLTAN_FREE(&plan->sizes_to);
+    ZOLTAN_FREE(&plan->sizes_from);
+    ZOLTAN_FREE(&plan->starts_to_ptr);
+    ZOLTAN_FREE(&plan->starts_from_ptr);
+    ZOLTAN_FREE(&plan->indices_to_ptr);
+    ZOLTAN_FREE(&plan->indices_from_ptr);
 
     nsends = plan->nsends;
     nrecvs = plan->nrecvs;
@@ -166,8 +166,8 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 		sum += sizes_to[index[i]];
 	    }
 
-	    ZOLTAN_FREE((void *) &index);
-	    ZOLTAN_FREE((void *) &sort_val);
+	    ZOLTAN_FREE(&index);
+	    ZOLTAN_FREE(&sort_val);
 	}
 
 	else {		/* Harder case, sends not blocked */
@@ -199,7 +199,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	            plan->max_send_size = sizes_to[i];
 		sum += sizes_to[i];
 	    }
-	    ZOLTAN_FREE((void *) &offset);
+	    ZOLTAN_FREE(&offset);
 	}
 
 
@@ -240,8 +240,8 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 		sum += sizes_from[index[i]];
 	    }
 
-	    ZOLTAN_FREE((void *) &index);
-	    ZOLTAN_FREE((void *) &sort_val);
+	    ZOLTAN_FREE(&index);
+	    ZOLTAN_FREE(&sort_val);
 	}
 
 	/*else {*/	/* Harder case, recvs not blocked */
@@ -253,16 +253,16 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 
 Mem_Err:
     if (return_flag == ZOLTAN_MEMERR) {
-	ZOLTAN_FREE((void *) &index);
-	ZOLTAN_FREE((void *) &sort_val);
-	ZOLTAN_FREE((void *) &offset);
-	ZOLTAN_FREE((void *) &plan->sizes);
-	ZOLTAN_FREE((void *) &plan->sizes_to);
-	ZOLTAN_FREE((void *) &plan->sizes_from);
-	ZOLTAN_FREE((void *) &plan->starts_to_ptr);
-	ZOLTAN_FREE((void *) &plan->starts_from_ptr);
-	ZOLTAN_FREE((void *) &plan->indices_to_ptr);
-	ZOLTAN_FREE((void *) &plan->indices_from_ptr);
+	ZOLTAN_FREE(&index);
+	ZOLTAN_FREE(&sort_val);
+	ZOLTAN_FREE(&offset);
+	ZOLTAN_FREE(&plan->sizes);
+	ZOLTAN_FREE(&plan->sizes_to);
+	ZOLTAN_FREE(&plan->sizes_from);
+	ZOLTAN_FREE(&plan->starts_to_ptr);
+	ZOLTAN_FREE(&plan->starts_from_ptr);
+	ZOLTAN_FREE(&plan->indices_to_ptr);
+	ZOLTAN_FREE(&plan->indices_from_ptr);
     }
 
     plan->sizes_to = sizes_to;

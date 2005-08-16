@@ -198,9 +198,9 @@ char *recv_data)		/* array of data I'll own after comm */
     MPI_Allreduce(&out_of_mem, &j, 1, MPI_INT, MPI_SUM, plan->comm);
 
     if (j > 0) {		/* Some proc is out of memory -> Punt */
-	ZOLTAN_FREE((void **) &send_buff);
+	ZOLTAN_FREE(&send_buff);
 	if (plan->indices_from != NULL)
-	    ZOLTAN_FREE((void **) &recv_buff);
+	    ZOLTAN_FREE(&recv_buff);
 	return (ZOLTAN_MEMERR);
     }
 
@@ -267,7 +267,7 @@ char *recv_data)		/* array of data I'll own after comm */
 		}
 	    }
 
-	    ZOLTAN_FREE((void **) &send_buff);
+	    ZOLTAN_FREE(&send_buff);
 	}
     }
     else {			/* Data of differing sizes */
@@ -339,7 +339,7 @@ char *recv_data)		/* array of data I'll own after comm */
 		}
 	    }
 
-	    ZOLTAN_FREE((void **) &send_buff);
+	    ZOLTAN_FREE(&send_buff);
 	}
     }
     return (ZOLTAN_OK);
@@ -403,7 +403,7 @@ char *recv_data)		/* array of data I'll own after comm */
 	    }
 	}
 
-	ZOLTAN_FREE((void **) &recv_buff);
+	ZOLTAN_FREE(&recv_buff);
     }
 
     return (ZOLTAN_OK);

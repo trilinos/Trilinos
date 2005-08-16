@@ -219,7 +219,7 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
     /* Now change nsends to count only non-self messages */
     nsends -= self_msg;
 
-    ZOLTAN_FREE((void **) &starts);
+    ZOLTAN_FREE(&starts);
 
 
 Mem_Err:
@@ -245,12 +245,12 @@ Mem_Err:
         if (comm_flag == ZOLTAN_MEMERR) {
 	    ZOLTAN_COMM_ERROR("Out of memory", yo, my_proc);
 	}
-	ZOLTAN_FREE((void **) &starts_from);
-	ZOLTAN_FREE((void **) &indices_to);
-	ZOLTAN_FREE((void **) &procs_to);
-	ZOLTAN_FREE((void **) &starts_to);
-	ZOLTAN_FREE((void **) &lengths_to);
-	ZOLTAN_FREE((void **) &starts);
+	ZOLTAN_FREE(&starts_from);
+	ZOLTAN_FREE(&indices_to);
+	ZOLTAN_FREE(&procs_to);
+	ZOLTAN_FREE(&starts_to);
+	ZOLTAN_FREE(&lengths_to);
+	ZOLTAN_FREE(&starts);
 	return(comm_flag);
     }
 
