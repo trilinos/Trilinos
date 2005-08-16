@@ -108,7 +108,7 @@ SAND2004--4819 \\
 Unlimited Release \\
 %\hfill
 %\begin{center}
-Printed September 2004
+Printed August 2005
 \end{center}
 
 \vspace{0.2in}
@@ -529,10 +529,10 @@ packages also enables the interfaces to those packages within \ML.
 %
 \choicebox{\tt --enable-amesos}
 {Enables support for the \amesos~package.
-  \amesos~is an interface with several direct solvers.  \ML\ supports
+ This package is necessary to use the \amesos\ interface in \ML\ to direct
+ solvers.  The solvers currently available are
   \umfpack~\cite{umfpack-home-page}, \klu, \superludist~(1.0 and 2.0),
-  \mumps~\cite{MUMPS}. This package is necessary to use the \amesos\ 
-    interface to direct solvers.}
+  \superlu~$3.0$~\cite{superlu-home-page}, and \mumps~\cite{MUMPS}.}
 %
 \choicebox{\tt --enable-teuchos}
 {Enables support for the \teuchos~package.  This package is necessary to 
@@ -569,6 +569,8 @@ $TRILINOS_HOME/configure --help
 
 The following configure line options enable interfaces in \ML\ to certain
 TPLs. By default, all the {\tt --with-ml\_}{\sl TPL} options are disabled.
+For the most up-to-date list, please type {\tt configure --help} at the \ML\
+package level.
 \smallskip
 
 %
@@ -577,18 +579,23 @@ TPLs. By default, all the {\tt --with-ml\_}{\sl TPL} options are disabled.
 %
 \choicebox{\tt --with-ml\_metis}{Enables interface for \metis~\cite{METIS}.}
 %
-\choicebox{\tt --with-ml\_parmetis2x}{ Enables interface for \parmetis,
-  version $2.x$.}
+\choicebox{\tt --with-ml\_parmetis2x}{ Enables interface for
+\parmetis~\cite{ParMETIS}, version $2.x$.}
+%
+\choicebox{\tt --with-ml\_zoltan}{ Enables interface for \zoltan~\cite{zoltan-home-page}.}
 %
 \choicebox{\tt --with-ml\_parmetis3x}{ Enables interface for \parmetis~\cite{ParMETIS}, version $3.x$.}
 %
-\choicebox{\tt --with-ml\_superlu}{ Enables \ML\ interface for serial
-    \superlu~\cite{superlu-manual}. {The \ML\ interface to
-    \superlu~is deprecated in favor of the \amesos~interface. }}
+\choicebox{\tt --with-ml\_superlu}{ Enables \ML's direct interface for serial
+    \superlu~\cite{superlu-manual} $1.0$. {This interface
+    is deprecated in favor of the \amesos~interface. }
+Note: you cannot configure \ML\ with both this option and {\tt--enable-amesos}.}
+%
+\choicebox{\tt --with-ml\_superlu2}{ Enables \ML's direct interface for serial
+    \superlu~\cite{superlu-manual} $2.0$. {This interface is deprecated in favor of the \amesos~interface. } Note: you cannot configure \ML\ with both this option and {\tt--enable-amesos}.}
 %
 \choicebox{\tt --with-ml\_superlu\_dist}{ Enables \ML\ interface for
-  \superludist~\cite{superlu-manual}. {The \ML\ interface to
-    \superludist~is deprecated in favor of the \amesos~interface. }}
+  \superludist~\cite{superlu-manual}. {This interface is deprecated in favor of the \amesos~interface. } Note: you cannot configure \ML\ with both this option and {\tt--enable-amesos}.}
 
 \medskip
 
@@ -1042,7 +1049,8 @@ parameter {\tt coarse: damping parameter}) as a solver. \\
 \verb!Amesos-Superludist! & Use \superludist\ through \amesos. \\
 \verb!Amesos-MUMPS! & Use double precision version of \mumps~through
 \amesos. \\
-\verb!SuperLU! & Use \ML\ interface to \superlu (depreacated). \\
+\verb!Amesos-Superlu! & Use \superlu\ through \amesos. \\
+\verb!SuperLU! & Use \ML\ interface to \superlu (deprecated). \\
 \hline
 \end{tabular}
 \caption{ML\_Epetra::MultiLevelPreconditioner: Some of the available coarse
