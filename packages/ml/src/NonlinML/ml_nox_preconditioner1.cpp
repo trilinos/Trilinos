@@ -514,7 +514,7 @@ bool ML_NOX::ML_Nox_Preconditioner::computePreconditioner(
                                               const Epetra_Vector& x,
                                               NOX::Parameter::List* precParams)
 {
-   bool flag;
+   bool flag = true;
    int offset = getoffset();
    if (ncalls_NewPrec_ % offset == 0)
          setinit(false);
