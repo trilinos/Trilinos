@@ -151,7 +151,7 @@ char *yo = "Zoltan_HG_HPart_Lib";
      else if (hgp->matching) err= Zoltan_HG_Matching(zz, hg, pack, hgp, &limit);
 
      if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
-        ZOLTAN_FREE((void**) &pack);
+        ZOLTAN_FREE(&pack);
         return err;
         }
 

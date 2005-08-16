@@ -107,7 +107,7 @@ char *yo = "Zoltan_HG_Coarsening";
      else /* no new hyperedge, because it only covers one vertex */
         c_hg->nPins = c_hindex[c_hg->nEdge];
      }
-  ZOLTAN_FREE((void**) &used_vertices);
+  ZOLTAN_FREE(&used_vertices);
 
   /* Done if there are no remaining edges */
   if (c_hg->nEdge == 0) {
