@@ -1,0 +1,380 @@
+#ifdef TRILINOS_PACKAGE
+#ifdef MORTAR
+
+
+#include <ctime>
+#include <cstdlib>
+#include <iostream>
+
+#ifdef PARALLEL
+#include <mpi.h>
+#endif
+
+#ifdef PARALLEL
+#include <Epetra_MpiComm.h>
+#else
+#include <Epetra_SerialComm.h>
+#endif
+#include "Epetra_CrsMatrix.h"
+
+// include the mortar stuff
+#include "mrtr_functions.H"
+#include "mrtr_segment.H"
+#include "mrtr_segment_linear1D.H"
+#include "mrtr_node.H"
+#include "mrtr_interface.H"
+#include "mrtr_manager.H"
+
+// user defined headers
+#include "cca_mortar.H"
+
+
+// the Epetra_Comm
+#ifdef PARALLEL
+static class Epetra_MpiComm* comm;
+#else
+static class Epetra_SerialComm* comm;
+#endif
+
+// the mortar manager class
+static class MRTR::Manager* mrtr_manager;
+
+/*----------------------------------------------------------------------*
+ |  routine to create mortar interfaces                      m.gee 06/05|
+ *----------------------------------------------------------------------*/
+#ifdef PARALLEL
+int create_mortar(FIELD *actfield, PARTITION *actpart,
+                  int disnum, DESIGN *design, int init, MPI_Comm mpicomm)
+#else
+int create_mortar(FIELD *actfield, PARTITION *actpart,
+                  int disnum, DESIGN *design, int init)
+#endif
+{
+  // Create a communicator for Epetra objects
+#ifdef PARALLEL
+  comm = new Epetra_MpiComm(mpicomm);
+  int MyPID = comm->MyPID();
+#else
+  comm = new Epetra_SerialComm();
+  int MyPID = comm->MyPID();
+#endif
+
+  // output level (0-10)
+  int outlevel = 10;
+
+  //-------------------------------------------------------------------
+  // get discretization
+
+  DISCRET* actdis = &(actfield->dis[disnum]);
+
+  //-------------------------------------------------------------------
+  // create the mortar manager
+
+  mrtr_manager = new MRTR::Manager(*comm,outlevel);
+
+  //=================================== handle the line interfaces (2D)
+  
+  //-------------------------------------------------------------------
+  // count number of 2D mortar interfaces ninter
+
+  int* ids    = NULL;
+  int  ninter = cca_mrtr_2D_numinterfaces(&ids,design);
+
+  //-------------------------------------------------------------------
+  // loop over number of mortar interfaces 
+
+  MRTR::Interface* interface = NULL;
+  for (int k=0; k<ninter; ++k)
+  {
+    //-----------------------------------------------------------------
+    // create an interface class
+
+    int id    = ids[k];
+    interface = new MRTR::Interface(id,true,mrtr_manager->Comm(),outlevel);
+
+    //-----------------------------------------------------------------
+    // find dlines for given interface id
+
+    DLINE* dline1 = NULL;
+    DLINE* dline2 = NULL;
+    bool ok = cca_mrtr_2D_finddlines(id,&dline1,&dline2,design);
+    
+    
+    //-----------------------------------------------------------------
+    // find all glines that are on dline1/dline2
+
+    int ngline1=0;
+    int ngline2=0;
+    GLINE** gline1 = NULL; // needs to be deleted
+    GLINE** gline2 = NULL; // needs to be deleted
+    ngline1 = cca_mrtr_2D_find_glines_on_dline(&gline1,dline1,actdis);    
+    ngline2 = cca_mrtr_2D_find_glines_on_dline(&gline2,dline2,actdis);    
+    
+    // loop all lines and create segment classes from them
+
+    // side 0 of interface
+    for (int i=0; i<ngline1; ++i)
+    {
+      // only my segments
+      if (gline1[i]->proc != MyPID) continue;
+      if (gline1[i]->ngsurf != 1)
+        cout << "***WRN*** gline " << i << " has more then one gsurf!\n";
+      int* nodeIds = NULL; // new int[gline1[i]->ngnode];
+      
+      MRTR::Segment::SegmentType typ = MRTR::Segment::seg_none;
+      cca_mrtr_2D_prepare_gline_data(gline1[i],&nodeIds,&typ);  
+
+      MRTR::Segment* seg;
+      if (typ==MRTR::Segment::seg_Linear1D)
+        seg = new MRTR::Segment_Linear1D(gline1[i]->Id,gline1[i]->ngnode,nodeIds);
+      else dserror("Unknown type of 1D segment");
+      
+      delete [] nodeIds;
+      
+      bool ok = interface->AddSegment(*seg,0);
+      delete seg; seg = NULL;
+    }
+
+    // side 1 of interface
+    for (int i=0; i<ngline2; ++i)
+    {
+      // only my segments
+      if (gline2[i]->proc != MyPID) continue;
+      if (gline2[i]->ngsurf != 1)
+        cout << "***WRN*** gline " << i << " has more then one gsurf!\n";
+
+      int* nodeIds = NULL;
+      MRTR::Segment::SegmentType typ = MRTR::Segment::seg_none;
+      cca_mrtr_2D_prepare_gline_data(gline2[i],&nodeIds,&typ); 
+
+      MRTR::Segment* seg;
+      if (typ==MRTR::Segment::seg_Linear1D)
+        seg = new MRTR::Segment_Linear1D(gline2[i]->Id,gline2[i]->ngnode,nodeIds);
+      else dserror("Unknown type of 1D segment");
+      
+      delete [] nodeIds;
+
+      bool ok = interface->AddSegment(*seg,1);
+      delete seg; seg = NULL;
+    }
+    
+    //-----------------------------------------------------------------
+    // find all gnodes that are on dline1/dline2
+
+    int ngnode1 = 0;
+    int ngnode2 = 0;
+    GNODE** gnode1 = NULL; // needs to be deleted
+    GNODE** gnode2 = NULL; // needs to be deleted
+    ngnode1 = cca_mrtr_2D_find_gnodes_on_dline(&gnode1,dline1,actdis);
+    ngnode2 = cca_mrtr_2D_find_gnodes_on_dline(&gnode2,dline2,actdis);
+    
+    // side 0 of interface
+    for (int i=0; i<ngnode1; ++i)
+    {
+      // only my own nodes
+      if (gnode1[i]->node->proc != MyPID) continue;
+      MRTR::Node* node = 
+        new MRTR::Node(gnode1[i]->Id,gnode1[i]->node->x,
+                       gnode1[i]->node->numdf,gnode1[i]->node->dof);
+      bool ok = interface->AddNode(*node,0);
+      delete node; node = NULL;
+    }
+    
+    // side 1 of interface
+    for (int i=0; i<ngnode2; ++i)
+    {
+      // only my own nodes
+      if (gnode2[i]->node->proc != MyPID) continue;
+      MRTR::Node* node = 
+        new MRTR::Node(gnode2[i]->Id,gnode2[i]->node->x,
+                       gnode2[i]->node->numdf,gnode2[i]->node->dof);
+      bool ok = interface->AddNode(*node,1);
+      delete node; node = NULL;
+    }
+    
+    //-----------------------------------------------------------------
+    // manually choose mortar (master side)
+    // FIXME: later should be chosen by mortar manager ?
+    //        this means that the functions have to stay changeable
+
+    interface->SetMortarSide(1);
+
+    //-----------------------------------------------------------------
+    // set linear shape functions on both sides, 
+    // set additional dual shape functions on non-mortar side 
+    // Currently ONLY linear functions!!!!
+
+    {
+      MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
+      interface->SetFunctionAllSegmentsSide(0,0,func);
+      interface->SetFunctionAllSegmentsSide(1,0,func);
+      delete func; 
+    }
+
+    //-----------------------------------------------------------------
+    // get the mortar side and set dual linear shape function to non mortar side
+
+    int side = interface->MortarSide();
+    side     = interface->OtherSide(side);
+    //MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
+    MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
+    interface->SetFunctionAllSegmentsSide(side,1,func);
+    delete func; func = NULL;
+    
+    //-----------------------------------------------------------------
+    // set type of projection to be used on this interface
+
+    interface->SetProjectionType(MRTR::Interface::proj_continousnormalfield);    
+    
+    //-----------------------------------------------------------------
+    // Complete interface 
+
+    ok = interface->Complete();
+    if (!ok)
+    {
+      cout << "***ERR*** interface->Complete() returned false\n";
+      exit(EXIT_FAILURE);
+    }
+    
+    //-----------------------------------------------------------------
+    // Add interface to Mortar Manager 
+    mrtr_manager->AddInterface(*interface); // deep copy
+
+    //-----------------------------------------------------------------
+    // tidy up 
+
+    if (gline1) delete [] gline1;
+    if (gline2) delete [] gline2;
+    if (gnode1) delete [] gnode1;
+    if (gnode2) delete [] gnode2;
+    if (interface) delete interface;
+    
+  //-------------------------------------------------------------------
+  } // for (int k=0; k<ninter; ++k) loop over mortar interfaces
+
+  //-----------------------------------------------------------------
+  // print all interfaces
+    fflush(stdout);
+    comm->Barrier();
+
+  delete [] ids;
+  return (1);
+}
+
+
+
+
+/*----------------------------------------------------------------------*
+ |  routine to compute mortar matrices                       m.gee 06/05|
+ *----------------------------------------------------------------------*/
+int compute_mortar(SPARSE_TYP* arraytyp, SPARSE_ARRAY* array, DESIGN *design)
+{
+  //-------------------------------------------------------------------
+  // count number of 2D mortar interfaces ninter
+  //-------------------------------------------------------------------
+  int* ids    = NULL;
+  int  ninter = cca_mrtr_2D_numinterfaces(&ids,design);
+  if (ninter==0)
+  {
+    if (ids) delete [] ids;
+    return (1);
+  }
+
+  //-------------------------------------------------------------------
+  // check type of matrix, currently only msr/spooles supported
+  int *update = NULL;
+  int numeq = 0;
+  int numeq_total = 0;
+  if (*arraytyp == msr)
+  {
+    update = array->msr->update.a.iv;
+    numeq  = array->msr->numeq;
+    numeq_total  = array->msr->numeq_total;
+  }
+  else if (*arraytyp == spoolmatrix)
+  {
+    update = array->spo->update.a.iv;
+    numeq  = array->spo->numeq;
+    numeq_total  = array->spo->numeq_total;
+  }
+  else
+  {
+    cout << "Mortar works with Aztec msr or Spooles matrix only!\n";
+    exit(EXIT_FAILURE);
+  }
+  if (!update)
+  {
+    cout << "update=NULL\n";
+    exit(EXIT_FAILURE);
+  }
+  if (!mrtr_manager)
+  {
+    cout << "mrtr_manager=NULL\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  //-------------------------------------------------------------------
+  // create a map for the current input matrix  
+  Epetra_Map* matrixmap = new Epetra_Map(numeq_total,numeq,update,0,*comm);
+
+  //-------------------------------------------------------------------
+  // store this map in the mortar manager
+  mrtr_manager->SetInputMap(matrixmap);
+  
+  //-------------------------------------------------------------------
+  // integrate the whole mortar interfaces
+  mrtr_manager->Mortar_Integrate();  
+    
+  //-------------------------------------------------------------------
+  // print the Mortar Manager
+  cout << *mrtr_manager;  
+  
+  //-------------------------------------------------------------------
+  // create an Epetra_CrsMatrix from the inputmatrix
+  Epetra_CrsMatrix* inputmatrix = new Epetra_CrsMatrix(Copy,*matrixmap,60);
+  
+  //-------------------------------------------------------------------
+  // fill the inputmatrix from ccarat depending on msr or spooles matrix
+  if (*arraytyp == msr)
+  {
+    update = array->msr->update.a.iv;
+    numeq  = array->msr->numeq;
+    int* bindx = array->msr->bindx.a.iv;
+    double* val = array->msr->val.a.dv;
+    for (int i=0; i<numeq; ++i)
+    {
+      int grow = update[i];
+      // diagonal
+      inputmatrix->InsertGlobalValues(grow,1,&(val[i]),&grow);
+      // off-diagonal
+      inputmatrix->InsertGlobalValues(grow,bindx[i+1]-bindx[i],&(val[bindx[i]]),&(bindx[bindx[i]]));
+    }
+  }
+  else if (*arraytyp == spoolmatrix)
+  {
+    int* irn = array->spo->irn_loc.a.iv;
+    int* jcn = array->spo->jcn_loc.a.iv;
+    double* val = array->spo->A_loc.a.dv;
+    int nnz = array->spo->A_loc.fdim;
+    for (int i=0; i<nnz; ++i)
+      inputmatrix->InsertGlobalValues(irn[i],1,&(val[i]),&jcn[i]);
+  }
+  inputmatrix->FillComplete();
+
+  //-------------------------------------------------------------------
+  // store the inputmatrix in the Mortar manager
+  mrtr_manager->SetInputMatrix(inputmatrix,false);
+
+  //-------------------------------------------------------------------
+  // produce the saddle point problem
+  mrtr_manager->MakeSaddleProblem();
+  
+  
+  //-------------------------------------------------------------------
+  // tidy up
+  delete matrixmap;
+  return(1);
+}
+
+#endif // MORTAR
+#endif // TRILINOS_PACKAGE
