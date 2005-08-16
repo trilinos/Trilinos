@@ -44,13 +44,21 @@ ACLOCAL	= aclocal -I config
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = \
-	testharness/test-harness.plx \
-	testharness/dependencies \
-	testharness/elements-machine/linux-software \
-	testharness/elements-machine/linux-software-mpi \
-	testharness/elements-trilinos/linux-software \
-	testharness/config/checkin \
-	testharness/lib/MIME-Lite-3.01/lib/MIME/Lite.pm \
+	commonTools/test/coverage/README \
+	commonTools/test/coverage/gcovmerge \
+	commonTools/test/harness/config \
+	commonTools/test/harness/README \
+	commonTools/test/harness/runharness \
+	commonTools/test/harness/invoke-configures/linux-beowulf \
+	commonTools/test/harness/invoke-configures/linux-beowulf-mpi \
+	commonTools/test/utilities/compareTestOutput \
+	commonTools/test/utilities/dependencies \
+	commonTools/test/utilities/README \
+	commonTools/test/utilities/report \
+	commonTools/test/utilities/runbuild \
+	commonTools/test/utilities/runconfigure \
+	commonTools/test/utilities/runmake \
+	commonTools/test/utilities/runtests \
 	sampleScripts/aix_mpi_xlC sampleScripts/aix_mpi_xlC2 \
 	sampleScripts/compaqCluster_mpi_stratus \
 	sampleScripts/compaqCluster_serial_stratus sampleScripts/cplant_mpi_ross \
@@ -74,6 +82,7 @@ EXTRA_DIST = \
 	sampleScripts/README config/AutotoolsVersionInfo \
 	sampleScripts/cygwin_icl.pl sampleScripts/stratus_ar.pl \
 	doc/Tutorial/README RELEASE_NOTES \
+	doc/build_docs.pl \
 	doc/check_installation.txt
 
 ## #######################################################################
