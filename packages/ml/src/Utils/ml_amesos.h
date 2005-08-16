@@ -16,6 +16,7 @@
 #define ML_AMESOS_SUPERLUDIST    2
 #define ML_AMESOS_MUMPS          3
 #define ML_AMESOS_SCALAPACK      4
+#define ML_AMESOS_SUPERLU        5
 
 
 #ifndef ML_CPP

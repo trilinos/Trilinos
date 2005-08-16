@@ -100,6 +100,9 @@ int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver,
      case ML_AMESOS_SUPERLUDIST:
        sprintf( str, "Amesos_SUPERLUDIST_%d", nl );
        break;
+     case ML_AMESOS_SUPERLU:
+       sprintf( str, "Amesos_SUPERLU_%d", nl );
+       break;
      case ML_AMESOS_MUMPS:
        sprintf( str, "Amesos_MUMPS_%d", nl );
        break;

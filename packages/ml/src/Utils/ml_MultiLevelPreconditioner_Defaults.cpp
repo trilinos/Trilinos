@@ -41,6 +41,7 @@
 
 #include "ml_epetra.h"
 #include "ml_anasazi.h"
+#include "Teuchos_RefCountPtr.hpp"
 
 using namespace Teuchos;
 using namespace ML_Epetra;

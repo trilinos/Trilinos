@@ -2025,6 +2025,7 @@ ApplyInverse(const Epetra_MultiVector& X,
  * - \c Amesos-KLU
  * - \c Amesos-UMFPACK
  * - \c Amesos-Superludist
+ * - \c Amesos-Superlu
  * - \c Amesos-MUMPS
  * - \c Amesos-ScALAPACK (under development in Amesos)
  * - \c do-nothing
@@ -2126,6 +2127,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   else if(  CoarseSolution == "Amesos-Superludist" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
                            ML_AMESOS_SUPERLUDIST, MaxProcs, AddToDiag);
+  else if(  CoarseSolution == "Amesos-Superlu" )
+    ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
+                           ML_AMESOS_SUPERLU, MaxProcs, AddToDiag);
   else if( CoarseSolution == "Amesos-MUMPS" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
                            ML_AMESOS_MUMPS, MaxProcs, AddToDiag);

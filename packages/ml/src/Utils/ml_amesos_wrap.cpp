@@ -136,6 +136,12 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
     
     break;
 
+  case ML_AMESOS_SUPERLU:
+    print_out(Comm, curr_level, "SuperLU");
+    A_Base = A_Factory.Create("Amesos_Superlu", *Amesos_LinearProblem);
+    
+    break;
+
   case ML_AMESOS_SCALAPACK:
     print_out(Comm, curr_level, "ScaLAPACK");
     A_Base = A_Factory.Create("Amesos_Scalapack", *Amesos_LinearProblem);
@@ -316,10 +322,9 @@ void ML_Amesos_Destroy(void *Amesos_Handle)
   const Epetra_LinearProblem *Amesos_LinearProblem;
   Amesos_LinearProblem = A_Base->GetProblem(); 
 
-  delete Amesos_LinearProblem->GetOperator(); 
-
-  delete Amesos_LinearProblem ;
   delete A_Base ;
+  delete Amesos_LinearProblem->GetOperator(); 
+  delete Amesos_LinearProblem ;
 
 }
 
