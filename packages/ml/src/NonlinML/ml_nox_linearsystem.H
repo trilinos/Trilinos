@@ -191,12 +191,22 @@ public:
   //! Return Jacobian operator
   virtual const Epetra_Operator& getJacobianOperator() const ;
 
+  //! Return Jacobian operator
+  virtual Epetra_Operator& getJacobianOperator();
+
   //! Return preconditioner operator
   virtual const Epetra_Operator& getGeneratedPrecOperator() const;
+
+  //! Return preconditioner operator
+  virtual Epetra_Operator& getGeneratedPrecOperator();
 
   //! Set Jacobian operator for solve
   virtual void 
   setJacobianOperatorForSolve(const Epetra_Operator& solveJacOp);
+
+  //! Set preconditioner operator for solve
+  virtual void 
+  setPrecOperatorForSolve(const Epetra_Operator& solvePrecOp);
 
 private:
 

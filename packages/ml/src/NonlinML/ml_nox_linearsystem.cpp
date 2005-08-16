@@ -270,9 +270,31 @@ const Epetra_Operator& ML_NOX::Ml_Nox_LinearSystem::getJacobianOperator() const
 }
 
 /*----------------------------------------------------------------------*
+ |  getJacobianOperator (public)                             m.gee 12/04|
+ *----------------------------------------------------------------------*/
+Epetra_Operator& ML_NOX::Ml_Nox_LinearSystem::getJacobianOperator()
+{
+   cout << "**ERR**: ML_Epetra::Ml_Nox_LinearSystem::getJacobianOperator:\n"
+        << "**ERR**: not impl.\n"  
+        << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+   return J_;
+}
+
+/*----------------------------------------------------------------------*
  |  getGeneratedPrecOperator (public)                        m.gee 12/04|
  *----------------------------------------------------------------------*/
 const Epetra_Operator& ML_NOX::Ml_Nox_LinearSystem::getGeneratedPrecOperator() const
+{
+   cout << "**ERR**: ML_Epetra::Ml_Nox_LinearSystem::getGeneratedPrecOperator:\n"
+        << "**ERR**: not impl.\n"  
+        << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+   return *Precptr_;
+}
+
+/*----------------------------------------------------------------------*
+ |  getGeneratedPrecOperator (public)                        m.gee 12/04|
+ *----------------------------------------------------------------------*/
+Epetra_Operator& ML_NOX::Ml_Nox_LinearSystem::getGeneratedPrecOperator()
 {
    cout << "**ERR**: ML_Epetra::Ml_Nox_LinearSystem::getGeneratedPrecOperator:\n"
         << "**ERR**: not impl.\n"  
@@ -286,6 +308,17 @@ const Epetra_Operator& ML_NOX::Ml_Nox_LinearSystem::getGeneratedPrecOperator() c
 void ML_NOX::Ml_Nox_LinearSystem::setJacobianOperatorForSolve(const Epetra_Operator& solveJacOp)
 {
    cout << "**ERR**: ML_Epetra::Ml_Nox_LinearSystem::setJacobianOperatorForSolve:\n"
+        << "**ERR**: not impl.\n"  
+        << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+   return;
+}
+
+/*----------------------------------------------------------------------*
+ |  setPrecOperatorForSolve (public)                         m.gee 08/05|
+ *----------------------------------------------------------------------*/
+void ML_NOX::Ml_Nox_LinearSystem::setPrecOperatorForSolve(const Epetra_Operator& solvePrecOp)
+{
+   cout << "**ERR**: ML_Epetra::Ml_Nox_LinearSystem::setPrecOperatorForSolve:\n"
         << "**ERR**: not impl.\n"  
         << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
    return;
