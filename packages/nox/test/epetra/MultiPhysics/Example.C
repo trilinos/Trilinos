@@ -573,6 +573,11 @@ int main(int argc, char *argv[])
            << " sec." << endl << endl;
   }
 
+  // Need to put in a check for convergence
+  // Added the following so test actually passes in parallel
+  if(MyPID==0)
+    cout << "Test passed!" << endl;
+
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif

@@ -74,13 +74,11 @@ int main(int argc, char *argv[]) {
   // *** Insert your testing here! ***
 
 
-
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
-    if (status == 0) 
-      cout << "Test was successful!" << endl;
-    else 
-      cout << "Test Failed!" << endl;
-  }
+  
+  if (status == 0) 
+    cout << "Test passed!" << endl;
+  else 
+    cout << "Test failed!" << endl;
 
   // Final return value (0 = succefull, non-zero = failure)
   return status;

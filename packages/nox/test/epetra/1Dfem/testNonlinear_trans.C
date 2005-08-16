@@ -582,6 +582,14 @@ int main(int argc, char *argv[])
     cout << endl;
   }
 
+  // Summarize test results  
+  if (utils.isPrintProcess()) {
+    if (solver.getStatus() == NOX::StatusTest::Converged)
+      cout << "Test passed!" << endl;
+    else 
+      cout << "Test failed!" << endl;
+  }
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif

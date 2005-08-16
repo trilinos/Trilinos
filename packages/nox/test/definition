@@ -2,17 +2,24 @@
 # FRAMEWORK group
 #
 
-# NOX tests
+# NOX LAPACK tests
+(FRAMEWORK) {
+    DIRS = lapack/NOX,
+           lapack/NOX_Group,
+           lapack/NOX_NewTest;
+    EXIT-STATUS = STRING-COMPARISON(Test passed!);
+    ARGS = -v;
+    COMM = SERIAL;
+}
+
+# NOX epetra tests
 (FRAMEWORK) {
     DIRS = epetra/1dfem,
            epetra/DS6.5.1,
-           epetra/MultiPhysics,
            epetra/NOX_Group,
            epetra/NOX_NewTest,
-           epetra/NOX_Vector,
-           lapack/NOX,
-           lapack/NOX_Group,
-           lapack/NOX_NewTest;
+           epetra/NOX_Vector;
+    EXIT-STATUS = STRING-COMPARISON(Test passed!);
     ARGS = -v;
     COMM = SERIAL, MPI;
 }

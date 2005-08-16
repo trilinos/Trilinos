@@ -235,13 +235,11 @@ int main(int argc, char *argv[]) {
   grp = solver.getSolutionGroup();
   
 
-
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
-    if (status == NOX::StatusTest::Converged) 
-      cout << "Test was successful!" << endl;
-    else 
-      cout << "Test Failed!" << endl;
-  }
+  // Print out status for test suite
+  if (status == NOX::StatusTest::Converged) 
+    cout << "Test passed!" << endl;
+  else 
+    cout << "Test failed!" << endl;
 
   // Final return value (0 = succefull, non-zero = failure)
   //return status;

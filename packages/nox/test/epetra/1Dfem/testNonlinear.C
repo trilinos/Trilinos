@@ -213,18 +213,6 @@ int main(int argc, char *argv[])
 	cout << "Nonlinear solver failed to converge!" << endl;
   }
 
-  // *** Insert your testing here! ***
-
-  // Final return value (0 = successfull, non-zero = failure)
-
-  // Summarize test results  
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
-    if (status == 0)
-      cout << "Test Successfull!" << endl;
-    else 
-      cout << "Test Failed!" << endl;
-  }
-
   // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
   const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
@@ -251,6 +239,18 @@ int main(int argc, char *argv[])
   fclose(ifp);
   */
 
+  // *** Insert your testing here! ***
+
+  // Final return value (0 = successfull, non-zero = failure)
+
+  // Summarize test results 
+  if (printing.isPrintProcess()) { 
+    if (status == 0)
+      cout << "Test passed!" << endl;
+    else 
+      cout << "Test failed!" << endl;
+  }
+  
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif

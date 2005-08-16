@@ -192,9 +192,9 @@ int main(int argc, char *argv[]) {
 
   if (printing.isPrintProcess()) {
     if (status == 0)
-      cout << "Test Successfull!" << endl;
+      cout << "Test passed!" << endl;
     else 
-      cout << "Test Failed!" << endl;
+      cout << "Test failed!" << endl;
   }
 
 #ifdef HAVE_MPI

@@ -268,9 +268,12 @@ int main(int argc, char *argv[])
   // Solve the nonlinear system
   NOX::StatusTest::StatusType status = solver.solve();
 
-  // Warn user if solve failed
+  // Print status
   if (status != NOX::StatusTest::Failed)
-    cout << "Error: Solve failed to converge!" << endl;
+    cout << "Test failed!" << endl;
+
+  if (status != NOX::StatusTest::Converged)
+    cout << "Test passed!" << endl;
 
   // Get the answer
   grp = solver.getSolutionGroup();

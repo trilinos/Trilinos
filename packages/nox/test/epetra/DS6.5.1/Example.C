@@ -250,12 +250,10 @@ int main(int argc, char *argv[])
     fprintf(ifp, "%d  %E\n", soln.Map().MinMyGID()+i, finalSolution[i]);
   fclose(ifp);
 
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
-    if (testStatus == 0)
-      cout << "Test Successfull!" << endl;
-    else
-      cout << "Test Failed!" << endl;
-  }
+  if (testStatus == 0)
+    cout << "Test passed!" << endl;
+  else
+    cout << "Test failed!" << endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
