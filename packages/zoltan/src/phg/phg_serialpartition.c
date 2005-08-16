@@ -201,13 +201,13 @@ static int timer_cpart=-1, timer_gather=-1, timer_refine=-1;
         scomm.Communicator = MPI_COMM_SELF;
         scomm.row_comm = MPI_COMM_SELF;
         scomm.col_comm = MPI_COMM_SELF;
-        scomm.RNGState = Zoltan_Rand(NULL);
-        scomm.RNGState_row = Zoltan_Rand(NULL);
-        scomm.RNGState_col = Zoltan_Rand(NULL);
         scomm.myProc = 0;
         scomm.nProc = 1;
         first_time = 0;
       }
+      scomm.RNGState = Zoltan_Rand(NULL);
+      scomm.RNGState_row = Zoltan_Rand(NULL);
+      scomm.RNGState_col = Zoltan_Rand(NULL);
       scomm.zz = zz;
 
       /* 

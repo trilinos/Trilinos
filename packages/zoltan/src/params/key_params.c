@@ -23,6 +23,7 @@ extern "C" {
 #include "key_params.h"
 #include "params_const.h"
 #include "timer_const.h"
+#include "zz_rand.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -47,6 +48,7 @@ static PARAM_VARS Key_params[] = {
   { "NUM_LOCAL_PARTITIONS", NULL, "INT", 0 },
   { "MIGRATE_ONLY_PROC_CHANGES", NULL, "INT", 0 },
   { "REMAP", NULL, "INT", 0 },
+  { "SEED", NULL, "INT", 0 },
   { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 /*****************************************************************************/
@@ -300,6 +302,13 @@ int  idx 			/* index of vector param, -1 if scalar */
 	zz->LB.Remap_Flag = result.ival;
 	status = 3;		/* Don't add to Params field of ZZ */
         break;
+
+      case 18:          /* Seed */
+        if (result.def)
+            result.ival = Zoltan_Seed();
+        Zoltan_Srand(result.ival, NULL);
+        status = 3;
+        break;
       }  /* end switch (index) */
     }
 
@@ -364,6 +373,8 @@ void Zoltan_Print_Key_Params(ZZ *zz)
          zz->LB.Num_Local_Parts_Param);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[17].name, 
          zz->LB.Remap_Flag);
+  printf("ZOLTAN Parameter %s = %d (%u)\n", Key_params[18].name, 
+         Zoltan_Seed(), Zoltan_Seed());
 }
 
 #ifdef __cplusplus

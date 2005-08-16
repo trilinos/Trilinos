@@ -400,9 +400,9 @@ int Zoltan_PHG_Redistribute(
         reqx = reqy = -1;
     
     /* fill ncomm */
-    ierr = Zoltan_PHG_Set_2D_Proc_Distrib(ocomm->zz, nmpicomm, ocomm->myProc-lo, hi-lo+1, 
-                                          reqx, reqy, 
-                                          ncomm);
+    ierr = Zoltan_PHG_Set_2D_Proc_Distrib(ocomm->zz, nmpicomm, 
+                                          ocomm->myProc-lo, hi-lo+1, 
+                                          reqx, reqy, ncomm);
     
     /* if new communicator is not NULL; this process is in that group
        so compute the rest of the stuff that it will need */

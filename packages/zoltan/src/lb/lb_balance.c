@@ -19,6 +19,7 @@ extern "C" {
 
 
 #include "zz_const.h"
+#include "zz_rand.h"
 #include "key_params.h"
 #include "ha_const.h"
 #include "all_allo_const.h"
@@ -288,6 +289,12 @@ int part_dim;
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_WARN);
   }
+
+  /*
+   *  Sync the random number generator across processors.
+   */
+
+  Zoltan_Srand_Sync(Zoltan_Rand(NULL), NULL, zz->Communicator);
 
   /*
    *  Construct the heterogenous machine description.

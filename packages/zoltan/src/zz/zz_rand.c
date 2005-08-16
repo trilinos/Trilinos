@@ -30,7 +30,14 @@ extern "C" {
  * gave problems on stratus (which assumed 64 bit longs.) 
  */
 
-static unsigned int zidum = 123456789U;
+static unsigned int zidum = ZOLTAN_RAND_INIT;
+
+unsigned int Zoltan_Seed()
+{
+/* Function that returns the current value of the Zoltan seed. */
+  return zidum;
+}
+
 
 unsigned Zoltan_Rand(unsigned int *myidum) {
 /* 
