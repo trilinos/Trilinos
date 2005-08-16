@@ -44,6 +44,4 @@ RANLIB="ranlib -s" \
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
---enable-tsfextended \
---disable-amesos-thyra \
---disable-aztecoo-thyra
+--enable-tsfextended
