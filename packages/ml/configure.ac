@@ -409,11 +409,12 @@ fi
 #### interfaces to 3rd party packages
 ############################################
 #
-TAC_ARG_WITH_PACKAGE(ml_superlu, [Enable serial SuperLU (version 1.0) support.  Note 1: SuperLU is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu" --with-ldflags="-L<SuperLU-library-path>" --with-incdirs="<SuperLU-include-path>".], ML_SUPERLU, no)
+TAC_ARG_WITH_PACKAGE(ml_superlu, [(Deprecated in favor of --enable-ml-amesos.
+Cannot be used at the same time as --enable-ml-amesos.) Enable serial SuperLU (version 1.0) support.  Note 1: SuperLU is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu" --with-ldflags="-L<SuperLU-library-path>" --with-incdirs="<SuperLU-include-path>".], ML_SUPERLU, no)
 #
-TAC_ARG_WITH_PACKAGE(ml_superlu2, [Enable serial SuperLU (version 2.0) support.  Note 1: SuperLU is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu" --with-ldflags="-L<SuperLU-library-path>" --with-incdirs="<SuperLU-include-path>".], ML_SUPERLU2_0, no)
+TAC_ARG_WITH_PACKAGE(ml_superlu2, [(Deprecated in favor of --enable-ml-amesos.  Cannot be used at the same time as --enable-ml-amesos.) Enable serial SuperLU (version 2.0) support.  Note 1: SuperLU is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu" --with-ldflags="-L<SuperLU-library-path>" --with-incdirs="<SuperLU-include-path>".], ML_SUPERLU2_0, no)
 #
-TAC_ARG_WITH_PACKAGE(ml_superlu_dist, [Enable SuperLU_DIST support.  Note 1: SuperLU_DIST is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU_DIST headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu_dist" --with-ldflags="-L<SuperLU_DIST-library-path>" --with-incdirs="<SuperLU_DIST-include-path>".], ML_SUPERLU_DIST, no)
+TAC_ARG_WITH_PACKAGE(ml_superlu_dist, [(Deprecated in favor of --enable-ml-amesos.  Cannot be used at the same time as --enable-ml-amesos.) Enable SuperLU_DIST support.  Note 1: SuperLU_DIST is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU_DIST headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu_dist" --with-ldflags="-L<SuperLU_DIST-library-path>" --with-incdirs="<SuperLU_DIST-include-path>".], ML_SUPERLU_DIST, no)
 #
 TAC_ARG_WITH_PACKAGE(ml_metis, [Enable METIS support.  METIS can be used to create aggregates using graph-decomposition algorithsm. Note 1: METIS is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of headers and libraries like, for instance: configure --with-libs="<other libraries> -lmetis" --with-ldflags="-L<METIS-library-path>" and --with-incdirs="<METIS-include-path>".], ML_METIS, no)
 #
@@ -430,8 +431,7 @@ TAC_ARG_WITH_PACKAGE(ml_parasails, [Enable Parasails support. See notes for --wi
 TAC_ARG_WITH_PACKAGE(ml_nox, [Enable ML_NOX support. --with-ml_nox requires that configure and make with --enable-nox --enable-prerelease --enable-nox-epetra --enable-epetraext have been run before, otherwise it won't find necessary headers and won't link. ], ML_NOX, no) 
 AM_CONDITIONAL(ML_USING_NOX, test "X$ac_cv_use_ml_nox" = "Xyes")
 #
-  TAC_ARG_WITH_PACKAGE(ml_zoltan, [Enable Zoltan support. This option requires
-that MPI be enabled.  See notes for --with-ml_metis.], ML_ZOLTAN, no) 
+TAC_ARG_WITH_PACKAGE(ml_zoltan, [Enable Zoltan support. This option requires that MPI be enabled.  See notes for --with-ml_metis.], ML_ZOLTAN, no) 
 #this works
 if test "X${HAVE_PKG_MPI}" != "Xyes"; then
 #if test "X${HAVE_MPI}" != "Xyes"; then
@@ -448,7 +448,16 @@ fi
 #
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, epetra, ML_EPETRA,  ML_USING_EPETRA, yes, [Enable Epetra support.], [Enable Epetra support. Can be overridden with --disable-ml-epetra.])
 #
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, amesos, ML_AMESOS, ML_USING_AMESOS, yes, [Enable AMESOS support. Amesos, a Trilinos package, can be used to interface ML with various direct solvers, such as SuperLU, MUMPS, UMFPACK, KLU, and other. Amesos requires --enable-epetra. See notes for --enable-ml_metis.], [Enable AMESOS support. Amesos, a Trilinos package, can be used to interface ML with various direct solvers, such as SuperLU, MUMPS, UMFPACK, KLU, and other. Amesos requires --enable-epetra. See notes for --enable-ml_metis. Can be overridden with --disable-ml-amesos.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, amesos, ML_AMESOS, ML_USING_AMESOS, yes, [Enable AMESOS support. Amesos, a Trilinos package, can be used to interface ML with various direct solvers, such as SuperLU, MUMPS, UMFPACK, KLU, and other.  Amesos requires --enable-epetra. See notes for --enable-ml_metis.], [Enable AMESOS support. Amesos, a Trilinos package, can be used to interface ML with various direct solvers, such as SuperLU, SuperLUdist, MUMPS, UMFPACK, KLU, and other. Amesos requires --enable-epetra. See notes for --enable-ml_metis. Can be overridden with --disable-ml-amesos.])
+#
+if test "X${ac_cv_use_amesos}" = "Xyes"; then
+   #Issue an error message and abort if the user has configured with
+   #both the Amesos interface and ML's internal SuperLU interface enabled.
+   #Amesos wants SuperLU version 3.0, whereas ML uses SuperLU versions 1.0/2.0.
+   if test "X$ac_cv_use_ml_superlu" = "Xyes" || test "X${ac_cv_use_ml_superlu2}" = "Xyes" || test "X${ac_cv_use_ml_superlu_dist}" = "Xyes"; then
+     AC_MSG_ERROR([[You cannot use Amesos and ML's internal interface to SuperLU/SuperLU-dist at the same time.]])
+   fi
+fi
 #
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, ifpack, ML_IFPACK, ML_USING_IFPACK, yes, [Enable IFPACK support. Ifpack, a Trilinos package, can provide incomplete factorization smoothers to ML. Ifpack requires --enable_epetra. See notes for --enable-ml_metis.], [Enable IFPACK support. Ifpack, a Trilinos package, can provide incomplete factorization smoothers to ML. Ifpack requires --enable_epetra. See notes for --enable-ml_metis. Can be overridden with --disable-ml-ifpack.])
 #
