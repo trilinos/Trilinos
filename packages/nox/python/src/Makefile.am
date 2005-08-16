@@ -35,7 +35,7 @@ SWIG_CXXFLAGS = \
         -I$(top_srcdir)/python/src           \
         -I$(top_srcdir)/../epetra/src        \
         -I$(top_srcdir)/../epetra/python/src \
-        -I$(top_srcdir)/../pytrilinos/src
+        -I$(top_srcdir)/../PyTrilinos/src
 
 # Default make target
 all-am: build

@@ -874,16 +874,6 @@ AC_CONFIG_FILES([
 		example-belos/Makefile
 		example-belos/epetra/Makefile
 		example-belos/epetra/1Dfem_nonlinear/Makefile
-		python/Makefile
-		python/src/Makefile
-		python/src/__init__.py
-		python/src/PyTrilinos/__init__.py
-		python/src/.deps/dummy
-		python/test/Makefile
-		python/test-epetra/Makefile
-		python/test-lapack/Makefile
-		python/example-epetra/Makefile
-		python/example-lapack/Makefile
 		src-loca/Makefile
 		src-loca/doc/Makefile
 		src-loca/src/Makefile
@@ -926,17 +916,29 @@ AC_CONFIG_FILES([
                 test/epetra/MultiPhysics/Makefile
                 test/epetra/DS6.5.1/Makefile
                 test/petsc/Makefile
+		python/Makefile
+		python/src/Makefile
+		python/src/__init__.py
+		python/src/PyTrilinos/__init__.py
+		python/src/.deps/dummy
+		python/test/Makefile
+		python/test-epetra/Makefile
+		python/test-lapack/Makefile
+		python/example-epetra/Makefile
+		python/example-lapack/Makefile
+		python/src-loca/Makefile
+		python/src-loca/src/Makefile
+		python/src-loca/src/__init__.py
+		python/src-loca/src/PyTrilinos/__init__.py
+		python/src-loca/src/.deps/dummy
+		python/src-loca/test/Makefile
+		python/src-loca/test-epetra/Makefile
+		python/src-loca/test-lapack/Makefile
+		python/src-loca/example-epetra/Makefile
+		python/src-loca/example-lapack/Makefile
 		])
 
 AC_OUTPUT
-
-#		python/GNUmakefile
-#		python/__init__.py
-#		src-loca/python/Makefile
-#		src-loca/python/GNUmakefile
-#		src-loca/python/__init__.py
-#		test/lapack/LOCA_python/Makefile
-#		test/lapack/LOCA_python/setpath.py
 
 # ------------------------------------------------------------------------
 # Bye World!

@@ -31253,7 +31253,7 @@ echo "${ECHO_T}$WITH_PRERELEASE" >&6
 # Output files
 # ------------------------------------------------------------------------
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile Makefile.export.nox doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile example-lapack/Makefile src-epetra/Makefile example-epetra/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile example-epetra/Brusselator_Split/Makefile example-epetra/Brusselator_EpetraNew/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile example-petsc/1Dfd_nonlinear/Makefile src-belos/Makefile example-belos/Makefile example-belos/epetra/Makefile example-belos/epetra/1Dfem_nonlinear/Makefile python/Makefile python/src/Makefile python/src/__init__.py python/src/PyTrilinos/__init__.py python/src/.deps/dummy python/test/Makefile python/test-epetra/Makefile python/test-lapack/Makefile python/example-epetra/Makefile python/example-lapack/Makefile src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-mf/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile src-loca/example-epetra/Tcubed/Makefile src-loca/example-epetra/Tcubed_epetra_new/Makefile src-loca/example-epetra/Brusselator_xyzt/Makefile src-loca/example-lapack/Makefile src-loca/example-lapack/Chan/Makefile src-loca/example-lapack/1Dfd_pitchfork/Makefile src-loca/example-lapack/Brusselator/Makefile test/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/serial/noxTestAll test/scripts/daily/mpi/Makefile test/scripts/daily/mpi/noxTestAllMpi test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_TestProblems/Makefile test/lapack/LOCA_UnitTests/Makefile test/lapack/LOCA_ChanProblem/Makefile test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_TestProblems/Makefile test/epetra/LOCA_UnitTests/Makefile test/epetra/LOCA_Tcubed/Makefile test/epetra/LOCA_Pitchfork/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/epetra/DS6.5.1/Makefile test/petsc/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ac_config_files="$ac_config_files Makefile Makefile.export.nox doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile example-lapack/Makefile src-epetra/Makefile example-epetra/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile example-epetra/Brusselator_Split/Makefile example-epetra/Brusselator_EpetraNew/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile example-petsc/1Dfd_nonlinear/Makefile src-belos/Makefile example-belos/Makefile example-belos/epetra/Makefile example-belos/epetra/1Dfem_nonlinear/Makefile src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-mf/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile src-loca/example-epetra/Tcubed/Makefile src-loca/example-epetra/Tcubed_epetra_new/Makefile src-loca/example-epetra/Brusselator_xyzt/Makefile src-loca/example-lapack/Makefile src-loca/example-lapack/Chan/Makefile src-loca/example-lapack/1Dfd_pitchfork/Makefile src-loca/example-lapack/Brusselator/Makefile test/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/serial/noxTestAll test/scripts/daily/mpi/Makefile test/scripts/daily/mpi/noxTestAllMpi test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_TestProblems/Makefile test/lapack/LOCA_UnitTests/Makefile test/lapack/LOCA_ChanProblem/Makefile test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_TestProblems/Makefile test/epetra/LOCA_UnitTests/Makefile test/epetra/LOCA_Tcubed/Makefile test/epetra/LOCA_Pitchfork/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/epetra/DS6.5.1/Makefile test/petsc/Makefile python/Makefile python/src/Makefile python/src/__init__.py python/src/PyTrilinos/__init__.py python/src/.deps/dummy python/test/Makefile python/test-epetra/Makefile python/test-lapack/Makefile python/example-epetra/Makefile python/example-lapack/Makefile python/src-loca/Makefile python/src-loca/src/Makefile python/src-loca/src/__init__.py python/src-loca/src/PyTrilinos/__init__.py python/src-loca/src/.deps/dummy python/src-loca/test/Makefile python/src-loca/test-epetra/Makefile python/src-loca/test-lapack/Makefile python/src-loca/example-epetra/Makefile python/src-loca/example-lapack/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -32178,16 +32178,6 @@ do
   "example-belos/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-belos/Makefile" ;;
   "example-belos/epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-belos/epetra/Makefile" ;;
   "example-belos/epetra/1Dfem_nonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-belos/epetra/1Dfem_nonlinear/Makefile" ;;
-  "python/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/Makefile" ;;
-  "python/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src/Makefile" ;;
-  "python/src/__init__.py" ) CONFIG_FILES="$CONFIG_FILES python/src/__init__.py" ;;
-  "python/src/PyTrilinos/__init__.py" ) CONFIG_FILES="$CONFIG_FILES python/src/PyTrilinos/__init__.py" ;;
-  "python/src/.deps/dummy" ) CONFIG_FILES="$CONFIG_FILES python/src/.deps/dummy" ;;
-  "python/test/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/test/Makefile" ;;
-  "python/test-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/test-epetra/Makefile" ;;
-  "python/test-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/test-lapack/Makefile" ;;
-  "python/example-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/example-epetra/Makefile" ;;
-  "python/example-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/example-lapack/Makefile" ;;
   "src-loca/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/Makefile" ;;
   "src-loca/doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/doc/Makefile" ;;
   "src-loca/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/src/Makefile" ;;
@@ -32230,6 +32220,26 @@ do
   "test/epetra/MultiPhysics/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/epetra/MultiPhysics/Makefile" ;;
   "test/epetra/DS6.5.1/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/epetra/DS6.5.1/Makefile" ;;
   "test/petsc/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/petsc/Makefile" ;;
+  "python/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/Makefile" ;;
+  "python/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src/Makefile" ;;
+  "python/src/__init__.py" ) CONFIG_FILES="$CONFIG_FILES python/src/__init__.py" ;;
+  "python/src/PyTrilinos/__init__.py" ) CONFIG_FILES="$CONFIG_FILES python/src/PyTrilinos/__init__.py" ;;
+  "python/src/.deps/dummy" ) CONFIG_FILES="$CONFIG_FILES python/src/.deps/dummy" ;;
+  "python/test/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/test/Makefile" ;;
+  "python/test-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/test-epetra/Makefile" ;;
+  "python/test-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/test-lapack/Makefile" ;;
+  "python/example-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/example-epetra/Makefile" ;;
+  "python/example-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/example-lapack/Makefile" ;;
+  "python/src-loca/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src-loca/Makefile" ;;
+  "python/src-loca/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src-loca/src/Makefile" ;;
+  "python/src-loca/src/__init__.py" ) CONFIG_FILES="$CONFIG_FILES python/src-loca/src/__init__.py" ;;
+  "python/src-loca/src/PyTrilinos/__init__.py" ) CONFIG_FILES="$CONFIG_FILES python/src-loca/src/PyTrilinos/__init__.py" ;;
+  "python/src-loca/src/.deps/dummy" ) CONFIG_FILES="$CONFIG_FILES python/src-loca/src/.deps/dummy" ;;
+  "python/src-loca/test/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src-loca/test/Makefile" ;;
+  "python/src-loca/test-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src-loca/test-epetra/Makefile" ;;
+  "python/src-loca/test-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src-loca/test-lapack/Makefile" ;;
+  "python/src-loca/example-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src-loca/example-epetra/Makefile" ;;
+  "python/src-loca/example-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src-loca/example-lapack/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/NOX_Config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/NOX_Config.h:src/NOX_Config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -33236,14 +33246,6 @@ if test "$no_create" != yes; then
   $ac_cs_success || { (exit 1); exit 1; }
 fi
 
-
-#		python/GNUmakefile
-#		python/__init__.py
-#		src-loca/python/Makefile
-#		src-loca/python/GNUmakefile
-#		src-loca/python/__init__.py
-#		test/lapack/LOCA_python/Makefile
-#		test/lapack/LOCA_python/setpath.py
 
 # ------------------------------------------------------------------------
 # Bye World!

@@ -66,6 +66,8 @@ host_triplet = @host@
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.export.nox.in $(srcdir)/Makefile.in \
 	$(top_srcdir)/configure \
+	$(top_srcdir)/python/src-loca/src/.deps/dummy.in \
+	$(top_srcdir)/python/src-loca/src/PyTrilinos/__init__.py.in \
 	$(top_srcdir)/python/src/.deps/dummy.in \
 	$(top_srcdir)/python/src/PyTrilinos/__init__.py.in \
 	config/config.guess config/config.sub config/depcomp \
@@ -106,7 +108,9 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES = Makefile.export.nox \
-	python/src/PyTrilinos/__init__.py python/src/.deps/dummy
+	python/src/PyTrilinos/__init__.py python/src/.deps/dummy \
+	python/src-loca/src/PyTrilinos/__init__.py \
+	python/src-loca/src/.deps/dummy
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -417,6 +421,10 @@ python/src/PyTrilinos/__init__.py: $(top_builddir)/config.status $(top_srcdir)/p
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 python/src/.deps/dummy: $(top_builddir)/config.status $(top_srcdir)/python/src/.deps/dummy.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
+python/src-loca/src/PyTrilinos/__init__.py: $(top_builddir)/config.status $(top_srcdir)/python/src-loca/src/PyTrilinos/__init__.py.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+python/src-loca/src/.deps/dummy: $(top_builddir)/config.status $(top_srcdir)/python/src-loca/src/.deps/dummy.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -551,7 +559,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/doc $(distdir)/python/src $(distdir)/python/src/.deps $(distdir)/python/src/PyTrilinos $(distdir)/test/scripts/daily/mpi $(distdir)/test/scripts/daily/serial
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/doc $(distdir)/python/src $(distdir)/python/src-loca/src $(distdir)/python/src-loca/src/.deps $(distdir)/python/src-loca/src/PyTrilinos $(distdir)/python/src/.deps $(distdir)/python/src/PyTrilinos $(distdir)/test/scripts/daily/mpi $(distdir)/test/scripts/daily/serial
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
