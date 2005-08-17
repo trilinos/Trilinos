@@ -54,7 +54,8 @@ int Zoltan_HSFC_Point_Assign (
 
    if (d->Target_Dim > 0){   /* degenerate geometry */
      dim = d->Target_Dim;
-     Zoltan_Transform_Point(pt, d->Transformation, d->ndimension, dim, pt);
+     Zoltan_Transform_Point(pt, d->Transformation, d->Permutation,
+       d->ndimension, dim, pt);
    }
    else{
      dim = d->ndimension;

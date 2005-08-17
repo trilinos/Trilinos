@@ -68,8 +68,8 @@ int      *part                  /* partition that point lands in;
         }
 
         if (rcb->Target_Dim > 0){  /* degenerate geometry */
-          Zoltan_Transform_Point(coords, rcb->Transformation, rcb->Num_Dim,
-                  rcb->Target_Dim, cnew);
+          Zoltan_Transform_Point(coords, rcb->Transformation, rcb->Permutation,
+            rcb->Num_Dim, rcb->Target_Dim, cnew);
           c = cnew;
         }
 
@@ -92,8 +92,8 @@ int      *part                  /* partition that point lands in;
         }
 
         if (rib->Target_Dim > 0){ /* degenerate geometry */
-          Zoltan_Transform_Point(coords, rib->Transformation, rib->Num_Geom,
-                  rib->Target_Dim, cnew);
+          Zoltan_Transform_Point(coords, rib->Transformation, rib->Permutation,
+            rib->Num_Geom, rib->Target_Dim, cnew);
           c = cnew;
           num_geom = rib->Target_Dim;
         }

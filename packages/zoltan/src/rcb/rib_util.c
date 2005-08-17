@@ -187,6 +187,7 @@ int Zoltan_RIB_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
     for (j=0; j<3; j++){
       to->Transformation[i][j] = from->Transformation[i][j];
     }
+    to->Permutation[i] = from->Permutation[i];
   }
 
   return ZOLTAN_OK;
@@ -235,11 +236,14 @@ void Zoltan_RIB_Print_Structure(ZZ *zz, int howMany)
 
   if (rib->Target_Dim > 0){
     printf("Degenerate geometry:\n");
-    printf("  Transform coordinates to %d dimensions, transformation:\n",rib->Target_Dim);
+    printf("  Transform to %d dimensions, transformation or permutation:\n",
+      rib->Target_Dim);
     for (i=0; i<3; i++){
       printf("    %lf %lf %lf\n", rib->Transformation[i][0],
              rib->Transformation[i][1], rib->Transformation[i][2]);
     }
+    printf("    or simple Permutation of coordinates: %d %d %d\n",
+      rib->Permutation[0], rib->Permutation[1], rib->Permutation[2]);
   }
   else{
     printf("Don't skip dimensions, no degenerate geometry.\n");

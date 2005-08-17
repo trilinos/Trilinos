@@ -633,6 +633,7 @@ int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
     for (j=0; j<3; j++){
       to->Transformation[i][j] = from->Transformation[i][j];
     }
+    to->Permutation[i] = from->Permutation[i];
   }
 
   to->ndimension = from->ndimension;
@@ -687,11 +688,14 @@ Partition *p;
 
   if (data->Target_Dim > 0){
     printf("Degenerate geometry:\n");
-    printf("  Transform coordinates to %d dimensions, transformation:\n",data->Target_Dim);
+    printf("  Transform to %d dimensions, transformation or permutation:\n",
+      data->Target_Dim);
     for (i=0; i<3; i++){
-      printf("    %lf %lf %lf\n", data->Transformation[i][0], 
+      printf("    %lf %lf %lf\n", data->Transformation[i][0],
              data->Transformation[i][1], data->Transformation[i][2]);
     }
+    printf("    or simple Permutation of coordinates: %d %d %d\n",
+      data->Permutation[0], data->Permutation[1], data->Permutation[2]);
   }
   else{
     printf("Don't skip dimensions, no degenerate geometry.\n");

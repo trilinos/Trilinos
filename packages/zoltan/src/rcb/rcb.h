@@ -68,6 +68,7 @@ typedef struct RCB_Struct {
                                   treated as 1D or 2D.
                                   0 - geometry is not degenerate */
   double Transformation[3][3]; /* transforms degenerate geometry to 2D or 1D */
+  int Permutation[3]; /* if trans. is simple coordinate switch, use this instead */
 } RCB_STRUCT;
 
 extern int Zoltan_RCB_Build_Structure(ZZ *, int *, int *, int, int);

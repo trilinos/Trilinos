@@ -93,7 +93,8 @@ int Zoltan_HSFC_Box_Assign (
      lo[0] = xlo; lo[1] = ylo; lo[2] = zlo;
      hi[0] = xhi; hi[1] = yhi; hi[2] = zhi;
 
-     Zoltan_Transform_Box(lo, hi, d->Transformation, d->ndimension, d->Target_Dim);
+     Zoltan_Transform_Box(lo, hi, d->Transformation, d->Permutation,
+       d->ndimension, d->Target_Dim);
 
      xlo = lo[0]; xhi = hi[0];
      ylo = 0.0; yhi = 0.0;

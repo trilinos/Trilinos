@@ -82,6 +82,8 @@ typedef struct HSFC_Data {
                                    treated as 1D or 2D.
                                    0 - geometry is not degenerate */
    double Transformation[3][3];   /* to align deg. geom along XY plane */
+   int Permutation[3]; /* if trans. is simple coordinate switch, use this instead */
+
    } HSFC_Data;                  /* data preserved for point & box drop later */
 
 
