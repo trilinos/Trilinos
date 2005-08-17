@@ -247,11 +247,7 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  if (me == 0){
-    Zoltan_Timer_PrintAll(zz->ZTime, 0, stdout);
-  }
+  Zoltan_Timer_PrintAll(zz->ZTime, 0, MPI_COMM_WORLD, stdout);
 
   /*
   ** Clean up
