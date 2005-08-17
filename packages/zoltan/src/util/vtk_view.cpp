@@ -59,6 +59,8 @@
 
 using namespace std;
 
+//#define DEBUG_PARTITION_IDS
+
 # ifdef MAXPATHLEN
 // BSD
 #define ZMAXPATH MAXPATHLEN
@@ -94,6 +96,7 @@ using namespace std;
 #include "vtkIntArray.h"
 #include "vtkTextActor.h"
 #include "vtkTextProperty.h"
+#include "vtkCell.h"
 #include "vtkPExodusReader.h"
 #include "vtkPChacoReader.h"
 
@@ -148,7 +151,7 @@ static char **fileNamesBase;
 // zdrive output files, and in the case of Exodus files, the number
 // of input Exodus files.  If this is not provided in the input
 // parameter file, vtk_view will try to figure it by looking in the 
-// dirctory where the input files are.  If there are no zdrive output 
+// directory where the input files are.  If there are no zdrive output 
 // files, vtk_view will just display the geometry.
 
 static int numZdriveProcs = 0; 
@@ -166,6 +169,10 @@ static void Run(vtkMultiProcessController *contr, void *arg);
 static int checkAllrc(int rc, vtkMPICommunicator *comm);
 static char *captionText(char *p, char *c);
 static char *get_zdrive_output_file_name();
+#ifdef DEBUG_PARTITION_IDS
+static void debug_partition_ids(vtkPoints *pts, vtkIntArray *partids);
+static void debug_partition_ids(vtkUnstructuredGrid *ug, vtkIntArray *partids);
+#endif
 
 static int *realloc(int *buf, int newsize, int oldsize)
 {
@@ -1031,6 +1038,29 @@ static void update_partition_ids(int *eltIds, vtkIntArray *partids)
     }
   }
 }
+#ifdef DEBUG_PARTITION_IDS
+static void debug_partition_ids(vtkUnstructuredGrid *ug, vtkIntArray *partids)
+{
+  double pcoords[3], weights[64], center[3];
+
+  for (vtkIdType i=0; i<ug->GetNumberOfCells(); i++){
+    vtkCell *c = ug->GetCell(i);
+    int subId = c->GetParametricCenter(pcoords);
+    c->EvaluateLocation(subId, pcoords, center, weights);
+    
+    cout << center[0] << " " << center[1] << " " << center[2] << ", ";
+    cout << partids->GetTuple(i) << endl;
+  }
+}
+static void debug_partition_ids(vtkPoints *pts, vtkIntArray *partids)
+{
+  for (vtkIdType i=0; i<pts->GetNumberOfPoints(); i++){
+    double *p = pts->GetPoint(i);
+    cout << p[0] << " " << p[1] << " " << p[2] << ", ";
+    cout << partids->GetValue(i) << endl;
+  }
+}
+#endif
 static char *get_zdrive_output_file_name()
 {
   char *nm = new char [ZMAXPATH];
@@ -1218,6 +1248,7 @@ int assign_partition_numbers(vtkUnstructuredGrid *ug)
 
   if (NumProcs == 1){
     nprocs = 1;
+    myrank = 0;
   }
   else{
     // It's possible that the VTK reader output empty grids to
@@ -1296,7 +1327,6 @@ int assign_partition_numbers(vtkUnstructuredGrid *ug)
 
   update_partition_ids(eltIds, partids);
 
-
   sndr = (myrank + nprocs - 1) % nprocs;
   recvr = (myrank + 1) % nprocs;
 
@@ -1314,6 +1344,26 @@ int assign_partition_numbers(vtkUnstructuredGrid *ug)
   }
 
 done:
+
+#ifdef DEBUG_PARTITION_IDS
+  if (partids){
+    for (int i=0; i<nprocs; i++){
+      if (i == myrank){
+        if (pointArray){
+          cout << "Rank " << i << " partition IDs for points " << endl;
+          debug_partition_ids(ug->GetPoints(), partids);
+        }
+        else{
+          cout << "Rank " << i << " partition IDs for cell centers " << endl;
+          debug_partition_ids(ug, partids);
+        }
+      }
+      if ((nprocs > 1) && (myrank >= 0)){
+        checkAllrc(1, subComm);   // barrier
+      }
+    }
+  }
+#endif
 
   subComm->Delete();
   group->Delete();
