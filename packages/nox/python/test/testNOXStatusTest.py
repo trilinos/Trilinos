@@ -38,10 +38,10 @@ import sys
 
 try:
     import setpath
-    import NOX
+    import Epetra, NOX
 except ImportError:
-    print >>sys.stderr, "Using system-installed NOX"
-    from PyTrilinos import NOX
+    from PyTrilinos import Epetra, NOX
+    print >>sys.stderr, "Using system-installed Epetra, NOX"
 
 import unittest
 
@@ -112,7 +112,14 @@ if __name__ == "__main__":
     # Add the test cases to the test suite
     suite.addTest(unittest.makeSuite(StatusTestTestCase))
 
+    # Create a communicator
+    comm = Epetra.PyComm()
+
     # Run the test suite
-    print >>sys.stderr, \
-          "\n*********************\nTesting Epetra.Object\n*********************\n"
-    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    if comm.MyPID() == 0: print >>sys.stderr, \
+       "\n*********************\nTesting Epetra.Object\n*********************\n"
+    verbosity = 2 * int(comm.MyPID() == 0)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
+
+    # Exit with a code that indicates the total number of errors and failures
+    sys.exit(len(result.errors) + len(result.failures))
