@@ -10,5 +10,5 @@
 
 (FRAMEWORK,New_PackagePyTests) {
     DIRS = ../python/test;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL, MPI(1-4);
 }

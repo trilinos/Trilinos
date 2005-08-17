@@ -27,5 +27,5 @@
 
 (FRAMEWORK, IFPACKPyExamples) {
     DIRS = ../python/example;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL, MPI(1-4);
 }

@@ -22,10 +22,10 @@
 
 (FRAMEWORK, EpetraExtPyExamples) {
         DIRS = ../python/example;
-        COMM = SERIAL, MPI(1);
+        COMM = SERIAL, MPI(1-4);
 }
 
 (FRAMEWORK, EpetraExtPyTests) {
         DIRS = ../python/test;
-        COMM = SERIAL, MPI(1);
+        COMM = SERIAL, MPI(1-4);
 }
