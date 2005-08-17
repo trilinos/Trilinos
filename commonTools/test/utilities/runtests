@@ -1124,6 +1124,8 @@ cleanUp();
             my $valuesString = "";
             if ($propertyString =~ m/\s*\w+?\s*=\s*(.*?;)/) {
                 $valuesString = $1;
+                # Replace $ABS_TOP_SRCDIR with $trilinosDir
+                $valuesString =~ s/\$ABS_TOP_SRC_DIR/$trilinosDir/g;
             } else {
                 $status++;
                 $errorString .= "! Malformed test group:  bad property list.\n";
