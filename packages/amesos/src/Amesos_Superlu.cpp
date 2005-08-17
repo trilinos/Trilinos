@@ -40,7 +40,11 @@
 namespace SLU
 {
 extern "C" {
+#ifdef AMESOS_SUPERLU_PRE_JULY2005
 #include "dsp_defs.h"
+#else
+#include "slu_ddefs.h"
+#endif
 }
 }
 struct SLUData
