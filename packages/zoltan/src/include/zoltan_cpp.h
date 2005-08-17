@@ -32,7 +32,11 @@ extern void Zoltan_RIB_Print_Structure(struct Zoltan_Struct *zz, int howMany);
 extern void Zoltan_HSFC_Print_Structure(struct Zoltan_Struct *zz);
 }
 
-#include <string>
+#ifdef TFLOP
+  #include <string.h>
+#else
+  #include <string>
+#endif
 
 class Zoltan_Object {
 
@@ -626,7 +630,11 @@ public:
     // the name passed in, so in order to compile we need a non-const
     // "char *" file name to pass to Zoltan_Generate_Files.
 
+#ifdef TFLOP
+    char *fn = strdup((char *)fname.c_str());
+#else
     char *fn = strdup(fname.c_str());
+#endif
 
     int rc = Zoltan_Generate_Files( ZZ_Ptr, fn, base_index,
                                   gen_geom, gen_graph, gen_hg );
