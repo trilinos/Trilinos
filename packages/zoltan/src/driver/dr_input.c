@@ -647,19 +647,21 @@ void gen_par_filename (
   int nprocs
 )
 {
+  double dnprocs = (double)nprocs;
+  double dndisks = (double)pio_info->num_dsk_ctrlrs;
+
   if (pio_info->num_dsk_ctrlrs <= 0)
     sprintf(par_fname, "%s/%s.%d.%0*d", pio_info->pdsk_root, scalar_fname,
-            nprocs, 1+(int)log10(nprocs), myproc);
+            nprocs, 1+(int)log10(dnprocs), myproc);
   else if (pio_info->zeros)
     sprintf(par_fname, "%s%0*d/%s%s.%d.%0*d", pio_info->pdsk_root,
-            pio_info->num_dsk_ctrlrs<9 ? 2 
-                                       : 1+(int)log10(pio_info->num_dsk_ctrlrs),
+            pio_info->num_dsk_ctrlrs<9 ? 2 : 1+(int)log10(dndisks),
             pio_info->rdisk, pio_info->pdsk_subdir, scalar_fname, nprocs,
-            1 + (int) log10(nprocs), myproc);
+            1 + (int) log10(dnprocs), myproc);
   else
     sprintf(par_fname, "%s%d/%s/%s.%d.%0*d", pio_info->pdsk_root,
             pio_info->rdisk, pio_info->pdsk_subdir, scalar_fname, nprocs,
-            1 + (int) log10(nprocs), myproc);
+            1 + (int) log10(dnprocs), myproc);
 }
 
 #ifdef __cplusplus
