@@ -68,7 +68,7 @@ $(LIB_NAME):	$(OBJ_FILES:.o=.d) $(OBJ_FILES) $(INC_FORTRAN)
 		@$(RANLIB) $(LIB_NAME)
 
 $(ZTARGET):	$(DEP_LIBS) $(LIB_NAME) $(MAIN_OBJ:.o=.d) $(MAIN_OBJ)
-		@echo "linking driver"
+		@echo "linking $(ZTARGET)"
 		@$(PURE_CC) $(CC) $(MAIN_OBJ) -o $(ZTARGET) $(LNK_LIBS)
 
 #		@purify -best_effort -follow-child-processes=yes -cache-dir=/tmp/purify $(CC) $(MAIN_OBJ) -o $(ZTARGET) $(LNK_LIBS)
