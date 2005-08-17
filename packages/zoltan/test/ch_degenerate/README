@@ -45,6 +45,10 @@ X-axis, with 100 points in the original shaft projecting to each of the
 will not split up the points that project to the same point, so if the 
 number of processes does not evenly divide 10, there will be a large imbalance.
 
+The same warning can appear on either slab and shaft when using RCB with 
+RCB_RECTILINEAR_BLOCKS turned on, forcing all points that line up after
+projection into the same block.
+
   Simple 2D geometry with degeneracies.
 
   "bug" - This is a 2D data set with 60 points ranging along the y axis
