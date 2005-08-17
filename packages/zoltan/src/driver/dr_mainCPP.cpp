@@ -13,7 +13,12 @@
 
 #include <mpi.h>   // must appear before stdio or iostream
 
+#ifdef TFLOP
+#include <iostream.h>
+#else
 #include <iostream>
+using namespace std;
+#endif
 
 #include "dr_const.h"
 #include "dr_input_const.h"
@@ -24,8 +29,6 @@
 #include "dr_dd.h"
 
 #include "zoltan_cpp.h"
-
-using namespace std;
 
 int Debug_Driver = 1;
 int Number_Iterations = 1;
