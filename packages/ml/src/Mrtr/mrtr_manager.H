@@ -105,6 +105,10 @@ private:
 
   // choose the dofs for lagrange multipliers
   Epetra_Map* LagrangeMultiplierDofs();
+  
+  // modified version of the epetraext matrixmatrixadd
+  int MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double scalarA,
+                      Epetra_CrsMatrix& B,double scalarB );
 
 private:
 

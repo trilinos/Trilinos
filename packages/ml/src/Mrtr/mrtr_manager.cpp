@@ -34,6 +34,8 @@
 #ifdef TRILINOS_PACKAGE
 
 #include "mrtr_manager.H"
+#include "EpetraExt_MatrixMatrix.h"  // for adding matrices
+#include <EpetraExt_Transpose_RowMatrix.h>
 
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 06/05|
@@ -216,6 +218,80 @@ bool MRTR::Manager::SetInputMatrix(Epetra_CrsMatrix* inputmatrix, bool DeepCopy)
 }
 
 /*----------------------------------------------------------------------*
+ |                                                                 08/05|
+ |  modified version of the epetraext matrixmatrixadd                   |
+ |  NOTE:                                                               |
+ |  - A has to be FillComplete, B must NOT be FillComplete()            |
+ *----------------------------------------------------------------------*/
+int MRTR::Manager::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double scalarA,
+                      Epetra_CrsMatrix& B,double scalarB )
+{
+  //
+  //This method forms the matrix-matrix sum B = scalarA * op(A) + scalarB * B, where
+
+  if (!A.Filled())
+  {
+     cout << "***ERR*** MRTR::Manager::MatrixMatrixAdd:\n"
+          << "***ERR*** FillComplete was not called on A\n"
+          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+     exit(EXIT_FAILURE);
+  }
+  if (B.Filled())
+  {
+     cout << "***ERR*** MRTR::Manager::MatrixMatrixAdd:\n"
+          << "***ERR*** FillComplete was called on B\n"
+          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+     exit(EXIT_FAILURE);
+  }
+  
+  //explicit tranpose A formed as necessary
+  Epetra_CrsMatrix* Aprime = 0;
+  EpetraExt::RowMatrix_Transpose* Atrans = 0;
+  if( transposeA )
+  {
+    Atrans = new EpetraExt::RowMatrix_Transpose(false);
+    Aprime = &(dynamic_cast<Epetra_CrsMatrix&>(((*Atrans)(const_cast<Epetra_CrsMatrix&>(A)))));
+  }
+  else
+    Aprime = const_cast<Epetra_CrsMatrix*>(&A);
+    
+  //Loop over B's rows and sum into
+  int MaxNumEntries = EPETRA_MAX( Aprime->MaxNumEntries(), B.MaxNumEntries() );
+  int NumEntries;
+  int * Indices = new int[MaxNumEntries];
+  double * Values = new double[MaxNumEntries];
+
+  int NumMyRows = A.NumMyRows();
+  int Row, err;
+
+  if( scalarA )
+  {
+    for( int i = 0; i < NumMyRows; ++i )
+    {
+      Row = Aprime->GRID(i);
+      EPETRA_CHK_ERR(Aprime->ExtractGlobalRowCopy(Row,MaxNumEntries,NumEntries,Values,Indices));
+      if( scalarA != 1.0 )
+        for( int j = 0; j < NumEntries; ++j ) Values[j] *= scalarA;
+      if( B.Filled() ) {//Sum In Values
+        err = B.SumIntoGlobalValues( Row, NumEntries, Values, Indices );
+        assert( err == 0 );
+      }
+      else {
+        err = B.InsertGlobalValues( Row, NumEntries, Values, Indices );
+        assert( err == 0 || err == 1 );
+      }
+    }
+  }
+
+  delete [] Indices;
+  delete [] Values;
+
+  if( Atrans ) delete Atrans;
+
+  return(0);
+}
+
+/*----------------------------------------------------------------------*
  |  Choose dofs for lagrange multipliers (private)           mwgee 07/05|
  | Note that this is collective for ALL procs                           |
  *----------------------------------------------------------------------*/
@@ -352,19 +428,41 @@ bool MRTR::Manager::Mortar_Integrate()
   }
     
   //-------------------------------------------------------------------
+  // build the map for the saddle point problem
+  {
+    // the saddle point problem rowmap is the inputmap + the constraintmap
+    int numglobalelements = inputmap_->NumGlobalElements() +
+                            constraintsmap_->NumGlobalElements();
+    int nummyelements     = inputmap_->NumMyElements() +
+                            constraintsmap_->NumMyElements();
+    vector<int> myglobalelements(nummyelements);
+    int count = 0;
+    int* inputmyglobalelements = inputmap_->MyGlobalElements();
+    for (int i=0; i<inputmap_->NumMyElements(); ++i)
+      myglobalelements[count++] = inputmyglobalelements[i];
+    int* constraintsmyglobalelements = constraintsmap_->MyGlobalElements();
+    for (int i=0; i<constraintsmap_->NumMyElements(); ++i)
+      myglobalelements[count++] = constraintsmyglobalelements[i];
+    if (count != nummyelements)
+    {
+        cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
+             << "***ERR*** Mismatch in dimensions\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+    }
+    if (saddlemap_) delete saddlemap_;
+    saddlemap_ = new Epetra_Map(numglobalelements,nummyelements,
+                                &(myglobalelements[0]),0,comm_);
+    myglobalelements.clear();
+  }
+
+  //-------------------------------------------------------------------
   // build the Epetra_CrsMatrix D and M
   {
-    if (!constraintsmap_)
-    {
-      cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
-           << "***ERR*** constraintsmap_ == NULL, cannot generate D and M\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-    }
     if (D_) delete D_;
     if (M_) delete M_;
-    D_ = new Epetra_CrsMatrix(Copy,*constraintsmap_,5,false);
-    M_ = new Epetra_CrsMatrix(Copy,*constraintsmap_,40,false);
+    D_ = new Epetra_CrsMatrix(Copy,*saddlemap_,5,false);
+    M_ = new Epetra_CrsMatrix(Copy,*saddlemap_,40,false);
   }
 
 
@@ -388,14 +486,14 @@ bool MRTR::Manager::Mortar_Integrate()
   
   //-------------------------------------------------------------------
   // call FillComplete() on M_ and D_ 
-  D_->FillComplete(*inputmap_,*constraintsmap_);
-  M_->FillComplete(*inputmap_,*constraintsmap_);
+  D_->FillComplete(*saddlemap_,*saddlemap_);
+  M_->FillComplete(*saddlemap_,*saddlemap_);
 
   return true;
 }
 
 /*----------------------------------------------------------------------*
- |  Choose dofs for lagrange multipliers (private)           mwgee 07/05|
+ | Create the saddle point problem (public)                  mwgee 07/05|
  | Note that this is collective for ALL procs                           |
  *----------------------------------------------------------------------*/
 Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
@@ -437,6 +535,15 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
   }
+  
+  // check for saddlemap_
+  if (!saddlemap_)
+  {
+      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
+           << "***ERR*** saddlemap_==NULL\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      exit(EXIT_FAILURE);
+  }
 
   // check for inputmatrix
   if (!inputmatrix_)
@@ -455,208 +562,24 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
   }
-
-  // create a rowmap for the saddle point problem
-  // the saddle point problem rowmap is the inputmap + the constraintmap
-  int numglobalelements = inputmap_->NumGlobalElements() +
-                          constraintsmap_->NumGlobalElements();
-  int nummyelements     = inputmap_->NumMyElements() +
-                          constraintsmap_->NumMyElements();
-  
-  vector<int> myglobalelements(nummyelements);
-  int count = 0;
-  
-  int* inputmyglobalelements = inputmap_->MyGlobalElements();
-  for (int i=0; i<inputmap_->NumMyElements(); ++i)
-    myglobalelements[count++] = inputmyglobalelements[i];
-
-  int* constraintsmyglobalelements = constraintsmap_->MyGlobalElements();
-  for (int i=0; i<constraintsmap_->NumMyElements(); ++i)
-    myglobalelements[count++] = constraintsmyglobalelements[i];
-  
-  if (count != nummyelements)
-  {
-      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
-           << "***ERR*** Mismatch in dimensions\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-  }
-  
-  if (saddlemap_) delete saddlemap_;
-  saddlemap_ = new Epetra_Map(numglobalelements,nummyelements,
-                              &(myglobalelements[0]),0,comm_);
   
   // create a matrix for the saddle problem and fill it
   if (saddlematrix_) delete saddlematrix_; 
   saddlematrix_ = new Epetra_CrsMatrix(Copy,*saddlemap_,90);
 
-
-  
   // add values from inputmatrix
-  // get a column map to convert column indices to global
-  const Epetra_Map& inputcolmap = inputmatrix_->ColMap();
-  for (int i=0; i<inputmatrix_->NumMyRows(); ++i)
-  {
-    // get a row in local indices (FillComplete() has been called on inputmatrix_))
-    int numentries;
-    double* values;
-    int* indices;
-    int err = inputmatrix_->ExtractMyRowView(i,numentries,values,indices);
-    if (err)
-    {
-      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
-           << "***ERR*** Proc " << comm_.MyPID() << ": inputmatrix_->ExtractMyRowView returned nonzero\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-    }
-    
-    // get the global row index
-    int grow = inputmatrix_->GRID(i);
-    if (grow<-1)
-    {
-      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
-           << "***ERR*** Proc " << comm_.MyPID() << " does not have global row for local row " << i << "\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-    }
-    
-    
-    // loop row and add values to saddlematrix_
-    for (int j=0; j<numentries; ++j)
-    {
-      int gcol = inputcolmap.GID(indices[j]);
-      if (gcol<0)
-      {
-        cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
-             << "***ERR*** Proc " << comm_.MyPID() << " does not have global col for local col " << indices[j] << " in column map\n"
-             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
-      }
-      //cout << "Proc " << comm_.MyPID() << ": grow " << grow << " gcol " << gcol << " value " << values[j] << endl;
-      err = saddlematrix_->InsertGlobalValues(grow,1,&values[j],&gcol);
-      if (err)
-      {
-        cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
-             << "***ERR*** Proc " << comm_.MyPID() << " saddlematrix_->InsertGlobalValues returned " << err << "\n"
-             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
-      }
-    } // for (int j=0; j<numentries; ++j)
-  } // for (int i=0; i<inputmatrix_->NumMyRows(); ++i)
+  MatrixMatrixAdd(*inputmatrix_,false,1.0,*saddlematrix_,0.0);
+  
+  // add values from D_
+  MatrixMatrixAdd(*D_,false,1.0,*saddlematrix_,1.0);
+  MatrixMatrixAdd(*D_,true,1.0,*saddlematrix_,1.0);  
 
+  // add values from M_
+  MatrixMatrixAdd(*M_,false,1.0,*saddlematrix_,1.0);
+  MatrixMatrixAdd(*M_,true,1.0,*saddlematrix_,1.0);  
 
+  saddlematrix_->FillComplete();
 
-
-  
-  // add values from matrix D_;
-  const Epetra_Map& dcolmap = D_->ColMap();
-  for (int i=0; i<D_->NumMyRows(); ++i)
-  {
-    // get a row in local indices (FillComplete() has been called on D_))
-    int numentries;
-    double* values;
-    int* indices;
-    int err = D_->ExtractMyRowView(i,numentries,values,indices);
-    if (err)
-    {
-      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
-           << "***ERR*** Proc " << comm_.MyPID() << ": D_->ExtractMyRowView returned nonzero\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-    }
-    
-    // get the global row index
-    int grow = D_->GRID(i);
-    if (grow<-1)
-    {
-      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
-           << "***ERR*** Proc " << comm_.MyPID() << " does not have global row for local row " << i << "\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-    }
-    
-    // loop row and values to saddlematrix_
-    for (int j=0; j<numentries; ++j)
-    {
-      int gcol = dcolmap.GID(indices[j]);
-      if (gcol<0)
-      {
-        cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
-             << "***ERR*** Proc " << comm_.MyPID() << " does not have global col for local col " << indices[j] << " in column map\n"
-             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
-      }
-      //cout << "Proc " << comm_.MyPID() << ": grow " << grow << " gcol " << gcol << " value " << values[j] << endl;
-      err = saddlematrix_->InsertGlobalValues(grow,1,&values[j],&gcol);
-      if (err)
-      {
-        cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
-             << "***ERR*** Proc " << comm_.MyPID() << " saddlematrix_->InsertGlobalValues returned " << err << "\n"
-             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
-      }
-    } // for (int j=0; j<numentries; ++j)
-  } // for (int i=0; i<D_->NumMyRows(); ++i)
-
-
-  
-  
-  
-  // add values from matrix M_;
-  const Epetra_Map& mcolmap = M_->ColMap();
-  for (int i=0; i<M_->NumMyRows(); ++i)
-  {
-    // get a row in local indices (FillComplete() has been called on M_))
-    int numentries;
-    double* values;
-    int* indices;
-    int err = M_->ExtractMyRowView(i,numentries,values,indices);
-    if (err)
-    {
-      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
-           << "***ERR*** Proc " << comm_.MyPID() << ": M_->ExtractMyRowView returned nonzero\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-    }
-    
-    // get the global row index
-    int grow = M_->GRID(i);
-    if (grow<-1)
-    {
-      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
-           << "***ERR*** Proc " << comm_.MyPID() << " does not have global row for local row " << i << "\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-    }
-    
-    // loop row and values to saddlematrix_
-    for (int j=0; j<numentries; ++j)
-    {
-      int gcol = mcolmap.GID(indices[j]);
-      if (gcol<0)
-      {
-        cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
-             << "***ERR*** Proc " << comm_.MyPID() << " does not have global col for local col " << indices[j] << " in column map\n"
-             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
-      }
-      cout << "Proc " << comm_.MyPID() << ": grow " << grow << " gcol " << gcol << " value " << values[j] << endl;
-      err = saddlematrix_->InsertGlobalValues(grow,1,&values[j],&gcol);
-      if (err)
-      {
-        cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
-             << "***ERR*** Proc " << comm_.MyPID() << " saddlematrix_->InsertGlobalValues returned " << err << "\n"
-             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
-      }
-    } // for (int j=0; j<numentries; ++j)
-  } // for (int i=0; i<M_->NumMyRows(); ++i)
-  
-  
-  
-  
-  
-  
   return saddlematrix_;
 }
 

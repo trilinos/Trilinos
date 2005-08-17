@@ -38,6 +38,7 @@ static class Epetra_SerialComm* comm;
 
 // the mortar manager class
 static class MRTR::Manager* mrtr_manager;
+class Epetra_CrsMatrix* saddleproblem;
 
 /*----------------------------------------------------------------------*
  |  routine to create mortar interfaces                      m.gee 06/05|
@@ -216,8 +217,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
 
     int side = interface->MortarSide();
     side     = interface->OtherSide(side);
-    //MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
-    MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
+    MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
+    //MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
     interface->SetFunctionAllSegmentsSide(side,1,func);
     delete func; func = NULL;
     
@@ -367,8 +368,72 @@ int compute_mortar(SPARSE_TYP* arraytyp, SPARSE_ARRAY* array, DESIGN *design)
 
   //-------------------------------------------------------------------
   // produce the saddle point problem
-  mrtr_manager->MakeSaddleProblem();
+#if 1
+  if (saddleproblem) 
+    delete saddleproblem; 
+  saddleproblem = mrtr_manager->MakeSaddleProblem();
+  if (*arraytyp == msr)
+  {
+  }
+  else if (*arraytyp == spoolmatrix)
+  {
+    array->spo->numeq       = saddleproblem->NumMyRows();
+    array->spo->numeq_total = saddleproblem->NumGlobalRows();
+
+    amdel(&(array->spo->update));
+    update = (int*)amdef("update",&(array->spo->update),array->spo->numeq,1,"IV");
+    for (int i=0; i<array->spo->numeq; ++i) 
+    {
+      update[i] = saddleproblem->GRID(i);
+      if (update[i] < 0) {
+        cout << "update[i]<0!\n";
+        exit(EXIT_FAILURE); 
+      }
+    }
+    array->spo->nnz = saddleproblem->NumMyNonzeros();
+    amdel(&(array->spo->rowptr));
+    amdel(&(array->spo->irn_loc));
+    amdel(&(array->spo->jcn_loc));
+    amdel(&(array->spo->A_loc));
+    int* rowptr   = (int*)   amdef("rowptr" ,&(array->spo->rowptr) ,array->spo->numeq+1,1,"IV");
+    int* irn_loc  = (int*)   amdef("irn_loc",&(array->spo->irn_loc),array->spo->nnz,1,"IV");
+    int* jcn_loc  = (int*)   amdef("jcn_loc",&(array->spo->jcn_loc),array->spo->nnz,1,"IV");
+    double* A_loc = (double*)amdef("A_loc"  ,&(array->spo->A_loc)  ,array->spo->nnz,1,"DV");
   
+    //saddleproblem->ColMap();
+    int rowcount = 0;
+    int nnzcount = 0;
+    for (int i=0; i<array->spo->numeq; ++i)
+    {
+      
+      int Row = saddleproblem->GRID(i);
+      if (Row<0) {
+        cout << "Row<0!\n";
+        exit(EXIT_FAILURE); 
+      }
+      int NumEntries; double* Values; int* Indices;
+      int err = saddleproblem->ExtractMyRowView(i,NumEntries,Values,Indices);
+      if (err) {
+        cout << "ExtractMyRowView returned " << err << endl;
+        exit(EXIT_FAILURE); 
+      }
+      for (int j=0; j<NumEntries; ++j)
+      {
+        irn_loc[nnzcount] = Row;
+        jcn_loc[nnzcount] = saddleproblem->GCID(Indices[j]);
+        if (jcn_loc[nnzcount]<0) {
+          cout << "saddleproblem->GCID returned " << jcn_loc[nnzcount] << endl;
+          exit(EXIT_FAILURE); 
+        }
+        A_loc[nnzcount]   = Values[j];
+        ++nnzcount;
+      }
+      rowptr[i] = rowcount;
+      rowcount += NumEntries;
+    } // for (int i=0; i<array->spo->numeq; ++i)
+    rowptr[array->spo->numeq] = rowcount;
+  }
+#endif  
   
   //-------------------------------------------------------------------
   // tidy up
