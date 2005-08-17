@@ -28,7 +28,12 @@
 
 #include "zoltan_timer.h"
 #include <stdio.h>
+
+#ifdef TFLOP
+#include <string.h>
+#else
 #include <string>
+#endif
 
 class Zoltan_Timer_Object {
 
