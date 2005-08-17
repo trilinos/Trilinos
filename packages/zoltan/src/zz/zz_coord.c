@@ -54,8 +54,10 @@ static int eigenvectors(double (*m)[3], double (*evecs)[3], int dim);
 static int tqli(double *d, int n, double *e, double(*z)[3]);
 static void tred2(double (*a)[3], int n, double *d, double *e);
 static void projected_distances(ZZ *zz, double *coords, int num_obj,
-        double *cm, double (*evecs)[3], double *d, int dim);
+        double *cm, double (*evecs)[3], double *d, int dim, int aa, int *order);
 static void order_decreasing(double *d, int *order);
+
+#define NEAR_ONE(x) ((x >= .9999) && (x <= 1.0001))
 
 int Zoltan_Get_Coordinates(
   ZZ *zz, 
@@ -80,8 +82,9 @@ int Zoltan_Get_Coordinates(
   double (*sav)[3];
   double skip_ratio;
   double x, y, *cold, flat;
-  int order[3];
-  int keep_cuts, skip_dimensions, d;
+  int order[3], axis_order[3];
+  int keep_cuts, skip_dimensions, d, axis_aligned;
+  int coord1, coord2;
   int target_dim;
   RCB_STRUCT *rcb;
   RIB_STRUCT *rib;
@@ -213,11 +216,45 @@ int Zoltan_Get_Coordinates(
       }
 
       /*
+       * Here we check to see if the eigenvectors are very close
+       * to the coordinate axes.  If so, we can more quickly
+       * determine whether the geometry is degenerate, and also more
+       * quickly transform the geometry to the lower dimensional
+       * space.
+       */
+
+      axis_aligned = 0;
+
+      for (i=0; i<d; i++){
+        axis_order[i] = -1;
+      }
+
+      for (j=0; j<d; j++){
+        for (i=0; i<d; i++){
+          x = fabs(evecs[i][j]);
+
+          if (NEAR_ONE(x)){
+            axis_order[j] = i;  /* e'vector j is very close to i axis */
+            break;
+          }
+        }
+        if (axis_order[j] < 0){
+          break;
+        }
+      }
+
+      if ((axis_order[0] >= 0) && (axis_order[1] >= 0) && (axis_order[2] >= 0)){
+        axis_aligned = 1;
+      }
+
+
+      /*
        * Calculate the extent of the geometry along the three lines defined
        * by the direction of the eigenvectors through the center of mass.
        */
 
-      projected_distances(zz, *coords, num_obj, cm, evecs, dist, d); 
+      projected_distances(zz, *coords, num_obj, cm, evecs, dist, d, 
+                          axis_aligned, axis_order); 
 
       /*
        * Decide whether these distances indicate the geometry is
@@ -278,64 +315,109 @@ int Zoltan_Get_Coordinates(
           ZOLTAN_PRINT_INFO(zz->Proc, yo, msg);
         }
 
-        /*
-         * Reorder the eigenvectors (they're the columns of evecs) from 
-         * longest projected distance to shorted projected distance.  Compute
-         * the transpose (the inverse) of the matrix.  This will transform
-         * the geometry to align along the X-Y plane, or along the X axis. 
-         */
-
-        for (i=0; i< target_dim; i++){
-          M[i][2] = 0.0;
-          for (j=0; j<d; j++){
-            M[i][j] = evecs[j][order[i]];
-          }
-        }
-        for (i=target_dim; i< 3; i++){
-          for (j=0; j<3; j++){
+        coord1 = -1;
+        coord2 = -1;
+        for (i=0; i< 3; i++){
+          for (j=0; j< 3; j++){
             M[i][j] = 0.0;
           }
         }
 
-        for (i=0, cold = *coords; i<num_obj; i++, cold += d){
+        if (axis_aligned){
 
-          x = M[0][0]*cold[0] + M[0][1]*cold[1];
-          if (d == 3) x +=  M[0][2]*cold[2];
+          /*
+          ** Create new geometry, transforming the primary direction
+          ** to the X-axis, and the secondary to the Y-axis.
+          */
 
+          coord1 = axis_order[order[0]];
           if (target_dim == 2){
-            /*
-             * Orient points to lie along XY plane, major direction along X,
-             * secondary along Y.  So it's mostly flat along Z.
-             */
-            y = M[1][0]*cold[0] + M[1][1]*cold[1]; 
-            if (d == 3) y +=  M[1][2]*cold[2];
-          } 
+            coord2 = axis_order[order[1]];
+          }
           else{
-            /*
-             * Orient points to lie along X axis.  Mostly flat along Y and Z.
-             */
             y = 0.0;
           }
 
-          cold[0] = x;
-          cold[1] = y;
-          if (d == 3) cold[2] = 0;
+          for (i=0, cold = *coords; i<num_obj; i++, cold += d){
+            x = cold[coord1];
+            if (target_dim == 2){
+              y = cold[coord2];
+            }
+
+            cold[0] = x;
+            cold[1] = y;
+            if (d == 3) cold[2] = 0.0;
+          }
+        }
+        else{
+          /*
+           * Reorder the eigenvectors (they're the columns of evecs) from 
+           * longest projected distance to shorted projected distance.  Compute
+           * the transpose (the inverse) of the matrix.  This will transform
+           * the geometry to align along the X-Y plane, or along the X axis. 
+           */
+  
+          for (i=0; i< target_dim; i++){
+            M[i][2] = 0.0;
+            for (j=0; j<d; j++){
+              M[i][j] = evecs[j][order[i]];
+            }
+          }
+          for (i=target_dim; i< 3; i++){
+            for (j=0; j<3; j++){
+              M[i][j] = 0.0;
+            }
+          }
+  
+          for (i=0, cold = *coords; i<num_obj; i++, cold += d){
+  
+            x = M[0][0]*cold[0] + M[0][1]*cold[1];
+            if (d == 3) x +=  M[0][2]*cold[2];
+  
+            if (target_dim == 2){
+              /*
+               * Orient points to lie along XY plane, major direction along X,
+               * secondary along Y.  So it's mostly flat along Z.
+               */
+              y = M[1][0]*cold[0] + M[1][1]*cold[1]; 
+              if (d == 3) y +=  M[1][2]*cold[2];
+            } 
+            else{
+              /*
+               * Orient points to lie along X axis.  Mostly flat along Y and Z.
+               */
+              y = 0.0;
+            }
+  
+            cold[0] = x;
+            cold[1] = y;
+            if (d == 3) cold[2] = 0;
+          }
         }
 
         if (keep_cuts){
           if (zz->LB.Method == RCB){
             rcb = (RCB_STRUCT *)zz->LB.Data_Structure;
             rcb->Target_Dim = target_dim;
+            rcb->Permutation[0] = coord1;
+            rcb->Permutation[1] = coord2;
+            rcb->Permutation[2] = -1;
             sav = rcb->Transformation;
           }
           else if (zz->LB.Method == RIB){
             rib = (RIB_STRUCT *)zz->LB.Data_Structure;
             rib->Target_Dim = target_dim;
+            rib->Permutation[0] = coord1;
+            rib->Permutation[1] = coord2;
+            rib->Permutation[2] = -1;
             sav = rib->Transformation;
           }
           else if (zz->LB.Method == HSFC){
             hsfc = (HSFC_Data *)zz->LB.Data_Structure;
             hsfc->Target_Dim = target_dim;
+            hsfc->Permutation[0] = coord1;
+            hsfc->Permutation[1] = coord2;
+            hsfc->Permutation[2] = -1;
             sav = hsfc->Transformation;
           }
 
@@ -348,7 +430,7 @@ int Zoltan_Get_Coordinates(
 
       } /* If geometry is very flat */
     }  /* If SKIP_DIMENSIONS is true */
-  } /* If 3-D rcb, rib or hsfc */
+  } /* If 2-D or 3-D rcb, rib or hsfc */
 
 End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -501,12 +583,34 @@ static void inertial_matrix3D(ZZ *zstruct, double *X,
   im[1][2] = im[2][1] = yzt;
 }
 static void projected_distances(ZZ *zz, double *coords, int num_obj,
-        double *cm, double (*evecs)[3], double *d, int dim)
+        double *cm, double (*evecs)[3], double *d, int dim, int aa, int *order)
 {
 int i, j;
 double val, min[3], max[3], *c, tmp;
 int Tflops_Special, proc, nprocs, proclower;
 MPI_Comm local_comm;
+
+  if (aa){
+    /* special case - eigenvectors are axis aligned */
+
+    for (j=0; j<dim; j++){
+      min[j] = max[j] = coords[j];
+    }
+
+    for (i=1, c = coords+dim; i<num_obj; i++, c += dim){
+      for (j=0; j<dim; j++){
+        if (c[j] < min[j]) min[j] = c[j];
+        else if (c[j] > max[j]) max[j] = c[j];
+      }
+    }
+
+    for (j=0; j<dim; j++){
+      /* distance along the j'th eigenvector */
+      d[j] = max[order[j]] - min[order[j]];
+    }
+    
+    return;
+  }
 
   Tflops_Special = zz->Tflops_Special;
   proc = zz->Proc;
@@ -761,6 +865,18 @@ static int tqli(double *d,     /* input from tred2, output is eigenvalues */
       }
     } while (m != l);
   }
+  return 0;
+}
+static int almost_one(double d)
+{
+  double l = 1.0 - 10e-5; 
+  double r = 1.0 + 10e-5; 
+  double ad = fabs(d);
+
+  if ((ad >= l) && (ad <= r)){
+    return 1;
+  }
+
   return 0;
 }
 

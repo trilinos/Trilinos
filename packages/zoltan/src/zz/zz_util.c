@@ -75,11 +75,12 @@ char **pstring2) 		/* cleaned string to return */
   * coordinates have been transformed due to degenerate geometries.
   */
 void Zoltan_Transform_Point(
-  double *p,                 /* point to transform */
-  double (*m)[3],            /* linear transformation     */
-  int d,                     /* dimension of input (2 or 3) */
-  int ndims,                 /* dimension of output (1, 2 or 3) */
-  double *v)                 /* output */
+  double *p,         /* point to transform */
+  double (*m)[3],    /* linear transformation */
+  int *permute,      /* simplified transformation, permute coordinates */
+  int d,             /* dimension of input (2 or 3) */
+  int ndims,         /* dimension of output (1, 2 or 3) */
+  double *v)         /* output */
 {
   double tmp[3];
 
@@ -87,24 +88,34 @@ void Zoltan_Transform_Point(
   tmp[1] = p[1];
   tmp[2] = p[2];
 
-  if (d == 2){  
-    v[0] = m[0][0] * tmp[0]  +  m[0][1] * tmp[1];
- 
-    v[1] = (ndims < 2) ? 
-            0.0 :
-            m[1][0] * tmp[0]  +  m[1][1] * tmp[1];
+  if (permute[0] >= 0){
+    v[0] = p[permute[0]];
+    v[1] = (ndims < 2) ? 0.0 : p[permute[1]];
+
+    if (d == 3){
+      v[2] = (ndims < 3) ? 0.0 : p[permute[2]];
+    }
   }
-  else if (d == 3) {
-    v[0] = m[0][0]*tmp[0] + m[0][1]*tmp[1] + m[0][2]*tmp[2];
- 
-    v[1] = (ndims < 2) ? 
-            0.0 :
-            m[1][0]*tmp[0] + m[1][1]*tmp[1] + m[1][2]*tmp[2];
- 
-    v[2] = (ndims < 3) ?
-            0.0 :
-            m[2][0]*tmp[0] + m[2][1]*tmp[1] + m[2][2]*tmp[2];
+  else{
+    if (d == 2){  
+      v[0] = m[0][0] * tmp[0]  +  m[0][1] * tmp[1];
    
+      v[1] = (ndims < 2) ? 
+              0.0 :
+              m[1][0] * tmp[0]  +  m[1][1] * tmp[1];
+    }
+    else if (d == 3) {
+      v[0] = m[0][0]*tmp[0] + m[0][1]*tmp[1] + m[0][2]*tmp[2];
+   
+      v[1] = (ndims < 2) ? 
+              0.0 :
+              m[1][0]*tmp[0] + m[1][1]*tmp[1] + m[1][2]*tmp[2];
+   
+      v[2] = (ndims < 3) ?
+              0.0 :
+              m[2][0]*tmp[0] + m[2][1]*tmp[1] + m[2][2]*tmp[2];
+     
+    }
   }
 }
 
@@ -123,6 +134,7 @@ void Zoltan_Transform_Point(
 void Zoltan_Transform_Box_Points(
   double *lo, double *hi,    /* input: bounds of 2D or 3D axis-aligned box */
   double (*m)[3],            /* input: linear transformation     */
+  int *perm,                 /* input: coordinate permutation */
   int d,                     /* dimension of box (2 or 3) */
   int ndims,                 /* dimension of transformed box (1, 2 or 3) */
   double (*v)[3])            /* output: 4 or 8 vertices of resulting box    */
@@ -136,7 +148,7 @@ void Zoltan_Transform_Box_Points(
        v[3][0] = hi[0]; v[3][1] = lo[1]; 
 
        for (i=0; i<4; i++){
-         Zoltan_Transform_Point(v[i], m, 2, ndims, v[i]);
+         Zoltan_Transform_Point(v[i], m, perm, 2, ndims, v[i]);
        }
      }
      else if (d == 3) {
@@ -150,7 +162,7 @@ void Zoltan_Transform_Box_Points(
        v[7][0] = hi[0]; v[7][1] = lo[1]; v[7][2] = hi[2];
 
        for (i=0; i<8; i++){
-         Zoltan_Transform_Point(v[i], m, 3, ndims, v[i]);
+         Zoltan_Transform_Point(v[i], m, perm, 3, ndims, v[i]);
        }
      }
 }
@@ -168,6 +180,7 @@ void Zoltan_Transform_Box_Points(
 void Zoltan_Transform_Box( 
   double *lo, double *hi,  /* input: box bounds, output: bounds of transformed box */
   double (*m)[3],          /* 3x3 transformation */
+  int *perm,               /* if transformation is simple coordinate permutation */
   int d,                   /* dimension of box */
   int ndims)               /* dimension of transformed box */
 {          
@@ -176,7 +189,7 @@ void Zoltan_Transform_Box(
 
      npoints = ((d == 2) ? 4 : 8);
 
-     Zoltan_Transform_Box_Points(lo, hi, m, d, ndims, v);
+     Zoltan_Transform_Box_Points(lo, hi, m, perm, d, ndims, v);
 
      lo[0] = hi[0] = v[0][0];
      lo[1] = hi[1] = 0.0;
