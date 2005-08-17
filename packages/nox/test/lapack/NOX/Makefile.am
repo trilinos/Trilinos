@@ -40,6 +40,8 @@ endif
 
 AM_CPPFLAGS = $(TEST_INCLUDES)
 
+EXEEXT = .exe
+
 noinst_PROGRAMS = rosenbrock broyden
 
 rosenbrock_SOURCES = \

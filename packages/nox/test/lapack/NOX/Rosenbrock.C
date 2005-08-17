@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
             cout << "Error: An input parameter file was expected but not found. \n" << endl;
             printParams.setParameter("Output Information", NOX::Utils::Error);
 	    NOX::Utils printing(printParams);
-            return 0;
+            return 1;
          }
 
        paramFilename = argv[2];
@@ -184,12 +184,6 @@ int main(int argc, char *argv[]) {
   }
   NOX::Utils printing(printParams);
 
-  // This test is only for SERIAL
-  // Exit if trying to run in parallel
-#ifdef HAVE_MPI
-  return 0;
-#endif
-  
   // Identify the test
   if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
     cout << "Starting lapack/NOX_NewTest/NOX_NewTest.exe" << endl;
@@ -234,19 +228,17 @@ int main(int argc, char *argv[]) {
   // Get the answer
   grp = solver.getSolutionGroup();
   
-
-  // Print out status for test suite
-  if (status == NOX::StatusTest::Converged) 
-    cout << "Test passed!" << endl;
-  else 
-    cout << "Test failed!" << endl;
-
   // Final return value (0 = succefull, non-zero = failure)
   //return status;
-  if (status ==  NOX::StatusTest::Converged) 
-     return 0;
+  int returnValue = 1;
+  if (status == NOX::StatusTest::Converged) {
+    cout << "Test passed!" << endl;
+    returnValue = 0;
+  }
   else
-     return 1;
+    cout << "Test failed!" << endl;
+  
+  return returnValue;
 }
 
 /*

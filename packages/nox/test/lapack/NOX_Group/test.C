@@ -57,12 +57,6 @@ int main(int argc, char *argv[]) {
   }
   NOX::Utils printing(printParams);
 
-  // This test is only for SERIAL
-  // Exit if trying to run in parallel
-#ifdef HAVE_MPI
-  return 0;
-#endif
-  
   if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
     cout << "Starting lapack/NOX_Group/NOX_Group.exe" << endl;
   }

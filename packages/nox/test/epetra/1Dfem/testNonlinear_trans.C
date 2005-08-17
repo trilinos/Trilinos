@@ -584,7 +584,7 @@ int main(int argc, char *argv[])
 
   // Summarize test results  
   if (utils.isPrintProcess()) {
-    if (solver.getStatus() == NOX::StatusTest::Converged)
+    if (ierr == 0)
       cout << "Test passed!" << endl;
     else 
       cout << "Test failed!" << endl;

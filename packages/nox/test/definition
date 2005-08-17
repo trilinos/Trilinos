@@ -14,7 +14,7 @@
 
 # NOX epetra tests
 (FRAMEWORK) {
-    DIRS = epetra/1dfem,
+    DIRS = epetra/1Dfem,
            epetra/DS6.5.1,
            epetra/NOX_Group,
            epetra/NOX_NewTest,

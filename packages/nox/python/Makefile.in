@@ -107,7 +107,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = src test test-epetra example-epetra test-lapack \
-	example-lapack src-loca
+	example-lapack
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ADDON_belos_EXAMPLES = @ADDON_belos_EXAMPLES@
@@ -340,7 +340,6 @@ target_vendor = @target_vendor@
 @BUILD_LIBNOXEPETRA_TRUE@EPETRA_EXAMPLE_SUBDIR = example-epetra
 @BUILD_LIBNOXLAPACK_TRUE@LAPACK_TEST_SUBDIR = test-lapack
 @BUILD_LIBNOXLAPACK_TRUE@LAPACK_EXAMPLE_SUBDIR = example-lapack
-@BUILD_LIBLOCA_TRUE@LOCA_SRC_SUBDIR = src-loca
 SUBDIRS = src test \
 	  $(EPETRA_TEST_SUBDIR) $(EPETRA_EXAMPLE_SUBDIR) \
 	  $(LAPACK_TEST_SUBDIR) $(LAPACK_EXAMPLE_SUBDIR) \
