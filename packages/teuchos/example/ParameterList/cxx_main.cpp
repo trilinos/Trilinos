@@ -31,15 +31,17 @@ int main(int argc, char* argv[])
 
   // The parameter list can be queried about the existance of a parameter, sublist, or type:
   // Has a solver been chosen?
-  bool solver_defined = My_List.isParameter("Solver");
+  bool solver_defined = false, prec_defined = false, dtol_double = false;
+  solver_defined = My_List.isParameter("Solver");
   // Has a preconditioner been chosen?
-  bool prec_defined = My_List.isSublist("Preconditioner"); 
+  prec_defined = My_List.isSublist("Preconditioner"); 
 #ifdef HAVE_TEMPLATE_QUALIFIER
   // Has a tolerance been chosen and is it a double-precision number?
-  bool tol_double = My_List.template isType<double>("Tolerance");
+  bool tol_double = false;
+  tol_double = My_List.template isType<double>("Tolerance");
 #endif
   // Has a drop tolerance been chosen and is it a double-precision number?
-  bool dtol_double = Teuchos::isParameterType<double>(Prec_List, "Drop Tolerance"); 
+  dtol_double = Teuchos::isParameterType<double>(Prec_List, "Drop Tolerance"); 
 
   /* The last two methods for checking the parameter type are equivalent.
      There is some question as to whether the syntax of the first type-checking
@@ -48,7 +50,8 @@ int main(int argc, char* argv[])
   */
   // Parameters can be retrieved from the parameter list in quite a few ways:
   // Get method that creates and sets the parameter if it doesn't exist.
-  int its = My_List.get("Max Iters", 1200);
+  int its = 0;
+  its = My_List.get("Max Iters", 1200);
   float tol;
 #ifdef HAVE_TEMPLATE_QUALIFIER
   // Get method that retrieves a parameter of a particular type.

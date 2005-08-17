@@ -126,10 +126,13 @@ int main(int argc, char *argv[])
   //-----------------------------------------------------------
   // Fill in Direction Sublist
   //-----------------------------------------------------------
+
+  double tol = 0.0;
+  bool RBNS = false;
   PL_Direction.get("Method", "Newton");
   PL_LinSol.set("Tol",1e-5);
-  double tol = PL_LinSol.get("Tolerance",1e-10);
-  bool RBNS = PL_Newton.get("Rescue Bad Newton Solve", true );
+  tol = PL_LinSol.get("Tolerance",1e-10);
+  RBNS = PL_Newton.get("Rescue Bad Newton Solve", true );
 
   //-----------------------------------------------------------
   // Print out Direction Sublist
@@ -174,22 +177,25 @@ int main(int argc, char *argv[])
   // (if there are no failures, this will be constructed and added)
   //-----------------------------------------------------------
   if (!FailedTests) {
+    int ARI = 0, default_step = 0, max_iter_inc = 0, rec_step = 0;
+    double alpha_factor = 0.0, min_bnds_factor = 0.0, max_bnds_factor = 0.0;
+    bool force_interp = true, use_cntrs = false;
     ParameterList PL_My_LineSearch;
     string ls_method = PL_My_LineSearch.get("Method", "Polynomial");
     ParameterList& PL_Polynomial = PL_My_LineSearch.sublist("Polynomial");
-    int ARI = PL_Polynomial.get("Allowed Relative Increase", 100 );
-    double alpha_factor = PL_Polynomial.get("Alpha Factor", 0.0001 );
-    int default_step = PL_Polynomial.get("Default Step", 1 );
-    bool force_interp = PL_Polynomial.get("Force Interpolation", false );
+    ARI = PL_Polynomial.get("Allowed Relative Increase", 100 );
+    alpha_factor = PL_Polynomial.get("Alpha Factor", 0.0001 );
+    default_step = PL_Polynomial.get("Default Step", 1 );
+    force_interp = PL_Polynomial.get("Force Interpolation", false );
     string interp_type = PL_Polynomial.get("Interpolation Type", "Cubic" );
-    double max_bnds_factor = PL_Polynomial.get("Max Bounds Factor", 0.5 );
+    max_bnds_factor = PL_Polynomial.get("Max Bounds Factor", 0.5 );
     PL_Polynomial.set("Max Iters", 3 );
-    int max_iter_inc = PL_Polynomial.get("Maximum Iteration for Increase", 0 );
-    double min_bnds_factor = PL_Polynomial.get("Min Bounds Factor", 0.1 );
-    int rec_step = PL_Polynomial.get("Recovery Step", 1 );
+    max_iter_inc = PL_Polynomial.get("Maximum Iteration for Increase", 0 );
+    min_bnds_factor = PL_Polynomial.get("Min Bounds Factor", 0.1 );
+    rec_step = PL_Polynomial.get("Recovery Step", 1 );
     string rec_step_type = PL_Polynomial.get("Recovery Step Type", "Constant");
     string suff_dec_cond = PL_Polynomial.get("Sufficient Decrease Condition", "Armijo-Goldstein" );
-    bool use_cntrs = PL_Polynomial.get("Use Counters", true );
+    use_cntrs = PL_Polynomial.get("Use Counters", true );
 
     PL_Main.set("Nonlinear Solver", "Line Search Based"); 
  
@@ -214,13 +220,13 @@ int main(int argc, char *argv[])
 	FailedTests++;
     }  
 
-    bool tempMeth;
+    bool tempMeth = true;
 #ifdef HAVE_TEMPLATE_QUALIFIER
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list using templated "get" method.
     // (This will only be tested if the compiler excepts "template" as a qualifier)
     //-----------------------------------------------------------
-    int max_iters;
+    int max_iters = 0;
     string nonlin_solver;
     tempMeth = true;
     try {
@@ -239,7 +245,7 @@ int main(int argc, char *argv[])
     // Retrieve some information from the parameter list that we know is a bad "get".
     // (This will only be tested if the compiler excepts "template" as a qualifier)
     //-----------------------------------------------------------
-    float mbf;
+    float mbf = 0.0;
     tempMeth = false;
     FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
     try {
@@ -260,8 +266,8 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------
     // Check the 'getParameter' helper function.
     //-----------------------------------------------------------
-    int def_step;
-    double alpha_fact;
+    int def_step = 0;
+    double alpha_fact = 0.0;
     tempMeth = true;
     try {
     	def_step = getParameter<int>(PL_Polynomial, "Default Step");

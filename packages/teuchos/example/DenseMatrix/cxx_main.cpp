@@ -18,9 +18,10 @@ int main(int argc, char* argv[])
     My_Copy3( Teuchos::View, My_Matrix, 2, 3, 1, 1 );
 
   // The matrix dimensions and strided storage information can be obtained:
-  int rows = My_Copy3.numRows();  // number of rows
-  int cols = My_Copy3.numCols();  // number of columns
-  int stride = My_Copy3.stride(); // storage stride
+  int rows, cols, stride;
+  rows = My_Copy3.numRows();  // number of rows
+  cols = My_Copy3.numCols();  // number of columns
+  stride = My_Copy3.stride(); // storage stride
 
   // Matrices can change dimension:
   Empty_Matrix.shape( 3, 3 );      // size non-dimensional matrices
@@ -41,13 +42,15 @@ int main(int argc, char* argv[])
   My_Copy2.scale( 0.5 );         // Matrix scaling
   
   // The pointer to the array of matrix values can be obtained:
-  double* My_Array = My_Matrix.values();   // pointer to matrix values
-  double* My_Column = My_Matrix[2];        // pointer to third column values
+  double *My_Array=0, *My_Column=0;
+  My_Array = My_Matrix.values();   // pointer to matrix values
+  My_Column = My_Matrix[2];        // pointer to third column values
 
   // The norm of a matrix can be computed:
-  double norm_one = My_Matrix.normOne();        // one norm
-  double norm_inf = My_Matrix.normInf();        // infinity norm
-  double norm_fro = My_Matrix.normFrobenius();  // frobenius norm
+  double norm_one, norm_inf, norm_fro;
+  norm_one = My_Matrix.normOne();        // one norm
+  norm_inf = My_Matrix.normInf();        // infinity norm
+  norm_fro = My_Matrix.normFrobenius();  // frobenius norm
 
   // Matrices can be compared:
   // Check if the matrices are equal in dimension and values

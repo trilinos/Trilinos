@@ -77,7 +77,8 @@ int main(int argc, char* argv[])
       /* time a simple function */
       for (int i=0; i<100; i++)
         {
-          double x = sqrtFunc();
+          double x = 0.0;
+          x = sqrtFunc();
         }
 
       /* time a reentrant function */
@@ -89,7 +90,8 @@ int main(int argc, char* argv[])
       /* time a function that throws an exception */
       for (int i=0; i<100; i++)
         {
-          double x = exceptFunc();
+          double x = 0.0;
+          x = exceptFunc();
         }
       
     }

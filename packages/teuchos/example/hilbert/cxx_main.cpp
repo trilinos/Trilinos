@@ -312,7 +312,6 @@ int main(int argc, char *argv[]) {
 
 template<typename TYPE>
 void ConstructHilbertMatrix(TYPE* A, int n) {
-  TYPE scal0 = ScalarTraits<TYPE>::zero();
   TYPE scal1 = ScalarTraits<TYPE>::one();
   for(int i = 0; i < n; i++) {
     for(int j = 0; j < n; j++) {
@@ -411,7 +410,6 @@ int Solve(int n, TYPE* H, TYPE* b, TYPE* err) {
   TYPE scal0 = ScalarTraits<TYPE>::zero();
   TYPE scal1 = ScalarTraits<TYPE>::one();
   TYPE scalNeg1 = scal0 - scal1;
-  TYPE result = scal0;
   BLAS<int, TYPE> blasObj;
   TYPE* x = new TYPE[n];
   for(int i = 0; i < n; i++) {
