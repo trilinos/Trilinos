@@ -51,6 +51,7 @@ class StatusTestTestCase(unittest.TestCase):
     "TestCase class for NOX.StatusTest objects"
 
     def setUp(self):
+        self.comm      = Epetra.PyComm()
         self.absResid  = NOX.StatusTest.NormF(1.0e-6)
         self.relResid  = NOX.StatusTest.NormF(1.0e-6,NOX.StatusTest.NormF.Unscaled)
         self.update    = NOX.StatusTest.NormUpdate(1.0e-5)
@@ -58,6 +59,9 @@ class StatusTestTestCase(unittest.TestCase):
         self.maxIters  = NOX.StatusTest.MaxIters(20)
         self.stagnate  = NOX.StatusTest.Stagnation()
         self.finiteVal = NOX.StatusTest.FiniteValue()
+
+    def tearDown(self):
+        self.comm.Barrier()
 
     def testAbsNormFGetStatus(self):
         "Test NOX.StatusTest.NormF getStatus method"

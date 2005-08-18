@@ -51,10 +51,14 @@ class ParameterTestCase(unittest.TestCase):
     "TestCase for NOX.Parameter.Lists"
 
     def setUp(self):
-        self.pl = NOX.Parameter.List()
+        self.comm = Epetra.PyComm()
+        self.pl   = NOX.Parameter.List()
         self.pl.setParameter("Integer Parameter", 2003    )
         self.pl.setParameter("Float Parameter",   3.14    )
         self.pl.setParameter("String Parameter",  "Sandia")
+
+    def tearDown(self):
+        self.comm.Barrier()
 
     def testIntExistence(self):
         "Test NOX.Parameter.List integer existence"
