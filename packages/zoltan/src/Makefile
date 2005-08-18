@@ -352,20 +352,21 @@ ZCPPDRIVE_DEPS	= $(ZDRIVE_DEPS)
 VIEW_OBJ        = vtk_view.o dr_input.o  dr_err.o
 
 VIEW_LIBS       = -L. $(VTK_LIBPATH) $(MPI_LIBPATH) $(X_LIBPATH) $(GL_LIBPATH) \
-   -lvtkHybrid -lvtkParallel -lvtkRendering -lvtkIO -lvtkGraphics -lvtkImaging \
-   $(GL_LIBS) $(X_LIBS) -lvtkftgl -lvtkfreetype \
+   -lvtkParallel -lvtkHybrid -lvtkIO -lvtkRendering -lvtkGraphics -lvtkImaging \
    -lvtkFiltering -lvtkCommon \
+   $(GL_LIBS) $(X_LIBS)  \
+   -lvtkftgl -lvtkfreetype \
    -lvtkpng -lvtktiff -lvtkzlib -lvtkjpeg -lvtkexpat \
-   -lpthread -lvtkexoIIc -lvtkNetCDF $(MPI_LIB)
+   -lpthread -lvtkexoIIc -lvtkNetCDF $(MPI_LIB) -ldl
 
 CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS)
 F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 
 ifdef CPPC
-CPPCOMP		= $(CPPC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS)
+CPPCOMP		= $(CPPC) $(CFLAGS) $(CPPFLAGS)
 else
 # See if C compiler will work with C++ files
-CPPCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS)
+CPPCOMP		= $(CC) $(CFLAGS) 
 endif
 
 ############################################################################
@@ -461,11 +462,11 @@ vtk_view:
 	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) vtk_view                        \
 	"ZTARGET=vtk_view"			\
-	"CC=$(CPPCOMP) "  	\
-	"OBJ_FILES=$(VIEW_OBJ)"		          \
-	"VPATH=$(ZOLTAN_VPATH)"                   \
-	"DEFS=$(GDEFINES) $(DEFS) $(VTK_INCPATH)" \
-	"MAIN_OBJ=$(VIEW_OBJ)"  		\
+	"CC=$(CPPCOMP) "  	                \
+	"MAIN_OBJ=$(VIEW_OBJ)"		        \
+	"OBJ_FILES=$(VIEW_OBJ)"		        \
+	"VPATH=$(ZOLTAN_VPATH)"                 \
+	"DEFS=$(DEFS) $(SUBINCPATH) $(MPI_INCPATH) $(VTK_INCPATH)" \
 	"LNK_LIBS=$(VIEW_LIBS)" 		\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)"
@@ -495,7 +496,7 @@ zCPPdrive:
 	"VPATH=$(ZOLTAN_VPATH)"			\
 	"CC=$(CPPCOMP)"				\
 	"OBJ_FILES=$(ZOLTAN_OBJ)"		\
-	"DEFS=$(GDEFINES) $(DEFS)" 		\
+	"DEFS=$(GDEFINES) $(DEFS) $(ZOLTAN_INC_PATH) " 		\
 	"MAIN_OBJ=$(ZCPPDRIVE_OBJ)" 		\
 	"LNK_LIBS=$(ZCPPDRIVE_LIBS)" 		\
 	"DEP_LIBS=$(ZCPPDRIVE_DEPS)"		\
