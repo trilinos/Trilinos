@@ -71,7 +71,11 @@ bool MRTR::Interface::Integrate_MasterSide_2D(Epetra_CrsMatrix& M)
   {
     // the segment to be integrated
     MRTR::Segment* actsseg = scurr->second;
-    
+
+#if 1
+    cout << "\nActive sseg id " << actsseg->Id() << "\n\n";
+#endif
+
     // check whether I own at least one of the nodes on this slave segment
     int nnode = actsseg->Nnode();
     MRTR::Node** nodes = actsseg->Nodes();
@@ -91,6 +95,9 @@ bool MRTR::Interface::Integrate_MasterSide_2D(Epetra_CrsMatrix& M)
     {
       MRTR::Segment* actmseg = mcurr->second;
       
+#if 1
+    cout << "Active mseg id " << actmseg->Id() << endl;
+#endif
       // if there is an overlap, integrate the pair
       // (whether there is an overlap or not will be checked inside)
       Integrate_MasterSide_2D_Section(*actsseg,*actmseg,M);
@@ -177,11 +184,31 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
     //cout << "Case 1: no overlap\n";
     ++foundcase;
   }
+  
+  // case 2: snode0 projects into master element
+  //         snode1 not projects into master element
+  //         mnodes not project into slave element
+  // Note: this case is due to tolerance in projection
+  if (snode0 && !snode1 && !mnode0 && !mnode1)
+  {
+    //cout << "Case 2: no overlap\n";
+    ++foundcase;
+  }
+  
+  // case 3: mnode0 projects into slave element element
+  //         mnode1 not projects into slave element
+  //         snodes don't project into master element
+  // Note: this case is due to tolerance in projection
+  if (!snode0 && !snode1 && mnode0 && !mnode1)
+  {
+    //cout << "Case 3: no overlap\n";
+    ++foundcase;
+  }
 
-  // case 2: both master node project into slave segment
+  // case 4: both master node project into slave segment
   if (mnode0 && mnode1)
   {
-    //cout << "Case 2: both mnodes in slave segment\n";
+    //cout << "Case 4: both mnodes in slave segment\n";
     ++foundcase;
     nstart = mnodes[0]->GetProjectedNode();
     nend   = mnodes[1]->GetProjectedNode();
@@ -191,10 +218,10 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
     mxib = 1.0;
   }
   
-  // case 3: both slave nodes project into master segment
+  // case 5: both slave nodes project into master segment
   if (snode0 && snode1)
   {
-    //cout << "Case 3: both snodes in master segment\n";
+    //cout << "Case 5: both snodes in master segment\n";
     ++foundcase;
     nstart = snodes[0]->GetProjectedNode();
     nend   = snodes[1]->GetProjectedNode();
@@ -204,10 +231,10 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
     mxib = nstart->Xi()[0];
   }
 
-  // case 4: first slave node in master segment and first master node in slave segment
+  // case 6: first slave node in master segment and first master node in slave segment
   if (snode0 && !snode1 && mnode0 && !mnode1)
   {
-    //cout << "Case 4: first slave in master seg and first master in slave seg\n";
+    //cout << "Case 6: first slave in master seg and first master in slave seg\n";
     ++foundcase;
     nstart = snodes[0]->GetProjectedNode();
     nend   = mnodes[0]->GetProjectedNode();
@@ -217,10 +244,10 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
     mxib = nstart->Xi()[0];
   }
 
-  // case 5: last slave node in master segment and last master node in slave segment
+  // case 7: last slave node in master segment and last master node in slave segment
   if (snode1 && !snode0 && mnode1 && !mnode0)
   {
-    //cout << "Case 5: last slave in master seg and last master in slave seg\n";
+    //cout << "Case 7: last slave in master seg and last master in slave seg\n";
     ++foundcase;
     nstart = mnodes[1]->GetProjectedNode();
     nend   = snodes[1]->GetProjectedNode();
@@ -235,6 +262,14 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
     cout << "***ERR*** MRTR::Interface::Integrate_MasterSide_2D_Section:\n"
          << "***ERR*** # cases that apply here: " << foundcase << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    cout << "Slave :" << sseg;
+    MRTR::Node** nodes = sseg.Nodes();
+    cout << *nodes[0];
+    cout << *nodes[1];
+    cout << "Master:" << mseg;
+    nodes = mseg.Nodes();
+    cout << *nodes[0];
+    cout << *nodes[1];
     exit(EXIT_FAILURE);
   }
   
