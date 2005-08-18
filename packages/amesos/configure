@@ -9532,59 +9532,6 @@ fi
 
 
 
-
-
-# Check whether --enable-thyra or --disable-thyra was given.
-if test "${enable_thyra+set}" = set; then
-  enableval="$enable_thyra"
-  ac_cv_implicit_use_thyra=$enableval
-else
-  ac_cv_implicit_use_thyra=no
-fi;
-
-if test "Xyes" != "Xno"; then
-  ac_cv_amesos_using_thyra_default=$ac_cv_implicit_use_thyra
-else
-  ac_cv_amesos_using_thyra_default=no
-fi
-
-# Check whether --enable-amesos-thyra or --disable-amesos-thyra was given.
-if test "${enable_amesos_thyra+set}" = set; then
-  enableval="$enable_amesos_thyra"
-  ac_cv_use_thyra=$enableval
-else
-  ac_cv_use_thyra=$ac_cv_amesos_using_thyra_default
-fi;
-
-echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in amesos" >&5
-echo $ECHO_N "checking whether to build optional thyra dependent code in amesos... $ECHO_C" >&6
-
-if test "X$ac_cv_use_thyra" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_AMESOS_THYRA 1
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_thyra" = "Xyes"; then
-  ENABLE_AMESOS_THYRA_TRUE=
-  ENABLE_AMESOS_THYRA_FALSE='#'
-else
-  ENABLE_AMESOS_THYRA_TRUE='#'
-  ENABLE_AMESOS_THYRA_FALSE=
-fi
-
-
-
-
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
@@ -12473,18 +12420,18 @@ rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
   fi
 
-  if test "${ac_cv_header_Cnames_h+set}" = set; then
-  echo "$as_me:$LINENO: checking for Cnames.h" >&5
-echo $ECHO_N "checking for Cnames.h... $ECHO_C" >&6
-if test "${ac_cv_header_Cnames_h+set}" = set; then
+  if test "${ac_cv_header_dsp_defs_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for dsp_defs.h" >&5
+echo $ECHO_N "checking for dsp_defs.h... $ECHO_C" >&6
+if test "${ac_cv_header_dsp_defs_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 fi
-echo "$as_me:$LINENO: result: $ac_cv_header_Cnames_h" >&5
-echo "${ECHO_T}$ac_cv_header_Cnames_h" >&6
+echo "$as_me:$LINENO: result: $ac_cv_header_dsp_defs_h" >&5
+echo "${ECHO_T}$ac_cv_header_dsp_defs_h" >&6
 else
   # Is the header compilable?
-echo "$as_me:$LINENO: checking Cnames.h usability" >&5
-echo $ECHO_N "checking Cnames.h usability... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking dsp_defs.h usability" >&5
+echo $ECHO_N "checking dsp_defs.h usability... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -12492,7 +12439,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 $ac_includes_default
-#include <Cnames.h>
+#include <dsp_defs.h>
 _ACEOF
 rm -f conftest.$ac_objext
 if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
@@ -12528,15 +12475,15 @@ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
 echo "${ECHO_T}$ac_header_compiler" >&6
 
 # Is the header present?
-echo "$as_me:$LINENO: checking Cnames.h presence" >&5
-echo $ECHO_N "checking Cnames.h presence... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking dsp_defs.h presence" >&5
+echo $ECHO_N "checking dsp_defs.h presence... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <Cnames.h>
+#include <dsp_defs.h>
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -12570,25 +12517,25 @@ echo "${ECHO_T}$ac_header_preproc" >&6
 # So?  What about this header?
 case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
   yes:no: )
-    { echo "$as_me:$LINENO: WARNING: Cnames.h: accepted by the compiler, rejected by the preprocessor!" >&5
-echo "$as_me: WARNING: Cnames.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { echo "$as_me:$LINENO: WARNING: Cnames.h: proceeding with the compiler's result" >&5
-echo "$as_me: WARNING: Cnames.h: proceeding with the compiler's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dsp_defs.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: dsp_defs.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dsp_defs.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: dsp_defs.h: proceeding with the compiler's result" >&2;}
     ac_header_preproc=yes
     ;;
   no:yes:* )
-    { echo "$as_me:$LINENO: WARNING: Cnames.h: present but cannot be compiled" >&5
-echo "$as_me: WARNING: Cnames.h: present but cannot be compiled" >&2;}
-    { echo "$as_me:$LINENO: WARNING: Cnames.h:     check for missing prerequisite headers?" >&5
-echo "$as_me: WARNING: Cnames.h:     check for missing prerequisite headers?" >&2;}
-    { echo "$as_me:$LINENO: WARNING: Cnames.h: see the Autoconf documentation" >&5
-echo "$as_me: WARNING: Cnames.h: see the Autoconf documentation" >&2;}
-    { echo "$as_me:$LINENO: WARNING: Cnames.h:     section \"Present But Cannot Be Compiled\"" >&5
-echo "$as_me: WARNING: Cnames.h:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { echo "$as_me:$LINENO: WARNING: Cnames.h: proceeding with the preprocessor's result" >&5
-echo "$as_me: WARNING: Cnames.h: proceeding with the preprocessor's result" >&2;}
-    { echo "$as_me:$LINENO: WARNING: Cnames.h: in the future, the compiler will take precedence" >&5
-echo "$as_me: WARNING: Cnames.h: in the future, the compiler will take precedence" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dsp_defs.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: dsp_defs.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dsp_defs.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: dsp_defs.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dsp_defs.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: dsp_defs.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dsp_defs.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: dsp_defs.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dsp_defs.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: dsp_defs.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dsp_defs.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: dsp_defs.h: in the future, the compiler will take precedence" >&2;}
     (
       cat <<\_ASBOX
 ## ---------------------------------- ##
@@ -12599,20 +12546,20 @@ _ASBOX
       sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
-echo "$as_me:$LINENO: checking for Cnames.h" >&5
-echo $ECHO_N "checking for Cnames.h... $ECHO_C" >&6
-if test "${ac_cv_header_Cnames_h+set}" = set; then
+echo "$as_me:$LINENO: checking for dsp_defs.h" >&5
+echo $ECHO_N "checking for dsp_defs.h... $ECHO_C" >&6
+if test "${ac_cv_header_dsp_defs_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  ac_cv_header_Cnames_h=$ac_header_preproc
+  ac_cv_header_dsp_defs_h=$ac_header_preproc
 fi
-echo "$as_me:$LINENO: result: $ac_cv_header_Cnames_h" >&5
-echo "${ECHO_T}$ac_cv_header_Cnames_h" >&6
+echo "$as_me:$LINENO: result: $ac_cv_header_dsp_defs_h" >&5
+echo "${ECHO_T}$ac_cv_header_dsp_defs_h" >&6
 
 fi
 
 
-  if test "X$ac_cv_header_Cnames_h" == "Xyes"; then
+  if test "X$ac_cv_header_slu_Cnames_h" == "Xyes"; then
 
 cat >>confdefs.h <<\_ACEOF
 #define AMESOS_SUPERLU_PRE_JULY2005
@@ -12620,18 +12567,18 @@ _ACEOF
 
   else
 
-    if test "${ac_cv_header_slu_Cnames_h+set}" = set; then
-  echo "$as_me:$LINENO: checking for slu_Cnames.h" >&5
-echo $ECHO_N "checking for slu_Cnames.h... $ECHO_C" >&6
-if test "${ac_cv_header_slu_Cnames_h+set}" = set; then
+    if test "${ac_cv_header_slu_ddefs_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for slu_ddefs.h" >&5
+echo $ECHO_N "checking for slu_ddefs.h... $ECHO_C" >&6
+if test "${ac_cv_header_slu_ddefs_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 fi
-echo "$as_me:$LINENO: result: $ac_cv_header_slu_Cnames_h" >&5
-echo "${ECHO_T}$ac_cv_header_slu_Cnames_h" >&6
+echo "$as_me:$LINENO: result: $ac_cv_header_slu_ddefs_h" >&5
+echo "${ECHO_T}$ac_cv_header_slu_ddefs_h" >&6
 else
   # Is the header compilable?
-echo "$as_me:$LINENO: checking slu_Cnames.h usability" >&5
-echo $ECHO_N "checking slu_Cnames.h usability... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking slu_ddefs.h usability" >&5
+echo $ECHO_N "checking slu_ddefs.h usability... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -12639,7 +12586,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 $ac_includes_default
-#include <slu_Cnames.h>
+#include <slu_ddefs.h>
 _ACEOF
 rm -f conftest.$ac_objext
 if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
@@ -12675,15 +12622,15 @@ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
 echo "${ECHO_T}$ac_header_compiler" >&6
 
 # Is the header present?
-echo "$as_me:$LINENO: checking slu_Cnames.h presence" >&5
-echo $ECHO_N "checking slu_Cnames.h presence... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking slu_ddefs.h presence" >&5
+echo $ECHO_N "checking slu_ddefs.h presence... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <slu_Cnames.h>
+#include <slu_ddefs.h>
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -12717,25 +12664,25 @@ echo "${ECHO_T}$ac_header_preproc" >&6
 # So?  What about this header?
 case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
   yes:no: )
-    { echo "$as_me:$LINENO: WARNING: slu_Cnames.h: accepted by the compiler, rejected by the preprocessor!" >&5
-echo "$as_me: WARNING: slu_Cnames.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { echo "$as_me:$LINENO: WARNING: slu_Cnames.h: proceeding with the compiler's result" >&5
-echo "$as_me: WARNING: slu_Cnames.h: proceeding with the compiler's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: slu_ddefs.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: slu_ddefs.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: slu_ddefs.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: slu_ddefs.h: proceeding with the compiler's result" >&2;}
     ac_header_preproc=yes
     ;;
   no:yes:* )
-    { echo "$as_me:$LINENO: WARNING: slu_Cnames.h: present but cannot be compiled" >&5
-echo "$as_me: WARNING: slu_Cnames.h: present but cannot be compiled" >&2;}
-    { echo "$as_me:$LINENO: WARNING: slu_Cnames.h:     check for missing prerequisite headers?" >&5
-echo "$as_me: WARNING: slu_Cnames.h:     check for missing prerequisite headers?" >&2;}
-    { echo "$as_me:$LINENO: WARNING: slu_Cnames.h: see the Autoconf documentation" >&5
-echo "$as_me: WARNING: slu_Cnames.h: see the Autoconf documentation" >&2;}
-    { echo "$as_me:$LINENO: WARNING: slu_Cnames.h:     section \"Present But Cannot Be Compiled\"" >&5
-echo "$as_me: WARNING: slu_Cnames.h:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { echo "$as_me:$LINENO: WARNING: slu_Cnames.h: proceeding with the preprocessor's result" >&5
-echo "$as_me: WARNING: slu_Cnames.h: proceeding with the preprocessor's result" >&2;}
-    { echo "$as_me:$LINENO: WARNING: slu_Cnames.h: in the future, the compiler will take precedence" >&5
-echo "$as_me: WARNING: slu_Cnames.h: in the future, the compiler will take precedence" >&2;}
+    { echo "$as_me:$LINENO: WARNING: slu_ddefs.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: slu_ddefs.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: slu_ddefs.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: slu_ddefs.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: slu_ddefs.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: slu_ddefs.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: slu_ddefs.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: slu_ddefs.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: slu_ddefs.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: slu_ddefs.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: slu_ddefs.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: slu_ddefs.h: in the future, the compiler will take precedence" >&2;}
     (
       cat <<\_ASBOX
 ## ---------------------------------- ##
@@ -12746,22 +12693,22 @@ _ASBOX
       sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
-echo "$as_me:$LINENO: checking for slu_Cnames.h" >&5
-echo $ECHO_N "checking for slu_Cnames.h... $ECHO_C" >&6
-if test "${ac_cv_header_slu_Cnames_h+set}" = set; then
+echo "$as_me:$LINENO: checking for slu_ddefs.h" >&5
+echo $ECHO_N "checking for slu_ddefs.h... $ECHO_C" >&6
+if test "${ac_cv_header_slu_ddefs_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  ac_cv_header_slu_Cnames_h=$ac_header_preproc
+  ac_cv_header_slu_ddefs_h=$ac_header_preproc
 fi
-echo "$as_me:$LINENO: result: $ac_cv_header_slu_Cnames_h" >&5
-echo "${ECHO_T}$ac_cv_header_slu_Cnames_h" >&6
+echo "$as_me:$LINENO: result: $ac_cv_header_slu_ddefs_h" >&5
+echo "${ECHO_T}$ac_cv_header_slu_ddefs_h" >&6
 
 fi
-if test $ac_cv_header_slu_Cnames_h = yes; then
+if test $ac_cv_header_slu_ddefs_h = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find header files for SuperLU (Cnames.h or slu_Cnames.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include)." >&5
-echo "$as_me: error: Cannot find header files for SuperLU (Cnames.h or slu_Cnames.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include)." >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find header files for SuperLU (dsp_defs.h or slu_ddefs.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include)." >&5
+echo "$as_me: error: Cannot find header files for SuperLU (dsp_defs.h or slu_ddefs.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include)." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -14613,7 +14560,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:14616: \"$ac_link\") >&5
+(eval echo $as_me:14563: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -14691,7 +14638,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:14694: \"$ac_link\") >&5
+(eval echo $as_me:14641: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -15206,13 +15153,6 @@ if test -z "${HAVE_SWIG_TRUE}" && test -z "${HAVE_SWIG_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_SWIG\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_SWIG\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${ENABLE_AMESOS_THYRA_TRUE}" && test -z "${ENABLE_AMESOS_THYRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_AMESOS_THYRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ENABLE_AMESOS_THYRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi

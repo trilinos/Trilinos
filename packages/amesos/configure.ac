@@ -513,12 +513,12 @@ if test "X$ac_cv_use_amesos_superlu" != "Xno"; then
     AC_MSG_ERROR([[Cannot find the SuperLU library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsuperlupack.a, or use --with-libs=-lsuperlupack --with-ldflags=-L/home/username/lib).]]))  
   fi
 
-  AC_CHECK_HEADER([Cnames.h],,,) 
-  if test "X$ac_cv_header_Cnames_h" == "Xyes"; then
+  AC_CHECK_HEADER([dsp_defs.h],,,) 
+  if test "X$ac_cv_header_slu_Cnames_h" == "Xyes"; then
     AC_DEFINE(AMESOS_SUPERLU_PRE_JULY2005,[],[Using pre July 2005 Superlu])
   else
 
-    AC_CHECK_HEADER([slu_Cnames.h],,AC_MSG_ERROR([[Cannot find header files for SuperLU (Cnames.h or slu_Cnames.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include).]])) 
+    AC_CHECK_HEADER([slu_ddefs.h],,AC_MSG_ERROR([[Cannot find header files for SuperLU (dsp_defs.h or slu_ddefs.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include).]])) 
   fi
 
   AM_CONDITIONAL(HAVE_AMESOS_SUPERLU, true ) 
