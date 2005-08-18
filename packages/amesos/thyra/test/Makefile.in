@@ -42,7 +42,7 @@
 # ************************************************************************
 # @HEADER
 
-SOURCES = dummy.c $(test_amesos_thyra_driver_SOURCES) $(test_single_amesos_thyra_solver_driver_SOURCES)
+SOURCES = $(test_amesos_thyra_driver_SOURCES) $(test_single_amesos_thyra_solver_driver_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,10 +65,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) dummy$(EXEEXT)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2)
 subdir = thyra/test
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/test_amesos_thyra.sh.in
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -104,13 +103,10 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
-CONFIG_CLEAN_FILES = test_amesos_thyra.sh
+CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = test_single_amesos_thyra_solver_driver$(EXEEXT)
 am__EXEEXT_2 = test_amesos_thyra_driver$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-dummy_SOURCES = dummy.c
-dummy_OBJECTS = dummy.$(OBJEXT)
-dummy_LDADD = $(LDADD)
 am__objects_1 = test_single_amesos_thyra_solver.$(OBJEXT) \
 	EpetraExt_readEpetraLinearSystem.$(OBJEXT)
 am_test_amesos_thyra_driver_OBJECTS =  \
@@ -132,22 +128,17 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES =  \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/dummy.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_amesos_thyra_driver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_single_amesos_thyra_solver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_single_amesos_thyra_solver_driver.Po
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = dummy.c $(test_amesos_thyra_driver_SOURCES) \
+SOURCES = $(test_amesos_thyra_driver_SOURCES) \
 	$(test_single_amesos_thyra_solver_driver_SOURCES)
-DIST_SOURCES = dummy.c $(test_amesos_thyra_driver_SOURCES) \
+DIST_SOURCES = $(test_amesos_thyra_driver_SOURCES) \
 	$(test_single_amesos_thyra_solver_driver_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -367,7 +358,7 @@ common_ldadd = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .o .obj
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -397,14 +388,9 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-test_amesos_thyra.sh: $(top_builddir)/config.status $(srcdir)/test_amesos_thyra.sh.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-dummy$(EXEEXT): $(dummy_OBJECTS) $(dummy_DEPENDENCIES) 
-	@rm -f dummy$(EXEEXT)
-	$(LINK) $(dummy_LDFLAGS) $(dummy_OBJECTS) $(dummy_LDADD) $(LIBS)
 test_amesos_thyra_driver$(EXEEXT): $(test_amesos_thyra_driver_OBJECTS) $(test_amesos_thyra_driver_DEPENDENCIES) 
 	@rm -f test_amesos_thyra_driver$(EXEEXT)
 	$(CXXLINK) $(test_amesos_thyra_driver_LDFLAGS) $(test_amesos_thyra_driver_OBJECTS) $(test_amesos_thyra_driver_LDADD) $(LIBS)
@@ -419,26 +405,9 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dummy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_amesos_thyra_driver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_single_amesos_thyra_solver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_single_amesos_thyra_solver_driver.Po@am__quote@
-
-.c.o:
-@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
-
-.c.obj:
-@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -682,12 +651,6 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
-
-dummy.o:
-	echo "Dummy build for test_amesos_thyra.sh"
-
-dummy.exe:
-	chmod a+x test_amesos_thyra.sh
 
 include $(top_builddir)/Makefile.export.amesos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

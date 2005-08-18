@@ -35,7 +35,7 @@ EXEEXT = .exe
 TEST_SINGLE_AMESOS_THYRA_SOLVER_DRIVER = test_single_amesos_thyra_solver_driver
 TEST_AMESOS_THYRA_DRIVER = test_amesos_thyra_driver
 
-noinst_PROGRAMS = $(TEST_SINGLE_AMESOS_THYRA_SOLVER_DRIVER) $(TEST_AMESOS_THYRA_DRIVER) dummy
+noinst_PROGRAMS = $(TEST_SINGLE_AMESOS_THYRA_SOLVER_DRIVER) $(TEST_AMESOS_THYRA_DRIVER)
 
 test_single_amesos_thyra_solver_driver_SOURCES = $(srcdir)/test_single_amesos_thyra_solver_driver.cpp $(common_sources)
 test_single_amesos_thyra_solver_driver_DEPENDENCIES = $(common_dependencies)
@@ -44,12 +44,6 @@ test_single_amesos_thyra_solver_driver_LDADD = $(common_ldadd)
 test_amesos_thyra_driver_SOURCES = $(srcdir)/test_amesos_thyra_driver.cpp $(common_sources)
 test_amesos_thyra_driver_DEPENDENCIES = $(common_dependencies)
 test_amesos_thyra_driver_LDADD = $(common_ldadd)
-
-dummy.o:
-	echo "Dummy build for test_amesos_thyra.sh"
-
-dummy.exe:
-	chmod a+x test_amesos_thyra.sh
 
 #
 # Common stuff

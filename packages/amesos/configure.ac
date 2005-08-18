@@ -915,7 +915,6 @@ AC_CONFIG_FILES([
 		thyra/src/Makefile
 		thyra/example/Makefile
 		thyra/test/Makefile
-		thyra/test/test_amesos_thyra.sh
 		])
 
 AC_OUTPUT
