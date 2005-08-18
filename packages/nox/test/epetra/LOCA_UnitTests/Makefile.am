@@ -59,9 +59,9 @@ householderBorderedSolve_exe_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
 	$(top_builddir)/src-epetra/libnoxepetra.a \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
-	$(top_builddir)/src-loca/src/libloca.la \
-        $(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
-	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.la
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-epetra/liblocaepetra.a \
+	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.a
 
 householderBorderedSolve_exe_LDADD = $(TEST_LIBS)
 
@@ -104,7 +104,3 @@ MAINTAINERCLEANFILES = Makefile.in
 
 MOSTLYCLEANFILES = $(CXXREPOS)
 
-# ------------------------------------------------------------------------
-# Include global libtool definitions
-# ------------------------------------------------------------------------
-include $(top_srcdir)/config/libtool_macros.am

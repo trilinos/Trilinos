@@ -55,7 +55,7 @@ LOCA_LAPACK = \
 # localapack library specifications
 # ------------------------------------------------------------------------
 
-liblocalapack_la_SOURCES = $(LOCA_LAPACK) $(LOCA_LAPACK_H)
+liblocalapack_a_SOURCES = $(LOCA_LAPACK) $(LOCA_LAPACK_H)
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies
@@ -78,13 +78,38 @@ if BUILD_LIBLOCALAPACK
 
 # List of all libraries to install in $(libexecdir)
 
-lib_LTLIBRARIES = liblocalapack.la
+lib_LIBRARIES = liblocalapack.a
 
 # List of all headers to install in $(includedir)
 
 include_HEADERS = $(LOCA_LAPACK_H)
 
 endif
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+
+if USE_ALTERNATE_AR
+
+liblocalapack_a_AR = $(ALTERNATE_AR)
+
+else
+
+liblocalapack_a_AR = $(AR) cru
+
+endif
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+
+liblocalapack_a_LIBADD = $(CXXREPOS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -97,13 +122,6 @@ MAINTAINERCLEANFILES = Makefile.in
 # ------------------------------------------------------------------------
 
 MOSTLYCLEANFILES = $(CXXREPOS)
-
-# ------------------------------------------------------------------------
-# Include global libtool definitions
-# ------------------------------------------------------------------------
-include $(top_srcdir)/config/libtool_macros.am
-
-
 
 
 

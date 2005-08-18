@@ -74,10 +74,8 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/ac_cxx_invalid_template_qualifier.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
-	$(top_srcdir)/config/ac_libtoolize_flags.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/ac_python_module.m4 \
-	$(top_srcdir)/config/acinclude.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_dggev.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
@@ -119,12 +117,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Rosenbrock.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
-CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
 SOURCES = $(broyden_SOURCES) $(rosenbrock_SOURCES)
 DIST_SOURCES = $(broyden_SOURCES) $(rosenbrock_SOURCES)
 ETAGS = etags
@@ -219,7 +214,6 @@ BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -229,7 +223,6 @@ CXXREPOS = @CXXREPOS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
-ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -257,11 +250,6 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-LIBTOOL = @LIBTOOL@
-LIBTOOL_CCLINKER_FLAGS = @LIBTOOL_CCLINKER_FLAGS@
-LIBTOOL_COMPILER_FLAGS = @LIBTOOL_COMPILER_FLAGS@
-LIBTOOL_LINKER_FLAGS = @LIBTOOL_LINKER_FLAGS@
-LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -378,7 +366,7 @@ broyden_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .C .lo .o .obj
+.SUFFIXES: .C .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -410,11 +398,7 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
 clean-noinstPROGRAMS:
-	@list='$(noinst_PROGRAMS)'; for p in $$list; do \
-	  f=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
-	  echo " rm -f $$p $$f"; \
-	  rm -f $$p $$f ; \
-	done
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 broyden$(EXEEXT): $(broyden_OBJECTS) $(broyden_DEPENDENCIES) 
 	@rm -f broyden$(EXEEXT)
 	$(CXXLINK) $(broyden_LDFLAGS) $(broyden_OBJECTS) $(broyden_LDADD) $(LIBS)
@@ -447,14 +431,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.C.lo:
-@am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
-
 Broyden.o: $(srcdir)/Broyden.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Broyden.o -MD -MP -MF "$(DEPDIR)/Broyden.Tpo" -c -o Broyden.o `test -f '$(srcdir)/Broyden.C' || echo '$(srcdir)/'`$(srcdir)/Broyden.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Broyden.Tpo" "$(DEPDIR)/Broyden.Po"; else rm -f "$(DEPDIR)/Broyden.Tpo"; exit 1; fi
@@ -471,14 +447,6 @@ Broyden.obj: $(srcdir)/Broyden.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Broyden.obj `if test -f '$(srcdir)/Broyden.C'; then $(CYGPATH_W) '$(srcdir)/Broyden.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Broyden.C'; fi`
 
-Broyden.lo: $(srcdir)/Broyden.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Broyden.lo -MD -MP -MF "$(DEPDIR)/Broyden.Tpo" -c -o Broyden.lo `test -f '$(srcdir)/Broyden.C' || echo '$(srcdir)/'`$(srcdir)/Broyden.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Broyden.Tpo" "$(DEPDIR)/Broyden.Plo"; else rm -f "$(DEPDIR)/Broyden.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Broyden.C' object='Broyden.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Broyden.Plo' tmpdepfile='$(DEPDIR)/Broyden.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Broyden.lo `test -f '$(srcdir)/Broyden.C' || echo '$(srcdir)/'`$(srcdir)/Broyden.C
-
 Rosenbrock.o: $(srcdir)/Rosenbrock.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rosenbrock.o -MD -MP -MF "$(DEPDIR)/Rosenbrock.Tpo" -c -o Rosenbrock.o `test -f '$(srcdir)/Rosenbrock.C' || echo '$(srcdir)/'`$(srcdir)/Rosenbrock.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Rosenbrock.Tpo" "$(DEPDIR)/Rosenbrock.Po"; else rm -f "$(DEPDIR)/Rosenbrock.Tpo"; exit 1; fi
@@ -494,23 +462,6 @@ Rosenbrock.obj: $(srcdir)/Rosenbrock.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Rosenbrock.Po' tmpdepfile='$(DEPDIR)/Rosenbrock.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rosenbrock.obj `if test -f '$(srcdir)/Rosenbrock.C'; then $(CYGPATH_W) '$(srcdir)/Rosenbrock.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rosenbrock.C'; fi`
-
-Rosenbrock.lo: $(srcdir)/Rosenbrock.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rosenbrock.lo -MD -MP -MF "$(DEPDIR)/Rosenbrock.Tpo" -c -o Rosenbrock.lo `test -f '$(srcdir)/Rosenbrock.C' || echo '$(srcdir)/'`$(srcdir)/Rosenbrock.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Rosenbrock.Tpo" "$(DEPDIR)/Rosenbrock.Plo"; else rm -f "$(DEPDIR)/Rosenbrock.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rosenbrock.C' object='Rosenbrock.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Rosenbrock.Plo' tmpdepfile='$(DEPDIR)/Rosenbrock.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rosenbrock.lo `test -f '$(srcdir)/Rosenbrock.C' || echo '$(srcdir)/'`$(srcdir)/Rosenbrock.C
-
-mostlyclean-libtool:
-	-rm -f *.lo
-
-clean-libtool:
-	-rm -rf .libs _libs
-
-distclean-libtool:
-	-rm -f libtool
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -616,14 +567,13 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-libtool distclean-tags
+	distclean-tags
 
 dvi: dvi-am
 
@@ -652,8 +602,7 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-am
 
@@ -666,16 +615,15 @@ ps-am:
 uninstall-am: uninstall-info-am
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags uninstall uninstall-am \
-	uninstall-info-am
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-info-am
 
 
 # Include NOX export makefile

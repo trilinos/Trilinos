@@ -1,7 +1,0 @@
-###############################################################################
-# Changes to the standard libtool command:
-# 1)  Force libtool to use the CXX tag.  Otherwise it gets confused on some
-#     platforms, e.g., janus.  This is fixed in automake 1.9.4.
-###############################################################################
-LIBTOOL = $(SHELL) $(top_builddir)/libtool --tag=CXX
-

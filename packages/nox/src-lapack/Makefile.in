@@ -82,10 +82,8 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/ac_cxx_invalid_template_qualifier.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
-	$(top_srcdir)/config/ac_libtoolize_flags.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/ac_python_module.m4 \
-	$(top_srcdir)/config/acinclude.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_dggev.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
@@ -130,20 +128,13 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_LAPACK_Vector.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
-CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
-LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libnoxlapack_a_SOURCES)
 DIST_SOURCES = $(libnoxlapack_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/NOX_LAPACK.H \
@@ -244,7 +235,6 @@ BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -254,7 +244,6 @@ CXXREPOS = @CXXREPOS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
-ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -282,11 +271,6 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-LIBTOOL = @LIBTOOL@
-LIBTOOL_CCLINKER_FLAGS = @LIBTOOL_CCLINKER_FLAGS@
-LIBTOOL_COMPILER_FLAGS = @LIBTOOL_COMPILER_FLAGS@
-LIBTOOL_LINKER_FLAGS = @LIBTOOL_LINKER_FLAGS@
-LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -438,7 +422,7 @@ MAINTAINERCLEANFILES = Makefile.in
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .C .lo .o .obj
+.SUFFIXES: .C .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -528,14 +512,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.C.lo:
-@am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
-
 NOX_LAPACK_Vector.o: $(srcdir)/NOX_LAPACK_Vector.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_LAPACK_Vector.o -MD -MP -MF "$(DEPDIR)/NOX_LAPACK_Vector.Tpo" -c -o NOX_LAPACK_Vector.o `test -f '$(srcdir)/NOX_LAPACK_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Vector.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_LAPACK_Vector.Tpo" "$(DEPDIR)/NOX_LAPACK_Vector.Po"; else rm -f "$(DEPDIR)/NOX_LAPACK_Vector.Tpo"; exit 1; fi
@@ -551,14 +527,6 @@ NOX_LAPACK_Vector.obj: $(srcdir)/NOX_LAPACK_Vector.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_LAPACK_Vector.Po' tmpdepfile='$(DEPDIR)/NOX_LAPACK_Vector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LAPACK_Vector.obj `if test -f '$(srcdir)/NOX_LAPACK_Vector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_LAPACK_Vector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_LAPACK_Vector.C'; fi`
-
-NOX_LAPACK_Vector.lo: $(srcdir)/NOX_LAPACK_Vector.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_LAPACK_Vector.lo -MD -MP -MF "$(DEPDIR)/NOX_LAPACK_Vector.Tpo" -c -o NOX_LAPACK_Vector.lo `test -f '$(srcdir)/NOX_LAPACK_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Vector.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_LAPACK_Vector.Tpo" "$(DEPDIR)/NOX_LAPACK_Vector.Plo"; else rm -f "$(DEPDIR)/NOX_LAPACK_Vector.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_LAPACK_Vector.C' object='NOX_LAPACK_Vector.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_LAPACK_Vector.Plo' tmpdepfile='$(DEPDIR)/NOX_LAPACK_Vector.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LAPACK_Vector.lo `test -f '$(srcdir)/NOX_LAPACK_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Vector.C
 
 NOX_LAPACK_Matrix.o: $(srcdir)/NOX_LAPACK_Matrix.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_LAPACK_Matrix.o -MD -MP -MF "$(DEPDIR)/NOX_LAPACK_Matrix.Tpo" -c -o NOX_LAPACK_Matrix.o `test -f '$(srcdir)/NOX_LAPACK_Matrix.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Matrix.C; \
@@ -576,14 +544,6 @@ NOX_LAPACK_Matrix.obj: $(srcdir)/NOX_LAPACK_Matrix.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LAPACK_Matrix.obj `if test -f '$(srcdir)/NOX_LAPACK_Matrix.C'; then $(CYGPATH_W) '$(srcdir)/NOX_LAPACK_Matrix.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_LAPACK_Matrix.C'; fi`
 
-NOX_LAPACK_Matrix.lo: $(srcdir)/NOX_LAPACK_Matrix.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_LAPACK_Matrix.lo -MD -MP -MF "$(DEPDIR)/NOX_LAPACK_Matrix.Tpo" -c -o NOX_LAPACK_Matrix.lo `test -f '$(srcdir)/NOX_LAPACK_Matrix.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Matrix.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_LAPACK_Matrix.Tpo" "$(DEPDIR)/NOX_LAPACK_Matrix.Plo"; else rm -f "$(DEPDIR)/NOX_LAPACK_Matrix.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_LAPACK_Matrix.C' object='NOX_LAPACK_Matrix.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_LAPACK_Matrix.Plo' tmpdepfile='$(DEPDIR)/NOX_LAPACK_Matrix.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LAPACK_Matrix.lo `test -f '$(srcdir)/NOX_LAPACK_Matrix.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Matrix.C
-
 NOX_LAPACK_Group.o: $(srcdir)/NOX_LAPACK_Group.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_LAPACK_Group.o -MD -MP -MF "$(DEPDIR)/NOX_LAPACK_Group.Tpo" -c -o NOX_LAPACK_Group.o `test -f '$(srcdir)/NOX_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Group.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_LAPACK_Group.Tpo" "$(DEPDIR)/NOX_LAPACK_Group.Po"; else rm -f "$(DEPDIR)/NOX_LAPACK_Group.Tpo"; exit 1; fi
@@ -599,23 +559,6 @@ NOX_LAPACK_Group.obj: $(srcdir)/NOX_LAPACK_Group.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_LAPACK_Group.Po' tmpdepfile='$(DEPDIR)/NOX_LAPACK_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LAPACK_Group.obj `if test -f '$(srcdir)/NOX_LAPACK_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_LAPACK_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_LAPACK_Group.C'; fi`
-
-NOX_LAPACK_Group.lo: $(srcdir)/NOX_LAPACK_Group.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_LAPACK_Group.lo -MD -MP -MF "$(DEPDIR)/NOX_LAPACK_Group.Tpo" -c -o NOX_LAPACK_Group.lo `test -f '$(srcdir)/NOX_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Group.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_LAPACK_Group.Tpo" "$(DEPDIR)/NOX_LAPACK_Group.Plo"; else rm -f "$(DEPDIR)/NOX_LAPACK_Group.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_LAPACK_Group.C' object='NOX_LAPACK_Group.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_LAPACK_Group.Plo' tmpdepfile='$(DEPDIR)/NOX_LAPACK_Group.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LAPACK_Group.lo `test -f '$(srcdir)/NOX_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Group.C
-
-mostlyclean-libtool:
-	-rm -f *.lo
-
-clean-libtool:
-	-rm -rf .libs _libs
-
-distclean-libtool:
-	-rm -f libtool
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
@@ -740,14 +683,13 @@ maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-libLIBRARIES clean-libtool \
-	mostlyclean-am
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-libtool distclean-tags
+	distclean-tags
 
 dvi: dvi-am
 
@@ -776,8 +718,7 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-am
 
@@ -791,17 +732,17 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES clean-libtool ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-includeHEADERS install-info \
-	install-info-am install-libLIBRARIES install-man install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+	clean-libLIBRARIES ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am \
+	install-includeHEADERS install-info install-info-am \
+	install-libLIBRARIES install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-includeHEADERS \
-	uninstall-info-am uninstall-libLIBRARIES
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES
 
 
 # ------------------------------------------------------------------------

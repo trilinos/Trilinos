@@ -74,10 +74,8 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/ac_cxx_invalid_template_qualifier.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
-	$(top_srcdir)/config/ac_libtoolize_flags.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/ac_python_module.m4 \
-	$(top_srcdir)/config/acinclude.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_dggev.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
@@ -129,20 +127,13 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Xfer_Operator.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
-CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
-LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(example_SOURCES)
 DIST_SOURCES = $(example_SOURCES)
 ETAGS = etags
@@ -237,7 +228,6 @@ BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -247,7 +237,6 @@ CXXREPOS = @CXXREPOS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
-ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -275,11 +264,6 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-LIBTOOL = @LIBTOOL@
-LIBTOOL_CCLINKER_FLAGS = @LIBTOOL_CCLINKER_FLAGS@
-LIBTOOL_COMPILER_FLAGS = @LIBTOOL_COMPILER_FLAGS@
-LIBTOOL_LINKER_FLAGS = @LIBTOOL_LINKER_FLAGS@
-LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -400,7 +384,7 @@ example_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .C .lo .o .obj
+.SUFFIXES: .C .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -432,11 +416,7 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
 clean-noinstPROGRAMS:
-	@list='$(noinst_PROGRAMS)'; for p in $$list; do \
-	  f=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
-	  echo " rm -f $$p $$f"; \
-	  rm -f $$p $$f ; \
-	done
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 example$(EXEEXT): $(example_OBJECTS) $(example_DEPENDENCIES) 
 	@rm -f example$(EXEEXT)
 	$(CXXLINK) $(example_LDFLAGS) $(example_OBJECTS) $(example_LDADD) $(LIBS)
@@ -475,14 +455,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.C.lo:
-@am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
-
 Example.o: $(srcdir)/Example.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example.o -MD -MP -MF "$(DEPDIR)/Example.Tpo" -c -o Example.o `test -f '$(srcdir)/Example.C' || echo '$(srcdir)/'`$(srcdir)/Example.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Example.Tpo" "$(DEPDIR)/Example.Po"; else rm -f "$(DEPDIR)/Example.Tpo"; exit 1; fi
@@ -498,14 +470,6 @@ Example.obj: $(srcdir)/Example.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Example.Po' tmpdepfile='$(DEPDIR)/Example.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example.obj `if test -f '$(srcdir)/Example.C'; then $(CYGPATH_W) '$(srcdir)/Example.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example.C'; fi`
-
-Example.lo: $(srcdir)/Example.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example.lo -MD -MP -MF "$(DEPDIR)/Example.Tpo" -c -o Example.lo `test -f '$(srcdir)/Example.C' || echo '$(srcdir)/'`$(srcdir)/Example.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Example.Tpo" "$(DEPDIR)/Example.Plo"; else rm -f "$(DEPDIR)/Example.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example.C' object='Example.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Example.Plo' tmpdepfile='$(DEPDIR)/Example.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example.lo `test -f '$(srcdir)/Example.C' || echo '$(srcdir)/'`$(srcdir)/Example.C
 
 Equation_A.o: $(srcdir)/Equation_A.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Equation_A.o -MD -MP -MF "$(DEPDIR)/Equation_A.Tpo" -c -o Equation_A.o `test -f '$(srcdir)/Equation_A.C' || echo '$(srcdir)/'`$(srcdir)/Equation_A.C; \
@@ -523,14 +487,6 @@ Equation_A.obj: $(srcdir)/Equation_A.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Equation_A.obj `if test -f '$(srcdir)/Equation_A.C'; then $(CYGPATH_W) '$(srcdir)/Equation_A.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Equation_A.C'; fi`
 
-Equation_A.lo: $(srcdir)/Equation_A.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Equation_A.lo -MD -MP -MF "$(DEPDIR)/Equation_A.Tpo" -c -o Equation_A.lo `test -f '$(srcdir)/Equation_A.C' || echo '$(srcdir)/'`$(srcdir)/Equation_A.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Equation_A.Tpo" "$(DEPDIR)/Equation_A.Plo"; else rm -f "$(DEPDIR)/Equation_A.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Equation_A.C' object='Equation_A.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Equation_A.Plo' tmpdepfile='$(DEPDIR)/Equation_A.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Equation_A.lo `test -f '$(srcdir)/Equation_A.C' || echo '$(srcdir)/'`$(srcdir)/Equation_A.C
-
 Equation_B.o: $(srcdir)/Equation_B.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Equation_B.o -MD -MP -MF "$(DEPDIR)/Equation_B.Tpo" -c -o Equation_B.o `test -f '$(srcdir)/Equation_B.C' || echo '$(srcdir)/'`$(srcdir)/Equation_B.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Equation_B.Tpo" "$(DEPDIR)/Equation_B.Po"; else rm -f "$(DEPDIR)/Equation_B.Tpo"; exit 1; fi
@@ -546,14 +502,6 @@ Equation_B.obj: $(srcdir)/Equation_B.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Equation_B.Po' tmpdepfile='$(DEPDIR)/Equation_B.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Equation_B.obj `if test -f '$(srcdir)/Equation_B.C'; then $(CYGPATH_W) '$(srcdir)/Equation_B.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Equation_B.C'; fi`
-
-Equation_B.lo: $(srcdir)/Equation_B.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Equation_B.lo -MD -MP -MF "$(DEPDIR)/Equation_B.Tpo" -c -o Equation_B.lo `test -f '$(srcdir)/Equation_B.C' || echo '$(srcdir)/'`$(srcdir)/Equation_B.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Equation_B.Tpo" "$(DEPDIR)/Equation_B.Plo"; else rm -f "$(DEPDIR)/Equation_B.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Equation_B.C' object='Equation_B.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Equation_B.Plo' tmpdepfile='$(DEPDIR)/Equation_B.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Equation_B.lo `test -f '$(srcdir)/Equation_B.C' || echo '$(srcdir)/'`$(srcdir)/Equation_B.C
 
 Burgers.o: $(srcdir)/Burgers.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Burgers.o -MD -MP -MF "$(DEPDIR)/Burgers.Tpo" -c -o Burgers.o `test -f '$(srcdir)/Burgers.C' || echo '$(srcdir)/'`$(srcdir)/Burgers.C; \
@@ -571,14 +519,6 @@ Burgers.obj: $(srcdir)/Burgers.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Burgers.obj `if test -f '$(srcdir)/Burgers.C'; then $(CYGPATH_W) '$(srcdir)/Burgers.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Burgers.C'; fi`
 
-Burgers.lo: $(srcdir)/Burgers.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Burgers.lo -MD -MP -MF "$(DEPDIR)/Burgers.Tpo" -c -o Burgers.lo `test -f '$(srcdir)/Burgers.C' || echo '$(srcdir)/'`$(srcdir)/Burgers.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Burgers.Tpo" "$(DEPDIR)/Burgers.Plo"; else rm -f "$(DEPDIR)/Burgers.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Burgers.C' object='Burgers.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Burgers.Plo' tmpdepfile='$(DEPDIR)/Burgers.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Burgers.lo `test -f '$(srcdir)/Burgers.C' || echo '$(srcdir)/'`$(srcdir)/Burgers.C
-
 HMX_PDE.o: $(srcdir)/HMX_PDE.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT HMX_PDE.o -MD -MP -MF "$(DEPDIR)/HMX_PDE.Tpo" -c -o HMX_PDE.o `test -f '$(srcdir)/HMX_PDE.C' || echo '$(srcdir)/'`$(srcdir)/HMX_PDE.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HMX_PDE.Tpo" "$(DEPDIR)/HMX_PDE.Po"; else rm -f "$(DEPDIR)/HMX_PDE.Tpo"; exit 1; fi
@@ -594,14 +534,6 @@ HMX_PDE.obj: $(srcdir)/HMX_PDE.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HMX_PDE.Po' tmpdepfile='$(DEPDIR)/HMX_PDE.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HMX_PDE.obj `if test -f '$(srcdir)/HMX_PDE.C'; then $(CYGPATH_W) '$(srcdir)/HMX_PDE.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HMX_PDE.C'; fi`
-
-HMX_PDE.lo: $(srcdir)/HMX_PDE.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT HMX_PDE.lo -MD -MP -MF "$(DEPDIR)/HMX_PDE.Tpo" -c -o HMX_PDE.lo `test -f '$(srcdir)/HMX_PDE.C' || echo '$(srcdir)/'`$(srcdir)/HMX_PDE.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HMX_PDE.Tpo" "$(DEPDIR)/HMX_PDE.Plo"; else rm -f "$(DEPDIR)/HMX_PDE.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HMX_PDE.C' object='HMX_PDE.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HMX_PDE.Plo' tmpdepfile='$(DEPDIR)/HMX_PDE.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HMX_PDE.lo `test -f '$(srcdir)/HMX_PDE.C' || echo '$(srcdir)/'`$(srcdir)/HMX_PDE.C
 
 Basis.o: $(srcdir)/Basis.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Basis.o -MD -MP -MF "$(DEPDIR)/Basis.Tpo" -c -o Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
@@ -619,14 +551,6 @@ Basis.obj: $(srcdir)/Basis.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Basis.obj `if test -f '$(srcdir)/Basis.C'; then $(CYGPATH_W) '$(srcdir)/Basis.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.C'; fi`
 
-Basis.lo: $(srcdir)/Basis.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Basis.lo -MD -MP -MF "$(DEPDIR)/Basis.Tpo" -c -o Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Basis.Tpo" "$(DEPDIR)/Basis.Plo"; else rm -f "$(DEPDIR)/Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.C' object='Basis.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Basis.Plo' tmpdepfile='$(DEPDIR)/Basis.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Basis.lo `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
-
 GenericEpetraProblem.o: $(srcdir)/GenericEpetraProblem.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT GenericEpetraProblem.o -MD -MP -MF "$(DEPDIR)/GenericEpetraProblem.Tpo" -c -o GenericEpetraProblem.o `test -f '$(srcdir)/GenericEpetraProblem.C' || echo '$(srcdir)/'`$(srcdir)/GenericEpetraProblem.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/GenericEpetraProblem.Tpo" "$(DEPDIR)/GenericEpetraProblem.Po"; else rm -f "$(DEPDIR)/GenericEpetraProblem.Tpo"; exit 1; fi
@@ -642,14 +566,6 @@ GenericEpetraProblem.obj: $(srcdir)/GenericEpetraProblem.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/GenericEpetraProblem.Po' tmpdepfile='$(DEPDIR)/GenericEpetraProblem.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GenericEpetraProblem.obj `if test -f '$(srcdir)/GenericEpetraProblem.C'; then $(CYGPATH_W) '$(srcdir)/GenericEpetraProblem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/GenericEpetraProblem.C'; fi`
-
-GenericEpetraProblem.lo: $(srcdir)/GenericEpetraProblem.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT GenericEpetraProblem.lo -MD -MP -MF "$(DEPDIR)/GenericEpetraProblem.Tpo" -c -o GenericEpetraProblem.lo `test -f '$(srcdir)/GenericEpetraProblem.C' || echo '$(srcdir)/'`$(srcdir)/GenericEpetraProblem.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/GenericEpetraProblem.Tpo" "$(DEPDIR)/GenericEpetraProblem.Plo"; else rm -f "$(DEPDIR)/GenericEpetraProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/GenericEpetraProblem.C' object='GenericEpetraProblem.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/GenericEpetraProblem.Plo' tmpdepfile='$(DEPDIR)/GenericEpetraProblem.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GenericEpetraProblem.lo `test -f '$(srcdir)/GenericEpetraProblem.C' || echo '$(srcdir)/'`$(srcdir)/GenericEpetraProblem.C
 
 Problem_Interface.o: $(srcdir)/Problem_Interface.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Problem_Interface.o -MD -MP -MF "$(DEPDIR)/Problem_Interface.Tpo" -c -o Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
@@ -667,14 +583,6 @@ Problem_Interface.obj: $(srcdir)/Problem_Interface.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`
 
-Problem_Interface.lo: $(srcdir)/Problem_Interface.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Problem_Interface.lo -MD -MP -MF "$(DEPDIR)/Problem_Interface.Tpo" -c -o Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Problem_Interface.Tpo" "$(DEPDIR)/Problem_Interface.Plo"; else rm -f "$(DEPDIR)/Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.C' object='Problem_Interface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Problem_Interface.Plo' tmpdepfile='$(DEPDIR)/Problem_Interface.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Problem_Interface.lo `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
-
 Problem_Manager.o: $(srcdir)/Problem_Manager.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Problem_Manager.o -MD -MP -MF "$(DEPDIR)/Problem_Manager.Tpo" -c -o Problem_Manager.o `test -f '$(srcdir)/Problem_Manager.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Manager.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Problem_Manager.Tpo" "$(DEPDIR)/Problem_Manager.Po"; else rm -f "$(DEPDIR)/Problem_Manager.Tpo"; exit 1; fi
@@ -690,14 +598,6 @@ Problem_Manager.obj: $(srcdir)/Problem_Manager.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Problem_Manager.Po' tmpdepfile='$(DEPDIR)/Problem_Manager.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Problem_Manager.obj `if test -f '$(srcdir)/Problem_Manager.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Manager.C'; fi`
-
-Problem_Manager.lo: $(srcdir)/Problem_Manager.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Problem_Manager.lo -MD -MP -MF "$(DEPDIR)/Problem_Manager.Tpo" -c -o Problem_Manager.lo `test -f '$(srcdir)/Problem_Manager.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Manager.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Problem_Manager.Tpo" "$(DEPDIR)/Problem_Manager.Plo"; else rm -f "$(DEPDIR)/Problem_Manager.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Manager.C' object='Problem_Manager.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Problem_Manager.Plo' tmpdepfile='$(DEPDIR)/Problem_Manager.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Problem_Manager.lo `test -f '$(srcdir)/Problem_Manager.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Manager.C
 
 OffBlock_Manager.o: $(srcdir)/OffBlock_Manager.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT OffBlock_Manager.o -MD -MP -MF "$(DEPDIR)/OffBlock_Manager.Tpo" -c -o OffBlock_Manager.o `test -f '$(srcdir)/OffBlock_Manager.C' || echo '$(srcdir)/'`$(srcdir)/OffBlock_Manager.C; \
@@ -715,14 +615,6 @@ OffBlock_Manager.obj: $(srcdir)/OffBlock_Manager.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o OffBlock_Manager.obj `if test -f '$(srcdir)/OffBlock_Manager.C'; then $(CYGPATH_W) '$(srcdir)/OffBlock_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/OffBlock_Manager.C'; fi`
 
-OffBlock_Manager.lo: $(srcdir)/OffBlock_Manager.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT OffBlock_Manager.lo -MD -MP -MF "$(DEPDIR)/OffBlock_Manager.Tpo" -c -o OffBlock_Manager.lo `test -f '$(srcdir)/OffBlock_Manager.C' || echo '$(srcdir)/'`$(srcdir)/OffBlock_Manager.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/OffBlock_Manager.Tpo" "$(DEPDIR)/OffBlock_Manager.Plo"; else rm -f "$(DEPDIR)/OffBlock_Manager.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/OffBlock_Manager.C' object='OffBlock_Manager.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/OffBlock_Manager.Plo' tmpdepfile='$(DEPDIR)/OffBlock_Manager.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o OffBlock_Manager.lo `test -f '$(srcdir)/OffBlock_Manager.C' || echo '$(srcdir)/'`$(srcdir)/OffBlock_Manager.C
-
 Xfer_Operator.o: $(srcdir)/Xfer_Operator.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Xfer_Operator.o -MD -MP -MF "$(DEPDIR)/Xfer_Operator.Tpo" -c -o Xfer_Operator.o `test -f '$(srcdir)/Xfer_Operator.C' || echo '$(srcdir)/'`$(srcdir)/Xfer_Operator.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Xfer_Operator.Tpo" "$(DEPDIR)/Xfer_Operator.Po"; else rm -f "$(DEPDIR)/Xfer_Operator.Tpo"; exit 1; fi
@@ -738,23 +630,6 @@ Xfer_Operator.obj: $(srcdir)/Xfer_Operator.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Xfer_Operator.Po' tmpdepfile='$(DEPDIR)/Xfer_Operator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Xfer_Operator.obj `if test -f '$(srcdir)/Xfer_Operator.C'; then $(CYGPATH_W) '$(srcdir)/Xfer_Operator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Xfer_Operator.C'; fi`
-
-Xfer_Operator.lo: $(srcdir)/Xfer_Operator.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Xfer_Operator.lo -MD -MP -MF "$(DEPDIR)/Xfer_Operator.Tpo" -c -o Xfer_Operator.lo `test -f '$(srcdir)/Xfer_Operator.C' || echo '$(srcdir)/'`$(srcdir)/Xfer_Operator.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Xfer_Operator.Tpo" "$(DEPDIR)/Xfer_Operator.Plo"; else rm -f "$(DEPDIR)/Xfer_Operator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Xfer_Operator.C' object='Xfer_Operator.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Xfer_Operator.Plo' tmpdepfile='$(DEPDIR)/Xfer_Operator.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Xfer_Operator.lo `test -f '$(srcdir)/Xfer_Operator.C' || echo '$(srcdir)/'`$(srcdir)/Xfer_Operator.C
-
-mostlyclean-libtool:
-	-rm -f *.lo
-
-clean-libtool:
-	-rm -rf .libs _libs
-
-distclean-libtool:
-	-rm -f libtool
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -860,14 +735,13 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-libtool distclean-tags
+	distclean-tags
 
 dvi: dvi-am
 
@@ -896,8 +770,7 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-am
 
@@ -910,16 +783,15 @@ ps-am:
 uninstall-am: uninstall-info-am
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags uninstall uninstall-am \
-	uninstall-info-am
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-info-am
 
 
 include $(top_builddir)/Makefile.export.nox

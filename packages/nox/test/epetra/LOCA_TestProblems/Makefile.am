@@ -73,14 +73,34 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 # locatestproblems library specifications
 # ------------------------------------------------------------------------
 
-liblocatestproblems_la_SOURCES = $(LOCA_TESTPROBLEMS) $(LOCA_TESTPROBLEMS_H)
+liblocatestproblems_a_SOURCES = $(LOCA_TESTPROBLEMS) $(LOCA_TESTPROBLEMS_H)
 
-liblocatestproblems_la_LIBADD = \
-	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
-	$(top_builddir)/src-loca/src/libloca.la \
-	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS)
+noinst_LIBRARIES = liblocatestproblems.a
 
-noinst_LTLIBRARIES = liblocatestproblems.la
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+
+if USE_ALTERNATE_AR
+
+liblocatestproblems_a_AR = $(ALTERNATE_AR)
+
+else
+
+liblocatestproblems_a_AR = $(AR) cru
+
+endif
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+
+liblocatestproblems_a_LIBADD = $(CXXREPOS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -94,9 +114,5 @@ MAINTAINERCLEANFILES = Makefile.in
 
 MOSTLYCLEANFILES = $(CXXREPOS)
 
-# ------------------------------------------------------------------------
-# Include global libtool definitions
-# ------------------------------------------------------------------------
-include $(top_srcdir)/config/libtool_macros.am
 
 

@@ -70,18 +70,15 @@ noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
 	$(am__EXEEXT_4) $(am__EXEEXT_5) $(am__EXEEXT_6) \
 	$(am__EXEEXT_7) $(am__EXEEXT_8) $(am__EXEEXT_9) \
 	$(am__EXEEXT_10)
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(top_srcdir)/config/libtool_macros.am
 subdir = src-loca/example-lapack/Chan
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/ac_cxx_invalid_template_qualifier.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
-	$(top_srcdir)/config/ac_libtoolize_flags.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/ac_python_module.m4 \
-	$(top_srcdir)/config/acinclude.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_dggev.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
@@ -180,20 +177,13 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ChanTP_NicDayModifiedBordering.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
-CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
-LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(chanContinuation_SOURCES) \
 	$(chanContinuation_Constraints_SOURCES) \
 	$(chanHomotopy_SOURCES) $(chanMultiContinuation_SOURCES) \
@@ -302,7 +292,6 @@ BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -312,7 +301,6 @@ CXXREPOS = @CXXREPOS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
-ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -340,17 +328,6 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-
-###############################################################################
-# Changes to the standard libtool command:
-# 1)  Force libtool to use the CXX tag.  Otherwise it gets confused on some
-#     platforms, e.g., janus.  This is fixed in automake 1.9.4.
-###############################################################################
-LIBTOOL = $(SHELL) $(top_builddir)/libtool --tag=CXX
-LIBTOOL_CCLINKER_FLAGS = @LIBTOOL_CCLINKER_FLAGS@
-LIBTOOL_COMPILER_FLAGS = @LIBTOOL_COMPILER_FLAGS@
-LIBTOOL_LINKER_FLAGS = @LIBTOOL_LINKER_FLAGS@
-LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -468,8 +445,8 @@ chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
 chanContinuation_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
 	$(top_builddir)/src-lapack/libnoxlapack.a \
-	$(top_builddir)/src-loca/src/libloca.la \
-        $(top_builddir)/src-loca/src-lapack/liblocalapack.la
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-lapack/liblocalapack.a
 
 chanContinuation_LDADD = $(EXAMPLE_LIBS)
 chanTP_SOURCES = $(srcdir)/ChanTP.C \
@@ -526,7 +503,7 @@ chanMultiContinuation_SOURCES = $(srcdir)/ChanMultiContinuation.C \
 		$(srcdir)/ChanProblemInterface.C
 
 chanMultiContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES) \
-                                 $(top_builddir)/src-loca/src-mf/liblocamf.la \
+                                 $(top_builddir)/src-loca/src-mf/liblocamf.a \
                                  $(MF_LIBDIR)/libExpCmp.a \
                                  $(MF_LIBDIR)/libMF.a
 
@@ -555,8 +532,8 @@ MOSTLYCLEANFILES = $(CXXREPOS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .C .lo .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/libtool_macros.am $(am__configure_deps)
+.SUFFIXES: .C .o .obj
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -587,11 +564,7 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
 clean-noinstPROGRAMS:
-	@list='$(noinst_PROGRAMS)'; for p in $$list; do \
-	  f=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
-	  echo " rm -f $$p $$f"; \
-	  rm -f $$p $$f ; \
-	done
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 chanContinuation$(EXEEXT): $(chanContinuation_OBJECTS) $(chanContinuation_DEPENDENCIES) 
 	@rm -f chanContinuation$(EXEEXT)
 	$(CXXLINK) $(chanContinuation_LDFLAGS) $(chanContinuation_OBJECTS) $(chanContinuation_LDADD) $(LIBS)
@@ -658,14 +631,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.C.lo:
-@am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
-
 ChanContinuation.o: $(srcdir)/ChanContinuation.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanContinuation.o -MD -MP -MF "$(DEPDIR)/ChanContinuation.Tpo" -c -o ChanContinuation.o `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanContinuation.Tpo" "$(DEPDIR)/ChanContinuation.Po"; else rm -f "$(DEPDIR)/ChanContinuation.Tpo"; exit 1; fi
@@ -681,14 +646,6 @@ ChanContinuation.obj: $(srcdir)/ChanContinuation.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanContinuation.Po' tmpdepfile='$(DEPDIR)/ChanContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanContinuation.obj `if test -f '$(srcdir)/ChanContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanContinuation.C'; fi`
-
-ChanContinuation.lo: $(srcdir)/ChanContinuation.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanContinuation.lo -MD -MP -MF "$(DEPDIR)/ChanContinuation.Tpo" -c -o ChanContinuation.lo `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanContinuation.Tpo" "$(DEPDIR)/ChanContinuation.Plo"; else rm -f "$(DEPDIR)/ChanContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanContinuation.C' object='ChanContinuation.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanContinuation.Plo' tmpdepfile='$(DEPDIR)/ChanContinuation.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanContinuation.lo `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C
 
 ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/ChanProblemInterface.Tpo" -c -o ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
@@ -706,14 +663,6 @@ ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
 
-ChanProblemInterface.lo: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanProblemInterface.lo -MD -MP -MF "$(DEPDIR)/ChanProblemInterface.Tpo" -c -o ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanProblemInterface.Tpo" "$(DEPDIR)/ChanProblemInterface.Plo"; else rm -f "$(DEPDIR)/ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='ChanProblemInterface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanProblemInterface.Plo' tmpdepfile='$(DEPDIR)/ChanProblemInterface.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
-
 ChanContinuation_Constraints.o: $(srcdir)/ChanContinuation_Constraints.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanContinuation_Constraints.o -MD -MP -MF "$(DEPDIR)/ChanContinuation_Constraints.Tpo" -c -o ChanContinuation_Constraints.o `test -f '$(srcdir)/ChanContinuation_Constraints.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation_Constraints.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanContinuation_Constraints.Tpo" "$(DEPDIR)/ChanContinuation_Constraints.Po"; else rm -f "$(DEPDIR)/ChanContinuation_Constraints.Tpo"; exit 1; fi
@@ -729,14 +678,6 @@ ChanContinuation_Constraints.obj: $(srcdir)/ChanContinuation_Constraints.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanContinuation_Constraints.Po' tmpdepfile='$(DEPDIR)/ChanContinuation_Constraints.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanContinuation_Constraints.obj `if test -f '$(srcdir)/ChanContinuation_Constraints.C'; then $(CYGPATH_W) '$(srcdir)/ChanContinuation_Constraints.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanContinuation_Constraints.C'; fi`
-
-ChanContinuation_Constraints.lo: $(srcdir)/ChanContinuation_Constraints.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanContinuation_Constraints.lo -MD -MP -MF "$(DEPDIR)/ChanContinuation_Constraints.Tpo" -c -o ChanContinuation_Constraints.lo `test -f '$(srcdir)/ChanContinuation_Constraints.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation_Constraints.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanContinuation_Constraints.Tpo" "$(DEPDIR)/ChanContinuation_Constraints.Plo"; else rm -f "$(DEPDIR)/ChanContinuation_Constraints.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanContinuation_Constraints.C' object='ChanContinuation_Constraints.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanContinuation_Constraints.Plo' tmpdepfile='$(DEPDIR)/ChanContinuation_Constraints.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanContinuation_Constraints.lo `test -f '$(srcdir)/ChanContinuation_Constraints.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation_Constraints.C
 
 ChanConstraint.o: $(srcdir)/ChanConstraint.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanConstraint.o -MD -MP -MF "$(DEPDIR)/ChanConstraint.Tpo" -c -o ChanConstraint.o `test -f '$(srcdir)/ChanConstraint.C' || echo '$(srcdir)/'`$(srcdir)/ChanConstraint.C; \
@@ -754,14 +695,6 @@ ChanConstraint.obj: $(srcdir)/ChanConstraint.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanConstraint.obj `if test -f '$(srcdir)/ChanConstraint.C'; then $(CYGPATH_W) '$(srcdir)/ChanConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanConstraint.C'; fi`
 
-ChanConstraint.lo: $(srcdir)/ChanConstraint.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanConstraint.lo -MD -MP -MF "$(DEPDIR)/ChanConstraint.Tpo" -c -o ChanConstraint.lo `test -f '$(srcdir)/ChanConstraint.C' || echo '$(srcdir)/'`$(srcdir)/ChanConstraint.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanConstraint.Tpo" "$(DEPDIR)/ChanConstraint.Plo"; else rm -f "$(DEPDIR)/ChanConstraint.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanConstraint.C' object='ChanConstraint.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanConstraint.Plo' tmpdepfile='$(DEPDIR)/ChanConstraint.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanConstraint.lo `test -f '$(srcdir)/ChanConstraint.C' || echo '$(srcdir)/'`$(srcdir)/ChanConstraint.C
-
 ChanHomotopy.o: $(srcdir)/ChanHomotopy.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanHomotopy.o -MD -MP -MF "$(DEPDIR)/ChanHomotopy.Tpo" -c -o ChanHomotopy.o `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanHomotopy.Tpo" "$(DEPDIR)/ChanHomotopy.Po"; else rm -f "$(DEPDIR)/ChanHomotopy.Tpo"; exit 1; fi
@@ -777,14 +710,6 @@ ChanHomotopy.obj: $(srcdir)/ChanHomotopy.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanHomotopy.Po' tmpdepfile='$(DEPDIR)/ChanHomotopy.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanHomotopy.obj `if test -f '$(srcdir)/ChanHomotopy.C'; then $(CYGPATH_W) '$(srcdir)/ChanHomotopy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanHomotopy.C'; fi`
-
-ChanHomotopy.lo: $(srcdir)/ChanHomotopy.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanHomotopy.lo -MD -MP -MF "$(DEPDIR)/ChanHomotopy.Tpo" -c -o ChanHomotopy.lo `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanHomotopy.Tpo" "$(DEPDIR)/ChanHomotopy.Plo"; else rm -f "$(DEPDIR)/ChanHomotopy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanHomotopy.C' object='ChanHomotopy.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanHomotopy.Plo' tmpdepfile='$(DEPDIR)/ChanHomotopy.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanHomotopy.lo `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C
 
 ChanMultiContinuation.o: $(srcdir)/ChanMultiContinuation.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanMultiContinuation.o -MD -MP -MF "$(DEPDIR)/ChanMultiContinuation.Tpo" -c -o ChanMultiContinuation.o `test -f '$(srcdir)/ChanMultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanMultiContinuation.C; \
@@ -802,14 +727,6 @@ ChanMultiContinuation.obj: $(srcdir)/ChanMultiContinuation.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanMultiContinuation.obj `if test -f '$(srcdir)/ChanMultiContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanMultiContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanMultiContinuation.C'; fi`
 
-ChanMultiContinuation.lo: $(srcdir)/ChanMultiContinuation.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanMultiContinuation.lo -MD -MP -MF "$(DEPDIR)/ChanMultiContinuation.Tpo" -c -o ChanMultiContinuation.lo `test -f '$(srcdir)/ChanMultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanMultiContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanMultiContinuation.Tpo" "$(DEPDIR)/ChanMultiContinuation.Plo"; else rm -f "$(DEPDIR)/ChanMultiContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanMultiContinuation.C' object='ChanMultiContinuation.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanMultiContinuation.Plo' tmpdepfile='$(DEPDIR)/ChanMultiContinuation.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanMultiContinuation.lo `test -f '$(srcdir)/ChanMultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanMultiContinuation.C
-
 ChanTP.o: $(srcdir)/ChanTP.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTP.o -MD -MP -MF "$(DEPDIR)/ChanTP.Tpo" -c -o ChanTP.o `test -f '$(srcdir)/ChanTP.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanTP.Tpo" "$(DEPDIR)/ChanTP.Po"; else rm -f "$(DEPDIR)/ChanTP.Tpo"; exit 1; fi
@@ -825,14 +742,6 @@ ChanTP.obj: $(srcdir)/ChanTP.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanTP.Po' tmpdepfile='$(DEPDIR)/ChanTP.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanTP.obj `if test -f '$(srcdir)/ChanTP.C'; then $(CYGPATH_W) '$(srcdir)/ChanTP.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTP.C'; fi`
-
-ChanTP.lo: $(srcdir)/ChanTP.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTP.lo -MD -MP -MF "$(DEPDIR)/ChanTP.Tpo" -c -o ChanTP.lo `test -f '$(srcdir)/ChanTP.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanTP.Tpo" "$(DEPDIR)/ChanTP.Plo"; else rm -f "$(DEPDIR)/ChanTP.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP.C' object='ChanTP.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanTP.Plo' tmpdepfile='$(DEPDIR)/ChanTP.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanTP.lo `test -f '$(srcdir)/ChanTP.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP.C
 
 ChanTPContinuation.o: $(srcdir)/ChanTPContinuation.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTPContinuation.o -MD -MP -MF "$(DEPDIR)/ChanTPContinuation.Tpo" -c -o ChanTPContinuation.o `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C; \
@@ -850,14 +759,6 @@ ChanTPContinuation.obj: $(srcdir)/ChanTPContinuation.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanTPContinuation.obj `if test -f '$(srcdir)/ChanTPContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation.C'; fi`
 
-ChanTPContinuation.lo: $(srcdir)/ChanTPContinuation.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTPContinuation.lo -MD -MP -MF "$(DEPDIR)/ChanTPContinuation.Tpo" -c -o ChanTPContinuation.lo `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanTPContinuation.Tpo" "$(DEPDIR)/ChanTPContinuation.Plo"; else rm -f "$(DEPDIR)/ChanTPContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation.C' object='ChanTPContinuation.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanTPContinuation.Plo' tmpdepfile='$(DEPDIR)/ChanTPContinuation.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanTPContinuation.lo `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C
-
 ChanTPContinuation_ModifiedBordering.o: $(srcdir)/ChanTPContinuation_ModifiedBordering.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTPContinuation_ModifiedBordering.o -MD -MP -MF "$(DEPDIR)/ChanTPContinuation_ModifiedBordering.Tpo" -c -o ChanTPContinuation_ModifiedBordering.o `test -f '$(srcdir)/ChanTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation_ModifiedBordering.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanTPContinuation_ModifiedBordering.Tpo" "$(DEPDIR)/ChanTPContinuation_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/ChanTPContinuation_ModifiedBordering.Tpo"; exit 1; fi
@@ -873,14 +774,6 @@ ChanTPContinuation_ModifiedBordering.obj: $(srcdir)/ChanTPContinuation_ModifiedB
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanTPContinuation_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/ChanTPContinuation_ModifiedBordering.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanTPContinuation_ModifiedBordering.obj `if test -f '$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; fi`
-
-ChanTPContinuation_ModifiedBordering.lo: $(srcdir)/ChanTPContinuation_ModifiedBordering.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTPContinuation_ModifiedBordering.lo -MD -MP -MF "$(DEPDIR)/ChanTPContinuation_ModifiedBordering.Tpo" -c -o ChanTPContinuation_ModifiedBordering.lo `test -f '$(srcdir)/ChanTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation_ModifiedBordering.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanTPContinuation_ModifiedBordering.Tpo" "$(DEPDIR)/ChanTPContinuation_ModifiedBordering.Plo"; else rm -f "$(DEPDIR)/ChanTPContinuation_ModifiedBordering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation_ModifiedBordering.C' object='ChanTPContinuation_ModifiedBordering.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanTPContinuation_ModifiedBordering.Plo' tmpdepfile='$(DEPDIR)/ChanTPContinuation_ModifiedBordering.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanTPContinuation_ModifiedBordering.lo `test -f '$(srcdir)/ChanTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation_ModifiedBordering.C
 
 ChanTPContinuation_NicDayModifiedBordering.o: $(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTPContinuation_NicDayModifiedBordering.o -MD -MP -MF "$(DEPDIR)/ChanTPContinuation_NicDayModifiedBordering.Tpo" -c -o ChanTPContinuation_NicDayModifiedBordering.o `test -f '$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C; \
@@ -898,14 +791,6 @@ ChanTPContinuation_NicDayModifiedBordering.obj: $(srcdir)/ChanTPContinuation_Nic
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanTPContinuation_NicDayModifiedBordering.obj `if test -f '$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C'; fi`
 
-ChanTPContinuation_NicDayModifiedBordering.lo: $(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTPContinuation_NicDayModifiedBordering.lo -MD -MP -MF "$(DEPDIR)/ChanTPContinuation_NicDayModifiedBordering.Tpo" -c -o ChanTPContinuation_NicDayModifiedBordering.lo `test -f '$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanTPContinuation_NicDayModifiedBordering.Tpo" "$(DEPDIR)/ChanTPContinuation_NicDayModifiedBordering.Plo"; else rm -f "$(DEPDIR)/ChanTPContinuation_NicDayModifiedBordering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C' object='ChanTPContinuation_NicDayModifiedBordering.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanTPContinuation_NicDayModifiedBordering.Plo' tmpdepfile='$(DEPDIR)/ChanTPContinuation_NicDayModifiedBordering.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanTPContinuation_NicDayModifiedBordering.lo `test -f '$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C
-
 ChanTP_ModifiedBordering.o: $(srcdir)/ChanTP_ModifiedBordering.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTP_ModifiedBordering.o -MD -MP -MF "$(DEPDIR)/ChanTP_ModifiedBordering.Tpo" -c -o ChanTP_ModifiedBordering.o `test -f '$(srcdir)/ChanTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_ModifiedBordering.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanTP_ModifiedBordering.Tpo" "$(DEPDIR)/ChanTP_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/ChanTP_ModifiedBordering.Tpo"; exit 1; fi
@@ -922,14 +807,6 @@ ChanTP_ModifiedBordering.obj: $(srcdir)/ChanTP_ModifiedBordering.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanTP_ModifiedBordering.obj `if test -f '$(srcdir)/ChanTP_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTP_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTP_ModifiedBordering.C'; fi`
 
-ChanTP_ModifiedBordering.lo: $(srcdir)/ChanTP_ModifiedBordering.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTP_ModifiedBordering.lo -MD -MP -MF "$(DEPDIR)/ChanTP_ModifiedBordering.Tpo" -c -o ChanTP_ModifiedBordering.lo `test -f '$(srcdir)/ChanTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_ModifiedBordering.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanTP_ModifiedBordering.Tpo" "$(DEPDIR)/ChanTP_ModifiedBordering.Plo"; else rm -f "$(DEPDIR)/ChanTP_ModifiedBordering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP_ModifiedBordering.C' object='ChanTP_ModifiedBordering.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanTP_ModifiedBordering.Plo' tmpdepfile='$(DEPDIR)/ChanTP_ModifiedBordering.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanTP_ModifiedBordering.lo `test -f '$(srcdir)/ChanTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_ModifiedBordering.C
-
 ChanTP_NicDayModifiedBordering.o: $(srcdir)/ChanTP_NicDayModifiedBordering.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTP_NicDayModifiedBordering.o -MD -MP -MF "$(DEPDIR)/ChanTP_NicDayModifiedBordering.Tpo" -c -o ChanTP_NicDayModifiedBordering.o `test -f '$(srcdir)/ChanTP_NicDayModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_NicDayModifiedBordering.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanTP_NicDayModifiedBordering.Tpo" "$(DEPDIR)/ChanTP_NicDayModifiedBordering.Po"; else rm -f "$(DEPDIR)/ChanTP_NicDayModifiedBordering.Tpo"; exit 1; fi
@@ -945,23 +822,6 @@ ChanTP_NicDayModifiedBordering.obj: $(srcdir)/ChanTP_NicDayModifiedBordering.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanTP_NicDayModifiedBordering.Po' tmpdepfile='$(DEPDIR)/ChanTP_NicDayModifiedBordering.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanTP_NicDayModifiedBordering.obj `if test -f '$(srcdir)/ChanTP_NicDayModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTP_NicDayModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTP_NicDayModifiedBordering.C'; fi`
-
-ChanTP_NicDayModifiedBordering.lo: $(srcdir)/ChanTP_NicDayModifiedBordering.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTP_NicDayModifiedBordering.lo -MD -MP -MF "$(DEPDIR)/ChanTP_NicDayModifiedBordering.Tpo" -c -o ChanTP_NicDayModifiedBordering.lo `test -f '$(srcdir)/ChanTP_NicDayModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_NicDayModifiedBordering.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanTP_NicDayModifiedBordering.Tpo" "$(DEPDIR)/ChanTP_NicDayModifiedBordering.Plo"; else rm -f "$(DEPDIR)/ChanTP_NicDayModifiedBordering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP_NicDayModifiedBordering.C' object='ChanTP_NicDayModifiedBordering.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanTP_NicDayModifiedBordering.Plo' tmpdepfile='$(DEPDIR)/ChanTP_NicDayModifiedBordering.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanTP_NicDayModifiedBordering.lo `test -f '$(srcdir)/ChanTP_NicDayModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_NicDayModifiedBordering.C
-
-mostlyclean-libtool:
-	-rm -f *.lo
-
-clean-libtool:
-	-rm -rf .libs _libs
-
-distclean-libtool:
-	-rm -f libtool
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -1011,7 +871,6 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/../../../config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -1070,14 +929,13 @@ maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-libtool distclean-tags
+	distclean-tags
 
 dvi: dvi-am
 
@@ -1106,8 +964,7 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-am
 
@@ -1120,24 +977,19 @@ ps-am:
 uninstall-am: uninstall-info-am
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags uninstall uninstall-am \
-	uninstall-info-am
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-info-am
 
 
 # Include NOX export makefile
 include $(top_builddir)/Makefile.export.nox
-
-# ------------------------------------------------------------------------
-# Include global libtool definitions
-# ------------------------------------------------------------------------
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

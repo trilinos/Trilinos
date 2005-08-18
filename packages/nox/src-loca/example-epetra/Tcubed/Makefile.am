@@ -66,8 +66,8 @@ example_SOURCES = $(srcdir)/Example.C \
 example_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a \
-	$(top_builddir)/src-loca/src/libloca.la \
-        $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-epetra/liblocaepetra.a
 
 example_LDADD = $(EXAMPLE_LIBS)
 
@@ -114,11 +114,11 @@ exampleMultiContinuation_SOURCES = $(srcdir)/ExampleMultiContinuation.C \
         $(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
 
 exampleMultiContinuation_DEPENDENCIES = $(example_DEPENDENCIES) \
-                                 $(top_builddir)/src-loca/src-mf/liblocamf.la \
+                                 $(top_builddir)/src-loca/src-mf/liblocamf.a \
                                  $(MF_LIBDIR)/libExpCmp.a \
                                  $(MF_LIBDIR)/libMF.a
 
-exampleMultiContinuation_LDADD = $(top_builddir)/src-loca/src-mf/liblocamf.la \
+exampleMultiContinuation_LDADD = $(top_builddir)/src-loca/src-mf/liblocamf.a \
                                  -L$(MF_LIBDIR) -lMF -lExpCmp \
                                  $(example_LDADD)
 
@@ -134,7 +134,3 @@ MAINTAINERCLEANFILES = Makefile.in
 
 MOSTLYCLEANFILES = $(CXXREPOS)
 
-# ------------------------------------------------------------------------
-# Include global libtool definitions
-# ------------------------------------------------------------------------
-include $(top_srcdir)/config/libtool_macros.am

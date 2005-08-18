@@ -67,18 +67,15 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(top_srcdir)/config/libtool_macros.am
 subdir = test/lapack/LOCA_ChanProblem
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/ac_cxx_invalid_template_qualifier.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
-	$(top_srcdir)/config/ac_libtoolize_flags.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/ac_python_module.m4 \
-	$(top_srcdir)/config/acinclude.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_dggev.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
@@ -126,12 +123,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ChanTPContinuation.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
-CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
 SOURCES = $(chanContinuation_exe_SOURCES) $(chanHomotopy_exe_SOURCES) \
 	$(chanTPContinuation_exe_SOURCES)
 DIST_SOURCES = $(chanContinuation_exe_SOURCES) \
@@ -228,7 +222,6 @@ BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -238,7 +231,6 @@ CXXREPOS = @CXXREPOS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
-ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -266,17 +258,6 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-
-###############################################################################
-# Changes to the standard libtool command:
-# 1)  Force libtool to use the CXX tag.  Otherwise it gets confused on some
-#     platforms, e.g., janus.  This is fixed in automake 1.9.4.
-###############################################################################
-LIBTOOL = $(SHELL) $(top_builddir)/libtool --tag=CXX
-LIBTOOL_CCLINKER_FLAGS = @LIBTOOL_CCLINKER_FLAGS@
-LIBTOOL_COMPILER_FLAGS = @LIBTOOL_COMPILER_FLAGS@
-LIBTOOL_LINKER_FLAGS = @LIBTOOL_LINKER_FLAGS@
-LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -387,9 +368,9 @@ chanContinuation_exe_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
 	$(top_builddir)/src-lapack/libnoxlapack.a \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
-	$(top_builddir)/src-loca/src/libloca.la \
-        $(top_builddir)/src-loca/src-lapack/liblocalapack.la \
-	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.la
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-lapack/liblocalapack.a \
+	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.a
 
 chanContinuation_exe_LDADD = $(TEST_LIBS)
 chanTPContinuation_exe_SOURCES = $(srcdir)/ChanTPContinuation.C 
@@ -411,8 +392,8 @@ MOSTLYCLEANFILES = $(CXXREPOS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .C .lo .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/libtool_macros.am $(am__configure_deps)
+.SUFFIXES: .C .o .obj
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -443,11 +424,7 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
 clean-noinstPROGRAMS:
-	@list='$(noinst_PROGRAMS)'; for p in $$list; do \
-	  f=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
-	  echo " rm -f $$p $$f"; \
-	  rm -f $$p $$f ; \
-	done
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 chanContinuation_exe$(EXEEXT): $(chanContinuation_exe_OBJECTS) $(chanContinuation_exe_DEPENDENCIES) 
 	@rm -f chanContinuation_exe$(EXEEXT)
 	$(CXXLINK) $(chanContinuation_exe_LDFLAGS) $(chanContinuation_exe_OBJECTS) $(chanContinuation_exe_LDADD) $(LIBS)
@@ -484,14 +461,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.C.lo:
-@am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
-
 ChanContinuation.o: $(srcdir)/ChanContinuation.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanContinuation.o -MD -MP -MF "$(DEPDIR)/ChanContinuation.Tpo" -c -o ChanContinuation.o `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanContinuation.Tpo" "$(DEPDIR)/ChanContinuation.Po"; else rm -f "$(DEPDIR)/ChanContinuation.Tpo"; exit 1; fi
@@ -507,14 +476,6 @@ ChanContinuation.obj: $(srcdir)/ChanContinuation.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanContinuation.Po' tmpdepfile='$(DEPDIR)/ChanContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanContinuation.obj `if test -f '$(srcdir)/ChanContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanContinuation.C'; fi`
-
-ChanContinuation.lo: $(srcdir)/ChanContinuation.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanContinuation.lo -MD -MP -MF "$(DEPDIR)/ChanContinuation.Tpo" -c -o ChanContinuation.lo `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanContinuation.Tpo" "$(DEPDIR)/ChanContinuation.Plo"; else rm -f "$(DEPDIR)/ChanContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanContinuation.C' object='ChanContinuation.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanContinuation.Plo' tmpdepfile='$(DEPDIR)/ChanContinuation.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanContinuation.lo `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C
 
 ChanHomotopy.o: $(srcdir)/ChanHomotopy.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanHomotopy.o -MD -MP -MF "$(DEPDIR)/ChanHomotopy.Tpo" -c -o ChanHomotopy.o `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C; \
@@ -532,14 +493,6 @@ ChanHomotopy.obj: $(srcdir)/ChanHomotopy.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanHomotopy.obj `if test -f '$(srcdir)/ChanHomotopy.C'; then $(CYGPATH_W) '$(srcdir)/ChanHomotopy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanHomotopy.C'; fi`
 
-ChanHomotopy.lo: $(srcdir)/ChanHomotopy.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanHomotopy.lo -MD -MP -MF "$(DEPDIR)/ChanHomotopy.Tpo" -c -o ChanHomotopy.lo `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanHomotopy.Tpo" "$(DEPDIR)/ChanHomotopy.Plo"; else rm -f "$(DEPDIR)/ChanHomotopy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanHomotopy.C' object='ChanHomotopy.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanHomotopy.Plo' tmpdepfile='$(DEPDIR)/ChanHomotopy.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanHomotopy.lo `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C
-
 ChanTPContinuation.o: $(srcdir)/ChanTPContinuation.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTPContinuation.o -MD -MP -MF "$(DEPDIR)/ChanTPContinuation.Tpo" -c -o ChanTPContinuation.o `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanTPContinuation.Tpo" "$(DEPDIR)/ChanTPContinuation.Po"; else rm -f "$(DEPDIR)/ChanTPContinuation.Tpo"; exit 1; fi
@@ -555,23 +508,6 @@ ChanTPContinuation.obj: $(srcdir)/ChanTPContinuation.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanTPContinuation.Po' tmpdepfile='$(DEPDIR)/ChanTPContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanTPContinuation.obj `if test -f '$(srcdir)/ChanTPContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation.C'; fi`
-
-ChanTPContinuation.lo: $(srcdir)/ChanTPContinuation.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTPContinuation.lo -MD -MP -MF "$(DEPDIR)/ChanTPContinuation.Tpo" -c -o ChanTPContinuation.lo `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanTPContinuation.Tpo" "$(DEPDIR)/ChanTPContinuation.Plo"; else rm -f "$(DEPDIR)/ChanTPContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation.C' object='ChanTPContinuation.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanTPContinuation.Plo' tmpdepfile='$(DEPDIR)/ChanTPContinuation.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanTPContinuation.lo `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C
-
-mostlyclean-libtool:
-	-rm -f *.lo
-
-clean-libtool:
-	-rm -rf .libs _libs
-
-distclean-libtool:
-	-rm -f libtool
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -621,7 +557,6 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/../../../config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -680,14 +615,13 @@ maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-libtool distclean-tags
+	distclean-tags
 
 dvi: dvi-am
 
@@ -716,8 +650,7 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-am
 
@@ -730,24 +663,19 @@ ps-am:
 uninstall-am: uninstall-info-am
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags uninstall uninstall-am \
-	uninstall-info-am
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-info-am
 
 
 # Include NOX export makefile
 include $(top_builddir)/Makefile.export.nox
-
-# ------------------------------------------------------------------------
-# Include global libtool definitions
-# ------------------------------------------------------------------------
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

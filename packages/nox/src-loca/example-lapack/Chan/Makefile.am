@@ -71,8 +71,8 @@ chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
 chanContinuation_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
 	$(top_builddir)/src-lapack/libnoxlapack.a \
-	$(top_builddir)/src-loca/src/libloca.la \
-        $(top_builddir)/src-loca/src-lapack/liblocalapack.la
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-lapack/liblocalapack.a
 
 chanContinuation_LDADD = $(EXAMPLE_LIBS)
 
@@ -142,7 +142,7 @@ chanMultiContinuation_SOURCES = $(srcdir)/ChanMultiContinuation.C \
 		$(srcdir)/ChanProblemInterface.C
 
 chanMultiContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES) \
-                                 $(top_builddir)/src-loca/src-mf/liblocamf.la \
+                                 $(top_builddir)/src-loca/src-mf/liblocamf.a \
                                  $(MF_LIBDIR)/libExpCmp.a \
                                  $(MF_LIBDIR)/libMF.a
 
@@ -172,7 +172,3 @@ MAINTAINERCLEANFILES = Makefile.in
 
 MOSTLYCLEANFILES = $(CXXREPOS)
 
-# ------------------------------------------------------------------------
-# Include global libtool definitions
-# ------------------------------------------------------------------------
-include $(top_srcdir)/config/libtool_macros.am

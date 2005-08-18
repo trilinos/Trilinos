@@ -75,10 +75,8 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/ac_cxx_invalid_template_qualifier.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
-	$(top_srcdir)/config/ac_libtoolize_flags.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/ac_python_module.m4 \
-	$(top_srcdir)/config/acinclude.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_dggev.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
@@ -123,20 +121,13 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
-CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
-LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libnoxtestutils_a_SOURCES)
 DIST_SOURCES = $(libnoxtestutils_a_SOURCES)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
@@ -233,7 +224,6 @@ BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -243,7 +233,6 @@ CXXREPOS = @CXXREPOS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
-ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -271,11 +260,6 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-LIBTOOL = @LIBTOOL@
-LIBTOOL_CCLINKER_FLAGS = @LIBTOOL_CCLINKER_FLAGS@
-LIBTOOL_COMPILER_FLAGS = @LIBTOOL_COMPILER_FLAGS@
-LIBTOOL_LINKER_FLAGS = @LIBTOOL_LINKER_FLAGS@
-LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -425,7 +409,7 @@ MOSTLYCLEANFILES = $(CXXREPOS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .C .lo .o .obj
+.SUFFIXES: .C .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -514,14 +498,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.C.lo:
-@am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
-
 libnoxtestutils_a-NOX_TestUtils.o: $(srcdir)/NOX_TestUtils.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxtestutils_a-NOX_TestUtils.o -MD -MP -MF "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo" -c -o libnoxtestutils_a-NOX_TestUtils.o `test -f '$(srcdir)/NOX_TestUtils.C' || echo '$(srcdir)/'`$(srcdir)/NOX_TestUtils.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo" "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po"; else rm -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo"; exit 1; fi
@@ -538,14 +514,6 @@ libnoxtestutils_a-NOX_TestUtils.obj: $(srcdir)/NOX_TestUtils.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtestutils_a-NOX_TestUtils.obj `if test -f '$(srcdir)/NOX_TestUtils.C'; then $(CYGPATH_W) '$(srcdir)/NOX_TestUtils.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_TestUtils.C'; fi`
 
-libnoxtestutils_a-NOX_TestUtils.lo: $(srcdir)/NOX_TestUtils.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxtestutils_a-NOX_TestUtils.lo -MD -MP -MF "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo" -c -o libnoxtestutils_a-NOX_TestUtils.lo `test -f '$(srcdir)/NOX_TestUtils.C' || echo '$(srcdir)/'`$(srcdir)/NOX_TestUtils.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo" "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Plo"; else rm -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_TestUtils.C' object='libnoxtestutils_a-NOX_TestUtils.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Plo' tmpdepfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtestutils_a-NOX_TestUtils.lo `test -f '$(srcdir)/NOX_TestUtils.C' || echo '$(srcdir)/'`$(srcdir)/NOX_TestUtils.C
-
 libnoxtestutils_a-NOX_TestCompare.o: $(srcdir)/NOX_TestCompare.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxtestutils_a-NOX_TestCompare.o -MD -MP -MF "$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.Tpo" -c -o libnoxtestutils_a-NOX_TestCompare.o `test -f '$(srcdir)/NOX_TestCompare.C' || echo '$(srcdir)/'`$(srcdir)/NOX_TestCompare.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.Tpo" "$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.Po"; else rm -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.Tpo"; exit 1; fi
@@ -561,23 +529,6 @@ libnoxtestutils_a-NOX_TestCompare.obj: $(srcdir)/NOX_TestCompare.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.Po' tmpdepfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtestutils_a-NOX_TestCompare.obj `if test -f '$(srcdir)/NOX_TestCompare.C'; then $(CYGPATH_W) '$(srcdir)/NOX_TestCompare.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_TestCompare.C'; fi`
-
-libnoxtestutils_a-NOX_TestCompare.lo: $(srcdir)/NOX_TestCompare.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxtestutils_a-NOX_TestCompare.lo -MD -MP -MF "$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.Tpo" -c -o libnoxtestutils_a-NOX_TestCompare.lo `test -f '$(srcdir)/NOX_TestCompare.C' || echo '$(srcdir)/'`$(srcdir)/NOX_TestCompare.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.Tpo" "$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.Plo"; else rm -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_TestCompare.C' object='libnoxtestutils_a-NOX_TestCompare.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.Plo' tmpdepfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtestutils_a-NOX_TestCompare.lo `test -f '$(srcdir)/NOX_TestCompare.C' || echo '$(srcdir)/'`$(srcdir)/NOX_TestCompare.C
-
-mostlyclean-libtool:
-	-rm -f *.lo
-
-clean-libtool:
-	-rm -rf .libs _libs
-
-distclean-libtool:
-	-rm -f libtool
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
@@ -703,14 +654,13 @@ maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-libLIBRARIES clean-libtool \
-	mostlyclean-am
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-libtool distclean-tags
+	distclean-tags
 
 dvi: dvi-am
 
@@ -739,8 +689,7 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-am
 
@@ -754,17 +703,17 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES clean-libtool ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-includeHEADERS install-info \
-	install-info-am install-libLIBRARIES install-man install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+	clean-libLIBRARIES ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am \
+	install-includeHEADERS install-info install-info-am \
+	install-libLIBRARIES install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-includeHEADERS \
-	uninstall-info-am uninstall-libLIBRARIES
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES
 
 
 # ------------------------------------------------------------------------

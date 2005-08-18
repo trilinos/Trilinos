@@ -67,8 +67,8 @@ brusselatorHopfContinuation_SOURCES = $(srcdir)/BrusselatorHopfContinuation.C \
 brusselatorContinuation_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
 	$(top_builddir)/src-lapack/libnoxlapack.a \
-	$(top_builddir)/src-loca/src/libloca.la \
-        $(top_builddir)/src-loca/src-lapack/liblocalapack.la
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-lapack/liblocalapack.a
 
 brusselatorHopf_DEPENDENCIES = $(brusselatorContinuation_DEPENDENCIES)
 
@@ -92,7 +92,3 @@ MAINTAINERCLEANFILES = Makefile.in
 
 MOSTLYCLEANFILES = $(CXXREPOS)
 
-# ------------------------------------------------------------------------
-# Include global libtool definitions
-# ------------------------------------------------------------------------
-include $(top_srcdir)/config/libtool_macros.am

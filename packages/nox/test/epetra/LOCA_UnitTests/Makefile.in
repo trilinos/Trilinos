@@ -68,18 +68,15 @@ POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
 	$(am__EXEEXT_4)
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(top_srcdir)/config/libtool_macros.am
 subdir = test/epetra/LOCA_UnitTests
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/ac_cxx_invalid_template_qualifier.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
-	$(top_srcdir)/config/ac_libtoolize_flags.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/ac_python_module.m4 \
-	$(top_srcdir)/config/acinclude.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_dggev.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
@@ -139,12 +136,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/HouseholderBorderedSolveContiguous.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
-CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
 SOURCES = $(compositeConstraintMVDX_exe_SOURCES) \
 	$(compositeConstraint_exe_SOURCES) \
 	$(householderBorderedSolveContiguous_exe_SOURCES) \
@@ -245,7 +239,6 @@ BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -255,7 +248,6 @@ CXXREPOS = @CXXREPOS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
-ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -283,17 +275,6 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-
-###############################################################################
-# Changes to the standard libtool command:
-# 1)  Force libtool to use the CXX tag.  Otherwise it gets confused on some
-#     platforms, e.g., janus.  This is fixed in automake 1.9.4.
-###############################################################################
-LIBTOOL = $(SHELL) $(top_builddir)/libtool --tag=CXX
-LIBTOOL_CCLINKER_FLAGS = @LIBTOOL_CCLINKER_FLAGS@
-LIBTOOL_COMPILER_FLAGS = @LIBTOOL_COMPILER_FLAGS@
-LIBTOOL_LINKER_FLAGS = @LIBTOOL_LINKER_FLAGS@
-LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -405,9 +386,9 @@ householderBorderedSolve_exe_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
 	$(top_builddir)/src-epetra/libnoxepetra.a \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
-	$(top_builddir)/src-loca/src/libloca.la \
-        $(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
-	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.la
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-epetra/liblocaepetra.a \
+	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.a
 
 householderBorderedSolve_exe_LDADD = $(TEST_LIBS)
 householderBorderedSolveContiguous_exe_SOURCES = \
@@ -450,8 +431,8 @@ MOSTLYCLEANFILES = $(CXXREPOS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .C .lo .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/libtool_macros.am $(am__configure_deps)
+.SUFFIXES: .C .o .obj
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -482,11 +463,7 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
 clean-noinstPROGRAMS:
-	@list='$(noinst_PROGRAMS)'; for p in $$list; do \
-	  f=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
-	  echo " rm -f $$p $$f"; \
-	  rm -f $$p $$f ; \
-	done
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 compositeConstraintMVDX_exe$(EXEEXT): $(compositeConstraintMVDX_exe_OBJECTS) $(compositeConstraintMVDX_exe_DEPENDENCIES) 
 	@rm -f compositeConstraintMVDX_exe$(EXEEXT)
 	$(CXXLINK) $(compositeConstraintMVDX_exe_LDFLAGS) $(compositeConstraintMVDX_exe_OBJECTS) $(compositeConstraintMVDX_exe_LDADD) $(LIBS)
@@ -527,14 +504,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.C.lo:
-@am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
-
 CompositeConstraintMVDX.o: $(srcdir)/CompositeConstraintMVDX.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CompositeConstraintMVDX.o -MD -MP -MF "$(DEPDIR)/CompositeConstraintMVDX.Tpo" -c -o CompositeConstraintMVDX.o `test -f '$(srcdir)/CompositeConstraintMVDX.C' || echo '$(srcdir)/'`$(srcdir)/CompositeConstraintMVDX.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CompositeConstraintMVDX.Tpo" "$(DEPDIR)/CompositeConstraintMVDX.Po"; else rm -f "$(DEPDIR)/CompositeConstraintMVDX.Tpo"; exit 1; fi
@@ -550,14 +519,6 @@ CompositeConstraintMVDX.obj: $(srcdir)/CompositeConstraintMVDX.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CompositeConstraintMVDX.Po' tmpdepfile='$(DEPDIR)/CompositeConstraintMVDX.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CompositeConstraintMVDX.obj `if test -f '$(srcdir)/CompositeConstraintMVDX.C'; then $(CYGPATH_W) '$(srcdir)/CompositeConstraintMVDX.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CompositeConstraintMVDX.C'; fi`
-
-CompositeConstraintMVDX.lo: $(srcdir)/CompositeConstraintMVDX.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CompositeConstraintMVDX.lo -MD -MP -MF "$(DEPDIR)/CompositeConstraintMVDX.Tpo" -c -o CompositeConstraintMVDX.lo `test -f '$(srcdir)/CompositeConstraintMVDX.C' || echo '$(srcdir)/'`$(srcdir)/CompositeConstraintMVDX.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CompositeConstraintMVDX.Tpo" "$(DEPDIR)/CompositeConstraintMVDX.Plo"; else rm -f "$(DEPDIR)/CompositeConstraintMVDX.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CompositeConstraintMVDX.C' object='CompositeConstraintMVDX.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CompositeConstraintMVDX.Plo' tmpdepfile='$(DEPDIR)/CompositeConstraintMVDX.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CompositeConstraintMVDX.lo `test -f '$(srcdir)/CompositeConstraintMVDX.C' || echo '$(srcdir)/'`$(srcdir)/CompositeConstraintMVDX.C
 
 CompositeConstraint.o: $(srcdir)/CompositeConstraint.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CompositeConstraint.o -MD -MP -MF "$(DEPDIR)/CompositeConstraint.Tpo" -c -o CompositeConstraint.o `test -f '$(srcdir)/CompositeConstraint.C' || echo '$(srcdir)/'`$(srcdir)/CompositeConstraint.C; \
@@ -575,14 +536,6 @@ CompositeConstraint.obj: $(srcdir)/CompositeConstraint.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CompositeConstraint.obj `if test -f '$(srcdir)/CompositeConstraint.C'; then $(CYGPATH_W) '$(srcdir)/CompositeConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CompositeConstraint.C'; fi`
 
-CompositeConstraint.lo: $(srcdir)/CompositeConstraint.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CompositeConstraint.lo -MD -MP -MF "$(DEPDIR)/CompositeConstraint.Tpo" -c -o CompositeConstraint.lo `test -f '$(srcdir)/CompositeConstraint.C' || echo '$(srcdir)/'`$(srcdir)/CompositeConstraint.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CompositeConstraint.Tpo" "$(DEPDIR)/CompositeConstraint.Plo"; else rm -f "$(DEPDIR)/CompositeConstraint.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CompositeConstraint.C' object='CompositeConstraint.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CompositeConstraint.Plo' tmpdepfile='$(DEPDIR)/CompositeConstraint.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CompositeConstraint.lo `test -f '$(srcdir)/CompositeConstraint.C' || echo '$(srcdir)/'`$(srcdir)/CompositeConstraint.C
-
 HouseholderBorderedSolveContiguous.o: $(srcdir)/HouseholderBorderedSolveContiguous.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT HouseholderBorderedSolveContiguous.o -MD -MP -MF "$(DEPDIR)/HouseholderBorderedSolveContiguous.Tpo" -c -o HouseholderBorderedSolveContiguous.o `test -f '$(srcdir)/HouseholderBorderedSolveContiguous.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderBorderedSolveContiguous.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HouseholderBorderedSolveContiguous.Tpo" "$(DEPDIR)/HouseholderBorderedSolveContiguous.Po"; else rm -f "$(DEPDIR)/HouseholderBorderedSolveContiguous.Tpo"; exit 1; fi
@@ -599,14 +552,6 @@ HouseholderBorderedSolveContiguous.obj: $(srcdir)/HouseholderBorderedSolveContig
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HouseholderBorderedSolveContiguous.obj `if test -f '$(srcdir)/HouseholderBorderedSolveContiguous.C'; then $(CYGPATH_W) '$(srcdir)/HouseholderBorderedSolveContiguous.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HouseholderBorderedSolveContiguous.C'; fi`
 
-HouseholderBorderedSolveContiguous.lo: $(srcdir)/HouseholderBorderedSolveContiguous.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT HouseholderBorderedSolveContiguous.lo -MD -MP -MF "$(DEPDIR)/HouseholderBorderedSolveContiguous.Tpo" -c -o HouseholderBorderedSolveContiguous.lo `test -f '$(srcdir)/HouseholderBorderedSolveContiguous.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderBorderedSolveContiguous.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HouseholderBorderedSolveContiguous.Tpo" "$(DEPDIR)/HouseholderBorderedSolveContiguous.Plo"; else rm -f "$(DEPDIR)/HouseholderBorderedSolveContiguous.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HouseholderBorderedSolveContiguous.C' object='HouseholderBorderedSolveContiguous.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HouseholderBorderedSolveContiguous.Plo' tmpdepfile='$(DEPDIR)/HouseholderBorderedSolveContiguous.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HouseholderBorderedSolveContiguous.lo `test -f '$(srcdir)/HouseholderBorderedSolveContiguous.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderBorderedSolveContiguous.C
-
 HouseholderBorderedSolve.o: $(srcdir)/HouseholderBorderedSolve.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT HouseholderBorderedSolve.o -MD -MP -MF "$(DEPDIR)/HouseholderBorderedSolve.Tpo" -c -o HouseholderBorderedSolve.o `test -f '$(srcdir)/HouseholderBorderedSolve.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderBorderedSolve.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HouseholderBorderedSolve.Tpo" "$(DEPDIR)/HouseholderBorderedSolve.Po"; else rm -f "$(DEPDIR)/HouseholderBorderedSolve.Tpo"; exit 1; fi
@@ -622,23 +567,6 @@ HouseholderBorderedSolve.obj: $(srcdir)/HouseholderBorderedSolve.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HouseholderBorderedSolve.Po' tmpdepfile='$(DEPDIR)/HouseholderBorderedSolve.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HouseholderBorderedSolve.obj `if test -f '$(srcdir)/HouseholderBorderedSolve.C'; then $(CYGPATH_W) '$(srcdir)/HouseholderBorderedSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HouseholderBorderedSolve.C'; fi`
-
-HouseholderBorderedSolve.lo: $(srcdir)/HouseholderBorderedSolve.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT HouseholderBorderedSolve.lo -MD -MP -MF "$(DEPDIR)/HouseholderBorderedSolve.Tpo" -c -o HouseholderBorderedSolve.lo `test -f '$(srcdir)/HouseholderBorderedSolve.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderBorderedSolve.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HouseholderBorderedSolve.Tpo" "$(DEPDIR)/HouseholderBorderedSolve.Plo"; else rm -f "$(DEPDIR)/HouseholderBorderedSolve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HouseholderBorderedSolve.C' object='HouseholderBorderedSolve.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HouseholderBorderedSolve.Plo' tmpdepfile='$(DEPDIR)/HouseholderBorderedSolve.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HouseholderBorderedSolve.lo `test -f '$(srcdir)/HouseholderBorderedSolve.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderBorderedSolve.C
-
-mostlyclean-libtool:
-	-rm -f *.lo
-
-clean-libtool:
-	-rm -rf .libs _libs
-
-distclean-libtool:
-	-rm -f libtool
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -688,7 +616,6 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/../../../config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -747,14 +674,13 @@ maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-libtool distclean-tags
+	distclean-tags
 
 dvi: dvi-am
 
@@ -783,8 +709,7 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-am
 
@@ -797,23 +722,18 @@ ps-am:
 uninstall-am: uninstall-info-am
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags uninstall uninstall-am \
-	uninstall-info-am
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-info-am
 
 
 include $(top_builddir)/Makefile.export.nox
-
-# ------------------------------------------------------------------------
-# Include global libtool definitions
-# ------------------------------------------------------------------------
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

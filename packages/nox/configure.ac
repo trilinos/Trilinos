@@ -123,17 +123,6 @@ TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
-# Libtool flags
-TAC_ARG_WITH_FLAGS(libtool-compiler-flags, LIBTOOL_COMPILER_FLAGS)
-TAC_ARG_WITH_FLAGS(libtool-linker-flags, LIBTOOL_LINKER_FLAGS)
-TAC_ARG_WITH_FLAGS(libtool-cclinker-flags, LIBTOOL_CCLINKER_FLAGS)
-
-# libtoolize LIBTOOL flags (i.e., add -Xcompiler, -Xlinker, -XCClinker flags
-# respectively)
-AC_LIBTOOLIZE_COMPILER_FLAGS(LIBTOOL_COMPILER_FLAGS)
-AC_LIBTOOLIZE_LINKER_FLAGS(LIBTOOL_LINKER_FLAGS)
-AC_LIBTOOLIZE_CCLINKER_FLAGS(LIBTOOL_CCLINKER_FLAGS)
-
 # ------------------------------------------------------------------------
 # Alternate archiver
 # ------------------------------------------------------------------------
@@ -562,27 +551,6 @@ fi
 AC_SUBST(IMPORT_EPETRA)
 
 # ------------------------------------------------------------------------
-# Configure libtool
-# ------------------------------------------------------------------------
-# The default is to not build LOCA as a shared library, but we use libtool
-# either way.  If Python support is enabled, then we must build LOCA
-# as a shared library
-if test X${BUILD_LIBLOCA} = Xyes || test X${BUILD_PYTHON} = Xyes; then
-
-  # Disable shared libraries by default
-  AC_DISABLE_SHARED
-
-  # Enable shared libraries if Python is enabled
-  if test X${BUILD_PYTHON} = Xyes; then
-    enable_shared=yes
-  fi
-
-  # Configure libtool
-  AC_PROG_LIBTOOL
-
-fi
-
-# ------------------------------------------------------------------------
 # User defined directories 
 # ------------------------------------------------------------------------
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
@@ -843,9 +811,6 @@ AC_SUBST(abs_builddir)
 AC_SUBST(abs_top_builddir)
 
 AC_SUBST(MPI_LIBS)
-AC_SUBST(LIBTOOL_COMPILER_FLAGS)
-AC_SUBST(LIBTOOL_LINKER_FLAGS)
-AC_SUBST(LIBTOOL_CCLINKER_FLAGS)
 
 # ------------------------------------------------------------------------
 # Output files

@@ -51,7 +51,7 @@
 # ------------------------------------------------------------------------
 
 
-SOURCES = $(liblocaepetra_la_SOURCES)
+SOURCES = $(liblocaepetra_a_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -74,18 +74,16 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(top_srcdir)/config/libtool_macros.am
 subdir = src-loca/src-epetra
+DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/ac_cxx_invalid_template_qualifier.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
-	$(top_srcdir)/config/ac_libtoolize_flags.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/ac_python_module.m4 \
-	$(top_srcdir)/config/acinclude.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_dggev.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
@@ -111,54 +109,52 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
+ARFLAGS = cru
 am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
-libLTLIBRARIES_INSTALL = $(INSTALL)
-LTLIBRARIES = $(lib_LTLIBRARIES)
-liblocaepetra_la_LIBADD =
-am__objects_1 = LOCA_Epetra_Group.lo LOCA_Epetra_BorderedOp.lo \
-	LOCA_Epetra_HouseholderJacOp.lo \
-	LOCA_Epetra_ShiftInvertOperator.lo
+libLIBRARIES_INSTALL = $(INSTALL_DATA)
+LIBRARIES = $(lib_LIBRARIES)
+am__DEPENDENCIES_1 =
+liblocaepetra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__objects_1 = LOCA_Epetra_Group.$(OBJEXT) \
+	LOCA_Epetra_BorderedOp.$(OBJEXT) \
+	LOCA_Epetra_HouseholderJacOp.$(OBJEXT) \
+	LOCA_Epetra_ShiftInvertOperator.$(OBJEXT)
 am__objects_2 =
-am__objects_3 = LOCA_EpetraNew_Group.lo \
-	LOCA_EpetraNew_Interface_xyzt.lo LOCA_Epetra_CompactWYOp.lo \
-	LOCA_BorderedSystem_EpetraHouseholder.lo \
-	LOCA_Epetra_AugmentedOp.lo \
-	LOCA_BorderedSystem_EpetraAugmented.lo LOCA_Epetra_Factory.lo
-am_liblocaepetra_la_OBJECTS = $(am__objects_1) $(am__objects_2) \
+am__objects_3 = LOCA_EpetraNew_Group.$(OBJEXT) \
+	LOCA_EpetraNew_Interface_xyzt.$(OBJEXT) \
+	LOCA_Epetra_CompactWYOp.$(OBJEXT) \
+	LOCA_BorderedSystem_EpetraHouseholder.$(OBJEXT) \
+	LOCA_Epetra_AugmentedOp.$(OBJEXT) \
+	LOCA_BorderedSystem_EpetraAugmented.$(OBJEXT) \
+	LOCA_Epetra_Factory.$(OBJEXT)
+am_liblocaepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_2)
-liblocaepetra_la_OBJECTS = $(am_liblocaepetra_la_OBJECTS)
+liblocaepetra_a_OBJECTS = $(am_liblocaepetra_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/LOCA_BorderedSystem_EpetraAugmented.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/LOCA_BorderedSystem_EpetraHouseholder.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/LOCA_EpetraNew_Group.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/LOCA_EpetraNew_Interface_xyzt.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_AugmentedOp.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_BorderedOp.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_CompactWYOp.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_Factory.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_Group.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_ShiftInvertOperator.Plo
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/LOCA_BorderedSystem_EpetraAugmented.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOCA_BorderedSystem_EpetraHouseholder.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOCA_EpetraNew_Group.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOCA_EpetraNew_Interface_xyzt.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_AugmentedOp.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_BorderedOp.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_CompactWYOp.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_Factory.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_Group.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_ShiftInvertOperator.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
-CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
-LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(liblocaepetra_la_SOURCES)
-DIST_SOURCES = $(liblocaepetra_la_SOURCES)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(liblocaepetra_a_SOURCES)
+DIST_SOURCES = $(liblocaepetra_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/LOCA_Epetra.H \
 	$(srcdir)/LOCA_Epetra_Group.H \
 	$(srcdir)/LOCA_Epetra_Interface.H \
@@ -269,7 +265,6 @@ BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -279,7 +274,6 @@ CXXREPOS = @CXXREPOS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
-ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -307,17 +301,6 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-
-###############################################################################
-# Changes to the standard libtool command:
-# 1)  Force libtool to use the CXX tag.  Otherwise it gets confused on some
-#     platforms, e.g., janus.  This is fixed in automake 1.9.4.
-###############################################################################
-LIBTOOL = $(SHELL) $(top_builddir)/libtool --tag=CXX
-LIBTOOL_CCLINKER_FLAGS = @LIBTOOL_CCLINKER_FLAGS@
-LIBTOOL_COMPILER_FLAGS = @LIBTOOL_COMPILER_FLAGS@
-LIBTOOL_LINKER_FLAGS = @LIBTOOL_LINKER_FLAGS@
-LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -455,32 +438,38 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
-liblocaepetra_la_SOURCES = \
+liblocaepetra_a_SOURCES = \
 	$(LOCA_EPETRA) \
 	$(LOCA_EPETRA_H) \
 	$(LOCA_EPETRANEW) \
 	$(LOCA_EPETRANEW_H)
 
 
-#liblocaepetra_la_CXXFLAGS = \
-#	-I$(top_srcdir)/src-loca/src \
-#	-I$(top_srcdir)/src \
-#	-I$(top_srcdir)/src-epetra \
-#	$(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS)
-
-#liblocaepetra_la_LIBADD = \
-#	$(top_builddir)/src-loca/src/libloca.la \
-#	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS)
-
 # ------------------------------------------------------------------------
 # When to turn it on
 # ------------------------------------------------------------------------
 
 # List of all libraries to install in $(libexecdir)
-@BUILD_LIBLOCAEPETRA_TRUE@lib_LTLIBRARIES = liblocaepetra.la
+@BUILD_LIBLOCAEPETRA_TRUE@lib_LIBRARIES = liblocaepetra.a
 
 # List of all headers to install in $(includedir)
 @BUILD_LIBLOCAEPETRA_TRUE@include_HEADERS = $(LOCA_EPETRA_H) $(LOCA_EPETRANEW_H)
+@USE_ALTERNATE_AR_FALSE@liblocaepetra_a_AR = $(AR) cru
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+@USE_ALTERNATE_AR_TRUE@liblocaepetra_a_AR = $(ALTERNATE_AR)
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+liblocaepetra_a_LIBADD = $(CXXREPOS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -494,8 +483,8 @@ MOSTLYCLEANFILES = $(CXXREPOS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .C .lo .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/libtool_macros.am $(am__configure_deps)
+.SUFFIXES: .C .o .obj
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -524,35 +513,39 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-install-libLTLIBRARIES: $(lib_LTLIBRARIES)
+install-libLIBRARIES: $(lib_LIBRARIES)
 	@$(NORMAL_INSTALL)
 	$(mkdir_p) $(DESTDIR)$(libdir)
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
 	  if test -f $$p; then \
 	    f="`echo $$p | sed -e 's|^.*/||'`"; \
-	    echo " $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$p $(DESTDIR)$(libdir)/$$f"; \
-	    $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$p $(DESTDIR)$(libdir)/$$f; \
+	    echo " $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f"; \
+	    $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    p="`echo $$p | sed -e 's|^.*/||'`"; \
+	    echo " $(RANLIB) $(DESTDIR)$(libdir)/$$p"; \
+	    $(RANLIB) $(DESTDIR)$(libdir)/$$p; \
 	  else :; fi; \
 	done
 
-uninstall-libLTLIBRARIES:
+uninstall-libLIBRARIES:
 	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	    p="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(LIBTOOL) --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p"; \
-	  $(LIBTOOL) --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p; \
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  p="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(libdir)/$$p"; \
+	  rm -f $(DESTDIR)$(libdir)/$$p; \
 	done
 
-clean-libLTLIBRARIES:
-	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
-	  test "$$dir" = "$$p" && dir=.; \
-	  echo "rm -f \"$${dir}/so_locations\""; \
-	  rm -f "$${dir}/so_locations"; \
-	done
-liblocaepetra.la: $(liblocaepetra_la_OBJECTS) $(liblocaepetra_la_DEPENDENCIES) 
-	$(CXXLINK) -rpath $(libdir) $(liblocaepetra_la_LDFLAGS) $(liblocaepetra_la_OBJECTS) $(liblocaepetra_la_LIBADD) $(LIBS)
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+liblocaepetra.a: $(liblocaepetra_a_OBJECTS) $(liblocaepetra_a_DEPENDENCIES) 
+	-rm -f liblocaepetra.a
+	$(liblocaepetra_a_AR) liblocaepetra.a $(liblocaepetra_a_OBJECTS) $(liblocaepetra_a_LIBADD)
+	$(RANLIB) liblocaepetra.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -560,17 +553,17 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_BorderedSystem_EpetraAugmented.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_BorderedSystem_EpetraHouseholder.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_EpetraNew_Group.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_EpetraNew_Interface_xyzt.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_AugmentedOp.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_BorderedOp.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_CompactWYOp.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_Factory.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_Group.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_ShiftInvertOperator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_BorderedSystem_EpetraAugmented.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_BorderedSystem_EpetraHouseholder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_EpetraNew_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_EpetraNew_Interface_xyzt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_AugmentedOp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_BorderedOp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_CompactWYOp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_Factory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_ShiftInvertOperator.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -588,14 +581,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.C.lo:
-@am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
-
 LOCA_Epetra_Group.o: $(srcdir)/LOCA_Epetra_Group.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_Group.o -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_Group.Tpo" -c -o LOCA_Epetra_Group.o `test -f '$(srcdir)/LOCA_Epetra_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_Group.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_Group.Tpo" "$(DEPDIR)/LOCA_Epetra_Group.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_Group.Tpo"; exit 1; fi
@@ -611,14 +596,6 @@ LOCA_Epetra_Group.obj: $(srcdir)/LOCA_Epetra_Group.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_Group.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_Group.obj `if test -f '$(srcdir)/LOCA_Epetra_Group.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_Group.C'; fi`
-
-LOCA_Epetra_Group.lo: $(srcdir)/LOCA_Epetra_Group.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_Group.lo -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_Group.Tpo" -c -o LOCA_Epetra_Group.lo `test -f '$(srcdir)/LOCA_Epetra_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_Group.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_Group.Tpo" "$(DEPDIR)/LOCA_Epetra_Group.Plo"; else rm -f "$(DEPDIR)/LOCA_Epetra_Group.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_Group.C' object='LOCA_Epetra_Group.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_Group.Plo' tmpdepfile='$(DEPDIR)/LOCA_Epetra_Group.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_Group.lo `test -f '$(srcdir)/LOCA_Epetra_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_Group.C
 
 LOCA_Epetra_BorderedOp.o: $(srcdir)/LOCA_Epetra_BorderedOp.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_BorderedOp.o -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_BorderedOp.Tpo" -c -o LOCA_Epetra_BorderedOp.o `test -f '$(srcdir)/LOCA_Epetra_BorderedOp.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_BorderedOp.C; \
@@ -636,14 +613,6 @@ LOCA_Epetra_BorderedOp.obj: $(srcdir)/LOCA_Epetra_BorderedOp.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_BorderedOp.obj `if test -f '$(srcdir)/LOCA_Epetra_BorderedOp.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_BorderedOp.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_BorderedOp.C'; fi`
 
-LOCA_Epetra_BorderedOp.lo: $(srcdir)/LOCA_Epetra_BorderedOp.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_BorderedOp.lo -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_BorderedOp.Tpo" -c -o LOCA_Epetra_BorderedOp.lo `test -f '$(srcdir)/LOCA_Epetra_BorderedOp.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_BorderedOp.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_BorderedOp.Tpo" "$(DEPDIR)/LOCA_Epetra_BorderedOp.Plo"; else rm -f "$(DEPDIR)/LOCA_Epetra_BorderedOp.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_BorderedOp.C' object='LOCA_Epetra_BorderedOp.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_BorderedOp.Plo' tmpdepfile='$(DEPDIR)/LOCA_Epetra_BorderedOp.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_BorderedOp.lo `test -f '$(srcdir)/LOCA_Epetra_BorderedOp.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_BorderedOp.C
-
 LOCA_Epetra_HouseholderJacOp.o: $(srcdir)/LOCA_Epetra_HouseholderJacOp.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_HouseholderJacOp.o -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.Tpo" -c -o LOCA_Epetra_HouseholderJacOp.o `test -f '$(srcdir)/LOCA_Epetra_HouseholderJacOp.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_HouseholderJacOp.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.Tpo" "$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.Tpo"; exit 1; fi
@@ -659,14 +628,6 @@ LOCA_Epetra_HouseholderJacOp.obj: $(srcdir)/LOCA_Epetra_HouseholderJacOp.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_HouseholderJacOp.obj `if test -f '$(srcdir)/LOCA_Epetra_HouseholderJacOp.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_HouseholderJacOp.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_HouseholderJacOp.C'; fi`
-
-LOCA_Epetra_HouseholderJacOp.lo: $(srcdir)/LOCA_Epetra_HouseholderJacOp.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_HouseholderJacOp.lo -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.Tpo" -c -o LOCA_Epetra_HouseholderJacOp.lo `test -f '$(srcdir)/LOCA_Epetra_HouseholderJacOp.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_HouseholderJacOp.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.Tpo" "$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.Plo"; else rm -f "$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_HouseholderJacOp.C' object='LOCA_Epetra_HouseholderJacOp.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.Plo' tmpdepfile='$(DEPDIR)/LOCA_Epetra_HouseholderJacOp.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_HouseholderJacOp.lo `test -f '$(srcdir)/LOCA_Epetra_HouseholderJacOp.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_HouseholderJacOp.C
 
 LOCA_Epetra_ShiftInvertOperator.o: $(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_ShiftInvertOperator.o -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_ShiftInvertOperator.Tpo" -c -o LOCA_Epetra_ShiftInvertOperator.o `test -f '$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C; \
@@ -684,14 +645,6 @@ LOCA_Epetra_ShiftInvertOperator.obj: $(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_ShiftInvertOperator.obj `if test -f '$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C'; fi`
 
-LOCA_Epetra_ShiftInvertOperator.lo: $(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_ShiftInvertOperator.lo -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_ShiftInvertOperator.Tpo" -c -o LOCA_Epetra_ShiftInvertOperator.lo `test -f '$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_ShiftInvertOperator.Tpo" "$(DEPDIR)/LOCA_Epetra_ShiftInvertOperator.Plo"; else rm -f "$(DEPDIR)/LOCA_Epetra_ShiftInvertOperator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C' object='LOCA_Epetra_ShiftInvertOperator.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_ShiftInvertOperator.Plo' tmpdepfile='$(DEPDIR)/LOCA_Epetra_ShiftInvertOperator.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_ShiftInvertOperator.lo `test -f '$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
-
 LOCA_EpetraNew_Group.o: $(srcdir)/LOCA_EpetraNew_Group.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_EpetraNew_Group.o -MD -MP -MF "$(DEPDIR)/LOCA_EpetraNew_Group.Tpo" -c -o LOCA_EpetraNew_Group.o `test -f '$(srcdir)/LOCA_EpetraNew_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_EpetraNew_Group.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_EpetraNew_Group.Tpo" "$(DEPDIR)/LOCA_EpetraNew_Group.Po"; else rm -f "$(DEPDIR)/LOCA_EpetraNew_Group.Tpo"; exit 1; fi
@@ -707,14 +660,6 @@ LOCA_EpetraNew_Group.obj: $(srcdir)/LOCA_EpetraNew_Group.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_EpetraNew_Group.Po' tmpdepfile='$(DEPDIR)/LOCA_EpetraNew_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_EpetraNew_Group.obj `if test -f '$(srcdir)/LOCA_EpetraNew_Group.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_EpetraNew_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_EpetraNew_Group.C'; fi`
-
-LOCA_EpetraNew_Group.lo: $(srcdir)/LOCA_EpetraNew_Group.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_EpetraNew_Group.lo -MD -MP -MF "$(DEPDIR)/LOCA_EpetraNew_Group.Tpo" -c -o LOCA_EpetraNew_Group.lo `test -f '$(srcdir)/LOCA_EpetraNew_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_EpetraNew_Group.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_EpetraNew_Group.Tpo" "$(DEPDIR)/LOCA_EpetraNew_Group.Plo"; else rm -f "$(DEPDIR)/LOCA_EpetraNew_Group.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_EpetraNew_Group.C' object='LOCA_EpetraNew_Group.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_EpetraNew_Group.Plo' tmpdepfile='$(DEPDIR)/LOCA_EpetraNew_Group.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_EpetraNew_Group.lo `test -f '$(srcdir)/LOCA_EpetraNew_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_EpetraNew_Group.C
 
 LOCA_EpetraNew_Interface_xyzt.o: $(srcdir)/LOCA_EpetraNew_Interface_xyzt.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_EpetraNew_Interface_xyzt.o -MD -MP -MF "$(DEPDIR)/LOCA_EpetraNew_Interface_xyzt.Tpo" -c -o LOCA_EpetraNew_Interface_xyzt.o `test -f '$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C; \
@@ -732,14 +677,6 @@ LOCA_EpetraNew_Interface_xyzt.obj: $(srcdir)/LOCA_EpetraNew_Interface_xyzt.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_EpetraNew_Interface_xyzt.obj `if test -f '$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C'; fi`
 
-LOCA_EpetraNew_Interface_xyzt.lo: $(srcdir)/LOCA_EpetraNew_Interface_xyzt.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_EpetraNew_Interface_xyzt.lo -MD -MP -MF "$(DEPDIR)/LOCA_EpetraNew_Interface_xyzt.Tpo" -c -o LOCA_EpetraNew_Interface_xyzt.lo `test -f '$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_EpetraNew_Interface_xyzt.Tpo" "$(DEPDIR)/LOCA_EpetraNew_Interface_xyzt.Plo"; else rm -f "$(DEPDIR)/LOCA_EpetraNew_Interface_xyzt.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C' object='LOCA_EpetraNew_Interface_xyzt.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_EpetraNew_Interface_xyzt.Plo' tmpdepfile='$(DEPDIR)/LOCA_EpetraNew_Interface_xyzt.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_EpetraNew_Interface_xyzt.lo `test -f '$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C
-
 LOCA_Epetra_CompactWYOp.o: $(srcdir)/LOCA_Epetra_CompactWYOp.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_CompactWYOp.o -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_CompactWYOp.Tpo" -c -o LOCA_Epetra_CompactWYOp.o `test -f '$(srcdir)/LOCA_Epetra_CompactWYOp.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_CompactWYOp.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_CompactWYOp.Tpo" "$(DEPDIR)/LOCA_Epetra_CompactWYOp.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_CompactWYOp.Tpo"; exit 1; fi
@@ -755,14 +692,6 @@ LOCA_Epetra_CompactWYOp.obj: $(srcdir)/LOCA_Epetra_CompactWYOp.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_CompactWYOp.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_CompactWYOp.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_CompactWYOp.obj `if test -f '$(srcdir)/LOCA_Epetra_CompactWYOp.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_CompactWYOp.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_CompactWYOp.C'; fi`
-
-LOCA_Epetra_CompactWYOp.lo: $(srcdir)/LOCA_Epetra_CompactWYOp.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_CompactWYOp.lo -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_CompactWYOp.Tpo" -c -o LOCA_Epetra_CompactWYOp.lo `test -f '$(srcdir)/LOCA_Epetra_CompactWYOp.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_CompactWYOp.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_CompactWYOp.Tpo" "$(DEPDIR)/LOCA_Epetra_CompactWYOp.Plo"; else rm -f "$(DEPDIR)/LOCA_Epetra_CompactWYOp.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_CompactWYOp.C' object='LOCA_Epetra_CompactWYOp.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_CompactWYOp.Plo' tmpdepfile='$(DEPDIR)/LOCA_Epetra_CompactWYOp.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_CompactWYOp.lo `test -f '$(srcdir)/LOCA_Epetra_CompactWYOp.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_CompactWYOp.C
 
 LOCA_BorderedSystem_EpetraHouseholder.o: $(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_BorderedSystem_EpetraHouseholder.o -MD -MP -MF "$(DEPDIR)/LOCA_BorderedSystem_EpetraHouseholder.Tpo" -c -o LOCA_BorderedSystem_EpetraHouseholder.o `test -f '$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C; \
@@ -780,14 +709,6 @@ LOCA_BorderedSystem_EpetraHouseholder.obj: $(srcdir)/LOCA_BorderedSystem_EpetraH
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_BorderedSystem_EpetraHouseholder.obj `if test -f '$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C'; fi`
 
-LOCA_BorderedSystem_EpetraHouseholder.lo: $(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_BorderedSystem_EpetraHouseholder.lo -MD -MP -MF "$(DEPDIR)/LOCA_BorderedSystem_EpetraHouseholder.Tpo" -c -o LOCA_BorderedSystem_EpetraHouseholder.lo `test -f '$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_BorderedSystem_EpetraHouseholder.Tpo" "$(DEPDIR)/LOCA_BorderedSystem_EpetraHouseholder.Plo"; else rm -f "$(DEPDIR)/LOCA_BorderedSystem_EpetraHouseholder.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C' object='LOCA_BorderedSystem_EpetraHouseholder.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_BorderedSystem_EpetraHouseholder.Plo' tmpdepfile='$(DEPDIR)/LOCA_BorderedSystem_EpetraHouseholder.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_BorderedSystem_EpetraHouseholder.lo `test -f '$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C
-
 LOCA_Epetra_AugmentedOp.o: $(srcdir)/LOCA_Epetra_AugmentedOp.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_AugmentedOp.o -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_AugmentedOp.Tpo" -c -o LOCA_Epetra_AugmentedOp.o `test -f '$(srcdir)/LOCA_Epetra_AugmentedOp.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_AugmentedOp.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_AugmentedOp.Tpo" "$(DEPDIR)/LOCA_Epetra_AugmentedOp.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_AugmentedOp.Tpo"; exit 1; fi
@@ -803,14 +724,6 @@ LOCA_Epetra_AugmentedOp.obj: $(srcdir)/LOCA_Epetra_AugmentedOp.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_AugmentedOp.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_AugmentedOp.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_AugmentedOp.obj `if test -f '$(srcdir)/LOCA_Epetra_AugmentedOp.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_AugmentedOp.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_AugmentedOp.C'; fi`
-
-LOCA_Epetra_AugmentedOp.lo: $(srcdir)/LOCA_Epetra_AugmentedOp.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_AugmentedOp.lo -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_AugmentedOp.Tpo" -c -o LOCA_Epetra_AugmentedOp.lo `test -f '$(srcdir)/LOCA_Epetra_AugmentedOp.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_AugmentedOp.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_AugmentedOp.Tpo" "$(DEPDIR)/LOCA_Epetra_AugmentedOp.Plo"; else rm -f "$(DEPDIR)/LOCA_Epetra_AugmentedOp.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_AugmentedOp.C' object='LOCA_Epetra_AugmentedOp.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_AugmentedOp.Plo' tmpdepfile='$(DEPDIR)/LOCA_Epetra_AugmentedOp.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_AugmentedOp.lo `test -f '$(srcdir)/LOCA_Epetra_AugmentedOp.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_AugmentedOp.C
 
 LOCA_BorderedSystem_EpetraAugmented.o: $(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_BorderedSystem_EpetraAugmented.o -MD -MP -MF "$(DEPDIR)/LOCA_BorderedSystem_EpetraAugmented.Tpo" -c -o LOCA_BorderedSystem_EpetraAugmented.o `test -f '$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C; \
@@ -828,14 +741,6 @@ LOCA_BorderedSystem_EpetraAugmented.obj: $(srcdir)/LOCA_BorderedSystem_EpetraAug
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_BorderedSystem_EpetraAugmented.obj `if test -f '$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C'; fi`
 
-LOCA_BorderedSystem_EpetraAugmented.lo: $(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_BorderedSystem_EpetraAugmented.lo -MD -MP -MF "$(DEPDIR)/LOCA_BorderedSystem_EpetraAugmented.Tpo" -c -o LOCA_BorderedSystem_EpetraAugmented.lo `test -f '$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_BorderedSystem_EpetraAugmented.Tpo" "$(DEPDIR)/LOCA_BorderedSystem_EpetraAugmented.Plo"; else rm -f "$(DEPDIR)/LOCA_BorderedSystem_EpetraAugmented.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C' object='LOCA_BorderedSystem_EpetraAugmented.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_BorderedSystem_EpetraAugmented.Plo' tmpdepfile='$(DEPDIR)/LOCA_BorderedSystem_EpetraAugmented.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_BorderedSystem_EpetraAugmented.lo `test -f '$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C
-
 LOCA_Epetra_Factory.o: $(srcdir)/LOCA_Epetra_Factory.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_Factory.o -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_Factory.Tpo" -c -o LOCA_Epetra_Factory.o `test -f '$(srcdir)/LOCA_Epetra_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_Factory.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_Factory.Tpo" "$(DEPDIR)/LOCA_Epetra_Factory.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_Factory.Tpo"; exit 1; fi
@@ -851,23 +756,6 @@ LOCA_Epetra_Factory.obj: $(srcdir)/LOCA_Epetra_Factory.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_Factory.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_Factory.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_Factory.obj `if test -f '$(srcdir)/LOCA_Epetra_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_Factory.C'; fi`
-
-LOCA_Epetra_Factory.lo: $(srcdir)/LOCA_Epetra_Factory.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_Factory.lo -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_Factory.Tpo" -c -o LOCA_Epetra_Factory.lo `test -f '$(srcdir)/LOCA_Epetra_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_Factory.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_Factory.Tpo" "$(DEPDIR)/LOCA_Epetra_Factory.Plo"; else rm -f "$(DEPDIR)/LOCA_Epetra_Factory.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_Factory.C' object='LOCA_Epetra_Factory.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_Factory.Plo' tmpdepfile='$(DEPDIR)/LOCA_Epetra_Factory.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_Factory.lo `test -f '$(srcdir)/LOCA_Epetra_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_Factory.C
-
-mostlyclean-libtool:
-	-rm -f *.lo
-
-clean-libtool:
-	-rm -rf .libs _libs
-
-distclean-libtool:
-	-rm -f libtool
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
@@ -934,7 +822,6 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/../../config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -963,7 +850,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LTLIBRARIES) $(HEADERS)
+all-am: Makefile $(LIBRARIES) $(HEADERS)
 installdirs:
 	$(mkdir_p) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
 install: install-am
@@ -994,14 +881,13 @@ maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
-	mostlyclean-am
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-libtool distclean-tags
+	distclean-tags
 
 dvi: dvi-am
 
@@ -1015,7 +901,7 @@ info-am:
 
 install-data-am: install-includeHEADERS
 
-install-exec-am: install-libLTLIBRARIES
+install-exec-am: install-libLIBRARIES
 
 install-info: install-info-am
 
@@ -1030,8 +916,7 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-am
 
@@ -1042,31 +927,26 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLTLIBRARIES
+	uninstall-libLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLTLIBRARIES clean-libtool ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-includeHEADERS install-info \
-	install-info-am install-libLTLIBRARIES install-man \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags uninstall uninstall-am \
-	uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLTLIBRARIES
+	clean-libLIBRARIES ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am \
+	install-includeHEADERS install-info install-info-am \
+	install-libLIBRARIES install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES
 
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies
 # ------------------------------------------------------------------------
 include $(top_builddir)/Makefile.export.nox
-
-# ------------------------------------------------------------------------
-# Include global libtool definitions
-# ------------------------------------------------------------------------
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
