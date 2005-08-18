@@ -134,7 +134,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
     if (timer_build < 0) 
       timer_build = Zoltan_Timer_Init(zz->ZTime, 1, "Build");
     if (timer_setupvmap < 0) 
-      timer_setupvmap = Zoltan_Timer_Init(zz->ZTime, 1, "Setup Vmaps");
+      timer_setupvmap = Zoltan_Timer_Init(zz->ZTime, 1, "Vmaps");
   }
 
   if (hgp.use_timers) 
@@ -234,9 +234,9 @@ int **exp_to_part )         /* list of partitions to which exported objs
   if (do_timing) {
     /* Initialize these timers here so their output is near end of printout */
     if (timer_retlist < 0) 
-      timer_retlist = Zoltan_Timer_Init(zz->ZTime, 1, "Return Lists");
+      timer_retlist = Zoltan_Timer_Init(zz->ZTime, 1, "Return_Lists");
     if (timer_finaloutput < 0) 
-      timer_finaloutput = Zoltan_Timer_Init(zz->ZTime, 1, "Final Output");
+      timer_finaloutput = Zoltan_Timer_Init(zz->ZTime, 1, "Final_Output");
 
     ZOLTAN_TIMER_START(zz->ZTime, timer_retlist, zz->Communicator);
   }

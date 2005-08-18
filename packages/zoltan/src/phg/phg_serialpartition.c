@@ -130,11 +130,11 @@ static int timer_cpart=-1, timer_gather=-1, timer_refine=-1;
 
   if (fine_timing) {
     if (timer_gather < 0)
-      timer_gather = Zoltan_Timer_Init(zz->ZTime, 1, "Coarse Gather");
+      timer_gather = Zoltan_Timer_Init(zz->ZTime, 1, "CP Gather");
     if (timer_refine < 0)
-      timer_refine = Zoltan_Timer_Init(zz->ZTime, 0, "Coarse Refine");
+      timer_refine = Zoltan_Timer_Init(zz->ZTime, 0, "CP Refine");
     if (timer_cpart < 0)
-      timer_cpart = Zoltan_Timer_Init(zz->ZTime, 0, "Coarse Part");
+      timer_cpart = Zoltan_Timer_Init(zz->ZTime, 0, "CP Part");
 
     ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, phg->comm->Communicator);
   }

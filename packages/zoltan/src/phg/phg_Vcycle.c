@@ -215,11 +215,11 @@ int Zoltan_PHG_Partition (
       timer_coarse = Zoltan_Timer_Init(zz->ZTime, 1, "Coarsening");
     if (timer_coarsepart < 0)
       timer_coarsepart = Zoltan_Timer_Init(zz->ZTime, 1,
-                                           "Total Coarse Partition");
+                                           "Coarse_Partition");
     if (timer_refine < 0) 
       timer_refine = Zoltan_Timer_Init(zz->ZTime, 1, "Refinement");
     if (timer_project < 0) 
-      timer_project = Zoltan_Timer_Init(zz->ZTime, 1, "Project Up");
+      timer_project = Zoltan_Timer_Init(zz->ZTime, 1, "Project_Up");
 
     ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hg->comm->Communicator);
   }
