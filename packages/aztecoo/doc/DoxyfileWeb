@@ -50,3 +50,5 @@ TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/h
 TAGFILES              += ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html
 
 GENERATE_TAGFILE       = ../../common/tag_files/aztecoo.tag
+
+PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS HAVE_AZTECOO_TEUCHOS
