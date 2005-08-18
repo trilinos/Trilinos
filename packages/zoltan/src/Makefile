@@ -174,14 +174,14 @@ SUB_VPATH	= ../include ../Utilities/shared \
 SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../zz -I../all -I../lb -I../par -I../rcb \
 		  -I../coloring -I../oct  \
-		  -I../order -I../hsfc -I../phg -I../hg \
+		  -I../order -I../hsfc -I../phg -I../hg -I../util \
 		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch \
 		  -I../parmetis -I../timer \
                   -I../ha -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory -I../Utilities/Timer
 SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb \
-		  coloring oct phg hg\
+		  coloring oct phg hg util \
                   hsfc parmetis params \
 		  timer ha  reftree include
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
@@ -324,8 +324,7 @@ endif
 #  Architecture-independent definitions
 ##############################################################################
 
-ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(MPI_INCPATH) \
-		  $(THIRD_PARTY_INCPATH)
+ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(THIRD_PARTY_INCPATH)
 ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) \
 		  $(COLOR_CSRC) $(PAR_CSRC) \
 		  $(ORDER_CSRC) $(OCT_CSRC) $(HSFC_CSRC) \
@@ -466,7 +465,7 @@ vtk_view:
 	"MAIN_OBJ=$(VIEW_OBJ)"		        \
 	"OBJ_FILES=$(VIEW_OBJ)"		        \
 	"VPATH=$(ZOLTAN_VPATH)"                 \
-	"DEFS=$(DEFS) $(SUBINCPATH) $(MPI_INCPATH) $(VTK_INCPATH)" \
+	"DEFS=$(DEFS) $(SUBINCPATH) $(INCLUDE_PATH) $(VTK_INCPATH)" \
 	"LNK_LIBS=$(VIEW_LIBS)" 		\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)"
