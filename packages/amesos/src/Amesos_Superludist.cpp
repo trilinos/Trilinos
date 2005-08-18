@@ -408,7 +408,7 @@ int Amesos_Superludist::Factor()
     if( ColPerm_ == "NATURAL" ) options_.ColPerm = NATURAL;
     else if( ColPerm_ == "MMD_AT_PLUS_A" ) options_.ColPerm = MMD_AT_PLUS_A;
     else if( ColPerm_ == "MMD_ATA" ) options_.ColPerm = MMD_ATA;
-    else if( ColPerm_ == "COLAMD" ) options_.ColPerm = COLAMD;
+    //    else if( ColPerm_ == "COLAMD" ) options_.ColPerm = COLAMD;     // COLAMD no longer supported in Superludist, as of July 2005
     else if( ColPerm_ == "MY_PERMC" ) {
       options_.ColPerm = MY_PERMC;
       ScalePermstruct_.perm_c = perm_c_;
