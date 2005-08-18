@@ -639,18 +639,18 @@ LOCA::NewStepper::buildConstrainedGroup(
   Teuchos::RefCountPtr< vector<string> > constraintParamNames;
 
   // Get constraint object
-  if (constraintsList->INVALID_TEMPLATE_QUALIFIER
+  if ((*constraintsList).INVALID_TEMPLATE_QUALIFIER
       isParameterRcp<LOCA::MultiContinuation::ConstraintInterface>("Constraint Object"))
-    constraints = constraintsList->INVALID_TEMPLATE_QUALIFIER
+    constraints = (*constraintsList).INVALID_TEMPLATE_QUALIFIER
       getRcpParameter<LOCA::MultiContinuation::ConstraintInterface>("Constraint Object");
   else
     globalData->locaErrorCheck->throwError(methodName,
 	  "\"Constraint Object\" parameter is not of type Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>!");
 
   // Get parameter names for constraints
-  if (constraintsList->INVALID_TEMPLATE_QUALIFIER
+  if ((*constraintsList).INVALID_TEMPLATE_QUALIFIER
       isParameterRcp< vector<string> > ("Constraint Parameter Names"))
-    constraintParamNames = constraintsList->INVALID_TEMPLATE_QUALIFIER
+    constraintParamNames = (*constraintsList).INVALID_TEMPLATE_QUALIFIER
       getRcpParameter< vector<string> > ("Constraint Parameter Names");
   else
     globalData->locaErrorCheck->throwError(methodName,

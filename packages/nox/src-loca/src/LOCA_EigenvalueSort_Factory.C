@@ -100,9 +100,9 @@ LOCA::EigenvalueSort::Factory::create(
     string userDefinedName = 
       eigenParams->getParameter("User-Defined Sorting Method Name",
 				"???");
-    if (eigenParams->INVALID_TEMPLATE_QUALIFIER
+    if ((*eigenParams).INVALID_TEMPLATE_QUALIFIER
 	  isParameterRcp<LOCA::EigenvalueSort::AbstractStrategy>(userDefinedName))
-      strategy = eigenParams->INVALID_TEMPLATE_QUALIFIER
+      strategy = (*eigenParams).INVALID_TEMPLATE_QUALIFIER
 	getRcpParameter<LOCA::EigenvalueSort::AbstractStrategy>(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
