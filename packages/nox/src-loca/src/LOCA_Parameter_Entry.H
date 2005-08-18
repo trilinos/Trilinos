@@ -161,10 +161,10 @@ namespace LOCA {
 	obj(object), obj_val_ptr(object_val_ptr) {}
   
       //! Destructor
-      ~DefaultFunctor() {}
+      virtual ~DefaultFunctor() {}
 
       //! Set parameter using object and data member pointer
-      void set(const ValueType& value) { obj.*obj_val_ptr = value; }
+      virtual void set(const ValueType& value) { obj.*obj_val_ptr = value; }
 
        //! Get parameter value this object represents
       virtual ValueType get() const { return obj.*obj_val_ptr; }
