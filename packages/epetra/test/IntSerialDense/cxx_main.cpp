@@ -467,12 +467,11 @@ int matrixExceptions(bool verbose, bool debug) {
 	EPETRA_TEST_ERR(!caught, returnierr);
 
 	// invalid dimension to user-data ctr (3 cases)
+     int* rand2 = getRandArray(2);
 	try {
 		caught = false;
 		if(verbose) cout << "\nChecking Epetra_IntSerialDenseMatrix(Copy, int*, -1, 2, 2) - invalid lda";
-		int* rand2 = getRandArray(2);
 		matrix = new Epetra_IntSerialDenseMatrix(Copy, rand2, -1, 2, 2);
-		delete[] rand2;
 	}
 	catch(int error) {
 		caught = true;
@@ -484,9 +483,7 @@ int matrixExceptions(bool verbose, bool debug) {
 	try {
 		caught = false;
 		if(verbose) cout << "\nChecking Epetra_IntSerialDenseMatrix(Copy, int*, 3, -2, 3) - invalid rows";
-		int* rand2 = getRandArray(2);
 		matrix = new Epetra_IntSerialDenseMatrix(Copy, rand2, 3, -2, 3);
-		delete[] rand2;
 	}
 	catch(int error) {
 		caught = true;
@@ -498,9 +495,7 @@ int matrixExceptions(bool verbose, bool debug) {
 	try {
 		caught = false;
 		if(verbose) cout << "\nChecking Epetra_IntSerialDenseMatrix(Copy, int*, 4, 4, -4) - invalid cols";
-		int* rand2 = getRandArray(2);
 		matrix = new Epetra_IntSerialDenseMatrix(Copy, rand2, -4, 4, -4);
-		delete[] rand2;
 	}
 	catch(int error) {
 		caught = true;
@@ -509,6 +504,7 @@ int matrixExceptions(bool verbose, bool debug) {
 			if(verbose) cout << "Checked OK." << endl;
 	}
 	EPETRA_TEST_ERR(!caught, returnierr);
+     delete [] rand2;
 	
 	// null pointer to user-data ctr
 	try {
@@ -633,6 +629,7 @@ int matrixExceptions(bool verbose, bool debug) {
 			if(verbose) cout << "Checked OK." << endl;
 	}
 	EPETRA_TEST_ERR(!caught, returnierr);
+     delete [] rand16;
 #endif // end of HAVE_EPETRA_ARRAY_BOUNDS_CHECK conditional
 	
 	// ISDM = ISDV
@@ -720,6 +717,8 @@ int matrixAssignment(bool verbose, bool debug) {
 		EPETRA_TEST_ERR((lhs.A() != origA) || (lhs.LDA() != origLDA), ierr);
 		EPETRA_TEST_ERR(!identicalSignatures(rhs,lhs,false), ierr);
 		EPETRA_TEST_ERR(!seperateData(rhs,lhs), ierr);
+     delete [] rand1;
+     delete [] rand2;
 	}
 	returnierr += ierr;
 	if(ierr == 0)
@@ -1174,6 +1173,8 @@ int vectorAssignment(bool verbose, bool debug) {
 		EPETRA_TEST_ERR((lhs.A() != origA) || (lhs.LDA() != origLDA), ierr);
 		EPETRA_TEST_ERR(!identicalSignatures(rhs,lhs,false), ierr);
 		EPETRA_TEST_ERR(!seperateData(rhs,lhs), ierr);
+		delete[] rand1;
+		delete[] rand2;
 	}
 	returnierr += ierr;
 	if(ierr == 0)
@@ -1324,12 +1325,11 @@ int vectorExceptions(bool verbose, bool debug) {
 	}
 	EPETRA_TEST_ERR(!caught, returnierr);
 
+     int* rand2 = getRandArray(2);
 	try { // invalid dimension to user-data ctr
 		caught = false;
 		if(verbose) cout << "\nChecking Epetra_IntSerialDenseVector(Copy, int*, -3)";
-		int* rand2 = getRandArray(2);
 		vector = new Epetra_IntSerialDenseVector(Copy, rand2, -3);
-		delete[] rand2;
 	}
 	catch(int error) {
 		caught = true;
@@ -1338,6 +1338,7 @@ int vectorExceptions(bool verbose, bool debug) {
 			if(verbose) cout << "Checked OK." << endl;
 	}
 	EPETRA_TEST_ERR(!caught, returnierr);
+     delete[] rand2;
 
 	try { // null pointer to user-data ctr
 		caught = false;
@@ -1423,6 +1424,7 @@ int vectorExceptions(bool verbose, bool debug) {
 			if(verbose) cout << "Checked OK." << endl;
 	}
 	EPETRA_TEST_ERR(!caught, returnierr);
+	delete[] rand17;
 #endif // end of HAVE_EPETRA_ARRAY_BOUNDS_CHECK conditional
 
 	// we don't need to check for ISDV = ISDM, as that is a compile-time error

@@ -738,7 +738,7 @@ int Epetra_CrsGraph::ComputeGlobalConstants() {
 
 void epetra_shellsort(int* list, int length)
 {
-  int i, j, j2, temp;
+  int i, j, j2, temp, istep;
   unsigned step;
 
   step = 3;
@@ -746,15 +746,16 @@ void epetra_shellsort(int* list, int length)
   {
     for (i=step; i < length; i++)
     {
+      istep = step;
       j = i;
-      j2 = j-step;
+      j2 = j-istep;
       temp = list[i];
       if (list[j2] > temp) {
-        while ((j >= step) && (list[j2] > temp))
+        while ((j >= istep) && (list[j2] > temp))
         {
           list[j] = list[j2];
           j = j2;
-          j2 -= step;
+          j2 -= istep;
         }
         list[j] = temp;
       }
@@ -870,7 +871,7 @@ void epetra_crsgraph_compress_out_duplicates(int len, int* list, int& newlen)
 //==============================================================================
 int Epetra_CrsGraph::RemoveRedundantIndices()
 {
-  int i, j, k, ig, jg, jl, jl_0, jl_n, insertPoint;
+  int i, ig, jl, jl_0, jl_n, insertPoint;
 
   if(NoRedundancies()) 
     return(0);
@@ -908,7 +909,6 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
   const Epetra_BlockMap& colMap = ColMap();
 
   for(i = 0; i < numMyBlockRows; i++) {
-    bool diagfound = false;
     int NumIndices = numIndicesPerRow[i];
     if(NumIndices > 0) {
       ig = rowMap.GID(i);
@@ -1199,7 +1199,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
 	for(j = 0; j < NumIndices; j++) 
 	  tmp[j] = ColIndices[j];
       }
-      if (!(CrsGraphData_->StaticProfile_) && NumIndices>0) delete [] ColIndices;
+      if (!(CrsGraphData_->StaticProfile_) && ColIndices!=0) delete [] ColIndices;
       CrsGraphData_->Indices_[i] = 0;
       tmp += NumIndices; 	// tmp points to the offset in All_Indices_ where Indices_[i] starts.
     }
@@ -1208,6 +1208,8 @@ int Epetra_CrsGraph::OptimizeStorage() {
     //if contiguous, set All_Indices_ from CrsGraphData_->Indices_[0].
     if (numMyBlockRows > 0 && !(CrsGraphData_->StaticProfile_)) {
       int errorcode = CrsGraphData_->All_Indices_.Size(CrsGraphData_->NumMyNonzeros_);
+      if(errorcode != 0) 
+	throw ReportError("Error with All_Indices_ allocation.", -99);
       int* all_indices_values = CrsGraphData_->All_Indices_.Values();
       int* indices_values = CrsGraphData_->Indices_[0];
       for(int ii=0; ii<CrsGraphData_->NumMyNonzeros_; ++ii) {

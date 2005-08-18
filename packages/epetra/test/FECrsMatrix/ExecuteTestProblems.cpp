@@ -785,6 +785,8 @@ int rectangular(const Epetra_Comm& Comm, bool verbose)
 
   EPETRA_CHK_ERR( A.InsertGlobalValues(numGlobalRows, globalRows,
                                        numcols, cols, coefs));
+  delete [] coefs;
+  delete [] globalRows;
 
   //Since the matrix is rectangular, we need to call GlobalAssemble with
   //a domain-map and a range-map. Otherwise, GlobalAssemble has no way of

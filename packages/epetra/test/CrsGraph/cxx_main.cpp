@@ -365,13 +365,13 @@ int checkSharedOwnership(Epetra_Comm& Comm, bool verbose) {
 	int ierr = 0;
 
 	// initialize Map
-	const int NumGlobalElements = 10;
+	const int NumMyElements = 10;
 	const int IndexBase = 0;
-	Epetra_Map Map1(NumGlobalElements, IndexBase, Comm);
+	Epetra_Map Map1(-1, NumMyElements, IndexBase, Comm);
 	// initialize Graphs
 	const int NumIndicesPerRow = 5;
-	Epetra_CrsGraph SoleOwner(Copy, Map1, NumIndicesPerRow);
-	Epetra_CrsGraph SharedOrig(Copy, Map1, NumIndicesPerRow);
+	Epetra_CrsGraph * SoleOwner = new Epetra_CrsGraph(Copy, Map1, Map1, NumIndicesPerRow);
+	Epetra_CrsGraph SharedOrig(Copy, Map1, Map1, NumIndicesPerRow);
 	Epetra_CrsGraph SharedOwner(SharedOrig);
 	// arrays used by Insert & Remove
 	Epetra_IntSerialDenseVector array1(2);
@@ -385,7 +385,7 @@ int checkSharedOwnership(Epetra_Comm& Comm, bool verbose) {
 
 	// InsertMyIndices
 	if(verbose) cout << "InsertMyIndices..." << endl;
-	soleOutput = SoleOwner.InsertMyIndices(0, 2, array1.Values());
+	soleOutput = SoleOwner->InsertMyIndices(0, 2, array1.Values());
 	sharedOutput = SharedOwner.InsertMyIndices(0, 2, array1.Values());
 	EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
 	EPETRA_TEST_ERR(!(sharedOutput == 1), ierr);
@@ -411,7 +411,7 @@ int checkSharedOwnership(Epetra_Comm& Comm, bool verbose) {
 
 	// FillComplete (#1)
 	if(verbose) cout << "FillComplete..." << endl;
-	soleOutput = SoleOwner.FillComplete();
+	soleOutput = SoleOwner->FillComplete();
 	sharedOutput = SharedOwner.FillComplete();
 	EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
 	EPETRA_TEST_ERR(!(sharedOutput == 1), ierr);
@@ -419,7 +419,7 @@ int checkSharedOwnership(Epetra_Comm& Comm, bool verbose) {
 
 	// OptimizeStorage
 	if(verbose) cout << "OptimizeStorage..." << endl;
-	soleOutput = SoleOwner.OptimizeStorage();
+	soleOutput = SoleOwner->OptimizeStorage();
 	sharedOutput = SharedOwner.OptimizeStorage();
 	EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
 	EPETRA_TEST_ERR(!(sharedOutput == 0), ierr);
@@ -427,7 +427,7 @@ int checkSharedOwnership(Epetra_Comm& Comm, bool verbose) {
 
 	// RemoveMyIndices (#1)
 	if(verbose) cout << "RemoveMyIndices..." << endl;
-	soleOutput = SoleOwner.RemoveMyIndices(0, 1, &array1[1]);
+	soleOutput = SoleOwner->RemoveMyIndices(0, 1, &array1[1]);
 	sharedOutput = SharedOwner.RemoveMyIndices(0, 1, &array1[1]);
 	EPETRA_TEST_ERR(!(soleOutput == -1), ierr);
 	EPETRA_TEST_ERR(!(sharedOutput == -1), ierr);
@@ -435,7 +435,7 @@ int checkSharedOwnership(Epetra_Comm& Comm, bool verbose) {
 
 	// RemoveMyIndices (#2)
 	if(verbose) cout << "RemoveMyIndices(#2)..." << endl;
-	soleOutput = SoleOwner.RemoveMyIndices(0);
+	soleOutput = SoleOwner->RemoveMyIndices(0);
 	sharedOutput = SharedOwner.RemoveMyIndices(0);
 	EPETRA_TEST_ERR(!(soleOutput == -1), ierr);
 	EPETRA_TEST_ERR(!(sharedOutput == -1), ierr);
@@ -443,7 +443,7 @@ int checkSharedOwnership(Epetra_Comm& Comm, bool verbose) {
 
 	// FillComplete (#2)
 	if(verbose) cout << "FillComplete(#2)..." << endl;
-	soleOutput = SoleOwner.FillComplete(SoleOwner.DomainMap(), SoleOwner.RangeMap());
+	soleOutput = SoleOwner->FillComplete(SoleOwner->DomainMap(), SoleOwner->RangeMap());
 	sharedOutput = SharedOwner.FillComplete(SharedOwner.DomainMap(), SharedOwner.RangeMap());
 	EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
 	EPETRA_TEST_ERR(!(sharedOutput == 1), ierr);
@@ -486,7 +486,7 @@ int checkSharedOwnership(Epetra_Comm& Comm, bool verbose) {
 
 	// *PROT* InsertIndices
 	// *PROT* MakeIndicesLocal
-
+	delete SoleOwner;
 	return(ierr);
 
 }

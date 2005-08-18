@@ -161,7 +161,7 @@
 *     Specifications for local variables
 *     ----------------------------------
       integer i, j, k, jbgn, jend, incx, incy
-      integer iy, ix
+      integer iy
       real*8 vali, xj1, xj2, xj3, xj4, xj5
 
 *

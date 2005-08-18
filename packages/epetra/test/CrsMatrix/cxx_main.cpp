@@ -458,6 +458,8 @@ int main(int argc, char *argv[])
 	forierr += !(A1.InsertGlobalValues(MyGlobalElements1[i], 1, &two1, MyGlobalElements1+i)>0); // Put in the diagonal entry
       }
     EPETRA_TEST_ERR(forierr,ierr);
+    delete [] Indices1;
+    delete [] Values1;
     
     // Finish up
     EPETRA_TEST_ERR(!(A1.FillComplete()==0),ierr);
@@ -880,14 +882,15 @@ cout << A2;
   else
     if (verbose) cout << endl << "InvRowSums tests PASSED" << endl << endl;
 
-delete [] Values2;
-delete [] Indices2;
-delete [] myGlobalElements;
-delete [] Values3;
-delete [] Indices3;
-delete [] Values3cm;
-delete [] Indices3cm;
-
+  delete [] Values2;
+  delete [] Indices2;
+  delete [] myGlobalElements;
+  delete [] Values3;
+  delete [] Indices3;
+  delete [] Values3cm;
+  delete [] Indices3cm;
+  delete [] RangeLeftScaleValues;
+  delete [] RowLeftScaleValues;
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif

@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  int i, ierr = 0, returnierr = 0;
+  int returnierr = 0;
 
 #ifdef EPETRA_MPI
 
@@ -67,7 +67,6 @@ int main(int argc, char *argv[]) {
     Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   }
   int MyPID = Comm.MyPID();
-  int NumProcs = Comm.NumProc();
 
   int verbose_int = verbose ? 1 : 0;
   Comm.Broadcast(&verbose_int, 1, 0);

@@ -70,22 +70,18 @@ void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
 
 int main(int argc, char *argv[]) {
 
-  int ierr = 0, i, forierr = 0;
-  bool debug = false;
+  int ierr = 0, i;
 
 #ifdef EPETRA_MPI
 
   // Initialize MPI
 
   MPI_Init(&argc,&argv);
-  int rank; // My process ID
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
 
 #else
 
-  int rank = 0;
   Epetra_SerialComm Comm;
 
 #endif
@@ -101,8 +97,8 @@ int main(int argc, char *argv[]) {
 
 
   //  char tmp;
-  //  if (rank==0) cout << "Press any key to continue..."<< endl;
-  //  if (rank==0) cin >> tmp;
+  //  if (Comm.MyPID()==0) cout << "Press any key to continue..."<< endl;
+  //  if (Comm.MyPID()==0) cin >> tmp;
   //  Comm.Barrier();
 
   Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
@@ -113,7 +109,7 @@ int main(int argc, char *argv[]) {
     cout << Epetra_Version() << endl << endl;
 
   int nx = 128;
-  int ny = Comm.NumProc()*nx; // Scale y grid with number of processors
+  int ny = NumProc*nx; // Scale y grid with number of processors
 
   // Create funky stencil to make sure the matrix is non-symmetric (transpose non-trivial):
 
@@ -376,9 +372,6 @@ void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
   A = new Epetra_VbrMatrix(Copy, *map, 0); // Construct matrix
 
   int * indices = new int[npoints];
-  double * values = new double[npoints];
-
-  double dnpoints = (double) npoints;
 
   // This section of code creates a vector of random values that will be used to create
   // light-weight dense matrices to pass into the VbrMatrix construction process.

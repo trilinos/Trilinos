@@ -90,13 +90,13 @@ int main(int argc, char *argv[]) {
 
   if (verbose) 
     cout << "*******************************************************************************************" << endl
-				 << "        Testing Exceptions (Expect error messages if EPETRA_NO_ERROR_REPORTS is not defined" << endl
-				 << "*******************************************************************************************" << endl
-				 << endl << endl;
+	 << "        Testing Exceptions (Expect error messages if EPETRA_NO_ERROR_REPORTS is not defined" << endl
+	 << "*******************************************************************************************" << endl
+	 << endl << endl;
 
   try {
     if (verbose) cout << "Checking Epetra_BlockMap(-2, ElementSize, IndexBase, Comm)" << endl;
-    Map = new Epetra_BlockMap(-2, ElementSize, IndexBase, Comm);
+    Epetra_BlockMap Map(-2, ElementSize, IndexBase, Comm);
   }
   catch (int Error) {
     if (Error != -1) {
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
 
   try {
     if (verbose) cout << "Checking Epetra_BlockMap(2, 3, ElementSize, IndexBase, Comm)" << endl;
-    Map = new Epetra_BlockMap(2, 3, ElementSize, IndexBase, Comm);
+    Epetra_BlockMap Map(2, 3, ElementSize, IndexBase, Comm);
   }
   catch (int Error) {
     if (Error != -4) {

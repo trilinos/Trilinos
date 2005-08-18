@@ -196,7 +196,7 @@
 *     Specifications for arguments
 *     ----------------------------
       implicit none
-      integer iupper, itrans, udiag, nodiag, m, n
+      integer iupper, udiag, nodiag, m, n
       integer ldx, ldy, xysame, nrhs
       integer indx(0:*), pntr(0:*)
       real*8 val(0:*), x(0:*), y(0:*)
@@ -456,7 +456,7 @@
 *     ----------------------------------
 *     Specifications for local variables
 *     ----------------------------------
-      integer i, j, k, ibgn, iend, incx, incy
+      integer i, j, k, ibgn, iend, incy
       integer ibgnoff, iendoff
       integer jstrt, jstop, jinc
       integer iy, ix

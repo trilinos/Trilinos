@@ -490,7 +490,7 @@ class Epetra_BlockMap: public Epetra_Object {
   
   void GlobalToLocalSetup();
   bool IsDistributedGlobal(int NumGlobalElements, int NumMyElements) const;
-  void CheckValidNGE(int NumGlobalElements) const;
+  void CheckValidNGE(int NumGlobalElements);
   void EndOfConstructorOps();
 	void CleanupData();
   

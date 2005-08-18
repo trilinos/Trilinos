@@ -40,22 +40,24 @@
 // Epetra_BlockMap constructor for a Epetra-defined uniform linear distribution of constant size elements.
 Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm)
   : Epetra_Object("Epetra::BlockMap"),
-    BlockMapData_(new Epetra_BlockMapData(NumGlobalElements, ElementSize, IndexBase, Comm))
+    BlockMapData_(0)
 {
-  BlockMapData_->ConstantElementSize_ = true;
-  BlockMapData_->LinearMap_ = true;
   
   // Each processor gets roughly numGlobalPoints/p points
   // This routine automatically defines a linear partitioning of a
   // map with numGlobalPoints across the processors
   // specified in the given Epetra_Comm
   
-  if (BlockMapData_->NumGlobalElements_ < 0) 
-    throw ReportError("NumGlobalElements = " + toString(BlockMapData_->NumGlobalElements_) + ".  Should be >= 0.", -1);
-  if (BlockMapData_->ElementSize_ <= 0) 
-    throw ReportError("ElementSize = " + toString(BlockMapData_->ElementSize_) + ".  Should be > 0.", -2);
+  if (NumGlobalElements < 0) 
+    throw ReportError("NumGlobalElements = " + toString(NumGlobalElements) + ".  Should be >= 0.", -1);
+  if (ElementSize <= 0) 
+    throw ReportError("ElementSize = " + toString(ElementSize) + ".  Should be > 0.", -2);
   
+  BlockMapData_ = new Epetra_BlockMapData(NumGlobalElements, ElementSize, IndexBase, Comm);
   int NumProc = Comm.NumProc();
+  BlockMapData_->ConstantElementSize_ = true;
+  BlockMapData_->LinearMap_ = true;
+
   int MyPID = Comm.MyPID();
   BlockMapData_->NumMyElements_ = BlockMapData_->NumGlobalElements_ / NumProc;
   int remainder = BlockMapData_->NumGlobalElements_ % NumProc;
@@ -88,8 +90,16 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int ElementSize, int Ind
 Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, 
 				 int ElementSize, int IndexBase, const Epetra_Comm& Comm)
   : Epetra_Object("Epetra::BlockMap"),
-    BlockMapData_(new Epetra_BlockMapData(NumGlobalElements, ElementSize, IndexBase, Comm))
+    BlockMapData_(0)
 {
+  if (NumGlobalElements < -1) 
+    throw ReportError("NumGlobalElements = " + toString(NumGlobalElements) + ".  Should be >= -1.", -1);
+  if (NumMyElements < 0) 
+    throw ReportError("NumMyElements = " + toString(NumMyElements) + ".  Should be >= 0.", -2);
+  if (ElementSize <= 0) 
+    throw ReportError("ElementSize = " + toString(ElementSize) + ". Should be > 0.", -3);
+
+  BlockMapData_ = new Epetra_BlockMapData(NumGlobalElements, ElementSize, IndexBase, Comm);
   BlockMapData_->NumMyElements_ = NumMyElements;
   BlockMapData_->MinMyElementSize_ = BlockMapData_->ElementSize_;
   BlockMapData_->MaxMyElementSize_ = BlockMapData_->ElementSize_;
@@ -100,12 +110,6 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
 
   // Each processor gets NumMyElements points
   
-  if (BlockMapData_->NumGlobalElements_ < -1) 
-    throw ReportError("NumGlobalElements = " + toString(BlockMapData_->NumGlobalElements_) + ".  Should be >= -1.", -1);
-  if (BlockMapData_->NumMyElements_ < 0) 
-    throw ReportError("NumMyElements = " + toString(BlockMapData_->NumMyElements_) + ".  Should be >= 0.", -2);
-  if (BlockMapData_->ElementSize_ <= 0) 
-    throw ReportError("ElementSize = " + toString(BlockMapData_->ElementSize_) + ". Should be > 0.", -3);
 
   // Get processor information
 
@@ -156,8 +160,27 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
 Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int * MyGlobalElements, 
 				 int ElementSize, int IndexBase, const Epetra_Comm& Comm)
   : Epetra_Object("Epetra::BlockMap"),
-    BlockMapData_(new Epetra_BlockMapData(NumGlobalElements, ElementSize, IndexBase, Comm))
+    BlockMapData_(0)
 {
+  int i;
+  // Each processor gets NumMyElements points
+
+  if (NumGlobalElements < -1) 
+    throw ReportError("NumGlobalElements = " + toString(NumGlobalElements) + ".  Should be >= -1.", -1);
+  if (NumMyElements < 0) 
+    throw ReportError("NumMyElements = " + toString(NumMyElements) + ".  Should be >= 0.", -2);
+  if (ElementSize <= 0) 
+    throw ReportError("ElementSize = " + toString(ElementSize) + ". Should be > 0.", -3);
+
+  // Allocate storage for global index list information
+
+  BlockMapData_ = new Epetra_BlockMapData(NumGlobalElements, ElementSize, IndexBase, Comm);
+  if (NumMyElements > 0) {
+    int errorcode = BlockMapData_->MyGlobalElements_.Size(NumMyElements);
+    if(errorcode != 0)
+      throw ReportError("Error with MyGlobalElements allocation.", -99);
+  }
+
   BlockMapData_->NumMyElements_ = NumMyElements;
   BlockMapData_->MinMyElementSize_ = BlockMapData_->ElementSize_;
   BlockMapData_->MaxMyElementSize_ = BlockMapData_->ElementSize_;
@@ -165,25 +188,6 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
   BlockMapData_->MaxElementSize_ = BlockMapData_->ElementSize_;
   BlockMapData_->ConstantElementSize_ = true;
   BlockMapData_->LinearMap_ = false;
-
-  int i;
-  // Each processor gets NumMyElements points
-
-  if (BlockMapData_->NumGlobalElements_ < -1) 
-    throw ReportError("NumGlobalElements = " + toString(BlockMapData_->NumGlobalElements_) + ".  Should be >= -1.", -1);
-  if (BlockMapData_->NumMyElements_ < 0) 
-    throw ReportError("NumMyElements = " + toString(BlockMapData_->NumMyElements_) + ".  Should be >= 0.", -2);
-  if (BlockMapData_->ElementSize_ <= 0) 
-    throw ReportError("ElementSize = " + toString(BlockMapData_->ElementSize_) + ". Should be > 0.", -3);
-
-  // Allocate storage for global index list information
-
-  if (NumMyElements > 0) {
-    int errorcode = BlockMapData_->MyGlobalElements_.Size(NumMyElements);
-    if(errorcode != 0)
-      throw ReportError("Error with MyGlobalElements allocation.", -99);
-  }
-
   // Get processor information
 
   int NumProc = Comm.NumProc();
@@ -247,23 +251,24 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
 Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int * MyGlobalElements, 
 				 int *ElementSizeList, int IndexBase, const Epetra_Comm& Comm)
   : Epetra_Object("Epetra::BlockMap"),
-    BlockMapData_(new Epetra_BlockMapData(NumGlobalElements, 0, IndexBase, Comm))
+    BlockMapData_(0)
 {
-  BlockMapData_->NumMyElements_ = NumMyElements;
-  BlockMapData_->ConstantElementSize_ = false;
-  BlockMapData_->LinearMap_ = false;
 
   int i;
   // Each processor gets NumMyElements points
 
-  if (BlockMapData_->NumGlobalElements_ < -1) 
-    throw ReportError("NumGlobalElements = " + toString(BlockMapData_->NumGlobalElements_) + ".  Should be >= -1.", -1);
-  if (BlockMapData_->NumMyElements_ < 0) 
-    throw ReportError("NumMyElements = " + toString(BlockMapData_->NumMyElements_) + ".  Should be >= 0.", -2);
-  for (i = 0; i < BlockMapData_->NumMyElements_; i++)
+  if (NumGlobalElements < -1) 
+    throw ReportError("NumGlobalElements = " + toString(NumGlobalElements) + ".  Should be >= -1.", -1);
+  if (NumMyElements < 0) 
+    throw ReportError("NumMyElements = " + toString(NumMyElements) + ".  Should be >= 0.", -2);
+  for (i = 0; i < NumMyElements; i++)
     if (ElementSizeList[i] <= 0) 
       throw ReportError("ElementSizeList["+toString(i)+"] = " + toString(ElementSizeList[i]) + ". Should be > 0.", -3);
   
+  BlockMapData_ = new Epetra_BlockMapData(NumGlobalElements, 0, IndexBase, Comm);
+  BlockMapData_->NumMyElements_ = NumMyElements;
+  BlockMapData_->ConstantElementSize_ = false;
+  BlockMapData_->LinearMap_ = false;
   // Allocate storage for global index list and element size information
 
   if (NumMyElements > 0) {
@@ -778,13 +783,16 @@ bool Epetra_BlockMap::IsDistributedGlobal(int NumGlobalElements, int NumMyElemen
 }
 
 //==============================================================================
-void Epetra_BlockMap::CheckValidNGE(int NumGlobalElements) const {
+void Epetra_BlockMap::CheckValidNGE(int NumGlobalElements) {
   // Check to see if user's value for NumGlobalElements is either -1 
   // (in which case we use our computed value) or matches ours.
-  if ((NumGlobalElements != -1) && (NumGlobalElements != BlockMapData_->NumGlobalElements_))
+  if ((NumGlobalElements != -1) && (NumGlobalElements != BlockMapData_->NumGlobalElements_)) {
+    int BmdNumGlobalElements = BlockMapData_->NumGlobalElements_;
+    CleanupData();
     throw ReportError("Invalid NumGlobalElements.  NumGlobalElements = " + toString(NumGlobalElements) + 
-		      ".  Should equal " + toString(BlockMapData_->NumGlobalElements_) + 
+		      ".  Should equal " + toString(BmdNumGlobalElements) + 
 		      ", or be set to -1 to compute automatically", -4);
+  }
 }
 
 //==============================================================================
