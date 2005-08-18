@@ -80,9 +80,9 @@ LOCA::TurningPoint::MooreSpence::SolverFactory::create(
     // Get name of user-defined strategy
     string userDefinedName = solverParams->getParameter("User-Defined Name",
 							"???");
-    if (solverParams->
+    if (solverParams->INVALID_TEMPLATE_QUALIFIER
 	  isParameterRcp<LOCA::TurningPoint::MooreSpence::SolverStrategy>(userDefinedName))
-      strategy = solverParams->
+      strategy = solverParams->INVALID_TEMPLATE_QUALIFIER
 	getRcpParameter<LOCA::TurningPoint::MooreSpence::SolverStrategy>(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(

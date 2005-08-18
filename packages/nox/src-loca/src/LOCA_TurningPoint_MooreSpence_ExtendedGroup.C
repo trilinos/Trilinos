@@ -86,16 +86,16 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
 			   "\"Length Normalization Vector\" is not set!");
   }
   Teuchos::RefCountPtr<NOX::Abstract::Vector> lenVecPtr = 
-    turningPointParams->getRcpParameter<NOX::Abstract::Vector>(
-						"Length Normalization Vector");
+    turningPointParams->INVALID_TEMPLATE_QUALIFIER 
+      getRcpParameter<NOX::Abstract::Vector>("Length Normalization Vector");
 
   if (!turningPointParams->isParameter("Initial Null Vector")) {
     globalData->locaErrorCheck->throwError(func,
 				 "\"Initial Null Vector\" is not set!");
   }
   Teuchos::RefCountPtr<NOX::Abstract::Vector> nullVecPtr = 
-    turningPointParams->getRcpParameter<NOX::Abstract::Vector>(
-						       "Initial Null Vector");
+    turningPointParams->INVALID_TEMPLATE_QUALIFIER 
+      getRcpParameter<NOX::Abstract::Vector>("Initial Null Vector");
 
   bool perturbSoln = turningPointParams->getParameter(
 					       "Perturb Initial Solution", 

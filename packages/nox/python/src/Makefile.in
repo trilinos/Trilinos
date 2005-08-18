@@ -100,7 +100,9 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/__init__.py.in $(top_srcdir)/config/swig.am
 subdir = python/src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
+am__aclocal_m4_deps =  \
+	$(top_srcdir)/config/ac_cxx_invalid_template_qualifier.m4 \
+	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
 	$(top_srcdir)/config/ac_libtoolize_flags.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \

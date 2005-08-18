@@ -75,9 +75,9 @@ LOCA::Eigensolver::Factory::create(
     // Get name of user-defined strategy
     string userDefinedName = eigenParams->getParameter("User-Defined Name",
 						       "???");
-    if (eigenParams->
+    if (eigenParams->INVALID_TEMPLATE_QUALIFIER
 	  isParameterRcp<LOCA::Eigensolver::AbstractStrategy>(userDefinedName))
-      strategy = eigenParams->
+      strategy = eigenParams->INVALID_TEMPLATE_QUALIFIER
 	getRcpParameter<LOCA::Eigensolver::AbstractStrategy>(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(

@@ -93,7 +93,7 @@ namespace LOCA {
     
     public:
       
-      //! Constructor.  Derived class constructors should mirror reset().
+      //! Constructor.
       Factory() {}
 
       //! Destructor

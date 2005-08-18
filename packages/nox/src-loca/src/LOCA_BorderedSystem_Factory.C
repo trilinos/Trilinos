@@ -69,9 +69,9 @@ LOCA::BorderedSystem::Factory::create(
     // Get name of user-defined strategy
     string userDefinedName = solverParams->getParameter("User-Defined Name",
 							"???");
-    if (solverParams->
-	  isParameterRcp<LOCA::BorderedSystem::AbstractStrategy>(userDefinedName))
-      strategy = solverParams->
+    if (solverParams->INVALID_TEMPLATE_QUALIFIER
+	isParameterRcp<LOCA::BorderedSystem::AbstractStrategy>(userDefinedName))
+      strategy = solverParams->INVALID_TEMPLATE_QUALIFIER
 	getRcpParameter<LOCA::BorderedSystem::AbstractStrategy>(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(

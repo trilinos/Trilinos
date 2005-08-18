@@ -86,9 +86,9 @@ LOCA::MultiContinuation::Factory::create(
     // Get name of user-defined strategy
     string userDefinedName = stepperParams->getParameter("User-Defined Name",
 							 "???");
-    if (stepperParams->
+    if (stepperParams->INVALID_TEMPLATE_QUALIFIER
 	  isParameterRcp<LOCA::MultiContinuation::AbstractStrategy>(userDefinedName))
-      strategy = stepperParams->
+      strategy = stepperParams->INVALID_TEMPLATE_QUALIFIER
 	getRcpParameter<LOCA::MultiContinuation::AbstractStrategy>(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(

@@ -88,9 +88,9 @@ LOCA::Bifurcation::Factory::create(
     string userDefinedName = bifurcationParams->getParameter(
 							 "User-Defined Name",
 							 "???");
-    if (bifurcationParams->
+    if (bifurcationParams->INVALID_TEMPLATE_QUALIFIER
 	  isParameterRcp<LOCA::MultiContinuation::AbstractGroup>(userDefinedName))
-      strategy = bifurcationParams->
+      strategy = bifurcationParams->INVALID_TEMPLATE_QUALIFIER
 	getRcpParameter<LOCA::MultiContinuation::AbstractGroup>(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(

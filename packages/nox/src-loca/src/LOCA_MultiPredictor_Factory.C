@@ -97,9 +97,9 @@ LOCA::MultiPredictor::Factory::create(
     // Get name of user-defined strategy
     string userDefinedName = predictorParams->getParameter("User-Defined Name",
 							   "???");
-    if (predictorParams->
+    if (predictorParams->INVALID_TEMPLATE_QUALIFIER
 	  isParameterRcp<LOCA::MultiPredictor::AbstractStrategy>(userDefinedName))
-      strategy = predictorParams->
+      strategy = predictorParams->INVALID_TEMPLATE_QUALIFIER
 	getRcpParameter<LOCA::MultiPredictor::AbstractStrategy>(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(

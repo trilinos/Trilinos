@@ -272,6 +272,7 @@ AC_COMPILE_IFELSE(
 # ------------------------------------------------------------------------
 AC_C_CONST
 AC_C_INLINE
+AC_CXX_INVALID_TEMPLATE_QUALIFIER
 
 # ------------------------------------------------------------------------
 # Should we enable library checks?
