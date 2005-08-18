@@ -488,7 +488,7 @@ bool MRTR::Manager::Mortar_Integrate()
   // call FillComplete() on M_ and D_ 
   D_->FillComplete(*saddlemap_,*saddlemap_);
   M_->FillComplete(*saddlemap_,*saddlemap_);
-
+  
   return true;
 }
 

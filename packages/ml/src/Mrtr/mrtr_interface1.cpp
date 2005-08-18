@@ -452,7 +452,7 @@ bool MRTR::Interface::Project()
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+      cout << "***ERR*** MRTR::Interface::Project:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -469,7 +469,7 @@ bool MRTR::Interface::Project()
     for (curr=rseg_[side].begin(); curr!=rseg_[side].end(); ++curr)
       if (curr->second->Nfunctions() < 1)
       {
-        cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+        cout << "***ERR*** MRTR::Interface::Project:\n"
              << "***ERR*** interface " << Id_ << ", mortar side\n"
              << "***ERR*** segment " << curr->second->Id() << " needs at least 1 function set\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -498,7 +498,7 @@ bool MRTR::Interface::Project()
   }
   else
   {
-    cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+    cout << "***ERR*** MRTR::Interface::Project:\n"
          << "***ERR*** interface " << Id() << "\n"
          << "***ERR*** currently only projection type MRTR::Interface::proj_continousnormalfield\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";

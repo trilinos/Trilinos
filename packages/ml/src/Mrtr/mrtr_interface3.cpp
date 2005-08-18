@@ -257,7 +257,8 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
   Epetra_SerialDenseMatrix* Mdense = 
                           integrator.Integrate(sseg,sxia,sxib,mseg,mxia,mxib);
   
-   // put results Mdense into Epetra_CrsMatrix M
+   // put results -Mdense into Epetra_CrsMatrix M
+   // note the sign change for M here
   // loop nodes on slave segment
   for (int slave=0; slave<sseg.Nnode(); ++slave)
   {
@@ -273,7 +274,7 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
     for (int master=0; master<mseg.Nnode(); ++master)
     {
       // do not add a zero from (*Mdense)(slave,master)
-      double val = (*Mdense)(slave,master);
+      double val = -((*Mdense)(slave,master));
       if (abs(val)<1.e-6) continue;
       
       int mndof = mnodes[master]->Ndof();
