@@ -37,6 +37,10 @@ typedef struct G2L_Hash G2LHash;
 int Zoltan_G2LHash_Create(G2LHash *hash, int size);
 int Zoltan_G2LHash_Destroy(G2LHash *hash);
 int Zoltan_G2LHash_G2L(G2LHash *hash, int gno);
+/*
+  if gno exist it returns lno, if it does not exist,
+  it inserts andr returns newly assigned lno */
+int Zoltan_G2LHash_Insert(G2LHash *hash, int gno);
 #define Zoltan_G2LHash_L2G(hash, lno) ((hash)->nodes[lno].gno)
 
 

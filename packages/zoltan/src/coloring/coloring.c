@@ -1,4 +1,4 @@
-/*****************************************************************************
+ /*****************************************************************************
  * Zoltan Library for Parallel Applications                                  *
  * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * For more info, see the README file in the top-level Zoltan directory.     *  
@@ -29,14 +29,35 @@ extern "C" {
 #include "parmetis_jostle.h"
 #include "all_allo_const.h"
 
+#define COLORTAG     1001
+#define SNTAG        1002
+#define XFORBIDTAG   1003
+#define FORBIDTAG    1004
+#define RECOLORTAG   1005
     
 /* Function prototypes */
-static int ReorderGraph(ZZ *, int, int *, int **, int *, int *, int *, int *, int *);
+static int D1coloring(ZZ *zz, char color_order, char color_method, char comm_pattern, int ss,
+                      int nVtx, G2LHash *hash, int *xadj, int *adj, int *adjproc, int *color);
+static int D2coloring(ZZ *zz, char color_order, char color_method, char comm_pattern, int ss,
+                      int nVtx, G2LHash *hash, int *xadj, int *adj, int *adjproc, int *color);
+
+static int ReorderGraph(ZZ *, int, int, int *, int **, int *,
+                        int *, int *, int *, int *);
 static int PickColor(ZZ *, char, int, int, int *, int *);
-static int InternalColoring(ZZ *zz, int *nColor, int nVtx, int *visit, int * xadj, int *adj, int *color, int *mark, int mark_size,char color_method);
-static int ParallelColoring (ZZ *zz, int nvtx, int *visit, int *xadj, int *adj, int *isbound, int ss, int *nColor, int *color, int **newcolored, int *mark, int gmaxdeg, G2LHash *hash, char color_method, char comm_pattern, int *rreqfrom, int *replies, MPI_Request *sreqs, MPI_Request *rreqs, MPI_Status *stats);
-static int DetectConflicts(ZZ *, int, int *, int *, int *, int *, int *, int *, int *);
-static int D1coloring(ZZ *zz, char color_order, char color_method, char comm_pattern, int ss, int nVtx, G2LHash *hash, int *xadj, int *adj, int *adjproc, int *color);
+static int InternalColoring(ZZ *zz, int distance, int *nColor,
+                            int nVtx, int *visit, int * xadj, int *adj,
+                            int *color, int *mark, int mark_size, char color_method);
+static int D1ParallelColoring (ZZ *zz, int nvtx, int *visit, int *xadj, int *adj,
+                               int *isbound, int ss, int *nColor, int *color,
+                               int **newcolored, int *mark, int gmaxdeg, G2LHash *hash,
+                               char color_method, char comm_pattern, int *rreqfrom,
+                               int *replies, MPI_Request *sreqs, MPI_Request *rreqs,
+                               MPI_Status *stats);
+static int sendNextStepsForbiddenColors(ZZ *zz, G2LHash *hash, int nlvtx, int p, int **srp, int *xadj, int *adj, int *xadjnl, int *adjnl, int *forbsizeS, int **xforbiddenS, int **forbiddenS, int *nColor, int *color, int *mark, int *confChk, int sncnt, int *wset, int *wsize, MPI_Request *sreqsFx, MPI_Request *sreqsF);
+static int waitPtrAndForbiddenColors(ZZ* zz, int rreqcntFx, MPI_Request *rreqsFx, int *rreqfromFx, MPI_Status *stats, int *forbsize, int **xforbidden, int **forbidden, int **xfp, MPI_Request *rreqsF);
+static int D2ParallelColoring (ZZ *zz, int nvtx, int nlvtx, int *visit, int *xadj, int *adj, int *xbadj, int *xadjnl, int *adjnl, int *adjproc, int *isbound, int ss, int *nColor, int *color, int **newcolored, int *mark, int gmaxdeg, G2LHash *hash, int **forbidden, int **xforbidden, int **forbiddenS, int **xforbiddenS, int *forbsize, int *forbsizeS, char color_method, char comm_pattern, int *rreqfromC, int *repliesC, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromF, int *repliesF, MPI_Request *sreqsF, MPI_Request *rreqsF, int *rreqfromFx, int *repliesFx, MPI_Request *sreqsFx, MPI_Request *rreqsFx, MPI_Status *stats, int *confChk, int *ssendsize, int *srecsize, int **ssendbuf, int **srecbuf, int ** ssp, int **srp, int **xfp, int *wset, int *wsize);
+static int D1DetectConflicts(ZZ *, int, int *, int *, int *, int *, int *, int *, int *);
+static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **srecbuf, int **ssendbuf, int *srecsize, int *ssendsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict);
 static int GenPrime(int stop, int *prime_num);
     
 /*****************************************************************************/
@@ -97,6 +118,7 @@ int Zoltan_Color(
   int *adjproc;                     
   int *input_parts;                 /* Initial partitions for objects. */
   int nvtx = num_obj;               /* number of vertices */
+  int gvtx;                         /* number of global vertices */
   idxtype *vwgt, *adjwgt;           /* weights - not used */
   float *ewgts, *float_vwgt;        /* weights - not used */
   int obj_wgt_dim, edge_wgt_dim;    /* weight dimensions - not used */
@@ -128,26 +150,11 @@ int Zoltan_Color(
   Zoltan_Assign_Param_Vals(zz->Params, Color_params, zz->Debug_Level, zz->Proc,
                            zz->Debug_Proc);
 
-  /* Compute Max number of array entries per ID over all processors.
-     This is a sanity-maintaining step; we don't want different
-     processors to have different values for these numbers. */
-  /* comm[0] = zz->Num_GID;
-    comm[1] = zz->Num_LID;
-    MPI_Allreduce(comm, gcomm, 2, MPI_INT, MPI_MAX, zz->Communicator);
-    zz->Num_GID = *num_gid_entries = gcomm[0];
-    zz->Num_LID = *num_lid_entries = gcomm[1];
-  */
   /* Return if this processor is not in the Zoltan structure's
      communicator. */
   if (ZOLTAN_PROC_NOT_IN_COMMUNICATOR(zz))
       return ZOLTAN_OK;
 
-  /* Construct the heterogenous machine description. */
-  /*  ierr = Zoltan_Build_Machine_Desc(zz);
-      if (ierr == ZOLTAN_FATAL)
-      ZOLTAN_COLOR_ERROR(ierr, "Error in constructing heterogeneous machine description.");
-  */
-  
 
   /* BUILD THE GRAPH */
   /* Check that the user has allocated space for the return args. */
@@ -184,7 +191,8 @@ int Zoltan_Color(
   /* CREATE THE HASH TABLE */
   /* Allocate hash table */
   /* UVCUVC: TODO we can allocate smaller hash; check this later */
-  if (GenPrime(2*xadj[nvtx], &hsize)==ZOLTAN_MEMERR)
+  MPI_Allreduce(&nvtx, &gvtx, 1, MPI_INT, MPI_SUM, zz->Communicator);        
+  if (GenPrime(gvtx > xadj[nvtx] ? 2*xadj[nvtx] : 2*gvtx , &hsize)==ZOLTAN_MEMERR)
       MEMORY_ERROR;
   if (Zoltan_G2LHash_Create(&hash, hsize)==ZOLTAN_MEMERR)
       MEMORY_ERROR;
@@ -193,24 +201,13 @@ int Zoltan_Color(
   /* By inserting local vertices first, it is ensured that the
      local ids of local vertices start from 0 and are consecutive*/
   for (j=0; j<nvtx; j++) 
-      Zoltan_G2LHash_G2L(&hash, vtxdist[zz->Proc] + j);
-
+      Zoltan_G2LHash_Insert(&hash, vtxdist[zz->Proc] + j);
 
   /* Add ids of the d1 neighbors into the hash table*/
   for (i=0; i<xadj[nvtx]; ++i)
-      adjncy[i] = Zoltan_G2LHash_G2L(&hash, adjncy[i]);
+      adjncy[i] = Zoltan_G2LHash_Insert(&hash, adjncy[i]);
   /* lastno is the total number of local and d1 neighbors */
   lastlno = hash.lastlno; 
-
-#if 0
-  printf("[%d] GRAPH after hashing: nvtx:%d\n", zz->Proc, nvtx);
-  for (i=0; i < nvtx; i++) {
-      printf("%d :: ", i);
-      for (j=xadj[i]; j < xadj[i+1]; j++)
-          printf("%d ", adjncy[j]);
-      printf("\n");
-  }
-#endif
   
   /* Allocate color array. Local and D1 neighbor colors will be stored here. */ 
   if (!(color = (int *) ZOLTAN_CALLOC(lastlno, sizeof(int))))
@@ -219,17 +216,19 @@ int Zoltan_Color(
   /* SELECT COLORING ALGORITHM AND PERFORM COLORING*/
   if (distance == 1)
       D1coloring(zz, color_order, color_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color);
+  else if (distance == 2)
+      D2coloring(zz, color_order, color_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color);
   else {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Coloring with requested distance is not implemented. Using Distance-1 coloring.");
       D1coloring(zz, color_order, color_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color);
   }
-  
+    
   /* FILL THE RETURN ARRAY */
   for (i=0; i<nvtx; i++) 
       color_exp[i] = color[i];
-  
+
   /* Check if there is an error in coloring */
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) { 
+  if (distance == 1 && zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) { 
       for (i=0; i<nvtx; i++) {
           for (j = xadj[i]; j < xadj[i+1]; j++) {
               int v = adjncy[j];
@@ -238,9 +237,8 @@ int Zoltan_Color(
           }
       }
   }
-
- End:
   
+ End:  
   Zoltan_Multifree(__FILE__,__LINE__, 6, &vtxdist, &xadj, &adjncy, &input_parts, &adjproc, &color);
   Zoltan_G2LHash_Destroy(&hash);
   
@@ -272,6 +270,7 @@ static int D1coloring(
 {
     static char *yo = "D1coloring";
     int i;
+    int distance = 1;
     int nColor = 0;              /* Number of colors */
     int nConflict;               /* Number of local vertices to be recolored
                                     in the next round */
@@ -311,7 +310,7 @@ static int D1coloring(
     isbound = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
     visit = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
     if (!isbound || !visit)
-        ZOLTAN_COLOR_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+        MEMORY_ERROR;
     
     /* Start timer */
     get_times = (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME);
@@ -319,12 +318,12 @@ static int D1coloring(
         MPI_Barrier(zz->Communicator);
         times[0] = Zoltan_Time(zz->Timer);
     }    
-    ierr = ReorderGraph(zz, nvtx, xadj, &xbadj, adj, adjproc, &nbound, isbound, visit);
+    ierr = ReorderGraph(zz, 1, nvtx, xadj, &xbadj, adj, adjproc, &nbound, isbound, visit);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
         ZOLTAN_COLOR_ERROR(ierr, "Error in ReorderGraph");
     if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
-#if 0
+#if 1
     printf("After reordering: nvtx:%d Proc:%d\n", nvtx, zz->Proc);
     for (i=0; i < nvtx; i++) {
         int j;
@@ -340,7 +339,7 @@ static int D1coloring(
     for (i=0; i<nvtx; i++)
         if (lmaxdeg < xadj[i+1] - xadj[i])
             lmaxdeg = xadj[i+1] - xadj[i];    
-    MPI_Allreduce(&lmaxdeg, &gmaxdeg, 1, MPI_INT, MPI_MAX, zz->Communicator);        
+    MPI_Allreduce(&lmaxdeg, &gmaxdeg, 1, MPI_INT, MPI_MAX, zz->Communicator);
     /* gmaxdeg+1 is the upper bound for #colors */
     ++gmaxdeg; 
     
@@ -354,11 +353,11 @@ static int D1coloring(
     rreqfrom = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
     newcolored = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
     if (!mark || !conflicts || !replies || !stats || !rreqs || !sreqs || !rreqfrom || !newcolored)
-        ZOLTAN_COLOR_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+        MEMORY_ERROR;
     for (i=0; i<zz->Num_Proc; ++i) {
         newcolored[i] = (int *) ZOLTAN_MALLOC(2 * ss * sizeof(int));
         if (!newcolored[i])
-            ZOLTAN_COLOR_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+            MEMORY_ERROR;
     }
 
     /* Generate random numbers associated with global numbers of the vertices */
@@ -366,7 +365,7 @@ static int D1coloring(
        to the same global vertex number */
     rand_key = (int *) ZOLTAN_MALLOC(sizeof(int) * lastlno);
     if (!rand_key)
-        ZOLTAN_COLOR_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+        MEMORY_ERROR;
     for(i=0; i<lastlno; i++) {
         srand48(Zoltan_G2LHash_L2G(hash, i));
         rand_key[i] = drand48()*1000000;
@@ -382,10 +381,10 @@ static int D1coloring(
         for (i=0; i<nvtx; i++)
             visit[i] = i;
         if (zz->Num_Proc==1)
-            InternalColoring(zz, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxdeg, color_method);
+            InternalColoring(zz, distance, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxdeg, color_method);
     }
     else if (color_order == 'I') {
-        InternalColoring(zz, &nColor, nvtx - nbound, visit + nbound, xadj, adj, color, mark, gmaxdeg, color_method);
+        InternalColoring(zz, distance, &nColor, nvtx - nbound, visit + nbound, xadj, adj, color, mark, gmaxdeg, color_method);
         nConflict = nbound;
     }
     else if (color_order=='B')
@@ -399,14 +398,14 @@ static int D1coloring(
     if (zz->Num_Proc >= 2) {
         do {
             int *tp = visit;
-            memset(mark, 0xff, gmaxdeg * sizeof(int));
-            ierr = ParallelColoring(zz, nConflict, visit, xadj, adj, isbound, ss,
+            memset(mark, 0xff, (1+nColor) * sizeof(int));
+            ierr = D1ParallelColoring(zz, nConflict, visit, xadj, adj, isbound, ss,
                                     &nColor, color, newcolored, mark, gmaxdeg, hash,
                                     color_method, comm_pattern, rreqfrom, replies,
                                     sreqs, rreqs, stats);
             if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-                ZOLTAN_COLOR_ERROR(ierr, "Error in ParallelColoring");
-            nConflict = DetectConflicts(zz, nConflict, visit, xadj, xbadj, adj,
+                ZOLTAN_COLOR_ERROR(ierr, "Error in D1ParallelColoring");
+            nConflict = D1DetectConflicts(zz, nConflict, visit, xadj, xbadj, adj,
                                         color, conflicts, rand_key);
             /* swap conflicts list with visit list so that if there are conflicts,
                next coloring will color them */
@@ -422,8 +421,16 @@ static int D1coloring(
     if (get_times) times[4] = Zoltan_Time(zz->Timer);
     /* Color internal vertices after boundaries if boundary first ordering */
     if (color_order == 'B') 
-        InternalColoring(zz, &nColor, nvtx-nbound, visit + nbound, xadj, adj, color, mark, gmaxdeg, color_method);
+        InternalColoring(zz, distance, &nColor, nvtx-nbound, visit + nbound, xadj, adj, color, mark, gmaxdeg, color_method);
 
+#if 0
+    printf("[%d] vtx(gno)->color: ", zz->Proc);
+    for (i=0; i<nvtx; i++)
+        printf("%d(%d)->%d ", i, Zoltan_G2LHash_L2G(hash, i), color[i]);
+    printf("\n");
+#endif
+    
+    
     if (get_times) {
         MPI_Barrier(zz->Communicator);
         times[5] = Zoltan_Time(zz->Timer);
@@ -475,10 +482,406 @@ static int D1coloring(
 
 
 /*****************************************************************************/
+/* Distance-2 Coloring */
+
+static int D2coloring(
+    ZZ *zz,
+    char color_order,  /* (I) interior vertices first
+                          (B) boundary vertices first (U) interleaved */
+    char color_method, /* Coloring method. (F) First fit
+                          (S) staggered first fit (L) load balancing */
+    char comm_pattern, /* (A) asynchronous (S) synchronous supersteps */
+    int ss,            /* Superstep size: detemines how many vertices are
+                          locally colored before the next color
+                          information exchange */
+    int nvtx,          /* number of vertices in the graph */
+    G2LHash *hash,     /* hash to map global ids of local and D1 neighbor
+                          vertices to consecutive local ids */
+    int *xadj,         /* arrays that store the graph structure */
+    int *adj,
+    int *adjproc,
+    int *color         /* return array to store colors of local and D1
+                          neighbor vertices */
+)
+{
+    static char *yo = "D2coloring";
+    int i, j, p;
+    int distance = 2;
+    int nColor = 0;              /* Number of colors */
+    int nConflict;               /* Number of local vertices to be recolored
+                                    in the next round */
+    int confCont;                /* Total number of vertices to be recolored
+                                    in the next round */
+    int nTotConflict;            /* Total number of conflicts over all rounds
+                                    on all processors */ 
+    int nRound;                  /* Number of parallel coloring rounds */
+    int *rand_key = NULL;        /* Array of random numbers associated with
+                                    global numbers of vertices */
+    int nbound;                  /* Number of local boundary1 vertices */
+    int *xbadj = NULL;           /* Pointer to end of cut edges in adj lists
+                                    of local vertices */
+    int *isbound=NULL;           /* Indicates whether a local vertex is a boundary
+                                    vertex */
+    int *visit = NULL;           /* Visit (coloring) order of local vertices */
+    int *mark = NULL;            /* Array to mark forbidden colors for a vertex */
+    int gmaxcolor = 0;           /* Maximum #colors */
+    int lmaxdeg = 0;             /* Maximum vertex degree for the local vertices */
+    int lastlno = hash->lastlno; /* Total number of local and D1 neighbor vertices */
+    int *conflicts = NULL;       /* List of vertices to be recolored in the next
+                                    round */
+    /* Arrays used for MPI communication */
+    int *repliesF = NULL, *repliesFx = NULL, *repliesC = NULL;
+    MPI_Status *stats = NULL;
+    MPI_Request *rreqsF = NULL, *rreqsFx = NULL, *rreqsC = NULL;
+    MPI_Request *sreqsF = NULL, *sreqsFx = NULL, *sreqsC = NULL;
+    int *rreqfromF = NULL, *rreqfromFx = NULL, *rreqfromC = NULL;
+    int rreqcntC, sreqcntC;
+    int **newcolored = NULL;     /* Array used for communicating boundary vertex
+                                    colors at the end of supersteps. Global number
+                                    of the vertex - color of vertex pairs are filled
+                                    in this array */
+    double times[6];             /* Used for timing measurements */
+    int get_times;               /* (1) Measure timings (0) Don't */ 
+    int ierr;
+    /* conflict detection */
+    int *confChk=NULL, *seen=NULL, *where=NULL, *pwhere=NULL, *vmark=NULL;
+    int *wset, wsize=0;    
+    /* forbidden color information exchange */
+    int **xfp=NULL;
+    int **forbidden=NULL, *forbsize = NULL, **xforbidden=NULL; 
+    int **forbiddenS=NULL, *forbsizeS = NULL, **xforbiddenS=NULL;
+    /* storing partial adjacency lists of nonlocal vertices */
+    int nnl=0, *xadjnl=NULL, *adjnl=NULL, *xadjnltemp=NULL;
+    /* superstep size info exchange */
+    int **srecbuf = NULL, **ssendbuf=NULL;
+    int *srecsize=NULL, *ssendsize=NULL;
+    int **ssp, **srp;    
+    
+    /* Memory allocation */
+    isbound = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
+    visit = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
+    if (!isbound || !visit)
+        MEMORY_ERROR;
+    
+    /* Start timer */
+    get_times = (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME);
+    if (get_times){
+        MPI_Barrier(zz->Communicator);
+        times[0] = Zoltan_Time(zz->Timer);
+    }    
+    ierr = ReorderGraph(zz, 2, nvtx, xadj, &xbadj, adj, adjproc, &nbound, isbound, visit);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+        ZOLTAN_COLOR_ERROR(ierr, "Error in ReorderGraph");
+    if (get_times) times[1] = Zoltan_Time(zz->Timer);
+
+#if 0
+    printf("After reordering: nvtx:%d Proc:%d\n", nvtx, zz->Proc);
+    for (i=0; i < nvtx; i++) {
+        printf("%d :: ", i);
+        for (j=xadj[i]; j < xadj[i+1]; j++)
+            printf("%d ", adj[j]);
+        printf("\n");
+    }
+#endif
+
+    /* Calculate the maximum degree of the graph */
+    lmaxdeg = 0;
+    for (i=0; i<nvtx; i++)
+        if (lmaxdeg < xadj[i+1] - xadj[i])
+            lmaxdeg = xadj[i+1] - xadj[i];    
+    MPI_Allreduce(&lmaxdeg, &gmaxcolor, 1, MPI_INT, MPI_MAX, zz->Communicator);        
+    /* gmaxdeg^2+1 is the upper bound for #colors */
+    gmaxcolor = gmaxcolor*gmaxcolor+1; 
+
+
+    /***** CONSTRUCT PARTIAL ADJ LIST OF NON-LOCAL VERTICES *****/ 
+    /* Count the number of times a non-local vertex appears in adj list */
+    /* Id's of nonlocal vertices start from nvtx and ends at lastlno - 1 due to hashing*/
+    nnl = lastlno - nvtx;
+    if (!(xadjnl = (int *) ZOLTAN_CALLOC(nnl + 1, sizeof(int))))
+        MEMORY_ERROR;
+    if (!(xadjnltemp = (int *) ZOLTAN_MALLOC((nnl + 1) * sizeof(int))))
+        MEMORY_ERROR;
+    xadjnl[0] = 0;    
+    for (i=0; i<nvtx; i++) {
+        /* consider the cut edges only */
+        for (j=xadj[i]; j<xbadj[i]; j++) 
+            ++xadjnl[adj[j]-nvtx+1];
+    }
+    for (i=0; i<nnl; i++)
+        xadjnl[i+1] += xadjnl[i];
+
+    /* Construct the partial adjancency list of non-local vertices */
+    /* Only local vertices appear in the partial adj list */
+    memcpy(xadjnltemp, xadjnl, (nnl + 1) * sizeof(int));
+    if (!(adjnl = (int *) ZOLTAN_CALLOC(xadjnl[nnl], sizeof(int))))
+        MEMORY_ERROR;    
+    for (i=0; i<nvtx; i++) {
+        /* consider the cut edges only */
+        for (j=xadj[i]; j<xbadj[i]; j++) {
+            int idx = xadjnltemp[adj[j]-nvtx]++;
+            adjnl[idx] = i;
+        }
+    }       
+
+#if 0
+    printf("[%d] Partial adj list of non-local vertices: #nonlocal: %d\n", zz->Proc, nnl);
+    for (i=0; i<nnl; i++) {
+        printf("%d :: ", i+nvtx);
+        for (j=xadjnl[i]; j<xadjnl[i+1]; j++)
+            printf("%d ", adjnl[j]);
+        printf("\n");
+    }
+#endif
+    
+    
+    /***** MEMORY ALLOCATON *****/
+    stats = (MPI_Status *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Status));
+    rreqsC = (MPI_Request *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Request));
+    sreqsC = (MPI_Request *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Request));
+    rreqfromC = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
+    repliesC = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
+    srecsize = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
+    ssendsize = (int *) ZOLTAN_CALLOC(zz->Num_Proc, sizeof(int));
+    if (!stats || !repliesC || !rreqsC || !sreqsC || !rreqfromC || !srecsize || !ssendsize)
+        MEMORY_ERROR;    
+    /* Issue async recvs for superstep info size */
+    for (rreqcntC=p=0; p<zz->Num_Proc; ++p) 
+        if (p!=zz->Proc)
+            MPI_Irecv(&srecsize[p], 1, MPI_INT, p, SNTAG, zz->Communicator, &rreqsC[rreqcntC++]);
+    /* Calculate size of superstep info to be sent to each processor*/
+    for (i=0; i<nvtx; ++i) {
+        /* consider cut edges only */
+        for (j=xadj[i]; j<xbadj[i]; j++)
+            ++ssendsize[adjproc[j]]; 
+    }    
+    for (i=0; i<zz->Num_Proc; i++)
+        if (i != zz->Proc)
+            ssendsize[i] += ceil((double)nbound / (double)ss);
+    /* Send the superstep info size so that other processors will allocate enough space */
+    for (sreqcntC=p=0; p<zz->Num_Proc; ++p) 
+        if (p != zz->Proc) 
+            MPI_Isend(&ssendsize[p], 1, MPI_INT, p, SNTAG, zz->Communicator, &sreqsC[sreqcntC++]);
+    
+    mark = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int)); 
+    vmark = (int *) ZOLTAN_CALLOC(lastlno, sizeof(int));
+    conflicts = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
+    if (!mark || !conflicts || !vmark)
+        MEMORY_ERROR;
+    repliesF = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
+    repliesFx = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
+    rreqsF = (MPI_Request *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Request));
+    sreqsF = (MPI_Request *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Request));
+    rreqsFx = (MPI_Request *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Request));
+    sreqsFx = (MPI_Request *) ZOLTAN_MALLOC(zz->Num_Proc  *sizeof(MPI_Request));
+    rreqfromF = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
+    rreqfromFx = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
+    if (!repliesF || !rreqsF || !sreqsF || !rreqfromF || 
+        !repliesFx || !rreqsFx || !sreqsFx || !rreqfromFx)
+        MEMORY_ERROR;
+    forbsize = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
+    forbsizeS = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
+    xfp = (int**) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));    
+    newcolored = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
+    forbidden = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
+    xforbidden = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
+    forbiddenS = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
+    xforbiddenS = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
+    if (!forbsize || !forbsizeS || !xfp || !newcolored || !forbidden || 
+        !xforbidden || !forbiddenS || !xforbiddenS)
+        MEMORY_ERROR;
+    for (i=0; i<zz->Num_Proc; ++i) {
+        newcolored[i] = (int *) ZOLTAN_MALLOC(2 * ss * sizeof(int)); /* DB: can be reduced */
+        xforbidden[i] = (int *) ZOLTAN_MALLOC((ss+1) * sizeof(int));
+        forbsize[i] = (int)(ceil((double) xadj[nvtx] / (double)nvtx) * ss); /* size of forbidden color allocation - init to avgDeg*ss*/
+        forbidden[i] = (int *) ZOLTAN_MALLOC(forbsize[i] * sizeof(int));
+        xforbiddenS[i] = (int *) ZOLTAN_MALLOC((ss+1) * sizeof(int));
+        forbsizeS[i] = (int)(ceil((double) xadj[nvtx] / (double) nvtx) * ss); /* size of forbidden color allocation for send buffer - init to avgDeg*ss*/
+        forbiddenS[i] = (int *) ZOLTAN_MALLOC(forbsizeS[i] * sizeof(int));
+        if (!newcolored[i] || !xforbidden[i] || !forbidden[i] || !xforbiddenS[i] || !forbiddenS[i])
+            MEMORY_ERROR;
+    }
+    confChk = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int)); /*the vertices to be checked in conflict detection */
+    wset = (int *) ZOLTAN_MALLOC(nbound * sizeof(int));
+    seen = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
+    where = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
+    pwhere = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
+    if (!confChk || !wset || !seen || !where || !pwhere)
+        MEMORY_ERROR;
+    
+    /* Wait for superstep size communication to end */
+    MPI_Waitall(rreqcntC, rreqsC, stats); /* wait all superstep numbers to be received */
+    MPI_Waitall(sreqcntC, sreqsC, stats); /* wait all superstep numbers to be sent */ 
+
+#if 1
+    for (p=0; p<zz->Num_Proc; p++) {
+        if (p != zz->Proc) {
+            printf("[%d] size of ssendbuf to be sent to   %d is %d\n", zz->Proc, p, ssendsize[p]);
+            printf("[%d] size of srecbuf to be rec'd from %d is %d\n", zz->Proc, p, srecsize[p]);
+        }
+    }
+#endif
+        
+    /* Allocate buffers for superstep size info to be sent and received */
+    ssendbuf = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
+    srecbuf = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
+    ssp = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
+    srp = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
+    if (!ssendbuf || !srecbuf || !ssp || !srp)
+        MEMORY_ERROR;
+    for (i=0; i<zz->Proc; i++) {
+        ssendbuf[i] = NULL;
+        srecbuf[i] = NULL;
+    }
+    for (p=0; p<zz->Num_Proc; p++) {
+        if (p != zz->Proc) {
+            ssendbuf[p] = (int *) ZOLTAN_MALLOC(ssendsize[p] * sizeof(int));
+            srecbuf[p] = (int *) ZOLTAN_MALLOC(srecsize[p] * sizeof(int));
+            if (!srecbuf[p] || !ssendbuf[p])
+                MEMORY_ERROR;
+        }
+    }
+    /* Generate random numbers associated with global numbers of the vertices */
+    /* All processors generate the same random number corresponding
+       to the same global vertex number */
+    rand_key = (int *) ZOLTAN_MALLOC(sizeof(int) * lastlno);
+    if (!rand_key)
+        MEMORY_ERROR;
+    for(i=0; i<lastlno; i++) {
+        srand48(Zoltan_G2LHash_L2G(hash, i));
+        rand_key[i] = drand48()*1000000;
+    }   
+
+    /* Color internal vertices and determine the visit order */
+    if (get_times) {
+        MPI_Barrier(zz->Communicator);
+        times[2] = Zoltan_Time(zz->Timer);
+    }
+    if (color_order == 'U') {
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, "Coloring with interleaved coloring order is not implemented for distance-2 coloring. Using internal first order.");
+        color_order = 'I';
+    }
+    if (color_order == 'I') {
+        InternalColoring(zz, distance, &nColor, nvtx - nbound, visit + nbound, xadj, adj, color, mark, gmaxcolor, color_method);
+        nConflict = nbound;
+    }
+    else if (color_order=='B')
+        nConflict = nbound;
+    else if (color_order == 'U') { 
+        nConflict = nvtx;
+        for (i=0; i<nvtx; i++)
+            visit[i] = i;
+        if (zz->Num_Proc==1)
+            InternalColoring(zz, distance, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxcolor, color_method);
+    }
+
+
+    if (get_times) times[3] = Zoltan_Time(zz->Timer);
+
+
+    /* Color boundary vertices */
+    nTotConflict = 0;
+    nRound = 0;
+    
+    if (zz->Num_Proc >= 2) {
+        do {
+            int *tp=visit;
+            wsize = 0;
+            memset(mark, 0xff, (nColor+1) * sizeof(int));
+            memset(confChk, 0xff, nbound * sizeof(int));            
+            ierr = D2ParallelColoring(zz, nConflict, nvtx, visit, xadj, adj, xbadj, xadjnl, adjnl, adjproc, isbound, ss,
+                                      &nColor, color, newcolored, mark, gmaxcolor, hash,
+                                      forbidden, xforbidden, forbiddenS, xforbiddenS, forbsize, forbsizeS,
+                                      color_method, comm_pattern,
+                                      rreqfromC, repliesC, sreqsC, rreqsC,
+                                      rreqfromF, repliesF, sreqsF, rreqsF,
+                                      rreqfromFx, repliesFx, sreqsFx, rreqsFx,
+                                      stats, confChk, ssendsize, srecsize, ssendbuf, srecbuf, ssp, srp, xfp, wset, &wsize);
+            if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+                ZOLTAN_COLOR_ERROR(ierr, "Error in D2ParallelColoring");
+            ierr = D2DetectConflicts(zz, hash, nvtx, wset, wsize, xadj, adj, adjproc, &nColor, color, conflicts, rand_key,
+                              vmark, seen, where, pwhere, srecbuf, ssendbuf, srecsize, ssendsize, srp, sreqsC, rreqsC,
+                              rreqfromC, stats, &nConflict);
+            if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+                ZOLTAN_COLOR_ERROR(ierr, "Error in D2DetectConflicts");
+            /* swap conflicts list with visit list so that if there are conflicts,
+               next coloring will color them */
+            visit = conflicts;
+            conflicts = tp;
+            confCont = 0;            
+            MPI_Allreduce(&nConflict, &confCont, 1, MPI_INT, MPI_SUM, zz->Communicator);
+            nTotConflict += confCont;
+            ++nRound;            
+        } while (confCont);
+    }
+    if (get_times) times[4] = Zoltan_Time(zz->Timer);
+    /* Color internal vertices after boundaries if boundary first ordering */
+    if (color_order == 'B') 
+        InternalColoring(zz, distance, &nColor, nvtx-nbound, visit + nbound, xadj, adj, color, mark, gmaxcolor, color_method);
+    
+    
+#if 1
+    printf("[%d] vtx(gno)->color: ", zz->Proc);
+    for (i=0; i<nvtx; i++)
+        printf("%d(%d)->%d ", i, Zoltan_G2LHash_L2G(hash, i), color[i]);
+    printf("\n");
+#endif
+
+
+    if (get_times) {
+        MPI_Barrier(zz->Communicator);
+        times[5] = Zoltan_Time(zz->Timer);
+    }
+    
+    /* Output timing results if desired */
+    if (get_times){
+        if (zz->Proc == zz->Debug_Proc) printf("\nZOLTAN timing statistics:\n");
+        Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, nColor, 
+                           " Number of Colors                           ");
+        Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, nTotConflict, 
+                           " Number of Conflicts                        ");
+        Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, nRound, 
+                           " Number of Rounds                           ");
+        Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[1]-times[0], 
+                           " Graph reordering time                      ");
+        Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[3]-times[2]+times[5]-times[4], 
+                           " Internal vertex coloring time              ");
+        Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[4]-times[3], 
+                           " Parallel boundary vertex coloring time     ");
+        Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[5]-times[0], 
+                           " Total coloring time (including reordering) ");
+        if (zz->Proc==zz->Debug_Proc) printf("\n");
+    }
+    
+    ierr = ZOLTAN_OK;
+    
+ End:
+    
+    /* Free */
+    for (i=0; i<zz->Num_Proc; ++i) 
+        Zoltan_Multifree (__FILE__, __LINE__, 7, &newcolored[i], &forbidden[i],
+                          &xforbidden[i], &forbiddenS[i], &xforbiddenS[i],
+                          &srecbuf[i], &ssendbuf[i]);
+
+    Zoltan_Multifree (__FILE__, __LINE__, 42, &isbound, &visit, &conflicts,
+                      &mark, &vmark, &newcolored, &repliesF, &repliesC, &repliesFx, &stats,
+                      &rreqsC, &rreqsF, &rreqsFx, &sreqsC,
+                      &sreqsF, &sreqsFx, &rreqfromC, &rreqfromF,
+                      &rreqfromFx, &xbadj, &srecsize, &ssendsize, &srecbuf, &ssendbuf,
+                      &forbidden, &xforbidden, &forbiddenS,
+                      &xforbiddenS, &forbsize, &forbsizeS,  &confChk, &seen,
+                      &where, &pwhere, &xfp, &rand_key, &wset, &xadjnl, &adjnl, &xadjnltemp, &ssp, &srp);
+    
+    return ierr;
+}
+
+
+/*****************************************************************************/
 /* Reorder graph adjacency list */
 
 static int ReorderGraph(
     ZZ *zz,           
+    int distance,     /* Coloring type */
     int nvtx,         /* In: Number of objects */
     int *xadj,        /* In: Pointer to xadj */
     int **pxbadj,     /* Out: Pointer to start of cut edges in the
@@ -499,7 +902,7 @@ static int ReorderGraph(
     /* Memory allocation */
     xbadj = (int *) ZOLTAN_CALLOC(nvtx+1, sizeof(int));
     if (!xbadj)
-        ZOLTAN_COLOR_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+        MEMORY_ERROR;
     
     /* Determine the boundary vertices and fill isbound */
     *nbound = 0;
@@ -513,17 +916,16 @@ static int ReorderGraph(
             }
         }
     }
-
-    /* Order vertices: boundaries first, internals last */
+    /* Construct vertex visit order: boundaries first, internals last */
     idx = 0;
     nboundIdx = *nbound;
     for (i=0; i<nvtx; ++i) {
-        if (isbound[i])
+        if (isbound[i] == 1)
             visit[idx++] = i;
         else
             visit[nboundIdx++] = i;
     }
-
+    
     /* move cut edges to the beginning of adj lists for boundary vertices */
     for (i=0; i<nvtx; ++i) {
         int j, b, tmp;
@@ -566,16 +968,17 @@ static int PickColor(
 )
 {
     int c, pickedColor;
-    static char *yo="PickColor";
-    
+         
     switch(color_method){    
     case 'F':
     default: 
         if (color_method !='F')
-            ZOLTAN_PRINT_WARN(zz->Proc, yo, "Unknown coloring method. Using First Fit (F).");	      
+            ZOLTAN_PRINT_WARN(zz->Proc, "PickColor", "Unknown coloring method. Using First Fit (F).");	      
         for (c = 1; (c <= *nColor) && (mark[c] == u); ++c) ;
-        if (c > *nColor)  /* no available color with # less than nColor */
+        if (c > *nColor) { /* no available color with # less than nColor */
             c = ++(*nColor);
+            mark[c] = -1;
+        }
         pickedColor = c;
     }
     
@@ -587,6 +990,7 @@ static int PickColor(
 
 static int InternalColoring(
     ZZ *zz,
+    int distance,
     int *nColor,
     int nvtx,
     int *visit,
@@ -598,28 +1002,51 @@ static int InternalColoring(
     char color_method
 )
 {
-    int i, j;
-
+    int i, j, k, c, u, v, w;
+    static char *yo = "InternalColoring";
+    int ierr = ZOLTAN_OK;
+ 
     memset(mark, 0xff, gmaxdeg * sizeof(int));
 
-    for (i=0; i<nvtx; ++i) {
-        int u = visit[i];        
-        for (j = xadj[u]; j < xadj[u+1]; ++j) {
-            int v = adj[j], c;            
-            if ((c = color[v]) != 0) 
-                mark[c] = u;
+    if (distance == 1) {
+        for (i=0; i<nvtx; ++i) {
+            u = visit[i];        
+            for (j = xadj[u]; j < xadj[u+1]; ++j) {
+                v = adj[j];            
+                if ((c = color[v]) != 0) 
+                    mark[c] = u;
+            }
+            color[u] = PickColor(zz, color_method, u, color[u], nColor, mark);
         }
-	color[u] = PickColor(zz, color_method, u, color[u], nColor, mark);
-    }
-    return ZOLTAN_OK;
+    } else if (distance == 2) {        
+        for (i=0; i<nvtx; ++i) {
+            u = visit[i];        
+            for (j = xadj[u]; j < xadj[u+1]; ++j) {
+                v = adj[j];              
+                if ((c = color[v]) != 0) 
+                    mark[c] = u;
+                for (k = xadj[v]; k < xadj[v+1]; ++k) {	  
+                    w = adj[k];
+                    if ((c = color[w]) != 0) 
+                        mark[c] = u;	      
+                }
+            }
+            color[u] = PickColor(zz, color_method, u, color[u], nColor, mark);
+        }
+    } else
+        ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Unknown coloring distance");
+
+ End:
+    
+    return ierr;
 }
 
 /*****************************************************************************/
 /* Parallel coloring of boundary vertices */       
 
-static int ParallelColoring (
+static int D1ParallelColoring (
     ZZ *zz,
-    int nvtx,         /* number of vertices in the graph */
+    int nvtx,         /* number of vertices to be colored in this round */
     int *visit,       /* Visit (coloring) order of local vertices */
     int *xadj,        /* arrays that store the graph structure */
     int *adj,
@@ -642,14 +1069,14 @@ static int ParallelColoring (
     char color_method, /* Coloring method. (F) First fit
                           (S) staggered first fit (L) load balancing */
     char comm_pattern, /* (A) asynchronous (S) synchronous supersteps */
-    int *rreqfrom,     /* Arrays used for MPI communication */
+    int *rreqfrom,    /* Arrays used for MPI communication */
     int *replies,
     MPI_Request *sreqs,
     MPI_Request *rreqs,
     MPI_Status *stats
 )
 {
-    static char *yo="ParallelColoring";
+    static char *yo="D1ParallelColoring";
     int colortag=1001, i, j, p, q, l;
     int *colored, n=0;
     int rreqcnt=0, sreqcnt=0, repcount;
@@ -708,10 +1135,12 @@ static int ParallelColoring (
                 for (j = 0; j < 2*ss; ) {
                     int v  = newcolored[p][j++], c, hv;                    
                     if (v < 0) 
-                        break;
-                    hv = Zoltan_G2LHash_G2L(hash, v);
-                    c = newcolored[p][j++];
-		    color[hv] = c;                    
+                        break;                    
+                    if ((hv = Zoltan_G2LHash_G2L(hash, v)) != -1) {
+                        c = newcolored[p][j++];
+                        color[hv] = c;
+                    } else
+                        ++j;                    
                 }
                 /* If p hasn't finished coloring, issue new color request */
                 if (j >= 2*ss) {
@@ -758,9 +1187,11 @@ static int ParallelColoring (
                 int v  = newcolored[p][j++], c, hv;                
                 if (v < 0) 
                     break;
-                hv = Zoltan_G2LHash_G2L(hash, v);
-                c = newcolored[p][j++];
-		color[hv] = c;
+                if ((hv = Zoltan_G2LHash_G2L(hash, v)) != -1) {
+                    c = newcolored[p][j++];
+                    color[hv] = c;
+                } else
+                    ++j;
             }
             
             /* If p hasn't finished coloring, issue new color request */
@@ -784,9 +1215,446 @@ static int ParallelColoring (
 }
 
 /*****************************************************************************/
-/* Detect conflicts */
+/* Send forbidden colors for the vertices to be colored in the next superstep */       
 
-static int DetectConflicts(
+static int sendNextStepsForbiddenColors(ZZ *zz, G2LHash *hash, int nlvtx, int p, int **srp, int *xadj, int *adj, int *xadjnl, int *adjnl,
+                                 int *forbsizeS, int **xforbiddenS, int **forbiddenS,
+                                 int *nColor, int *color, int *mark, int *confChk, int sncnt, int *wset, int *wsize, MPI_Request *sreqsFx, MPI_Request *sreqsF)
+{
+    int u, m1 = 0, m2 = 0, m3, m4;
+    
+    /*** calculate forbidden colors for each vertex u
+         that proc p will color in its current superstep ***/
+    while (*srp[p] >= 0) {
+        u = Zoltan_G2LHash_G2L(hash, *srp[p]);
+#if 0
+        printf("[%d] u:%d, gu:%d, pu: %d, xadjnls: %d, xadjnle: %d\n", zz->Proc, u, *srp[p], p, xadjnl[u-nlvtx], xadjnl[u-nlvtx+1]);
+#endif        
+        int cnt = 0; /* count the max number of forbidden colors for u */
+        /* put the start of u's forbidden colors into xforbiddenS */
+        xforbiddenS[p][m1++] = m2;
+        for (m3 = xadjnl[u-nlvtx]; m3 < xadjnl[u-nlvtx+1]; m3++) { /*mark d2 forbidden colors of u*/
+            int v = adjnl[m3]; /* v is a local neighbor of u*/
+#if 0
+            printf(" [%d] local neighbor of %d is %d\n", zz->Proc, u, v);
+#endif            
+            /* mark v for conflict detection if it has more than 1 neighbors colored in this superstep */
+            if (confChk[v] == sncnt) {
+                confChk[v] = -2; /*mark for conflict check*/
+                wset[(*wsize)++] = v;
+            }
+            else if (confChk[v] != -2)
+                confChk[v] = sncnt; /*mark v the first time for this superstep*/
+            /*resume calculating forbidden colors*/
+            for (m4 = xadj[v]; m4 < xadj[v+1]; m4++) {
+                int w = adj[m4], c; /* w is a d2 neighbor of u*/
+
+#if 0
+                printf("  [%d] d2 neighbor of %d is %d, cw: %d\n", zz->Proc, u, w, color[w]);
+#endif                
+                if ((c = color[w]) != 0) {
+                    mark[c] = u;
+                    cnt++;
+                }
+            }
+        }
+        if (forbsizeS[p] < m2 + cnt) { /*if send buffer is not large enough, increase buffer by 20% */
+            forbsizeS[p] = (int)((double)(m2+cnt) * 1.2); 
+            forbiddenS[p] = (int *) ZOLTAN_REALLOC(forbiddenS[p], sizeof(int) * forbsizeS[p]); 
+        }
+        for (m3 = 1; m3 <= *nColor; m3++) {
+            //printf("c:%d v:%d\n", m3, mark[m3]);
+            if (mark[m3] == u) {
+                forbiddenS[p][m2++] = m3;
+#if 0
+                printf(" [%d] %d is put into forbS of %d\n", zz->Proc, m3, u);
+#endif
+            }
+        }
+        ++srp[p];
+    }
+    if (*srp[p] != -2)
+        ++srp[p];
+    xforbiddenS[p][m1++] = xforbiddenS[p][0] = m2;
+    
+    /*** send forbidden colors to p for its next superstep***/
+    MPI_Isend(xforbiddenS[p], m1, MPI_INT, p, XFORBIDTAG, zz->Communicator, &sreqsFx[p]);
+    MPI_Isend(forbiddenS[p], xforbiddenS[p][0], MPI_INT, p, FORBIDTAG, zz->Communicator, &sreqsF[p]);
+    
+#if 1
+    printf("Proc %d: Sent forbidden list of size %d for %d vertices on proc %d. \n", zz->Proc, xforbiddenS[p][0], m1-1, p);
+#endif
+    
+    return 0;                    
+}
+
+/*****************************************************************************/
+/* Wait until receiving all forbidden color pointers and then forbidden colors */       
+
+static int waitPtrAndForbiddenColors(ZZ *zz, int rreqcntFx, MPI_Request *rreqsFx, int *rreqfromFx, MPI_Status *stats, int *forbsize, int **xforbidden, int **forbidden, int **xfp, MPI_Request *rreqsF)
+{
+    int rreqcntF=0, l, p;
+        
+    MPI_Waitall(rreqcntFx, rreqsFx, stats); /* wait all forbidden color pointers */ 
+    for (l=rreqcntFx-1; l>=0; --l) { /* process the received messages */
+        p = rreqfromFx[l];	  
+        if (forbsize[p] < xforbidden[p][0]) { /*xforbidden[p][0] is the buffersize for msg from p*/
+            forbidden[p] = (int *) ZOLTAN_REALLOC(forbidden[p], sizeof(int) * xforbidden[p][0]); 
+            forbsize[p] = xforbidden[p][0];
+        }
+        /*** Issue async recvs for corresponding forbidden colors ***/
+        MPI_Irecv(forbidden[p], xforbidden[p][0], MPI_INT, p, FORBIDTAG, zz->Communicator, &rreqsF[rreqcntF++]);
+    }        
+    MPI_Waitall(rreqcntF, rreqsF, stats); /* wait all forbidden color messages to be received */
+    for (p = 0; p < zz->Num_Proc; p++) { /*reset the xforbidden vertex pointers to point the first vertices*/
+        if (p != zz->Proc) {
+            xforbidden[p][0] = 0;
+            xfp[p] = xforbidden[p];
+        }
+    }
+    return rreqcntF;
+}
+
+
+
+/*****************************************************************************/
+/* Parallel coloring of boundary vertices */       
+
+static int D2ParallelColoring (
+    ZZ *zz,
+    int nvtx,         /* number of vertices to be colored in this round */
+    int nlvtx,
+    int *visit,       /* Visit (coloring) order of local vertices */
+    int *xadj,        /* arrays that store the graph structure */
+    int *adj,
+    int *xbadj,
+    int *xadjnl,
+    int *adjnl,
+    int *adjproc,
+    int *isbound,     /* Indicates whether a local vertex is a boundary
+                         vertex */
+    int ss,           /* Superstep size: detemines how many vertices are
+                         locally colored before the next color
+                         information exchange */
+    int *nColor,      /* Number of colors */
+    int *color,       /* return array to store colors of local and D1
+                         neighbor vertices */
+    int **newcolored, /* Array used for communicating boundary vertex
+                         colors at the end of supersteps. Global number
+                         of the vertex - color of vertex pairs are filled
+                         in this array */
+    int *mark,        /* Array to mark forbidden colors for a vertex */
+    int gmaxdeg,      /* Maximum vertex degree in the graph */
+    G2LHash *hash,    /* hash to map global ids of local and D1 neighbor
+                         vertices to consecutive local ids */ 
+    int **forbidden,  /* Arrays used for forbidden color exchange */
+    int **xforbidden,
+    int **forbiddenS,
+    int **xforbiddenS,
+    int *forbsize,
+    int *forbsizeS,
+    char color_method, /* Coloring method. (F) First fit
+                          (S) staggered first fit (L) load balancing */
+    char comm_pattern, /* (A) asynchronous (S) synchronous supersteps */
+    int *rreqfromC,     /* Arrays used for MPI communication */
+    int *repliesC,
+    MPI_Request *sreqsC,
+    MPI_Request *rreqsC,
+    int *rreqfromF,     /* Arrays used for MPI communication */
+    int *repliesF,
+    MPI_Request *sreqsF,
+    MPI_Request *rreqsF,
+    int *rreqfromFx,     /* Arrays used for MPI communication */
+    int *repliesFx,
+    MPI_Request *sreqsFx,
+    MPI_Request *rreqsFx,
+    MPI_Status *stats,
+    int *confChk,        /* Arrays used for conflict detection */
+    int *ssendsize,
+    int *srecsize,
+    int **ssendbuf,
+    int **srecbuf,
+    int **ssp,
+    int **srp, 
+    int **xfp,
+    int *wset,
+    int *wsize
+)
+{    
+    int i, j, k, p, l;
+    int *colored = newcolored[zz->Proc];
+    int n=0, m = 0;
+    int rreqcntC=0, sreqcntC=0; /*keeps track of updated D-1 neighbor colors comm.*/
+    int rreqcntFx=0; /*keeps track of forbidden color pointer communication*/
+    int sncnt = 0; /*superstep number counter */
+    int fp = 0; /*index to forbidProc*/
+    int ierr = ZOLTAN_OK;
+
+    /* DETEMINE THE SUPERSTEP NUMBER OF LOCAL VERTICES AND COMMUNICATE THEM */
+    /* Issue async recvs for superstep info */
+    for (rreqcntC=p=0; p<zz->Num_Proc; ++p)
+        if (p!=zz->Proc) 
+            MPI_Irecv(srecbuf[p], srecsize[p], MPI_INT, p, SNTAG, zz->Communicator, &rreqsC[rreqcntC++]);
+    /* Calculate superstep info to be sent */
+    /* Initialize pointers for filling the buffers */
+    for (p=0; p<zz->Num_Proc; p++)
+        if (p != zz->Proc)
+            ssp[p] = ssendbuf[p];
+    /* Determine which local vertex will be colored in which superstep
+       and put this info to the buffer to be sent to processors holding
+       the neighbors of the vertex */
+    n = 1;
+    for (i=0; i<nvtx; ++i) {
+        int u = visit[i], gu;
+        gu = Zoltan_G2LHash_L2G(hash, u);
+        for (j=xadj[u]; j<xbadj[u]; j++) {
+            if (ssp[adjproc[j]] != ssendbuf[adjproc[j]]) {
+                if (*(ssp[adjproc[j]]-1) != gu) {
+                    *(ssp[adjproc[j]]++) = gu;
+                }
+            } else 
+                *(ssp[adjproc[j]]++) = gu;
+        }
+        if (n == ss) { /* mark the end of superstep */
+            n = 0;
+            for (p=0; p<zz->Num_Proc; p++)
+                if (p!= zz->Proc)
+                    *(ssp[p]++) = -1; 
+        }        
+        ++n;
+    }
+    /* Mark end of superstep info by -2 */
+    for (p=0; p<zz->Num_Proc; p++) {
+        if (p != zz->Proc) {
+            if (ssp[p] == ssendbuf[p])
+                *ssp[p] = -2;
+            else if (*(ssp[p]-1) == -1)
+                *(--ssp[p]) = -2;
+            else
+                *ssp[p] = -2;
+        }
+    }
+
+#if 1
+    for (p=0; p<zz->Num_Proc; p++)
+        if (p != zz->Proc) {
+            printf("[%d] ssendbuf sent to proc %d: ", zz->Proc, p);
+            for (i=0; ssendbuf[p][i] != -2; i++)                
+                printf("%d ", ssendbuf[p][i]);
+            printf("-2\n");
+        } 
+#endif
+    
+    /* Issue async sends for superstep info */
+    for (sreqcntC=p=0; p<zz->Num_Proc; ++p) 
+        if (p != zz->Proc) 
+            MPI_Isend(ssendbuf[p], ssp[p] - ssendbuf[p] + 1, MPI_INT, p, SNTAG, zz->Communicator, &sreqsC[sreqcntC++]);
+    
+    MPI_Waitall(rreqcntC, rreqsC, stats); /* wait all superstep info to be received */
+    MPI_Waitall(sreqcntC, sreqsC, stats); /* wait all superstep info to be sent */ 
+
+#if 1   
+    MPI_Barrier(zz->Communicator);
+    for (p=0; p<zz->Num_Proc; p++)
+        if (p != zz->Proc) {
+            printf("[%d] srecbuf received from proc %d: ", zz->Proc, p);
+            for (i=0; srecbuf[p][i] != -2; i++)                
+                printf("%d ", srecbuf[p][i]);
+            printf("-2\n");
+        }
+#endif
+            
+    /***** COLORING *****/
+    /* Issue async recvs for updated d1 colors */
+    for (rreqcntC=p=0; p<zz->Num_Proc; ++p)
+        if (p != zz->Proc) {
+            rreqfromC[rreqcntC] = p;
+            MPI_Irecv(newcolored[p], 2*ss, MPI_INT, p, COLORTAG, zz->Communicator, &rreqsC[rreqcntC++]);
+        }
+
+    /* Initialize superstep info buffer pointers */
+    for (p=0; p<zz->Num_Proc; p++)
+        if (p != zz->Proc) {
+            ssp[p] = ssendbuf[p];
+            srp[p] = srecbuf[p];
+        }
+
+    /* Initial forbidden color communication and confChk marking for the first ss ****/
+    for (rreqcntFx=p=0; p<zz->Num_Proc; ++p)
+        if (p != zz->Proc) {
+            sendNextStepsForbiddenColors(zz, hash, nlvtx, p, srp, xadj, adj, xadjnl, adjnl, forbsizeS, xforbiddenS, forbiddenS, nColor, color, mark, confChk, sncnt, wset, wsize, sreqsFx, sreqsF);
+            rreqfromFx[rreqcntFx] = p;
+            MPI_Irecv(xforbidden[p], ss + 1, MPI_INT, p, XFORBIDTAG, zz->Communicator, &rreqsFx[rreqcntFx++]);
+        } else
+            xforbidden[p][0] = 0;
+    waitPtrAndForbiddenColors(zz, rreqcntFx, rreqsFx, rreqfromFx, stats, forbsize, xforbidden, forbidden, xfp, rreqsF);                
+
+
+#if 1
+    for (p=0; p<zz->Num_Proc; p++) {
+        int u, idx = 0;
+        if (p != zz->Proc) {
+            for (idx=0; ssendbuf[p][idx]>=0; idx++) {
+                u=Zoltan_G2LHash_G2L(hash, ssendbuf[p][idx]);
+                printf("[%d] Forblist for vtx %d from proc %d: ", zz->Proc, u, p);
+                for (i=xforbidden[p][idx]; i<xforbidden[p][idx+1]; i++)
+                    printf("%d ", forbidden[p][i]);
+                printf("\n");
+            }
+        }
+    }
+#endif
+                
+    /* Coloring */
+    n = 0; 
+    for (i = 0; i < nvtx; ++i) {
+        int u = visit[i];
+        if (confChk[u] == sncnt) { /* add boundary vertices of this round into confChk */
+            confChk[u] = -2;
+            wset[(*wsize)++] = u;
+        }
+        for (j = xadj[u]; j < xadj[u+1]; ++j) {
+            int v =  adj[j], c;            
+            int vp = adjproc[j]; /* owner of vertex v */
+            if ((c = color[v]) != 0) 
+                mark[c] = u;
+            if (vp == zz->Proc) { /* if v is local as well */
+                if (isbound[v] && confChk[v] == sncnt) { /* add boundary vertices of this round into confChk */
+                    confChk[v] = -2;
+                    wset[(*wsize)++] = v;
+                }
+                for (k = xadj[v]; k < xadj[v+1]; ++k) {	  
+                    int w = adj[k];
+                    if ((c = color[w]) != 0)
+                        mark[c] = u;	      
+                }
+            }
+            else { /* if v is non-local, read forbidden colors sent by the owner of v */                
+                for (m = *xfp[vp]; m < *(xfp[vp] + 1); m++) {
+                    c = forbidden[vp][m];
+                    mark[c] = u;
+                }
+            }
+        }
+        color[u] = PickColor(zz, color_method, u, color[u], nColor, mark);
+        colored[n++] = Zoltan_G2LHash_L2G(hash, u);
+        colored[n++] = color[u];
+        
+#if 1
+        printf("%d: PC Color[%d] = %d\n", zz->Proc, u, color[u]);
+#endif
+      
+        /* If superstep is finished, communicate the updated colors and forbidden colors */
+        if (n >= 2*ss) {
+            ++sncnt;
+            for (p=0; p<zz->Num_Proc; p++)
+                ++xfp[p];
+            /* Issue new async recvs for forbidden color pointers */
+            for (rreqcntFx=p=0; p<zz->Num_Proc; ++p)
+                if (p!=zz->Proc) {
+                    rreqfromFx[rreqcntFx] = p;
+                    MPI_Irecv(xforbidden[p], ss + 1, MPI_INT, p, XFORBIDTAG, zz->Communicator, &rreqsFx[rreqcntFx++]);
+                }                
+            /* send local color updates */
+            for (sreqcntC=p=0; p<zz->Num_Proc; ++p) 
+                if (p!=zz->Proc) 
+                    MPI_Isend(colored, 2*ss, MPI_INT, p, COLORTAG, zz->Communicator, &sreqsC[sreqcntC++]);
+            
+            /* process the received color update messages */
+            MPI_Waitall(rreqcntC, rreqsC, stats);
+            fp = 0; /*number of procesors requesting forbidden colors for their next ss*/
+            for (l = 0; l < rreqcntC; ++l) {
+                p = rreqfromC[l];	
+#if 1
+                printf("New colors from proc %d received by proc %d:\n", p, zz->Proc);
+#endif                
+                /* update non-local vertex colors according to the received color update message content */  
+                for (j = 0; j < 2*ss; ) { 
+                    int v = newcolored[p][j++], c, hv;                   
+                    if (v < 0)
+                        break;
+                    if ((hv = Zoltan_G2LHash_G2L(hash, v)) != -1) {
+                        c = newcolored[p][j++];
+                        color[hv] = c;
+                    } else
+                        ++j;
+                }
+                /* if round is not finished on proc p */
+                if (j >= 2*ss) 
+                    rreqfromC[fp++] = p;                    
+            }
+            
+            /* send forbidden colors to requesting processors */
+	    rreqcntC = fp;
+            for (l = 0; l < rreqcntC; l++) { 
+                p = rreqfromC[l];
+                sendNextStepsForbiddenColors(zz, hash, nlvtx, p, srp, xadj, adj, xadjnl, adjnl, forbsizeS, xforbiddenS, forbiddenS, nColor, color, mark, confChk, sncnt, wset, wsize, sreqsFx, sreqsF);
+                /* Issue new async receive for color update */
+                MPI_Irecv(newcolored[p], 2*ss, MPI_INT, p, COLORTAG, zz->Communicator, &rreqsC[l]);
+            }            
+            /* read forbidden color pointer messages and issue corresponding async recvs for forbidden colors*/
+            waitPtrAndForbiddenColors(zz, rreqcntFx, rreqsFx, rreqfromFx, stats, forbsize, xforbidden, forbidden, xfp, rreqsF);                
+            n = 0;
+            MPI_Waitall(sreqcntC, sreqsC, stats); /* wait all color updates to be sent */            
+        }
+    }
+    
+    /* round is finished on zz->Proc, make the last send */
+    colored[n++] = -1;
+    colored[n++] = -1;
+    for (sreqcntC=p=0; p<zz->Num_Proc; ++p)
+        if (p!=zz->Proc) 
+            MPI_Isend(colored, n, MPI_INT, p, COLORTAG, zz->Communicator, &sreqsC[sreqcntC++]);
+
+#if 1
+    printf("Proc %d: Round finished and the final send is issued.  Helping others.\n", zz->Proc);
+#endif
+
+
+    /* process the remaining color update messages */
+    while (rreqcntC) { /*until all color update messages in this superstep are received*/
+        MPI_Waitall(rreqcntC, rreqsC, stats); /* wait all color updates to be received */
+        fp = 0;
+        ++sncnt;
+        for (l = 0; l < rreqcntC; ++l) {            
+            p = rreqfromC[l];	
+#if 1
+            printf("New colors from proc %d received by proc %d:\n", p, zz->Proc);
+#endif
+
+            /* update non-local vertex colors according to the received color update message content */  
+            for (j = 0; j < 2*ss; ) { 
+                int v = newcolored[p][j++], c, hv;                   
+                if (v < 0)
+                    break;
+                if ((hv = Zoltan_G2LHash_G2L(hash, v)) != -1) {
+                    c = newcolored[p][j++];
+                    color[hv] = c;
+                } else
+                    ++j;
+            }
+	    /* if round is not finished on proc p */
+	    if (j >= 2*ss)
+                rreqfromC[fp++] = p;
+	}
+	/* send forbidden colors to requesting processors */
+	rreqcntC = fp;
+	for (l = 0; l < rreqcntC; l++) {
+            p = rreqfromC[l];
+            sendNextStepsForbiddenColors(zz, hash, nlvtx, p, srp, xadj, adj, xadjnl, adjnl, forbsizeS, xforbiddenS, forbiddenS, nColor, color, mark, confChk, sncnt, wset, wsize, sreqsFx, sreqsF);
+            /* Issue new async receive for color update */
+            MPI_Irecv(newcolored[p], 2*ss, MPI_INT, p, COLORTAG, zz->Communicator, &rreqsC[l]);
+	}
+    }
+    MPI_Waitall(sreqcntC, sreqsC, stats); /* wait last color update to be sent */            
+
+    return ierr;
+}
+
+/*****************************************************************************/
+/* Detect D1 conflicts */
+
+static int D1DetectConflicts(
     ZZ *zz,
     int nConflict,
     int *visit,
@@ -812,6 +1680,119 @@ static int DetectConflicts(
     }
     return conflict;
 }
+
+/*****************************************************************************/
+/* Detect D2 conflicts */
+
+static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **srecbuf, int **ssendbuf, int *srecsize, int *ssendsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict)
+{
+    static char *yo="D2DetectConflicts";
+    int w, i, j, p;
+    int rreqcntC=0, sreqcntC=0;
+    int *q;
+    int ierr = ZOLTAN_OK;
+
+    for (i=0; i<zz->Num_Proc; ++i)
+        if (i != zz->Proc)
+            srp[i] = srecbuf[i];
+        else
+            srp[i] = conflicts;
+
+    /*** Issue async recv for recolor info ***/
+    for (rreqcntC=p=0; p<zz->Num_Proc; ++p)
+        if (p != zz->Proc) {
+            rreqfromC[rreqcntC] = p;
+            MPI_Irecv(ssendbuf[p], ssendsize[p], MPI_INT, p, RECOLORTAG, zz->Communicator, &rreqsC[rreqcntC++]);
+        }
+    
+    /*** Detect conflicts and mark vertices to be recolored ***/
+    memset(seen, 0xff, sizeof(int) * (*nColor+1));
+    memset(where, 0xff, sizeof(int) * (*nColor+1));
+    memset(pwhere, 0xff, sizeof(int) * (*nColor+1));
+    for (i = 0; i < wsize; i++) {
+        int x, v, cw, cx, px, pv, gv, gx;
+        w = wset[i];
+        cw = color[w];
+        seen[cw] = w;
+        where[cw] = w;
+        pwhere[cw] = zz->Proc;
+        for (j = xadj[w]; j < xadj[w+1]; j++) {
+            x = adj[j];
+            px = adjproc[j];
+            cx = color[x];
+            gx = Zoltan_G2LHash_L2G(hash, x);
+            if (seen[cx] == w) {
+                v = where[cx];
+                pv = pwhere[cx];
+                gv = Zoltan_G2LHash_L2G(hash, v);
+                if (rand_key[gv] <= rand_key[gx]) {
+                    if (!vmark[x]) {
+                        *srp[px]++ = gx;
+                        vmark[x] = 1;
+                    }
+                } else {
+                    if (!vmark[v]) {
+                        *srp[pv]++ = gv;
+                        vmark[v] = 1;
+                    }
+                    where[cx] = x;
+                    pwhere[cx] = px;
+                }
+            } else {
+                seen [cx] = w;
+                where[cx] = x;
+                pwhere [cx] = px;
+            }
+        }
+    }                    
+    
+    /*** Construct recolor messages ***/
+    for (p = 0; p < zz->Num_Proc; p++) 
+        if (p != zz->Proc) {
+            *srp[p]++ = -1;
+            if ((srp[p] - srecbuf[p]) > srecsize[p])
+                ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Insufficient memory allocation, use larger sized buffers.");
+            MPI_Isend(srecbuf[p], srp[p] - srecbuf[p] , MPI_INT, p, RECOLORTAG, zz->Communicator, &sreqsC[sreqcntC++]);
+            for (q = srecbuf[p]; *q!=-1; ++q) {
+                int u = Zoltan_G2LHash_G2L(hash, *q);
+                vmark[u] = 0;
+            }
+            *q = 0;
+        }
+    
+    /*** Build the local vertices to be recolored ***/                    
+    MPI_Waitall(rreqcntC, rreqsC, stats); /* wait all recolor info to be received */
+    for (p = 0; p < zz->Num_Proc; p++)
+        if (p != zz->Proc) {
+            j = 0;
+            while (ssendbuf[p][j] != -1) {
+                int gu = ssendbuf[p][j++], u;
+                u = Zoltan_G2LHash_G2L(hash, gu);
+                if (!vmark[u]) {
+                    *srp[zz->Proc]++ = gu;
+                    vmark[u] = 1;
+                }
+            }
+        }
+    *srp[zz->Proc] = -1;
+    *nconflict = srp[zz->Proc] - conflicts;
+    for (q = conflicts; *q != -1; ++q) {
+        *q = Zoltan_G2LHash_G2L(hash, *q);
+        vmark[*q] = 0;
+    }
+    *q = 0;
+    MPI_Waitall(sreqcntC, sreqsC, stats); /* wait all recolor info to be sent */
+    
+#if 1
+    printf("%d: There are %d conflicts\n", zz->Proc, *nconflict);
+#endif
+
+ End:
+    
+    return ierr;
+}
+
+
 
 /*****************************************************************************/
 /* Returns the prime number closest to (and smaller than) stop */

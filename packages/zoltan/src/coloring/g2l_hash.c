@@ -36,7 +36,7 @@ int Zoltan_G2LHash_Destroy(G2LHash *hash)
     return ZOLTAN_OK;
 }
 
-int Zoltan_G2LHash_G2L(G2LHash *hash, int gno)
+int Zoltan_G2LHash_Insert(G2LHash *hash, int gno)
 {
     int i, lno;
     G2LHashNode *ptr;
@@ -62,3 +62,15 @@ int Zoltan_G2LHash_G2L(G2LHash *hash, int gno)
     return lno;
 }
 
+int Zoltan_G2LHash_G2L(G2LHash *hash, int gno)
+{
+    int i;
+    G2LHashNode *ptr;
+
+    i = Zoltan_Hash(&gno, 1, (unsigned int) hash->size);
+    for (ptr=hash->table[i]; ptr && ptr->gno!=gno; ptr = ptr->next);
+    if (!ptr)
+        return -1;
+    else
+        return ptr->lno;
+}
