@@ -68,7 +68,8 @@ meros = \
 
 ml = \
 --enable-ml \
---enable-nox
+--enable-nox \
+--enable-loca
 
 new_package = \
 --enable-new_package
