@@ -57,9 +57,11 @@ INTEL_LIB=${INTEL_DIR}/../lib
 --with-mpi-incdir="/usr/local/include" \
 CXX=${INTEL_CXX} \
 CC=${INTEL_CC} \
-CXXFLAGS="-O3 -finline-functions -cxxlib-gcc -I/usr/local/include -wd1476,1572,1505" \
+CCFLAGS="-O3  -Wall -I/usr/local/include" \
+CXXFLAGS="-O3 -finline-functions -cxxlib-gcc -ansi -Wall -w1 -I/usr/local/include -wd1476,1572,1505" \
 --with-ldflags=-L${INTEL_LIB} \
 FLIBS="-lfrtbegin -lg2c -lm -lgcc_s -lstdc++ -lgcc" \
+FFLAGS="-O3 -Wall" \
 --with-blas="-L/usr/local/intel/mkl70/lib/32 -lmkl_lapack -lmkl_ia32" \
 --with-libs="-lexpat" \
 --disable-default-packages \

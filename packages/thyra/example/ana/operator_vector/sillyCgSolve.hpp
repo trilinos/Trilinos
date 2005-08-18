@@ -72,7 +72,7 @@ bool sillyCgSolve(
   if(r0_nrm == ST::zero()) return true;          // Trivial RHS and initial LHS guess?
   // Create workspace vectors and scalars
   RefCountPtr<Thyra::VectorBase<Scalar> > p = createMember(space), q = createMember(space);
-  Scalar rho_old;
+  Scalar rho_old=1.0; // initialize to 1 to avoid a gcc warning - KL
   // Perform the iterations
   for( int iter = 0; iter <= maxNumIters; ++iter ) {
     // Check convergence and output iteration
