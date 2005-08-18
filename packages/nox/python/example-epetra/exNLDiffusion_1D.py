@@ -34,12 +34,18 @@
 # use "import ..." for Trilinos modules.  This prevents us from accidentally
 # picking up a system-installed version and ensures that we are testing the
 # build module.
-import setpath
-import Epetra
-import EpetraExt
-import NOX
 import sys
-from   Numeric import *
+
+try:
+    import setpath
+    import Epetra
+    import EpetraExt
+    import NOX
+except ImportError:
+    from PyTrilinos import Epetra, EpetraExt, NOX
+    print >>sys.stderr, "Using system-installed Epetra, EpetraExt, NOX"
+
+from Numeric import *
 
 ########################################################################
 
@@ -57,12 +63,13 @@ class Problem:
         self.computeGraph()
     def computeGraph(self):
         self.__graph = Epetra.CrsGraph(Epetra.Copy, self.__map, 3)
-        self.__graph.InsertGlobalIndices(0,2,array([0,1]))
-        for i in range(1,self.__size-1):
-            self.__graph.InsertGlobalIndices(i,3,array([i-1,i,i+1]))
-        self.__graph.InsertGlobalIndices(self.__size-1,2,array([self.__size-2,
-                                                                self.__size-1]))
-        self.__graph.TransformToLocal()
+        for lrid in range(self.__graph.NumMyRows()):
+            grid = self.__graph.GRID(lrid)
+            if   grid == 0            : indices = [0,1]
+            elif grid == self.__size-1: indices = [grid-1,grid]
+            else                      : indices = [grid-1,grid,grid+1]
+            self.__graph.InsertGlobalIndices(grid,len(indices),indices)
+        self.__graph.FillComplete()
     def setInterface(self, interface):
         self.__interface = interface
     def getSolution(self):
@@ -93,8 +100,8 @@ class Problem:
 ########################################################################
 
 def main():
-    # Set up the (serial) communicator
-    comm    = Epetra.SerialComm()
+    # Create a communicator
+    comm    = Epetra.PyComm()
     myPID   = comm.MyPID()
     numProc = comm.NumProc()
 
@@ -103,10 +110,10 @@ def main():
         print "usage:", sys.argv[0], "problemSize"
         sys.exit(1)
     if (len(sys.argv) == 1):
-        probSize = 11
+        probSize = 11 * comm.NumProc()
     else:
         probSize = int(sys.argv[1])
-    print "probSize =", probSize
+    if myPID == 0: print "probSize =", probSize
 
     # Create an instance of the nonlinear Problem class
     # and initialize the first guess
@@ -167,12 +174,20 @@ def main():
     group = NOX.Epetra.Group(printParams, lsParams, interface, soln, fdc)
 
     # Create the convergence tests
+    print myPID, "Creating NormF status test"
     absresid  = NOX.StatusTest.NormF(1.0e-6)
+    print myPID, "Creating rel NormF status test"
+    # Here is where the script hangs
     relresid  = NOX.StatusTest.NormF(group, 1.0e-6)
+    print myPID, "Creating NormUpdate status test"
     update    = NOX.StatusTest.NormUpdate(1.0e-5)
+    print myPID, "Creating NormWRMS status test"
     wrms      = NOX.StatusTest.NormWRMS(1.0e-2, 1.0e-8)
+    print myPID, "Creating MaxIters status test"
     maxiters  = NOX.StatusTest.MaxIters(20)
+    print myPID, "Creating Combo status test"
     converged = NOX.StatusTest.Combo(NOX.StatusTest.Combo.AND)
+    print myPID, "Adding status tests"
     converged.addStatusTest(absresid)
     converged.addStatusTest(relresid)
     converged.addStatusTest(wrms    )
