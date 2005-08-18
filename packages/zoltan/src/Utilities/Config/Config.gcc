@@ -24,13 +24,15 @@ RANLIB			= ranlib
 AR			= ar r
 
 CC			= gcc -Wall
-CPPC			= g++ -Wall
+CPPC			= g++ -Wall -Wno-deprecated
 #CC			= gcc -Wall -fprofile-arcs -ftest-coverage
+
 INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/lang/SC3.0.1/ansi_include \
 			  -I/Net/proj/zoltan/arch/solaris/include \
-			  -I/Net/local/mpi/include \
-			  -I/Net/local/mpi/build/solaris/ch_p4/include
+                          -I/Net/local/mpi/include \
+                          -I/Net/local/mpi/build/solaris/ch_p4/include
+
 DBG_FLAGS		= -g 
 OPT_FLAGS		= -O
 CFLAGS 			= $(DBG_FLAGS)
@@ -59,4 +61,29 @@ PATOH_INCPATH		= -I/Net/local/proj/zoltan/arch/all/src
 
 NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/solaris/lib
 NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/solaris/include
+
+#----------------------------------------------------------------
+# Definitions required to build vtk_view.  Check the
+# architecture specific "bin" directory on the LAN for a
+# prebuilt version.  VTK sources can be obtained at www.vtk.org.
+#
+# The location of the VTK libraries
+#
+VTK_LIBPATH = -L/Net/local/proj/zoltan/arch/solaris/lib/vtk
+
+# The location of the VTK header files
+#
+VTK_INCPATH = -I/Net/local/proj/zoltan/arch/solaris/include/vtk
+
+# The location of the X libraries, and the X libraries required, if any
+#
+X_LIBPATH = -L/usr/X/lib
+X_LIBS    = -lXt -lX11 -lXt
+
+# The location of the GL or Mesa libraries, and the libraries
+#
+GL_LIBPATH = -L/usr/lib
+GL_LIBS    = -lGL -lGLU
+#----------------------------------------------------------------
+
 
