@@ -333,10 +333,19 @@ bool MRTR::Node::BuildAveragedNormal()
   
   for (int i=0; i<3; ++i) n_[i] = 0.0;
   double weight = 0.0;
+
+#if 0
+  cout << "Building normal for node\n" << *this;
+#endif
   
   for (int i=0; i<nseg; ++i)
   {
     MRTR::Segment* seg = segptr_[i]; 
+
+#if 0
+    cout << "Now averaging from Segment\n" << *seg;
+#endif    
+
     if (!seg)
     {
       cout << "***ERR*** MRTR::Node::BuildAveragedNormal:\n"

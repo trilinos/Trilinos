@@ -176,7 +176,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       if (gnode1[i]->node->proc != MyPID) continue;
       MRTR::Node* node = 
         new MRTR::Node(gnode1[i]->Id,gnode1[i]->node->x,
-                       gnode1[i]->node->numdf,gnode1[i]->node->dof);
+                       2/*gnode1[i]->node->numdf*/,gnode1[i]->node->dof);
       bool ok = interface->AddNode(*node,0);
       delete node; node = NULL;
     }
@@ -188,7 +188,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       if (gnode2[i]->node->proc != MyPID) continue;
       MRTR::Node* node = 
         new MRTR::Node(gnode2[i]->Id,gnode2[i]->node->x,
-                       gnode2[i]->node->numdf,gnode2[i]->node->dof);
+                       2/*gnode2[i]->node->numdf*/,gnode2[i]->node->dof);
       bool ok = interface->AddNode(*node,1);
       delete node; node = NULL;
     }
@@ -257,6 +257,10 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
   // print all interfaces
     fflush(stdout);
     comm->Barrier();
+
+#if 0
+    cout << *mrtr_manager;
+#endif  
 
   delete [] ids;
   return (1);

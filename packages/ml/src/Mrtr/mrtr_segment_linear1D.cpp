@@ -246,7 +246,7 @@ double MRTR::Segment_Linear1D::Metric(double* xi, double g[], double G[][3])
 double* MRTR::Segment_Linear1D::BuildNormal(double* xi)
 { 
   // build the metric vectors at this local coordinates xi
-  double g[3];
+  double g[3]; for (int i=0; i<3; ++i) g[i] = 0.0;
   double dl;
   dl = Metric(xi,g,NULL);
   

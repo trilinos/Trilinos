@@ -62,12 +62,16 @@ bool MRTR::Projector::ProjectNodetoSegment_NodalNormal(MRTR::Node& node,
 {
 #if 0
   cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
+  cout << "Segment\n" << seg;
+  MRTR::Node** nodes = seg.Nodes();
+  cout << *nodes[0];
+  cout << *nodes[1];
 #endif
   if (IsTwoDimensional())
   {
     // we do a newton iteration for the projection coordinates xi
     // set starting value to the middle of the segment
-    double eta = 0.0;
+    double eta = -0.8;
     int    i = 0;
     double F,dF,deta;
     for (i=0; i<10; ++i)

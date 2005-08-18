@@ -91,7 +91,7 @@ public:
   // get view of node Ids on this segment
   const int* NodeIds() const { return &(nodeId_[0]); }
   
-  // rturn ptr vector to my nodes (might be NULL before call to Interface::Complete())
+  // return ptr vector to my nodes (might be NULL before call to Interface::Complete())
   MRTR::Node** Nodes() { return &(nodeptr_[0]); }
   
   // return number of functions set

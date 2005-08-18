@@ -133,20 +133,22 @@ int cca_mrtr_2D_prepare_gline_data(GLINE* gline, int** nodeIds,
   ELEMENT* ele = gline->gsurf[0]->element;
   int eleids[100];
   int ids[100];
+  int nodelocalids[100];
+  int count=0;
+
   (*nodeIds) = new int [gline->ngnode];
   
   for (int i=0; i<ele->numnp; ++i)
     eleids[i] = ele->node[i]->gnode->Id;
-  
   for (int j=0; j<gline->ngnode; ++j)
     ids[j] = gline->gnode[j]->Id;
   
-  int count=0;
   for (int i=0; i<ele->numnp; ++i)
   {
     for (int j=0; j<gline->ngnode; ++j)
       if (eleids[i] == ids[j])
       {
+        nodelocalids[count] = i;
         (*nodeIds)[count] = ids[j];
         ++count;
         break;
@@ -154,6 +156,15 @@ int cca_mrtr_2D_prepare_gline_data(GLINE* gline, int** nodeIds,
   }
   if (count != gline->ngnode)
     cout << "***ERR*** Something wrong in finding nodeids for gline\n";
+
+  // we have to check the nodelocalids for the combination 0 3
+  // because in this case the order is actually 3 0
+  if (nodelocalids[0]==0 && nodelocalids[1]==3)
+  {
+    int tmp = (*nodeIds)[0];
+    (*nodeIds)[0] = (*nodeIds)[1];
+    (*nodeIds)[1] = tmp;
+  }
   return (count);
 }
 

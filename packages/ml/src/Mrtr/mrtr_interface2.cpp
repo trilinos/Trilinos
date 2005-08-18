@@ -1055,7 +1055,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
         mindist = dist;
 	closenode = mnode;
       }
-      // cout << "snode " << snode->Id() << " mnode " << mnode->Id() << " mindist " << mindist  << " dist " << dist << endl;
+      //cout << "snode " << snode->Id() << " mnode " << mnode->Id() << " mindist " << mindist  << " dist " << dist << endl;
     }
     if (!closenode)
     {
@@ -1064,8 +1064,13 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
     }
-    // cout << "snode " << snode->Id() << " closenode " << closenode->Id() << endl;
-    
+
+#if 0
+    cout << "snode " << snode->Id() << " closenode " << closenode->Id() << endl;
+    cout << "snode\n" << *snode;
+    cout << "closenode\n" << *closenode;
+#endif    
+
     // get segments attached to closest node cnode
     int  nseg = closenode->Nseg();
     MRTR::Segment** segs = closenode->Segments(); 
@@ -1215,7 +1220,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
 
 
 /*----------------------------------------------------------------------*
- | (re)build the topology info between nodes and segments               |
+ | project nodes master to slave                                        |
  *----------------------------------------------------------------------*/
 bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
 { 
@@ -1325,8 +1330,8 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
       }
     } // for (int i=0; i<nseg; ++i)
     
-    // check whether the besseg/bestdist are inside that segment
-    // (with some tolerance of 10%
+    // check whether the bestseg/bestdist are inside that segment
+    // (with some tolerance of 20%)
     bool ok = false;
     if (IsOneDimensional())
       if (abs(bestdist[0]) < 1.2) ok = true;
@@ -1363,7 +1368,8 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
   } // for (scurr=rnode_[mside].begin(); scurr!=rnode_[mside].end(); ++scurr)
 
   // loop all master nodes again and make the projection and the new normal redundant
-  double* bcast = new double[7*rnode_[mside].size()]; // that's the max
+  int bsize = 7*rnode_[mside].size();
+  double* bcast = new double[bsize]; // that's the max
   for (int proc=0; proc<lComm()->NumProc(); ++proc)
   {
     int blength = 0;
@@ -1392,7 +1398,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
         bcast[blength] = N[2];
         ++blength;
       }
-      if (blength > 7*rnode_[sside].size())
+      if (blength > bsize)
       {
         cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
              << "***ERR*** Overflow in communication buffer occured\n"

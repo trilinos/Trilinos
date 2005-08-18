@@ -481,7 +481,15 @@ bool MRTR::Interface::Project()
   map<int,MRTR::Node*>::iterator ncurr;
   for (int side=0; side<2; ++side)
     for (ncurr=rnode_[side].begin(); ncurr!=rnode_[side].end(); ++ncurr)
+    {
+#if 0
+      cout << *(ncurr->second);
+#endif
       ncurr->second->BuildAveragedNormal();
+#if 0
+      cout << *(ncurr->second);
+#endif
+    }
 
   //-------------------------------------------------------------------
   // check the type of projection to be used and project nodes
