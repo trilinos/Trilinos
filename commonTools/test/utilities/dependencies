@@ -33,6 +33,7 @@ epetra = \
 --with-loca-anasazi \
 --enable-aztecoo \
 --enable-belos \
+--enable-claps \
 --enable-epetraext \
 --enable-ifpack \
 --enable-komplex \
