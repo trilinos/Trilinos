@@ -12,16 +12,23 @@
     COMM = SERIAL;
 }
 
-# NOX epetra tests
+# NOX Epetra tests
 (FRAMEWORK) {
     DIRS = epetra/1Dfem,
-           epetra/DS6.5.1,
            epetra/NOX_Group,
            epetra/NOX_NewTest,
            epetra/NOX_Vector;
     EXIT-STATUS = STRING-COMPARISON(Test passed!);
     ARGS = -v;
     COMM = SERIAL, MPI;
+}
+
+# NOX Epetra test that is limited to 2 processors
+(FRAMEWORK) {
+    DIRS = epetra/DS6.5.1;
+    EXIT-STATUS = STRING-COMPARISON(Test passed!);
+    ARGS = -v;
+    COMM = SERIAL, MPI(2);
 }
 
 # NOX Python tests
