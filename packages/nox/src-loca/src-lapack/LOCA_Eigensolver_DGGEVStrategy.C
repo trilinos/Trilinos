@@ -73,6 +73,8 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   // Get LAPACK group
   LOCA::LAPACK::Group* grp = 
     dynamic_cast<LOCA::LAPACK::Group*>(&group);
+
+  bool hasMassMatrix = grp->hasMass();
  
   // Check to make sure we have dggev available if we need generalized 
   // eigenvalues.
@@ -87,8 +89,6 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   }
 
 #endif
-
-  bool hasMassMatrix = grp->hasMass();
 
   if (globalData->locaUtils->doPrint(Utils::StepperIteration)) {
     cout << endl << globalData->locaUtils->fill(64,'=') << endl
