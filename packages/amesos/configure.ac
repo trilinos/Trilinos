@@ -514,7 +514,7 @@ if test "X$ac_cv_use_amesos_superlu" != "Xno"; then
   fi
 
   AC_CHECK_HEADER([dsp_defs.h],,,) 
-  if test "X$ac_cv_header_slu_Cnames_h" == "Xyes"; then
+  if test "X$ac_cv_header_dsp_defs_h" == "Xyes"; then
     AC_DEFINE(AMESOS_SUPERLU_PRE_JULY2005,[],[Using pre July 2005 Superlu])
   else
 
