@@ -198,7 +198,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     // FIXME: later should be chosen by mortar manager ?
     //        this means that the functions have to stay changeable
 
-    interface->SetMortarSide(1);
+    interface->SetMortarSide(0);
 
     //-----------------------------------------------------------------
     // set linear shape functions on both sides, 
@@ -217,8 +217,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
 
     int side = interface->MortarSide();
     side     = interface->OtherSide(side);
-    MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
-    //MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
+    //MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
+    MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
     interface->SetFunctionAllSegmentsSide(side,1,func);
     delete func; func = NULL;
     

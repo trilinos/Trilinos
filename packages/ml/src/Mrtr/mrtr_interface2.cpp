@@ -1011,7 +1011,7 @@ bool MRTR::Interface::ProjectNodes_NormalField()
 }
 
 /*----------------------------------------------------------------------*
- | (re)build the topology info between nodes and segments               |
+ | project the slave nodes onto master segments along slave normal field|
  *----------------------------------------------------------------------*/
 bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
 { 
@@ -1148,9 +1148,60 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
     else  // this slave node does not have a valid projection
     {
       if (OutLevel()>5)
-      cout << "################### Node " << snode->Id() << " does not have projection\n\n";
+      cout << "***WRN***: Node " << snode->Id() << " does not have projection\n\n";
+      snode->SetProjectedNode(NULL);
     }
   } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
+
+
+  // Postprocess the projections
+  // The slave side of the interface might be larger then the master side
+  // of the interface so not all slave nodes have a projection.
+  // For those slave nodes without a projection attached to a slave segment
+  // which overlaps with the master side, lagrange mutlipliers have to be
+  // introduced. This is done by checking all nodes without a projection 
+  // whether they are attached to some slave segment on which another node
+  // HAS a projection. If this case is found, a pseudo ProjectedNode is 
+  // introduced for that node.
+  for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
+  {
+    MRTR::Node* snode = scurr->second;
+    
+    // do only my own nodes
+    if (NodePID(snode->Id()) != lComm()->MyPID())
+      continue;
+      
+    // don't do anything on nodes that already have a projection
+    if (snode->GetProjectedNode())
+      continue;
+    
+    // get segments adjacent to this node  
+    int nseg             = snode->Nseg();
+    MRTR::Segment** segs = snode->Segments();
+    
+    // loop segments and check for other nodes with projection
+    bool foundit = false;
+    for (int i=0; i<nseg; ++i)
+    {
+      int nnode = segs[i]->Nnode();
+      MRTR::Node** nodes = segs[i]->Nodes();
+      for (int j=0; j<nnode; ++j)
+        if (nodes[j]->GetProjectedNode())
+        {
+          foundit = true;
+          break;
+        }
+      if (foundit) break;
+    }
+    
+    if (foundit)
+    {
+      MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*snode,NULL,NULL);
+      snode->SetProjectedNode(pnode);
+    }
+    
+  } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
+  
 
   // loop all slave nodes again and make the projections redundant
   double* bcast = new double[4*rnode_[sside].size()]; // that's the max
@@ -1168,7 +1219,10 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
         const double* xi = pnode->Xi();
         bcast[blength] = (double)pnode->Id();            
         ++blength;
-        bcast[blength] = (double)pnode->Segment()->Id(); 
+        if (pnode->Segment())
+          bcast[blength] = (double)pnode->Segment()->Id(); 
+        else
+          bcast[blength] = -1.0; // indicating this node does not have projection but lagrange multipliers
         ++blength;
         bcast[blength] = xi[0];
         ++blength;
@@ -1194,8 +1248,10 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
         int     sid = (int)bcast[i]; ++i;
         double* xi  = &bcast[i];     ++i; ++i;
         MRTR::Node* snode = GetNodeView(nid);
-        MRTR::Segment* seg = GetSegmentView(sid);
-        if (!snode || !seg)
+        MRTR::Segment* seg = NULL;
+        if (sid!=-1)
+          seg = GetSegmentView(sid);
+        if (!snode)
         {
           cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
                << "***ERR*** Cannot get view of node or segment\n"
@@ -1220,7 +1276,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
 
 
 /*----------------------------------------------------------------------*
- | project nodes master to slave                                        |
+ | project nodes master to slave along slave cont. normal field         |
  *----------------------------------------------------------------------*/
 bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
 { 
@@ -1363,7 +1419,8 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
     else // this mnode does not have a valid projection
     {
       if (OutLevel()>5)
-      cout << "################### Node " << mnode->Id() << " does not have projection\n\n";
+      cout << "***WRN***: Node " << mnode->Id() << " does not have projection\n\n";
+      mnode->SetProjectedNode(NULL);
     }
   } // for (scurr=rnode_[mside].begin(); scurr!=rnode_[mside].end(); ++scurr)
 
@@ -1469,7 +1526,7 @@ int MRTR::Interface::SetLMDofs(int minLMGID)
     int mside = MortarSide();
     int sside = OtherSide(mside);
     
-    // loop nodes on slave side and set LMdofs for thos who have a projection
+    // loop nodes on slave side and set LMdofs for those who have a projection
     map<int,MRTR::Node*>::iterator curr;
     for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
     {

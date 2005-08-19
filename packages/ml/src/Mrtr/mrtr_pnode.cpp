@@ -44,16 +44,17 @@ MRTR::ProjectedNode::ProjectedNode(MRTR::Node& basenode,
                                    MRTR::Segment* pseg) :
 MRTR::Node(basenode)
 {
-  if (!pseg)
-  {
-    cout << "***ERR*** MRTR::ProjectedNode::ProjectedNode:\n"
-         << "***ERR*** parameter pseg = NULL\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);     
-  }
   pseg_ = pseg;
-  xi_[0] = xi[0];
-  xi_[1] = xi[1];
+  if (xi)
+  {
+    xi_[0] = xi[0];
+    xi_[1] = xi[1];
+  }
+  else
+  {
+    xi_[0] = 999.0;
+    xi_[1] = 999.0;
+  }
 }
 
 /*----------------------------------------------------------------------*
