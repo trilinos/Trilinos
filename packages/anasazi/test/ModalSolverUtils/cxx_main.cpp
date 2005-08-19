@@ -395,9 +395,9 @@ int main(int argc, char *argv[])
   }
   else {
     for (i=0; i<nev; i++) {
-      if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-Avec[i] ) > 1.0e-15 ) {
+      if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-K(i,i) ) > 1.0e-14 ) {
 	numberFailedTests++;
-	cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 10]!"<<endl;
+	cout<< "ERROR (Processor "<<MyPID<<"):  DIRECT SOLVER FAILED [esType = 10]!"<<endl;
 	testFailed = true;
 	break;
       }      
@@ -412,9 +412,9 @@ int main(int argc, char *argv[])
   std::vector<double> Mdiag(NumColumns);
   std::vector<double> true_lambda(NumColumns);
   for (i=0; i<NumColumns; i++) {
-    Mdiag[i] = Teuchos::ScalarTraits<double>::random() + 1.0;
+    Mdiag[i] = Teuchos::ScalarTraits<double>::random() + 2.0;
     M(i,i) = Mdiag[i];
-    true_lambda[i] = Avec[i] / Mdiag[i];
+    true_lambda[i] = K(i,i) / Mdiag[i]; 
   }
   msUtils.sortScalars( NumColumns, &true_lambda[0] );
 
@@ -433,10 +433,10 @@ int main(int argc, char *argv[])
     for (i=0; i<nev; i++) {
       if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-true_lambda[i] ) > 1.0e-14 ) {
 	numberFailedTests++;
-	cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 1]!"<<endl;
+	cout<< "ERROR (Processor "<<MyPID<<"):  DIRECT SOLVER FAILED [esType = 1]!"<<endl;
 	testFailed = true;
 	break;
-      }      
+      } 
     }
     if (!testFailed && (verbose && MyPID == 0)) {
       cout<< "DIRECT SOLVER PASSED [esType = 1]!"<<endl;
@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
     for (i=0; i<nev; i++) {
       if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-true_lambda[i] ) > 1.0e-14 ) {
 	numberFailedTests++;
-	cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 0]!"<<endl;
+	cout<< "ERROR (Processor "<<MyPID<<"):  DIRECT SOLVER FAILED [esType = 0]!"<<endl;
 	testFailed = true;
 	break;
       }      
