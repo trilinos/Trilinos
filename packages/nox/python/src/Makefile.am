@@ -77,6 +77,8 @@ setup.txt: Makefile
 	@echo "  'top_srcdir'  : '$(top_srcdir)',"   >> $@
 	@echo "  'srcdir'      : '$(srcdir)',"       >> $@
 	@echo "  'top_builddir': '$(top_builddir)'," >> $@
+	@echo "  'CC'          : '$(CC)',"           >> $@
+	@echo "  'CXX'         : '$(CXX)',"          >> $@
 	@echo "  'LDFLAGS'     : '$(LDFLAGS)',"      >> $@
 	@echo "  'LAPACK_LIBS' : '$(LAPACK_LIBS)',"  >> $@
 	@echo "  'BLAS_LIBS'   : '$(BLAS_LIBS)',"    >> $@
