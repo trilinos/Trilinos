@@ -3,7 +3,7 @@
 
 #include "Python.h"
 #include "NOX_Epetra_Interface.H"
-#include "Callback.H"
+#include "Callback.h"
 
 // Forward declarations
 class Epetra_Vector;
