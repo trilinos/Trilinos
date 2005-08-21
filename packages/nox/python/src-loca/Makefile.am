@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#                 PyTrilinos.NOX: Python Interface to NOX
+#                PyTrilinos.LOCA: Python Interface to LOCA
 #                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -40,11 +40,6 @@ if BUILD_LIBNOXLAPACK
   LAPACK_EXAMPLE_SUBDIR=example-lapack
 endif
 
-if BUILD_LIBLOCA
-  LOCA_SRC_SUBDIR=src-loca
-endif
-
 SUBDIRS = src test \
 	  $(EPETRA_TEST_SUBDIR) $(EPETRA_EXAMPLE_SUBDIR) \
-	  $(LAPACK_TEST_SUBDIR) $(LAPACK_EXAMPLE_SUBDIR) \
-	  $(LOCA_SRC_SUBDIR)
+	  $(LAPACK_TEST_SUBDIR) $(LAPACK_EXAMPLE_SUBDIR)

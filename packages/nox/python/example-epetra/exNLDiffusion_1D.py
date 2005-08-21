@@ -174,27 +174,27 @@ def main():
     group = NOX.Epetra.Group(printParams, lsParams, interface, soln, fdc)
 
     # Create the convergence tests
-    print myPID, "Creating NormF status test"
     absresid  = NOX.StatusTest.NormF(1.0e-6)
-    print myPID, "Creating rel NormF status test"
-    # Here is where the script hangs
     relresid  = NOX.StatusTest.NormF(group, 1.0e-6)
-    print myPID, "Creating NormUpdate status test"
     update    = NOX.StatusTest.NormUpdate(1.0e-5)
-    print myPID, "Creating NormWRMS status test"
     wrms      = NOX.StatusTest.NormWRMS(1.0e-2, 1.0e-8)
-    print myPID, "Creating MaxIters status test"
     maxiters  = NOX.StatusTest.MaxIters(20)
-    print myPID, "Creating Combo status test"
     converged = NOX.StatusTest.Combo(NOX.StatusTest.Combo.AND)
-    print myPID, "Adding status tests"
+    if myPID == 0: print "Adding absresid"
     converged.addStatusTest(absresid)
+    if myPID == 0: print "Adding relresid"
     converged.addStatusTest(relresid)
+    if myPID == 0: print "Adding wrms"
     converged.addStatusTest(wrms    )
+    if myPID == 0: print "Adding update"
     converged.addStatusTest(update  )
+    if myPID == 0: print "Creating combo"
     combo     = NOX.StatusTest.Combo(NOX.StatusTest.Combo.OR)
+    if myPID == 0: print "Adding converged"
     combo.addStatusTest(converged)
+    if myPID == 0: print "Adding maxiters"
     combo.addStatusTest(maxiters)
+    if myPID == 0: print "Done building combo"
 
     # Create the method
     solver = NOX.Solver.Manager(group, combo, nlParams)
@@ -203,15 +203,16 @@ def main():
     status = solver.solve()
 
     # Print the status test result
-    print "\nStatus test:"
-    if (status == NOX.StatusTest.Converged):
-        print "Nonlinear solver converged!"
-    elif (status == NOX.StatusTest.Failed):
-        print "Nonlinear solver failed to converge!"
-    elif (status == NOX.StatusTest.Unconverged):
-        print "Nonlinear solver neither failed nor converged!"
-    elif (status == NOX.StatusTest.Unevaluated):
-        print "Nonlinear solver unevaluated."
+    if myPID == 0:
+        print "\nStatus test:"
+        if (status == NOX.StatusTest.Converged):
+            print "Nonlinear solver converged!"
+        elif (status == NOX.StatusTest.Failed):
+            print "Nonlinear solver failed to converge!"
+        elif (status == NOX.StatusTest.Unconverged):
+            print "Nonlinear solver neither failed nor converged!"
+        elif (status == NOX.StatusTest.Unevaluated):
+            print "Nonlinear solver unevaluated."
 
     # Print the final output parameters
     nlOutputParams = nlParams.sublist("Output")
@@ -219,12 +220,13 @@ def main():
     nlIts = nlOutputParams.getParameter("Nonlinear Iterations")
     lsIts = lsOutputParams.getParameter("Total Number of Linear Iterations")
     resid = nlOutputParams.getParameter("2-Norm of Residual")
-    print "\n", \
-          "Final Parameters\n", \
-          "****************\n", \
-          "Nonlinear iterations:   ", nlIts, "\n", \
-          "Total linear iterations:", lsIts, "\n", \
-          "Final residual:         ", resid
+    if myPID == 0:
+        print "\n", \
+              "Final Parameters\n", \
+              "****************\n", \
+              "Nonlinear iterations:   ", nlIts, "\n", \
+              "Total linear iterations:", lsIts, "\n", \
+              "Final residual:         ", resid
 
 if (__name__ == "__main__"):
     main()

@@ -892,6 +892,16 @@ AC_CONFIG_FILES([
 		python/test-lapack/Makefile
 		python/example-epetra/Makefile
 		python/example-lapack/Makefile
+		python/src-loca/Makefile
+		python/src-loca/src/Makefile
+		python/src-loca/src/__init__.py
+		python/src-loca/src/.deps/dummy
+		python/src-loca/src/PyTrilinos/__init__.py
+		python/src-loca/test/Makefile
+		python/src-loca/test-epetra/Makefile
+		python/src-loca/test-lapack/Makefile
+		python/src-loca/example-epetra/Makefile
+		python/src-loca/example-lapack/Makefile
 		])
 
 AC_OUTPUT
