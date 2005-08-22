@@ -214,6 +214,7 @@ int main(int argc, char *argv[])
 
     // Set the LOCA Utilities
     NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
+    locaUtilsList.setParameter("MyPID", MyPID);
     if (verbose) {
       locaUtilsList.setParameter("Output Information", 
 				 LOCA::Utils::Error + 
@@ -231,6 +232,7 @@ int main(int argc, char *argv[])
     NOX::Parameter::List& nlParams = paramList->sublist("NOX");
 
     NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.setParameter("MyPID", MyPID);
     if (verbose)
        nlPrintParams.setParameter("Output Information", 
 				  NOX::Utils::Error +
