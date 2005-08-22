@@ -428,8 +428,8 @@ LOCA::NewStepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
     NOX::StatusTest::StatusType solverStatus = solverPtr->solve();
 
     // Get solution
-    *curGroupPtr
-      = dynamic_cast<const LOCA::MultiContinuation::ExtendedGroup&>(solverPtr->getSolutionGroup());
+    *Teuchos::rcp_dynamic_cast<NOX::Abstract::Group>(curGroupPtr) = 
+      solverPtr->getSolutionGroup();
 
     if (solverStatus == NOX::StatusTest::Failed) {
       printEndStep(LOCA::Abstract::Iterator::Unsuccessful);
