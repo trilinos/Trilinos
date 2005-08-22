@@ -34,6 +34,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include "Tpetra_Util.hpp" // for toString
 #include "Tpetra_Version.hpp"
+#include <unistd.h>
 #ifdef TPETRA_MPI
 #include <mpi.h>
 #endif // TPETRA_MPI
