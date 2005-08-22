@@ -219,6 +219,7 @@ int ML_Aggregate_Set_CoarsenScheme_DD( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_UncoupledMIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_UncoupledCoupled( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_METIS( ML_Aggregate *ag  );
+int ML_Aggregate_Set_CoarsenScheme_VBMETIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_ParMETIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_Zoltan( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_User( ML_Aggregate *ag  );
@@ -236,6 +237,10 @@ int ML_Aggregate_Set_CoarsenSchemeLevel_METIS( int level, int, ML_Aggregate *ag 
 int ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS( int level, int, ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenSchemeLevel_Zoltan( int level, int, ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenSchemeLevel_User( int level, int, ML_Aggregate *ag  );
+int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,const int level,
+                                                    const int N_levels,const int nblocks, 
+                                                    const int *blocks,const int *block_pde,
+                                                    const int block_dim);
 
 /* ------------------------------------------------------------------------- */
 /* set threshold for pruning matrix graph                                    */

@@ -2175,6 +2175,23 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 
   if (CoarsenScheme == "Uncoupled-MIS")
       ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(agg_);
+  else if (CoarsenScheme == "VBMETIS")
+  {
+     ML_Aggregate_Set_CoarsenScheme_VBMETIS(agg_);
+     int  nblocks   = List_.get("aggregation: nblocks",0);
+     int  blockdim  = List_.get("aggregation: length blocks",0);
+     int* blocks    = List_.get("aggregation: blocks", (int*)NULL);
+     int* block_pde = List_.get("aggregation: block_pde", (int*)NULL);
+     ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS(agg_,0,NumLevels_,nblocks,
+                                                    blocks,block_pde,blockdim);
+     int nodesperagg = List_.get("aggregation: nodes per aggregate",0);
+     if (!nodesperagg) {
+       cout << "*ML*WRN* aggregation: nodes per aggregate no set, using 9\n";
+       nodesperagg = 9;
+     }
+     for (int i=0; i<NumLevels_; ++i)
+       ML_Aggregate_Set_NodesPerAggr(ml_,agg_,i,nodesperagg);
+  }
   else {
      for( int level=0 ; level<NumLevels_-1 ; ++level ) {  
    
