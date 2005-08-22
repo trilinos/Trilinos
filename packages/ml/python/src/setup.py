@@ -119,7 +119,7 @@ if sysName == "Linux":
 # Define the strings that refer to the required source files.
 wrapML          = "ML_wrap.cpp"
 
-# compiler and linker
+# Compiler and linker
 sysconfig.get_config_vars()
 config_vars = sysconfig._config_vars;
 config_vars['CC']  = CXX
