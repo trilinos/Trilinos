@@ -119,6 +119,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   double hgraph_global_max[2];
   double hgraph_global_min[2];
   double hgraph_global_sum[2];
+  double hgraph_local_stats[2];
+  ZHG* zhg;
   
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -378,7 +380,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         }
 
         /* create and fill zhg structure with all removed edges */
-        ZHG* zhg;
         zhg = (ZHG*) ZOLTAN_MALLOC(sizeof(ZHG));
         if (zhg == NULL) {
             ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
@@ -399,7 +400,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         zhg->nRecv_GNOs = 0;
 
         /* Perform cut calculations and find global max, min and sum */
-        double hgraph_local_stats[2];
         ierr = Zoltan_PHG_Removed_Cuts(zz, zhg, hgraph_local_stats);
         if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
             ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_PHG_Removed_Cuts failed!");

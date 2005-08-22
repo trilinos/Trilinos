@@ -1222,7 +1222,8 @@ static int sendNextStepsForbiddenColors(ZZ *zz, G2LHash *hash, int nlvtx, int p,
                                  int *nColor, int *color, int *mark, int *confChk, int sncnt, int *wset, int *wsize, MPI_Request *sreqsFx, MPI_Request *sreqsF)
 {
     int u, m1 = 0, m2 = 0, m3, m4;
-    
+    int cnt;
+
     /*** calculate forbidden colors for each vertex u
          that proc p will color in its current superstep ***/
     while (*srp[p] >= 0) {
@@ -1230,7 +1231,7 @@ static int sendNextStepsForbiddenColors(ZZ *zz, G2LHash *hash, int nlvtx, int p,
 #if 0
         printf("[%d] u:%d, gu:%d, pu: %d, xadjnls: %d, xadjnle: %d\n", zz->Proc, u, *srp[p], p, xadjnl[u-nlvtx], xadjnl[u-nlvtx+1]);
 #endif        
-        int cnt = 0; /* count the max number of forbidden colors for u */
+        cnt = 0; /* count the max number of forbidden colors for u */
         /* put the start of u's forbidden colors into xforbiddenS */
         xforbiddenS[p][m1++] = m2;
         for (m3 = xadjnl[u-nlvtx]; m3 < xadjnl[u-nlvtx+1]; m3++) { /*mark d2 forbidden colors of u*/
