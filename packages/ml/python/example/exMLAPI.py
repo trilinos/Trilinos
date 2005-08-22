@@ -19,8 +19,9 @@
 try:
   import setpath
   import Epetra, ML
-except:
+except ImportError:
   from PyTrilinos import Epetra, ML
+  print "Using system-installed Epetra, ML"
 
 class MultiLevel:
   def __init__(self, A, MaxLevels):

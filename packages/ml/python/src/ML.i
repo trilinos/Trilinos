@@ -151,6 +151,10 @@ bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
 
 %}
 
+// Ignore directives
+%ignore *::operator=;
+%ignore *::operator[];
+
 using namespace std;
 %include "ml_config.h"
 

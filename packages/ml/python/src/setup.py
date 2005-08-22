@@ -65,10 +65,15 @@ pytrilinosLib    = "pytrilinos"
 # Define the epetra include path, library directory and library name
 PyEpetraDir   = os.path.join(pakDir, "..", "epetra", "python", "src")
 
-# setup standard information for includes, libraries, and extra agrs
-stdIncludes = [srcDir, pytrilinosInc, PyEpetraDir];
-stdLibs     = [pytrilinosLib]
-stdLibDirs  = [pytrilinosLibDir]
+# Define the amesos include path, library directory and library name
+amesosInc    = os.path.join(pakDir,   "..", "amesos", "src")
+amesosLibDir = os.path.join(buildDir, "..", "amesos", "src")
+amesosLib    = "amesos"
+
+# Set up standard information for includes, libraries, and extra agrs
+stdIncludes = [srcDir, pytrilinosInc, PyEpetraDir, amesosInc];
+stdLibDirs  = [pytrilinosLibDir, amesosLibDir]
+stdLibs     = [ ]
 extraArgs   = [ ]
 
 # Create the extra arguments list and complete the standard libraries list.
@@ -95,7 +100,18 @@ for include in am_includes:
     else:
         extraArgs.append(include)
 
-# hack to fix linking under linux
+# Finish up stdLibs definition.  We may need to add the Amesos library, and its
+# position is non-trivial
+if amesosLib not in stdLibs:
+    epetraExtLib = "epetraext"
+    if epetraExtLib in stdLibs:
+        index = stdLibs.index(epetraExtLib)
+        stdLibs.insert(index, amesosLib)
+    else:
+        stdLibs.append(amesosLib)
+stdLibs.append(pytrilinosLib)
+
+# Hack to fix linking under Linux
 sysName = os.uname()[0]
 if sysName == "Linux":
     extraArgs.append("-lstdc++")
