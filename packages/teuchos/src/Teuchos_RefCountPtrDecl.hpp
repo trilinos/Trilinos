@@ -123,6 +123,15 @@ RefCountPtr<C> c_ptr = rcp(new C);
 RefCountPtr<C> c_ptr = rcp(new C[n],DeallocArrayDelete<C>(),true);
 \endcode
 
+<li> <b>Creating a <tt>RefCountPtr<></tt> object equipped with a specialized deallocator function</b> : <tt>Teuchos::DeallocFunctorDelete</tt>
+
+\code
+
+void someDeallocFunction(C* c_ptr);
+
+RefCountPtr<C> c_ptr = rcp(new deallocFunctorDelete<C>(someDeallocFunction),true);
+\endcode
+
 <li> <b>Initializing a <tt>RefCountPtr<></tt> object to NULL</b>
 
 \code
@@ -419,6 +428,37 @@ public:
 	/// Deallocates a pointer <tt>ptr</tt> using <tt>delete [] ptr</tt> (required).
 	void free( T* ptr ) { if(ptr) delete [] ptr; }
 };
+
+/** \brief Deallocator subclass that Allows any functor object (including a
+ * function pointer) to be used to free an object.
+ *
+ * Note, the only requirement is that deleteFuctor(ptr) can be called (which
+ * is true for a function pointer).
+ *
+ * Note, a client should generally use the function
+ * <tt>deallocFunctorDelete()</tt> to create this object and not try to
+ * construct it directly.
+ */
+template<class T, class DeleteFunctor>
+class DeallocFunctorDelete
+{
+public:
+  DeallocFunctorDelete( DeleteFunctor deleteFunctor ) : deleteFunctor_(deleteFunctor) {}
+  typedef T ptr_t;
+  void free( T* ptr ) { if(ptr) deleteFunctor_(ptr); }
+private:
+  DeleteFunctor deleteFunctor_;
+  DeallocFunctorDelete(); // Not defined and not to be called!
+};
+
+/** \brief A simple function used to create a functor deallocator object.
+ */
+template<class T, class DeleteFunctor>
+DeallocFunctorDelete<T,DeleteFunctor>
+deallocFunctorDelete( DeleteFunctor deleteFunctor )
+{
+  return DeallocFunctorDelete<T,DeleteFunctor>(deleteFunctor);
+}
 
 /** \brief . */
 template<class T>

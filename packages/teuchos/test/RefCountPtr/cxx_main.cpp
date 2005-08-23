@@ -125,6 +125,12 @@ public:
   ~Get_A_f_return() { *a_f_return_ = a_->A_f(); }
 };
 
+void deallocA(A* ptr)
+{
+  std::cout << "\nCalled deallocA(...)!\n";
+  delete ptr;
+}
+
 /*
 
  Non-polymophic classes hiearchy examlpe
@@ -190,6 +196,7 @@ int main( int argc, char* argv[] ) {
 
 	using Teuchos::RefCountPtr;
 	using Teuchos::DeallocDelete;
+	using Teuchos::deallocFunctorDelete;
 	using Teuchos::null;
 	using Teuchos::rcp;
 	using Teuchos::is_null;
@@ -216,7 +223,7 @@ int main( int argc, char* argv[] ) {
 #ifdef HAVE_MPI
 			MPI_Finalize();
 #endif
-			cout << "End Result: TEST FAILED" << endl;
+			cout << "\nEnd Result: TEST FAILED" << endl;
 			return parse_return;
 		}
 
@@ -497,6 +504,9 @@ int main( int argc, char* argv[] ) {
     TEST_FOR_EXCEPT( a_f_return != A_f_return ); // Should be been called in destructor of a_ptr1 but before the A object is destroyed!
 #endif
 
+    // Testing the deallocFunctorDelete function and DeallocFunctorDelete class
+    a_ptr1 = rcp( new C, deallocFunctorDelete<A>(deallocA), true );
+
 #ifdef HAVE_TEUCHOS_BOOST
 
 		if(verbose)
@@ -542,7 +552,7 @@ int main( int argc, char* argv[] ) {
 	MPI_Finalize();
 #endif
 
-    cout << "End Result: TEST PASSED" << endl;	
+    cout << "\nEnd Result: TEST PASSED" << endl;	
 
 #ifdef HAVE_MPI
     if ( procRank == 0 )
