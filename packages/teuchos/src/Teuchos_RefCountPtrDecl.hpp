@@ -658,7 +658,7 @@ template<class T> inline RefCountPtr<T> rcp( T* p ) { return rcp(p,true); }
  *                 the underlying pointer by calling <tt>dealloc.free(p)</tt>.
  *                 when all references have been removed.
  *
- * Postconditions:<ul>
+ * Preconditions:<ul>
  * <li> The function <tt>void Dealloc_T::free(T* p)</tt> exists.
  * </ul>
  *
@@ -678,8 +678,8 @@ template<class T> inline RefCountPtr<T> rcp( T* p ) { return rcp(p,true); }
  *
  * By default, <tt>return</tt> has ownership to delete the object
  * pointed to by <tt>p</tt> when <tt>return</tt> is deleted (see
- * <tt>~RefCountPtr())</tt>.  It is vitually important that if
- * <tt>owns_mem == true</tt> that the address <tt>p</tt> that is
+ * <tt>~RefCountPtr())</tt>.  If <tt>owns_mem==true</tt>, it is vital
+ * that the address <tt>p</tt>
  * passed in is the same address that was returned by <tt>new</tt>.
  * With multiple inheritance this is not always the case.  See the
  * above discussion.  This class is templated to accept a deallocator
