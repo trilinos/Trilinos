@@ -46,9 +46,13 @@ if BUILD_LOCA_EPETRA_EXAMPLES
 EXAMPLE = example
 EXAMPLETPCONT = exampleTPContinuation
 
+if BUILD_LIBLOCAMF
+EXAMPLEMULTICONTINUATION = exampleMultiContinuation
 endif
 
-noinst_PROGRAMS = $(EXAMPLE) $(EXAMPLETPCONT) 
+endif
+
+noinst_PROGRAMS = $(EXAMPLE) $(EXAMPLETPCONT) $(EXAMPLEMULTICONTINUATION)
 
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
@@ -74,9 +78,22 @@ exampleTPContinuation_SOURCES = \
 
 exampleTPContinuation_DEPENDENCIES = $(example_DEPENDENCIES)
 
-exampleTPContinuation_CXXFLAGS = $(example_CXXFLAGS)
-
 exampleTPContinuation_LDADD = $(example_LDADD)
+
+exampleMultiContinuation_SOURCES = \
+	$(srcdir)/ExampleMultiContinuation.C \
+        $(srcdir)/FiniteElementProblem.C \
+	$(srcdir)/FiniteElementProblem.H \
+        $(srcdir)/Basis.C \
+	$(srcdir)/Basis.H \
+        $(srcdir)/Problem_Interface.C \
+	$(srcdir)/Problem_Interface.H
+
+exampleMultiContinuation_DEPENDENCIES = \
+	$(example_DEPENDENCIES) \
+	$(top_builddir)/src-loca/src-mf/liblocamf.a 
+
+exampleMultiContinuation_LDADD = $(example_LDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

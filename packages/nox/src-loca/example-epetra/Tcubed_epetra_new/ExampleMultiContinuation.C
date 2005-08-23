@@ -115,13 +115,16 @@ int main(int argc, char *argv[])
   // Begin LOCA Solver ************************************
 
   // Create parameter list
-  NOX::Parameter::List paramList;
+  Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
+    Teuchos::rcp(new NOX::Parameter::List);
 
   // Create LOCA sublist
-  NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
+  NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
 
   // Create the stepper sublist and set the stepper parameters
   NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
+  locaStepperList.setParameter("Continuation Method", "Arc Length");
+  locaStepperList.setParameter("Bordered Solver Method", "Householder");
   locaStepperList.setParameter("Number of Continuation Parameters", 2);
   locaStepperList.setParameter("Epsilon", 0.1);
   locaStepperList.setParameter("Max Charts", 10000);
@@ -180,7 +183,7 @@ int main(int argc, char *argv[])
 			     LOCA::Utils::Parameters);
 
   // Create the "Solver" parameters sublist to be used with NOX Solvers
-  NOX::Parameter::List& nlParams = paramList.sublist("NOX");
+  NOX::Parameter::List& nlParams = paramList->sublist("NOX");
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
 
   // Create the NOX printing parameter list
@@ -222,9 +225,9 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Scaling", "None");             
   //lsParams.setParameter("Scaling", "Row Sum");          
   //lsParams.setParameter("Preconditioning", "None");   
+  lsParams.setParameter("Preconditioner", "Ifpack");
   //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
   //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
-  lsParams.setParameter("Preconditioning", "IFPACK: Jacobian Matrix");
   //lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
   //lsParams.setParameter("Aztec Preconditioner", "ilu"); 
   //lsParams.setParameter("Overlap", 2);  
@@ -258,34 +261,42 @@ int main(int argc, char *argv[])
   // 4. Jacobi Preconditioner
   //NOX::Epetra::JacobiPreconditioner Prec(soln);
 
+   // Create the linear systems
+  NOX::EpetraNew::LinearSystemAztecOO linsys(nlPrintParams, lsParams,
+					     interface, interface,
+					     A, soln);
+
   // Create the loca vector
   NOX::Epetra::Vector locaSoln(soln);
 
   // Create the Group
-  LOCA::Epetra::Group grp(nlPrintParams, lsParams, interface, pVector, locaSoln, A);
-  //NOX::Epetra::Group grp(nlPrintParams, lsParams, interface, soln, A); 
-  //NOX::Epetra::Group grp(nlPrintParams, lsParams, interface, soln, A, Prec); 
-  grp.computeF();
+  Teuchos::RefCountPtr<LOCA::EpetraNew::Group> grp = 
+      Teuchos::rcp(new LOCA::EpetraNew::Group(nlPrintParams, interface, 
+					      locaSoln, linsys, pVector));
+
+   
+  grp->computeF();
 
   // Create the Solver convergence test
   //NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
   NOX::StatusTest::NormF wrms(1.0e-8);
   NOX::StatusTest::MaxIters maxiters(searchParams.getParameter("Max Iters", 10));
-  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
-  combo.addStatusTest(wrms);
-  combo.addStatusTest(maxiters);
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+  combo->addStatusTest(wrms);
+  combo->addStatusTest(maxiters);
+
+  // Create the Epetra Factory
+  Teuchos::RefCountPtr<LOCA::Epetra::Factory> factory = 
+      Teuchos::rcp(new LOCA::Epetra::Factory);
 
   // Create the stepper  
-  LOCA::MultiStepper stepper(grp, combo, paramList);
+  LOCA::MultiStepper stepper(grp, combo, paramList, factory);
   LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
   if (status != LOCA::Abstract::Iterator::Finished)
     if (MyPID==0) 
       cout << "Stepper failed to converge!" << endl;
-
-  // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(stepper.getSolutionGroup());
-  const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
   // End Nonlinear Solver **************************************
 
@@ -293,7 +304,7 @@ int main(int argc, char *argv[])
   if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    stepper.getParameterList().print(cout);
+    stepper.getParameterList()->print(cout);
     cout << endl;
   }
 

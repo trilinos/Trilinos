@@ -366,6 +366,14 @@ LOCA::MultiContinuation::ExtendedGroup::scaleTangent()
   }
 }
 
+void
+LOCA::MultiContinuation::ExtendedGroup::setPredictorTangentDirection(
+			 const LOCA::MultiContinuation::ExtendedVector& v,
+			 int i)
+{
+  tangentMultiVec[i] = v;
+}
+
 const LOCA::MultiContinuation::ExtendedMultiVector&
 LOCA::MultiContinuation::ExtendedGroup::getPredictorTangent() const
 {

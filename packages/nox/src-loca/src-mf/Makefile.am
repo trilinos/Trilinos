@@ -49,16 +49,23 @@ LOCA_MF = \
 	$(srcdir)/LOCA_MultiStepper.C 
 
 # ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
+else
+EXPORT_INCLUDES = $(LOCA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+# ------------------------------------------------------------------------
 # locamf library specifications
 # ------------------------------------------------------------------------
 
 liblocamf_a_SOURCES = $(LOCA_MF) $(LOCA_MF_H)
-
-liblocamf_a_CXXFLAGS = \
-	-I$(top_srcdir)/src-loca/src \
-	-I$(top_srcdir)/src \
-	-I$(MF_INCDIR) \
-	$(TRILINOS_CXXFLAGS)
 
 # ------------------------------------------------------------------------
 # When to turn it on

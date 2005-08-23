@@ -32,6 +32,7 @@
 
 #include <MFLOCA.H>
 #include "LOCA_Utils.H"
+#include <LOCA_MultiContinuation_ExtendedMultiVector.H>
 
 extern "C" {
 
@@ -56,7 +57,7 @@ int MFLOCAProjectForBB(MFNVector,double*,void*);
 double MFPrintMetricLOCA(double*,double*);
 
 LOCAData::LOCAData(NOX::Solver::Generic& s, 
-		   LOCA::MultiContinuation::ExtendedGroup& g, 
+		   LOCA::MultiContinuation::AbstractStrategy& g, 
 		   NOX::Parameter::List& par,
 		   NOX::StatusTest::Generic& st,
 		   list<ParamData>& conParamData) :
@@ -139,7 +140,7 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
   for (i=0; i<k; i++) {
     MFNVector tmp =  MFMColumn(mPhi,i);
     LMCEV* tmp2 = (LMCEV *) MFNVectorGetData(tmp);
-    data->grp.setPredictorDirection(*tmp2, i);
+    data->grp.setPredictorTangentDirection(*tmp2, i);
     MFFreeNVector(tmp);
   }
   
@@ -189,7 +190,8 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
   else {
     LMCEV* u = (LMCEV *) MFNVectorGetData(vu);
      
-    data->grp = data->solver.getSolutionGroup();
+    dynamic_cast<NOX::Abstract::Group&>(data->grp) = 
+      data->solver.getSolutionGroup();
     *u = data->grp.getX(); /* overloaded deep copy */
     data->grp.notifyCompletedStep();
     
@@ -225,7 +227,7 @@ int MFTangentLOCA(int n,int k,MFNVector vu,MFNKMatrix mPhi,void *d)
    data->grp.computePredictor();
 
    const LOCA::MultiContinuation::ExtendedMultiVector& pred = 
-     data->grp.getPredictorDirections();
+     data->grp.getPredictorTangent();
 
    for (int i=0; i<k; i++) {
      LMCEV* t = dynamic_cast<LMCEV*>(pred[i].clone());

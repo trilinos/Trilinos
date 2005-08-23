@@ -34,7 +34,7 @@
 #define MFLOCA_H
 
 #include <LOCA.H>
-#include <LOCA_MultiContinuation_ExtendedGroup.H>
+#include <LOCA_MultiContinuation_AbstractStrategy.H>
 #include <LOCA_MultiContinuation_ExtendedVector.H>
 typedef LOCA::MultiContinuation::ExtendedVector LMCEV; 
 
@@ -61,13 +61,13 @@ struct ParamData {
 
 struct LOCAData {
   LOCAData(NOX::Solver::Generic& s, 
-	   LOCA::MultiContinuation::ExtendedGroup& g, 
+	   LOCA::MultiContinuation::AbstractStrategy& g, 
 	   NOX::Parameter::List& par,
 	   NOX::StatusTest::Generic& st,
 	   list<ParamData>& conParamData);
 
   NOX::Solver::Generic& solver;
-  LOCA::MultiContinuation::ExtendedGroup& grp;
+  LOCA::MultiContinuation::AbstractStrategy& grp;
   NOX::Parameter::List& p;
   NOX::StatusTest::Generic& status;
   list<ParamData>& paramData;

@@ -87,6 +87,16 @@ namespace LOCA {
       //! Scales tangent to predictor
       virtual void scaleTangent() = 0;
 
+      //! Sets tangent to predictor
+      /*!
+       * This is required by MF which takes the tangent space, 
+       * orthogonalizes it, and then sets it back in the group.
+       */
+      virtual void
+      setPredictorTangentDirection(
+			    const LOCA::MultiContinuation::ExtendedVector& v,
+			    int i) = 0;
+
       //! Returns tangent to predictor
       virtual const LOCA::MultiContinuation::ExtendedMultiVector&
       getPredictorTangent() const = 0;

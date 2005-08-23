@@ -510,15 +510,53 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(loca, anasazi, LOCA_ANASAZI, BUILD_LOCAANASAZI, y
 # LOCA-MF support (MF is NOT a Trilinos package - do not use the 
 # tac_arg_can_use_package.m4)
 # ------------------------------------------------------------------------
-
 AC_ARG_WITH(loca-mf,
-[AC_HELP_STRING([--with-loca-mf],[Compile MF support into libloca. Default is no.])],
-[BUILD_LOCA_MF_SUPPORT=${withval}],
+[AC_HELP_STRING([--with-loca-mf=PATH],[Enable Multifario (MF) support in LOCA, optionally providing the path to the base multifario directory (e.g., /usr/local/multifario). Default is no.])],
+[
+  if test "X${withval}" != "Xyes"; then
+     MF_PATH=${withval}
+  fi
+  BUILD_LOCA_MF_SUPPORT=yes
+],
 [BUILD_LOCA_MF_SUPPORT=no]
 )
 AC_MSG_CHECKING(whether we should build MF support into loca library)
 AC_MSG_RESULT([${BUILD_LOCA_MF_SUPPORT}])
 AM_CONDITIONAL(BUILD_LIBLOCAMF, test X${BUILD_LOCA_MF_SUPPORT} = Xyes)
+
+AC_ARG_WITH(mf-incdir,
+[AC_HELP_STRING([--with-mf-incdir=PATH],[Path to Multifario include directory])],
+[MF_INCDIR=${withval}],
+[
+  if test "X${MF_PATH}" != "X"; then
+     MF_INCDIR="${MF_PATH}/include"
+  else
+     MF_INCDIR=
+  fi
+]
+)
+
+AC_ARG_WITH(mf-libdir,
+[AC_HELP_STRING([--with-mf-libdir=PATH],[Path to Multifario library directory])],
+[MF_LIBDIR=${withval}],
+[
+  if test "X${MF_PATH}" != "X"; then
+     MF_LIBDIR="${MF_PATH}/lib"
+  else
+     MF_LIBDIR=
+  fi
+]
+)
+
+AC_ARG_WITH(mf-libs,
+[AC_HELP_STRING([--with-mf-libs=LIBS],[Multifario libraries (e.g., "-lMF -lExpCmp")])],
+[MF_LIBS=${withval}],
+[MF_LIBS="-lMF -lExpCmp"]
+)
+
+AC_SUBST(MF_INCDIR)
+AC_SUBST(MF_LIBDIR)
+AC_SUBST(MF_LIBS) 
 
 # ------------------------------------------------------------------------
 # NOX-EpetraExt support

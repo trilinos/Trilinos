@@ -34,6 +34,8 @@
 @BUILD_LIBLOCALAPACK_TRUE@LOCA_LAPACK_LIB = -L@abs_top_builddir@/src-loca/src-lapack  -llocalapack
 @BUILD_LIBLOCAEPETRA_TRUE@LOCA_EPETRA_LIB = -L@abs_top_builddir@/src-loca/src-epetra  -llocaepetra
 @BUILD_LIBLOCAMF_TRUE@LOCA_MF_LIB = -L@abs_top_builddir@/src-loca/src-mf  -llocamf
+@BUILD_LIBLOCAMF_TRUE@MF_INCLUDES = -I@MF_INCDIR@
+@BUILD_LIBLOCAMF_TRUE@MF_LIB = -L@MF_LIBDIR@ @MF_LIBS@
 
 ##########################
 # NOX defines
@@ -69,11 +71,12 @@ LOCA_INCLUDES_BASE = \
                -I@abs_top_srcdir@/src-loca/src-epetra \
                -I@abs_top_srcdir@/src-loca/src-mf \
                $(NOX_INCLUDES) \
-               $(ANASAZI_INCLUDES)
+               $(ANASAZI_INCLUDES) \
+               $(MF_INCLUDES)
 @USING_GNUMAKE_TRUE@LOCA_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES_BASE))
 @USING_GNUMAKE_FALSE@LOCA_INCLUDES = $(LOCA_INCLUDES_BASE)
 
-LOCA_LIBS_BASE = @LDFLAGS@ $(LOCA_LAPACK_LIB) $(LOCA_EPETRA_LIB) $(LOCA_MF_LIB) -L@abs_top_builddir@/src-loca/src -lloca $(NOX_LAPACK_LIB) $(NOX_EPETRA_LIB) $(NOX_PETSC_LIB) $(NOX_BELOS_LIB) $(NOX_TSF_LIB) -L@abs_top_builddir@/src -lnox $(ANASAZI_LIBS) $(BELOS_LIBS) $(ML_LIBS) $(EPETRAEXT_LIBS) $(IFPACK_LIBS) $(AZTECOO_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) @LIBS@ @LAPACK_LIBS@ @BLAS_LIBS@ @FLIBS@
+LOCA_LIBS_BASE = @LDFLAGS@ $(LOCA_LAPACK_LIB) $(LOCA_EPETRA_LIB) $(LOCA_MF_LIB) -L@abs_top_builddir@/src-loca/src -lloca $(NOX_LAPACK_LIB) $(NOX_EPETRA_LIB) $(NOX_PETSC_LIB) $(NOX_BELOS_LIB) $(NOX_TSF_LIB) -L@abs_top_builddir@/src -lnox $(ANASAZI_LIBS) $(BELOS_LIBS) $(ML_LIBS) $(EPETRAEXT_LIBS) $(IFPACK_LIBS) $(AZTECOO_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(MF_LIB) @LIBS@ @LAPACK_LIBS@ @BLAS_LIBS@ @FLIBS@
 @USING_GNUMAKE_TRUE@LOCA_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_LIBS_BASE))
 @USING_GNUMAKE_FALSE@LOCA_LIBS     = $(LOCA_LIBS_BASE)
 

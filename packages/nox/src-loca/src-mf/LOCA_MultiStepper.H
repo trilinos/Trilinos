@@ -33,10 +33,12 @@
 #ifndef LOCA_STEPPERMULTI_H
 #define LOCA_STEPPERMULTI_H
 
+#include "Teuchos_RefCountPtr.hpp"
+
 #include "LOCA_Abstract_Iterator.H"    // for status
+#include "LOCA_Factory.H"              // class data element
 #include "NOX_Parameter_List.H"	       // class data element
 #include "NOX_Solver_Manager.H"	       // class data element
-#include "LOCA_Bifurcation_Manager.H"  // class data element
 #include "NOX_StatusTest_Generic.H"    // for enum StatusType
 #include "NOX_Common.H"                // for <string> class
 
@@ -67,31 +69,36 @@ namespace LOCA {
   public:
 
     //! Constructor 
-    MultiStepper(LOCA::MultiContinuation::AbstractGroup& initialGuess,
-		 NOX::StatusTest::Generic& t,
-		 NOX::Parameter::List& p);
+    MultiStepper(const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+	       const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
+	       const Teuchos::RefCountPtr<NOX::Parameter::List>& p);
+
+    //! Constructor with user-provided factory
+    MultiStepper(const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+	       const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
+	       const Teuchos::RefCountPtr<NOX::Parameter::List>& p,
+	       const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory);
     
     //! Destructor
     virtual ~MultiStepper();
 
     //! Reset the Stepper to start a new continuation run
-    virtual bool reset(LOCA::MultiContinuation::AbstractGroup& initialGuess,
-		       NOX::StatusTest::Generic& t,
-		       NOX::Parameter::List& p);
+    virtual bool reset(const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+	  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
+	  const Teuchos::RefCountPtr<NOX::Parameter::List>& p);
 
     //! Run continuation
     virtual LOCA::Abstract::Iterator::IteratorStatus run();
 
     //! Return the current solution group.
-    virtual LOCA::MultiContinuation::AbstractGroup& getSolutionGroup();
+    virtual Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
+    getSolutionGroup();
 
     //! Return the output parameters from the stepper algorithm. 
-    virtual const NOX::Parameter::List& getParameterList() const;
+    virtual Teuchos::RefCountPtr<const NOX::Parameter::List> 
+    getParameterList() const;
 
   protected:
-
-    //! Copy Constructor: Not implemented, but put here to prevent compiler form generating one
-    MultiStepper(const MultiStepper& s);
 
     //! Print to the screen the initialization information
     virtual void printInitializationInfo();
@@ -99,25 +106,56 @@ namespace LOCA {
     //! Parses parameter list to get continuation parameter data
     virtual void getConParamData();
 
+    //! Builds a constrained group is specified through parameter lists
+    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+    buildConstrainedGroup(
+      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp);
+
+  private:
+
+    //! Private to prohibit copying
+    MultiStepper(const MultiStepper&);
+
+    //! Private to prohibit copying
+    MultiStepper& operator = (const MultiStepper&);
+
   protected:
 
-    //! Bifurcation group manager
-    LOCA::Bifurcation::Manager* bifGroupManagerPtr;
+    //! Global data
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+
+    //! Parsed parameter list
+    Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
+    
+    //! Factory
+    Teuchos::RefCountPtr<LOCA::Factory> locaFactory;
+
+    //! User-provided factory
+    Teuchos::RefCountPtr<LOCA::Abstract::Factory> factory;
+
+    //! Flag indicating whether we have a user-provided factory
+    bool haveFactory;
+
+    //! Predictor strategy
+    Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy> predictor;
+
+    //! Current continuation group
+    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> curGroupPtr;
 
     //! Pointer to bifurcation group
-    LOCA::MultiContinuation::AbstractGroup* bifGroupPtr;
+    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> bifGroupPtr;
 
-    //! Pointer to the Group with the initial guess for the nonlinear solver.  This is used for resetting the nonlinear solver in between successful steps.
-    LOCA::MultiContinuation::ExtendedGroup* curGroupPtr;
-
-    //! Pointer to the status test.  
-    NOX::StatusTest::Generic* statusTestPtr;
+    //! Pointer to the status test.
+    Teuchos::RefCountPtr<NOX::StatusTest::Generic> statusTestPtr;
 
     //! Pointer to parameter list passed in constructor/reset method
-    NOX::Parameter::List* paramListPtr;
+    Teuchos::RefCountPtr<NOX::Parameter::List> paramListPtr;
+
+    //! Pointer to stepper parameters
+    Teuchos::RefCountPtr<NOX::Parameter::List> stepperList;
 
     //! Solver (a.k.a corrector)
-    NOX::Solver::Manager* solverPtr;
+    Teuchos::RefCountPtr<NOX::Solver::Manager> solverPtr;
 
     //! Stores continuation parameter vector
     LOCA::ParameterVector paramVec;

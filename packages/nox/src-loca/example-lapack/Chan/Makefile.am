@@ -137,16 +137,15 @@ chanTPContinuation_NicDayModifiedBordering_DEPENDENCIES = \
 
 chanTPContinuation_NicDayModifiedBordering_LDADD = $(EXAMPLE_LIBS)
 
-chanMultiContinuation_SOURCES = $(srcdir)/ChanMultiContinuation.C \
-		$(srcdir)/ChanProblemInterface.H \
-		$(srcdir)/ChanProblemInterface.C
+chanMultiContinuation_SOURCES = \
+	$(srcdir)/ChanMultiContinuation.C \
+	$(srcdir)/ChanProblemInterface.H \
+	$(srcdir)/ChanProblemInterface.C
 
 chanMultiContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES) \
-                                 $(top_builddir)/src-loca/src-mf/liblocamf.a \
-                                 $(MF_LIBDIR)/libExpCmp.a \
-                                 $(MF_LIBDIR)/libMF.a
+                                 $(top_builddir)/src-loca/src-mf/liblocamf.a 
 
-chanMultiContinuation_LDADD = $(EXMAPLE_LIBS)
+chanMultiContinuation_LDADD = $(EXAMPLE_LIBS)
 
 chanContinuation_Constraints_SOURCES = \
 	$(srcdir)/ChanContinuation_Constraints.C \

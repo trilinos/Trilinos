@@ -156,7 +156,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeConstraints()
 		      -1.0, arcLengthGroup->getPrevX(), 0.0);
 
   // Compute [dx/ds; dp/ds]^T * [x - x_o; p - p_o] - ds
-  scaledTangent.multiply(1.0, *secant, constraints);
+  secant->multiply(1.0, scaledTangent, constraints);
   for (int i=0; i<arcLengthGroup->getNumParams(); i++)
     constraints(i,0) -= arcLengthGroup->getStepSize(i) * 
       scaledTangent[i].dot(tangent[i]);
