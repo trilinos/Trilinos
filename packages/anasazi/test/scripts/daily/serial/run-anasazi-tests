@@ -54,6 +54,24 @@ if ($result != 0) {
 }
 
 #************************************
+# MVOPTester utilties test
+#************************************
+
+$result = system ('./MVOPTester/MVOPTester_test.exe');
+if ($result != 0) {
+  # If we failed run it again in verbose mode.
+  $success = 0;
+  printf
+    "\n\n*****************************************".
+    "\n*** Running MVOPTester test ****".
+    "\n*****************************************\n\n";
+  system ('./MVOPTester/MVOPTester_test.exe -v');
+} else {
+  printf
+    "\n ****** MVOPTester test PASSED ****** \n";
+}
+
+#************************************
 # Block Krylov-Schur test
 #************************************
 
@@ -89,5 +107,24 @@ if ($result != 0) {
     "\n ****** BlockDavidson test PASSED ****** \n";
 }
 
+#************************************
+# LOBPCG test
+#************************************
+
+$result = system ('./LOBPCG/LOBPCG_test.exe');
+if ($result != 0) {
+  # If we failed run it again in verbose mode.
+  $success = 0;
+  printf
+    "\n\n*****************************************".
+    "\n*** Running LOBPCG test ****".
+    "\n*****************************************\n\n";
+  system ('./LOBPCG/LOBPCG_test.exe -v');
+} else {
+  printf
+    "\n ****** LOBPCG test PASSED ****** \n";
+}
+
 # Return 0 if all the tests were successful, else return -1.
 exit ($success ? 0 : -1 );
+
