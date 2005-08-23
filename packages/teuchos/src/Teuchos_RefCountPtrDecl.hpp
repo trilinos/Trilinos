@@ -460,6 +460,39 @@ deallocFunctorDelete( DeleteFunctor deleteFunctor )
   return DeallocFunctorDelete<T,DeleteFunctor>(deleteFunctor);
 }
 
+/** \brief Deallocator subclass that Allows any functor object (including a
+ * function pointer) to be used to free a handle (i.e. pointer to pointer) to
+ * an object.
+ *
+ * Note, the only requirement is that deleteFuctor(ptrptr) can be called
+ * (which is true for a function pointer).
+ *
+ * Note, a client should generally use the function
+ * <tt>deallocFunctorDelete()</tt> to create this object and not try to
+ * construct it directly.
+ */
+template<class T, class DeleteHandleFunctor>
+class DeallocFunctorHandleDelete
+{
+public:
+  DeallocFunctorHandleDelete( DeleteHandleFunctor deleteHandleFunctor )
+    : deleteHandleFunctor_(deleteHandleFunctor) {}
+  typedef T ptr_t;
+  void free( T* ptr ) { if(ptr) { T **hdl = &ptr; deleteHandleFunctor_(hdl); } }
+private:
+  DeleteHandleFunctor deleteHandleFunctor_;
+  DeallocFunctorHandleDelete(); // Not defined and not to be called!
+};
+
+/** \brief A simple function used to create a functor deallocator object.
+ */
+template<class T, class DeleteHandleFunctor>
+DeallocFunctorHandleDelete<T,DeleteHandleFunctor>
+deallocFunctorHandleDelete( DeleteHandleFunctor deleteHandleFunctor )
+{
+  return DeallocFunctorHandleDelete<T,DeleteHandleFunctor>(deleteHandleFunctor);
+}
+
 /** \brief . */
 template<class T>
 class RefCountPtr {

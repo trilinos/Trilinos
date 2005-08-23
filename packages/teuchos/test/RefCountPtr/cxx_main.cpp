@@ -131,6 +131,13 @@ void deallocA(A* ptr)
   delete ptr;
 }
 
+void deallocHandleA(A** handle)
+{
+  std::cout << "\nCalled deallocHandleA(...)!\n";
+  A *ptr = *handle;
+  delete ptr;
+}
+
 /*
 
  Non-polymophic classes hiearchy examlpe
@@ -197,6 +204,7 @@ int main( int argc, char* argv[] ) {
 	using Teuchos::RefCountPtr;
 	using Teuchos::DeallocDelete;
 	using Teuchos::deallocFunctorDelete;
+	using Teuchos::deallocFunctorHandleDelete;
 	using Teuchos::null;
 	using Teuchos::rcp;
 	using Teuchos::is_null;
@@ -465,7 +473,7 @@ int main( int argc, char* argv[] ) {
 #endif // SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS_PRINT
 		A *a_rptr5 = c_ptr5;    // Here the address has changed and is no longer the same as the base address
 		a_ptr1 = rcp(a_rptr5);  // This is a no-no and could cause trouble!
-		a_ptr1 = Teuchos::null; // This will cause a segmentation fault in free(...) on many platforms
+		a_ptr1 = null; // This will cause a segmentation fault in free(...) on many platforms
 #endif // SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS
 	
 		// Test out getting the deallocator object
@@ -494,8 +502,8 @@ int main( int argc, char* argv[] ) {
     set_extra_data( Teuchos::rcp(new Get_A_f_return(&*a_ptr1,&a_f_return)), "a_f_return", &a_ptr1, true, Teuchos::PRE_DESTROY );
 
 		// Set pointers to null to force releasing any owned memory
-		a_ptr1 = Teuchos::null;
-		d_ptr1 = Teuchos::null;
+		a_ptr1 = null;
+		d_ptr1 = null;
 
 #ifndef __sun
 		// RAB: 2004/08/12: It appears that SUN compiler is not deleting the piece of extra
@@ -506,6 +514,11 @@ int main( int argc, char* argv[] ) {
 
     // Testing the deallocFunctorDelete function and DeallocFunctorDelete class
     a_ptr1 = rcp( new C, deallocFunctorDelete<A>(deallocA), true );
+    a_ptr1 = null;
+
+    // Testing the deallocFunctorHandleDelete function and DeallocFunctorHandleDelete class
+    a_ptr1 = rcp( new C, deallocFunctorHandleDelete<A>(deallocHandleA), true );
+    a_ptr1 = null;
 
 #ifdef HAVE_TEUCHOS_BOOST
 
