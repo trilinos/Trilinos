@@ -243,11 +243,12 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	length = vector1a.getNumMyEntries();
 	for(OrdinalType i = 0; i < length; i++)
 		if(vector1a[i] != scalarArray[i])
-			if(verbose)
-				if(ierr == 0) 
-					cout << "Passed" << endl;
-				else
-					cout << "Failed" << endl;
+			ierr++;
+	if(verbose)
+		if(ierr == 0) 
+			cout << "Passed" << endl;
+		else
+			cout << "Failed" << endl;
 	returnierr += ierr;
 	ierr = 0;
 	
