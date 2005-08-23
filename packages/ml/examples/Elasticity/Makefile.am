@@ -12,7 +12,7 @@ EXEEXT = .exe
 noinst_PROGRAMS = ml_example_elasticity \
                   ml_read_elas
 
-CCLD = $(CCX)
+CCLD = $(CXX)
 
 ml_example_elasticity_SOURCES      = $(srcdir)/ml_example_elasticity.c
 ml_example_elasticity_DEPENDENCIES = $(top_builddir)/src/libml.a

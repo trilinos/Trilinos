@@ -1960,10 +1960,21 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 
    allocated_space = Amat->max_nz_per_row+2;
    if (Amat_bindx == NULL) {
+#ifdef ML_WITH_EPETRA
      Epetra_ML_GetCrsDataptrs(Amat, &Amat_epetval, &Amat_epetbindx,&Amat_epetrowptr);
      cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
      vals = (double *) ML_allocate(allocated_space*sizeof(double));
      oldcols = cols;  oldvals = vals;
+#else
+     if (Amat->comm->ML_mypid == 0)
+       pr_error("ML_Smoother_BlockGS: Epetra is not enabled.\n");
+     else
+#ifdef ML_MPI
+       MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+       exit(1);
+#endif /*ifdef ML_MPI*/
+#endif /*ifdef ML_WITH_EPETRA*/
    }
 
    correc = (double *) ML_allocate(blocksize*sizeof(double));

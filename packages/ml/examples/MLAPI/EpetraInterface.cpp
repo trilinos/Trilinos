@@ -26,7 +26,7 @@
 // 
 // ************************************************************************
 //@HEADER
-
+#if defined(HAVE_ML_MLAPI) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TRIUTILS)
 #include "ml_config.h"
 #include "ml_common.h"
 #include "Epetra_Map.h"
@@ -38,7 +38,6 @@
 // required by the linear system solver
 #include "AztecOO.h"
 
-#if defined(HAVE_ML_MLAPI)
 #include "MLAPI_Space.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_MultiLevelSA.h"
