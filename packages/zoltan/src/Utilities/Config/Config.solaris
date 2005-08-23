@@ -30,10 +30,11 @@ INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/lang/SC3.0.1/ansi_include \
 			  -I/Net/proj/zoltan/arch/solaris/include \
 			  -I/Net/local/mpi/include \
-			  -I/Net/local/mpi/build/solaris/ch_p4/include
+			  -I/Net/local/mpi/build/solaris/ch_p4/include 
+
 DBG_FLAGS		= -g
 OPT_FLAGS		= -O
-CFLAGS 			= $(OPT_FLAGS)
+CFLAGS 			= -ftrap=common $(OPT_FLAGS)
 
 F90                     = f90
 LOCAL_F90               = f90
@@ -54,6 +55,11 @@ PARMETIS_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
 JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
 JOSTLE_INCPATH 		= -I/Net/local/proj/zoltan/arch/all/src
 JOSTLE_SRCPATH 		= /Net/local/proj/zoltan/arch/all/src
+
+#PATOH_LIBPATH           = -L/home/u/kddevin/code/PaToH/lib
+#PATOH_INCPATH           = -I/Net/local/proj/zoltan/arch/all/src
+#PATOH_LIBPATH          = -L/Net/local/proj/zoltan/arch/solaris/lib
+#PATOH_INCPATH          = -I/Net/local/proj/zoltan/arch/all/src
 
 NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/solaris/lib
 NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/solaris/include
