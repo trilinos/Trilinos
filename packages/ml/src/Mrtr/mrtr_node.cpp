@@ -221,7 +221,7 @@ ostream& operator << (ostream& os, const MRTR::Node& node)
  *----------------------------------------------------------------------*/
 bool MRTR::Node::Print() const
 { 
-  cout << "Node " << Id_ << "\tCoords ";
+  cout << "Node " << setw(6) << Id_ << "\tCoords ";
   for (int i=0; i<3; ++i)
     cout << setw(10) << x_[i] << " ";
 

@@ -47,6 +47,29 @@ namespace MRTR
 {
 
 /*----------------------------------------------------------------------*
+ |  the standard 1D-constant shape function                        08/05|
+ *----------------------------------------------------------------------*/
+class Function_Constant1D : public MRTR::Function 
+{
+public:
+  
+  // ctor
+  Function_Constant1D() {type_=MRTR::Function::func_Constant1D;}
+  
+  // copy-ctor
+  Function_Constant1D(const MRTR::Function_Constant1D& old) {type_=old.type_;}
+
+  // dtor
+  virtual ~Function_Constant1D() {}
+
+  // evaluate the shape function
+  bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
+
+  // need a clone functionality to do a deep copy
+  MRTR::Function* Clone() const;
+};
+
+/*----------------------------------------------------------------------*
  |  the standard 1D-linear shape function                          06/05|
  *----------------------------------------------------------------------*/
 class Function_Linear1D : public MRTR::Function 

@@ -76,6 +76,12 @@ MRTR::Function* MRTR::AllocateFunction(MRTR::Function::FunctionType type)
 {
   switch (type)
   {
+    case MRTR::Function::func_Constant1D:
+      {
+        MRTR::Function_Constant1D* tmp = new MRTR::Function_Constant1D();
+        return tmp;
+      }
+    break;
     case MRTR::Function::func_Linear1D:
       {
         MRTR::Function_Linear1D* tmp = new MRTR::Function_Linear1D();

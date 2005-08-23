@@ -127,20 +127,20 @@ MRTR::Segment::~Segment()
  *----------------------------------------------------------------------*/
 bool MRTR::Segment::Print() const
 { 
-  cout << "Segment " << Id_; 
+  cout << "Segment " << setw(6) << Id_; 
   if (stype_ == MRTR::Segment::seg_Linear1D)
-    cout << " Typ Linear1D";
+    cout << " Typ Linear1D   ";
   if (stype_ == MRTR::Segment::seg_Quadratic1D)
     cout << " Typ Quadratic1D";
   if (stype_ == MRTR::Segment::seg_Bilinear2D)
-    cout << " Typ BiLinear2D";
+    cout << " Typ BiLinear2D ";
   if (stype_ == MRTR::Segment::seg_Biquadratic2D)
     cout << " Typ Quadratic2D";
   if (stype_ == MRTR::Segment::seg_none)
-    cout << " Typ NONE";
+    cout << " Typ NONE       ";
   cout << " #Nodes " << nodeId_.size() << " Nodes: ";
   for (int i=0; i<nodeId_.size(); ++i)
-    cout << nodeId_[i] << "  ";
+    cout << setw(6) << nodeId_[i] << "  ";
   cout << "  #Functions " << functions_.size() << "  Types: ";
   map<int,MRTR::Function*>::const_iterator curr;
   for (curr=functions_.begin(); curr != functions_.end(); ++curr)
@@ -173,9 +173,6 @@ bool MRTR::Segment::SetFunction(int id, MRTR::Function* func)
   map<int,MRTR::Function*>::iterator curr = functions_.find(id);
   if (curr != functions_.end())
   {
-    cout << "***WRN*** MRTR::Segment::SetFunction:\n"
-         << "***WRN*** Segment " << Id_ << " function with id " << id << " has been set before\n"
-         << "***WRN*** overwriting...\n";
     delete curr->second;
     MRTR::Function* newfunc = func->Clone();
     curr->second = newfunc;

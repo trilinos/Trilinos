@@ -169,7 +169,7 @@ bool MRTR::Interface::Integrate_MasterSide_2D(Epetra_CrsMatrix& M)
     // the segment to be integrated
     MRTR::Segment* actsseg = scurr->second;
 
-#if 1
+#if 0
     cout << "\nActive sseg id " << actsseg->Id() << "\n\n";
 #endif
 
@@ -192,7 +192,7 @@ bool MRTR::Interface::Integrate_MasterSide_2D(Epetra_CrsMatrix& M)
     {
       MRTR::Segment* actmseg = mcurr->second;
       
-#if 1
+#if 0
     cout << "Active mseg id " << actmseg->Id() << endl;
 #endif
       // if there is an overlap, integrate the pair
@@ -355,8 +355,8 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
     ++foundcase;
     nstart = mnodes[0]->GetProjectedNode();
     nend   = mnodes[1]->GetProjectedNode();
-    sxia = nstart->Xi()[0];
-    sxib = nend->Xi()[0];
+    sxia = nend->Xi()[0];
+    sxib = nstart->Xi()[0];
     mxia = -1.0;
     mxib = 1.0;
   }

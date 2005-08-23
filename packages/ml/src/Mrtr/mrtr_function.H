@@ -56,6 +56,7 @@ public:
   enum FunctionType
   {
     func_none,
+    func_Constant1D,
     func_Linear1D,
     func_DualLinear1D
   };

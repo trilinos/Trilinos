@@ -409,8 +409,23 @@ bool MRTR::Manager::Mortar_Integrate()
   }  
 
   //-------------------------------------------------------------------
-  // this is probably the place to put detection of end nodes and end segments
-  
+  // this is probably the place to put detection of end segments
+  // for each end segment, the order of the lagrange multiplier shape
+  // function will be reduced by one
+  {
+    map<int,MRTR::Interface*>::iterator curr;
+    for (curr=interface_.begin(); curr != interface_.end(); ++curr)
+    {
+      bool ok = curr->second->DetectEndSegmentsandReduceOrder();
+      if (!ok)
+      {
+        cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+             << "***ERR*** interface " << curr->second->Id() << " returned false from DetectEndSegmentsandReduceOrder\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
 
   //-------------------------------------------------------------------
   // choose dofs for lagrange multipliers and set them to slave nodes

@@ -1148,12 +1148,12 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
     else  // this slave node does not have a valid projection
     {
       if (OutLevel()>5)
-      cout << "***WRN***: Node " << snode->Id() << " does not have projection\n\n";
+      cout << "***WRN***: Node " << snode->Id() << " does not have projection\n";
       snode->SetProjectedNode(NULL);
     }
   } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
 
-
+#if 1
   // Postprocess the projections
   // The slave side of the interface might be larger then the master side
   // of the interface so not all slave nodes have a projection.
@@ -1171,10 +1171,11 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
     if (NodePID(snode->Id()) != lComm()->MyPID())
       continue;
       
+    
     // don't do anything on nodes that already have a projection
     if (snode->GetProjectedNode())
       continue;
-    
+
     // get segments adjacent to this node  
     int nseg             = snode->Nseg();
     MRTR::Segment** segs = snode->Segments();
@@ -1187,10 +1188,11 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
       MRTR::Node** nodes = segs[i]->Nodes();
       for (int j=0; j<nnode; ++j)
         if (nodes[j]->GetProjectedNode())
-        {
-          foundit = true;
-          break;
-        }
+          if (nodes[j]->GetProjectedNode()->Segment())
+          {
+            foundit = true;
+            break;
+          }
       if (foundit) break;
     }
     
@@ -1199,9 +1201,8 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
       MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*snode,NULL,NULL);
       snode->SetProjectedNode(pnode);
     }
-    
   } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
-  
+#endif  
 
   // loop all slave nodes again and make the projections redundant
   double* bcast = new double[4*rnode_[sside].size()]; // that's the max
@@ -1614,4 +1615,91 @@ vector<int>* MRTR::Interface::MyLMIds()
   return lmids;
 }
 
+/*----------------------------------------------------------------------*
+ | detect end segments and reduce the order of the lm shape functions   |
+ | on these end segments                                                |
+ *----------------------------------------------------------------------*/
+bool MRTR::Interface::DetectEndSegmentsandReduceOrder()
+{ 
+  if (!IsComplete())
+  {
+    cout << "***ERR*** MRTR::Interface::DetectEndSegmentsandReduceOrder:\n"
+         << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  if (!lComm()) return true;
+
+  int mside = MortarSide();
+  int sside = OtherSide(mside);
+
+  if (IsOneDimensional())
+  {
+    /*
+    in the 1D interface case, an end segment is detected as follows:
+    - an end segments is attached to a node that has a projection and is the 
+      ONLY segment attached to that node
+    - an end segment is attached to a node that has a pseudo projection (that is
+      a node carrying lagrange mutlipliers but not having a projection) 
+    */
+    
+    // loop all nodes on the slave side and find those with only one segment
+    map<int,MRTR::Node*>::iterator curr;
+    for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+    {
+      MRTR::Node* node = curr->second;
+      bool foundit = false;
+      if (node->Nseg()<2)
+        foundit = true;
+      if (node->GetProjectedNode())
+        if (!(node->GetProjectedNode()->Segment()))
+          foundit = true;
+      if (!foundit)
+        continue;
+        
+      MRTR::Segment** segs = node->Segments();
+
+      for (int i=0; i<node->Nseg(); ++i)
+      {
+        MRTR::Function::FunctionType type = 
+          segs[i]->FunctionType(1);
+          
+        MRTR::Function_Constant1D* tmp1;  
+        switch (type)
+        {
+          // for linear and dual linear reduce function order to constant
+          case MRTR::Function::func_Constant1D:
+          case MRTR::Function::func_Linear1D:
+          case MRTR::Function::func_DualLinear1D:
+            tmp1 = new Function_Constant1D();
+            segs[i]->SetFunction(1,tmp1);
+            delete tmp1; tmp1 = NULL;
+          break;
+          case MRTR::Function::func_none:
+            cout << "***ERR*** MRTR::Interface::DetectEndSegmentsandReduceOrder:\n"
+                 << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is func_none\n"
+                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+            exit(EXIT_FAILURE);     
+          break;
+          default:
+            cout << "***ERR*** MRTR::Interface::DetectEndSegmentsandReduceOrder:\n"
+                 << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is unknown\n"
+                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+            exit(EXIT_FAILURE);     
+          break;
+        } // switch (type)
+      } // for (int i=0; i<node->Nseg(); ++i)
+    } // for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+
+  } // if (IsOneDimensional())
+  else
+  {
+    cout << "***ERR*** MRTR::Interface::DetectEndSegmentsandReduceOrder:\n"
+         << "***ERR*** not impl. for 2D interfaces\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+
+  return true;
+}
 #endif // TRILINOS_PACKAGE

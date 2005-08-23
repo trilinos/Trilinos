@@ -157,6 +157,9 @@ public:
   
   // get vector of all lm dof ids on this interface
   vector<int>* MyLMIds();
+  
+  // detect end segments and reduce order of lagrange mutliplier shape functions
+  bool DetectEndSegmentsandReduceOrder();
 
 private:  
 
