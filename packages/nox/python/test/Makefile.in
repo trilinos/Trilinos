@@ -329,7 +329,7 @@ AUTOMAKE_OPTIONS = foreign
 #       could get rid of these.
 #
 EXTRA_DIST = \
-	setpath.py testNOXPararmeter.py testNOXStatusTest.py
+	setpath.py testNOXParameter.py testNOXStatusTest.py
 
 MAINTAINERCLEANFILES = Makefile.in
 

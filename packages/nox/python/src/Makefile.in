@@ -393,6 +393,19 @@ INTERFACES = NOX_TopLevel.i NOX_Abstract.i NOX_Parameter.i NOX_Solver.i \
 WRAPPERS = $(INTERFACES:.i=_wrap.cpp)
 PROXIES_TMP = $(INTERFACES:.i=.py      )
 PROXIES = $(PROXIES_TMP:NOX_=      )
+
+# ------------------------------------------------------------------------
+# Extra files to be installed by 'make dist'
+# ------------------------------------------------------------------------
+EXTRA_DIST = \
+	$(INTERFACES) \
+	setup.py \
+	Epetra_VectorHelper.h \
+	Epetra_VectorHelper.cpp \
+	PyInterface.h \
+	PyInterface.cpp \
+	Utils_enums.H
+
 all: all-am
 
 .SUFFIXES:

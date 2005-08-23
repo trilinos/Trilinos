@@ -43,7 +43,7 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = setpath.py
+EXTRA_DIST = setpath.py testLOCA.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'

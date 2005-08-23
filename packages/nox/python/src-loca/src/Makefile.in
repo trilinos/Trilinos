@@ -397,6 +397,14 @@ INTERFACES = LOCA_TopLevel.i LOCA_Continuation.i LOCA_MultiContinuation.i \
 WRAPPERS = $(INTERFACES:.i=_wrap.cpp)
 PROXIES_TMP = $(INTERFACES:.i=.py      )
 PROXIES = $(PROXIES_TMP:LOCA_=     )
+
+# ------------------------------------------------------------------------
+# Extra files to be installed by 'make dist'
+# ------------------------------------------------------------------------
+EXTRA_DIST = \
+	$(INTERFACES) \
+	setup.py
+
 all: all-am
 
 .SUFFIXES:

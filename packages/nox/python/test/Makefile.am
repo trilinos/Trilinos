@@ -44,7 +44,7 @@ ACLOCAL	= aclocal -I config
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = \
-	setpath.py testNOXPararmeter.py testNOXStatusTest.py
+	setpath.py testNOXParameter.py testNOXStatusTest.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'

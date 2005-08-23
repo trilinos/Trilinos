@@ -100,3 +100,16 @@ clean-local:
 	$(RM) -r ../../packages
 
 CLEANFILES += setup.txt $(WRAPPERS) $(PROXIES)
+
+# ------------------------------------------------------------------------
+# Extra files to be installed by 'make dist'
+# ------------------------------------------------------------------------
+
+EXTRA_DIST = \
+	$(INTERFACES) \
+	setup.py \
+	Epetra_VectorHelper.h \
+	Epetra_VectorHelper.cpp \
+	PyInterface.h \
+	PyInterface.cpp \
+	Utils_enums.H
