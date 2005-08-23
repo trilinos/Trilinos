@@ -65,8 +65,10 @@ int main(int argc, char *argv[]) {
   int MyPID = Comm.MyPID();
 
   //  Dimension of the matrix
-        int nx = 10;        // Discretization points in any one direction.
-  int NumGlobalElements = nx*nx;  // Size of matrix nx*nx
+  // Discretization points in any one direction.
+  int nx = 10;                    
+  // Size of matrix nx*nx
+  int NumGlobalElements = nx*nx;  
 
   // Construct a Map that puts approximately the same number of
   // equations on each processor.
