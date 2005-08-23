@@ -187,8 +187,11 @@ namespace LOCA {
     //! Continuation group from previous step
     Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> prevGroupPtr;
 
-    //! Eigensolver for computing eigenvalues after each continuation
+    //! Eigensolver for computing eigenvalues after each continuation step
     Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> eigensolver;
+
+    //! Strategy for saving eigenvectors/values
+    Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy> saveEigenData;
 
     //! Pointer to bifurcation group
     Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> bifGroupPtr;

@@ -47,6 +47,7 @@
 #include "LOCA_MultiContinuation_ExtendedGroup.H"
 #include "LOCA_MultiContinuation_ExtendedVector.H"
 #include "LOCA_Eigensolver_AbstractStrategy.H"
+#include "LOCA_SaveEigenData_AbstractStrategy.H"
 #include "LOCA_MultiContinuation_ConstrainedGroup.H"
 
 LOCA::NewStepper::NewStepper(
@@ -63,6 +64,7 @@ LOCA::NewStepper::NewStepper(
   curGroupPtr(),
   prevGroupPtr(),
   eigensolver(),
+  saveEigenData(),
   bifGroupPtr(),
   statusTestPtr(),
   paramListPtr(),
@@ -93,6 +95,7 @@ LOCA::NewStepper::NewStepper(
   curGroupPtr(),
   prevGroupPtr(),
   eigensolver(),
+  saveEigenData(),
   bifGroupPtr(),
   statusTestPtr(),
   paramListPtr(),
@@ -163,6 +166,10 @@ LOCA::NewStepper::reset(const Teuchos::RefCountPtr<LOCA::MultiContinuation::Abst
     parsedParams->getSublist("Eigensolver");
   eigensolver = locaFactory->createEigensolverStrategy(parsedParams,
 						       eigenParams);
+
+  // Create strategy to save eigenvectors/values
+  saveEigenData = locaFactory->createSaveEigenDataStrategy(parsedParams,
+							   eigenParams);
 
   // Initialize the utilities
   LOCA::Utils::setUtils(*paramListPtr);
@@ -328,8 +335,11 @@ LOCA::NewStepper::start() {
     Teuchos::RefCountPtr< std::vector<double> > evals_i;
     Teuchos::RefCountPtr< NOX::Abstract::MultiVector > evecs_r;
     Teuchos::RefCountPtr< NOX::Abstract::MultiVector > evecs_i;
-    eigensolver->computeEigenvalues(*curGroupPtr->getBaseLevelUnderlyingGroup(),
-				    evals_r, evals_i, evecs_r, evecs_i);
+    eigensolver->computeEigenvalues(
+				 *curGroupPtr->getBaseLevelUnderlyingGroup(),
+				 evals_r, evals_i, evecs_r, evecs_i);
+
+    saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
   }
 
   // Compute predictor direction
@@ -556,8 +566,11 @@ LOCA::NewStepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
     Teuchos::RefCountPtr< std::vector<double> > evals_i;
     Teuchos::RefCountPtr< NOX::Abstract::MultiVector > evecs_r;
     Teuchos::RefCountPtr< NOX::Abstract::MultiVector > evecs_i;
-    eigensolver->computeEigenvalues(*curGroupPtr->getBaseLevelUnderlyingGroup(),
-				    evals_r, evals_i, evecs_r, evecs_i);
+    eigensolver->computeEigenvalues(
+				 *curGroupPtr->getBaseLevelUnderlyingGroup(),
+				 evals_r, evals_i, evecs_r, evecs_i);
+
+    saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
   }
 
   return stepStatus;

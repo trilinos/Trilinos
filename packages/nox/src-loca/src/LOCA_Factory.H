@@ -43,6 +43,7 @@
 #include "LOCA_BorderedSystem_Factory.H"
 #include "LOCA_Eigensolver_Factory.H"
 #include "LOCA_EigenvalueSort_Factory.H"
+#include "LOCA_SaveEigenData_Factory.H"
 #include "LOCA_TurningPoint_MooreSpence_SolverFactory.H"
 
 // Forward declarations
@@ -181,6 +182,18 @@ namespace LOCA {
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
 
+    //! Create strategy to save eigenvector/value data
+    /*!
+     * Instantiates a strategy to save eigenvector/value data based on the 
+     * "Save Eigen Data Method" parameter of the "Eigensolver" sublist.  
+     * See LOCA::SaveEigenData::Factory for a description of available 
+     * strategies.
+     */
+    Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy>
+    createSaveEigenDataStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
+
     //! Create Moore-Spence turning point solver strategy
     /*!
      * Instantiates a solver strategy based on the 
@@ -231,6 +244,9 @@ namespace LOCA {
 
     //! EigenvalueSort factory
     LOCA::EigenvalueSort::Factory eigenvalueSortFactory;
+
+    //! Save eigen data factory
+    LOCA::SaveEigenData::Factory saveEigenFactory;
 
     //! Moore-Spence solver factory
     LOCA::TurningPoint::MooreSpence::SolverFactory mooreSpenceSolverFactory;

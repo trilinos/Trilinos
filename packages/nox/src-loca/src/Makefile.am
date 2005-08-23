@@ -304,14 +304,19 @@ LOCA_EIGENSOLVER_H = \
 	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H \
 	$(srcdir)/LOCA_Eigensolver_Factory.H \
 	$(srcdir)/LOCA_EigenvalueSort_Strategies.H \
-	$(srcdir)/LOCA_EigenvalueSort_Factory.H
+	$(srcdir)/LOCA_EigenvalueSort_Factory.H \
+	$(srcdir)/LOCA_SaveEigenData_AbstractStrategy.H \
+	$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.H \
+	$(srcdir)/LOCA_SaveEigenData_Factory.H
 
 LOCA_EIGENSOLVER = \
 	$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C \
 	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C \
 	$(srcdir)/LOCA_Eigensolver_Factory.C \
 	$(srcdir)/LOCA_EigenvalueSort_Strategies.C \
-	$(srcdir)/LOCA_EigenvalueSort_Factory.C
+	$(srcdir)/LOCA_EigenvalueSort_Factory.C \
+	$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C \
+	$(srcdir)/LOCA_SaveEigenData_Factory.C
 
 LOCA_FACTORY_H = \
 	$(srcdir)/LOCA_Factory.H \

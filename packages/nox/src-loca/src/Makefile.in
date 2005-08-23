@@ -230,6 +230,9 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Eigensolver_Factory.H \
 	$(srcdir)/LOCA_EigenvalueSort_Strategies.H \
 	$(srcdir)/LOCA_EigenvalueSort_Factory.H \
+	$(srcdir)/LOCA_SaveEigenData_AbstractStrategy.H \
+	$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.H \
+	$(srcdir)/LOCA_SaveEigenData_Factory.H \
 	$(srcdir)/LOCA_Factory.H $(srcdir)/LOCA_GlobalData.H \
 	$(srcdir)/LOCA_Extended_Vector.C \
 	$(srcdir)/LOCA_Extended_MultiVector.C \
@@ -334,6 +337,8 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Eigensolver_Factory.C \
 	$(srcdir)/LOCA_EigenvalueSort_Strategies.C \
 	$(srcdir)/LOCA_EigenvalueSort_Factory.C \
+	$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C \
+	$(srcdir)/LOCA_SaveEigenData_Factory.C \
 	$(srcdir)/LOCA_Factory.C $(srcdir)/LOCA_GlobalData.C
 am__objects_1 =
 am__objects_2 = $(am__objects_1) $(am__objects_1) $(am__objects_1) \
@@ -453,7 +458,9 @@ am__objects_19 = libloca_a-LOCA_Eigensolver_DefaultStrategy.$(OBJEXT) \
 	libloca_a-LOCA_Eigensolver_AnasaziStrategy.$(OBJEXT) \
 	libloca_a-LOCA_Eigensolver_Factory.$(OBJEXT) \
 	libloca_a-LOCA_EigenvalueSort_Strategies.$(OBJEXT) \
-	libloca_a-LOCA_EigenvalueSort_Factory.$(OBJEXT)
+	libloca_a-LOCA_EigenvalueSort_Factory.$(OBJEXT) \
+	libloca_a-LOCA_SaveEigenData_DefaultStrategy.$(OBJEXT) \
+	libloca_a-LOCA_SaveEigenData_Factory.$(OBJEXT)
 am__objects_20 = libloca_a-LOCA_Factory.$(OBJEXT) \
 	libloca_a-LOCA_GlobalData.$(OBJEXT)
 am__objects_21 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
@@ -557,6 +564,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Secant.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Tangent.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_Default.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_ItRef.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_Manager.Po \
@@ -703,6 +712,9 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Eigensolver_Factory.H \
 	$(srcdir)/LOCA_EigenvalueSort_Strategies.H \
 	$(srcdir)/LOCA_EigenvalueSort_Factory.H \
+	$(srcdir)/LOCA_SaveEigenData_AbstractStrategy.H \
+	$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.H \
+	$(srcdir)/LOCA_SaveEigenData_Factory.H \
 	$(srcdir)/LOCA_Factory.H $(srcdir)/LOCA_GlobalData.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
@@ -1199,14 +1211,19 @@ LOCA_EIGENSOLVER_H = \
 	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H \
 	$(srcdir)/LOCA_Eigensolver_Factory.H \
 	$(srcdir)/LOCA_EigenvalueSort_Strategies.H \
-	$(srcdir)/LOCA_EigenvalueSort_Factory.H
+	$(srcdir)/LOCA_EigenvalueSort_Factory.H \
+	$(srcdir)/LOCA_SaveEigenData_AbstractStrategy.H \
+	$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.H \
+	$(srcdir)/LOCA_SaveEigenData_Factory.H
 
 LOCA_EIGENSOLVER = \
 	$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C \
 	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C \
 	$(srcdir)/LOCA_Eigensolver_Factory.C \
 	$(srcdir)/LOCA_EigenvalueSort_Strategies.C \
-	$(srcdir)/LOCA_EigenvalueSort_Factory.C
+	$(srcdir)/LOCA_EigenvalueSort_Factory.C \
+	$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C \
+	$(srcdir)/LOCA_SaveEigenData_Factory.C
 
 LOCA_FACTORY_H = \
 	$(srcdir)/LOCA_Factory.H \
@@ -1490,6 +1507,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Secant.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Tangent.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_Default.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_ItRef.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_Manager.Po@am__quote@
@@ -3254,6 +3273,38 @@ libloca_a-LOCA_EigenvalueSort_Factory.obj: $(srcdir)/LOCA_EigenvalueSort_Factory
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_EigenvalueSort_Factory.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_EigenvalueSort_Factory.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_EigenvalueSort_Factory.obj `if test -f '$(srcdir)/LOCA_EigenvalueSort_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_EigenvalueSort_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_EigenvalueSort_Factory.C'; fi`
+
+libloca_a-LOCA_SaveEigenData_DefaultStrategy.o: $(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_SaveEigenData_DefaultStrategy.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.Tpo" -c -o libloca_a-LOCA_SaveEigenData_DefaultStrategy.o `test -f '$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.Tpo" "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C' object='libloca_a-LOCA_SaveEigenData_DefaultStrategy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_SaveEigenData_DefaultStrategy.o `test -f '$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C
+
+libloca_a-LOCA_SaveEigenData_DefaultStrategy.obj: $(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_SaveEigenData_DefaultStrategy.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.Tpo" -c -o libloca_a-LOCA_SaveEigenData_DefaultStrategy.obj `if test -f '$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.Tpo" "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C' object='libloca_a-LOCA_SaveEigenData_DefaultStrategy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_SaveEigenData_DefaultStrategy.obj `if test -f '$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_SaveEigenData_DefaultStrategy.C'; fi`
+
+libloca_a-LOCA_SaveEigenData_Factory.o: $(srcdir)/LOCA_SaveEigenData_Factory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_SaveEigenData_Factory.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.Tpo" -c -o libloca_a-LOCA_SaveEigenData_Factory.o `test -f '$(srcdir)/LOCA_SaveEigenData_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_SaveEigenData_Factory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.Tpo" "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_SaveEigenData_Factory.C' object='libloca_a-LOCA_SaveEigenData_Factory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_SaveEigenData_Factory.o `test -f '$(srcdir)/LOCA_SaveEigenData_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_SaveEigenData_Factory.C
+
+libloca_a-LOCA_SaveEigenData_Factory.obj: $(srcdir)/LOCA_SaveEigenData_Factory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_SaveEigenData_Factory.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.Tpo" -c -o libloca_a-LOCA_SaveEigenData_Factory.obj `if test -f '$(srcdir)/LOCA_SaveEigenData_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_SaveEigenData_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_SaveEigenData_Factory.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.Tpo" "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_SaveEigenData_Factory.C' object='libloca_a-LOCA_SaveEigenData_Factory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_SaveEigenData_Factory.obj `if test -f '$(srcdir)/LOCA_SaveEigenData_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_SaveEigenData_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_SaveEigenData_Factory.C'; fi`
 
 libloca_a-LOCA_Factory.o: $(srcdir)/LOCA_Factory.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Factory.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Factory.Tpo" -c -o libloca_a-LOCA_Factory.o `test -f '$(srcdir)/LOCA_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Factory.C; \

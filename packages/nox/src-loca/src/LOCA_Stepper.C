@@ -40,6 +40,7 @@
 #include "LOCA_Factory.H"
 #include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_Eigensolver_AbstractStrategy.H"
+#include "LOCA_SaveEigenData_AbstractStrategy.H"
 #include "LOCA_Continuation_AbstractGroup.H"   // class data element
 #include "LOCA_Continuation_ExtendedGroup.H"
 #include "LOCA_Continuation_NaturalGroup.H"
@@ -52,6 +53,7 @@ LOCA::Stepper::Stepper(LOCA::Continuation::AbstractGroup& initialGuess,
   factory(),
   haveFactory(false),
   eigensolver(),
+  saveEigenData(),
   bifGroupManagerPtr(NULL),
   bifGroupPtr(NULL),
   conGroupManagerPtr(NULL),
@@ -79,6 +81,7 @@ LOCA::Stepper::Stepper(
   factory(userFactory),
   haveFactory(true),
   eigensolver(),
+  saveEigenData(),
   bifGroupManagerPtr(NULL),
   bifGroupPtr(NULL),
   conGroupManagerPtr(NULL),
@@ -160,6 +163,10 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
     parsedParams->getSublist("Eigensolver");
   eigensolver = locaFactory->createEigensolverStrategy(parsedParams,
 						       eigenParams);
+
+  // Create strategy to save eigenvectors/values
+  saveEigenData = locaFactory->createSaveEigenDataStrategy(parsedParams,
+							   eigenParams);
 
   // Initialize the utilities
   LOCA::Utils::setUtils(*paramListPtr);
@@ -315,6 +322,8 @@ LOCA::Stepper::start() {
     Teuchos::RefCountPtr< NOX::Abstract::MultiVector > evecs_i;
     eigensolver->computeEigenvalues(curGroupPtr->getBaseLevelUnderlyingGroup(),
 				    evals_r, evals_i, evecs_r, evecs_i);
+
+    saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
   }
 
   // Initialize predictor direction
@@ -540,6 +549,8 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
     Teuchos::RefCountPtr< NOX::Abstract::MultiVector > evecs_i;
     eigensolver->computeEigenvalues(curGroupPtr->getBaseLevelUnderlyingGroup(),
 				    evals_r, evals_i, evecs_r, evecs_i);
+
+    saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
   }
 
   return stepStatus;

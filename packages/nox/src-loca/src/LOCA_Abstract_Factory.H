@@ -64,6 +64,9 @@ namespace LOCA {
   namespace EigenvalueSort {
     class AbstractStrategy;
   }
+  namespace SaveEigenData {
+    class AbstractStrategy;
+  }
   namespace TurningPoint {
     namespace MooreSpence {
       class SolverStrategy;
@@ -164,6 +167,14 @@ namespace LOCA {
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
        Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy);
+
+      //! Create strategy to save eigenvector/value data
+      virtual bool
+      createSaveEigenDataStrategy(
+         const string& strategyName,
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	 Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy>& strategy);
 
       //! Create Moore-Spence turning point solver strategy
       virtual bool

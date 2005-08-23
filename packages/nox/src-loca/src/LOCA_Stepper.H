@@ -177,6 +177,9 @@ namespace LOCA {
     //! Eigensolver for computing eigenvalues after each continuation
     Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> eigensolver;
 
+    //! Strategy for saving eigenvectors/values
+    Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy> saveEigenData;
+
     //! Bifurcation group manager
     LOCA::Bifurcation::Manager* bifGroupManagerPtr;
 

@@ -97,6 +97,16 @@ LOCA::Abstract::Factory::createEigenvalueSortStrategy(
 }
 
 bool
+LOCA::Abstract::Factory::createSaveEigenDataStrategy(
+         const string& strategyName,
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	 Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy>& strategy)
+{
+  return false;
+}
+
+bool
 LOCA::Abstract::Factory::createMooreSpenceSolverStrategy(
        const string& strategyName,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,

@@ -47,6 +47,7 @@ LOCA::Factory::Factory(
   borderedFactory(global_data),
   eigensolverFactory(global_data),
   eigenvalueSortFactory(global_data),
+  saveEigenFactory(global_data),
   mooreSpenceSolverFactory(global_data)
 {
   // Set the factory member of the global data
@@ -65,6 +66,7 @@ LOCA::Factory::Factory(
   borderedFactory(global_data),
   eigensolverFactory(global_data),
   eigenvalueSortFactory(global_data),
+  saveEigenFactory(global_data),
   mooreSpenceSolverFactory(global_data)
 {
   // Initialize user-defined factory
@@ -236,6 +238,32 @@ LOCA::Factory::createEigenvalueSortStrategy(
   }
 
   strategy = eigenvalueSortFactory.create(topParams, eigenParams);
+
+  return strategy;
+}
+
+Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy>
+LOCA::Factory::createSaveEigenDataStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams)
+{
+  string methodName = "LOCA::Factory::createSaveEigenDataStrategy()";
+  Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy> strategy;
+
+  // If we have a user-provided factory, first try creating the strategy
+  // using it
+  if (haveFactory) {
+    const string& strategyName = 
+      saveEigenFactory.strategyName(*eigenParams);
+    bool created = factory->createSaveEigenDataStrategy(strategyName,
+							topParams,
+							eigenParams,
+							strategy);
+    if (created)
+      return strategy;
+  }
+
+  strategy = saveEigenFactory.create(topParams, eigenParams);
 
   return strategy;
 }
