@@ -57,7 +57,7 @@ namespace LOCA {
      * natural continuation:
      * \f[
      *     g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=
-     *         p-p_0-v_p \Delta s\f
+     *         p-p_0-v_p \Delta s
      * \f]
      * where \f$v_p\f$ is the parameter component of the predictor direction 
      * \f$v\f$.
