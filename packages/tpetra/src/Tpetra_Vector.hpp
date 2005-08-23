@@ -38,7 +38,6 @@
 #include <Teuchos_BLAS.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-#include "../test/tpetra_test_util.hpp"
 
 namespace Tpetra {
 

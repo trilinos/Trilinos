@@ -34,7 +34,9 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include "Tpetra_Util.hpp" // for toString
 #include "Tpetra_Version.hpp"
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #ifdef TPETRA_MPI
 #include <mpi.h>
 #endif // TPETRA_MPI
@@ -52,7 +54,11 @@
 
 //! cin used as MPI breakpoint (used for debugging parallel code)
 void mpiBreakpoint(int myImageID) {
+#ifdef HAVE_UNISTD_H
 	cout << "Image " << myImageID << " is alive, PID " << getpid() << endl;
+#else
+	cout << "Image " << myImageID << " is alive, PID ???" << endl;
+#endif
 	if(myImageID == 0) {
 		cout << "[TPETRA-DEBUG mpiBreakpoint] ";
 		cin >> myImageID;
