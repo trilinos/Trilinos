@@ -742,6 +742,8 @@ static int create_field_array(vtkUnstructuredGrid *ug,
 {
   int rc = 0;
 
+  ca[0] = pa[0] = '\0';
+
   if (zdriveCount > 0){
     // Find the partition number for each "cell" in my subgrid.  This
     // requires reading the zdrive output files.  We name the
@@ -1933,8 +1935,8 @@ static void write_usage()
   cout << endl;
 
   cout << "output frame stride = " << endl;
-  cout << "  This is how many degrees to skip between frames.  The default " << endl;
-  cout << "  is 1 degree." << endl;
+  cout << "  This the difference in degrees from one frame to the next." << endl;
+  cout << "  The default is 1 degree." << endl;
   cout << endl;
 
   cout << "output view up = x y z" << endl;
