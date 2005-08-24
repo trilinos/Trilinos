@@ -46,4 +46,5 @@ FFLAGS=-O3 \
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
---enable-tsfextended
+--enable-tsfextended \
+--with-gnumake
