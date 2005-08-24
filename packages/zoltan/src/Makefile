@@ -30,6 +30,11 @@
 # The optional flags are:
 #    YES_FORTRAN=1   Use to compile and link a version of Zoltan that can
 #                    be called from Fortran.
+#
+# Two graphical tools for visualizing geometric partitions: 
+#   gmake <flags> vtk_view (requires VTK from www.vtk.org and OpenGL)
+#   gmake <flags> vtk_write (requires VTK and Mesa GL from www.mesa.org)
+#
 # Example:
 # To compile a version of Zoltan for tflop including the F90 interface, type
 #    gmake YES_FORTRAN=1 ZOLTAN_ARCH=tflop zoltan
@@ -349,6 +354,7 @@ ZCPPDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
 ZCPPDRIVE_DEPS	= $(ZDRIVE_DEPS)
 
 VIEW_OBJ        = vtk_view.o dr_input.o  dr_err.o
+WRITE_OBJ        = vtk_write.o dr_input.o  dr_err.o
 
 VIEW_LIBS       = -L. $(VTK_LIBPATH) $(MPI_LIBPATH) $(X_LIBPATH) $(GL_LIBPATH) \
    -lvtkParallel -lvtkHybrid -lvtkIO -lvtkRendering -lvtkGraphics -lvtkImaging \
@@ -357,6 +363,15 @@ VIEW_LIBS       = -L. $(VTK_LIBPATH) $(MPI_LIBPATH) $(X_LIBPATH) $(GL_LIBPATH) \
    -lvtkftgl -lvtkfreetype \
    -lvtkpng -lvtktiff -lvtkzlib -lvtkjpeg -lvtkexpat \
    -lpthread -lvtkexoIIc -lvtkNetCDF $(MPI_LIB) -ldl
+
+OFFSCREEN_VIEW_LIBS = \
+   -L. $(VTK_OFFSCREEN_LIBPATH) $(X_LIBPATH) $(MPI_LIBPATH) $(MESA_LIBPATH) \
+   -lvtkHybrid -lvtkParallel -lvtkRendering -lvtkIO -lvtkGraphics -lvtkImaging \
+   $(MESA_LIBS) $(X_LIBS) -lvtkftgl -lvtkfreetype \
+   -lvtkFiltering -lvtkCommon \
+   -lvtkpng -lvtktiff -lvtkzlib -lvtkjpeg -lvtkexpat \
+   -lpthread -lvtkexoIIc -lvtkNetCDF $(MPI_LIB)
+
 
 CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS)
 F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
@@ -467,6 +482,22 @@ vtk_view:
 	"VPATH=$(ZOLTAN_VPATH)"                 \
 	"DEFS=$(DEFS) $(SUBINCPATH) $(INCLUDE_PATH) $(VTK_INCPATH)" \
 	"LNK_LIBS=$(VIEW_LIBS)" 		\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
+	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)"
+
+vtk_write:
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd util ; cp -f vtk_view.cpp vtk_write.cpp ; 
+	@cd $(ZOLTAN_OBJ_DIR); 			\
+	$(MAKE) vtk_write                       \
+	"ZTARGET=vtk_write"			\
+	"CC=$(CPPCOMP) "  	                \
+	"OBJ_FILES=$(WRITE_OBJ)"	        \
+	"VPATH=$(ZOLTAN_VPATH)"                 \
+	"DEFS=$(GDEFINES) -DOUTPUT_TO_FILE $(DEFS) $(VTK_OFFSCREEN_INCPATH)" \
+	"MAIN_OBJ=$(WRITE_OBJ)"  		\
+	"LNK_LIBS=$(OFFSCREEN_VIEW_LIBS)" 	\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)"
 
