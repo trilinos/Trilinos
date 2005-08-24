@@ -138,21 +138,15 @@ PATOH_INCPATH           = -I/Net/local/proj/zoltan/arch/pclinux/PaToH
 #PARKWAY_INCPATH        = -I/home/umit/prgs/parkway-2.0
 
 #----------------------------------------------------------------
-# Definitions required to build vtk_view, the VTK application that
-# can be used to view Chaco and Exodus test files that have been
-# partitioned by zdrive.  vtk_view is a parallel C++ application.
-# A pre-built version of vtk_view may be found on SNL's LAN in the
-# architecture specific "bin" directory.  To rebuild, you need
-# to provide paths to VTK libraries and include files.  There are
-# versions of these as well on the LAN.  The latest version VTK
-# may be obtained from www.vtk.org. 
+# Definitions required to build vtk_view and vtk_write.  Pre-built
+# versions may be found on SNL's LAN in the architecture specific
+# "bin" directory.  To rebuild, you need to provide paths to VTK
+# libraries and include files.  There are versions of these as well
+# on the LAN.  The latest version of VTK may be obtained from www.vtk.org.
 #
-# The location of the VTK libraries
+# The location of the VTK libraries, built with OpenGL
 #
 VTK_LIBPATH = -L/Net/local/proj/zoltan/arch/linux/lib/vtk
-
-# The location of the VTK header files
-#
 VTK_INCPATH = -I/Net/local/proj/zoltan/arch/linux/include/vtk
 
 # The location of the X libraries, and the X libraries required, if any
@@ -164,4 +158,15 @@ X_LIBS    = -lXt
 #
 GL_LIBPATH = -L/usr/lib
 GL_LIBS    = -lMesaGL
+
+# vtk_write does off screen rendering and so requires the Mesa GL
+# libraries.  It also requires a different version of VTK, one that
+# was built with the MANGLED_MESA option and with Mesa GL header files.
+
+VTK_OFFSCREEN_LIBPATH = -L/Net/local/proj/zoltan/arch/linux/lib/vtkMesa
+VTK_OFFSCREEN_INCPATH = -I/Net/local/proj/zoltan/arch/linux/include/vtkMesa
+
+MESA_LIBPATH = -L/Net/local/proj/zoltan/arch/linux/lib/Mesa
+MESA_LIBS = -lGL  -lGLU -lOSMesa
 #----------------------------------------------------------------
+
