@@ -202,7 +202,7 @@ int Zoltan_PHG_Partition (
              timer_vcycle = -1;   /* times everything in Vcycle not included
                                      in above timers */
   int do_timing = (hgp->use_timers > 1);
-  int vcycle_timing = (hgp->use_timers > 2);
+  int vcycle_timing = (hgp->use_timers > 4);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
     
@@ -298,7 +298,7 @@ int Zoltan_PHG_Partition (
         ZOLTAN_TIMER_START(zz->ZTime, timer_coarse, hg->comm->Communicator);
       }
 
-      if (hgp->use_timers > 2) {
+      if (vcycle_timing) {
         if (vcycle->timer_coarse < 0) {
           char str[80];
           sprintf(str, "VC Coarsening %d", hg->info);
@@ -380,7 +380,7 @@ int Zoltan_PHG_Partition (
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hg->comm->Communicator);
       ZOLTAN_TIMER_START(zz->ZTime, timer_refine, hg->comm->Communicator);
     }
-    if (hgp->use_timers > 2) {
+    if (vcycle_timing) {
       if (vcycle->timer_refine < 0) {
         char str[80];
         sprintf(str, "VC Refinement %d", hg->info);
@@ -418,7 +418,7 @@ int Zoltan_PHG_Partition (
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hg->comm->Communicator);
       ZOLTAN_TIMER_START(zz->ZTime, timer_project, hg->comm->Communicator);
     }
-    if (hgp->use_timers > 2) {
+    if (vcycle_timing) {
       if (vcycle->timer_project < 0) {
         char str[80];
         sprintf(str, "VC Project Up %d", hg->info);
@@ -483,7 +483,7 @@ int Zoltan_PHG_Partition (
 End:
   vcycle = del;
   while (vcycle) {
-    if (hgp->use_timers > 2) {
+    if (vcycle_timing) {
       Zoltan_Timer_PrintAll(vcycle->timer, 0, hg->comm->Communicator, stdout);
       Zoltan_Timer_Destroy(&vcycle->timer);
     }
