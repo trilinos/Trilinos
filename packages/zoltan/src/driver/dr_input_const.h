@@ -91,7 +91,7 @@ typedef struct Parallel_IO *PARIO_INFO_PTR;
  * zdrive style of input file.
  */
 
-#define UNDEFINED_LIST_MAX    10
+#define UNDEFINED_LIST_MAX    20
 #define UNDEFINED_LENGTH_MAX 128
 
 struct ParameterList
