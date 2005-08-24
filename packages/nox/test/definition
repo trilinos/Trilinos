@@ -51,6 +51,8 @@
     EXIT-STATUS = STRING-COMPARISON(All tests passed);
     ARGS = -v;
     COMM = SERIAL, MPI;
+    X-ARCH = sun4u;
+    X-HOST = paunchy;
 }
 
 # LOCA LAPACK tests
@@ -61,4 +63,6 @@
     EXIT-STATUS = STRING-COMPARISON(All tests passed);
     ARGS = -v;
     COMM = SERIAL;
+    X-ARCH = sun4u;
+    X-HOST = paunchy;
 }
