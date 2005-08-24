@@ -317,7 +317,7 @@ int Zoltan_PHG_Partition (
       /* Construct coarse hypergraph and LevelMap */
       err = Zoltan_PHG_Coarsening (zz, hg, match, coarser->hg, vcycle->LevelMap,
        &vcycle->LevelCnt, &vcycle->LevelSndCnt, &vcycle->LevelData, 
-       &vcycle->comm_plan);
+       &vcycle->comm_plan, hgp);
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN) 
         goto End;
 
