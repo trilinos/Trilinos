@@ -42,6 +42,7 @@
 #include <vector>
 
 #include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_CrsMatrix.h"
 
 using namespace std;
 
@@ -78,8 +79,16 @@ public:
   Epetra_SerialDenseMatrix* Integrate(MRTR::Segment& sseg, double sxia, double sxib,
                                       MRTR::Segment& mseg, double mxia, double mxib);
 
+  // assemble the result -Mdense from the integration above into M
+  bool Assemble(MRTR::Interface& inter, MRTR::Segment& sseg, MRTR::Segment& mseg, 
+                Epetra_CrsMatrix& M, Epetra_SerialDenseMatrix& Mdense);
+
   // integrate a 1D slave segment
   Epetra_SerialDenseMatrix* Integrate(MRTR::Segment& sseg, double sxia, double sxib);
+
+  // assemble the result Ddense from the integration above into D
+  bool Assemble(MRTR::Interface& inter, MRTR::Segment& sseg,  
+                Epetra_CrsMatrix& D, Epetra_SerialDenseMatrix& Ddense);
 
 private:  
   // don't want = operator

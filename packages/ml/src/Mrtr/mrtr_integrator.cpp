@@ -254,6 +254,143 @@ Epetra_SerialDenseMatrix* MRTR::Integrator::Integrate(MRTR::Segment& sseg,
 }
 
 /*----------------------------------------------------------------------*
+ |  assemble the result -Mdense into M (public)              mwgee 08/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Integrator::Assemble(MRTR::Interface& inter, 
+                                MRTR::Segment& sseg, 
+                                MRTR::Segment& mseg, 
+                                Epetra_CrsMatrix& M, 
+                                Epetra_SerialDenseMatrix& Mdense)
+{
+  MRTR::Node** snodes = sseg.Nodes();
+  MRTR::Node** mnodes = mseg.Nodes();
+  
+  for (int slave=0; slave<sseg.Nnode(); ++slave)
+  {
+    // only do slave node rows that belong to this proc
+    if (inter.NodePID(snodes[slave]->Id()) != inter.lComm()->MyPID())
+      continue;
+    
+    // we want to add the row Mdense(slave,...) to the rows lmdof[sdof] 
+    // and                row Ddense(slave,...) to the rows lmdof[sdof] 
+    // get the dofs of slave node snodes[slave];
+    int        snlmdof = snodes[slave]->Nlmdof();
+    const int* slmdof  = snodes[slave]->LMDof();
+    
+    // this slave node might not have a projection, then the number
+    // of lagrange multipliers snlmdof of it is zero
+    // in this case, do nothing
+    if (!snlmdof) continue;
+    
+    // loop nodes on master segment
+    for (int master=0; master<mseg.Nnode(); ++master)
+    {
+      // do not add a zero from (*Mdense)(slave,master)
+      double val = -(Mdense(slave,master));
+      if (abs(val)<1.e-6) continue;
+      
+      int mndof = mnodes[master]->Ndof();
+      const int* mdof = mnodes[master]->Dof();
+      
+      if (mndof != snlmdof)
+      {
+        cout << "***ERR*** MRTR::Interface::Integrate_2D_Section:\n"
+             << "***ERR*** mismatch in number of lagrange multipliers and primal degrees of freedom:\n"
+             << "***ERR*** slave node " << snodes[slave]->Id() << " master node " << mnodes[master]->Id() << "\n"
+             << "***ERR*** # lagrange multipliers " << snlmdof << " # dofs " << mndof << "\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      }
+      
+      // loop dofs on slave node and insert a value for each master dof
+      for (int i=0; i<snlmdof; ++i)
+      {
+        int row = slmdof[i];
+        int col = mdof[i];
+        int err = M.SumIntoGlobalValues(row,1,&val,&col);
+        if (err)
+          err = M.InsertGlobalValues(row,1,&val,&col);
+        if (err)
+        {
+          cout << "***ERR*** MRTR::Interface::Integrate_2D_Section:\n"
+               << "***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n"
+               << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          exit(EXIT_FAILURE);
+        }
+      } // for (int i=0; i<snlmdof; ++i)
+    } // for (int master=0; master<mseg.Nnode(); ++master)
+  } // for (int slave=0; slave<sseg.Nnode(); ++slave)
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  assemble the result Ddense into D (public)               mwgee 08/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Integrator::Assemble(MRTR::Interface& inter, 
+                                MRTR::Segment& sseg, 
+                                Epetra_CrsMatrix& D, 
+                                Epetra_SerialDenseMatrix& Ddense)
+{
+  MRTR::Node** snodes = sseg.Nodes();
+  
+  for (int rownode=0; rownode<sseg.Nnode(); ++rownode)
+  {
+    // only insert in rows that I own
+    if (inter.NodePID(snodes[rownode]->Id()) != inter.lComm()->MyPID())
+      continue;
+      
+    // get row dofs
+    int        nlmdof = snodes[rownode]->Nlmdof();
+    const int* lmdof  = snodes[rownode]->LMDof();
+    
+    // this slave node might not have a projection and therefore might not
+    // carry lagrange multipliers. In this case, do not insert anything
+    if (nlmdof==0) continue;
+    
+    // loop column nodes
+    for (int colnode=0; colnode<sseg.Nnode(); ++colnode)
+    {
+      // do not add a zero from Ddense
+      double val = Ddense(rownode,colnode);
+      if (abs(val)<1.e-6) continue;
+      
+      int ndof = snodes[colnode]->Ndof();
+      const int* dof = snodes[colnode]->Dof();
+      
+      if (nlmdof != ndof)
+      {
+        cout << "***ERR*** MRTR::Interface::Integrate_2D_Section:\n"
+             << "***ERR*** mismatch in number of lagrange multipliers and primal degrees of freedom:\n"
+             << "***ERR*** slave node " << snodes[rownode]->Id() << "\n"
+             << "***ERR*** # lagrange multipliers " << nlmdof << " # dofs " << ndof << "\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      }
+      
+      // loop lm dofs and insert a value for each dof
+      for (int i=0; i<nlmdof; ++i)
+      {
+        int row = lmdof[i];
+        int col = dof[i];
+        int err = D.SumIntoGlobalValues(row,1,&val,&col);
+        if (err)
+          err = D.InsertGlobalValues(row,1,&val,&col);
+        if (err)
+        {
+          cout << "***ERR*** MRTR::Interface::Integrate_2D_Section:\n"
+               << "***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n"
+               << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          exit(EXIT_FAILURE);
+        }
+      } // for (int i=0; i<nlmdof; ++i)
+    } // for (int colnode=0; colnode<sseg.Nnode(); ++colnode)
+  } // for (int rownode=0; rownode<sseg.Nnode(); ++rownode)
+
+  return true;
+}
+
+
+/*----------------------------------------------------------------------*
  |  integrate a 1D slave segment (public)                    mwgee 07/05|
  |  This method integrates 2 functions on the same (slave) segment      |
  |  from given local coordinates sxia to sxib                           |

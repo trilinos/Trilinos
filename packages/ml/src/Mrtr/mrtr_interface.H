@@ -70,6 +70,9 @@ public:
     proj_orthogonal
   };
   
+  // the integrator class is a friend to the interface class
+  friend class Integrator;
+
   // ctor
   explicit Interface(int Id, bool oneD, Epetra_Comm& comm, int outlevel);
   
@@ -225,20 +228,12 @@ private:
   // project the master nodes ontp the slave surface along slave's normal field
   bool ProjectNodes_MastertoSlave_NormalField();
   
-  // control routine of the integration of the master side in 2D
-  bool Integrate_MasterSide_2D(Epetra_CrsMatrix& M);
-  // integrate the overlap of 2 segments in 2D (master contribution)
-  bool Integrate_MasterSide_2D_Section(MRTR::Segment& sseg, MRTR::Segment& mseg,
-                                       Epetra_CrsMatrix& M);
+  // control routine of the integration of the master/slave side in 2D
+  bool Integrate_2D(Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
   
-  // control routine of the integration of the slave side in 2D
-  bool Integrate_SlaveSide_2D(Epetra_CrsMatrix& D);
-  // integrate one slave segment (slave contribution)
-  bool Integrate_SlaveSide_2D_Section(MRTR::Segment& sseg, MRTR::Segment& mseg,
-                                      Epetra_CrsMatrix& D);
-  
-
-
+  // integrate the overlap of 2 segments in 2D (master/slave contribution)
+  bool Integrate_2D_Section(MRTR::Segment& sseg,MRTR::Segment& mseg,
+                            Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
 
 private:
   
