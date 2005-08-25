@@ -547,7 +547,7 @@ exit $exitStatus;
         # Find last instance of "Running PACKAGE Configure Script."  Since 
         # configure failed, it should not have a matching "Finished Running..."
         # string, and PACKAGE should be the broken package.
-        $configureOutput =~ m/.*^Running(.*?)Configure Script/ms;
+        $configureOutput =~ m/.*^Running (.*?) Configure Script/ms;
         if (defined $1) { $brokenPackage = $1; }
         
         if (defined $brokenPackage) {
@@ -580,13 +580,13 @@ exit $exitStatus;
         my $configuredPackages = "";
         
         # Compile list of all "Finished Running PACKAGE Configure Script" strings.        
-        my @finishedStrings = $configureOutput =~ m/(Finished( Running)? \w*? Configure Script)/g;        
+        my @finishedStrings = $configureOutput =~ m/(Finished( Running)? .*? Configure Script)/g;        
         foreach my $finishedString (@finishedStrings) {
                             
             # Grab package name.
             my $package = "";
-            if ($finishedString =~ m/Finished Running (\w*?) Configure Script/) {
-                $package = $1;
+            if ($finishedString =~ m/Finished( Running)? (.*?) Configure Script/) {
+                $package = $2;
                 $package = lc($package);
                 $configuredPackages .= "$package; ";
             }
