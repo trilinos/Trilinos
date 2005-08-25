@@ -30,7 +30,7 @@ include $(top_builddir)/Makefile.export.triutils
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = -I$(TRIUTILS_INCLUDES)               \
+SWIG_CXXFLAGS = $(TRIUTILS_INCLUDES)                 \
                 -I$(top_srcdir)/../epetra/python/src \
 		-I$(top_srcdir)/../PyTrilinos/src
 
