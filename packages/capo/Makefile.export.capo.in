@@ -1,0 +1,33 @@
+# Required dep. on Thyra
+include @abs_top_builddir@/../thyra/Makefile.export.thyra
+
+# These are the include path and the libraries needed to compile the Capo
+# library, and to link the Capo library with another package of an
+# application.
+_CAPO_INCLUDES = \
+  $(THYRA_INCLUDES) \
+  -I@abs_top_srcdir@/src \
+  -I@abs_top_builddir@/src
+
+_CAPO_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lcapo $(THYRA_LIBS) @LIBS@ @FLIBS@ 
+
+@USING_GNUMAKE_TRUE@CAPO_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_CAPO_INCLUDES))
+@USING_GNUMAKE_TRUE@CAPO_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_CAPO_LIBS))
+@USING_GNUMAKE_FALSE@CAPO_INCLUDES = $(_CAPO_INCLUDES)
+@USING_GNUMAKE_FALSE@CAPO_LIBS     = $(_CAPO_LIBS)
+
+# Tests and examples depend on Epetra (ToDo: Make optional!)
+include @abs_top_builddir@/../epetra/Makefile.export.epetra
+
+# These variables define the include path and libraries that can be used in
+# the Capo' examples and tests, but that are not required to compile or link
+# Capo itself.
+
+_CAPO_EXTRA_INCLUDES = $(EPETRA_INCLUDES)
+
+_CAPO_EXTRA_LIBS = $(EPETRA_LIBS)
+
+@USING_GNUMAKE_TRUE@CAPO_EXTRA_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_CAPO_EXTRA_INCLUDES))
+@USING_GNUMAKE_TRUE@CAPO_EXTRA_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_CAPO_EXTRA_LIBS))
+@USING_GNUMAKE_FALSE@CAPO_EXTRA_INCLUDES = $(_CAPO_EXTRA_INCLUDES)
+@USING_GNUMAKE_FALSE@CAPO_EXTRA_LIBS     = $(_CAPO_EXTRA_LIBS)

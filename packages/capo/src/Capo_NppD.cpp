@@ -86,17 +86,6 @@ NppD::NppD(const Teuchos::RefCountPtr<Parameter_List>& ParamList,
   Tfinal = T0;
   Tstep = 0.0;
 
-  /** For period doubling bifurcation **/
-  dvector = createMember(x0->space());
-  Createvectord();
-  nuprevious = createMember(x0->space());
-  nucurrent = createMember(x0->space());
-  nufinal = createMember(x0->space());
-  nustep = createMember(x0->space());
-  Thyra::assign(&*nustep, 0.0);
-  Thyra::assign(&*nuprevious, *dvector); 
-  Thyra::assign(&*nucurrent, *dvector); 
-  Thyra::assign(&*nufinal, *dvector);
 
   App_Integrator = App_Int;
   SolveParameters = ParamList;
@@ -114,6 +103,18 @@ NppD::NppD(const Teuchos::RefCountPtr<Parameter_List>& ParamList,
 
   // Use the VectorBase xcurrent to create a MultiVector Base.
   Ve = Thyra::createMembers(xcurrent->space(),30);
+
+  /** For period doubling bifurcation **/
+  dvector = createMember(x0->space());
+  Createvectord();
+  nuprevious = createMember(x0->space());
+  nucurrent = createMember(x0->space());
+  nufinal = createMember(x0->space());
+  nustep = createMember(x0->space());
+  Thyra::assign(&*nustep, 0.0);
+  Thyra::assign(&*nuprevious, *dvector); 
+  Thyra::assign(&*nucurrent, *dvector); 
+  Thyra::assign(&*nufinal, *dvector);
 
 }
 
@@ -157,10 +158,11 @@ void NppD::Createvectord()
       We = MatVecs(Ve_pe);
       Thyra::apply(*Ve_pe,Thyra::TRANS,*We,&*Se);
       SchurDecomp(Se,Re,1);
-      if (i<14)
+      if (i<8)
 	{
 	  Thyra::apply(*We,Thyra::NOTRANS,*Se,&*Ve_pe);
 	  Orthonormalize(Ve_pe,SolveParameters->get_NumberXtraVecsSubspace());
+	  cerr << "On lap " << i << endl;
 	}
     }
   
@@ -223,9 +225,10 @@ void NppD::Initialize()
 	{
 	  Thyra::apply(*We,Thyra::NOTRANS,*Se,&*Ve_pe);
 	  Orthonormalize(Ve_pe,SolveParameters->get_NumberXtraVecsSubspace());
+	  cerr << "On lap " << i << endl;
+	  Print(Re);
 	}
     }
-  
   Orthonormalize(Ve_pe,SolveParameters->get_NumberXtraVecsSubspace());
   // The Schur decomposition may have altered the Unstable basis size
   // so reset it to zero.
@@ -902,6 +905,7 @@ void NppD::SubspaceIterations(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<
 	{
 	  Thyra::apply(*We,Thyra::NOTRANS,*Se,&*Ve_pe);
 	  Orthonormalize(Ve_pe,Subspace_Size);
+	  Print(Re);
 	}
     }
   Orthonormalize(Ve_pe,Subspace_Size);

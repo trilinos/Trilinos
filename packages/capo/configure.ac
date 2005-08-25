@@ -422,7 +422,8 @@ AC_CONFIG_FILES([
 		examples/Reed/Makefile	
 		examples/VanderPol/Makefile
 		examples/Rpm_Test/Makefile
-		examples/Tcubed/Makefile	
+		examples/Tcubed/Makefile
+		examples/Elezgaray/Makefile	
 		])
 
 
