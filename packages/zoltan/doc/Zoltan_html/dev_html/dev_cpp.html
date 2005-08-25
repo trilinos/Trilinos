@@ -54,9 +54,9 @@ associated with it.  This data structure maintains all the state required
 for one instance of that sub function.  Each request of the library for 
 some operation requires that data structure.
 
-<P>The classes in the Zoltan C++ library follow structure just described.
+<P>The classes in the Zoltan C++ library follow the structure just described.
 Each class is implemented in a header
-file which encapsulates a Zoltan data structure and the functions that
+file and encapsulates a Zoltan data structure and the functions that
 operate on that structure.  A C++ application wishing to use a
 feature of Zoltan, would include the feature's header file in it's source, and
 link with the Zoltan C++ library.
@@ -78,8 +78,8 @@ is defined in <I>zoltan_timer_cpp.h</I>.
 class <B>Zoltan_DD</B> defined in <I>zoltan_dd_cpp.h</I>
 
 <H3> <A NAME="cpp dev conventions"></A>Programming Conventions</H3>
-When modifying the interface to a Zoltan capability, you will want to modify 
-the associated C++ header file accordingly.  This section describes the 
+When modifying the interface to Zoltan , you will want to modify 
+the appropriate C++ header file accordingly.  This section describes the 
 conventions to follow to maintain a consistent and correct library interface 
 for the C++ user of Zoltan.
 
@@ -128,7 +128,7 @@ by a compiler.
 type), the associated C++ method will take a reference variable.
 If a C function takes a pointer to a pointer, the C++ function will take
 a pointer reference.  The references are more efficient, and it is
-the behavior that the experienced C++ programmer expects.
+the behavior a C++ programmer expects.
 A pointer to an array remains a pointer to an array.
 
 <P><TABLE rules=cols,rows frame=box align=center cellpadding=5>
@@ -150,7 +150,7 @@ A pointer to an array remains a pointer to an array.
 <P>If a C function takes a pointer to an array of <I>char</I>, the
 associated C++ method will take a <I>string</I> object.
 
-<P><TABLE rules=cols,rows frame=box align=center>
+<P><TABLE rules=cols,rows frame=box align=center cellpadding=5>
 <TR> <TH>C function parameter</TH> <TH>C++ method parameter</TH> </TR>
 <TR> <TD>char *fname</TD> <TD>std::string &fname</TD> </TR>
 </TABLE>
