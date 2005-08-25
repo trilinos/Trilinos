@@ -105,7 +105,7 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
     }
     
   //-------------------------------------------------------------------
-  // do the integration of the master side
+  // do the integration of the master and slave side
   if (IsOneDimensional())
   {
     ok = Integrate_MasterSide_2D(M);
@@ -214,15 +214,6 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
                                                       MRTR::Segment& mseg,
                                                       Epetra_CrsMatrix& M)
 { 
-  if (!IsComplete())
-  {
-    cout << "***ERR*** MRTR::Interface::Integrate_MasterSide_2D_Section:\n"
-         << "***ERR*** Complete() not called on interface " << Id() << "\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  if (!lComm()) return true;
-  
   // if one of the segments is quadratic, we have to do something here
   if (sseg.Type()!=MRTR::Segment::seg_Linear1D || mseg.Type()!=MRTR::Segment::seg_Linear1D)
   {
@@ -291,30 +282,21 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
   //         mnodes not project into slave element
   // Note: this case is due to tolerance in projection
   if (snode0 && !snode1 && !mnode0 && !mnode1)
-  {
-    //cout << "Case 2: no overlap\n";
     ++foundcase;
-  }
   
   // case 3: mnode0 projects into slave element element
   //         mnode1 not projects into slave element
   //         snodes don't project into master element
   // Note: this case is due to tolerance in projection
   if (!snode0 && !snode1 && mnode0 && !mnode1)
-  {
-    //cout << "Case 3: no overlap\n";
     ++foundcase;
-  }
   
   // case 4: mnode0 doe not project into slave element element
   //         mnode1 projects into slave element
   //         snodes don't project into master element
   // Note: this case is due to tolerance in projection
   if (!snode0 && !snode1 && !mnode0 && mnode1)
-  {
-    //cout << "Case 4: no overlap\n";
     ++foundcase;
-  }
   
   // case 5: mnodes do not project into slave element
   //        snode0 does not project into master element
@@ -328,15 +310,12 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
     bool ok = true;
     // Have to check whether snodes[0] has a projection 
     // (into a neighbor master segment) and whether that projection point is
-    // low in xi value
+    // low in xi range (should be -1.0)
     nstart = snodes[0]->GetProjectedNode(); // check whether a projection exists 
     if (!nstart) ok = false;
-
-    if (ok)
-      sxia = nstart->Xi()[0]; 
+    if (ok) sxia = nstart->Xi()[0]; 
     if (sxia > -1.1 && sxia < -0.9) ok = true; // check whether projection is good
     else                            ok = false;  
-    
     if (ok)
     {    
       nend   = snodes[1]->GetProjectedNode(); 
@@ -351,7 +330,6 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
   // case 6: both master node project into slave segment
   if (mnode0 && mnode1)
   {
-    //cout << "Case 6: both mnodes in slave segment\n";
     ++foundcase;
     nstart = mnodes[0]->GetProjectedNode();
     nend   = mnodes[1]->GetProjectedNode();
@@ -364,7 +342,6 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
   // case 7: both slave nodes project into master segment
   if (snode0 && snode1)
   {
-    //cout << "Case 7: both snodes in master segment\n";
     ++foundcase;
     nstart = snodes[0]->GetProjectedNode();
     nend   = snodes[1]->GetProjectedNode();
@@ -377,7 +354,6 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
   // case 8: first slave node in master segment and first master node in slave segment
   if (snode0 && !snode1 && mnode0 && !mnode1)
   {
-    //cout << "Case 8: first slave in master seg and first master in slave seg\n";
     ++foundcase;
     nstart = snodes[0]->GetProjectedNode();
     nend   = mnodes[0]->GetProjectedNode();
@@ -390,7 +366,6 @@ bool MRTR::Interface::Integrate_MasterSide_2D_Section(MRTR::Segment& sseg,
   // case 9: last slave node in master segment and last master node in slave segment
   if (snode1 && !snode0 && mnode1 && !mnode0)
   {
-    //cout << "Case 9: last slave in master seg and last master in slave seg\n";
     ++foundcase;
     nstart = mnodes[1]->GetProjectedNode();
     nend   = snodes[1]->GetProjectedNode();
@@ -539,9 +514,20 @@ bool MRTR::Interface::Integrate_SlaveSide_2D(Epetra_CrsMatrix& D)
     // if none of the nodes belongs to me, do nothing on this segment
     if (!foundone) continue;
     
-    // integrate this segment and add values to D
-    Integrate_SlaveSide_2D_Section(*actsseg,D);
+    // loop over all segments on the master side
+    map<int,MRTR::Segment*>::iterator mcurr;
+    for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)    
+    {
+      MRTR::Segment* actmseg = mcurr->second;
       
+      // if there is an overlap between actsseg and actmseg, integrate
+      // the slave side contribution of this overlap and add to D
+      // (actmseg is actually only needed to determine this overlap, 
+      //  for nothing else)
+      Integrate_SlaveSide_2D_Section(*actsseg,*actmseg,D);
+      
+      
+    } // for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)    
   } // for (scurr=rseg_[sside].begin(); scurr!=rseg_[sside].end(); ++scurr)
 
   return true;
@@ -551,16 +537,162 @@ bool MRTR::Interface::Integrate_SlaveSide_2D(Epetra_CrsMatrix& D)
  | integrate the slave side's contribution                              |
  *----------------------------------------------------------------------*/
 bool MRTR::Interface::Integrate_SlaveSide_2D_Section(MRTR::Segment& sseg, 
+                                                     MRTR::Segment& mseg, 
                                                      Epetra_CrsMatrix& D)
 { 
-  // get nodes of this segment
+  // get nodes of slave and master segment
   MRTR::Node** snodes = sseg.Nodes();
+  MRTR::Node** mnodes = mseg.Nodes();
+  
+  // there is several cases on how these 2 segments can overlap
+  // handle all of them including that they don't overlap at all
+  bool snode0 = false;
+  bool snode1 = false;
+  bool mnode0 = false;
+  bool mnode1 = false;
+  int foundcase =  0;
+
+  if (snodes[0]->GetProjectedNode())
+    if (snodes[0]->GetProjectedNode()->Segment())
+      if (snodes[0]->GetProjectedNode()->Segment()->Id() == mseg.Id())
+        snode0 = true;
+  if (snodes[1]->GetProjectedNode())
+    if (snodes[1]->GetProjectedNode()->Segment())
+      if (snodes[1]->GetProjectedNode()->Segment()->Id() == mseg.Id())
+        snode1 = true;
+      
+  if (mnodes[0]->GetProjectedNode())
+    if (mnodes[0]->GetProjectedNode()->Segment())
+      if (mnodes[0]->GetProjectedNode()->Segment()->Id() == sseg.Id())
+        mnode0 = true;
+  if (mnodes[1]->GetProjectedNode())
+    if (mnodes[1]->GetProjectedNode()->Segment())
+      if (mnodes[1]->GetProjectedNode()->Segment()->Id() == sseg.Id())
+        mnode1 = true;
+
+  MRTR::ProjectedNode* nstart = NULL;
+  MRTR::ProjectedNode* nend   = NULL;
+
+  // the xi range to integrate
+  double sxia=999.0,sxib=999.0;
+
+  // case 1: snodes don't project into master element and
+  //         mnodes don't project into slave element
+  if (!snode0 && !snode1 && !mnode0 && !mnode1)
+    ++foundcase;
+  
+  // case 2: snode0 projects into master element
+  //         snode1 not projects into master element
+  //         mnodes not project into slave element
+  // Note: this case is due to tolerance in projection
+  if (snode0 && !snode1 && !mnode0 && !mnode1)
+    ++foundcase;
+  
+  // case 3: mnode0 projects into slave element element
+  //         mnode1 not projects into slave element
+  //         snodes don't project into master element
+  // Note: this case is due to tolerance in projection
+  if (!snode0 && !snode1 && mnode0 && !mnode1)
+    ++foundcase;
+  
+  // case 4: mnode0 doe not project into slave element element
+  //         mnode1 projects into slave element
+  //         snodes don't project into master element
+  // Note: this case is due to tolerance in projection
+  if (!snode0 && !snode1 && !mnode0 && mnode1)
+    ++foundcase;
+  
+  // case 5: mnodes do not project into slave element
+  //        snode0 does not project into master element
+  //        snode1 does project into master element
+  // Note: this case might happen when mnode1 and snode0
+  //       project exactly on an opposite node and are assigned
+  //       an other element then this one
+  if (!snode0 && snode1 && !mnode0 && !mnode1)
+  {
+    bool ok = true;
+    // Have to check whether snodes[0] has a projection 
+    // (into a neighbor master segment) and whether that projection point is
+    // low in xi range (should be -1.0)
+    nstart = snodes[0]->GetProjectedNode(); // check whether a projection exists 
+    if (!nstart) ok = false;
+    if (ok) sxia = nstart->Xi()[0]; 
+    if (sxia > -1.1 && sxia < -0.9) ok = true; // check whether projection is good
+    else                            ok = false;  
+    if (ok)
+    {    
+      nend   = snodes[1]->GetProjectedNode(); 
+      sxia = -1.0;
+      sxib =  1.0;
+      ++foundcase;
+    }
+  }
+
+  // case 6: both master node project into slave segment
+  if (mnode0 && mnode1)
+  {
+    ++foundcase;
+    nstart = mnodes[0]->GetProjectedNode();
+    nend   = mnodes[1]->GetProjectedNode();
+    sxia = nend->Xi()[0];
+    sxib = nstart->Xi()[0];
+  }
+  
+  // case 7: both slave nodes project into master segment
+  if (snode0 && snode1)
+  {
+    ++foundcase;
+    nstart = snodes[0]->GetProjectedNode();
+    nend   = snodes[1]->GetProjectedNode();
+    sxia = -1.0;
+    sxib =  1.0;
+  }
+
+  // case 8: first slave node in master segment and first master node in slave segment
+  if (snode0 && !snode1 && mnode0 && !mnode1)
+  {
+    ++foundcase;
+    nstart = snodes[0]->GetProjectedNode();
+    nend   = mnodes[0]->GetProjectedNode();
+    sxia = -1.0;
+    sxib = nend->Xi()[0];
+  }
+
+  // case 9: last slave node in master segment and last master node in slave segment
+  if (snode1 && !snode0 && mnode1 && !mnode0)
+  {
+    ++foundcase;
+    nstart = mnodes[1]->GetProjectedNode();
+    nend   = snodes[1]->GetProjectedNode();
+    sxia = nstart->Xi()[0];
+    sxib = 1.0;
+  }
+
+  if (foundcase != 1)
+  {
+    cout << "***ERR*** MRTR::Interface::Integrate_SlaveSide_2D_Section:\n"
+         << "***ERR*** # cases that apply here: " << foundcase << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    cout << "Slave :" << sseg;
+    MRTR::Node** nodes = sseg.Nodes();
+    cout << *nodes[0];
+    cout << *nodes[1];
+    cout << "Master:" << mseg;
+    nodes = mseg.Nodes();
+    cout << *nodes[0];
+    cout << *nodes[1];
+    exit(EXIT_FAILURE);
+  }
+  
+  // there might be no overlap
+  if (!nstart && !nend)
+    return true;
   
   // create an integrator instance of some given order
   MRTR::Integrator integrator(5,IsOneDimensional());
   
   // do the integration
-  Epetra_SerialDenseMatrix* Ddense = integrator.Integrate(sseg,-1.,1.);
+  Epetra_SerialDenseMatrix* Ddense = integrator.Integrate(sseg,sxia,sxib);
   
   // put results Ddense into D
   for (int rownode=0; rownode<sseg.Nnode(); ++rownode)

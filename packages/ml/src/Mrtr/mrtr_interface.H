@@ -234,7 +234,8 @@ private:
   // control routine of the integration of the slave side in 2D
   bool Integrate_SlaveSide_2D(Epetra_CrsMatrix& D);
   // integrate one slave segment (slave contribution)
-  bool Integrate_SlaveSide_2D_Section(MRTR::Segment& sseg, Epetra_CrsMatrix& D);
+  bool Integrate_SlaveSide_2D_Section(MRTR::Segment& sseg, MRTR::Segment& mseg,
+                                      Epetra_CrsMatrix& D);
   
 
 
