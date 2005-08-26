@@ -263,7 +263,7 @@ RUN (s858352-nightly-mpi) {
     COMM                = mpi;
     INVOKE-CONFIGURE    = darwin-s858352-mpi;
     TEST-CATEGORY       = FRAMEWORK;
-    MAX-PROC            = 1;
+    MAX-PROC            = 2;
     MPI-START           = lamboot;
     MPI-STOP            = lamhalt;
     TTR-DIR             = /Users/mnpheno/TrilinosTestHarness/TrilinosTestResults;
