@@ -51,6 +51,16 @@ are also included in <I>include/zoltan.h</I>. Interface functions are called
 by the application to register functions, select a load-balancing method,
 invoke load balancing and migrate data.
 
+<P>The interface to the C++ version of the Zoltan library is in the file
+<I>include/zoltan_cpp.h</I>.  This file defines the <B>Zoltan_Object</B> class,
+representing a <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>
+data structure and the functions which
+operate upon it.  The conventions used to wrap C library functions as
+C++ library functions are described in the chapter
+<B><a href="dev_cpp.html">C++ Interface</a></B>.
+A C++ program that uses Zoltan includes <I>include/zoltan_cpp.h</I>
+instead of <I>include/zoltan.h</I>.
+
 <P>For more detailed information on Zoltan's query and interface functions,
 please see the <A HREF="../ug_html/ug.html">Zoltan User's Guide</A>.
 

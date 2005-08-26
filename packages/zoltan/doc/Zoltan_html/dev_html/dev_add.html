@@ -62,11 +62,16 @@ If necessary, write a routine to free your dynamically allocated data structures
 See tips on <a href="dev_add_memory.html">memory management</a></li>
 in Zoltan.</a>
 <li>
-Add partition remapping to your algorithm using 
-<a href="dev_add_remap.html"><b>Zoltan_LB_Remap</b></a>.
+If the parameter <a href="../ug_html/ug_alg_rcb.html">KEEP_CUTS</a>
+is defined for your algorithm, write a routine 
+to copy your load balancing 
+<a href="dev_add_struct.html#Copy">data structure</a>. 
 <li>
-Update the </a><a href="dev_fortran.html#fortran dev add">Fortran
-interface</a>, if necessary.</li>
+Add partition remapping to your algorithm using 
+<a href="dev_add_.html"><b>Zoltan_LB_Remap</b></a>.
+<li>
+Update the <a href="dev_fortran.html#fortran dev add">Fortran</a>
+and <a href="dev_cpp.html">C++</a> interfaces, if necessary.</li>
 
 <li>
 Document your new method. The documentation should be written in a format

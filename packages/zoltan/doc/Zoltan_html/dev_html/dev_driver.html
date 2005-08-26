@@ -27,23 +27,27 @@
 
 
 <h2>
-<a NAME="Zdrive"></a>Appendix: Using the Test Drivers: <i>zdrive</i> and <i>zfdrive</i></h2>
+<a NAME="Zdrive"></a>Appendix: Using the Test Drivers: <i>zdrive</i>, <i>zCPPdrive</i> and <i>zfdrive</i></h2>
 
 <h3>
 <a NAME="Introduction"></a>Introduction</h3>
 In order to facilitate development and testing of the Zoltan library, 
-simple driver programs, <i>zdrive</i> (C) and <i>zfdrive</i> (Fortran90),
+simple driver programs, <i>zdrive</i> (C), <i>zCPPdrive</i> (C++)
+and <i>zfdrive</i> (Fortran90),
 are included with the library
 distribution. The concept behind the drivers is to read in mesh or graph
 information from files, run Zoltan, and then output the new assignments
-for each processor to another file. The test driver <i>zdrive</i> reads ExodusII/NemesisI
+for each processor to another file. The test drivers <i>zdrive</i> 
+and <i>zCPPdrive</i> reads ExodusII/NemesisI
 parallel FEM files and <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a>
 input files. Parallel NemesisI files can be created from ExodusII or Genesis
 file using the NemesisI utilities <i>nem_slice</i> and <i>nem_spread</i>.
 The Fortran90 program <i>zfdrive</i> reads only <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a> input files.
 <p>
 Source code for <i>zdrive</i> is in the <i>driver</i> and <i>ch</i> directories of
-the Zoltan distribution. Source code for <i>zfdrive</i> is in the <i>fdriver</i> directory.
+the Zoltan distribution. Source code for <i>zfdrive</i> is in the <i>fdriver</i> directory.  The source code for <i>zCPPdrive</i>, which exercises the C++ Zoltan library,
+is also in <i>driver</i>, and uses some
+of the same C source files that  <i>zdrive</i> uses.
 <p>
 To compile the test drivers,
 use the following commands:

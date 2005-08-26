@@ -170,12 +170,24 @@ built for the RCB algorithm.&nbsp; (Taken from rcb/shared.c.)</i></caption>
 </table></center>
 
 <p>
-The data structures pointed to by <i>zz->LB.Data_Structure</i> must also be freed.
-A function that frees these structures and resets <i>zz->LB.Data_Structure</i>
+The data structures pointed to by <i>zz->LB.Data_Structure</i> will be freed
+at some point, and may be copied.
+<p>A function that frees these structures and resets <i>zz->LB.Data_Structure</i>
 to NULL should be written.  The function should be called when the load-balancing
 algorithm exits, either normally or due to an error condition.
 The function
 <b>Zoltan_RCB_Free_Structure</b> in <i>rcb/rcb_util.c</i> may be used as an example.
+<A NAME="Copy"></A>
+<p>If your algorithm uses the <a href="../ug_html/ug_alg_rcb.html">KEEP_CUTS</a>
+parameter, a function that copies one <i>zz->LB.Data_Structure</i> to another is 
+required.  This is particularly important for C++, 
+which may create temporary objects
+at runtime by invoking a copy operator (which will call your copy function).
+It is a convenience for C applications, which may wish to copy one Zoltan_Struct
+to another.  
+See the function <b>Zoltan_RCB_Copy_Structure</b> in <i>rcb/rcb_util.c</i> 
+for an example.  
+
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_add_memory.html">Next:&nbsp;
 Memory Management</a>&nbsp; |&nbsp; <a href="dev_add_lb.html">Previous:&nbsp;
