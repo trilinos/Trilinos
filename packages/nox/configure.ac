@@ -42,7 +42,7 @@ AC_INIT([nox],[4.0-dev],[nox-developers@software.sandia.gov])
 
 # Hello World!
 echo "----------------------------------------"
-echo "Running NOX/LOCA Configure Script"
+echo "Running NOX Configure Script"
 echo "----------------------------------------"
 
 # This is to protect against accidentally specifying the wrong
@@ -949,5 +949,5 @@ AC_OUTPUT
 # ------------------------------------------------------------------------
 
 echo "------------------------------------------"
-echo "Finished Running NOX/LOCA Configure Script"
+echo "Finished Running NOX Configure Script"
 echo "------------------------------------------"

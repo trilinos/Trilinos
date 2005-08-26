@@ -1466,7 +1466,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 # Hello World!
 echo "----------------------------------------"
-echo "Running NOX/LOCA Configure Script"
+echo "Running NOX Configure Script"
 echo "----------------------------------------"
 
 # This is to protect against accidentally specifying the wrong
@@ -18265,5 +18265,5 @@ fi
 # ------------------------------------------------------------------------
 
 echo "------------------------------------------"
-echo "Finished Running NOX/LOCA Configure Script"
+echo "Finished Running NOX Configure Script"
 echo "------------------------------------------"
