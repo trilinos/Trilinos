@@ -1,3 +1,19 @@
+/* 
+  Here is a list of the architectures listed in am_install and the machines on which 
+  we do the testing:
+LINUX (GNU) -  herouxsmp 
+LINUX (Intel)  - spirit (I think)
+SGI 64 - atlantis
+DEC/Alpha MPI - stratus
+Sun OS - Paunchy - hopefully soon to be replaced
+MAC OSX - s3858352 
+
+
+
+
+
+  These are listed here so that they will not show up in the document itself.
+*/
 /*! \mainpage Amesos: An Interface to Serial and Parallel Direct Sparse Solver Packages.
 
 \image html AmesosLogo.jpeg
@@ -28,13 +44,13 @@ The main page of the Doxygen documentation is organized as follows:
 
 Amesos supports the following classes:
 
-- \c Amesos_Lapack - Interface to LAPACK's DGETRF. Amesos_Lapack is the 
-     only dense solver supported by Amesos.
+- \c Amesos_Lapack - Interface to LAPACK's serial dense solver DGETRF.
+- \c Amesos_Scalapack - Interface to ScaLAPACK's parallel dense solver PDGETRF.
 - \c Amesos_Klu - Interface to Tim Davis serial solver KLU (distributed within Amesos). 
 - \c Amesos_Umfpack - Interface to Tim Davis's UMFPACK (version 4.3 or later)
-- \c Amesos_Pardiso - Interface to PARDISO
+- \c Amesos_Pardiso - Interface to PARDISO (prototype)
 - \c Amesos_Taucs - Interface to TAUCS
-- \c Amesos_Superlu - Interface to Xiaoye Li's SuperLU serial memory code with serial input interface.
+- \c Amesos_Superlu - Interface to Xiaoye Li's SuperLU serial memory code with serial input interface (version 3.0 or later).
 - \c Amesos_Superludist - Interface to Xiaoye Li's SuperLU Distributed memory code with serial input interface (version 2.0 or later).
 - \c Amesos_Dscpack - Interface to Padma Raghavan's DSCPACK
 - \c Amesos_Mumps - Interface to CERFACS' MUMPS (version 4.3.1 or later)
@@ -69,11 +85,13 @@ The following tables reports an overview of the Amesos classes.
 <td>Amesos_Klu</td>
 <td>Amesos_Umfpack</td>
 <td>Amesos_Superlu</td>
+<td>Amesos_Scalapack</td>
 </tr>
 <tr>
 <td>Default behavior</td>
 <td>Enabled</td>
 <td>Enabled</td>
+<td>Disabled</td>
 <td>Disabled</td>
 <td>Disabled</td>
 </tr>
@@ -83,6 +101,7 @@ The following tables reports an overview of the Amesos classes.
 <td>C</td>
 <td>C</td>
 <td>C</td>
+<td>FORTRAN77</td>
 </tr>
 <tr>
 <td>Communicator</td>
@@ -90,6 +109,7 @@ The following tables reports an overview of the Amesos classes.
 <td>none</td>
 <td>none</td>
 <td>none</td>
+<td>MPI</td>
 </tr>
 <tr>
 <td>Processes used for Factorization/Solve</td>
@@ -97,9 +117,11 @@ The following tables reports an overview of the Amesos classes.
 <td>Process 0</td>
 <td>Process 0</td>
 <td>Process 0</td>
+<td>Any</td>
 </tr>
 <tr>
 <td>Distributed input matrix</td>
+<td>Yes </td>
 <td>Yes </td>
 <td>Yes </td>
 <td>Yes </td>
@@ -111,9 +133,11 @@ The following tables reports an overview of the Amesos classes.
 <td>Yes</td>
 <td>Yes</td>
 <td>Yes</td>
+<td>Yes</td>
 </tr>
 <tr>
 <td>Requires BLAS</td>
+<td>Yes</td>
 <td>Yes</td>
 <td>Yes</td>
 <td>Yes</td>
@@ -125,6 +149,7 @@ The following tables reports an overview of the Amesos classes.
 <td>No</td>
 <td>No</td>
 <td>No</td>
+<td>No</td>
 </tr>
 <tr>
 <td>Requires BLACS</td>
@@ -132,6 +157,7 @@ The following tables reports an overview of the Amesos classes.
 <td>No</td>
 <td>No</td>
 <td>No</td>
+<td>Yes</td>
 </tr>
 <tr>
 <td>Requires ScaLAPACK</td>
@@ -139,6 +165,7 @@ The following tables reports an overview of the Amesos classes.
 <td>No</td>
 <td>No</td>
 <td>No</td>
+<td>Yes</td>
 </tr>
 </table> 
 
@@ -253,9 +280,11 @@ The following table details the supported matrix formats for each class.
 <td>Amesos_Umfpack</td>
 <td>Amesos_Pardiso</td>
 <td>Amesos_Taucs</td>
+<td>Amesos_Scalapack</td>
 </tr>
 <tr>
 <td>Epetra_RowMatrix</td>
+<td>yes</td>
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
@@ -269,9 +298,11 @@ The following table details the supported matrix formats for each class.
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
+<td>yes</td>
 </tr>
 <tr>
 <td>Epetra_VbrMatrix</td>
+<td>yes</td>
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
@@ -355,7 +386,14 @@ The configure like will look like:
 
 Other flags may be required depending on the location of
  MPI, BLAS and LAPACK. The table below reports the 
-architectures and compilers tested with Amesos.
+architectures and compilers tested with each of the Amesos classes. 
+"nightly" means that these tests are included in out routine (though not always nightly) 
+testing.  "yes" means that theses tests were run at least once.  
+
+This table may soon be replaced by a table which reports only the
+results of the routine, "nightly", tests.  \ref am_manual_testing
+will continue to list of architectures and compilers on which Amesos solvers have
+been tested manually.
 
 <table>
 <tr>
@@ -365,6 +403,7 @@ architectures and compilers tested with Amesos.
 <td>Amesos_Umfpack</td>
 <td>Amesos_Pardiso</td>
 <td>Amesos_Taucs</td>
+<td>Amesos_Scalapack</td>
 </tr>
 <tr>
 <td>LINUX (GNU), SERIAL</td>
@@ -373,6 +412,7 @@ architectures and compilers tested with Amesos.
 <td>yes</td>
 <td>yes</td>
 <td>yes</td>
+<td>no</td>
 </tr>
 <tr>
 <td>LINUX (Intel), MPI</td>
@@ -381,28 +421,32 @@ architectures and compilers tested with Amesos.
 <td>yes</td>
 <td>no</td>
 <td>no</td>
+<td>no</td>
 </tr>
 <tr>
 <td>LINUX (GNU), MPI</td>
+<td>nightly </td>
+<td>nightly </td>
 <td>yes </td>
 <td>yes </td>
 <td>yes </td>
-<td>yes </td>
-<td>yes </td>
+<td>nightly </td>
 </tr>
 <tr>
 <td>SGI 64, MPI</td>
-<td>yes </td>
-<td>yes </td>
-<td>yes </td>
+<td>nightly </td>
+<td>nightly </td>
+<td>nightly </td>
 <td>no </td>
 <td>no </td>
+<td>nightly</td>
 </tr>
 <tr>
 <td>DEC/Alpha MPI</td>
-<td>yes</td>
-<td>yes</td>
-<td>yes</td>
+<td>nightly</td>
+<td>nightly</td>
+<td>nightly</td>
+<td>no</td>
 <td>no</td>
 <td>no</td>
 </tr>
@@ -413,6 +457,25 @@ architectures and compilers tested with Amesos.
 <td>yes</td>
 <td>no</td>
 <td>yes</td>
+<td>no</td>
+</tr>
+<tr>
+<td>MAC OSX, MPI</td>
+<td>nightly</td>
+<td>nightly</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Sun OS, MPI</td>
+<td>nightly</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
 </tr>
 <tr>
 <td>Sandia Cplant, MPI</td>
@@ -420,13 +483,6 @@ architectures and compilers tested with Amesos.
 <td>yes</td>
 <td>yes</td>
 <td>no</td>
-<td>no</td>
-</tr>
-<tr>
-<td>Sandia ASCI Red, MPI</td>
-<td>no</td>
-<td>yes</td>
-<td>yes</td>
 <td>no</td>
 <td>no</td>
 </tr>
@@ -456,17 +512,17 @@ architectures and compilers tested with Amesos.
 </tr>
 <tr>
 <td>LINUX (GNU), MPI</td>
-<td>yes </td>
-<td>yes </td>
+<td>nightly </td>
+<td>nightly </td>
 <td>no </td>
-<td>yes </td>
+<td>nightly </td>
 </tr>
 <tr>
 <td>SGI 64, MPI</td>
 <td>yes</td>
 <td>no</td>
-<td>yes </td>
-<td>no </td>
+<td>nightly </td>
+<td>nightly </td>
 </tr>
 <tr>
 <td>DEC/Alpha MPI</td>
@@ -483,14 +539,21 @@ architectures and compilers tested with Amesos.
 <td>no</td>
 </tr>
 <tr>
-<td>Sandia Cplant, MPI</td>
-<td>yes</td>
-<td>yes</td>
+<td>MAC OSX, MPI</td>
+<td>no</td>
+<td>no</td>
 <td>no</td>
 <td>no</td>
 </tr>
 <tr>
-<td>Sandia ASCI Red, MPI</td>
+<td>Sun OS, MPI</td>
+<td>nightly</td>
+<td>no</td>
+<td>no</td>
+<td>nightly</td>
+</tr>
+<tr>
+<td>Sandia Cplant, MPI</td>
 <td>yes</td>
 <td>yes</td>
 <td>no</td>
@@ -631,26 +694,37 @@ for more details.
 
 \section am_future Known bugs and future developments
 
+\subsection old_incompatibilities Incompatibility between old versions of SuperLU
+
+Versions of Superlu and Superludist prior to August 2005 exhibit some
+mutual incompatibility as well as incompatbility with KLU and UMFPACK.  
+
 Depending on the version of SuperLU and SuperLU_DIST, you may or may not
 configure Amesos with support for both. This is due to conflicts in the header
-files of SuperLU/SuperLU_DIST.
+files of SuperLU/SuperLU_DIST.  
 
-You may encounter problems while trying to use the SuperLU/SuperLU_DIST
-classes when KLU or UMFPACK  are enabled. This is due to a conflict in the colamd algorithm.
-The version of colamd which is distributed within Amesos is latest available,
-  and it is comparible with
-that of UMFPACK, but it is not compatible
-with the version distributed within SuperLU/SuperLU_DIST.
-Depending on the version of SuperLU/SuperLU_DIST, 
-this incompatibility may cause the code to crash. You
-might need to disable KLU and UMFPACK to use SuperLU/SuperLU_DIST.
 
-Amesos has an incomplete interface to ScaLAPACK under development.
+\subsection known_bugs bugs
+
+    <p> Amesos_Dscpack has memory leaks, prints to standard out and may 
+crash if
+SymbolicFactorization() is called multiple times on the same Amesos 
+object.
+    <p> Amesos packages other than Amesos_Klu do not accept non-standard 
+maps
+(e.g. one with indices {1,2,5,8,9, ... } )
+    <p> Amesos packages other than Amesos_Klu do not accept range and 
+domain maps
+which differ from the matrix map
+    <p> Superludist fails on some matrices
+    <p> Error handling on singular and near singular matrices is 
+inconsistent
+
 
 \section am_final Final Remarks
 
-<P>This page is maintained by Marzio Sala, SNL 9214.
-<p>This page last updated 29-May-05.
+<P>This page is maintained by Marzio Sala, SNL 9214 and Ken Stanley.
+<p>This page last updated 26-Aug-05.
 
 */
 
@@ -680,6 +754,155 @@ Amesos has an incomplete interface to ScaLAPACK under development.
 \page am_readme README
 
 \include README-Amesos
+*/
+
+/*!
+\page am_manual_testing MANUAL TESTING
+
+ The table below reports the architectures and compilers manually tested with
+Amesos.  This table is no longer updated. 
+
+
+<table>
+<tr>
+<td>architecture</td>
+<td>Amesos_Lapack</td>
+<td>Amesos_Klu</td>
+<td>Amesos_Umfpack</td>
+<td>Amesos_Pardiso</td>
+<td>Amesos_Taucs</td>
+</tr>
+<tr>
+<td>LINUX (GNU), SERIAL</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>LINUX (Intel), MPI</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>LINUX (GNU), MPI</td>
+<td>yes </td>
+<td>yes </td>
+<td>yes </td>
+<td>yes </td>
+<td>yes </td>
+</tr>
+<tr>
+<td>SGI 64, MPI</td>
+<td>yes </td>
+<td>yes </td>
+<td>yes </td>
+<td>no </td>
+<td>no </td>
+</tr>
+<tr>
+<td>DEC/Alpha MPI</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>MAC OSX, SERIAL</td>
+<td>no</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>Sandia Cplant, MPI</td>
+<td>no</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Sandia ASCI Red, MPI</td>
+<td>no</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td>architecture</td>
+<td>Amesos_Superlu</td>
+<td>Amesos_Superludist</td>
+<td>Amesos_Mumps</td>
+<td>Amesos_Dscpack</td>
+</tr>
+<tr>
+<td>LINUX (GNU), SERIAL</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>LINUX (Intel), MPI</td>
+<td>no</td>
+<td>no</td>
+<td>yes</td>
+<td>no</td>
+</tr>
+<tr>
+<td>LINUX (GNU), MPI</td>
+<td>yes </td>
+<td>yes </td>
+<td>no </td>
+<td>yes </td>
+</tr>
+<tr>
+<td>SGI 64, MPI</td>
+<td>yes</td>
+<td>no</td>
+<td>yes </td>
+<td>no </td>
+</tr>
+<tr>
+<td>DEC/Alpha MPI</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>MAC OSX, SERIAL</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Sandia Cplant, MPI</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Sandia ASCI Red, MPI</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+</tr>
+</table>
 */
 
 /*!
