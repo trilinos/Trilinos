@@ -226,7 +226,8 @@ DIST_SOURCES = $(am__libteuchos_a_SOURCES_DIST) \
 	$(EXTRA_libteuchos_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
-	$(srcdir)/Teuchos_any.hpp $(srcdir)/Teuchos_arrayArg.hpp \
+	$(srcdir)/Teuchos_any.hpp $(srcdir)/Teuchos_Array.hpp \
+	$(srcdir)/Teuchos_arrayArg.hpp \
 	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp $(srcdir)/Teuchos_BLAS_wrappers.hpp \
 	$(srcdir)/Teuchos_BLAS_types.hpp \
@@ -262,7 +263,7 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_TestForException.hpp \
 	$(srcdir)/Teuchos_Time.hpp $(srcdir)/Teuchos_TimeMonitor.hpp \
 	$(srcdir)/Teuchos_Utils.hpp $(srcdir)/Teuchos_Workspace.hpp \
-	$(srcdir)/Teuchos_Version.hpp $(srcdir)/Teuchos_Array.hpp \
+	$(srcdir)/Teuchos_Version.hpp \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.hpp \
 	$(srcdir)/Teuchos_FileInputSource.hpp \
 	$(srcdir)/Teuchos_FileInputStream.hpp \
@@ -437,6 +438,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
 	$(srcdir)/Teuchos_any.hpp \
+	$(srcdir)/Teuchos_Array.hpp \
 	$(srcdir)/Teuchos_arrayArg.hpp \
 	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp \
@@ -499,7 +501,6 @@ CORE = \
 	$(srcdir)/Teuchos_Workspace.cpp
 
 EXTRA_EXTENDED_H = \
-	$(srcdir)/Teuchos_Array.hpp \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.hpp \
 	$(srcdir)/Teuchos_FileInputSource.hpp \
 	$(srcdir)/Teuchos_FileInputStream.hpp \

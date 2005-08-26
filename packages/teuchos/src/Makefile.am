@@ -46,6 +46,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
 	$(srcdir)/Teuchos_any.hpp \
+	$(srcdir)/Teuchos_Array.hpp \
 	$(srcdir)/Teuchos_arrayArg.hpp \
 	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp \
@@ -108,7 +109,6 @@ CORE = \
 	$(srcdir)/Teuchos_Workspace.cpp
 
 EXTRA_EXTENDED_H = \
-	$(srcdir)/Teuchos_Array.hpp \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.hpp \
 	$(srcdir)/Teuchos_FileInputSource.hpp \
 	$(srcdir)/Teuchos_FileInputStream.hpp \
