@@ -63,27 +63,39 @@ NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/solaris/lib
 NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/solaris/include
 
 #----------------------------------------------------------------
-# Definitions required to build vtk_view.  Check the
-# architecture specific "bin" directory on the LAN for a
-# prebuilt version.  VTK sources can be obtained at www.vtk.org.
+# Definitions required to build vtk_view and vtk_write.  Pre-built
+# versions may be found on SNL's LAN in the architecture specific
+# "bin" directory.  To rebuild, you need to provide paths to VTK
+# libraries and include files.  There are versions of these as well
+# on the LAN.  The latest version of VTK may be obtained from www.vtk.org.
 #
-# The location of the VTK libraries
+# The location of the VTK libraries, built with OpenGL
 #
 VTK_LIBPATH = -L/Net/local/proj/zoltan/arch/solaris/lib/vtk
-
-# The location of the VTK header files
-#
 VTK_INCPATH = -I/Net/local/proj/zoltan/arch/solaris/include/vtk
 
 # The location of the X libraries, and the X libraries required, if any
 #
 X_LIBPATH = -L/usr/X/lib
-X_LIBS    = -lXt -lX11 -lXt
+X_LIBS    = -lXt -lX11 -lXt -lXext
 
 # The location of the GL or Mesa libraries, and the libraries
 #
 GL_LIBPATH = -L/usr/lib
+GL_INCPATH = -I/usr/include
 GL_LIBS    = -lGL -lGLU
+
+# vtk_write does off screen rendering and so requires the Mesa GL
+# libraries built with mangled names.  It also requires a different 
+# version of VTK, one that was built with the MANGLED_MESA option 
+# and with Mesa GL header files.  A static build is a good idea.
+
+VTK_OFFSCREEN_LIBPATH = -L/Net/local/proj/zoltan/arch/solaris/lib/vtkMesa
+VTK_OFFSCREEN_INCPATH = -I/Net/local/proj/zoltan/arch/solaris/include/vtkMesa
+
+MESA_LIBPATH = -L/Net/local/proj/zoltan/arch/solaris/lib/Mesa
+MESA_INCPATH = -I/Net/local/proj/zoltan/arch/solaris/include/mesa
+MESA_LIBS = -lMGL  -lMGLU -lMOSMesa
 #----------------------------------------------------------------
 
 
