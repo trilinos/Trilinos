@@ -59,6 +59,7 @@ public:
   virtual void initializePreconditionedOp(
     const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >     &fwdOp
     ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &precOp
+    ,const EPreconditionerInputType                                               precOpType
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                              *Op
     ) const = 0;
 
@@ -69,8 +70,9 @@ public:
    */
   virtual void uninitializePreconditionedOp(
     LinearOpWithSolveBase<RangeScalar,DomainScalar>                       *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *fwdOp  = NULL
-    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *precOp = NULL
+    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *fwdOp       = NULL
+    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *precOp      = NULL
+    ,EPreconditionerInputType                                             *precOpType  = NULL
     ) const = 0;
   
   //@}

@@ -93,7 +93,8 @@ bool Thyra::testMaxErr(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
-  const bool success = ( error <= max_error );
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+  const bool success = ( !SMT::isnaninf(error) && !SMT::isnaninf(max_error) && error <= max_error );
   if(out) {
     *out
       << std::endl
@@ -124,8 +125,9 @@ bool Thyra::testRelErr(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
   const ScalarMag rel_err = relErr( v1, v2 );
-  const bool success = ( rel_err <= maxRelErr_error );
+  const bool success = ( !SMT::isnaninf(rel_err) && !SMT::isnaninf(maxRelErr_error) && rel_err <= maxRelErr_error );
   if(out) {
     *out
       << std::endl

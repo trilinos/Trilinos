@@ -29,8 +29,6 @@
 // ///////////////////////////////
 // cxx_main.cpp
 
-#include "Thyra_MPIVectorStd.hpp" // Put here to test Kevin's compilation problem
-#include "Thyra_SerialVectorSpaceStd.hpp"
 #include "Thyra_SerialVectorSpaceStd.hpp"
 #include "Thyra_ProductVectorSpace.hpp"
 #include "Thyra_VectorStdOpsTester.hpp"

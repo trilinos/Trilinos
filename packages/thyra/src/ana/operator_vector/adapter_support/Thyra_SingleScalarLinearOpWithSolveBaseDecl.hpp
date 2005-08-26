@@ -57,6 +57,10 @@ public:
   /** \brief . */
   bool solveTransposeSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
   /** \brief . */
+  int defaultSolveMaxIterations(EConj conj, ESolveTolType solveTolType) const;
+  /** \brief . */
+  int defaultSolveTransposeMaxIterations(EConj conj, ESolveTolType solveTolType) const;
+  /** \brief . */
   void solve(
     const EConj                           conj
     ,const MultiVectorBase<Scalar>        &B
@@ -95,6 +99,14 @@ protected:
     ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]
     ,SolveStatus<Scalar>                  blockSolveStatus[]
     ) const = 0;
+
+  //@}
+
+  /** @name Protected virtual functions with default implementations. */
+  //@{
+
+  /** \brief Returns 1 as the default for max iterations. */
+  int defaultSolveMaxIterations(ETransp M_trans, ESolveTolType solveTolType) const;
 
   //@}
 

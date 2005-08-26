@@ -73,41 +73,38 @@ namespace Thyra {
 
  * Let \f$op(A)\f$ signify either the forward operator \f$A\f$, the transpose
  * operator \f$A^T\f$ or the adjoint operator \f$A^H\f$.  What this interface
- * assumes is that for any appropriately selected random multi-vector
- * <tt>X</tt> which gives the operator application of
+ * assumes is that for any appropriately selected consistent multi-vector RHS
+ * <tt>B</tt> that a solve of \f$A X = B\f$ will yield an approximate solution
+ * LHS multi-vector <tt>X</tt> such that <tt>A X == B</tt>.  Note that this
+ * interface does not assume that a solution \f$X\f$ can be computed for any
+ * random RHS multi-vector \f$B\f$.  Solutions for any random RHS can on be
+ * expected for relatively well conditioned non-singular operators.
 
-  \f[
-    B \leftarrow op(A) X
-  \f]
-
- * then a solve operation should be able to be performed that can recover
- * \f$X\f$ to some tolerance.  Note that this interface does not assume that a
- * solution can be achieved for any random RHS multi-vector \f$X\f$ but this
- * should be the case for non-singular operators.
-
- * It is recommended that clients use the non-member helper functions defined
- * \ref Thyra_LinearOpWithSolveBase_helper_grp "here" rather than call these
- * member functions directly as they support a number of other simpler use
- * cases.
+ * <b>Note:</b> It is recommended that clients use the non-member helper
+ * functions defined \ref Thyra_LinearOpWithSolveBase_helper_grp "here" rather
+ * than call these member functions directly as they support a number of other
+ * simpler use cases.
  * 
  * <b>Solve Criteria</b>
  * 
  * This interface potentially allows clients to specify a relative tolerance
  * on either the relative residual norm or the relative norm of the solution
  * error and can target different solution criteria to different blocks of
- * linear system.  This interface tries to allow for mathematically rigorous
+ * linear systems.  This interface tries to allow for mathematically rigorous
  * solution tolerances that are not based only any implementation-dependent
  * features like the number of iterations of some solver algorithm.  This
  * interface, however, allows <tt>*this</tt> operator to exclude support for
  * either or both types of solution tolerances (see the functions
  * <tt>solveSupportsSolveTolType()</tt> and
- * <tt>solveTransposeSupportsSolveTolType()</tt>).
+ * <tt>solveTransposeSupportsSolveTolType()</tt>).  Also, this interface
+ * assumes that all implementations can support a "default" solve criteria
+ * that is determined internally to <tt>*this</tt>.
  * 
  * This interface is meant to support direct and iterative linear solvers as
  * well as combinations of the two in a variety of configurations.  Because of
- * the almost infinite possible types of linear solver configurations
+ * the almost infinite number of types of linear solver configurations
  * possible, this interface tries not to specify any particular
- * solver-specific types of control options.  The one exception is a maximum
+ * solver-specific solution control options.  The one exception is a maximum
  * number of iterations which is totally implementation defined.  These types
  * of control options are better specified in lower lever implementations and
  * should be kept out of an interface such as this.
@@ -136,7 +133,7 @@ namespace Thyra {
  * where the column indexes are given by \f$i_j = \left( \sum_{k=1}^{j}
  * \mbox{blockSolveCriteria[k-1].numRhs} \right)\f$, for \f$j = 1 \ldots N\f$.
  *
- * The solve criteria for the \f$j^{\mbox{th}}\f$ system
+ * The solve criteria for the \f$j^{\mbox{th}}\f$ block system
    
  \f[
    op(A)  X_{(:,i_{j-1}+1:i_j)} = B_{(:,i_{j-1}+1:i_j)} 
@@ -159,7 +156,7 @@ namespace Thyra {
  * block linear solve is reported in a <tt>SolveStatus</tt> object.
  *
  * The struct <tt>BlockSolveCriteria</tt> contains a <tt>SolveCriteria</tt>
- * member and number of RHSs that it applies to.  It is the
+ * member and a number of RHSs that it applies to.  It is the
  * <tt>SolveCriteria</tt> object that determines the type and tolerance of a
  * block solve request.
  *
@@ -170,22 +167,22 @@ namespace Thyra {
  * 
  * <ul>
  * 
- * <li> <b>Unspecified (Default) tolerance</b> [
- * <tt>solveCriteria.requestedTol==SolveCriteria::unspecifiedTolerance()</tt>
- * ]: In this mode, criteria for the solution tolerance is determined
- * internally by <tt>*this</tt> object.  Usually, it would be assumed that
- * <tt>*this</tt> would solve the linear systems to a sufficient tolerance for
- * the given ANA client.  This is the mode that many ANAs not designed to
- * control inexactness would work with.  In this mode, the solution criteria
- * will be determined in the end by the application or the user in an
- * "appropriate" manner.  In this case, no meaningful solve status can be
- * returned to the client.
+ * <li> <b>Unspecified (Default) solution criteria type</b> [
+ * <tt>solveCriteria.solveTolType==SOLVE_TOL_DEFAULT</tt> ]: In this mode,
+ * criteria for the solution tolerance is determined internally by
+ * <tt>*this</tt> object.  Usually, it would be assumed that <tt>*this</tt>
+ * would solve the linear systems to a sufficient tolerance for the given ANA
+ * client.  This is the mode that many ANAs not designed to control
+ * inexactness would work with.  In this mode, the solution criteria will be
+ * determined in the end by the application or the user in an "appropriate"
+ * manner.  In this case, the value of <tt>solveCriteria.requestedTol</tt> is
+ * ignored and no meaningful solve status can be returned to the client.
  * 
- * <li> <b>Residual tolerance</b> [
- * <tt>solveCriteria.requestedTol!=SolveCriteria::unspecifiedTolerance() &&
- * solveCriteria.solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt> ]: In this
- * mode, the solution algorithm would be requested to solve the block system
- * to the relative residual tolerance of
+ * <li> <b>Residual tolerance solution criteria</b> [
+ * <tt>solveCriteria.solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM &&
+ * solveCriteria.requestedTol!=SolveCriteria::unspecifiedTolerance()</tt> ]:
+ * In this mode, the solution algorithm would be requested to solve the block
+ * system to the relative residual tolerance of
 
   \f[
      \frac{|| op(A) X_{(:,i)} - B_{(:,i)} ||}{ ||B_{(:,i)}||} \le \mu_r,
@@ -198,11 +195,11 @@ namespace Thyra {
  * to monitor this tolerance and be able to achieve it, or on failure be able
  * to report the actual tolerance achieved.
  * 
- * <li> <b>Solution error tolerance</b> [
- * <tt>solveCriteria.requestedTol!=SolveCriteria::unspecifiedTolerance() &&
- * solveCriteria.solveTolType==SOLVE_TOL_REL_SOLUTION_ERR_NORM</tt> ]: In this
- * mode, the solution algorithm would be requested to solve the system to the
- * relative solution error tolerance of
+ * <li> <b>Solution error tolerance solution criteria</b> [
+ * <tt>solveCriteria.solveTolType==SOLVE_TOL_REL_SOLUTION_ERR_NORM &&
+ * solveCriteria.requestedTol!=SolveCriteria::unspecifiedTolerance()</tt> ]:
+ * In this mode, the solution algorithm would be requested to solve the system
+ * to the relative solution error tolerance of
 
   \f[
     \frac{|| X^*_{(:,i)} - X_{(:,i)} ||}{ ||X^*_{(:,i)}||} \le \mu_e,
@@ -234,8 +231,8 @@ namespace Thyra {
  * <tt>SolveStatus</tt> object can optionally be returned that lets the client
  * know the status of the linear solve.
  *
- * A note about direct solvers is in order.  The "inexact" solve feature of
- * this interface is primarily designed to support "loose" solve tolerances
+ * A note about direct solvers is in order.  The "inexact" solve features of
+ * this interface are primarily designed to support "loose" solve tolerances
  * that exploit the properties of iterative linear solvers.  With that said,
  * any decent direct solver can assume that it has met the convergence
  * criteria as requested by the client but does not have to return an estimate
@@ -248,23 +245,25 @@ namespace Thyra {
  * 
  * <li><b>Converged</b> [
  * <tt>solveStatus.solveStatus==SOLVE_STATUS_CONVERGED</tt> ]: This status is
- * returned by the linear solver if the solution criteria was likely achieved.
- * This should almost always be the return value for a direct linear solver.
- * The maximum actual tolerance achieved may or may not be returned in the
- * field <tt>solveStatus.achievedTol</tt>.  The two sub-cases are:
+ * returned by the linear solver if the solution criteria was likely achieved
+ * (within some acceptable cushion cased by round-off etc.).  This should
+ * almost always be the return value for a direct linear solver.  The maximum
+ * actual tolerance achieved may or may not be returned in the field
+ * <tt>solveStatus.achievedTol</tt>.  The two sub-cases are:
  * 
  *   <ul>
  * 
- *   <li><b>Known tolerance</b> [ <tt>solveStatus.achievedTol >= 0</tt> ] :
- *   The linear solver knows the approximate order-of-magnitude estimate of
- *   the maximum tolerance achieved.  An order-of-magnitude (or so) estimate
- *   of the achieved tolerance would likely be known by any iterative linear
- *   solver where when
+ *   <li><b>Known tolerance</b> [
+ *   <tt>solveStatus.achievedTol!=SolveStatus::unknownTolerance()</tt> ] : The
+ *   linear solver knows the approximate order-of-magnitude estimate of the
+ *   maximum tolerance achieved.  An order-of-magnitude (or so) estimate of
+ *   the achieved tolerance would likely be known by any iterative linear
+ *   solver when
  *   <tt>solveCriteria.solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt>.  Most
  *   direct linear solvers will not return a known tolerance except for the
  *   case where
  *   <tt>solveCriteria.solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt> and
- *   iterative refinement is used.
+ *   where iterative refinement is used.
 
  *   <li><b>Unknown tolerance</b> [
  *   <tt>solveStatus.achievedTol==SolveStatus::unknownTolerance()</tt> ] : The
@@ -282,12 +281,13 @@ namespace Thyra {
  * direct linear solver should almost never return this status except for in
  * extreme cases (e.g. highly ill conditioned matrix and a tight requested
  * tolerance).  The linear solver may not be able to return the actual
- * tolerance achieved and the same to cases as for the <it>unconverged</it>
- * case are possible and the two cases are:
+ * tolerance achieved and the same two cases as for the <it>unconverged</it>
+ * case are possible and the two subdcases are:
  * 
  *   <ul>
  * 
- *   <li><b>Known tolerance</b> [ <tt>solveStatus.achievedTol >= 0</tt> ] :
+ *   <li><b>Known tolerance</b> [
+ *   <tt>solveStatus.achievedTol!===SolveStatus::unknownTolerance()0</tt> ] :
  *   The linear solver knows the approximate order-of-magnitude estimate of
  *   the maximum tolerance achieved.
  * 
@@ -303,19 +303,23 @@ namespace Thyra {
  * <tt>solveStatus.solveStatus==SOLVE_STATUS_UNKNOWN</tt> ]: The linear solver
  * does not know if the solution status was achieved or not.  In this case,
  * the value of
- * <tt>solveStatus.achievedTol==SolveStatus::unknownTolerance()</tt> will
- * always be returned.  This may be the return value when there is no
+ * <tt>solveStatus.achievedTol==SolveStatus::unknownTolerance()</tt> may or
+ * many not be returned.  This may be the return value when there is no
  * reasonable way that the linear solver algorithm can know now to compute or
  * estimate the requested tolerance.  This will also always be the return
- * status when
- * <tt>solveCriteria.requestedTol==SolveCriteria::unspecifiedTolerance()</tt>
- * since the client would have no way to interpret this tolerance.
+ * status when <tt>solveCriteria.solveTolType==SOLVE_TOL_DEFAULT</tt> since
+ * the client would have no way to interpret this tolerance.  The value of
+ * <tt>solveStatus.achievedTol!=SolveStatus::unknownTolerance()</tt> in this
+ * case should only be returned when
+ * <tt>solveCriteria.solveTolType==SOLVE_TOL_DEFAULT</tt> and therefore the
+ * client would have no way to interpret this tolerance as a residual or an
+ * solution norm.
  * 
  * </ul>
  *
  * The implementation of the function <tt>accumulateSolveStatus()</tt> defines
  * how to accumulate the individual solve status for each RHS in a block into
- * the overall solve status for a block returned by
+ * the overall solve status for an entire block returned by
  * <tt>blockSolveStatus[]</tt>.
  * 
  * <b>Notes to subclass developers</b>
@@ -439,13 +443,21 @@ public:
    */
   virtual bool solveTransposeSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
 
-  /** \brief Return the implementation-defined maximum number of iterations that a standard solve
-   * is allowed to take.
+  /** \brief Return the implementation-defined maximum number of iterations
+   * that a standard forward solve is allowed to take.
    *
    * The default implementation returns 1 which would be consistent with a
    * direct linear solver.
    */
-  virtual int defaultMaxIterations() const;
+  virtual int defaultSolveMaxIterations(EConj conj, ESolveTolType solveTolType) const;
+
+  /** \brief Return the implementation-defined maximum number of iterations
+   * that a standard transpose solve is allowed to take.
+   *
+   * The default implementation returns 1 which would be consistent with a
+   * direct linear solver.
+   */
+  virtual int defaultSolveTransposeMaxIterations(EConj conj, ESolveTolType solveTolType) const;
 
   /** \brief Request the transpose (or adjoint) solution of a block system
    * with different targeted solution criteria.
@@ -594,17 +606,18 @@ solve(
 #endif
   )
 {
+  typedef SolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>       SC;
   typedef BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>  BSC;
   typedef SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>         BSS;
+  SC  defaultSolveCriteria;
   BSC blockSolveCriteria[1];
   BSS blockSolveStatus[1];
-  if(solveCriteria)
-    blockSolveCriteria[0] = BSC(*solveCriteria,B.domain()->dim());
-    A.solve(
-      conj,B,X,solveCriteria?1:0
-      ,solveCriteria ? blockSolveCriteria : NULL
-      ,solveCriteria ? blockSolveStatus   : NULL
-      );
+  blockSolveCriteria[0] = BSC(solveCriteria?*solveCriteria:defaultSolveCriteria,B.domain()->dim());
+  A.solve(
+    conj,B,X,1
+    ,blockSolveCriteria
+    ,blockSolveStatus
+    );
   return blockSolveStatus[0];
 }
 
@@ -645,17 +658,18 @@ solveTranspose(
 #endif
   )
 {
+  typedef SolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>       SC;
   typedef BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>  BSC;
   typedef SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>         BSS;
+  SC  defaultSolveCriteria;
   BSC blockSolveCriteria[1];
   BSS blockSolveStatus[1];
-  if(solveCriteria)
-    blockSolveCriteria[0] = BSC(*solveCriteria,B.domain()->dim());
-    A.solveTranspose(
-      conj,B,X,solveCriteria?1:0
-      ,solveCriteria ? blockSolveCriteria : NULL
-      ,solveCriteria ? blockSolveStatus   : NULL
-      );
+  blockSolveCriteria[0] = BSC(solveCriteria?*solveCriteria:defaultSolveCriteria,B.domain()->dim());
+  A.solveTranspose(
+    conj,B,X,1
+    ,blockSolveCriteria
+    ,blockSolveStatus
+    );
   return blockSolveStatus[0];
 }
 

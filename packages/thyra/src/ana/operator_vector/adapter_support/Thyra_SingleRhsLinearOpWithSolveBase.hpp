@@ -59,6 +59,7 @@ void SingleRhsLinearOpWithSolveBase<Scalar>::solve(
       const BlockSolveCriteria<Scalar> &solveCriteria = blockSolveCriteria[block_i];
       SolveStatus<Scalar> overallSolveStatus;
       overallSolveStatus.solveStatus = SOLVE_STATUS_CONVERGED; // Initialized for accumulateSolveStatus()
+      overallSolveStatus.iterations = 0;
       for( Index block_col_i = 0; block_col_i < solveCriteria.numRhs; ++block_col_i, ++j ) {
         SolveStatus<Scalar>
           solveStatus = this->solve(M_trans,*B.col(j),&*X->col(j),&solveCriteria.solveCriteria);

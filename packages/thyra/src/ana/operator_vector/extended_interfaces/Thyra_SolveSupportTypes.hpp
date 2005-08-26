@@ -43,7 +43,8 @@ namespace Thyra {
  * \ingroup Equation_solve_foundation_code_grp
  */
 enum ESolveTolType {
-  SOLVE_TOL_REL_RESIDUAL_NORM           ///< Enforce the tolerance on the relative natural norm in the residual vector
+  SOLVE_TOL_DEFAULT                     ///< Use some default solve criteria
+  ,SOLVE_TOL_REL_RESIDUAL_NORM          ///< Enforce the tolerance on the relative natural norm in the residual vector
   ,SOLVE_TOL_REL_SOLUTION_ERR_NORM      ///< Enforce the tolerance on the relative natural norm in the error in the solution vector
 };
 
@@ -52,6 +53,7 @@ inline
 const char* toString(const ESolveTolType solveTolType)
 {
   switch(solveTolType) {
+    case SOLVE_TOL_DEFAULT: return"SOLVE_TOL_DEFAULT";
     case SOLVE_TOL_REL_RESIDUAL_NORM: return "SOLVE_TOL_REL_RESIDUAL_NORM";
     case SOLVE_TOL_REL_SOLUTION_ERR_NORM: return "SOLVE_TOL_REL_SOLUTION_ERR_NORM";
     default: TEST_FOR_EXCEPT(true);
@@ -72,28 +74,29 @@ struct SolveCriteria {
   /** \brief . */
   static const int unspecifiedMaxIterations() { return -1; }
   /** \brief The type of solve tolerance requested as given in
-   * <tt>requestedTol</tt>.
+   * <tt>this->requestedTol</tt>.
    */
   ESolveTolType    solveTolType;
   /** \brief The requested solve tolerance (what the client would like to see).
    *
-   * A value of <tt>defaultTolerance()</tt> means that the solver
-   * implementation can define convergence any way it sees fit.
+   * Only significant if <tt>this->solveTolType!=SOLVE_TOL_DEFAULT</TT>
    */
   ScalarMag        requestedTol;
   /** \brief The maximum number of iterations the solver is allowed to take.
    *
    * Note that the interpretation of this integer is 100% implementation
    * defined and should not be used in the most general setting.
+   *
+   * This argument may be significant regardless of the value of <tt>this->solveTolType</tt>.
    */
   int maxIterations;
-  /** \brief . */
+  /** \brief Default construction is for a default solve. */
   SolveCriteria()
-    :solveTolType(SOLVE_TOL_REL_RESIDUAL_NORM)
+    :solveTolType(SOLVE_TOL_DEFAULT)
     ,requestedTol(unspecifiedTolerance())
      ,maxIterations(unspecifiedMaxIterations())
     {}
-  /** \brief . */
+  /** \brief Construct with a specified solve criteria. */
   SolveCriteria(ESolveTolType _solveTolType, ScalarMag _requestedTol, int _maxIterations = unspecifiedMaxIterations())
     : solveTolType(_solveTolType), requestedTol(_requestedTol), maxIterations(_maxIterations)
     {}
@@ -175,7 +178,7 @@ struct SolveStatus {
    * for user diagnostics and not for any algorithmic purpose.
    */
   int iterations;
-  /** \brief Return message from the linear solver */
+  /** \brief A simple one-line message (i.e. no newlines) returned from the solver */
   std::string message;
   /** \brief . */
   SolveStatus()
@@ -192,6 +195,12 @@ struct SolveStatus {
     }
 };
 
+/** \brief Enum for defining the status of a preconditioner object. */
+enum EPreconditionerInputType {
+  PRECONDITIONER_INPUT_TYPE_AS_OPERATOR  ///< The input preconditioner should just be applied as an operator
+  ,PRECONDITIONER_INPUT_TYPE_AS_MATRIX   ///< The input preconditioner should viewed as a matrix to be factored then backsolved as a preconditioner
+};
+
 /** \brief Accumulate solve status objects for solving a block of RHSs is
  * smaller sub-blocks..
  *
@@ -202,7 +211,10 @@ struct SolveStatus {
  *                               sub-blocks of RHS.
  *
  * On the first call, set <tt>overallSolveStatus->solveStatus =
- * SOLVE_STATUS_CONVERGED</tt>!
+ * SOLVE_STATUS_CONVERGED</tt> and <tt>overallSolveStatus->iterations =
+ * 0</tt>!
+ *
+ * \ingroup Equation_solve_foundation_code_grp
  */
 template <class Scalar>
 void accumulateSolveStatus(
@@ -214,54 +226,55 @@ void accumulateSolveStatus(
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(overallSolveStatus==NULL);
 #endif
-  if( overallSolveCriteria.requestedTol == SolveCriteria<Scalar>::unspecifiedTolerance() ) {
-    // There is nothing to accumulate, only a default return is given
-    overallSolveStatus->solveStatus = SOLVE_STATUS_UNKNOWN;
-    overallSolveStatus->achievedTol = SolveStatus<Scalar>::unknownTolerance();
-  }
-  else {
-    // Update the solve status
-    switch(solveStatus.solveStatus) {
-      case SOLVE_STATUS_UNCONVERGED:
-      {
-        // First, if we see any unconverged solve status, then the entire block is
-        // unconverged!
-        overallSolveStatus->solveStatus = SOLVE_STATUS_UNCONVERGED;
-        break;
-      }
-      case SOLVE_STATUS_UNKNOWN:
-      {
-        // Next, if any solve status is unknown, then if the overall solve status
-        // says converged, then we have to mark it as unknown.  Note than unknown
-        // could mean that the system is actually converged!
-        switch(overallSolveStatus->solveStatus) {
-          case SOLVE_STATUS_CONVERGED:
-            overallSolveStatus->solveStatus = SOLVE_STATUS_UNKNOWN;
-            break;
-          case SOLVE_STATUS_UNCONVERGED:
-          case SOLVE_STATUS_UNKNOWN:
-            // If we get here then the overall solve status is either unknown
-            // already or says unconverged and this will not change here!
-            break;
-          default:
-            TEST_FOR_EXCEPT(true); // Corrupted enum?
-        }
-        break;
-      }
-      case SOLVE_STATUS_CONVERGED:
-      {
-        // If we get here then the overall solve status is either unknown,
-        // unconverged, or converged and this will not change here!
-        break;
-      }
-      default:
-        TEST_FOR_EXCEPT(true); // Corrupted enum?
+  switch(solveStatus.solveStatus) {
+    case SOLVE_STATUS_UNCONVERGED:
+    {
+      // First, if we see any unconverged solve status, then the entire block is
+      // unconverged!
+      overallSolveStatus->solveStatus = SOLVE_STATUS_UNCONVERGED;
+      overallSolveStatus->message = solveStatus.message;
+      break;
     }
-    // Update the achieved tolerence to the maximum returned
-    if( solveStatus.achievedTol > overallSolveStatus->achievedTol ) {
-      overallSolveStatus->achievedTol = solveStatus.achievedTol;
+    case SOLVE_STATUS_UNKNOWN:
+    {
+      // Next, if any solve status is unknown, then if the overall solve status
+      // says converged, then we have to mark it as unknown.  Note than unknown
+      // could mean that the system is actually converged!
+      switch(overallSolveStatus->solveStatus) {
+        case SOLVE_STATUS_CONVERGED:
+          overallSolveStatus->solveStatus = SOLVE_STATUS_UNKNOWN;
+          break;
+        case SOLVE_STATUS_UNCONVERGED:
+        case SOLVE_STATUS_UNKNOWN:
+          // If we get here then the overall solve status is either unknown
+          // already or says unconverged and this will not change here!
+          overallSolveStatus->message = solveStatus.message;
+          break;
+        default:
+          TEST_FOR_EXCEPT(true); // Corrupted enum?
+      }
+      break;
     }
+    case SOLVE_STATUS_CONVERGED:
+    {
+      // If we get here then the overall solve status is either unknown,
+      // unconverged, or converged and this will not change here!
+      if(overallSolveStatus->message == "")
+        overallSolveStatus->message = solveStatus.message;
+      break;
+    }
+    default:
+      TEST_FOR_EXCEPT(true); // Corrupted enum?
   }
+  // Update the achieved tolerence to the maximum returned
+  if( solveStatus.achievedTol > overallSolveStatus->achievedTol ) {
+    overallSolveStatus->achievedTol = solveStatus.achievedTol;
+  }
+  // Accumulate the total number of iterations
+  overallSolveStatus->iterations += solveStatus.iterations;
+  // Set a message if non is set
+  if(overallSolveStatus->message == "")
+    overallSolveStatus->message = solveStatus.message;
 }
 
 } // namespace Thyra

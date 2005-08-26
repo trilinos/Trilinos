@@ -537,8 +537,13 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
     if(out) *out <<endl<<li<< "this->check_for_symmetry()==false: Skipping check of symmetry ...\n";
   }
   
-  if(out)
+  if(out) {
+    if(success)
+      *out <<endl<<li<<"Congratulations, this LinearOpBase object seems to check out!\n";
+    else
+      *out <<endl<<li<<"Oh no, at least one of the tests performed with this LinearOpBase object failed (see above failures)!\n";
     *out <<endl<<li<< "*** Leaving LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::check(...)\n";
+  }
 
   return success;
 }
@@ -677,8 +682,14 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
 
   }
 
-  if(out)
+  
+  if(out) {
+    if(success)
+      *out <<endl<<li<<"Congratulations, these two LinearOpBase objects seem to be the same!\n";
+    else
+      *out <<endl<<li<<"Oh no, these two LinearOpBase objects seem to be different (see above failures)!\n";
     *out <<endl<<li<< "*** Leaving LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::compare(...)\n";
+  }
 
   return success;
 

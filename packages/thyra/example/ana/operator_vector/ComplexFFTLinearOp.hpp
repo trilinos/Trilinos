@@ -211,7 +211,7 @@ ComplexFFTLinearOp<RealScalar>::solve(
   typedef Thyra::SolveStatus< std::complex<RealScalar> >    SS;
   SS solveStatus;
   solveStatus.solveStatus
-    = (solveCriteria && solveCriteria->requestedTol!=SC::unspecifiedTolerance()
+    = (solveCriteria && solveCriteria->solveTolType!=Thyra::SOLVE_TOL_DEFAULT
        ? Thyra::SOLVE_STATUS_CONVERGED : Thyra::SOLVE_STATUS_UNKNOWN );
   solveStatus.achievedTol = SS::unknownTolerance();
   solveStatus.iterations = 1;

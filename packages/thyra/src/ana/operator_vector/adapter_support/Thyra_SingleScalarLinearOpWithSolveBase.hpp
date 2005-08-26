@@ -62,6 +62,18 @@ bool SingleScalarLinearOpWithSolveBase<Scalar>::solveTransposeSupportsSolveTolTy
 }
 
 template <class Scalar>
+int SingleScalarLinearOpWithSolveBase<Scalar>::defaultSolveMaxIterations(EConj conj, ESolveTolType solveTolType) const
+{
+  return this->defaultSolveMaxIterations(applyConjToTrans(conj),solveTolType);
+}
+
+template <class Scalar>
+int SingleScalarLinearOpWithSolveBase<Scalar>::defaultSolveTransposeMaxIterations(EConj conj, ESolveTolType solveTolType) const
+{
+  return this->defaultSolveMaxIterations(applyTransposeConjToTrans(conj),solveTolType);
+}
+
+template <class Scalar>
 void SingleScalarLinearOpWithSolveBase<Scalar>::solve(
   const EConj                           conj
   ,const MultiVectorBase<Scalar>        &B
@@ -85,6 +97,14 @@ void SingleScalarLinearOpWithSolveBase<Scalar>::solveTranspose(
   ) const
 {
   this->solve(applyTransposeConjToTrans(conj),B,X,numBlocks,blockSolveCriteria,blockSolveStatus);
+}
+
+// Protected virtual functions with default implementations
+
+template <class Scalar>
+int SingleScalarLinearOpWithSolveBase<Scalar>::defaultSolveMaxIterations(ETransp M_trans, ESolveTolType solveTolType) const
+{
+  return 1;
 }
 
 } // namespace Thyra

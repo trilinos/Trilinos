@@ -161,7 +161,7 @@ SolveStatus<Scalar> DiagonalLinearOp<Scalar>::solve(
   ele_wise_divide( Scalar(ST::one()/gamma_), b, *diag_, x );
   SS solveStatus;
   solveStatus.solveStatus
-    = (solveCriteria && solveCriteria->requestedTol!=SC::unspecifiedTolerance()
+    = (solveCriteria && solveCriteria->solveTolType!=SOLVE_TOL_DEFAULT
        ? SOLVE_STATUS_CONVERGED : SOLVE_STATUS_UNKNOWN );
   solveStatus.achievedTol = SolveStatus<Scalar>::unknownTolerance();
   solveStatus.iterations = 1;
