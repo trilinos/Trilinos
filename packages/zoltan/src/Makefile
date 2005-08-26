@@ -12,34 +12,31 @@
 ##############################################################################
 
 ##############################################################################
-# Top-level Makefile for Zoltan library and Zoltan driver zdrive.
+# Top-level Makefile for Zoltan library, test drivers, and graphical tools
 #
 # To compile the library, type
-#    gmake ZOLTAN_ARCH=<targetmachine> zoltan
+#    gmake <optional flags> ZOLTAN_ARCH=<targetmachine> zoltan
 # where
 #    targetmachine = the suffix of one of the configuration files Config.*
 #                    in Zoltan/Utilities/Config.
-#
-# To compile zdrive, type
-#    gmake <optional flags> zdrive
-#
-# To compile zCPPdrive (C++ test driver), type
-#    gmake <optional flags> zCPPdrive
-#    and be sure to define the C++ compiler CPPC in your Config.* file
 #
 # The optional flags are:
 #    YES_FORTRAN=1   Use to compile and link a version of Zoltan that can
 #                    be called from Fortran.
 #
+# To compile the C, Fortran, or C++ test driver:
+#    gmake ZOLTAN_ARCH=<> zdrive
+#    gmake ZOLTAN_ARCH=<> zfdrive
+#    gmake ZOLTAN_ARCH=<> zCPPdrive
+#
 # Two graphical tools for visualizing geometric partitions: 
-#   gmake <flags> vtk_view (requires VTK from www.vtk.org and OpenGL)
-#   gmake <flags> vtk_write (requires VTK and Mesa GL from www.mesa.org)
+#
+# gmake ZOLTAN_ARCH=<> vtk_view (needs VTK from www.vtk.org and OpenGL)
+# gmake ZOLTAN_ARCH=<> vtk_write (needs VTK and Mesa GL from www.mesa.org)
 #
 # Example:
 # To compile a version of Zoltan for tflop including the F90 interface, type
 #    gmake YES_FORTRAN=1 ZOLTAN_ARCH=tflop zoltan
-#
-# TODO - only build c++ test driver if CPP is defined in Config.ARCH
 ##############################################################################
 
 ZTARGET=zdrive 
@@ -370,7 +367,7 @@ OFFSCREEN_VIEW_LIBS = \
    $(MESA_LIBS) $(X_LIBS) -lvtkftgl -lvtkfreetype \
    -lvtkFiltering -lvtkCommon \
    -lvtkpng -lvtktiff -lvtkzlib -lvtkjpeg -lvtkexpat \
-   -lpthread -lvtkexoIIc -lvtkNetCDF $(MPI_LIB)
+   -lpthread -lvtkexoIIc -lvtkNetCDF $(MPI_LIB) -ldl
 
 
 CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS)
@@ -410,14 +407,17 @@ help:
 	@echo ' '
 	@echo 'To build the Zoltan library only, type '
 	@echo '   gmake ZOLTAN_ARCH=desired_arch zoltan'
+	@echo ' '
 	@echo 'where desired_arch is the architecture on which Zoltan'
 	@echo 'will run.  The file Utilities/Config/Config.desired_arch'
 	@echo 'should exist and may need to be adapted to your system.'
 	@echo 'See  Utilities/Config/Config.generic for '
 	@echo 'instructions on creating Config.desired_arch.'
 	@echo ' '
-	@echo 'To build the the test driver zdrive, type'
+	@echo 'To build the C, Fortran or C++ test driver, type'
 	@echo '   gmake ZOLTAN_ARCH=desired_arch zdrive'
+	@echo '   gmake ZOLTAN_ARCH=desired_arch zfdrive'
+	@echo '   gmake ZOLTAN_ARCH=desired_arch zCPPdrive'
 	@echo 'where desired_arch is defined as above.'
 	@echo ' '
 	@echo 'To include the F90 interface in Zoltan, use the gmake'
@@ -428,6 +428,16 @@ help:
 	@echo '   gmake ZOLTAN_ARCH=tflop YES_FORTRAN=1 zoltan'
 	@echo 'builds the tflop version of the Zoltan library'
 	@echo 'including the F90 interface.'
+	@echo ' '
+	@echo 'The graphical tools require VTK and OpenGL or Mesa.'
+	@echo 'To compile the display tool:'
+	@echo '   gmake ZOLTAN_ARCH=desired_arch vtk_view '
+	@echo 'To compile the off-screen image writing tool:'
+	@echo '   gmake ZOLTAN_ARCH=desired_arch vtk_write '
+	@echo ' '
+	@echo 'To build examples, go to the Example directory and'
+	@echo '   gmake ZOLTAN_ARCH=desired_arch all'
+
 
 
 ###########################################################################
@@ -480,7 +490,7 @@ vtk_view:
 	"MAIN_OBJ=$(VIEW_OBJ)"		        \
 	"OBJ_FILES=$(VIEW_OBJ)"		        \
 	"VPATH=$(ZOLTAN_VPATH)"                 \
-	"DEFS=$(DEFS) $(SUBINCPATH) $(INCLUDE_PATH) $(VTK_INCPATH)" \
+	"DEFS=$(DEFS) $(SUBINCPATH) $(INCLUDE_PATH) $(VTK_INCPATH) $(GL_INCPATH)" \
 	"LNK_LIBS=$(VIEW_LIBS)" 		\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)"
@@ -495,7 +505,7 @@ vtk_write:
 	"CC=$(CPPCOMP) "  	                \
 	"OBJ_FILES=$(WRITE_OBJ)"	        \
 	"VPATH=$(ZOLTAN_VPATH)"                 \
-	"DEFS=$(DEFS) $(SUBINCPATH) $(INCLUDE_PATH) $(VTK_OFFSCREEN_INCPATH) -DOUTPUT_TO_FILE" \
+	"DEFS=$(DEFS) $(SUBINCPATH) $(INCLUDE_PATH) $(VTK_OFFSCREEN_INCPATH) $(MESA_INCPATH) -DOUTPUT_TO_FILE" \
 	"MAIN_OBJ=$(WRITE_OBJ)"  		\
 	"LNK_LIBS=$(OFFSCREEN_VIEW_LIBS)" 	\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
