@@ -147,7 +147,7 @@ std::string AmesosLinearOpWithSolve::description() const
 
 bool AmesosLinearOpWithSolve::opSupported(ETransp M_trans) const
 {
-  return true; // ToDo: Determine if the Epetra_Operator supports adjoints or not!
+  return ::Thyra::opSupported(*fwdOp_,M_trans);
 }
 
 void AmesosLinearOpWithSolve::apply(
@@ -238,7 +238,7 @@ void AmesosLinearOpWithSolve::solve(
   if(numBlocks && blockSolveStatus) {
     for( int i = 0; i < numBlocks; ++i ) {
       blockSolveStatus[i].solveStatus
-        = (blockSolveCriteria[i].solveCriteria.requestedTol!=SC::unspecifiedTolerance()
+        = (blockSolveCriteria[i].solveCriteria.solveTolType!=SOLVE_TOL_DEFAULT
            ? SOLVE_STATUS_CONVERGED : SOLVE_STATUS_UNKNOWN );
       blockSolveStatus[i].achievedTol = SS::unknownTolerance();
       blockSolveStatus[i].iterations = 1;

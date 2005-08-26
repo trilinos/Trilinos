@@ -161,16 +161,31 @@ public:
 	 */
 	Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> > mpiDomain() const;
 
+	/** \brief . */
+	Teuchos::RefCountPtr<Epetra_Operator> epetra_op();
+
+	/** \brief . */
+	Teuchos::RefCountPtr<const Epetra_Operator> epetra_op() const;
+
   //@}
 
 	/** @name Overridden from EpetraLinearOpBase */
 	//@{
 
 	/** \brief . */
-	Teuchos::RefCountPtr<Epetra_Operator> epetra_op();
-
+	void getEpetraOpView(
+    Teuchos::RefCountPtr<Epetra_Operator>   *epetraOp
+    ,ETransp                                *epetraOpTransp
+    ,EApplyEpetraOpAs                       *epetraOpApplyAs
+    ,EAdjointEpetraOp                       *epetraOpAdjointSupport
+    );
 	/** \brief . */
-	Teuchos::RefCountPtr<const Epetra_Operator> epetra_op() const;
+	void getEpetraOpView(
+    Teuchos::RefCountPtr<const Epetra_Operator>   *epetraOp
+    ,ETransp                                      *epetraOpTransp
+    ,EApplyEpetraOpAs                             *epetraOpApplyAs
+    ,EAdjointEpetraOp                             *epetraOpAdjointSupport
+    ) const;
 
 	//@}
 

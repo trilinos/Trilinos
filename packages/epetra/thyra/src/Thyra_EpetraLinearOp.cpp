@@ -114,8 +114,6 @@ EpetraLinearOp::mpiDomain() const
 	return domain_;
 }
 
-// Overridden from EpetraLinearOpBase
-
 Teuchos::RefCountPtr<Epetra_Operator>
 EpetraLinearOp::epetra_op() 
 {
@@ -126,6 +124,46 @@ Teuchos::RefCountPtr<const Epetra_Operator>
 EpetraLinearOp::epetra_op() const 
 {
 	return op_;
+}
+
+// Overridden from EpetraLinearOpBase
+
+void EpetraLinearOp::getEpetraOpView(
+  Teuchos::RefCountPtr<Epetra_Operator>   *epetraOp
+  ,ETransp                                *epetraOpTransp
+  ,EApplyEpetraOpAs                       *epetraOpApplyAs
+  ,EAdjointEpetraOp                       *epetraOpAdjointSupport
+  )
+{
+#ifdef _DEBUG
+  TEST_FOR_EXCEPT(epetraOp==NULL);
+  TEST_FOR_EXCEPT(epetraOpTransp==NULL);
+  TEST_FOR_EXCEPT(epetraOpApplyAs==NULL);
+  TEST_FOR_EXCEPT(epetraOpAdjointSupport==NULL);
+#endif
+  *epetraOp = op_;
+  *epetraOpTransp = opTrans_;
+  *epetraOpApplyAs = applyAs_;
+  *epetraOpAdjointSupport = adjointSupport_;
+}
+
+void EpetraLinearOp::getEpetraOpView(
+  Teuchos::RefCountPtr<const Epetra_Operator>   *epetraOp
+  ,ETransp                                      *epetraOpTransp
+  ,EApplyEpetraOpAs                             *epetraOpApplyAs
+  ,EAdjointEpetraOp                             *epetraOpAdjointSupport
+  ) const
+{
+#ifdef _DEBUG
+  TEST_FOR_EXCEPT(epetraOp==NULL);
+  TEST_FOR_EXCEPT(epetraOpTransp==NULL);
+  TEST_FOR_EXCEPT(epetraOpApplyAs==NULL);
+  TEST_FOR_EXCEPT(epetraOpAdjointSupport==NULL);
+#endif
+  *epetraOp = op_;
+  *epetraOpTransp = opTrans_;
+  *epetraOpApplyAs = applyAs_;
+  *epetraOpAdjointSupport = adjointSupport_;
 }
 
 // Overridden from SingleScalarLinearOpBase

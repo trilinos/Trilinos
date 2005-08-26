@@ -27,34 +27,34 @@
 //@HEADER
 */
 
-#include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
+#ifndef TEST_SINGLE_AZTECOO_THYRA_SOLVER_HPP
+#define TEST_SINGLE_AZTECOO_THYRA_SOLVER_HPP
 
-int main(int argc, char argv[])
-{
+#include "AztecOO_config.h"
+#include "Teuchos_ConfigDefs.hpp"
 
-  bool success = true;
-  bool verbose = true;
+namespace Teuchos { class ParameterList; }
 
-  std::ostream &out = std::cout;
+namespace Thyra {
 
-	try {
+/** \brief Testing function for a single aztecoo solver with a single matrix.
+ *
+ */
+bool test_single_aztecoo_thyra_solver(
+  const std::string                       matrixFile
+  ,const bool                             testTranspose
+  ,const int                              numRandomVectors
+  ,const double                           maxFwdError
+  ,const int                              maxIterations
+  ,const double                           maxResid
+  ,const double                           maxSolutionError
+  ,const bool                             showAllTests
+  ,const bool                             dumpAll
+  ,Teuchos::ParameterList                 *fwdSolveParamList
+  ,Teuchos::ParameterList                 *adjSolveParamList
+  ,std::ostream                           *out
+  );
 
-    TEST_FOR_EXCEPT(true); // ToDo: Implement!
+} // namespace Thyra
 
-	}
-	catch( const std::exception &excpt ) {
-		std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
-		success = false;
-	}
-	catch( ... ) {
-		std::cerr << "*** Caught an unknown exception\n";
-		success = false;
-	}
-	
-	if (verbose) {
-		if(success)  out << "\nCongratulations! All of the tests checked out!\n";
-		else         out << "\nOh no! At least one of the tests failed!\n";
-	}
-
-  return ( success ? 0 : 1 );
-}
+#endif // TEST_SINGLE_AZTECOO_THYRA_SOLVER_HPP

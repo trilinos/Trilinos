@@ -47,7 +47,12 @@ bool DiagonalEpetraLinearOpWithSolveFactory::isCompatible(
   const EpetraLinearOpBase *eFwdOp = NULL;
   if( ! (eFwdOp = dynamic_cast<const EpetraLinearOpBase*>(&fwdOp)) )
     return false;
-  if( !dynamic_cast<const Epetra_RowMatrix*>(&*eFwdOp->epetra_op()) )
+  Teuchos::RefCountPtr<const Epetra_Operator> epetraFwdOp;
+  ETransp                                     epetraFwdOpTransp;
+  EApplyEpetraOpAs                            epetraFwdOpApplyAs;
+  EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
+  eFwdOp->getEpetraOpView(&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport);
+  if( !dynamic_cast<const Epetra_RowMatrix*>(&*epetraFwdOp) )
     return false;
   return true;
 }
@@ -64,8 +69,13 @@ void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
   ) const
 {
   TEST_FOR_EXCEPT(Op==NULL);
-  const EpetraLinearOpBase   &eFwdOp = Teuchos::dyn_cast<const EpetraLinearOpBase>(*fwdOp);
-  const Epetra_RowMatrix &eRMOp  = Teuchos::dyn_cast<const Epetra_RowMatrix>(*(eFwdOp.epetra_op()));
+  const EpetraLinearOpBase &eFwdOp = Teuchos::dyn_cast<const EpetraLinearOpBase>(*fwdOp);
+  Teuchos::RefCountPtr<const Epetra_Operator> epetraFwdOp;
+  ETransp                                     epetraFwdOpTransp;
+  EApplyEpetraOpAs                            epetraFwdOpApplyAs;
+  EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
+  eFwdOp.getEpetraOpView(&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport);
+  const Epetra_RowMatrix &eRMOp  = Teuchos::dyn_cast<const Epetra_RowMatrix>(*epetraFwdOp);
   const Epetra_Map &map = eRMOp.OperatorDomainMap();
   Teuchos::RefCountPtr<Epetra_Vector>
     e_diag = Teuchos::rcp(new Epetra_Vector(map));

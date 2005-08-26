@@ -32,33 +32,53 @@ EXEEXT = .exe
 # Actual programs
 #
 
-TEST_AZTECOO_THYRA = test_aztecoo_thyra
+TEST_SINGLE_AZTECOO_THYRA_SOLVER_DRIVER = test_single_aztecoo_thyra_solver_driver
+TEST_AZTECOO_THYRA_DRIVER = test_aztecoo_thyra_driver
 
-noinst_PROGRAMS = $(TEST_AZTECOO_THYRA)
+noinst_PROGRAMS = $(TEST_SINGLE_AZTECOO_THYRA_SOLVER_DRIVER) $(TEST_AZTECOO_THYRA_DRIVER)
 
-test_aztecoo_thyra_SOURCES = $(srcdir)/test_aztecoo_thyra.cpp $(common_sources)
-test_aztecoo_thyra_DEPENDENCIES = $(common_dependencies)
-test_aztecoo_thyra_LDADD = $(common_ldadd)
+test_single_aztecoo_thyra_solver_driver_SOURCES = $(srcdir)/test_single_aztecoo_thyra_solver_driver.cpp $(common_sources)
+test_single_aztecoo_thyra_solver_driver_DEPENDENCIES = $(common_dependencies)
+test_single_aztecoo_thyra_solver_driver_LDADD = $(common_ldadd)
+
+test_aztecoo_thyra_driver_SOURCES = $(srcdir)/test_aztecoo_thyra_driver.cpp $(common_sources)
+test_aztecoo_thyra_driver_DEPENDENCIES = $(common_dependencies)
+test_aztecoo_thyra_driver_LDADD = $(common_ldadd)
 
 #
 # Common stuff
 #
 
-common_sources = 
+common_sources = $(srcdir)/test_single_aztecoo_thyra_solver.cpp $(top_srcdir)/../amesos/thyra/test/EpetraExt_readEpetraLinearSystem.cpp
 
 common_dependencies = $(top_builddir)/thyra/src/libaztecoothyra.a $(top_builddir)/src/libaztecoo.a
 
 include $(top_builddir)/Makefile.export.aztecoo
 
-if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AZTECOO_INCLUDES))
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AZTECOO_LIBS))
-else
-EXPORT_INCLUDES = $(AZTECOO_INCLUDES)
-EXPORT_LIBS = $(AZTECOO_LIBS)
+if ENABLE_AZTECOO_IFPACK
+# If we are using IFPACK, then we must include ifpack's makefile.export file which
+# may or may not already include aztecoo's makefile.export file.
+include $(top_builddir)/../ifpack/Makefile.export.ifpack
+common_sources += $(srcdir)/Ifpack_PreconditionerFactory.cpp
+common_dependencies += $(top_builddir)/../ifpack/src/libifpack.a
+$(top_builddir)/../ifpack/src/libifpack.a :
+	cd $(top_builddir)/../ifpack; make all-libs
 endif
 
-AM_CPPFLAGS = $(EXPORT_INCLUDES)
+# Here we have to include the aztecoo stuff explicitly since ifpack may have been 
+# configured with --disable-ifpack-aztecoo.  Either way, this will work just fine!
+_EXPORT_INCLUDES = $(AZTECOO_EXTRA_INCLUDES) $(IFPACK_INCLUDES) $(AZTECOO_INCLUDES)
+_EXPORT_LIBS =  $(AZTECOO_EXTRA_LIBS) $(IFPACK_LIBS) $(AZTECOO_LIBS)
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
+else
+EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
+EXPORT_LIBS = $(_EXPORT_LIBS)
+endif
+
+AM_CPPFLAGS = -I$(top_srcdir)/../amesos/thyra/test $(EXPORT_INCLUDES)
 
 common_ldadd = $(EXPORT_LIBS)
 
