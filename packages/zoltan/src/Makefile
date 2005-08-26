@@ -435,7 +435,7 @@ help:
 	@echo 'To compile the off-screen image writing tool:'
 	@echo '   gmake ZOLTAN_ARCH=desired_arch vtk_write '
 	@echo ' '
-	@echo 'To build examples, go to the Example directory and'
+	@echo 'To build examples, go to the examples directory and'
 	@echo '   gmake ZOLTAN_ARCH=desired_arch all'
 
 
