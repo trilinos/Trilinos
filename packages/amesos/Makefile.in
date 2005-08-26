@@ -328,6 +328,8 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @PYTHON_USE_TRUE@PYTHON_SUBDIR = python
 @ENABLE_AMESOS_THYRA_FALSE@THYRA_SUBDIR = 
 @ENABLE_AMESOS_THYRA_TRUE@THYRA_SUBDIR = thyra
+@ENABLE_AMESOS_THYRA_FALSE@BUILD_THYRA_SUBLIB = 
+@ENABLE_AMESOS_THYRA_TRUE@BUILD_THYRA_SUBLIB = cd thyra/src; make
 SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
@@ -763,6 +765,7 @@ all-local:
 
 all-libs:
 	cd src ; make all-libs
+	$(BUILD_THYRA_SUBLIB)
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.amesos $(exec_prefix)/include/.

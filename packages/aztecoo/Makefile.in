@@ -160,6 +160,8 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+ENABLE_AZTECOO_IFPACK_FALSE = @ENABLE_AZTECOO_IFPACK_FALSE@
+ENABLE_AZTECOO_IFPACK_TRUE = @ENABLE_AZTECOO_IFPACK_TRUE@
 ENABLE_AZTECOO_THYRA_FALSE = @ENABLE_AZTECOO_THYRA_FALSE@
 ENABLE_AZTECOO_THYRA_TRUE = @ENABLE_AZTECOO_THYRA_TRUE@
 EXEEXT = @EXEEXT@
@@ -291,6 +293,8 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @ENABLE_AZTECOO_THYRA_FALSE@THYRA_SUBDIR = 
 @ENABLE_AZTECOO_THYRA_TRUE@THYRA_SUBDIR = thyra
 SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
+@ENABLE_AZTECOO_THYRA_FALSE@BUILD_THYRA_SUBLIB = 
+@ENABLE_AZTECOO_THYRA_TRUE@BUILD_THYRA_SUBLIB = cd $(top_builddir)/thyra/src ; make
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 @HAVE_MPI_FALSE@AZTECOO_CHECK_COMM = serial
@@ -707,7 +711,8 @@ all-local:
 	@echo ""
 
 all-libs:
-	cd src ; make all-libs
+	cd $(top_builddir)/src ; make all-libs
+	$(BUILD_THYRA_SUBLIB)
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.aztecoo $(exec_prefix)/include/.
@@ -727,6 +732,16 @@ all-libs:
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 
 @USING_EXPORT_MAKEFILES_FALSE@uninstall-hook:
+
+runtests-serial :
+	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  --trilinos-dir=$(TRILINOS_HOME_DIR) \
+  --comm=serial \
+  --build-dir=$(TRILINOS_BUILD_DIR) \
+  --category=FRAMEWORK \
+  --output-dir=@abs_top_builddir@/test/runtests-results \
+  --verbosity=1 \
+  --packages=aztecoo
 
 run-examples:
 	@echo

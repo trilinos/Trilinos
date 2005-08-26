@@ -122,8 +122,15 @@ runtests-mpi :
 ## Export makefile stuff
 ## #######################################################################
 
+if ENABLE_EPETRA_THYRA
+BUILD_THYRA_SUBLIB=cd $(top_builddir)/thyra/src ; make
+else
+BUILD_THYRA_SUBLIB=
+endif
+
 all-libs:
 	cd $(top_builddir)/src ; make all-libs
+	$(BUILD_THYRA_SUBLIB)
 
 if USING_EXPORT_MAKEFILES
 

@@ -113,8 +113,16 @@ SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBD
 ## #######################################################################
 ## Target for circular dependencies
 ## #######################################################################
+
+if ENABLE_AMESOS_THYRA
+BUILD_THYRA_SUBLIB=cd $(top_builddir)/thyra/src ; make
+else
+BUILD_THYRA_SUBLIB=
+endif
+
 all-libs:
-	cd src ; make all-libs
+	cd $(top_builddir)/src ; make all-libs
+	$(BUILD_THYRA_SUBLIB)
 
 ## #######################################################################
 ## Export Makefile Installation

@@ -98,8 +98,16 @@ SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
 ## #######################################################################
 ## Target for circular dependencies
 ## #######################################################################
+
+if ENABLE_AZTECOO_THYRA
+BUILD_THYRA_SUBLIB=cd $(top_builddir)/thyra/src ; make
+else
+BUILD_THYRA_SUBLIB=
+endif
+
 all-libs:
-	cd src ; make all-libs
+	cd $(top_builddir)/src ; make all-libs
+	$(BUILD_THYRA_SUBLIB)
 
 ## #######################################################################
 ## Export Makefile Installation
@@ -135,6 +143,16 @@ endif
 
 TRILINOS_HOME_DIR  = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
+
+runtests-serial :
+	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  --trilinos-dir=$(TRILINOS_HOME_DIR) \
+  --comm=serial \
+  --build-dir=$(TRILINOS_BUILD_DIR) \
+  --category=FRAMEWORK \
+  --output-dir=@abs_top_builddir@/test/runtests-results \
+  --verbosity=1 \
+  --packages=aztecoo
 
 if HAVE_MPI
 AZTECOO_CHECK_COMM = mpi
