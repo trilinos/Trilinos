@@ -34,7 +34,6 @@
 //   zero. Note: This doesn't cause a failure anymore, but just a warning.
 // * I assume/verify that a multivector must have at least one vector. This seems 
 //   to be consistent with Epetra_MultiVec.
-// * I assume that there are no constraints on indices for a selected view/copy.
 // * I do not assume that an operator is deterministic; I do assume that the
 //   operator, applied to 0, will return 0.
 
@@ -153,8 +152,8 @@ namespace Anasazi {
        last vector, and choose the others randomly.
     */
     ind[0] = 0;
-    ind[1] = numvecs-1;
-    for (i=2; i<numvecs_2; i++) {
+    ind[numvecs_2] = numvecs-1;
+    for (i=1; i<numvecs_2-1; i++) {
       ind[i] = rand() % numvecs;
     }
 
@@ -306,7 +305,7 @@ namespace Anasazi {
        2) Verify that norm is sqrt(n)
        3) Verify that norms aren't negative
 
-       Heidi: I'm not sure that we can expect this to hold in practice.
+       Note: I'm not sure that we can expect this to hold in practice.
               Maybe something like abs(norm-sqrt(n)) < SCT::eps()  ???
               The sum of 1^2==1 should be n, but what about sqrt(n)?
               They may be using a different square root than ScalartTraits
@@ -404,7 +403,8 @@ namespace Anasazi {
         if ( norms2[i] != norms[ind[i]] ) {
           if ( om->isVerbosityAndPrint(Warning) ) {
             out << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
-                << "Copied vectors do not agree." << endl;
+                << "Copied vectors do not agree:" 
+                << norms2[i] << " != " << norms[ind[i]] << endl;
           }
           return Failed;
         }
@@ -801,7 +801,11 @@ namespace Anasazi {
                > SCT::magnitude(normsB[i]*normsC[j]) ) {
             if ( om->isVerbosityAndPrint(Warning) ) {
               out << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
-                  << "Inner products not valid." << endl;
+                  << "Triangle inequality did not hold: " 
+                  << SCT::magnitude(SDM(i,j)) 
+                  << " > " 
+                  << SCT::magnitude(normsB[i]*normsC[j]) 
+                  << endl;
             }
             return Failed;
           }
@@ -1044,7 +1048,7 @@ namespace Anasazi {
     }
 
 
-    /*********** MvTimesMatAddMv() ***************************************
+    /*********** MvTimesMatAddMv() 7 by 5 ********************************
        C = alpha*B*SDM + beta*C
        1) Use alpha==0, SDM!=0, beta==1 and check that C is unchanged
        2) Use alpha==0, SDM!=0, beta==0 and check that C is set to zero
@@ -1063,7 +1067,7 @@ namespace Anasazi {
       B = MVT::Clone(*A,p);
       C = MVT::Clone(*A,q);
 
-      // alpha==0, SDM!=0, beta==1 and check that C is unchanged
+      // Test 1: alpha==0, SDM!=0, beta==1 and check that C is unchanged
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,&normsB1);
@@ -1091,7 +1095,7 @@ namespace Anasazi {
         }
       }
 
-      // alpha==0, SDM!=0, beta==0 and check that C is set to zero
+      // Test 2: alpha==0, SDM!=0, beta==0 and check that C is set to zero
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,&normsB1);
@@ -1113,13 +1117,18 @@ namespace Anasazi {
         if ( normsC2[i] != zero ) {
           if ( om->isVerbosityAndPrint(Warning) ) {
             out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Arithmetic test 2 failed." << endl;
+                << "Arithmetic test 2 failed: " 
+                << normsC2[i] 
+                << " != " 
+                << zero 
+                << endl;
           }
           return Failed;
         }
       }
 
-      // alpha==1, SDM==I, beta==0 and check that C is set to B
+      // Test 3: alpha==1, SDM==|I|, beta==0 and check that C is set to B
+      //                        |0|
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,&normsB1);
@@ -1144,13 +1153,17 @@ namespace Anasazi {
         if ( normsB1[i] != normsC2[i] ) {
           if ( om->isVerbosityAndPrint(Warning) ) {
             out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Arithmetic test 3 failed." << endl;
+                << "Arithmetic test 3 failed: "
+                << normsB1[i] 
+                << " != "
+                << normsC2[i]
+                << endl;
           }
           return Failed;
         }
       }
 
-      // alpha==1, SDM==0, beta==1 and check that C is unchanged
+      // Test 4: alpha==1, SDM==0, beta==1 and check that C is unchanged
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,&normsB1);
@@ -1173,6 +1186,154 @@ namespace Anasazi {
           if ( om->isVerbosityAndPrint(Warning) ) {
             out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
                 << "Arithmetic test 4 failed." << endl;
+          }
+          return Failed;
+        }
+      }
+    }
+
+    /*********** MvTimesMatAddMv() 5 by 7 ********************************
+       C = alpha*B*SDM + beta*C
+       1) Use alpha==0, SDM!=0, beta==1 and check that C is unchanged
+       2) Use alpha==0, SDM!=0, beta==0 and check that C is set to zero
+       3) Use alpha==1, SDM==I, beta==0 and check that C is set to B
+       4) Use alpha==1, SDM==0, beta==1 and check that C is unchanged
+       5) Test with non-square matrices
+       6) Always check that input arguments are not modified 
+    *********************************************************************/
+    {
+      const int p = 5, q = 7;
+      Teuchos::RefCountPtr<MV> B, C;
+      Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
+      std::vector<ScalarType> normsC1(q), normsC2(q),
+                              normsB1(p), normsB2(p);
+      
+      B = MVT::Clone(*A,p);
+      C = MVT::Clone(*A,q);
+
+      // Test 5: alpha==0, SDM!=0, beta==1 and check that C is unchanged
+      MVT::MvRandom(*B);
+      MVT::MvRandom(*C);
+      MVT::MvNorm(*B,&normsB1);
+      MVT::MvNorm(*C,&normsC1);
+      SDM.random();
+      MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
+      MVT::MvNorm(*B,&normsB2);
+      MVT::MvNorm(*C,&normsC2);
+      for (i=0; i<p; i++) {
+        if ( normsB1[i] != normsB2[i] ) {
+          if ( om->isVerbosityAndPrint(Warning) ) {
+            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+                << "Input vectors were modified." << endl;
+          }
+          return Failed;
+        }
+      }
+      for (i=0; i<q; i++) {
+        if ( normsC1[i] != normsC2[i] ) {
+          if ( om->isVerbosityAndPrint(Warning) ) {
+            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+                << "Arithmetic test 5 failed." << endl;
+          }
+          return Failed;
+        }
+      }
+
+      // Test 6: alpha==0, SDM!=0, beta==0 and check that C is set to zero
+      MVT::MvRandom(*B);
+      MVT::MvRandom(*C);
+      MVT::MvNorm(*B,&normsB1);
+      MVT::MvNorm(*C,&normsC1);
+      SDM.random();
+      MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
+      MVT::MvNorm(*B,&normsB2);
+      MVT::MvNorm(*C,&normsC2);
+      for (i=0; i<p; i++) {
+        if ( normsB1[i] != normsB2[i] ) {
+          if ( om->isVerbosityAndPrint(Warning) ) {
+            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+                << "Input vectors were modified." << endl;
+          }
+          return Failed;
+        }
+      }
+      for (i=0; i<q; i++) {
+        if ( normsC2[i] != zero ) {
+          if ( om->isVerbosityAndPrint(Warning) ) {
+            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+                << "Arithmetic test 6 failed: " 
+                << normsC2[i] 
+                << " != " 
+                << zero 
+                << endl;
+          }
+          return Failed;
+        }
+      }
+
+      // Test 7: alpha==1, SDM==[I 0], beta==0 and check that C is set to B
+      MVT::MvRandom(*B);
+      MVT::MvRandom(*C);
+      MVT::MvNorm(*B,&normsB1);
+      MVT::MvNorm(*C,&normsC1);
+      SDM.scale(zero);
+      for (i=0; i<p; i++) {
+        SDM(i,i) = one;
+      }
+      MVT::MvTimesMatAddMv(one,*B,SDM,zero,*C);
+      MVT::MvNorm(*B,&normsB2);
+      MVT::MvNorm(*C,&normsC2);
+      for (i=0; i<p; i++) {
+        if ( normsB1[i] != normsB2[i] ) {
+          if ( om->isVerbosityAndPrint(Warning) ) {
+            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+                << "Input vectors were modified." << endl;
+          }
+          return Failed;
+        }
+      }
+      for (i=0; i<p; i++) {
+        if ( normsB1[i] != normsC2[i] ) {
+          if ( om->isVerbosityAndPrint(Warning) ) {
+            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+                << "Arithmetic test 7 failed." << endl;
+          }
+          return Failed;
+        }
+      }
+      for (i=p; i<q; i++) {
+        if ( normsC2[i] != zero ) {
+          if ( om->isVerbosityAndPrint(Warning) ) {
+            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+                << "Arithmetic test 7 failed." << endl;
+          }
+          return Failed;
+        }
+      }
+
+      // Test 8: alpha==1, SDM==0, beta==1 and check that C is unchanged
+      MVT::MvRandom(*B);
+      MVT::MvRandom(*C);
+      MVT::MvNorm(*B,&normsB1);
+      MVT::MvNorm(*C,&normsC1);
+      SDM.scale(zero);
+      MVT::MvTimesMatAddMv(one,*B,SDM,one,*C);
+      MVT::MvNorm(*B,&normsB2);
+      MVT::MvNorm(*C,&normsC2);
+      for (i=0; i<p; i++) {
+        if ( normsB1[i] != normsB2[i] ) {
+          if ( om->isVerbosityAndPrint(Warning) ) {
+            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+                << "Input vectors were modified." << endl;
+          }
+          return Failed;
+        }
+      }
+      for (i=0; i<q; i++) {
+        if ( normsC1[i] != normsC2[i] ) {
+          if ( om->isVerbosityAndPrint(Warning) ) {
+            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+                << "Arithmetic test 8 failed." << endl;
           }
           return Failed;
         }
