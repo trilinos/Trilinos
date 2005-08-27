@@ -20,7 +20,7 @@
 CORE_H = \
 	$(srcdir)/AnasaziBasicEigenproblem.hpp \
 	$(srcdir)/AnasaziBasicSort.hpp \
-        $(srcdir)/AnasaziBlockDavidson.hpp \
+	$(srcdir)/AnasaziBlockDavidson.hpp \
 	$(srcdir)/AnasaziBlockKrylovSchur.hpp \
 	$(srcdir)/AnasaziConfigDefs.hpp \
 	$(srcdir)/AnasaziEigenproblem.hpp \
@@ -34,7 +34,8 @@ CORE_H = \
 	$(srcdir)/AnasaziOperatorTraits.hpp \
 	$(srcdir)/AnasaziOutputManager.hpp \
 	$(srcdir)/AnasaziReturnType.hpp \
-	$(srcdir)/AnasaziSortManager.hpp
+	$(srcdir)/AnasaziSortManager.hpp \
+	$(srcdir)/AnasaziThyraAdapter.hpp 
 
 CORE = \
 	$(srcdir)/AnasaziEpetraAdapter.cpp \
