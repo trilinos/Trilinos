@@ -27,9 +27,11 @@
 // ************************************************************************
 //@HEADER
 //
-//  This test uses the MVOPTester.hpp functions to test the Anasazi adapter
-//  to Epetra.
+//  This test uses the MVOPTester.hpp functions to test the Anasazi adapters
+//  to Epetra and Thyra.
 //
+
+// #define TEST_THYRA_ADAPTER
 
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
@@ -44,20 +46,28 @@
 #include "Epetra_SerialComm.h"
 
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziMVOPTester.hpp"
+#include "AnasaziEpetraAdapter.hpp"
+
+#ifdef TEST_THYRA_ADAPTER
+#include "AnasaziThyraAdapter.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
+#endif
 
 int main(int argc, char *argv[])
 {
-  int i, ierr;
+  int i, ierr, gerr;
+  gerr = 0;
 
 #ifdef HAVE_MPI
   // Initialize MPI and setup an Epetra communicator
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  Teuchos::RefCountPtr<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
 #else
   // If we aren't using MPI, then setup a serial communicator.
   Epetra_SerialComm Comm;
+  Teuchos::RefCountPtr<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
 #endif
 
    // number of global elements
@@ -65,7 +75,7 @@ int main(int argc, char *argv[])
   int blockSize = 5;
 
   // PID info
-  int MyPID = Comm.MyPID();
+  int MyPID = Comm->MyPID();
   bool verbose = 0;
 
   if (argc>1) {
@@ -76,12 +86,12 @@ int main(int argc, char *argv[])
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
-  Epetra_Map Map(dim, 0, Comm);
+  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( new Epetra_Map(dim, 0, *Comm) );
   
   // Get update list and number of local equations from newly created Map.
-  int NumMyElements = Map.NumMyElements();
+  int NumMyElements = Map->NumMyElements();
   int * MyGlobalElements = new int[NumMyElements];
-  Map.MyGlobalElements(MyGlobalElements);
+  Map->MyGlobalElements(MyGlobalElements);
 
   // Create an integer vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
@@ -100,8 +110,7 @@ int main(int argc, char *argv[])
   }
 
   // Create an Epetra_Matrix
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A 
-    = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, NumNz) );
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Map, NumNz) );
    
   // Add  rows one-at-a-time
   // Need some vectors to help
@@ -136,55 +145,115 @@ int main(int argc, char *argv[])
   ierr = A->FillComplete();
   assert(ierr==0);
 
+  // Create an Anasazi::EpetraSymOp from this Epetra_CrsMatrix
+  Teuchos::RefCountPtr<Anasazi::EpetraSymOp> op = Teuchos::rcp(new Anasazi::EpetraSymOp(A));
+
   // Issue several useful typedefs;
-  typedef Anasazi::MultiVec<double> MV;
-  typedef Anasazi::Operator<double> OP;
+  typedef Anasazi::MultiVec<double> EMV;
+  typedef Anasazi::Operator<double> EOP;
 
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note that this needs to have the same number of columns as the blocksize.
-  Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec 
-    = Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blockSize) );
+  Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(*Map, blockSize) );
   ivec->Random();
 
   // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
-    Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
   if (verbose) {
     MyOM->SetVerbosity( Anasazi::Warning );
   }
 
-  // test the multivector class
-  ierr = Anasazi::TestMultiVecTraits<double,MV>(MyOM,ivec);
+  // test the Epetra adapter multivector
+  ierr = Anasazi::TestMultiVecTraits<double,EMV>(MyOM,ivec);
+  gerr |= ierr;
   switch (ierr) {
   case Anasazi::Ok:
     if ( verbose && MyPID==0 ) {
-      cout << "*** PASSED TestMultiVecTraits()" << endl;
+      cout << "*** EpetraAdapter PASSED TestMultiVecTraits()" << endl;
     }
     break;
   case Anasazi::Failed:
     if ( verbose && MyPID==0 ) {
-      cout << "*** FAILED TestMultiVecTraits() ***" << endl;
+      cout << "*** EpetraAdapter FAILED TestMultiVecTraits() ***" 
+           << endl << endl;
+    }
+    break;
+  }
+
+  // test the Epetra adapter operator 
+  ierr = Anasazi::TestOperatorTraits<double,EMV,EOP>(MyOM,ivec,op);
+  gerr |= ierr;
+  switch (ierr) {
+  case Anasazi::Ok:
+    if ( verbose && MyPID==0 ) {
+      cout << "*** EpetraAdapter PASSED TestOperatorTraits()" << endl;
+    }
+    break;
+  case Anasazi::Failed:
+    if ( verbose && MyPID==0 ) {
+      cout << "*** EpetraAdapter FAILED TestOperatorTraits() ***" 
+           << endl << endl;
     }
     break;
   }
 
 
-  // test the operator class
-  Teuchos::RefCountPtr<Anasazi::EpetraSymOp> op 
-   = Teuchos::rcp(new Anasazi::EpetraSymOp(A));
-  ierr = Anasazi::TestOperatorTraits<double,MV,OP>(MyOM,ivec,op);
+#ifdef TEST_THYRA_ADAPTER
+  typedef Thyra::MultiVectorBase<double> TMVB;
+  typedef Thyra::LinearOpBase<double>    TLOB;
+  // create thyra objects from the epetra objects
+
+  // first, a Thyra::VectorSpaceBase
+  Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<double> > epetra_vs = 
+    Thyra::create_MPIVectorSpaceBase(Map);
+
+  // then, a ScalarProdVectorSpaceBase
+  Teuchos::RefCountPtr<const Thyra::ScalarProdVectorSpaceBase<double> > sp_domain = 
+    Teuchos::rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<double> >(epetra_vs,true);
+
+  // then, a MultiVectorBase (from the Epetra_MultiVector)
+  Teuchos::RefCountPtr<Thyra::MultiVectorBase<double> > thyra_ivec = 
+    Thyra::create_MPIMultiVectorBase(Teuchos::rcp_implicit_cast<Epetra_MultiVector>(ivec),epetra_vs,sp_domain);
+
+  // then, a LinearOpBase (from the Epetra_CrsMatrix)
+  Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > thyra_op = 
+    Teuchos::rcp( new Thyra::EpetraLinearOp(A) );
+
+
+  // test the Thyra adapter multivector
+  ierr = Anasazi::TestMultiVecTraits<double,TMVB>(MyOM,thyra_ivec);
+  gerr |= ierr;
   switch (ierr) {
   case Anasazi::Ok:
     if ( verbose && MyPID==0 ) {
-      cout << "*** PASSED TestOperatorTraits()" << endl;
+      cout << "*** ThyraAdapter PASSED TestMultiVecTraits()" << endl;
     }
     break;
   case Anasazi::Failed:
     if ( verbose && MyPID==0 ) {
-      cout << "*** FAILED TestOperatorTraits() ***" << endl;
+      cout << "*** ThyraAdapter FAILED TestMultiVecTraits() ***" 
+           << endl << endl;
     }
     break;
   }
+
+  // test the Thyra adapter operator 
+  ierr = Anasazi::TestOperatorTraits<double,TMVB,TLOB>(MyOM,thyra_ivec,thyra_op);
+  gerr |= ierr;
+  switch (ierr) {
+  case Anasazi::Ok:
+    if ( verbose && MyPID==0 ) {
+      cout << "*** ThyraAdapter PASSED TestOperatorTraits()" << endl;
+    }
+    break;
+  case Anasazi::Failed:
+    if ( verbose && MyPID==0 ) {
+      cout << "*** ThyraAdapter FAILED TestOperatorTraits() ***" 
+           << endl << endl;
+    }
+    break;
+  }
+#endif
 
   // Release all objects
   delete [] NumNz;
@@ -196,7 +265,7 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
 
-  if (ierr) {
+  if (gerr) {
     if (verbose && MyPID==0)
       cout << "End Result: TEST FAILED" << endl;	
     return -1;
