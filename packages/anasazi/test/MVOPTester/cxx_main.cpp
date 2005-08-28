@@ -66,7 +66,6 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
 #else
   // If we aren't using MPI, then setup a serial communicator.
-  Epetra_SerialComm Comm;
   Teuchos::RefCountPtr<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
 #endif
 
