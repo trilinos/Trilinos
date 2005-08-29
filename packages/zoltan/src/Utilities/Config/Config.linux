@@ -167,7 +167,7 @@ VTK_OFFSCREEN_LIBPATH = -L/Net/local/proj/zoltan/arch/linux/lib/vtkMesa
 VTK_OFFSCREEN_INCPATH = -I/Net/local/proj/zoltan/arch/linux/include/vtkMesa
 
 MESA_LIBPATH = -L/Net/local/proj/zoltan/arch/linux/lib/Mesa
-MESA_INCPATH = -L/Net/local/proj/zoltan/arch/linux/include/Mesa
+MESA_INCPATH = -I/Net/local/proj/zoltan/arch/linux/include/Mesa
 MESA_LIBS = -lGL  -lGLU -lOSMesa
 #----------------------------------------------------------------
 
