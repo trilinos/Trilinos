@@ -10,10 +10,10 @@ Shell usage: MakefileVariables.py [options] [filename]
 options:
     -h | --help       Print this message and exit
     -m | --make       Output in Makefile format
-    -p | --python     Output as a python dictionary
+    -p | --python     Output as a python dictionary (default)
     -v | --version    Print the version number and exit
 
-Python usage: import MakefileExport
+Python usage: import MakefileVariables
 
 Available functions:
     removeContinuationLines([string, string, ...]) -> None (combine any strings
@@ -52,7 +52,7 @@ import sys
 # lines, include statements and variable references
 assignRE   = re.compile(r"([^=]+)=([^=]+)"  )
 blankRE    = re.compile(r"^\s*$"            )
-continueRE = re.compile(r"(.*)\\\s*$")
+continueRE = re.compile(r"(.*)\\\s*$"       )
 includeRE  = re.compile(r"\s*include\s+(.+)")
 makeVarRE  = re.compile(r"\$\(([^)]+)\)"    )
 
