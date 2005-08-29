@@ -234,10 +234,14 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
 	(*tmpi)(i) = 0.0;;
       }
 	
-    if (isPrevComplexEval)
+    if (isPrevComplexEval) {
       isPrevComplexEval = false;
-    if (isComplexEval)
+      isComplexEval = false;
+    }
+    if (isComplexEval) {
       isPrevComplexEval = true;
+      isComplexEval = false;
+    }
 
   }
 
