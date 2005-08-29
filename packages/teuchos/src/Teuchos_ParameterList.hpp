@@ -134,6 +134,7 @@ public:
     <li> Use the static_cast<T>() when the type is ambiguous.
     <li> Both char* and string map to are stored as strings internally. 
     <li> Sets the parameter as "used".
+    <li> Exception is thrown if \c name exists, but is not of type \c T.
     </ul>
   */
   template<typename T>
@@ -151,7 +152,7 @@ public:
   std::string& get(const string& name, const char* def_value)
   { return get(name, std::string(def_value)); }
   
-  /*! \brief Retrieves parameter \c name of type \c T from a list, an exception is thrown if this parameter doesn't exist.
+  /*! \brief Retrieves parameter \c name of type \c T from a list, an exception is thrown if this parameter doesn't exist or is the wrong type.
     \note The syntax for calling this method is:  <tt> list.template get<int>( "Iters" ) </tt>
   */
   template<typename T>
@@ -256,7 +257,12 @@ private:
     if (i == params_.end()) {
       params_[name].setValue(def_value, true);
       i = params_.find(name);
+    } else {
+      // The parameter was found, make sure it is the same type as T.
+      TEST_FOR_EXCEPTION( !isType( name, (T*)NULL ), std::runtime_error,
+			  "get ( " << name << ", T def_value ) failed -- parameter is wrong type! " );
     }
+
     // Return the value of the parameter
     return getValue<T>(entry(i));
   }
