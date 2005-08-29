@@ -118,7 +118,11 @@ public:
    * remembered forward linear operator.
    *
    * \param  Op     [in/out] On input, <tt>*Op</tt> is an initialized or uninitialized
-   *                object and on output is uninitialized.
+   *                object and on output is uninitialized.  Note that "uninitialized"
+   *                does not mean that <tt>Op</tt> is completely stateless.  It may still
+   *                remember some aspect of the matrix <tt>fwdOp</tt> that will allow
+   *                for a more efficient initialization next time through
+   *                <tt>this->initializeOp()</tt>.
    * \param  fwdOp  [in/out] If <tt>fwdOp!=NULL</tt> on input, the on output, the
    *                same forward operator passed into <tt>this->initailzeOp()</tt> will be
    *                returned.
@@ -142,6 +146,61 @@ public:
     ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *fwdOp = NULL
     ) const = 0;
   
+  //@}
+
+
+  /** @name Virtual functions with default implementations */
+  //@{
+
+
+  /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
+   * given a "compatible" <tt>LinearOpBase</tt> object but allow for reuse of
+   * any preprocessing that is in <tt>*Op</tt>..
+   *
+   * \param  fwdOp  [in] The forward linear operator that will be used to create
+   *                the output <tt>LinearOpWithSolveBase</tt> object.
+   * \param  Op     [in/out] The output <tt>LinearOpWithSolveBase</tt> object.  This object must have
+   *                be created first by <tt>this->createOp()</tt> and may have already been through
+   *                at least one previous set of calls to <tt>this->initializeOp()</tt> and
+   *                <tt>this->uninitializeOp()</tt>.  Note that subclasses
+   *                should always first strip off the transpose and scaling by calling <tt>unwrap()</tt>
+   *                before attempting to dynamic cast the object.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->isCompatible(*fwdOp)==true</tt>
+   * <li><tt>Op!=NULL</tt>
+   * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
+   *     this function.
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   * <li>Throws <tt>CatastrophicSolveFailure</tt> if the underlying linear solver could
+   *     not be created sucessfully (do to a factorization failure or some other cause).
+   * <li><tt>Op->range()->isCompatible(*fwdOp->range())==true</tt>
+   * <li><tt>Op->domain()->isCompatible(*fwdOp->domain())==true</tt>
+   * <li><tt>Op->apply()</tt> and <tt>Op->applyTranspose()</tt> must behave
+   *     exactly the same as <tt>fwdOp->apply()</tt> and <tt>fwdOp->applyTranspose()</tt>
+   * <li><tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
+   *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
+   *     be remembered by the <tt>*Op</tt> object.  The client must be careful
+   *     not to modify the <tt>*fwdOp</tt> object or else the <tt>*Op</tt> object may also
+   *     be modified.
+   * </ul>
+   *
+   * The purpose of this function is to allow the reuse of old factorizations
+   * and/or preconditioners that may go into the initialization of the
+   * <tt>*Op</tt> objects.  Note that by calling this function, the peformance
+   * <tt>Op->solve(...)</tt> may not be as good as when calling the function
+   * <tt>this->initializeOp(...,Op)</tt>.
+   *
+   * The default implemenation of this function just calls
+   * <tt>this->initializeOp(fwdOp,Op)</tt>.
+   */
+  virtual void initializeAndReuseOp(
+    const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
+    ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                             *Op
+    ) const;
+
   //@}
 
 };
@@ -174,6 +233,18 @@ createAndInitializeLinearOpWithSolve(
     Op = factory.createOp();
   factory.initializeOp(fwdOp,&*Op);
   return Op;
+}
+
+// /////////////////////////
+// Implementations
+
+template<class RangeScalar, class DomainScalar>
+void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializeAndReuseOp(
+  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
+  ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                             *Op
+  ) const
+{
+  this->initializeOp(fwdOp,Op);
 }
 
 } // namespace Thyra
