@@ -55,7 +55,7 @@ for one instance of that sub function.  Each request of the library for
 some operation requires that data structure.
 
 <P>The classes in the Zoltan C++ library follow the structure just described.
-Each class is implemented in a header
+Each class is defined in a header
 file and encapsulates a Zoltan data structure and the functions that
 operate on that structure.  A C++ application wishing to use a
 feature of Zoltan, would include the feature's header file in it's source, and
@@ -170,7 +170,7 @@ Here we provide a checklist of things to be done when the C interface to
 the Zoltan library is changed:
 
 <UL>
-<LI>If a new major component is added to Zoltan, create a C++ wrapper for
+<LI>If a new major component is added to Zoltan, create a C++ class for
 that component in a new header file, using the programming conventions
 described above.  </LI>
 <LI>If functions are added or removed, or their parameter lists are
