@@ -12,8 +12,8 @@ view: $(TARGET).dvi
 ps: $(TARGET).dvi
 	dvips -o $(TARGET).ps $(TARGET)
 
-pdf: ps
-	ps2pdf $(TARGET).ps $(TARGET).pdf
+pdf: $(TARGET).dvi
+	dvipdf $(TARGET).dvi $(TARGET).pdf
 
 print: $(TARGET).dvi
 	dvips $(TARGET)
