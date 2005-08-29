@@ -32,6 +32,10 @@
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
+#ifdef THYRA_RYTHMOS_DEBUG
+#include "Thyra_TestingTools.hpp"
+#endif // THYRA_RYTHMOS_DEBUG
+
 namespace Thyra {
 
 /** \brief Decorator subclass for a steady-state version of a DAE for single-residual
@@ -182,6 +186,40 @@ void SingleResidSSDAEModelEvaluator<Scalar>::initialize(
   x_ = createMember( daeModel_->get_x_space() );
 
   // ToDo: Check that daeModel supports x_dot, x and maybe t
+
+#ifdef THYRA_RYTHMOS_DEBUG
+  std::cout << "----------------------------------------------------------------------" << std::endl;
+  std::cout << "Thyra::SingleResidSSDAEModelEvaluator::initialize" << std::endl;
+  std::cout << "coeff_x_dot_ = " << coeff_x_dot_ << std::endl;
+  std::cout << "x_dot_base_ = ";                  
+  if ( x_dot_base_.get() ) 
+    std::cout << "\n" << *x_dot_base_            << std::endl;
+  else
+    std::cout << "null"                          << std::endl;
+  std::cout << "coeff_x_ = " << coeff_x_         << std::endl;
+  std::cout << "x_base_ = ";                      
+  if ( x_base_.get() )
+    std::cout << "\n" << *x_base_                << std::endl;
+  else
+    std::cout << "null"                          << std::endl;
+  std::cout << "t_base_ = " << t_base_           << std::endl;
+  std::cout << "x_bar_init_ = ";                  
+  if ( x_bar_init_.get() )
+    std::cout << "\n" <<  *x_bar_init_           << std::endl;
+  else
+    std::cout << "null"                          << std::endl;
+  std::cout << "x_dot_ = ";                       
+  if ( x_dot_.get() )
+    std::cout << "\n" << *x_dot_                 << std::endl;
+  else
+    std::cout << "null"                          << std::endl;
+  std::cout << "x_ = ";                           
+  if ( x_.get() )
+    std::cout << "\n" << *x_                     << std::endl;
+  else
+    std::cout << "null"                          << std::endl;
+  std::cout << "----------------------------------------------------------------------" << std::endl;
+#endif // THYRA_RYTHMOS_DEBUG
 }
 
 // Overridden from ModelEvaluator
@@ -241,17 +279,55 @@ void SingleResidSSDAEModelEvaluator<Scalar>::evalModel(
   ,const ModelEvaluatorBase::OutArgs<Scalar>& outArgs_bar
   ) const
 {
+#ifdef THYRA_RYTHMOS_DEBUG
+  std::cout << "----------------------------------------------------------------------" << std::endl;
+  std::cout << "Thyra::SingleResidSSDAEModelEvaluator::evalModel" << std::endl;
+#endif // THYRA_RYTHMOS_DEBUG
   const VectorBase<Scalar> &x_bar = *inArgs_bar.get_x(); 
   // x_dot = coeff_x_dot * x_bar + x_dot_base
   if (x_dot_base_.get())
     Thyra::V_StVpV( &*x_dot_, coeff_x_dot_, x_bar, *x_dot_base_ );
   else
     Thyra::V_StV( &*x_dot_, coeff_x_dot_, x_bar);
+#ifdef THYRA_RYTHMOS_DEBUG
+  std::cout << "x_dot_ = coeff_x_dot_ * x_bar + x_dot_base_" << std::endl;
+  std::cout << "coeff_x_dot_ = " << coeff_x_dot_             << std::endl;
+  std::cout << "x_bar = "                                    << std::endl;
+  std::cout <<  x_bar                                        << std::endl;
+  std::cout << "x_dot_base_ = ";
+  if ( x_dot_base_.get() )
+    std::cout << "\n" << *x_dot_base_                        << std::endl;
+  else
+    std::cout << "null"                                      << std::endl;
+  std::cout << "x_dot_ = ";
+  if ( x_dot_.get() )
+    std::cout << "\n" << *x_dot_                             << std::endl;
+  else
+    std::cout << "null"                                      << std::endl;
+#endif // THYRA_RYTHMOS_DEBUG
+
   // x = coeff_x * x_bar + x_base
   if (x_base_.get())
     Thyra::V_StVpV( &*x_, coeff_x_, x_bar, *x_base_ );
   else
     Thyra::V_StV( &*x_, coeff_x_, x_bar);
+#ifdef THYRA_RYTHMOS_DEBUG
+  std::cout << "x_ = coeff_x_ * x_bar + x_base_" << std::endl;
+  std::cout << "coeff_x_ = " << coeff_x_         << std::endl;
+  std::cout << "x_bar = "                        << std::endl;
+  std::cout <<  x_bar                            << std::endl;
+  std::cout << "x_base_ = ";
+  if ( x_base_.get() )
+    std::cout << "\n" << *x_base_                << std::endl;
+  else
+    std::cout << "null"                          << std::endl;
+  std::cout << "x_ = ";
+  if ( x_.get() )
+    std::cout << "\n" << *x_                     << std::endl;
+  else
+    std::cout << "null"                          << std::endl;
+#endif // THYRA_RYTHMOS_DEBUG
+
   // Compute W and f
   Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > W;
   if( (W = outArgs_bar.get_W()).get() ) {
@@ -262,11 +338,24 @@ void SingleResidSSDAEModelEvaluator<Scalar>::evalModel(
       ,*x_dot_, *x_, t_base_, Scalar(beta*coeff_x_dot_), Scalar(beta*coeff_x_)
       ,outArgs_bar.get_f().get(), &*W
       );
+#ifdef THYRA_RYTHMOS_DEBUG
+    std::cout << "f = "                 << std::endl;
+    std::cout << *(outArgs_bar.get_f()) << std::endl;
+    std::cout << "W = "                 << std::endl;
+    std::cout << *W                     << std::endl;
+#endif // THYRA_RYTHMOS_DEBUG
   }
   else {
     // Compute only the residual
     eval_f( *daeModel_, *x_dot_, *x_, t_base_, &*outArgs_bar.get_f() );
+#ifdef THYRA_RYTHMOS_DEBUG
+    std::cout << "f = "                 << std::endl;
+    std::cout << *(outArgs_bar.get_f()) << std::endl;
+#endif // THYRA_RYTHMOS_DEBUG
   }
+#ifdef THYRA_RYTHMOS_DEBUG
+  std::cout << "----------------------------------------------------------------------" << std::endl;
+#endif // THYRA_RYTHMOS_DEBUG
 }
 
 } // namespace Thyra

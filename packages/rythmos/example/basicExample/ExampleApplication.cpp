@@ -35,6 +35,10 @@
 #endif // HAVE_MPI
 #include "Epetra_CrsMatrix.h"
 
+#ifdef EXAMPLEAPPLICATION_DEBUG
+#include <iostream>
+#endif
+
 ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 {
   implicit_ = params.get<bool>( "implicit" );
@@ -170,8 +174,16 @@ void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs
 {
   const Epetra_Vector &x = *inArgs.get_x();
   const Epetra_Vector &lambda = *lambda_ptr_;
+#ifdef EXAMPLEAPPLICATION_DEBUG
+      std::cout << "----------------------------------------------------------------------" << std::endl;
+      std::cout << "ExampleApplication::evalModel x = " << std::endl;
+      x.Print(std::cout);
+      std::cout << "ExampleApplication::evalModel lambda = " << std::endl;
+      lambda.Print(std::cout);
+#endif
   int localNumElements = x.MyLength();
-  if(implicit_) {
+  if(implicit_) 
+  {
     const Epetra_Vector &x_dot = *inArgs.get_x_dot();
     if(outArgs.get_f().get()) {
       Epetra_Vector &f = *outArgs.get_f();
@@ -179,33 +191,54 @@ void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs
       {
         f[i] = x_dot[i] - lambda[i]*x[i];
       }
+#ifdef EXAMPLEAPPLICATION_DEBUG
+      std::cout << "ExampleApplication::evalModel (implicit) x_dot = " << std::endl;
+      x_dot.Print(std::cout);
+      std::cout << "ExampleApplication::evalModel (implicit) f = " << std::endl;
+      f.Print(std::cout);
+#endif
     }
     Teuchos::RefCountPtr<Epetra_Operator> W;
     if( (W = outArgs.get_W()).get() ) {
       const double alpha = inArgs.get_alpha();
       const double beta = inArgs.get_beta();
       Epetra_CrsMatrix &crsW = Teuchos::dyn_cast<Epetra_CrsMatrix>(*W);
-			double values[1];
-			int indices[1];
-			const int IB = epetra_map_ptr_->IndexBase();
-			for( int i = 0; i < localNumElements; ++i ) {
+      double values[1];
+      int indices[1];
+      const int IB = epetra_map_ptr_->IndexBase();
+      for( int i = 0; i < localNumElements; ++i ) 
+      {
         values[0] = alpha - beta*lambda[i];
-				indices[0] = i + IB;  // global column
-				crsW.ReplaceGlobalValues(
-					i + IB              // GlobalRow
-					,1                  // NumEntries
-					,values             // Values
-					,indices            // Indices
-					);
-			}
+        indices[0] = i + IB;  // global column
+        crsW.ReplaceGlobalValues(i + IB              // GlobalRow
+                                 ,1                  // NumEntries
+                                 ,values             // Values
+                                 ,indices            // Indices
+                                          );
+      }
+#ifdef EXAMPLEAPPLICATION_DEBUG
+      std::cout << "ExampleApplication::evalModel (implicit) alpha, beta = " << std::endl;
+      std::cout << "alpha = " << alpha << std::endl;
+      std::cout << "beta = "  << beta  << std::endl;
+      std::cout << "ExampleApplication::evalModel (implicit) W = " << std::endl;
+      crsW.Print(std::cout);
+#endif
     }
   }
-  else {
+  else 
+  {
     Epetra_Vector &f = *outArgs.get_f();
     int localNumElements = x.MyLength();
     for (int i=0 ; i<localNumElements ; ++i)
     {
       f[i] = lambda[i]*x[i];
     }
+#ifdef EXAMPLEAPPLICATION_DEBUG
+    std::cout << "ExampleApplication::evalModel (explicit) f = " << std::endl;
+    f.Print(std::cout);
+#endif
   }
+#ifdef EXAMPLEAPPLICATION_DEBUG
+  std::cout << "----------------------------------------------------------------------" << std::endl;
+#endif
 }

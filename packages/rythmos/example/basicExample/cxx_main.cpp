@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
     std::string lambda_fit = "random"; // Lambda model
     int numElements = 1; // number of elements in vector
     double x0 = 10.0; // ODE initial condition
+    double finalTime = 1.0; // ODE final time
     int N = 10;  // number of steps to take
     const int num_methods = 3;
     const EMethod method_values[] = { METHOD_FE, METHOD_BE, METHOD_ERK };
@@ -93,6 +94,7 @@ int main(int argc, char *argv[])
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
     clp.setOption( "x0", &x0, "Constant ODE initial condition." );
+    clp.setOption( "T", &finalTime, "Final time for simulation." );
     clp.setOption( "lambda_min", &lambda_min, "Lower bound for ODE coefficient");
     clp.setOption( "lambda_max", &lambda_max, "Upper bound for ODE coefficient");
     clp.setOption( "lambda_fit", &lambda_fit, "Lambda model:  random, linear");
@@ -117,6 +119,13 @@ int main(int argc, char *argv[])
       std::cerr << "lamba_min must be less than lambda_max" << std::endl;
       return(1);
     }
+
+    if (finalTime <= 0.0)
+    {
+      std::cerr << "Final simulation time must be > 0.0." << std::endl;
+      return(1);
+    }
+
     
     // Set up the parameter list for the application:
     Teuchos::ParameterList params;
@@ -162,7 +171,7 @@ int main(int argc, char *argv[])
     Rythmos::Stepper<double> &stepper = *stepper_ptr;
 
     double t0 = 0.0;
-    double t1 = 1.0;
+    double t1 = finalTime;
     double dt = (t1-t0)/N;
 
     // Integrate forward with fixed step sizes:
@@ -211,12 +220,16 @@ int main(int argc, char *argv[])
     int MyLength = x_computed.MyLength();
     for (int i=0 ; i<MyLength ; ++i)
     {
+      std::cout.precision(15);
       std::cout << "lambda[" << MyPID*MyLength+i << "] = " << lambda[i] << std::endl;
     }
     for (int i=0 ; i<MyLength ; ++i)
     {
-      std::cout << "Computed: x[" << MyPID*MyLength+i << "] = " << x_computed[i] << "\t" 
-                <<    "Exact: x[" << MyPID*MyLength+i << "] = " << x_star[i] << std::endl;
+      std::cout.precision(15);
+      std::cout << "Computed: x[" << MyPID*MyLength+i << "] = ";
+      std::cout.width(20); std::cout << x_computed[i] << "\t";
+      std::cout << "Exact: x[" << MyPID*MyLength+i << "] = ";
+      std::cout.width(20); std::cout << x_star[i] << std::endl;
     }
     
 #ifdef HAVE_MPI
