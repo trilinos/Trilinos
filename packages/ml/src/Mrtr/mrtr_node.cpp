@@ -42,8 +42,7 @@
  |  ctor (public)                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
 MRTR::Node::Node(int Id, const double* x, int ndof, const int* dof) :
-Id_(Id),
-pnode_(NULL)
+Id_(Id)
 {
   seg_.resize(0);
   segptr_.resize(0);
@@ -58,6 +57,7 @@ pnode_(NULL)
   for (int i=0; i<ndof; ++i) dof_[i] = dof[i];
   
   LMdof_.resize(0);
+  pnode_.resize(0);
 }
 
 /*----------------------------------------------------------------------*
@@ -66,8 +66,7 @@ pnode_(NULL)
  |  used internally                                                     |
  *----------------------------------------------------------------------*/
 MRTR::Node::Node() :
-Id_(-1),
-pnode_(NULL)
+Id_(-1)
 {
   seg_.resize(0);
   segptr_.resize(0);
@@ -81,6 +80,7 @@ pnode_(NULL)
     x_[i] = 0.0;
   }
 
+  pnode_.resize(0);
 }
 
 /*----------------------------------------------------------------------*
@@ -121,11 +121,12 @@ MRTR::Node::Node(MRTR::Node& old)
   else
     segptr_.resize(0);
   
-  if (old.pnode_)
-    pnode_ = new MRTR::ProjectedNode(*(old.pnode_));
-  else
-    pnode_ = NULL;
-    
+  pnode_.resize(old.pnode_.size());  
+  for (int i=0; i<pnode_.size(); ++i)
+    if (old.pnode_[i])
+    {
+      pnode_[i] = new MRTR::ProjectedNode(*(old.pnode_[i]));
+    }    
 }
 
 /*----------------------------------------------------------------------*
@@ -202,9 +203,10 @@ MRTR::Node::~Node()
   LMdof_.clear();
   seg_.clear();
   segptr_.clear();
-  if (pnode_)
-    delete pnode_;
-  pnode_ = NULL; 
+  for (int i=0; i<pnode_.size(); ++i)
+    if (pnode_[i])
+      delete pnode_[i];
+  pnode_.clear();
 }
 
 /*----------------------------------------------------------------------*
@@ -383,10 +385,33 @@ bool MRTR::Node::BuildAveragedNormal()
  *----------------------------------------------------------------------*/
 bool MRTR::Node::SetProjectedNode(MRTR::ProjectedNode* pnode)
 { 
-  if (pnode_) delete pnode_;
-  pnode_ = pnode;
+  pnode_.resize(pnode_.size()+1);
+  pnode_[pnode_.size()-1] = pnode;
   return true;
 }
 
+/*----------------------------------------------------------------------*
+ |  get projected nodes                                      mwgee 07/05|
+ *----------------------------------------------------------------------*/
+MRTR::ProjectedNode** MRTR::Node::GetProjectedNodes(int& length)
+{ 
+  length = pnode_.size();
+  if (length)
+   return &(pnode_[0]);
+  else
+    return NULL;
+}
+
+/*----------------------------------------------------------------------*
+ |  get projected nodes                                      mwgee 07/05|
+ *----------------------------------------------------------------------*/
+MRTR::ProjectedNode* MRTR::Node::GetProjectedNode()
+{ 
+  int length = pnode_.size();
+  if (length)
+    return pnode_[0];
+  else
+    return NULL;
+}
 
 #endif // TRILINOS_PACKAGE
