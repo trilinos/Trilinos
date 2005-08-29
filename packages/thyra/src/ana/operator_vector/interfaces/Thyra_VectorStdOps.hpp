@@ -385,7 +385,7 @@ void Thyra::V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBas
   linear_combination(
     2,Teuchos::arrayArg<Scalar>(alpha,Teuchos::ScalarTraits<Scalar>::one())()
     ,Teuchos::arrayArg<const VectorBase<Scalar>*>(&x,&y)()
-    ,Teuchos::ScalarTraits<Scalar>::one(),z
+    ,Teuchos::ScalarTraits<Scalar>::zero(),z
     );
 }
 
