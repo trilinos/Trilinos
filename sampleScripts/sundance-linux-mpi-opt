@@ -11,7 +11,7 @@
 BUILD_DIR=`pwd`
 
 ../configure --enable-mpi --with-mpi-compilers \
-CXXFLAGS="-O3 -finline-functions -funroll-loops -Wall -ansi -pedantic " \
+CXXFLAGS="-O3 -finline-functions -funroll-loops -Wall" \
 --with-libs="-lexpat" \
 --disable-default-packages \
 --enable-teuchos --enable-teuchos-extended \
