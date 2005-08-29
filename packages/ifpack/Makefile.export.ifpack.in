@@ -28,8 +28,8 @@ _IFPACK_LIBS= -L@abs_top_builddir@/src/ -lifpack \
 	     $(EPETRA_LIBS) \
 	     $(TEUCHOS_LIBS)                            
 
-@USING_GNUMAKE_TRUE@IFPACK_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_IFPACK_INCLUDES))
-@USING_GNUMAKE_TRUE@IFPACK_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_IFPACK_LIBS))
+@USING_GNUMAKE_TRUE@IFPACK_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_IFPACK_INCLUDES))
+@USING_GNUMAKE_TRUE@IFPACK_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_IFPACK_LIBS))
 @USING_GNUMAKE_FALSE@IFPACK_INCLUDES = $(_IFPACK_INCLUDES)
 @USING_GNUMAKE_FALSE@IFPACK_LIBS     = $(_IFPACK_LIBS)
 
@@ -39,7 +39,7 @@ _IFPACK_EXTRA_INCLUDES= $(EPETRAEXT_INCLUDES) \
 _IFPACK_EXTRA_LIBS= $(EPETRAEXT_LIBS) \
 	           $(TRIUTILS_LIBS)
 
-@USING_GNUMAKE_TRUE@IFPACK_EXTRA_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_IFPACK_EXTRA_INCLUDES))
-@USING_GNUMAKE_TRUE@IFPACK_EXTRA_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_IFPACK_EXTRA_LIBS))
+@USING_GNUMAKE_TRUE@IFPACK_EXTRA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_IFPACK_EXTRA_INCLUDES))
+@USING_GNUMAKE_TRUE@IFPACK_EXTRA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_IFPACK_EXTRA_LIBS))
 @USING_GNUMAKE_FALSE@IFPACK_EXTRA_INCLUDES = $(_IFPACK_EXTRA_INCLUDES)
 @USING_GNUMAKE_FALSE@IFPACK_EXTRA_LIBS     = $(_IFPACK_EXTRA_LIBS)

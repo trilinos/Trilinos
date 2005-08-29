@@ -11,8 +11,8 @@ _CAPO_INCLUDES = \
 
 _CAPO_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lcapo $(THYRA_LIBS) @LIBS@ @FLIBS@ 
 
-@USING_GNUMAKE_TRUE@CAPO_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_CAPO_INCLUDES))
-@USING_GNUMAKE_TRUE@CAPO_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_CAPO_LIBS))
+@USING_GNUMAKE_TRUE@CAPO_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_CAPO_INCLUDES))
+@USING_GNUMAKE_TRUE@CAPO_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_CAPO_LIBS))
 @USING_GNUMAKE_FALSE@CAPO_INCLUDES = $(_CAPO_INCLUDES)
 @USING_GNUMAKE_FALSE@CAPO_LIBS     = $(_CAPO_LIBS)
 
@@ -27,7 +27,7 @@ _CAPO_EXTRA_INCLUDES = $(EPETRA_INCLUDES)
 
 _CAPO_EXTRA_LIBS = $(EPETRA_LIBS)
 
-@USING_GNUMAKE_TRUE@CAPO_EXTRA_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_CAPO_EXTRA_INCLUDES))
-@USING_GNUMAKE_TRUE@CAPO_EXTRA_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_CAPO_EXTRA_LIBS))
+@USING_GNUMAKE_TRUE@CAPO_EXTRA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_CAPO_EXTRA_INCLUDES))
+@USING_GNUMAKE_TRUE@CAPO_EXTRA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_CAPO_EXTRA_LIBS))
 @USING_GNUMAKE_FALSE@CAPO_EXTRA_INCLUDES = $(_CAPO_EXTRA_INCLUDES)
 @USING_GNUMAKE_FALSE@CAPO_EXTRA_LIBS     = $(_CAPO_EXTRA_LIBS)

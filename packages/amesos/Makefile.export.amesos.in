@@ -23,8 +23,8 @@ _AMESOS_INCLUDES = \
 
 _AMESOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src $(AMESOS_THYRA_LIBS) -lamesos $(EPETRA_LIBS) $(TEUCHOS_LIBS) @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ 
 
-@USING_GNUMAKE_TRUE@AMESOS_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_AMESOS_INCLUDES))
-@USING_GNUMAKE_TRUE@AMESOS_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_AMESOS_LIBS))
+@USING_GNUMAKE_TRUE@AMESOS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_AMESOS_INCLUDES))
+@USING_GNUMAKE_TRUE@AMESOS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_AMESOS_LIBS))
 @USING_GNUMAKE_FALSE@AMESOS_INCLUDES = $(_AMESOS_INCLUDES)
 @USING_GNUMAKE_FALSE@AMESOS_LIBS     = $(_AMESOS_LIBS)
 
@@ -38,7 +38,7 @@ _AMESOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src $(AMESOS_THYRA_LIBS) -lamesos 
 _AMESOS_EXTRA_INCLUDES = $(EPETRAEXT_INCLUDES) $(TRIUTILS_INCLUDES)
 _AMESOS_EXTRA_LIBS = $(EPETRAEXT_LIBS) $(TRIUTILS_LIBS)
 
-@USING_GNUMAKE_TRUE@AMESOS_EXTRA_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_AMESOS_EXTRA_INCLUDES))
-@USING_GNUMAKE_TRUE@AMESOS_EXTRA_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_AMESOS_EXTRA_LIBS))
+@USING_GNUMAKE_TRUE@AMESOS_EXTRA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_AMESOS_EXTRA_INCLUDES))
+@USING_GNUMAKE_TRUE@AMESOS_EXTRA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_AMESOS_EXTRA_LIBS))
 @USING_GNUMAKE_FALSE@AMESOS_EXTRA_INCLUDES = $(_AMESOS_EXTRA_INCLUDES)
 @USING_GNUMAKE_FALSE@AMESOS_EXTRA_LIBS     = $(_AMESOS_EXTRA_LIBS)

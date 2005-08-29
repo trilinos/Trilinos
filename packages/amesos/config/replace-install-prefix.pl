@@ -61,6 +61,8 @@ foreach(@my_lib_dirs) {
   }
 }
 #
+run_cmnd($cmnd_base . "${my_top_srcdir}/config ${exec_prefix}/include ${my_abs_export_makefile} ${my_abs_export_makefile}");
+#
 # Subroutines
 #
 sub remove_rel_paths {

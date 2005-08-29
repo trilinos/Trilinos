@@ -17,7 +17,7 @@ _THYRA_INCLUDES = \
 
 _THYRA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lthyra $(TEUCHOS_LIBS) @LIBS@ @FLIBS@ 
 
-@USING_GNUMAKE_TRUE@THYRA_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_THYRA_INCLUDES))
-@USING_GNUMAKE_TRUE@THYRA_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_THYRA_LIBS))
+@USING_GNUMAKE_TRUE@THYRA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_THYRA_INCLUDES))
+@USING_GNUMAKE_TRUE@THYRA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_THYRA_LIBS))
 @USING_GNUMAKE_FALSE@THYRA_INCLUDES = $(_THYRA_INCLUDES)
 @USING_GNUMAKE_FALSE@THYRA_LIBS     = $(_THYRA_LIBS)

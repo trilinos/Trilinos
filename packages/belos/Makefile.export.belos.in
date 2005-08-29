@@ -18,7 +18,7 @@ _BELOS_INCLUDES = \
 
 _BELOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lbelos $(TEUCHOS_LIBS) $(EPETRA_LIBS) $(TRIUTILS_LIBS) $(IFPACK_LIBS) @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ 
 
-@USING_GNUMAKE_TRUE@BELOS_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_BELOS_INCLUDES))
-@USING_GNUMAKE_TRUE@BELOS_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_BELOS_LIBS))
+@USING_GNUMAKE_TRUE@BELOS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_BELOS_INCLUDES))
+@USING_GNUMAKE_TRUE@BELOS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_BELOS_LIBS))
 @USING_GNUMAKE_FALSE@BELOS_INCLUDES = $(_BELOS_INCLUDES)
 @USING_GNUMAKE_FALSE@BELOS_LIBS     = $(_BELOS_LIBS)

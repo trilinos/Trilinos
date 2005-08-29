@@ -8,7 +8,7 @@ _TRIUTILS_INCLUDES = \
 
 _TRIUTILS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -ltriutils $(EPETRA_LIBS) @BLAS_LIBS@ @LIBS@ @FLIBS@ 
 
-@USING_GNUMAKE_TRUE@TRIUTILS_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_TRIUTILS_INCLUDES))
-@USING_GNUMAKE_TRUE@TRIUTILS_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_TRIUTILS_LIBS))
+@USING_GNUMAKE_TRUE@TRIUTILS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_TRIUTILS_INCLUDES))
+@USING_GNUMAKE_TRUE@TRIUTILS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_TRIUTILS_LIBS))
 @USING_GNUMAKE_FALSE@TRIUTILS_INCLUDES = $(_TRIUTILS_INCLUDES)
 @USING_GNUMAKE_FALSE@TRIUTILS_LIBS     = $(_TRIUTILS_LIBS)

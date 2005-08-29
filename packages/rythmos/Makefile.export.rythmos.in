@@ -12,7 +12,7 @@ _RYTHMOS_INCLUDES = \
 # Note, the order of the library depandancies is critical (higher level libraries from left to right)
 _RYTHMOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lrythmos $(EPETRA_LIBS) $(THYRA_LIBS) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@ 
 
-@USING_GNUMAKE_TRUE@RYTHMOS_INCLUDES  = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_RYTHMOS_INCLUDES))
-@USING_GNUMAKE_TRUE@RYTHMOS_LIBS      = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_RYTHMOS_LIBS))
+@USING_GNUMAKE_TRUE@RYTHMOS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_RYTHMOS_INCLUDES))
+@USING_GNUMAKE_TRUE@RYTHMOS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_RYTHMOS_LIBS))
 @USING_GNUMAKE_FALSE@RYTHMOS_INCLUDES = $(_RYTHMOS_INCLUDES)
 @USING_GNUMAKE_FALSE@RYTHMOS_LIBS     = $(_RYTHMOS_LIBS)
