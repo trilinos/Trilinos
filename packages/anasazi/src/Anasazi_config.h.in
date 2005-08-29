@@ -30,6 +30,9 @@
 #undef HAVE_ANASAZI_TESTS
 
 /* Define if want to build with anasazi enabled */
+#undef HAVE_ANASAZI_THYRA
+
+/* Define if want to build with anasazi enabled */
 #undef HAVE_ANASAZI_TRIUTILS
 
 /* Define to 1 if you have the <assert.h> header file. */

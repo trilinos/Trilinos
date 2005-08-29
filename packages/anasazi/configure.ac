@@ -306,6 +306,8 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, aztecoo, ANASAZI_AZTECOO, BUILD_AZTECOO,
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, ifpack, ANASAZI_IFPACK, BUILD_IFPACK, yes, [Build examples which use Ifpack.], [Build examples which use Ifpack. Can be overridden with --disable-anasazi-ifpack.])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, thyra, ANASAZI_THYRA, BUILD_THYRA, yes, [Build examples which use Thyra.], [Build examples which use Thyra. Can be overridden with --disable-anasazi-thyra.])
+
 # ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
