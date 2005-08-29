@@ -201,6 +201,10 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
 #endif
 
+  delete noxVec2;
+  delete noxVec1;
+  delete standardMap;
+
   // return 0 for a successful test
   return status;
 }
