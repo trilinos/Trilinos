@@ -49,7 +49,7 @@
 // Toolkit, available for free from Kitware, Inc. at www.vtk.org), version
 // 5.0 or later.  In the  Config.{arch} file that directed your compilation 
 // of Zoltan, add directives to indicate where the VTK, GL and X libraries 
-// are.  See "Config.linux" for an example of these directives.
+// are.  See "Config.generic" for an example of these directives.
 //
 // vtk_write must be compiled with a version of VTK libraries that were
 // built with the MANGLED_MESA directive.  vtk_write must be linked with
@@ -183,7 +183,7 @@ static char *vis_opt_names[UNDEFINED_LIST_MAX]={
   "output name",      // base name for output image file
   "output frame start",  // first image (default is 0)
   "output frame stop",   // last image (default is 0, 359 is complete circle)
-  "output frame stride", // degrees to skip between images
+  "output frame stride", // degrees from one image to the next
   "output view up",      // the "up" direction in the image
                       // add new output image options here <<<<<<<
 };
@@ -388,7 +388,7 @@ int main(int argc, char **argv)
 
 static void Run(vtkMultiProcessController *contr, void *arg)
 {
-  // Read in the chaco or distributed Nemesis (exodusII) files.
+  // Read in the Chaco or distributed Nemesis (exodusII) files.
   // Include at least one field array in the event we will not
   // have partition numbers to display.
 
@@ -1868,7 +1868,7 @@ static char *get_zdrive_output_file_name()
 {
   char *nm = new char [ZMAXPATH];
 
-  sprintf(nm, "%s.out.%d.0",
+  sprintf(nm, "%s.out.%d.{n}",
     fileNames ? fileNamesBase[0] : fname_opts.pexo_fname, zdriveCount);
 
   return nm;
