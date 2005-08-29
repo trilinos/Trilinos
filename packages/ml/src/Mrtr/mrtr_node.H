@@ -148,6 +148,7 @@ protected:
   vector<MRTR::Segment*> segptr_;  // ptrs to segments length nseg_
 
   MRTR::ProjectedNode*   pnode_;   // the projected node on some segment
+  //vector<MRTR::ProjectedNode*>   pnode_;   // the projected node on some segment
 
 };
 

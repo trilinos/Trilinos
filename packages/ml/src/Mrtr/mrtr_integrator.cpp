@@ -205,7 +205,7 @@ Epetra_SerialDenseMatrix* MRTR::Integrator::Integrate(MRTR::Segment& sseg,
   int ncol = mseg.Nnode();
   Epetra_SerialDenseMatrix* Mdense = new Epetra_SerialDenseMatrix(nrow,ncol);
 
-  for (int gp=0; gp < Ngp(); ++gp)
+  for (int gp=0; gp<Ngp(); ++gp)
   {
     double eta = Coordinate(gp);
     double wgt = Weight(gp);
@@ -245,7 +245,7 @@ Epetra_SerialDenseMatrix* MRTR::Integrator::Integrate(MRTR::Segment& sseg,
         (*Mdense)(slave,master) += (N1N2*weight);
       }
     }
-  } // for (int gp=0; gp<integrator.Ngp(); ++gp)  
+  } // for (int gp=0; gp<Ngp(); ++gp)  
 
 
   //cout << *Mdense;
@@ -448,5 +448,133 @@ Epetra_SerialDenseMatrix* MRTR::Integrator::Integrate(MRTR::Segment& sseg,
   return Ddense;
 }
 
+
+
+
+/*----------------------------------------------------------------------*
+ |                                            (public)       mwgee 08/05|
+ | integrate the modification of the master side                        |
+ *----------------------------------------------------------------------*/
+Epetra_SerialDenseMatrix* MRTR::Integrator::Integrate_2D_Mmod(
+                                                      MRTR::Segment& sseg, 
+                                                      double sxia, double sxib,
+                                                      MRTR::Segment& mseg, 
+                                                      double mxia, double mxib)
+{
+  Epetra_SerialDenseMatrix* Mmod = new Epetra_SerialDenseMatrix(mseg.Nnode(),1);
+
+  for (int gp=0; gp < Ngp(); ++gp)
+  {
+    double eta = Coordinate(gp);
+    double wgt = Weight(gp);
+    
+    // make the transformation for the slave side
+    double sxi = 0.5*(1-eta)*sxia + 0.5*(1+eta)*sxib;
+    
+    // make the transformation for the master side 
+    // (note master side is xi positiv in the other direction
+    double mxi = 0.5*(1+eta)*mxia + 0.5*(1-eta)*mxib;
+    
+    // compute the Jacobian dsxi / deta on the slave side
+    double dxideta = -0.5*sxia + 0.5*sxib;
+    
+    // evaluate the Jacobian dx / dsxi (metric) on the slave side
+    double dxdsxi = sseg.Metric(&sxi,NULL,NULL);
+    
+    // calculate value wgt*dxideta*dxdsxi
+    double weight = wgt*dxideta*dxdsxi;
+    
+    // evaluate function 0 of the slave side (supposed to be the trace function)
+    double sval[sseg.Nnode()];
+    sseg.EvaluateFunction(0,&sxi,sval,sseg.Nnode(),NULL);
+    
+    // make the delta function phi12 = phi1 - phi2
+    double val = sval[0] - sval[1];
+    
+    // evaluate function 0 of the master side (supposed to be the trace function)
+    double mval[mseg.Nnode()];
+    mseg.EvaluateFunction(0,&mxi,mval,mseg.Nnode(),NULL);
+    
+    // loop over nodes of the master side
+    for (int master=0; master<mseg.Nnode(); ++master)
+    {
+      // multiply functions for each master node
+      double N1N2 = -0.5 * val * mval[master];
+      (*Mmod)(master,0) += (N1N2*weight);
+    }
+  } // for (int gp=0; gp<integrator.Ngp(); ++gp)  
+
+
+  //cout << *Mmod;
+
+  return Mmod;
+}
+
+
+/*----------------------------------------------------------------------*
+ |  assemble the modification -Mmod into M (public)          mwgee 08/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Integrator::Assemble_2D_Mod(MRTR::Interface& inter, 
+                                       MRTR::Segment& sseg, 
+                                       MRTR::Segment& mseg, 
+                                       Epetra_CrsMatrix& M, 
+                                       Epetra_SerialDenseMatrix& Mmod)
+{
+  MRTR::Node** snodes = sseg.Nodes();
+  MRTR::Node** mnodes = mseg.Nodes();
+  
+  for (int slave=0; slave<sseg.Nnode(); ++slave)
+  {
+    // only do slave node rows that belong to this proc
+    if (inter.NodePID(snodes[slave]->Id()) != inter.lComm()->MyPID())
+      continue;
+    
+    // we want to add the row Mdense(slave,...) to the rows lmdof[sdof] 
+    // and                row Ddense(slave,...) to the rows lmdof[sdof] 
+    // get the dofs of slave node snodes[slave];
+    int        snlmdof = snodes[slave]->Nlmdof();
+    const int* slmdof  = snodes[slave]->LMDof();
+    
+    // this slave node might not have a projection, then the number
+    // of lagrange multipliers snlmdof of it is zero
+    // in this case, do nothing
+    if (!snlmdof) continue;
+    
+    // loop lm dofs on node slave
+    for (int sdof=0; sdof<snlmdof; ++sdof)
+    {
+      int row = slmdof[sdof];
+
+      // loop nodes on master segment
+      for (int master=0; master<mseg.Nnode(); ++master)
+      {
+        int mndof = mnodes[master]->Ndof();
+        const int* mdofs = mnodes[master]->Dof();
+        
+        // dofs on node master
+        for (int mdof=0; mdof<mndof; ++mdof)
+        {
+          int col = mdofs[mdof];
+          
+          // do not add a zero from (*Mdense)(slave,master)
+          double val = -(Mmod(slave*snlmdof+sdof,master*mndof+mdof));
+          if (abs(val)<1.e-9) continue;
+          
+          int err = M.SumIntoGlobalValues(row,1,&val,&col);
+          if (err)
+            err = M.InsertGlobalValues(row,1,&val,&col);
+          if (err)
+          {
+            cout << "***ERR*** MRTR::Interface::Assemble_2D_Mod:\n"
+                 << "***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n"
+                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+            exit(EXIT_FAILURE);
+          } // if (err)
+        } // for (int mdof=0; mdof<mndof; ++mdof)
+      } // for (int master=0; master<mseg.Nnode(); ++master)
+    } // for (int sdof=0; sdof<snlmdof; ++sdof)
+  } // for (int slave=0; slave<sseg.Nnode(); ++slave)
+  return true;
+}
 
 #endif // TRILINOS_PACKAGE

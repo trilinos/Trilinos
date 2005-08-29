@@ -75,20 +75,29 @@ public:
   // return the weight of a given gaussian point gp
   double Weight(int gp) { return weights_[gp]; }
 
+
   // integrate a 1D overlap between a slave and a master segment
   Epetra_SerialDenseMatrix* Integrate(MRTR::Segment& sseg, double sxia, double sxib,
                                       MRTR::Segment& mseg, double mxia, double mxib);
-
   // assemble the result -Mdense from the integration above into M
   bool Assemble(MRTR::Interface& inter, MRTR::Segment& sseg, MRTR::Segment& mseg, 
                 Epetra_CrsMatrix& M, Epetra_SerialDenseMatrix& Mdense);
 
+
   // integrate a 1D slave segment
   Epetra_SerialDenseMatrix* Integrate(MRTR::Segment& sseg, double sxia, double sxib);
-
   // assemble the result Ddense from the integration above into D
   bool Assemble(MRTR::Interface& inter, MRTR::Segment& sseg,  
                 Epetra_CrsMatrix& D, Epetra_SerialDenseMatrix& Ddense);
+
+
+  // integrate modification of M
+  Epetra_SerialDenseMatrix* Integrate_2D_Mmod(MRTR::Segment& sseg, double sxia, double sxib,
+                                              MRTR::Segment& mseg, double mxia, double mxib);
+  // assemble the result -Mdense from the integration above into M
+  bool Assemble_2D_Mod(MRTR::Interface& inter, MRTR::Segment& sseg, MRTR::Segment& mseg, 
+                Epetra_CrsMatrix& M, Epetra_SerialDenseMatrix& Mmod);
+
 
 private:  
   // don't want = operator

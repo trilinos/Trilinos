@@ -394,7 +394,7 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   
   // do the integration of the master side
   Epetra_SerialDenseMatrix* Mdense = 
-                          integrator.Integrate(sseg,sxia,sxib,mseg,mxia,mxib);
+                            integrator.Integrate(sseg,sxia,sxib,mseg,mxia,mxib);
   
   // do the integration of the slave side
   Epetra_SerialDenseMatrix* Ddense = integrator.Integrate(sseg,sxia,sxib);
@@ -405,6 +405,129 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
 
    // put results Ddense into Epetra_CrsMatrix D
   integrator.Assemble(*this,sseg,D,*Ddense);
+
+#if 1 // modification for curved interfaces from paper by B. Wohlmuth
+  // do this modification for
+  // linear elements
+  // vector valued PDE (ndof=2, e.g. elasticity)
+  // |delta n| != 0
+  if (sseg.Type() == MRTR::Segment::seg_Linear1D && 
+      mseg.Type() == MRTR::Segment::seg_Linear1D)
+  if (snodes[0]->Nlmdof() == snodes[1]->Nlmdof() &&
+      mnodes[0]->Ndof() == mnodes[1]->Ndof() &&
+      snodes[0]->Nlmdof() == mnodes[0]->Ndof())
+  {
+    Epetra_SerialDenseMatrix* Mmod = NULL;
+    
+    // get the normal at slave nodes
+    const double* n0 = snodes[0]->N();
+    const double* n1 = snodes[1]->N();
+
+    // build the tangential orthogonal to the normal
+    double t[2][2];
+    t[0][0] = -n0[1]; t[1][0] = -n1[1];
+    t[0][1] =  n0[0]; t[1][1] =  n1[0];
+    double n[2][2];
+    n[0][0] =  n0[0]; n[1][0] =  n1[0]; 
+    n[0][1] =  n0[1]; n[1][1] =  n1[1]; 
+    
+    // build delta values of normal and tangential
+    double dn[2]; double dt[2];
+    dn[0] = n0[0] - n1[0];  
+    dn[1] = n0[1] - n1[1];  
+    dt[0] = t[0][0] - t[1][0];
+    dt[1] = t[0][1] - t[1][1];
+    
+    // build norm of dn. If it's zero, don't do anything
+    bool doit = false;
+    double delta = dn[0]*dn[0]+dn[1]*dn[1];
+    if (abs(delta)>1.0e-9) doit = true;
+
+    if (doit)
+    {
+      // do the integration of the modification of the master side
+      // integral ( -0.5 * psi_12 * phi_k ) k=1,...,nnode_master 
+      Epetra_SerialDenseMatrix* Mmod_scalar =
+                        integrator.Integrate_2D_Mmod(sseg,sxia,sxib,mseg,mxia,mxib);
+
+      // create an Epetra_SerialDenseMatrix of dimension (nsnode x nlmdof , nmnode x nmdof)
+      int nsnode = sseg.Nnode();
+      int nsdof  = snodes[0]->Nlmdof();
+      int nmnode = mseg.Nnode();
+      int nmdof  = mnodes[0]->Ndof();
+      Mmod =  new Epetra_SerialDenseMatrix(nsnode*nsdof,nmnode*nmdof);
+
+      // add modification values to Mmod
+      for (int snode=0; snode<nsnode; ++snode)
+        for (int sdof=0; sdof<nsdof; ++sdof)
+        {
+          double nt[2];
+          nt[0] = n[snode][sdof] * dn[0] + t[snode][sdof] * dt[0];
+          nt[1] = n[snode][sdof] * dn[1] + t[snode][sdof] * dt[1];
+          for (int mnode=0; mnode<nmnode; ++mnode)
+            for (int mdof=0; mdof<nmdof; ++mdof)
+            {
+              double val = nt[mdof] * (*Mmod_scalar)(mnode,0);
+              (*Mmod)(snode*nsdof+sdof,mnode*nmdof+mdof) = val;
+              //cout << *Mmod;
+            }
+        } // for (int sdof=0; sdof<nsdof; ++sdof)
+      //cout << *Mmod;
+
+#if 0  // verification of the expression by expressions given in paper
+      Epetra_SerialDenseMatrix* Mmod2 = new Epetra_SerialDenseMatrix(nsnode*nsdof,nmnode*nmdof);
+      // n1 dot n2
+      double n1n2 = 0.0;
+      for (int i=0; i<2; ++i) n1n2 += n[0][i]*n[1][i];
+      // third row of n1 x n2
+      double n1xn2 = n[0][0]*n[1][1] - n[0][1]*n[1][0];
+      
+      // slave 0 sdof 0 master 0 mdof 0 
+      (*Mmod2)(0,0) = -(*Mmod_scalar)(0,0) * (1.0-n1n2);
+      // slave 0 sdof 0 master 0 mdof 1
+      (*Mmod2)(0,1) =  (*Mmod_scalar)(0,0) * n1xn2;
+      // slave 0 sdof 0 master 1 mdof 0
+      (*Mmod2)(0,2) = -(*Mmod_scalar)(1,0) * (1.0-n1n2);
+      // slave 0 sdof 0 master 1 mdof 1
+      (*Mmod2)(0,3) =  (*Mmod_scalar)(1,0) * n1xn2;
+      // slave 0 sdof 1 master 0 mdof 0 
+      (*Mmod2)(1,0) = -(*Mmod_scalar)(0,0) * n1xn2;
+      // slave 0 sdof 1 master 0 mdof 1
+      (*Mmod2)(1,1) = -(*Mmod_scalar)(0,0) * (1.0-n1n2);
+      // slave 0 sdof 1 master 1 mdof 0
+      (*Mmod2)(1,2) = -(*Mmod_scalar)(1,0) * n1xn2;
+      // slave 0 sdof 1 master 1 mdof 1
+      (*Mmod2)(1,3) = -(*Mmod_scalar)(1,0) * (1.0-n1n2);
+      // slave 1 sdof 0 master 0 mdof 0
+      (*Mmod2)(2,0) = -(*Mmod_scalar)(0,0) * (n1n2-1.0);
+      // slave 1 sdof 0 master 0 mdof 1
+      (*Mmod2)(2,1) =  (*Mmod_scalar)(0,0) * n1xn2;
+      // slave 1 sdof 0 master 1 mdof 0
+      (*Mmod2)(2,2) = -(*Mmod_scalar)(1,0) * (n1n2-1.0);
+      // slave 1 sdof 0 master 1 mdof 1
+      (*Mmod2)(2,3) =  (*Mmod_scalar)(1,0) * n1xn2;
+      // slave 1 sdof 1 master 0 mdof 0
+      (*Mmod2)(3,0) = -(*Mmod_scalar)(0,0) * n1xn2;
+      // slave 1 sdof 1 master 0 mdof 1
+      (*Mmod2)(3,1) = -(*Mmod_scalar)(0,0) * (n1n2-1.0);
+      // slave 1 sdof 1 master 1 mdof 0
+      (*Mmod2)(3,2) = -(*Mmod_scalar)(1,0) * n1xn2;
+      // slave 1 sdof 1 master 1 mdof 1
+      (*Mmod2)(3,3) = -(*Mmod_scalar)(1,0) * (n1n2-1.0);
+      cout << *Mmod2;
+      delete Mmod2; Mmod2 = NULL;
+#endif
+
+      //  assemble -Mmod into M
+      integrator.Assemble_2D_Mod(*this,sseg,mseg,M,*Mmod);
+      
+      // tidy up 
+      if (Mmod)        delete Mmod;        Mmod = NULL;
+      if (Mmod_scalar) delete Mmod_scalar; Mmod_scalar = NULL;
+    } // if (doit)
+  } // if a lot of stuff
+#endif
+
   
   // tidy up 
   if (Mdense) delete Mdense; Mdense = NULL;

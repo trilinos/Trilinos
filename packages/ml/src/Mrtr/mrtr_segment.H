@@ -130,7 +130,7 @@ public:
   // unpack function for communication
   virtual bool UnPack(int* pack) = 0;
   
-  // build an outward normal at a node adjacent to this
+  // build an outward normal
   virtual double* BuildNormal(double* xi) = 0;
   
   // integrate the are of this segment
