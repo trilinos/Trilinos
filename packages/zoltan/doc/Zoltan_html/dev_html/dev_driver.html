@@ -23,7 +23,7 @@
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_test_script.html">Next</a>&nbsp; |&nbsp; <a href="dev_refs.html">Previous</a></i></b></div>
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_view.html">Next</a>&nbsp; |&nbsp; <a href="dev_refs.html">Previous</a></i></b></div>
 
 
 <h2>
@@ -38,20 +38,20 @@ are included with the library
 distribution. The concept behind the drivers is to read in mesh or graph
 information from files, run Zoltan, and then output the new assignments
 for each processor to another file. The test drivers <i>zdrive</i> 
-and <i>zCPPdrive</i> reads ExodusII/NemesisI
+and <i>zCPPdrive</i> read ExodusII/NemesisI
 parallel FEM files and <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a>
 input files. Parallel NemesisI files can be created from ExodusII or Genesis
 file using the NemesisI utilities <i>nem_slice</i> and <i>nem_spread</i>.
 The Fortran90 program <i>zfdrive</i> reads only <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a> input files.
 <p>
 Source code for <i>zdrive</i> is in the <i>driver</i> and <i>ch</i> directories of
-the Zoltan distribution. Source code for <i>zfdrive</i> is in the <i>fdriver</i> directory.  The source code for <i>zCPPdrive</i>, which exercises the C++ Zoltan library,
-is also in <i>driver</i>, and uses some
-of the same C source files that  <i>zdrive</i> uses.
+the Zoltan distribution. Source code for <i>zfdrive</i> is in the <i>fdriver</i> directory.  The source code for <i>zCPPdrive</i> is also in <i>driver</i>, and uses some
+of the same C source files (in <i>driver</i> and <i>ch</i>) that <i>zdrive</i> uses.
 <p>
 To compile the test drivers,
 use the following commands:
 <ul>gmake [options] zdrive</ul>
+<ul>gmake [options] zCPPdrive</ul>
 <ul>gmake YES_FORTRAN=1 [options] zfdrive</ul>
 where the options are described below.
 <table WIDTH="100%" >
@@ -73,8 +73,8 @@ for <i>&lt;platform</i>&gt;, must be created in the
 The drivers
 are placed in the <i>Obj_&lt;platform&gt;</i> directory.
 <h3>
-<a NAME="running zdrive"></a>Running <i>zdrive</i> and <i>zfdrive</i></h3>
-The programs <i>zdrive</i> and <i>zfdrive</i> are run using an input command file. A fully commented example of
+<a NAME="running zdrive"></a>Running the Test Drivers</h3>
+The test drivers are run using an input command file. A fully commented example of
 this file and the possible options can be found in <i><a href="zdrive.inp">zdrive.inp</a></i>.
 The default name for the command file is <i>zdrive.inp</i>, and the drivers will
 look for this file in the execution directory if an alternate name is not
@@ -123,19 +123,21 @@ The input decomposition can also be written in this format to files
 "<i>file_name</i>.in.<i>p</i>.<i>n</i>";
 see "zdrive debug level" in <i><a href="zdrive.inp">zdrive.inp</a></i> for more details.
 <p>
-Decompositions for 2D problems can also be written to files that can be plotted 
+Decompositions for 2D problems can be written to files that can be plotted 
 by <a href="http://www.gnuplot.org/">gnuplot</a>.  See "gnuplot output" in  <i><a href="zdrive.inp">zdrive.inp</a></i>
-for more information.
+for more information.  Decompositions for 3D problems can be viewed after the
+test driver has finished by running the graphical tools <I>vtk_view</I> or
+<I>vtk_write</I> described <a href="dev_view.html">next</a>.
 <h3>
 <a NAME="adding algorithms"></a>Adding New Algorithms</h3>
 The driver has been set up in such a way that testing new algorithms that
 have been added to Zoltan is relatively simple. The method that is in the
 input file is passed directly to Zoltan. Thus, this string must be the
 same string that the parameter <a href="../ug_html/ug_alg.html#LB_METHOD"><i>LB_METHOD</i></a> is expecting.
-<p>
+<h3>
 <hr WIDTH="100%">
-<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_test_script.html">Next:&nbsp;
-Using the Test Script</a>&nbsp; |&nbsp; <a href="dev_refs.html">Previous:&nbsp;
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_view.html">Next:&nbsp;
+Visualizing Geometric Partitions</a>&nbsp; |&nbsp; <a href="dev_refs.html">Previous:&nbsp;
 References</a>]
 </body>
-</html>
+</html
