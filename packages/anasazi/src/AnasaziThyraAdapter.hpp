@@ -28,7 +28,7 @@
 
 /*! \file AnasaziThyraAdapter.hpp
   \brief Specializations of the Anasazi multi-vector and operator traits 
-  classes using Thyra base classes MultiVectorBase and LinearOpBase.
+  classes using Thyra base classes LinearOpBase and MultiVectorBase.
 */
 
 #ifndef ANASAZI_THYRA_ADAPTER_HPP
@@ -43,17 +43,18 @@
 
 namespace Anasazi {
   
-  ////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
   //
-  // Implementation of the Anasazi::MultiVecTraits for Epetra::MultiVector.
+  // Implementation of the Anasazi::MultiVecTraits for Thyra::MultiVectorBase
   //
-  ////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
 
   /*! \class MultiVecTraits< ScalarType, Thyra::MultiVectorBase<ScalarType> >
-    \brief Template specialization of Anasazi::MultiVecTraits class using the Epetra_MultiVector class.
+    \brief Template specialization of Anasazi::MultiVecTraits class using the
+    Thyra::MultiVectorBase class.
 
-    This interface will ensure that any Epetra_MultiVector will be accepted by the Anasazi
-    templated solvers.  
+    This interface will ensure that any implementation of MultiVectorBaseClass 
+    will be accepted by the Anasazi templated solvers.  
 
   */
 
@@ -304,20 +305,20 @@ namespace Anasazi {
     //@}
   };        
 
-  ////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////// 
   //
-  // Implementation of the Anasazi::OperatorTraits for Epetra::Operator.
+  // Implementation of the Anasazi::OperatorTraits for Thyra::LinearOpBase
   //
-  ////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////// 
 
   /*! \class OperatorTraits< ScalarType ,
                              Thyra::MultiVectorBase<ScalarType> ,  
                              Thyra::LinearOpBase<ScalarType> >
-    \brief Template specialization of Anasazi::OperatorTraits class using the Epetra_Operator virtual base class and 
-    Epetra_MultiVector class.
+    \brief Template specialization of Anasazi::OperatorTraits class using the
+    Thyra::LinearOpBase virtual base class and Thyra::MultiVectorBase class.
 
-    This interface will ensure that any Epetra_Operator and Epetra_MultiVector will be accepted by the Anasazi
-    templated solvers.
+    This interface will ensure that any LinearOpBase and MultiVectorBase
+    implementations will be accepted by the Anasazi templated solvers.
 
   */
 
@@ -329,8 +330,8 @@ namespace Anasazi {
     typedef Thyra::LinearOpBase<ScalarType>    TLOB;
   public:
     
-    /*! \brief This method takes the Epetra_MultiVector \c x and
-      applies the Epetra_Operator \c Op to it resulting in the Epetra_MultiVector \c y.
+    /*! \brief This method takes the MultiVectorBase \c x and
+      applies the LinearOpBase \c Op to it resulting in the MultiVectorBase \c y.
     */    
     static ReturnType Apply ( const TLOB& Op, const TMVB& x, TMVB& y )
     { 
@@ -343,4 +344,4 @@ namespace Anasazi {
 } // end of Anasazi namespace 
 
 #endif 
-// end of file ANASAZI_EPETRA_ADAPTER_HPP
+// end of file ANASAZI_THYRA_ADAPTER_HPP
