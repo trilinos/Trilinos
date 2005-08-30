@@ -173,36 +173,20 @@ namespace Anasazi {
 				 const Teuchos::SerialDenseMatrix<int,ScalarType>& B, 
 				 const ScalarType beta, TMVB& mv )
     {
-      typedef Thyra::VectorBase<ScalarType> TVB;
-      // create pointers to the columns of A
-      int i, j;
-      int m = A.domain()->dim();
-      int n = mv.domain()->dim();
-      std::vector<const TVB*> acols(m);
-      for (i=0; i<m; i++) {
-        // col() returns a RefCountPtr. Deref it and then grab the address.
-        // remember, col is indexed like [1,m] (not [0,m-1])
-        acols[i] = &(*A.col(i+1));
-      }
-
-      // create storage for the columns of B
-      // we must have separate storage because we have to have somewhere
-      // to store the product of alpha*B
-      //
-      // Note: we could just make a copy of B and then perform alpha*B. this
-      // would use more memory (probably not an issue), while providing
-      // negligible increases in efficiency. 
-      std::vector<ScalarType> btemp(m);
-
-      // now just perform the matrix multiplication, for each column of 
-      // the answer.
-      for (i=0; i<n; i++) {
-        for (j=0; j<m; j++) {
-          btemp[j] = alpha*B(j,i);
+      int m = B.numRows();
+      int n = B.numCols();
+      // create a MultiVectorBase object to represent the matrix
+      Teuchos::RefCountPtr< TMVB > mat = Thyra::createMembers( A.domain(), n );
+      // get an explicit view which allows us to access the data
+      Thyra::ExplicitMutableMultiVectorView<ScalarType> mat_view(*mat);
+      // copy the data
+      for (int j=0; j<n; j++) {
+        for (int i=0; i<m; i++) {
+          mat_view(i+1,j+1) = B(i,j);
         }
-        // remember, col is indexed like [1,n] (not [0,n-1])
-        Thyra::linear_combination(m,&(btemp[0]),&(acols[0]),beta,&(*mv.col(i+1)) );
       }
+      // perform the operation via A: mv <- alpha*A*mat + beta*mv
+      A.apply(Thyra::NONCONJ_ELE,*mat,&mv,alpha,beta);
     }
 
     /*! \brief Replace \c mv with \f$\alpha A + \beta B\f$.
@@ -239,8 +223,9 @@ namespace Anasazi {
         }
       }
     }
-    
-    /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Tmv[i]\f$.
+
+    /*! \brief Compute a vector \c b where the components are the individual dot-products of the 
+        \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Tmv[i]\f$.
      */
     static void MvDot( const TMVB& mv, const TMVB& A, std::vector<ScalarType>* b )
     { Thyra::dots(mv,A,&((*b)[0])); }
