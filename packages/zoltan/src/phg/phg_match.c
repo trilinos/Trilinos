@@ -595,14 +595,14 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 /* convenience macro to encapsulate resizing a buffer when necessary */
 #define MACRO_REALLOC(new_size, old_size, buffer)  {\
   old_size = new_size;\
-fprintf (stderr, "RTHRTH MESSAGE MESSAGE MESSAGE REALLOCATE\n");\
   if (!(buffer = (int*) ZOLTAN_REALLOC (buffer, old_size * sizeof(int)))) {\
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");\
     err = ZOLTAN_MEMERR;\
     goto fini;\
     }\
   } 
-      
+
+  
 /****************************************************************************/
 /* Because this calculation is done in two locations it has been converted to a
 ** subroutine to assure consistancy. Inline is not yet always available!
@@ -637,7 +637,7 @@ static int pmatching_ipm (ZZ *zz,
       *permute = NULL, /* reorder of candidates after global communicatio */
       *edgebuf = NULL; /* holds received candidates for processing */
   int nSend,   /* currently allocated size of the coresponding working buffers */
-      nDest, nSize, nRec, nIndex, nAux, nEdgebuf, nPermute; 
+      nDest, nSize, nRec, nIndex, nEdgebuf; 
   float bestsum;       /* holds current best inner product */
   float *sums = NULL,  /* holds inner product of one candidate for each vertex */
         *f = NULL;     /* used to stuff floating value into integer message */
@@ -687,41 +687,43 @@ static int pmatching_ipm (ZZ *zz,
     }
   }
                  
-  /* allocate fixed sized array storage */
-  nPermute = 1 + MAX (MAX(nTotal, max_nVtx), hgc->nProc_y);
+  /* allocate "complicated" fixed sized array storage */
   nIndex   = 1 + MAX (MAX(nTotal, max_nVtx), hgc->nProc_y);
-  nAux     = 1 + MAX (MAX(nTotal, max_nVtx), hgc->nProc_y);
   nDest    = 1 + MAX (MAX(hgc->nProc_x,hgc->nProc_y), MAX(nTotal,max_nVtx));
   nSize    = 1 + MAX (MAX(hgc->nProc_x,hgc->nProc_y), MAX(nTotal,max_nVtx));
 
-  /* nSend/nEdgebuf are used for candidate exchange.  Candidates are
-   * sent as <gno, #pins, pin_list>, so nSend/nEdgebuf must have
-   * storage for 2 ints + nPins for each candidate. */
-  nSend    = 2 * max_nVtx + MAX (1000, MAX(max_nPins, max_nVtx+2));
-  nEdgebuf = 2 * max_nVtx + MAX (1000, MAX(max_nPins, max_nVtx+2));
-  nRec     = MAX (1000, MAX(max_nPins, max_nVtx+2));
-    
+  /* These 3 buffers are REALLOC'd iff necessary, but this should be very rare */
+  nSend    = max_nPins;   /* nSend/nEdgebuf are used for candidate exchange    */
+  nEdgebuf = max_nPins;   /* candidates sent as <gno, #pins, pin_list>         */
+  nRec     = max_nPins;
+
   if (hg->nVtx)  
     if (!(cmatch = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
      || !(visit  = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
+     || !(aux    = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))     
      || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof (float))))  {
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
        err = ZOLTAN_MEMERR;
        goto fini;
     }
+    
+  if (!cFLAG)
+    if (!(edgebuf      = (int*)  ZOLTAN_MALLOC (nEdgebuf   * sizeof (int)))
+     || !(master_data  = (int*)  ZOLTAN_MALLOC (3 * nTotal * sizeof (int)))
+     || !(master_procs = (int*)  ZOLTAN_MALLOC (nTotal     * sizeof (int))))  {
+       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+       err = ZOLTAN_MEMERR;
+       goto fini;
+    }  
   
-  if (!(permute =    (int*)  ZOLTAN_MALLOC (nPermute     * sizeof (int)))
-   || !(edgebuf =    (int*)  ZOLTAN_MALLOC (nEdgebuf     * sizeof (int)))
-   || !(select  =    (int*)  ZOLTAN_MALLOC ((1+nCandidates)  * sizeof (int)))        
-   || !(send    =    (int*)  ZOLTAN_MALLOC (nSend        * sizeof (int)))
-   || !(dest    =    (int*)  ZOLTAN_MALLOC (nDest        * sizeof (int)))
-   || !(size    =    (int*)  ZOLTAN_MALLOC (nSize        * sizeof (int)))
-   || !(rec     =    (int*)  ZOLTAN_MALLOC (nRec         * sizeof (int)))
-   || !(index   =    (int*)  ZOLTAN_MALLOC (nIndex       * sizeof (int)))
-   || !(aux     =    (int*)  ZOLTAN_MALLOC (nAux         * sizeof (int)))
-   || !(rows    =    (int**) ZOLTAN_MALLOC ((hgc->nProc_y + 1) * sizeof (int*)))
-   || !(master_data =(int*)  ZOLTAN_MALLOC (3 * nTotal   * sizeof (int)))
-   || !(master_procs=(int*)  ZOLTAN_MALLOC (nTotal       * sizeof (int))))  {
+  if (!(permute = (int*)  ZOLTAN_MALLOC (nTotal             * sizeof (int)))
+   || !(select  = (int*)  ZOLTAN_MALLOC (nCandidates        * sizeof (int)))      
+   || !(send    = (int*)  ZOLTAN_MALLOC (nSend              * sizeof (int)))
+   || !(dest    = (int*)  ZOLTAN_MALLOC (nDest              * sizeof (int)))
+   || !(size    = (int*)  ZOLTAN_MALLOC (nSize              * sizeof (int)))
+   || !(rec     = (int*)  ZOLTAN_MALLOC (nRec               * sizeof (int)))
+   || !(index   = (int*)  ZOLTAN_MALLOC (nIndex             * sizeof (int)))
+   || !(rows    = (int**) ZOLTAN_MALLOC ((hgc->nProc_y + 1) * sizeof (int*))))  {
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
      err = ZOLTAN_MEMERR;
      goto fini;
@@ -1034,7 +1036,7 @@ static int pmatching_ipm (ZZ *zz,
          hgc->col_comm);
        
       /* Determine best vertex and best sum for each candidate */
-      if (hgc->myProc_y == 0)
+      if (hgc->myProc_y == 0)     /* do following only if I am the MASTER ROW */
         for (r = rec; r < rec + recsize;)  {
           gno   = *r++;                    /* candidate's GNO */
           count = *r++;                    /* count of nonzero pairs */
