@@ -50,7 +50,7 @@ from   Numeric  import *
 ##########################################################################
 
 class EpetraPyCommTestCase(unittest.TestCase):
-    "TestCase class for SerialComm communicator objects"
+    "TestCase class for PyComm communicator objects"
 
     def setUp(self):
         self.comm  = Epetra.PyComm()
@@ -95,6 +95,13 @@ class EpetraPyCommTestCase(unittest.TestCase):
         f = open(filename, "r")
         self.assertEqual(f.read(), self.output)
         f.close()
+
+#     def testSumAllInt(self):
+#         "Test Epetra.PyComm SumAll method for single int"
+#         n = self.comm.NumProc()
+#         myInt = self.comm.MyPID()
+#         sumInts = self.comm.SumAll(myInt)
+#         self.assertEquals(sumInts, n*(n-1)/2)
 
 ##########################################################################
 

@@ -420,9 +420,15 @@ PyObject* Epetra_Comm_InterfaceDouble(const Epetra_Comm& Comm,
 // Ignore directives
 %ignore operator<<(ostream &, const Epetra_Object &);// From python, use __str__
 %ignore Epetra_Object::Print(ostream &) const;
+%ignore Epetra_Comm::SumAll(int*,int*,int);
+%ignore Epetra_Comm::SumAll(double*,double*,int);
 %ignore Epetra_SerialComm::operator=(const Epetra_SerialComm &);
+%ignore Epetra_SerialComm::SumAll(int*,int*,int);
+%ignore Epetra_SerialComm::SumAll(double*,double*,int);
 #ifdef HAVE_MPI
 %ignore Epetra_MpiComm::operator=(const Epetra_MpiComm &);
+%ignore Epetra_MpiComm::SumAll(int*,int*,int);
+%ignore Epetra_MpiComm::SumAll(double*,double*,int);
 #endif
 %ignore Epetra_CompObject::operator=(const Epetra_CompObject &);
 %ignore Epetra_CompObject::UpdateFlops(int) const;   // Use long int version
@@ -1128,6 +1134,82 @@ fail:
     return(result);
   }
 }
+
+#ifndef HAVE_MPI
+%extend Epetra_SerialComm {
+#else
+%extend Epetra_MpiComm {
+#endif
+     //%extend Epetra_Comm {
+
+   int SumAll(int partialSums) {
+     int globalSums[1];
+     int sumResult = self->SumAll(&partialSums, &globalSums[0], 1);
+     if (sumResult != 0) {
+       PyErr_SetString(PyExc_RuntimeError, "SumAll error");
+       return NULL;
+     }
+     return globalSums[0];
+   }
+
+   double SumAll(double partialSums) {
+     double globalSums[1];
+     int    sumResult = self->SumAll(&partialSums, &globalSums[0], 1);
+     if (sumResult != 0) {
+       PyErr_SetString(PyExc_RuntimeError, "SumAll error");
+       return NULL;
+     }
+     return globalSums[0];
+   }
+
+   PyObject * SumAll(PyObject * sequence) {
+     int count     = 0;
+     int sumResult = 0;
+
+     // Create a numeric array from the input argument.  This is a robust way of
+     // converting python sequences into contiguous C data.
+     PyArrayObject * pyArray =
+       NumPyWrapper::contiguous_typed_array(sequence, PyArray_NOTYPE, 1, NULL);
+
+     switch(pyArray->descr->type_num) {
+
+     // A sequence of integers
+     case PyArray_INT: {
+       count             = pyArray->dimensions[0];
+       int * partialSums = (int *)pyArray->data;
+       int   dims[1]     = {count};
+       int   globalSums[count];
+       sumResult         = self->SumAll(partialSums, globalSums, count);
+       if (sumResult != 0) {
+	 PyErr_SetString(PyExc_RuntimeError, "SumAll error");
+	 return NULL;
+       }
+       Py_XDECREF(pyArray);  // We're done with the array from the input argument
+       return PyArray_FromDimsAndData(1, dims, PyArray_INT, (char *)globalSums);
+       break;
+     }
+     // A sequence of floats
+     case PyArray_DOUBLE: {
+       count                = pyArray->dimensions[0];
+       double * partialSums = (double *)pyArray->data;
+       int      dims[1]     = {count};
+       double   globalSums[count];
+       sumResult            = self->SumAll(partialSums, globalSums, count);
+       if (sumResult != 0) {
+	 PyErr_SetString(PyExc_RuntimeError, "SumAll error");
+	 return NULL;
+       }
+       Py_XDECREF(pyArray);  // We're done with the array from the input argument
+       return PyArray_FromDimsAndData(1, dims, PyArray_DOUBLE, (char *)globalSums);
+       break;
+     }
+     // Something else
+     default:
+       PyErr_SetString(PyExc_ValueError, "Expected a sequence of integers or floats");
+       return NULL;
+     }
+   }
+ }
 
 // MPI stuff
 PyObject* Init_Argv(PyObject *args);

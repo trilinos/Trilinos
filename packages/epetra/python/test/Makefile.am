@@ -68,3 +68,4 @@ test%: $(srcdir)/test%.py
 clean:
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
 	/bin/rm -f *.pyc
+	/bin/rm -f *.dat

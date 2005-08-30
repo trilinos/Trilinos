@@ -286,7 +286,7 @@ DEPFILES = $(shell ls $(DEPDIR)/*.Pi 2> /dev/null)
 
 # Clean target.  Put the generated dependency files in the list of files to
 # be removed with a "make clean"
-CLEANFILES = $(DEPDIR)/*.Pi setup.txt $(WRAPPERS) $(PROXIES)
+CLEANFILES = $(DEPDIR)/*.Pi $(WRAPPERS) $(PROXIES)
 
 # Define the SWIGCOMPILE macro
 SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
@@ -483,31 +483,18 @@ $(tempdir):
 	@echo "Creating directory $@"
 	mkdir -p $@
 
-# File setup.txt is a way to transfer make variables to the setup.py
-# python script
-setup.txt: $(srcdir)/Makefile.am
-	@echo "creating $@"
-	@echo "{"                                   >  $@
-	@echo "  'top_srcdir'  : '$(top_srcdir)',"  >> $@
-	@echo "  'srcdir'      : '$(srcdir)',"      >> $@
-	@echo "  'top_builddir': '$(top_builddir)',">> $@
-	@echo "  'CC'          : '$(CC)',"          >> $@
-	@echo "  'CXX'         : '$(CXX)',"         >> $@
-	@echo "  'LDFLAGS'     : '$(LDFLAGS)',"     >> $@
-	@echo "  'LAPACK_LIBS' : '$(LAPACK_LIBS)'," >> $@
-	@echo "  'BLAS_LIBS'   : '$(BLAS_LIBS)',"   >> $@
-	@echo "  'FLIBS'       : '$(FLIBS)',"       >> $@
-	@echo "  'LIBS'        : '$(LIBS)',"        >> $@
-	@echo "  'PYTHON'      : '$(PYTHON)'"       >> $@
-	@echo "}"                                   >> $@
+# The setup.py script needs to know the Trilinos home directory, so we
+# transfer it via an environment variable
+setup:
+	export TRILINOS_HOME_DIR=$(TRILINOS_HOME_DIR)
 
-build: $(WRAPPERS) setup.txt $(tempdir)
+build: $(WRAPPERS) setup $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
 	$(PYTHON) $(srcdir)/setup.py install --prefix=$(PYTHON_PREFIX)
 
-clean-local:
+clean-local: setup
 	$(PYTHON) $(srcdir)/setup.py clean
 	$(RM) -r ../../packages
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

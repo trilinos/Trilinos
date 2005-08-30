@@ -58,32 +58,19 @@ INTERFACES = Epetra.i
 WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
 PROXIES    = $(INTERFACES:.i=.py      )
 
-# File setup.txt is a way to transfer make variables to the setup.py
-# python script
-setup.txt: $(srcdir)/Makefile.am
-	@echo "creating $@"
-	@echo "{"                                   >  $@
-	@echo "  'top_srcdir'  : '$(top_srcdir)',"  >> $@
-	@echo "  'srcdir'      : '$(srcdir)',"      >> $@
-	@echo "  'top_builddir': '$(top_builddir)',">> $@
-	@echo "  'CC'          : '$(CC)',"          >> $@
-	@echo "  'CXX'         : '$(CXX)',"         >> $@
-	@echo "  'LDFLAGS'     : '$(LDFLAGS)',"     >> $@
-	@echo "  'LAPACK_LIBS' : '$(LAPACK_LIBS)'," >> $@
-	@echo "  'BLAS_LIBS'   : '$(BLAS_LIBS)',"   >> $@
-	@echo "  'FLIBS'       : '$(FLIBS)',"       >> $@
-	@echo "  'LIBS'        : '$(LIBS)',"        >> $@
-	@echo "  'PYTHON'      : '$(PYTHON)'"       >> $@
-	@echo "}"                                   >> $@
+# The setup.py script needs to know the Trilinos home directory, so we
+# transfer it via an environment variable
+setup:
+	export TRILINOS_HOME_DIR=$(TRILINOS_HOME_DIR)
 
-build: $(WRAPPERS) setup.txt $(tempdir)
+build: $(WRAPPERS) setup $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
 	$(PYTHON) $(srcdir)/setup.py install --prefix=$(PYTHON_PREFIX)
 
-clean-local:
+clean-local: setup
 	$(PYTHON) $(srcdir)/setup.py clean
 	$(RM) -r ../../packages
 
-CLEANFILES += setup.txt $(WRAPPERS) $(PROXIES)
+CLEANFILES += $(WRAPPERS) $(PROXIES)
