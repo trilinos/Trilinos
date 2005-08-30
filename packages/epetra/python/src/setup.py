@@ -38,7 +38,7 @@ import string
 import sys
 
 # Trilinos import
-TRILINOS_HOME_DIR = os.environ["TRILINOS_HOME_DIR"]
+TRILINOS_HOME_DIR = os.path.normpath(open("TRILINOS_HOME_DIR","r").read()[:-1])
 sys.path.insert(0,os.path.join(TRILINOS_HOME_DIR,"commonTools","buildTools"))
 
 # Build the makeVars dictionary

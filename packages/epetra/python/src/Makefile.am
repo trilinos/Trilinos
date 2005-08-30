@@ -26,8 +26,6 @@
 # ************************************************************************
 # @HEADER
 
-TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
-
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 @HAVE_MPI_TRUE@MPI_FLAG = -DHAVE_MPI
@@ -60,18 +58,13 @@ INTERFACES = Epetra.i
 WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
 PROXIES    = $(INTERFACES:.i=.py      )
 
-# The setup.py script needs to know the Trilinos home directory, so we
-# transfer it via an environment variable
-setup:
-	export TRILINOS_HOME_DIR=$(TRILINOS_HOME_DIR)
-
-build: $(WRAPPERS) setup $(tempdir)
+build: $(WRAPPERS) $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
 	$(PYTHON) $(srcdir)/setup.py install --prefix=$(PYTHON_PREFIX)
 
-clean-local: setup
+clean-local:
 	$(PYTHON) $(srcdir)/setup.py clean
 	$(RM) -r ../../packages
 

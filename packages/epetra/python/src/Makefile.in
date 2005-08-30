@@ -92,7 +92,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/__init__.py.in $(top_srcdir)/config/swig.am
+	$(srcdir)/TRILINOS_HOME_DIR.in $(srcdir)/__init__.py.in \
+	$(top_srcdir)/config/swig.am
 subdir = python/src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -130,7 +131,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Epetra_config.h
-CONFIG_CLEAN_FILES = __init__.py
+CONFIG_CLEAN_FILES = TRILINOS_HOME_DIR __init__.py
 SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -278,7 +279,6 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 
 # Dependencies.  Obtain the list of dependencies by executing ls.  This could
 # be empty, so when we include the dependency files, we also include 'dummy',
@@ -347,6 +347,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+TRILINOS_HOME_DIR: $(top_builddir)/config.status $(srcdir)/TRILINOS_HOME_DIR.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 __init__.py: $(top_builddir)/config.status $(srcdir)/__init__.py.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 uninstall-info-am:
@@ -484,18 +486,13 @@ $(tempdir):
 	@echo "Creating directory $@"
 	mkdir -p $@
 
-# The setup.py script needs to know the Trilinos home directory, so we
-# transfer it via an environment variable
-setup:
-	export TRILINOS_HOME_DIR=$(TRILINOS_HOME_DIR)
-
-build: $(WRAPPERS) setup $(tempdir)
+build: $(WRAPPERS) $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
 	$(PYTHON) $(srcdir)/setup.py install --prefix=$(PYTHON_PREFIX)
 
-clean-local: setup
+clean-local:
 	$(PYTHON) $(srcdir)/setup.py clean
 	$(RM) -r ../../packages
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
