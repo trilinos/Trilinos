@@ -67,7 +67,9 @@
 <li> Build options will change.  please run "configure --help" to see the new options.  
 </ul>
 
-  8/29/2005:  Many of the internals of %LOCA are being rewritten to more fully support multi-parameter continuation, constraint tracking, higher-order predictors and advanced bifurcation algorithms.  This process is mostly, but not fully complete.  In the future, this new framework will completely replace the old framework, but for now both are available.  Because the new framework is under development, most of the documentation corresponds to the old framework and therefore it is recommended that new users write their interface to the old framework.  For a brief description of the new framework, see the \ref new_loca_framework page.
+8/29/2005:  There currently is a portability issue with %LOCA to the Solaris platform using the Sun Forte 7 compilers.  %LOCA builds on this platform but does not run correctly.  It appears the problem is compiler related as the virtual table for some %LOCA objects is not setup correctly.  All of the %LOCA examples and any %LOCA tests involving continuation runs fail with a segmentation fault.  It is not known whether %LOCA runs correctly when built with version 10 of the Sun compilers.  See bugzilla bug <a href="http://software.sandia.gov/bugzilla/show_bug.cgi?id=1238"> 1238 </a> for more information on this issue.
+
+8/29/2005:  Many of the internals of %LOCA are being rewritten to more fully support multi-parameter continuation, constraint tracking, higher-order predictors and advanced bifurcation algorithms.  This process is mostly, but not fully complete.  In the future, this new framework will completely replace the old framework, but for now both are available.  Because the new framework is under development, most of the documentation corresponds to the old framework and therefore it is recommended that new users write their interface to the old framework.  For a brief description of the new framework, see the \ref new_loca_framework page.
 
   \section user_information User Information
 
@@ -589,6 +591,12 @@ For the most part, ref-count pointers are only used in the new framework.
 <li> Libtool support has been removed from %LOCA due to portability issues.
 <li> Python support is temporarily disabled in this release due to a major
 refactor of the build system for python wrappers in Trilinos.
+</ul>
+
+%LOCA portability notes:
+<ul>
+<li>
+There currently is a portability issue with %LOCA to the Solaris platform using the Sun Forte 7 compilers.  %LOCA builds on this platform but does not run correctly.  It appears the problem is compiler related as the virtual table for some %LOCA objects is not setup correctly.  All of the %LOCA examples and any %LOCA tests involving continuation runs fail with a segmentation fault.  It is not known whether %LOCA runs correctly when built with version 10 of the Sun compilers.  See bugzilla bug <a href="http://software.sandia.gov/bugzilla/show_bug.cgi?id=1238"> 1238 </a> for more information on this issue.
 </ul>
 
 
