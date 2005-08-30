@@ -44,9 +44,10 @@ sys.path.insert(0,os.path.join(TRILINOS_HOME_DIR,"commonTools","buildTools"))
 # Build the makeVars dictionary
 makeVars = { }
 from MakefileVariables import *
-makeVars.update(processFile(os.path.join("Makefile")))
+makeVars.update(processFile(os.path.join("..","..","Makefile")))
 makeVars.update(processFile(os.path.join("..","..","Makefile.export")))
 makeVars.update(processFile(os.path.join("..","..","Makefile.export.epetra")))
+makeVars.update(processFile(os.path.join("Makefile")))
 
 # Certain directory paths are needed by setup.py.  top_srcdir is the path for the
 # epetra package directory, and srcdir is the path for the python source directory

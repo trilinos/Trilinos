@@ -26,6 +26,8 @@
 # ************************************************************************
 # @HEADER
 
+TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
+
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 @HAVE_MPI_TRUE@MPI_FLAG = -DHAVE_MPI
