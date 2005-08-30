@@ -203,6 +203,11 @@ AC_CXX_NEW_FOR_SCOPING
 AC_CXX_STD_SPRINTF
 
 # ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
+
+# ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
@@ -366,6 +371,7 @@ AC_SUBST(ac_aux_dir)
 
 AC_CONFIG_FILES([
 		Makefile 
+		Makefile.export.pytrilinos
 		example/Makefile
 		src/Makefile
 		test/Makefile
@@ -377,10 +383,3 @@ AC_OUTPUT()
 echo "--------------------------------------------"
 echo "Finished Running PyTrilinos Configure Script"
 echo "--------------------------------------------"
-
-# Removed AC_CONFIG_FILES:
-#
-#		src/__init__.py
-#		src/.deps/dummy
-#		src/.deps/NOX/dummy
-#		src/NOX/__init__.py
