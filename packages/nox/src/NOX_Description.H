@@ -65,7 +65,9 @@
 <li> Non-optional dependence of NOX on another Trilinos package called Teuchos. Teuchos is a very light-weight and portable utility library that supplies reference counted smart pointers and a parameter list among other things.  As a result of this dependency, we ask that from now on, you download and build nox Trilinos instead of just building the nox library separately.  This requirement is further needed since the new testing tools sit at the top Trilinos level.  As we switch to the new tools, users will need Trilinos scripts to run the nox tests.
 <li> Multivector support will be not be an option, but will be a permanent part of the library.
 <li> Build options will change.  please run "configure --help" to see the new options.  
-<\ul>
+</ul>
+
+  8/29/2005:  Many of the internals of %LOCA are being rewritten to more fully support multi-parameter continuation, constraint tracking, higher-order predictors and advanced bifurcation algorithms.  This process is mostly, but not fully complete.  In the future, this new framework will completely replace the old framework, but for now both are available.  Because the new framework is under development, most of the documentation corresponds to the old framework and therefore it is recommended that new users write their interface to the old framework.  For a brief description of the new framework, see the \ref new_loca_framework page.
 
   \section user_information User Information
 
@@ -541,22 +543,52 @@ The following pages are relevant to developers.
 
 /*! \page nox_release_information NOX and LOCA Release Information
 
-NOX/LOCA 4.0 is being released as part of Trilinos 5.0 on March 1st 2005.
+NOX/LOCA 4.0 is being released as part of Trilinos 6.0 on September 1st 2005.
 
-What's new in this release:
+NOX release notes:
 <ul> 
 <li> A new Tensor based solver that is independent of the linear solver is now implemented (in the prerelease section).
 <li> Inexact Trust Region Techniques are fully supported (also in the prerelease section).
 <li> Improved support for Epetra objects - The NOX::EpetraNew::Group should be used in place of the NOX::Epetra::Group.  In the future we will be phasing out the NOX::Epetra::Group and replace it with NOX::EpetraNew::Group.
 <li> A multi-physics technique for code coupling has been demonstrated in the test/epetra/Multiphysics directory.  This will be expanded to a generic capability in the next year.
-<li> The %LOCA library can now be built as a shared library using libtool.  See \ref nox_configuration_options for how to do this.  Known issues with this are:
-   <ul>
-   <li> Extra link libraries passed using the --with-libs configure flag should use the "-Lpath -lname" format instead of "path/libname.a"
-   <li> Building %LOCA as a static library on DEC architectures using template repositories does not work.  On these architectures, only build %LOCA as a shared library using the --enable-shared and --disable-static configure flags, or turn off template repositories using the "-tweak" C++ compiler flag.  Note that if the later method is chosen, a large number of warnings will be issued each time an executable is linked against %LOCA.
-   <li> When building shared libraries on SGI systems in 64 bit, one must supply the "-64" C++ compiler flag to not only the compiler and linker through CXXFLAGS and LDFLAGS, but also to libtool using LIBTOOL_CCLINKER_FLAGS or --with-libtool-cclinker-flags.  Also one must turn off template repositories and the template prelinker using the flags "-ptused -no_prelink -no_auto_include".
-   <li> When building shared libraries on Solaris systems, one should add "-xlic_lib=sunperf" to CFLAGS, "-library=sunperf" to CXXFLAGS and LIBTOOL_CCLINKER_FLAGS, and make sure neither of these flags appear in LDFLAGS.
-  </ul>
-<li> A basic, but functional python interface to %NOX and %LOCA now exists.  See \ref nox_configuration_options for how to enable this.  A test exhibiting this functionality can be found in the nox/test/lapack/LOCA_python directory.
+</ul>
+
+%LOCA release notes:
+<ul>
+<li> A constraint tracking feature has been added to %LOCA where the user can
+specify additional algebraic constraints that must be satisfied along with
+the residual.  Examples include boundary conditions, phase conditions in
+periodic orbits, etc.  The resulting Newton system can be efficiently solved
+using the QR method discussed below.  This capability is only available using
+the LOCA::NewStepper also discussed below.
+<li> A QR method for solving augmented systems of equations in parallel has
+been added, and is an extension of the Householder method already available
+to systems with more than one augmented row/column.  This method allows
+bordered systems of equations to be solved in roughly the same time as
+original system and is well-conditioned even when the original system is
+nearly singular.  This capability is only available using the LOCA::NewStepper 
+discussed below.
+<li> Many of the internals of %LOCA have been rewritten to more fully support
+multi-parameter continuation, constraint tracking, higher-order predictors
+and advanced bifurcation algorithms.  This process is mostly, but not fully
+complete.  This functionality is available by choosing the LOCA::NewStepper
+for continuation instead of the original LOCA::Stepper.  However pitchfork
+and Hopf continuation are currently not available in the new framework.
+Documentation for this new framework can be found on the 
+\ref new_loca_framework page.
+<li> LOCA's interface to eigensolvers has changed slightly and now uses
+a strategy interface approach instead of relying on the group to provide
+computeEigenvalues() and saveEigenvalues() methods.  This provides a more
+natural decoupling of the parallel linear algebra data structures (i.e., the
+group) from the eigensolver method/package (eigensolver strategy object).
+The use of strategy interfaces instead of group methods is a major theme in
+the new %LOCA framework, and is discussed more fully on the new framework page.
+<li> Teuchos::RefCountPtr support has been added to improve software quality.
+For the most part, ref-count pointers are only used in the new framework.
+<li> Many regression tests have been added to improve software quality.
+<li> Libtool support has been removed from %LOCA due to portability issues.
+<li> Python support is temporarily disabled in this release due to a major
+refactor of the build system for python wrappers in Trilinos.
 </ul>
 
 
@@ -651,25 +683,6 @@ Here is a detailed list and explanation of the %NOX configuration options.
    <li> \c FFLAGS  
       <ul>
          <li> Fortran 77 compiler flags <em>(used only in configure tests)</em>
-      </ul>
-   <li> \c LIBTOOL_COMPILER_FLAGS
-      <ul>
-         <li> Specify additional compiler flags specifically to libtool.  Use 
-              this when libtool removes a needed compiler flag passed 
-              through the normal mechanism from the compile line.
-      </ul>
-   <li> \c LIBTOOL_LINKER_FLAGS
-      <ul>
-         <li> Specify additional linker flags specifically to libtool.  Use 
-              this when libtool removes a needed linker flag passed 
-              through the normal mechanism from the link line.
-      </ul>
-   <li> \c LIBTOOL_CCLINKER_FLAGS
-      <ul>
-         <li> Specify additional C++ linker flags specifically to libtool.  
-              Use 
-              this when libtool removes a needed C++ linker flag passed 
-              through the normal mechanism from the C++ link line.
       </ul>
 </ul>
 
@@ -791,17 +804,12 @@ library and related examples do depend on MPI.
       <li> %LOCA has a generic interface to Anasazi allowing it to compute eigenvalues/eigenvectors for any group/vector implementation.
       <li> Trilinos must be configured with \c --enable-anasazi to use this option.
     </ul>
-  <li> \c --with-loca-mf
+  <li> \c --with-loca-mf[=PATH]
     <ul>
       <li> Enable Multifario support in %LOCA.
-      <li> <a href="http://www.coin-or.org/multifario/"> Multifario </a> (MF) is a multi-parameter continuation library written by Mike Henderson at IBM.  Including this option allows %LOCA to use MF for multi-parameter continuation.
-      <li> Use the flags \c --with-mf-incdir and \c --with-mf-libdir to point to the MF include and lib directories.  A version of MF that is known to work with %LOCA is available in the Trilinos3PL.
-    </ul>
-  <li> \c --enable-shared, \c --disable-shared, \c --enable-static, \c --disable-static
-    <ul> 
-      <li> %LOCA can be compiled as both a static and a shared library, and these flags determine which version of the library is built.  The default is to build only the static library.
-      <li> If python support is enabled (see below), %LOCA is automatically built as both a static and shared library since the python support requires %LOCA to be built as a shared library for correct operation.
-      <li> Note that if %LOCA is built as both a shared and static library, installed with "make install", and then linked against an executable, most linkers will automaticaly choose the shared version of the library to link to.  In this case you should use libtool to link the executable or have the path to \c loca.so in your \c LD_LIBRARY_PATH environment variable.
+      <li> <a href="http://www.coin-or.org/multifario/"> Multifario </a> (MF) is a multi-parameter continuation library written by Mike Henderson at IBM.  Including this option allows %LOCA to use MF for multi-parameter continuation.  Optinally, the path to the top-level Multifario directory can be specified as an argument to this option.  The path to the Multifario include directory will then by PATH/include and the path to the Multifario library directory will be PATH/lib.
+      <li> The flags \c --with-mf-incdir and \c --with-mf-libdir are also available to point to the MF include and lib directories.  A version of MF that is known to work with %LOCA is available in the Trilinos3PL.
+      <li> The multifario libraries can be specified with --with-mf-libs.  The default is "-lMF -lExpCmp".
     </ul>
 </ul>
 
@@ -812,13 +820,13 @@ library and related examples do depend on MPI.
   <ul>
     <li> Enable python interface wrappers in %NOX.  Default is to not build the python support.
     <li> If %LOCA is enabled, \c --enable-python also enables the %LOCA-python wrappers, and if %LAPACK or %Epetra support is enabled, those python interface wrappers are enabled as well.
-    <li> The python interface includes wrappers generated by <a href="http://www.swig.org/"> SWIG </a> for creating and manipulating %NOX/LOCA objects in python.   SWIG is not needed to build these wrappers.  These wrappers are part of a larger project called PyTrilinos.
+    <li> The python interface wrappers are generated by <a href="http://www.swig.org/"> SWIG </a>.
     <li> The wrappers are known to work with python 2.3 and 2.4.  For the python-Epetra support, the Numeric module is required, and version 23.3 is known to work.
   </ul>
 <li> \c --with-swig
   <ul>
     <li> Enable creation of SWIG wrapper files using SWIG.  
-    <li> SWIG is not required to build the python interface files, but is required if the %NOX/LOCA source code is modified.  
+    <li> SWIG is now required to build the python interface files.
     <li> The path to the SWIG binary can be passed as an optional argument to this flag.
     <li> Currently SWIG version >= 1.3.23 is required.
   </ul>

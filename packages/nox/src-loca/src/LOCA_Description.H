@@ -876,3 +876,23 @@ ylabel('\alpha    ','Rotation',0);
 title('Locus of Turning Points');
 \endcode
 */
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page new_loca_framework New LOCA Framework
+
+Most of %LOCA is being rewritten to more fully support multi-parameter continuation, constraint tracking, higher-order predictors and advanced bifurcation algorithms.  The new framework is being developed along side the old framework, so both are currently available.  However the new framework is not complete, but is expected to be so for Trilinos Release 7.0 sometime in 2006.  Once the new framework is complete, the old one will be removed.  However the interfaces for both the new and old frameworks are still very similar, so the conversion between them is fairly simple.  There are three major components to this refactoring:
+<ul>
+<li> Use of Teuchos::RefCountPtr objects instead of raw pointers or references for better C++ memory management.
+<li> Use of strategy interfaces and factories to choose between alternative numerical algorithms.
+<li> Use of multi-vectors throughout %LOCA to consolidate single and multiple parameter continuation code and to more fully support block algorithms.
+</ul>
+
+In the new framework, Teuchos::RefCountPtr's are used whenever objects are passed into an object method and the supplied arguments have a persisting relationship with that object beyond the lifetime of the function call.  This greatly simplifies memory management since the owning object does not need to worry about deleting any of the supplied arguments.  For the most part this is transparent to the user since the only place where users must use ref-count pointers is when passing the group, parameter list, and status test objects to the stepper constructor (or when implementing a strategy interface as discussed below).
+
+In the old framework, whenever a numerical continuation or bifurcation algorithm needed the result of a computation that was problem or data structure dependent, a group method was created for that computation which the user could implement in their own concrete group.  The problem with this however is it ties the implementation of this method to the group and makes it difficult for the group to support multiple ways of implementing the computation.  In the new framework, a strategy interface approach is taken instead where an abstract interface class is written the encapsulates the interface for the computation (strategy interface) and strategy objects are written that implement that interface for different strategies.  Then a factory is written that instantiates strategy objects based on a name provided in a parameter list (see for example LOCA::Eigensolver::AbstractStrategy and LOCA::Eigensolver::Factory or LOCA::BorderedSystem::AbstractStrategy and LOCA::BorderedSystem::Factory).  This allows the same group to use multiple strategies for a given computation and separates the interface to parallel linear algebra data structures in the group from the often many ways data structure dependent computations can be written in the strategy objects.  (In many ways this is similar to the Manager concept in %NOX, except it allows users to easily provide their own strategy implementations by implementing their own factory, see LOCA::Factory and LOCA::Abstract::Factory).
+
+Finally, multi-vectors are used where appropriate in the new framework to consolidate single and multi-parameter continuation code by viewing single parameter continuation as a special case of multi-parameter continuation.  This allows all of the same code to be used for both types of continuation, greatly simplifying code maintenance and development.  It also gives %LOCA a natural and efficient interface to block solvers such as Anasazi and Belos.
+*/
