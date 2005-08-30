@@ -31,60 +31,46 @@
 # System imports
 from   distutils.core import *
 from   distutils      import sysconfig
-import commands
 import os
-import re
-import string
 import sys
 
 # Trilinos import
-TRILINOS_HOME_DIR = os.path.normpath(open("TRILINOS_HOME_DIR","r").read()[:-1])
+TRILINOS_HOME_DIR = os.path.normpath(open("TRILINOS_HOME_DIR").read()[:-1])
 sys.path.insert(0,os.path.join(TRILINOS_HOME_DIR,"commonTools","buildTools"))
-
-# Build the makeVars dictionary
-makeVars = { }
 from MakefileVariables import *
-makeVars.update(processFile(os.path.join("..","..","Makefile")))
-makeVars.update(processFile(os.path.join("..","..","Makefile.export")))
+
+# Build the makeVars dictionary by processing relevant Makefiles
+makeVars = { }
 makeVars.update(processFile(os.path.join("..","..","Makefile.export.epetra")))
+makeVars.update(processFile(os.path.join("..","..","..","PyTrilinos",
+                                         "Makefile.export.pytrilinos")))
 makeVars.update(processFile(os.path.join("Makefile")))
 
-# Certain directory paths are needed by setup.py.  top_srcdir is the path for the
-# epetra package directory, and srcdir is the path for the python source directory
-top_srcdir   = os.path.normpath(makeVars["top_srcdir"  ])
-srcdir       = os.path.normpath(makeVars["srcdir"      ])
-top_builddir = os.path.normpath(makeVars["top_builddir"])
+# Import the variable names and values into the global namespace.  This is
+# crucual: every variable name/value pair obtained by processing the specified
+# Makefiles above will become actual python variables in the global namespace.
+globals().update(makeVars)
 
-# Obtain the version from the package version function, using regular
-# expressions.  This assumes that the function returns a string constant of the
-# form "PackageName Version xxx - mm/dd/yyyy" and extracts the xxx (which does
-# not have to be three characters long).
-version       = "??"
-versionRE     = re.compile(r"return.*Version\s+(.*)\s+-\s+\d")
-versionHeader = os.path.join(top_srcdir,"src","Epetra_Version.h")
+# Obtain the package version number string
 try:
-    for line in open(versionHeader).readlines():
-        match = versionRE.search(line)
-        if match:
-            version = match.group(1)
-except IOError:
-    pass
+    version = makeVars["PACKAGE_VERSION"]
+except KeyError:
+    version = makeVars.get("VERSION","??")
 
-# Define the PyTrilinos include path, library directory and library name
-pytrilinosInc    = os.path.normpath(os.path.join(top_srcdir,   "..", "PyTrilinos", "src"))
-pytrilinosLibDir = os.path.normpath(os.path.join(top_builddir, "..", "PyTrilinos", "src"))
-pytrilinosLib    = "pytrilinos"
+# Initialize arguments that will be needed by the Extension class
+include_dirs    = [srcdir]
+library_dirs    = [      ]
+libraries       = [      ]
+extra_link_args = [      ]
 
-# Start defining arguments that will be needed by the Extension class
-include_dirs    = [pytrilinosInc, srcdir ]
-library_dirs    = [pytrilinosLibDir      ]
-libraries       = [pytrilinosLib         ]
-extra_link_args = [                      ]
-
-# Get the relevant Makefile variable values, split them into lists of strings,
-# and add them together to to obtain a big list of options
-options = makeVars["EPETRA_INCLUDES"].split() + \
-          makeVars["EPETRA_LIBS"    ].split()
+# Get the relevant Makefile export variable values, split them into lists of
+# strings, add them together to obtain a big list of option strings, and then
+# remove any duplicate entries
+options = EPETRA_INCLUDES.split()     + \
+          EPETRA_LIBS.split()         + \
+          PYTRILINOS_INCLUDES.split() + \
+          PYTRILINOS_LIBS.split()
+uniquifyList(options)
 
 # Distribute the individual options to the appropriate Extension class arguments
 for option in options:
@@ -97,32 +83,18 @@ for option in options:
     else:
         extra_link_args.append(option)
 
-# The library "stdc++" is added to the libraries argument list for a case where
-# we know it needs it.  Has this been fixed by forcing the compiler to be CXX?
-#sysName = os.uname()[0]
-#if sysName == "Linux":
-#    libraries.append("stdc++")
-
-# Remove duplicate entries from the argument lists
-uniquifyList(include_dirs   )
-uniquifyList(library_dirs   )
-uniquifyList(libraries      )
-uniquifyList(extra_link_args)
-
-# Define the strings that refer to the required source files.
-wrapEpetra         = "Epetra_wrap.cpp"
+# Define the strings that refer to the required local source files
+epetraWrap         = "Epetra_wrap.cpp"
 epetraNumPyVector  = os.path.join(srcdir,"Epetra_NumPyVector.cpp" )
 
 # Compiler and linker
-CXX = makeVars["CXX"]
 sysconfig.get_config_vars()
-config_vars = sysconfig._config_vars;
-config_vars["CC" ] = CXX
-config_vars["CXX"] = CXX
+sysconfig._config_vars["CC" ] = CXX
+sysconfig._config_vars["CXX"] = CXX
 
 # _Epetra extension module
 _Epetra = Extension("PyTrilinos._Epetra",
-                    [wrapEpetra, epetraNumPyVector],
+                    [epetraWrap, epetraNumPyVector],
                     define_macros   = [("HAVE_CONFIG_H", "1")],
                     include_dirs    = include_dirs,
                     library_dirs    = library_dirs,
