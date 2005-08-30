@@ -27,7 +27,7 @@ Available functions:
     specialNormPath(string) -> string (normalize a path, even if it starts with
                                        -I, -L, etc.)
     uniqiufyList([string1, string2, ...]) -> None (remove duplicate strings from
-                                                   the list)
+                                                  the list)
     uniquifyString(string) -> string (remove duplicate substrings from the
                                       string)
     uniquifyDict(dict) -> None (Uniquify each value of the given dictionary)
@@ -50,11 +50,11 @@ import sys
 
 # Define regular expressions for Makefile assignments, blank line, continuation
 # lines, include statements and variable references
-assignRE   = re.compile(r"([^=]+)=([^=]+)"  )
-blankRE    = re.compile(r"^\s*$"            )
-continueRE = re.compile(r"(.*)\\\s*$"       )
-includeRE  = re.compile(r"\s*include\s+(.+)")
-makeVarRE  = re.compile(r"\$\(([^)]+)\)"    )
+assignRE   = re.compile(r"^\s*([A-Za-z_][A-Za-z_0-9]*)\s*=\s*(.*)$")
+blankRE    = re.compile(r"^\s*$"                                   )
+continueRE = re.compile(r"(.*)\\\s*$"                              )
+includeRE  = re.compile(r"\s*include\s+(.+)"                       )
+makeVarRE  = re.compile(r"\$\(([^)]+)\)"                           )
 
 #############################################################################
 
