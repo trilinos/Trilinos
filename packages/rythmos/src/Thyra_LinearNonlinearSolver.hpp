@@ -48,7 +48,7 @@ public:
   SolveStatus<Scalar> solve(
     const ModelEvaluator<Scalar>          &model
     ,VectorBase<Scalar>                   *x
-    ,const SolveCriteria<Scalar>          *solveCriteria = NULL
+    ,const SolveCriteria<Scalar>          *solveCriteria
     ) const;
 
   //@}

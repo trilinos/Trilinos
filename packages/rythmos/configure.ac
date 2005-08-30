@@ -231,6 +231,11 @@ AC_CXX_STD_SPRINTF
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  rythmos, amesos, RYTHMOS_AMESOS, ENABLE_RYTHMOS_AMESOS, yes,
+  [Build the Amesos operator/vector adapater support in Rythmos.],
+  [Build the Amesos operator/vector adapater support in Rythmos.  Can be overridden with --disable-rythmos-amesos.])
+
 # ------------------------------------------------------------------------
 # #np# newp_swahili is an example of a package feature which requires both
 # a cpp #define command and one or more source or header files  - ie 
