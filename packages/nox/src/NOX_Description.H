@@ -545,17 +545,15 @@ The following pages are relevant to developers.
 
 /*! \page nox_release_information NOX and LOCA Release Information
 
-NOX/LOCA 4.0 is being released as part of Trilinos 6.0 on September 1st 2005.
+NOX/LOCA 4.1 is being released as part of Trilinos 6.0 on September 1st 2005.
 
-NOX release notes:
-<ul> 
-<li> A new Tensor based solver that is independent of the linear solver is now implemented (in the prerelease section).
-<li> Inexact Trust Region Techniques are fully supported (also in the prerelease section).
-<li> Improved support for Epetra objects - The NOX::EpetraNew::Group should be used in place of the NOX::Epetra::Group.  In the future we will be phasing out the NOX::Epetra::Group and replace it with NOX::EpetraNew::Group.
-<li> A multi-physics technique for code coupling has been demonstrated in the test/epetra/Multiphysics directory.  This will be expanded to a generic capability in the next year.
+General release 4.1 notes:
+<ul>
+<li> NOX and LOCA now use the new export makefile system.  When compiled and installed into the prefix directory, two new makefiles will appear: Makefile.export.nox and Makefile.export.nox.macros.  These files contain all variables needed my a simple Makefile to build and link against nox.  All major packages in Trilinos now support this feature.
+<li> NOX and LOCA's examples now work in a consistent manner with the tests.  The examples and tests can be enabled or disabled with the flags --enable-nox-tests and --enable-nox-examples.  The specific examples that will be compiled depend on which support packages are enabled (lapack, epetra, petsc, belos, tsf). You no longer need to specify specific example support like --enable-nox-epetra-examples.
 </ul>
 
-%LOCA release notes:
+%LOCA release 4.1 notes:
 <ul>
 <li> A constraint tracking feature has been added to %LOCA where the user can
 specify additional algebraic constraints that must be satisfied along with
@@ -599,6 +597,13 @@ refactor of the build system for python wrappers in Trilinos.
 There currently is a portability issue with %LOCA to the Solaris platform using the Sun Forte 7 compilers.  %LOCA builds on this platform but does not run correctly.  It appears the problem is compiler related as the virtual table for some %LOCA objects is not setup correctly.  All of the %LOCA examples and any %LOCA tests involving continuation runs fail with a segmentation fault.  It is not known whether %LOCA runs correctly when built with version 10 of the Sun compilers.  See bugzilla bug <a href="http://software.sandia.gov/bugzilla/show_bug.cgi?id=1238"> 1238 </a> for more information on this issue.
 </ul>
 
+NOX release 4.0 notes:
+<ul> 
+<li> A new Tensor based solver that is independent of the linear solver is now implemented (in the prerelease section).
+<li> Inexact Trust Region Techniques are fully supported (also in the prerelease section).
+<li> Improved support for Epetra objects - The NOX::EpetraNew::Group should be used in place of the NOX::Epetra::Group.  In the future we will be phasing out the NOX::Epetra::Group and replace it with NOX::EpetraNew::Group.
+<li> A multi-physics technique for code coupling has been demonstrated in the test/epetra/Multiphysics directory.  This will be expanded to a generic capability in the next year.
+</ul>
 
 */
 
