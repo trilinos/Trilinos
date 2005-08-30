@@ -66,6 +66,20 @@ global_ids</i>, <i>local_ids</i>, <i>rank, iperm</i>)
 <br>INTEGER(Zoltan_INT) :: global_ids(*), local_ids(*)
 <br>INTEGER(Zoltan_INT) :: rank(*), iperm(*)
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Object::Order</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>num_lid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const int &<i>num_obj</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>rank</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>iperm</i>);
+</td>
+</tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Order </b>invokes the ordering routine specified
@@ -176,7 +190,7 @@ called.</td>
 
 <td>Upon return,&nbsp; this struct contains additional information about
 the ordering produced. This parameter is currently not used and should
-always be set to NULL.  It is not included in the FORTRAN interface.</td>
+always be set to NULL.  It is not included in the FORTRAN or C++ interface.</td>
 </tr>
 
 <tr>

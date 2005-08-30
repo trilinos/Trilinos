@@ -121,8 +121,13 @@ The system call <i>malloc</i> may be used instead of
 The Zoltan library is implemented in ANSI C and can be compiled with any
 ANSI C compiler.&nbsp; Makefiles are included with the source code; these
 makefiles require the GNU Make (gmake) utility.  The
-top-level Makefile defines targets for the Zoltan library and <a href="../dev_html/dev_driver.html">test
-driver</a> programs in C and Fortran90.&nbsp; This Makefile need not be
+top-level Makefile defines targets for the Zoltan library,
+<a href="../dev_html/dev_driver.html">test driver</a> programs 
+in C, C++ and Fortran90, and 
+<a href="../dev_html/dev_view.html">two graphical utilities</a> useful
+for visualization of geometric partitions.  (The test drivers and
+utilities are primarily intended for use
+by developers.)&nbsp; This Makefile need not be
 edited to build Zoltan.&nbsp; Instead, environment-specific definitions
 are specified in the configuration file, <i>Utilities/Config/Config.&lt;platform></i>,
 where <i>&lt;platform></i> specifies the particular platform for which
@@ -179,15 +184,52 @@ ZOLTAN_ARCH = <i>&lt;platform>; </i>export ZOLTAN_ARCH
 The resulting library <i>libzoltan.a</i>, object files, and dependency files
 are stored in the directory Obj_&lt;<i>platform</i>>.
 <h3>
+<a NAME="Testing the Library"></a>Testing the Zoltan Library</h3>
+The <I>examples</I> directory contains simple C and C++ examples which use
+the Zoltan library.  The Makefile in this directory has three targets:
+<DL>
+<DT>gmake ZOLTAN_ARCH=&lt;platform> C_Examples
+<DD>This builds simple C language examples that use the Zoltan library to perform load balancing.
+<DT>gmake ZOLTAN_ARCH=&lt;platform> CPP_Examples
+<DD>This builds simple C++ language examples that use the Zoltan library 
+to perform load balancing.  To build C++ applications, define CPPC to point
+to your C++ compiler in the Config.&lt;platform> file.
+<DT>gmake ZOLTAN_ARCH=&lt;platform> all
+<DD>Build both C and C++ examples.  Don't forget to define CPPC in your 
+Config.&lt;platform> file.
+</DL>
+<p>
+Some of these examples make use of a small library of support routines found in
+the <I>examples/lib</I> directory.  These routines create simple test
+meshes of varying sizes, perform error checking across the parallel
+application, and define Zoltan call backs.
+<p>
+The "right" answer for these tests depends on the number of processes with
+which you run the tests.  In general, if they compile successfully,
+run quickly (in seconds), and produce reasonable looking output, then
+you have been successful in building Zoltan.
+
+<h3>
 <a NAME="Building Applications"></a>Building Applications that use Zoltan</h3>
-The library interface is described in the C include file <i>include/zoltan_types.h</i>;
-this file should be included in all application source files that call
-Zoltan library routines. Similarly, <a href="ug_fortran_apps.html">Fortran applications</a> must USE
-<a href="ug_fortran_api.html#fortran ug api zoltan module">module
-zoltan</a> and 
+The C library interface is described in the include file <i>include/zoltan.h</i>;
+this file should be included in all C application source files that call
+Zoltan library routines. 
+<p>
+The <a href="ug_cpp.html">C++ interface</a> to 
+Zoltan is implemented in header files which define classes that
+wrap the Zoltan C library.  The file <I>include/zoltan_cpp.h</I> defines the
+<B>Zoltan_Object</B> class which encapsulates a load balancing data structure and the
+Zoltan load balancing functions which operate upon it.  Include this header file
+instead in your C++ application.  Note that C++ applications should call the
+C function <B>Zoltan_Initialize</B> before creating a <B>Zoltan_Object</B>.
+<p>
+<a href="ug_fortran_apps.html">Fortran applications</a> must USE
+<a href="ug_fortran_api.html#fortran ug api zoltan module">module zoltan</a> and 
 specify <i>Zoltan/Obj_&lt;platform></i>
 as a directory to be searched for module information files.
-The application should then be linked with the Zoltan library
+<p>
+The C, C++ or Fortran application should then be linked with the Zoltan library
+(built with Fortran support in the Fortran case)
 and its <a href="../ug_html/ug_util.html">utility libraries</a> by including
 <blockquote><i>-lzoltan </i></blockquote>
 in the linking command for the application. 

@@ -34,6 +34,10 @@ allocation and deallocation routines which add error-checking and
 <a href="#Debug_Memory">debugging capabilities</a>.  These routines
 are packaged separately from Zoltan to allow their independent
 use in other applications.  A Fortran90 interface is not yet available.
+C++ programmers can include the header file "zoltan_mem.h" and use the
+C functions.  This header file, and in fact all of Zoltan's C language header
+files, are surrounded by an <B>extern "C" {}</B> declaration to
+prevent name mangling when compiled with a C++ compiler.
 <p>
 <hr>
 <table>

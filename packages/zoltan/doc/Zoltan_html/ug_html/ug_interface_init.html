@@ -41,7 +41,7 @@ described below:
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP WIDTH="15%" NOSAVE>C:</td>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">int <b>Zoltan_Initialize</b> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int <i>argc</i>,
@@ -59,6 +59,7 @@ described below:
 <br>CHARACTER(LEN=*), DIMENSION(*), INTENT(IN), OPTIONAL :: argv&nbsp;
 <br>REAL(Zoltan_FLOAT), INTENT(OUT) :: ver&nbsp;</td>
 </tr>
+
 </table>
 
 <hr WIDTH="100%">The <b>Zoltan_Initialize</b> function initializes MPI
@@ -76,6 +77,8 @@ NOT have to be passed as a keyword argument.
 <p><b>Zoltan_Initialize</b> returns the the Zoltan version number so that
 users can verify which version of the library their application is linked
 to.
+<p>C++ applications should call the C <B>Zoltan_Initialize</B> function
+before using the C++ interface to the Zoltan library.  
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -133,6 +136,13 @@ to.
 <br>TYPE(Zoltan_Struct), pointer :: Zoltan_Create&nbsp;
 <br>INTEGER, INTENT(IN) :: communicator&nbsp;</td>
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>C++:</td>
+<td WIDTH="85%"><b>Zoltan_Object</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const MPI_Comm &<i>communicator</i> = MPI_COMM_WORLD);</td>
+</tr>
+
 </table>
 
 <hr WIDTH="100%">The <b>Zoltan_Create</b> function allocates memory for
@@ -142,6 +152,11 @@ many subsequent functions. An application may allocate more than one <b>Zoltan_S
 data structure; for example, an application may use several <b>Zoltan_Struct</b>
 structures if, say, it uses different decompositions with different load-balancing
 techniques.
+<p>
+In the C++ interface to Zoltan, the <B>Zoltan_Object</B> class represents
+a Zoltan load balancing data structure and the functions that operate on it.
+It is the constructor which allocates an instance of a <b>Zoltan_Object</B>.  It has
+no return value.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -194,6 +209,14 @@ Fortran. Any error that occurs in this function is assumed to be fatal.</td>
 <br>INTEGER(Zoltan_INT) :: Zoltan_Set_Param&nbsp;
 <br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
 <br>CHARACTER(LEN=*), INTENT(IN) :: param_name, new_value&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Object::Set_Param</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const std::string &<b>param_name</b>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const std::string &<b>new_value</b>);</td>
 </tr>
 </table>
 
@@ -277,6 +300,15 @@ being set. As above, the string is case-insensitive.&nbsp;</td>
 <br>TYPE(Zoltan_Struct), INTENT(IN) :: zz
 <br>CHARACTER(LEN=*), INTENT(IN) :: param_name, new_value
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: index</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Object::Set_Param_Vec</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const std::string &<i>param_name</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const std::string &<i>new_val</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const int &<i>index</i>);</td>
 </tr>
 </table>
 
@@ -369,6 +401,15 @@ the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Object::Set_Fn</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const <b>ZOLTAN_FN_TYPE </b> &<i>fn_type</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void (*<i>fn_ptr</i>)(),
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void *<i>data</i> = 0);</td>
+</tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Set_Fn</b> registers an application-supplied
@@ -455,6 +496,15 @@ or TYPE(Zoltan_User_Data_<i>x</i>) where <i>x</i> is 1, 2, 3 or 4. See
 the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Object::Set_&lt;<i>zoltan_fn_type</i>>_Fn</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;<b><i><a href="ug_query.html">zoltan_fn_type</a></i></b>>
+(*<i>fn_ptr</i>)(),&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void *<i>data</i> = 0);</td>
 </tr>
 </table>
 
@@ -553,6 +603,12 @@ query function.</td>
 <td>SUBROUTINE <b>Zoltan_Destroy</b>(<i>zz</i>)&nbsp;
 <br>TYPE(Zoltan_Struct), POINTER :: zz&nbsp;</td>
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">~<b>Zoltan_Object</b> ();
+</tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Destroy</b> frees the memory associated with
@@ -561,6 +617,9 @@ structure in Fortran. Note that <b>Zoltan_Destroy</b> does not deallocate
 the import and export arrays returned from Zoltan (e.g., the arrays returned
 from <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>);
 these arrays can be deallocated through a separate call to <b><a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a></b>.
+<p>
+There is no explicit <B>Destroy</B> method in the C++ interface.  The <B>Zoltan_Object</B>
+is destroyed when the destructor executes.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>

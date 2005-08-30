@@ -83,6 +83,18 @@ int <B>Zoltan_LB_Point_PP_Assign</B> (
 <BR> INTEGER(Zoltan_INT), INTENT(OUT) :: proc&nbsp;
 <BR> INTEGER(Zoltan_INT), INTENT(OUT) :: part&nbsp;</TD>
 </TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C++:</TD>
+
+<TD WIDTH="85%">
+int <B>Zoltan_Object::LB_Point_PP_Assign</B> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;double * const <I>coords</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int & <I>proc</I>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int & <I>part</I>
+);&nbsp;
+</TD>
+</TR>
 </TABLE>
 
 <HR WIDTH="100%"><B>Zoltan_LB_Point_PP_Assign</B> is used to determine to 
@@ -177,6 +189,24 @@ zmax, procs, numprocs, parts, numparts</I>)&nbsp;
 <BR> INTEGER(Zoltan_INT), INTENT(OUT) :: numprocs&nbsp;
 <BR> INTEGER(Zoltan_INT), DIMENSION(*), INTENT(OUT) ::parts&nbsp;
 <BR> INTEGER(Zoltan_INT), INTENT(OUT) :: numparts&nbsp;
+</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C++:</TD>
+
+<TD WIDTH="85%">
+int <B>Zoltan_Object::LB_Box_PP_Assign</B> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const double & <I>xmin</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const double & <I>ymin</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const double & <I>zmin</I>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const double & <I>xmax</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const double & <I>ymax</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const double & <I>zmax</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int * const <I>procs</I>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int & <I>numprocs</I>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int * const <I>parts</I>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int & <I>numparts</I>);
 </TD>
 </TR>
 </TABLE>
@@ -296,6 +326,17 @@ int <B>Zoltan_LB_Point_Assign</B> (
 <BR> REAL(Zoltan_DOUBLE), DIMENSION(*), INTENT(IN) :: coords&nbsp;
 <BR> INTEGER(Zoltan_INT), INTENT(OUT) :: proc&nbsp;</TD>
 </TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C++:</TD>
+
+<TD WIDTH="85%">
+int <B>Zoltan_Object::LB_Point_Assign</B> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;double * const <I>coords</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int & <I>proc</I>,
+);&nbsp;
+</TD>
+</TR>
 </TABLE>
 
 <HR WIDTH="100%"><B>Zoltan_LB_Point_Assign</B> is 
@@ -368,6 +409,22 @@ zmax, procs, numprocs</I>)&nbsp;
 <BR> REAL(Zoltan_DOUBLE), INTENT(IN) :: xmin, ymin, zmin, xmax, ymax, zmax&nbsp;
 <BR> INTEGER(Zoltan_INT), DIMENSION(*), INTENT(OUT) ::procs&nbsp;
 <BR> INTEGER(Zoltan_INT), INTENT(OUT) :: numprocs&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C++:</TD>
+
+<TD WIDTH="85%">
+int <B>Zoltan_Object::LB_Box_PP_Assign</B> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const double & <I>xmin</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const double & <I>ymin</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const double & <I>zmin</I>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const double & <I>xmax</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const double & <I>ymax</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const double & <I>zmax</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int * const <I>procs</I>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int & <I>numprocs</I>,
+</TD>
 </TR>
 </TABLE>
 

@@ -68,6 +68,13 @@ functions are required by individual algorithms.
 <br><b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b></blockquote>
 </blockquote>
 
+<p>
+The C++ methods that require a query function as a parameter use the
+C-style function for that parameter.  Creating a set of C++ style
+prototypes and having the Zoltan C library call them would create a great
+deal of complexity in the C++ interface to Zoltan.  Unless there is a good
+reason to do this, we will ask the C++ programmer to write their query
+functions as C functions.
 <hr><hr>
 
 <!------------------------------------------------------------------------->
@@ -80,7 +87,7 @@ functions are required by individual algorithms.
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_NUM_OBJ_FN</b>
@@ -152,7 +159,7 @@ of objects that are currently assigned to the processor.
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef void<b> ZOLTAN_OBJ_LIST_FN</b>
@@ -275,7 +282,7 @@ may be NULL.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_FIRST_OBJ_FN</b>
@@ -421,7 +428,7 @@ of the first object.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_NEXT_OBJ_FN</b>
@@ -581,7 +588,7 @@ of the next object.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef void <b>ZOLTAN_PARTITION_MULTI_FN</b>
@@ -705,7 +712,7 @@ and local IDs.
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_PARTITION_FN</b>
@@ -830,7 +837,7 @@ returned.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_NUM_GEOM_FN</b>
@@ -906,7 +913,7 @@ application, the return value should be three.
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef void <b>ZOLTAN_GEOM_MULTI_FN</b>
@@ -1033,7 +1040,7 @@ in <i>geom_vec[i*num_dim:(i+1)*num_dim-1]</i>.
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef void <b>ZOLTAN_GEOM_FN</b>
@@ -1144,7 +1151,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef void <b>ZOLTAN_NUM_EDGES_MULTI_FN</b>
@@ -1265,7 +1272,7 @@ in <i>num_edges[i]</i>.
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_NUM_EDGES_FN</b>
@@ -1377,7 +1384,7 @@ returned.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef void <b>ZOLTAN_EDGE_LIST_MULTI_FN</b>
@@ -1548,7 +1555,7 @@ return value of <i>ewgts</i> is undefined and may be NULL.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef void <b>ZOLTAN_EDGE_LIST_FN</b>
@@ -1692,7 +1699,7 @@ return value of <i>ewgts </i>is undefined and may be NULL.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_NUM_COARSE_OBJ_FN</b>
@@ -1764,7 +1771,7 @@ the number of objects (elements) in the initial coarse grid.
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef void <b>ZOLTAN_COARSE_OBJ_LIST_FN</b>
@@ -1927,7 +1934,7 @@ element in the user provided traversal. The same provisions hold as for
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_FIRST_COARSE_OBJ_FN</b>
@@ -2105,7 +2112,7 @@ object in the coarse grid.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_NEXT_COARSE_OBJ_FN</b>
@@ -2286,7 +2293,7 @@ object in the coarse grid.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_NUM_CHILD_FN</b>
@@ -2395,7 +2402,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef void <b>ZOLTAN_CHILD_LIST_FN</b>
@@ -2610,7 +2617,7 @@ element in the user provided traversal. The same provisions hold as for
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef void<b> ZOLTAN_CHILD_WEIGHT_FN</b>
@@ -2728,7 +2735,7 @@ value of <i>obj_wgts</i> is undefined and may be NULL.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_NUM_BORDER_OBJ_FN</b>
@@ -2811,7 +2818,7 @@ should be returned.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef void <b>ZOLTAN_BORDER_OBJ_LIST_FN</b>
@@ -2945,7 +2952,7 @@ If <i>wgt_dim=0,</i> <i>obj_wgts</i> is undefined and may be NULL.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_FIRST_BORDER_OBJ_FN</b>
@@ -3101,7 +3108,7 @@ of the first object along the processor border.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_NEXT_BORDER_OBJ_FN</b>

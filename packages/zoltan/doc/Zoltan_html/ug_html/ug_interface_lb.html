@@ -93,6 +93,29 @@ export_to_part</i>)&nbsp;
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_to_part, export_to_part</td>
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Object::LB_Partition</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>changes</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_gid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_import</i>,&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+&<i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+&<i>import_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>import_procs</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>import_to_part</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_export</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+ &<i>export_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+ &<i>export_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>export_procs</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>export_to_part</i>);</td>
+</tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_LB_Partition</b> invokes the load-balancing
@@ -281,6 +304,17 @@ function <b>Zoltan_LB_Set_Part_Sizes</b>(
 <br>real(Zoltan_FLOAT) INTENT(IN) partsizes(*)
 </td>
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Object::LB_Set_Part_Sizes</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const int &<i>global_num,</i>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const int &<i>len</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>part_ids,</i>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>wgt_idx</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float *<i>part_sizes</i>);</td>
+</tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_LB_Set_Part_Sizes</b> is used to specify the
@@ -396,6 +430,19 @@ ncuts, cut_wgt, nboundary, nadj</i>)&nbsp;
 nadj
 <br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(vwgt_dim), OPTIONAL :: obj_wgt&nbsp;
 <br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(ewgt_dim), OPTIONAL :: cut_wgt&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Object::LB_Eval</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const int &<i>print_stats</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nobj</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float * const <i>obj_wgt</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>ncuts</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float * const <i>cut_wgt</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nboundary</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nadj</i>);&nbsp;</td>
 </tr>
 </table>
 
@@ -553,16 +600,29 @@ to_part</i>)
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: local_ids
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: procs, to_part</td>
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Object::LB_Free_Part</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+&<i>global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+&<i>local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>procs</i>,&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>to_part</i>);</td>
+</tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_LB_Free_Part</b> frees the memory allocated
-by the Zoltan to return the results of <b><a href="#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
+by Zoltan to return the results of <b><a href="#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
 or
 <b><a href="ug_interface_mig.html#Zoltan_Invert_Lists">Zoltan_Invert_Lists</a></b>.
 Memory pointed to by the arguments is freed and the arguments are set to
-NULL in C or nullified in Fortran. NULL arguments may be passed to <b>Zoltan_LB_Free_Part</b>.
+NULL in C and C++ or nullified in Fortran. NULL arguments may be passed to <b>Zoltan_LB_Free_Part</b>.
 Note that this function does not destroy the Zoltan data structure itself;
-it is deallocated through a call to <b><a href="ug_interface_init.html#Zoltan_Destroy">Zoltan_Destroy</a></b>.
+it is deallocated through a call to <b><a href="ug_interface_init.html#Zoltan_Destroy">Zoltan_Destroy</a></b>
+in C and Fortran and by the object destructor in C++.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -648,6 +708,27 @@ num_export, export_global_ids, export_local_ids, export_procs</i>)&nbsp;
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Object::LB_Balance</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>changes</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_gid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_import</i>,&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+&<i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+&<i>import_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>import_procs</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_export</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+&<i>export_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+&<i>export_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>export_procs</i>);&nbsp;</td>
+</tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_LB_Balance</b> is a wrapper around
@@ -721,6 +802,22 @@ import_procs, export_global_ids, export_local_ids, export_procs</i>)&nbsp;
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Object::LB_Free_Data</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+&<i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+&<i>import_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>import_procs</i>,&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+&<i>export_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+&<i>export_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>export_procs</i>);&nbsp;</td>
+</tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_LB_Free_Data</b> frees the memory allocated
@@ -730,7 +827,8 @@ or
 Memory pointed to by the arguments is freed and the arguments are set to
 NULL in C or nullified in Fortran. NULL arguments may be passed to <b>Zoltan_LB_Free_Data</b>.
 Note that this function does not destroy the Zoltan data structure itself;
-it is deallocated through a call to <b><a href="ug_interface_init.html#Zoltan_Destroy">Zoltan_Destroy</a></b>.
+it is deallocated through a call to <b><a href="ug_interface_init.html#Zoltan_Destroy">Zoltan_Destroy</a></b> in C and Fortran, and by the <B>Zoltan_Object</B> destructor
+in C++.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>

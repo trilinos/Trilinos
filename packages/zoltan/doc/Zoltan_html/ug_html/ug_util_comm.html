@@ -95,7 +95,15 @@ arguments as
 <b><a href="#Zoltan_Comm_Do_Reverse">Zoltan_Comm_Do_Reverse</a></b>.
 
 <p>All the functions in the unstructured communication library return integer
-<a href="../ug_html/ug_interface.html#Error Codes">error codes</a> identical to those used by Zoltan.   A Fortran90 interface is not yet available.
+<a href="../ug_html/ug_interface.html#Error Codes">error codes</a> identical to 
+those used by Zoltan.   
+<p>
+The C++ interface to the unstructured communication utility is found
+in the <I>zoltan_comm_cpp.h</I> header file which defines the 
+<B>Zoltan_Comm</B> class.
+<p>
+A Fortran90 interface is not yet available.
+
 
 <p>
 <hr>
@@ -107,9 +115,16 @@ arguments as
 </tr>
 
 <tr VALIGN=TOP>
-<td><b>Function prototypes file:</b></td>
+<td><b>C Function prototypes file:</b></td>
 
-<td><i>Utilities/Communication/zoltan_comm.h</i> or <i>include/zoltan_comm.h</i>
+<td><i>Utilities/Communication/zoltan_comm.h</i>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b>C++ class definition:</b></td>
+
+<td><i>Utilities/Communication/zoltan_comm_cpp.h</i>
 </td>
 </tr>
 
@@ -182,15 +197,34 @@ automatically propagate to the algorithms.&nbsp;</blockquote>
 </table>
 
 <!------------------------------------------------------------------------->
-<hr>
+<hr> <hr>
+<b>C:</b><br>
 <a NAME="Zoltan_Comm_Create"></a>
-<hr>
 int <b>Zoltan_Comm_Create</b>(
 struct Zoltan_Comm_Obj **<i>plan</i>,
 int <i>nsend</i>, 
 int *<i>proclist</i>, 
 MPI_Comm <i>comm</i>, 
 int <i>tag</i>, 
+int *<i>nreturn</i>);
+<br>
+<b>C++:</b><br>
+<b>Zoltan_Comm</b>(
+const int & <i>nsend</i>, 
+int *<i>proclist</i>, 
+const MPI_Comm & <i>comm</i>, 
+const int & <i>tag</i>, 
+int *<i>nreturn</i>);
+<br>
+&nbsp;&nbsp;&nbsp;or
+<br>
+<b>Zoltan_Comm</b>();
+<br>
+<b>Zoltan_Comm::Create</b>(
+const int & <i>nsend</i>, 
+int *<i>proclist</i>, 
+const MPI_Comm & <i>comm</i>, 
+const int & <i>tag</i>, 
 int *<i>nreturn</i>);
 <hr>The <b>Zoltan_Comm_Create</b> function sets up the communication plan in
 the unstructured communication package. Its input is a count of objects
@@ -260,7 +294,13 @@ each of the objects to be sent.</td>
 <td>Error code.</td>
 </tr>
 </table>
-
+<p>
+In the C++ interface to the communication utility, the communication plan
+is represented by a <B>Zoltan_Comm</B> object.  It is created when the
+<B>Zoltan_Comm</B> constructor executes.  There are two constructors.  The
+first one listed above uses parameters to initialize the plan.  The
+second constructor does not, but the plan can subsequently be initialized
+with a call to <B>Zoltan_Comm::Create()</B>.
 <p>
 
 <!------------------------------------------------------------------------->
@@ -269,14 +309,21 @@ each of the objects to be sent.</td>
 <a NAME="Zoltan_Comm_Do_Post"></a>
 <a NAME="Zoltan_Comm_Do_Wait"></a>
 <hr>
+<b>C:</b><br>
 int <b>Zoltan_Comm_Do</b>(struct Zoltan_Comm_Obj *<i>plan</i>,
 int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>, char *<i>recvbuf</i>);&nbsp;
 <br>
-nt <b>Zoltan_Comm_Do_Post</b>(struct Zoltan_Comm_Obj *<i>plan</i>,
+int <b>Zoltan_Comm_Do_Post</b>(struct Zoltan_Comm_Obj *<i>plan</i>,
 int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>, char *<i>recvbuf</i>);&nbsp;
 <br>
-nt <b>Zoltan_Comm_Do_Wait</b>(struct Zoltan_Comm_Obj *<i>plan</i>,
+int <b>Zoltan_Comm_Do_Wait</b>(struct Zoltan_Comm_Obj *<i>plan</i>,
 int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>, char *<i>recvbuf</i>);&nbsp;
+<br><b>C++:</b><br>
+int <b>Zoltan_Comm::Do</b>(const int & <i>tag</i>, char *<i>send_data</i>, const int & <i>nbytes</i>, char *<i>recvbuf</i>);&nbsp;
+<br>
+int <b>Zoltan_Comm::Do_Post</b>(const int & <i>tag</i>, char *<i>send_data</i>, const int & <i>nbytes</i>, char *<i>recvbuf</i>);&nbsp;
+<br>
+int <b>Zoltan_Comm::Do_Wait</b>(const int & <i>tag</i>, char *<i>send_data</i>, const int & <i>nbytes</i>, char *<i>recvbuf</i>);&nbsp;
 
 <hr>The <b>Zoltan_Comm_Do</b> function performs the communication described
 in a communication plan built by <b><a href="#Zoltan_Comm_Create">Zoltan_Comm_Create</a></b>.
@@ -352,6 +399,7 @@ more details.)</td>
 <a NAME="Zoltan_Comm_Do_Reverse_Post"></a>
 <a NAME="Zoltan_Comm_Do_Reverse_Wait"></a>
 <hr>
+<b>C:</b><br>
 int <b>Zoltan_Comm_Do_Reverse</b>(
 struct Zoltan_Comm_Obj *<i>plan</i>, int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>,
 int *<i>sizes</i>, char *<i>recvbuf</i>);&nbsp;
@@ -362,6 +410,18 @@ int *<i>sizes</i>, char *<i>recvbuf</i>);&nbsp;
 <br>
 int <b>Zoltan_Comm_Do_Reverse_Wait</b>(
 struct Zoltan_Comm_Obj *<i>plan</i>, int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>,
+int *<i>sizes</i>, char *<i>recvbuf</i>);&nbsp;
+<br><b>C++:</b><br>
+int <b>Zoltan_Comm::Do_Reverse</b>(
+const int & <i>tag</i>, char *<i>send_data</i>, const int & <i>nbytes</i>,
+int *<i>sizes</i>, char *<i>recvbuf</i>);&nbsp;
+<br>
+int <b>Zoltan_Comm::Do_Reverse_Post</b>(
+const int & <i>tag</i>, char *<i>send_data</i>, const int & <i>nbytes</i>,
+int *<i>sizes</i>, char *<i>recvbuf</i>);&nbsp;
+<br>
+int <b>Zoltan_Comm::Do_Reverse_Wait</b>(
+const int & <i>tag</i>, char *<i>send_data</i>, const int & <i>nbytes</i>,
 int *<i>sizes</i>, char *<i>recvbuf</i>);&nbsp;
 <hr>The <b>Zoltan_Comm_Do_Reverse</b> function performs communication based
 on a communication plan built by <b><a href="#Zoltan_Comm_Create">Zoltan_Comm_Create</a></b>.
@@ -440,9 +500,13 @@ of the values being received, not sent.</td>
 <hr>
 <a NAME="Zoltan_Comm_Resize"></a>
 <hr>
+<b>C:</b><br>
 int <b>Zoltan_Comm_Resize</b>(
 struct Zoltan_Comm_Obj *<i>plan</i>, 
 int *<i>sizes</i>, int <i>tag</i> , int *<i>total_recv_size</i>);&nbsp;
+<br><b>C++:</b><br>
+int <b>Zoltan_Comm::Resize</b>(
+int *<i>sizes</i>, const int & <i>tag</i> , int *<i>total_recv_size</i>);&nbsp;
 <hr>If the objects being communicated are of variable sizes, then the plan
 produced by <b><a href="#Zoltan_Comm_Create">Zoltan_Comm_Create</a></b> is incomplete.
 This routine allows the plan to be augmented to allow for variable sizes.
@@ -507,10 +571,13 @@ size (in bytes), you need to scale by the <i>nbytes</i> argument to <b><a href="
 <hr>
 <a NAME="Zoltan_Comm_Destroy"></a>
 <hr>
-int <b>Zoltan_Comm_Destroy</b>(
+<b>C:</b>&nbsp; int <b>Zoltan_Comm_Destroy</b>(
 struct Zoltan_Comm_Obj **<i>plan</i>);&nbsp;
+<br><b>C++:</b>&nbsp; <b>~Zoltan_Comm();</b>
 <hr>The <b>Zoltan_Comm_Destroy</b> function frees all memory associated with
 a communication plan created by <b><a href="#Zoltan_Comm_Create">Zoltan_Comm_Create</a></b>.
+The C++ <b>Zoltan_Comm</b> object does not have an explicit <b>Destroy</b> method.
+It is deallocated when it's destructor is called.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
@@ -545,10 +612,19 @@ Upon return, <i>plan</i> is set to NULL.&nbsp;</td>
 <hr>
 <a NAME="Zoltan_Comm_Exchange_Sizes"></a>
 <hr>
+<b>C:</b><br>
 int <b>Zoltan_Comm_Exchange_Sizes</b>(
 int *<i>sizes_to</i>, int *<i>procs_to</i>, int <i>nsends</i>, int <i>self_msg</i>,
 int *<i>sizes_from</i>, int *<i>procs_from</i>, int <i>nrecvs</i>, int
 *<i>total_recv_size</i>, int <i>my_proc</i>, int <i>tag</i>, MPI_Comm <i>comm</i>
+);&nbsp;
+<br><b>C++:</b><br>
+static int <b>Zoltan_Comm::Exchange_Sizes</b>(
+int *<i>sizes_to</i>, int *<i>procs_to</i>, 
+const int & <i>nsends</i>, const int & <i>self_msg</i>,
+int *<i>sizes_from</i>, int *<i>procs_from</i>, const int & <i>nrecvs</i>, 
+int *<i>total_recv_size</i>, const int & <i>my_proc</i>, 
+const int & <i>tag</i>, const MPI_Comm & <i>comm</i>
 );&nbsp;
 <hr>This routine is used by <b><a href="#Zoltan_Comm_Resize">Zoltan_Comm_Resize</a></b>
 to update the sizes of the messages each processor is expecting to receive.
@@ -657,11 +733,20 @@ number of bytes will be scaled by the <i>nbytes</i> argument to <b><a href="#Zol
 <hr>
 <a NAME="Zoltan_Comm_Invert_Map"></a>
 <hr>
+<b>C:</b><br>
 int <b>Zoltan_Comm_Invert_Map</b>( int
 *<i>lengths_to</i>, int *<i> procs_to</i>, int <i>nsends</i>, int <i>self_msg</i>,
 int **<i> lengths_from</i>, int **<i> procs_from</i>, int *<i> nrecvs</i>,
 int <i>my_proc</i>, int <i>nprocs</i>, int <i>out_of_mem</i>, int <i>tag</i>,
 MPI_Comm <i>comm</i> );&nbsp;
+<br><b>C++:</b><br>
+static int <b>Zoltan_Comm::Invert_Map</b>( int
+*<i>lengths_to</i>, int *<i> procs_to</i>, 
+const int & <i>nsends</i>, const int & <i>self_msg</i>,
+int * &<i> lengths_from</i>, int * &<i> procs_from</i>, int &<i> nrecvs</i>,
+const int & <i>my_proc</i>, const int & <i>nprocs</i>, 
+const int & <i>out_of_mem</i>, const int & <i>tag</i>,
+const MPI_Comm & <i>comm</i> );&nbsp;
 <hr>The <b>Zoltan_Comm_Invert_Map</b> function is a low level communication
 routine. It is useful when a processor knows to whom it needs to send data, 
 but not from whom it needs to receive data. Each processor provides to this
@@ -788,7 +873,8 @@ int *<i>vals_other</i>, int <i>nvals</i>);&nbsp;
 set of integers via the quicksort algorithm. The integers are reordered
 from lowest to highest, and a second array of integers is reordered in
 the same fashion. This second array can be used to return the permutation
-associated with the sort operation.
+associated with the sort operation.  There is no C++ interface to this
+function.  You can use the C function instead.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
@@ -833,6 +919,7 @@ order.&nbsp;</td>
 <hr>
 <a NAME="Zoltan_Comm_Info"></a>
 <hr>
+<b>C:</b><br>
 int <b>Zoltan_Comm_Info</b>( 
   struct Zoltan_Comm_Obj *<i>plan</i>,
   int *<i>nsends</i>,
@@ -847,8 +934,22 @@ int <b>Zoltan_Comm_Info</b>(
   int *<i>recv_nvals</i>,
   int *<i>recv_total_size</i>,
   int *<i>recv_list</i>,
-  int *<i>self_msg</i>
-)
+  int *<i>self_msg</i>);
+<br><b>C++:</b><br>
+int <b>Zoltan_Comm::Info</b>( 
+  int *<i>nsends</i>,
+  int *<i>send_procs</i>,
+  int *<i>send_lengths</i>,
+  int *<i>send_nvals</i>,
+  int *<i>send_max_size</i>,
+  int *<i>send_list</i>,
+  int *<i>nrecvs</i>,
+  int *<i>recv_procs</i>,
+  int *<i>recv_lengths</i>,
+  int *<i>recv_nvals</i>,
+  int *<i>recv_total_size</i>,
+  int *<i>recv_list</i>,
+  int *<i>self_msg</i>) const;
 <hr><b>Zoltan_Comm_Info</b> returns information about a communication plan.
 All arguments, except the <i>plan</i> itself, may be NULL; values are 
 returned only for non-NULL arguments.  
@@ -984,9 +1085,11 @@ Upon return, the number of self-messages.
 <hr>
 <a NAME="Zoltan_Comm_Invert_Plan"></a>
 <hr>
-int <b>Zoltan_Comm_Invert_Plan</b>( 
+<b>C:</b>&nbsp; int <b>Zoltan_Comm_Invert_Plan</b>( 
   struct Zoltan_Comm_Obj **<i>plan</i>
-)
+);
+<br><b>C++:</b>&nbsp; int <b>Zoltan_Comm::Invert_Plan</b>();
+
 <hr>Given a communication plan, <b>Zoltan_Comm_Invert_Plan</b> 
 alters the plan to make it the plan for the reverse communication.
 Information in the input plan is replaced by information for the
