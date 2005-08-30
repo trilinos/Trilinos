@@ -85,7 +85,7 @@ namespace Teuchos {
 
 	This allows the user to define the length of a SerialDenseVector at any point.
 	This method can be called at any point after construction.  Any values previously in
-	this object will be destroyed and the resized vector starts will all zero values.
+	this object will be destroyed and the resized vector starts with all zero values.
     */
     int size(int length) {return(SerialDenseMatrix<OrdinalType, ScalarType>::shape(length, 1));};
 
