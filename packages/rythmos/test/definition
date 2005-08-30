@@ -1,0 +1,38 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --method=FE --maxerror=1e-1;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --method=BE --maxerror=1e-1;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --numelements=10;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --method=FE --maxerror=1e-1 --numelements=10;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=10;
+    COMM = SERIAL, MPI;
+}

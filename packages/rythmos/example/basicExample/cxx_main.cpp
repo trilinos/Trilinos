@@ -52,6 +52,7 @@
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_LinearNonlinearSolver.hpp"
 #include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
+#include "Thyra_TestingTools.hpp"
 
 #include <string>
 
@@ -65,7 +66,7 @@ enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK };
 int main(int argc, char *argv[])
 {
   bool verbose = true; // verbosity level.
-  bool success = true; // determine if the run was successfull
+  bool result, success = true; // determine if the run was successfull
 
   try { // catch exceptions
 
@@ -80,7 +81,7 @@ int main(int argc, char *argv[])
 
     double lambda_min = -0.9;   // min ODE coefficient
     double lambda_max = -0.01;  // max ODE coefficient
-    std::string lambda_fit = "random"; // Lambda model
+    std::string lambda_fit = "linear"; // Lambda model
     int numElements = 1; // number of elements in vector
     double x0 = 10.0; // ODE initial condition
     double finalTime = 1.0; // ODE final time
@@ -88,7 +89,8 @@ int main(int argc, char *argv[])
     const int num_methods = 3;
     const EMethod method_values[] = { METHOD_FE, METHOD_BE, METHOD_ERK };
     const char * method_names[] = { "FE", "BE", "ERK" };
-    EMethod method_val = METHOD_FE;
+    EMethod method_val = METHOD_ERK;
+    double maxError = 1e-6;
     bool version = false;  // display version information 
 
     // Parse the command-line options:
@@ -101,6 +103,7 @@ int main(int argc, char *argv[])
     clp.setOption( "numelements", &numElements, "Problem size");
     clp.setOption( "method", &method_val, num_methods, method_values, method_names, "Integration method" );
     clp.setOption( "numsteps", &N, "Number of integration steps to take" );
+    clp.setOption( "maxerror", &maxError, "Maximum error" );
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not" );
     clp.setOption( "version", "run", &version, "Version of this code" );
 
@@ -223,6 +226,7 @@ int main(int argc, char *argv[])
       std::cout.precision(15);
       std::cout << "lambda[" << MyPID*MyLength+i << "] = " << lambda[i] << std::endl;
     }
+    double error = 0;
     for (int i=0 ; i<MyLength ; ++i)
     {
       std::cout.precision(15);
@@ -230,7 +234,17 @@ int main(int argc, char *argv[])
       std::cout.width(20); std::cout << x_computed[i] << "\t";
       std::cout << "Exact: x[" << MyPID*MyLength+i << "] = ";
       std::cout.width(20); std::cout << x_star[i] << std::endl;
+      const double thisError = Thyra::relErr(x_computed[i],x_star[i]);
+      error = std::max(thisError,error);
+      //error = ( thisError > error ? thisError : error );
     }
+    result = Thyra::testMaxErr(
+      "error",error
+      ,"maxError",maxError
+      ,"maxWarning",10.0*maxError
+      ,&std::cerr,""
+      );
+    if(!result) success = false;
     
 #ifdef HAVE_MPI
     MPI_Finalize();
