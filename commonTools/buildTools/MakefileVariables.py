@@ -26,8 +26,8 @@ Available functions:
                                      appropriate substitutions)
     specialNormPath(string) -> string (normalize a path, even if it starts with
                                        -I, -L, etc.)
-    uniqifyList([string1, string2, ...]) -> None (remove duplicate strings from
-                                                  the list)
+    uniqiufyList([string1, string2, ...]) -> None (remove duplicate strings from
+                                                   the list)
     uniquifyString(string) -> string (remove duplicate substrings from the
                                       string)
     uniquifyDict(dict) -> None (Uniquify each value of the given dictionary)
@@ -92,7 +92,14 @@ def parseExportFile(filename):
         # Process include statements
         match = includeRE.match(line)
         if match:
-            dict.update(parseExportFile(match.group(1).strip()))
+            tempDict = dict
+            tempDict["include files"] = match.group(1).strip()
+            makeSubstitutions(tempDict)
+            for file in tempDict["include files"].split():
+                try:
+                    dict.update(parseExportFile(file))
+                except IOError:
+                    pass
             continue
         # Process assignment statements
         match = assignRE.match(line)
