@@ -113,6 +113,9 @@ bool Thyra::test_single_amesos_thyra_solver(
     
   LinearOpWithSolveTester<double> linearOpWithSolveTester;
   linearOpWithSolveTester.turn_off_all_tests();
+  linearOpWithSolveTester.check_forward_default(true);
+  linearOpWithSolveTester.forward_default_residual_error_tol(1.1*maxResid);
+  linearOpWithSolveTester.forward_default_residual_warning_tol(2.0*maxResid);
   linearOpWithSolveTester.check_forward_residual(true);
   linearOpWithSolveTester.forward_residual_solve_tol(maxResid);
   linearOpWithSolveTester.forward_residual_slack_error_tol(1e-1*maxResid);
@@ -122,6 +125,9 @@ bool Thyra::test_single_amesos_thyra_solver(
   linearOpWithSolveTester.forward_solution_error_slack_error_tol(1e-1*maxError);
   linearOpWithSolveTester.forward_solution_error_slack_warning_tol(maxError);
   if(testTranspose) {
+    linearOpWithSolveTester.check_adjoint_default(true);
+    linearOpWithSolveTester.adjoint_default_residual_error_tol(1.1*maxResid);
+    linearOpWithSolveTester.adjoint_default_residual_warning_tol(2.0*maxResid);
     linearOpWithSolveTester.check_adjoint_residual(true);
     linearOpWithSolveTester.adjoint_residual_solve_tol(maxResid);
     linearOpWithSolveTester.adjoint_residual_slack_error_tol(1e-1*maxResid);

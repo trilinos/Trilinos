@@ -65,6 +65,10 @@ AztecOOLinearOpWithSolve::AztecOOLinearOpWithSolve(
   ,fwdDefaultTol_(fwdDefaultTol)
   ,adjDefaultMaxIterations_(adjDefaultMaxIterations)
   ,adjDefaultTol_(adjDefaultTol)
+  ,precOpType_(PRECONDITIONER_INPUT_TYPE_AS_OPERATOR)
+  ,allowInexactFwdSolve_(false)
+  ,allowInexactAdjSolve_(false)
+  ,aztecSolverScalar_(0.0)
 {}
 
 void AztecOOLinearOpWithSolve::initialize(

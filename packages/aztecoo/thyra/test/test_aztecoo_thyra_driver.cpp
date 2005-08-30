@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
       //
       for( int prec_i = 0; prec_i < 2; ++prec_i ) {
         if(verbose)
-          out << std::endl<<matrix_i<<":"<<prec_i<<": Testing, matrixFile=\'"<<mtp.matrixFile<<"\', prec = ";
+          out << std::endl<<matrix_i<<":"<<prec_i<<": Testing, matrixFile=\'"<<mtp.matrixFile<<"\', ";
         bool testTranspose;
         int    maxIters;
         double maxResid;

@@ -31,6 +31,7 @@
 #include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
+#include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Epetra_SerialComm.h"
@@ -159,20 +160,47 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     result = linearOpWithSolveTester.check(*nsA,out,indentSpacer,indentSpacer);
     if(!result) success = false;
 
+    if(out) *out << "\nF) Uninitialize nsA, create precondtioner for diagonal scaled by 0.99 and then reinitialize nsA reusing the old preconditioner ...\n";
+
+    opFactory->uninitializeOp(&*nsA);
+    if(1){
+      Epetra_Vector diag(epetra_A->RowMap());
+      epetra_A->ExtractDiagonalCopy(diag);
+      diag.Scale(0.5);
+      epetra_A->ReplaceDiagonalValues(diag);
+    }
+    opFactory->initializeOp(A,&*nsA);
+    if(1){
+      Teuchos::RefCountPtr<VectorBase<double> >
+        b = createMember(nsA->range()),
+        x = createMember(nsA->domain());
+      assign(&*b,1.0);
+      assign(&*x,0.0);
+      solve(*nsA,NOTRANS,*b,&*x);
+    }
+    opFactory->uninitializeOp(&*nsA);
+    if(1){
+      Epetra_Vector diag(epetra_A->RowMap());
+      epetra_A->ExtractDiagonalCopy(diag);
+      diag.Scale(1.0/0.5);
+      epetra_A->ReplaceDiagonalValues(diag);
+    }
+    opFactory->initializeAndReuseOp(A,&*nsA);
+
+    if(out) *out << "\nG) Testing the LinearOpWithSolveBase interface of nsA ...\n";
+    
+    Thyra::seed_randomize<double>(0);
+    result = linearOpWithSolveTester.check(*nsA,out,indentSpacer,indentSpacer);
+    if(!result) success = false;
+
     if(useAztecPrec) {
 
-      if(out) *out << "\nF) Uninitialize nsA, and then reinitialize (A,A,PRECONDITIONER_INPUT_TYPE_AS_MATRIX) => nsA ...\n";
+      if(out) *out << "\nH) Uninitialize nsA, and then reinitialize (A,A,PRECONDITIONER_INPUT_TYPE_AS_MATRIX) => nsA ...\n";
       
       opFactory->uninitializeOp(&*nsA);
       opFactory->initializePreconditionedOp(A,A,PRECONDITIONER_INPUT_TYPE_AS_MATRIX,&*nsA);
-      
-      if(out) *out << "\nG) Testing the LinearOpBase interface of nsA ...\n";
-      
-      Thyra::seed_randomize<double>(0);
-      result = linearOpTester.check(*nsA,out,indentSpacer,indentSpacer);
-      if(!result) success = false;
-      
-      if(out) *out << "\nH) Testing the LinearOpWithSolveBase interface of nsA ...\n";
+
+      if(out) *out << "\nI) Testing the LinearOpWithSolveBase interface of nsA ...\n";
       
       Thyra::seed_randomize<double>(0);
       result = linearOpWithSolveTester.check(*nsA,out,indentSpacer,indentSpacer);
@@ -190,7 +218,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     }
     else {
 
-      if(out) *out << "\nSkipping testing steps F, G, and H since we are not using aztec preconditioning and therefore will not test with an external preconditioner matrix!\n";
+      if(out) *out << "\nSkipping testing steps H and I since we are not using aztec preconditioning and therefore will not test with an external preconditioner matrix!\n";
 
     }
 
@@ -203,7 +231,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
         linearOpWithSolveTester.check_adjoint_residual(true);
       }
       
-      if(out) *out << "\nI) Create an ifpack preconditioner precA for A ...\n";
+      if(out) *out << "\nJ) Create an ifpack preconditioner precA for A ...\n";
       
       Ifpack::PreconditionerFactory ifpackPrecFactory;
       ifpackPrecFactory.calcCondEst(true);
@@ -214,16 +242,10 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       
       if(out && dumpAll) *out << "\ndescribe(precA) =\n" << describe(*precA,Teuchos::VERB_EXTREME,indentSpacer,indentSpacer);
       
-      if(out) *out << "\nJ) Uninitialize nsA, and then reinitialize (A,precA,PRECONDITIONER_INPUT_TYPE_AS_OPERATOR) => nsA ...\n";
+      if(out) *out << "\nK) Uninitialize nsA, and then reinitialize (A,precA,PRECONDITIONER_INPUT_TYPE_AS_OPERATOR) => nsA ...\n";
       
       opFactory->uninitializeOp(&*nsA);
       opFactory->initializePreconditionedOp(A,precA,PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,&*nsA);
-      
-      if(out) *out << "\nK) Testing the LinearOpBase interface of nsA ...\n";
-      
-      Thyra::seed_randomize<double>(0);
-      result = linearOpTester.check(*nsA,out,indentSpacer,indentSpacer);
-      if(!result) success = false;
       
       if(out) *out << "\nL) Testing the LinearOpWithSolveBase interface of nsA ...\n";
       
@@ -243,13 +265,13 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     }
     else {
 
-      if(out) *out << "\nSkipping testing steps I, J, K, and L since we are not using aztec preconditioning and therefore will not test with an ifpack preconditioner!\n";
+      if(out) *out << "\nSkipping testing steps J, K, and L since we are not using aztec preconditioning and therefore will not test with an ifpack preconditioner!\n";
 
     }
 
 #else // HAVE_AZTECOO_IFPACK
 
-    if(out) *out << "\nSkipping testing steps I, J, K, and L since they require ifpack and ifpack has not been enabled!\n";
+    if(out) *out << "\nSkipping testing steps J, K, and L since they require ifpack and ifpack has not been enabled!\n";
 
 #endif // HAVE_AZTECOO_IFPACK
 
@@ -259,20 +281,14 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     opFactory->uninitializeOp(&*nsA);
     epetra_A->Scale(2.5);
     opFactory->initializeOp(A,&*nsA);
-  
-    if(out) *out << "\nN) Testing the LinearOpBase interface of nsA ...\n";
 
-    Thyra::seed_randomize<double>(0);
-    result = linearOpTester.check(*nsA,out,indentSpacer,indentSpacer);
-    if(!result) success = false;
-
-    if(out) *out << "\nO) Testing the LinearOpWithSolveBase interface of nsA ...\n";
+    if(out) *out << "\nN) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
     Thyra::seed_randomize<double>(0);
     result = linearOpWithSolveTester.check(*nsA,out,indentSpacer,indentSpacer);
     if(!result) success = false;
 
-    if(out) *out << "\nP) Uninitialize the matrix object nsA, create a scaled (by 2.5) copy  epetra_A2 of epetra_A, and then reinitialize nsA with epetra_A2 ...\n";
+    if(out) *out << "\nO) Uninitialize the matrix object nsA, create a scaled (by 2.5) copy  epetra_A2 of epetra_A, and then reinitialize nsA with epetra_A2 ...\n";
 
     Teuchos::RefCountPtr<Epetra_CrsMatrix>
       epetra_A2 = Teuchos::rcp(new Epetra_CrsMatrix(*epetra_A));
@@ -281,14 +297,8 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       A2 = Teuchos::rcp(new EpetraLinearOp(epetra_A2));
     opFactory->uninitializeOp(&*nsA);
     opFactory->initializeOp(A2,&*nsA);
-  
-    if(out) *out << "\nQ) Testing the LinearOpBase interface of nsA ...\n";
 
-    Thyra::seed_randomize<double>(0);
-    result = linearOpTester.check(*nsA,out,indentSpacer,indentSpacer);
-    if(!result) success = false;
-
-    if(out) *out << "\nR) Testing the LinearOpWithSolveBase interface of nsA ...\n";
+    if(out) *out << "\nP) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
     Thyra::seed_randomize<double>(0);
     result = linearOpWithSolveTester.check(*nsA,out,indentSpacer,indentSpacer);
@@ -296,26 +306,20 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
     if(!useAztecPrec) {
 
-      if(out) *out << "\nS) Create an implicitly scaled (by 2.5) and transposed matrix A3 = scale(2.5,transpose(A)) and initialize nsA2 ...\n";
+      if(out) *out << "\nQ) Create an implicitly scaled (by 2.5) and transposed matrix A3 = scale(2.5,transpose(A)) and initialize nsA2 ...\n";
     
       Teuchos::RefCountPtr<const LinearOpBase<double> >
         A3 = scale(2.5,transpose(A));
       Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
         nsA2 = createAndInitializeLinearOpWithSolve(*opFactory,A3);
     
-      if(out) *out << "\nT) Testing the LinearOpBase interface of nsA2 ...\n";
-    
-      Thyra::seed_randomize<double>(0);
-      result = linearOpTester.check(*nsA2,out,indentSpacer,indentSpacer);
-      if(!result) success = false;
-    
-      if(out) *out << "\nU) Testing the LinearOpWithSolveBase interface of nsA2 ...\n";
+      if(out) *out << "\nR) Testing the LinearOpWithSolveBase interface of nsA2 ...\n";
     
       Thyra::seed_randomize<double>(0);
       result = linearOpWithSolveTester.check(*nsA2,out,indentSpacer,indentSpacer);
       if(!result) success = false;
     
-      if(out) *out << "\nV) Testing that LinearOpBase interfaces of transpose(nsA) == nsA2 ...\n";
+      if(out) *out << "\nS) Testing that LinearOpBase interfaces of transpose(nsA) == nsA2 ...\n";
     
       result = linearOpTester.compare(
         *transpose(Teuchos::rcp_implicit_cast<const LinearOpBase<double> >(nsA)),*nsA2
@@ -326,7 +330,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     }
     else {
 
-      if(out) *out << "\nSkipping testing steps S, T, U, and V because we are using internal AztecOO preconditioners!\n";
+      if(out) *out << "\nSkipping testing steps Q, R, and S because we are using internal AztecOO preconditioners!\n";
 
     }
 
