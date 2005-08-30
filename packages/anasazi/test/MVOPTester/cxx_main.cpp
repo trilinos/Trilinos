@@ -31,8 +31,6 @@
 //  to Epetra and Thyra.
 //
 
-// #define TEST_THYRA_ADAPTER
-
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
 #ifdef HAVE_MPI
@@ -49,7 +47,7 @@
 #include "AnasaziMVOPTester.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 
-#ifdef TEST_THYRA_ADAPTER
+#ifdef HAVE_EPETRA_THYRA
 #include "AnasaziThyraAdapter.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
@@ -89,13 +87,13 @@ int main(int argc, char *argv[])
   
   // Get update list and number of local equations from newly created Map.
   int NumMyElements = Map->NumMyElements();
-  int * MyGlobalElements = new int[NumMyElements];
-  Map->MyGlobalElements(MyGlobalElements);
+  std::vector<int> MyGlobalElements(NumMyElements);
+  Map->MyGlobalElements(&MyGlobalElements[0]);
 
   // Create an integer vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
   // on this processor
-  int * NumNz = new int[NumMyElements];
+  std::vector<int> NumNz(NumMyElements);
 
   // We are building a tridiagonal matrix where each row has (-1 2 -1)
   // So we need 2 off-diagonal terms (except for the first and last equation)
@@ -109,14 +107,14 @@ int main(int argc, char *argv[])
   }
 
   // Create an Epetra_Matrix
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Map, NumNz) );
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Map, &NumNz[0]) );
    
   // Add  rows one-at-a-time
   // Need some vectors to help
   // Off diagonal Values will always be -1
-  double *Values = new double[2];
+  std::vector<double> Values(2);
   Values[0] = -1.0; Values[1] = -1.0;
-  int *Indices = new int[2];
+  std::vector<int> Indices(2);
   double two = 2.0;
   int NumEntries;
   for (i=0; i<NumMyElements; i++) {
@@ -133,10 +131,10 @@ int main(int argc, char *argv[])
       Indices[1] = MyGlobalElements[i]+1;
       NumEntries = 2;
     }
-    ierr = A->InsertGlobalValues(MyGlobalElements[i],NumEntries,Values,Indices);
+    ierr = A->InsertGlobalValues(MyGlobalElements[i],NumEntries,&Values[0],&Indices[0]);
     assert(ierr==0);
     // Put in the diagonal entry
-    ierr = A->InsertGlobalValues(MyGlobalElements[i],1,&two,MyGlobalElements+i);
+    ierr = A->InsertGlobalValues(MyGlobalElements[i],1,&two,&MyGlobalElements[i]);
     assert(ierr==0);
   }
    
@@ -197,7 +195,7 @@ int main(int argc, char *argv[])
   }
 
 
-#ifdef TEST_THYRA_ADAPTER
+#ifdef HAVE_EPETRA_THYRA
   typedef Thyra::MultiVectorBase<double> TMVB;
   typedef Thyra::LinearOpBase<double>    TLOB;
   // create thyra objects from the epetra objects
@@ -253,12 +251,6 @@ int main(int argc, char *argv[])
     break;
   }
 #endif
-
-  // Release all objects
-  delete [] NumNz;
-  delete [] Values;
-  delete [] Indices;
-  delete [] MyGlobalElements;
 
 #ifdef HAVE_MPI
   MPI_Finalize();

@@ -56,6 +56,9 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
+/* Define if want to build with epetra enabled */
+#undef HAVE_EPETRA_THYRA
+
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 

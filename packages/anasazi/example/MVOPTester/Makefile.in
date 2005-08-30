@@ -115,6 +115,8 @@ BUILD_AZTECOO_FALSE = @BUILD_AZTECOO_FALSE@
 BUILD_AZTECOO_TRUE = @BUILD_AZTECOO_TRUE@
 BUILD_BELOS_FALSE = @BUILD_BELOS_FALSE@
 BUILD_BELOS_TRUE = @BUILD_BELOS_TRUE@
+BUILD_EPETRA_THYRA_FALSE = @BUILD_EPETRA_THYRA_FALSE@
+BUILD_EPETRA_THYRA_TRUE = @BUILD_EPETRA_THYRA_TRUE@
 BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
 BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
 BUILD_IFPACK_FALSE = @BUILD_IFPACK_FALSE@
@@ -253,7 +255,9 @@ MVOPTesterEx_DEPENDENCIES = \
         $(top_builddir)/../epetra/src/libepetra.a \
         $(top_builddir)/../teuchos/src/libteuchos.a 
 
-MVOPTesterEx_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
+MVOPTesterEx_CXXFLAGS = -I$(top_srcdir)/src \
+			-I$(top_srcdir)/util/ModeLaplace
+
 
 #np# List libraries that np is dependent on.
 MVOPTesterEx_LDADD = \

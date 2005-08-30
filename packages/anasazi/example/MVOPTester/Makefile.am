@@ -33,7 +33,8 @@ MVOPTesterEx_DEPENDENCIES = \
         $(top_builddir)/../epetra/src/libepetra.a \
         $(top_builddir)/../teuchos/src/libteuchos.a 
 
-MVOPTesterEx_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
+MVOPTesterEx_CXXFLAGS = -I$(top_srcdir)/src \
+			-I$(top_srcdir)/util/ModeLaplace
 
 #np# List libraries that np is dependent on.
 MVOPTesterEx_LDADD = \

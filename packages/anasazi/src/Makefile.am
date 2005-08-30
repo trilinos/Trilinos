@@ -34,12 +34,24 @@ CORE_H = \
 	$(srcdir)/AnasaziOperatorTraits.hpp \
 	$(srcdir)/AnasaziOutputManager.hpp \
 	$(srcdir)/AnasaziReturnType.hpp \
-	$(srcdir)/AnasaziSortManager.hpp \
-	$(srcdir)/AnasaziThyraAdapter.hpp 
+	$(srcdir)/AnasaziSortManager.hpp
 
 CORE = \
 	$(srcdir)/AnasaziEpetraAdapter.cpp \
 	$(srcdir)/AnasaziVersion.cpp
+
+if BUILD_THYRA
+
+THYRA_H = \
+	$(srcdir)/AnasaziThyraAdapter.hpp 
+THYRA = 
+
+else
+
+THYRA_H = 
+THYRA = 
+
+endif
 
 UTIL_H = 
 
@@ -126,6 +138,7 @@ ANASAZI_LIB = libanasazi.a
 #np# replace new_package with the name of the package being autotool'ed here
 ANASAZI_H = \
 	$(CORE_H) \
+	$(THYRA_H) \
 	$(UTIL_H) \
 	$(ENUM_H) \
 	$(UNIPROC_H) \
@@ -138,6 +151,7 @@ ANASAZI_H = \
 #np# replace new_package with the name of the package being autotool'ed here
 libanasazi_a_SOURCES = \
 	$(CORE) \
+	$(THYRA) \
 	$(UTIL) \
 	$(UNIPROC) \
 	$(SERIAL) \
@@ -239,6 +253,12 @@ else
 BUILD_IFPACK_LIBS =
 endif
 
+if BUILD_THYRA
+BUILD_THYRA_LIBS = cd $(top_builddir)/../thyra ; $(MAKE) all-libs
+else
+BUILD_THYRA_LIBS =
+endif
+
 all-libs:
 	$(MAKE) libanasazi.a
 	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
@@ -247,8 +267,4 @@ all-libs:
 	$(BUILD_BELOS_LIBS)
 	$(BUILD_AZTECOO_LIBS)
 	$(BUILD_IFPACK_LIBS)
-
-
-
-
-
+	$(BUILD_THYRA_LIBS)
