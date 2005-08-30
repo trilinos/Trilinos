@@ -30,9 +30,7 @@
 created by the python distutils module."""
 
 # System includes
-import commands
 import os
-import string
 import sys
 from   distutils.util import get_platform
 
