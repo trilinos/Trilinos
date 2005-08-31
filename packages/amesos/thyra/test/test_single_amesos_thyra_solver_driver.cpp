@@ -48,7 +48,12 @@ int main(int argc, char* argv[])
     //
     
     std::string                             matrixFile             = "";
-    Thyra::Amesos::ESolverType              solverType             = Thyra::Amesos::KLU;
+    Thyra::Amesos::ESolverType              solverType
+#ifdef HAVE_AMESOS_KLU
+                                                                   = Thyra::Amesos::KLU;
+#else
+                                                                   = Thyra::Amesos::LAPACK;
+#endif
     Thyra::Amesos::ERefactorizationPolicy   refactorizationPolicy  = Thyra::Amesos::REPIVOT_ON_REFACTORIZATION;
     bool                                    testTranspose          = true;
     int                                     numRandomVectors       = 1;
