@@ -1,0 +1,246 @@
+// @HEADER
+// ***********************************************************************
+//
+//                 Anasazi: Block Eigensolvers Package
+//                 Copyright (2004) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+// @HEADER
+//
+//  This test is for the LOBPCG solver using the Thyra interface
+//  The Thyra objects will be extracted from Epetra objects using the
+//  Epetra-Thyra interface.
+//  Therefore, this test should yield identical results compared against
+//  the Epetra-only LOBPCG solver test.
+//
+#include "AnasaziConfigDefs.hpp"
+#include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziEpetraAdapter.hpp"
+#include "AnasaziLOBPCG.hpp"
+#include "AnasaziEpetraAdapter.hpp"
+#include "AnasaziBasicSort.hpp"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Vector.h"
+
+#ifdef EPETRA_MPI
+#include "Epetra_MpiComm.h"
+#include <mpi.h>
+#else
+#include "Epetra_SerialComm.h"
+#endif
+
+#ifdef HAVE_EPETRA_THYRA
+#include "AnasaziThyraAdapter.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
+#endif
+#include "ModeLaplace1DQ1.h"
+
+int main(int argc, char *argv[]) 
+{
+  int i;
+  int info = 0;
+  
+#ifdef EPETRA_MPI
+
+  // Initialize MPI
+  MPI_Init(&argc,&argv);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+
+#else
+
+  Epetra_SerialComm Comm;
+
+#endif
+  
+  int MyPID = Comm.MyPID();
+  
+  bool testFailed = false;
+  bool verbose = 0;
+  std::string which("SM");
+  if (argc>1) {
+    if (argv[1][0]=='-' && argv[1][1]=='v') {
+      verbose = true;
+    }
+    else {
+      which = argv[1];
+    }
+  }
+  if (argc>2) {
+    if (argv[2][0]=='-' && argv[2][1]=='v') {
+      verbose = true;
+    }
+    else {
+      which = argv[2];
+    }
+  }
+
+  if (verbose && MyPID == 0) {
+    cout << Anasazi::Anasazi_Version() << endl << endl;
+  }
+
+#ifndef HAVE_EPETRA_THYRA
+  if (verbose && MyPid == 0) {
+      cout << "Please configure Anasazi with:" << endl;
+      cout << "--enable-epetra-thyra" << endl;
+      cout << "--enable-anasazy-thyra" << endl;
+  }
+  return 0;
+#endif
+  
+  Anasazi::ReturnType returnCode = Anasazi::Ok;  
+  
+  typedef Thyra::MultiVectorBase<double> MV;
+  typedef Thyra::LinearOpBase<double>    OP;
+
+  //  Problem information
+  int space_dim = 1;
+  std::vector<double> brick_dim( space_dim );
+  brick_dim[0] = 1.0;
+  std::vector<int> elements( space_dim );
+  elements[0] = 100;
+
+  // create a Thyra::VectorSpaceBase
+  Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<double> > epetra_vs = 
+    Thyra::create_MPIVectorSpaceBase(Map);
+
+  // create a ScalarProdVectorSpaceBase
+  Teuchos::RefCountPtr<const Thyra::ScalarProdVectorSpaceBase<double> > sp_domain = 
+    Teuchos::rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<double> >(epetra_vs,true);
+
+  // create an epetra multivector
+  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
+  ivec->Random();
+
+  // create a MultiVectorBase (from the Epetra_MultiVector)
+  Teuchos::RefCountPtr<Thyra::MultiVectorBase<double> > thyra_ivec = 
+    Thyra::create_MPIMultiVectorBase(Teuchos::rcp_implicit_cast<Epetra_MultiVector>(ivec),epetra_vs,sp_domain);
+
+  // Create problem
+  Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+
+  // Get the stiffness and mass matrices
+  Teuchos::RefCountPtr<Epetra_Operator> K = Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getStiffness()), false );
+  Teuchos::RefCountPtr<Epetra_Operator> M = Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getMass()), false );
+
+  // Create Thyra LinearOpBase objects from the Epetra_Operator objects
+  Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > thyra_K = 
+    Teuchos::rcp( new Thyra::EpetraLinearOp(K) );
+  Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > thyra_M = 
+    Teuchos::rcp( new Thyra::EpetraLinearOp(M) );
+
+  // Eigensolver parameters
+  int nev = 4;
+  int blockSize = 5;
+  int maxIters = 500;
+  double tol = 1.0e-6;
+
+  // Create parameter list to pass into solver
+  Teuchos::ParameterList MyPL;
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Max Iters", maxIters );
+  MyPL.set( "Tol", tol );
+  
+  // Create default output manager 
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
+
+  // Set verbosity level
+  if (verbose) {
+    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
+  }
+
+  // Create the sort manager
+  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
+     Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
+
+  // Create eigenproblem
+
+  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(K, M, ivec) );
+  //  MyProblem->SetPrec( Teuchos::rcp( const_cast<Epetra_Operator *>(opStiffness->getPreconditioner()), false ) );
+  
+  // Inform the eigenproblem that the operator A is symmetric
+  MyProblem->SetSymmetric(true);
+  
+  // Set the number of eigenvalues requested and the blocksize the solver should use
+  MyProblem->SetNEV( nev );
+  
+  // Inform the eigenproblem that you are finishing passing it information
+  info = MyProblem->SetProblem();
+  if (info)
+    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+  
+  // Create the eigensolver 
+  Anasazi::LOBPCG<double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
+
+
+  
+  // Solve the problem to the specified tolerances or length
+  returnCode = MySolver.solve();
+  if (returnCode != Anasazi::Ok)
+    testFailed = true;
+
+  // Get the eigenvalues and eigenvectors from the eigenproblem
+  Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
+  Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
+  
+  if (verbose && returnCode == Anasazi::Ok)
+    info = testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
+
+  
+  // Compute the direct residual
+  std::vector<double> normV( evecs->NumVectors() );
+  Teuchos::SerialDenseMatrix<int,double> T(evecs->NumVectors(), evecs->NumVectors());
+  for (int i=0; i<evecs->NumVectors(); i++)
+    T(i,i) = (*evals)[i];
+  Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
+  K->Apply( *evecs, Kvec );  
+  Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
+  M->Apply( *evecs, Mvec );  
+  Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
+  info = Kvec.Norm2( &normV[0] );
+  assert( info==0 );
+  
+  for ( i=0; i<nev; i++ ) {
+    if ( Teuchos::ScalarTraits<double>::magnitude(normV[i]/(*evals)[i]) > 5.0e-5 )
+      testFailed = true;
+  }
+
+#ifdef EPETRA_MPI
+
+  MPI_Finalize() ;
+
+#endif
+
+  if (testFailed) {
+    if (verbose && MyPID==0)
+      cout << "End Result: TEST FAILED" << endl;	
+    return -1;
+  }
+  //
+  // Default return value
+  //
+  if (verbose && MyPID==0)
+    cout << "End Result: TEST PASSED" << endl;
+  return 0;
+
+}	
