@@ -283,14 +283,12 @@ void MPITridiagLinearOp<Scalar>::communicate(
       }
       else {
         MPI_Sendrecv_replace( &buff[0], numPrimObjs, primMPIType, procRank_+1, 0, procRank_-1, 0, mpiComm_, &status );
-        TEST_FOR_EXCEPT( status.MPI_ERROR );
         PTT::loadPrimitiveObjs( numPrimObjs, &buff[0], x_km1 );
       }
     }
     // Send and receive x[0] backward and copy into x_kp1
     if(first) {
       MPI_Recv( &buff[0], numPrimObjs, primMPIType, procRank_+1, 0, mpiComm_, &status );
-      TEST_FOR_EXCEPT( status.MPI_ERROR );
       PTT::loadPrimitiveObjs( numPrimObjs, &buff[0], x_kp1 );
     }
     else {
@@ -300,7 +298,6 @@ void MPITridiagLinearOp<Scalar>::communicate(
       }
       else {
         MPI_Sendrecv_replace( &buff[0], numPrimObjs, primMPIType, procRank_-1, 0, procRank_+1, 0, mpiComm_, &status );
-        TEST_FOR_EXCEPT( status.MPI_ERROR );
         PTT::loadPrimitiveObjs( numPrimObjs, &buff[0], x_kp1 );
       }
     }
