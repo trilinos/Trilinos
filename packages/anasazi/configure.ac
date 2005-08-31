@@ -295,7 +295,7 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 # ------------------------------------------------------------------------
 # Trilinos Package Dependencies
 # Required: Epetra, Teuchos
-# Optional: Triutils, Belos, AztecOO, and Ifpack
+# Optional: Thyra, Triutils, Belos, AztecOO, and Ifpack
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, triutils, ANASAZI_TRIUTILS, BUILD_TRIUTILS, yes, [Build examples which use Triutils.], [Build examples which use Triutils. Can be overridden with --disable-anasazi-triutils.])
@@ -306,7 +306,7 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, aztecoo, ANASAZI_AZTECOO, BUILD_AZTECOO,
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, ifpack, ANASAZI_IFPACK, BUILD_IFPACK, yes, [Build examples which use Ifpack.], [Build examples which use Ifpack. Can be overridden with --disable-anasazi-ifpack.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, thyra, ANASAZI_THYRA, BUILD_THYRA, yes, [Build code which uses Thyra.], [Build code which uses Thyra. Can be overridden with --disable-anasazi-thyra.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, thyra, ANASAZI_THYRA, BUILD_ANASAZI_THYRA, yes, [Build code which uses Thyra.], [Build code which uses Thyra. Can be overridden with --disable-anasazi-thyra.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetra, thyra, EPETRA_THYRA, BUILD_EPETRA_THYRA, yes, [Build examples which use Epetra-Thyra adapters.], [Build examples which use Epetra-Thyra adapters. Can be overridden with --disable-epetra-thyra.])
 
@@ -434,6 +434,12 @@ AC_CONFIG_FILES([
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile
 		test/scripts/daily/mpi/Makefile
+		thyra/Makefile
+		thyra/src/Makefile
+		thyra/example/Makefile
+		thyra/test/Makefile
+		thyra/example/MVOPTester/Makefile
+		thyra/test/MVOPTester/Makefile
 		])
 
 AC_OUTPUT()

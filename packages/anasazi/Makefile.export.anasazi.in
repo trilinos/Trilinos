@@ -8,8 +8,7 @@ include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 @BUILD_BELOS_TRUE@include @abs_top_builddir@/../belos/Makefile.export.belos
 @BUILD_AZTECOO_TRUE@include @abs_top_builddir@/../aztecoo/Makefile.export.aztecoo
 @BUILD_IFPACK_TRUE@include @abs_top_builddir@/../ifpack/Makefile.export.ifpack
-@BUILD_THYRA_TRUE@include @abs_top_builddir@/../thyra/Makefile.export.thyra
-
+@BUILD_ANASAZI_THYRA_TRUE@include @abs_top_builddir@/../thyra/Makefile.export.thyra
 
 _ANASAZI_INCLUDES = \
 	-I@abs_top_srcdir@/src \

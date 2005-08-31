@@ -14,8 +14,33 @@
 
 @SET_MAKE@
 
-# @HEADER
-# @HEADER
+#@HEADER
+# ************************************************************************
+#
+#               Anasazi: Block Eigensolvers Package
+#               Copyright (2001) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+#
+# ************************************************************************
+#@HEADER
 
 #np# Note the following paragraph.
 # ------------------------------------------------------------------------
@@ -50,9 +75,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 subdir = src
-DIST_COMMON = $(am__include_HEADERS_DIST) \
-	$(srcdir)/Anasazi_config.h.in $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in
+DIST_COMMON = $(include_HEADERS) $(srcdir)/Anasazi_config.h.in \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -93,7 +117,7 @@ am__objects_2 =
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
 am_libanasazi_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_2) $(am__objects_2) $(am__objects_2) \
-	$(am__objects_2) $(am__objects_2) $(am__objects_3)
+	$(am__objects_2) $(am__objects_3)
 libanasazi_a_OBJECTS = $(am_libanasazi_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -107,23 +131,6 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(libanasazi_a_SOURCES) $(EXTRA_libanasazi_a_SOURCES)
 DIST_SOURCES = $(libanasazi_a_SOURCES) $(EXTRA_libanasazi_a_SOURCES)
-am__include_HEADERS_DIST = $(srcdir)/AnasaziBasicEigenproblem.hpp \
-	$(srcdir)/AnasaziBasicSort.hpp \
-	$(srcdir)/AnasaziBlockDavidson.hpp \
-	$(srcdir)/AnasaziBlockKrylovSchur.hpp \
-	$(srcdir)/AnasaziConfigDefs.hpp \
-	$(srcdir)/AnasaziEigenproblem.hpp \
-	$(srcdir)/AnasaziEigensolver.hpp \
-	$(srcdir)/AnasaziEpetraAdapter.hpp $(srcdir)/AnasaziLOBPCG.hpp \
-	$(srcdir)/AnasaziModalSolverUtils.hpp \
-	$(srcdir)/AnasaziMultiVec.hpp \
-	$(srcdir)/AnasaziMultiVecTraits.hpp \
-	$(srcdir)/AnasaziOperator.hpp \
-	$(srcdir)/AnasaziOperatorTraits.hpp \
-	$(srcdir)/AnasaziOutputManager.hpp \
-	$(srcdir)/AnasaziReturnType.hpp \
-	$(srcdir)/AnasaziSortManager.hpp \
-	$(srcdir)/AnasaziThyraAdapter.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -140,6 +147,8 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
+BUILD_ANASAZI_THYRA_FALSE = @BUILD_ANASAZI_THYRA_FALSE@
+BUILD_ANASAZI_THYRA_TRUE = @BUILD_ANASAZI_THYRA_TRUE@
 BUILD_AZTECOO_FALSE = @BUILD_AZTECOO_FALSE@
 BUILD_AZTECOO_TRUE = @BUILD_AZTECOO_TRUE@
 BUILD_BELOS_FALSE = @BUILD_BELOS_FALSE@
@@ -152,8 +161,6 @@ BUILD_IFPACK_FALSE = @BUILD_IFPACK_FALSE@
 BUILD_IFPACK_TRUE = @BUILD_IFPACK_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
-BUILD_THYRA_FALSE = @BUILD_THYRA_FALSE@
-BUILD_THYRA_TRUE = @BUILD_THYRA_TRUE@
 BUILD_TRIUTILS_FALSE = @BUILD_TRIUTILS_FALSE@
 BUILD_TRIUTILS_TRUE = @BUILD_TRIUTILS_TRUE@
 CC = @CC@
@@ -296,12 +303,6 @@ CORE = \
 	$(srcdir)/AnasaziEpetraAdapter.cpp \
 	$(srcdir)/AnasaziVersion.cpp
 
-@BUILD_THYRA_FALSE@THYRA_H = 
-@BUILD_THYRA_TRUE@THYRA_H = \
-@BUILD_THYRA_TRUE@	$(srcdir)/AnasaziThyraAdapter.hpp 
-
-@BUILD_THYRA_FALSE@THYRA = 
-@BUILD_THYRA_TRUE@THYRA = 
 UTIL_H = 
 UTIL = 
 ENUM_H = 
@@ -354,7 +355,6 @@ ANASAZI_LIB = libanasazi.a
 #np# replace new_package with the name of the package being autotool'ed here
 ANASAZI_H = \
 	$(CORE_H) \
-	$(THYRA_H) \
 	$(UTIL_H) \
 	$(ENUM_H) \
 	$(UNIPROC_H) \
@@ -368,7 +368,6 @@ ANASAZI_H = \
 #np# replace new_package with the name of the package being autotool'ed here
 libanasazi_a_SOURCES = \
 	$(CORE) \
-	$(THYRA) \
 	$(UTIL) \
 	$(UNIPROC) \
 	$(SERIAL) \
@@ -448,8 +447,8 @@ MAINTAINERCLEANFILES = Makefile.in
 @BUILD_AZTECOO_TRUE@BUILD_AZTECOO_LIBS = cd $(top_builddir)/../aztecoo ; $(MAKE) all-libs
 @BUILD_IFPACK_FALSE@BUILD_IFPACK_LIBS = 
 @BUILD_IFPACK_TRUE@BUILD_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; $(MAKE) all-libs
-@BUILD_THYRA_FALSE@BUILD_THYRA_LIBS = 
-@BUILD_THYRA_TRUE@BUILD_THYRA_LIBS = cd $(top_builddir)/../thyra ; $(MAKE) all-libs
+@BUILD_ANASAZI_THYRA_FALSE@BUILD_THYRA_LIBS = 
+@BUILD_ANASAZI_THYRA_TRUE@BUILD_THYRA_LIBS = cd $(top_builddir)/../thyra ; $(MAKE) all-libs
 all: Anasazi_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
