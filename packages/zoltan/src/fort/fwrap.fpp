@@ -335,11 +335,10 @@ integer(Zoltan_INT), dimension(*), intent(out) :: zzOut
 integer(Zoltan_INT) INTENT_IN nbytes
 end subroutine Zfw_Copy
 end interface
-interface
 
 interface
 !NAS$ ALIEN "F77 zfw_copy_to"
-subroutine Zfw_Copy_To(zz1, zz2, nbytes)
+function Zfw_Copy_To(zz1, zz2, nbytes)
 use zoltan_types
 use lb_user_const
 use zoltan_user_data
@@ -347,10 +346,10 @@ implicit none
 integer(Zoltan_INT) :: Zfw_Copy_To
 integer(Zoltan_INT), dimension(*) INTENT_IN zz1, zz2
 integer(Zoltan_INT) INTENT_IN nbytes
-end subroutine Zfw_Copy_To
+end function Zfw_Copy_To
 end interface
-interface
 
+interface
 !NAS$ ALIEN "F77 zfw_destroy"
 subroutine Zfw_Destroy(zz,nbytes)
 use zoltan_types
@@ -1362,6 +1361,7 @@ function Zf90_Copy(zz_from)
 type(Zoltan_Struct), pointer :: Zf90_Copy, zz_from
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_to, zz_addr
 integer(Zoltan_INT) :: nbytes, i
+logical :: isnull
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz_from%addr%addr(i:i))
@@ -1378,7 +1378,7 @@ endif
 end function Zf90_Copy
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine Zf90_Copy_To(zz_to, zz_from)
+function Zf90_Copy_To(zz_to, zz_from)
 integer(Zoltan_INT) :: Zf90_Copy_To
 type(Zoltan_Struct), pointer :: zz_to, zz_from
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr_to, zz_addr_from
@@ -1389,7 +1389,7 @@ do i=1,nbytes
    zz_addr_from(i) = ichar(zz_from%addr%addr(i:i))
 end do
 Zf90_Copy_To = Zfw_Copy_To(zz_addr_to,zz_addr_from,nbytes)
-end subroutine Zf90_Copy_To
+end function Zf90_Copy_To
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine Zf90_Destroy(zz)
