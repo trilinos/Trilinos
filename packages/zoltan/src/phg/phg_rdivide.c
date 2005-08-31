@@ -22,13 +22,15 @@
 */
 
 
-static int split_hypergraph (int *pins[2], HGraph*, HGraph*, Partition, int, ZZ*, double *, double *);
+static int split_hypergraph(int *pins[2], HGraph*, HGraph*, Partition, int,
+                            ZZ*, double *, double *);
 
 
 static int rdivide_and_prepsend(int, int, Partition, ZZ *, HGraph *,
                                 PHGPartParams *, int, int *, int *, int *,
                                 int *, int *, int);
-static float balanceTol(PHGPartParams *hgp, int pno, float ratios[2], float tot, float pw);
+static float balanceTol(PHGPartParams *hgp, int pno, float ratios[2],
+                        float tot, float pw);
 
 /* Recursively divides both the problem and the processes (if enabled)
    into 2 parts until all parts are found */
@@ -54,11 +56,15 @@ int Zoltan_PHG_rdivide(
   float  bal_tol = hgp->bal_tol;
   float  bisec_part_sizes[2]={0.0,0.0};   /* Target partition sizes; dimension is 2 
                                         because we are doing bisection */
-  static int timer_rdivide=-1;      /* Timer; declared static to accumulate
-                                       times over multiple runs. 
-                                       Tricky to get right because of the
-                                       recursion.  */
+  static int timer_rdivide=-1;      /* Timers; declared static to accumulate */
+  static int timer_before=-1;       /* times over multiple runs.  */
+  static int timer_after=-1;        /* Tricky to get right because of the */
+  static int timer_split=-1;        /* recursion.  */
+  static int timer_redist=-1;
+  static int timer_send=-1;
+
   int do_timing = (hgp->use_timers > 1);
+  int detail_timing = (hgp->use_timers > 3);
 
   if (!hg->nVtx)  /* UVC: no vertex; no need for recursion!? */
       return ierr;
@@ -66,8 +72,20 @@ int Zoltan_PHG_rdivide(
   if (do_timing) { 
     if (timer_rdivide < 0) 
       timer_rdivide = Zoltan_Timer_Init(zz->ZTime, 1, "Rdivide");
-
     ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, hg->comm->Communicator);
+  }
+  if (detail_timing) {
+    if (timer_before < 0) 
+      timer_before = Zoltan_Timer_Init(zz->ZTime, 0, "Rdivide_BefPart");
+    ZOLTAN_TIMER_START(zz->ZTime, timer_before, hg->comm->Communicator);
+    if (timer_after < 0) 
+      timer_after = Zoltan_Timer_Init(zz->ZTime, 0, "Rdivide_AftPart");
+    if (timer_split < 0) 
+      timer_split = Zoltan_Timer_Init(zz->ZTime, 0, "Rdivide_Split");
+    if (timer_redist < 0) 
+      timer_redist = Zoltan_Timer_Init(zz->ZTime, 0, "Rdivide_Redist");
+    if (timer_send < 0) 
+      timer_send = Zoltan_Timer_Init(zz->ZTime, 0, "Rdivide_Send");
   }
   hg->redl = hgp->redl;
   
@@ -102,6 +120,8 @@ int Zoltan_PHG_rdivide(
 
   if (do_timing)  /* Don't include partitioning time in rdivide */
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hg->comm->Communicator);
+  if (detail_timing)
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_before, hg->comm->Communicator);
 
   /*uprintf(hgc, "OLD MAxImbal: %.3f   New MaxImbal: %.3f\n", bal_tol, hgp->bal_tol);*/
 
@@ -109,6 +129,8 @@ int Zoltan_PHG_rdivide(
 
   if (do_timing)  /* Restart rdivide timer */
     ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, hg->comm->Communicator);
+  if (detail_timing)
+    ZOLTAN_TIMER_START(zz->ZTime, timer_after, hg->comm->Communicator);
 
   hgp->bal_tol = bal_tol;
   if (ierr != ZOLTAN_OK)
@@ -126,7 +148,7 @@ int Zoltan_PHG_rdivide(
     goto End;
   }
 
-  if (hg->nEdge && (!(pins[0] = (int*) ZOLTAN_CALLOC (2 * hg->nEdge, sizeof(int)))
+  if (hg->nEdge && (!(pins[0] = (int*) ZOLTAN_CALLOC(2*hg->nEdge, sizeof(int)))
    || !(lpins[0] = (int*) ZOLTAN_CALLOC (2 * hg->nEdge, sizeof(int)))))
       MEMORY_ERROR;
   if (pins[0] && lpins[0]) {
@@ -134,7 +156,7 @@ int Zoltan_PHG_rdivide(
       lpins[1] = &(lpins[0][hg->nEdge]);
   }
      
-  /* Initial calculation of the local pin distribution  (sigma in UVC's papers)  */
+  /* Initial calculation of the local pin distribution (sigma in UVC's papers)*/
   for (i = 0; i < hg->nEdge; ++i)
       for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
         ++(lpins[part[hg->hvertex[j]]][i]);
@@ -145,6 +167,11 @@ int Zoltan_PHG_rdivide(
                     hgc->row_comm);
   ZOLTAN_FREE (&lpins[0]);   /* we don't need lpins anymore */
     
+  if (detail_timing) {
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_after, hg->comm->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer_split, hg->comm->Communicator);
+  }
+  
   /* recursively divide in two parts and repartition hypergraph */
   if (mid>lo) { /* only split if we really need it */
       if (!(left = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
@@ -173,6 +200,9 @@ int Zoltan_PHG_rdivide(
   }
   Zoltan_Multifree (__FILE__, __LINE__, 2, &pins[0], &part);
   
+  if (detail_timing) {
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_split, hg->comm->Communicator);
+  }
 
   if (hgp->proc_split && hgc->nProc>1 && left && right) {
       PHGComm  leftcomm, rightcomm;
@@ -181,27 +211,44 @@ int Zoltan_PHG_rdivide(
           *leftdest=NULL, *rightdest=NULL, procmid;
       ZOLTAN_COMM_OBJ *plan=NULL;    
 
+      if (detail_timing) {
+        ZOLTAN_TIMER_START(zz->ZTime, timer_redist, hg->comm->Communicator);
+      }
       /* redistribute left and right parts */
-      procmid = (int)((float) (hgc->nProc-1) * (float) left->dist_x[hgc->nProc_x] / (float) hg->dist_x[hgc->nProc_x]);
+      procmid = (int)((float) (hgc->nProc-1) 
+                    * (float) left->dist_x[hgc->nProc_x] 
+                    / (float) hg->dist_x[hgc->nProc_x]);
 #ifdef _DEBUG1
       if (procmid<0 || (procmid+1>hgc->nProc-1))
-          errexit("hey hey Proc Number range is [0, %d] prcomid=%d for left #pins=%d nPins=%d", hgc->nProc-1, procmid, left->dist_x[hgc->nProc_x] , hg->dist_x[hgc->nProc_x]);
-      uprintf(hgc, "before redistribute for left procmid=%d ------------------\n", procmid);
+          errexit("hey hey Proc Number range is [0, %d] prcomid=%d "
+                  "for left #pins=%d nPins=%d", hgc->nProc-1, procmid, 
+                   left->dist_x[hgc->nProc_x] , hg->dist_x[hgc->nProc_x]);
+      uprintf(hgc, "before redistribute for left procmid=%d ---------------\n",
+                    procmid);
 #endif
       
-      Zoltan_PHG_Redistribute(zz, hgp, left, 0, procmid, &leftcomm, &newleft, &leftvmap, &leftdest);
+      Zoltan_PHG_Redistribute(zz, hgp, left, 0, procmid, &leftcomm, 
+                              &newleft, &leftvmap, &leftdest);
       if (hgp->output_level >= PHG_DEBUG_LIST)     
-          uprintf(hgc, "Left: H(%d, %d, %d) ----> H(%d, %d, %d)\n", left->nVtx, left->nEdge, left->nPins, newleft.nVtx, newleft.nEdge, newleft.nPins);
+          uprintf(hgc, "Left: H(%d, %d, %d) ----> H(%d, %d, %d)\n", left->nVtx,
+                  left->nEdge, left->nPins, newleft.nVtx, newleft.nEdge,
+                  newleft.nPins);
       Zoltan_HG_HGraph_Free (left);
       
 #ifdef _DEBUG1
       uprintf(hgc, "before redistribute for right ++++++++++++++++++++++\n");
 #endif
-      Zoltan_PHG_Redistribute(zz, hgp, right, procmid+1, hgc->nProc-1, &rightcomm, &newright, &rightvmap, &rightdest);
+      Zoltan_PHG_Redistribute(zz, hgp, right, procmid+1, hgc->nProc-1,
+                              &rightcomm, &newright, &rightvmap, &rightdest);
       if (hgp->output_level >= PHG_DEBUG_LIST)     
-          uprintf(hgc, "Right: H(%d, %d, %d) ----> H(%d, %d, %d)\n", right->nVtx, right->nEdge, right->nPins, newright.nVtx, newright.nEdge, newright.nPins);
+          uprintf(hgc, "Right: H(%d, %d, %d) ----> H(%d, %d, %d)\n",
+                  right->nVtx, right->nEdge, right->nPins, newright.nVtx, 
+                  newright.nEdge, newright.nPins);
       Zoltan_HG_HGraph_Free (right);
       
+      if (detail_timing) {
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_redist, hg->comm->Communicator);
+      }
       nsend = MAX(newleft.nVtx, newright.nVtx);
       part = (Partition) ZOLTAN_MALLOC (nsend * sizeof (int));
       proclist = (int *) ZOLTAN_MALLOC (nsend * sizeof (int));
@@ -239,9 +286,13 @@ int Zoltan_PHG_rdivide(
 
           hgp->bal_tol = save_bal_tol;
           
-          Zoltan_HG_HGraph_Free (&newleft); /* free dist_x and dist_y allocated in Redistribute*/
+          Zoltan_HG_HGraph_Free (&newleft); /* free dist_x and dist_y
+                                               allocated in Redistribute*/
       }
 
+      if (detail_timing) {
+        ZOLTAN_TIMER_START(zz->ZTime, timer_send, hg->comm->Communicator);
+      }
       --msg_tag;
       ierr |= Zoltan_Comm_Create(&plan, nsend, proclist, hgc->Communicator,
                                  msg_tag, &i);
@@ -276,6 +327,9 @@ int Zoltan_PHG_rdivide(
       }
       
       Zoltan_Comm_Destroy(&plan);
+      if (detail_timing) {
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_send, hg->comm->Communicator);
+      }
   } else {
       if (left) {
           float save_bal_tol=hgp->bal_tol;
@@ -305,7 +359,8 @@ int Zoltan_PHG_rdivide(
           float save_bal_tol=hgp->bal_tol;
           
           if (hgp->output_level >= PHG_DEBUG_LIST)     
-              uprintf(hgc, "Right: H(%d, %d, %d)\n", right->nVtx, right->nEdge, right->nPins);
+              uprintf(hgc, "Right: H(%d, %d, %d)\n",
+                      right->nVtx, right->nEdge, right->nPins);
           hgp->bal_tol = balanceTol(hgp, 1, bisec_part_sizes,
                                     leftw+rightw, rightw);
 
@@ -618,7 +673,8 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
 }
 
 
-static float balanceTol(PHGPartParams *hgp, int pno, float ratios[2], float tot, float pw)
+static float balanceTol(PHGPartParams *hgp, int pno, float ratios[2],
+                        float tot, float pw)
 {
     float ntol=(pw==0.0) ? 0.0 : (tot*hgp->bal_tol*ratios[pno])/pw;
     

@@ -500,7 +500,8 @@ End:
     ZOLTAN_FREE(&del);
   }
 
-  ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hg->comm->Communicator);
+  if (do_timing)
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hg->comm->Communicator);
   ZOLTAN_TRACE_EXIT(zz, yo) ;
   return err;
 }
