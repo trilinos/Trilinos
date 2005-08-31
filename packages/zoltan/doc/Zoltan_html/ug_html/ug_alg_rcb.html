@@ -164,6 +164,28 @@ cut.&nbsp; <br>
       </td>
     </tr>
 <tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> SKIP_DIMENSIONS</i></td>
+<td>
+When a 3 dimensional geometry is almost flat, it may make more
+sense to treat it as a 2 dimensional geometry when applying the RCB
+algorithm.  In this case, the RCB calculation is applied to the plane 
+that corresponds with the geometry, and so the cuts, while still orthogonal,
+may no longer be axis aligned.  
+If this parameter is set to <B>1</B>, a 3 dimensional
+geometry will be treated as 2 dimensional if is very flat, 
+or 1 dimensional if it very skinny.  And a 2 dimensional geometry will
+be treated as 1 dimensional if it is very skinny.
+</td>
+</tr>
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> SKIP_RATIO</i></td>
+<td>
+If the <B>SKIP_DIMENSIONS</B> parameter is set, then this parameter
+determines when a geometry is considered to be flat.  
+A bounding box which is oriented to the geometry is constructed, and
+the lengths of it's sides are tested against this ratio.
+</td>
+</tr>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_RECOMPUTE_BOX</i></td>
 
 <td>Flag indicating whether the bounding box of set of partitions is
@@ -244,6 +266,16 @@ the largest and smallest side of a subdomain. Must be &gt; 1. <br>
       <td><br>
       </td>
       <td><i>RCB_LOCK_DIRECTIONS</i> = 0</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>SKIP_DIMENSIONS</i> = 0</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>SKIP_RATIO</i> = 10</td>
     </tr>
     <tr>
       <td><br>

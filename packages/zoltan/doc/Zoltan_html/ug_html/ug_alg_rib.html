@@ -107,6 +107,30 @@ closest objects.
 </tr>
 
 <tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> SKIP_DIMENSIONS</i></td>
+<td>
+When a 3 dimensional geometry is almost flat, it may make more
+sense to treat it as a 2 dimensional geometry when applying the RIB
+algorithm.  (Coordinate values in the omitted direction are ignored
+for the purposes of partitioning.)
+If this parameter is set to <B>1</B>, a 3 dimensional
+geometry will be treated as 2 dimensional if is very flat,
+or 1 dimensional if it very skinny.  And a 2 dimensional geometry will
+be treated as 1 dimensional if it is very skinny.
+</td>
+</tr>
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> SKIP_RATIO</i></td>
+<td>
+If the <B>SKIP_DIMENSIONS</B> parameter is set, then this parameter
+determines when a geometry is considered to be flat.
+A bounding box which is oriented to the geometry is constructed, and
+the lengths of it's sides are tested against this ratio.
+</td>
+</tr>
+
+
+<tr>
 <td VALIGN=TOP><b>Default:</b></td>
 
 <td></td>
@@ -140,6 +164,18 @@ closest objects.
 <td></td>
 
 <td><i>AVERAGE_CUTS</i> = 0</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>SKIP_DIMENSIONS</i> = 0</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>SKIP_RATIO</i> = 10</td>
 </tr>
 
 <tr>
