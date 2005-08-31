@@ -53,6 +53,8 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #endif
 
+using namespace std;
+
 int main(int argc, char *argv[])
 {
   int i, ierr, gerr;
@@ -67,6 +69,7 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
 #endif
 
+
    // number of global elements
   int dim = 100;
   int blockSize = 5;
@@ -80,6 +83,15 @@ int main(int argc, char *argv[])
       verbose = true;
     }
   }
+
+#ifndef HAVE_EPETRA_THYRA
+  if (verbose) {
+      cout << "Please configure Anasazi with:" << endl;
+      cout << "--enable-epetra-thyra" << endl;
+      cout << "--enable-anasazy-thyra" << endl;
+  }
+  return 0;
+#endif
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
@@ -159,41 +171,6 @@ int main(int argc, char *argv[])
   if (verbose) {
     MyOM->SetVerbosity( Anasazi::Warning );
   }
-
-  // test the Epetra adapter multivector
-  ierr = Anasazi::TestMultiVecTraits<double,EMV>(MyOM,ivec);
-  gerr |= ierr;
-  switch (ierr) {
-  case Anasazi::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter PASSED TestMultiVecTraits()" << endl;
-    }
-    break;
-  case Anasazi::Failed:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter FAILED TestMultiVecTraits() ***" 
-           << endl << endl;
-    }
-    break;
-  }
-
-  // test the Epetra adapter operator 
-  ierr = Anasazi::TestOperatorTraits<double,EMV,EOP>(MyOM,ivec,op);
-  gerr |= ierr;
-  switch (ierr) {
-  case Anasazi::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter PASSED TestOperatorTraits()" << endl;
-    }
-    break;
-  case Anasazi::Failed:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter FAILED TestOperatorTraits() ***" 
-           << endl << endl;
-    }
-    break;
-  }
-
 
 #ifdef HAVE_EPETRA_THYRA
   typedef Thyra::MultiVectorBase<double> TMVB;

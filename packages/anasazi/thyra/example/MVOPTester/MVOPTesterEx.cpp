@@ -66,6 +66,15 @@ int main(int argc, char *argv[])
   // PID info
   int MyPID = Comm.MyPID();
 
+#ifndef HAVE_EPETRA_THYRA
+  if (MyPID == 0) {
+      cout << "Please configure Anasazi with:" << endl;
+      cout << "--enable-epetra-thyra" << endl;
+      cout << "--enable-anasazy-thyra" << endl;
+  }
+  return 0;
+#endif
+
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
   Epetra_Map Map(dim, 0, Comm);

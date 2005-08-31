@@ -47,12 +47,6 @@
 #include "AnasaziMVOPTester.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 
-#ifdef HAVE_EPETRA_THYRA
-#include "AnasaziThyraAdapter.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
-#endif
-
 int main(int argc, char *argv[])
 {
   int i, ierr, gerr;
@@ -194,63 +188,6 @@ int main(int argc, char *argv[])
     break;
   }
 
-
-#ifdef HAVE_EPETRA_THYRA
-  typedef Thyra::MultiVectorBase<double> TMVB;
-  typedef Thyra::LinearOpBase<double>    TLOB;
-  // create thyra objects from the epetra objects
-
-  // first, a Thyra::VectorSpaceBase
-  Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<double> > epetra_vs = 
-    Thyra::create_MPIVectorSpaceBase(Map);
-
-  // then, a ScalarProdVectorSpaceBase
-  Teuchos::RefCountPtr<const Thyra::ScalarProdVectorSpaceBase<double> > sp_domain = 
-    Teuchos::rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<double> >(epetra_vs,true);
-
-  // then, a MultiVectorBase (from the Epetra_MultiVector)
-  Teuchos::RefCountPtr<Thyra::MultiVectorBase<double> > thyra_ivec = 
-    Thyra::create_MPIMultiVectorBase(Teuchos::rcp_implicit_cast<Epetra_MultiVector>(ivec),epetra_vs,sp_domain);
-
-  // then, a LinearOpBase (from the Epetra_CrsMatrix)
-  Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > thyra_op = 
-    Teuchos::rcp( new Thyra::EpetraLinearOp(A) );
-
-
-  // test the Thyra adapter multivector
-  ierr = Anasazi::TestMultiVecTraits<double,TMVB>(MyOM,thyra_ivec);
-  gerr |= ierr;
-  switch (ierr) {
-  case Anasazi::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** ThyraAdapter PASSED TestMultiVecTraits()" << endl;
-    }
-    break;
-  case Anasazi::Failed:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** ThyraAdapter FAILED TestMultiVecTraits() ***" 
-           << endl << endl;
-    }
-    break;
-  }
-
-  // test the Thyra adapter operator 
-  ierr = Anasazi::TestOperatorTraits<double,TMVB,TLOB>(MyOM,thyra_ivec,thyra_op);
-  gerr |= ierr;
-  switch (ierr) {
-  case Anasazi::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** ThyraAdapter PASSED TestOperatorTraits()" << endl;
-    }
-    break;
-  case Anasazi::Failed:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** ThyraAdapter FAILED TestOperatorTraits() ***" 
-           << endl << endl;
-    }
-    break;
-  }
-#endif
 
 #ifdef HAVE_MPI
   MPI_Finalize();
