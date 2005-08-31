@@ -1264,7 +1264,7 @@ static int sendNextStepsForbiddenColors(ZZ *zz, G2LHash *hash, int nlvtx, int p,
             forbiddenS[p] = (int *) ZOLTAN_REALLOC(forbiddenS[p], sizeof(int) * forbsizeS[p]); 
         }
         for (m3 = 1; m3 <= *nColor; m3++) {
-            //printf("c:%d v:%d\n", m3, mark[m3]);
+            /*printf("c:%d v:%d\n", m3, mark[m3]);*/
             if (mark[m3] == u) {
                 forbiddenS[p][m2++] = m3;
 #if 0
