@@ -63,13 +63,13 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
  *                 if == 0, stay silent but compute output arguments
  *
  * Output:
- *   nobj      - number of objects (for each proc)
+ *   nobj      - number of objects (local for this proc)
  *   obj_wgt   - obj_wgt[0:zz->Obj_Weight_Dim-1] are the object weights
- *               (for each proc)
- *   ncuts     - number of cuts (for each proc)
- *   cut_wgt   - cut_wgt[0:zz->Obj_Weight_Dim-1] are the cut weights (for each proc)
- *   nboundary - number of boundary objects (for each proc)
- *   nadj      - the number of adjacent procs (for each proc)
+ *               (local for this proc)
+ *   ncuts     - number of cuts (local for this proc)
+ *   cut_wgt   - cut_wgt[0:zz->Obj_Weight_Dim-1] are the cut weights (local for this proc)
+ *   nboundary - number of boundary objects (local for this proc)
+ *   nadj      - the number of adjacent procs (local for this proc)
  *
  * Output parameters will only be returned if they are 
  * not NULL on entry.
