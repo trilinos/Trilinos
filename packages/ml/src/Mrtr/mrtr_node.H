@@ -139,18 +139,17 @@ protected:
 
 protected:
 
-  int                    Id_;      // Id of this node
-  double                 x_[3];    // cordinates of this node 
-  double                 n_[3];    // a nodal outward normal
+  int                          Id_;      // Id of this node
+  double                       x_[3];    // cordinates of this node 
+  double                       n_[3];    // a nodal outward normal
 
-  vector<int>            dof_;     // dof ids on this node 
-  vector<int>            LMdof_;   // dofs ids of LM if this is slave side
+  vector<int>                  dof_;     // dof ids on this node 
+  vector<int>                  LMdof_;   // dofs ids of LM if this is slave side
 
-  vector<int>            seg_;     // vector of segment ids adjacent to me
-  vector<MRTR::Segment*> segptr_;  // ptrs to segments length nseg_
+  vector<int>                  seg_;     // vector of segment ids adjacent to me
+  vector<MRTR::Segment*>       segptr_;  // ptrs to segments length nseg_
 
-  //MRTR::ProjectedNode*   pnode_;   // the projected node on some segment
-  vector<MRTR::ProjectedNode*>   pnode_;   // the projected node on some segment
+  vector<MRTR::ProjectedNode*> pnode_;   // the projected node on some segment
 
 };
 
