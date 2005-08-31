@@ -348,77 +348,74 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     
     nedges = zz->Get_Num_HG_Edges(zz->Get_Num_HG_Edges_Data, &ierr);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                "Error returned from Get_Num_HG_Edges");
-        goto End;
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Get_Num_HG_Edges");
+      goto End;
     }
 
     if (nedges > 0) {
 
-        /* Get info about the edges:  GIDs, LIDs, sizes, edge weights */
-        egids = ZOLTAN_MALLOC_GID_ARRAY(zz, nedges);
-        elids = ZOLTAN_MALLOC_LID_ARRAY(zz, nedges);
-        esizes = (int *) ZOLTAN_MALLOC(nedges * sizeof(int));
-        nwgt = nedges * ewgtdim;
-        if (nwgt) 
-            ewgts = (float *) ZOLTAN_MALLOC(nwgt * sizeof(float));
-        if (!esizes || !egids || (num_lid_entries && !elids) ||
-                (nwgt && !ewgts))  {
-            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-            ierr = ZOLTAN_MEMERR;
-            goto End;
-        }
+      /* Get info about the edges:  GIDs, LIDs, sizes, edge weights */
+      egids = ZOLTAN_MALLOC_GID_ARRAY(zz, nedges);
+      elids = ZOLTAN_MALLOC_LID_ARRAY(zz, nedges);
+      esizes = (int *) ZOLTAN_MALLOC(nedges * sizeof(int));
+      nwgt = nedges * ewgtdim;
+      if (nwgt) 
+        ewgts = (float *) ZOLTAN_MALLOC(nwgt * sizeof(float));
+      if (!esizes || !egids || (num_lid_entries && !elids) ||
+          (nwgt && !ewgts))  {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+        ierr = ZOLTAN_MEMERR;
+        goto End;
+      }
 
-        ierr = zz->Get_HG_Edge_Info(zz->Get_HG_Edge_Info_Data,
-                num_gid_entries, num_lid_entries,
-                nedges, ewgtdim, 
-                egids, elids, esizes, ewgts); 
-        if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-            ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                    "Error returned from Get_HG_Edge_Info");
-            goto End;
-        }
-
-        /* create and fill zhg structure with all removed edges */
-        zhg = (ZHG*) ZOLTAN_MALLOC(sizeof(ZHG));
-        if (zhg == NULL) {
-            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-            ierr = ZOLTAN_MEMERR;
-            goto End;
-        }
-
-        zhg->nObj = num_obj;
-        zhg->GIDs = global_ids;
-        zhg->LIDs = local_ids;
-        zhg->nRemove = nedges;
-        zhg->Remove_EGIDs = egids;
-        zhg->Remove_ELIDs = elids;
-        zhg->Remove_Ewgt = ewgts;
-        zhg->Remove_Esize = esizes;
-        zhg->Input_Parts = part;
-        zhg->Output_Parts = part;
-        zhg->nRecv_GNOs = 0;
-
-        /* Perform cut calculations and find global max, min and sum */
-        ierr = Zoltan_PHG_Removed_Cuts(zz, zhg, hgraph_local_stats);
-        if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_PHG_Removed_Cuts failed!");
-            
-        MPI_Allreduce(hgraph_local_stats, hgraph_global_sum, 2,
-                MPI_DOUBLE, MPI_SUM, zz->Communicator);
-        MPI_Allreduce(hgraph_local_stats, hgraph_global_max, 2,
-                MPI_DOUBLE, MPI_MAX, zz->Communicator);
-        MPI_Allreduce(hgraph_local_stats, hgraph_global_min, 2,
-                MPI_DOUBLE, MPI_MIN, zz->Communicator);
-            
-
-        ZOLTAN_FREE(&esizes);
-        ZOLTAN_FREE(&egids);
-        ZOLTAN_FREE(&elids);
-        ZOLTAN_FREE(&ewgts);
-        ZOLTAN_FREE(&zhg);
-        
+      ierr = zz->Get_HG_Edge_Info(zz->Get_HG_Edge_Info_Data,
+                                  num_gid_entries, num_lid_entries,
+                                  nedges, ewgtdim, 
+                                  egids, elids, esizes, ewgts); 
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo,"Error returned from Get_HG_Edge_Info");
+        goto End;
+      }
     }
+
+    /* create and fill zhg structure with all removed edges */
+    zhg = (ZHG*) ZOLTAN_MALLOC(sizeof(ZHG));
+    if (zhg == NULL) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+
+    zhg->nObj = num_obj;
+    zhg->GIDs = global_ids;
+    zhg->LIDs = local_ids;
+    zhg->nRemove = nedges;
+    zhg->Remove_EGIDs = egids;
+    zhg->Remove_ELIDs = elids;
+    zhg->Remove_Ewgt = ewgts;
+    zhg->Remove_Esize = esizes;
+    zhg->Input_Parts = part;
+    zhg->Output_Parts = part;
+    zhg->nRecv_GNOs = 0;
+
+    /* Perform cut calculations and find global max, min and sum */
+    ierr = Zoltan_PHG_Removed_Cuts(zz, zhg, hgraph_local_stats);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_PHG_Removed_Cuts failed!");
+            
+    MPI_Allreduce(hgraph_local_stats, hgraph_global_sum, 2,
+                  MPI_DOUBLE, MPI_SUM, zz->Communicator);
+    MPI_Allreduce(hgraph_local_stats, hgraph_global_max, 2,
+                  MPI_DOUBLE, MPI_MAX, zz->Communicator);
+    MPI_Allreduce(hgraph_local_stats, hgraph_global_min, 2,
+                  MPI_DOUBLE, MPI_MIN, zz->Communicator);
+            
+
+    ZOLTAN_FREE(&esizes);
+    ZOLTAN_FREE(&egids);
+    ZOLTAN_FREE(&elids);
+    ZOLTAN_FREE(&ewgts);
+    ZOLTAN_FREE(&zhg);
   }  
   
   if (print_stats){
