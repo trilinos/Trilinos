@@ -429,6 +429,7 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
                                     has changed                              */
   int num_gid_entries;           /* Number of array entries in a global ID.  */
   int num_lid_entries;           /* Number of array entries in a local ID.   */
+  int dummy;                     /* unused parameters */
 
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -442,7 +443,7 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     if (Debug_Driver > 0) {
       if (Proc == 0) cout << "\nBEFORE load balancing" << endl;
       driver_eval(mesh);
-      int i = zz.LB_Eval(1, 0, NULL, 0, NULL, 0, 0);
+      int i = zz.LB_Eval(1, dummy, NULL, dummy, NULL, dummy, dummy);
       if (i) cout << "Warning: Zoltan_LB_Eval returned code " << i << endl;
     }
     if (Test.Gen_Files) {
@@ -536,7 +537,7 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     if (Debug_Driver > 0) {
       if (Proc == 0) cout << "\nAFTER load balancing\n" << endl;
       driver_eval(mesh);
-      int i = zz.LB_Eval(1, 0, NULL, 0, NULL, 0, 0);
+      int i = zz.LB_Eval(1, dummy, NULL, dummy, NULL, dummy, dummy);
       if (i) cout << "Warning: Zoltan_LB_Eval returned code " << i << endl;
     }
     if (Test.Gen_Files) {
