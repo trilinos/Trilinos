@@ -211,7 +211,7 @@ static int pmatching_col_ipm(
        || !(adj =  (int*)  ZOLTAN_MALLOC(hg->nVtx * sizeof(int))) 
        || !(order = (int*)  ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))){
           Zoltan_Multifree(__FILE__, __LINE__, 4, &lips, &gips, &adj, &order);
-          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
           return ZOLTAN_MEMERR;
       }
     
@@ -227,14 +227,14 @@ static int pmatching_col_ipm(
       /* allocate buffers */
       if (!(sendbuf = (char*) ZOLTAN_MALLOC(2*MAX_NNZ * sizeof(float)))) {
         ZOLTAN_FREE(&sendbuf);
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
         return ZOLTAN_MEMERR;
       }
       if (hgc->myProc_y==0 &&
         !(recvbuf = (char*) ZOLTAN_MALLOC(2*MAX_NNZ*hgc->nProc_y* sizeof(float)))) {
         ZOLTAN_FREE(&sendbuf);
         ZOLTAN_FREE(&recvbuf);
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
         return ZOLTAN_MEMERR;
       }
     }
@@ -596,7 +596,7 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 #define MACRO_REALLOC(new_size, old_size, buffer)  {\
   old_size = new_size;\
   if (!(buffer = (int*) ZOLTAN_REALLOC (buffer, old_size * sizeof(int)))) {\
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");\
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");\
     err = ZOLTAN_MEMERR;\
     goto fini;\
     }\
@@ -630,17 +630,22 @@ static int pmatching_ipm (ZZ *zz,
                        /* on all procs in hgc->col_comm.              */
   int nTotal;          /* sum of nCandidates across proc rows.        */
   int *send = NULL,    /* working buffers, may be reused              */
-      *dest = NULL, *size = NULL, *rec = NULL, *index = NULL, *aux = NULL;
+      *dest = NULL,
+      *size = NULL,
+      *rec = NULL,
+      *index = NULL,
+      *aux = NULL;
   int *visit = NULL,   /* fixed usage arrays, candidate visit order */
       *cmatch = NULL,  /* working copy of match array */
       *select = NULL,  /* current selected candidates */
       *permute = NULL, /* reorder of candidates after global communicatio */
       *edgebuf = NULL; /* holds received candidates for processing */
-  int nSend,   /* currently allocated size of the coresponding working buffers */
-      nDest, nSize, nRec, nIndex, nEdgebuf; 
-  float bestsum;       /* holds current best inner product */
-  float *sums = NULL,  /* holds inner product of one candidate for each vertex */
-        *f = NULL;     /* used to stuff floating value into integer message */
+  int nSend, nDest, nSize, nRec, nIndex, nEdgebuf; /* currently allocated size
+                                                      of the corresponding
+                                                      working buffers */
+  float bestsum;      /* holds current best inner product */
+  float *sums = NULL, /* holds inner product of one candidate for each vertex */
+        *f = NULL;    /* used to stuff floating value into integer message */
   PHGComm *hgc = hg->comm;
   int err = ZOLTAN_OK, old_row, row, col;
   int max_nPins, max_nVtx;       /* Global max # pins/proc and vtx/proc */
@@ -677,7 +682,7 @@ static int pmatching_ipm (ZZ *zz,
     max_nPins = hg->nPins;
   }
   else  {
-    MPI_Allreduce(&hg->nPins, &max_nPins, 1, MPI_INT, MPI_MAX,hgc->Communicator);
+    MPI_Allreduce(&hg->nPins, &max_nPins, 1, MPI_INT,MPI_MAX,hgc->Communicator);
     max_nVtx = nTotal = 0;
     for (i = 0; i < hgc->nProc_x; i++)  {
       count = hg->dist_x[i+1]-hg->dist_x[i];  /* number of vertices on proc i */
@@ -692,17 +697,17 @@ static int pmatching_ipm (ZZ *zz,
   nDest    = 1 + MAX (MAX(hgc->nProc_x,hgc->nProc_y), MAX(nTotal,max_nVtx));
   nSize    = 1 + MAX (MAX(hgc->nProc_x,hgc->nProc_y), MAX(nTotal,max_nVtx));
 
-  /* These 3 buffers are REALLOC'd iff necessary, but this should be very rare */
-  nSend    = max_nPins;   /* nSend/nEdgebuf are used for candidate exchange    */
-  nEdgebuf = max_nPins;   /* candidates sent as <gno, #pins, pin_list>         */
+  /* These 3 buffers are REALLOC'd iff necessary; this should be very rare */
+  nSend    = max_nPins;   /* nSend/nEdgebuf are used for candidate exchange   */
+  nEdgebuf = max_nPins;   /* candidates sent as <gno, #pins, pin_list>        */
   nRec     = max_nPins;
 
   if (hg->nVtx)  
     if (!(cmatch = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
      || !(visit  = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
      || !(aux    = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))     
-     || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof (float))))  {
-       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+     || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof (float)))) {
+       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
        err = ZOLTAN_MEMERR;
        goto fini;
     }
@@ -710,21 +715,21 @@ static int pmatching_ipm (ZZ *zz,
   if (!cFLAG)
     if (!(edgebuf      = (int*)  ZOLTAN_MALLOC (nEdgebuf   * sizeof (int)))
      || !(master_data  = (int*)  ZOLTAN_MALLOC (3 * nTotal * sizeof (int)))
-     || !(master_procs = (int*)  ZOLTAN_MALLOC (nTotal     * sizeof (int))))  {
-       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+     || !(master_procs = (int*)  ZOLTAN_MALLOC (nTotal     * sizeof (int)))) {
+       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
        err = ZOLTAN_MEMERR;
        goto fini;
     }  
   
   if (!(permute = (int*)  ZOLTAN_MALLOC (nTotal             * sizeof (int)))
    || !(select  = (int*)  ZOLTAN_MALLOC (nCandidates        * sizeof (int)))      
-   || !(send    = (int*)  ZOLTAN_MALLOC (nSend              * sizeof (int)))
+   || (nSend && !(send = (int*)  ZOLTAN_MALLOC (nSend       * sizeof (int))))
    || !(dest    = (int*)  ZOLTAN_MALLOC (nDest              * sizeof (int)))
    || !(size    = (int*)  ZOLTAN_MALLOC (nSize              * sizeof (int)))
-   || !(rec     = (int*)  ZOLTAN_MALLOC (nRec               * sizeof (int)))
+   || (nRec && !(rec = (int*)  ZOLTAN_MALLOC (nRec          * sizeof (int))))
    || !(index   = (int*)  ZOLTAN_MALLOC (nIndex             * sizeof (int)))
-   || !(rows    = (int**) ZOLTAN_MALLOC ((hgc->nProc_y + 1) * sizeof (int*))))  {
-     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+   || !(rows    = (int**) ZOLTAN_MALLOC ((hgc->nProc_y + 1) * sizeof (int*)))) {
+     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
      err = ZOLTAN_MEMERR;
      goto fini;
   }
@@ -860,27 +865,31 @@ static int pmatching_ipm (ZZ *zz,
           count = *r++;                      /* count of following hyperedges */
         }
         else
-          gno = permute[k];                  /* need to use next local vertex */
+          gno = permute[k];       /* need to use next local vertex */
+                                  /* here gno is really a local id */
                   
         /* now compute the row's nVtx inner products for kth candidate */
         m = 0;
-        if      (!cFLAG && (hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
-          INNER_PRODUCT1(1.0)
-        else if (!cFLAG && (hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
-          INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]])
-        else if (!cFLAG && (hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
-          INNER_PRODUCT1(hg->ewgt[*r])
-        else if (!cFLAG && (hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
-          INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[*r])
+        if (!cFLAG) {
+          if      ((hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
+            INNER_PRODUCT1(1.0)
+          else if ((hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
+            INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]])
+          else if ((hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
+            INNER_PRODUCT1(hg->ewgt[*r])
+          else if ((hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
+            INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[*r])
                   
-        else if (cFLAG  && (hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
-          INNER_PRODUCT2(1.0)
-        else if (cFLAG  && (hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
-          INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]])
-        else if (cFLAG  && (hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
-          INNER_PRODUCT2(hg->ewgt [edge])
-        else if (cFLAG  && (hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
-          INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[edge])   
+        } else /* cFLAG */ {
+          if      ((hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
+            INNER_PRODUCT2(1.0)
+          else if ((hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
+            INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]])
+          else if ((hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
+            INNER_PRODUCT2(hg->ewgt [edge])
+          else if ((hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
+            INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[edge])   
+        }
           
         /* if local vtx, remove self inner product (useless maximum) */
         if (cFLAG)
@@ -913,7 +922,7 @@ static int pmatching_ipm (ZZ *zz,
           /* current partial sums fit, so put them into the send buffer */
           dest[sendcnt]   = gno % hgc->nProc_y;  /* proc to compute tsum */
           size[sendcnt++] = msgsize;             /* size of message */
-          sendsize       += msgsize;            /* cummulative size of message */
+          sendsize       += msgsize;          /* cummulative size of message */
           
           *s++ = hgc->myProc_y;      /* save my row (for merging) */
           *s++ = hgc->myProc_x;      /* save my col (for debugging) */
@@ -971,12 +980,14 @@ static int pmatching_ipm (ZZ *zz,
       s = send; 
       for (n = old_kstart; n < kstart; n++)  {
         m = 0;        
+        /* here gno is really a local id when cFLAG */
         gno = (cFLAG) ? permute[n] : edgebuf [permute[n]];
                
         /* Not sure if this test makes any speedup ???, works without! */
         if (gno % hgc->nProc_y != hgc->myProc_y)
-          continue;                           /* this gno is not on this proc */
-
+          continue;                           /* this gno's partial IPs not sent
+                                                 to this proc */
+        
         /* merge step: look for target gno from each row's data */
         for (i = 0; i < hgc->nProc_y; i++)  {
           if (rows[i] < &rec[recsize] && *rows[i] == gno)  {       
@@ -1001,7 +1012,7 @@ static int pmatching_ipm (ZZ *zz,
         if (count > 0)  {
           if ( (s - send) + (2 + 2 * count) > nSend ) {
             sendsize = s - send;
-            MACRO_REALLOC (nSend + 2*(1+count), nSend, send); /* enlarge buffer*/
+            MACRO_REALLOC (nSend + 2*(1+count), nSend, send); /*enlarge buffer*/
             s = send + sendsize;   /* since realloc buffer could move */ 
           }      
           *s++ = gno;
@@ -1020,7 +1031,12 @@ static int pmatching_ipm (ZZ *zz,
       sendsize = s - send;   /* size (in ints) of send buffer */
       
       /* Communicate total inner product results to MASTER ROW */
+
+/* KDDKDD SHOULD THIS BE MPI_Gather to row 0 (MASTER ROW)? */
       MPI_Allgather (&sendsize, 1, MPI_INT, size, 1, MPI_INT, hgc->col_comm);
+
+/* KDDKDD DOES THE FOLLOWING MEMORY MANAGEMENT APPLY ONLY TO 
+   KDDKDD myProc_y == 0?  ONLY ROOT OF MPI_GATHERV SHOULD NEED IT. */
       recsize = 0;
       for (i = 0; i < hgc->nProc_y; i++)
         recsize += size[i];        
@@ -1109,6 +1125,10 @@ static int pmatching_ipm (ZZ *zz,
         
     /* fill send buffer with messages. A message is two matched gno's */
     /* Note: match to self if inner product is below threshold */
+    /* KDDKDD  SHOULD WE COMMUNICATE MESSAGE IF MATCHING VERTEX TO SELF??  
+     * KDDKDD  GNO and VERTEX==GNO ARE BOTH ON THIS PROCESSOR. 
+     * KDDKDD  CAN WE SET MATCH ARRAY APPROPRIATELY AND 
+     * KDDKDD  SKIP THE MESSAGE? */
     s = send; 
     sendcnt = 0;
     if (hgc->myProc_y == 0)
@@ -1118,8 +1138,8 @@ static int pmatching_ipm (ZZ *zz,
         *s++ = gno = VTX_LNO_TO_GNO (hg, lno);
         *s++ = vertex = (sums [lno] > TSUM_THRESHOLD) ? index[lno] : gno;
             
-        /* each distict owner (gno or vertex) needs its copy of the message */
-        /*  KDDKDD:  Matching gno to vertex with IP=sums[lno] */
+        /* Matching gno to vertex with IP=sums[lno] */
+        /* each distinct owner (gno or vertex) needs its copy of the message.*/
         d1 = VTX_TO_PROC_X (hg, gno);
         d2 = VTX_TO_PROC_X (hg, vertex);
         dest[sendcnt++] = d1;
@@ -1258,7 +1278,7 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
    if (*recsize > *nRec)  {   
      *nRec = *recsize;
      if (!(*rec = (int*) ZOLTAN_REALLOC (*rec, *nRec * sizeof(int))))  {
-       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory");
+       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error");
        return ZOLTAN_MEMERR;
      }
    }
