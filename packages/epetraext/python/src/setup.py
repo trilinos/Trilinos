@@ -31,111 +31,90 @@
 # System imports
 from   distutils.core import *
 from   distutils      import sysconfig
-import commands
 import os
-import re
-import string
 import sys
 
-# Any information that needs to be transferred from the autotooled Makefile is
-# written to file setup.txt using python syntax to define a dictionary.  The
-# keys of this 'makeInfo' dictionary are variable names and the corresponding
-# values represent the data that will be needed by this setup.py script.
+# Trilinos import
+TRILINOS_HOME_DIR = os.path.normpath(open("TRILINOS_HOME_DIR").read()[:-1])
+sys.path.insert(0,os.path.join(TRILINOS_HOME_DIR,"commonTools","buildTools"))
+from MakefileVariables import *
+
+# Build the makeVars dictionary by processing relevant Makefiles
+makeVars = { }
+makeVars.update(processFile(os.path.join("..","..","Makefile.export.epetraext")))
+makeVars.update(processFile(os.path.join("..","..","..","epetra",
+                                         "Makefile.export.epetra")))
+makeVars.update(processFile(os.path.join("..","..","..","PyTrilinos",
+                                         "Makefile.export.pytrilinos")))
+makeVars.update(processFile(os.path.join("Makefile")))
+
+# Import the variable names and values into the global namespace.  This is
+# crucual: every variable name/value pair obtained by processing the specified
+# Makefiles above will become actual python variables in the global namespace.
+globals().update(makeVars)
+
+# Obtain the package version number string
 try:
-    f = open("setup.txt")
-    makeInfo = f.readlines()
-    f.close()
-    makeInfo = eval(string.join(makeInfo))
-except IOError:
-    makeInfo = { }
+    version = makeVars["PACKAGE_VERSION"]
+except KeyError:
+    version = makeVars.get("VERSION","??")
 
-# Certain directory paths are needed by setup.py.  pakDir is the path for the
-# epetraext package directory, and srcDir is the path for the python source directory
-pakDir = makeInfo.get("top_srcdir","")
-srcDir = makeInfo.get("srcdir"    ,"")
-CXX    = makeInfo.get("CXX")
+# Initialize arguments that will be needed by the Extension class
+include_dirs    = [srcdir]
+library_dirs    = [      ]
+libraries       = [      ]
+extra_link_args = [      ]
 
-# Obtain the version from the package version function, using regular
-# expressions.  This assumes that the function returns a string constant of the
-# form "PackageName Version xxx - mm/dd/yyyy" and extracts the xxx (which does
-# not have to be three characters long).
-version       = "??"
-versionRE     = re.compile(r"return.*Version\s+(.*)\s+-\s+\d")
-versionHeader = os.path.join(pakDir,"src","New_Package_Version.h")
-try:
-    header = open(versionHeader)
-    lines  = header.readlines()
-    header.close()
-    for line in lines:
-        match = versionRE.search(line)
-        if match:
-            version = match.group(1)
-except IOError:
-    pass
+# Get the relevant Makefile export variable values, split them into lists of
+# strings, add them together to obtain a big list of option strings, and then
+# remove any duplicate entries
+options = EPETRAEXT_INCLUDES.split()  + \
+          EPETRAEXT_LIBS.split()      + \
+          EPETRA_INCLUDES.split()     + \
+          EPETRA_LIBS.split()         + \
+          PYTRILINOS_INCLUDES.split() + \
+          PYTRILINOS_LIBS.split()
+uniquifyList(options)
 
-# Define the PyTrilinos include path, library directory and library name
-pytrilinosInc    = os.path.join(pakDir, "..", "PyTrilinos", "src")
-pytrilinosLibDir = os.path.join("..", "..", "..", "PyTrilinos", "src")
-pytrilinosLib    = "pytrilinos"
-
-# Define the epetra include path, library directory and library name
-epetraInc    = os.path.join(pakDir, "..", "epetra", "src")
-epetraLibDir = os.path.join("..", "..", "..", "epetra", "src")
-epetraLib    = "epetra"
-
-# Define the epetraext include path, library directory and library name
-epetraExtInc    = [os.path.join(pakDir, "src"),
-                   os.path.join(pakDir, "src", "coloring"),
-                   os.path.join(pakDir, "src", "transform"),
-                   os.path.join(pakDir, "src", "inout"),
-                   os.path.join(pakDir, "../epetra/python", "src")]
-epetraExtLibDir = os.path.join("..", "..", "src")
-epetraExtLib    = "epetraext"
-
-# Standard libraries.  This is currently a hack.  The library "stdc++" is added
-# to the standard library list for a case where we know it needs it.
-stdLibs = [ ]
-sysName = os.uname()[0]
-if sysName == "Linux":
-    stdLibs.append("stdc++")
-
-# Create the extra arguments list and complete the standard libraries list.  
-extraArgs = [ ]
-libs = makeInfo.get("EPETRAEXT_LIBS"    ,"").split() 
-for lib in libs:
-    if lib[:2] == "-l":
-        stdLibs.append(lib[2:])
+# Distribute the individual options to the appropriate Extension class arguments
+for option in options:
+    if option[:2] == "-I":
+        include_dirs.append(option[2:])
+    elif option[:2] == "-L":
+        library_dirs.append(option[2:])
+    elif option[:2] == "-l":
+        libraries.append(option[2:])
     else:
-        extraArgs.append(lib)
+        extra_link_args.append(option)
 
-# Define the strings that refer to the required source files.
+# An additional include directory
+include_dirs.append(os.path.join(top_srcdir,"..","epetra","python","src"))
+
+# Define the strings that refer to the required local source files
 epetraExtWrap = "EpetraExt_wrap.cpp"
 
-# compiler and linker
+# Compiler and linker
 sysconfig.get_config_vars()
-config_vars = sysconfig._config_vars;
-config_vars['CC'] = CXX
-config_vars['CXX'] = CXX
+sysconfig._config_vars["CC" ] = CXX
+sysconfig._config_vars["CXX"] = CXX
 
-# _Epetra extension module
+# _EpetraExt extension module
 _EpetraExt = Extension("PyTrilinos._EpetraExt",
                        [epetraExtWrap],
-                       include_dirs    =  epetraExtInc + [pytrilinosInc,
-                                                          epetraInc, srcDir],
-                       library_dirs    = [pytrilinosLibDir, epetraLibDir,
-                                          epetraExtLibDir],
-                       libraries       = [pytrilinosLib, epetraLib,
-                                          epetraExtLib] + stdLibs,
-                       extra_link_args = extraArgs
+                       define_macros   = [("HAVE_CONFIG_H", "1")],
+                       include_dirs    = include_dirs,
+                       library_dirs    = library_dirs,
+                       libraries       = libraries,
+                       extra_link_args = extra_link_args
                        )
 
-# PyTrilinos.Epetra setup
+# PyTrilinos.EpetraExt setup
 setup(name         = "PyTrilinos.EpetraExt",
       version      = version,
       description  = "Python Interface to Trilinos Package EpetraExt",
-      author       = "Marzio Sala",
-      author_email = "msala@sandia.gov",
+      author       = "Bill Spotz",
+      author_email = "wfspotz@sandia.gov",
       package_dir  = {"PyTrilinos" : "."},
       packages     = ["PyTrilinos"],
-      ext_modules  = [ _EpetraExt  ]
+      ext_modules  = [ _EpetraExt ]
       )

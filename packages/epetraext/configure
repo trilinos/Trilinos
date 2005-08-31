@@ -13190,7 +13190,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # Output files
 # ------------------------------------------------------------------------
 ##
-                                                                                                                                                                                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile Makefile.export.epetraext src/Makefile test/Makefile test/BTF/Makefile test/Composite/Makefile test/Matlab/Makefile test/MapColoring/Makefile test/MatrixMatrix/Makefile test/Overlap/Makefile test/Permutation/Makefile test/SingletonFilter/Makefile test/Transpose/Makefile test/SymmRCM/Makefile test/View/Makefile test/Zoltan/Makefile test/inout/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/scripts/weekly/Makefile test/scripts/weekly/serial/Makefile test/scripts/weekly/mpi/Makefile example/Makefile example/inout/Makefile example/zoltan/Makefile example/matlab/Makefile example/MapColoring/Makefile python/Makefile python/src/Makefile python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                        ac_config_files="$ac_config_files Makefile Makefile.export.epetraext src/Makefile test/Makefile test/BTF/Makefile test/Composite/Makefile test/Matlab/Makefile test/MapColoring/Makefile test/MatrixMatrix/Makefile test/Overlap/Makefile test/Permutation/Makefile test/SingletonFilter/Makefile test/Transpose/Makefile test/SymmRCM/Makefile test/View/Makefile test/Zoltan/Makefile test/inout/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/scripts/weekly/Makefile test/scripts/weekly/serial/Makefile test/scripts/weekly/mpi/Makefile example/Makefile example/inout/Makefile example/zoltan/Makefile example/matlab/Makefile example/MapColoring/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -14011,6 +14011,7 @@ do
   "example/MapColoring/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/MapColoring/Makefile" ;;
   "python/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/Makefile" ;;
   "python/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src/Makefile" ;;
+  "python/src/TRILINOS_HOME_DIR" ) CONFIG_FILES="$CONFIG_FILES python/src/TRILINOS_HOME_DIR" ;;
   "python/src/__init__.py" ) CONFIG_FILES="$CONFIG_FILES python/src/__init__.py" ;;
   "python/src/.deps/dummy" ) CONFIG_FILES="$CONFIG_FILES python/src/.deps/dummy" ;;
   "python/test/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/test/Makefile" ;;

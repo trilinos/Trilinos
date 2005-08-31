@@ -507,6 +507,7 @@ AC_CONFIG_FILES([
 		example/MapColoring/Makefile
 		python/Makefile
 		python/src/Makefile
+		python/src/TRILINOS_HOME_DIR
 		python/src/__init__.py
 		python/src/.deps/dummy
 		python/test/Makefile
