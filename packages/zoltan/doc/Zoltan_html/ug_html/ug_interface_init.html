@@ -31,6 +31,8 @@ Functions used to initialize and manipulate Zoltan's data structures are
 described below:
 <ul><b><a href="#Zoltan_Initialize">Zoltan_Initialize</a></b>
 <br><b><a href="#Zoltan_Create">Zoltan_Create</a></b>
+<br><b><a href="#Zoltan_Copy">Zoltan_Copy</a></b>
+<br><b><a href="#Zoltan_Copy_To">Zoltan_Copy_To</a></b>
 <br><b><a href="#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 <br><b><a href="#Zoltan_Set_Param_Vec">Zoltan_Set_Param_Vec</a></b>
 <br><b><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
@@ -186,6 +188,142 @@ If all processors are to participate, <i>communicator</i> should be <b>MPI_COMM_
 <td>Pointer to memory for storage of Zoltan information. If an error occurs,
 NULL will be returned in C, or the result will be a nullified pointer in
 Fortran. Any error that occurs in this function is assumed to be fatal.</td>
+</tr>
+</table>
+
+<p><!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Copy"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>C:</td>
+
+<td WIDTH="85%">struct <b>Zoltan_Struct</b> *<b>Zoltan_Copy</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Zoltan_Struct</b> *<i>from</i>);</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b>Zoltan_Copy</b>(<i>from</i>)&nbsp;
+<br>TYPE(Zoltan_Struct), pointer :: Zoltan_Copy&nbsp;
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: from &nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>C++:</td>
+<td WIDTH="85%"><b>Zoltan_Object</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const Zoltan_Object &<i>zz</i>);</td>
+</tr>
+
+</table>
+
+<hr WIDTH="100%">The <b>Zoltan_Copy</b> function creates a new
+<b>Zoltan_Struct</b> and copies the state of the existing <b>Zoltan_Struct</b>,
+which it has been passed, to the new structure.  It returns the new
+<b>Zoltan_Struct</b>.
+<p>
+There is no direct interface to <B>Zoltan_Copy</B> from C++. Rather, the
+<B>Zoltan_Object</B> copy constructor invokes the C library <B>Zoltan_Copy</B>
+program.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; from</i></td>
+
+<td>A pointer to the <b>Zoltan_Struct</b> that is to be copied.
+</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:&nbsp;</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct</b> *</td>
+
+<td>Pointer to a new <b>Zoltan_Struct</b>, which is now a copy of <I>from</I>.
+</td>
+</tr>
+</table>
+
+<p><!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Copy_To"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Copy_To</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Zoltan_Struct</b> *<i>to</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Zoltan_Struct</b> *<i>from</i>);</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b>Zoltan_Copy_To</b>(<i>to</i>, <i>from</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_Copy_To&nbsp;
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: to &nbsp;
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: from &nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>C++:</td>
+<td WIDTH="85%"><b>Zoltan_Object</b> & operator= (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const Zoltan_Object &<i>zz</i>);</td>
+</tr>
+
+</table>
+
+<hr WIDTH="100%">The <b>Zoltan_Copy_To</b> function copies one
+<b>Zoltan_Struct</b> to another, after first freeing any memory used by the
+target <b>Zoltan_Struct</b> and re-initializing it.  
+<p>
+The C++ interface to <B>Zoltan_Copy_To</B> function is through the
+<B>Zoltan_Object</B> copy operator, which invokes the C library <B>Zoltan_Copy_To</B>
+program.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; to</i></td>
+
+<td>A pointer to an existing <b>Zoltan_Struct</b>, the target of the copy.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; from</i></td>
+
+<td>A pointer to an existing <b>Zoltan_Struct</b>, the source of the copy.
+</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:&nbsp;</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><b>0</b> on success and <b>1</b> on failure.
+</td>
 </tr>
 </table>
 
