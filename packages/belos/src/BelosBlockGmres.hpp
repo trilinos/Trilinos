@@ -55,6 +55,7 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
 #include "BelosConfigDefs.hpp"
 #include "BelosIterativeSolver.hpp"
@@ -147,8 +148,14 @@ namespace Belos {
     //! Method for block orthogonalization when a dependency has been detected in the Krylov basis.
     bool BlkOrthSing(MultiVec<TYPE>&);
 
+    //! Method for updating QR factorization of upper Hessenberg matrix 
+    void UpdateLSQR(Teuchos::SerialDenseMatrix<int,TYPE>&,Teuchos::SerialDenseMatrix<int,TYPE>&);
+
     //! Method for checking the orthogonality of the Krylov basis.
     void CheckKrylovOrth(const int);
+
+    //! Method for computing Givens rotation
+    void givens_rot(double&, double&, double&, double&, double&);
 
     //! Reference to the linear problem being solver for with the solver. [passed in by user]
     LinearProblemManager<TYPE>& _lp; 
@@ -160,7 +167,7 @@ namespace Belos {
     OutputManager<TYPE>& _om;
 
     //! Pointers to the Krylov basis constructed by the solver.
-    MultiVec<TYPE> *_basisvecs;
+    Teuchos::RefCountPtr<MultiVec<TYPE> > _basisvecs;
 
     //! Pointers to the current right-hand side and solution multivecs being solved for.
     MultiVec<TYPE> *_cur_block_rhs, *_cur_block_sol;
@@ -178,6 +185,7 @@ namespace Belos {
     int _blocksize;
     int _restartiter, _totaliter, _iter;
     TYPE _dep_tol, _blk_tol, _sing_tol;
+    Teuchos::SerialDenseVector<int,TYPE> beta, cs, sn;
   };
   //
   // Implementation
@@ -192,7 +200,6 @@ namespace Belos {
     _lp(lp),
     _stest(stest),
     _om(om),
-    _basisvecs(0),     
     _cur_block_rhs(0),
     _cur_block_sol(0),
     _os(om.GetOStream()),
@@ -211,7 +218,6 @@ namespace Belos {
   template <class TYPE>
   BlockGmres<TYPE>::~BlockGmres() 
   {
-    if (_basisvecs) delete _basisvecs;
   }
   
   template <class TYPE>
@@ -290,13 +296,11 @@ namespace Belos {
   template <class TYPE>
   void BlockGmres<TYPE>::Solve () 
   {
-    int i,j, maxidx;
-    TYPE *beta=0;
-    int *index=0;
+    int i=0;
+    std::vector<int> index;
     const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
     const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
-    TYPE sigma, mu, vscale, maxelem;
-    MultiVec<TYPE> *U_vec=0;
+    Teuchos::RefCountPtr<MultiVec<TYPE> > U_vec, Vjp1, solnUpdate;
     bool dep_flg = false, exit_flg = false;
     Teuchos::LAPACK<int, TYPE> lapack;
     Teuchos::BLAS<int, TYPE> blas;
@@ -324,27 +328,25 @@ namespace Belos {
       //
       // Make room for the Arnoldi vectors and F.
       //
-      _basisvecs = _cur_block_rhs->Clone((_length+1)*_blocksize); assert(_basisvecs!=NULL);
+      _basisvecs = Teuchos::rcp( _cur_block_rhs->Clone((_length+1)*_blocksize) );
       //
       // Create the rectangular Hessenberg matrix and right-hand side of least squares problem.
       //
       _hessmatrix.shape((_length+1)*_blocksize, _length*_blocksize);
       _z.shape((_length+1)*_blocksize, _blocksize); 
       //
-      beta = new TYPE[(_length+1)*_blocksize]; assert(beta!=NULL);
-      index = new int[ (_length+1)*_blocksize ]; assert(index!=NULL);
+      index.resize((_length+1)*_blocksize);
       for (i=0; i < (_length+1)*_blocksize; i++) { index[i] = i; }
       //
       for (_restartiter=0; _stest.CheckStatus(this) == Unconverged && !exit_flg; _restartiter++) {
 	//
 	// Associate the initial block of _basisvecs with U_vec.
 	//
-	U_vec = _basisvecs->CloneView(index, _blocksize);
-	assert(U_vec!=NULL);
+	U_vec = Teuchos::rcp( _basisvecs->CloneView(&index[0], _blocksize) );
 	//
 	// Compute current residual and place into 1st block
 	//
-	_lp.ComputeResVec( U_vec, _cur_block_sol, _cur_block_rhs );
+	_lp.ComputeResVec( U_vec.get(), _cur_block_sol, _cur_block_rhs );
 	//
 	dep_flg = false; exit_flg = false;
 	//
@@ -362,7 +364,6 @@ namespace Belos {
 	    _os << "  Reason: Failed to compute initial block of orthonormal basis vectors"
 		 << endl << endl;
 	  }
-	  if (U_vec) {delete U_vec; U_vec = 0;}
 	}
 	//
 	for (_iter=0; _iter<_length && _stest.CheckStatus(this) == Unconverged && !exit_flg; _iter++, ++_totaliter) {
@@ -370,60 +371,19 @@ namespace Belos {
 	  // Compute a length _length block Arnoldi Reduction (one step at a time),
 	  // the exit_flg indicates if we cannot extend the Arnoldi Reduction.
           // If exit_flg is true, then we need to leave this loop and compute the latest solution.
+	  // NOTE:  There's an exception here if the blocksize is equal to one, then a lucky
+	  // breakdown has occurred, so we should update the least-squares problem.
 	  //
 	  //dep_flg = true;
 	  exit_flg = BlockReduction(dep_flg);
-	  if (exit_flg){ 
+	  if (exit_flg && _blocksize > 1){ 
 	    break;
 	  }
 	  //
-	  // QR factorization of Least-Squares system with Householder reflectors
+	  // Update the new Least-Squares solution through the QR factorization of the new
+	  // block in the upper Hessenberg matrix.
 	  //
-	  for (j=0; j<_blocksize; j++) {
-	    //
-	    // Apply previous Householder reflectors to new block of Hessenberg matrix
-	    //
-	    for (i=0; i<_iter*_blocksize+j; i++) {
-	      sigma = blas.DOT( _blocksize, &_hessmatrix(i+1,i), 1, &_hessmatrix(i+1,_iter*_blocksize+j), 1);
-	      sigma += _hessmatrix(i,_iter*_blocksize+j);
-	      sigma *= beta[i];
-	      blas.AXPY(_blocksize, -sigma, &_hessmatrix(i+1,i), 1, &_hessmatrix(i+1,_iter*_blocksize+j), 1);
-	      _hessmatrix(i,_iter*_blocksize+j) -= sigma;
-	    }
-	    //
-	    // Compute new Householder reflector
-	    //
-	    maxidx = blas.IAMAX( _blocksize+1, &_hessmatrix(_iter*_blocksize+j,_iter*_blocksize+j), 1 );
-	    maxelem = _hessmatrix(_iter*_blocksize+j+maxidx-1,_iter*_blocksize+j);
-	    for (i=0; i<_blocksize+1; i++) 
-	      _hessmatrix(_iter*_blocksize+j+i,_iter*_blocksize+j) /= maxelem;
-	    sigma = blas.DOT( _blocksize, &_hessmatrix(_iter*_blocksize+j+1,_iter*_blocksize+j), 1, 
-			      &_hessmatrix(_iter*_blocksize+j+1,_iter*_blocksize+j), 1 );
-	    if (sigma == zero) {
-	      beta[_iter*_blocksize + j] = zero;
-	    } else {
-	      mu = sqrt(_hessmatrix(_iter*_blocksize+j,_iter*_blocksize+j)*_hessmatrix(_iter*_blocksize+j,_iter*_blocksize+j)+sigma);
-	      if ( _hessmatrix(_iter*_blocksize+j,_iter*_blocksize+j) < zero ) {
-		vscale = _hessmatrix(_iter*_blocksize+j,_iter*_blocksize+j) - mu;
-	      } else {
-		vscale = -sigma / (_hessmatrix(_iter*_blocksize+j,_iter*_blocksize+j) + mu);
-	      }
-	      beta[_iter*_blocksize+j] = 2.0*vscale*vscale/(sigma + vscale*vscale);
-	      _hessmatrix(_iter*_blocksize+j,_iter*_blocksize+j) = maxelem*mu;
-	      for (i=0; i<_blocksize; i++)
-		_hessmatrix(_iter*_blocksize+j+1+i,_iter*_blocksize+j) /= vscale;
-	    }
-	    //
-	    // Apply new Householder reflector to rhs
-	    //
-	    for (i=0; i<_blocksize; i++) {
-	      sigma = blas.DOT( _blocksize, &_hessmatrix(_iter*_blocksize+j+1,_iter*_blocksize+j), 1, &_z(_iter*_blocksize+j+1,i), 1);
-	      sigma += _z(_iter*_blocksize+j,i);
-	      sigma *= beta[_iter*_blocksize+j];
-	      blas.AXPY(_blocksize, -sigma, &_hessmatrix(_iter*_blocksize+j+1,_iter*_blocksize+j), 1, &_z(_iter*_blocksize+j+1,i), 1);
-	      _z(_iter*_blocksize+j,i) -= sigma;
-	    }
-	  }
+	  UpdateLSQR( _hessmatrix, _z );
 	  //
 	} // end for (_iter=0;...
 	//
@@ -436,28 +396,26 @@ namespace Belos {
 		   Teuchos::NON_UNIT_DIAG, _iter*_blocksize, _blocksize, one,
 		   _hessmatrix.values(), _hessmatrix.stride(), _z_copy.values(), _z_copy.stride() ); 
 	  // Create view into current basis vectors.
-	  MultiVec<TYPE> * Vjp1 = _basisvecs->CloneView(index, _iter*_blocksize);
-          MultiVec<TYPE> * solnUpdate = _cur_block_sol->Clone( _blocksize );	  
+	  Vjp1 = Teuchos::rcp( _basisvecs->CloneView(&index[0], _iter*_blocksize) );
+          solnUpdate = Teuchos::rcp( _cur_block_sol->Clone( _blocksize ) ); 
 	  solnUpdate->MvTimesMatAddMv( one, *Vjp1, _z_copy, zero );
-	  delete Vjp1;
 	  //
 	  // Update the solution held by the linear problem.
 	  //	  
-	  _lp.SolutionUpdated( solnUpdate );
-	  delete solnUpdate;
-        }
+	  _lp.SolutionUpdated( solnUpdate.get() );
+	  //
+        } 
 	//
 	// Print out solver status
 	// 
 	if (_om.doOutput( 0 )) {
 	  _stest.Print(_os);
-	  if (exit_flg) {
+	  if (exit_flg && _blocksize>1) {
 	    _os << " Exiting Block GMRES --- " << endl;
 	    _os << "  Reason: Failed to compute new block of orthonormal basis vectors" << endl;
 	    _os << "  ***Solution from previous step will be returned***"<< endl<< endl;
 	  }
 	} 
-	if (U_vec) {delete U_vec; U_vec = 0;}
 	//
 	// Break out of this loop before the _restartiter is incremented if we are finished.
 	//
@@ -473,12 +431,6 @@ namespace Belos {
       //
       _cur_block_sol = _lp.GetCurrLHSVec();
       _cur_block_rhs = _lp.GetCurrRHSVec();
-      //
-      // **************Free heap space**************
-      //
-      if (_basisvecs) {delete _basisvecs; _basisvecs=0;}
-      if (index) {delete [] index; index=0;}
-      if (beta) {delete [] beta; beta=0; }
       //
     } // end while( _cur_block_sol && _cur_block_rhs )
     //
@@ -508,6 +460,8 @@ namespace Belos {
       dep = BlkOrth(*AU_vec);
       if (dep) {
 	dep_flg = true;
+	if (_blocksize == 1)
+	  return dep_flg;
       }
     }
     // If any dependencies have been detected during this step of
@@ -590,6 +544,7 @@ namespace Belos {
       // block of the Hessenberg matrix
       //
       F_vec->MvTransMv (one, *V_prev, dense_mat);
+      //dense_mat.print(cout);
       //
       // Update the orthogonalization coefficients for the j-th block
       // column of the Hessenberg matrix.
@@ -1040,6 +995,106 @@ namespace Belos {
     //
   } // end QRFactorAug()
   
+  template<class TYPE>
+  void BlockGmres<TYPE>::UpdateLSQR( Teuchos::SerialDenseMatrix<int,TYPE>& R, 
+				     Teuchos::SerialDenseMatrix<int,TYPE>& z )
+  {
+    int i, j, maxidx;
+    TYPE sigma, mu, vscale, maxelem, temp;
+    const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+    const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
+    Teuchos::BLAS<int, TYPE> blas;
+    //
+    // Apply previous transformations and compute new transformation to reduce upper-Hessenberg
+    // system to upper-triangular form.  
+    // NOTE:  When _iter==0, storage will be created for the transformations.
+    //
+    if (_blocksize == 1) 
+      {
+	if (_iter==0) {
+	  cs.resize( _length+1 );
+	  sn.resize( _length+1 );
+	}
+	//
+	// QR factorization of Least-Squares system with Givens rotations
+	//
+	for (i=0; i<_iter; i++) {
+	  //
+	  // Apply previous Givens rotations to new column of Hessenberg matrix
+	  //
+	  temp = cs[i]*R(i,_iter) + sn[i]*R(i+1,_iter);
+	  R(i+1,_iter) = -sn[i]*R(i,_iter) + cs[i]*R(i+1,_iter);
+	  R(i,_iter) = temp;
+	}
+	//
+	// Calculate new Givens rotation
+	//
+	givens_rot( R(_iter,_iter), R(_iter+1,_iter), cs[_iter], sn[_iter], temp );
+	R(_iter,_iter) = temp;
+	R(_iter+1,_iter) = zero;
+	//
+	// Update RHS w/ new transformation
+	//
+	z(_iter+1,0) = -sn[_iter]*z(_iter,0);
+	z(_iter,0) = cs[_iter]*z(_iter,0);
+      } 
+    else
+      {
+	if (_iter==0) {
+	  beta.size((_length+1)*_blocksize);
+	}
+	//
+	// QR factorization of Least-Squares system with Householder reflectors
+	//
+	for (j=0; j<_blocksize; j++) {
+	  //
+	  // Apply previous Householder reflectors to new block of Hessenberg matrix
+	  //
+	  for (i=0; i<_iter*_blocksize+j; i++) {
+	    sigma = blas.DOT( _blocksize, &R(i+1,i), 1, &R(i+1,_iter*_blocksize+j), 1);
+	    sigma += R(i,_iter*_blocksize+j);
+	    sigma *= beta[i];
+	    blas.AXPY(_blocksize, -sigma, &R(i+1,i), 1, &R(i+1,_iter*_blocksize+j), 1);
+	    R(i,_iter*_blocksize+j) -= sigma;
+	  }
+	  //
+	  // Compute new Householder reflector
+	  //
+	  maxidx = blas.IAMAX( _blocksize+1, &R(_iter*_blocksize+j,_iter*_blocksize+j), 1 );
+	  maxelem = R(_iter*_blocksize+j+maxidx-1,_iter*_blocksize+j);
+	  for (i=0; i<_blocksize+1; i++) 
+	    R(_iter*_blocksize+j+i,_iter*_blocksize+j) /= maxelem;
+	  sigma = blas.DOT( _blocksize, &R(_iter*_blocksize+j+1,_iter*_blocksize+j), 1, 
+			    &R(_iter*_blocksize+j+1,_iter*_blocksize+j), 1 );
+	  if (sigma == zero) {
+	    beta[_iter*_blocksize + j] = zero;
+	  } else {
+	    mu = sqrt(R(_iter*_blocksize+j,_iter*_blocksize+j)*R(_iter*_blocksize+j,_iter*_blocksize+j)+sigma);
+	    if ( R(_iter*_blocksize+j,_iter*_blocksize+j) < zero ) {
+	      vscale = R(_iter*_blocksize+j,_iter*_blocksize+j) - mu;
+	    } else {
+	      vscale = -sigma / (R(_iter*_blocksize+j,_iter*_blocksize+j) + mu);
+	    }
+	    beta[_iter*_blocksize+j] = 2.0*vscale*vscale/(sigma + vscale*vscale);
+	    R(_iter*_blocksize+j,_iter*_blocksize+j) = maxelem*mu;
+	    for (i=0; i<_blocksize; i++)
+	      R(_iter*_blocksize+j+1+i,_iter*_blocksize+j) /= vscale;
+	  }
+	  //
+	  // Apply new Householder reflector to rhs
+	  //
+	  for (i=0; i<_blocksize; i++) {
+	    sigma = blas.DOT( _blocksize, &R(_iter*_blocksize+j+1,_iter*_blocksize+j), 
+			      1, &z(_iter*_blocksize+j+1,i), 1);
+	    sigma += z(_iter*_blocksize+j,i);
+	    sigma *= beta[_iter*_blocksize+j];
+	    blas.AXPY(_blocksize, -sigma, &R(_iter*_blocksize+j+1,_iter*_blocksize+j), 
+		      1, &z(_iter*_blocksize+j+1,i), 1);
+	    z(_iter*_blocksize+j,i) -= sigma;
+	  }
+	}
+      } // end if (_blocksize == 1)
+  } // end UpdateLSQR
   
   template<class TYPE>
   void BlockGmres<TYPE>::CheckKrylovOrth( const int j ) 
@@ -1109,6 +1164,48 @@ namespace Belos {
     //
   } // end CheckKrylovOrth
     
+  template<class TYPE>
+  void BlockGmres<TYPE>::givens_rot(double& a, double& b, double& c, double& s, double& tau)
+  {
+    const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+    const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
+    //
+    // Initialize variables
+    //
+    c = zero;
+    s = zero;
+    tau = zero;
+    //
+    // If the second direction is already zero, no transformation is needed.
+    //
+    if (b == zero) {
+      c = one;
+      s = zero;
+      tau = a;
+      return;
+    }
+    //
+    // Compute Givens rotation
+    //
+    if (Teuchos::ScalarTraits<TYPE>::magnitude(a) > Teuchos::ScalarTraits<TYPE>::magnitude(b)) 
+      {
+	c = b/a;
+	tau = Teuchos::ScalarTraits<TYPE>::squareroot( one + c*c );
+	s = c/tau;
+	c = one/tau;
+	tau *= a;
+      }
+    else 
+      {
+	s = a/b;
+	tau = Teuchos::ScalarTraits<TYPE>::squareroot( one + s*s );
+	c = s/tau;
+	s = one/tau;
+	tau *= b;
+      }
+  } // end givens_rot
+
+
 } // end namespace Belos
 
 #endif
