@@ -118,6 +118,9 @@ public:
   // printout Segment
   virtual bool Print() const;
   
+  // get local numbering id for global node id adjacent to segment
+  int GetLocalNodeId(int nid);
+
 
   //------------- pure virtual methods to be implemented in derived class
 
@@ -138,15 +141,6 @@ public:
 
   // build the basis vector and metrix tensor at a given point in element
   virtual double Metric(double* xi, double g[], double G[][3]) = 0;
-
-protected:  
-
-  //------------- methods used from base class
-  
-  // get local numbering id for global node id adjacent to segment
-  int GetLocalNodeId(int nid);
-
-  //------------- pure virtual methods to be implemented in derived class
 
   // get local coordinates at a node in LOCAL numbering
   virtual bool LocalCoordinatesOfNode(int lid, double* xi) = 0;

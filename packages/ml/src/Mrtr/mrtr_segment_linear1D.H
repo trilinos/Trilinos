@@ -83,15 +83,15 @@ public:
   // (derived) build the basis vector and metrix tensor at a given point in element
   double Metric(double* xi, double g[], double G[][3]);
 
+  // (derived) get local coordinates at a node in LOCAL numbering
+  bool LocalCoordinatesOfNode(int lid, double* xi);
+  
 
 protected:  
 
   // don't want = operator
   Segment_Linear1D operator = (const Segment& old);
 
-  // (derived) get local coordinates at a node in LOCAL numbering
-  bool LocalCoordinatesOfNode(int lid, double* xi);
-  
 };
 
 } // namespace MRTR

@@ -104,11 +104,16 @@ bool MRTR::Interface::Project()
     ok = ProjectNodes_NormalField();
     if (!ok) return false;
   }
+  else if (GetProjectionType() == MRTR::Interface::proj_orthogonal)
+  {
+    ok = ProjectNodes_Orthogonal();
+    if (!ok) return false;
+  }
   else
   {
     cout << "***ERR*** MRTR::Interface::Project:\n"
          << "***ERR*** interface " << Id() << "\n"
-         << "***ERR*** currently only projection type MRTR::Interface::proj_continousnormalfield\n"
+         << "***ERR*** unknown type of nodal projection\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
@@ -393,7 +398,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
       }
       if (i != blength)
       {
-        cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
+        cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
              << "***ERR*** Mismatch in dimension of recv buffer\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         exit(EXIT_FAILURE);
@@ -520,9 +525,9 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
     // (with some tolerance of 20%)
     bool ok = false;
     if (IsOneDimensional())
-      if (abs(bestdist[0]) < 1.2) ok = true;
+      if (abs(bestdist[0]) < 1.1) ok = true;
     else
-      if (abs(bestdist[0])<1.2 && abs(bestdist[1])<1.2) ok = true;
+      if (abs(bestdist[0])<1.1 && abs(bestdist[1])<1.1) ok = true;
     
     if (ok) // the projection is good
     {
@@ -631,5 +636,313 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
   return true;
 }
 
+/*----------------------------------------------------------------------*
+ | do projection of nodes on master and slave side                      |
+ *----------------------------------------------------------------------*/
+bool MRTR::Interface::ProjectNodes_Orthogonal()
+{ 
+  if (!IsComplete())
+  {
+    cout << "***ERR*** MRTR::Interface::ProjectNodes_Orthogonal:\n"
+         << "***ERR*** Complete() not called on interface " << Id() << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  if (!lComm()) return true;
 
+  // project the master nodes onto the slave surface orthogonaly
+  ProjectNodes_MastertoSlave_Orthogonal();
+
+  // project the slave nodes onto the master surface orthogonal to adjacent slave segment
+  ProjectNodes_SlavetoMaster_Orthogonal();  
+  
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ | project nodes master to slave along slave orthogonal         |
+ *----------------------------------------------------------------------*/
+bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
+{ 
+  if (!IsComplete())
+  {
+    cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+         << "***ERR*** Complete() not called on interface " << Id() << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  if (!lComm()) return true;
+  
+  int mside = MortarSide();
+  int sside = OtherSide(mside);
+
+  // iterate over all master nodes and project those belonging to me
+    map<int,MRTR::Node*>::iterator mcurr;
+  for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
+  {
+    MRTR::Node* mnode = mcurr->second;
+    if (NodePID(mnode->Id()) != lComm()->MyPID())
+      continue;
+      
+    const double* mx = mnode->X();
+    double mindist = 1.0e+20;
+    MRTR::Node* closenode = NULL;
+    
+    // find a node on the slave side that is closest to me
+    map<int,MRTR::Node*>::iterator scurr;
+    for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
+    {
+      MRTR::Node* snode = scurr->second;
+      const double* sx = snode->X();
+      
+      // build distance | snode->X() - mnode->X() |
+      double dist = 0.0;
+      for (int i=0; i<3; ++i) dist += (mx[i]-sx[i])*(mx[i]-sx[i]);
+      dist = sqrt(dist);
+      if (dist < mindist)
+      {
+        mindist = dist;
+        closenode = snode;
+      }
+    } 
+    if (!closenode)
+    {
+      cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+           << "***ERR*** Weired: for master node " << mnode->Id() << " no closest master node found\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      exit(EXIT_FAILURE);
+    }
+
+
+    // get segments attached to closest node closenode
+    int  nseg = closenode->Nseg();
+    MRTR::Segment** segs = closenode->Segments(); 
+    
+    // create a projection operator
+    MRTR::Projector projector(IsOneDimensional());
+    
+    // loop these segments and find best projection
+    double bestdist[2];
+    bestdist[0] = bestdist[1] = 1.0e+20;
+    MRTR::Segment* bestseg = NULL;
+    for (int i=0; i<nseg; ++i)
+    {
+      // project the master node orthogonally on the slave segment
+      double xi[2]; xi[0] = xi[1] = 0.0;
+      projector.ProjectNodetoSegment_SegmentOrthogonal(*mnode,*(segs[i]),xi);
+      
+      // check whether xi is better than previous projection
+      if (IsOneDimensional())
+      {
+        if (abs(xi[0]) < abs(bestdist[0])) 
+        {
+	  bestdist[0] = xi[0];
+	  bestdist[1] = xi[1];
+	  bestseg = segs[i];
+        }
+      }
+      else
+      {
+        cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+             << "***ERR*** not impl. for 3D\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      }
+      
+    } // for (int i=0; i<nseg; ++i)
+      
+    // check whether this best projection is good
+    bool ok = false;
+    if (IsOneDimensional())
+    {
+      if (abs(bestdist[0]) < 1.1) 
+        ok = true;
+    }
+    else
+    {
+      cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+           << "***ERR*** not impl. for 3D\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      exit(EXIT_FAILURE);
+    }
+    
+    if (ok) // the projection is good
+    {
+      // create a projected node and store it in mnode
+      MRTR::ProjectedNode* pnode = 
+        new MRTR::ProjectedNode(*mnode,bestdist,bestseg);
+      mnode->SetProjectedNode(pnode);
+    } 
+    else // this mnode does not have a valid projection
+    {
+      if (OutLevel()>5)
+      cout << "***WRN***: Node " << mnode->Id() << " does not have projection\n\n";
+      mnode->SetProjectedNode(NULL);
+    }
+  } // for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
+
+  // loop all master nodes again and make projection redundant
+  int bsize = 4*rnode_[mside].size();
+  double* bcast = new double[bsize]; // that's the max
+  for (int proc=0; proc<lComm()->NumProc(); ++proc)
+  {
+    int blength = 0;
+    if (proc==lComm()->MyPID())
+    {
+      for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
+      {
+        MRTR::Node* mnode = mcurr->second;
+        if (proc != NodePID(mnode->Id())) continue; // cannot have a projection on a node i don't own
+        MRTR::ProjectedNode* pnode = mnode->GetProjectedNode();
+        if (!pnode) continue; // this node doe not have a projection
+        const double* xi = pnode->Xi();
+        bcast[blength] = (double)pnode->Id();
+        ++blength;
+        bcast[blength] = (double)pnode->Segment()->Id();
+        ++blength;
+        bcast[blength] = xi[0];
+        ++blength;
+        bcast[blength] = xi[1];
+        ++blength;
+      } // for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
+      if (blength>bsize)
+      {
+        cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+             << "***ERR*** Overflow in communication buffer occured\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      }
+    } // if (proc==lComm()->MyPID())
+    lComm()->Broadcast(&blength,1,proc);
+    lComm()->Broadcast(bcast,blength,proc);
+    if (proc!=lComm()->MyPID())
+    {
+      int i;
+      for (int i=0; i<blength;)
+      {
+        int     nid = (int)bcast[i];  ++i;
+        int     sid = (int)bcast[i];  ++i;
+        double* xi  =      &bcast[i]; ++i; ++i; 
+        MRTR::Node*    mnode = GetNodeView(nid);
+        MRTR::Segment* seg   = GetSegmentView(sid);
+        if (!mnode || !seg)
+        {
+          cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+               << "***ERR*** Cannot get view of node or segment\n"
+               << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          exit(EXIT_FAILURE);
+        }
+        MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*mnode,xi,seg);
+        mnode->SetProjectedNode(pnode);
+      }
+      if (i != blength)
+      {
+        cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+             << "***ERR*** Mismatch in dimension of recv buffer\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      }
+    } // if (proc!=lComm()->MyPID())
+  }  // for (int proc=0; proc<lComm()->NumProc(); ++proc)
+  delete [] bcast; bcast = NULL;
+
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ | project the slave nodes onto master segments orthogonal              |
+ *----------------------------------------------------------------------*/
+bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
+{
+  if (!IsComplete())
+  {
+    cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
+         << "***ERR*** Complete() not called on interface " << Id() << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  if (!lComm()) return true;
+  
+  int mside = MortarSide();
+  int sside = OtherSide(mside);
+
+  // iterate over all nodes of the slave side and project those belonging to me
+  map<int,MRTR::Node*>::iterator scurr;
+  for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
+  {
+    MRTR::Node* snode = scurr->second;
+    if (NodePID(snode->Id()) != lComm()->MyPID())
+      continue;
+    
+    const double* sx = snode->X();
+    double mindist = 1.0e+20;
+    MRTR::Node* closenode = NULL;
+    
+    // find a node on the master side, that is closest to me
+    map<int,MRTR::Node*>::iterator mcurr;
+    for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
+    {
+      MRTR::Node* mnode = mcurr->second;
+      const double* mx = mnode->X();
+      
+      // build distance | mnode->X() - snode->X() |
+      double dist = 0.0;
+      for (int i=0; i<3; ++i) dist += (mx[i]-sx[i])*(mx[i]-sx[i]);
+      dist = sqrt(dist);
+      if (dist <= mindist)
+      {
+        mindist = dist;
+	closenode = mnode;
+      }
+      //cout << "snode " << snode->Id() << " mnode " << mnode->Id() << " mindist " << mindist  << " dist " << dist << endl;
+    }
+    if (!closenode)
+    {
+      cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
+           << "***ERR*** Weired: for slave node " << snode->Id() << " no closest master node found\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      exit(EXIT_FAILURE);
+    }
+
+    // get segments attached to closest node cnode
+    int  nmseg = closenode->Nseg();
+    MRTR::Segment** msegs = closenode->Segments(); 
+    
+    // create a projection-iterator
+    MRTR::Projector projector(IsOneDimensional());
+
+    // loop segments and find all projections onto them
+    for (int i=0; i<nmseg; ++i)
+    {
+      // loop all segments that are adjacent to the slave node
+      int nsseg = snode->Nseg();
+      MRTR::Segment** ssegs = snode->Segments(); 
+      for (int j=0; j<nsseg; ++j)
+      {
+        // project the slave node onto that master segment
+        double xi[2]; xi[0] = xi[1] = 0.0;
+        projector.ProjectNodetoSegment_Orthogonal_to_Slave(*snode,*(msegs[i]),xi,*(ssegs[j]));
+      
+      
+      
+      } // for (int j=0; j<nsseg; ++j)
+      
+
+
+    } // for (int i=0; i<nmseg; ++i)
+
+
+
+
+
+
+
+
+
+
+    
+  } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)  
+
+  return true; 
+}
 #endif // TRILINOS_PACKAGE

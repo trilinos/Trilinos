@@ -426,4 +426,364 @@ double MRTR::Projector::evaluate_gradF_2D_SegmentNormal(MRTR::Node& node,
   return gradF;
 }
 
+/*----------------------------------------------------------------------*
+ |                                                           mwgee 08/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Projector::ProjectNodetoSegment_SegmentOrthogonal(MRTR::Node& node, 
+                                                             MRTR::Segment& seg, 
+						             double xi[])
+{
+#if 0
+  cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
+#endif
+  if (IsTwoDimensional())
+  {
+    // we do a newton iteration for the projection coordinates xi
+    // set starting value to the middle of the segment
+    double eta = 0.0;
+    int    i = 0;
+    double F,dF,deta;
+    for (i=0; i<10; ++i)
+    {
+      F = evaluate_F_2D_SegmentOrthogonal(node,seg,eta);
+      if (abs(F) < 1.0e-10) break;
+      dF   = evaluate_gradF_2D_SegmentOrthogonal(node,seg,eta);
+      deta = (-F)/dF;
+      eta += deta;
+    }
+    if (abs(F)>1.0e-10)
+    {
+      cout << "***WRN*** MRTR::Projector::ProjectNodetoSegment_SegmentOrthogonal:\n"
+      	   << "***WRN*** Newton iteration failed to converge\n"
+      	   << "***WRN*** #iterations = " << i << endl
+      	   << "***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
+           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    }
+#if 0
+    cout << "#iterations = " << i << " F = " << F << " eta = " << eta << endl;
+#endif
+    xi[0] = eta;
+    return true;
+  }
+  else
+  {
+    cout << "***ERR*** MRTR::Projector::ProjectNodetoSegment_SegmentOrthogonal:\n"
+    	 << "***ERR*** 3D projection not yet impl.\n"
+    	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |                                                           mwgee 08/05|
+ | 2D case:                                                             |
+ | this method evaluates the function                                   |
+ | F(eta) = ( Ni * xis - xm ) dot g(xi)                                 |
+ | with Ni shape functions of slave segment                             |
+ |      xm  nodal coords of master node                                 |
+ |      xs  nodal coords of slave nodes on segment                      |
+ |      njs nodal outward normal of nodes xs (slave side)               |
+ *----------------------------------------------------------------------*/
+double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal(MRTR::Node& node, 
+                                                        MRTR::Segment& seg, 
+	      					        double eta)
+{
+  // check the type of function on the segment
+  // Here, we need 1D functions set as function id 0
+  MRTR::Function::FunctionType type = seg.FunctionType(0);
+  if (type != MRTR::Function::func_Linear1D)
+  {
+    cout << "***ERR*** MRTR::Projector::evaluate_F_2D_SegmentOrthogonal:\n"
+    	 << "***ERR*** function is of wrong type\n"
+    	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  // evaluate the first function set on segment at eta
+  int nsnode = seg.Nnode();
+  double* val = new double[nsnode];
+  seg.EvaluateFunction(0,&eta,val,nsnode,NULL);
+  
+  // get nodal coords and normals of slave nodes and interpolate them
+  double Nx[2]; 
+  Nx[0] = Nx[1] = 0.0;
+  MRTR::Node** snodes = seg.Nodes();
+  if (!snodes)
+  {
+    cout << "***ERR*** MRTR::Projector::evaluate_F_2D_SegmentOrthogonal:\n"
+    	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
+    	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  for (int i=0; i<nsnode; ++i)
+  {
+    const double* X = snodes[i]->X();
+    Nx[0] += val[i]*X[0];
+    Nx[1] += val[i]*X[1];
+  }
+  delete [] val; val = NULL;
+  
+  // subtract xm from interpolated coords Nx
+  const double* X = node.X();
+  Nx[0] -= X[0];
+  Nx[1] -= X[1];
+  
+  // evaluate the metric of the segment in point xi
+  double g[2];
+  seg.Metric(&eta,g,NULL);
+
+  // calculate F
+  double F = Nx[0]*g[0] + Nx[1]*g[1];
+
+  return F;
+}
+
+/*----------------------------------------------------------------------*
+ |                                                           mwgee 08/05|
+ | 2D case:                                                             |
+ | this method evaluates the function                                   |
+ | gradF(eta) =                                                         |
+ |   ( Ni,eta * xis ) * ( Ni,eta * xis )                                |
+ | with Ni,eta derivative of shape functions of segment                 |
+ |      Ni,Nj shape functions of segment                                |
+ |      xis nodal coords of segment's nodes i (slave side)              |
+ *----------------------------------------------------------------------*/
+double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal(MRTR::Node& node, 
+                                                        MRTR::Segment& seg, 
+	      				                double eta)
+{
+  // check the type of function on the segment
+  // Here, we need 1D functions set as function id 0
+  MRTR::Function::FunctionType type = seg.FunctionType(0);
+  if (type != MRTR::Function::func_Linear1D)
+  {
+    cout << "***ERR*** MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal:\n"
+    	 << "***ERR*** function is of wrong type\n"
+    	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  // evaluate function and derivatives of the first function set on segment at eta
+  int nsnode = seg.Nnode();
+  double* deriv = new double[nsnode*2];
+  seg.EvaluateFunction(0,&eta,NULL,nsnode,deriv);
+  
+  // intermediate data:
+  // Nxeta  = Ni,eta * xi
+  
+  // get nodal coords and normals of nodes and interpolate them
+  double Nxeta[2];  Nxeta[0] = Nxeta[1] = 0.0;
+  MRTR::Node** snodes = seg.Nodes();
+  if (!snodes)
+  {
+    cout << "***ERR*** MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal:\n"
+    	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
+    	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  for (int i=0; i<nsnode; ++i)
+  {
+    const double* X = snodes[i]->X();
+    Nxeta[0] += deriv[i]*X[0];
+    Nxeta[1] += deriv[i]*X[1];
+  }
+  
+  delete [] deriv; deriv = NULL;
+  
+  // calculate gradF
+  double gradF =   Nxeta[0]*Nxeta[0] + Nxeta[1]*Nxeta[1];
+  return gradF;
+}
+
+/*----------------------------------------------------------------------*
+ |                                                           mwgee 08/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
+                                                             MRTR::Node& snode, 
+                                                             MRTR::Segment& seg, 
+						             double xi[],
+                                                             MRTR::Segment& sseg)
+{
+#if 1
+  cout << "----- Projector: Node " << snode.Id() << " Segment " << seg.Id() << endl;
+  cout << "      orthogonal to Slave Segment " << sseg.Id() << endl;
+#endif
+
+  if (IsTwoDimensional())
+  {
+    // get the local node id of snode on sseg
+    int lid = sseg.GetLocalNodeId(snode.Id());
+    if (lid<0)
+    {
+      cout << "***ERR*** MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
+    	   << "***ERR*** local node id could not be found\n"
+      	   << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      exit(EXIT_FAILURE);
+    }
+    // get coordinate of local node lid
+    double lidxi;
+    sseg.LocalCoordinatesOfNode(lid,&lidxi);
+    
+    // build tangent vector in xi
+    double g[2];
+    sseg.Metric(&lidxi,g,NULL);
+    
+    // we do a newton iteration for the projection coordinates xi
+    // set starting value to the middle of the segment
+    double eta = 0.0;
+    int    i = 0;
+    double F,dF,deta;
+    for (i=0; i<10; ++i)
+    {
+      F = evaluate_F_2D_SegmentOrthogonal_to_g(snode,seg,eta,g);
+      if (abs(F) < 1.0e-10) break;
+      dF   = evaluate_gradF_2D_SegmentOrthogonal_to_g(snode,seg,eta,g);
+      deta = (-F)/dF;
+      eta += deta;
+    }
+    if (abs(F)>1.0e-10)
+    {
+      cout << "***WRN*** MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
+      	   << "***WRN*** Newton iteration failed to converge\n"
+      	   << "***WRN*** #iterations = " << i << endl
+      	   << "***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
+           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    }
+#if 1
+    cout << "#iterations = " << i << " F = " << F << " eta = " << eta << endl;
+#endif
+    xi[0] = eta;
+    return true;
+  }
+  else
+  {
+    cout << "***ERR*** MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
+    	 << "***ERR*** 3D projection not impl.\n"
+    	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |                                                           mwgee 08/05|
+ | 2D case:                                                             |
+ | this method evaluates the function                                   |
+ | F(eta) = ( Ni * xim - xs ) dot gs                                    |
+ | with Ni shape functions of slave segment                             |
+ |      xm  nodal coords of master node                                 |
+ |      xs  nodal coords of slave nodes on segment                      |
+ |      njs nodal outward normal of nodes xs (slave side)               |
+ *----------------------------------------------------------------------*/
+double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(MRTR::Node& node, 
+                                                             MRTR::Segment& seg, 
+	      					             double eta,
+                                                             double* g)
+{
+  // check the type of function on the segment
+  // Here, we need 1D functions set as function id 0
+  MRTR::Function::FunctionType type = seg.FunctionType(0);
+  if (type != MRTR::Function::func_Linear1D)
+  {
+    cout << "***ERR*** MRTR::Projector::evaluate_F_2D_SegmentOrthogonal_to_g:\n"
+    	 << "***ERR*** function is of wrong type\n"
+    	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  // evaluate the first function set on segment at eta
+  int nsnode = seg.Nnode();
+  double* val = new double[nsnode];
+  seg.EvaluateFunction(0,&eta,val,nsnode,NULL);
+  
+  // get nodal coords and normals of master nodes and interpolate them
+  double Nx[2]; 
+  Nx[0] = Nx[1] = 0.0;
+  MRTR::Node** mnodes = seg.Nodes();
+  if (!mnodes)
+  {
+    cout << "***ERR*** MRTR::Projector::evaluate_F_2D_SegmentOrthogonal_to_g:\n"
+    	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
+    	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  for (int i=0; i<nsnode; ++i)
+  {
+    const double* X = mnodes[i]->X();
+    Nx[0] += val[i]*X[0];
+    Nx[1] += val[i]*X[1];
+  }
+  delete [] val; val = NULL;
+  
+  // subtract xs from interpolated coords Nx
+  const double* X = node.X();
+  Nx[0] -= X[0];
+  Nx[1] -= X[1];
+  
+  // calculate F
+  double F = Nx[0]*g[0] + Nx[1]*g[1];
+
+  return F;
+}
+
+/*----------------------------------------------------------------------*
+ |                                                           mwgee 08/05|
+ | 2D case:                                                             |
+ | this method evaluates the function                                   |
+ | gradF(eta) =                                                         |
+ |   ( Ni,eta * xis ) * ( Ni,eta * xis )                                |
+ | with Ni,eta derivative of shape functions of segment                 |
+ |      Ni,Nj shape functions of segment                                |
+ |      xis nodal coords of segment's nodes i (slave side)              |
+ *----------------------------------------------------------------------*/
+double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g(
+                                                        MRTR::Node& node, 
+                                                        MRTR::Segment& seg, 
+	      				                double eta,
+                                                        double* g)
+{
+  // check the type of function on the segment
+  // Here, we need 1D functions set as function id 0
+  MRTR::Function::FunctionType type = seg.FunctionType(0);
+  if (type != MRTR::Function::func_Linear1D)
+  {
+    cout << "***ERR*** MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g:\n"
+    	 << "***ERR*** function is of wrong type\n"
+    	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  // evaluate function and derivatives of the first function set on segment at eta
+  int nmnode = seg.Nnode();
+  double* deriv = new double[nmnode*2];
+  seg.EvaluateFunction(0,&eta,NULL,nmnode,deriv);
+  
+  // intermediate data:
+  // Nxeta  = Ni,eta * xi
+  
+  // get nodal coords and normals of nodes and interpolate them
+  double Nxeta[2];  Nxeta[0] = Nxeta[1] = 0.0;
+  MRTR::Node** mnodes = seg.Nodes();
+  if (!mnodes)
+  {
+    cout << "***ERR*** MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g:\n"
+    	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
+    	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  for (int i=0; i<nmnode; ++i)
+  {
+    const double* X = mnodes[i]->X();
+    Nxeta[0] += deriv[i]*X[0];
+    Nxeta[1] += deriv[i]*X[1];
+  }
+  
+  delete [] deriv; deriv = NULL;
+  
+  // calculate gradF
+  double gradF =   Nxeta[0]*g[0] + Nxeta[1]*g[1];
+  return gradF;
+}
+
 #endif // TRILINOS_PACKAGE

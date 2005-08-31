@@ -221,12 +221,17 @@ private:
   
   // project node using the normal field of the slave side
   bool ProjectNodes_NormalField();
-  
   // project nodes of the slave side to the master side using slave side's normal field
   bool ProjectNodes_SlavetoMaster_NormalField();
-
   // project the master nodes ontp the slave surface along slave's normal field
   bool ProjectNodes_MastertoSlave_NormalField();
+
+  // project node orthogonal to slave side
+  bool ProjectNodes_Orthogonal();
+  // project the master nodes ontp the slave surface orthogonal to slave segment
+  bool ProjectNodes_MastertoSlave_Orthogonal();
+  // project nodes of the slave side to the master side orthogonal to segments adjacent to slave node
+  bool ProjectNodes_SlavetoMaster_Orthogonal();
   
   // control routine of the integration of the master/slave side in 2D
   bool Integrate_2D(Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);

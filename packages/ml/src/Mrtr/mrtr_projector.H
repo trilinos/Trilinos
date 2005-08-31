@@ -68,9 +68,12 @@ public:
 
   // project a node onto a segment along the node's normal
   bool ProjectNodetoSegment_NodalNormal(MRTR::Node& node, MRTR::Segment& seg, double xi[]);
-  
   // project a node onto a segment along the interpolated segment's normal field
   bool ProjectNodetoSegment_SegmentNormal(MRTR::Node& node, MRTR::Segment& seg, double xi[]);
+
+  // project a node onto a segment orthogonal to the segment
+  bool ProjectNodetoSegment_SegmentOrthogonal(MRTR::Node& node, MRTR::Segment& seg, double xi[]);
+  bool ProjectNodetoSegment_Orthogonal_to_Slave(MRTR::Node& snode, MRTR::Segment& seg, double xi[], MRTR::Segment& sseg);
 
 private:  
   // don't want = operator
@@ -86,7 +89,14 @@ private:
   double evaluate_F_2D_SegmentNormal(MRTR::Node& node, MRTR::Segment& seg, double eta);  
   double evaluate_gradF_2D_SegmentNormal(MRTR::Node& node, MRTR::Segment& seg, double eta);
 
-
+  // evaluate F and gradF functions for ProjectNodetoSegment_SegmentOrthogonal
+  double evaluate_F_2D_SegmentOrthogonal(MRTR::Node& node, MRTR::Segment& seg, double eta);  
+  double evaluate_gradF_2D_SegmentOrthogonal(MRTR::Node& node, MRTR::Segment& seg, double eta);
+  
+  // evalauate F and gradF functions for ProjectNodetoSegment_Orthogonal_to_Slave
+  double evaluate_F_2D_SegmentOrthogonal_to_g(MRTR::Node& node, MRTR::Segment& seg, double eta, double* g);  
+  double evaluate_gradF_2D_SegmentOrthogonal_to_g(MRTR::Node& node, MRTR::Segment& seg, double eta, double* g);
+  
 private:
 
   bool twoD_;   // dimension of the projection, true if 2-dimensional
