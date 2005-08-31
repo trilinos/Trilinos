@@ -11168,7 +11168,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 ##
-                                                                                          ac_config_files="$ac_config_files Makefile Makefile.export.triutils src/Makefile test/Makefile test/Read/Makefile python/Makefile python/src/Makefile python/src/__init__.py python/src/.deps/dummy"
+                                                                                                    ac_config_files="$ac_config_files Makefile Makefile.export.triutils src/Makefile test/Makefile test/Read/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy"
 
 
 cat >confcache <<\_ACEOF
@@ -11874,6 +11874,7 @@ do
   "test/Read/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Read/Makefile" ;;
   "python/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/Makefile" ;;
   "python/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src/Makefile" ;;
+  "python/src/TRILINOS_HOME_DIR" ) CONFIG_FILES="$CONFIG_FILES python/src/TRILINOS_HOME_DIR" ;;
   "python/src/__init__.py" ) CONFIG_FILES="$CONFIG_FILES python/src/__init__.py" ;;
   "python/src/.deps/dummy" ) CONFIG_FILES="$CONFIG_FILES python/src/.deps/dummy" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;

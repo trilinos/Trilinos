@@ -31,92 +31,86 @@
 # System imports
 from   distutils.core import *
 from   distutils      import sysconfig
-import commands
 import os
-import string
 import sys
 
-# Any information that needs to be transferred from the autotooled Makefile is
-# written to file setup.txt using python syntax to define a dictionary.  The
-# keys of this 'makeInfo' dictionary are variable names and the corresponding
-# values represent the data that will be needed by this setup.py script.
+# Trilinos import
+TRILINOS_HOME_DIR = os.path.normpath(open("TRILINOS_HOME_DIR").read()[:-1])
+sys.path.insert(0,os.path.join(TRILINOS_HOME_DIR,"commonTools","buildTools"))
+from MakefileVariables import *
+
+# Build the makeVars dictionary by processing relevant Makefiles
+makeVars = { }
+makeVars.update(processFile(os.path.join("..","..","Makefile.export.triutils")))
+makeVars.update(processFile(os.path.join("..","..","..","PyTrilinos",
+                                         "Makefile.export.pytrilinos")))
+makeVars.update(processFile(os.path.join("Makefile")))
+
+# Import the variable names and values into the global namespace.  This is
+# crucual: every variable name/value pair obtained by processing the specified
+# Makefiles above will become actual python variables in the global namespace.
+globals().update(makeVars)
+
+# Obtain the package version number string
 try:
-    f = open("setup.txt")
-    makeInfo = f.readlines()
-    f.close()
-    makeInfo = eval(string.join(makeInfo))
-except IOError:
-    makeInfo = { }
+    version = makeVars["PACKAGE_VERSION"]
+except KeyError:
+    version = makeVars.get("VERSION","??")
 
-# Certain directory paths are needed by setup.py.  pakDir is the path for the
-# epetra package directory, and srcDir is the path for the python source directory
-buildDir   = makeInfo.get("top_builddir","")
-pakDir     = makeInfo.get("top_srcdir","")
-srcDir     = makeInfo.get("srcdir","")
-CXX        = makeInfo.get("CXX")
+# Initialize arguments that will be needed by the Extension class
+include_dirs    = [srcdir]
+library_dirs    = [      ]
+libraries       = [      ]
+extra_link_args = [      ]
 
-# Define the teuchos include path, library directory and library name
-TriutilsSrcDir   = os.path.join(pakDir,   "..", "triutils", "src")
-TriutilsLibDir   = os.path.join(buildDir, "..", "triutils", "src")
-TriutilsLib      = "triutils"
+# Get the relevant Makefile export variable values, split them into lists of
+# strings, add them together to obtain a big list of option strings, and then
+# remove any duplicate entries
+options = TRIUTILS_INCLUDES.split()   + \
+          TRIUTILS_LIBS.split()       + \
+          PYTRILINOS_INCLUDES.split() + \
+          PYTRILINOS_LIBS.split()
+uniquifyList(options)
 
-# Define the pytrilinos include path, library directory and library name
-PyTrilinosInc    = os.path.join(pakDir,   "..", "PyTrilinos", "src")
-PyTrilinosLibDir = os.path.join(buildDir, "..", "PyTrilinos", "src")
-PyTrilinosLib    = "pytrilinos"
-
-# Define the epetra include path, library directory and library name
-EpetraSrcDir   = os.path.join(pakDir,   "..", "epetra", "src")
-EpetraLibDir   = os.path.join(buildDir, "..", "epetra", "src")
-EpetraLib      = "epetra"
-PyEpetraDir    = os.path.join(pakDir, "../epetra/python", "src")
-
-# Standard libraries.  This is currently a hack.  The library "stdc++" is added
-# to the standard library list for a case where we know it needs it.
-stdLibs = [ ]
-sysName = os.uname()[0]
-if sysName == "Linux":
-    stdLibs.append("stdc++")
-
-# Create the extra arguments list and complete the standard libraries list. 
-extraArgs = []
-libs = makeInfo.get("TRIUTILS_LIBS","").split()
-for lib in libs:
-    if lib[:2] == "-l":
-        stdLibs.append(lib[2:])
+# Distribute the individual options to the appropriate Extension class arguments
+for option in options:
+    if option[:2] == "-I":
+        include_dirs.append(option[2:])
+    elif option[:2] == "-L":
+        library_dirs.append(option[2:])
+    elif option[:2] == "-l":
+        libraries.append(option[2:])
     else:
-        extraArgs.append(lib)
+        extra_link_args.append(option)
 
-# Define the strings that refer to the required source files.
-wrapTriutils = "Triutils_wrap.cpp"
+# An additional include directory
+include_dirs.append(os.path.join(top_srcdir,"..","epetra","python","src"))
 
-# compiler and linker
+# Define the strings that refer to the required local source files
+triutilsWrap = "Triutils_wrap.cpp"
+
+# Compiler and linker
 sysconfig.get_config_vars()
-config_vars = sysconfig._config_vars;
-config_vars['CC']  = CXX
-config_vars['CXX'] = CXX
+sysconfig._config_vars["CC" ] = CXX
+sysconfig._config_vars["CXX"] = CXX
 
-# _Triutils  extension module
+# _Triutils extension module
 _Triutils = Extension("PyTrilinos._Triutils",
-                    [wrapTriutils],
-                    define_macros=[('HAVE_CONFIG_H', '1')],
-                    include_dirs    = [PyTrilinosInc, EpetraSrcDir,
-                                       EpetraLibDir, PyEpetraDir,
-                                       TriutilsSrcDir, TriutilsLibDir],
-                    library_dirs    = [PyTrilinosLibDir, EpetraLibDir,
-                                       TriutilsLibDir],
-                    libraries       = [PyTrilinosLib, TriutilsLib, EpetraLib] + \
-                                      stdLibs, 
-                    extra_link_args = extraArgs
-                    )
+                      [triutilsWrap],
+                      define_macros   = [("HAVE_CONFIG_H", "1")],
+                      include_dirs    = include_dirs,
+                      library_dirs    = library_dirs,
+                      libraries       = libraries,
+                      extra_link_args = extra_link_args
+                      )
 
 # PyTrilinos.Triutils setup
 setup(name         = "PyTrilinos.Triutils",
-      version      = "1.0",
+      version      = version,
       description  = "Python Interface to Trilinos Package Triutils",
-      author       = "Marzio Sala",
-      author_email = "msala@sandia.gov",
+      author       = "Bill Spotz",
+      author_email = "wfspotz@sandia.gov",
       package_dir  = {"PyTrilinos" : "."},
       packages     = ["PyTrilinos"],
-      ext_modules  = [ _Triutils  ],
+      ext_modules  = [ _Triutils ]
       )

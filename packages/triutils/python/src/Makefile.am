@@ -52,21 +52,7 @@ INTERFACES = Triutils.i
 WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
 PROXIES    = $(INTERFACES:.i=.py      )
 
-# File setup.txt is a way to transfer make variables to the setup.py
-# python script
-setup.txt: $(srcdir)/Makefile.am
-	@echo "creating $@"
-	@echo "{"                                      >  $@
-	@echo "  'top_builddir' : '$(top_builddir)',"  >> $@
-	@echo "  'top_srcdir'   : '$(top_srcdir)',"    >> $@
-	@echo "  'srcdir'       : '$(srcdir)',"        >> $@
-	@echo "  'CC'           : '$(CC)',"            >> $@
-	@echo "  'CXX'          : '$(CXX)',"           >> $@
-	@echo "  'TRIUTILS_LIBS': '$(TRIUTILS_LIBS)'," >> $@
-	@echo "  'PYTHON'       : '$(PYTHON)'"         >> $@
-	@echo "}"                                      >> $@
-
-build: $(WRAPPERS) setup.txt $(tempdir)
+build: $(WRAPPERS) $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
@@ -76,4 +62,4 @@ clean-local:
 	$(PYTHON) $(srcdir)/setup.py clean
 	$(RM) -r ../../packages
 
-CLEANFILES += setup.txt $(WRAPPERS) $(PROXIES)
+CLEANFILES += $(WRAPPERS) $(PROXIES)
