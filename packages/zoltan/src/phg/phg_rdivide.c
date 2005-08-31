@@ -145,6 +145,8 @@ int Zoltan_PHG_rdivide(
     for (i = 0; i < hg->nVtx; ++i)
       final[hg->vmap[i]] = ((part[i] == 0) ? lo : hi);
     ZOLTAN_FREE (&part);
+    if (detail_timing) 
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer_after, hg->comm->Communicator);
     goto End;
   }
 
