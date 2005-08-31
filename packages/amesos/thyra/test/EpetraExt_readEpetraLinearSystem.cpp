@@ -93,16 +93,16 @@ void EpetraExt::readEpetraLinearSystem(
       );
   }
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix>    _A         = Teuchos::rcp(readA);
-  Teuchos::RefCountPtr<Epetra_Map>          _map       = Teuchos::rcp(readMap);
-  Teuchos::RefCountPtr<Epetra_Vector>       _x         = Teuchos::rcp(readx);
-  Teuchos::RefCountPtr<Epetra_Vector>       _b         = Teuchos::rcp(readb);
-  Teuchos::RefCountPtr<Epetra_Vector>       _xExact    = Teuchos::rcp(readxexact);
+  Teuchos::RefCountPtr<Epetra_CrsMatrix>    loc_A         = Teuchos::rcp(readA);
+  Teuchos::RefCountPtr<Epetra_Map>          loc_map       = Teuchos::rcp(readMap);
+  Teuchos::RefCountPtr<Epetra_Vector>       loc_x         = Teuchos::rcp(readx);
+  Teuchos::RefCountPtr<Epetra_Vector>       loc_b         = Teuchos::rcp(readb);
+  Teuchos::RefCountPtr<Epetra_Vector>       loc_xExact    = Teuchos::rcp(readxexact);
 
-  if(A)       *A       = _A;
-  if(map)     *map     = _map;
-  if(x)       *x       = _x;
-  if(b)       *b       = _b;
-  if(xExact)  *xExact  = _xExact;
+  if(A)       *A       = loc_A;
+  if(map)     *map     = loc_map;
+  if(x)       *x       = loc_x;
+  if(b)       *b       = loc_b;
+  if(xExact)  *xExact  = loc_xExact;
   
 }
