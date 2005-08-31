@@ -128,7 +128,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	// variable-sized ctr
 	if(verbose) cout << "BlockElementSpace constructor (variable-sized)...";
 	Teuchos::Array<OrdinalType> eSizeList = Teuchos::tuple(one, one, one+one, one+one+one, one+one+one+one+one);
-	Tpetra::BlockElementSpace<OrdinalType> bes2(es1, &eSizeList.front());
+	Tpetra::BlockElementSpace<OrdinalType> bes2(es1, eSizeList);
 	if(debug) cout << bes2;
 
 	// copy ctr

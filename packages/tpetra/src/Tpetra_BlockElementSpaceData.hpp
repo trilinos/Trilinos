@@ -46,7 +46,7 @@ namespace Tpetra {
 							  OrdinalType const maxGlobalSize,
 							  OrdinalType const* elementSizeList) 
 			: Object("Tpetra::BlockElementSpaceData")
-			, ElementSpace_(&ElementSpace) 
+			, ElementSpace_(ElementSpace) 
 			, constantSize_(constantSize)
 			, elementSize_(elementSize)
 			, numMyPoints_(numMyPoints)
@@ -76,7 +76,7 @@ namespace Tpetra {
 		};
 
 	protected:
-		ElementSpace<OrdinalType> const* ElementSpace_;
+		ElementSpace<OrdinalType> const ElementSpace_;
 		bool const constantSize_;
 		OrdinalType const elementSize_;
 		OrdinalType const numMyPoints_;

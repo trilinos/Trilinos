@@ -100,7 +100,7 @@ namespace Tpetra {
 		};
 		
 		//! Tpetra::BlockElementSpace constructor with arbitrary element sizes.
-		BlockElementSpace(ElementSpace<OrdinalType>& ElementSpace, OrdinalType* elementSizeList)
+		BlockElementSpace(ElementSpace<OrdinalType>& ElementSpace, std::vector<OrdinalType> const& elementSizeList)
 			: Object("Tpetra::BlockElementSpace")
 			, BlockElementSpaceData_()
 		{
@@ -411,7 +411,7 @@ namespace Tpetra {
 		};
 		
 		//! Access function for ElementSpace object.
-		ElementSpace<OrdinalType> const& elementSpace() const {return(*BlockElementSpaceData_->ElementSpace_);};
+		ElementSpace<OrdinalType> const& elementSpace() const {return(BlockElementSpaceData_->ElementSpace_);};
 		
 		//! Generates a compatible ElementSpace
 		/*! A "compatible" ElementSpace is defined as an ElementSpace 
