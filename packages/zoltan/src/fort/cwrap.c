@@ -34,6 +34,8 @@ extern "C" {
 #define Zfw_Initialize                 zfw_initialize
 #define Zfw_Initialize1                zfw_initialize1
 #define Zfw_Create                     zfw_create       
+#define Zfw_Copy                       zfw_copy
+#define Zfw_Copy_To                    zfw_copy_to
 #define Zfw_Destroy                    zfw_destroy       
 #define Zfw_Memory_Stats               zfw_memory_stats       
 #define Zfw_Set_Fn0f                   zfw_set_fn0f
@@ -87,6 +89,8 @@ extern "C" {
 #define Zfw_Initialize                 ZFW_INITIALIZE
 #define Zfw_Initialize1                ZFW_INITIALIZE1
 #define Zfw_Create                     ZFW_CREATE       
+#define Zfw_Copy                       ZFW_COPY
+#define Zfw_Copy_To                    ZFW_COPY_TO
 #define Zfw_Destroy                    ZFW_DESTROY       
 #define Zfw_Memory_Stats               ZFW_MEMORY_STATS  
 #define Zfw_Set_Fn0f                   ZFW_SET_FN0F
@@ -139,6 +143,8 @@ extern "C" {
 #define Zfw_Initialize                 zfw_initialize_
 #define Zfw_Initialize1                zfw_initialize1_
 #define Zfw_Create                     zfw_create_
+#define Zfw_Copy                       zfw_copy_
+#define Zfw_Copy_To                    zfw_copy_to_
 #define Zfw_Destroy                    zfw_destroy_
 #define Zfw_Memory_Stats               zfw_memory_stats_
 #define Zfw_Set_Fn0f                   zfw_set_fn0f_
@@ -192,6 +198,8 @@ extern "C" {
 #define Zfw_Initialize                 zfw_initialize__
 #define Zfw_Initialize1                zfw_initialize1__
 #define Zfw_Create                     zfw_create__
+#define Zfw_Copy                       zfw_copy__
+#define Zfw_Copy_To                    zfw_copy_to__
 #define Zfw_Destroy                    zfw_destroy__
 #define Zfw_Memory_Stats               zfw_memory_stats__
 #define Zfw_Set_Fn0f                   zfw_set_fn0f__
@@ -911,6 +919,35 @@ void Zfw_Create(int *f_communicator, int *addr_lb, int *nbytes)
    lb->Fortran = 1;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {addr_lb[i] = (int)*p; p++;}
+}
+
+/*****************************************************************************/
+void Zfw_Copy(int *addr_lb1, int *addr_lb2, int *nbytes)
+{
+   struct Zoltan_Struct *in, *out;
+   unsigned char *p;
+   int i;
+   p = (unsigned char *) &in;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb1[i]; p++;}
+
+   out = Zoltan_Copy(in);
+   out->Fortran = 1;
+
+   p = (unsigned char *) &out;
+   for (i=0; i<(*nbytes); i++) {addr_lb2[i] = (int)*p; p++;}
+}
+
+/*****************************************************************************/
+int Zfw_Copy_To(int *addr_lb1, int *addr_lb2, int *nbytes)
+{
+   struct Zoltan_Struct *to, *from;
+   unsigned char *p;
+   int i;
+   p = (unsigned char *) &to;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb1[i]; p++;}
+   p = (unsigned char *) &from;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb2[i]; p++;}
+   return Zoltan_Copy_To(to, from);
 }
 
 /*****************************************************************************/

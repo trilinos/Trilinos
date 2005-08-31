@@ -107,6 +107,8 @@ public :: &
 public :: &
    Zoltan_Initialize, &
    Zoltan_Create, &
+   Zoltan_Copy, &
+   Zoltan_Copy_To, &
    Zoltan_Destroy, &
    Zoltan_Memory_Stats, &
    Zoltan_Set_Fn, &
@@ -322,6 +324,33 @@ end subroutine Zfw_Create
 end interface
 
 interface
+!NAS$ ALIEN "F77 zfw_copy"
+subroutine Zfw_Copy(zzIn, zzOut, nbytes)
+use zoltan_types
+use lb_user_const
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT), dimension(*) INTENT_IN zzIn
+integer(Zoltan_INT), dimension(*), intent(out) :: zzOut
+integer(Zoltan_INT) INTENT_IN nbytes
+end subroutine Zfw_Copy
+end interface
+interface
+
+interface
+!NAS$ ALIEN "F77 zfw_copy_to"
+subroutine Zfw_Copy_To(zz1, zz2, nbytes)
+use zoltan_types
+use lb_user_const
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT) :: Zfw_Copy_To
+integer(Zoltan_INT), dimension(*) INTENT_IN zz1, zz2
+integer(Zoltan_INT) INTENT_IN nbytes
+end subroutine Zfw_Copy_To
+end interface
+interface
+
 !NAS$ ALIEN "F77 zfw_destroy"
 subroutine Zfw_Destroy(zz,nbytes)
 use zoltan_types
@@ -1050,6 +1079,14 @@ interface Zoltan_Create
    module procedure Zf90_Create
 end interface
 
+interface Zoltan_Copy
+   module procedure Zf90_Copy
+end interface
+
+interface Zoltan_Copy_To
+   module procedure Zf90_Copy_To
+end interface
+
 interface Zoltan_Destroy
    module procedure Zf90_Destroy
 end interface
@@ -1319,6 +1356,40 @@ if (isnull) then
    nullify(Zf90_Create)
 endif
 end function Zf90_Create
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_Copy(zz_from)
+type(Zoltan_Struct), pointer :: Zf90_Copy, zz_from
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_to, zz_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   zz_addr(i) = ichar(zz_from%addr%addr(i:i))
+end do
+call Zfw_Copy(zz_addr, zz_to, nbytes)
+do i=1,Zoltan_PTR_LENGTH
+   Zf90_Copy%addr%addr(i:i) = char(zz_to(i))
+end do
+isnull = (Zf90_Copy%addr == Zoltan_NULL_PTR)
+if (isnull) then
+   deallocate(Zf90_Copy)
+   nullify(Zf90_Copy)
+endif
+end function Zf90_Copy
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+subroutine Zf90_Copy_To(zz_to, zz_from)
+integer(Zoltan_INT) :: Zf90_Copy_To
+type(Zoltan_Struct), pointer :: zz_to, zz_from
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr_to, zz_addr_from
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   zz_addr_to(i)   = ichar(zz_to%addr%addr(i:i))
+   zz_addr_from(i) = ichar(zz_from%addr%addr(i:i))
+end do
+Zf90_Copy_To = Zfw_Copy_To(zz_addr_to,zz_addr_from,nbytes)
+end subroutine Zf90_Copy_To
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine Zf90_Destroy(zz)
