@@ -37,7 +37,9 @@ my $configFile;         # Config file to use            (default: ./config)
 my $verbosity;          # verbosity level               (default: 1)
 my $logVerbosity;       # log file verbosity level      (default: 0)
 
+my $shortCircuit;       # quit with a non-zero exit code as soon as anything fails
 my $noUpdate;           # don't update
+my $noReport;           # don't report
 my $updated;            # have we been updated yet?
 
 my $coverage;           # pass --coverage flag to runtests 
@@ -88,12 +90,14 @@ exit $exitStatus;
         use Getopt::Long;
         GetOptions( "trilinos-dir=s" => \$trilinosDir,
                     "build-name=s" => \$buildName,
+                    "short-circuit" => \$shortCircuit,
+                    "no-update" => \$noUpdate,
+                    "no-report" => \$noReport,
+                    "coverage" => \$coverage,
                     "config-file=s" => \$configFile,
                     "verbosity=i" => \$verbosity,
                     "log-verbosity=i" => \$logVerbosity,
-                    "no-update" => \$noUpdate,
                     "updated" => \$updated,
-		    "coverage" => \$coverage,
                     "quiet" => \$quiet,
                     "help" => \$help );
         
@@ -297,7 +301,9 @@ exit $exitStatus;
         if ($buildOptions{'MAKE-COMMAND'}) {
             $cmd .= "--make-cmd=\"".$buildOptions{'MAKE-COMMAND'}."\" ";
         }
-        $cmd .= "--recover ";
+        if (!$shortCircuit) {
+            $cmd .= "--recover ";
+        }
         $cmd .= "--output-dir=$trilinosDir/commonTools/test/harness/results ";
         $cmd .= "--start-time=$runStartTimeForFilename ";
         $cmd .= "--verbosity=$argVerbosity ";
@@ -306,6 +312,10 @@ exit $exitStatus;
         my $skipTests = 0;
         if ($status != 0) { 
             $skipTests = 1;
+            if ($shortCircuit) {
+                print "short-circuit mode:  build failed:  quitting.\n";
+                return 77;
+            }
         }
     
         # Capture and format build end time.
@@ -382,7 +392,7 @@ exit $exitStatus;
         $string .= "HARDWARE_PLATFORM    = $hardwarePlatform\n";        
         print MACHINE_FILE $string;        
         close MACHINE_FILE;
-                        
+        
         # Run runtests
         if (!($skipTests || (defined $buildOptions{'BUILD-ONLY'} && $buildOptions{'BUILD-ONLY'} =~ m/"YES"/i))) {
             $cmd  = "perl runtests ";
@@ -405,6 +415,9 @@ exit $exitStatus;
             if ($coverage) {
                 $cmd .= "--coverage ";       
             }
+            if ($shortCircuit) {
+                $cmd .= "--short-circuit ";
+            }
             $cmd .= "--output-dir=$trilinosDir/commonTools/test/harness/results/";
             $cmd .= "$runStartTimeForFilename-build ";
             $cmd .= "--simple-dir-name ";
@@ -412,22 +425,28 @@ exit $exitStatus;
             $cmd .= "--log-verbosity=$argLogVerbosity ";
             $output = `$cmd`;
             $status = $?;
-            if ($status != 0) { 
+            if ($status != 0) {
+                if ($shortCircuit) {
+                    print "short-circuit mode:  test failed:  quitting.\n";
+                    return 77;
+                }
                 return 1;
             }
         }
-                        
+                   
         # Run report
-        $cmd  = "perl report ";
-        $cmd .= "--ttr-dir=".$buildOptions{'TTR-DIR'}." ";
-        $cmd .= "--results-dir=$trilinosDir/commonTools/test/harness/results/";
-        $cmd .= "$runStartTimeForFilename-build ";
-        $cmd .= "--ssg-username=".$buildOptions{'SSG-USERNAME'}." ";
-        $cmd .= "--verbosity=$argVerbosity ";
-        $output = `$cmd`;
-        $status = $?;
-        if ($status != 0) { 
-            return 1;
+        if (!$noReport) {
+            $cmd  = "perl report ";
+            $cmd .= "--ttr-dir=".$buildOptions{'TTR-DIR'}." ";
+            $cmd .= "--results-dir=$trilinosDir/commonTools/test/harness/results/";
+            $cmd .= "$runStartTimeForFilename-build ";
+            $cmd .= "--ssg-username=".$buildOptions{'SSG-USERNAME'}." ";
+            $cmd .= "--verbosity=$argVerbosity ";
+            $output = `$cmd`;
+            $status = $?;
+            if ($status != 0) { 
+                return 1;
+            }
         }
         
         return 0;       
@@ -665,6 +684,13 @@ exit $exitStatus;
         print "                             definition.\n";
         print "                             Example: beowulf-nightly-serial\n";
         print "                             REQUIRED.\n";
+        print "\n";
+        print "  --short-circuit            Quit with a non-zero exit code as soon as\n";
+        print "                             anything fails.\n";
+        print "\n";
+        print "  --no-update                Skip updating the repository.\n";
+        print "\n";
+        print "  --no-report                Skip reporting the results.\n";
         print "\n";
         print "  --config-file=FILE         Specify the path to the runharness config\n";
         print "                             file containing the given build name. If not\n";

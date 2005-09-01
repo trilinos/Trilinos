@@ -1,13 +1,12 @@
 ../configure \
 --with-blas=/space/Trilinos3PL/libblas.a \
 --with-lapack=/space/Trilinos3PL/liblapack.a \
+--with-gnumake \
 --cache-file=config.cache \
 --disable-default-packages \
 --enable-amesos \
 --enable-anasazi \
 --enable-aztecoo \
---enable-belos \
---enable-capo \
 --enable-claps \
 --enable-didasko \
 --enable-epetra \
@@ -22,7 +21,6 @@
 --enable-komplex \
 --enable-loca \
 --with-loca-anasazi \
---enable-meros \
 --enable-ml \
 --with-ml-64bit-integer="long long" \
 --enable-new_package \
@@ -33,12 +31,11 @@
 --enable-nox-lapack \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
---enable-rythmos \
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-teuchos-complex \
 --enable-teuchos-extended \
 --enable-thyra \
---enable-tpetra \
 --enable-triutils \
---enable-tsfextended
+--disable-amesos-thyra \
+--disable-aztecoo-thyra

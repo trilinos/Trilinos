@@ -115,46 +115,6 @@ RUN (paunchy-nightly-mpi) {
 
 ###############################################################################
 #
-# stratus nightly serial
-#
-###############################################################################
-
-RUN (stratus-nightly-serial) {
-    
-    BUILD-DIR           = SERIAL-NEW;
-    COMM                = serial;
-    INVOKE-CONFIGURE    = osf-stratus;
-    MAKE-COMMAND        = gmake;
-    TEST-CATEGORY       = FRAMEWORK;
-    TTR-DIR             = /projects/trilinos/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
-
-}
-
-###############################################################################
-#
-# stratus nightly mpi
-#
-###############################################################################
-
-RUN (stratus-nightly-mpi) {
-    
-    BUILD-DIR           = MPI-NEW;
-    COMM                = mpi;
-    INVOKE-CONFIGURE    = osf-stratus-mpi;
-    MAKE-COMMAND        = gmake;
-    TEST-CATEGORY       = FRAMEWORK;
-    MAX-PROC            = 4;
-    MPI-START           = lamboot;
-    MPI-STOP            = lamhalt;    
-    MPI-GO              = prun -n;
-    TTR-DIR             = /projects/trilinos/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
-
-}
-
-###############################################################################
-#
 # atlantis nightly serial
 #
 ###############################################################################
@@ -371,3 +331,56 @@ RUN (qt-mpi) {
 
 }
 
+###############################################################################
+#
+# sais028 mpi
+#
+###############################################################################
+                                                                                
+RUN (sais028-mpi) {                                                                                
+    BUILD-DIR           = sais028MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = aix-sais028-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 2;
+    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
+# software tarball serial
+#
+###############################################################################
+
+RUN (software-tarball-serial) {
+    
+    BUILD-DIR           = SERIAL-TARBALL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-software;
+    TEST-CATEGORY       = TARBALL;
+    TTR-DIR             = /space/TrilinosWebHome/TrilinosRelease6.0/TrilinosTestResults;
+    SSG-USERNAME        = mnphenow;
+
+}
+
+###############################################################################
+#
+# software tarball mpi
+#
+###############################################################################
+
+RUN (software-tarball-mpi) {
+    
+    BUILD-DIR           = MPI-TARBALL;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = linux-software-mpi;
+    TEST-CATEGORY       = TARBALL;
+    MAX-PROC            = 1;
+    MPI-START           = lamboot;
+    MPI-STOP            = lamhalt;    
+    TTR-DIR             = /space/TrilinosWebHome/TrilinosRelease6.0/TrilinosTestResults;
+    SSG-USERNAME        = mnphenow;
+
+}
