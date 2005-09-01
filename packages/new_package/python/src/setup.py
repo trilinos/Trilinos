@@ -41,11 +41,11 @@ from MakefileVariables import *
 
 # Build the makeVars dictionary by processing relevant Makefiles
 makeVars = { }
-makeVars.update(processFile(os.path.join("..","..","..","epetra"    ,
-                                         "Makefile.export.epetra"    )))
-makeVars.update(processFile(os.path.join("..","..","..","PyTrilinos",
-                                         "Makefile.export.pytrilinos")))
-makeVars.update(processFile(os.path.join("Makefile")))
+makeVars.update(processMakefile(os.path.join("..","..","..","epetra"    ,
+                                             "Makefile.export.epetra"    )))
+makeVars.update(processMakefile(os.path.join("..","..","..","PyTrilinos",
+                                             "Makefile.export.pytrilinos")))
+makeVars.update(processMakefile(os.path.join("Makefile")))
 
 # Import the variable names and values into the global namespace.  This is
 # crucual: every variable name/value pair obtained by processing the specified
