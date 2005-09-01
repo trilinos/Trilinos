@@ -16,32 +16,44 @@ options:
 Python usage: import MakefileVariables
 
 Available functions:
-    removeContinuationLines([string, string, ...]) -> None (combine any strings
-                                   that end with '\' with its following string)
-    isNotBlankLine(string) -> bool (return True if string is not blank)
-    parseMakefile(string) -> dict (open filename and obtain make variable names
-                                   and their raw values)
-    evaluate(string,dict) -> string (Substitute variable values in dict for
-                                     $(...) in string)
-    makeSubstitutions(dict) -> None (Interpret dict as varName/value pairs;
-                                     wherever '$(...)' appears in values, make
-                                     appropriate substitutions)
-    specialNormPath(string) -> string (normalize a path, even if it starts with
-                                       -I, -L, etc.)
-    uniqiufyList([string1, string2, ...]) -> None (remove duplicate strings from
-                                                  the list)
-    uniquifyString(string) -> string (remove duplicate substrings from the
-                                      string)
-    uniquifyDict(dict) -> None (Uniquify each value of the given dictionary)
-    processFile(string) -> dict (Given a filename, parse the file for make
-                                 variable names and values, make substitutions
-                                 wherever '$(...)' is found in the values, and
-                                 then uniquify the resulting values)
+
+    removeContinuationLines([string, string, ...]) -> None
+        Combine any strings that end with '\' with its following string.
+
+    isNotBlankLine(string) -> bool
+        Return True if string is not blank.
+
+    parseMakefile(string) -> dict
+        Open filename and obtain make variable names and their raw values.
+
+    evaluate(string,dict) -> string
+        Substitute variable values in dict for $(...) in string.
+
+    makeSubstitutions(dict) -> None
+        Interpret dict as varName/value pairs; wherever '$(...)' appears in
+        values, make appropriate substitutions.
+
+    specialNormPath(string) -> string
+        Normalize a path, even if it starts with -I, -L, etc.
+
+    uniqiufyList([string1, string2, ...]) -> None
+        Remove duplicate strings from the list.
+
+    uniquifyString(string) -> string
+        Remove duplicate substrings from the string.
+
+    uniquifyDict(dict) -> None
+        Uniquify each value of the given dictionary.
+
+    processMakefile(string) -> dict
+        Given the name of a Makefile, parse the file for make variable names and
+        values, make substitutions wherever '$(...)' is found in the values, and 
+        then uniquify the resulting values.
 """
 
-__version__ = "1.0"
+__version__ = "1.1"
 __author__  = "Bill Spotz"
-__date__    = "Aug 29 2005"
+__date__    = "Sep 1 2005"
 
 # Import python modules for command-line options, the operating system, regular
 # expressions, and system functions
@@ -58,7 +70,7 @@ blankRE    = re.compile(r"^\s*$"                                   )
 continueRE = re.compile(r"(.*)\\\s*$"                              )
 includeRE  = re.compile(r"\s*include\s+(.+)"                       )
 makeVarRE  = re.compile(r"\$\(([A-Za-z_][A-Za-z0-9_]*)\)"          )
-shellRE    = re.compile(r"\$\(shell ([^)]+)\)"                     )
+shellRE    = re.compile(r"\$\(shell (.+)\)"                        )
 
 #############################################################################
 
@@ -216,12 +228,25 @@ def uniquifyDict(dict):
 
 #############################################################################
 
-def processFile(filename):
+def processMakefile(filename):
     """Open filename, read its contents and parse it for Makefile assignments,
     creating a dictionary of variable names and string values.  Substitute
     variable values when '$(...)' appears in a string value."""
-    dict = parseMakefile(filename)
+    # We want to change directories to the directory that contains the
+    # Makefile.  Then, when we make substitutions, any $(shell ...) expansions
+    # will be done from the assumed directory.
+    cwd = os.getcwd()
+    (path,name) = os.path.split(filename)
+    if path: os.chdir(path)
+
+    # Parse and substitute
+    dict = parseMakefile(name)
     makeSubstitutions(dict)
+
+    # Change directory back to prevent confusion
+    os.chdir(cwd)
+
+    # Remove duplicates from the dictionary values and return the dictionary
     uniquifyDict(dict)
     return dict
 
