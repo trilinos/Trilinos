@@ -28,6 +28,10 @@ static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;   /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_col_ipm;   /* OLD column ipm, will be phased out */
 static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;   /* alternating ipm */
 
+static int Zoltan_PHG_match_isolated(ZZ *zz, HGraph *hg, Matching match, 
+                                     int small_degree);
+
+
 /*****************************************************************************/
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
 {
@@ -96,10 +100,35 @@ char  *yo = "Zoltan_PHG_Matching";
   
   /* Do the matching */
   if (hgp->matching) {
+    Zoltan_PHG_match_isolated(zz, hg, match, 0);
+    ierr = hgp->matching (zz, hg, match, hgp);
+  }
+
+End: 
+
+  /* Restore the old edge weights if scaling was used. */
+  if (hgp->edge_scaling)
+      hg->ewgt = old_ewgt;
+
+  ZOLTAN_FREE ((void**) &new_ewgt);
+  ZOLTAN_TRACE_EXIT (zz, yo);
+  return ierr;
+}
+
+
+static int Zoltan_PHG_match_isolated(
+  ZZ *zz,
+  HGraph *hg,
+  Matching match,
+  int small_degree /* 0 or 1 */
+)
+{
     int v=-1, i, *ldeg, *deg;
 #ifdef _DEBUG
     int cnt=0;
 #endif
+    static char *yo = "Zoltan_PHG_match_isolated";
+    int ierr = ZOLTAN_OK;
 
     if (hg->nVtx) {
       if (!(ldeg = (int*)  ZOLTAN_MALLOC(2*hg->nVtx*sizeof(int))))
@@ -130,22 +159,11 @@ char  *yo = "Zoltan_PHG_Matching";
       if (cnt)
           uprintf(hg->comm, "Local H(%d, %d, %d) and there were %d isolated vertices\n", hg->nVtx, hg->nEdge, hg->nPins, cnt);           
 #endif
+End:
       ZOLTAN_FREE(&ldeg);
     }
-    ierr = hgp->matching (zz, hg, match, hgp);
-  }
-
-End: 
-
-  /* Restore the old edge weights if scaling was used. */
-  if (hgp->edge_scaling)
-      hg->ewgt = old_ewgt;
-
-  ZOLTAN_FREE ((void**) &new_ewgt);
-  ZOLTAN_TRACE_EXIT (zz, yo);
-  return ierr;
+    return ierr;
 }
-
 
 static int pmatching_local(
   ZZ *zz,
