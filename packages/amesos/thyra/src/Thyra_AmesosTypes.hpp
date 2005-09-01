@@ -37,7 +37,10 @@ namespace Thyra {
 
 namespace Amesos {
 
-/** \brief . */
+/** \brief .
+
+\ingroup Amesos_Thyra_adapters_grp
+*/
 enum ESolverType {
   LAPACK
 #ifdef HAVE_AMESOS_KLU
@@ -75,7 +78,10 @@ enum ESolverType {
 #endif
 }; 
 
-/** \brief . */
+/** \brief .
+
+\ingroup Amesos_Thyra_adapters_grp
+*/
 const int numSolverTypes = 1 // LAPACK 
 #ifdef HAVE_AMESOS_KLU
 +1
@@ -112,32 +118,53 @@ const int numSolverTypes = 1 // LAPACK
 #endif
 ;
 
-/** \brief . */
+/** \brief .
+
+\ingroup Amesos_Thyra_adapters_grp
+*/
 extern const ESolverType SolverTypeValues[numSolverTypes];
 
-/** \brief . */
+/** \brief .
+
+\ingroup Amesos_Thyra_adapters_grp
+*/
 extern const char* SolverTypeNames[numSolverTypes];
 
-/** \brief . */
+/** \brief .
+
+\ingroup Amesos_Thyra_adapters_grp
+*/
 inline const char* toString(const ESolverType solverType)
 { return SolverTypeNames[solverType]; }
 
-/** \brief The policy used on refactoring a matrix. */
+/** \brief The policy used on refactoring a matrix.
+
+\ingroup Amesos_Thyra_adapters_grp
+*/
 enum ERefactorizationPolicy {
   REPIVOT_ON_REFACTORIZATION     ///< Completely new pivoting will be used on refactorizations!
   ,NO_PIVOT_ON_REFACTORIZATION   ///< No piviting, or only minor repivoting, will be used on refactorizations!
 };
 
-/** \brief . */
+/** \brief .
+
+\ingroup Amesos_Thyra_adapters_grp
+*/
 const int numRefactorizationPolices = 2;
 
-/** \brief . */
+/** \brief .
+
+\ingroup Amesos_Thyra_adapters_grp
+*/
 extern const ERefactorizationPolicy RefactorizationPolicyValues[numRefactorizationPolices];
 
 /** \brief . */
 extern const char* RefactorizationPolicyNames[numRefactorizationPolices];
 
-/** \brief . */
+/** \brief .
+
+\ingroup Amesos_Thyra_adapters_grp
+*/
 inline const char* toString(const ERefactorizationPolicy refactorizationPolicy)
 { return RefactorizationPolicyNames[refactorizationPolicy]; }
 

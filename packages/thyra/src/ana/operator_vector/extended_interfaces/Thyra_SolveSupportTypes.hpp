@@ -195,7 +195,7 @@ struct SolveStatus {
     }
 };
 
-/** \brief Enum for defining the status of a preconditioner object. */
+/** \brief Enum defining the status of a preconditioner object. */
 enum EPreconditionerInputType {
   PRECONDITIONER_INPUT_TYPE_AS_OPERATOR  ///< The input preconditioner should just be applied as an operator
   ,PRECONDITIONER_INPUT_TYPE_AS_MATRIX   ///< The input preconditioner should viewed as a matrix to be factored then backsolved as a preconditioner

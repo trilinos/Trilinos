@@ -124,7 +124,6 @@ ANA_OPERATOR_VECTOR_EXTENDED_INTERFACES_H = \
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_LinearOpWithSolveBase.hpp\
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_LinearOpWithSolveBaseDecl.hpp\
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_LinearOpWithSolveFactoryBase.hpp\
-  $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_PreconditionedLinearOpWithSolveFactoryBase.hpp\
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_VectorSpaceConverterBase.hpp\
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_ProductMultiVectorBase.hpp\
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_ProductVectorBase.hpp\

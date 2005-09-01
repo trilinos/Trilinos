@@ -30,7 +30,7 @@
 #ifndef THYRA_AZTECOO_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 #define THYRA_AZTECOO_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 
-#include "Thyra_PreconditionedLinearOpWithSolveFactoryBase.hpp"
+#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
 
@@ -38,12 +38,12 @@ namespace Teuchos { class ParameterList; }
 
 namespace Thyra {
 
-/** \brief <tt>PreconditionedLinearOpWithSolveFactoryBase</tt> subclass
- * implemented in terms of <tt>AztecOO</tt>.
+/** \brief <tt>LinearOpWithSolveFactoryBase</tt> subclass implemented in terms
+ * of <tt>AztecOO</tt>.
  *
  * ToDo: Finish documentation!
  */
-class AztecOOLinearOpWithSolveFactory : public PreconditionedLinearOpWithSolveFactoryBase<double> {
+class AztecOOLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<double> {
 public:
 
   /** @name Constructors/initializers/accessors */
@@ -91,7 +91,7 @@ public:
 
   //@}
 
-  /** @name Overridden from LinearOpWithSolveFactoryBase */
+  /** @name Overridden public functions from LinearOpWithSolveFactoryBase */
   //@{
 
   /** \brief . */
@@ -113,15 +113,7 @@ public:
     ) const;
 
   /** \brief . */
-  void uninitializeOp(
-    LinearOpWithSolveBase<double>                             *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >        *fwdOp
-    ) const;
-
-  //@}
-
-  /** \name Overridden from PreconditionedLinearOpWithSolveBase */
-  //@{
+  bool supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const;
 
   /** \brief . */
   void initializePreconditionedOp(
@@ -132,7 +124,7 @@ public:
     ) const;
 
   /** \brief . */
-  void uninitializePreconditionedOp(
+  void uninitializeOp(
     LinearOpWithSolveBase<double>                       *Op
     ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *fwdOp
     ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *precOp
@@ -140,6 +132,7 @@ public:
     ) const;
 
   //@}
+
 
 private:
 
@@ -151,6 +144,8 @@ private:
   Teuchos::RefCountPtr<Teuchos::ParameterList>     adjSolveParamlist_;
   bool                                             adj_cerr_warning_if_unused_;
 
+  bool useAztecPrec_;
+
   // /////////////////////////
   // Private member functions
 
@@ -160,13 +155,6 @@ private:
     ,const EPreconditionerInputType                             precOpType
     ,const bool                                                 reusePrec
     ,LinearOpWithSolveBase<double>                              *Op
-    ) const;
-
-  void uninitializeOp_impl(
-    LinearOpWithSolveBase<double>                       *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *fwdOp
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *precOp
-    ,EPreconditionerInputType                           *precOpType
     ) const;
 
 };

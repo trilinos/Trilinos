@@ -107,15 +107,23 @@ void AztecOOLinearOpWithSolveFactory::initializeAndReuseOp(
   this->initializeOp_impl(fwdOp,Teuchos::null,PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,true,Op);
 }
 
-void AztecOOLinearOpWithSolveFactory::uninitializeOp(
-    LinearOpWithSolveBase<double>                             *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >        *fwdOp
-  ) const
+bool AztecOOLinearOpWithSolveFactory::supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const
 {
-  this->uninitializeOp_impl(Op,fwdOp,NULL,NULL);
+  const_cast<bool&>(useAztecPrec_) = ( 
+    fwdSolveParamlist_.get() && fwdSolveParamlist_->isParameter("AZ_precond") && fwdSolveParamlist_->get<std::string>("AZ_precond")!="none"
+    );
+  switch(precOpType) {
+    case PRECONDITIONER_INPUT_TYPE_AS_OPERATOR:
+      return true;
+      break;
+    case PRECONDITIONER_INPUT_TYPE_AS_MATRIX:
+      return useAztecPrec_;
+      break;
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
+  return PRECONDITIONER_INPUT_TYPE_AS_OPERATOR; // Should never be called!
 }
-
-// Overridden from PreconditionedLinearOpWithSolveBase
 
 void AztecOOLinearOpWithSolveFactory::initializePreconditionedOp(
   const Teuchos::RefCountPtr<const LinearOpBase<double> >     &fwdOp
@@ -128,14 +136,28 @@ void AztecOOLinearOpWithSolveFactory::initializePreconditionedOp(
   this->initializeOp_impl(fwdOp,precOp,precOpType,false,Op);
 }
 
-void AztecOOLinearOpWithSolveFactory::uninitializePreconditionedOp(
+void AztecOOLinearOpWithSolveFactory::uninitializeOp(
   LinearOpWithSolveBase<double>                       *Op
   ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *fwdOp
   ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *precOp
   ,EPreconditionerInputType                           *precOpType
   ) const
 {
-  this->uninitializeOp_impl(Op,fwdOp,precOp,precOpType);
+#ifdef _DEBUG
+  TEST_FOR_EXCEPT(Op==NULL);
+#endif
+  AztecOOLinearOpWithSolve
+    *aztecOp = &Teuchos::dyn_cast<AztecOOLinearOpWithSolve>(*Op);
+  Teuchos::RefCountPtr<const LinearOpBase<double> >
+    _fwdOp = aztecOp->extract_fwdOp(),  // Will be null if uninitialized!
+    _precOp = aztecOp->extract_precOp(); // Will be null if no external preconditioner
+  EPreconditionerInputType
+    _precOpType = aztecOp->extract_precOpType();
+  if(fwdOp) *fwdOp = _fwdOp; // It is fine if the client does not want this object back!
+  if(precOp) *precOp = _precOp;
+  if(precOpType) *precOpType = _precOpType;
+  // ToDo: Extracting the Epetra_Operator views what where used to initialize
+  // the forward and adjoint solvers!  This is needed to make this totally stateless
 }
 
 // private
@@ -154,6 +176,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::rcp_const_cast;
   using Teuchos::set_extra_data;
+  using Teuchos::get_optional_extra_data;
   typedef EpetraExt::ProductOperator PO;
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
@@ -217,26 +240,20 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     rowmatrix_epetraFwdOp  = rcp_dynamic_cast<const Epetra_RowMatrix>(epetra_epetraFwdOp),
     rowmatrix_epetraPrecOp = rcp_dynamic_cast<const Epetra_RowMatrix>(epetra_epetraPrecOp);
   //
-  // Are we to use built in aztec preconditioners?
-  //
-  const bool useAztecPrec = ( 
-    fwdSolveParamlist_.get() && fwdSolveParamlist_->isParameter("AZ_precond") && fwdSolveParamlist_->get<std::string>("AZ_precond")!="none"
-    );
-  //
   // Determine the type of preconditoner
   //
-
+  this->supportsPreconditionerInputType(precOpType); // Updates useAztecPrec_
   enum ELocalPrecType { PT_NONE, PT_AZTEC_FROM_OP, PT_AZTEC_FROM_PREC_MATRIX, PT_FROM_PREC_OP };
   ELocalPrecType localPrecType;
-  if( precOp.get()==NULL && !useAztecPrec ) {
+  if( precOp.get()==NULL && !useAztecPrec_ ) {
     // No preconditioning at all!
     localPrecType = PT_NONE;
   }
-  else if( precOp.get()==NULL && useAztecPrec ) {
+  else if( precOp.get()==NULL && useAztecPrec_ ) {
     // We are using the forward matrix for the preconditioner using aztec preconditioners
     localPrecType = PT_AZTEC_FROM_OP;
   }
-  else if( precOp.get() && precOpType==PRECONDITIONER_INPUT_TYPE_AS_MATRIX && useAztecPrec ) {
+  else if( precOp.get() && precOpType==PRECONDITIONER_INPUT_TYPE_AS_MATRIX && useAztecPrec_ ) {
     // The preconditioner comes from the input as a matrix and we are using aztec preconditioners
     localPrecType = PT_AZTEC_FROM_PREC_MATRIX;
   }
@@ -277,13 +294,32 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       // Let's assume that fwdOp and precOp are compatible with the already
       // created AztecOO objects.  If they are not, then the client should have
       // created a new LOWSB object from scratch!
-      TEST_FOR_EXCEPTION(
-        old_fwdOp.get()!=NULL, std::logic_error
-        ,"Error, the client should have called this->unitializeOp(Op) or this->uninitializePreconditionedOp(Op,...) before calling this function!"
-        );
       aztecFwdSolver = old_aztecFwdSolver;
       aztecAdjSolver = old_aztecAdjSolver;
       startingOver = false;
+      // We must wipe out the old preconditoner if we are not reusing the preconditioner
+      bool *constructedAztecPreconditioner = NULL;
+      if(
+        !reusePrec
+        && ( constructedAztecPreconditioner = get_optional_extra_data<bool>(aztecFwdSolver,"AOOLOWSF::constructedAztecPreconditoner") )
+        && *constructedAztecPreconditioner
+        )
+      {
+        aztecFwdSolver->DestroyPreconditioner();
+        *constructedAztecPreconditioner = false;
+      }
+      // We must see if we set an external preconditioner but will not do so
+      // again in which case we must blow away AztecOO and start over again!
+      bool *setPreconditionerOperator = NULL;
+      if(
+        localPrecType != PT_FROM_PREC_OP
+        && ( setPreconditionerOperator = get_optional_extra_data<bool>(aztecFwdSolver,"AOOLOWSF::setPreconditonerOperator") )
+        && *setPreconditionerOperator
+        )
+      {
+        // We must start over again since there is no way to unset an external preconditioner!
+        startingOver = true;
+      }
     }
   }
   //
@@ -307,7 +343,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       aztecAdjSolver->SetAztecOption(AZ_output,AZ_none); 
       aztecAdjSolver->SetAztecOption(AZ_conv,AZ_rhs);
       aztecAdjSolver->SetAztecOption(AZ_diagnostics,AZ_none);
-      aztecAdjSolver->SetAztecOption(AZ_keep_info, 1);
+      //aztecAdjSolver->SetAztecOption(AZ_keep_info, 1);
     }
   }
   //
@@ -388,11 +424,8 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
           "passed in an Epetra_RowMatrix for the forward operator but the overall transpose is not NOTRANS and therefore we can can just "
           "hand this over to aztec without making a copy which is not supported here!"
           );
-        if( startingOver || rowmatrix_epetraFwdOp.get() != aztecFwdSolver->GetPrecMatrix() ) {
-          // Here we must only reset the preconditioner if it is different or we will blow it away!
-          aztecFwdSolver->SetPrecMatrix(const_cast<Epetra_RowMatrix*>(&*rowmatrix_epetraFwdOp));
-          set_extra_data(rowmatrix_epetraFwdOp,"AOOLOWSF::rowmatrix_epetraFwdOp",&aztecFwdSolver,false);
-        }
+        aztecFwdSolver->SetPrecMatrix(const_cast<Epetra_RowMatrix*>(&*rowmatrix_epetraFwdOp));
+        set_extra_data(rowmatrix_epetraFwdOp,"AOOLOWSF::rowmatrix_epetraFwdOp",&aztecFwdSolver,false);
       }
       setAztecPreconditioner = true;
       break;
@@ -414,11 +447,8 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
           "passed in an Epetra_RowMatrix for the preconditoner matrix but the overall transpose is not NOTRANS and therefore we can can just "
           "hand this over to aztec without making a copy which is not supported here!"
           );
-        if( startingOver || rowmatrix_epetraPrecOp.get() != aztecFwdSolver->GetPrecMatrix() ) {
-          // Here we must only reset the preconditioner if it is different or we will blow it away!
-          aztecFwdSolver->SetPrecMatrix(const_cast<Epetra_RowMatrix*>(&*rowmatrix_epetraPrecOp));
-          set_extra_data(rowmatrix_epetraPrecOp,"AOOLOWSF::rowmatrix_epetraPrecOp",&aztecFwdSolver,false);
-        }
+        aztecFwdSolver->SetPrecMatrix(const_cast<Epetra_RowMatrix*>(&*rowmatrix_epetraPrecOp));
+        set_extra_data(rowmatrix_epetraPrecOp,"AOOLOWSF::rowmatrix_epetraPrecOp",&aztecFwdSolver,false);
       }
       setAztecPreconditioner = true;
       break;
@@ -441,11 +471,8 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
         aztec_fwd_epetra_epetraPrecOp = epetra_epetraPrecOp;
       else
         aztec_fwd_epetra_epetraPrecOp = rcp(new PO(1,epetraOps,epetraOpsTransp,epetraOpsApplyMode));
-      if( startingOver || aztec_fwd_epetra_epetraPrecOp.get() != aztecFwdSolver->GetPrecOperator() ) {
-        // Here we must only reset the preconditioner if it is different or we will blow it away!
-        aztecFwdSolver->SetPrecOperator(const_cast<Epetra_Operator*>(&*aztec_fwd_epetra_epetraPrecOp));
-        set_extra_data(aztec_fwd_epetra_epetraPrecOp,"AOOLOWSF::aztec_fwd_epetra_epetraPrecOp",&aztecFwdSolver,false);
-      }
+      aztecFwdSolver->SetPrecOperator(const_cast<Epetra_Operator*>(&*aztec_fwd_epetra_epetraPrecOp));
+      set_extra_data(aztec_fwd_epetra_epetraPrecOp,"AOOLOWSF::aztec_fwd_epetra_epetraPrecOp",&aztecFwdSolver,false);
       // Adjoint solve
       if( aztecAdjSolver.get() && epetra_epetraPrecOpAdjointSupport == EPETRA_OP_ADJOINT_SUPPORTED ) {
         epetraOpsTransp[0] = ( overall_epetra_epetraPrecOpTransp==NOTRANS ? Teuchos::TRANS : Teuchos::NO_TRANS );
@@ -455,6 +482,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
           aztec_adj_epetra_epetraPrecOp = rcp(new PO(1,epetraOps,epetraOpsTransp,epetraOpsApplyMode));
         aztecAdjSolver->SetPrecOperator(const_cast<Epetra_Operator*>(&*aztec_adj_epetra_epetraPrecOp));
         set_extra_data(aztec_adj_epetra_epetraPrecOp,"AOOLOWSF::aztec_adj_epetra_epetraPrecOp",&aztecAdjSolver,false);
+        set_extra_data<bool>(true,"AOOLOWSF::setPrecondtionerOperator",&aztecFwdSolver,false);
       }
       break;
     }
@@ -468,10 +496,11 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     if( startingOver || !reusePrec ) {
       double condNumEst = -1.0;
       TEST_FOR_EXCEPT(0!=aztecFwdSolver->ConstructPreconditioner(condNumEst));
-      aztecFwdSolver->SetAztecOption(AZ_pre_calc, AZ_calc);
+      //aztecFwdSolver->SetAztecOption(AZ_pre_calc, AZ_calc);
+      set_extra_data<bool>(true,"AOOLOWSF::constructedAztecPreconditoner",&aztecFwdSolver,false);
     }
     else {
-      aztecFwdSolver->SetAztecOption(AZ_pre_calc, AZ_reuse);
+      //aztecFwdSolver->SetAztecOption(AZ_pre_calc, AZ_reuse);
     }
   }
   //
@@ -487,30 +516,6 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   aztecOp->fwdDefaultTol(fwdDefaultTol());
   aztecOp->adjDefaultMaxIterations(adjDefaultMaxIterations());
   aztecOp->adjDefaultTol(adjDefaultTol());
-}
-
-void AztecOOLinearOpWithSolveFactory::uninitializeOp_impl(
-  LinearOpWithSolveBase<double>                       *Op
-  ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *fwdOp
-  ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *precOp
-  ,EPreconditionerInputType                           *precOpType
-  ) const
-{
-#ifdef _DEBUG
-  TEST_FOR_EXCEPT(Op==NULL);
-#endif
-  AztecOOLinearOpWithSolve
-    *aztecOp = &Teuchos::dyn_cast<AztecOOLinearOpWithSolve>(*Op);
-  Teuchos::RefCountPtr<const LinearOpBase<double> >
-    _fwdOp = aztecOp->extract_fwdOp(),  // Will be null if uninitialized!
-    _precOp = aztecOp->extract_precOp(); // Will be null if no external preconditioner
-  EPreconditionerInputType
-    _precOpType = aztecOp->extract_precOpType();
-  if(fwdOp) *fwdOp = _fwdOp; // It is fine if the client does not want this object back!
-  if(precOp) *precOp = _precOp;
-  if(precOpType) *precOpType = _precOpType;
-  // ToDo: Extracting the Epetra_Operator views what where used to initialize
-  // the forward and adjoint solvers!  This is needed to make this totally stateless
 }
 
 } // namespace Thyra

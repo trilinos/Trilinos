@@ -39,9 +39,16 @@
 namespace Thyra {
 
 /** \brief Concrete <tt>LinearOpWithSolveBase</tt> subclass that adapts any
- * <tt>Amesos_Solver</tt> object.
+ * <tt>Amesos_BaseSolver</tt> object.
+ *
+ * Note, clients should not generally directly create objects of this type but
+ * instead should use <tt>AmesosLinearOpWithSolveFactory</tt>.  Only very
+ * sophisticated users should ever directly interact with an object through
+ * this subclass interface.
  *
  * ToDo: Finish documentation!
+ *
+ * \ingroup Amesos_Thyra_adapters_grp
  */
 class AmesosLinearOpWithSolve
   : virtual public LinearOpWithSolveBase<double>                  // Public interface
@@ -158,7 +165,7 @@ public:
   
   //@}
 
-  /** @name Overridden from LinearOpBase */
+  /** @name Overridden public functions from LinearOpBase */
   //@{
   /** \brief. */
   Teuchos::RefCountPtr< const VectorSpaceBase<double> > range() const;
@@ -168,7 +175,7 @@ public:
   Teuchos::RefCountPtr<const LinearOpBase<double> > clone() const;
   //@}
 
-  /** @name Overridden from Teuchos::Describable */
+  /** @name Overridden public functions from Teuchos::Describable */
   //@{
   /** \brief . */
   std::string description() const;
@@ -176,7 +183,7 @@ public:
 
 protected:
 
-  /** @name Overridden from SingleScalarLinearOpBase */
+  /** @name Overridden protected functions from SingleScalarLinearOpBase */
   //@{
   /** \brief . */
   bool opSupported(ETransp M_trans) const;
@@ -190,7 +197,7 @@ protected:
     ) const;
   //@}
 
-  /** @name Overridden from SingleScalarLinearOpWithSolveBase */
+  /** @name Overridden protected functions from SingleScalarLinearOpWithSolveBase */
   //@{
   /** \brief . */
   bool solveSupportsTrans(ETransp M_trans) const;

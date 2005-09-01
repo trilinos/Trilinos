@@ -99,7 +99,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
     if(out) *out << "\nB) Creating a AztecOOLinearOpWithSolveFactory object opFactory ...\n";
 
-    Teuchos::RefCountPtr<const PreconditionedLinearOpWithSolveFactoryBase<double> >
+    Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >
       opFactory;
     if(1) {
       Teuchos::RefCountPtr<AztecOOLinearOpWithSolveFactory>
@@ -162,7 +162,8 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
     if(out) *out << "\nF) Uninitialize nsA, create precondtioner for diagonal scaled by 0.99 and then reinitialize nsA reusing the old preconditioner ...\n";
 
-    opFactory->uninitializeOp(&*nsA);
+    // Scale the diagonal of the matrix and then create the preconditioner for it
+    opFactory->uninitializeOp(&*nsA); // Not required but a good idea since we are changing the matrix
     if(1){
       Epetra_Vector diag(epetra_A->RowMap());
       epetra_A->ExtractDiagonalCopy(diag);
@@ -170,15 +171,9 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       epetra_A->ReplaceDiagonalValues(diag);
     }
     opFactory->initializeOp(A,&*nsA);
-    if(1){
-      Teuchos::RefCountPtr<VectorBase<double> >
-        b = createMember(nsA->range()),
-        x = createMember(nsA->domain());
-      assign(&*b,1.0);
-      assign(&*x,0.0);
-      solve(*nsA,NOTRANS,*b,&*x);
-    }
-    opFactory->uninitializeOp(&*nsA);
+
+    // Scale the matrix back again and then reuse the preconditioner
+    opFactory->uninitializeOp(&*nsA); // Not required but a good idea since we are changing the matrix
     if(1){
       Epetra_Vector diag(epetra_A->RowMap());
       epetra_A->ExtractDiagonalCopy(diag);
@@ -195,9 +190,8 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
     if(useAztecPrec) {
 
-      if(out) *out << "\nH) Uninitialize nsA, and then reinitialize (A,A,PRECONDITIONER_INPUT_TYPE_AS_MATRIX) => nsA ...\n";
+      if(out) *out << "\nH) Reinitialize (A,A,PRECONDITIONER_INPUT_TYPE_AS_MATRIX) => nsA ...\n";
       
-      opFactory->uninitializeOp(&*nsA);
       opFactory->initializePreconditionedOp(A,A,PRECONDITIONER_INPUT_TYPE_AS_MATRIX,&*nsA);
 
       if(out) *out << "\nI) Testing the LinearOpWithSolveBase interface of nsA ...\n";
@@ -242,9 +236,8 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       
       if(out && dumpAll) *out << "\ndescribe(precA) =\n" << describe(*precA,Teuchos::VERB_EXTREME,indentSpacer,indentSpacer);
       
-      if(out) *out << "\nK) Uninitialize nsA, and then reinitialize (A,precA,PRECONDITIONER_INPUT_TYPE_AS_OPERATOR) => nsA ...\n";
+      if(out) *out << "\nK) Reinitialize (A,precA,PRECONDITIONER_INPUT_TYPE_AS_OPERATOR) => nsA ...\n";
       
-      opFactory->uninitializeOp(&*nsA);
       opFactory->initializePreconditionedOp(A,precA,PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,&*nsA);
       
       if(out) *out << "\nL) Testing the LinearOpWithSolveBase interface of nsA ...\n";
@@ -276,9 +269,9 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 #endif // HAVE_AZTECOO_IFPACK
 
 
-    if(out) *out << "\nM) Uninitialize the matrix object nsA, scale the epetra_A object by 2.5, and then reinitialize nsA with epetra_A ...\n";
+    if(out) *out << "\nM) Scale the epetra_A object by 2.5, and then reinitialize nsA with epetra_A ...\n";
 
-    opFactory->uninitializeOp(&*nsA);
+    opFactory->uninitializeOp(&*nsA); // Not required but a good idea since we are changing the matrix
     epetra_A->Scale(2.5);
     opFactory->initializeOp(A,&*nsA);
 
@@ -288,15 +281,17 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     result = linearOpWithSolveTester.check(*nsA,out,indentSpacer,indentSpacer);
     if(!result) success = false;
 
-    if(out) *out << "\nO) Uninitialize the matrix object nsA, create a scaled (by 2.5) copy  epetra_A2 of epetra_A, and then reinitialize nsA with epetra_A2 ...\n";
+    if(out) *out << "\nO) Create a scaled (by 2.5) copy epetra_A2 of epetra_A, and then reinitialize nsA with epetra_A2 ...\n";
 
     Teuchos::RefCountPtr<Epetra_CrsMatrix>
       epetra_A2 = Teuchos::rcp(new Epetra_CrsMatrix(*epetra_A));
     epetra_A2->Scale(2.5);
     Teuchos::RefCountPtr<LinearOpBase<double> >
       A2 = Teuchos::rcp(new EpetraLinearOp(epetra_A2));
-    opFactory->uninitializeOp(&*nsA);
     opFactory->initializeOp(A2,&*nsA);
+    // Note that it was okay not to uninitialize nsA first here since A, which
+    // was used to initialize nsA last, was not changed and therefore the
+    // state of nsA was fine throughout
 
     if(out) *out << "\nP) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     

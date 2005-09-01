@@ -145,7 +145,7 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   if(out) *out << "\nF) Uninitialize the matrix object nsA, scale the epetra_A object by 2.5, and then refactor nsA with epetra_A ...\n";
 
-  opFactory->uninitializeOp(&*nsA);
+  opFactory->uninitializeOp(&*nsA); // Optional call but a good idea if changing the operator
   epetra_A->Scale(2.5);
   opFactory->initializeOp(A,&*nsA);
   
@@ -168,7 +168,6 @@ bool Thyra::test_single_amesos_thyra_solver(
   epetra_A2->Scale(2.5);
   Teuchos::RefCountPtr<LinearOpBase<double> >
     A2 = Teuchos::rcp(new EpetraLinearOp(epetra_A2));
-  opFactory->uninitializeOp(&*nsA);
   opFactory->initializeOp(A2,&*nsA);
   
   if(out) *out << "\nJ) Testing the LinearOpBase interface of nsA ...\n";

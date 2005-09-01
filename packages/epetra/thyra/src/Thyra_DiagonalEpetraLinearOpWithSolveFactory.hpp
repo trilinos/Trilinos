@@ -54,10 +54,11 @@ public:
     ,LinearOpWithSolveBase<double>                             *Op
     ) const;
 
-  /** \brief . */
   void uninitializeOp(
-    LinearOpWithSolveBase<double>                         *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >    *fwdOp
+    LinearOpWithSolveBase<double>                        *Op
+    ,Teuchos::RefCountPtr<const LinearOpBase<double> >   *fwdOp
+    ,Teuchos::RefCountPtr<const LinearOpBase<double > >  *precOp
+    ,EPreconditionerInputType                            *precOpType
     ) const;
 
   //@}

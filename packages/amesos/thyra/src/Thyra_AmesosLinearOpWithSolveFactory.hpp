@@ -49,17 +49,12 @@ namespace Thyra {
  * subclasses do not allow the <tt>Epetra_Operator</tt> object to change after
  * construction.  Therefore, this current flawed implementation requires that
  * every call to the <tt>EpetraLinearOpBase::epetra_op()</tt> function return
- * the same <tt>Epetra_Operator</tt> object.  Note that this is aways the case
- * for the <tt>EpetraLinearOp</tt> subclass.
+ * the same <tt>Epetra_Operator</tt> object.
+ *
+ * \ingroup Amesos_Thyra_adapters_grp
  */
 class AmesosLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<double> {
 public:
-
-  /** @name Public types */
-  //@{
-
-
-  //@}
 
   /** @name Constructors/initializers/accessors */
   //@{
@@ -67,13 +62,15 @@ public:
   /** \brief Constructor which sets the defaults.
    */
   AmesosLinearOpWithSolveFactory(
-    const Amesos::ESolverType                solverType
+    const Amesos::ESolverType                            solverType
 #ifdef HAVE_AMESOS_KLU
-                                                                    = Amesos::KLU
+                                                                                = Amesos::KLU
 #else
-                                                                    = Amesos::LAPACK
+                                                                                = Amesos::LAPACK
 #endif
-    ,const Amesos::ERefactorizationPolicy    refactorizationPolicy  = Amesos::REPIVOT_ON_REFACTORIZATION
+    ,const Amesos::ERefactorizationPolicy                refactorizationPolicy  = Amesos::REPIVOT_ON_REFACTORIZATION
+    ,const Teuchos::RefCountPtr<Teuchos::ParameterList>  &paramList             = Teuchos::null
+    ,const bool                                          throwOnPrecInput       = true
     );
 
   /** \brief Set the type of solver to use.
@@ -105,9 +102,17 @@ public:
    */
   STANDARD_NONCONST_COMPOSITION_MEMBERS( Teuchos::ParameterList, paramList )
 
+  /** \brief Set if an exception is thrown when <tt>this->initializePreconditionedOp()</tt>
+   * is called or not.
+   *
+   * This option can be changed inbetween refactorizations (i.e. between calls
+   * to <tt>this->initializeOp()</tt>).
+   */
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, throwOnPrecInput )
+
   //@}
 
-  /** @name Overridden from LinearOpWithSolveFactoryBase */
+  /** @name Overridden public functions from LinearOpWithSolveFactoryBase */
   //@{
 
   /** \brief Returns true if <tt>dynamic_cast<const EpetraLinearOpBase*>(fwdOp)!=NULL</tt> . */
@@ -122,10 +127,25 @@ public:
     ,LinearOpWithSolveBase<double>                             *Op
     ) const;
 
+  /** \brief Returns <tt>false</tt> . */
+  bool supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const;
+
+  /** \brief Throws exception if <tt>this->throwOnPrecInput() == true</tt> and calls
+   * <tt>this->initializeOp(fwdOp,Op)</tt> otherwise
+   */
+  void initializePreconditionedOp(
+    const Teuchos::RefCountPtr<const LinearOpBase<double> >     &fwdOp
+    ,const Teuchos::RefCountPtr<const LinearOpBase<double> >    &precOp
+    ,const EPreconditionerInputType                             precOpType
+    ,LinearOpWithSolveBase<double>                              *Op
+    ) const;
+
   /** \brief . */
   void uninitializeOp(
-    LinearOpWithSolveBase<double>                       *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *fwdOp
+    LinearOpWithSolveBase<double>                        *Op
+    ,Teuchos::RefCountPtr<const LinearOpBase<double> >   *fwdOp
+    ,Teuchos::RefCountPtr<const LinearOpBase<double > >  *precOp
+    ,EPreconditionerInputType                            *precOpType
     ) const;
 
   //@}

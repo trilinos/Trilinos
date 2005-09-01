@@ -42,13 +42,16 @@ namespace Thyra {
  * linear systems.  This interface carefully separates the construction from
  * the initialization of a <tt>LinearOpWithSolveBase</tt> object.
  *
- * Note that the non-member functions defined
- * \ref Thyra_LinearOpWithSolveFactoryBase_helper_grp "here" provide for
- * simpler use cases and are recommended as a way to access the capabilities
- * of this interface.
+ * Note that the non-member functions defined \ref
+ * Thyra_LinearOpWithSolveFactoryBase_helper_grp "here" provide for simpler
+ * use cases.
  *
  * This interface can be implemented by both direct and iterative linear
  * solvers.
+ *
+ * <b>Use Cases:</b>
+ *
+ * ToDo: Finish documentation!
  *
  * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
@@ -56,10 +59,7 @@ template <class RangeScalar, class DomainScalar = RangeScalar>
 class LinearOpWithSolveFactoryBase : virtual public Teuchos::Describable {
 public:
 
-  /** \brief . */
-  virtual ~LinearOpWithSolveFactoryBase() {}
-
-  /** @name Pure virtual functions that must be overridden in subclasses */
+  /** @name Pure virtual public functions that must be overridden in subclasses */
   //@{
 
   /** \brief Check that a <tt>LinearOpBase</tt> objects is compatible with
@@ -82,13 +82,14 @@ public:
    *
    * \param  fwdOp  [in] The forward linear operator that will be used to create
    *                the output <tt>LinearOpWithSolveBase</tt> object.
-   * \param  Op     [out] The output <tt>LinearOpWithSolveBase</tt> object.  This object must have
+   * \param  Op     [in/out] The output <tt>LinearOpWithSolveBase</tt> object.  This object must have
    *                be created first by <tt>this->createOp()</tt>.  The object may have also
    *                already been passed through this function several times.  Note that subclasses
    *                should always first strip off the transpose and scaling by calling <tt>unwrap()</tt>
    *                before attempting to dynamic cast the object.
    *
    * <b>Preconditions:</b><ul>
+   * <li><tt>fwdOp.get()!=NULL</tt>
    * <li><tt>this->isCompatible(*fwdOp)==true</tt>
    * <li><tt>Op!=NULL</tt>
    * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
@@ -108,14 +109,22 @@ public:
    *     not to modify the <tt>*fwdOp</tt> object or else the <tt>*Op</tt> object may also
    *     be modified.
    * </ul>
+   *
+   * This is the default initialization function for a
+   * <tt>LinearOpWithSolveBase</tt> object.  For a direct solver, the
+   * factorization would be computed, perhaps from scratch.  For an iterative
+   * solver, the preconditioner would be computed from the values in
+   * <tt>*fwdOp</tt> if appropriate.
+   *
    */
   virtual void initializeOp(
     const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                             *Op
     ) const = 0;
 
-  /** \brief Uninitialize a <tt>LinearOpWithSolveBase</tt> object and return its
-   * remembered forward linear operator.
+  /** \brief Uninitialize a <tt>LinearOpWithSolveBase</tt> object and return
+   * its remembered forward linear operator and potentially also its
+   * externally generated preconditioner.
    *
    * \param  Op     [in/out] On input, <tt>*Op</tt> is an initialized or uninitialized
    *                object and on output is uninitialized.  Note that "uninitialized"
@@ -124,12 +133,22 @@ public:
    *                for a more efficient initialization next time through
    *                <tt>this->initializeOp()</tt>.
    * \param  fwdOp  [in/out] If <tt>fwdOp!=NULL</tt> on input, the on output, the
-   *                same forward operator passed into <tt>this->initailzeOp()</tt> will be
+   *                same forward operator passed into <tt>this->initializeOp()</tt> will be
    *                returned.
+   * \param  precOp [in/out] If <tt>precOp!=NULL</tt> on input, the on output, the
+   *                same preconditioner operator passed into <tt>this->initializePreconditionedOp()</tt> will be
+   *                returned if the preconditioner was not ignored.
+   * \param  precOpType
+   *                [in/out] If <tt>precOpType!=NULL</tt> on input, the on output, the
+   *                same option value passed to <tt>this->initializePreconditionedOp()</tt> will be
+   *                returned if the preconditioner was not ignored.
+   *                
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
    *     this function.
+   * <li><tt>Op</tt> may or may not have been passed through a call to
+   *     <tt>this->initialize()</tt> or <tt>this->initializePreconditionedOp()</tt>.
    * </ul>
    *
    * <b>Postconditions:</b><ul>
@@ -140,18 +159,22 @@ public:
    *     it is safe to modify the forward operator object <tt>*(*fwdOp)</tt> returned in <tt>fwdOp</tt>.
    *     The default is <tt>fwdOp==NULL</tt> in which case the forward operator will not be returned in <tt>*fwdOp</tt>.
    * </ul>
+   *
+   * This function should be called before the forward operator passed in to
+   * <tt>this->initializeOp()</tt> is modified.  Otherwise, <tt>*this</tt>
+   * could be left in an inconsistent state.
    */
   virtual void uninitializeOp(
     LinearOpWithSolveBase<RangeScalar,DomainScalar>                       *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *fwdOp = NULL
+    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *fwdOp       = NULL
+    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *precOp      = NULL
+    ,EPreconditionerInputType                                             *precOpType  = NULL
     ) const = 0;
   
   //@}
 
-
-  /** @name Virtual functions with default implementations */
+  /** @name Virtual public functions with default implementations */
   //@{
-
 
   /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
    * given a "compatible" <tt>LinearOpBase</tt> object but allow for reuse of
@@ -167,6 +190,7 @@ public:
    *                before attempting to dynamic cast the object.
    *
    * <b>Preconditions:</b><ul>
+   * <li><tt>fwdOp.get()!=NULL</tt>
    * <li><tt>this->isCompatible(*fwdOp)==true</tt>
    * <li><tt>Op!=NULL</tt>
    * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
@@ -189,16 +213,98 @@ public:
    *
    * The purpose of this function is to allow the reuse of old factorizations
    * and/or preconditioners that may go into the initialization of the
-   * <tt>*Op</tt> objects.  Note that by calling this function, the peformance
-   * <tt>Op->solve(...)</tt> may not be as good as when calling the function
-   * <tt>this->initializeOp(...,Op)</tt>.
+   * <tt>*Op</tt> objects.  Note that by calling this function, the
+   * performance <tt>Op->solve(...)</tt> may not be as good as when calling
+   * the function <tt>this->initializeOp(...,Op)</tt> to initialize
+   * <tt>*Op</tt>.
    *
    * The default implemenation of this function just calls
-   * <tt>this->initializeOp(fwdOp,Op)</tt>.
+   * <tt>this->initializeOp(fwdOp,Op)</tt> which does the default
+   * implementation.
    */
   virtual void initializeAndReuseOp(
     const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                             *Op
+    ) const;
+
+  /** \brief Determines if <tt>*this</tt> supports given preconditioner type.
+   *
+   * The default implementation returns <tt>false</tt>.
+   */
+  virtual bool supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const;
+
+  /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
+   * given a "compatible" <tt>LinearOpBase</tt> object and an optional
+   * preconditioner.
+   *
+   * \param  fwdOp  [in] The forward linear operator that will be used to create
+   *                the output <tt>LinearOpWithSolveBase</tt> object.
+   * \param  precOp [in] The preconditioner linear operator that will be used to create
+   *                the output <tt>LinearOpWithSolveBase</tt> object if preconditioners are supported.
+   * \param  precOpType
+   *                [in] The type of the preconditioner being passed in.
+   * \param  Op     [in/out] The output <tt>LinearOpWithSolveBase</tt> object.  This object must have
+   *                be created first by <tt>this->createOp()</tt>.  The object may have also
+   *                already been passed through this function several times.  Note that subclasses
+   *                should always first strip off the transpose and scaling by calling <tt>unwrap()</tt>
+   *                before attempting to dynamic cast the object.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>fwdOp.get()!=NULL</tt>
+   * <li><tt>precOp.get()!=NULL</tt>
+   * <li><tt>this->isCompatible(*fwdOp)==true</tt>
+   * <li><tt>Op!=NULL</tt>
+   * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
+   *     this function.
+   * <li>It is allowed for an implementation to throw an exception if 
+   *     <tt>this->this->supportsPreconditionerInputType(precOpType)==false</tt> but this is
+   *     not required.
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   * <li>Throws <tt>CatastrophicSolveFailure</tt> if the underlying linear solver could
+   *     not be created sucessfully (do to a factorization failure or some other cause).
+   * <li><tt>Op->range()->isCompatible(*fwdOp->range())==true</tt>
+   * <li><tt>Op->domain()->isCompatible(*fwdOp->domain())==true</tt>
+   * <li><tt>Op->apply()</tt> and <tt>Op->applyTranspose()</tt> must behave
+   *     exactly the same as <tt>fwdOp->apply()</tt> and <tt>fwdOp->applyTranspose()</tt>
+   * <li><tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
+   *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
+   *     be remembered by the <tt>*Op</tt> object.  The client must be careful
+   *     not to modify the <tt>*fwdOp</tt> object or else the <tt>*Op</tt> object may also
+   *     be modified.
+   * <li>If <tt>this->this->supportsPreconditionerInputType(precOpType)==true</tt> then
+   *     <ul>
+   *       <li><tt>precOp.count()</tt> after output is greater than <tt>precOp.count()</tt>
+   *       just before this call and therefore the client can assume that the <tt>*precOp</tt> object will 
+   *       be remembered by the <tt>*Op</tt> object.  The client must be careful
+   *       not to modify the <tt>*precOp</tt> object or else the <tt>*Op</tt> object may also
+   *       be modified.
+   *     </ul>
+   * <li>else if an exception is not thrown then
+   *     <ul>
+   *       <li><tt>precOp.count()</tt> after output is equal to <tt>precOp.count()</tt>
+   *       just before this call and therefore the <tt>*precOp</tt> is ignored and is not remembered.
+   *     </ul>
+   * </ul>
+   *
+   * <b>Warning!</tt> It is allowed for an implementation to throw an
+   * exception if
+   * <tt>this->this->supportsPreconditionerInputType(precOpType)==false</tt>
+   * so therefore a client should not call this function if preconditioners
+   * are not supported!  The mode of silently ignoring preconditioners is
+   * acceptable in some cases.
+   *
+   * The default implementation throws an exception which is consistent with
+   * the default implementation of
+   * <tt>this->supportsPreconditionerInputType()</tt> which assumes by default
+   * that preconditioners can not be supported..
+   */
+  virtual void initializePreconditionedOp(
+    const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >     &fwdOp
+    ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &precOp
+    ,const EPreconditionerInputType                                               precOpType
+    ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                              *Op
     ) const;
 
   //@}
@@ -245,6 +351,27 @@ void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializeAndReuseO
   ) const
 {
   this->initializeOp(fwdOp,Op);
+}
+
+template<class RangeScalar, class DomainScalar>
+bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const
+{
+  return false;
+}
+
+template<class RangeScalar, class DomainScalar>
+void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializePreconditionedOp(
+  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >     &fwdOp
+  ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &precOp
+  ,const EPreconditionerInputType                                               precOpType
+  ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                              *Op
+  ) const
+{
+  TEST_FOR_EXCEPTION(
+    true,std::logic_error
+    ,"Error, the concrete implementation described as \'"<<this->description()<<"\' did not override the "
+    "initializePreconditionedOp(...) function and the default implementation throws this exception!"
+    );
 }
 
 } // namespace Thyra

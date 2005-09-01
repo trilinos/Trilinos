@@ -75,11 +75,15 @@ namespace Thyra {
 // Constructors/initializers/accessors
 
 AmesosLinearOpWithSolveFactory::AmesosLinearOpWithSolveFactory(
-    const Amesos::ESolverType               solverType
-    ,const Amesos::ERefactorizationPolicy   refactorizationPolicy
+  const Amesos::ESolverType                            solverType
+  ,const Amesos::ERefactorizationPolicy                refactorizationPolicy
+  ,const Teuchos::RefCountPtr<Teuchos::ParameterList>  &paramList
+  ,const bool                                          throwOnPrecInput
     )
   :solverType_(solverType)
   ,refactorizationPolicy_(refactorizationPolicy)
+   ,paramList_(paramList)
+   ,throwOnPrecInput_(throwOnPrecInput)
 {}
 
 // Overridden from LinearOpWithSolveFactoryBase
@@ -269,9 +273,31 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
   }
 }
 
+bool AmesosLinearOpWithSolveFactory::supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const
+{
+  return false;
+}
+
+void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
+  const Teuchos::RefCountPtr<const LinearOpBase<double> >     &fwdOp
+  ,const Teuchos::RefCountPtr<const LinearOpBase<double> >    &precOp
+  ,const EPreconditionerInputType                             precOpType
+  ,LinearOpWithSolveBase<double>                              *Op
+  ) const
+{
+  TEST_FOR_EXCEPTION(
+    this->throwOnPrecInput(), std::logic_error
+    ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support precondtioners "
+    "and has been configured to throw this exception when the  initializePreconditionedOp(...) function is called!"
+    );
+  this->initializeOp(fwdOp,Op); // Ignore the precondtioner!
+}
+
 void AmesosLinearOpWithSolveFactory::uninitializeOp(
-  LinearOpWithSolveBase<double>                       *Op
-  ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *fwdOp
+  LinearOpWithSolveBase<double>                        *Op
+  ,Teuchos::RefCountPtr<const LinearOpBase<double> >   *fwdOp
+  ,Teuchos::RefCountPtr<const LinearOpBase<double > >  *precOp
+  ,EPreconditionerInputType                            *precOpType
   ) const
 {
 #ifdef _DEBUG
@@ -290,6 +316,8 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
     // so you had better not rest this!
   }
   if(fwdOp) *fwdOp = _fwdOp; // It is fine if the client does not want this object back!
+  if(precOp) *precOp = Teuchos::null; // We never keep a preconditioner!
+  if(precOpType) *precOpType = PRECONDITIONER_INPUT_TYPE_AS_OPERATOR; // Just to not have junk!
 }
 
 } // namespace Thyra
