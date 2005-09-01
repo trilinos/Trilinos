@@ -19,8 +19,10 @@ Available functions:
     removeContinuationLines([string, string, ...]) -> None (combine any strings
                                    that end with '\' with its following string)
     isNotBlankLine(string) -> bool (return True if string is not blank)
-    parseExportFile(string) -> dict (open filename and obtain make variable
-                                     names and their raw values)
+    parseMakefile(string) -> dict (open filename and obtain make variable names
+                                   and their raw values)
+    evaluate(string,dict) -> string (Substitute variable values in dict for
+                                     $(...) in string)
     makeSubstitutions(dict) -> None (Interpret dict as varName/value pairs;
                                      wherever '$(...)' appears in values, make
                                      appropriate substitutions)
@@ -43,6 +45,7 @@ __date__    = "Aug 29 2005"
 
 # Import python modules for command-line options, the operating system, regular
 # expressions, and system functions
+import commands
 from   getopt import *
 import os
 import re
@@ -54,7 +57,8 @@ assignRE   = re.compile(r"^\s*([A-Za-z_][A-Za-z_0-9]*)\s*=\s*(.*)$")
 blankRE    = re.compile(r"^\s*$"                                   )
 continueRE = re.compile(r"(.*)\\\s*$"                              )
 includeRE  = re.compile(r"\s*include\s+(.+)"                       )
-makeVarRE  = re.compile(r"\$\(([^)]+)\)"                           )
+makeVarRE  = re.compile(r"\$\(([A-Za-z_][A-Za-z0-9_]*)\)"          )
+shellRE    = re.compile(r"\$\(shell ([^)]+)\)"                     )
 
 #############################################################################
 
@@ -79,7 +83,7 @@ def isNotBlankLine(s):
 
 #############################################################################
 
-def parseExportFile(filename):
+def parseMakefile(filename):
     """Open filename, read in the text and return a dictionary of make variable
     names and values.  If an include statement is found, this routine will be
     called recursively."""
@@ -97,7 +101,7 @@ def parseExportFile(filename):
             makeSubstitutions(tempDict)
             for file in tempDict["include files"].split():
                 try:
-                    dict.update(parseExportFile(file))
+                    dict.update(parseMakefile(file))
                 except IOError:
                     pass
             continue
@@ -109,49 +113,65 @@ def parseExportFile(filename):
 
 #############################################################################
 
+def evaluate(value, dict):
+    """Evaluate the string 'value' by applying the following algorithm: if value
+    contains substring '$(VARNAME)' and dict has key VARNAME, substitute
+    dict[VARNAME] for the variable reference.  If VARNAME is not a key for the
+    dictionary, substitute the null string.  If value contains substring
+    '$(shell ...)', then call this routine recursively on the obtained command
+    string.  If the resulting command string is unchanged, execute it as a shell
+    command and substitutue the results.  Return the evaluated string."""
+
+    # Initialize
+    originalValue = value
+    pos           = len(value)
+
+    # Evaluate $(VARNAME)
+    match = makeVarRE.search(value)
+    if match:
+        subVarName = match.group(1)
+        start      = match.start(1)-2
+        end        = match.end(1)  +1
+        if subVarName in dict.keys():
+            subValue = dict[subVarName]
+        else:
+            subValue = ""
+        value = value[:start] + subValue + value[end:]
+    else:
+
+        # Evaluate $(shell ...)
+        match = shellRE.search(value)
+        if match:
+            shellCmd    = match.group(1)
+            start       = match.start(1)-8
+            end         = match.end(1)  +1
+            newShellCmd = evaluate(shellCmd,dict)
+            if (shellCmd == newShellCmd):
+                (status,subValue) = commands.getstatusoutput(shellCmd)
+                if status:
+                    print >>sys.stderr, "WARNING: %s gives\n%s" % (shellCmd,
+                                                                   subValue)
+                    subValue = ""
+                value = value[:start] + subValue + value[end:]
+            else:
+                value = value[:start] + newShellCmd + value[end:]
+
+    # Are we done?
+    if value == originalValue:
+        return value
+    else:
+        return evaluate(value,dict)
+
+#############################################################################
+
 def makeSubstitutions(dict):
     """Loop over the items of a dictionary of variable names and string values.
     If the value contains the substring(s) '$(VARNAME)' and VARNAME is a key in
     the dictionary, then substitute the appropriate value.  If VARNAME is not a
     key in the dictionary, then substitute the null string.  For circular
     substitutions, substitute the null string."""
-    active    = dict   # Shallow copy
-    completed = { }
-    i = 0
-    # Dictionary active are the varName/value pairs that are still being
-    # actively substitutued.  When its length is zero, we are done
-    while len(active) > 0:
-        varName = active.keys()[i]
-        value   = active[varName]
-        done    = False
-        pos     = 0
-        while not done:
-            match = makeVarRE.search(value, pos)
-            if match:
-                subVarName = match.group(1)
-                start      = match.start(1)-2
-                pos        = match.end(1)  +1
-                if subVarName == varName:  # We have encountered a circular reference
-                    subValue = ""          #   effectively delete it
-                elif subVarName in completed.keys():
-                    subValue = completed[subVarName]
-                elif subVarName in active.keys():
-                    subValue = active[subVarName]
-                else:
-                    subValue = ""
-                active[varName] = "%s%s%s" % (value[:start], subValue, value[pos:])
-            else:
-                if pos == 0:
-                    # We searched from the beginning and found no $(...), so
-                    # this varName/value pair is completed
-                    completed[varName] = value
-                    del active[varName]
-                done = True                 # We are done checking this varName/value pair
-                i += 1                      # Go to the next varName/value pair,
-                if i >= len(active): i = 0  #   wrapping to the beginning, if necessary
-
-    # Update the given dict
-    dict.update(completed)
+    for varName in dict:
+        dict[varName] = evaluate(dict[varName],dict)
 
 #############################################################################
 
@@ -200,7 +220,7 @@ def processFile(filename):
     """Open filename, read its contents and parse it for Makefile assignments,
     creating a dictionary of variable names and string values.  Substitute
     variable values when '$(...)' appears in a string value."""
-    dict = parseExportFile(filename)
+    dict = parseMakefile(filename)
     makeSubstitutions(dict)
     uniquifyDict(dict)
     return dict
