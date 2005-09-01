@@ -245,7 +245,8 @@ private:
   int *Lp, *Li, *Up, *Ui, *P ;	
   double *Lx, *Ux ;
   //
-  //  KSS - I hope to convert both of these to teuchos RefCountPtrs  bug #1501
+  //  PrivateKluData_ contains pointers to data needed by klu whose
+  //  data structures are defined by klu.h
   //
   Teuchos::RefCountPtr<Amesos_Klu_Pimpl> PrivateKluData_; 
   Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndex_; 

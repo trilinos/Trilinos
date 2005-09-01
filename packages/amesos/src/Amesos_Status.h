@@ -3,6 +3,9 @@
 
 #include "Teuchos_ParameterList.hpp"
 using namespace Teuchos;
+
+
+
 /*!
  \class Amesos_Status
  
@@ -12,6 +15,7 @@ using namespace Teuchos;
 
  \date Last updated on 24-May-05 (Champions' League Final day)
 */
+
 
 class Amesos_Status
 {

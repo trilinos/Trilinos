@@ -32,25 +32,42 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
+extern "C" {
+#include "taucs.h"
+}
 
 using namespace Teuchos;
 
-//=============================================================================
-Amesos_Taucs::Amesos_Taucs(const Epetra_LinearProblem &prob) :
-  Matrix_(0),
-  Problem_(&prob),
-  A_(0),
-  L_(0)
-{ }
 
-//=============================================================================
-Amesos_Taucs::~Amesos_Taucs(void) 
-{
+//
+//  deaalocFunctorHandleDelete requires a fucntion that takes a ** argument, these
+//  functions meet that requirement
+// 
+void taucs_dccs_free_ptr( taucs_ccs_matrix** taucs_ccs_matrix_in ) { 
+  taucs_dccs_free( *taucs_ccs_matrix_in ); 
+}
 
-  // print out some information if required by the user
-  if ((verbose_ && PrintTiming_) || verbose_ == 2) PrintTiming();
-  if ((verbose_ && PrintStatus_) || verbose_ == 2) PrintStatus();
+void taucs_supernodal_factor_free_ptr( taucs_ccs_matrix** taucs_ccs_matrix_in ) { 
+  taucs_supernodal_factor_free( *taucs_ccs_matrix_in ); 
+}
 
+class Amesos_Taucs_Pimpl {
+public:
+
+#define USE_REF_COUNT_PTR_FOR_A_AND_L
+#ifdef USE_REF_COUNT_PTR_FOR_A_AND_L
+   Teuchos::RefCountPtr<taucs_ccs_matrix> A_ ;
+   Teuchos::RefCountPtr<taucs_ccs_matrix> L_ ;
+#else
+   taucs_ccs_matrix* A_ ;
+   taucs_ccs_matrix* L_ ;
+
+  Amesos_Taucs_Pimpl():
+    A_(0),
+    L_(0)
+  {}
+
+  ~Amesos_Taucs_Pimpl(void){
   if (A_ != 0)
   {
     taucs_dccs_free(A_);
@@ -62,6 +79,39 @@ Amesos_Taucs::~Amesos_Taucs(void)
     taucs_supernodal_factor_free(L_);
     L_ = 0;
   }
+  }
+
+#endif
+} ;
+
+//=============================================================================
+Amesos_Taucs::Amesos_Taucs(const Epetra_LinearProblem &prob) :
+  PrivateTaucsData_( rcp( new Amesos_Taucs_Pimpl() ) ),
+  Matrix_(0),
+  Problem_(&prob)
+{ }
+
+//=============================================================================
+Amesos_Taucs::~Amesos_Taucs(void) 
+{
+
+  // print out some information if required by the user
+  if ((verbose_ && PrintTiming_) || verbose_ == 2) PrintTiming();
+  if ((verbose_ && PrintStatus_) || verbose_ == 2) PrintStatus();
+
+#if 0
+  if (A_ != 0)
+  {
+    taucs_dccs_free(A_);
+    A_ = 0;
+  }
+
+  if (L_ != 0)
+  {
+    taucs_supernodal_factor_free(L_);
+    L_ = 0;
+  }
+#endif
 }
 
 //=============================================================================
@@ -110,21 +160,29 @@ int Amesos_Taucs::ConvertToTaucs()
     int nnz = SerialMatrix().NumMyNonzeros();
     int nnz_sym = (nnz) / 2 + n;
 
-    if (A_ != 0)
+#ifndef USE_REF_COUNT_PTR_FOR_A_AND_L
+    if (PrivateTaucsData_->A_ != 0)
     {
-      taucs_dccs_free(A_);
-      A_ = 0;
+      taucs_dccs_free(PrivateTaucsData_->A_);
+      PrivateTaucsData_->A_ = 0;
     }
+#endif
 
-    A_ = taucs_ccs_create(n, n, nnz_sym, TAUCS_DOUBLE);
-    A_->flags = TAUCS_SYMMETRIC | TAUCS_LOWER | TAUCS_DOUBLE;
+#ifdef USE_REF_COUNT_PTR_FOR_A_AND_L
+    PrivateTaucsData_->A_ = 
+      rcp( taucs_ccs_create(n, n, nnz_sym, TAUCS_DOUBLE),
+		 deallocFunctorHandleDelete<taucs_ccs_matrix>(taucs_dccs_free_ptr), true );	   
+#else
+    PrivateTaucsData_->A_ = taucs_ccs_create(n, n, nnz_sym, TAUCS_DOUBLE) ;
+#endif
+    PrivateTaucsData_->A_->flags = TAUCS_SYMMETRIC | TAUCS_LOWER | TAUCS_DOUBLE;
 
     int count = 0;
     int MaxNumEntries = SerialMatrix().MaxNumEntries();
     vector<int>    Indices(MaxNumEntries);
     vector<double> Values(MaxNumEntries);
 
-    A_->colptr[0] = 0;
+    PrivateTaucsData_->A_->colptr[0] = 0;
 
     for (int i = 0 ; i < n ; ++i)
     {
@@ -144,13 +202,13 @@ int Amesos_Taucs::ConvertToTaucs()
         if (Indices[j] == i)
           Values[j] += AddToDiag_;
 
-        A_->rowind[count] = Indices[j];
-        A_->values.d[count] = Values[j];
+        PrivateTaucsData_->A_->rowind[count] = Indices[j];
+        PrivateTaucsData_->A_->values.d[count] = Values[j];
         ++count;
         ++count2;
       }
 
-      A_->colptr[i + 1] = A_->colptr[i] + count2;
+      PrivateTaucsData_->A_->colptr[i + 1] = PrivateTaucsData_->A_->colptr[i] + count2;
     }
 
     if (count > SerialMatrix().NumMyNonzeros())
@@ -181,13 +239,20 @@ int Amesos_Taucs::PerformSymbolicFactorization()
 
   if (Comm().MyPID() == 0)
   {
-    if (L_ != 0)
-    {
-      taucs_supernodal_factor_free(L_);
-      L_ = 0;
-    }
 
-    L_ = (taucs_ccs_matrix*)taucs_ccs_factor_llt_symbolic(A_);
+#ifdef USE_REF_COUNT_PTR_FOR_A_AND_L
+    PrivateTaucsData_->L_ = 
+      rcp( ((taucs_ccs_matrix*)taucs_ccs_factor_llt_symbolic(&*PrivateTaucsData_->A_)),
+	   deallocFunctorHandleDelete<taucs_ccs_matrix>(taucs_supernodal_factor_free_ptr), true );	  
+#else
+    if (PrivateTaucsData_->L_ != 0)
+    {
+      taucs_supernodal_factor_free(PrivateTaucsData_->L_);
+      PrivateTaucsData_->L_ = 0;
+    }
+    PrivateTaucsData_->L_ = 
+      (taucs_ccs_matrix*)taucs_ccs_factor_llt_symbolic(&*PrivateTaucsData_->A_) ;
+#endif 
   }
 
   AddTime("symbolic");
@@ -202,9 +267,9 @@ int Amesos_Taucs::PerformNumericFactorization( )
 
   if (Comm().MyPID() == 0) 
   {
-    taucs_supernodal_factor_free_numeric(L_);
+    taucs_supernodal_factor_free_numeric( &*PrivateTaucsData_->L_);
 
-    int ierr = taucs_ccs_factor_llt_numeric(A_, L_);
+    int ierr = taucs_ccs_factor_llt_numeric(&*PrivateTaucsData_->A_, &*PrivateTaucsData_->L_);
 
     if (ierr != 0) 
     {
@@ -356,7 +421,7 @@ int Amesos_Taucs::Solve()
 
     for (int i = 0 ; i < NumVectors ; ++i)
     {
-      int ierr = taucs_supernodal_solve_llt(L_, 
+      int ierr = taucs_supernodal_solve_llt(&*PrivateTaucsData_->L_, 
                                             SerialXValues + i * LDA,
                                             SerialBValues + i * LDA);
 

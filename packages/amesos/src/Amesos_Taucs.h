@@ -56,7 +56,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 extern "C" {
-#include "taucs.h"
+  //  #include "taucs.h"
 }
 
 /*!
@@ -66,6 +66,10 @@ extern "C" {
 
   \date Last updated on June 2005
 */
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+class Amesos_Taucs_Pimpl ; 
+#endif
 
 class Amesos_Taucs: public Amesos_BaseSolver, 
                     private Amesos_Time, 
@@ -190,11 +194,12 @@ private:
   //! Pointer to the linear system problem.
   const Epetra_LinearProblem* Problem_;
 
-  //! Stores the linear system matrix in TAUCS format.
-  taucs_ccs_matrix* A_;
-  
-  //! Stores the factorization in TAUCS format.
-  taucs_ccs_matrix* L_;
+  //
+  //  PrivateTaucsData_ contains pointers to data needed by taucs whose
+  //  data structures are defined by taucs.h
+  //
+  Teuchos::RefCountPtr<Amesos_Taucs_Pimpl> PrivateTaucsData_; 
+
 
 };  // class Amesos_Taucs  
 

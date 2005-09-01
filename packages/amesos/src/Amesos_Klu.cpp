@@ -43,20 +43,18 @@ extern "C" {
 
 class Amesos_Klu_Pimpl {
 public:
-   klu_symbolic *Symbolic_ ;
-   klu_numeric *Numeric_ ;
+   Teuchos::RefCountPtr<klu_symbolic> Symbolic_ ;
+   Teuchos::RefCountPtr<klu_numeric> Numeric_ ;
 
+#if 0
   Amesos_Klu_Pimpl():
     Symbolic_(0),
     Numeric_(0)
   {}
 
   ~Amesos_Klu_Pimpl(void){
-
-    if ( Symbolic_ ) klu_btf_free_symbolic (&Symbolic_) ;
-    if ( Numeric_ ) klu_btf_free_numeric (&Numeric_) ;
   }
-
+#endif 
 } ;
 
 
@@ -386,13 +384,16 @@ int Amesos_Klu::PerformSymbolicFactorization()
   ResetTime();
 
   if (MyPID_ == 0) {
+#if 0
     if (PrivateKluData_->Symbolic_) {
 	klu_btf_free_symbolic (&(PrivateKluData_->Symbolic_)) ;
     }
+#endif
 
     PrivateKluData_->Symbolic_ =
-	klu_btf_analyze (NumGlobalElements_, &Ap[0], Ai, (klu_control *) 0);
-    if ( PrivateKluData_->Symbolic_ == 0 ) AMESOS_CHK_ERR( 1 ) ;
+	rcp( klu_btf_analyze (NumGlobalElements_, &Ap[0], Ai, (klu_control *) 0),
+		 deallocFunctorHandleDelete<klu_symbolic>(klu_btf_free_symbolic), true );
+    //    if ( PrivateKluData_->Symbolic_ == 0 ) AMESOS_CHK_ERR( 1 ) ;
   }
 
   AddTime("symbolic");
@@ -415,14 +416,14 @@ int Amesos_Klu::PerformNumericFactorization( )
     control.scale = ScaleMethod_ ;
 
     // see if we can "refactorize"
-    if ( refactorize_ && PrivateKluData_->Numeric_ ) {
+    if ( refactorize_ && PrivateKluData_->Numeric_.get() ) {
 
 	// refactorize using the existing Symbolic and Numeric objects, and
 	// using the identical pivot ordering as the prior klu_btf_factor.
 	// No partial pivoting is done.
 	int result = klu_btf_refactor (&Ap[0], Ai, Aval,
-		    PrivateKluData_->Symbolic_, &control,
-		    PrivateKluData_->Numeric_) ;
+		    &*PrivateKluData_->Symbolic_, &control,
+		    &*PrivateKluData_->Numeric_) ;
 
 	// Did it work?
 	if ( result == KLU_OK) {
@@ -450,16 +451,18 @@ int Amesos_Klu::PerformNumericFactorization( )
 	// refactorize parameter is false, or we tried to refactorize and
 	// found it to be too inaccurate.
 
+#if 0
 	// destroy the existing Numeric object, if it exists
 	if ( PrivateKluData_->Numeric_ ) {
 	    klu_btf_free_numeric (&(PrivateKluData_->Numeric_)) ;
 	}
-
+#endif
 	// factor the matrix using partial pivoting
 	PrivateKluData_->Numeric_ =
-	    klu_btf_factor (&Ap[0], Ai, Aval,
-		    PrivateKluData_->Symbolic_, &control) ;
-	if ( PrivateKluData_->Numeric_ == 0 ) AMESOS_CHK_ERR( 2 ) ;
+	    rcp( klu_btf_factor (&Ap[0], Ai, Aval,
+				 &*PrivateKluData_->Symbolic_, &control),
+		 deallocFunctorHandleDelete<klu_numeric>(klu_btf_free_numeric), true );
+	//	if ( PrivateKluData_->Numeric_ == 0 ) AMESOS_CHK_ERR( 2 ) ;
     }
 
   }
@@ -655,10 +658,10 @@ int Amesos_Klu::Solve()
       SerialX_->Scale(1.0, *SerialB_ ) ;    // X = B (Klu overwrites B with X)
     }
     if (UseTranspose()) {
-      klu_btf_solve( PrivateKluData_->Symbolic_, PrivateKluData_->Numeric_,
+      klu_btf_solve( &*PrivateKluData_->Symbolic_, &*PrivateKluData_->Numeric_,
 		     SerialXlda_, NumVectors_, &SerialXBvalues_[0] );
     } else {
-      klu_btf_tsolve( PrivateKluData_->Symbolic_, PrivateKluData_->Numeric_,
+      klu_btf_tsolve( &*PrivateKluData_->Symbolic_, &*PrivateKluData_->Numeric_,
 		      SerialXlda_, NumVectors_, &SerialXBvalues_[0] );
     }
   }
