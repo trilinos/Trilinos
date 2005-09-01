@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
         ,MTP("In_FourByFour.mtx",1e-12,1e-12,1e-12)
         ,MTP("In_KheadK.mtx",1e-12,1e-12,1e-12)
         ,MTP("In_KheadSorted.mtx",1e-12,1e-12,1e-12)
-        ,MTP("In_nos1.mtx",1e-12,1e-10,1e-12)
+        ,MTP("In_nos1.mtx",1e-11,1e-10,1e-12)
         ,MTP("In_nos5.mtx",1e-12,1e-12,1e-12)
       };
     //
