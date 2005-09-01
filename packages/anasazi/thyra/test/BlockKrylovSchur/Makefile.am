@@ -36,34 +36,37 @@ EXPORT_LIBS = $(ANASAZI_TEST_LIBS)
 EXPORT_INC_PATH = $(ANASAZI_TEST_INCLUDES)
 endif
 
-AM_CPPFLAGS = $(EXPORT_INC_PATH)
+AM_CPPFLAGS = -I$(top_srcdir)/util/ModeLaplace $(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
 #np# List all executable names here
-noinst_PROGRAMS = MVOPTesterThyra_test
+noinst_PROGRAMS = BlockKrylovSchurThyra_test
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
-MVOPTesterThyra_test_SOURCES = $(srcdir)/cxx_main.cpp
+BlockKrylovSchurThyra_test_SOURCES = $(srcdir)/cxx_main.cpp
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
-MVOPTesterThyra_test_DEPENDENCIES = \
+BlockKrylovSchurThyra_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
-MVOPTesterThyra_test_CXXFLAGS = \
+BlockKrylovSchurThyra_test_CXXFLAGS = \
 	-I$(top_srcdir)/thyra/src \
 	-I$(top_srcdir)/src
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
-MVOPTesterThyra_test_LDADD = $(EXPORT_LIBS) 
+BlockKrylovSchurThyra_test_LDADD = \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+    $(EXPORT_LIBS) 
 
 # Dummy for new export makefiles
 LIBS = 

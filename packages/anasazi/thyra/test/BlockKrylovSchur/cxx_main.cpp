@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 //
-//  This test is for the LOBPCG solver using the Thyra interface
+//  This test is for the BlockKrylovSchur solver using the Thyra interface
 //  The Thyra objects will be extracted from Epetra objects using the
 //  Epetra-Thyra interface.
 //  Therefore, this test should yield identical results compared against
@@ -35,7 +35,7 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziEpetraAdapter.hpp"
-#include "AnasaziLOBPCG.hpp"
+#include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "Epetra_CrsMatrix.h"
@@ -55,6 +55,7 @@
 #endif
 
 #include "ModeLaplace1DQ1.h"
+#include "BlockPCGSolver.h"
 
 int main(int argc, char *argv[]) 
 {
@@ -123,10 +124,12 @@ int main(int argc, char *argv[])
   elements[0] = 100;
 
   // Eigensolver parameters
+  int maxIterCG = 100;
+  double tolCG = 1e-7;
   int nev = 4;
   int blockSize = 5;
   int maxIters = 500;
-  double tol = 1.0e-6;
+  double tol = tolCG * 10.0;
 
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = 
@@ -137,6 +140,11 @@ int main(int argc, char *argv[])
     Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getStiffness()), false );
   Teuchos::RefCountPtr<Epetra_Operator> M = 
     Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getMass()), false );
+
+  // Create preconditioner
+  Teuchos::RefCountPtr<BlockPCGSolver> opStiffness = Teuchos::rcp( new BlockPCGSolver(Comm, M.get(), tolCG, maxIterCG, 0) );
+  opStiffness->setPreconditioner( 0 );
+  Teuchos::RefCountPtr<Anasazi::EpetraGenOp> InverseOp = Teuchos::rcp( new Anasazi::EpetraGenOp( opStiffness, K ) );
 
   // Get a pointer to the Epetra_Map
   Teuchos::RefCountPtr<const Epetra_Map> Map =  
@@ -165,6 +173,8 @@ int main(int argc, char *argv[])
     Teuchos::rcp( new Thyra::EpetraLinearOp(K) );
   Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > thyra_M = 
     Teuchos::rcp( new Thyra::EpetraLinearOp(M) );
+  Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > thyra_IOp = 
+    Teuchos::rcp( new Thyra::EpetraLinearOp(InverseOp) );
 
   // Create parameter list to pass into solver
   Teuchos::ParameterList MyPL;
@@ -189,7 +199,7 @@ int main(int argc, char *argv[])
 
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
     Teuchos::rcp( 
-      new Anasazi::BasicEigenproblem<double, MV, OP>(thyra_K, thyra_M, thyra_ivec) 
+      new Anasazi::BasicEigenproblem<double, MV, OP>(thyra_IOp, thyra_M, thyra_ivec) 
     );
   //  MyProblem->SetPrec( Teuchos::rcp( const_cast<Epetra_Operator *>(opStiffness->getPreconditioner()), false ) );
 
@@ -205,13 +215,14 @@ int main(int argc, char *argv[])
     cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
 
   // Create the eigensolver 
-  Anasazi::LOBPCG<double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
+  Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
 
 
 
   // Solve the problem to the specified tolerances or length
   returnCode = MySolver.solve();
   if (returnCode != Anasazi::Ok) {
+    cout << "The return code for BlockKrylovSchur is : "<< returnCode << endl;
     testFailed = true;
   }
 

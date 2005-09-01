@@ -27,4 +27,4 @@
 #@HEADER
 
 #SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG MVOPTester scripts 
-SUBDIRS = MVOPTester 
+SUBDIRS = MVOPTester LOBPCG BlockKrylovSchur 
