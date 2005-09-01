@@ -9,37 +9,58 @@
 #    COMM = SERIAL, MPI;
 #}
 
+# Default run, Explicit Runge-Kutta 4 stage
 (FRAMEWORK) {
     TESTS = ../example/basicExample/basicExample.exe;
     COMM = SERIAL;
 }
 
+# Scalar Forward Euler
 (FRAMEWORK) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --method=FE --maxerror=1e-1;
     COMM = SERIAL;
 }
 
+# Scalar Backward Euler
 (FRAMEWORK) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --method=BE --maxerror=1e-1;
     COMM = SERIAL;
 }
 
+# Vector Explicit Runge-Kutta 4 stage
 (FRAMEWORK) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --numelements=10;
     COMM = SERIAL;
 }
 
+# Vector Forward Euler
 (FRAMEWORK) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --method=FE --maxerror=1e-1 --numelements=10;
     COMM = SERIAL;
 }
 
+# Vector Backward Euler
 (FRAMEWORK) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=10;
     COMM = SERIAL;
 }
+
+# Vector Forward Euler with same accuracy as ERK
+(FRAMEWORK) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --numelements=10 --method=FE --T=0.1 --numsteps=5000;
+    COMM = SERIAL;
+}
+
+# Vector Backward Euler with same accuracy as ERK
+(FRAMEWORK) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --numelements=10 --method=BE --T=0.1 --numsteps=5000;
+    COMM = SERIAL;
+}
+
