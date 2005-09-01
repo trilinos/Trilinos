@@ -28,6 +28,7 @@ my $mpiStart;           # mpi startup command       (default: NONE)
 my $mpiStop;            # mpi shutdown command      (default: NONE)
 my $mpiGo;              # mpi-go command            (default: mpirun -np )
 my @packages;           # array of packages to test
+my $shortCircuit;       # quit with a non-zero exit code as soon as anything fails
 
 my $outputDir;          # output directory          (default: .)
 my $simpleDirName;      # leave off timestamp for sake of database reporting
@@ -98,9 +99,10 @@ cleanUp();
                     "mpi-stop=s" => \$mpiStop,
                     "mpi-go=s" => \$mpiGo,
                     "packages=s" => \$packageList,
+                    "short-circuit" => \$shortCircuit,
                     "output-dir=s" => \$outputDir,
                     "simple-dir-name" => \$simpleDirName,
-		    "coverage" => \$coverage,
+		            "coverage" => \$coverage,
                     "verbosity=i" => \$verbosity,
                     "log-verbosity=i" => \$logVerbosity,
                     "quiet" => \$quiet,
@@ -570,6 +572,11 @@ cleanUp();
             print RESULTS $resultsString;
             
             close RESULTS;
+            
+            if ($shortCircuit && $testExitStatus) {
+                print "short-circuit mode:  test failed:  quitting.\n";
+                return 77;
+            }
             
         } # foreach @testListAoH
         
@@ -1298,6 +1305,9 @@ cleanUp();
         print "  --packages=P1[,P2]     Specify the packages to test.  Separate multiple\n";
         print "                         packages with commas.  Omit to test all built\n";
         print "                         packages with tests defined.\n";
+        print "\n";
+        print "  --short-circuit        Quit with a non-zero exit code as soon as\n";
+        print "                         anything fails.\n";
         print "\n";
         print "  --output-dir=DIR       Specify the directory in which to create the directory\n";
         print "                         containing the test results.\n";
