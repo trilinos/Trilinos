@@ -2,6 +2,12 @@
 # FRAMEWORK group
 #
 
+(FRAMEWORK, AztecOOThyraTests) {
+    TESTS = ../thyra/test/test_aztecoo_thyra_driver.exe;
+    ARGS = --matrix-dir=$ABS_TOP_SRCDIR/packages/amesos/test/Test_Basic --show-all-tests;
+    COMM = SERIAL, MPI;
+}
+
 (FRAMEWORK, AztecOOTests) {
     DIRS = AztecOO,
 	         AztecOO_SetParameters;
