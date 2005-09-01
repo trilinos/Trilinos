@@ -17,6 +17,12 @@ Python usage: import MakefileVariables
 
 Available functions:
 
+    findBlock(string,int=0) -> (int,int)
+        Search string to find an open delimeter and return its index as the
+        first int.  Search for the corresponding closing delimeter and return
+        its index as the second int.  Be smart about nested blocks.  Start
+        search from optional int argument.
+
     joinContinuationLines([string, string, ...]) -> None
         Combine any strings that end with '\' with its following string.
 
