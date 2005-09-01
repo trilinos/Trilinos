@@ -126,7 +126,7 @@ public:
   bool SetProjectedNode(MRTR::ProjectedNode* pnode);
   
   // get view of projected nodes (if there is any, otherwise NULL)
-  MRTR::ProjectedNode** GetProjectedNodes(int& length);
+  MRTR::ProjectedNode** GetProjectedNode(int& length);
   // get a view of the first projected node in the vector of projected nodes
   MRTR::ProjectedNode*  GetProjectedNode();
   

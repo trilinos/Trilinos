@@ -61,6 +61,9 @@ public:
   // ctor 
   explicit ProjectedNode(MRTR::Node& basenode, const double* xi, MRTR::Segment* pseg);
   
+  // ctor for the case of orthogonal projection 
+  explicit ProjectedNode(MRTR::Node& basenode, const double* xi, MRTR::Segment* pseg, int orthseg);
+  
   // copy-ctor
   ProjectedNode(MRTR::ProjectedNode& old);
   
@@ -76,6 +79,9 @@ public:
   // get view of segment I am on
   MRTR::Segment* Segment() { return pseg_; }
   
+  // get id of segment this projection is orthogonal to
+  int OrthoSegment() { return orthseg_; }
+  
 protected:  
   // don't want = operator
   ProjectedNode operator = (const ProjectedNode& old);
@@ -83,8 +89,9 @@ protected:
 protected:
 
   double xi_[2];            // local coordinates of this projected node on pseg_;
-  MRTR::Segment* pseg_;      // segment this projected node is on
-
+  MRTR::Segment* pseg_;     // segment this projected node is on
+  int orthseg_;             // id of segment this projection is orthogonal to
+                            // (used only in orth. projection, otherwise -1)
 };
 
 } // namespace MRTR

@@ -755,7 +755,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     bool ok = false;
     if (IsOneDimensional())
     {
-      if (abs(bestdist[0]) < 1.1) 
+      if (abs(bestdist[0]) < 1.01) 
         ok = true;
     }
     else
@@ -777,7 +777,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     {
       if (OutLevel()>5)
       cout << "***WRN***: Node " << mnode->Id() << " does not have projection\n\n";
-      mnode->SetProjectedNode(NULL);
+      //mnode->SetProjectedNode(NULL);
     }
   } // for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
 
@@ -794,7 +794,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
         MRTR::Node* mnode = mcurr->second;
         if (proc != NodePID(mnode->Id())) continue; // cannot have a projection on a node i don't own
         MRTR::ProjectedNode* pnode = mnode->GetProjectedNode();
-        if (!pnode) continue; // this node doe not have a projection
+        if (!pnode) continue; // this node does not have a projection
         const double* xi = pnode->Xi();
         bcast[blength] = (double)pnode->Id();
         ++blength;
@@ -818,7 +818,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     if (proc!=lComm()->MyPID())
     {
       int i;
-      for (int i=0; i<blength;)
+      for (i=0; i<blength;)
       {
         int     nid = (int)bcast[i];  ++i;
         int     sid = (int)bcast[i];  ++i;
@@ -838,7 +838,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
       if (i != blength)
       {
         cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
-             << "***ERR*** Mismatch in dimension of recv buffer\n"
+             << "***ERR*** Mismatch in dimension of recv buffer: " << i << " != " << blength << "\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         exit(EXIT_FAILURE);
       }
@@ -856,7 +856,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
 {
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
+    cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -871,6 +871,11 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
   for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
   {
     MRTR::Node* snode = scurr->second;
+
+#if 0
+    cout << "now projecting\n " << *snode;
+#endif    
+    
     if (NodePID(snode->Id()) != lComm()->MyPID())
       continue;
     
@@ -912,36 +917,129 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
     MRTR::Projector projector(IsOneDimensional());
 
     // loop segments and find all projections onto them
+    int nsseg = snode->Nseg();
+    MRTR::Segment** ssegs = snode->Segments(); 
     for (int i=0; i<nmseg; ++i)
     {
       // loop all segments that are adjacent to the slave node
-      int nsseg = snode->Nseg();
-      MRTR::Segment** ssegs = snode->Segments(); 
       for (int j=0; j<nsseg; ++j)
       {
         // project the slave node onto that master segment
         double xi[2]; xi[0] = xi[1] = 0.0;
         projector.ProjectNodetoSegment_Orthogonal_to_Slave(*snode,*(msegs[i]),xi,*(ssegs[j]));
-      
-      
-      
+        
+        // check whether this projection is good
+        bool ok = false;
+        if (IsOneDimensional())
+        {
+          if (abs(xi[0])<1.01)
+            ok = true;
+        }
+        else
+        {
+          cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
+               << "***ERR*** not impl. for 3D\n"
+               << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          exit(EXIT_FAILURE);
+        }
+        
+        if (ok) // the projection is good
+        {
+          // create a projected node and store it in snode
+          MRTR::ProjectedNode* pnode = 
+            new MRTR::ProjectedNode(*snode,xi,msegs[i],ssegs[j]->Id());
+          snode->SetProjectedNode(pnode);
+#if 0
+          cout << " snode id: " << pnode->Id()
+               << " projects on mseg: " << msegs[i]->Id()
+               << " orth to sseg " << ssegs[j]->Id() << endl;
+#endif          
+        }
       } // for (int j=0; j<nsseg; ++j)
-      
-
-
     } // for (int i=0; i<nmseg; ++i)
-
-
-
-
-
-
-
-
-
-
-    
   } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)  
+
+
+// in here goes the modification for larger slave then master side
+// (pseudo-projected nodes)
+
+  // loop all slave nodes again and make projections redundant
+  if (lComm()->NumProc()>1)
+  {
+    vector<double> bcast(10*rnode_[sside].size());
+    for (int proc=0; proc<lComm()->NumProc(); ++proc)
+    {
+      int blength=0;
+      if (proc==lComm()->MyPID())
+      {
+        for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
+        {
+          MRTR::Node* snode = scurr->second;
+          if (proc != NodePID(snode->Id())) continue; // cannot have a projection on a node i don't own
+          int npnode=0;
+          MRTR::ProjectedNode** pnode = snode->GetProjectedNode(npnode);        
+          if (!pnode) continue; // no projection on this one
+          bcast[blength] = (double)snode->Id();
+          ++blength;
+          bcast[blength] = (double)npnode;
+          ++blength;
+          for (int j=0; j<npnode; ++j)
+          {
+            bcast[blength] = (double)pnode[j]->Segment()->Id();
+            ++blength;
+            const double* xi = pnode[j]->Xi();
+            bcast[blength] = xi[0];
+            ++blength;
+            bcast[blength] = xi[1];
+            ++blength;
+            bcast[blength] = pnode[j]->OrthoSegment();
+            ++blength;
+          }
+          if (bcast.size() < blength+20) 
+            bcast.resize(bcast.size()+40);
+        } // for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
+        if (blength>=bcast.size())
+        {
+          cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
+               << "***ERR*** Overflow in communication buffer occured\n"
+               << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          exit(EXIT_FAILURE);
+        }
+      } // if (proc==lComm()->MyPID())
+      
+      lComm()->Broadcast(&blength,1,proc);
+      if (proc!=lComm()->MyPID()) bcast.resize(blength);
+      lComm()->Broadcast(&bcast[0],blength,proc);
+      
+      if (proc!=lComm()->MyPID())
+      {
+        int i;
+        for (i=0; i<blength;)
+        {
+          int nid    = (int)bcast[i] ; ++i;
+          MRTR::Node* snode = GetNodeView(nid);
+          int npnode = (int) bcast[i]; ++i;
+          for (int j=0; j<npnode; ++j)
+          {
+            int sid     = (int)bcast[i]; ++i;
+            double* xi  = &bcast[i];     ++i; ++i;
+            int orthseg = (int)bcast[i]; ++i;
+            MRTR::Segment* seg   = GetSegmentView(sid);
+            MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*snode,xi,seg,orthseg);
+            snode->SetProjectedNode(pnode);
+          }
+        }
+        if (i != blength)
+        {
+          cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
+               << "***ERR*** Mismatch in dimension of recv buffer: " << i << " != " << blength << "\n"
+               << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          exit(EXIT_FAILURE);
+        }
+      } // if (proc!=lComm()->MyPID())
+    } // for (int proc=0; proc<lComm()->NumProc(); ++proc)
+    bcast.clear();
+  } // if (lComm()->NumProc()>1)
 
   return true; 
 }

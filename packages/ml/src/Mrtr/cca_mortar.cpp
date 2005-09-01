@@ -217,16 +217,16 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
 
     int side = interface->MortarSide();
     side     = interface->OtherSide(side);
-    MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
-    //MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
+    //MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
+    MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
     interface->SetFunctionAllSegmentsSide(side,1,func);
     delete func; func = NULL;
     
     //-----------------------------------------------------------------
     // set type of projection to be used on this interface
 
-    //interface->SetProjectionType(MRTR::Interface::proj_continousnormalfield);    
-    interface->SetProjectionType(MRTR::Interface::proj_orthogonal);    
+    interface->SetProjectionType(MRTR::Interface::proj_continousnormalfield);    
+    //interface->SetProjectionType(MRTR::Interface::proj_orthogonal);    
     
     //-----------------------------------------------------------------
     // Complete interface 

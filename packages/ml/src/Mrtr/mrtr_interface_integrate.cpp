@@ -65,8 +65,7 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   
   //-------------------------------------------------------------------
   // send all procs not member of this interface's intra-comm out of here
-  // FIXME for testing, leave them in
-  //if (!lComm()) return true;
+  if (!lComm()) return true;
 
   //-------------------------------------------------------------------
   // interface needs to have a mortar side assigned
@@ -223,31 +222,115 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   // get slave and master's projections of the end points
   MRTR::Node** snodes = sseg.Nodes();
   MRTR::Node** mnodes = mseg.Nodes();
+  
+#if 0
+  cout << "snodes[0]\n" << *snodes[0];
+  cout << "snodes[1]\n" << *snodes[1];
+  cout << "mnodes[0]\n" << *mnodes[0];
+  cout << "mnodes[1]\n" << *mnodes[1];
+#endif  
 
   bool snode0 = false;
   bool snode1 = false;
   bool mnode0 = false;
   bool mnode1 = false;
   int foundcase =  0;
+  MRTR::ProjectedNode* is_spnode0 = NULL;
+  MRTR::ProjectedNode* is_spnode1 = NULL;
+  MRTR::ProjectedNode* is_mpnode0 = NULL;
+  MRTR::ProjectedNode* is_mpnode1 = NULL;
   
-  if (snodes[0]->GetProjectedNode())
-    if (snodes[0]->GetProjectedNode()->Segment())
-      if (snodes[0]->GetProjectedNode()->Segment()->Id() == mseg.Id())
-        snode0 = true;
-  if (snodes[1]->GetProjectedNode())
-    if (snodes[1]->GetProjectedNode()->Segment())
-      if (snodes[1]->GetProjectedNode()->Segment()->Id() == mseg.Id())
-        snode1 = true;
-      
-  if (mnodes[0]->GetProjectedNode())
-    if (mnodes[0]->GetProjectedNode()->Segment())
-      if (mnodes[0]->GetProjectedNode()->Segment()->Id() == sseg.Id())
-        mnode0 = true;
-  if (mnodes[1]->GetProjectedNode())
-    if (mnodes[1]->GetProjectedNode()->Segment())
-      if (mnodes[1]->GetProjectedNode()->Segment()->Id() == sseg.Id())
-        mnode1 = true;
-      
+  // projection along continous normal field results in projection points
+  // that are unique
+  if (GetProjectionType() == proj_continousnormalfield)
+  {  
+    if (snodes[0]->GetProjectedNode())
+      if (snodes[0]->GetProjectedNode()->Segment())
+        if (snodes[0]->GetProjectedNode()->Segment()->Id() == mseg.Id())
+        {
+          snode0     = true;
+          is_spnode0 = snodes[0]->GetProjectedNode();
+        }
+    if (snodes[1]->GetProjectedNode())
+      if (snodes[1]->GetProjectedNode()->Segment())
+        if (snodes[1]->GetProjectedNode()->Segment()->Id() == mseg.Id())
+        {
+          snode1     = true;
+          is_spnode1 = snodes[1]->GetProjectedNode(); 
+        }
+    if (mnodes[0]->GetProjectedNode())
+      if (mnodes[0]->GetProjectedNode()->Segment())
+        if (mnodes[0]->GetProjectedNode()->Segment()->Id() == sseg.Id())
+        {
+          mnode0     = true;
+          is_mpnode0 = mnodes[0]->GetProjectedNode();
+        }
+    if (mnodes[1]->GetProjectedNode())
+      if (mnodes[1]->GetProjectedNode()->Segment())
+        if (mnodes[1]->GetProjectedNode()->Segment()->Id() == sseg.Id())
+        {
+          mnode1     = true;
+          is_mpnode1 = mnodes[1]->GetProjectedNode();
+        }
+  }
+  // projection orthogonal to some slave segment results in multiple projection
+  // point for the slave side. Here, we pick the one that has been projected
+  // orthogonal to the current slave segment
+  else if (GetProjectionType() == proj_orthogonal)
+  {
+    int nspnode0;
+    MRTR::ProjectedNode** spnode0 = snodes[0]->GetProjectedNode(nspnode0);
+    if (spnode0)
+      for (int i=0; i<nspnode0; ++i)
+        if (spnode0[i]->Segment())
+          if (spnode0[i]->Segment()->Id() == mseg.Id())
+            if (spnode0[i]->OrthoSegment() == sseg.Id())
+            {
+#if 0
+              cout << " snode id: " << spnode0[i]->Id()
+                   << " projects on mseg: " << mseg.Id()
+                   << " orth to sseg: " << spnode0[i]->OrthoSegment() << endl;
+#endif
+              snode0     = true;
+              is_spnode0 = spnode0[i];  
+              break;
+            }
+    
+    int nspnode1;
+    MRTR::ProjectedNode** spnode1 = snodes[1]->GetProjectedNode(nspnode1);
+    if (spnode1)
+      for (int i=0; i<nspnode1; ++i)
+        if (spnode1[i]->Segment())
+          if (spnode1[i]->Segment()->Id() == mseg.Id())
+            if (spnode1[i]->OrthoSegment() == sseg.Id())
+            {
+#if 0
+              cout << " snode id: " << spnode1[i]->Id()
+                   << " projects on mseg: " << mseg.Id()
+                   << " orth to sseg: " << spnode1[i]->OrthoSegment() << endl;
+#endif
+              snode1 = true;  
+              is_spnode1 = spnode1[i];  
+              break;
+            }
+
+    if (mnodes[0]->GetProjectedNode())
+      if (mnodes[0]->GetProjectedNode()->Segment())
+        if (mnodes[0]->GetProjectedNode()->Segment()->Id() == sseg.Id())
+        {
+          mnode0     = true;
+          is_mpnode0 = mnodes[0]->GetProjectedNode(); 
+        }
+    if (mnodes[1]->GetProjectedNode())
+      if (mnodes[1]->GetProjectedNode()->Segment())
+        if (mnodes[1]->GetProjectedNode()->Segment()->Id() == sseg.Id())
+        {
+          mnode1 = true;
+          is_mpnode1 = mnodes[1]->GetProjectedNode(); 
+        }
+  }
+  
+        
   MRTR::ProjectedNode* nstart = NULL;
   MRTR::ProjectedNode* nend   = NULL;
 
@@ -299,26 +382,41 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
     // low in xi range (should be -1.0)
     nstart = snodes[0]->GetProjectedNode(); // check whether a projection exists 
     if (!nstart) ok = false;
+    if (ok) // projection nstart has to be in neighbour master element
+    {
+      if (!nstart->Segment()) ok = true; // nstart is virtual
+      else
+      {
+        int nseg             = mnodes[1]->Nseg();
+        MRTR::Segment** segs = mnodes[1]->Segments();
+        int segid = nstart->Segment()->Id();
+        for (int i=0; i<nseg; ++i)
+        if (segid == segs[i]->Id()) break;
+        else ok = false;
+      }
+    }
     if (ok) sxia = nstart->Xi()[0]; 
-    if (sxia > -1.1 && sxia < -0.9) ok = true; // check whether projection is good
-    else                            ok = false;  
+    if (ok && sxia > -1.1 && sxia < -0.9) ok = true; // check whether projection is good
+    else                                  ok = false;  
     if (ok)
     {    
-      nend   = snodes[1]->GetProjectedNode(); 
+      nend =  is_spnode1; 
       sxia = -1.0;
       sxib =  1.0;
-      mxia = snodes[1]->GetProjectedNode()->Xi()[0];
+      mxia =  is_spnode1->Xi()[0];
       mxib =  1.0;
       ++foundcase;
     }
+    else
+      ++ foundcase; // do nothing?
   }
 
   // case 6: both master node project into slave segment
   if (mnode0 && mnode1)
   {
     ++foundcase;
-    nstart = mnodes[0]->GetProjectedNode();
-    nend   = mnodes[1]->GetProjectedNode();
+    nstart = is_mpnode0;
+    nend   = is_mpnode1;
     sxia = nend->Xi()[0];
     sxib = nstart->Xi()[0];
     mxia = -1.0;
@@ -329,8 +427,8 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   if (snode0 && snode1)
   {
     ++foundcase;
-    nstart = snodes[0]->GetProjectedNode();
-    nend   = snodes[1]->GetProjectedNode();
+    nstart = is_spnode0;
+    nend   = is_spnode1;
     sxia = -1.0;
     sxib =  1.0;
     mxia = nend->Xi()[0];
@@ -341,8 +439,8 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   if (snode0 && !snode1 && mnode0 && !mnode1)
   {
     ++foundcase;
-    nstart = snodes[0]->GetProjectedNode();
-    nend   = mnodes[0]->GetProjectedNode();
+    nstart = is_spnode0;
+    nend   = is_mpnode0;
     sxia = -1.0;
     sxib = nend->Xi()[0];
     mxia = -1.0;
@@ -353,8 +451,8 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   if (snode1 && !snode0 && mnode1 && !mnode0)
   {
     ++foundcase;
-    nstart = mnodes[1]->GetProjectedNode();
-    nend   = snodes[1]->GetProjectedNode();
+    nstart = is_mpnode1;
+    nend   = is_spnode1;
     sxia = nstart->Xi()[0];
     sxib = 1.0;
     mxia = nend->Xi()[0];
@@ -374,6 +472,7 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
     nodes = mseg.Nodes();
     cout << *nodes[0];
     cout << *nodes[1];
+    cout << "snode0: " << snode0 << " snode1: " << snode1 << " mnode0: " << mnode0 << " mnode1: " << mnode1 << endl;
     exit(EXIT_FAILURE);
   }
   
@@ -413,6 +512,7 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   // |delta n| != 0
   if (sseg.Type() == MRTR::Segment::seg_Linear1D && 
       mseg.Type() == MRTR::Segment::seg_Linear1D)
+  if (sseg.FunctionType(1) == MRTR::Function::func_DualLinear1D)
   if (snodes[0]->Nlmdof() == snodes[1]->Nlmdof() &&
       mnodes[0]->Ndof() == mnodes[1]->Ndof() &&
       snodes[0]->Nlmdof() == mnodes[0]->Ndof())
@@ -439,9 +539,9 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
     dt[1] = t[0][1] - t[1][1];
     
     // build norm of dn. If it's zero, don't do anything
-    bool doit = false;
-    double delta = dn[0]*dn[0]+dn[1]*dn[1];
-    if (abs(delta)>1.0e-9) doit = true;
+    bool doit = true;
+//    double delta = dn[0]*dn[0]+dn[1]*dn[1];
+//    if (abs(delta)>1.0e-11) doit = true;
 
     if (doit)
     {
@@ -469,10 +569,8 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
             {
               double val = nt[mdof] * (*Mmod_scalar)(mnode,0);
               (*Mmod)(snode*nsdof+sdof,mnode*nmdof+mdof) = val;
-              //cout << *Mmod;
             }
         } // for (int sdof=0; sdof<nsdof; ++sdof)
-      //cout << *Mmod;
 
 #if 0  // verification of the expression by expressions given in paper
       Epetra_SerialDenseMatrix* Mmod2 = new Epetra_SerialDenseMatrix(nsnode*nsdof,nmnode*nmdof);
@@ -483,39 +581,39 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
       double n1xn2 = n[0][0]*n[1][1] - n[0][1]*n[1][0];
       
       // slave 0 sdof 0 master 0 mdof 0 
-      (*Mmod2)(0,0) = -(*Mmod_scalar)(0,0) * (1.0-n1n2);
+      (*Mmod2)(0,0) = (*Mmod_scalar)(0,0) * (1.0-n1n2);
       // slave 0 sdof 0 master 0 mdof 1
-      (*Mmod2)(0,1) =  (*Mmod_scalar)(0,0) * n1xn2;
+      (*Mmod2)(0,1) = - (*Mmod_scalar)(0,0) * n1xn2;
       // slave 0 sdof 0 master 1 mdof 0
-      (*Mmod2)(0,2) = -(*Mmod_scalar)(1,0) * (1.0-n1n2);
+      (*Mmod2)(0,2) = (*Mmod_scalar)(1,0) * (1.0-n1n2);
       // slave 0 sdof 0 master 1 mdof 1
-      (*Mmod2)(0,3) =  (*Mmod_scalar)(1,0) * n1xn2;
+      (*Mmod2)(0,3) = - (*Mmod_scalar)(1,0) * n1xn2;
       // slave 0 sdof 1 master 0 mdof 0 
-      (*Mmod2)(1,0) = -(*Mmod_scalar)(0,0) * n1xn2;
+      (*Mmod2)(1,0) = (*Mmod_scalar)(0,0) * n1xn2;
       // slave 0 sdof 1 master 0 mdof 1
-      (*Mmod2)(1,1) = -(*Mmod_scalar)(0,0) * (1.0-n1n2);
+      (*Mmod2)(1,1) = (*Mmod_scalar)(0,0) * (1.0-n1n2);
       // slave 0 sdof 1 master 1 mdof 0
-      (*Mmod2)(1,2) = -(*Mmod_scalar)(1,0) * n1xn2;
+      (*Mmod2)(1,2) = (*Mmod_scalar)(1,0) * n1xn2;
       // slave 0 sdof 1 master 1 mdof 1
-      (*Mmod2)(1,3) = -(*Mmod_scalar)(1,0) * (1.0-n1n2);
+      (*Mmod2)(1,3) = (*Mmod_scalar)(1,0) * (1.0-n1n2);
       // slave 1 sdof 0 master 0 mdof 0
-      (*Mmod2)(2,0) = -(*Mmod_scalar)(0,0) * (n1n2-1.0);
+      (*Mmod2)(2,0) = (*Mmod_scalar)(0,0) * (n1n2-1.0);
       // slave 1 sdof 0 master 0 mdof 1
-      (*Mmod2)(2,1) =  (*Mmod_scalar)(0,0) * n1xn2;
+      (*Mmod2)(2,1) = - (*Mmod_scalar)(0,0) * n1xn2;
       // slave 1 sdof 0 master 1 mdof 0
-      (*Mmod2)(2,2) = -(*Mmod_scalar)(1,0) * (n1n2-1.0);
+      (*Mmod2)(2,2) = (*Mmod_scalar)(1,0) * (n1n2-1.0);
       // slave 1 sdof 0 master 1 mdof 1
-      (*Mmod2)(2,3) =  (*Mmod_scalar)(1,0) * n1xn2;
+      (*Mmod2)(2,3) = - (*Mmod_scalar)(1,0) * n1xn2;
       // slave 1 sdof 1 master 0 mdof 0
-      (*Mmod2)(3,0) = -(*Mmod_scalar)(0,0) * n1xn2;
+      (*Mmod2)(3,0) = (*Mmod_scalar)(0,0) * n1xn2;
       // slave 1 sdof 1 master 0 mdof 1
-      (*Mmod2)(3,1) = -(*Mmod_scalar)(0,0) * (n1n2-1.0);
+      (*Mmod2)(3,1) = (*Mmod_scalar)(0,0) * (n1n2-1.0);
       // slave 1 sdof 1 master 1 mdof 0
-      (*Mmod2)(3,2) = -(*Mmod_scalar)(1,0) * n1xn2;
+      (*Mmod2)(3,2) = (*Mmod_scalar)(1,0) * n1xn2;
       // slave 1 sdof 1 master 1 mdof 1
-      (*Mmod2)(3,3) = -(*Mmod_scalar)(1,0) * (n1n2-1.0);
-      cout << *Mmod2;
-      delete Mmod2; Mmod2 = NULL;
+      (*Mmod2)(3,3) = (*Mmod_scalar)(1,0) * (n1n2-1.0);
+      //cout << *Mmod2;
+      //delete Mmod2; Mmod2 = NULL;
 #endif
 
       //  assemble -Mmod into M

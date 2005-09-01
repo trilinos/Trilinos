@@ -490,6 +490,7 @@ Epetra_SerialDenseMatrix* MRTR::Integrator::Integrate_2D_Mmod(
     
     // make the delta function phi12 = phi1 - phi2
     double val = sval[0] - sval[1];
+    //double val = sval[1] - sval[0];
     
     // evaluate function 0 of the master side (supposed to be the trace function)
     double mval[mseg.Nnode()];

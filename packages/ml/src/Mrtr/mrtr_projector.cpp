@@ -605,7 +605,7 @@ bool MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
 						             double xi[],
                                                              MRTR::Segment& sseg)
 {
-#if 1
+#if 0
   cout << "----- Projector: Node " << snode.Id() << " Segment " << seg.Id() << endl;
   cout << "      orthogonal to Slave Segment " << sseg.Id() << endl;
 #endif
@@ -650,7 +650,7 @@ bool MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
       	   << "***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
            << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
-#if 1
+#if 0
     cout << "#iterations = " << i << " F = " << F << " eta = " << eta << endl;
 #endif
     xi[0] = eta;

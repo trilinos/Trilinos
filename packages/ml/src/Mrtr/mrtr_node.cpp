@@ -393,17 +393,17 @@ bool MRTR::Node::SetProjectedNode(MRTR::ProjectedNode* pnode)
 /*----------------------------------------------------------------------*
  |  get projected nodes                                      mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::ProjectedNode** MRTR::Node::GetProjectedNodes(int& length)
+MRTR::ProjectedNode** MRTR::Node::GetProjectedNode(int& length)
 { 
   length = pnode_.size();
   if (length)
-   return &(pnode_[0]);
+    return &(pnode_[0]);
   else
     return NULL;
 }
 
 /*----------------------------------------------------------------------*
- |  get projected nodes                                      mwgee 07/05|
+ |  get projected node                                       mwgee 07/05|
  *----------------------------------------------------------------------*/
 MRTR::ProjectedNode* MRTR::Node::GetProjectedNode()
 { 
