@@ -442,6 +442,7 @@ AC_CONFIG_FILES([
 		thyra/test/MVOPTester/Makefile
         thyra/test/LOBPCG/Makefile
         thyra/test/BlockKrylovSchur/Makefile
+        thyra/test/BlockDavidson/Makefile
 		])
 
 AC_OUTPUT()

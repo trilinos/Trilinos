@@ -10895,7 +10895,7 @@ fi
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                                                                                                                                                                                                        ac_config_files="$ac_config_files Makefile Makefile.export.anasazi src/Makefile util/Makefile util/ModeLaplace/Makefile example/Makefile example/BlockDavidson/Makefile example/BlockKrylovSchur/Makefile example/LOBPCG/Makefile example/MVOPTester/Makefile test/Makefile test/ModalSolverUtils/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/MVOPTester/Makefile test/LOBPCG/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile thyra/example/MVOPTester/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOBPCG/Makefile thyra/test/BlockKrylovSchur/Makefile"
+                                                                                                                                                                                                                                                                                                  ac_config_files="$ac_config_files Makefile Makefile.export.anasazi src/Makefile util/Makefile util/ModeLaplace/Makefile example/Makefile example/BlockDavidson/Makefile example/BlockKrylovSchur/Makefile example/LOBPCG/Makefile example/MVOPTester/Makefile test/Makefile test/ModalSolverUtils/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/MVOPTester/Makefile test/LOBPCG/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile thyra/example/MVOPTester/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOBPCG/Makefile thyra/test/BlockKrylovSchur/Makefile thyra/test/BlockDavidson/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11587,6 +11587,7 @@ do
   "thyra/test/MVOPTester/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/test/MVOPTester/Makefile" ;;
   "thyra/test/LOBPCG/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/test/LOBPCG/Makefile" ;;
   "thyra/test/BlockKrylovSchur/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/test/BlockKrylovSchur/Makefile" ;;
+  "thyra/test/BlockDavidson/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/test/BlockDavidson/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Anasazi_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Anasazi_config.h:src/Anasazi_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
