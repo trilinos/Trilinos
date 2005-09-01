@@ -100,8 +100,13 @@ char  *yo = "Zoltan_PHG_Matching";
   
   /* Do the matching */
   if (hgp->matching) {
+    /* first match isolated verticed */
     Zoltan_PHG_match_isolated(zz, hg, match, 0);
+    /* now do the real matching */
     ierr = hgp->matching (zz, hg, match, hgp);
+    /* clean up by matching "isolated" vertices of degree 1 */
+    /* only useful in special cases (e.g. near-diagonal matrices) */
+    Zoltan_PHG_match_isolated(zz, hg, match, 1);
   }
 
 End: 
@@ -120,7 +125,7 @@ static int Zoltan_PHG_match_isolated(
   ZZ *zz,
   HGraph *hg,
   Matching match,
-  int small_degree /* 0 or 1 */
+  int small_degree /* 0 or 1; 0 corresponds to truely isolated vertices */
 )
 {
     int v=-1, i, *ldeg, *deg;
@@ -134,25 +139,28 @@ static int Zoltan_PHG_match_isolated(
       if (!(ldeg = (int*)  ZOLTAN_MALLOC(2*hg->nVtx*sizeof(int))))
         MEMORY_ERROR;
       deg = ldeg + hg->nVtx;
-      /* first match isolated vertices.
+      /* match isolated vertices.
          UVCUVC: right now we match in the natural order,
          I don't think we need random matching but if needed
-         we can match in random order */
+         we can match in random order. */
       for (i=0; i<hg->nVtx; ++i)
           ldeg[i] = hg->vindex[i+1] - hg->vindex[i];
       MPI_Allreduce(ldeg, deg, hg->nVtx, MPI_INT, MPI_SUM, hg->comm->col_comm);
       
       for (i=0; i<hg->nVtx; ++i)
-          if (!deg[i]) { /* isolated vertex */
+          if (deg[i] <= small_degree) { /* isolated vertex */
 #ifdef _DEBUG
               ++cnt;
 #endif
-              if (v==-1)
-                  v = i;
-              else {
-                  match[v] = i;
-                  match[i] = v;
-                  v = -1;
+              if (match[i]==i){
+                  /* vtx i not matched yet */
+                  if (v==-1)
+                      v = i;
+                  else {
+                      match[v] = i;
+                      match[i] = v;
+                      v = -1;
+                  }
               }
           }
 #ifdef _DEBUG
