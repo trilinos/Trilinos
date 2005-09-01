@@ -2,37 +2,44 @@
 # FRAMEWORK group
 #
 
+# This is how to test with SERIAL and MPI
+# 09/01/05 tscoffe:  MPI runs are not ready yet.
+#(FRAMEWORK) {
+#    TESTS = ../example/basicExample/basicExample.exe;
+#    COMM = SERIAL, MPI;
+#}
+
 (FRAMEWORK) {
     TESTS = ../example/basicExample/basicExample.exe;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL;
 }
 
 (FRAMEWORK) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --method=FE --maxerror=1e-1;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL;
 }
 
 (FRAMEWORK) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --method=BE --maxerror=1e-1;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL;
 }
 
 (FRAMEWORK) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --numelements=10;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL;
 }
 
 (FRAMEWORK) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --method=FE --maxerror=1e-1 --numelements=10;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL;
 }
 
 (FRAMEWORK) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=10;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL;
 }
