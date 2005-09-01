@@ -196,7 +196,6 @@ def parseMakefile(filename):
         if match:
             files = evaluate(match.group(1),dict).split()
             for file in files:
-                #print "Including", file
                 try:
                     dict.update(parseMakefile(file))
                 except IOError:
@@ -223,13 +222,11 @@ def evaluate(value, dict):
     originalValue = value
     pos           = len(value)
     debug = "shell perl" in value
-    #if debug: print "\n%s\n" % value
 
     # Evaluate $(VARNAME)
     match = makeVarRE.search(value)
     if match:
         subVarName = match.group(1)
-        #if debug: print "\n%s\n" % subVarName
         start      = match.start(1)-2
         end        = match.end(1)  +1
         if subVarName in dict.keys():
@@ -274,13 +271,7 @@ def makeSubstitutions(dict):
     key in the dictionary, then substitute the null string.  For circular
     substitutions, substitute the null string."""
     for varName in dict:
-        value = dict[varName]
-        #if "EPETRAEXT_INCLUDES" == varName:
-        #    print "\n%s =\n%s\n" % (varName, value)
-        dict[varName] = evaluate(value,dict)
-        #if "EPETRAEXT_INCLUDES" == varName:
-        #    print "\n%s =\n%s\n" % (varName, dict[varName])
-        #    sys.exit()
+        dict[varName] = evaluate(dict[varName],dict)
 
 #############################################################################
 
