@@ -26,14 +26,17 @@
 # ************************************************************************
 # @HEADER
 
+# Include export Makefiles
+include $(top_builddir)/Makefile.export.epetra
+include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
+
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 @HAVE_MPI_TRUE@MPI_FLAG = -DHAVE_MPI
 
-SWIG_CXXFLAGS = -I$(top_srcdir)/src               \
-	        -I$(srcdir)                       \
-                -I$(top_builddir)/src             \
-	        -I$(top_srcdir)/../PyTrilinos/src \
+SWIG_CXXFLAGS = $(EPETRA_INCLUDES)     \
+	        $(PYTRILINOS_INCLUDES) \
+	        -I$(srcdir)            \
 		$(MPI_FLAG)
 
 EXTRA_DIST = Epetra.i setup.py      \

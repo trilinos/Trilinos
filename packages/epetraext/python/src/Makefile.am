@@ -26,12 +26,15 @@
 # ************************************************************************
 # @HEADER
 
-# Include swig rules
+# Include export Makefiles
 include $(top_builddir)/Makefile.export.epetraext
+include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
+
+# Include swig rules
 include $(top_srcdir)/config/swig.am
 SWIG_CXXFLAGS = $(EPETRAEXT_INCLUDES)                \
-		-I$(top_srcdir)/../epetra/python/src \
-		-I$(top_srcdir)/../PyTrilinos/src
+	        $(PYTRILINOS_INCLUDES)               \
+		-I$(top_srcdir)/../epetra/python/src
 
 EXTRA_DIST = EpetraExt.i setup.py
 

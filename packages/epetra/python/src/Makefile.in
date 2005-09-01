@@ -294,10 +294,9 @@ SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 
 # Include swig rules
 @HAVE_MPI_TRUE@MPI_FLAG = -DHAVE_MPI
-SWIG_CXXFLAGS = -I$(top_srcdir)/src               \
-	        -I$(srcdir)                       \
-                -I$(top_builddir)/src             \
-	        -I$(top_srcdir)/../PyTrilinos/src \
+SWIG_CXXFLAGS = $(EPETRA_INCLUDES)     \
+	        $(PYTRILINOS_INCLUDES) \
+	        -I$(srcdir)            \
 		$(MPI_FLAG)
 
 EXTRA_DIST = Epetra.i setup.py      \
@@ -470,6 +469,10 @@ uninstall-am: uninstall-info-am
 	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am uninstall \
 	uninstall-am uninstall-info-am
 
+
+# Include export Makefiles
+include $(top_builddir)/Makefile.export.epetra
+include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 include $(DEPFILES)
 
 # Wrapper and proxy targets
