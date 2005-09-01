@@ -17,7 +17,7 @@ Python usage: import MakefileVariables
 
 Available functions:
 
-    removeContinuationLines([string, string, ...]) -> None
+    joinContinuationLines([string, string, ...]) -> None
         Combine any strings that end with '\' with its following string.
 
     isNotBlankLine(string) -> bool
@@ -70,11 +70,91 @@ blankRE    = re.compile(r"^\s*$"                                   )
 continueRE = re.compile(r"(.*)\\\s*$"                              )
 includeRE  = re.compile(r"\s*include\s+(.+)"                       )
 makeVarRE  = re.compile(r"\$\(([A-Za-z_][A-Za-z0-9_]*)\)"          )
-shellRE    = re.compile(r"\$\(shell (.+)\)"                        )
+shellRE    = re.compile(r"\$\(shell"                               )
 
 #############################################################################
 
-def removeContinuationLines(lines):
+def findBlock(text, pos=0):
+    """Given the input text (potentially multiline) and an optional pos marking
+    the starting position, find an opening delimeter -- either (, [, {, single
+    quote, or double quote -- and return a tuple of integers indicating the
+    character indexes of the text block -- closed with ), ], }, single quote, or
+    double quote, respectively -- while correctly handling nested blocks."""
+
+    # Define delimeter strings
+    quote1Delimeter = "'"
+    quote2Delimeter = '"'
+    openDelimeters  = "\(\[\{"
+    closeDelimeters = "\)\]\}"
+
+    # Define delimeter regular expressions
+    quote1RE = re.compile("([" + quote1Delimeter + "])", re.M)
+    quote2RE = re.compile("([" + quote2Delimeter + "])", re.M)
+    openRE   = re.compile("([" + openDelimeters  +
+                                 quote1Delimeter +
+                                 quote2Delimeter + "])", re.M)
+    anyRE    = re.compile("([" + openDelimeters  +
+                                 quote1Delimeter +
+                                 quote2Delimeter +
+                                 closeDelimeters + "])", re.M)
+
+    # Find the first opening delimeter
+    matchObject = openRE.search(text, pos)
+    if not matchObject: return (None, None)
+
+    # Initialize the loop
+    stack = [ matchObject.group() ]
+    start = matchObject.start()
+    pos   = start + 1
+
+    # Find the end of the block
+    while matchObject:
+
+        # Determine the active delimeter regular expression
+        if   stack[-1] == quote1Delimeter:
+            activeRE = quote1RE
+        elif stack[-1] == quote2Delimeter:
+            activeRE = quote2RE
+        else:
+            activeRE = anyRE
+
+        # Search for the next delimeter
+        matchObject = activeRE.search(text, pos)
+        if matchObject:
+            delimeter = matchObject.group()
+            pos       = matchObject.end()
+
+            # Check for matched delimeters
+            if (((stack[-1] == quote1Delimeter) and
+                 (delimeter == quote1Delimeter)) or
+                ((stack[-1] == quote2Delimeter) and
+                 (delimeter == quote2Delimeter)) or
+                ((stack[-1] == "("            ) and
+                 (delimeter == ")"            )) or
+                ((stack[-1] == "["            ) and
+                 (delimeter == "]"            )) or
+                ((stack[-1] == "{"            ) and
+                 (delimeter == "}"            ))   ):
+                stack.pop()                  # Remove the last element from the list
+                if len(stack) == 0:
+                    return (start, pos)
+
+            # Process unmatched delimeter
+            else:
+                if (delimeter in openDelimeters  or
+                    delimeter == quote1Delimeter or
+                    delimeter == quote2Delimeter   ):
+                    stack.append(delimeter)  # Add the delimeter to the stack
+                else:
+                    raise RuntimeError, "findBlock: mismatched delimeters: " + \
+                          stack[-1] + " " + delimeter
+
+    # We made it through all of text without finding the end of the block
+    raise RuntimeError, "findBlock: open block: " + join(stack)
+
+#############################################################################
+
+def joinContinuationLines(lines):
     """Given lines, a list of strings, check for the continuation character
     ('\') at the end of each line.  If found, combine the appropriate strings
     into one, leaving blank lines in the list to avoid duplication."""
@@ -101,17 +181,16 @@ def parseMakefile(filename):
     called recursively."""
     lines = open(filename,"r").readlines()     # Read in the lines of the Makefile
     lines = [s.split("#")[0] for s in lines]   # Remove all comments
-    removeContinuationLines(lines)             # Remove continuation lines
+    joinContinuationLines(lines)               # Remove continuation lines
     lines = filter(isNotBlankLine, lines)      # Remove all blank lines
     dict = { }
     for line in lines:
         # Process include statements
         match = includeRE.match(line)
         if match:
-            tempDict = dict
-            tempDict["include files"] = match.group(1).strip()
-            makeSubstitutions(tempDict)
-            for file in tempDict["include files"].split():
+            files = evaluate(match.group(1),dict).split()
+            for file in files:
+                #print "Including", file
                 try:
                     dict.update(parseMakefile(file))
                 except IOError:
@@ -137,11 +216,14 @@ def evaluate(value, dict):
     # Initialize
     originalValue = value
     pos           = len(value)
+    debug = "shell perl" in value
+    #if debug: print "\n%s\n" % value
 
     # Evaluate $(VARNAME)
     match = makeVarRE.search(value)
     if match:
         subVarName = match.group(1)
+        #if debug: print "\n%s\n" % subVarName
         start      = match.start(1)-2
         end        = match.end(1)  +1
         if subVarName in dict.keys():
@@ -154,19 +236,22 @@ def evaluate(value, dict):
         # Evaluate $(shell ...)
         match = shellRE.search(value)
         if match:
-            shellCmd    = match.group(1)
-            start       = match.start(1)-8
-            end         = match.end(1)  +1
+            # The shellRE only matches the opening '$(shell'.  We need to find
+            # the closing ')', accounting for internal parenthetical or quoted
+            # blocks.
+            (start,end) = findBlock(value,match.start())
+            start      -= 1
+            shellCmd    = value[start+8:end-1]
             newShellCmd = evaluate(shellCmd,dict)
-            if (shellCmd == newShellCmd):
-                (status,subValue) = commands.getstatusoutput(shellCmd)
-                if status:
-                    print >>sys.stderr, "WARNING: %s gives\n%s" % (shellCmd,
-                                                                   subValue)
-                    subValue = ""
-                value = value[:start] + subValue + value[end:]
-            else:
-                value = value[:start] + newShellCmd + value[end:]
+            while newShellCmd != shellCmd:
+                shellCmd    = newShellCmd
+                newShellCmd = evaluate(shellCmd,dict)
+            (status,subValue) = commands.getstatusoutput(shellCmd)
+            if status:
+                print >>sys.stderr, "WARNING: %s gives\n%s" % (shellCmd,
+                                                               subValue)
+                subValue = ""
+            value = value[:start] + subValue + value[end:]
 
     # Are we done?
     if value == originalValue:
@@ -183,7 +268,13 @@ def makeSubstitutions(dict):
     key in the dictionary, then substitute the null string.  For circular
     substitutions, substitute the null string."""
     for varName in dict:
-        dict[varName] = evaluate(dict[varName],dict)
+        value = dict[varName]
+        #if "EPETRAEXT_INCLUDES" == varName:
+        #    print "\n%s =\n%s\n" % (varName, value)
+        dict[varName] = evaluate(value,dict)
+        #if "EPETRAEXT_INCLUDES" == varName:
+        #    print "\n%s =\n%s\n" % (varName, dict[varName])
+        #    sys.exit()
 
 #############################################################################
 
@@ -285,7 +376,7 @@ def main():
             sys.exit()
 
     # Process the filename
-    dict = processFile(args[0])
+    dict = processMakefile(args[0])
 
     # Output the variable names and values
     if outStyle == "make":
