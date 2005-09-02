@@ -26,13 +26,13 @@ DEFS 		=
 RANLIB		= ranlib
 AR			= ar r
 
-CC          = /usr/local/mpich/bin/mpicc
-CPPC        = /usr/local/mpich/bin/mpiCC
+CC          = /usr/local/mpich-1.2.6-eth/bin/mpicc
+CPPC        = /usr/local/mpich-1.2.6-eth/bin/mpiCC
 #CC			= gcc -Wall -fprofile-arcs -ftest-coverage
 #CC			= gcc -Wall
 #CPPC		= g++ -Wall
 
-INCLUDE_PATH	= -I/usr/local/mpich/include
+INCLUDE_PATH	= -I/usr/local/mpich-1.2.6-eth/include
 DBG_FLAGS		= -g 
 OPT_FLAGS		= -O
 CFLAGS 			= $(DBG_FLAGS)
@@ -46,10 +46,10 @@ FARG      		= farg_typical
 F90_MODULE_PREFIX 	= -M
 
 #MPI_LIB			= -lmpich -lpmpich -lnsl -lgcc
-#MPI_LIBPATH		= -L/usr/local/mpich/lib
+#MPI_LIBPATH		= -L/usr/local/mpich-1.2.6-eth/lib
 
-#PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib/ParMETIS3
-#PARMETIS_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
+#PARMETIS_LIBPATH 	= -L../../ParMETIS3_1
+#PARMETIS_INCPATH 	= -I../../ParMETIS3_1
 #
 #JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
 #JOSTLE_INCPATH 		= -I/Net/local/proj/zoltan/arch/all/src
