@@ -426,8 +426,8 @@ static int pmatching_ipm (ZZ *zz,
        goto fini;
     }  
   
-  if (!(permute = (int*)  ZOLTAN_MALLOC (nTotal             * sizeof (int)))
-   || !(select  = (int*)  ZOLTAN_MALLOC (nCandidates        * sizeof (int)))      
+  if ((nTotal && !(permute = (int*)  ZOLTAN_MALLOC (nTotal  * sizeof (int))))
+   || (nCandidates && !(select  = (int*)  ZOLTAN_MALLOC (nCandidates * sizeof (int))))
    || (nSend && !(send = (int*)  ZOLTAN_MALLOC (nSend       * sizeof (int))))
    || !(dest    = (int*)  ZOLTAN_MALLOC (nDest              * sizeof (int)))
    || !(size    = (int*)  ZOLTAN_MALLOC (nSize              * sizeof (int)))
