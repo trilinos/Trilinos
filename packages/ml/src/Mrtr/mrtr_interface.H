@@ -121,6 +121,36 @@ public:
   int GetSide(MRTR::Segment* seg);
   int GetSide(MRTR::Node* node);
 
+  // get local number of segments on interface on side 0 or 1
+  int MyNsegment(int side) { return seg_[side].size(); }
+
+  // get global number of segments on interface on side 0 or 1
+  int GlobalNsegment(int side);
+
+  // get local total number of segments on interface (both sides)
+  int MyNsegment() { return (seg_[0].size()+seg_[1].size()); }
+
+  // get global total number of segments on interface (both sides)
+  int GlobalNsegment();
+
+  // get local number of nodes on interface side 0 or 1
+  int MyNnode(int side) { return node_[side].size(); }
+  
+  // get local number of nodes on interface (both sides)
+  int MyNnode() { return (node_[0].size()+node_[1].size()); } 
+
+  // get global number of segments on interface on side 0 or 1
+  int GlobalNnode(int side);
+
+  // get global total number of nodes on interface (both sides)
+  int GlobalNnode();
+
+  // get intra-PID (intra-process id) for a given nodal id, returns -1 if nodal id doesn't exist
+  int NodePID(int nid) const;
+  
+  // get intra-PID (intra-process id) for given segment id, returns -1 if seg id doesn't exist
+  int SegPID(int sid) const;
+  
   //=======Construction methods
 
   // finalizes construction of this interface, after a call to Complete()
@@ -149,6 +179,10 @@ public:
   // get a view of a MRTR::Node (of either side) specifying node id
   MRTR::Node* GetNodeView(int nid);
 
+  // get a view of ALL nodes on this interface (Complete() hast to be called)
+  // method allocates a vector, calling method is in charge of deleting
+  MRTR::Node** GetNodeView();
+
   // get a view of a MRTR::Segment (of either side) specifying seg id
   MRTR::Segment* GetSegmentView(int sid);
   
@@ -174,36 +208,6 @@ private:
 
   // print local node information to cout
   bool PrintNodes() const;
-
-  // get intra-PID (intra-process id) for a given nodal id, returns -1 if nodal id doesn't exist
-  int NodePID(int nid) const;
-  
-  // get intra-PID (intra-process id) for given segment id, returns -1 if seg id doesn't exist
-  int SegPID(int sid) const;
-  
-  // get local number of segments on interface on side 0 or 1
-  int MyNsegment(int side) { return seg_[side].size(); }
-
-  // get global number of segments on interface on side 0 or 1
-  int GlobalNsegment(int side);
-
-  // get local total number of segments on interface (both sides)
-  int MyNsegment() { return (seg_[0].size()+seg_[1].size()); }
-
-  // get global total number of segments on interface (both sides)
-  int GlobalNsegment();
-
-  // get local number of nodes on interface side 0 or 1
-  int MyNnode(int side) { return node_[side].size(); }
-  
-  // get local number of nodes on interface (both sides)
-  int MyNnode() { return (node_[0].size()+node_[1].size()); } 
-
-  // get global number of segments on interface on side 0 or 1
-  int GlobalNnode(int side);
-
-  // get global total number of nodes on interface (both sides)
-  int GlobalNnode();
 
   // get a view of a MRTR::Node (of either side) specifying node id
   // returns NULL if node id does not exist locally

@@ -110,6 +110,10 @@ private:
   int MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double scalarA,
                       Epetra_CrsMatrix& B,double scalarB );
 
+  // automatically choose mortar side (called when mortarside==-2 on any interface)
+  bool ChooseMortarSide();
+  bool ChooseMortarSide_2D(vector<MRTR::Interface*> inter);
+  
 private:
 
   int                        outlevel_;       // output level (0-10)

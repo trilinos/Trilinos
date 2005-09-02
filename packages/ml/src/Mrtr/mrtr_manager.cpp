@@ -390,6 +390,25 @@ bool MRTR::Manager::Mortar_Integrate()
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
+  
+  //-------------------------------------------------------------------
+  // check whether we have a mortar side chosen on each interface or 
+  // whether we have to chose it automatically
+  {
+    map<int,MRTR::Interface*>::iterator curr;
+    bool foundit = true;
+    for (curr=interface_.begin(); curr != interface_.end(); ++curr)
+    {
+      int mside = curr->second->MortarSide();
+      if (mside==-2)
+      {
+        foundit = false;
+        break;
+      }
+    }
+    if (!foundit); // we have to chose mortar sides ourself
+      ChooseMortarSide();
+  }  
 
   //-------------------------------------------------------------------
   // build projections for all interfaces
@@ -598,5 +617,184 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
 
   return saddlematrix_;
 }
+
+/*----------------------------------------------------------------------*
+ |                                                                 09/05|
+ |  choose the mortar side                                              |
+ *----------------------------------------------------------------------*/
+bool MRTR::Manager::ChooseMortarSide()
+{
+  // find all 2D interfaces
+  vector<MRTR::Interface*> inter(Ninterfaces());
+  map<int,MRTR::Interface*>::iterator curr;
+  curr=interface_.begin();
+  int count = 0;
+  for (curr=interface_.begin(); curr != interface_.end(); ++curr)
+  {
+    if (curr->second->IsOneDimensional())
+    {
+      inter[count] = curr->second;
+      ++count;
+    }
+  }
+  inter.resize(count);
+  
+  // call choice of the mortar side for all 1D interfaces
+  bool ok = ChooseMortarSide_2D(inter);
+
+  // for 2D interfaces not yet impl.
+
+  // tidy up
+  inter.clear();  
+
+  return ok;
+}
+
+
+/*----------------------------------------------------------------------*
+ |                                                                 09/05|
+ |  choose the mortar side for 1D interfaces                            |
+ *----------------------------------------------------------------------*/
+bool MRTR::Manager::ChooseMortarSide_2D(vector<MRTR::Interface*> inter)
+{
+  // number of interfaces
+  int ninter = inter.size();
+  if (ninter < 2) return true;
+  
+  if (OutLevel()>5)
+  {
+    fflush(stdout);
+    if (Comm().MyPID()==0)
+      cout << "---MRTR::Manager: finding common nodes on interfaces\n";
+    fflush(stdout);
+  }
+  
+  // get a view of all nodes from all interfaces
+  vector<MRTR::Node**> nodes(ninter);
+  vector<int>          nnodes(ninter);
+  for (int i=0; i<ninter; ++i)
+  {
+    nnodes[i] = inter[i]->GlobalNnode(); // returns 0 for procs not in lComm()
+    nodes[i]  = inter[i]->GetNodeView();
+  }
+  
+  // loop all interfaces
+  for (int i=0; i<ninter; ++i)
+  {
+    // loop all nodes on that interface 
+    // (procs not part of inter[i]->lComm() don't loop because they have nnodes[i]=0)
+    for (int j=0; j<nnodes[i]; ++j)
+    {
+      // do nothing for node that does not belong to me
+      if (inter[i]->NodePID(nodes[i][j]->Id()) != inter[i]->lComm()->MyPID())
+        continue;
+        
+      // do nothing for a node that has been flagged cornernode before
+      if (nodes[i][j]->IsCorner())
+        continue;
+        
+      // the node we are currently looking for
+      int actnodeid       = nodes[i][j]->Id();
+      MRTR::Node* inode   = nodes[i][j];
+      
+      // search all other interfaces for this node
+      for (int k=0; k<ninter; ++k)
+      {
+        if (k==i) 
+          continue; // don't do the active one
+        
+        MRTR::Node* knode = NULL;
+        for (int l=0; l<nnodes[k]; ++l)
+          if (actnodeid==nodes[k][l]->Id())
+          {
+            knode = nodes[k][l];
+            break;
+          }
+        if (!knode) // node inode is not on interface k 
+          continue;
+          
+        // found node actnodeid on interface i and k
+        if (OutLevel()>5)
+        {
+          cout << "Node " << actnodeid << " on interfaces " << inter[i]->Id() << " and " << inter[k]->Id() << endl;
+          fflush(stdout);
+        }
+        
+        // flag that node on interfaces i and k as cornernode
+        inode->SetCorner();
+        knode->SetCorner();
+      } // for (int k=0; k<ninter; ++k)
+    } // for (int j=0; j< nnodes[i]; ++j)
+  } // for (int i=0; i<ninter; ++i)
+
+
+  
+  // make the cornernode information redundant
+    // loop all interfaces
+  for (int i=0; i<ninter; ++i)
+  {
+    // if I'm not part of inter[i], continue
+    if (!inter[i]->lComm())
+      continue;
+    for (int proc=0; proc<inter[i]->lComm()->NumProc(); ++proc)
+    {
+      // get the corner nodes I have found
+      vector<int> bcast(4);
+      int bsize = 0;
+      if (proc==inter[i]->lComm()->MyPID())
+        for (int j=0; j<nnodes[i]; ++j)
+        {
+          if (nodes[i][j]->IsCorner())
+          {
+            if (bcast.size() <= bsize)
+              bcast.resize(bsize+10);
+            bcast[bsize] = j;
+            ++bsize;  
+          }
+        } // for (int j=0; j<nnodes[i]; ++j)
+      inter[i]->lComm()->Broadcast(&bsize,1,proc);
+      bcast.resize(bsize);
+      inter[i]->lComm()->Broadcast(&(bcast[0]),bsize,proc);
+      if (proc!=inter[i]->lComm()->MyPID())
+        for (int k=0; k<bsize; ++k)
+        {
+          int j = bcast[k];
+          nodes[i][j]->SetCorner();
+        }
+      bcast.clear();
+    } // for (int proc=0; proc<Comm()->NumProc(); ++proc)
+  } // for (i=0; i<ninter; ++i)
+
+  
+
+
+
+  // tidy up
+  nnodes.clear();
+  for (int i=0; i<ninter; ++i) 
+    if (nodes[i]) delete [] nodes[i];
+  nodes.clear();
+
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #endif // TRILINOS_PACKAGE

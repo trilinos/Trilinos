@@ -399,7 +399,7 @@ bool MRTR::Interface::SetFunctionAllSegmentsSide(int side,
  *----------------------------------------------------------------------*/
 bool MRTR::Interface::SetMortarSide(int side)
 { 
-  if (side!=0 && side!=1)
+  if (side!=0 && side!=1 && side!=-2)
   {
     cout << "***ERR*** MRTR::Interface::SetMortarSide:\n"
          << "***ERR*** side = " << side << " not equal 0 or 1\n"
@@ -498,9 +498,7 @@ int MRTR::Interface::GlobalNnode(int side)
   }
   if (!lComm()) 
     return 0;
-  int lnnode = node_[side].size();
-  int gnnode;
-  lcomm_->SumAll(&lnnode,&gnnode,1);
+  int gnnode = rnode_[side].size();
   return(gnnode);
 }
 
@@ -523,9 +521,7 @@ int MRTR::Interface::GlobalNnode()
   }
   if (!lComm()) 
     return 0;
-  int lnnode = node_[0].size() + node_[1].size();
-  int gnnode;
-  lcomm_->SumAll(&lnnode,&gnnode,1);
+  int gnnode = rnode_[0].size() + rnode_[1].size();;
   return(gnnode);
 }
 
@@ -640,13 +636,6 @@ MRTR::Node* MRTR::Interface::GetNodeView(int nid)
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  if (!lComm())
-  {
-    cout << "***ERR*** MRTR::Interface::GetNodeView:\n"
-         << "***ERR*** Interface " << Id() << ": Proc " << gcomm_.MyPID() << "not in intra-comm\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
   if (!lComm()) return NULL;
   
   map<int,MRTR::Node*>::iterator curr = rnode_[0].find(nid);
@@ -656,6 +645,35 @@ MRTR::Node* MRTR::Interface::GetNodeView(int nid)
   if (curr != rnode_[1].end())
     return(curr->second);
   return (NULL);
+}
+
+/*----------------------------------------------------------------------*
+ |  get view of ALL nodes on this interface                             |
+ |  method allocates a ptr vector the calling methos is in charge of    |
+ | destroying it                                                        |
+ | returns NULL if proc is not art of the local communicator            |
+ *----------------------------------------------------------------------*/
+MRTR::Node** MRTR::Interface::GetNodeView()
+{ 
+  if (!IsComplete())
+  {
+    cout << "***ERR*** MRTR::Interface::GetNodeView:\n"
+         << "***ERR*** Interface " << Id() << ": Complete() not called\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  if (!lComm()) return NULL;
+  
+  MRTR::Node** view = new MRTR::Node*[GlobalNnode()];
+  int count=0;
+  map<int,MRTR::Node*>::iterator curr;
+  for (int i=0; i<2; ++i)
+    for (curr=rnode_[i].begin(); curr != rnode_[i].end(); ++curr)
+    {
+      view[count] = curr->second;
+      ++count;
+    }
+  return view;
 }
 
 /*----------------------------------------------------------------------*
@@ -672,7 +690,7 @@ MRTR::Segment* MRTR::Interface::GetSegmentView(int sid)
   }
   if (!lComm())
   {
-    cout << "***ERR*** MRTR::Interface::GetNodeView:\n"
+    cout << "***ERR*** MRTR::Interface::GetSegmentView:\n"
          << "***ERR*** Interface " << Id() << ": Proc " << gcomm_.MyPID() << "not in intra-comm\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);

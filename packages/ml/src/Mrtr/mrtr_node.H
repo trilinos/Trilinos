@@ -133,23 +133,31 @@ public:
   // set dof number for lagrange multiplier
   bool SetLagrangeMultiplierId(int LMId);
   
+  // set the iscorner_ flag
+  void SetCorner() { iscorner_ = true; return; }
+  // query the iscorner_ flag
+  bool IsCorner() { return iscorner_; }
+  
 protected:  
   // don't want = operator
   Node operator = (const Node& old);
 
 protected:
 
-  int                          Id_;      // Id of this node
-  double                       x_[3];    // cordinates of this node 
-  double                       n_[3];    // a nodal outward normal
+  int                          Id_;       // Id of this node
+  double                       x_[3];     // cordinates of this node 
+  double                       n_[3];     // a nodal outward normal
 
-  vector<int>                  dof_;     // dof ids on this node 
-  vector<int>                  LMdof_;   // dofs ids of LM if this is slave side
+  bool                         iscorner_; // flag indicating whether this is a node
+                                          // shared by several interfaces  
 
-  vector<int>                  seg_;     // vector of segment ids adjacent to me
-  vector<MRTR::Segment*>       segptr_;  // ptrs to segments length nseg_
+  vector<int>                  dof_;      // dof ids on this node 
+  vector<int>                  LMdof_;    // dofs ids of LM if this is slave side
 
-  vector<MRTR::ProjectedNode*> pnode_;   // the projected node on some segment
+  vector<int>                  seg_;      // vector of segment ids adjacent to me
+  vector<MRTR::Segment*>       segptr_;   // ptrs to segments length nseg_
+
+  vector<MRTR::ProjectedNode*> pnode_;    // the projected node on some segment
 
 };
 

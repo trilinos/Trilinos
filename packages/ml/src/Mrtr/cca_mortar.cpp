@@ -195,16 +195,14 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     
     //-----------------------------------------------------------------
     // manually choose mortar (master side)
-    // FIXME: later should be chosen by mortar manager ?
-    //        this means that the functions have to stay changeable
-
-    interface->SetMortarSide(1);
+    // mortar side is either 0 or 1 or -2 for automatic
+    interface->SetMortarSide(-2);
 
     //-----------------------------------------------------------------
     // set linear shape functions on both sides, 
     // set additional dual shape functions on non-mortar side 
     // Currently ONLY linear functions!!!!
-
+    if (interface->MortarSide() != -2)
     {
       MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
       interface->SetFunctionAllSegmentsSide(0,0,func);
@@ -216,17 +214,20 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     // get the mortar side and set dual linear shape function to non mortar side
 
     int side = interface->MortarSide();
-    side     = interface->OtherSide(side);
-    //MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
-    MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
-    interface->SetFunctionAllSegmentsSide(side,1,func);
-    delete func; func = NULL;
+    if (side==1 || side==0)
+    {
+      side     = interface->OtherSide(side);
+      //MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
+      MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
+      interface->SetFunctionAllSegmentsSide(side,1,func);
+      delete func; func = NULL;
+    }
     
     //-----------------------------------------------------------------
     // set type of projection to be used on this interface
 
-    //interface->SetProjectionType(MRTR::Interface::proj_continousnormalfield);    
-    interface->SetProjectionType(MRTR::Interface::proj_orthogonal);    
+    interface->SetProjectionType(MRTR::Interface::proj_continousnormalfield);    
+    //interface->SetProjectionType(MRTR::Interface::proj_orthogonal);    
     
     //-----------------------------------------------------------------
     // Complete interface 
@@ -256,11 +257,11 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
 
   //-----------------------------------------------------------------
   // print all interfaces
-    fflush(stdout);
-    comm->Barrier();
+  fflush(stdout);
+  comm->Barrier();
 
-#if 0
-    cout << *mrtr_manager;
+#if 1
+  cout << *mrtr_manager;
 #endif  
 
   delete [] ids;

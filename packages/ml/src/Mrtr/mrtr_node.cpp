@@ -42,7 +42,8 @@
  |  ctor (public)                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
 MRTR::Node::Node(int Id, const double* x, int ndof, const int* dof) :
-Id_(Id)
+Id_(Id),
+iscorner_(false)
 {
   seg_.resize(0);
   segptr_.resize(0);
@@ -66,7 +67,8 @@ Id_(Id)
  |  used internally                                                     |
  *----------------------------------------------------------------------*/
 MRTR::Node::Node() :
-Id_(-1)
+Id_(-1),
+iscorner_(false)
 {
   seg_.resize(0);
   segptr_.resize(0);
@@ -89,6 +91,8 @@ Id_(-1)
 MRTR::Node::Node(MRTR::Node& old)
 {
   Id_ = old.Id();
+  
+  iscorner_ = old.iscorner_;
   
   for (int i=0; i<3; ++i) 
   {
@@ -242,6 +246,9 @@ bool MRTR::Node::Print() const
     for (int i=0; i<LMdof_.size(); ++i)
       cout << LMdof_[i] << " ";
   }
+  
+  if (iscorner_)
+    cout << " is shared among interfaces \n";
 
   cout << endl;
   return true;
