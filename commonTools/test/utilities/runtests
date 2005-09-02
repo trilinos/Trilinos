@@ -432,7 +432,7 @@ cleanUp();
                 print TEMP $testOutput;
                 close TEMP;
                 
-                my $ctoCommand = "$trilinosDir/commonTools/test/utilities/./compareTestOutput ";
+                my $ctoCommand = "python $trilinosDir/commonTools/test/utilities/compareTestOutput ";
                 $ctoCommand .= $testListAoH[$i]{'commandFile'}." ";
                 $ctoCommand .= $testListAoH[$i]{'masterFile'}." ";
                 $ctoCommand .= "$testOutputFile 2>&1";
