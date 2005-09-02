@@ -26,17 +26,18 @@
 # ************************************************************************
 # @HEADER
 
+# Include the export Makefiles
+include $(top_builddir)/Makefile.export
+include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
+
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-include $(top_builddir)/Makefile.export
 
-PYTHON_LIBS     = $(EXTRA_LIBS) $(IFPACK_LIBS)
-PYTHON_INCLUDES = $(IFPACK_INCLUDES)
+IFPACK_PYTHON_INCLUDES = $(IFPACK_INCLUDES) $(PYTRILINOS_INCLUDES)
+IFPACK_PYTHON_LIBS     = $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS) $(PYTRILINOS_LIBS)
 
-SWIG_CXXFLAGS = -I$(srcdir)                          \
-                $(PYTHON_INCLUDES)                   \
-                -I$(top_srcdir)/../epetra/python/src \
-		-I$(top_srcdir)/../PyTrilinos/src
+SWIG_CXXFLAGS = $(IFPACK_PYTHON_INCLUDES)                   \
+                -I$(top_srcdir)/../epetra/python/src
 
 EXTRA_DIST = IFPACK.i setup.py
 
@@ -56,22 +57,7 @@ INTERFACES = IFPACK.i
 WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
 PROXIES    = $(INTERFACES:.i=.py      )
 
-# File setup.txt is a way to transfer make variables to the setup.py
-# python script
-setup.txt: $(srcdir)/Makefile.am
-	@echo "creating $@"
-	@echo "{"                                           >  $@
-	@echo "  'top_builddir'    : '$(top_builddir)',"    >> $@
-	@echo "  'top_srcdir'      : '$(top_srcdir)',"      >> $@
-	@echo "  'srcdir'          : '$(srcdir)',"          >> $@
-	@echo "  'CC'              : '$(CC)',"              >> $@
-	@echo "  'CXX'             : '$(CXX)',"             >> $@
-	@echo "  'PYTHON_LIBS'     : '$(PYTHON_LIBS)',"     >> $@
-	@echo "  'PYTHON_INCLUDES' : '$(PYTHON_INCLUDES)'," >> $@
-	@echo "  'PYTHON'          : '$(PYTHON)'"           >> $@
-	@echo "}"                                           >> $@
-
-build: $(WRAPPERS) setup.txt $(tempdir)
+build: $(WRAPPERS) $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
@@ -81,4 +67,4 @@ clean-local:
 	$(PYTHON) $(srcdir)/setup.py clean
 	$(RM) -r ../../packages
 
-CLEANFILES += setup.txt $(WRAPPERS) $(PROXIES)
+CLEANFILES += $(WRAPPERS) $(PROXIES)

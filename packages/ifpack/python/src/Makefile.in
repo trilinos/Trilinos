@@ -92,7 +92,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/__init__.py.in $(top_srcdir)/config/swig.am
+	$(srcdir)/TRILINOS_HOME_DIR.in $(srcdir)/__init__.py.in \
+	$(top_srcdir)/config/swig.am
 subdir = python/src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -127,7 +128,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Ifpack_config.h
-CONFIG_CLEAN_FILES = __init__.py
+CONFIG_CLEAN_FILES = TRILINOS_HOME_DIR __init__.py
 SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -286,20 +287,20 @@ target_vendor = @target_vendor@
 # Dependencies.  Obtain the list of dependencies by executing ls.  This could
 # be empty, so when we include the dependency files, we also include 'dummy',
 # an empty file used to trick configure into making the dependency directory.
-DEPFILES = $(shell ls $(DEPDIR)/*.Pi 2> /dev/null)
+DEPFILES = $(shell ls $(DEPDIR)/*.Pi 2> /dev/null; ls $(DEPDIR)/dummy)
 
 # Clean target.  Put the generated dependency files in the list of files to
 # be removed with a "make clean"
-CLEANFILES = $(DEPDIR)/*.Pi setup.txt $(WRAPPERS) $(PROXIES)
+CLEANFILES = $(DEPDIR)/*.Pi $(WRAPPERS) $(PROXIES)
 
 # Define the SWIGCOMPILE macro
 SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
-PYTHON_LIBS = $(EXTRA_LIBS) $(IFPACK_LIBS)
-PYTHON_INCLUDES = $(IFPACK_INCLUDES)
-SWIG_CXXFLAGS = -I$(srcdir)                          \
-                $(PYTHON_INCLUDES)                   \
-                -I$(top_srcdir)/../epetra/python/src \
-		-I$(top_srcdir)/../PyTrilinos/src
+
+# Include swig rules
+IFPACK_PYTHON_INCLUDES = $(IFPACK_INCLUDES) $(PYTRILINOS_INCLUDES)
+IFPACK_PYTHON_LIBS = $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS) $(PYTRILINOS_LIBS)
+SWIG_CXXFLAGS = $(IFPACK_PYTHON_INCLUDES)                   \
+                -I$(top_srcdir)/../epetra/python/src
 
 EXTRA_DIST = IFPACK.i setup.py
 
@@ -343,6 +344,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+TRILINOS_HOME_DIR: $(top_builddir)/config.status $(srcdir)/TRILINOS_HOME_DIR.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 __init__.py: $(top_builddir)/config.status $(srcdir)/__init__.py.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 uninstall-info-am:
@@ -464,7 +467,11 @@ uninstall-am: uninstall-info-am
 	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am uninstall \
 	uninstall-am uninstall-info-am
 
-include $(DEPDIR)/dummy $(DEPFILES)
+
+# Include the export Makefiles
+include $(top_builddir)/Makefile.export
+include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
+include $(DEPFILES)
 
 # Wrapper and proxy targets
 %.py: %_wrap.cpp
@@ -473,9 +480,6 @@ include $(DEPDIR)/dummy $(DEPFILES)
 	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
 	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
 
-# Include swig rules
-include $(top_builddir)/Makefile.export
-
 # Default make target
 all-am: build
 
@@ -483,22 +487,7 @@ $(tempdir):
 	@echo "Creating directory $@"
 	mkdir -p $@
 
-# File setup.txt is a way to transfer make variables to the setup.py
-# python script
-setup.txt: $(srcdir)/Makefile.am
-	@echo "creating $@"
-	@echo "{"                                           >  $@
-	@echo "  'top_builddir'    : '$(top_builddir)',"    >> $@
-	@echo "  'top_srcdir'      : '$(top_srcdir)',"      >> $@
-	@echo "  'srcdir'          : '$(srcdir)',"          >> $@
-	@echo "  'CC'              : '$(CC)',"              >> $@
-	@echo "  'CXX'             : '$(CXX)',"             >> $@
-	@echo "  'PYTHON_LIBS'     : '$(PYTHON_LIBS)',"     >> $@
-	@echo "  'PYTHON_INCLUDES' : '$(PYTHON_INCLUDES)'," >> $@
-	@echo "  'PYTHON'          : '$(PYTHON)'"           >> $@
-	@echo "}"                                           >> $@
-
-build: $(WRAPPERS) setup.txt $(tempdir)
+build: $(WRAPPERS) $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
