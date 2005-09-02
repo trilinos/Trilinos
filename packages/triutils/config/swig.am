@@ -35,8 +35,8 @@
 # Dependencies.  Obtain the list of dependencies by executing ls.  This could
 # be empty, so when we include the dependency files, we also include 'dummy',
 # an empty file used to trick configure into making the dependency directory.
-DEPFILES   = $(shell ls $(DEPDIR)/*.Pi 2> /dev/null)
-include $(DEPDIR)/dummy $(DEPFILES)
+DEPFILES = $(shell ls $(DEPDIR)/*.Pi 2> /dev/null, $(DEPDIR)/dummy)
+include $(DEPFILES)
 
 # Clean target.  Put the generated dependency files in the list of files to
 # be removed with a "make clean"
