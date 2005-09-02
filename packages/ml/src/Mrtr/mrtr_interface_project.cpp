@@ -279,65 +279,9 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
         = new MRTR::ProjectedNode(*snode,bestdist,bestseg);
       snode->SetProjectedNode(pnode);
     }
-    else  // this slave node does not have a valid projection
-    {
-      if (OutLevel()>5)
-      cout << "***WRN***: Node " << snode->Id() << " does not have projection\n";
-      snode->SetProjectedNode(NULL);
-    }
   } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
-
-#if 1
-  // Postprocess the projections
-  // The slave side of the interface might be larger then the master side
-  // of the interface so not all slave nodes have a projection.
-  // For those slave nodes without a projection attached to a slave segment
-  // which overlaps with the master side, lagrange mutlipliers have to be
-  // introduced. This is done by checking all nodes without a projection 
-  // whether they are attached to some slave segment on which another node
-  // HAS a projection. If this case is found, a pseudo ProjectedNode is 
-  // introduced for that node.
-  for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
-  {
-    MRTR::Node* snode = scurr->second;
-    
-    // do only my own nodes
-    if (NodePID(snode->Id()) != lComm()->MyPID())
-      continue;
-      
-    
-    // don't do anything on nodes that already have a projection
-    if (snode->GetProjectedNode())
-      continue;
-
-    // get segments adjacent to this node  
-    int nseg             = snode->Nseg();
-    MRTR::Segment** segs = snode->Segments();
-    
-    // loop segments and check for other nodes with projection
-    bool foundit = false;
-    for (int i=0; i<nseg; ++i)
-    {
-      int nnode = segs[i]->Nnode();
-      MRTR::Node** nodes = segs[i]->Nodes();
-      for (int j=0; j<nnode; ++j)
-        if (nodes[j]->GetProjectedNode())
-          if (nodes[j]->GetProjectedNode()->Segment())
-          {
-            foundit = true;
-            break;
-          }
-      if (foundit) break;
-    }
-    
-    if (foundit)
-    {
-      MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*snode,NULL,NULL);
-      snode->SetProjectedNode(pnode);
-    }
-  } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
-#endif  
-
+  lComm()->Barrier();
+  
   // loop all slave nodes again and make the projections redundant
   double* bcast = new double[4*rnode_[sside].size()]; // that's the max
   for (int proc=0; proc<lComm()->NumProc(); ++proc)
@@ -406,6 +350,58 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
     }
   } // for (int proc=0; proc<lComm()->NumProc(); ++proc)
   delete [] bcast; bcast = NULL;
+  lComm()->Barrier();
+
+#if 1
+  // Postprocess the projections
+  // The slave side of the interface might be larger then the master side
+  // of the interface so not all slave nodes have a projection.
+  // For those slave nodes without a projection attached to a slave segment
+  // which overlaps with the master side, lagrange mutlipliers have to be
+  // introduced. This is done by checking all nodes without a projection 
+  // whether they are attached to some slave segment on which another node
+  // HAS a projection. If this case is found, a pseudo ProjectedNode is 
+  // introduced for that node.
+  for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
+  {
+    MRTR::Node* snode = scurr->second;
+    
+    // don't do anything on nodes that already have a projection
+    if (snode->GetProjectedNode())
+      continue;
+
+    // get segments adjacent to this node  
+    int nseg             = snode->Nseg();
+    MRTR::Segment** segs = snode->Segments();
+    
+    // loop segments and check for other nodes with projection
+    bool foundit = false;
+    for (int i=0; i<nseg; ++i)
+    {
+      int nnode = segs[i]->Nnode();
+      MRTR::Node** nodes = segs[i]->Nodes();
+      for (int j=0; j<nnode; ++j)
+        if (nodes[j]->GetProjectedNode())
+          if (nodes[j]->GetProjectedNode()->Segment())
+          {
+            foundit = true;
+            break;
+          }
+      if (foundit) break;
+    }
+    
+    if (foundit)
+    {
+#if 0
+      cout << "Node without projection:\n" << *snode;        
+      cout << "...get's lagrange multipliers\n\n";
+#endif
+      MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*snode,NULL,NULL);
+      snode->SetProjectedNode(pnode);
+    }
+  } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
+#endif  
+
   return true;
 }
 
@@ -960,8 +956,6 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
   } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)  
 
 
-// in here goes the modification for larger slave then master side
-// (pseudo-projected nodes)
 
   // loop all slave nodes again and make projections redundant
   if (lComm()->NumProc()>1)
@@ -1040,6 +1034,56 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
     } // for (int proc=0; proc<lComm()->NumProc(); ++proc)
     bcast.clear();
   } // if (lComm()->NumProc()>1)
+
+#if 1
+  // Postprocess the projections
+  // The slave side of the interface might be larger then the master side
+  // of the interface so not all slave nodes have a projection.
+  // For those slave nodes without a projection attached to a slave segment
+  // which overlaps with the master side, lagrange mutlipliers have to be
+  // introduced. This is done by checking all nodes without a projection 
+  // whether they are attached to some slave segment on which another node
+  // HAS a projection. If this case is found, a pseudo ProjectedNode is 
+  // introduced for that node.
+  for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
+  {
+    MRTR::Node* snode = scurr->second;
+    // do only my own nodes
+
+    // don't do anything on nodes that already have a projection
+    if (snode->GetProjectedNode())
+      continue;
+
+    // get segments adjacent to this node  
+    int nseg             = snode->Nseg();
+    MRTR::Segment** segs = snode->Segments();
+    // loop segments and check for other nodes with projection
+    bool foundit = false;
+    for (int i=0; i<nseg; ++i)
+    {
+      int nnode = segs[i]->Nnode();
+      MRTR::Node** nodes = segs[i]->Nodes();
+      for (int j=0; j<nnode; ++j)
+        if (nodes[j]->GetProjectedNode())
+          if (nodes[j]->GetProjectedNode()->Segment())
+          {
+            foundit = true;
+            break;
+          }
+      if (foundit) break;
+    }
+    if (foundit)
+    {
+#if 0
+      cout << "Node without projection:\n" << *snode;        
+      cout << "...get's lagrange multipliers\n\n";
+#endif
+      MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*snode,NULL,NULL);
+      snode->SetProjectedNode(pnode);
+    }
+  }
+#endif
+
 
   return true; 
 }

@@ -1139,7 +1139,7 @@ bool MRTR::Interface::DetectEndSegmentsandReduceOrder()
           foundit = true;
       if (!foundit)
         continue;
-        
+      
       MRTR::Segment** segs = node->Segments();
 
       for (int i=0; i<node->Nseg(); ++i)

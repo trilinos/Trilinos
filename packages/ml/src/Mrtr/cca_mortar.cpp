@@ -225,8 +225,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     //-----------------------------------------------------------------
     // set type of projection to be used on this interface
 
-    interface->SetProjectionType(MRTR::Interface::proj_continousnormalfield);    
-    //interface->SetProjectionType(MRTR::Interface::proj_orthogonal);    
+    //interface->SetProjectionType(MRTR::Interface::proj_continousnormalfield);    
+    interface->SetProjectionType(MRTR::Interface::proj_orthogonal);    
     
     //-----------------------------------------------------------------
     // Complete interface 
@@ -379,6 +379,7 @@ int compute_mortar(SPARSE_TYP* arraytyp, SPARSE_ARRAY* array, DESIGN *design)
   saddleproblem = mrtr_manager->MakeSaddleProblem();
   if (*arraytyp == msr)
   {
+    cout << "***ERR** msr matrix not yet impl\n\n"; fflush(stdout);
   }
   else if (*arraytyp == spoolmatrix)
   {
@@ -408,6 +409,8 @@ int compute_mortar(SPARSE_TYP* arraytyp, SPARSE_ARRAY* array, DESIGN *design)
     //saddleproblem->ColMap();
     int rowcount = 0;
     int nnzcount = 0;
+    //FILE *out = fopen("matrix.txt","w");
+    //fprintf(out,"nrow %d nnz %d\n",saddleproblem->NumMyRows(),saddleproblem->NumMyNonzeros());
     for (int i=0; i<array->spo->numeq; ++i)
     {
       
@@ -424,6 +427,7 @@ int compute_mortar(SPARSE_TYP* arraytyp, SPARSE_ARRAY* array, DESIGN *design)
       }
       for (int j=0; j<NumEntries; ++j)
       {
+        //fprintf(out,"%10d %10d %20.10e\n",Row+1,saddleproblem->GCID(Indices[j])+1,Values[j]);
         irn_loc[nnzcount] = Row;
         jcn_loc[nnzcount] = saddleproblem->GCID(Indices[j]);
         if (jcn_loc[nnzcount]<0) {

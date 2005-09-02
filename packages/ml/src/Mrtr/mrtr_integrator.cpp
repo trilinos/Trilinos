@@ -287,7 +287,7 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
     {
       // do not add a zero from (*Mdense)(slave,master)
       double val = -(Mdense(slave,master));
-      if (abs(val)<1.e-6) continue;
+      if (abs(val)<1.e-10) continue;
       
       int mndof = mnodes[master]->Ndof();
       const int* mdof = mnodes[master]->Dof();
@@ -352,7 +352,7 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
     {
       // do not add a zero from Ddense
       double val = Ddense(rownode,colnode);
-      if (abs(val)<1.e-6) continue;
+      if (abs(val)<1.e-10) continue;
       
       int ndof = snodes[colnode]->Ndof();
       const int* dof = snodes[colnode]->Dof();
@@ -490,7 +490,6 @@ Epetra_SerialDenseMatrix* MRTR::Integrator::Integrate_2D_Mmod(
     
     // make the delta function phi12 = phi1 - phi2
     double val = sval[0] - sval[1];
-    //double val = sval[1] - sval[0];
     
     // evaluate function 0 of the master side (supposed to be the trace function)
     double mval[mseg.Nnode()];
