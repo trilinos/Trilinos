@@ -26,15 +26,17 @@
 # ************************************************************************
 # @HEADER
 
-# basic definitions for ML
+# Include export Makefiles
 include  $(top_builddir)/Makefile.export
+include  $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
+
+ML_PYTHON_INCLUDES = $(ML_INCLUDES) $(PYTRILINOS_INCLUDES)
+ML_PYTHON_LIBS     = $(ML_LIBS)     $(PYTRILINOS_LIBS)
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = -I$(srcdir)                          \
-                $(ML_INCLUDES)                       \
-                -I$(top_srcdir)/../epetra/python/src \
-		-I$(top_srcdir)/../PyTrilinos/src
+SWIG_CXXFLAGS = $(ML_PYTHON_INCLUDES)                \
+                -I$(top_srcdir)/../epetra/python/src
 
 EXTRA_DIST = ML.i setup.py
 
@@ -54,23 +56,7 @@ INTERFACES = ML.i
 WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
 PROXIES    = $(INTERFACES:.i=.py      )
 
-# File setup.txt is a way to transfer make variables to the setup.py
-# python script
-setup.txt: $(srcdir)/Makefile.am
-	@echo "creating $@"
-	@echo "{"                                     >  $@
-	@echo "  'top_builddir' : '$(top_builddir)'," >> $@
-	@echo "  'top_srcdir'   : '$(top_srcdir)',"   >> $@
-	@echo "  'srcdir'       : '$(srcdir)',"       >> $@
-	@echo "  'CC'           : '$(CC)',"           >> $@
-	@echo "  'CXX'          : '$(CXX)',"          >> $@
-	@echo "  'CXXFLAGS'     : '$(CXXFLAGS)',"     >> $@
-	@echo "  'ML_INCLUDES'  : '$(ML_INCLUDES)',"  >> $@
-	@echo "  'ML_LIBS'      : '$(ML_LIBS)',"      >> $@
-	@echo "  'PYTHON'       : '$(PYTHON)'"        >> $@
-	@echo "}"                                     >> $@
-
-build: $(WRAPPERS) setup.txt $(tempdir)
+build: $(WRAPPERS) $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
@@ -80,4 +66,4 @@ clean-local:
 	$(PYTHON) $(srcdir)/setup.py clean
 	$(RM) -r ../../packages
 
-CLEANFILES += setup.txt $(WRAPPERS) $(PROXIES)
+CLEANFILES += $(WRAPPERS) $(PROXIES)

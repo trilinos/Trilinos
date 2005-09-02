@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#              PyTrilinos.Epetra: Python Interface to Epetra
+#                  PyTrilinos.ML: Python Interface to ML
 #                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -51,15 +51,16 @@ EXTRA_DIST = \
 ## #######################################################################
 MAINTAINERCLEANFILES = Makefile.in
 
-# Define the suite of examples
-EXAMPLE_SUITE = testMultiLevelPreconditioner
+# Define the suite of test scripts
+TEST_SUITE = testMultiLevelPreconditioner
 
-check-am: $(EXAMPLE_SUITE)
+SETPATH = setpath.py
 
-# Run the example script
-ex%: $(srcdir)/ex%.py $(srcdir)/setpath.py
-	cp $^ .
-	$(PYTHON) $@.py
+all: $(TEST_SUITE)
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then cp $(srcdir)/$(SETPATH) . ; fi
+
+test%: $(srcdir)/test%.py
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then cp $(srcdir)/$@.py . ; fi
 
 # Clean target
-CLEANFILES = $(patsubst %, %.py, $(EXAMPLE_SUITE)) setpath.py setpath.pyc
+CLEANFILES = $(TEST_SUITE:=.py) $(SETPATH) *.py

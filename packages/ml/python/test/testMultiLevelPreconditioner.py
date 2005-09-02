@@ -3,12 +3,8 @@ try:
   import setpath
   import ML, Triutils, AztecOO, Epetra
 except:
-  try:
     from PyTrilinos import ML, Triutils, AztecOO, Epetra
-  except ImportError:
-    raise ImportError, "error w/ ML or Triutils or AztecOO or Epetra"
-
-Epetra.Init()
+    print "Using system-installed ML, Triutils, AztecOO, Epetra"
 
 # builds the linear system matrix and sets up starting solution and
 # right-hand side
@@ -42,5 +38,3 @@ Solver.SetPrecOperator(Prec)
 Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
 Solver.SetAztecOption(AztecOO.AZ_output, 16)
 Solver.Iterate(1550, 1e-5)
-
-Epetra.Finalize()

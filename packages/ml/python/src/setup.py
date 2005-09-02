@@ -31,118 +31,81 @@
 # System imports
 from   distutils.core import *
 from   distutils      import sysconfig
-import commands
 import os
-import string
 import sys
 
-# Any information that needs to be transferred from the autotooled Makefile is
-# written to file setup.txt using python syntax to define a dictionary.  The
-# keys of this 'makeInfo' dictionary are variable names and the corresponding
-# values represent the data that will be needed by this setup.py script.
+# Trilinos import
+TRILINOS_HOME_DIR = os.path.normpath(open("TRILINOS_HOME_DIR").read()[:-1])
+sys.path.insert(0,os.path.join(TRILINOS_HOME_DIR,"commonTools","buildTools"))
+from MakefileVariables import *
+
+# Build the makeVars dictionary by processing relevant Makefiles
+makeVars = { }
+makeVars.update(processMakefile(os.path.join("Makefile")))
+
+# Import the variable names and values into the global namespace.  This is
+# crucual: every variable name/value pair obtained by processing the specified
+# Makefiles above will become actual python variables in the global namespace.
+globals().update(makeVars)
+
+# Obtain the package version number string
 try:
-    f = open("setup.txt")
-    makeInfo = f.readlines()
-    f.close()
-    makeInfo = eval(string.join(makeInfo))
-except IOError:
-    makeInfo = { }
+    version = makeVars["PACKAGE_VERSION"]
+except KeyError:
+    version = makeVars.get("VERSION","??")
 
-# Certain directory paths are needed by setup.py.  pakDir is the path for the
-# epetra package directory, and srcDir is the path for the python source directory
-buildDir   = makeInfo.get("top_builddir","")
-pakDir     = makeInfo.get("top_srcdir","")
-srcDir     = makeInfo.get("srcdir","")
-CXX        = makeInfo.get("CXX")
-CXXFLAGS   = makeInfo.get("CXXFLAGS")
+# Initialize arguments that will be needed by the Extension class
+include_dirs    = [srcdir]
+library_dirs    = [      ]
+libraries       = [      ]
+extra_link_args = [      ]
 
+# Get the relevant Makefile export variable values, split them into lists of
+# strings, add them together to obtain a big list of option strings, and then
+# remove any duplicate entries
+options = ML_PYTHON_INCLUDES.split() + \
+          ML_PYTHON_LIBS.split()
+uniquifyList(options)
 
-# Define the pytrilinos include path, library directory and library name
-pytrilinosInc    = os.path.join(pakDir,   "..", "PyTrilinos", "src")
-pytrilinosLibDir = os.path.join(buildDir, "..", "PyTrilinos", "src")
-pytrilinosLib    = "pytrilinos"
-
-# Define the epetra include path, library directory and library name
-PyEpetraDir   = os.path.join(pakDir, "..", "epetra", "python", "src")
-
-# Define the amesos include path, library directory and library name
-amesosInc    = os.path.join(pakDir,   "..", "amesos", "src")
-amesosLibDir = os.path.join(buildDir, "..", "amesos", "src")
-amesosLib    = "amesos"
-
-# Set up standard information for includes, libraries, and extra agrs
-stdIncludes = [srcDir, pytrilinosInc, PyEpetraDir, amesosInc];
-stdLibDirs  = [pytrilinosLibDir, amesosLibDir]
-stdLibs     = [ ]
-extraArgs   = [ ]
-
-# Create the extra arguments list and complete the standard libraries list.
-am_libs     = makeInfo.get("ML_LIBS",     "").split() 
-am_includes = makeInfo.get("ML_INCLUDES", "").split()
-
-for lib in am_libs:
-    if lib[:2] == "-l":
-        stdLibs.append(lib[2:])
-    elif lib[:2] == "-L":
-        stdLibDirs.append(lib[2:])
+# Distribute the individual options to the appropriate Extension class arguments
+for option in options:
+    if option[:2] == "-I":
+        include_dirs.append(option[2:])
+    elif option[:2] == "-L":
+        library_dirs.append(option[2:])
+    elif option[:2] == "-l":
+        libraries.append(option[2:])
     else:
-        extraArgs.append(lib)
+        extra_link_args.append(option)
 
-for lib in makeInfo.get("LIBS","").split():
-    if lib[:2] == "-L":
-        stdLibDirs.append(lib[2:])
-    else:
-        extraArgs.append(lib)
+# An additional include directory
+include_dirs.append(os.path.join(top_srcdir,"..","epetra","python","src"))
 
-for include in am_includes:
-    if include[:2] == "-I":
-        stdIncludes.append(include[2:])
-    else:
-        extraArgs.append(include)
-
-# Finish up stdLibs definition.  We may need to add the Amesos library, and its
-# position is non-trivial
-if amesosLib not in stdLibs:
-    epetraExtLib = "epetraext"
-    if epetraExtLib in stdLibs:
-        index = stdLibs.index(epetraExtLib)
-        stdLibs.insert(index, amesosLib)
-    else:
-        stdLibs.append(amesosLib)
-stdLibs.append(pytrilinosLib)
-
-# Hack to fix linking under Linux
-sysName = os.uname()[0]
-if sysName == "Linux":
-    extraArgs.append("-lstdc++")
-
-# Define the strings that refer to the required source files.
-wrapML          = "ML_wrap.cpp"
+# Define the strings that refer to the required local source files
+mlWrap = "ML_wrap.cpp"
 
 # Compiler and linker
 sysconfig.get_config_vars()
-config_vars = sysconfig._config_vars;
-config_vars['CC']  = CXX
-config_vars['CXX'] = CXX
-config_vars['OPT'] = CXXFLAGS
+sysconfig._config_vars["CC" ] = CXX
+sysconfig._config_vars["CXX"] = CXX
 
-# _ML  extension module
+# _ML extension module
 _ML = Extension("PyTrilinos._ML",
-                    [wrapML],
-                    define_macros=[('HAVE_CONFIG_H', '1')],
-                    include_dirs    = stdIncludes,
-                    library_dirs    = stdLibDirs,
-                    libraries       = stdLibs,
-                    extra_link_args = extraArgs
-                    )
+                       [mlWrap],
+                       define_macros   = [("HAVE_CONFIG_H", "1")],
+                       include_dirs    = include_dirs,
+                       library_dirs    = library_dirs,
+                       libraries       = libraries,
+                       extra_link_args = extra_link_args
+                       )
 
 # PyTrilinos.ML setup
 setup(name         = "PyTrilinos.ML",
-      version      = "1.0",
+      version      = version,
       description  = "Python Interface to Trilinos Package ML",
-      author       = "Marzio Sala",
-      author_email = "msala@sandia.gov",
+      author       = "Bill Spotz",
+      author_email = "wfspotz@sandia.gov",
       package_dir  = {"PyTrilinos" : "."},
       packages     = ["PyTrilinos"],
-      ext_modules  = [_ML]
+      ext_modules  = [ _ML ]
       )
