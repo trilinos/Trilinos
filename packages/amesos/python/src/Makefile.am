@@ -26,21 +26,23 @@
 # ************************************************************************
 # @HEADER
 
+# Include export Makefiles
+include $(top_builddir)/Makefile.export.amesos
+include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
+
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-include $(top_builddir)/Makefile.export.amesos
 
 if USING_GNUMAKE
-PYTHON_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS))
-PYTHON_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES))
+AMESOS_PYTHON_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS) $(PYTRILINOS_LIBS))
+AMESOS_PYTHON_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES) $(PYTRILINOS_INCLUDES))
 else
-PYTHON_LIBS     = $(AMESOS_LIBS)     $(AMESOS_EXTRA_LIBS)
-PYTHON_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
+AMESOS_PYTHON_LIBS     = $(AMESOS_LIBS)     $(AMESOS_EXTRA_LIBS)
+AMESOS_PYTHON_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
 endif
 
-SWIG_CXXFLAGS = $(PYTHON_INCLUDES)                   \
-		-I$(top_srcdir)/../epetra/python/src \
-		-I$(top_srcdir)/../PyTrilinos/src
+SWIG_CXXFLAGS = $(AMESOS_PYTHON_INCLUDES)            \
+		-I$(top_srcdir)/../epetra/python/src
 
 EXTRA_DIST = Amesos.i setup.py
 
@@ -60,22 +62,7 @@ INTERFACES = Amesos.i
 WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
 PROXIES    = $(INTERFACES:.i=.py      )
 
-# File setup.txt is a way to transfer make variables to the setup.py
-# python script
-setup.txt: $(srcdir)/Makefile.am
-	@echo "creating $@"
-	@echo "{"                                     >  $@
-	@echo "  'top_builddir' : '$(top_builddir)'," >> $@
-	@echo "  'top_srcdir'   : '$(top_srcdir)',"   >> $@
-	@echo "  'srcdir'       : '$(srcdir)',"       >> $@
-	@echo "  'CC'           : '$(CC)',"           >> $@
-	@echo "  'CXX'          : '$(CXX)',"          >> $@
-	@echo "  'CXXFLAGS'     : '$(CXXFLAGS)',"     >> $@
-	@echo "  'LDFLAGS'      : '$(PYTHON_LIBS)',"  >> $@
-	@echo "  'PYTHON'       : '$(PYTHON)'"        >> $@
-	@echo "}"                                     >> $@
-
-build: $(WRAPPERS) setup.txt $(tempdir)
+build: $(WRAPPERS) $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
@@ -85,4 +72,4 @@ clean-local:
 	$(PYTHON) $(srcdir)/setup.py clean
 	$(RM) -r ../../packages
 
-CLEANFILES += setup.txt $(WRAPPERS) $(PROXIES)
+CLEANFILES += $(WRAPPERS) $(PROXIES)
