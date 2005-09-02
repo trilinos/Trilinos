@@ -404,6 +404,7 @@ AC_CONFIG_FILES([
     test/scripts/daily/serial/Makefile
     python/Makefile
     python/src/Makefile
+    python/src/TRILINOS_HOME_DIR
     python/src/__init__.py
     python/src/.deps/dummy
     python/example/Makefile

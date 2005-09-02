@@ -26,14 +26,15 @@
 # ************************************************************************
 # @HEADER
 
-# basic definitions for AztecOO
+# Include expor tMakefiles
 include  $(top_builddir)/Makefile.export.aztecoo
+include  $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 SWIG_CXXFLAGS = $(AZTECOO_INCLUDES)                  \
-                -I$(top_srcdir)/../epetra/python/src \
-		-I$(top_srcdir)/../PyTrilinos/src
+		$(PYTRILINOS_INCLUDES)               \
+                -I$(top_srcdir)/../epetra/python/src
 
 EXTRA_DIST = AztecOO.i setup.py
 
@@ -53,25 +54,11 @@ INTERFACES = AztecOO.i
 WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
 PROXIES    = $(INTERFACES:.i=.py      )
 
-# File setup.txt is a way to transfer make variables to the setup.py
-# python script
+# Teuchos support
 @HAVE_AZTECOO_TEUCHOS_TRUE@AZTECOO_TEUCHOS="True"
 @HAVE_AZTECOO_TEUCHOS_FALSE@AZTECOO_TEUCHOS="False"
 
-setup.txt: $(srcdir)/Makefile.am
-	@echo "creating $@"
-	@echo "{"                                             >  $@
-	@echo "  'top_builddir'     : '$(top_builddir)',"     >> $@
-	@echo "  'top_srcdir'       : '$(top_srcdir)',"       >> $@
-	@echo "  'srcdir'           : '$(srcdir)',"           >> $@
-	@echo "  'CC'               : '$(CC)',"               >> $@
-	@echo "  'CXX'              : '$(CXX)',"              >> $@
-	@echo "  'AZTECOO_LIBS'     : '$(AZTECOO_LIBS)',"     >> $@
-	@echo "  'AZTECOO_INCLUDES' : '$(AZTECOO_INCLUDES)'," >> $@
-	@echo "  'PYTHON'           : '$(PYTHON)',"           >> $@
-	@echo "}"                                             >> $@
-
-build: $(WRAPPERS) setup.txt $(tempdir)
+build: $(WRAPPERS) $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
@@ -81,4 +68,4 @@ clean-local:
 	$(PYTHON) $(srcdir)/setup.py clean
 	$(RM) -r ../../packages
 
-CLEANFILES += setup.txt $(WRAPPERS) $(PROXIES)
+CLEANFILES += $(WRAPPERS) $(PROXIES)

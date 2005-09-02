@@ -31,93 +31,83 @@
 # System imports
 from   distutils.core import *
 from   distutils      import sysconfig
-import commands
 import os
-import string
 import sys
 
-# Any information that needs to be transferred from the autotooled Makefile is
-# written to file setup.txt using python syntax to define a dictionary.  The
-# keys of this 'makeInfo' dictionary are variable names and the corresponding
-# values represent the data that will be needed by this setup.py script.
+# Trilinos import
+TRILINOS_HOME_DIR = os.path.normpath(open("TRILINOS_HOME_DIR").read()[:-1])
+sys.path.insert(0,os.path.join(TRILINOS_HOME_DIR,"commonTools","buildTools"))
+from MakefileVariables import *
+
+# Build the makeVars dictionary by processing relevant Makefiles
+makeVars = { }
+makeVars.update(processMakefile(os.path.join("Makefile")))
+
+# Import the variable names and values into the global namespace.  This is
+# crucual: every variable name/value pair obtained by processing the specified
+# Makefiles above will become actual python variables in the global namespace.
+globals().update(makeVars)
+
+# Obtain the package version number string
 try:
-    f = open("setup.txt")
-    makeInfo = f.readlines()
-    f.close()
-    makeInfo = eval(string.join(makeInfo))
-except IOError:
-    makeInfo = { }
+    version = makeVars["PACKAGE_VERSION"]
+except KeyError:
+    version = makeVars.get("VERSION","??")
 
-# Certain directory paths are needed by setup.py.  pakDir is the path for the
-# epetra package directory, and srcDir is the path for the python source directory
-buildDir   = makeInfo.get("top_builddir","")
-pakDir     = makeInfo.get("top_srcdir","")
-srcDir     = makeInfo.get("srcdir","")
-CXX        = makeInfo.get("CXX")
+# Initialize arguments that will be needed by the Extension class
+include_dirs    = [srcdir]
+library_dirs    = [      ]
+libraries       = [      ]
+extra_link_args = [      ]
 
-# Define the PyTrilinos include path, library directory and library name
-pytrilinosInc    = os.path.join(pakDir,   "..", "PyTrilinos", "src")
-pytrilinosLibDir = os.path.join(buildDir, "..", "PyTrilinos", "src")
-pytrilinosLib    = "pytrilinos"
+# Get the relevant Makefile export variable values, split them into lists of
+# strings, add them together to obtain a big list of option strings, and then
+# remove any duplicate entries
+options = AZTECOO_INCLUDES.split()    + \
+          AZTECOO_LIBS.split()        + \
+          PYTRILINOS_INCLUDES.split() + \
+          PYTRILINOS_LIBS.split()
+uniquifyList(options)
 
-# Define the epetra include path, library directory and library name
-PyEpetraDir   = os.path.join(pakDir, "..", "epetra", "python", "src")
-
-# setup standard information for includes, libraries, and extra agrs
-stdIncludes = [srcDir, pytrilinosInc, PyEpetraDir];
-stdLibDirs  = [pytrilinosLibDir]
-stdLibs     = [pytrilinosLib]
-extraArgs   = [ ]
-
-# Create the extra arguments list and complete the standard libraries list. 
-am_libs     = makeInfo.get("AZTECOO_LIBS" ,"").split() 
-am_includes = makeInfo.get("AZTECOO_INCLUDES" ,"").split()
-
-for lib in am_libs:
-    if lib[:2] == "-l":
-        stdLibs.append(lib[2:])
-    elif lib[:2] == "-L":
-        stdLibDirs.append(lib[2:])
+# Distribute the individual options to the appropriate Extension class arguments
+for option in options:
+    if option[:2] == "-I":
+        include_dirs.append(option[2:])
+    elif option[:2] == "-L":
+        library_dirs.append(option[2:])
+    elif option[:2] == "-l":
+        libraries.append(option[2:])
     else:
-        extraArgs.append(lib)
+        extra_link_args.append(option)
 
-for include in am_includes:
-    if include[:2] == "-I":
-        stdIncludes.append(include[2:])
-    else:
-        extraArgs.append(include)
+# An additional include directory
+include_dirs.append(os.path.join(top_srcdir,"..","epetra","python","src"))
 
-# Hack to fix linking under linux
-sysName = os.uname()[0]
-if sysName == "Linux":
-    extraArgs.append("-lstdc++")
-
-# Define the strings that refer to the required source files.
-wrapAztecOO = "AztecOO_wrap.cpp"
+# Define the strings that refer to the required local source files
+aztecooWrap = "AztecOO_wrap.cpp"
 
 # Compiler and linker
 sysconfig.get_config_vars()
-config_vars = sysconfig._config_vars;
-config_vars['CC'] = CXX
-config_vars['CXX'] = CXX
+sysconfig._config_vars["CC" ] = CXX
+sysconfig._config_vars["CXX"] = CXX
 
-# _AztecOO  extension module
+# _AztecOO extension module
 _AztecOO = Extension("PyTrilinos._AztecOO",
-                    [wrapAztecOO],
-                    define_macros=[('HAVE_CONFIG_H', '1')],
-                    include_dirs    = stdIncludes,
-                    library_dirs    = stdLibDirs,
-                    libraries       = stdLibs,
-                    extra_link_args = extraArgs
-                    )
+                       [aztecooWrap],
+                       define_macros   = [("HAVE_CONFIG_H", "1")],
+                       include_dirs    = include_dirs,
+                       library_dirs    = library_dirs,
+                       libraries       = libraries,
+                       extra_link_args = extra_link_args
+                       )
 
 # PyTrilinos.AztecOO setup
 setup(name         = "PyTrilinos.AztecOO",
-      version      = "1.0",
+      version      = version,
       description  = "Python Interface to Trilinos Package AztecOO",
-      author       = "Marzio Sala",
-      author_email = "msala@sandia.gov",
+      author       = "Bill Spotz",
+      author_email = "wfspotz@sandia.gov",
       package_dir  = {"PyTrilinos" : "."},
       packages     = ["PyTrilinos"],
-      ext_modules  = [_AztecOO],
+      ext_modules  = [ _AztecOO ]
       )
