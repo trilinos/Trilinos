@@ -41,8 +41,6 @@ from MakefileVariables import *
 
 # Build the makeVars dictionary by processing relevant Makefiles
 makeVars = { }
-makeVars.update(processMakefile(os.path.join("..","..","..","PyTrilinos",
-                                         "Makefile.export.pytrilinos")))
 makeVars.update(processMakefile(os.path.join("Makefile")))
 
 # Import the variable names and values into the global namespace.  This is
