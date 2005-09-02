@@ -77,6 +77,8 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 
   bool TrustMe = ParamList.get( "TrustMe", false );
 
+  bool MyVerbose = false ; 
+
   RefCountPtr<Epetra_CrsMatrix> MyMat ; 
   RefCountPtr<Epetra_CrsMatrix> MyMatWithDiag ; 
 
@@ -132,7 +134,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
   }
   //  Epetra_CrsMatrix*& Amat = &*MyMat ; 
 
-  if ( verbose ) cout << " Partial Factorization complete " << endl ; 
+  if ( MyVerbose ) cout << " Partial Factorization complete " << endl ; 
 
   relerror = 0 ; 
   relresidual = 0 ; 
@@ -195,8 +197,8 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     //  that transpose is set to a default value before it is used.
     //
     if ( transpose ) OUR_CHK_ERR( Abase->SetUseTranspose( transpose ) ); 
-    if (verbose) ParamList.set( "DebugLevel", 1 );
-    if (verbose) ParamList.set( "OutputLevel", 1 );
+    if (MyVerbose) ParamList.set( "DebugLevel", 1 );
+    if (MyVerbose) ParamList.set( "OutputLevel", 1 );
     OUR_CHK_ERR( Abase->SetParameters( ParamList ) ); 
 
     if ( TrustMe ) {
@@ -253,7 +255,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	cAAx = cAx ;
       }
 
-    if ( verbose ) cout << " Compute  b = A x2 = A A' A'' xexact  " << endl ; 
+    if ( MyVerbose ) cout << " Compute  b = A x2 = A A' A'' xexact  " << endl ; 
 
     MyMatWithDiag->Multiply( transpose, cAAx, b ) ;  //  b = A x2 = A A' A'' xexact
  
@@ -276,7 +278,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
     OUR_CHK_ERR( Abase->Solve(  ) ); 
     if ( TrustMe ) sAAx = FixedLHS ; 
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
+    if ( MyVerbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 
     if ( Levels >= 2 ) 
       {
@@ -297,7 +299,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	//	OUR_CHK_ERR( Abase->SetParameters( *NullList ) );   // Make sure we handle null lists 
 	OUR_CHK_ERR( Abase->Solve(  ) ); 
 	if ( TrustMe ) sAx = FixedLHS ; 
-	if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
+	if ( MyVerbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 	
       }
     else
@@ -315,7 +317,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	}
 	OUR_CHK_ERR( Abase->Solve(  ) ); 
 	if ( TrustMe ) x = FixedLHS ;
-	if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
+	if ( MyVerbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
       }
     else
       {
@@ -367,12 +369,12 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	kAAx = kAx ; 
       }
 
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
+    if ( MyVerbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
     MyMatWithDiag->Multiply( transpose, kAAx, bcheck ) ; //  temp = A" x2
-    if ( verbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
+    if ( MyVerbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 
-    if ( verbose ) cout << " Levels =  " << Levels << endl ; 
-    if ( verbose ) cout << " Rcond =  " << Rcond << endl ; 
+    if ( MyVerbose ) cout << " Levels =  " << Levels << endl ; 
+    if ( MyVerbose ) cout << " Rcond =  " << Rcond << endl ; 
 
     double norm_diff ;
     double norm_one ;
@@ -380,21 +382,21 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     DomainDiff.Update( 1.0, sAAx, -1.0, cAAx, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     sAAx.Norm2( &norm_one ) ; 
-    if (verbose) cout << " norm( sAAx - cAAx ) / norm(sAAx ) = " 
+    if (MyVerbose) cout << " norm( sAAx - cAAx ) / norm(sAAx ) = " 
 		      << norm_diff /norm_one << endl ; 
 
 
     DomainDiff.Update( 1.0, sAx, -1.0, cAx, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     sAx.Norm2( &norm_one ) ; 
-    if (verbose) cout << " norm( sAx - cAx ) / norm(sAx ) = " 
+    if (MyVerbose) cout << " norm( sAx - cAx ) / norm(sAx ) = " 
 		      << norm_diff /norm_one << endl ; 
 
 
     DomainDiff.Update( 1.0, x, -1.0, xexact, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     x.Norm2( &norm_one ) ; 
-    if (verbose) cout << " norm( x - xexact ) / norm(x) = " 
+    if (MyVerbose) cout << " norm( x - xexact ) / norm(x) = " 
 		      << norm_diff /norm_one << endl ; 
 
     relerror = norm_diff / norm_one ; 
@@ -402,21 +404,21 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     DomainDiff.Update( 1.0, sAx, -1.0, kAx, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     sAx.Norm2( &norm_one ) ; 
-    if (verbose) cout << " norm( sAx - kAx ) / norm(sAx ) = " 
+    if (MyVerbose) cout << " norm( sAx - kAx ) / norm(sAx ) = " 
 		      << norm_diff /norm_one << endl ; 
 
 
     DomainDiff.Update( 1.0, sAAx, -1.0, kAAx, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     sAAx.Norm2( &norm_one ) ; 
-    if (verbose) cout << " norm( sAAx - kAAx ) / norm(sAAx ) = " 
+    if (MyVerbose) cout << " norm( sAAx - kAAx ) / norm(sAAx ) = " 
 		      << norm_diff /norm_one << endl ; 
 
 
     RangeDiff.Update( 1.0, bcheck, -1.0, b, 0.0 ) ;
     RangeDiff.Norm2( &norm_diff ) ; 
     bcheck.Norm2( &norm_one ) ; 
-    if (verbose) cout << " norm( bcheck - b ) / norm(bcheck ) = " 
+    if (MyVerbose) cout << " norm( bcheck - b ) / norm(bcheck ) = " 
 		      << norm_diff /norm_one << endl ; 
 
     relresidual = norm_diff / norm_one ; 
@@ -424,7 +426,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 
     if (iam == 0 ) {
       if ( relresidual * Rcond < 1e-16 ) {
-	if (verbose) cout << " Test 1 Passed " << endl ;
+	if (MyVerbose) cout << " Test 1 Passed " << endl ;
       } else {
 	cout <<  __FILE__ << "::"  << __LINE__ << 
 	  " relresidual = " << relresidual <<

@@ -646,14 +646,14 @@
    fun:blacs_gridmap__
 }
 
-{
-   <Taucs memory leak bug #1580 >
-   Memcheck:Addr4
-   fun:recursive_multifrontal_supernodal_factor_llt
-   fun:recursive_multifrontal_supernodal_factor_llt_caller
-   fun:taucs_dccs_factor_llt_numeric
-   fun:taucs_ccs_factor_llt_numeric
-}
+# {
+#   <Taucs memory leak bug #1580 >
+#   Memcheck:Addr4
+#   fun:recursive_multifrontal_supernodal_factor_llt
+#   fun:recursive_multifrontal_supernodal_factor_llt_caller
+#   fun:taucs_dccs_factor_llt_numeric
+#   fun:taucs_ccs_factor_llt_numeric
+# }
 {
    <superludist memory leak #3 bug #1459 >
    Memcheck:Leak
@@ -661,4 +661,73 @@
    fun:at_plus_a_dist
    fun:get_perm_c_dist
    fun:pdgssvx
+}
+#
+#  Needed on my fedora linux laptop
+#
+{
+   <linux_laptop_write_1>
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   fun:mwrite
+   fun:_cio_kreqfront
+   fun:kdetach
+}
+
+{
+   <linux_laptop_write_2>
+   Memcheck:Param
+   writev(vector)
+   fun:writev
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+}
+
+
+{
+   <linux_laptop_write_3>
+   Memcheck:Param
+   writev(vector[...])
+   fun:writev
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksrfront
+}
+{
+   <linux_laptop_write_4>
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   fun:mwrite
+   fun:_cio_kreqfront
+   fun:_cipc_ksrfront
+}
+{
+   <linux_laptop_write_5>
+   Memcheck:Param
+   writev(vector[...])
+   fun:writev
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+}
+{
+   <linux_laptop_write_6>
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   fun:mwrite
+   fun:_cio_kreq
+   fun:_cipc_ksend
+}
+{
+   <linux_laptop_write_7>
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   fun:mwrite
+   fun:_cio_kreq
+   fun:kattach
 }

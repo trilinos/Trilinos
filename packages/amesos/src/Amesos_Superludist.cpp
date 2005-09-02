@@ -35,6 +35,28 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Util.h"
 // #include "CrsMatrixTranspose.h"
+#include "superlu_ddefs.h"
+#include "supermatrix.h"
+//  SuperLU defines Reduce to be a macro in util.h, this conflicts with Reduce() in Epetra_MultiVector.h
+#undef Reduce
+
+class Amesos_Superlu_Pimpl {
+public:
+  //   Teuchos::RefCountPtr<klu_symbolic> Symbolic_ ;
+  //   Teuchos::RefCountPtr<klu_numeric> Numeric_ ;
+  fact_t FactOption_; 
+  //  Here are the structures used by Superlu
+  SuperMatrix SuperluA_;
+  ScalePermstruct_t ScalePermstruct_;
+  LUstruct_t LUstruct_;
+  SOLVEstruct_t SOLVEstruct_; 
+  //! SuperLU_DIST's grid information.
+  gridinfo_t grid_;
+  //! Vector of options.
+  superlu_options_t options_;
+  
+} ;
+
 
 // ====================================================================== 
 int Superludist_NumProcRows( int NumProcs ) {
@@ -76,6 +98,7 @@ int SetNPRowAndCol(const int MaxProcesses, int& nprow, int& npcol)
 
 //=============================================================================
 Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob) :
+  PrivateSuperluData_( rcp( new Amesos_Superlu_Pimpl() ) ),
   Problem_(&prob),
   GridCreated_(0), 
   FactorizationDone_(0), 
@@ -96,7 +119,7 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob) :
 {
   Redistribute_ = true;
   AddZeroToDiag_ = false;
-  FactOption_ = SamePattern_SameRowPerm ;
+  PrivateSuperluData_->FactOption_ = SamePattern_SameRowPerm ;
   ReuseSymbolic_ = false ; 
 
   MaxProcesses_ = - 1; 
@@ -126,16 +149,16 @@ Amesos_Superludist::~Amesos_Superludist(void)
   if (PrintStatus_) PrintStatus();
 
   if ( FactorizationDone_ ) {
-    SUPERLU_FREE( SuperluA_.Store );
-    ScalePermstructFree(&ScalePermstruct_);
-    Destroy_LU(NumGlobalRows_, &grid_, &LUstruct_);
-    LUstructFree(&LUstruct_);
-    if ( options_.SolveInitialized ) {
-      dSolveFinalize(&options_, &SOLVEstruct_ ) ; 
+    SUPERLU_FREE( PrivateSuperluData_->SuperluA_.Store );
+    ScalePermstructFree(&PrivateSuperluData_->ScalePermstruct_);
+    Destroy_LU(NumGlobalRows_, &PrivateSuperluData_->grid_, &PrivateSuperluData_->LUstruct_);
+    LUstructFree(&PrivateSuperluData_->LUstruct_);
+    if ( PrivateSuperluData_->options_.SolveInitialized ) {
+      dSolveFinalize(&PrivateSuperluData_->options_, &PrivateSuperluData_->SOLVEstruct_ ) ; 
     }
   }
   if ( GridCreated_ ) {
-    superlu_gridexit(&grid_);
+    superlu_gridexit(&PrivateSuperluData_->grid_);
   }
 }
 
@@ -165,8 +188,8 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList )
     if( SuperludistParams.isParameter("Fact") )
       FactOption = SuperludistParams.get("Fact", FactOption);
 
-    if( FactOption == "SamePattern_SameRowPerm" ) FactOption_ = SamePattern_SameRowPerm;
-    else if( FactOption == "SamePattern" ) FactOption_ = SamePattern;
+    if( FactOption == "SamePattern_SameRowPerm" ) PrivateSuperluData_->FactOption_ = SamePattern_SameRowPerm;
+    else if( FactOption == "SamePattern" ) PrivateSuperluData_->FactOption_ = SamePattern;
     else if ( FactOption != "NotSet" ) 
       AMESOS_CHK_ERR(-2); // input not valid
 
@@ -361,16 +384,16 @@ int Amesos_Superludist::Factor()
   if ( ! GridCreated_ ) {
     // NOTE: nprow_ and npcol_ cannot be changed by the user
     GridCreated_ = true;
-    superlu_gridinit(comm1.Comm(), nprow_, npcol_, &grid_);
+    superlu_gridinit(comm1.Comm(), nprow_, npcol_, &PrivateSuperluData_->grid_);
   }
 
   if ( FactorizationDone_ ) {
-    SUPERLU_FREE( SuperluA_.Store );
-    ScalePermstructFree(&ScalePermstruct_);
-    Destroy_LU(NumGlobalRows_, &grid_, &LUstruct_);
-    LUstructFree(&LUstruct_);
-    if ( options_.SolveInitialized ) {
-      dSolveFinalize(&options_, &SOLVEstruct_ ) ; 
+    SUPERLU_FREE( PrivateSuperluData_->SuperluA_.Store );
+    ScalePermstructFree(&PrivateSuperluData_->ScalePermstruct_);
+    Destroy_LU(NumGlobalRows_, &PrivateSuperluData_->grid_, &PrivateSuperluData_->LUstruct_);
+    LUstructFree(&PrivateSuperluData_->LUstruct_);
+    if ( PrivateSuperluData_->options_.SolveInitialized ) {
+      dSolveFinalize(&PrivateSuperluData_->options_, &PrivateSuperluData_->SOLVEstruct_ ) ; 
     }
   }
 
@@ -384,54 +407,54 @@ int Amesos_Superludist::Factor()
     //
     //  Set up Superlu's data structures
     //
-    set_default_options_dist(&options_);
+    set_default_options_dist(&PrivateSuperluData_->options_);
 
-    dCreate_CompRowLoc_Matrix_dist( &SuperluA_, NumGlobalRows_, NumGlobalRows_, 
+    dCreate_CompRowLoc_Matrix_dist( &PrivateSuperluData_->SuperluA_, NumGlobalRows_, NumGlobalRows_, 
 				    nnz_loc, NumMyElements, MyActualFirstElement,
 				    &Aval_[0], &Ai_[0], &Ap_[0], 
 				    SLU_NR_loc, SLU_D, SLU_GE );
 
     FactorizationDone_ = true;   // i.e. clean up Superlu data structures in the destructor
 
-    ScalePermstructInit(NumGlobalRows_, NumGlobalRows_, &ScalePermstruct_);
-    LUstructInit(NumGlobalRows_, NumGlobalRows_, &LUstruct_);
+    ScalePermstructInit(NumGlobalRows_, NumGlobalRows_, &PrivateSuperluData_->ScalePermstruct_);
+    LUstructInit(NumGlobalRows_, NumGlobalRows_, &PrivateSuperluData_->LUstruct_);
 
     // stick options from ParameterList to options_ structure
     // Here we follow the same order of the SuperLU_dist 2.0 manual (pag 55/56)
     
-    assert( options_.Fact == DOFACT );  
-    options_.Fact = DOFACT ;       
+    assert( PrivateSuperluData_->options_.Fact == DOFACT );  
+    PrivateSuperluData_->options_.Fact = DOFACT ;       
 
-    if( Equil_ ) options_.Equil = (yes_no_t)YES;
-    else         options_.Equil = NO;
+    if( Equil_ ) PrivateSuperluData_->options_.Equil = (yes_no_t)YES;
+    else         PrivateSuperluData_->options_.Equil = NO;
 
-    if( ColPerm_ == "NATURAL" ) options_.ColPerm = NATURAL;
-    else if( ColPerm_ == "MMD_AT_PLUS_A" ) options_.ColPerm = MMD_AT_PLUS_A;
-    else if( ColPerm_ == "MMD_ATA" ) options_.ColPerm = MMD_ATA;
-    //    else if( ColPerm_ == "COLAMD" ) options_.ColPerm = COLAMD;     // COLAMD no longer supported in Superludist, as of July 2005
+    if( ColPerm_ == "NATURAL" ) PrivateSuperluData_->options_.ColPerm = NATURAL;
+    else if( ColPerm_ == "MMD_AT_PLUS_A" ) PrivateSuperluData_->options_.ColPerm = MMD_AT_PLUS_A;
+    else if( ColPerm_ == "MMD_ATA" ) PrivateSuperluData_->options_.ColPerm = MMD_ATA;
+    //    else if( ColPerm_ == "COLAMD" ) PrivateSuperluData_->options_.ColPerm = COLAMD;     // COLAMD no longer supported in Superludist, as of July 2005
     else if( ColPerm_ == "MY_PERMC" ) {
-      options_.ColPerm = MY_PERMC;
-      ScalePermstruct_.perm_c = perm_c_;
+      PrivateSuperluData_->options_.ColPerm = MY_PERMC;
+      PrivateSuperluData_->ScalePermstruct_.perm_c = perm_c_;
     }
 
-    if( RowPerm_ == "NATURAL" ) options_.RowPerm = (rowperm_t)NATURAL;
-    if( RowPerm_ == "LargeDiag" ) options_.RowPerm = LargeDiag;
+    if( RowPerm_ == "NATURAL" ) PrivateSuperluData_->options_.RowPerm = (rowperm_t)NATURAL;
+    if( RowPerm_ == "LargeDiag" ) PrivateSuperluData_->options_.RowPerm = LargeDiag;
     else if( ColPerm_ == "MY_PERMR" ) {
-      options_.RowPerm = MY_PERMR;
-      ScalePermstruct_.perm_r = perm_r_;
+      PrivateSuperluData_->options_.RowPerm = MY_PERMR;
+      PrivateSuperluData_->ScalePermstruct_.perm_r = perm_r_;
     }
 
-    if( ReplaceTinyPivot_ ) options_.ReplaceTinyPivot = (yes_no_t)YES;
-    else                    options_.ReplaceTinyPivot = (yes_no_t)NO;
+    if( ReplaceTinyPivot_ ) PrivateSuperluData_->options_.ReplaceTinyPivot = (yes_no_t)YES;
+    else                    PrivateSuperluData_->options_.ReplaceTinyPivot = (yes_no_t)NO;
 
-    if( IterRefine_ == "NO" ) options_.IterRefine = (IterRefine_t)NO;
-    else if( IterRefine_ == "DOUBLE" ) options_.IterRefine = DOUBLE;
-    else if( IterRefine_ == "EXTRA" ) options_.IterRefine = EXTRA;
+    if( IterRefine_ == "NO" ) PrivateSuperluData_->options_.IterRefine = (IterRefine_t)NO;
+    else if( IterRefine_ == "DOUBLE" ) PrivateSuperluData_->options_.IterRefine = DOUBLE;
+    else if( IterRefine_ == "EXTRA" ) PrivateSuperluData_->options_.IterRefine = EXTRA;
 
     //  Without the following two lines, SuperLU_DIST cannot be made
     //  quiet.
-    if (PrintNonzeros_) options_.PrintStat = (yes_no_t)YES;
-    else                options_.PrintStat = (yes_no_t)NO;
+    if (PrintNonzeros_) PrivateSuperluData_->options_.PrintStat = (yes_no_t)YES;
+    else                PrivateSuperluData_->options_.PrintStat = (yes_no_t)NO;
     
     SuperLUStat_t stat;
     PStatInit(&stat);    /* Initialize the statistics variables. */
@@ -445,11 +468,11 @@ int Amesos_Superludist::Factor()
     int nrhs = 0 ;   //  Prevents forward and back solves
     int ldx = NumGlobalRows_;     //  Should be untouched
 
-    pdgssvx(&options_, &SuperluA_, &ScalePermstruct_, &xValues, ldx, nrhs, &grid_,
-	    &LUstruct_, &SOLVEstruct_, &berr, &stat, &info);
+    pdgssvx(&PrivateSuperluData_->options_, &PrivateSuperluData_->SuperluA_, &PrivateSuperluData_->ScalePermstruct_, &xValues, ldx, nrhs, &PrivateSuperluData_->grid_,
+	    &PrivateSuperluData_->LUstruct_, &PrivateSuperluData_->SOLVEstruct_, &berr, &stat, &info);
 
-    if ( options_.SolveInitialized ) {
-      dSolveFinalize(&options_, &SOLVEstruct_ ) ; 
+    if ( PrivateSuperluData_->options_.SolveInitialized ) {
+      dSolveFinalize(&PrivateSuperluData_->options_, &PrivateSuperluData_->SOLVEstruct_ ) ; 
     }
     AMESOS_CHK_ERR(info);
 
@@ -547,9 +570,9 @@ int Amesos_Superludist::ReFactor( )
 
   if (Comm().MyPID() < nprow_ * npcol_) {
 
-    set_default_options_dist(&options_);
+    set_default_options_dist(&PrivateSuperluData_->options_);
 
-    options_.Fact = FactOption_;
+    PrivateSuperluData_->options_.Fact = PrivateSuperluData_->FactOption_;
     SuperLUStat_t stat;
     PStatInit(&stat);    /* Initialize the statistics variables. */
     int info ;
@@ -557,8 +580,8 @@ int Amesos_Superludist::ReFactor( )
     double xValues;  //  Should be untouched
     int nrhs = 0 ;   //  Prevents forward and back solves
     int ldx = NumGlobalRows_;     //  Should be untouched
-    pdgssvx(&options_, &SuperluA_, &ScalePermstruct_, &xValues, ldx, nrhs, &grid_,
-            &LUstruct_, &SOLVEstruct_, &berr, &stat, &info);
+    pdgssvx(&PrivateSuperluData_->options_, &PrivateSuperluData_->SuperluA_, &PrivateSuperluData_->ScalePermstruct_, &xValues, ldx, nrhs, &PrivateSuperluData_->grid_,
+            &PrivateSuperluData_->LUstruct_, &PrivateSuperluData_->SOLVEstruct_, &berr, &stat, &info);
     PStatFree(&stat);
     AMESOS_CHK_ERR( info ) ;
   } 
@@ -669,11 +692,11 @@ int Amesos_Superludist::Solve()
     
     if (!GridCreated_ || !FactorizationDone_)
       AMESOS_CHK_ERR(-1); // internal error
-    options_.Fact = FACTORED ;       
+    PrivateSuperluData_->options_.Fact = FACTORED ;       
 
     bool BlockSolve = true ; 
-    pdgssvx(&options_, &SuperluA_, &ScalePermstruct_, &values[0], ldx, 
-            nrhs, &grid_, &LUstruct_, &SOLVEstruct_, &berr[0], 
+    pdgssvx(&PrivateSuperluData_->options_, &PrivateSuperluData_->SuperluA_, &PrivateSuperluData_->ScalePermstruct_, &values[0], ldx, 
+            nrhs, &PrivateSuperluData_->grid_, &PrivateSuperluData_->LUstruct_, &PrivateSuperluData_->SOLVEstruct_, &berr[0], 
             &stat, &info);
     AMESOS_CHK_ERR(info);
     
@@ -757,7 +780,7 @@ void Amesos_Superludist::PrintTiming() const
   string p = "Amesos_Superludist : ";
   PrintLine();
 
-  cout << p << "Time to convert matrix to Klu format = "
+  cout << p << "Time to convert matrix to Superludist format = "
        << ConTime << " (s)" << endl;
   cout << p << "Time to redistribute matrix = "
        << MatTime << " (s)" << endl;

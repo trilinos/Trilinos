@@ -79,8 +79,8 @@ int PartialFactorizationOneStep( const char* AmesosClass,
     //  that transpose is set to a default value before it is used.
     //
     if ( transpose ) OUR_CHK_ERR( Abase->SetUseTranspose( transpose ) ); 
-    if (verbose) ParamList.set( "DebugLevel", 1 );
-    if (verbose) ParamList.set( "OutputLevel", 1 );
+    //    if (verbose) ParamList.set( "DebugLevel", 1 );
+    //    if (verbose) ParamList.set( "OutputLevel", 1 );
     if ( Steps > 1 ) {
       OUR_CHK_ERR( Abase->SetParameters( ParamList ) ); 
       if ( Steps > 2 ) {
@@ -127,8 +127,6 @@ int PartialFactorizationOneStep( const char* AmesosClass,
 		  difference.Update( 1.0, x, -1.0, xexact, 0.0 ) ;
 		  difference.Norm2( &norm_diff ) ; 
 		  x.Norm2( &norm_one ) ; 
-		  if (verbose) cout << " norm( x - xexact ) / norm(x) = " 
-				    << norm_diff /norm_one << endl ; 
 		  
 		  relerror = norm_diff / norm_one ; 
 		  
@@ -136,6 +134,9 @@ int PartialFactorizationOneStep( const char* AmesosClass,
 		  
 		  if (iam == 0 ) {
 		    if ( relresidual * Rcond > 1e-16 ) {
+		      if (verbose) cout << __FILE__ << "::"<< __LINE__ 
+					<< " norm( x - xexact ) / norm(x) = " 
+					<< norm_diff /norm_one << endl ; 
 		      errors += 1 ; 
 		    }
 		  }

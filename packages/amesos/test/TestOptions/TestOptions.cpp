@@ -581,10 +581,10 @@ int NextMain( int argc, char *argv[] ) {
 
     Abase = Afactory.Create( &AmesosClasses[i][0], Problem ) ; 
     if ( Abase == 0 ) {
-      if ( verbose ) cout << AmesosClasses[i] << " not built in this configuration"  << endl ;
+      if ( !quiet && Comm.MyPID() == 0  ) cout << AmesosClasses[i] << " not built in this configuration"  << endl ;
       AmesosClassesInstalled[i] = false;
     } else {
-      if ( verbose ) cout << " Testing " << AmesosClasses[i] << endl ;
+      if (  !quiet && Comm.MyPID() == 0  ) cout << " Testing " << AmesosClasses[i] << endl ;
       AmesosClassesInstalled[i] = true;
       Teuchos::ParameterList ParamList ;
       ParamList.set( "NoDestroy", true );    // Prevents Amesos_Mumps from deleting data

@@ -56,7 +56,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 
   {
     Teuchos::ParameterList ParamList ;
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
     ParamList.set( "Redistribute", true );
     ParamList.set( "AddZeroToDiag", true );
     Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
@@ -89,16 +88,11 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 					  
-      if (verbose) cout << " TestSuperludist relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestSuperludist relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestSuperludist maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestSuperludist maxrelerror = " << maxrelerror << endl ; 
 					  
     }
       
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", true );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
@@ -125,7 +119,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", true );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
@@ -153,7 +146,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", true );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
@@ -182,7 +174,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", true );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
@@ -211,7 +202,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
@@ -240,7 +230,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
@@ -269,7 +258,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
@@ -298,7 +286,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
@@ -327,7 +314,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       ParamList.set( "AddZeroToDiag", true );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", true );
@@ -358,7 +344,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
 	ParamList.set( "Redistribute", true );
       else
@@ -390,7 +375,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
 	ParamList.set( "Redistribute", true );
       else
@@ -422,7 +406,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
 	ParamList.set( "Redistribute", true );
       else
@@ -454,7 +437,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
 	ParamList.set( "Redistribute", true );
       else
@@ -486,7 +468,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
 	ParamList.set( "Redistribute", true );
       else
@@ -518,7 +499,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
 	ParamList.set( "Redistribute", true );
       else
@@ -550,7 +530,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
     {
       Teuchos::ParameterList ParamList ;
-      if ( verbose ) ParamList.set( "DebugLevel", 1 );
       if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
 	ParamList.set( "Redistribute", true );
       else

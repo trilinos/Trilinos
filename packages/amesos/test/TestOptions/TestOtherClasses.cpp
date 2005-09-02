@@ -32,8 +32,6 @@ int TestOtherClasses( const char* AmesosClass,
     ParamList.set( "Redistribute", true );
     ParamList.set( "AddZeroToDiag", true );
     ParamList.set( "MaxProcs", 100000 );
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
-
     //  ParamList.print( cerr, 10 ) ; 
 
     double relerror;
@@ -75,11 +73,6 @@ int TestOtherClasses( const char* AmesosClass,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestOtherClasses " << AmesosClass << " relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestOtherClasses " << AmesosClass << " relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestOtherClasses " << AmesosClass << " maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestOtherClasses " << AmesosClass << " maxrelerror = " << maxrelerror << endl ; 
-
     }
     if (verbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
     if ( verbose && Errors ) {
@@ -93,7 +86,6 @@ int TestOtherClasses( const char* AmesosClass,
     ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
     ParamList.set( "Redistribute", false );
     ParamList.set( "AddToDiag", 1e-3 );
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
 
     //  ParamList.print( cerr, 10 ) ; 
 
@@ -131,11 +123,6 @@ int TestOtherClasses( const char* AmesosClass,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestOtherClasses " << AmesosClass << " relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestOtherClasses " << AmesosClass << " relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestOtherClasses " << AmesosClass << " maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestOtherClasses " << AmesosClass << " maxrelerror = " << maxrelerror << endl ; 
-
     }
     if (verbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
     if ( verbose && Errors ) {
@@ -150,10 +137,7 @@ int TestOtherClasses( const char* AmesosClass,
   //     2)  Refactorize = true 
   {
     Teuchos::ParameterList ParamList ;
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
     ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
-    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 1 );
     ParamList.set( "Refactorize", true );
       
     double relerror;
@@ -186,11 +170,6 @@ int TestOtherClasses( const char* AmesosClass,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << AmesosClass << "  relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << AmesosClass << "  relerror = " << relerror << endl ; 
-      if (verbose) cout << AmesosClass << "  maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << AmesosClass << "  maxrelerror = " << maxrelerror << endl ; 
-	
     }
     if (verbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
     if ( verbose && Errors ) {
@@ -206,17 +185,12 @@ int TestOtherClasses( const char* AmesosClass,
   //     4)  ComputeTrueResidual==true
   {
     Teuchos::ParameterList ParamList ;
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
     ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
-    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 1 );
     ParamList.set( "ComputeTrueResidual", true );
       
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Test 2) no fail yet " << endl ; 
-
     int Errors = PerformOneSolveAndTest(AmesosClass,
 					EpetraMatrixType,
 					Comm, 
@@ -239,11 +213,6 @@ int TestOtherClasses( const char* AmesosClass,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << AmesosClass << "  relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << AmesosClass << "  relerror = " << relerror << endl ; 
-      if (verbose) cout << AmesosClass << "  maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << AmesosClass << "  maxrelerror = " << maxrelerror << endl ; 
-	
     }
     if (verbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
     if ( verbose && Errors > 0 ) {

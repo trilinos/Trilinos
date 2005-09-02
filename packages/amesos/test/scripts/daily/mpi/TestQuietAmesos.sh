@@ -102,7 +102,9 @@ echo `uname -a` >>& $file
 #  Set MPI_GROUP_MAX to allow this test to pass desipte bug #1210
 setenv MPI_COMM_MAX 4096
 setenv MPI_GROUP_MAX 4096
-foreach f ( Test_Epetra_RowMatrix Test_SuperLU_DIST TestOptions )
+    echo "TEST STARTED"
+# foreach f ( Test_Epetra_RowMatrix Test_SuperLU_DIST TestOptions )
+foreach f ( TestOptions )
   cd $f
   set exefiles = (*.exe)
   set TestRan = False 
@@ -123,7 +125,7 @@ foreach f ( Test_Epetra_RowMatrix Test_SuperLU_DIST TestOptions )
           # A test failed.
           set AnError = True
 	  if ( ! -z ../$file4 ) then 
-             echo "  ******** Test w/ 4 proc yielded these messages: ********" >>& ../$file
+             echo "  ******** Test w/ 1 proc yielded these messages: ********" >>& ../$file
 	     cat ../$file4 >> ../$file 
              echo "  ******** End of messages ********" >>& ../$file
           endif
@@ -181,6 +183,7 @@ if ( "$2" == "True" ) then
 endif
 
 if ( "$AnError" == "True" ) then
+    echo "End Result: TEST FAILED"
     exit 1
 else
     echo "End Result: TEST PASSED"

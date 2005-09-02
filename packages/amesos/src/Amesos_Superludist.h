@@ -44,10 +44,16 @@
 #include "Epetra_Comm.h"
 #endif
 
-#include "superlu_ddefs.h"
-#include "supermatrix.h"
-//  SuperLU defines Reduce to be a macro in util.h, this conflicts with Reduce() in Epetra_MultiVector.h
-#undef Reduce
+
+// Amesos_Superludist_Pimpl contains a pointer to structures defined in 
+// superlu_ddefs.h.  This prevents Amesos_Superludist.h 
+// from having to include superludist.h.
+//
+//  Doxygen does not handle forward class references well.
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+class Amesos_Superlu_Pimpl ; 
+#endif
+
 
 //! Amesos_Superludist:  An object-oriented wrapper for Superludist.
 /*!  Amesos_Superludist will solve a linear systems of equations: <TT>A X = B</TT>
@@ -144,6 +150,12 @@ private:
     return(*(CrsUniformMatrix_.get()));
   }
 
+  //
+  //  PrivateSuperluData_ contains pointers to data needed by klu whose
+  //  data structures are defined by klu.h
+  //
+  Teuchos::RefCountPtr<Amesos_Superlu_Pimpl> PrivateSuperluData_; 
+
   int RedistributeA();
 
   int ReFactor();
@@ -159,7 +171,6 @@ private:
 
   //! Allows FactOption to be used on subsequent calls to pdgssvx from NumericFactorization
   bool ReuseSymbolic_; 
-  fact_t FactOption_; 
   //! redistribute the input matrix prior to calling Superludist
   bool Redistribute_ ; 
 
@@ -178,18 +189,9 @@ private:
   vector <double> Aval_;
   //! Contains the global ID of local columns.
   int* Global_Columns_;
-  //  Here are the structures used by Superlu
-  SuperMatrix SuperluA_;
-  ScalePermstruct_t ScalePermstruct_;
-  LUstruct_t LUstruct_;
-  SOLVEstruct_t SOLVEstruct_; 
 
   int nprow_;
   int npcol_;
-  //! SuperLU_DIST's grid information.
-  gridinfo_t grid_;
-  //! Vector of options.
-  superlu_options_t options_;
 
   bool PrintNonzeros_;
   string ColPerm_;

@@ -64,17 +64,12 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
 
   {
     Teuchos::ParameterList ParamList ;
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
-    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 1 );
     ParamList.set( "MaxProcs", 100000 );
     //  ParamList.print( cerr, 10 ) ; 
       
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Test 1) no fail yet " << endl ; 
-
     int Errors = PerformOneSolveAndTest("Amesos_Scalapack",
 					EpetraMatrixType,
 					Comm, 
@@ -101,13 +96,10 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestScalapack relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestScalapack relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestScalapack maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestScalapack maxrelerror = " << maxrelerror << endl ; 
-	
     }
-    if (verbose)  cout << " TestScalapack NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestScalapack NumErrors = " << NumErrors 
+		       << __FILE__ << "::" << __LINE__ 
+		       << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << "Amesos_Scalapack" << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
@@ -118,9 +110,6 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
   //     2)  ComputeVectorNorms==true,  MaxProcs==2
   {
     Teuchos::ParameterList ParamList ;
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
-    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 1 );
     ParamList.set( "MaxProcs", 2 );
     ParamList.set( "ComputeTrueResidual", true );
     //  ParamList.print( cerr, 10 ) ; 
@@ -128,8 +117,6 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Test 2) no fail yet " << endl ; 
-
     int Errors = PerformOneSolveAndTest("Amesos_Scalapack",
 					EpetraMatrixType,
 					Comm, 
@@ -152,13 +139,10 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestScalapack relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestScalapack relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestScalapack maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestScalapack maxrelerror = " << maxrelerror << endl ; 
-	
     }
-    if (verbose)  cout << " TestScalapack NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestScalapack NumErrors = " << NumErrors 
+		       << __FILE__ << "::" << __LINE__ 
+		       << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << "Amesos_Scalapack" << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
@@ -169,9 +153,6 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
   //     3)  ComputeVectorNorms==true,  MaxProcs==2, grid_mb_ =2, grid_nb_=2
   {
     Teuchos::ParameterList ParamList ;
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
-    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 1 );
     ParamList.set( "MaxProcs", 2 );
     ParamList.set( "ComputeTrueResidual", true );
     //  ParamList.print( cerr, 10 ) ; 
@@ -182,8 +163,6 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Test 3) no fail yet " << endl ; 
-
     int Errors = PerformOneSolveAndTest("Amesos_Scalapack",
 					EpetraMatrixType,
 					Comm, 
@@ -206,13 +185,10 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestScalapack relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestScalapack relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestScalapack maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestScalapack maxrelerror = " << maxrelerror << endl ; 
-	
     }
-    if (verbose)  cout << " TestScalapack NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestScalapack NumErrors = " << NumErrors << " "
+		       << __FILE__ << "::" << __LINE__ 
+		       << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << "Amesos_Scalapack" << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
@@ -223,9 +199,6 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
   //     4)  ComputeTrueResidual==true,  MaxProcs==1000 grid_mb_ =3, grid_nb_=3
   {
     Teuchos::ParameterList ParamList ;
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
-    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 1 );
     ParamList.set( "MaxProcs", 1000 );
     ParamList.set( "ComputeTrueResidual", true );
     Teuchos::ParameterList& ScalapackParams = ParamList.sublist("Scalapack") ;
@@ -235,8 +208,6 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Test 4) no fail yet " << endl ; 
-
     int Errors = PerformOneSolveAndTest("Amesos_Scalapack",
 					EpetraMatrixType,
 					Comm, 
@@ -259,13 +230,10 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestScalapack relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestScalapack relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestScalapack maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestScalapack maxrelerror = " << maxrelerror << endl ; 
-	
     }
-    if (verbose)  cout << " TestScalapack NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout 
+      << __FILE__ << "::" << __LINE__ 
+      << " TestScalapack NumErrors = " << NumErrors << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << "Amesos_Scalapack" << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
@@ -276,9 +244,6 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
   //     5)  "2D distribution"=false, ComputeTrueResidual=true, ComputeVectorNorms=true
   {
     Teuchos::ParameterList ParamList ;
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
-    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 1 );
     ParamList.set( "MaxProcs", 1000 );
     ParamList.set( "ComputeTrueResidual", true );
     Teuchos::ParameterList& ScalapackParams = ParamList.sublist("Scalapack") ;
@@ -288,8 +253,6 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Test 5) no fail yet " << endl ; 
-
     int Errors = PerformOneSolveAndTest("Amesos_Scalapack",
 					EpetraMatrixType,
 					Comm, 
@@ -312,13 +275,10 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestScalapack relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestScalapack relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestScalapack maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestScalapack maxrelerror = " << maxrelerror << endl ; 
-	
     }
-    if (verbose)  cout << " TestScalapack NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout 
+      << __FILE__ << "::" << __LINE__ 
+      << " TestScalapack NumErrors = " << NumErrors << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << "Amesos_Scalapack" << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
@@ -331,15 +291,9 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
   //     6)  no parameters
   {
     Teuchos::ParameterList ParamList ;
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
-    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 1 );
-      
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout << " Test 6) no fail yet " << endl ; 
-
     int Errors = PerformOneSolveAndTest("Amesos_Scalapack",
 					EpetraMatrixType,
 					Comm, 
@@ -362,13 +316,10 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestScalapack relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestScalapack relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestScalapack maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestScalapack maxrelerror = " << maxrelerror << endl ; 
-	
     }
-    if (verbose)  cout << " TestScalapack NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout 
+      << __FILE__ << "::" << __LINE__ 
+      << " TestScalapack NumErrors = " << NumErrors << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << "Amesos_Scalapack" << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  

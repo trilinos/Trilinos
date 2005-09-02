@@ -35,10 +35,6 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
   maxrelresidual = 0.0;
   const Epetra_Comm& Comm = Amat->Comm();
 
-  if ( verbose ) ParamList.set( "DebugLevel", 1 );
-  if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-  else ParamList.set( "OutputLevel", 1 );
-
   //
   //     1)  no parameters
 
@@ -75,13 +71,11 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestKlu relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestKlu relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestKlu maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestKlu maxrelerror = " << maxrelerror << endl ; 
-	
     }
-    if (verbose)  cout << " TestKlu NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestKlu NumErrors = " 
+		       << NumErrors << " "
+		       << __FILE__ << "::" << __LINE__ 
+		       << endl ; 
     if ( Amat->Comm().MyPID() == 0 && Errors > 0 ) {
       cout << "Amesos_Klu" 
 	   << __FILE__ << "::"  << __LINE__ 
@@ -127,13 +121,11 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestKlu relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestKlu relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestKlu maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestKlu maxrelerror = " << maxrelerror << endl ; 
-	
     }
-    if (verbose)  cout << " TestKlu NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestKlu NumErrors = " 
+		       << NumErrors << " "
+		       << __FILE__ << "::" << __LINE__ 
+		       << endl ; 
     if (  Amat->Comm().MyPID() == 0 && Errors > 0 ) {
       cout << "Amesos_Klu" 
 	   << __FILE__ << "::"  << __LINE__ 
@@ -182,13 +174,11 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestKlu relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestKlu relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestKlu maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestKlu maxrelerror = " << maxrelerror << endl ; 
-	
     }
-    if (verbose)  cout << " TestKlu NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestKlu NumErrors = " 
+		       << NumErrors << " "
+		       << __FILE__ << "::" << __LINE__ 
+		       << endl ; 
     if (  Amat->Comm().MyPID() == 0 && Errors > 0 ) {
       cout << "Amesos_Klu" 
 	   << __FILE__ << "::"  << __LINE__ 
@@ -233,13 +223,11 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestKlu relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestKlu relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestKlu maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestKlu maxrelerror = " << maxrelerror << endl ; 
-	
     }
-    if (verbose)  cout << " TestKlu NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestKlu NumErrors = " 
+		       << NumErrors << " "
+		       << __FILE__ << "::" << __LINE__ 
+		       << endl ; 
     if ( Comm.MyPID() == 0 && Errors > 0 ) {
       cout << "Amesos_Klu" 
 	   << __FILE__ << "::"  << __LINE__ 
@@ -253,11 +241,6 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
   //
   //     3)  ScaleMethod = 1 - argh I don't see how ScaleMEthod can work
   {
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
-    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 1 );
-    ParamList.set( "ScaleMethod", 1 );
-      
     double relerror;
     double relresidual;
       
@@ -282,13 +265,11 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestKlu relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestKlu relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestKlu maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestKlu maxrelerror = " << maxrelerror << endl ; 
-	
     }
-    if (verbose)  cout << " TestKlu NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestKlu NumErrors = " 
+		       << NumErrors << " "
+		       << __FILE__ << "::" << __LINE__ 
+		       << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << "Amesos_Klu" << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
@@ -302,9 +283,6 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
   //
   //     4)  ComputeTrueResidual==true
   {
-    if ( verbose ) ParamList.set( "DebugLevel", 1 );
-    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
-    else ParamList.set( "OutputLevel", 1 );
     ParamList.set( "ComputeTrueResidual", true );
     //    Teuchos::ParameterList& KluParams = ParamList.sublist("Klu") ;
     //    KluParams.set( "grid_mb", 3 );
@@ -334,13 +312,9 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
       NumTests++ ; 
 
-      if (verbose) cout << " TestKlu relresidual = " <<relresidual << endl ; 
-      if (verbose) cout << " TestKlu relerror = " << relerror << endl ; 
-      if (verbose) cout << " TestKlu maxrelresidual = " << maxrelresidual << endl ; 
-      if (verbose) cout << " TestKlu maxrelerror = " << maxrelerror << endl ; 
-	
     }
-    if (verbose)  cout << " TestKlu NumErrors = " << NumErrors << endl ; 
+    if (verbose)  cout << " TestKlu NumErrors = " << NumErrors 
+		       << " " << __FILE__ < "::" << __LINE__ << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << "Amesos_Klu" << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  

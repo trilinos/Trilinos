@@ -273,7 +273,7 @@ int Amesos_Taucs::PerformNumericFactorization( )
 
     if (ierr != 0) 
     {
-      cerr << "Amesos_Taucs: error during symbolic factorization ("
+      cerr << "Amesos_Taucs: error during numeric factorization ("
         << ierr << ")" << endl;
       AMESOS_CHK_ERR(-1);
     }
