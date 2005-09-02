@@ -30,33 +30,22 @@
 created by the python distutils module."""
 
 # System includes
-import commands
 import os
-import string
 import sys
 from   distutils.util import get_platform
 
-# Consruct the setup.txt file name
+# Obtain the current directory name
 myDir,myName = os.path.split(__file__)
-setup_txt    = os.path.normpath(os.path.join(myDir, "..", "src", "setup.txt"))
-
-f = open(setup_txt)
-makeInfo = f.readlines()
-f.close()
-makeInfo = eval(string.join(makeInfo))
 
 # Construct the the build library directory name
 libDir = "lib.%s-%s" % (get_platform(), sys.version[0:3])
 
-# Get the path to the build directories
-fullPath = os.path.normpath(os.path.join(myDir, "..", "src", "build", libDir,
-                                         "PyTrilinos"))
+# Get the full path to the build directories
+fullPath   = os.path.normpath(os.path.join(myDir, "..", "src", "build", libDir,
+                                           "PyTrilinos"))
 epetraPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "epetra",
                                            "python", "src", "build", libDir,
                                            "PyTrilinos"))
-epetraExtPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "epetraext",
-                                              "python", "src", "build", libDir,
-                                              "PyTrilinos"))
 
 # Insert the full path to the build library directory
 # at the beginning of the python search path
@@ -64,5 +53,3 @@ if fullPath:
     sys.path.insert(0,fullPath)
 if epetraPath:
     sys.path.insert(1,epetraPath)
-if epetraExtPath:
-    sys.path.insert(1,epetraExtPath)

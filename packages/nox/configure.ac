@@ -922,6 +922,7 @@ AC_CONFIG_FILES([
                 test/petsc/Makefile
 		python/Makefile
 		python/src/Makefile
+		python/src/TRILINOS_HOME_DIR
 		python/src/__init__.py
 		python/src/PyTrilinos/__init__.py
 		python/src/.deps/dummy

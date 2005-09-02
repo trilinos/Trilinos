@@ -26,16 +26,17 @@
 # ************************************************************************
 # @HEADER
 
+# Include export Makefiles
+include $(top_builddir)/Makefile.export.nox
+include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
+
+NOX_PYTHON_INCLUDES = $(NOX_INCLUDES) $(PYTRILINOS_INCLUDES)
+NOX_PYTHON_LIBS     = $(NOX_LIBS)     $(PYTRILINOS_LIBS)
+
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = \
-	-I$(top_srcdir)/src                  \
-	-I$(top_srcdir)/src-epetra           \
-	-I$(top_srcdir)/src-lapack           \
-        -I$(top_srcdir)/python/src           \
-        -I$(top_srcdir)/../epetra/src        \
-        -I$(top_srcdir)/../epetra/python/src \
-        -I$(top_srcdir)/../PyTrilinos/src
+SWIG_CXXFLAGS = $(NOX_PYTHON_INCLUDES)               \
+		-I$(top_srcdir)/../epetra/python/src
 
 # Default make target
 all-am: build
@@ -69,27 +70,7 @@ WRAPPERS    = $(INTERFACES:.i=_wrap.cpp)
 PROXIES_TMP = $(INTERFACES:.i=.py      )
 PROXIES     = $(PROXIES_TMP:NOX_=      )
 
-# File setup.txt is a way to transfer make variables to the setup.py
-# python script
-setup.txt: Makefile
-	@echo "creating $@"
-	@echo "{"                                    >  $@
-	@echo "  'top_srcdir'  : '$(top_srcdir)',"   >> $@
-	@echo "  'srcdir'      : '$(srcdir)',"       >> $@
-	@echo "  'top_builddir': '$(top_builddir)'," >> $@
-	@echo "  'CC'          : '$(CC)',"           >> $@
-	@echo "  'CXX'         : '$(CXX)',"          >> $@
-	@echo "  'LDFLAGS'     : '$(LDFLAGS)',"      >> $@
-	@echo "  'LAPACK_LIBS' : '$(LAPACK_LIBS)',"  >> $@
-	@echo "  'BLAS_LIBS'   : '$(BLAS_LIBS)',"    >> $@
-	@echo "  'FLIBS'       : '$(FLIBS)',"        >> $@
-	@echo "  'LIBS'        : '$(LIBS)',"         >> $@
-	@echo "  'PYTHON'      : '$(PYTHON)',"       >> $@
-	@echo "  'NOX_EPETRA'  : '$(NOX_EPETRA)',"   >> $@
-	@echo "  'NOX_LAPACK'  : '$(NOX_LAPACK)',"   >> $@
-	@echo "}"                                    >> $@
-
-build: $(WRAPPERS) setup.txt $(tempdir)
+build: $(WRAPPERS) $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
@@ -99,7 +80,7 @@ clean-local:
 	$(PYTHON) $(srcdir)/setup.py clean
 	$(RM) -r ../../packages
 
-CLEANFILES += setup.txt $(WRAPPERS) $(PROXIES)
+CLEANFILES += $(WRAPPERS) $(PROXIES)
 
 # ------------------------------------------------------------------------
 # Extra files to be installed by 'make dist'

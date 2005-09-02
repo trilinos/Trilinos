@@ -53,6 +53,8 @@ except IOError:
 # nox directory, and srcDir is the path for the python source directory
 pakDir = makeInfo.get("top_srcdir","")
 srcDir = makeInfo.get("srcdir"    ,"")
+CC     = makeInfo.get("CC" )
+CXX    = makeInfo.get("CXX")
 
 # Obtain the version from the package version function, using regular
 # expressions.  This assumes that the function returns a string constant of the
@@ -148,6 +150,12 @@ for lib in libs:
         stdLibs.append(lib[2:])
     else:
         extraLinkArgs.append(lib)
+
+# Compiler and linker
+sysconfig.get_config_vars()
+config_vars = sysconfig._config_vars;
+config_vars['CC']  = CC
+config_vars['CXX'] = CXX
 
 # Define the strings that refer to the required source files.
 locaTopLevelWrap          = "LOCA_TopLevel_wrap.cpp"
