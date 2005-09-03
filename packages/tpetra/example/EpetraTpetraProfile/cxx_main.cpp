@@ -33,6 +33,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Export.h"
+#include "Epetra_Version.h"
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -55,7 +56,7 @@
 #include "Teuchos_Array.hpp"
 
 void test(Epetra_Comm& comm, Epetra_Map& map, Epetra_CrsMatrix& A, Epetra_Vector& xexact,
-		  Epetra_Vector& b, int dim, int nnz, bool verbose, bool smallProblem);
+		  Epetra_Vector& b, int dim, bool verbose, bool smallProblem);
 
 void outputResults(bool const verbose, int niters, 
 				   double epetraInsertTime, double epetraFillCompleteTime, 
@@ -80,6 +81,9 @@ int main(int argc, char *argv[]) {
 	
 	if(verbose) {
 		cout << "\n===========================================================================================\n";
+		cout << "Epetra Tpetra Profile" << endl;
+		cout << Epetra_Version() << endl;
+		cout << Tpetra::Tpetra_Version() << endl;
 		cout << "===========================================================================================\n\n";
 	}
 	
@@ -91,9 +95,6 @@ int main(int argc, char *argv[]) {
 		<< argv[0] << " mymatrix.hb" << endl << endl;
 		return(1);
 	}
-	
-	if(verbose)
-		cout << Tpetra::Tpetra_Version() << endl;
 	
 	// ------------------------------------------------------------------
 	// Use TrilUtil's ReadHb2Epetra to read in data file
@@ -126,7 +127,6 @@ int main(int argc, char *argv[]) {
 	
 	// redistribute the matrix
 	A.Export(*readA, exporter, Add);
-	A.FillComplete();
 	
 	// ------------------------------------------------------------------
 	// Other initial stuff
@@ -134,18 +134,18 @@ int main(int argc, char *argv[]) {
 	
 	bool smallProblem = false;
 	int dim = map.NumGlobalElements();
-	int nnz = A.NumGlobalNonzeros();
 	if(dim < 100) 
 		smallProblem = true;
 	
-	if(verbose && smallProblem)
-		cout << "Original Matrix = " << endl;
-	if(smallProblem)
+	/*if(smallProblem) {
+		if(verbose)
+			cout << "Original Matrix = " << endl;
 		cout << A << endl;
+	}
 	
 	if(verbose)
 		cout << "Problem Dimension        = " << dim << endl
-		     << "Number of matrix entries = " << nnz << endl;
+		     << "Number of matrix entries = " << nnz << endl;*/
 	
 	// ------------------------------------------------------------------
 	// start of performance testing
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
 	// convert dim and nnz from global values to local values?
 	dim = map.NumMyElements();
 	
-	test(comm, map, A, xexact, b, dim, nnz, verbose, smallProblem);
+	test(comm, map, A, xexact, b, dim, verbose, smallProblem);
 	
 	// ------------------------------------------------------------------
 	// end of performance testing
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
 // main testing function: does performance testing on both Epetra and Tpetra
 //=========================================================================================
 void test(Epetra_Comm& comm, Epetra_Map& map, Epetra_CrsMatrix& A, Epetra_Vector& xexact, 
-		  Epetra_Vector& b, int dim, int nnz, bool verbose, bool smallProblem) {
+		  Epetra_Vector& b, int dim, bool verbose, bool smallProblem) {
 	// ------------------------------------------------------------------
 	// create Tpetra versions of map, xexact, and b
 	// ------------------------------------------------------------------
@@ -222,21 +222,23 @@ void test(Epetra_Comm& comm, Epetra_Map& map, Epetra_CrsMatrix& A, Epetra_Vector
 	// measure time to do creation and insertions
 	// ------------------------------------------------------------------
 	
-	double tstart = timer.ElapsedTime();
+	double startTime = timer.ElapsedTime();
 	Epetra_CrsMatrix Ae(Copy, map, 0);
 	for(int i = 0; i < dim; i++) {
-		A.ExtractMyRowView(i, numEntries, values, indices);
-		Ae.InsertGlobalValues(map.GID(i), numEntries, values, indices);
+		int GIDi = A.GRID(i);
+		A.ExtractGlobalRowView(GIDi, numEntries, values, indices);
+		Ae.InsertGlobalValues(GIDi, numEntries, values, indices);
 	}
-	double epetraInsertTime = timer.ElapsedTime() - tstart;
+	double epetraInsertTime = timer.ElapsedTime() - startTime;
 	
-	tstart = timer.ElapsedTime();
+	startTime = timer.ElapsedTime();
 	Tpetra::CisMatrix<int, double> At(vectorspace);
 	for(int i = 0; i < dim; i++) {
-		A.ExtractMyRowView(i, numEntries, values, indices);
-		At.submitEntries(Tpetra::Insert, vectorspace.getGlobalIndex(i), numEntries, values, indices);
+		int GIDi = A.GRID(i);
+		A.ExtractGlobalRowView(GIDi, numEntries, values, indices);
+		At.submitEntries(Tpetra::Insert, GIDi, numEntries, values, indices);
 	}
-	double tpetraInsertTime = timer.ElapsedTime() - tstart;
+	double tpetraInsertTime = timer.ElapsedTime() - startTime;
 
 	// ------------------------------------------------------------------
 	// measure time to do fillComplete
@@ -253,29 +255,35 @@ void test(Epetra_Comm& comm, Epetra_Map& map, Epetra_CrsMatrix& A, Epetra_Vector
 	// measure time to do multiply/apply
 	// ------------------------------------------------------------------
 	
+	// First we call A.FillComplete() so that we can call A.NumGlobalNonzeros().
+	// This will give us the nnz value we use. (We don't extract nnz from a call
+	// to Ae.NumGlobalNonzeros() because we want to keep the states of Ae and At
+	// as identical as possible.)
+	A.FillComplete();
+	int nnz = A.NumGlobalNonzeros();
+	
 	// Next, compute how many times we should call the Multiply method, 
 	// assuming a rate of 100 MFLOPS and a desired time of 1 second total.
-	int niters = static_cast<int>(100000000.0 / static_cast<double>(2 * nnz));
-	
-	if(smallProblem) 
+	int niters = static_cast<int>(100000000.0 / static_cast<double>(2 * nnz));	
+	if(smallProblem) // "small" problems are usually used for diagnostics, so only do it once
 		niters = 1;
 	
 	Epetra_Flops counter;
 	Epetra_Vector bcomp_e(map);
 	Ae.SetFlopCounter(counter);
-	tstart = timer.ElapsedTime();
+	startTime = timer.ElapsedTime();
 	for(int i = 0; i < niters; i++) 
 		Ae.Multiply(false, xexact, bcomp_e);
-	double epetraMatvecTime = timer.ElapsedTime() - tstart;
+	double epetraMatvecTime = timer.ElapsedTime() - startTime;
 	double epetraNumFlops = Ae.Flops(); // Total number of Epetra FLOPS in Multiplies
 	
 	Teuchos::Flops flops;
 	Tpetra::Vector<int, double> bcomp_t(vectorspace);
 	At.setFlopCounter(flops);
-	tstart = timer.ElapsedTime();
+	startTime = timer.ElapsedTime();
 	for(int i = 0; i < niters; i++) 
 		At.apply(xexact_t, bcomp_t); // At * xexact_t = bcomp_t
-	double tpetraMatvecTime = timer.ElapsedTime() - tstart;
+	double tpetraMatvecTime = timer.ElapsedTime() - startTime;
 	double tpetraNumFlops = At.getFlops(); // Total number of Tpetra FLOPS in Multiplies
 	
 	// ------------------------------------------------------------------
