@@ -802,12 +802,12 @@ namespace Anasazi {
       //
       for (rank = size; rank > 0; --rank) {
 
-        U = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(size,size) );              
-	//
+        U = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(rank,rank) );              
+        //
         // Copy KK & MM
         //
-        KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, KK, size, size ) );
-        MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, *MM, size, size ) );
+        KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, KK, rank, rank ) );
+        MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, *MM, rank, rank ) );
         //
         // Solve the generalized eigenproblem with LAPACK
         //
@@ -834,15 +834,17 @@ namespace Anasazi {
         // Check the quality of eigenvectors
         // ( using mass-orthonormality )
         //
-        Teuchos::SerialDenseMatrix<int,ScalarType> MMcopy2( Teuchos::Copy, *MM, size, size );          
-        for (i = 0; i < size; ++i) {
+        Teuchos::SerialDenseMatrix<int,ScalarType> MMcopy2( Teuchos::Copy, *MM, rank, rank );          
+        for (i = 0; i < rank; ++i) {
           for (j = 0; j < i; ++j)
             MMcopy2(i,j) = (*MM)(j,i);
         }
-        blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, size, rank, size, one, MMcopy2.values(), MMcopy2.stride(), 
-                  KKcopy->values(), KKcopy->stride(), zero, U->values(), U->stride());
-        blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS, rank, rank, size, one, KKcopy->values(), KKcopy->stride(), 
-                  U->values(), U->stride(), zero, MMcopy2.values(), MMcopy2.stride());
+        U->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,MMcopy2,*KKcopy,zero);
+        //blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, size, rank, size, one, MMcopy2.values(), MMcopy2.stride(), 
+        //          KKcopy->values(), KKcopy->stride(), zero, U->values(), U->stride());
+        MMcopy2.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*KKcopy,*U,zero);
+        //blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS, rank, rank, size, one, KKcopy->values(), KKcopy->stride(), 
+        //          U->values(), U->stride(), zero, MMcopy2.values(), MMcopy2.stride());
         ScalarType maxNorm = zero;
         ScalarType maxOrth = zero;
         for (i = 0; i < rank; ++i) {
@@ -870,6 +872,9 @@ namespace Anasazi {
       // Copy the computed eigenvectors and eigenvalues
       // ( they may be less than the number requested because of deflation )
       //
+      
+      // cout << "directSolve    rank: " << rank << "\tsize: " << size << endl;
+
       *nev = (rank < *nev) ? rank : *nev;
       EV->putScalar( zero );
       blas.COPY( *nev, &tt[0], 1, &(*theta)[0], 1 );
