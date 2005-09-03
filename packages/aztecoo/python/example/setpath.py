@@ -46,6 +46,9 @@ fullPath   = os.path.normpath(os.path.join(myDir, "..", "src", "build", libDir,
 epetraPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "epetra",
                                            "python", "src", "build", libDir,
                                            "PyTrilinos"))
+triutilsPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "triutils",
+                                             "python", "src", "build", libDir,
+                                             "PyTrilinos"))
 
 # Insert the full path to the build library directory
 # at the beginning of the python search path
@@ -53,3 +56,5 @@ if fullPath:
     sys.path.insert(0,fullPath)
 if epetraPath:
     sys.path.insert(1,epetraPath)
+if triutilsPath:
+    sys.path.insert(2,triutilsPath)
