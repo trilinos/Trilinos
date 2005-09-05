@@ -36,7 +36,9 @@ SUBDIRS = MultiLevelPreconditioner_NonSym    \
 	  AztecSimple                        \
           Zoltan                             \
           IFPACKSmoothers                    \
-          MLAPICompare                       \
+          MLAPILinearCombination             \
+          MLAPISerialMatrix                  \
+          MLAPIDistributedMatrix             \
           2d_Poisson                         \
           3d_Poisson                         \
           Communicator                       \
