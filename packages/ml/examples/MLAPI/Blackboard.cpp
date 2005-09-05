@@ -62,82 +62,45 @@ int main(int argc, char *argv[])
     
     Space MySpace(4 * GetNumProcs());
 
-    // MLAPI::SerialMatrix is a very simple and convenient Epetra_RowMatrix 
-    // derived class. Inserting a new element is just A(row, col) = val.
-    // Most of the methods of Epetra_RowMatrix are implemented in 
-    // MLAPI::SerialMatrix.
+    // Class MLAPI::DistributedMatrix is a simple way to define
+    // matrices. This class can be used to define distributed matrices. Each
+    // processor can set on-processor and off-processor elements. Before any
+    // use, the matrix need to be "freezed", so that the communication pattern
+    // can be established. This is done by method FillComplete(). After having
+    // called this method, elements can no longer be added; however, already
+    // inserted elements can be modified using method ReplaceElement().
     //
-    // MLAPI::SerialMatrix can be used for serial computations only. 
-    // Furthermore, it is *not* meant to be efficient, just easy-to-use. 
-    // Users should consider
-    // other Epetra_RowMatrix derived classes (like Epetra_CrsMatrix or
-    // Epetra_VbrMatrix) in order to define parallel and scalable matrices.
-    // Function Gallery() returns some parallel matrices, see one of the
-    // other MLAPI examples.
-    //
-    // NOTE: each time A(row,col) is called, a zero element is inserted if
-    // not already present in the matrix!
-
-    if (GetNumProcs() == 1) {
-
-      SerialMatrix A_Mat(MySpace, MySpace);
-      for (int i = 0 ; i < MySpace.GetNumGlobalElements() ; ++i) {
-        if (i) A_Mat(i, i - 1) = -1.0;
-        A_Mat(i,i) = 2.0;
-        if (i + 1 != A_Mat.NumGlobalCols())
-          A_Mat(i, i + 1) = -1.0;
-      }
-    }
-
-    // Class MLAPI::DistributedMatrix is another simple way to define
-    // matrices. This class is a little bit more complex to be used
-    // than MLAPI::SerialMatrix, but it works with any numbers of
-    // processors. Elements can be set usign SetElement(row, col, value),
-    // where `row' and `col' refer to the GLOBAL numbering. Any processor
-    // can set any element (that is, also non-local elements).
-    // Note that DistributedMatrix's MUST be FillComplete()'d in order
-    // to be wrapped as Operator's. After the call to FillComplete(),
-    // no new elements can be inserted into the matrix (although, elements
-    // already inserted can be changed).
-
-    DistributedMatrix A_Dist(MySpace, MySpace);
+    // This class is based on the Epetra_FECrsMatrix class. The insertion of
+    // elements is somehow slower, but the matrix-vector product is as
+    // efficient as those of the Epetra_FECrsmatrix class (with the only
+    // overhead of an additional function call).
+    
+    DistributedMatrix A(MySpace, MySpace);
 
     // As any processor can set any element, here we fill the entire
-    // matrix on processor 1 only. Clearly, each processor can fill
-    // its own part only.
+    // matrix on processor 0 only. It is of course possible (and preferable)
+    // to let each processor fill local rows only.
 
     if (GetMyPID() == 0) {
 
       for (int i = 0 ; i < MySpace.GetNumGlobalElements() ; ++i) {
 
-        if (i) A_Dist.SetElement(i, i - 1, -1.0);
-        A_Dist.SetElement(i, i, 2.0);
-        if (i + 1 != A_Dist.NumGlobalCols())
-          A_Dist.SetElement(i, i + 1, -1.0);
-
+        if (i) 
+          A(i, i - 1) = -1.0;
+        if (i + 1 != A.NumGlobalCols())
+          A(i, i + 1) = -1.0;
+        A(i, i) = 2.0;
       }
     }
 
-    A_Dist.FillComplete(); 
+    A.FillComplete(); 
 
     // To get the (row, col) value of the matrix, use method
     // value = GetElement(row, col). Note that both `row' and `col'
     // refer to global indices; however row must be a locally hosted row.
     // If (row, col) is not found, value is set to 0.0.
 
-    cout << A_Dist;
-
-    // Note that both MLAPI::SerialMatrix and MLAPI::DistributedMatrix 
-    // cannot be copied or reassigned, and no
-    // operators are overloaded on this class. The only way to use an
-    // MLAPI::SerialMatrix and MLAPI::DistributedMatrix with other MLAPI 
-    // objects is to wrap it into an MLAPI::Operator, as done in the 
-    // following line.
-    //
-    // NOTE: The last parameter has be to `false' because the Operator 
-    // should not delete the A_Dist object.
-
-    Operator A(MySpace, MySpace, &A_Dist, false);
+    cout << A;
 
     // Here we define 3 vectors. The last, z, is empty.
     

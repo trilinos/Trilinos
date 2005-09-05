@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     Teuchos::ParameterList MLList;
     MLList.set("max levels",3);
     MLList.set("aggregation: type", "Uncoupled");
-    MLList.set("aggregation: damping factor", 0.0);
+    MLList.set("aggregation: damping factor", 1.333);
     MLList.set("smoother: type","symmetric Gauss-Seidel");
     MLList.set("smoother: sweeps",1);
     MLList.set("smoother: damping factor",1.0);
@@ -134,7 +134,6 @@ int main(int argc, char *argv[])
         break;
 
       OldNorm = NewNorm;
-
     }
 
     // finalize the MLAPI workspace

@@ -64,28 +64,28 @@ int main(int argc, char *argv[])
     // define the space for fine level vectors and operators.
     Space FineSpace(2*NX);
 
-    DistributedMatrix MatA(FineSpace, FineSpace);
+    DistributedMatrix A(FineSpace, FineSpace);
 
     // assemble the matrix on processor 0 only
-    if (GetMyPID() == 0) {
-      for (int i = 0 ; i < NX ; ++i) {
-        MatA.SetElement(2*i, 2*i, 2.0);
-        MatA.SetElement(2*i+1, 2*i+1, 2.0);
+    if (GetMyPID() == 0) 
+    {
+      for (int i = 0 ; i < NX ; ++i) 
+      {
+        A(2*i, 2*i)     = 2.0;
+        A(2*i+1, 2*i+1) = 2.0;
         if (i)
         {
-          MatA.SetElement(2*i, 2*(i - 1), - 1.0);
-          MatA.SetElement(2*i+1, 2*(i - 1)+1, - 1.0);
+          A(2*i, 2*(i - 1))     = - 1.0;
+          A(2*i+1, 2*(i - 1)+1) = - 1.0;
         }
-        if (i != NX - 1) {
-          MatA.SetElement(2*i, 2*(i + 1), - 1.0);
-          MatA.SetElement(2*i+1, 2*(i + 1)+1, - 1.0);
+        if (i != NX - 1) 
+        {
+          A(2*i, 2*(i + 1))     = - 1.0;
+          A(2*i+1, 2*(i + 1)+1) = - 1.0;
         }
       }
     }
-    MatA.FillComplete();
-
-    // wrap MatA as an Operator
-    Operator A(FineSpace, FineSpace, &MatA, false);
+    A.FillComplete();
 
     int NumPDEEqns = 2;
     int MaxLevels = 10;

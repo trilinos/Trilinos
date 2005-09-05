@@ -26,9 +26,8 @@
 // 
 // ************************************************************************
 //@HEADER
-#if defined(HAVE_ML_MLAPI) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TRIUTILS)
-#include "ml_config.h"
 #include "ml_common.h"
+#if defined(HAVE_ML_MLAPI) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
