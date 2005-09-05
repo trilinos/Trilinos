@@ -194,7 +194,9 @@ $(srcdir)/MLAPI/MLAPI_Space.h                \
 $(srcdir)/MLAPI/MLAPI_TimeObject.h           \
 $(srcdir)/MLAPI/MLAPI_Workspace.h            \
 $(srcdir)/MLAPI/MLAPI_Error.h                \
-$(srcdir)/MLAPI/MLAPI_SAMIS.h
+$(srcdir)/MLAPI/MLAPI_SAMIS.h                \
+$(srcdir)/MLAPI/MLAPI_LinearCombinations.h   \
+$(srcdir)/MLAPI/MLAPI_BaseLinearCombination.h
 
 UTIL = \
 $(srcdir)/Utils/ml_rbm.c                                    \
@@ -245,6 +247,7 @@ $(srcdir)/MLAPI/MLAPI_Aggregation.cpp                       \
 $(srcdir)/MLAPI/MLAPI_Error.cpp                             \
 $(srcdir)/MLAPI/MLAPI_DistributedMatrix.cpp                 \
 $(srcdir)/MLAPI/MLAPI_SAMIS.cpp                             \
+$(srcdir)/MLAPI/MLAPI_LinearCombinations.cpp                \
 $(srcdir)/NonlinML/ml_nox_coarseinterface.cpp               \
 $(srcdir)/NonlinML/ml_nox_linearsystem.cpp                  \
 $(srcdir)/NonlinML/ml_nox_matrixfreelevel.cpp               \
