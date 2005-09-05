@@ -1,10 +1,9 @@
 #ifndef ML_EXPRESSIONS_H
 #define ML_EXPRESSIONS_H
 
-namespace MLAPI {
+#include "MLAPI_LinearCombinations.h"
 
-class MultiVector;
-class Operator;
+namespace MLAPI {
 
 /*!
 \file MLAPI_Expressions.h
@@ -16,17 +15,67 @@ class Operator;
 \date Last updated on Feb-05.
 */
 
+// =============================================== //
+// OPERATOR + BETWEEN VECTORS AND LINEAR OPERATORS //
+// =============================================== //
+
 // ====================================================================== 
 //! Creates a new MultiVector, defined as x + y
 // ====================================================================== 
 
-MultiVector operator+(const MultiVector& x, const MultiVector& y);
+MultiVectorCombination operator+(const MultiVector& x, const MultiVector& y);
+
+LinearCombinationAdd operator+(const BaseLinearCombination& left, 
+                               const BaseLinearCombination& right);
+
+LinearCombinationMixed operator+(const BaseLinearCombination& left, 
+                                 const MultiVector& right);
+
+LinearCombinationMixed operator+(const MultiVector& left, 
+                                 const BaseLinearCombination& right);
 
 // ====================================================================== 
-//! Creates a new MultiVector, defined as x - y
+//! Creates a new MultiVector, defined as alpha * x + beta * y
 // ====================================================================== 
 
-MultiVector operator-(const MultiVector& x, const MultiVector& y);
+MultiVectorCombination operator+(const MultiVectorScaled& left, 
+                                 const MultiVectorScaled& right);
+
+// ====================================================================== 
+//! Creates a new MultiVector, defined as alpha * x + A * y
+// ====================================================================== 
+
+Residual operator+(const MultiVectorScaled& left, 
+                   const BaseOperatorTimesMultiVector& right);
+
+// ====================================================================== 
+//! Creates a new MultiVector, defined as x + A * y
+// ====================================================================== 
+
+Residual operator+(const MultiVector& left, 
+                   const BaseOperatorTimesMultiVector& right);
+
+// ====================================================================== 
+//! Creates a new MultiVector, defined as alpha * x + beta * y
+// ====================================================================== 
+
+MultiVectorCombination operator+(const MultiVectorScaled& left, 
+                                 const MultiVectorScaled& right);
+
+// ====================================================================== 
+//! Creates a new MultiVector, defined as alpha * x + A * y
+// ====================================================================== 
+
+Residual operator+(const MultiVectorScaled& left, 
+                   const BaseOperatorTimesMultiVector& right);
+
+// ====================================================================== 
+//! Creates a new MultiVector, defined as x + A * y
+// ====================================================================== 
+
+Residual operator+(const MultiVector& left, 
+                   const BaseOperatorTimesMultiVector& right);
+
 
 // ====================================================================== 
 //! Creates a new MultiVector, defined as x + y
@@ -35,19 +84,50 @@ MultiVector operator-(const MultiVector& x, const MultiVector& y);
 MultiVector operator+(const MultiVector& x, const double alpha);
 
 // ====================================================================== 
+//! Creates a new MultiVector, defined as x + alpha
+// ====================================================================== 
+
+MultiVector operator+(const double alpha, const MultiVector& x);
+
+// =============================================== //
+// OPERATOR - BETWEEN VECTORS AND LINEAR OPERATORS //
+// =============================================== //
+
+// ====================================================================== 
 //! Creates a new MultiVector, defined as x - y
+// ====================================================================== 
+
+MultiVectorCombination operator-(const MultiVector& x, const MultiVector& y);
+
+LinearCombinationAdd operator-(const BaseLinearCombination& left, 
+                                const BaseLinearCombination& right);
+
+LinearCombinationMixed operator-(const BaseLinearCombination& left, 
+                                const MultiVector& right);
+
+LinearCombinationMixed operator-(const MultiVector& left, 
+                                const BaseLinearCombination& right);
+
+// ====================================================================== 
+//! Creates a new MultiVector, defined as x - A * y
+// ====================================================================== 
+
+Residual operator-(const MultiVector& left, 
+                   const BaseOperatorTimesMultiVector& right);
+
+
+
+
+
+
+// ====================================================================== 
+//! Creates a new MultiVector, defined as x - alpha
 // ====================================================================== 
 
 MultiVector operator-(const MultiVector& x, const double alpha);
 
 // ====================================================================== 
-//! Creates a new MultiVector, defined as x + y
-// ====================================================================== 
-
-MultiVector operator+(const double alpha, const MultiVector& x);
-
-// ====================================================================== 
-//! Creates a new MultiVector, defined as x - y
+//! Creates a new MultiVector, defined as alpha - y
 // ====================================================================== 
 
 MultiVector operator-(const double alpha, const MultiVector& x);
@@ -97,10 +177,24 @@ Operator operator*(const Operator& A, const double alpha);
 Operator operator*(const double alpha, const Operator& A);
 
 // ====================================================================== 
+//! Creates a new Operator, defined as A / alpha
+// ====================================================================== 
+
+inline Operator operator/(const Operator& A, const double alpha)
+{
+  return(A * (1.0 / alpha));
+}
+
+// ====================================================================== 
 //! Creates a new MultiVector, defined as x * alpha
 // ====================================================================== 
 
 MultiVector operator*(const MultiVector& x, const double alpha);
+
+inline MultiVector operator*(const double alpha, const MultiVector&x)
+{
+  return(x * alpha);
+}
 
 // ====================================================================== 
 //! Creates a new MultiVector y, such that y = x / alpha
@@ -112,7 +206,14 @@ MultiVector operator/(const MultiVector& x, const double alpha);
 //! Creates a new MultiVector y, such that y = A * x.
 // ====================================================================== 
 
-MultiVector operator*(const BaseOperator& A, const MultiVector& x);
+BaseOperatorTimesMultiVector operator*(const BaseOperator& A, const MultiVector& x);
+
+// ====================================================================== 
+//! Creates a new MultiVector y, such that y = A * x (x is a BaseLinearCombination)
+// ====================================================================== 
+
+BaseOperatorTimesMultiVector operator*(const BaseOperator& A, 
+                                       const BaseLinearCombination& x);
 
 // ====================================================================== 
 //! Computes the dot product between the first vector in x and y
@@ -120,6 +221,11 @@ MultiVector operator*(const BaseOperator& A, const MultiVector& x);
 
 double operator* (const MultiVector& x, const MultiVector& y);
 
+double operator* (const MultiVector& x, const BaseLinearCombination& y);
+
+double operator* (const BaseLinearCombination& x, const MultiVector& y);
+
+double operator* (const BaseLinearCombination& x, const BaseLinearCombination& y);
 
 } // namespace MLAPI
 

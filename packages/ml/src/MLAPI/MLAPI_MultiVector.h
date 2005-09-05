@@ -1,5 +1,5 @@
-#ifndef ML_VECTOR_H
-#define ML_VECTOR_H
+#ifndef ML_MULTIVECTOR_H
+#define ML_MULTIVECTOR_H
 
 //#include "ml_lapack.h"
 #include "MLAPI_Error.h"
@@ -7,6 +7,7 @@
 #include "MLAPI_Space.h"
 #include "MLAPI_CompObject.h"
 #include "MLAPI_TimeObject.h"
+#include "MLAPI_BaseLinearCombination.h"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_BLAS_wrappers.hpp"
 #include "Teuchos_LAPACK_wrappers.hpp"
@@ -71,6 +72,9 @@ private:
   bool    ownership_;
 };
 
+class MultiVector;
+
+    
 /*!
 \class MultiVector
 
@@ -234,12 +238,16 @@ public:
   //! Appends a new vector.
   void Append(MultiVector rhs)
   {
+    StackPush();
+
     CheckSpaces(rhs);
 
     for (int v = 0 ; v < rhs.GetNumVectors() ; ++v) {
       RCPValues_.push_back(rhs.GetRCPValues(v));
       ++NumVectors_;
     }
+
+    StackPop();
   }
 
   //! Deletes the last vector.
@@ -293,6 +301,18 @@ public:
         SetRCPValues(rhs.GetRCPValues(v), v);
       SetLabel(rhs.GetLabel());
     }
+
+    StackPop();
+
+    return(*this);
+  }
+
+  //! Sets the elements from the input BaseLinearCombination
+  MultiVector& operator=(const BaseLinearCombination& rhs)
+  {
+    StackPush();
+
+    rhs.Set(*this);
 
     StackPop();
 
@@ -532,6 +552,15 @@ public:
     UpdateTime();
   }
 
+#if 0
+  void Add(double alpha)
+  {
+    for (int v = 0 ; v < GetNumVectors() ; ++v)
+      for (int i = 0 ; i < GetMyLength() ; ++i)
+        GetValues(v)[i] += alpha;
+  }
+#endif
+
   //! Computes the dot product between \c this vector and \c rhs.
   inline double DotProduct(const MultiVector& rhs, int v = -1) const 
   {
@@ -617,6 +646,30 @@ public:
         */
 
     Result          = ML_Comm_GmaxDouble(GetML_Comm(),MyResult);
+
+    StackPop();
+    UpdateTime();
+    return(Result);
+  }
+
+  //! Computes the one norm of \c this vector.
+  inline double NormOne(int v = -1) const 
+  {
+    ResetTimer();
+    StackPush();
+
+    if (v == -1) {
+      CheckSingleVector();
+      v = 0;
+    }
+
+    double MyResult = 0.0;
+    double Result   = 0.0;
+    double* ptr     = (double*)GetValues(v);
+    for (int i = 0 ; i < GetMyLength() ; ++i)
+      MyResult += fabs(ptr[i]);
+
+    Result          = ML_Comm_GsumDouble(GetML_Comm(),MyResult);
 
     StackPop();
     UpdateTime();
@@ -789,6 +842,14 @@ public:
   }
   // @}
 
+  bool IsAlias(const MultiVector& rhs) const
+  {
+    if (rhs.GetValues(0) == GetValues(0))
+      return(true);
+    else
+      return(false);
+  }
+
 private:
 
   //! Sets the length of RCPValues_ array
@@ -811,7 +872,7 @@ private:
       ML_THROW("rhs.GetVectorSpace() is not equal to this->GetVectorSpace()", -1);
     }
 
-    if (rhs.GetValues(0) == GetValues(0))
+    if (IsAlias(rhs))
       ML_THROW("updating a vector with its alias...", -1);
   }
 
@@ -863,4 +924,4 @@ private:
 
 } // namespace MLAPI
 
-#endif // if ML_VECTOR_H
+#endif // if ML_MULTIVECTOR_H

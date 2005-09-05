@@ -46,21 +46,19 @@ Operator GetShiftedLaplacian1D(const int NumGlobalElements,
 
   Space FineSpace(NumGlobalElements);
 
-  DistributedMatrix* MatA = new DistributedMatrix(FineSpace, FineSpace);
+  DistributedMatrix A(FineSpace, FineSpace);
 
   if (GetMyPID() == 0) {
     for (int i = 0 ; i < NumGlobalElements ; ++i) {
-      MatA->SetElement(i, i, 2.0 - LambdaMin);
+      A(i, i) = 2.0 - LambdaMin;
       if (i)
-        MatA->SetElement(i, i - 1, - 1.0);
+        A(i, i - 1) = - 1.0;
       if (i != NumGlobalElements - 1)
-        MatA->SetElement(i, i + 1, - 1.0);
+        A(i, i + 1) = - 1.0;
     }
   }
 
-  MatA->FillComplete();
-
-  Operator A(FineSpace, FineSpace, MatA, true);
+  A.FillComplete();
 
   return(A);
 }
@@ -84,7 +82,7 @@ Operator GetShiftedLaplacian2D(const int NX, const int NY,
 
   MultiVector Scale(LocalizedSpace);
 
-  DistributedMatrix* MatA = new DistributedMatrix(FineSpace, FineSpace);
+  DistributedMatrix A(FineSpace, FineSpace);
 
   // assemble the matrix on processor 0 only
   if (GetMyPID() == 0) {
@@ -100,22 +98,22 @@ Operator GetShiftedLaplacian2D(const int NX, const int NY,
         for (int j = 0 ; j < NY ; ++j) {
           int row = i + j * NX;
           sr = Scale(row);
-          MatA->SetElement(row, row, sr * sr * (4.0 - LambdaMin));
+          A(row, row) = sr * sr * (4.0 - LambdaMin);
           if (i > 0) {
             sc = Scale(row - 1);
-            MatA->SetElement(row, row - 1, sr * sc * (-1.0));
+            A(row, row - 1) =  sr * sc * (-1.0);
           }
           if (i < NX - 1) {
             sc = Scale(row + 1);
-            MatA->SetElement(row, row + 1, sr * sc * (-1.0));
+            A(row, row + 1) =  sr * sc * (-1.0);
           }
           if (j > 0) {
             sc = Scale(row - NX);
-            MatA->SetElement(row, row - NX, sr * sc * (-1.0));
+            A(row, row - NX) =  sr * sc * (-1.0);
           }
           if (j < NY - 1) {
             sc = Scale(row + NX);
-            MatA->SetElement(row, row + NX, sr * sc * (-1.0));
+            A(row, row + NX) =  sr * sc * (-1.0);
           }
         }
       }
@@ -125,24 +123,22 @@ Operator GetShiftedLaplacian2D(const int NX, const int NY,
       for (int i = 0 ; i < NX ; ++i) {
         for (int j = 0 ; j < NY ; ++j) {
           int row = i + j * NX;
-          MatA->SetElement(row, row, 4.0 - LambdaMin);
+          A(row, row) = 4.0 - LambdaMin;
           if (i > 0) 
-            MatA->SetElement(row, row - 1, -1.0);
+            A(row, row - 1) = -1.0;
           if (i < NX - 1)
-            MatA->SetElement(row, row + 1, -1.0);
+            A(row, row + 1) = -1.0;
           if (j > 0) 
-            MatA->SetElement(row, row - NX, -1.0);
+            A(row, row - NX) = -1.0;
           if (j < NY - 1)
-            MatA->SetElement(row, row + NX, -1.0);
+            A(row, row + NX) = -1.0;
         }
       }
     }
 
   } // mypid == 0
 
-  MatA->FillComplete();
-
-  Operator A(FineSpace, FineSpace, MatA, true);
+  A.FillComplete();
 
   return (A);
 }
@@ -172,7 +168,7 @@ Operator ReadMatrix(const char* FileName)
 
   Space FineSpace(NumGlobalElements);
 
-  DistributedMatrix* MatA = new DistributedMatrix(FineSpace, FineSpace);
+  DistributedMatrix A(FineSpace, FineSpace);
 
   if (GetMyPID() == 0) {
     int row, col;
@@ -187,13 +183,11 @@ Operator ReadMatrix(const char* FileName)
       if (col < 0 || col >= NumGlobalElements)
         ML_THROW("Invalid col number (" + GetString(col) + ")", -1);
 
-      MatA->SetElement(row, col, val);
+      A(row, col) = val;
     }
   }
 
-  MatA->FillComplete();
-
-  Operator A(FineSpace, FineSpace, MatA, true);
+  A.FillComplete();
 
   return(A);
 }
@@ -207,7 +201,7 @@ Operator GetRecirc2D(const int NX, const int NY, const double conv,
 
   Space FineSpace(NX * NY);
 
-  DistributedMatrix* MatA = new DistributedMatrix(FineSpace, FineSpace);
+  DistributedMatrix A(FineSpace, FineSpace);
 
   if (GetMyPID() == 0) {
 
@@ -251,26 +245,23 @@ Operator GetRecirc2D(const int NX, const int NY, const double conv,
         int row = iy * NX + ix;
 
         if (ix != 0)
-          MatA->SetElement(row, row - 1, left);
+          A(row, row - 1) = left;
 
         if (ix != NX - 1)
-          MatA->SetElement(row, row + 1, right);
+          A(row, row + 1) = right;
 
         if (iy != 0)
-          MatA->SetElement(row, row - NX, lower);
+          A(row, row - NX) = lower;
 
         if (iy != NY - 1)
-          MatA->SetElement(row, row + NX, upper);
+          A(row, row + NX) = upper;
 
-        MatA->SetElement(row, row, center);
+        A(row, row) = center;
       }
     }
   }
 
-  MatA->FillComplete();
-
-  // wrap MatA as an Operator
-  Operator A(FineSpace, FineSpace, MatA, true);
+  A.FillComplete();
 
   return(A);
 }

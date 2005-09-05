@@ -7,8 +7,8 @@
 //#include "ml_lapack.h"
 #include "ml_comm.h"
 #include "MLAPI_Error.h"
-#include "MLAPI_BaseObject.h"
 #include "MLAPI_Space.h"
+#include "MLAPI_Operator.h"
 #include "Epetra_Vector.h"
 #include "Epetra_RowMatrix.h"
 #include "Teuchos_RefCountPtr.hpp"
@@ -16,17 +16,14 @@
 
 namespace MLAPI {
 
-class SerialMatrix : public Epetra_RowMatrix, public BaseObject {
+class Epetra_SerialMatrix : public Epetra_RowMatrix {
 
 public:
 
-  SerialMatrix(const Space& RowSpace, const Space& ColSpace)
+  Epetra_SerialMatrix(const Space& RowSpace, const Space& ColSpace)
   {
-    RowSpace_ = RowSpace;
-    ColSpace_ = ColSpace;
-
-    NumMyRows_ = RowSpace_.GetNumMyElements();
-    NumMyCols_ = ColSpace_.GetNumMyElements();
+    NumMyRows_ = RowSpace.GetNumMyElements();
+    NumMyCols_ = ColSpace.GetNumMyElements();
     
     NumMyNonzeros_ = 0;
     NumMyDiagonals_ = 0;
@@ -270,7 +267,7 @@ public:
 
   virtual const char* Label() const
   {
-    return(GetLabel().c_str());
+    return("Epetra_SerialMatrix");
   }
 
   virtual bool UseTranspose() const
@@ -313,55 +310,13 @@ public:
     }
   }
            
-  std::ostream& Print(std::ostream& os, const bool verbose = true) const
-  {
-    int Length = MaxNumEntries();
-    vector<double> Values(Length);
-    vector<int>    Indices(Length);
-
-    os << endl;
-    os << "*** MLAPI::SerialMatrix ***" << endl;
-    os << "Label = " << GetLabel() << endl;
-    os << "Number of rows = " << NumMyRows() << endl;
-    os << "Number of columns = " << NumMyCols() << endl;
-    os << endl;
-    os.width(10); os << "row ID";
-    os.width(10); os << "col ID";
-    os.width(30); os << "value";
-    os << endl;
-    os << endl;
-
-    for (int i = 0 ; i < NumMyRows() ; ++i) {
-      int NnzRow = 0;
-      ExtractMyRowCopy(i, Length, NnzRow, &Values[0], &Indices[0]);
-      for (int j = 0 ; j < NnzRow ; ++j) {
-        os.width(10); os << i;
-        os.width(10); os << Indices[j];
-        os.width(30); os << Values[j];
-        os << endl;
-      }
-    }
-    return(os);
-  }
-
-  Space RowSpace() const
-  {
-    return(RowSpace_);
-  }
-
-  Space ColSpace() const
-  {
-    return(ColSpace_);
-  }
-
-
 private:
 
-  SerialMatrix(const SerialMatrix& rhs)
+  Epetra_SerialMatrix(const Epetra_SerialMatrix& rhs)
   {
   }
 
-  SerialMatrix& operator=(const SerialMatrix& rhs)
+  Epetra_SerialMatrix& operator=(const Epetra_SerialMatrix& rhs)
   {
     return(*this);
   }
@@ -374,13 +329,71 @@ private:
   mutable map<int,double>::iterator where_;
   mutable vector<map<int,double> > ptr_;
 
-  Space ColSpace_;
-  Space RowSpace_;
-
   Teuchos::RefCountPtr<Epetra_Map> RowMap_;
   Teuchos::RefCountPtr<Epetra_Map> ColMap_;
 
-}; // class SerialMatrix
+}; // class Epetra_SerialMatrix
+
+class SerialMatrix : public Operator 
+{
+public:
+  SerialMatrix()
+  {
+    Matrix_ = 0;
+  }
+
+  SerialMatrix& operator()(const SerialMatrix& rhs)
+  {
+    Matrix_ = rhs.Matrix_;
+    Operator::operator=(rhs);
+  }
+            
+  SerialMatrix(const Space& RowSpace, const Space& ColSpace)
+  {
+    Matrix_ = new Epetra_SerialMatrix(RowSpace, ColSpace);
+
+    Reshape(RowSpace, ColSpace, Matrix_, true);
+  }
+
+  inline double& operator()(const int row, const int col)
+  {
+    return((*Matrix_)(row, col));
+  }
+    
+  std::ostream& Print(std::ostream& os, const bool verbose = true) const
+  {
+    int Length = Matrix_->MaxNumEntries();
+    vector<double> Values(Length);
+    vector<int>    Indices(Length);
+
+    os << endl;
+    os << "*** MLAPI::SerialMatrix ***" << endl;
+    os << "Label = " << GetLabel() << endl;
+    os << "Number of rows = " << Matrix_->NumMyRows() << endl;
+    os << "Number of columns = " << Matrix_->NumMyCols() << endl;
+    os << endl;
+    os.width(10); os << "row ID";
+    os.width(10); os << "col ID";
+    os.width(30); os << "value";
+    os << endl;
+    os << endl;
+
+    for (int i = 0 ; i < Matrix_->NumMyRows() ; ++i) {
+      int NnzRow = 0;
+      Matrix_->ExtractMyRowCopy(i, Length, NnzRow, &Values[0], &Indices[0]);
+      for (int j = 0 ; j < NnzRow ; ++j) {
+        os.width(10); os << i;
+        os.width(10); os << Indices[j];
+        os.width(30); os << Values[j];
+        os << endl;
+      }
+    }
+    return(os);
+  }
+
+private:
+  Epetra_SerialMatrix* Matrix_;
+};
 
 } // namespace MLAPI
 

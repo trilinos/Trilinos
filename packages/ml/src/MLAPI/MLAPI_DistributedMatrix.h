@@ -4,14 +4,14 @@
 #include "ml_common.h"
 
 #include "MLAPI_Error.h"
-#include "MLAPI_BaseObject.h"
+#include "MLAPI_Operator.h"
 #include "MLAPI_Space.h"
 #include "Epetra_Map.h"
 #include "Epetra_FECrsMatrix.h"
 
 namespace MLAPI {
 
-class DistributedMatrix : public Epetra_RowMatrix, public BaseObject {
+class DistributedMatrix : public Epetra_RowMatrix, public Operator {
 
 public:
 
@@ -188,6 +188,11 @@ public:
     return(Matrix_->SetUseTranspose(what));
   }
   
+  int Apply(const MultiVector& X, MultiVector& Y) const
+  {
+    return(Operator::Apply(X, Y));
+  }
+
   virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   {
     if (!IsFillCompleted())
@@ -237,18 +242,50 @@ public:
     return(RowSpace_);
   }
 
-  void SetElement(int row, int col, double value)
+  inline double& operator()(const int GRID, const int GCID)
   {
     if (IsFillCompleted())
-      ML_THROW("Matrix already FillComplete()'d", -1);
-
-    if (Matrix_->ReplaceGlobalValues(1, &row, 1, &col, &value) > 0)
-      Matrix_->InsertGlobalValues(1, &row, 1, &col, &value);
+    {
+      ML_THROW("Matrix already FillCompleted()'d", -1);
+    }
+    else
+    {
+      rows_.push_back(GRID);
+      cols_.push_back(GCID);
+      vals_.push_back(0.0);
+      return(vals_[vals_.size() - 1]);
+    }
   }
   
+  inline void ReplaceElement(const int GRID, const int GCID, 
+                             const double value)
+  {
+    if (!IsFillCompleted())
+      ML_THROW("Matrix not FillCompleted()'d yet", -1);
+
+    int LRID = RangeMap_->LID(GRID);
+    int LCID = Matrix_->ColMap().LID(GCID);
+    if (Matrix_->ReplaceMyValues((int)LRID, 1, (double*)&value, 
+                                 (int*)&LCID) < 0)
+      ML_THROW("Can only replace locally owned elements", -1);
+  }
+
   void FillComplete()
   {
-    
+    // populate the matrix here
+    for (int i = 0 ; i < vals_.size() ; ++i)
+    {
+      int    GRID  = rows_[i];
+      int    GCID  = cols_[i];
+      double value = vals_[i];
+      if (Matrix_->ReplaceGlobalValues(1, &GRID, 1, &GCID, &value) > 0)
+        Matrix_->InsertGlobalValues(1, &GRID, 1, &GCID, &value);
+    }
+    rows_.resize(0);
+    cols_.resize(0);
+    vals_.resize(0);
+
+    // freeze the matrix
     if (Matrix_->GlobalAssemble())
       ML_THROW("Error in GlobalAssemble()", -1);
 
@@ -256,6 +293,8 @@ public:
       ML_THROW("Error in FillComplete()", -1);
 
     FillCompleted_ = true;
+
+    Reshape(ColSpace_, RowSpace_, Matrix_, true);
   }
 
   bool IsFillCompleted() const 
@@ -274,8 +313,9 @@ private:
     return(*this);
   }
 
-  vector<vector<double> > Values_;
-  vector<vector<int> >    Indices_;
+  mutable vector<int>    rows_;
+  mutable vector<int>    cols_;
+  mutable vector<double> vals_;
 
   Epetra_FECrsMatrix* Matrix_;
   Space ColSpace_;
