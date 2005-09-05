@@ -10,6 +10,8 @@ class MultiVector;
 class BaseLinearCombination 
 {
 public:
+  virtual ~BaseLinearCombination() {};
+
   virtual const Space GetVectorSpace() const = 0;
   // Computes v += <operations>
   virtual void Update(MultiVector& v) const = 0;

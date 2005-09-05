@@ -6,6 +6,7 @@
 #include "MLAPI_Error.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_Space.h"
+#include "MLAPI_BaseLinearCombination.h"
 #include "Epetra_Map.h"
 #include "Epetra_FECrsMatrix.h"
 
@@ -273,7 +274,7 @@ public:
   void FillComplete()
   {
     // populate the matrix here
-    for (int i = 0 ; i < vals_.size() ; ++i)
+    for (unsigned int i = 0 ; i < vals_.size() ; ++i)
     {
       int    GRID  = rows_[i];
       int    GCID  = cols_[i];

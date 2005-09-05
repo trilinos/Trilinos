@@ -124,10 +124,10 @@ public:
                          const MultiVector x,
                          const double beta,
                          const MultiVector y) :
-    alpha_(alpha),
     x_(x),
-    beta_(beta),
-    y_(y)
+    y_(y),
+    alpha_(alpha),
+    beta_(beta)
   {}
 
   const Space GetVectorSpace() const;
@@ -204,11 +204,11 @@ public:
 
   Residual(double alpha, const MultiVector& b, double beta, 
            const BaseOperator& A, const MultiVector& x) :
-    alpha_(alpha),
-    beta_(beta),
-    b_(b),
     A_(A),
-    x_(x)
+    b_(b),
+    x_(x),
+    alpha_(alpha),
+    beta_(beta)
   {}
 
   const Space GetVectorSpace() const;

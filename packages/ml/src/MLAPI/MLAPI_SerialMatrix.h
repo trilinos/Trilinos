@@ -346,6 +346,7 @@ public:
   {
     Matrix_ = rhs.Matrix_;
     Operator::operator=(rhs);
+    return(*this);
   }
             
   SerialMatrix(const Space& RowSpace, const Space& ColSpace)
