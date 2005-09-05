@@ -33,9 +33,9 @@ TEST_INCLUDES = $(ML_EXTRA_INCLUDES) $(ML_INCLUDES)
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = MLAPICompare
+noinst_PROGRAMS = MLAPISerialMatrix
 
-MLAPICompare_SOURCES      = $(srcdir)/cxx_main.cpp
-MLAPICompare_DEPENDENCIES = $(top_builddir)/src/libml.a
-MLAPICompare_CXXFLAGS     = ${TEST_INCLUDES}
-MLAPICompare_LDADD        = ${TEST_LIBS}
+MLAPISerialMatrix_SOURCES      = $(srcdir)/cxx_main.cpp
+MLAPISerialMatrix_DEPENDENCIES = $(top_builddir)/src/libml.a
+MLAPISerialMatrix_CXXFLAGS     = ${TEST_INCLUDES}
+MLAPISerialMatrix_LDADD        = ${TEST_LIBS}

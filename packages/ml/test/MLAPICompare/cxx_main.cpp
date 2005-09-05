@@ -27,40 +27,36 @@
 // ************************************************************************
 //@HEADER
 
-#include "ml_include.h"
+#include "ml_config.h"
+#include "ml_common.h"
 
 #if defined(HAVE_ML_MLAPI)
 
-#ifdef HAVE_MPI
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_Map.h"
-#include "Epetra_SerialDenseVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_LinearProblem.h"
-#include "AztecOO.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
-// includes required by ML
-
-#include "ml_include.h"
-#include "ml_MultiLevelPreconditioner.h"
-#include "MLAPI_Error.h"
 #include "MLAPI_Space.h"
-#include "MLAPI_MultiVector.h"
 #include "MLAPI_Operator.h"
+#include "MLAPI_MultiVector.h"
+#include "MLAPI_SerialMatrix.h"
+#include "MLAPI_Expressions.h"
 #include "MLAPI_MultiLevelSA.h"
-#include "MLAPI_MATLABStream.h"
-#include "MLAPI_Workspace.h"
-#include "MLAPI_EpetraBaseOperator.h"
 
-using namespace Teuchos;
-using namespace Trilinos_Util;
-using namespace ML_Epetra;
 using namespace MLAPI;
+
+void Check(const double ActualNorm, const double ExpectedNorm)
+{
+  if (GetMyPID() == 0)
+  {
+    cout << "NormOne, actual = " << ActualNorm;
+    cout << ", expected = " << ExpectedNorm;
+
+    if (ActualNorm != ExpectedNorm)
+      cout << ",  FAILED!" << endl;
+    else
+      cout << ",  OK!" << endl;
+  }
+
+  if (ActualNorm != ExpectedNorm)
+    exit(EXIT_FAILURE);
+}
 
 // ============== //
 // example driver //
@@ -71,142 +67,86 @@ int main(int argc, char *argv[])
   
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
 #endif
-  Epetra_Time Time(Comm);
+      
+  try
+  {
+    Init();
 
-  int ProblemSize = 100 * Comm.NumProc();
-  if (argc > 1) {
-    ProblemSize = atoi(argv[1]);
-  }
+    if (GetNumProcs() != 1)
+      throw("Only with one processor");
+
+    int NumGlobalElements = 10;
+    Space S(NumGlobalElements);
+
+    SerialMatrix B; // will hold a copy of current operator
+    Operator C; /// will hold a composition of current operator
+    MultiVector V(S), W;
+
+    // ============================================================== //
+    // Define the matrix inside, then reassign the DistributedMatrix  //
+    // to another Operator, let the DistributedMatrix disappear, then //
+    // work with the other Operator.                                  //
+    // ============================================================== //
     
-  int NumPDEEqns = 4;
+    if (true)
+    {
+      SerialMatrix A(S, S);
+      for (int i = 0 ; i < S.GetNumGlobalElements() ; ++i)
+      {
+        A(i, i) = 1.0;
+      }
 
-  VbrMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", ProblemSize);
-  Epetra_RowMatrix* A = Gallery.GetVbrMatrix(NumPDEEqns);
-  Epetra_LinearProblem* Problem = Gallery.GetVbrLinearProblem();
-  Epetra_MultiVector* LHS = Gallery.GetVbrStartingSolution();
-  Epetra_MultiVector* RHS = Gallery.GetVbrRHS();
+      V = 1.0;
+      W = A * V;
 
-  AztecOO solver(*Problem);
+      Check(W.NormOne(), NumGlobalElements);
 
-  // =========================== parameters =================================
+      // perform an operator using A, then change its values. 
+      // NOTE: I can only assign B to a SerialMatrix object, not to a generic
+      // Operator. Therefore B = A * A will not work, since A * A returns an
+      // Operator, not a SerialMatrix.
+      B = A;
 
-  double DampingFactor = 1.333;
-  int    OutputLevel = 16;
+      for (int i = 0 ; i < S.GetNumGlobalElements() ; ++i)
+      {
+        A(i, i) = 2.0;
+      }
 
-  int MLPIters, MLAPIIters;
-  double MLPResidual, MLAPIResidual;
-  double MLPConstructionTime, MLAPIConstructionTime;
-  double MLPSolveTime, MLAPISolveTime;
+      B = A;
+      // A is destroyed at this point.
+    }
 
-  // =========================== begin of ML part ===========================
-  
-  ParameterList MLList;
-  ParameterList IFPACKList;
-  ML_Epetra::SetDefaults("SA",MLList);
-  MLList.set("max levels",10);
-  MLList.set("increasing or decreasing","increasing");
-  MLList.set("aggregation: type", "Uncoupled");
-  MLList.set("aggregation: damping factor", DampingFactor); 
-  MLList.set("coarse: max size",32 * Comm.NumProc());
-  MLList.set("smoother: pre or post", "both");
-  MLList.set("coarse: type","Amesos-KLU");
-  MLList.set("smoother: type","IFPACK");
-  MLList.set("smoother: ifpack type","point relaxation stand-alone");
-  MLList.set("smoother: sweeps",1);
-  MLList.set("smoother: damping factor",0.67);
-  IFPACKList.set("relaxation: sweeps", 1);
-  IFPACKList.set("relaxation: damping factor", 0.67);
-  IFPACKList.set("relaxation: type", "symmetric Gauss-Seidel");
-  IFPACKList.set("relaxation: zero starting solution", false);
-  MLList.set("smoother: ifpack list", IFPACKList);
-  MLList.set("PDE equations", NumPDEEqns);
-  
-  // ======================================================== //
-  // build the MultiLevelPreconditioner first, and track down //
-  // the number of iterations, the residual and the CPU-time  //
-  // ======================================================== //
-  
-  Time.ResetStartTime();
+    // change the values of B
+    for (int i = 0 ; i < S.GetNumGlobalElements() ; ++i)
+    {
+      B(i, i) = 2.0 * B(i, i);
+    }
 
-  MultiLevelPreconditioner* MLPPrec;
-  MLPPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
-  MLPConstructionTime = Time.ElapsedTime();
-  Time.ResetStartTime();
+    // reassign B to C, then work with C
+    C = B;
+    C = C * B;
 
-  LHS->PutScalar(0.0);
-  RHS->PutScalar(1.0);
+    // check the norm
+    V = 1.0;
+    W = C * V;
 
-  solver.SetPrecOperator(MLPPrec);
-  solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_output, OutputLevel);
-  solver.Iterate(1550, 1e-5);
-
-  MLPIters = solver.NumIters();
-  MLPResidual = solver.TrueResidual();
-
-  delete MLPPrec;
-  MLPSolveTime = Time.ElapsedTime();
-
-  // ======================================================= //
-  // now we aim to define the same preconditioner, using the //
-  // MLAPI interface. Iterations and residual should be the  //
-  // same, then we compare the CPU time as well.             //
-  // ======================================================= //
-  
-  MLList.set("smoother: type", "symmetric Gauss-Seidel");
-
-  Init();
-  int size = A->NumMyRows();
-  Space FineSpace(-1,size);
-
-  Operator AA(FineSpace,FineSpace,A,false);
-
-  Time.ResetStartTime();
-
-  MultiLevelSA* Cycle = new MultiLevelSA(AA,MLList);
-  Epetra_Operator* MLAPIPrec = 
-    new EpetraBaseOperator(A->RowMatrixRowMap(),*Cycle);
-  MLAPIConstructionTime = Time.ElapsedTime();
-  Time.ResetStartTime();
-
-  LHS->PutScalar(0.0);
-  RHS->PutScalar(1.0);
-
-  solver.SetPrecOperator(MLAPIPrec);
-  solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_output, OutputLevel);
-  solver.Iterate(1550, 1e-5);
-
-  MLAPIIters = solver.NumIters();
-  MLAPIResidual = solver.TrueResidual();
-
-  delete MLAPIPrec;
-  MLAPISolveTime = Time.ElapsedTime();
-
-  // ================ //
-  // output some crap //
-  // ================ //
-
-  if( Comm.MyPID()==0 ) {
-    cout << "Iterations: " << MLPIters    << " vs. " << MLAPIIters    << endl;
-    cout << "Residual  : " << MLPResidual << " vs. " << MLAPIResidual << endl;
-    cout << "CPU-time (const) : " << MLPConstructionTime     << " vs. " 
-         << MLAPIConstructionTime     << endl;
-    cout << "CPU-time (solve) : " << MLPSolveTime     << " vs. " 
-         << MLAPISolveTime     << endl;
+    Check(W.NormOne(), 16.0 * NumGlobalElements);
   }
+  catch (const int e) 
+  {
+    cout << "Caught integer exception, code = " << e << endl;
+  }
+  catch (...) 
+  {
+    cout << "problems here..." << endl;
+  } 
 
-#ifdef EPETRA_MPI
-  MPI_Finalize() ;
+#ifdef HAVE_MPI
+  MPI_Finalize();
 #endif
 
-  return 0 ;
-  
+  return(EXIT_SUCCESS);
 }
 
 #else
