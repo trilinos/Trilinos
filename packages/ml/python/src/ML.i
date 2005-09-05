@@ -101,6 +101,11 @@ print r.Norm2()
 
 %module(package="PyTrilinos", directors="1", docstring=ML_DOCSTRING) ML
 
+// This is to avoid BaseLinearCombination and derived classes.
+// MLAPI_LC is defined in setup.py; the MLAPI code contains some 
+// `#ifndef MLAPI_LC' that must be kept in place.
+#define MLAPI_LC
+
 %{
 // System includes
 #include <iostream>
@@ -183,7 +188,7 @@ using namespace std;
 %feature("director") MLAPI::BaseOperator;
 %import "Epetra.i"
 
-// Amesos interface includes
+// ML interface includes
 %include "ml_MultiLevelPreconditioner.h"
 
 %include "MLAPI_Workspace.h"
@@ -322,7 +327,9 @@ fail:
 %extend MLAPI::MultiVector {
   MLAPI::MultiVector __add__(MLAPI::MultiVector& rhs)
   {
-    return(*self + rhs);
+    MultiVector res = *self + rhs;
+
+    return(res);
   }
 
   MLAPI::MultiVector __sub__(MLAPI::MultiVector& rhs)

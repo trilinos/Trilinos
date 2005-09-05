@@ -92,7 +92,8 @@ sysconfig._config_vars["CXX"] = CXX
 # _ML extension module
 _ML = Extension("PyTrilinos._ML",
                        [mlWrap],
-                       define_macros   = [("HAVE_CONFIG_H", "1")],
+                       define_macros   = [("HAVE_CONFIG_H", "1"),
+                                          ("MLAPI_LC", "1")],
                        include_dirs    = include_dirs,
                        library_dirs    = library_dirs,
                        libraries       = libraries,

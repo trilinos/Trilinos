@@ -2,6 +2,7 @@
 #define ML_PYMATRIX_H
 
 #include "ml_common.h"
+#include "MLAPI_BaseOperator.h"
 #include "MLAPI_Operator.h"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Epetra_Map.h"

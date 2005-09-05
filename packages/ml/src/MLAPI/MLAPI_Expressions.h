@@ -22,7 +22,7 @@ namespace MLAPI {
 // ====================================================================== 
 //! Creates a new MultiVector, defined as x + y
 // ====================================================================== 
-
+#ifndef MLAPI_LC
 MultiVectorCombination operator+(const MultiVector& x, const MultiVector& y);
 
 LinearCombinationAdd operator+(const BaseLinearCombination& left, 
@@ -76,19 +76,6 @@ Residual operator+(const MultiVectorScaled& left,
 Residual operator+(const MultiVector& left, 
                    const BaseOperatorTimesMultiVector& right);
 
-
-// ====================================================================== 
-//! Creates a new MultiVector, defined as x + y
-// ====================================================================== 
-
-MultiVector operator+(const MultiVector& x, const double alpha);
-
-// ====================================================================== 
-//! Creates a new MultiVector, defined as x + alpha
-// ====================================================================== 
-
-MultiVector operator+(const double alpha, const MultiVector& x);
-
 // =============================================== //
 // OPERATOR - BETWEEN VECTORS AND LINEAR OPERATORS //
 // =============================================== //
@@ -114,11 +101,43 @@ LinearCombinationMixed operator-(const MultiVector& left,
 
 Residual operator-(const MultiVector& left, 
                    const BaseOperatorTimesMultiVector& right);
+#else
+inline 
+MultiVector operator+(const MultiVector& x, const MultiVector& y)
+{
+  MultiVector res(x.GetVectorSpace());
+  res.Update(1.0, x, 1.0, y);
+  return(res);
+}
 
+inline 
+MultiVector operator-(const MultiVector& x, const MultiVector& y)
+{
+  MultiVector res(x.GetVectorSpace());
+  res.Update(1.0, x, -1.0, y);
+  return(res);
+}
 
+inline 
+MultiVector operator*(const Operator& A, const MultiVector& y)
+{
+  MultiVector res(A.GetOperatorRangeSpace());
+  A.Apply(y, res);
+  return(res);
+}
+#endif
 
+// ====================================================================== 
+//! Creates a new MultiVector, defined as x + alpha
+// ====================================================================== 
 
+MultiVector operator+(const MultiVector& x, const double alpha);
 
+// ====================================================================== 
+//! Creates a new MultiVector, defined as alpha + x
+// ====================================================================== 
+
+MultiVector operator+(const double alpha, const MultiVector& x);
 
 // ====================================================================== 
 //! Creates a new MultiVector, defined as x - alpha
@@ -202,6 +221,7 @@ inline MultiVector operator*(const double alpha, const MultiVector&x)
 
 MultiVector operator/(const MultiVector& x, const double alpha);
 
+#ifndef MLAPI_LC
 // ====================================================================== 
 //! Creates a new MultiVector y, such that y = A * x.
 // ====================================================================== 
@@ -214,6 +234,15 @@ BaseOperatorTimesMultiVector operator*(const BaseOperator& A, const MultiVector&
 
 BaseOperatorTimesMultiVector operator*(const BaseOperator& A, 
                                        const BaseLinearCombination& x);
+#else
+inline 
+MultiVector operator*(const BaseOperator& A, const MultiVector& x)
+{
+  MultiVector res(A.GetOperatorRangeSpace());
+  A.Apply(x, res);
+  return(res);
+}
+#endif
 
 // ====================================================================== 
 //! Computes the dot product between the first vector in x and y
@@ -221,11 +250,13 @@ BaseOperatorTimesMultiVector operator*(const BaseOperator& A,
 
 double operator* (const MultiVector& x, const MultiVector& y);
 
+#ifndef MLAPI_LC
 double operator* (const MultiVector& x, const BaseLinearCombination& y);
 
 double operator* (const BaseLinearCombination& x, const MultiVector& y);
 
 double operator* (const BaseLinearCombination& x, const BaseLinearCombination& y);
+#endif
 
 } // namespace MLAPI
 
