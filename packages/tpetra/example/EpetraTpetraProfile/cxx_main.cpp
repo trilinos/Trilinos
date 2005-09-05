@@ -56,9 +56,9 @@
 #include "Teuchos_Array.hpp"
 
 void test(Epetra_Comm& comm, Epetra_Map& map, Epetra_CrsMatrix& A, Epetra_Vector& xexact,
-		  Epetra_Vector& b, int dim, bool verbose, bool smallProblem);
+		  Epetra_Vector& b, int dim, bool verbose, bool smallProblem, std::string const name);
 
-void outputResults(bool const verbose, int niters, 
+void outputResults(bool const verbose, int niters, std::string const name,
 				   double epetraInsertTime, double epetraFillCompleteTime, 
 				   double epetraMatvecTime, double epetraNumFlops, 
 				   double tpetraInsertTime, double tpetraFillCompleteTime,
@@ -94,6 +94,13 @@ int main(int argc, char *argv[]) {
 		<< "Example:" << endl 
 		<< argv[0] << " mymatrix.hb" << endl << endl;
 		return(1);
+	}
+	
+	// convert filename to std::string for output
+	std::string name(argv[1]); // construct string from null-terminated C-string
+	std::string::size_type idx = name.rfind('/');
+	if(idx != std::string::npos) { // we want just the filename, without the path to it
+		name = name.substr(idx+1);
 	}
 	
 	// ------------------------------------------------------------------
@@ -154,7 +161,7 @@ int main(int argc, char *argv[]) {
 	// convert dim and nnz from global values to local values?
 	dim = map.NumMyElements();
 	
-	test(comm, map, A, xexact, b, dim, verbose, smallProblem);
+	test(comm, map, A, xexact, b, dim, verbose, smallProblem, name);
 	
 	// ------------------------------------------------------------------
 	// end of performance testing
@@ -179,7 +186,7 @@ int main(int argc, char *argv[]) {
 // main testing function: does performance testing on both Epetra and Tpetra
 //=========================================================================================
 void test(Epetra_Comm& comm, Epetra_Map& map, Epetra_CrsMatrix& A, Epetra_Vector& xexact, 
-		  Epetra_Vector& b, int dim, bool verbose, bool smallProblem) {
+		  Epetra_Vector& b, int dim, bool verbose, bool smallProblem, std::string const name) {
 	// ------------------------------------------------------------------
 	// create Tpetra versions of map, xexact, and b
 	// ------------------------------------------------------------------
@@ -290,7 +297,7 @@ void test(Epetra_Comm& comm, Epetra_Map& map, Epetra_CrsMatrix& A, Epetra_Vector
 	// output results
 	// ------------------------------------------------------------------
 	
-	outputResults(verbose, niters, epetraInsertTime, epetraFillCompleteTime, epetraMatvecTime, epetraNumFlops,
+	outputResults(verbose, niters, name, epetraInsertTime, epetraFillCompleteTime, epetraMatvecTime, epetraNumFlops,
 				  tpetraInsertTime, tpetraFillCompleteTime, tpetraMatvecTime, tpetraNumFlops);
 	
 	if(smallProblem) { // ** TODO ** This needs to be massaged for parallel output
@@ -334,7 +341,7 @@ void test(Epetra_Comm& comm, Epetra_Map& map, Epetra_CrsMatrix& A, Epetra_Vector
 //=========================================================================================
 // helper function to handle outputing the test results (but not the residuals)
 //=========================================================================================
-void outputResults(bool const verbose, int niters, 
+void outputResults(bool const verbose, int niters, std::string const name,
 				   double epetraInsertTime, double epetraFillCompleteTime, 
 				   double epetraMatvecTime, double epetraNumFlops, 
 				   double tpetraInsertTime, double tpetraFillCompleteTime,
@@ -376,13 +383,15 @@ void outputResults(bool const verbose, int niters,
 	
 	if(verbose) {
 		cout << "\n*************************************************************************************************" << endl;
-		cout << "Package name, PID, Insert Time, FillComplete Time, # Matvecs, Matvec Time, # Flops" << endl;
+		cout << "Package name, Matrix Name, PID, Insert Time, FillComplete Time, # Matvecs, Matvec Time, # Flops" << endl;
 		cout << "*************************************************************************************************" << endl;
 		for(int i = 0; i < numProcs; i++) {
-			cout << "Epetra" << setw(5) << i << setw(15) << epetraInsertTime_g[i] << setw(15) << epetraFillCompleteTime_g[i] 
+			cout << "Epetra     " << name << setw(5) << i 
+				 << setw(15) << epetraInsertTime_g[i] << setw(15) << epetraFillCompleteTime_g[i] 
 				 << setw(15) << niters_g[i] << setw(15) << epetraMatvecTime_g[i]
 				 << setw(15) << epetraNumFlops_g[i] << endl;
-			cout << "Tpetra" << setw(5) << i << setw(15) << tpetraInsertTime_g[i] << setw(15) << tpetraFillCompleteTime_g[i] 
+			cout << "Tpetra     " << name << setw(5) << i 
+				 << setw(15) << tpetraInsertTime_g[i] << setw(15) << tpetraFillCompleteTime_g[i] 
 				 << setw(15) << niters_g[i] << setw(15) << tpetraMatvecTime_g[i]
 				 << setw(15) << tpetraNumFlops_g[i] << endl;
 		}
