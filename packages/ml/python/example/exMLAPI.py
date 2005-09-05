@@ -147,7 +147,8 @@ def main():
     # compute the energy of the error
     diff = x - x_exact
     ###print "iter ", i, " ||x - x_exact||_A = ", diff * (Matrix * diff)
-    print "iter ", i, " ||x - x_exact||_2 = ", diff * diff
+    if Comm.MyPID() == 0:
+      print "iter ", i, " ||x - x_exact||_2 = ", diff * diff
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

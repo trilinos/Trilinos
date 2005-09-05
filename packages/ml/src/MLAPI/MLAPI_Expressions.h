@@ -105,7 +105,7 @@ Residual operator-(const MultiVector& left,
 inline 
 MultiVector operator+(const MultiVector& x, const MultiVector& y)
 {
-  MultiVector res(x.GetVectorSpace());
+  MultiVector res(x.GetVectorSpace(), y.GetNumVectors());
   res.Update(1.0, x, 1.0, y);
   return(res);
 }
@@ -113,7 +113,7 @@ MultiVector operator+(const MultiVector& x, const MultiVector& y)
 inline 
 MultiVector operator-(const MultiVector& x, const MultiVector& y)
 {
-  MultiVector res(x.GetVectorSpace());
+  MultiVector res(x.GetVectorSpace(), y.GetNumVectors());
   res.Update(1.0, x, -1.0, y);
   return(res);
 }
@@ -121,7 +121,7 @@ MultiVector operator-(const MultiVector& x, const MultiVector& y)
 inline 
 MultiVector operator*(const Operator& A, const MultiVector& y)
 {
-  MultiVector res(A.GetOperatorRangeSpace());
+  MultiVector res(A.GetOperatorRangeSpace(), y.GetNumVectors());
   A.Apply(y, res);
   return(res);
 }
@@ -238,7 +238,7 @@ BaseOperatorTimesMultiVector operator*(const BaseOperator& A,
 inline 
 MultiVector operator*(const BaseOperator& A, const MultiVector& x)
 {
-  MultiVector res(A.GetOperatorRangeSpace());
+  MultiVector res(A.GetOperatorRangeSpace(), x.GetNumVectors());
   A.Apply(x, res);
   return(res);
 }

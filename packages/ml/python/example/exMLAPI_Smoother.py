@@ -99,7 +99,7 @@ def MultiLevelCycle(A, P, R, S, b_f, level, MaxLevels):
 def main():
   # Defines a communicator (serial or parallel, depending on how Trilinos
   # was configured), and creates a matrix corresponding to a 1D Laplacian.
-  n = 10
+  n = 1000
   FineSpace = ML.Space(n)
   
   Matrix = ML.PyMatrix(FineSpace, FineSpace)
