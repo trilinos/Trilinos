@@ -32,64 +32,56 @@
 
 #include "LOCA_Epetra_Group.H"	          // class definition
 
-#include "LOCA_Epetra_Interface.H"        // class data members
+#include "LOCA_Epetra_Interface_Required.H"        // class data members
 #include "NOX_Parameter_List.H"
+#include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
-#include "NOX_Epetra_Scaling.H"
-#include "NOX_Epetra_SharedOperator.H"
-#include "Epetra_Vector.h"
 #include "LOCA_Utils.H"
 #include "LOCA_ErrorCheck.H"
-#include "LOCA_Epetra_BorderedOp.H"
-#include "LOCA_Epetra_HouseholderJacOp.H"
-
-// Trilinos Objects
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_LinearProblem.h"
-#include "Epetra_Map.h" 
-#include "Epetra_Vector.h"
-
-// External include files - linking to Aztec00 and Epetra in Trilinos
+#include "LOCA_Epetra_ShiftInvertOperator.H"
 #include "AztecOO.h"
-#include "AztecOO_Operator.h"
-#include "AztecOO_StatusTest.h"
-#include "AztecOO_StatusTestCombo.h"
-#include "AztecOO_StatusTestMaxIters.h"
-#include "AztecOO_StatusTestResNorm.h"
+#include "NOX_Epetra_LinearSystemAztecOO.H"
 
-#include "Ifpack_CrsRiluk.h"
-
-LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
-			   NOX::Parameter::List& par, 
-			   LOCA::Epetra::Interface& i, 
-			   const LOCA::ParameterVector& p, 
-			   NOX::Epetra::Vector& x, 
-			   Epetra_Operator& J) :
-  NOX::Epetra::Group(printParams, par, i, x, J),
-  LOCA::Abstract::Group(par),
+LOCA::Epetra::Group::Group(NOX::Parameter::List& printingParams, 
+			      LOCA::Epetra::Interface::Required& i, 
+			      NOX::Epetra::Vector& initialGuess,
+			      const LOCA::ParameterVector& p) :
+  NOX::Epetra::Group(printingParams, i, initialGuess),
+  LOCA::Abstract::Group(),
   params(p),
   userInterface(i),
+  interfaceTime(false),
   tmpVectorPtr2(0),
   scaleVecPtr(NULL)
 {
 }
 
-LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
-			   NOX::Parameter::List& par, 
-			   LOCA::Epetra::Interface& i, 
-			   const LOCA::ParameterVector& p, 
-			   NOX::Epetra::Vector& x, 
-			   Epetra_Operator& J, 
-			   Epetra_Operator& M) :
-  NOX::Epetra::Group(printParams, par, i, x, J, M),
-  LOCA::Abstract::Group(par),
+LOCA::Epetra::Group::Group(NOX::Parameter::List& printingParams, 
+			      LOCA::Epetra::Interface::Required& i, 
+			      NOX::Epetra::Vector& initialGuess, 
+			      NOX::Epetra::LinearSystem& linSys,
+			      const LOCA::ParameterVector& p) :
+  NOX::Epetra::Group(printingParams, i, initialGuess, linSys),
+  LOCA::Abstract::Group(),
   params(p),
   userInterface(i),
+  interfaceTime(false),
+  tmpVectorPtr2(0),
+  scaleVecPtr(NULL)
+{
+}
+
+LOCA::Epetra::Group::Group(NOX::Parameter::List& printingParams, 
+			      LOCA::Epetra::Interface::TimeDependent& i, 
+			      NOX::Epetra::Vector& initialGuess, 
+			      NOX::Epetra::LinearSystem& linSys,
+			      const LOCA::ParameterVector& p) :
+  NOX::Epetra::Group(printingParams, i, initialGuess, linSys),
+  LOCA::Abstract::Group(),
+  params(p),
+  userInterface(i), 
+  interfaceTime(true),
   tmpVectorPtr2(0),
   scaleVecPtr(NULL)
 {
@@ -101,6 +93,7 @@ LOCA::Epetra::Group::Group(const LOCA::Epetra::Group& source,
   LOCA::Abstract::Group(source, type),
   params(source.params),
   userInterface(source.userInterface),
+  interfaceTime(source.interfaceTime),
   tmpVectorPtr2(0),
   scaleVecPtr(NULL)
 {
@@ -110,7 +103,7 @@ LOCA::Epetra::Group::Group(const LOCA::Epetra::Group& source,
 
 LOCA::Epetra::Group::~Group() 
 {
-  delete tmpVectorPtr2;
+    delete tmpVectorPtr2;
   if (scaleVecPtr != NULL)
     delete scaleVecPtr;
 }
@@ -118,7 +111,7 @@ LOCA::Epetra::Group::~Group()
 NOX::Abstract::Group* 
 LOCA::Epetra::Group::clone(NOX::CopyType type) const 
 {
-  return new Group(*this, type);
+  return new LOCA::Epetra::Group(*this, type);
 }
 
 NOX::Abstract::Group& 
@@ -129,6 +122,12 @@ LOCA::Epetra::Group::operator=(const NOX::Abstract::Group& source)
 
 LOCA::Abstract::Group& 
 LOCA::Epetra::Group::operator=(const LOCA::Abstract::Group& source)
+{
+  return operator=(dynamic_cast<const Group&> (source));
+}
+
+NOX::Abstract::Group& 
+LOCA::Epetra::Group::operator=(const NOX::Epetra::Group& source)
 {
   return operator=(dynamic_cast<const Group&> (source));
 }
@@ -209,7 +208,7 @@ LOCA::Epetra::Group::getParams() const
   return params;
 }
 
-NOX::Epetra::Interface& 
+NOX::Epetra::Interface::Required& 
 LOCA::Epetra::Group::getUserInterface()
 {
   return userInterface;
@@ -223,16 +222,170 @@ LOCA::Epetra::Group::printSolution(const double conParam) const
 
 void
 LOCA::Epetra::Group::printSolution(const NOX::Epetra::Vector& x_,
-                                   const double conParam) const
+				      const double conParam) const
 {
   userInterface.printSolution(x_.getEpetraVector(), conParam);
 }
 
 void
 LOCA::Epetra::Group::printSolution(const NOX::Abstract::Vector& x_,
-                                   const double conParam) const
+				      const double conParam) const
 {
   printSolution(dynamic_cast<const NOX::Epetra::Vector&>(x_), conParam);
+}
+
+double
+LOCA::Epetra::Group::computeScaledDotProduct(
+				       const NOX::Abstract::Vector& a,
+				       const NOX::Abstract::Vector& b) const
+{
+  if (scaleVecPtr == NULL)
+    return a.dot(b) / a.length();
+  else {
+    NOX::Abstract::Vector* as = a.clone(NOX::DeepCopy);
+    NOX::Abstract::Vector* bs = b.clone(NOX::DeepCopy);
+    double d;
+
+    as->scale(*scaleVecPtr);
+    bs->scale(*scaleVecPtr);
+    d = as->dot(*bs);
+
+    delete as;
+    delete bs;
+
+    return d;
+  }
+}
+   
+void
+LOCA::Epetra::Group::setScaleVector(const NOX::Abstract::Vector& s)
+{
+  if (scaleVecPtr != NULL)
+    delete scaleVecPtr;
+
+  scaleVecPtr = s.clone(NOX::DeepCopy);
+
+  return;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Epetra::Group::computeMassMatrix()
+{
+  // Hardwired for matrix-free mode on mass matrix, so this routine does nothing
+  if(interfaceTime)
+    return NOX::Abstract::Group::Ok;
+  else
+    return NOX::Abstract::Group::BadDependency;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Epetra::Group::applyMassMatrix(const NOX::Abstract::Vector& input,
+                                        NOX::Abstract::Vector& result) const
+{
+  // For matrix-free mode, call interface for applying mass matrix
+  if(interfaceTime){
+     const NOX::Epetra::Vector& epetraInput = 
+       dynamic_cast<const NOX::Epetra::Vector&>(input);
+     NOX::Epetra::Vector& epetraResult =
+       dynamic_cast<NOX::Epetra::Vector&>(result);
+     return dynamic_cast<LOCA::Epetra::Interface::TimeDependent&>(userInterface).applyMassMatrix(epetraInput,epetraResult);
+  }
+  else
+    return NOX::Abstract::Group::BadDependency;
+}
+
+bool 
+LOCA::Epetra::Group::isMassMatrix()
+{
+  return true;
+}
+
+
+NOX::Abstract::Group::ReturnType
+LOCA::Epetra::Group::applyShiftedMatrix(const NOX::Abstract::Vector& input,
+                                           NOX::Abstract::Vector& result,
+                                           double shift) const
+{
+  return applyShiftedMatrix(dynamic_cast<const NOX::Epetra::Vector&>(input), dynamic_cast<NOX::Epetra::Vector&>(result), shift);
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Epetra::Group::applyShiftedMatrix(
+				       const NOX::Epetra::Vector& epetraInput,
+				       NOX::Epetra::Vector& epetraResult,
+				       double shift) const
+{
+  // Hardwired for matrix-free mode, so no shifted matrix is available
+  // Create action of shifted matrix in 2 steps
+
+  applyJacobian(epetraInput,epetraResult);
+
+  if(interfaceTime) {
+
+   // If there is a mass matrix, shifted matrix is J + shift*M
+
+    NOX::Epetra::Vector massResult(epetraResult,NOX::ShapeCopy);
+    dynamic_cast<LOCA::Epetra::Interface::TimeDependent&>(userInterface).applyMassMatrix(epetraInput,massResult);
+
+     epetraResult.update(shift,massResult,1.00);
+  }
+
+  else {
+
+    // If no mass matrix, shifted matrix is J + shift*I
+
+     epetraResult.update(shift,epetraInput,1.00);
+  }
+
+  return NOX::Abstract::Group::Ok;
+}
+
+
+NOX::Abstract::Group::ReturnType
+LOCA::Epetra::Group::applyShiftedMatrixInverse(
+					    NOX::Parameter::List& params,
+					    const NOX::Abstract::Vector& input,
+					    NOX::Abstract::Vector& result,
+					    double shift)
+                                           
+{
+  const NOX::Epetra::Vector& epetraInput = dynamic_cast<const NOX::Epetra::Vector&>(input);
+  NOX::Epetra::Vector& epetraResult = dynamic_cast<NOX::Epetra::Vector&>(result);
+
+  // If shift is zero, just apply Jacobian inverse
+
+  if(shift == 0.0) {
+    applyJacobianInverse(params,epetraInput,epetraResult);
+  }
+  else {
+
+    // Otherwise, construct a shift and invert operator, and use AztecOO to solve linear system
+
+    LOCA::Epetra::ShiftInvertOperator A(*this,sharedLinearSystem.getObject(this).getJacobianOperator(),shift,interfaceTime);
+
+    NOX::Epetra::Vector dummy(epetraResult,NOX::ShapeCopy);
+    Epetra_Vector& epetra_dummy = dummy.getEpetraVector();    
+    LOCA::Epetra::ShiftInvertInterface interface; 
+    NOX::Parameter::List& solveList = params.sublist("NOX").sublist("Direction").sublist("Newton").sublist("Linear Solver");
+
+   NOX::Epetra::LinearSystemAztecOO shiftsys(params,solveList,userInterface,dynamic_cast<NOX::Epetra::Interface::Jacobian&>(interface),dynamic_cast<Epetra_Operator&>(A),epetra_dummy); 
+
+    shiftsys.setJacobianOperatorForSolve(dynamic_cast<Epetra_Operator&>(A));
+
+    shiftsys.applyJacobianInverse(params,epetraInput,epetraResult);
+
+  }
+
+  return NOX::Abstract::Group::Ok;  
+}
+
+void
+LOCA::Epetra::Group::scaleVector(NOX::Abstract::Vector& x) const
+{
+  if (scaleVecPtr == NULL)
+    x.scale(1.0 / sqrt(static_cast<double>(x.length())));
+  else 
+    x.scale(*scaleVecPtr);
 }
 
 void
@@ -263,11 +416,12 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
   tmpVectorPtr2->PutScalar(1.0-conParamValue);
 
   // See if it is an Epetra_CrsMatrix
+  const Epetra_CrsMatrix* constTestCrs = 0;
   Epetra_CrsMatrix* testCrs = 0;
-  testCrs = dynamic_cast<Epetra_CrsMatrix*>
-            (&(sharedJacobian.getOperator(this)));
-  if (testCrs != 0) {
-
+  constTestCrs = dynamic_cast<const Epetra_CrsMatrix*>
+    (&(sharedLinearSystem.getObject(this).getJacobianOperator()));
+  if (constTestCrs != 0) {
+    testCrs = const_cast<Epetra_CrsMatrix*>(constTestCrs);
     testCrs->Scale(conParamValue);
     testCrs->ExtractDiagonalCopy(*tmpVectorPtr);
     tmpVectorPtr->Update(1.0, *tmpVectorPtr2, 1.0);
@@ -277,10 +431,12 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
   }
 
   // See if it is an Epetra_VbrMatrix
+  const Epetra_VbrMatrix* constTestVbr = 0;
   Epetra_VbrMatrix* testVbr = 0;
-  testVbr = dynamic_cast<Epetra_VbrMatrix*>(&(sharedJacobian.getOperator(this)));
+  constTestVbr = dynamic_cast<const Epetra_VbrMatrix*>
+    (&(sharedLinearSystem.getObject(this).getJacobianOperator()));
   if (testVbr != 0) {
-    
+    testVbr = const_cast<Epetra_VbrMatrix*>(constTestVbr);
     testVbr->Scale(conParamValue);
     testVbr->ExtractDiagonalCopy(*tmpVectorPtr);
     tmpVectorPtr->Update(1.0, *tmpVectorPtr2, 1.0);
@@ -288,332 +444,96 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
     return LOCA::Abstract::Group::Ok;
   }
 
-  // Otherwise this alg won't work
-  LOCA::ErrorCheck::throwError(
-    "LOCA::Epetra::Group::augmentJacobianForHomotopy()",
-    "the Jacobian must be either an Epetra_CrsMatrix or an Epetra_VbrMatrix!");
+  // Otherwise this alg won't work -- return NotDefined
 
-  return LOCA::Abstract::Group::Ok;
+  return LOCA::Abstract::Group::NotDefined;
 }
 
-double
-LOCA::Epetra::Group::computeScaledDotProduct(
-				       const NOX::Abstract::Vector& a,
-				       const NOX::Abstract::Vector& b) const
-{
-  if (scaleVecPtr == NULL)
-    return a.dot(b) / a.length();
-  else {
-    NOX::Abstract::Vector* as = a.clone(NOX::DeepCopy);
-    NOX::Abstract::Vector* bs = b.clone(NOX::DeepCopy);
-    double d;
+// NOX::Abstract::Group::ReturnType 
+// LOCA::Epetra::Group::applyBorderedJacobianInverse(
+// 				     bool trans,
+// 				     NOX::Parameter::List& p,
+// 				     const NOX::Abstract::Vector& ca,
+// 				     const NOX::Abstract::Vector& cb,
+// 				     const NOX::Abstract::Vector& cvInput,
+// 				     double sInput,
+// 				     NOX::Abstract::Vector& vResult,
+// 				     double& sResult) const
+// {
+//   // Get non-const input
+//   NOX::Abstract::Vector& vInput = const_cast<NOX::Abstract::Vector&>(cvInput);
+//   NOX::Abstract::Vector& a = const_cast<NOX::Abstract::Vector&>(ca);
+//   NOX::Abstract::Vector& b = const_cast<NOX::Abstract::Vector&>(cb);
 
-    as->scale(*scaleVecPtr);
-    bs->scale(*scaleVecPtr);
-    d = as->dot(*bs);
-
-    delete as;
-    delete bs;
-
-    return d;
-  }
-}
-
-NOX::Abstract::Group::ReturnType 
-LOCA::Epetra::Group::applyHouseholderJacobianInverse(
-					  NOX::Parameter::List& p,
-					  const NOX::Abstract::Vector& cf,
-					  const NOX::Abstract::Vector& cdfdp,
-					  const NOX::Abstract::Vector& cux,
-					  double up, double beta,
-					  NOX::Abstract::Vector& result_x,
-					  double& result_p) const
-{
-  // Get non-const input
-  NOX::Abstract::Vector& f = const_cast<NOX::Abstract::Vector&>(cf);
-  NOX::Abstract::Vector& dfdp = const_cast<NOX::Abstract::Vector&>(cdfdp);
-  NOX::Abstract::Vector& ux = const_cast<NOX::Abstract::Vector&>(cux);
-
-  // cast vectors to nox epetra vectors
-  NOX::Epetra::Vector& nox_epetra_f = 
-    dynamic_cast<NOX::Epetra::Vector&>(f);
-  NOX::Epetra::Vector& nox_epetra_dfdp = 
-    dynamic_cast<NOX::Epetra::Vector&>(dfdp);
-  NOX::Epetra::Vector& nox_epetra_ux = 
-    dynamic_cast<NOX::Epetra::Vector&>(ux);
-  NOX::Epetra::Vector& nox_epetra_result_x = 
-    dynamic_cast<NOX::Epetra::Vector&>(result_x);
+//   // cast vectors to nox epetra vectors
+//   NOX::Epetra::Vector& nox_epetra_vInput = 
+//     dynamic_cast<NOX::Epetra::Vector&>(vInput);
+//   NOX::Epetra::Vector& nox_epetra_a = 
+//     dynamic_cast<NOX::Epetra::Vector&>(a);
+//   NOX::Epetra::Vector& nox_epetra_b = 
+//     dynamic_cast<NOX::Epetra::Vector&>(b);
+//   NOX::Epetra::Vector& nox_epetra_vResult = 
+//     dynamic_cast<NOX::Epetra::Vector&>(vResult);
   
-  // Get underlying epetra vectors
-  Epetra_Vector& epetra_f = nox_epetra_f.getEpetraVector();
-  Epetra_Vector& epetra_dfdp = nox_epetra_dfdp.getEpetraVector();
-  Epetra_Vector& epetra_ux = nox_epetra_ux.getEpetraVector();
-  Epetra_Vector& epetra_result_x = nox_epetra_result_x.getEpetraVector();
+//   // Get underlying epetra vectors
+//   Epetra_Vector& epetra_vInput = nox_epetra_vInput.getEpetraVector();
+//   Epetra_Vector& epetra_a = nox_epetra_a.getEpetraVector();
+//   Epetra_Vector& epetra_b = nox_epetra_b.getEpetraVector();
+//   Epetra_Vector& epetra_vResult = nox_epetra_vResult.getEpetraVector();
 
-  // Create preconditioner
-  createIfpackPreconditioner(p);
+//   // Get Jacobian, preconditioner operators
+//   const Epetra_Operator& cjac = 
+//     sharedLinearSystem.getObject(this).getJacobianOperator();
+//   const Epetra_Operator& cprec = 
+//     sharedLinearSystem.getObject(this).getGeneratedPrecOperator();
+//   Epetra_Operator& jac = const_cast<Epetra_Operator&>(cjac);
+//   Epetra_Operator& prec = const_cast<Epetra_Operator&>(cprec);
 
-  // Get Jacobian, preconditioner operators
-  const Epetra_Operator& cjac = sharedJacobian.getOperator();
-  Epetra_Operator& jac = const_cast<Epetra_Operator&>(cjac);
-  Epetra_Operator& prec = *ifpackPreconditioner;
+//   // Build bordered matrix-free Jacobian, preconditioning operator
+//   LOCA::Epetra::BorderedOp extended_jac(jac, epetra_a, epetra_b);
+//   LOCA::Epetra::BorderedOp extended_prec(prec, epetra_a, epetra_b);
+//   extended_jac.SetUseTranspose(trans);
+//   extended_prec.SetUseTranspose(trans);
 
-  // Build Householder projection-Jacobian operator
-  LOCA::Epetra::HouseholderJacOp houseJac(jac, epetra_dfdp, epetra_ux,
-					  up, beta);
+//   // Build extended epetra vectors
+//   Epetra_Vector *epetra_extended_input = 
+//     extended_jac.buildEpetraExtendedVec(epetra_vInput, sInput, true);
+//   Epetra_Vector *epetra_extended_result = 
+//     extended_jac.buildEpetraExtendedVec(epetra_vResult, 0.0, false);
 
-  // Initialize operator
-  houseJac.init(epetra_result_x);
+//   // Build extended NOX::Epetra vectors
+//   NOX::Epetra::Vector nox_epetra_extended_input(*epetra_extended_input,
+// 						NOX::DeepCopy,
+// 						true);
+//   NOX::Epetra::Vector nox_epetra_extended_result(*epetra_extended_result,
+// 						 NOX::DeepCopy,
+// 						 true);
 
-  // Create Epetra linear problem object for the linear solve
-  Epetra_LinearProblem Problem(&houseJac, &epetra_result_x, &epetra_f);
+//   bool status = 
+//     sharedLinearSystem.getObject(this).applyJacobianInverse(
+// 						   p, 
+// 						   nox_epetra_extended_input, 
+// 						   nox_epetra_extended_result,
+// 						   &extended_jac,
+// 						   &extended_prec);
 
-  // Set the default Problem parameters to "hard" (this sets Aztec defaults
-  // during the AztecOO instantiation)
-  Problem.SetPDL(hard);
-
-  // Create the solver. 
-  AztecOO houseAztecSolver(Problem);
-
-  // Set specific Aztec parameters requested by NOX
-  setBorderedAztecOptions(p, houseAztecSolver);
-
-  // Set preconditioner
-  houseAztecSolver.SetPrecOperator(&prec);
-
-  // Get linear solver convergence parameters
-  int maxit = p.getParameter("Max Iterations", 400);
-  double tol = p.getParameter("Tolerance", 1.0e-6);
+//   extended_jac.setEpetraExtendedVec(epetra_vResult, sResult, 
+// 				    *epetra_extended_result);
   
-  // Solve linear problem
-  int aztecStatus = houseAztecSolver.Iterate(maxit, tol);
+//   delete epetra_extended_input;
+//   delete epetra_extended_result;
 
-  // Set the output parameters in the "Output" sublist
-  NOX::Parameter::List& outputList = p.sublist("Output");
-  int prevLinIters = 
-    outputList.getParameter("Total Number of Linear Iterations", 0);
-  int curLinIters = houseAztecSolver.NumIters();
-  double achievedTol = houseAztecSolver.ScaledResidual();
-
-  outputList.setParameter("Number of Linear Iterations", curLinIters);
-  outputList.setParameter("Total Number of Linear Iterations", 
-			  (prevLinIters + curLinIters));
-  outputList.setParameter("Achieved Tolerance", achievedTol);
-
-  // Destroy preconditioner
-  destroyPreconditioner();
-
-  // Apply Householder transformation to result
-  result_p = 0.0;
-  houseJac.applyHouse(epetra_result_x, result_p);
-
-  // Finalize operator
-  houseJac.finish();
-
-  if (aztecStatus != 0) 
-    return NOX::Abstract::Group::NotConverged;
-  
-  return NOX::Abstract::Group::Ok;
-}
+//   if (status) 
+//     return NOX::Abstract::Group::Ok;
+//   else
+//     return NOX::Abstract::Group::NotConverged;
+// }
 
 void
-LOCA::Epetra::Group::scaleVector(NOX::Abstract::Vector& x) const
+LOCA::Epetra::Group::setJacobianOperatorForSolve(
+					      const Epetra_Operator& op) const
 {
-  if (scaleVecPtr == NULL)
-    x.scale(1.0 / sqrt(static_cast<double>(x.length())));
-  else 
-    x.scale(*scaleVecPtr);
+  // Set Jacobian operator for solve
+  sharedLinearSystem.getObject(this).setJacobianOperatorForSolve(op);
+  isValidSolverJacOp = true;
 }
-    
-NOX::Abstract::Group::ReturnType 
-LOCA::Epetra::Group::applyBorderedJacobianInverse(bool trans,
-				     NOX::Parameter::List& p,
-				     const NOX::Abstract::Vector& ca,
-				     const NOX::Abstract::Vector& cb,
-				     const NOX::Abstract::Vector& cvInput,
-				     double sInput,
-				     NOX::Abstract::Vector& vResult,
-				     double& sResult) const
-{
-  // Get non-const input
-  NOX::Abstract::Vector& vInput = const_cast<NOX::Abstract::Vector&>(cvInput);
-  NOX::Abstract::Vector& a = const_cast<NOX::Abstract::Vector&>(ca);
-  NOX::Abstract::Vector& b = const_cast<NOX::Abstract::Vector&>(cb);
-
-  // cast vectors to nox epetra vectors
-  NOX::Epetra::Vector& nox_epetra_vInput = 
-    dynamic_cast<NOX::Epetra::Vector&>(vInput);
-  NOX::Epetra::Vector& nox_epetra_a = 
-    dynamic_cast<NOX::Epetra::Vector&>(a);
-  NOX::Epetra::Vector& nox_epetra_b = 
-    dynamic_cast<NOX::Epetra::Vector&>(b);
-  NOX::Epetra::Vector& nox_epetra_vResult = 
-    dynamic_cast<NOX::Epetra::Vector&>(vResult);
-  
-  // Get underlying epetra vectors
-  Epetra_Vector& epetra_vInput = nox_epetra_vInput.getEpetraVector();
-  Epetra_Vector& epetra_a = nox_epetra_a.getEpetraVector();
-  Epetra_Vector& epetra_b = nox_epetra_b.getEpetraVector();
-  Epetra_Vector& epetra_vResult = nox_epetra_vResult.getEpetraVector();
-
-  // Create preconditioner
-  createIfpackPreconditioner(p);
-
-  // Get Jacobian, preconditioner operators
-  //const Epetra_Operator& cjac = sharedJacobianPtr->getOperator();
-  const Epetra_Operator& cjac = sharedJacobian.getOperator();
-  Epetra_Operator& jac = const_cast<Epetra_Operator&>(cjac);
-  Epetra_Operator& prec = *ifpackPreconditioner;
-
-  // Build bordered matrix-free Jacobian, preconditioning operator
-  LOCA::Epetra::BorderedOp extended_jac(jac, epetra_a, epetra_b);
-  LOCA::Epetra::BorderedOp extended_prec(prec, epetra_a, epetra_b);
-  extended_jac.SetUseTranspose(trans);
-  extended_prec.SetUseTranspose(trans);
-
-  // Build extended epetra vectors
-  Epetra_Vector *epetra_extended_input = 
-    extended_jac.buildEpetraExtendedVec(epetra_vInput, sInput, true);
-  Epetra_Vector *epetra_extended_result = 
-    extended_jac.buildEpetraExtendedVec(epetra_vResult, 0.0, false);
-
-  // Create Epetra linear problem object for the linear solve
-  Epetra_LinearProblem Problem(&extended_jac, 
-  			       epetra_extended_result, 
-			       epetra_extended_input);
-
-  // Set the default Problem parameters to "hard" (this sets Aztec defaults
-  // during the AztecOO instantiation)
-  Problem.SetPDL(hard);
-
-  // Create the solver. 
-  AztecOO borderedAztecSolver(Problem);
-
-  // Set specific Aztec parameters requested by NOX
-  setBorderedAztecOptions(p, borderedAztecSolver);
-
-  // Set preconditioner
-  borderedAztecSolver.SetPrecOperator(&extended_prec);
-
-  // Get linear solver convergence parameters
-  int maxit = p.getParameter("Max Iterations", 400);
-  double tol = p.getParameter("Tolerance", 1.0e-6);
-  
-  // Solve linear problem
-  int aztecStatus = borderedAztecSolver.Iterate(maxit, tol);
-
-  // Set the output parameters in the "Output" sublist
-  NOX::Parameter::List& outputList = p.sublist("Output");
-  int prevLinIters = 
-    outputList.getParameter("Total Number of Linear Iterations", 0);
-  int curLinIters = borderedAztecSolver.NumIters();
-  double achievedTol = borderedAztecSolver.ScaledResidual();
-
-  outputList.setParameter("Number of Linear Iterations", curLinIters);
-  outputList.setParameter("Total Number of Linear Iterations", 
-			  (prevLinIters + curLinIters));
-  outputList.setParameter("Achieved Tolerance", achievedTol);
-
-  extended_jac.setEpetraExtendedVec(epetra_vResult, sResult, 
-				    *epetra_extended_result);
-  
-  delete epetra_extended_input;
-  delete epetra_extended_result;
-
-  // Destroy preconditioner
-  destroyPreconditioner();
-
-  if (aztecStatus != 0) 
-    return NOX::Abstract::Group::NotConverged;
-  
-  return NOX::Abstract::Group::Ok;
-}
-
-void
-LOCA::Epetra::Group::setScaleVector(const NOX::Abstract::Vector& s)
-{
-  if (scaleVecPtr != NULL)
-    delete scaleVecPtr;
-
-  scaleVecPtr = s.clone(NOX::DeepCopy);
-
-  return;
-}
-
-void 
-LOCA::Epetra::Group::setBorderedAztecOptions(const NOX::Parameter::List& p, 
-					     AztecOO& aztec) const
-{
-  // Set the Aztec Solver
-  string linearSolver = p.getParameter("Aztec Solver", "GMRES");
-  if (linearSolver == "CG")
-    aztec.SetAztecOption(AZ_solver, AZ_cg);
-  else if (linearSolver == "GMRES")
-    aztec.SetAztecOption(AZ_solver, AZ_gmres);
-  else if (linearSolver == "CGS")
-    aztec.SetAztecOption(AZ_solver, AZ_cgs);
-  else if (linearSolver == "TFQMR")
-    aztec.SetAztecOption(AZ_solver, AZ_tfqmr);
-  else if (linearSolver == "BiCGStab")
-    aztec.SetAztecOption(AZ_solver, AZ_bicgstab);
-  else if (linearSolver == "LU")
-    aztec.SetAztecOption(AZ_solver, AZ_lu);
-  else {
-    cout << "ERROR: LOCA::Epetra::Group::setAztecOptions" 
-	 << endl
-	 << "\"Aztec Solver\" parameter \"" << linearSolver 
-	 <<  "\" is invalid!" << endl;
-    throw "NOX Error";
-  }
-    
-  // Gram-Schmidt orthogonalization procedure
-  string orthog = p.getParameter("Orthogonalization", "Classical");
-  if (orthog == "Classical") 
-    aztec.SetAztecOption(AZ_orthog, AZ_classic);
-  else if (orthog == "Modified")
-    aztec.SetAztecOption(AZ_orthog, AZ_modified);
-  else {
-    cout << "ERROR: LOCA::Epetra::Group::setAztecOptions" 
-	 << endl
-	 << "\"Orthogonalization\" parameter \"" << orthog
-	 << "\" is invalid!" << endl;
-    throw "NOX Error";
-  }
-
-  // Size of the krylov space
-  aztec.SetAztecOption(AZ_kspace, 
-		       p.getParameter("Size of Krylov Subspace", 300));
-
-  // Convergence criteria to use in the linear solver
-  string convCriteria = p.getParameter("Convergence Criteria", "r0");
-  if (convCriteria == "r0") 
-    aztec.SetAztecOption(AZ_conv, AZ_r0);
-  else if (convCriteria == "rhs")
-    aztec.SetAztecOption(AZ_conv, AZ_rhs);
-  else if (convCriteria == "Anorm")
-    aztec.SetAztecOption(AZ_conv, AZ_Anorm);
-  else if (convCriteria == "no scaling")
-    aztec.SetAztecOption(AZ_conv, AZ_noscaled);
-  else if (convCriteria == "sol")
-    aztec.SetAztecOption(AZ_conv, AZ_sol);
-  else {
-    cout << "ERROR: LOCA::Epetra::Group::setAztecOptions" 
-	 << endl
-	 << "\"Convergence Criteria\" parameter \"" << convCriteria
-	 << "\" is invalid!" << endl;
-    throw "NOX Error";
-  }
-
-  // Set the ill-conditioning threshold for the upper hessenberg matrix
-  if (p.isParameter("Ill-Conditioning Threshold")) {
-    aztec.SetAztecParam(AZ_ill_cond_thresh, 
-			p.getParameter("Ill-Conditioning Threshold", 1.0e+11));
-  }
-
-  // Frequency of linear solve residual output
-  aztec.SetAztecOption(AZ_output, 
-		       p.getParameter("Output Frequency", AZ_last));
-
-  return;
-}
-

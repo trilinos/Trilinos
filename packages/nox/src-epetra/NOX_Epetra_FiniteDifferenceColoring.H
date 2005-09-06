@@ -26,9 +26,9 @@
 // 
 // ************************************************************************
 //@HEADER
-                                                                                
-#ifndef _EPETRA_FINITEDIFFERENCECOLORING_H_
-#define _EPETRA_FINITEDIFFERENCECOLORING_H_
+
+#ifndef NOX_EPETRA_FINITEDIFFERENCECOLORING_H
+#define NOX_EPETRA_FINITEDIFFERENCECOLORING_H
 
 #include "Epetra_RowMatrix.h"    	    // base class
 #include "NOX_Epetra_FiniteDifference.H"    // base class
@@ -36,6 +36,8 @@
 #include "NOX_Common.H"          // for <string>
 
 #include "vector"                // for column indices from coloring
+#include "list"                  //
+#include "map"
 
 // Forward Declarations
 class Epetra_Comm;
@@ -46,13 +48,6 @@ class Epetra_Vector;
 class Epetra_IntVector;
 class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
-
-namespace NOX {
-  class Utils;
-  namespace Epetra {
-    class Interface;
-  }
-}
 
 namespace NOX {
 
@@ -106,40 +101,82 @@ the argument.
 
 <B>Using %FiniteDifferenceColoring in Parallel</B>
 
-This class can be used to numerically approximate \f$ J \f$ for
-distributed parallel problems provided a very minimal of conditions are
-met.  Namely, an Epetra_CrsGraph reflecting a row-based distribution must
-be used in the constructor.  Next, the application must be aware that the
-perturbed vector used to compute residuals has already been scattered
-to a form consistent with the column space of the Epetra_CrsGraph.
-In practice, this means that the perturbed vector used by computeF()
-has already been scattered to a ghosted or overlapped state.  The
-application should then not perform this step but rather simply use
+Two ways of using this class in a distributed parallel environment are
+currently supported.  From an application standpoint, the two approaches 
+differ only in the status of the solution iterate used in the residual
+fill.  If an object of this class is contructed with %parallelColoring = true
+the solution iterate will be passe back in a non-ghosted form.  On the
+contrary, setting this parameter to false in the constructor will 
+cause the solution iterate to be in a ghosted form when calling back for
+a residual fill.  When using the second approach, the user should be
+aware that the perturbed vector used to compute residuals has already
+been scattered to a form consistent with the column space of the
+Epetra_CrsGraph.  In practice, this means that the perturbed vector used
+by computeF() has already been scattered to a ghosted or overlapped state.
+The application should then not perform this step but rather simply use
 the vector provided with the possible exception of requiring a local
 index reordering to bring the column-space based vector in sync with a
 potentially different ghosted index ordering.  See the %Brusselator and
 %1Dfem_nonlinearColoring example problems for details.
 
+<B>Special Case for Approximate Jacobian Construction</B>
+
+Provision is made for a simplified and cheaper use of coloring that
+currently provides only for the diagonal of the Jacobian to be computed.
+This is based on using a first-neighbors coloring of the original
+Jacobian graph using the Epetra_Ext MapColoring class with the distance1
+argument set to true.  This same argument should also be set to true in
+the constructor to this class.  The result will be a diagonal Jacobian
+filled in a much more efficient manner.
 
 */
 
 class FiniteDifferenceColoring : public FiniteDifference {
-      
+     
+ protected:
+ 
+  enum ColoringType { NOX_SERIAL, NOX_PARALLEL };
+        
  public:
-
-  //! Constructor
-
-  FiniteDifferenceColoring(Interface& i, const Epetra_Vector& initialGuess, 
+ 
+  //! Constructor with output control
+  FiniteDifferenceColoring(NOX::Parameter::List& printingParams,
+                           Interface::Required& i, 
+			   const Epetra_Vector& initialGuess, 
                            Epetra_MapColoring& colorMap,
                            vector<Epetra_IntVector>& columns,
+                           bool parallelColoring = false, 
+                           bool distance1 = false, 
                            double beta = 1.0e-6, double alpha = 1.0e-4);
 
   //! Constructor
+  FiniteDifferenceColoring(Interface::Required& i, 
+			   const Epetra_Vector& initialGuess, 
+                           Epetra_MapColoring& colorMap,
+                           vector<Epetra_IntVector>& columns,
+                           bool parallelColoring = false, 
+                           bool distance1 = false, 
+                           double beta = 1.0e-6, double alpha = 1.0e-4);
 
-  FiniteDifferenceColoring(Interface& i, const Epetra_Vector& initialGuess, 
+  //! Constructor with output control
+  FiniteDifferenceColoring(NOX::Parameter::List& printingParams,
+                           Interface::Required& i, 
+			   const Epetra_Vector& initialGuess, 
                            Epetra_CrsGraph& rawGraph,
                            Epetra_MapColoring& colorMap,
                            vector<Epetra_IntVector>& columns,
+                           bool parallelColoring = false,
+                           bool distance1 = false, 
+                           double beta = 1.0e-6, double alpha = 1.0e-4);
+
+  //! Constructor
+  FiniteDifferenceColoring(Interface::Required& i, 
+			   const Epetra_Vector& initialGuess, 
+                           Epetra_CrsGraph& rawGraph,
+                           Epetra_MapColoring& colorMap,
+                           vector<Epetra_IntVector>& columns,
+                           bool parallelColoring = false,
+                           bool distance1 = false, 
                            double beta = 1.0e-6, double alpha = 1.0e-4);
 
   //! Pure virtual destructor
@@ -151,7 +188,19 @@ class FiniteDifferenceColoring : public FiniteDifference {
   //! Compute Jacobian given the specified input vector, x. Returns true if computation was successful.
   virtual bool computeJacobian(const Epetra_Vector& x);
 
+  //! Output the coloring map, index map and underlying matrix
+  //virtual void Print(ostream&);
+
+  //! Create containers for using color and index maps in parallel coloring
+  virtual void createColorContainers();
+
 protected:
+
+  //! Enum flag for type of coloring being used
+  ColoringType coloringType;
+
+  //! bool flag for specifying special case of distance-1 coloring
+  bool distance1;
 
   //! Color Map created by external algorithm 
   const Epetra_MapColoring* colorMap;
@@ -162,8 +211,17 @@ protected:
   //! Number of colors in Color Map 
   int numColors;
 
+  //! Max Number of colors on all procs in Color Map
+  int maxNumColors;
+
   //! List of colors in Color Map 
   int* colorList;
+
+  //! List of colors in Color Map
+  list<int> listOfAllColors;
+  
+  //! Inverse mapping from color id to its position in colorList
+  std::map<int, int> colorToNumMap;
 
   //! Coloring Map created by external algorithm
   Epetra_Map* cMap;
@@ -178,7 +236,7 @@ protected:
   Epetra_Vector* betaColorVect;
 
   //! Color vector based on unColorred Map containing perturbations
-  Epetra_Vector mappedColorVect;
+  Epetra_Vector* mappedColorVect;
 
   //! Perturbed solution vector based on column map
   Epetra_Vector* xCol_perturb;

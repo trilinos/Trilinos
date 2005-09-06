@@ -42,17 +42,19 @@ endif
 
 AM_CPPFLAGS = $(TEST_INCLUDES) -I$(top_srcdir)/test/lapack/LOCA_TestProblems
 
-#EXEEXT = .exe
+EXEEXT = .exe
 
-CHANCONT = chanContinuation_exe
-CHANTPCONT = chanTPContinuation_exe
-CHANHOMOTOPY = chanHomotopy_exe
+CHANCONT = chanContinuation
+CHANTPCONT = chanTPContinuation
+CHANHOMOTOPY = chanHomotopy
 
+if BUILD_LOCA_LAPACK_TESTS
 noinst_PROGRAMS = $(CHANCONT) $(CHANTPCONT) $(CHANHOMOTOPY) 
+endif
 
-chanContinuation_exe_SOURCES = $(srcdir)/ChanContinuation.C 
+chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C 
 
-chanContinuation_exe_DEPENDENCIES = \
+chanContinuation_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
 	$(top_builddir)/src-lapack/libnoxlapack.a \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
@@ -60,19 +62,19 @@ chanContinuation_exe_DEPENDENCIES = \
         $(top_builddir)/src-loca/src-lapack/liblocalapack.a \
 	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.a
 
-chanContinuation_exe_LDADD = $(TEST_LIBS)
+chanContinuation_LDADD = $(TEST_LIBS)
 
-chanTPContinuation_exe_SOURCES = $(srcdir)/ChanTPContinuation.C 
+chanTPContinuation_SOURCES = $(srcdir)/ChanTPContinuation.C 
 
-chanTPContinuation_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
+chanTPContinuation_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
 
-chanTPContinuation_exe_LDADD = $(TEST_LIBS)
+chanTPContinuation_LDADD = $(TEST_LIBS)
 
-chanHomotopy_exe_SOURCES = $(srcdir)/ChanHomotopy.C 
+chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C 
 
-chanHomotopy_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
+chanHomotopy_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
 
-chanHomotopy_exe_LDADD = $(TEST_LIBS)
+chanHomotopy_LDADD = $(TEST_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

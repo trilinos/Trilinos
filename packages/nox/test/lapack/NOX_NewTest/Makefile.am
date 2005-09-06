@@ -42,7 +42,9 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 
 EXEEXT = .exe
 
+if BUILD_LAPACK_TESTS
 noinst_PROGRAMS = NOX_NewTest
+endif
 
 NOX_NewTest_SOURCES = $(srcdir)/test.C
 

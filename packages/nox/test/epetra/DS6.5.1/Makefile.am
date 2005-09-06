@@ -43,7 +43,9 @@ EXEEXT = .exe
 
 EXAMPLE = DS6_5_1
 
+if BUILD_EPETRA_TESTS
 noinst_PROGRAMS = DS6_5_1
+endif
 
 DS6_5_1_SOURCES = $(srcdir)/DennisSchnabel.C \
                   $(srcdir)/DennisSchnabel.H \

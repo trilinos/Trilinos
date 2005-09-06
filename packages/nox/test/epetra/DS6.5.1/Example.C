@@ -184,16 +184,16 @@ int main(int argc, char *argv[])
   Epetra_RowMatrix& A = Problem.getJacobian();
 
   // Create the callback interfaces for filling the residual and Jacbian
-  NOX::EpetraNew::Interface::Required& iReq = interface;
-  NOX::EpetraNew::Interface::Jacobian& iJac = interface;
+  NOX::Epetra::Interface::Required& iReq = interface;
+  NOX::Epetra::Interface::Jacobian& iJac = interface;
 
   // Create the Linear System
-  NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams,
+  NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
                                              iReq, iJac, A, soln);
 
   // Create the Group
   NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
-  NOX::EpetraNew::Group grp(printParams, iReq, initialGuess, linSys); 
+  NOX::Epetra::Group grp(printParams, iReq, initialGuess, linSys); 
 
   // Establish initial convergence status
   grp.computeF();
@@ -207,26 +207,9 @@ int main(int argc, char *argv[])
   NOX::Solver::Manager solver(grp, combo, nlParams);
   NOX::StatusTest::StatusType status = solver.solve();
 
-  int testStatus = 0;
-
-  if (status != NOX::StatusTest::Converged) {
-    if (MyPID==0) cout << "Nonlinear solver failed to converge!" << endl;
-    testStatus = -1;
-  }
-
-  // Test for correct line-search and linear solver behavior
-  NOX::Parameter::List & outParams = nlParams.sublist("Line Search").sublist("Output");
-  if( (outParams.getParameter("Total Number of Failed Line Searches", -1) != 0) ||
-    (outParams.getParameter("Total Number of Line Search Calls", 0) != 7) ||
-    (outParams.getParameter("Total Number of Line Search Inner Iterations", 0) != 4) ||
-    (outParams.getParameter("Total Number of Non-trivial Line Searches", 0) != 2) ||
-    (lsParams.sublist("Output").getParameter("Total Number of Linear Iterations", 0) != 14) ) {
-    testStatus = -1;
-  }
-
   // Get the Epetra_Vector with the final solution from the solver
-  const NOX::EpetraNew::Group& finalGroup = 
-      dynamic_cast<const NOX::EpetraNew::Group&>(solver.getSolutionGroup());
+  const NOX::Epetra::Group& finalGroup = 
+      dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
   const Epetra_Vector& finalSolution = 
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
@@ -249,6 +232,36 @@ int main(int argc, char *argv[])
   for (i=0; i<NumMyElements; i++)
     fprintf(ifp, "%d  %E\n", soln.Map().MinMyGID()+i, finalSolution[i]);
   fclose(ifp);
+
+  // Report results
+
+  int testStatus = 0; // Converged
+
+  // 1. Convergence
+  if (status != NOX::StatusTest::Converged) {
+    if (MyPID==0) cout << "Nonlinear solver failed to converge!" << endl;
+    testStatus = 1;
+  }
+  // 2. Nonlinear Iterations (7)
+  if (solver.getParameterList().sublist("Output").getParameter("Nonlinear Iterations",0) != 7) {
+    testStatus = 2;
+  }
+  // 3. Linear Iterations (14)
+  if (solver.getParameterList().sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").getParameter("Total Number of Linear Iterations",0) != 14) {
+    testStatus = 3;
+  }
+  // 4. Number of Non-trivial Line Searches (2)
+  if (solver.getParameterList().sublist("Line Search").sublist("Output").getParameter("Total Number of Non-trivial Line Searches",0) != 2) {
+    testStatus = 4;
+  }
+  // 5. Number of Line Search Inner Iterations (4)
+  if (solver.getParameterList().sublist("Line Search").sublist("Output").getParameter("Total Number of Line Search Inner Iterations",0) != 4) {
+    testStatus = 5;
+  }
+  // 6. Number of Failed Line Searches (0)
+  if (solver.getParameterList().sublist("Line Search").sublist("Output").getParameter("Total Number of Failed Line Searches",-1) != 0) {
+    testStatus = 6;
+  }
 
   if (testStatus == 0)
     cout << "Test passed!" << endl;

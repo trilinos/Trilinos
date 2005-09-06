@@ -42,7 +42,9 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 
 EXEEXT = .exe
 
+if BUILD_LAPACK_TESTS
 noinst_PROGRAMS = rosenbrock broyden
+endif
 
 rosenbrock_SOURCES = \
 			$(srcdir)/Rosenbrock.C 

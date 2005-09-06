@@ -44,9 +44,9 @@
 // ---------- Forward Declarations ----------
 class GenericEpetraProblem;
 
-class  Problem_Interface : public NOX::EpetraNew::Interface::Required,
-                           public NOX::EpetraNew::Interface::Jacobian,
-                           public NOX::EpetraNew::Interface::Preconditioner
+class  Problem_Interface : public NOX::Epetra::Interface::Required,
+                           public NOX::Epetra::Interface::Jacobian,
+                           public NOX::Epetra::Interface::Preconditioner
 {
 public:
   Problem_Interface(GenericEpetraProblem& Problem);
@@ -57,13 +57,15 @@ public:
                 FillType flag = Residual);
 
   //! Compute an explicit Jacobian
-  bool computeJacobian(const Epetra_Vector& x);
+  bool computeJacobian(const Epetra_Vector& x,
+		       Epetra_Operator& Jac);
 
   //! Compute the Epetra_RowMatrix M, that will be used by the Aztec preconditioner instead of the Jacobian.  This is used when there is no explicit Jacobian present (i.e. Matrix-Free Newton-Krylov).  This MUST BE an Epetra_RowMatrix since the Aztec preconditioners need to know the sparsity pattern of the matrix.  Returns true if computation was successful.
   bool computePrecMatrix(const Epetra_Vector& x);
   
   //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.
   bool computePreconditioner(const Epetra_Vector& x,
+			     Epetra_Operator& Prec,
                              NOX::Parameter::List* precParams = 0);
 
   //! Application Operator: Object that points to the user's evaluation routines.

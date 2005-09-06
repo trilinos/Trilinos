@@ -37,9 +37,9 @@
 #include "NOX_Epetra.H"
 
 // This is needed to get the FillType enum values from NOX_Epetra_Interface
-#include "NOX_EpetraNew_Interface_Required.H"
-#include "NOX_EpetraNew_Interface_Jacobian.H"
-#include "NOX_EpetraNew_Interface_Preconditioner.H"
+#include "NOX_Epetra_Interface_Required.H"
+#include "NOX_Epetra_Interface_Jacobian.H"
+#include "NOX_Epetra_Interface_Preconditioner.H"
 
 //#include "Problem_Manager.H"
 class Problem_Manager;
@@ -75,7 +75,7 @@ public:
 
   // Evaluates the function (RHS) and/or the Jacobian using the solution 
   // values in solnVector.
-  virtual bool evaluate( NOX::EpetraNew::Interface::Required::FillType fill,
+  virtual bool evaluate( NOX::Epetra::Interface::Required::FillType fill,
                            const Epetra_Vector *solnVector, 
                            Epetra_Vector *rhsVector ) = 0;
 

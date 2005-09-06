@@ -42,9 +42,13 @@ endif
 
 AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
-EXAMPLE = example
+EXEEXT = .exe
 
-noinst_PROGRAMS = $(EXAMPLE)
+if BUILD_BELOS_EXAMPLES
+if BUILD_EPETRA_EXAMPLES
+noinst_PROGRAMS = example
+endif
+endif
 
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \

@@ -29,9 +29,5 @@
 //LOCA::Epetra Objects
 #include "NOX_Epetra.H"
 #include "LOCA_Epetra_Group.H"
-#include "LOCA_Epetra_Interface.H"
-
-//EpetraNew objects
-#include "LOCA_EpetraNew_Group.H"
-#include "LOCA_EpetraNew_Interface_Required.H"
+#include "LOCA_Epetra_Interface_Required.H"
 #include "LOCA_Epetra_Factory.H"

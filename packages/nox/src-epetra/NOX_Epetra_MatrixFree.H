@@ -27,11 +27,13 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _NOX_EPETRA_MATRIXFREE_H_
-#define _NOX_EPETRA_MATRIXFREE_H_
+#ifndef NOX_EPETRA_MATRIXFREE_H
+#define NOX_EPETRA_MATRIXFREE_H
 
 #include "Epetra_Comm.h"
-#include "Epetra_Operator.h"	// base class
+
+#include "Epetra_Operator.h"	           // base class
+#include "NOX_Epetra_Interface_Jacobian.H" // base class
 
 #include "NOX_Common.H"
 #include "Epetra_Import.h"
@@ -42,9 +44,14 @@ class Epetra_Comm;
 class Epetra_Map;
 
 namespace NOX {
-namespace Epetra {
-class Interface;
-}
+  namespace Abstract {
+    class Group;
+  }
+  namespace Epetra {
+    namespace Interface {
+      class Required;
+    }
+  }
 }
 
 namespace NOX {
@@ -63,7 +70,8 @@ where \f$J\f$ is the Jacobian, \f$F\f$ is the function evaluation, \f$x\f$ is th
 
 where \f$ \lambda = 1.0e-6 \f$.
  */
-class MatrixFree : public Epetra_Operator {
+class MatrixFree : public Epetra_Operator,
+		   public virtual NOX::Epetra::Interface::Jacobian {
 
  public:
 
@@ -71,7 +79,8 @@ class MatrixFree : public Epetra_Operator {
   enum DifferenceType {Forward, Backward, Centered};
 
   //! Constructor
-  MatrixFree(Interface& i, const Epetra_Vector& x, double lambda = 1.0e-6);
+  MatrixFree(NOX::Epetra::Interface::Required& i, const Epetra_Vector& x,
+	     bool useNewPerturbation = false);
 
   //! Pure virtual destructor
   virtual ~MatrixFree();
@@ -150,13 +159,16 @@ class MatrixFree : public Epetra_Operator {
   //! Returns the most recently used value of the perturbation parameter \f$ \eta \f$.
   double getPerturbation() const;
 
+  //! Register a NOX::Abstract::Group derived object and use the computeF() method of that group for the perturbation instead of the NOX::Epetra::Interface::Required::computeF() method.  This is required for LOCA to get the operators correct during homotopy.
+  void setGroupForComputeF(NOX::Abstract::Group& group);
+
 protected:
 
   //! Label for matrix
   string label;
 
   //! User provided interface function
-  Interface& interface;
+  NOX::Epetra::Interface::Required& interface;
 
   //! The current solution vector
   Epetra_Vector currentX;
@@ -198,8 +210,17 @@ protected:
   //! Flag that determines if we should calculate eta or use a value set by the user.
   bool computeEta;
 
+  //! Flag to enables the use of a group instead of the interface for the computeF() calls in the directional difference calculation.
+  bool useGroupForComputeF;
+
+  //! A new perturbation formulation developed by C. T. Kelley and A. G. Salniger can be used by the constructor flag useNewPerturbation = true.
+  bool useNewPerturbation;
+
+  //! Pointer to the group for computeF() calls.
+  NOX::Abstract::Group* groupPtr;
+
 };
 } // namespace Epetra
 } // namespace NOX
 
-#endif /* _EPETRA_ROWMATRIX_H_ */
+#endif /* NOX_EPETRA_MATRIXFREE_H */

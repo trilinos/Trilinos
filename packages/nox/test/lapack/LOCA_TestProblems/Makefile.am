@@ -66,7 +66,9 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 
 liblocatestproblems_a_SOURCES = $(LOCA_TESTPROBLEMS) $(LOCA_TESTPROBLEMS_H)
 
+if BUILD_LOCA_LAPACK_TESTS
 noinst_LIBRARIES = liblocatestproblems.a
+endif
 
 # ------------------------------------------------------------------------
 # For using a special archiver

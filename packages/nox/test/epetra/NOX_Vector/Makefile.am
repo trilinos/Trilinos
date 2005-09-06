@@ -41,14 +41,15 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = NOX_Vector
+if BUILD_EPETRA_TESTS
+noinst_PROGRAMS = NOX_Epetra_Vector
+endif
 
-NOX_Vector_SOURCES = $(srcdir)/test.C
+NOX_Epetra_Vector_SOURCES = $(srcdir)/test.C
 
-NOX_Vector_DEPENDENCIES = \
+NOX_Epetra_Vector_DEPENDENCIES = \
                           $(top_builddir)/src/libnox.a \
                           $(top_builddir)/src-epetra/libnoxepetra.a \
                           $(top_builddir)/test/utils/libnoxtestutils.a
 
-#Unsure why this test need to link to the BLAS on an IBM.
-NOX_Vector_LDADD = $(TEST_LIBS)
+NOX_Epetra_Vector_LDADD = $(TEST_LIBS)

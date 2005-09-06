@@ -288,20 +288,20 @@ int main(int argc, char *argv[])
     Epetra_RowMatrix& Amat = Problem.getJacobian();
 
     // Create the linear systems
-    Teuchos::RefCountPtr<NOX::EpetraNew::LinearSystemAztecOO> linsys = 
-      Teuchos::rcp(new NOX::EpetraNew::LinearSystemAztecOO(nlPrintParams, 
-							   lsParams,
-							   interface, 
-							   interface,
-							   Amat, soln));
+    Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, 
+							lsParams,
+							interface, 
+							interface,
+							Amat, soln));
 
     // Create the loca vector
     NOX::Epetra::Vector locaSoln(soln);
 
     // Create the Group
-    grp = Teuchos::rcp(new LOCA::EpetraNew::Group(nlPrintParams, 
-						  interface, locaSoln, *linsys,
-						  pVector));
+    grp = Teuchos::rcp(new LOCA::Epetra::Group(nlPrintParams, 
+					       interface, locaSoln, *linsys,
+					       pVector));
     
 
     // Change initial guess to a random vector

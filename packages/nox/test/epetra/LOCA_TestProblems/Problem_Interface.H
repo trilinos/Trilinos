@@ -50,8 +50,8 @@ namespace LOCA {
 
 
 class  Problem_Interface : 
-  public LOCA::EpetraNew::Interface::Required,
-  public NOX::EpetraNew::Interface::Jacobian
+  public LOCA::Epetra::Interface::Required,
+  public NOX::Epetra::Interface::Jacobian
 {
 public:
   Problem_Interface(FiniteElementProblem& Problem);
@@ -61,7 +61,7 @@ public:
   bool computeF(const Epetra_Vector& x, Epetra_Vector& F, FillType flag);
 
   //! Compute an explicit Jacobian
-  bool computeJacobian(const Epetra_Vector& x);
+  bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
 
   //! Set a parameter in the user's code.
   void setParameters(const LOCA::ParameterVector& params);

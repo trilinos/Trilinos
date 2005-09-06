@@ -123,7 +123,7 @@ bool Burgers::initializeSoln()
 
 // Matrix and Residual Fills
 bool Burgers::evaluate(
-             NOX::EpetraNew::Interface::Required::FillType fillType,
+             NOX::Epetra::Interface::Required::FillType fillType,
              const Epetra_Vector* soln, 
              Epetra_Vector* tmp_rhs) 
 {
@@ -159,7 +159,7 @@ bool Burgers::evaluate(
     //cout << "depSoln[" << i << "] :" << dep[i] << endl;
   }
   xvec.Import(*xptr, *Importer, Insert);
-  if( flag == NOX::EpetraNew::Interface::Required::FD_Res)
+  if( flag == NOX::Epetra::Interface::Required::FD_Res)
     // Overlap vector for solution received from FD coloring, so simply reorder
     // on processor
     u.Export(*soln, *ColumnToOverlapImporter, Insert);

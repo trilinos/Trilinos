@@ -136,14 +136,14 @@ OffBlock_Manager::~OffBlock_Manager()
 // These methods are needed to allow inheritance from GenericEpetraProblem base
 
 bool OffBlock_Manager::evaluate(
-              NOX::EpetraNew::Interface::Required::FillType flag,
+              NOX::Epetra::Interface::Required::FillType flag,
               const Epetra_Vector *solnVector,
               Epetra_Vector *rhsVector)
 {
   // Determine if fill call is valid
-  if (rhsVector == 0 || flag != NOX::EpetraNew::Interface::Required::FD_Res) {
+  if (rhsVector == 0 || flag != NOX::Epetra::Interface::Required::FD_Res) {
     cout << "ERROR: Either invalid RHS vector or call made from other than "
-         << "NOX::EpetraNew::FiniteDifference to OffBlock fill !!" << endl;
+         << "NOX::Epetra::FiniteDifference to OffBlock fill !!" << endl;
     throw "OffBlock_Manager ERROR";
   }
 
@@ -168,7 +168,7 @@ bool OffBlock_Manager::evaluate(
   return true;
 }
 
-NOX::EpetraNew::Group& OffBlock_Manager::getGroup()
+NOX::Epetra::Group& OffBlock_Manager::getGroup()
 {
   if( !group ) {
     cout << "ERROR: Unable to get off-block Group for "
@@ -245,22 +245,22 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
   if( !useColoring )
   {
     // Now setup each FD Jacobian as its own group/linearsystem
-    matrixOperator = new NOX::EpetraNew::FiniteDifference(
+    matrixOperator = new NOX::Epetra::FiniteDifference(
       	*offBlockInterface, 
   	*rowMapVec, 
 //  	compositeVec, 
   	graph);
   
-    NOX::EpetraNew::Interface::Required& reqInt = 
-      dynamic_cast<NOX::EpetraNew::Interface::Required&>(*offBlockInterface);
-    NOX::EpetraNew::Interface::Jacobian& jacInt = 
-      dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*matrixOperator);
+    NOX::Epetra::Interface::Required& reqInt = 
+      dynamic_cast<NOX::Epetra::Interface::Required&>(*offBlockInterface);
+    NOX::Epetra::Interface::Jacobian& jacInt = 
+      dynamic_cast<NOX::Epetra::Interface::Jacobian&>(*matrixOperator);
   
     // Here we create a linear system solely for the sake of filling an
     // off-diagonal block Jacobian contribution using FDC.  The nlParams and
     // statusTest are irrelevant and so are taken as that of the overall
     // Problem_Manager object.
-    linearSystem = new NOX::EpetraNew::LinearSystemAztecOO(
+    linearSystem = new NOX::Epetra::LinearSystemAztecOO(
         myManager->nlParams->sublist("Printing"),
         myManager->nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
         reqInt,
@@ -272,7 +272,7 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
     noxVec = new NOX::Epetra::Vector(*rowMapVec);
 //    NOX::Epetra::Vector tmpNOXVec(compositeVec);
   
-    group = new NOX::EpetraNew::Group(
+    group = new NOX::Epetra::Group(
       myManager->nlParams->sublist("Printing"),
       reqInt,
       *noxVec,
@@ -322,7 +322,7 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
     }
   
     // Now setup each FDC Jacobian as its own group/linearsystem
-    matrixOperator = new NOX::EpetraNew::FiniteDifferenceColoring(
+    matrixOperator = new NOX::Epetra::FiniteDifferenceColoring(
       	*offBlockInterface, 
   	*rowMapVec, 
   	graph, 
@@ -331,16 +331,16 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
   	useParallel,
   	distance1 );
   
-    NOX::EpetraNew::Interface::Required& reqInt = 
-      dynamic_cast<NOX::EpetraNew::Interface::Required&>(*offBlockInterface);
-    NOX::EpetraNew::Interface::Jacobian& jacInt = 
-      dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*matrixOperator);
+    NOX::Epetra::Interface::Required& reqInt = 
+      dynamic_cast<NOX::Epetra::Interface::Required&>(*offBlockInterface);
+    NOX::Epetra::Interface::Jacobian& jacInt = 
+      dynamic_cast<NOX::Epetra::Interface::Jacobian&>(*matrixOperator);
   
     // Here we create a linear system solely for the sake of filling an
     // off-diagonal block Jacobian contribution using FDC.  The nlParams and
     // statusTest are irrelevant and so are taken as that of the overall
     // Problem_Manager object.
-    linearSystem = new NOX::EpetraNew::LinearSystemAztecOO(
+    linearSystem = new NOX::Epetra::LinearSystemAztecOO(
         myManager->nlParams->sublist("Printing"),
         myManager->nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
         reqInt,
@@ -350,7 +350,7 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
   
     NOX::Epetra::Vector tmpNOXVec(*rowMapVec);
   
-    group = new NOX::EpetraNew::Group(
+    group = new NOX::Epetra::Group(
       myManager->nlParams->sublist("Printing"),
       reqInt,
       tmpNOXVec,

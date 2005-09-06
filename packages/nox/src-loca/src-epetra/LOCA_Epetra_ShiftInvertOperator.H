@@ -31,7 +31,7 @@
 #define LOCA_EPETRA_SHIFTINVERTOPERATOR_H
 
 #include "Epetra_Operator.h"
-#include "LOCA_EpetraNew_Group.H"
+#include "LOCA_Epetra_Group.H"
 #include "LOCA_ErrorCheck.H"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
@@ -41,7 +41,7 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Distributor.h"
 #include "NOX_Epetra_Vector.H"
-#include "NOX_EpetraNew_Interface_Jacobian.H"
+#include "NOX_Epetra_Interface_Jacobian.H"
 
 class Epetra_MultiVector;
 class Epetra_CrsMatrix;
@@ -56,7 +56,7 @@ namespace LOCA {
   namespace Epetra {
 
     //! Interface for LOCA::Epetra::ShifterInvertOperator
-    class ShiftInvertInterface : public NOX::EpetraNew::Interface::Jacobian {
+    class ShiftInvertInterface : public NOX::Epetra::Interface::Jacobian {
 
     public:
       
@@ -67,7 +67,8 @@ namespace LOCA {
       ~ShiftInvertInterface() {};
       
       //! Compute Jacobian \f$J\f$.
-      bool computeJacobian(const Epetra_Vector &x) {return true;}; 
+      bool computeJacobian(const Epetra_Vector &x,
+			   Epetra_Operator& Jac) {return true;}; 
     };
 
     //! Epetra operator for \f$(J-\sigma M)^{-1}\f$.
@@ -76,7 +77,7 @@ namespace LOCA {
     public:
 
       //! Constructor
-      ShiftInvertOperator(const LOCA::EpetraNew::Group& grp, 
+      ShiftInvertOperator(const LOCA::Epetra::Group& grp, 
 			  const Epetra_Operator& jac, 
 			  const double& shift, 
 			  bool hasMassMatrix);
@@ -128,7 +129,7 @@ namespace LOCA {
     protected:  
   
       //! LOCA group
-      const LOCA::EpetraNew::Group& locagrp; 
+      const LOCA::Epetra::Group& locagrp; 
 
       //! Jacobian operator
       const Epetra_Operator& jacOper;

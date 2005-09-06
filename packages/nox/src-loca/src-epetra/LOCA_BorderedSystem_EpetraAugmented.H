@@ -44,7 +44,7 @@ namespace LOCA {
   namespace MultiContinuation {
     class ConstraintInterfaceMVDX;
   }
-  namespace EpetraNew {
+  namespace Epetra {
     class Group;
   }
 }
@@ -246,7 +246,7 @@ namespace LOCA {
       Teuchos::RefCountPtr<NOX::Parameter::List> solverParams;
 
       //! Pointer to group storing J
-      Teuchos::RefCountPtr<LOCA::EpetraNew::Group> grp;
+      Teuchos::RefCountPtr<LOCA::Epetra::Group> grp;
 
       //! Pointer to A block
       Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> A;

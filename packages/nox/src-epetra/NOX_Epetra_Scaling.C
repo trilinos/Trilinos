@@ -26,7 +26,7 @@
 // 
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #include "NOX_Epetra_Scaling.H"
 
 #include "Epetra_Vector.h"

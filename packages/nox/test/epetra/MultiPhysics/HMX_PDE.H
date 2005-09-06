@@ -76,7 +76,7 @@ public:
 
   // Evaluates the function (F) and/or the Jacobian using the solution 
   // values in solnVector.
-  bool evaluate( NOX::EpetraNew::Interface::Required::FillType fill,
+  bool evaluate( NOX::Epetra::Interface::Required::FillType fill,
                 const Epetra_Vector *solnVector, 
 		Epetra_Vector *rhsVector);
 

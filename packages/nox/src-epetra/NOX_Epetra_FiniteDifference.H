@@ -27,11 +27,14 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _EPETRA_FINITEDIFFERENCE_H_
-#define _EPETRA_FINITEDIFFERENCE_H_
+#ifndef NOX_EPETRA_FINITEDIFFERENCE_H
+#define NOX_EPETRA_FINITEDIFFERENCE_H
 
-#include "Epetra_RowMatrix.h"    // base class
+#include "Epetra_RowMatrix.h"                       // base class
+#include "NOX_Epetra_Interface_Jacobian.H"       // base class
+#include "NOX_Epetra_Interface_Preconditioner.H" // base class
 
+#include "NOX_Epetra_Interface_Required.H" // for enum FillType
 #include "NOX_Common.H"          // for <string>
 
 // Forward Declarations
@@ -44,8 +47,8 @@ class Epetra_CrsMatrix;
 
 namespace NOX {
   class Utils;
-  namespace Epetra {
-    class Interface;
+  namespace Abstract {
+    class Group;
   }
 }
 
@@ -71,24 +74,54 @@ In addition to the forward difference derivative approximation, backward or cent
 
   Since this inherits from the Epetra_RowMatrix class, it can be used as the preconditioning matrix for AztecOO preconditioners.  This method is very inefficient when computing the Jacobian and is not recommended for large-scale systems but only for debugging purposes.
   */
-class FiniteDifference : public Epetra_RowMatrix {
+class FiniteDifference : public Epetra_RowMatrix,
+			 public NOX::Epetra::Interface::Jacobian,
+			 public NOX::Epetra::Interface::Preconditioner {
 
  public:
 
   //! Define types for use of the perturbation parameter \f$ \delta\f$.
   enum DifferenceType {Forward, Backward, Centered};
 
-  //! Constructor
-  FiniteDifference(Interface& i, const Epetra_Vector& initialGuess, double beta = 1.0e-6, double alpha = 1.0e-4);
+  //! Constructor with output control
+  FiniteDifference(NOX::Parameter::List& printingParams,
+                   Interface::Required& i, const Epetra_Vector& initialGuess,
+		   double beta = 1.0e-6, double alpha = 1.0e-4);
 
   //! Constructor
-  FiniteDifference(Interface& i, const Epetra_Vector& initialGuess, const Epetra_Vector& beta, double alpha = 1.0e-4);
+  FiniteDifference( Interface::Required& i, const Epetra_Vector& initialGuess,
+		   double beta = 1.0e-6, double alpha = 1.0e-4);
+
+  //! Constructor with output control
+  FiniteDifference(NOX::Parameter::List& printingParams,
+                   Interface::Required& i, const Epetra_Vector& initialGuess,
+		   const Epetra_Vector& beta, double alpha = 1.0e-4);
+
+  //! Constructor
+  FiniteDifference( Interface::Required& i, const Epetra_Vector& initialGuess,
+		   const Epetra_Vector& beta, double alpha = 1.0e-4);
+
+  //! Constructor with output control that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
+  FiniteDifference(NOX::Parameter::List& printingParams,
+                   Interface::Required& i, const Epetra_Vector& initialGuess,
+		   Epetra_CrsGraph& g, double beta = 1.0e-6,
+		   double alpha = 1.0e-4);
 
   //! Constructor that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
-  FiniteDifference(Interface& i, const Epetra_Vector& initialGuess, const Epetra_CrsGraph& g, double beta = 1.0e-6, double alpha = 1.0e-4);
+  FiniteDifference(Interface::Required& i, const Epetra_Vector& initialGuess,
+		   Epetra_CrsGraph& g, double beta = 1.0e-6,
+		   double alpha = 1.0e-4);
+
+  //! Constructor with output control that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
+  FiniteDifference(NOX::Parameter::List& printingParams,
+                   Interface::Required& i, const Epetra_Vector& initialGuess,
+		   Epetra_CrsGraph& g, const Epetra_Vector& beta,
+		   double alpha = 1.0e-4);
 
   //! Constructor that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
-  FiniteDifference(Interface& i, const Epetra_Vector& initialGuess, const Epetra_CrsGraph& g, const Epetra_Vector& beta, double alpha = 1.0e-4);
+  FiniteDifference(Interface::Required& i, const Epetra_Vector& initialGuess,
+		   Epetra_CrsGraph& g, const Epetra_Vector& beta,
+		   double alpha = 1.0e-4);
 
   //! Pure virtual destructor
   virtual ~FiniteDifference();
@@ -208,7 +241,9 @@ class FiniteDifference : public Epetra_RowMatrix {
   virtual bool computeJacobian(const Epetra_Vector& x);
 
   //! Compute an Epetra_RowMatrix to be used by Aztec preconditioners given the specified input vector, x. Returns true if computation was successful.
-  virtual bool computePreconditioner(const Epetra_Vector& x, Epetra_RowMatrix& M);
+  virtual bool computePreconditioner(const Epetra_Vector& x,
+				     Epetra_Operator& Prec,
+				     NOX::Parameter::List* precParams = 0);
 
   //! Set the type of perturbation method used (default is Forward)
   virtual void setDifferenceMethod( DifferenceType type );
@@ -219,12 +254,21 @@ class FiniteDifference : public Epetra_RowMatrix {
   //! Output the underlying matrix
   virtual void Print(ostream&) const;
 
+  //! Register a NOX::Abstract::Group derived object and use the computeF() method of that group for the perturbation instead of the NOX::Epetra::Interface::Required::computeF() method.  This is required for LOCA to get the operators correct during homotopy.
+  void setGroupForComputeF(NOX::Abstract::Group& group);
+
 protected:
 
   //! Constructs an Epetra_CrsGraph and Epetra_RowMatrix for the Jacobian.  This is only called if the user does not supply an Epetra_CrsGraph.
-  Epetra_CrsMatrix* createGraphAndJacobian(Interface& i, const Epetra_Vector& x);
+  Epetra_CrsMatrix* createGraphAndJacobian(Interface::Required& i, const Epetra_Vector& x);
+
+  bool computeF(const Epetra_Vector& input, Epetra_Vector& result,
+		NOX::Epetra::Interface::Required::FillType);
 
 protected:
+
+  //! Printing Utilities object
+  const NOX::Utils utils;
 
   //! Map that contains element distribution data
   const Epetra_BlockMap& map;
@@ -236,7 +280,7 @@ protected:
   Epetra_CrsMatrix* jacobian;
 
   //! User provided interface function.
-  Interface& interface;
+  NOX::Epetra::Interface::Required& interface;
 
   //! Perturbed solution vector - a work array that needs to be mutable.
   mutable Epetra_Vector x_perturb;
@@ -274,8 +318,17 @@ protected:
   //! label for the Epetra_RowMatrix
   string label;
 
+  //! Flag to enables the use of a group instead of the interface for the computeF() calls in the directional difference calculation.
+  bool useGroupForComputeF;
+
+  //! Pointer to the group for computeF() calls.
+  NOX::Abstract::Group* groupPtr;
+
+  //! Flag to specify if the matrix graph was created locally or was passed in.
+  bool graphCreatedLocally;
+
 };
 }  // namespace Epetra
 }  // namespace NOX
 
-#endif /* _EPETRA_FINITEDIFFERENCE_H_ */
+#endif /* NOX_EPETRA_FINITEDIFFERENCE_H */

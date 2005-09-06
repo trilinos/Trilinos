@@ -37,7 +37,7 @@
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
-#include "LOCA_EpetraNew_Group.H"
+#include "LOCA_Epetra_Group.H"
 #include "LOCA_Epetra_AugmentedOp.H"
 
 LOCA::BorderedSystem::EpetraAugmented::EpetraAugmented(
@@ -83,12 +83,12 @@ LOCA::BorderedSystem::EpetraAugmented::setMatrixBlocks(
   Teuchos::RefCountPtr<NOX::Abstract::Group> non_const_group = 
     Teuchos::rcp_const_cast<NOX::Abstract::Group>(group);
 
-  // Cast group to an EpetraNew group
-  grp = Teuchos::rcp_dynamic_cast<LOCA::EpetraNew::Group>(non_const_group);
+  // Cast group to an Epetra group
+  grp = Teuchos::rcp_dynamic_cast<LOCA::Epetra::Group>(non_const_group);
   if (grp.get() == NULL)
     globalData->locaErrorCheck->throwError(
 				    callingFunction,
-				    "Group object must be an EpetraNew group");
+				    "Group object must be an Epetra group");
 
   A = blockA;
 
@@ -303,7 +303,7 @@ LOCA::BorderedSystem::EpetraAugmented::applyInverse(
        Teuchos::rcp(&(nox_epetra_f->getEpetraMultiVector()), false);
      
      // Get linear system
-     NOX::EpetraNew::LinearSystem& linSys = grp->getLinearSystem();
+     NOX::Epetra::LinearSystem& linSys = grp->getLinearSystem();
 
      // Get Jacobian
      Teuchos::RefCountPtr<Epetra_Operator> jac =

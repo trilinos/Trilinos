@@ -41,21 +41,25 @@ endif
 
 AM_CPPFLAGS = $(TEST_INCLUDES)
 
-HOUSEHOLDERBORDEREDSOLVE = householderBorderedSolve_exe
-HOUSEHOLDERBORDEREDSOLVECONTIGUOUS = householderBorderedSolveContiguous_exe
-COMPOSITECONSTRAINT = compositeConstraint_exe
-COMPOSITECONSTRAINTMVDX = compositeConstraintMVDX_exe
+EXEEXT = .exe
 
+HOUSEHOLDERBORDEREDSOLVE = householderBorderedSolve
+HOUSEHOLDERBORDEREDSOLVECONTIGUOUS = householderBorderedSolveContiguous
+COMPOSITECONSTRAINT = compositeConstraint
+COMPOSITECONSTRAINTMVDX = compositeConstraintMVDX
+
+if BUILD_LOCA_EPETRA_TESTS
 noinst_PROGRAMS = \
 	$(HOUSEHOLDERBORDEREDSOLVE) \
 	$(HOUSEHOLDERBORDEREDSOLVECONTIGUOUS) \
 	$(COMPOSITECONSTRAINT) \
 	$(COMPOSITECONSTRAINTMVDX)
+endif
 
-householderBorderedSolve_exe_SOURCES = \
+householderBorderedSolve_SOURCES = \
 	$(srcdir)/HouseholderBorderedSolve.C 
 
-householderBorderedSolve_exe_DEPENDENCIES = \
+householderBorderedSolve_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
 	$(top_builddir)/src-epetra/libnoxepetra.a \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
@@ -63,34 +67,34 @@ householderBorderedSolve_exe_DEPENDENCIES = \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.a \
 	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.a
 
-householderBorderedSolve_exe_LDADD = $(TEST_LIBS)
+householderBorderedSolve_LDADD = $(TEST_LIBS)
 
-householderBorderedSolveContiguous_exe_SOURCES = \
+householderBorderedSolveContiguous_SOURCES = \
 	$(srcdir)/HouseholderBorderedSolveContiguous.C 
 
-householderBorderedSolveContiguous_exe_DEPENDENCIES = \
-	$(householderBorderedSolve_exe_DEPENDENCIES)
+householderBorderedSolveContiguous_DEPENDENCIES = \
+	$(householderBorderedSolve_DEPENDENCIES)
 
-householderBorderedSolveContiguous_exe_LDADD = \
-	$(householderBorderedSolve_exe_LDADD)
+householderBorderedSolveContiguous_LDADD = \
+	$(householderBorderedSolve_LDADD)
 
-compositeConstraint_exe_SOURCES = \
+compositeConstraint_SOURCES = \
 	$(srcdir)/CompositeConstraint.C
 
-compositeConstraint_exe_DEPENDENCIES = \
-	$(householderBorderedSolve_exe_DEPENDENCIES)
+compositeConstraint_DEPENDENCIES = \
+	$(householderBorderedSolve_DEPENDENCIES)
 
-compositeConstraint_exe_LDADD = \
-	$(householderBorderedSolve_exe_LDADD)
+compositeConstraint_LDADD = \
+	$(householderBorderedSolve_LDADD)
 
-compositeConstraintMVDX_exe_SOURCES = \
+compositeConstraintMVDX_SOURCES = \
 	$(srcdir)/CompositeConstraintMVDX.C
 
-compositeConstraintMVDX_exe_DEPENDENCIES = \
-	$(householderBorderedSolve_exe_DEPENDENCIES)
+compositeConstraintMVDX_DEPENDENCIES = \
+	$(householderBorderedSolve_DEPENDENCIES)
 
-compositeConstraintMVDX_exe_LDADD = \
-	$(householderBorderedSolve_exe_LDADD)
+compositeConstraintMVDX_LDADD = \
+	$(householderBorderedSolve_LDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

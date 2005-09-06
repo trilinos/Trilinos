@@ -109,7 +109,7 @@ DennisSchnabel::~DennisSchnabel()
 
 // Matrix and Residual Fills
 bool DennisSchnabel::evaluate(
-             NOX::EpetraNew::Interface::Required::FillType fillType,
+             NOX::Epetra::Interface::Required::FillType fillType,
              const Epetra_Vector* soln, 
              Epetra_Vector* tmp_rhs)
 {

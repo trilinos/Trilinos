@@ -40,37 +40,26 @@
 LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra.H \
 	$(srcdir)/LOCA_Epetra_Group.H \
-	$(srcdir)/LOCA_Epetra_Interface.H \
-	$(srcdir)/LOCA_Epetra_BorderedOp.H \
-	$(srcdir)/LOCA_Epetra_HouseholderJacOp.H \
-	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.H
-
-LOCA_EPETRA = \
-	$(srcdir)/LOCA_Epetra_Group.C \
-	$(srcdir)/LOCA_Epetra_BorderedOp.C \
-	$(srcdir)/LOCA_Epetra_HouseholderJacOp.C \
-	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
-
-LOCA_EPETRANEW_H = \
-	$(srcdir)/LOCA_EpetraNew_Group.H \
-	$(srcdir)/LOCA_EpetraNew_Interface_Required.H \
-	$(srcdir)/LOCA_EpetraNew_Interface_xyzt.H \
-	$(srcdir)/LOCA_EpetraNew_Interface_MassMatrix.H \
-        $(srcdir)/LOCA_EpetraNew_Interface_TimeDependent.H \
+	$(srcdir)/LOCA_Epetra_Interface_Required.H \
+	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
+	$(srcdir)/LOCA_Epetra_Interface_MassMatrix.H \
+        $(srcdir)/LOCA_Epetra_Interface_TimeDependent.H \
 	$(srcdir)/LOCA_Epetra_CompactWYOp.H \
 	$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.H \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.H \
 	$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.H \
-	$(srcdir)/LOCA_Epetra_Factory.H
- 
-LOCA_EPETRANEW = \
-	$(srcdir)/LOCA_EpetraNew_Group.C \
-	$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C \
+	$(srcdir)/LOCA_Epetra_Factory.H \
+	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.H
+
+LOCA_EPETRA = \
+	$(srcdir)/LOCA_Epetra_Group.C \
+	$(srcdir)/LOCA_Epetra_Interface_xyzt.C \
 	$(srcdir)/LOCA_Epetra_CompactWYOp.C \
 	$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.C \
 	$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C \
-	$(srcdir)/LOCA_Epetra_Factory.C
+	$(srcdir)/LOCA_Epetra_Factory.C \
+	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies
@@ -91,9 +80,7 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 liblocaepetra_a_SOURCES = \
 	$(LOCA_EPETRA) \
-	$(LOCA_EPETRA_H) \
-	$(LOCA_EPETRANEW) \
-	$(LOCA_EPETRANEW_H)
+	$(LOCA_EPETRA_H)
 
 # ------------------------------------------------------------------------
 # When to turn it on
@@ -107,7 +94,7 @@ lib_LIBRARIES = liblocaepetra.a
 
 # List of all headers to install in $(includedir)
 
-include_HEADERS = $(LOCA_EPETRA_H) $(LOCA_EPETRANEW_H)
+include_HEADERS = $(LOCA_EPETRA_H)
 
 endif
 

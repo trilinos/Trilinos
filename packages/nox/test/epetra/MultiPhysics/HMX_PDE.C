@@ -136,7 +136,7 @@ void HMX_PDE::initializeSolution(double val)
 
 // Matrix and Residual Fills
 bool HMX_PDE::evaluate(
-                    NOX::EpetraNew::Interface::Required::FillType flag,
+                    NOX::Epetra::Interface::Required::FillType flag,
 		    const Epetra_Vector* soln, 
 		    Epetra_Vector* tmp_rhs)
 {
@@ -154,16 +154,16 @@ bool HMX_PDE::evaluate(
   // "flag" can be used to determine how accurate your fill of F should be
   // depending on why we are calling evaluate (Could be using computeF to
   // populate a Jacobian or Preconditioner).
-  if (flag == NOX::EpetraNew::Interface::Required::Residual) {
+  if (flag == NOX::Epetra::Interface::Required::Residual) {
     // Do nothing for now
   }
-  else if (flag == NOX::EpetraNew::Interface::Required::Jac) {
+  else if (flag == NOX::Epetra::Interface::Required::Jac) {
     // Do nothing for now
   }
-  else if (flag == NOX::EpetraNew::Interface::Required::Prec) {
+  else if (flag == NOX::Epetra::Interface::Required::Prec) {
     // Do nothing for now
   }
-  else if (flag == NOX::EpetraNew::Interface::Required::User) {
+  else if (flag == NOX::Epetra::Interface::Required::User) {
     // Do nothing for now
   }
 
@@ -187,7 +187,7 @@ bool HMX_PDE::evaluate(
     dep[i].Import(*( (*(depSolutions.find(depProblems[i]))).second ), 
                    *Importer, Insert);
   xvec.Import(*xptr, *Importer, Insert);
-  if( flag == NOX::EpetraNew::Interface::Required::FD_Res)
+  if( flag == NOX::Epetra::Interface::Required::FD_Res)
     // Overlap vector for solution received from FD coloring, so simply reorder
     // on processor
     u.Export(*soln, *ColumnToOverlapImporter, Insert);

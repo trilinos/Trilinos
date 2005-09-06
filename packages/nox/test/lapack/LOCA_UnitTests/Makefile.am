@@ -42,9 +42,11 @@ endif
 
 AM_CPPFLAGS = $(TEST_INCLUDES)
 
+EXEEXT = .exe
+
 if BUILD_LOCAANASAZI
 
-ANASAZIJACOBIANINVERSE = anasaziJacobianInverse_exe
+ANASAZIJACOBIANINVERSE = anasaziJacobianInverse
 
 else
 
@@ -52,18 +54,20 @@ ANASAZIJACOBIANINVERSE =
 
 endif
 
-BORDEREDSOLVENC = borderedSolveNonContiguous_exe
-BORDEREDSOLVEC = borderedSolveContiguous_exe
+BORDEREDSOLVENC = borderedSolveNonContiguous
+BORDEREDSOLVEC = borderedSolveContiguous
 
+if BUILD_LOCA_LAPACK_TESTS
 noinst_PROGRAMS = \
 	$(ANASAZIJACOBIANINVERSE) \
 	$(BORDEREDSOLVENC) \
 	$(BORDEREDSOLVEC)
+endif
 
-anasaziJacobianInverse_exe_SOURCES = \
+anasaziJacobianInverse_SOURCES = \
 	$(srcdir)/AnasaziJacobianInverse.C 
 
-anasaziJacobianInverse_exe_DEPENDENCIES = \
+anasaziJacobianInverse_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
 	$(top_builddir)/src-lapack/libnoxlapack.a \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
@@ -71,23 +75,23 @@ anasaziJacobianInverse_exe_DEPENDENCIES = \
         $(top_builddir)/src-loca/src-lapack/liblocalapack.a \
 	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.a
 
-anasaziJacobianInverse_exe_LDADD = $(TEST_LIBS)
+anasaziJacobianInverse_LDADD = $(TEST_LIBS)
 
-borderedSolveNonContiguous_exe_SOURCES = \
+borderedSolveNonContiguous_SOURCES = \
 	$(srcdir)/BorderedSolveNonContiguous.C
 
-borderedSolveNonContiguous_exe_DEPENDENCIES = \
+borderedSolveNonContiguous_DEPENDENCIES = \
 	$(anasaziJacobianInverse_exe_DEPENDENCIES)
 
-borderedSolveNonContiguous_exe_LDADD = $(TEST_LIBS)
+borderedSolveNonContiguous_LDADD = $(TEST_LIBS)
 
-borderedSolveContiguous_exe_SOURCES = \
+borderedSolveContiguous_SOURCES = \
 	$(srcdir)/BorderedSolveContiguous.C
 
-borderedSolveContiguous_exe_DEPENDENCIES = \
+borderedSolveContiguous_DEPENDENCIES = \
 	$(anasaziJacobianInverse_exe_DEPENDENCIES)
 
-borderedSolveContiguous_exe_LDADD = $(TEST_LIBS)
+borderedSolveContiguous_LDADD = $(TEST_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

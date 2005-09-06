@@ -280,10 +280,10 @@ int main(int argc, char *argv[])
     //NOX::Epetra::JacobiPreconditioner Prec(soln);
 
     // Create the linear systems
-    NOX::EpetraNew::LinearSystemAztecOO linsys(nlPrintParams, lsParams,
+    NOX::Epetra::LinearSystemAztecOO linsys(nlPrintParams, lsParams,
 					       interface, interface,
 					       A, soln);
-    //   NOX::EpetraNew::LinearSystemAztecOO linsys(nlPrintParams, lsParams,
+    //   NOX::Epetra::LinearSystemAztecOO linsys(nlPrintParams, lsParams,
     // 					     interface, soln);
 
     // Create the loca vector
@@ -298,8 +298,8 @@ int main(int argc, char *argv[])
 			 0.5*locaSoln.dot(locaSoln) / locaSoln.length());
 
     // Create the Group
-    Teuchos::RefCountPtr<LOCA::EpetraNew::Group> grp = 
-      Teuchos::rcp(new LOCA::EpetraNew::Group(nlPrintParams, interface, 
+    Teuchos::RefCountPtr<LOCA::Epetra::Group> grp = 
+      Teuchos::rcp(new LOCA::Epetra::Group(nlPrintParams, interface, 
 					      locaSoln, linsys, pVector));
     grp->computeF();
 
@@ -345,8 +345,8 @@ int main(int argc, char *argv[])
     }
 
     // Get the final solution from the stepper
-    Teuchos::RefCountPtr<const LOCA::EpetraNew::Group> finalGroup = 
-      Teuchos::rcp_dynamic_cast<const LOCA::EpetraNew::Group>(stepper.getSolutionGroup());
+    Teuchos::RefCountPtr<const LOCA::Epetra::Group> finalGroup = 
+      Teuchos::rcp_dynamic_cast<const LOCA::Epetra::Group>(stepper.getSolutionGroup());
     const NOX::Epetra::Vector& finalSolution = 
       dynamic_cast<const NOX::Epetra::Vector&>(finalGroup->getX());
 

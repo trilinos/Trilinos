@@ -34,22 +34,22 @@
 #define LOCA_EPETRA_GROUP_H
 
 #include "LOCA_Abstract_Group.H"    // base class
-#include "NOX_Epetra_Group.H"       // base class
+#include "NOX_Epetra_Group.H"    // base class
 #include "LOCA_Parameter_Vector.H"  // class data element
 #include "NOX_Common.H"             // class data element (string)
+#include "LOCA_Epetra_Interface_TimeDependent.H"
 
 // Forward declares
 namespace NOX {
-  namespace Epetra {
-    class SharedOperator;
-  }
   namespace Parameter {
     class List;
   }
 }
 namespace LOCA {
   namespace Epetra {
-    class Interface;
+    namespace Interface {
+      class Required;
+    }
   }
 }
 
@@ -58,12 +58,12 @@ namespace LOCA {
   //! %LOCA %Epetra support
   namespace Epetra {
 
-    //! Extension of the NOX::Epetra::Group to %LOCA.  
+    //! Extension of the NOX::Epetra:New:Group to %LOCA.  
     /*!
       This class is derived both from the NOX::Epetra::Group and
       LOCA::Abstract::Group classes and therefore inherits the implementation
       of the NOX::Abstract::Group interface provided by NOX::Epetra::Group.
-
+      
       This class provides implementations of %LOCA AbstractGroup virtual 
       methods specific to the %Epetra group.  It stores a parameter vector
       for setting/retrieving parameter values 
@@ -84,35 +84,40 @@ namespace LOCA {
       NOX::Epetra::Group computeF() and computeJacobian().
     */
 
-    class Group : public NOX::Epetra::Group, public LOCA::Abstract::Group {
+    class Group : public virtual NOX::Epetra::Group, 
+		  public virtual LOCA::Abstract::Group {
 
     public:
-      //! Constructor with Jacobian Operator only.  
-      /*! Either there is no preconditioning or the Jacobian will be used
-       * for preconditioning.  An Epetra_Operator must be supplied for 
-       * the Jacobian even in Matrix-Free mode. linearSolverParams is 
-       * the "Linear Solver" sublist of parameter list.
-       *
-       * The scaling vector is set to a default of all one's
+      //! Constructor with NO linear system (VERY LIMITED).
+      /*! WARNING: If this constructor is used, then methods that require
+       * a Jacobian or preconditioning will not be available.  You will be
+       * limited to simple algorithms like nonlinear-CG with no
+       * preconditioning.
        */
-      Group(NOX::Parameter::List& printParams, 
-	    NOX::Parameter::List& linearSolverParams, Interface& i, 
-	    const ParameterVector& p, NOX::Epetra::Vector& x, 
-	    Epetra_Operator& J);
+      Group(NOX::Parameter::List& printingParams, 
+	    LOCA::Epetra::Interface::Required& i, 
+	    NOX::Epetra::Vector& initialGuess,
+	    const LOCA::ParameterVector& p);
 
-      //! Constructor with a separate Jacobian (J) and %Preconditioner (M).  
+      //! Standard Constructor.
+      Group(NOX::Parameter::List& printingParams, 
+	    LOCA::Epetra::Interface::Required& i, 
+	    NOX::Epetra::Vector& initialGuess, 
+	    NOX::Epetra::LinearSystem& linSys,
+	    const LOCA::ParameterVector& p);
+
+      //! Constructor with time-dependent interface
+      Group(NOX::Parameter::List& printingParams,
+            LOCA::Epetra::Interface::TimeDependent& i,
+            NOX::Epetra::Vector& initialGuess,
+            NOX::Epetra::LinearSystem& linSys,
+	    const LOCA::ParameterVector& p);
+
+
       /*! 
-	linearSolverParams is the "Linear %Solver" sublist of parameter list.
-	The scaling vector is set to a default of all one's
-      */
-      Group(NOX::Parameter::List& printParams, 
-	    NOX::Parameter::List& linearSolverParams, Interface& i, 
-	    const ParameterVector& p, NOX::Epetra::Vector& x, 
-	    Epetra_Operator& J, 
-	    Epetra_Operator& M);
-
-      /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
-	valid shared Jacobian and shared preconditioning matrix. */
+       * \brief Copy constructor. If type is DeepCopy, takes ownership of
+       * valid shared Jacobian and shared preconditioning matrix. 
+       */
       Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
@@ -127,22 +132,28 @@ namespace LOCA {
       //@{
 
       //! Assignment operator.
-      virtual NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
+      virtual NOX::Abstract::Group& 
+      operator=(const NOX::Abstract::Group& source);
+
+      //! Assignment operator.
+      virtual NOX::Abstract::Group& 
+      operator=(const NOX::Epetra::Group& source);
 
       //! Cloning function
-      virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
+      virtual NOX::Abstract::Group* 
+      clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Overloaded computeF()
       /*!
-	Calls LOCA::Epetra::Interface::setParams before evalulating F.
-      */
+       * Calls LOCA::Epetra::Interface::setParams before evalulating F.
+       */
       virtual NOX::Abstract::Group::ReturnType 
       computeF();
 
       //! Overloaded computeJacobian()
       /*!
-	Calls LOCA::Epetra::Interface::setParams before evalulating J.
-      */
+       * Calls LOCA::Epetra::Interface::setParams before evalulating J.
+       */
       virtual NOX::Abstract::Group::ReturnType 
       computeJacobian();
 
@@ -154,7 +165,8 @@ namespace LOCA {
       //@{
 
       //! Assignment operator
-      virtual LOCA::Abstract::Group& operator=(const LOCA::Abstract::Group& source);
+      virtual LOCA::Abstract::Group& 
+      operator=(const LOCA::Abstract::Group& source);
 
       //@}
 
@@ -203,50 +215,6 @@ namespace LOCA {
       virtual void printSolution(const NOX::Abstract::Vector& x,
                                  const double conParam) const;
 
-      //! Solve arclength continuation equations using Householder projection
-      /*!
-       * This method computes a solution to the following system
-       * of equations
-       * \f[
-       *    \begin{bmatrix}
-       *      J & \frac{df}{dp}
-       *   \end{bmatrix} Q \Delta x = f 
-       * \f]
-       * where \f$Q\in\Re^{n+1\times n}\f$ is an orthogonal matrix such that
-       * for any \f$z\in\Re^n\f$,
-       * \f[
-       *    Q z = P \begin{bmatrix} z \\ 0 \end{bmatrix}.
-       * \f]
-       * Here \f$P = I - \beta u u^T\in\Re^{n+1\times n+1}\f$ is a Householder
-       * transformation such that \f$P v = \|v\|_2 e_{n+1}\f$ and 
-       * \f$u_{n+1} = 1\f$ where \f$v\in\Re^{n+1}\f$ is the predictor 
-       * vector and \f$e_{n+1}\f$ is the \f$n+1\f$ column of the identity.
-       *
-       * The implementation here uses Aztec with an Ifpack preconditioner
-       * for \f$J\f$.
-       */
-      virtual NOX::Abstract::Group::ReturnType
-      applyHouseholderJacobianInverse(NOX::Parameter::List& params,
-				      const NOX::Abstract::Vector& f,
-				      const NOX::Abstract::Vector& dfdp,
-				      const NOX::Abstract::Vector& ux,
-				      double up, double beta,
-				      NOX::Abstract::Vector& result_x,
-				      double& result_p) const;
-
-      //! Scales a vector using scaling vector
-      /*! 
-       * The implementation here uses the scaling vector \f$s\f$ if one
-       * is supplied:
-       * \f[
-       *     x_i = a_i*s_i.
-       * \f]
-       * If the scaling vector is not provided, the vector is rescaled by
-       * the square root of its length.
-       */
-      virtual void
-      scaleVector(NOX::Abstract::Vector& x) const;
-
       //@}
 
       /*! 
@@ -278,6 +246,59 @@ namespace LOCA {
       //@}
 
       /*! 
+       * @name Implementation of LOCA::Homotopy::AbstractGroup virtual methods.
+       */
+      //@{
+
+      /*! 
+       * \brief Replace Jacobian \f$J\f$ by \f$J+pI\f$ where \f$I\f$ is the 
+       * identity matrix and \f$p\f$ is a scalar (\b conParamValue).
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      augmentJacobianForHomotopy(double conParamValue);
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::TimeDependent::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Compute the mass matrix for the system.
+      //! (Currently only has matrix-free implementation.)
+      virtual NOX::Abstract::Group::ReturnType 
+      computeMassMatrix();
+
+      //! Multiply the mass matrix by a vector.
+      //! (Currently only has matrix-free implementation.)
+      virtual NOX::Abstract::Group::ReturnType 
+      applyMassMatrix(const NOX::Abstract::Vector& input,
+		      NOX::Abstract::Vector& result) const;
+
+      virtual bool isMassMatrix();
+
+      //! Multiply the shifted matrix by a vector.
+      //! (Currently only has matrix-free implementation.)
+      virtual NOX::Abstract::Group::ReturnType 
+      applyShiftedMatrix(const NOX::Abstract::Vector& input,
+			 NOX::Abstract::Vector& result,
+			 double shift) const;
+
+      virtual NOX::Abstract::Group::ReturnType 
+      applyShiftedMatrix(const NOX::Epetra::Vector& input,
+			 NOX::Epetra::Vector& result,
+			 double shift) const;
+
+      //! Solve the linear system with the shifted matrix, using the same
+      //! solver and settings as for the Jacobian matrix.
+      virtual NOX::Abstract::Group::ReturnType 
+      applyShiftedMatrixInverse(NOX::Parameter::List& params,
+				const NOX::Abstract::Vector& input,
+				NOX::Abstract::Vector& result,
+				double shift);
+      //@}
+
+      /*! 
        * @name Implementation of LOCA::Bifurcation::TPBord::AbstractGroup virtual methods.
        */
       //@{
@@ -302,34 +323,33 @@ namespace LOCA {
        *     \end{bmatrix}
        * \f]
        */
-      virtual NOX::Abstract::Group::ReturnType
-      applyBorderedJacobianInverse(bool trans,
-				   NOX::Parameter::List& params,
-				   const NOX::Abstract::Vector& a,
-				   const NOX::Abstract::Vector& b,
-				   const NOX::Abstract::Vector& vInput,
-				   double sInput,
-				   NOX::Abstract::Vector& vResult,
-				   double& sResult) const;
+//       virtual NOX::Abstract::Group::ReturnType
+//       applyBorderedJacobianInverse(bool trans,
+// 				   NOX::Parameter::List& params,
+// 				   const NOX::Abstract::Vector& a,
+// 				   const NOX::Abstract::Vector& b,
+// 				   const NOX::Abstract::Vector& vInput,
+// 				   double sInput,
+// 				   NOX::Abstract::Vector& vResult,
+// 				   double& sResult) const;
 
-      //@}
-
+      //! Scales a vector using scaling vector
       /*! 
-       * @name Implementation of LOCA::Homotopy::AbstractGroup virtual methods.
+       * The implementation here uses the scaling vector \f$s\f$ if one
+       * is supplied:
+       * \f[
+       *     x_i = a_i*s_i.
+       * \f]
+       * If the scaling vector is not provided, the vector is rescaled by
+       * the square root of its length.
        */
-      //@{
-
-      /*! 
-       * \brief Replace Jacobian \f$J\f$ by \f$J+pI\f$ where \f$I\f$ is the 
-       * identity matrix and \f$p\f$ is a scalar (\b conParamValue).
-       */
-      virtual NOX::Abstract::Group::ReturnType 
-      augmentJacobianForHomotopy(double conParamValue);
+      virtual void
+      scaleVector(NOX::Abstract::Vector& x) const;
 
       //@}
 
       //! Return the userInterface.
-      virtual NOX::Epetra::Interface& getUserInterface();
+      virtual NOX::Epetra::Interface::Required& getUserInterface();
 
       //! Call the user interface print() routine, any vector
       virtual void printSolution(const NOX::Epetra::Vector& x,
@@ -338,29 +358,26 @@ namespace LOCA {
       //! Sets the scale vector.  
       void setScaleVector(const NOX::Abstract::Vector& s);
 
-      protected:
-
-      //! Sets aztec solver options for matrix-free bordered system
-      void setBorderedAztecOptions(const NOX::Parameter::List& p, 
-				   AztecOO& aztec) const;
+      //! Sets the Jacobian operator
+      void setJacobianOperatorForSolve(const Epetra_Operator& op) const;
 
     protected:
 
       //! Parameter vector
       LOCA::ParameterVector params;
 
-      /** @name Additional Shared Operators */
-      //@{
-      //! Pointer to shared mass matrix 
-      //NOX::Epetra::SharedOperator* sharedMassMatrixPtr;
-
-      //@}
-
       //! Reference to the user supplied interface functions
-      Interface& userInterface;
+      LOCA::Epetra::Interface::Required& userInterface;
+
+      /*! 
+       * \brief Flag indicating whether interface is derived from 
+       * LOCA::Epetra::Interface::TimeDependent
+       */
+      bool interfaceTime;
 
       //! Extra vector needed for intermediate calculations of LOCA routines.
-      /*! NOTE: there already is a tmpVectorPtr in the NOX::Epetra::Group.  This is a second temporary vector if that one extra isn't enough.
+      /*! NOTE: there already is a tmpVectorPtr in the NOX::Epetra::Group.  
+       * This is a second temporary vector if that one extra isn't enough.
        */
       Epetra_Vector* tmpVectorPtr2;
 

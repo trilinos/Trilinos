@@ -41,42 +41,29 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 
 EXEEXT = .exe
 
-INTERFACE = $(srcdir)/Interface.C \
-	$(srcdir)/Interface.H
+if BUILD_EPETRA_TESTS
+noinst_PROGRAMS = 1Dfem 1DfemTransient
+endif
 
-noinst_PROGRAMS = testNonlinear testNonlinear_EpetraNew \
-			testNonlinear_trans
+1Dfem_SOURCES = \
+	        $(srcdir)/1DfemInterface.H \
+                $(srcdir)/1DfemInterface.C \
+                $(srcdir)/1Dfem.C
 
-testNonlinear_SOURCES = \
-                        $(INTERFACE) \
-                        $(srcdir)/testNonlinear.C
+1Dfem_DEPENDENCIES = \
+                     $(top_builddir)/src/libnox.a \
+                     $(top_builddir)/src-epetra/libnoxepetra.a
 
-testNonlinear_DEPENDENCIES = \
-                             $(top_builddir)/src/libnox.a \
-                             $(top_builddir)/src-epetra/libnoxepetra.a
+1Dfem_LDADD = $(TEST_LIBS)
 
-testNonlinear_LDADD = $(TEST_LIBS)
+1DfemTransient_SOURCES = \
+	                 $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemTransient.C
 
-INTERFACE_EPETRANEW = $(srcdir)/Interface_EpetraNew.C \
-	              $(srcdir)/Interface_EpetraNew.H
+1DfemTransient_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
 
-testNonlinear_EpetraNew_SOURCES = \
-                        $(INTERFACE_EPETRANEW) \
-                        $(srcdir)/testNonlinear_EpetraNew.C
-
-testNonlinear_EpetraNew_DEPENDENCIES = \
-                             $(top_builddir)/src/libnox.a \
-                             $(top_builddir)/src-epetra/libnoxepetra.a
-
-testNonlinear_EpetraNew_LDADD = $(TEST_LIBS)
-
-testNonlinear_trans_SOURCES = \
-                        $(INTERFACE_EPETRANEW) \
-                        $(srcdir)/testNonlinear_trans.C
-
-testNonlinear_trans_DEPENDENCIES = \
-                             $(top_builddir)/src/libnox.a \
-                             $(top_builddir)/src-epetra/libnoxepetra.a
-
-testNonlinear_trans_LDADD = $(TEST_LIBS)
+1DfemTransient_LDADD = $(TEST_LIBS)
 

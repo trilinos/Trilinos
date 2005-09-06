@@ -861,45 +861,33 @@ AC_CONFIG_FILES([
 		doc/Doxyfile
 		src/Makefile
                 src-lapack/Makefile
-		example-lapack/Makefile
 		src-epetra/Makefile
-		example-epetra/Makefile
-		example-epetra/1Dfem_linear/Makefile
-		example-epetra/1Dfem_nonlinear/Makefile
-		example-epetra/1Dfem_nonlinearColoring/Makefile
-		example-epetra/1Dtransfem_nonlinear/Makefile
-		example-epetra/Brusselator_Split/Makefile
-		example-epetra/Brusselator_EpetraNew/Makefile
                 src-petsc/Makefile
-                example-petsc/Makefile
-                example-petsc/DS6.5.1/Makefile
-                example-petsc/1Dfd_nonlinear/Makefile
 		src-belos/Makefile
-		example-belos/Makefile
-		example-belos/epetra/Makefile
-		example-belos/epetra/1Dfem_nonlinear/Makefile
 		src-loca/Makefile
 		src-loca/doc/Makefile
 		src-loca/src/Makefile
                 src-loca/src-epetra/Makefile
 		src-loca/src-lapack/Makefile
 		src-loca/src-mf/Makefile
-                src-loca/example-epetra/Makefile
-                src-loca/example-epetra/1Dfem/Makefile
-                src-loca/example-epetra/Tcubed/Makefile
-                src-loca/example-epetra/Tcubed_epetra_new/Makefile
-                src-loca/example-epetra/Brusselator_xyzt/Makefile
-		src-loca/example-lapack/Makefile
-		src-loca/example-lapack/Chan/Makefile
-		src-loca/example-lapack/1Dfd_pitchfork/Makefile
-		src-loca/example-lapack/Brusselator/Makefile
+		examples/Makefile
+		examples/lapack/Makefile
+		examples/lapack/NOX_SimpleExamples/Makefile
+		examples/lapack/LOCA_Chan/Makefile
+		examples/lapack/LOCA_Brusselator/Makefile
+		examples/lapack/LOCA_1DFDPitchfork/Makefile
+		examples/epetra/Makefile
+		examples/epetra/NOX_1DFEMNonlinear/Makefile
+		examples/epetra/NOX_1DFEMNonlinearColoring/Makefile
+		examples/epetra/LOCA_Tcubed/Makefile
+		examples/epetra/LOCA_Brusselator_xyzt/Makefile
+                examples/petsc/Makefile
+                examples/petsc/DS6.5.1/Makefile
+                examples/petsc/1DFiniteDifference/Makefile
+		example-belos/Makefile
+		example-belos/epetra/Makefile
+		example-belos/epetra/1Dfem_nonlinear/Makefile
                 test/Makefile
-                test/scripts/Makefile
-                test/scripts/daily/Makefile
-                test/scripts/daily/serial/Makefile
-		test/scripts/daily/serial/noxTestAll
-                test/scripts/daily/mpi/Makefile
-		test/scripts/daily/mpi/noxTestAllMpi
                 test/utils/Makefile
                 test/lapack/Makefile
 		test/lapack/NOX/Makefile
@@ -919,6 +907,8 @@ AC_CONFIG_FILES([
                 test/epetra/1Dfem/Makefile
                 test/epetra/MultiPhysics/Makefile
                 test/epetra/DS6.5.1/Makefile
+                test/epetra/Brusselator/Makefile
+                test/epetra/FiniteDifferenceColoring/Makefile
                 test/petsc/Makefile
 		python/Makefile
 		python/src/Makefile

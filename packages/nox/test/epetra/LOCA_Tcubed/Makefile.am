@@ -41,12 +41,16 @@ endif
 
 AM_CPPFLAGS = $(TEST_INCLUDES)
 
-noinst_PROGRAMS = tcubed_exe tcubed_constraint_exe
+EXEEXT = .exe
 
-tcubed_exe_SOURCES = \
+if BUILD_LOCA_EPETRA_TESTS
+noinst_PROGRAMS = tcubed tcubed_constraint
+endif
+
+tcubed_SOURCES = \
 	$(srcdir)/Tcubed.C 
 
-tcubed_exe_DEPENDENCIES = \
+tcubed_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
@@ -54,15 +58,15 @@ tcubed_exe_DEPENDENCIES = \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.a \
 	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.a
 
-tcubed_exe_LDADD = $(TEST_LIBS)
+tcubed_LDADD = $(TEST_LIBS)
 
-tcubed_constraint_exe_SOURCES = \
+tcubed_constraint_SOURCES = \
 	$(srcdir)/Tcubed_constraint.C 
 
-tcubed_constraint_exe_DEPENDENCIES = \
-        $(tcubed_exe_DEPENDENCIES)
+tcubed_constraint_DEPENDENCIES = \
+        $(tcubed_DEPENDENCIES)
 
-tcubed_constraint_exe_LDADD = $(TEST_LIBS)
+tcubed_constraint_LDADD = $(TEST_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

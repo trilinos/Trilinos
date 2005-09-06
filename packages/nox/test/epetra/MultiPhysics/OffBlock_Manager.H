@@ -64,7 +64,7 @@ public:
   virtual ~OffBlock_Manager();
 
   // Return the underlying Group 
-  NOX::EpetraNew::Group& getGroup();
+  NOX::Epetra::Group& getGroup();
 
   // Return the underlying CrsMatrix 
   Epetra_CrsMatrix& getMatrix();
@@ -85,7 +85,7 @@ public:
 
   // These allow inheritance from GenericEpetraProblem base class
 
-  bool evaluate(NOX::EpetraNew::Interface::Required::FillType type,
+  bool evaluate(NOX::Epetra::Interface::Required::FillType type,
                const Epetra_Vector *solnVector,
                Epetra_Vector *rhsVector);
 
@@ -115,9 +115,9 @@ private:
   Epetra_MapColoring                   * colorMap;
   EpetraExt::CrsGraph_MapColoringIndex * colorMapIndex;
   vector<Epetra_IntVector>             * columnSet;
-  NOX::EpetraNew::FiniteDifference     * matrixOperator;
-  NOX::EpetraNew::LinearSystemAztecOO  * linearSystem;
-  NOX::EpetraNew::Group                * group;    
+  NOX::Epetra::FiniteDifference        * matrixOperator;
+  NOX::Epetra::LinearSystemAztecOO     * linearSystem;
+  NOX::Epetra::Group                   * group;    
   
   // These are needed to shift indices for coloring and 
   // block-based condition number estimates

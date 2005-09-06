@@ -1796,7 +1796,7 @@ else
 echo "$as_me: WARNING: \`missing' script is too old or missing" >&2;}
 fi
 
-if mkdir -p --version . >/dev/null 2>&1 && test ! -d ./--version; then
+if mkdir -p -- . 2>/dev/null; then
   # Keeping the `.' argument allows $(mkdir_p) to be used without
   # argument.  Indeed, we sometimes output rules like
   #   $(mkdir_p) $(somedir)
@@ -1809,7 +1809,7 @@ else
   # recognize any option.  It will interpret all options as
   # directories to create, and then abort because `.' already
   # exists.
-  for d in ./-p ./--version;
+  for d in ./-p ./--;
   do
     test -d $d && rmdir $d
   done
@@ -3252,9 +3252,7 @@ else
     : > sub/conftest.c
     for i in 1 2 3 4 5 6; do
       echo '#include "conftst'$i'.h"' >> sub/conftest.c
-      # Using `: > sub/conftst$i.h' creates only sub/conftst1.h with
-      # Solaris 8's {/usr,}/bin/sh.
-      touch sub/conftst$i.h
+      : > sub/conftst$i.h
     done
     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
 
@@ -3282,14 +3280,9 @@ else
        grep sub/conftest.${OBJEXT-o} sub/conftest.Po > /dev/null 2>&1 &&
        ${MAKE-make} -s -f confmf > /dev/null 2>&1; then
       # icc doesn't choke on unknown options, it will just issue warnings
-      # or remarks (even with -Werror).  So we grep stderr for any message
-      # that says an option was ignored or not supported.
-      # When given -MP, icc 7.0 and 7.1 complain thusly:
-      #   icc: Command line warning: ignoring option '-M'; no argument required
-      # The diagnosis changed in icc 8.0:
-      #   icc: Command line remark: option '-MP' not supported
-      if (grep 'ignoring option' conftest.err ||
-          grep 'not supported' conftest.err) >/dev/null 2>&1; then :; else
+      # (even with -Werror).  So we grep stderr for any message
+      # that says an option was ignored.
+      if grep 'ignoring option' conftest.err >/dev/null 2>&1; then :; else
         am_cv_CC_dependencies_compiler_type=$depmode
         break
       fi
@@ -3716,9 +3709,7 @@ else
     : > sub/conftest.c
     for i in 1 2 3 4 5 6; do
       echo '#include "conftst'$i'.h"' >> sub/conftest.c
-      # Using `: > sub/conftst$i.h' creates only sub/conftst1.h with
-      # Solaris 8's {/usr,}/bin/sh.
-      touch sub/conftst$i.h
+      : > sub/conftst$i.h
     done
     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
 
@@ -3746,14 +3737,9 @@ else
        grep sub/conftest.${OBJEXT-o} sub/conftest.Po > /dev/null 2>&1 &&
        ${MAKE-make} -s -f confmf > /dev/null 2>&1; then
       # icc doesn't choke on unknown options, it will just issue warnings
-      # or remarks (even with -Werror).  So we grep stderr for any message
-      # that says an option was ignored or not supported.
-      # When given -MP, icc 7.0 and 7.1 complain thusly:
-      #   icc: Command line warning: ignoring option '-M'; no argument required
-      # The diagnosis changed in icc 8.0:
-      #   icc: Command line remark: option '-MP' not supported
-      if (grep 'ignoring option' conftest.err ||
-          grep 'not supported' conftest.err) >/dev/null 2>&1; then :; else
+      # (even with -Werror).  So we grep stderr for any message
+      # that says an option was ignored.
+      if grep 'ignoring option' conftest.err >/dev/null 2>&1; then :; else
         am_cv_CXX_dependencies_compiler_type=$depmode
         break
       fi
@@ -4106,7 +4092,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4109:" \
+echo "$as_me:4095:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -9818,7 +9804,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9821: \"$ac_link\") >&5
+(eval echo $as_me:9807: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9896,7 +9882,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9899: \"$ac_link\") >&5
+(eval echo $as_me:9885: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10898,7 +10884,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10901: \"$ac_link\") >&5
+(eval echo $as_me:10887: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10976,7 +10962,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10979: \"$ac_link\") >&5
+(eval echo $as_me:10965: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -16284,7 +16270,7 @@ echo "${ECHO_T}$WITH_PRERELEASE" >&6
 # Output files
 # ------------------------------------------------------------------------
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ac_config_files="$ac_config_files Makefile Makefile.export.nox doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile example-lapack/Makefile src-epetra/Makefile example-epetra/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile example-epetra/Brusselator_Split/Makefile example-epetra/Brusselator_EpetraNew/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile example-petsc/1Dfd_nonlinear/Makefile src-belos/Makefile example-belos/Makefile example-belos/epetra/Makefile example-belos/epetra/1Dfem_nonlinear/Makefile src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-mf/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile src-loca/example-epetra/Tcubed/Makefile src-loca/example-epetra/Tcubed_epetra_new/Makefile src-loca/example-epetra/Brusselator_xyzt/Makefile src-loca/example-lapack/Makefile src-loca/example-lapack/Chan/Makefile src-loca/example-lapack/1Dfd_pitchfork/Makefile src-loca/example-lapack/Brusselator/Makefile test/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/serial/noxTestAll test/scripts/daily/mpi/Makefile test/scripts/daily/mpi/noxTestAllMpi test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_TestProblems/Makefile test/lapack/LOCA_UnitTests/Makefile test/lapack/LOCA_ChanProblem/Makefile test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_TestProblems/Makefile test/epetra/LOCA_UnitTests/Makefile test/epetra/LOCA_Tcubed/Makefile test/epetra/LOCA_Pitchfork/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/epetra/DS6.5.1/Makefile test/petsc/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/PyTrilinos/__init__.py python/src/.deps/dummy python/test/Makefile python/test-epetra/Makefile python/test-lapack/Makefile python/example-epetra/Makefile python/example-lapack/Makefile python/src-loca/Makefile python/src-loca/src/Makefile python/src-loca/src/TRILINOS_HOME_DIR python/src-loca/src/__init__.py python/src-loca/src/.deps/dummy python/src-loca/src/PyTrilinos/__init__.py python/src-loca/test/Makefile python/src-loca/test-epetra/Makefile python/src-loca/test-lapack/Makefile python/src-loca/example-epetra/Makefile python/src-loca/example-lapack/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ac_config_files="$ac_config_files Makefile Makefile.export.nox doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile src-epetra/Makefile src-petsc/Makefile src-belos/Makefile src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-mf/Makefile examples/Makefile examples/lapack/Makefile examples/lapack/NOX_SimpleExamples/Makefile examples/lapack/LOCA_Chan/Makefile examples/lapack/LOCA_Brusselator/Makefile examples/lapack/LOCA_1DFDPitchfork/Makefile examples/epetra/Makefile examples/epetra/NOX_1DFEMNonlinear/Makefile examples/epetra/NOX_1DFEMNonlinearColoring/Makefile examples/epetra/LOCA_Tcubed/Makefile examples/epetra/LOCA_Brusselator_xyzt/Makefile examples/petsc/Makefile examples/petsc/DS6.5.1/Makefile examples/petsc/1DFiniteDifference/Makefile example-belos/Makefile example-belos/epetra/Makefile example-belos/epetra/1Dfem_nonlinear/Makefile test/Makefile test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_TestProblems/Makefile test/lapack/LOCA_UnitTests/Makefile test/lapack/LOCA_ChanProblem/Makefile test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_TestProblems/Makefile test/epetra/LOCA_UnitTests/Makefile test/epetra/LOCA_Tcubed/Makefile test/epetra/LOCA_Pitchfork/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/epetra/DS6.5.1/Makefile test/epetra/Brusselator/Makefile test/epetra/FiniteDifferenceColoring/Makefile test/petsc/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/PyTrilinos/__init__.py python/src/.deps/dummy python/test/Makefile python/test-epetra/Makefile python/test-lapack/Makefile python/example-epetra/Makefile python/example-lapack/Makefile python/src-loca/Makefile python/src-loca/src/Makefile python/src-loca/src/TRILINOS_HOME_DIR python/src-loca/src/__init__.py python/src-loca/src/.deps/dummy python/src-loca/src/PyTrilinos/__init__.py python/src-loca/test/Makefile python/src-loca/test-epetra/Makefile python/src-loca/test-lapack/Makefile python/src-loca/example-epetra/Makefile python/src-loca/example-lapack/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -17192,45 +17178,33 @@ do
   "doc/Doxyfile" ) CONFIG_FILES="$CONFIG_FILES doc/Doxyfile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "src-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-lapack/Makefile" ;;
-  "example-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-lapack/Makefile" ;;
   "src-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-epetra/Makefile" ;;
-  "example-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/Makefile" ;;
-  "example-epetra/1Dfem_linear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/1Dfem_linear/Makefile" ;;
-  "example-epetra/1Dfem_nonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/1Dfem_nonlinear/Makefile" ;;
-  "example-epetra/1Dfem_nonlinearColoring/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/1Dfem_nonlinearColoring/Makefile" ;;
-  "example-epetra/1Dtransfem_nonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/1Dtransfem_nonlinear/Makefile" ;;
-  "example-epetra/Brusselator_Split/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/Brusselator_Split/Makefile" ;;
-  "example-epetra/Brusselator_EpetraNew/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/Brusselator_EpetraNew/Makefile" ;;
   "src-petsc/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-petsc/Makefile" ;;
-  "example-petsc/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-petsc/Makefile" ;;
-  "example-petsc/DS6.5.1/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-petsc/DS6.5.1/Makefile" ;;
-  "example-petsc/1Dfd_nonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-petsc/1Dfd_nonlinear/Makefile" ;;
   "src-belos/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-belos/Makefile" ;;
-  "example-belos/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-belos/Makefile" ;;
-  "example-belos/epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-belos/epetra/Makefile" ;;
-  "example-belos/epetra/1Dfem_nonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-belos/epetra/1Dfem_nonlinear/Makefile" ;;
   "src-loca/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/Makefile" ;;
   "src-loca/doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/doc/Makefile" ;;
   "src-loca/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/src/Makefile" ;;
   "src-loca/src-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/src-epetra/Makefile" ;;
   "src-loca/src-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/src-lapack/Makefile" ;;
   "src-loca/src-mf/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/src-mf/Makefile" ;;
-  "src-loca/example-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-epetra/Makefile" ;;
-  "src-loca/example-epetra/1Dfem/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-epetra/1Dfem/Makefile" ;;
-  "src-loca/example-epetra/Tcubed/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-epetra/Tcubed/Makefile" ;;
-  "src-loca/example-epetra/Tcubed_epetra_new/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-epetra/Tcubed_epetra_new/Makefile" ;;
-  "src-loca/example-epetra/Brusselator_xyzt/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-epetra/Brusselator_xyzt/Makefile" ;;
-  "src-loca/example-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-lapack/Makefile" ;;
-  "src-loca/example-lapack/Chan/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-lapack/Chan/Makefile" ;;
-  "src-loca/example-lapack/1Dfd_pitchfork/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-lapack/1Dfd_pitchfork/Makefile" ;;
-  "src-loca/example-lapack/Brusselator/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-lapack/Brusselator/Makefile" ;;
+  "examples/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
+  "examples/lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/lapack/Makefile" ;;
+  "examples/lapack/NOX_SimpleExamples/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/lapack/NOX_SimpleExamples/Makefile" ;;
+  "examples/lapack/LOCA_Chan/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/lapack/LOCA_Chan/Makefile" ;;
+  "examples/lapack/LOCA_Brusselator/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/lapack/LOCA_Brusselator/Makefile" ;;
+  "examples/lapack/LOCA_1DFDPitchfork/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/lapack/LOCA_1DFDPitchfork/Makefile" ;;
+  "examples/epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/epetra/Makefile" ;;
+  "examples/epetra/NOX_1DFEMNonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/epetra/NOX_1DFEMNonlinear/Makefile" ;;
+  "examples/epetra/NOX_1DFEMNonlinearColoring/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/epetra/NOX_1DFEMNonlinearColoring/Makefile" ;;
+  "examples/epetra/LOCA_Tcubed/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/epetra/LOCA_Tcubed/Makefile" ;;
+  "examples/epetra/LOCA_Brusselator_xyzt/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/epetra/LOCA_Brusselator_xyzt/Makefile" ;;
+  "examples/petsc/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/petsc/Makefile" ;;
+  "examples/petsc/DS6.5.1/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/petsc/DS6.5.1/Makefile" ;;
+  "examples/petsc/1DFiniteDifference/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/petsc/1DFiniteDifference/Makefile" ;;
+  "example-belos/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-belos/Makefile" ;;
+  "example-belos/epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-belos/epetra/Makefile" ;;
+  "example-belos/epetra/1Dfem_nonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-belos/epetra/1Dfem_nonlinear/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
-  "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
-  "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
-  "test/scripts/daily/serial/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/serial/Makefile" ;;
-  "test/scripts/daily/serial/noxTestAll" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/serial/noxTestAll" ;;
-  "test/scripts/daily/mpi/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/Makefile" ;;
-  "test/scripts/daily/mpi/noxTestAllMpi" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/noxTestAllMpi" ;;
   "test/utils/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/utils/Makefile" ;;
   "test/lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/lapack/Makefile" ;;
   "test/lapack/NOX/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/lapack/NOX/Makefile" ;;
@@ -17250,6 +17224,8 @@ do
   "test/epetra/1Dfem/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/epetra/1Dfem/Makefile" ;;
   "test/epetra/MultiPhysics/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/epetra/MultiPhysics/Makefile" ;;
   "test/epetra/DS6.5.1/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/epetra/DS6.5.1/Makefile" ;;
+  "test/epetra/Brusselator/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/epetra/Brusselator/Makefile" ;;
+  "test/epetra/FiniteDifferenceColoring/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/epetra/FiniteDifferenceColoring/Makefile" ;;
   "test/petsc/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/petsc/Makefile" ;;
   "python/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/Makefile" ;;
   "python/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src/Makefile" ;;
@@ -18179,14 +18155,14 @@ echo X"$mf" |
   grep '^DEP_FILES *= *[^ #]' < "$mf" > /dev/null || continue
   # Extract the definition of DEP_FILES from the Makefile without
   # running `make'.
-  DEPDIR=`sed -n 's/^DEPDIR = //p' < "$mf"`
+  DEPDIR=`sed -n -e '/^DEPDIR = / s///p' < "$mf"`
   test -z "$DEPDIR" && continue
   # When using ansi2knr, U may be empty or an underscore; expand it
-  U=`sed -n 's/^U = //p' < "$mf"`
+  U=`sed -n -e '/^U = / s///p' < "$mf"`
   test -d "$dirpart/$DEPDIR" || mkdir "$dirpart/$DEPDIR"
   # We invoke sed twice because it is the simplest approach to
   # changing $(DEPDIR) to its actual value in the expansion.
-  for file in `sed -n '
+  for file in `sed -n -e '
     /^DEP_FILES = .*\\\\$/ {
       s/^DEP_FILES = //
       :loop

@@ -40,9 +40,6 @@ class Epetra_LinearProblem;
 
 namespace NOX {
   class Utils;
-  namespace Epetra {
-    class Interface;
-  }
 }
 
 namespace NOX {

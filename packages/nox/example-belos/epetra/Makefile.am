@@ -29,8 +29,4 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_EPETRA_EXAMPLES
-
 SUBDIRS = 1Dfem_nonlinear 
-
-endif

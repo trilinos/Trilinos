@@ -41,12 +41,16 @@ endif
 
 AM_CPPFLAGS = $(TEST_INCLUDES)
 
-noinst_PROGRAMS = pitchfork_exe
+EXEEXT = .exe
 
-pitchfork_exe_SOURCES = \
+if BUILD_LOCA_EPETRA_TESTS
+noinst_PROGRAMS = pitchfork
+endif
+
+pitchfork_SOURCES = \
 	$(srcdir)/Pitchfork.C 
 
-pitchfork_exe_DEPENDENCIES = \
+pitchfork_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
@@ -54,7 +58,7 @@ pitchfork_exe_DEPENDENCIES = \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.a \
 	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.a
 
-pitchfork_exe_LDADD = $(TEST_LIBS)
+pitchfork_LDADD = $(TEST_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

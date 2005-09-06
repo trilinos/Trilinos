@@ -39,7 +39,7 @@
 #ifndef _NOX_EXAMPLE_DENNIS_SCHNABEL_651_H
 #define _NOX_EXAMPLE_DENNIS_SCHNABEL_651_H
 
-#include "NOX_EpetraNew_Interface_Required.H"
+#include "NOX_Epetra_Interface_Required.H"
 
 // Forward Declarations
 class Epetra_Comm;
@@ -65,7 +65,7 @@ public:
 
   // Evaluates the function (RHS) and/or the Jacobian using the solution 
   // values in solnVector.
-  bool evaluate( NOX::EpetraNew::Interface::Required::FillType fillType,
+  bool evaluate( NOX::Epetra::Interface::Required::FillType fillType,
                  const Epetra_Vector *solnVector, Epetra_Vector *rhsVector);
 
   // Return a reference to the Epetra_Vector with the initial guess

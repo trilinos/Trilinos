@@ -67,7 +67,7 @@ public:
   GenericEpetraProblem& getProblem(string name);
 
   // Get a group given its unique id
-  NOX::EpetraNew::Group& getGroup(int id);
+  NOX::Epetra::Group& getGroup(int id);
 
   // Get the compositeSoln vector
   Epetra_Vector& getCompositeSoln();
@@ -169,7 +169,7 @@ public:
 
   // These allow inheritance from GenericEpetraProblem base class
 
-  bool evaluate(NOX::EpetraNew::Interface::Required::FillType type,
+  bool evaluate(NOX::Epetra::Interface::Required::FillType type,
                const Epetra_Vector *solnVector,
                Epetra_Vector *rhsVector);
 
@@ -195,9 +195,9 @@ private:
   map<int, GenericEpetraProblem*> Problems; // Problem container
   map<int, string> Names;                   // Problem names
   map<string, int> NameLookup;              // Needed to lookup problems by name
-  map<int, NOX::EpetraNew::LinearSystemAztecOO*> LinearSystems;
+  map<int, NOX::Epetra::LinearSystemAztecOO*> LinearSystems;
   					    // Linear Systems container
-  map<int, NOX::EpetraNew::Group*> Groups;    // Groups container
+  map<int, NOX::Epetra::Group*> Groups;    // Groups container
   map<int, Problem_Interface*> Interfaces;    // Interfaces container
   map<int, NOX::Solver::Manager*> Solvers;    // Solvers container
   map<int, Epetra_IntVector*> ProblemToCompositeIndices;

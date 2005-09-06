@@ -29,7 +29,7 @@
 #include "LOCA_Epetra_ShiftInvertOperator.H"
 
 //==============================================================================
-LOCA::Epetra::ShiftInvertOperator::ShiftInvertOperator(const LOCA::EpetraNew::Group& grp, const Epetra_Operator& jac, const double& shift, bool hasMassMatrix) :
+LOCA::Epetra::ShiftInvertOperator::ShiftInvertOperator(const LOCA::Epetra::Group& grp, const Epetra_Operator& jac, const double& shift, bool hasMassMatrix) :
   locagrp(grp),
   jacOper(jac),
   shift_(shift),

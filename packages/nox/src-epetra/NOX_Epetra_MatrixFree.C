@@ -30,7 +30,9 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
-#include "NOX_Epetra_Interface.H"
+#include "NOX_Abstract_Group.H"
+#include "NOX_Epetra_Vector.H"
+#include "NOX_Epetra_Interface_Required.H"
 #include "NOX_Utils.H"
 
 #include "NOX_Epetra_MatrixFree.H"
@@ -38,7 +40,8 @@
 using namespace NOX;
 using namespace NOX::Epetra;
 
-MatrixFree::MatrixFree(Interface& i, const Epetra_Vector& x, double lambda_) :
+MatrixFree::MatrixFree(Interface::Required& i, const Epetra_Vector& x,
+		       bool p) :
   label("NOX::Matrix-Free"),
   interface(i),
   currentX(x),
@@ -49,10 +52,13 @@ MatrixFree::MatrixFree(Interface& i, const Epetra_Vector& x, double lambda_) :
   epetraMap(0),
   ownsMap(false),
   diffType(Forward),
-  lambda(lambda_),
+  lambda(1.0e-6),
   eta(0.0),
   userEta(1.0e-6),
-  computeEta(true)
+  computeEta(true),
+  useGroupForComputeF(false),
+  useNewPerturbation(p),
+  groupPtr(0)
 {
   // Zero out Vectors
   perturbX.PutScalar(0.0);
@@ -81,6 +87,7 @@ MatrixFree::MatrixFree(Interface& i, const Epetra_Vector& x, double lambda_) :
 
 MatrixFree::~MatrixFree()
 {
+  delete groupPtr;
   if (ownsMap)
     delete epetraMap;
 }
@@ -147,17 +154,29 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // Create an extra perturbed residual vector pointer if needed
   if ( diffType == Centered )
     if ( !fmPtr )
-	fmPtr = new Epetra_Vector(fo);
+      fmPtr = new Epetra_Vector(fo);
 
   // Create a reference to the extra perturbed residual vector
   Epetra_Vector& fm = *fmPtr;
 
   double scaleFactor = 1.0;
   if ( diffType == Backward )
-    scaleFactor = -1.0;
+  scaleFactor = -1.0;
 
-  if (computeEta)
-    eta = lambda*(lambda + solutionNorm/vectorNorm);
+  if (computeEta) {
+    if (useNewPerturbation) {
+      double dotprod;
+      test  = currentX.Dot(X, &dotprod);
+      if (dotprod==0.0) dotprod = 1.0e-12;
+      //eta = lambda*(1.0e-8/lambda + fabs(dotprod)/vectorNorm);
+      eta = lambda*(1.0e-12/lambda + fabs(dotprod)/(vectorNorm * vectorNorm)) * dotprod/fabs(dotprod);
+    }
+    else
+      eta = lambda*(lambda + solutionNorm/vectorNorm);
+
+    //cout << "New Pert = " << eta << endl;
+    //cout << "Old Pert = " << lambda*(lambda + solutionNorm/vectorNorm) << endl;
+  }
   else
     eta = userEta;
 
@@ -166,12 +185,29 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   Y = X;
   Y.Scale(eta);
   perturbX.Update(1.0,Y,1.0);
-  interface.computeF(perturbX, fp, Interface::MatrixFreeF);
+
+  if (!useGroupForComputeF)
+    interface.computeF(perturbX, fp, NOX::Epetra::Interface::Required::MF_Res);
+  else{
+    NOX::Epetra::Vector noxX(perturbX, NOX::DeepCopy, true);
+    groupPtr->setX(noxX);
+    groupPtr->computeF();
+    fp = dynamic_cast<const NOX::Epetra::Vector&>
+      (groupPtr->getF()).getEpetraVector();
+  }
 
   if ( diffType == Centered ) {
     Y.Scale(-2.0);
     perturbX.Update(scaleFactor,Y,1.0);
-    interface.computeF(perturbX, fm, Interface::MatrixFreeF);
+    if (!useGroupForComputeF)
+      interface.computeF(perturbX, fm, NOX::Epetra::Interface::Required::MF_Res);
+    else{
+      NOX::Epetra::Vector noxX(perturbX, NOX::DeepCopy, true);
+      groupPtr->setX(noxX);
+      groupPtr->computeF();
+      fm = dynamic_cast<const NOX::Epetra::Vector&>
+        (groupPtr->getF()).getEpetraVector();
+    }
   }
 
   // Compute the directional derivative
@@ -238,10 +274,21 @@ bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
   // Since we have no explicit Jacobian we set our currentX to the
   // incoming value and evaluate the RHS.  When the Jacobian is applied,
   // we compute the perturbed residuals and the directional
-  // derivative.
+  // derivative.  Ignore Jac.
   currentX = x;
 
-  return interface.computeF(x, fo, Interface::MatrixFreeF);
+  bool ok = false;
+  if (!useGroupForComputeF)
+    ok = interface.computeF(x, fo, NOX::Epetra::Interface::Required::MF_Res);
+  else {
+    NOX::Epetra::Vector noxX(currentX, NOX::DeepCopy, true);
+    groupPtr->setX(noxX);
+    groupPtr->computeF();
+    fo = dynamic_cast<const NOX::Epetra::Vector&>
+      (groupPtr->getF()).getEpetraVector();
+    ok = true;
+  }
+  return ok;
 }
 
 void MatrixFree::setDifferenceMethod(DifferenceType diffType_)
@@ -268,4 +315,13 @@ void MatrixFree::setPerturbation(double eta_)
 double MatrixFree::getPerturbation() const
 {
   return eta;
+}
+
+void MatrixFree::setGroupForComputeF(NOX::Abstract::Group& group)
+{
+  useGroupForComputeF = true;
+  delete groupPtr;
+  groupPtr = 0;
+  groupPtr = group.clone();
+  return;
 }

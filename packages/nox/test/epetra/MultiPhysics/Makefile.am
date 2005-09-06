@@ -39,9 +39,11 @@ endif
 
 AM_CPPFLAGS = $(TEST_INCLUDES)
 
-EXAMPLE = example
+EXEEXT = .exe
 
-noinst_PROGRAMS = $(EXAMPLE)
+if BUILD_EPETRA_TESTS
+noinst_PROGRAMS = example
+endif
 
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/Equation_A.C $(srcdir)/Equation_A.H \

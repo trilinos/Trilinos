@@ -29,8 +29,4 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_BELOS_EXAMPLES
-
 SUBDIRS = epetra
-
-endif

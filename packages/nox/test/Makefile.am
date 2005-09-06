@@ -27,7 +27,7 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = scripts utils lapack epetra petsc
+SUBDIRS = utils lapack epetra petsc
 
 #
 # The below targets allow you to use the new

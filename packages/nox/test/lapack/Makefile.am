@@ -27,26 +27,5 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_LAPACK_TESTS
-NOX_SUBDIRS = NOX_NewTest NOX_Group NOX
-else
-NOX_SUBDIRS = 
-endif
-
-if BUILD_LOCA_LAPACK_TESTS
-#if BUILD_PYTHON
-#LOCA_PYTHON_SUBDIRS = LOCA_python
-#else
-LOCA_PYTHON_SUBDIRS = 
-#endif
-LOCA_SUBDIRS = \
-	LOCA_TestProblems \
-	LOCA_UnitTests \
-	LOCA_ChanProblem \
-	$(LOCA_PYTHON_SUBDIRS)
-else
-LOCA_SUBDIRS =
-endif
-
-
-SUBDIRS = $(NOX_SUBDIRS) $(LOCA_SUBDIRS)
+SUBDIRS = NOX_NewTest NOX_Group NOX \
+          LOCA_TestProblems LOCA_UnitTests LOCA_ChanProblem

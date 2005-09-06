@@ -179,10 +179,10 @@ GenericEpetraProblem& Problem_Manager::getProblem(string name)
     return getProblem( (*iter).second );
 }
 
-NOX::EpetraNew::Group& Problem_Manager::getGroup(int id_)
+NOX::Epetra::Group& Problem_Manager::getGroup(int id_)
 {
   // Get a group given its unique id
-  NOX::EpetraNew::Group* group = (*(Groups.find(id_))).second;
+  NOX::Epetra::Group* group = (*(Groups.find(id_))).second;
   if( !group ) {
     cout << "ERROR: Could not get Group for Problem with id --> " << id_ 
          << " !!" << endl;
@@ -322,18 +322,18 @@ void Problem_Manager::registerComplete()
     int probId = problem.getId();
 
     Interfaces[probId] = new Problem_Interface(problem);
-    NOX::EpetraNew::Interface::Required& reqInt = 
-      dynamic_cast<NOX::EpetraNew::Interface::Required&>
+    NOX::Epetra::Interface::Required& reqInt = 
+      dynamic_cast<NOX::Epetra::Interface::Required&>
       (*(*(Interfaces.find(probId))).second);
 
     NOX::Epetra::Vector nox_soln( problem.getSolution() );
 
     // Use this for analytic Matrix Fills
 #ifndef USE_FD
-    NOX::EpetraNew::Interface::Jacobian& jacInt = 
-      dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>
+    NOX::Epetra::Interface::Jacobian& jacInt = 
+      dynamic_cast<NOX::Epetra::Interface::Jacobian&>
       (*(*(Interfaces.find(probId))).second);
-    LinearSystems[probId] = new NOX::EpetraNew::LinearSystemAztecOO(
+    LinearSystems[probId] = new NOX::Epetra::LinearSystemAztecOO(
       nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
       reqInt,
@@ -341,7 +341,7 @@ void Problem_Manager::registerComplete()
       problem.getJacobian(),
       problem.getSolution() );
 
-    Groups[probId] = new NOX::EpetraNew::Group(
+    Groups[probId] = new NOX::Epetra::Group(
       nlParams->sublist("Printing"),
       reqInt,
       nox_soln,
@@ -369,7 +369,7 @@ void Problem_Manager::registerComplete()
     if (MyPID == 0)
       printf("\n\tTime to color Jacobian # %d --> %e sec. \n\n",
                   icount++,fillTime.ElapsedTime());
-    MatrixOperators[probId] = new NOX::EpetraNew::FiniteDifferenceColoring(
+    MatrixOperators[probId] = new NOX::Epetra::FiniteDifferenceColoring(
 		*(*(Interfaces.find(probId))).second, 
 	        problem.getSolution(), 
 	        problem.getGraph(), 
@@ -377,9 +377,9 @@ void Problem_Manager::registerComplete()
 	        *(*(ColumnsSets.find(probId))).second,
     		useParallel,
 		distance1);
-    NOX::EpetraNew::Interface::Jacobian& jacInt = 
-      dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*(*(MatrixOperators.find(probId))).second);
-    LinearSystems[probId] = new NOX::EpetraNew::LinearSystemAztecOO(
+    NOX::Epetra::Interface::Jacobian& jacInt = 
+      dynamic_cast<NOX::Epetra::Interface::Jacobian&>(*(*(MatrixOperators.find(probId))).second);
+    LinearSystems[probId] = new NOX::Epetra::LinearSystemAztecOO(
       nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
       reqInt,
@@ -387,7 +387,7 @@ void Problem_Manager::registerComplete()
       *(*(MatrixOperators.find(probId))).second,
       problem.getSolution() );
 
-    Groups[probId] = new NOX::EpetraNew::Group(
+    Groups[probId] = new NOX::Epetra::Group(
       nlParams->sublist("Printing"),
       reqInt,
       nox_soln,
@@ -457,7 +457,7 @@ void Problem_Manager::setGroupX(int probId)
     throw "Problem_Manager ERROR";
   }
 
-  NOX::EpetraNew::Group *grp = (*(Groups.find(probId))).second;
+  NOX::Epetra::Group *grp = (*(Groups.find(probId))).second;
   if( !grp ) {
     cout << "ERROR: Could not get appropriate group for use in setX !!"
          << endl;
@@ -548,7 +548,7 @@ void Problem_Manager::computeAllF()
 
 void Problem_Manager::computeGroupF(int probId)
 {
-  NOX::EpetraNew::Group *grp = (*(Groups.find(probId))).second;
+  NOX::Epetra::Group *grp = (*(Groups.find(probId))).second;
   if( !grp ) {
     cout << "ERROR: Could not get a group for problem with id --> "
          << probId << endl;
@@ -569,7 +569,7 @@ void Problem_Manager::computeAllJacobian()
   // method
   for( ; problemIter != problemLast; problemIter++) {
     int probId = (*problemIter).first;
-    NOX::EpetraNew::Group *grp = (*(Groups.find(probId))).second;
+    NOX::Epetra::Group *grp = (*(Groups.find(probId))).second;
     if( !grp ) {
       cout << "ERROR: Could not find valid group for compouteJacobian !!"
            << endl;
@@ -632,8 +632,8 @@ void Problem_Manager::updateWithFinalSolution(int probId)
     throw "Problem_Manager ERROR";
   }
 
-  const NOX::EpetraNew::Group& finalGroup =
-    dynamic_cast<const NOX::EpetraNew::Group&>(solver->getSolutionGroup());
+  const NOX::Epetra::Group& finalGroup =
+    dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
   const Epetra_Vector& finalSolution =
     (dynamic_cast<const NOX::Epetra::Vector&>
       (finalGroup.getX())).getEpetraVector();
@@ -767,7 +767,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
     // Get the problem, its Jacobian graph and its linear system
     GenericEpetraProblem & problem = *((*problemIter).second);
     Epetra_CrsGraph & problemGraph = problem.getGraph();
-    NOX::EpetraNew::LinearSystemAztecOO & problemLinearSystem = 
+    NOX::Epetra::LinearSystemAztecOO & problemLinearSystem = 
       *(*(LinearSystems.find(probId))).second;
 
     // Get the indices map for copying data from this problem into 
@@ -783,9 +783,9 @@ void Problem_Manager::copyProblemJacobiansToComposite()
     // operator being used.
     const Epetra_Operator& jacOp = problemLinearSystem.getJacobianOperator();
 
-    if ( dynamic_cast<const NOX::EpetraNew::FiniteDifference*>(&jacOp) )
+    if ( dynamic_cast<const NOX::Epetra::FiniteDifference*>(&jacOp) )
       p_problemMatrix = const_cast<Epetra_CrsMatrix*>(
-        &dynamic_cast<const NOX::EpetraNew::FiniteDifference&>
+        &dynamic_cast<const NOX::Epetra::FiniteDifference&>
           (jacOp).getUnderlyingMatrix());
     else if ( dynamic_cast<const Epetra_CrsMatrix*>(&jacOp) )
       // NOTE: We are getting the matrix from the problem.  This SHOULD be
@@ -922,7 +922,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
     // Get the problem, its Jacobian graph and its linear system
     GenericEpetraProblem & problem = *((*problemIter).second);
     Epetra_CrsGraph & problemGraph = problem.getGraph();
-    NOX::EpetraNew::LinearSystemAztecOO & problemLinearSystem = 
+    NOX::Epetra::LinearSystemAztecOO & problemLinearSystem = 
       *(*(LinearSystems.find(probId))).second;
 
     // Get the indices map for copying data from this problem into 
@@ -938,9 +938,9 @@ void Problem_Manager::copyProblemJacobiansToComposite()
     // operator being used.
     const Epetra_Operator& jacOp = problemLinearSystem.getJacobianOperator();
 
-    if ( dynamic_cast<const NOX::EpetraNew::FiniteDifference*>(&jacOp) )
+    if ( dynamic_cast<const NOX::Epetra::FiniteDifference*>(&jacOp) )
       p_problemMatrix = const_cast<Epetra_CrsMatrix*>(
-        &dynamic_cast<const NOX::EpetraNew::FiniteDifference&>
+        &dynamic_cast<const NOX::Epetra::FiniteDifference&>
           (jacOp).getUnderlyingMatrix());
     else if ( dynamic_cast<const Epetra_CrsMatrix*>(&jacOp) )
       // NOTE: We are getting the matrix from the problem.  This SHOULD be
@@ -1090,7 +1090,7 @@ double Problem_Manager::getNormSum()
   for( ; problemIter != problemLast; problemIter++) {
     int probId = (*problemIter).first;
 
-    NOX::EpetraNew::Group *grp = (*(Groups.find(probId))).second;
+    NOX::Epetra::Group *grp = (*(Groups.find(probId))).second;
     if( !grp ) {
       cout << "ERROR: Could not get appropriate group for use in NormSum !!"
            << endl;
@@ -1165,7 +1165,7 @@ bool Problem_Manager::solve()
       GenericEpetraProblem& problem = *(*problemIter).second;
       int probId = problem.getId();
 
-      NOX::EpetraNew::Group &problemGroup = *(*(Groups.find(probId))).second;
+      NOX::Epetra::Group &problemGroup = *(*(Groups.find(probId))).second;
       NOX::Solver::Manager &problemSolver = *(*(Solvers.find(probId))).second;
     
       // Sync all dependent data with this problem 
@@ -1276,22 +1276,22 @@ bool Problem_Manager::solveMF()
   A = new Epetra_CrsMatrix(Copy, *AA); 
   A->FillComplete();
 
-  NOX::EpetraNew::Interface::Required& reqInt = 
-    dynamic_cast<NOX::EpetraNew::Interface::Required&>(interface);
+  NOX::Epetra::Interface::Required& reqInt = 
+    dynamic_cast<NOX::Epetra::Interface::Required&>(interface);
   NOX::Epetra::Vector nox_soln(*compositeSoln);
 
   // Create the Matrix-Free Jacobian Operator
-  //NOX::EpetraNew::MatrixFree Jac(interface, *compositeSoln);
-  //NOX::EpetraNew::Interface::Jacobian& jacInt = Jac;
-  NOX::EpetraNew::Interface::Jacobian& jacInt = interface;
+  //NOX::Epetra::MatrixFree Jac(interface, *compositeSoln);
+  //NOX::Epetra::Interface::Jacobian& jacInt = Jac;
+  NOX::Epetra::Interface::Jacobian& jacInt = interface;
 
-  NOX::EpetraNew::Interface::Preconditioner& precInt = 
-    dynamic_cast<NOX::EpetraNew::Interface::Preconditioner&>(interface);
+  NOX::Epetra::Interface::Preconditioner& precInt = 
+    dynamic_cast<NOX::Epetra::Interface::Preconditioner&>(interface);
 
   NOX::Parameter::List& lsParams = 
     nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver");
 
-  NOX::EpetraNew::LinearSystemAztecOO composite_linearSystem(
+  NOX::Epetra::LinearSystemAztecOO composite_linearSystem(
     nlParams->sublist("Printing"),
     lsParams,
     //jacInt, Jac,
@@ -1301,7 +1301,7 @@ bool Problem_Manager::solveMF()
 
   //lsParams.setParameter("Preconditioning", "None");
   lsParams.setParameter("Preconditioner", "AztecOO");
-  NOX::EpetraNew::Group grp(nlParams->sublist("Printing"), 
+  NOX::Epetra::Group grp(nlParams->sublist("Printing"), 
     interface, nox_soln, composite_linearSystem);
   grp.computeF();
 
@@ -1328,7 +1328,7 @@ bool Problem_Manager::solveMF()
 // These methods are needed to allow inheritance from GenericEpetraProblem base
 
 bool Problem_Manager::evaluate(
-              NOX::EpetraNew::Interface::Required::FillType flag,
+              NOX::Epetra::Interface::Required::FillType flag,
               const Epetra_Vector *solnVector,
               Epetra_Vector *rhsVector)
 {

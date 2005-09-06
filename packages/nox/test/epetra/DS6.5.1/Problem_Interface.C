@@ -40,14 +40,15 @@ Problem_Interface::~Problem_Interface()
 { }
 
 bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec, 
-                     NOX::EpetraNew::Interface::Required::FillType fillType)
+                     NOX::Epetra::Interface::Required::FillType fillType)
 {
   return problem.evaluate(fillType, &x, &FVec);
 }
 
-bool Problem_Interface::computeJacobian(const Epetra_Vector& x)
+bool Problem_Interface::computeJacobian(const Epetra_Vector& x,
+					Epetra_Operator& Jac)
 {
-  return problem.evaluate(NOX::EpetraNew::Interface::Required::Jac, &x, NULL);
+  return problem.evaluate(NOX::Epetra::Interface::Required::Jac, &x, NULL);
 }
 
 //-----------------------------------------------------------------------------

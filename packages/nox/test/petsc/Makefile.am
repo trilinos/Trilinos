@@ -27,16 +27,4 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_PETSC_TESTS
-NOX_SUBDIRS = 
-else
-NOX_SUBDIRS = 
-endif
-
-if BUILD_LOCA_PETSC_TESTS
-LOCA_SUBDIRS = 
-else
-LOCA_SUBDIRS =
-endif
-
-SUBDIRS = $(NOX_SUBDIRS) $(LOCA_SUBDIRS)
+SUBDIRS = 
