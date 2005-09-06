@@ -70,9 +70,9 @@ struct SolveCriteria {
   /** \brief . */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
   /** \brief . */
-  static const ScalarMag unspecifiedTolerance() { return ScalarMag(-1); }
+  static ScalarMag unspecifiedTolerance() { return ScalarMag(-1); }
   /** \brief . */
-  static const int unspecifiedMaxIterations() { return -1; }
+  static int unspecifiedMaxIterations() { return -1; }
   /** \brief The type of solve tolerance requested as given in
    * <tt>this->requestedTol</tt>.
    */
@@ -163,7 +163,7 @@ struct SolveStatus {
   /** \brief . */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
   /** \brief . */
-  static const ScalarMag unknownTolerance() { return ScalarMag(-1); }
+  static ScalarMag unknownTolerance() { return ScalarMag(-1); }
   /** \brief The return status of the solve. */
   ESolveStatus solveStatus;
   /** \brief The maximum final tolerance actually achieved by the (block) linear solve.
