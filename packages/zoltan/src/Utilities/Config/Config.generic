@@ -215,8 +215,7 @@ VTK_INCPATH = -I/usr/local/include/vtk
 #
 # The Mesa GL library
 #
-# For off-screen rendering, build Mesa first (www.mesa3d.org) because OpenGL
-# may not be capable be of doing off-screen rendering.  Choose a static
+# For off-screen rendering, build Mesa first (www.mesa3d.org).  Choose a static
 # configuration file and do two things: add -DUSE_MGL_NAMESPACE to CFLAGS,
 # and rename the "actual file names" so they don't conflict with OpenGL 
 # library names.  (The MESA_INCPATH is the location of the "GL" directory.)
@@ -229,6 +228,7 @@ MESA_LIBS = -lMGL  -lMGLU -lMOSMesa
 #
 # Then build VTK, again with VTK_USE_PARALLEL, VTK_USE_RENDERING, VTK_USE_MPI.
 # Make sure VTK_USE_MANGLED_MESA is ON and VTK_OPENGL_HAS_MESA is OFF.
+# Add -DUSE_MGL_NAMESPACE to CMAKE_C_CFLAGS and CMAKE_CXX_FLAGS.
 # Define the MANGLED_MESA_*, MANGLED_OSMESA_*, OPENGL_* paths to point to
 # your Mesa build.  
 #
