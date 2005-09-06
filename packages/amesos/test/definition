@@ -5,7 +5,7 @@
 (FRAMEWORK, AmesosThyraTests) {
     TESTS = ../thyra/test/test_amesos_thyra_driver.exe;
     ARGS = --matrix-dir=$ABS_TOP_SRCDIR/packages/amesos/test/Test_Basic --show-all-tests;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL;
 }
 
 (FRAMEWORK, AmesosTests) {   
