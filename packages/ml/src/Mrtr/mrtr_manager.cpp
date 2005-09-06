@@ -793,6 +793,20 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<MRTR::Interface*> inter)
   
   // we now color the interfaces in such a way that every corner node
   // has lagrange multipliers either never or once but never more then once
+  // this exercice is a little tricky as each interface has it's own
+  // intra-communicator where a bunch of procs but not necessarily all of them
+  // belong to. Therefore some searching has to be done by procs that are 
+  // member of a specific intra-comm, while some communication has to be
+  // done using the global comm.
+  // This loop probably does not scale well in parallel but I'm already happy
+  // if it works at all!
+  // The coloring allows for some interfaces to have a user-specified mortar side
+  // It tries to make use of such a prescribed choice of side. But
+  // when specifying a mortar side on one or more interfaces but not on all of them, 
+  // there is no guarantee that the coloring works out even if the user chose
+  // the mortar sides carefully so the coloring should/could work out!
+  // This is due to the fact that there is some heuristics in here (e.g. line 926)
+  // and there is more then one valid way to color the problem.
   vector<int> flags((2*ninter));
   vector<int> flagr((2*ninter));
   for (int i=0; i<ninter; ++i)
@@ -803,17 +817,17 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<MRTR::Interface*> inter)
      // if there is a dependency, choose mortar side of inter[i] approp., 
      // if there is no dependency, choose something
 
-     // create a vector of flags as follows:
-     // flags[0..ninter-1]        flags for side 0 of inter[i]
-     // flags[ninter..2*ninter-1] flags for side 1 of inter[i]
-     // flags[k]==  0 : no dependency
-     // flags[k]==  1 : dependency but no side chosen yet on inter[k]
-     // flags[k]==  2 : side should be chosen master/mortar side
-     // flags[k]==  3 : side should be chosen slave/LM side
-     for (int k=0; k<2*ninter; ++k) flags[k] = 0;
-       
      if (inter[i]->MortarSide() == -2)
      {
+       // create a vector of flags as follows:
+       // flags[0..ninter-1]        flags for side 0 of inter[i]
+       // flags[ninter..2*ninter-1] flags for side 1 of inter[i]
+       // flags[k]==  0 : no dependency
+       // flags[k]==  1 : dependency but no side chosen yet on inter[k]
+       // flags[k]==  2 : side should be chosen master/mortar side
+       // flags[k]==  3 : side should be chosen slave/LM side
+       for (int k=0; k<2*ninter; ++k) flags[k] = 0;
+       
        // actnode[0] holds the active node id
        // actnode[1] holds the side this node is on on inter[i]  
        int actnodes[2]; 
@@ -883,11 +897,13 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<MRTR::Interface*> inter)
 
        // sum all flags
        Comm().MaxAll(&(flags[0]),&(flagr[0]),(2*ninter));
-       
+
+#if 1       
        cout << "Flags side 0:\n";
        for (int j=0; j<ninter; ++j) cout << "inter " << j << " flag " << flagr[j] << endl;
        cout << "Flags side 1:\n";
        for (int j=ninter; j<2*ninter; ++j) cout << "inter " << j << " flag " << flagr[j] << endl;
+#endif
        
        // loop through flags and make a decision what to chose on inter[i]
        for (int k=0; k<ninter; ++k)
@@ -935,15 +951,92 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<MRTR::Interface*> inter)
        if (inter[i]->MortarSide()==-2)
          inter[i]->SetMortarSide(0);
          
-
-
+       // now we loop through the flags again and color all interfaces,
+       // that had a connection to inter[i] but did not care
+       // (so they had flag[k]==1 and flag[ninter+k]==1)
+       for (int k=0; k<ninter; ++k)
+       {
+         if (i==k) continue;
+         if (flagr[k]==1 && flagr[ninter+k]==1)
+         {
+           if (inter[k]->MortarSide()!=-2)
+           {
+             cout << "***ERR*** MRTR::Manager::ChooseMortarSide_2D:\n"
+                  << "***ERR*** weird, this interface is not supposed to already have a mortar side assigned\n"
+                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+             exit(EXIT_FAILURE);
+           }
+           
+           // loop through cornernodes of inter[i]
+           for (int j=0; j<cornernodes[i].size(); ++j)
+           {
+             actnodes[0] = 0; actnodes[1] = 0;    
+             if (inter[i]->lComm())
+               if (inter[i]->lComm()->MyPID()==0)
+               {
+                 actnodes[0] = cornernodes[i][j];
+                 actnodes[1] = inter[i]->GetSide(actnodes[0]);
+               }
+             Comm().MaxAll(actnodes,actnoder,2);
+             
+             // intraproc 0 of inter[k] makes the decision on what to do
+             int mortarside_s = -1;
+             int mortarside_r;
+             if (inter[k]->lComm())
+               if (inter[k]->lComm()->MyPID()==0)
+               {
+                 // loop through inter[k]'s cornernode
+                 for (int l=0; l<cornernodes[k].size(); ++l)
+                 {
+                   if (actnoder[0]==cornernodes[k][l])
+                   {
+                     // get the mortar and nodal side of inter[i]
+                     int mside_i   = inter[i]->MortarSide();
+                     int nodeside_i = actnoder[1];
+                     
+                     // get the nodal side of inter[k]
+                     int nodeside_k = inter[k]->GetSide(actnoder[0]);
+                     
+                     // the node is on the mortar side of i, 
+                     // so put it on the slave side on k
+                     if (mside_i == nodeside_i)
+                     {
+                       if (mortarside_s != -1)
+                         if (mortarside_s != inter[k]->OtherSide(nodeside_k))
+                         {
+                           cout << "***ERR*** MRTR::Manager::ChooseMortarSide_2D:\n"
+                                << "***ERR*** interface has a conflict that can not be resolved\n"
+                                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+                           exit(EXIT_FAILURE);
+                         }
+                       mortarside_s = inter[k]->OtherSide(nodeside_k);
+                     }
+                     // the node is on the slave side of i,
+                     // so put it on the mortar side of k
+                     else 
+                     {
+                       if (mortarside_s != -1)
+                         if (mortarside_s != nodeside_k)
+                         {
+                           cout << "***ERR*** MRTR::Manager::ChooseMortarSide_2D:\n"
+                                << "***ERR*** interface has a conflict that can not be resolved\n"
+                                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+                           exit(EXIT_FAILURE);
+                         }
+                       mortarside_s = nodeside_k;
+                     }
+                   }
+                 } // for (l=0; l<cornernodes[k].size(); ++l)
+               } // if (inter[k]->lComm()->MyPID()==0)
+             Comm().MaxAll(&mortarside_s,&mortarside_r,1);
+             if (mortarside_r != -1)
+               inter[k]->SetMortarSide(mortarside_r);
+           } // for (int j=0; j<cornernodes[i].size(); ++j)
+           
+         } // if (flagr[k]==1 && flagr[ninter+k]==1)
+       } // for (k=0; k<ninter; ++k)
 
      } // if (inter[i]->MortarSide() == -2)
-     
-     
-
-    
-    
   } // for (int i=0; i<ninter; ++i)
 
 
