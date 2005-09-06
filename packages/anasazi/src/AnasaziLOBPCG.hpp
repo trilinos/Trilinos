@@ -727,12 +727,10 @@ namespace Anasazi {
     
 
       // We can reduce the size of the local problem if the directSolver detects rank deficiency 
-      if ((localSize == twoBlocks) && (_nevLocal == _blockSize)) {
+      if (_nevLocal == _blockSize) {
         localSize = _blockSize;
       }
-      
-      // We can reduce the size of the local problem if the directSolver detects rank deficiency
-      if ((localSize == threeBlocks) && (_nevLocal <= twoBlocks)) {
+      else if (_nevLocal <= twoBlocks) {
         localSize = twoBlocks;
       }
 
@@ -775,6 +773,7 @@ namespace Anasazi {
         } // if (localSize == threeBlocks)
       } // if (localSize >= twoBlocks )
 
+      // Replace S with S*Lambda
       for (j = 0; j < _blockSize; ++j) {
         blas.SCAL(localSize, _theta[j], S[j], 1);
       }
@@ -791,6 +790,7 @@ namespace Anasazi {
         }
       } // if (localSize >= twoBlocks)
             
+      // Restore S from S*Lambda back to S
       for (j = 0; j < _blockSize; ++j) {
         blas.SCAL(localSize, one/_theta[j], S[j], 1);
       }
