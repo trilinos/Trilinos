@@ -522,7 +522,7 @@ static int D2coloring(
                                     of local vertices */
     int *isbound=NULL;           /* Indicates whether a local vertex is a boundary
                                     vertex */
-    int *visit = NULL;           /* Visit (coloring) order of local vertices */
+    int *visit = NULL, *visitIntern=NULL;  /* Visit (coloring) order of local vertices */
     int *mark = NULL;            /* Array to mark forbidden colors for a vertex */
     int gmaxcolor = 0;           /* Maximum #colors */
     int lmaxdeg = 0;             /* Maximum vertex degree for the local vertices */
@@ -761,11 +761,12 @@ static int D2coloring(
         ZOLTAN_PRINT_WARN(zz->Proc, yo, "Coloring with interleaved coloring order is not implemented for distance-2 coloring. Using internal first order.");
         color_order = 'I';
     }
+    visitIntern = visit + nbound;
     if (color_order == 'I') {
-        InternalColoring(zz, distance, &nColor, nvtx - nbound, visit + nbound, xadj, adj, color, mark, gmaxcolor, color_method);
+        InternalColoring(zz, distance, &nColor, nvtx - nbound, visitIntern, xadj, adj, color, mark, gmaxcolor, color_method);
         nConflict = nbound;
     }
-    else if (color_order=='B')
+    else if (color_order=='B') 
         nConflict = nbound;
     else if (color_order == 'U') { 
         nConflict = nvtx;
@@ -817,7 +818,7 @@ static int D2coloring(
     if (get_times) times[4] = Zoltan_Time(zz->Timer);
     /* Color internal vertices after boundaries if boundary first ordering */
     if (color_order == 'B') 
-        InternalColoring(zz, distance, &nColor, nvtx-nbound, visit + nbound, xadj, adj, color, mark, gmaxcolor, color_method);
+        InternalColoring(zz, distance, &nColor, nvtx-nbound, visitIntern, xadj, adj, color, mark, gmaxcolor, color_method);
     
     
 #if 1
@@ -1025,11 +1026,12 @@ static int InternalColoring(
                 v = adj[j];              
                 if ((c = color[v]) != 0) 
                     mark[c] = u;
-                for (k = xadj[v]; k < xadj[v+1]; ++k) {	  
-                    w = adj[k];
-                    if ((c = color[w]) != 0) 
-                        mark[c] = u;	      
-                }
+                if (v<nvtx) /* this is internal as well */ 
+                    for (k = xadj[v]; k < xadj[v+1]; ++k) {	  
+                        w = adj[k];
+                        if ((c = color[w]) != 0) 
+                            mark[c] = u;	      
+                    }                
             }
             color[u] = PickColor(zz, color_method, u, color[u], nColor, mark);
         }
