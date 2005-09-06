@@ -41,8 +41,12 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 
 EXEEXT = .exe
 
+if BUILD_BELOS_TESTS
+1DFEM_BELOS = 1DfemBelos
+endif
+
 if BUILD_EPETRA_TESTS
-noinst_PROGRAMS = 1Dfem 1DfemTransient
+noinst_PROGRAMS = 1Dfem 1DfemTransient $(1DFEM_BELOS)
 endif
 
 1Dfem_SOURCES = \
@@ -66,4 +70,16 @@ endif
                               $(top_builddir)/src-epetra/libnoxepetra.a
 
 1DfemTransient_LDADD = $(TEST_LIBS)
+
+1DfemBelos_SOURCES = \
+	                 $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemBelos.C
+
+1DfemBelos_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a \
+                              $(top_builddir)/src-belos/libnoxbelos.a
+
+1DfemBelos_LDADD = $(TEST_LIBS)
 

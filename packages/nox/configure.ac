@@ -412,6 +412,11 @@ REQUIRE_LIB_CHECK=no
   AC_SUBST(ADDON_petsc_TESTS)
   AC_SUBST(ADDON_loca_petsc_TESTS)
 
+  # belos testing
+  NOX_TESTING(belos)
+  AM_CONDITIONAL(BUILD_BELOS_TESTS, test X${ADDON_belos_TESTS} = Xyes)
+  AC_SUBST(ADDON_belos_TESTS)
+
   # python testing
   NOX_TESTING(python)
   AM_CONDITIONAL(BUILD_PYTHON_TESTS, test X${ADDON_python_TESTS} = Xyes)

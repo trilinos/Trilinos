@@ -58,8 +58,7 @@
 #include "AztecOO.h"
 
 // User's application specific files 
-#include "Problem_Interface.H" // Interface file to NOX
-#include "FiniteElementProblem.H"              
+#include "1DfemInterface.H" // Interface file to NOX
 
 using namespace std;
 
@@ -101,10 +100,11 @@ int main(int argc, char *argv[])
   // Create the FiniteElementProblem class.  This creates all required
   // Epetra objects for the problem and allows calls to the 
   // function (RHS) and Jacobian evaluation routines.
-  FiniteElementProblem Problem(NumGlobalElements, Comm);
+  Interface interface(NumGlobalElements, Comm);
+  interface.setPDEfactor(1000.0);
 
   // Get the vector from the Problem
-  Epetra_Vector& soln = Problem.getSolution();
+  Epetra_Vector& soln = interface.getSolution();
 
   // Initialize Solution
   soln.PutScalar(1.0);
@@ -171,17 +171,13 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Max Iterations", 800);  
   lsParams.setParameter("Tolerance", 1e-4);
   lsParams.setParameter("Preconditioner", "Ifpack");
+  lsParams.setParameter("Preconditioner Operator", "Use Jacobian");
   lsParams.setParameter("Output Frequency", 50);
   lsParams.setParameter("Verbosity Level", 1);
 
-  // Create the interface between the test problem and the nonlinear solver
-  // This is created by the user using inheritance of the abstract base class:
-  // NOX_Epetra_Interface
-  Problem_Interface interface(Problem);
-
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
-  Epetra_RowMatrix& A = Problem.getJacobian();
+  Epetra_RowMatrix& A = interface.getJacobian();
   // 2. Matrix-Free (Epetra_Operator)
   //NOX::Epetra::MatrixFree A(interface, soln);
   // 3. Finite Difference (Epetra_RowMatrix)

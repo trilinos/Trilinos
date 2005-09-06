@@ -39,19 +39,24 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
-#include "NOX_Epetra_Interface.H"
+#include "NOX_Epetra_Interface_Required.H"
+#include "NOX_Epetra_Interface_Jacobian.H"
+#include "NOX_Epetra_Interface_Preconditioner.H"
 
 // ---------- Forward Declarations ----------
 class FiniteElementProblem;
 
-class  Problem_Interface : public NOX::Epetra::Interface
+class  Problem_Interface : public NOX::Epetra::Interface::Required,
+			   public NOX::Epetra::Interface::Jacobian,
+			   public NOX::Epetra::Interface::Preconditioner
 {
 public:
   Problem_Interface(FiniteElementProblem& Problem);
   ~Problem_Interface();
 
   //! Compute and return F
-  bool computeF(const Epetra_Vector& x, Epetra_Vector& FVec, FillType flag = F);
+  bool computeF(const Epetra_Vector& x, Epetra_Vector& FVec, 
+		FillType flag = Residual);
 
   //! Compute an explicit Jacobian
   bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
@@ -60,7 +65,8 @@ public:
   bool computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M);
   
   //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.
-  bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M);
+  bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M,
+			     NOX::Parameter::List* precParams = 0);
 
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 

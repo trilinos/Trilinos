@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(1Dfem_SOURCES) $(1DfemTransient_SOURCES)
+SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) $(1DfemTransient_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -67,7 +67,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 @BUILD_EPETRA_TESTS_TRUE@noinst_PROGRAMS = 1Dfem$(EXEEXT) \
-@BUILD_EPETRA_TESTS_TRUE@	1DfemTransient$(EXEEXT)
+@BUILD_EPETRA_TESTS_TRUE@	1DfemTransient$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@	$(am__EXEEXT_1)
 subdir = test/epetra/1Dfem
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -102,6 +103,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
+@BUILD_BELOS_TESTS_TRUE@am__EXEEXT_1 = 1DfemBelos$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_1Dfem_OBJECTS = 1DfemInterface.$(OBJEXT) 1Dfem.$(OBJEXT)
 1Dfem_OBJECTS = $(am_1Dfem_OBJECTS)
@@ -109,13 +111,15 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(NOX_TEST_LIBS))
+am_1DfemBelos_OBJECTS = 1DfemInterface.$(OBJEXT) 1DfemBelos.$(OBJEXT)
+1DfemBelos_OBJECTS = $(am_1DfemBelos_OBJECTS)
 am_1DfemTransient_OBJECTS = 1DfemInterface.$(OBJEXT) \
 	1DfemTransient.$(OBJEXT)
 1DfemTransient_OBJECTS = $(am_1DfemTransient_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/1Dfem.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/1Dfem.Po ./$(DEPDIR)/1DfemBelos.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemInterface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemTransient.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -127,13 +131,16 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(1Dfem_SOURCES) $(1DfemTransient_SOURCES)
-DIST_SOURCES = $(1Dfem_SOURCES) $(1DfemTransient_SOURCES)
+SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) \
+	$(1DfemTransient_SOURCES)
+DIST_SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) \
+	$(1DfemTransient_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ADDON_belos_EXAMPLES = @ADDON_belos_EXAMPLES@
+ADDON_belos_TESTS = @ADDON_belos_TESTS@
 ADDON_epetra_EXAMPLES = @ADDON_epetra_EXAMPLES@
 ADDON_epetra_TESTS = @ADDON_epetra_TESTS@
 ADDON_lapack_EXAMPLES = @ADDON_lapack_EXAMPLES@
@@ -160,6 +167,8 @@ AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
 BUILD_BELOS_EXAMPLES_FALSE = @BUILD_BELOS_EXAMPLES_FALSE@
 BUILD_BELOS_EXAMPLES_TRUE = @BUILD_BELOS_EXAMPLES_TRUE@
+BUILD_BELOS_TESTS_FALSE = @BUILD_BELOS_TESTS_FALSE@
+BUILD_BELOS_TESTS_TRUE = @BUILD_BELOS_TESTS_TRUE@
 BUILD_EPETRA_EXAMPLES_FALSE = @BUILD_EPETRA_EXAMPLES_FALSE@
 BUILD_EPETRA_EXAMPLES_TRUE = @BUILD_EPETRA_EXAMPLES_TRUE@
 BUILD_EPETRA_TESTS_FALSE = @BUILD_EPETRA_TESTS_FALSE@
@@ -360,6 +369,7 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_FALSE@TEST_INCLUDES = $(NOX_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES))
 AM_CPPFLAGS = $(TEST_INCLUDES)
+@BUILD_BELOS_TESTS_TRUE@1DFEM_BELOS = 1DfemBelos
 1Dfem_SOURCES = \
 	        $(srcdir)/1DfemInterface.H \
                 $(srcdir)/1DfemInterface.C \
@@ -380,6 +390,17 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
                               $(top_builddir)/src-epetra/libnoxepetra.a
 
 1DfemTransient_LDADD = $(TEST_LIBS)
+1DfemBelos_SOURCES = \
+	                 $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemBelos.C
+
+1DfemBelos_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a \
+                              $(top_builddir)/src-belos/libnoxbelos.a
+
+1DfemBelos_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -419,6 +440,9 @@ clean-noinstPROGRAMS:
 1Dfem$(EXEEXT): $(1Dfem_OBJECTS) $(1Dfem_DEPENDENCIES) 
 	@rm -f 1Dfem$(EXEEXT)
 	$(CXXLINK) $(1Dfem_LDFLAGS) $(1Dfem_OBJECTS) $(1Dfem_LDADD) $(LIBS)
+1DfemBelos$(EXEEXT): $(1DfemBelos_OBJECTS) $(1DfemBelos_DEPENDENCIES) 
+	@rm -f 1DfemBelos$(EXEEXT)
+	$(CXXLINK) $(1DfemBelos_LDFLAGS) $(1DfemBelos_OBJECTS) $(1DfemBelos_LDADD) $(LIBS)
 1DfemTransient$(EXEEXT): $(1DfemTransient_OBJECTS) $(1DfemTransient_DEPENDENCIES) 
 	@rm -f 1DfemTransient$(EXEEXT)
 	$(CXXLINK) $(1DfemTransient_LDFLAGS) $(1DfemTransient_OBJECTS) $(1DfemTransient_LDADD) $(LIBS)
@@ -430,6 +454,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1Dfem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemBelos.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemTransient.Po@am__quote@
 
@@ -480,6 +505,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1Dfem.Po' tmpdepfile='$(DEPDIR)/1Dfem.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1Dfem.obj `if test -f '$(srcdir)/1Dfem.C'; then $(CYGPATH_W) '$(srcdir)/1Dfem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1Dfem.C'; fi`
+
+1DfemBelos.o: $(srcdir)/1DfemBelos.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemBelos.o -MD -MP -MF "$(DEPDIR)/1DfemBelos.Tpo" -c -o 1DfemBelos.o `test -f '$(srcdir)/1DfemBelos.C' || echo '$(srcdir)/'`$(srcdir)/1DfemBelos.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemBelos.Tpo" "$(DEPDIR)/1DfemBelos.Po"; else rm -f "$(DEPDIR)/1DfemBelos.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemBelos.C' object='1DfemBelos.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemBelos.Po' tmpdepfile='$(DEPDIR)/1DfemBelos.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemBelos.o `test -f '$(srcdir)/1DfemBelos.C' || echo '$(srcdir)/'`$(srcdir)/1DfemBelos.C
+
+1DfemBelos.obj: $(srcdir)/1DfemBelos.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemBelos.obj -MD -MP -MF "$(DEPDIR)/1DfemBelos.Tpo" -c -o 1DfemBelos.obj `if test -f '$(srcdir)/1DfemBelos.C'; then $(CYGPATH_W) '$(srcdir)/1DfemBelos.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemBelos.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemBelos.Tpo" "$(DEPDIR)/1DfemBelos.Po"; else rm -f "$(DEPDIR)/1DfemBelos.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemBelos.C' object='1DfemBelos.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemBelos.Po' tmpdepfile='$(DEPDIR)/1DfemBelos.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemBelos.obj `if test -f '$(srcdir)/1DfemBelos.C'; then $(CYGPATH_W) '$(srcdir)/1DfemBelos.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemBelos.C'; fi`
 
 1DfemTransient.o: $(srcdir)/1DfemTransient.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemTransient.o -MD -MP -MF "$(DEPDIR)/1DfemTransient.Tpo" -c -o 1DfemTransient.o `test -f '$(srcdir)/1DfemTransient.C' || echo '$(srcdir)/'`$(srcdir)/1DfemTransient.C; \
