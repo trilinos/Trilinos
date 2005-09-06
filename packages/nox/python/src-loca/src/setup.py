@@ -31,278 +31,170 @@
 # System imports
 from   distutils.core import *
 from   distutils      import sysconfig
-import commands
 import os
-import re
-import string
 import sys
 
-# Any information that needs to be transferred from the autotooled Makefile is
-# written to file setup.txt using python syntax to define a dictionary.  The
-# keys of this 'makeInfo' dictionary are variable names and the corresponding
-# values represent the data that will be needed by this setup.py script.
+# Trilinos import
+TRILINOS_HOME_DIR = os.path.normpath(open("TRILINOS_HOME_DIR").read()[:-1])
+sys.path.insert(0,os.path.join(TRILINOS_HOME_DIR,"commonTools","buildTools"))
+from MakefileVariables import *
+
+# Build the makeVars dictionary by processing relevant Makefiles
+makeVars = { }
+makeVars.update(processMakefile(os.path.join("Makefile")))
+
+# Import the variable names and values into the global namespace.  This is
+# crucual: every variable name/value pair obtained by processing the specified
+# Makefiles above will become actual python variables in the global namespace.
+globals().update(makeVars)
+
+# Obtain the package version number string
 try:
-    f = open("setup.txt")
-    makeInfo = f.readlines()
-    f.close()
-    makeInfo = eval(string.join(makeInfo))
-except IOError:
-    makeInfo = { }
+    version = makeVars["PACKAGE_VERSION"]
+except KeyError:
+    version = makeVars.get("VERSION","??")
 
-# Certain directory paths are needed by setup.py.  pakDir is the path for the
-# nox directory, and srcDir is the path for the python source directory
-pakDir = makeInfo.get("top_srcdir","")
-srcDir = makeInfo.get("srcdir"    ,"")
-CC     = makeInfo.get("CC" )
-CXX    = makeInfo.get("CXX")
+# Initialize arguments that will be needed by the Extension class
+include_dirs    = [srcdir]
+library_dirs    = [      ]
+libraries       = [      ]
+extra_link_args = [      ]
 
-# Obtain the version from the package version function, using regular
-# expressions.  This assumes that the function returns a string constant of the
-# form "LOCA Version xxx - mm/dd/yyyy" and extracts the xxx (which does
-# not have to be three characters long).  I know LOCA does not have this yet,
-# but maybe someday...
-versionRE     = re.compile(r"return.*Version\s+(.*)\s+-\s+\d")
-versionHeader = os.path.join(pakDir,"src-loca","src","LOCA_Version.C")
-try:
-    header = open(versionHeader)
-    lines  = header.readlines()
-    header.close()
-    for line in lines:
-        match = versionRE.search(line)
-        if match:
-            version = match.group(1)
-except IOError:
-    version = "??"
+# Get the relevant Makefile export variable values, split them into lists of
+# strings, add them together to obtain a big list of option strings, and then
+# remove any duplicate entries
+options = LOCA_PYTHON_INCLUDES.split() + \
+          LOCA_PYTHON_LIBS.split()
+uniquifyList(options)
 
-# Define the teuchos include path, library directory and library name
-teuchosInc    = os.path.join(pakDir, "..", "teuchos", "src")
-teuchosLibDir = os.path.join("..", "..", "..", "..", "teuchos", "src")
-teuchosLib    = "teuchos"
-
-# # Define the epetra include path, library directory and library name
-# epetraInc    = os.path.join(pakDir, "..", "epetra", "src")
-# epetraPyInc  = os.path.join(pakDir, "..", "epetra", "python", "src")
-# epetraLibDir = os.path.join("..", "..", "..", "..", "epetra", "src")
-# epetraLib    = "epetra"
-
-# Define the nox include path, library directory and library name
-noxInc      = os.path.join(pakDir, "src")
-noxPyInc    = os.path.join(pakDir, "python", "src")
-noxLibDir   = os.path.join("..", "..", "..", "src")
-noxLib      = "nox"
-
-# Define the loca include path, library directory and library name
-locaInc    = os.path.join(pakDir, "src-loca", "src")
-locaLibDir = os.path.join("..", "..", "..", "src-loca", "src")
-locaLib    = "loca"
-
-# # Define the nox-epetra include path, library directory and library name
-# noxEpetraInc    = os.path.join(pakDir, "src-epetra")
-# noxEpetraLibDir = os.path.join("..", "..", "src-epetra")
-# noxEpetraLib    = "noxepetra"
-
-# Define the nox-lapack include path, library directory and library name
-noxLAPACKInc    = os.path.join(pakDir, "src-lapack")
-noxLAPACKLibDir = os.path.join("..", "..", "..", "src-lapack")
-noxLAPACKLib    = "noxlapack"
-
-# # Define the loca-epetra include path, library directory and library name
-# locaEpetraInc    = os.path.join(pakDir, "src-loca", "src-epetra")
-# locaEpetraLibDir = os.path.join("..", "..", "..", "src-loca", "src-epetra")
-# locaEpetraLib    = "locaepetra"
-
-# Define the loca-lapack include path, library directory and library name
-locaLAPACKInc    = os.path.join(pakDir, "src-loca", "src-lapack")
-locaLAPACKLibDir = os.path.join("..", "..", "..", "src-loca", "src-lapack")
-locaLAPACKLib    = "localapack"
-
-# # Define the aztecoo include path, library directory and library name
-# aztecooInc    = os.path.join(pakDir, "..", "aztecoo", "src")
-# aztecooLibDir = os.path.join("..", "..", "..", "aztecoo", "src")
-# aztecooLib    = "aztecoo"
-
-# # Define the ifpack include path, library directory and library name
-# ifpackInc    = os.path.join(pakDir, "..", "ifpack", "src")
-# ifpackLibDir = os.path.join("..", "..", "..", "ifpack", "src")
-# ifpackLib    = "ifpack"
-
-# Standard libraries.  This is currently a bit of a hack.  The library "stdc++"
-# is added to the standard library list for a case where we know it sometimes
-# needs it.
-stdLibs = [ ]
-sysName = os.uname()[0]
-if sysName == "Linux":
-    stdLibs.append("stdc++")
-
-# Create the extra compile and link argument lists and complete the standard
-# libraries list.  This is accomplished by looping over the arguments in
-# LDFLAGS, BLAS_LIBS, LAPACK_LIBS, FLIBS and LIBS and adding them to the
-# appropriate list.
-extraCompileArgs = [ ]
-extraLinkArgs    = [ ]
-libs = makeInfo.get("LDFLAGS"    ,"").split() + \
-       makeInfo.get("BLAS_LIBS"  ,"").split() + \
-       makeInfo.get("LAPACK_LIBS","").split() + \
-       makeInfo.get("FLIBS"      ,"").split() + \
-       makeInfo.get("LIBS"       ,"").split()
-for lib in libs:
-    if lib[:2] == "-l":
-        stdLibs.append(lib[2:])
+# Distribute the individual options to the appropriate Extension class arguments
+for option in options:
+    if option[:2] == "-I":
+        include_dirs.append(option[2:])
+    elif option[:2] == "-L":
+        library_dirs.append(option[2:])
+    elif option[:2] == "-l":
+        libraries.append(option[2:])
     else:
-        extraLinkArgs.append(lib)
+        extra_link_args.append(option)
+
+# An additional include directory
+include_dirs.append(os.path.join(top_srcdir,"..","epetra","python","src"))
+
+# Define the strings that refer to the required local source files
+locaTopLevelWrap          = "LOCA_TopLevel_wrap.cpp"
+locaAbstractWrap          = "LOCA_Abstract_wrap.cpp"
+locaBifurcationWrap       = "LOCA_Bifurcation_wrap.cpp"
+locaContinuationWrap      = "LOCA_Continuation_wrap.cpp"
+locaHomotopyWrap          = "LOCA_Homotopy_wrap.cpp"
+locaMultiContinuationWrap = "LOCA_MultiContinuation_wrap.cpp"
+locaTimeDependentWrap     = "LOCA_TimeDependent_wrap.cpp"
+locaEpetraWrap            = "LOCA_Epetra_wrap.cpp"
+locaLAPACKWrap            = "LOCA_LAPACK_wrap.cpp"
 
 # Compiler and linker
 sysconfig.get_config_vars()
-config_vars = sysconfig._config_vars;
-config_vars['CC']  = CC
-config_vars['CXX'] = CXX
-
-# Define the strings that refer to the required source files.
-locaTopLevelWrap          = "LOCA_TopLevel_wrap.cpp"
-locaContinuationWrap      = "LOCA_Continuation_wrap.cpp"
-locaMultiContinuationWrap = "LOCA_MultiContinuation_wrap.cpp"
-locaHomotopyWrap          = "LOCA_Homotopy_wrap.cpp"
-locaTimeDependentWrap     = "LOCA_TimeDependent_wrap.cpp"
-locaBifurcationWrap       = "LOCA_Bifurcation_wrap.cpp"
-locaAbstractWrap          = "LOCA_Abstract_wrap.cpp"
-#locaEpetraWrap            = "LOCA_Epetra_wrap.cpp"
-locaLAPACKWrap            = "LOCA_LAPACK_wrap.cpp"
-locaChanWrap              = "LOCA_Chan_wrap.cpp"
-epetraVectorHelper       = os.path.join(srcDir, "Epetra_VectorHelper.cpp")
-pyInterface              = os.path.join(srcDir, "PyInterface.cpp"        )
+sysconfig._config_vars["CC" ] = CXX
+sysconfig._config_vars["CXX"] = CXX
 
 # LOCA_TopLevel extension module
-LOCA_TopLevel = Extension("PyTrilinos.LOCA._TopLevel",
+LOCA_TopLevel = Extension("PyTrilinos.LOCA_TopLevel",
                           [locaTopLevelWrap],
-                          include_dirs       = [locaInc, teuchosInc, noxInc,
-                                                noxPyInc, srcDir],
-                          library_dirs       = [locaLibDir, teuchosLibDir,
-                                                noxLibDir],
-                          libraries          = [locaLib, teuchosLib, noxLib] + \
-                                                stdLibs,
-                          extra_compile_args = extraCompileArgs,
-                          extra_link_args    = extraLinkArgs
+                          define_macros   = [("HAVE_CONFIG_H", "1")],
+                          include_dirs    = include_dirs,
+                          library_dirs    = library_dirs,
+                          libraries       = libraries,
+                          extra_link_args = extra_link_args
                           )
-
-# LOCA_Continuation extension module
-LOCA_Continuation = Extension("PyTrilinos.LOCA._Continuation",
-                              [locaContinuationWrap],
-                              include_dirs       = [locaInc, noxInc, srcDir],
-                              library_dirs       = [locaLibDir, noxLibDir],
-                              libraries          = [locaLib, noxLib] + stdLibs,
-                              extra_compile_args = extraCompileArgs,
-                              extra_link_args    = extraLinkArgs
-                              )
-
-# LOCA_MultiContinuation extension module
-LOCA_MultiContinuation = Extension("PyTrilinos.LOCA._MultiContinuation",
-                                   [locaMultiContinuationWrap],
-                                   include_dirs       = [locaInc, teuchosInc,
-                                                         noxInc, srcDir],
-                                   library_dirs       = [locaLibDir],
-                                   libraries          = [locaLib] + stdLibs,
-                                   extra_compile_args = extraCompileArgs,
-                                   extra_link_args    = extraLinkArgs
-                                   )
-
-# LOCA_Homotopy extension module
-LOCA_Homotopy = Extension("PyTrilinos.LOCA._Homotopy",
-                          [locaHomotopyWrap],
-                          include_dirs       = [locaInc, noxInc, srcDir],
-                          library_dirs       = [locaLibDir],
-                          libraries          = [locaLib] + stdLibs,
-                          extra_compile_args = extraCompileArgs,
-                          extra_link_args    = extraLinkArgs
-                          )
-
-# LOCA_TimeDependent extension module
-LOCA_TimeDependent = Extension("PyTrilinos.LOCA._TimeDependent",
-                               [locaTimeDependentWrap],
-                               include_dirs       = [locaInc, noxInc, srcDir],
-                               library_dirs       = [locaLibDir],
-                               libraries          = [locaLib] + stdLibs,
-                               extra_compile_args = extraCompileArgs,
-                               extra_link_args    = extraLinkArgs
-                               )
-
-# LOCA_Bifurcation extension module
-LOCA_Bifurcation = Extension("PyTrilinos.LOCA._Bifurcation",
-                             [locaBifurcationWrap],
-                             include_dirs       = [locaInc, teuchosInc, noxInc,
-                                                   srcDir],
-                             library_dirs       = [locaLibDir, noxLibDir],
-                             libraries          = [locaLib, noxLib] + stdLibs,
-                             extra_compile_args = extraCompileArgs,
-                             extra_link_args    = extraLinkArgs
-                             )
 
 # LOCA_Abstract extension module
-LOCA_Abstract = Extension("PyTrilinos.LOCA._Abstract",
+LOCA_Abstract = Extension("PyTrilinos.LOCA_Abstract",
                           [locaAbstractWrap],
-                          include_dirs       = [locaInc, teuchosInc, noxInc,
-                                                srcDir],
-                          library_dirs       = [locaLibDir],
-                          libraries          = [locaLib] + stdLibs,
-                          extra_compile_args = extraCompileArgs,
-                          extra_link_args    = extraLinkArgs
+                          define_macros   = [("HAVE_CONFIG_H", "1")],
+                          include_dirs    = include_dirs,
+                          library_dirs    = library_dirs,
+                          libraries       = libraries,
+                          extra_link_args = extra_link_args
                           )
 
-# # LOCA_Epetra extension module
-# LOCA_Epetra = Extension("PyTrilinos.LOCA._Epetra",
-#                         #[locaEpetraWrap, callback, epetraVectorHelper,
-#                         # numPyArray, numPyWrapper, pyInterface],
-#                         [locaEpetraWrap],
-#                         include_dirs       = [locaEpetraInc, locaInc, epetraInc,
-#                                               epetraPyInc, srcDir],
-#                         library_dirs       = [locaEpetraLibDir, locaLibDir,
-#                                               aztecooLibDir, ifpackLibDir,
-#                                               epetraLibDir],
-#                         libraries          = [locaEpetraLib, locaLib, aztecooLib,
-#                                               ifpackLib, epetraLib] + stdLibs,
-#                         extra_compile_args = extraCompileArgs,
-#                         extra_link_args    = extraLinkArgs
-#                         )
+# LOCA_Bifurcation extension module
+LOCA_Bifurcation = Extension("PyTrilinos.LOCA_Bifurcation",
+                             [locaBifurcationWrap],
+                             define_macros   = [("HAVE_CONFIG_H", "1")],
+                             include_dirs    = include_dirs,
+                             library_dirs    = library_dirs,
+                             libraries       = libraries,
+                             extra_link_args = extra_link_args
+                             )
 
-# LOCA_LAPACK extension module
-LOCA_LAPACK = Extension("PyTrilinos.LOCA._LAPACK",
-                        [locaLAPACKWrap],
-                        include_dirs       = [locaLAPACKInc, noxLAPACKInc,
-                                              locaInc, noxInc, teuchosInc,
-                                              srcDir],
-                        library_dirs       = [locaLAPACKLibDir, noxLAPACKLibDir,
-                                              locaLibDir, noxLibDir],
-                        libraries          = [locaLAPACKLib, noxLAPACKLib,
-                                              locaLib, noxLib] + stdLibs,
-                        extra_compile_args = extraCompileArgs,
-                        extra_link_args    = extraLinkArgs
+# LOCA_Continuation extension module
+LOCA_Continuation = Extension("PyTrilinos.LOCA_Continuation",
+                              [locaContinuationWrap],
+                              define_macros   = [("HAVE_CONFIG_H", "1")],
+                              include_dirs    = include_dirs,
+                              library_dirs    = library_dirs,
+                              libraries       = libraries,
+                              extra_link_args = extra_link_args
+                              )
+
+# LOCA_Homotopy extension module
+LOCA_Homotopy = Extension("PyTrilinos.LOCA_Homotopy",
+                          [locaHomotopyWrap],
+                          define_macros   = [("HAVE_CONFIG_H", "1")],
+                          include_dirs    = include_dirs,
+                          library_dirs    = library_dirs,
+                          libraries       = libraries,
+                          extra_link_args = extra_link_args
+                          )
+
+# LOCA_MultiContinuation extension module
+LOCA_MultiContinuation = Extension("PyTrilinos.LOCA_MultiContinuation",
+                                   [locaMultiContinuationWrap],
+                                   define_macros   = [("HAVE_CONFIG_H", "1")],
+                                   include_dirs    = include_dirs,
+                                   library_dirs    = library_dirs,
+                                   libraries       = libraries,
+                                   extra_link_args = extra_link_args
+                                   )
+
+# LOCA_TimeDependent extension module
+LOCA_TimeDependent = Extension("PyTrilinos.LOCA_TimeDependent",
+                               [locaTimeDependentWrap],
+                               define_macros   = [("HAVE_CONFIG_H", "1")],
+                               include_dirs    = include_dirs,
+                               library_dirs    = library_dirs,
+                               libraries       = libraries,
+                               extra_link_args = extra_link_args
+                               )
+
+# LOCA_Epetra extension module
+LOCA_Epetra = Extension("PyTrilinos.LOCA_Epetra",
+                        [locaEpetraWrap],
+                        define_macros   = [("HAVE_CONFIG_H", "1")],
+                        include_dirs    = include_dirs,
+                        library_dirs    = library_dirs,
+                        libraries       = libraries,
+                        extra_link_args = extra_link_args
                         )
 
-# LOCA_Chan extension module
-LOCA_Chan = Extension("PyTrilinos.LOCA._Chan",
-                      [locaChanWrap],
-                      include_dirs       = [locaInc, srcDir],
-                      library_dirs       = [locaLibDir],
-                      libraries          = [locaLib] + stdLibs,
-                      extra_compile_args = extraCompileArgs,
-                      extra_link_args    = extraLinkArgs
-                      )
+# LOCA_LAPACK extension module
+LOCA_LAPACK = Extension("PyTrilinos.LOCA_LAPACK",
+                        [locaLAPACKWrap],
+                        define_macros   = [("HAVE_CONFIG_H", "1")],
+                        include_dirs    = include_dirs,
+                        library_dirs    = library_dirs,
+                        libraries       = libraries,
+                        extra_link_args = extra_link_args
+                        )
 
 # Build the list of extension modules to wrap
-ext_modules = [ LOCA_TopLevel,
-                LOCA_Continuation,
-                LOCA_MultiContinuation,
-                LOCA_Homotopy,
-                LOCA_TimeDependent,
-                LOCA_Bifurcation,
-                LOCA_Abstract           ]
-#if makeInfo.get("LOCA_EPETRA",""):
-#    ext_modules.append(LOCA_Epetra)
-if makeInfo.get("LOCA_LAPACK"):
-    ext_modules.append(LOCA_LAPACK)
-    #ext_modules.append(LOCA_Chan  )
+ext_modules = [LOCA_TopLevel, LOCA_Abstract, LOCA_Bifurcation,
+               LOCA_Continuation, LOCA_Homotopy, LOCA_MultiContinuation,
+               LOCA_TimeDependent]
+if LOCA_EPETRA: ext_modules.append(LOCA_Epetra)
+if LOCA_LAPACK: ext_modules.append(LOCA_LAPACK)
 
-# PyTrilinos.LOCA setup.  This is what tells the distutils module how to
-# create the package.
+# PyTrilinos.LOCA setup
 setup(name         = "PyTrilinos.LOCA",
       version      = version,
       description  = "Python Interface to Trilinos Package LOCA",

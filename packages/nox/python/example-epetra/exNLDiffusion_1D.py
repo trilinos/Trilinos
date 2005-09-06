@@ -148,22 +148,23 @@ def main():
 
     # Sublist for linear solver
     lsParams     = newtonParams.sublist("Linear Solver")
-    lsParams.setParameter("Aztec Solver",     "GMRES"                   )
-    lsParams.setParameter("Max Iterations",   800                       )
-    lsParams.setParameter("Tolerance",        1e-4                      )
-    lsParams.setParameter("Scaling",          "None"                    )
-    lsParams.setParameter("Preconditioning",  "AztecOO: Jacobian Matrix")
+    lsParams.setParameter("Aztec Solver",    "GMRES"                   )
+    lsParams.setParameter("Max Iterations",  800                       )
+    lsParams.setParameter("Tolerance",       1e-4                      )
+    lsParams.setParameter("Scaling",         "None"                    )
+    lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix")
 
     # Create the interface between the Problem and the NOX nonlinear solver
     interface = NOX.Epetra.PyInterface(problem)
     problem.setInterface(interface)
 
     # Generate a color map from the problem graph
-    mapColoring   = EpetraExt.CrsGraph_MapColoring(False)
+    mapColoring   = EpetraExt.CrsGraph_MapColoring()
     colorMap      = mapColoring(problem.getGraph())
-#    print "colorMap = {", colorMap, "\n}"
     colorMapIndex = EpetraExt.CrsGraph_MapColoringIndex(colorMap)
+    print "mapColoringIndex =", mapColoring
     columns       = colorMapIndex(problem.getGraph())
+    print "columns =", columns
 
     # Create the finite difference coloring object
     fdc = NOX.Epetra.FiniteDifferenceColoring(interface, soln,    \

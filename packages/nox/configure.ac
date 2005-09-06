@@ -933,6 +933,7 @@ AC_CONFIG_FILES([
 		python/example-lapack/Makefile
 		python/src-loca/Makefile
 		python/src-loca/src/Makefile
+		python/src-loca/src/TRILINOS_HOME_DIR
 		python/src-loca/src/__init__.py
 		python/src-loca/src/.deps/dummy
 		python/src-loca/src/PyTrilinos/__init__.py

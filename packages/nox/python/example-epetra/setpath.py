@@ -56,3 +56,5 @@ if fullPath:
     sys.path.insert(0,fullPath)
 if epetraPath:
     sys.path.insert(1,epetraPath)
+if epetraextPath:
+    sys.path.insert(2,epetraextPath)

@@ -82,13 +82,15 @@ for option in options:
 include_dirs.append(os.path.join(top_srcdir,"..","epetra","python","src"))
 
 # Define the strings that refer to the required local source files
-noxTopLevelWrap   = "NOX_TopLevel_wrap.cpp"
-noxAbstractWrap   = "NOX_Abstract_wrap.cpp"
-noxParameterWrap  = "NOX_Parameter_wrap.cpp"
-noxSolverWrap     = "NOX_Solver_wrap.cpp"
-noxStatusTestWrap = "NOX_StatusTest_wrap.cpp"
-noxEpetraWrap     = "NOX_Epetra_wrap.cpp"
-noxLAPACKWrap     = "NOX_LAPACK_wrap.cpp"
+noxTopLevelWrap    = "NOX_TopLevel_wrap.cpp"
+noxAbstractWrap    = "NOX_Abstract_wrap.cpp"
+noxParameterWrap   = "NOX_Parameter_wrap.cpp"
+noxSolverWrap      = "NOX_Solver_wrap.cpp"
+noxStatusTestWrap  = "NOX_StatusTest_wrap.cpp"
+noxEpetraWrap      = "NOX_Epetra_wrap.cpp"
+noxLAPACKWrap      = "NOX_LAPACK_wrap.cpp"
+epetraVectorHelper = os.path.join(srcdir,"Epetra_VectorHelper.cpp")
+pyInterface        = os.path.join(srcdir,"PyInterface.cpp"        )
 
 # Compiler and linker
 sysconfig.get_config_vars()
@@ -96,7 +98,7 @@ sysconfig._config_vars["CC" ] = CXX
 sysconfig._config_vars["CXX"] = CXX
 
 # NOX_TopLevel extension module
-NOX_TopLevel = Extension("PyTrilinos.NOX_TopLevel",
+NOX_TopLevel = Extension("PyTrilinos.NOX._TopLevel",
                          [noxTopLevelWrap],
                          define_macros   = [("HAVE_CONFIG_H", "1")],
                          include_dirs    = include_dirs,
@@ -106,7 +108,7 @@ NOX_TopLevel = Extension("PyTrilinos.NOX_TopLevel",
                          )
 
 # NOX_Abstract extension module
-NOX_Abstract = Extension("PyTrilinos.NOX_Abstract",
+NOX_Abstract = Extension("PyTrilinos.NOX._Abstract",
                          [noxAbstractWrap],
                          define_macros   = [("HAVE_CONFIG_H", "1")],
                          include_dirs    = include_dirs,
@@ -116,7 +118,7 @@ NOX_Abstract = Extension("PyTrilinos.NOX_Abstract",
                          )
 
 # NOX_Parameter extension module
-NOX_Parameter = Extension("PyTrilinos.NOX_Parameter",
+NOX_Parameter = Extension("PyTrilinos.NOX._Parameter",
                           [noxParameterWrap],
                           define_macros   = [("HAVE_CONFIG_H", "1")],
                           include_dirs    = include_dirs,
@@ -126,7 +128,7 @@ NOX_Parameter = Extension("PyTrilinos.NOX_Parameter",
                           )
 
 # NOX_Solver extension module
-NOX_Solver = Extension("PyTrilinos.NOX_Solver",
+NOX_Solver = Extension("PyTrilinos.NOX._Solver",
                        [noxSolverWrap],
                        define_macros   = [("HAVE_CONFIG_H", "1")],
                        include_dirs    = include_dirs,
@@ -136,7 +138,7 @@ NOX_Solver = Extension("PyTrilinos.NOX_Solver",
                        )
 
 # NOX_StatusTest extension module
-NOX_StatusTest = Extension("PyTrilinos.NOX_StatusTest",
+NOX_StatusTest = Extension("PyTrilinos.NOX._StatusTest",
                            [noxStatusTestWrap],
                            define_macros   = [("HAVE_CONFIG_H", "1")],
                            include_dirs    = include_dirs,
@@ -146,8 +148,8 @@ NOX_StatusTest = Extension("PyTrilinos.NOX_StatusTest",
                            )
 
 # NOX_Epetra extension module
-NOX_Epetra = Extension("PyTrilinos.NOX_Epetra",
-                       [noxEpetraWrap],
+NOX_Epetra = Extension("PyTrilinos.NOX._Epetra",
+                       [noxEpetraWrap, epetraVectorHelper, pyInterface],
                        define_macros   = [("HAVE_CONFIG_H", "1")],
                        include_dirs    = include_dirs,
                        library_dirs    = library_dirs,
@@ -156,7 +158,7 @@ NOX_Epetra = Extension("PyTrilinos.NOX_Epetra",
                        )
 
 # NOX_LAPACK extension module
-NOX_LAPACK = Extension("PyTrilinos.NOX_LAPACK",
+NOX_LAPACK = Extension("PyTrilinos.NOX._LAPACK",
                        [noxLAPACKWrap],
                        define_macros   = [("HAVE_CONFIG_H", "1")],
                        include_dirs    = include_dirs,

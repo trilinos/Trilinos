@@ -33,12 +33,15 @@ include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 
+_AMESOS_PYTHON_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES) $(PYTRILINOS_INCLUDES)
+_AMESOS_PYTHON_LIBS     = $(AMESOS_LIBS)     $(AMESOS_EXTRA_LIBS)     $(PYTRILINOS_LIBS) 
+
 if USING_GNUMAKE
-AMESOS_PYTHON_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS) $(PYTRILINOS_LIBS))
-AMESOS_PYTHON_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES) $(PYTRILINOS_INCLUDES))
+AMESOS_PYTHON_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_AMESOS_PYTHON_INCLUDES))
+AMESOS_PYTHON_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_AMESOS_PYTHON_LIBS))
 else
-AMESOS_PYTHON_LIBS     = $(AMESOS_LIBS)     $(AMESOS_EXTRA_LIBS)
-AMESOS_PYTHON_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
+AMESOS_PYTHON_INCLUDES = $(_AMESOS_PYTHON_INCLUDES)
+AMESOS_PYTHON_LIBS     = $(_AMESOS_PYTHON_LIBS)
 endif
 
 SWIG_CXXFLAGS = $(AMESOS_PYTHON_INCLUDES)            \

@@ -26,7 +26,7 @@
 # ************************************************************************
 # @HEADER
 
-# Include expor tMakefiles
+# Include export tMakefiles
 include  $(top_builddir)/Makefile.export.aztecoo
 include  $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 
