@@ -109,9 +109,10 @@ def main():
   # Defines a communicator (serial or parallel, depending on how Trilinos
   # was configured), and creates a matrix corresponding to a 1D Laplacian.
   # AT THIS MOMENT THE EXAMPLE IS ONLY SERIAL
-  n = 1000
+  comm  = Epetra.PyComm()
+  n     = 1000
   Space = ML.Space(n)
-  
+
   Matrix = ML.PyMatrix(Space, Space)
 
   for i in Space.GetMyGlobalElements():
@@ -147,13 +148,12 @@ def main():
     # compute the energy of the error
     diff = x - x_exact
     ###print "iter ", i, " ||x - x_exact||_A = ", diff * (Matrix * diff)
-    if Comm.MyPID() == 0:
+    if comm.MyPID() == 0:
       print "iter ", i, " ||x - x_exact||_2 = ", diff * diff
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the
-# function if the script has been called as an executable from the UNIX
-# command
+# function if the script has been called as an executable from the UNIX command
 # line.  This also allows, for example, this file to be imported from a python
 # debugger and main() called from there.
 if __name__ == "__main__":
