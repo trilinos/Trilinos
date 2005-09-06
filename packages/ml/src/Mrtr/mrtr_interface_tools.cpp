@@ -742,7 +742,6 @@ int MRTR::Interface::GetSide(MRTR::Segment* seg)
  *----------------------------------------------------------------------*/
 int MRTR::Interface::GetSide(MRTR::Node* node)
 { 
-  if (!lComm()) return -1;
   if (!IsComplete())
   {
     cout << "***ERR*** MRTR::Interface::GetSide:\n"
@@ -761,6 +760,35 @@ int MRTR::Interface::GetSide(MRTR::Node* node)
   if (curr != rnode_[0].end())
     return(0);
   curr = rnode_[1].find(node->Id());
+  if (curr != rnode_[1].end())
+    return(1);
+  return (-1);
+}
+
+/*----------------------------------------------------------------------*
+ |  find out which side a node is on                                    |
+ | returns -1 if it can't find the node on either side                  |
+ *----------------------------------------------------------------------*/
+int MRTR::Interface::GetSide(int nodeid)
+{ 
+  if (!IsComplete())
+  {
+    cout << "***ERR*** MRTR::Interface::GetSide:\n"
+         << "***ERR*** Interface " << Id() << ": Complete() not called\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  if (!lComm())
+  {
+    cout << "***ERR*** MRTR::Interface::GetSide:\n"
+         << "***ERR*** Interface " << Id() << ": Proc " << gcomm_.MyPID() << "not in intra-comm\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  map<int,MRTR::Node*>::iterator curr = rnode_[0].find(nodeid);
+  if (curr != rnode_[0].end())
+    return(0);
+  curr = rnode_[1].find(nodeid);
   if (curr != rnode_[1].end())
     return(1);
   return (-1);

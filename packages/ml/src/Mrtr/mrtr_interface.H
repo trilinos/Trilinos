@@ -120,6 +120,7 @@ public:
   // find out which side a node or segment is on
   int GetSide(MRTR::Segment* seg);
   int GetSide(MRTR::Node* node);
+  int GetSide(int nodeid);
 
   // get local number of segments on interface on side 0 or 1
   int MyNsegment(int side) { return seg_[side].size(); }
