@@ -27,6 +27,8 @@
 //@HEADER
 */
 
+#ifndef __sun
+
 #include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
 #include "Thyra_AztecOOLinearOpWithSolve.hpp"
 #include "Thyra_ScaledAdjointLinearOpBase.hpp"
@@ -519,3 +521,5 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
 }
 
 } // namespace Thyra
+
+#endif // __sun

@@ -27,6 +27,8 @@
 //@HEADER
 */
 
+#ifndef __sun
+
 #include "Thyra_AztecOOLinearOpWithSolve.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 
@@ -329,3 +331,10 @@ AztecOOLinearOpWithSolve::solve(
 }
 
 }	// end namespace Thyra
+
+#endif // __sun
+
+
+
+
+

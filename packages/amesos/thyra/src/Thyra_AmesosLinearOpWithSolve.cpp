@@ -28,6 +28,8 @@
 // @HEADER
 */
 
+#ifndef __sun
+
 #include "Thyra_AmesosLinearOpWithSolve.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Epetra_MultiVector.h"
@@ -247,3 +249,5 @@ void AmesosLinearOpWithSolve::solve(
 }
 
 }	// end namespace Thyra
+
+#endif // __sun

@@ -26,8 +26,10 @@
 // ***********************************************************************
 //@HEADER
 */
-
 #include "test_single_aztecoo_thyra_solver.hpp"
+
+#ifndef __sun
+
 #include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
@@ -40,6 +42,8 @@
 #  include "Ifpack_CrsRiluk.h"
 #  include "Ifpack_PreconditionerFactory.hpp"
 #endif
+
+#endif // __sun
 
 bool Thyra::test_single_aztecoo_thyra_solver(
   const std::string                       matrixFile
@@ -59,6 +63,8 @@ bool Thyra::test_single_aztecoo_thyra_solver(
   bool result, success = true;
 
   try {
+
+#ifndef __sun
 
     if(out) {
       *out << "\n***"
@@ -328,6 +334,13 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       if(out) *out << "\nSkipping testing steps Q, R, and S because we are using internal AztecOO preconditioners!\n";
 
     }
+
+#else // __sun
+		
+		if(out) *out << "\nTest failed since is was not even compiled since __sun was defined!\n";
+		success = false;
+
+#endif // __sun
 
   }
 	catch( const std::exception &excpt ) {

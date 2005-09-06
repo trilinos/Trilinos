@@ -28,6 +28,8 @@
 // @HEADER
 */
 
+#ifndef __sun
+
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #include "Thyra_AmesosLinearOpWithSolve.hpp"
 #include "Thyra_ScaledAdjointLinearOpBase.hpp"
@@ -321,3 +323,6 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
 }
 
 } // namespace Thyra
+
+#endif // __sun
+

@@ -29,12 +29,17 @@
 */
 
 #include "test_single_amesos_thyra_solver.hpp"
+
+#ifndef __sun
+
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Epetra_SerialComm.h"
+
+#endif // __sun
 
 bool Thyra::test_single_amesos_thyra_solver(
   const std::string                       matrixFile
@@ -51,6 +56,8 @@ bool Thyra::test_single_amesos_thyra_solver(
   )
 {
   bool result, success = true;
+
+#ifndef __sun
 
   if(out) {
     *out << "\n***"
@@ -208,6 +215,13 @@ bool Thyra::test_single_amesos_thyra_solver(
     ,out,indentSpacer,indentSpacer
     );
   if(!result) success = false;
+
+#else // __sun
+  
+  if(out) *out << "\nTest failed since is was not even compiled since __sun was defined!\n";
+  success = false;
+
+#endif // __sun
 
   return success;
 
