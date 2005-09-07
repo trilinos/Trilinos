@@ -729,18 +729,17 @@ static int D2coloring(
     srp = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
     if (!ssendbuf || !srecbuf || !ssp || !srp)
         MEMORY_ERROR;
-    for (i=0; i<zz->Proc; i++) {
-        ssendbuf[i] = NULL;
-        srecbuf[i] = NULL;
-    }
-    for (p=0; p<zz->Num_Proc; p++) {
+    for (p=0; p<zz->Num_Proc; p++) 
         if (p != zz->Proc) {
             ssendbuf[p] = (int *) ZOLTAN_MALLOC(ssendsize[p] * sizeof(int));
             srecbuf[p] = (int *) ZOLTAN_MALLOC(srecsize[p] * sizeof(int));
             if (!srecbuf[p] || !ssendbuf[p])
                 MEMORY_ERROR;
+        } else {
+            ssendbuf[p] = NULL;
+            srecbuf[p] = NULL;
         }
-    }
+    
     /* Generate random numbers associated with global numbers of the vertices */
     /* All processors generate the same random number corresponding
        to the same global vertex number */
@@ -789,7 +788,8 @@ static int D2coloring(
             int *tp=visit;
             wsize = 0;
             memset(mark, 0xff, (nColor+1) * sizeof(int));
-            memset(confChk, 0xff, nbound * sizeof(int));            
+            memset(confChk, 0xff, nvtx * sizeof(int)); /* UVCUVC: Check if we can do better;
+                                                          i.e. not to re-set again in every round */
             ierr = D2ParallelColoring(zz, nConflict, nvtx, visit, xadj, adj, xbadj, xadjnl, adjnl, adjproc, isbound, ss,
                                       &nColor, color, newcolored, mark, gmaxcolor, hash,
                                       forbidden, xforbidden, forbiddenS, xforbiddenS, forbsize, forbsizeS,
@@ -1728,7 +1728,7 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
                 v = where[cx];
                 pv = pwhere[cx];
                 gv = Zoltan_G2LHash_L2G(hash, v);
-                if (rand_key[gv] <= rand_key[gx]) {
+                if (rand_key[v] <= rand_key[x]) {
                     if (!vmark[x]) {
                         *srp[px]++ = gx;
                         vmark[x] = 1;
