@@ -75,8 +75,8 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
 
   int MaxMyNumEntries;
 
-  if (cheap) {
-
+  if (cheap) 
+  {
     NumMyNonzeros_ = Op_->N_nonzeros;
     MaxMyNumEntries = Op_->max_nz_per_row;
     Allocated_ = MaxMyNumEntries;
@@ -84,10 +84,9 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
     Values_.resize(Allocated_);
     NumMyDiagonals_ = NumMyRows_;
     Diagonal_.resize(0);
-
   }
-  else {
-
+  else 
+  {
     Diagonal_.resize(NumMyRows()); 
     Indices_.resize(Allocated_);
     Values_.resize(Allocated_);
