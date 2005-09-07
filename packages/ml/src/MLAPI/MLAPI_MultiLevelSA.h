@@ -119,7 +119,6 @@ public:
   //! Computes the hierarchy.
   void Compute() 
   {
-
     ResetTimer();
     StackPush();
     IsComputed_ = false;
@@ -138,11 +137,16 @@ public:
     // build up the default null space
     if (ThisNS.GetNumVectors() == 0) {
       ThisNS.Reshape(FineMatrix_.GetDomainSpace(),NumPDEEqns);
-      ThisNS = 0.0;
-      for (int i = 0 ; i < ThisNS.GetMyLength() ; ++i)
-        for (int j = 0 ; j < NumPDEEqns ;++j)
-          if (i % NumPDEEqns == j)
-            ThisNS(i,j) = 1.0;
+      if (NumPDEEqns == 1)
+        ThisNS = 1.0;
+      else
+      {
+        ThisNS = 0.0;
+        for (int i = 0 ; i < ThisNS.GetMyLength() ; ++i)
+          for (int j = 0 ; j < NumPDEEqns ;++j)
+            if (i % NumPDEEqns == j)
+              ThisNS(i,j) = 1.0;
+      }
     }
 
     MultiVector NextNS;     // contains the next-level null space

@@ -2,6 +2,7 @@
 #define MLAPI_ERROR_H
 
 #include <string>
+#include <iostream>
 
 namespace MLAPI {
 
@@ -11,6 +12,7 @@ typedef struct StackEntry {
   std::string FuncName;
 } Entry;
 
+#ifdef MLAPI_CHECK
 #ifdef HAVE_ML_CFUNC
 #define StackPush() \
   StackPush_(__PRETTY_FUNCTION__, __FILE__, __LINE__)
@@ -18,12 +20,22 @@ typedef struct StackEntry {
 #define StackPush() \
   StackPush_("function not available", __FILE__, __LINE__)
 #endif
+#else
+#define StackPush()
+#endif
 
+#ifdef MLAPI_CHECK
 void StackPush_(std::string FuncName, std::string FileName, int line);
 
 void StackPop();
 
 void StackPrint();
+asdf
+#else
+inline void StackPop() {}
+inline void StackPrint() {std::cout << "Compile with -DMLAPI_CHECK to get the function stack" << std::endl;}
+#endif
+
 
 } // namespace MLAPI
 
