@@ -2637,7 +2637,10 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
    while (next >= 0) 
    {
      Amat = &(ml->Amat[level]);
-     grid_info =(ML_Aggregate_Viz_Stats *) Amat->to->Grid->Grid;
+     if (Amat->to != NULL && Amat->to->Grid != NULL)
+       grid_info =(ML_Aggregate_Viz_Stats *) Amat->to->Grid->Grid;
+     else 
+       grid_info = NULL;
      aux_flag = (ml->Amat[fine_level].aux_data->enable && 
                  level <= ml->Amat[fine_level].aux_data->max_level);
 
@@ -2697,7 +2700,13 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       }
       /* end of check */
 
+      /* reduce memory usage */
+      ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[next]));
+
       (*user_gen_restriction)(ml, level, next,user_data);
+
+      /* reduce memory usage */
+      // ML_Operator_ChangeToSinglePrecision(&(ml->Rmat[level]));
 
      if (aux_flag)
      {
@@ -2724,9 +2733,9 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
          printf("ML_Gen_MultiLevelHierarchy (level %d) : RAP time = %e\n", level, t0);
 #endif
 
-      /* reduce memory usage */
-      ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[next]));
+#if 0
       ML_Operator_ImplicitTranspose(&(ml->Rmat[level]), &(ml->Pmat[next]), ML_TRUE);
+#endif
       if (((ML_Aggregate*)user_data)->P_tentative != NULL)
       {
         Ptent = ((ML_Aggregate*)user_data)->P_tentative[next];
