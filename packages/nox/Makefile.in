@@ -122,7 +122,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = doc src src-lapack src-epetra src-petsc src-belos \
-	src-loca test examples example-belos python
+	src-loca test examples python
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -370,7 +370,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 
 @BUILD_PYTHON_TRUE@PYTHON_SUBDIR = python
 SUBDIRS = doc src src-lapack src-epetra src-petsc src-belos \
-	  src-loca test examples example-belos $(PYTHON_SUBDIR)
+	  src-loca test examples $(PYTHON_SUBDIR)
 
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
