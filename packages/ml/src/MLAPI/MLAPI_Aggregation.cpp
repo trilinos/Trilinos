@@ -23,7 +23,6 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
               const MultiVector& ThisNS, 
               Operator& Ptent, MultiVector& NextNS)
 {
-
   string CoarsenType     = List.get("aggregation: type", "Uncoupled");
   /* old version
   int    NodesPerAggr    = List.get("aggregation: per aggregate", 64);
@@ -75,6 +74,7 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
     ML_THROW("Requested aggregation scheme (" + CoarsenType +
              ") not recognized", -1);
   }
+
   int NextSize = ML_Aggregate_Coarsen(agg_object, A.GetML_Operator(), 
                                       &ML_Ptent, GetML_Comm());
 
@@ -101,6 +101,8 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
   }
   */
 
+  ML_Operator_ChangeToSinglePrecision(ML_Ptent);
+
   int NumMyElements = NextSize;
   Space CoarseSpace(-1,NumMyElements);
   Ptent.Reshape(CoarseSpace,A.GetRangeSpace(),ML_Ptent,true);
@@ -116,7 +118,6 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
 
   ML_Aggregate_Destroy(&agg_object);
   ML_memory_free((void**)&null_vect);
-
 }
 
 // ====================================================================== 
@@ -127,7 +128,6 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List, Operator& Ptent)
   MultiVector CoarseNS;
 
   GetPtent(A, List, FineNS, Ptent, CoarseNS);
-  
 }
 
 } // namespace MLAPI

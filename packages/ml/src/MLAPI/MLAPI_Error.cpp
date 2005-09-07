@@ -7,6 +7,7 @@
 
 namespace MLAPI {
 
+#ifdef MLAPI_CHECK
 static std::vector<StackEntry> StackData;
 
 void StackPush_(std::string FuncName, std::string FileName, int line)
@@ -35,6 +36,7 @@ void StackPrint()
   }
 
 }
+#endif
 
 } // namespace MLAPI
 #endif
