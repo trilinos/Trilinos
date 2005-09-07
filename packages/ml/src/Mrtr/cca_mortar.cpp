@@ -209,6 +209,15 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       interface->SetFunctionAllSegmentsSide(1,0,func);
       delete func; 
     }
+    // mortar side is not yet chosen, we cannot set functions.
+    // So we just set what kind of functions we want to have set
+    // The Mortar::Manager is setting the functions later accordingly
+    else
+    {
+      interface->SetFunctionTypes(MRTR::Function::func_Linear1D,      // the isoparametric function
+                                  MRTR::Function::func_DualLinear1D); // the LM space
+                                  //MRTR::Function::func_Linear1D); // the LM space
+    }
 
     //-----------------------------------------------------------------
     // get the mortar side and set dual linear shape function to non mortar side
@@ -260,7 +269,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
   fflush(stdout);
   comm->Barrier();
 
-#if 1
+#if 0
   cout << *mrtr_manager;
 #endif  
 

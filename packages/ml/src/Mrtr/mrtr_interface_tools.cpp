@@ -52,7 +52,9 @@ isIntegrated_(false),
 gcomm_(comm),
 lcomm_(NULL),
 mortarside_(-1),
-ptype_(MRTR::Interface::proj_none)
+ptype_(MRTR::Interface::proj_none),
+primal_(MRTR::Function::func_none),
+dual_(MRTR::Function::func_none)
 {
   return;
 }
@@ -68,7 +70,9 @@ isComplete_(old.isComplete_),
 isIntegrated_(old.isIntegrated_),
 gcomm_(old.gcomm_),
 mortarside_(old.mortarside_),
-ptype_(old.ptype_)
+ptype_(old.ptype_),
+primal_(old.primal_),
+dual_(old.dual_)
 {
   // copy the nodes and segments
   for (int i=0; i<2; ++i)
@@ -464,10 +468,8 @@ int MRTR::Interface::GlobalNsegment()
   }
   if (!lComm()) 
     return 0;
-  int lnsegment = seg_[0].size() + seg_[1].size();
-  int gnsegment;
-  lcomm_->SumAll(&lnsegment,&gnsegment,1);
-  return(gnsegment);
+  int nsegment = rseg_[0].size() + rseg_[1].size();
+  return(nsegment);
 }
 
 /*----------------------------------------------------------------------*
@@ -688,13 +690,6 @@ MRTR::Segment* MRTR::Interface::GetSegmentView(int sid)
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  if (!lComm())
-  {
-    cout << "***ERR*** MRTR::Interface::GetSegmentView:\n"
-         << "***ERR*** Interface " << Id() << ": Proc " << gcomm_.MyPID() << "not in intra-comm\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
   if (!lComm()) return NULL;
   
   map<int,MRTR::Segment*>::iterator curr = rseg_[0].find(sid);
@@ -704,6 +699,34 @@ MRTR::Segment* MRTR::Interface::GetSegmentView(int sid)
   if (curr != rseg_[1].end())
     return(curr->second);
   return (NULL);
+}
+
+/*----------------------------------------------------------------------*
+ |  get view of ALL segments on this interface                          |
+ |  method returns a ptr to a vector, calling method is in              |
+ | charge of deleteing it                                               |
+ *----------------------------------------------------------------------*/
+MRTR::Segment** MRTR::Interface::GetSegmentView()
+{ 
+  if (!IsComplete())
+  {
+    cout << "***ERR*** MRTR::Interface::GetSegmentView:\n"
+         << "***ERR*** Interface " << Id() << ": Complete() not called\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  if (!lComm()) return NULL;
+  
+  MRTR::Segment** segs = new MRTR::Segment*[GlobalNsegment()];
+  map<int,MRTR::Segment*>::iterator curr;
+  int count=0;
+  for (int i=0; i<2; ++i)
+    for (curr=rseg_[i].begin(); curr != rseg_[i].end(); ++curr)
+    {
+      segs[count] = curr->second;
+      ++count;
+    }
+  return segs;
 }
 
 /*----------------------------------------------------------------------*
@@ -1043,7 +1066,7 @@ int MRTR::Interface::SetLMDofs(int minLMGID)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::GlobalNsegment:\n"
+    cout << "***ERR*** MRTR::Interface::SetLMDofs:\n"
          << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return (0);
@@ -1101,7 +1124,7 @@ vector<int>* MRTR::Interface::MyLMIds()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::GlobalNsegment:\n"
+    cout << "***ERR*** MRTR::Interface::MyLMIds:\n"
          << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return (0);
@@ -1231,4 +1254,126 @@ bool MRTR::Interface::DetectEndSegmentsandReduceOrder()
 
   return true;
 }
+
+/*----------------------------------------------------------------------*
+ | set the type of shape functions that are supposed to be used         |
+ | primal: type of shape function for the trace space                   |
+ | dual:   type of shape function for the LM space                      |
+ *----------------------------------------------------------------------*/
+bool MRTR::Interface::SetFunctionTypes(MRTR::Function::FunctionType primal,
+                                       MRTR::Function::FunctionType dual)
+{ 
+  primal_ = primal;
+  dual_   = dual;
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ | set functions to all segments depending on the variables primal_     |
+ | and dual_
+ *----------------------------------------------------------------------*/
+bool MRTR::Interface::SetFunctionsFromFunctionTypes()
+{ 
+  if (!lComm()) return true;
+  if (!IsComplete())
+  {
+    cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+         << "***ERR*** interface " << Id() << " : Complete() was not called\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);     
+  }
+  if (dual_==MRTR::Function::func_none)
+  {
+    cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+         << "***ERR*** interface " << Id() << " : no dual function type set\n"
+         << "***ERR*** use SetFunctionTypes(..) to set function types\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);     
+  }
+  
+  // set the primal shape functions
+  MRTR::Function_Linear1D*     func1 = NULL;
+  MRTR::Function_Constant1D*   func2 = NULL;
+  MRTR::Function_DualLinear1D* func3 = NULL;
+  switch(primal_)
+  {
+    case MRTR::Function::func_Linear1D:
+      func1 = new MRTR::Function_Linear1D();
+      SetFunctionAllSegmentsSide(0,0,func1);
+      SetFunctionAllSegmentsSide(1,0,func1);
+      delete func1; func1 = NULL;
+    break;
+    case MRTR::Function::func_DualLinear1D:
+      cout << "***WRN*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+           << "***WRN*** interface " << Id() << " : setting discontious dual shape functions as\n"
+           << "***WRN*** primal isoparametric trace space function is probably a bad idea...\n"
+           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    break;
+    case MRTR::Function::func_Constant1D:
+      cout << "***WRN*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+           << "***WRN*** interface " << Id() << " : setting constant shape functions as\n"
+           << "***WRN*** primal isoparametric trace space function is probably a bad idea...\n"
+           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    break;
+    case MRTR::Function::func_none:
+      cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+           << "***ERR*** interface " << Id() << " : no primal function type set\n"
+           << "***ERR*** use SetFunctionTypes(..) to set function types\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      exit(EXIT_FAILURE);     
+    break;
+    default:
+      cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+           << "***ERR*** interface " << Id() << " : Unknown function type: " << primal_ << endl
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      exit(EXIT_FAILURE);     
+    break;
+  }
+  
+  int side = MortarSide();
+  if (side != 1 && side != 0)
+  {
+    cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+         << "***ERR*** interface " << Id() << " : Mortar Side not set set\n"
+         << "***ERR*** use SetMortarSide(int side) to choose mortar side first\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);     
+  }
+  side = OtherSide(side); // we want the slave side here
+
+  switch(dual_)
+  {
+    case MRTR::Function::func_Linear1D:
+      func1 = new MRTR::Function_Linear1D();
+      SetFunctionAllSegmentsSide(side,1,func1);
+      delete func1; func1 = NULL;
+    break;
+    case MRTR::Function::func_DualLinear1D:
+      func3 = new MRTR::Function_DualLinear1D();
+      SetFunctionAllSegmentsSide(side,1,func3);
+      delete func3; func3 = NULL;
+    break;
+    case MRTR::Function::func_Constant1D:
+      func2 = new MRTR::Function_Constant1D();
+      SetFunctionAllSegmentsSide(side,1,func2);
+      delete func2; func2 = NULL;
+    break;
+    case MRTR::Function::func_none:
+      cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+           << "***ERR*** interface " << Id() << " : no dual function type set\n"
+           << "***ERR*** use SetFunctionTypes(..) to set function types\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      exit(EXIT_FAILURE);     
+    break;
+    default:
+      cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+           << "***ERR*** interface " << Id() << " : Unknown function type: " << dual_ << endl
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      exit(EXIT_FAILURE);     
+    break;
+  }
+
+  return true;
+}
+
 #endif // TRILINOS_PACKAGE

@@ -109,6 +109,8 @@ public:
   inline const Epetra_Comm* lComm() const { return lcomm_; }
   
   // get Mortar side, returns -1 if mortar side was not set
+  //                  returns -2 of mortar side is chosen by MRTR::Manager
+  //                  and has not yet been chosen
   int MortarSide() { return mortarside_; }
 
   // get the other side from the input side
@@ -180,12 +182,16 @@ public:
   // get a view of a MRTR::Node (of either side) specifying node id
   MRTR::Node* GetNodeView(int nid);
 
-  // get a view of ALL nodes on this interface (Complete() hast to be called)
-  // method allocates a vector, calling method is in charge of deleting
+  // get a view of ALL nodes on this interface (Complete() has to be called)
+  // method allocates a vector, calling method is in charge of deleting it
   MRTR::Node** GetNodeView();
 
   // get a view of a MRTR::Segment (of either side) specifying seg id
   MRTR::Segment* GetSegmentView(int sid);
+  
+  // get a view of ALL segments on this interface (Complete() has to be called)
+  // method allocates a vector, calling methos is in charge of deleteing it
+  MRTR::Segment** GetSegmentView();
   
   // build averaged normals and project nodes to other side
   bool Project();
@@ -198,6 +204,13 @@ public:
   
   // detect end segments and reduce order of lagrange mutliplier shape functions
   bool DetectEndSegmentsandReduceOrder();
+
+  // set the type of functions to be set to all segments 
+  bool SetFunctionTypes(MRTR::Function::FunctionType primal,
+                        MRTR::Function::FunctionType dual);
+  
+  // set functions to segments from the previoulsy set function types
+  bool SetFunctionsFromFunctionTypes();
 
 private:  
 
@@ -244,7 +257,7 @@ private:
   // integrate the overlap of 2 segments in 2D (master/slave contribution)
   bool Integrate_2D_Section(MRTR::Segment& sseg,MRTR::Segment& mseg,
                             Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
-
+  
 private:
   
   int                     Id_;           // the interface Id                      
@@ -264,6 +277,9 @@ private:
   map<int,MRTR::Node*>    node_[2];      // local nodes of interface (both sides)
   map<int,MRTR::Node*>    rnode_[2];     // global nodes of interface (both sides)
   map<int,int>            nodePID_;      // maps all global node ids to process holding the node
+  
+  MRTR::Function::FunctionType primal_;  // the type of functions to be set as trace space function
+  MRTR::Function::FunctionType dual_;    // the type of functions to be set as LM space function
   
 };
 

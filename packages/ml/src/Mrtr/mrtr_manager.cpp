@@ -394,7 +394,7 @@ bool MRTR::Manager::Mortar_Integrate()
   
   //-------------------------------------------------------------------
   // check whether we have a mortar side chosen on each interface or 
-  // whether we have to chose it automatically
+  // whether we have to chose it here
   {
     map<int,MRTR::Interface*>::iterator curr;
     bool foundit = true;
@@ -411,6 +411,28 @@ bool MRTR::Manager::Mortar_Integrate()
       ChooseMortarSide();
   }  
 
+  //-------------------------------------------------------------------
+  // check whether functions have been set on interfaces
+  // if not, check for functions flag and set them
+  {
+    bool foundit = true;
+    map<int,MRTR::Interface*>::iterator curr;
+    for (curr=interface_.begin(); curr != interface_.end(); ++curr)
+    {
+      int nseg             = curr->second->GlobalNsegment();
+      MRTR::Segment** segs = curr->second->GetSegmentView();
+      for (int i=0; i<nseg; ++i)
+        if (segs[i]->Nfunctions() < 1)
+        {
+          foundit = false;
+          break;
+        }
+      delete [] segs;
+      if (!foundit)
+        curr->second->SetFunctionsFromFunctionTypes();
+    }
+  } 
+  
   //-------------------------------------------------------------------
   // build projections for all interfaces
   {
@@ -676,7 +698,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<MRTR::Interface*> inter)
   }
   Comm().Barrier();
   
-  // time this whole process
+  // time this process
   Epetra_Time time(Comm());
   time.ResetStartTime();
   
