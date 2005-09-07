@@ -215,8 +215,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     else
     {
       interface->SetFunctionTypes(MRTR::Function::func_Linear1D,      // the isoparametric function
-                                  MRTR::Function::func_DualLinear1D); // the LM space
-                                  //MRTR::Function::func_Linear1D); // the LM space
+                                  //MRTR::Function::func_DualLinear1D); // the LM space
+                                  MRTR::Function::func_Linear1D); // the LM space
     }
 
     //-----------------------------------------------------------------
@@ -226,8 +226,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     if (side==1 || side==0)
     {
       side     = interface->OtherSide(side);
-      //MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
-      MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
+      MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
+      //MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
       interface->SetFunctionAllSegmentsSide(side,1,func);
       delete func; func = NULL;
     }

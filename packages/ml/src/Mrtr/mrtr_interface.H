@@ -97,7 +97,8 @@ public:
   bool IsComplete() const { return isComplete_; }
   
   // return true if this interface has been successfully integrated
-  bool IsIntegrated() const { return isIntegrated_; }
+  bool IsIntegrated() const { if (!lComm()) return true; 
+                              else return isIntegrated_; }
   
   // get Id of this interface
   int Id() const { return Id_; }

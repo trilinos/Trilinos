@@ -531,6 +531,9 @@ bool MRTR::Manager::Mortar_Integrate()
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {  
       MRTR::Interface* inter = curr->second;
+#if 0
+      cout << "Integrating interface " << inter->Id() << endl;
+#endif
       bool ok = inter->Mortar_Integrate(*D_,*M_);
       if (!ok)
       {

@@ -353,19 +353,72 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   if (snode0 && !snode1 && !mnode0 && !mnode1)
     ++foundcase;
   
-  // case 3: mnode0 projects into slave element element
+  // case 3: mnode0 projects into slave element
   //         mnode1 not projects into slave element
   //         snodes don't project into master element
   // Note: this case is due to tolerance in projection
   if (!snode0 && !snode1 && mnode0 && !mnode1)
     ++foundcase;
   
-  // case 4: mnode0 doe not project into slave element element
+  // case 4: mnode0 does not project into slave element
   //         mnode1 projects into slave element
   //         snodes don't project into master element
   // Note: this case is due to tolerance in projection
   if (!snode0 && !snode1 && !mnode0 && mnode1)
-    ++foundcase;
+  {
+    bool ok = false;
+    // to do nothing, mnode1 has to project really low in the slave segment
+    nstart = is_mpnode1;
+    sxia = nstart->Xi()[0];
+    if (sxia>0.95)
+    {
+      ++foundcase;
+      nstart = NULL;
+      nend   = NULL;
+    }
+    else
+    {
+      ok = true;
+      sxib = 1.0;
+      // for the range of the master element, we need to check whether
+      // 1.) mnodes[0] projects into a neighbor of sseg
+      // 2.) mnodes[0]'s projection hast to be low in xi
+      nend = mnodes[0]->GetProjectedNode();
+      if (nend) ok = true;
+      else      ok = false;
+      if (ok)
+      {
+        if (!nend->Segment()) ok = true;
+        else
+        {
+          int nseg             = snodes[1]->Nseg();
+          MRTR::Segment** segs = snodes[1]->Segments();
+          int segid = nend->Segment()->Id();
+          for (int i=0; i<nseg; ++i)
+            if (segid==segs[i]->Id()) { ok = true; break;}
+            else ok = false;
+          if (ok)
+          {
+            double xi = nend->Xi()[0];
+            if (xi>-0.95)
+              ok = false;
+          }
+        }
+      }
+      if (ok)
+      {
+        mxia = -1.0;
+        mxib = 1.0;
+        ++foundcase;
+      }
+      else // do nothing?
+      {
+        nstart = NULL;
+        nend   = NULL;
+        ++foundcase;
+      }
+    }
+  }
   
   // case 5: mnodes do not project into slave element
   //        snode0 does not project into master element
@@ -391,7 +444,7 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
         MRTR::Segment** segs = mnodes[1]->Segments();
         int segid = nstart->Segment()->Id();
         for (int i=0; i<nseg; ++i)
-        if (segid == segs[i]->Id()) break;
+        if (segid == segs[i]->Id()) { ok = true; break; }
         else ok = false;
       }
     }
@@ -407,8 +460,12 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
       mxib =  1.0;
       ++foundcase;
     }
-    else
-      ++ foundcase; // do nothing?
+    else // do nothing?
+    {
+      ++ foundcase;
+      nstart = NULL;
+      nend = NULL; 
+    }
   }
 
   // case 6: both master node project into slave segment
