@@ -889,9 +889,6 @@ AC_CONFIG_FILES([
                 examples/petsc/Makefile
                 examples/petsc/DS6.5.1/Makefile
                 examples/petsc/1DFiniteDifference/Makefile
-		example-belos/Makefile
-		example-belos/epetra/Makefile
-		example-belos/epetra/1Dfem_nonlinear/Makefile
                 test/Makefile
                 test/utils/Makefile
                 test/lapack/Makefile
