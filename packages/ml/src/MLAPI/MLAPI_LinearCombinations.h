@@ -18,18 +18,18 @@ public:
     right_(right)
   {}
 
-  const Space GetVectorSpace() const
+  inline const Space GetVectorSpace() const
   {
     return(left_.GetVectorSpace());
   }
 
-  void Update(MultiVector& v) const
+  inline void Update(MultiVector& v) const
   {
     left_.Update(v);
     right_.Update(v);
   }
 
-  void Set(MultiVector& v) const
+  inline void Set(MultiVector& v) const
   {
     left_.Set(v);
     right_.Update(v);
@@ -137,17 +137,17 @@ public:
     return(x_);
   }
 
-  const double GetLeftScalar() const
+  inline const double GetLeftScalar() const
   {
     return(alpha_);
   }
 
-  const MultiVector GetRightMultiVector() const
+  inline const MultiVector GetRightMultiVector() const
   {
     return(y_);
   }
 
-  const double GetRightScalar() const
+  inline const double GetRightScalar() const
   {
     return(beta_);
   }
@@ -176,12 +176,12 @@ public:
 
   const Space GetVectorSpace() const;
 
-  const BaseOperator& GetBaseOperator() const
+  inline const BaseOperator& GetBaseOperator() const
   {
     return(A_);
   }
 
-  const MultiVector& GetMultiVector() const
+  inline const MultiVector& GetMultiVector() const
   {
     return(x_);
   }

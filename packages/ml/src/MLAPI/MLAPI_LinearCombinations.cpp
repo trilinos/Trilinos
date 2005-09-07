@@ -153,7 +153,9 @@ void BaseOperatorTimesMultiVector::Set(MultiVector& v) const
 
   if (v.GetVectorSpace() != A_.GetOperatorRangeSpace() ||
       v.IsAlias(x_))
+  {
     v.Reshape(A_.GetOperatorRangeSpace(), x_.GetNumVectors());
+  }
 
   A_.Apply(x_, v);
 
@@ -169,8 +171,6 @@ void Residual::Update(MultiVector& v) const
 {
   StackPush();
   
-  cout << " UPDATE " << endl;
-
   // FIXME: THIS IS A DUPLICATE
   if (v.IsAlias(b_) || v.IsAlias(x_))
   {
