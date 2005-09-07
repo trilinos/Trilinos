@@ -96,8 +96,10 @@ public:
     DomainSpace_       = DomainSpace;
 
     RCPOperatorBox_    = Teuchos::rcp(new ML_Operator_Box(Op,Ownership));
+    // NOTE: Should the code crash, change the following to `false'
+    bool cheap = true;
     // FIXME: I am not so sure about the following ownership
-    RCPRowMatrix_      = Teuchos::rcp(new ML_Epetra::RowMatrix(Op,&(GetEpetra_Comm())));
+    RCPRowMatrix_      = Teuchos::rcp(new ML_Epetra::RowMatrix(Op,&(GetEpetra_Comm()), cheap));
     RCPAuxOperatorBox_ = AuxOp;
 
     StackPop();

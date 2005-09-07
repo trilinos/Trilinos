@@ -537,18 +537,48 @@ public:
     CheckSpaces(rhs);
     CheckNumVectors(rhs.GetNumVectors());
 
-    int incr = 1;
-    for (int v = 0 ; v < GetNumVectors() ; ++v) {
-      // scale this by beta
-      DSCAL_F77(&n, &beta, GetValues(v), &incr);
-      // computes this = alpha * rhs + this
-      DAXPY_F77(&n, &alpha, (double*)rhs.GetValues(v), &incr, 
-                GetValues(v), &incr);
+    for (int v = 0 ; v < GetNumVectors() ; ++v) 
+    {
+      double* ptr_this = GetValues(v);
+      double* ptr_rhs  = (double*)(rhs.GetValues(v));
+
+      if (alpha == 1.0 && beta == 1.0)
+      {
+        for (int i = 0 ; i < GetMyLength() ; ++i)
+          ptr_this[i] += ptr_rhs[i];
+        UpdateFlops(GetGlobalLength());
+      }
+      else if (alpha == 1.0 && beta == 0.0)
+      {
+        for (int i = 0 ; i < GetMyLength() ; ++i)
+          ptr_this[i] = ptr_rhs[i];
+      }
+      else if (alpha == 0.0 && beta == 1.0)
+      {
+        // do nothing here
+        int dummy = 1;
+      }
+      else if (alpha == 1.0 && beta == -1.0)
+      {
+        for (int i = 0 ; i < GetMyLength() ; ++i)
+          ptr_this[i] = ptr_rhs[i] - ptr_this[i];
+        UpdateFlops(GetGlobalLength()); 
+      }
+      else if (alpha == -1.0 && beta == 1.0)
+      {
+        for (int i = 0 ; i < GetMyLength() ; ++i)
+          ptr_this[i] -= ptr_rhs[i];
+        UpdateFlops(GetGlobalLength()); 
+      }
+      else
+      {
+        for (int i = 0 ; i < GetMyLength() ; ++i)
+          ptr_this[i] = ptr_rhs[i] * alpha + ptr_this[i] * beta;
+        UpdateFlops(3.0 * GetGlobalLength()); 
+      }
     }
 
     StackPop();
-    UpdateFlops(1.0 * GetNumVectors() * GetGlobalLength()); // DSCAL
-    UpdateFlops(2.0 * GetNumVectors() * GetGlobalLength()); // DAXPY
     UpdateTime();
   }
 
