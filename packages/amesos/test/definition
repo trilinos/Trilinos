@@ -9,6 +9,21 @@
     COMM = SERIAL;
 }
 
+(INSTALL) {   
+    TESTS = scripts/daily/mpi/TestKlu.exe,
+            scripts/daily/mpi/TestLapack.exe,
+            scripts/daily/mpi/TestDscpack.exe,
+            scripts/daily/mpi/TestScalapack.exe,
+            scripts/daily/mpi/TestTaucs.exe,
+            scripts/daily/mpi/TestExamples.exe,
+            scripts/daily/mpi/TestMumps.exe,
+            scripts/daily/mpi/TestSuperlu.exe,
+            scripts/daily/mpi/TestSuperludist.exe;
+    COMM = CUSTOM-MPI; 
+    ARGS = NightlyTest True True;      
+    EXIT-STATUS = STRING-COMPARISON ; 
+}
+
 (FRAMEWORK, AmesosTests) {   
     DIRS = scripts/daily/mpi;
     COMM = CUSTOM-MPI; 
