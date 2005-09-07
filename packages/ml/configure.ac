@@ -688,6 +688,7 @@ AC_CONFIG_FILES([
                 test/3d_Poisson/Makefile
                 test/Zoltan/Makefile
                 test/IFPACKSmoothers/Makefile
+                test/MLAPICompare/Makefile
                 test/MLAPILinearCombination/Makefile
                 test/MLAPISerialMatrix/Makefile
                 test/MLAPIDistributedMatrix/Makefile
