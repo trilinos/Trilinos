@@ -36,6 +36,7 @@
 #include "mrtr_manager.H"
 #include "EpetraExt_MatrixMatrix.h"  // for adding matrices
 #include <EpetraExt_Transpose_RowMatrix.h>
+#include "Epetra_Time.h"
 
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 06/05|
@@ -665,9 +666,20 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<MRTR::Interface*> inter)
   {
     fflush(stdout);
     if (Comm().MyPID()==0)
-      cout << "---MRTR::Manager: finding common nodes on interfaces\n";
+    {
+      cout << "---MRTR::Manager: start interface coloring:\n";
+      for (int i=0; i<ninter; ++i)
+        cout << "Interface " << inter[i]->Id() << " : Mortar Side : " << inter[i]->MortarSide() << endl;
+      cout << "---MRTR::Manager: finding common nodes on interfaces:\n";
+    }
     fflush(stdout);
   }
+  Comm().Barrier();
+  
+  // time this whole process
+  Epetra_Time time(Comm());
+  time.ResetStartTime();
+  
   
   // get a view of all nodes from all interfaces
   vector<MRTR::Node**> nodes(ninter);
@@ -790,6 +802,16 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<MRTR::Interface*> inter)
     cornernodes[i].resize(bsize);
     Comm().Broadcast(&(cornernodes[i][0]),bsize,bprocr);
   }
+
+  if (OutLevel()>5)
+  {
+    fflush(stdout);
+    if (Comm().MyPID()==0)
+      cout << "---MRTR::Manager: finding common nodes: " 
+           << time.ElapsedTime() << " sec" << endl;
+    fflush(stdout);
+  }
+  time.ResetStartTime();
   
   // we now color the interfaces in such a way that every corner node
   // has lagrange multipliers either never or once but never more then once
@@ -898,7 +920,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<MRTR::Interface*> inter)
        // sum all flags
        Comm().MaxAll(&(flags[0]),&(flagr[0]),(2*ninter));
 
-#if 1       
+#if 0       
        cout << "Flags side 0:\n";
        for (int j=0; j<ninter; ++j) cout << "inter " << j << " flag " << flagr[j] << endl;
        cout << "Flags side 1:\n";
@@ -1039,12 +1061,39 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<MRTR::Interface*> inter)
      } // if (inter[i]->MortarSide() == -2)
   } // for (int i=0; i<ninter; ++i)
 
+  if (OutLevel()>5)
+  {
+    fflush(stdout);
+    if (Comm().MyPID()==0)
+      cout << "---MRTR::Manager: coloring interfaces : " 
+           << time.ElapsedTime() << " sec" << endl;
+    fflush(stdout);
+  }
+
+  if (OutLevel()>5)
+  {
+    fflush(stdout);
+    if (Comm().MyPID()==0)
+    {
+      cout << "---MRTR::Manager: chosen mortar sides : \n";
+      for (int i=0; i<ninter; ++i)
+        cout << "Interface " << inter[i]->Id() << " : Mortar Side : " << inter[i]->MortarSide() << endl;
+      cout << "---MRTR::Manager: end interface coloring\n";
+    }
+    fflush(stdout);
+  }
+  Comm().Barrier();
 
   // tidy up
   nnodes.clear();
   for (int i=0; i<ninter; ++i) 
     if (nodes[i]) delete [] nodes[i];
   nodes.clear();
+  for (int i=0; i<ninter; ++i) 
+    cornernodes[i].clear();
+  cornernodes.clear();
+  flags.clear();
+  flagr.clear();
 
   return true;
 }
