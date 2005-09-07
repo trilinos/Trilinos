@@ -60,7 +60,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 all-local:
 	@echo ""
 	@echo "Trilinos package aztecoo built successfully"
-	@echo "To check the installation, simply type \"make run-examples\"."
+	@echo "To check the installation, simply type \"$(MAKE) run-examples\"."
 	@echo "For more details, please refer to the instructions"
 	@echo "contained in Trilinos/doc/check_installation.txt"
 	@echo ""
@@ -100,13 +100,13 @@ SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
 ## #######################################################################
 
 if ENABLE_AZTECOO_THYRA
-BUILD_THYRA_SUBLIB=cd $(top_builddir)/thyra/src ; make
+BUILD_THYRA_SUBLIB=cd $(top_builddir)/thyra/src ; $(MAKE)
 else
 BUILD_THYRA_SUBLIB=
 endif
 
 all-libs:
-	cd $(top_builddir)/src ; make all-libs
+	cd $(top_builddir)/src ; $(MAKE) all-libs
 	$(BUILD_THYRA_SUBLIB)
 
 ## #######################################################################

@@ -58,7 +58,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
                                                                                 
 all-local:
 	@echo "Trilinos package epetraext built successfully"
-	@echo "To check the installation, simply type \"make run-examples\"."
+	@echo "To check the installation, simply type \"$(MAKE) run-examples\"."
 	@echo "For more details, please refer to the instructions"
 	@echo "contained in Trilinos/doc/check_installation.txt"
 
@@ -86,7 +86,7 @@ SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
 ## Target for circular dependencies
 ## #######################################################################
 all-libs:
-	cd src ; make all-libs
+	cd src ; $(MAKE) all-libs
 
 ## #######################################################################
 ## Export Makefile Installation

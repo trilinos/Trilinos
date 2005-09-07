@@ -62,7 +62,7 @@ include $(top_builddir)/../ifpack/Makefile.export.ifpack
 common_sources += $(srcdir)/Ifpack_PreconditionerFactory.cpp
 common_dependencies += $(top_builddir)/../ifpack/src/libifpack.a
 $(top_builddir)/../ifpack/src/libifpack.a :
-	cd $(top_builddir)/../ifpack; make all-libs
+	cd $(top_builddir)/../ifpack; $(MAKE) all-libs
 endif
 
 # Here we have to include the aztecoo stuff explicitly since ifpack may have been 

@@ -142,38 +142,38 @@ runtests-mpi :
   --output-dir=@abs_top_builddir@/runtests-results
 
 run-examples: all-am
-	@if [ -d packages/epetra    ]; then cd packages/epetra;    make run-examples; fi
-	@if [ -d packages/epetraext ]; then cd packages/epetraext; make run-examples; fi
-	@if [ -d packages/aztecoo   ]; then cd packages/aztecoo;   make run-examples; fi
-	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    make run-examples; fi
-	@if [ -d packages/amesos    ]; then cd packages/amesos;    make run-examples; fi
-	@if [ -d packages/ml        ]; then cd packages/ml;        make run-examples; fi
-	@if [ -d packages/nox       ]; then cd packages/nox;       make run-examples; fi
-	@if [ -d packages/didasko   ]; then cd packages/didasko;   make run-examples; fi
+	@if [ -d packages/epetra    ]; then cd packages/epetra;    $(MAKE) run-examples; fi
+	@if [ -d packages/epetraext ]; then cd packages/epetraext; $(MAKE) run-examples; fi
+	@if [ -d packages/aztecoo   ]; then cd packages/aztecoo;   $(MAKE) run-examples; fi
+	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    $(MAKE) run-examples; fi
+	@if [ -d packages/amesos    ]; then cd packages/amesos;    $(MAKE) run-examples; fi
+	@if [ -d packages/ml        ]; then cd packages/ml;        $(MAKE) run-examples; fi
+	@if [ -d packages/nox       ]; then cd packages/nox;       $(MAKE) run-examples; fi
+	@if [ -d packages/didasko   ]; then cd packages/didasko;   $(MAKE) run-examples; fi
 
 run-tests: all-am
-	@if [ -d packages/epetra    ]; then cd packages/epetra;    make run-tests; fi
-	@if [ -d packages/epetraext ]; then cd packages/epetraext; make run-tests; fi
-	@if [ -d packages/aztecoo   ]; then cd packages/aztecoo;   make run-tests; fi
-	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    make run-tests; fi
-	@if [ -d packages/amesos    ]; then cd packages/amesos;    make run-tests; fi
-	@if [ -d packages/ml        ]; then cd packages/ml;        make run-tests; fi
-	@if [ -d packages/nox       ]; then cd packages/nox;       make run-tests; fi
-	@if [ -d packages/didasko   ]; then cd packages/didasko;   make run-tests; fi
+	@if [ -d packages/epetra    ]; then cd packages/epetra;    $(MAKE) run-tests; fi
+	@if [ -d packages/epetraext ]; then cd packages/epetraext; $(MAKE) run-tests; fi
+	@if [ -d packages/aztecoo   ]; then cd packages/aztecoo;   $(MAKE) run-tests; fi
+	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    $(MAKE) run-tests; fi
+	@if [ -d packages/amesos    ]; then cd packages/amesos;    $(MAKE) run-tests; fi
+	@if [ -d packages/ml        ]; then cd packages/ml;        $(MAKE) run-tests; fi
+	@if [ -d packages/nox       ]; then cd packages/nox;       $(MAKE) run-tests; fi
+	@if [ -d packages/didasko   ]; then cd packages/didasko;   $(MAKE) run-tests; fi
 
 run-pyexamples: all-am
-	@if [ -d packages/epetra    ]; then cd packages/epetra;    make run-pyexamples; fi
-	@if [ -d packages/epetraext ]; then cd packages/epetraext; make run-pyexamples; fi
-	@if [ -d packages/aztecoo   ]; then cd packages/aztecoo;   make run-pyexamples; fi
-	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    make run-pyexamples; fi
-	@if [ -d packages/amesos    ]; then cd packages/amesos;    make run-pyexamples; fi
-	@if [ -d packages/ml        ]; then cd packages/ml;        make run-pyexamples; fi
-	@if [ -d packages/nox       ]; then cd packages/nox;       make run-pyexamples; fi
-	@if [ -d packages/didasko   ]; then cd packages/didasko;   make run-pyexamples; fi
+	@if [ -d packages/epetra    ]; then cd packages/epetra;    $(MAKE) run-pyexamples; fi
+	@if [ -d packages/epetraext ]; then cd packages/epetraext; $(MAKE) run-pyexamples; fi
+	@if [ -d packages/aztecoo   ]; then cd packages/aztecoo;   $(MAKE) run-pyexamples; fi
+	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    $(MAKE) run-pyexamples; fi
+	@if [ -d packages/amesos    ]; then cd packages/amesos;    $(MAKE) run-pyexamples; fi
+	@if [ -d packages/ml        ]; then cd packages/ml;        $(MAKE) run-pyexamples; fi
+	@if [ -d packages/nox       ]; then cd packages/nox;       $(MAKE) run-pyexamples; fi
+	@if [ -d packages/didasko   ]; then cd packages/didasko;   $(MAKE) run-pyexamples; fi
 
 run-pytests: all-am
-	@if [ -d packages/epetra      ]; then cd packages/epetra;      make run-pytests; fi
-	@if [ -d packages/epetraext   ]; then cd packages/epetraext;   make run-pytests; fi
-	@if [ -d packages/new_package ]; then cd packages/new_package; make run-pytests; fi
-	@if [ -d packages/ml          ]; then cd packages/ml;          make run-pytests; fi
-	@if [ -d packages/nox         ]; then cd packages/nox;         make run-pytests; fi
+	@if [ -d packages/epetra      ]; then cd packages/epetra;      $(MAKE) run-pytests; fi
+	@if [ -d packages/epetraext   ]; then cd packages/epetraext;   $(MAKE) run-pytests; fi
+	@if [ -d packages/new_package ]; then cd packages/new_package; $(MAKE) run-pytests; fi
+	@if [ -d packages/ml          ]; then cd packages/ml;          $(MAKE) run-pytests; fi
+	@if [ -d packages/nox         ]; then cd packages/nox;         $(MAKE) run-pytests; fi

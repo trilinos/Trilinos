@@ -330,7 +330,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @ENABLE_AMESOS_THYRA_TRUE@THYRA_SUBDIR = thyra
 SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
 @ENABLE_AMESOS_THYRA_FALSE@BUILD_THYRA_SUBLIB = 
-@ENABLE_AMESOS_THYRA_TRUE@BUILD_THYRA_SUBLIB = cd $(top_builddir)/thyra/src ; make
+@ENABLE_AMESOS_THYRA_TRUE@BUILD_THYRA_SUBLIB = cd $(top_builddir)/thyra/src ; $(MAKE)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 @HAVE_MPI_FALSE@AMESOS_CHECK_COMM = serial
@@ -746,7 +746,7 @@ all-local:
 	@echo "        +----------------------------------------------------+"
 	@echo "        | Trilinos package amesos built successfully         |"
 	@echo "        |                                                    |"
-	@echo "        | You might want to type \"make run-examples\" to      |"
+	@echo "        | You might want to type \"$(MAKE) run-examples\" to      |"
 	@echo "        | verify that all the Amesos examples run            |"
 	@echo "        | successfully. For more details, please refer to    |"
 	@echo "        | Trilinos/doc/check_installation.txt.               |"
@@ -764,7 +764,7 @@ all-local:
 	@echo 
 
 all-libs:
-	cd $(top_builddir)/src ; make all-libs
+	cd $(top_builddir)/src ; $(MAKE) all-libs
 	$(BUILD_THYRA_SUBLIB)
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	

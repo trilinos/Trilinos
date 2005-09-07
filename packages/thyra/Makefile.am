@@ -128,7 +128,7 @@ runtests-mpi :
 ## #######################################################################
 
 all-libs:
-	cd $(top_builddir)/src ; make all-libs
+	cd $(top_builddir)/src ; $(MAKE) all-libs
 
 if USING_EXPORT_MAKEFILES
 

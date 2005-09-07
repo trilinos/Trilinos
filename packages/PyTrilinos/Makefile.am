@@ -96,7 +96,7 @@ all-local:
 ## Target for circular dependencies
 ## #######################################################################
 all-libs:
-	cd src ; make all-libs
+	cd src ; $(MAKE) all-libs
 
 ## #######################################################################
 ## Export Makefile Installation

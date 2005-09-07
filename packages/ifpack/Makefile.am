@@ -61,7 +61,7 @@ all-local:
 	@echo "        +----------------------------------------------------+"
 	@echo "        | Trilinos package IFPACK built successfully         |"
 	@echo "        |                                                    |"
-	@echo "        | You might want to type \"make run-examples\" to      |"
+	@echo "        | You might want to type \"$(MAKE) run-examples\" to      |"
 	@echo "        | verify that all the IFPACK examples run            |"
 	@echo "        | successfully. For more details, please refer to    |"
 	@echo "        | Trilinos/doc/check_installation.txt.               |"
@@ -101,7 +101,7 @@ SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
 ## Target for circular dependencies
 ## #######################################################################
 all-libs:
-	cd src ; make all-libs
+	cd src ; $(MAKE) all-libs
 
 ## #######################################################################
 ## Export Makefile Installation

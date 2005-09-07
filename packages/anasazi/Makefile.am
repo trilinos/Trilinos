@@ -117,7 +117,7 @@ SUBDIRS = src $(UTIL_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(THYRA_SUBDIR)
 ## Target for circular dependencies
 ## #######################################################################
 all-libs:
-	cd src ; make all-libs
+	cd src ; $(MAKE) all-libs
 
 ## #######################################################################
 ## Export Makefile Installation

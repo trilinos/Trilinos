@@ -69,7 +69,7 @@ all-local:
 	@echo "        +----------------------------------------------------+"
 	@echo "        | Trilinos package amesos built successfully         |"
 	@echo "        |                                                    |"
-	@echo "        | You might want to type \"make run-examples\" to      |"
+	@echo "        | You might want to type \"$(MAKE) run-examples\" to      |"
 	@echo "        | verify that all the Amesos examples run            |"
 	@echo "        | successfully. For more details, please refer to    |"
 	@echo "        | Trilinos/doc/check_installation.txt.               |"
@@ -115,13 +115,13 @@ SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBD
 ## #######################################################################
 
 if ENABLE_AMESOS_THYRA
-BUILD_THYRA_SUBLIB=cd $(top_builddir)/thyra/src ; make
+BUILD_THYRA_SUBLIB=cd $(top_builddir)/thyra/src ; $(MAKE)
 else
 BUILD_THYRA_SUBLIB=
 endif
 
 all-libs:
-	cd $(top_builddir)/src ; make all-libs
+	cd $(top_builddir)/src ; $(MAKE) all-libs
 	$(BUILD_THYRA_SUBLIB)
 
 ## #######################################################################
