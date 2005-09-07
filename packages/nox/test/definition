@@ -3,7 +3,7 @@
 #
 
 # NOX LAPACK tests
-(FRAMEWORK, INSTALL) {
+(FRAMEWORK,INSTALL) {
     DIRS = lapack/NOX,
            lapack/NOX_Group,
            lapack/NOX_NewTest;
@@ -13,11 +13,11 @@
 }
 
 # NOX Epetra tests
-(FRAMEWORK, INSTALL) {
+(FRAMEWORK,INSTALL) {
     DIRS = epetra/1Dfem,
            epetra/NOX_Group,
            epetra/NOX_NewTest,
-           epetra/NOX_Vector;
+           epetra/NOX_Vector,
            epetra/FiniteDifferenceColoring;
     EXIT-STATUS = STRING-COMPARISON(Test passed!);
     ARGS = -v;
@@ -25,7 +25,7 @@
 }
 
 # NOX Epetra test that is limited to 2 processors
-(FRAMEWORK, INSTALL) {
+(FRAMEWORK,INSTALL) {
     DIRS = epetra/DS6.5.1;
     EXIT-STATUS = STRING-COMPARISON(Test passed!);
     ARGS = -v;
@@ -33,19 +33,19 @@
 }
 
 # NOX Python tests
-(FRAMEWORK, INSTALL, NOXPyTests) {
+(FRAMEWORK,INSTALL,NOXPyTests) {
     DIRS = ../python/test;
     COMM = SERIAL, MPI(1-4);
 }
 
 # NOX Python examples
-(FRAMEWORK, INSTALL, NOXPyExamples) {
+(FRAMEWORK,INSTALL,NOXPyExamples) {
     DIRS = ../python/example-epetra;
     COMM = SERIAL, MPI(1-4);
 }
 
 # LOCA Epetra tests
-(FRAMEWORK, INSTALL) {
+(FRAMEWORK,INSTALL) {
     DIRS = epetra/LOCA_UnitTests,
            epetra/LOCA_Tcubed,
            epetra/LOCA_Pitchfork;
@@ -57,7 +57,7 @@
 }
 
 # LOCA LAPACK tests
-(FRAMEWORK, INSTALL) {
+(FRAMEWORK,INSTALL) {
     DIRS = lapack/LOCA_UnitTests,
            lapack/LOCA_ChanProblem,
            lapack/LOCA_python;

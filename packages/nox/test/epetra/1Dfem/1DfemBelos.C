@@ -64,7 +64,6 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i;
 
   // Initialize MPI
 #ifdef HAVE_MPI
@@ -82,12 +81,20 @@ int main(int argc, char *argv[])
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
 
+  // Check verbosity level
+  bool verbose = false;
+  if (argc > 1)
+    if (argv[1][0]=='-' && argv[1][1]=='v')
+      verbose = true;
+
   // Get the number of elements from the command line
-  if (argc!=2) { 
-    cout << "Usage: " << argv[0] << " number_of_elements" << endl;
-    exit(1);
-  }
-  int NumGlobalElements = atoi(argv[1]) + 1;
+  int NumGlobalElements = 0;
+  if ((argc > 2) && (verbose))
+    NumGlobalElements = atoi(argv[2]) + 1;
+  else if ((argc > 1) && (!verbose))
+    NumGlobalElements = atoi(argv[1]) + 1;
+  else 
+    NumGlobalElements = 101;
 
   // The number of unknowns must be at least equal to the 
   // number of processors.
@@ -123,13 +130,17 @@ int main(int argc, char *argv[])
   printParams.setParameter("MyPID", MyPID); 
   printParams.setParameter("Output Precision", 3);
   printParams.setParameter("Output Processor", 0);
-  printParams.setParameter("Output Information", 
-			NOX::Utils::OuterIteration + 
-			NOX::Utils::OuterIterationStatusTest + 
-			NOX::Utils::InnerIteration +
-			NOX::Utils::Parameters + 
-			NOX::Utils::Details + 
-			NOX::Utils::Warning);
+  if (verbose) {
+    printParams.setParameter("Output Information", 
+			     NOX::Utils::OuterIteration + 
+			     NOX::Utils::OuterIterationStatusTest + 
+			     NOX::Utils::InnerIteration +
+			     NOX::Utils::Parameters + 
+			     NOX::Utils::Details + 
+			     NOX::Utils::Warning);
+  }
+  else
+    printParams.setParameter("Output Information",NOX::Utils::Error);
 
   // Sublist for line search 
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
@@ -172,24 +183,16 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Tolerance", 1e-4);
   lsParams.setParameter("Preconditioner", "Ifpack");
   lsParams.setParameter("Preconditioner Operator", "Use Jacobian");
-  lsParams.setParameter("Output Frequency", 50);
+  lsParams.setParameter("Output Frequency", 0);
   lsParams.setParameter("Verbosity Level", 1);
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
   Epetra_RowMatrix& A = interface.getJacobian();
-  // 2. Matrix-Free (Epetra_Operator)
-  //NOX::Epetra::MatrixFree A(interface, soln);
-  // 3. Finite Difference (Epetra_RowMatrix)
-  //NOX::Epetra::FiniteDifference A(interface, soln);
-  //  A.setDifferenceMethod(NOX::Epetra::FiniteDifference::Backward);
-  // 4. Jacobi Preconditioner
-  //NOX::Epetra::JacobiPreconditioner Prec(soln);
 
   // Create the linear system
   NOX::Epetra::Interface::Required& iReq = interface;
   NOX::Epetra::Interface::Jacobian& iJac = interface;
-  NOX::Epetra::Interface::Preconditioner& iPrec = interface;
   NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
 					  iReq, iJac, A, soln);
 
@@ -225,42 +228,60 @@ int main(int argc, char *argv[])
 
   // Create the method
   NOX::Solver::Manager solver(belos_grp, combo, nlParams);
-  NOX::StatusTest::StatusType status = solver.solve();
+  NOX::StatusTest::StatusType solverStatus = solver.solve();
 
-  if (status != NOX::StatusTest::Converged)
-    if (MyPID==0) 
-      cout << "Nonlinear solver failed to converge!" << endl;
+  if (verbose) {
+    if (solverStatus != NOX::StatusTest::Converged)
+      if (MyPID==0) 
+	cout << "Nonlinear solver failed to converge!" << endl;
+  }
 
   // Get the Epetra_Vector with the final solution from the solver
+  /*
   const NOX::Belos::Group& finalGroup = dynamic_cast<const NOX::Belos::Group&>(solver.getSolutionGroup());
   const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
+  */
 
   // End Nonlinear Solver **************************************
 
   // Output the parameter list
   NOX::Utils utils(printParams);
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
-    cout << endl << "Final Parameters" << endl
-	 << "****************" << endl;
-    solver.getParameterList().print(cout);
-    cout << endl;
+  if (verbose) {
+    if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+      cout << endl << "Final Parameters" << endl
+	   << "****************" << endl;
+      solver.getParameterList().print(cout);
+      cout << endl;
+    }
   }
 
-  // Print solution
-  char file_name[25];
-  FILE *ifp;
-  int NumMyElements = soln.Map().NumMyElements();
-  (void) sprintf(file_name, "output.%d",MyPID);
-  ifp = fopen(file_name, "w");
-  for (i=0; i<NumMyElements; i++)
-    fprintf(ifp, "%d  %E\n", soln.Map().MinMyGID()+i, finalSolution[i]);
-  fclose(ifp);
-
+  // Tests
+  int status = 0; // Converged
+  
+  // 1. Convergence
+  if (solverStatus != NOX::StatusTest::Converged) {
+    status = 1;
+    if (utils.isPrintProcessAndType(NOX::Utils::Error))
+      cout << "Nonlinear solver failed to converge!" << endl;
+  }
+  // 2. Nonlinear solve iterations (10)
+  if (solver.getParameterList().sublist("Output").getParameter("Nonlinear Iterations", 0) != 10)
+    status = 1;
+  
+  
+  // Summarize test results 
+  if (utils.isPrintProcess()) { 
+    if (status == 0)
+      cout << "Test passed!" << endl;
+    else 
+      cout << "Test failed!" << endl;
+  }
+  
 #ifdef HAVE_MPI
-  MPI_Finalize() ;
+  MPI_Finalize();
 #endif
 
 /* end main
 */
-return ierr ;
+return status;
 }
