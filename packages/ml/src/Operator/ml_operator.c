@@ -842,8 +842,9 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
    tcolumns     = (int    *) ML_allocate(sizeof(int)*tallocated_space);
    tvalues      = (double *) ML_allocate(sizeof(double)*tallocated_space);
 
-   if (tvalues == NULL) {
+   if ( (tvalues == NULL) || (tcolumns == NULL)) {
       if (tcolumns != NULL) ML_free(tcolumns);
+      if (tvalues != NULL) ML_free(tvalues);
       Amat->data         = temp;
       Amat->getrow       = amalg_getrow;
       Amat->invec_leng  /= block_size;
@@ -1356,6 +1357,32 @@ ML_Operator *ML_Operator_ImplicitlyVScale(ML_Operator *Amat, double* scale,
   ML_Operator_Set_Getrow(matrix,Amat->getrow->Nrows,ML_implicitvscale_Getrow);
   matrix->data_destroy   = ML_implicitvscale_Destroy;
   if (OnDestroy_FreeChild) new_data->destroy_child = 1;
+
+  return matrix;
+}
+/* ******************************************************************** */
+/* Modify matrix so that it uses a getrow wrapper that will effectively */
+/* scale the matrix. Scaling is by the inverse of the block diagonal    */
+/* where the block size is the num_PDEs                                 */
+/* ******************************************************************** */
+ML_Operator *ML_Operator_ImplicitlyBlockDinvScale(ML_Operator *Amat)
+{
+  ML_Operator *matrix;
+  ML_Sm_BGS_Data *data;
+  struct MLSthing *widget;
+
+  widget = ML_Smoother_Create_MLS();
+
+  ML_Smoother_Create_BGS_Data(&data);
+  ML_Smoother_Gen_BGSFacts(&data, Amat, Amat->num_PDEs);
+  widget->unscaled_matrix = Amat;
+  widget->block_scaling   = data;
+
+  matrix = ML_Operator_Create(Amat->comm);
+  ML_Operator_Set_ApplyFuncData(matrix,Amat->invec_leng, Amat->outvec_leng,
+                                widget,Amat->outvec_leng, NULL,0);
+  ML_Operator_Set_ApplyFunc (matrix, ML_BlockScaledApply);
+  matrix->data_destroy   = ML_Smoother_Destroy_MLS;
 
   return matrix;
 }
