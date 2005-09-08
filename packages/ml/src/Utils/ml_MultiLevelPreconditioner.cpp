@@ -1732,7 +1732,7 @@ Print(const char *whichHierarchy)
     }
     else {
       mlptr = ml_;
-      sprintf(auxSuffix,"");
+      auxSuffix[0] = '\0';
     }
 
     // Amat (one for each level)

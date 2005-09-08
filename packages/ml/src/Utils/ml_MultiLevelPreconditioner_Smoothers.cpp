@@ -66,6 +66,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   int num_smoother_steps = List_.get("smoother: sweeps", 1);
 
   double omega = List_.get("smoother: damping factor",1.0);
+  // rst: There is a capability within some of the Gauss-Seidel
+  //      routines to estimate an automatic omega based on
+  //      looking at the spectral radius of L^{inv} A.
+  //      However the line below prevents us from turning this
+  //      on. We can either get rid of this or set the default omega
+  //      to 1 in another spot or add some new string (e.g. "compute omega").
+  //
   if (omega == ML_DDEFAULT) omega = 1.0;
 
   int pre_or_post = 0;
@@ -552,7 +559,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
              << "Resetting nodal smoother on level " << logical_level << endl
              << "ML*WRN* to account for negative mass matrix." << endl;
         //pre-smoother
-        ML* ml_ptr = ml_;
+
         ML_Sm_Hiptmair_Data *hiptmairSmData =
            (ML_Sm_Hiptmair_Data *) ml_->pre_smoother[logical_level].smoother->data;
         ML *ml_subproblem = hiptmairSmData->ml_nodal;
