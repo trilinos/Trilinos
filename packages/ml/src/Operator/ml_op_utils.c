@@ -2476,6 +2476,9 @@ int ML_Operator_MisRootPts( ML_Operator *Amatrix,  int num_PDE_eqns,
       for (kk = 0; kk < rowi_N; kk++) columns[j++] = rowi_col[kk];
       rowptr[i+1] = j;
    }
+   if (rowi_col != NULL) ML_free(rowi_col);
+   if (rowi_val != NULL) ML_free(rowi_val);
+
 
  (*aggr_index) = (int *) ML_allocate(sizeof(int)* ntotal*num_PDE_eqns);
  printf("ntotal is %d\n",ntotal);
