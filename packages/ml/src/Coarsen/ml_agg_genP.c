@@ -859,7 +859,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
      Ptemp = ML_Operator_Create(Amat->comm);
      ML_2matmult(Amat, Pmatrix, Ptemp, ML_CSR_MATRIX );
-     ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs);
+     ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs,1,1);
      ML_Operator_Add(Pmatrix,Ptemp, &(ml->Pmat[clevel]),ML_CSR_MATRIX,
 		     -ag->smoothP_damping_factor / max_eigen);
      ML_Operator_Destroy(&Ptemp);
@@ -2706,7 +2706,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       (*user_gen_restriction)(ml, level, next,user_data);
 
       /* reduce memory usage */
-      // ML_Operator_ChangeToSinglePrecision(&(ml->Rmat[level]));
+      /* ML_Operator_ChangeToSinglePrecision(&(ml->Rmat[level])); */
 
      if (aux_flag)
      {
@@ -3128,14 +3128,23 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
  */
 
 int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
-		 int blk_size)
+		 int blk_size, int transposeD, int transposePtemp)
+/* tranposeD indicates whether we want to do inv(D) or inv(D^T) */
+/* transposePtemp indicates whether we need to first transpose the
+   matrix so that the columns become the rows (and then later transpose
+   the result back. 
+   Note: In ml_agg_min_energy.cpp, we need to compute 
+         H D^{-1}  where H = P^T A .This is equivalent
+         to computing (D^{-T} H^T)^T. In this case we want
+         tranposeD to be 1 and tranposePtemp to be 0.
+*/
 {
   ML_Operator *Rtemp, *P2temp;
   struct ML_CSR_MSRdata *csr_data;
   int Num_blocks = 0, i, j, block, column;
   int *rowptr, *columns;
-  int *new_columns, first, last, nz_ptr;
-  double *new_values, *values;
+  int *new_columns = NULL, first, last, nz_ptr;
+  double *new_values = NULL, *values;
   int **perms;
   double **blockdata;
   char N[2];
@@ -3143,8 +3152,11 @@ int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
   int info, one = 1;
 
 
-  Rtemp = ML_Operator_Create(Ptemp->comm);
-  ML_Operator_Transpose(Ptemp, Rtemp);
+  if (transposePtemp == 1) {
+    Rtemp = ML_Operator_Create(Ptemp->comm);
+    ML_Operator_Transpose(Ptemp, Rtemp);
+  }
+  else Rtemp = Ptemp;
 
   csr_data = (struct ML_CSR_MSRdata *) Rtemp->data;
 
@@ -3155,9 +3167,14 @@ int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
   values  = csr_data->values;
   for (i = 0; i < Rtemp->outvec_leng; i++) {
     ML_az_sort( &(columns[rowptr[i]]), 
-		rowptr[i+1]-rowptr[i+1], NULL, 
+		rowptr[i+1]-rowptr[i], NULL, 
 		&(values[rowptr[i]])); 
     block = -1;
+    /* it looks like we count every block in every row           */
+    /* as opposed to block row. I believe this is what we        */
+    /* actually want as the total space is then multiplied by    */
+    /* the block size (as oppose to the square of the block size)*/
+
     for (j = rowptr[i]; j < rowptr[i+1]; j++) {
       if (columns[j]/blk_size != block) {
 	Num_blocks++;
@@ -3202,11 +3219,12 @@ int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
      }
      blockdata  = mls_widget->block_scaling->blockfacts;
      perms      = mls_widget->block_scaling->perms;
-     strcpy(N,"N");
+     if (transposeD == 1) strcpy(N,"T");
+     else strcpy(N,"N");
 
      for (i = 0; i < Rtemp->outvec_leng; i++) {
        for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += blk_size) {
-	 block  = csr_data->columns[j]/blk_size;
+	 block  = (csr_data->columns[j])/blk_size;
 	 /*MLFORTRAN(dgetrs)(N,&blk_size,&one,blockdata[block],&blk_size,*/
 	 DGETRS_F77(N,&blk_size,&one,blockdata[block],&blk_size,
 			   perms[block], &(values[j]),
@@ -3229,14 +3247,19 @@ int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
      /* the original Ptemp (which has the correct            */
      /* communication pointer).                              */
 	
-     P2temp = ML_Operator_Create(Ptemp->comm);
-     ML_Operator_Transpose(Rtemp, P2temp);
-     ML_Operator_Destroy(&Rtemp);
+     if (transposePtemp == 1) {
+       P2temp = ML_Operator_Create(Ptemp->comm);
+       ML_Operator_Transpose(Rtemp, P2temp);
+       ML_Operator_Destroy(&Rtemp);
 
-     csr_data = (struct ML_CSR_MSRdata *) P2temp->data;
-     P2temp->data = Ptemp->data;
-     Ptemp->data = csr_data;
-     ML_Operator_Destroy(&P2temp);
+       csr_data = (struct ML_CSR_MSRdata *) P2temp->data;
+       P2temp->data = Ptemp->data;
+       Ptemp->data = csr_data;
+       ML_Operator_Destroy(&P2temp);
+     }
+     else {
+       Ptemp->data = csr_data;
+     }
 
      return 0;
 }
