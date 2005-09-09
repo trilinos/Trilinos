@@ -78,6 +78,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->drop_tol_for_smoothing     = 0.0;
    (*ag)->fine_complexity            = 0.0;
    (*ag)->nvblocks                   = 0;
+   (*ag)->old_RowOmegas              = 0;
    (*ag)->vblock_info                = NULL;
    (*ag)->operator_complexity        = 0.0;
    (*ag)->keep_P_tentative           = ML_NO;
