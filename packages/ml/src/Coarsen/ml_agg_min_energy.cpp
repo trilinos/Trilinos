@@ -16,6 +16,19 @@ using namespace std;
 static int     Dinv_size = -1;
 static double* Dinv      = 0;
 
+void peek(char *str, ML_Operator *mat, int row ) 
+{
+  int allocated = 0, *bindx = NULL, row_length, i;
+  double *val = NULL;
+
+  ML_get_matrix_row(mat, 1, &row, &allocated, &bindx, &val, &row_length, 0);
+
+  for (i = 0; i < row_length; i++) 
+    printf("%s(%d,%d) = %20.13e;\n",str,row+1,bindx[i]+1,val[i]);
+
+  ML_free(bindx); ML_free(val);
+}
+
 // ====================================================================== 
 inline static double multiply(int row, struct ML_CSR_MSRdata* left, 
                               struct ML_CSR_MSRdata* right)
@@ -164,11 +177,14 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   int         Ncoarse, Nfine, gNfine, gNcoarse;
   ML_Operator **prev_P_tentatives;
   ML_Aggregate * ag = (ML_Aggregate *) data;
+  double t0,t1;
 
 #ifdef ML_TIMING
   double t0;
   t0 =  GetClock();
 #endif
+  t0 =  GetClock();
+
 
   ML_Operator* Amat = &(ml->Amat[level]); //already created and filled
   prev_P_tentatives = ag->P_tentative; // for keep_P_tentative
@@ -234,45 +250,109 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 
   // this vector is free'd in the generation of the restriction
   // so that I don't have to query for the diagonal.
-  Dinv = (double*)ML_allocate(sizeof(double) * n);
-  Dinv_size = n;
 
-  for (int i = 0 ; i < n ; i++) 
-  {
-    ML_get_matrix_row(Amat, 1, &i, &allocated, &bindx, &val,
-                      &row_length, 0);
-    for  (int j = 0; j < row_length; j++) {
-      Dinv[i] = 0.0;
-      if (i == bindx[j]) {
-        if (val[j] == 0.0)
-        {
-          cerr << "*ML*ERR* zero diagonal element on row " << i << endl;
-          exit(EXIT_FAILURE);
-        }
-        Dinv[i] = 1.0 / val[j];
-        break;
-      }
-    }
-  }
+// rst: comment out 2 lines above and put
+// rst: Scaled_A = Amat;
 
-  ML_Operator* Scaled_A = 0;
-  Scaled_A = ML_Operator_ImplicitlyVScale(Amat, Dinv, 0);
-  ML_CommInfoOP_Clone(&(Scaled_A->getrow->pre_comm), Amat->getrow->pre_comm);
+  ML_Operator* DinvAmat;
+  DinvAmat = ML_Operator_ImplicitlyBlockDinvScale(Amat);
+
+  ML_Operator *Pprime_gz = NULL, *temp1 = NULL, *temp2 = NULL;
+  int *root_pts = NULL, Nroots;
+  int count, i, j;
+  struct ML_CSR_MSRdata *csr_data;
+  int *row_ptr, *columns;
+  double *values;
+  int *newrowptr, *newcolumns, max_nz_per_row, nnz_in_row;
+  double *newvalues;
+
+
+#define newstuff
+  int compress = 1;
+
 
   ML_Operator* P_prime = ML_Operator_Create(P_0->comm);
-  ML_2matmult(Scaled_A, P_0, P_prime, ML_CSR_MATRIX);
+  t1 =  GetClock(); printf("start time = %e\n",t1-t0);  t0 = t1;
+  ML_2matmult(Amat, P_0, P_prime, ML_CSR_MATRIX);
+  t1 =  GetClock(); printf("A*P0 time = %e\n",t1-t0);  t0 = t1;
+  ML_CSR_DropSmall(P_prime, 1e-4, 1e-4, 1e-4);
+  t1 =  GetClock(); printf("drop time = %e\n",t1-t0);  t0 = t1;
+  ML_AGG_DinvP(P_prime, (MLSthing *) DinvAmat->data, Amat->num_PDEs,0,1);
+  t1 =  GetClock(); printf("D^-1 A*P0 = %e\n",t1-t0);  t0 = t1;
+
+  Pprime_gz = P_prime;
+  if (compress == 1) {
+    temp1     =  ML_Operator_Create(Amat->comm);
+    temp2     =  ML_Operator_Create(Amat->comm);
+    Pprime_gz = ML_Operator_Create(Amat->comm);
+
+    ML_Operator_Transpose(P_0,temp1);
+    t1 =  GetClock(); printf("P_0 transpose = %e\n",t1-t0);  t0 = t1;
+    ML_2matmult(temp1, P_prime, temp2, ML_CSR_MATRIX);
+    t1 =  GetClock(); printf("Acoarse = %e\n",t1-t0);  t0 = t1;
+    Nroots = ML_Operator_MisRootPts( temp2,  Amat->num_PDEs, &root_pts);
+    t1 =  GetClock(); printf("Misroot time = %e\n",t1-t0);  t0 = t1;
+
+    csr_data = (struct ML_CSR_MSRdata *) P_prime->data;
+    row_ptr = csr_data->rowptr;
+    columns = csr_data->columns;
+    values  = csr_data->values;
+    count = 0;
+    for (i = 0; i < n ; i++) {
+      for (j = row_ptr[i]; j < row_ptr[i+1]; j++) {
+	if ( root_pts[columns[j]] != -1) count++;
+      }
+    }
+    newrowptr  = (int    *)  ML_allocate(sizeof(int)*(n+1));
+    newcolumns = (int    *)  ML_allocate(sizeof(int)*(count+1));
+    newvalues  = (double *)  ML_allocate(sizeof(double)*(count+1));
+    count      = 0;
+    newrowptr[0]   = 0;
+    max_nz_per_row = 0;
+    for (i = 0; i < n ; i++) {
+      nnz_in_row = 0;
+      for (j = row_ptr[i]; j < row_ptr[i+1]; j++) {
+	if ( root_pts[columns[j]] != -1) {
+	  nnz_in_row++;
+	  newvalues[count   ] = values[j];
+	  newcolumns[count++] = root_pts[columns[j]];
+	}
+      }
+      if (nnz_in_row > max_nz_per_row) max_nz_per_row = nnz_in_row;
+      newrowptr[i+1] = count;
+    }
+    csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+    if (csr_data == NULL) pr_error("no space for csr_data\n");
+    csr_data->columns = newcolumns;
+    csr_data->values  = newvalues;
+    csr_data->rowptr  = newrowptr;
+
+    ML_Operator_Set_ApplyFuncData(Pprime_gz, Nroots, n, csr_data, n, NULL, 0);
+    ML_Operator_Set_Getrow(Pprime_gz, n, CSR_getrow);
+    ML_Operator_Set_ApplyFunc (Pprime_gz, CSR_matvec);
+    //ML_CommInfoOP_Clone( &(Amat->getrow->pre_comm),  
+    Pprime_gz->data_destroy = ML_CSR_MSRdata_Destroy;
+    Pprime_gz->max_nz_per_row = max_nz_per_row;
+    Pprime_gz->N_nonzeros     = count;
+    t1 =  GetClock(); printf("Compress time = %e\n",t1-t0);  t0 = t1;
+    //    ML_CSR_DropSmall(Pprime_gz, 1.e-9);
+
+  }
 
   ML_Operator* Z = 0;
-  ML_Operator* Scaled_A_trans = 0;
   ML_Operator* P_second = 0;
 
-  int n_0 = P_0->invec_leng;
+  int n_0     = P_0->invec_leng;
   int n_0_tot = ML_gsum_int(n_0, P_0->comm);
 
   vector<double> num(n_0);
+  vector<double> tmp(n_0);
   vector<double> den(n_0);
   vector<double> ColOmega(n_0);
-
+#ifdef newstuff
+  vector<double> tnum(Nroots);
+  vector<double> tden(Nroots);
+#endif
   switch (ag->minimizing_energy) {
   case 1:
     // Z_1 = I                          
@@ -285,31 +365,85 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   case 2:
     // Z_2 = A^T * A. Need to be smart here to avoid the construction of Z_2
     
-    Scaled_A_trans = ML_Operator_Create(P_0->comm);
-    ML_Operator_Transpose_byrow(Scaled_A, Scaled_A_trans);
-
     P_second = ML_Operator_Create(P_0->comm);
-    ML_2matmult(Scaled_A, P_prime, P_second, ML_CSR_MATRIX);
-
-    multiply_all(P_prime, P_second, &num[0]);
-    multiply_all(P_second, P_second, &den[0]);
+    ML_2matmult(Amat, Pprime_gz, P_second, ML_CSR_MATRIX);
+//  ML_CSR_DropSmall(P_prime, 1e-4);
+    t1 =  GetClock(); printf("second 2mat = %e\n",t1-t0);  t0 = t1;
+    ML_AGG_DinvP(P_second, (MLSthing *) DinvAmat->data, Amat->num_PDEs,0,1);
+    t1 =  GetClock(); printf("second scale = %e\n",t1-t0);  t0 = t1;
+    if (compress == 1) {
+      multiply_all(Pprime_gz, P_second, &tnum[0]);
+      t1 =  GetClock(); printf("first mult_all = %e\n",t1-t0);  t0 = t1;
+      multiply_all(P_second, P_second, &tden[0]);
+      t1 =  GetClock(); printf("second mult_all = %e\n",t1-t0);  t0 = t1;
+    }
+    else {
+      multiply_all(Pprime_gz, P_second, &num[0]);
+      t1 =  GetClock(); printf("first mult_all = %e\n",t1-t0);  t0 = t1;
+      multiply_all(P_second, P_second, &den[0]);
+      t1 =  GetClock(); printf("second mult_all = %e\n",t1-t0);  t0 = t1;
+    }
     break;
 
   case 3:
-    // Z_3 = A^T + A
-    // Need P_second, and to form A^T, then Z_3
-    
-    Scaled_A_trans = ML_Operator_Create(P_0->comm);
-    ML_Operator_Transpose_byrow(Scaled_A, Scaled_A_trans);
-
-    Z = ML_Operator_Create(P_0->comm);
-    ML_Operator_Add(Scaled_A, Scaled_A_trans, Z, ML_CSR_MATRIX, 1.0);
-
+    //             diag( P0' ( A'D' + DA) D A P0)
+    //   omega =   -----------------------------
+    //             diag( P0'A'D' ( A'D' + DA) D A P0)
+    //
+    //             diag( Prime'Prime + P0'Psecond)
+    //         =   -----------------------------
+    //                2*diag( Psecond'Prime)
+    //
+    //    where Prime = D A P0  and Psecond = D A Pprime
+    //
     P_second = ML_Operator_Create(P_0->comm);
-    ML_2matmult(Z, P_prime, P_second, ML_CSR_MATRIX);
+    
+  // if (Amat->num_PDEs == 1) {
+  //    Do this Marzio's way as it avoids a couple of transposes.
+  //    
+  //    ML_2matmult(Scaled_A, P_prime, P_second, ML_CSR_MATRIX);
+  // }
+  // else {
+        ML_2matmult(Amat, P_prime, P_second, ML_CSR_MATRIX);
+t1 =  GetClock(); printf("next matmat = %e\n",t1-t0);  t0 = t1;
+ ML_AGG_DinvP(P_second, (MLSthing *) DinvAmat->data, Amat->num_PDEs,0,1);
+t1 =  GetClock(); printf("next scale = %e\n",t1-t0);  t0 = t1;
+  // }   
 
-    multiply_all(P_0, P_second, &num[0]);
+
+    multiply_all(P_0, P_second,  &num[0]);
+t1 =  GetClock(); printf("first mult_all = %e\n",t1-t0);  t0 = t1;
+    multiply_all(P_prime, P_prime, &tmp[0]);
+t1 =  GetClock(); printf("second mult_all = %e\n",t1-t0);  t0 = t1;
+#ifdef newstuff
+    for (int i = 0 ; i < n_0 ; ++i) tnum[i] += tmp[i];
+    multiply_all(P_prime, P_second, &tden[0]);
+t1 =  GetClock(); printf("third mult_all = %e\n",t1-t0);  t0 = t1;
+    for (int i = 0 ; i < n_0 ; ++i) tden[i] *= 2.;
+#else
+    for (int i = 0 ; i < n_0 ; ++i) num[i] += tmp[i];
     multiply_all(P_prime, P_second, &den[0]);
+t1 =  GetClock(); printf("third mult_all = %e\n",t1-t0);  t0 = t1;
+    for (int i = 0 ; i < n_0 ; ++i) den[i] *= 2.;
+#endif
+
+
+    //
+    //  The old way of calculating this was to first create a
+    //  matrix Z such that Z = A^T + A. I have left the old way
+    //  commented out as it avoids an addtional 'multiply_all'. 
+    //  However, it does this at the expense of transposing the 
+    //  entire matrix. I would guess that the transpose costs 
+    //  more than any savings. -rst
+    // 
+    //     Scaled_A_trans = ML_Operator_Create(P_0->comm);
+    //     ML_Operator_Transpose_byrow(Scaled_A, Scaled_A_trans);
+    //     Z = ML_Operator_Create(P_0->comm);
+    //     ML_Operator_Add(Scaled_A, Scaled_A_trans, Z, ML_CSR_MATRIX, 1.0);
+    //     P_second = ML_Operator_Create(P_0->comm);
+    //     ML_2matmult(Z, P_prime, P_second, ML_CSR_MATRIX);
+    //     multiply_all(P_0, P_second, &den[0]);
+    //     multiply_all(P_prime, P_second, &den[0]);
     break;
 
   default:
@@ -319,7 +453,40 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     exit(EXIT_FAILURE);
   }
 
-  int zero_local = 0;
+  /* convert from root points to all the coarse points */
+
+  double temp_omega, temp_den, temp_num;
+  int flag;
+  if (compress == 1) {
+t1 =  GetClock(); printf("start expand = %e\n",t1-t0);  t0 = t1;
+
+    for (int row = 0 ; row < temp2->invec_leng ; row++) {
+      flag = -1;
+      temp_omega = 1e+20; temp_num = -1.e10; temp_den = -1.;
+      ML_get_matrix_row(temp2, 1, &row, &allocated, &bindx, &val,
+			&row_length, 0); 
+      for  (int j = 0; j < row_length; j++)     {
+	if ( (flag != 1) && ( root_pts[bindx[j]] != -1 )) {
+	  if ( bindx[j] == row ) {
+	    temp_num = tnum[root_pts[bindx[j]]];
+	    temp_den = tden[root_pts[bindx[j]]];
+	    flag = 1;
+	  }
+	  else {
+	    if ( tnum[root_pts[bindx[j]]]/tden[root_pts[bindx[j]]] <
+		 temp_num/temp_den) {
+	      temp_num = tnum[root_pts[bindx[j]]];
+	      temp_den = tden[root_pts[bindx[j]]];
+	    }
+	  }
+	}
+      }
+      if (temp_den == -1.) { printf("problems\n"); exit(-1); }
+      num[row] = temp_num; den[row] = temp_den;
+    }
+t1 =  GetClock(); printf("end expand = %e\n",t1-t0);  t0 = t1;
+  }
+  int zero_local   = 0;
   double min_local = DBL_MAX;
   double max_local = DBL_MIN;
 
@@ -336,8 +503,8 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     if (val > max_local) max_local = val;
   }
 
-  double min_all = ML_gmin_double(min_local, P_0->comm);
-  double max_all = ML_gmax_double(max_local, P_0->comm);
+  double min_all  = ML_gmin_double(min_local, P_0->comm);
+  double max_all  = ML_gmax_double(max_local, P_0->comm);
   double zero_all = ML_gsum_int(zero_local, P_0->comm);
 
   if (ML_Get_PrintLevel() > 5 && P_0->comm->ML_mypid == 0)
@@ -351,52 +518,56 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 
   // convert the omega's from column-based to row-based
 
-  vector<double> RowOmega(n);
+  //  vector<double> RowOmega(n);
+  double *RowOmega;
+  RowOmega = (double *) ML_allocate(sizeof(double)*(n+1));
+  ag->old_RowOmegas = RowOmega;
   for (int i = 0 ; i < n ; i++) RowOmega[i] = DBL_MAX;
-
-  int* aggr_info = ag->aggr_info[level];
 
   for (int row = 0 ; row < n ; row++) 
   {
-    ML_get_matrix_row(Amat, 1, &row, &allocated, &bindx, &val,
-                      &row_length, 0);
+    ML_get_matrix_row(P_prime, 1, &row, &allocated, &bindx, &val,
+                      &row_length, 0); // should really be P0 + Pprime
 
     for  (int j = 0; j < row_length; j++) 
     {
       if (bindx[j] < n) // this is white magic
       {
-        int aggr = aggr_info[bindx[j]];
-        double omega = ColOmega[aggr];
+	double omega = ColOmega[bindx[j]];
         if (omega < RowOmega[row]) RowOmega[row] = omega;
       }
     }
   }
 
   ML_Operator* Scaled_P_prime = 0;
+
   Scaled_P_prime = ML_Operator_ImplicitlyVScale(P_prime, &RowOmega[0], 0);
   ML_CommInfoOP_Clone(&(Scaled_P_prime->getrow->pre_comm), P_prime->getrow->pre_comm);
 
   ML_Operator_Add(P_0, Scaled_P_prime, &(ml->Pmat[clevel]), 
                   ML_CSR_MATRIX, -1.0);
+  //  ML_CSR_DropSmall(&(ml->Pmat[clevel]), 1.e-2);
 
   ML_Operator_Set_1Levels(&(ml->Pmat[clevel]), &(ml->SingleLevel[clevel]),
                           &(ml->SingleLevel[level]));
 
-  ML_free(bindx);
-  ML_free(val);
+  if (bindx != NULL) ML_free(bindx);
+  if (val   != NULL) ML_free(val);
 
+  if (DinvAmat != NULL) ML_Operator_Destroy(&DinvAmat);
+  if (Pprime_gz != P_prime) ML_Operator_Destroy(&Pprime_gz);
+  if (temp2)          ML_Operator_Destroy(&temp2);
+  if (temp1)          ML_Operator_Destroy(&temp1);
   if (Z)              ML_Operator_Destroy(&Z);
   if (P_prime)        ML_Operator_Destroy(&P_prime);
   if (P_second)       ML_Operator_Destroy(&P_second);
-  if (Scaled_A)       ML_Operator_Destroy(&Scaled_A);
-  if (Scaled_A_trans) ML_Operator_Destroy(&Scaled_A_trans);
   if (Scaled_P_prime) ML_Operator_Destroy(&Scaled_P_prime);
+  if (root_pts != NULL) ML_free(root_pts);
 
 #ifdef ML_TIMING
   ml->Pmat[clevel].build_time =  GetClock() - t0;
   ml->timing->total_build_time += ml->Pmat[clevel].build_time;
 #endif
-
   return(0);
 }
 
@@ -423,175 +594,56 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
   prev_P_tentatives = ag->P_tentative; // for keep_P_tentative
   ML_Operator* P_0 = prev_P_tentatives[clevel]; // already created and filled
 
+  double *RowOmega = ag->old_RowOmegas;
+
   /* ============================================================ */
   /* Start construction Pmatrix to minimize the energy of         */
   /* each basis function. This requires two additional operators, */
   /* here called P_prime and P_second.                            */
   /* ============================================================ */
 
-  int row_length;
-  int allocated = 128;
-  int*    bindx = (int    *)  ML_allocate(allocated*sizeof(int   ));
-  double* val   = (double *)  ML_allocate(allocated*sizeof(double));
-  int n = Amat->getrow->Nrows;
+  ML_Operator* P0_trans = ML_Operator_Create(P_0->comm);
+  ML_Operator* P0TA     = ML_Operator_Create(P_0->comm);
 
-  if (Dinv == 0 || Dinv_size != n) 
-  {
-    cerr << "Error: Static data Dinv is null or Dinv_size is wrong!" << endl;
-    cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
-    exit(EXIT_FAILURE);
-  }
+  ML_Operator_Transpose_byrow(P_0, P0_trans);
+  ML_2matmult(P0_trans, Amat, P0TA, ML_CSR_MATRIX);
+  ML_CSR_DropSmall(P0TA, 1.e-5, 1e-5, 1e-5);
+  ML_Operator* ttt = ML_Operator_ImplicitlyBlockDinvScale(Amat);
 
-  ML_Operator* Scaled_A = 0;
-  // FIXME: scale by rows or scale by columns??
-  Scaled_A = ML_Operator_ImplicitlyVScale(Amat, Dinv, 0);
-  ML_CommInfoOP_Clone(&(Scaled_A->getrow->pre_comm), Amat->getrow->pre_comm);
+  ML_AGG_DinvP(P0TA, (MLSthing *) ttt->data, Amat->num_PDEs,1,0);
+  ML_Operator* Scaled_P0TA = 0;
+  Scaled_P0TA = ML_Operator_ImplicitlyVCScale(P0TA, &(RowOmega[0]), 0);
 
-  ML_Operator* Scaled_A_trans = ML_Operator_Create(P_0->comm);
-  ML_Operator_Transpose_byrow(Scaled_A, Scaled_A_trans);
-
-  ML_Operator* P_prime = ML_Operator_Create(P_0->comm);
-  ML_2matmult(Scaled_A_trans, P_0, P_prime, ML_CSR_MATRIX);
-
-  ML_Operator* Z = 0;
-  ML_Operator* P_second = 0;
-
-  int n_0 = P_0->invec_leng;
-  int n_0_tot = ML_gsum_int(n_0, P_0->comm);
-  vector<double> num(n_0);
-  vector<double> den(n_0);
-  vector<double> ColOmega(n_0);
-
-  switch (ag->minimizing_energy) {
-  case 1:
-    // Z_1 = I                          
-    // This is simple, no need for P_second because == P_prime
-    multiply_all(P_0, P_prime, &num[0]);
-    multiply_self_all(P_prime, &den[0]);
-    break;
-
-  case 2:
-    // Z_2 = A^T * A. Need to be smart here to avoid the construction of Z_2
-    
-    P_second = ML_Operator_Create(P_0->comm);
-    ML_2matmult(Scaled_A_trans, P_prime, P_second, ML_CSR_MATRIX);
-
-    multiply_all(P_prime, P_second, &num[0]);
-    multiply_all(P_second, P_second, &den[0]);
-    break;
-
-  case 3:
-    // Z_3 = A^T + A
-    // Need P_second, and to form A^T, then Z_3
-    
-    Z = ML_Operator_Create(P_0->comm);
-    ML_Operator_Add(Scaled_A, Scaled_A_trans, Z, ML_CSR_MATRIX, 1.0);
-
-    P_second = ML_Operator_Create(P_0->comm);
-    ML_2matmult(Z, P_prime, P_second, ML_CSR_MATRIX);
-
-    multiply_all(P_0, P_second, &num[0]);
-    multiply_all(P_prime, P_second, &den[0]);
-    break;
-
-  default:
-    // should never be here
-    cerr << "Incorrect parameter (" << ag->minimizing_energy << ")" << endl;
-    cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
-    exit(EXIT_FAILURE);
-  }
-
-  int zero_local = 0;
-
-  for (int i = 0 ; i < n_0 ; ++i) 
-  {
-    ColOmega[i] = num[i] / den[i];
-    if (ColOmega[i] < 0.) 
-    {
-      ColOmega[i] = 0;
-      ++zero_local;
-    }
-  }
-
-  double min_local = DBL_MAX;
-  double max_local = DBL_MIN;
-
-  for (int i = 0 ; i < n_0 ; ++i)
-  {
-    if (ColOmega[i] < min_local) min_local = ColOmega[i];
-    if (ColOmega[i] > max_local) max_local = ColOmega[i];
-  }
-
-  double min_all = ML_gmin_double(min_local, P_0->comm);
-  double max_all = ML_gmax_double(max_local, P_0->comm);
-  double zero_all = ML_gsum_int(zero_local, P_0->comm);
-
-  if (ML_Get_PrintLevel() > 5 && P_0->comm->ML_mypid == 0)
-  { 
-    cout << endl;
-    cout << "Restriction Smoothing: Using energy minimization (scheme = " 
-         << ag->minimizing_energy << ")" << endl;
-    cout << "Damping parameter: min = " << min_all <<  ", max = " << max_all 
-         << " (" << zero_all << " zeros out of " << n_0_tot << ")" << endl;
-    cout << endl;
-  }
-
-
-  // convert the omega's from column-based to row-based
-
-  vector<double> RowOmega(n);
-  for (int i = 0 ; i < n ; i++) RowOmega[i] = DBL_MAX;
-
-  int* aggr_info = ag->aggr_info[level];
-
-  for (int row = 0 ; row < n ; row++) 
-  {
-    ML_get_matrix_row(Amat, 1, &row, &allocated, &bindx, &val,
-                      &row_length, 0);
-
-    for  (int j = 0; j < row_length; j++) 
-    {
-      int pos = bindx[j];
-      if (pos < n) // another big of magic
-      {
-        int aggr = aggr_info[pos];
-        double omega = ColOmega[aggr];
-        if (omega < RowOmega[row]) RowOmega[row] = omega;
-      }
-    }
-  }
-
-  ML_Operator* Scaled_P_prime = 0;
-  Scaled_P_prime = ML_Operator_ImplicitlyVScale(P_prime, &RowOmega[0], 0);
+#ifdef out
   ML_CommInfoOP_Clone(&(Scaled_P_prime->getrow->pre_comm), 
                       P_prime->getrow->pre_comm);
+#endif
 
-  ML_Operator* temp = ML_Operator_Create(P_0->comm);
-  ML_Operator_Add(P_0, Scaled_P_prime, temp, ML_CSR_MATRIX, -1.0);
+  ML_Operator_Add(P0_trans,Scaled_P0TA,&(ml->Rmat[level]),ML_CSR_MATRIX,-1.0);
 
-  ML_Operator_Transpose_byrow(temp, &(ml->Rmat[level]));
+  //  ML_CSR_DropSmall(&(ml->Rmat[level]), 1.e-2);
+
 
   ML_Operator_Set_1Levels(&(ml->Rmat[level]), &(ml->SingleLevel[level]), 
                           &(ml->SingleLevel[clevel]));
 
-  ML_free(bindx);
-  ML_free(val);
 
-  if (Scaled_A)       ML_Operator_Destroy(&Scaled_A);
-  if (Scaled_A_trans) ML_Operator_Destroy(&Scaled_A_trans);
-  if (P_prime)        ML_Operator_Destroy(&P_prime);
-  if (Scaled_P_prime) ML_Operator_Destroy(&Scaled_P_prime);
-  if (Z)              ML_Operator_Destroy(&Z);
-  if (P_second)       ML_Operator_Destroy(&P_second);
-  if (temp)           ML_Operator_Destroy(&temp);
 
-  ML_free(Dinv); Dinv = 0;
+  if ( ag->old_RowOmegas != NULL) ML_free(ag->old_RowOmegas);
+  ag->old_RowOmegas = NULL;
+
   Dinv_size = -1;
 
 #ifdef ML_TIMING
   ml->Rmat[level].build_time =  GetClock() - t0;
   ml->timing->total_build_time += ml->Rmat[level].build_time;
 #endif
+
+
+  if (ttt != NULL) ML_Operator_Destroy(&ttt);
+  if (P0_trans != NULL) ML_Operator_Destroy(&P0_trans);  
+  if (P0TA != NULL) ML_Operator_Destroy(&P0TA);
+  if (Scaled_P0TA != NULL) ML_Operator_Destroy(&Scaled_P0TA);
 
   return(0);
 }
