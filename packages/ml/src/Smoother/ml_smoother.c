@@ -3502,21 +3502,27 @@ void ML_Smoother_Destroy_BGS_Data(void *data)
    ML_Sm_BGS_Data *ml_data;
 
    ml_data = (ML_Sm_BGS_Data *) data;
-   if ( ml_data->blockfacts != NULL )
-   {
-      for ( i = 0; i < ml_data->Nblocks; i++ )
-         if ( ml_data->blockfacts[i] != NULL ) ML_free(ml_data->blockfacts[i]);
-      ML_free( ml_data->blockfacts );
+
+   /* Free up the block factors. Note: it is a little faster to free */
+   /* them this way (in the reverse order that we allocated them).   */
+   /* This is useful when ML_MEM_CHECK is defined (to check memory). */
+
+   for ( i = ml_data->Nblocks-1; i >= 0; i-- ) {
+     if ( (ml_data->blockfacts    != NULL ) &&
+          (ml_data->blockfacts[i] != NULL )) ML_free(ml_data->blockfacts[i]);
+     if ( (ml_data->perms         != NULL ) && 
+	  (ml_data->perms[i]      != NULL )) ML_free(ml_data->perms[i]);
    }
-   if ( ml_data->perms != NULL )
-   {
-      for ( i = 0; i < ml_data->Nblocks; i++ )
-         if ( ml_data->perms[i] != NULL ) ML_free(ml_data->perms[i]);
-      ML_free( ml_data->perms );
-   }
-   if ( ml_data->blocklengths != NULL )
+   if (ml_data->blockfacts != NULL ) ML_free( ml_data->blockfacts );
+   if (ml_data->perms      != NULL ) ML_free( ml_data->perms );
+
+   if ( ml_data->blocklengths != NULL ) {
       ML_free( ml_data->blocklengths );
-   ML_free(ml_data->blockmap);
+   }
+   if (ml_data->blockmap != NULL) {
+     ML_free(ml_data->blockmap);
+   }
+
    ML_memory_free((void**) &ml_data);
 }
 
@@ -3536,9 +3542,9 @@ void ML_Smoother_Clean_BGS_Data(void *data)
    perms = dataptr->perms;
    blockfacts = dataptr->blockfacts;
 
-   for (i=0; i < Nblocks; i++) {
-      ML_free(perms[i]);
-      ML_free(blockfacts[i]);
+   for (i = Nblocks-1; i >= 0; i--) {
+     if (perms[i]      != NULL) ML_free(perms[i]);
+     if (blockfacts[i] != NULL)  ML_free(blockfacts[i]);
    }
 
    ML_free(perms);
