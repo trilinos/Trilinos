@@ -112,6 +112,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     ParamList.set( "MaxProcs", 2 );
     ParamList.set( "ComputeTrueResidual", true );
+    ParamList.set( "OutputLevel", 0 );
     //  ParamList.print( cerr, 10 ) ; 
       
     double relerror;
@@ -155,6 +156,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     ParamList.set( "MaxProcs", 2 );
     ParamList.set( "ComputeTrueResidual", true );
+    ParamList.set( "OutputLevel", 0 );
     //  ParamList.print( cerr, 10 ) ; 
     Teuchos::ParameterList& ScalapackParams = ParamList.sublist("Scalapack") ;
     ScalapackParams.set( "grid_mb", 2 );
@@ -201,6 +203,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     ParamList.set( "MaxProcs", 1000 );
     ParamList.set( "ComputeTrueResidual", true );
+    ParamList.set( "OutputLevel", 0 );
     Teuchos::ParameterList& ScalapackParams = ParamList.sublist("Scalapack") ;
     ScalapackParams.set( "grid_mb", 3 );
     ScalapackParams.set( "grid_nb", 3 );
@@ -246,6 +249,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList ParamList ;
     ParamList.set( "MaxProcs", 1000 );
     ParamList.set( "ComputeTrueResidual", true );
+    ParamList.set( "OutputLevel", 0 );
     Teuchos::ParameterList& ScalapackParams = ParamList.sublist("Scalapack") ;
     ScalapackParams.set( "2D distribution", false );
 
