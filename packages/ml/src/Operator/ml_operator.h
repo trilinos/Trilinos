@@ -282,6 +282,7 @@ extern int ML_implicitvscale_Matvec(ML_Operator *Amat_in, int ilen, double p[],
 extern ML_Operator *ML_Operator_ImplicitlyVScale(ML_Operator *Amat, 
                                                  double* scale,
                                                  int OnDestroy_FreeChild);
+extern ML_Operator *ML_Operator_ImplicitlyBlockDinvScale(ML_Operator *Amat);
 extern void ML_implicitvscale_Destroy(void *data);
 extern int ML_implicitvcscale_Getrow(ML_Operator *data, int N_requested_rows, 
 				   int requested_rows[], int allocated_space, 
@@ -290,6 +291,9 @@ extern int ML_implicitvcscale_Getrow(ML_Operator *data, int N_requested_rows,
 extern ML_Operator *ML_Operator_ImplicitlyVCScale(ML_Operator *Amat, 
                                                  double* scale,
                                                  int OnDestroy_FreeChild);
+extern int ML_CSR_DropSmall(ML_Operator *Pe, double AbsoluteDrop,
+			    double RelativeRowDrop, double RelativeColDrop);
+
 /* amalagamation routines */
 extern int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size, 
                double drop_tolerance);
@@ -318,6 +322,8 @@ extern int AZ_get_MSR_arrays(ML_Operator *, int **bindx, double **val);
 int ML_Operator_GetFlops(ML_Operator *mat);
 void ML_Operator_GetGlobalDimensions(ML_Operator *A,int *nrows,int *ncols);
 
+extern int ML_Operator_MisRootPts( ML_Operator *Amatrix,  int num_PDE_eqns,
+				     int **);
 
 #ifdef ML_WITH_EPETRA
 extern int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);

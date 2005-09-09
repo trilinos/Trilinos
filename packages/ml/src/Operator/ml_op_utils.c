@@ -2313,3 +2313,317 @@ int ML_Operator_Get_Nnz(ML_Operator *A)
   }
   return A->N_nonzeros; 
 }
+
+/* ******************************************************************** */
+/* Functions to color matrices to cheapen ml_agg_min_energy.c           */
+/* ******************************************************************** */
+/* Author        : Ray Tuminaro (SNL)                                   */
+/* Date          : Sept, 2005                                           */
+/* ******************************************************************** */
+
+int ML_Operator_MisRootPts( ML_Operator *Amatrix,  int num_PDE_eqns,
+			    int **aggr_index)
+{
+  /*
+   * Take Amatrix and perform a maximal independent set on the associated
+   * block matrix (where the block size is num_PDE_eqns). The resulting
+   * independent set is returned in aggr_index[] where 
+   *            aggr_index[k] = -1  ==> not part of independent set
+   *            aggr_index[k] > -1  ==> aggr_index[k]th local point in 
+   *                                    independent set
+   * NOTE: This routine has not yet been checked in parallel.
+   *
+   */
+
+  int Nrows, index, i, j, kk, aggr_count;
+  int *rcvleng= NULL, *sndleng= NULL, *send_list = NULL;
+  char                  *vtype, *state, *bdry;
+   int                   nvertices, *vlist, ntotal, Nneigh;
+   int                   *neigh = NULL, max_element, Nghost;
+   int                   **sndbuf = NULL, **rcvbuf = NULL;
+   int                   **sendlist = NULL, **recvlist = NULL;
+   ML_CommInfoOP         *mat_comm;
+   int                   allocated = 0, *rowi_col = NULL, rowi_N;
+   double                *rowi_val = NULL, *dtemp;
+   int                   *templist, **proclist, *rowptr, *columns;
+   ML_Comm               *comm;
+
+   Nrows        = Amatrix->outvec_leng;
+   comm         = Amatrix->comm;
+
+   if ( Nrows % num_PDE_eqns != 0 )
+   {
+      printf("ERROR : Nrows must be multiples");
+      printf(" of num_PDE_eqns.\n");
+      exit(1);
+   }
+
+   /*= `amalgamate' refers to the conversion from block matrices
+     to point matrices */
+   
+   ML_Operator_AmalgamateAndDropWeak(Amatrix, num_PDE_eqns, 0.0);
+   Nrows     /= num_PDE_eqns;
+   nvertices  = Amatrix->outvec_leng;
+
+   mat_comm  = Amatrix->getrow->pre_comm;
+   Nneigh    = ML_CommInfoOP_Get_Nneighbors(mat_comm);
+   neigh     = ML_CommInfoOP_Get_neighbors(mat_comm);
+   sendlist  = (int **) ML_allocate(sizeof(int *)*Nneigh);
+   recvlist  = (int **) ML_allocate(sizeof(int *)*Nneigh);
+   rcvbuf    = (int **) ML_allocate(sizeof(int *)*Nneigh);
+   sndbuf    = (int **) ML_allocate(sizeof(int *)*Nneigh);
+   rcvleng   = (int  *) ML_allocate(sizeof(int  )*Nneigh);
+   sndleng   = (int  *) ML_allocate(sizeof(int  )*Nneigh);
+
+   max_element = nvertices - 1;
+   for (i = 0; i < Nneigh; i++) {
+      recvlist[i]  = ML_CommInfoOP_Get_rcvlist(mat_comm, neigh[i]);
+      rcvleng[i]   = ML_CommInfoOP_Get_Nrcvlist (mat_comm, neigh[i]);
+      sendlist[i]  = ML_CommInfoOP_Get_sendlist (mat_comm, neigh[i]);
+      sndleng[i]   = ML_CommInfoOP_Get_Nsendlist(mat_comm, neigh[i]);
+      rcvbuf[i]    = (int *) ML_allocate(sizeof(int)*(rcvleng[i]+1));
+      sndbuf[i]    = (int *) ML_allocate(sizeof(int)*(sndleng[i]+1));
+                           /* +1 needed inside ML_Aggregate_LabelVertices */
+      for (j = 0; j < rcvleng[i]; j++) 
+         if (recvlist[i][j] > max_element ) 
+            max_element = recvlist[i][j];
+   }
+   Nghost = max_element - nvertices + 1;
+   ntotal = nvertices + Nghost;
+
+   templist = (int *) ML_allocate(sizeof(int)*nvertices);
+   for ( i = 0; i < nvertices; i++ ) templist[i] = 0;
+   for ( i = 0; i < Nneigh; i++ ) {
+      for ( j = 0; j < sndleng[i]; j++ ) {
+         index = sendlist[i][j];
+         if ( index >= nvertices || index < 0 ) {
+	   printf("%d : Error : in sendlist.\n", comm->ML_mypid);
+            exit(0);
+         }
+         templist[index]++;
+	 /*= templist[j] is the number of processors who need `j' */	 
+      }
+   }
+
+   /* Allocate proclist to record the processors and indices each of */
+   /* my local vertices are to send.  The first element of the array */
+   /* is a counter of how many processors, followed by a number of   */
+   /* processor and index pairs.                                     */
+
+   proclist = (int **) ML_allocate(ntotal * sizeof( int *));
+   for ( i = 0; i < nvertices; i++ ) {
+      proclist[i]    =(int *) ML_allocate( (2*templist[i]+1) * sizeof( int ) );
+      proclist[i][0] = 0;
+      templist[i]    = 0;
+   }
+   for ( i = 0; i < Nneigh; i++ ) {
+      for ( j = 0; j < sndleng[i]; j++ ) {
+         index = sendlist[i][j];
+         proclist[index][templist[index]+1] = i;
+         proclist[index][templist[index]+2] = j;
+         templist[index] += 2;
+         proclist[index][0]++;
+      }
+   }
+   for ( i = nvertices; i < ntotal; i++ ) {
+      proclist[i] = (int *) ML_allocate( sizeof( int ) );
+   }
+   for ( i = 0; i < Nneigh; i++ ) {
+      for ( j = 0; j < rcvleng[i]; j++ ) {
+         index = recvlist[i][j];
+         proclist[index][0] = neigh[i];
+      }
+   }
+   ML_free(templist);
+
+   /* record the Dirichlet boundary and count number of nonzeros */
+
+   bdry = (char *) ML_allocate(sizeof(char)*(ntotal + 1));
+   for (i = Nrows ; i < ntotal; i++) bdry[i] = 'F';
+   j = 0;
+   for (i = 0; i < Nrows; i++) {
+      bdry[i] = 'T';
+      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+                        &rowi_N, 0);
+      if (rowi_N > 1) bdry[i] = 'F';
+      j += rowi_N;
+   }
+
+   /* communicate the boundary information */
+
+   dtemp = (double *) ML_allocate(sizeof(double)*(ntotal+1));
+   for (i = nvertices; i < ntotal; i++) dtemp[i] = 0;
+   for (i = 0; i < nvertices; i++) {
+      if (bdry[i] == 'T') dtemp[i] = 1.;
+      else  dtemp[i] = 0.;
+   }
+   ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm,nvertices,comm,
+                    ML_OVERWRITE,NULL);
+   for (i = nvertices; i < ntotal; i++) {
+      if (dtemp[i] == 1.) bdry[i] = 'T';
+      else bdry[i] = 'F';
+   }
+   ML_free(dtemp);
+
+   /* make a csr version of nonzero pattern */
+   rowptr  = (int *) ML_allocate(sizeof(int)*(nvertices+1));
+   columns = (int *) ML_allocate(sizeof(int)*(j+1));
+   j = 0;
+   rowptr[0] = 0;
+   for (i = 0; i < Nrows; i++) {
+      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+                        &rowi_N, 0);
+      for (kk = 0; kk < rowi_N; kk++) columns[j++] = rowi_col[kk];
+      rowptr[i+1] = j;
+   }
+
+ (*aggr_index) = (int *) ML_allocate(sizeof(int)* ntotal*num_PDE_eqns);
+ printf("ntotal is %d\n",ntotal);
+ for (i = 0; i < ntotal; i++) (*aggr_index)[i] = -1;
+
+   vlist  = (int *) ML_allocate(sizeof(int)* nvertices);
+   state  = (char *) ML_allocate(sizeof(char)* ntotal);
+   vtype  = (char *) ML_allocate(sizeof(char)* ntotal);
+   for (i = 0; i < nvertices; i++)  vlist[i] =  i;
+   for (i = 0; i < ntotal;    i++)  state[i] = 'F';
+   for (i = 0; i < ntotal;    i++)  vtype[i] = 'x';
+
+   /* delete nodes that are just isolated Dirichlet points */
+
+   for (i = 0; i < nvertices ; i++) {
+     if (bdry[i] == 'T') state[i] = 'D'; 
+   }
+
+   aggr_count = ML_Aggregate_LabelVertices(nvertices, vlist,'x',state, vtype, 
+					   nvertices, rowptr, 
+					   columns, comm->ML_mypid,
+					   proclist, 
+                      Nneigh,sndbuf,neigh, sndleng,
+                      Nneigh,rcvbuf, neigh, rcvleng,
+                      recvlist, 1532, comm, *aggr_index);
+
+   /* free memory used for doing the MIS stuff */
+
+   for ( i = 0; i < ntotal; i++ ) ML_free(proclist[i]);
+   ML_free(proclist);
+   ML_free(vlist); ML_free(state); ML_free(vtype);
+   for (i = 0; i < Nneigh; i++) {
+      ML_free(recvlist[i]);
+      ML_free(sendlist[i]);
+      ML_free(rcvbuf[i]);
+      ML_free(sndbuf[i]);
+   }
+   ML_free(sndleng); ML_free(rcvleng);  ML_free(sndbuf);
+   ML_free(rcvbuf);  ML_free(recvlist); ML_free(sendlist);
+   ML_free(neigh);
+
+
+   ML_free(bdry); 
+   ML_free(columns); ML_free(rowptr);
+
+   ML_Operator_UnAmalgamateAndDropWeak(Amatrix, num_PDE_eqns, 0.0);
+
+   for (i = Nrows - 1; i >= 0; i-- ) {
+      for (j = num_PDE_eqns-1; j >= 0; j--) {
+	if ( (*aggr_index)[i] == -1) 
+	  (*aggr_index)[i*num_PDE_eqns+j] = -1;
+	else 
+	  (*aggr_index)[i*num_PDE_eqns+j] = num_PDE_eqns*(*aggr_index)[i] + j;
+      }
+   }
+   return(aggr_count*num_PDE_eqns);
+}
+
+/*************************************************************************
+Modify matrix by dropping small entries.
+ *************************************************************************/
+int ML_CSR_DropSmall(ML_Operator *Pe, double AbsoluteDrop,
+		     double RelativeRowDrop, double RelativeColDrop)
+
+{
+  /* Drop entry Pe(I,J) when all of the following conditions are true:
+   *
+   *     1.  | Pe(I,J) | < AbsoluteDrop
+   *     2.  | Pe(I,J) | < RelativeRowDrop * max | Pe(I,:) |
+   *     3.  | Pe(I,J) | < RelativeColDrop * max | Pe(:,J) |
+   *                Note: if RelativeColDrop != 0, we do not
+   *                      drop columns associated with ghost nodes.
+   */
+
+  struct ML_CSR_MSRdata *csr_data;
+  int            lower, nz_ptr, i, j, nn;
+  double         row_max = 0., dtemp;
+  double         *col_maxs = NULL;
+
+  if ( (Pe->getrow == NULL) ||  (Pe->getrow->func_ptr != CSR_getrow)) {
+     printf("ML_CSR_DropSmall can only be used with CSR matrices\n");
+     return -1;
+  }
+  csr_data = (struct ML_CSR_MSRdata *) Pe->data;
+
+  AbsoluteDrop    = ML_abs(AbsoluteDrop);
+  RelativeRowDrop = ML_abs(RelativeRowDrop);
+  RelativeColDrop = ML_abs(RelativeColDrop);
+
+  if (RelativeColDrop != 0.0) {
+    nn = Pe->invec_leng + ML_CommInfoOP_Compute_TotalRcvLength(
+				       Pe->getrow->pre_comm);
+    col_maxs = (double *) ML_allocate(sizeof(double)*(nn+1));
+    for (i = 0; i < nn; i++) col_maxs[i] = 0.;
+    for (i = 0; i < Pe->outvec_leng; i++) {
+      for (j = csr_data->rowptr[i]; j < csr_data->rowptr[i+1]; j++) {
+	nn = csr_data->columns[j];
+	if (ML_abs(csr_data->values[j]) > col_maxs[nn] )
+	  col_maxs[nn] = ML_abs(csr_data->values[j]);
+      }
+    }
+    for (i = 0; i < nn; i++) col_maxs[nn] *= RelativeColDrop; 
+    for (i = Pe->invec_leng ; i < nn; i++) col_maxs[nn] = 0.;
+  }
+
+  lower = csr_data->rowptr[0];
+  nz_ptr = 0;
+  for (i = 0; i < Pe->outvec_leng; i++) {
+    if (RelativeRowDrop != 0.0) {
+      row_max = 0.;
+      for (j = lower; j < csr_data->rowptr[i+1]; j++) {
+	if (ML_abs(csr_data->values[j]) > row_max) 
+	  row_max = ML_abs(csr_data->values[j]);
+      }
+      if (row_max > 1.) row_max = 1.;
+                  /* Ugh: For now ml_agg_min_energy seems   */
+                  /* to work better with the above line in. */
+      row_max *= RelativeRowDrop;
+      if (AbsoluteDrop < row_max) row_max = AbsoluteDrop;
+    }
+    else row_max = AbsoluteDrop;
+
+    if (RelativeColDrop == 0.) {
+      for (j = lower; j < csr_data->rowptr[i+1]; j++) {
+	dtemp = ML_abs(csr_data->values[j]);
+	if  (dtemp > row_max) {
+	  csr_data->values[nz_ptr] = csr_data->values[j];
+	  csr_data->columns[nz_ptr] = csr_data->columns[j];
+	  nz_ptr++;
+	}
+      }
+    }
+    else {
+      for (j = lower; j < csr_data->rowptr[i+1]; j++) {
+	dtemp = ML_abs(csr_data->values[j]);
+	if  ( (dtemp > row_max) || (dtemp > col_maxs[csr_data->columns[j]])) {
+	  csr_data->values[nz_ptr] = csr_data->values[j];
+	  csr_data->columns[nz_ptr] = csr_data->columns[j];
+	  nz_ptr++;
+	}
+      }
+    }
+    lower = csr_data->rowptr[i+1];
+    csr_data->rowptr[i+1] = nz_ptr;
+  }
+  Pe->N_nonzeros = nz_ptr;
+
+  if (col_maxs != NULL) ML_free(col_maxs);
+  return 0;
+
+}
