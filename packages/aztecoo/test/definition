@@ -28,7 +28,7 @@
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK, AztecOOPyExamples) {
+(FRAMEWORK, INSTALL, AztecOOPyExamples) {
     DIRS = ../python/example;
     COMM = SERIAL, MPI(1-4);
 }

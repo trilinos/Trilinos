@@ -42,12 +42,12 @@
     COMM = SERIAL;
 }
 
-(FRAMEWORK, EpetraPyTests) {
+(FRAMEWORK, INSTALL, EpetraPyTests) {
       DIRS = ../python/test;
       COMM = SERIAL, MPI(1-4);
 }
 
-(FRAMEWORK, EpetraPyExamples) {
+(FRAMEWORK, INSTALL, EpetraPyExamples) {
       DIRS = ../python/example;
       COMM = SERIAL, MPI(1-4);
 }

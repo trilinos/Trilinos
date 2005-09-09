@@ -2,13 +2,13 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK) {
+(FRAMEWORK, INSTALL) {
     DIRS = Hello_Test, Jambo_Test, test1;
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK,New_PackagePyTests) {
+(FRAMEWORK, INSTALL, New_PackagePyTests) {
     DIRS = ../python/test;
     COMM = SERIAL, MPI(1-4);
 }
