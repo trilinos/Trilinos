@@ -39,7 +39,7 @@
 }
 
 # NOX Python examples
-(FRAMEWORK,INSTALL,NOXPyExamples) {
+(FRAMEWORK,NOXPyExamples) {
     DIRS = ../python/example-epetra;
     COMM = SERIAL, MPI(1-4);
 }
@@ -59,8 +59,7 @@
 # LOCA LAPACK tests
 (FRAMEWORK,INSTALL) {
     DIRS = lapack/LOCA_UnitTests,
-           lapack/LOCA_ChanProblem,
-           lapack/LOCA_python;
+           lapack/LOCA_ChanProblem;
     EXIT-STATUS = STRING-COMPARISON(All tests passed);
     ARGS = -v;
     COMM = SERIAL;
