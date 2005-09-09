@@ -57,10 +57,10 @@ include $(top_builddir)/Makefile.export.amesos
 
 if USING_GNUMAKE
 EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_EXTRA_INCLUDES) $(AMESOS_INCLUDES))
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_EXTRA_LIBS) $(AMESOS_LIBS))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl  $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS))
 else
 EXPORT_INCLUDES = $(AMESOS_EXTRA_INCLUDES) $(AMESOS_INCLUDES)
-EXPORT_LIBS = $(AMESOS_EXTRA_LIBS) $(AMESOS_LIBS)
+EXPORT_LIBS = $(AMESOS_LIBS)  $(AMESOS_EXTRA_LIBS)
 endif
 
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
@@ -68,4 +68,5 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
 
 # This is already added part of AMESOS_LIBS and therefore automake does not need to add this again!
-LIBS =
+#  However, this prevents Atlantis from building, so I have commented it out for now
+# LIBS =

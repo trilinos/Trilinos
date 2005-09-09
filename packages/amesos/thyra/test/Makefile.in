@@ -116,7 +116,7 @@ test_amesos_thyra_driver_OBJECTS =  \
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(AMESOS_LIBS))
+@USING_GNUMAKE_TRUE@	$(AMESOS_EXTRA_LIBS))
 am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
 am_test_single_amesos_thyra_solver_driver_OBJECTS =  \
 	test_single_amesos_thyra_solver_driver.$(OBJEXT) \
@@ -234,9 +234,7 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
-
-# This is already added part of AMESOS_LIBS and therefore automake does not need to add this again!
-LIBS = 
+LIBS = @LIBS@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -351,8 +349,8 @@ common_sources = $(srcdir)/test_single_amesos_thyra_solver.cpp $(srcdir)/EpetraE
 common_dependencies = $(top_builddir)/thyra/src/libamesosthyra.a $(top_builddir)/src/libamesos.a
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(AMESOS_EXTRA_INCLUDES) $(AMESOS_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_EXTRA_INCLUDES) $(AMESOS_INCLUDES))
-@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(AMESOS_EXTRA_LIBS) $(AMESOS_LIBS)
-@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_EXTRA_LIBS) $(AMESOS_LIBS))
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(AMESOS_LIBS)  $(AMESOS_EXTRA_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl  $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
 all: all-am
@@ -653,6 +651,10 @@ uninstall-am: uninstall-info-am
 
 
 include $(top_builddir)/Makefile.export.amesos
+
+# This is already added part of AMESOS_LIBS and therefore automake does not need to add this again!
+#  However, this prevents Atlantis from building, so I have commented it out for now
+# LIBS =
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
