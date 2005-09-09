@@ -103,7 +103,11 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    int totalnnz = 0;
    static double multiplier = 0.20;
 #endif
-
+#ifdef ML_AGGR_INAGGR
+   char fname[80];
+   FILE *fp;
+   static int level_count = 0;
+#endif
    /* ============================================================= */
    /* get the machine information and matrix references             */
    /* ============================================================= */
@@ -527,6 +531,34 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Cmatrix,amal_mat_indx,
 				       bdry_array, &aggr_count, &aggr_index, true_bdry);
+#ifdef ML_AGGR_INAGGR
+
+   for ( i = 0; i < nvblocks; i++ ) aggr_index[i] = -1;
+   sprintf(fname,"agg0_%d",level_count); level_count++;
+   fp = fopen(fname,"r");
+   if (fp == NULL) {
+      printf("Cannot open aggregate file %s for reading.\n",fname);
+      exit(1);
+   }
+   else {
+      printf("Reading aggregate for level %d from file %s\n",
+             level_count-1,fname);
+      fflush(stdout);
+   }
+   aggr_count = 0;
+   for (i = 0; i <nvblocks; i++) {
+     if ( fscanf(fp,"%d%d",&j,&k) != 2) break;
+      aggr_index[j/5] = k;
+      if (k >= aggr_count) aggr_count = k+1;
+      fscanf(fp,"%d%d",&j,&k);
+      fscanf(fp,"%d%d",&j,&k);
+      fscanf(fp,"%d%d",&j,&k);
+      fscanf(fp,"%d%d",&j,&k);
+   }
+   fclose(fp);
+   printf("Read in %d aggregates\n\n",aggr_count);
+
+#endif
    }
    ML_Operator_Destroy(&Cmatrix);
    ML_free(csr_data);
