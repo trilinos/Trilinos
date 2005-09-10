@@ -28,106 +28,110 @@
 # ************************************************************************
 # @header
 
+"""
+Usage is: ./exSolvers.py <solver-type>
+    where <solver-type> can be:
+        - Amesos_Lapack (DEFAULT)
+        - Amesos_Klu
+        - Amesos_Umfpack
+        - Amesos_Pardiso
+        - Amesos_Taucs
+        - Amesos_Superlu
+        - Amesos_Superludist
+        - Amesos_Dscpack
+        - Amesos_Mumps
+"""
+
 # System import
 import sys
 
 # PyTrilinos imports
 try:
   import setpath
-  import Epetra, Amesos
 except ImportError:
   from PyTrilinos import Epetra, Amesos
   print "Using system-installed Epetra, Amesos"
-
-def PrintHelp():
-  print ' '
-  print 'Usage is: ./exSolvers.py <solver-type>'
-  print 'where <solver-type> can be:'
-  print '- Amesos_Lapack (DEFAULT)'
-  print '- Amesos_Klu'
-  print '- Amesos_Umfpack'
-  print '- Amesos_Pardiso'
-  print '- Amesos_Taucs'
-  print '- Amesos_Superlu'
-  print '- Amesos_Superludist'
-  print '- Amesos_Dscpack'
-  print '- Amesos_Mumps'
+else:
+  import Epetra
+  import Amesos
 
 def main():
-  Comm = Epetra.PyComm();
+  Comm = Epetra.PyComm()
 
   args = sys.argv[1:]
   if len(args) == 0:
     Type = "Amesos_Lapack"
   else:
-    Type = args[0];
+    Type = args[0]
 
-  NumGlobalRows = 10;
-  Map = Epetra.Map(NumGlobalRows, 0, Comm);
-  LHS_exact = Epetra.MultiVector(Map, 1);
-  LHS = Epetra.MultiVector(Map, 1);
-  RHS = Epetra.MultiVector(Map, 1);
-  Matrix = Epetra.CrsMatrix(Epetra.Copy, Map, 0);
-  Indices = Epetra.IntSerialDenseVector(3);
-  Values = Epetra.SerialDenseVector(3);
-  Values[0] = 2.0; Values[1] = -1.0; Values[2] = -1.0;
+  NumGlobalRows = 10
+  Map = Epetra.Map(NumGlobalRows, 0, Comm)
+  LHS_exact = Epetra.MultiVector(Map, 1)
+  LHS = Epetra.MultiVector(Map, 1)
+  RHS = Epetra.MultiVector(Map, 1)
+  Matrix = Epetra.CrsMatrix(Epetra.Copy, Map, 0)
+  Indices = Epetra.IntSerialDenseVector(3)
+  Values = Epetra.SerialDenseVector(3)
+  Values[0] =  2.0
+  Values[1] = -1.0
+  Values[2] = -1.0
 
   NumLocalRows = Map.NumMyElements()
 
   # Builds the matrix (1D Laplacian)
   for ii in range(0, NumLocalRows):
     i = Map.GID(ii)
-    Indices[0] = i;
+    Indices[0] = i
     if i == 0:
-      NumEntries = 2;
-      Indices[1] = i + 1;
+      NumEntries = 2
+      Indices[1] = i + 1
     elif i == NumGlobalRows - 1:
-      NumEntries = 2;
-      Indices[1] = i - 1;
+      NumEntries = 2
+      Indices[1] = i - 1
     else:
-      NumEntries = 3;
-      Indices[1] = i - 1;
-      Indices[2] = i + 1;
-    Matrix.InsertGlobalValues(i, NumEntries, Values, Indices);
-  ierr = Matrix.FillComplete();
+      NumEntries = 3
+      Indices[1] = i - 1
+      Indices[2] = i + 1
+    Matrix.InsertGlobalValues(i, NumEntries, Values, Indices)
+  ierr = Matrix.FillComplete()
 
-  LHS_exact.Random();
-  Matrix.Multiply(False, LHS_exact, RHS);
-  LHS.PutScalar(1.0);
+  LHS_exact.Random()
+  Matrix.Multiply(False, LHS_exact, RHS)
+  LHS.PutScalar(1.0)
 
-  Problem = Epetra.LinearProblem(Matrix, LHS, RHS);
+  Problem = Epetra.LinearProblem(Matrix, LHS, RHS)
 
   if Type == "Amesos_Lapack":
-    Solver = Amesos.Lapack(Problem);
+    Solver = Amesos.Lapack(Problem)
   elif Type == "Amesos_Klu":
-    Solver = Amesos.Klu(Problem);
+    Solver = Amesos.Klu(Problem)
   elif Type == "Amesos_Umfpack":
-    Solver = Amesos.Umfpack(Problem);
+    Solver = Amesos.Umfpack(Problem)
   elif Type == "Amesos_Pardiso":
-    Solver = Amesos.Umfpack(Problem);
+    Solver = Amesos.Umfpack(Problem)
   elif Type == "Amesos_Taucs":
-    Solver = Amesos.Umfpack(Problem);
+    Solver = Amesos.Umfpack(Problem)
   elif Type == "Amesos_Superlu":
-    Solver = Amesos.Superlu(Problem);
+    Solver = Amesos.Superlu(Problem)
   elif Type == "Amesos_Superludist":
-    Solver = Amesos.Superludist(Problem);
+    Solver = Amesos.Superludist(Problem)
   elif Type == "Amesos_Dscpack":
-    Solver = Amesos.Dscpack(Problem);
+    Solver = Amesos.Dscpack(Problem)
   elif Type == "Amesos_Mumps":
-    Solver = Amesos.Mumps(Problem);
+    Solver = Amesos.Mumps(Problem)
   else:
     print 'Selected solver (%s) not available' % Type
-    PrintHelp();
-    sys.exit(-2);
+    print __doc__
+    sys.exit(-2)
   
   AmesosList = {
     "PrintStatus": True,
     "PrintTiming": True
-  };
-  Solver.SetParameters(AmesosList);
-  Solver.SymbolicFactorization();
-  Solver.NumericFactorization();
-  ierr = Solver.Solve();
+  }
+  Solver.SetParameters(AmesosList)
+  Solver.SymbolicFactorization()
+  Solver.NumericFactorization()
+  ierr = Solver.Solve()
   print "Solver.Solve() return code = ", ierr
   del Solver
 
@@ -137,4 +141,4 @@ def main():
 # line.  This also allows, for example, this file to be imported from a python
 # debugger and main() called from there.
 if __name__ == "__main__":
-    main();
+    main()
