@@ -40,10 +40,13 @@
 # PyTrilinos imports
 try:
   import setpath
-  import Epetra, Amesos
 except ImportError:
-  from PyTrilinos import Epetra, Amesos
+  from PyTrilinos import Epetra
+  from PyTrilinos import Amesos
   print "Using system-installed Epetra, Amesos"
+else:
+  import Epetra
+  import Amesos
 
 # dimension of the problem
 NumGlobalRows = 10

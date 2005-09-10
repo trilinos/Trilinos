@@ -41,7 +41,7 @@ from MakefileVariables import *
 
 # Build the makeVars dictionary by processing relevant Makefiles
 makeVars = { }
-makeVars.update(processMakefile(os.path.join("Makefile")))
+makeVars.update(processMakefile("Makefile"))
 
 # Import the variable names and values into the global namespace.  This is
 # crucual: every variable name/value pair obtained by processing the specified
@@ -65,7 +65,7 @@ extra_link_args = [      ]
 # remove any duplicate entries
 options = AMESOS_PYTHON_INCLUDES.split()     + \
           AMESOS_PYTHON_LIBS.split()
-uniquifyList(options)
+uniquifyList(options,reverse=True)
 
 # Distribute the individual options to the appropriate Extension class arguments
 for option in options:
@@ -78,8 +78,16 @@ for option in options:
     else:
         extra_link_args.append(option)
 
+# Alter the order of the libraries to ensure proper linking.  This seems to be
+# needed when thyra is enabled and Trilinos is configured without
+# --with-gnumake.
+teuchos = "teuchos"
+libraries.remove(teuchos)
+index = libraries.index("amesos")
+libraries.insert(index+1,teuchos)
+
 # Define the strings that refer to the required local source files
-amesosWrap         = "Amesos_wrap.cpp"
+amesosWrap = "Amesos_wrap.cpp"
 
 # An additional include directory
 include_dirs.append(os.path.join(top_srcdir,"..","epetra","python","src"))
