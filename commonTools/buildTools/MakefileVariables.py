@@ -17,6 +17,31 @@ Python usage: import MakefileVariables
 
 Available functions:
 
+    processMakefile(string) -> dict
+        Given the name of a Makefile, parse the file for make variable names and
+        values, make substitutions wherever '$(...)' is found in the values, and 
+        then uniquify the resulting values.
+
+    parseMakefile(string) -> dict
+        Open filename and obtain make variable names and their raw (unevaluated)
+        values.
+
+    evaluate(string,dict) -> string
+        Substitute variable values in dict for $(...) in string.
+
+    makeSubstitutions(dict) -> None
+        Interpret dict as varName/value pairs; wherever '$(...)' appears in
+        values, make appropriate substitutions.
+
+    uniqiufyList([string1, string2, ...], bool=False) -> None
+        Remove duplicate strings from the list.
+
+    uniquifyString(string, bool=False) -> string
+        Remove duplicate substrings from the string.
+
+    uniquifyDict(dict, bool=False) -> None
+        Uniquify each value of the given dictionary.
+
     findBlock(string,int=0) -> (int,int)
         Search string to find an open delimeter and return its index as the
         first int.  Search for the corresponding closing delimeter and return
@@ -29,37 +54,13 @@ Available functions:
     isNotBlankLine(string) -> bool
         Return True if string is not blank.
 
-    parseMakefile(string) -> dict
-        Open filename and obtain make variable names and their raw values.
-
-    evaluate(string,dict) -> string
-        Substitute variable values in dict for $(...) in string.
-
-    makeSubstitutions(dict) -> None
-        Interpret dict as varName/value pairs; wherever '$(...)' appears in
-        values, make appropriate substitutions.
-
     specialNormPath(string) -> string
         Normalize a path, even if it starts with -I, -L, etc.
-
-    uniqiufyList([string1, string2, ...]) -> None
-        Remove duplicate strings from the list.
-
-    uniquifyString(string) -> string
-        Remove duplicate substrings from the string.
-
-    uniquifyDict(dict) -> None
-        Uniquify each value of the given dictionary.
-
-    processMakefile(string) -> dict
-        Given the name of a Makefile, parse the file for make variable names and
-        values, make substitutions wherever '$(...)' is found in the values, and 
-        then uniquify the resulting values.
 """
 
-__version__ = "1.1"
+__version__ = "1.2"
 __author__  = "Bill Spotz"
-__date__    = "Sep 1 2005"
+__date__    = "Sep 10 2005"
 
 # Import python modules for command-line options, the operating system, regular
 # expressions, and system functions
@@ -286,33 +287,37 @@ def specialNormPath(path):
 
 #############################################################################
 
-def uniquifyList(list):
-    """Remove duplicate items from a list, preserving original order."""
+def uniquifyList(list,reverse=False):
+    """Remove duplicate items from a list, preserving the forward order
+    (default) or reverse order if the reverse flag is set."""
+    if reverse: list.reverse()
     i = 1
     while i < len(list):
         if list[i] in list[:i]:
             del list[i]
         else:
             i += 1
+    if reverse: list.reverse()
 
 #############################################################################
 
-def uniquifyString(s, delim=' '):
+def uniquifyString(s, delim=' ', reverse=False):
     """Split a string using the specified delimeter, apply specialNormPath to
-    each string, uniquify the resulting list, and return a string that joins the
-    unique list with the same delimeter."""
+    each string, uniquify the resulting list (passing along the optional reverse
+    flag), and return a string that joins the unique list with the same
+    delimeter."""
     list = s.split(delim)
     list = [specialNormPath(path.strip()) for path in list]
-    uniquifyList(list)
+    uniquifyList(list,reverse)
     return delim.join(list)
 
 #############################################################################
 
-def uniquifyDict(dict):
+def uniquifyDict(dict,reverse=False):
     """Loop over each item in a dictionary of variable names and string values
-    and uniquify the string."""
+    and uniquify the string, passing along the optional reverse flag."""
     for key in dict:
-        dict[key] = uniquifyString(dict[key])
+        dict[key] = uniquifyString(dict[key],reverse=reverse)
 
 #############################################################################
 
