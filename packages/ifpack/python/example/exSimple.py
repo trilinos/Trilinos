@@ -1,10 +1,14 @@
 #! /usr/bin/env python
 try:
   import setpath
-  import Epetra, Triutils, AztecOO, IFPACK
 except:
   from PyTrilinos import Epetra, Triutils, AztecOO, IFPACK
   print "Using system-installed Epetra, Triutils, AztecOO, IFPACK"
+else:
+  import Epetra
+  import Triutils
+  import AztecOO
+  import IFPACK
 
 import sys
 

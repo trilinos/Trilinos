@@ -16,9 +16,12 @@
 
 try:
   import setpath
-  import Epetra, AztecOO
 except:
   from PyTrilinos import Epetra, AztecOO
+  print "Using installed versions of Epetra, AztecOO"
+else:
+  import Epetra
+  import AztecOO
 
 class MyOperator(Epetra.PyOperator):
   def __init__(self, Map):

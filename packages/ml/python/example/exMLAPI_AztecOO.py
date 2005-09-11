@@ -17,9 +17,13 @@
 
 try:
   import setpath
-  import Epetra, ML, AztecOO
 except:
   from PyTrilinos import Epetra, ML, AztecOO
+  print "Using installed versions of Epetra, ML, AztecOO"
+else:
+  import Epetra
+  import ML
+  import AztecOO
 
 class MultiLevel(ML.BaseOperator):
   def Compute(self, A, MaxLevels):
