@@ -275,18 +275,18 @@ void test(Epetra_Comm& comm, Epetra_Map& map, Epetra_CrsMatrix& A, Epetra_Vector
 	if(smallProblem) // "small" problems are usually used for diagnostics, so only do it once
 		niters = 1;
 	
-	Epetra_Flops counter;
 	Epetra_Vector bcomp_e(map);
-	Ae.SetFlopCounter(counter);
+	Epetra_Flops flops_e;
+	Ae.SetFlopCounter(flops_e);
 	startTime = timer.ElapsedTime();
 	for(int i = 0; i < niters; i++) 
 		Ae.Multiply(false, xexact, bcomp_e);
 	double epetraMatvecTime = timer.ElapsedTime() - startTime;
 	double epetraNumFlops = Ae.Flops(); // Total number of Epetra FLOPS in Multiplies
 	
-	Teuchos::Flops flops;
 	Tpetra::Vector<int, double> bcomp_t(vectorspace);
-	At.setFlopCounter(flops);
+	Teuchos::Flops flops_t;
+	At.setFlopCounter(flops_t);
 	startTime = timer.ElapsedTime();
 	for(int i = 0; i < niters; i++) 
 		At.apply(xexact_t, bcomp_t); // At * xexact_t = bcomp_t
@@ -297,7 +297,8 @@ void test(Epetra_Comm& comm, Epetra_Map& map, Epetra_CrsMatrix& A, Epetra_Vector
 	// output results
 	// ------------------------------------------------------------------
 	
-	outputResults(verbose, niters, name, epetraInsertTime, epetraFillCompleteTime, epetraMatvecTime, epetraNumFlops,
+	outputResults(verbose, niters, name, 
+				  epetraInsertTime, epetraFillCompleteTime, epetraMatvecTime, epetraNumFlops,
 				  tpetraInsertTime, tpetraFillCompleteTime, tpetraMatvecTime, tpetraNumFlops);
 	
 	if(smallProblem) { // ** TODO ** This needs to be massaged for parallel output
@@ -379,24 +380,29 @@ void outputResults(bool const verbose, int niters, std::string const name,
 	commV.gatherAll(&tpetraInsertTime, &tpetraInsertTime_g[0], 1);
 	commV.gatherAll(&tpetraFillCompleteTime, &tpetraFillCompleteTime_g[0], 1);
 	commV.gatherAll(&tpetraMatvecTime, &tpetraMatvecTime_g[0], 1);
-	commV.gatherAll(&tpetraNumFlops, &tpetraNumFlops_g[0], 1);
+	
+	// *** TEMPORARY HACK ***
+	//commV.gatherAll(&tpetraNumFlops, &tpetraNumFlops_g[0], 1);
+	commV.sumAll(&tpetraNumFlops, &tpetraNumFlops_g[0], 1);
+	tpetraNumFlops_g.assign(tpetraNumFlops_g.size(), tpetraNumFlops_g[0]);
 	
 	if(verbose) {
 		cout << "\n*************************************************************************************************" << endl;
-		cout << "Package name, Matrix Name, PID, Insert Time, FillComplete Time, # Matvecs, Matvec Time, # Flops, MFLOPS" << endl;
+		cout << "Package name, Matrix Name, PID, Insert Time, FillComplete Time, Matvec Time, MFLOP Rate" << endl;
 		cout << "*************************************************************************************************" << endl;
 		for(int i = 0; i < numProcs; i++) {
 			cout << "Epetra     " << name << setw(5) << i 
 				 << setw(15) << epetraInsertTime_g[i] << setw(15) << epetraFillCompleteTime_g[i] 
-				 << setw(15) << niters_g[i] << setw(15) << epetraMatvecTime_g[i]
-				 << setw(15) << epetraNumFlops_g[i] 
-				 << setw(15) << (epetraNumFlops_g[i] / epetraMatvecTime_g[i] / 1000000.0) << endl;
+				 << setw(15) << epetraMatvecTime_g[i] << setw(15) << (epetraNumFlops_g[i] / epetraMatvecTime_g[i] / 1000000.0) 
+				 << endl;
 			cout << "Tpetra     " << name << setw(5) << i 
 				 << setw(15) << tpetraInsertTime_g[i] << setw(15) << tpetraFillCompleteTime_g[i] 
-				 << setw(15) << niters_g[i] << setw(15) << tpetraMatvecTime_g[i]
-				 << setw(15) << tpetraNumFlops_g[i] 
-				 << setw(15) << (tpetraNumFlops_g[i] / tpetraMatvecTime_g[i] / 1000000.0) << endl;
+				 << setw(15) << tpetraMatvecTime_g[i] << setw(15) << (tpetraNumFlops_g[i] / tpetraMatvecTime_g[i] / 1000000.0) 
+				 << endl;
 		}
+		cout << "\n# Matvecs (niters) = " << niters_g << endl;
+		cout << "# Flops (Epetra) = " << epetraNumFlops_g << endl;
+		cout << "# Flops (Tpetra) = " << tpetraNumFlops_g << endl;
 	}
 	
 }
