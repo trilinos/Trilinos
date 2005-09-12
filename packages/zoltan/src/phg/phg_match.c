@@ -98,12 +98,13 @@ char  *yo = "Zoltan_PHG_Matching";
   /* Do the matching */
   if (hgp->matching) {
     /* first match isolated verticed */
-    Zoltan_PHG_match_isolated(zz, hg, match, 0);
+    /* EBEB Temporarily disable isolated vertex matching! */
+    /* Zoltan_PHG_match_isolated(zz, hg, match, 0); */
     /* now do the real matching */
     ierr = hgp->matching (zz, hg, match, hgp);
     /* clean up by matching "isolated" vertices of degree 1 */
     /* only useful in special cases (e.g. near-diagonal matrices) */
-    Zoltan_PHG_match_isolated(zz, hg, match, 1);
+    /* Zoltan_PHG_match_isolated(zz, hg, match, 1); */
   }
 
 End: 
@@ -498,17 +499,31 @@ static int pmatching_ipm (ZZ *zz,
     
       /* fill send buff as list of <gno, gno's edge count, list of edge lno's> */
       s = send;
+      n = 0;
       for (i = 0; i < sendcnt; i++)   {
         lno = select[i];
-        *s++ = VTX_LNO_TO_GNO (hg, lno);                                /* gno */
-        *s++ = hg->vindex[lno+1] - hg->vindex[lno];                   /* count */
-        for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
-          *s++ = hg->vedge[j];                                  /* lno of edge */
+        /* Optimization: Only send data for vertices that are non-empty locally */
+        if ((hg->vindex[lno+1] - hg->vindex[lno]) ||
+            /* EBEB The test below should not be necessary! */
+            ((gno % hgc->nProc_y)==hgc->myProc_y) ) { /* row that accumulates i.p. */
+          n++;  /* non-empty vertex */
+          *s++ = VTX_LNO_TO_GNO (hg, lno);                                /* gno */
+          *s++ = hg->vindex[lno+1] - hg->vindex[lno];                   /* count */
+          for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
+            *s++ = hg->vedge[j];                                  /* lno of edge */
+        }
       }
       sendsize = s - send;
+/*
+      uprintf(hgc, "Debug: sendsize=%d, n=%d\n", sendsize, n);
+      uprintf(hgc, "Debug: %d out of %d candidates nonempty (%g%%)\n",
+            n, sendcnt, 100.*n/sendcnt);
+*/
     
       /* determine actual global number of candidates this round */
-      MPI_Allreduce (&sendcnt, &nTotal, 1, MPI_INT, MPI_SUM, hgc->row_comm);
+      /* n is actual number of local non-empty vertices */
+      /* nTotal is the global number of candidate vertices in this row */
+      MPI_Allreduce (&n, &nTotal, 1, MPI_INT, MPI_SUM, hgc->row_comm);
       if (nTotal == 0) {
         if (hgp->use_timers > 3)
            ZOLTAN_TIMER_STOP (zz->ZTime, timer[1], hg->comm->Communicator);
@@ -616,6 +631,15 @@ static int pmatching_ipm (ZZ *zz,
 
         /* HEADER_COUNT (row, col, gno, count of <lno, psum> pairs) */                    
         msgsize = HEADER_COUNT + 2 * count;
+
+        /* EBEB Avoid buffer overflow by realloc. 
+                Temp hack for testing. Revisit this!  
+        */
+        if (msgsize+sendsize >= nSend){
+          int offset=s-send;
+          MACRO_REALLOC (2*(msgsize+nSend), nSend, send);
+          s = send+offset;    
+        }
         
         /* iff necessary, resize send buffer to fit at least first message */
         if (sendcnt == 0 && (msgsize > nSend))  {
@@ -651,8 +675,12 @@ static int pmatching_ipm (ZZ *zz,
       MACRO_TIMER_START (3, "Matching kstart B");
      
       /* synchronize all rows in this column to next kstart value */
+      /* EBEB Skip synchronization. */
       old_kstart = kstart;      
+      kstart = k;
+      /* 
       MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
+      */
             
       /* Send inner product data in send buffer to appropriate rows */
       err = communication_by_plan (zz, sendcnt, dest, size, 1, send, &reccnt, 
