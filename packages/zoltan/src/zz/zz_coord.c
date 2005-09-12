@@ -56,6 +56,8 @@ static void tred2(double (*a)[3], int n, double *d, double *e);
 static void projected_distances(ZZ *zz, double *coords, int num_obj,
         double *cm, double (*evecs)[3], double *d, int dim, int aa, int *order);
 static void order_decreasing(double *d, int *order);
+static void transform_coordinates(double *coords, int num_obj, int d,
+                                  ZZ_Transform *tr);
 
 #define NEAR_ONE(x) ((x >= .9999) && (x <= 1.0001))
 
@@ -78,19 +80,15 @@ int Zoltan_Get_Coordinates(
                           NULL to query functions when NUM_LID_ENTRIES == 0. */
   double cm[3], dist[3];
   double evecs[3][3];
-  double M[3][3], im[3][3];
-  double (*sav)[3];
+  double im[3][3];
   double skip_ratio;
-  double x, y, *cold, flat;
+  double flat, x;
   int order[3], axis_order[3];
-  int keep_cuts, skip_dimensions, d, axis_aligned;
-  int coord1, coord2;
+  int skip_dimensions, d, axis_aligned;
   int target_dim;
-  RCB_STRUCT *rcb;
-  RIB_STRUCT *rib;
-  HSFC_Data *hsfc;
   int ierr = ZOLTAN_OK;
   char msg[256];
+  ZZ_Transform *tran;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -169,26 +167,73 @@ int Zoltan_Get_Coordinates(
    * 1D problem.
    *
    * Return these points to the partitioning algorithm, in effect partitioning
-   * in only the 2 (or 1) significant dimensions.  Save the transformation 
-   * matrix if KEEP_CUTS is true.
+   * in only the 2 (or 1) significant dimensions.  
    */
 
   if (((*num_dim == 3) || (*num_dim == 2)) && 
       ((zz->LB.Method==RCB) || (zz->LB.Method==RIB) || (zz->LB.Method==HSFC))){
 
-    Zoltan_Bind_Param(Skip_Dim_Params, "KEEP_CUTS", (void *)&keep_cuts);
-    Zoltan_Bind_Param(Skip_Dim_Params, "SKIP_DIMENSIONS", (void *)&skip_dimensions);
-    Zoltan_Bind_Param(Skip_Dim_Params, "SKIP_RATIO", (void *)&skip_ratio);
+    if (zz->LB.Method == RCB){
+      tran = &(((RCB_STRUCT *)(zz->LB.Data_Structure))->Tran);
+    } 
+    else if (zz->LB.Method == RIB){
+      tran = &(((RIB_STRUCT *)(zz->LB.Data_Structure))->Tran);
+    }
+    else{
+      tran = &(((HSFC_Data*)(zz->LB.Data_Structure))->tran);
+    }
 
-    keep_cuts = 0;
-    skip_dimensions = 0;
-    skip_ratio = 10.0;
-    Zoltan_Assign_Param_Vals(zz->Params, Skip_Dim_Params, zz->Debug_Level,
-      zz->Proc, zz->Debug_Proc);
+   d = *num_dim;
 
-    if (skip_dimensions){
+   if (tran->Target_Dim >= 0){
+     /*
+      * The degeneracy transformation was computed on a previous
+      * call to the load balancing function.  If it was determined
+      * that the geometry was not degenerate (Target_Dim == 0)
+      * then we assume it is still not degenerate, and do nothing.
+      *
+      * If it was determined to be degenerate, we apply the same
+      * transformation we applied before, even though the geometry
+      * may have changed.
+      * TODO: Is this the best course of action?  
+      */
+     if (tran->Target_Dim > 0){
+       transform_coordinates(*coords, num_obj, d, tran);
+     }
+    }
+    else{
+      Zoltan_Bind_Param(Skip_Dim_Params, "KEEP_CUTS", (void *)&i);
+      Zoltan_Bind_Param(Skip_Dim_Params, "SKIP_DIMENSIONS", 
+                       (void *)&skip_dimensions);
+      Zoltan_Bind_Param(Skip_Dim_Params, "SKIP_RATIO", (void *)&skip_ratio);
 
-      d = *num_dim;
+      skip_dimensions = 0;
+      skip_ratio = 10.0;
+
+      Zoltan_Assign_Param_Vals(zz->Params, Skip_Dim_Params, zz->Debug_Level,
+                               zz->Proc, zz->Debug_Proc);
+
+      if (skip_dimensions == 0){
+        tran->Target_Dim = 0;  /* flag do NOT transform geometry */
+      }
+    }
+
+    if (tran->Target_Dim < 0){
+
+      if (skip_ratio <= 1){
+        if (zz->Proc == 0){
+          ZOLTAN_PRINT_WARN(0, yo, "SKIP_RATIO <= 1, setting it to 10.0");
+        }
+        skip_ratio = 10.0;
+      }
+
+      tran->Target_Dim = 0;
+      for (i=0; i< 3; i++){
+        for (j=0; j< 3; j++){
+          tran->Transformation[i][j] = 0.0;
+        }
+        tran->Permutation[i] = -1;
+      }
 
       /*
        * Get the center of mass and inertial matrix of coordinates.  Ignore
@@ -210,9 +255,10 @@ int Zoltan_Get_Coordinates(
       rc = eigenvectors(im, evecs, d);
 
       if (rc){
-        /* eigenvector calculation failed */
-        skip_dimensions = 0;
-        goto End;
+        if (zz->Proc == 0){
+          ZOLTAN_PRINT_WARN(0, yo, "SKIP_DIMENSIONS calculation failed");
+        }
+        goto End; 
       }
 
       /*
@@ -246,7 +292,6 @@ int Zoltan_Get_Coordinates(
       if ((axis_order[0] >= 0) && (axis_order[1] >= 0) && (axis_order[2] >= 0)){
         axis_aligned = 1;
       }
-
 
       /*
        * Calculate the extent of the geometry along the three lines defined
@@ -296,8 +341,10 @@ int Zoltan_Get_Coordinates(
         }
       }
 
-      if ((target_dim == 1) || (target_dim ==2)){
- 
+      if ((target_dim == 1) || (target_dim ==2)){ 
+        /*
+         * Yes, geometry is degenerate
+         */
         if ((zz->Debug_Level > 0) && (zz->Proc == 0)){
           if (d == 2){
             sprintf(msg,
@@ -315,38 +362,15 @@ int Zoltan_Get_Coordinates(
           ZOLTAN_PRINT_INFO(zz->Proc, yo, msg);
         }
 
-        coord1 = -1;
-        coord2 = -1;
-        for (i=0; i< 3; i++){
-          for (j=0; j< 3; j++){
-            M[i][j] = 0.0;
-          }
-        }
-
         if (axis_aligned){
-
           /*
           ** Create new geometry, transforming the primary direction
           ** to the X-axis, and the secondary to the Y-axis.
           */
 
-          coord1 = axis_order[order[0]];
+          tran->Permutation[0] = axis_order[order[0]];
           if (target_dim == 2){
-            coord2 = axis_order[order[1]];
-          }
-          else{
-            y = 0.0;
-          }
-
-          for (i=0, cold = *coords; i<num_obj; i++, cold += d){
-            x = cold[coord1];
-            if (target_dim == 2){
-              y = cold[coord2];
-            }
-
-            cold[0] = x;
-            cold[1] = y;
-            if (d == 3) cold[2] = 0.0;
+            tran->Permutation[1] = axis_order[order[1]];
           }
         }
         else{
@@ -358,75 +382,21 @@ int Zoltan_Get_Coordinates(
            */
   
           for (i=0; i< target_dim; i++){
-            M[i][2] = 0.0;
+            tran->Transformation[i][2] = 0.0;
             for (j=0; j<d; j++){
-              M[i][j] = evecs[j][order[i]];
+              tran->Transformation[i][j] = evecs[j][order[i]];
             }
           }
           for (i=target_dim; i< 3; i++){
             for (j=0; j<3; j++){
-              M[i][j] = 0.0;
-            }
-          }
-  
-          for (i=0, cold = *coords; i<num_obj; i++, cold += d){
-  
-            x = M[0][0]*cold[0] + M[0][1]*cold[1];
-            if (d == 3) x +=  M[0][2]*cold[2];
-  
-            if (target_dim == 2){
-              /*
-               * Orient points to lie along XY plane, major direction along X,
-               * secondary along Y.  So it's mostly flat along Z.
-               */
-              y = M[1][0]*cold[0] + M[1][1]*cold[1]; 
-              if (d == 3) y +=  M[1][2]*cold[2];
-            } 
-            else{
-              /*
-               * Orient points to lie along X axis.  Mostly flat along Y and Z.
-               */
-              y = 0.0;
-            }
-  
-            cold[0] = x;
-            cold[1] = y;
-            if (d == 3) cold[2] = 0;
-          }
-        }
-
-        if (keep_cuts){
-          if (zz->LB.Method == RCB){
-            rcb = (RCB_STRUCT *)zz->LB.Data_Structure;
-            rcb->Target_Dim = target_dim;
-            rcb->Permutation[0] = coord1;
-            rcb->Permutation[1] = coord2;
-            rcb->Permutation[2] = -1;
-            sav = rcb->Transformation;
-          }
-          else if (zz->LB.Method == RIB){
-            rib = (RIB_STRUCT *)zz->LB.Data_Structure;
-            rib->Target_Dim = target_dim;
-            rib->Permutation[0] = coord1;
-            rib->Permutation[1] = coord2;
-            rib->Permutation[2] = -1;
-            sav = rib->Transformation;
-          }
-          else if (zz->LB.Method == HSFC){
-            hsfc = (HSFC_Data *)zz->LB.Data_Structure;
-            hsfc->Target_Dim = target_dim;
-            hsfc->Permutation[0] = coord1;
-            hsfc->Permutation[1] = coord2;
-            hsfc->Permutation[2] = -1;
-            sav = hsfc->Transformation;
-          }
-
-          for (i=0; i<3; i++){
-            for (j=0; j<3; j++){
-              sav[i][j] = M[i][j];
+              tran->Transformation[i][j] = 0.0;
             }
           }
         }
+
+        tran->Target_Dim = target_dim;
+
+        transform_coordinates(*coords, num_obj, d, tran);
 
       } /* If geometry is very flat */
     }  /* If SKIP_DIMENSIONS is true */
@@ -439,6 +409,48 @@ End:
   }
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
+}
+static void transform_coordinates(double *coords, int num_obj, int d,
+                                  ZZ_Transform *tr)
+{
+  int i, a, b;
+  double x, y = 0.0;
+
+  if (tr->Permutation[0] >= 0){
+
+    a = tr->Permutation[0];
+    b = tr->Permutation[1];
+
+    for (i=0; i<num_obj; i++, coords += d){
+      x = coords[a];
+      if (tr->Target_Dim == 2){
+        y = coords[b];
+      }
+
+      coords[0] = x;
+      coords[1] = y;
+      if (d == 3) coords[2] = 0.0;
+    }
+  }
+  else{
+    for (i=0; i<num_obj; i++, coords += d){
+  
+      x = tr->Transformation[0][0]*coords[0] + 
+          tr->Transformation[0][1]*coords[1];
+
+      if (d == 3) x +=  tr->Transformation[0][2]*coords[2];
+  
+      if (tr->Target_Dim == 2){
+        y = tr->Transformation[1][0]*coords[0] + 
+            tr->Transformation[1][1]*coords[1]; 
+        if (d == 3) y +=  tr->Transformation[1][2]*coords[2];
+      } 
+  
+      coords[0] = x;
+      coords[1] = y;
+      if (d == 3) coords[2] = 0.0;
+    }
+  }
 }
 
 static void inertial_matrix2D(ZZ *zstruct, double *X, 

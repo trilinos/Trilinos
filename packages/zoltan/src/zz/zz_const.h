@@ -482,6 +482,22 @@ struct Zoltan_Struct {
 
 typedef struct Zoltan_Struct ZZ;
 
+/*
+ *  A structure to hold coordinate transformations for degenerate
+ *  geometries.
+ */
+
+struct Zoltan_Transform_Struct{
+  int Target_Dim; /* Number of dimensions in transformed geometry:
+                    -1 - not computed yet
+                     0 - geometry is not degenerate, don't transform it
+                     1 or 2 - geometry will be projected to line or plane   */
+  double Transformation[3][3]; /* transforms degenerate geometry to 2D or 1D */
+  int Permutation[3]; /* if trans. is simple coordinate switch, use this instead */
+};
+
+typedef struct Zoltan_Transform_Struct ZZ_Transform;
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
