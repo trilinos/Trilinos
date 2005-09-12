@@ -115,8 +115,8 @@ algorithm.  (Coordinate values in the omitted direction are ignored
 for the purposes of partitioning.)
 If this parameter is set to <B>1</B>, a 3 dimensional
 geometry will be treated as 2 dimensional if is very flat,
-or 1 dimensional if it very skinny.  And a 2 dimensional geometry will
-be treated as 1 dimensional if it is very skinny.
+or 1 dimensional if it very thin.  And a 2 dimensional geometry will
+be treated as 1 dimensional if it is very thin.
 </td>
 </tr>
 <tr>
@@ -125,7 +125,7 @@ be treated as 1 dimensional if it is very skinny.
 If the <B>SKIP_DIMENSIONS</B> parameter is set, then this parameter
 determines when a geometry is considered to be flat.
 A bounding box which is oriented to the geometry is constructed, and
-the lengths of it's sides are tested against this ratio.
+the lengths of it's sides are tested against a ratio of 1 : <B>SKIP_RATIO</B>.
 </td>
 </tr>
 
