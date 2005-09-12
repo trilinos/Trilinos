@@ -503,9 +503,7 @@ static int pmatching_ipm (ZZ *zz,
       for (i = 0; i < sendcnt; i++)   {
         lno = select[i];
         /* Optimization: Only send data for vertices that are non-empty locally */
-        if ((hg->vindex[lno+1] - hg->vindex[lno]) ||
-            /* EBEB The test below should not be necessary! */
-            ((gno % hgc->nProc_y)==hgc->myProc_y) ) { /* row that accumulates i.p. */
+        if (hg->vindex[lno+1] > hg->vindex[lno]) {
           n++;  /* non-empty vertex */
           *s++ = VTX_LNO_TO_GNO (hg, lno);                                /* gno */
           *s++ = hg->vindex[lno+1] - hg->vindex[lno];                   /* count */
