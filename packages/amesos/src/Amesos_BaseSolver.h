@@ -1,4 +1,3 @@
-
 /*
 // @HEADER
 // ***********************************************************************
@@ -154,12 +153,12 @@ parameters.
 
 
 <H2>Changing the values of the underlying matrix operator.</H2> 
-In the basic
-calling sequence (no calls to SymbolicFactorization() or
-NumericFactorization()), the underlying matrix can be modified
-between any two calls to Solve() - any class implementing this
-interface must perform the solve based on the values in the matrix
-at the time that Solve() is called.  
+
+<p>Any changes to the values of a matrix must be accompanied by a call to
+NumericFactorization() before the next call to Solve() or the behavior
+of Solve() is undefined.  Any changes to the numerical structure of
+the matrix must be followed by a call to SymbolicFactorization() and
+NumericalFactorization() before the next call to Solve().
 
 <p>Once SymbolicFactorization() has been called, classes implementing
 this interface may assume that any change made to the non-zero
