@@ -119,10 +119,6 @@ namespace Anasazi {
     static int GetNumCols( const DM& dm )
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return 0; }     
 
-    //! \brief Obtain the stride of the data of \c dm.
-    static int GetStride( const DM& dm )
-    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return 0; }     
-
     //@}
 
     //@{ \name Data access methods
@@ -134,13 +130,23 @@ namespace Anasazi {
       return Teuchos::ScalarTraits<ScalarType>::zero();
     }
 
+    //! \brief Access a const reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
     static const ScalarType & value( const DM& dm, const int i, const int j )
     { 
       UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); 
       return Teuchos::ScalarTraits<ScalarType>::zero();
     }
 
-    static ScalarType * values( DM& dm ) {
+    /*! \brief Access the pointers to the data in \c dm, information enabling
+     * C-style access to the data.
+
+        \return The return value is a pointer to the data, stored sequentially.
+        \c *cor denotes whether the data is stored column-oriented (\f$*cor ==
+        true$) or row-oriented (\f$cor == false$). \c *stride denotes the stride
+        between columns/rows. 
+
+    */
+    static ScalarType * values( DM& dm, int *stride, bool *cor) {
       UndefinedDenseMatTraits<ScalarType, DM>::notDefined();
       return (ScalarType *)NULL;
     }
