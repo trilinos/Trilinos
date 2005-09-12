@@ -16,7 +16,7 @@
 // vtk_write is built when OUTPUT_TO_FILE is defined.
 //
 // Both applications read a Chaco or Exodus file and zdrive output
-// files, and render the mesh colored by the Zoltan paritioning
+// files, and render the mesh colored by the Zoltan partitioning
 // computed by zdrive.
 //
 // vtk_view brings up a window on your display in which you can rotate,
@@ -236,6 +236,7 @@ static char filePrefix[ZMAXPATH];  //   root directory for pattern
 static int fileRange[2];      //   file numbers for pattern
 static char **fileNames;  // OR list of all file names 
 static char **fileNamesBase;
+static int specialSingleFile = 0;
 static int numNemesisFiles = 0; 
 static int lastPartition = 0; 
 
@@ -1168,23 +1169,22 @@ static int set_nemesis_file_names_or_pattern(char *baseName,
     }
 
     if (NumProcs > 1){
-      int counts[3];
+      int counts[4];
       counts[0] = rc;
       counts[1] = zdriveCount;
       counts[2] = numNemesisFiles;
-      Comm->Broadcast(counts, 3, 0);
+      counts[3] = specialSingleFile;
+      Comm->Broadcast(counts, 4, 0);
 
       if (Proc > 0){
         rc = counts[0];
         zdriveCount = counts[1];
         numNemesisFiles = counts[2];
+        specialSingleFile = counts[3];
       } 
     }
 
-    if ((numNemesisFiles == 0) && (Proc == 0)){
-      cerr << "Error: Unable to locate input Exodus/Nemesis files" << endl;
-    }
-    if ((numNemesisFiles == 0) || rc){
+    if (rc){
       retVal = 1;
       goto done2;
     }
@@ -1192,7 +1192,13 @@ static int set_nemesis_file_names_or_pattern(char *baseName,
 
   num = 1+(int)(std::log10((float)numNemesisFiles));
 
-  if (numDisks > 1){
+  if (specialSingleFile){
+    fileNames = new char *[1];
+    fileNamesBase = new char *[1];
+    fileNames[0] = strdup(baseName);
+    fileNamesBase[0] = strdup(baseName);
+  }
+  else if (numDisks > 1){
 
     // We need to provide the VTK reader with a list of all file names.
     
@@ -1214,13 +1220,18 @@ static int set_nemesis_file_names_or_pattern(char *baseName,
     fileRange[0] = 0;
     fileRange[1] = numNemesisFiles - 1;
 
+    fileNamesBase = new char *[1];
+
     if (numDisks == 1){
       strcpy(filePrefix, disks[0]);
       sprintf(filePattern, "%%s/%s.%d.%%0%dd", baseName, numNemesisFiles, num);
+      fileNamesBase[0] = new char [ZMAXPATH];
+      sprintf(fileNamesBase[0],"%s/%s", disks[0], baseName);
     }
     else{
       strcpy(filePrefix, baseName);
       sprintf(filePattern, "%%s.%d.%%0%dd", numNemesisFiles, num);
+      fileNamesBase[0] = strdup(baseName);
     }
   }
 
@@ -1337,6 +1348,15 @@ static int set_number_of_zdrive_processes(char *fname, char **disks)
             break;
           }
         }
+        else if (!*c){
+          /* 
+           * The name given was not the base name for a distributed
+           * file, it was the whole name of a single file.
+           */
+          count = 1;
+          specialSingleFile = 1;
+          break;
+        }
       }
     }
 
@@ -1346,16 +1366,21 @@ static int set_number_of_zdrive_processes(char *fname, char **disks)
 
   closedir(dir);
 
-  if ((zdriveCount == 0) && verbose){
-    cerr << "Unable to locate zdrive output file(s) ";
-    cerr << dn << "/" << fn << ".out.{numfiles}.{fileno}" << endl;
-    cerr << "We'll just show you the geometry of the input files." << endl;
+  if (verbose){
+    if (numNemesisFiles == 0){
+      cerr << "Unable to locate specified nemesis file(s)"<< endl;
+    }
+    else if (zdriveCount == 0){
+      cerr << "Unable to locate zdrive output file(s) ";
+      cerr << dn << "/" << fn << ".out.{numfiles}.{fileno}" << endl;
+      cerr << "We'll just show you the geometry of the input files." << endl;
+    }
   }
 
   delete [] dn;
   delete [] fn;
 
-  return 0;
+  return (numNemesisFiles == 0);
 }
 //----------------------------------------------------------------
 // Functions to read the zdrive output files, and to create an
@@ -1437,7 +1462,12 @@ int g, p, nvals;
   int num = 1+(int)(std::log10((float)zdriveCount));
 
   if (!fileNames){
-    c = fname_opts.pexo_fname;
+    if (fileNamesBase){
+      c = fileNamesBase[0];
+    }
+    else{
+      c = fname_opts.pexo_fname;
+    }
   }
 
   for (int i=from; i<=to; i++){
