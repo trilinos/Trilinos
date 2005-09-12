@@ -119,13 +119,22 @@ int Zoltan_HSFC(
    if (sizeof (int) != 4)
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "HSFC tested only for 32 bit integers");
 
-   /* allocate persistant storage required by box assign and point assign */
-   Zoltan_HSFC_Free_Structure (zz);
-   zz->LB.Data_Structure = (void*) ZOLTAN_MALLOC (sizeof (HSFC_Data));
-   if (zz->LB.Data_Structure == NULL)
-      ZOLTAN_HSFC_ERROR(ZOLTAN_MEMERR, "Error returned by malloc");
-   d = (HSFC_Data*) zz->LB.Data_Structure;
-   memset ((void*)d, 0, sizeof (HSFC_Data));
+   /* allocate persistent storage required by box assign and point assign */
+
+   if (zz->LB.Data_Structure == NULL){
+     zz->LB.Data_Structure = (void*) ZOLTAN_MALLOC (sizeof (HSFC_Data));
+     if (zz->LB.Data_Structure == NULL){
+       ZOLTAN_HSFC_ERROR(ZOLTAN_MEMERR, "Error returned by malloc");
+     }
+
+     d = (HSFC_Data*) zz->LB.Data_Structure;
+     memset ((void*)d, 0, sizeof (HSFC_Data));
+     d->tran.Target_Dim = -1;  /* flag that it is not computed yet */
+   }
+   else{
+     d = (HSFC_Data*) zz->LB.Data_Structure;
+     ZOLTAN_FREE (&d->final_partition);
+   }
 
    /* obtain dot information: gids, lids, weights  */
    err = Zoltan_Get_Obj_List (zz, &ndots, &gids, &lids, zz->Obj_Weight_Dim,
@@ -158,8 +167,8 @@ int Zoltan_HSFC(
    if (err != 0) 
       ZOLTAN_HSFC_ERROR(ZOLTAN_FATAL, "Error in Zoltan_Get_Coordinates.");
 
-   if (d->Target_Dim > 0){  /* degenerate geometry */
-     dim = d->Target_Dim;
+   if (d->tran.Target_Dim > 0){  /* degenerate geometry */
+     dim = d->tran.Target_Dim;
    }
    else{
      dim = d->ndimension;
@@ -551,8 +560,11 @@ int Zoltan_HSFC(
    ddummy = 0.0;
    Zoltan_Assign_Param_Vals (zz->Params, HSFC_params, zz->Debug_Level, zz->Proc,
     zz->Debug_Proc);
-   if (param == 0)
-      Zoltan_HSFC_Free_Structure (zz);
+
+   if (!param &&                    /* we don't need partitions */
+       (d->tran.Target_Dim < 0)){   /* we don't need transformation */
+     Zoltan_HSFC_Free_Structure (zz);
+   }
 
    /* really done now, now free dynamic storage and exit with return status */
    err = ((out_of_tolerance) ? ZOLTAN_WARN : ZOLTAN_OK);
@@ -631,14 +643,14 @@ int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
     to->bbox_lo[i] = from->bbox_lo[i];
     to->bbox_extent[i] = from->bbox_extent[i];
     for (j=0; j<3; j++){
-      to->Transformation[i][j] = from->Transformation[i][j];
+      to->tran.Transformation[i][j] = from->tran.Transformation[i][j];
     }
-    to->Permutation[i] = from->Permutation[i];
+    to->tran.Permutation[i] = from->tran.Permutation[i];
   }
 
   to->ndimension = from->ndimension;
   to->fhsfc = from->fhsfc;
-  to->Target_Dim = from->Target_Dim;
+  to->tran.Target_Dim = from->tran.Target_Dim;
 
   if (from->final_partition){
     len = sizeof(Partition) * fromZZ->LB.Num_Global_Parts;
@@ -686,23 +698,24 @@ Partition *p;
       data->bbox_extent[0], data->bbox_extent[1], data->bbox_extent[2],
       data->ndimension, data->fhsfc);
 
-  if (data->Target_Dim > 0){
+  if (data->tran.Target_Dim > 0){
     printf("Degenerate geometry:\n");
     printf("  Transform to %d dimensions, transformation or permutation:\n",
-      data->Target_Dim);
+      data->tran.Target_Dim);
     for (i=0; i<3; i++){
-      printf("    %lf %lf %lf\n", data->Transformation[i][0],
-             data->Transformation[i][1], data->Transformation[i][2]);
+      printf("    %lf %lf %lf\n", data->tran.Transformation[i][0],
+             data->tran.Transformation[i][1], data->tran.Transformation[i][2]);
     }
     printf("    or simple Permutation of coordinates: %d %d %d\n",
-      data->Permutation[0], data->Permutation[1], data->Permutation[2]);
+      data->tran.Permutation[0], data->tran.Permutation[1], 
+      data->tran.Permutation[2]);
   }
   else{
     printf("Don't skip dimensions, no degenerate geometry.\n");
   }
 }
 
-/* function to read  "KEEP_CUTS" parameter: */
+/* function to read HSFC parameters: */
 int Zoltan_HSFC_Set_Param (char *name, char *val)
    {
    int index;

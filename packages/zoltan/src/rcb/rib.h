@@ -43,12 +43,7 @@ typedef struct RIB_Struct {
     struct Dot_Struct *Dots;
     struct rib_tree   *Tree_Ptr;
     int                Num_Geom;
-    int Target_Dim;              /* 1 or 2 - geometry is degenerate, and will 
-                                    treated as 1D or 2D.
-                                    0 - geometry is not degenerate */
-    double Transformation[3][3];   /* to align deg. geom along XY plane */
-    int Permutation[3]; /* if trans. is simple coordinate switch, use this instead */
-
+    ZZ_Transform       Tran;     /* transformation for degenerate geometry */
 } RIB_STRUCT;
 
 extern int Zoltan_RIB_Build_Structure(ZZ *, int *, int *, int, int);

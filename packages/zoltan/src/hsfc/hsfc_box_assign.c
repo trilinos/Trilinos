@@ -82,7 +82,7 @@ int Zoltan_HSFC_Box_Assign (
       goto fini;
       }
 
-   if (d->Target_Dim > 0){   /* It must be 1 or 2 */
+   if (d->tran.Target_Dim > 0){   /* It must be 1 or 2 */
      /* 
       * Degenerate geometry:
       * Transform query box into coordinates that were used for partitioning,
@@ -93,32 +93,32 @@ int Zoltan_HSFC_Box_Assign (
      lo[0] = xlo; lo[1] = ylo; lo[2] = zlo;
      hi[0] = xhi; hi[1] = yhi; hi[2] = zhi;
 
-     Zoltan_Transform_Box(lo, hi, d->Transformation, d->Permutation,
-       d->ndimension, d->Target_Dim);
+     Zoltan_Transform_Box(lo, hi, d->tran.Transformation, d->tran.Permutation,
+       d->ndimension, d->tran.Target_Dim);
 
      xlo = lo[0]; xhi = hi[0];
      ylo = 0.0; yhi = 0.0;
      zlo = 0.0; zhi = 0.0;
 
-     if (d->Target_Dim == 2){
+     if (d->tran.Target_Dim == 2){
        ylo = lo[1]; yhi = hi[1];
-       dim = d->Target_Dim;
+       dim = d->tran.Target_Dim;
      }
-     else if (d->Target_Dim == 1){
+     else if (d->tran.Target_Dim == 1){
        /* 
         * Don't let Point_Assign transform coordinates (we already
         * did that) or remap partition numbers (we'll do that at "fini").
         */
        dim = d->ndimension;
        remap = zz->LB.Remap;
-       d->Target_Dim = 0;   /* don't transform coordinates */
+       d->tran.Target_Dim = 0;   /* don't transform coordinates */
        d->ndimension = 1;   /* partitions were calculated as 1D */
        zz->LB.Remap = NULL; /* don't remap partition numbers */
        Zoltan_HSFC_Point_Assign (zz, &xlo, NULL, &n);
        Zoltan_HSFC_Point_Assign (zz, &xhi, NULL, &loop);
        for (i = n; i <= loop; i++)  /* loop < n */
           part_array[i] = 1;
-       d->Target_Dim = 1;
+       d->tran.Target_Dim = 1;
        d->ndimension = dim;       
        zz->LB.Remap = remap;
        goto fini;

@@ -55,7 +55,7 @@ int i, ierr = 0;
     rcb->Global_IDs = NULL;
     rcb->Local_IDs = NULL;
     rcb->Dots = NULL;
-    rcb->Target_Dim = 0;
+    rcb->Tran.Target_Dim = -1;
 
     rcb->Tree_Ptr = (struct rcb_tree *)
       ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(struct rcb_tree));
@@ -193,13 +193,13 @@ int Zoltan_RCB_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
 
   to->Num_Dim = from->Num_Dim;
 
-  to->Target_Dim = from->Target_Dim;
+  to->Tran.Target_Dim = from->Tran.Target_Dim;
 
   for (i=0; i<3; i++){
     for (j=0; j<3; j++){
-      to->Transformation[i][j] = from->Transformation[i][j];
+      to->Tran.Transformation[i][j] = from->Tran.Transformation[i][j];
     }
-    to->Permutation[i] = from->Permutation[i];
+    to->Tran.Permutation[i] = from->Tran.Permutation[i];
   }
 
   return ZOLTAN_OK;
@@ -258,16 +258,17 @@ void Zoltan_RCB_Print_Structure(ZZ *zz, int howMany)
     printf("Box: NULL\n");
   }
 
-  if (rcb->Target_Dim > 0){
+  if (rcb->Tran.Target_Dim > 0){
     printf("Degenerate geometry:\n");
     printf("  Transform to %d dimensions, transformation or permutation:\n",
-      rcb->Target_Dim);
+      rcb->Tran.Target_Dim);
     for (i=0; i<3; i++){
-      printf("    %lf %lf %lf\n", rcb->Transformation[i][0],
-             rcb->Transformation[i][1], rcb->Transformation[i][2]);
+      printf("    %lf %lf %lf\n", rcb->Tran.Transformation[i][0],
+             rcb->Tran.Transformation[i][1], rcb->Tran.Transformation[i][2]);
     }
     printf("    or simple Permutation of coordinates: %d %d %d\n",
-      rcb->Permutation[0], rcb->Permutation[1], rcb->Permutation[2]);
+      rcb->Tran.Permutation[0], rcb->Tran.Permutation[1], 
+      rcb->Tran.Permutation[2]);
   }
   else{
     printf("Don't skip dimensions, no degenerate geometry.\n");

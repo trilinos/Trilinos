@@ -1123,7 +1123,7 @@ End:
   if (dotmark0) ZOLTAN_FREE(&dotmark0);
   if (dotmark_best) ZOLTAN_FREE(&dotmark_best);
 
-  if (!reuse && !gen_tree) {
+  if (!reuse && !gen_tree && rcb && (rcb->Tran.Target_Dim < 0)) {
     /* Free all memory used. */
     Zoltan_RCB_Free_Structure(zz);
   }

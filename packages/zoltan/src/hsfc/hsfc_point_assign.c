@@ -52,9 +52,9 @@ int Zoltan_HSFC_Point_Assign (
      pt[i] = x[i];  /* we don't want to change caller's "x" */
    }
 
-   if (d->Target_Dim > 0){   /* degenerate geometry */
-     dim = d->Target_Dim;
-     Zoltan_Transform_Point(pt, d->Transformation, d->Permutation,
+   if (d->tran.Target_Dim > 0){   /* degenerate geometry */
+     dim = d->tran.Target_Dim;
+     Zoltan_Transform_Point(pt, d->tran.Transformation, d->tran.Permutation,
        d->ndimension, dim, pt);
    }
    else{

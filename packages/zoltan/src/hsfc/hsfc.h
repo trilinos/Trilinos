@@ -78,12 +78,7 @@ typedef struct HSFC_Data {
    double     bbox_extent[3];    /* length of each side of bounding box */
    int        ndimension;        /* number of dimensions in problem (2 or 3) */
    double    (*fhsfc)(ZZ*, double*);  /* space filling curve function */
-   int Target_Dim;              /* 1 or 2 - geometry is degenerate, and will 
-                                   treated as 1D or 2D.
-                                   0 - geometry is not degenerate */
-   double Transformation[3][3];   /* to align deg. geom along XY plane */
-   int Permutation[3]; /* if trans. is simple coordinate switch, use this instead */
-
+   ZZ_Transform tran;            /* transformation for degenerate geometry */
    } HSFC_Data;                  /* data preserved for point & box drop later */
 
 

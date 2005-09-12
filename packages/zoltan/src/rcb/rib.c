@@ -754,7 +754,8 @@ End:
   ZOLTAN_FREE(&value);
   ZOLTAN_FREE(&dotlist);
 
-  if (!gen_tree) {
+  if (!gen_tree &&                         /* don't need partitions */
+      rib && (rib->Tran.Target_Dim < 0)) { /* don't need transformation */
     /* Free all memory used. */
     Zoltan_RIB_Free_Structure(zz);
   }
@@ -889,8 +890,8 @@ RIB_STRUCT *rib;
 
   rib = (RIB_STRUCT *)zz->LB.Data_Structure;
 
-  if (rib->Target_Dim > 0){ 
-    num_geom = rib->Target_Dim; /* degenerate geometry */
+  if (rib->Tran.Target_Dim > 0){ 
+    num_geom = rib->Tran.Target_Dim; /* degenerate geometry */
   }
 
   switch (num_geom) {

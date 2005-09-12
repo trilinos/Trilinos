@@ -106,14 +106,14 @@ int            *numparts)       /* number of partitions in part list */
         box.hi[1] = ymax;
         box.hi[2] = zmax;
 
-        if (rcb->Target_Dim > 0){
+        if (rcb->Tran.Target_Dim > 0){
           /* 
            * Degenerate geometry, transform box to the lower dimensional
            * space that the partitioning occured in.  Our new box may
            * encompass more partitions, but it won't miss any.
            */
-          Zoltan_Transform_Box(box.lo, box.hi, rcb->Transformation, 
-                    rcb->Permutation, rcb->Num_Dim, rcb->Target_Dim);
+          Zoltan_Transform_Box(box.lo, box.hi, rcb->Tran.Transformation, 
+                    rcb->Tran.Permutation, rcb->Num_Dim, rcb->Tran.Target_Dim);
         }
 
         Box_Assign(zz, treept, &box, include_procs, include_parts, 
@@ -139,16 +139,17 @@ int            *numparts)       /* number of partitions in part list */
               box.hi[1] = ymax;
               box.hi[2] = zmax;
 
-              if (rib->Target_Dim == 0){
+              if (rib->Tran.Target_Dim == 0){
                 Box_Assign3(zz, itree, &box, include_procs, include_parts, 
                           proc_array, parts, numparts, itree[0].right_leaf);
               }
               else{ /* degenerate geometry, Target_Dim is 2 or 1 */
 
                 Zoltan_Transform_Box_Points(box.lo, box.hi,
-                  rib->Transformation, rib->Permutation, 3, rib->Target_Dim, p);
+                  rib->Tran.Transformation, rib->Tran.Permutation, 3, 
+                  rib->Tran.Target_Dim, p);
 
-                if (rib->Target_Dim == 1){  /* box -> line */
+                if (rib->Tran.Target_Dim == 1){  /* box -> line */
 
                   box.lo[0] = box.hi[0] = p[0][0];
                   for (i=1; i<8; i++){
@@ -160,7 +161,7 @@ int            *numparts)       /* number of partitions in part list */
                 }
                 else{     /* box -> plane, no longer axis-aligned */
 
-                  Transformed_Box_Assign(zz, itree, p, rib->Target_Dim,
+                  Transformed_Box_Assign(zz, itree, p, rib->Tran.Target_Dim,
                     include_procs, include_parts, proc_array, parts, numparts, 
                     itree[0].right_leaf);
                 }
@@ -173,7 +174,7 @@ int            *numparts)       /* number of partitions in part list */
               box.hi[0] = xmax;
               box.hi[1] = ymax;
 
-              if (rib->Target_Dim == 0){
+              if (rib->Tran.Target_Dim == 0){
                 Box_Assign2(zz, itree, &box, include_procs, include_parts,
                             proc_array, parts, numparts, itree[0].right_leaf);
               }
@@ -182,7 +183,7 @@ int            *numparts)       /* number of partitions in part list */
                 /* degenerate geometry, Target_Dim is 1 */
 
                 Zoltan_Transform_Box_Points(box.lo, box.hi,
-                  rib->Transformation, rib->Permutation, 2, 1, p);
+                  rib->Tran.Transformation, rib->Tran.Permutation, 2, 1, p);
 
                 box.lo[0] = box.hi[0] = p[0][0];
                 for (i=1; i<4; i++){
