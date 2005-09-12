@@ -132,12 +132,14 @@ Utilities 	-- Zoltan utilities, including the memory management and
 OTHER CODE (not compiled into the Zoltan library)
 -------------------------------------------------
 
-driver          -- Driver program zdrive that reads exodus/nemesis files, runs
-                   Zoltan and then writes out the new assignment vectors.
-                   This program is compiled by making the zdrive target.
+driver          -- Driver programs zdrive and zCPPdrive that read exodus/nemesis 
+                   files, run Zoltan and then write out the new assignment vectors.
+                   These programs are compiled by making zdrive or zCPPdrive target.
 
 ch              -- Routines developed by Hendrickson and Leland to read Chaco
                    input files and build graphs in the zdrive program.
+
+examples        -- A directory containing very simple C and C++ applications 
 
 fdriver         -- Fortran version of driver, primarily used for testing
                    the Fortran interface.
@@ -152,6 +154,6 @@ test		-- Test problems in both Nemesis/Exodus and Chaco formats.
                    Also contains the script test_zoltan that runs the test 
                    driver with all the test problems.
 
-util		-- Utility scripts.
+util		-- Utility scripts and a graphical partition viewer vtk_view
 
 
