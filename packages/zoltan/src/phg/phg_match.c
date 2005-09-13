@@ -334,7 +334,8 @@ static int pmatching_ipm (ZZ *zz,
                        /* identical on all procs in hgc->Communicator.*/
   int nCandidates;     /* # of candidates on this proc; identical     */
                        /* on all procs in hgc->col_comm.              */
-  int nTotal;          /* sum of nCandidates across proc rows.        */
+  int nTotal;          /* sum of # of non-empty candidates across proc row. */
+  int max_nTotal;      /* max of nTotal across proc cols.        */
   int *send = NULL,    /* working buffers, may be reused              */
       *dest = NULL,
       *size = NULL,
@@ -380,6 +381,10 @@ static int pmatching_ipm (ZZ *zz,
   nRounds     = cFLAG ? ROUNDS_CONSTANT : hgc->nProc_x * ROUNDS_CONSTANT;
   nCandidates = calc_nCandidates (hg->nVtx, cFLAG ? 1 : hgc->nProc_x); 
     
+printf("%d KMDKMD MATCHBARRIERIN %d %d %d\n", zz->Proc, hg->nVtx, nRounds, nCandidates);
+/* KMDKMD */ MPI_Barrier(MPI_COMM_WORLD);
+printf("%d KMDKMD MATCHBARRIEROUT %d %d %d\n", zz->Proc, hg->nVtx, nRounds, nCandidates);
+printf("%d KMDKMD ONE\n", zz->Proc);
   /* determine maximum number of Vtx and Pins for storage allocation */
   /* determine initial sum of all candidates, nTotal for storage allocation */
   if (cFLAG)  {
@@ -521,8 +526,14 @@ static int pmatching_ipm (ZZ *zz,
       /* determine actual global number of candidates this round */
       /* n is actual number of local non-empty vertices */
       /* nTotal is the global number of candidate vertices in this row */
+printf("%d KMDKMD TWO %d %d\n", zz->Proc, round, nRounds);
       MPI_Allreduce (&n, &nTotal, 1, MPI_INT, MPI_SUM, hgc->row_comm);
+      MPI_Allreduce (&nTotal, &max_nTotal, 1, MPI_INT, MPI_MAX, hgc->col_comm);
+printf("%d KMDKMD TWO AGAIN %d %d nTotal=%d maxnTotal=%d\n", zz->Proc, round, nRounds, nTotal, max_nTotal);
+/* KMDKMD OLD VERSION -- DELETE IF THE FIX IS OK
       if (nTotal == 0) {
+*/
+      if (max_nTotal == 0) {
         if (hgp->use_timers > 3)
            ZOLTAN_TIMER_STOP (zz->ZTime, timer[1], hg->comm->Communicator);
         break;                          /* globally all work is done, so quit */
@@ -680,6 +691,7 @@ static int pmatching_ipm (ZZ *zz,
       MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
       */
             
+printf("%d KMDKMD THREE %d\n", zz->Proc, round);
       /* Send inner product data in send buffer to appropriate rows */
       err = communication_by_plan (zz, sendcnt, dest, size, 1, send, &reccnt, 
        &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
@@ -764,6 +776,7 @@ static int pmatching_ipm (ZZ *zz,
       /* Communicate total inner product results to MASTER ROW */
 
 /* KDDKDD SHOULD THIS BE MPI_Gather to row 0 (MASTER ROW)? */
+printf("%d KMDKMD FOUR %d\n", zz->Proc, round);
       MPI_Allgather (&sendsize, 1, MPI_INT, size, 1, MPI_INT, hgc->col_comm);
 
 /* KDDKDD DOES THE FOLLOWING MEMORY MANAGEMENT APPLY ONLY TO 
@@ -826,6 +839,7 @@ static int pmatching_ipm (ZZ *zz,
 
     MACRO_TIMER_START (4, "Matching Phase 3");   
     
+printf("%d KMDKMD FIVE %d\n", zz->Proc, round);
     /* MASTER ROW only: send best results to candidates' owners */
     err = communication_by_plan (zz, nmaster, master_procs, NULL, 3,
      master_data, &reccnt, &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
@@ -881,6 +895,7 @@ static int pmatching_ipm (ZZ *zz,
         }
       }
         
+printf("%d KMDKMD SIX %d\n", zz->Proc, round);
     /* send match results only to impacted parties */
     err = communication_by_plan (zz, sendcnt, dest, NULL, 2, send, &reccnt,
      &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+10);
@@ -907,12 +922,14 @@ static int pmatching_ipm (ZZ *zz,
           match [VTX_GNO_TO_LNO (hg, vertex)] = -gno - 1;
       }      
     
+printf("%d KMDKMD SEVEN %d\n", zz->Proc, round);
     /* update match array to the entire column */   
     MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
     MACRO_TIMER_STOP (5);                       /* end of phase 4 */
   }                                             /* DONE: loop over rounds */
   MACRO_TIMER_START (6, "Matching Cleanup");          
   
+printf("%d KMDKMD EIGHT %d\n", zz->Proc, round);
   /* optional sanity tests */
   if (zz->Debug_Level > 4 && hgc->myProc_x == 0 && hgc->myProc_y == 0)  {
     int local = 0, global = 0, unmatched = 0;
@@ -970,6 +987,7 @@ static int pmatching_ipm (ZZ *zz,
   MACRO_TIMER_STOP (6);
 
 fini:
+printf("%d KMDKMD NINE %d\n", zz->Proc, round);
   Zoltan_Multifree (__FILE__, __LINE__, 15, &cmatch, &visit, &sums, &send,
    &dest, &size, &rec, &index, &aux, &permute, &edgebuf, &select, &rows,
    &master_data, &master_procs);
