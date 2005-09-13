@@ -381,7 +381,7 @@ static int pmatching_ipm (ZZ *zz,
   nRounds     = cFLAG ? ROUNDS_CONSTANT : hgc->nProc_x * ROUNDS_CONSTANT;
   nCandidates = calc_nCandidates (hg->nVtx, cFLAG ? 1 : hgc->nProc_x); 
     
-printf("%d KMDKMD %d ONE %d %d\n", zz->Proc, hg->info, nRounds, nCandidates);
+printf("%d KMDKMD %d ONE %d %d\n", zz->Proc, hg->info, nRounds, nCandidates);fflush(stdout);
   /* determine maximum number of Vtx and Pins for storage allocation */
   /* determine initial sum of all candidates, nTotal for storage allocation */
   if (cFLAG)  {
@@ -523,12 +523,12 @@ printf("%d KMDKMD %d ONE %d %d\n", zz->Proc, hg->info, nRounds, nCandidates);
       /* determine actual global number of candidates this round */
       /* n is actual number of local non-empty vertices */
       /* nTotal is the global number of candidate vertices in this row */
-printf("%d KMDKMD %d TWO %d %d\n", zz->Proc, hg->info, round, nRounds);
+printf("%d KMDKMD %d TWO %d %d\n", zz->Proc, hg->info, round, nRounds);fflush(stdout);
       MPI_Allreduce (&n, &nTotal, 1, MPI_INT, MPI_SUM, hgc->row_comm);
       MPI_Allreduce (&nTotal, &max_nTotal, 1, MPI_INT, MPI_MAX, hgc->col_comm);
-printf("%d KMDKMD %d TWO AGAIN %d %d nTotal=%d maxnTotal=%d\n", zz->Proc, hg->info, round, nRounds, nTotal, max_nTotal);
+printf("%d KMDKMD %d TWO AGAIN %d %d nTotal=%d maxnTotal=%d\n", zz->Proc, hg->info, round, nRounds, nTotal, max_nTotal);fflush(stdout);
 /* KMDKMD %d OLD VERSION -- DELETE IF THE FIX IS OK
-      if (nTotal == 0) {
+      if (nTotal == 0) { X}X
 */
       if (max_nTotal == 0) {
         if (hgp->use_timers > 3)
@@ -579,7 +579,15 @@ printf("%d KMDKMD %d TWO AGAIN %d %d nTotal=%d maxnTotal=%d\n", zz->Proc, hg->in
       
     /* for each candidate vertex, compute all local partial inner products */
     kstart = old_kstart = 0;         /* next candidate (of nTotal) to process */
-    while (kstart < nTotal)  {
+/* KMDKMD OLD VERSION -- REMOVE IF FIX IS OK
+    while (kstart < nTotal)  { 
+   KMDKMD I think the override of the send-buffering with realloc removes
+   KMDKMD the need for the while loop.  Indeed, since nTotal can vary within
+   KMDKMD a processor column, and since there is column communication within
+   KMDKMD this while loop, the while condition will cause hangs when some
+   KMDKMD processor has nTotal=0.  We'll have to revisit this problem when
+   KMDKMD we reactivate the fixed-size send buffer.
+*/
       MACRO_TIMER_START (2, "Matching kstart A");
       sendsize = 0;                      /* position in send buffer */
       sendcnt = 0;                       /* count of messages in send buffer */
@@ -688,12 +696,14 @@ printf("%d KMDKMD %d TWO AGAIN %d %d nTotal=%d maxnTotal=%d\n", zz->Proc, hg->in
       MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
       */
             
-printf("%d KMDKMD %d THREE %d\n", zz->Proc, hg->info, round);
+printf("%d KMDKMD %d THREE %d\n", zz->Proc, hg->info, round);fflush(stdout);
+printf("%d KMDKMD %d THREE %d BEFORE sendcnt %d \n", zz->Proc, hg->info, round, sendcnt);fflush(stdout);
       /* Send inner product data in send buffer to appropriate rows */
       err = communication_by_plan (zz, sendcnt, dest, size, 1, send, &reccnt, 
        &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
       if (err != ZOLTAN_OK)
         goto fini;
+printf("%d KMDKMD %d THREE %d DONE reccnt %d recsize %d \n", zz->Proc, hg->info, round, reccnt, recsize);fflush(stdout);
       
       /* build index into receive buffer pointer for each new row of data */
       old_row = -1;
@@ -773,7 +783,7 @@ printf("%d KMDKMD %d THREE %d\n", zz->Proc, hg->info, round);
       /* Communicate total inner product results to MASTER ROW */
 
 /* KDDKDD SHOULD THIS BE MPI_Gather to row 0 (MASTER ROW)? */
-printf("%d KMDKMD %d FOUR %d\n", zz->Proc, hg->info, round);
+printf("%d KMDKMD %d FOUR %d\n", zz->Proc, hg->info, round);fflush(stdout);
       MPI_Allgather (&sendsize, 1, MPI_INT, size, 1, MPI_INT, hgc->col_comm);
 
 /* KDDKDD DOES THE FOLLOWING MEMORY MANAGEMENT APPLY ONLY TO 
@@ -828,7 +838,8 @@ printf("%d KMDKMD %d FOUR %d\n", zz->Proc, hg->info, round);
         MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
       }
       MACRO_TIMER_STOP (3);    
-    }              /* DONE: kstart < nTotal loop */ 
+/* KMDKMD  REMOVING THE WHILE LOOP
+    }   */           /* DONE: kstart < max_nTotal loop */ 
     if (cFLAG)
       continue;      /* skip phases 3 and 4, continue rounds */ 
     
@@ -836,7 +847,7 @@ printf("%d KMDKMD %d FOUR %d\n", zz->Proc, hg->info, round);
 
     MACRO_TIMER_START (4, "Matching Phase 3");   
     
-printf("%d KMDKMD %d FIVE %d\n", zz->Proc, hg->info, round);
+printf("%d KMDKMD %d FIVE %d\n", zz->Proc, hg->info, round);fflush(stdout);
     /* MASTER ROW only: send best results to candidates' owners */
     err = communication_by_plan (zz, nmaster, master_procs, NULL, 3,
      master_data, &reccnt, &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
@@ -892,7 +903,7 @@ printf("%d KMDKMD %d FIVE %d\n", zz->Proc, hg->info, round);
         }
       }
         
-printf("%d KMDKMD %d SIX %d\n", zz->Proc, hg->info, round);
+printf("%d KMDKMD %d SIX %d\n", zz->Proc, hg->info, round);fflush(stdout);
     /* send match results only to impacted parties */
     err = communication_by_plan (zz, sendcnt, dest, NULL, 2, send, &reccnt,
      &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+10);
@@ -919,14 +930,14 @@ printf("%d KMDKMD %d SIX %d\n", zz->Proc, hg->info, round);
           match [VTX_GNO_TO_LNO (hg, vertex)] = -gno - 1;
       }      
     
-printf("%d KMDKMD %d SEVEN %d\n", zz->Proc, hg->info, round);
+printf("%d KMDKMD %d SEVEN %d\n", zz->Proc, hg->info, round);fflush(stdout);
     /* update match array to the entire column */   
     MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
     MACRO_TIMER_STOP (5);                       /* end of phase 4 */
   }                                             /* DONE: loop over rounds */
   MACRO_TIMER_START (6, "Matching Cleanup");          
   
-printf("%d KMDKMD %d EIGHT %d\n", zz->Proc, hg->info, round);
+printf("%d KMDKMD %d EIGHT %d\n", zz->Proc, hg->info, round);fflush(stdout);
   /* optional sanity tests */
   if (zz->Debug_Level > 4 && hgc->myProc_x == 0 && hgc->myProc_y == 0)  {
     int local = 0, global = 0, unmatched = 0;
@@ -984,7 +995,7 @@ printf("%d KMDKMD %d EIGHT %d\n", zz->Proc, hg->info, round);
   MACRO_TIMER_STOP (6);
 
 fini:
-printf("%d KMDKMD %d NINE %d\n", zz->Proc, hg->info, round);
+printf("%d KMDKMD %d NINE %d\n", zz->Proc, hg->info, round);fflush(stdout);
   Zoltan_Multifree (__FILE__, __LINE__, 15, &cmatch, &visit, &sums, &send,
    &dest, &size, &rec, &index, &aux, &permute, &edgebuf, &select, &rows,
    &master_data, &master_procs);
