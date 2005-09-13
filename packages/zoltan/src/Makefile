@@ -514,7 +514,6 @@ vtk_write:
 zdrive:
 	$(MAKE) zoltan
 	@cd $(ZOLTAN_OBJ_DIR); 			\
-        rm $(ZCPPDRIVE_OBJ);                     \
 	$(MAKE) $(ZTARGET)			\
 	"ZTARGET=$(ZTARGET)"			\
 	"LIB_NAME=$(LIB_NAME)"			\
