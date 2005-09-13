@@ -2,7 +2,6 @@
 # Package options
 #
 PROJECT_NAME           = "Thyra Miscellaneous Utilities"
-PROJECT_NUMBER         = "Version of the Day"
 OUTPUT_DIRECTORY       = ../src/utils/doc
 #
 # What and how documentation is extracted

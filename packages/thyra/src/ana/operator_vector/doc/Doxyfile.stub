@@ -2,7 +2,6 @@
 # Package options
 #
 PROJECT_NAME           = "Thyra ANA Operator/VectorBase Interfaces and Related Software"
-PROJECT_NUMBER         = "Version of the Day"
 OUTPUT_DIRECTORY       = ../src/ana/operator_vector/doc
 #
 # What and how documentation is extracted

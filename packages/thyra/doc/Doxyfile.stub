@@ -2,7 +2,6 @@
 # Package options
 #
 PROJECT_NAME           = "Thyra"
-PROJECT_NUMBER         = "Version of the Day"
 OUTPUT_DIRECTORY       = .
 #
 # What and how documentation is extracted

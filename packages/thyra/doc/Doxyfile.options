@@ -6,6 +6,7 @@
 # Package options
 #
 OUTPUT_LANGUAGE        = English
+PROJECT_NUMBER         = "Version of the Day"
 #
 # What and how documentation is extracted
 #

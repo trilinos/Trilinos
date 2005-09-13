@@ -2,7 +2,6 @@
 # Package options
 #
 PROJECT_NAME           = "RTOp : Vector Reduction/Transformation Operators"
-PROJECT_NUMBER         = "Version of the Day"
 OUTPUT_DIRECTORY       = ../src/ana/rtop/doc
 #
 # What and how documentation is extracted
