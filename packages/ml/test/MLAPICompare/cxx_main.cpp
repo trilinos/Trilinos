@@ -32,7 +32,7 @@
 #endif
 #include "ml_config.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_API)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
