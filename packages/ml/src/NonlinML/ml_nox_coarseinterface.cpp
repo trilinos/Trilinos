@@ -470,11 +470,14 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
 
   // FIXME:: after intensive testing, this test might not be necessary
   Epetra_Vector* xcoarse  = 0;
+#if 0
   bool samemap = this_RowMap_->PointSameAs(x.Map());
   if (samemap)
   {
+#endif
      xcoarse = new Epetra_Vector(*this_RowMap_,false);
      xcoarse->Update(1.0,x,0.0);
+#if 0
   }
   else
   {
@@ -492,7 +495,7 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
      }
      delete exporter; exporter = 0;
   }
-  
+#endif  
   if (ml_printlevel_>9 && x.Comm().MyPID()==0)
   {
      cout << "ML (level " << level_ << "): Call no " << nFcalls_ << " to Nox_CoarseProblem_Interface::computeF\n";
@@ -508,10 +511,13 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
      Epetra_Vector*         xfine     = new Epetra_Vector(finegraph->RowMap(),false);
 
      // FIXME:: after intensive testing, this test might not be necessary
+#if 0
      samemap = xfine->Map().PointSameAs(xcoarse->Map());
      if (samemap)
      {
+#endif
         xfine->Update(1.0,*xcoarse,0.0);
+#if 0
      }
      else
      {
@@ -528,7 +534,7 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
         }
         delete exporter; exporter = 0;
      }
-
+#endif
      // call fine level interface
      err = fineinterface_.computeF(*xfine,*Ffine,fillFlag);
      if (xfine) delete xfine; xfine = 0;
@@ -572,10 +578,13 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
      if (Ffine) delete Ffine; Ffine = 0;
      
      // FIXME:: after intensive testing, this test might not be necessary
+#if 0
      samemap = F.Map().PointSameAs(Fcoarse->Map());
      if (samemap)
      {
+#endif
         F.Update(1.0,*Fcoarse,0.0);
+#if 0
      }
      else
      {
@@ -593,7 +602,7 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
         }
         if (importer) delete importer; importer = 0;
      }
-     
+#endif     
      if (Fcoarse) delete Fcoarse; Fcoarse = 0;
   } // level_ > 0
 

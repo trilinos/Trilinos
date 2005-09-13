@@ -125,10 +125,13 @@ comm_(comm)
 
    Epetra_Vector* xc = new Epetra_Vector(graph_->RowMap(),false);
    // FIXME: after intesive testing, this test might be obsolet
+#if 0
    bool samemap = xc->Map().PointSameAs(xthis->Map());
    if (samemap)
    {
+#endif
       xc->Update(1.0,*xthis,0.0);
+#if 0
    }
    else
    {
@@ -145,6 +148,7 @@ comm_(comm)
       }
       if (importer) delete importer; importer = 0;
    }
+#endif   
    if (xthis) delete xthis; xthis = 0;
 
    // create the coloring of the graph
@@ -316,10 +320,13 @@ bool ML_NOX::ML_Nox_MatrixfreeLevel::recreateLevel(int level, int nlevel, int pl
 
    Epetra_Vector* xc = new Epetra_Vector(graph_->RowMap(),false);
    // FIXME: after intesive testing, this test might be obsolet
+#if 0
    bool samemap = xc->Map().PointSameAs(xthis->Map());
    if (samemap)
    {
+#endif
       xc->Update(1.0,*xthis,0.0);
+#if 0
    }
    else
    {
@@ -336,6 +343,7 @@ bool ML_NOX::ML_Nox_MatrixfreeLevel::recreateLevel(int level, int nlevel, int pl
       }
       if (importer) delete importer; importer = 0;
    }
+#endif   
    if (xthis) delete xthis; xthis = 0;
 
    // create the coloring of the graph
