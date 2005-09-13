@@ -31,8 +31,9 @@
 #define HAVE_CONFIG_H
 #endif
 #include "ml_config.h"
+#include "ml_common.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_API)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_MLAPI)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -296,7 +297,7 @@ int main(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
+  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils --enable-amesos --enable-ifpack");
   
   return 0;
 }
