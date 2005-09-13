@@ -33,6 +33,7 @@
     COMM = SERIAL, MPI;
 }
 
+# These tests should only be run on 1, 4, 9, 16, or 25 processors.
 (FRAMEWORK, MLTests) {
      DIRS = MultiLevelPreconditioner_Aux,
             MLAPICompare;
