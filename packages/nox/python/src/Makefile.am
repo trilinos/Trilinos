@@ -45,11 +45,13 @@ all-am: build
 
 # Currently, this temporary directory is required to be present for the
 # setup.py script to work correctly
+if BUILD_NOX_PYTHON
 tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_platform; print os.path.join('build','temp.%s-%s'%(get_platform(),sys.version[0:3]))")
 
 $(tempdir):
 	@echo "Creating directory $@"
 	mkdir -p $@
+endif
 
 # Set the appropriate Make macros
 if BUILD_NOX_PYTHON
@@ -88,7 +90,7 @@ clean-local:
 	$(RM) -r ../../packages
 else
 build:
-
+	echo 'NOX-Python support is disabled!'
 endif
 
 CLEANFILES += $(WRAPPERS) $(PROXIES)

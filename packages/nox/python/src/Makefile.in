@@ -380,7 +380,7 @@ SWIG_CXXFLAGS = $(NOX_PYTHON_INCLUDES)               \
 
 # Currently, this temporary directory is required to be present for the
 # setup.py script to work correctly
-tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_platform; print os.path.join('build','temp.%s-%s'%(get_platform(),sys.version[0:3]))")
+@BUILD_NOX_PYTHON_TRUE@tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_platform; print os.path.join('build','temp.%s-%s'%(get_platform(),sys.version[0:3]))")
 @BUILD_LIBNOXEPETRA_FALSE@@BUILD_NOX_PYTHON_TRUE@EPETRA_I = 
 
 # Set the appropriate Make macros
@@ -587,9 +587,9 @@ swigclean:
 # Default make target
 all-am: build
 
-$(tempdir):
-	@echo "Creating directory $@"
-	mkdir -p $@
+@BUILD_NOX_PYTHON_TRUE@$(tempdir):
+@BUILD_NOX_PYTHON_TRUE@	@echo "Creating directory $@"
+@BUILD_NOX_PYTHON_TRUE@	mkdir -p $@
 
 @BUILD_NOX_PYTHON_TRUE@build: $(WRAPPERS) $(tempdir)
 @BUILD_NOX_PYTHON_TRUE@	$(PYTHON) $(srcdir)/setup.py build
@@ -601,6 +601,7 @@ $(tempdir):
 @BUILD_NOX_PYTHON_TRUE@	$(PYTHON) $(srcdir)/setup.py clean
 @BUILD_NOX_PYTHON_TRUE@	$(RM) -r ../../packages
 @BUILD_NOX_PYTHON_FALSE@build:
+@BUILD_NOX_PYTHON_FALSE@	echo 'NOX-Python support is disabled!'
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
