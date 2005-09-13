@@ -39,7 +39,11 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = README-Amesos ChangeLog-Amesos
+EXTRA_DIST = README-Amesos ChangeLog-Amesos \
+       config/generate-makeoptions.pl \
+       config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
+       config/replace-install-prefix.pl config/string-replace.pl
+
 
 ## #######################################################################
 ## Tools in the auxillary directory 
@@ -69,7 +73,7 @@ all-local:
 	@echo "        +----------------------------------------------------+"
 	@echo "        | Trilinos package amesos built successfully         |"
 	@echo "        |                                                    |"
-	@echo "        | You might want to type \"$(MAKE) run-examples\" to      |"
+	@echo "        | You might want to type \"make run-examples\" to      |"
 	@echo "        | verify that all the Amesos examples run            |"
 	@echo "        | successfully. For more details, please refer to    |"
 	@echo "        | Trilinos/doc/check_installation.txt.               |"
@@ -165,7 +169,7 @@ runtests-serial :
   --trilinos-dir=$(TRILINOS_HOME_DIR) \
   --comm=serial \
   --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=FRAMEWORK \
+  --category=INSTALL \
   --output-dir=@abs_top_builddir@/test/runtests-results \
   --verbosity=1 \
   --packages=amesos

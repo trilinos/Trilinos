@@ -67,6 +67,9 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 common_ldadd = $(EXPORT_LIBS)
 
+EXTRA_DIST = $(srcdir)/EpetraExt_readEpetraLinearSystem.h \
+	$(srcdir)/test_single_amesos_thyra_solver.hpp
+
 # This is already added part of AMESOS_LIBS and therefore automake does not need to add this again!
 #  However, this prevents Atlantis from building, so I have commented it out for now
 # LIBS =

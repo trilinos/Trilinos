@@ -125,7 +125,7 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #COMMENT fails on herouxsmp $mpigo  3 amesos_test.exe TAUCS   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
 #COMMENT fails on herouxsmp $mpigo  3 amesos_test.exe TAUCS   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
 #
-#  Test some tranpose solves
+#  Test some tranpose solves   - Transpose fails - see bug #1579
 #
 #COMMENT fails on herouxsmp $mpigo  4 amesos_test.exe TAUCS   ImpcolB.rua 0 1 1 1  1e-9 1e-12  >>SST.stdout
 #COMMENT fails on herouxsmp $mpigo  4 amesos_test.exe TAUCS   ImpcolA.rua 1 1 1 1  1e-9 1e-11  >>SST.stdout

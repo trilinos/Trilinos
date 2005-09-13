@@ -103,8 +103,7 @@ echo `uname -a` >>& $file
 setenv MPI_COMM_MAX 4096
 setenv MPI_GROUP_MAX 4096
     echo "TEST STARTED"
-# foreach f ( Test_Epetra_RowMatrix Test_SuperLU_DIST TestOptions )
-foreach f ( TestOptions )
+foreach f ( Test_Epetra_RowMatrix Test_SuperLU_DIST TestOptions )
   cd $f
   set exefiles = (*.exe)
   set TestRan = False 

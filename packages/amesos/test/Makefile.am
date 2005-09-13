@@ -47,3 +47,5 @@ SUBDIRS = scripts \
 	  Test_MUMPS \
 	  Test_DSCPACK TestOptions ${PERF_SUBDIR}
 
+EXTRA_DIST = definition
+

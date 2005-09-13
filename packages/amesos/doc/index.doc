@@ -37,6 +37,7 @@ The main page of the Doxygen documentation is organized as follows:
 - \ref am_readme
 - \ref am_change_log
 - \ref am_python
+- \ref am_thyra
 - \ref am_future
 - \ref am_final
 
@@ -691,6 +692,14 @@ defined using Python/Epetra objects. Please refer to the PyTrilinos
 documentation 
 http://software.sandia.gov/trilinos/packages/pytrilinos/overview.html
 for more details.
+
+\section am_thyra Thyra support
+
+The <a href="../../thyra/doc/html/index.html">Amesos to Thyra Linear Solver
+Adapters</a> take <tt>Thyra::LinearOpBase</tt> objects that wrap
+<tt>Epetra_Operator</tt> objects and turn them into
+<tt>Thyra::LinearOpWithSolveBase</tt> objects which can then be used to solve
+linear systems using <tt>Amesos_BaseSolver</tt> implementations.
 
 \section am_future Known bugs and future developments
 
