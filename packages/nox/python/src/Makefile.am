@@ -28,7 +28,9 @@
 
 # Include export Makefiles
 include $(top_builddir)/Makefile.export.nox
+if BUILD_NOX_PYTHON
 include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
+endif
 
 NOX_PYTHON_INCLUDES = $(NOX_INCLUDES) $(PYTRILINOS_INCLUDES)
 NOX_PYTHON_LIBS     = $(NOX_LIBS)     $(PYTRILINOS_LIBS)

@@ -566,7 +566,7 @@ uninstall-am: uninstall-info-am
 
 # Include export Makefiles
 include $(top_builddir)/Makefile.export.nox
-include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
+@BUILD_LOCA_PYTHON_TRUE@include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 include $(DEPFILES)
 
 # Wrapper and proxy targets

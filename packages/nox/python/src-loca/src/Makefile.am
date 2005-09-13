@@ -28,7 +28,9 @@
 
 # Include export Makefiles
 include $(top_builddir)/Makefile.export.nox
+if BUILD_LOCA_PYTHON
 include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
+endif
 
 LOCA_PYTHON_INCLUDES = $(LOCA_INCLUDES) $(PYTRILINOS_INCLUDES) -I$(srcdir) -I$(srcdir)/../../src
 LOCA_PYTHON_LIBS     = $(LOCA_LIBS)     $(PYTRILINOS_LIBS)
