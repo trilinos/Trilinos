@@ -48,7 +48,9 @@
 // NOX includes
 #include "NOX_Abstract_Group.H"
 #include "NOX_Abstract_Vector.H"
-#include "NOX_Epetra_Interface.H"
+#include "NOX_Epetra_Interface_Required.H"
+#include "NOX_Epetra_Interface_Jacobian.H"
+#include "NOX_Epetra_Interface_Preconditioner.H"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_FiniteDifference.H"
 #include "NOX_Epetra_FiniteDifferenceColoring.H"
@@ -117,7 +119,10 @@ using namespace NOX::Epetra  ;
 
 // NOX interface includes
 using namespace std;
-%include "NOX_Epetra_Interface.H"
+%include "NOX_Epetra_Interface_Required.H"
+%include "NOX_Epetra_Interface_Jacobian.H"
+%include "NOX_Epetra_Interface_Preconditioner.H"
+using namespace NOX::Epetra::Interface;
 %include "NOX_Epetra_Group.H"
 %include "NOX_Epetra_FiniteDifference.H"
 %include "NOX_Epetra_FiniteDifferenceColoring.H"

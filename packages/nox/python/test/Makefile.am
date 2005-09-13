@@ -56,6 +56,8 @@ TEST_SUITE = testNOXParameter testNOXStatusTest
 
 SETPATH_PY = setpath.py
 
+if BUILD_NOX_PYTHON
+if BUILD_NOX_TESTS
 all: $(TEST_SUITE)
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH_PY) . ; fi
 
@@ -66,3 +68,5 @@ test%: $(srcdir)/test%.py
 clean:
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
 	/bin/rm -f *.pyc
+endif
+endif

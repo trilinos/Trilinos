@@ -170,8 +170,10 @@ NOX_LAPACK = Extension("PyTrilinos.NOX._LAPACK",
 # Build the list of extension modules to wrap
 ext_modules = [NOX_TopLevel, NOX_Abstract, NOX_Parameter, NOX_Solver,
                NOX_StatusTest]
-if NOX_EPETRA: ext_modules.append(NOX_Epetra)
-if NOX_LAPACK: ext_modules.append(NOX_LAPACK)
+if PYTHON_NOX_EPETRA == 1:
+    ext_modules.append(NOX_Epetra)
+if PYTHON_NOX_LAPACK == 1:
+    ext_modules.append(NOX_LAPACK)
 
 # PyTrilinos.NOX setup
 setup(name         = "PyTrilinos.NOX",

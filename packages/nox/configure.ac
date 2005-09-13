@@ -324,7 +324,6 @@ AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
 NOX_INTERFACE(lapack, LIBNOXLAPACK, nox)
 NOX_INTERFACE(epetra, LIBNOXEPETRA, nox)
 NOX_INTERFACE(petsc, LIBNOXPETSC, nox)
-NOX_INTERFACE(tsf, LIBNOXTSF, nox)
 NOX_INTERFACE(belos, LIBNOXBELOS, nox)
 
 # ------------------------------------------------------------------------
@@ -391,6 +390,14 @@ REQUIRE_LIB_CHECK=no
   )
   AC_MSG_RESULT([${ADDON_TESTS}])
 
+  # Basic tests that are not dependent on a support package
+  if test X${ADDON_TESTS} = Xyes; then
+    REQUIRE_LIB_CHECK=yes
+  fi
+  AM_CONDITIONAL(BUILD_NOX_TESTS, test X${ADDON_TESTS} = Xyes)
+  AM_CONDITIONAL(BUILD_LOCA_TESTS, test X${ADDON_TESTS} = Xyes && 
+                                   test X${BUILD_LIBLOCA} = Xyes)
+
   # lapack testing
   NOX_TESTING(lapack)
   AM_CONDITIONAL(BUILD_LAPACK_TESTS, test X${ADDON_lapack_TESTS} = Xyes)
@@ -416,13 +423,6 @@ REQUIRE_LIB_CHECK=no
   NOX_TESTING(belos)
   AM_CONDITIONAL(BUILD_BELOS_TESTS, test X${ADDON_belos_TESTS} = Xyes)
   AC_SUBST(ADDON_belos_TESTS)
-
-  # python testing
-  NOX_TESTING(python)
-  AM_CONDITIONAL(BUILD_PYTHON_TESTS, test X${ADDON_python_TESTS} = Xyes)
-  AM_CONDITIONAL(BUILD_LOCA_PYTHON_TESTS, test X${ADDON_loca_python_TESTS} = Xyes)
-  AC_SUBST(ADDON_python_TESTS)
-  AC_SUBST(ADDON_loca_python_TESTS)
 
   # Determine whether to build the new test utils library
   AM_CONDITIONAL(BUILD_TESTUTILS, test X${REQUIRE_LIB_CHECK} = Xyes)
@@ -500,11 +500,6 @@ REQUIRE_LIB_CHECK=no
   AM_CONDITIONAL(BUILD_BELOS_EXAMPLES, test X${ADDON_belos_EXAMPLES} = Xyes)
   AC_SUBST(ADDON_belos_EXAMPLES)
   
-  # tsf
-  NOX_EXAMPLES(tsf)
-  AM_CONDITIONAL(BUILD_TSF_EXAMPLES, test X${ADDON_tsf_EXAMPLES} = Xyes)
-  AC_SUBST(ADDON_tsf_EXAMPLES)
-  
 # ------------------------------------------------------------------------
 # LOCA-Anasazi support
 # ------------------------------------------------------------------------
@@ -579,6 +574,41 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, ml, NOX_ML_EPETRA, BUILD_NOX_EPETRA_ML_SUPPO
 # NOX/LOCA-Python Check.
 # ------------------------------------------------------------------------
 TAC_ENABLE_PYTHON
+
+# Separate builds for loca and nox
+AC_ARG_ENABLE(nox-python,
+[AC_HELP_STRING([--disable-nox-python],[Used ONLY to disable the python supportin nox.  It cannot be used to enable python support.  Use the flag --enable-python to enable support.])],
+[
+  BUILD_NOX_PYTHON=${enableval}
+  if test X${BUILD_NOX_PYTHON} != Xno; then
+    echo "*****************************"
+    echo "NOX Configure ERROR - the flag \"--enable-nox-python\" is not"
+    echo "allowed!  To enable python support in nox, use --enable-python."
+    echo "The flag \"--disable-nox-python\" is allowed to specifically"
+    echo "disable nox python support while allowing python support in"
+    echo "other Trilinos packages."
+    echo "*****************************"
+    AC_MSG_ERROR([The flag \"--enable-nox-python\" is not allowed.])
+  fi
+],
+[
+  AC_ARG_ENABLE(python,
+  [],
+  [BUILD_NOX_PYTHON=${enableval}],
+  [BUILD_NOX_PYTHON=no]
+  )
+]
+)
+
+if test X${BUILD_NOX_PYTHON} = Xyes && test X${BUILD_LOCA} = Xyes; then
+  ## RPP: For now we have completely disabled python support in loca
+  ##BUILD_LOCA_PYTHON=yes
+  BUILD_LOCA_PYTHON=no
+else
+  BUILD_LOCA_PYTHON=no
+fi
+AM_CONDITIONAL(BUILD_NOX_PYTHON, test X${BUILD_NOX_PYTHON} = Xyes)
+AM_CONDITIONAL(BUILD_LOCA_PYTHON, test X${BUILD_LOCA_PYTHON} = Xyes)
 
 # Determine which addon libraries to support in Python
 IMPORT_LAPACK=0

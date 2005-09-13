@@ -550,10 +550,12 @@ int main(int argc, char *argv[])
           cout << "Nonlinear solver failed to converge!" << endl;
     }
 
+    
     // Get the Epetra_Vector with the final solution from the solver
     const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
     const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
-    Epetra_Vector& exactSolution = interface.getExactSoln(time);
+    //Epetra_Vector& exactSolution = interface.getExactSoln(time);
+    
 
     // End Nonlinear Solver **************************************
 
@@ -584,10 +586,13 @@ int main(int argc, char *argv[])
 
   // Test for convergence
   
-  // 1. Linear solve iterations on final time step (30)
+#ifndef HAVE_MPI 
+  // 1. Linear solve iterations on final time step (30)- SERIAL TEST ONLY!
+  //    The number of linear iterations changes with # of procs.
   if (solver.getParameterList().sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").getParameter("Total Number of Linear Iterations",0) != 30) {
     ierr = 1;
   }
+#endif
   // 2. Nonlinear solve iterations on final time step (3)
   if (solver.getParameterList().sublist("Output").getParameter("Nonlinear Iterations", 0) != 3)
     ierr = 2;

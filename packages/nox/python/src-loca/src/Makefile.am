@@ -49,19 +49,21 @@ $(tempdir):
 	mkdir -p $@
 
 # Set the appropriate Make macros
+if BUILD_LOCA_PYTHON
 if BUILD_LIBLOCAEPETRA
   EPETRA_I=LOCA_Epetra.i
-  LOCA_EPETRA=1
+  PYTHON_LOCA_EPETRA=1
 else
   LOCA_EPETRA=
+  PYTHON_LOCA_EPETRA=0
 endif
-
 if BUILD_LIBLOCALAPACK
   LAPACK_I=LOCA_LAPACK.i
 #  CHAN_I=LOCA_Chan.i
-  LOCA_LAPACK=1
+  PYTHON_LOCA_LAPACK=1
 else
-  LOCA_LAPACK=
+  PYTHON_LOCA_LAPACK=0
+endif
 endif
 
 # Define the SWIG interface files and the resulting wrapper files
@@ -73,6 +75,7 @@ WRAPPERS    = $(INTERFACES:.i=_wrap.cpp)
 PROXIES_TMP = $(INTERFACES:.i=.py      )
 PROXIES     = $(PROXIES_TMP:LOCA_=     )
 
+if BUILD_LOCA_PYTHON
 build: $(WRAPPERS) $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
@@ -82,6 +85,10 @@ install: build
 clean-local:
 	$(PYTHON) $(srcdir)/setup.py clean
 	$(RM) -r ../../packages
+else
+build:
+
+endif
 
 CLEANFILES += $(WRAPPERS) $(PROXIES)
 

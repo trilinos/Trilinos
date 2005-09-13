@@ -25,14 +25,6 @@ PyInterface::PyInterface(PyObject * problem) :
 					      "computeJacobian"));
   }
 
-  // If the python object has a "computePrecMatrix" attribute, set it
-  // to be the PyInterface computePrecMatrix callback function
-  if (PyObject_HasAttrString (mp_problem,
-			      "computePrecMatrix")) {
-    setComputePrecMatrix(PyObject_GetAttrString(mp_problem,
-						"computePrecMatrix"));
-  }
-
   // If the python object has a "computePeconditioner" attribute, set it
   // to be the PyInterface computePreconditioner callback function
   if (PyObject_HasAttrString (mp_problem,
@@ -50,8 +42,8 @@ PyInterface::~PyInterface() {
 
 // Compute F
 bool PyInterface::computeF(const Epetra_Vector & x,
-			         Epetra_Vector & RHS,
-				 FillType        flag)
+			   Epetra_Vector & RHS,
+			   NOX::Epetra::Interface::Required::FillType flag)
 {
   mp_x   = &x;
   mp_rhs = &RHS;
@@ -93,31 +85,10 @@ bool PyInterface::computeJacobian(const Epetra_Vector   & x,
   return (bool) PyObject_IsTrue(result);
 }
 
-// Compute the preconditioning matrix
-bool PyInterface::computePrecMatrix(const Epetra_Vector    & x,
-					  Epetra_RowMatrix & M)
-{
-  mp_x      = &x;
-  mp_precMx = &M;
-
-  PyObject * arglist;
-  PyObject * result;
-
-  arglist = Py_BuildValue("()");
-  result  = PyEval_CallObject(m_computePrecMatrix.getFunction(), arglist);
-  Py_DECREF(arglist);  // All done with argument list
-
-  if (0 == result) {
-    PyErr_Clear();
-    return false;
-  }
-  Py_DECREF(result); // All done with returned result object
-  return (bool) PyObject_IsTrue(result);
-}
-
 // Compute the preconditioning operator
 bool PyInterface::computePreconditioner(const Epetra_Vector   & x,
-					      Epetra_Operator & M)
+					Epetra_Operator & M,
+					NOX::Parameter::List* precParams)
 {
   mp_x      = &x;
   mp_precOp = &M;
@@ -147,12 +118,6 @@ PyObject * PyInterface::setComputeF(PyObject * p_pyObject)
 PyObject * PyInterface::setComputeJacobian(PyObject * p_pyObject)
 {
   return m_computeJacobian.setFunction(p_pyObject);
-}
-
-// Set the compute preconditioning matrix callback function
-PyObject * PyInterface::setComputePrecMatrix(PyObject * p_pyObject)
-{
-  return m_computePrecMatrix.setFunction(p_pyObject);
 }
 
 // Set the compute preconditioning operator callback function

@@ -191,8 +191,10 @@ LOCA_LAPACK = Extension("PyTrilinos.LOCA_LAPACK",
 ext_modules = [LOCA_TopLevel, LOCA_Abstract, LOCA_Bifurcation,
                LOCA_Continuation, LOCA_Homotopy, LOCA_MultiContinuation,
                LOCA_TimeDependent]
-if LOCA_EPETRA: ext_modules.append(LOCA_Epetra)
-if LOCA_LAPACK: ext_modules.append(LOCA_LAPACK)
+if PYTHON_LOCA_EPETRA == 1:
+    ext_modules.append(LOCA_Epetra)
+if PYTHON_LOCA_LAPACK == 1:
+    ext_modules.append(LOCA_LAPACK)
 
 # PyTrilinos.LOCA setup
 setup(name         = "PyTrilinos.LOCA",

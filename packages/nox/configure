@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE AR ac_ct_AR ALTERNATE_AR USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE HAVE_DOXYGEN_DOT EGREP INSIDE_TRILINOS_TRUE INSIDE_TRILINOS_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_LIBNOXTSF_TRUE BUILD_LIBNOXTSF_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE ADDON_lapack_TESTS ADDON_loca_lapack_TESTS BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE ADDON_epetra_TESTS ADDON_loca_epetra_TESTS BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE ADDON_petsc_TESTS ADDON_loca_petsc_TESTS BUILD_BELOS_TESTS_TRUE BUILD_BELOS_TESTS_FALSE ADDON_belos_TESTS BUILD_PYTHON_TESTS_TRUE BUILD_PYTHON_TESTS_FALSE BUILD_LOCA_PYTHON_TESTS_TRUE BUILD_LOCA_PYTHON_TESTS_FALSE ADDON_python_TESTS ADDON_loca_python_TESTS BUILD_TESTUTILS_TRUE BUILD_TESTUTILS_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE ADDON_lapack_EXAMPLES ADDON_loca_lapack_EXAMPLES BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE ADDON_epetra_EXAMPLES ADDON_loca_epetra_EXAMPLES BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE ADDON_petsc_EXAMPLES BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE ADDON_belos_EXAMPLES BUILD_TSF_EXAMPLES_TRUE BUILD_TSF_EXAMPLES_FALSE ADDON_tsf_EXAMPLES BUILD_LOCAANASAZI_TRUE BUILD_LOCAANASAZI_FALSE BUILD_LIBLOCAMF_TRUE BUILD_LIBLOCAMF_FALSE MF_INCDIR MF_LIBDIR MF_LIBS BUILD_NOX_EPETRAEXT_SUPPORT_TRUE BUILD_NOX_EPETRAEXT_SUPPORT_FALSE BUILD_NOX_EPETRA_ML_SUPPORT_TRUE BUILD_NOX_EPETRA_ML_SUPPORT_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG IMPORT_LAPACK IMPORT_EPETRA FLIBS BLAS_LIBS LAPACK_LIBS PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir abs_builddir abs_top_builddir MPI_LIBS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE AR ac_ct_AR ALTERNATE_AR USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE HAVE_DOXYGEN_DOT EGREP INSIDE_TRILINOS_TRUE INSIDE_TRILINOS_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_NOX_TESTS_TRUE BUILD_NOX_TESTS_FALSE BUILD_LOCA_TESTS_TRUE BUILD_LOCA_TESTS_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE ADDON_lapack_TESTS ADDON_loca_lapack_TESTS BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE ADDON_epetra_TESTS ADDON_loca_epetra_TESTS BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE ADDON_petsc_TESTS ADDON_loca_petsc_TESTS BUILD_BELOS_TESTS_TRUE BUILD_BELOS_TESTS_FALSE ADDON_belos_TESTS BUILD_TESTUTILS_TRUE BUILD_TESTUTILS_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE ADDON_lapack_EXAMPLES ADDON_loca_lapack_EXAMPLES BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE ADDON_epetra_EXAMPLES ADDON_loca_epetra_EXAMPLES BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE ADDON_petsc_EXAMPLES BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE ADDON_belos_EXAMPLES BUILD_LOCAANASAZI_TRUE BUILD_LOCAANASAZI_FALSE BUILD_LIBLOCAMF_TRUE BUILD_LIBLOCAMF_FALSE MF_INCDIR MF_LIBDIR MF_LIBS BUILD_NOX_EPETRAEXT_SUPPORT_TRUE BUILD_NOX_EPETRAEXT_SUPPORT_FALSE BUILD_NOX_EPETRA_ML_SUPPORT_TRUE BUILD_NOX_EPETRA_ML_SUPPORT_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG BUILD_NOX_PYTHON_TRUE BUILD_NOX_PYTHON_FALSE BUILD_LOCA_PYTHON_TRUE BUILD_LOCA_PYTHON_FALSE IMPORT_LAPACK IMPORT_EPETRA FLIBS BLAS_LIBS LAPACK_LIBS PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir abs_builddir abs_top_builddir MPI_LIBS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -899,7 +899,6 @@ Optional Features:
   --enable-nox-lapack     compile nox-lapack interface libraries
   --enable-nox-epetra     compile nox-epetra interface libraries
   --enable-nox-petsc      compile nox-petsc interface libraries
-  --enable-nox-tsf        compile nox-tsf interface libraries
   --enable-nox-belos      compile nox-belos interface libraries
   --enable-nox-tests      compile regression tests, over-rides the trilinos
                           flag "--enable-tests" so that nox tests can be built
@@ -926,6 +925,10 @@ Optional Features:
   --enable-nox-ml         Build ml support into the noxepetra library.
   --enable-python[=PYTHON]
                           absolute path name of Python executable
+  --disable-nox-python    Used ONLY to disable the python supportin nox. It
+                          cannot be used to enable python support. Use the
+                          flag --enable-python to enable support.
+
   --enable-prerelease     Enable compilation and documentation of prerelease
                           code. Prerelease code is code under development that
                           we restrict from release to the public. It is
@@ -4092,7 +4095,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4095:" \
+echo "$as_me:4098:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7829,33 +7832,6 @@ fi
 
 
 
-  # Check whether --enable-nox-tsf or --disable-nox-tsf was given.
-if test "${enable_nox_tsf+set}" = set; then
-  enableval="$enable_nox_tsf"
-  ADDON_tsf=$enableval
-else
-  ADDON_tsf=no
-
-fi;
-
-  echo "$as_me:$LINENO: checking whether we should build the nox-tsf interface libraries" >&5
-echo $ECHO_N "checking whether we should build the nox-tsf interface libraries... $ECHO_C" >&6
-  echo "$as_me:$LINENO: result: ${ADDON_tsf}" >&5
-echo "${ECHO_T}${ADDON_tsf}" >&6
-
-
-
-if test X${ADDON_tsf} = Xyes; then
-  BUILD_LIBNOXTSF_TRUE=
-  BUILD_LIBNOXTSF_FALSE='#'
-else
-  BUILD_LIBNOXTSF_TRUE='#'
-  BUILD_LIBNOXTSF_FALSE=
-fi
-
-
-
-
   # Check whether --enable-nox-belos or --disable-nox-belos was given.
 if test "${enable_nox_belos+set}" = set; then
   enableval="$enable_nox_belos"
@@ -7944,6 +7920,32 @@ fi;
 fi;
   echo "$as_me:$LINENO: result: ${ADDON_TESTS}" >&5
 echo "${ECHO_T}${ADDON_TESTS}" >&6
+
+  # Basic tests that are not dependent on a support package
+  if test X${ADDON_TESTS} = Xyes; then
+    REQUIRE_LIB_CHECK=yes
+  fi
+
+
+if test X${ADDON_TESTS} = Xyes; then
+  BUILD_NOX_TESTS_TRUE=
+  BUILD_NOX_TESTS_FALSE='#'
+else
+  BUILD_NOX_TESTS_TRUE='#'
+  BUILD_NOX_TESTS_FALSE=
+fi
+
+
+
+if test X${ADDON_TESTS} = Xyes &&
+                                   test X${BUILD_LIBLOCA} = Xyes; then
+  BUILD_LOCA_TESTS_TRUE=
+  BUILD_LOCA_TESTS_FALSE='#'
+else
+  BUILD_LOCA_TESTS_TRUE='#'
+  BUILD_LOCA_TESTS_FALSE=
+fi
+
 
   # lapack testing
 
@@ -8171,66 +8173,6 @@ else
   BUILD_BELOS_TESTS_TRUE='#'
   BUILD_BELOS_TESTS_FALSE=
 fi
-
-
-
-  # python testing
-
-    echo "$as_me:$LINENO: checking whether we should build the nox python regression tests" >&5
-echo $ECHO_N "checking whether we should build the nox python regression tests... $ECHO_C" >&6
-    if test X${ADDON_TESTS} = Xyes && test X${ADDON_python} = Xyes; then
-      echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-      ADDON_python_TESTS=yes
-
-      echo "$as_me:$LINENO: checking whether we should build the loca python regression tests" >&5
-echo $ECHO_N "checking whether we should build the loca python regression tests... $ECHO_C" >&6
-      if test X${BUILD_LIBLOCA} = Xyes; then
-	ADDON_loca_python_TESTS=yes
-        echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-      else
-	ADDON_loca_python_TESTS=no
-        echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-      fi
-
-    else
-      echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-      ADDON_python_TESTS=no
-      echo "$as_me:$LINENO: checking whether we should build the loca python regression tests" >&5
-echo $ECHO_N "checking whether we should build the loca python regression tests... $ECHO_C" >&6
-      echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-      ADDON_loca_python_TESTS=no
-    fi
-
-    if test X${ADDON_python_TESTS} = Xyes; then
-      REQUIRE_LIB_CHECK=yes
-    fi
-
-
-
-
-if test X${ADDON_python_TESTS} = Xyes; then
-  BUILD_PYTHON_TESTS_TRUE=
-  BUILD_PYTHON_TESTS_FALSE='#'
-else
-  BUILD_PYTHON_TESTS_TRUE='#'
-  BUILD_PYTHON_TESTS_FALSE=
-fi
-
-
-
-if test X${ADDON_loca_python_TESTS} = Xyes; then
-  BUILD_LOCA_PYTHON_TESTS_TRUE=
-  BUILD_LOCA_PYTHON_TESTS_FALSE='#'
-else
-  BUILD_LOCA_PYTHON_TESTS_TRUE='#'
-  BUILD_LOCA_PYTHON_TESTS_FALSE=
-fi
-
 
 
 
@@ -8489,55 +8431,6 @@ if test X${ADDON_belos_EXAMPLES} = Xyes; then
 else
   BUILD_BELOS_EXAMPLES_TRUE='#'
   BUILD_BELOS_EXAMPLES_FALSE=
-fi
-
-
-
-  # tsf
-
-    echo "$as_me:$LINENO: checking whether we should build the nox tsf examples" >&5
-echo $ECHO_N "checking whether we should build the nox tsf examples... $ECHO_C" >&6
-    if test X${ADDON_EXAMPLES} = Xyes && test X${ADDON_tsf} = Xyes; then
-      echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-      ADDON_tsf_EXAMPLES=yes
-
-      echo "$as_me:$LINENO: checking whether we should build the loca tsf examples" >&5
-echo $ECHO_N "checking whether we should build the loca tsf examples... $ECHO_C" >&6
-      if test X${BUILD_LIBLOCA} = Xyes; then
-	ADDON_loca_tsf_EXAMPLES=yes
-        echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-      else
-	ADDON_loca_tsf_EXAMPLES=no
-        echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-      fi
-
-    else
-      echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-      ADDON_tsf_EXAMPLES=no
-      echo "$as_me:$LINENO: checking whether we should build the loca tsf examples" >&5
-echo $ECHO_N "checking whether we should build the loca tsf examples... $ECHO_C" >&6
-      echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-      ADDON_loca_tsf_EXAMPLES=no
-    fi
-
-    if test X${ADDON_tsf_EXAMPLES} = Xyes; then
-      REQUIRE_LIB_CHECK=yes
-    fi
-
-
-
-
-if test X${ADDON_tsf_EXAMPLES} = Xyes; then
-  BUILD_TSF_EXAMPLES_TRUE=
-  BUILD_TSF_EXAMPLES_FALSE='#'
-else
-  BUILD_TSF_EXAMPLES_TRUE='#'
-  BUILD_TSF_EXAMPLES_FALSE=
 fi
 
 
@@ -9719,6 +9612,67 @@ GNU_HAVE_SWIG=${WITH_SWIG}
 
 
 
+# Separate builds for loca and nox
+# Check whether --enable-nox-python or --disable-nox-python was given.
+if test "${enable_nox_python+set}" = set; then
+  enableval="$enable_nox_python"
+
+  BUILD_NOX_PYTHON=${enableval}
+  if test X${BUILD_NOX_PYTHON} != Xno; then
+    echo "*****************************"
+    echo "NOX Configure ERROR - the flag \"--enable-nox-python\" is not"
+    echo "allowed!  To enable python support in nox, use --enable-python."
+    echo "The flag \"--disable-nox-python\" is allowed to specifically"
+    echo "disable nox python support while allowing python support in"
+    echo "other Trilinos packages."
+    echo "*****************************"
+    { { echo "$as_me:$LINENO: error: The flag \"--enable-nox-python\" is not allowed." >&5
+echo "$as_me: error: The flag \"--enable-nox-python\" is not allowed." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+else
+
+  # Check whether --enable-python or --disable-python was given.
+if test "${enable_python+set}" = set; then
+  enableval="$enable_python"
+  BUILD_NOX_PYTHON=${enableval}
+else
+  BUILD_NOX_PYTHON=no
+
+fi;
+
+
+fi;
+
+if test X${BUILD_NOX_PYTHON} = Xyes && test X${BUILD_LOCA} = Xyes; then
+  ## RPP: For now we have completely disabled python support in loca
+  ##BUILD_LOCA_PYTHON=yes
+  BUILD_LOCA_PYTHON=no
+else
+  BUILD_LOCA_PYTHON=no
+fi
+
+
+if test X${BUILD_NOX_PYTHON} = Xyes; then
+  BUILD_NOX_PYTHON_TRUE=
+  BUILD_NOX_PYTHON_FALSE='#'
+else
+  BUILD_NOX_PYTHON_TRUE='#'
+  BUILD_NOX_PYTHON_FALSE=
+fi
+
+
+
+if test X${BUILD_LOCA_PYTHON} = Xyes; then
+  BUILD_LOCA_PYTHON_TRUE=
+  BUILD_LOCA_PYTHON_FALSE='#'
+else
+  BUILD_LOCA_PYTHON_TRUE='#'
+  BUILD_LOCA_PYTHON_FALSE=
+fi
+
+
 # Determine which addon libraries to support in Python
 IMPORT_LAPACK=0
 if test X${BUILD_PYTHON} = Xyes && test X${ADDON_lapack} = Xyes; then
@@ -9853,7 +9807,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9856: \"$ac_link\") >&5
+(eval echo $as_me:9810: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9931,7 +9885,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9934: \"$ac_link\") >&5
+(eval echo $as_me:9888: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10933,7 +10887,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10936: \"$ac_link\") >&5
+(eval echo $as_me:10890: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11011,7 +10965,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11014: \"$ac_link\") >&5
+(eval echo $as_me:10968: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -16518,13 +16472,6 @@ echo "$as_me: error: conditional \"BUILD_LIBNOXPETSC\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_LIBNOXTSF_TRUE}" && test -z "${BUILD_LIBNOXTSF_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_LIBNOXTSF\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_LIBNOXTSF\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${BUILD_LIBNOXBELOS_TRUE}" && test -z "${BUILD_LIBNOXBELOS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_LIBNOXBELOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -16543,6 +16490,20 @@ if test -z "${BUILD_LIBLOCAEPETRA_TRUE}" && test -z "${BUILD_LIBLOCAEPETRA_FALSE
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_LIBLOCAEPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_LIBLOCAEPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_NOX_TESTS_TRUE}" && test -z "${BUILD_NOX_TESTS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_NOX_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_NOX_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_LOCA_TESTS_TRUE}" && test -z "${BUILD_LOCA_TESTS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_LOCA_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_LOCA_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -16595,20 +16556,6 @@ echo "$as_me: error: conditional \"BUILD_BELOS_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_PYTHON_TESTS_TRUE}" && test -z "${BUILD_PYTHON_TESTS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_PYTHON_TESTS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_PYTHON_TESTS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_LOCA_PYTHON_TESTS_TRUE}" && test -z "${BUILD_LOCA_PYTHON_TESTS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_LOCA_PYTHON_TESTS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_LOCA_PYTHON_TESTS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${BUILD_TESTUTILS_TRUE}" && test -z "${BUILD_TESTUTILS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TESTUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -16655,13 +16602,6 @@ if test -z "${BUILD_BELOS_EXAMPLES_TRUE}" && test -z "${BUILD_BELOS_EXAMPLES_FAL
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_BELOS_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_BELOS_EXAMPLES\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_TSF_EXAMPLES_TRUE}" && test -z "${BUILD_TSF_EXAMPLES_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TSF_EXAMPLES\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_TSF_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -16774,6 +16714,20 @@ if test -z "${HAVE_SWIG_TRUE}" && test -z "${HAVE_SWIG_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_SWIG\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_SWIG\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_NOX_PYTHON_TRUE}" && test -z "${BUILD_NOX_PYTHON_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_NOX_PYTHON\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_NOX_PYTHON\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_LOCA_PYTHON_TRUE}" && test -z "${BUILD_LOCA_PYTHON_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_LOCA_PYTHON\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_LOCA_PYTHON\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -17484,14 +17438,16 @@ s,@BUILD_LIBNOXEPETRA_TRUE@,$BUILD_LIBNOXEPETRA_TRUE,;t t
 s,@BUILD_LIBNOXEPETRA_FALSE@,$BUILD_LIBNOXEPETRA_FALSE,;t t
 s,@BUILD_LIBNOXPETSC_TRUE@,$BUILD_LIBNOXPETSC_TRUE,;t t
 s,@BUILD_LIBNOXPETSC_FALSE@,$BUILD_LIBNOXPETSC_FALSE,;t t
-s,@BUILD_LIBNOXTSF_TRUE@,$BUILD_LIBNOXTSF_TRUE,;t t
-s,@BUILD_LIBNOXTSF_FALSE@,$BUILD_LIBNOXTSF_FALSE,;t t
 s,@BUILD_LIBNOXBELOS_TRUE@,$BUILD_LIBNOXBELOS_TRUE,;t t
 s,@BUILD_LIBNOXBELOS_FALSE@,$BUILD_LIBNOXBELOS_FALSE,;t t
 s,@BUILD_LIBLOCALAPACK_TRUE@,$BUILD_LIBLOCALAPACK_TRUE,;t t
 s,@BUILD_LIBLOCALAPACK_FALSE@,$BUILD_LIBLOCALAPACK_FALSE,;t t
 s,@BUILD_LIBLOCAEPETRA_TRUE@,$BUILD_LIBLOCAEPETRA_TRUE,;t t
 s,@BUILD_LIBLOCAEPETRA_FALSE@,$BUILD_LIBLOCAEPETRA_FALSE,;t t
+s,@BUILD_NOX_TESTS_TRUE@,$BUILD_NOX_TESTS_TRUE,;t t
+s,@BUILD_NOX_TESTS_FALSE@,$BUILD_NOX_TESTS_FALSE,;t t
+s,@BUILD_LOCA_TESTS_TRUE@,$BUILD_LOCA_TESTS_TRUE,;t t
+s,@BUILD_LOCA_TESTS_FALSE@,$BUILD_LOCA_TESTS_FALSE,;t t
 s,@BUILD_LAPACK_TESTS_TRUE@,$BUILD_LAPACK_TESTS_TRUE,;t t
 s,@BUILD_LAPACK_TESTS_FALSE@,$BUILD_LAPACK_TESTS_FALSE,;t t
 s,@BUILD_LOCA_LAPACK_TESTS_TRUE@,$BUILD_LOCA_LAPACK_TESTS_TRUE,;t t
@@ -17513,12 +17469,6 @@ s,@ADDON_loca_petsc_TESTS@,$ADDON_loca_petsc_TESTS,;t t
 s,@BUILD_BELOS_TESTS_TRUE@,$BUILD_BELOS_TESTS_TRUE,;t t
 s,@BUILD_BELOS_TESTS_FALSE@,$BUILD_BELOS_TESTS_FALSE,;t t
 s,@ADDON_belos_TESTS@,$ADDON_belos_TESTS,;t t
-s,@BUILD_PYTHON_TESTS_TRUE@,$BUILD_PYTHON_TESTS_TRUE,;t t
-s,@BUILD_PYTHON_TESTS_FALSE@,$BUILD_PYTHON_TESTS_FALSE,;t t
-s,@BUILD_LOCA_PYTHON_TESTS_TRUE@,$BUILD_LOCA_PYTHON_TESTS_TRUE,;t t
-s,@BUILD_LOCA_PYTHON_TESTS_FALSE@,$BUILD_LOCA_PYTHON_TESTS_FALSE,;t t
-s,@ADDON_python_TESTS@,$ADDON_python_TESTS,;t t
-s,@ADDON_loca_python_TESTS@,$ADDON_loca_python_TESTS,;t t
 s,@BUILD_TESTUTILS_TRUE@,$BUILD_TESTUTILS_TRUE,;t t
 s,@BUILD_TESTUTILS_FALSE@,$BUILD_TESTUTILS_FALSE,;t t
 s,@BUILD_LAPACK_EXAMPLES_TRUE@,$BUILD_LAPACK_EXAMPLES_TRUE,;t t
@@ -17539,9 +17489,6 @@ s,@ADDON_petsc_EXAMPLES@,$ADDON_petsc_EXAMPLES,;t t
 s,@BUILD_BELOS_EXAMPLES_TRUE@,$BUILD_BELOS_EXAMPLES_TRUE,;t t
 s,@BUILD_BELOS_EXAMPLES_FALSE@,$BUILD_BELOS_EXAMPLES_FALSE,;t t
 s,@ADDON_belos_EXAMPLES@,$ADDON_belos_EXAMPLES,;t t
-s,@BUILD_TSF_EXAMPLES_TRUE@,$BUILD_TSF_EXAMPLES_TRUE,;t t
-s,@BUILD_TSF_EXAMPLES_FALSE@,$BUILD_TSF_EXAMPLES_FALSE,;t t
-s,@ADDON_tsf_EXAMPLES@,$ADDON_tsf_EXAMPLES,;t t
 s,@BUILD_LOCAANASAZI_TRUE@,$BUILD_LOCAANASAZI_TRUE,;t t
 s,@BUILD_LOCAANASAZI_FALSE@,$BUILD_LOCAANASAZI_FALSE,;t t
 s,@BUILD_LIBLOCAMF_TRUE@,$BUILD_LIBLOCAMF_TRUE,;t t
@@ -17570,6 +17517,10 @@ s,@SWIG_PYTHON_CPPFLAGS@,$SWIG_PYTHON_CPPFLAGS,;t t
 s,@HAVE_SWIG_TRUE@,$HAVE_SWIG_TRUE,;t t
 s,@HAVE_SWIG_FALSE@,$HAVE_SWIG_FALSE,;t t
 s,@GNU_HAVE_SWIG@,$GNU_HAVE_SWIG,;t t
+s,@BUILD_NOX_PYTHON_TRUE@,$BUILD_NOX_PYTHON_TRUE,;t t
+s,@BUILD_NOX_PYTHON_FALSE@,$BUILD_NOX_PYTHON_FALSE,;t t
+s,@BUILD_LOCA_PYTHON_TRUE@,$BUILD_LOCA_PYTHON_TRUE,;t t
+s,@BUILD_LOCA_PYTHON_FALSE@,$BUILD_LOCA_PYTHON_FALSE,;t t
 s,@IMPORT_LAPACK@,$IMPORT_LAPACK,;t t
 s,@IMPORT_EPETRA@,$IMPORT_EPETRA,;t t
 s,@FLIBS@,$FLIBS,;t t

@@ -92,8 +92,6 @@ class Problem:
         return True
     def computeJacobian(self, x, m):
         return False
-    def computePrecMatrix(self, x, m):
-        return False
     def computePreconditioner(self, x, op):
         return False
 

@@ -337,13 +337,16 @@ int main(int argc, char *argv[])
       if (printing.isPrintProcessAndType(NOX::Utils::Error))
 	cout << "Nonlinear solver failed to converge!" << endl;
   }
-  // 2. Linear solve iterations (53)
+#ifndef HAVE_MPI 
+  // 2. Linear solve iterations (53) - SERIAL TEST ONLY!
+  //    The number of linear iterations changes with # of procs.
   if (solver.getParameterList().sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").getParameter("Total Number of Linear Iterations",0) != 53) {
-    status = 1;
+    status = 2;
   }
+#endif
   // 3. Nonlinear solve iterations (10)
   if (solver.getParameterList().sublist("Output").getParameter("Nonlinear Iterations", 0) != 10)
-    status = 1;
+    status = 3;
 
 
   // Summarize test results 

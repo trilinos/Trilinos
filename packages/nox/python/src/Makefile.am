@@ -50,17 +50,21 @@ $(tempdir):
 	mkdir -p $@
 
 # Set the appropriate Make macros
+if BUILD_NOX_PYTHON
 if BUILD_LIBNOXEPETRA
   EPETRA_I=NOX_Epetra.i
-  NOX_EPETRA=1
+  PYTHON_NOX_EPETRA=1
 else
-  NOX_EPETRA=
+  EPETRA_I=
+  PYTHON_NOX_EPETRA=0
 endif
 if BUILD_LIBNOXLAPACK
   LAPACK_I=NOX_LAPACK.i
-  NOX_LAPACK=1
+  PYTHON_NOX_LAPACK=1
 else
-  NOX_LAPACK=
+  LAPACK_I= 
+  PYTHON_NOX_LAPACK=1
+endif
 endif
 
 # Define the SWIG interface files and the resulting wrapper files
@@ -70,6 +74,7 @@ WRAPPERS    = $(INTERFACES:.i=_wrap.cpp)
 PROXIES_TMP = $(INTERFACES:.i=.py      )
 PROXIES     = $(PROXIES_TMP:NOX_=      )
 
+if BUILD_NOX_PYTHON
 build: $(WRAPPERS) $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
@@ -79,6 +84,10 @@ install: build
 clean-local:
 	$(PYTHON) $(srcdir)/setup.py clean
 	$(RM) -r ../../packages
+else
+build:
+
+endif
 
 CLEANFILES += $(WRAPPERS) $(PROXIES)
 

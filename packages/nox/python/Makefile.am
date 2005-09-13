@@ -30,21 +30,5 @@
 ## Subdirectories to be make'd recursively
 ## #######################################################################
 
-if BUILD_LIBNOXEPETRA
-  EPETRA_TEST_SUBDIR=test-epetra
-  EPETRA_EXAMPLE_SUBDIR=example-epetra
-endif
-
-if BUILD_LIBNOXLAPACK
-  LAPACK_TEST_SUBDIR=test-lapack
-  LAPACK_EXAMPLE_SUBDIR=example-lapack
-endif
-
-if BUILD_LIBLOCA
-  LOCA_SRC_SUBDIR=src-loca
-endif
-
-SUBDIRS = src test \
-	  $(EPETRA_TEST_SUBDIR) $(EPETRA_EXAMPLE_SUBDIR) \
-	  $(LAPACK_TEST_SUBDIR) $(LAPACK_EXAMPLE_SUBDIR) \
-	  $(LOCA_SRC_SUBDIR)
+SUBDIRS = src src-loca test test-lapack example-lapack \
+          test-epetra example-epetra

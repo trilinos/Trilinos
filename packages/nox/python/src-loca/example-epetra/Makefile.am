@@ -55,6 +55,8 @@ EXAMPLE_SUITE =
 
 SETPATH_PY = setpath.py
 
+if BUILD_LOCA_PYTHON
+if BUILD_LOCA_EPETRA_EXAMPLES
 all: $(EXAMPLE_SUITE)
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH_PY) . ; fi
 
@@ -65,3 +67,5 @@ ex%: $(srcdir)/ex%.py
 clean:
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
 	/bin/rm -f *.pyc
+endif
+endif
