@@ -22,9 +22,7 @@
     DIRS = AztecSimple,
            Communicator,
            IFPACKSmoothers,
-           MLAPICompare,
            ML_Operator2Epetra_RowMatrix,
-           MultiLevelPreconditioner_Aux,
            MultiLevelPreconditioner_Maxwell,
            MultiLevelPreconditioner_NonSym,
            MultiLevelPreconditioner_Sym,
@@ -33,6 +31,12 @@
            VerySimple,
            Zoltan;
     COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK, MLTests) {
+     DIRS = MultiLevelPreconditioner_Aux,
+            MLAPICompare;
+     COMM = SERIAL, MPI(4 9 16 25);
 }
 
 #
