@@ -103,6 +103,7 @@ comm_(comm)
   fd_beta_             = 1.0e-06;
   fd_centered_         = false;
   offset_newPrec_      = 100;
+  recompute_newPrec_   = 0;
 
   FAS_normF_           = 1.0e-05;
   FAS_nupdate_         = 1.0e-05;
@@ -259,6 +260,23 @@ bool ML_NOX::ML_Nox_Preconditioner::SetRecomputeOffset(int offset)
     return false;     
   }
   offset_newPrec_ = offset;
+  return true;
+}                              
+
+/*----------------------------------------------------------------------*
+ |  Set methods for flags/data (public)                      m.gee 03/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::SetRecomputeOffset(int offset, int recomputestep)
+{ 
+  if (offset<0 || recomputestep<0)
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::SetRecomputeOffset:\n"
+         << "**ERR**: offset or recomputestep out of range, using previous one\n"
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; 
+    return false;     
+  }
+  offset_newPrec_    = offset;
+  recompute_newPrec_ = recomputestep;
   return true;
 }                              
 
@@ -516,8 +534,11 @@ bool ML_NOX::ML_Nox_Preconditioner::computePreconditioner(
 {
    bool flag = true;
    int offset = getoffset();
-   if (ncalls_NewPrec_ % offset == 0)
-         setinit(false);
+   if (ncalls_NewPrec_ % offset == 0) // recompute every offset
+      setinit(false);
+   if (recompute_newPrec_ != 0) // recompute initially after step recompute_newPrec_
+   if (ncalls_NewPrec_ == recompute_newPrec_)
+      setinit(false);
    if (isinit() == false)
    {
       if (comm_.MyPID()==0 && ml_printlevel_ > 0 )

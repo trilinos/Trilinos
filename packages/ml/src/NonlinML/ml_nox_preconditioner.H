@@ -291,6 +291,18 @@ public:
    */
   bool SetRecomputeOffset(int offset);
 
+  //! Set the offset for recomputing this preconditioner.
+  /*! 
+   Set the offset for recomputing this preconditioner. Every offset times, the
+   preconditioner is applied it will recreate itself and will use the
+   fine level interface to obtain either a new fine level Jacobian or
+   to compute a Finite Differencing - Jacobian.
+   Optionally, the MG hierarchy and Jacobian can be recomputed after the
+   recomputestep iteration
+   \param offset (In) : How often to apply this preconditioner before recomputing it.
+   */
+  bool SetRecomputeOffset(int offset, int recomputestep);
+
   //! Set dimensions for the PDE and the Nullspace.
   /*! 
    Set dimensions for the PDE and the Nullspace. 
@@ -518,6 +530,7 @@ private:
   bool                                  destroyfineJac_;   // flag to indicate this class destroys the fineJac_
   Epetra_CrsMatrix*                     fineJac_;          // fine grid matrix (only used when ismatrixfree_=false)
   int                                   offset_newPrec_;   // how often to recompute the precond from scratch
+  int                                   recompute_newPrec_;// initial recomputing step
   int                                   ncalls_NewPrec_;   // how often computePreconditioner is called
 
   // ---data related to the ML-hierarchy---
