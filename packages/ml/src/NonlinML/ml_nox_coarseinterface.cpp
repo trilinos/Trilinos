@@ -615,6 +615,7 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
              << "**ERR**: isFAS is true and f-vector is NULL\n"
              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
      }
+#if 0
      if (F.Map().SameAs(fbar_->Map())  != true ||
          F.Map().SameAs(fxbar_->Map()) != true)
      {
@@ -622,7 +623,7 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
              << "**ERR**: mismatch in Maps of F and fbar_/fxbar_\n"
              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
      }
-
+#endif
      F.Update(-1.0,*fxbar_,1.0,*fbar_,1.0);
 
   }

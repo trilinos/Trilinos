@@ -539,6 +539,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Ve
       fbar  = new Epetra_Vector(Copy,*f,0);
       xbar  = new Epetra_Vector(Copy,*x,0);
       fxbar = new Epetra_Vector(xbar->Map(),false);
+      nlnLevel_[level]->setModifiedSystem(false,NULL,NULL);
       nlnLevel_[level]->computeF(*xbar,*fxbar,NOX::EpetraNew::Interface::Required::Residual);
       nlnLevel_[level]->setModifiedSystem(true,fbar,fxbar);
       // iterate on the FAS-problem
@@ -559,10 +560,11 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Ve
    fbar  = new Epetra_Vector(Copy,*f,0);
    xbar  = new Epetra_Vector(Copy,*x,0);
    fxbar = new Epetra_Vector(xbar->Map(),false);
+   nlnLevel_[level]->setModifiedSystem(false,NULL,NULL);
    nlnLevel_[level]->computeF(*xbar,*fxbar,NOX::EpetraNew::Interface::Required::Residual);
    nlnLevel_[level]->setModifiedSystem(true,fbar,fxbar);
 
-   //======presmoothing on the original system===========================
+   //======presmoothing on the FAS system===========================
    if (level > 0 && FAS_presmooth_>0)
       *converged = nlnLevel_[level]->iterate(f,x,FAS_presmooth_);
    else if (level==0 && FAS_prefinesmooth_>0)

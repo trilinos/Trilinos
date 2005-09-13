@@ -882,7 +882,7 @@ bool ML_NOX::ML_Nox_NonlinearLevel::iterate(Epetra_Vector* f, Epetra_Vector* x,
       returnstatus = false;
       if (ml_printlevel_ > 0 && comm_.MyPID() == 0) {
          cout << "ML (level " << level_ << "): NOX: " 
-              << niter << " iterations, Norm(F)=" << norm2 << ", Unconverged\n"; fflush(stdout);
+              << niter << " iterations, Norm(F)=" << norm2 << ", Failed\n"; fflush(stdout);
       }
    }
    else
