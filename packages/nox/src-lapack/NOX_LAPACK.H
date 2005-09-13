@@ -36,5 +36,3 @@
 #include "NOX_LAPACK_Vector.H"
 #include "NOX_LAPACK_Group.H"
 #include "NOX_LAPACK_Interface.H"
-
-
