@@ -32,9 +32,10 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 
 struct MatrixTestPacket {
-  MatrixTestPacket(std::string  _matrixFile, double _maxFwdError, double _maxError, double _maxResid)
-    :matrixFile(_matrixFile),maxFwdError(_maxFwdError),maxError(_maxError),maxResid(_maxResid) {}
+  MatrixTestPacket(std::string  _matrixFile, bool _unsymmetric, double _maxFwdError, double _maxError, double _maxResid)
+    :matrixFile(_matrixFile),unsymmetric(_unsymmetric),maxFwdError(_maxFwdError),maxError(_maxError),maxResid(_maxResid) {}
   std::string  matrixFile;
+  bool         unsymmetric;
   double       maxFwdError;
   double       maxError;
   double       maxResid;
@@ -88,15 +89,15 @@ int main(int argc, char* argv[])
     // Note, we may need to adjust these for bad platforms ...
     const MTP testMatrices[numTestMatrices] =
       {
-        MTP("In_bcsstk01.mtx",1e-12,1e-12,1e-12)
-        ,MTP("In_bcsstk02.mtx",1e-12,1e-12,1e-12)
-        ,MTP("In_bcsstk04.mtx",1e-12,1e-10,1e-12)
-        ,MTP("In_Diagonal.mtx",1e-12,1e-12,1e-12)
-        ,MTP("In_FourByFour.mtx",1e-12,1e-12,1e-12)
-        ,MTP("In_KheadK.mtx",1e-12,1e-12,1e-12)
-        ,MTP("In_KheadSorted.mtx",1e-12,1e-12,1e-12)
-        ,MTP("In_nos1.mtx",1e-11,1e-10,1e-12)
-        ,MTP("In_nos5.mtx",1e-12,1e-12,1e-12)
+        MTP("In_bcsstk01.mtx",false,1e-12,1e-12,1e-12)
+        ,MTP("In_bcsstk02.mtx",false,1e-12,1e-12,1e-12)
+        ,MTP("In_bcsstk04.mtx",false,1e-12,1e-10,1e-12)
+        ,MTP("In_Diagonal.mtx",false,1e-12,1e-12,1e-12)
+        ,MTP("In_FourByFour.mtx",true,1e-12,1e-12,1e-12)
+        ,MTP("In_KheadK.mtx",false,1e-12,1e-12,1e-12)
+        ,MTP("In_KheadSorted.mtx",false,1e-12,1e-12,1e-12)
+        ,MTP("In_nos1.mtx",false,1e-11,1e-10,1e-12)
+        ,MTP("In_nos5.mtx",false,1e-12,1e-12,1e-12)
       };
     //
     // Loop through all of the test matrices
@@ -109,41 +110,46 @@ int main(int argc, char* argv[])
       //
       for( int solver_i = 0; solver_i < Thyra::Amesos::numSolverTypes; ++solver_i ) {
         const Thyra::Amesos::ESolverType
-          solverType = Thyra::Amesos::SolverTypeValues[solver_i];
+          solverType = Thyra::Amesos::solverTypeValues[solver_i];
         //
         // Toggle the refactorization options
         //
         for( int factorizationPolicy_i = 0; factorizationPolicy_i < Thyra::Amesos::numRefactorizationPolices;  ++factorizationPolicy_i ) {
           const Thyra::Amesos::ERefactorizationPolicy
-            refactorizationPolicy = Thyra::Amesos::RefactorizationPolicyValues[factorizationPolicy_i];
+            refactorizationPolicy = Thyra::Amesos::refactorizationPolicyValues[factorizationPolicy_i];
           if(verbose)
             out << std::endl<<matrix_i<<"."<<solver_i<<"."<<factorizationPolicy_i<<": "
                 << "Testing, matrixFile=\'"<<mtp.matrixFile<<"\', solverType=\'"<<toString(solverType)<<"\', refactorizationPolicy=\'"<<toString(refactorizationPolicy)<<"\' ..."; 
-          std::ostringstream oss;
-          result =
-            Thyra::test_single_amesos_thyra_solver(
-              matrixDir+"/"+mtp.matrixFile,solverType,refactorizationPolicy,testTranspose,numRandomVectors
-              ,mtp.maxFwdError,mtp.maxError,mtp.maxResid,showAllTestsDetails,dumpAll,&oss
-              );
-          if(!result) success = false;
-          if(verbose) {
-            if(result) {
-              if(showAllTests)
-                out << std::endl << oss.str();
-              else
-                out << " : passed!\n";
-            }
-            else {
-              if(showAllTests)
-                out << std::endl << oss.str();
-              else
-                out << " : failed!\n";
+          if( mtp.unsymmetric && Thyra::Amesos::supportsUnsymmetric[solver_i] ) {
+            out << " : Skipping since unsymmetric and not supported!\n";
+          }
+          else {
+            std::ostringstream oss;
+            result =
+              Thyra::test_single_amesos_thyra_solver(
+                matrixDir+"/"+mtp.matrixFile,solverType,refactorizationPolicy,testTranspose,numRandomVectors
+                ,mtp.maxFwdError,mtp.maxError,mtp.maxResid,showAllTestsDetails,dumpAll,&oss
+                );
+            if(!result) success = false;
+            if(verbose) {
+              if(result) {
+                if(showAllTests)
+                  out << std::endl << oss.str();
+                else
+                  out << " : passed!\n";
+              }
+              else {
+                if(showAllTests)
+                  out << std::endl << oss.str();
+                else
+                  out << " : failed!\n";
+              }
             }
           }
         }
       }
     }
-
+    
 	}
 	catch( const std::exception &excpt ) {
 		std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;

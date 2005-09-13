@@ -122,20 +122,26 @@ const int numSolverTypes = 1 // LAPACK
 
 \ingroup Amesos_Thyra_adapters_grp
 */
-extern const ESolverType SolverTypeValues[numSolverTypes];
+extern const ESolverType solverTypeValues[numSolverTypes];
 
 /** \brief .
 
 \ingroup Amesos_Thyra_adapters_grp
 */
-extern const char* SolverTypeNames[numSolverTypes];
+extern const char* solverTypeNames[numSolverTypes];
+
+/** \brief .
+
+\ingroup Amesos_Thyra_adapters_grp
+*/
+extern const bool supportsUnsymmetric[numSolverTypes];
 
 /** \brief .
 
 \ingroup Amesos_Thyra_adapters_grp
 */
 inline const char* toString(const ESolverType solverType)
-{ return SolverTypeNames[solverType]; }
+{ return solverTypeNames[solverType]; }
 
 /** \brief The policy used on refactoring a matrix.
 
@@ -156,17 +162,17 @@ const int numRefactorizationPolices = 2;
 
 \ingroup Amesos_Thyra_adapters_grp
 */
-extern const ERefactorizationPolicy RefactorizationPolicyValues[numRefactorizationPolices];
+extern const ERefactorizationPolicy refactorizationPolicyValues[numRefactorizationPolices];
 
 /** \brief . */
-extern const char* RefactorizationPolicyNames[numRefactorizationPolices];
+extern const char* refactorizationPolicyNames[numRefactorizationPolices];
 
 /** \brief .
 
 \ingroup Amesos_Thyra_adapters_grp
 */
 inline const char* toString(const ERefactorizationPolicy refactorizationPolicy)
-{ return RefactorizationPolicyNames[refactorizationPolicy]; }
+{ return refactorizationPolicyNames[refactorizationPolicy]; }
 
 } // namespace Amesos
 

@@ -41,7 +41,35 @@ namespace Thyra {
 /** \brief <tt>LinearOpWithSolveFactoryBase</tt> subclass implemented in terms
  * of <tt>AztecOO</tt>.
  *
- * ToDo: Finish documentation!
+ * This class creates objects of type <tt>AztecOOLinearOpWithSolve</tt>
+ * (through the <tt>LinearOpWithSolveBase</tt> interface) using
+ * <tt>AztecOO</tt> objects.
+ *
+ * The class can support both externally defined preconditioners and built-in
+ * aztec preconditioners.  Then built-in aztec preconditioners are used (as
+ * specified by the input parameter list), <tt>*this</tt> only supports very
+ * limited functionality and does not support adjoint solves.  However, when
+ * no preconditioning or externally defined preconditioners are used,
+ * <tt>*this</tt> supports a wide range of features which include:
+ *
+ * <ul>
+ * <li>Handling of implicitly scaled and transposed <tt>LinearOpBase</tt>
+ * objects through the <tt>ScaledAdjointLinearOpBase</tt> interface.
+ * <li>Supports forward and adjoint solves.
+ * </ul>
+ *
+ * <b>Warning:</b> One must be very careful what options are set using the
+ * parameter lists passed in using <tt>setFwdAztecSolveParameters()</tt> and
+ * <tt>setAdjAztecSolveParameters()</tt> as some of these options will cause
+ * great problems and may even result in <tt>exit()</tt> being called to
+ * terminate your program!  In the future, a new parameter sublist will be
+ * defined that will define a safer way to control the underlying aztec
+ * solvers.
+ *
+ * Click on the above "examples" link at the top to see how this class is
+ * used.
+ *
+ * \ingroup AztecOO_Thyra_adapters_grp
  */
 class AztecOOLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<double> {
 public:

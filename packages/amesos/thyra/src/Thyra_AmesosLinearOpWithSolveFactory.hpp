@@ -42,21 +42,33 @@ namespace Thyra {
 /** \brief Concrete <tt>LinearOpWithSolveFactoryBase</tt> adapter subclass that uses
  * Amesos direct solvers.
  *
+ * This class creates objects of type <tt>AmesosLinearOpWithSolve</tt>
+ * (through the <tt>LinearOpWithSolveBase</tt> interface) which can then be
+ * used to solve for linear systems.  The <tt>%AmesosLinearOpWithSolve</tt>
+ * objects created an initialized by this object are completely indpendent
+ * from <tt>*this</tt>.  This allows for multiple
+ * <tt>%AmesosLinearOpWithSolve</tt> objects to be created and maintained
+ * simultaneously and for <tt>*this</tt> factory object to be destroyed
+ * without affecting the created <tt>%AmesosLinearOpWithSolve</tt> objects.
+ *
+ * 
+ *
  * <b>Development notes:</b> This class has been designed to allow for "smart"
  * <tt>EpetraLinearOpBase</tt> subclasses that can create an
- * <tt>Epetra_Operator</tt> view on command.  However, the current
- * implementation of at least some of the <tt>Amesos_BaseSolver</tt>
- * subclasses do not allow the <tt>Epetra_Operator</tt> object to change after
- * construction.  Therefore, this current flawed implementation requires that
- * every call to the <tt>EpetraLinearOpBase::epetra_op()</tt> function return
- * the same <tt>Epetra_Operator</tt> object.
+ * <tt>Epetra_Operator</tt> view on command where the underlying storage may
+ * not be an <tt>Epetra</tt> object.  However, the current implementation of
+ * at least some of the <tt>Amesos_BaseSolver</tt> subclasses do not allow the
+ * <tt>%Epetra_Operator</tt> object to change after construction.  Therefore,
+ * this current flawed implementation requires that every call to the
+ * <tt>EpetraLinearOpBase::getEpetraOpView()</tt> function return the same
+ * <tt>%Epetra_Operator</tt> object.
  *
  * \ingroup Amesos_Thyra_adapters_grp
  */
 class AmesosLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<double> {
 public:
 
-  /** @name Constructors/initializers/accessors */
+  /** \name Constructors/initializers/accessors */
   //@{
 
   /** \brief Constructor which sets the defaults.

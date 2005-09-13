@@ -44,7 +44,7 @@ namespace Thyra {
  * different use cases.  It supports forward and optionally adjoint
  * (transpose) solves.  I can support inexact solves based on a residual norm
  * tolerance or just allow for a default (i.e. tight) linear solve tolerance.
- * Currently, this subclass not not support inexact solves by specifying a
+ * Currently, this subclass does not support inexact solves by specifying a
  * tolerance on the estimate of the solution error and it is unlikely that
  * this subclass with ever support this mode.
  *
@@ -53,10 +53,12 @@ namespace Thyra {
  * implementation that is fairly flexible (and will be make more flexible in
  * the future) is <tt>AztecOOLinearOpWithSolveFactory</tt>.
  *
- * This subclass allows for user-defined preconditioners or for built-in
- * <tt>AztecOO</tt> preconditioners.
+ * This subclass allows for user-defined preconditioners or for built-in aztec
+ * preconditioners.
  *
  * ToDo: Finish documentation!
+ *
+ * \ingroup AztecOO_Thyra_adapters_grp
  */
 class AztecOOLinearOpWithSolve
   : virtual public LinearOpWithSolveBase<double>               // Public interface

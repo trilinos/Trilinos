@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
     // Note, we may need to adjust these for bad platforms ...
     const MTP testMatrices[numTestMatrices] =
       {
-        MTP("In_bcsstk01.mtx"       ,1e-12, 40 , 1e-4, 0.5,      1.0, 20 , 1e-10, 0.5,      1.0)
+        MTP("In_bcsstk01.mtx"       ,1e-12, 40 , 1e-4, 0.6,      1.0, 20 , 1e-10, 0.5,      1.0)
         ,MTP("In_bcsstk02.mtx"      ,1e-12, 40 , 1e-3, 0.5,      1.0, 2  , 1e-10, 0.5,      1.0)
         ,MTP("In_bcsstk04.mtx"      ,1e-12, 80 , 1e-4, 0.999990, 1.0, 40 , 1e-10, 0.999990, 1.0)
         ,MTP("In_Diagonal.mtx"      ,1e-12, 4  , 1e-6, 1e-14,    1.0, 2  , 1e-10, 1e-14,    1.0)

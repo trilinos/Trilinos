@@ -41,12 +41,13 @@ namespace Thyra {
 /** \brief Concrete <tt>LinearOpWithSolveBase</tt> subclass that adapts any
  * <tt>Amesos_BaseSolver</tt> object.
  *
- * Note, clients should not generally directly create objects of this type but
- * instead should use <tt>AmesosLinearOpWithSolveFactory</tt>.  Only very
- * sophisticated users should ever directly interact with an object through
- * this subclass interface.
+ * See the <tt>LinearOpWithSolveBase</tt> interface for a description of how
+ * to use objects of this type.
  *
- * ToDo: Finish documentation!
+ * <b>Note:</b> Clients should not generally directly create objects of this
+ * type but instead should use <tt>AmesosLinearOpWithSolveFactory</tt>.  Only
+ * very sophisticated users should ever directly interact with an object
+ * through this subclass interface.
  *
  * \ingroup Amesos_Thyra_adapters_grp
  */

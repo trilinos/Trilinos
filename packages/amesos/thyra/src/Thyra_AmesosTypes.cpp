@@ -32,7 +32,7 @@
 
 namespace Thyra {
 
-const Amesos::ESolverType Amesos::SolverTypeValues[Amesos::numSolverTypes] =
+const Amesos::ESolverType Amesos::solverTypeValues[Amesos::numSolverTypes] =
 {
   LAPACK
 #ifdef HAVE_AMESOS_KLU
@@ -70,7 +70,7 @@ const Amesos::ESolverType Amesos::SolverTypeValues[Amesos::numSolverTypes] =
 #endif
 };
 
-const char* Amesos::SolverTypeNames[Amesos::numSolverTypes] =
+const char* Amesos::solverTypeNames[Amesos::numSolverTypes] =
 {
   "Lapack"
 #ifdef HAVE_AMESOS_KLU
@@ -108,13 +108,51 @@ const char* Amesos::SolverTypeNames[Amesos::numSolverTypes] =
 #endif
 };
 
-const Amesos::ERefactorizationPolicy Amesos::RefactorizationPolicyValues[Amesos::numRefactorizationPolices] =
+const bool Amesos::supportsUnsymmetric[Amesos::numSolverTypes] =
+{
+  true
+#ifdef HAVE_AMESOS_KLU
+  ,true
+#endif
+#ifdef HAVE_AMESOS_UMFPACK
+  ,true
+#endif
+#ifdef HAVE_AMESOS_SUPERLU
+  ,true
+#endif
+#ifdef HAVE_AMESOS_SUPERLUDIST
+  ,true
+#endif
+#ifdef HAVE_AMESOS_TAUCS
+  ,false
+#endif
+#ifdef HAVE_AMESOS_PARDISO
+  ,true
+#endif
+#ifdef HAVE_AMESOS_PASTIX
+  ,true
+#endif
+#ifdef HAVE_AMESOS_PARAKLETE
+  ,true
+#endif
+#ifdef HAVE_AMESOS_MUMPS
+  ,true
+#endif
+#ifdef HAVE_AMESOS_SCALAPACK
+  ,true
+#endif
+#ifdef HAVE_AMESOS_DSCPACK
+  ,false
+#endif
+};
+
+const Amesos::ERefactorizationPolicy Amesos::refactorizationPolicyValues[Amesos::numRefactorizationPolices] =
 {
   REPIVOT_ON_REFACTORIZATION
   ,NO_PIVOT_ON_REFACTORIZATION
 };
 
-const char* Amesos::RefactorizationPolicyNames[Amesos::numRefactorizationPolices] =
+const char* Amesos::refactorizationPolicyNames[Amesos::numRefactorizationPolices] =
 {
   "RepivotOnRefactorization"
   ,"NoPivotOnRefactorization"

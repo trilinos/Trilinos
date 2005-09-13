@@ -67,12 +67,12 @@ int main(int argc, char* argv[])
     clp.setOption( "matrix-file", &matrixFile, "Matrix iput file [Required]." );
     clp.setOption(
       "solver-type", &solverType
-      ,Thyra::Amesos::numSolverTypes, Thyra::Amesos::SolverTypeValues, Thyra::Amesos::SolverTypeNames
+      ,Thyra::Amesos::numSolverTypes, Thyra::Amesos::solverTypeValues, Thyra::Amesos::solverTypeNames
       ,"Type of direct solver."
       );
     clp.setOption(
       "refactorization-policy", &refactorizationPolicy
-      ,Thyra::Amesos::numRefactorizationPolices, Thyra::Amesos::RefactorizationPolicyValues, Thyra::Amesos::RefactorizationPolicyNames
+      ,Thyra::Amesos::numRefactorizationPolices, Thyra::Amesos::refactorizationPolicyValues, Thyra::Amesos::refactorizationPolicyNames
       ,"Pivoting policy used on refactorizations."
       );
     clp.setOption( "test-transpose", "no-test-transpose", &testTranspose, "Test the transpose solve or not." );
