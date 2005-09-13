@@ -172,7 +172,9 @@ bool HMX_PDE::evaluate(
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
   Epetra_Vector uold(*OverlapMap);
-  vector<Epetra_Vector> dep(numDep, Epetra_Vector(*OverlapMap));
+  vector<Epetra_Vector*> dep(numDep);
+  for( int i = 0; i<numDep; i++)
+    dep[i] = new Epetra_Vector(*OverlapMap);
   Epetra_Vector xvec(*OverlapMap);
 
   // Export Solution to Overlap vector
@@ -184,7 +186,7 @@ bool HMX_PDE::evaluate(
   // FD coloring in parallel.
   uold.Import(*oldSolution, *Importer, Insert);
   for( int i = 0; i<numDep; i++ )
-    dep[i].Import(*( (*(depSolutions.find(depProblems[i]))).second ), 
+    (*dep[i]).Import(*( (*(depSolutions.find(depProblems[i]))).second ), 
                    *Importer, Insert);
   xvec.Import(*xptr, *Importer, Insert);
   if( flag == NOX::Epetra::Interface::Required::FD_Res)
@@ -275,8 +277,8 @@ bool HMX_PDE::evaluate(
       uuold[0] = uold[ne];
       uuold[1] = uold[ne+1];
       for( int i = 0; i<numDep; i++ ) {
-        ddep[i][0] = dep[i][ne];
-        ddep[i][1] = dep[i][ne+1];
+        ddep[i][0] = (*dep[i])[ne];
+        ddep[i][1] = (*dep[i])[ne+1];
       }
       // Calculate the basis function and variables at the gauss points
       basis.getBasis(gp, xx, uu, uuold, ddep);
@@ -380,6 +382,13 @@ bool HMX_PDE::evaluate(
   }
 #endif
 
+  // Cleanup
+  for( int i = 0; i < numDep; ++i)
+  {
+    delete [] ddep[i];
+    delete     dep[i];
+  }
+  delete [] srcTerm;
 
   return true;
 }
