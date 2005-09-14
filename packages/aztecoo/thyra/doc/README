@@ -1,0 +1,7 @@
+This directory contains a doxygen documentation collection for the Epetra =>
+Thyra adapters.  Note that doxygen must not be run from this directory but
+instead from the directory
+
+  Trilinos/packages/epetra/doc
+
+(see the file 'build.doxygen.documentation').
