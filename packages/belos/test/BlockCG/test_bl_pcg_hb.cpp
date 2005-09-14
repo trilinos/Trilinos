@@ -64,7 +64,7 @@
 
 int main(int argc, char *argv[]) {
 	//
-	int i, j;
+	int i;
 	int n_nonzeros, N_update;
 	int *bindx=0, *update=0, *col_inds=0;
 	double *val=0, *row_vals=0;
@@ -79,7 +79,6 @@ int main(int argc, char *argv[]) {
 #endif
 	
 	int MyPID = Comm.MyPID();
-	int NumProc = Comm.NumProc();	
 	bool verbose = 0;
 	//
         if((argc < 2 || argc > 4)&& MyPID==0) {

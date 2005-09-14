@@ -157,8 +157,8 @@ CG<TYPE>::CG(LinearProblemManager<TYPE>& lp,
   _lp(lp), 
   _stest(stest),
   _om(om),
-  _cur_block_rhs(0),
   _cur_block_sol(0),
+  _cur_block_rhs(0),
   _residvec(0),
   _iter(0),
   _prec(5.0e-15), 
@@ -192,11 +192,9 @@ void CG<TYPE>::SetCGBlkTols()
 template <class TYPE>
 MultiVec<TYPE>* CG<TYPE>::GetNativeResiduals( TYPE *normvec ) const 
 {
-  int i;
-  int* index = new int[ 1 ];
+  std::vector<int> index(1);
   index[ 0 ] = 0;
-  MultiVec<TYPE>* ResidMV = _residvec->CloneView( index, 1 );
-  delete [] index;
+  MultiVec<TYPE>* ResidMV = _residvec->CloneView( &index[0], 1 );
   return ResidMV;
 }
 
@@ -204,10 +202,7 @@ template <class TYPE>
 void CG<TYPE>::Solve () 
 {
   //
-  int i, j, k, info, num_ind;
-  int ind_blksz, prev_ind_blksz;
   bool exit_flg = false;
-  char UPLO = 'U';
   const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
   const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
   Teuchos::LAPACK<int,TYPE> lapack;
