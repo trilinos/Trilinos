@@ -112,7 +112,7 @@ Printed March 2005
 \vspace{0.2in}
 
 \begin{center}
-{\Large {\bf \MLAPIns: a C++ Framework For Multilevel Preconditioners}}
+{\Large {\bf \MLAPIns: A C++ Framework for Multilevel Preconditioners}}
 %\footnote{ Sandia is a multiprogram laboratory operated by Sandia Corporation,
 %a Lockheed Martin Company, for the United States Department of Energy's
 %National Nuclear Security Administration under contract DE-AC04-94AL85000.}}}
@@ -135,13 +135,10 @@ Albuquerque, NM 87185-1110
 \end{center}
 
 \begin{abstract}
-We discuss the design of \MLAPIns, an object oriented framework that enables 
-the development and usage of efficient,
-scalable and portable implementations of multilevel preconditioners for
-general distributed sparse matrices, in
-both serial and parallel environments. 
-
-\smallskip
+We discuss the design of \MLAPIns, an object oriented framework that enables
+the development and usage of efficient, scalable and portable implementations
+of multilevel preconditioners for general distributed sparse matrices, in both
+serial and parallel environments. 
 
 The main feature of this framework is the use of several programming paradigms
 for the different implementation layes, with a strong emphasis on object
@@ -152,12 +149,14 @@ package of Trilinos~\cite{Trilinos-home-page}.
 
 \smallskip
 
-We report several numerical experiments, obtained on serial and parallel
-computers, to show that the overload required by the object-oriented layer
-is very modest, therefore allowing developers to focus on
-the new algorithm they are developing and testing, rather than the implementation details, yet obtaining a
-code whose efficiency and scalability is comparable with that of C or FORTRAN
-layers underneath.
+In this paper, we 
+outline the most important features of MLAPI, and we describe its usage
+with several examples.
+
+\bigskip
+
+{\sl Note: An extended version of this paper, containing numerical comparisons
+  between MLAPI and ML, has been submitted to ACM-TOMS.}
 \end{abstract}
 
 %
@@ -170,7 +169,6 @@ layers underneath.
 \end{center}
 \clearpage
 \newpage
-
 
 \tableofcontents
 \newpage
@@ -382,12 +380,7 @@ In this paper, we want to show that it is possible to obtain intuitive,
   Section~\ref{sec:basic} introduces the most important \MLAPI classes, whose
   usage is presented in Section~\ref{sec:usage}. The
   MATLAB~\copyright~interface is detailed in Section~\ref{sec:matlab}.
-  Numerical results are reported in Section~\ref{sec:results}, where a
-  smoothed aggregation multilevel code, written in plain C, is compared with
-  an OO code, implementing the {\sl same} algorithm.  We will show that the
-  overhead required by OO on modern compilers is negligible, the C++ being
-  remarkably shorter and easier to read and understand, and simpler to
-  maintain and test.  Section~\ref{sec:conclusions} outlines the conclusions.
+  Section~\ref{sec:conclusions} outlines the conclusions.
 
 %-----------------------------------------------------------------------------%
 \section{Software Design}
@@ -529,16 +522,9 @@ needs to be allocated, then all elements in \verb!C! need to be copied in
 \noindent
 {\bf Operator overloading.} Operator overloading is an 
 interesting capability of C++ that has been only
-partially used in the scientific computing community. We do not adopt expression
-templates (see for instance~\cite{vandevoorde03cpp}); instead, we
-create temporary vectors, then perform vector operations (like updates,
-scaling, or DAXPY operations) using optimized BLAS routines 
-(whose use would not be possible using expressions templates). 
-However, each overloaded operator can be replaced, in a secondary
-optimization phase, by class methods, therefore
-avoiding the creation of temporary objects, at the price of a more
-``conventional'' coding. For example, the operation {\tt x = a + b} can be
-replaced by method {\tt Update()} of {\tt x}.
+partially used in the scientific computing community. We adopt expression
+templates (see for instance~\cite{vandevoorde03cpp}) to increase the
+performances of MLAPI.
 
 %-----------------------------------------------------------------------------%
 \section{\MLAPI Classes}
@@ -817,65 +803,53 @@ double NormX = sqrt(x * x);
 \end{verbatim}
 
 %-----------------------------------------------------------------------------%
-\subsection{The {\tt SerialMatrix} Class}
-\label{sec:serialmatrix}
+\subsection{The {\tt SerialMatrix} and {\tt DistributedMatrix} Classes}
+\label{sec:matrices}
 %-----------------------------------------------------------------------------%
 
-\MLAPI offers a very simple and convenient matrix class, derived from
- the \verb!Epetra_RowMatrix! class.
- Using this class, the insertion of a new
- element is just \verb!A(row, col) = val!. This class
-can be used for serial computations only, and it is not meant to be efficient,
-just easy-to-use. Users should consider
-other \verb!Epetra_RowMatrix! derived classes
-to define parallel and scalable matrices. Using class {\tt SerialMatrix}, the \MLAPI
-code may look like the following:
+\MLAPI offers two convenient matrix classes, one for serial
+computations only, and the other for serial or parallel computations. Both are
+derived from the {\tt Operator} class, and overload the {\tt ()} operator to
+facilitate the insertion and modification of elements.
+The first class is
+{\tt SerialMatrix}. An example of code to
+create a tridiagonal matrix is as follows:
 \begin{verbatim}
-SerialMatrix A_Mat(S, S);
-for (int i = 0 ; i < 10 ; ++i) {
-  if (i) A_Mat(i, i - 1) = -1.0;
-  A_Mat(i,i) = 2.0;
-  if (i + 1 != A_Mat.NumGlobalCols())
-    A_Mat(i, i + 1) = -1.0;
+Space S(n); // n is the size of the matrix
+SerialMatrix A(S, S);
+for (int i = 0 ; i < n ; ++i) {
+  A(i,i) = 2.0;
+  if (i)          A(i, i - 1) = -1.0;
+  if (i != n - 1) A(i, i + 1) = -1.0;
 }
 \end{verbatim}
-Note that {\tt SerialMatrix}'s cannot be copied or reassigned, and no
-operators are overloaded on this class. The only way to use an
-{\tt SerialMatrix} with other \MLAPI objects is to wrap it into an
-{\tt Operator}, as done in the following line.
+The second class, {\tt DistributedMatrix} can be used to create distributed
+matrices. Using this class, any process can set {\sl any} element of the
+matrix (that is, both elements in the locally hosted rows, as well as elements
+        hosted by another process). The following example creates a
+distributed tridiagonal matrix:
 \begin{verbatim}
-Operator A(S, S, &A_Mat, false);
-\end{verbatim}
-The last parameter of the constructor is set to {\tt false} because, in
-this example, the
-\verb!A_Mat! will be deleted by the user.
+Space S(n); // n is the global size of the matrix
+DistributedMatrix A(S, S);
 
-%-----------------------------------------------------------------------------%
-\subsection{The {\tt DistributedMatrix} Class}
-\label{sec:distributedmatrix}
-%-----------------------------------------------------------------------------%
-
-The {\tt DistributedMatrix} class allows user to set the entries of a
-distributed matrix using method {\tt SetElement()}. Any process can set {\sl
-  any} element of the matrix (that is, both elements in the locally hosted
-rows, as well as elements hosted by another process). In the following
-  example, processor 0 will set all the elements of the matrix.
-\begin{verbatim}
-DistributedMatrix A_Dist(MySpace, MySpace);
-
-if (GetMyPID() == 0) {
-  for (int i = 0 ; i < MySpace.GetNumGlobalElements() ; ++i) {
-    if (i) A_Dist.SetElement(i, i - 1, -1.0);
-    A_Dist.SetElement(i, i, 2.0);
-    if (i + 1 != A_Dist.NumGlobalCols())
-      A_Dist.SetElement(i, i + 1, -1.0);
-  }
+// loop over all local elements
+for (int i = 0 ; i < S.GetNumMyElements() ; ++i) {
+  int j = S(i); // get global ID of local element i
+  A(j, j) = 2.0;
+  if (j)          A(j, j - 1) = -1.0;
+  if (j != n - 1) A(j, j + 1) = -1.0;
 }
 \end{verbatim}
-The matrix must be "freezed" by calling method {\tt FillComplete()}, which
-computes all the data structures that are required in order to use the matrix
-in a distributed environment. Matrix elements cannot be added after the call
-to {\tt FillComplete()}.
+After the insertion of all elements, the matrix structure must be ``freezed''
+by calling method {\tt FillComplete()}. This method computes the data
+structures required by the (distributed) matrix-vector product.  Matrix
+elements cannot be added after the call to {\tt FillComplete()}; though, the
+value of already existing elements can be modified.
+
+By using the {\tt SerialMatrix} class, the user can insert matrix elements at
+any time; however, the matrix-vector product has not been optimized. The {\tt
+  DistributedMatrix} class, instead, offers an optimized matrix-vector
+  product, since the matrix is internally stored by using the Epetra library.
 
 %-----------------------------------------------------------------------------%
 \section{Using \MLAPI}
@@ -991,273 +965,14 @@ on file an {\tt InverseOperator} object, as this class only defines the
 action of the inverse of an operator on a given vector.
 
 %-----------------------------------------------------------------------------%
-\section{Numerical Results}
-\label{sec:results}
-%-----------------------------------------------------------------------------%
-
-\begin{table}
-\begin{center}
-\begin{tabular}{| p{2cm}  p{10cm} |}
-\hline
-symbol & meaning \\
-\hline
-$n$          & Size of the linear system matrix \\
-$p$          & Number of processors used in the computation \\
-\tt constr   & Time in seconds to construct the preconditioner \\
-\tt appl     & Time in seconds to solve the linear system using PCG\\
-\tt iter     & Time in seconds for each iteration of PCG \\
-\tt total    & \tt constr + appl \\
-\tt diff     & Additional total time required by \mlapi with respect to the
-\ML\ total time.\\
-\hline
-\end{tabular}
-\caption{List of symbols used in the Tables.}
-\label{tab:symbol}
-\end{center}
-\end{table}
-
-\begin{table}
-\begin{center}
-\begin{tabular}{| p{2cm}  p{10cm} |}
-\hline
-computer & description \\
-\hline
-LINUX  & Pentium M 1.7GHz, using gcc version 3.2.2 20030222 (Red Hat Linux
-                                                             3.2.2-5) \\
-DEC    & Compaq C V6.4-009 on Compaq Tru64 UNIX V5.1A (Rev. 1885) \\
-SUN    & SPARC Sun using Solaris compilers \\
-SGI    & 195 MHz MIPS R10000, using MIPSpro Compilers, Version 7.4.2m \\
-CPLANT & 500 MHz DEC Alpha processor, using Compaq C V65-001 \\
-\hline
-\end{tabular}
-\caption{List of computers used in the numerical tests.}
-\label{tab:machines}
-\end{center}
-\end{table}
-
-
-\begin{table}
-\begin{center}
-\begin{tabular}{| c | c c c |}
-\hline
-$n$ & \ML & \MLAPI & \MLAPIns-opt \\
-\hline
-$256^3$  & 0.008 & 0.013 & 0.011 \\
-$512^3$  & 0.035 & 0.053 & 0.038 \\
-$768^3$  & 0.079 & 0.122 & 0.087 \\ 
-$1024^3$ & 0.137 & 0.217 & 0.154 \\ 
-\hline
-\end{tabular}
-\caption{LINUX: Time in seconds for the computation of $r = b - A x$ using \ML\ directly, or \MLAPI, or the optimized \MLAPI code.}
-\label{tab:linux-res}
-\end{center}
-\end{table}
-
-
-\begin{table}
-\begin{center}
-\begin{tabular}{| c | c c c |}
-\hline
-$p$ & \ML & \MLAPI & \MLAPIns-opt \\
-\hline
- 1 & 0.089 &  0.11  &  0.093 \\
- 4 & 0.096 &  0.12  &  0.098 \\
-16 & 0.098 &  0.12  &  0.099 \\
-\hline
-\end{tabular}
-\caption{CPLANT: Time in seconds for the computation of $r = b - A x$ using
-  \ML\ directly, or \MLAPI, or the optimized \MLAPI code. 
-  The matrix has size $512^2 \times p$.}
-\label{tab:cplant-res}
-\end{center}
-\end{table}
-
-\begin{table}
-\begin{center}
-\begin{tabular}{| c | c c c |}
-\hline
-$p$ & \ML & \MLAPI & \MLAPIns-opt \\
-\hline
- 1 & 0.22 &  0.28  &  0.22 \\
- 4 & 0.27 &  0.34  &  0.41 \\
-16 & 0.42 &  0.50  &  0.47 \\
-\hline
-\end{tabular}
-\caption{SGI: Time in seconds for the computation of $r = b - A x$ using
-  \ML\ directly, or \MLAPI, or the optimized \MLAPI code. 
-  The matrix has size $512^2 \times p$.}
-\label{tab:sgi-res}
-\end{center}
-\end{table}
-
-\begin{table}
-\begin{center}
-\begin{tabular}{| c | c c c | c c c | c |}
-\hline
-    & \multicolumn{3}{ c |}{\ML} & \multicolumn{3}{ c |}{\MLAPI}  & \\
-$n$ & {\tt const}  & {\tt appl}  & {\tt total}  & {\tt constr}  
-    & {\tt appl}   & {\tt total} & {\tt diff}  \\
-\hline
-$256^2$  &   0.92 &   3.05 & 3.97   &  1.02 &   3.09 & 4.11  & 3.52  \\
-$512^2$  &   2.92 &  11.72 & 14.64  &  3.13 &  12.43 & 15.56 & 6.28  \\
-$768^2$  &   5.59 &  32.32 & 37.91  &  6.69 &  34.10 & 40.79 & 7.59  \\
-$1024^2$ &   9.16 &  64.55 & 73.71  & 11.12 &  68.49 & 79.61 & 8.00  \\
-\hline
-\end{tabular}
-\caption{LINUX: PCG solution of linear system (\ref{eq:lin_sys}) with
-  a multilevel preconditioner.}
-\label{tab:linux-2d}
-\end{center}
-\end{table}
-
-
-\begin{table}
-\begin{center}
-\begin{tabular}{| c | c c c | c c c | c |}
-\hline
-    & \multicolumn{3}{ c |}{\ML} & \multicolumn{3}{ c |}{\MLAPI}  & \\
-$n$ & {\tt const}  & {\tt appl}  & {\tt total}  & {\tt constr}  
-    & {\tt appl}   & {\tt total} & {\tt diff}  \\
-\hline
-$256^2$  &   4.95 &  33.17 & 38.12  &  6.53 &  36.48 & 43.01 &12.82  \\
-$512^2$  &  19.94 & 137.64 &157.58  & 26.50 & 148.98 &175.48 &11.36  \\
-$768^2$  &  44.94 & 379.09 &424.03  & 59.08 & 408.17 &467.25 &10.19  \\
-$1024^2$ &  79.06 & 746.16 &815.22  &105.11 & 812.26 &917.37 &11.16  \\
-\hline
-\end{tabular}
-\caption{SUN: PCG solution of linear system (\ref{eq:lin_sys}) with
-  a multilevel preconditioner.}
-\label{tab:sun-2d}
-\end{center}
-\end{table}
-
-\begin{table}
-\begin{center}
-\begin{tabular}{| c | c c c | c c c | c |}
-\hline
-    & \multicolumn{3}{ c |}{\ML} & \multicolumn{3}{ c |}{\MLAPI}  & \\
-$n$ & {\tt const}  & {\tt appl}  & {\tt total}  & {\tt constr}  
-    & {\tt appl}   & {\tt total} & {\tt diff}  \\
-\hline
-$256^2$  &   3.09 &  17.38 & 20.47  &  3.74 &  17.66 & 21.40 & 4.54  \\
-$512^2$  &  12.43 &  70.57 & 83.00  & 15.21 &  71.57 & 86.78 & 4.55  \\
-$768^2$  &  28.04 & 193.01 &221.05  & 34.49 & 198.88 &233.37 & 5.57  \\
-$1024^2$ &  49.95 & 388.99 &438.94  & 60.78 & 397.13 &457.92 & 4.23  \\
-\hline
-\end{tabular}
-\caption{DEC: PCG solution of linear system (\ref{eq:lin_sys}) with
-  a multilevel preconditioner.}
-\label{tab:dec-2d}
-\end{center}
-\end{table}
-
-\begin{table}
-\begin{center}
-\begin{tabular}{| c | c c | c c |}
-\hline
-    & \multicolumn{2}{ c |}{\ML} & \multicolumn{2}{ c |}{\MLAPI} \\
-$p$ & {\tt const}  & {\tt iter}  & {\tt constr}  
-    & {\tt iter}   \\
-\hline
- 1  &   7.53 &  3.16  & 10.49 &   3.20  \\
- 4  &   9.06 &  3.35  & 13.13 &   3.45  \\
-16  &   9.45 &  3.38  & 14.12 &   3.34  \\
-\hline
-\end{tabular}
-\caption{CPLANT: PCG solution of linear system (\ref{eq:lin_sys}) with
-  a multilevel preconditioner.
- The matrix has size $512^2 \times p$.}
-\label{tab:cplant-2d}
-\end{center}
-\end{table}
-
-\begin{table}
-\begin{center}
-\begin{tabular}{| c | c c | c c |}
-\hline
-    & \multicolumn{2}{ c |}{\ML} & \multicolumn{2}{ c |}{\MLAPI} \\
-$p$ & {\tt const}  & {\tt iter}  & {\tt constr}  
-    & {\tt iter}   \\
-\hline
- 1  &  15.79 &  6.94  & 19.06 &   7.11  \\
- 4  &  16.57 &  7.29  & 20.40 &   7.46  \\
-16  &  19.45 &  8.40  & 23.78 &   8.59  \\
-\hline
-\end{tabular}
-\caption{SGI: PCG solution of linear system (\ref{eq:lin_sys}) with
-  a multilevel preconditioner.
- The matrix has size $512^2 \times p$.}
-\label{tab:sgi-2d}
-\end{center}
-\end{table}
-
-We now report some numerical results that compare the \mlapi implementation with
-a more ``standard'' C code based on the \ML\ library. 
-A list of symbols used in this Section in reported in Table~\ref{tab:symbol},
-and the computers used in the numerical experiments are described in
-Table~\ref{tab:machines}. 
-
-\smallskip
-
-Tables~\ref{tab:linux-res}, \ref{tab:cplant-res}  and \ref{tab:sgi-res}
-compares the \ML\ and \MLAPI approach for a basic kernel: the computation of
-the $r = b - A x$, using the \ML\ library, \MLAPI with 
-operator overloading, and without operator overloading 
-(indicated in the table as \MLAPIns-opt). The \MLAPI code simply reads
-{\tt r = b - A * x}, where {\tt r, x, b} are {\tt MultiVector}'s 
-and {\tt A} is an {\tt Operator}. The \MLAPIns-opt codes reads
-as follows:
-\begin{verbatim}
-A.Apply(x, r);
-r.Update(1.0, b, -1.0);
-\end{verbatim}
-therefore being more efficient, but somehow less obvious to understand.
-We can note that the \MLAPI with operator overloading is slower than the
-original \ML\ version of about 50\%, because of some
-additional checks performed by \MLAPI and of required wrappers for different vector
-formats, but mainly because of the creation of temporary objects. The
-optimize \MLAPI is only slightly slower that the C code. 
-
-\smallskip
-
-We now consider the solution of linear system (\ref{eq:lin_sys}) using the
-conjugate gradient method, preconditioned with a multilevel smoothed
-aggregation preconditioner.
-Tables~\ref{tab:linux-2d}, \ref{tab:sun-2d} and
-\ref{tab:dec-2d} compare the time required by \ML\ and \MLAPI for serial
-computations, while Tables~\ref{tab:cplant-2d} and \ref{tab:sgi-2d}
-investigate how the two approaches compare in parallel environments, using a
-Linux cluster (CPLANT) or an SGI Origin 3800.  The matrix arises from a 2D or
-3D Laplacian, discretized with a classical 5-point formula.  The multilevel
-hierarchy is constructed using classical smoothed aggregation for symmetric
-problems, with symmetric Gauss-Seidel smoother, and LU solver on the coarsest
-level.  For the parallel runs, we keep constant the size of the local matrix, by
-storing $512 \times 512$ rows on each processor. 
-
-We note that the time per iteration is almost equivalent, while the
-\mlapi construction time can be up to 50\% larger than the \ML\ time. This is
-due to the design requirements of \MLAPI: in order to extend flexibility, all
-\MLAPI operators are wrapped as {\tt Epetra\_RowMatrix}, and the global ID of
-all local rows and columns in computed, while \ML\ avoids this step for some the
-operators in the hierarchy. The difference between the \ML\ and \MLAPI time can vary considerably
-on different architectures, the C++ code being slower on order machines 
-(like SUN).
-However, we note that the overhead of \mlapi 
-can be quantified in about 10\%
-of the \ML\ time. This holds for both serial and parallel computations. This
-difference could be reduced by optimizing the creation of the multilevel
-hierarchy, as well as the application of the preconditioner.
-
-%-----------------------------------------------------------------------------%
 \section{Concluding Remarks}
 \label{sec:conclusions}
 %-----------------------------------------------------------------------------%
 
-Using C++ can greatly enhance clarity, reuse, and
-portability of numerical libraries. In our C++  library, \MLAPIns, 
-  the implementation details are completely hidden at
-the algorithm level, so that the resulting code greatly resemble the 
-algorithm itself. This object oriented framework is based on a
+Using C++ can greatly enhance clarity, reuse, and portability of numerical
+libraries. In our C++  library, \MLAPIns, the implementation details are
+completely hidden at the algorithm level, so that the resulting code greatly
+resemble the algorithm itself. This object oriented framework is based on a
 carefully designed set of classes and operator overloading, and allows the
 algorithm developer to write a parallel, efficient (C++) code in a MATLAB-like
 style. Operations on \MLAPI classes are then automatically translated by a
@@ -1265,12 +980,9 @@ style. Operations on \MLAPI classes are then automatically translated by a
 that the developer can focus on the algorithm itself, without spending time on
 details that can be fixed by the compiler. This reduces the time spent in
 writing and debugging the algorithm, at the only expense of a minimal increase
-in the CPU time, that can be quantified in about 10\% of increase with respect
-to optimize C code. We believe that this is a negligible 
-factor in the development and testing of new
-ideas, especially considering the time saved by the developer to write the
-code itself. Besides, reported results show that the \MLAPI code can be
-improved in a secondary optimization phase.
+in the CPU time. We believe that this is a negligible factor in the
+development and testing of new ideas, especially considering the time saved by
+the developer to write the code itself. 
 
 %-----------------------------------------------------------------------------%
 \section*{Acknowledgments}
