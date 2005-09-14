@@ -22,10 +22,10 @@ endif
 if BUILD_TSFCORE_EPETRA
 BELOS_BGMRES_TSFCORE_EX = bl_gmres_tsfcore
 endif
-BELOS_BGMRES_HB_EX = bl_gmres_hb 
+BELOS_BGMRES_EX = bl_gmres_hb bl_gmres_diag
 #endif
 
-noinst_PROGRAMS = $(BELOS_BGMRES_HB_EX) $(BELOS_BGMRES_IFPACK_EX) $(BELOS_BGMRES_TSFCORE_EX) Dummy
+noinst_PROGRAMS = $(BELOS_BGMRES_EX) $(BELOS_BGMRES_IFPACK_EX) $(BELOS_BGMRES_TSFCORE_EX) Dummy
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/orsirr1.hb orsirr1.hb
@@ -37,6 +37,8 @@ bl_pgmres_hb_SOURCES = $(srcdir)/test_bl_pgmres_hb.cpp
 
 bl_gmres_hb_SOURCES = $(srcdir)/test_bl_gmres_hb.cpp
 
+bl_gmres_diag_SOURCES = $(srcdir)/test_bl_gmres_diag.cpp
+
 bl_gmres_tsfcore_SOURCES = $(srcdir)/test_bl_gmres_tsfcore.cpp
 
 bl_pgmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
@@ -44,6 +46,10 @@ bl_pgmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a			
 
 bl_gmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+bl_gmres_diag_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -64,6 +70,14 @@ bl_pgmres_hb_CXXFLAGS = -I$(top_srcdir)/src \
 		-I$(top_builddir)/../teuchos/src
 
 bl_gmres_hb_CXXFLAGS = 	-I$(top_srcdir)/src \
+		-I$(top_srcdir)/../epetra/src \
+		-I$(top_builddir)/../epetra/src \
+		-I$(top_srcdir)/../triutils/src \
+		-I$(top_builddir)/../triutils/src \
+		-I$(top_srcdir)/../teuchos/src \
+		-I$(top_builddir)/../teuchos/src
+
+bl_gmres_diag_CXXFLAGS = -I$(top_srcdir)/src \
 		-I$(top_srcdir)/../epetra/src \
 		-I$(top_builddir)/../epetra/src \
 		-I$(top_srcdir)/../triutils/src \
@@ -93,6 +107,8 @@ bl_gmres_tsfcore_CXXFLAGS = 	-I$(top_srcdir)/src \
 bl_pgmres_hb_LDADD = $(EXPORT_LIBS)
 
 bl_gmres_hb_LDADD = $(EXPORT_LIBS)
+
+bl_gmres_diag_LDADD = $(EXPORT_LIBS)
 
 bl_gmres_tsfcore_LDADD = \
 		$(top_builddir)/../TSFCore/src/libTSFCore.a \

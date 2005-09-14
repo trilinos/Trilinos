@@ -136,7 +136,7 @@ private:
   {
     status_ = Unconverged;
     nIters_ = iSolver->GetNumIters();
-    if (nIters_ >= maxIters_)
+    if (nIters_ > maxIters_)
       status_ = Failed;
     return status_;
   }

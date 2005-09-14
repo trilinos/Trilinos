@@ -366,11 +366,12 @@ namespace Belos {
 	  }
 	}
 	//
-	for (_iter=0; _iter<_length && _stest.CheckStatus(this) == Unconverged && !exit_flg; _iter++, ++_totaliter) {
+	for (_iter=0; _iter<_length && _stest.CheckStatus(this) == Unconverged && !exit_flg; ++_iter, ++_totaliter) {
 	  //
 	  // Compute a length _length block Arnoldi Reduction (one step at a time),
 	  // the exit_flg indicates if we cannot extend the Arnoldi Reduction.
           // If exit_flg is true, then we need to leave this loop and compute the latest solution.
+          //
 	  // NOTE:  There's an exception here if the blocksize is equal to one, then a lucky
 	  // breakdown has occurred, so we should update the least-squares problem.
 	  //
@@ -406,11 +407,17 @@ namespace Belos {
 	  //
         } 
 	//
+	// Check status if _iter==_length
+	//
+	if (_iter == _length) {
+	  _stest.CheckStatus(this);
+	}
+	//
 	// Print out solver status
 	// 
 	if (_om.doOutput( 0 )) {
 	  _stest.Print(_os);
-	  if (exit_flg && _blocksize>1) {
+	  if (exit_flg && _stest.GetStatus()!=Converged) {
 	    _os << " Exiting Block GMRES --- " << endl;
 	    _os << "  Reason: Failed to compute new block of orthonormal basis vectors" << endl;
 	    _os << "  ***Solution from previous step will be returned***"<< endl<< endl;
@@ -1001,7 +1008,6 @@ namespace Belos {
   {
     int i, j, maxidx;
     TYPE sigma, mu, vscale, maxelem, temp;
-    const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
     const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
     Teuchos::BLAS<int, TYPE> blas;
     //
