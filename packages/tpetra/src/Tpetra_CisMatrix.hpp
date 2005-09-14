@@ -166,7 +166,7 @@ namespace Tpetra {
 			}
 
 			// update flops counter: nnz
-			updateFlops(data().numMyNonzeros_);
+			updateFlops(getNumGlobalNonzeros());
 		}
   
 		//! Submit a single entry, using global IDs.
@@ -224,9 +224,6 @@ namespace Tpetra {
 			}
 			else
 				throw reportError("Unknown Combine Mode.", 2);
-      
-			// update flops counter: numEntries
-			updateFlops(numEntries);
     
 			data().numMyNonzeros_+= numEntries;
 		}
@@ -351,6 +348,9 @@ namespace Tpetra {
 					data().haveExporter_ = true;
 				}
 			}
+			
+			// store numGlobalNonzeros so that we don't have to recompute it anymore
+			data().numGlobalNonzeros_ = getNumGlobalNonzeros();
 
 			data().fillCompleted_ = true;
 		}
@@ -384,29 +384,27 @@ namespace Tpetra {
 			}
 
 			// update flops counter: 2 * nnz
-			updateFlops(data().numMyNonzeros_ + data().numMyNonzeros_);
+			updateFlops(getNumGlobalNonzeros() + getNumGlobalNonzeros());
 		}
   
 		//! Returns the global one norm of the matrix
 		ScalarType normOne() const {
+			if(!isFillCompleted())
+				throw reportError("Cannot compute one-norm until after call to fillComplete.", 3);
 			if(isRowOriented())
-				if(!data().haveCol_)
-					throw reportError("Cannot compute one-norm until column distribution is specified.", 3);
-				else
-					return(secondaryNorm());
+				return(secondaryNorm());
 			else
 				return(primaryNorm());
 		}
 
 		//! Returns the global infinity norm of the matrix
 		ScalarType normInf() const {
+			if(!isFillCompleted())
+				throw reportError("Cannot compute infinity-norm until after call to fillComplete.", 3);
 			if(isRowOriented())
 				return(primaryNorm());
 			else
-				if(!data().haveRow_)
-					throw reportError("Cannot compute infinity-norm until row distribution is specified.", 3);
-				else
-					return(secondaryNorm());
+				return(secondaryNorm());
 		}
   
 		//@}
@@ -415,7 +413,10 @@ namespace Tpetra {
   
 		//! Returns the number of nonzero entries in the global matrix.
 		OrdinalType getNumGlobalNonzeros() const {
-			return(globalSum(getNumMyNonzeros()));
+			if(isFillCompleted())
+				return(data().numGlobalNonzeros_);
+			else
+				return(globalSum(getNumMyNonzeros()));
 		}
   
 		//! Returns the number of nonzero entries in the calling image's portion of the matrix.
@@ -696,8 +697,8 @@ namespace Tpetra {
 			ScalarType globalMax = Teuchos::ScalarTraits<ScalarType>::zero();
 			comm().maxAll(&maxSum, &globalMax, Teuchos::OrdinalTraits<OrdinalType>::one());
     
-			// update flops counter: length-1 for each row/column
-			updateFlops(getNumMyNonzeros() - getPrimaryDist().getNumMyEntries());
+			// update flops counter: nnz
+			updateFlops(getNumGlobalNonzeros());
 
 			return(globalMax);
 		}
@@ -722,8 +723,8 @@ namespace Tpetra {
 			ScalarType globalMax = Teuchos::ScalarTraits<ScalarType>::zero();
 			comm().maxAll(&localMax, &globalMax, Teuchos::OrdinalTraits<OrdinalType>::one());
     
-			// update flops counter: length-1 for each column/row
-			updateFlops(getNumMyNonzeros() - getSecondaryDist().getNumMyEntries());
+			// update flops counter: nnz
+			updateFlops(getNumGlobalNonzeros());
 
 			return(globalMax);
 		}

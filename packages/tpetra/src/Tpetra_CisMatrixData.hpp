@@ -50,6 +50,7 @@ namespace Tpetra {
 			, rowOriented_(rowOriented)
 			, fillCompleted_(false)
 			, numMyNonzeros_(Teuchos::OrdinalTraits<OrdinalType>::zero())
+			, numGlobalNonzeros_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, haveImporter_(false)
 			, haveExporter_(false)
 			, importer_()
@@ -75,6 +76,7 @@ namespace Tpetra {
 			, rowOriented_(rowOriented)
 			, fillCompleted_(false)
 			, numMyNonzeros_(Teuchos::OrdinalTraits<OrdinalType>::zero())
+			, numGlobalNonzeros_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, haveImporter_(false)
 			, haveExporter_(false)
 			, importer_()
@@ -117,6 +119,9 @@ namespace Tpetra {
 
 		// other variables used prior to fillComplete
 		OrdinalType numMyNonzeros_;
+		
+		// other variables used after fillComplete
+		OrdinalType numGlobalNonzeros_;
 
 		// Import and Export
 		bool haveImporter_;
