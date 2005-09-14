@@ -33,3 +33,6 @@ endif
 STANDARD_SUBDIRS = scripts BLAS DenseMatrix dyn_cast LAPACK ParameterList RefCountPtr Time Workspace
 
 SUBDIRS = $(STANDARD_SUBDIRS) $(CONTAINERS_SUBDIR) $(XML_SUBDIR)
+
+EXTRA_DIST = definition
+

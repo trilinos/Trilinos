@@ -46,7 +46,9 @@ ACLOCAL	= aclocal -I config
 EXTRA_DIST = bootstrap \
 	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
 	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 \
-	config/depcomp config/generate-makeoptions.pl
+	config/depcomp config/generate-makeoptions.pl \
+	config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
+	config/replace-install-prefix.pl config/string-replace.pl
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
