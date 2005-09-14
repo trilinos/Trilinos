@@ -406,10 +406,12 @@ int main(int argc, char *argv[])
   if (solver.getParameterList().sublist("Output").getParameter("Nonlinear Iterations",0) != 3) {
     testStatus = 2;
   }
+#ifndef HAVE_MPI
   // 3. Linear Iterations (9)
   if (solver.getParameterList().sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").getParameter("Total Number of Linear Iterations",0) != 9) {
     testStatus = 3;
   }
+#endif
 
   // Summarize test results 
   if (utils.isPrintProcess()) { 
