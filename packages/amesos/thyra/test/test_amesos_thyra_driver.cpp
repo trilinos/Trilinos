@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
           if(verbose)
             out << std::endl<<matrix_i<<"."<<solver_i<<"."<<factorizationPolicy_i<<": "
                 << "Testing, matrixFile=\'"<<mtp.matrixFile<<"\', solverType=\'"<<toString(solverType)<<"\', refactorizationPolicy=\'"<<toString(refactorizationPolicy)<<"\' ..."; 
-          if( mtp.unsymmetric && Thyra::Amesos::supportsUnsymmetric[solver_i] ) {
+          if( mtp.unsymmetric && !Thyra::Amesos::supportsUnsymmetric[solver_i] ) {
             out << " : Skipping since unsymmetric and not supported!\n";
           }
           else {
