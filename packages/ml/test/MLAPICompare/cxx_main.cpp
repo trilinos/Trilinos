@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 #endif
   Epetra_Time Time(Comm);
 
-  int ProblemSize = 1000;
+  int ProblemSize = 100;
   if (argc > 1) {
     ProblemSize = atoi(argv[1]);
   }
@@ -150,7 +150,8 @@ int main(int argc, char *argv[])
     time_MLAPI = EPETRA_MIN(time_MLAPI, Time.ElapsedTime());
     norm_MLAPI = R_MLAPI.Norm2();
 
-    assert (norm_Epetra == norm_MLAPI);
+    if (abs(norm_Epetra - norm_MLAPI) > 1e-8)
+      exit(EXIT_FAILURE);
   }
 
   time_Epetra /= out_rep;
