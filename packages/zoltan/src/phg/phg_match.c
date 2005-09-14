@@ -1014,6 +1014,8 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
      }
      scale = 1;       
    }
+   else
+     *recsize = *reccnt * scale;
    
    /* realloc rec buffer if necessary */  
    if (*recsize > *nRec)  {   
