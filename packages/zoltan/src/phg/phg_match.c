@@ -103,7 +103,7 @@ char  *yo = "Zoltan_PHG_Matching";
     ierr = hgp->matching (zz, hg, match, hgp);
     /* clean up by matching "near-isolated" vertices of degree 1 */
     /* only useful in special cases (e.g. near-diagonal matrices) */
-    /* Zoltan_PHG_match_isolated(zz, hg, match, 1); */
+    Zoltan_PHG_match_isolated(zz, hg, match, 1);
   }
 
 End: 
@@ -145,19 +145,19 @@ static int Zoltan_PHG_match_isolated(
       MPI_Allreduce(ldeg, deg, hg->nVtx, MPI_INT, MPI_SUM, hg->comm->col_comm);
       
       for (i=0; i<hg->nVtx; ++i)
-          if (deg[i] <= small_degree) { /* isolated vertex */
+          if ((match[i]==i) && (deg[i] <= small_degree)) { /* isolated vertex */
 #ifdef _DEBUG
               ++cnt;
 #endif
-              if (match[i]==i){
-                  /* vtx i not matched yet */
-                  if (v==-1)
-                      v = i;
-                  else {
-                      match[v] = i;
-                      match[i] = v;
-                      v = -1;
-                  }
+              /* match with previous unmatched vertex */
+              /* EBEB For degree-1 vertices, we could be more clever
+                 and match vertices that share a common neighbor */
+              if (v==-1)
+                  v = i;
+              else {
+                  match[v] = i;
+                  match[i] = v;
+                  v = -1;
               }
           }
 #ifdef _DEBUG
