@@ -37,3 +37,5 @@ SUBDIRS = $(VECTOR_RANDOM_SUBDIR)
 #TESTS = \
 #BlockMap/BlockMap_test.exe
 
+EXTRA_DIST = definition
+

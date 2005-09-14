@@ -215,6 +215,10 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 @HAVE_EPETRA_TRUE@@HAVE_MPI_TRUE@VECTOR_RANDOM_SUBDIR = vector_random
 SUBDIRS = $(VECTOR_RANDOM_SUBDIR)
+
+#TESTS = \
+#BlockMap/BlockMap_test.exe
+EXTRA_DIST = definition
 all: all-recursive
 
 .SUFFIXES:
@@ -494,9 +498,6 @@ uninstall-info: uninstall-info-recursive
 	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
 	uninstall uninstall-am uninstall-info-am
 
-
-#TESTS = \
-#BlockMap/BlockMap_test.exe
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
