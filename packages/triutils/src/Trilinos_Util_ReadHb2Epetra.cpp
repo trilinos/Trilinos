@@ -41,7 +41,7 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
 				 Epetra_Vector *& b,
 				 Epetra_Vector *&xexact) {
   FILE *in_file ;
-  int numGlobalEquations, N_columns, n_entries, Nrhs;
+  int numGlobalEquations=0, N_columns=0, n_entries=0, Nrhs=0;
   char Title[73], Key[9], Rhstype[4];
   char Type[4] = "XXX";
   char Ptrfmt[17], Indfmt[17], Valfmt[21], Rhsfmt[21];
@@ -71,7 +71,7 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
 	  printf("Error: Cannot open file: %s\n",data_file);
 	  exit(1);
 	}
-
+      
       readHB_header(in_file, Title, Key, Type, &numGlobalEquations, &N_columns, 
 		    &n_entries, &Nrhs,
 		    Ptrfmt, Indfmt, Valfmt, Rhsfmt,

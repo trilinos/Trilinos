@@ -27,3 +27,6 @@
 #@HEADER
 
 SUBDIRS = Read
+
+EXTRA_DIST = definition
+
