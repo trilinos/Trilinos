@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 
    // number of global elements
   int dim = 100;
-  int blockSize = 5;
+  int blockSize = 3;
 
   // PID info
   int MyPID = Comm->MyPID();
@@ -183,7 +183,9 @@ int main(int argc, char *argv[])
 
   // then, a ScalarProdVectorSpaceBase
   Teuchos::RefCountPtr<const Thyra::ScalarProdVectorSpaceBase<double> > sp_domain = 
-    Teuchos::rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<double> >(epetra_vs,true);
+    Teuchos::rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<double> >(
+      epetra_vs->smallVecSpcFcty()->createVecSpc(ivec->NumVectors())
+    );
 
   // then, a MultiVectorBase (from the Epetra_MultiVector)
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<double> > thyra_ivec = 

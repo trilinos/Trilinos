@@ -124,12 +124,12 @@ int main(int argc, char *argv[])
   elements[0] = 100;
 
   // Eigensolver parameters
-  int maxIterCG = 100;
-  double tolCG = 1e-7;
-  int nev = 4;
-  int blockSize = 5;
-  int maxIters = 500;
-  double tol = tolCG * 10.0;
+  const int maxIterCG = 100;
+  const double tolCG = 1e-7;
+  const int nev = 4;
+  const int blockSize = 5;
+  const int maxIters = 500;
+  const double tol = tolCG * 10.0;
 
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = 
@@ -159,9 +159,11 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<double> > epetra_vs = 
     Thyra::create_MPIVectorSpaceBase(Map);
 
-  // create a ScalarProdVectorSpaceBase
+  // then, a ScalarProdVectorSpaceBase
   Teuchos::RefCountPtr<const Thyra::ScalarProdVectorSpaceBase<double> > sp_domain = 
-    Teuchos::rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<double> >(epetra_vs,true);
+    Teuchos::rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<double> >(
+      epetra_vs->smallVecSpcFcty()->createVecSpc(ivec->NumVectors())
+    );
 
   // create a MultiVectorBase (from the Epetra_MultiVector)
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<double> > thyra_ivec = 
@@ -187,8 +189,7 @@ int main(int argc, char *argv[])
 
   // Set verbosity level
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails 
-                      + Anasazi::IterationDetails + Anasazi::OrthoDetails );
+    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
   }
 
   // Create the sort manager

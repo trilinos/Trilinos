@@ -152,9 +152,11 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<double> > epetra_vs = 
     Thyra::create_MPIVectorSpaceBase(Map);
 
-  // create a ScalarProdVectorSpaceBase
+  // then, a ScalarProdVectorSpaceBase
   Teuchos::RefCountPtr<const Thyra::ScalarProdVectorSpaceBase<double> > sp_domain = 
-    Teuchos::rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<double> >(epetra_vs,true);
+    Teuchos::rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<double> >(
+      epetra_vs->smallVecSpcFcty()->createVecSpc(ivec->NumVectors())
+    );
 
   // create a MultiVectorBase (from the Epetra_MultiVector)
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<double> > thyra_ivec = 
