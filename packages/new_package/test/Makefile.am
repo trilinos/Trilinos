@@ -34,3 +34,6 @@
 #np# test1/ rather than this file.
 
 SUBDIRS = scripts Hello_Test Jambo_Test
+
+EXTRA_DIST = definition
+
