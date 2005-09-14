@@ -1,8 +1,8 @@
 .././configure \
---enable-nox --enable-nox-epetra \
---with-blas="-L/opt/intel/mkl/lib/32 -lmkl_ia32 -lguide" \
---with-lapack="-L/opt/intel/mkl/lib/32 \
--lmkl_lapack -L/opt/intel/mkl/lib/32 -lmkl_ia32" --with-mpi-compilers \
+--cache-file=config.cache \
+--with-blas="-L/mnt_projects/sysapps/intel/mkl72/lib/32 -lmkl_ia32 -lguide" \
+--with-lapack="-L/mnt_projects/sysapps/intel/mkl72/lib/32 \
+-lmkl_lapack -lmkl_ia32" --with-mpi-compilers \
 --with-mpi-libs=-lmpich \
 CFLAGS=-O3 CXXFLAGS=-O3 \
 FFLAGS=-O3 CPPFLAGS="-DCODE_MP"
