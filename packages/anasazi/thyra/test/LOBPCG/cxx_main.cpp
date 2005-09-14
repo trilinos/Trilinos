@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
   if (verbose && MyPid == 0) {
       cout << "Please configure Anasazi with:" << endl;
       cout << "--enable-epetra-thyra" << endl;
-      cout << "--enable-anasazy-thyra" << endl;
+      cout << "--enable-anasazi-thyra" << endl;
   }
   return 0;
 #endif
