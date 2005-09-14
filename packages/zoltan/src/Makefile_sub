@@ -27,8 +27,10 @@ endif
 
 include $(OBJ_FILES:.o=.d)
 
+DEPENDENCIES := $(subst .o,.d,$(subst .O,.d, $(MAIN_OBJ)))
+
 ifdef MAIN_OBJ
-include $(MAIN_OBJ:.o=.d)
+include $(DEPENDENCIES)
 endif
 
 # On Solaris machines, the C++ include directories may contain .cc files
@@ -47,6 +49,11 @@ endif
 %.o:	%.c
 	@echo "Compiling $<..."
 	@$(CC) $(DEFS) -c $<
+
+%.O:	%.c
+	@echo "$< -> $@ (C++), to avoid conflict with C object"
+	@$(CC) $(DEFS) -o $@ -c $<
+
 
 %.d:	%.cpp
 	@echo "(Re)Building dependency for $<..."
@@ -67,7 +74,7 @@ $(LIB_NAME):	$(OBJ_FILES:.o=.d) $(OBJ_FILES) $(INC_FORTRAN)
 		@$(AR) $(LIB_NAME) $(OBJ_FILES) $(FOBJ_FILES)
 		@$(RANLIB) $(LIB_NAME)
 
-$(ZTARGET):	$(DEP_LIBS) $(LIB_NAME) $(MAIN_OBJ:.o=.d) $(MAIN_OBJ)
+$(ZTARGET):	$(DEP_LIBS) $(LIB_NAME) $(DEPENDENCIES) $(MAIN_OBJ)
 		@echo "linking $(ZTARGET)"
 		@$(PURE_CC) $(CC) $(MAIN_OBJ) -o $(ZTARGET) $(LNK_LIBS)
 
