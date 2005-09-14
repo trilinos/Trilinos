@@ -71,8 +71,6 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   // need to perform a getrow() on all lines to setup some
   // parameters. Note that NormInf is no longer computed.
 
-  NumMyRowEntries_.resize(NumMyRows());
-
   int MaxMyNumEntries;
 
   if (cheap) 
@@ -87,6 +85,8 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   }
   else 
   {
+    NumMyRowEntries_.resize(NumMyRows());
+
     Diagonal_.resize(NumMyRows()); 
     Indices_.resize(Allocated_);
     Values_.resize(Allocated_);
@@ -259,10 +259,12 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
   if (MyRow < 0 || MyRow >= NumMyRows())
     ML_CHK_ERR(-1); // not a local row
 
+#if 0
   if (NumMyRowEntries_[MyRow] > Length) {
     cerr << MyRow << " " << NumMyRowEntries_[MyRow] << " " << Length << endl;
     ML_CHK_ERR(-2); // need more space
   }
+#endif
 
   int ierr = ML_Operator_Getrow(Op_,1,&MyRow,Length,
 				Indices,Values,&NumEntries);
@@ -270,8 +272,10 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
   if (ierr < 0)
     ML_CHK_ERR(ierr);
   
+#if 0
   if (NumEntries != NumMyRowEntries_[MyRow])
     ML_CHK_ERR(-4); // something went wrong
+#endif
 
   return(0);
 
