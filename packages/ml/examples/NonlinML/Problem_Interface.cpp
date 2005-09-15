@@ -40,12 +40,9 @@
 
 //-----------------------------------------------------------------------------
 Problem_Interface::Problem_Interface(FiniteElementProblem& Problem) :
+  ML_NOX::Ml_Nox_Fineinterface(),
   problem(Problem)
 { 
-  isnewJacobian_   = false;
-  numJacobian_     = 0; 
-  t_               = 0.;
-  ncalls_computeF_ = 0;
   return; 
 }
 
