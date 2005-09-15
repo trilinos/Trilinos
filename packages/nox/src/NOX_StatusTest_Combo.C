@@ -39,25 +39,29 @@ NOX::StatusTest::Combo::Combo(ComboType t) :
   status = Unevaluated;
 }
 
-NOX::StatusTest::Combo::Combo(ComboType t, Generic& a) :
+NOX::StatusTest::Combo::Combo(ComboType t, 
+			      const Teuchos::RefCountPtr<Generic>& a) :
   type(t)
 {
-  tests.push_back(&a);
+  tests.push_back(a);
   status = Unevaluated;
 }
 
-NOX::StatusTest::Combo::Combo(ComboType t, Generic& a, Generic& b) :
+NOX::StatusTest::Combo::Combo(ComboType t, 
+			      const Teuchos::RefCountPtr<Generic>& a, 
+			      const Teuchos::RefCountPtr<Generic>& b) :
   type(t)
 {
-  tests.push_back(&a);
-  addStatusTest(b);
+  tests.push_back(a);
+  this->addStatusTest(b);
   status = Unevaluated;
 }
 
-NOX::StatusTest::Combo& NOX::StatusTest::Combo::addStatusTest(Generic& a)
+NOX::StatusTest::Combo& NOX::StatusTest::Combo::
+addStatusTest(const Teuchos::RefCountPtr<Generic>& a)
 {
-  if (isSafe(a))
-    tests.push_back(&a);
+  if (isSafe(*(a.get())))
+    tests.push_back(a);
   else 
   {
     const int indent = 2;
@@ -65,7 +69,7 @@ NOX::StatusTest::Combo& NOX::StatusTest::Combo::addStatusTest(Generic& a)
     cout << "This combo test currently consists of the following:\n";
     this->print(cout, indent);
     cout << "Unable to add the following test:\n";
-    a.print(cout, indent);
+    a->print(cout, indent);
     cout << "\n";
   }
   return *this;
@@ -79,10 +83,10 @@ bool NOX::StatusTest::Combo::isSafe(Generic& a)
   
   // Recursively test that we're not adding something that's already
   // in the list because that can also lead to infinite recursions.
-  for (vector<Generic*>::iterator i = tests.begin(); i != tests.end(); ++i) 
+  for (vector<Teuchos::RefCountPtr<Generic> >::iterator i = tests.begin(); i != tests.end(); ++i) 
   {
     
-    Combo* ptr = dynamic_cast<Combo*>(*i);
+    Combo* ptr = dynamic_cast<Combo*>(i->get());
     if (ptr != NULL)
       if (!ptr->isSafe(a))
 	return false;
@@ -126,7 +130,7 @@ void NOX::StatusTest::Combo::orOp(const Solver::Generic& problem, NOX::StatusTes
 
   // Checks the status of each test. The first test it encounters, if
   // any, that is unconverged is the status that it sets itself too.
-  for (vector<Generic*>::const_iterator i = tests.begin(); i != tests.end(); ++i) 
+  for (vector<Teuchos::RefCountPtr<Generic> >::const_iterator i = tests.begin(); i != tests.end(); ++i) 
   {
     NOX::StatusTest::StatusType s = (*i)->checkStatusEfficiently(problem, checkType);
 
@@ -153,7 +157,7 @@ void NOX::StatusTest::Combo::andOp(const Solver::Generic& problem, NOX::StatusTe
 
   bool isUnconverged = false;
 
-  for (vector<Generic*>::const_iterator i = tests.begin(); i != tests.end(); ++i) {
+  for (vector<Teuchos::RefCountPtr<Generic> >::const_iterator i = tests.begin(); i != tests.end(); ++i) {
 
     NOX::StatusTest::StatusType s = (*i)->checkStatusEfficiently(problem, checkType);
 
@@ -198,7 +202,7 @@ ostream& NOX::StatusTest::Combo::print(ostream& stream, int indent) const
   stream << " Combination";
   stream << " -> " << endl;
 
-  for (vector<Generic*>::const_iterator i = tests.begin(); i != tests.end(); ++i) 
+  for (vector<Teuchos::RefCountPtr<Generic> >::const_iterator i = tests.begin(); i != tests.end(); ++i) 
     (*i)->print(stream, indent+2);
     
   return stream;

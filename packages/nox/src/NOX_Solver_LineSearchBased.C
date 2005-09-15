@@ -37,16 +37,17 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
-NOX::Solver::LineSearchBased::LineSearchBased(NOX::Abstract::Group& xGrp, 
-					      NOX::StatusTest::Generic& t, 
-					      NOX::Parameter::List& p) :
-  solnPtr(&xGrp),		        // pointer to xGrp
-  oldSolnPtr(xGrp.clone(DeepCopy)),     // create via clone
+NOX::Solver::LineSearchBased::
+LineSearchBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
+		const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
+		const Teuchos::RefCountPtr<NOX::Parameter::List>& p) :
+  solnPtr(xGrp),		        // pointer to xGrp
+  oldSolnPtr(xGrp->clone(DeepCopy)),     // create via clone
   oldSoln(*oldSolnPtr),		        // reference to just-created pointer
-  dirPtr(xGrp.getX().clone(ShapeCopy)), // create via clone 
+  dirPtr(xGrp->getX().clone(ShapeCopy)), // create via clone 
   dir(*dirPtr),			        // reference to just-created pointer
-  testPtr(&t),			// pointer to t
-  paramsPtr(&p),		// pointer to p
+  testPtr(t),			// pointer to t
+  paramsPtr(p),		// pointer to p
   utils(paramsPtr->sublist("Printing")),                // intialize the utils
   lineSearch(utils, paramsPtr->sublist("Line Search")), // initialize the line search
   direction(utils, paramsPtr->sublist("Direction")),     // initialize the direction
@@ -101,13 +102,14 @@ void NOX::Solver::LineSearchBased::init()
 
 }
 
-bool NOX::Solver::LineSearchBased::reset(NOX::Abstract::Group& xGrp, 
-					 NOX::StatusTest::Generic& t, 
-					 NOX::Parameter::List& p) 
+bool NOX::Solver::LineSearchBased::
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& p) 
 {
-  solnPtr = &xGrp;
-  testPtr = &t;
-  paramsPtr = &p;		
+  solnPtr = xGrp;
+  testPtr = t;
+  paramsPtr = p;		
   utils.reset(paramsPtr->sublist("Printing"));
   lineSearch.reset(paramsPtr->sublist("Line Search"));	
   direction.reset(paramsPtr->sublist("Direction"));
@@ -118,11 +120,12 @@ bool NOX::Solver::LineSearchBased::reset(NOX::Abstract::Group& xGrp,
   return true;
 }
 
-bool NOX::Solver::LineSearchBased::reset(NOX::Abstract::Group& xGrp, 
-					 NOX::StatusTest::Generic& t)
+bool NOX::Solver::LineSearchBased::
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t)
 {
-  solnPtr = &xGrp;
-  testPtr = &t;
+  solnPtr = xGrp;
+  testPtr = t;
   init();
   return true;
 }

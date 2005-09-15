@@ -146,8 +146,10 @@ int main()
 			  NOX::Utils::Warning);
 
     // Set up the status tests
-    NOX::StatusTest::NormF normF(1.0e-8);
-    NOX::StatusTest::MaxIters maxIters(maxNewtonIters);
+    Teuchos::RefCountPtr<NOX::StatusTest::NormF> normF = 
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
+    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxIters = 
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
     Teuchos::RefCountPtr<NOX::StatusTest::Generic> comboOR = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
 					      normF, 

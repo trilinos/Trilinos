@@ -260,9 +260,19 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
   // Set previous solution vector in current solution group
   curGroupPtr->setPrevX(curGroupPtr->getX());
 
+  // 9/15/2005 RPP: NOX refactor requires RCP's.  Adding a hack here 
+  // to keep old stepper compiling until Eric gets a chance to 
+  // remove it.
+  Teuchos::RefCountPtr<LOCA::Continuation::ExtendedGroup> curGroupRCP =
+    Teuchos::rcp(curGroupPtr, false);
+  Teuchos::RefCountPtr<NOX::StatusTest::Generic> statusTestRCP =
+    Teuchos::rcp(statusTestPtr, false);
+  Teuchos::RefCountPtr<NOX::Parameter::List> noxParamsRCP =
+    Teuchos::rcp(&(LOCA::Utils::getSublist("NOX")), false);  
+
   // Create solver using initial conditions
-  solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr,
-				       LOCA::Utils::getSublist("NOX"));
+  solverPtr = new NOX::Solver::Manager(curGroupRCP, statusTestRCP,
+				       noxParamsRCP);
 
   printInitializationInfo();
 
@@ -339,10 +349,20 @@ LOCA::Stepper::start() {
   prevPredictorPtr =
     dynamic_cast<LOCA::Continuation::ExtendedVector*>(curPredictorPtr->clone());
 
+  // 9/15/2005 RPP: NOX refactor requires RCP's.  Adding a hack here 
+  // to keep old stepper compiling until Eric gets a chance to 
+  // remove it.
+  Teuchos::RefCountPtr<LOCA::Continuation::ExtendedGroup> curGroupRCP =
+    Teuchos::rcp(curGroupPtr, false);
+  Teuchos::RefCountPtr<NOX::StatusTest::Generic> statusTestRCP =
+    Teuchos::rcp(statusTestPtr, false);
+  Teuchos::RefCountPtr<NOX::Parameter::List> noxParamsRCP =
+    Teuchos::rcp(&(LOCA::Utils::getSublist("NOX")), false);  
+
   // Create new solver using new continuation groups and combo status test
   delete solverPtr;
-  solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr,
-				       LOCA::Utils::getSublist("NOX"));
+  solverPtr = new NOX::Solver::Manager(curGroupRCP, statusTestRCP,
+				       noxParamsRCP);
 
   return LOCA::Abstract::Iterator::NotFinished;
 }
@@ -414,10 +434,17 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
 
     printStartStep();
 
-    // Create new solver
+    Teuchos::RefCountPtr<LOCA::Continuation::ExtendedGroup> curGroupRCP =
+      Teuchos::rcp(curGroupPtr, false);
+    Teuchos::RefCountPtr<NOX::StatusTest::Generic> statusTestRCP =
+      Teuchos::rcp(statusTestPtr, false);
+    Teuchos::RefCountPtr<NOX::Parameter::List> noxParamsRCP =
+      Teuchos::rcp(&(LOCA::Utils::getSublist("NOX")), false);  
+    
+    // Create new solver using new continuation groups and combo status test
     delete solverPtr;
-    solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr,
-					 LOCA::Utils::getSublist("NOX"));
+    solverPtr = new NOX::Solver::Manager(curGroupRCP, statusTestRCP,
+					 noxParamsRCP);
 
     // Solve step
     NOX::StatusTest::StatusType solverStatus = solverPtr->solve();
@@ -470,9 +497,17 @@ LOCA::Stepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 //   solverPtr->reset(*curGroupPtr, *statusTestPtr,
 // 		   LOCA::Utils::getSublist("NOX"));
 
+  Teuchos::RefCountPtr<LOCA::Continuation::ExtendedGroup> curGroupRCP =
+    Teuchos::rcp(curGroupPtr, false);
+  Teuchos::RefCountPtr<NOX::StatusTest::Generic> statusTestRCP =
+    Teuchos::rcp(statusTestPtr, false);
+  Teuchos::RefCountPtr<NOX::Parameter::List> noxParamsRCP =
+    Teuchos::rcp(&(LOCA::Utils::getSublist("NOX")), false);  
+  
+  // Create new solver using new continuation groups and combo status test
   delete solverPtr;
-  solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr,
-				       LOCA::Utils::getSublist("NOX"));
+  solverPtr = new NOX::Solver::Manager(curGroupRCP, statusTestRCP,
+				       noxParamsRCP);
 
   return stepStatus;
 }

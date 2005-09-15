@@ -97,16 +97,24 @@ int main()
     grp.setParam("alpha",0.35);
 
     // Create a Hopf point group that uses the lapack group
-    LOCA::Bifurcation::HopfBord::ExtendedGroup hopfgrp(grp, y, z, phi, w, 1);
+    Teuchos::RefCountPtr<LOCA::Bifurcation::HopfBord::ExtendedGroup> 
+      hopfgrp = Teuchos::rcp(new LOCA::Bifurcation::HopfBord::
+			     ExtendedGroup(grp, y, z, phi, w, 1));
 
     // Set up the status tests
-    NOX::StatusTest::NormF statusTestA(1.0e-8, NOX::StatusTest::NormF::Scaled);
-    NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
-    NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, 
-					    statusTestA, statusTestB);
+    Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8, 
+					      NOX::StatusTest::NormF::Scaled));
+    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
+    Teuchos::RefCountPtr<NOX::StatusTest::Combo> statusTestsCombo = 
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
+					      statusTestA, statusTestB));
 
     // Create the list of solver parameters
-    NOX::Parameter::List solverParameters;
+    Teuchos::RefCountPtr<NOX::Parameter::List> solverParametersPtr =
+      Teuchos::rcp(new NOX::Parameter::List);
+    NOX::Parameter::List& solverParameters = *solverParametersPtr.get();
 
     // Set the level of output (this is the default)
     solverParameters.setParameter("Output Information", 
@@ -131,7 +139,8 @@ int main()
     NOX::Parameter::List& linearSolverParameters = newtonParameters.sublist("Linear Solver");
     
     // Create the solver
-    NOX::Solver::Manager solver(hopfgrp, statusTestsCombo, solverParameters);
+    NOX::Solver::Manager solver(hopfgrp, statusTestsCombo, 
+				solverParametersPtr);
 
     // Solve the nonlinear system
     NOX::StatusTest::StatusType status = solver.solve();
@@ -141,12 +150,13 @@ int main()
     solver.getParameterList().print(cout);
     
     // Get the answer
-    hopfgrp = solver.getSolutionGroup();
-    grp = hopfgrp.getUnderlyingGroup();
+    const LOCA::Bifurcation::HopfBord::ExtendedGroup& soln_hopfgrp = 
+      dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedGroup&>(solver.getSolutionGroup());
+    grp = soln_hopfgrp.getUnderlyingGroup();
 
     // Print the answer
     cout << "\n" << "-- Final Solution From Solver --" << "\n";
-    hopfgrp.printSolution(grp.getParam("alpha"));
+    soln_hopfgrp.printSolution(grp.getParam("alpha"));
 
     // Close output file
     outFile.close();

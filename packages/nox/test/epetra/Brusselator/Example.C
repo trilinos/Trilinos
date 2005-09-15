@@ -154,7 +154,9 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  NOX::Parameter::List nlParams;
+  Teuchos::RefCountPtr<NOX::Parameter::List> nlParamsPtr =
+    Teuchos::rcp(new NOX::Parameter::List);
+  NOX::Parameter::List& nlParams = *(nlParamsPtr.get());
 
   // Set the nonlinear solver method
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
@@ -290,26 +292,25 @@ int main(int argc, char *argv[])
 
   // Create the Group
   NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
-  NOX::Epetra::Group grp(printParams, iReq, initialGuess, linSys);
-  grp.computeF();
+  Teuchos::RefCountPtr<NOX::Epetra::Group> grpPtr = 
+    Teuchos::rcp(new NOX::Epetra::Group(printParams, 
+					iReq, 
+					initialGuess, 
+					linSys));  
+  NOX::Epetra::Group& grp = *(grpPtr.get());
 
   // Create the convergence tests
-  NOX::StatusTest::NormF absresid(1.0e-8, NOX::StatusTest::NormF::Unscaled);
-  //NOX::StatusTest::NormF relresid(grp, 1.0e-2);
-  //NOX::StatusTest::NormUpdate update(1.0e-5);
-  //NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
-  //NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
-  //converged.addStatusTest(absresid);
-  //converged.addStatusTest(relresid);
-  //converged.addStatusTest(wrms);
-  //converged.addStatusTest(update);
-  NOX::StatusTest::MaxIters maxiters(25);
-  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
-  combo.addStatusTest(absresid);
-  combo.addStatusTest(maxiters);
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8, NOX::StatusTest::NormF::Unscaled));
+  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(25));
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+  combo->addStatusTest(absresid);
+  combo->addStatusTest(maxiters);
 
   // Create the method
-  NOX::Solver::Manager solver(grp, combo, nlParams);
+  NOX::Solver::Manager solver(grpPtr, combo, nlParamsPtr);
 
   // Initialize time integration parameters
   int maxTimeSteps = 3;
@@ -367,7 +368,7 @@ int main(int argc, char *argv[])
 
     Problem.reset(finalSolution);
     grp.setX(finalSolution);
-    solver.reset(grp, combo, nlParams);
+    solver.reset(grpPtr, combo, nlParamsPtr);
     grp.computeF();
 
   } // end time step while loop

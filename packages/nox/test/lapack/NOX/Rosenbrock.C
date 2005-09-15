@@ -146,7 +146,9 @@ private:
 int main(int argc, char *argv[]) {
 
   // Set up the printing utilities
-  NOX::Parameter::List noxParams;
+  Teuchos::RefCountPtr<NOX::Parameter::List> noxParamsPtr =
+    Teuchos::rcp(new NOX::Parameter::List);
+  NOX::Parameter::List& noxParams = *noxParamsPtr.get();
   NOX::Parameter::List& printParams = noxParams.sublist("Printing");
   printParams.setParameter("Output Precision", 5);
        
@@ -200,23 +202,24 @@ int main(int argc, char *argv[]) {
   // Create a group which uses that problem interface. The group will
   // be initialized to contain the default initial guess for the
   // specified problem.
-  NOX::LAPACK::Group grp(rosenbrock);
+  Teuchos::RefCountPtr<NOX::LAPACK::Group> grp = 
+    Teuchos::rcp(new NOX::LAPACK::Group(rosenbrock));
 
   // Set up the status tests
-  NOX::StatusTest::NormF statusTestA(grp, 1.0e-4);
-  NOX::StatusTest::MaxIters statusTestB(20);
-  NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
-
-
-  // Create the list of solver parameters
-  NOX::Parameter::List solverParameters;
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-4));
+  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> statusTestsCombo = 
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
+					    statusTestA, statusTestB));
 
   // Read parameters from file paramFilename - command line arg#1
-  if (usingParamInputFile && !NOX::parseTextInputFile(paramFilename, solverParameters))
+  if (usingParamInputFile && !NOX::parseTextInputFile(paramFilename, noxParams))
      cout << "Using unchanged parameters " << endl;
   
   // Create the solver
-  NOX::Solver::Manager solver(grp, statusTestsCombo, solverParameters);
+  NOX::Solver::Manager solver(grp, statusTestsCombo, noxParamsPtr);
 
   // Solve the nonlinesar system
   NOX::StatusTest::StatusType status = solver.solve();
@@ -226,7 +229,8 @@ int main(int argc, char *argv[]) {
   solver.getParameterList().print(cout);
 
   // Get the answer
-  grp = solver.getSolutionGroup();
+  NOX::LAPACK::Group solnGrp = 
+    dynamic_cast<const NOX::LAPACK::Group&>(solver.getSolutionGroup());
   
   // Final return value (0 = succefull, non-zero = failure)
   //return status;

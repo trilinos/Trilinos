@@ -112,7 +112,9 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  NOX::Parameter::List nlParams;
+  Teuchos::RefCountPtr<NOX::Parameter::List> nlParamsPtr =
+    Teuchos::rcp(new NOX::Parameter::List);
+  NOX::Parameter::List& nlParams = *(nlParamsPtr.get());
 
   // Set the nonlinear solver method
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
@@ -193,18 +195,23 @@ int main(int argc, char *argv[])
 
   // Create the Group
   NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
-  NOX::Epetra::Group grp(printParams, iReq, initialGuess, linSys); 
-
-  // Establish initial convergence status
-  grp.computeF();
+  Teuchos::RefCountPtr<NOX::Epetra::Group> grpPtr = 
+    Teuchos::rcp(new NOX::Epetra::Group(printParams, 
+					iReq, 
+					initialGuess, 
+					linSys)); 
 
   // Create the convergence tests
-  NOX::StatusTest::NormF testNormF(1.0e-6);
-  NOX::StatusTest::MaxIters testMaxIters(25);
-  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, testNormF, testMaxIters);
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF> testNormF = 
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-6));
+  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> testMaxIters = 
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(25));
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
+					    testNormF, testMaxIters));
 
   // Create the method
-  NOX::Solver::Manager solver(grp, combo, nlParams);
+  NOX::Solver::Manager solver(grpPtr, combo, nlParamsPtr);
   NOX::StatusTest::StatusType status = solver.solve();
 
   // Get the Epetra_Vector with the final solution from the solver

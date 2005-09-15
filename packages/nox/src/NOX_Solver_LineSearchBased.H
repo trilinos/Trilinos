@@ -103,16 +103,18 @@ public:
   /*!
     See reset(NOX::Abstract::Group&, NOX::StatusTest::Generic&, NOX::Parameter::List&) for description
    */
-  LineSearchBased(NOX::Abstract::Group& grp, NOX::StatusTest::Generic& tests, NOX::Parameter::List& params);
+  LineSearchBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+		  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
+		  const Teuchos::RefCountPtr<NOX::Parameter::List>& params);
 
   //! Destructor
   virtual ~LineSearchBased();
 
-  virtual bool reset(NOX::Abstract::Group& grp, 
-		     NOX::StatusTest::Generic& tests, 
-		     NOX::Parameter::List& params);
-  virtual bool reset(NOX::Abstract::Group& grp, 
-		     NOX::StatusTest::Generic& tests);
+  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
+		     const Teuchos::RefCountPtr<NOX::Parameter::List>& params);
+  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType iterate();
   virtual NOX::StatusTest::StatusType solve();
@@ -135,7 +137,7 @@ protected:
 protected:
   
   //! Current solution.
-  NOX::Abstract::Group* solnPtr;		
+  Teuchos::RefCountPtr<NOX::Abstract::Group> solnPtr;		
 
   //! Previous solution pointer. 
   /*! We have both a pointer and a reference because we need to create
@@ -152,10 +154,10 @@ protected:
   NOX::Abstract::Vector& dir;
 
   //! Stopping test.
-  NOX::StatusTest::Generic* testPtr;		
+  Teuchos::RefCountPtr<NOX::StatusTest::Generic> testPtr;		
 
   //! Input parameters.
-  NOX::Parameter::List* paramsPtr;	
+  Teuchos::RefCountPtr<NOX::Parameter::List> paramsPtr;	
 
   //! Utils
   NOX::Utils utils;

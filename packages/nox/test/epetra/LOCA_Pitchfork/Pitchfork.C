@@ -299,8 +299,10 @@ int main(int argc, char *argv[])
     grp->computeF();
 
     // Create the Solver convergence test
-    NOX::StatusTest::NormF wrms(1.0e-8);
-    NOX::StatusTest::MaxIters maxiters(maxNewtonIters);
+    Teuchos::RefCountPtr<NOX::StatusTest::NormF> wrms = 
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
+    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
     Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
     combo->addStatusTest(wrms);

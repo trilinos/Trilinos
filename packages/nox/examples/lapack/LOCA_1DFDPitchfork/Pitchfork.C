@@ -70,17 +70,21 @@ int main()
     asymVec(i) = sin( pi/2.0 * (-1.0 + h*i) );
 
   // Create a turning point group that uses the lapack group
-  LOCA::Bifurcation::PitchforkBord::ExtendedGroup pfgrp(grp, asymVec, asymVec,
-							asymVec,2);
+  Teuchos::RefCountPtr<LOCA::Bifurcation::PitchforkBord::ExtendedGroup> pfgrp = Teuchos::rcp(new LOCA::Bifurcation::PitchforkBord::ExtendedGroup(grp, asymVec, asymVec, asymVec,2));
 
   // Set up the status tests
-  NOX::StatusTest::NormF statusTestA(1.0e-8);
-  NOX::StatusTest::MaxIters statusTestB(10);
-  NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, 
-					  statusTestA, statusTestB);
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
+  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(10));
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> statusTestsCombo = 
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
+					    statusTestA, statusTestB));
 
   // Create the list of solver parameters
-  NOX::Parameter::List solverParameters;
+  Teuchos::RefCountPtr<NOX::Parameter::List> solverParametersPtr = 
+    Teuchos::rcp(new NOX::Parameter::List);
+  NOX::Parameter::List& solverParameters = *solverParametersPtr.get();
 
   // Set the level of output (this is the default)
   solverParameters.setParameter("Output Information", 
@@ -110,7 +114,7 @@ int main()
 //  linearSolverParameters.setParameter("Bifurcation Solve", "Iterative Refinement");
 
   // Create the solver
-  NOX::Solver::Manager solver(pfgrp, statusTestsCombo, solverParameters);
+  NOX::Solver::Manager solver(pfgrp, statusTestsCombo, solverParametersPtr);
 
   // Solve the nonlinear system
   NOX::StatusTest::StatusType status = solver.solve();
@@ -120,10 +124,9 @@ int main()
   solver.getParameterList().print(cout);
 
   // Get the answer
-  pfgrp = solver.getSolutionGroup();
+  const LOCA::Bifurcation::PitchforkBord::ExtendedGroup& soln_pfgrp = dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedGroup&>(solver.getSolutionGroup());
   
-
   // Print the answer
   cout << "\n" << "-- Final Solution From Solver --" << "\n";
-  pfgrp.printSolution(0.0);
+  soln_pfgrp.printSolution(0.0);
 }

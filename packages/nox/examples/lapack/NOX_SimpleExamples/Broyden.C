@@ -164,10 +164,13 @@ int main()
   // Create a group which uses that problem interface. The group will
   // be initialized to contain the default initial guess for the
   // specified problem.
-  NOX::LAPACK::Group grp(broyden);
+  Teuchos::RefCountPtr<NOX::LAPACK::Group> grp = 
+    Teuchos::rcp(new NOX::LAPACK::Group(broyden));
 
   // Create the top level parameter list
-  NOX::Parameter::List solverParameters;
+  Teuchos::RefCountPtr<NOX::Parameter::List> solverParametersPtr =
+    Teuchos::rcp(new NOX::Parameter::List);
+  NOX::Parameter::List& solverParameters = *solverParametersPtr;
 
   // Set the nonlinear solver method
   //solverParameters.setParameter("Nonlinear Solver", "Tensor-Krylov Based");
@@ -219,29 +222,33 @@ int main()
 
 
   // Create the convergence tests
-  //NOX::StatusTest::NormF statusTestA(grp, 1.0e-12);
-  NOX::StatusTest::NormF statusTestA(1.0e-12, NOX::StatusTest::NormF::Unscaled);
-  NOX::StatusTest::MaxIters statusTestB(50);
-  NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR,
-					  statusTestA, statusTestB);
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-12, 
+					    NOX::StatusTest::NormF::Unscaled));
+  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(50));
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> statusTestsCombo = 
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
+					    statusTestA, statusTestB));
 
   // Create the solver
-  NOX::Solver::Manager solver(grp, statusTestsCombo, solverParameters);
+  NOX::Solver::Manager solver(grp, statusTestsCombo, solverParametersPtr);
 
   // Print the starting point
   cout << "\n" << "-- Starting Point --" << "\n";
-  cout << "|| F(x0) || = " << utils.sciformat(grp.getNormF()) << endl;
+  cout << "|| F(x0) || = " << utils.sciformat(grp->getNormF()) << endl;
   // grp.print();
 
   // Solve the nonlinear system
   NOX::StatusTest::StatusType status = solver.solve();
 
   // Warn user if solve failed
-  if (status != NOX::StatusTest::Failed)
+  if (status != NOX::StatusTest::Converged)
     cout << "Error: Solve failed to converge!" << endl;
 
   // Get the answer
-  grp = solver.getSolutionGroup();
+  NOX::LAPACK::Group solnGrp = 
+    dynamic_cast<const NOX::LAPACK::Group&>(solver.getSolutionGroup());
 
   // Output the parameter list
   if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
@@ -253,8 +260,8 @@ int main()
   // Print the answer
   if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
     cout << "\n" << "-- Final Solution From Solver --" << "\n";
-    cout << "|| F(x*) || = " << utils.sciformat(grp.getNormF()) << endl;
-    // grp.print();
+    cout << "|| F(x*) || = " << utils.sciformat(solnGrp.getNormF()) << endl;
+    // solnGrp.print();
   }
   
 }

@@ -27,14 +27,15 @@
 // ************************************************************************
 //@HEADER
                                                                                 
-#ifndef _NOX_PROBLEM_MANAGER_H
-#define _NOX_PROBLEM_MANAGER_H
+#ifndef NOX_PROBLEM_MANAGER_H
+#define NOX_PROBLEM_MANAGER_H
 
 #include "NOX.H"
 #include "NOX_Epetra.H"
 
 #include "Problem_Interface.H"
 #include "GenericEpetraProblem.H"
+#include "Teuchos_RefCountPtr.hpp"
 
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
 class OffBlock_Manager;
@@ -80,10 +81,10 @@ public:
                         GenericEpetraProblem& problemB);
 
   // Register NLSolver parameter list
-  void registerParameters(NOX::Parameter::List& List);
+  void registerParameters(const Teuchos::RefCountPtr<NOX::Parameter::List>& List);
 
   // Register Convergence Test(s)
-  void registerStatusTest(NOX::StatusTest::Combo& comboTest);
+  void registerStatusTest(const Teuchos::RefCountPtr<NOX::StatusTest::Combo>& comboTest);
 
   // Signal completion of problem, parameter, and convergence test
   // regitrations and trigger the problem setup
@@ -180,8 +181,8 @@ private:
 
 public:
   // Made these public for now
-  NOX::Parameter::List* nlParams;           // NLSolver parameter list
-  NOX::StatusTest::Combo* statusTest;       // Convergence criterion (ia)
+  Teuchos::RefCountPtr<NOX::Parameter::List> nlParams; // NLSolver parameter list
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> statusTest;       // Convergence criterion (ia)
 
 private:
 
@@ -197,7 +198,7 @@ private:
   map<string, int> NameLookup;              // Needed to lookup problems by name
   map<int, NOX::Epetra::LinearSystemAztecOO*> LinearSystems;
   					    // Linear Systems container
-  map<int, NOX::Epetra::Group*> Groups;    // Groups container
+  map<int, Teuchos::RefCountPtr<NOX::Epetra::Group> >Groups;    // Groups container
   map<int, Problem_Interface*> Interfaces;    // Interfaces container
   map<int, NOX::Solver::Manager*> Solvers;    // Solvers container
   map<int, Epetra_IntVector*> ProblemToCompositeIndices;

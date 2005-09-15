@@ -33,17 +33,18 @@
 #ifndef NOX_SOLVER_GENERIC_H
 #define NOX_SOLVER_GENERIC_H
 
-#include "NOX_StatusTest_Generic.H" 	// for NOX::StatusTest::StatusType
+#include "NOX_StatusTest_Generic.H"  // for NOX::StatusTest::StatusType
 
 // Forward declarations
 namespace NOX {
-namespace Parameter {
-class List;
+  namespace Parameter {
+    class List;
+  }
+  namespace Abstract {
+    class Group;
+  }
 }
-namespace Abstract {
-class Group;
-}
-}
+#include "Teuchos_RefCountPtr.hpp"
 
 namespace NOX {
 
@@ -104,9 +105,10 @@ public:
     iterate() and solve() are completely undefined. To remedy this,
     call reset() again with the modified objects.
   */
-  virtual bool reset(NOX::Abstract::Group& grp, 
-		     NOX::StatusTest::Generic& tests, 
-		     NOX::Parameter::List& params) = 0;
+  virtual bool 
+  reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& params) = 0;
 
   /*! 
     \brief A soft reset of the nonlinear solver for a new problem.
@@ -119,8 +121,9 @@ public:
     This reset allows problems to bypass the potentially time consuming
     parsing of the parameter lists.
   */
-  virtual bool reset(NOX::Abstract::Group& grp, 
-		     NOX::StatusTest::Generic& tests) = 0;
+  virtual bool 
+  reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests) = 0;
 
   //! Check current convergence and failure status. 
   virtual NOX::StatusTest::StatusType getStatus() = 0;

@@ -76,8 +76,6 @@ Problem_Manager::Problem_Manager(Epetra_Comm& comm,
                                  bool doOffBlocks_,
                                  int numGlobalElements) :
   GenericEpetraProblem(comm, numGlobalElements),
-  nlParams(0),
-  statusTest(0),
   problemCount(0),
   doOffBlocks(doOffBlocks_),
   compositeMap(0),
@@ -110,7 +108,6 @@ Problem_Manager::~Problem_Manager()
     delete ProblemToCompositeIndices [i];
     delete Interfaces                [i];
     delete Solvers                   [i];
-    delete Groups                    [i];
     delete LinearSystems             [i];
 
 #ifdef HAVE_NOX_EPETRAEXT
@@ -182,14 +179,14 @@ GenericEpetraProblem& Problem_Manager::getProblem(string name)
 NOX::Epetra::Group& Problem_Manager::getGroup(int id_)
 {
   // Get a group given its unique id
-  NOX::Epetra::Group* group = (*(Groups.find(id_))).second;
-  if( !group ) {
+  Teuchos::RefCountPtr<NOX::Epetra::Group> group = (*(Groups.find(id_))).second;
+  if( Teuchos::is_null(group) ) {
     cout << "ERROR: Could not get Group for Problem with id --> " << id_ 
          << " !!" << endl;
     throw "Problem_Manager ERROR";
   }
   else
-    return *group;
+    return *(group.get());
 }
 
 Epetra_Vector& Problem_Manager::getCompositeSoln()
@@ -236,14 +233,14 @@ void Problem_Manager::createDependency(GenericEpetraProblem& problemA,
 
 }
 
-void Problem_Manager::registerParameters(NOX::Parameter::List& List)
+void Problem_Manager::registerParameters(const Teuchos::RefCountPtr<NOX::Parameter::List>& List)
 {
-  nlParams = &List;
+  nlParams = List;
 }
 
-void Problem_Manager::registerStatusTest(NOX::StatusTest::Combo& comboTest)
+void Problem_Manager::registerStatusTest(const Teuchos::RefCountPtr<NOX::StatusTest::Combo>& comboTest)
 {
-  statusTest = &comboTest;
+  statusTest = comboTest;
 }
 
 void Problem_Manager::registerComplete()
@@ -255,7 +252,7 @@ void Problem_Manager::registerComplete()
     throw "Problem_Manager ERROR";
   }
 
-  if(nlParams == 0 || statusTest == 0)
+  if(Teuchos::is_null(nlParams) || Teuchos::is_null(statusTest))
   {
     cout << "ERROR: No nlParams and/or statusTest registered with "
          << "Problem_Manager !!" << endl;
@@ -387,11 +384,11 @@ void Problem_Manager::registerComplete()
       *(*(MatrixOperators.find(probId))).second,
       problem.getSolution() );
 
-    Groups[probId] = new NOX::Epetra::Group(
+    Groups[probId] = Teuchos::rcp(new NOX::Epetra::Group(
       nlParams->sublist("Printing"),
       reqInt,
       nox_soln,
-      *(*(LinearSystems.find(probId))).second );
+      *(*(LinearSystems.find(probId))).second ));
 #else
     if(MyPID==0)
       cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
@@ -402,8 +399,8 @@ void Problem_Manager::registerComplete()
     // Needed to establish initial convergence state
     (*(Groups.find(probId))).second->computeF(); 
    
-    Solvers[probId] = new NOX::Solver::Manager(*(*(Groups.find(probId))).second, 
-					*statusTest, *nlParams );
+    Solvers[probId] = new NOX::Solver::Manager((Groups.find(probId))->second, 
+					statusTest, nlParams );
     iter++;
   }
 
@@ -457,8 +454,9 @@ void Problem_Manager::setGroupX(int probId)
     throw "Problem_Manager ERROR";
   }
 
-  NOX::Epetra::Group *grp = (*(Groups.find(probId))).second;
-  if( !grp ) {
+  Teuchos::RefCountPtr<NOX::Epetra::Group> grp = 
+    (*(Groups.find(probId))).second;
+  if( Teuchos::is_null(grp) ) {
     cout << "ERROR: Could not get appropriate group for use in setX !!"
          << endl;
     throw "Problem_Manager ERROR";
@@ -548,8 +546,9 @@ void Problem_Manager::computeAllF()
 
 void Problem_Manager::computeGroupF(int probId)
 {
-  NOX::Epetra::Group *grp = (*(Groups.find(probId))).second;
-  if( !grp ) {
+  Teuchos::RefCountPtr<NOX::Epetra::Group> grp = 
+    (*(Groups.find(probId))).second;
+  if( Teuchos::is_null(grp) ) {
     cout << "ERROR: Could not get a group for problem with id --> "
          << probId << endl;
     throw "Problem_Manager ERROR";
@@ -569,8 +568,9 @@ void Problem_Manager::computeAllJacobian()
   // method
   for( ; problemIter != problemLast; problemIter++) {
     int probId = (*problemIter).first;
-    NOX::Epetra::Group *grp = (*(Groups.find(probId))).second;
-    if( !grp ) {
+    Teuchos::RefCountPtr<NOX::Epetra::Group> grp = 
+      (*(Groups.find(probId))).second;
+    if( Teuchos::is_null(grp) ) {
       cout << "ERROR: Could not find valid group for compouteJacobian !!"
            << endl;
       throw "Problem_Manager ERROR";
@@ -1090,8 +1090,9 @@ double Problem_Manager::getNormSum()
   for( ; problemIter != problemLast; problemIter++) {
     int probId = (*problemIter).first;
 
-    NOX::Epetra::Group *grp = (*(Groups.find(probId))).second;
-    if( !grp ) {
+    Teuchos::RefCountPtr<NOX::Epetra::Group> grp = 
+      (*(Groups.find(probId))).second;
+    if( Teuchos::is_null(grp) ) {
       cout << "ERROR: Could not get appropriate group for use in NormSum !!"
            << endl;
       throw "Problem_Manager ERROR";
@@ -1139,17 +1140,23 @@ bool Problem_Manager::solve()
   NOX::StatusTest::StatusType status;
 
   // RPP: Inner status test
-  NOX::StatusTest::NormF absresid(1.0e-10);
-  NOX::StatusTest::NormUpdate update(1.0e-5);
-  NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
-  converged.addStatusTest(absresid);
-  converged.addStatusTest(update);
-  NOX::StatusTest::MaxIters maxiters(100);
-  NOX::StatusTest::FiniteValue finiteValue;
-  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
-  combo.addStatusTest(converged);
-  combo.addStatusTest(maxiters);
-  combo.addStatusTest(finiteValue);
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid =
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-10));
+  Teuchos::RefCountPtr<NOX::StatusTest::NormUpdate> update =
+    Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> converged =
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
+  converged->addStatusTest(absresid);
+  converged->addStatusTest(update);
+  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters =
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
+  Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> finiteValue =
+    Teuchos::rcp(new NOX::StatusTest::FiniteValue);
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo =
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+  combo->addStatusTest(converged);
+  combo->addStatusTest(maxiters);
+  combo->addStatusTest(finiteValue);
 
 //  while( normSum > 2.e-0 ) // Hard-coded convergence criterion for now.
   int nlIter = 0; 
@@ -1165,7 +1172,8 @@ bool Problem_Manager::solve()
       GenericEpetraProblem& problem = *(*problemIter).second;
       int probId = problem.getId();
 
-      NOX::Epetra::Group &problemGroup = *(*(Groups.find(probId))).second;
+      Teuchos::RefCountPtr<NOX::Epetra::Group> problemGroup = 
+	Groups.find(probId)->second;
       NOX::Solver::Manager &problemSolver = *(*(Solvers.find(probId))).second;
     
       // Sync all dependent data with this problem 
@@ -1174,7 +1182,8 @@ bool Problem_Manager::solve()
       setGroupX(probId);
       // Reset the solver for this problem and solve
       //problemSolver.reset(problemGroup, *statusTest, *nlParams);
-      problemSolver.reset(problemGroup, combo, *nlParams);
+
+      problemSolver.reset(problemGroup, combo, nlParams);
       status = problemSolver.solve();
       if( status != NOX::StatusTest::Converged )
       { 
@@ -1301,11 +1310,13 @@ bool Problem_Manager::solveMF()
 
   //lsParams.setParameter("Preconditioning", "None");
   lsParams.setParameter("Preconditioner", "AztecOO");
-  NOX::Epetra::Group grp(nlParams->sublist("Printing"), 
-    interface, nox_soln, composite_linearSystem);
-  grp.computeF();
+  Teuchos::RefCountPtr<NOX::Epetra::Group> grp = 
+    Teuchos::rcp(new NOX::Epetra::Group(nlParams->sublist("Printing"), 
+					interface, nox_soln, 
+					composite_linearSystem));
+  grp->computeF();
 
-  NOX::Solver::Manager solver(grp, *statusTest, *nlParams);
+  NOX::Solver::Manager solver(grp, statusTest, nlParams);
   NOX::StatusTest::StatusType status = solver.solve();
   if( status != NOX::StatusTest::Converged )
   { 

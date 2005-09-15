@@ -169,9 +169,12 @@ int main()
   NOX::Parameter::List& linearSolverParameters = newtonParameters.sublist("Linear Solver");
 
     // Set up the status tests
-    NOX::StatusTest::NormF statusTestA(1.0e-6, NOX::StatusTest::NormF::Scaled);
-    NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
-    NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-6, 
+					    NOX::StatusTest::NormF::Scaled));
+  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
+  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
     // Create the stepper  
     LOCA::Stepper stepper(grp, combo, paramList);

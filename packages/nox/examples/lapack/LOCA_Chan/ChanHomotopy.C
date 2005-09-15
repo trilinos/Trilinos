@@ -129,8 +129,10 @@ int main()
     //NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
 
     // Set up the status tests
-    NOX::StatusTest::NormF statusTestA(grp, 1.0e-8);
-    NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
+    Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+      Teuchos::rcp(new NOX::StatusTest::NormF(grp, 1.0e-8));
+    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
     // Create the homotopy group

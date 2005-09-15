@@ -392,7 +392,9 @@ int main(int argc, char *argv[])
   grp.computeF();
 
   // Create the convergence tests
-  NOX::StatusTest::NormF absresid(1.0e-8, NOX::StatusTest::NormF::Unscaled);
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8, 
+					    NOX::StatusTest::NormF::Unscaled));
   //NOX::StatusTest::NormF relresid(grp, 1.0e-2);
   //NOX::StatusTest::NormUpdate update(1.0e-5);
   //NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
@@ -401,7 +403,8 @@ int main(int argc, char *argv[])
   //converged.addStatusTest(relresid);
   //converged.addStatusTest(wrms);
   //converged.addStatusTest(update);
-  NOX::StatusTest::MaxIters maxiters(50);
+  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(50));
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
   combo.addStatusTest(absresid);
   combo.addStatusTest(maxiters);

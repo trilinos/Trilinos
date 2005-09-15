@@ -234,18 +234,18 @@ public:
 
     See reset() for description. 
   */
-  TrustRegionBased(NOX::Abstract::Group& xgrp, 
-		   NOX::StatusTest::Generic& t, 
-		   NOX::Parameter::List& p);
+  TrustRegionBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp, 
+		   const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
+		   const Teuchos::RefCountPtr<NOX::Parameter::List>& p);
 
   //! Destructor
   virtual ~TrustRegionBased();
 
-  virtual bool reset(NOX::Abstract::Group& xgrp, 
-		     NOX::StatusTest::Generic& t, 
-		     NOX::Parameter::List& p);
-  virtual bool reset(NOX::Abstract::Group& xgrp, 
-		     NOX::StatusTest::Generic& t);
+  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp, 
+		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
+		     const Teuchos::RefCountPtr<NOX::Parameter::List>& p);
+  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp, 
+		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType iterate();
   virtual NOX::StatusTest::StatusType solve();
@@ -268,7 +268,7 @@ protected:
 protected:
   
   //! Current solution.
-  NOX::Abstract::Group* solnPtr;		
+  Teuchos::RefCountPtr<NOX::Abstract::Group> solnPtr;		
 
   //! Previous solution pointer. 
   /*! We have both a pointer and a reference because we need to create
@@ -306,10 +306,10 @@ protected:
   NOX::Abstract::Vector& bVec;
 
   //! Stopping test.
-  NOX::StatusTest::Generic* testPtr;		
+  Teuchos::RefCountPtr<NOX::StatusTest::Generic> testPtr;		
 
   //! Input parameters.
-  NOX::Parameter::List* paramsPtr;	
+  Teuchos::RefCountPtr<NOX::Parameter::List> paramsPtr;	
 
   //! Printing Utils
   NOX::Utils utils;

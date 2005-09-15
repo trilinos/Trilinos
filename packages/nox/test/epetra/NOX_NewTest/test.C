@@ -70,8 +70,10 @@ int main(int argc, char *argv[]) {
   int NumProc = Comm.NumProc();
 
   // Set up the printing utilities
+  Teuchos::RefCountPtr<NOX::Parameter::List> noxParamsPtr =
+    Teuchos::rcp(new NOX::Parameter::List);
+  NOX::Parameter::List& noxParams = *(noxParamsPtr.get());
   // Only print output if the "-v" flag is set on the command line
-  NOX::Parameter::List noxParams;
   NOX::Parameter::List& printParams = noxParams.sublist("Printing");
   printParams.setParameter("MyPID", MyPID); 
   printParams.setParameter("Output Precision", 5);

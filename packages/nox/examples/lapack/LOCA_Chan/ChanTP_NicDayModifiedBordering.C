@@ -63,13 +63,18 @@ int main()
   nullVec.init(1.0);             // initial value 1.0
 
   // Set up the status tests
-  //NOX::StatusTest::NormUpdate statusTestA(tpgrp, 1.0e-7);
-  NOX::StatusTest::NormF statusTestA(1.0e-11);
-  NOX::StatusTest::MaxIters statusTestB(20);
-  NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-11));
+  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> statusTestsCombo = 
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
+					    statusTestA, statusTestB));
 
   // Create the list of solver parameters
-  NOX::Parameter::List solverParameters;
+  Teuchos::RefCountPtr<NOX::Parameter::List> solverParametersPtr =
+    Teuchos::rcp(new NOX::Parameter::List);
+  NOX::Parameter::List& solverParameters = *solverParametersPtr.get();
 
   // Create the NOX printing parameter list
   NOX::Parameter::List& nlPrintParams = solverParameters.sublist("Printing");
@@ -97,11 +102,13 @@ int main()
   NOX::Parameter::List& linearSolverParameters = newtonParameters.sublist("Linear Solver");
 
   // Create a turning point group that uses the lapack group
-  LOCA::Bifurcation::TPBord::NicDayModifiedBorderingGroup tpgrp(grp, nullVec, 
-							  nullVec, 0);
+  Teuchos::RefCountPtr
+    <LOCA::Bifurcation::TPBord::NicDayModifiedBorderingGroup> tpgrp = 
+    Teuchos::rcp(new LOCA::Bifurcation::TPBord::
+		 NicDayModifiedBorderingGroup(grp, nullVec, nullVec, 0));
 
   // Create the solver
-  NOX::Solver::Manager solver(tpgrp, statusTestsCombo, solverParameters);
+  NOX::Solver::Manager solver(tpgrp, statusTestsCombo, solverParametersPtr);
 
   // Solve the nonlinear system
   NOX::StatusTest::StatusType status = solver.solve();
@@ -111,9 +118,10 @@ int main()
   solver.getParameterList().print(cout);
 
   // Get the answer
-  tpgrp = solver.getSolutionGroup();
+  const LOCA::Bifurcation::TPBord::NicDayModifiedBorderingGroup& soln_tpgrp = 
+    dynamic_cast<const LOCA::Bifurcation::TPBord::NicDayModifiedBorderingGroup&>(solver.getSolutionGroup());
 
   // Print the answer
   cout << "\n" << "-- Final Solution From Solver --" << "\n";
-  tpgrp.printSolution(0.0);
+  soln_tpgrp.printSolution(0.0);
 }

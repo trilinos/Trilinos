@@ -32,6 +32,7 @@
 
 #include "NOX_Solver_Manager.H"	// class definition
 #include "NOX_Utils.H"		// for static function doPrint
+#include "Teuchos_RefCountPtr.hpp" // for RefCountPtr 
 
 // Header files for different solvers
 #include "NOX_Solver_LineSearchBased.H"	 // LineSearch method
@@ -42,7 +43,10 @@
 #include "NOX_Solver_TensorBasedTest.H"  // Tensor-Krylov method
 #endif
 
-NOX::Solver::Manager::Manager(Abstract::Group& grp, StatusTest::Generic &t, Parameter::List& p) :
+NOX::Solver::Manager::
+Manager(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
+	const Teuchos::RefCountPtr<StatusTest::Generic>& t, 
+	const Teuchos::RefCountPtr<Parameter::List>& p) :
   method(""),
   ptr(NULL)
 {
@@ -60,11 +64,13 @@ NOX::Solver::Manager::~Manager()
   delete ptr;
 }
 
-bool NOX::Solver::Manager::reset(Abstract::Group& grp, 
-				 StatusTest::Generic& tests, 
-				 Parameter::List& params)
+bool NOX::Solver::Manager::
+reset(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
+      const Teuchos::RefCountPtr<StatusTest::Generic>& tests, 
+      const Teuchos::RefCountPtr<Parameter::List>& params)
 {
-  string newmethod = params.getParameter("Nonlinear Solver", "Line Search Based");
+  string newmethod = 
+    params->getParameter("Nonlinear Solver", "Line Search Based");
 
   if ((method == newmethod) && (ptr != NULL))
   {
@@ -125,8 +131,9 @@ bool NOX::Solver::Manager::reset(Abstract::Group& grp,
   }
 }
 
-bool NOX::Solver::Manager::reset(Abstract::Group& grp, 
-				 StatusTest::Generic& tests)
+bool NOX::Solver::Manager::
+reset(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
+      const Teuchos::RefCountPtr<StatusTest::Generic>& tests)
 {
   return ptr->reset(grp, tests);
 }

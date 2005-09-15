@@ -42,20 +42,23 @@
 using namespace NOX;
 using namespace NOX::Solver;
 
-TrustRegionBased::TrustRegionBased(Abstract::Group& grp, StatusTest::Generic& t, Parameter::List& p) :
-  solnPtr(&grp),		// pointer to grp
-  oldSolnPtr(grp.clone(DeepCopy)), // create via clone
+TrustRegionBased::
+TrustRegionBased(const Teuchos::RefCountPtr<Abstract::Group>& grp,
+		 const Teuchos::RefCountPtr<StatusTest::Generic>& t,
+		 const Teuchos::RefCountPtr<Parameter::List>& p) :
+  solnPtr(grp),		// pointer to grp
+  oldSolnPtr(grp->clone(DeepCopy)), // create via clone
   oldSoln(*oldSolnPtr),		// reference to just-created pointer
-  newtonVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
+  newtonVecPtr(grp->getX().clone(ShapeCopy)), // create via clone 
   newtonVec(*newtonVecPtr),	// reference to just-created pointer
-  cauchyVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
+  cauchyVecPtr(grp->getX().clone(ShapeCopy)), // create via clone 
   cauchyVec(*cauchyVecPtr),	// reference to just-created pointer
-  aVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
+  aVecPtr(grp->getX().clone(ShapeCopy)), // create via clone 
   aVec(*aVecPtr),		// reference to just-created pointer
-  bVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
+  bVecPtr(grp->getX().clone(ShapeCopy)), // create via clone 
   bVec(*bVecPtr),		// reference to just-created pointer
-  testPtr(&t),			// pointer to t
-  paramsPtr(&p),			// copy p
+  testPtr(t),			// pointer to t
+  paramsPtr(p),			// copy p
   utils(paramsPtr->sublist("Printing")), // inititalize utils
   newton(utils),		// initialize direction
   cauchy(utils),       		// initialize direction
@@ -181,23 +184,27 @@ void NOX::Solver::TrustRegionBased::invalid(const string& name, double value) co
   throw "NOX Error";
 }
 
-bool TrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t, 
-			     Parameter::List& p) 
+bool TrustRegionBased::
+reset(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
+      const Teuchos::RefCountPtr<StatusTest::Generic>& t, 
+      const Teuchos::RefCountPtr<Parameter::List>& p) 
 {
-  solnPtr = &grp;
-  testPtr = &t;
-  paramsPtr = &p;			
+  solnPtr = grp;
+  testPtr = t;
+  paramsPtr = p;			
   utils.reset(paramsPtr->sublist("Printing"));
   prePostOperator.reset(utils, paramsPtr->sublist("Solver Options"));
   init();
   return true;
 }
 
-bool TrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t)
+bool TrustRegionBased::
+reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
+      const Teuchos::RefCountPtr<StatusTest::Generic>& t)
 {
   // New initial guess and status test
-  solnPtr = &grp;
-  testPtr = &t;
+  solnPtr = grp;
+  testPtr = t;
 
   // Initialize 
   nIter = 0;

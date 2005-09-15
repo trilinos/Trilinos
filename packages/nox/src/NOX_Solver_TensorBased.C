@@ -48,26 +48,27 @@
 #define DEVELOPER_CODE
 #define USE_INITIAL_GUESS_LOGIC
 
-NOX::Solver::TensorBased::TensorBased(NOX::Abstract::Group& xGrp,
-				      NOX::StatusTest::Generic& t,
-				      NOX::Parameter::List& p) :
-  solnPtr(&xGrp),		// pointer to xGrp
-  oldSolnPtr(xGrp.clone(DeepCopy)), // create via clone
+NOX::Solver::TensorBased::
+TensorBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
+	    const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
+	    const Teuchos::RefCountPtr<NOX::Parameter::List>& p) :
+  solnPtr(xGrp),		// pointer to xGrp
+  oldSolnPtr(xGrp->clone(DeepCopy)), // create via clone
   oldSoln(*oldSolnPtr),		// reference to just-created pointer
-  newtonVecPtr(xGrp.getX().clone(ShapeCopy)), // create via clone 
+  newtonVecPtr(xGrp->getX().clone(ShapeCopy)), // create via clone 
   newtonVec(*newtonVecPtr),	// reference to just-created pointer
-  tensorVecPtr(xGrp.getX().clone(ShapeCopy)), // create via clone 
+  tensorVecPtr(xGrp->getX().clone(ShapeCopy)), // create via clone 
   tensorVec(*tensorVecPtr),	// reference to just-created pointer
-  aVecPtr(xGrp.getX().clone(ShapeCopy)), // create via clone 
+  aVecPtr(xGrp->getX().clone(ShapeCopy)), // create via clone 
   aVec(*aVecPtr),		// reference to just-created pointer
-  sVecPtr(xGrp.getX().clone(ShapeCopy)), // create via clone 
+  sVecPtr(xGrp->getX().clone(ShapeCopy)), // create via clone 
   sVec(*sVecPtr),		// reference to just-created pointer
-  tmpVecPtr(xGrp.getX().clone(ShapeCopy)), // create via clone 
+  tmpVecPtr(xGrp->getX().clone(ShapeCopy)), // create via clone 
   tmpVec(*tmpVecPtr),		// reference to just-created pointer
-  residualVecPtr(xGrp.getX().clone(ShapeCopy)), // create via clone 
+  residualVecPtr(xGrp->getX().clone(ShapeCopy)), // create via clone 
   residualVec(*residualVecPtr),	// reference to just-created pointer
-  testPtr(&t),			// pointer to t
-  paramsPtr(&p),		// copy p
+  testPtr(t),			// pointer to t
+  paramsPtr(p),		// copy p
   utils(paramsPtr->sublist("Printing")),   // initialize utils
   print(utils),
   prePostOperator(utils, paramsPtr->sublist("Solver Options"))
@@ -128,13 +129,14 @@ void NOX::Solver::TensorBased::init()
 }
 
 
-bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
-				     NOX::StatusTest::Generic& t,
-				     NOX::Parameter::List& p)
+bool NOX::Solver::TensorBased::
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& p)
 {
-  solnPtr = &xGrp;
-  testPtr = &t;
-  paramsPtr = &p;
+  solnPtr = xGrp;
+  testPtr = t;
+  paramsPtr = p;
 
   utils.reset(paramsPtr->sublist("Printing"));
   prePostOperator.reset(utils, paramsPtr->sublist("Solver Options"));
@@ -263,11 +265,12 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
   return true;
 }
 
-bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
-				     NOX::StatusTest::Generic& t)
+bool NOX::Solver::TensorBased::
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t)
 {
-  solnPtr = &xGrp;
-  testPtr = &t;
+  solnPtr = xGrp;
+  testPtr = t;
   init();
   return true;
 }

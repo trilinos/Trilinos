@@ -153,7 +153,9 @@ int main(int argc, char *argv[])
   // parameter list as wwell as its own convergence test(s).
 
   // Create the top level parameter list
-  NOX::Parameter::List nlParams;
+  Teuchos::RefCountPtr<NOX::Parameter::List> nlParamsPtr =
+    Teuchos::rcp(new NOX::Parameter::List);
+  NOX::Parameter::List& nlParams = *(nlParamsPtr.get());
 
   // Set the nonlinear solver method
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
@@ -259,17 +261,23 @@ int main(int argc, char *argv[])
   // Create the convergence tests
   // Note: as for the parameter list, both (all) problems use the same 
   // convergence test(s) for now, but each could have its own.
-  NOX::StatusTest::NormF absresid(1.0e-8);
-  NOX::StatusTest::NormUpdate update(1.0e-5);
-  NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
-  converged.addStatusTest(absresid);
-  converged.addStatusTest(update);
-  NOX::StatusTest::MaxIters maxiters(100);
-  NOX::StatusTest::FiniteValue finiteValue;
-  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
-  combo.addStatusTest(converged);
-  combo.addStatusTest(maxiters);
-  combo.addStatusTest(finiteValue);
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
+  Teuchos::RefCountPtr<NOX::StatusTest::NormUpdate> update = 
+    Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> converged = 
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
+  converged->addStatusTest(absresid);
+  converged->addStatusTest(update);
+  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
+  Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> finiteValue = 
+    Teuchos::rcp(new NOX::StatusTest::FiniteValue);
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+  combo->addStatusTest(converged);
+  combo->addStatusTest(maxiters);
+  combo->addStatusTest(finiteValue);
 
   // Make this explicit
   bool doOffBlocks = true;
@@ -280,7 +288,7 @@ int main(int argc, char *argv[])
 
   // Note that each problem could contain its own nlParams list as well as
   // its own convergence test(s). 
-  problemManager.registerParameters(nlParams);
+  problemManager.registerParameters(nlParamsPtr);
   problemManager.registerStatusTest(combo);
 
   bool doBrusselator = false; // Hard-coded for now

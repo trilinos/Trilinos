@@ -94,13 +94,13 @@ namespace LOCA {
       ~Wrapper();
 
       //! Implementation of reset method (forwarded to wrapped solver)
-      bool reset(NOX::Abstract::Group& grp, 
-		 NOX::StatusTest::Generic& tests, 
-		 NOX::Parameter::List& params);
+      bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+		 const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
+		 const Teuchos::RefCountPtr<NOX::Parameter::List>& params);
   
       //! Implementation of reset method (forwarded to wrapped solver)
-      bool reset(NOX::Abstract::Group& grp, 
-		 NOX::StatusTest::Generic& tests);
+      bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+		 const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
       
       //! Implementation of getStatus method (forwarded to wrapped solver)
       NOX::StatusTest::StatusType getStatus();
@@ -146,10 +146,10 @@ namespace LOCA {
       NOX::Solver::Generic* solverPtr;
 
       //! Pointer to solution group
-      const NOX::Abstract::Group* solnGrpPtr;
+      Teuchos::RefCountPtr<const NOX::Abstract::Group> solnGrpPtr;
 
       //! Pointer to previous solution group
-      const NOX::Abstract::Group* oldSolnGrpPtr;
+      Teuchos::RefCountPtr<const NOX::Abstract::Group> oldSolnGrpPtr;
 
     };
   }

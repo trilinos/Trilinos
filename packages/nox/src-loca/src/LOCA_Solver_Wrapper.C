@@ -34,18 +34,16 @@
 #include "LOCA_Continuation_AbstractGroup.H"
 #include "LOCA_Extended_AbstractGroup.H"
 
-LOCA::Solver::Wrapper::Wrapper(NOX::Solver::Generic& solver) :
-  solverPtr(&solver),
-  solnGrpPtr(NULL),
-  oldSolnGrpPtr(NULL)
+LOCA::Solver::Wrapper::
+Wrapper(NOX::Solver::Generic& solver) :
+  solverPtr(&solver)
 {
   resetWrapper();
 }
 
-LOCA::Solver::Wrapper::Wrapper(const NOX::Solver::Generic& solver) :
-  solverPtr(&const_cast<NOX::Solver::Generic&>(solver)),
-  solnGrpPtr(NULL),
-  oldSolnGrpPtr(NULL)
+LOCA::Solver::Wrapper::
+Wrapper(const NOX::Solver::Generic& solver) :
+  solverPtr(&(const_cast<NOX::Solver::Generic&>(solver)))
 {
   resetWrapper();
 }
@@ -55,9 +53,10 @@ LOCA::Solver::Wrapper::~Wrapper()
 }
 
 bool
-LOCA::Solver::Wrapper::reset(NOX::Abstract::Group& grp, 
-			     NOX::StatusTest::Generic& tests, 
-			     NOX::Parameter::List& params)
+LOCA::Solver::Wrapper::
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& params)
 {
   bool res = solverPtr->reset(grp, tests, params);
   resetWrapper();
@@ -65,8 +64,9 @@ LOCA::Solver::Wrapper::reset(NOX::Abstract::Group& grp,
 }
 
 bool 
-LOCA::Solver::Wrapper::reset(NOX::Abstract::Group& grp, 
-			     NOX::StatusTest::Generic& tests) 
+LOCA::Solver::Wrapper::
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests) 
 {
   bool res =  solverPtr->reset(grp, tests);
   resetWrapper();
@@ -134,15 +134,15 @@ LOCA::Solver::Wrapper::resetWrapper()
 
   if (eGrpPtr == NULL) {
     // soln group is not extended, so set points to original groups
-    solnGrpPtr = &soln;
-    oldSolnGrpPtr = &oldSoln;
+    solnGrpPtr = Teuchos::rcp(&soln, false);
+    oldSolnGrpPtr = Teuchos::rcp(&oldSoln, false);
   }
 
   else {
     // soln group is extended so get underlying groups
     oldEGrpPtr = dynamic_cast<const LOCA::Extended::AbstractGroup*>(&oldSoln);
-    solnGrpPtr = &(eGrpPtr->getUnderlyingGroup());
-    oldSolnGrpPtr = &(oldEGrpPtr->getUnderlyingGroup());
+    solnGrpPtr = Teuchos::rcp(&(eGrpPtr->getUnderlyingGroup()), false);
+    oldSolnGrpPtr = Teuchos::rcp(&(oldEGrpPtr->getUnderlyingGroup()), false);
   }
 
   return;

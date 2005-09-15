@@ -35,6 +35,7 @@
 
 #include "NOX_Solver_Generic.H"	// base class
 #include "NOX_Common.H"		// class data element (string)
+
 namespace NOX {
 namespace Solver{
 
@@ -75,16 +76,19 @@ public:
 
     See reset() for a full description.
   */
-  Manager(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &t, 
-	  NOX::Parameter::List& p);
+  Manager(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+	  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
+	  const Teuchos::RefCountPtr<NOX::Parameter::List>& p);
 
   //! Destructor.
   ~Manager();
 
-  bool reset(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &tests, 
-	     NOX::Parameter::List& params);
+  bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+	     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
+	     const Teuchos::RefCountPtr<NOX::Parameter::List>& params);
   
-  bool reset(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &tests);
+  bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
+	     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
 
   NOX::StatusTest::StatusType getStatus();
 

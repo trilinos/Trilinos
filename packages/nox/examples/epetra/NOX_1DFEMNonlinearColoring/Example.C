@@ -121,7 +121,9 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  NOX::Parameter::List nlParams;
+  Teuchos::RefCountPtr<NOX::Parameter::List> nlParamsPtr =
+    Teuchos::rcp(new NOX::Parameter::List);
+  NOX::Parameter::List& nlParams = *nlParamsPtr.get();
 
   // Set the nonlinear solver method
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
@@ -199,8 +201,10 @@ int main(int argc, char *argv[])
 					  iReq, iJac, A, soln);
 
   // Create the Group
-  NOX::Epetra::Vector nv(soln, NOX::DeepCopy, true);
-  NOX::Epetra::Group grp(printParams, iReq, nv, linSys); 
+  NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
+  Teuchos::RefCountPtr<NOX::Epetra::Group> grp =
+    Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, initialGuess, 
+					linSys)); 
 
   // Use an Epetra Scaling object if desired
   Epetra_Vector scaleVec(soln);
@@ -213,23 +217,32 @@ int main(int argc, char *argv[])
   weights.scale(1.0e-8);
 
   // Create the convergence tests
-  NOX::StatusTest::NormF absresid(1.0e-8);
-  NOX::StatusTest::NormF relresid(grp, 1.0e-2);
-  NOX::StatusTest::NormUpdate update(1.0e-5);
-  NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
-  //NOX::StatusTest::WRMS wrms(1.0e-2, weights);
-  NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
-  converged.addStatusTest(absresid);
-  converged.addStatusTest(relresid);
-  converged.addStatusTest(wrms);
-  converged.addStatusTest(update);
-  NOX::StatusTest::MaxIters maxiters(20);
-  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
-  combo.addStatusTest(converged);
-  combo.addStatusTest(maxiters);
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF> relresid = 
+    Teuchos::rcp(new NOX::StatusTest::NormF(*grp.get(), 1.0e-2));
+  Teuchos::RefCountPtr<NOX::StatusTest::NormUpdate> update =
+    Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
+  Teuchos::RefCountPtr<NOX::StatusTest::NormWRMS> wrms =
+    Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> converged =
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
+  converged->addStatusTest(absresid);
+  converged->addStatusTest(relresid);
+  converged->addStatusTest(wrms);
+  converged->addStatusTest(update);
+  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
+  Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> fv =
+    Teuchos::rcp(new NOX::StatusTest::FiniteValue);
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+  combo->addStatusTest(fv);
+  combo->addStatusTest(converged);
+  combo->addStatusTest(maxiters);
 
   // Create the method
-  NOX::Solver::Manager solver(grp, combo, nlParams);
+  NOX::Solver::Manager solver(grp, combo, nlParamsPtr);
   NOX::StatusTest::StatusType status = solver.solve();
 
   if (status != NOX::StatusTest::Converged)

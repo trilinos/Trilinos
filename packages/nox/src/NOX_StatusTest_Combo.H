@@ -35,6 +35,7 @@
 
 #include "NOX_StatusTest_Generic.H" // base class
 #include "NOX_Common.H"		// class data element (vector)
+#include "Teuchos_RefCountPtr.hpp" 
 
 namespace NOX {
 
@@ -59,7 +60,7 @@ namespace StatusTest {
   \note We call checkStatus on \e every convergence test, though some
   may be called with the NOX::StatusTest::None option.
 
-  \author Tammy Kolda (SNL 8950)
+  \author Tammy Kolda (SNL 8950) and Roger Pawlowski (SNL 1416)
 */
 class Combo : public Generic {
 
@@ -80,16 +81,17 @@ public:
   Combo(ComboType t);
 
   //! Constructor with a single test.
-  Combo(ComboType t, Generic& a);
+  Combo(ComboType t, const Teuchos::RefCountPtr<Generic>& a);
 
   //! Constructor with two tests.
-  Combo(ComboType t, Generic& a, Generic& b);
+  Combo(ComboType t, const Teuchos::RefCountPtr<Generic>& a, 
+	const Teuchos::RefCountPtr<Generic>& b);
 
   //! Add another test to this combination. 
   /*!
     Calls isSafe() to determine if it is safe to add \c a to the combination.
   */
-  virtual Combo& addStatusTest(Generic& a);
+  virtual Combo& addStatusTest(const Teuchos::RefCountPtr<Generic>& a);
 
   //! Destructor
   virtual ~Combo();
@@ -159,7 +161,7 @@ private:
   const ComboType type;
 
   //! Vector of generic status tests
-  vector<Generic*> tests;
+  vector<Teuchos::RefCountPtr<Generic> > tests;
 
   //! %Status
   StatusType status;

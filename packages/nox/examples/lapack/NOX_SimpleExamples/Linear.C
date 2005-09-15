@@ -318,15 +318,22 @@ int main(int argc, char* argv[])
   // Create a group which uses that problem interface. The group will
   // be initialized to contain the default initial guess for the
   // specified problem.
-  NOX::LAPACK::Group grp(linear);
-
+  Teuchos::RefCountPtr<NOX::LAPACK::Group> grp = 
+    Teuchos::rcp(new NOX::LAPACK::Group(linear));
+  
   // ** Status Tests **
-  NOX::StatusTest::NormF normf(grp, 1.0e-8);
-  NOX::StatusTest::MaxIters maxiters( 5 * n );
-  NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, normf, maxiters);
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF> normf =
+    Teuchos::rcp(new NOX::StatusTest::NormF(*grp, 1.0e-8));
+  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters =
+    Teuchos::rcp(new NOX::StatusTest::MaxIters( 5 * n ));
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> statusTestsCombo =
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
+					    normf, maxiters));
 
   // ** Paramter List **
-  NOX::Parameter::List solverParams;
+  Teuchos::RefCountPtr<NOX::Parameter::List> solverParamsPtr =
+    Teuchos::rcp(new NOX::Parameter::List);
+  NOX::Parameter::List& solverParams = *solverParamsPtr.get();
 
   // -- Output Level --
   solverParams.sublist("Printing").setParameter("Output Information", 
@@ -384,13 +391,13 @@ int main(int argc, char* argv[])
   // ** Solve **
   
   // Create the solver
-  NOX::Solver::Manager solver(grp, statusTestsCombo, solverParams);
+  NOX::Solver::Manager solver(grp, statusTestsCombo, solverParamsPtr);
 
   // Solve the nonlinesar system
   NOX::StatusTest::StatusType status = solver.solve();
 
   // Warn user if solve failed
-  if (status != NOX::StatusTest::Failed)
+  if (status != NOX::StatusTest::Converged)
     cout << "Error: Solve failed to converge!" << endl;
 
   // ** Output solution **
@@ -400,17 +407,18 @@ int main(int argc, char* argv[])
   solver.getParameterList().print(cout);
 
   // Get the answer from the solver
-  grp = solver.getSolutionGroup();
+  NOX::LAPACK::Group solnGrp = 
+    dynamic_cast<const NOX::LAPACK::Group&>(solver.getSolutionGroup());
   
   // Print the answer from the solver
   cout << "\n" << "-- Final Solution From Solver --" << "\n";
-  grp.print();
+  solnGrp.print();
 
   // Print the true answer
-  grp.setX(linear.getSolution());
-  grp.computeF();
+  solnGrp.setX(linear.getSolution());
+  solnGrp.computeF();
   cout << "\n" << "-- Expected Solution --" << "\n";
-  grp.print();
+  solnGrp.print();
 }
 
 #endif

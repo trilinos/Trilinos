@@ -75,16 +75,17 @@
 #include "stdio.h"  // for printf()
 
 
-NOX::Solver::TensorBasedTest::TensorBasedTest(NOX::Abstract::Group& xgrp,
-				      NOX::StatusTest::Generic& t,
-				      NOX::Parameter::List& p) :
-  solnptr(&xgrp),		// pointer to xgrp
-  oldsolnptr(xgrp.clone(DeepCopy)), // create via clone
+NOX::Solver::TensorBasedTest::
+TensorBasedTest(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp,
+		const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
+		const Teuchos::RefCountPtr<NOX::Parameter::List>& p) :
+  solnptr(xgrp),		// pointer to xgrp
+  oldsolnptr(xgrp->clone(DeepCopy)), // create via clone
   oldsoln(*oldsolnptr),		// reference to just-created pointer
-  dirptr(xgrp.getX().clone(ShapeCopy)), // create via clone 
+  dirptr(xgrp->getX().clone(ShapeCopy)), // create via clone 
   dir(*dirptr),			// reference to just-created pointer
-  testptr(&t),			// pointer to t
-  paramsPtr(&p),			// copy p
+  testptr(t),			// pointer to t
+  paramsPtr(p),			// copy p
   utils(paramsPtr->sublist("Printing")),               // initialize utils
   lineSearch(utils, paramsPtr->sublist("Line Search")),// initialize linesearch
   direction(utils, paramsPtr->sublist("Direction")),   // initialize direction
@@ -136,13 +137,14 @@ void NOX::Solver::TensorBasedTest::init()
 }
 
 
-bool NOX::Solver::TensorBasedTest::reset(NOX::Abstract::Group& xgrp,
-				     NOX::StatusTest::Generic& t,
-				     NOX::Parameter::List& p)
+bool NOX::Solver::TensorBasedTest::
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp,
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& p)
 {
-  solnptr = &xgrp;
-  testptr = &t;
-  paramsPtr = &p;
+  solnptr = xgrp;
+  testptr = t;
+  paramsPtr = p;
   utils.reset(paramsPtr->sublist("Printing"));
   lineSearch.reset(paramsPtr->sublist("Line Search"));
   direction.reset(paramsPtr->sublist("Direction"));
@@ -152,11 +154,12 @@ bool NOX::Solver::TensorBasedTest::reset(NOX::Abstract::Group& xgrp,
   return true;
 }
 
-bool NOX::Solver::TensorBasedTest::reset(NOX::Abstract::Group& xgrp,
-				     NOX::StatusTest::Generic& t)
+bool NOX::Solver::TensorBasedTest::
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp,
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t)
 {
-  solnptr = &xgrp;
-  testptr = &t;
+  solnptr = xgrp;
+  testptr = t;
   init();
   return true;
 }

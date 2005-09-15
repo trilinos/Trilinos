@@ -269,8 +269,10 @@ int main(int argc, char *argv[])
   grp.computeF();
 
   // Create the Solver convergence test
-  NOX::StatusTest::NormF wrms(1.0e-8);
-  NOX::StatusTest::MaxIters maxiters(searchParams.getParameter("Max Iters", 10));
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF> wrms = 
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
+  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(searchParams.getParameter("Max Iters", 10)));
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
   combo.addStatusTest(wrms);
   combo.addStatusTest(maxiters);

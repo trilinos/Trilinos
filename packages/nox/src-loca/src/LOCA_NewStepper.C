@@ -272,9 +272,9 @@ LOCA::NewStepper::reset(const Teuchos::RefCountPtr<LOCA::MultiContinuation::Abst
 
   // Create solver using initial conditions
   solverPtr = Teuchos::rcp(new NOX::Solver::Manager(
-					   *curGroupPtr, 
-					   *statusTestPtr,
-					   *parsedParams->getSublist("NOX")));
+					   curGroupPtr, 
+					   statusTestPtr,
+					   parsedParams->getSublist("NOX")));
 
   printInitializationInfo();
 
@@ -353,8 +353,8 @@ LOCA::NewStepper::start() {
 
   // Create new solver using new continuation groups and combo status test
   solverPtr = Teuchos::rcp(new NOX::Solver::Manager(
-					   *curGroupPtr, *statusTestPtr,
-					   *parsedParams->getSublist("NOX")));
+					   curGroupPtr, statusTestPtr,
+					   parsedParams->getSublist("NOX")));
 
   return LOCA::Abstract::Iterator::NotFinished;
 }
@@ -431,8 +431,8 @@ LOCA::NewStepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
 
     // Create new solver
     solverPtr = Teuchos::rcp(new NOX::Solver::Manager(
-					   *curGroupPtr, *statusTestPtr,
-					   *parsedParams->getSublist("NOX")));
+					   curGroupPtr, statusTestPtr,
+					   parsedParams->getSublist("NOX")));
 
     // Solve step
     NOX::StatusTest::StatusType solverStatus = solverPtr->solve();
@@ -486,8 +486,8 @@ LOCA::NewStepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 // 		   parsedParams->getSublist("NOX"));
 
   solverPtr = Teuchos::rcp(new NOX::Solver::Manager(
-					    *curGroupPtr, *statusTestPtr,
-					    *parsedParams->getSublist("NOX")));
+					    curGroupPtr, statusTestPtr,
+					    parsedParams->getSublist("NOX")));
 
   return stepStatus;
 }
