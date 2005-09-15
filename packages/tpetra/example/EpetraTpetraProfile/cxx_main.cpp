@@ -380,11 +380,7 @@ void outputResults(bool const verbose, int niters, std::string const name,
 	commV.gatherAll(&tpetraInsertTime, &tpetraInsertTime_g[0], 1);
 	commV.gatherAll(&tpetraFillCompleteTime, &tpetraFillCompleteTime_g[0], 1);
 	commV.gatherAll(&tpetraMatvecTime, &tpetraMatvecTime_g[0], 1);
-	
-	// *** TEMPORARY HACK ***
-	//commV.gatherAll(&tpetraNumFlops, &tpetraNumFlops_g[0], 1);
-	commV.sumAll(&tpetraNumFlops, &tpetraNumFlops_g[0], 1);
-	tpetraNumFlops_g.assign(tpetraNumFlops_g.size(), tpetraNumFlops_g[0]);
+	commV.gatherAll(&tpetraNumFlops, &tpetraNumFlops_g[0], 1);
 	
 	if(verbose) {
 		cout << "\n*************************************************************************************************" << endl;
