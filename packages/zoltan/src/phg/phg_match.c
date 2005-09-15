@@ -832,7 +832,36 @@ static int pmatching_ipm (ZZ *zz,
     if (cFLAG)
       continue;      /* skip phases 3 and 4, continue rounds */ 
     
-         /************************ PHASE 3: **********************************/
+#ifdef NEW_PHASE3
+    /************************ NEW PHASE 3: ********************************/
+
+    MACRO_TIMER_START (4, "Matching Phase 3");
+
+    /* Only MASTER ROW computes best global match for candidates */
+    /* EBEB or perhaps we can do this fully distributed? */
+    if (hgc->myProc_y == 0) {
+
+      /* Create array of size # global candidates in this round. */
+      /* Perhaps this should be allocated once up front? */
+
+      /* Populate array with triplets from computed inner product data. */
+      /* A triplet is (candidate id, best match id, and best i.p. value) */
+      /* Sort by candidate's global id. Can we use hash instead? */
+
+      /* User-defined Allreduce to find max over inner product values;
+         this will tell us the globally best "match" for each candidate. */
+
+      /* Look through array of "winners" and update match array. */
+
+    }
+
+    /* broadcast match array to the entire column */
+    MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
+    MACRO_TIMER_STOP (4);                       /* end of phase 3 */
+  }                                             /* DONE: loop over rounds */
+
+#else /* Old phase 3 and 4 */
+    /************************ PHASE 3: **********************************/
 
     MACRO_TIMER_START (4, "Matching Phase 3");   
     
@@ -921,8 +950,10 @@ static int pmatching_ipm (ZZ *zz,
     MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
     MACRO_TIMER_STOP (5);                       /* end of phase 4 */
   }                                             /* DONE: loop over rounds */
-  MACRO_TIMER_START (6, "Matching Cleanup");          
+#endif /* ! NEW_PHASE3 */
   
+  MACRO_TIMER_START (6, "Matching Cleanup");          
+
   /* optional sanity tests */
   if (zz->Debug_Level > 4 && hgc->myProc_x == 0 && hgc->myProc_y == 0)  {
     int local = 0, global = 0, unmatched = 0;
