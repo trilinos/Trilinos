@@ -174,12 +174,12 @@ public:
   //! Query whether the current Jacobian matches the current solution vector.
   /*! Query whether the current Jacobian matches the current solution vector.
    */
-  virtual bool isnewJacobian() = 0;
+  virtual bool isnewJacobian() { return isnewJacobian_; }
   
   //! Query how often the Jacobian has been recomputed.
   /*! Query how often the Jacobian has been recomputed.
    */
-  virtual int getnumJacobian() = 0;
+  virtual int getnumJacobian() { return numJacobian_; }
 
   //! Compute and return the Nullspace of the problem from the application.
   /*! Compute and return the Nullspace of the problem from the application. This method is called
