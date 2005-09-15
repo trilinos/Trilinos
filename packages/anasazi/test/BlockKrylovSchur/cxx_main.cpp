@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 //
-//  This test is for the internal utilities that are used by the modal analysis solver.
+//  This test is for the BlockKrylovSchur solver using the Epetra interface
 //
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBlockKrylovSchur.hpp"
@@ -51,9 +51,9 @@ int main(int argc, char *argv[])
 {
   int i;
   int info = 0;
-  
+
 #ifdef EPETRA_MPI
-  
+
   // Initialize MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -63,9 +63,9 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 
 #endif
-  
+
   int MyPID = Comm.MyPID();
-  
+
   Anasazi::ReturnType returnCode = Anasazi::Ok;
 
   bool testFailed = false;
@@ -88,10 +88,10 @@ int main(int argc, char *argv[])
       which = argv[2];
     }
   }
-  
-  
-  if (verbose && MyPID == 0)
+
+  if (verbose && MyPID == 0) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
+  }
   
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
@@ -111,41 +111,31 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Epetra_Operator> M = Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getMass()), false );
 
   // Create preconditioner
-  int maxIterCG = 100;
-  double tolCG = 1e-7;
+  const int maxIterCG = 100;
+  const double tolCG = 1e-7;
   
   Teuchos::RefCountPtr<BlockPCGSolver> opStiffness = Teuchos::rcp( new BlockPCGSolver(Comm, M.get(), tolCG, maxIterCG, 0) );
   opStiffness->setPreconditioner( 0 );
-
   Teuchos::RefCountPtr<Anasazi::EpetraGenOp> InverseOp = Teuchos::rcp( new Anasazi::EpetraGenOp( opStiffness, K ) );
 
-  // Variables needed for eigensolver
+  // Eigensolver parameters
+  const int nev = 4;
+  const int blockSize = 2;
+  const int maxBlocks = 10;
+  const int maxRestarts = 500;
+  const double tol = tolCG * 10.0;
 
-  int nev = 4;
-  int blockSize = 2;
-  int maxBlocks = 10;
-  int maxRestarts = 500;
-  double tol = tolCG * 10.0;
-  
-  // Create parameter list to pass into solver
-
-  Teuchos::ParameterList MyPL;
-  MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Blocks", maxBlocks );
-  MyPL.set( "Max Restarts", maxRestarts );
-  MyPL.set( "Tol", tol );
-  
-  // Create eigenproblem
-  
+  // create an epetra multivector
   Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
-  
+
+  // Create eigenproblem
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(InverseOp, M, ivec) );
   
   // Inform the eigenproblem that the operator A is symmetric
   MyProblem->SetSymmetric(true);
-  
+
   // Set the number of eigenvalues requested and the blocksize the solver should use
   MyProblem->SetNEV( nev );
 
@@ -154,20 +144,28 @@ int main(int argc, char *argv[])
   if (info)
     cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
 
+  // Create parameter list to pass into solver
+  Teuchos::ParameterList MyPL;
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Max Blocks", maxBlocks );
+  MyPL.set( "Max Restarts", maxRestarts );
+  MyPL.set( "Tol", tol );
+
   // Create default output manager 
   Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
 
   // Set verbosity level
-  if (verbose) 
+  if (verbose) {
     MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
+  }
 
   // Create a sorting manager to handle the sorting of eigenvalues in the solver
-  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 
+  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
     Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
-  
-  // Create the eigensolver  
-  Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
-  
+
+  // Create the eigensolver
+  Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
+
   // Solve the problem to the specified tolerances or length
   returnCode = MySolver.solve();
   if (returnCode != Anasazi::Ok) {
@@ -204,9 +202,7 @@ int main(int argc, char *argv[])
   }
 
 #ifdef EPETRA_MPI
-
   MPI_Finalize() ;
-
 #endif
 
   if (testFailed) {
