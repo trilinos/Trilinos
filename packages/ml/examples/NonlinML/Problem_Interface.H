@@ -95,12 +95,6 @@ public:
   // return the Map from the problem
   const Epetra_Map& getMap() { return problem.getMap(); }                                     
 
-  // return the Jacobian flag (Jacobian valid or not)
-  bool isnewJacobian() { return  (isnewJacobian_); }     
-  
-  // return the number of Jacobians evaluated so far
-  int getnumJacobian() { return (numJacobian_); }                         
-
   // get nullspace
   double* Get_Nullspace(const int nummyrows, const int numpde, const int dim_nullsp)
   { return NULL; }
