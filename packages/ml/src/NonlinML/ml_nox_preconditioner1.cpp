@@ -104,6 +104,7 @@ comm_(comm)
   fd_centered_         = false;
   offset_newPrec_      = 100;
   recompute_newPrec_   = 0;
+  adaptive_NewPrec_    = 0.0;
 
   FAS_normF_           = 1.0e-05;
   FAS_nupdate_         = 1.0e-05;
@@ -266,7 +267,9 @@ bool ML_NOX::ML_Nox_Preconditioner::SetRecomputeOffset(int offset)
 /*----------------------------------------------------------------------*
  |  Set methods for flags/data (public)                      m.gee 03/05|
  *----------------------------------------------------------------------*/
-bool ML_NOX::ML_Nox_Preconditioner::SetRecomputeOffset(int offset, int recomputestep)
+bool ML_NOX::ML_Nox_Preconditioner::SetRecomputeOffset(int offset, 
+                                                       int recomputestep,
+                                                       double adaptrecompute)
 { 
   if (offset<0 || recomputestep<0)
   {
@@ -277,6 +280,7 @@ bool ML_NOX::ML_Nox_Preconditioner::SetRecomputeOffset(int offset, int recompute
   }
   offset_newPrec_    = offset;
   recompute_newPrec_ = recomputestep;
+  adaptive_NewPrec_  = adaptrecompute;
   return true;
 }                              
 
@@ -534,11 +538,29 @@ bool ML_NOX::ML_Nox_Preconditioner::computePreconditioner(
 {
    bool flag = true;
    int offset = getoffset();
+   if (offset)
    if (ncalls_NewPrec_ % offset == 0) // recompute every offset
       setinit(false);
    if (recompute_newPrec_ != 0) // recompute initially after step recompute_newPrec_
    if (ncalls_NewPrec_ == recompute_newPrec_)
       setinit(false);
+   if (adaptive_NewPrec_ > 0.0 && ncalls_NewPrec_ != 0)
+   {
+     if (!noxsolver_)
+     {
+      cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::ML_Nox_ApplyInverse_NonLinear:\n"
+           << "**ERR**: noxsolver not registered, use set_nox_solver(solver)!\n"
+           << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+     }
+     const NOX::EpetraNew::Group& finalGroup = 
+     dynamic_cast<const NOX::EpetraNew::Group&>(noxsolver_->getSolutionGroup());
+     const Epetra_Vector& currentF = 
+     (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getF())).getEpetraVector();
+     double norm;
+     currentF.Norm2(&norm);
+     if (norm>adaptive_NewPrec_)
+       setinit(false);
+   }
    if (isinit() == false)
    {
       if (comm_.MyPID()==0 && ml_printlevel_ > 0 )

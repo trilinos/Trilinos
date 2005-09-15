@@ -301,7 +301,7 @@ public:
    recomputestep iteration
    \param offset (In) : How often to apply this preconditioner before recomputing it.
    */
-  bool SetRecomputeOffset(int offset, int recomputestep);
+  bool SetRecomputeOffset(int offset, int recomputestep, double adaptrecompute);
 
   //! Set dimensions for the PDE and the Nullspace.
   /*! 
@@ -531,6 +531,7 @@ private:
   Epetra_CrsMatrix*                     fineJac_;          // fine grid matrix (only used when ismatrixfree_=false)
   int                                   offset_newPrec_;   // how often to recompute the precond from scratch
   int                                   recompute_newPrec_;// initial recomputing step
+  double                                adaptive_NewPrec_; // recompute preconditioner if residual is larger than this
   int                                   ncalls_NewPrec_;   // how often computePreconditioner is called
 
   // ---data related to the ML-hierarchy---
