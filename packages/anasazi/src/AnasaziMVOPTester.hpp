@@ -909,8 +909,8 @@ namespace Anasazi {
 
     /*********** MvAddMv() ***********************************************
        D = alpha*B + beta*C
-       1) Use alpha == 0 and check that D == C
-       2) Use  beta == 0 and check that D == B
+       1) Use alpha==0,beta==1 and check that D == C
+       2) Use alpha==1,beta==0 and check that D == B
        3) Use D==0 and D!=0 and check that result is the same
        4) Check that input arguments are not modified 
     *********************************************************************/
@@ -1045,6 +1045,69 @@ namespace Anasazi {
           return Failed;
         }
       }
+    }
+
+    /*********** MvAddMv() ***********************************************
+       Similar to above, but where B or C are potentially the same 
+       object as D. This case is commonly used, for example, to affect
+       A <- alpha*A
+       via 
+       MvAddMv(alpha,A,zero,A,A)
+          ** OR **
+       MvAddMv(zero,A,alpha,A,A)
+      
+       The result is that the operation has to be "atomic". That is, 
+       B and C are no longer reliable after D is modified, so that 
+       the assignment to D must be the last thing to occur.
+
+       D = alpha*B + beta*C
+
+       1) Use alpha==0,beta==1 and check that D == C
+       2) Use alpha==1,beta==0 and check that D == B
+    *********************************************************************/
+    {
+      const int p = 7;
+      Teuchos::RefCountPtr<MV> B, C, D;
+      std::vector<ScalarType> normsB(p),
+                              normsD(p);
+      ScalarType alpha = SCT::random(),
+                  beta = SCT::random();
+      std::vector<int> lclindex(p);
+      for (i=0; i<p; i++) lclindex[i] = i;
+
+      B = MVT::Clone(*A,p);
+      C = MVT::CloneView(*B,lclindex);
+      D = MVT::CloneView(*B,lclindex);
+
+      MVT::MvRandom(*B);
+      MVT::MvNorm(*B,&normsB);
+   
+      // check that 0*B+1*C == C
+      MVT::MvAddMv(zero,*B,one,*C,*D);
+      MVT::MvNorm(*D,&normsD);
+      for (i=0; i<p; i++) {
+        if ( normsB[i] != normsD[i] ) {
+          if ( om->isVerbosityAndPrint(Warning) ) {
+            out << "*** ERROR *** MultiVecTraits::MvAddMv() #2" << endl
+                << "Assignment did not work." << endl;
+          }
+          return Failed;
+        }
+      }
+
+      // check that 1*B+0*C == B
+      MVT::MvAddMv(one,*B,zero,*C,*D);
+      MVT::MvNorm(*D,&normsD);
+      for (i=0; i<p; i++) {
+        if ( normsB[i] != normsD[i] ) {
+          if ( om->isVerbosityAndPrint(Warning) ) {
+            out << "*** ERROR *** MultiVecTraits::MvAddMv() #2" << endl
+                << "Assignment did not work." << endl;
+          }
+          return Failed;
+        }
+      }
+
     }
 
 
@@ -1414,6 +1477,37 @@ namespace Anasazi {
               << "Operator applied to zero did not return zero." << endl;
         }
         return Failed;
+      }
+    }
+
+    // If we send in a random matrix, we should not get a zero return
+    MVT::MvRandom(*B);
+    MVT::MvNorm(*B,&normsB1);
+    ret = OPT::Apply(*M,*B,*C);
+    MVT::MvNorm(*B,&normsB2);
+    MVT::MvNorm(*C,&normsC2);
+    if (ret != Ok) {
+      if (om->isVerbosityAndPrint(Warning)) {
+        out << "*** ERROR *** OperatorTraits::Apply()." << endl
+            << "Apply() returned an error." << endl;
+      }
+      return Failed;
+    }
+    bool ZeroWarning = false;
+    for (i=0; i<numvecs; i++) {
+      if (normsB2[i] != normsB1[i]) {
+        if ( om->isVerbosityAndPrint(Warning) ) {
+          out << "*** ERROR *** OperatorTraits::Apply()." << endl
+              << "Apply() modified the input vectors." << endl;
+        }
+        return Failed;
+      }
+      if (normsC2[i] == SCT::zero() && ZeroWarning==false ) {
+        if ( om->isVerbosityAndPrint(Warning) ) {
+          out << "*** ERROR *** OperatorTraits::Apply()." << endl
+              << "Operator applied to random matrix returned zero." << endl;
+          ZeroWarning = true;
+        }
       }
     }
 
