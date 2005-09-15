@@ -46,6 +46,11 @@ const Space MultiVectorScaled::GetVectorSpace() const
   return(vector_.GetVectorSpace());
 }
 
+const Space LinearCombinationScaled::GetVectorSpace() const
+{
+  return(left_.GetVectorSpace());
+}
+
 void LinearCombinationScaled::Update(MultiVector& v) const
 {
   StackPush();
