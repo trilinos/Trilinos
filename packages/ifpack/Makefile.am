@@ -38,7 +38,11 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = README-IFPACK ChangeLog-IFPACK
+EXTRA_DIST = README-IFPACK ChangeLog-IFPACK \
+       config/generate-makeoptions.pl \
+       config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
+       config/replace-install-prefix.pl config/string-replace.pl
+
 
 
 # #######################################################################

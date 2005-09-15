@@ -292,6 +292,7 @@ $(IFPACK_RELAXATION_TEST) \
 $(IFPACK_ILU_TEST) \
 $(IFPACK_IC_TEST)
 
+EXTRA_DIST = definition
 all: all-recursive
 
 .SUFFIXES:

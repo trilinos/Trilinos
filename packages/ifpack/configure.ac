@@ -415,7 +415,6 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/PreconditionerFactory/Makefile
 		test/TestAll/Makefile
-		test/CrsRiluk/Makefile
 		test/IlukGraph/Makefile
 		test/SetParameters/Makefile
 		test/Relaxation/Makefile

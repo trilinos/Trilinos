@@ -19,7 +19,7 @@
 
 # Removing PreconditionerFactory from MPI for now because it seems to hang.
 
-(FRAMEWORK, IFPACKExamples) {
+(FRAMEWORK, INSTALL, IFPACKExamples) {
     DIRS = ../example;
     ARGS = -v;
     COMM = SERIAL, MPI(1-4);

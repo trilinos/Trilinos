@@ -131,6 +131,7 @@ COMP_H = \
 	$(srcdir)/Ifpack_Utils.h                  \
 	$(srcdir)/Ifpack_Reordering.h             \
 	$(srcdir)/Ifpack_RCMReordering.h          \
+	$(srcdir)/Ifpack_SPARSKIT.h \
 	$(srcdir)/Ifpack_METISReordering.h        \
 	$(srcdir)/Ifpack_OverlappingRowMatrix.h
 

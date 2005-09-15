@@ -281,7 +281,11 @@ target_vendor = @target_vendor@
 # ************************************************************************
 # @HEADER
 AUTOMAKE_OPTIONS = foreign
-EXTRA_DIST = README-IFPACK ChangeLog-IFPACK
+EXTRA_DIST = README-IFPACK ChangeLog-IFPACK \
+       config/generate-makeoptions.pl \
+       config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
+       config/replace-install-prefix.pl config/string-replace.pl
+
 
 # #######################################################################
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
