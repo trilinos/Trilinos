@@ -195,12 +195,15 @@ namespace Anasazi {
     static void MvAddMv( const ScalarType alpha, const TMVB& A, 
                          const ScalarType beta,  const TMVB& B, TMVB& mv )
     { 
-      // Set mv = 0
-      Thyra::assign(&mv,Teuchos::ScalarTraits<ScalarType>::zero());
-      // Add alpha*A to mv
-      Thyra::update(alpha,A,&mv);
-      // Add beta*B to mv
-      Thyra::update(beta ,B,&mv);
+      ScalarType coef[2], zero = Teuchos::ScalarTraits<ScalarType>::zero();
+      const TMVB * in[2];
+
+      in[0] = &A;
+      in[1] = &B;
+      coef[0] = alpha;
+      coef[1] = beta;
+
+      Thyra::linear_combination(2,coef,in,zero,&mv);
     }
 
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Tmv \f$.
