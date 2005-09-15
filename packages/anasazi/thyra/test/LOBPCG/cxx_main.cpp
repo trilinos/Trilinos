@@ -179,8 +179,7 @@ int main(int argc, char *argv[])
 
   // Set verbosity level
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails 
-                      + Anasazi::IterationDetails + Anasazi::OrthoDetails );
+    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
   }
 
   // Create the sort manager
