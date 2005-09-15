@@ -57,3 +57,6 @@ runtests-mpi :
   --output-dir=@abs_top_builddir@/test/runtests-results \
   --verbosity=1 \
   --packages=nox
+
+EXTRA_DIST = definition
+

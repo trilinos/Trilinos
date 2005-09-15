@@ -357,7 +357,10 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 AUTOMAKE_OPTIONS = foreign
-EXTRA_DIST = LICENSE
+EXTRA_DIST = LICENSE config/generate-makeoptions.pl \
+       config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
+       config/replace-install-prefix.pl config/string-replace.pl
+
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	configure config.status config.log \

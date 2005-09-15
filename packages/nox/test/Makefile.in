@@ -340,6 +340,7 @@ SUBDIRS = utils lapack epetra petsc
 #
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
+EXTRA_DIST = definition
 all: all-recursive
 
 .SUFFIXES:
