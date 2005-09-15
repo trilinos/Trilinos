@@ -76,9 +76,12 @@ int main(int argc, char *argv[])
 
   int MyPID = Comm.MyPID();
 
+  Anasazi::ReturnType returnCode = Anasazi::Ok;
+
   bool testFailed = false;
   bool verbose = 0;
   std::string which("SM");
+
   if (argc>1) {
     if (argv[1][0]=='-' && argv[1][1]=='v') {
       verbose = true;
@@ -109,8 +112,6 @@ int main(int argc, char *argv[])
   return 0;
 #endif
 
-  Anasazi::ReturnType returnCode = Anasazi::Ok;  
-
   typedef Thyra::MultiVectorBase<double> MV;
   typedef Thyra::LinearOpBase<double>    OP;
   typedef Anasazi::MultiVecTraits<double,MV>    MVT;
@@ -123,37 +124,35 @@ int main(int argc, char *argv[])
   std::vector<int> elements( space_dim );
   elements[0] = 100;
 
-  // Eigensolver parameters
-  const int maxIterCG = 100;
-  const double tolCG = 1e-7;
-  const int nev = 4;
-  const int blockSize = 5;
-  const int maxIters = 500;
-  const double tol = tolCG * 10.0;
-
   // Create problem
-  Teuchos::RefCountPtr<ModalProblem> testCase = 
-    Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+  Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
 
   // Get the stiffness and mass matrices
-  Teuchos::RefCountPtr<Epetra_Operator> K = 
-    Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getStiffness()), false );
-  Teuchos::RefCountPtr<Epetra_Operator> M = 
-    Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getMass()), false );
+  Teuchos::RefCountPtr<Epetra_Operator> K = Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getStiffness()), false );
+  Teuchos::RefCountPtr<Epetra_Operator> M = Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getMass()), false );
 
   // Create preconditioner
+  const int maxIterCG = 100;
+  const double tolCG = 1e-7;
+  
   Teuchos::RefCountPtr<BlockPCGSolver> opStiffness = Teuchos::rcp( new BlockPCGSolver(Comm, M.get(), tolCG, maxIterCG, 0) );
   opStiffness->setPreconditioner( 0 );
   Teuchos::RefCountPtr<Anasazi::EpetraGenOp> InverseOp = Teuchos::rcp( new Anasazi::EpetraGenOp( opStiffness, K ) );
 
+  // Eigensolver parameters
+  const int nev = 4;
+  const int blockSize = 2;
+  const int maxBlocks = 10;
+  const int maxRestarts = 500;
+  const double tol = tolCG * 10.0;
+
+  // create an epetra multivector
+  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
+  ivec->Random();
+
   // Get a pointer to the Epetra_Map
   Teuchos::RefCountPtr<const Epetra_Map> Map =  
     Teuchos::rcp( &K->OperatorDomainMap(), false );
-
-  // create an epetra multivector
-  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = 
-      Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
-  ivec->Random();
 
   // create a Thyra::VectorSpaceBase
   Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<double> > epetra_vs = 
@@ -178,31 +177,11 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > thyra_IOp = 
     Teuchos::rcp( new Thyra::EpetraLinearOp(InverseOp) );
 
-  // Create parameter list to pass into solver
-  Teuchos::ParameterList MyPL;
-  MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Iters", maxIters );
-  MyPL.set( "Tol", tol );
-
-  // Create default output manager 
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-
-  // Set verbosity level
-  if (verbose) {
-    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
-  }
-
-  // Create the sort manager
-  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
-     Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
-
   // Create eigenproblem
-
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
     Teuchos::rcp( 
       new Anasazi::BasicEigenproblem<double, MV, OP>(thyra_IOp, thyra_M, thyra_ivec) 
     );
-  //  MyProblem->SetPrec( Teuchos::rcp( const_cast<Epetra_Operator *>(opStiffness->getPreconditioner()), false ) );
 
   // Inform the eigenproblem that the operator A is symmetric
   MyProblem->SetSymmetric(true);
@@ -215,10 +194,27 @@ int main(int argc, char *argv[])
   if (info)
     cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
 
-  // Create the eigensolver 
+  // Create parameter list to pass into solver
+  Teuchos::ParameterList MyPL;
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Max Blocks", maxBlocks );
+  MyPL.set( "Max Restarts", maxRestarts );
+  MyPL.set( "Tol", tol );
+
+  // Create default output manager 
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
+
+  // Set verbosity level
+  if (verbose) {
+    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
+  }
+
+  // Create a sorting manager to handle the sorting of eigenvalues in the solver
+  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
+    Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
+
+  // Create the eigensolver
   Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
-
-
 
   // Solve the problem to the specified tolerances or length
   returnCode = MySolver.solve();
