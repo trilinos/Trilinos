@@ -2,7 +2,7 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK) {
+(FRAMEWORK, INSTALL) {
     DIRS = simple;
     ARGS = -v;
     COMM = SERIAL, MPI;
