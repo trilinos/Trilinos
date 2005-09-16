@@ -17,7 +17,7 @@
 #@HEADER
 #@HEADER
 
-SOURCES = $(TestOptions_SOURCES)
+SOURCES = $(TestOptions_SOURCES) $(EXTRA_TestOptions_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -82,19 +82,14 @@ CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = TestOptions$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__TestOptions_SOURCES_DIST = $(srcdir)/DoNothing.cpp
-@HAVE_AMESOS_TRIUTILS_FALSE@am_TestOptions_OBJECTS =  \
-@HAVE_AMESOS_TRIUTILS_FALSE@	DoNothing.$(OBJEXT)
-@HAVE_AMESOS_TRIUTILS_TRUE@am_TestOptions_OBJECTS =  \
-@HAVE_AMESOS_TRIUTILS_TRUE@	TestOptions.$(OBJEXT) \
-@HAVE_AMESOS_TRIUTILS_TRUE@	CreateTridi.$(OBJEXT) \
-@HAVE_AMESOS_TRIUTILS_TRUE@	TestSuperludist.$(OBJEXT) \
-@HAVE_AMESOS_TRIUTILS_TRUE@	TestScalapack.$(OBJEXT) \
-@HAVE_AMESOS_TRIUTILS_TRUE@	TestKlu.$(OBJEXT) \
-@HAVE_AMESOS_TRIUTILS_TRUE@	NewMatNewMap.$(OBJEXT) \
-@HAVE_AMESOS_TRIUTILS_TRUE@	TestAllClasses.$(OBJEXT) \
-@HAVE_AMESOS_TRIUTILS_TRUE@	PartialFactorization.$(OBJEXT) \
-@HAVE_AMESOS_TRIUTILS_TRUE@	PerformOneSolveAndTest.$(OBJEXT) \
-@HAVE_AMESOS_TRIUTILS_TRUE@	TestOtherClasses.$(OBJEXT)
+am__objects_1 = DoNothing.$(OBJEXT)
+am__objects_2 = TestOptions.$(OBJEXT) CreateTridi.$(OBJEXT) \
+	TestSuperludist.$(OBJEXT) TestScalapack.$(OBJEXT) \
+	TestKlu.$(OBJEXT) NewMatNewMap.$(OBJEXT) \
+	TestAllClasses.$(OBJEXT) PartialFactorization.$(OBJEXT) \
+	PerformOneSolveAndTest.$(OBJEXT) TestOtherClasses.$(OBJEXT)
+@HAVE_AMESOS_TRIUTILS_FALSE@am_TestOptions_OBJECTS = $(am__objects_1)
+@HAVE_AMESOS_TRIUTILS_TRUE@am_TestOptions_OBJECTS = $(am__objects_2)
 TestOptions_OBJECTS = $(am_TestOptions_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
@@ -122,8 +117,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(TestOptions_SOURCES)
-DIST_SOURCES = $(am__TestOptions_SOURCES_DIST)
+SOURCES = $(TestOptions_SOURCES) $(EXTRA_TestOptions_SOURCES)
+DIST_SOURCES = $(am__TestOptions_SOURCES_DIST) \
+	$(EXTRA_TestOptions_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -319,7 +315,6 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES))
 AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 TEST = TestOptions 
-@HAVE_AMESOS_TRIUTILS_FALSE@TestOptions_SOURCES = $(srcdir)/DoNothing.cpp
 
 # if HAVE_AMESOS_EPETRAEXT
 #    EPETRA_EXT_LIB = 	$(top_builddir)/../epetraext/src/libepetraext.a 
@@ -328,25 +323,32 @@ TEST = TestOptions
 #    EPETRA_EXT_LIB = 
 #    EPETRA_EXT_INCLUDE = 
 # endif 
-@HAVE_AMESOS_TRIUTILS_TRUE@TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/CreateTridi.cpp \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/CreateTridi.h \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestSuperludist.cpp \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestScalapack.cpp \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestScalapack.h \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestKlu.cpp \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestKlu.h \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestSuperludist.h \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/NewMatNewMap.cpp \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/NewMatNewMap.h \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestAllClasses.cpp \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestAllClasses.h \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/PartialFactorization.cpp \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/PartialFactorization.h \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/PerformOneSolveAndTest.cpp \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/PerformOneSolveAndTest.h \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestOtherClasses.cpp \
-@HAVE_AMESOS_TRIUTILS_TRUE@	$(srcdir)/TestOtherClasses.h
+EXTRA_AMESOS_TRIUTILS_TEST = $(srcdir)/TestOptions.cpp  \
+        $(srcdir)/CreateTridi.cpp \
+        $(srcdir)/CreateTridi.h \
+        $(srcdir)/TestSuperludist.cpp \
+        $(srcdir)/TestScalapack.cpp \
+        $(srcdir)/TestScalapack.h \
+        $(srcdir)/TestKlu.cpp \
+        $(srcdir)/TestKlu.h \
+        $(srcdir)/TestSuperludist.h \
+        $(srcdir)/NewMatNewMap.cpp \
+        $(srcdir)/NewMatNewMap.h \
+        $(srcdir)/TestAllClasses.cpp \
+        $(srcdir)/TestAllClasses.h \
+        $(srcdir)/PartialFactorization.cpp \
+        $(srcdir)/PartialFactorization.h \
+        $(srcdir)/PerformOneSolveAndTest.cpp \
+        $(srcdir)/PerformOneSolveAndTest.h \
+        $(srcdir)/TestOtherClasses.cpp \
+        $(srcdir)/TestOtherClasses.h
+
+EXTRA_TRIVIAL_TEST = $(srcdir)/DoNothing.cpp
+@HAVE_AMESOS_TRIUTILS_FALSE@TestOptions_SOURCES = $(EXTRA_TRIVIAL_TEST)
+@HAVE_AMESOS_TRIUTILS_TRUE@TestOptions_SOURCES = $(EXTRA_AMESOS_TRIUTILS_TEST)
+EXTRA_TestOptions_SOURCES = \
+	$(EXTRA_AMESOS_TRIUTILS_TEST) \
+	$(EXTRA_TRIVIAL_TEST)
 
 TestOptions_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 TestOptions_LDADD = $(EXAMPLE_LIBS)

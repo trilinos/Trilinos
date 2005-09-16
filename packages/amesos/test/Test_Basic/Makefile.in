@@ -360,6 +360,15 @@ EXTRA_DIST = $(srcdir)/662_bus.rsa \
 	$(srcdir)/In_AmesosKluSerial.csh  $(srcdir)/In_AmesosSuperluSerial.csh \
 	$(srcdir)/In_AmesosUmfpackSerial.csh \
 	$(srcdir)/In_Suppressions \
+	$(srcdir)/Amesos_TestDriver.cpp \
+	$(srcdir)/Amesos_TestSolver.cpp \
+	$(srcdir)/Amesos_TestMultiSolver.cpp \
+	$(srcdir)/Amesos_TestMrhsSolver.cpp \
+	$(srcdir)/SparseDirectTimingVars.cpp \
+	$(srcdir)/SparseDirectTimingVars.h \
+	$(srcdir)/Amesos_TestSolver.h \
+	$(srcdir)/SparseSolverResult.cpp \
+	$(srcdir)/SparseSolverResult.h \
 	$(srcdir)/In_count_coverage 
 
 all: all-am
