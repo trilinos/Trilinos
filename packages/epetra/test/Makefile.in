@@ -286,6 +286,7 @@ SerialSpdDense/SerialSpdDense_test.exe \
 VbrMatrix/VbrMatrix_test.exe \
 Vector/Vector_test.exe
 
+EXTRA_DIST = definition
 all: all-recursive
 
 .SUFFIXES:
