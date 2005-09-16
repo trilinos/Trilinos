@@ -52,7 +52,11 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = ChangeLog-ML README-ML COPYRIGHT
+EXTRA_DIST = ChangeLog-ML README-ML COPYRIGHT \
+       config/generate-makeoptions.pl \
+       config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
+       config/replace-install-prefix.pl config/string-replace.pl
+
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
