@@ -281,6 +281,7 @@ ClassicAztec_CFLAGS = -I$(top_srcdir)/src
 ClassicAztec_LDADD = $(AZTECOO_LIBS) \
 	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
+EXTRA_DIST = $(srcdir)/In_inputToClassicAztec
 all: all-am
 
 .SUFFIXES:
@@ -445,6 +446,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/$(srcdir)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -561,7 +563,7 @@ uninstall-am: uninstall-info-am
 
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/inputToClassicAztec  inputToClassicAztec
+	cp  $(srcdir)/In_inputToClassicAztec  inputToClassicAztec
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

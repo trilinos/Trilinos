@@ -31,7 +31,7 @@ EXEEXT = .exe
 noinst_PROGRAMS = ClassicAztec Dummy
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/inputToClassicAztec  inputToClassicAztec
+	cp  $(srcdir)/In_inputToClassicAztec  inputToClassicAztec
 
 
 ClassicAztec_SOURCES = $(srcdir)/main.c $(srcdir)/az_app_utils.c $(srcdir)/az_examples.c
@@ -42,3 +42,6 @@ ClassicAztec_CFLAGS = -I$(top_srcdir)/src
 
 ClassicAztec_LDADD = $(AZTECOO_LIBS) \
 	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+EXTRA_DIST = $(srcdir)/inputToClassicAztec
+
