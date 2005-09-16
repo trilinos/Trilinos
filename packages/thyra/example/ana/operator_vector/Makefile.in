@@ -285,6 +285,16 @@ common_dependencies = \
 @USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(THYRA_LIBS))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
+
+# We don't need to install these headers, but we need the files in the tarball.
+EXTRA_DIST = $(srcdir)/sillyCgSolve.hpp \
+	     $(srcdir)/sillyPowerMethod.hpp \
+	     $(srcdir)/SerialTridiagLinearOp.hpp \
+	     $(srcdir)/serial_1D_FFT.hpp \
+	     $(srcdir)/RealComplexFFTLinearOp.hpp \
+	     $(srcdir)/MPITridiagLinearOp.hpp \
+	     $(srcdir)/ComplexFFTLinearOp.hpp
+
 all: all-am
 
 .SUFFIXES:
@@ -473,6 +483,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/$(srcdir)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

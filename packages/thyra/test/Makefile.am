@@ -27,3 +27,6 @@
 #@HEADER
 
 SUBDIRS = ana
+
+EXTRA_DIST = definition
+

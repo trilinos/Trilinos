@@ -139,6 +139,8 @@ ANA_OPERATOR_VECTOR_ANA_SUPPORT_H = \
   $(srcdir)/ana/operator_vector/ana_support/Thyra_ExplicitVectorView.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_LinearOpTester.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_LinearOpTesterDecl.hpp\
+  $(srcdir)/ana/operator_vector/ana_support/Thyra_LinearOpWithSolveTester.hpp \
+  $(srcdir)/ana/operator_vector/ana_support/Thyra_LinearOpWithSolveTesterDecl.hpp \
   $(srcdir)/ana/operator_vector/ana_support/Thyra_MultiVectorAllocator.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_MultiVectorStdOpsTester.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_MultiVectorStdOpsTesterDecl.hpp\

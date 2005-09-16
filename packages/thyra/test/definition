@@ -2,19 +2,19 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK) {
+(FRAMEWORK, INSTALL) {
     TESTS = ../example/ana/operator_vector/sillyCgSolve_mpi.exe;
     ARGS = --verbose;
     COMM = MPI,SERIAL;
 }
 
-(FRAMEWORK) {
+(FRAMEWORK, INSTALL) {
     TESTS = ana/operator_vector/test_composite_linear_ops.exe;
     ARGS = --use-mpi --verbose;
     COMM = MPI,SERIAL;
 }
 
-(FRAMEWORK) {
+(FRAMEWORK, INSTALL) {
     TESTS = ana/operator_vector/test_product_space.exe,
 	    ana/operator_vector/test_std_ops.exe,
 	    ../example/ana/operator_vector/sillyCgSolve_serial.exe,
@@ -23,27 +23,27 @@
     COMM = SERIAL;
 }
 
-(FRAMEWORK) {
+(FRAMEWORK, INSTALL) {
     TESTS = ana/operator_vector/test_scalar_product.exe,
     ARGS = --verbose;
     X-HOST = paunchy;
     COMM = SERIAL;
 }
 
-(FRAMEWORK) {
+(FRAMEWORK, INSTALL) {
     TESTS = ../example/ana/operator_vector/silly1DFFT_serial.exe;
     ARGS = --verbose;
     X-HOST = paunchy, stratus0;
     COMM = SERIAL;
 }
 
-(FRAMEWORK) {
+(FRAMEWORK, INSTALL) {
     TESTS = ana/operator_vector/test_composite_linear_ops.exe;
     ARGS = --use-serial --verbose;
     COMM = SERIAL;
 }
 
-(FRAMEWORK) {
+(FRAMEWORK, INSTALL) {
     TESTS = ../example/ana/operator_vector/sillyCgSolve_serial.exe;
     ARGS = --unsym-op --diag-scale=1.05 --verbose;
     COMM = SERIAL;
