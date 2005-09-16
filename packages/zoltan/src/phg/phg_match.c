@@ -19,6 +19,16 @@ extern "C" {
 #include <stdlib.h>
 #include "phg.h"
 
+/* Flags indicating how pmatching_ipm should work.
+   These flags can be removed after we decide which versions work best. 
+   For now, since we are still debugging, SPARSE_CANDIDATES is ON and 
+   USE_SUBROUNDS is OFF.  The "working" version of the code has the
+   opposite value of SPARSE_CANDIDATES, and can use either value of 
+   USE_SUBROUNDS.
+*/
+#define SPARSE_CANDIDATES
+#undef  USE_SUBROUNDS
+
     /*
 #define _DEBUG
     */
@@ -490,8 +500,8 @@ static int pmatching_ipm (ZZ *zz,
       /* Select upto nCandidates unmatched vertices to globally match. */
       for (sendcnt = 0; sendcnt < nCandidates && vindex < hg->nVtx; vindex++)  {
         if (cmatch[visit[vindex]] == visit[vindex])  {         /* unmatched */
-          select[sendcnt++] = visit[vindex];     /* select it as a candidate */
-          cmatch[visit[vindex]] = -1;            /* mark it as a pending match */
+          select[sendcnt++] = visit[vindex];    /* select it as a candidate */
+          cmatch[visit[vindex]] = -1;           /* mark it as a pending match */
         }
       }
       nselect = sendcnt;                          /* save for later use */
@@ -505,18 +515,21 @@ static int pmatching_ipm (ZZ *zz,
       if (sendsize > nSend)
         MACRO_REALLOC (sendsize, nSend, send);     /* make send buffer bigger */
     
-      /* fill send buff as list of <gno, gno's edge count, list of edge lno's> */
+      /* fill send buff: list of <gno, gno's edge count, list of edge lno's> */
       s = send;
       n = 0;
       for (i = 0; i < sendcnt; i++)   {
         lno = select[i];
-        /* Optimization: Only send data for vertices that are non-empty locally */
-        if (hg->vindex[lno+1] > hg->vindex[lno]) {
+        /* Optimization: Send only vertices that are non-empty locally */
+#ifdef SPARSE_CANDIDATES
+        if (hg->vindex[lno+1] > hg->vindex[lno]) 
+#endif
+        {
           n++;  /* non-empty vertex */
-          *s++ = VTX_LNO_TO_GNO (hg, lno);                                /* gno */
-          *s++ = hg->vindex[lno+1] - hg->vindex[lno];                   /* count */
+          *s++ = VTX_LNO_TO_GNO (hg, lno);                         /* gno */
+          *s++ = hg->vindex[lno+1] - hg->vindex[lno];              /* count */
           for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
-            *s++ = hg->vedge[j];                                  /* lno of edge */
+            *s++ = hg->vedge[j];                             /* lno of edge */
         }
       }
       sendsize = s - send;
@@ -530,7 +543,11 @@ static int pmatching_ipm (ZZ *zz,
       /* n is actual number of local non-empty vertices */
       /* nTotal is the global number of candidate vertices in this row */
       MPI_Allreduce (&n, &nTotal, 1, MPI_INT, MPI_SUM, hgc->row_comm);
+#ifdef SPARSE_CANDIDATES
       MPI_Allreduce (&nTotal, &max_nTotal, 1, MPI_INT, MPI_MAX, hgc->col_comm);
+#else
+      max_nTotal = nTotal;   /* All column procs has same nTotal */
+#endif
       if (max_nTotal == 0) {
         if (hgp->use_timers > 3)
            ZOLTAN_TIMER_STOP (zz->ZTime, timer[1], hg->comm->Communicator);
@@ -570,8 +587,12 @@ static int pmatching_ipm (ZZ *zz,
       /* Zoltan_PHG_Vertex_Visit_Order() to reorder the candidates          */
       /* but that routine uses a local hg so won't work on the candidates.  */
       if (hgc->nProc_x > 1) {
-        Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(hgc->RNGState_col),hgc->col_comm);
+        Zoltan_Srand_Sync(Zoltan_Rand(NULL),&(hgc->RNGState_col),hgc->col_comm);
+#ifndef SPARSE_CANDIDATES
+        /* Bob thinks the permutation causes problems in accumulating
+         * the total inner products. */
         Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));
+#endif
       }
     }                           /* DONE:  if (cFLAG) else ...}  */
     MACRO_TIMER_STOP (1);
@@ -580,8 +601,9 @@ static int pmatching_ipm (ZZ *zz,
       
     /* for each candidate vertex, compute all local partial inner products */
     kstart = old_kstart = 0;         /* next candidate (of nTotal) to process */
-/* KMDKMD OLD VERSION -- REMOVE IF FIX IS OK
+#ifdef USE_SUBROUNDS
     while (kstart < nTotal)  { 
+/*
    KMDKMD I think the override of the send-buffering with realloc removes
    KMDKMD the need for the while loop.  Indeed, since nTotal can vary within
    KMDKMD a processor column, and since there is column communication within
@@ -589,6 +611,7 @@ static int pmatching_ipm (ZZ *zz,
    KMDKMD processor has nTotal=0.  We'll have to revisit this problem when
    KMDKMD we reactivate the fixed-size send buffer.
 */
+#endif
       MACRO_TIMER_START (2, "Matching kstart A");
       sendsize = 0;                      /* position in send buffer */
       sendcnt = 0;                       /* count of messages in send buffer */
@@ -647,6 +670,7 @@ static int pmatching_ipm (ZZ *zz,
         /* HEADER_COUNT (row, col, gno, count of <lno, psum> pairs) */                    
         msgsize = HEADER_COUNT + 2 * count;
 
+#ifndef USE_SUBROUNDS
         /* EBEB Avoid buffer overflow by realloc. 
                 Temp hack for testing. Revisit this!  
         */
@@ -655,6 +679,7 @@ static int pmatching_ipm (ZZ *zz,
           MACRO_REALLOC (2*(msgsize+nSend), nSend, send);
           s = send+offset;    
         }
+#endif
         
         /* iff necessary, resize send buffer to fit at least first message */
         if (sendcnt == 0 && (msgsize > nSend))  {
@@ -690,12 +715,13 @@ static int pmatching_ipm (ZZ *zz,
       MACRO_TIMER_START (3, "Matching kstart B");
      
       /* synchronize all rows in this column to next kstart value */
-      /* EBEB Skip synchronization. */
       old_kstart = kstart;      
-      kstart = k;
-      /* 
+#ifdef USE_SUBROUNDS
       MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
-      */
+#else
+      /* EBEB Skip synchronization. */
+      kstart = k;
+#endif
             
       /* Send inner product data in send buffer to appropriate rows */
       err = communication_by_plan (zz, sendcnt, dest, size, 1, send, &reccnt, 
@@ -835,8 +861,9 @@ static int pmatching_ipm (ZZ *zz,
         MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
       }
       MACRO_TIMER_STOP (3);    
-/* KMDKMD  REMOVING THE WHILE LOOP
-    }   */           /* DONE: kstart < max_nTotal loop */ 
+#ifdef USE_SUBROUNDS
+    }            /* DONE: kstart < max_nTotal loop */ 
+#endif
     if (cFLAG)
       continue;      /* skip phases 3 and 4, continue rounds */ 
     
