@@ -125,7 +125,7 @@ static int Zoltan_PHG_match_isolated(
   int small_degree /* 0 or 1; 0 corresponds to truely isolated vertices */
 )
 {
-    int v=-1, i, *ldeg, *deg;
+    int v=-1, i, unmatched=0, *ldeg, *deg;
 #ifdef _DEBUG
     int cnt=0;
 #endif
@@ -144,20 +144,28 @@ static int Zoltan_PHG_match_isolated(
           ldeg[i] = hg->vindex[i+1] - hg->vindex[i];
       MPI_Allreduce(ldeg, deg, hg->nVtx, MPI_INT, MPI_SUM, hg->comm->col_comm);
       
-      for (i=0; i<hg->nVtx; ++i)
-          if ((match[i]==i) && (deg[i] <= small_degree)) { /* isolated vertex */
+      if (small_degree>0){
+          /* Only match on procs with many unmatched vertices */
+          unmatched= 0;
+          for (i=0; i<hg->nVtx; ++i)
+              if (match[i]==i) unmatched++;
+      }
+      if ((small_degree==0) || (unmatched > 0.8*hg->nVtx))
+          for (i=0; i<hg->nVtx; ++i){
+              if ((match[i]==i) && (deg[i] <= small_degree)) { 
 #ifdef _DEBUG
-              ++cnt;
+                  ++cnt;
 #endif
-              /* match with previous unmatched vertex */
-              /* EBEB For degree-1 vertices, we could be more clever
-                 and match vertices that share a common neighbor */
-              if (v==-1)
-                  v = i;
-              else {
-                  match[v] = i;
-                  match[i] = v;
-                  v = -1;
+                  /* match with previous unmatched vertex */
+                  /* EBEB For degree-1 vertices, we could be more clever
+                     and match vertices that share a common neighbor */
+                  if (v==-1)
+                      v = i;
+                  else {
+                      match[v] = i;
+                      match[i] = v;
+                      v = -1;
+                  }
               }
           }
 #ifdef _DEBUG
