@@ -332,6 +332,9 @@ _EXPORT_LIBS = $(AZTECOO_EXTRA_LIBS) $(IFPACK_LIBS) $(AZTECOO_LIBS)
 @USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
 AM_CPPFLAGS = -I$(top_srcdir)/../amesos/thyra/test $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
+EXTRA_DIST = $(srcdir)/test_single_aztecoo_thyra_solver.hpp \
+	$(srcdir)/Ifpack_PreconditionerFactory.hpp
+
 all: all-am
 
 .SUFFIXES:
@@ -531,6 +534,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/$(srcdir)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

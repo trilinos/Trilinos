@@ -43,5 +43,5 @@ ClassicAztec_CFLAGS = -I$(top_srcdir)/src
 ClassicAztec_LDADD = $(AZTECOO_LIBS) \
 	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
-EXTRA_DIST = $(srcdir)/inputToClassicAztec
+EXTRA_DIST = $(srcdir)/In_inputToClassicAztec
 

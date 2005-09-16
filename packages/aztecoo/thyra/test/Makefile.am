@@ -82,5 +82,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/../amesos/thyra/test $(EXPORT_INCLUDES)
 
 common_ldadd = $(EXPORT_LIBS)
 
+EXTRA_DIST = $(srcdir)/test_single_aztecoo_thyra_solver.hpp \
+	$(srcdir)/Ifpack_PreconditionerFactory.hpp
+
 # This is already added part of AZTECOO_LIBS and therefore automake does not need to add this again!
 LIBS =

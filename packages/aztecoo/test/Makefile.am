@@ -27,3 +27,6 @@
 #@HEADER
 
 SUBDIRS = AztecOO AztecOO_UserOpUserMat AztecOO_SetParameters scripts
+
+EXTRA_DIST = definition
+
