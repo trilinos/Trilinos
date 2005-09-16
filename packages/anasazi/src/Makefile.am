@@ -65,7 +65,8 @@ CORE = \
 	$(srcdir)/AnasaziEpetraAdapter.cpp \
 	$(srcdir)/AnasaziVersion.cpp
 
-UTIL_H = 
+UTIL_H = \
+	$(srcdir)/AnasaziMVOPTester.hpp 
 
 UTIL = 
 
