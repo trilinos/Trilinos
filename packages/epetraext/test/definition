@@ -2,7 +2,7 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK, EpetraExtTests) {
+(FRAMEWORK, INSTALL, EpetraExtTests) {
     DIRS = MatrixMatrix,
            Permutation,
            Transpose,
@@ -13,7 +13,7 @@
 
 # Removed MapColoring & MatrixMatrix from MPI for now because they always seem to hang.
 
-(FRAMEWORK, EpetraExtTests) {
+(FRAMEWORK, INSTALL, EpetraExtTests) {
     DIRS = MatrixMatrix,
            MapColoring;
     ARGS = -v;
