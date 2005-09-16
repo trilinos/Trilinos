@@ -112,8 +112,10 @@ char  *yo = "Zoltan_PHG_Matching";
     /* now do the real matching */
     ierr = hgp->matching (zz, hg, match, hgp);
     /* clean up by matching "near-isolated" vertices of degree 1 */
-    /* only useful in special cases (e.g. near-diagonal matrices) */
-    Zoltan_PHG_match_isolated(zz, hg, match, 1);
+    /* only useful in special cases (e.g. near-diagonal matrices).
+       in many cases there is a slight increase in cuts, so 
+       turn it off for now.                                      */
+    /* Zoltan_PHG_match_isolated(zz, hg, match, 1); */
   }
 
 End: 
