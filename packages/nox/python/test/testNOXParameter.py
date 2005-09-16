@@ -38,10 +38,12 @@ import sys
 
 try:
     import setpath
-    import Epetra, NOX
 except ImportError:
     from PyTrilinos import Epetra, NOX
     print >>sys.stderr, "Using system-installed Epetra, NOX"
+else:
+    import NOX
+    import Epetra
 
 import unittest
 
