@@ -98,7 +98,7 @@ sysconfig._config_vars["CC" ] = CXX
 sysconfig._config_vars["CXX"] = CXX
 
 # LOCA_TopLevel extension module
-LOCA_TopLevel = Extension("PyTrilinos.LOCA_TopLevel",
+LOCA_TopLevel = Extension("PyTrilinos.LOCA._TopLevel",
                           [locaTopLevelWrap],
                           define_macros   = [("HAVE_CONFIG_H", "1")],
                           include_dirs    = include_dirs,
@@ -108,7 +108,7 @@ LOCA_TopLevel = Extension("PyTrilinos.LOCA_TopLevel",
                           )
 
 # LOCA_Abstract extension module
-LOCA_Abstract = Extension("PyTrilinos.LOCA_Abstract",
+LOCA_Abstract = Extension("PyTrilinos.LOCA._Abstract",
                           [locaAbstractWrap],
                           define_macros   = [("HAVE_CONFIG_H", "1")],
                           include_dirs    = include_dirs,
@@ -118,7 +118,7 @@ LOCA_Abstract = Extension("PyTrilinos.LOCA_Abstract",
                           )
 
 # LOCA_Bifurcation extension module
-LOCA_Bifurcation = Extension("PyTrilinos.LOCA_Bifurcation",
+LOCA_Bifurcation = Extension("PyTrilinos.LOCA._Bifurcation",
                              [locaBifurcationWrap],
                              define_macros   = [("HAVE_CONFIG_H", "1")],
                              include_dirs    = include_dirs,
@@ -128,7 +128,7 @@ LOCA_Bifurcation = Extension("PyTrilinos.LOCA_Bifurcation",
                              )
 
 # LOCA_Continuation extension module
-LOCA_Continuation = Extension("PyTrilinos.LOCA_Continuation",
+LOCA_Continuation = Extension("PyTrilinos.LOCA._Continuation",
                               [locaContinuationWrap],
                               define_macros   = [("HAVE_CONFIG_H", "1")],
                               include_dirs    = include_dirs,
@@ -138,7 +138,7 @@ LOCA_Continuation = Extension("PyTrilinos.LOCA_Continuation",
                               )
 
 # LOCA_Homotopy extension module
-LOCA_Homotopy = Extension("PyTrilinos.LOCA_Homotopy",
+LOCA_Homotopy = Extension("PyTrilinos.LOCA._Homotopy",
                           [locaHomotopyWrap],
                           define_macros   = [("HAVE_CONFIG_H", "1")],
                           include_dirs    = include_dirs,
@@ -148,7 +148,7 @@ LOCA_Homotopy = Extension("PyTrilinos.LOCA_Homotopy",
                           )
 
 # LOCA_MultiContinuation extension module
-LOCA_MultiContinuation = Extension("PyTrilinos.LOCA_MultiContinuation",
+LOCA_MultiContinuation = Extension("PyTrilinos.LOCA._MultiContinuation",
                                    [locaMultiContinuationWrap],
                                    define_macros   = [("HAVE_CONFIG_H", "1")],
                                    include_dirs    = include_dirs,
@@ -158,7 +158,7 @@ LOCA_MultiContinuation = Extension("PyTrilinos.LOCA_MultiContinuation",
                                    )
 
 # LOCA_TimeDependent extension module
-LOCA_TimeDependent = Extension("PyTrilinos.LOCA_TimeDependent",
+LOCA_TimeDependent = Extension("PyTrilinos.LOCA._TimeDependent",
                                [locaTimeDependentWrap],
                                define_macros   = [("HAVE_CONFIG_H", "1")],
                                include_dirs    = include_dirs,
@@ -168,7 +168,7 @@ LOCA_TimeDependent = Extension("PyTrilinos.LOCA_TimeDependent",
                                )
 
 # LOCA_Epetra extension module
-LOCA_Epetra = Extension("PyTrilinos.LOCA_Epetra",
+LOCA_Epetra = Extension("PyTrilinos.LOCA._Epetra",
                         [locaEpetraWrap],
                         define_macros   = [("HAVE_CONFIG_H", "1")],
                         include_dirs    = include_dirs,
@@ -178,7 +178,7 @@ LOCA_Epetra = Extension("PyTrilinos.LOCA_Epetra",
                         )
 
 # LOCA_LAPACK extension module
-LOCA_LAPACK = Extension("PyTrilinos.LOCA_LAPACK",
+LOCA_LAPACK = Extension("PyTrilinos.LOCA._LAPACK",
                         [locaLAPACKWrap],
                         define_macros   = [("HAVE_CONFIG_H", "1")],
                         include_dirs    = include_dirs,

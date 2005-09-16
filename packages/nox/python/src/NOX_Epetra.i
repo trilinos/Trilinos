@@ -120,24 +120,24 @@ using namespace NOX::Epetra  ;
 // NOX interface includes
 using namespace std;
 %include "NOX_Epetra_Interface_Required.H"
-%include "NOX_Epetra_Interface_Jacobian.H"
-%include "NOX_Epetra_Interface_Preconditioner.H"
-using namespace NOX::Epetra::Interface;
-%include "NOX_Epetra_Group.H"
-%include "NOX_Epetra_FiniteDifference.H"
-%include "NOX_Epetra_FiniteDifferenceColoring.H"
-%include "NOX_Epetra_Vector.H"
+// %include "NOX_Epetra_Interface_Jacobian.H"
+// %include "NOX_Epetra_Interface_Preconditioner.H"
+// using namespace NOX::Epetra::Interface;
+// %include "NOX_Epetra_Group.H"
+// %include "NOX_Epetra_FiniteDifference.H"
+// %include "NOX_Epetra_FiniteDifferenceColoring.H"
+// %include "NOX_Epetra_Vector.H"
 
-// Local interface includes
-%include "Callback.h"
-%include "PyInterface.h"
+// // Local interface includes
+// %include "Callback.h"
+// %include "PyInterface.h"
 
-// Extensions
-%extend NOX::Epetra::Group {
-  void getSoln(PyObject * p_pyObject) {
-    Epetra_VectorHelper::unloadViaCopy(& const_cast<Epetra_Vector &> 
-                                    ((dynamic_cast<const NOX::Epetra::Vector &>
-                                      (self->getX())).getEpetraVector()),
-                                    p_pyObject);
-  }
-}
+// // Extensions
+// %extend NOX::Epetra::Group {
+//   void getSoln(PyObject * p_pyObject) {
+//     Epetra_VectorHelper::unloadViaCopy(& const_cast<Epetra_Vector &> 
+//                                     ((dynamic_cast<const NOX::Epetra::Vector &>
+//                                       (self->getX())).getEpetraVector()),
+//                                     p_pyObject);
+//   }
+// }
