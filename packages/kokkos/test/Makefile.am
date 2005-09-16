@@ -28,3 +28,6 @@
 
 SUBDIRS = BaseSparseMultiply BaseSparseSolve \
 DenseMultiVector HbMatrix Permutation
+
+EXTRA_DIST = definition
+

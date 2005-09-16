@@ -215,6 +215,7 @@ target_vendor = @target_vendor@
 SUBDIRS = BaseSparseMultiply BaseSparseSolve \
 DenseMultiVector HbMatrix Permutation
 
+EXTRA_DIST = definition
 all: all-recursive
 
 .SUFFIXES:
