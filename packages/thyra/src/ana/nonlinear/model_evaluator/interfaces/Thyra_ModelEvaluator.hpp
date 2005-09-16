@@ -29,12 +29,13 @@
 #ifndef THYRA_MODEL_EVALUATOR_HPP
 #define THYRA_MODEL_EVALUATOR_HPP
 
+#include "Teuchos_Describable.hpp"
 #include "Thyra_LinearOpWithSolveBase.hpp"
 
 namespace Thyra {
 
 /** \brief . */
-class ModelEvaluatorBase {
+class ModelEvaluatorBase : virtual public Teuchos::Describable {
 public:
 
   /** \name Public types */
@@ -42,30 +43,44 @@ public:
 
   /** \brief.  */
   enum EInArgsMembers {
-    IN_ARG_x_dot
-    ,IN_ARG_x
-    ,IN_ARG_t
-    ,IN_ARG_alpha
-    ,IN_ARG_beta
+    IN_ARG_x_dot ///< .
+    ,IN_ARG_x ///< .
+    ,IN_ARG_t ///< .
+    ,IN_ARG_alpha ///< .
+    ,IN_ARG_beta ///< .
   };
+  /** \brief.  */
   static const int NUM_E_IN_ARGS_MEMBERS=5;
 
   /** \brief . */
   template<class Scalar>
   class InArgs {
   public:
+    /** \brief.  */
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+    /** \brief.  */
     InArgs();
+    /** \brief.  */
     void set_x_dot( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x_dot );
+    /** \brief.  */
     Teuchos::RefCountPtr<const VectorBase<Scalar> > get_x_dot() const;
+    /** \brief.  */
     void set_x( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x );
+    /** \brief.  */
     Teuchos::RefCountPtr<const VectorBase<Scalar> > get_x() const;
+    /** \brief.  */
     void set_t( ScalarMag t );
+    /** \brief.  */
     ScalarMag get_t() const;
+    /** \brief.  */
     void set_alpha( Scalar alpha );
+    /** \brief.  */
     Scalar get_alpha() const;
+    /** \brief.  */
     void set_beta( Scalar beta );
+    /** \brief.  */
     Scalar get_beta() const;
+    /** \brief.  */
     bool supports(EInArgsMembers arg) const;
   protected:
     /** \brief . */
@@ -82,20 +97,27 @@ public:
 
   /** \brief.  */
   enum EOutArgsMembers {
-    OUT_ARG_f
-    ,OUT_ARG_W
+    OUT_ARG_f ///< .
+    ,OUT_ARG_W ///< .
   };
+  /** \brief.  */
   static const int NUM_E_OUT_ARGS_MEMBERS=2;
 
   /** \brief . */
   template<class Scalar>
   class OutArgs {
   public:
+    /** \brief.  */
     OutArgs();
+    /** \brief.  */
     void set_f( const Teuchos::RefCountPtr<VectorBase<Scalar> > &f );
+    /** \brief.  */
     Teuchos::RefCountPtr<VectorBase<Scalar> > get_f() const;
+    /** \brief.  */
     void set_W( const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &W );
+    /** \brief.  */
     Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > get_W() const;
+    /** \brief.  */
     bool supports(EOutArgsMembers arg) const;
   protected:
     /** \brief . */
@@ -149,10 +171,7 @@ public:
   /** \brief . */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
-  /** \brief . */
-  virtual ~ModelEvaluator() {}
-
-  /** \name Pure virtual functions that must be overridden by subclasses. */
+  /** \name Public pure virtual functions that must be overridden by subclasses */
   //@{
 
   /** \breif . */
@@ -162,17 +181,20 @@ public:
   virtual Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const = 0;
 
   /** \brief . */
-  virtual InArgs<Scalar> createInArgs() const = 0;
+  virtual ModelEvaluatorBase::InArgs<Scalar> createInArgs() const = 0;
 
   /** \brief . */
-  virtual OutArgs<Scalar> createOutArgs() const = 0;
+  virtual ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const = 0;
 
   /** \brief . */
-  virtual void evalModel( const InArgs<Scalar>& inArgs, const OutArgs<Scalar>& outArgs ) const = 0;
+  virtual void evalModel(
+    const ModelEvaluatorBase::InArgs<Scalar>       &inArgs
+    ,const ModelEvaluatorBase::OutArgs<Scalar>     &outArgs
+    ) const = 0;
 
   //@}
 
-  /** \name Virtual functions with default implementations. */
+  /** \name Public virtual functions with default implementations */
   //@{
 
   /** \brief Return an optional initial guess for x.
@@ -316,7 +338,6 @@ void eval_f_W(
   model.evalModel(inArgs,outArgs);
 
 }
-
 
 // //////////////////////////////////
 // Definitions

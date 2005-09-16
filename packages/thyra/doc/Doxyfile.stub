@@ -22,6 +22,7 @@ IGNORE_PREFIX          =
 #
 TAGFILES               = ../../common/tag_files/ThyraUtils.tag=../../src/utils/doc/html \
                          ../../common/tag_files/ThyraRTOp.tag=../../src/ana/rtop/doc/html \
-                         ../../common/tag_files/ThyraOperatorVector.tag=../../src/ana/operator_vector/doc/html
+                         ../../common/tag_files/ThyraOperatorVector.tag=../../src/ana/operator_vector/doc/html \
+                         ../../common/tag_files/ThyraNonlinear.tag=../../src/ana/nonlinear/doc/html
 ALLEXTERNALS           = YES
 EXTERNAL_GROUPS        = YES

@@ -318,12 +318,19 @@ AM_CONDITIONAL(BUILD_MATLAB, [test "X$ac_cv_use_epetraext_matlab" != "Xno"])
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, block, [Enable EpetraExt Block subpkg], BLOCK, yes)
 AM_CONDITIONAL(BUILD_BLOCK, [test "X$ac_cv_use_epetraext_block" != "Xno"])
 
+TAC_ARG_ENABLE_FEATURE_SUB( epetraext, modelevaluator, [Enable EpetraExt Model Evaluator subpkg], MODEL_EVALUATOR, yes)
+AM_CONDITIONAL(BUILD_MODEL_EVALUATOR, [test "X$ac_cv_use_epetraext_modelevaluator" != "Xno"])
+
 # ------------------------------------------------------------------------
 # Interfaces to other Trilinos packages
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetraext, triutils, EPETRAEXT_TRIUTILS, BUILD_TRIUTILS, yes, [Build triutils support in epetraext.], [Build triutils support in epetraext. Can be overridden with --disable-epetraext-triutils.])
-                               
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  epetraext, thyra, EPETRAEXT_THYRA, ENABLE_EPETRAEXT_THYRA, yes
+  ,[Build the Thyra adapater support in EpetraExt.]
+  ,[Build the Thyra adapater support in EpetraExt.  Can be overridden with --disable-epetraext-thyra.])
 
 # ------------------------------------------------------------------------
 # Checks if tests should be built
@@ -442,7 +449,7 @@ fi
 # Determine libraries needed for linking with Fortran
 AC_F77_LIBRARY_LDFLAGS
 
-# -- DEC CXX --
+Z# -- DEC CXX --
 dnl if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
 dnl    XTRALDADD="cxx_repository/*.o"
 dnl fi
@@ -477,32 +484,32 @@ AC_SUBST(ac_aux_dir)
 ##
 AC_CONFIG_FILES([
 		Makefile
-                Makefile.export.epetraext
+		Makefile.export.epetraext
 		src/Makefile
-                test/Makefile
-                test/BTF/Makefile
-                test/Composite/Makefile
+		test/Makefile
+		test/BTF/Makefile
+		test/Composite/Makefile
 		test/Matlab/Makefile
-                test/MapColoring/Makefile
-                test/MatrixMatrix/Makefile
-                test/Overlap/Makefile
-                test/Permutation/Makefile
-                test/SingletonFilter/Makefile
-                test/Transpose/Makefile
-                test/SymmRCM/Makefile
-                test/View/Makefile
-                test/Zoltan/Makefile
-                test/inout/Makefile
-                test/scripts/Makefile
-                test/scripts/daily/Makefile
-                test/scripts/daily/serial/Makefile
-                test/scripts/daily/mpi/Makefile
-                test/scripts/weekly/Makefile
-                test/scripts/weekly/serial/Makefile
-                test/scripts/weekly/mpi/Makefile
-                example/Makefile
-                example/inout/Makefile
-                example/zoltan/Makefile
+		test/MapColoring/Makefile
+		test/MatrixMatrix/Makefile
+		test/Overlap/Makefile
+		test/Permutation/Makefile
+		test/SingletonFilter/Makefile
+		test/Transpose/Makefile
+		test/SymmRCM/Makefile
+		test/View/Makefile
+		test/Zoltan/Makefile
+		test/inout/Makefile
+		test/scripts/Makefile
+		test/scripts/daily/Makefile
+		test/scripts/daily/serial/Makefile
+		test/scripts/daily/mpi/Makefile
+		test/scripts/weekly/Makefile
+		test/scripts/weekly/serial/Makefile
+		test/scripts/weekly/mpi/Makefile
+		example/Makefile
+		example/inout/Makefile
+		example/zoltan/Makefile
 		example/matlab/Makefile
 		example/MapColoring/Makefile
 		python/Makefile
@@ -512,6 +519,8 @@ AC_CONFIG_FILES([
 		python/src/.deps/dummy
 		python/test/Makefile
 		python/example/Makefile
+		thyra/Makefile
+		thyra/src/Makefile
 		])
 
 AC_OUTPUT()

@@ -65,7 +65,7 @@ namespace Thyra {
  * <tt>MPIVectorSpaceBase</tt> subclass.
  *
  * Vector subclasses must also call the protected function
- * <tt>updateMpiState()</tt> whenever the state of <tt>*this->mpiSpace()</tt>
+ * <tt>updateMpiSpace()</tt> whenever the state of <tt>*this->mpiSpace()</tt>
  * vector space changes.  This function gathers some cached data that makes
  * the rest of the class more efficient.  This function must be called in a
  * constructor or any other function that changes the state of the vector

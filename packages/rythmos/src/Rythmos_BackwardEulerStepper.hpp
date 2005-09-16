@@ -39,33 +39,34 @@
 
 namespace Rythmos {
 
+/** \brief . */
 template<class Scalar>
 class BackwardEulerStepper : public Stepper<Scalar>
 {
   public:
 
-    //
+    /** \brief . */
     BackwardEulerStepper(
       const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >        &model
       ,const Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> >  &solver
       );
 
-    //
+    /** \brief . */
     void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
 
-    //
+    /** \brief . */
     void setSolver(const Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> > &solver);
 
-    // Take a step _no larger_ than dt 
+    /** \brief . */
     Scalar TakeStep(Scalar dt);
    
-    // Take a step 
+    /** \brief . */
     Scalar TakeStep();
 
-    // Get solution vector
+    /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
 
-    // Get residual vector
+    /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
 
   private:

@@ -383,6 +383,7 @@ namespace Teuchos {
     static inline mpf_class zero() { mpf_class zero = 0.0; return zero; };
     static inline mpf_class one() { mpf_class one = 1.0; return one; };    
     static inline mpf_class conjugate(mpf_class x) { return x; };
+    static inline bool isnaninf(mpf_class x) { return false; } // mpf_class currently can't handle nan or inf!
     static inline void seedrandom(unsigned int s) { 
       unsigned long int seedVal = static_cast<unsigned long int>(s);
       gmp_rng.seed( seedVal );	
@@ -411,6 +412,7 @@ namespace Teuchos {
     static inline mp_real zero() { mp_real zero = 0.0; return zero; };
     static inline mp_real one() { mp_real one = 1.0; return one; };    
     static inline mp_real conjugate(mp_real x) { return x; };
+    static inline bool isnaninf(mp_real x) { return false; } // ToDo: Change this?
     static inline void seedrandom(unsigned int s) { 
       long int seedVal = static_cast<long int>(s);
       srand48(seedVal);

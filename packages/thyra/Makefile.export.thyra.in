@@ -2,6 +2,10 @@
 include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 
 _THYRA_INCLUDES = \
+  -I@abs_top_srcdir@/src/ana/nonlinear/model_evaluator/ana_support \
+  -I@abs_top_srcdir@/src/ana/nonlinear/model_evaluator/interfaces \
+  -I@abs_top_srcdir@/src/ana/nonlinear/solvers/ana_support \
+  -I@abs_top_srcdir@/src/ana/nonlinear/solvers/interfaces \
   -I@abs_top_srcdir@/src/ana/operator_vector/adapter_support \
   -I@abs_top_srcdir@/src/ana/operator_vector/adapter_support/mpi \
   -I@abs_top_srcdir@/src/ana/operator_vector/adapter_support/serial \

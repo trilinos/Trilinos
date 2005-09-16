@@ -459,6 +459,19 @@ ANA_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H = \
   $(srcdir)/ana/operator_vector/adapter_support/mpi/Thyra_MultiVectorSerialization.hpp\
   $(srcdir)/ana/operator_vector/adapter_support/mpi/Thyra_MultiVectorSerializationDecl.hpp
 
+ANA_NONLINEAR_MODEL_EVALUATOR_INTERFACES_H = \
+  $(srcdir)/ana/nonlinear/model_evaluator/interfaces/Thyra_ModelEvaluator.hpp
+
+ANA_NONLINEAR_MODEL_EVALUATOR_ANA_SUPPORT_H = \
+  $(srcdir)/ana/nonlinear/model_evaluator/ana_support/Thyra_SingleResidSSDAEModelEvaluator.hpp
+
+ANA_NONLINEAR_SOLVERS_INTERFACES_H = \
+  $(srcdir)/ana/nonlinear/solvers/interfaces/Thyra_NonlinearSolverBase.hpp
+
+ANA_NONLINEAR_SOLVERS_ANA_SUPPORT_H = \
+  $(srcdir)/ana/nonlinear/solvers/ana_support/Thyra_LinearNonlinearSolver.hpp\
+  $(srcdir)/ana/nonlinear/solvers/ana_support/Thyra_NewtonNonlinearSolver.hpp
+
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(THYRA_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(THYRA_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
@@ -478,7 +491,11 @@ THYRA_H = \
   $(ANA_OPERATOR_VECTOR_ANA_SUPPORT_H)\
 	$(ANA_OPERATOR_VECTOR_ADAPTER_SUPPORT_H)\
   $(ANA_OPERATOR_VECTOR_ADAPTER_SUPPORT_SERIAL_H)\
-  $(ANA_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H)
+  $(ANA_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H)\
+  $(ANA_NONLINEAR_MODEL_EVALUATOR_INTERFACES_H)\
+  $(ANA_NONLINEAR_MODEL_EVALUATOR_ANA_SUPPORT_H)\
+  $(ANA_NONLINEAR_SOLVERS_INTERFACES_H)\
+  $(ANA_NONLINEAR_SOLVERS_ANA_SUPPORT_H)
 
 libthyra_a_SOURCES = \
   $(UTILS) \
@@ -789,7 +806,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/ana/operator_vector/adapter_support $(distdir)/ana/operator_vector/adapter_support/mpi $(distdir)/ana/operator_vector/adapter_support/serial $(distdir)/ana/operator_vector/ana_support $(distdir)/ana/operator_vector/extended_interfaces $(distdir)/ana/operator_vector/interfaces $(distdir)/ana/rtop/base $(distdir)/ana/rtop/ops_lib $(distdir)/utils
+	$(mkdir_p) $(distdir)/ana/nonlinear/model_evaluator/ana_support $(distdir)/ana/nonlinear/model_evaluator/interfaces $(distdir)/ana/nonlinear/solvers/ana_support $(distdir)/ana/nonlinear/solvers/interfaces $(distdir)/ana/operator_vector/adapter_support $(distdir)/ana/operator_vector/adapter_support/mpi $(distdir)/ana/operator_vector/adapter_support/serial $(distdir)/ana/operator_vector/ana_support $(distdir)/ana/operator_vector/extended_interfaces $(distdir)/ana/operator_vector/interfaces $(distdir)/ana/rtop/base $(distdir)/ana/rtop/ops_lib $(distdir)/utils
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

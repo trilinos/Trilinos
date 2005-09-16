@@ -45,17 +45,13 @@
 CORE_H = \
 	$(srcdir)/Rythmos_ConfigDefs.h \
 	$(srcdir)/Rythmos_InOutArgs.hpp \
-	$(srcdir)/Rythmos_ModelEvaluator.hpp \
 	$(srcdir)/Rythmos_Stepper.hpp \
 	$(srcdir)/Rythmos_BackwardEulerStepper.hpp \
 	$(srcdir)/Rythmos_ForwardEulerStepper.hpp \
-	$(srcdir)/Rythmos_ExplicitRKStepper.hpp \
-	$(srcdir)/Thyra_EpetraModelEvaluator.hpp \
-	$(srcdir)/Thyra_ModelEvaluator.hpp
+	$(srcdir)/Rythmos_ExplicitRKStepper.hpp
 
 CORE = \
-	$(srcdir)/Rythmos_Version.cpp \
-	$(srcdir)/Thyra_EpetraModelEvaluator.cpp
+	$(srcdir)/Rythmos_Version.cpp
 
 UTIL_H =
 
@@ -222,6 +218,17 @@ nodist_execinclude_HEADERS = Rythmos_config.h
 
 MAINTAINERCLEANFILES = Makefile.in 
 
+
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+ENABLE_RYTHMOS_THYRA_LIBS = cd $(top_builddir)/../thyra ; $(MAKE) all-libs
+ENABLE_RYTHMOS_EPETRA_LIBS = cd $(top_builddir)/../epetra ; $(MAKE) all-libs
+
+all-libs:
+	$(MAKE) librythmos.a
+	$(ENABLE_RYTHMOS_THYRA_LIBS)
+	$(ENABLE_RYTHMOS_EPETRA_LIBS)
 
 
 

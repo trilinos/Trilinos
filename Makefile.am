@@ -103,6 +103,9 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 ## #######################################################################
 SUBDIRS = packages
 
+all-libs:
+	cd $(top_builddir)/packages ; $(MAKE) all-libs
+
 ## #######################################################################
 ## Install the perl scrpts used for external makefiles
 ## #######################################################################

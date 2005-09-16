@@ -60,7 +60,7 @@ EXTRA_TRANSFORM_H = \
      $(srcdir)/transform/EpetraExt_Reindex_LinearProblem.h \
      $(srcdir)/transform/EpetraExt_SolverMap_CrsMatrix.h \
      $(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.h
-     
+
 EXTRA_TRANSFORM = \
      $(srcdir)/transform/EpetraExt_Permutation.cpp \
      $(srcdir)/transform/EpetraExt_LPTrans_From_GraphTrans.cpp \
@@ -114,7 +114,7 @@ TRANSFORM_H =
 TRANSFORM =
 
 endif
-     
+
 EXTRA_BTF_H = \
      $(srcdir)/btf/EpetraExt_BTF_CrsGraph.h \
      $(srcdir)/btf/EpetraExt_BTF_CrsMatrix.h \
@@ -164,7 +164,8 @@ EXTRA_INOUT_H = \
      $(srcdir)/inout/EpetraExt_BlockMapIn.h \
      $(srcdir)/inout/EpetraExt_CrsMatrixIn.h \
      $(srcdir)/inout/EpetraExt_MultiVectorIn.h \
-     $(srcdir)/inout/EpetraExt_VectorIn.h
+     $(srcdir)/inout/EpetraExt_VectorIn.h\
+     $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.h
 
 EXTRA_INOUT = \
      $(srcdir)/inout/EpetraExt_mmio.cpp \
@@ -175,7 +176,8 @@ EXTRA_INOUT = \
      $(srcdir)/inout/EpetraExt_BlockMapIn.cpp \
      $(srcdir)/inout/EpetraExt_CrsMatrixIn.cpp \
      $(srcdir)/inout/EpetraExt_MultiVectorIn.cpp \
-     $(srcdir)/inout/EpetraExt_VectorIn.cpp
+     $(srcdir)/inout/EpetraExt_VectorIn.cpp\
+     $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp
 
 if BUILD_INOUT
 
@@ -308,6 +310,28 @@ MATLAB =
 
 endif
 
+
+EXTRA_MODEL_EVALUATOR_H = \
+     $(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.h
+
+EXTRA_MODEL_EVALUATOR =
+
+if BUILD_MODEL_EVALUATOR
+
+MODEL_EVALUATOR_H = \
+    $(EXTRA_MODEL_EVALUATOR_H)
+
+MODEL_EVALUATOR = \
+    $(EXTRA_MODEL_EVALUATOR)
+
+else
+
+MODEL_EVALUATOR_H =
+
+MODEL_EVALUATOR =
+
+endif
+
 EXTRA_BLOCK_H = \
     $(srcdir)/block/EpetraExt_BlockCrsMatrix.h \
     $(srcdir)/block/EpetraExt_BlockMultiVector.h \
@@ -348,7 +372,8 @@ libepetraext_a_SOURCES = \
      $(ZOLTAN) \
      $(COLORING) \
      $(MATLAB) \
-     $(BLOCK)
+     $(BLOCK) \
+     $(MODEL_EVALUATOR)
 
 #If these are not listed, the files will not be included in
 #the distribution tarball.
@@ -365,7 +390,8 @@ EPETRAEXT_H = \
      $(ZOLTAN_H) \
      $(COLORING_H) \
      $(MATLAB_H) \
-     $(BLOCK_H)
+     $(BLOCK_H) \
+     $(MODEL_EVALUATOR_H)
 
 #We need the following to support separate build directories
 #AM_CPPFLAGS = \

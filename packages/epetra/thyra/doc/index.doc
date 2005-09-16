@@ -21,6 +21,19 @@ the Epetra to Thyra adapter code.
 
 </ul>
 
+\section EpetraThyra_links_sec Links to other software
+
+<ul>
+
+<li><a
+href="../../../../thyra/src/ana/operator_vector/doc/html/index.html">Thyra ANA
+Operator/Vector Interfaces</a>
+
+<li><a
+href="../../../doc/html/index.html">Main Epetra Documentation</a>
+
+</ul>
+
 */
 
 /** \defgroup Epetra_Thyra_Op_Vec_adapters_grp Epetra to Thyra Operator/Vector Adapter Code

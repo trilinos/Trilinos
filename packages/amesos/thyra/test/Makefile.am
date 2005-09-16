@@ -49,7 +49,7 @@ test_amesos_thyra_driver_LDADD = $(common_ldadd)
 # Common stuff
 #
 
-common_sources = $(srcdir)/test_single_amesos_thyra_solver.cpp $(srcdir)/EpetraExt_readEpetraLinearSystem.cpp
+common_sources = $(srcdir)/test_single_amesos_thyra_solver.cpp
 
 common_dependencies = $(top_builddir)/thyra/src/libamesosthyra.a $(top_builddir)/src/libamesos.a
 
@@ -67,7 +67,7 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 common_ldadd = $(EXPORT_LIBS)
 
-EXTRA_DIST = $(srcdir)/EpetraExt_readEpetraLinearSystem.h \
+EXTRA_DIST = \
 	$(srcdir)/test_single_amesos_thyra_solver.hpp
 
 # This is already added part of AMESOS_LIBS and therefore automake does not need to add this again!

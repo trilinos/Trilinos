@@ -46,7 +46,6 @@ namespace Thyra {
  \verbatim
 
  f_bar(x_bar) = f( coeff_x_dot * x_bar + x_dot_base, coeff_x * x_bar + x_base, t_base ) = 0
-
  \endverbatim
  *
  * with initial starting guess <tt>x_bar_init</tt>.
@@ -56,7 +55,6 @@ namespace Thyra {
  \verbatim
 
  beta * d(f_bar)/d(x_bar) = (beta*coeff_x_dot) * d(f)/d(x_dot) + (beta*coeff_x) * d(f)/d(x)
-
  \endverbatim
  *
  * ToDo: Finish Documentation!

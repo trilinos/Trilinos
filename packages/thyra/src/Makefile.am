@@ -243,6 +243,20 @@ ANA_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H = \
   $(srcdir)/ana/operator_vector/adapter_support/mpi/Thyra_MultiVectorSerialization.hpp\
   $(srcdir)/ana/operator_vector/adapter_support/mpi/Thyra_MultiVectorSerializationDecl.hpp
 
+ANA_NONLINEAR_MODEL_EVALUATOR_INTERFACES_H = \
+  $(srcdir)/ana/nonlinear/model_evaluator/interfaces/Thyra_ModelEvaluator.hpp
+
+ANA_NONLINEAR_MODEL_EVALUATOR_ANA_SUPPORT_H = \
+  $(srcdir)/ana/nonlinear/model_evaluator/ana_support/Thyra_SingleResidSSDAEModelEvaluator.hpp
+
+ANA_NONLINEAR_SOLVERS_INTERFACES_H = \
+  $(srcdir)/ana/nonlinear/solvers/interfaces/Thyra_NonlinearSolverBase.hpp
+
+ANA_NONLINEAR_SOLVERS_ANA_SUPPORT_H = \
+  $(srcdir)/ana/nonlinear/solvers/ana_support/Thyra_LinearNonlinearSolver.hpp\
+  $(srcdir)/ana/nonlinear/solvers/ana_support/Thyra_NewtonNonlinearSolver.hpp
+
+
 #Specify locations of include files within Trilinos
 
 include $(top_builddir)/Makefile.export.thyra
@@ -272,7 +286,11 @@ THYRA_H = \
   $(ANA_OPERATOR_VECTOR_ANA_SUPPORT_H)\
 	$(ANA_OPERATOR_VECTOR_ADAPTER_SUPPORT_H)\
   $(ANA_OPERATOR_VECTOR_ADAPTER_SUPPORT_SERIAL_H)\
-  $(ANA_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H)
+  $(ANA_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H)\
+  $(ANA_NONLINEAR_MODEL_EVALUATOR_INTERFACES_H)\
+  $(ANA_NONLINEAR_MODEL_EVALUATOR_ANA_SUPPORT_H)\
+  $(ANA_NONLINEAR_SOLVERS_INTERFACES_H)\
+  $(ANA_NONLINEAR_SOLVERS_ANA_SUPPORT_H)
 
 libthyra_a_SOURCES = \
   $(UTILS) \

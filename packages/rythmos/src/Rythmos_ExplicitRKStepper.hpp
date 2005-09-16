@@ -37,27 +37,27 @@
 
 namespace Rythmos {
 
+/** \brief . */
 template<class Scalar>
 class ExplicitRKStepper : public Stepper<Scalar>
 {
   public:
     
-    // Constructor
+    /** \brief . */
     ExplicitRKStepper();
     ExplicitRKStepper(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model_);
     
-    // Destructor
+    /** \brief . */
     ~ExplicitRKStepper();
 
-    // Take a step _no larger_ than dt 
+    /** \brief . */
     Scalar TakeStep(Scalar dt);
    
-    // Take a step 
+    /** \brief . */
     Scalar TakeStep();
 
-    // Get solution vector
+    /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
-
 
   private:
 

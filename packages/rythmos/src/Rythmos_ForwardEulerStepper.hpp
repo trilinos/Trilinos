@@ -37,28 +37,29 @@
 
 namespace Rythmos {
 
+/** \brief . */
 template<class Scalar>
 class ForwardEulerStepper : public Stepper<Scalar>
 {
   public:
     
-    // Constructor
+    /** \brief . */
     ForwardEulerStepper();
     ForwardEulerStepper(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
     
-    // Destructor
+    /** \brief . */
     ~ForwardEulerStepper();
 
-    // Take a step _no larger_ than dt 
+    /** \brief . */
     Scalar TakeStep(Scalar dt);
    
-    // Take a step 
+    /** \brief . */
     Scalar TakeStep();
 
-    // Get solution vector
+    /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
 
-    // Get residual vector
+    /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
 
   private:

@@ -49,7 +49,7 @@ test_aztecoo_thyra_driver_LDADD = $(common_ldadd)
 # Common stuff
 #
 
-common_sources = $(srcdir)/test_single_aztecoo_thyra_solver.cpp $(top_srcdir)/../amesos/thyra/test/EpetraExt_readEpetraLinearSystem.cpp
+common_sources = $(srcdir)/test_single_aztecoo_thyra_solver.cpp
 
 common_dependencies = $(top_builddir)/thyra/src/libaztecoothyra.a $(top_builddir)/src/libaztecoo.a
 

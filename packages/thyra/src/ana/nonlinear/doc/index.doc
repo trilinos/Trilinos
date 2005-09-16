@@ -1,0 +1,95 @@
+/*! \mainpage Thyra Nonlinear Interfaces and Support Software
+
+\section Thyra_Nonlinear_outline_sec Outline
+
+<ul>
+<li> \ref Thyra_Nonlinear_intro_sec
+<li> \ref Thyra_Nonlinear_software_sec
+<li> \ref Thyra_Nonlinear_links_to_other_documentation_sec
+</ul>
+
+\section Thyra_Nonlinear_intro_sec Introduction
+
+This doxygen collection contains interfaces for nonlinear ANAs.
+
+\section Thyra_Nonlinear_software_sec Software
+
+<ul>
+
+<li><b>Model Evaluators</b>
+
+  <ul>
+  
+  <li><b>ANA Interfaces</b>
+
+    <ul>
+
+    <li><tt>Thyra::ModelEvaluator</tt> defines a very general interface for
+    representing a number of different types of nonlinear problems.
+
+    </ul>
+  
+  <li><b>ANA Support</b>
+
+    <ul>
+
+    <li><tt>Thyra::SingleResidSSDAEModelEvaluator</tt> is a <em>decorator</em>
+    subclass that defines time-step equations for an implicit ODE or a DAE for
+    a number of different single-residual integration methods with backward Euler being the
+    simplest.
+
+    </ul>
+
+  </ul>
+
+<li><b>Solvers</b>
+
+  <ul>
+  
+  <li><b>ANA Interfaces</b>
+
+    <ul>
+
+    <li><tt>Thyra::NonlinearSolverBase</tt> defines a very general interface
+    for solving a set of nonlinear equations represented through the
+    <tt>Thyra::ModelEvaluator</tt> interface.
+
+    </ul>
+  
+  <li><b>ANA Support</b>
+
+    <ul>
+
+    <li><tt>Thyra::LinearNonlinearSolver</tt> is a subclass of
+    <tt>Thyra::NonlinearSolverBase</tt> that solves a set of linear
+    equations represented by a <tt>Thyra::ModelEvaluator</tt> object.
+
+    <li><tt>Thyra::NewtonNonlinearSolver</tt> is a subclass of
+    <tt>Thyra::NonlinearSolverBase</tt> that implements a very simple Newton
+    method for solving a general set of nonlinear equations represented by a
+    <tt>Thyra::ModelEvaluator</tt> object.
+
+    </ul>
+
+  </ul>
+
+</ul>
+
+\section Thyra_Nonlinear_links_to_other_documentation_sec Links to Other Documentation Collections
+
+Below are links to other related documentation:
+
+<ul>
+
+<li><b><a href="../../../../../doc/html/index.html">Main Thyra Package
+Documentation</a></b>: This is the main documentation page for the %Thyra
+package which provides an outline for all %Thyra software.
+
+<li><b><a
+href="../../../../../../epetraext/thyra/doc/html/index.html">EpetraExt/Thyra
+Adapters</a></b>: This software includes in implementation of <tt>Thyra::ModelEvaluator</tt>
+in terms of Epetra objects..
+
+</ul>
+
+*/

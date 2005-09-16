@@ -27,12 +27,10 @@
 # @HEADER
 
 SOURCE_H = \
-	$(srcdir)/EpetraExt_ProductOperator.h \
 	$(srcdir)/Thyra_AztecOOLinearOpWithSolve.hpp \
 	$(srcdir)/Thyra_AztecOOLinearOpWithSolveFactory.hpp
 
 SOURCE = \
-	$(srcdir)/EpetraExt_ProductOperator.cpp \
 	$(srcdir)/Thyra_AztecOOLinearOpWithSolve.cpp \
 	$(srcdir)/Thyra_AztecOOLinearOpWithSolveFactory.cpp
 

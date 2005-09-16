@@ -34,7 +34,20 @@
 
 namespace Teuchos {
 
-/** \defgroup Teuchos_RefCountPtrBoostSharedPtrConversions_grp Conversion utilities for going between <tt>Teuchos::RefCountPtr</tt> and <tt>boost::shared_ptr</tt>.
+/** \defgroup Teuchos_RefCountPtrBoostSharedPtrConversions_grp Conversion utilities for going between Teuchos::RefCountPtr and boost::shared_ptr.
+
+The smart pointer classes <tt>Teuchos::RefCountPtr</tt> and
+<tt>boost::shared_ptr</tt> are easily compatible.  The two templated
+conversion functions <tt>Teuchos::rcp( const boost::shared_ptr<T> & )</tt> and
+<tt>Teuchos::shared_pointer( const RefCountPtr<T> & )</tt> have been created
+for converting back and forth.
+
+The following code shows how to convert back and forth between these two smart
+pointer types:
+
+
+
+
 
 */
 //@{
@@ -81,10 +94,12 @@ private:
 };
 
 /** \brief Conversion function that takes in a <tt>boost::shared_ptr</tt>
- * object and spits out a <tt>Teuchos::RefCountPtr</tt>.
+ * object and spits out a <tt>Teuchos::RefCountPtr</tt> object.
  *
  * If the input <tt>boost::shared_ptr</tt> already wraps a <tt>Teuchos::RefCountPtr</tt>
  * object, then that <tt>Teuchos::RefCountPtr</tt> object will be copied and returned.
+ *
+ * This function is not complicated, just look at its defintion below.
  */
 template<class T>
 RefCountPtr<T> rcp( const boost::shared_ptr<T> &sptr );
@@ -95,6 +110,8 @@ RefCountPtr<T> rcp( const boost::shared_ptr<T> &sptr );
  * If the input <tt>Teuchos::RefCountPtr</tt> already wraps a
  * <tt>boost::shared_ptr</tt> object, then that <tt>boost::shared_ptr</tt>
  * object will be copied and returned.
+ *
+ * This function is not complicated, just look at its defintion below.
  */
 template<class T>
 boost::shared_ptr<T> shared_pointer( const RefCountPtr<T> &rcp );

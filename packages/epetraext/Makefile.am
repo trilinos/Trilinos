@@ -81,14 +81,28 @@ if PYTHON_USE
 PYTHON_SUBDIR=python
 endif
 
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
+if ENABLE_EPETRAEXT_THYRA
+THYRA_SUBDIR=thyra
+else
+THYRA_SUBDIR=
+endif
+
+SUBDIRS = src $(THYRA_SUBDIR) $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
 
 
 ## #######################################################################
 ## Target for circular dependencies
 ## #######################################################################
+
+if ENABLE_EPETRAEXT_THYRA
+BUILD_THYRA_SUBLIB=cd $(top_builddir)/thyra/src ; $(MAKE)
+else
+BUILD_THYRA_SUBLIB=
+endif
+
 all-libs:
-	cd src ; $(MAKE) all-libs
+	cd $(top_builddir)/src ; $(MAKE) all-libs
+	$(BUILD_THYRA_SUBLIB)
 
 ## #######################################################################
 ## Export Makefile Installation

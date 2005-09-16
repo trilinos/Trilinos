@@ -57,6 +57,9 @@
 #undef HAVE_EPETRAEXT_TESTS
 
 /* Define if want to build with epetraext enabled */
+#undef HAVE_EPETRAEXT_THYRA
+
+/* Define if want to build with epetraext enabled */
 #undef HAVE_EPETRAEXT_TRIUTILS
 
 /* Define if want to build examples */
@@ -124,6 +127,9 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define if want to build epetraext-modelevaluator */
+#undef HAVE_MODEL_EVALUATOR
 
 /* define if we want to use MPI */
 #undef HAVE_MPI

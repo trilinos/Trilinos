@@ -29,6 +29,7 @@
 #ifndef THYRA_NONLINEAR_SOLVER_BASE_HPP
 #define THYRA_NONLINEAR_SOLVER_BASE_HPP
 
+#include "Teuchos_Describable.hpp"
 #include "Thyra_LinearOpWithSolveBaseDecl.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 
@@ -39,11 +40,8 @@ namespace Thyra {
  * ToDo: Finish documentation.
  */
 template <class Scalar>
-class NonlinearSolverBase {
+class NonlinearSolverBase : virtual public Teuchos::Describable {
 public:
-
-  /** \brief .*/
-  virtual ~NonlinearSolverBase() {}
   
   /** @name Pure virtual functions that must be overridden in subclasses */
   //@{

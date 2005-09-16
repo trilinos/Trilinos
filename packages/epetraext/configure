@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP HAVE_THREADS_TRUE HAVE_THREADS_FALSE BUILD_TRANSFORM_TRUE BUILD_TRANSFORM_FALSE BUILD_INOUT_TRUE BUILD_INOUT_FALSE BUILD_COLORING_TRUE BUILD_COLORING_FALSE BUILD_ZOLTAN_TRUE BUILD_ZOLTAN_FALSE BUILD_BTF_TRUE BUILD_BTF_FALSE BUILD_MATLAB_TRUE BUILD_MATLAB_FALSE BUILD_BLOCK_TRUE BUILD_BLOCK_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_EXPERIMENTAL_TRUE BUILD_EXPERIMENTAL_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP HAVE_THREADS_TRUE HAVE_THREADS_FALSE BUILD_TRANSFORM_TRUE BUILD_TRANSFORM_FALSE BUILD_INOUT_TRUE BUILD_INOUT_FALSE BUILD_COLORING_TRUE BUILD_COLORING_FALSE BUILD_ZOLTAN_TRUE BUILD_ZOLTAN_FALSE BUILD_BTF_TRUE BUILD_BTF_FALSE BUILD_MATLAB_TRUE BUILD_MATLAB_FALSE BUILD_BLOCK_TRUE BUILD_BLOCK_FALSE BUILD_MODEL_EVALUATOR_TRUE BUILD_MODEL_EVALUATOR_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE ENABLE_EPETRAEXT_THYRA_TRUE ENABLE_EPETRAEXT_THYRA_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_EXPERIMENTAL_TRUE BUILD_EXPERIMENTAL_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -909,10 +909,17 @@ Optional Features:
                           Enable EpetraExt Matlab subpkg (default is no)
   --enable-epetraext-block
                           Enable EpetraExt Block subpkg (default is yes)
+  --enable-epetraext-modelevaluator
+                          Enable EpetraExt Model Evaluator subpkg (default is
+                          yes)
   --enable-triutils       Build triutils support in epetraext. Can be
                           overridden with --disable-epetraext-triutils.
   --enable-epetraext-triutils
                           Build triutils support in epetraext.
+  --enable-thyra          Build the Thyra adapater support in EpetraExt. Can
+                          be overridden with --disable-epetraext-thyra.
+  --enable-epetraext-thyra
+                          Build the Thyra adapater support in EpetraExt.
   --enable-tests          Build tests for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
@@ -4238,7 +4245,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4241:" \
+echo "$as_me:4248:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8012,6 +8019,42 @@ else
 fi
 
 
+
+# Check whether --enable-epetraext-modelevaluator or --disable-epetraext-modelevaluator was given.
+if test "${enable_epetraext_modelevaluator+set}" = set; then
+  enableval="$enable_epetraext_modelevaluator"
+  ac_cv_use_epetraext_modelevaluator=$enableval
+else
+  ac_cv_use_epetraext_modelevaluator=yes
+fi;
+
+echo "$as_me:$LINENO: checking whether to use epetraext-modelevaluator" >&5
+echo $ECHO_N "checking whether to use epetraext-modelevaluator... $ECHO_C" >&6
+
+if test "X$ac_cv_use_epetraext_modelevaluator" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_MODEL_EVALUATOR
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_epetraext_modelevaluator" != "Xno"; then
+  BUILD_MODEL_EVALUATOR_TRUE=
+  BUILD_MODEL_EVALUATOR_FALSE='#'
+else
+  BUILD_MODEL_EVALUATOR_TRUE='#'
+  BUILD_MODEL_EVALUATOR_FALSE=
+fi
+
+
 # ------------------------------------------------------------------------
 # Interfaces to other Trilinos packages
 # ------------------------------------------------------------------------
@@ -8066,6 +8109,59 @@ else
   BUILD_TRIUTILS_FALSE=
 fi
 
+
+
+
+
+
+# Check whether --enable-thyra or --disable-thyra was given.
+if test "${enable_thyra+set}" = set; then
+  enableval="$enable_thyra"
+  ac_cv_implicit_use_thyra=$enableval
+else
+  ac_cv_implicit_use_thyra=no
+fi;
+
+if test "Xyes
+  " != "Xno"; then
+  ac_cv_epetraext_using_thyra_default=$ac_cv_implicit_use_thyra
+else
+  ac_cv_epetraext_using_thyra_default=no
+fi
+
+# Check whether --enable-epetraext-thyra or --disable-epetraext-thyra was given.
+if test "${enable_epetraext_thyra+set}" = set; then
+  enableval="$enable_epetraext_thyra"
+  ac_cv_use_thyra=$enableval
+else
+  ac_cv_use_thyra=$ac_cv_epetraext_using_thyra_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in epetraext" >&5
+echo $ECHO_N "checking whether to build optional thyra dependent code in epetraext... $ECHO_C" >&6
+
+if test "X$ac_cv_use_thyra" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_EPETRAEXT_THYRA 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_thyra" = "Xyes"; then
+  ENABLE_EPETRAEXT_THYRA_TRUE=
+  ENABLE_EPETRAEXT_THYRA_FALSE='#'
+else
+  ENABLE_EPETRAEXT_THYRA_TRUE='#'
+  ENABLE_EPETRAEXT_THYRA_FALSE=
+fi
 
 
 
@@ -9332,7 +9428,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9335: \"$ac_link\") >&5
+(eval echo $as_me:9431: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9410,7 +9506,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9413: \"$ac_link\") >&5
+(eval echo $as_me:9509: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12901,7 +12997,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:12904: \"$ac_link\") >&5
+(eval echo $as_me:13000: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12979,7 +13075,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:12982: \"$ac_link\") >&5
+(eval echo $as_me:13078: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13152,7 +13248,7 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
-# -- DEC CXX --
+Z# -- DEC CXX --
 
 
 
@@ -13176,7 +13272,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # Output files
 # ------------------------------------------------------------------------
 ##
-                                                                                                                                                                                                                                                                                                                                                                        ac_config_files="$ac_config_files Makefile Makefile.export.epetraext src/Makefile test/Makefile test/BTF/Makefile test/Composite/Makefile test/Matlab/Makefile test/MapColoring/Makefile test/MatrixMatrix/Makefile test/Overlap/Makefile test/Permutation/Makefile test/SingletonFilter/Makefile test/Transpose/Makefile test/SymmRCM/Makefile test/View/Makefile test/Zoltan/Makefile test/inout/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/scripts/weekly/Makefile test/scripts/weekly/serial/Makefile test/scripts/weekly/mpi/Makefile example/Makefile example/inout/Makefile example/zoltan/Makefile example/matlab/Makefile example/MapColoring/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export.epetraext src/Makefile test/Makefile test/BTF/Makefile test/Composite/Makefile test/Matlab/Makefile test/MapColoring/Makefile test/MatrixMatrix/Makefile test/Overlap/Makefile test/Permutation/Makefile test/SingletonFilter/Makefile test/Transpose/Makefile test/SymmRCM/Makefile test/View/Makefile test/Zoltan/Makefile test/inout/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/scripts/weekly/Makefile test/scripts/weekly/serial/Makefile test/scripts/weekly/mpi/Makefile example/Makefile example/inout/Makefile example/zoltan/Makefile example/matlab/Makefile example/MapColoring/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile thyra/Makefile thyra/src/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -13403,10 +13499,24 @@ echo "$as_me: error: conditional \"BUILD_BLOCK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${BUILD_MODEL_EVALUATOR_TRUE}" && test -z "${BUILD_MODEL_EVALUATOR_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_MODEL_EVALUATOR\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_MODEL_EVALUATOR\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_TRIUTILS_TRUE}" && test -z "${BUILD_TRIUTILS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TRIUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_TRIUTILS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_EPETRAEXT_THYRA_TRUE}" && test -z "${ENABLE_EPETRAEXT_THYRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_EPETRAEXT_THYRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_EPETRAEXT_THYRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -14002,6 +14112,8 @@ do
   "python/src/.deps/dummy" ) CONFIG_FILES="$CONFIG_FILES python/src/.deps/dummy" ;;
   "python/test/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/test/Makefile" ;;
   "python/example/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/example/Makefile" ;;
+  "thyra/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/Makefile" ;;
+  "thyra/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/src/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/EpetraExt_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/EpetraExt_config.h:src/EpetraExt_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -14187,8 +14299,12 @@ s,@BUILD_MATLAB_TRUE@,$BUILD_MATLAB_TRUE,;t t
 s,@BUILD_MATLAB_FALSE@,$BUILD_MATLAB_FALSE,;t t
 s,@BUILD_BLOCK_TRUE@,$BUILD_BLOCK_TRUE,;t t
 s,@BUILD_BLOCK_FALSE@,$BUILD_BLOCK_FALSE,;t t
+s,@BUILD_MODEL_EVALUATOR_TRUE@,$BUILD_MODEL_EVALUATOR_TRUE,;t t
+s,@BUILD_MODEL_EVALUATOR_FALSE@,$BUILD_MODEL_EVALUATOR_FALSE,;t t
 s,@BUILD_TRIUTILS_TRUE@,$BUILD_TRIUTILS_TRUE,;t t
 s,@BUILD_TRIUTILS_FALSE@,$BUILD_TRIUTILS_FALSE,;t t
+s,@ENABLE_EPETRAEXT_THYRA_TRUE@,$ENABLE_EPETRAEXT_THYRA_TRUE,;t t
+s,@ENABLE_EPETRAEXT_THYRA_FALSE@,$ENABLE_EPETRAEXT_THYRA_FALSE,;t t
 s,@BUILD_TESTS_TRUE@,$BUILD_TESTS_TRUE,;t t
 s,@BUILD_TESTS_FALSE@,$BUILD_TESTS_FALSE,;t t
 s,@BUILD_EXAMPLES_TRUE@,$BUILD_EXAMPLES_TRUE,;t t

@@ -22,10 +22,10 @@ IGNORE_PREFIX          =
 #
 # Links to other packages
 #
-TAGFILES               = ../../common/tag_files/teuchos.tag=../../../../../../teuchos/doc/html \
-                         ../../common/tag_files/ThyraUtils.tag=../../../../../../thyra/src/utils/doc/html \
-                         ../../common/tag_files/ThyraRTOp.tag=../../../../../../thyra/src/ana/rtop/doc/html \
-                         ../../common/tag_files/ThyraOperatorVector.tag=../../../../../../thyra/src/ana/operator_vector/doc/html \
+TAGFILES               = ../../common/tag_files/teuchos.tag=../../../../teuchos/doc/html \
+                         ../../common/tag_files/ThyraUtils.tag=../../../../thyra/src/utils/doc/html \
+                         ../../common/tag_files/ThyraRTOp.tag=../../../../thyra/src/ana/rtop/doc/html \
+                         ../../common/tag_files/ThyraOperatorVector.tag=../../../../thyra/src/ana/operator_vector/doc/html \
                          ../../common/tag_files/epetra.tag=../../../doc/html
 GENERATE_TAGFILE       = ../../common/tag_files/EpetraThyra.tag
 ALLEXTERNALS           = NO

@@ -47,26 +47,14 @@ WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
 INPUT                  = index.doc \
-                         ../src ../example/basicExample
-# Note: For now ../example is added just to make the code easy to browse
-FILE_PATTERNS          = *.h *.hpp *.cpp
+                         ../src \
+                         ../example/basicExample/ExampleApplication.hpp \
+                         ../example/basicExample/ExampleApplication.cpp
+FILE_PATTERNS          = *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
-#EXAMPLE_PATH           =  example/basicExample/cxx_main.cpp \
-#                          example/basicExample/ExampleApplication.cpp \
-#                          example/basicExample/ExampleApplication.hpp \
-#                          example/basicExample/ExampleApplicationRythmosInterface.cpp \
-#                          example/basicExample/ExampleApplicationRythmosInterface.hpp \
-#                          example/classExample/cxx_main.cpp \
-#                          example/classExample/ModelEvaluator.hpp \
-#                          example/classExample/Stepper.hpp \
-#                          example/classExample/Stepper_ForwardEuler.hpp \
-#                          example/constExample/cxx_main.cpp \
-#                          example/constExample/verySmall/cxx_main.cpp \
-#                          example/refCountPtrExample/cxx_main.cpp \
-#                          example/refCountPtrExample2/cxx_main.cpp \
-#                          example/verySimple/cxx_main.cpp
+EXAMPLE_PATH           =  ../example/basicExample
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = 
 INPUT_FILTER           = 
@@ -99,7 +87,13 @@ TAGFILES               = ../../common/tag_files/teuchos.tag=../../../teuchos/doc
                          ../../common/tag_files/ThyraUtils.tag=../../../thyra/src/utils/doc/html \
                          ../../common/tag_files/ThyraRTOp.tag=../../../thyra/src/ana/rtop/doc/html \
                          ../../common/tag_files/ThyraOperatorVector.tag=../../../thyra/src/ana/operator_vector/doc/html \
-                         ../../common/tag_files/epetra.tag=../../../epetra/doc/html
+                         ../../common/tag_files/ThyraNonlinear.tag=../../../thyra/src/ana/nonlinear/doc/html \
+                         ../../common/tag_files/epetra.tag=../../../epetra/doc/html \
+                         ../../common/tag_files/EpetraThyra.tag=../../../epetra/thyra/doc/html \
+                         ../../common/tag_files/amesos.tag=../../../amesos/doc/html \
+                         ../../common/tag_files/AmesosThyra.tag=../../../amesos/thyra/doc/html \
+                         ../../common/tag_files/epetraext.tag=../../../epetraext/doc/html \
+                         ../../common/tag_files/EpetraExtThyra.tag=../../../epetraext/thyra/doc/html
 GENERATE_TAGFILE       = ../../common/tag_files/rythmos.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO

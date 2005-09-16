@@ -1,36 +1,42 @@
 /*! \mainpage Thyra : Interfaces and Support code for the Interoperability of Abstract Numerical Algorithms
 
+\section thyra_outline_sec Outline
+
+<ul>
+<li> \ref thyra_intro_sec
+<li> \ref thyra_software_sec
+<li> \ref thyra_dependencies_sec
+<li> \ref thyra_configuration_sec
+<li> \ref thyra_external_projects_sec
+<li> \ref thyra_documents_sec
+<li> \ref thyra_contributors_sec
+<li> \ref thyra_related_software_sec
+</ul>
+
+\section thyra_intro_sec Introduction
+
 The %Thyra package contains a set of interfaces and supporting code that
 defines basic interoperability mechanisms between different types of numerical
 software.  The foundation of all of these interfaces are the mathematical
 concepts of vectors, vector spaces, and linear operators.  All other
-interfaces and support software is built on the basic operator/vector
+interfaces and support software are built on these basic operator/vector
 interfaces.
 
 This main page provides the starting point for all of the documentation for
-%Thyra interfaces and software.  The following is an outline of the sections
-on this main page:
+%Thyra interfaces and software.  This documentation is generated using
+Doxygen.
 
-<ul>
-<li> \ref thyra_software_sec provides a road-map to the various types
-of software in the %Thyra package and %Thyra-related software in other packages.
-<li> \ref thyra_dependencies_sec describes what other Trilinos packages that
-the %Thyra package needs to build and link against.
-<li> \ref thyra_configuration_sec mentions some of the more important
-configuration options that affect the %Thyra package and what code is built
-and installed.
-<li> \ref thyra_external_projects_sec describes how to build and link
-against an installation of %Thyra in external projects.
-<li> \ref thyra_documents_sec lists some useful documents related to %Thyra.
-<li> \ref thyra_contributors_sec lists individuals who have contributed to the
-development of %Thyra.
-<li> \ref thyra_related_software_sec gives links to other software related to %Thyra.
-</ul>
+The documentation for %Thyra is broken up into a number of different doxygen
+collections as described in the next section.
 
-\section thyra_software_sec Thyra Software
+\section thyra_software_sec Thyra Software Package Documentation Collections
 
-Below are links to different Doxygen documentation collections for different
-aspects of Thyra:
+The Doxygen-generated documentation is broken up into a number of different
+doxygen collections in an attempt to make each individual collection more
+manageable to browse and comprehend.
+
+Below are links to the different Doxygen documentation collections for the
+different aspects of Thyra:
 
 <ul>
 
@@ -50,6 +56,10 @@ ANAs.
   Contains the most fundamental %Thyra operator/vector interfaces as well as standard adapter code and ANA development
   utilities.
 
+  <li> <a href="../../src/ana/nonlinear/doc/html/index.html">Nonlinear Interfaces and Support Software</a>:
+  Contains the some fundamental interfaces for developing nonlinear ANAs and also includes related support
+  software.
+
   </ul>
 
 <li> Other Thyra software
@@ -58,7 +68,7 @@ ANAs.
 
   <li> Single program multiple data (SPMD) vector and matrix creational, loading and accessing interfaces: These are abstract
   interfaces that application code can use to fill vectors and sparse matrices on distributed-memory
-  parallel computers (as well as on SMP computers of course).
+  parallel computers (as well as on SMP computers of course) [Does not exist yet].
 
   </ul>
 
@@ -91,12 +101,12 @@ installation of Trilinos (i.e. using <tt>make install</tt>).
 the %Thyra package (an other Trilinos packages) to have the makefile
 fragments <tt>Makefile.export.thyra</tt> and <tt>Makefile.export.thyra.macros</tt>
 installed in the installation directory <tt>$TRILINOS_INSTALL_DIR/include</tt> for
-use by external makefiles (\ref thyra_external_projects_sec "see").
+use by external makefiles (see \ref thyra_external_projects_sec "below").
 </ul>
 
-See the output from <tt>./configure --help</tt> (where <tt>./</tt> is
-the base source directory) for a complete listing of all of the
-configure options that Thyra responds to.
+See the output from <tt>./configure --help</tt> (where <tt>./</tt> is the base
+source directory for the <tt>thyra</tt> package) for a complete listing of all
+of the configure options that Thyra responds to.
 
 The %Thyra package is also affected by configure options passed to
 other packages and some of these options are:
@@ -110,31 +120,43 @@ extended-precision <tt>mpf_class</tt> scalar type to be used in
 templated examples and tests.
 </ul>
 
+Note that the above options will not be listed by
+<tt>Trilinos/packages/thyra/configure --help</tt> but instead are listed by
+<tt>Trilinos/packages/teuchos/configure --help</tt>.
+
 \section thyra_external_projects_sec Building and Linking Against Thyra in External Projects
 
 It is recommended that developers external to Trilinos install %Thyra with the
 rest of Trilinos and then compile and link against the installed headers and
-libraries (see ??? for a discussion of installing Trilinos).  Remember that in
-order to install the contents of the <tt>thyra</tt> packages that one must
-enable it (see <tt>--enable-thyra</tt> and other <tt>configure</tt> options)
-before installation.
+libraries (see the <a
+href="../../../../doc/UserGuide/TrilinosUserGuide.pdf">Trilinos Users
+Guide</a> for a discussion of installing Trilinos).  Remember that in order to
+install the contents of the <tt>thyra</tt> packages that one must enable it
+(see the <tt>--enable-thyra</tt> and other <tt>configure</tt> options
+described \ref thyra_configuration_sec "above") before installation.
 
 Once %Thyra software is installed in the location specified by the configure
-option <tt>--prefix=TRILINOS_INSTALL_DIR</tt> with the rest of Trilinos, it is
+option <tt>--prefix=$TRILINOS_INSTALL_DIR</tt> with the rest of Trilinos
+(where <tt>$TRILINOS_INSTALL_DIR</tt> is the path of the directory that you
+specify where Trilinos will be installed with <tt>make install</tt>), it is
 important that a client's external makefile system be consistent with the
 environment used to build %Thyra.  To do this, if the option
-<tt>--enable-export-makefiles</tt> was enabled, then a set of makefile
-fragments is installed in the directory
+<tt>--enable-export-makefiles</tt> was enabled at configure time, then a set
+of makefile fragments is installed in the directory
 
 \verbatim
-
   $TRILINOS_INSTALL_DIR/include/
 \endverbatim
+
+The installed makefile fragment files <tt>Makefile.export.thyra</tt> and
+<tt>Makefile.export.thyra.macros</tt> can then be included in an external
+makefile to give compiler options, include paths, libraries etc.
+
+\subsection thyra_external_makefile_example_sec An example external makefile
 
 When %Thyra is installed with Trilinos, the directory
 
 \verbatim
-
   $TRILINOS_INSTALL_DIR/example/thyra/
 \endverbatim
 
@@ -172,28 +194,15 @@ This paper describes the basics of <tt>Teuchos::RefCountPtr</tt> and
 outlines a convention for passing objects to and from functions that
 all of the code in %Thyra adheres to.
 
-<li><b><a href="http://software.sandia.gov/RTOp/RTOpTOMS.pdf"> VectorBase
+<li><b><a href="http://software.sandia.gov/RTOp/RTOpTOMS.pdf"> Vector
 Reduction/Transformation Operators </a></b>
 
 This paper describes the need for, and the basic design of,
-<tt>RTOpPack::RTOpT</tt>.  The concrete implementation described in
-this paper used C while the current <tt>RTOpPack::RTOpT</tt> is a
-fully templated C++ implementation.
+<tt>RTOpPack::RTOpT</tt>.  The concrete implementation described in this paper
+used C structs while the current <tt>%RTOpPack::RTOpT</tt> is a fully
+templated C++ class implementation.
 
-<li><b><a
-href="http://software.sandia.gov/trilinos/packages/tsfcore/TSFCoreSAND.pdf">
-TSFCore : A package of light-weight object-oriented abstractions for
-the development of abstract numerical algorithms and interfacing to
-linear algebra libraries and applications </a></b>
-
-This paper describes the requirements and the use cases for the \ref
-foundational_thyra_operator_vector_interfaces_sec.  This paper contains critical
-design information without which %Thyra can not be fully
-appreciated.  However, most developer's that interact with Thyra
-need not know all of the detailed design information presented in this
-report.
-
-ToDo: Update this paper using the Thyra Operator/Vector paper!
+<!-- ToDo: Put in a link to the Thyra paper at some point! -->
 
 </ul>
 
@@ -205,6 +214,7 @@ order, are:
 <ul>
 <li> Roscoe Bartlett (rabartl@sandia.gov): %Thyra lead developer
 <li> Paul Boggs (ptboggs@sandia.gov) : Split/O3D lead developer, %Thyra developer
+<li> Todd Coffey (tscoffe@sandia.gov) : Rythmos lead developer, %Thyra developer
 <li> Michael Heroux (maherou@sandia.gov): Trilinos leader
 <li> Rob Hoekstra (rjhoeks@sandia.gov) : %EpetraExt lead developer
 <li> Victoria Howle (vehowle@sandia.gov) : %Meros lead developer, %Thyra developer
@@ -220,11 +230,28 @@ Below is a partial list of software related to Thyra.
 
 <ul>
 
-<li><a href="../../../epetra/thyra/doc/html/index.html">ANA Operator/Vector
-Adapters for Epetra </a>: This software allows the creation of
+<li><b><a href="../../../epetra/thyra/doc/html/index.html">ANA Operator/Vector
+Adapters for Epetra</a></b>: This software allows the creation of
 <tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt>,
 <tt>Thyra::MultiVectorBase</tt>, and <tt>Thyra::LinearOpBase</tt> objects out
 of Epetra objects.
+
+<li><b><a href="../../../amesos/thyra/doc/html/index.html">ANA Linear Solver
+Adapters for Amesos</a></b>: This software defines the implementation of the
+extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
+<tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of
+<tt>Amesos_BaseSolver</tt> implementations.  These adapters allow a client to
+take any <tt>Epetra_RowMatrix</tt> object embedded in a
+<tt>Thyra::EpetraLinearOp</tt> object and immediately use to to define a
+direct linear solver.
+
+<li><b><a href="../../../aztecoo/thyra/doc/html/index.html">ANA Linear Solver
+Adapters for AztecOO</a></b>: This software defines the implementation of the
+extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
+<tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of the <tt>AztecOO</tt>
+class.  These adapters allow a client to take any <tt>Epetra_RowMatrix</tt>
+object embedded in a <tt>Thyra::EpetraLinearOp</tt> object and immediately use
+to to define an iterative linear solver such as GMRES, CG etc.
 
 </ul>
 

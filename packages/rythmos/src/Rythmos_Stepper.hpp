@@ -36,31 +36,22 @@
 
 namespace Rythmos {
 
-//-----------------------------------------------------------------------------
-// Class         : Stepper
-// Purpose       : Base class for defining stepper functionality
-// Special Notes :
-// Creator       : Todd Coffey, SNL
-// Creation Date : 05/26/05
-//-----------------------------------------------------------------------------
+/** \brief Base class for defining stepper functionality. */
 template<class Scalar> 
 class Stepper
 {
   public:
     
-    // Constructor
-    Stepper() {};
-    
-    // Destructor
+    /// Destructor
     virtual ~Stepper() {};
 
-    // Take a step _no larger_ than dt 
+    /// Take a step _no larger_ than dt 
     virtual Scalar TakeStep(Scalar dt)=0;
    
-    // Take a step 
+    /// Take a step 
     virtual Scalar TakeStep()=0;
 
-    // Get solution vector
+    /// Get solution vector
     virtual Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const = 0;
     
 };

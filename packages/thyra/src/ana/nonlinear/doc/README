@@ -1,0 +1,7 @@
+This directory contains a doxygen documentation collection for the Thyra
+nonlinear interfaces.  Note that doxygen must not be run from this directory
+but instead from the directory
+
+  Trilinos/packages/thyra/doc
+
+(see the file 'build_docs').

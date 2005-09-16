@@ -29,7 +29,7 @@
 #ifndef EXAMPLE_APPLICATION_HPP
 #define EXAMPLE_APPLICATION_HPP
 
-#include "EpetraExt_ModelEvaluator.hpp"
+#include "EpetraExt_ModelEvaluator.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Rythmos_ConfigDefs.h"
 #include "Epetra_Map.h"

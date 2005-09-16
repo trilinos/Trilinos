@@ -9,5 +9,8 @@ doxygen ../src/ana/rtop/doc/Doxyfile
 cd ../src/ana/operator_vector/doc ; ./generate_Doxyfile ; cd ../../../../doc
 doxygen ../src/ana/operator_vector/doc/Doxyfile
 
+cd ../src/ana/nonlinear/doc ; ./generate_Doxyfile ; cd ../../../../doc
+doxygen ../src/ana/nonlinear/doc/Doxyfile
+
 ./generate_Doxyfile
 doxygen Doxyfile

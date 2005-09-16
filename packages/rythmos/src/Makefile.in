@@ -115,8 +115,7 @@ am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execin
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 librythmos_a_DEPENDENCIES =
-am__objects_1 = Rythmos_Version.$(OBJEXT) \
-	Thyra_EpetraModelEvaluator.$(OBJEXT)
+am__objects_1 = Rythmos_Version.$(OBJEXT)
 am__objects_2 =
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
 am_librythmos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -126,8 +125,7 @@ librythmos_a_OBJECTS = $(am_librythmos_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Rythmos_Version.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Thyra_EpetraModelEvaluator.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Rythmos_Version.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -294,17 +292,13 @@ target_vendor = @target_vendor@
 CORE_H = \
 	$(srcdir)/Rythmos_ConfigDefs.h \
 	$(srcdir)/Rythmos_InOutArgs.hpp \
-	$(srcdir)/Rythmos_ModelEvaluator.hpp \
 	$(srcdir)/Rythmos_Stepper.hpp \
 	$(srcdir)/Rythmos_BackwardEulerStepper.hpp \
 	$(srcdir)/Rythmos_ForwardEulerStepper.hpp \
-	$(srcdir)/Rythmos_ExplicitRKStepper.hpp \
-	$(srcdir)/Thyra_EpetraModelEvaluator.hpp \
-	$(srcdir)/Thyra_ModelEvaluator.hpp
+	$(srcdir)/Rythmos_ExplicitRKStepper.hpp
 
 CORE = \
-	$(srcdir)/Rythmos_Version.cpp \
-	$(srcdir)/Thyra_EpetraModelEvaluator.cpp
+	$(srcdir)/Rythmos_Version.cpp
 
 UTIL_H = 
 UTIL = 
@@ -438,6 +432,12 @@ nodist_execinclude_HEADERS = Rythmos_config.h
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+ENABLE_RYTHMOS_THYRA_LIBS = cd $(top_builddir)/../thyra ; $(MAKE) all-libs
+ENABLE_RYTHMOS_EPETRA_LIBS = cd $(top_builddir)/../epetra ; $(MAKE) all-libs
 all: Rythmos_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -530,7 +530,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_Version.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_EpetraModelEvaluator.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -563,22 +562,6 @@ Rythmos_Version.obj: $(srcdir)/Rythmos_Version.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Rythmos_Version.Po' tmpdepfile='$(DEPDIR)/Rythmos_Version.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_Version.obj `if test -f '$(srcdir)/Rythmos_Version.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_Version.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_Version.cpp'; fi`
-
-Thyra_EpetraModelEvaluator.o: $(srcdir)/Thyra_EpetraModelEvaluator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_EpetraModelEvaluator.o -MD -MP -MF "$(DEPDIR)/Thyra_EpetraModelEvaluator.Tpo" -c -o Thyra_EpetraModelEvaluator.o `test -f '$(srcdir)/Thyra_EpetraModelEvaluator.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_EpetraModelEvaluator.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Thyra_EpetraModelEvaluator.Tpo" "$(DEPDIR)/Thyra_EpetraModelEvaluator.Po"; else rm -f "$(DEPDIR)/Thyra_EpetraModelEvaluator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_EpetraModelEvaluator.cpp' object='Thyra_EpetraModelEvaluator.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_EpetraModelEvaluator.Po' tmpdepfile='$(DEPDIR)/Thyra_EpetraModelEvaluator.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_EpetraModelEvaluator.o `test -f '$(srcdir)/Thyra_EpetraModelEvaluator.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_EpetraModelEvaluator.cpp
-
-Thyra_EpetraModelEvaluator.obj: $(srcdir)/Thyra_EpetraModelEvaluator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_EpetraModelEvaluator.obj -MD -MP -MF "$(DEPDIR)/Thyra_EpetraModelEvaluator.Tpo" -c -o Thyra_EpetraModelEvaluator.obj `if test -f '$(srcdir)/Thyra_EpetraModelEvaluator.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_EpetraModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_EpetraModelEvaluator.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Thyra_EpetraModelEvaluator.Tpo" "$(DEPDIR)/Thyra_EpetraModelEvaluator.Po"; else rm -f "$(DEPDIR)/Thyra_EpetraModelEvaluator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_EpetraModelEvaluator.cpp' object='Thyra_EpetraModelEvaluator.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_EpetraModelEvaluator.Po' tmpdepfile='$(DEPDIR)/Thyra_EpetraModelEvaluator.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_EpetraModelEvaluator.obj `if test -f '$(srcdir)/Thyra_EpetraModelEvaluator.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_EpetraModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_EpetraModelEvaluator.cpp'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
@@ -787,6 +770,11 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 #Specify locations of include files within Trilinos
 
 include $(top_builddir)/Makefile.export.rythmos
+
+all-libs:
+	$(MAKE) librythmos.a
+	$(ENABLE_RYTHMOS_THYRA_LIBS)
+	$(ENABLE_RYTHMOS_EPETRA_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

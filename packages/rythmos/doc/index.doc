@@ -4,3 +4,15 @@
 consider using Rythmos unless you talk with Todd Coffey (tscoffe@sandia.gov).
 
 */
+
+/** \example cxx_main.cpp
+
+*/
+
+/** \example ExampleApplication.hpp
+
+*/
+
+/** \example ExampleApplication.cpp
+
+*/
