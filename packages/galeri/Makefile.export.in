@@ -1,0 +1,12 @@
+GALERI_LIBS = $(top_builddir)/src/libgaleri.a                  \
+	      $(top_builddir)/../epetra/src/libepetra.a        \
+	      $(top_builddir)/../teuchos/src/libteuchos.a      \
+              @LDFLAGS@ @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ \
+              @LAPACK_LIBS@ @BLAS_LIBS@
+
+GALERI_INCLUDES = -I$(top_builddir)/src/             \
+		  -I$(top_srcdir)/src                \
+		  -I$(top_builddir)/../epetra/src    \
+		  -I$(top_srcdir)/../epetra/src      \
+		  -I$(top_builddir)/../teuchos/src   \
+		  -I$(top_srcdir)/../teuchos/src 

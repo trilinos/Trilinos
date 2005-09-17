@@ -1,0 +1,8 @@
+Sep-05
+------
+
+*) Added doxygen documentation.
+*) Galeri is created. It contains the functionalities of
+   Trilinos_Util_CrsMatrixGallery (without the VBR module), and the small
+   finite element code of ml/examples/FiniteElements.
+   
