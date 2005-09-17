@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 try:
   import setpath
-except:
+except ImportError:
   from PyTrilinos import ML, Triutils, AztecOO, Epetra
   print "Using installed versions of ML, Triutils, AztecOO, Epetra"
 else:

@@ -41,7 +41,7 @@ from MakefileVariables import *
 
 # Build the makeVars dictionary by processing relevant Makefiles
 makeVars = { }
-makeVars.update(processMakefile(os.path.join("Makefile")))
+makeVars.update(processMakefile("Makefile"))
 
 # Import the variable names and values into the global namespace.  This is
 # crucual: every variable name/value pair obtained by processing the specified
@@ -55,10 +55,12 @@ except KeyError:
     version = makeVars.get("VERSION","??")
 
 # Initialize arguments that will be needed by the Extension class
-include_dirs    = [srcdir]
-library_dirs    = [      ]
-libraries       = [      ]
-extra_link_args = [      ]
+include_dirs       = [srcdir]
+library_dirs       = [      ]
+libraries          = [      ]
+extra_link_args    = [      ]
+extra_compile_args = CPPFLAGS.split() + CXXFLAGS.split()
+uniquifyList(extra_compile_args)
 
 # Get the relevant Makefile export variable values, split them into lists of
 # strings, add them together to obtain a big list of option strings, and then
@@ -100,91 +102,100 @@ sysconfig._config_vars["CXX"] = CXX
 # LOCA_TopLevel extension module
 LOCA_TopLevel = Extension("PyTrilinos.LOCA._TopLevel",
                           [locaTopLevelWrap],
-                          define_macros   = [("HAVE_CONFIG_H", "1")],
-                          include_dirs    = include_dirs,
-                          library_dirs    = library_dirs,
-                          libraries       = libraries,
-                          extra_link_args = extra_link_args
+                          define_macros      = [("HAVE_CONFIG_H", "1")],
+                          include_dirs       = include_dirs,
+                          library_dirs       = library_dirs,
+                          libraries          = libraries,
+                          extra_compile_args = extra_compile_args,
+                          extra_link_args    = extra_link_args
                           )
 
 # LOCA_Abstract extension module
 LOCA_Abstract = Extension("PyTrilinos.LOCA._Abstract",
                           [locaAbstractWrap],
-                          define_macros   = [("HAVE_CONFIG_H", "1")],
-                          include_dirs    = include_dirs,
-                          library_dirs    = library_dirs,
-                          libraries       = libraries,
-                          extra_link_args = extra_link_args
+                          define_macros      = [("HAVE_CONFIG_H", "1")],
+                          include_dirs       = include_dirs,
+                          library_dirs       = library_dirs,
+                          libraries          = libraries,
+                          extra_compile_args = extra_compile_args,
+                          extra_link_args    = extra_link_args
                           )
 
 # LOCA_Bifurcation extension module
 LOCA_Bifurcation = Extension("PyTrilinos.LOCA._Bifurcation",
                              [locaBifurcationWrap],
-                             define_macros   = [("HAVE_CONFIG_H", "1")],
-                             include_dirs    = include_dirs,
-                             library_dirs    = library_dirs,
-                             libraries       = libraries,
-                             extra_link_args = extra_link_args
+                             define_macros      = [("HAVE_CONFIG_H", "1")],
+                             include_dirs       = include_dirs,
+                             library_dirs       = library_dirs,
+                             libraries          = libraries,
+                             extra_compile_args = extra_compile_args,
+                             extra_link_args    = extra_link_args
                              )
 
 # LOCA_Continuation extension module
 LOCA_Continuation = Extension("PyTrilinos.LOCA._Continuation",
                               [locaContinuationWrap],
-                              define_macros   = [("HAVE_CONFIG_H", "1")],
-                              include_dirs    = include_dirs,
-                              library_dirs    = library_dirs,
-                              libraries       = libraries,
-                              extra_link_args = extra_link_args
+                              define_macros      = [("HAVE_CONFIG_H", "1")],
+                              include_dirs       = include_dirs,
+                              library_dirs       = library_dirs,
+                              libraries          = libraries,
+                              extra_compile_args = extra_compile_args,
+                              extra_link_args    = extra_link_args
                               )
 
 # LOCA_Homotopy extension module
 LOCA_Homotopy = Extension("PyTrilinos.LOCA._Homotopy",
                           [locaHomotopyWrap],
-                          define_macros   = [("HAVE_CONFIG_H", "1")],
-                          include_dirs    = include_dirs,
-                          library_dirs    = library_dirs,
-                          libraries       = libraries,
-                          extra_link_args = extra_link_args
+                          define_macros      = [("HAVE_CONFIG_H", "1")],
+                          include_dirs       = include_dirs,
+                          library_dirs       = library_dirs,
+                          libraries          = libraries,
+                          extra_compile_args = extra_compile_args,
+                          extra_link_args    = extra_link_args
                           )
 
 # LOCA_MultiContinuation extension module
 LOCA_MultiContinuation = Extension("PyTrilinos.LOCA._MultiContinuation",
                                    [locaMultiContinuationWrap],
-                                   define_macros   = [("HAVE_CONFIG_H", "1")],
-                                   include_dirs    = include_dirs,
-                                   library_dirs    = library_dirs,
-                                   libraries       = libraries,
-                                   extra_link_args = extra_link_args
+                                   define_macros      = [("HAVE_CONFIG_H", "1")],
+                                   include_dirs       = include_dirs,
+                                   library_dirs       = library_dirs,
+                                   libraries          = libraries,
+                                   extra_compile_args = extra_compile_args,
+                                   extra_link_args    = extra_link_args
                                    )
 
 # LOCA_TimeDependent extension module
 LOCA_TimeDependent = Extension("PyTrilinos.LOCA._TimeDependent",
                                [locaTimeDependentWrap],
-                               define_macros   = [("HAVE_CONFIG_H", "1")],
-                               include_dirs    = include_dirs,
-                               library_dirs    = library_dirs,
-                               libraries       = libraries,
-                               extra_link_args = extra_link_args
+                               define_macros      = [("HAVE_CONFIG_H", "1")],
+                               include_dirs       = include_dirs,
+                               library_dirs       = library_dirs,
+                               libraries          = libraries,
+                               extra_compile_args = extra_compile_args,
+                               extra_link_args    = extra_link_args
                                )
 
 # LOCA_Epetra extension module
 LOCA_Epetra = Extension("PyTrilinos.LOCA._Epetra",
                         [locaEpetraWrap],
-                        define_macros   = [("HAVE_CONFIG_H", "1")],
-                        include_dirs    = include_dirs,
-                        library_dirs    = library_dirs,
-                        libraries       = libraries,
-                        extra_link_args = extra_link_args
+                        define_macros      = [("HAVE_CONFIG_H", "1")],
+                        include_dirs       = include_dirs,
+                        library_dirs       = library_dirs,
+                        libraries          = libraries,
+                        extra_compile_args = extra_compile_args,
+                        extra_link_args    = extra_link_args
                         )
 
 # LOCA_LAPACK extension module
 LOCA_LAPACK = Extension("PyTrilinos.LOCA._LAPACK",
                         [locaLAPACKWrap],
-                        define_macros   = [("HAVE_CONFIG_H", "1")],
-                        include_dirs    = include_dirs,
-                        library_dirs    = library_dirs,
-                        libraries       = libraries,
-                        extra_link_args = extra_link_args
+                        define_macros      = [("HAVE_CONFIG_H", "1")],
+                        include_dirs       = include_dirs,
+                        library_dirs       = library_dirs,
+                        libraries          = libraries,
+                        extra_compile_args = extra_compile_args,
+                        extra_link_args    = extra_link_args
                         )
 
 # Build the list of extension modules to wrap

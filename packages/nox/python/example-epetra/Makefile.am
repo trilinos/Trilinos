@@ -65,7 +65,7 @@ ex%: $(srcdir)/ex%.py
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
 clean:
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm *.py ; fi
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
 	/bin/rm -f *.pyc
 endif
 endif

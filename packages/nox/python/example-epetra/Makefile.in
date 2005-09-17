@@ -496,7 +496,7 @@ uninstall-am: uninstall-info-am
 @BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_PYTHON_TRUE@	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
 @BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_PYTHON_TRUE@clean:
-@BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_PYTHON_TRUE@	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm *.py ; fi
+@BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_PYTHON_TRUE@	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
 @BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_PYTHON_TRUE@	/bin/rm -f *.pyc
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

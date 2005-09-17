@@ -41,7 +41,7 @@ from MakefileVariables import *
 
 # Build the makeVars dictionary by processing relevant Makefiles
 makeVars = { }
-makeVars.update(processMakefile(os.path.join("Makefile")))
+makeVars.update(processMakefile("Makefile"))
 
 # Import the variable names and values into the global namespace.  This is
 # crucual: every variable name/value pair obtained by processing the specified
@@ -55,10 +55,12 @@ except KeyError:
     version = makeVars.get("VERSION","??")
 
 # Initialize arguments that will be needed by the Extension class
-include_dirs    = [srcdir]
-library_dirs    = [      ]
-libraries       = [      ]
-extra_link_args = [      ]
+include_dirs       = [srcdir]
+library_dirs       = [      ]
+libraries          = [      ]
+extra_link_args    = [      ]
+extra_compile_args = CPPFLAGS.split() + CXXFLAGS.split()
+uniquifyList(extra_compile_args)
 
 # Get the relevant Makefile export variable values, split them into lists of
 # strings, add them together to obtain a big list of option strings, and then
@@ -100,71 +102,78 @@ sysconfig._config_vars["CXX"] = CXX
 # NOX_TopLevel extension module
 NOX_TopLevel = Extension("PyTrilinos.NOX._TopLevel",
                          [noxTopLevelWrap],
-                         define_macros   = [("HAVE_CONFIG_H", "1")],
-                         include_dirs    = include_dirs,
-                         library_dirs    = library_dirs,
-                         libraries       = libraries,
-                         extra_link_args = extra_link_args
+                         define_macros      = [("HAVE_CONFIG_H", "1")],
+                         include_dirs       = include_dirs,
+                         library_dirs       = library_dirs,
+                         libraries          = libraries,
+                         extra_compile_args = extra_compile_args,
+                         extra_link_args    = extra_link_args
                          )
 
 # NOX_Abstract extension module
 NOX_Abstract = Extension("PyTrilinos.NOX._Abstract",
                          [noxAbstractWrap],
-                         define_macros   = [("HAVE_CONFIG_H", "1")],
-                         include_dirs    = include_dirs,
-                         library_dirs    = library_dirs,
-                         libraries       = libraries,
-                         extra_link_args = extra_link_args
+                         define_macros      = [("HAVE_CONFIG_H", "1")],
+                         include_dirs       = include_dirs,
+                         library_dirs       = library_dirs,
+                         libraries          = libraries,
+                         extra_compile_args = extra_compile_args,
+                         extra_link_args    = extra_link_args
                          )
 
 # NOX_Parameter extension module
 NOX_Parameter = Extension("PyTrilinos.NOX._Parameter",
                           [noxParameterWrap],
-                          define_macros   = [("HAVE_CONFIG_H", "1")],
-                          include_dirs    = include_dirs,
-                          library_dirs    = library_dirs,
-                          libraries       = libraries,
-                          extra_link_args = extra_link_args
+                          define_macros      = [("HAVE_CONFIG_H", "1")],
+                          include_dirs       = include_dirs,
+                          library_dirs       = library_dirs,
+                          libraries          = libraries,
+                          extra_compile_args = extra_compile_args,
+                          extra_link_args    = extra_link_args
                           )
 
 # NOX_Solver extension module
 NOX_Solver = Extension("PyTrilinos.NOX._Solver",
                        [noxSolverWrap],
-                       define_macros   = [("HAVE_CONFIG_H", "1")],
-                       include_dirs    = include_dirs,
-                       library_dirs    = library_dirs,
-                       libraries       = libraries,
-                       extra_link_args = extra_link_args
+                       define_macros      = [("HAVE_CONFIG_H", "1")],
+                       include_dirs       = include_dirs,
+                       library_dirs       = library_dirs,
+                       libraries          = libraries,
+                       extra_compile_args = extra_compile_args,
+                       extra_link_args    = extra_link_args
                        )
 
 # NOX_StatusTest extension module
 NOX_StatusTest = Extension("PyTrilinos.NOX._StatusTest",
                            [noxStatusTestWrap],
-                           define_macros   = [("HAVE_CONFIG_H", "1")],
-                           include_dirs    = include_dirs,
-                           library_dirs    = library_dirs,
-                           libraries       = libraries,
-                           extra_link_args = extra_link_args
+                           define_macros      = [("HAVE_CONFIG_H", "1")],
+                           include_dirs       = include_dirs,
+                           library_dirs       = library_dirs,
+                           libraries          = libraries,
+                           extra_compile_args = extra_compile_args,
+                           extra_link_args    = extra_link_args
                            )
 
 # NOX_Epetra extension module
 NOX_Epetra = Extension("PyTrilinos.NOX._Epetra",
                        [noxEpetraWrap, epetraVectorHelper, pyInterface],
-                       define_macros   = [("HAVE_CONFIG_H", "1")],
-                       include_dirs    = include_dirs,
-                       library_dirs    = library_dirs,
-                       libraries       = libraries,
-                       extra_link_args = extra_link_args
+                       define_macros      = [("HAVE_CONFIG_H", "1")],
+                       include_dirs       = include_dirs,
+                       library_dirs       = library_dirs,
+                       libraries          = libraries,
+                       extra_compile_args = extra_compile_args,
+                       extra_link_args    = extra_link_args
                        )
 
 # NOX_LAPACK extension module
 NOX_LAPACK = Extension("PyTrilinos.NOX._LAPACK",
                        [noxLAPACKWrap],
-                       define_macros   = [("HAVE_CONFIG_H", "1")],
-                       include_dirs    = include_dirs,
-                       library_dirs    = library_dirs,
-                       libraries       = libraries,
-                       extra_link_args = extra_link_args
+                       define_macros      = [("HAVE_CONFIG_H", "1")],
+                       include_dirs       = include_dirs,
+                       library_dirs       = library_dirs,
+                       libraries          = libraries,
+                       extra_compile_args = extra_compile_args,
+                       extra_link_args    = extra_link_args
                        )
 
 # Build the list of extension modules to wrap

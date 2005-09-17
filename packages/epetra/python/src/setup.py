@@ -44,7 +44,7 @@ makeVars = { }
 makeVars.update(processMakefile(os.path.join("..","..","Makefile.export.epetra")))
 makeVars.update(processMakefile(os.path.join("..","..","..","PyTrilinos",
                                              "Makefile.export.pytrilinos")))
-makeVars.update(processMakefile(os.path.join("Makefile")))
+makeVars.update(processMakefile("Makefile"))
 
 # Import the variable names and values into the global namespace.  This is
 # crucual: every variable name/value pair obtained by processing the specified
@@ -63,6 +63,7 @@ library_dirs       = [      ]
 libraries          = [      ]
 extra_link_args    = [      ]
 extra_compile_args = CPPFLAGS.split() + CXXFLAGS.split()
+uniquifyList(extra_compile_args)
 
 # Get the relevant Makefile export variable values, split them into lists of
 # strings, add them together to obtain a big list of option strings, and then

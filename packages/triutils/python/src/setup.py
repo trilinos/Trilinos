@@ -41,7 +41,7 @@ from MakefileVariables import *
 
 # Build the makeVars dictionary by processing relevant Makefiles
 makeVars = { }
-makeVars.update(processMakefile(os.path.join("Makefile")))
+makeVars.update(processMakefile("Makefile"))
 
 # Import the variable names and values into the global namespace.  This is
 # crucual: every variable name/value pair obtained by processing the specified
@@ -55,10 +55,12 @@ except KeyError:
     version = makeVars.get("VERSION","??")
 
 # Initialize arguments that will be needed by the Extension class
-include_dirs    = [srcdir]
-library_dirs    = [      ]
-libraries       = [      ]
-extra_link_args = [      ]
+include_dirs       = [srcdir]
+library_dirs       = [      ]
+libraries          = [      ]
+extra_link_args    = [      ]
+extra_compile_args = CPPFLAGS.split() + CXXFLAGS.split()
+uniquifyList(extra_compile_args)
 
 # Get the relevant Makefile export variable values, split them into lists of
 # strings, add them together to obtain a big list of option strings, and then
@@ -94,11 +96,12 @@ sysconfig._config_vars["CXX"] = CXX
 # _Triutils extension module
 _Triutils = Extension("PyTrilinos._Triutils",
                       [triutilsWrap],
-                      define_macros   = [("HAVE_CONFIG_H", "1")],
-                      include_dirs    = include_dirs,
-                      library_dirs    = library_dirs,
-                      libraries       = libraries,
-                      extra_link_args = extra_link_args
+                      define_macros      = [("HAVE_CONFIG_H", "1")],
+                      include_dirs       = include_dirs,
+                      library_dirs       = library_dirs,
+                      libraries          = libraries,
+                      extra_compile_args = extra_compile_args,
+                      extra_link_args    = extra_link_args
                       )
 
 # PyTrilinos.Triutils setup

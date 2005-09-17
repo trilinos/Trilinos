@@ -45,7 +45,7 @@ makeVars.update(processMakefile(os.path.join("..","..","..","epetra"    ,
                                              "Makefile.export.epetra"    )))
 makeVars.update(processMakefile(os.path.join("..","..","..","PyTrilinos",
                                              "Makefile.export.pytrilinos")))
-makeVars.update(processMakefile(os.path.join("Makefile")))
+makeVars.update(processMakefile("Makefile"))
 
 # Import the variable names and values into the global namespace.  This is
 # crucual: every variable name/value pair obtained by processing the specified
@@ -62,8 +62,9 @@ except KeyError:
 include_dirs       = [srcdir]
 library_dirs       = [      ]
 libraries          = [      ]
-extra_compile_args = [      ]
 extra_link_args    = [      ]
+extra_compile_args = CPPFLAGS.split() + CXXFLAGS.split()
+uniquifyList(extra_compile_args)
 
 # New_Package does not support the export Makefile system, so we need to build
 # the NEW_PACKAGE_INCLUDES and NEW_PACKAGE_LIBS variables from scratch
