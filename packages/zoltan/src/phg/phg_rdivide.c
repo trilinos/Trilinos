@@ -62,6 +62,7 @@ int Zoltan_PHG_rdivide(
   static int timer_split=-1;        /* recursion.  */
   static int timer_redist=-1;
   static int timer_send=-1;
+  static int timer_wait=-1;
 
   int do_timing = (hgp->use_timers > 1);
   int detail_timing = (hgp->use_timers > 3);
@@ -72,12 +73,12 @@ int Zoltan_PHG_rdivide(
   if (do_timing) { 
     if (timer_rdivide < 0) 
       timer_rdivide = Zoltan_Timer_Init(zz->ZTime, 1, "Rdivide");
-    ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, hg->comm->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, hgc->Communicator);
   }
   if (detail_timing) {
     if (timer_before < 0) 
       timer_before = Zoltan_Timer_Init(zz->ZTime, 0, "Rdivide_BefPart");
-    ZOLTAN_TIMER_START(zz->ZTime, timer_before, hg->comm->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer_before, hgc->Communicator);
     if (timer_after < 0) 
       timer_after = Zoltan_Timer_Init(zz->ZTime, 0, "Rdivide_AftPart");
     if (timer_split < 0) 
@@ -86,6 +87,8 @@ int Zoltan_PHG_rdivide(
       timer_redist = Zoltan_Timer_Init(zz->ZTime, 0, "Rdivide_Redist");
     if (timer_send < 0) 
       timer_send = Zoltan_Timer_Init(zz->ZTime, 0, "Rdivide_Send");
+    if (timer_wait < 0) 
+      timer_wait = Zoltan_Timer_Init(zz->ZTime, 0, "Rdivide_LoadBalWait");
   }
   hg->redl = hgp->redl;
   
@@ -119,18 +122,18 @@ int Zoltan_PHG_rdivide(
                                 : 1.0 + hgp->bal_tol_adjustment*(bal_tol-1.0);
 
   if (do_timing)  /* Don't include partitioning time in rdivide */
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hg->comm->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hgc->Communicator);
   if (detail_timing)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_before, hg->comm->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_before, hgc->Communicator);
 
   /*uprintf(hgc, "OLD MAxImbal: %.3f   New MaxImbal: %.3f\n", bal_tol, hgp->bal_tol);*/
 
   ierr = Zoltan_PHG_Partition (zz, hg, 2, bisec_part_sizes, part, hgp, level);
 
   if (do_timing)  /* Restart rdivide timer */
-    ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, hg->comm->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, hgc->Communicator);
   if (detail_timing)
-    ZOLTAN_TIMER_START(zz->ZTime, timer_after, hg->comm->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer_after, hgc->Communicator);
 
   hgp->bal_tol = bal_tol;
   if (ierr != ZOLTAN_OK)
@@ -146,7 +149,7 @@ int Zoltan_PHG_rdivide(
       final[hg->vmap[i]] = ((part[i] == 0) ? lo : hi);
     ZOLTAN_FREE (&part);
     if (detail_timing) 
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_after, hg->comm->Communicator);
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer_after, hgc->Communicator);
     goto End;
   }
 
@@ -170,8 +173,8 @@ int Zoltan_PHG_rdivide(
   ZOLTAN_FREE (&lpins[0]);   /* we don't need lpins anymore */
     
   if (detail_timing) {
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_after, hg->comm->Communicator);
-    ZOLTAN_TIMER_START(zz->ZTime, timer_split, hg->comm->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_after, hgc->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer_split, hgc->Communicator);
   }
   
   /* recursively divide in two parts and repartition hypergraph */
@@ -202,9 +205,8 @@ int Zoltan_PHG_rdivide(
   }
   Zoltan_Multifree (__FILE__, __LINE__, 2, &pins[0], &part);
   
-  if (detail_timing) {
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_split, hg->comm->Communicator);
-  }
+  if (detail_timing) 
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_split, hgc->Communicator);
 
   if (hgp->proc_split && hgc->nProc>1 && left && right) {
       PHGComm  leftcomm, rightcomm;
@@ -213,9 +215,9 @@ int Zoltan_PHG_rdivide(
           *leftdest=NULL, *rightdest=NULL, procmid;
       ZOLTAN_COMM_OBJ *plan=NULL;    
 
-      if (detail_timing) {
-        ZOLTAN_TIMER_START(zz->ZTime, timer_redist, hg->comm->Communicator);
-      }
+      if (detail_timing) 
+        ZOLTAN_TIMER_START(zz->ZTime, timer_redist, hgc->Communicator);
+      
       /* redistribute left and right parts */
       procmid = (int)((float) (hgc->nProc-1) 
                     * (float) left->dist_x[hgc->nProc_x] 
@@ -248,9 +250,9 @@ int Zoltan_PHG_rdivide(
                   newright.nEdge, newright.nPins);
       Zoltan_HG_HGraph_Free (right);
       
-      if (detail_timing) {
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_redist, hg->comm->Communicator);
-      }
+      if (detail_timing) 
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_redist, hgc->Communicator);
+      
       nsend = MAX(newleft.nVtx, newright.nVtx);
       part = (Partition) ZOLTAN_MALLOC (nsend * sizeof (int));
       proclist = (int *) ZOLTAN_MALLOC (nsend * sizeof (int));
@@ -261,7 +263,7 @@ int Zoltan_PHG_rdivide(
           MEMORY_ERROR;
       if (hgc->myProc<=procmid) {
           float save_bal_tol=hgp->bal_tol;
-              
+
           /* I'm on the left part so I should partition newleft */
           hgp->bal_tol = balanceTol(hgp, 0, bisec_part_sizes,
                                     leftw+rightw, leftw);
@@ -272,11 +274,14 @@ int Zoltan_PHG_rdivide(
                                        timer_rdivide);
 
           hgp->bal_tol = save_bal_tol;
-
-          Zoltan_HG_HGraph_Free (&newright); /* free dist_x and dist_y allocated in Redistribute*/
+          Zoltan_HG_HGraph_Free (&newright); /* free dist_x and dist_y
+                                                allocated in Redistribute*/
+          if (detail_timing) {
+              ZOLTAN_TIMER_START(zz->ZTime, timer_wait, hgc->Communicator);
+          }          
       } else {
           float save_bal_tol=hgp->bal_tol;
-          
+
           /* I'm on the right part so I should partition newright */
           hgp->bal_tol = balanceTol(hgp, 1, bisec_part_sizes,
                                     leftw+rightw, rightw);
@@ -286,14 +291,21 @@ int Zoltan_PHG_rdivide(
                                         rightdest, rightvmap, &nsend,
                                         timer_rdivide);
 
-          hgp->bal_tol = save_bal_tol;
-          
+          hgp->bal_tol = save_bal_tol;          
           Zoltan_HG_HGraph_Free (&newleft); /* free dist_x and dist_y
                                                allocated in Redistribute*/
+          if (detail_timing) {
+              ZOLTAN_TIMER_START(zz->ZTime, timer_wait, hgc->Communicator);
+          }          
       }
 
       if (detail_timing) {
-        ZOLTAN_TIMER_START(zz->ZTime, timer_send, hg->comm->Communicator);
+          MPI_Barrier(hgc->Communicator);
+          ZOLTAN_TIMER_STOP(zz->ZTime, timer_wait, hgc->Communicator);
+      }
+
+      if (detail_timing) {
+        ZOLTAN_TIMER_START(zz->ZTime, timer_send, hgc->Communicator);
       }
       --msg_tag;
       ierr |= Zoltan_Comm_Create(&plan, nsend, proclist, hgc->Communicator,
@@ -330,7 +342,7 @@ int Zoltan_PHG_rdivide(
       
       Zoltan_Comm_Destroy(&plan);
       if (detail_timing) {
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_send, hg->comm->Communicator);
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_send, hgc->Communicator);
       }
   } else {
       if (left) {
@@ -345,13 +357,13 @@ int Zoltan_PHG_rdivide(
 
           if (do_timing)  /* Stop timer before recursion */
               ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide,
-                                hg->comm->Communicator);
+                                hgc->Communicator);
 
           ierr = Zoltan_PHG_rdivide (lo, mid, final, zz, left, hgp, level+1);
 
           if (do_timing)  /* Restart timer after recursion */
               ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, 
-                                hg->comm->Communicator);
+                                hgc->Communicator);
 
           hgp->bal_tol = save_bal_tol;
                     
@@ -368,13 +380,13 @@ int Zoltan_PHG_rdivide(
 
           if (do_timing)  /* Stop timer before recursion */
               ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide,
-                                hg->comm->Communicator);
+                                hgc->Communicator);
           
           ierr |= Zoltan_PHG_rdivide(mid+1, hi, final, zz, right, hgp, level+1);
 
           if (do_timing)  /* Restart timer after recursion */
               ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, 
-                                hg->comm->Communicator);
+                                hgc->Communicator);
 
           hgp->bal_tol = save_bal_tol;
           
@@ -388,7 +400,7 @@ End:
                     &left, &right, &proclist, &sendbuf, &recvbuf);
 
   if (do_timing) 
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hg->comm->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hgc->Communicator);
 
   return ierr;
 }
