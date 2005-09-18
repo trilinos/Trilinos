@@ -491,5 +491,6 @@ User Guide can be found at:
 ])
 AC_CONFIG_FILES([
 		Makefile
+		Makefile.export.trilinos
 		packages/Makefile])
  AC_OUTPUT
