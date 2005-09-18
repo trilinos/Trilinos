@@ -17,11 +17,12 @@ CXXFLAGS="-g -O0 -Wreturn-type -ansi -pedantic " \
 --enable-teuchos --enable-teuchos-extended \
 --enable-teuchos-complex --enable-teuchos-abc --enable-teuchos-expat \
 --enable-thyra \
---enable-epetra --enable-epetra-thyra \
+--disable-aztecoo-thyra \
+--disable-epetra-thyra \
+--enable-epetra \
 --enable-tsfextended \
 --enable-ml \
 --disable-ml-examples \
---enable-epetraext \
 --enable-aztecoo \
 --enable-ifpack \
 --enable-nox \
