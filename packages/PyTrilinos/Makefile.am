@@ -66,7 +66,8 @@ config/acx_lapack.m4                    config/tac_arg_with_incdirs.m4 \
 config/acx_pthread.m4                   config/tac_arg_with_lapacklib.m4 \
 config/config.guess                     config/tac_arg_with_libdirs.m4 \
 config/config.sub                       config/tac_arg_with_package.m4 \
-bootstrap 
+config/strip_dup_incl_paths.pl          config/strip_dup_libs.pl \
+config/replace-install-prefix.pl        bootstrap 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.
