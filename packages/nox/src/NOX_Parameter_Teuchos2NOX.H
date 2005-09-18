@@ -33,6 +33,7 @@
 #include "NOX_Common.H" // for NOX_Config.h
 #include "NOX_Parameter_List.H"		
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
 namespace NOX {
 
@@ -50,7 +51,7 @@ namespace NOX {
       Teuchos2NOX(){;}
       
       /** */
-      Parameter::List toNOX(const Teuchos::ParameterList& tpl) const ;
+      Teuchos::RefCountPtr<Parameter::List> toNOX(const Teuchos::ParameterList& tpl) const ;
     protected:
       
    

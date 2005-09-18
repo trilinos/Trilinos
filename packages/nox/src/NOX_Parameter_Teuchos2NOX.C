@@ -33,9 +33,9 @@ using namespace NOX::Parameter;
 
 using namespace Teuchos;
 
-List Teuchos2NOX::toNOX(const ParameterList& p) const
+RefCountPtr<List> Teuchos2NOX::toNOX(const ParameterList& p) const
 {
-  List rtn;
+  RefCountPtr<List> rtn = rcp(new List());
 
   for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i)
     {
@@ -44,28 +44,28 @@ List Teuchos2NOX::toNOX(const ParameterList& p) const
       
       if (val.isList())
         {
-          rtn.sublist(name) = toNOX(getValue<ParameterList>(val));
+          rtn->sublist(name) = *(toNOX(getValue<ParameterList>(val)));
         }
       else if (val.isType<int>())
         {
-          rtn.setParameter(name, getValue<int>(val));
+          rtn->setParameter(name, getValue<int>(val));
         }
       else if (val.isType<double>())
         {
-          rtn.setParameter(name, getValue<double>(val));
+          rtn->setParameter(name, getValue<double>(val));
         }
       else if (val.isType<bool>())
         {
-          rtn.setParameter(name, getValue<bool>(val));
+          rtn->setParameter(name, getValue<bool>(val));
         }
       else if (val.isType<string>())
         {
-          rtn.setParameter(name, getValue<string>(val));
+          rtn->setParameter(name, getValue<string>(val));
         }
       else
         {
           any data = val.getAny();
-          rtn.setParameter(name, AnyPtr(data));
+          rtn->setParameter(name, AnyPtr(data));
         }
     }
 
