@@ -251,6 +251,8 @@ int main(int argc, char *argv[])
    bool        islinearPrec       = false;       // preconditioner is linear MG-operator      
    bool        matrixfree         = false;       // use Finite Diffeencing for operators      
    bool        matfreelev0        = false;       // use FD on fine level only      
+   double      adaptiverecompute  = 100.0;       // recompute if residual is larger then this value
+   int         recomputestep      = 2;          // the MG hierarchy is recomputed after this iteration step
    int         offset             = 5;         // every offset this preconditioner is recomputed             
    int         ml_printlevel      = 9;           // ML-output-level (0-10)
 
@@ -310,7 +312,9 @@ int main(int argc, char *argv[])
    Prec.SetDimensions(dimension,numPDE,dimNS); 
    Prec.SetSmoothers(fsmoothertype,smoothertype,coarsesolve);  
    Prec.SetSmootherSweeps(nsmooth_fine,nsmooth,nsmooth_coarse);                  
-   Prec.SetRecomputeOffset(offset);
+   
+   Prec.SetRecomputeOffset(offset,recomputestep,adaptiverecompute);
+   //Prec.SetRecomputeOffset(offset);
    Prec.SetConvergenceCriteria((FAS_normF),FAS_nupdate);
    Prec.SetFAScycle(FAS_prefinesmooth,FAS_presmooth,FAS_coarsesmooth,FAS_postsmooth,FAS_postfinesmooth,FAS_maxcycle);
    Prec.SetFiniteDifferencing(fd_centered,fd_alpha,fd_beta);
