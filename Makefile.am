@@ -44,6 +44,9 @@ ACLOCAL	= aclocal -I config
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = \
+	commonTools/buildTools/MakefileVariables.py \
+	commonTools/buildTools/strip_dup_incl_paths.pl \
+	commonTools/buildTools/strip_dup_libs.pl \
 	commonTools/test/coverage/README \
 	commonTools/test/coverage/gcovmerge \
 	commonTools/test/harness/config \
@@ -132,7 +135,7 @@ runtests-serial :
   --trilinos-dir=$(TRILINOS_HOME_DIR) \
   --comm=serial \
   --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=FRAMEWORK \
+  --category=INSTALL \
   --output-dir=@abs_top_builddir@/runtests-results
 
 runtests-mpi :
@@ -141,7 +144,7 @@ runtests-mpi :
   --comm=mpi \
   --mpi-go=$(TRILINOS_MPI_GO) \
   --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=FRAMEWORK \
+  --category=INSTALL \
   --output-dir=@abs_top_builddir@/runtests-results
 
 run-examples: all-am
