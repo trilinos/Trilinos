@@ -3098,7 +3098,8 @@ else
 fi
 
 
-if test "X$ac_cv_use_epetraext" != "Xno"; then
+if test "X$ac_cv_use_epetraext" != "Xno" ||
+	( test "X$ac_cv_use_thyra" != "Xno" && test "X$ac_cv_use_aztecoo" != "Xno" ); then
 
 
 subdirs="$subdirs packages/epetraext"

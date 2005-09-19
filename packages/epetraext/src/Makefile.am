@@ -36,9 +36,11 @@
 CORE_H = \
      $(srcdir)/EpetraExt_ConfigDefs.h \
      $(srcdir)/EpetraExt_MatrixMatrix.h \
+     $(srcdir)/EpetraExt_ProductOperator.h \
      $(srcdir)/EpetraExt_Version.h
 
 CORE = \
+     $(srcdir)/EpetraExt_ProductOperator.cpp \
      $(srcdir)/EpetraExt_MatrixMatrix.cpp
 
 EXTRA_TRANSFORM_H = \

@@ -321,7 +321,8 @@ else
 fi
 AM_CONDITIONAL(BUILD_AMESOS, test "X$BUILD_AMESOS" != "Xno")
 
-if test "X$ac_cv_use_epetraext" != "Xno"; then
+if test "X$ac_cv_use_epetraext" != "Xno" ||
+	( test "X$ac_cv_use_thyra" != "Xno" && test "X$ac_cv_use_aztecoo" != "Xno" ); then
   AC_CONFIG_SUBDIRS([packages/epetraext])
   BUILD_EPETRAEXT=yes
   if test "X$ac_cv_use_epetraext_explicit" != "Xyes"; then

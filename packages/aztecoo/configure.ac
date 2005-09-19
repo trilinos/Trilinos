@@ -271,8 +271,8 @@ TAC_ENABLE_PYTHON
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   aztecoo, thyra, AZTECOO_THYRA, ENABLE_AZTECOO_THYRA, yes,
-  [Build the Thyra operator/vector adapater support in AztecOO.],
-  [Build the Thyra operator/vector adapater support in AztecOO.  Can be overridden with --disable-aztecoo-thyra.])
+  [Build the Thyra operator/vector adapater support in AztecOO (also rquires epetraext).],
+  [Build the Thyra operator/vector adapater support in AztecOO (also rquires epetraext).  Can be overridden with --disable-aztecoo-thyra.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   aztecoo, ifpack, AZTECOO_IFPACK, ENABLE_AZTECOO_IFPACK, yes,

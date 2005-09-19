@@ -123,6 +123,7 @@ am__DEPENDENCIES_1 =
 libepetraext_a_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am__libepetraext_a_SOURCES_DIST =  \
+	$(srcdir)/EpetraExt_ProductOperator.cpp \
 	$(srcdir)/EpetraExt_MatrixMatrix.cpp \
 	$(srcdir)/transform/EpetraExt_Permutation.cpp \
 	$(srcdir)/transform/EpetraExt_LPTrans_From_GraphTrans.cpp \
@@ -180,7 +181,8 @@ am__libepetraext_a_SOURCES_DIST =  \
 	$(srcdir)/block/EpetraExt_BlockMultiVector.cpp \
 	$(srcdir)/block/EpetraExt_BlockVector.cpp \
 	$(srcdir)/block/EpetraExt_BlockUtility.cpp
-am__objects_1 = EpetraExt_MatrixMatrix.$(OBJEXT)
+am__objects_1 = EpetraExt_ProductOperator.$(OBJEXT) \
+	EpetraExt_MatrixMatrix.$(OBJEXT)
 am__objects_2 = EpetraExt_Permutation.$(OBJEXT) \
 	EpetraExt_LPTrans_From_GraphTrans.$(OBJEXT) \
 	EpetraExt_LPTrans_From_MatrixTrans.$(OBJEXT) \
@@ -278,6 +280,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_MultiVectorOut.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_Overlap_CrsGraph.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_Permutation.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_ProductOperator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_PutBlockMap.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_PutMultiVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_PutRowMatrix.Po \
@@ -322,6 +325,7 @@ DIST_SOURCES = $(am__libepetraext_a_SOURCES_DIST) \
 	$(EXTRA_libepetraext_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/EpetraExt_MatrixMatrix.h \
+	$(srcdir)/EpetraExt_ProductOperator.h \
 	$(srcdir)/EpetraExt_Version.h \
 	$(srcdir)/transform/EpetraExt_Transform.h \
 	$(srcdir)/transform/EpetraExt_Transform_Composite.h \
@@ -549,9 +553,11 @@ target_vendor = @target_vendor@
 CORE_H = \
      $(srcdir)/EpetraExt_ConfigDefs.h \
      $(srcdir)/EpetraExt_MatrixMatrix.h \
+     $(srcdir)/EpetraExt_ProductOperator.h \
      $(srcdir)/EpetraExt_Version.h
 
 CORE = \
+     $(srcdir)/EpetraExt_ProductOperator.cpp \
      $(srcdir)/EpetraExt_MatrixMatrix.cpp
 
 EXTRA_TRANSFORM_H = \
@@ -999,6 +1005,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_MultiVectorOut.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Overlap_CrsGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Permutation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_ProductOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_PutBlockMap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_PutMultiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_PutRowMatrix.Po@am__quote@
@@ -1045,6 +1052,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+EpetraExt_ProductOperator.o: $(srcdir)/EpetraExt_ProductOperator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_ProductOperator.o -MD -MP -MF "$(DEPDIR)/EpetraExt_ProductOperator.Tpo" -c -o EpetraExt_ProductOperator.o `test -f '$(srcdir)/EpetraExt_ProductOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraExt_ProductOperator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_ProductOperator.Tpo" "$(DEPDIR)/EpetraExt_ProductOperator.Po"; else rm -f "$(DEPDIR)/EpetraExt_ProductOperator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EpetraExt_ProductOperator.cpp' object='EpetraExt_ProductOperator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_ProductOperator.Po' tmpdepfile='$(DEPDIR)/EpetraExt_ProductOperator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ProductOperator.o `test -f '$(srcdir)/EpetraExt_ProductOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraExt_ProductOperator.cpp
+
+EpetraExt_ProductOperator.obj: $(srcdir)/EpetraExt_ProductOperator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_ProductOperator.obj -MD -MP -MF "$(DEPDIR)/EpetraExt_ProductOperator.Tpo" -c -o EpetraExt_ProductOperator.obj `if test -f '$(srcdir)/EpetraExt_ProductOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/EpetraExt_ProductOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraExt_ProductOperator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_ProductOperator.Tpo" "$(DEPDIR)/EpetraExt_ProductOperator.Po"; else rm -f "$(DEPDIR)/EpetraExt_ProductOperator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EpetraExt_ProductOperator.cpp' object='EpetraExt_ProductOperator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_ProductOperator.Po' tmpdepfile='$(DEPDIR)/EpetraExt_ProductOperator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ProductOperator.obj `if test -f '$(srcdir)/EpetraExt_ProductOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/EpetraExt_ProductOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraExt_ProductOperator.cpp'; fi`
 
 EpetraExt_MatrixMatrix.o: $(srcdir)/EpetraExt_MatrixMatrix.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_MatrixMatrix.o -MD -MP -MF "$(DEPDIR)/EpetraExt_MatrixMatrix.Tpo" -c -o EpetraExt_MatrixMatrix.o `test -f '$(srcdir)/EpetraExt_MatrixMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraExt_MatrixMatrix.cpp; \
