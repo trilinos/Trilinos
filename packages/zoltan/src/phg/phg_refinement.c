@@ -81,7 +81,7 @@ static int serial_fm2 (ZZ *zz,
     PHGPartParams *hgp,
     float bal_tol)
 {
-int    i, j, vertex, edge, *cut[2], *locked = 0, *locked_list = 0, round = 0;
+int    i, j, vertex, edge, *pins[2], *locked = 0, *locked_list = 0, round = 0;
 double total_weight, part_weight[2], max_weight[2];
 double cutsize_beforepass, best_cutsize, *gain = 0;
 HEAP   heap[2];
@@ -125,28 +125,27 @@ int    best_imbalance, imbalance;
   tw0 = total_weight * part_sizes[0];
 #endif
   
-  if (!(cut[0]      = (int*)   ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
-   || !(locked      = (int*)   ZOLTAN_CALLOC    (hg->nVtx,  sizeof(int)))
-   || !(locked_list = (int*)   ZOLTAN_CALLOC    (hg->nVtx,  sizeof(int)))
-   || !(gain        = (double*)ZOLTAN_CALLOC    (hg->nVtx,  sizeof(double))) ) {
-         Zoltan_Multifree(__FILE__,__LINE__, 4, &cut[0], &locked, &locked_list,
+  if (!(pins[0]     = (int*)   ZOLTAN_CALLOC(2*hg->nEdge, sizeof(int)))
+   || !(locked      = (int*)   ZOLTAN_CALLOC(hg->nVtx,    sizeof(int)))
+   || !(locked_list = (int*)   ZOLTAN_CALLOC(hg->nVtx,    sizeof(int)))
+   || !(gain        = (double*)ZOLTAN_CALLOC(hg->nVtx,    sizeof(double))) ) {
+         Zoltan_Multifree(__FILE__,__LINE__, 4, &pins[0], &locked, &locked_list,
           &gain);
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
          return ZOLTAN_MEMERR;
          }
-  cut[1] = &(cut[0][hg->nEdge]);
+  pins[1] = &(pins[0][hg->nEdge]);
 
-  /* Initial calculation of the cut distribution and gain values */
+  /* Initial calculation of the pins distribution and gain values */
   for (i = 0; i < hg->nEdge; i++)
      for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
-        (cut[part[hg->hvertex[j]]][i])++;
+        (pins[part[hg->hvertex[j]]][i])++;
   for (i = 0; i < hg->nVtx; i++)
-     for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)
-        {
+     for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++) {
         edge = hg->vedge[j];
-        if (cut[part[i]][edge] == 1)
+        if (pins[part[i]][edge] == 1)
            gain[i] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
-        else if (cut[1-part[i]][edge] == 0)
+        else if (pins[1-part[i]][edge] == 0)
            gain[i] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
         }
 
@@ -173,7 +172,7 @@ int    best_imbalance, imbalance;
   do {
     int step = 0, no_better_steps = 0, number_locked = 0, best_locked = 0;
     int sour, dest;
-    double akt_cutsize=best_cutsize;
+    double cur_cutsize=best_cutsize;
 
     round++;
     cutsize_beforepass = best_cutsize;
@@ -207,17 +206,17 @@ int    best_imbalance, imbalance;
 
         locked[vertex] = part[vertex] + 1;
         locked_list[number_locked++] = vertex;
-        akt_cutsize -= gain[vertex];        
+        cur_cutsize -= gain[vertex];        
         
-        Zoltan_HG_move_vertex (hg, vertex, sour, dest, part, cut, gain, heap);
+        Zoltan_HG_move_vertex (hg, vertex, sour, dest, part, pins, gain, heap);
 
 #ifdef _DEBUG
         imbal = (tw0==0.0) ? 0.0 : (part_weight[0]-tw0)/tw0;
-        uprintf(hg->comm, "%4d: moving %4d from %d to %d cut=%6.0lf bal=%.3lf\n", step, vertex, sour, dest, akt_cutsize, imbal);
+        uprintf(hg->comm, "%4d: moving %4d from %d to %d cut=%6.0lf bal=%.3lf\n", step, vertex, sour, dest, cur_cutsize, imbal);
         /* Just for debugging */
         cutsize = Zoltan_PHG_Compute_NetCut(hg->comm, hg, part, p);
-        if (akt_cutsize!=cutsize) {
-            errexit("%s: after move cutsize=%.2lf Verify: total=%.2lf\n", uMe(hg->comm), akt_cutsize,
+        if (cur_cutsize!=cutsize) {
+            errexit("%s: after move cutsize=%.2lf Verify: total=%.2lf\n", uMe(hg->comm), cur_cutsize,
                     cutsize);
         }
 #endif
@@ -229,16 +228,16 @@ int    best_imbalance, imbalance;
         imbalance = (part_weight[0]>max_weight[0])||(part_weight[1]>max_weight[1]);
 
         if ( ( best_imbalance && (error < best_error))
-          || (!imbalance && (akt_cutsize < best_cutsize)))  {
+          || (!imbalance && (cur_cutsize < best_cutsize)))  {
             best_error   = error;
             best_imbalance = imbalance;
             best_locked  = number_locked;
-            best_cutsize = akt_cutsize;
+            best_cutsize = cur_cutsize;
             no_better_steps = 0;
             }
         if (hgp->output_level > HG_DEBUG_LIST+1)
            printf ("%4d %6d %2d->%2d %7.2f %f %f\n", step, vertex, sour, dest,
-            error, akt_cutsize - cutsize_beforepass, akt_cutsize);
+            error, cur_cutsize - cutsize_beforepass, cur_cutsize);
         }
 
 #ifdef _DEBUG
@@ -251,7 +250,7 @@ int    best_imbalance, imbalance;
         sour = part[vertex];
         dest = locked[vertex] - 1;
 
-        Zoltan_HG_move_vertex (hg, vertex, sour, dest, part, cut, gain, heap);
+        Zoltan_HG_move_vertex (hg, vertex, sour, dest, part, pins, gain, heap);
 
         part_weight[sour] -= (hg->vwgt ? hg->vwgt[vertex] : 1.0);
         part_weight[dest] += (hg->vwgt ? hg->vwgt[vertex] : 1.0);
@@ -296,8 +295,8 @@ int    best_imbalance, imbalance;
   }
 #endif  
   
-  /* gain_check (hg, gain, part, cut); */
-  Zoltan_Multifree(__FILE__,__LINE__, 4, &cut[0], &locked, &locked_list, &gain);
+  /* gain_check (hg, gain, part, pins); */
+  Zoltan_Multifree(__FILE__,__LINE__, 4, &pins[0], &locked, &locked_list, &gain);
   Zoltan_Heap_Free(&heap[0]);
   Zoltan_Heap_Free(&heap[1]);
 
@@ -441,6 +440,19 @@ static int refine_fm2 (ZZ *zz,
         int rank;
     } root;
     
+    static int timer_refine=-1;      /* Timers; declared static to accumulate */
+    static int timer_pins=-1;       /* times over multiple runs.  */
+    static int timer_iso=-1;
+    static int timer_gain=-1;
+    static int timer_heap=-1;
+    static int timer_pass=-1;
+    static int timer_roll=-1;
+    static int timer_nonroot=-1;
+    
+    int do_timing = (hgp->use_timers > 1);
+    int detail_timing = (hgp->use_timers > 3);
+
+    
     ZOLTAN_TRACE_ENTER(zz, yo);
 
     if (p != 2) {
@@ -460,6 +472,28 @@ static int refine_fm2 (ZZ *zz,
         return serial_fm2 (zz, hg, p, part_sizes, part, hgp, bal_tol);
 #endif
 
+    if (do_timing) { 
+        if (timer_refine < 0) 
+            timer_refine = Zoltan_Timer_Init(zz->ZTime, 1, "Ref_P_Total");
+        ZOLTAN_TIMER_START(zz->ZTime, timer_refine, hgc->Communicator);
+    }
+    if (detail_timing) {
+        if (timer_pins < 0) 
+            timer_pins = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Pins");
+        if (timer_iso < 0) 
+            timer_iso = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_IsolatedVert");
+        if (timer_gain < 0) 
+            timer_gain = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Gain");
+        if (timer_heap < 0) 
+            timer_heap = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Heap");
+        if (timer_pass < 0) 
+            timer_pass = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Pass");
+        if (timer_roll < 0) 
+            timer_roll = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Roll");
+        if (timer_nonroot < 0) 
+            timer_nonroot = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_NonRoot");
+    }
+    
     
     /* find the index of the proc in column group with 
        the most #nonzeros; it will be our root
@@ -533,14 +567,21 @@ static int refine_fm2 (ZZ *zz,
     }
 
     /* Initial calculation of the local pin distribution (sigma in UVC's papers)  */
+    if (detail_timing)         
+        ZOLTAN_TIMER_START(zz->ZTime, timer_pins, hgc->Communicator);                        
     for (i = 0; i < hg->nEdge; ++i)
         for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
             ++(lpins[part[hg->hvertex[j]]][i]);
+    if (detail_timing)         
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_pins, hgc->Communicator);                    
+    
 
 #ifdef HANDLE_ISOLATED_VERTICES        
     /* first compute vertex degree to find any isolated vertices
        we use lgain and gain, as ldeg, deg.*/
     if (hg->nVtx) {
+        if (detail_timing)         
+            ZOLTAN_TIMER_START(zz->ZTime, timer_iso, hgc->Communicator);        
         ldeg = (int *) lgain;
         deg = (int *) gain; /* null for non-root but that is fine */
         for (i = 0; i < hg->nVtx; ++i)
@@ -555,6 +596,9 @@ static int refine_fm2 (ZZ *zz,
                     part[i] = -(part[i]+1); /* remove those vertices from that part*/
                 }        
         }   
+        if (detail_timing)         
+            ZOLTAN_TIMER_STOP(zz->ZTime, timer_iso, hgc->Communicator);        
+
     }
 #endif
     
@@ -564,9 +608,14 @@ static int refine_fm2 (ZZ *zz,
         int notfeasible=(weights[0]>max_weight[0]) || (weights[1]>max_weight[1]);
     
         /* now compute global pin distribution */
-        if (hg->nEdge)
+        if (hg->nEdge) {
+            if (detail_timing)         
+                ZOLTAN_TIMER_START(zz->ZTime, timer_pins, hgc->Communicator);                    
             MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, 
                           hgc->row_comm);
+            if (detail_timing)         
+                ZOLTAN_TIMER_STOP(zz->ZTime, timer_pins, hgc->Communicator);                    
+        }
 
         /* now we can compute actual cut */
         best_cutsizeat=0;
@@ -609,6 +658,9 @@ static int refine_fm2 (ZZ *zz,
 #endif
 
         /* compute only the gains of the vertices from 'from' part */
+        if (detail_timing)         
+            ZOLTAN_TIMER_START(zz->ZTime, timer_gain, hgc->Communicator);                    
+        
         for (i = 0; i < hg->nVtx; ++i) {
             lgain[i] = 0.0;
             if (part[i]==from) 
@@ -626,10 +678,14 @@ static int refine_fm2 (ZZ *zz,
         if (hg->nVtx)
             MPI_Reduce(lgain, gain, hg->nVtx, MPI_FLOAT, MPI_SUM, root.rank, 
                        hgc->col_comm);
+        if (detail_timing)         
+            ZOLTAN_TIMER_STOP(zz->ZTime, timer_gain, hgc->Communicator);                    
+        
 
-        if (hgp->output_level >= PHG_DEBUG_ALL)        
+        if (hgp->output_level >= PHG_DEBUG_ALL) {
+            imbal = (targetw0==0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;
             printf("%s FM Pass %d (%d->%d) Cut=%.2lf W[%5.0lf, %5.0lf] I= %.2lf LW[%5.0lf, %5.0lf] LI= %.2lf\n", uMe(hgc), passcnt, from, to, cutsize, weights[0], weights[1], imbal, lweights[0], lweights[1], limbal);
-
+        }
 
         if (hgc->myProc_y==root.rank) {
             /* those are the lucky ones; each proc in column-group
@@ -637,6 +693,8 @@ static int refine_fm2 (ZZ *zz,
                version we'll do it in the root procs and broadcast */
 
 #ifdef HANDLE_ISOLATED_VERTICES
+            if (detail_timing)         
+                ZOLTAN_TIMER_START(zz->ZTime, timer_iso, hgc->Communicator);                    
             lwadjust[0] = lwadjust[1] = 0.0;
             for (i=isocnt; i < hg->nVtx; ++i) { /* go over isolated vertices */
                 int   u=moves[i], pno=-part[u]-1;
@@ -649,7 +707,12 @@ static int refine_fm2 (ZZ *zz,
             }
             lweights[0] += lwadjust[0];
             lweights[1] += lwadjust[1];
+            if (detail_timing)         
+                ZOLTAN_TIMER_STOP(zz->ZTime, timer_iso, hgc->Communicator);                    
 #endif
+
+            if (detail_timing)         
+                ZOLTAN_TIMER_START(zz->ZTime, timer_heap, hgc->Communicator);                    
             
             /* Initialize the heaps and fill them with the gain values */
             Zoltan_Heap_Clear(&heap[from]);  
@@ -657,6 +720,10 @@ static int refine_fm2 (ZZ *zz,
                 if (part[i]==from)
                     Zoltan_Heap_Input(&heap[from], i, gain[i]);
             Zoltan_Heap_Make(&heap[from]);
+            if (detail_timing) {
+                ZOLTAN_TIMER_STOP(zz->ZTime, timer_heap, hgc->Communicator);
+                ZOLTAN_TIMER_START(zz->ZTime, timer_pass, hgc->Communicator);
+            }
             
             while ((neggaincnt < maxneggain) && ((lweights[to]+minvw) <= lmax_weight[to]) ) {
                 if (Zoltan_Heap_Empty(&heap[from])) /* too bad it is empty */
@@ -714,6 +781,12 @@ static int refine_fm2 (ZZ *zz,
                 ++movecnt;
             }
 
+            
+            if (detail_timing) {
+                ZOLTAN_TIMER_STOP(zz->ZTime, timer_pass, hgc->Communicator);
+                ZOLTAN_TIMER_START(zz->ZTime, timer_roll, hgc->Communicator);
+            }
+
 #ifdef _DEBUG
 	    if (v<0)
                 uprintf(hgc, "EOLB @ %d there was no vertex to select: v=%d\n", movecnt, v);
@@ -735,8 +808,13 @@ static int refine_fm2 (ZZ *zz,
             for (i=0; i<best_cutsizeat; ++i){
                 int v = (moves[i] < 0 ) ? -moves[i] - 1 : moves[i];
                 mark[v] = 0;
-            }                
+            }
+            if (detail_timing) 
+                ZOLTAN_TIMER_STOP(zz->ZTime, timer_roll, hgc->Communicator);            
         }
+
+        if (detail_timing) 
+            ZOLTAN_TIMER_START(zz->ZTime, timer_nonroot, hgc->Communicator);            
         
         /* now root bcast moves to column procs */
         MPI_Bcast(&best_cutsizeat, 1, MPI_INT, root.rank, hgc->col_comm);
@@ -748,7 +826,10 @@ static int refine_fm2 (ZZ *zz,
                     fm2_move_vertex_oneway_nonroot(v, hg, part, lpins, lweights);
             }
         }
+        if (detail_timing) 
+            ZOLTAN_TIMER_STOP(zz->ZTime, timer_nonroot, hgc->Communicator);            
 
+        
 #ifdef _DEBUG
         for (i = 0; i < hg->nEdge; ++i) {
             int lp[2];
@@ -762,7 +843,10 @@ static int refine_fm2 (ZZ *zz,
 #endif
 
 
-#ifdef HANDLE_ISOLATED_VERTICES            
+#ifdef HANDLE_ISOLATED_VERTICES
+        if (detail_timing)         
+            ZOLTAN_TIMER_START(zz->ZTime, timer_iso, hgc->Communicator);        
+        
 #if 0
         MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);        
         best_imbal = (targetw0==0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;
@@ -795,7 +879,9 @@ static int refine_fm2 (ZZ *zz,
         if (hgc->myProc_y!=root.rank) {
             lweights[0] += lwadjust[0];
             lweights[1] += lwadjust[1];
-        }            
+        }
+        if (detail_timing)         
+            ZOLTAN_TIMER_STOP(zz->ZTime, timer_iso, hgc->Communicator);                
 #endif        
         
         MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
@@ -835,6 +921,8 @@ static int refine_fm2 (ZZ *zz,
 
 
 #ifdef HANDLE_ISOLATED_VERTICES
+    if (detail_timing)         
+        ZOLTAN_TIMER_START(zz->ZTime, timer_iso, hgc->Communicator);            
     /* now root sneds the final part no's of isolated vertices; if any */
     MPI_Bcast(&isocnt, 1, MPI_INT, root.rank, hgc->col_comm);
     if (isocnt<hg->nVtx) {
@@ -851,7 +939,8 @@ static int refine_fm2 (ZZ *zz,
             for (i=isocnt; i < hg->nVtx; ++i)  /* go over isolated vertices */
                 part[moves[i]] = deg[i];
     }
-    
+    if (detail_timing)         
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_iso, hgc->Communicator);            
 #endif
     if (hgc->myProc_y==root.rank) { /* only root needs mark, adj, gain and heaps*/        
         Zoltan_Multifree(__FILE__,__LINE__, 3, &mark, &adj, &gain);
@@ -861,6 +950,11 @@ static int refine_fm2 (ZZ *zz,
     
  End:    
     Zoltan_Multifree(__FILE__, __LINE__, 4, &pins[0], &lpins[0], &moves, &lgain);
+
+    if (do_timing) 
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_refine, hgc->Communicator);
+    
+    
     ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_OK;
 }
