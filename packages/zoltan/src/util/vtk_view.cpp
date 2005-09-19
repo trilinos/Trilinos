@@ -171,6 +171,7 @@ static char *vis_opt_names[UNDEFINED_LIST_MAX]={
   "zdrive count",     // number of zdrive processes 
   "image height",    // pixel height of image
   "image width",     // pixel width of image
+  "output partition number", // visualize this partition number
 
                       // Options ONLY for interactive window display:
   "omit caption",     // don't display default caption in window
@@ -191,6 +192,7 @@ static char *vis_opt_names[UNDEFINED_LIST_MAX]={
 enum {option_zdrive_count,
       option_height,
       option_width,
+      option_partition_number,
 
       option_omit_caption,
       option_omit_scalar_bar,
@@ -215,6 +217,8 @@ static char vis_opt_values[UNDEFINED_LIST_MAX][UNDEFINED_LENGTH_MAX];
 static int zdriveCount = 0; 
 static int imageHeight = 300;
 static int imageWidth= 300;
+static int showPartitionNumber = -1;
+static int notPartitionNumber = -1;
 
 #ifndef OUTPUT_TO_FILE
 static int omitCaption = 0;
@@ -971,6 +975,11 @@ int read_broadcast_input_options(int &argc, char **argv)
   if (vis_opt_values[option_width][0]){
     sscanf(vis_opt_values[option_width], "%d", &imageWidth);
   }
+  if (vis_opt_values[option_partition_number][0]){
+    sscanf(vis_opt_values[option_partition_number], "%d", 
+      &showPartitionNumber);
+    notPartitionNumber = (showPartitionNumber ? 0 : 1);
+  }
 
   int rc = check_valid_range(imageHeight, vis_opt_names[option_height], 30, 2500);
 
@@ -1423,7 +1432,18 @@ static void update_partition_ids(int *eltIds, vtkIntArray *partids)
       map<int,int>::iterator it = partitionMap.find(eltIds[i]);
 
       if (it->first == eltIds[i]){
-        ids[i] = it->second;
+
+        if (showPartitionNumber >= 0){
+          if (it->second == showPartitionNumber){
+            ids[i] = showPartitionNumber;
+          }
+          else{
+            ids[i] = notPartitionNumber;
+          }
+        }
+        else{
+          ids[i] = it->second;
+        }
       }
     }
   }
