@@ -24,6 +24,7 @@ CXXFLAGS="-g -pto" \
 --enable-epetraext-inout \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
+--enable-galeri \
 --enable-ifpack \
 --enable-kokkos \
 --enable-komplex \
