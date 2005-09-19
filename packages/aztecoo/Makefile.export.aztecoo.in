@@ -2,15 +2,19 @@
 include @abs_top_builddir@/../epetra/Makefile.export.epetra
 include @abs_top_builddir@/../triutils/Makefile.export.triutils
 
-# Optional dependancy on thyra
+# Optional dependancy on thyra and epetraext
+
 @ENABLE_AZTECOO_THYRA_TRUE@include @abs_top_builddir@/../thyra/Makefile.export.thyra
+@ENABLE_AZTECOO_THYRA_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
 
 @ENABLE_AZTECOO_THYRA_TRUE@AZTECOO_THYRA_INCLUDES = \
 @ENABLE_AZTECOO_THYRA_TRUE@	-I@abs_top_srcdir@/thyra/src \
 @ENABLE_AZTECOO_THYRA_TRUE@	-I@abs_top_builddir@/thyra/src \
-@ENABLE_AZTECOO_THYRA_TRUE@	$(THYRA_INCLUDES)
+@ENABLE_AZTECOO_THYRA_TRUE@	$(EPETRAEXT_INCLUDES) $(THYRA_INCLUDES)
 
-@ENABLE_AZTECOO_THYRA_TRUE@AZTECOO_THYRA_LIBS = -L@abs_top_builddir@/thyra/src -laztecoothyra $(THYRA_LIBS)
+@ENABLE_AZTECOO_THYRA_TRUE@AZTECOO_THYRA_LIBS = \
+@ENABLE_AZTECOO_THYRA_TRUE@ -L@abs_top_builddir@/thyra/src -laztecoothyra \
+@ENABLE_AZTECOO_THYRA_TRUE@ $(EPETRAEXT_LIBS) $(THYRA_LIBS)
 
 ## Optional dependency on Teuchos
 @HAVE_AZTECOO_TEUCHOS_TRUE@include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
