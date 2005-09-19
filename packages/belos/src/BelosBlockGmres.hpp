@@ -449,7 +449,7 @@ namespace Belos {
   {
     //
     int i;	
-    int *index = new int[_blocksize]; assert(index!=NULL);
+    std::vector<int> index(_blocksize);
     MultiVec<TYPE> *AU_vec = _basisvecs->Clone( _blocksize );
     //
     // Associate the j-th block of _basisvecs with U_vec.
@@ -457,7 +457,7 @@ namespace Belos {
     for ( i=0; i<_blocksize; i++ ) {
       index[i] = _iter*_blocksize+i;
     }
-    MultiVec<TYPE>* U_vec = _basisvecs->CloneView(index, _blocksize);
+    MultiVec<TYPE>* U_vec = _basisvecs->CloneView(&index[0], _blocksize);
     assert(U_vec!=NULL);
     //
     _lp.Apply( *U_vec, *AU_vec ); 
@@ -467,8 +467,11 @@ namespace Belos {
       dep = BlkOrth(*AU_vec);
       if (dep) {
 	dep_flg = true;
-	if (_blocksize == 1)
+	if (_blocksize == 1) {
+	  delete AU_vec;
+	  delete U_vec;
 	  return dep_flg;
+	}
       }
     }
     // If any dependencies have been detected during this step of
@@ -481,7 +484,7 @@ namespace Belos {
       flg = BlkOrthSing(*AU_vec);
     }
     //
-    delete U_vec; delete [] index;
+    delete U_vec; 
     delete AU_vec;
     //
     return flg;

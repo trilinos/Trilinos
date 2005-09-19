@@ -389,5 +389,12 @@ int main(int argc, char *argv[])
     MPI_Finalize(); 
 #endif
 
+    delete D;
+    delete D2;
+    delete B;
+    delete C;
+    delete Inner;
+    delete Outer;
+
     return(0);
 }
