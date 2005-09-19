@@ -199,7 +199,7 @@ namespace Anasazi {
     _knownEV(0),
     _MSUtils(om),
     _os(_om->GetOStream()),
-    _restartTimers(_pl.get("Restarting", false)),
+    _restartTimers(_pl.get("Restart Timers", false)),
     _timerOp(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
     _timerMOp(Teuchos::TimeMonitor::getNewTimer("Operation M*x")),
     _timerPrec(Teuchos::TimeMonitor::getNewTimer("Operation Prec*x")),
