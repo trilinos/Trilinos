@@ -1,0 +1,47 @@
+/*! \mainpage EpetraExt/%Thyra Adapters
+
+
+
+\section EpetraExt_Thyra_outline_sec Outline
+
+<ul>
+<li> \ref EpetraExt_Thyra_intro_sec
+<li> \ref EpetraExt_Thyra_software_sec
+<li> \ref EpetraExt_Thyra_links_sec
+</ul>
+
+\section EpetraExt_Thyra_intro_sec Introduction
+
+This doxygen collection documents versions EpetraExt/Thyra adpaters.
+
+\section EpetraExt_Thyra_software_sec Software
+
+<ul>
+
+<li><b>Model Evaluators</b>
+
+  <ul>
+
+  <li><tt>Thyra::EpetraModelEvaluator</tt> implements the
+  <tt>Thyra::ModelEvaluator</tt> interface in terms of an
+  <tt>EpetraExt::ModelEvaluator</tt> object and a
+  <tt>Thyra::LinearOpWithSolveFactoryBase</tt> object.
+
+  </ul>
+
+</ul>
+
+\section EpetraExt_Thyra_links_sec Links to other documentation
+
+<ul>
+
+<li><a
+href="../../../../thyra/src/ana/nonlinear/doc/html/index.html">Thyra ANA
+Nonlinear Interfaces</a>
+
+<li><a
+href="../../../doc/html/index.html">Main EpetraExt Documentation</a>
+
+</ul>
+
+*/
