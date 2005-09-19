@@ -376,7 +376,7 @@ public:
   /*! 
    Returns the label of this class.
    */
-  char* Label() const {return(&(label_[0]));}
+  const char* Label() const {return(&(label_[0]));}
 
   //! get Comm of this class
   /*! 

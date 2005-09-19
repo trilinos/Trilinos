@@ -233,7 +233,7 @@ public:
 private:  
   // don't want copy-ctor and = operator
   Ml_Nox_Fineinterface(ML_NOX::Ml_Nox_Fineinterface& old);
-  Ml_Nox_Fineinterface operator = (const ML_NOX::Ml_Nox_Fineinterface& old);
+  //Ml_Nox_Fineinterface operator = (const ML_NOX::Ml_Nox_Fineinterface& old);
   
 public:
 

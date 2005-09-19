@@ -546,9 +546,9 @@ bool ML_NOX::ML_Nox_Preconditioner::computePreconditioner(
       setinit(false);
    if (adaptive_NewPrec_ > 0.0 && ncalls_NewPrec_ != 0)
    {
-     if (!noxsolver_)
+     if (!noxsolver_ && !islinearPrec_)
      {
-      cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::ML_Nox_ApplyInverse_NonLinear:\n"
+      cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::computePreconditioner:\n"
            << "**ERR**: noxsolver not registered, use set_nox_solver(solver)!\n"
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
      }
@@ -1212,7 +1212,6 @@ int ML_NOX::ML_Nox_Preconditioner::ApplyInverse(
                                         const Epetra_MultiVector& X, 
                                         Epetra_MultiVector& Y) const
 {
-  int err=1;
   if (isinit_==false)
   {
     cout << "**ERR**: ML_Nox_Preconditioner::ApplyInverse:\n";
@@ -1221,7 +1220,7 @@ int ML_NOX::ML_Nox_Preconditioner::ApplyInverse(
   }
   if (islinearPrec_ == true)
   {
-     err = ML_Nox_ApplyInverse_Linear(X,Y);
+     int err = ML_Nox_ApplyInverse_Linear(X,Y);
      if (err==0)
        return(0);
      else
@@ -1229,7 +1228,7 @@ int ML_NOX::ML_Nox_Preconditioner::ApplyInverse(
   }
   else if (islinearPrec_ == false)
   {
-     err = ML_Nox_ApplyInverse_NonLinear(X,Y);
+     int err = ML_Nox_ApplyInverse_NonLinear(X,Y);
      if (err==0)
        return(0);
      else

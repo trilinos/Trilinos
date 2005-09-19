@@ -336,7 +336,7 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
     }
 
     //! returns the label of this class
-    char * Label() const                         {return(name_);}
+    const char * Label() const                   {return(name_);}
 
     //! returns the usetranspose_ flag
     bool UseTranspose() const                    {return(usetranspose_);}
