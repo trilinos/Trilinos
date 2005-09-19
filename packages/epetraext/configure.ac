@@ -449,7 +449,7 @@ fi
 # Determine libraries needed for linking with Fortran
 AC_F77_LIBRARY_LDFLAGS
 
-Z# -- DEC CXX --
+# -- DEC CXX --
 dnl if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
 dnl    XTRALDADD="cxx_repository/*.o"
 dnl fi

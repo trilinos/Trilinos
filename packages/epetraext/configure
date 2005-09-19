@@ -13248,7 +13248,7 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
-Z# -- DEC CXX --
+# -- DEC CXX --
 
 
 
