@@ -40,6 +40,21 @@ static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;   /* alternating ipm */
 static int Zoltan_PHG_match_isolated(ZZ *zz, HGraph *hg, Matching match, 
                                      int small_degree);
 
+/* New phase 3 not ready yet. */
+#ifdef NEW_PHASE3
+struct triplet {
+    int cand;     /* gno of candidate vertex */
+    int partner;  /* gno of best match found so far */
+    float ip;     /* inner product */
+};
+
+/* special sorting routines */
+static void quicksort_list_inc_struct (
+  struct triplet * list, int start, int end);
+static void quickpart_list_inc_struct (
+  struct triplet *list, int start, int end, int *equal, int *larger);
+
+#endif
 
 /*****************************************************************************/
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
@@ -378,6 +393,7 @@ static int pmatching_ipm (ZZ *zz,
   int **rows = NULL;             /* used only in merging process */
   int bestlno, vertex, nselect, edge;
   int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
+  struct triplet *best_matches= NULL;
   int cFLAG;                    /* if set, do only a column matching, c-ipm */
   static int timer[7] = {-1, -1, -1, -1, -1, -1, -1};
   char *yo = "pmatching_ipm";
@@ -481,7 +497,7 @@ static int pmatching_ipm (ZZ *zz,
 
   MACRO_TIMER_STOP (0);
   vindex = 0;                                /* marks position in visit array */
-  for (round = 0; round < nRounds; round++)  {
+  for (round = 0; round < nRounds; round++) {
     MACRO_TIMER_START (1, "matching phase 1");
     
     /************************ PHASE 1: ***************************************/
@@ -596,7 +612,7 @@ static int pmatching_ipm (ZZ *zz,
         Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));
 #endif
       }
-    }                           /* DONE:  if (cFLAG) else ...}  */
+    }                           /* DONE:  if (cFLAG) else ...  */
     MACRO_TIMER_STOP (1);
     
     /************************ PHASE 2: ***************************************/
@@ -877,20 +893,42 @@ static int pmatching_ipm (ZZ *zz,
     /* Only MASTER ROW computes best global match for candidates */
     /* EBEB or perhaps we can do this fully distributed? */
     if (hgc->myProc_y == 0) {
+      int cand;
 
-      /* Create array of size # global candidates in this round. */
-      /* Perhaps this should be allocated once up front? */
+      /* Convert master_data to array of triplets with best potential matches. */
+      best_matches = (struct triplet *) master_data;
 
-      /* Populate array with triplets from computed inner product data. */
       /* A triplet is (candidate id, best match id, and best i.p. value) */
-      /* Sort by candidate's global id. Can we use hash instead? */
+      /* Sort by candidate's global id; this is necessary to do the
+         "merge" between processors efficiently. Can we use hash instead? */
+      quicksort_list_inc_struct(best_matches, 0, nmaster);
 
       /* User-defined Allreduce to find max over inner product values;
          this will tell us the globally best "match" for each candidate. */
+      for (i=0; i<nmaster; i++){
+        uprintf(hgc, "candidate # %d = %d\n", i, best_matches[i].cand); 
+      }
 
       /* Look through array of "winners" and update match array. */
+      /* Local numbers are used for local matches, otherwise
+         -(gno+1) is used in the match array.                    */
+      for (i=0; i<nmaster; i++){
+        cand = best_matches[i].cand;
+        vertex = best_matches[i].partner;
+        if (VTX_TO_PROC_X (hg, cand)   == hgc->myProc_x
+         && VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x)   {
+            int v1 = VTX_GNO_TO_LNO (hg, vertex);             
+            int v2 = VTX_GNO_TO_LNO (hg, cand);                
+            match[v1] = v2;
+            match[v2] = v1;
+        }                         
+        else if (VTX_TO_PROC_X (hg, cand) == hgc->myProc_x)
+          match [VTX_GNO_TO_LNO (hg, cand)]    = -vertex - 1;
+        else              
+          match [VTX_GNO_TO_LNO (hg, vertex)] = -cand - 1;
+      }
 
-    }
+    } /* End (hgc->myProc_y == 0) */
 
     /* broadcast match array to the entire column */
     MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
@@ -1106,6 +1144,49 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
    Zoltan_Comm_Destroy (&plan); 
    return ZOLTAN_OK;
 }
+
+/***************************************************************************/
+#ifdef NEW_PHASE3
+
+/* Sorting structs in increasing order. Criteria is first field in a struct. */
+/* Note: Customized for 'struct triplet'. C does not have templates! */
+static void quickpart_list_inc_struct (
+  struct triplet *list, int start, int end, int *equal, int *larger)
+{
+int i, key;
+struct triplet temp;
+
+  key = list ? list[(end+start)/2].cand: 1;
+
+  *equal = *larger = start;
+  for (i = start; i <= end; i++)
+    if (list[i].cand < key) {
+       temp              = list[i];
+       list[i]           = list[*larger];
+       list[(*larger)++] = list[*equal];
+       list[(*equal)++]  = temp;
+    }
+    else if (list[i].cand == key) {
+       temp              = list[i];
+       list[i]           = list[*larger];
+       list[(*larger)++] = temp;
+    }
+}
+
+
+static void quicksort_list_inc_struct (struct triplet * list, int start, int end)
+{
+int  equal, larger;
+
+  printf("Debug: quicksort, start=%d, end =%d\n", start, end);
+
+  if (start < end) {
+     quickpart_list_inc_struct (list, start, end, &equal, &larger);
+     quicksort_list_inc_struct (list, start, equal-1);
+     quicksort_list_inc_struct (list, larger,end);
+  }
+}
+#endif
 
 #undef MACRO_REALLOC
 #undef MACRO_TIMER_START
