@@ -86,6 +86,7 @@ EXPORT_INCLUDES = $(ANASAZI_INCLUDES)
 endif
 
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
 # ------------------------------------------------------------------------	
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.
@@ -94,10 +95,10 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # New_Package library specifications
 # ------------------------------------------------------------------------
 #np# replace new_package with the name of the package being autotool'ed here
-#ANASAZI_LIB = libanasazi.a
+#ANASAZI_THYRA_LIB = libanasazithyra.a
 
 #np# replace new_package with the name of the package being autotool'ed here
-ANASAZI_H = \
+ANASAZI_THYRA_H = \
 	$(top_srcdir)/src/Anasazi_ConfigDefs.hpp \
 	$(CORE_H) \
 	$(MPI_H) 
@@ -108,7 +109,7 @@ ANASAZI_H = \
 #	$(MPI)
 
 #np# replace new_package with the name of the package being autotool'ed here
-#EXTRA_libanasazi_a_SOURCES = \
+#EXTRA_libanasazithyra_a_SOURCES = \
 #	$(EXTRA_MPI) \
 #	$(EXTRA_MPI_H) 
 
@@ -125,11 +126,11 @@ ANASAZI_H = \
 #if USE_ALTERNATE_AR
 
 #np# replace new_package with the name of the package being autotool'ed here
-#libanasazi_a_AR = $(ALTERNATE_AR)
+#libanasazithyra_a_AR = $(ALTERNATE_AR)
 #else
 
 #np# replace new_package with the name of the package being autotool'ed here
-#libanasazi_a_AR = $(AR) cru
+#libanasazithyra_a_AR = $(AR) cru
 
 #endif
 
@@ -139,7 +140,7 @@ ANASAZI_H = \
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-#libanasazi_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
+#libanasazithyra_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
@@ -153,7 +154,7 @@ ANASAZI_H = \
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-#include_HEADERS = $(ANASAZI_H) 
+include_HEADERS = $(ANASAZI_THYRA_H) 
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
@@ -165,7 +166,6 @@ ANASAZI_H = \
 # special.
 
 execincludedir = $(exec_prefix)/include
-#nodist_execinclude_HEADERS = Anasazi_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
