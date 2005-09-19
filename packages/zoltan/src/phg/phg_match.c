@@ -393,10 +393,12 @@ static int pmatching_ipm (ZZ *zz,
   int **rows = NULL;             /* used only in merging process */
   int bestlno, vertex, nselect, edge;
   int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
-  struct triplet *best_matches= NULL;
   int cFLAG;                    /* if set, do only a column matching, c-ipm */
   static int timer[7] = {-1, -1, -1, -1, -1, -1, -1};
   char *yo = "pmatching_ipm";
+#ifdef NEW_PHASE3
+  struct triplet *local_best= NULL, *global_best= NULL;
+#endif
   
   
   ZOLTAN_TRACE_ENTER (zz, yo);
@@ -896,25 +898,30 @@ static int pmatching_ipm (ZZ *zz,
       int cand;
 
       /* Convert master_data to array of triplets with best potential matches. */
-      best_matches = (struct triplet *) master_data;
+      local_best = (struct triplet *) master_data;
 
       /* A triplet is (candidate id, best match id, and best i.p. value) */
       /* Sort by candidate's global id; this is necessary to do the
          "merge" between processors efficiently. Can we use hash instead? */
-      quicksort_list_inc_struct(best_matches, 0, nmaster);
+      quicksort_list_inc_struct(local_best, 0, nmaster-1);
+
+      /* DEBUG 
+      for (i=0; i<nmaster; i++){
+        uprintf(hgc, "candidate # %d = %d\n", i, local_best[i].cand); 
+      }
+      */
 
       /* User-defined Allreduce to find max over inner product values;
          this will tell us the globally best "match" for each candidate. */
-      for (i=0; i<nmaster; i++){
-        uprintf(hgc, "candidate # %d = %d\n", i, best_matches[i].cand); 
-      }
+      /* MPI_AllReduce(local_best, global_best, ...) */
+      global_best = local_best; /* TEMP */
 
       /* Look through array of "winners" and update match array. */
       /* Local numbers are used for local matches, otherwise
          -(gno+1) is used in the match array.                    */
       for (i=0; i<nmaster; i++){
-        cand = best_matches[i].cand;
-        vertex = best_matches[i].partner;
+        cand   = global_best[i].cand;
+        vertex = global_best[i].partner;
         if (VTX_TO_PROC_X (hg, cand)   == hgc->myProc_x
          && VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x)   {
             int v1 = VTX_GNO_TO_LNO (hg, vertex);             
@@ -1153,8 +1160,8 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 static void quickpart_list_inc_struct (
   struct triplet *list, int start, int end, int *equal, int *larger)
 {
-int i, key;
-struct triplet temp;
+  int i, key;
+  struct triplet temp;
 
   key = list ? list[(end+start)/2].cand: 1;
 
@@ -1176,9 +1183,7 @@ struct triplet temp;
 
 static void quicksort_list_inc_struct (struct triplet * list, int start, int end)
 {
-int  equal, larger;
-
-  printf("Debug: quicksort, start=%d, end =%d\n", start, end);
+  int  equal, larger;
 
   if (start < end) {
      quickpart_list_inc_struct (list, start, end, &equal, &larger);
