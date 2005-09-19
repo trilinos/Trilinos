@@ -223,10 +223,16 @@ int main(int argc, char *argv[])
     Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
     Teuchos::RefCountPtr<MV> evecs = MyProblem->GetEvecs();
     
-    // eigenCheck() doesn't know Thyra::MultiVecBase objects
-    //if (verbose) 
-    //  info = testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
-  
+    
+    // test against the analytical solutions
+    if (verbose) {
+      // Extract the Epetra multivector from the Thyra wrapper
+      Teuchos::RefCountPtr<Epetra_MultiVector> epetra_evecs =
+        Thyra::get_Epetra_MultiVector(*Map,evecs);
+
+      info = testCase->eigenCheck( *epetra_evecs, &(*evals)[0], 0 );
+    }
+
     // Compute the direct residual
     Teuchos::RefCountPtr<MV> Kvec, Mvec; 
     int numVecs = MVT::GetNumberVecs(*evecs);
