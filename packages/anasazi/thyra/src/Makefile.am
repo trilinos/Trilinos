@@ -99,7 +99,7 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 #np# replace new_package with the name of the package being autotool'ed here
 ANASAZI_THYRA_H = \
-	$(top_srcdir)/src/Anasazi_ConfigDefs.hpp \
+	$(top_srcdir)/src/AnasaziConfigDefs.hpp \
 	$(CORE_H) \
 	$(MPI_H) 
 
