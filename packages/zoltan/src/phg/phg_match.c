@@ -53,6 +53,8 @@ static void quicksort_list_inc_struct (
   struct triplet * list, int start, int end);
 static void quickpart_list_inc_struct (
   struct triplet *list, int start, int end, int *equal, int *larger);
+/* MPI_Op merge routine */
+static void phasethreemerge(void *, void *, int *, MPI_Datatype *);
 
 #endif
 
@@ -398,6 +400,8 @@ static int pmatching_ipm (ZZ *zz,
   char *yo = "pmatching_ipm";
 #ifdef NEW_PHASE3
   struct triplet *local_best= NULL, *global_best= NULL;
+  MPI_Op phasethreeop;
+  MPI_Datatype phasethreetype;
 #endif
   
   
@@ -413,6 +417,14 @@ static int pmatching_ipm (ZZ *zz,
 
   /* set a flag if user wants a column matching or a full matching */
   cFLAG = strcasecmp(hgp->redm_str, "c-ipm") ? 0 : 1;
+
+#ifdef NEW_PHASE3
+  if (!cFLAG) {
+    MPI_Type_contiguous(sizeof(struct triplet),MPI_CHAR, &phasethreetype);
+    MPI_Type_commit(&phasethreetype);
+    MPI_Op_create(&phasethreemerge, 1, &phasethreeop);
+  }
+#endif /* NEW_PHASE3 */
 
   /* determine basic working parameters */
   nRounds     = cFLAG ? ROUNDS_CONSTANT : hgc->nProc_x * ROUNDS_CONSTANT;
@@ -459,6 +471,10 @@ static int pmatching_ipm (ZZ *zz,
   if (!cFLAG)
     if (!(edgebuf      = (int*)  ZOLTAN_MALLOC (nEdgebuf   * sizeof (int)))
      || !(master_data  = (int*)  ZOLTAN_MALLOC (3 * nTotal * sizeof (int)))
+#ifdef NEW_PHASE3
+     || !(global_best = (struct triplet*) ZOLTAN_MALLOC(nTotal *
+                                                       sizeof(struct triplet)))
+#endif
      || !(master_procs = (int*)  ZOLTAN_MALLOC (nTotal     * sizeof (int)))) {
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
        err = ZOLTAN_MEMERR;
@@ -897,13 +913,16 @@ static int pmatching_ipm (ZZ *zz,
     if (hgc->myProc_y == 0) {
       int cand;
 
-      /* Convert master_data to array of triplets with best potential matches. */
+      /* Convert master_data to array of triplets with best potential matches.*/
       local_best = (struct triplet *) master_data;
 
       /* A triplet is (candidate id, best match id, and best i.p. value) */
       /* Sort by candidate's global id; this is necessary to do the
          "merge" between processors efficiently. Can we use hash instead? */
       quicksort_list_inc_struct(local_best, 0, nmaster-1);
+
+      for (i = nmaster; i < max_nTotal; i++)
+        local_best[i].cand = INT_MAX;
 
       /* DEBUG 
       for (i=0; i<nmaster; i++){
@@ -913,24 +932,27 @@ static int pmatching_ipm (ZZ *zz,
 
       /* User-defined Allreduce to find max over inner product values;
          this will tell us the globally best "match" for each candidate. */
-      /* MPI_AllReduce(local_best, global_best, ...) */
-      global_best = local_best; /* TEMP */
+
+      MPI_Allreduce(local_best, global_best, max_nTotal, phasethreetype,
+                    phasethreeop, hgc->row_comm);
 
       /* Look through array of "winners" and update match array. */
       /* Local numbers are used for local matches, otherwise
          -(gno+1) is used in the match array.                    */
-      for (i=0; i<nmaster; i++) {
+      for (i = 0; i < max_nTotal; i++) {
         cand   = global_best[i].cand;
+        if (cand == INT_MAX) break;  /* All matches are processed */
         vertex = global_best[i].partner;
-        if (VTX_TO_PROC_X(hg, cand)   == hgc->myProc_x
-         && VTX_TO_PROC_X(hg, vertex) == hgc->myProc_x)   {
-          int v1 = VTX_GNO_TO_LNO(hg, vertex);             
-          int v2 = VTX_GNO_TO_LNO(hg, cand);                
-          match[v1] = v2;
-          match[v2] = v1;
+        if (VTX_TO_PROC_X(hg, cand)   == hgc->myProc_x) {
+          if (VTX_TO_PROC_X(hg, vertex) == hgc->myProc_x)   {
+            int v1 = VTX_GNO_TO_LNO(hg, vertex);             
+            int v2 = VTX_GNO_TO_LNO(hg, cand);                
+            match[v1] = v2;
+            match[v2] = v1;
+          }
+          else 
+            match[VTX_GNO_TO_LNO(hg, cand)]   = -vertex - 1;
         }                         
-        else if (VTX_TO_PROC_X(hg, cand) == hgc->myProc_x)
-          match[VTX_GNO_TO_LNO(hg, cand)]   = -vertex - 1;
         else              
           match[VTX_GNO_TO_LNO(hg, vertex)] = -cand - 1;
       }
@@ -940,7 +962,6 @@ static int pmatching_ipm (ZZ *zz,
     /* broadcast match array to the entire column */
     MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
     MACRO_TIMER_STOP (4);                       /* end of phase 3 */
-  }                                             /* DONE: loop over rounds */
 
 #else /* Old phase 3 and 4 */
     /************************ PHASE 3: **********************************/
@@ -1024,8 +1045,8 @@ static int pmatching_ipm (ZZ *zz,
     /* update match array to the entire column */   
     MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
     MACRO_TIMER_STOP (5);                       /* end of phase 4 */
-  }                                             /* DONE: loop over rounds */
 #endif /* ! NEW_PHASE3 */
+  }                                             /* DONE: loop over rounds */
   
   MACRO_TIMER_START (6, "Matching Cleanup", 0);
 
@@ -1086,6 +1107,15 @@ static int pmatching_ipm (ZZ *zz,
   MACRO_TIMER_STOP (6);
 
 fini:
+
+#ifdef NEW_PHASE3
+  if (!cFLAG) {
+    MPI_Op_free(&phasethreeop);
+    MPI_Type_free(&phasethreetype);
+    ZOLTAN_FREE(&global_best);
+  }
+#endif
+
   Zoltan_Multifree (__FILE__, __LINE__, 15, &cmatch, &visit, &sums, &send,
    &dest, &size, &rec, &index, &aux, &permute, &edgebuf, &select, &rows,
    &master_data, &master_procs);
@@ -1147,6 +1177,105 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 
 /***************************************************************************/
 #ifdef NEW_PHASE3
+
+static void phasethreemerge(
+  void *tin, 
+  void *tinout, 
+  int *tnum, 
+  MPI_Datatype *mytype
+)
+{
+/* MPI_Op for merging lists of triplets 
+ * Assuming in and inout are sorted by candidate number.
+ * Number of valid entries in each array is <= num.
+ * Non-valid entries have candidate number INT_MAX; they are grouped
+ * at the end of the arrays.
+ * This function merges in and inout such that the output
+ * array is sorted by candidate number and the largest inner product
+ * value is chosen for each candidate.
+ * Upon conclusion of the Allreduce, there will be num valid entries
+ * in inout.
+ * KDDKDD Still want to break ties in favor of local processor; not 
+ * KDDKDD yet implemented.
+ */
+
+int num = *tnum;
+struct triplet *in = (struct triplet *) tin;
+struct triplet *inout = (struct triplet *) tinout;
+struct triplet *tmp;
+int i, o, t;  /* Position indices for in, inout, and tmp */
+int j;
+
+  tmp = (struct triplet *) ZOLTAN_MALLOC(num * sizeof(struct triplet));
+  i = o = t = 0;
+  while (1) {
+
+    /* Copy in candidates that are smaller than current inout candidate */
+    while ((i < num) && (in[i].cand < inout[o].cand)) {
+      tmp[t] = in[i];
+      t++; i++;
+    }
+
+    /* Copy inout candidates that are smaller than current in candidate */
+    while ((o < num) && (inout[o].cand < in[i].cand)) {
+      tmp[t] = inout[o];
+      t++; o++;
+    } 
+   
+    /* If reached end of either list, break. */
+    if (i == num || o == num) break;
+    
+    /* If reached end of valid values in both lists, break. */
+    if ((in[i].cand == INT_MAX) && (inout[o].cand == INT_MAX)) break;
+
+    /* If both lists contain the same candidate... */
+    if (in[i].cand == inout[o].cand) {
+      tmp[t].cand = in[i].cand;
+      if (in[i].ip > inout[o].ip) {
+        /* in has larger inner product */
+        tmp[t].ip = in[i].ip;
+        tmp[t].partner = in[i].partner;
+      }
+      else if (inout[o].ip > in[i].ip) {
+        /* inout has larger inner product */
+        tmp[t].ip = inout[o].ip;
+        tmp[t].partner = inout[o].partner;
+      }
+      else { /* IP TIE */
+        /* KDDKDD currently breaking ties by larger partner gno; change
+         * KDDKDD to include owning processor here. */
+        if (in[i].partner > inout[o].partner) {
+          tmp[t].ip = in[i].ip;
+          tmp[t].partner = in[i].partner;
+        }
+        else {
+          tmp[t].ip = inout[o].ip;
+          tmp[t].partner = inout[o].partner;
+        }
+      } 
+      t++; i++; o++;
+    } 
+  }
+
+  /* Copy valid extras from end of arrays. */
+  while ((i < num) && (in[i].cand != INT_MAX)) {
+    tmp[t] = in[i];
+    t++; i++;
+  }
+  while ((o < num) && (inout[o].cand != INT_MAX)) {
+    tmp[t] = inout[o];
+    t++; o++;
+  }
+
+  /* Copy result back into inout */
+  for (j = 0; j < t; j++)
+    inout[j] = tmp[j];
+
+  ZOLTAN_FREE(&tmp);
+}
+
+
+
 
 /* Sorting structs in increasing order. Criteria is first field in a struct. */
 /* Note: Customized for 'struct triplet'. C does not have templates! */
