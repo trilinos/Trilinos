@@ -34,6 +34,7 @@
 #define NOX_LINESEARCH_UTILS_SLOPE_H
 
 #include "NOX_Common.H"
+#include "NOX_Utils.H"
 
 // Forward declaration
 namespace NOX {
@@ -60,7 +61,7 @@ class Slope {
 public:
 
   //! Default constructor
-  Slope();
+  Slope(const NOX::Utils& utils);
 
   //! Destructor
   virtual ~Slope();
@@ -107,6 +108,13 @@ where \f$\eta\f$ is a scalar perturbation calculated by:
   double computeSlopeWithOutJac(const NOX::Abstract::Vector& dir, const NOX::Abstract::Group& grp);
 
 private:
+  //! Disallow default constructor.
+  Slope() {};
+
+private:
+
+  //! Printing object
+  NOX::Utils utils;
 
   //! A vector that *may* be used in computeSlope()
   NOX::Abstract::Vector* vecPtr;

@@ -47,23 +47,23 @@ NOX::LineSearch::Utils::Printing::~Printing()
 
 void NOX::LineSearch::Utils::Printing::printStep(int n, double step, double oldf, double newf, const string s, bool unscaleF) const
 {
-  if (isPrintProcessAndType(NOX::Utils::InnerIteration)) 
+  if (isPrintType(NOX::Utils::InnerIteration)) 
   {
-    cout << setw(3) << n << ":";
-    cout << NOX::Utils::fill(1,' ') << "step = " << sciformat(step);
+    this->out() << setw(3) << n << ":";
+    this->out() << NOX::Utils::fill(1,' ') << "step = " << sciformat(step);
     if (unscaleF == true) {
-      cout << NOX::Utils::fill(1,' ') << "oldf = " << sciformat(sqrt(2. * oldf));
-      cout << NOX::Utils::fill(1,' ') << "newf = " << sciformat(sqrt(2. * newf));
+      this->out() << NOX::Utils::fill(1,' ') << "oldf = " << sciformat(sqrt(2. * oldf));
+      this->out() << NOX::Utils::fill(1,' ') << "newf = " << sciformat(sqrt(2. * newf));
     }
     else {
-      cout << NOX::Utils::fill(1,' ') << "oldf = " << sciformat(oldf);
-      cout << NOX::Utils::fill(1,' ') << "newf = " << sciformat(newf);
+      this->out() << NOX::Utils::fill(1,' ') << "oldf = " << sciformat(oldf);
+      this->out() << NOX::Utils::fill(1,' ') << "newf = " << sciformat(newf);
     }
     if (!s.empty()) 
     {
-      cout << " " << s << "\n";
-      cout << NOX::Utils::fill(72);
+      this->out() << " " << s << "\n";
+      this->out() << NOX::Utils::fill(72);
     }
-    cout << endl;
+    this->out() << endl;
   }
 }

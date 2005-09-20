@@ -157,7 +157,7 @@ void GenericEpetraProblem::outputResults(NOX::Solver::Manager& solver,
 {
   // Output the parameter list
   NOX::Utils utils(printParams);
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+  if (utils.isPrintType(NOX::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
     solver.getParameterList().print(cout);

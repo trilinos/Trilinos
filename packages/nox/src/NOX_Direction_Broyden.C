@@ -247,8 +247,8 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
       *oldJacobianGrpPtr = soln;
 
     // Calcuate new Jacobian
-    if (utils.isPrintProcessAndType(NOX::Utils::Details))
-      cout << "       Recomputing Jacobian" << endl;
+    if (utils.isPrintType(NOX::Utils::Details))
+      utils.out() << "       Recomputing Jacobian" << endl;
  
     status = oldJacobianGrpPtr->computeJacobian();
     if (status != NOX::Abstract::Group::Ok) 
@@ -357,8 +357,8 @@ bool NOX::Direction::Broyden::doRestart(NOX::Abstract::Group& soln,
 
 void NOX::Direction::Broyden::throwError(const string& functionName, const string& errorMsg)
 {
-    if (utils.isPrintProcessAndType(NOX::Utils::Error))
-      cerr << "NOX::Direction::Broyden::" << functionName << " - " << errorMsg << endl;
+    if (utils.isPrintType(NOX::Utils::Error))
+      utils.err() << "NOX::Direction::Broyden::" << functionName << " - " << errorMsg << endl;
     throw "NOX Error";
 }
 

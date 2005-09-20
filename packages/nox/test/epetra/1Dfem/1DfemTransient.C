@@ -422,6 +422,9 @@ int main(int argc, char *argv[])
   else
     printParams.setParameter("Output Information", NOX::Utils::Error);
 
+  // Create a print class for controlling output below
+  NOX::Utils utils(printParams);
+
   // Sublist for line search 
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   searchParams.setParameter("Method", "Full Step");
@@ -453,7 +456,7 @@ int main(int argc, char *argv[])
   // 1. User supplied (Epetra_RowMatrix)
   Epetra_RowMatrix& Analytic = interface.getJacobian();
   // 2. Matrix-Free (Epetra_Operator)
-  NOX::Epetra::MatrixFree MF(interface, soln);
+  NOX::Epetra::MatrixFree MF(utils, interface, soln);
   // 3. Finite Difference (Epetra_RowMatrix)
   NOX::Epetra::FiniteDifference FD(interface, soln);
 
@@ -543,9 +546,6 @@ int main(int argc, char *argv[])
   // Create the solver
   NOX::Solver::Manager solver(grpPtr, combo, nlParamsPtr);
 
-  // Create a print class for controlling output below
-  NOX::Utils utils(printParams);
-
   // Overall status flag
   int ierr = 0;
 
@@ -554,15 +554,15 @@ int main(int argc, char *argv[])
     timeStep++;
     time += dt;
 
-    cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
+    utils.out() << "Time Step: " << timeStep << ",\tTime: " << time << endl;
   
     NOX::StatusTest::StatusType status = solver.solve();
 
     // Check for convergence
     if (status != NOX::StatusTest::Converged) {
         ierr++;
-        if (utils.isPrintProcessAndType(NOX::Utils::Error))
-          cout << "Nonlinear solver failed to converge!" << endl;
+        if (utils.isPrintType(NOX::Utils::Error))
+          utils.out() << "Nonlinear solver failed to converge!" << endl;
     }
 
     
@@ -592,11 +592,11 @@ int main(int argc, char *argv[])
   } // end time step while loop
 
   // Output the parameter list
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
-    cout << endl << "Final Parameters" << endl
+  if (utils.isPrintType(NOX::Utils::Parameters)) {
+    utils.out() << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    solver.getParameterList().print(cout);
-    cout << endl;
+    solver.getParameterList().print(utils.out());
+    utils.out() << endl;
   }
 
   // Test for convergence
@@ -613,12 +613,10 @@ int main(int argc, char *argv[])
     ierr = 2;
 
   // Summarize test results  
-  if (utils.isPrintProcess()) {
-    if (ierr == 0)
-      cout << "Test passed!" << endl;
-    else 
-      cout << "Test failed!" << endl;
-  }
+  if (ierr == 0)
+    utils.out() << "Test passed!" << endl;
+  else 
+    utils.out() << "Test failed!" << endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize();

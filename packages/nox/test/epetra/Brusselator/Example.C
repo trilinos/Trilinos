@@ -178,7 +178,10 @@ int main(int argc, char *argv[])
   }
   else
     printParams.setParameter("Output Information", NOX::Utils::Error);
-  
+
+  // Create a print handle object
+  NOX::Utils utils(printParams);
+
   // Sublist for line search 
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   searchParams.setParameter("Method", "Full Step");
@@ -243,7 +246,7 @@ int main(int argc, char *argv[])
   // 5. Finite Difference with Coloring......uncomment the following
 // -------------- Uncomment this block to use coloring --------------- //
 #ifndef HAVE_NOX_EPETRAEXT 
-  cout << "Cannot use Coloring without package epetraext !!!!" << endl;
+  utils.out() << "Cannot use Coloring without package epetraext !!!!" << endl;
   exit(0);
 #else 
   // Create a timer for performance
@@ -339,7 +342,7 @@ int main(int argc, char *argv[])
     time += dt;
   
     if (verbose)
-      cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
+      utils.out() << "Time Step: " << timeStep << ",\tTime: " << time << endl;
   
     status = NOX::StatusTest::Unconverged;
     status = solver.solve();
@@ -347,7 +350,7 @@ int main(int argc, char *argv[])
     if (verbose)
       if (status != NOX::StatusTest::Converged)
 	if (MyPID==0) 
-	  cout << "Nonlinear solver failed to converge!" << endl;
+	  utils.out() << "Nonlinear solver failed to converge!" << endl;
 
     // Get the Epetra_Vector with the final solution from the solver
     const NOX::Epetra::Group& finalGroup = 
@@ -374,20 +377,19 @@ int main(int argc, char *argv[])
   } // end time step while loop
 
   // Output the parameter list
-  NOX::Utils utils(printParams);
   if (verbose) {
-    if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
-      cout << endl << "Final Parameters" << endl
+    if (utils.isPrintType(NOX::Utils::Parameters)) {
+      utils.out() << endl << "Final Parameters" << endl
 	   << "****************" << endl;
-      solver.getParameterList().print(cout);
-      cout << endl;
+      solver.getParameterList().print(utils.out());
+      utils.out() << endl;
     }
   }
 
   // Output timing info
   if (verbose) {
     if(MyPID==0)
-      cout << "\nTimings :\n\tWallTime --> " << 
+      utils.out() << "\nTimings :\n\tWallTime --> " << 
 	myTimer.WallTime() - startWallTime << " sec."
 	   << "\n\tElapsedTime --> " << myTimer.ElapsedTime() 
 	   << " sec." << endl << endl;
@@ -400,7 +402,7 @@ int main(int argc, char *argv[])
 
   // 1. Convergence
   if (status != NOX::StatusTest::Converged) {
-    if (MyPID==0) cout << "Nonlinear solver failed to converge!" << endl;
+    if (MyPID==0) utils.out() << "Nonlinear solver failed to converge!" << endl;
     testStatus = 1;
   }
   // 2. Nonlinear Iterations (3)
@@ -415,12 +417,10 @@ int main(int argc, char *argv[])
 #endif
 
   // Summarize test results 
-  if (utils.isPrintProcess()) { 
-    if (testStatus == 0)
-      cout << "Test passed!" << endl;
-    else 
-      cout << "Test failed!" << endl;
-  }
+  if (testStatus == 0)
+    utils.out() << "Test passed!" << endl;
+  else 
+    utils.out() << "Test failed!" << endl;
   
 #ifdef HAVE_MPI
   MPI_Finalize();

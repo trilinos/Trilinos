@@ -37,7 +37,10 @@
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
 
-NOX::StatusTest::NormF::NormF(double tolerance, NOX::Abstract::Vector::NormType ntype, ScaleType stype) :
+NOX::StatusTest::NormF::
+NormF(double tolerance, 
+      NOX::Abstract::Vector::NormType ntype, ScaleType stype, 
+      const NOX::Utils* u) :
   status(Unevaluated),
   normType(ntype),
   scaleType(stype),
@@ -47,9 +50,13 @@ NOX::StatusTest::NormF::NormF(double tolerance, NOX::Abstract::Vector::NormType 
   trueTolerance(tolerance),
   normF(0.0)
 {
+  if (u != NULL)
+    utils = *u;
 }
 
-NOX::StatusTest::NormF::NormF(double tolerance, ScaleType stype) :
+NOX::StatusTest::NormF::
+NormF(double tolerance, ScaleType stype, 
+      const NOX::Utils* u) :
   status(Unevaluated),
   normType(NOX::Abstract::Vector::TwoNorm),
   scaleType(stype),
@@ -59,11 +66,15 @@ NOX::StatusTest::NormF::NormF(double tolerance, ScaleType stype) :
   trueTolerance(tolerance),
   normF(0.0)
 {
+  if (u != NULL)
+    utils = *u;
 }
 
-NOX::StatusTest::NormF::NormF(NOX::Abstract::Group& initialGuess, double tolerance, 
-			      NOX::Abstract::Vector::NormType ntype, 
-			      NOX::StatusTest::NormF::ScaleType stype) :
+NOX::StatusTest::NormF::
+NormF(NOX::Abstract::Group& initialGuess, double tolerance, 
+      NOX::Abstract::Vector::NormType ntype, 
+      NOX::StatusTest::NormF::ScaleType stype, 
+      const NOX::Utils* u) :
   status(Unevaluated),
   normType(ntype),
   scaleType(stype),
@@ -73,11 +84,16 @@ NOX::StatusTest::NormF::NormF(NOX::Abstract::Group& initialGuess, double toleran
   trueTolerance(0.0),
   normF(0.0)
 {
+  if (u != NULL)
+    utils = *u;
+
   relativeSetup(initialGuess);
 }
 
 
-NOX::StatusTest::NormF::NormF(NOX::Abstract::Group& initialGuess, double tolerance, ScaleType stype) :
+NOX::StatusTest::NormF::
+NormF(NOX::Abstract::Group& initialGuess, double tolerance, ScaleType stype, 
+      const NOX::Utils* u) :
   status(Unevaluated),
   normType(NOX::Abstract::Vector::TwoNorm),
   scaleType(stype),
@@ -87,6 +103,9 @@ NOX::StatusTest::NormF::NormF(NOX::Abstract::Group& initialGuess, double toleran
   trueTolerance(0.0),
   normF(0.0)
 {
+  if (u != NULL)
+    utils = *u;
+
   relativeSetup(initialGuess);
 }
 
@@ -129,7 +148,8 @@ void NOX::StatusTest::NormF::relativeSetup(NOX::Abstract::Group& initialGuess)
   rtype = initialGuess.computeF();
   if (rtype != NOX::Abstract::Group::Ok) 
   {
-    cerr << "NOX::StatusTest::NormF::NormF - Unable to compute F" << endl;
+    utils.err() << "NOX::StatusTest::NormF::NormF - Unable to compute F" 
+		<< endl;
     throw "NOX Error";
   }
     

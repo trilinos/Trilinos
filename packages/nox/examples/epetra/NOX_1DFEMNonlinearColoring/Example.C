@@ -142,6 +142,9 @@ int main(int argc, char *argv[])
 			NOX::Utils::Details + 
 			NOX::Utils::Warning);
 
+  // Create parallel printing utilities
+  NOX::Utils utils(printParams);
+
   // Sublist for line search 
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   searchParams.setParameter("Method", "Full Step");
@@ -247,7 +250,7 @@ int main(int argc, char *argv[])
 
   if (status != NOX::StatusTest::Converged)
     if (MyPID==0) 
-      cout << "Nonlinear solver failed to converge!" << endl;
+      utils.out() << "Nonlinear solver failed to converge!" << endl;
 
   // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
@@ -256,12 +259,11 @@ int main(int argc, char *argv[])
   // End Nonlinear Solver **************************************
 
   // Output the parameter list
-  NOX::Utils utils(printParams);
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
-    cout << endl << "Final Parameters" << endl
+  if (utils.isPrintType(NOX::Utils::Parameters)) {
+    utils.out() << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    solver.getParameterList().print(cout);
-    cout << endl;
+    solver.getParameterList().print(utils.out());
+    utils.out() << endl;
   }
 
   // Print solution

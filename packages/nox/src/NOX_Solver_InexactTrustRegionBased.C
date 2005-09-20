@@ -119,10 +119,10 @@ void NOX::Solver::InexactTrustRegionBased::init()
     resetCounters();
 
   // Print out initialization information
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
-    cout << "\n" << NOX::Utils::fill(72) << "\n";
-    cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
-    paramsPtr->print(cout,5);
+  if (utils.isPrintType(NOX::Utils::Parameters)) {
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utils.out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
+    paramsPtr->print(utils.out(),5);
   }
 
   // Get the trust region method
@@ -134,7 +134,7 @@ void NOX::Solver::InexactTrustRegionBased::init()
   else if (methodChoice == "Inexact Trust Region")
     method = Inexact;
   else {
-    cerr << "NOX::Solver::InexactTrustRegionBased::init - \"" << methodChoice
+    utils.err() << "NOX::Solver::InexactTrustRegionBased::init - \"" << methodChoice
 	 << "\" is an invalid choice for \"Method\" key!"
 	 << endl;
     throw "NOX Error";
@@ -249,10 +249,10 @@ void NOX::Solver::InexactTrustRegionBased::init()
   // Test the initial guess
   status = testPtr->checkStatus(*this);
 
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
-    cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
-    testPtr->print(cout, 5);
-    cout <<"\n" << NOX::Utils::fill(72) << "\n";
+  if (utils.isPrintType(NOX::Utils::Parameters)) {
+    utils.out() << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
+    testPtr->print(utils.out(), 5);
+    utils.out() <<"\n" << NOX::Utils::fill(72) << "\n";
   }
 
 }
@@ -263,7 +263,7 @@ void NOX::Solver::InexactTrustRegionBased::init()
 void NOX::Solver::InexactTrustRegionBased::invalid(const string& name, 
 						   double value) const
 {
-  cout << "NOX::Solver::InexactTrustRegionBased::init - " 
+  utils.out() << "NOX::Solver::InexactTrustRegionBased::init - " 
        << "Invalid \"" << name << "\" (" << value << ")" 
        << endl;
   throw "NOX Error";
@@ -275,7 +275,7 @@ void NOX::Solver::InexactTrustRegionBased::invalid(const string& name,
 void NOX::Solver::InexactTrustRegionBased::throwError(const string& method, 
 						      const string& message) const
 {
-  cout << "NOX::Solver::InexactTrustRegionBased::" << method << " - " 
+  utils.out() << "NOX::Solver::InexactTrustRegionBased::" << method << " - " 
        << message << endl;
   throw "NOX Error";
 }
@@ -315,10 +315,10 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
     resetCounters();
 
   // Print out initialization information
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
-    cout << "\n" << NOX::Utils::fill(72) << "\n";
-    cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
-    paramsPtr->print(cout,5);
+  if (utils.isPrintType(NOX::Utils::Parameters)) {
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utils.out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
+    paramsPtr->print(utils.out(),5);
   }
 
   // Compute F of initital guess
@@ -332,10 +332,10 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
   // Test the initial guess
   status = testPtr->checkStatus(*this);
 
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
-    cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
-    testPtr->print(cout, 5);
-    cout <<"\n" << NOX::Utils::fill(72) << "\n";
+  if (utils.isPrintType(NOX::Utils::Parameters)) {
+    utils.out() << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
+    testPtr->print(utils.out(), 5);
+    utils.out() <<"\n" << NOX::Utils::fill(72) << "\n";
   }
   return true;
 }
@@ -396,7 +396,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
   ok = newton.compute(newtonVec, soln, *this);
   if (!ok) 
   {
-    cout << "NOX::Solver::InexactTrustRegionBased::iterate - "
+    utils.out() << "NOX::Solver::InexactTrustRegionBased::iterate - "
 	 << "unable to calculate Newton direction" << endl;
     status = StatusTest::Failed;
     return status;
@@ -405,7 +405,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
   ok = cauchy.compute(cauchyVec, soln, *this);
   if (!ok) 
   {
-    cout << "NOX::Solver::InexactTrustRegionBased::iterate - "
+    utils.out() << "NOX::Solver::InexactTrustRegionBased::iterate - "
 	 << "unable to calculate Cauchy direction" << endl;
     status = StatusTest::Failed;
     return status;
@@ -431,10 +431,10 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
   // Improvement ratio = (oldF - newF) / (mold - mnew)
   double ratio = -1;
 
-  if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) 
+  if (utils.isPrintType(NOX::Utils::InnerIteration)) 
   {
-    cout << NOX::Utils::fill(72) << endl;
-    cout << "-- Trust Region Inner Iteration --" << endl;
+    utils.out() << NOX::Utils::fill(72) << endl;
+    utils.out() << "-- Trust Region Inner Iteration --" << endl;
   }
 
   // Dogleg variable
@@ -492,14 +492,14 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
       // sqrt of quadratic equation
       double tmp = (cta * cta) - ((ctc - (radius * radius)) * ata);
       if (tmp < 0) {
-	cerr << "NOX::Solver::InexactTrustRegionBased::iterate - invalid computation" << endl;
+	utils.err() << "NOX::Solver::InexactTrustRegionBased::iterate - invalid computation" << endl;
 	throw "NOX Error";
       }
       
       // final soln to quadratic equation
       gamma = (sqrt(tmp) - cta) / ata;
       if ((gamma < 0) || (gamma > 1)) {
-	cerr << "NOX::Solver::InexactTrustRegionBased::iterate - invalid trust region step" << endl;
+	utils.err() << "NOX::Solver::InexactTrustRegionBased::iterate - invalid trust region step" << endl;
 	throw "NOX Error";
       }
       
@@ -525,7 +525,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
     NOX::Abstract::Group::ReturnType rtype = soln.computeF();
     if (rtype != NOX::Abstract::Group::Ok) 
     {
-      cerr << "NOX::Solver::InexactTrustRegionBased::iterate - "
+      utils.err() << "NOX::Solver::InexactTrustRegionBased::iterate - "
 	   << "unable to compute F" << endl;
       throw "NOX Error";
     }
@@ -539,7 +539,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
       rtype = oldSoln.applyJacobian(*dirPtr, bVec);
       if (rtype != NOX::Abstract::Group::Ok) 
       {
-	cout << "NOX::Solver::TrustRegionBased::iterate - "
+	utils.out() << "NOX::Solver::TrustRegionBased::iterate - "
 	     << "unable to compute F" << endl;
 	throw "NOX Error";
       }
@@ -553,10 +553,10 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
       ratio = (oldNormF - newNormF) / (oldNormF - normFLinear);
 
       // Print the ratio values if requested
-      if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
+      if (utils.isPrintType(NOX::Utils::InnerIteration)) {
       double numerator = oldNormF - newNormF;
       double denominator = oldNormF - normFLinear;
-	cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
+	utils.out() << "Ratio computation: " << utils.sciformat(numerator) << "/" 
 	     << utils.sciformat(denominator) << "=" << ratio << endl;
       }
 
@@ -578,7 +578,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
 	rtype = oldSoln.applyJacobian(*dirPtr, bVec);
 	if (rtype != NOX::Abstract::Group::Ok) 
 	{
-	  cerr << "NOX::Solver::InexactTrustRegionBased::iterate - "
+	  utils.err() << "NOX::Solver::InexactTrustRegionBased::iterate - "
 	       << "unable to compute F" << endl;
 	  throw "NOX Error";
 	}
@@ -595,8 +595,8 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
 			     0.5 * bVec.dot(bVec));
 
 	ratio = numerator / denominator;
-	if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration))
-	  cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
+	if (utils.isPrintType(NOX::Utils::InnerIteration))
+	  utils.out() << "Ratio computation: " << utils.sciformat(numerator) << "/" 
 	       << utils.sciformat(denominator) << "=" << ratio << endl;
 
 	// WHY IS THIS CHECK HERE?
@@ -605,26 +605,26 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
       }
     }  // end ratio computation
 
-    if (utils.isPrintProcessAndType(Utils::InnerIteration)) {
-      cout << "radius = " << utils.sciformat(radius, 1);
-      cout << " ratio = " << setprecision(1) << setw(3) << ratio;
-      cout << " f = " << utils.sciformat(sqrt(2*newF));
-      cout << " oldF = " << utils.sciformat(sqrt(2*oldF));
-      cout << " ";
+    if (utils.isPrintType(Utils::InnerIteration)) {
+      utils.out() << "radius = " << utils.sciformat(radius, 1);
+      utils.out() << " ratio = " << setprecision(1) << setw(3) << ratio;
+      utils.out() << " f = " << utils.sciformat(sqrt(2*newF));
+      utils.out() << " oldF = " << utils.sciformat(sqrt(2*oldF));
+      utils.out() << " ";
 
       switch(stepType) {
       case InexactTrustRegionBased::Newton:
-	cout << "Newton";
+	utils.out() << "Newton";
 	break;
       case InexactTrustRegionBased::Cauchy:
-	cout << "Cauchy";
+	utils.out() << "Cauchy";
 	break;
       case InexactTrustRegionBased::Dogleg:
-	cout << "Dogleg";
+	utils.out() << "Dogleg";
 	break;
       }
 
-      cout << endl;
+      utils.out() << endl;
     }
 
     // Update trust region
@@ -656,9 +656,9 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
       double tmp = radius/computeNorm(newtonVec);
       sumDoglegFracNewtonLength += tmp;
 
-      if (utils.isPrintProcessAndType(Utils::Details)) {
-	cout << "    Fraction of Newton Step Length = " << tmp << endl;
-	cout << "    Fraction Between Cauchy and Newton Direction = " 
+      if (utils.isPrintType(Utils::Details)) {
+	utils.out() << "    Fraction of Newton Step Length = " << tmp << endl;
+	utils.out() << "    Fraction Between Cauchy and Newton Direction = " 
 	     << gamma << endl; 
       }
 
@@ -668,8 +668,8 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
   // Evaluate the current status
   if ((radius <= minRadius) && (ratio < minRatio)) 
   {
-    if (utils.isPrintProcessAndType(Utils::InnerIteration))
-      cout << "Using recovery step and resetting trust region." << endl;
+    if (utils.isPrintType(Utils::InnerIteration))
+      utils.out() << "Using recovery step and resetting trust region." << endl;
     soln.computeX(oldSoln, newtonVec, recoveryStep);
     soln.computeF();
     radius = computeNorm(newtonVec);
@@ -679,8 +679,8 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
 
   status = test.checkStatus(*this);
  
-  if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
-    cout << NOX::Utils::fill(72) << endl;
+  if (utils.isPrintType(Utils::InnerIteration)) 
+    utils.out() << NOX::Utils::fill(72) << endl;
 
   // Return status.
   return status;
@@ -710,7 +710,7 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
   // Compute Cauchy direction
   bool ok = cauchy.compute(cauchyVec, oldSoln, *this);
   if (!ok) {
-    cout << "NOX::Solver::InexactTrustRegionBased::iterate - "
+    utils.out() << "NOX::Solver::InexactTrustRegionBased::iterate - "
 	 << "unable to calculate Cauchy direction" << endl;
     status = StatusTest::Failed;
     return status;
@@ -734,10 +734,10 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
   if (nIter == 0) 
       radius = maxRadius;
 
-  if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) 
+  if (utils.isPrintType(NOX::Utils::InnerIteration)) 
   {
-    cout << NOX::Utils::fill(72) << endl;
-    cout << "-- Trust Region Inner Iteration --" << endl;
+    utils.out() << NOX::Utils::fill(72) << endl;
+    utils.out() << "-- Trust Region Inner Iteration --" << endl;
   }
 
   // Set up variables needed during inner iteration.
@@ -868,7 +868,7 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
        rtype = oldSoln.applyJacobian(*dirPtr, bVec);
        if (rtype != NOX::Abstract::Group::Ok) 
        {
-	 cout << "NOX::Solver::TrustRegionBased::iterate - "
+	 utils.out() << "NOX::Solver::TrustRegionBased::iterate - "
 	      << "unable to compute F" << endl;
 	 throw "NOX Error";
        } 
@@ -882,10 +882,10 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
        ratio = (oldNormF - newNormF) / (oldNormF - normFLinear);
        
        // Print the ratio values if requested
-       if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
+       if (utils.isPrintType(NOX::Utils::InnerIteration)) {
 	 double numerator = oldNormF - newNormF;
 	 double denominator = oldNormF - normFLinear;
-	 cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
+	 utils.out() << "Ratio computation: " << utils.sciformat(numerator) << "/" 
 	      << utils.sciformat(denominator) << "=" << ratio << endl;
        }
 
@@ -911,8 +911,8 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
 			    0.5 * zVec.dot(zVec));
 
        ratio = numerator / denominator;
-       if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration))
-	 cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
+       if (utils.isPrintType(NOX::Utils::InnerIteration))
+	 utils.out() << "Ratio computation: " << utils.sciformat(numerator) << "/" 
 	      << utils.sciformat(denominator) << "=" << ratio << endl;
 
        // WHY IS THIS CHECK HERE?
@@ -921,26 +921,26 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
      }
     } 
 
-    if (utils.isPrintProcessAndType(Utils::InnerIteration)) {
-      cout << "radius = " << utils.sciformat(radius, 1);
-      cout << " ratio = " << setprecision(1) << setw(3) << ratio;
-      cout << " f = " << utils.sciformat(sqrt(2*newF));
-      cout << " oldF = " << utils.sciformat(sqrt(2*oldF));
-      cout << " ";
+    if (utils.isPrintType(Utils::InnerIteration)) {
+      utils.out() << "radius = " << utils.sciformat(radius, 1);
+      utils.out() << " ratio = " << setprecision(1) << setw(3) << ratio;
+      utils.out() << " f = " << utils.sciformat(sqrt(2*newF));
+      utils.out() << " oldF = " << utils.sciformat(sqrt(2*oldF));
+      utils.out() << " ";
 
       switch(stepType) {
       case InexactTrustRegionBased::Newton:
-	cout << "Newton";
+	utils.out() << "Newton";
 	break;
       case InexactTrustRegionBased::Cauchy:
-	cout << "Cauchy";
+	utils.out() << "Cauchy";
 	break;
       case InexactTrustRegionBased::Dogleg:
-	cout << "Dogleg";
+	utils.out() << "Dogleg";
 	break;
       }
       
-      cout << endl;
+      utils.out() << endl;
     }
 
     // Check the inner iteration status
@@ -978,9 +978,9 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
       double tmp = radius/computeNorm(newtonVec);
       sumDoglegFracNewtonLength += tmp;
 
-      if (utils.isPrintProcessAndType(Utils::Details)) {
-	cout << "    Fraction of Newton Step Length = " << tmp << endl;
-	cout << "    Fraction Between Cauchy and Newton Direction = " 
+      if (utils.isPrintType(Utils::Details)) {
+	utils.out() << "    Fraction of Newton Step Length = " << tmp << endl;
+	utils.out() << "    Fraction Between Cauchy and Newton Direction = " 
 	     << tau << endl; 
       }
 
@@ -999,15 +999,15 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
   // If the inner iteration failed, use a recovery step
   if (innerIterationStatus == Failed) {
 
-    if (utils.isPrintProcessAndType(Utils::InnerIteration))
-      cout << "Inner Iteration Failed!\n ";
+    if (utils.isPrintType(Utils::InnerIteration))
+      utils.out() << "Inner Iteration Failed!\n ";
     if (computedNewtonDir) {
       soln.computeX(oldSoln, cauchyVec, recoveryStep);
-      cout << "Using Newton recovery step and resetting trust region!" << endl;
+      utils.out() << "Using Newton recovery step and resetting trust region!" << endl;
     }
     else {
       soln.computeX(oldSoln, cauchyVec, recoveryStep);
-      cout << "Using Cauchy recovery step and resetting trust region!" << endl;
+      utils.out() << "Using Cauchy recovery step and resetting trust region!" << endl;
     }
     soln.computeF();
     radius = computeNorm(newtonVec);
@@ -1016,8 +1016,8 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
   // Evaluate the current status
   status = test.checkStatus(*this);
  
-  if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
-    cout << NOX::Utils::fill(72) << endl;
+  if (utils.isPrintType(Utils::InnerIteration)) 
+    utils.out() << NOX::Utils::fill(72) << endl;
 
   return status;    
 }
@@ -1116,34 +1116,34 @@ void NOX::Solver::InexactTrustRegionBased::printUpdate()
 {
   // Print the status test parameters at each iteration if requested  
   if ((status == StatusTest::Unconverged) && 
-      (utils.isPrintProcessAndType(NOX::Utils::OuterIterationStatusTest))) {
-    cout << NOX::Utils::fill(72) << "\n";
-    cout << "-- Status Test Results --\n";    
-    testPtr->print(cout);
-    cout << NOX::Utils::fill(72) << "\n";
+      (utils.isPrintType(NOX::Utils::OuterIterationStatusTest))) {
+    utils.out() << NOX::Utils::fill(72) << "\n";
+    utils.out() << "-- Status Test Results --\n";    
+    testPtr->print(utils.out());
+    utils.out() << NOX::Utils::fill(72) << "\n";
   }
   
   double fmax = solnPtr->getF().norm(Abstract::Vector::MaxNorm);
-  if (utils.isPrintProcessAndType(NOX::Utils::OuterIteration)) {
-    cout << "\n" << NOX::Utils::fill(72) << "\n";
-    cout << "-- Newton Trust-Region Step " << nIter << " -- \n";
-    cout << "f = " << utils.sciformat(sqrt(2*newF));
-    cout << " fmax = " << utils.sciformat(fmax);
-    cout << "  dx = " << utils.sciformat(dx);
-    cout << "  radius = " << utils.sciformat(radius);
+  if (utils.isPrintType(NOX::Utils::OuterIteration)) {
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utils.out() << "-- Newton Trust-Region Step " << nIter << " -- \n";
+    utils.out() << "f = " << utils.sciformat(sqrt(2*newF));
+    utils.out() << " fmax = " << utils.sciformat(fmax);
+    utils.out() << "  dx = " << utils.sciformat(dx);
+    utils.out() << "  radius = " << utils.sciformat(radius);
     if (status == StatusTest::Converged)
-      cout << " (Converged!)";
+      utils.out() << " (Converged!)";
     if (status == StatusTest::Failed)
-      cout << " (Failed!)";
-    cout << "\n" << NOX::Utils::fill(72) << "\n" << endl;
+      utils.out() << " (Failed!)";
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n" << endl;
   }
   
   if ((status != StatusTest::Unconverged) && 
-      (utils.isPrintProcessAndType(NOX::Utils::OuterIteration))) {
-    cout << NOX::Utils::fill(72) << "\n";
-    cout << "-- Final Status Test Results --\n";    
-    testPtr->print(cout);
-    cout << NOX::Utils::fill(72) << "\n";
+      (utils.isPrintType(NOX::Utils::OuterIteration))) {
+    utils.out() << NOX::Utils::fill(72) << "\n";
+    utils.out() << "-- Final Status Test Results --\n";    
+    testPtr->print(utils.out());
+    utils.out() << NOX::Utils::fill(72) << "\n";
   }
 }
 

@@ -34,6 +34,8 @@
 #define NOX_UTILS_H
 
 #include "NOX_Common.H"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
 // Forward declarations
 namespace NOX {
@@ -45,7 +47,7 @@ class List;
 namespace NOX {
 
 /*!
-  \brief Provides parallel communication and printing utilities.
+  \brief Provides printing utilities.
 
   The following parameters are used by this class and should be
   defined in the "Printing" sublist of the solver parameter list.
@@ -126,50 +128,7 @@ public:				// types
   };
 
 
-public:				// static functions
-
-  /*! 
-    \brief Deprecated
-    \deprecated Use Utils() or reset() on instantiated object instead.
-  */
-  static void setUtils(NOX::Parameter::List& p);
-
-  /*! 
-    \brief Deprecated
-    \deprecated Use isPrintProcess() on instantiated object instead.
-  */
-  static bool isPrintProc();
-
-  /*! 
-    \brief Deprecated.
-    \deprecated Use isPrintProcess() on instantiated object instead.
-  */ 
-  static bool doPrint(int printLevel);
-
-  /*!
-    \brief Deprecated
-    \deprecated Use isPrintProcessAndCode() on instantiated object instead.
-  */
-  static bool doPrint(MsgType type);
-
-  /*! 
-    \brief Deprecated
-    \deprecated Use isPrintProcessAndCode() on instantiated object instead.
-  */ 
-  static bool doAllPrint(int printLevel);
-
-  /*!
-    \brief Deprecated
-    \deprecated Use isPrintCode() on instantiated object instead.
-  */
-  static bool doAllPrint(MsgType type);
-
-  /*!
-    \brief Deprecated
-    \deprecated No replacement.
-  */
-  static int getMyPID();
-
+public:		
 
   /*!  
     \brief Creates a Fill object which can be used in an output stream
@@ -184,20 +143,24 @@ public:				// static functions
   */
   static Fill fill(int filln, char fillc = '*');
 
+public:
 
-  /*!
-    \brief Deprecated
-    \deprecated Use sciformat() on instantiated object instead.
-  */
-  static Sci sci(double dval, int prec = -1);
+  //! Constructor.  
+  /*!The final argument is a reference counted pointer to an ostream.
+    This defaults to std::cout if not supplied.  Users should only
+    supply this argument if they want output directed to a
+    std::ostream other than std::cout.  If so, they must wrap the
+    pointer in a reference counted pointer for safe memory
+    management. */
+  Utils(int outputInformation=0xf, int MyPID=0, int outputProcess=0, 
+	int outputPrecision=3, 
+	const Teuchos::RefCountPtr<std::ostream>& outputStream=
+	Teuchos::rcp(&(std::cout), false),
+	const Teuchos::RefCountPtr<std::ostream>& errorStream=
+	Teuchos::rcp(&(std::cerr), false));
 
-public:				// functions
-
-  //! Empty constructor
-  Utils();
-
-  //! Constructor
-  explicit Utils(NOX::Parameter::List& p);
+  //! Constructor via a parameter list
+  Utils(NOX::Parameter::List& p);
 
   //! Copy constructor
   Utils(const NOX::Utils& u);
@@ -205,17 +168,35 @@ public:				// functions
   //! Destructor
   ~Utils();
 
-  //! Reset the utility parameters
-  void reset(NOX::Parameter::List& p);
+  //! Assignment operator
+  NOX::Utils& operator=(const NOX::Utils& source);
 
-  //! Returns true if this is the designated print process
-  bool isPrintProcess() const;
+  //! Reset the printing parameters
+  void reset(NOX::Parameter::List& p);
 
   //! Returns true if this is a valid print type
   bool isPrintType(NOX::Utils::MsgType type) const;
 
-  //! Returns true if this is the designated print process and this is a valid print type
-  bool isPrintProcessAndType(NOX::Utils::MsgType type) const;
+  //! Returns the ostream for printing if this proces is the print process. Returns a Teuchos::oblackholestream otherwise.
+  std::ostream& out() const;
+
+  //! Returns the ostream for printing if this process is the print process and the print type is valid. Returns a Teuchos::oblackholestream otherwise.
+  std::ostream& out(NOX::Utils::MsgType type) const;
+
+  //! Returns the ostream for printing regardless of the print processor.  Only use this call if you want all processes to print to the ostream.
+  std::ostream& pout() const; 
+
+  //! Returns the ostream for printing if the print type matches.  Only use this call if you want all processes to print to the ostream for the print type.
+  std::ostream& pout(NOX::Utils::MsgType type) const; 
+
+  //! Returns the error stream for printing if this is the print process.
+  std::ostream& err() const;
+
+  //! Returns the error stream for printing to all processors.  Only use this call if you want all processes to print to the error stream.
+  std::ostream& perr() const;
+  
+  //! Print this object
+  void print(ostream& os) const;
 
   /*! 
     \brief Creates a Sci object which can be used in an output stream
@@ -238,11 +219,6 @@ public:				// functions
 
 private:
 
-  //! Print out a message regarding being deprecated
-  static void deprecated(const string& oldname, const string& newname);
-
-private:
-
   //! Output precision for floats and doubles.
   int precision;
   
@@ -255,12 +231,27 @@ private:
   //! Processor responsible for output. 
   int printProc;
 
+  //! std::ostream derived object that deletes the output.
+  /*! This is useful for parallel printing to eliminate errors due to printing to all processors.
+   */
+  Teuchos::RefCountPtr<std::ostream> blackholeStream;
+
+  //! Output stream to be used for printing.
+  Teuchos::RefCountPtr<std::ostream> printStream;
+
+  //! Output stream used for printing to the print process.
+  Teuchos::RefCountPtr<std::ostream> myStream;
+
+  //! Output stream used for printing to the print process.
+  Teuchos::RefCountPtr<std::ostream> errorStream;
+
 }; // class Utils
 
 } // namespace NOX
 
 ostream& operator<<(ostream&, const NOX::Utils::Fill&);
 ostream& operator<<(ostream&, const NOX::Utils::Sci&);
+ostream& operator<<(ostream&, const NOX::Utils& utils);
 
 
 #endif

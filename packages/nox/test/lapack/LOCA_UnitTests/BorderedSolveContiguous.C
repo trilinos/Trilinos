@@ -67,7 +67,7 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
 	  const string& testName) {
   int ierr = 0;
 
-  if (utils->isPrintProcessAndType(NOX::Utils::TestDetails))
+  if (utils->isPrintType(NOX::Utils::TestDetails))
     cout << endl << "***** " << testName << " *****" << endl;
 
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> a = 

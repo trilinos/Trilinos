@@ -67,7 +67,7 @@ bool NOX::LineSearch::Backtrack::reset(NOX::Parameter::List& params)
     normType = NOX::Abstract::Vector::TwoNorm;
   else 
   {
-    cout << "NOX::LineSearch::Backtrack::reset - Invalid choice \"" << tmp 
+    utils.out() << "NOX::LineSearch::Backtrack::reset - Invalid choice \"" << tmp 
 	 << "\" for \"Decrease Condition\"" << endl;
     throw "NOX Error";
   }
@@ -98,28 +98,28 @@ bool NOX::LineSearch::Backtrack::compute(NOX::Abstract::Group& grp, double& step
   rtype = grp.computeF();    
   if (rtype != NOX::Abstract::Group::Ok)
   {
-    cerr << "NOX::LineSearch::BackTrack::compute - Unable to compute F" << endl;
+    utils.err() << "NOX::LineSearch::BackTrack::compute - Unable to compute F" << endl;
     throw "NOX Error";
   }
 
   newF = getNormF(grp);
   int nIters = 1;
 
-  if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
+  if (utils.isPrintType(Utils::InnerIteration)) 
   {
-   cout << "\n" << Utils::fill(72) << "\n" << "-- Backtrack Line Search -- \n";
+   utils.out() << "\n" << Utils::fill(72) << "\n" << "-- Backtrack Line Search -- \n";
   }
 
   while ((newF >= oldF) && (!isFailed)) 
   {
 
-    if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
+    if (utils.isPrintType(Utils::InnerIteration)) 
     {
-      cout << setw(3) << nIters << ":";
-      cout << " step = " << utils.sciformat(step);
-      cout << " oldF = " << utils.sciformat(oldF);
-      cout << " newF = " << utils.sciformat(newF);
-      cout << endl;
+      utils.out() << setw(3) << nIters << ":";
+      utils.out() << " step = " << utils.sciformat(step);
+      utils.out() << " oldF = " << utils.sciformat(oldF);
+      utils.out() << " newF = " << utils.sciformat(newF);
+      utils.out() << endl;
     }
 
     nIters ++;
@@ -136,24 +136,24 @@ bool NOX::LineSearch::Backtrack::compute(NOX::Abstract::Group& grp, double& step
     rtype = grp.computeF();    
     if (rtype != NOX::Abstract::Group::Ok)
     {
-      cerr << "NOX::LineSearch::BackTrack::compute - Unable to compute F" << endl;
+      utils.err() << "NOX::LineSearch::BackTrack::compute - Unable to compute F" << endl;
       throw "NOX Error";
     }
 
     newF = getNormF(grp);
   } 
 
-  if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
+  if (utils.isPrintType(Utils::InnerIteration)) 
   {
-    cout << setw(3) << nIters << ":";
-    cout << " step = " << utils.sciformat(step);
-    cout << " oldF = " << utils.sciformat(oldF);
-    cout << " newF = " << utils.sciformat(newF);
+    utils.out() << setw(3) << nIters << ":";
+    utils.out() << " step = " << utils.sciformat(step);
+    utils.out() << " oldF = " << utils.sciformat(oldF);
+    utils.out() << " newF = " << utils.sciformat(newF);
     if (isFailed)
-      cout << " (USING RECOVERY STEP!)" << endl;
+      utils.out() << " (USING RECOVERY STEP!)" << endl;
     else
-      cout << " (STEP ACCEPTED!)" << endl;
-    cout << Utils::fill(72) << "\n" << endl;
+      utils.out() << " (STEP ACCEPTED!)" << endl;
+    utils.out() << Utils::fill(72) << "\n" << endl;
   }
 
   return (!isFailed);

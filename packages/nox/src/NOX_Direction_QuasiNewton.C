@@ -247,8 +247,8 @@ bool NOX::Direction::QuasiNewton::compute(NOX::Abstract::Vector& dir,
 
 void NOX::Direction::QuasiNewton::throwError(const string& functionName, const string& errorMsg)
 {
-    if (utils.isPrintProcessAndType(Utils::Error))
-      cerr << "NOX::Direction::QuasiNewton::" << functionName << " - " << errorMsg << endl;
+    if (utils.isPrintType(Utils::Error))
+      utils.err() << "NOX::Direction::QuasiNewton::" << functionName << " - " << errorMsg << endl;
     throw "NOX Error";
 }
 

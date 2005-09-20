@@ -42,6 +42,7 @@
 
 NOX::LineSearch::MoreThuente::MoreThuente(const NOX::Utils& u, Parameter::List& params) :
   print(u),
+  slope(u),
   paramsPtr(0)
 {
   reset(params);
@@ -73,7 +74,7 @@ bool NOX::LineSearch::MoreThuente::reset(Parameter::List& params)
       (maxfev <= 0) || 
       (defaultstep <= 0)) 
   {
-    cout << "NOX::LineSearch::MoreThuente::reset - Error in Input Parameter!" << endl;
+    print.out() << "NOX::LineSearch::MoreThuente::reset - Error in Input Parameter!" << endl;
     throw "NOX Error";
   }
 
@@ -85,7 +86,7 @@ bool NOX::LineSearch::MoreThuente::reset(Parameter::List& params)
   else if (choice == "Armijo-Goldstein") 
     suffDecrCond = ArmijoGoldstein;
   else {
-    cout << "ERROR: NOX::LineSearch::MoreThuente::reset() - the choice of "
+    print.out() << "ERROR: NOX::LineSearch::MoreThuente::reset() - the choice of "
 	 << "\"Sufficient Decrease Condition\" is invalid." << endl;
     throw "NOX Error";
   }
@@ -97,7 +98,7 @@ bool NOX::LineSearch::MoreThuente::reset(Parameter::List& params)
     recoveryStepType = LastComputedStep;
   }
   else {
-    cout << "NOX::LineSearch::MoreThuente::reset - Invalid "
+    print.out() << "NOX::LineSearch::MoreThuente::reset - Invalid "
 	 << "\"Recovery Step Type\"" << endl;
     throw "NOX Error";
   }
@@ -145,9 +146,9 @@ bool NOX::LineSearch::MoreThuente::compute(Abstract::Group& grp, double& step,
 int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp, 
 			const Abstract::Group& oldgrp, const Abstract::Vector& dir, const Solver::Generic& s)
 {
-  if (print.isPrintProcessAndType(NOX::Utils::InnerIteration)) 
+  if (print.isPrintType(NOX::Utils::InnerIteration)) 
   {
-   cout << "\n" << NOX::Utils::fill(72) << "\n" << "-- More'-Thuente Line Search -- \n";
+   print.out() << "\n" << NOX::Utils::fill(72) << "\n" << "-- More'-Thuente Line Search -- \n";
   }
 
   // Set default step
@@ -170,9 +171,9 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
 
   if (dginit >= 0.0) 
   {
-    if (print.isPrintProcessAndType(NOX::Utils::Warning)) 
+    if (print.isPrintType(NOX::Utils::Warning)) 
     {
-      cout << "NOX::LineSearch::MoreThuente::cvsrch - Non-descent direction (dginit = " << dginit << ")" << endl;
+      print.out() << "NOX::LineSearch::MoreThuente::cvsrch - Non-descent direction (dginit = " << dginit << ")" << endl;
     }
     stp = recoverystep;
     newgrp.computeX(oldgrp, dir, stp);
@@ -262,7 +263,7 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     rtype = newgrp.computeF();
     if (rtype != NOX::Abstract::Group::Ok) 
     {
-      cerr << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute F" << endl;
+      print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute F" << endl;
       throw "NOX Error";
     }
 
@@ -277,14 +278,14 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
       rtype = newgrp.computeJacobian();
       if (rtype != NOX::Abstract::Group::Ok) 
 	{
-	  cerr << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Jacobian" << endl;
+	  print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Jacobian" << endl;
 	  throw "NOX Error";
 	}
 
       rtype = newgrp.computeGradient();
       if (rtype != NOX::Abstract::Group::Ok) 
 	{
-	  cerr << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Gradient" << endl;
+	  print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Gradient" << endl;
 	  throw "NOX Error";
 	}
     }
@@ -331,7 +332,7 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
       info = 2;			// bracketed soln
 
 
-    //cout << "f=" << f << " ftest1=" << ftest1 << " fabs(dg)=" << fabs(dg) 
+    //print.out() << "f=" << f << " ftest1=" << ftest1 << " fabs(dg)=" << fabs(dg) 
     //	 << " gtol*(-dginit)=" << gtol*(-dginit) << endl;
 
     // RPP sufficient decrease test can be different
@@ -366,7 +367,7 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
 	message = "(USING RECOVERY STEP!)";
 	
 	/*
-	if (print.isPrintProcessAndType(Utils::Details))
+	if (print.isPrintType(Utils::Details))
 	  message += "[Failure info flag = " + info + "]";
 	*/
 	    

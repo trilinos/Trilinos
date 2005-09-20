@@ -2,6 +2,14 @@
 # FRAMEWORK group
 #
 
+# NOX basic tests
+(FRAMEWORK,INSTALL) {
+    DIRS = basic;
+    EXIT-STATUS = STRING-COMPARISON(Test passed!);
+    ARGS = -v;
+    COMM = SERIAL;
+}
+
 # NOX LAPACK tests
 (FRAMEWORK,INSTALL) {
     DIRS = lapack/NOX,

@@ -145,8 +145,8 @@ bool NOX::Direction::Manager::compute(Abstract::Vector& dir, Abstract::Group& gr
 {
   if (ptr == NULL) 
   {
-    if (utils.doPrint(NOX::Utils::Warning)) 
-      cout << "Calling NOX::Direction::Manager::compute on uninitialized direction" << endl;
+    if (utils.isPrintType(NOX::Utils::Warning)) 
+      utils.out() << "Calling NOX::Direction::Manager::compute on uninitialized direction" << endl;
     return false;
   }
 
@@ -158,8 +158,8 @@ bool NOX::Direction::Manager::compute(Abstract::Vector& dir, Abstract::Group& gr
 {
   if (ptr == NULL) 
   {
-    if (utils.doPrint(NOX::Utils::Warning)) 
-      cout << "Calling NOX::Direction::Manager::compute on uninitialized direction" << endl;
+    if (utils.isPrintType(NOX::Utils::Warning)) 
+      utils.out() << "Calling NOX::Direction::Manager::compute on uninitialized direction" << endl;
     return false;
   }
 
@@ -168,6 +168,6 @@ bool NOX::Direction::Manager::compute(Abstract::Vector& dir, Abstract::Group& gr
 
 void NOX::Direction::Manager::printWarning(const string& name, const string& warning)
 {
-  if (utils.doPrint(NOX::Utils::Warning)) 
-    cout << "Calling NOX::Direction::Manager::" << name << " - " << warning << endl;
+  if (utils.isPrintType(NOX::Utils::Warning)) 
+    utils.out() << "Calling NOX::Direction::Manager::" << name << " - " << warning << endl;
 }

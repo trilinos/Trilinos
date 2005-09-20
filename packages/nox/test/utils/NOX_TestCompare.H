@@ -149,7 +149,7 @@ namespace NOX {
     std::ostream& os;
 
     //! Utils object determing what to print out
-    const NOX::Utils& utils;
+    const NOX::Utils utils;
 
   };
 

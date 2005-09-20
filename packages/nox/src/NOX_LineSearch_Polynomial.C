@@ -44,6 +44,7 @@
 NOX::LineSearch::Polynomial::Polynomial(const NOX::Utils& u, Parameter::List& params) :
   paramsPtr(NULL),
   print(u),
+  slopeUtil(u),
   userNormPtr(NULL),
   meritFuncPtr(NULL)
 {
@@ -71,7 +72,7 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
     suffDecrCond = None;
   else 
   {
-    cerr << "NOX::LineSearch::Polynomial::reset - Invalid \"Sufficient Decrease Condition\"" << endl;
+    print.err() << "NOX::LineSearch::Polynomial::reset - Invalid \"Sufficient Decrease Condition\"" << endl;
     throw "NOX Error";
   }
 
@@ -85,7 +86,7 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
     interpolationType = Quadratic3;
   else 
   {
-    cerr << "NOX::LineSearch::Polynomial::reset - Invalid \"Interpolation Type\"" << endl;
+    print.err() << "NOX::LineSearch::Polynomial::reset - Invalid \"Interpolation Type\"" << endl;
     throw "NOX Error";
   }
 
@@ -97,7 +98,7 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
     recoveryStepType = LastComputedStep;
   }
   else {
-    cerr << "NOX::LineSearch::Polynomial::reset - Invalid \"Recovery Step Type\"" << endl;
+    print.err() << "NOX::LineSearch::Polynomial::reset - Invalid \"Recovery Step Type\"" << endl;
     throw "NOX Error";
   }
 
@@ -378,7 +379,7 @@ bool NOX::LineSearch::Polynomial::checkConvergence(double newValue, double oldVa
     break;
   default:
     
-    cerr << "NOX::LineSearch::Polynomial::isSufficientDecrease - Unknown convergence criteria" << endl;
+    print.err() << "NOX::LineSearch::Polynomial::isSufficientDecrease - Unknown convergence criteria" << endl;
     throw "NOX Error";
     
   }
@@ -454,29 +455,29 @@ double NOX::LineSearch::Polynomial::computeSlope(const NOX::Abstract::Vector& di
 
 void NOX::LineSearch::Polynomial::printOpeningRemarks() const
 {
-  if (print.isPrintProcessAndType(NOX::Utils::InnerIteration)) 
+  if (print.isPrintType(NOX::Utils::InnerIteration)) 
   {
-    cout << "\n" << NOX::Utils::fill(72) << "\n" << "-- Polynomial Line Search -- \n";
+    print.out() << "\n" << NOX::Utils::fill(72) << "\n" << "-- Polynomial Line Search -- \n";
   }
 
-  if (print.isPrintProcessAndType(NOX::Utils::Details)) 
+  if (print.isPrintType(NOX::Utils::Details)) 
   {
     if (userNormPtr != NULL)
-      cout << "       Norms = Using a user defined norm" << endl;
+      print.out() << "       Norms = Using a user defined norm" << endl;
     else 
-      cout << "       Norms = L-2" << endl;
+      print.out() << "       Norms = L-2" << endl;
   
     if (meritFuncPtr != NULL) 
-      cout << "       Merit Function = User Defined" << endl;
+      print.out() << "       Merit Function = User Defined" << endl;
     else 
-      cout << "       Merit Function = 0.5 * || F || * || F ||" << endl;
+      print.out() << "       Merit Function = 0.5 * || F || * || F ||" << endl;
   }
 }
 
 void NOX::LineSearch::Polynomial::printBadSlopeWarning(double slope) const
 {
-  if (print.isPrintProcessAndType(NOX::Utils::Warning))
-    cout << "WARNING: Computed slope is positive (slope = " 
+  if (print.isPrintType(NOX::Utils::Warning))
+    print.out() << "WARNING: Computed slope is positive (slope = " 
 	 << slope
 	 << ").\n" << "Using recovery step!" 
 	 << endl;

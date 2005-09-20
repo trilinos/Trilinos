@@ -27,36 +27,27 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = utils basic lapack epetra petsc
+include $(top_builddir)/Makefile.export.nox
 
-#
-# The below targets allow you to use the new
-# testharness to run the test suite as make targets
-#
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES))
+else
+TEST_LIBS     = $(NOX_TEST_LIBS)
+TEST_INCLUDES = $(NOX_TEST_INCLUDES)
+endif
 
-TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
-TRILINOS_BUILD_DIR=@abs_top_builddir@/../..
+AM_CPPFLAGS = $(TEST_INCLUDES)
 
-runtests-serial :
-	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  --trilinos-dir=$(TRILINOS_HOME_DIR) \
-  --comm=serial \
-  --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=FRAMEWORK \
-  --output-dir=@abs_top_builddir@/test/runtests-results \
-  --verbosity=1 \
-  --packages=nox
+EXEEXT = .exe
 
-runtests-mpi :
-	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  --trilinos-dir=$(TRILINOS_HOME_DIR) \
-  --comm=mpi \
-  --mpi-go=$(TRILINOS_MPI_GO) \
-  --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=FRAMEWORK \
-  --output-dir=@abs_top_builddir@/test/runtests-results \
-  --verbosity=1 \
-  --packages=nox
+if BUILD_NOX_TESTS
+noinst_PROGRAMS = NOXPrintUtils
+endif
 
-EXTRA_DIST = definition
+NOXPrintUtils_SOURCES = $(srcdir)/NOXPrintUtils.C
 
+NOXPrintUtils_DEPENDENCIES = \
+                     $(top_builddir)/src/libnox.a
+
+NOXPrintUtils_LDADD = $(TEST_LIBS)

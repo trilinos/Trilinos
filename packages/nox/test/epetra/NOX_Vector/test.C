@@ -91,28 +91,25 @@ int main(int argc, char *argv[]) {
   NOX::Utils printing(printParams);
 
   // Identify the test problem
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails))
-    cout << "Starting epetra/NOX_Vector/NOX_Vector.exe" << endl;
+  if (printing.isPrintType(NOX::Utils::TestDetails))
+    printing.out() << "Starting epetra/NOX_Vector/NOX_Vector.exe" << endl;
 
   // Create a TestCompare class
-  NOX::TestCompare tester( cout, printing);
+  NOX::TestCompare tester( printing.out(), printing);
   double tolerance = 1.e-12;
   NOX::TestCompare::CompareType aComp = NOX::TestCompare::Absolute;
 
   // Identify processor information
 #ifdef HAVE_MPI
-  if (printing.isPrintProcess()) {
-    cout << "Parallel Run" << endl;
-    cout << "Number of processors = " << Comm.NumProc() << endl;
-    cout << "Print Process = " << MyPID << endl;
-  }
+  printing.out() << "Parallel Run" << endl;
+  printing.out() << "Number of processors = " << Comm.NumProc() << endl;
+  printing.out() << "Print Process = " << MyPID << endl;
   Comm.Barrier();
   if (printing.isPrintType(NOX::Utils::TestDetails))
-    cout << "Process " << MyPID << " is alive!" << endl;
+    printing.out() << "Process " << MyPID << " is alive!" << endl;
   Comm.Barrier();
 #else
-  if (printing.isPrintProcess())
-    cout << "Serial Run" << endl;
+  printing.out() << "Serial Run" << endl;
 #endif
 
   // Create a map describing data distribution
@@ -192,12 +189,10 @@ int main(int argc, char *argv[]) {
 
 
 
-  if (printing.isPrintProcess()) {
-    if (status == 0)
-      cout << "Test passed!" << endl;
-    else 
-      cout << "Test failed!" << endl;
-  }
+  if (status == 0)
+    printing.out() << "Test passed!" << endl;
+  else 
+    printing.out() << "Test failed!" << endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize();

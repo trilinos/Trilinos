@@ -147,6 +147,14 @@ int main(int argc, char *argv[])
     printParams.setParameter("Output Information", NOX::Utils::Error +
 			     NOX::Utils::TestDetails);
 
+  // Uncomment the following to redirect output to a file
+  //Teuchos::RefCountPtr<std::ostream> out = 
+  //  Teuchos::rcp(new ofstream("roger.txt"));
+  //printParams.setParameter<std::ostream>("Output Stream", out);
+
+  // Create a print class for controlling output below
+  NOX::Utils printing(printParams);
+
   // Sublist for line search 
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   searchParams.setParameter("Method", "Full Step");
@@ -234,7 +242,7 @@ int main(int argc, char *argv[])
   // 1. User supplied (Epetra_RowMatrix)
   //Epetra_RowMatrix& Analytic = interface.getJacobian();
   // 2. Matrix-Free (Epetra_Operator)
-  NOX::Epetra::MatrixFree MF(interface, soln);
+  NOX::Epetra::MatrixFree MF(printing, interface, soln);
   // 3. Finite Difference (Epetra_RowMatrix)
   NOX::Epetra::FiniteDifference FD(interface, soln);
 
@@ -309,9 +317,6 @@ int main(int argc, char *argv[])
   NOX::Solver::Manager solver(grpPtr, combo, nlParamsPtr);
   NOX::StatusTest::StatusType solvStatus = solver.solve();
 
-  // Create a print class for controlling output below
-  NOX::Utils printing(printParams);
-
   //
   // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
@@ -322,11 +327,11 @@ int main(int argc, char *argv[])
 
   // Output the parameter list
   if (verbose) {
-    if (printing.isPrintProcessAndType(NOX::Utils::Parameters)) {
-      cout << endl << "Final Parameters" << endl
+    if (printing.isPrintType(NOX::Utils::Parameters)) {
+      printing.out() << endl << "Final Parameters" << endl
 	   << "****************" << endl;
-      solver.getParameterList().print(cout);
-      cout << endl;
+      solver.getParameterList().print(printing.out());
+      printing.out() << endl;
     }
   }
 
@@ -349,8 +354,8 @@ int main(int argc, char *argv[])
   // 1. Convergence
   if (solvStatus != NOX::StatusTest::Converged) {
       status = 1;
-      if (printing.isPrintProcessAndType(NOX::Utils::Error))
-	cout << "Nonlinear solver failed to converge!" << endl;
+      if (printing.isPrintType(NOX::Utils::Error))
+	printing.out() << "Nonlinear solver failed to converge!" << endl;
   }
 #ifndef HAVE_MPI 
   // 2. Linear solve iterations (53) - SERIAL TEST ONLY!
@@ -365,12 +370,10 @@ int main(int argc, char *argv[])
 
 
   // Summarize test results 
-  if (printing.isPrintProcess()) { 
-    if (status == 0)
-      cout << "Test passed!" << endl;
-    else 
-      cout << "Test failed!" << endl;
-  }
+  if (status == 0)
+    printing.out() << "Test passed!" << endl;
+  else 
+    printing.out() << "Test failed!" << endl;
   
 #ifdef HAVE_MPI
   MPI_Finalize();

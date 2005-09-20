@@ -920,6 +920,7 @@ AC_CONFIG_FILES([
                 examples/petsc/DS6.5.1/Makefile
                 examples/petsc/1DFiniteDifference/Makefile
                 test/Makefile
+                test/basic/Makefile
                 test/utils/Makefile
                 test/lapack/Makefile
 		test/lapack/NOX/Makefile

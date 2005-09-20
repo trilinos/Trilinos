@@ -34,8 +34,8 @@
 #define NOX_STATUSTEST_COMBO_H
 
 #include "NOX_StatusTest_Generic.H" // base class
-#include "NOX_Common.H"		// class data element (vector)
-#include "Teuchos_RefCountPtr.hpp" 
+#include "NOX_Common.H"		    // class data element (vector)
+#include "NOX_Utils.H"              // class data element
 
 namespace NOX {
 
@@ -77,15 +77,17 @@ public:
     OR
   };
 
-  //! Constructor
-  Combo(ComboType t);
+  //! Constructor.  Optional argument is the error stream for output.
+  Combo(ComboType t, const NOX::Utils* u = NULL);
 
   //! Constructor with a single test.
-  Combo(ComboType t, const Teuchos::RefCountPtr<Generic>& a);
+  Combo(ComboType t, const Teuchos::RefCountPtr<Generic>& a,
+	const NOX::Utils* u = NULL);
 
   //! Constructor with two tests.
   Combo(ComboType t, const Teuchos::RefCountPtr<Generic>& a, 
-	const Teuchos::RefCountPtr<Generic>& b);
+	const Teuchos::RefCountPtr<Generic>& b,
+	const NOX::Utils* u = NULL);
 
   //! Add another test to this combination. 
   /*!
@@ -165,6 +167,9 @@ private:
 
   //! %Status
   StatusType status;
+
+  //! Ostream used to print errors
+  NOX::Utils utils;
 
 }; // class Combo
 

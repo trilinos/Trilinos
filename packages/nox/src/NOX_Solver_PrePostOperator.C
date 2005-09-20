@@ -80,14 +80,14 @@ reset(NOX::Utils& utils, NOX::Parameter::List& p)
       if (prePostOperatorPtr != 0)
 	havePrePostOperator = true;
       else
-	if (utils.isPrintProcessAndType(NOX::Utils::Warning))
-	  cout << "Warning: NOX::Solver::LineSearchBased::init() - "
+	if (utils.isPrintType(NOX::Utils::Warning))
+	  utils.out() << "Warning: NOX::Solver::LineSearchBased::init() - "
 	       << "\"User Defined Pre/Post Operator\" not derived from "
 	       << "NOX::Parameter::PrePostOperator class!\n"
 	       << "Ignoring this flag!"<< endl;
     }
     else {
-      cout << "ERROR: NOX::Solver::LineSearchBased::init() - the parameter "
+      utils.out() << "ERROR: NOX::Solver::LineSearchBased::init() - the parameter "
 	   << "\"User Defined Pre/Post Operator\" must be derived from an"
 	   << "arbitrary parameter!" << endl;
       throw "NOX Error";

@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
   // Output the parameter list
   if (verbose) {
     NOX::Utils utils(printParams);
-    if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+    if (utils.isPrintType(NOX::Utils::Parameters)) {
       cout << endl << "Final Parameters" << endl
 	   << "****************" << endl;
       solver.getParameterList().print(cout);

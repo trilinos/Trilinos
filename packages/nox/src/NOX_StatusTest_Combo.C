@@ -33,25 +33,41 @@
 #include "NOX_StatusTest_Combo.H"
 #include "NOX_Utils.H"
 
-NOX::StatusTest::Combo::Combo(ComboType t) :
+NOX::StatusTest::Combo::
+Combo(ComboType t, const NOX::Utils* u) :
   type(t)
 {
+  if (u != NULL)
+    utils = *u;
+
   status = Unevaluated;
+
 }
 
-NOX::StatusTest::Combo::Combo(ComboType t, 
-			      const Teuchos::RefCountPtr<Generic>& a) :
+NOX::StatusTest::Combo::
+Combo(ComboType t, 
+      const Teuchos::RefCountPtr<Generic>& a, 
+      const NOX::Utils* u) :
   type(t)
 {
+  if (u != NULL)
+    utils = *u;
+
   tests.push_back(a);
   status = Unevaluated;
+
 }
 
-NOX::StatusTest::Combo::Combo(ComboType t, 
-			      const Teuchos::RefCountPtr<Generic>& a, 
-			      const Teuchos::RefCountPtr<Generic>& b) :
+NOX::StatusTest::Combo::
+Combo(ComboType t, 
+      const Teuchos::RefCountPtr<Generic>& a, 
+      const Teuchos::RefCountPtr<Generic>& b, 
+      const NOX::Utils* u) :
   type(t)
 {
+  if (u != NULL)
+    utils = *u;
+
   tests.push_back(a);
   this->addStatusTest(b);
   status = Unevaluated;
@@ -65,12 +81,12 @@ addStatusTest(const Teuchos::RefCountPtr<Generic>& a)
   else 
   {
     const int indent = 2;
-    cout << "\n*** WARNING! ***\n";
-    cout << "This combo test currently consists of the following:\n";
-    this->print(cout, indent);
-    cout << "Unable to add the following test:\n";
-    a->print(cout, indent);
-    cout << "\n";
+    utils.err() << "\n*** WARNING! ***\n";
+    utils.err() << "This combo test currently consists of the following:\n";
+    this->print(utils.err(), indent);
+    utils.err() << "Unable to add the following test:\n";
+    a->print(utils.err(), indent);
+    utils.err() << "\n";
   }
   return *this;
 }
@@ -190,13 +206,6 @@ ostream& NOX::StatusTest::Combo::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
-//   stream << setiosflags(ios::left) << setw(13) << setfill('.');
-//   if (status == Unconverged) 
-//     stream << "**";
-//   else if (status == Failed)
-//     stream << "Failed";
-//   else
-//     stream << "Converged";
   stream << status;
   stream << ((type == OR) ? "OR" : "AND");
   stream << " Combination";

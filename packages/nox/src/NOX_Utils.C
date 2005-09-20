@@ -34,36 +34,73 @@
 #include "NOX_Utils.H"
 #include "NOX_Parameter_List.H"
 
-NOX::Utils::Utils()
+NOX::Utils::Utils(int outputInformation, int MyPID, int outputProcess, 
+		  int outputPrecision, 
+		  const Teuchos::RefCountPtr<ostream>& outputStream,
+		  const Teuchos::RefCountPtr<ostream>& errStream) :
+  precision(outputPrecision),
+  myPID(MyPID),
+  printTest(outputInformation),
+  printProc(outputProcess),
+  blackholeStream(Teuchos::rcp(new Teuchos::oblackholestream)),
+  printStream(outputStream),
+  myStream((myPID == printProc) ? outputStream : blackholeStream ),
+  errorStream(errStream)
 {
-  // Make an empty list
-  NOX::Parameter::List p;
-  reset(p);
 }
 
 NOX::Utils::Utils(NOX::Parameter::List& p)
 {
-  reset(p);
+  this->reset(p);
 }
 
 NOX::Utils::Utils(const NOX::Utils& source)
 {
-  printTest = source.printTest;
-  myPID = source.myPID;
-  printProc = source.printProc;
-  precision = source.precision;
+  *this = source;
 }
 
 NOX::Utils::~Utils()
 {
 }
 
+NOX::Utils& NOX::Utils::operator=(const NOX::Utils& source)
+{
+  printTest = source.printTest;
+  myPID = source.myPID;
+  printProc = source.printProc;
+  precision = source.precision;
+  printStream = source.printStream;
+  myStream = source.myStream;
+  errorStream = source.errorStream;
+
+  return *this;
+}
+
 void NOX::Utils::reset(NOX::Parameter::List& p)
 {
+  // Basic info
   printTest = p.getParameter("Output Information", 0xf);
   myPID = p.getParameter("MyPID", 0);
   printProc = p.getParameter("Output Processor", 0);
   precision = p.getParameter("Output Precision", 3);
+  
+  // Output streams
+  blackholeStream = Teuchos::rcp(new Teuchos::oblackholestream);
+
+  if (p.isParameterRcp<std::ostream>("Output Stream"))
+    printStream =
+      (p).INVALID_TEMPLATE_QUALIFIER
+      getRcpParameter<std::ostream>("Output Stream");
+  else 
+    printStream = Teuchos::rcp(&(std::cout), false);
+  myStream = (myPID == printProc) ? printStream : blackholeStream;
+  
+  if (p.isParameterRcp<std::ostream>("Error Stream"))
+    errorStream =
+      (p).INVALID_TEMPLATE_QUALIFIER
+      getRcpParameter<std::ostream>("Error Stream");
+  else 
+    errorStream = Teuchos::rcp(&(std::cerr), false);
 }
 
 //static
@@ -94,18 +131,8 @@ ostream& operator<<(ostream& os, const NOX::Utils::Sci& s)
   os.setf(ios::scientific);
   os.precision(s.p);
   os << setw(s.p + 6) << s.d;
-  cout.unsetf(ios::scientific);
+  os.unsetf(ios::scientific);
   return os;
-}
-
-bool NOX::Utils::isPrintProcess() const
-{
-  return (printProc == myPID);
-}
-
-bool NOX::Utils::isPrintProcessAndType(MsgType type) const
-{
-  return (isPrintProcess() && isPrintType(type));
 }
 
 bool NOX::Utils::isPrintType(MsgType type) const
@@ -113,59 +140,54 @@ bool NOX::Utils::isPrintType(MsgType type) const
   return ((type == NOX::Utils::Error) || ((printTest & type) != 0));
 }
 
-//private
-void NOX::Utils::deprecated(const string& oldname, const string& newname)
+
+std::ostream& NOX::Utils::out() const
 {
-#ifdef WITH_PRERELEASE
-  cerr << "WARNING: NOX::Utils::" << oldname << " is deprecated!" << "\n"
-       << "         Use Nox::Utils::" << newname << " instead." << endl;
-#endif
+  return *myStream;
 }
 
-//static & deprecated
-NOX::Utils::Sci NOX::Utils::sci(double dval, int p) 
+std::ostream& NOX::Utils::out(NOX::Utils::MsgType type) const
 {
-  deprecated("sci","sciformat");
-  return  NOX::Utils::Sci(dval, ((p > 0) ? p : 3) );
+  if (isPrintType(type))
+    return *myStream;
+
+  return *blackholeStream;
 }
 
-//static & deprecated
-bool NOX::Utils::isPrintProc() 
+std::ostream& NOX::Utils::pout() const
 {
-  deprecated("isPrintProc","isPrintProcess");
-  return true;
+  return *printStream;
 }
 
-//static & deprecated
-bool NOX::Utils::doPrint(MsgType type) 
+std::ostream& NOX::Utils::pout(NOX::Utils::MsgType type) const
 {
-  deprecated("doPrint","isPrintProcessAndType");
-  return true;
+  if (isPrintType(type))
+    return *printStream;
+  
+  return *blackholeStream;
 }
 
-//static & deprecated
-bool NOX::Utils::doAllPrint(MsgType type) 
+std::ostream& NOX::Utils::err() const
 {
-  deprecated("doAllPrint","isPrintType");
-  return true;
+  return (myPID == printProc) ? *errorStream : *blackholeStream;
 }
 
-//static & deprecated
-bool NOX::Utils::doPrint(int printLevel)
+std::ostream& NOX::Utils::perr() const
 {
-  deprecated("doPrint","isPrintProcessAndType");
-  return (isPrintProc());
+  return *errorStream;
 }
 
-//static & deprecated
-bool NOX::Utils::doAllPrint(int printLevel)
+void NOX::Utils::print(ostream& os) const
 {
-  deprecated("doAllPrint","isPrintType");
-  return true;
+  os << "NOX::Utils Printing Object" << endl;
+  os << "Output Information Level = " << printTest << endl;
+  os << "My PID = " << myPID << endl;
+  os << "Print Processor = " << printProc << endl;
+  os << "Precision = " << precision << endl;
 }
 
-//static & deprecated
-void NOX::Utils::setUtils(NOX::Parameter::List& params)
+ostream& operator<<(ostream& os, const NOX::Utils& utils)
 {
-  deprecated("setUtils","reset");
+  utils.print(os);
+  return os;
 }

@@ -35,6 +35,7 @@
 
 #include "NOX_StatusTest_Generic.H"	// base class
 #include "NOX_Abstract_Vector.H"        // for NormType
+#include "NOX_Utils.H"                  // for cerr
 
 // Forward declaration
 namespace NOX {
@@ -119,20 +120,24 @@ public:
 
   //! Constructor for absolute norm. 
   /*! This constructor defaults to the \c Absolute tolerance type. */
-  NormF(double tolerance, NOX::Abstract::Vector::NormType ntype, ScaleType stype = Scaled);
+  NormF(double tolerance, NOX::Abstract::Vector::NormType ntype, 
+	ScaleType stype = Scaled, const NOX::Utils* u = NULL);
 
   //! Constructor for absolute norm
   /*! This constructor defaults to the \c Absolute ToleranceType and \c TWO NormType. */
-  NormF(double tolerance, ScaleType stype = Scaled);
+  NormF(double tolerance, ScaleType stype = Scaled, 
+	const NOX::Utils* u = NULL);
 
   //! Constructor with initial guess (for relative norms)
   /*! This constructor defaults to the \c Relative tolerance type. */
   NormF(NOX::Abstract::Group& initialGuess, double tolerance, 
-	NOX::Abstract::Vector::NormType ntype, ScaleType stype = Scaled);
+	NOX::Abstract::Vector::NormType ntype, ScaleType stype = Scaled, 
+	const NOX::Utils* u = NULL);
 
   //! Constructor with initial guess (for relative norms)
   /*! This constructor defaults to the \c Relative ToleranceType and \c TWO NormType. */
-  NormF(NOX::Abstract::Group& initialGuess, double tolerance, ScaleType stype = Scaled);
+  NormF(NOX::Abstract::Group& initialGuess, double tolerance, 
+	ScaleType stype = Scaled, const NOX::Utils* u = NULL);
 
   //! Destructor.
   virtual ~NormF();
@@ -208,6 +213,9 @@ private:
 
   //! Norm of F to be compared to trueTolerance
   double normF;
+
+  //! Ostream used to print errors
+  NOX::Utils utils;
 
 };
 

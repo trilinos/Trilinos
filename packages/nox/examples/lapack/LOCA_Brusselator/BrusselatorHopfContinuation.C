@@ -180,6 +180,9 @@ int main()
 			       //NOX::Utils::Details + 
 			       NOX::Utils::Warning);
 
+    // Create a printing control object
+    NOX::Utils utils(nlPrintParams);
+
     // Create the "Line Search" sublist for the "Line Search Based" solver
     NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
     searchParams.setParameter("Method", "Full Step");
@@ -202,7 +205,7 @@ int main()
       cout << "Stepper failed to converge!" << endl;
 
     // Output the parameter list
-    if (NOX::Utils::doPrint(NOX::Utils::Parameters)) {
+    if (utils.isPrintType(NOX::Utils::Parameters)) {
       cout << endl << "Final Parameters" << endl
 	   << "****************" << endl;
       stepper.getParameterList().print(cout);

@@ -139,6 +139,6 @@ bool NOX::LineSearch::Manager::compute(Abstract::Group& newgrp, double& step,
 
 void NOX::LineSearch::Manager::printWarning(const string& name, const string& warning)
 {
-  if (utils.doPrint(NOX::Utils::Warning)) 
-    cout << "Calling NOX::LineSearch::Manager::" << name << " - " << warning << endl;
+  if (utils.isPrintType(NOX::Utils::Warning)) 
+    utils.out() << "Calling NOX::LineSearch::Manager::" << name << " - " << warning << endl;
 }

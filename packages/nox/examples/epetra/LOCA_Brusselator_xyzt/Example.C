@@ -288,6 +288,9 @@ int main(int argc, char *argv[])
 			NOX::Utils::Details + 
 			NOX::Utils::Warning);
 
+  // create parallel printing utilities
+  NOX::Utils utils(printParams);
+
   // Sublist for line search 
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   searchParams.setParameter("Method", "Full Step");
@@ -429,13 +432,13 @@ int main(int argc, char *argv[])
     timeStep++;
     time += dt;
   
-    cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
+    utils.out() << "Time Step: " << timeStep << ",\tTime: " << time << endl;
   
 //    NOX::StatusTest::StatusType status = solver.solve();
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
     if (status != LOCA::Abstract::Iterator::Finished)
-       if (MyPID==0) cout << "Stepper failed to converge!" << endl;
+       if (MyPID==0) utils.out() << "Stepper failed to converge!" << endl;
 
 
     // Get the Epetra_Vector with the final solution from the solver
@@ -459,17 +462,16 @@ int main(int argc, char *argv[])
   } // end time step while loop
 
   // Output the parameter list
-  NOX::Utils utils(printParams);
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
-    cout << endl << "Final Parameters" << endl
+  if (utils.isPrintType(NOX::Utils::Parameters)) {
+    utils.out() << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    stepper.getParameterList().print(cout);
-    cout << endl;
+    stepper.getParameterList().print(utils.out());
+    utils.out() << endl;
   }
 
   // Output timing info
   if(MyPID==0)
-    cout << "\nTimings :\n\tWallTime --> " << 
+    utils.out() << "\nTimings :\n\tWallTime --> " << 
 	    myTimer.WallTime() - startWallTime << " sec."
          << "\n\tElapsedTime --> " << myTimer.ElapsedTime() 
          << " sec." << endl << endl;

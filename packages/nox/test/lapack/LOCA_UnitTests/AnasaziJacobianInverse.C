@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
     NOX::Utils utils(nlPrintParams);
     NOX::TestCompare testCompare(cout, utils);
 
-    if (utils.isPrintProcessAndType(NOX::Utils::TestDetails))
+    if (utils.isPrintType(NOX::Utils::TestDetails))
       cout << endl << "***** Checking solution statistics *****" << endl;
 
     // Check eigenvalues

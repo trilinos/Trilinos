@@ -108,8 +108,8 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
   ok = soln.computeF();
   if (ok != Abstract::Group::Ok) {
-    if (utils.isPrintProcessAndType(Utils::Warning))
-      cout << "NOX::Direction::NonlinearCG::compute - Unable to compute F." 
+    if (utils.isPrintType(Utils::Warning))
+      utils.out() << "NOX::Direction::NonlinearCG::compute - Unable to compute F." 
            << endl;
     return false;
   }
@@ -118,16 +118,16 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
     if(!soln.isJacobian())
       ok = soln.computeJacobian();
       if (ok != Abstract::Group::Ok) {
-        if (utils.isPrintProcessAndType(Utils::Warning))
-          cout << "NOX::Direction::NonlinearCG::compute - "
+        if (utils.isPrintType(Utils::Warning))
+          utils.out() << "NOX::Direction::NonlinearCG::compute - "
                << "Unable to compute Jacobian." << endl;
         return false;
       }
     tmpVec = dir;
     ok = soln.applyRightPreconditioning(false, paramsPtr->sublist("Nonlinear CG").sublist("Linear Solver"), tmpVec, dir);
     if (ok != Abstract::Group::Ok) {
-      if (utils.isPrintProcessAndType(Utils::Warning))
-        cout << "NOX::Direction::NonlinearCG::compute - "
+      if (utils.isPrintType(Utils::Warning))
+        utils.out() << "NOX::Direction::NonlinearCG::compute - "
              << "Unable to apply Right Preconditioner." << endl;
       return false;
     }
@@ -157,8 +157,8 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
     // Constrain beta >= 0
       if(beta < 0.0) {
-        if (utils.isPrintProcessAndType(Utils::OuterIteration))
-          cout << "BETA < 0, (" << beta << ") --> Resetting to zero" << endl;
+        if (utils.isPrintType(Utils::OuterIteration))
+          utils.out() << "BETA < 0, (" << beta << ") --> Resetting to zero" << endl;
         beta = 0.0;
       }
     } 
@@ -177,8 +177,8 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
     if( (niter % restartFrequency)==0)
     {
-       if (utils.isPrintProcessAndType(Utils::OuterIteration))
-         cout << "Resetting beta --> 0" << endl;
+       if (utils.isPrintType(Utils::OuterIteration))
+         utils.out() << "Resetting beta --> 0" << endl;
 
        beta = 0 ;  // Restart with Steepest Descent direction
     }

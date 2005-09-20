@@ -34,14 +34,18 @@
 #include "NOX_Common.H"
 #include "NOX_Solver_Generic.H"
 
-NOX::StatusTest::MaxIters::MaxIters(int maxIterations) :
+NOX::StatusTest::MaxIters::
+MaxIters(int maxIterations, const NOX::Utils* u) :
   maxiters(maxIterations),
   niters(0),
   status(Unevaluated)
 {
+  if (u != NULL)
+    utils = *u;
+
   if (maxiters < 1) 
   {
-    cout << "NOX::StatusTest::MaxIters - must choose a number greater than zero" << endl;
+    utils.err() << "NOX::StatusTest::MaxIters - must choose a number greater than zero" << endl;
     throw "NOX Error";
   }
 }

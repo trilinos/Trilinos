@@ -566,7 +566,7 @@ Abstract::Group::ReturnType NOX::Epetra::Group::getNormLastLinearSolveResidual(d
   
   // Otherwise give warning since a Newton direction has not been calculated
   // wrt this solution group
-  if (utils.isPrintProcessAndType(Utils::Warning)) {
+  if (utils.isPrintType(Utils::Warning)) {
     cout << "ERROR: NOX::Epetra::Group::getNormLastLinearSolveResidual() - "
 	 << "Group has not performed a Newton solve corresponding to this "
 	 << "solution vector!" << endl;

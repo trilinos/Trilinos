@@ -65,8 +65,8 @@ void List::unused() const
 {
   for (ConstIterator i = params.begin(); i != params.end(); ++i) {
     if (!(entry(i).isUsed())) {
-      cout << "WARNING: Parameter \"" << name(i) << "\" " << entry(i)
-	   << " is unused" << endl;
+      std::cerr << "WARNING: Parameter \"" << name(i) << "\" " << entry(i)
+		<< " is unused" << endl;
     }
   }
 }

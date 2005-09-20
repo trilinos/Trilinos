@@ -71,6 +71,7 @@ TensorBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
   paramsPtr(p),		// copy p
   utils(paramsPtr->sublist("Printing")),   // initialize utils
   print(utils),
+  slopeObj(utils),
   prePostOperator(utils, paramsPtr->sublist("Solver Options"))
 {
   reset(xGrp, t, p);
@@ -90,28 +91,28 @@ void NOX::Solver::TensorBased::init()
   numJ2vMults = 0;
   
   // Print out parameters
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters))
+  if (utils.isPrintType(NOX::Utils::Parameters))
   {
-    cout << "\n" << NOX::Utils::fill(72) << "\n";
-    cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
-    paramsPtr->print(cout,5);
-    cout << "\n" << NOX::Utils::fill(72) << "\n";
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utils.out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
+    paramsPtr->print(utils.out(),5);
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
   }
 
   // Compute F of initial guess
   NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
   if (rtype != NOX::Abstract::Group::Ok)
   {
-    cerr << "NOX::Solver::TensorBased::init - Unable to compute F" << endl;
+    utils.err() << "NOX::Solver::TensorBased::init - Unable to compute F" << endl;
     throw "NOX Error";
   }
 
   // Test the initial guess
   status = testPtr->checkStatus(*this);
   if ((status == NOX::StatusTest::Converged) &&
-      (utils.isPrintProcessAndType(NOX::Utils::Warning)))
+      (utils.isPrintType(NOX::Utils::Warning)))
   {
-    cout << "Warning: NOX::Solver::TensorBased::init() - The solution passed "
+    utils.out() << "Warning: NOX::Solver::TensorBased::init() - The solution passed "
 	 << "into the solver (either through constructor or reset method) "
 	 << "is already converged!  The solver will not "
 	 << "attempt to solve this system since status is flagged as "
@@ -119,11 +120,11 @@ void NOX::Solver::TensorBased::init()
   }
 
   // Print out status tests
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters))
+  if (utils.isPrintType(NOX::Utils::Parameters))
   {
-    cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
-    testPtr->print(cout, 5);
-    cout <<"\n" << NOX::Utils::fill(72) << "\n";
+    utils.out() << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
+    testPtr->print(utils.out(), 5);
+    utils.out() <<"\n" << NOX::Utils::fill(72) << "\n";
   }
 
 }
@@ -152,8 +153,8 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
     requestedBaseStep = NewtonStep;
   else
   {
-    if (utils.isPrintProcessAndType(NOX::Utils::Error))
-      cerr << "NOX::Direction::Tensor::reset() - The choice of "
+    if (utils.isPrintType(NOX::Utils::Error))
+      utils.err() << "NOX::Direction::Tensor::reset() - The choice of "
 	   << "\"Method\" parameter \"" << choice
 	   << "\" is invalid." << endl;
     throw "NOX error";
@@ -175,8 +176,8 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
     useModifiedMethod = 
       dirParams.getParameter("Use Modified Bouaricha", true);
     if (useModifiedMethod  &&
-	utils.isPrintProcessAndType(NOX::Utils::Parameters))
-      cout << "Using Modifed Bouaricha method" << endl;
+	utils.isPrintType(NOX::Utils::Parameters))
+      utils.out() << "Using Modifed Bouaricha method" << endl;
   }
 
   
@@ -198,8 +199,8 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
     lsType = Newton;
   else
   {
-    if (utils.isPrintProcessAndType(NOX::Utils::Error))
-      cerr << "NOX::Direction::Tensor::reset() - The choice of "
+    if (utils.isPrintType(NOX::Utils::Error))
+      utils.err() << "NOX::Direction::Tensor::reset() - The choice of "
 	   << "\"Line Search\" parameter " << choice
 	   << " is invalid." << endl;
     throw "NOX Error";
@@ -218,7 +219,7 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
     recoveryStepType = LastComputedStep;  // Use last step from linesearch
   else
   {
-    cerr << "NOX::Solver::TensorBased::reset() - "
+    utils.err() << "NOX::Solver::TensorBased::reset() - "
 	 << "Invalid \"Recovery Step Type\"" << endl;
     throw "NOX Error";
   }
@@ -237,8 +238,8 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
     lambdaSelection = Quadratic;
   else
   {
-    if (utils.isPrintProcessAndType(NOX::Utils::Error))
-      cerr << "NOX::Solver::TensorBased::reset() - The choice of "
+    if (utils.isPrintType(NOX::Utils::Error))
+      utils.err() << "NOX::Solver::TensorBased::reset() - The choice of "
 	   << "\"Lambda Selection\" parameter " << choice
 	   << " is invalid." << endl;
     throw "NOX Error";
@@ -254,8 +255,8 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
   //  convCriteria = None;
   else
   {
-    if (utils.isPrintProcessAndType(NOX::Utils::Error))
-      cerr << "NOX::Solver::TensorBased::reset() - The choice of "
+    if (utils.isPrintType(NOX::Utils::Error))
+      utils.err() << "NOX::Solver::TensorBased::reset() - The choice of "
 	   << "\"Sufficient Decrease Condition\" parameter " << choice
 	   << " is invalid." << endl;
     throw "NOX Error";
@@ -278,10 +279,10 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
 NOX::Solver::TensorBased::~TensorBased() 
 {
 #ifdef DEVELOPER_CODE
-  if (utils.isPrintProcessAndType(NOX::Utils::Details))
+  if (utils.isPrintType(NOX::Utils::Details))
   {
-    cout << "multsJv = " << numJvMults << "   (linesearch)" << endl;
-    cout << "mults2Jv = " << numJ2vMults << endl;
+    utils.out() << "multsJv = " << numJvMults << "   (linesearch)" << endl;
+    utils.out() << "mults2Jv = " << numJ2vMults << endl;
   }
 #endif
   delete oldSolnPtr;
@@ -318,8 +319,8 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
   bool ok = computeTensorDirection(soln, *this);
   if (!ok)
   {
-    if (utils.isPrintProcessAndType(NOX::Utils::Error))
-      cout << "NOX::Solver::TensorBased::iterate - "
+    if (utils.isPrintType(NOX::Utils::Error))
+      utils.out() << "NOX::Solver::TensorBased::iterate - "
 	   << "unable to calculate direction" << endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
@@ -338,15 +339,15 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
   {
     if (step == 0.0)
     {
-      if (utils.isPrintProcessAndType(NOX::Utils::Error))
-	cout << "NOX::Solver::TensorBased::iterate - line search failed"
+      if (utils.isPrintType(NOX::Utils::Error))
+	utils.out() << "NOX::Solver::TensorBased::iterate - line search failed"
 	     << endl;
       status = NOX::StatusTest::Failed;
       prePostOperator.runPostIterate(*this);
       return status;
     }
-    else if (utils.isPrintProcessAndType(NOX::Utils::Warning))
-      cout << "NOX::Solver::TensorBased::iterate - "
+    else if (utils.isPrintType(NOX::Utils::Warning))
+      utils.out() << "NOX::Solver::TensorBased::iterate - "
 	   << "using recovery step for line search" << endl;
   }
 
@@ -354,8 +355,8 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
   NOX::Abstract::Group::ReturnType rtype = soln.computeF();
   if (rtype != NOX::Abstract::Group::Ok)
   {
-    if (utils.isPrintProcessAndType(NOX::Utils::Error))
-      cout << "NOX::Solver::TensorBased::iterate - "
+    if (utils.isPrintType(NOX::Utils::Error))
+      utils.out() << "NOX::Solver::TensorBased::iterate - "
 	   << "unable to compute F" << endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
@@ -423,12 +424,12 @@ void NOX::Solver::TensorBased::printUpdate()
 
   // Print the status test parameters at each iteration if requested  
   if ((status == NOX::StatusTest::Unconverged) &&
-      (utils.isPrintProcessAndType(NOX::Utils::OuterIterationStatusTest)))
+      (utils.isPrintType(NOX::Utils::OuterIterationStatusTest)))
   {
-    cout << NOX::Utils::fill(72) << "\n";
-    cout << "-- Status Test Results --\n";    
-    testPtr->print(cout);
-    cout << NOX::Utils::fill(72) << "\n";
+    utils.out() << NOX::Utils::fill(72) << "\n";
+    utils.out() << "-- Status Test Results --\n";    
+    testPtr->print(utils.out());
+    utils.out() << NOX::Utils::fill(72) << "\n";
   }
 
   // All processes participate in the computation of these norms...
@@ -439,28 +440,28 @@ void NOX::Solver::TensorBased::printUpdate()
   }
 
   // ...But only the print process actually prints the result.
-  if (utils.isPrintProcessAndType(NOX::Utils::OuterIteration))
+  if (utils.isPrintType(NOX::Utils::OuterIteration))
   {
-    cout << "\n" << NOX::Utils::fill(72) << "\n";
-    cout << "-- Nonlinear Solver Step " << nIter << " -- \n";
-    cout << "f = " << utils.sciformat(normSoln);
-    cout << "  step = " << utils.sciformat(step);
-    cout << "  dx = " << utils.sciformat(normStep);
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utils.out() << "-- Nonlinear Solver Step " << nIter << " -- \n";
+    utils.out() << "f = " << utils.sciformat(normSoln);
+    utils.out() << "  step = " << utils.sciformat(step);
+    utils.out() << "  dx = " << utils.sciformat(normStep);
     if (status == NOX::StatusTest::Converged)
-      cout << " (Converged!)";
+      utils.out() << " (Converged!)";
     if (status == NOX::StatusTest::Failed)
-      cout << " (Failed!)";
-    cout << "\n" << NOX::Utils::fill(72) << "\n" << endl;
+      utils.out() << " (Failed!)";
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n" << endl;
   }
 
   // Print the final parameter values of the status test
   if ((status != NOX::StatusTest::Unconverged) && 
-      (utils.isPrintProcessAndType(NOX::Utils::OuterIteration)))
+      (utils.isPrintType(NOX::Utils::OuterIteration)))
   {
-    cout << NOX::Utils::fill(72) << "\n";
-    cout << "-- Final Status Test Results --\n";    
-    testPtr->print(cout);
-    cout << NOX::Utils::fill(72) << "\n";
+    utils.out() << NOX::Utils::fill(72) << "\n";
+    utils.out() << "-- Final Status Test Results --\n";    
+    testPtr->print(utils.out());
+    utils.out() << NOX::Utils::fill(72) << "\n";
   }
 }
 
@@ -519,11 +520,11 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     double tmpVecNorm = tmpVec.norm();
     double residualNormRel = residualNorm /
       solver.getPreviousSolutionGroup().getNormF();
-    if (utils.isPrintProcessAndType(NOX::Utils::Details))
+    if (utils.isPrintType(NOX::Utils::Details))
     {
-      cout << "  Norm of initial guess: " << utils.sciformat(tmpVecNorm, 6)
+      utils.out() << "  Norm of initial guess: " << utils.sciformat(tmpVecNorm, 6)
 	   << endl;
-      cout << "  initg norm of model residual =   "
+      utils.out() << "  initg norm of model residual =   "
 	   << utils.sciformat(residualNorm, 6) << " (abs)     "
 	   << utils.sciformat(residualNormRel, 6) << " (rel)" << endl;
     }
@@ -539,21 +540,21 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 #ifdef USE_INITIAL_GUESS_LOGIC    
     if (relativeResidual < 1.0)
     {
-      if (utils.isPrintProcessAndType(NOX::Utils::Details))
-	cout << "  Initial guess is good..." << endl;
+      if (utils.isPrintType(NOX::Utils::Details))
+	utils.out() << "  Initial guess is good..." << endl;
       isInitialGuessGood = true;
       tensorVec = tmpVec;
       double newTol = tol / relativeResidual;
       if (newTol > 0.99)
 	newTol = 0.99;  // force at least one iteration
       linearParams.setParameter("Tolerance",  newTol);
-      if (utils.isPrintProcessAndType(NOX::Utils::Details))
-	cout << "  Setting tolerance to " << utils.sciformat(newTol,6) << endl;
+      if (utils.isPrintType(NOX::Utils::Details))
+	utils.out() << "  Setting tolerance to " << utils.sciformat(newTol,6) << endl;
     }
     else
 #endif // USE_INITIAL_GUESS_LOGIC    
     {
-      //cout << "  Initial guess is BAD... do not use!\n";
+      //utils.out() << "  Initial guess is BAD... do not use!\n";
       isInitialGuessGood = false;
       residualVec = solver.getPreviousSolutionGroup().getF();
     }
@@ -568,8 +569,8 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
       if (doRescue == false)
 	throwError("computeTensorDirection", "Unable to apply Jacobian inverse");
       else if ((doRescue == true) &&
-	       (utils.isPrintProcessAndType(NOX::Utils::Warning)))
-	cout << "WARNING: NOX::Solver::TensorBased::computeTensorDirection() - "
+	       (utils.isPrintType(NOX::Utils::Warning)))
+	utils.out() << "WARNING: NOX::Solver::TensorBased::computeTensorDirection() - "
 	     << "Linear solve failed to achieve convergence - "
 	     << "using the step anyway " 
 	     << "since \"Rescue Bad Newton Solve\" is true." << endl;
@@ -598,8 +599,8 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     double residualNorm2 = residualVec.norm();
     double residualNorm2Rel = residualNorm2 /
       solver.getPreviousSolutionGroup().getNormF();
-    if (utils.isPrintProcessAndType(NOX::Utils::Details))
-      cout << " jifp norm of model residual =   "
+    if (utils.isPrintType(NOX::Utils::Details))
+      utils.out() << " jifp norm of model residual =   "
 	   << utils.sciformat(residualNorm2, 6) << " (abs)     "
 	   << utils.sciformat(residualNorm2Rel, 6) << " (rel)" << endl;
 #endif
@@ -614,8 +615,8 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     if (doRescue == false)
       throwError("computeTensorDirection", "Unable to apply Jacobian inverse");
     else if ((doRescue == true) &&
-	     (utils.isPrintProcessAndType(NOX::Utils::Warning)))
-      cout << "WARNING: NOX::Solver::TensorBased::computeTensorDirection() - "
+	     (utils.isPrintType(NOX::Utils::Warning)))
+      utils.out() << "WARNING: NOX::Solver::TensorBased::computeTensorDirection() - "
 	   << "Linear solve failed to achieve convergence - "
 	   << "using the step anyway " 
 	   << "since \"Rescue Bad Newton Solve\" is true." << endl;
@@ -656,24 +657,24 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 
     double sVecNorm = sVec.norm();
     double aVecNorm = aVec.norm();
-    if (utils.isPrintProcessAndType(NOX::Utils::Details))
+    if (utils.isPrintType(NOX::Utils::Details))
     {
-      cout << " sTinvJF = " << utils.sciformat(sTinvJF, 6)
+      utils.out() << " sTinvJF = " << utils.sciformat(sTinvJF, 6)
 	   << "  sTinvJa = " << utils.sciformat(sTinvJa, 6) << endl;
-      cout << " norm(s) = " << utils.sciformat(sVecNorm, 6)
+      utils.out() << " norm(s) = " << utils.sciformat(sVecNorm, 6)
 	   << "  norm(a) = " << utils.sciformat(aVecNorm, 6) << endl;
     }
     
     if (useModifiedMethod)
     {
       double alpha2 = lambdaBar;
-      if (utils.isPrintProcessAndType(NOX::Utils::Details))
-	cout << " Beta = " << utils.sciformat(beta, 6)
+      if (utils.isPrintType(NOX::Utils::Details))
+	utils.out() << " Beta = " << utils.sciformat(beta, 6)
 	     << "  Alpha2 = " << utils.sciformat(alpha2, 6) << endl;
       if (alpha2 != 1.0)
       {
-	if (utils.isPrintProcessAndType(NOX::Utils::Details))
-	  cout << "   *** Scaling tensor term a ***" << endl;
+	if (utils.isPrintType(NOX::Utils::Details))
+	  utils.out() << "   *** Scaling tensor term a ***" << endl;
 	aVec.scale(alpha2);
 	tmpVec.scale(alpha2);
 	sTinvJa *= alpha2;
@@ -691,8 +692,8 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 #endif // CHECK_RESIDUALS
 #if DEBUG_LEVEL > 0
     double sDotT = tensorVec.dot(sVec);
-    if (utils.isPrintProcessAndType(NOX::Utils::Details))
-      cout << "  Beta = " << utils.sciformat(beta, 6)
+    if (utils.isPrintType(NOX::Utils::Details))
+      utils.out() << "  Beta = " << utils.sciformat(beta, 6)
 	   << "  std = " << utils.sciformat(sDotT, 6)
 	   << "  qval = " << utils.sciformat(qval, 2)
 	   << "  lambdaBar = " << lambdaBar << endl;
@@ -722,8 +723,8 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
     qval = (qa * beta * beta) + (qb * beta) + (lambda * qc);
     lambdaBar = qb*qb / (4*qa*qc);
 #if DEBUG_LEVEL > 0
-    if (utils.isPrintProcessAndType(NOX::Utils::Details))
-      cout << "  ####  LambdaBar = " << lambdaBar << "  ####\n";
+    if (utils.isPrintType(NOX::Utils::Details))
+      utils.out() << "  ####  LambdaBar = " << lambdaBar << "  ####\n";
 #endif
   }
   else
@@ -733,8 +734,8 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
     if ( (fabs(qa / qb) < 1e-8)  &&  (fabs(lambda * qc / qb) < 1) )
     {
 #if DEBUG_LEVEL > 0
-      if (utils.isPrintProcessAndType(NOX::Utils::Details))
-	cout << "  qa is relatively small\n";
+      if (utils.isPrintType(NOX::Utils::Details))
+	utils.out() << "  qa is relatively small\n";
 #endif 
       beta = -lambda * qc / qb;
     }
@@ -744,8 +745,8 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
       double tmp2 = (-qb - sqrt(discriminant)) / (2*qa);
       beta = (fabs(tmp1) < fabs(tmp2)) ? tmp1 : tmp2; // bwb - temporary test
 #if DEBUG_LEVEL > 1
-      if (utils.isPrintProcessAndType(NOX::Utils::Details))
-	cout << "  tmp1 = " << utils.sciformat(tmp1, 6)
+      if (utils.isPrintType(NOX::Utils::Details))
+	utils.out() << "  tmp1 = " << utils.sciformat(tmp1, 6)
 	     << "  tmp2 = " << utils.sciformat(tmp2, 6)
 	     << "  dir0xsc = " << utils.sciformat(dir0xsc, 6)
 	     << "  normS = " << utils.sciformat(normS, 6)
@@ -754,8 +755,8 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
     }
   }
 #if DEBUG_LEVEL > 1
-  if (utils.isPrintProcessAndType(NOX::Utils::Details))
-    cout << "  qa,qb,qc = " << utils.sciformat(qa, 6)
+  if (utils.isPrintType(NOX::Utils::Details))
+    utils.out() << "  qa,qb,qc = " << utils.sciformat(qa, 6)
 	 << utils.sciformat(qb, 6)
 	 << utils.sciformat(qc, 6)
 	 << "   beta = " << utils.sciformat(beta, 6)
@@ -781,14 +782,14 @@ NOX::Solver::TensorBased::computeCurvilinearStep(NOX::Abstract::Vector& dir,
 
 #if DEBUG_LEVEL > 0
   double sDotD = dir.dot(sVec);
-  if (utils.isPrintProcessAndType(NOX::Utils::Details))
+  if (utils.isPrintType(NOX::Utils::Details))
   {
-    cout << "  Beta = " << utils.sciformat(beta, 6)
+    utils.out() << "  Beta = " << utils.sciformat(beta, 6)
 	 << "  std = " << utils.sciformat(sDotD, 6)
 	 << "  qval = " << qval
 	 << "  lambdaBar = " << lambdaBar
 	 << endl;
-    cout << "  betaFactor = " << utils.sciformat(betaFactor,6)
+    utils.out() << "  betaFactor = " << utils.sciformat(betaFactor,6)
 	 << "  beta1 = " << utils.sciformat(beta1, 6)
 	 << endl;
   }
@@ -858,19 +859,19 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
 					    const NOX::Abstract::Vector& lsDir,
 					    const NOX::Solver::Generic& s)
 {
-  if (print.isPrintProcessAndType(NOX::Utils::InnerIteration))
+  if (print.isPrintType(NOX::Utils::InnerIteration))
   {
-    cout << "\n" << NOX::Utils::fill(72) << "\n";
-    cout << "-- Tensor Line Search (";
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utils.out() << "-- Tensor Line Search (";
     if (lsType == Curvilinear)
-      cout << "Curvilinear";
+      utils.out() << "Curvilinear";
     else if (lsType == Standard)
-      cout << "Standard";
+      utils.out() << "Standard";
     else if (lsType == FullStep)
-      cout << "Full Step";
+      utils.out() << "Full Step";
     else if (lsType == Dual)
-      cout << "Dual";
-    cout << ") -- " << endl;
+      utils.out() << "Dual";
+    utils.out() << ") -- " << endl;
   }
 
   // Local variables
@@ -941,8 +942,8 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
       fprime = slopeObj.computeSlope(tmpVec, oldSoln);
       numJvMults++;
 
-      if (utils.isPrintProcessAndType(NOX::Utils::Details))
-	cout << "  Switching to Newton step.  New fprime = "
+      if (utils.isPrintType(NOX::Utils::Details))
+	utils.out() << "  Switching to Newton step.  New fprime = "
 	     << utils.sciformat(fprime, 6) << endl;
     }
     else
@@ -1045,8 +1046,8 @@ NOX::Solver::TensorBased::getNormModelResidual(
   if (isTensorModel)
   {
     double beta = sVec.dot(dir);
-    if (utils.isPrintProcessAndType(NOX::Utils::Details))
-      cout << " sc'*dt   = " << utils.sciformat(beta, 6) << endl;
+    if (utils.isPrintType(NOX::Utils::Details))
+      utils.out() << " sc'*dt   = " << utils.sciformat(beta, 6) << endl;
     residualPtr->update(beta*beta, *aVecPtr, 1.0);
   }
 
@@ -1070,15 +1071,15 @@ NOX::Solver::TensorBased::printDirectionInfo(char* dirName,
   double fprime = getDirectionalDerivative(dir, soln);
   double fprimeRel = fprime / dirNorm;
   
-  if (utils.isPrintProcessAndType(NOX::Utils::Details))
+  if (utils.isPrintType(NOX::Utils::Details))
   {
-    cout << " " << dirName << " norm of model residual =   "
+    utils.out() << " " << dirName << " norm of model residual =   "
 	 << utils.sciformat(residual, 6) << " (abs)     "
 	 << utils.sciformat(residualRel, 6) << " (rel)" << endl;
-    cout << " " << dirName << " directional derivative =  "
+    utils.out() << " " << dirName << " directional derivative =  "
 	 << utils.sciformat(fprime, 6) << " (abs)    "
 	 << utils.sciformat(fprimeRel, 6) << " (rel)" << endl;
-    cout << " " << dirName << " norm = "
+    utils.out() << " " << dirName << " norm = "
        << utils.sciformat(dirNorm, 6) << endl;
   }
 }
@@ -1122,8 +1123,8 @@ double NOX::Solver::TensorBased::selectLambda(double fNew, double fOld,
 void NOX::Solver::TensorBased::throwError(const string& functionName,
 					  const string& errorMsg) const
 {
-  if (utils.isPrintProcessAndType(NOX::Utils::Error))
-    cerr << "NOX::Solver::TensorBased::" << functionName
+  if (utils.isPrintType(NOX::Utils::Error))
+    utils.err() << "NOX::Solver::TensorBased::" << functionName
 	 << " - " << errorMsg << endl;
   throw "NOX Error";
 }

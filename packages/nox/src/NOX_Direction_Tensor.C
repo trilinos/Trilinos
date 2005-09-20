@@ -236,24 +236,24 @@ bool NOX::Direction::Tensor::reset(NOX::Parameter::List& params)
     requestedBaseStep = TensorStep3;
   }
   else if (choice == "Tensor2") {
-    cout << "Tensor step 2 is requested\n";
+    utils.out() << "Tensor step 2 is requested\n";
     requestedBaseStep = TensorStep2;
   }
   else if (choice == "Tensor2+") {
-    cout << "Tensor step 2+ is requested\n";
+    utils.out() << "Tensor step 2+ is requested\n";
     requestedBaseStep = TensorStep2;
     isSubspaceAugmented = true;
   }
   else if (choice == "TensorFP") {
-    cout << "Feng-Pulliam tensor step is requested\n";
+    utils.out() << "Feng-Pulliam tensor step is requested\n";
     requestedBaseStep = TensorStepFP;
   }
   else if (choice == "Newton") {
-    cout << "Newton step is requested\n";
+    utils.out() << "Newton step is requested\n";
     requestedBaseStep = NewtonStep;
   }
   else {
-    cout << "Warning: NOX::Direction::Tensor::reset() - the choice of "
+    utils.out() << "Warning: NOX::Direction::Tensor::reset() - the choice of "
 	 << "\"Compute Step\" parameter is invalid." << endl;
     requestedBaseStep = TensorStep3;
   }
@@ -453,17 +453,17 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
     acPtr->scale(1/(normS*normS*normS*normS));
 
 #if DEBUG_LEVEL > 1
-  cout << "Current Point: " << soln.getX().length() 
+  utils.out() << "Current Point: " << soln.getX().length() 
        << "  " << soln.getX().norm() << "  "; 
   soln.getX().print();
-  cout << "Current F: ";
+  utils.out() << "Current F: ";
   soln.getF().print();
-  cout << "Previous F: "; 
+  utils.out() << "Previous F: "; 
   solver.getPreviousSolutionGroup().getF().print();
-  cout << "Previous direction: " << scPtr->length() 
+  utils.out() << "Previous direction: " << scPtr->length() 
        << "  " << normS << "  "; 
   scPtr->print();
-  cout << "Tensor term ac: " << acPtr->length() 
+  utils.out() << "Tensor term ac: " << acPtr->length() 
        << "  " << acPtr->norm() << "  ";
   acPtr->print();
 #endif // DEBUG_LEVEL
@@ -479,7 +479,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
       isParameter("Adjusted Tolerance"))
     lsTol = solver.getParameterList().sublist("Line Search").
       getParameter("Adjusted Tolerance", tol);
-  cout << "Adjusted tolerance = " << lsTol << endl;
+  utils.out() << "Adjusted tolerance = " << lsTol << endl;
   
   // Compute inexact forcing term if requested.
   tol = inexactNewtonUtils.computeForcingTerm(soln,
@@ -512,7 +512,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 	// a bad Newton step.
       {
 	*dInitial = *dNewton;
-	cout << " Using Newton step instead of Tensor step in restart " << errTol/tol
+	utils.out() << " Using Newton step instead of Tensor step in restart " << errTol/tol
 	     << endl;
       }
 #endif
@@ -781,9 +781,9 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
       dTensor->update(yt[iterations]/normU, *dInitial, 1);// add in initial dir
 
 #if DEBUG_LEVEL > 2
-      cout << "yt ";
+      utils.out() << "yt ";
       print_vector(iterations, yt);
-      cout << "yn ";
+      utils.out() << "yn ";
       print_vector(iterations, yn);
       printf("qbeta equation: %e  %e  %e\n", aa, bb, cc);
       printf("qbeta results : %e  %e  %e\n", beta, qval, lambdaBar);
@@ -907,8 +907,8 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
     soln.applyJacobian(*dInitial, *vecw);      multsJv++;
     dir0xsc = scPtr->dot(*dInitial);
 #if DEBUG_LEVEL > 0
-    cout << " Initial guess \"dir\" is NOT zero\n";
-    cout << " dir0xsc = " << dir0xsc << "\n";
+    utils.out() << " Initial guess \"dir\" is NOT zero\n";
+    utils.out() << " dir0xsc = " << dir0xsc << "\n";
 #endif
   }
   else
@@ -1012,7 +1012,7 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
     factorR[p][j] = basisVptr[p]->norm();
     if (factorR[p][j] == 0.0) {
 #if DEBUG_LEVEL > 0
-      cout << "Note: vector " << p+1 << " is linearly dependent on others "
+      utils.out() << "Note: vector " << p+1 << " is linearly dependent on others "
 	   << "and will not be inlcuded\n";
 #endif
     }
@@ -1024,8 +1024,8 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
   int p1 = p; // Save value of this p in the event of block breakdown
   
 #if DEBUG_LEVEL > 1
-  cout << "p = " << p << endl;
-  cout << "factorR matrix:\n";
+  utils.out() << "p = " << p << endl;
+  utils.out() << "factorR matrix:\n";
   print_matrix(maxp,maxp,factorR);
 #endif
 
@@ -1065,21 +1065,21 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
 #endif
 
 #if DEBUG_LEVEL > 1
-  cout << "normS = " << Utils::sci(normS) << endl;
-  cout << "vecg ";
+  utils.out() << "normS = " << Utils::sci(normS) << endl;
+  utils.out() << "vecg ";
   print_vector(maxDim, vecg);
-  cout << "vecq ";
+  utils.out() << "vecq ";
   print_vector(maxDim, vecq);
 #endif
 
 #if DEBUG_LEVEL > 1
-  cout << "prev F: "; 
+  utils.out() << "prev F: "; 
   solver.getPreviousSolutionGroup().getF().print();
-  cout << "Basis 0: ";
+  utils.out() << "Basis 0: ";
   basisVptr[0]->print();
-  cout << "Basis 1: ";
+  utils.out() << "Basis 1: ";
   basisVptr[1]->print();
-  cout << "Basis 2: ";
+  utils.out() << "Basis 2: ";
   basisVptr[2]->print();
 #endif
 
@@ -1176,7 +1176,7 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
 	((reorth ==AsNeeded) &&
 	 (normav2 == 0 || log10(normav/normav2) > 10))) {
 #if DEBUG_LEVEL > 0
-      cout << "Reorthogonalize...\n";
+      utils.out() << "Reorthogonalize...\n";
 #endif
       for (int j=1; j<k+p; j++) {
 	double hr = basisVptr[k+p]->dot(*basisVptr[j]);
@@ -1193,13 +1193,13 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
       // Breakdown in the Arnoldi process
       if (p == 1) {
 #if DEBUG_LEVEL > 0
-	cout << "Breakdown: solution in subspace now\n";
+	utils.out() << "Breakdown: solution in subspace now\n";
 #endif
 	breakdown = true;
       }
       else {
 #if DEBUG_LEVEL > 0
-	cout << "Breakdown in block Arnoldi method, reducing block size.\n";
+	utils.out() << "Breakdown in block Arnoldi method, reducing block size.\n";
 #endif
 	p--;
       }
@@ -1210,8 +1210,8 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
 	     k, newHessCol[k+p], log10(normav/newHessCol[k+p]));
 #endif
 #if DEBUG_LEVEL > 2
-      cout << "Iteration " << k << ":\n";
-      cout << "newHessCol ";
+      utils.out() << "Iteration " << k << ":\n";
+      utils.out() << "newHessCol ";
       print_vector(k+p1+1, newHessCol);
 #endif 
 #ifdef STORE_HESSENBERG
@@ -1503,12 +1503,12 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
 
 #if DEBUG_LEVEL > 1
 #ifdef STORE_HESSENBERG
-  cout << "Original Hessenberg: \n";
+  utils.out() << "Original Hessenberg: \n";
   print_matrix(maxDim,kmax,hess2);
 #endif
-  cout << "\n\nModified Hessenberg: \n";
+  utils.out() << "\n\nModified Hessenberg: \n";
   print_matrix(maxDim,kmax,hess);
-  cout << "modified vecg ";
+  utils.out() << "modified vecg ";
   print_vector(maxDim, vecg);
 #endif
   
@@ -1554,9 +1554,9 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
   if (isAugmentSubspace) dNewton->update(-yn[k1]/normS, *scPtr, 1);
 
 #if DEBUG_LEVEL > 1
-  cout << "yn ";
+  utils.out() << "yn ";
   print_vector(iterations, yn);
-  cout << "Newton Direction 1: ";
+  utils.out() << "Newton Direction 1: ";
   dNewton->print();
 #endif
 #ifdef CHECK_RESIDUALS
@@ -1581,16 +1581,16 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
 
 
 #if DEBUG_LEVEL > 1
-  cout << "Hessenberg: \n";
+  utils.out() << "Hessenberg: \n";
   print_matrix(maxDim, kmax, hess);
-  cout << "vecg ";
+  utils.out() << "vecg ";
   print_vector(maxDim, vecg);
-  cout << "vecq ";
+  utils.out() << "vecq ";
   print_vector(maxDim, vecq);
   printf("normS = %e, y1 = %e\n", normS, y1);
-  cout << "vecz ";
+  utils.out() << "vecz ";
   print_vector(maxDim, vecz);
-  cout << "pindex ";
+  utils.out() << "pindex ";
   print_vector(iterations, pindex);
 #endif
   
@@ -1664,9 +1664,9 @@ NOX::Direction::Tensor::computeTensorStep(const NOX::Abstract::Group& soln,
   isCLParamsCalculated = false;
 
 #if DEBUG_LEVEL > 1
-  cout << "yt ";
+  utils.out() << "yt ";
   print_vector(iterations, yt);
-  cout << "Tensor Direction: "; 
+  utils.out() << "Tensor Direction: "; 
   dTensor->print();
 #endif
 #if DEBUG_LEVEL > 0
@@ -1826,7 +1826,7 @@ NOX::Direction::Tensor::computeCurvilinearStep2(NOX::Abstract::Vector& dir,
     // Calculate beta(lambda)
     discriminant = 1 - 4*0.5*stJinvA*stJinvF*lambda;
     if (discriminant < 0) {
-      cout << "Warning: discriminant is negative ("<< discriminant << ").\n";
+      utils.out() << "Warning: discriminant is negative ("<< discriminant << ").\n";
       discriminant = 0;
     }
     largeRoot = (-1 - sqrt(discriminant)) / (2*0.5*stJinvA);
@@ -1888,8 +1888,8 @@ const NOX::Abstract::Vector& NOX::Direction::Tensor::getNewton() const
 void NOX::Direction::Tensor::throwError(const string& functionName,
 					const string& errorMsg) const
 {
-  if (utils.isPrintProcessAndType(NOX::Utils::Error))
-    cerr << "NOX::Direction::Tensor::" << functionName << " - " << errorMsg <<
+  if (utils.isPrintType(NOX::Utils::Error))
+    utils.err() << "NOX::Direction::Tensor::" << functionName << " - " << errorMsg <<
       endl;
   throw "NOX Error";
 }
@@ -1900,7 +1900,7 @@ void** NOX::Direction::Tensor::allocate_matrix(int rows, int cols,
 {
   if (a) {
     // delete_matrix(a);
-    cout << "Warning: Possibly a previously allocated matrix\n";
+    utils.out() << "Warning: Possibly a previously allocated matrix\n";
   }
 
   // allocate memory for storing a rectangular cols x rows matrix
@@ -1920,7 +1920,7 @@ void* NOX::Direction::Tensor::allocate_vector(int n, int*& x) const
 {
   if (x) {
     // delete x;
-    cout << "Warning: Possibly a previously allocated vector\n";
+    utils.out() << "Warning: Possibly a previously allocated vector\n";
   }
 
   x = new int [n];
@@ -1933,7 +1933,7 @@ void* NOX::Direction::Tensor::allocate_vector(int n, double*& x) const
 {
   if (x) {
     // delete x;
-    cout << "Warning: Possibly a previously allocated vector\n";
+    utils.out() << "Warning: Possibly a previously allocated vector\n";
   }
 
   x = new double [n];
@@ -2312,7 +2312,7 @@ double NOX::Direction::Tensor::calculateBeta(double qa, double qb, double qc,
     qval = qa*beta*beta + qb*beta + qc;
     lambdaBar = qb*qb / (4*qa*qc);
 #if DEBUG_LEVEL > 0
-    cout << "  ####  LambdaBar = " << lambdaBar << "  ####\n";
+    utils.out() << "  ####  LambdaBar = " << lambdaBar << "  ####\n";
 #endif
   }
   else {
@@ -2320,7 +2320,7 @@ double NOX::Direction::Tensor::calculateBeta(double qa, double qb, double qc,
     lambdaBar = 1.0;
     if (fabs(qa*qc/qb) < 1e-8) {
 #if DEBUG_LEVEL > 0
-      cout << " Quadratic equation is relatively linear\n";
+      utils.out() << " Quadratic equation is relatively linear\n";
 #endif 
       beta = -qc/qb;
     }

@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
   NOX::Utils printing(printParams);
 
   // Identify the test
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
+  if (printing.isPrintType(NOX::Utils::TestDetails)) {
     cout << "Starting lapack/NOX_NewTest/NOX_NewTest.exe" << endl;
   }
 

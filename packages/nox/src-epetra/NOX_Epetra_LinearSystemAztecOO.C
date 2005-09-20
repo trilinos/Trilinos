@@ -355,7 +355,7 @@ setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
   else if (linearSolver == "LU")
     aztec.SetAztecOption(AZ_solver, AZ_lu);
   else {
-    cout << "ERROR: NOX::Epetra::Group::setAztecOptions" << endl
+    utils.out() << "ERROR: NOX::Epetra::Group::setAztecOptions" << endl
 	 << "\"Aztec Solver\" parameter \"" << linearSolver 
 	 <<  "\" is invalid!" << endl;
     throw "NOX Error";
@@ -467,16 +467,16 @@ setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
   }
 
   // Some Debugging utilities 
-  if (utils.isPrintProcessAndType(Utils::Debug)) {
-    //cout << "NOX::Epetra::LinearSystemAztecOO Operator Information" << endl;
-    //cout << "jacType = " << jacType << endl;
-    //cout << "jacPtr = " << jacPtr << endl;
-    //cout << "jacInterfacePtr = " << jacInterfacePtr << endl;
-    //cout << "ownsJacOperator = " << ownsJacOperator << endl;
-    //cout << "precType = " << precType << endl;
-    //cout << "precPtr = " << precPtr << endl;
-    //cout << "precInterfacePtr = " << precInterfacePtr << endl;
-    //cout << "ownsPrecOperator = " << ownsPrecOperator << endl;
+  if (utils.isPrintType(Utils::Debug)) {
+    //utils.out() << "NOX::Epetra::LinearSystemAztecOO Operator Information" << endl;
+    //utils.out() << "jacType = " << jacType << endl;
+    //utils.out() << "jacPtr = " << jacPtr << endl;
+    //utils.out() << "jacInterfacePtr = " << jacInterfacePtr << endl;
+    //utils.out() << "ownsJacOperator = " << ownsJacOperator << endl;
+    //utils.out() << "precType = " << precType << endl;
+    //utils.out() << "precPtr = " << precPtr << endl;
+    //utils.out() << "precInterfacePtr = " << precInterfacePtr << endl;
+    //utils.out() << "ownsPrecOperator = " << ownsPrecOperator << endl;
   }
     
   return;
@@ -491,7 +491,7 @@ createJacobianOperator(NOX::Parameter::List& lsParams,
   string choice = lsParams.getParameter("Jacobian Operator", "Matrix-Free");
 
   if (choice == "Matrix-Free") {
-    jacPtr = new MatrixFree(iReq, cloneVector);
+    jacPtr = new MatrixFree(utils, iReq, cloneVector);
     jacInterfacePtr = 
       dynamic_cast<NOX::Epetra::Interface::Jacobian*>(jacPtr);
     jacType = EpetraOperator;
@@ -604,8 +604,8 @@ applyJacobianInverse(Parameter::List &p,
     
     scaling->scaleLinearSystem(Problem);
 
-    if (utils.isPrintProcessAndType(Utils::Details)) {
-      cout << *scaling << endl;
+    if (utils.isPrintType(Utils::Details)) {
+      utils.out() << *scaling << endl;
     }
   }
   // ************* End linear system scaling *******************
@@ -802,8 +802,8 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
   }
 
 
-  if (utils.isPrintProcessAndType(Utils::LinearSolverDetails))
-    cout << "\n       Computing a new precondtioner" << endl;;
+  if (utils.isPrintType(Utils::LinearSolverDetails))
+    utils.out() << "\n       Computing a new precondtioner" << endl;;
 
   if (precAlgorithm == AztecOO_) {
     
@@ -881,8 +881,8 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
   double endTime = timer.WallTime();
   timeCreatePreconditioner += (endTime - startTime);
 
-  if (utils.isPrintProcessAndType(Utils::LinearSolverDetails))
-    cout << "\n       Time required to create precondtioner : " 
+  if (utils.isPrintType(Utils::LinearSolverDetails))
+    utils.out() << "\n       Time required to create precondtioner : " 
          << (endTime - startTime) << " (sec.)" << endl;;
 
   return true;
@@ -899,8 +899,8 @@ createIfpackPreconditioner(Parameter::List& p) const
   if (ifpackPreconditionerPtr != 0) 
     throwError("createIfpackPreconditioner", "Ifpack Prec NOT NULL");
 
-  if (utils.isPrintProcessAndType(Utils::Debug))
-    cout << "NOX::Epetra::LinearSolverAztecOO : createIfpackPrecon - \n"
+  if (utils.isPrintType(Utils::Debug))
+    utils.out() << "NOX::Epetra::LinearSolverAztecOO : createIfpackPrecon - \n"
          << "  using Fill Factor --> " << p.getParameter("Fill Factor", 1)
          << endl;
 
@@ -1004,18 +1004,18 @@ createNewIfpackPreconditioner(Parameter::List& p) const
   Teuchos::ParameterList* teuchosParams = 
     p.getAnyPtrParameter<Teuchos::ParameterList>("Ifpack Teuchos Parameter List");
   if ( !teuchosParams ) {
-    if (utils.isPrintProcess())
-      cout << "ERROR: NOX::Epetra::LinearSystemAztecOO::"
+    if (utils.isPrintType(NOX::Utils::Error))
+      utils.out() << "ERROR: NOX::Epetra::LinearSystemAztecOO::"
            << "createNewIfpackPreconditioner() - "
            << "Could not obtain the required Teuchos::ParameterList "
            << "from \"Ifpack Teuchos Parameter List\" " << endl;
     throw "NOX Error";
   }
 
-  if (utils.isPrintProcessAndType(Utils::Debug)) {
-    cout << "NOX::Epetra::LinearSolverAztecOO : createNewIfpackPrecon - \n"
+  if (utils.isPrintType(Utils::Debug)) {
+    utils.out() << "NOX::Epetra::LinearSolverAztecOO : createNewIfpackPrecon - \n"
          << "  using Teuchos parameter : " << endl;
-    teuchosParams->print(cout);
+    teuchosParams->print(utils.out());
   } 
 
   Ifpack Factory;
@@ -1122,7 +1122,7 @@ createMLPreconditioner(Parameter::List& p) const
     p.getAnyConstPtrParameter<Teuchos::ParameterList>("ML Teuchos Parameter List");
   if ( !constTeuchosParams ) {
     if (utils.isPrintProcess())
-      cout << "ERROR: NOX::Epetra::LinearSystemAztecOO::"
+      utils.out() << "ERROR: NOX::Epetra::LinearSystemAztecOO::"
            << "createMLPreconditioner() - "
            << "Could not obtain the required Teuchos::ParameterList "
            << "from \"ML Teuchos Parameter List\" " << endl;
@@ -1208,8 +1208,8 @@ bool NOX::Epetra::LinearSystemAztecOO::destroyPreconditioner() const
       MLPreconditionerPtr = 0;
     }
 #endif
-    if (utils.isPrintProcessAndType(Utils::LinearSolverDetails)) {
-      cout << "\n       Destroying preconditioner" << endl;
+    if (utils.isPrintType(Utils::LinearSolverDetails)) {
+      utils.out() << "\n       Destroying preconditioner" << endl;
     }
   }
   isPrecConstructed = false;
@@ -1264,8 +1264,8 @@ resetScaling(NOX::Epetra::Scaling& scalingObject)
 void NOX::Epetra::LinearSystemAztecOO::
 throwError(const string& functionName, const string& errorMsg) const
 {
-  if (utils.isPrintProcessAndType(Utils::Error)) {
-    cout << "NOX::Epetra::LinearSystemAztecOO::" << functionName 
+  if (utils.isPrintType(Utils::Error)) {
+    utils.out() << "NOX::Epetra::LinearSystemAztecOO::" << functionName 
 	 << " - " << errorMsg << endl;
   }
   throw "NOX Error";
@@ -1327,8 +1327,8 @@ bool NOX::Epetra::LinearSystemAztecOO::checkPreconditionerReuse()
     return false;
   }
 
-  if (utils.isPrintProcessAndType(Utils::Details)) 
-    cout << "\n\tLinearSystemAztecOO: Age of Prec --> " 
+  if (utils.isPrintType(Utils::Details)) 
+    utils.out() << "\n\tLinearSystemAztecOO: Age of Prec --> " 
          << precQueryCounter << " / " << maxAgeOfPrec << endl;
 
   // This allows reuse for the entire nonlinear solve

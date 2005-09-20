@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
   }
   NOX::Utils printing(printParams);
 
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
+  if (printing.isPrintType(NOX::Utils::TestDetails)) {
     cout << "Starting lapack/NOX_Group/NOX_Group.exe" << endl;
   }
 

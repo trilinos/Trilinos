@@ -66,7 +66,7 @@ int NOX::TestCompare::testValue(double value,
   else
     passed = true;
 
-  if (utils.isPrintProcessAndType(NOX::Utils::TestDetails)) {
+  if (utils.isPrintType(NOX::Utils::TestDetails)) {
     os << std::endl
 	 << "\tChecking " << name << ":  ";
     if (passed)
@@ -106,7 +106,7 @@ int NOX::TestCompare::testVector(const NOX::Abstract::Vector& vec,
   else
     passed = false;
 
-  if (utils.isPrintProcessAndType(NOX::Utils::TestDetails)) {
+  if (utils.isPrintType(NOX::Utils::TestDetails)) {
     os << std::endl
 	 << "\tChecking " << name << ":  ";
     if (passed)
@@ -151,7 +151,7 @@ NOX::TestCompare::testMatrix(
   else
     passed = false;
 
-  if (utils.isPrintProcessAndType(NOX::Utils::TestDetails)) {
+  if (utils.isPrintType(NOX::Utils::TestDetails)) {
     os << std::endl
 	 << "\tChecking " << name << ":  ";
     if (passed)
@@ -194,7 +194,7 @@ NOX::TestCompare::testMultiVector(
   else
     passed = false;
 
-  if (utils.isPrintProcessAndType(NOX::Utils::TestDetails)) {
+  if (utils.isPrintType(NOX::Utils::TestDetails)) {
     os << std::endl
 	 << "\tChecking " << name << ":  ";
     if (passed)

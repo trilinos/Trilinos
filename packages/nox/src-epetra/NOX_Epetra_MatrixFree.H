@@ -34,6 +34,7 @@
 
 #include "Epetra_Operator.h"	           // base class
 #include "NOX_Epetra_Interface_Jacobian.H" // base class
+#include "NOX_Utils.H"
 
 #include "NOX_Common.H"
 #include "Epetra_Import.h"
@@ -79,8 +80,8 @@ class MatrixFree : public Epetra_Operator,
   enum DifferenceType {Forward, Backward, Centered};
 
   //! Constructor
-  MatrixFree(NOX::Epetra::Interface::Required& i, const Epetra_Vector& x,
-	     bool useNewPerturbation = false);
+  MatrixFree(const NOX::Utils& u, NOX::Epetra::Interface::Required& i, 
+	     const Epetra_Vector& x, bool useNewPerturbation = false);
 
   //! Pure virtual destructor
   virtual ~MatrixFree();
@@ -218,6 +219,9 @@ protected:
 
   //! Pointer to the group for computeF() calls.
   NOX::Abstract::Group* groupPtr;
+
+  //! Printing utilities.
+  NOX::Utils utils;
 
 };
 } // namespace Epetra

@@ -65,7 +65,7 @@ bool NOX::Direction::SteepestDescent::reset(NOX::Parameter::List& params)
   else if (tmp == "None")
     scaleType = NOX::Direction::SteepestDescent::None;
   else {
-    cout << "NOX::Direction::SteepestDescent::reset - Invalid choice \""
+    utils.out() << "NOX::Direction::SteepestDescent::reset - Invalid choice \""
 	  << tmp << "\" for \"Scaling Type\"" << endl;
     throw "NOX Error";
   }
@@ -168,8 +168,8 @@ bool NOX::Direction::SteepestDescent::compute(Abstract::Vector& dir,
 void NOX::Direction::SteepestDescent::throwError(const string& functionName, 
 						 const string& errorMsg)
 {
-    if (utils.isPrintProcessAndType(Utils::Error))
-      cerr << "NOX::Direction::SteepestDescent::" << functionName 
+    if (utils.isPrintType(Utils::Error))
+      utils.err() << "NOX::Direction::SteepestDescent::" << functionName 
 	   << " - " << errorMsg << endl;
     throw "NOX Error";
 }

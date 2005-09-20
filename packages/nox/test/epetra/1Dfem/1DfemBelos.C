@@ -144,6 +144,9 @@ int main(int argc, char *argv[])
   else
     printParams.setParameter("Output Information",NOX::Utils::Error);
 
+  // Create a print handler for output control
+  NOX::Utils utils(printParams);
+
   // Sublist for line search 
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   searchParams.setParameter("Method", "Full Step");
@@ -249,7 +252,7 @@ int main(int argc, char *argv[])
   if (verbose) {
     if (solverStatus != NOX::StatusTest::Converged)
       if (MyPID==0) 
-	cout << "Nonlinear solver failed to converge!" << endl;
+	utils.out() << "Nonlinear solver failed to converge!" << endl;
   }
 
   // Get the Epetra_Vector with the final solution from the solver
@@ -261,13 +264,12 @@ int main(int argc, char *argv[])
   // End Nonlinear Solver **************************************
 
   // Output the parameter list
-  NOX::Utils utils(printParams);
   if (verbose) {
-    if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
-      cout << endl << "Final Parameters" << endl
+    if (utils.isPrintType(NOX::Utils::Parameters)) {
+      utils.out() << endl << "Final Parameters" << endl
 	   << "****************" << endl;
-      solver.getParameterList().print(cout);
-      cout << endl;
+      solver.getParameterList().print(utils.out());
+      utils.out() << endl;
     }
   }
 
@@ -277,8 +279,8 @@ int main(int argc, char *argv[])
   // 1. Convergence
   if (solverStatus != NOX::StatusTest::Converged) {
     status = 1;
-    if (utils.isPrintProcessAndType(NOX::Utils::Error))
-      cout << "Nonlinear solver failed to converge!" << endl;
+    if (utils.isPrintType(NOX::Utils::Error))
+      utils.out() << "Nonlinear solver failed to converge!" << endl;
   }
   // 2. Nonlinear solve iterations (10)
   if (solver.getParameterList().sublist("Output").getParameter("Nonlinear Iterations", 0) != 10)
@@ -286,12 +288,10 @@ int main(int argc, char *argv[])
   
   
   // Summarize test results 
-  if (utils.isPrintProcess()) { 
-    if (status == 0)
-      cout << "Test passed!" << endl;
-    else 
-      cout << "Test failed!" << endl;
-  }
+  if (status == 0)
+    utils.out() << "Test passed!" << endl;
+  else 
+    utils.out() << "Test failed!" << endl;
   
 #ifdef HAVE_MPI
   MPI_Finalize();

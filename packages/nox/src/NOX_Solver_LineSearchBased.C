@@ -65,27 +65,27 @@ void NOX::Solver::LineSearchBased::init()
   status = NOX::StatusTest::Unconverged;
 
   // Print out parameters
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) 
+  if (utils.isPrintType(NOX::Utils::Parameters)) 
   {
-    cout << "\n" << NOX::Utils::fill(72) << "\n";
-    cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
-    paramsPtr->print(cout,5);
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utils.out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
+    paramsPtr->print(utils.out(),5);
   }
 
   // Compute F of initital guess
   NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
   if (rtype != NOX::Abstract::Group::Ok) 
   {
-    cout << "NOX::Solver::LineSearchBased::init - Unable to compute F" << endl;
+    utils.out() << "NOX::Solver::LineSearchBased::init - Unable to compute F" << endl;
     throw "NOX Error";
   }
 
   // Test the initial guess
   status = testPtr->checkStatus(*this);
   if ((status == NOX::StatusTest::Converged) &&
-      (utils.isPrintProcessAndType(NOX::Utils::Warning)))
+      (utils.isPrintType(NOX::Utils::Warning)))
   {
-    cout << "Warning: NOX::Solver::LineSearchBased::init() - The solution passed "
+    utils.out() << "Warning: NOX::Solver::LineSearchBased::init() - The solution passed "
 	 << "into the solver (either through constructor or reset method) "
 	 << "is already converged!  The solver wil not "
 	   << "attempt to solve this system since status is flagged as "
@@ -93,11 +93,11 @@ void NOX::Solver::LineSearchBased::init()
   }
 
   // Print out status tests
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) 
+  if (utils.isPrintType(NOX::Utils::Parameters)) 
   {
-    cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
-    testPtr->print(cout, 5);
-    cout <<"\n" << NOX::Utils::fill(72) << "\n";
+    utils.out() << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
+    testPtr->print(utils.out(), 5);
+    utils.out() <<"\n" << NOX::Utils::fill(72) << "\n";
   }
 
 }
@@ -161,7 +161,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::iterate()
   ok = direction.compute(dir, soln, *this);
   if (!ok) 
   {
-    cout << "NOX::Solver::LineSearchBased::iterate - unable to calculate direction" << endl;
+    utils.out() << "NOX::Solver::LineSearchBased::iterate - unable to calculate direction" << endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
     return status;
@@ -179,20 +179,20 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::iterate()
   {
     if (step == 0) 
     {
-      cout << "NOX::Solver::LineSearchBased::iterate - line search failed" << endl;
+      utils.out() << "NOX::Solver::LineSearchBased::iterate - line search failed" << endl;
       status = NOX::StatusTest::Failed;
       prePostOperator.runPostIterate(*this);
       return status;
     }
-    else if (utils.isPrintProcessAndType(NOX::Utils::Warning))
-      cout << "NOX::Solver::LineSearchBased::iterate - using recovery step for line search" << endl;
+    else if (utils.isPrintType(NOX::Utils::Warning))
+      utils.out() << "NOX::Solver::LineSearchBased::iterate - using recovery step for line search" << endl;
   }
 
   // Compute F for new current solution.
   NOX::Abstract::Group::ReturnType rtype = soln.computeF();
   if (rtype != NOX::Abstract::Group::Ok) 
   {
-    cout << "NOX::Solver::LineSearchBased::iterate - unable to compute F" << endl;
+    utils.out() << "NOX::Solver::LineSearchBased::iterate - unable to compute F" << endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
     return status;
@@ -260,12 +260,12 @@ void NOX::Solver::LineSearchBased::printUpdate()
 
   // Print the status test parameters at each iteration if requested  
   if ((status == NOX::StatusTest::Unconverged) && 
-      (utils.isPrintProcessAndType(NOX::Utils::OuterIterationStatusTest))) 
+      (utils.isPrintType(NOX::Utils::OuterIterationStatusTest))) 
   {
-    cout << NOX::Utils::fill(72) << "\n";
-    cout << "-- Status Test Results --\n";    
-    testPtr->print(cout);
-    cout << NOX::Utils::fill(72) << "\n";
+    utils.out() << NOX::Utils::fill(72) << "\n";
+    utils.out() << "-- Status Test Results --\n";    
+    testPtr->print(utils.out());
+    utils.out() << NOX::Utils::fill(72) << "\n";
   }
 
   // All processes participate in the computation of these norms...
@@ -276,28 +276,28 @@ void NOX::Solver::LineSearchBased::printUpdate()
   }
 
   // ...But only the print process actually prints the result.
-  if (utils.isPrintProcessAndType(NOX::Utils::OuterIteration)) 
+  if (utils.isPrintType(NOX::Utils::OuterIteration)) 
   {
-    cout << "\n" << NOX::Utils::fill(72) << "\n";
-    cout << "-- Nonlinear Solver Step " << nIter << " -- \n";
-    cout << "f = " << utils.sciformat(normSoln);
-    cout << "  step = " << utils.sciformat(step);
-    cout << "  dx = " << utils.sciformat(normStep);
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utils.out() << "-- Nonlinear Solver Step " << nIter << " -- \n";
+    utils.out() << "f = " << utils.sciformat(normSoln);
+    utils.out() << "  step = " << utils.sciformat(step);
+    utils.out() << "  dx = " << utils.sciformat(normStep);
     if (status == NOX::StatusTest::Converged)
-      cout << " (Converged!)";
+      utils.out() << " (Converged!)";
     if (status == NOX::StatusTest::Failed)
-      cout << " (Failed!)";
-    cout << "\n" << NOX::Utils::fill(72) << "\n" << endl;
+      utils.out() << " (Failed!)";
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n" << endl;
   }
 
   // Print the final parameter values of the status test
   if ((status != NOX::StatusTest::Unconverged) && 
-      (utils.isPrintProcessAndType(NOX::Utils::OuterIteration))) 
+      (utils.isPrintType(NOX::Utils::OuterIteration))) 
   {
-    cout << NOX::Utils::fill(72) << "\n";
-    cout << "-- Final Status Test Results --\n";    
-    testPtr->print(cout);
-    cout << NOX::Utils::fill(72) << "\n";
+    utils.out() << NOX::Utils::fill(72) << "\n";
+    utils.out() << "-- Final Status Test Results --\n";    
+    testPtr->print(utils.out());
+    utils.out() << NOX::Utils::fill(72) << "\n";
   }
 }
 

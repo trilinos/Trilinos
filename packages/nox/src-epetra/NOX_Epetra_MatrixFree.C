@@ -40,8 +40,8 @@
 using namespace NOX;
 using namespace NOX::Epetra;
 
-MatrixFree::MatrixFree(Interface::Required& i, const Epetra_Vector& x,
-		       bool p) :
+MatrixFree::MatrixFree(const NOX::Utils& u, Interface::Required& i, 
+		       const Epetra_Vector& x, bool p) :
   label("NOX::Matrix-Free"),
   interface(i),
   currentX(x),
@@ -58,7 +58,8 @@ MatrixFree::MatrixFree(Interface::Required& i, const Epetra_Vector& x,
   computeEta(true),
   useGroupForComputeF(false),
   useNewPerturbation(p),
-  groupPtr(0)
+  groupPtr(0),
+  utils(u)
 {
   // Zero out Vectors
   perturbX.PutScalar(0.0);
@@ -95,7 +96,7 @@ MatrixFree::~MatrixFree()
 int MatrixFree::SetUseTranspose(bool UseTranspose)
 {
   if (UseTranspose == true) {
-    cout << "ERROR: NOX::Epetra::MatrixFree::SetUseTranspose() - Transpose is "
+    utils.out() << "ERROR: NOX::Epetra::MatrixFree::SetUseTranspose() - Transpose is "
 	 << "unavailable in Matrix-Free mode!" << endl;
     throw "NOX Error";
   }
@@ -127,8 +128,8 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // Make sure the norm computed correctly
   if (test != 0) {
-    if (NOX::Utils::doPrint(Utils::Warning))
-      cout << "Warning: NOX::Epetra::MatrixFree::Apply() - solutionNorm "
+    if (utils.isPrintType(Utils::Warning))
+      utils.out() << "Warning: NOX::Epetra::MatrixFree::Apply() - solutionNorm "
 	   << "failed!" << endl;
     solutionNorm = 1.0;
   }
@@ -137,8 +138,8 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // Make sure the norm computed correctly
   if (test != 0) {
-    if (NOX::Utils::doPrint(Utils::Warning))
-      cout << "Warning: NOX::Epetra::MatrixFree::Apply() - vectorNorm failed!"
+    if (utils.isPrintType(Utils::Warning))
+      utils.out() << "Warning: NOX::Epetra::MatrixFree::Apply() - vectorNorm failed!"
 	   << endl;
     vectorNorm = 1.0;
   }
@@ -146,7 +147,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // Make sure the norm is not zero, otherwise we can get an inf perturbation
   if (vectorNorm == 0.0) {
     //if (NOX::Utils::doPrint(Utils::Warning))
-    //cout << "Warning: NOX::Epetra::MatrixFree::Apply() - vectorNorm is zero"
+    //utils.out() << "Warning: NOX::Epetra::MatrixFree::Apply() - vectorNorm is zero"
     //<< endl;
     vectorNorm = 1.0;
   }
@@ -174,8 +175,8 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     else
       eta = lambda*(lambda + solutionNorm/vectorNorm);
 
-    //cout << "New Pert = " << eta << endl;
-    //cout << "Old Pert = " << lambda*(lambda + solutionNorm/vectorNorm) << endl;
+    //utils.out() << "New Pert = " << eta << endl;
+    //utils.out() << "Old Pert = " << lambda*(lambda + solutionNorm/vectorNorm) << endl;
   }
   else
     eta = userEta;
@@ -225,7 +226,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
 int MatrixFree::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  cout << "ERROR: NOX::MatrixFree::ApplyInverse - Not available for Matrix Free!"
+  utils.out() << "ERROR: NOX::MatrixFree::ApplyInverse - Not available for Matrix Free!"
        << endl;
   throw "NOX Error";
   return (-1);
@@ -233,7 +234,7 @@ int MatrixFree::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 
 double MatrixFree::NormInf() const
 {
-  cout << "ERROR: NOX::Epetra::MatrixFree::NormInf() - Not Available for "
+  utils.out() << "ERROR: NOX::Epetra::MatrixFree::NormInf() - Not Available for "
        << "Matrix-Free mode!" << endl;
   throw "NOX Error";
   return 1.0;

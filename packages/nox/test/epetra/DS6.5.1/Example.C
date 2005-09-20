@@ -140,12 +140,12 @@ int main(int argc, char *argv[])
   NOX::Utils printing(printParams);
 
   // Identify the test problem
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails))
+  if (printing.isPrintType(NOX::Utils::TestDetails))
     cout << "Starting epetra/DS6.5.1/DS_6_5_1.exe" << endl;
 
   // Identify processor information
 #ifdef HAVE_MPI
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
+  if (printing.isPrintType(NOX::Utils::TestDetails)) {
     cout << "Parallel Run" << endl;
     cout << "Number of processors = " << NumProc << endl;
     cout << "Print Process = " << MyPID << endl;
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     cout << "Process " << MyPID << " is alive!" << endl;
   Comm.Barrier();
 #else
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails))
+  if (printing.isPrintType(NOX::Utils::TestDetails))
     cout << "Serial Run" << endl;
 #endif
   // Sublist for line search 
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
   // End Nonlinear Solver **************************************
 
   // Output the parameter list
-  if (printing.isPrintProcessAndType(NOX::Utils::Parameters)) {
+  if (printing.isPrintType(NOX::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
     solver.getParameterList().print(cout);

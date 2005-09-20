@@ -41,6 +41,7 @@
 #include "ml_epetra_preconditioner.h"
 #endif
 #include "NOX_Parameter_Arbitrary.H"
+#include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 // Forward declares
@@ -496,7 +497,7 @@ protected:
   NOX::Parameter::List printParams;
 
   //! Printing Utilities object
-  const NOX::Utils utils;
+  NOX::Utils utils;
 
   //! Reference to the user supplied Jacobian interface functions
   NOX::Epetra::Interface::Jacobian* jacInterfacePtr;

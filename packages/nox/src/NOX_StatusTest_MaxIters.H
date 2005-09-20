@@ -34,6 +34,7 @@
 #define NOX_STATUS_MAXITERS_H
 
 #include "NOX_StatusTest_Generic.H"	// base class
+#include "NOX_Utils.H"                  // class data element
 
 namespace NOX {
 
@@ -58,8 +59,8 @@ class MaxIters : public Generic {
 
 public:
 
-  //! Constructor. Specify the maximum number of nonlinear solver iterations, \f$k_{\max}\f$.
-  MaxIters(int maxIterations);
+  //! Constructor. Specify the maximum number of nonlinear solver iterations, \f$k_{\max}\f$ ands optinally an error stream for printing errors.
+  MaxIters(int maxIterations, const NOX::Utils* u = NULL);
 
   //! Destructor.
   virtual ~MaxIters();
@@ -93,6 +94,10 @@ private:
 
   //! %Status
   NOX::StatusTest::StatusType status;
+
+  //! Ostream used to print errors
+  NOX::Utils utils;
+
 };
 
 } // namespace Status

@@ -103,25 +103,25 @@ void NOX::Solver::TensorBasedTest::init()
   status = NOX::StatusTest::Unconverged;
 
   // Print out initialization information
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
-    cout << "\n" << NOX::Utils::fill(72) << "\n";
-    cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
-    paramsPtr->print(cout,5);
-    cout << "\n" << NOX::Utils::fill(72) << "\n";
+  if (utils.isPrintType(NOX::Utils::Parameters)) {
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utils.out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
+    paramsPtr->print(utils.out(),5);
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
   }
 
   // Compute F of initial guess
   NOX::Abstract::Group::ReturnType rtype = solnptr->computeF();
   if (rtype != NOX::Abstract::Group::Ok)    {
-    cout << "NOX::Solver::TensorBasedTest::init - Unable to compute F" << endl;
+    utils.out() << "NOX::Solver::TensorBasedTest::init - Unable to compute F" << endl;
     throw "NOX Error";
   }
 
   // Test the initial guess
   status = testptr->checkStatus(*this);
   if ((status == NOX::StatusTest::Converged) &&
-      (utils.isPrintProcessAndType(NOX::Utils::Warning)))  {
-    cout << "Warning: NOX::Solver::TensorBasedTest::init() - The solution passed "
+      (utils.isPrintType(NOX::Utils::Warning)))  {
+    utils.out() << "Warning: NOX::Solver::TensorBasedTest::init() - The solution passed "
 	 << "into the solver (either through constructor or reset method) "
 	 << "is already converged!  The solver will not "
 	 << "attempt to solve this system since status is flagged as "
@@ -129,10 +129,10 @@ void NOX::Solver::TensorBasedTest::init()
   }
 
   // Print out status tests
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters))  {
-    cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
-    testptr->print(cout, 5);
-    cout <<"\n" << NOX::Utils::fill(72) << "\n";
+  if (utils.isPrintType(NOX::Utils::Parameters))  {
+    utils.out() << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
+    testptr->print(utils.out(), 5);
+    utils.out() <<"\n" << NOX::Utils::fill(72) << "\n";
   }
 }
 
@@ -194,7 +194,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::iterate()
   bool ok;
   ok = direction.compute(dir, soln, *this);
   if (!ok) {
-    cout << "NOX::Solver::TensorBasedTest::iterate - "
+    utils.out() << "NOX::Solver::TensorBasedTest::iterate - "
 	 << "unable to calculate direction" << endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
@@ -212,13 +212,13 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::iterate()
   ok = lineSearch.compute(soln, step, dir, *this);
   if (!ok) {
     if (step == 0) {
-      cout << "NOX::Solver::TensorBasedTest::iterate - line search failed" << endl;
+      utils.out() << "NOX::Solver::TensorBasedTest::iterate - line search failed" << endl;
       status = NOX::StatusTest::Failed;
       prePostOperator.runPostIterate(*this);
       return status;
     }
-    else if (utils.isPrintProcessAndType(NOX::Utils::Warning))
-       cout << "NOX::Solver::TensorBasedTest::iterate - "
+    else if (utils.isPrintType(NOX::Utils::Warning))
+       utils.out() << "NOX::Solver::TensorBasedTest::iterate - "
 	    << "using recovery step for line search" << endl;
   }
       
@@ -226,7 +226,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::iterate()
   // Compute F for new current solution.
   NOX::Abstract::Group::ReturnType rtype = soln.computeF();
   if (rtype != NOX::Abstract::Group::Ok)  {
-    cout << "NOX::Solver::LineSearchBased::iterate - "
+    utils.out() << "NOX::Solver::LineSearchBased::iterate - "
 	 << "unable to compute F" << endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
@@ -302,11 +302,11 @@ void NOX::Solver::TensorBasedTest::printUpdate()
 
   // Print the status test parameters at each iteration if requested  
   if ((status == NOX::StatusTest::Unconverged) &&
-      (utils.isPrintProcessAndType(NOX::Utils::OuterIterationStatusTest))) {
-    cout << NOX::Utils::fill(72) << "\n";
-    cout << "-- Status Test Results --\n";    
-    testptr->print(cout);
-    cout << NOX::Utils::fill(72) << "\n";
+      (utils.isPrintType(NOX::Utils::OuterIterationStatusTest))) {
+    utils.out() << NOX::Utils::fill(72) << "\n";
+    utils.out() << "-- Status Test Results --\n";    
+    testptr->print(utils.out());
+    utils.out() << NOX::Utils::fill(72) << "\n";
   }
 
   // All processes participate in the computation of these norms...
@@ -316,26 +316,26 @@ void NOX::Solver::TensorBasedTest::printUpdate()
   }
 
   // ...But only the print process actually prints the result.
-  if (utils.isPrintProcessAndType(NOX::Utils::OuterIteration)) {
-    cout << "\n" << NOX::Utils::fill(72) << "\n";
-    cout << "-- Nonlinear Solver Step " << niter << " -- \n";
-    cout << "f = " << utils.sciformat(normSoln);
-    cout << "  step = " << utils.sciformat(step);
-    cout << "  dx = " << utils.sciformat(normStep);
+  if (utils.isPrintType(NOX::Utils::OuterIteration)) {
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utils.out() << "-- Nonlinear Solver Step " << niter << " -- \n";
+    utils.out() << "f = " << utils.sciformat(normSoln);
+    utils.out() << "  step = " << utils.sciformat(step);
+    utils.out() << "  dx = " << utils.sciformat(normStep);
     if (status == NOX::StatusTest::Converged)
-      cout << " (Converged!)";
+      utils.out() << " (Converged!)";
     if (status == NOX::StatusTest::Failed)
-      cout << " (Failed!)";
-    cout << "\n" << Utils::fill(72) << "\n" << endl;
+      utils.out() << " (Failed!)";
+    utils.out() << "\n" << Utils::fill(72) << "\n" << endl;
   }
 
   // Print the final parameter values of the status test
   if ((status != NOX::StatusTest::Unconverged) && 
-      (utils.isPrintProcessAndType(NOX::Utils::OuterIteration))) {
-    cout << NOX::Utils::fill(72) << "\n";
-    cout << "-- Final Status Test Results --\n";    
-    testptr->print(cout);
-    cout << NOX::Utils::fill(72) << "\n";
+      (utils.isPrintType(NOX::Utils::OuterIteration))) {
+    utils.out() << NOX::Utils::fill(72) << "\n";
+    utils.out() << "-- Final Status Test Results --\n";    
+    testptr->print(utils.out());
+    utils.out() << NOX::Utils::fill(72) << "\n";
   }
 }
 
@@ -348,7 +348,8 @@ void NOX::Solver::TensorBasedTest::printUpdate()
 NOX::LineSearch::Tensor::Tensor(const NOX::Utils& u, Parameter::List& params) :
   paramsPtr(&params),
   utils(u),   //paramsPtr->sublist("Printing")),
-  print(utils)
+  print(utils),
+  slopeObj(u)
 {
   //  reset(paramsPtr->sublist("Line Search"));
   reset(*paramsPtr);
@@ -368,7 +369,7 @@ bool NOX::LineSearch::Tensor::reset(NOX::Parameter::List& lsParams)
   // Determine the specific type of tensor linesearch to perform
   string choice = lsParams.getParameter("Method", "Curvilinear");
 
-  cout << choice << endl;
+  utils.out() << choice << endl;
   
   if (choice == "Curvilinear")
     lsType = Curvilinear;
@@ -382,8 +383,8 @@ bool NOX::LineSearch::Tensor::reset(NOX::Parameter::List& lsParams)
     lsType = Newton;
   else
   {
-    if (utils.isPrintProcessAndType(NOX::Utils::Error))
-      cerr << "NOX::Direction::Tensor::reset() - The choice of "
+    if (utils.isPrintType(NOX::Utils::Error))
+      utils.err() << "NOX::Direction::Tensor::reset() - The choice of "
 	   << "\"Line Search\" parameter " << choice
 	   << " is invalid." << endl;
     throw "NOX Error";
@@ -403,7 +404,7 @@ bool NOX::LineSearch::Tensor::reset(NOX::Parameter::List& lsParams)
     recoveryStepType = LastComputedStep;  // Use last step from linesearch
   else
   {
-    cerr << "NOX::Solver::TensorBased::reset() - "
+    utils.err() << "NOX::Solver::TensorBased::reset() - "
 	 << "Invalid \"Recovery Step Type\"" << endl;
     throw "NOX Error";
   }
@@ -423,8 +424,8 @@ bool NOX::LineSearch::Tensor::reset(NOX::Parameter::List& lsParams)
     lambdaSelection = Quadratic;
   else
   {
-    if (utils.isPrintProcessAndType(NOX::Utils::Error))
-      cerr << "NOX::Solver::TensorBased::reset() - The choice of "
+    if (utils.isPrintType(NOX::Utils::Error))
+      utils.err() << "NOX::Solver::TensorBased::reset() - The choice of "
 	   << "\"Lambda Selection\" parameter " << choice
 	   << " is invalid." << endl;
     throw "NOX Error";
@@ -440,8 +441,8 @@ bool NOX::LineSearch::Tensor::reset(NOX::Parameter::List& lsParams)
     suffDecrCond = None;
   else
   {
-    if (utils.isPrintProcessAndType(NOX::Utils::Error))
-      cerr << "NOX::Solver::TensorBased::reset() - The choice of "
+    if (utils.isPrintType(NOX::Utils::Error))
+      utils.err() << "NOX::Solver::TensorBased::reset() - The choice of "
 	   << "\"Sufficient Decrease Condition\" parameter " << choice
 	   << " is invalid." << endl;
     throw "NOX Error";
@@ -469,8 +470,8 @@ bool NOX::LineSearch::Tensor::reset(NOX::Parameter::List& lsParams)
   else if (choice == "Newton")
     lsType = Newton;
   else {
-    if (utils.isPrintProcessAndType(NOX::Utils::Warning)) {
-      cout << "Warning: NOX::Direction::Tensor::reset() - the choice of "
+    if (utils.isPrintType(NOX::Utils::Warning)) {
+      utils.out() << "Warning: NOX::Direction::Tensor::reset() - the choice of "
 	   << "\"Line Search\" \nparameter is invalid.  Using curvilinear "
 	   << "line search." << endl;
     }
@@ -487,7 +488,7 @@ bool NOX::LineSearch::Tensor::reset(NOX::Parameter::List& lsParams)
     lambdaSelection = Quadratic;
   }
   else {
-    cout << "Warning: NOX::Solver::TensorBasedTest::init() - the choice of "
+    utils.out() << "Warning: NOX::Solver::TensorBasedTest::init() - the choice of "
 	 << "\"Lambda Selection\" parameter is invalid." << endl;
     lambdaSelection = Halving;
   }
@@ -579,9 +580,9 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
 				const NOX::Solver::Generic& s,
 				const NOX::Direction::Tensor& direction)
 {
-  if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
-    cout << "\n" << NOX::Utils::fill(72) << "\n";
-    cout << "-- Tensor Line Search ("
+  if (utils.isPrintType(NOX::Utils::InnerIteration)) {
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utils.out() << "-- Tensor Line Search ("
 	 << paramsPtr->getParameter("Submethod","Curvilinear")
 	 << ") -- \n";
   }
@@ -766,7 +767,7 @@ bool NOX::LineSearch::Tensor::checkConvergence(double newValue, double oldValue,
 
   default:
 
-    cerr << "NOX::LineSearch::Tensor::checkConvergence - Unknown convergence criteria" << endl;
+    utils.err() << "NOX::LineSearch::Tensor::checkConvergence - Unknown convergence criteria" << endl;
     throw "NOX Error";
 
   }
@@ -793,8 +794,8 @@ double NOX::LineSearch::Tensor::selectLambda(double newf, double oldf,
 
 void NOX::LineSearch::Tensor::printBadSlopeWarning(double slope) const
 {
-  if (print.isPrintProcessAndType(NOX::Utils::Warning))
-    cout << "WARNING: Computed slope is positive (slope = " 
+  if (print.isPrintType(NOX::Utils::Warning))
+    utils.out() << "WARNING: Computed slope is positive (slope = " 
 	 << slope
 	 << ").\n" << "Using recovery step!" 
 	 << endl;

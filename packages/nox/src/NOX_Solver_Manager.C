@@ -47,6 +47,7 @@ NOX::Solver::Manager::
 Manager(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
 	const Teuchos::RefCountPtr<StatusTest::Generic>& t, 
 	const Teuchos::RefCountPtr<Parameter::List>& p) :
+  utils(p->sublist("Printing")),
   method(""),
   ptr(NULL)
 {
@@ -117,13 +118,13 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
 #endif
     else 
     {
-      cout << "ERROR: NOX::Solver::Manager::reset - Invalid solver choice " << method << endl;
+      utils.out() << "ERROR: NOX::Solver::Manager::reset - Invalid solver choice " << method << endl;
       throw "NOX Error";
     }
 
     if (ptr == NULL) 
     {
-      cerr << "NOX::Solver::Manager::reset - Null pointer error" << endl;
+      utils.err() << "NOX::Solver::Manager::reset - Null pointer error" << endl;
       return false;
     }
 
@@ -141,7 +142,7 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
 // PRIVATE
 void NOX::Solver::Manager::deprecated(const string& oldName, const string& newName) const
 {
-  cout << "Warning: NOX::Solver::Manager::reset - " 
+  utils.out() << "Warning: NOX::Solver::Manager::reset - " 
        << "Nonlinear Solver choice \"" << oldName << "\" is deprecated.\n"
        << "                                       " 
        << "Use \"" << newName << "\" instead." 
@@ -197,7 +198,7 @@ void NOX::Solver::Manager::checkNullPtr(const string& fname) const
 {
   if (ptr == NULL) 
   {
-    cout << "NOX::Solver::Manager::" << fname << " - Null pointer error" << endl;
+    utils.out() << "NOX::Solver::Manager::" << fname << " - Null pointer error" << endl;
     throw "NOX Error";
   }
 }

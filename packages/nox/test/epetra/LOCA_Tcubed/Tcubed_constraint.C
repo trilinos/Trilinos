@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
     NOX::Utils utils(nlPrintParams);
     NOX::TestCompare testCompare(cout, utils);
   
-    if (utils.isPrintProcessAndType(NOX::Utils::TestDetails))
+    if (utils.isPrintType(NOX::Utils::TestDetails))
       cout << endl << "***** Checking solutions statistics *****" << endl;
 
     // Check number of steps

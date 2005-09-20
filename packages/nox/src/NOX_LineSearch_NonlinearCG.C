@@ -65,9 +65,9 @@ bool NonlinearCG::compute(Abstract::Group& newgrp,
 		     const Abstract::Vector& dir,
 		     const Solver::Generic& s) 
 {
-  if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration))
+  if (utils.isPrintType(NOX::Utils::InnerIteration))
   {
-    cout << "\n" << NOX::Utils::fill(72) << "\n" << "-- NonlinearCG Line Search -- \n";
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n" << "-- NonlinearCG Line Search -- \n";
   }
 
   const Abstract::Group& oldgrp = s.getPreviousSolutionGroup();
@@ -86,11 +86,11 @@ bool NonlinearCG::compute(Abstract::Group& newgrp,
 
   double checkOrthogonality = fabs( newgrp.getF().dot(dir) ); 
 
-  if (utils.isPrintProcessAndType(Utils::InnerIteration)) {
-    cout << setw(3) << "1" << ":";
-    cout << " step = " << utils.sciformat(step);
-    cout << " orth = " << utils.sciformat(checkOrthogonality);
-    cout << "\n" << NOX::Utils::fill(72) << "\n" << endl;
+  if (utils.isPrintType(Utils::InnerIteration)) {
+    utils.out() << setw(3) << "1" << ":";
+    utils.out() << " step = " << utils.sciformat(step);
+    utils.out() << " orth = " << utils.sciformat(checkOrthogonality);
+    utils.out() << "\n" << NOX::Utils::fill(72) << "\n" << endl;
   }
   
   return true;
@@ -110,7 +110,7 @@ NOX::Abstract::Vector& NonlinearCG::computeDirectionalDerivative(
   // Check that F exists
   if (!grp.isF())
   {
-    cout << "NOX::LineSearch::NonlinearCG::computeDirectionalDerivative "
+    utils.out() << "NOX::LineSearch::NonlinearCG::computeDirectionalDerivative "
          << "- Invalid F" << endl;
     throw "NOX Error";
   }

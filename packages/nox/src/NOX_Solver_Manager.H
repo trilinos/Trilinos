@@ -35,6 +35,7 @@
 
 #include "NOX_Solver_Generic.H"	// base class
 #include "NOX_Common.H"		// class data element (string)
+#include "NOX_Utils.H"          // class data element
 
 namespace NOX {
 namespace Solver{
@@ -116,6 +117,9 @@ private:
   void checkNullPtr(const string& fname) const;
 
 private:
+
+  //! Printing utilities
+  NOX::Utils utils;
 
   //! Name of method being used
   string method;

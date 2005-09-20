@@ -279,14 +279,14 @@ int main(int argc, char *argv[])
     dynamic_cast<const NOX::LAPACK::Group&>(solver.getSolutionGroup());
 
   // Output the parameter list
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+  if (utils.isPrintType(NOX::Utils::Parameters)) {
     cout << "\n" << "-- Parameter List Used in Solver --" << endl;
     solver.getParameterList().print(cout);
     cout << endl;
   }
 
   // Print the answer
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+  if (utils.isPrintType(NOX::Utils::Parameters)) {
     cout << "\n" << "-- Final Solution From Solver --" << "\n";
     cout << "|| F(x*) || = " << utils.sciformat(solnGrp.getNormF()) << endl;
     // solnGrp.print();

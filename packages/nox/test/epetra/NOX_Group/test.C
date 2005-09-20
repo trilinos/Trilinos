@@ -94,23 +94,23 @@ int main(int argc, char *argv[]) {
   NOX::Utils printing(printParams);
 
   // Identify the test problem
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails))
-    cout << "Starting epetra/NOX_Group/NOX_Group.exe" << endl;
+  if (printing.isPrintType(NOX::Utils::TestDetails))
+    printing.out() << "Starting epetra/NOX_Group/NOX_Group.exe" << endl;
 
   // Identify processor information
 #ifdef HAVE_MPI
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
-    cout << "Parallel Run" << endl;
-    cout << "Number of processors = " << NumProc << endl;
-    cout << "Print Process = " << MyPID << endl;
+  if (printing.isPrintType(NOX::Utils::TestDetails)) {
+    printing.out() << "Parallel Run" << endl;
+    printing.out() << "Number of processors = " << NumProc << endl;
+    printing.out() << "Print Process = " << MyPID << endl;
   }
   Comm.Barrier();
   if (printing.isPrintType(NOX::Utils::TestDetails))
-    cout << "Process " << MyPID << " is alive!" << endl;
+    printing.out() << "Process " << MyPID << " is alive!" << endl;
   Comm.Barrier();
 #else
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails))
-    cout << "Serial Run" << endl;
+  if (printing.isPrintType(NOX::Utils::TestDetails))
+    printing.out() << "Serial Run" << endl;
 #endif
 
   // Return value
@@ -120,12 +120,10 @@ int main(int argc, char *argv[]) {
 
 
 
-  if (printing.isPrintProcess()) {
-    if (status == 0)
-      cout << "Test passed!" << endl;
-    else 
-      cout << "Test failed!" << endl;
-  }
+  if (status == 0)
+    printing.out() << "Test passed!" << endl;
+  else 
+    printing.out() << "Test failed!" << endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize();
