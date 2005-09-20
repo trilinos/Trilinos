@@ -320,10 +320,10 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
    }  
 
 /* simple macro to start timer */
-#define MACRO_TIMER_START(arg, message) \
+#define MACRO_TIMER_START(arg, message, sync) \
   if (hgp->use_timers > 3)  {\
     if (timer[arg] < (arg))\
-      timer[arg] = Zoltan_Timer_Init(zz->ZTime, 0, message);\
+      timer[arg] = Zoltan_Timer_Init(zz->ZTime, sync, message);\
     ZOLTAN_TIMER_START(zz->ZTime, timer[arg], hg->comm->Communicator);\
   }   
 
@@ -402,7 +402,7 @@ static int pmatching_ipm (ZZ *zz,
   
   
   ZOLTAN_TRACE_ENTER (zz, yo);
-  MACRO_TIMER_START (0, "matching setup");
+  MACRO_TIMER_START (0, "matching setup", 0);
  
   /* this restriction may be removed later, but for now NOTE this test */
   if (sizeof(int) < sizeof (float))  {
@@ -500,7 +500,7 @@ static int pmatching_ipm (ZZ *zz,
   MACRO_TIMER_STOP (0);
   vindex = 0;                                /* marks position in visit array */
   for (round = 0; round < nRounds; round++) {
-    MACRO_TIMER_START (1, "matching phase 1");
+    MACRO_TIMER_START (1, "matching phase 1", 0);
     
     /************************ PHASE 1: ***************************************/
     
@@ -632,7 +632,7 @@ static int pmatching_ipm (ZZ *zz,
    KMDKMD we reactivate the fixed-size send buffer.
 */
 #endif
-      MACRO_TIMER_START (2, "Matching kstart A");
+      MACRO_TIMER_START (2, "Matching kstart A", 0);
       sendsize = 0;                      /* position in send buffer */
       sendcnt = 0;                       /* count of messages in send buffer */
       s = send;                          /* start at send buffer origin */
@@ -732,7 +732,7 @@ static int pmatching_ipm (ZZ *zz,
       }                  /* DONE: loop over k */                    
 
       MACRO_TIMER_STOP (2);
-      MACRO_TIMER_START (3, "Matching kstart B");
+      MACRO_TIMER_START (3, "Matching kstart B", 0);
      
       /* synchronize all rows in this column to next kstart value */
       old_kstart = kstart;      
@@ -826,27 +826,26 @@ static int pmatching_ipm (ZZ *zz,
       
       /* Communicate total inner product results to MASTER ROW */
 
-/* KDDKDD SHOULD THIS BE MPI_Gather to row 0 (MASTER ROW)? */
-      MPI_Allgather (&sendsize, 1, MPI_INT, size, 1, MPI_INT, hgc->col_comm);
+      MPI_Gather(&sendsize, 1, MPI_INT, size, 1, MPI_INT, 0, hgc->col_comm);
 
-/* KDDKDD DOES THE FOLLOWING MEMORY MANAGEMENT APPLY ONLY TO 
-   KDDKDD myProc_y == 0?  ONLY ROOT OF MPI_GATHERV SHOULD NEED IT. */
-      recsize = 0;
-      for (i = 0; i < hgc->nProc_y; i++)
-        recsize += size[i];        
+      if (hgc->myProc_y == 0) {
+        recsize = 0;
+        for (i = 0; i < hgc->nProc_y; i++)
+          recsize += size[i];        
           
-      dest[0] = 0;
-      for (i = 1; i < hgc->nProc_y; i++)
-        dest[i] = dest[i-1] + size[i-1];
+        dest[0] = 0;
+        for (i = 1; i < hgc->nProc_y; i++)
+          dest[i] = dest[i-1] + size[i-1];
         
-      if (recsize > nRec)
-        MACRO_REALLOC (recsize, nRec, rec);      /* make rec buffer bigger */
-      if (recsize)  
-        MPI_Gatherv (send, sendsize, MPI_INT, rec, size, dest, MPI_INT, 0,
-         hgc->col_comm);
+        if (recsize > nRec)
+          MACRO_REALLOC (recsize, nRec, rec);      /* make rec buffer bigger */
+      }
+
+      MPI_Gatherv(send, sendsize, MPI_INT, rec, size, dest, MPI_INT, 0,
+                  hgc->col_comm);
        
       /* Determine best vertex and best sum for each candidate */
-      if (hgc->myProc_y == 0)     /* do following only if I am the MASTER ROW */
+      if (hgc->myProc_y == 0) {   /* do following only if I am the MASTER ROW */
         for (r = rec; r < rec + recsize;)  {
           gno   = *r++;                    /* candidate's GNO */
           count = *r++;                    /* count of nonzero pairs */
@@ -876,6 +875,7 @@ static int pmatching_ipm (ZZ *zz,
             master_procs[nmaster++] = VTX_TO_PROC_X (hg, gno);
           }
         }
+      }
         
       if (cFLAG) {  /* Broadcast what we matched so far */
         MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
@@ -890,7 +890,7 @@ static int pmatching_ipm (ZZ *zz,
 #ifdef NEW_PHASE3
     /************************ NEW PHASE 3: ********************************/
 
-    MACRO_TIMER_START (4, "Matching Phase 3");
+    MACRO_TIMER_START (4, "Matching Phase 3", 1);
 
     /* Only MASTER ROW computes best global match for candidates */
     /* EBEB or perhaps we can do this fully distributed? */
@@ -919,20 +919,20 @@ static int pmatching_ipm (ZZ *zz,
       /* Look through array of "winners" and update match array. */
       /* Local numbers are used for local matches, otherwise
          -(gno+1) is used in the match array.                    */
-      for (i=0; i<nmaster; i++){
+      for (i=0; i<nmaster; i++) {
         cand   = global_best[i].cand;
         vertex = global_best[i].partner;
-        if (VTX_TO_PROC_X (hg, cand)   == hgc->myProc_x
-         && VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x)   {
-            int v1 = VTX_GNO_TO_LNO (hg, vertex);             
-            int v2 = VTX_GNO_TO_LNO (hg, cand);                
-            match[v1] = v2;
-            match[v2] = v1;
+        if (VTX_TO_PROC_X(hg, cand)   == hgc->myProc_x
+         && VTX_TO_PROC_X(hg, vertex) == hgc->myProc_x)   {
+          int v1 = VTX_GNO_TO_LNO(hg, vertex);             
+          int v2 = VTX_GNO_TO_LNO(hg, cand);                
+          match[v1] = v2;
+          match[v2] = v1;
         }                         
-        else if (VTX_TO_PROC_X (hg, cand) == hgc->myProc_x)
-          match [VTX_GNO_TO_LNO (hg, cand)]    = -vertex - 1;
+        else if (VTX_TO_PROC_X(hg, cand) == hgc->myProc_x)
+          match[VTX_GNO_TO_LNO(hg, cand)]   = -vertex - 1;
         else              
-          match [VTX_GNO_TO_LNO (hg, vertex)] = -cand - 1;
+          match[VTX_GNO_TO_LNO(hg, vertex)] = -cand - 1;
       }
 
     } /* End (hgc->myProc_y == 0) */
@@ -945,16 +945,16 @@ static int pmatching_ipm (ZZ *zz,
 #else /* Old phase 3 and 4 */
     /************************ PHASE 3: **********************************/
 
-    MACRO_TIMER_START (4, "Matching Phase 3");   
+    MACRO_TIMER_START (4, "Matching Phase 3", 1);   
     
     /* MASTER ROW only: send best results to candidates' owners */
-    err = communication_by_plan (zz, nmaster, master_procs, NULL, 3,
-     master_data, &reccnt, &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
-    if (err != ZOLTAN_OK)
-      goto fini;  
+    if (hgc->myProc_y == 0) {
+      err = communication_by_plan (zz, nmaster, master_procs, NULL, 3,
+       master_data, &reccnt, &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
+      if (err != ZOLTAN_OK)
+        goto fini;  
 
     /* read each message (candidate id, best match id, and best i.p.) */ 
-    if (hgc->myProc_y == 0) 
       for (r = rec; r < rec + 3 * reccnt; )   {
         gno    = *r++;
         vertex = *r++;
@@ -970,63 +970,56 @@ static int pmatching_ipm (ZZ *zz,
             sums  [lno] = bestsum;
         }                   
       }
+    }
     MACRO_TIMER_STOP (4);
-    MACRO_TIMER_START (5, "Matching Phase 4");
+    MACRO_TIMER_START (5, "Matching Phase 4", 1);
                                           
     /************************ PHASE 4: ************************************/
         
+    /* Update match array.  Send messages to off-processor matches */
     /* fill send buffer with messages. A message is two matched gno's */
     /* Note: match to self if inner product is below threshold */
-    /* KDDKDD  SHOULD WE COMMUNICATE MESSAGE IF MATCHING VERTEX TO SELF??  
-     * KDDKDD  GNO and VERTEX==GNO ARE BOTH ON THIS PROCESSOR. 
-     * KDDKDD  CAN WE SET MATCH ARRAY APPROPRIATELY AND 
-     * KDDKDD  SKIP THE MESSAGE? */
     s = send; 
     sendcnt = 0;
-    if (hgc->myProc_y == 0)
+    if (hgc->myProc_y == 0) {
       for (i = 0; i < nselect; i++)   {
-        int d1, d2;
+        int d2;
         lno = select[i];
-        *s++ = gno = VTX_LNO_TO_GNO (hg, lno);
-        *s++ = vertex = (sums [lno] > TSUM_THRESHOLD) ? index[lno] : gno;
+        gno = VTX_LNO_TO_GNO(hg, lno);
+        vertex = (sums[lno] > TSUM_THRESHOLD) ? index[lno] : gno;
+        d2 = VTX_TO_PROC_X(hg, vertex);
             
-        /* Matching gno to vertex with IP=sums[lno] */
-        /* each distinct owner (gno or vertex) needs its copy of the message.*/
-        d1 = VTX_TO_PROC_X (hg, gno);
-        d2 = VTX_TO_PROC_X (hg, vertex);
-        dest[sendcnt++] = d1;
-        if (d1 != d2)  {
+        /* Matching gno to vertex */
+        if (d2 == hgc->myProc_x) {
+          int v1 = VTX_GNO_TO_LNO(hg, vertex);             
+          match[v1] = lno;
+          match[lno] = v1;
+        }                         
+        else {
+          /* set candidate match info */
+          match[lno] = -vertex - 1;
+          /* gno is on this processor, but vertex is not.  Send
+             copy to owner of vertex. */
           *s++ = gno;
-          *s++ = vertex;        
+          *s++ = vertex;
           dest[sendcnt++] = d2;
         }
       }
         
-    /* send match results only to impacted parties */
-    err = communication_by_plan (zz, sendcnt, dest, NULL, 2, send, &reccnt,
-     &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+10);
-    if (err != ZOLTAN_OK)
-      goto fini;
+      /* send match results only to impacted parties */
+      err = communication_by_plan (zz, sendcnt, dest, NULL, 2, send, &reccnt,
+       &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+10);
+      if (err != ZOLTAN_OK)
+        goto fini;
 
-    /* update match array with current selections */
-    /* Note: -gno-1 designates an external match as a negative number */
-    if (hgc->myProc_y == 0)
+      /* update match array with current selections */
+      /* Note: -gno-1 designates an external match as a negative number */
       for (r = rec; r < rec + 2 * reccnt; )  {   
         gno    = *r++;
         vertex = *r++;
-
-        if (VTX_TO_PROC_X (hg, gno)    == hgc->myProc_x
-         && VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x)   {
-            int v1 = VTX_GNO_TO_LNO (hg, vertex);             
-            int v2 = VTX_GNO_TO_LNO (hg, gno);                
-            match [v1] = v2;
-            match [v2] = v1;
-        }                         
-        else if (VTX_TO_PROC_X (hg, gno) == hgc->myProc_x)
-          match [VTX_GNO_TO_LNO (hg, gno)]    = -vertex - 1;
-        else              
-          match [VTX_GNO_TO_LNO (hg, vertex)] = -gno - 1;
+        match [VTX_GNO_TO_LNO (hg, vertex)] = -gno - 1;
       }      
+    }
     
     /* update match array to the entire column */   
     MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
@@ -1034,7 +1027,7 @@ static int pmatching_ipm (ZZ *zz,
   }                                             /* DONE: loop over rounds */
 #endif /* ! NEW_PHASE3 */
   
-  MACRO_TIMER_START (6, "Matching Cleanup");          
+  MACRO_TIMER_START (6, "Matching Cleanup", 0);
 
   /* optional sanity tests */
   if (zz->Debug_Level > 4 && hgc->myProc_x == 0 && hgc->myProc_y == 0)  {
