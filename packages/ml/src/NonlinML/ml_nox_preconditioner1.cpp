@@ -544,7 +544,7 @@ bool ML_NOX::ML_Nox_Preconditioner::computePreconditioner(
    if (recompute_newPrec_ != 0) // recompute initially after step recompute_newPrec_
    if (ncalls_NewPrec_ == recompute_newPrec_)
       setinit(false);
-   if (adaptive_NewPrec_ > 0.0 && ncalls_NewPrec_ != 0)
+   if (adaptive_NewPrec_ > 0.0 && ncalls_NewPrec_ != 0 && !islinearPrec_)
    {
      if (!noxsolver_ && !islinearPrec_)
      {
