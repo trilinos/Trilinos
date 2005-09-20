@@ -48,7 +48,9 @@ epetra = \
 --enable-tsfextended 
 
 epetraext = \
---enable-epetraext
+--enable-epetraext \
+--enable-aztecoo-thyra \
+--enable-amesos-thyra
 
 ifpack = \
 --enable-ifpack \
