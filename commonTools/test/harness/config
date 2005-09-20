@@ -6,6 +6,7 @@
 
 RUN (beowulf-nightly-serial) {
     
+    BUILD-LABEL         = nightly;
     BUILD-DIR           = SERIAL-NEW;
     COMM                = serial;
     INVOKE-CONFIGURE    = linux-beowulf;
