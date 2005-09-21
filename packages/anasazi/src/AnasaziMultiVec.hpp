@@ -52,6 +52,7 @@ namespace Anasazi {
 template <class ScalarType>
 class MultiVec {
 public:
+
 	//@{ \name Constructor/Destructor.
 	//! Anasazi::MultiVec constructor.
 	MultiVec() {};
@@ -136,7 +137,7 @@ public:
 	   Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
 	*/
 
-	virtual void MvNorm ( std::vector<ScalarType>* normvec ) const = 0;
+	virtual void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec ) const = 0;
 
 	//@}
 	//@{ \name Initialization methods
@@ -163,6 +164,7 @@ public:
 	*/
 	virtual void MvPrint ( ostream& os ) const = 0;
 	//@}
+
 };
 
 
@@ -269,7 +271,7 @@ public:
     /*! \brief Compute the 2-norm of each individual vector of \c mv.  
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
     */
-    static void MvNorm( const MultiVec<ScalarType>& mv, std::vector<ScalarType>* normvec )
+    static void MvNorm( const MultiVec<ScalarType>& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec )
     { mv.MvNorm(normvec); }
 
     //@}

@@ -150,7 +150,7 @@ namespace Anasazi {
     /*! \brief Compute the 2-norm of each individual vector of \c mv.  
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
     */
-    static void MvNorm( const MV& mv, std::vector<ScalarType>* normvec )
+    static void MvNorm( const MV& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
 
     //@}
