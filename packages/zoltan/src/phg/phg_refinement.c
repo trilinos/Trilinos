@@ -449,7 +449,7 @@ static int refine_fm2 (ZZ *zz,
     static int timer_roll=-1;
     static int timer_nonroot=-1;
     
-    int do_timing = (hgp->use_timers > 1);
+    int do_timing = (hgp->use_timers > 2);
     int detail_timing = (hgp->use_timers > 3);
 
     
@@ -801,8 +801,8 @@ static int refine_fm2 (ZZ *zz,
                 int v = moves[i];
                 if (v<0)
                     v = -v-1;
-                else 
-                    fm2_move_vertex_oneway(v, hg, part, gain, heap, pins, lpins, weights, lweights, mark, adj);
+                else /* we don't need to roll pins, or weights etc; rolling local ones suffices */
+                    fm2_move_vertex_oneway_nonroot(v, hg, part, lpins, lweights);
                 mark[v] = 0;
             }
             for (i=0; i<best_cutsizeat; ++i){
