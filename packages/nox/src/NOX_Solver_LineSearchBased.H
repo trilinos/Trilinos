@@ -177,6 +177,9 @@ protected:
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;
 
+  //! Type of check to use for status tests.  See NOX::StatusTest for more details.
+  NOX::StatusTest::CheckType checkType;
+
   //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
   NOX::Solver::PrePostOperator prePostOperator;
 

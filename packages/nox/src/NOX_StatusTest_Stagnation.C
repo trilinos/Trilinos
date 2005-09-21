@@ -51,9 +51,15 @@ NOX::StatusTest::Stagnation::~Stagnation()
 }
 
 NOX::StatusTest::StatusType 
-NOX::StatusTest::Stagnation::checkStatus(const Solver::Generic& problem)
+NOX::StatusTest::Stagnation::
+checkStatus(const Solver::Generic& problem,
+	    NOX::StatusTest::CheckType checkType)
 {
   status = Unconverged;
+
+  // This test should ignore the checkType!  This test must be run
+  // each iteration because it triggers after a set number of
+  // iterations.
 
   // First time through we don't do anything
   int niters = problem.getNumIterations(); 
@@ -61,7 +67,7 @@ NOX::StatusTest::Stagnation::checkStatus(const Solver::Generic& problem)
     lastIteration = 0;
     numSteps = 0;
     return Unconverged;
-  } 
+  }
 
   // Make sure we have not already counted the last nonlinear iteration.
   // This protects against multiple calls to checkStatus() in between 
@@ -73,7 +79,7 @@ NOX::StatusTest::Stagnation::checkStatus(const Solver::Generic& problem)
   else
     lastIteration = niters;
 
-  // Compute the convergenc rate and set counter appropriately
+  // Compute the convergence rate and set counter appropriately
   if (!isCounted) {
 
     convRate = problem.getSolutionGroup().getNormF() / 

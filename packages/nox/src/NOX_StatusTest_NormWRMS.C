@@ -94,8 +94,16 @@ NormWRMS::~NormWRMS()
   delete v;
 }
 
-StatusType NormWRMS::checkStatus(const Solver::Generic& problem)
+StatusType NormWRMS::
+checkStatus(const Solver::Generic& problem, 
+	    NOX::StatusTest::CheckType checkType)
 {
+  if (checkType == NOX::StatusTest::None) {
+    status = Unevaluated;
+    value = 1.0e+12;
+    return status;
+  }
+
   status = Unconverged;
 
   const Abstract::Group& soln = problem.getSolutionGroup();

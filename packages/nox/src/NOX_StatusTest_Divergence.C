@@ -45,10 +45,15 @@ NOX::StatusTest::Divergence::~Divergence()
 {
 }
 
-NOX::StatusTest::StatusType 
-NOX::StatusTest::Divergence::checkStatus(const Solver::Generic& problem)
+NOX::StatusTest::StatusType NOX::StatusTest::Divergence::
+checkStatus(const Solver::Generic& problem,
+	    NOX::StatusTest::CheckType checkType)
 {
   status = Unconverged;
+
+  // This test should ignore the checkType!  This test must be run
+  // each iteration because it triggers after a set number of
+  // iterations.
 
   // First time through we don't do anything
   int niters = problem.getNumIterations(); 

@@ -118,6 +118,11 @@ void NOX::Solver::InexactTrustRegionBased::init()
   if (useCounters)
     resetCounters();
 
+  // Get the checktype
+  checkType = (NOX::StatusTest::CheckType) paramsPtr->
+    sublist("Solver Options").getParameter("Status Test Check Type", 
+					   NOX::StatusTest::Minimal);
+
   // Print out initialization information
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
@@ -247,7 +252,7 @@ void NOX::Solver::InexactTrustRegionBased::init()
     newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
 
   // Test the initial guess
-  status = testPtr->checkStatus(*this);
+  status = testPtr->checkStatus(*this, checkType);
 
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     utils.out() << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
@@ -330,7 +335,7 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
     newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
 
   // Test the initial guess
-  status = testPtr->checkStatus(*this);
+  status = testPtr->checkStatus(*this, checkType);
 
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     utils.out() << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
@@ -677,7 +682,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
       radius = 2 * minRadius;*/
   }
 
-  status = test.checkStatus(*this);
+  status = test.checkStatus(*this, checkType);
  
   if (utils.isPrintType(Utils::InnerIteration)) 
     utils.out() << NOX::Utils::fill(72) << endl;
@@ -1014,7 +1019,7 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
   }
 
   // Evaluate the current status
-  status = test.checkStatus(*this);
+  status = test.checkStatus(*this, checkType);
  
   if (utils.isPrintType(Utils::InnerIteration)) 
     utils.out() << NOX::Utils::fill(72) << endl;

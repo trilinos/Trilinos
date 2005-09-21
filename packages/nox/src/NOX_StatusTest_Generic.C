@@ -33,13 +33,6 @@
 #include "NOX_StatusTest_Generic.H"
 #include "NOX_Common.H"
 
-NOX::StatusTest::StatusType NOX::StatusTest::Generic::
-checkStatusEfficiently(const NOX::Solver::Generic& problem, 
-		       NOX::StatusTest::CheckType checkType)
-{ 
-  return checkStatus(problem); 
-}
-
 ostream& operator<<(ostream& os, NOX::StatusTest::StatusType type)
 {
   os << setiosflags(ios::left) << setw(13) << setfill('.');

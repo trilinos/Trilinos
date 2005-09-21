@@ -65,15 +65,9 @@ NOX::StatusTest::FiniteValue::~FiniteValue()
 {
 }
 
-NOX::StatusTest::StatusType 
-NOX::StatusTest::FiniteValue::checkStatus(const Solver::Generic& problem)
-{
-  return checkStatusEfficiently(problem, NOX::StatusTest::Minimal);
-}
-
 NOX::StatusTest::StatusType NOX::StatusTest::FiniteValue::
-checkStatusEfficiently(const Solver::Generic& problem, 
-		       NOX::StatusTest::CheckType checkType)
+checkStatus(const Solver::Generic& problem, 
+	    NOX::StatusTest::CheckType checkType)
 {
   // Reset the check
   normValue = -1.0;

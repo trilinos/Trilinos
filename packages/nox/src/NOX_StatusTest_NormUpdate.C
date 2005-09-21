@@ -65,12 +65,8 @@ NormUpdate::~NormUpdate()
   delete updateVectorPtr;
 }
 
-StatusType NormUpdate::checkStatus(const Solver::Generic& problem)
-{
-  return checkStatusEfficiently(problem, NOX::StatusTest::Minimal);
-}
-
-StatusType NormUpdate::checkStatusEfficiently(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType)
+StatusType NormUpdate::checkStatus(const Solver::Generic& problem, 
+				   NOX::StatusTest::CheckType checkType)
 {
   if (checkType == None)
   {

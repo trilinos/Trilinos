@@ -125,6 +125,10 @@ void TrustRegionBased::init()
   if (recoveryStep < 0) 
     invalid("Recovery Step", recoveryStep);
 
+  // Get the checktype
+  checkType = (NOX::StatusTest::CheckType) paramsPtr->
+    sublist("Solver Options").getParameter("Status Test Check Type", 
+					   NOX::StatusTest::Minimal);
 
   // Check for a user defined Norm
   if (paramsPtr->sublist("Trust Region").
@@ -165,7 +169,7 @@ void TrustRegionBased::init()
     newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
 
   // Test the initial guess
-  status = testPtr->checkStatus(*this);
+  status = testPtr->checkStatus(*this, checkType);
 
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     utils.out() << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
@@ -227,7 +231,7 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
     newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
 
   // Test the initial guess
-  status = testPtr->checkStatus(*this);
+  status = testPtr->checkStatus(*this, checkType);
 
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     utils.out() << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
@@ -562,7 +566,7 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
       radius = 2 * minRadius;*/
   }
 
-  status = test.checkStatus(*this);
+  status = test.checkStatus(*this, checkType);
  
   if (utils.isPrintType(Utils::InnerIteration)) 
     utils.out() << NOX::Utils::fill(72) << endl;

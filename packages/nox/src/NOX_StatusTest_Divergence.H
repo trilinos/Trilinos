@@ -80,7 +80,9 @@ public:
     The nature of this test is such that it \e must be executed at
     every nonlinear iteration, so we don't use the checkType argument.
    */
-  virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem);
+  virtual NOX::StatusTest::StatusType 
+  checkStatus(const NOX::Solver::Generic& problem, 
+	      NOX::StatusTest::CheckType checkType);
 
   virtual NOX::StatusTest::StatusType getStatus() const;
 

@@ -108,7 +108,7 @@ void NOX::Solver::TensorBased::init()
   }
 
   // Test the initial guess
-  status = testPtr->checkStatus(*this);
+  status = testPtr->checkStatus(*this, checkType);
   if ((status == NOX::StatusTest::Converged) &&
       (utils.isPrintType(NOX::Utils::Warning)))
   {
@@ -168,6 +168,11 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
 
   // Initialize direction parameters for this object
   doRescue = teParams.getParameter("Rescue Bad Newton Solve", true);
+
+  // Get the checktype
+  checkType = (NOX::StatusTest::CheckType) paramsPtr->
+    sublist("Solver Options").getParameter("Status Test Check Type", 
+					   NOX::StatusTest::Minimal);
 
   // Determine whether we should use the Modified Tensor method
   useModifiedMethod = false;
@@ -363,7 +368,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
     return status;
   }
 
-  status = test.checkStatus(*this);
+  status = test.checkStatus(*this, checkType);
  
   prePostOperator.runPostIterate(*this);
 

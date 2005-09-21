@@ -1695,13 +1695,25 @@ immediately before the word that is causing the link. For example,
      <ul>
 
      <li> "User Defined Pre/Post Operator" - a
-     NOX::Parameter::PrePostOperator derived object that allows users
-     to insert pre and post method calls into nox's solvers (before
-     and after the NOX::Solver::Generic::iterate() and before and
-     after the NOX::Solver::Generic::solve() methods).  This object
-     can be set in the parameter list since it is derived from
-     NOX::Parameter::Arbitrary.  See NOX::Parameter::PrePostOperator
-     for details on how to implement this object.
+     Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> object that
+     allows users to insert pre and post method calls into nox's
+     solvers (before and after the NOX::Solver::Generic::iterate() and
+     before and after the NOX::Solver::Generic::solve() methods).
+     Users write a class that derives from
+     NOX::Abstract::PrePostOperator.  they then wrap the construction
+     in a Teuchos::RefCountPtr object.  These objects can be set in
+     the parameter list with the following code.  See
+     NOX::Parameter::PrePostOperator for details on how to implement
+     this object.
+
+     \verbatim 
+  Teuchos::RefCountPtr<UserPrePostOperator> ppo =
+    Teuchos::rcp(new UserPrePostOperator(printing));
+  nlParams.sublist("Solver Options").setParameter
+    <NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", ppo);
+     \endverbatim
+
+     <li> "Status Test Check Type" - an enumerated type (NOX::StatusTest::CheckType) that determines if all or just a minimal set of status tests should be run at each iteration.  The status tests can be run efficiently if set to NOX::StatusTest::Minimal and all test run every iteration is set to NOX::StatusTest::Complete.  
 
      </ul>
 

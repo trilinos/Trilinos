@@ -65,13 +65,9 @@ namespace LOCA {
       virtual ~Wrapper();
 
       //! Calls checkStatus of underlying status test
-      virtual NOX::StatusTest::StatusType 
-      checkStatus(const NOX::Solver::Generic& problem);
-
-      //! Calls checkStatus of underlying status test
       virtual NOX::StatusTest::StatusType
-      checkStatusEfficiently(const NOX::Solver::Generic& problem, 
-			     NOX::StatusTest::CheckType checkType);
+      checkStatus(const NOX::Solver::Generic& problem, 
+		  NOX::StatusTest::CheckType checkType);
 
       //! Calls getStatus of underlying status test
       virtual NOX::StatusTest::StatusType getStatus() const;

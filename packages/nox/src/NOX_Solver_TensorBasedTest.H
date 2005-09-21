@@ -284,6 +284,9 @@ protected:
   //! Stopping test.
   Teuchos::RefCountPtr<NOX::StatusTest::Generic> testptr;		
 
+  //! Type of check to use for status tests.  See NOX::StatusTest for more details.
+  NOX::StatusTest::CheckType checkType;
+
   //! Input parameters.
   Teuchos::RefCountPtr<NOX::Parameter::List> paramsPtr;	
 

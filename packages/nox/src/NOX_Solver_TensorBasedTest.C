@@ -102,6 +102,11 @@ void NOX::Solver::TensorBasedTest::init()
   niter = 0;
   status = NOX::StatusTest::Unconverged;
 
+  // Get the checktype
+  checkType = (NOX::StatusTest::CheckType) paramsPtr->
+    sublist("Solver Options").getParameter("Status Test Check Type", 
+					   NOX::StatusTest::Minimal);
+
   // Print out initialization information
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
@@ -118,7 +123,7 @@ void NOX::Solver::TensorBasedTest::init()
   }
 
   // Test the initial guess
-  status = testptr->checkStatus(*this);
+  status = testptr->checkStatus(*this, checkType);
   if ((status == NOX::StatusTest::Converged) &&
       (utils.isPrintType(NOX::Utils::Warning)))  {
     utils.out() << "Warning: NOX::Solver::TensorBasedTest::init() - The solution passed "
@@ -235,7 +240,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::iterate()
 
   
   // Evaluate the current status.
-  status = test.checkStatus(*this);
+  status = test.checkStatus(*this, checkType);
  
   prePostOperator.runPostIterate(*this);
 

@@ -99,16 +99,12 @@ public:
   virtual ~Combo();
 
   /*!
-    \brief Calls checkStatus(problem, NOX::StatusTest::Minimal)
-   */
-  virtual StatusType checkStatus(const NOX::Solver::Generic& problem);
-
-  /*!
     \brief Tests stopping criterion.
     
     See addOp() and orOp() for details.
   */
-  virtual StatusType checkStatusEfficiently(const NOX::Solver::Generic& problem, NOX::StatusTest::CheckType checkType);
+  virtual StatusType checkStatus(const NOX::Solver::Generic& problem, 
+				 NOX::StatusTest::CheckType checkType);
 
   virtual StatusType getStatus() const;
 
@@ -130,7 +126,8 @@ protected:
     this combination test without that check.
 
   */
-  virtual void orOp(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType);
+  virtual void orOp(const Solver::Generic& problem, 
+		    NOX::StatusTest::CheckType checkType);
 
   //! Use this for checkStatus when this is an AND type combo. Updates NOX::StatusTest::Combo::status.
   /*!  
@@ -147,7 +144,8 @@ protected:
     the sake of completeness, even if we could determine the status of
     this combination test without that check.
   */
-  virtual void andOp(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType);
+  virtual void andOp(const Solver::Generic& problem, 
+		     NOX::StatusTest::CheckType checkType);
 
   /*! \brief Check whether or not it is safe to add \c a to this list
    of tests.

@@ -143,11 +143,9 @@ public:
   virtual ~NormF();
 
   // derived
-  virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem);
-
-  // derived
-  virtual NOX::StatusTest::StatusType checkStatusEfficiently(const NOX::Solver::Generic& problem,
-							     NOX::StatusTest::CheckType checkType);
+  virtual NOX::StatusTest::StatusType 
+  checkStatus(const NOX::Solver::Generic& problem,
+	      NOX::StatusTest::CheckType checkType);
 
   // derived
   virtual NOX::StatusTest::StatusType getStatus() const;

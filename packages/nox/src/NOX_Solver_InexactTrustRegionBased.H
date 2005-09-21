@@ -474,6 +474,9 @@ protected:
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;
 
+  //! Type of check to use for status tests.  See NOX::StatusTest for more details.
+  NOX::StatusTest::CheckType checkType;
+
   //! Enumerated list for each direction that may be required in the Trust region computation.
   enum StepType 
   {

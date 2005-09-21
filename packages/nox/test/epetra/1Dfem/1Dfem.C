@@ -245,6 +245,10 @@ int main(int argc, char *argv[])
   nlParams.sublist("Solver Options").setParameter
     <NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", ppo);
 
+  // Let's force all status tests to do a full check
+  nlParams.sublist("Solver Options").
+    setParameter("Status Test Check Type", NOX::StatusTest::Complete);
+
   // Create all possible Epetra_Operators.
   // 1. User supplied (Epetra_RowMatrix)
   //Epetra_RowMatrix& Analytic = interface.getJacobian();

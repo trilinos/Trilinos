@@ -69,11 +69,8 @@ public:
   virtual ~FiniteValue();
 
   virtual NOX::StatusTest::StatusType 
-  checkStatus(const NOX::Solver::Generic& problem);
-
-  virtual NOX::StatusTest::StatusType 
-  checkStatusEfficiently(const NOX::Solver::Generic& problem, 
-			 NOX::StatusTest::CheckType checkType);
+  checkStatus(const NOX::Solver::Generic& problem, 
+	      NOX::StatusTest::CheckType checkType);
 
   virtual NOX::StatusTest::StatusType getStatus() const;
 
