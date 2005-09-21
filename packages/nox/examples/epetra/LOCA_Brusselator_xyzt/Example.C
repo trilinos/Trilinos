@@ -101,7 +101,7 @@
 
 #ifdef HAVE_NOX_EPETRAEXT
 // Comment out following line for usual implicit time stepping on all procs
-#define DO_XYZT 1
+//#define DO_XYZT 1
 #endif
 
 #ifdef DO_XYZT
@@ -112,8 +112,6 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i;
-
   // Initialize MPI
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -195,10 +193,11 @@ int main(int argc, char *argv[])
 
   // Create the top level parameter list
 
-  NOX::Parameter::List paramList;
+  Teuchos::RefCountPtr<NOX::Parameter::List> paramList =
+       Teuchos::rcp(new NOX::Parameter::List);
 
   // Create LOCA sublist
-  NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
+  NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
 
   // Create the stepper sublist and set the stepper parameters
   NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
@@ -270,7 +269,7 @@ int main(int argc, char *argv[])
 			     LOCA::Utils::Parameters);
 
   // Create the "Solver" parameters sublist to be used with NOX Solvers
-  NOX::Parameter::List& nlParams = paramList.sublist("NOX");
+  NOX::Parameter::List& nlParams = paramList->sublist("NOX");
   // Set the nonlinear solver method
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
   //nlParams.setParameter("Nonlinear Solver", "Trust Region Based");
@@ -341,11 +340,6 @@ int main(int argc, char *argv[])
   // Create the interface between the test problem and the nonlinear solver
   Problem_Interface interface(Problem);
 
-  // Print initial guess
-#ifndef DO_XYZT
-  interface.printSolution(soln, locaStepperList.getParameter("Initial Value", 0.0));
-#endif
-
   // Create the Epetra_RowMatrix
   Epetra_RowMatrix& A = Problem.getJacobian();
 
@@ -371,7 +365,6 @@ int main(int argc, char *argv[])
   Epetra_Vector scaleVec(soln);
   NOX::Epetra::Scaling scaling;
   scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
-  //grp.setLinearSolveScaling(scaling);
 
   LOCA::Epetra::Interface::Required& iReq = interface;
 
@@ -390,15 +383,17 @@ int main(int argc, char *argv[])
   pVector.addParameter("alpha",0.6);
   pVector.addParameter("beta",2.0);
 
-  LOCA::Epetra::Group grp(printParams, iReq, initialGuess, linSys, pVector);
+  Teuchos::RefCountPtr<LOCA::Epetra::Group> grp =
+    Teuchos::rcp(new LOCA::Epetra::Group(printParams,
+                 iReq, initialGuess, linSys, pVector));
 
-  grp.computeF();
+  grp->computeF();
 
   // Create the convergence tests
   Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8, 
 					    NOX::StatusTest::NormF::Unscaled));
-  //NOX::StatusTest::NormF relresid(grp, 1.0e-2);
+  //NOX::StatusTest::NormF relresid(*grp.get(), 1.0e-2);
   //NOX::StatusTest::NormUpdate update(1.0e-5);
   //NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
   //NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
@@ -408,19 +403,20 @@ int main(int argc, char *argv[])
   //converged.addStatusTest(update);
   Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(50));
-  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
-  combo.addStatusTest(absresid);
-  combo.addStatusTest(maxiters);
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo =
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+  combo->addStatusTest(absresid);
+  combo->addStatusTest(maxiters);
 
   // Create the method
   //NOX::Solver::Manager solver(grp, combo, nlParams);
-  LOCA::Stepper stepper(grp, combo, paramList);
+  LOCA::NewStepper stepper(grp, combo, paramList);
 
   // Initialize time integration parameters
 #ifdef DO_XYZT
   int maxTimeSteps = 1; // No longer need a time integration loop
 #else
-  int maxTimeSteps = 5;
+  int maxTimeSteps = 16;
 #endif
   int timeStep = 0;
   double time = 0.;
@@ -443,20 +439,18 @@ int main(int argc, char *argv[])
 
     // Get the Epetra_Vector with the final solution from the solver
     const LOCA::Epetra::Group& finalGroup = 
-      dynamic_cast<const LOCA::Epetra::Group&>(stepper.getSolutionGroup());
+      dynamic_cast<const LOCA::Epetra::Group&>(*(stepper.getSolutionGroup()));
     const Epetra_Vector& finalSolution = 
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
     // End Nonlinear Solver **************************************
 
 #ifndef DO_XYZT
-    // Not needed for continuation runs
-    interface.printSolution(soln, locaStepperList.getParameter("Initial Value", 0.0));
 
     Problem.reset(finalSolution);
-    grp.setX(finalSolution);
+    grp->setX(finalSolution);
     stepper.reset(grp, combo, paramList);
-    grp.computeF();
+    grp->computeF();
 #endif
 
   } // end time step while loop
@@ -465,7 +459,7 @@ int main(int argc, char *argv[])
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     utils.out() << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    stepper.getParameterList().print(utils.out());
+    stepper.getParameterList()->print(utils.out());
     utils.out() << endl;
   }
 
@@ -480,5 +474,5 @@ int main(int argc, char *argv[])
   MPI_Finalize() ;
 #endif
 
-return ierr ;
+return 0 ;
 }

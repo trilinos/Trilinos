@@ -125,25 +125,28 @@ private:
 
   double xmin;
   double xmax;
-  double dx;
   double dt;
-
-  FillType flag;
+  Epetra_Comm *Comm;
   OverlapType overlapType;
+  int NumGlobalNodes;     // Total Number of nodes
+  Epetra_Import *ColumnToOverlapImporter;
+  Epetra_CrsGraph *AA;
+  Epetra_CrsMatrix *A;
+  double alpha, beta;     // Model Parameters
+
+  // Default initialization for these
+  double dx;
+  FillType flag;
   Epetra_Map *StandardNodeMap; 
   Epetra_Map *OverlapNodeMap;
   Epetra_Map *StandardMap; 
   Epetra_Map *OverlapMap;
   Epetra_Import *Importer;
   Epetra_Import *nodeImporter;
-  Epetra_Import *ColumnToOverlapImporter;
   Epetra_Vector *xptr;
   Epetra_Vector *initialSolution;
   Epetra_Vector *oldSolution;
   Epetra_Vector *rhs;
-  Epetra_CrsGraph *AA;
-  Epetra_CrsMatrix *A;
-  Epetra_Comm *Comm;
 
   int MyPID;              // Process number
   int NumProc;            // Total number of processes
@@ -151,10 +154,8 @@ private:
   int NumSpecies;         // Number of unknowns owned by this process
   enum { NUMSPECIES = 2}; // Needed for SGI build
   int NumMyNodes;         // Number of nodes owned by this process
-  int NumGlobalNodes;     // Total Number of nodes
   int NumMyUnknowns;      // Number of unknowns owned by this process
   int NumGlobalUnknowns;  // Total Number of unknowns
-  double alpha, beta;     // Model Parameters
 
 };
 #endif

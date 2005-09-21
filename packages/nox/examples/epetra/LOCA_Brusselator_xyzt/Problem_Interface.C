@@ -42,7 +42,7 @@
 Problem_Interface::Problem_Interface(Brusselator& Problem) :
   problem(Problem),
   conStep(0),
-  timeStep(0),
+  timeStep(1),
   oldSolnOrig(Problem.getOldSoln())
 { }
 
@@ -68,8 +68,9 @@ void Problem_Interface::setParameters(const LOCA::ParameterVector& params)
  
 void Problem_Interface::printSolution(const Epetra_Vector& x, double conParam)
 {
-   if (timeStep==0) cout << "Writing solution at continuation step " << conStep
-	                 << "  for parameter = " << conParam << endl;
+   if (timeStep==1)
+      cout << "Writing solution at continuation step " << conStep
+           << "  for parameter = " << conParam << endl;
    char file_name[25];
    FILE *ifp;
    Epetra_Vector& xMesh = problem.getMesh();
@@ -81,6 +82,7 @@ void Problem_Interface::printSolution(const Epetra_Vector& x, double conParam)
      fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, xMesh[i],
                        x[2*i], x[2*i+1]);
    fclose(ifp);
+   timeStep++; //for time integration runs
 }
 
 void Problem_Interface::dataForPrintSolution(const int conStep_,

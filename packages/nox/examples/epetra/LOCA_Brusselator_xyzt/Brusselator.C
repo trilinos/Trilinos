@@ -334,7 +334,7 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   // Declare required variables
   int i,j,ierr;
   int OverlapNumMyNodes = OverlapNodeMap->NumMyElements();
-  int OverlapNumMyUnknowns = OverlapMap->NumMyElements();
+  //int OverlapNumMyUnknowns = OverlapMap->NumMyElements();
 
   int OverlapMinMyNodeGID;
   if (MyPID==0) OverlapMinMyNodeGID = StandardNodeMap->MinMyGID();
@@ -342,8 +342,6 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
 
   int row1, row2, column1, column2;
   double term1, term2;
-  double factor1=1000.0;
-  double factor2=1000.0;
   double Dcoeff1 = 0.025;
   double Dcoeff2 = 0.025;
 //  double alpha = 0.6;
