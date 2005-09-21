@@ -940,11 +940,14 @@ static int pmatching_ipm (ZZ *zz,
       /* Local numbers are used for local matches, otherwise
          -(gno+1) is used in the match array.                    */
       for (i = 0; i < max_nTotal; i++) {
+        int cproc, vproc;
         cand   = global_best[i].cand;
         if (cand == INT_MAX) break;  /* All matches are processed */
         vertex = global_best[i].partner;
-        if (VTX_TO_PROC_X(hg, cand)   == hgc->myProc_x) {
-          if (VTX_TO_PROC_X(hg, vertex) == hgc->myProc_x)   {
+        cproc = VTX_TO_PROC_X(hg, cand);
+        vproc = VTX_TO_PROC_X(hg, vertex);
+        if (cproc == hgc->myProc_x) {
+          if (vproc == hgc->myProc_x)   {
             int v1 = VTX_GNO_TO_LNO(hg, vertex);             
             int v2 = VTX_GNO_TO_LNO(hg, cand);                
             match[v1] = v2;
@@ -953,7 +956,7 @@ static int pmatching_ipm (ZZ *zz,
           else 
             match[VTX_GNO_TO_LNO(hg, cand)]   = -vertex - 1;
         }                         
-        else              
+        else if (vproc == hgc->myProc_x)
           match[VTX_GNO_TO_LNO(hg, vertex)] = -cand - 1;
       }
 
@@ -1208,7 +1211,7 @@ int j;
 
   tmp = (struct triplet *) ZOLTAN_MALLOC(num * sizeof(struct triplet));
   i = o = t = 0;
-  while (1) {
+  while (i < num && o < num) {
 
     /* Copy in candidates that are smaller than current inout candidate */
     while ((i < num) && (in[i].cand < inout[o].cand)) {
@@ -1216,14 +1219,17 @@ int j;
       t++; i++;
     }
 
+    /* If reached end of in list, break. */
+    if (i == num) break;
+
     /* Copy inout candidates that are smaller than current in candidate */
     while ((o < num) && (inout[o].cand < in[i].cand)) {
       tmp[t] = inout[o];
       t++; o++;
     } 
    
-    /* If reached end of either list, break. */
-    if (i == num || o == num) break;
+    /* If reached end of inout list, break. */
+    if (o == num) break;
     
     /* If reached end of valid values in both lists, break. */
     if ((in[i].cand == INT_MAX) && (inout[o].cand == INT_MAX)) break;
