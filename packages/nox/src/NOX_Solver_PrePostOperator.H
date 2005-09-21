@@ -34,7 +34,8 @@
 #define NOX_SOLVER_PREPOSTOPERATOR_H
 
 #include "NOX_Common.H"
-#include "NOX_Parameter_PrePostOperator.H"
+#include "Teuchos_RefCountPtr.hpp"
+#include "NOX_Abstract_PrePostOperator.H"
 
 // Forward declaration
 namespace NOX {
@@ -55,9 +56,9 @@ namespace Solver {
 /*!
   @brief Functor to process the pre/post operator object in the parameter list.
 
-  This class searches a parameter list, if found, clones the user
-  supplied NOX::Parameter::PrePostOperator derived object, and returns
-  a pointer to the new object.
+  This class searches the "Solver Options" parameter list, if found,
+  clones the user supplied NOX::Abstract::PrePostOperator derived
+  object, and returns a pointer to the new object.
 
   For instructions on how to implement a PrePostOperator, see
   NOX::Parameter::PrePostOperator.
@@ -67,7 +68,7 @@ class PrePostOperator {
 
 private:
 
-  //! Disalloe default ctor.
+  //! Disallow default ctor.
   PrePostOperator();
 
   //! Disallow copy ctor.
@@ -79,14 +80,15 @@ private:
 public:
 
   //! Ctor.
-  PrePostOperator(NOX::Utils& utils, NOX::Parameter::List& p);
+  PrePostOperator(const NOX::Utils& utils, 
+		  NOX::Parameter::List& solverOptionsSubList);
 
   //! Destructor.
   virtual ~PrePostOperator();
 
   //! Resets the pre/post operator.
   virtual void
-  reset(NOX::Utils& utils, NOX::Parameter::List& solverOptionsSublist);
+  reset(const NOX::Utils& utils, NOX::Parameter::List& solverOptionsSublist);
 
   //! User defined method that will be executed at the start of a call to NOX::Solver::Generic::iterate().
   virtual void runPreIterate(const NOX::Solver::Generic& solver);
@@ -101,11 +103,12 @@ public:
   virtual void runPostSolve(const NOX::Solver::Generic& solver);
 
 protected:
-  //! flag that determines if a pre/post operator was supplied by user.
+
+  //! Flag that determines if a pre/post operator has been supplied by user.
   bool havePrePostOperator;
 
   //! Points to user defined pre/post operator.
-  NOX::Parameter::PrePostOperator* prePostOperatorPtr;
+  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> prePostOperatorPtr;
 
 };
 } // namespace Solver

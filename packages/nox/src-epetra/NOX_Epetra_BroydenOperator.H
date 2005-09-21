@@ -34,7 +34,7 @@
 #include "NOX_Common.H"
 #include "NOX_Epetra.H"
 #include "NOX_Parameter_List.H"
-#include "NOX_Parameter_PrePostOperator.H"
+#include "NOX_Abstract_PrePostOperator.H"
 
 #include "Epetra_Vector.h"
 #include "Epetra_CrsGraph.h"
@@ -51,7 +51,7 @@ namespace Epetra {
   to obtain by other means.  It computes updates using secant approximations
   emobdied in truncated %Broyden updates that preserve matrix sparsity.
 
-  This class derives from NOX::Parameter::PrePostOperator in order to
+  This class derives from NOX::Abstract::PrePostOperator in order to
   perform a Broyden-type update on an existing matrix that it holds but does
   not own.  This update is performed after each nonlinear iteration within
   method runPostIterate(...) according to the recursive formula:
@@ -82,7 +82,7 @@ namespace Epetra {
   the %Broyden matrix, e.g. a block diagonal matrix.
 
  */
-class BroydenOperator : public NOX::Parameter::PrePostOperator,
+class BroydenOperator : public NOX::Abstract::PrePostOperator,
                         public NOX::Epetra::Interface::Jacobian,
                         public NOX::Epetra::Interface::Preconditioner {
 
@@ -128,9 +128,6 @@ class BroydenOperator : public NOX::Parameter::PrePostOperator,
 
   //! Update the %Broyden matrix using changes in residuals the solution vector from the most recent nnlinear iteration.
   virtual void runPostIterate( const NOX::Solver::Generic & solver);
-
-  //! A dummy method needed for inheritance.
-  virtual NOX::Parameter::Arbitrary * clone() const;
 
   //! A dummy method needed for inheritance.
   virtual const string & getType() const; 

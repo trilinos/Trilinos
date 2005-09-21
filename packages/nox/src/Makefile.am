@@ -131,7 +131,8 @@ nodist_execinclude_HEADERS = NOX_Config.h
 ABSTRACT_H = \
 	$(srcdir)/NOX_Abstract_Vector.H \
 	$(srcdir)/NOX_Abstract_MultiVector.H \
-	$(srcdir)/NOX_Abstract_Group.H
+	$(srcdir)/NOX_Abstract_Group.H \
+        $(srcdir)/NOX_Abstract_PrePostOperator.H
 
 ABSTRACT = \
 	$(srcdir)/NOX_Abstract_Vector.C \
@@ -175,7 +176,6 @@ PARAMETER_H = \
         $(srcdir)/NOX_Parameter_Arbitrary.H \
         $(srcdir)/NOX_Parameter_UserNorm.H \
         $(srcdir)/NOX_Parameter_MeritFunction.H \
-        $(srcdir)/NOX_Parameter_PrePostOperator.H \
 	$(srcdir)/NOX_Parameter_DirectionConstructor.H \
 	$(srcdir)/NOX_Parameter_DirectionConstructorT.H \
 	$(srcdir)/NOX_Parameter_LineSearchConstructor.H \
@@ -187,7 +187,6 @@ PARAMETER_H = \
 
 PARAMETER = \
 	$(srcdir)/NOX_Parameter_Entry.C \
-        $(srcdir)/NOX_Parameter_PrePostOperator.C \
 	$(srcdir)/NOX_Parameter_List.C \
 	$(srcdir)/NOX_Parameter_Teuchos2NOX.C
 

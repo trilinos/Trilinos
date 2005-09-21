@@ -57,6 +57,7 @@
 
 // User's application specific files 
 #include "1DfemInterface.H" 
+#include "1DfemPrePostOperator.H"
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -238,6 +239,12 @@ int main(int argc, char *argv[])
   scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
   //grp.setLinearSolveScaling(scaling);
 
+  // Add a user defined pre/post operator object
+  Teuchos::RefCountPtr<UserPrePostOperator> ppo =
+    Teuchos::rcp(new UserPrePostOperator(printing));
+  nlParams.sublist("Solver Options").setParameter
+    <NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", ppo);
+
   // Create all possible Epetra_Operators.
   // 1. User supplied (Epetra_RowMatrix)
   //Epetra_RowMatrix& Analytic = interface.getJacobian();
@@ -367,8 +374,18 @@ int main(int argc, char *argv[])
   // 3. Nonlinear solve iterations (10)
   if (solver.getParameterList().sublist("Output").getParameter("Nonlinear Iterations", 0) != 10)
     status = 3;
-
-
+  // 4. Test the pre/post iterate options
+  {
+  UserPrePostOperator* ppoPtr = dynamic_cast<UserPrePostOperator*>(ppo.get());
+  if (ppoPtr->getNumRunPreIterate() != 10)
+    status = 4;
+  if (ppoPtr->getNumRunPostIterate() != 10)
+    status = 4;
+  if (ppoPtr->getNumRunPreSolve() != 1)
+    status = 4;
+  if (ppoPtr->getNumRunPostSolve() != 1)
+    status = 4;
+  }
   // Summarize test results 
   if (status == 0)
     printing.out() << "Test passed!" << endl;

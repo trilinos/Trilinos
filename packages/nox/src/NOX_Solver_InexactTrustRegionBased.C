@@ -39,7 +39,7 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Parameter_UserNorm.H"
 #include "NOX_Parameter_MeritFunction.H"
-#include "NOX_Parameter_PrePostOperator.H"
+#include "NOX_Solver_PrePostOperator.H"
 
 using namespace NOX;
 using namespace NOX::Solver;

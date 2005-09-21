@@ -56,8 +56,14 @@ BroydenOperator::BroydenOperator(NOX::Parameter::List & nlParams,
   // runPostIterate.  Note: we need to make provision for storing and calling 
   // any existing Pre/Post Operator.
 
-  nlParams.sublist("Solver Options").setParameter(
-                     "User Defined Pre/Post Operator", *this);
+  // RPP 9/20/2005: This is a very bad idea!  It breaks the rcp and
+  // user's expectations.  For noe we will have to create rcp without
+  // dtor.
+  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> me = 
+    Teuchos::rcp(this, false);
+  nlParams.sublist("Solver Options").setParameter
+    <NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", 
+				     me);
 }
 
 BroydenOperator::BroydenOperator(NOX::Parameter::List & nlParams, 
@@ -83,8 +89,14 @@ BroydenOperator::BroydenOperator(NOX::Parameter::List & nlParams,
   // runPostIterate.  Note: we need to make provision for storing and calling 
   // any existing Pre/Post Operator.
 
-  nlParams.sublist("Solver Options").setParameter(
-                     "User Defined Pre/Post Operator", *this);
+  // RPP 9/20/2005: This is a very bad idea!  It breaks the rcp and
+  // user's expectations.  For noe we will have to create rcp without
+  // dtor.
+  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> me = 
+    Teuchos::rcp(this, false);
+  nlParams.sublist("Solver Options").setParameter
+    <NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", 
+				     me);
 }
 
 BroydenOperator::BroydenOperator(NOX::Parameter::List & nlParams, 
@@ -110,8 +122,14 @@ BroydenOperator::BroydenOperator(NOX::Parameter::List & nlParams,
   // runPostIterate.  Note: we need to make provision for storing and calling 
   // any existing Pre/Post Operator.
 
-  nlParams.sublist("Solver Options").setParameter(
-                     "User Defined Pre/Post Operator", *this);
+  // RPP 9/20/2005: This is a very bad idea!  It breaks the rcp and
+  // user's expectations.  For noe we will have to create rcp without
+  // dtor.
+  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> me = 
+    Teuchos::rcp(this, false);
+  nlParams.sublist("Solver Options").setParameter
+    <NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", 
+				     me);
 }
 
 BroydenOperator::BroydenOperator(const BroydenOperator & bOp) :
@@ -263,11 +281,6 @@ void BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
     }
   }
 
-}
-
-NOX::Parameter::Arbitrary * BroydenOperator::clone() const
-{
-  return new BroydenOperator(*this);
 }
 
 const string & BroydenOperator::getType() const

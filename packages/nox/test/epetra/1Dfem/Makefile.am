@@ -52,6 +52,8 @@ endif
 1Dfem_SOURCES = \
 	        $(srcdir)/1DfemInterface.H \
                 $(srcdir)/1DfemInterface.C \
+                $(srcdir)/1DfemPrePostOperator.H \
+                $(srcdir)/1DfemPrePostOperator.C \
                 $(srcdir)/1Dfem.C
 
 1Dfem_DEPENDENCIES = \

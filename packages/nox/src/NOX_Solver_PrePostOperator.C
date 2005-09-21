@@ -50,47 +50,26 @@ NOX::Solver::PrePostOperator& NOX::Solver::PrePostOperator::
 operator=(const PrePostOperator& p)
 { return *this; }
 
-NOX::Solver::PrePostOperator::PrePostOperator(NOX::Utils& utils,
+NOX::Solver::PrePostOperator::PrePostOperator(const NOX::Utils& utils,
 					      NOX::Parameter::List& p) :
-  havePrePostOperator(false),
-  prePostOperatorPtr(0)
-{
-  reset(utils, p);
-}
+  havePrePostOperator(false)
+{ reset(utils, p); }
 
 NOX::Solver::PrePostOperator::~PrePostOperator()
-{
-  delete prePostOperatorPtr;
-}
+{ }
 
 void NOX::Solver::PrePostOperator::
-reset(NOX::Utils& utils, NOX::Parameter::List& p)
+reset(const NOX::Utils& utils, NOX::Parameter::List& p)
 {
-  //NOX::Parameter::List& p = params.sublist("Solver Options");
-
-  if (prePostOperatorPtr != 0)
-    delete prePostOperatorPtr;
-  prePostOperatorPtr = 0;
   havePrePostOperator = false;
 
-  if (p.isParameter("User Defined Pre/Post Operator")) {
-    if (p.isParameterArbitrary("User Defined Pre/Post Operator")) {
-      prePostOperatorPtr = dynamic_cast<NOX::Parameter::PrePostOperator*>
-	(p.getArbitraryParameter("User Defined Pre/Post Operator").clone());
-      if (prePostOperatorPtr != 0)
-	havePrePostOperator = true;
-      else
-	if (utils.isPrintType(NOX::Utils::Warning))
-	  utils.out() << "Warning: NOX::Solver::LineSearchBased::init() - "
-	       << "\"User Defined Pre/Post Operator\" not derived from "
-	       << "NOX::Parameter::PrePostOperator class!\n"
-	       << "Ignoring this flag!"<< endl;
-    }
-    else {
-      utils.out() << "ERROR: NOX::Solver::LineSearchBased::init() - the parameter "
-	   << "\"User Defined Pre/Post Operator\" must be derived from an"
-	   << "arbitrary parameter!" << endl;
-      throw "NOX Error";
-    }
+  if (p.INVALID_TEMPLATE_QUALIFIER
+      isParameterRcp<NOX::Abstract::PrePostOperator>
+      ("User Defined Pre/Post Operator")) 
+  {
+    prePostOperatorPtr = p.INVALID_TEMPLATE_QUALIFIER
+      getRcpParameter<NOX::Abstract::PrePostOperator>
+      ("User Defined Pre/Post Operator");
+    havePrePostOperator = true;
   }
 }

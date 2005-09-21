@@ -30,11 +30,10 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_PARAMETER_PREPOSTOPERATOR_H
-#define NOX_PARAMETER_PREPOSTOPERATOR_H
+#ifndef NOX_ABSTRACT_PREPOSTOPERATOR_H
+#define NOX_ABSTRACT_PREPOSTOPERATOR_H
 
 #include "NOX_Common.H"  // for NOX_Config.h
-#include "NOX_Parameter_Arbitrary.H" // base class
 
 // Forward Declarations
 namespace NOX {
@@ -44,7 +43,7 @@ namespace NOX {
 }
 
 namespace NOX {
-namespace Parameter {
+namespace Abstract {
 
 /*! 
 
@@ -53,11 +52,10 @@ namespace Parameter {
   NOX::Solver::Generic::iterate() and NOX::Solver::Generic::solve()
   methods).
 
-  This class is a member of the namespace NOX::Parameter and is
-  derived from the NOX:Parameter::Arbitrary class.
-
   The user should implement their own concrete implementation of this
-  class and register it in the "Solver Options" sublist.
+  class and register it as a
+  Teuchos::RefCountPtr<NOX::Abstract::PrePostoperator> in the "Solver
+  Options" sublist.
 
   
   To create and use a user defined pre/post operators:
@@ -65,11 +63,11 @@ namespace Parameter {
   <ol>
 
   <li> Create a pre/post operator that derives from
-  NOX::Parameter::PrePostOperator. For example, the pre/post oeprator \c
+  NOX::Abstract::PrePostOperator. For example, the pre/post operator \c
   Foo might be defined as shown below.
 
   \code
-  class Foo : public NOX::Parameter::PrePostOperator {
+  class Foo : public NOX::Abstract::PrePostOperator {
   // Insert class definition here
   }
   \endcode
@@ -77,27 +75,27 @@ namespace Parameter {
   <li> Create the appropriate entries in the parameter list, as follows.
 
   \code
-  Foo foo();
-  params.sublist("Sovler Options").setParameter("User Defined Pre/Post Operator", foo);
+  Teuchos::RefCountPtr<Foo> foo = Teuchos::rcp(new Foo);
+  params.sublist("Sovler Options").setParameter<NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", foo);
   \endcode
 
   </ol>
 
-  \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
+  \author Roger Pawlowski (SNL 9233)
 */
 
-class PrePostOperator : public NOX::Parameter::Arbitrary {
+class PrePostOperator {
 
 public:
   
   //! %Abstract %Vector constructor (does nothing)
-  PrePostOperator();
+  PrePostOperator() {};
 
   //! Copy constructor (doesnothing)
-  PrePostOperator(const NOX::Parameter::PrePostOperator& source);
+  PrePostOperator(const NOX::Abstract::PrePostOperator& source) {};
 
   //! %Abstract %Vector destructor (does nothing)
-  virtual ~PrePostOperator();
+  virtual ~PrePostOperator() {};
 
   //! User defined method that will be executed at the start of a call to NOX::Solver::Generic::iterate().
   virtual void runPreIterate(const NOX::Solver::Generic& solver);
@@ -112,7 +110,27 @@ public:
   virtual void runPostSolve(const NOX::Solver::Generic& solver);
 
 }; // class PrePostOperator
-} // namespace Parameter
+} // namespace Abstract
 } // namespace NOX
+
+inline void NOX::Abstract::PrePostOperator::
+runPreIterate(const NOX::Solver::Generic& solver) {
+  return;
+}
+
+inline void NOX::Abstract::PrePostOperator::
+runPostIterate(const NOX::Solver::Generic& solver) {
+  return;
+}
+
+inline void NOX::Abstract::PrePostOperator::
+runPreSolve(const NOX::Solver::Generic& solver) {
+  return;
+}
+
+inline void NOX::Abstract::PrePostOperator::
+runPostSolve(const NOX::Solver::Generic& solver) {
+  return;
+}
 
 #endif
