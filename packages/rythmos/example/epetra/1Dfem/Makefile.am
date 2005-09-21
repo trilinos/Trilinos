@@ -26,32 +26,12 @@
 # ************************************************************************
 #@HEADER
 
-EXEEXT = .exe
-
-#
-# Actual programs
-#
-
-EXAMPLE = basicExample
-
-noinst_PROGRAMS = $(EXAMPLE)
-
-basicExample_SOURCES = \
-	 $(srcdir)/cxx_main.cpp \
-	 $(srcdir)/ExampleApplication.cpp 
-
-basicExample_DEPENDENCIES = $(common_dependencies)
-
-basicExample_LDADD = $(common_ldadd)
-
 #
 # Common stuff
 #
 
-common_dependencies = \
-  $(top_builddir)/src/librythmos.a
-
 include $(top_builddir)/Makefile.export.rythmos
+include $(top_builddir)/../nox/Makefile.export.nox
 
 if USING_GNUMAKE
 EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES))
@@ -63,7 +43,28 @@ endif
 
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
-common_ldadd = $(EXPORT_LIBS)
+EXEEXT = .exe
 
-# This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
-LIBS =
+
+#
+# Actual programs
+#
+
+noinst_PROGRAMS = 1DfemTransient
+
+1DfemTransient_SOURCES = \
+	                 $(srcdir)/1DfemInterface.H \
+                   $(srcdir)/1DfemInterface.C \
+                   $(srcdir)/1DfemTransient.H \
+									 $(srcdir)/ExampleApplication.hpp \
+									 $(srcdir)/ExampleApplication.cpp \
+									 $(srcdir)/cxx_main.cpp
+
+1DfemTransient_DEPENDENCIES = \
+                              $(top_builddir)/../nox/src/libnox.a \
+                              $(top_builddir)/../nox/src-epetra/libnoxepetra.a \
+                              $(top_builddir)/src/librythmos.a
+
+1DfemTransient_LDADD = $(EXPORT_LIBS)
+
+
