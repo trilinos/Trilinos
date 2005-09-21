@@ -26,4 +26,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = basicExample verySimple refCountPtrExample refCountPtrExample2 constExample epetra
+SUBDIRS = 1Dfem
