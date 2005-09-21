@@ -192,6 +192,10 @@ void randomize( Scalar l, Scalar u, VectorBase<Scalar>* v );
  * These functions a just simpler ways to call the functions defined
  * \ref Thyra_Op_Vec_VectorStdOpsAll_names_grp "here".
  *
+ * The convention used here is described in the short note <a
+ * href="./LinearAlgebraFunctionConvention.pdf">A Simple Convention for the
+ * Specification of Linear Algebra Function Prototypes in C++ </a>.
+ *
  * \ingroup Thyra_Op_Vec_VectorStdOpsAll_grp
  */
 //@{

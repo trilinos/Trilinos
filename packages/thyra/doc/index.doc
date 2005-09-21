@@ -202,6 +202,16 @@ This paper describes the need for, and the basic design of,
 used C structs while the current <tt>%RTOpPack::RTOpT</tt> is a fully
 templated C++ class implementation.
 
+<li><b><a
+href="../../src/ana/operator_vector/doc/html/LinearAlgebraFunctionConvention.pdf">A
+Simple Convention for the Specification of Linear Algebra Function Prototypes
+in C++ </a></b>
+
+This short note describes a simple convention for writing function prototypes
+for linear algebra operations.  This convention is used in \ref
+Thyra_Op_Vec_VectorStdOpsAll_LA_names_grp "this" set of functions, for
+instance.
+
 <!-- ToDo: Put in a link to the Thyra paper at some point! -->
 
 </ul>

@@ -1,16 +1,20 @@
-#!/bin/sh
+#!/bin/bash
 
-cd ../src/utils/doc ; ./generate_Doxyfile ; cd ../../../doc
+pushd ../src/utils/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/utils/doc/Doxyfile
 
-cd ../src/ana/rtop/doc ; ./generate_Doxyfile ; cd ../../../../doc
+pushd ../src/ana/rtop/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/ana/rtop/doc/Doxyfile
 
-cd ../src/ana/operator_vector/doc ; ./generate_Doxyfile ; cd ../../../../doc
+pushd ../../../doc/Thyra/linear_algebra_function_convention; make pdf ; popd
+cp ../../../doc/Thyra/linear_algebra_function_convention/LinearAlgebraFunctionConvention.pdf ../src/ana/operator_vector/doc/html/.
+
+pushd ../src/ana/operator_vector/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/ana/operator_vector/doc/Doxyfile
 
-cd ../src/ana/nonlinear/doc ; ./generate_Doxyfile ; cd ../../../../doc
+pushd ../src/ana/nonlinear/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/ana/nonlinear/doc/Doxyfile
 
 ./generate_Doxyfile
 doxygen Doxyfile
+
