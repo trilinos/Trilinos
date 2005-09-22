@@ -7409,7 +7409,7 @@ echo "$as_me: error: Cannot find sstream, strstream, sstream.h, or strstream.h. 
    { (exit 1); exit 1; }; }
 fi
 
-if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
+if test "X$ac_cv_header_typeinfo" != "Xyes"; then
   { { echo "$as_me:$LINENO: error: Cannot find typeinfo.  Teuchos requires this header." >&5
 echo "$as_me: error: Cannot find typeinfo.  Teuchos requires this header." >&2;}
    { (exit 1); exit 1; }; }

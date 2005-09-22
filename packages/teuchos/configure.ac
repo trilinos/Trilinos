@@ -257,7 +257,7 @@ if test "X$ac_cv_header_sstream" != "Xyes" && test "X$ac_cv_header_strstream" !=
   AC_MSG_ERROR([[Cannot find sstream, strstream, sstream.h, or strstream.h.  Teuchos requires at least one of these.]])
 fi
 
-if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
+if test "X$ac_cv_header_typeinfo" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find typeinfo.  Teuchos requires this header.]])
 fi
 
