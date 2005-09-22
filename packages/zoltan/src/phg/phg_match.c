@@ -556,9 +556,11 @@ static int pmatching_ipm (ZZ *zz,
       n = 0;
       for (i = 0; i < sendcnt; i++)   {
         lno = select[i];
+        gno = VTX_LNO_TO_GNO (hg, lno);
         /* Optimization: Send only vertices that are non-empty locally */
 #ifdef SPARSE_CANDIDATES
-        if (hg->vindex[lno+1] > hg->vindex[lno]) 
+        if ((hg->vindex[lno+1] > hg->vindex[lno]) 
+         || (gno % hgc->nProc_y == hgc->myProc_y))
 #endif
         {
           n++;  /* non-empty vertex */
