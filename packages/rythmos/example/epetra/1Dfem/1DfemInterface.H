@@ -97,6 +97,9 @@ public:
   // Set PDE factor
   bool setPDEfactor(double value) { factor = value; return true; };
 
+  // Return a reference to the Epetra_Map used for the Solution Epetra_Vector
+  Epetra_Map& getMap();
+
 protected:
 
   // Evaluates the function (F) and/or the Jacobian using the solution 

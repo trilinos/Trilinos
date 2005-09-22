@@ -39,11 +39,11 @@
 #include <iostream>
 #endif
 
-#include "Teuchos_dyn_cast.hpp"
+//#include "Teuchos_dyn_cast.hpp"
 
 ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 {
-  numElements_ = params.get<int>( "NumGlobalElements" );
+  numElements_ = params.get<int>( "NumElements" );
 #ifdef HAVE_MPI
   MPI_Comm mpiComm = params.get<MPI_Comm>( "MPIComm" );
   epetra_comm_ptr_ = Teuchos::rcp( new Epetra_MpiComm(mpiComm) );
@@ -58,10 +58,7 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
   problemInterfacePtr_->setPDEfactor(1.0);
 
   // This is needed to extract the Epetra_Map for the solution
-  Epetra_Vector &soln = problemInterfacePtr_->getSolution();
-  const Epetra_BlockMap& solnBlockMap = soln.Map();
-  const Epetra_Map& solnMap = Teuchos::dyn_cast<const Epetra_Map>(solnBlockMap);
-  epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map( solnMap ) );
+  epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map( problemInterfacePtr_->getMap() ) );
 
   // This is needed to extract the Epetra_CrsGraph for the Jacobian
   Epetra_CrsMatrix &jacobian = problemInterfacePtr_->getJacobian();

@@ -294,6 +294,11 @@ Epetra_Vector& Interface::getSolution()
 {
   return *initialSolution;
 }
+
+Epetra_Map& Interface::getMap()
+{
+  return *StandardMap;
+}
   
 Epetra_Vector& Interface::getMesh()
 {

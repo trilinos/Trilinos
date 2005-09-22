@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
     const int num_methods = 3;
     const EMethod method_values[] = { METHOD_FE, METHOD_BE, METHOD_ERK };
     const char * method_names[] = { "FE", "BE", "ERK" };
-    EMethod method_val = METHOD_ERK;
+    EMethod method_val = METHOD_BE;
     double maxError = 1e-6;
     bool version = false;  // display version information 
 
