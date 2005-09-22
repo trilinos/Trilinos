@@ -14,9 +14,6 @@
 
 @SET_MAKE@
 
-#@HEADER
-#@HEADER
-
 SOURCES = $(LOBPCGEpetraEx_SOURCES) $(LOBPCGEpetraExGen_SOURCES)
 
 srcdir = @srcdir@
@@ -126,6 +123,8 @@ BUILD_IFPACK_FALSE = @BUILD_IFPACK_FALSE@
 BUILD_IFPACK_TRUE = @BUILD_IFPACK_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
+BUILD_TEUCHOS_COMPLEX_FALSE = @BUILD_TEUCHOS_COMPLEX_FALSE@
+BUILD_TEUCHOS_COMPLEX_TRUE = @BUILD_TEUCHOS_COMPLEX_TRUE@
 BUILD_TRIUTILS_FALSE = @BUILD_TRIUTILS_FALSE@
 BUILD_TRIUTILS_TRUE = @BUILD_TRIUTILS_TRUE@
 CC = @CC@
@@ -631,6 +630,34 @@ uninstall-info: uninstall-info-recursive
 	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
 	uninstall uninstall-am uninstall-info-am
 
+//@HEADER
+// ************************************************************************
+//
+//
+//                 Anasazi: Block Eigensolvers Package
+//                 Copyright (2004) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
 
 include $(top_builddir)/Makefile.export.anasazi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
