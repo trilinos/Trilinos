@@ -106,4 +106,7 @@ EXTRA_DIST = \
 	Epetra_VectorHelper.cpp \
 	PyInterface.h \
 	PyInterface.cpp \
+	NOX_Epetra.i \
+	NOX_LAPACK.i \
 	Utils_enums.H
+
