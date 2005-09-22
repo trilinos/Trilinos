@@ -116,6 +116,7 @@ using namespace std;
 #include "vtkTextProperty.h"
 #endif
 
+#include "vtkLookupTable.h"
 #include "vtkCompositeRenderManager.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkDistributedDataFilter.h"
@@ -458,6 +459,30 @@ static void Run(vtkMultiProcessController *contr, void *arg)
   }
 
   mapper->SetScalarRange(range[0], range[1]);
+
+#if 0
+
+  // Problem - with the default lookup table it is difficult to
+  // distinguish the different regions, even with as few as
+  // six partitions.  Here we try creating our own color map.
+  // I haven't found one yet that give a satisfactory contrast.
+
+  vtkIdType nvals = (vtkIdType)range[1] - (vtkIdType)range[0] + 1;
+  vtkLookupTable *lut = vtkLookupTable::New();
+  lut->SetTableRange(range);
+  lut->SetNumberOfTableValues(nvals);
+  double b0 = .1;                             // blue
+  double bdiff = .8 / (nvals-1);
+  double g0 = .0;                             // green
+  double gdiff = 0.0; //.2 / (nvals-1);
+  double r0 = .9;                             // red
+  double rdiff = -.8 / (nvals-1);
+  for (vtkIdType i=0; i<nvals; i++){
+    lut->SetTableValue(i, r0 + i*rdiff, g0 + i*gdiff, b0 + i*bdiff);
+  }
+ 
+  mapper->SetLookupTable(lut);
+#endif
 
   // Create actors (I don't know how to render text or scalar bar to a file)
 
