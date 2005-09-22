@@ -423,23 +423,23 @@ int read_cmd_file (
     }
 
     else {
-      char buffer[200];
-      buffer[0] = '\0';
       if (undef){
         if (undef->list_size < UNDEFINED_LIST_MAX){
-          strncpy((char *)(undef->line + undef->list_size), line, UNDEFINED_LENGTH_MAX-1);
+          strncpy((char *)(undef->line + undef->list_size), line, 
+            UNDEFINED_LENGTH_MAX-1);
           undef->list_size++;
         }
         else{
-          sprintf (buffer, "fatal error, too many unrecognized commands: %s\n", line);
+          char buffer[200];
+          sprintf (buffer, 
+            "fatal error, too many unrecognized commands: %s\n", line);
+          Gen_Error(0, buffer);
+          return 0;
         }
       }
       else{
-        sprintf (buffer, "fatal error, unrecognized command line: %s\n", line);
-      }
-      if (buffer[0]){
-        Gen_Error(0, buffer);
-        return 0;
+        printf("Warning: ignoring unrecognized line in input file:\n\t%s\n",
+          line);
       }
     }
   }
