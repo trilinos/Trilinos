@@ -1121,7 +1121,7 @@ createMLPreconditioner(Parameter::List& p) const
   const Teuchos::ParameterList* constTeuchosParams = 
     p.getAnyConstPtrParameter<Teuchos::ParameterList>("ML Teuchos Parameter List");
   if ( !constTeuchosParams ) {
-    if (utils.isPrintProcess())
+    if (utils.isPrintType(NOX::Utils::Error))
       utils.out() << "ERROR: NOX::Epetra::LinearSystemAztecOO::"
            << "createMLPreconditioner() - "
            << "Could not obtain the required Teuchos::ParameterList "
