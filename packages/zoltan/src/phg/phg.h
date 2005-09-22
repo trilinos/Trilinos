@@ -37,7 +37,7 @@ extern "C" {
 /* Code should call VTX_GNO_TO_LNO or EDGE_GNO_TO_LNO */
 
 #define GNO_TO_LNO(gno, dist, myblock) \
-    (gno) - (dist)[(myblock)]
+    ((gno) - (dist)[(myblock)])
 #define VTX_GNO_TO_LNO(phg, gno) \
     GNO_TO_LNO(gno, (phg)->dist_x, (phg)->comm->myProc_x)
 #define EDGE_GNO_TO_LNO(phg, gno) \
@@ -48,7 +48,7 @@ extern "C" {
 /* Code should call VTX_LNO_TO_GNO or EDGE_LNO_TO_GNO */
 
 #define LNO_TO_GNO(lno, dist, myblock) \
-    (lno) + (dist)[(myblock)]
+    ((lno) + (dist)[(myblock)])
 #define VTX_LNO_TO_GNO(phg, lno) \
     LNO_TO_GNO(lno, (phg)->dist_x, (phg)->comm->myProc_x)
 #define EDGE_LNO_TO_GNO(phg, lno) \
