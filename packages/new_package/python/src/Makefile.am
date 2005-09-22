@@ -61,6 +61,8 @@ INTERFACES = New_Package.i
 WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
 PROXIES    = $(INTERFACES:.i=.py      )
 
+EXTRA_DIST = New_Package.i setup.py
+
 build: $(WRAPPERS) $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 

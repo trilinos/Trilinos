@@ -295,6 +295,7 @@ tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_pl
 INTERFACES = New_Package.i
 WRAPPERS = $(INTERFACES:.i=_wrap.cpp)
 PROXIES = $(INTERFACES:.i=.py      )
+EXTRA_DIST = New_Package.i setup.py
 all: all-am
 
 .SUFFIXES:
