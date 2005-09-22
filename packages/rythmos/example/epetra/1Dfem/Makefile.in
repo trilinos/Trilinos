@@ -111,7 +111,7 @@ am_1DfemTransient_OBJECTS = 1DfemInterface.$(OBJEXT) \
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(RYTHMOS_LIBS))
+@USING_GNUMAKE_TRUE@	$(NOX_LIBS))
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -273,10 +273,10 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(RYTHMOS_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES))
-@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(RYTHMOS_LIBS)
-@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(RYTHMOS_LIBS))
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(RYTHMOS_INCLUDES) $(NOX_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES) $(NOX_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(RYTHMOS_LIBS) $(NOX_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(RYTHMOS_LIBS) $(NOX_LIBS))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
 1DfemTransient_SOURCES = \
 	                 $(srcdir)/1DfemInterface.H \

@@ -37,7 +37,7 @@
 #include "Epetra_Comm.h"
 #include "Epetra_CrsGraph.h"
 
-#include "1DfemTransient.C"
+#include "1DfemTransient.H"
 
 /** \brief Base interface for evaluating a stateless "model".
  *

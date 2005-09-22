@@ -39,6 +39,8 @@
 #include <iostream>
 #endif
 
+#include "Teuchos_dyn_cast.hpp"
+
 ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 {
   numElements_ = params.get<int>( "NumGlobalElements" );
@@ -50,14 +52,16 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 #endif // HAVE_MPI
   
   // This object is derived from NOX::Epetra::Interface
-  problemInterfacePtr_ = Teuchos::rcp(new TransientInterface(numElements_, *epetra_comm_ptr, -20.0, 20.0));
+  problemInterfacePtr_ = Teuchos::rcp(new TransientInterface(numElements_, *epetra_comm_ptr_, -20.0, 20.0));
 
   // Set the PDE nonlinear coefficient for this problem
   problemInterfacePtr_->setPDEfactor(1.0);
 
   // This is needed to extract the Epetra_Map for the solution
   Epetra_Vector &soln = problemInterfacePtr_->getSolution();
-  epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map( soln.Map() ) );
+  const Epetra_BlockMap& solnBlockMap = soln.Map();
+  const Epetra_Map& solnMap = Teuchos::dyn_cast<const Epetra_Map>(solnBlockMap);
+  epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map( solnMap ) );
 
   // This is needed to extract the Epetra_CrsGraph for the Jacobian
   Epetra_CrsMatrix &jacobian = problemInterfacePtr_->getJacobian();
@@ -115,22 +119,22 @@ ExampleApplication::createOutArgs() const
 
 void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
 {
-  const Epetra_Vector& x = *inArgs.get_x();
-  const Epetra_Vector& xdot = *inArgs.get_x_dot();
+  Teuchos::RefCountPtr<const Epetra_Vector> x = inArgs.get_x();
+  Teuchos::RefCountPtr<const Epetra_Vector> xdot = inArgs.get_x_dot();
   Teuchos::RefCountPtr<Epetra_Vector> f;
-  if( f = outArgs.get_f().get() ) 
+  if( (f = outArgs.get_f()).get() ) 
   {
-    NOX::Epetra::Interface::Required::FillType flag = Residual;
-    problemInterfacePtr_->evaluate(flag,&*x,&*xdot,0.0,0.0,&*f,NULL)
+    NOX::Epetra::Interface::Required::FillType flag = NOX::Epetra::Interface::Required::Residual;
+    problemInterfacePtr_->evaluate(flag,&*x,&*xdot,0.0,0.0,&*f,NULL);
   }
   Teuchos::RefCountPtr<Epetra_Operator> W;
   if( (W = outArgs.get_W()).get() ) 
   {
     const double alpha = inArgs.get_alpha();
     const double beta = inArgs.get_beta();
-    NOX::Epetra::Interface::Required::FillType flag = Jac;
-    problemInterfacePtr_->evaluate(flag,&*x,&*xdot,alpha,beta,NULL,&*W);
+    NOX::Epetra::Interface::Required::FillType flag = NOX::Epetra::Interface::Required::Jac;
     Epetra_CrsMatrix& jacobian = problemInterfacePtr_->getJacobian();
+    problemInterfacePtr_->evaluate(flag,&*x,&*xdot,alpha,beta,NULL,&jacobian);
     W = Teuchos::rcp(&jacobian,false);
   }
 }
