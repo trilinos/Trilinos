@@ -1070,8 +1070,6 @@ namespace Anasazi {
       Teuchos::RefCountPtr<MV> B, C, D;
       std::vector<ScalarType> normsB(p),
                               normsD(p);
-      ScalarType alpha = SCT::random(),
-                  beta = SCT::random();
       std::vector<int> lclindex(p);
       for (i=0; i<p; i++) lclindex[i] = i;
 
