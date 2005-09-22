@@ -111,6 +111,12 @@
 #include <vector.h>
 #endif
 
+#ifdef HAVE_COMPLEX
+#include <complex>
+#else
+#include <complex.h>
+#endif
+
 #ifdef HAVE_IOSTREAM
 #include <iostream>
 #else

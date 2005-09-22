@@ -26,7 +26,11 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG MVOPTester scripts
+if BUILD_TEUCHOS_COMPLEX
+COMPLEX_SUBDIR = MVOPComplex
+endif
+
+SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG MVOPTester $(COMPLEX_SUBDIR) scripts
 
 EXTRA_DIST = definition
  

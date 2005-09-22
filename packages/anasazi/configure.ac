@@ -172,39 +172,44 @@ AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
 AC_CHECK_HEADERS([string string.h], [break],)
 AC_CHECK_HEADERS([vector vector.h], [break],)
+AC_CHECK_HEADERS([complex complex.h], [break],)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  New_Package requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Anasazi requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_cstdio" != "Xyes" && test "X$ac_cv_header_stdio_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  New_Package requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  Anasazi requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cassert or assert.h.  New_Package requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find cassert or assert.h.  Anasazi requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find string or string.h.  New_Package requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find string or string.h.  Anasazi requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find string or string.h.  New_Package requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find string or string.h.  Anasazi requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find vector or vector.h.  New_Package requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find vector or vector.h.  Anasazi requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_complex" != "Xyes" && test "X$ac_cv_header_complex_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find complex or complex.h.  Anasazi requires at least one or the other.]])
 fi
 
 if test "X${host}" != "Xtflop"; then
   if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find cmath or math.h.  New_Package requires at least one or the other.]])
+    AC_MSG_ERROR([[Cannot find cmath or math.h.  Anasazi requires at least one or the other.]])
   fi
 else
   # TFLOP
   if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  New_Package requires at least one or the other.]])
+    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  Anasazi requires at least one or the other.]])
   fi
 fi  
 
@@ -298,6 +303,9 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 # Optional: Thyra, Triutils, Belos, AztecOO, and Ifpack
 # ------------------------------------------------------------------------
 
+TAC_ARG_ENABLE_FEATURE_SUB(teuchos, complex, [Build examples/tests which use complex scalar type], TEUCHOS_COMPLEX, no)
+AM_CONDITIONAL(BUILD_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno"])
+
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, triutils, ANASAZI_TRIUTILS, BUILD_TRIUTILS, yes, [Build examples which use Triutils.], [Build examples which use Triutils. Can be overridden with --disable-anasazi-triutils.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, belos, ANASAZI_BELOS, BUILD_BELOS, yes, [Build examples which use Belos.], [Build examples which use Belos. Can be overridden with --disable-anasazi-belos.])
@@ -309,6 +317,8 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, ifpack, ANASAZI_IFPACK, BUILD_IFPACK, ye
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, thyra, ANASAZI_THYRA, BUILD_ANASAZI_THYRA, yes, [Build code which uses Thyra.], [Build code which uses Thyra. Can be overridden with --disable-anasazi-thyra.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetra, thyra, EPETRA_THYRA, BUILD_EPETRA_THYRA, yes, [Build examples which use Epetra-Thyra adapters.], [Build examples which use Epetra-Thyra adapters. Can be overridden with --disable-epetra-thyra.])
+
+#TAC_ARG_ENABLE_CAN_USE_PACKAGE(teuchos, complex, TEUCHOS_COMPLEX, BUILD_TEUCHOS_COMPLEX, yes, [Build examples/tests which use complex code], [Build examples/tests which use complex<> code.  Can be overridden with --disable-teuchos-complex])
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -428,6 +438,7 @@ AC_CONFIG_FILES([
 		test/ModalSolverUtils/Makefile
 		test/BlockDavidson/Makefile
 		test/BlockKrylovSchur/Makefile
+		test/MVOPComplex/Makefile
 		test/MVOPTester/Makefile
 		test/LOBPCG/Makefile
 		test/scripts/Makefile

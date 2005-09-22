@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_ANASAZI_THYRA_TRUE BUILD_ANASAZI_THYRA_FALSE BUILD_EPETRA_THYRA_TRUE BUILD_EPETRA_THYRA_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_TEUCHOS_COMPLEX_TRUE BUILD_TEUCHOS_COMPLEX_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_ANASAZI_THYRA_TRUE BUILD_ANASAZI_THYRA_FALSE BUILD_EPETRA_THYRA_TRUE BUILD_EPETRA_THYRA_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -898,6 +898,9 @@ Optional Features:
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
+  --enable-teuchos-complex
+                          Build examples/tests which use complex scalar type
+                          (default is no)
   --enable-triutils       Build examples which use Triutils. Can be overridden
                           with --disable-anasazi-triutils.
   --enable-anasazi-triutils
@@ -3841,7 +3844,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3844:" \
+echo "$as_me:3847:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6250,53 +6253,210 @@ fi
 done
 
 
+
+for ac_header in complex complex.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## --------------------------------- ##
+## Report this to hkthorn@sandia.gov ##
+## --------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ break
+fi
+
+done
+
+
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
-  { { echo "$as_me:$LINENO: error: Cannot find cstdlib or stdlib.h.  New_Package requires at least one or the other." >&5
-echo "$as_me: error: Cannot find cstdlib or stdlib.h.  New_Package requires at least one or the other." >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find cstdlib or stdlib.h.  Anasazi requires at least one or the other." >&5
+echo "$as_me: error: Cannot find cstdlib or stdlib.h.  Anasazi requires at least one or the other." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
 if test "X$ac_cv_header_cstdio" != "Xyes" && test "X$ac_cv_header_stdio_h" != "Xyes"; then
-  { { echo "$as_me:$LINENO: error: Cannot find cstdio or stdio.h.  New_Package requires at least one or the other." >&5
-echo "$as_me: error: Cannot find cstdio or stdio.h.  New_Package requires at least one or the other." >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find cstdio or stdio.h.  Anasazi requires at least one or the other." >&5
+echo "$as_me: error: Cannot find cstdio or stdio.h.  Anasazi requires at least one or the other." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
 if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != "Xyes"; then
-  { { echo "$as_me:$LINENO: error: Cannot find cassert or assert.h.  New_Package requires at least one or the other." >&5
-echo "$as_me: error: Cannot find cassert or assert.h.  New_Package requires at least one or the other." >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find cassert or assert.h.  Anasazi requires at least one or the other." >&5
+echo "$as_me: error: Cannot find cassert or assert.h.  Anasazi requires at least one or the other." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
 if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
-  { { echo "$as_me:$LINENO: error: Cannot find string or string.h.  New_Package requires at least one or the other." >&5
-echo "$as_me: error: Cannot find string or string.h.  New_Package requires at least one or the other." >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find string or string.h.  Anasazi requires at least one or the other." >&5
+echo "$as_me: error: Cannot find string or string.h.  Anasazi requires at least one or the other." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
 if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
-  { { echo "$as_me:$LINENO: error: Cannot find string or string.h.  New_Package requires at least one or the other." >&5
-echo "$as_me: error: Cannot find string or string.h.  New_Package requires at least one or the other." >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find string or string.h.  Anasazi requires at least one or the other." >&5
+echo "$as_me: error: Cannot find string or string.h.  Anasazi requires at least one or the other." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
 if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
-  { { echo "$as_me:$LINENO: error: Cannot find vector or vector.h.  New_Package requires at least one or the other." >&5
-echo "$as_me: error: Cannot find vector or vector.h.  New_Package requires at least one or the other." >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find vector or vector.h.  Anasazi requires at least one or the other." >&5
+echo "$as_me: error: Cannot find vector or vector.h.  Anasazi requires at least one or the other." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+if test "X$ac_cv_header_complex" != "Xyes" && test "X$ac_cv_header_complex_h" != "Xyes"; then
+  { { echo "$as_me:$LINENO: error: Cannot find complex or complex.h.  Anasazi requires at least one or the other." >&5
+echo "$as_me: error: Cannot find complex or complex.h.  Anasazi requires at least one or the other." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
 if test "X${host}" != "Xtflop"; then
   if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
-    { { echo "$as_me:$LINENO: error: Cannot find cmath or math.h.  New_Package requires at least one or the other." >&5
-echo "$as_me: error: Cannot find cmath or math.h.  New_Package requires at least one or the other." >&2;}
+    { { echo "$as_me:$LINENO: error: Cannot find cmath or math.h.  Anasazi requires at least one or the other." >&5
+echo "$as_me: error: Cannot find cmath or math.h.  Anasazi requires at least one or the other." >&2;}
    { (exit 1); exit 1; }; }
   fi
 else
   # TFLOP
   if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
-    { { echo "$as_me:$LINENO: error: Cannot find iomanip or iomanip.h.  New_Package requires at least one or the other." >&5
-echo "$as_me: error: Cannot find iomanip or iomanip.h.  New_Package requires at least one or the other." >&2;}
+    { { echo "$as_me:$LINENO: error: Cannot find iomanip or iomanip.h.  Anasazi requires at least one or the other." >&5
+echo "$as_me: error: Cannot find iomanip or iomanip.h.  Anasazi requires at least one or the other." >&2;}
    { (exit 1); exit 1; }; }
   fi
 fi
@@ -7259,6 +7419,42 @@ fi
 # ------------------------------------------------------------------------
 
 
+# Check whether --enable-teuchos-complex or --disable-teuchos-complex was given.
+if test "${enable_teuchos_complex+set}" = set; then
+  enableval="$enable_teuchos_complex"
+  ac_cv_use_teuchos_complex=$enableval
+else
+  ac_cv_use_teuchos_complex=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use teuchos-complex" >&5
+echo $ECHO_N "checking whether to use teuchos-complex... $ECHO_C" >&6
+
+if test "X$ac_cv_use_teuchos_complex" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TEUCHOS_COMPLEX
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_teuchos_complex" != "Xno"; then
+  BUILD_TEUCHOS_COMPLEX_TRUE=
+  BUILD_TEUCHOS_COMPLEX_FALSE='#'
+else
+  BUILD_TEUCHOS_COMPLEX_TRUE='#'
+  BUILD_TEUCHOS_COMPLEX_FALSE=
+fi
+
+
+
 
 # Check whether --enable-triutils or --disable-triutils was given.
 if test "${enable_triutils+set}" = set; then
@@ -7576,6 +7772,8 @@ fi
 
 
 
+#TAC_ARG_ENABLE_CAN_USE_PACKAGE(teuchos, complex, TEUCHOS_COMPLEX, BUILD_TEUCHOS_COMPLEX, yes, [Build examples/tests which use complex code], [Build examples/tests which use complex<> code.  Can be overridden with --disable-teuchos-complex])
+
 # ------------------------------------------------------------------------
 # Specify other directories
 # ------------------------------------------------------------------------
@@ -7674,7 +7872,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7677: \"$ac_link\") >&5
+(eval echo $as_me:7875: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7752,7 +7950,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7755: \"$ac_link\") >&5
+(eval echo $as_me:7953: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10591,7 +10789,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10594: \"$ac_link\") >&5
+(eval echo $as_me:10792: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10669,7 +10867,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10672: \"$ac_link\") >&5
+(eval echo $as_me:10870: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10895,7 +11093,7 @@ fi
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                                                                                                                                                                                                                  ac_config_files="$ac_config_files Makefile Makefile.export.anasazi src/Makefile util/Makefile util/ModeLaplace/Makefile example/Makefile example/BlockDavidson/Makefile example/BlockKrylovSchur/Makefile example/LOBPCG/Makefile example/MVOPTester/Makefile test/Makefile test/ModalSolverUtils/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/MVOPTester/Makefile test/LOBPCG/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile thyra/example/MVOPTester/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOBPCG/Makefile thyra/test/BlockKrylovSchur/Makefile thyra/test/BlockDavidson/Makefile"
+                                                                                                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export.anasazi src/Makefile util/Makefile util/ModeLaplace/Makefile example/Makefile example/BlockDavidson/Makefile example/BlockKrylovSchur/Makefile example/LOBPCG/Makefile example/MVOPTester/Makefile test/Makefile test/ModalSolverUtils/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/MVOPComplex/Makefile test/MVOPTester/Makefile test/LOBPCG/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile thyra/example/MVOPTester/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOBPCG/Makefile thyra/test/BlockKrylovSchur/Makefile thyra/test/BlockDavidson/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11070,6 +11268,13 @@ if test -z "${BUILD_TESTS_TRUE}" && test -z "${BUILD_TESTS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_TEUCHOS_COMPLEX_TRUE}" && test -z "${BUILD_TEUCHOS_COMPLEX_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TEUCHOS_COMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TEUCHOS_COMPLEX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -11573,6 +11778,7 @@ do
   "test/ModalSolverUtils/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/ModalSolverUtils/Makefile" ;;
   "test/BlockDavidson/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockDavidson/Makefile" ;;
   "test/BlockKrylovSchur/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockKrylovSchur/Makefile" ;;
+  "test/MVOPComplex/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MVOPComplex/Makefile" ;;
   "test/MVOPTester/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MVOPTester/Makefile" ;;
   "test/LOBPCG/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/LOBPCG/Makefile" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
@@ -11761,6 +11967,8 @@ s,@BUILD_EXAMPLES_TRUE@,$BUILD_EXAMPLES_TRUE,;t t
 s,@BUILD_EXAMPLES_FALSE@,$BUILD_EXAMPLES_FALSE,;t t
 s,@BUILD_TESTS_TRUE@,$BUILD_TESTS_TRUE,;t t
 s,@BUILD_TESTS_FALSE@,$BUILD_TESTS_FALSE,;t t
+s,@BUILD_TEUCHOS_COMPLEX_TRUE@,$BUILD_TEUCHOS_COMPLEX_TRUE,;t t
+s,@BUILD_TEUCHOS_COMPLEX_FALSE@,$BUILD_TEUCHOS_COMPLEX_FALSE,;t t
 s,@BUILD_TRIUTILS_TRUE@,$BUILD_TRIUTILS_TRUE,;t t
 s,@BUILD_TRIUTILS_FALSE@,$BUILD_TRIUTILS_FALSE,;t t
 s,@BUILD_BELOS_TRUE@,$BUILD_BELOS_TRUE,;t t
