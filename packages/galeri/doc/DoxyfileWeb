@@ -40,10 +40,12 @@
 #
 ############################################################################
 
-PROJECT_NAME           = New_Package
+PROJECT_NAME           = Galeri
 
-INPUT                  = ../src index.doc
+INPUT                  = index.doc maps.doc matrices.doc utils.doc fe.doc
+INPUT                 += ../src ../src/Maps/ ../src/CrsMatrices
+INPUT                 += ../src/FiniteElements
 
-EXAMPLE_PATH           = ../example
+EXAMPLE_PATH           = ../example ../
 
-GENERATE_TAGFILE       = ../../common/tag_files/new_package.tag
+GENERATE_TAGFILE       = ../../common/tag_files/galeri.tag
