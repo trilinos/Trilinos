@@ -66,6 +66,8 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
   // Construct a Source Map that puts approximately the same 
   // Number of equations on each processor in uniform global ordering
   StandardMap = new Epetra_Map(NumGlobalElements, 0, *Comm);
+//  std::cout << "StandardMap = new Epetra_Map(NumGlobalElements, 0, *Comm);" << std::endl;
+//  std::cout << "typeid(*StandardMap).name() = " << typeid(*StandardMap).name() << std::endl;
 
   // Get the number of elements owned by this processor
   NumMyElements = StandardMap->NumMyElements();
@@ -102,6 +104,8 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
   // Construct Linear Objects  
   Importer = new Epetra_Import(*OverlapMap, *StandardMap);
   initialSolution = new Epetra_Vector(*StandardMap);
+//  std::cout << "initialSolution = new Epetra_Vector(*StandardMap);" << std::endl;
+//  std::cout << "typeid(initialSolution->Map()).name() = " << typeid(initialSolution->Map()).name() << std::endl;
 
   // Assign non-zero entries in the graph
   createGraph();

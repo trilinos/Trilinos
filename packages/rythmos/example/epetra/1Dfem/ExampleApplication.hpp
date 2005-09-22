@@ -83,7 +83,7 @@ private:
     // Epetra Comm:
     Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_;
     // Epetra Map:
-    Teuchos::RefCountPtr<Epetra_Map> epetra_map_ptr_;
+    Teuchos::RefCountPtr<const Epetra_Map> epetra_map_ptr_;
     
     // Global number of unknowns:
     int numElements_;

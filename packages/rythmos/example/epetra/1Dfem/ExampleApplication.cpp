@@ -39,7 +39,7 @@
 #include <iostream>
 #endif
 
-//#include "Teuchos_dyn_cast.hpp"
+#include "Teuchos_dyn_cast.hpp"
 
 ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 {
@@ -59,6 +59,11 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 
   // This is needed to extract the Epetra_Map for the solution
   epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map( problemInterfacePtr_->getMap() ) );
+//  Epetra_Vector& soln = problemInterfacePtr_->getSolution();
+//  const Epetra_BlockMap& solnBlockMap = soln.Map();
+//  std::cout << "typeid(solnBlockMap).name() = " << typeid(solnBlockMap).name() << std::endl;
+//  const Epetra_Map& solnMap = Teuchos::dyn_cast<const Epetra_Map>(solnBlockMap);
+//  epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map( solnMap ) );
 
   // This is needed to extract the Epetra_CrsGraph for the Jacobian
   Epetra_CrsMatrix &jacobian = problemInterfacePtr_->getJacobian();
@@ -118,11 +123,22 @@ void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs
 {
   Teuchos::RefCountPtr<const Epetra_Vector> x = inArgs.get_x();
   Teuchos::RefCountPtr<const Epetra_Vector> xdot = inArgs.get_x_dot();
+#ifdef EXAMPLEAPPLICATION_DEBUG
+  std::cout << "ExampleApplication::evalModel ---------------------------{" << std::endl;
+  std::cout << "x = " << std::endl;
+  x->Print(std::cout);
+  std::cout << "xdot = " << std::endl;
+  xdot->Print(std::cout);
+#endif // EXAMPLEAPPLICATION_DEBUG
   Teuchos::RefCountPtr<Epetra_Vector> f;
   if( (f = outArgs.get_f()).get() ) 
   {
     NOX::Epetra::Interface::Required::FillType flag = NOX::Epetra::Interface::Required::Residual;
     problemInterfacePtr_->evaluate(flag,&*x,&*xdot,0.0,0.0,&*f,NULL);
+#ifdef EXAMPLEAPPLICATION_DEBUG
+    std::cout << "f = " << std::endl;
+    f->Print(std::cout);
+#endif // EXAMPLEAPPLICATION_DEBUG
   }
   Teuchos::RefCountPtr<Epetra_Operator> W;
   if( (W = outArgs.get_W()).get() ) 
@@ -133,7 +149,14 @@ void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs
     Epetra_CrsMatrix& jacobian = problemInterfacePtr_->getJacobian();
     problemInterfacePtr_->evaluate(flag,&*x,&*xdot,alpha,beta,NULL,&jacobian);
     W = Teuchos::rcp(&jacobian,false);
+#ifdef EXAMPLEAPPLICATION_DEBUG
+    std::cout << "jacobian = " << std::endl;
+    jacobian.Print(std::cout);
+#endif // EXAMPLEAPPLICATION_DEBUG
   }
+#ifdef EXAMPLEAPPLICATION_DEBUG
+  std::cout << "ExampleApplication::evalModel ---------------------------}" << std::endl;
+#endif // EXAMPLEAPPLICATION_DEBUG
 }
 
 Teuchos::RefCountPtr<Epetra_Vector> ExampleApplication::get_exact_solution( double t ) const
