@@ -1,23 +1,48 @@
-################################################################################
-#
-# Trilinos Release 6.0 Release Notes
-#
-################################################################################
+###############################################################################
+#                                                                             #
+# Trilinos Release 6.0 Release Notes                                          #
+#                                                                             #
+###############################################################################
 
 Overview:
 
-Trilinos is a collection of compatible software packages that support parallel linear algebra computations, solution of linear, non-linear and eigen systems of equations and related capabilities. The majority of packages are written in C++ using object-oriented techniques. All packages are self-contained, with the Trilinos top layer providing a common look-and-feel and infrastructure. 
-
+Trilinos is a collection of compatible software packages that support parallel 
+linear algebra computations, solution of linear, non-linear and eigen systems 
+of equations and related capabilities. The majority of packages are written in 
+C++ using object-oriented techniques. All packages are self-contained, with the 
+Trilinos top layer providing a common look-and-feel and infrastructure. 
 
 Packages:
 
-The version 6.0 general release contains 18 packages: Amesos, Anasazi, AztecOO, Didasko, Epetra, EpetraExt, Ifpack, Kokkos, Komplex, LOCA, ML, New_Package, NOX, Pliris, PyTrilinos, Teuchos, Thyra, and Triutils.
+The version 6.0 general release contains 18 packages: Amesos, Anasazi, AztecOO, 
+Didasko, Epetra, EpetraExt, Ifpack, Kokkos, Komplex, LOCA, ML, New_Package, 
+NOX, Pliris, PyTrilinos, Teuchos, Thyra, and Triutils.
 
-The limited release contains an additional 9 packages that are available in special situations by request. These are: Belos, Capo, Claps, Jpetra, Meros, Rythmos, Tpetra, TSF, and TSFExtended.
+The limited release contains an additional 9 packages that are available in 
+special situations by request. These are: Belos, Capo, Claps, Jpetra, Meros, 
+Rythmos, Tpetra, TSF, and TSFExtended.
 
-In addition to many new features across most packages, Trilinos Release 6.0 contains one new package, Thyra.  This package represents our first general release of an abstract interface to support generic programming.  Thyra contains interfaces for basic linear algebra objects, a first linear solver interface, and supporting software.  Furthermore, adapters for Amesos, AztecOO, Epetra, Ifpack, ML, NOX and Teuchos provide a broad set of functionality to users of Thyra.  Finally, since Thyra is fundamentally an interface, users can write code based on Thyra without commiting to any particular concrete linear algebra package, but instead have access to a growing collection of supported concrete libraries.
+In addition to many new features across most packages, Trilinos Release 6.0 
+contains one new package, Thyra.  This package represents our first general 
+release of an abstract interface to support generic programming.  Thyra 
+contains interfaces for basic linear algebra objects, a first linear solver 
+interface, and supporting software.  Furthermore, adapters for Amesos, AztecOO, 
+Epetra, Ifpack, ML, NOX and Teuchos provide a broad set of functionality to 
+users of Thyra.  Finally, since Thyra is fundamentally an interface, users can 
+write code based on Thyra without commiting to any particular concrete linear 
+algebra package, but instead have access to a growing collection of supported 
+concrete libraries.
 
-A second major feature is the much improved design and implementation of PyTrilinos.  PyTrilinos capabilities are now primarily distributed across Trilinos packages (although critical common functionality is still in the PyTrilinos package), so that Epetra, EpetraExt, Triutils, AztecOO, Amesos, Ifpack, ML, LOCA, NOX and New_Package are accessible to Python applications.  PyTrilinos also supports parallel MPI execution without additional Python modules, and parallel performance for large-grain computations matches native Trilinos peformance.  Finally, Python users are able to define their own matrix modules in Python, satisfying Trilinos abstract interface, that can be used by Trilinos solvers.
+A second major feature is the much improved design and implementation of 
+PyTrilinos.  PyTrilinos capabilities are now primarily distributed across 
+Trilinos packages (although critical common functionality is still in the 
+PyTrilinos package), so that Epetra, EpetraExt, Triutils, AztecOO, Amesos, 
+Ifpack, ML, LOCA, NOX and New_Package are accessible to Python applications.  
+PyTrilinos also supports parallel MPI execution without additional Python 
+modules, and parallel performance for large-grain computations matches native 
+Trilinos peformance.  Finally, Python users are able to define their own matrix 
+modules in Python, satisfying Trilinos abstract interface, that can be used by 
+Trilinos solvers.
 
 Other package-specific features are listed below.
 
@@ -25,184 +50,270 @@ More information:
 
 Trilinos website: http://software.sandia.gov/trilinos 
 
+===============================================================================
 
---------------------------------------------------------------------------
+Amesos
 
-Amesos:
-- improved memory management and performances 
+- Improved memory management and performances 
 - Added Scalapack, TAUCS and PARDISO support.
 - Python interface for the factory and most classes.
-- Amesos_Klu
-Improved performance on small matrices 
-Supports non-standard indexing (i.e. {1,2,5,8,9}
-Supports domain and range maps which differ from the matrix row map
+- Amesos_Klu:
+  - Improved performance on small matrices 
+  - Supports non-standard indexing (i.e. {1,2,5,8,9}
+  - Supports domain and range maps which differ from the matrix row map
 - Amesos_Superlu and Amesos_Superludist:
-Compatible with all Amesos solvers
-Memory leaks eliminated
-- Thyra wrappers for linear solve interface.  These adapter subclasses allow any
-amesos direct solver to be incorporated, in a seamless way, into
-abstract numerical algorithms written using the Thyra operator/vector
-abstractions.
-
+  - Compatible with all Amesos solvers
+  - Memory leaks eliminated
+- Thyra wrappers for linear solve interface.  These adapter subclasses allow 
+  any amesos direct solver to be incorporated, in a seamless way, into abstract 
+  numerical algorithms written using the Thyra operator/vector abstractions.
 - Makefile.export support 
 - Eliminated dependence on triutils 
 - Improved robustness through enhanced nighty testing
 
-# Known bugs:
+Known bugs:
 
-- Amesos_Dscpack has memory leaks, prints to standard out and may crash if SymbolicFactorization() is called multiple times on the same Amesos object.
-- Amesos packages other than Amesos_Klu do not accept non-standard maps (e.g. one with indices {1,2,5,8,9, ... } )
-- Amesos packages other than Amesos_Klu do not accept range and domain maps which differ from the matrix map
+- Amesos_Dscpack has memory leaks, prints to standard out and may crash if 
+  SymbolicFactorization() is called multiple times on the same Amesos object.
+- Amesos packages other than Amesos_Klu do not accept non-standard maps (e.g. 
+  one with indices {1,2,5,8,9, ... } )
+- Amesos packages other than Amesos_Klu do not accept range and domain maps 
+  which differ from the matrix map
 - Superludist fails on some matrices
 - Error handling on singular and near singular matrices is inconsistent
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
-Anasazi:
+Anasazi
 
-In Trilinos Release 6.0, Anasazi has a new solver, enhanced functionality and much more documentation.
+In Trilinos Release 6.0, Anasazi has a new solver, enhanced functionality and 
+much more documentation.
 
--This release of Anasazi provides abstract implementations of three eigensolvers:  block Davidson,  block Krylov-Schur, and locally-optimal block preconditioned conjugate gradient (LOBPCG).  LOBPCG is the newest abstract eigensolver implementation in the Anasazi framework for computing solutions to symmetric eigenvalue problems.
+- This release of Anasazi provides abstract implementations of three 
+  eigensolvers:  block Davidson,  block Krylov-Schur, and locally-optimal block 
+  preconditioned conjugate gradient (LOBPCG).  LOBPCG is the newest abstract 
+  eigensolver implementation in the Anasazi framework for computing solutions 
+  to symmetric eigenvalue problems.
 
--All three eigensolvers in Anasazi use the Anasazi::SortManager to sort for the eigenvalues of interest. This functionality was previously available for only the block Krylov-Schur implementation.
+- All three eigensolvers in Anasazi use the Anasazi::SortManager to sort for 
+  the eigenvalues of interest. This functionality was previously available for 
+  only the block Krylov-Schur implementation.
 
--Anasazi solvers now collect timing information that will be outputted if the Anasazi::OutputManager is given the Anasazi::TimingDetails flag.
+- Anasazi solvers now collect timing information that will be outputted if the 
+  Anasazi::OutputManager is given the Anasazi::TimingDetails flag.
 
--The Anasazi framework now provides testing functionality for user-written interfaces to Anasazi::MultiVecTraits and Anasazi::OperatorTraits.  This functionality gives users a way to perform a sanity check on their interface.
+- The Anasazi framework now provides testing functionality for user-written 
+  interfaces to Anasazi::MultiVecTraits and Anasazi::OperatorTraits.  This 
+  functionality gives users a way to perform a sanity check on their interface.
 
--Anasazi has an updated and expanded tutorial in Didasko.
+- Anasazi has an updated and expanded tutorial in Didasko.
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
-AztecOO:
+AztecOO
+
 - Python interface.
+- Thyra linear solver adapters : Allows an AztecOO solver to be incorporated, 
+  in a seamless way, into abstract numerical algorithms written using the Thyra 
+  operator/vector abstractions.
 
-- Thyra linear solver adapters : Allows an AztecOO solver to be incorporated, in a seamless way, into abstract numerical algorithms written using the Thyra operator/vector abstractions.
+-------------------------------------------------------------------------------
 
---------------------------------------------------------------------------
-
-Didasko:
+Didasko
 
 - New chapter on Anasazi.
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
-Epetra:
-- Python interface for several objects, in serial and MPI: Epetra_Map, Epetra_CrsMatrix, Epetra_LinearProblem, Epetra_Vector, Epetra_MultiVector, Epetra_SerialDenseVector Epetra_SerialDenseMatrix, and more.
-- Thyra adapters for vector space, linear operator, vector and multivector classes.
+Epetra
 
---------------------------------------------------------------------------
+- Python interface for several objects, in serial and MPI: Epetra_Map, 
+  Epetra_CrsMatrix, Epetra_LinearProblem, Epetra_Vector, Epetra_MultiVector, 
+  Epetra_SerialDenseVector Epetra_SerialDenseMatrix, and more.
+- Thyra adapters for vector space, linear operator, vector and multivector 
+  classes.
 
-EpetraExt:
+-------------------------------------------------------------------------------
+
+EpetraExt
+
 - Python interface for I/O
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
-IFPACK:
+IFPACK
+
 - Python interface for the factory class
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
-Kokkos:
-
-- No notable changes.
-
---------------------------------------------------------------------------
-
-Komplex:
+Kokkos
 
 - No notable changes.
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+
+Komplex
+
+- No notable changes.
+
+-------------------------------------------------------------------------------
 
 LOCA
 
 New features:
 
--- A constraint tracking feature has been added to LOCA where the user can specify additional algebraic constraints that must be satisfied along with the residual.  Examples include boundary conditions, phase conditions in periodic orbits, etc.  The resulting Newton system can be efficiently solved using the QR method discussed below.  This capability is only available using the LOCA::NewStepper also discussed below.
+- A constraint tracking feature has been added to LOCA where the user can 
+  specify additional algebraic constraints that must be satisfied along with 
+  the residual.  Examples include boundary conditions, phase conditions in 
+  periodic orbits, etc.  The resulting Newton system can be efficiently solved 
+  using the QR method discussed below.  This capability is only available using 
+  the LOCA::NewStepper also discussed below.
 
--- A QR method for solving augmented systems of equations in parallel has been added, and is an extension of the Householder method already available to systems with more than one augmented row/column.  This method allows bordered systems of equations to be solved in roughly the same time as original system and is well-conditioned even when the original system is nearly singular.  This capability is only available using the LOCA::NewStepper discussed below.
+- A QR method for solving augmented systems of equations in parallel has been 
+  added, and is an extension of the Householder method already available to 
+  systems with more than one augmented row/column.  This method allows bordered 
+  systems of equations to be solved in roughly the same time as original system 
+  and is well-conditioned even when the original system is nearly singular.  
+  This capability is only available using the LOCA::NewStepper discussed below.
 
--- Many of the internals of LOCA have been rewritten to more fully support multi-parameter continuation, constraint tracking, higher-order predictors and advanced bifurcation algorithms.  This process is mostly, but not fully complete.  This functionality is available by choosing the LOCA::NewStepper for continuation instead of the original LOCA::Stepper.  However pitchfork and Hopf continuation are currently not available in the new framework. Documentation for this new framework can be found on the New LOCA Framework page.
+- Many of the internals of LOCA have been rewritten to more fully support 
+  multi-parameter continuation, constraint tracking, higher-order predictors 
+  and advanced bifurcation algorithms.  This process is mostly, but not fully 
+  complete.  This functionality is available by choosing the LOCA::NewStepper 
+  for continuation instead of the original LOCA::Stepper.  However pitchfork 
+  and Hopf continuation are currently not available in the new framework. 
+  Documentation for this new framework can be found on the New LOCA Framework 
+  page.
 
--- LOCA's interface to eigensolvers has changed slightly and now uses a strategy interface approach instead of relying on the group to provide computeEigenvalues() and saveEigenvalues() methods.  This provides a more natural decoupling of the parallel linear algebra data structures (i.e., the group) from the eigensolver method/package (eigensolver strategy object). The use of strategy interfaces instead of group methods is a major theme in the new LOCA framework, and is discussed more fully on the new framework page.
+- LOCA's interface to eigensolvers has changed slightly and now uses a strategy 
+  interface approach instead of relying on the group to provide 
+  computeEigenvalues() and saveEigenvalues() methods.  This provides a more 
+  natural decoupling of the parallel linear algebra data structures (i.e., the 
+  group) from the eigensolver method/package (eigensolver strategy object). The 
+  use of strategy interfaces instead of group methods is a major theme in the 
+  new LOCA framework, and is discussed more fully on the new framework page.
 
 Other notes:
 
--- Teuchos::RefCountPtr support has been added to improve software quality. For the most part, ref-count pointers are only used in the new framework.
+- Teuchos::RefCountPtr support has been added to improve software quality. For 
+  the most part, ref-count pointers are only used in the new framework.
 
--- Many regression tests have been added to improve software quality.
+- Many regression tests have been added to improve software quality.
 
--- Libtool support has been removed from LOCA due to portability issues.
+- Libtool support has been removed from LOCA due to portability issues.
 
--- Python support is temporarily disabled in this release due to a major refactor of the build system for python wrappers in Trilinos.
+- Python support is temporarily disabled in this release due to a major 
+  refactor of the build system for python wrappers in Trilinos.
 
 Portability notes:
 
--- There currently is a portability issue with LOCA to the Solaris platform using the Sun Forte 7 compilers.  LOCA builds on this platform but does not run correctly.  It appears the problem is compiler related as the virtual table for some LOCA objects is not setup correctly.  All of the LOCA examples and any LOCA tests involving continuation runs fail with a segmentation fault.  It is not known whether LOCA runs correctly when built with version 10 of the Sun compilers.  See bugzilla bug <a href="http://software.sandia.gov/bugzilla/show_bug.cgi?id=1238"> 1238 </a> for more information on this issue.
+- There currently is a portability issue with LOCA to the Solaris platform 
+  using the Sun Forte 7 compilers.  LOCA builds on this platform but does not 
+  run correctly.  It appears the problem is compiler related as the virtual 
+  table for some LOCA objects is not setup correctly.  All of the LOCA examples 
+  and any LOCA tests involving continuation runs fail with a segmentation 
+  fault.  It is not known whether LOCA runs correctly when built with version 
+  10 of the Sun compilers.  See bugzilla bug 1238 for more information on this 
+  issue.
 
-
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 ML
 
-- Improved the organization of the MLAPI source files and examples.  Now the compilation of the MLAPI sources is about 20% faster, and the compilation of the MLAPI examples up to 3 times faster.  Some never-used examples and classes have been deleted.
-- Drop the support for command line parameters. A similar capability is supported by the Python interface.
-- Repartitioning is now fully available through the MultiLevelPreconditioner interface.
-- Completed the ML wrapper for Python, using SWIG. The ML module still requires a manual configuration of shared libraries, as done (on Linux/GCC at the moment) with script make_shared_linux.sh, located in the PyTrilinos directory.  The basic functionalities of the MultiLevelPreconditioner class are available, for both serial and parallel runs. The ML module is compatible with the Epetra and AztecOO modules.
-- Changed the wrapper names and contents for Epetra matrices.  Now the dynamic cast to Epetra_CrsMatrix and/or Epetra_VbrMatrix is done only once in the construction of the preconditioner.  This results in an improvement of the performances up to 30% for smore test problems.
+- Improved the organization of the MLAPI source files and examples.  Now the 
+  compilation of the MLAPI sources is about 20% faster, and the compilation of 
+  the MLAPI examples up to 3 times faster.  Some never-used examples and 
+  classes have been deleted.
+- Drop the support for command line parameters. A similar capability is 
+  supported by the Python interface.
+- Repartitioning is now fully available through the MultiLevelPreconditioner 
+  interface.
+- Completed the ML wrapper for Python, using SWIG. The ML module still requires 
+  a manual configuration of shared libraries, as done (on Linux/GCC at the 
+  moment) with script make_shared_linux.sh, located in the PyTrilinos 
+  directory.  The basic functionalities of the MultiLevelPreconditioner class 
+  are available, for both serial and parallel runs. The ML module is compatible 
+  with the Epetra and AztecOO modules.
+- Changed the wrapper names and contents for Epetra matrices.  Now the dynamic 
+  cast to Epetra_CrsMatrix and/or Epetra_VbrMatrix is done only once in the 
+  construction of the preconditioner.  This results in an improvement of the 
+  performances up to 30% for smore test problems.
 
-- Added a simple finite element code, that can be used to test ML and MLAPI preconditioners. The code offers a pure Galerkin and a SUPG discretization for second order PDEs, in 2D and 3D, using triangles, quads, tets, and hexahedra. L2 and H1 norms of the computed solution and error can be computed. Results can be visualized using MEDIT.
-- In the MLAPI namespace, added class MultiLevelAdaptiveSA, which implements the \alpha SA algorithm (computation of slow converging modes for problems with non-smooth kernels).
-- Added a class, Ifpack_ML, that wraps an MultiLevelPreconditioner as Ifpack_Preconditioner, so that ML can be used as local solver in a domain decomposition preconditioner.
+- Added a simple finite element code, that can be used to test ML and MLAPI 
+  preconditioners. The code offers a pure Galerkin and a SUPG discretization 
+  for second order PDEs, in 2D and 3D, using triangles, quads, tets, and 
+  hexahedra. L2 and H1 norms of the computed solution and error can be 
+  computed. Results can be visualized using MEDIT.
+- In the MLAPI namespace, added class MultiLevelAdaptiveSA, which implements 
+  the \alpha SA algorithm (computation of slow converging modes for problems 
+  with non-smooth kernels).
+- Added a class, Ifpack_ML, that wraps an MultiLevelPreconditioner as 
+  Ifpack_Preconditioner, so that ML can be used as local solver in a domain 
+  decomposition preconditioner.
 - Extended capabilities to read matrices from file in various formats.
-- Added support for adaptive smoothed aggregation within MLAPI.  A new class, called MultiLevelAdaptiveSA, has been added.
+- Added support for adaptive smoothed aggregation within MLAPI.  A new class, 
+  called MultiLevelAdaptiveSA, has been added.
 - Added a prototype of class for non-symmetric smoothed  aggregation.
-- Added capability to write visualization files in legacy VTK (Visualization toolkit) format.  These are readable by paraview, which is freely available from www.paraview.org.  Supports 1D/2D/3D point cloud visualization for aggregates, as well as solution visualization.
+- Added capability to write visualization files in legacy VTK (Visualization 
+  toolkit) format.  These are readable by paraview, which is freely available 
+  from www.paraview.org.  Supports 1D/2D/3D point cloud visualization for 
+  aggregates, as well as solution visualization.
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
-New_Package:
+New_Package
 
-- PyTrilinos support:  Illustrates how a package can provide Python support.  Used by several other packages to provide new capabilities for PyTrilinos.
+- PyTrilinos support:  Illustrates how a package can provide Python support.  
+  Used by several other packages to provide new capabilities for PyTrilinos.
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
-NOX:
+NOX
 
-- Refactor of configure for nox to align with the rest of Trilinos.  We now use the same m4's that other packages use.  Also changed the way the examples are configured so they are consistent with the tests.  Added implicit compilation of ml and anasazi support.
-- Addition of the export makefile system to enable easy interfacing to external applications.
--  NOX now has a required dependency on Teuchos, it must be built as part of Trilinos.
+- Refactor of configure for nox to align with the rest of Trilinos.  We now use 
+  the same m4's that other packages use.  Also changed the way the examples are 
+  configured so they are consistent with the tests.  Added implicit compilation 
+  of ml and anasazi support.
+- Addition of the export makefile system to enable easy interfacing to external 
+  applications.
+-  NOX now has a required dependency on Teuchos, it must be built as part of 
+  Trilinos.
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
-Pliris:
+Pliris
 
 - No notable changes.
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 PyTrilinos
 
 In addition to python support present in Trilinos Release 5.0 for
 
-Epetra
-EpetraExt
-NOX
-NOX.Epetra
+  Epetra
+  EpetraExt
+  NOX
+  NOX.Epetra
 
 python interfaces have been added for the following packages:
 
-Amesos
-AztecOO
-IFPACK
-LOCA
-ML
-New_Package
-Triutils
+  Amesos
+  AztecOO
+  IFPACK
+  LOCA
+  ML
+  New_Package
+  Triutils
 
-Additionally, MPI support has been added.  Specifically, the Epetra.MpiComm class has been wrapped.  A new class, Epetra.PyComm, has been added, which returns an Epetra.SerialComm for serial builds and an Epetra.MpiComm for MPI builds.  For an MPI build, MPI_Init() is automatically called when the Epetra module is imported and MPI_Finalize() is automatically registered with the "atexit" module. Thus python scripts can be written that are identical for serial and MPI runs.
-
+Additionally, MPI support has been added.  Specifically, the Epetra.MpiComm 
+class has been wrapped.  A new class, Epetra.PyComm, has been added, which 
+returns an Epetra.SerialComm for serial builds and an Epetra.MpiComm for MPI 
+builds.  For an MPI build, MPI_Init() is automatically called when the Epetra 
+module is imported and MPI_Finalize() is automatically registered with the 
+"atexit" module. Thus python scripts can be written that are identical for 
+serial and MPI runs.
 
 Configuration, building and installing
 --------------------------------------
@@ -212,131 +323,202 @@ Python interfaces are enabled at configuration time now using the
 --with-python[=path]    or
 --enable-python[=path]
 
-options, which are equivalent.  During "make", python interfaces will be built for every package that both supports python and is enabled.
+options, which are equivalent.  During "make", python interfaces will be built 
+for every package that both supports python and is enabled.
 
-(In Release 5.0, the four supported packages all had to be enabled. The --enable-pytrilinos configuration option, which enabled PyTrilinos in Release 5.0, now only enables a small utility library used by all of the python interfaces.  The --enable-pytrilinos option is not strictly needed by end users, as the PyTrilinos package is automatically enabled by either --with-python or --enable-python.)
+(In Release 5.0, the four supported packages all had to be enabled. The 
+--enable-pytrilinos configuration option, which enabled PyTrilinos in Release 
+5.0, now only enables a small utility library used by all of the python 
+interfaces.  The --enable-pytrilinos option is not strictly needed by end 
+users, as the PyTrilinos package is automatically enabled by either 
+--with-python or --enable-python.)
 
-Python 2.3 or higher is highly recommended.  Some packages can be built against python 2.2, but there are some packages that require python 2.3.
+Python 2.3 or higher is highly recommended.  Some packages can be built against 
+python 2.2, but there are some packages that require python 2.3.
 
-SWIG (Simple Wrapper Interface Generator) version 1.3.23 or higher is required to generate the wrapper code.  These wrappers are not pre-built because they can be affected by configuration options. Configure will find swig if it is in your standard path, or you can tell configure where to find it using the --with-swig=PATH option.
+SWIG (Simple Wrapper Interface Generator) version 1.3.23 or higher is required 
+to generate the wrapper code.  These wrappers are not pre-built because they 
+can be affected by configuration options. Configure will find swig if it is in 
+your standard path, or you can tell configure where to find it using the 
+--with-swig=PATH option.
 
 The Numeric python module is required.
 
-Do not configure with C flags -ansi or -pedantic.  Python supports arbitrary precision integers and these options will cause the compiler to fail.
+Do not configure with C flags -ansi or -pedantic.  Python supports arbitrary 
+precision integers and these options will cause the compiler to fail.
 
-The "make install" command will install the python interfaces (in addition to the standard package libraries and header files, of course).  If configured with --prefix=PATH, the modules will be installed in PATH/lib.  Make sure your PYTHONPATH environment variable is set correctly.  If --prefix=PATH is not provided, the modules will be installed in the standard location determined by where the python executable is installed.  This is often not /usr/local/, which is the default installation location for other Trilinos packages.  Depending on how python was installed, this usually requires root access.
-
+The "make install" command will install the python interfaces (in addition to 
+the standard package libraries and header files, of course).  If configured 
+with --prefix=PATH, the modules will be installed in PATH/lib.  Make sure your 
+PYTHONPATH environment variable is set correctly.  If --prefix=PATH is not 
+provided, the modules will be installed in the standard location determined by 
+where the python executable is installed.  This is often not /usr/local/, 
+which is the default installation location for other Trilinos packages.  
+Depending on how python was installed, this usually requires root access.
 
 Testing
 -------
 
->From the top build directory, or from a package top build directory, you can invoke "make run-pyexamples" or "make run-pytests" to execute all the scripts in the example or test directories, respectively. This will give concise output regarding failure or success for each script.  Detailed results of thes tests that have been run can be found in the
+>From the top build directory, or from a package top build directory, you can 
+invoke "make run-pyexamples" or "make run-pytests" to execute all the scripts 
+in the example or test directories, respectively. This will give concise output 
+regarding failure or success for each script.  Detailed results of thes tests 
+that have been run can be found in the
 
 packages/PACKAGE_NAME/test/runtests-results/
 
 directory of the build directory.
 
-
 Examples
 --------
 
-An important change was made to the directory structure for Release 6.0.  The python wrapper generation code is now contained within each package, under a directory named "python".  Within this directory are "src", "test", "example" and possibly other sub-directories.  For example, the epetra directory structure now includes
+An important change was made to the directory structure for Release 6.0.  The 
+python wrapper generation code is now contained within each package, under a 
+directory named "python".  Within this directory are "src", "test", "example" 
+and possibly other sub-directories.  For example, the epetra directory 
+structure now includes
 
 packages/epetra/python/
 packages/epetra/python/example/
 packages/epetra/python/src/
 packages/epetra/python/test/
 
-In the python/example sub-directory of each supported package, there will be one or more example python scripts demonstrating how to use the given module interface.  The python/test sub-directories are for unit tests.  If you are familiar with the python unittest module, these test scripts can provide additional examples of how to use the given module interface.
+In the python/example sub-directory of each supported package, there will be 
+one or more example python scripts demonstrating how to use the given module 
+interface.  The python/test sub-directories are for unit tests.  If you are 
+familiar with the python unittest module, these test scripts can provide 
+additional examples of how to use the given module interface.
 
-The example and test scripts are copied from the source directory to the build directory when "make" is run.  If these scripts are run from the build directory, they are designed to import the local build (uninstalled) versions of the Trilinos python interface modules.  If run from a different location (say, the source directory, or if you have copied them to another location), the scripts will still work as long as the python interfaces have been installed in a location where python can find them.
-
+The example and test scripts are copied from the source directory to the build 
+directory when "make" is run.  If these scripts are run from the build 
+directory, they are designed to import the local build (uninstalled) versions 
+of the Trilinos python interface modules.  If run from a different location 
+(say, the source directory, or if you have copied them to another location), 
+the scripts will still work as long as the python interfaces have been 
+installed in a location where python can find them.
 
 Using PyTrilinos
 ----------------
 
-At this time, PyTrilinos documentation is admittedly incomplete. However, some documentation is available at
+At this time, PyTrilinos documentation is admittedly incomplete. However, some 
+documentation is available at
 
 http://software.sandia.gov/trilinos/packages/pytrilinos/documentation.html
 
-where you can find current lists of what packages are supported and which classes and functions within those packages have been wrapped.
+where you can find current lists of what packages are supported and which 
+classes and functions within those packages have been wrapped.
 
-PyTrilinos modules should be imported from a python script using, for
+PyTrilinos modules should be imported from a python script using, for 
 example, the
 
 >>> from PyTrilinos import Epetra
 
-syntax.  Not all classes of all supported packages have been wrapped. One way to see what is available is to use the dir() function on a module:
+syntax.  Not all classes of all supported packages have been wrapped. One way 
+to see what is available is to use the dir() function on a module:
 
 >>> dir(Epetra)
 
-For the most part, the python versions of functions, constructors and class methods use the same return values and argument lists as their C++ counterparts.  Therefore, the individual package documentation is a good starting place for what is available, and for proper usage. However, it often makes sense to change the python argument lists --
-for example, we may allow the use of a python list in place of a pointer to a C array, and we may then eliminate the integer size argument from the argument list, since it can now be obtained implicitly; or an output argument may be moved to a function's return value, often changing the return value to a tuple.  Fortunately, all wrapped methods and functions have a documentation string that indicates correct usage.  Documentation strings in python can be obtained with the help() function.  For example:
+For the most part, the python versions of functions, constructors and class 
+methods use the same return values and argument lists as their C++ counterparts.  
+Therefore, the individual package documentation is a good starting place for 
+what is available, and for proper usage. However, it often makes sense to 
+change the python argument lists --
+for example, we may allow the use of a python list in place of a pointer to a 
+C array, and we may then eliminate the integer size argument from the argument 
+list, since it can now be obtained implicitly; or an output argument may be 
+moved to a function's return value, often changing the return value to a tuple.  
+Fortunately, all wrapped methods and functions have a documentation string that 
+indicates correct usage.  Documentation strings in python can be obtained with 
+the help() function.  For example:
 
 >>> help(Epetra.CrsMatrix.InsertGlobalValues)
 Help on method InsertGlobalValues in module Epetra:
 
 InsertGlobalValues(*args) unbound Epetra.CrsMatrix method
-InsertGlobalValues(self, int GlobalRow, int NumEntries, double Values, int Indices) -> int
-InsertGlobalValues(self, int Row, int Size, SerialDenseVector Values, IntSerialDenseVector Entries) -> int
+InsertGlobalValues(self, int GlobalRow, int NumEntries, double Values, int 
+Indices) -> int
+InsertGlobalValues(self, int Row, int Size, SerialDenseVector Values, 
+IntSerialDenseVector Entries) -> int
 InsertGlobalValues(self, int row, PyObject Values, PyObject Indices) -> int
 
-The PyObject type that will often appear in these documentation strings refer to arbitrary python objects, but often are expected to be containers such as lists, tuples or Numeric arrays.  In these cases, some experimentation may be in order.
-
+The PyObject type that will often appear in these documentation strings refer 
+to arbitrary python objects, but often are expected to be containers such as 
+lists, tuples or Numeric arrays.  In these cases, some experimentation may be 
+in order.
 
 For Developers
 --------------
 
-By convention, the code to build individual python interfaces now resides within each package, in the sub-directory "python".  For a template of how to wrap a Trilinos package, see the new-package package, and in particular the 
+By convention, the code to build individual python interfaces now resides 
+within each package, in the sub-directory "python".  For a template of how to 
+wrap a Trilinos package, see the new-package package, and in particular the 
 
 packages/new_package/python/Instructions.txt
 
 file.
 
-The PyTrilinos package itself is now a small library of utility classes and functions, intended to ease repetitive tasks that come up frequently when wrapping Trilinos packages.  For more details, contact Bill Spotz, wfspotz@sandia.gov.
+The PyTrilinos package itself is now a small library of utility classes and 
+functions, intended to ease repetitive tasks that come up frequently when 
+wrapping Trilinos packages.  For more details, contact Bill Spotz, 
+wfspotz@sandia.gov.
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
-Teuchos:
+Teuchos
 
 - No notable changes.
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 Thyra(new)
 
-- Defines fundamental abstract interfaces for vectors, multi-vectors, vector spaces, and linear operators that form the foundation for all abstract numerical algorithms.
+- Defines fundamental abstract interfaces for vectors, multi-vectors, vector 
+  spaces, and linear operators that form the foundation for all abstract 
+  numerical algorithms.
 
-- These interfaces will eventually be use to provide uniform interoperability between a number of Trilinos (e.g. Belos, Anasazi, NOX, Rythmos, MOOCHO) and non-Trilinos packages and to encapsulate application/physics codes.
+- These interfaces will eventually be use to provide uniform interoperability 
+  between a number of Trilinos (e.g. Belos, Anasazi, NOX, Rythmos, MOOCHO) and 
+  non-Trilinos packages and to encapsulate application/physics codes.
 
-- Also included are a small number of extended interoperability interfaces such as:
+- Also included are a small number of extended interoperability interfaces 
+  such as:
   - Interface for linear operators that support a solve operation
   - Other miscellaneous interoperability interfaces
-- Also included is adapter support code and very general concrete implementations for:
+- Also included is adapter support code and very general concrete 
+  implementations for:
   - Support for specialized scalar products for vector spaces
-  - Support serial vector, multi-vector, vector space, and linear operator implementations
-  - Support MPI-based parallel vector, multi-vector, vector space, and linear operator implementations
-- Also included is utility code for helping to write abstract numerical algorithms:
+  - Support serial vector, multi-vector, vector space, and linear operator 
+    implementations
+  - Support MPI-based parallel vector, multi-vector, vector space, and linear 
+    operator implementations
+- Also included is utility code for helping to write abstract numerical 
+  algorithms:
   - Unit tests for linear operators
-  - Composite objects: product vectors, implicit operators (diagonal, scaled/transposed, multiplicative etc.)
+  - Composite objects: product vectors, implicit operators (diagonal, 
+    scaled/transposed, multiplicative etc.)
   - Explicit access to vector and multi-vector coefficients
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
-Triutils:
+Triutils
+
 - Python interface for the matrix gallery
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 CLAPS (limited release only)
 
-- The CLAPS package now contains two domain decomposition preconditioners/solvers. The first, named CLOP, is based on a classic overlapping Schwarz approach with an algebraically constructed coarse space. The second, named CLIP, is an iterative substructuring (Schur complement) approach that can be viewed as a primal counterpart of FETI-DP.
+- The CLAPS package now contains two domain decomposition 
+  preconditioners/solvers. The first, named CLOP, is based on a classic 
+  overlapping Schwarz approach with an algebraically constructed coarse 
+  space. The second, named CLIP, is an iterative substructuring (Schur 
+  complement) approach that can be viewed as a primal counterpart of FETI-DP.
 
-################################################################################
-#
-# Trilinos Release 5.0 Release Notes
-#
-################################################################################
+###############################################################################
+#                                                                             #
+# Trilinos Release 5.0 Release Notes                                          #
+#                                                                             #
+###############################################################################
 
 Overview:
 
@@ -371,7 +553,7 @@ More information:
 
 Trilinos website: http://software.sandia.gov/trilinos 
 
-================================================================================
+===============================================================================
 
 Amesos (version 2.0)
 
@@ -390,7 +572,7 @@ Amesos (version 2.0)
   - Superludist fails on some matrices 
   - Error handling on singular and near singular matrices is inconsistent 
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 Anasazi (New)
 
@@ -407,7 +589,7 @@ Anasazi (New)
 - Many examples for solving standard and generalized eigenvalues problems using 
   Anasazi are provided in this release. 
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 AztecOO
 
@@ -417,7 +599,7 @@ AztecOO
 - Support (optional dependence on Teuchos) for ParameterList-driven use 
   of AztecOO via Teuchos ParameterList objects.
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 Didasko (New)
 
@@ -427,7 +609,7 @@ Didasko (New)
 - All examples are configured with autotools. Users can enable the compilations 
   of the examples by adding --enable-didasko to their configure line. 
 
--------------------------------------------------------------------------------- 
+------------------------------------------------------------------------------- 
 Epetra
 
 - Memory efficiency improvement for MultiVector, CrsGraph and CrsMatrix 
@@ -447,7 +629,7 @@ Epetra
   the so-called Jagged Diagonal data format. This format is especially 
   effective for vector machines such as the Cray X1 and NEC SX series machines.
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
  
 EpetraExt
 
@@ -455,7 +637,7 @@ EpetraExt
 - Sparse matrix Add for Epetra CRS matrices. 
 - Global index map "reindexing" tool for Epetra objects. 
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 Ifpack
 
@@ -469,19 +651,19 @@ Ifpack
 - Two new factorizations, ILUT and ICT, have been introduced. 
 - A new user's guide is available. The doxygen documentation has been improved. 
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 Kokkos (version 1.1)
 
 - No notable new features. 
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 Komplex (version 2.0)
 
 - No notable new features. 
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 LOCA
 
@@ -509,7 +691,7 @@ LOCA
     test exhibiting this functionality can be found in the 
     Trilinos/packages/nox/test/lapack/LOCA_python directory. 
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 ML (version 3.1)
 
@@ -532,14 +714,14 @@ ML (version 3.1)
 - Wrapping an ML_Operator struct as Epetra_RowMatrix is now supported.
 - Improved test coverage.
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 New_Package (version 1.1)
 
 - New tests are working examples of how to add tests to the Trilinos 
   Test-Harness. 
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 NOX
 
@@ -555,7 +737,7 @@ NOX
   test/epetra/Multiphysics directory. This will be expanded to a generic 
   capability in the next year. 
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 Pliris (New)
 
@@ -566,7 +748,7 @@ Pliris (New)
 - Test code allows performance studies - performance is dependent on highly 
   optimized Level 3 BLAS.
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 PyTrilinos (New)
 
@@ -579,7 +761,7 @@ PyTrilinos (New)
 - Wrapped classes support almost all of the class methods. See documentation 
   of wrapped packages for details. 
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 Teuchos
 
@@ -589,10 +771,8 @@ Teuchos
 - Code enabling the conversion from NOX::Parameter::List to 
   Teuchos::ParameterList, and vice versa. 
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 Triutils
 
 - No notable new features. 
-
-################################################################################
