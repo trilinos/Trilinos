@@ -146,12 +146,12 @@ void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs
     const double alpha = inArgs.get_alpha();
     const double beta = inArgs.get_beta();
     NOX::Epetra::Interface::Required::FillType flag = NOX::Epetra::Interface::Required::Jac;
-    Epetra_CrsMatrix& jacobian = problemInterfacePtr_->getJacobian();
-    problemInterfacePtr_->evaluate(flag,&*x,&*xdot,alpha,beta,NULL,&jacobian);
-    W = Teuchos::rcp(&jacobian,false);
+//    Epetra_CrsMatrix& jacobian = problemInterfacePtr_->getJacobian();
+    Epetra_CrsMatrix& jac = Teuchos::dyn_cast<Epetra_CrsMatrix>(*W);
+    problemInterfacePtr_->evaluate(flag,&*x,&*xdot,alpha,beta,NULL,&jac);
 #ifdef EXAMPLEAPPLICATION_DEBUG
-    std::cout << "jacobian = " << std::endl;
-    jacobian.Print(std::cout);
+    std::cout << "jac = " << std::endl;
+    jac.Print(std::cout);
 #endif // EXAMPLEAPPLICATION_DEBUG
   }
 #ifdef EXAMPLEAPPLICATION_DEBUG

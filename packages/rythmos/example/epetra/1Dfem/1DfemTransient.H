@@ -84,6 +84,8 @@
 // User's application specific files 
 #include "1DfemInterface.H" 
 
+#include "Teuchos_dyn_cast.hpp"
+
 using namespace std;
 
 // ------------------------------------------------------------------------
@@ -130,6 +132,8 @@ public:
   		Epetra_RowMatrix* tmp_matrix)
   {
 
+    Epetra_CrsMatrix* jacout;
+    
     //Determine what to fill (F or Jacobian)
     bool fillF = false;
     bool fillMatrix = false;
@@ -139,6 +143,7 @@ public:
     }
     else {
       fillMatrix = true;
+      jacout = &Teuchos::dyn_cast<Epetra_CrsMatrix>(*tmp_matrix);
     }
   
     // "flag" can be used to determine how accurate your fill of F should be
@@ -190,7 +195,7 @@ public:
     if (fillF) 
       rhs->PutScalar(0.0);
     if (fillMatrix) 
-      jacobian->PutScalar(0.0);
+      jacout->PutScalar(0.0);
   
     // Loop Over # of Finite Elements on Processor
     for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
@@ -240,7 +245,7 @@ public:
                 8.0/factor/factor*
                 (2.0*basis.uu-3.0*basis.uu*basis.uu)*
                 basis.phi[j]*basis.phi[i])); // 09/21/05 tscoffe
-  	      ierr=jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
+  	      ierr=jacout->SumIntoGlobalValues(row, 1, &jac, &column);
   	    }
   	  }
   	}
@@ -256,10 +261,10 @@ public:
       if (fillMatrix) {
         column=0;
         jac=1.0;
-        jacobian->ReplaceGlobalValues(0, 1, &jac, &column);
+        jacout->ReplaceGlobalValues(0, 1, &jac, &column);
         column=1;
         jac=0.0;
-        jacobian->ReplaceGlobalValues(0, 1, &jac, &column);
+        jacout->ReplaceGlobalValues(0, 1, &jac, &column);
       }
     }
 
@@ -272,17 +277,17 @@ public:
       row=NumGlobalElements-1;
       column=row;
       jac=1.0;
-      jacobian->ReplaceGlobalValues(row, 1, &jac, &column);
+      jacout->ReplaceGlobalValues(row, 1, &jac, &column);
       column--;
       jac=0.0;
-      jacobian->ReplaceGlobalValues(row, 1, &jac, &column);
+      jacout->ReplaceGlobalValues(row, 1, &jac, &column);
     }
   }
 
     // Sync up processors to be safe
     Comm->Barrier();
    
-    jacobian->FillComplete();
+    jacout->FillComplete();
   
     return true;
   }

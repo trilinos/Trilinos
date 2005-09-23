@@ -50,7 +50,6 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
-#include "Thyra_LinearNonlinearSolver.hpp"
 #include "Thyra_NewtonNonlinearSolver.hpp"
 #include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
 #include "Thyra_TestingTools.hpp"
@@ -131,8 +130,10 @@ int main(int argc, char *argv[])
     Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
       W_factory;
     if(method_val == METHOD_BE)
+    {
       //W_factory = Teuchos::rcp(new Thyra::DiagonalEpetraLinearOpWithSolveFactory());
       W_factory = Teuchos::rcp(new Thyra::AmesosLinearOpWithSolveFactory());
+    }
 
     // create interface to problem
     Teuchos::RefCountPtr<ExampleApplication>
@@ -152,7 +153,11 @@ int main(int argc, char *argv[])
     } else if (method_val == METHOD_BE) {
       Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<double> >
         nonlinearSolver;
-      nonlinearSolver = Teuchos::rcp(new Thyra::LinearNonlinearSolver<double>());
+//    nonlinearSolver = Teuchos::rcp(new Thyra::LinearNonlinearSolver<double>());
+      Teuchos::RefCountPtr<Thyra::NewtonNonlinearSolver<double> >
+        _nonlinearSolver = Teuchos::rcp(new Thyra::NewtonNonlinearSolver<double>());
+      _nonlinearSolver->defaultTol(1e-3*maxError);
+      nonlinearSolver = _nonlinearSolver;
       stepper_ptr = Teuchos::rcp(new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
       method = "Backward Euler";
     } else {
