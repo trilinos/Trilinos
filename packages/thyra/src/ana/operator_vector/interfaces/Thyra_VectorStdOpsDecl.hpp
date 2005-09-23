@@ -239,6 +239,16 @@ void Vp_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar
 template<class Scalar>
 void Vp_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x, const Scalar& beta );
 
+/** \brief <tt>y(i) = x(i), i = 1...y->space()->dim()</tt>.
+ */
+template<class Scalar>
+void V_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x );
+
+/** \brief <tt>y(i) = alpha, i = 1...y->space()->dim()</tt>.
+ */
+template<class Scalar>
+void V_S( VectorBase<Scalar>* y, const Scalar& alpha );
+
 /** \brief <tt>z(i) = x(i) + y(i), i = 1...z->space()->dim()</tt>.
  */
 template<class Scalar>

@@ -358,6 +358,18 @@ void Thyra::Vp_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x, const Scal
 }
 
 template<class Scalar>
+void Thyra::V_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x )
+{
+  assign(&*y,x);
+}
+
+template<class Scalar>
+void Thyra::V_S( VectorBase<Scalar>* y, const Scalar& alpha )
+{
+  assign(&*y,alpha);
+}
+
+template<class Scalar>
 void Thyra::V_VpV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;

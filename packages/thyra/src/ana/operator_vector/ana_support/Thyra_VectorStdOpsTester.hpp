@@ -212,11 +212,12 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   bool success = true;
   if(out) *out << "\nvecSpc.dim() = " << vecSpc.dim() << std::endl;
 
-  if(out) *out << "\nCreating vectors v1, v2, v3 and z ...\n";
+  if(out) *out << "\nCreating vectors v1, v2, v3, x and z ...\n";
   Teuchos::RefCountPtr<VectorBase<Scalar> >
     v1 = createMember(vecSpc),
     v2 = createMember(vecSpc),
     v3 = createMember(vecSpc),
+    x  = createMember(vecSpc),
     z  = createMember(vecSpc);
 
   if(out) *out << "\nassign(&*v1,-2.0);\n";
@@ -272,6 +273,90 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
     ) success=false;
 
   // ToDo: Add tests for *all* standard operators!
+  
+  Scalar alpha;
+  Scalar beta;
+
+  // Test V_StVpV
+  if(out) *out << "\nV_StVpV(&*z,alpha,*v1,*v2);\n";
+  v1 = createMember(vecSpc);
+  v2 = createMember(vecSpc);
+  v3 = createMember(vecSpc);
+  x  = createMember(vecSpc);
+  z  = createMember(vecSpc);
+  alpha = Scalar(1.2345);
+  seed_randomize<Scalar>(12345);
+  randomize(Scalar(-10*ST::one()),Scalar(10*ST::one()),&*v1);
+  randomize(Scalar(-10*ST::one()),Scalar(10*ST::one()),&*v2);
+  V_StVpV(&*v3,alpha,*v1,*v2);
+  V_V(&*z,*v1);
+  Vp_V(&*z,*v2,alpha);
+  V_V(&*x,*v3);
+  Vp_V(&*x,*z,Scalar(-ST::one()));
+  if(!testRelErr<Scalar>(
+       "norm_2(*x)",norm_2(*x)
+       ,"0.0",ST::zero()
+       ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
+       )
+    ) success=false;
+
+  // Test Vp_V
+  if(out) *out << "\nVp_V(&*v1,*v2,beta);\n";
+  v1 = createMember(vecSpc);
+  v2 = createMember(vecSpc);
+  v3 = createMember(vecSpc);
+  x  = createMember(vecSpc);
+  z  = createMember(vecSpc);
+  alpha = Scalar(-2.0);
+  beta = Scalar(10.0);
+  V_S(&*v1,alpha);
+  seed_randomize<Scalar>(12345);
+  randomize(Scalar(-10*ST::one()),Scalar(10*ST::one()),&*v2);
+  Vp_V(&*v1,*v2,beta); 
+  V_S(&*v3,alpha);
+  V_StVpV(&*z,beta,*v3,*v2);
+  V_StVpV(&*x,Scalar(-ST::one()),*z,*v1);
+  if(!testRelErr<Scalar>(
+       "norm_2(*x)",norm_2(*x)
+       ,"0.0",ST::zero()
+       ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
+       )
+    ) success=false;
+
+  // Test V_S
+  if(out) *out << "\nV_S(&*v1,alpha);\n";
+  v1 = createMember(vecSpc);
+  v2 = createMember(vecSpc);
+  z  = createMember(vecSpc);
+  alpha = Scalar(1.2345);
+  assign(&*v1,alpha);
+  V_S(&*v2,alpha);
+  V_StVpV(&*z,Scalar(-1*ST::one()),*v1,*v2);
+  if(!testRelErr<Scalar>(
+       "norm_2(*z)",norm_2(*z)
+       ,"0.0",ST::zero()
+       ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
+       )
+    ) success=false;
+
+  
+  // Test V_V
+  if(out) *out << "\nV_V(&*v1,*v2);\n";
+  v1 = createMember(vecSpc);
+  v2 = createMember(vecSpc);
+  z  = createMember(vecSpc);
+  seed_randomize<Scalar>(12345);
+  randomize(Scalar(-10*ST::one()),Scalar(10*ST::one()),&*v1);
+  V_V(&*v2,*v1);
+  V_StVpV(&*z,Scalar(-1*ST::one()),*v1,*v2);
+  if(!testRelErr<Scalar>(
+       "norm_2(*z)",norm_2(*z)
+       ,"0.0",ST::zero()
+       ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
+       )
+    ) success=false;
+  
+
 
   if(out) *out
     << "\n*** Leaving VectorStdOpsTester<"<<ST::name()<<">::checkStdOps(...) ...\n";
