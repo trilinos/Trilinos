@@ -144,6 +144,9 @@ struct PHGPartParamsStruct {
   float EdgeSizeThreshold;  /* % of global vtxs beyond which an edge is 
                                considered to be dense. */
   char parkway_serpart[MAX_PARAM_STRING_LEN];  /* SerialPartitioner for parKway. */    
+  char balance_obj[MAX_PARAM_STRING_LEN];  /* Balancing objective:
+                                                usually vertices (rows),
+                                                but could be pins (nonzeros) */
 };
 
 typedef struct PHGPartParamsStruct PHGPartParams;

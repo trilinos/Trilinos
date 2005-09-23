@@ -58,6 +58,7 @@ static PARAM_VARS PHG_params[] = {
   {"EDGE_SIZE_THRESHOLD",             NULL,  "FLOAT",  0},
   {"PHG_BAL_TOL_ADJUSTMENT",          NULL,  "FLOAT",  0},  
   {"PARKWAY_SERPART",                 NULL,  "STRING", 0},
+  {"BALANCE_OBJ",                     NULL,  "STRING", 0},
   {NULL,                              NULL,  NULL,     0}     
 };
 
@@ -382,7 +383,6 @@ static int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_FM_MAX_NEG_MOVE", &hgp->fm_max_neg_move);  
   Zoltan_Bind_Param(PHG_params, "PHG_COARSE_PARTITIONING", 
                                  hgp->coarsepartition_str);
-
   Zoltan_Bind_Param(PHG_params, "PHG_COARSE_ITERATIONS",
                                  (void*) &hgp->num_coarse_iter);  
   Zoltan_Bind_Param(PHG_params, "PHG_USE_TIMERS",
@@ -393,9 +393,10 @@ static int Zoltan_PHG_Initialize_Params(
                                  (void*) &hgp->EdgeSizeThreshold);  
   Zoltan_Bind_Param(PHG_params, "PHG_BAL_TOL_ADJUSTMENT",
                                  (void*) &hgp->bal_tol_adjustment);  
-
   Zoltan_Bind_Param(PHG_params, "PARKWAY_SERPART",
                     hgp->parkway_serpart);  
+  Zoltan_Bind_Param(PHG_params, "BALANCE_OBJ",
+                    hgp->balance_obj);  
   
   /* Set default values */
   strncpy(hgp->redm_str,            "ipm",   MAX_PARAM_STRING_LEN);
@@ -404,6 +405,7 @@ static int Zoltan_PHG_Initialize_Params(
   strncpy(hgp->coarsepartition_str, "gr0",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->parkway_serpart,     "patoh", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->balance_obj,      "vertices", MAX_PARAM_STRING_LEN);
 
   hgp->use_timers = 0;
   hgp->proc_split = 1;

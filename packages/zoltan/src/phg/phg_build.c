@@ -637,12 +637,31 @@ float *tmpwgts = NULL;
   }
   else {
     /* Application did not specify object weights, but PHG code needs them.
-     * Create uniform weights.
+     * Create uniform weights, or use #pins.
      */
     phg->VtxWeightDim = 1;
     phg->vwgt = (float *) ZOLTAN_MALLOC(phg->nVtx * sizeof(float));
-    for (i = 0; i < phg->nVtx; i++)
-      phg->vwgt[i] = 1.;
+ 
+    if ((!strcasecmp(hgp->balance_obj, "pins")) || 
+         !strcasecmp(hgp->balance_obj, "nonzeros")) {
+      /* set vertex weight to vertex degree */
+      if (!tmpwgts){
+        tmpwgts = (float *) ZOLTAN_MALLOC(phg->nVtx * sizeof(float));
+        if (phg->nVtx && !tmpwgts) MEMORY_ERROR;
+      }
+      /* first compute local degree in tmpwgts */
+      for (i = 0; i < phg->nVtx; i++){
+        tmpwgts[i] = phg->vindex[i+1] - phg->vindex[i];
+      }
+      /* sum local degrees to global degrees and use as vtx weight */
+      MPI_Allreduce(tmpwgts, phg->vwgt, phg->nVtx, MPI_FLOAT, MPI_SUM, 
+                    phg->comm->col_comm);
+    }
+    else {
+      /* unit weights */
+      for (i = 0; i < phg->nVtx; i++)
+        phg->vwgt[i] = 1.;
+    }
   }
 
   if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
