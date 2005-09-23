@@ -42,7 +42,13 @@
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 
+#ifdef HAVE_COMPLEX
 typedef std::complex<double> ScalarType;
+#elif HAVE_COMPLEX_H
+typedef ::complex<double> ScalarType;
+#else
+typedef double ScalarType
+#endif
 
 #include "MyMultiVec.hpp"
 #include "MyOperator.hpp"
@@ -71,7 +77,7 @@ int main(int argc, char *argv[])
   }
 
   // Create a sort manager to sort for the eigenvalue with largest real part.
-  Anasazi::BasicSort<std::complex<double>,MyMultiVec,MyOperator> mySort("LR");
+  Anasazi::BasicSort<ScalarType, MyMultiVec, MyOperator> mySort("LR");
 
 
 #ifdef HAVE_MPI
