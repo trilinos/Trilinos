@@ -237,7 +237,8 @@ void Vp_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar
 /** \brief <tt>y(i) = x(i) + beta*y(i), i = 1...y->space()->dim()</tt>.
  */
 template<class Scalar>
-void Vp_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x, const Scalar& beta );
+void Vp_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x, const Scalar& beta = Teuchos::ScalarTraits<Scalar>::one() );
+
 
 /** \brief <tt>y(i) = x(i), i = 1...y->space()->dim()</tt>.
  */
