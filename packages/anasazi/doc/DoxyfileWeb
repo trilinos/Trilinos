@@ -42,7 +42,7 @@
 
 PROJECT_NAME           = Anasazi
 
-INPUT                  = ../src index.doc
+INPUT                  = ../src ../thyra/src index.doc
 
 EXAMPLE_PATH           = ../example
 
