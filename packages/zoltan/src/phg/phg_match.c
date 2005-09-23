@@ -28,6 +28,7 @@ extern "C" {
 */
 #define SPARSE_CANDIDATES
 #undef  USE_SUBROUNDS
+#define NEW_PHASE3
 
     /*
 #define _DEBUG
@@ -47,6 +48,8 @@ struct triplet {
     int partner;  /* gno of best match found so far */
     float ip;     /* inner product */
 };
+
+static struct triplet *Tmp_Best = NULL;  /* Temp buf used in MPI_Allreduce fn */
 
 /* special sorting routines */
 static void quicksort_list_inc_struct (
@@ -473,6 +476,8 @@ static int pmatching_ipm (ZZ *zz,
      || !(master_data  = (int*)  ZOLTAN_MALLOC (3 * nTotal * sizeof (int)))
 #ifdef NEW_PHASE3
      || !(global_best = (struct triplet*) ZOLTAN_MALLOC(nTotal *
+                                                       sizeof(struct triplet)))
+     || !(Tmp_Best    = (struct triplet*) ZOLTAN_MALLOC(nTotal *
                                                        sizeof(struct triplet)))
 #endif
      || !(master_procs = (int*)  ZOLTAN_MALLOC (nTotal     * sizeof (int)))) {
@@ -1118,6 +1123,7 @@ fini:
     MPI_Op_free(&phasethreeop);
     MPI_Type_free(&phasethreetype);
     ZOLTAN_FREE(&global_best);
+    ZOLTAN_FREE(&Tmp_Best);
   }
 #endif
 
@@ -1207,17 +1213,15 @@ static void phasethreemerge(
 int num = *tnum;
 struct triplet *in = (struct triplet *) tin;
 struct triplet *inout = (struct triplet *) tinout;
-struct triplet *tmp;
-int i, o, t;  /* Position indices for in, inout, and tmp */
+int i, o, t;  /* Position indices for in, inout, and Tmp_Best */
 int j;
 
-  tmp = (struct triplet *) ZOLTAN_MALLOC(num * sizeof(struct triplet));
   i = o = t = 0;
   while (i < num && o < num) {
 
     /* Copy in candidates that are smaller than current inout candidate */
     while ((i < num) && (in[i].cand < inout[o].cand)) {
-      tmp[t] = in[i];
+      Tmp_Best[t] = in[i];
       t++; i++;
     }
 
@@ -1226,7 +1230,7 @@ int j;
 
     /* Copy inout candidates that are smaller than current in candidate */
     while ((o < num) && (inout[o].cand < in[i].cand)) {
-      tmp[t] = inout[o];
+      Tmp_Best[t] = inout[o];
       t++; o++;
     } 
    
@@ -1238,27 +1242,27 @@ int j;
 
     /* If both lists contain the same candidate... */
     if (in[i].cand == inout[o].cand) {
-      tmp[t].cand = in[i].cand;
+      Tmp_Best[t].cand = in[i].cand;
       if (in[i].ip > inout[o].ip) {
         /* in has larger inner product */
-        tmp[t].ip = in[i].ip;
-        tmp[t].partner = in[i].partner;
+        Tmp_Best[t].ip = in[i].ip;
+        Tmp_Best[t].partner = in[i].partner;
       }
       else if (inout[o].ip > in[i].ip) {
         /* inout has larger inner product */
-        tmp[t].ip = inout[o].ip;
-        tmp[t].partner = inout[o].partner;
+        Tmp_Best[t].ip = inout[o].ip;
+        Tmp_Best[t].partner = inout[o].partner;
       }
       else { /* IP TIE */
         /* KDDKDD currently breaking ties by larger partner gno; change
          * KDDKDD to include owning processor here. */
         if (in[i].partner > inout[o].partner) {
-          tmp[t].ip = in[i].ip;
-          tmp[t].partner = in[i].partner;
+          Tmp_Best[t].ip = in[i].ip;
+          Tmp_Best[t].partner = in[i].partner;
         }
         else {
-          tmp[t].ip = inout[o].ip;
-          tmp[t].partner = inout[o].partner;
+          Tmp_Best[t].ip = inout[o].ip;
+          Tmp_Best[t].partner = inout[o].partner;
         }
       } 
       t++; i++; o++;
@@ -1267,19 +1271,17 @@ int j;
 
   /* Copy valid extras from end of arrays. */
   while ((i < num) && (in[i].cand != INT_MAX)) {
-    tmp[t] = in[i];
+    Tmp_Best[t] = in[i];
     t++; i++;
   }
   while ((o < num) && (inout[o].cand != INT_MAX)) {
-    tmp[t] = inout[o];
+    Tmp_Best[t] = inout[o];
     t++; o++;
   }
 
   /* Copy result back into inout */
   for (j = 0; j < t; j++)
-    inout[j] = tmp[j];
-
-  ZOLTAN_FREE(&tmp);
+    inout[j] = Tmp_Best[j];
 }
 
 
