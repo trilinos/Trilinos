@@ -286,8 +286,8 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   z  = createMember(vecSpc);
   alpha = Scalar(1.2345);
   seed_randomize<Scalar>(12345);
-  randomize(Scalar(-10*ST::one()),Scalar(10*ST::one()),&*v1);
-  randomize(Scalar(-10*ST::one()),Scalar(10*ST::one()),&*v2);
+  randomize(Scalar(Scalar(-10)*ST::one()),Scalar(Scalar(10)*ST::one()),&*v1);
+  randomize(Scalar(Scalar(-10)*ST::one()),Scalar(Scalar(10)*ST::one()),&*v2);
   V_StVpV(&*v3,alpha,*v1,*v2);
   V_V(&*z,*v1);
   Vp_V(&*z,*v2,alpha);
@@ -311,7 +311,7 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   beta = Scalar(10.0);
   V_S(&*v1,alpha);
   seed_randomize<Scalar>(12345);
-  randomize(Scalar(-10*ST::one()),Scalar(10*ST::one()),&*v2);
+  randomize(Scalar(Scalar(-10)*ST::one()),Scalar(Scalar(10)*ST::one()),&*v2);
   Vp_V(&*v1,*v2,beta); 
   V_S(&*v3,alpha);
   V_StVpV(&*z,beta,*v3,*v2);
@@ -333,7 +333,7 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   alpha = Scalar(-2.0);
   V_S(&*v1,alpha);
   seed_randomize<Scalar>(12345);
-  randomize(Scalar(-10*ST::one()),Scalar(10*ST::one()),&*v2);
+  randomize(Scalar(Scalar(-10)*ST::one()),Scalar(Scalar(10)*ST::one()),&*v2);
   Vp_V(&*v1,*v2); 
   V_S(&*v3,alpha);
   V_StVpV(&*z,ST::one(),*v3,*v2);
@@ -353,7 +353,7 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   alpha = Scalar(1.2345);
   assign(&*v1,alpha);
   V_S(&*v2,alpha);
-  V_StVpV(&*z,Scalar(-1*ST::one()),*v1,*v2);
+  V_StVpV(&*z,Scalar(-ST::one()),*v1,*v2);
   if(!testRelErr<Scalar>(
        "norm_2(*z)",norm_2(*z)
        ,"0.0",ST::zero()
@@ -368,9 +368,9 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   v2 = createMember(vecSpc);
   z  = createMember(vecSpc);
   seed_randomize<Scalar>(12345);
-  randomize(Scalar(-10*ST::one()),Scalar(10*ST::one()),&*v1);
+  randomize(Scalar(Scalar(-10)*ST::one()),Scalar(Scalar(10)*ST::one()),&*v1);
   V_V(&*v2,*v1);
-  V_StVpV(&*z,Scalar(-1*ST::one()),*v1,*v2);
+  V_StVpV(&*z,Scalar(-ST::one()),*v1,*v2);
   if(!testRelErr<Scalar>(
        "norm_2(*z)",norm_2(*z)
        ,"0.0",ST::zero()
