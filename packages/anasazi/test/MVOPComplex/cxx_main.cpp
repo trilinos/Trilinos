@@ -31,16 +31,13 @@
 //  and checks functionality.
 //
 
-#ifdef HAVE_MPI
-#include "mpi.h"
-#endif
-#ifndef __cplusplus
-#define __cplusplus
-#endif
-
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziEpetraAdapter.hpp"
+
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 
 #ifdef HAVE_COMPLEX
 typedef std::complex<double> ScalarType;
