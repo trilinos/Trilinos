@@ -287,7 +287,7 @@ static int pmatching_alt_ipm(
                
 #define ROUNDS_CONSTANT 8     /* controls the number of candidate vertices */ 
 #define IPM_TAG        28731  /* MPI message tag, arbitrary value */
-#define HEADER_COUNT    4     /* Phase 2 send buffer header size in ints */
+#define HEADER_COUNT    3     /* Phase 2 send buffer header size in ints */
 
 /* these thresholds need to become parameters in phg - maybe ??? */
 #define PSUM_THRESHOLD 0.0    /* ignore inner products (i.p.) < threshold */
@@ -395,7 +395,7 @@ static int pmatching_ipm (ZZ *zz,
   float *sums = NULL, /* holds inner product of one candidate for each vertex */
         *f = NULL;    /* used to stuff floating value into integer message */
   PHGComm *hgc = hg->comm;
-  int err = ZOLTAN_OK, old_row, row, col;
+  int err = ZOLTAN_OK, old_row, row;
   int max_nPins, max_nVtx;       /* Global max # pins/proc and vtx/proc */
   int **rows = NULL;             /* used only in merging process */
   int bestlno, vertex, nselect, edge;
@@ -718,7 +718,7 @@ static int pmatching_ipm (ZZ *zz,
         if (count == 0)
           continue;         /* no partial sums to append to message */
 
-        /* HEADER_COUNT (row, col, gno, count of <lno, psum> pairs) */                    
+        /* HEADER_COUNT (row, gno, count of <lno, psum> pairs) */                    
         msgsize = HEADER_COUNT + 2 * count;
 
 #ifndef USE_SUBROUNDS
@@ -745,7 +745,6 @@ static int pmatching_ipm (ZZ *zz,
           sendsize       += msgsize;          /* cummulative size of message */
           
           *s++ = hgc->myProc_y;      /* save my row (for merging) */
-          *s++ = hgc->myProc_x;      /* save my col (for debugging) */
           *s++ = gno;          
           *s++ = count;
           for (i = 0; i < count; i++)  {          
@@ -785,7 +784,6 @@ static int pmatching_ipm (ZZ *zz,
       k = 0;
       for (r = rec; r < rec + recsize  &&  k < hgc->nProc_y; )  {     
         row = *r++;        
-        col = *r++;               /* column only for debugging, may go away */
         if (row != old_row)  {
           index[k++] = r - rec;   /* points at gno, not row or col */
           old_row = row;
@@ -823,7 +821,7 @@ static int pmatching_ipm (ZZ *zz,
                 aux[m++] = lno;           /* then save the lno */          
               sums[lno] += *(float*) (++rows[i]);    /* sum the psums */
             }
-            rows[i] += 3;                 /* skip past current lno, row, col */       
+            rows[i] += 2;                 /* skip past current psum, row */
           }
         }
           
