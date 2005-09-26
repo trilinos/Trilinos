@@ -221,6 +221,11 @@ int main(int argc, char *argv[])
     }  
 
     bool tempMeth = true;
+
+    //-----------------------------------------------------------
+    // Check the templated 'get' method.
+    //-----------------------------------------------------------
+
 #ifdef HAVE_TEMPLATE_QUALIFIER
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list using templated "get" method.
@@ -259,6 +264,132 @@ int main(int argc, char *argv[])
 	cout<< "  Can we retrieve information using the WRONG variable type ... ";
     }
     if (tempMeth) { if (verbose) cout << "no" << endl; }
+    else { if (verbose) cout << "yes" << endl; }
+
+#else // HAVE_TEMPLATE_QUALIFIER
+    //-----------------------------------------------------------
+    // Retrieve some information from the parameter list using templated "get" method.
+    // (This will only be tested if the compiler does not except "template" as a qualifier)
+    //-----------------------------------------------------------
+    int max_iters = 0;
+    string nonlin_solver;
+    tempMeth = true;
+    try {
+      max_iters = PL_My_Polynomial.template get<int>("Max Iters");
+      nonlin_solver = PL_Main.get<string>("Nonlinear Solver");
+    }
+    catch( std::exception& e ) { tempMeth = false; }  
+    if (verbose) {
+	cout<< "Is the templated 'get' method functional ... "<<endl;
+	cout<< "  Can we retrieve information using the CORRECT variable type ... ";
+    }
+    if (tempMeth && max_iters==3) { if (verbose) cout << "yes" << endl; }
+    else { if (verbose) cout << "no" << endl; FailedTests++; }
+
+    //-----------------------------------------------------------
+    // Retrieve some information from the parameter list that we know is a bad "get".
+    // (This will only be tested if the compiler does not except "template" as a qualifier)
+    //-----------------------------------------------------------
+    float mbf = 0.0;
+    tempMeth = false;
+    FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
+    try {
+	mbf = PL_LinSol.get<float>( "Tol" );
+    }
+    catch( std::exception& e ) {
+	tempMeth = true;
+	FailedTests--;		
+    }
+    if (verbose) {
+	cout<< "  Can we retrieve information using the WRONG variable type ... ";
+    }
+    if (tempMeth) { if (verbose) cout << "no" << endl; }
+    else { if (verbose) cout << "yes" << endl; }
+
+#endif // HAVE_TEMPLATE_QUALIFIER
+
+    //-----------------------------------------------------------
+    // Check the templated 'getPtr' method.
+    //-----------------------------------------------------------
+
+#ifdef HAVE_TEMPLATE_QUALIFIER
+    //-----------------------------------------------------------
+    // Retrieve some information from the parameter list using templated "get" method.
+    // (This will only be tested if the compiler excepts "template" as a qualifier)
+    //-----------------------------------------------------------
+    int* max_iters_ptr = 0;
+    string* nonlin_solver_ptr;
+
+    max_iters_ptr = PL_My_Polynomial.template getPtr<int>("Max Iters");
+    nonlin_solver_ptr = PL_Main.template getPtr<string>("Nonlinear Solver");
+
+    if (verbose) {
+	cout<< "Is the templated 'getPtr' method functional ... "<<endl;
+	cout<< "  Can we retrieve information using the CORRECT variable type ... ";
+    }
+    if (max_iters_ptr) {
+	if ((*max_iters_ptr)==3) {
+		if (verbose) cout << "yes" << endl; 
+	}
+    	else { if (verbose) cout << "no" << endl; FailedTests++; }
+    }
+
+    //-----------------------------------------------------------
+    // Retrieve some information from the parameter list that we know is a bad "get".
+    // (This will only be tested if the compiler excepts "template" as a qualifier)
+    //-----------------------------------------------------------
+    float* mbf_ptr = 0;
+    FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
+
+    mbf_ptr = PL_LinSol.template getPtr<float>( "Tol" );
+
+    if (!mbf_ptr)
+	FailedTests--;		
+
+    if (verbose) {
+	cout<< "  Can we retrieve information using the WRONG variable type ... ";
+    }
+    if (!mbf_ptr) { if (verbose) cout << "no" << endl; }
+    else { if (verbose) cout << "yes" << endl; }
+
+#else // HAVE_TEMPLATE_QUALIFIER
+    //-----------------------------------------------------------
+    // Retrieve some information from the parameter list using templated "get" method.
+    // (This will only be tested if the compiler does not except "template" as a qualifier)
+    //-----------------------------------------------------------
+    int* max_iters_ptr = 0;
+    string* nonlin_solver_ptr;
+
+    max_iters_ptr = PL_My_Polynomial.template getPtr<int>("Max Iters");
+    nonlin_solver_ptr = PL_Main.template getPtr<string>("Nonlinear Solver");
+
+    if (verbose) {
+	cout<< "Is the templated 'getPtr' method functional ... "<<endl;
+	cout<< "  Can we retrieve information using the CORRECT variable type ... ";
+    }
+    if (max_iters_ptr) {
+	if ((*max_iters_ptr)==3) {
+		if (verbose) cout << "yes" << endl; 
+	}
+    	else { if (verbose) cout << "no" << endl; FailedTests++; }
+    }
+
+    //-----------------------------------------------------------
+    // Retrieve some information from the parameter list that we know is a bad "get".
+    // (This will only be tested if the compiler does not except "template" as a qualifier)
+    //-----------------------------------------------------------
+    float* mbf_ptr = 0;
+    FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
+
+    mbf_ptr = PL_LinSol.template getPtr<float>( "Tol" );
+
+    if (!mbf_ptr)
+	FailedTests--;		
+
+    if (verbose) {
+	cout<< "  Can we retrieve information using the WRONG variable type ... ";
+    }
+    if (!mbf_ptr) { if (verbose) cout << "no" << endl; }
     else { if (verbose) cout << "yes" << endl; }
 
 #endif // HAVE_TEMPLATE_QUALIFIER

@@ -158,12 +158,25 @@ public:
   template<typename T>
   T& get(const string& name);
   
-  /*! \brief Retrieves parameter \c name of type \c T from a constant list, an exception is thrown if this parameter doesn't exist.
+  /*! \brief Retrieves parameter \c name of type \c T from a constant list, an exception is thrown if this parameter doesn't exist or is the wrong type.
     \note The syntax for calling this method is:  <tt> list.template get<int>( "Iters" ) </tt>
   */
   template<typename T>
   const T& get(const string& name) const;  
   
+  /*! \brief Retrieves the pointer for parameter \c name of type \c T from a list.  A null pointer is returned if this parameter doesn't exist or is the wrong type.
+    \note The syntax for calling this method is:  <tt> list.template getPtr<int>( "Iters" ) </tt>
+  */
+  template<typename T>
+  T* getPtr(const string& name);
+  
+  /*! \brief Retrieves the pointer for parameter \c name of type \c T from a constant list.  A null pointer is returned if this parameter doesn't exist or is the wrong type.
+    \note The syntax for calling this method is:  <tt> list.template getPtr<int>( "Iters" ) </tt>
+  */
+  template<typename T>
+  const T* getPtr(const string& name) const;  
+  
+
   //@}
   
   //@{ \name Sublist Methods
@@ -295,6 +308,32 @@ private:
     
     // Return the default value for this type
     return getValue<T>(entry(i));
+  }
+
+  template<typename T>
+  T* ParameterList::getPtr(const string& name) 
+  {
+    ConstIterator i = params_.find(name);
+    
+    // This parameter was not found or is wrong type, return a null pointer.
+    if ( i == params_.end() || !isType( name, (T*)(NULL) ) )
+	return (T*)(NULL);
+
+    // Return a pointer to the value.
+    return &getValue<T>(entry(i));
+  }
+  
+  template<typename T>
+  const T* ParameterList::getPtr(const string& name) const
+  {
+    ConstIterator i = params_.find(name);
+
+    // This parameter was not found or is wrong type, return a null pointer.
+    if ( i == params_.end() || !isType( name, (T*)(NULL) ) )
+	return (T*)(NULL);
+    
+    // Return the pointer to the value.
+    return &getValue<T>(entry(i));
   }
   
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
