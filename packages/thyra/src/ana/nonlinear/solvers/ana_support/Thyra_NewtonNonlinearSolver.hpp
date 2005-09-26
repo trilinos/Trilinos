@@ -124,7 +124,7 @@ SolveStatus<Scalar> NewtonNonlinearSolver<Scalar>::solve(
   int iter = 1;
   for( ; iter <= maxIters; ++iter ) {
     // Evaluate f and W
-    eval_f_W( model, *x, ST::one(), &*f, &*J );
+    eval_f_W( model, *x_curr, ST::one(), &*f, &*J );
     // Solve the system: J*dx = -f
     SolveCriteria<Scalar> linearSolveCriteria(SOLVE_TOL_REL_RESIDUAL_NORM,linearTolSafety*tol);
     SolveStatus<Scalar>
@@ -142,7 +142,7 @@ SolveStatus<Scalar> NewtonNonlinearSolver<Scalar>::solve(
       // ToDo: Add option to throw exception failure
     }
     // Update the solution: x_curr = x_curr + dx
-    Vp_StV( &*x_curr, ST::one(), *dx );
+    Vp_V( &*x_curr, *dx );
     // Convergence test
     const ScalarMag nrm_dx = Thyra::norm(*dx);
     if(R*nrm_dx < tolSafety*tol) {
