@@ -74,6 +74,9 @@ public:
   /** \brief . */
   void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
 
+  /** \brief . */
+  Teuchos::RefCountPtr<const Epetra_Vector> get_exact_solution(double t) const;
+
   //@}
 
 private:

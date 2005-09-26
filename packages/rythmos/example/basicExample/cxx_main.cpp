@@ -171,15 +171,11 @@ int main(int argc, char *argv[])
     } else if (method_val == METHOD_BE) {
       Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<double> >
         nonlinearSolver;
-      nonlinearSolver = Teuchos::rcp(new Thyra::LinearNonlinearSolver<double>());
-      /*
-      if(1){
-        Teuchos::RefCountPtr<Thyra::NewtonNonlinearSolver<double> >
-          _nonlinearSolver = Teuchos::rcp(new Thyra::NewtonNonlinearSolver<double>());
-        _nonlinearSolver->defaultTol(1e-3*maxError);
-        nonlinearSolver = _nonlinearSolver;
-      }
-      */
+//    nonlinearSolver = Teuchos::rcp(new Thyra::LinearNonlinearSolver<double>());
+      Teuchos::RefCountPtr<Thyra::NewtonNonlinearSolver<double> >
+        _nonlinearSolver = Teuchos::rcp(new Thyra::NewtonNonlinearSolver<double>());
+      _nonlinearSolver->defaultTol(1e-3*maxError);
+      nonlinearSolver = _nonlinearSolver;
       stepper_ptr = Teuchos::rcp(new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
       method = "Backward Euler";
     } else {
@@ -209,13 +205,38 @@ int main(int argc, char *argv[])
     const Epetra_Vector &x_computed = *x_computed_ptr;
 
     // compute exact answer
+    Teuchos::RefCountPtr<const Epetra_Vector> x_star_ptr = epetraModel->get_exact_solution(t1);
+    const Epetra_Vector& x_star = *x_star_ptr;
+    
+    // get lambda from the problem:
     Teuchos::RefCountPtr<const Epetra_Vector> lambda_ptr = epetraModel->get_coeff();
     const Epetra_Vector &lambda = *lambda_ptr;
-    Epetra_Vector x_star(lambda.Map());
-    for (int i=0 ; i < x_star.MyLength() ; ++i)
+
+    // compute numerical exact answer (for FE and BE)
+    Teuchos::RefCountPtr<const Epetra_Vector> x_numerical_exact_ptr; 
+    if (method_val == METHOD_FE) 
     {
-      x_star[i] = x0*exp(lambda[i]*t1);
+      Teuchos::RefCountPtr<Epetra_Vector> x_exact_ptr = Teuchos::rcp(new Epetra_Vector(x_star.Map()));
+      Epetra_Vector& x_exact = *x_exact_ptr;
+      int myN = x_exact.MyLength();
+      for ( int i=0 ; i<myN ; ++i)
+      {
+        x_exact[i] = x0*pow(1+lambda[i]/N,N);
+      }
+      x_numerical_exact_ptr = x_exact_ptr;
+    } 
+    else if (method_val == METHOD_BE) 
+    {
+      Teuchos::RefCountPtr<Epetra_Vector> x_exact_ptr = Teuchos::rcp(new Epetra_Vector(x_star.Map()));
+      Epetra_Vector& x_exact = *x_exact_ptr;
+      int myN = x_exact.MyLength();
+      for ( int i=0 ; i<myN ; ++i)
+      {
+        x_exact[i] = x0*pow(1/(1-lambda[i]/N),N);
+      }
+      x_numerical_exact_ptr = x_exact_ptr;
     }
+
 
     // 06/03/05 tscoffe to get an Epetra_Map associated with an Epetra_Vector:
     // x.Map()
@@ -259,6 +280,25 @@ int main(int argc, char *argv[])
       ,&std::cerr,""
       );
     if(!result) success = false;
+
+    // Check numerics against exact numerical method for FE and BE case:
+    error = 0;
+    if (x_numerical_exact_ptr.get())
+    {
+      const Epetra_Vector& x_numerical_exact = *x_numerical_exact_ptr;
+      for ( int i=0 ; i<MyLength ; ++i)
+      {
+        const double thisError = Thyra::relErr(x_numerical_exact[i],x_computed[i]);
+        error = std::max(thisError,error);
+      }
+      result = Thyra::testMaxErr(
+        "Exact numerical error",error
+        ,"maxError",1.0e-12
+        ,"maxWarning",1.0e-11
+        ,&std::cerr,""
+        );
+      if(!result) success = false;
+    }
     
 #ifdef HAVE_MPI
     MPI_Finalize();

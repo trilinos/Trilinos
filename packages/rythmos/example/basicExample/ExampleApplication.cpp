@@ -242,3 +242,19 @@ void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs
   std::cout << "----------------------------------------------------------------------" << std::endl;
 #endif
 }
+
+Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplication::get_exact_solution(double t) const
+{
+  Teuchos::RefCountPtr<Epetra_Vector> x_star_ptr = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
+  Epetra_Vector& x_star = *x_star_ptr;
+  Epetra_Vector& lambda = *lambda_ptr_;
+  x_star.PutScalar(0.0);
+  x_star.Scale(t,lambda);
+  int myN = x_star.MyLength();
+  for ( int i=0 ; i<myN ; ++i )
+  {
+    x_star[i] = exp(x_star[i]);
+  }
+  x_star.Scale(x0_);
+  return(x_star_ptr);
+}
