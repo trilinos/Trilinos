@@ -484,7 +484,11 @@ static int pmatching_ipm (ZZ *zz,
      || !(Tmp_Best    = (struct triplet*) ZOLTAN_MALLOC(total_nCandidates *
                                                        sizeof(struct triplet)))
 #endif
-     || !(master_procs = (int*)  ZOLTAN_MALLOC (nTotal     * sizeof (int)))) {
+#ifndef NEW_PHASE3
+     || !(master_procs = (int*)  ZOLTAN_MALLOC (nTotal     * sizeof (int)))
+#endif
+     ) 
+     {
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
        err = ZOLTAN_MEMERR;
        goto fini;
@@ -899,7 +903,10 @@ static int pmatching_ipm (ZZ *zz,
             *mp++ = VTX_LNO_TO_GNO (hg, bestlno);
              f = (float*) mp++;
             *f = bestsum;
-            master_procs[nmaster++] = VTX_TO_PROC_X (hg, gno);
+#ifndef NEW_PHASE3
+            master_procs[nmaster] = VTX_TO_PROC_X (hg, gno);
+#endif
+            nmaster++;
           }
         }
       }
