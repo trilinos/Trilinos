@@ -121,7 +121,6 @@ using namespace std;
 #include "vtkUnstructuredGrid.h"
 #include "vtkDistributedDataFilter.h"
 #include "vtkDataSetSurfaceFilter.h"
-#include "vtkMultiProcessController.h"
 #include "vtkMPIController.h"
 #include "vtkMPICommunicator.h"
 #include "vtkMPIGroup.h"
@@ -255,7 +254,7 @@ static int set_nemesis_file_names_or_pattern(char *baseName,
   char *dirRoot, char *subDir);
 static int check_partition_numbers(vtkUnstructuredGrid *ug);
 static int assign_partition_numbers(vtkUnstructuredGrid *ug);
-static void Run(vtkMultiProcessController *contr, void *arg);
+static void Run(vtkMultiProcessController *c, void *arg);
 static int checkAllrc(int rc, vtkMPICommunicator *comm);
 static int check_valid_range(int val, char *nm, int lo, int hi);
 static void remove_trailing_junk(char *cbegin);
@@ -291,33 +290,22 @@ int main(int argc, char **argv)
 {
   // Establish that we are an MPI application
 
-  vtkMultiProcessController *contr = vtkMultiProcessController::New();
-  contr->Initialize(&argc, &argv);
+  Controller = vtkMPIController::New();
+  Controller->Initialize(&argc, &argv);
 
-  vtkMultiProcessController::SetGlobalController(contr);
+  vtkMPIController::SetGlobalController(Controller);
 
-  NumProcs = contr->GetNumberOfProcesses();
-  Proc = contr->GetLocalProcessId();
+  NumProcs = Controller->GetNumberOfProcesses();
+  Proc = Controller->GetLocalProcessId();
 
-  if (!contr->IsA("vtkMPIController"))
-    {
-    if (Proc == 0)
-      {
-      cout << "vtk_view requires MPI" << endl;
-      }
-    contr->Delete();
-    return 1;
-    }
-
-  Comm = vtkMPICommunicator::SafeDownCast(contr->GetCommunicator());
-  Controller = vtkMPIController::SafeDownCast(contr);
+  Comm = vtkMPICommunicator::SafeDownCast(Controller->GetCommunicator());
 
   // Read and broadcast the input parameters
 
   int rc = read_broadcast_input_options(argc, argv);
 
   if (rc){
-    contr->Delete();
+    Controller->Delete();
     return 1;
   }
 
@@ -337,8 +325,8 @@ int main(int argc, char **argv)
     }
 
     if (rc > 0){
-      contr->Finalize(); 
-      contr->Delete();
+      Controller->Finalize(); 
+      Controller->Delete();
     
       return 1;
     }
@@ -383,20 +371,22 @@ int main(int argc, char **argv)
 
   // Run parallel method, VTK-style.
 
-  contr->SetSingleMethod(Run, NULL);
-  contr->SingleMethodExecute();
+  Controller->SetSingleMethod(Run, NULL);
+  Controller->SingleMethodExecute();
 
-  contr->Finalize();
-  contr->Delete();
+  Controller->Finalize();
+  Controller->Delete();
 
   return 0;
 }
 
-static void Run(vtkMultiProcessController *contr, void *arg)
+static void Run(vtkMultiProcessController *c, void *arg)
 {
   // Read in the Chaco or distributed Nemesis (exodusII) files.
   // Include at least one field array in the event we will not
   // have partition numbers to display.
+
+  vtkMPIController *contr = vtkMPIController::SafeDownCast(c);
 
   vtkUnstructuredGrid *ug = vtkUnstructuredGrid::New();
 
@@ -1161,8 +1151,10 @@ static int set_nemesis_file_names_or_pattern(char *baseName,
   char *dirRoot, char *subDir)
 {
   char **disks=NULL;
-  int nzeros, len, rc, num;
+  int nzeros, num;
   int retVal = 0;
+  int len = 0;
+  int rc = 0;
 
   fileNames = NULL;
   fileNamesBase = NULL;
@@ -1498,7 +1490,8 @@ static void debug_partition_ids(vtkPoints *pts, vtkIntArray *partids)
 #endif
 static int read_zdrive_output(int from, int to)
 {
-char nm[ZMAXPATH], line[1024], *c;
+char nm[ZMAXPATH], line[1024];
+char *c = NULL;
 FILE *fp;
 int g, p, nvals;
 
