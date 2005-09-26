@@ -493,7 +493,11 @@ struct Zoltan_Transform_Struct{
                      0 - geometry is not degenerate, don't transform it
                      1 or 2 - geometry will be projected to line or plane   */
   double Transformation[3][3]; /* transforms degenerate geometry to 2D or 1D */
-  int Permutation[3]; /* if trans. is simple coordinate switch, use this instead */
+  int Permutation[3]; /* if trans. is simple coord switch, use this instead */
+  double CM[3];       /* saved center of mass */
+  double Evecs[3][3]; /* saved eigenvectors */
+  int Axis_Order[3];  /* saved axis alignment information */
+
 };
 
 typedef struct Zoltan_Transform_Struct ZZ_Transform;
@@ -567,6 +571,9 @@ extern int Zoltan_Print_Obj_List( ZZ *zz, ZOLTAN_ID_PTR Gids, ZOLTAN_ID_PTR Lids
 extern int Zoltan_Get_Coordinates(ZZ *, int, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
   int *, double **);
 
+extern void Zoltan_Print_Transformation(ZZ_Transform *tr);
+extern void Zoltan_Copy_Transformation(ZZ_Transform *to, ZZ_Transform *from);
+extern void Zoltan_Initialize_Transformation(ZZ_Transform *tr);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

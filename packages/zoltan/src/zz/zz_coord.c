@@ -58,6 +58,8 @@ static void projected_distances(ZZ *zz, double *coords, int num_obj,
 static void order_decreasing(double *d, int *order);
 static void transform_coordinates(double *coords, int num_obj, int d,
                                   ZZ_Transform *tr);
+static int get_target_dimension(double *dist, int *order, 
+                                double skip_ratio, int d);
 
 #define NEAR_ONE(x) ((x >= .9999) && (x <= 1.0001))
 
@@ -78,12 +80,11 @@ int Zoltan_Get_Coordinates(
   int alloced_coords = 0;
   ZOLTAN_ID_PTR lid;   /* Temporary pointers to local IDs; used to pass 
                           NULL to query functions when NUM_LID_ENTRIES == 0. */
-  double cm[3], dist[3];
-  double evecs[3][3];
+  double dist[3];
   double im[3][3];
   double skip_ratio;
   double flat, x;
-  int order[3], axis_order[3];
+  int order[3];
   int skip_dimensions, d, axis_aligned;
   int target_dim;
   int ierr = ZOLTAN_OK;
@@ -173,6 +174,28 @@ int Zoltan_Get_Coordinates(
   if (((*num_dim == 3) || (*num_dim == 2)) && 
       ((zz->LB.Method==RCB) || (zz->LB.Method==RIB) || (zz->LB.Method==HSFC))){
 
+    Zoltan_Bind_Param(Skip_Dim_Params, "KEEP_CUTS", (void *)&i);
+    Zoltan_Bind_Param(Skip_Dim_Params, "SKIP_DIMENSIONS", 
+                     (void *)&skip_dimensions);
+    Zoltan_Bind_Param(Skip_Dim_Params, "SKIP_RATIO", (void *)&skip_ratio);
+
+    skip_dimensions = 0;
+    skip_ratio = 10.0;
+
+    Zoltan_Assign_Param_Vals(zz->Params, Skip_Dim_Params, zz->Debug_Level,
+                             zz->Proc, zz->Debug_Proc);
+
+    if (skip_dimensions == 0){
+      goto End;
+    }
+
+    if (skip_ratio <= 1){
+      if (zz->Proc == 0){
+        ZOLTAN_PRINT_WARN(0, yo, "SKIP_RATIO <= 1, setting it to 10.0");
+      }
+      skip_ratio = 10.0;
+    }
+
     if (zz->LB.Method == RCB){
       tran = &(((RCB_STRUCT *)(zz->LB.Data_Structure))->Tran);
     } 
@@ -183,67 +206,61 @@ int Zoltan_Get_Coordinates(
       tran = &(((HSFC_Data*)(zz->LB.Data_Structure))->tran);
     }
 
-   d = *num_dim;
+    d = *num_dim;
 
-   if (tran->Target_Dim >= 0){
-     /*
-      * The degeneracy transformation was computed on a previous
-      * call to the load balancing function.  If it was determined
-      * that the geometry was not degenerate (Target_Dim == 0)
-      * then we assume it is still not degenerate, and do nothing.
-      *
-      * If it was determined to be degenerate, we apply the same
-      * transformation we applied before, even though the geometry
-      * may have changed.
-      * TODO: Is this the best course of action?  
-      */
-     if (tran->Target_Dim > 0){
-       transform_coordinates(*coords, num_obj, d, tran);
-     }
-    }
-    else{
-      Zoltan_Bind_Param(Skip_Dim_Params, "KEEP_CUTS", (void *)&i);
-      Zoltan_Bind_Param(Skip_Dim_Params, "SKIP_DIMENSIONS", 
-                       (void *)&skip_dimensions);
-      Zoltan_Bind_Param(Skip_Dim_Params, "SKIP_RATIO", (void *)&skip_ratio);
+    if (tran->Target_Dim >= 0){
+      /*
+       * On a previous load balancing call, we determined whether
+       * or not the geometry was degenerate.  If the geometry was 
+       * determined to be not degenerate, then we assume it is still 
+       * not degenerate, and we skip the degeneracy calculation.  
+       */
+      if (tran->Target_Dim > 0){
+        /*
+         * The geometry *was* degenerate.  We test the extent
+         * of the geometry along the principal directions determined
+         * last time to determine if it is still degenerate with that
+         * orientation.  If so, we transform the coordinates using the
+         * same transformation we used last time.  If not, we do the 
+         * entire degeneracy calculation again.
+         */
+ 
+        if ((tran->Axis_Order[0] >= 0) && 
+            (tran->Axis_Order[1] >= 0) && (tran->Axis_Order[2] >= 0)){
+          axis_aligned = 1;
+        }
+        else{
+          axis_aligned = 0;
+        }
 
-      skip_dimensions = 0;
-      skip_ratio = 10.0;
+        projected_distances(zz, *coords, num_obj, tran->CM, 
+             tran->Evecs, dist, d, axis_aligned, tran->Axis_Order); 
 
-      Zoltan_Assign_Param_Vals(zz->Params, Skip_Dim_Params, zz->Debug_Level,
-                               zz->Proc, zz->Debug_Proc);
+        target_dim = get_target_dimension(dist, order, skip_ratio, d);
 
-      if (skip_dimensions == 0){
-        tran->Target_Dim = 0;  /* flag do NOT transform geometry */
+        if (target_dim > 0){
+          transform_coordinates(*coords, num_obj, d, tran);
+        }
+        else{
+          /* Set's Target_Dim to -1, flag to recompute degeneracy */
+          Zoltan_Initialize_Transformation(tran);
+        }
       }
     }
 
     if (tran->Target_Dim < 0){
 
-      if (skip_ratio <= 1){
-        if (zz->Proc == 0){
-          ZOLTAN_PRINT_WARN(0, yo, "SKIP_RATIO <= 1, setting it to 10.0");
-        }
-        skip_ratio = 10.0;
-      }
-
       tran->Target_Dim = 0;
-      for (i=0; i< 3; i++){
-        for (j=0; j< 3; j++){
-          tran->Transformation[i][j] = 0.0;
-        }
-        tran->Permutation[i] = -1;
-      }
 
       /*
        * Get the center of mass and inertial matrix of coordinates.  Ignore
        * vertex weights, we are only interested in geometry.  Global operation.
        */
       if (d == 2){
-        inertial_matrix2D(zz, *coords, num_obj, cm, im);
+        inertial_matrix2D(zz, *coords, num_obj, tran->CM, im);
       }
       else{
-        inertial_matrix3D(zz, *coords, num_obj, cm, im);
+        inertial_matrix3D(zz, *coords, num_obj, tran->CM, im);
       }
 
       /*
@@ -252,7 +269,7 @@ int Zoltan_Get_Coordinates(
        * orientation of the geometry.
        */
 
-      rc = eigenvectors(im, evecs, d);
+      rc = eigenvectors(im, tran->Evecs, d);
 
       if (rc){
         if (zz->Proc == 0){
@@ -272,24 +289,25 @@ int Zoltan_Get_Coordinates(
       axis_aligned = 0;
 
       for (i=0; i<d; i++){
-        axis_order[i] = -1;
+        tran->Axis_Order[i] = -1;
       }
 
       for (j=0; j<d; j++){
         for (i=0; i<d; i++){
-          x = fabs(evecs[i][j]);
+          x = fabs(tran->Evecs[i][j]);
 
           if (NEAR_ONE(x)){
-            axis_order[j] = i;  /* e'vector j is very close to i axis */
+            tran->Axis_Order[j] = i;  /* e'vector j is very close to i axis */
             break;
           }
         }
-        if (axis_order[j] < 0){
+        if (tran->Axis_Order[j] < 0){
           break;
         }
       }
 
-      if ((axis_order[0] >= 0) && (axis_order[1] >= 0) && (axis_order[2] >= 0)){
+      if ((tran->Axis_Order[0] >= 0) && 
+          (tran->Axis_Order[1] >= 0) && (tran->Axis_Order[2] >= 0)){
         axis_aligned = 1;
       }
 
@@ -298,50 +316,17 @@ int Zoltan_Get_Coordinates(
        * by the direction of the eigenvectors through the center of mass.
        */
 
-      projected_distances(zz, *coords, num_obj, cm, evecs, dist, d, 
-                          axis_aligned, axis_order); 
+      projected_distances(zz, *coords, num_obj, tran->CM, tran->Evecs, dist, 
+                          d, axis_aligned, tran->Axis_Order); 
 
       /*
        * Decide whether these distances indicate the geometry is
        * very flat in one or two directions.
        */
 
-      target_dim = 0;
-  
-      if (d == 2){
-        if (dist[0] < dist[1]){
-          order[0] = 1; order[1] = 0;
-        }
-        else{
-          order[0] = 0; order[1] = 1;
-        }
-        if (dist[order[1]] < (dist[order[0]] / skip_ratio)){
-          target_dim = 1;
-        }
-      }
-      else{
-        order_decreasing(dist, order);
+      target_dim = get_target_dimension(dist, order, skip_ratio, d);
 
-        flat = dist[order[0]] / skip_ratio;
-  
-        if (dist[order[2]] < flat){
-          /*
-           * We'll rotate geometry so it's aligned with the X/Y plane
-           * and project to Z=0.
-           */
-          target_dim = 2;
-  
-          if (dist[order[1]] < flat){
-            /*
-             * We'll rotate geometry so it's aligned with the X-axis
-             * and project to the X-axis.
-             */
-            target_dim = 1;
-          }
-        }
-      }
-
-      if ((target_dim == 1) || (target_dim ==2)){ 
+      if (target_dim > 0){
         /*
          * Yes, geometry is degenerate
          */
@@ -368,9 +353,9 @@ int Zoltan_Get_Coordinates(
           ** to the X-axis, and the secondary to the Y-axis.
           */
 
-          tran->Permutation[0] = axis_order[order[0]];
+          tran->Permutation[0] = tran->Axis_Order[order[0]];
           if (target_dim == 2){
-            tran->Permutation[1] = axis_order[order[1]];
+            tran->Permutation[1] = tran->Axis_Order[order[1]];
           }
         }
         else{
@@ -384,7 +369,8 @@ int Zoltan_Get_Coordinates(
           for (i=0; i< target_dim; i++){
             tran->Transformation[i][2] = 0.0;
             for (j=0; j<d; j++){
-              tran->Transformation[i][j] = evecs[j][order[i]];
+              tran->Transformation[i][j] = tran->Evecs[j][order[i]];
+
             }
           }
           for (i=target_dim; i< 3; i++){
@@ -409,6 +395,104 @@ End:
   }
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
+}
+void Zoltan_Print_Transformation(ZZ_Transform *tr)
+{
+  int i;
+  printf("Target_Dim: %d\n", tr->Target_Dim);
+  printf("Degenerate geometry:\n");
+  printf("  Transformation:\n");
+  for (i=0; i<3; i++){
+    printf("    %lf %lf %lf\n", tr->Transformation[i][0],
+           tr->Transformation[i][1], tr->Transformation[i][2]);
+  }
+  printf("  Eigenvectors of inertial matrix:\n");
+  for (i=0; i<3; i++){
+    printf("    %lf %lf %lf\n", tr->Evecs[i][0], 
+      tr->Evecs[i][1], tr->Evecs[i][2]);
+  }
+  printf("  Simple coordinate permutation (if axis-aligned):\n");
+  printf("    %d %d %d\n",
+    tr->Permutation[0], tr->Permutation[1], tr->Permutation[2]);
+  printf("  Center of mass, axis order: (%lf %lf %lf), %d %d %d\n",
+    tr->CM[0], tr->CM[1], tr->CM[2],
+    tr->Axis_Order[0], tr->Axis_Order[1], tr->Axis_Order[2]);
+}
+void Zoltan_Copy_Transformation(ZZ_Transform *to, ZZ_Transform *from)
+{
+  int i, j;
+  to->Target_Dim = from->Target_Dim;
+
+  for (i=0; i<3; i++){
+    for (j=0; j<3; j++){
+      to->Transformation[i][j] = from->Transformation[i][j];
+      to->Evecs[i][j] = from->Evecs[i][j]; 
+    }
+    to->Permutation[i] = from->Permutation[i];
+    to->CM[i] = from->CM[i];
+    to->Axis_Order[i] = from->Axis_Order[i];
+  } 
+}
+void Zoltan_Initialize_Transformation(ZZ_Transform *tr)
+{
+  int i, j;
+  tr->Target_Dim = -1;
+
+  for (i=0; i<3; i++){
+    for (j=0; j<3; j++){
+      tr->Transformation[i][j] = 0.0;
+      tr->Evecs[i][j] = 0.0;
+    }
+    tr->Permutation[i] = -1;
+    tr->CM[i] = 0.0;
+    tr->Axis_Order[i] = 0;
+  } 
+}
+static int get_target_dimension(double *dist, int *order, 
+                                double skip_ratio, int d)
+{
+  /*
+   * Decide whether these distances indicate the geometry is
+   * very flat in one or two directions.
+   */
+
+  int target_dim = 0;
+  double flat;
+  
+  if (d == 2){
+    if (dist[0] < dist[1]){
+      order[0] = 1; order[1] = 0;
+    }
+    else{
+      order[0] = 0; order[1] = 1;
+    }
+    if (dist[order[1]] < (dist[order[0]] / skip_ratio)){
+      target_dim = 1;
+    }
+  }
+  else{
+    order_decreasing(dist, order);
+
+    flat = dist[order[0]] / skip_ratio;
+  
+    if (dist[order[2]] < flat){
+      /*
+       * We'll rotate geometry so it's aligned with the X/Y plane
+       * and project to Z=0.
+       */
+      target_dim = 2;
+  
+      if (dist[order[1]] < flat){
+        /*
+         * We'll rotate geometry so it's aligned with the X-axis
+         * and project to the X-axis.
+         */
+        target_dim = 1;
+      }
+    }
+  }
+
+  return target_dim;
 }
 static void transform_coordinates(double *coords, int num_obj, int d,
                                   ZZ_Transform *tr)
