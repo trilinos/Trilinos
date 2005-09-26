@@ -50,6 +50,7 @@ struct triplet {
 };
 
 static struct triplet *Tmp_Best = NULL;  /* Temp buf used in MPI_Allreduce fn */
+static HGraph *HG_Ptr;
 
 /* special sorting routines */
 static void quicksort_list_inc_struct (
@@ -375,6 +376,7 @@ static int pmatching_ipm (ZZ *zz,
                        /* on all procs in hgc->col_comm.              */
   int nTotal;          /* sum of # of non-empty candidates across proc row. */
   int max_nTotal;      /* max of nTotal across proc cols.        */
+  int total_nCandidates; /* Sum of nCandidates across row. */
   int *send = NULL,    /* working buffers, may be reused              */
       *dest = NULL,
       *size = NULL,
@@ -437,6 +439,7 @@ static int pmatching_ipm (ZZ *zz,
   /* determine initial sum of all candidates, nTotal for storage allocation */
   if (cFLAG)  {
     nTotal    = nCandidates;
+    total_nCandidates = nTotal;
     max_nVtx  = hg->nVtx;
     max_nPins = hg->nPins;
   }
@@ -449,6 +452,7 @@ static int pmatching_ipm (ZZ *zz,
         max_nVtx = count;
       nTotal += calc_nCandidates (count, hgc->nProc_x);
     }
+    total_nCandidates = nTotal;
   }
                  
   /* allocate "complicated" fixed sized array storage */
@@ -475,9 +479,9 @@ static int pmatching_ipm (ZZ *zz,
     if (!(edgebuf      = (int*)  ZOLTAN_MALLOC (nEdgebuf   * sizeof (int)))
      || !(master_data  = (int*)  ZOLTAN_MALLOC (3 * nTotal * sizeof (int)))
 #ifdef NEW_PHASE3
-     || !(global_best = (struct triplet*) ZOLTAN_MALLOC(nTotal *
+     || !(global_best = (struct triplet*) ZOLTAN_MALLOC(total_nCandidates *
                                                        sizeof(struct triplet)))
-     || !(Tmp_Best    = (struct triplet*) ZOLTAN_MALLOC(nTotal *
+     || !(Tmp_Best    = (struct triplet*) ZOLTAN_MALLOC(total_nCandidates *
                                                        sizeof(struct triplet)))
 #endif
      || !(master_procs = (int*)  ZOLTAN_MALLOC (nTotal     * sizeof (int)))) {
@@ -569,7 +573,7 @@ static int pmatching_ipm (ZZ *zz,
 #endif
         {
           n++;  /* non-empty vertex */
-          *s++ = VTX_LNO_TO_GNO (hg, lno);                         /* gno */
+          *s++ = gno;
           *s++ = hg->vindex[lno+1] - hg->vindex[lno];              /* count */
           for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
             *s++ = hg->vedge[j];                             /* lno of edge */
@@ -928,7 +932,7 @@ static int pmatching_ipm (ZZ *zz,
          "merge" between processors efficiently. Can we use hash instead? */
       quicksort_list_inc_struct(local_best, 0, nmaster-1);
 
-      for (i = nmaster; i < max_nTotal; i++)
+      for (i = nmaster; i < total_nCandidates; i++)
         local_best[i].cand = INT_MAX;
 
       /* DEBUG 
@@ -940,13 +944,14 @@ static int pmatching_ipm (ZZ *zz,
       /* User-defined Allreduce to find max over inner product values;
          this will tell us the globally best "match" for each candidate. */
 
-      MPI_Allreduce(local_best, global_best, max_nTotal, phasethreetype,
+      HG_Ptr = hg;
+      MPI_Allreduce(local_best, global_best, total_nCandidates, phasethreetype,
                     phasethreeop, hgc->row_comm);
 
       /* Look through array of "winners" and update match array. */
       /* Local numbers are used for local matches, otherwise
          -(gno+1) is used in the match array.                    */
-      for (i = 0; i < max_nTotal; i++) {
+      for (i = 0; i < total_nCandidates; i++) {
         int cproc, vproc;
         cand   = global_best[i].cand;
         if (cand == INT_MAX) break;  /* All matches are processed */
@@ -1254,13 +1259,32 @@ int j;
         Tmp_Best[t].partner = inout[o].partner;
       }
       else { /* IP TIE */
-        /* KDDKDD currently breaking ties by larger partner gno; change
-         * KDDKDD to include owning processor here. */
-        if (in[i].partner > inout[o].partner) {
+        int in_proc = VTX_TO_PROC_X(HG_Ptr, in[i].partner);
+        int inout_proc = VTX_TO_PROC_X(HG_Ptr, inout[o].partner);
+        int cand_proc = VTX_TO_PROC_X(HG_Ptr, in[i].cand);
+
+        /* Give preference to partners on candidate's processor */
+        if (((in_proc == cand_proc) && (inout_proc == cand_proc))
+         || ((in_proc != cand_proc) && (inout_proc != cand_proc))) {
+          /* Both partners are on candidate's proc OR
+             neither partner is on candidate's proc.
+             Break ties by larger partner gno. */
+          if (in[i].partner > inout[o].partner) {
+            Tmp_Best[t].ip = in[i].ip;
+            Tmp_Best[t].partner = in[i].partner;
+          }
+          else {
+            Tmp_Best[t].ip = inout[o].ip;
+            Tmp_Best[t].partner = inout[o].partner;
+          }
+        }
+        else if (in_proc == cand_proc) {
+          /* Give preference to local partner */
           Tmp_Best[t].ip = in[i].ip;
           Tmp_Best[t].partner = in[i].partner;
         }
-        else {
+        else /* inout_proc == cand_proc */ {
+          /* Give preference to local partner */
           Tmp_Best[t].ip = inout[o].ip;
           Tmp_Best[t].partner = inout[o].partner;
         }
