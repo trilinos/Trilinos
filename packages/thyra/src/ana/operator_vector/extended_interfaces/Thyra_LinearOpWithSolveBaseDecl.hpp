@@ -37,7 +37,19 @@ namespace Thyra {
 /** \brief Base class for all linear operators that can support a high-level
  * solve operation.
  * 
- * <b>Introduction</b>
+ * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ *
+ * \section LOWSB_outline_sec Outline
+ *
+ * <ul>
+ * <li>\ref LOWSB_intro_sec
+ * <li>\ref LOWSB_solve_criteria_sec
+ * <li>\ref LOWSB_solve_status_sec
+ * <li>\ref LOWSB_use_cases_sec 
+ * <li>\ref LOWSB_developer_notes_sec
+ * </ul>
+ * 
+ * \section LOWSB_intro_sec Introduction
  * 
  * This interface supports linear operators (with potentially different range
  * and domain scalar types) that can also support a forward solve operation
@@ -85,7 +97,7 @@ namespace Thyra {
  * than call these member functions directly as they support a number of other
  * simpler use cases.
  * 
- * <b>Solve Criteria</b>
+ * \section LOWSB_solve_criteria_sec Solve Criteria
  * 
  * This interface potentially allows clients to specify a relative tolerance
  * on either the relative residual norm or the relative norm of the solution
@@ -216,7 +228,7 @@ namespace Thyra {
  * 
  * </ul>
  * 
- * <b>Solve Status</b>
+ * \section LOWSB_solve_status_sec Solve Status
  * 
  * After the <tt>solve()</tt> and <tt>solveTranspose()</tt> functions return,
  * the client can optionally get back a solution status for each block of
@@ -322,14 +334,21 @@ namespace Thyra {
  * the overall solve status for an entire block returned by
  * <tt>blockSolveStatus[]</tt>.
  * 
- * <b>Notes to subclass developers</b>
+ * \section LOWSB_use_cases_sec Use cases
+ *
+ * This interface supports a variety of use cases where where described, more
+ * or less, in the above sections.  Here, we give specific examples for a
+ * number of important use cases and show how to use the non-member helper
+ * functions defined \ref Thyra_LinearOpWithSolveBase_helper_grp "here".
+ *
+ * ToDo: Finish documentation!
+ * 
+ * \section LOWSB_developer_notes_sec Notes to subclass developers
  * 
  * This interface assumes, by default, that subclasses will only support the
  * forward solve operation in which case only a single virtual function
  * <tt>solve()</tt> must be overridden.  See <tt>LinearOpBase</tt> for what
  * other virtual functions must be overridden to define a concrete subclass.
- * 
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
 template <class RangeScalar, class DomainScalar = RangeScalar>
 class LinearOpWithSolveBase : virtual public LinearOpBase<RangeScalar,DomainScalar> {

@@ -39,6 +39,8 @@
  *
  * This is a very bad but straightforward implementation of a real-to-complex
  * FFT operator that simply uses the implemention <tt>ComplexFFTLinearOp</tt>.
+ *
+ * \ingroup Thyra_Op_Vec_examples_fft_grp
  */
 template<class RealScalar>
 class RealComplexFFTLinearOp : virtual public Thyra::LinearOpWithSolveBase< std::complex<RealScalar>, RealScalar >

@@ -110,7 +110,6 @@ public:
  * appropriate for study.
  *
  * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
- * \ingroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp
  */
 template<class Scalar>
 void unwrap(
@@ -150,7 +149,6 @@ void unwrap(
  * The implementation of this function is not too complicated and is
  * appropriate for study.
  *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  * \ingroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp
  */
 template<class Scalar>

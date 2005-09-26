@@ -39,6 +39,8 @@
  *
  * This implementation uses orthonormal columns and rows and therefore the
  * adjoint is the same as the inverse.
+ *
+ * \ingroup Thyra_Op_Vec_examples_fft_grp
  */
 template<class RealScalar>
 class ComplexFFTLinearOp

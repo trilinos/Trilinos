@@ -37,35 +37,91 @@ namespace Thyra {
 
 /** \brief Base class for all linear operators.
  *
- * A linear operator can perform the following operation:
+ * \section Thyra_LO_outline_sec Outline
  *
  * <ul>
- * <li><tt>Y = alpha*op(M)*X + beta*Y</tt>
+ * <li>\ref Thyra_LO_intro_sec
+ * <li>\ref Thyra_LO_spaces_sec
+ * <li>\ref Thyra_LO_scalar_types_sec
+ * <li>\ref Thyra_LO_single_scalar_sec
+ * <li>\ref Thyra_LO_adjoint_relation_sec
+ * <li>\ref Thyra_LO_aliasing_sec
+ * <li>\ref Thyra_LO_optional_adjoints_sec
+ * <li>\ref Thyra_LO_testing_sec
+ * <li>\ref Thyra_LO_dev_notes_sec
  * </ul>
  *
- * through the <tt>apply()</tt> function where <tt>Y</tt> and <tt>X</tt> are
- * <tt>MultiVectorBase</tt> objects.  The reason for the exact form of the
- * above operations is that there are direct BLAS and equivalent versions of
- * these operations and performing a sum-into multiplication is more efficient
- * in general.
+ * \section Thyra_LO_intro_sec Introduction
  *
- * A linear operator has vector spaces associated with it for the
- * multi-vectors <tt>X</tt> and <tt>Y</tt> that lie in the domain and the
- * range spaces of the non-transposed linear operator <tt>y = M*x</tt> and
- * these spaces are returned by <tt>domain()</tt> and <tt>range()</tt>.  The
- * scalar types for the domain and range spaces, <tt>DomainScalar</tt> and
- * <tt>RangeScalar</tt> can be different.
+ * A linear operator can optionally perform the forward operations
+ *
+ * <ul>
+ * <li><b>Forward non-conjugate apply</b> \verbatim Y = alpha*M*X + beta*Y \endverbatim
+ * <li><b>Forward conjugate apply</b> \verbatim Y = alpha*conjugate(M)*X + beta*Y \endverbatim
+ * </ul>
+ *
+ * through the <tt>apply()</tt> function and the operations
+ *
+ * <ul>
+ * <li><b>Transpose non-conjugate apply</b> \verbatim Y = alpha*transpose(M)*X + beta*Y \endverbatim
+ * <li><b>Transpose conjugate (i.e. adjoint) apply</b> \verbatim Y = alpha*adjoint(M)*X + beta*Y \endverbatim
+ * </ul>
+ *
+ * through the <tt>applyTranspose()</tt> function where <tt>Y</tt> and
+ * <tt>X</tt> are <tt>MultiVectorBase</tt> objects.  The reason for the exact
+ * form of the above operations is that there are direct BLAS and equivalent
+ * versions of these operations and performing a sum-into multiplication is
+ * more efficient in general.
+ *
+ * \section Thyra_LO_spaces_sec Range and domain spaces
+ *
+ * A linear operator has vector spaces associated with it for the vectors
+ * <tt>x</tt> and <tt>y</tt> that lie in the domain and the range spaces of
+ * the non-transposed linear operator <tt>y = M*x</tt> and these spaces are
+ * returned by <tt>domain()</tt> and <tt>range()</tt>.
+ *
+ * \section Thyra_LO_scalar_types_sec Support for different range and domain scalar types
+ *
+ * This interface allows for different scalar types for the range and domain
+ * spaces, <tt>RangeScalar</tt> and <tt>DomainScalar</tt> respectively.  This
+ * is needed to support such things as real-to-complex FFTs (see the example
+ * <tt>RealToComplex1DFFTLinearOp</tt> for instance) and real to
+ * extended-precision linear operators.
+ *
+ * \section Thyra_LO_single_scalar_sec Single scalar type linear operators
+ *
+ * While this interface supports the notion of different range and domain
+ * scalar types, many different <tt>%LinearOpBase</tt> implementations and
+ * many different ANAs will only support a single scalar type.  There is a lot
+ * of support for single-scalar-type linear operators.
+ *
+ * First that there is a forward declaration for this class of the form
+ 
+ \code
+  template<class RangeScalar, class DomainScalar = RangeScalar> class LinearOpBase;
+ \endcode
+
+ * that allows the class to be refereed to using just one Scalar type as
+ * <tt>LinearOpBase<Scalar></tt>.  This is useful for both clients and
+ * subclass implementations.
+ *
+ * When a client ANA can only support a single-scalar type of linear operator,
+ * it may be more convenient to use some of the wrapper functions such as
+ * <tt>Thyra::apply()</tt> and <tt>Thyra::opSupported()</tt> that are
+ * described \ref Thyra_Op_Vec_LinearOpBase_support_grp "here".
+ *
+ * \section Thyra_LO_adjoint_relation_sec Scalar products and the adjoint relation
  *
  * Note that the vector spaces returned from <tt>domain()</tt> and
  * <tt>range()</tt> may have specialized implementations of the scalar product
- * \f$<u,w>\f$ (i.e. \f$<u,w> \neq u^T w\f$ in general).  As a result, the
+ * \f$<u,w>\f$ (i.e. \f$<u,w> \neq u^H w\f$ in general).  As a result, the
  * operator and adjoint operator must obey the defined scalar product.
- * Specifically, for any two vectors \f$w\f$ (in the domain space
- * \f$\mathcal{D}\f$) and \f$u\f$ (in the range space \f$\mathcal{R}\f$) the
- * adjoint operation must obey:
+ * Specifically, for any two vectors \f$w\f$ in the domain space
+ * \f$\mathcal{D}\f$ and \f$u\f$ in the range space \f$\mathcal{R}\f$ the
+ * adjoint operation must obey the adjoint property
  *
  \f[
-  <u,A v>_{\mathcal{R}} = <A^T u, v>_{\mathcal{D}}
+  <u,A v>_{\mathcal{R}} =\!= <A^H u, v>_{\mathcal{D}}
  \f]
  *
  * where \f$<.,.>_{\mathcal{R}}\f$ is the scalar product defined by
@@ -74,45 +130,71 @@ namespace Thyra {
  * property of the adjoint can be checked numerically, if adjoints are
  * supported, using the testing utility class <tt>LinearOpTester</tt>.
  *
- * Note that it is strictly forbidden to alias the input/output object
- * <tt>Y</tt> with the input object <tt>X</tt>.
+ * \section Thyra_LO_aliasing_sec Aliasing policy
  *
- * If a <tt>%LinearOpBase</tt> subclass can not support a particular value
- * of <tt>M_tans</tt> in the <tt>apply()</tt> functions, then the function
- * <tt>opSupported()</tt> must return <tt>false</tt> for that
- * particular value of <tt>M_trans</tt>.
+ * It is strictly forbidden to alias the input/output object <tt>Y</tt> with
+ * the input object <tt>X</tt> in <tt>apply()</tt> or
+ * <tt>applyTranspose()</tt>.  Allowing aliasing would greatly complicate the
+ * development of concrete subclasses.
  *
- * <b>Notes for subclass developers</b>
+ * \section Thyra_LO_optional_adjoints_sec Optional support for specific types of operator applications
  *
- * There are only three functions that a subclass is required to
- * override: <tt>domain()</tt>, <tt>range()</tt> and <tt>apply()</tt>.
- * Note that the functions <tt>domain()</tt> and <tt>range()</tt> should
- * simply return <tt>VectorSpaceBase</tt> objects for subclasses that are
- * already defined for the vectors that the linear operator interacts
- * with through the function <tt>apply()</tt>.  Therefore, given that
- * appropriate <tt>VectorSpaceBase</tt> and <tt>VectorBase</tt> subclasses exist,
- * the only real work involved in implementing a <tt>LinearOpBase</tt> 
- * is defining a single function <tt>apply()</tt>.
+ * This interface does not require that a linear operator implementation
+ * support all of the different types of operator applications defined in the
+ * \ref Thyra_LO_intro_sec "introduction" above.  If a
+ * <tt>%LinearOpBase</tt> object can not support a particular type of operator
+ * application, then this is determined by the functions
+ * <tt>applySupports()</tt> and <tt>applyTransposeSupports()</tt>.
  *
- * If a <tt>LinearOpBase</tt> subclass can not support a particular value
- * of the transpose argument <tt>M_trans</tt> in the <tt>apply()</tt>
- * functions, then the function <tt>opSupported(M_trans)</tt> must be
- * overridden to return <tt>false</tt> for this value of
- * <tt>M_trans</tt>.
+ * \section Thyra_LO_testing_sec Testing LinearOpBase objects
+ *
+ * The concrete class <tt>LinearOpTester</tt> provides a full featured set of
+ * tests for any <tt>%LinearOpBase</tt> object.  This testing class can check
+ * if the operator is truly "linear", and/or if the adjoint relationship
+ * holds, and/or if an operator is symmetric.  All of the tests are controlled
+ * by the client, can be turned on and off, and pass/failure is determined by
+ * tolerances that the client can specify.  In addition, this testing class
+ * can also check if two linear operators are approximately equal.
+ *
+ * \section Thyra_LO_dev_notes_sec Notes for subclass developers
+ *
+ * There are only three functions that a concrete subclass is required to
+ * override: <tt>domain()</tt>, <tt>range()</tt> and <tt>apply()</tt>.  Note
+ * that the functions <tt>domain()</tt> and <tt>range()</tt> should simply
+ * return <tt>VectorSpaceBase</tt> objects for subclasses that are already
+ * defined for the vectors that the linear operator interacts with through the
+ * function <tt>apply()</tt>.  Therefore, given that appropriate
+ * <tt>VectorSpaceBase</tt> and <tt>MultiVectorBase</tt> (and/or
+ * <tt>VectorBase</tt>) subclasses exist, the only real work involved in
+ * implementing a <tt>LinearOpBase</tt> subclass is in defining a single
+ * function <tt>apply()</tt>.
+ *
+ * This interface provides default implementations for the functions
+ * <tt>applyTranspose()</tt> and <tt>applyTransposeSupports()</tt> where it is
+ * assumed that the operator does not support transpose (or adjoint) operator
+ * applications.  If transpose (and/or adjoint)operator applications can be
+ * supported, then the functions <tt>applyTranspose()</tt> and
+ * <tt>applyTransposeSupports()</tt> should be overridden as well.
  *
  * If possible, the subclass should also override the <tt>clone()</tt>
- * function with allows clients to create copies of a
- * <tt>LinearOpBase</tt> object.  This functionality is very important in
- * some circumstances.  However, this functionality is not required
- * and the default <tt>clone()</tt> implementation returns a null
- * smart pointer object.
+ * function with allows clients to create copies of a <tt>LinearOpBase</tt>
+ * object.  This functionality is useful in some circumstances.  However, this
+ * functionality is not required and the default <tt>clone()</tt>
+ * implementation returns a null smart pointer object.
  *
- * If multi-vectors are supported in general by the application and
- * linear algebra library then, if possible, the subclass should also
- * override the multi-vector version of <tt>apply()</tt>.  In many
- * cases, a specialized multi-vector version will outperform the
- * default implementation (which is based on the single vector
- * version) in this class.
+ * If a concrete subclass can only support a single scalar type, then the
+ * concrete subclass should perhaps inherit form the
+ * <tt>SingleScalarLinearOpBase</tt> node subclass.  This node subclass
+ * provides just a single function <tt>SingleScalarLinearOpBase::apply()</tt>
+ * that will support both forward and transpose (adjoint) operator
+ * applications.
+ *
+ * If, in addition to only supporting a single scalar type, a concrete
+ * subclass can only support single RHS operator applications then perhaps the
+ * node subclass <tt>SingleRhsLinearOpBase</tt> should be inherited from.
+ * This node subclass provides a version of
+ * <tt>SingleRhsLinearOpBase::apply()</tt> that takes <tt>VectorBase</tt>
+ * objects instead of <tt>MultiVectorBase</tt> objects.
  *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
@@ -135,9 +217,9 @@ public:
    * change if <tt>*this</tt> modified so this reference should not
    * be maintained for too long.
    *
-   * Once more, the client should not expect the <tt>%VectorSpaceBase</tt>
-   * object embedded in <tt>return</tt> to be valid past the lifetime
-   * of <tt>*this</tt>.
+   * <b>New Behavior!</b> It is required that the <tt>%VectorSpaceBase</tt>
+   * object embedded in <tt>return</tt> must be valid past the lifetime of
+   * <tt>*this</tt> linear operator object.
    */
   virtual Teuchos::RefCountPtr< const VectorSpaceBase<RangeScalar> > range() const = 0;
 
@@ -153,39 +235,43 @@ public:
    * change if <tt>*this</tt> modified so this reference should not
    * be maintained for too long.
    *
-   * Once more, the client should not expect the <tt>%VectorSpaceBase</tt>
-   * object embedded in <tt>return</tt> to be valid past the lifetime
-   * of <tt>*this</tt>.
+   * <b>New Behavior!</b> It is required that the <tt>%VectorSpaceBase</tt>
+   * object embedded in <tt>return</tt> must be valid past the lifetime of
+   * <tt>*this</tt> linear operator object.
    */
   virtual Teuchos::RefCountPtr< const VectorSpaceBase<DomainScalar> > domain() const = 0;
 
-  /** \brief Apply the non-transposed linear operator to a multi-vector :
-   * <tt>Y = alpha*M*X + beta*Y</tt>.
+  /** \brief Apply the forward non-conjugate or conjugate linear operator to a
+   * multi-vector : <tt>Y = alpha*M*X + beta*Y</tt>.
    *
    * @param  conj
    *                [in] Determines whether the elements are non-conjugate or conjugate.
+   *                The value <tt>NONCONJ_ELE</tt> gives the standard forward operator
+   *                while the value of <tt>CONJ_ELE</tt> gives the forward operator
+   *                with the complex conjugate matrix elements.  For a real-valued
+   *                operators, this argument is ignored and has no effect.
    * @param  X      [in] The right hand side multi-vector 
    * @param  Y      [in/out] The target multi-vector being transformed
    * @param  alpha  [in] Scalar multiplying <tt>M</tt>, where <tt>M==*this</tt>.
      *                The default value of <tt>alpha</tt> is </tt>1.0</tt>
-   * @param  beta   [in] The multiplier for the target multi-vector <tt>y</tt>.
+   * @param  beta   [in] The multiplier for the target multi-vector <tt>Y</tt>.
    *                The default value of <tt>beta</tt> is <tt>0.0</tt>.
    * 
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li> <tt>this->applySupports(conj)==true</tt> (throw <tt>Exceptions::OpNotSupported</tt>)
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
+   * <li> <tt>X.range()->isCompatible(this->domain()) == true</tt>
+   *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * <li> <tt>Y->range()->isCompatible(*this->range()) == true</tt>
    *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * <li> <tt>Y->domain()->isCompatible(*X.domain()) == true</tt>
-   *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
-   * <li> <tt>X.range()->isCompatible(this->domain()) == true</tt>
    *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * <li> <tt>Y</tt> can not alias <tt>X</tt>.  It is up to the client to ensure that <tt>Y</tt>
    *      and <tt>X</tt> are distinct since in general this can not be verified by the implementation until,
    *      perhaps, it is too late.  If possible, an exception will be thrown if aliasing is detected.
    * </ul>
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li> Is it not obvious?  After the function returns the multi-vector <tt>Y</tt>
    *      is transformed as indicated above.
    * </ul>
@@ -210,46 +296,53 @@ public:
    */
   virtual bool applySupports( const EConj conj ) const;
 
-  /** \brief Determines if <tt>apply()</tt> supports this <tt>conj</tt> argument.
+  /** \brief Determines if <tt>applyTranspose()</tt> supports this <tt>conj</tt> argument.
    *
-   * The default implementation returns <tt>false</tt>.
+   * The default implementation returns <tt>false</tt> which is consistent
+   * with the below default implementation for <tt>applyTranspose()</tt>.
    */
   virtual bool applyTransposeSupports( const EConj conj ) const;
 
-  /** \brief Apply the transposed linear operator to a multi-vector : <tt>Y =
-   * alpha*trans(M)*X + beta*Y</tt>.
+  /** \brief Apply the non-conjugate or conjugate transposed linear operator
+   * to a multi-vector : <tt>Y = alpha*trans(M)*X + beta*Y</tt>.
    *
    * @param  conj
    *                [in] Determines whether the elements are non-conjugate or conjugate.
+   *                The value <tt>NONCONJ_ELE</tt> gives the standard transposed operator
+   *                with non-conjugate transposed matrix elements
+   *                while the value of <tt>CONJ_ELE</tt> gives the standard adjoint operator
+   *                with the complex conjugate transposed matrix elements.  For a real-valued
+   *                operators, this argument is ignored and has no effect.
    * @param  X      [in] The right hand side multi-vector 
    * @param  Y      [in/out] The target multi-vector being transformed
    * @param  alpha  [in] Scalar multiplying <tt>M</tt>, where <tt>M==*this</tt>.
      *                The default value of <tt>alpha</tt> is </tt>1.0</tt>
-   * @param  beta   [in] The multiplier for the target multi-vector <tt>y</tt>.
+   * @param  beta   [in] The multiplier for the target multi-vector <tt>Y</tt>.
    *                The default value of <tt>beta</tt> is <tt>0.0</tt>.
    * 
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li> <tt>this->applyTransposeSupports(conj)==true</tt> (throw <tt>Exceptions::OpNotSupported</tt>)
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
+   * <li> <tt>X.range()->isCompatible(this->range()) == true</tt>
+   *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * <li> <tt>Y->range()->isCompatible(*this->domain()) == true</tt>
    *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * <li> <tt>Y->domain()->isCompatible(*X.domain()) == true</tt>
    *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
-   * <li> <tt>X.range()->isCompatible(this->range()) == true</tt>
-   *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
-   * <li> <tt>Y</tt> can not alias <tt>X</tt>.  It is up to the client to ensure that <tt>Y</tt>
    *      and <tt>X</tt> are distinct since in general this can not be verified by the implementation until,
    *      perhaps, it is too late.  If possible, an exception will be thrown if aliasing is detected.
+   * <li> <tt>Y</tt> can not alias <tt>X</tt>.  It is up to the client to ensure that <tt>Y</tt>
    * </ul>
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li> Is it not obvious?  After the function returns the multi-vector <tt>Y</tt>
    *      is transformed as indicated above.
    * </ul>
    *
    * The default implementation throws an exception but gives a very good
    * error message.  The assumption here is that most linear operators will
-   * not be able to support an tranpose apply.
+   * not be able to support an transpose apply and that is why this default
+   * implementation is provided.
    */
   virtual void applyTranspose(
     const EConj                            conj
@@ -261,17 +354,15 @@ public:
 
   /** \brief Clone the linear operator object (if supported).
    *
-   * The primary purpose for this function is to allow a client to
-   * capture the current state of a linear operator object and be
-   * guaranteed that some other client will not alter its behavior.
-   * A smart implementation will use reference counting and lazy
-   * evaluation internally and will not actually copy any large
-   * amount of data unless it has to.
+   * The primary purpose for this function is to allow a client to capture the
+   * current state of a linear operator object and be guaranteed that some
+   * other client will not alter its behavior.  A smart implementation will
+   * use reference counting and lazy evaluation internally and will not
+   * actually copy any large amount of data unless it has to.
    *
-   * The default implementation returns <tt>return.get()==NULL</tt>
-   * which is allowable by this specification.  A linear operator
-   * object is not required to return a non-NULL value but almost
-   * every good linear operator implementation should and will.
+   * The default implementation returns <tt>return.get()==NULL</tt> which is
+   * allowable.  A linear operator object is not required to return a non-NULL
+   * value but many good matrix-based linear operator implementations will.
    */
   virtual Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> > clone() const;
 
@@ -282,11 +373,10 @@ public:
 
   /** \brief Generates a default outputting for all linear operators.
    *
-   * Calls on the <tt>this->describe(void)</tt> function for the name
-   * of the class (and possibly its instance name) and then if
-   * <tt>verbLevel >= VERB_EXTREME</tt>, then the linear operators
-   * elements themselves are printed as well.  The format of the
-   * output is as follows:
+   * Calls on the <tt>this->description()</tt> function for the name of the
+   * class (and possibly its instance name) and then if <tt>verbLevel >=
+   * VERB_EXTREME</tt>, then the linear operators elements themselves are
+   * printed as well.  The format of the output is as follows:
    *
    \verbatim
 
@@ -319,10 +409,18 @@ public:
 
 };	// end class LinearOpBase
 
+/** \defgroup Thyra_Op_Vec_LinearOpBase_support_grp Support functions for LinearOpBase interface
+
+These functions allow a client to use a <tt>LinearOpBase</tt> object more
+easily in simpler use cases.
+
+\ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+
+*/
+//@{
 
 /** \brief Determines if an operation is supported for a single scalar type.
  *
- * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 template<class Scalar>
 inline bool opSupported( const LinearOpBase<Scalar> &M, ETransp M_trans )
@@ -336,7 +434,6 @@ inline bool opSupported( const LinearOpBase<Scalar> &M, ETransp M_trans )
  *
  * Calls <tt>M.apply(conj,X,Y,alpha,beta)</tt>.
  *
- * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 template<class RangeScalar, class DomainScalar>
 inline void apply(
@@ -390,7 +487,6 @@ inline void apply(
  *
  * Calls <tt>M.applyTranspose(conj,X,Y,alpha,beta)</tt>.
  *
- * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 template<class RangeScalar, class DomainScalar>
 inline void applyTranspose(
@@ -447,7 +543,6 @@ inline void applyTranspose(
  * Calls <tt>M.apply(...,X,Y,alpha,beta)</tt> or
  * <tt>M.applyTranspose(...,X,Y,alpha,beta)</tt>.
  *
- * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 template<class Scalar>
 inline void apply(
@@ -499,6 +594,8 @@ inline void apply(
 }
 
 #endif
+
+//@}
 
 }	// end namespace Thyra
 

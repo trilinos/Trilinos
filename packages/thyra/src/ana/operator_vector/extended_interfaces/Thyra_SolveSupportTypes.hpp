@@ -195,15 +195,17 @@ struct SolveStatus {
     }
 };
 
-/** \brief Enum defining the status of a preconditioner object. */
+/** \brief Enum defining the status of a preconditioner object.
+ *
+ * \ingroup Equation_solve_foundation_code_grp
+ */
 enum EPreconditionerInputType {
   PRECONDITIONER_INPUT_TYPE_AS_OPERATOR  ///< The input preconditioner should just be applied as an operator
   ,PRECONDITIONER_INPUT_TYPE_AS_MATRIX   ///< The input preconditioner should viewed as a matrix to be factored then backsolved as a preconditioner
 };
 
 /** \brief Accumulate solve status objects for solving a block of RHSs is
- * smaller sub-blocks..
- *
+ * smaller sub-blocks.
  *
  * \param  overallSolveCriteria  [in] The overall solve criteria for the overall blocks.
  * \param  solveStatus           [in] The solve status for a sub-block (or a single RHS) 

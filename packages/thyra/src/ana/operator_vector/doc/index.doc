@@ -7,7 +7,7 @@ one use the outline below to browse the classes and various functions
 documented here.  The one exception is the above <a
 href="./modules.html">"Modules"</a> link which is essentially an outline of
 what is presented below.  The following presentation is designed to expose
-developers to the %Thyra ANA Operator/Vector package and related code in
+developers to the %Thyra ANA Operator/Vector interfaces and related code in
 manageable chunks as to not overwhelm.  However, the above links are very
 useful as a developer's reference and should only be used as such.
 
@@ -19,6 +19,7 @@ useful as a developer's reference and should only be used as such.
 <li> \ref thyra_operator_vector_use_cases_sec
 <li> \ref thyra_operator_vector_examples_sec
 <li> \ref thyra_operator_vector_technicalities_sec
+<li> \ref Thyra_Op_Vec_faq_sec
 <li> \ref Thyra_Op_Vec_links_to_other_documentation_sec
 </ul>
 
@@ -29,9 +30,9 @@ algebra objects such as vectors and linear operators and its most fundamental
 interfaces are shown in the UML class diagram below.  <!-- A detailed
 discussion of the motivation, requirements and basic design issues associated
 with %Thyra are described in <a href="???">this report</a>.  The purpose of
-this online documentation is not to restate what is in <a href="???">this
-report</A>.  --> This online documentation is meant to provide a road-map to
-the Doxygen-generated C++ code documentation and provide convenient access to
+this outline documentation is not to restate what is in <a href="???">this
+report</A>.  --> This documentation page is meant to provide a road-map to the
+Doxygen-generated C++ code documentation and provide convenient access to
 helpful examples.
 
 This main page provides the starting point for all of the documentation for
@@ -39,7 +40,7 @@ the %Thyra Operator/Vector Interfaces.
 
 \section Thyra_Op_Vec_foundational_interfaces_sec Foundational Thyra Operator/Vector Interfaces
 
-\image html ThyraOperatorVectorSimple.gif "Foundational Thyra operator/vector interfaces (Note: above graphic not hyperlinked!)"
+\image html ThyraOperatorVectorSimple.gif "Foundational Thyra operator/vector interfaces (Note: above graphic not hyper-linked!)"
 
 The most fundamental abstract interfaces contained in the %Thyra package
 (and shown in the above UML class diagram) are:
@@ -71,19 +72,21 @@ There are primarily three different use cases related to the foundational
 %Thyra operator/vector interfaces shown above.  The first, and by far the most
 important, is the use of the \ref Thyra_Op_Vec_ANA_Interoperability_grp.  This
 first use case is really the main reason for the creation of %Thyra in the
-first place.  The second most important use case is the \ref
+first place and is the most basic and important dependence that another
+package can have on %Thyra.  The second most important use case is the \ref
 Thyra_Op_Vec_Adapters_grp of vector spaces, vectors, multi-vectors and linear
 operators.  These types of subclass implementations are also known as
 "adapter" subclasses if they "adapt" some pre-existing set of classes or
-interfaces.  The third use case is the use of the \ref
-Thyra_Op_Vec_ANA_Development_grp.  While the foundational %Thyra
+interfaces (which is often the case).  The third use case is the use of the
+\ref Thyra_Op_Vec_ANA_Development_grp.  While the foundational %Thyra
 operator/vector interface classes were not directly designed for this use
 case, with some minimal helper functions and classes, directly writing ANA
 implementations in terms of %Thyra objects is quite straightforward.
 
 Click on the links below for a discussion of each of these three use cases and
 a description of additional supporting code.  These use cases provide the
-primary documentation thread for the software in this doxygen collection.
+primary documentation organization for the software in this doxygen
+collection.
 
 <ol>
 
@@ -145,17 +148,17 @@ also be provided.
 
 The fundamental %Thyra interfaces and related software are not templated on an
 index (i.e. ordinal) type.  Instead, the type <tt>Thyra::Index</tt> is used
-which is just a typedef that is defined at configure time to be an unsigned
-integral type.  This type must be able to hold the value of the largest
-dimension of a vector space that will be used by an executable.  For most
-platforms and use cases, <b><tt>int</tt></b> is sufficient but in other cases
-<b><tt>long int</tt></b> may be necessary on some 64 bit platforms.  Not
+which is just a typedef that is defined at configure time to be an integral
+type of sufficient size.  This type must be able to hold the value of the
+largest dimension of a vector space that will be used by an executable.  For
+most platforms and use cases, <b><tt>int</tt></b> is sufficient but in other
+cases <b><tt>long int</tt></b> may be necessary on some 64 bit platforms.  Not
 templating on the index (ordinal) type does not result in any degradation in
-usability, runtime speed or storage usage for any use case.  However, certain
+usability, runtime speed, or storage usage for any use case.  However, certain
 types of subclasses of the %Thyra interfaces, such as sparse matrix
 subclasses, may need to be templated on a local index (ordinal) type.
 
-<li><b>Dynamic memory management using <tt>%Teuchos::RefCountPtr</tt></b>
+<li><b>Dynamic memory management</b>
 
 All of the code in the %Thyra package almost exclusively uses the
 <tt>%Teuchos</tt> smart reference counted pointer class
@@ -163,7 +166,7 @@ All of the code in the %Thyra package almost exclusively uses the
 object-oriented programming.  %Thyra also religiously uses the idioms
 described in <a
 href="http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf">this
-report</a> for passing object to and from functions that involves
+report</a> for passing object to and from functions that involve
 <tt>Teuchos::RefCountPtr</tt> .
 
 <li><b>Error (exception) handling</b>
@@ -175,7 +178,7 @@ thrown exceptions should inherit from the standard base class
 <tt>std::exception</tt>.  All exceptions in %Thyra software are thrown using
 the macros <tt>TEST_FOR_EXCEPTION()</tt> or <tt>TEST_FOR_EXCEPT()</tt>.  By
 consistently using these macros is is easy to set a breakpoint in a debugger
-just before an exception is thrown by setting a breakpoint on
+just before an exception is thrown by setting a breakpoint on the function
 <tt>TestForException_break()</tt>.  If the code is configured with the macro
 <tt>_DEBUG</tt> defined (i.e. <tt>CPPFLAGS="-D_DEBUG ..."</tt>) then a lot of
 runtime validation is performed.  Whenever development work is being performed
@@ -183,6 +186,11 @@ this macro should always be enabled since a lot of errors will be caught that
 would be hard to diagnose otherwise.
 
 </ul>
+
+\section Thyra_Op_Vec_faq_sec Frequently Asked Questions (FAQ)
+
+Click \ref Thyra_Op_Vec_faq_grp "here" for a list of frequently asked
+questions (FAQ) compiled for this collection of code.
 
 \section Thyra_Op_Vec_links_to_other_documentation_sec Links to Other Documentation Collections
 
@@ -205,7 +213,7 @@ Adapters for Amesos</a></b>: This software defines the implementation of the
 extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
 <tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of
 <tt>Amesos_BaseSolver</tt> implementations.  These adapters allow a client to
-take any <tt>Epetra_RowMatrix</tt> object enbedded in a
+take any <tt>Epetra_RowMatrix</tt> object embedded in a
 <tt>Thyra::EpetraLinearOp</tt> object and immediately use to to define a
 direct linear solver.
 
@@ -214,10 +222,170 @@ Adapters for AztecOO</a></b>: This software defines the implementation of the
 extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
 <tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of the <tt>AztecOO</tt>
 class.  These adapters allow a client to take any <tt>Epetra_RowMatrix</tt>
-object enbedded in a <tt>Thyra::EpetraLinearOp</tt> object and immediately use
-to to define an iterative linear solver such as GMRES, CG etc.
+object embedded in a <tt>Thyra::EpetraLinearOp</tt> object and immediately use
+to to define an iterative linear solver such as GMRES or CG.
 
 </ul>
+
+*/
+
+/** \defgroup Thyra_Op_Vec_faq_grp Frequently Asked Questions (FAQ) about Thyra Operator/Vector Softwrae
+
+\section Thyra_Op_Vec_faq_outline_sec Outline
+
+<ul>
+
+<li>\ref Thyra_Op_Vec_faq_rcp_sec
+
+  <ul>
+  <li>\ref Thyra_Op_Vec_faq_rcp_important_sec
+  <li>\ref Thyra_Op_Vec_faq_rcp_amp_star_sec
+  <li>\ref Thyra_Op_Vec_faq_rcp_everywhere_sec
+  </ul>
+
+<li>\ref Thyra_Op_Vec_faq_itfc_sec
+
+  <ul>
+  <li>\ref Thyra_Op_Vec_faq_why_helper_funcs_sec
+  <li>\ref Thyra_Op_Vec_faq_index_op_sec
+  <li>\ref Thyra_Op_Vec_faq_op_overload_sec
+  <li>\ref Thyra_Op_Vec_faq_Scalar_sec
+  <li>\ref Thyra_Op_Vec_faq_creating_vecs_multivecs_sec
+  </ul>
+
+</ul>
+
+\section Thyra_Op_Vec_faq_rcp_sec Questions about the smart pointer class Teuchos::RefCountPtr
+
+\subsection Thyra_Op_Vec_faq_rcp_important_sec Q: What are RefCountPtr objects and why are they important?
+
+<b>A:</b>The class Teuchos::RefCountPtr implements a form of reference
+counting which, through the magic of smart pointers in C++, allows objects to
+be created and used without much concern for when and where they should be
+deleted.  It is a form of garbage collection but is not as general or fail-
+safe as in languages with built in garbage collection.  For more information
+see:
+
+http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
+
+and click on: <tt>Teuchos::RefCountPtr</tt>
+
+\subsection Thyra_Op_Vec_faq_rcp_amp_star_sec Q: Do I really have to write &*ptr all the time?
+
+What are the benefits of &* vs. get()?
+
+<b>A:</b> There are two ways to get at the underlying raw pointer to an
+object that is wrapped in the RefCountPtr<C> object <tt>c_ptr</tt>:
+
+\code
+
+C *c_rptr1 = c_ptr.get(); // Unchecked, can be NULL
+C *c_rptr2 = &*c_ptr;     // Checked in debug build and will not return NULL
+\endcode
+
+You should use <tt>c_ptr.get()</tt> when it is okay for the pointer to be
+<tt>NULL</tt>.  On the other hand, you should use <tt>&*c_ptr</tt> when you
+don't want to allow the raw pointer to be <tt>NULL</tt>.  This is because the
+operator function <tt>Teuchos::RefCountPtr::operator*()</tt> will throw an
+exception if <tt>Teuchos::RefCountPtr::get()==NULL</tt> when the code is
+compiled using the macro define <tt>-D_DEBUG</tt>.
+
+For more information see Item 3 in Appendix B in 
+
+http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
+
+\subsection Thyra_Op_Vec_faq_rcp_everywhere_sec Q: Should my code use RefCountPtr's everywhere?
+
+<b>A:</b> You should only use RefCountPtr to wrap objects where a persisting
+relationship is being formed or maintained.  For non-persisting relationships,
+use raw C++ references and pointers.
+
+For more information see the main body and Appendix D of the document:
+
+http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
+
+\section Thyra_Op_Vec_faq_itfc_sec Questions about Fundamental Thyra Operator/Vector Interfaces
+
+\subsection Thyra_Op_Vec_faq_why_helper_funcs_sec Q: Why is Thyra written with so many non-member helper functions instead of member functions?
+
+In my C++ class we were told that the beauty of OOP is that functions and data
+can be put together into classes to combine the operations with the data they
+operate on.
+
+<b>A:</b> Generally member functions should only be used over non-member
+functions when direct access to private or protected data for functions is
+required.  My minimizing the amount of code that can access non-public data
+you greatly simplify maintenance.  See section 11.3.1 in "The C++ Programming
+Language: Special Edition" for a discussion of this topic.
+
+\subsection Thyra_Op_Vec_faq_index_op_sec Q: Why don't Thyra vectors support element access using the an overloaded operator[]?
+
+<b>A:</b> Direct element access to vector data through the
+<tt>Thyra::VectorBase</tt> interface can not be allowed in most general
+abstract numerical algorithms except in very specialized cases.  Direct
+element access assumes that all of the the vector data is readily available
+which is not the case in distributed-memory, out-of-core and certainly not
+client/server runtime configurations.  In addition, an overloaded
+<tt>operator[]</tt> function would be extremely inefficient since it would
+have to be a virtual function.
+
+For more information on the philosophy of the design of vector interface
+<tt>Thyra::VectorBase</tt> see the document "Vector Reduction/Transformation
+Operators" at:
+
+http://software.sandia.gov/RTOp/RTOpTOMS.pdf
+
+\subsection Thyra_Op_Vec_faq_op_overload_sec Q: Why doesn't Thyra support linear algebra operations using overloaded operators for +, -, *, etc?
+
+<b>A:</b> Supporting Matlab-like syntax for linear algebra operations like:
+
+\verbatim
+
+  y = alpha*x + z;
+
+  y = adjoint(A)*x + B*z;
+\endverbatim
+
+for large abstract objects in a near-optimally efficient manner is extremely
+non-trivial.  Such a capability can be supported through the creation of
+handle classes and compile-time expression templates but such an
+implementation is complicated and is difficult for beginners to debug through.
+There are a whole host of other reasons they Matlab-like syntax will not work
+as well as in Matlab.  For a slightly more detailed discussion, see the document
+
+<b><a href="./LinearAlgebraFunctionConvention.pdf">A Simple Convention for
+the Specification of Linear Algebra Function Prototypes in C++ </a></b>
+
+In short, Thyra does not (yet) support operator overloading for Matlab-like
+syntax and will not until the resulting code can be as efficient, compile-time
+safe, and as debuggable as the current lower-level function-call interface.
+However, check back with Thyra in the near future and you might find such
+handle classes with operator overloading.
+
+\subsection Thyra_Op_Vec_faq_Scalar_sec Q: Where is the Scalar class, and how do I use it to replace my underlying data-type, e.g. double, in my ANA? 
+
+<b>A:</b> The 'Scalar' class in a template argument in all of the core Thyra
+interface code.  The goal of this template argument is to allow many abstract
+numerical algorithms to be written in a general form to support a number of
+different scalar types (e.g. real, complex, extended precision etc.).  While
+the interfaces, the composite classes, and many of the concrete
+implementations are fully templated some are not and can only support one
+scalar type (e.g. see the Epetra/Thyra adapters).
+
+See the <tt>Thyra::sillyCgSolve()</tt> and <tt>Thyra::sillyPowerMethod()</tt>
+examples for how this templating is used.
+
+\subsection Thyra_Op_Vec_faq_creating_vecs_multivecs_sec Q: How do I create a Thyra::VectorBase or Thyra::MultiVectorBase object?
+
+The member functions Thyra::VectorSpaceBase::createMember() and
+Thyra::VectorSpaceBase::createMembers() are protected and can not be called by
+client code.
+
+<b>A:</b> You must use the non-member functions <tt>Thyra::createMember()</tt>
+and <tt>Thyra::createMembers()</tt> described \ref
+Thyra_Op_Vec_createMember_grp "here".
+
+<!-- \subsection Thyra_Op_Vec_faq_xxx_sec Q: -->
 
 */
 
@@ -255,12 +423,12 @@ Below, the interoperability interfaces are divided into \ref
 Thyra_Op_Vec_Interoperability_Fundamental_Interfaces_sec "fundamental" and
 \ref Thyra_Op_Vec_Interoperability_Extended_Interfaces_sec "extended"
 categories.  The fundamental operator/vector interfaces are the foundation for
-all other interfaces.  The extended operator/vector interfaces extend the
-fundamental interfaces and provide new types of functionality.
+all other interfaces and software described in this doxygen collection.  The
+extended operator/vector interfaces define new types of functionality.
 
 \section Thyra_Op_Vec_Interoperability_Fundamental_Interfaces_sec Fundamental Interfaces
 
-\image html ThyraOperatorVector.gif "Fundamental vector and linear operator interfaces (Note: above graphic not hyperlinked!)"
+\image html ThyraOperatorVector.gif "Fundamental vector and linear operator interfaces (Note: above graphic not hyper-linked!)"
 
 The above UML class diagram is a more detailed version of the UML
 class diagram shown in the \ref index "introduction" for the
@@ -280,15 +448,15 @@ shown in the above UML class diagram are described below:
 These interface classes rely on a few \ref Thyra_Op_Vec_BasicTypes_grp "basic types"
 and \ref Thyra_Op_Vec_Exceptions_grp "basic exception classes".
 
-The details behind the design of these interfaces are described in
-detail in <a
+<!-- The details behind the design of these interfaces are described in detail
+in <a
 href="http://software.sandia.gov/trilinos/packages/tsfcore/TSFCoreSAND.pdf">this
-report</a> and in the documentation for each individual C++ class.
-One important paper describing the RTOp approach which provides the
-foundation for <tt>RTOpPack::RTOpT</tt> can be found in <a
-href="http://software.sandia.gov/RTOp/RTOpTOMS.pdf">this paper</a>.
-Note that <tt>RTOpPack::RTOpT</tt> is a refinement of the C and C++
-RTOp interfaces described in the aforementioned paper.
+report</a> and in the documentation for each individual C++ class. --> One
+important paper describing the RTOp approach which provides the foundation for
+<tt>RTOpPack::RTOpT</tt> can be found in <a
+href="http://software.sandia.gov/RTOp/RTOpTOMS.pdf">this paper</a>.  Note that
+<tt>RTOpPack::RTOpT</tt> is a refinement of the C and C++ RTOp interfaces
+described in the aforementioned paper.
 
 \section Thyra_Op_Vec_Interoperability_Extended_Interfaces_sec Extended Interfaces
 
@@ -4248,6 +4416,38 @@ sillyCgSolve_mpi.cpp </a>
 
 Click \ref Thyra_Op_Vec_examples_cg_MPI_grp "here" for a more
 detailed discussion of this example program.
+
+*/
+
+//
+// FFT examples
+//
+
+/** \example ComplexFFTLinearOp.hpp
+
+Click \ref Thyra_Op_Vec_examples_fft_grp "here" for an example program that
+use this example class.
+
+*/
+
+/** \example RealComplexFFTLinearOp.hpp
+
+Click \ref Thyra_Op_Vec_examples_fft_grp "here" for an example program that
+use this example class.
+
+*/
+
+/** \defgroup Thyra_Op_Vec_examples_fft_grp Templated FFT examples
+
+\ingroup Thyra_Op_Vec_examples_grp
+
+To see the full listing of this example program click: <a
+href="silly1DFFT__serial_8cpp-example.html">
+silly1DFFT_serial.cpp </a>
+
+*/
+
+/** \example silly1DFFT_serial.cpp
 
 */
 

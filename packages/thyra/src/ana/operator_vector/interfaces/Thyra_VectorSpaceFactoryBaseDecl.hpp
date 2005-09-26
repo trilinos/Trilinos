@@ -34,11 +34,14 @@
 
 namespace Thyra {
 
-/** \brief Abstract interface for objects that can create vector spaces of a specified dimension.
+/** \brief Abstract interface for objects that can create vector spaces of a
+ * specified dimension.
  *
- * The primary role that a <tt>%VectorSpaceFactoryBase</tt> object takes
- * is defined in the documentation for the class <tt>VectorSpaceBase</tt>
- * and is related to the domain space of <tt>MultiVectorBase</tt> objects.
+ * The primary role that a <tt>%VectorSpaceFactoryBase</tt> object takes is
+ * defined in the documentation for the class <tt>VectorSpaceBase</tt> and is
+ * related to the domain space of <tt>MultiVectorBase</tt> objects.  However,
+ * this is a general factory interface class that can be used to create almost
+ * any <tt>VectorSpaceBase</tt> object just given a dimension.
  *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
@@ -56,17 +59,18 @@ public:
    *
    * @param  dim  [in] The dimension of the vector space to create.
    *
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li> <tt>dim > 0</tt> (throw <tt>std::invalid_argument</tt>).
    * </ul>
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li> <tt>return.get() != NULL</tt>
    * <li> <tt>return->dim() == dim</tt>
    * </ul>
    *
-   * @return  Returns a smart reference counted pointer to a dynamically
-   * allocated vector space object that can be used to create vector.
+   * @return Returns a smart reference-counted pointer to a dynamically
+   * allocated vector space object that can be used to create vectors and
+   * multi-vectors.
    */
   virtual Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > createVecSpc(int dim) const = 0;
 

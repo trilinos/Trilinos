@@ -6,7 +6,7 @@
 # Points to where Trilinos is installed
 TRILINOS_INSTALL_DIR = ../..
 
-# Include the makefile fragment that specify the compile/link commands 
+# Include the makefile fragment that specifies the compile/link commands 
 include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.thyra.macros
 # Include the makefile fragement that defines the include paths and libraries
 include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.thyra
@@ -24,6 +24,10 @@ COMPILE_FLAGS = $(THYRA_CXXFLAGS) $(THYRA_DEFS) $(THYRA_CPPFLAGS) $(THYRA_INCLUD
 #LINK_FLAGS = $(shell perl $(TRILINOS_INSTALL_DIR)/include/strip_dup_libs.pl $(THYRA_LIBS))
 # For platforms where perl and/or GNUMake are not available
 LINK_FLAGS = $(THYRA_LIBS)
+
+#
+# Define the compile and link targets that use the included macros
+#
 
 sillyCgSolve_serial.exe : sillyCgSolve_serial.o
 	$(THYRA_CXXLD) $(THYRA_CXXFLAGS) sillyCgSolve_serial.o -o sillyCgSolve_serial.exe $(LINK_FLAGS)

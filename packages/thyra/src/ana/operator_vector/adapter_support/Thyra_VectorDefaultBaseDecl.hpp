@@ -35,11 +35,27 @@
 
 namespace Thyra {
 
-/** \brief Convienent node subclass for concrete <tt>VectorBase</tt>
- * subclasses.
+/** \brief Convenient node subclass for concrete <tt>VectorBase</tt>
+ * subclasses that relies on a default <tt>MultiVectorBase</tt>
+ * implementation.
  *
  * This node subclass provides as many default implementations as possible for
- * virtual functions.
+ * virtual functions based on the default multi-vector implementation
+ * <tt>MultiVectorCols</tt>.
+ *
+ * <b>Notes for subclass developers</b>
+ *
+ * In order to create a concrete subclass of this interface, only two
+ * operations must be overridden: <tt>space()</tt> and <tt>applyOp()</tt>.
+ * Overriding the <tt>space()</tt> operation requires defining a concrete
+ * <tt>VectorSpaceBase</tt> class (which has only three pure virtual
+ * operations if using <tt>VectorSpaceDefaultBase</tt>).
+ *
+ * Note that all of the inherited <tt>LinearOpBase</tt> and
+ * <tt>MultiVectorBase</tt> functions are overridden in this subclass and are
+ * given perfectly good implementations.  Therefore, a concrete subclass of
+ * <tt>%VectorDefaultBase</tt> should not have to re-override any of these
+ * functions.
  *
  * \ingroup Thyra_Op_Vec_general_adapter_support_code_grp
  */
@@ -64,7 +80,7 @@ public:
   //@{
   /// Returns <tt>this->space()</tt>
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
-  /// Returns a <tt>SerialVectorSpace</tt> object with dimension 1.
+  /// Returns a <tt>SerialVectorSpaceStd</tt> object with dimension 1.
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
   //@}
 
@@ -111,7 +127,7 @@ protected:
    */
   bool opSupported(ETransp M_trans) const;
 
-  /** \brief. Applies vector and its adjoint (transpose) as a linear operator. */
+  /** \brief. Applies vector or its adjoint (transpose) as a linear operator. */
   void apply(
     const ETransp                M_trans
     ,const VectorBase<Scalar>    &x

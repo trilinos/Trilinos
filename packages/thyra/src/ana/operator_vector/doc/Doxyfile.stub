@@ -13,6 +13,8 @@ INPUT                  = ../src/ana/operator_vector/doc/index.doc \
                          ../src/ana/operator_vector/ana_support \
                          ../example/ana/operator_vector/SerialTridiagLinearOp.hpp \
                          ../example/ana/operator_vector/MPITridiagLinearOp.hpp \
+                         ../example/ana/operator_vector/ComplexFFTLinearOp.hpp \
+                         ../example/ana/operator_vector/RealComplexFFTLinearOp.hpp \
                          ../example/ana/operator_vector/sillyCgSolve.hpp \
                          ../example/ana/operator_vector/sillyPowerMethod.hpp
 FILE_PATTERNS          = *.h *c *.hpp *.cpp

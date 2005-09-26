@@ -34,8 +34,20 @@
 
 namespace Thyra {
 
-/** \brief Node subclass that provides default implementations for as many
- * other functions as is reasonable.
+/** \brief Node subclass that uses a default <tt>MultiVectorBase</tt>
+ * implementation</tt> to provide default implementations for as many other
+ * functions in <tt>MultiVectorBase</tt> interface the as is reasonable.
+ *
+ * <b>Notes to subclass developers</b>
+ *
+ * Only three function overrides are required in order to create a concrete
+ * <tt>MultiVectorBase</tt> subclass: <tt>range()</tt>, <tt>domain()</tt> and
+ * the non-const version of <tt>col()</tt>.  All of the other functions have
+ * default implementations.  However, a good implementation will provide
+ * optimized overrides of at least the functions <tt>apply()</tt> and
+ * <tt>applyTranspose()</tt>.  The non-const versions of <tt>subView()</tt>
+ * should be overridden if subviews are important.  The default implementation
+ * will not achieve near-optimal performance in many cases.
  *
  * \ingroup Thyra_Op_Vec_general_adapter_support_code_grp
  */
@@ -53,7 +65,7 @@ public:
   /** \brief . */
   using MultiVectorBase<Scalar>::subView; // Inject *all* functions!
 
-  /** Overridden from MultiVectorBase */
+  /** \name Overridden public member functions from MultiVectorBase */
   //@{
   /** \brief . */
   Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const Range1D& colRng ) const;
