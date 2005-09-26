@@ -631,6 +631,11 @@ ComputePreconditioner(const bool CheckPreconditioner)
 #ifdef HAVE_ML_AZTECOO
 #ifdef HAVE_MPI
   const Epetra_MpiComm * MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm());
+  if (!MpiComm)
+  {
+     cerr << "dynamic_cast of Comm() failed\n";
+     exit( EXIT_FAILURE );
+  }
   AZ_set_proc_config(ProcConfig_,MpiComm->Comm());
 #else
   AZ_set_proc_config(ProcConfig_,AZ_NOT_MPI);
