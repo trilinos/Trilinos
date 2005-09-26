@@ -303,24 +303,24 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 /* and local vertices.  Not inlined because inline is not universal, yet.  */
 #define INNER_PRODUCT1(ARG)\
   for (i = 0; i < count; r++, i++)\
-    for (j = hg->hindex [*r]; j < hg->hindex [*r + 1]; j++) {\
+    for (j = hg->hindex[*r]; j < hg->hindex[*r + 1]; j++) {\
       if (cmatch[hg->hvertex[j]] == hg->hvertex[j])  {\
-        if (sums [hg->hvertex[j]] == 0.0)\
-          index [m++] = hg->hvertex[j];\
-        sums [hg->hvertex[j]] += (ARG);\
+        if (sums[hg->hvertex[j]] == 0.0)\
+          index[m++] = hg->hvertex[j];\
+        sums[hg->hvertex[j]] += (ARG);\
       }\
     }
             
 /* Mostly identical inner product calculation to above for c-ipm variant. Here */
 /* candidates are a subset of local vertices and are not in a separate buffer  */     
 #define INNER_PRODUCT2(ARG)\
-   for (i = hg->vindex[gno]; i < hg->vindex[gno+1]; i++)  {\
+   for (i = hg->vindex[cand_gno]; i < hg->vindex[cand_gno+1]; i++)  {\
      edge = hg->vedge[i];\
-     for (j = hg->hindex [edge]; j < hg->hindex [edge+1]; j++)  {\
+     for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++)  {\
        if (cmatch[hg->hvertex[j]] == hg->hvertex[j])    {\
-         if (sums [hg->hvertex[j]] == 0.0)\
-           index [m++] = hg->hvertex[j];\
-         sums [hg->hvertex[j]] += (ARG);\
+         if (sums[hg->hvertex[j]] == 0.0)\
+           index[m++] = hg->hvertex[j];\
+         sums[hg->hvertex[j]] += (ARG);\
        }\
      }\
    }  
@@ -368,7 +368,8 @@ static int pmatching_ipm (ZZ *zz,
   PHGPartParams *hgp)
 {
   int i, j, k, n, m, round, vindex, kstart, *r, *s;   /* loop counters  */
-  int lno, gno, count, old_kstart;                    /* temp variables */
+  int lno, count, old_kstart;                    /* temp variables */
+  int cand_gno;        /* gno of current candidate */
   int sendcnt, sendsize, reccnt, recsize, msgsize;    /* temp variables */
   int nRounds;         /* # of matching rounds to be performed;       */
                        /* identical on all procs in hgc->Communicator.*/
@@ -398,7 +399,7 @@ static int pmatching_ipm (ZZ *zz,
   int err = ZOLTAN_OK, old_row, row;
   int max_nPins, max_nVtx;       /* Global max # pins/proc and vtx/proc */
   int **rows = NULL;             /* used only in merging process */
-  int bestlno, vertex, nselect, edge;
+  int bestlno, partner_gno, nselect, edge;
   int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
   int cFLAG;                    /* if set, do only a column matching, c-ipm */
   static int timer[7] = {-1, -1, -1, -1, -1, -1, -1};
@@ -462,7 +463,8 @@ static int pmatching_ipm (ZZ *zz,
 
   /* These 3 buffers are REALLOC'd iff necessary; this should be very rare */
   nSend    = max_nPins;   /* nSend/nEdgebuf are used for candidate exchange   */
-  nEdgebuf = max_nPins;   /* candidates sent as <gno, #pins, pin_list>        */
+  nEdgebuf = max_nPins;   /* candidates sent as
+                             <cand_gno, #pins, pin_list>        */
   nRec     = max_nPins;
 
   if (hg->nVtx)  
@@ -510,7 +512,7 @@ static int pmatching_ipm (ZZ *zz,
   /* match[] is local slice of global matching array.  It uses local numbering 
    * (zero-based). Initially, match[i] = i. After matching, match[i]=i indicates
    * an unmatched vertex. A matching between vertices i & j is indicated by 
-   * match[i] = j & match [j] = i.  NOTE: a match to an off processor vertex is
+   * match[i] = j & match[j] = i.  NOTE: a match to an off processor vertex is
    * indicated by a negative number, -(gno+1), and must use global numbers
    * (gno's) and not local numbers, lno's, which are zero based.        */
 
@@ -560,24 +562,26 @@ static int pmatching_ipm (ZZ *zz,
       for (i = 0; i < sendcnt; i++)  {
         lno = select[i];
         sendsize += (hg->vindex[lno+1] - hg->vindex[lno]);
-        }
+      }
       if (sendsize > nSend)
         MACRO_REALLOC (sendsize, nSend, send);     /* make send buffer bigger */
     
-      /* fill send buff: list of <gno, gno's edge count, list of edge lno's> */
+      /* fill send buff: list of 
+       * <cand_gno, cand_gno's edge count, list of edge lno's> 
+       */
       s = send;
       n = 0;
       for (i = 0; i < sendcnt; i++)   {
         lno = select[i];
-        gno = VTX_LNO_TO_GNO (hg, lno);
+        cand_gno = VTX_LNO_TO_GNO(hg, lno);
         /* Optimization: Send only vertices that are non-empty locally */
 #ifdef SPARSE_CANDIDATES
         if ((hg->vindex[lno+1] > hg->vindex[lno]) 
-         || (gno % hgc->nProc_y == hgc->myProc_y))
+         || (cand_gno % hgc->nProc_y == hgc->myProc_y))
 #endif
         {
           n++;  /* non-empty vertex */
-          *s++ = gno;
+          *s++ = cand_gno;
           *s++ = hg->vindex[lno+1] - hg->vindex[lno];              /* count */
           for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
             *s++ = hg->vedge[j];                             /* lno of edge */
@@ -621,13 +625,13 @@ static int pmatching_ipm (ZZ *zz,
         dest[i] = dest[i-1] + size[i-1];
 
       /* communicate vertices & their edges to all row neighbors */
-      MPI_Allgatherv (send, sendsize, MPI_INT, edgebuf, size, dest, MPI_INT,
+      MPI_Allgatherv(send, sendsize, MPI_INT, edgebuf, size, dest, MPI_INT,
        hgc->row_comm);
          
       /* create random permutation of index into the edge buffer */
       i = 0;
       for (j = 0 ; j < nTotal  &&  i < recsize; j++)   {
-        permute[j] = i++;             /* save index of gno in permute[] */
+        permute[j] = i++;             /* save index of cand_gno in permute[] */
         count      = edgebuf[i++];    /* count of edges */
         i += count;                   /* skip over count edges */
       }
@@ -670,12 +674,12 @@ static int pmatching_ipm (ZZ *zz,
       for (k = kstart; k < nTotal; k++)  {  
         if (!cFLAG)  { 
           r     = &edgebuf[permute[k]];
-          gno   = *r++;                      /* gno of candidate vertex */
-          count = *r++;                      /* count of following hyperedges */
+          cand_gno = *r++;                 /* gno of candidate vertex */
+          count = *r++;                    /* count of following hyperedges */
         }
         else
-          gno = permute[k];       /* need to use next local vertex */
-                                  /* here gno is really a local id */
+          cand_gno = permute[k];  /* need to use next local vertex */
+                                  /* here cand_gno is really a local id */
                   
         /* now compute the row's nVtx inner products for kth candidate */
         m = 0;
@@ -695,16 +699,16 @@ static int pmatching_ipm (ZZ *zz,
           else if ((hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
             INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]])
           else if ((hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
-            INNER_PRODUCT2(hg->ewgt [edge])
+            INNER_PRODUCT2(hg->ewgt[edge])
           else if ((hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
             INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[edge])   
         }
           
         /* if local vtx, remove self inner product (useless maximum) */
         if (cFLAG)
-          sums [gno] = 0.0;             /* here gno is really a local id */
-        else if (VTX_TO_PROC_X (hg, gno) == hgc->myProc_x)
-          sums [VTX_GNO_TO_LNO (hg, gno)] = 0.0;
+          sums[cand_gno] = 0.0;       /* here cand_gno is really a local id */
+        else if (VTX_TO_PROC_X(hg, cand_gno) == hgc->myProc_x)
+          sums[VTX_GNO_TO_LNO(hg, cand_gno)] = 0.0;
          
         /* count partial sums exceeding PSUM_THRESHOLD */   
         count = 0;
@@ -718,7 +722,9 @@ static int pmatching_ipm (ZZ *zz,
         if (count == 0)
           continue;         /* no partial sums to append to message */
 
-        /* HEADER_COUNT (row, gno, count of <lno, psum> pairs) */                    
+        /* HEADER_COUNT (row, cand_gno, count of <lno, psum> pairs describing
+         *               non-zero partial inner products) 
+         */
         msgsize = HEADER_COUNT + 2 * count;
 
 #ifndef USE_SUBROUNDS
@@ -740,12 +746,12 @@ static int pmatching_ipm (ZZ *zz,
 
         if (sendsize + msgsize <= nSend)  {
           /* current partial sums fit, so put them into the send buffer */
-          dest[sendcnt]   = gno % hgc->nProc_y;  /* proc to compute tsum */
+          dest[sendcnt]   = cand_gno % hgc->nProc_y; /* proc to compute tsum */
           size[sendcnt++] = msgsize;             /* size of message */
           sendsize       += msgsize;          /* cummulative size of message */
           
           *s++ = hgc->myProc_y;      /* save my row (for merging) */
-          *s++ = gno;          
+          *s++ = cand_gno;          
           *s++ = count;
           for (i = 0; i < count; i++)  {          
             *s++ = aux[i];                          /* lno of partial sum */
@@ -785,10 +791,10 @@ static int pmatching_ipm (ZZ *zz,
       for (r = rec; r < rec + recsize  &&  k < hgc->nProc_y; )  {     
         row = *r++;        
         if (row != old_row)  {
-          index[k++] = r - rec;   /* points at gno, not row or col */
+          index[k++] = r - rec;   /* points at cand_gno, not row */
           old_row = row;
         }
-        gno   = *r++;
+        cand_gno = *r++;
         count = *r++;
         r += (count * 2);
       }
@@ -803,17 +809,17 @@ static int pmatching_ipm (ZZ *zz,
       s = send; 
       for (n = old_kstart; n < kstart; n++)  {
         m = 0;        
-        /* here gno is really a local id when cFLAG */
-        gno = (cFLAG) ? permute[n] : edgebuf [permute[n]];
+        /* here cand_gno is really a local id when cFLAG */
+        cand_gno = (cFLAG) ? permute[n] : edgebuf[permute[n]];
                
         /* Not sure if this test makes any speedup ???, works without! */
-        if (gno % hgc->nProc_y != hgc->myProc_y)
-          continue;                           /* this gno's partial IPs not sent
-                                                 to this proc */
+        if (cand_gno % hgc->nProc_y != hgc->myProc_y)
+          continue;                      /* this cand_gno's partial IPs not sent
+                                            to this proc */
         
-        /* merge step: look for target gno from each row's data */
+        /* merge step: look for target cand_gno from each row's data */
         for (i = 0; i < hgc->nProc_y; i++)  {
-          if (rows[i] < &rec[recsize] && *rows[i] == gno)  {       
+          if (rows[i] < &rec[recsize] && *rows[i] == cand_gno)  {       
             count = *(++rows[i]);
             for (j = 0; j < count; j++)  {
               lno = *(++rows[i]);         
@@ -831,14 +837,16 @@ static int pmatching_ipm (ZZ *zz,
           if (sums[aux[i]] > TSUM_THRESHOLD)
             count++;   
 
-        /* create <gno, count, <lno, tsum>> in send array */           
+        /* create <cand_gno, count of <lno,tsum> pairs, <lno, tsum>> 
+         * in send array.
+         */           
         if (count > 0)  {
           if ( (s - send) + (2 + 2 * count) > nSend ) {
             sendsize = s - send;
             MACRO_REALLOC (nSend + 2*(1+count), nSend, send); /*enlarge buffer*/
             s = send + sendsize;   /* since realloc buffer could move */ 
           }      
-          *s++ = gno;
+          *s++ = cand_gno;
           *s++ = count;
         }  
         for (i = 0; i < m; i++)   {
@@ -876,7 +884,7 @@ static int pmatching_ipm (ZZ *zz,
       /* Determine best vertex and best sum for each candidate */
       if (hgc->myProc_y == 0) {   /* do following only if I am the MASTER ROW */
         for (r = rec; r < rec + recsize;)  {
-          gno   = *r++;                    /* candidate's GNO */
+          cand_gno = *r++;                    /* candidate's GNO */
           count = *r++;                    /* count of nonzero pairs */
           bestsum = -1.0;                  /* any negative value will do */
           bestlno = -1;                    /* any negative value will do */
@@ -890,19 +898,19 @@ static int pmatching_ipm (ZZ *zz,
           }
          
           if (cFLAG && bestsum > TSUM_THRESHOLD)  {
-            match[bestlno]  = gno;
-            match[gno]      = bestlno;
+            match[bestlno]  = cand_gno;
+            match[cand_gno] = bestlno;
             cmatch[bestlno] = -1;         
           }
                         
           if (!cFLAG && bestsum > TSUM_THRESHOLD)  {
             cmatch[bestlno] = -1;  /* mark pending match to avoid conflicts */
-            *mp++ = gno;
-            *mp++ = VTX_LNO_TO_GNO (hg, bestlno);
+            *mp++ = cand_gno;
+            *mp++ = VTX_LNO_TO_GNO(hg, bestlno);
              f = (float*) mp++;
             *f = bestsum;
 #ifndef NEW_PHASE3
-            master_procs[nmaster] = VTX_TO_PROC_X (hg, gno);
+            master_procs[nmaster] = VTX_TO_PROC_X(hg, cand_gno);
 #endif
             nmaster++;
           }
@@ -927,7 +935,6 @@ static int pmatching_ipm (ZZ *zz,
     /* Only MASTER ROW computes best global match for candidates */
     /* EBEB or perhaps we can do this fully distributed? */
     if (hgc->myProc_y == 0) {
-      int cand;
 
       /* Convert master_data to array of triplets with best potential matches.*/
       local_best = (struct triplet *) master_data;
@@ -958,23 +965,23 @@ static int pmatching_ipm (ZZ *zz,
          -(gno+1) is used in the match array.                    */
       for (i = 0; i < total_nCandidates; i++) {
         int cproc, vproc;
-        cand   = global_best[i].cand;
-        if (cand == INT_MAX) break;  /* All matches are processed */
-        vertex = global_best[i].partner;
-        cproc = VTX_TO_PROC_X(hg, cand);
-        vproc = VTX_TO_PROC_X(hg, vertex);
+        cand_gno = global_best[i].cand;
+        if (cand_gno == INT_MAX) break;  /* All matches are processed */
+        partner_gno = global_best[i].partner;
+        cproc = VTX_TO_PROC_X(hg, cand_gno);
+        vproc = VTX_TO_PROC_X(hg, partner_gno);
         if (cproc == hgc->myProc_x) {
           if (vproc == hgc->myProc_x)   {
-            int v1 = VTX_GNO_TO_LNO(hg, vertex);             
-            int v2 = VTX_GNO_TO_LNO(hg, cand);                
+            int v1 = VTX_GNO_TO_LNO(hg, partner_gno);             
+            int v2 = VTX_GNO_TO_LNO(hg, cand_gno);                
             match[v1] = v2;
             match[v2] = v1;
           }
           else 
-            match[VTX_GNO_TO_LNO(hg, cand)]   = -vertex - 1;
+            match[VTX_GNO_TO_LNO(hg, cand_gno)] = -partner_gno - 1;
         }                         
         else if (vproc == hgc->myProc_x)
-          match[VTX_GNO_TO_LNO(hg, vertex)] = -cand - 1;
+          match[VTX_GNO_TO_LNO(hg, partner_gno)] = -cand_gno - 1;
       }
 
     } /* End (hgc->myProc_y == 0) */
@@ -997,18 +1004,18 @@ static int pmatching_ipm (ZZ *zz,
 
     /* read each message (candidate id, best match id, and best i.p.) */ 
       for (r = rec; r < rec + 3 * reccnt; )   {
-        gno    = *r++;
-        vertex = *r++;
+        cand_gno = *r++;
+        partner_gno = *r++;
         f      = (float*) r++;
         bestsum = *f;            
                              
         /* Note: ties are broken to favor local over global matches */   
-        lno =  VTX_GNO_TO_LNO (hg, gno);  
-        if ((bestsum > sums [lno]) || (bestsum == sums [lno]
-         && VTX_TO_PROC_X (hg, gno)    != hgc->myProc_x
-         && VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x))    {        
-            index [lno] = vertex;
-            sums  [lno] = bestsum;
+        lno =  VTX_GNO_TO_LNO(hg, cand_gno);  
+        if ((bestsum > sums[lno]) || (bestsum == sums[lno]
+         && VTX_TO_PROC_X(hg, cand_gno)    != hgc->myProc_x
+         && VTX_TO_PROC_X(hg, partner_gno) == hgc->myProc_x))    {        
+            index[lno] = partner_gno;
+            sums[lno] = bestsum;
         }                   
       }
     }
@@ -1026,23 +1033,23 @@ static int pmatching_ipm (ZZ *zz,
       for (i = 0; i < nselect; i++)   {
         int d2;
         lno = select[i];
-        gno = VTX_LNO_TO_GNO(hg, lno);
-        vertex = (sums[lno] > TSUM_THRESHOLD) ? index[lno] : gno;
-        d2 = VTX_TO_PROC_X(hg, vertex);
+        cand_gno = VTX_LNO_TO_GNO(hg, lno);
+        partner_gno = (sums[lno] > TSUM_THRESHOLD) ? index[lno] : cand_gno;
+        d2 = VTX_TO_PROC_X(hg, partner_gno);
             
-        /* Matching gno to vertex */
+        /* Matching cand_gno to partner_gno */
         if (d2 == hgc->myProc_x) {
-          int v1 = VTX_GNO_TO_LNO(hg, vertex);             
+          int v1 = VTX_GNO_TO_LNO(hg, partner_gno);             
           match[v1] = lno;
           match[lno] = v1;
         }                         
         else {
           /* set candidate match info */
-          match[lno] = -vertex - 1;
-          /* gno is on this processor, but vertex is not.  Send
-             copy to owner of vertex. */
-          *s++ = gno;
-          *s++ = vertex;
+          match[lno] = -partner_gno - 1;
+          /* cand_gno is on this processor, but partner_gno is not.  Send
+             copy to owner of partner_gno. */
+          *s++ = cand_gno;
+          *s++ = partner_gno;
           dest[sendcnt++] = d2;
         }
       }
@@ -1054,11 +1061,11 @@ static int pmatching_ipm (ZZ *zz,
         goto fini;
 
       /* update match array with current selections */
-      /* Note: -gno-1 designates an external match as a negative number */
+      /* Note: -cand_gno-1 designates an external match as a negative number */
       for (r = rec; r < rec + 2 * reccnt; )  {   
-        gno    = *r++;
-        vertex = *r++;
-        match [VTX_GNO_TO_LNO (hg, vertex)] = -gno - 1;
+        cand_gno = *r++;
+        partner_gno = *r++;
+        match[VTX_GNO_TO_LNO(hg, partner_gno)] = -cand_gno - 1;
       }      
     }
     
@@ -1092,7 +1099,7 @@ static int pmatching_ipm (ZZ *zz,
 
     for (i = 0; i < hg->nVtx; i++)
       if (match[i] < 0)  cmatch[i] = -match[i] - 1;
-      else               cmatch[i] = VTX_LNO_TO_GNO (hg, match[i]);
+      else               cmatch[i] = VTX_LNO_TO_GNO(hg, match[i]);
 
     MPI_Allgather (&hg->nVtx, 1, MPI_INT, size, 1, MPI_INT, hgc->row_comm); 
 
