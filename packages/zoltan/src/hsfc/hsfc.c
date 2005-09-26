@@ -129,7 +129,7 @@ int Zoltan_HSFC(
 
      d = (HSFC_Data*) zz->LB.Data_Structure;
      memset ((void*)d, 0, sizeof (HSFC_Data));
-     d->tran.Target_Dim = -1;  /* flag that it is not computed yet */
+     Zoltan_Initialize_Transformation(&(d->tran));
    }
    else{
      d = (HSFC_Data*) zz->LB.Data_Structure;
@@ -638,19 +638,16 @@ int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
 
   toZZ->LB.Data_Structure = (void *)to;
 
+  Zoltan_Copy_Transformation(&(to->tran), &(from->tran));
+
   for (i=0; i<3; i++){
     to->bbox_hi[i] = from->bbox_hi[i];
     to->bbox_lo[i] = from->bbox_lo[i];
     to->bbox_extent[i] = from->bbox_extent[i];
-    for (j=0; j<3; j++){
-      to->tran.Transformation[i][j] = from->tran.Transformation[i][j];
-    }
-    to->tran.Permutation[i] = from->tran.Permutation[i];
   }
 
   to->ndimension = from->ndimension;
   to->fhsfc = from->fhsfc;
-  to->tran.Target_Dim = from->tran.Target_Dim;
 
   if (from->final_partition){
     len = sizeof(Partition) * fromZZ->LB.Num_Global_Parts;
@@ -698,21 +695,7 @@ Partition *p;
       data->bbox_extent[0], data->bbox_extent[1], data->bbox_extent[2],
       data->ndimension, data->fhsfc);
 
-  if (data->tran.Target_Dim > 0){
-    printf("Degenerate geometry:\n");
-    printf("  Transform to %d dimensions, transformation or permutation:\n",
-      data->tran.Target_Dim);
-    for (i=0; i<3; i++){
-      printf("    %lf %lf %lf\n", data->tran.Transformation[i][0],
-             data->tran.Transformation[i][1], data->tran.Transformation[i][2]);
-    }
-    printf("    or simple Permutation of coordinates: %d %d %d\n",
-      data->tran.Permutation[0], data->tran.Permutation[1], 
-      data->tran.Permutation[2]);
-  }
-  else{
-    printf("Don't skip dimensions, no degenerate geometry.\n");
-  }
+  Zoltan_Print_Transformation(&(data->tran));
 }
 
 /* function to read HSFC parameters: */
