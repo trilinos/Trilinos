@@ -1,7 +1,7 @@
 ../configure \
-CXXFLAGS="-O3 -fprofile-arcs -ftest-coverage" \
-CFLAGS=-O3 \
-FFLAGS=-O3 \
+CXXFLAGS="-O0 -fprofile-arcs -ftest-coverage" \
+CFLAGS=-O0 \
+FFLAGS=-O0 \
 CXX=g++ \
 --cache-file=config.cache \
 --disable-default-packages \
