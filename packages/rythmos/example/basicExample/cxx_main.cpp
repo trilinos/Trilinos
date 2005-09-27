@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
       std::cout.precision(15);
       std::cout << "lambda[" << MyPID*MyLength+i << "] = " << lambda[i] << std::endl;
     }
-    double error = 0;
+    // Print out computed and exact solutions:
     for (int i=0 ; i<MyLength ; ++i)
     {
       std::cout.precision(15);
@@ -269,36 +269,43 @@ int main(int argc, char *argv[])
       std::cout.width(20); std::cout << x_computed[i] << "\t";
       std::cout << "Exact: x[" << MyPID*MyLength+i << "] = ";
       std::cout.width(20); std::cout << x_star[i] << std::endl;
-      const double thisError = Thyra::relErr(x_computed[i],x_star[i]);
-      error = std::max(thisError,error);
-      //error = ( thisError > error ? thisError : error );
     }
-    result = Thyra::testMaxErr(
-      "error",error
-      ,"maxError",maxError
-      ,"maxWarning",10.0*maxError
-      ,&std::cerr,""
-      );
-    if(!result) success = false;
-
+    
     // Check numerics against exact numerical method for FE and BE case:
-    error = 0;
+    double numerical_error = 0;
     if (x_numerical_exact_ptr.get())
     {
       const Epetra_Vector& x_numerical_exact = *x_numerical_exact_ptr;
       for ( int i=0 ; i<MyLength ; ++i)
       {
         const double thisError = Thyra::relErr(x_numerical_exact[i],x_computed[i]);
-        error = std::max(thisError,error);
+        numerical_error = std::max(thisError,numerical_error);
       }
       result = Thyra::testMaxErr(
-        "Exact numerical error",error
+        "Exact numerical error",numerical_error
         ,"maxError",1.0e-12
         ,"maxWarning",1.0e-11
         ,&std::cerr,""
         );
       if(!result) success = false;
     }
+
+    // Check numerics against exact DE solution:
+    double error = 0;
+    for (int i=0 ; i<MyLength ; ++i)
+    {
+      const double thisError = Thyra::relErr(x_computed[i],x_star[i]);
+      error = std::max(thisError,error);
+      //error = ( thisError > error ? thisError : error );
+    }
+    result = Thyra::testMaxErr(
+      "Exact DE solution error",error
+      ,"maxError",maxError
+      ,"maxWarning",10.0*maxError
+      ,&std::cerr,""
+      );
+    if(!result) success = false;
+
     
 #ifdef HAVE_MPI
     MPI_Finalize();
