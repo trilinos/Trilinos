@@ -36,8 +36,8 @@ print "\n";
 
 if($num_hpp_files) { print "Number of lines in *.hpp files = $num_hpp_lines\n"; }
 if($num_cpp_files) { print "Number of lines in *.cpp files = $num_cpp_lines\n"; }
-if($num_H_files)   { print "Number of lines in *.H files   = $num_hpp_lines\n"; }
-if($num_C_files)   { print "Number of lines in *.C files   = $num_cpp_lines\n"; }
+if($num_H_files)   { print "Number of lines in *.H files   = $num_H_lines\n"; }
+if($num_C_files)   { print "Number of lines in *.C files   = $num_C_lines\n"; }
 if($num_h_files)   { print "Number of lines in *.h files   = $num_h_lines\n"; }
 if($num_c_files)   { print "Number of lines in *.c files   = $num_c_lines\n"; }
 if($num_f_files)   { print "Number of lines in *.f files   = $num_f_lines\n"; }
