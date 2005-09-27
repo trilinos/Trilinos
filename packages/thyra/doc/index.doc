@@ -1,3 +1,5 @@
+? Doxyfile
+? html
 /*! \mainpage Thyra : Interfaces and Support code for the Interoperability of Abstract Numerical Algorithms
 
 \section thyra_outline_sec Outline
@@ -55,6 +57,10 @@ ANAs.
   <li> <a href="../../src/ana/operator_vector/doc/html/index.html">Operator/Vector Interfaces and Support Software</a>:
   Contains the most fundamental %Thyra operator/vector interfaces as well as standard adapter code and ANA development
   utilities.
+
+  <li> <a href="../../src/ana/nonlinear/doc/html/index.html">Nonlinear Interfaces and Support Software</a>:
+  Contains the some fundamental interfaces for developing nonlinear ANAs and also includes related support
+  software.
 
   </ul>
 
@@ -198,6 +204,16 @@ This paper describes the need for, and the basic design of,
 used C structs while the current <tt>%RTOpPack::RTOpT</tt> is a fully
 templated C++ class implementation.
 
+<li><b><a
+href="../../src/ana/operator_vector/doc/html/LinearAlgebraFunctionConvention.pdf">A
+Simple Convention for the Specification of Linear Algebra Function Prototypes
+in C++ </a></b>
+
+This short note describes a simple convention for writing function prototypes
+for linear algebra operations.  This convention is used in \ref
+Thyra_Op_Vec_VectorStdOpsAll_LA_names_grp "this" set of functions, for
+instance.
+
 <!-- ToDo: Put in a link to the Thyra paper at some point! -->
 
 </ul>
@@ -247,7 +263,7 @@ extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
 <tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of the <tt>AztecOO</tt>
 class.  These adapters allow a client to take any <tt>Epetra_RowMatrix</tt>
 object embedded in a <tt>Thyra::EpetraLinearOp</tt> object and immediately use
-to to define an iterative linear solver such as GMRES or CG.
+to to define an iterative linear solver such as GMRES and CG.
 
 </ul>
 
