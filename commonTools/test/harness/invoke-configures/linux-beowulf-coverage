@@ -3,6 +3,7 @@ CXXFLAGS="-O0 -fprofile-arcs -ftest-coverage" \
 CFLAGS=-O0 \
 FFLAGS=-O0 \
 CXX=g++ \
+--with-gnumake \
 --cache-file=config.cache \
 --disable-default-packages \
 --enable-amesos \
@@ -37,7 +38,6 @@ CXX=g++ \
 --enable-nox-lapack \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
---enable-python \
 --enable-rythmos \
 --enable-teuchos \
 --enable-teuchos-abc \
@@ -46,5 +46,4 @@ CXX=g++ \
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
---enable-tsfextended \
---with-gnumake
+--enable-tsfextended
