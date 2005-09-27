@@ -3,11 +3,11 @@
 # beowulf nightly serial
 #
 ###############################################################################
-
+ 
 RUN (beowulf-nightly-serial) {
     
     BUILD-LABEL         = nightly;
-    BUILD-DIR           = SERIAL-NEW;
+    BUILD-DIR           = SERIAL;
     COMM                = serial;
     INVOKE-CONFIGURE    = linux-beowulf;
     TEST-CATEGORY       = FRAMEWORK;
@@ -24,7 +24,7 @@ RUN (beowulf-nightly-serial) {
 
 RUN (beowulf-nightly-mpi) {
     
-    BUILD-DIR           = MPI-NEW;
+    BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = linux-beowulf-mpi;
     TEST-CATEGORY       = FRAMEWORK;
@@ -38,13 +38,32 @@ RUN (beowulf-nightly-mpi) {
 
 ###############################################################################
 #
+# beowulf coverage
+#
+###############################################################################
+
+RUN (beowulf-coverage) {
+    
+    BUILD-LABEL         = coverage;
+    BUILD-DIR           = COVERAGE;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-beowulf-coverage;
+   #TEST-CATEGORY       = COVERAGE; # set up later
+    TEST-CATEGORY       = FRAMEWORK;
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = mnphenow;
+
+}
+
+###############################################################################
+#
 # herouxsmp nightly serial
 #
 ###############################################################################
 
 RUN (herouxsmp-nightly-serial) {
     
-    BUILD-DIR           = SERIAL-NEW;
+    BUILD-DIR           = SERIAL;
     COMM                = serial;
     INVOKE-CONFIGURE    = linux-herouxsmp;
     MAKE-COMMAND        = make -j4;
@@ -62,7 +81,7 @@ RUN (herouxsmp-nightly-serial) {
 
 RUN (herouxsmp-nightly-mpi) {
     
-    BUILD-DIR           = MPI-NEW;
+    BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = linux-herouxsmp-mpi;
     MAKE-COMMAND        = make -j4;
@@ -83,7 +102,7 @@ RUN (herouxsmp-nightly-mpi) {
 
 RUN (paunchy-nightly-serial) {
     
-    BUILD-DIR           = SERIAL-NEW;
+    BUILD-DIR           = SERIAL;
     COMM                = serial;
     INVOKE-CONFIGURE    = sunos-paunchy;
     MAKE-COMMAND        = /Net/local/gnu/bin/gmake;
@@ -101,7 +120,7 @@ RUN (paunchy-nightly-serial) {
 
 RUN (paunchy-nightly-mpi) {
     
-    BUILD-DIR           = MPI-NEW;
+    BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = sunos-paunchy-mpi;
     MAKE-COMMAND        = /Net/local/gnu/bin/gmake;
@@ -122,7 +141,7 @@ RUN (paunchy-nightly-mpi) {
 
 RUN (atlantis-nightly-serial) {
     
-    BUILD-DIR           = SERIAL-NEW;
+    BUILD-DIR           = SERIAL;
     COMM                = serial;
     INVOKE-CONFIGURE    = sgi-atlantis;
     MAKE-COMMAND        = gmake;
@@ -140,7 +159,7 @@ RUN (atlantis-nightly-serial) {
 
 RUN (atlantis-nightly-mpi) {
 
-    BUILD-DIR           = MPI-NEW;
+    BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = sgi-atlantis-mpi;
     MAKE-COMMAND        = gmake;
@@ -201,7 +220,7 @@ RUN (redstorm-nightly-mpi) {
 
 RUN (s858352-nightly-serial) {
 
-    BUILD-DIR           = SERIAL-NEW;
+    BUILD-DIR           = SERIAL;
     COMM                = serial;
     INVOKE-CONFIGURE    = darwin-s858352;
     TEST-CATEGORY       = FRAMEWORK;
@@ -220,7 +239,7 @@ RUN (s858352-nightly-serial) {
 
 RUN (s858352-nightly-mpi) {
 
-    BUILD-DIR           = MPI-NEW;
+    BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = darwin-s858352-mpi;
     TEST-CATEGORY       = FRAMEWORK;
