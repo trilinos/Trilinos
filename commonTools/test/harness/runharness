@@ -181,9 +181,23 @@ exit $exitStatus;
         # If --updated flag is set, we've already updated and we've been
         #     replaced by the new, updated version of ourself--we want to skip
         #     this so we don't continue the process forever
-        if (!$updated) {       
-            chdir "$trilinosDir"
-                or die "cannot chdir to $trilinosDir, died";  
+        if (!$updated) {
+        
+            # If Trilinos3PL exists in the same directory as TrilinosRELEASE
+            # (in the same directory as the directory containing $trilinosDir)
+            # then update it as well.
+            chdir "$trilinosDir" or die "cannot chdir to $trilinosDir, died";  
+            if (! chdir "../../Trilinos3PL") {
+                print "can't chdir to \"../../Trilinos3PL\", skipping update of Trilinos3PL\n";
+            } else {
+                my $output = `cvs -q update -dP 2>&1`;
+                my $result = $?;
+                if ($result) {
+                    print "error updating Trilinos3PL";
+                }
+            }
+            
+            chdir "$trilinosDir" or die "cannot chdir to $trilinosDir, died";  
             my $output = `cvs -q update -dP 2>&1`;
             my $result = $?;
             if ($result) {
