@@ -750,8 +750,13 @@ static int read_mesh(vtkUnstructuredGrid *ug)
 
   if (ug->GetNumberOfCells() < NumProcs) {
     if (Proc == 0) {
-      cout << "Input dataset is too small, only ";
-      cout << ug->GetNumberOfCells() << " cells." << endl;
+      if (ug->GetNumberOfCells() > 0){
+        cout << "Input dataset is too small, only ";
+        cout << ug->GetNumberOfCells() << " cells." << endl;
+      }
+      else{
+        cout << "No input dataset." << endl;
+      }
     }
     return 1;
   }
@@ -1392,8 +1397,10 @@ static int set_number_of_zdrive_processes(char *fname, char **disks)
 
   closedir(dir);
 
+  int fail = ((fname_opts.file_type == NEMESIS_FILE) && (numNemesisFiles == 0));
+
   if (verbose){
-    if (numNemesisFiles == 0){
+    if (fail){
       cerr << "Unable to locate specified nemesis file(s)"<< endl;
     }
     else if (zdriveCount == 0){
@@ -1406,7 +1413,7 @@ static int set_number_of_zdrive_processes(char *fname, char **disks)
   delete [] dn;
   delete [] fn;
 
-  return (numNemesisFiles == 0);
+  return fail;
 }
 //----------------------------------------------------------------
 // Functions to read the zdrive output files, and to create an
