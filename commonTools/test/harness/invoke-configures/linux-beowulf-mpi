@@ -2,11 +2,22 @@
 CXXFLAGS=-O3 \
 CFLAGS=-O3 \
 FFLAGS=-O3 \
+--with-libs="/common/TrilinosTestHarness/Trilinos3PL/prebuilt/dscpack-1.0/dsclibdbl_linux_lam.a \
+/common/TrilinosTestHarness/Trilinos3PL/prebuilt/pardiso-1.2.3/libpardiso_GNU_IA32.so \
+/common/TrilinosTestHarness/Trilinos3PL/prebuilt/taucs-2.2/libtaucs_linux_lam.a \
+/common/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0/libsuperludist_linux_lam.a -llapack -lf77blas -latlas -lg2c " \
+--with-incdirs="-I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/dscpack-1.0 \
+-I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0 \
+-I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/taucs-2.2" \
 --enable-mpi \
 --with-mpi-compilers \
 --cache-file=config.cache \
 --disable-default-packages \
 --enable-amesos \
+--enable-amesos-dscpack \
+--disable-amesos-pardiso \
+--enable-amesos-superludist \
+--enable-amesos-taucs \
 --enable-anasazi \
 --enable-aztecoo \
 --enable-belos \
