@@ -652,6 +652,8 @@ static void Run(vtkMultiProcessController *c, void *arg)
 #else
 
   renWin->SetPosition(0, 360*Proc); 
+prm->ResetCamera(renderer);
+prm->ResetCameraClippingRange(renderer);
   prm->StartInteractor(); // now you can interact with window
   iren->Delete();
 
