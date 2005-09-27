@@ -60,7 +60,7 @@ class Foo
     const RefCountPtr<Bar> test8();
     RefCountPtr<Bar> test9();
     RefCountPtr<Bar> &test10();
-    RefCountPtr<Bar> &test11();
+    //RefCountPtr<Bar> &test11();
     const RefCountPtr<const Bar> &test12();
     const RefCountPtr<const Bar> &test13() const;
     const RefCountPtr<Bar> &test14() const;
@@ -135,11 +135,13 @@ RefCountPtr<Bar> &Foo::test10()
 {
   return(Bptr_);
 }
+/*
 RefCountPtr<Bar> &Foo::test11()
 {
 //  return(rcp(new Bar(75.0))); // not allowed because I'm passing out a
   // reference to an internal object
 }
+*/
 const RefCountPtr<const Bar> &Foo::test12()
 {
   return(BptrConst_);

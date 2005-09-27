@@ -27,6 +27,7 @@
 // @HEADER
 
 #include "ExampleApplication.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #ifdef HAVE_MPI
 #  include "Epetra_MpiComm.h"
 #  include "mpi.h"
@@ -78,7 +79,7 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
   else // if ( lambda_fit_ == "random" )
   {
     int MyPID = lambda.Comm().MyPID();
-    unsigned int seed = time(NULL)+10*MyPID; 
+    unsigned int seed = Teuchos::ScalarTraits<int>::random()+10*MyPID; 
     seed *= seed;
     lambda.SetSeed(seed);
     lambda.Random(); // fill with random numbers in (-1,1)
