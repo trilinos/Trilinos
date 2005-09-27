@@ -711,7 +711,7 @@ void Amesos_Klu::PrintStatus() const
   cout << "Amesos_Klu : Nonzero elements per row = "
        << 1.0*numentries_/NumGlobalElements_ << endl;
   cout << "Amesos_Klu : Percentage of nonzero elements = "
-       << 100.0*numentries_/(pow(NumGlobalElements_,2.0)) << endl;
+       << 100.0*numentries_/(pow(double(NumGlobalElements_),double(2.0))) << endl;
   cout << "Amesos_Klu : Use transpose = " << UseTranspose_ << endl;
 
   PrintLine();
