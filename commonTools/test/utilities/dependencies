@@ -49,8 +49,7 @@ epetra = \
 
 epetraext = \
 --enable-epetraext \
---enable-aztecoo-thyra \
---enable-amesos-thyra
+--enable-thyra
 
 ifpack = \
 --enable-ifpack \
