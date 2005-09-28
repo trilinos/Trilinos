@@ -8,11 +8,11 @@
 #include "Epetra_LAPACK.h"
 
 namespace singularCoarse {
-  double *Qcoarse;
-  double *QcoarseTQcoarse;
-  int rowQcoarse;
-  int colQcoarse;
-  const Epetra_Comm *commCoarse;
+  static double *Qcoarse;
+  static double *QcoarseTQcoarse;
+  static int rowQcoarse;
+  static int colQcoarse;
+  static const Epetra_Comm *commCoarse;
   //---------------------
   void setNullSpace(double *V, int row, int col, double *VtV, const Epetra_Comm *_Comm);
   void projection(double *z, int *options, int *proc_config, double *params,
