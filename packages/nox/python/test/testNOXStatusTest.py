@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     # Run the test suite
     if comm.MyPID() == 0: print >>sys.stderr, \
-       "\n*********************\nTesting Epetra.Object\n*********************\n"
+       "\n**********************\nTesting NOX.StatusTest\n**********************\n"
     verbosity = 2 * int(comm.MyPID() == 0)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
