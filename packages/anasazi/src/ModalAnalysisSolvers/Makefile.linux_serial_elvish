@@ -121,12 +121,10 @@ OFILE = mydsaupd.o mydsaup2.o \
         BlockDACG.o BRQMIN.o LOBPCG.o KnyazevLOBPCG.o \
         ARPACKm3.o ModifiedARPACKm3.o \
         Davidson.o \
-        LinSolvers.o OrthoPack.o Projectors.o JDBSYM.o \
         JDPCG.o \
         BlockPCGSolver.o \
         ModeLaplace1DQ1.o ModeLaplace2DQ1.o ModeLaplace3DQ1.o \
-        ModeLaplace1DQ2.o ModeLaplace2DQ2.o ModeLaplace3DQ2.o \
-        ModeFileMatrices.o
+        ModeLaplace1DQ2.o ModeLaplace2DQ2.o ModeLaplace3DQ2.o
 
 driver: $(OFILE) driver.o
 	$(LINKER) $(LDFLAGS) $(OFILE) driver.o $(LIB_PATHS) -o driver.serial
