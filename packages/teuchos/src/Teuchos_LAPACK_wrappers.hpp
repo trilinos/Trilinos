@@ -118,7 +118,7 @@
 #define ZLARND_F77  F77_FUNC(clarnd,CLARND)
 #define ZLARNV_F77  F77_FUNC(clarnv,CLARNV)
 
-#endif
+#endif /* HAVE_TEUCHOS_COMPLEX */
 
 #elif defined(INTEL_CXML)
 
@@ -194,7 +194,7 @@
 #define ZLARND_F77  F77_FUNC(zlarnd,ZLARND)
 #define ZLARNV_F77  F77_FUNC(zlarnv,ZLARNV)
 
-#endif
+#endif /* HAVE_TEUCHOS_COMPLEX */
 
 #elif defined(INTEL_MKL)
 
@@ -270,9 +270,9 @@
 #define ZLARND_F77  F77_FUNC(zlarnd,ZLARND)
 #define ZLARNV_F77  F77_FUNC(zlarnv,ZLARNV)
 
-#endif
+#endif /* HAVE_TEUCHOS_COMPLEX */
 
-#endif 
+#endif /* defined(CRAY_T3X) || defined(INTEL_CXML) || defined(INTEL_MKL) */
 
 /* All three of these machines use a simple uppercase mangling of Fortran names */
 
@@ -616,7 +616,6 @@ void PREFIX ZLARNV_F77(const int* idist, int* seed, const int* n, complex<double
 
 #ifdef __cplusplus
 }
-
 #endif
 
 #endif // end of TEUCHOS_LAPACK_WRAPPERS_HPP_
