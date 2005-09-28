@@ -52,14 +52,14 @@
       COMM = SERIAL, MPI(1-4);
 }
 
-(FRAMEWORK) {
+(FRAMEWORK,INSTALL) {
     TESTS = ../thyra/example/sillyCgSolve_epetra.exe,
             ../thyra/example/sillyPowerMethod_epetra.exe;
     ARGS = --verbose;
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK) {
+(FRAMEWORK,INSTALL) {
     TESTS = ../thyra/test/test_epetra_adapters.exe;
     ARGS = --verbose;
     COMM = SERIAL, MPI;

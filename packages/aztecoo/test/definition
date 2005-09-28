@@ -2,7 +2,7 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK, AztecOOThyraTests) {
+(FRAMEWORK, INSTALL, AztecOOThyraTests) {
     TESTS = ../thyra/test/test_aztecoo_thyra_driver.exe;
     ARGS = --matrix-dir=$ABS_TOP_SRCDIR/packages/amesos/test/Test_Basic --show-all-tests;
     X-HOST = paunchy;
