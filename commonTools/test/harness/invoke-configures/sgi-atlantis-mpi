@@ -7,6 +7,8 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 --with-libs="/scratch1/mnpheno/Trilinos3PL/prebuilt/dscpack-1.0/dsclibdbl_atlantis.a \
 /scratch1/mnpheno/Trilinos3PL/prebuilt/umfpack-4.1/libumfpack_atlantis.a \
 /scratch1/mnpheno/Trilinos3PL/prebuilt/umfpack-4.1/libamd_atlantis.a \
+/scratch1/mnpheno/Trilinos3PL/prebuilt/superlu-3.0.july05/libsuperlu_atlantis.a \
+/scratch1/mnpheno/Trilinos3PL/prebuilt/superludist-2.0.1/libsuperludist_atlantis.a \
 /scratch1/mnpheno/Trilinos3PL/prebuilt/mumps-4.3/libmumps_atlantis.a \
 /scratch1/mnpheno/Trilinos3PL/prebuilt/mumps-4.3/libpord_atlantis.a \
 /scratch1/mnpheno/Trilinos3PL/prebuilt/scalapack-1.7/libscalapack_atlantis.a \
@@ -14,6 +16,8 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 -lfortran -lmpi" \
 --with-incdirs="-I/scratch1/mnpheno/Trilinos3PL/prebuilt/dscpack-1.0 \
 -I/scratch1/mnpheno/Trilinos3PL/prebuilt/umfpack-4.1 \
+-I/scratch1/mnpheno/Trilinos3PL/prebuilt/superlu-3.0.july05/ \
+-I/scratch1/mnpheno/Trilinos3PL/prebuilt/superludist-2.0.1/ \
 -I/scratch1/mnpheno/Trilinos3PL/prebuilt/mumps-4.3" \
 --enable-mpi \
 --with-mpi-libs=-lmpi \
@@ -24,6 +28,8 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 --enable-amesos-mumps \
 --enable-amesos-scalapack \
 --enable-amesos-umfpack \
+--enable-amesos-superlu \
+--enable-amesos-superludist \
 --enable-anasazi \
 --enable-aztecoo \
 --enable-belos \
