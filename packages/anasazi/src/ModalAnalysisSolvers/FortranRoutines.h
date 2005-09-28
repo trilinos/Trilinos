@@ -52,15 +52,8 @@ void PREFIX F77_FUNC(dgeqrf,DGEQRF)(int *M, int *N, double *A, int *lda, double 
 void PREFIX F77_FUNC(dormqr,DORMQR)(Epetra_fcd, Epetra_fcd, int *M, int *N, int *K, double *A,
                      int *lda, double *tau, double *C, int *ldc, double *work, int *lwork,
                      int *info);
-void PREFIX F77_FUNC(dspev,DSPEV)(Epetra_fcd, Epetra_fcd, int *N, double *A, double *W, 
-                     double *Z, int *ldz, double *work, int *info);
 void PREFIX F77_FUNC(dsteqr,DSTEQR)(Epetra_fcd, int *N, double *D, double *E, double *Z,
                      int *ldz, double *work, int *info);
-void PREFIX F77_FUNC(dsyev,DSYEV)(Epetra_fcd, Epetra_fcd, int *N, double *A, int *lda,
-                     double *W, double *work, int *lwork, int *info);
-void PREFIX F77_FUNC(dsygv,DSYGV)(int *itype, Epetra_fcd, Epetra_fcd, int *N, double *A,
-                     int *lda, double *B, int *ldb, double *W, double *work, int *lwork,
-                     int *info);
 
 #if defined (INTEL_CXML)
 int PREFIX F77_FUNC(ilaenv,ILAENV)(int *ispec, char *NAME, unsigned int len_name, char *OPTS, 
