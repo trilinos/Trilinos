@@ -115,16 +115,16 @@ LIB_PATHS = $(TRILINOS_LIBRARIES) \
 #=======================================================================
 
 OFILE = mydsaupd.o mydsaup2.o \
-        FortranRoutines.o \
-        MyMemory.o \
-        ModalTools.o CheckingTools.o SortingTools.o \
-        BlockDACG.o BRQMIN.o LOBPCG.o KnyazevLOBPCG.o \
+        BlockDACG.o BRQMIN.o \
+        LOBPCG.o LOBPCG_light.o KnyazevLOBPCG.o \
         ARPACKm3.o ModifiedARPACKm3.o \
-        Davidson.o \
-        JDPCG.o \
+        Davidson.o JDPCG.o \
+        AMGOperator.o singularCoarse.o MyIncompleteChol.o \
         BlockPCGSolver.o \
         ModeLaplace1DQ1.o ModeLaplace2DQ1.o ModeLaplace3DQ1.o \
-        ModeLaplace1DQ2.o ModeLaplace2DQ2.o ModeLaplace3DQ2.o
+        ModeLaplace1DQ2.o ModeLaplace2DQ2.o ModeLaplace3DQ2.o \
+        ModalTools.o CheckingTools.o SortingTools.o \
+        MyMemory.o FortranRoutines.o
 
 driver: $(OFILE) driver.o
 	$(LINKER) $(LDFLAGS) $(OFILE) driver.o $(LIB_PATHS) -o driver.serial
