@@ -411,8 +411,12 @@
  *
  ******************************************************************************/
 
-#define AZ_classic          0
-#define AZ_modified         1
+#define AZ_classic          0 /* Does double classic */
+#define AZ_modified         1 /* Does single modified */
+#define AZ_single_classic   2
+#define AZ_single_modified  3
+#define AZ_double_classic   4
+#define AZ_double_modified  5
 
 /*******************************************************************************
  *

@@ -1,4 +1,3 @@
-
 /*@HEADER
 // ***********************************************************************
 // 
@@ -758,7 +757,15 @@ int AztecOO::recursiveIterate(int MaxIters, double Tolerance)
 //=============================================================================
 int AztecOO::Iterate(int MaxIters, double Tolerance)
 {
-  if (X_ == 0 || B_ == 0 || UserOperatorData_ == 0) EPETRA_CHK_ERR(-1);
+  if (X_ == 0 || B_ == 0 || UserOperatorData_ == 0) EPETRA_CHK_ERR(-11);
+
+  if (UserMatrixData_!=0)
+    if (GetUserMatrix()!=0) {
+      int nnz = GetUserMatrix()->NumGlobalNonzeros();
+      if (nnz<1) {
+	EPETRA_CHK_ERR(-12); // Matrix has no entries.
+      }
+    }
 
   SetAztecOption(AZ_max_iter, MaxIters);
   SetAztecParam(AZ_tol, Tolerance);

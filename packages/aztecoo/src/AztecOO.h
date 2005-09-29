@@ -482,6 +482,9 @@ class AztecOO {
   //! Returns the true scaled residual for this problem.
   double ScaledResidual() const {return(status_[AZ_scaled_r]);};
 
+  //! Returns the recursive residual for this problem.
+  double RecursiveResidual() const {return(status_[AZ_rec_r]);};
+
   //! AztecOO status extraction function.
   /*! Extract Aztec status array into user-provided array.  The array must be of
     length AZ_STATUS_SIZE as defined in the az_aztec.h header file.

@@ -164,8 +164,12 @@ int AZ_check_input(int data_org[], int options[], double params[],
   if (options[AZ_solver]     == AZ_GMRESR       &&
       options[AZ_kspace]      < 1                ) return -10;
 
-  if (options[AZ_orthog]     != AZ_classic      &&
-      options[AZ_orthog]     != AZ_modified      ) return -11;
+  if (options[AZ_orthog]     != AZ_classic         &&
+      options[AZ_orthog]     != AZ_modified        &&
+      options[AZ_orthog]     != AZ_single_classic  &&
+      options[AZ_orthog]     != AZ_single_modified &&
+      options[AZ_orthog]     != AZ_double_classic  &&
+      options[AZ_orthog]     != AZ_double_modified ) return -11;
 
   if (options[AZ_aux_vec]    != AZ_resid        &&
       options[AZ_aux_vec]    != AZ_rand          ) return -12;

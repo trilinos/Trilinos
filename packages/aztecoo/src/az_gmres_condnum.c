@@ -159,6 +159,7 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
   double ** hh2 = NULL;
   double condnum;
   int itemp;
+  int type_orthog, num_orthog_steps;
   
   /**************************** execution begins ******************************/
 
@@ -184,6 +185,19 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
   proc         = proc_config[AZ_node];
   print_freq   = options[AZ_print_freq];
   kspace       = options[AZ_kspace];
+
+  num_orthog_steps = 1;
+
+  if (
+      options[AZ_orthog]==AZ_classic ||
+      options[AZ_orthog]==AZ_double_modified ||
+      options[AZ_orthog]==AZ_double_classic) num_orthog_steps = 2;
+
+  type_orthog = 0;
+  if (
+      options[AZ_orthog]==AZ_modified ||
+      options[AZ_orthog]==AZ_single_modified ||
+      options[AZ_orthog]==AZ_double_modified) type_orthog = 1;
 
   /* Initialize some values in convergence info struct */
   convergence_info->print_info = print_freq;
@@ -316,14 +330,12 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
 
       /* Gram-Schmidt orthogonalization */
 
-      if (!options[AZ_orthog]) { /* classical. Actually, we do */
-                                 /* this twice. I forget the   */
-                                 /* initials that are used to  */
-                                 /* describe this: DKSG???     */
+      if (type_orthog==0) { /* Classical. Actually, we do */
+                            /* this twice. DGKS method    */
 
         for (k = 0; k <= i; k++) hh[k][i] = 0.0;
         for (k = 0; k <= i; k++) hh2[k][i] = 0.0;
-        for (ii = 0 ; ii < 2; ii++ ) {
+        for (ii = 0 ; ii < num_orthog_steps; ii++ ) {
           if (N == 0) for (k = 0; k <= i; k++) dots[k] = 0.0;
           dble_tmp = 0.0; mm = i+1;
           DGEMV_F77(CHAR_MACRO(T[0]), &N, &mm, &doubleone, vblock, &aligned_N_total,
@@ -336,11 +348,13 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
         }
       }
       else {                    /* modified */
-        for (k = 0; k <= i; k++) {
-          hh[k][i] = dble_tmp = AZ_gdot(N, v[k], v[i1], proc_config);
-          hh2[k][i] = hh[k][i];
-          dble_tmp = -dble_tmp;
-          DAXPY_F77(&N, &dble_tmp, v[k], &one, v[i1], &one);
+        for (ii = 0 ; ii < num_orthog_steps; ii++ ) {
+	  for (k = 0; k <= i; k++) {
+	    hh[k][i] = dble_tmp = AZ_gdot(N, v[k], v[i1], proc_config);
+	    hh2[k][i] = hh[k][i];
+	    dble_tmp = -dble_tmp;
+	    DAXPY_F77(&N, &dble_tmp, v[k], &one, v[i1], &one);
+	  }
         }
       }
 
@@ -349,8 +363,11 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
       hh[i1][i] = dble_tmp = sqrt(AZ_gdot(N, v[i1], v[i1], proc_config));
 
       hh2[i1][i] = hh[i1][i];
-
-      if (dble_tmp  > DBL_EPSILON*r_2norm)
+      /* Relative size doesn't matter here, it just needs to be nonzero.
+         Some very, very tiny number, such as DBL_MIN, might cause trouble,
+         so check for that.
+       */
+      if (dble_tmp  > 100.0 * DBL_MIN )
         dble_tmp  = 1.0 / dble_tmp;
       else
         dble_tmp = 0.0;
@@ -395,7 +412,10 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
         svsml[i] = cc;
       }
 
-      if ((small == 0.0) || (dble_tmp  < DBL_EPSILON * r_2norm) ||
+      /* Check dble_tmp relative to 1.0 here.  Perhaps
+         ||A|| would be better.  ||v[i1]|| before it is orthogonalized
+         could be used as an estimate of ||A||. */
+      if ((small == 0.0) || (dble_tmp  < DBL_EPSILON) ||
           (big/small > params[AZ_ill_cond_thresh]) ) {
         /* (big/small > 1.0e+11) ) {  This is now a parameter */
 
@@ -412,7 +432,8 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
 
 	itemp = i;
 	
-        if (dble_tmp  < DBL_EPSILON * r_2norm) i = AZ_breakdown;
+        /* Use same check as above. */
+        if (dble_tmp  < DBL_EPSILON) i = AZ_breakdown;
         else                                   i = AZ_ill_cond;
 
         AZ_terminate_status_print(i, iter, status, rec_residual, params,
