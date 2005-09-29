@@ -1,8 +1,8 @@
 #@HEADER
 # ************************************************************************
 # 
-#        AztecOO: An Object-Oriented Aztec Linear Solver Package 
-#                 Copyright (2002) Sandia Corporation
+#               Epetra: Linear Algebra Services Package 
+#                 Copyright (2001) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -26,7 +26,28 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = AztecOO AztecOO_UserOpUserMat AztecOO_SetParameters scripts GMRES_Tests
+EXEEXT = .exe
 
-EXTRA_DIST = definition
+noinst_PROGRAMS = GMRES_Tests
+
+GMRES_Tests_SOURCES = $(srcdir)/cxx_main.cpp
+
+GMRES_Tests_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a
+
+include $(top_builddir)/Makefile.export.aztecoo
+
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AZTECOO_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AZTECOO_INCLUDES))
+else
+EXPORT_LIBS = $(AZTECOO_LIBS)
+EXPORT_INC_PATH = $(AZTECOO_INCLUDES)
+endif
+
+##AztecOO_CXXFLAGS = -I$(top_srcdir)/src 
+
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
+
+#Unsure why this test need to link to the BLAS on an IBM.
+GMRES_Tests_LDADD = $(EXPORT_LIBS)
 

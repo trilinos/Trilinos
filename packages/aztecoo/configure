@@ -911,10 +911,10 @@ Optional Features:
   --enable-python[=PYTHON]
                           absolute path name of Python executable
   --enable-thyra          Build the Thyra operator/vector adapater support in
-                          AztecOO. Can be overridden with
-                          --disable-aztecoo-thyra.
+                          AztecOO (also rquires epetraext). Can be overridden
+                          with --disable-aztecoo-thyra.
   --enable-aztecoo-thyra  Build the Thyra operator/vector adapater support in
-                          AztecOO.
+                          AztecOO (also rquires epetraext).
   --enable-ifpack         Allows aztecoo/thyra adapters to use ifpack in
                           examples and tests. Can be overridden with
                           --disable-aztecoo-ifpack.
@@ -12043,7 +12043,7 @@ fi
 #                example/aztec_app/Makefile
 #                example/aztec_hb/Makefile
 #
-                                                                                                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.aztecoo src/Makefile example/Makefile example/UG_Ex1/Makefile example/UG_Ex1/Makefile.include example/simple_epetra_aztecoo/Makefile example/simple_epetra_aztecoo/Makefile.include example/AztecOO_UserOpUserMat/Makefile example/AztecOO_UserOpUserMat/Makefile.include example/AztecOO/Makefile example/AztecOO/Makefile.include example/ClassicAztec/Makefile example/ClassicAztec/Makefile.include test/Makefile test/AztecOO/Makefile test/AztecOO_SetParameters/Makefile test/AztecOO_SetParameters/Makefile.include test/AztecOO_UserOpUserMat/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/example/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile"
+                                                                                                                                                                                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.aztecoo src/Makefile example/Makefile example/UG_Ex1/Makefile example/UG_Ex1/Makefile.include example/simple_epetra_aztecoo/Makefile example/simple_epetra_aztecoo/Makefile.include example/AztecOO_UserOpUserMat/Makefile example/AztecOO_UserOpUserMat/Makefile.include example/AztecOO/Makefile example/AztecOO/Makefile.include example/ClassicAztec/Makefile example/ClassicAztec/Makefile.include test/Makefile test/AztecOO/Makefile test/GMRES_Tests/Makefile test/AztecOO_SetParameters/Makefile test/AztecOO_SetParameters/Makefile.include test/AztecOO_UserOpUserMat/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/example/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -12787,6 +12787,7 @@ do
   "example/ClassicAztec/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES example/ClassicAztec/Makefile.include" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/AztecOO/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/AztecOO/Makefile" ;;
+  "test/GMRES_Tests/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/GMRES_Tests/Makefile" ;;
   "test/AztecOO_SetParameters/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/AztecOO_SetParameters/Makefile" ;;
   "test/AztecOO_SetParameters/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/AztecOO_SetParameters/Makefile.include" ;;
   "test/AztecOO_UserOpUserMat/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/AztecOO_UserOpUserMat/Makefile" ;;

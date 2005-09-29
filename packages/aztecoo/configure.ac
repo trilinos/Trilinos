@@ -396,6 +396,7 @@ AC_CONFIG_FILES([
     example/ClassicAztec/Makefile.include
     test/Makefile
     test/AztecOO/Makefile
+    test/GMRES_Tests/Makefile
     test/AztecOO_SetParameters/Makefile
     test/AztecOO_SetParameters/Makefile.include
     test/AztecOO_UserOpUserMat/Makefile
