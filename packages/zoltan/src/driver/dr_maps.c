@@ -293,6 +293,7 @@ static void compare_maps_with_ddirectory_results(
 static const int want_size = 4;
 int num_elems = mesh->num_elems;
 Zoltan_DD_Directory *dd = NULL;
+Zoltan_DD_Directory *ddCopy = NULL;
 ZOLTAN_ID_PTR gids = NULL;
 ZOLTAN_ID_PTR lids = NULL;
 ZOLTAN_ID_PTR my_gids = NULL;
@@ -356,6 +357,28 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
   }
 
   free(gids);
+
+  /*
+   * Test DD copy functions
+   */
+
+printf("Test DD copy functions\n");
+
+  ddCopy = Zoltan_DD_Copy(dd);
+
+  if (!ddCopy){
+    Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Copy");
+    error = 1;
+  }
+
+  ierr = Zoltan_DD_Copy_To(&dd, ddCopy);
+
+  if (ierr != ZOLTAN_OK){
+    Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Copy_to");
+    error = 1;
+  }
+
+  Zoltan_DD_Destroy(&ddCopy);
 
   /* 
    * Use the DDirectory to find owners of off-processor neighboring elements. 
@@ -458,6 +481,7 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
    * Test the copy functions
    */
 
+printf("Test Comm copy functions\n");
   comm_copy = Zoltan_Comm_Copy(comm);
 
   if (!comm_copy){

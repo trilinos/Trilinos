@@ -355,6 +355,20 @@ Zoltan_Comm *comm;
 
   free(gids);
 
+  /*
+   * Test copy operator and constructor
+   */
+
+printf("Test DD copy functions\n");
+  Zoltan_DD ddCopy(*dd);  // uses copy constructor
+  Zoltan_DD ddNew;        // uses ordinary constructor
+
+  delete dd;
+
+  ddNew = ddCopy;         // uses copy operator
+
+  dd = &ddNew;
+
   /* 
    * Use the DDirectory to find owners of off-processor neighboring elements. 
    * Of course, we have this info in ELEM_INFO, but we do the find to test
@@ -399,8 +413,6 @@ Zoltan_Comm *comm;
     Gen_Error(0, "Fatal:  Error returned by Zoltan_DD::Find");
     error = 1;
   }
-
-  delete dd;
 
   /*
    * Check for errors 
@@ -449,6 +461,20 @@ Zoltan_Comm *comm;
   comm = new Zoltan_Comm(num_nbor, ownerlist, MPI_COMM_WORLD, 747, 
                         &num_others);
 
+  /*
+   * Test copy operator and constructor
+   */
+
+printf("Test comm copy functions\n");
+  Zoltan_Comm commCopy(*comm);    // uses copy constructor
+  Zoltan_Comm commNew;            // uses ordinary constructor
+
+  delete comm;
+
+  commNew = commCopy;             // uses copy operator
+
+  comm = &commNew;
+
   /* 
    * Do communication to determine which of this proc's data is wanted by 
    * other procs.
@@ -469,8 +495,6 @@ Zoltan_Comm *comm;
   }
 
   free(i_want);
-
-  delete comm;
 
   /*  
    * Find number of maps and the size of the largest map. 
