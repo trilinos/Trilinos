@@ -932,6 +932,7 @@ int Zoltan_PHG_Coarsening
     i += sz;
   }
   Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);
+  ip = NULL;
   
   c_hg->nPins = hg->nPins + ahindex[hg->nEdge]; /* safe over estimate of nPins */
   c_hg->nEdge = hg->nEdge;
