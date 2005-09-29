@@ -87,6 +87,8 @@ struct Zoltan_Comm_Obj {	/* data for mapping between decompositions */
     int       nvals_recv;	/* number of values I own after remapping */
     int       nrecvs;		/* number of msgs I'll recv (w/o self_msg) */
     int       nsends;		/* number of msgs I'll send (w/o self_msg) */
+    int       nindices_to;
+    int       nindices_from;
     int       self_msg;		/* do I have data for myself? */
     int       max_send_size;	/* size of longest message I send (w/o self) */
     int       total_recv_size;	/* total amount of data I'll recv (w/ self) */

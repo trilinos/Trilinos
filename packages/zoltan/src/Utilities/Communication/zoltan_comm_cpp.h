@@ -61,10 +61,22 @@ public:
     return rc;
     }
 
+  Zoltan_Comm (const Zoltan_Comm &plan) // Copy constructor
+   {
+   this->Plan = Zoltan_Comm_Copy(plan->Plan);
+   }
+
   ~Zoltan_Comm()
     {
     Zoltan_Comm_Destroy(&this->Plan);
     }
+
+  Zoltan_Comm & operator= (const Zoltan_Comm &plan) // Copy operator
+  {
+    Zoltan_Comm_Copy_To(this->Plan, plan.Plan);
+
+    return *this;
+  }
       
   int Resize(int *sizes, const int &tag, int *sum_recv_sizes)
     {

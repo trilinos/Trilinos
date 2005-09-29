@@ -152,6 +152,7 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
     }
 
     comm_flag = Zoltan_Comm_Do_Post(plan_reverse, tag, send_data, nbytes, recv_data);
+
     return (comm_flag);
 }
 

@@ -282,6 +282,8 @@ Mem_Err:
     plan->nvals_recv = total_recv_size;
     plan->nrecvs = nrecvs;
     plan->nsends = nsends;
+    plan->nindices_to = nactive;
+    plan->nindices_from = 0;
     plan->self_msg = self_msg;
     plan->max_send_size = max_send_size;
     plan->total_recv_size = total_recv_size;
@@ -296,6 +298,84 @@ Mem_Err:
     *pnvals_recv = total_recv_size;
     *cobj = plan;
     return (comm_flag);
+}
+#define COPY_BUFFER(buf, type, num) \
+  if (((num)>0) && from->buf) { \
+    to->buf = (type *)ZOLTAN_MALLOC((num) * sizeof(type)); \
+    if (!to->buf) { \
+      ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory."); \
+      Zoltan_Comm_Destroy(toptr); \
+      return ZOLTAN_MEMERR; \
+    } \
+    memcpy(to->buf, from->buf, (num) * sizeof(type)); \
+  } \
+  else { \
+    to->buf = NULL; \
+  }
+    
+#define COPY_FIELD(f) to->f = from->f;
+
+ZOLTAN_COMM_OBJ *Zoltan_Comm_Copy(ZOLTAN_COMM_OBJ *from)
+{
+  ZOLTAN_COMM_OBJ *to = NULL;
+
+  Zoltan_Comm_Copy_To(&to, from);
+
+  return to;
+}
+int Zoltan_Comm_Copy_To(ZOLTAN_COMM_OBJ **toptr, ZOLTAN_COMM_OBJ *from)
+{
+  static char *yo = "Zoltan_Comm_Create";
+  int proc = 0;
+  ZOLTAN_COMM_OBJ *to= NULL;
+
+  if (!toptr){
+    return ZOLTAN_FATAL;
+  }
+
+  if (*toptr){
+    Zoltan_Comm_Destroy(toptr);
+  }
+
+  if (from){
+
+    MPI_Comm_rank(from->comm, &proc);
+
+    to = *toptr = (ZOLTAN_COMM_OBJ *)ZOLTAN_MALLOC(sizeof(ZOLTAN_COMM_OBJ));
+
+    MPI_Comm_dup(from->comm, &(to->comm));
+
+    COPY_FIELD(nvals);
+    COPY_FIELD(nvals_recv);
+    COPY_FIELD(nrecvs);
+    COPY_FIELD(nsends);
+    COPY_FIELD(nindices_to);
+    COPY_FIELD(nindices_from);
+    COPY_FIELD(self_msg);
+    COPY_FIELD(max_send_size);
+    COPY_FIELD(total_recv_size);
+
+    COPY_BUFFER(procs_to, int, to->nsends);
+    COPY_BUFFER(procs_from, int, to->nrecvs);
+    COPY_BUFFER(lengths_to, int, to->nsends);
+    COPY_BUFFER(lengths_from, int, to->nrecvs);
+    COPY_BUFFER(starts_to, int, to->nsends);
+    COPY_BUFFER(starts_from, int, to->nrecvs + to->self_msg);
+    COPY_BUFFER(indices_to, int, to->nindices_to);
+    COPY_BUFFER(indices_from, int, to->nindices_from);
+    COPY_BUFFER(sizes, int, to->nvals + 1);
+    COPY_BUFFER(sizes_to, int, to->nsends + to->self_msg);
+    COPY_BUFFER(sizes_from, int, to->nrecvs + to->self_msg);
+    COPY_BUFFER(starts_to_ptr, int, to->nsends + to->self_msg);
+    COPY_BUFFER(starts_from_ptr, int, to->nrecvs + to->self_msg);
+    COPY_BUFFER(indices_to_ptr, int, to->nvals);
+    COPY_BUFFER(indices_from_ptr, int, to->nvals);
+
+    COPY_BUFFER(request, MPI_Request, to->nrecvs);
+    COPY_BUFFER(status, MPI_Status, to->nrecvs);
+  }
+
+  return ZOLTAN_OK;
 }
 
 #ifdef __cplusplus
