@@ -157,6 +157,10 @@ performs the reverse (opposite) communication of <b><a href="#Zoltan_Comm_Do">Zo
 
 <br><b><a href="#Zoltan_Comm_Resize">Zoltan_Comm_Resize</a>:&nbsp; </b>augments
 the plan to allow objects to be of variable sizes.&nbsp;
+<br><b><a href="#Zoltan_Comm_Copy">Zoltan_Comm_Copy</a>:</b>&nbsp; create a new
+communication plan and copy an existing one to it.&nbsp;
+<br><b><a href="#Zoltan_Comm_Copy_To">Zoltan_Comm_Copy_To</a>:</b>&nbsp; copy
+one existing communication plan to another.&nbsp;
 <br><b><a href="#Zoltan_Comm_Destroy">Zoltan_Comm_Destroy</a>:</b>&nbsp; free memory
 associated with a communication plan.&nbsp;</blockquote>
 <b>Low Level Routines:</b>
@@ -566,6 +570,96 @@ size (in bytes), you need to scale by the <i>nbytes</i> argument to <b><a href="
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Comm_Copy"></a>
+<hr>
+<b>C:</b>&nbsp; struct Zoltan_Comm_Obj *<b>Zoltan_Comm_Copy</b>(
+struct Zoltan_Comm_Obj *<i>plan</i>);&nbsp;
+<br><b>C++:</b>&nbsp; <b>Zoltan_Comm(const Zoltan_Comm &plan);</b>
+<hr><b>Zoltan_Comm_Copy</b> creates a new Zoltan_Comm_Obj structure
+and copies the existing <I>plan</I> to it.
+The corresponding C++ method is the <b>Zoltan_Comm</b> copy
+constructor.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; plan</i></td>
+
+<td>A pointer to the communication plan to be copied to the new
+Zoltan_Comm_Obj structure. &nbsp;</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; struct Zoltan_Comm_Obj *</td>
+
+<td>the newly created plan, or NULL on error.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Comm_Copy_To"></a>
+<hr>
+<b>C:</b>&nbsp; int <b>Zoltan_Comm_Copy_To</b>(
+struct Zoltan_Comm_Obj **<i>to</i>,&nbsp;
+struct Zoltan_Comm_Obj *<i>from</i>);&nbsp;
+<br><b>C++:</b>&nbsp; Zoltan_Comm &  &nbsp;<b>operator= </b>(const Zoltan_Comm &plan);</b>
+<hr><b>Zoltan_Comm_Copy_To</b> copies one existing communication plan
+to another.
+The corresponding C++ method is the <b>Zoltan_Comm</b> copy operator.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; to</i></td>
+<td>A pointer to a pointer to the communication plan that will
+be copied to. We destroy the plan first, and set the pointer to
+the plan to NULL, before proceeding with the copy. 
+&nbsp;</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; from</i></td>
+<td>A pointer the communication plan that we will make a copy of.
+&nbsp;</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>Error code</td>
+</tr>
+</table>
+
+<p>
+
 
 <!------------------------------------------------------------------------->
 <hr>
