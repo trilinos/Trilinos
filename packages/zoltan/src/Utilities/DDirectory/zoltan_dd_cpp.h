@@ -68,6 +68,18 @@ public:
     {
     Zoltan_DD_Destroy (&this->DD) ;
     }
+
+  Zoltan_DD (const Zoltan_DD &dd) // Copy constructor
+   {
+   this->DD = Zoltan_DD_Copy(dd.DD);
+   }
+
+  Zoltan_DD & operator= (const Zoltan_DD &dd) // Copy operator
+  {
+    Zoltan_DD_Copy_To(&this->DD, dd.DD);
+
+    return *this;
+  }
  
   int Update (ZOLTAN_ID_PTR gid, ZOLTAN_ID_PTR lid, 
     ZOLTAN_ID_PTR user, int *partition, const int &count) 
@@ -90,7 +102,7 @@ public:
     {
     return Zoltan_DD_Set_Hash_Fn (this->DD, hash);
     } 
-  
+
   void Stats () const
     {
     Zoltan_DD_Stats (this->DD) ;

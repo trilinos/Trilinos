@@ -134,6 +134,98 @@ int Zoltan_DD_Create (
    return ZOLTAN_DD_NORMAL_RETURN ;
    }
 
+/*******************  Copy functions  ***************************/
+    
+#define COPY_FIELD(f) to->f = from->f;
+
+static void allocate_copy_list(DD_Node **new, DD_Node *l, int len);
+
+Zoltan_DD_Directory *Zoltan_DD_Copy(Zoltan_DD_Directory *from)
+{
+  Zoltan_DD_Directory *to = NULL;
+
+  Zoltan_DD_Copy_To(&to, from);
+
+  return to;
+}
+int Zoltan_DD_Copy_To(Zoltan_DD_Directory **toptr, Zoltan_DD_Directory *from)
+{
+  static char *yo = "Zoltan_DD_Copy_To";
+  int i, ierr, proc = 0;
+  Zoltan_DD_Directory *to= NULL;
+
+  if (!toptr){
+    return ZOLTAN_FATAL;
+  }
+
+  if (*toptr){
+    Zoltan_DD_Destroy(toptr);
+  }
+
+  if (from){
+    proc = from->my_proc;
+
+    to = *toptr = 
+      (Zoltan_DD_Directory *)ZOLTAN_MALLOC(
+        sizeof (Zoltan_DD_Directory) + 
+        (from->table_length * sizeof(DD_Node*)));
+
+    if (!to){
+      ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory."); 
+      return ZOLTAN_MEMERR;
+    }
+
+    MPI_Comm_dup(from->comm, &(to->comm));
+
+    COPY_FIELD(my_proc);
+    COPY_FIELD(nproc);
+    COPY_FIELD(gid_length);
+    COPY_FIELD(lid_length);
+    COPY_FIELD(max_id_length);
+    COPY_FIELD(user_data_length);
+    COPY_FIELD(table_length);
+    COPY_FIELD(node_size);
+    COPY_FIELD(find_msg_size);
+    COPY_FIELD(update_msg_size);
+    COPY_FIELD(remove_msg_size);
+    COPY_FIELD(debug_level);
+    COPY_FIELD(hash);
+    COPY_FIELD(cleanup);
+
+    for (i=0; i<to->table_length; i++){
+      allocate_copy_list(&(to->table[i]), from->table[i], 
+                                to->node_size);
+    }
+  }
+
+  return ZOLTAN_OK;
+}
+static void allocate_copy_list(DD_Node **new, DD_Node *l, int len)
+{
+  DD_Node *next = l;
+  DD_Node *node = NULL, *prev = NULL;
+
+  *new = NULL;
+
+  if (len == 0){
+    return ;
+  }
+
+  while (next){
+    node = (DD_Node *)ZOLTAN_MALLOC(len);
+    memcpy(node, next, len);
+    if (prev){
+      prev->next = node;
+    }
+    else{
+      *new = node;
+    }
+    node->next = NULL;
+    prev = node;
+    next = next->next;
+  }
+}
+  
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

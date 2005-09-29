@@ -43,6 +43,9 @@ typedef struct Zoltan_DD_Struct Zoltan_DD_Directory;
 int Zoltan_DD_Create (Zoltan_DD_Directory **dd, MPI_Comm comm, int num_gid,
  int num_lid, int user_length,  int table_length, int debug_level) ;
 
+int Zoltan_DD_Copy_To(Zoltan_DD_Directory **toptr, Zoltan_DD_Directory *from);
+Zoltan_DD_Directory *Zoltan_DD_Copy(Zoltan_DD_Directory *from);
+
 void Zoltan_DD_Destroy (Zoltan_DD_Directory **dd) ;
 
 int Zoltan_DD_Update (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
