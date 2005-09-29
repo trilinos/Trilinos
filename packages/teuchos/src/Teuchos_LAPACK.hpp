@@ -817,7 +817,6 @@ namespace Teuchos
 #if defined (INTEL_CXML)
     return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
 #else
-    junk;
     return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4 );
 #endif
   }
