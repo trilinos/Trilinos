@@ -131,6 +131,10 @@ A Fortran90 interface is not yet available.
 <b>Routines:</b><blockquote>
 <b><a href="#DD_Create">Zoltan_DD_Create</a></b>:&nbsp;
 Allocates memory and initializes the directory.
+<br><b><a href="#DD_Copy">Zoltan_DD_Copy</a></b>:&nbsp;
+Allocates a new directory structure and copies an existing one to it.
+<br><b><a href="#DD_Copy_To">Zoltan_DD_Copy_To</a></b>:&nbsp;
+Copies one directory structure to another.
 <br><b><a href="#DD_Destroy">Zoltan_DD_Destroy</a></b>:&nbsp;
 Terminate the directory and frees its memory.
 <br><b><a href="#DD_Update">Zoltan_DD_Update</a></b>:&nbsp;
@@ -251,6 +255,57 @@ directory.  The
 second constructor does not, but it can subsequently be initialized
 with a call to <B>Zoltan_DD::Create()</B>.
 <p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Copy"></a>
+<hr>
+<b>C:</b> &nbsp; struct Zoltan_DD_Struct &nbsp *<b>Zoltan_DD_Copy</b> (struct Zoltan_DD_Struct *<i>from</i>);
+<br><b>C++:</b> &nbsp; <b>Zoltan_DD</b>(const Zoltan_DD &dd);
+<hr>
+This routine creates a new distributed directory structure and copies
+an existing one to it.  The corresponding routine in the C++ library
+is the Zoltan_DD copy constructor.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+<td WIDTH="80%"></td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;from</i></td>
+<td>The existing directory structure which will be copied to the new one.</td></tr>
+
+<tr>
+<td><b>Returned Value:</b></td><td></td></tr>
+<tr><td>&nbsp;&nbsp;&nbsp;struct Zoltan_DD_Struct *</td>
+<td>The newly created directory structure.</td></tr>
+</table>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Copy_To"></a>
+<hr>
+<b>C:</b> &nbsp; int <b>Zoltan_DD_Copy_To</b> (struct Zoltan_DD_Struct **<i>to</i>, struct Zoltan_DD_Struct *<i>from</i>);
+<br><b>C++:</b> &nbsp; Zoltan_DD & <b>operator=</b>(const Zoltan_DD &dd);
+<hr>
+This routine copies one distributed directory structure to another.
+The corresponding method in the C++ library
+is the Zoltan_DD class copy operator.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+<td WIDTH="80%"></td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;to</i></td>
+<td>A pointer to a pointer to the target structure.  The structure will be destroyed and the pointer set to NULL before proceeding with the copy.</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;from</i></td>
+<td>A pointer to the source structure.  The contents of this structure will be copied to the target structure.</td></tr>
+
+<tr>
+<td><b>Returned Value:</b></td><td></td></tr>
+<tr><td>&nbsp;&nbsp;&nbsp;int</td>
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td></tr>
+</table>
+
 
 <!------------------------------------------------------------------------->
 <hr>
