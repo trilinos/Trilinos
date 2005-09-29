@@ -314,7 +314,7 @@ int nbor_proc;
 int i, j, k, ierr, error = 0, gerror = 0;
 ELEM_INFO_PTR current;
 struct map_list_head map;
-ZOLTAN_COMM_OBJ *comm;
+ZOLTAN_COMM_OBJ *comm, *comm_copy;
 
 
   /* Load array of element globalIDs for elements on this processor. */
@@ -453,6 +453,26 @@ ZOLTAN_COMM_OBJ *comm;
     Gen_Error(0, "Fatal:  Error returned from Zoltan_Comm_Create");
     return;
   }
+
+  /*
+   * Test the copy functions
+   */
+
+  comm_copy = Zoltan_Comm_Copy(comm);
+
+  if (!comm_copy){
+    Gen_Error(0, "Fatal:  Error returned from Zoltan_Comm_Copy");
+    return;
+  }
+
+  ierr = Zoltan_Comm_Copy_To(&comm, comm_copy);
+  
+  if (ierr){
+    Gen_Error(0, "Fatal:  Error returned from Zoltan_Comm_Copy_To");
+    return;
+  }
+
+  Zoltan_Comm_Destroy(&comm_copy);
 
   /* 
    * Do communication to determine which of this proc's data is wanted by 
