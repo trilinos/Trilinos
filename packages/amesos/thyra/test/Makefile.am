@@ -42,8 +42,21 @@ test_single_amesos_thyra_solver_driver_DEPENDENCIES = $(common_dependencies)
 test_single_amesos_thyra_solver_driver_LDADD = $(common_ldadd)
 
 test_amesos_thyra_driver_SOURCES = $(srcdir)/test_amesos_thyra_driver.cpp $(common_sources)
-test_amesos_thyra_driver_DEPENDENCIES = $(common_dependencies)
+test_amesos_thyra_driver_DEPENDENCIES = $(common_dependencies) matrices
 test_amesos_thyra_driver_LDADD = $(common_ldadd)
+
+matrices:
+	cp  $(top_srcdir)/test/Test_Basic/In_bcsstk01.mtx bcsstk01.mtx                              
+	cp  $(top_srcdir)/test/Test_Basic/In_bcsstk02.mtx bcsstk02.mtx                              
+	cp  $(top_srcdir)/test/Test_Basic/In_bcsstk04.mtx bcsstk04.mtx                              
+	cp  $(top_srcdir)/test/Test_Basic/In_nos1.mtx nos1.mtx                                      
+	cp  $(top_srcdir)/test/Test_Basic/In_nos5.mtx nos5.mtx                                      
+	cp  $(top_srcdir)/test/Test_Basic/In_FourByFour.mtx FourByFour.mtx                          
+	cp  $(top_srcdir)/test/Test_Basic/In_Diagonal.mtx Diagonal.mtx                              
+	cp  $(top_srcdir)/test/Test_Basic/In_MissingADiagonal.mtx MissingADiagonal.mtx                              
+	cp  $(top_srcdir)/test/Test_Basic/In_KheadK.mtx KheadK.mtx                                  
+	cp  $(top_srcdir)/test/Test_Basic/In_KheadSorted.mtx  KheadSorted.mtx
+	cp  $(top_srcdir)/test/Test_Basic/In_Khead.triS Khead.triS  
 
 #
 # Common stuff

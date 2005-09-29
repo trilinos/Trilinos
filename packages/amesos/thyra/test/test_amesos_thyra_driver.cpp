@@ -89,15 +89,15 @@ int main(int argc, char* argv[])
     // Note, we may need to adjust these for bad platforms ...
     const MTP testMatrices[numTestMatrices] =
       {
-        MTP("In_bcsstk01.mtx",false,1e-12,1e-12,1e-12)
-        ,MTP("In_bcsstk02.mtx",false,1e-12,1e-12,1e-12)
-        ,MTP("In_bcsstk04.mtx",false,1e-12,1e-10,1e-12)
-        ,MTP("In_Diagonal.mtx",false,1e-12,1e-12,1e-12)
-        ,MTP("In_FourByFour.mtx",true,1e-12,1e-12,1e-12)
-        ,MTP("In_KheadK.mtx",false,1e-12,1e-12,1e-12)
-        ,MTP("In_KheadSorted.mtx",false,1e-12,1e-12,1e-12)
-        ,MTP("In_nos1.mtx",false,1e-11,1e-10,1e-12)
-        ,MTP("In_nos5.mtx",false,1e-12,1e-12,1e-12)
+        MTP("bcsstk01.mtx",false,1e-12,1e-12,1e-12)
+        ,MTP("bcsstk02.mtx",false,1e-12,1e-12,1e-12)
+        ,MTP("bcsstk04.mtx",false,1e-12,1e-10,1e-12)
+        ,MTP("Diagonal.mtx",false,1e-12,1e-12,1e-12)
+        ,MTP("FourByFour.mtx",true,1e-12,1e-12,1e-12)
+        ,MTP("KheadK.mtx",false,1e-12,1e-12,1e-12)
+        ,MTP("KheadSorted.mtx",false,1e-12,1e-12,1e-12)
+        ,MTP("nos1.mtx",false,1e-11,1e-10,1e-12)
+        ,MTP("nos5.mtx",false,1e-12,1e-12,1e-12)
       };
     //
     // Loop through all of the test matrices

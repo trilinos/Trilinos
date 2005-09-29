@@ -128,15 +128,15 @@ int main(int argc, char* argv[])
     // Note, we may need to adjust these for bad platforms ...
     const MTP testMatrices[numTestMatrices] =
       {
-        MTP("In_bcsstk01.mtx"       ,1e-12, 40 , 1e-4, 0.6,      1.0, 20 , 1e-10, 0.5,      1.0)
-        ,MTP("In_bcsstk02.mtx"      ,1e-12, 40 , 1e-3, 0.5,      1.0, 2  , 1e-10, 0.5,      1.0)
-        ,MTP("In_bcsstk04.mtx"      ,1e-12, 80 , 1e-4, 0.999990, 1.0, 40 , 1e-10, 0.999990, 1.0)
-        ,MTP("In_Diagonal.mtx"      ,1e-12, 4  , 1e-6, 1e-14,    1.0, 2  , 1e-10, 1e-14,    1.0)
-        ,MTP("In_FourByFour.mtx"    ,1e-12, 4  , 1e-6, 1e-14,    1.0, 2  , 1e-10, 1e-14,    1.0)
-        ,MTP("In_KheadK.mtx"        ,1e-12, 8  , 1e-6, 1e-14,    1.0, 2  , 1e-10, 1e-14,    1.0)
-        ,MTP("In_KheadSorted.mtx"   ,1e-12, 8  , 1e-6, 1e-14,    1.0, 2  , 1e-10, 1e-14,    1.0)
-        ,MTP("In_nos1.mtx"          ,1e-11, 200, 1e-4, 0.6,      1.0, 237, 1e-2,  5.0,      1.0)
-        ,MTP("In_nos5.mtx"          ,1e-12, 468, 1e-5, 0.5,      1.0, 468, 1e-10, 0.5,      1.0)
+        MTP("bcsstk01.mtx"       ,1e-12, 40 , 1e-4, 0.6,      1.0, 20 , 1e-10, 0.5,      1.0)
+        ,MTP("bcsstk02.mtx"      ,1e-12, 40 , 1e-3, 0.5,      1.0, 2  , 1e-10, 0.5,      1.0)
+        ,MTP("bcsstk04.mtx"      ,1e-12, 80 , 1e-4, 0.999990, 1.0, 40 , 1e-10, 0.999990, 1.0)
+        ,MTP("Diagonal.mtx"      ,1e-12, 4  , 1e-6, 1e-14,    1.0, 2  , 1e-10, 1e-14,    1.0)
+        ,MTP("FourByFour.mtx"    ,1e-12, 4  , 1e-6, 1e-14,    1.0, 2  , 1e-10, 1e-14,    1.0)
+        ,MTP("KheadK.mtx"        ,1e-12, 8  , 1e-6, 1e-14,    1.0, 2  , 1e-10, 1e-14,    1.0)
+        ,MTP("KheadSorted.mtx"   ,1e-12, 8  , 1e-6, 1e-14,    1.0, 2  , 1e-10, 1e-14,    1.0)
+        ,MTP("nos1.mtx"          ,1e-11, 200, 1e-4, 0.6,      1.0, 237, 1e-2,  5.0,      1.0)
+        ,MTP("nos5.mtx"          ,1e-12, 468, 1e-5, 0.5,      1.0, 468, 1e-10, 0.5,      1.0)
       };
     //
     // Loop through all of the test matrices
