@@ -112,9 +112,6 @@ Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
 Thyra::createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::MutableSubVectorT<Scalar> &raw_v )
 {
   Teuchos::RefCountPtr<VectorBase<Scalar> > v = vs->createMemberView(raw_v);
-#ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
-  assign(&*v,Teuchos::ScalarTraits<Scalar>::nan());
-#endif  
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &v );
   return v;
 }
@@ -131,9 +128,6 @@ Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
 Thyra::createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubVectorT<Scalar> &raw_v )
 {
   Teuchos::RefCountPtr<const VectorBase<Scalar> > v = vs->createMemberView(raw_v);
-#ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
-  assign(&*v,Teuchos::ScalarTraits<Scalar>::nan());
-#endif  
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &v );
   return v;
 }
@@ -150,9 +144,6 @@ Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
 Thyra::createMembersView(  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::MutableSubMultiVectorT<Scalar> &raw_mv )
 {
   Teuchos::RefCountPtr<MultiVectorBase<Scalar> > mv = vs->createMembersView(raw_mv);
-#ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
-  assign(&*mv,Teuchos::ScalarTraits<Scalar>::nan());
-#endif  
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &mv );
   return mv;
 }
@@ -169,9 +160,6 @@ Teuchos::RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
 Thyra::createMembersView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubMultiVectorT<Scalar> &raw_mv )
 {
   Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > mv = vs->createMembersView(raw_mv);
-#ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
-  assign(&*mv,Teuchos::ScalarTraits<Scalar>::nan());
-#endif  
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &mv );
   return mv;
 }
