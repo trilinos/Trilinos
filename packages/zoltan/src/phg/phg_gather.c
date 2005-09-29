@@ -89,11 +89,11 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
 
   shg->dist_x = (int *) ZOLTAN_MALLOC(2 * sizeof(int));
   shg->dist_y = (int *) ZOLTAN_MALLOC(2 * sizeof(int));
+  if (!shg->dist_x || !shg->dist_y) MEMORY_ERROR;
+
   shg->dist_x[0] = shg->dist_y[0] = 0;
   shg->dist_x[1] = shg->nVtx;
   shg->dist_y[1] = shg->nEdge;
-
-  /* KDDKDD -- Need allocation error check here. */
 
   shg->comm = scomm;
 
