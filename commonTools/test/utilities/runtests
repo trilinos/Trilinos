@@ -102,7 +102,7 @@ cleanUp();
                     "short-circuit" => \$shortCircuit,
                     "output-dir=s" => \$outputDir,
                     "simple-dir-name" => \$simpleDirName,
-		            "coverage" => \$coverage,
+                    "coverage" => \$coverage,
                     "verbosity=i" => \$verbosity,
                     "log-verbosity=i" => \$logVerbosity,
                     "quiet" => \$quiet,
@@ -745,12 +745,9 @@ cleanUp();
                     
                         if (opendir(DIR, $builtTestDirPath)) {
                             while (defined (my $file = readdir(DIR))) {
-                                my $absFile = "$buildDir/packages/$package/test/$dir/$file";                        
-                                if (    (-x $absFile) &&
-                                        (!-d $absFile) &&
-                                        ($file !~ m/^\./)
-                                ) {
-                                    push( @{ $definitionAoHoA[$i]{'TESTS'} }, "$dir/$file");
+                                my $absFile = "$buildDir/packages/$package/test/$dir/$file";
+                                if ( isValidTestExec("$buildDir/packages/$package/test/$dir",$file) ) {
+                                  push( @{ $definitionAoHoA[$i]{'TESTS'} }, "$dir/$file");
                                 }
                             }
                             closedir(DIR);
@@ -1354,3 +1351,39 @@ cleanUp();
       chomp($outputStr = `$cmnd_in`) if($returnVal == 0);
       return $outputStr;
     } # getOptionalOutput()
+
+
+    ############################################################################
+    # isValidTestExec()
+    #
+    # Determines if the input file is a valid executable file that can
+    # be a test program.
+    #
+    #   - args:
+    #               the absolute path to a candidate file
+    #               the file name itself
+    #
+    #   - returns:  True if the file is a valid executable test program
+    #
+
+    sub isValidTestExec {
+      my $abs_path = shift;
+      my $file = shift;
+      my $absFile = "$abs_path/$file";
+      if(
+
+         (-x $absFile) &&        # Must be executable!
+
+         (!-d $absFile) &&       # Must not be a directory!
+
+         ($file !~ m/^\./) &&    # We do not run hidden files!
+         ($file !~ m/\.obj$/) &&  # These files are made exectuable by the
+         ($file !~ m/\.ilk$/) &&  # Windows Intel C++ compiler and should not
+         ($file !~ m/\.pdb$/)     # be run as test programs!
+
+        )
+      {
+        return 1;
+      }
+      return 0;
+    } # isValidTestExec()
