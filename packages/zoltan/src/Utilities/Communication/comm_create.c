@@ -325,7 +325,7 @@ ZOLTAN_COMM_OBJ *Zoltan_Comm_Copy(ZOLTAN_COMM_OBJ *from)
 }
 int Zoltan_Comm_Copy_To(ZOLTAN_COMM_OBJ **toptr, ZOLTAN_COMM_OBJ *from)
 {
-  static char *yo = "Zoltan_Comm_Create";
+  static char *yo = "Zoltan_Comm_Copy_To";
   int proc = 0;
   ZOLTAN_COMM_OBJ *to= NULL;
 
