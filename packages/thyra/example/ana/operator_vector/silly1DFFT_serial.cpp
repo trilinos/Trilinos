@@ -89,7 +89,7 @@ bool run1DFFTExample(
 {
   using Teuchos::RefCountPtr; using Teuchos::rcp;
   typedef std::complex<RealScalar> ComplexScalar;
-  typedef Teuchos::ScalarTraits<RealScalar> ST;
+  typedef Teuchos::ScalarTraits<RealScalar> RST;
   const std::string indentSpacer = "  ";
   bool success = true;
   bool result;
@@ -97,7 +97,7 @@ bool run1DFFTExample(
   if(outputPrec > 0) std::cout.precision(outputPrec);
 
   if(verbose)
-    std::cout << "\n***\n*** Running 1D FFT example using real scalar type = \'" << ST::name() << "\' ...\n***\n";
+    std::cout << "\n***\n*** Running 1D FFT example using real scalar type = \'" << RST::name() << "\' ...\n***\n";
 
   Teuchos::Time timer("");
   timer.start(true);
@@ -114,11 +114,17 @@ bool run1DFFTExample(
     realDomainVecSpc = realToComplexConverter.createVectorSpaceFrom(*C->domain());
   RefCountPtr<Thyra::MultiVectorBase<RealScalar> >
     realDomainVec = Thyra::createMember(realDomainVecSpc);
+  Thyra::seed_randomize<RealScalar>(0);
+  Thyra::randomize( RealScalar(-RST::one()), RST::one(), &*realDomainVec );
+  if(verbose && dumpAll)
+    std::cout << "\nrealDomainVec \n" << *realDomainVec;
   RefCountPtr<Thyra::MultiVectorBase<ComplexScalar> >
     complexDomainVec = Thyra::createMember(C->domain()),
     complexRangeVec = Thyra::createMember(C->range());
   realToComplexConverter.convert(*realDomainVec,&*complexDomainVec);
   Thyra::apply( *C, Thyra::NOTRANS, *complexDomainVec, &*complexRangeVec );
+  if(verbose && dumpAll)
+    std::cout << "\ncomplexDomainVec \n" << *complexDomainVec << "\ncomplexRangeVec \n" << *complexRangeVec;
   Thyra::ListedMultiVectorRandomizer<RealScalar>
     realDomainRand( Teuchos::arrayArg<RefCountPtr<const Thyra::MultiVectorBase<RealScalar> > >(realDomainVec)(), 1 );
   Thyra::ListedMultiVectorRandomizer<ComplexScalar>
