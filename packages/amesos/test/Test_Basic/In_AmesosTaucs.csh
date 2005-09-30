@@ -178,8 +178,8 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 #  A couple more matrices
 #
-$mpigo  1 amesos_test.exe TAUCS 662_bus_out.rsa 0 1 3 0 1e-11 1e-12 >>SST.stdout 
-$mpigo  3 amesos_test.exe TAUCS 662_bus_out.rsa 0 1 3 0 1e-11 1e-12 >>SST.stdout 
+$mpigo  1 amesos_test.exe TAUCS 662_bus_out.rsa 0 1 3 0 1e-10 1e-12 >>SST.stdout 
+$mpigo  3 amesos_test.exe TAUCS 662_bus_out.rsa 0 1 3 0 1e-10 1e-12 >>SST.stdout 
 echo "" >> SST.summary 
 echo "COMMENT End AmesosTaucs.exe" >> SST.summary 
 
