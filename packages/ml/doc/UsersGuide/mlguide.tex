@@ -242,7 +242,7 @@ configuring and building \ML\ is outlined in Section~\ref{configure}.
 Section~\ref{sec:getting_started} shows the basic usage of \ML\ as a
 black-box preconditioner for {\sc Epetra} matrices. The definition of
 (parallel) preconditioners using ML\_Epetra::MultiLevelPreconditioner is
-detailed. This class only requires the linear system matrix, and a list
+described. This class only requires the linear system matrix, and a list
 of options.  Available parameters for
 ML\_Epetra::MultiLevelPreconditioner are reported in Section
 \ref{all possible parameters}.  
@@ -367,7 +367,7 @@ use the examples.
 %
 \ML\ is configured and built using the GNU autoconf~\cite{Autoconf} and
 automake~\cite{Automake} tools.  It can be configured and build as a
-standalone package without or with {\sc Aztec 2.1} support (as detailed
+standalone package without or with {\sc Aztec 2.1} support (as described
 in Section~\ref{Standalone Mode} and~\ref{other packages}), or as a part
 of the \trilinos~framework~\cite{Trilinos-home-page} (as described in
 Section~\ref{sec:build:trilinos}). Even though \ML\ can be compiled and
@@ -513,8 +513,8 @@ files.  To configure \ML\ with one of the above TPLs, you must enable the
 particular TPL interface in \ML. 
 \medskip
 
-The same configure options that one uses to enable certain other Trilinos
-packages also enables the interfaces to those packages within \ML.
+The same configure options that enable certain other Trilinos
+packages also enable the interfaces to those packages within \ML.
 
 \smallskip
 
@@ -599,10 +599,10 @@ Note: you cannot configure \ML\ with both this option and {\tt--enable-amesos}.}
 
 \medskip
 
-If one of the above options is enables, then the user must specify the
+If one of the above options is enabled, then the user must specify the
 location of the header files, with the option
 \begin{verbatim}
---with-incdirs=<include-locations>
+--with-incdirs="-I/include-locations"
 \end{verbatim}
 (Header files for \trilinos~libraries are automatically located if \ML\ 
 is built through the \trilinos~{\tt configure}.)  In order to link the
@@ -613,8 +613,8 @@ packages' libraries\footnote{An example of configuration line that enables \meti
  --with-ldflags="-L\$HOME/lib/LINUX\_MPI" --with-libs="-lparmetis-3.1 -lmetis-4.0" }.}
 , with the option
 \begin{verbatim}
---with-ldflags=<lib-locations>
---with-libs=<lib-list>
+--with-ldflags="<lib-locations>"
+--with-libs="<lib-list>"
 \end{verbatim}
 The user might find useful the option 
 \begin{verbatim}
@@ -794,8 +794,8 @@ Epetra\_RowMatrix, \verb!Solver! is an AztecOO object, and
 
   delete MLPrec;
 \end{verbatim}
-We now detail the general procedure to define the
-MultiLevelPreconditioner. First, the user defines a \teuchos~parameter
+A MultiLevelPreconditioner may be defined as follows.
+First, the user defines a \teuchos~parameter
 list\footnote{See the \teuchos~documentation for a detailed overview of
   this class.}.  Table~\ref{tab:teuchos} briefly reports the most
 important methods of this class.
@@ -879,16 +879,18 @@ components of the hierarchy, like smoothers and coarse solver\footnote{Note
 \subsection{Example 2: ml\_2level\_DD.cpp}
 \label{parameter list ex. 2}
 
-As a second example, here we explain with some details the construction
-of a 2-level domain decomposition preconditioner, with a coarse space
-defined using aggregation. 
+In the second example, 
+a two level domain decomposition preconditioner is constructed.
+The coarse space is defined using aggregation. 
+It is worthwhile to compare the parameters selected here
+to the default parameters stated in Table~\ref{tab:default}.
 
 File {\tt
   \$ML\_HOME/examples/TwoLevelDD/ml\_2level\_DD.cpp}
 reports the entire code.  In the example, the linear system matrix
-\verb!A!,  coded as an Epetra\_CrsMatrix, corresponds to the
-discretization of a 2D Laplacian on a Cartesian grid. \verb!x! and
-\verb!b! are the solution vector and the right-hand side, respectively.
+\verb!A!,  is an Epetra\_CrsMatrix corresponding to the
+discretization of a Laplacian on a 2D Cartesian grid. 
+The solution vector and right-hand side are \verb!x! and \verb!b! respectively.
 
 \noindent
 The AztecOO linear problem is defined as
