@@ -29,6 +29,7 @@ extern "C" {
 #define SPARSE_CANDIDATES
 #undef  USE_SUBROUNDS
 #define NEW_PHASE3
+#undef NEWER_PHASE3
 
     /*
 #define _DEBUG
@@ -287,7 +288,11 @@ static int pmatching_alt_ipm(
                
 #define ROUNDS_CONSTANT 8     /* controls the number of candidate vertices */ 
 #define IPM_TAG        28731  /* MPI message tag, arbitrary value */
-#define HEADER_COUNT    3     /* Phase 2 send buffer header size in ints */
+#ifdef NEWER_PHASE3
+#define HEADER_COUNT    4          /* Phase 2 send buffer header size in ints */
+#else
+#define HEADER_COUNT    3          /* Phase 2 send buffer header size in ints */
+#endif
 
 /* these thresholds need to become parameters in phg - maybe ??? */
 #define PSUM_THRESHOLD 0.0    /* ignore inner products (i.p.) < threshold */
@@ -412,7 +417,11 @@ static int pmatching_ipm (ZZ *zz,
   struct triplet *local_best= NULL, *global_best= NULL;
   MPI_Op phasethreeop;
   MPI_Datatype phasethreetype;
-#endif
+#endif  /* NEW_PHASE3 */
+#ifdef NEWER_PHASE3
+  int candidate_index;
+  int first_candidate_index;
+#endif  /* NEWER_PHASE3 */
   
   
   ZOLTAN_TRACE_ENTER (zz, yo);
@@ -455,6 +464,9 @@ static int pmatching_ipm (ZZ *zz,
       count = hg->dist_x[i+1]-hg->dist_x[i];  /* number of vertices on proc i */
       if (count > max_nVtx)
         max_nVtx = count;
+#ifdef NEWER_PHASE3
+      if (i == hgc->myProc_x) first_candidate_index = total_nCandidates;
+#endif
       total_nCandidates += calc_nCandidates (count, hgc->nProc_x);
     }
   }
@@ -565,7 +577,7 @@ static int pmatching_ipm (ZZ *zz,
       nselect = sendcnt;                          /* save for later use */
                         
       /* assure send buffer is large enough by first computing required size */
-      sendsize = 2 * sendcnt;                      /* takes care of header */
+      sendsize = (HEADER_COUNT-1) * sendcnt;      /* takes care of header */
       for (i = 0; i < sendcnt; i++)  {
         lno = select[i];
         sendsize += (hg->vindex[lno+1] - hg->vindex[lno]);
@@ -578,6 +590,9 @@ static int pmatching_ipm (ZZ *zz,
        */
       s = send;
       n = 0;
+#ifdef NEWER_PHASE3
+      candidate_index = first_candidate_index;
+#endif  /* NEWER_PHASE3 */
       for (i = 0; i < sendcnt; i++)   {
         lno = select[i];
         candidate_gno = VTX_LNO_TO_GNO(hg, lno);
@@ -585,14 +600,21 @@ static int pmatching_ipm (ZZ *zz,
 #ifdef SPARSE_CANDIDATES
         if ((hg->vindex[lno+1] > hg->vindex[lno]) 
          || (candidate_gno % hgc->nProc_y == hgc->myProc_y))
-#endif
+#endif  /* SPARSE_CANDIDATES */
         {
           n++;  /* non-empty vertex */
           *s++ = candidate_gno;
+#ifdef NEWER_PHASE3
+          *s++ = candidate_index;
+printf("%d KDDKDD %d  ONE (%d, %d)\n", zz->Proc, round, candidate_gno, candidate_index);
+#endif  /* NEWER_PHASE3 */
           *s++ = hg->vindex[lno+1] - hg->vindex[lno];              /* count */
           for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
             *s++ = hg->vedge[j];                             /* lno of edge */
         }
+#ifdef NEWER_PHASE3
+        candidate_index++;
+#endif  /* NEWER_PHASE3 */
       }
       sendsize = s - send;
 /*
@@ -640,6 +662,9 @@ static int pmatching_ipm (ZZ *zz,
       for (j = 0 ; j < nTotal  &&  i < recsize; j++)   {
         permute[j] = i++;             /* save index of candidate_gno 
                                          in permute[] */
+#ifdef NEWER_PHASE3
+        i++;                          /* skip candidate_index */
+#endif /* NEWER_PHASE3 */
         count      = edgebuf[i++];    /* count of edges */
         i += count;                   /* skip over count edges */
       }
@@ -683,6 +708,10 @@ static int pmatching_ipm (ZZ *zz,
         if (!cFLAG)  { 
           r     = &edgebuf[permute[k]];
           candidate_gno = *r++;                 /* gno of candidate vertex */
+#ifdef NEWER_PHASE3
+          candidate_index = *r++;          /* candidate_index of vertex */
+printf("%d KDDKDD %d  TWO (%d, %d)\n", zz->Proc, round, candidate_gno, candidate_index);
+#endif  /* NEWER_PHASE3 */
           count = *r++;                    /* count of following hyperedges */
         }
         else
@@ -731,7 +760,8 @@ static int pmatching_ipm (ZZ *zz,
         if (count == 0)
           continue;         /* no partial sums to append to message */
 
-        /* HEADER_COUNT (row, candidate_gno, count of <lno, psum> pairs 
+        /* HEADER_COUNT (row, candidate_gno, candidate_index (if NEWER_PHASE3), 
+         *               count of <lno, psum> pairs 
          *               describing non-zero partial inner products).
          */
         msgsize = HEADER_COUNT + 2 * count;
@@ -761,7 +791,11 @@ static int pmatching_ipm (ZZ *zz,
           sendsize       += msgsize;          /* cummulative size of message */
           
           *s++ = hgc->myProc_y;      /* save my row (for merging) */
-          *s++ = candidate_gno;          
+          *s++ = candidate_gno;
+#ifdef NEWER_PHASE3
+          *s++ = candidate_index;
+printf("%d KDDKDD %d  THREE (%d, %d)\n", zz->Proc, round, candidate_gno, candidate_index);
+#endif  /* NEWER_PHASE3 */
           *s++ = count;
           for (i = 0; i < count; i++)  {          
             *s++ = aux[i];                          /* lno of partial sum */
@@ -805,6 +839,10 @@ static int pmatching_ipm (ZZ *zz,
           old_row = row;
         }
         candidate_gno = *r++;
+#ifdef NEWER_PHASE3
+        candidate_index = *r++;
+printf("%d KDDKDD %d  FOUR (%d, %d)\n", zz->Proc, round, candidate_gno, candidate_index);
+#endif  /* NEWER_PHASE3 */
         count = *r++;
         r += (count * 2);
       }
@@ -830,6 +868,10 @@ static int pmatching_ipm (ZZ *zz,
         /* merge step: look for target candidate_gno from each row's data */
         for (i = 0; i < hgc->nProc_y; i++)  {
           if (rows[i] < &rec[recsize] && *rows[i] == candidate_gno)  {       
+#ifdef NEWER_PHASE3
+            candidate_index = *(++rows[i]);   /* skip candidate index */
+printf("%d KDDKDD %d  FIVE (%d, %d)\n", zz->Proc, round, candidate_gno, candidate_index);
+#endif
             count = *(++rows[i]);
             for (j = 0; j < count; j++)  {
               lno = *(++rows[i]);         
@@ -837,7 +879,8 @@ static int pmatching_ipm (ZZ *zz,
                 aux[m++] = lno;           /* then save the lno */          
               sums[lno] += *(float*) (++rows[i]);    /* sum the psums */
             }
-            rows[i] += 2;                 /* skip past current psum, row */
+            rows[i] += 2;                 /* skip past current psum,
+                                             index (if NEWER_PHASE3),row */
           }
         }
           
@@ -847,16 +890,23 @@ static int pmatching_ipm (ZZ *zz,
           if (sums[aux[i]] > TSUM_THRESHOLD)
             count++;   
 
-        /* create <candidate_gno, count of <lno,tsum> pairs, <lno, tsum>> 
+        /* create <candidate_gno, candidate_index (if NEWER_PHASE3),
+         * count of <lno,tsum> pairs, <lno, tsum>> 
          * in send array.
          */           
         if (count > 0)  {
-          if ( (s - send) + (2 + 2 * count) > nSend ) {
+          if ( (s - send) + ((HEADER_COUNT-1) + 2 * count) > nSend ) 
+          {
             sendsize = s - send;
-            MACRO_REALLOC (nSend + 2*(1+count), nSend, send); /*enlarge buffer*/
+            MACRO_REALLOC (nSend + (HEADER_COUNT-1)+2*count, nSend, send); 
+                                   /*enlarge buffer*/
             s = send + sendsize;   /* since realloc buffer could move */ 
           }      
           *s++ = candidate_gno;
+#ifdef NEWER_PHASE3
+          *s++ = candidate_index;
+printf("%d KDDKDD %d  SIX (%d, %d)\n", zz->Proc, round, candidate_gno, candidate_index);
+#endif  /* NEWER_PHASE3 */
           *s++ = count;
         }  
         for (i = 0; i < m; i++)   {
@@ -895,6 +945,10 @@ static int pmatching_ipm (ZZ *zz,
       if (hgc->myProc_y == 0) {   /* do following only if I am the MASTER ROW */
         for (r = rec; r < rec + recsize;)  {
           candidate_gno = *r++;                    /* candidate's GNO */
+#ifdef NEWER_PHASE3
+          candidate_index = *r++;                  /* candidate's index */
+printf("%d KDDKDD %d  SEVEN (%d, %d)\n", zz->Proc, round, candidate_gno, candidate_index);
+#endif  /* NEWER_PHASE3 */
           count = *r++;                    /* count of nonzero pairs */
           bestsum = -1.0;                  /* any negative value will do */
           bestlno = -1;                    /* any negative value will do */
@@ -915,13 +969,21 @@ static int pmatching_ipm (ZZ *zz,
                         
           if (!cFLAG && bestsum > TSUM_THRESHOLD)  {
             cmatch[bestlno] = -1;  /* mark pending match to avoid conflicts */
+/* KDDKDD -- change master_data to triplet data structure always */
+#ifdef NEWER_PHASE3_NOT_UNTIL_MERGE_IS_READY
+            master_data[candidate_index*(HEADER_COUNT-1)] = candidate_gno;
+            master_data[1+candidate_index*(HEADER_COUNT-1)] = 
+                                                    VTX_LNO_TO_GNO(hg, bestlno);
+            f = (float*) &(master_data[2+candidate_index*(HEADER_COUNT-1)]);
+#else
             *mp++ = candidate_gno;
             *mp++ = VTX_LNO_TO_GNO(hg, bestlno);
-             f = (float*) mp++;
+            f = (float*) mp++;
+#endif  /* NEWER_PHASE3 */
             *f = bestsum;
 #ifndef NEW_PHASE3
             master_procs[nmaster] = VTX_TO_PROC_X(hg, candidate_gno);
-#endif
+#endif  /* !NEWER_PHASE3 */
             nmaster++;
           }
         }
@@ -1234,8 +1296,6 @@ static void phasethreemerge(
  * value is chosen for each candidate.
  * Upon conclusion of the Allreduce, there will be num valid entries
  * in inout.
- * KDDKDD Still want to break ties in favor of local processor; not 
- * KDDKDD yet implemented.
  */
 
 int num = *tnum;
