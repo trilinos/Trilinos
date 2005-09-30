@@ -1193,8 +1193,8 @@ void AZ_capture_matrix(AZ_MATRIX *Amat, int proc_config[],
 #endif
 	  x = (double *) malloc(num_total_equations * sizeof(double));
 	  y = (double *) malloc(num_total_equations * sizeof(double));
-	  for (i = 0; i < num_total_equations; i++) x[0] = 0.0;
-	  for (i = 0; i < num_total_equations; i++) y[0] = 0.0;
+	  for (i = 0; i < num_total_equations; i++) x[i] = 0.0;
+	  for (i = 0; i < num_total_equations; i++) y[i] = 0.0;
 	  for (i = 0; i < num_total_equations; i++) {
 	    /* For each column i, multiply by the vector e_i to extract the
 	       coefficients from the ith column.  Then write these out. */
