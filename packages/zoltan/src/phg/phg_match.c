@@ -62,6 +62,9 @@ static void quickpart_list_inc_struct (
 static void phasethreemerge(void *, void *, int *, MPI_Datatype *);
 
 #endif
+#ifdef NEWER_PHASE3
+static void phasethreereduce(void *, void *, int *, MPI_Datatype *);
+#endif
 
 /*****************************************************************************/
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
@@ -441,7 +444,11 @@ static int pmatching_ipm (ZZ *zz,
   if (!cFLAG) {
     MPI_Type_contiguous(sizeof(struct triplet),MPI_CHAR, &phasethreetype);
     MPI_Type_commit(&phasethreetype);
+#ifdef NEWER_PHASE3_NOT_READY_YET
+    MPI_Op_create(&phasethreereduce, 1, &phasethreeop);
+#else
     MPI_Op_create(&phasethreemerge, 1, &phasethreeop);
+#endif /* NEWER_PHASE3 */
   }
 #endif /* NEW_PHASE3 */
 
@@ -493,22 +500,38 @@ static int pmatching_ipm (ZZ *zz,
        err = ZOLTAN_MEMERR;
        goto fini;
     }
-    
-  if (!cFLAG)
-    if (!(edgebuf     = (int*) ZOLTAN_MALLOC(nEdgebuf   * sizeof(int)))
-     || !(master_data = (int*) ZOLTAN_MALLOC(3 * total_nCandidates 
+
+  if (!cFLAG && total_nCandidates && (hgc->myProc_y == 0))   /* Master row */
+    if (!(master_data = (int*) ZOLTAN_MALLOC(3 * total_nCandidates
                                                * sizeof(int)))
-#ifdef NEW_PHASE3
-     || !(global_best = (struct triplet*) ZOLTAN_MALLOC(total_nCandidates *
-                                                       sizeof(struct triplet)))
-     || !(Tmp_Best    = (struct triplet*) ZOLTAN_MALLOC(total_nCandidates *
-                                                       sizeof(struct triplet)))
-#endif
 #ifndef NEW_PHASE3
      || !(master_procs = (int*) ZOLTAN_MALLOC(total_nCandidates * sizeof(int)))
+#else   /* NEW_PHASE3 */
+     || !(global_best = (struct triplet*) ZOLTAN_MALLOC(total_nCandidates *
+                                                       sizeof(struct triplet)))
+#ifndef NEWER_PHASE3_NOT_READY_YET
+     || !(Tmp_Best    = (struct triplet*) ZOLTAN_MALLOC(total_nCandidates *
+                                                       sizeof(struct triplet)))
+#endif  /* !NEWER_PHASE3 */
 #endif
-     ) 
-     {
+    ) {
+       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
+       err = ZOLTAN_MEMERR;
+       goto fini;
+    }  
+
+#ifdef NEWER_PHASE3_NOT_READY_YET
+  for (i = 0; i < total_nCandidates; i++) {
+    float *f;
+    master_data[i*3] = -1;
+    master_data[i*3+1] = -1;
+    f = (float *) &(master_data[i*3+2]);
+    *f = -1.;
+  }
+#endif
+
+  if (!cFLAG)
+    if (!(edgebuf     = (int*) ZOLTAN_MALLOC(nEdgebuf   * sizeof(int)))) {
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
        err = ZOLTAN_MEMERR;
        goto fini;
@@ -516,7 +539,8 @@ static int pmatching_ipm (ZZ *zz,
   
   if ((total_nCandidates && !(permute = (int*) ZOLTAN_MALLOC(total_nCandidates
                                                              * sizeof(int))))
-   || (nCandidates && !(select = (int*) ZOLTAN_MALLOC(nCandidates * sizeof(int))))
+   || (nCandidates && !(select = (int*) ZOLTAN_MALLOC(nCandidates 
+                                                      * sizeof(int))))
    || (nSend && !(send = (int*) ZOLTAN_MALLOC(nSend * sizeof(int))))
    || !(dest = (int*) ZOLTAN_MALLOC(nDest * sizeof(int)))
    || !(size = (int*) ZOLTAN_MALLOC(nSize * sizeof(int)))
@@ -970,12 +994,11 @@ printf("%d KDDKDD %d  SEVEN (%d, %d)\n", zz->Proc, round, candidate_gno, candida
           if (!cFLAG && bestsum > TSUM_THRESHOLD)  {
             cmatch[bestlno] = -1;  /* mark pending match to avoid conflicts */
 /* KDDKDD -- change master_data to triplet data structure always */
-#ifdef NEWER_PHASE3_NOT_UNTIL_MERGE_IS_READY
-            master_data[candidate_index*(HEADER_COUNT-1)] = candidate_gno;
-            master_data[1+candidate_index*(HEADER_COUNT-1)] = 
-                                                    VTX_LNO_TO_GNO(hg, bestlno);
-            f = (float*) &(master_data[2+candidate_index*(HEADER_COUNT-1)]);
-#else
+#ifdef NEWER_PHASE3_NOT_READY_YET
+            master_data[candidate_index*3] = candidate_gno;
+            master_data[1+candidate_index*3] = VTX_LNO_TO_GNO(hg, bestlno);
+            f = (float*) &(master_data[2+candidate_index*3]);
+#else  /* !NEWER_PHASE3 */
             *mp++ = candidate_gno;
             *mp++ = VTX_LNO_TO_GNO(hg, bestlno);
             f = (float*) mp++;
@@ -1014,10 +1037,12 @@ printf("%d KDDKDD %d  SEVEN (%d, %d)\n", zz->Proc, round, candidate_gno, candida
       /* A triplet is (candidate id, best match id, and best i.p. value) */
       /* Sort by candidate's global id; this is necessary to do the
          "merge" between processors efficiently. Can we use hash instead? */
+#ifndef NEWER_PHASE3_NOT_READY_YET
       quicksort_list_inc_struct(local_best, 0, nmaster-1);
 
       for (i = nmaster; i < total_nCandidates; i++)
         local_best[i].candidate = INT_MAX;
+#endif /* !NEWER_PHASE3 */
 
       /* DEBUG 
       for (i=0; i<nmaster; i++){
@@ -1038,7 +1063,17 @@ printf("%d KDDKDD %d  SEVEN (%d, %d)\n", zz->Proc, round, candidate_gno, candida
       for (i = 0; i < total_nCandidates; i++) {
         int cproc, vproc;
         candidate_gno = global_best[i].candidate;
+printf("%d KDDKDD EIGHT (%d, %d)\n", zz->Proc, candidate_gno, i);
+#ifdef  NEWER_PHASE3_NOT_READY_YET
+        /* Reinitialize master_data for next round */
+        master_data[i*3] = master_data[i*3+1] = -1;
+        f = (float *) &(master_data[i*3+2]);
+        *f = -1.;
+        if (candidate_gno == -1) continue;
+#endif  /* NEWER_PHASE3 */
+#ifndef NEWER_PHASE3_NOT_READY_YET
         if (candidate_gno == INT_MAX) break;  /* All matches are processed */
+#endif  /* !NEWER_PHASE3 */
         partner_gno = global_best[i].partner;
         cproc = VTX_TO_PROC_X(hg, candidate_gno);
         vproc = VTX_TO_PROC_X(hg, partner_gno);
@@ -1055,11 +1090,19 @@ printf("%d KDDKDD %d  SEVEN (%d, %d)\n", zz->Proc, round, candidate_gno, candida
         else if (vproc == hgc->myProc_x)
           match[VTX_GNO_TO_LNO(hg, partner_gno)] = -candidate_gno - 1;
       }
-
     } /* End (hgc->myProc_y == 0) */
 
     /* broadcast match array to the entire column */
     MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
+#ifdef KDDKDD_DO_NOT_COMMIT
+/* KDDKDD DO NOT COMMIT */
+if (hgc->myProc_y == 0) {
+  for (i = 0; i < hg->nVtx; i++)
+    printf("%d KDDKDD %d MATCH %d %d <-> %d\n", zz->Proc, round, i, VTX_LNO_TO_GNO(hg,i),match[i]);
+}
+/* KDDKDD DO NOT COMMIT */
+#endif  /* KDDKDD_DO_NOT_COMMIT */
+
     MACRO_TIMER_STOP (4);                       /* end of phase 3 */
 
 #else /* Old phase 3 and 4 */
@@ -1277,6 +1320,72 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 }
 
 /***************************************************************************/
+#ifdef NEWER_PHASE3
+
+static void phasethreereduce(
+  void *tin, 
+  void *tinout, 
+  int *tnum, 
+  MPI_Datatype *mytype
+)
+{
+/* MPI_Op for computing the maximum inner-product for each candidate */
+
+int num = *tnum;
+struct triplet *in = (struct triplet *) tin;
+struct triplet *inout = (struct triplet *) tinout;
+int i;
+
+  for (i = 0; i < num; i++) {
+    /* Sanity check; remove later */
+    if (in[i].candidate >= 0 && inout[i].candidate >= 0 &&
+        in[i].candidate != inout[i].candidate) {
+      printf("%d KDDKDD ERROR HERE %d %d %d\n", 
+             HG_Ptr->comm->myProc, i, in[i].candidate, inout[i].candidate);
+    }
+    if (in[i].ip > inout[i].ip) {
+      /* in has larger inner product */
+      inout[i].ip = in[i].ip;
+      inout[i].partner = in[i].partner;
+    }
+    else if (inout[i].ip > in[i].ip) {
+      /* inout already has larger inner product */
+      /* Don't need to do anything */
+    }
+    else { /* IP TIE */
+      int in_proc = VTX_TO_PROC_X(HG_Ptr, in[i].partner);
+      int inout_proc = VTX_TO_PROC_X(HG_Ptr, inout[i].partner);
+      int cand_proc = VTX_TO_PROC_X(HG_Ptr, in[i].candidate);
+
+      /* Give preference to partners on candidate's processor */
+      if (((in_proc == cand_proc) && (inout_proc == cand_proc))
+       || ((in_proc != cand_proc) && (inout_proc != cand_proc))) {
+        /* Both partners are on candidate's proc OR
+           neither partner is on candidate's proc.
+           Break ties by larger partner gno. */
+        if (in[i].partner > inout[i].partner) {
+            inout[i].ip = in[i].ip;
+            inout[i].partner = in[i].partner;
+        }
+        else {
+          /* Don't need to do anything here; 
+           * inout already has the better value 
+           */
+        }
+      }
+      else if (in_proc == cand_proc) {
+        /* Give preference to local partner */
+        inout[i].ip = in[i].ip;
+        inout[i].partner = in[i].partner;
+      }
+      else /* inout_proc == cand_proc */ {
+        /* Don't need to do anything here; inout already has the better value */
+      } 
+    } 
+  }
+}
+#endif  /* NEWER_PHASE3 */
+
 #ifdef NEW_PHASE3
 
 static void phasethreemerge(
@@ -1430,7 +1539,7 @@ static void quicksort_list_inc_struct (struct triplet * list, int start, int end
      quicksort_list_inc_struct (list, larger,end);
   }
 }
-#endif
+#endif  /* NEW_PHASE3 */
 
 #undef MACRO_REALLOC
 #undef MACRO_TIMER_START
