@@ -5,13 +5,15 @@
 (FRAMEWORK) {
     TESTS = BlockCG/bl_cg_hb.exe,
             BlockCG/bl_pcg_hb.exe;
-    ARGS = ./BlockCG/bcsstk14.hb;
-    COMM = SERIAL;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = -v ./BlockCG/bcsstk14.hb;
+    COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK) {
     TESTS = BlockGmres/bl_gmres_hb.exe,
             BlockGmres/bl_pgmres_hb.exe;
-    ARGS = ./BlockGmres/orsirr1.hb;
-    COMM = SERIAL;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = -v ./BlockGmres/orsirr1.hb;
+    COMM = SERIAL, MPI;
 }

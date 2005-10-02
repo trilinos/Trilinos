@@ -293,8 +293,22 @@ int main(int argc, char *argv[]) {
 	delete [] actual_resids;
 	delete [] rhs_norm;	
 
-	if (My_Test.GetStatus() == Belos::Converged)
-  	  return 0;
-	return 1;
+#ifdef EPETRA_MPI
+
+  MPI_Finalize() ;
+
+#endif
+
+  if (My_Test.GetStatus()!=Belos::Converged) {
+	if (verbose)
+      		cout << "End Result: TEST FAILED" << endl;	
+	return -1;
+  }
+  //
+  // Default return value
+  //
+  if (verbose)
+    cout << "End Result: TEST PASSED" << endl;
+  return 0;
   //
 } // end test_bl_pgmres_hb.cpp
