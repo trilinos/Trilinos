@@ -57,6 +57,16 @@
 #include <mpi.h>
 #endif
 
+#ifdef HAVE_ML_MLAPI
+#include "MLAPI_Space.h"
+#include "MLAPI_Operator.h"
+#include "MLAPI_MultiVector.h"
+#include "MLAPI_Gallery.h"
+#include "MLAPI_Expressions.h"
+#include "MLAPI_MultiLevelAdaptiveSA.h"
+#include "MLAPI_DistributedMatrix.h"
+#endif
+
 // this class
 #include "ml_nox_preconditioner.H"
 
@@ -757,6 +767,11 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
      i = fineJac_->NumMyRows();
   // get the nullspace
   double* nullsp = interface_.Get_Nullspace(i,ml_numPDE_,ml_dim_nullsp_);
+
+#if 0 // run dadptive setup phase to improve nullspace
+  Ml_Nox_adaptivesetup(&nullsp,fineJac_,ml_numPDE_,ml_dim_nullsp_);
+#endif
+  
   if (nullsp)
   {
 #if 0
@@ -1474,4 +1489,73 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
   return true;
 }                                                     
 
+/*----------------------------------------------------------------------*
+ |  run adaptive setup                                       m.gee 09/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::Ml_Nox_adaptivesetup(double** oldns,
+                                                         Epetra_CrsMatrix* Jac,
+                                                         int oldnumpde,
+                                                         int olddimns)
+{
+#ifdef HAVE_ML_MLAPI
+
+  // init the mlapi
+  MLAPI::Init();
+  MLAPI::Space FineSpace(Jac->RowMap());
+
+  // fine grid operator
+  MLAPI::Operator A(FineSpace,FineSpace,Jac,false);
+
+  // create the cycle options
+  Teuchos::ParameterList List;
+  List.set("PDE equations", oldnumpde);
+  List.set("use default null space", false);
+  List.set("smoother: type", "symmetric Gauss-Seidel"); // or "MLS" and use 
+  //List.set("smoother: type", "MLS"); 
+  //List.set("smoother: MLS polynomial order",4); 
+  List.set("smoother: sweeps", 3);
+  List.set("smoother: damping factor", 1.0);
+  List.set("coarse: type", "Amesos-KLU");
+  List.set("coarse: max size", ml_maxcoarsesize_);
+  List.set("adapt: max reduction", 0.1);
+  List.set("adapt: iters fine", 45);
+  List.set("adapt: iters coarse", 35);
+  List.set("aggregation: damping", 1.33);
+  List.set("aggregation: type", "Uncoupled");  // or "METIS", not "VBMETIS"
+  
+  
+  // create the adaptive class
+  MLAPI::MultiLevelAdaptiveSA Prec(A,List,oldnumpde,ml_N_levels_);
+
+  // set the input nullspace
+  MLAPI::MultiVector NSfine(FineSpace,olddimns);
+  for (int v=0; v<olddimns; ++v)
+    for (int i=0; i<NSfine.GetMyLength(); ++i)
+      NSfine(i,v) = (*oldns)[v*(NSfine.GetMyLength())+i];
+  Prec.SetNullSpace(NSfine);
+
+  // set input numpde
+  Prec.SetInputNumPDEEqns(oldnumpde);
+  
+  // run adatpive setup
+  Prec.AdaptCompute(true,1);
+  
+  // get the new nullspace
+  MLAPI::MultiVector NSnew = Prec.GetNullSpace();
+  int newdimns = NSnew.GetNumVectors();
+  
+  // delete the old one and copy the new one
+  delete [] (*oldns);
+  (*oldns) = new double[newdimns*NSnew.GetMyLength()];
+  
+  for (int v=0; v<newdimns; ++v)
+    for (int i=0; i<NSnew.GetMyLength(); ++i)
+      (*oldns)[v*(NSnew.GetMyLength())+i] = NSnew(i,v);
+  
+  // change the dimension of the nullspace
+  ml_dim_nullsp_ = newdimns;
+  
+#endif
+  return true;
+}
 #endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) 

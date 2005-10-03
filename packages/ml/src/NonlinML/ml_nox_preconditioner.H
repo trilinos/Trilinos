@@ -514,6 +514,9 @@ private:
   // destructor of vector of nonlinearlevels
   bool destroy_nonlinearlevels(ML_NOX::ML_Nox_NonlinearLevel*** nln, int nlevel);
 
+  // run adatpve setup
+  bool Ml_Nox_adaptivesetup(double** oldns, Epetra_CrsMatrix* Jac,int oldnumpde,int olddimns);
+
 private:
   // ---general data---
   char*                                 label_;             // the label of this class
