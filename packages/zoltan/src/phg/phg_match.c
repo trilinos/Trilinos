@@ -30,8 +30,11 @@ extern "C" {
 #undef  USE_SUBROUNDS
 #define NEW_PHASE3
 
-#undef NEWER_PHASE3           /* Generates and sends candidate index */
-#undef NEWER_PHASE3_REDUCTION /* Uses candidate index to fill master_data */
+#define CANDIDATE_INDICES           /* Generate and send candidate index. */
+
+#define NEWER_PHASE3_REDUCTION /* Use candidate index to fill master_data */
+                               /* Requires both NEW_PHASE3 and 
+                                  CANDIDATE_INDICES. */
 
     /*
 #define _DEBUG
@@ -66,7 +69,7 @@ static void phasethreemerge(void *, void *, int *, MPI_Datatype *);
 #endif
 #ifdef NEWER_PHASE3_REDUCTION
 static void phasethreereduce(void *, void *, int *, MPI_Datatype *);
-#endif
+#endif  /* NEWER_PHASE3_REDUCTION */
 
 /*****************************************************************************/
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
@@ -293,11 +296,11 @@ static int pmatching_alt_ipm(
                
 #define ROUNDS_CONSTANT 8     /* controls the number of candidate vertices */ 
 #define IPM_TAG        28731  /* MPI message tag, arbitrary value */
-#ifdef NEWER_PHASE3
+#ifdef CANDIDATE_INDICES
 #define HEADER_COUNT    4          /* Phase 2 send buffer header size in ints */
 #else
 #define HEADER_COUNT    3          /* Phase 2 send buffer header size in ints */
-#endif
+#endif  /* CANDIDATE_INDICES */
 
 /* these thresholds need to become parameters in phg - maybe ??? */
 #define PSUM_THRESHOLD 0.0    /* ignore inner products (i.p.) < threshold */
@@ -423,10 +426,10 @@ static int pmatching_ipm (ZZ *zz,
   MPI_Op phasethreeop;
   MPI_Datatype phasethreetype;
 #endif  /* NEW_PHASE3 */
-#ifdef NEWER_PHASE3
+#ifdef CANDIDATE_INDICES
   int candidate_index;
   int first_candidate_index;
-#endif  /* NEWER_PHASE3 */
+#endif  /* CANDIDATE_INDICES */
   
   
   ZOLTAN_TRACE_ENTER (zz, yo);
@@ -450,7 +453,7 @@ static int pmatching_ipm (ZZ *zz,
     MPI_Op_create(&phasethreereduce, 1, &phasethreeop);
 #else
     MPI_Op_create(&phasethreemerge, 1, &phasethreeop);
-#endif /* NEWER_PHASE3 */
+#endif /* NEWER_PHASE3_REDUCTION */
   }
 #endif /* NEW_PHASE3 */
 
@@ -473,9 +476,9 @@ static int pmatching_ipm (ZZ *zz,
       count = hg->dist_x[i+1]-hg->dist_x[i];  /* number of vertices on proc i */
       if (count > max_nVtx)
         max_nVtx = count;
-#ifdef NEWER_PHASE3
+#ifdef CANDIDATE_INDICES
       if (i == hgc->myProc_x) first_candidate_index = total_nCandidates;
-#endif
+#endif /* CANDIDATE_INDICES */
       total_nCandidates += calc_nCandidates (count, hgc->nProc_x);
     }
   }
@@ -514,7 +517,7 @@ static int pmatching_ipm (ZZ *zz,
 #ifndef NEWER_PHASE3_REDUCTION
      || !(Tmp_Best    = (struct triplet*) ZOLTAN_MALLOC(total_nCandidates *
                                                        sizeof(struct triplet)))
-#endif  /* !NEWER_PHASE3 */
+#endif  /* !NEWER_PHASE3_REDUCTION */
 #endif
     ) {
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
@@ -531,7 +534,7 @@ static int pmatching_ipm (ZZ *zz,
       f = (float *) &(master_data[i*3+2]);
       *f = -1.;
     }
-#endif
+#endif  /* NEWER_PHASE3_REDUCTION */
 
   if (!cFLAG)
     if (!(edgebuf     = (int*) ZOLTAN_MALLOC(nEdgebuf   * sizeof(int)))) {
@@ -617,9 +620,9 @@ static int pmatching_ipm (ZZ *zz,
        */
       s = send;
       n = 0;
-#ifdef NEWER_PHASE3
+#ifdef CANDIDATE_INDICES
       candidate_index = first_candidate_index;
-#endif  /* NEWER_PHASE3 */
+#endif  /* CANDIDATE_INDICES */
       for (i = 0; i < sendcnt; i++)   {
         lno = select[i];
         candidate_gno = VTX_LNO_TO_GNO(hg, lno);
@@ -631,16 +634,16 @@ static int pmatching_ipm (ZZ *zz,
         {
           n++;  /* non-empty vertex */
           *s++ = candidate_gno;
-#ifdef NEWER_PHASE3
+#ifdef CANDIDATE_INDICES
           *s++ = candidate_index;
-#endif  /* NEWER_PHASE3 */
+#endif  /* CANDIDATE_INDICES */
           *s++ = hg->vindex[lno+1] - hg->vindex[lno];              /* count */
           for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
             *s++ = hg->vedge[j];                             /* lno of edge */
         }
-#ifdef NEWER_PHASE3
+#ifdef CANDIDATE_INDICES
         candidate_index++;
-#endif  /* NEWER_PHASE3 */
+#endif  /* CANDIDATE_INDICES */
       }
       sendsize = s - send;
 /*
@@ -688,9 +691,9 @@ static int pmatching_ipm (ZZ *zz,
       for (j = 0 ; j < nTotal  &&  i < recsize; j++)   {
         permute[j] = i++;             /* save index of candidate_gno 
                                          in permute[] */
-#ifdef NEWER_PHASE3
+#ifdef CANDIDATE_INDICES
         i++;                          /* skip candidate_index */
-#endif /* NEWER_PHASE3 */
+#endif /* CANDIDATE_INDICES */
         count      = edgebuf[i++];    /* count of edges */
         i += count;                   /* skip over count edges */
       }
@@ -706,7 +709,7 @@ static int pmatching_ipm (ZZ *zz,
         /* Bob thinks the permutation causes problems in accumulating
          * the total inner products. */
         Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));
-#endif
+#endif  /* SPARSE_CANDIDATES */
       }
     }                           /* DONE:  if (cFLAG) else ...  */
     MACRO_TIMER_STOP (1);
@@ -734,9 +737,9 @@ static int pmatching_ipm (ZZ *zz,
         if (!cFLAG)  { 
           r     = &edgebuf[permute[k]];
           candidate_gno = *r++;                 /* gno of candidate vertex */
-#ifdef NEWER_PHASE3
+#ifdef CANDIDATE_INDICES
           candidate_index = *r++;          /* candidate_index of vertex */
-#endif  /* NEWER_PHASE3 */
+#endif  /* CANDIDATE_INDICES */
           count = *r++;                    /* count of following hyperedges */
         }
         else
@@ -785,7 +788,8 @@ static int pmatching_ipm (ZZ *zz,
         if (count == 0)
           continue;         /* no partial sums to append to message */
 
-        /* HEADER_COUNT (row, candidate_gno, candidate_index (if NEWER_PHASE3), 
+        /* HEADER_COUNT (row, candidate_gno, candidate_index (if 
+         *               CANDIDATE_INDICES), 
          *               count of <lno, psum> pairs 
          *               describing non-zero partial inner products).
          */
@@ -817,9 +821,9 @@ static int pmatching_ipm (ZZ *zz,
           
           *s++ = hgc->myProc_y;      /* save my row (for merging) */
           *s++ = candidate_gno;
-#ifdef NEWER_PHASE3
+#ifdef CANDIDATE_INDICES
           *s++ = candidate_index;
-#endif  /* NEWER_PHASE3 */
+#endif  /* CANDIDATE_INDICES */
           *s++ = count;
           for (i = 0; i < count; i++)  {          
             *s++ = aux[i];                          /* lno of partial sum */
@@ -863,9 +867,9 @@ static int pmatching_ipm (ZZ *zz,
           old_row = row;
         }
         candidate_gno = *r++;
-#ifdef NEWER_PHASE3
+#ifdef CANDIDATE_INDICES
         candidate_index = *r++;
-#endif  /* NEWER_PHASE3 */
+#endif  /* CANDIDATE_INDICES */
         count = *r++;
         r += (count * 2);
       }
@@ -891,9 +895,9 @@ static int pmatching_ipm (ZZ *zz,
         /* merge step: look for target candidate_gno from each row's data */
         for (i = 0; i < hgc->nProc_y; i++)  {
           if (rows[i] < &rec[recsize] && *rows[i] == candidate_gno)  {       
-#ifdef NEWER_PHASE3
+#ifdef CANDIDATE_INDICES
             candidate_index = *(++rows[i]);   /* skip candidate index */
-#endif  /* NEWER_PHASE3 */
+#endif  /* CANDIDATE_INDICES */
             count = *(++rows[i]);
             for (j = 0; j < count; j++)  {
               lno = *(++rows[i]);         
@@ -911,7 +915,7 @@ static int pmatching_ipm (ZZ *zz,
           if (sums[aux[i]] > TSUM_THRESHOLD)
             count++;   
 
-        /* create <candidate_gno, candidate_index (if NEWER_PHASE3),
+        /* create <candidate_gno, candidate_index (if CANDIDATE_INDICES),
          * count of <lno,tsum> pairs, <lno, tsum>> 
          * in send array.
          */           
@@ -924,9 +928,9 @@ static int pmatching_ipm (ZZ *zz,
             s = send + sendsize;   /* since realloc buffer could move */ 
           }      
           *s++ = candidate_gno;
-#ifdef NEWER_PHASE3
+#ifdef CANDIDATE_INDICES
           *s++ = candidate_index;
-#endif  /* NEWER_PHASE3 */
+#endif  /* CANDIDATE_INDICES */
           *s++ = count;
         }  
         for (i = 0; i < m; i++)   {
@@ -965,9 +969,9 @@ static int pmatching_ipm (ZZ *zz,
       if (hgc->myProc_y == 0) {   /* do following only if I am the MASTER ROW */
         for (r = rec; r < rec + recsize;)  {
           candidate_gno = *r++;                    /* candidate's GNO */
-#ifdef NEWER_PHASE3
+#ifdef CANDIDATE_INDICES
           candidate_index = *r++;                  /* candidate's index */
-#endif  /* NEWER_PHASE3 */
+#endif  /* CANDIDATE_INDICES */
           count = *r++;                    /* count of nonzero pairs */
           bestsum = -1.0;                  /* any negative value will do */
           bestlno = -1;                    /* any negative value will do */
@@ -993,15 +997,15 @@ static int pmatching_ipm (ZZ *zz,
             master_data[candidate_index*3] = candidate_gno;
             master_data[1+candidate_index*3] = VTX_LNO_TO_GNO(hg, bestlno);
             f = (float*) &(master_data[2+candidate_index*3]);
-#else  /* !NEWER_PHASE3 */
+#else  /* !NEWER_PHASE3_REDUCTION */
             *mp++ = candidate_gno;
             *mp++ = VTX_LNO_TO_GNO(hg, bestlno);
             f = (float*) mp++;
-#endif  /* NEWER_PHASE3 */
+#endif  /* NEWER_PHASE3_REDUCTION */
             *f = bestsum;
 #ifndef NEW_PHASE3
             master_procs[nmaster] = VTX_TO_PROC_X(hg, candidate_gno);
-#endif  /* !NEWER_PHASE3 */
+#endif  /* !NEW_PHASE3 */
             nmaster++;
           }
         }
@@ -1037,7 +1041,7 @@ static int pmatching_ipm (ZZ *zz,
 
       for (i = nmaster; i < total_nCandidates; i++)
         local_best[i].candidate = INT_MAX;
-#endif /* !NEWER_PHASE3 */
+#endif /* !NEWER_PHASE3_REDUCTION */
 
       /* DEBUG 
       for (i=0; i<nmaster; i++){
@@ -1064,10 +1068,10 @@ static int pmatching_ipm (ZZ *zz,
         f = (float *) &(master_data[i*3+2]);
         *f = -1.;
         if (candidate_gno == -1) continue;
-#endif  /* NEWER_PHASE3 */
+#endif  /* NEWER_PHASE3_REDUCTION */
 #ifndef NEWER_PHASE3_REDUCTION
         if (candidate_gno == INT_MAX) break;  /* All matches are processed */
-#endif  /* !NEWER_PHASE3 */
+#endif  /* !NEWER_PHASE3_REDUCTION */
         partner_gno = global_best[i].partner;
         cproc = VTX_TO_PROC_X(hg, candidate_gno);
         vproc = VTX_TO_PROC_X(hg, partner_gno);
@@ -1366,7 +1370,7 @@ int i;
     } 
   }
 }
-#endif  /* NEWER_PHASE3 */
+#endif  /* NEWER_PHASE3_REDUCTION */
 
 #ifdef NEW_PHASE3
 
