@@ -3,6 +3,8 @@ CXXFLAGS="-O0 -fprofile-arcs -ftest-coverage" \
 CFLAGS=-O0 \
 FFLAGS=-O0 \
 CXX=g++ \
+CC=gcc \
+F77=g77 \
 --with-gnumake \
 --cache-file=config.cache \
 --disable-default-packages \
