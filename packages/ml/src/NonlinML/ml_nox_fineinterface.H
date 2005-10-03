@@ -230,11 +230,11 @@ public:
    */
   bool setnumcallscomputeF(int ncalls) { ncalls_computeF_=ncalls; return true; }
 
-private:  
-  // don't want copy-ctor and = operator
-  Ml_Nox_Fineinterface(ML_NOX::Ml_Nox_Fineinterface& old);
-  //Ml_Nox_Fineinterface operator = (const ML_NOX::Ml_Nox_Fineinterface& old);
-  
+  // output method to look at the iterate
+#if 1
+  virtual bool PrintSol(int id) = 0;
+#endif  
+
 public:
 
   //! Flag to indicate, that the Jacobian has been evaluated by the application.
@@ -268,6 +268,11 @@ public:
   /*! ncalls_computeF_ is used to count the number of calls to computeF
   */  
   int ncalls_computeF_;
+  
+private:  
+  // don't want copy-ctor and = operator
+  Ml_Nox_Fineinterface(ML_NOX::Ml_Nox_Fineinterface& old);
+  //Ml_Nox_Fineinterface operator = (const ML_NOX::Ml_Nox_Fineinterface& old);
   
 };
 } // namespace ML_NOX

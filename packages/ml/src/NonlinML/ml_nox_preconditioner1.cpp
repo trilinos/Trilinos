@@ -115,6 +115,7 @@ comm_(comm)
   offset_newPrec_      = 100;
   recompute_newPrec_   = 0;
   adaptive_NewPrec_    = 0.0;
+  adaptns_             = 0;
 
   FAS_normF_           = 1.0e-05;
   FAS_nupdate_         = 1.0e-05;
@@ -279,7 +280,8 @@ bool ML_NOX::ML_Nox_Preconditioner::SetRecomputeOffset(int offset)
  *----------------------------------------------------------------------*/
 bool ML_NOX::ML_Nox_Preconditioner::SetRecomputeOffset(int offset, 
                                                        int recomputestep,
-                                                       double adaptrecompute)
+                                                       double adaptrecompute,
+                                                       int adaptns)
 { 
   if (offset<0 || recomputestep<0)
   {
@@ -291,6 +293,7 @@ bool ML_NOX::ML_Nox_Preconditioner::SetRecomputeOffset(int offset,
   offset_newPrec_    = offset;
   recompute_newPrec_ = recomputestep;
   adaptive_NewPrec_  = adaptrecompute;
+  adaptns_           = adaptns;
   return true;
 }                              
 
@@ -768,9 +771,9 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   // get the nullspace
   double* nullsp = interface_.Get_Nullspace(i,ml_numPDE_,ml_dim_nullsp_);
 
-#if 0 // run dadptive setup phase to improve nullspace
-  Ml_Nox_adaptivesetup(&nullsp,fineJac_,ml_numPDE_,ml_dim_nullsp_);
-#endif
+  // run adaptive setup phase
+  if (adaptns_>0)
+    Ml_Nox_adaptivesetup(&nullsp,fineJac_,ml_numPDE_,ml_dim_nullsp_);
   
   if (nullsp)
   {
@@ -1527,6 +1530,24 @@ bool ML_NOX::ML_Nox_Preconditioner::Ml_Nox_adaptivesetup(double** oldns,
   // create the adaptive class
   MLAPI::MultiLevelAdaptiveSA Prec(A,List,oldnumpde,ml_N_levels_);
 
+  // if there's no nullspace vector, create the default one
+  if (!(*oldns))
+  {
+    if (olddimns<oldnumpde) olddimns = oldnumpde;
+    int nmyrows = Jac->NumMyRows();
+    (*oldns) = new double[olddimns*nmyrows];
+    for (int v=0; v<olddimns; ++v)
+    {
+      for (int i=0; i<nmyrows; ++i) (*oldns)[i] = 0.0;
+      int i=v;
+      for (; i<nmyrows; )
+      {
+        (*oldns)[i] = 1.0;
+        i +=  olddimns;
+      }
+    }
+  }
+
   // set the input nullspace
   MLAPI::MultiVector NSfine(FineSpace,olddimns);
   for (int v=0; v<olddimns; ++v)
@@ -1538,7 +1559,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Ml_Nox_adaptivesetup(double** oldns,
   Prec.SetInputNumPDEEqns(oldnumpde);
   
   // run adatpive setup
-  Prec.AdaptCompute(true,1);
+  Prec.AdaptCompute(true,adaptns_);
   
   // get the new nullspace
   MLAPI::MultiVector NSnew = Prec.GetNullSpace();
@@ -1554,6 +1575,21 @@ bool ML_NOX::ML_Nox_Preconditioner::Ml_Nox_adaptivesetup(double** oldns,
   
   // change the dimension of the nullspace
   ml_dim_nullsp_ = newdimns;
+  
+#if 1
+  // printout the nullspace vectors to gid
+  const Epetra_Vector* sol = interface_.getSolution();
+  double* solptr;
+  sol->ExtractView(&solptr);
+  for (int v=0; v<newdimns; ++v)
+  {
+    for (int i=0; i<sol->MyLength(); ++i)
+      solptr[i] = (*oldns)[v*sol->MyLength() + i];
+    interface_.PrintSol(v);
+  }
+  cout << "Nullspace was printed to GID\n";
+  exit(0);
+#endif  
   
 #endif
   return true;
