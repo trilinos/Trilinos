@@ -6,7 +6,7 @@
  
 RUN (beowulf-nightly-serial) {
     
-    BUILD-LABEL         = nightly;
+    BUILD-LABEL         = default;
     BUILD-DIR           = SERIAL;
     COMM                = serial;
     INVOKE-CONFIGURE    = linux-beowulf;
@@ -24,6 +24,7 @@ RUN (beowulf-nightly-serial) {
 
 RUN (beowulf-nightly-mpi) {
     
+    BUILD-LABEL         = default;
     BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = linux-beowulf-mpi;
@@ -63,6 +64,7 @@ RUN (beowulf-coverage) {
 
 RUN (herouxsmp-nightly-serial) {
     
+    BUILD-LABEL         = default;
     BUILD-DIR           = SERIAL;
     COMM                = serial;
     INVOKE-CONFIGURE    = linux-herouxsmp;
@@ -81,6 +83,7 @@ RUN (herouxsmp-nightly-serial) {
 
 RUN (herouxsmp-nightly-mpi) {
     
+    BUILD-LABEL         = default;
     BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = linux-herouxsmp-mpi;
@@ -102,6 +105,7 @@ RUN (herouxsmp-nightly-mpi) {
 
 RUN (paunchy-nightly-serial) {
     
+    BUILD-LABEL         = default;
     BUILD-DIR           = SERIAL;
     COMM                = serial;
     INVOKE-CONFIGURE    = sunos-paunchy;
@@ -120,6 +124,7 @@ RUN (paunchy-nightly-serial) {
 
 RUN (paunchy-nightly-mpi) {
     
+    BUILD-LABEL         = default;
     BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = sunos-paunchy-mpi;
@@ -141,6 +146,7 @@ RUN (paunchy-nightly-mpi) {
 
 RUN (atlantis-nightly-serial) {
     
+    BUILD-LABEL         = default;
     BUILD-DIR           = SERIAL;
     COMM                = serial;
     INVOKE-CONFIGURE    = sgi-atlantis;
@@ -159,6 +165,7 @@ RUN (atlantis-nightly-serial) {
 
 RUN (atlantis-nightly-mpi) {
 
+    BUILD-LABEL         = default;
     BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = sgi-atlantis-mpi;
@@ -176,7 +183,8 @@ RUN (atlantis-nightly-mpi) {
 ###############################################################################
                                                                                 
 RUN (redstormXcompile-nightly-mpi) {
-                                                                                
+                              
+    BUILD-LABEL         = default;                                                  
     BUILD-DIR           = redstormXcompileTH;
     COMM                = mpi;
     INVOKE-CONFIGURE    = redstormXcompile-reddish1-mpi;
@@ -198,6 +206,7 @@ RUN (redstormXcompile-nightly-mpi) {
 
 RUN (redstorm-nightly-mpi) {
     
+    BUILD-LABEL         = default;
     BUILD-DIR           = redstormMPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = redstorm-mpi;
@@ -220,6 +229,7 @@ RUN (redstorm-nightly-mpi) {
 
 RUN (s858352-nightly-serial) {
 
+    BUILD-LABEL         = default;
     BUILD-DIR           = SERIAL;
     COMM                = serial;
     INVOKE-CONFIGURE    = darwin-s858352;
@@ -239,6 +249,7 @@ RUN (s858352-nightly-serial) {
 
 RUN (s858352-nightly-mpi) {
 
+    BUILD-LABEL         = default;
     BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = darwin-s858352-mpi;
@@ -258,7 +269,8 @@ RUN (s858352-nightly-mpi) {
 ###############################################################################
                                                                                 
 RUN (sass2889-nightly-mpi) {
-                                                                                
+                             
+    BUILD-LABEL         = default;                                                   
     BUILD-DIR           = sass2889MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = sunos-sass2889-mpi;
@@ -279,7 +291,8 @@ RUN (sass2889-nightly-mpi) {
 ###############################################################################
                                                                                 
 RUN (sasg1099-nightly-mpi) {
-                                                                                
+                             
+    BUILD-LABEL         = default;                                                   
     BUILD-DIR           = sasg1099MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = sgi-sasg1099-mpi;
@@ -299,7 +312,8 @@ RUN (sasg1099-nightly-mpi) {
 ###############################################################################
                                                                                 
 RUN (nwcc-nightly-mpi) {
-                                                                                
+                               
+    BUILD-LABEL         = default;                                                 
     BUILD-DIR           = nwccMPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = nwcc-spirit-mpi;
@@ -320,6 +334,7 @@ RUN (nwcc-nightly-mpi) {
 
 RUN (qt-alegra-mpi) {
 
+    BUILD-LABEL         = alegra;
     BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = qt-mpi-alegra;
@@ -341,6 +356,7 @@ RUN (qt-alegra-mpi) {
 
 RUN (qt-mpi) {
 
+    BUILD-LABEL         = default;
     BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = qt-mpi;
@@ -357,7 +373,9 @@ RUN (qt-mpi) {
 #
 ###############################################################################
                                                                                 
-RUN (sais028-mpi) {                                                                                
+RUN (sais028-mpi) {              
+
+    BUILD-LABEL         = default;                                                                  
     BUILD-DIR           = sais028MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = aix-sais028-mpi;
@@ -365,42 +383,5 @@ RUN (sais028-mpi) {
     MAX-PROC            = 2;
     TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = jmwille;
-
-}
-
-###############################################################################
-#
-# software tarball serial
-#
-###############################################################################
-
-RUN (software-tarball-serial) {
-    
-    BUILD-DIR           = SERIAL-TARBALL;
-    COMM                = serial;
-    INVOKE-CONFIGURE    = linux-software;
-    TEST-CATEGORY       = TARBALL;
-    TTR-DIR             = /space/TrilinosWebHome/TrilinosRelease6.0/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
-
-}
-
-###############################################################################
-#
-# software tarball mpi
-#
-###############################################################################
-
-RUN (software-tarball-mpi) {
-    
-    BUILD-DIR           = MPI-TARBALL;
-    COMM                = mpi;
-    INVOKE-CONFIGURE    = linux-software-mpi;
-    TEST-CATEGORY       = TARBALL;
-    MAX-PROC            = 1;
-    MPI-START           = lamboot;
-    MPI-STOP            = lamhalt;    
-    TTR-DIR             = /space/TrilinosWebHome/TrilinosRelease6.0/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
 
 }
