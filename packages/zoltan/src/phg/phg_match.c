@@ -29,7 +29,9 @@ extern "C" {
 #define SPARSE_CANDIDATES
 #undef  USE_SUBROUNDS
 #define NEW_PHASE3
-#undef NEWER_PHASE3
+
+#undef NEWER_PHASE3           /* Generates and sends candidate index */
+#undef NEWER_PHASE3_REDUCTION /* Uses candidate index to fill master_data */
 
     /*
 #define _DEBUG
@@ -62,7 +64,7 @@ static void quickpart_list_inc_struct (
 static void phasethreemerge(void *, void *, int *, MPI_Datatype *);
 
 #endif
-#ifdef NEWER_PHASE3
+#ifdef NEWER_PHASE3_REDUCTION
 static void phasethreereduce(void *, void *, int *, MPI_Datatype *);
 #endif
 
@@ -444,7 +446,7 @@ static int pmatching_ipm (ZZ *zz,
   if (!cFLAG) {
     MPI_Type_contiguous(sizeof(struct triplet),MPI_CHAR, &phasethreetype);
     MPI_Type_commit(&phasethreetype);
-#ifdef NEWER_PHASE3_NOT_READY_YET
+#ifdef NEWER_PHASE3_REDUCTION
     MPI_Op_create(&phasethreereduce, 1, &phasethreeop);
 #else
     MPI_Op_create(&phasethreemerge, 1, &phasethreeop);
@@ -509,7 +511,7 @@ static int pmatching_ipm (ZZ *zz,
 #else   /* NEW_PHASE3 */
      || !(global_best = (struct triplet*) ZOLTAN_MALLOC(total_nCandidates *
                                                        sizeof(struct triplet)))
-#ifndef NEWER_PHASE3_NOT_READY_YET
+#ifndef NEWER_PHASE3_REDUCTION
      || !(Tmp_Best    = (struct triplet*) ZOLTAN_MALLOC(total_nCandidates *
                                                        sizeof(struct triplet)))
 #endif  /* !NEWER_PHASE3 */
@@ -520,14 +522,15 @@ static int pmatching_ipm (ZZ *zz,
        goto fini;
     }  
 
-#ifdef NEWER_PHASE3_NOT_READY_YET
-  for (i = 0; i < total_nCandidates; i++) {
-    float *f;
-    master_data[i*3] = -1;
-    master_data[i*3+1] = -1;
-    f = (float *) &(master_data[i*3+2]);
-    *f = -1.;
-  }
+#ifdef NEWER_PHASE3_REDUCTION
+  if (hgc->myProc_y == 0)
+    for (i = 0; i < total_nCandidates; i++) {
+      float *f;
+      master_data[i*3] = -1;
+      master_data[i*3+1] = -1;
+      f = (float *) &(master_data[i*3+2]);
+      *f = -1.;
+    }
 #endif
 
   if (!cFLAG)
@@ -630,7 +633,6 @@ static int pmatching_ipm (ZZ *zz,
           *s++ = candidate_gno;
 #ifdef NEWER_PHASE3
           *s++ = candidate_index;
-printf("%d KDDKDD %d  ONE (%d, %d)\n", zz->Proc, round, candidate_gno, candidate_index);
 #endif  /* NEWER_PHASE3 */
           *s++ = hg->vindex[lno+1] - hg->vindex[lno];              /* count */
           for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
@@ -734,7 +736,6 @@ printf("%d KDDKDD %d  ONE (%d, %d)\n", zz->Proc, round, candidate_gno, candidate
           candidate_gno = *r++;                 /* gno of candidate vertex */
 #ifdef NEWER_PHASE3
           candidate_index = *r++;          /* candidate_index of vertex */
-printf("%d KDDKDD %d  TWO (%d, %d)\n", zz->Proc, round, candidate_gno, candidate_index);
 #endif  /* NEWER_PHASE3 */
           count = *r++;                    /* count of following hyperedges */
         }
@@ -818,7 +819,6 @@ printf("%d KDDKDD %d  TWO (%d, %d)\n", zz->Proc, round, candidate_gno, candidate
           *s++ = candidate_gno;
 #ifdef NEWER_PHASE3
           *s++ = candidate_index;
-printf("%d KDDKDD %d  THREE (%d, %d)\n", zz->Proc, round, candidate_gno, candidate_index);
 #endif  /* NEWER_PHASE3 */
           *s++ = count;
           for (i = 0; i < count; i++)  {          
@@ -865,7 +865,6 @@ printf("%d KDDKDD %d  THREE (%d, %d)\n", zz->Proc, round, candidate_gno, candida
         candidate_gno = *r++;
 #ifdef NEWER_PHASE3
         candidate_index = *r++;
-printf("%d KDDKDD %d  FOUR (%d, %d)\n", zz->Proc, round, candidate_gno, candidate_index);
 #endif  /* NEWER_PHASE3 */
         count = *r++;
         r += (count * 2);
@@ -894,8 +893,7 @@ printf("%d KDDKDD %d  FOUR (%d, %d)\n", zz->Proc, round, candidate_gno, candidat
           if (rows[i] < &rec[recsize] && *rows[i] == candidate_gno)  {       
 #ifdef NEWER_PHASE3
             candidate_index = *(++rows[i]);   /* skip candidate index */
-printf("%d KDDKDD %d  FIVE (%d, %d)\n", zz->Proc, round, candidate_gno, candidate_index);
-#endif
+#endif  /* NEWER_PHASE3 */
             count = *(++rows[i]);
             for (j = 0; j < count; j++)  {
               lno = *(++rows[i]);         
@@ -903,8 +901,7 @@ printf("%d KDDKDD %d  FIVE (%d, %d)\n", zz->Proc, round, candidate_gno, candidat
                 aux[m++] = lno;           /* then save the lno */          
               sums[lno] += *(float*) (++rows[i]);    /* sum the psums */
             }
-            rows[i] += 2;                 /* skip past current psum,
-                                             index (if NEWER_PHASE3),row */
+            rows[i] += 2;                 /* skip past current psum,row */
           }
         }
           
@@ -929,7 +926,6 @@ printf("%d KDDKDD %d  FIVE (%d, %d)\n", zz->Proc, round, candidate_gno, candidat
           *s++ = candidate_gno;
 #ifdef NEWER_PHASE3
           *s++ = candidate_index;
-printf("%d KDDKDD %d  SIX (%d, %d)\n", zz->Proc, round, candidate_gno, candidate_index);
 #endif  /* NEWER_PHASE3 */
           *s++ = count;
         }  
@@ -971,7 +967,6 @@ printf("%d KDDKDD %d  SIX (%d, %d)\n", zz->Proc, round, candidate_gno, candidate
           candidate_gno = *r++;                    /* candidate's GNO */
 #ifdef NEWER_PHASE3
           candidate_index = *r++;                  /* candidate's index */
-printf("%d KDDKDD %d  SEVEN (%d, %d)\n", zz->Proc, round, candidate_gno, candidate_index);
 #endif  /* NEWER_PHASE3 */
           count = *r++;                    /* count of nonzero pairs */
           bestsum = -1.0;                  /* any negative value will do */
@@ -994,7 +989,7 @@ printf("%d KDDKDD %d  SEVEN (%d, %d)\n", zz->Proc, round, candidate_gno, candida
           if (!cFLAG && bestsum > TSUM_THRESHOLD)  {
             cmatch[bestlno] = -1;  /* mark pending match to avoid conflicts */
 /* KDDKDD -- change master_data to triplet data structure always */
-#ifdef NEWER_PHASE3_NOT_READY_YET
+#ifdef NEWER_PHASE3_REDUCTION
             master_data[candidate_index*3] = candidate_gno;
             master_data[1+candidate_index*3] = VTX_LNO_TO_GNO(hg, bestlno);
             f = (float*) &(master_data[2+candidate_index*3]);
@@ -1037,7 +1032,7 @@ printf("%d KDDKDD %d  SEVEN (%d, %d)\n", zz->Proc, round, candidate_gno, candida
       /* A triplet is (candidate id, best match id, and best i.p. value) */
       /* Sort by candidate's global id; this is necessary to do the
          "merge" between processors efficiently. Can we use hash instead? */
-#ifndef NEWER_PHASE3_NOT_READY_YET
+#ifndef NEWER_PHASE3_REDUCTION
       quicksort_list_inc_struct(local_best, 0, nmaster-1);
 
       for (i = nmaster; i < total_nCandidates; i++)
@@ -1063,15 +1058,14 @@ printf("%d KDDKDD %d  SEVEN (%d, %d)\n", zz->Proc, round, candidate_gno, candida
       for (i = 0; i < total_nCandidates; i++) {
         int cproc, vproc;
         candidate_gno = global_best[i].candidate;
-printf("%d KDDKDD EIGHT (%d, %d)\n", zz->Proc, candidate_gno, i);
-#ifdef  NEWER_PHASE3_NOT_READY_YET
+#ifdef  NEWER_PHASE3_REDUCTION
         /* Reinitialize master_data for next round */
         master_data[i*3] = master_data[i*3+1] = -1;
         f = (float *) &(master_data[i*3+2]);
         *f = -1.;
         if (candidate_gno == -1) continue;
 #endif  /* NEWER_PHASE3 */
-#ifndef NEWER_PHASE3_NOT_READY_YET
+#ifndef NEWER_PHASE3_REDUCTION
         if (candidate_gno == INT_MAX) break;  /* All matches are processed */
 #endif  /* !NEWER_PHASE3 */
         partner_gno = global_best[i].partner;
@@ -1079,8 +1073,8 @@ printf("%d KDDKDD EIGHT (%d, %d)\n", zz->Proc, candidate_gno, i);
         vproc = VTX_TO_PROC_X(hg, partner_gno);
         if (cproc == hgc->myProc_x) {
           if (vproc == hgc->myProc_x)   {
-            int v1 = VTX_GNO_TO_LNO(hg, partner_gno);             
-            int v2 = VTX_GNO_TO_LNO(hg, candidate_gno);                
+            int v1 = VTX_GNO_TO_LNO(hg, partner_gno);
+            int v2 = VTX_GNO_TO_LNO(hg, candidate_gno);
             match[v1] = v2;
             match[v2] = v1;
           }
@@ -1094,14 +1088,6 @@ printf("%d KDDKDD EIGHT (%d, %d)\n", zz->Proc, candidate_gno, i);
 
     /* broadcast match array to the entire column */
     MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
-#ifdef KDDKDD_DO_NOT_COMMIT
-/* KDDKDD DO NOT COMMIT */
-if (hgc->myProc_y == 0) {
-  for (i = 0; i < hg->nVtx; i++)
-    printf("%d KDDKDD %d MATCH %d %d <-> %d\n", zz->Proc, round, i, VTX_LNO_TO_GNO(hg,i),match[i]);
-}
-/* KDDKDD DO NOT COMMIT */
-#endif  /* KDDKDD_DO_NOT_COMMIT */
 
     MACRO_TIMER_STOP (4);                       /* end of phase 3 */
 
@@ -1320,7 +1306,7 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 }
 
 /***************************************************************************/
-#ifdef NEWER_PHASE3
+#ifdef NEWER_PHASE3_REDUCTION
 
 static void phasethreereduce(
   void *tin, 
@@ -1337,16 +1323,14 @@ struct triplet *inout = (struct triplet *) tinout;
 int i;
 
   for (i = 0; i < num; i++) {
-    /* Sanity check; remove later */
-    if (in[i].candidate >= 0 && inout[i].candidate >= 0 &&
-        in[i].candidate != inout[i].candidate) {
-      printf("%d KDDKDD ERROR HERE %d %d %d\n", 
-             HG_Ptr->comm->myProc, i, in[i].candidate, inout[i].candidate);
-    }
+
+    if (in[i].candidate == -1 && inout[i].candidate == -1) 
+      /* No values set for this candidate */
+      continue;
+
     if (in[i].ip > inout[i].ip) {
       /* in has larger inner product */
-      inout[i].ip = in[i].ip;
-      inout[i].partner = in[i].partner;
+      inout[i] = in[i];
     }
     else if (inout[i].ip > in[i].ip) {
       /* inout already has larger inner product */
@@ -1364,8 +1348,7 @@ int i;
            neither partner is on candidate's proc.
            Break ties by larger partner gno. */
         if (in[i].partner > inout[i].partner) {
-            inout[i].ip = in[i].ip;
-            inout[i].partner = in[i].partner;
+          inout[i] = in[i];
         }
         else {
           /* Don't need to do anything here; 
@@ -1375,8 +1358,7 @@ int i;
       }
       else if (in_proc == cand_proc) {
         /* Give preference to local partner */
-        inout[i].ip = in[i].ip;
-        inout[i].partner = in[i].partner;
+        inout[i] = in[i];
       }
       else /* inout_proc == cand_proc */ {
         /* Don't need to do anything here; inout already has the better value */
