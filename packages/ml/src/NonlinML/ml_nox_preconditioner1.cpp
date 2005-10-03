@@ -1576,7 +1576,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Ml_Nox_adaptivesetup(double** oldns,
   // change the dimension of the nullspace
   ml_dim_nullsp_ = newdimns;
   
-#if 1
+#if 0
   // printout the nullspace vectors to gid
   const Epetra_Vector* sol = interface_.getSolution();
   double* solptr;
