@@ -170,11 +170,6 @@ can therefore be used everywhere Numeric vectors are accepted.
 // Epetra includes
 #include "Epetra_Version.h"
 #include "Epetra_Object.h"
-#include "Epetra_Comm.h"
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
@@ -213,203 +208,6 @@ can therefore be used everywhere Numeric vectors are accepted.
 #include "NumPyWrapper.h"
 #include "PyEpetra_Utils.h"  
 
-#define SUMALL    0
-#define MINALL    1
-#define MAXALL    2
-#define GATHERALL 3
-#define SCANSUM   4
-#define BROADCAST 5
-
-#ifdef HAVE_MPI
-#include "mpi.h"
-PyObject* Init_Argv(PyObject *args) 
-{  
-  /*
-  int flag = 0;
-  // check that MPI_Init has not already been called 
-  MPI_Initialized(&flag);
-  if (flag)
-    return Py_BuildValue("");
-   */
-
-  int i, error, myid, size;
-  int argc = 0;  
-  char **argv;   
-
-  /* Reconstruct C-commandline */     
-  /*                           */ 
-  argc = PyList_Size(args); //Number of commandline arguments
-  argv = (char**) malloc((argc+1)*sizeof(char*)); 
-  
-  for (i=0; i<argc; i++)  
-    argv[i] = PyString_AsString( PyList_GetItem(args, i) );
-    
-  argv[i] = NULL; //Lam 7.0 requires last arg to be NULL  
-  
-  error = MPI_Init(&argc, &argv); 
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);    
-  MPI_Comm_size(MPI_COMM_WORLD, &size);    
-
-  if (error != 0) {
-    MPI_Comm_rank(MPI_COMM_WORLD, &myid);    
-    PyErr_SetString(PyExc_RuntimeError, "error");   
-    return NULL;
-  }  
-
-  return Py_BuildValue("");  
-} 
-  
-PyObject* Finalize() 
-{
-  int error, myid;
-
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);  
-  
-  // FIXME: add if finalized!
-
-  error = MPI_Finalize();
-  if (error != 0) {
-    PyErr_SetString(PyExc_RuntimeError, "error");    //raise ValueError, errmsg
-    return NULL;
-  }  
-    
-  return Py_BuildValue("");
-} 
-
-MPI_Comm CommWorld()
-{
-  return(MPI_COMM_WORLD);
-}
-#else
-PyObject* Init_Argv(PyObject *args) 
-{
-  return Py_BuildValue("");
-}
-
-PyObject* Finalize()
-{
-  return Py_BuildValue("");
-}
-#endif
-
-PyObject* Epetra_Comm_InterfaceInt(const Epetra_Comm& Comm,
-                                   int action, PyObject* input,
-                                   int root)
-{
-  PyObject* result;
-
-  int len = PyList_Size(input);
-  vector<int> orig(len);
-  vector<int> dest(len);
-
-  for (int i = 0 ; i < len ; ++i)
-  {
-    PyObject* value;
-    value = PyList_GetItem(input, i);
-
-    if (PyInt_Check(value) == 0)
-    {
-      cerr << "Indices must be integers" << endl;
-      Py_INCREF(Py_None);
-      return Py_None;
-    }
-    orig[i] = PyLong_AsLong(value);
-  }
-
-  // communicate here
-  switch (action) {
-  case SUMALL:
-    Comm.SumAll(&orig[0], &dest[0], len);
-    break;
-  case MINALL:
-    Comm.MinAll(&orig[0], &dest[0], len);
-    break;
-  case MAXALL:
-    Comm.MaxAll(&orig[0], &dest[0], len);
-    break;
-  case GATHERALL:
-    Comm.GatherAll(&orig[0], &dest[0], len);
-    break;
-  case SCANSUM:
-    Comm.ScanSum(&orig[0], &dest[0], len);
-    break;
-  case BROADCAST:
-    Comm.Broadcast(&orig[0], len, root);
-    for (int i = 0 ; i < len ; ++i)
-      dest[i] = orig[i];
-    break;
-  }
-
-  // now insert in the result
-  result = PyList_New(len);
-  for (int i = 0 ; i < len ; ++i)
-  {
-    PyObject* value;
-    value = PyLong_FromLong(dest[i]);
-    PyList_SetItem(result, i, value);
-  }
-  return(result);
-}
-
-PyObject* Epetra_Comm_InterfaceDouble(const Epetra_Comm& Comm,
-                                      int action, PyObject* input,
-                                      int root)
-{
-  PyObject* result;
-
-  int len = PyList_Size(input);
-  vector<double> orig(len);
-  vector<double> dest(len);
-
-  for (int i = 0 ; i < len ; ++i)
-  {
-    PyObject* value;
-    value = PyList_GetItem(input, i);
-
-    if (PyFloat_Check(value) == 0)
-    {
-      cerr << "Indices must be doubles" << endl;
-      Py_INCREF(Py_None);
-      return Py_None;
-    }
-    orig[i] = PyFloat_AsDouble(value);
-  }
-
-  // communicate here
-  switch (action) {
-  case SUMALL:
-    Comm.SumAll(&orig[0], &dest[0], len);
-    break;
-  case MINALL:
-    Comm.MinAll(&orig[0], &dest[0], len);
-    break;
-  case MAXALL:
-    Comm.MaxAll(&orig[0], &dest[0], len);
-    break;
-  case GATHERALL:
-    Comm.GatherAll(&orig[0], &dest[0], len);
-    break;
-  case SCANSUM:
-    Comm.ScanSum(&orig[0], &dest[0], len);
-    break;
-  case BROADCAST:
-    Comm.Broadcast(&orig[0], len, root);
-    for (int i = 0 ; i < len ; ++i)
-      dest[i] = orig[i];
-    break;
-  }
-
-  // now insert in the result
-  result = PyList_New(len);
-  for (int i = 0 ; i < len ; ++i)
-  {
-    PyObject* value;
-    value = PyFloat_FromDouble(dest[i]);
-    PyList_SetItem(result, i, value);
-  }
-  return(result);
-}
-
 #include "Epetra_PyOperator.h"
 #include "Epetra_PyRowMatrix.h"
 %}
@@ -420,16 +218,6 @@ PyObject* Epetra_Comm_InterfaceDouble(const Epetra_Comm& Comm,
 // Ignore directives
 %ignore operator<<(ostream &, const Epetra_Object &);// From python, use __str__
 %ignore Epetra_Object::Print(ostream &) const;
-%ignore Epetra_Comm::SumAll(int*,int*,int);
-%ignore Epetra_Comm::SumAll(double*,double*,int);
-%ignore Epetra_SerialComm::operator=(const Epetra_SerialComm &);
-%ignore Epetra_SerialComm::SumAll(int*,int*,int);
-%ignore Epetra_SerialComm::SumAll(double*,double*,int);
-#ifdef HAVE_MPI
-%ignore Epetra_MpiComm::operator=(const Epetra_MpiComm &);
-%ignore Epetra_MpiComm::SumAll(int*,int*,int);
-%ignore Epetra_MpiComm::SumAll(double*,double*,int);
-#endif
 %ignore Epetra_CompObject::operator=(const Epetra_CompObject &);
 %ignore Epetra_CompObject::UpdateFlops(int) const;   // Use long int version
 %ignore Epetra_CompObject::UpdateFlops(float) const; // Use double version
@@ -493,11 +281,6 @@ PyObject* Epetra_Comm_InterfaceDouble(const Epetra_Comm& Comm,
 // Rename directives
 %rename(Version             ) Epetra_Version;
 %rename(Object              ) Epetra_Object;
-%rename(Comm                ) Epetra_Comm;
-%rename(SerialComm          ) Epetra_SerialComm;
-#ifdef HAVE_MPI
-%rename(MpiComm             ) Epetra_MpiComm;
-#endif
 %rename(BlockMap            ) Epetra_BlockMap;
 %rename(Map                 ) Epetra_Map;
 %rename(LocalMap            ) Epetra_LocalMap;
@@ -564,11 +347,9 @@ PyObject* Epetra_Comm_InterfaceDouble(const Epetra_Comm& Comm,
 using namespace std;
 %include "Epetra_Version.h"
 %include "Epetra_Object.h"
-%include "Epetra_Comm.h"
-%include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-%include "Epetra_MpiComm.h"
-#endif
+
+%include "Epetra_Comm.i"
+
 %include "Epetra_BlockMap.h"
 %include "Epetra_Map.h"
 %include "Epetra_LocalMap.h"
@@ -1086,137 +867,6 @@ fail:
     return s.substr(0,s.length()-1);  // Return the string minus trailing \n
   }
 }
-
-// must be as defined above
-#define SUMALL    0
-#define MINALL    1
-#define MAXALL    2
-#define GATHERALL 3
-#define SCANSUM   4
-#define BROADCAST 5
-
-#ifndef HAVE_MPI
-%extend Epetra_SerialComm {
-#else
-%extend Epetra_MpiComm {
-#endif
-  // works for INTs and DOUBLEs, like Epetra_Comm
-  PyObject* GlobalOp(int action, PyObject* input, int root = 0)
-  {
-    char what;
-
-    if (PyList_Check(input) == 0)
-    {
-      cerr << "Input object is not a list" << endl;
-      Py_INCREF(Py_None);
-      return Py_None;
-    }
-
-    // get the first object to understand the type
-    PyObject* value = PyList_GetItem(input, 0);
-
-    if (PyInt_Check(value))
-      what = 'I';
-    else if (PyFloat_Check(value))
-      what = 'D';
-    else
-    {
-      cerr << "Only integers and doubles are supported" << endl;
-      Py_INCREF(Py_None);
-      return Py_None;
-    }
-
-    PyObject* result;
-    if (what == 'I')
-      result = Epetra_Comm_InterfaceInt(*self, action, input, root);
-    else
-      result = Epetra_Comm_InterfaceDouble(*self, action, input, root);
-    return(result);
-  }
-}
-
-#ifndef HAVE_MPI
-%extend Epetra_SerialComm {
-#else
-%extend Epetra_MpiComm {
-#endif
-     //%extend Epetra_Comm {
-
-   int SumAll(int partialSums) {
-     int globalSums[1];
-     int sumResult = self->SumAll(&partialSums, &globalSums[0], 1);
-     if (sumResult != 0) {
-       PyErr_SetString(PyExc_RuntimeError, "SumAll error");
-       return NULL;
-     }
-     return globalSums[0];
-   }
-
-   double SumAll(double partialSums) {
-     double globalSums[1];
-     int    sumResult = self->SumAll(&partialSums, &globalSums[0], 1);
-     if (sumResult != 0) {
-       PyErr_SetString(PyExc_RuntimeError, "SumAll error");
-       return NULL;
-     }
-     return globalSums[0];
-   }
-
-   PyObject * SumAll(PyObject * sequence) {
-     int count     = 0;
-     int sumResult = 0;
-
-     // Create a numeric array from the input argument.  This is a robust way of
-     // converting python sequences into contiguous C data.
-     PyArrayObject * pyArray =
-       NumPyWrapper::contiguous_typed_array(sequence, PyArray_NOTYPE, 1, NULL);
-
-     switch(pyArray->descr->type_num) {
-
-     // A sequence of integers
-     case PyArray_INT: {
-       count             = pyArray->dimensions[0];
-       int * partialSums = (int *)pyArray->data;
-       int   dims[1]     = {count};
-       int   globalSums[count];
-       sumResult         = self->SumAll(partialSums, globalSums, count);
-       if (sumResult != 0) {
-	 PyErr_SetString(PyExc_RuntimeError, "SumAll error");
-	 return NULL;
-       }
-       Py_XDECREF(pyArray);  // We're done with the array from the input argument
-       return PyArray_FromDimsAndData(1, dims, PyArray_INT, (char *)globalSums);
-       break;
-     }
-     // A sequence of floats
-     case PyArray_DOUBLE: {
-       count                = pyArray->dimensions[0];
-       double * partialSums = (double *)pyArray->data;
-       int      dims[1]     = {count};
-       double   globalSums[count];
-       sumResult            = self->SumAll(partialSums, globalSums, count);
-       if (sumResult != 0) {
-	 PyErr_SetString(PyExc_RuntimeError, "SumAll error");
-	 return NULL;
-       }
-       Py_XDECREF(pyArray);  // We're done with the array from the input argument
-       return PyArray_FromDimsAndData(1, dims, PyArray_DOUBLE, (char *)globalSums);
-       break;
-     }
-     // Something else
-     default:
-       PyErr_SetString(PyExc_ValueError, "Expected a sequence of integers or floats");
-       return NULL;
-     }
-   }
- }
-
-// MPI stuff
-PyObject* Init_Argv(PyObject *args);
-PyObject* Finalize();
-#ifdef HAVE_MPI
-MPI_Comm CommWorld();
-#endif
 
 // Python code.  Here we set the __version__ string, call MPI_Init()
 // and arrange for MPI_Finalize to be called (if appropriate), and

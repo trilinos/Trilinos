@@ -39,7 +39,9 @@ SWIG_CXXFLAGS = $(EPETRA_INCLUDES)     \
 	        -I$(srcdir)            \
 		$(MPI_FLAG)
 
-EXTRA_DIST = Epetra.i setup.py      \
+EXTRA_DIST = Epetra.i               \
+	     Epetra_Comm.i          \
+	     setup.py               \
 	     Epetra_NumPyVector.cpp \
 	     Epetra_NumPyVector.h   \
 	     Epetra_PyOperator.h    \
