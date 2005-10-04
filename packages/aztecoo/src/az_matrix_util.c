@@ -542,8 +542,6 @@ int AZ_get_sym_indx(int iblk, int jblk, int *indx, int *bindx, int *bpntr)
 /******************************************************************************/
 /******************************************************************************/
 
-extern int AZ_sys_msg_type;
-
 void AZ_print_out(int update_index[], int extern_index[], int update[], 
 	int external[], double val[], int indx[], int bindx[], int rpntr[], 
 	int cpntr[], int bpntr[], int proc_config[], int choice, int matrix, 
@@ -603,8 +601,8 @@ void AZ_print_out(int update_index[], int extern_index[], int update[],
    MPI_AZRequest request;  /* Message handle */
 
  
-   type            = AZ_sys_msg_type;
-   AZ_sys_msg_type =(AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS +AZ_MSG_TYPE;
+   type            = proc_config[AZ_MPI_Tag];
+   proc_config[AZ_MPI_Tag] =(type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS +AZ_MSG_TYPE;
 
    /* Synchronize things so that processor 0 prints first and then */
    /* sends a message to processor 1 so that he prints, etc.      */

@@ -129,6 +129,8 @@ void AZ_set_comm(int proc_config[], MPI_AZComm comm)
   ptr1 = (char *) &comm;
   ptr2 = (char *) &(proc_config[AZ_Comm_MPI]);
   for (i = 0; i < sizeof(MPI_AZComm); i++) ptr2[i] = ptr1[i];
+
+  proc_config[AZ_MPI_Tag] = AZ_MSG_TYPE;
 #else
   proc_config[AZ_Comm_MPI] = 1;
 #endif

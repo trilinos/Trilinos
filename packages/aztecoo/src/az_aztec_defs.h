@@ -538,7 +538,7 @@
 #define AZ_FIRST_USER_PARAM    10 /* User can define up to 20 params
                                      values starting at AZ_FIRST_USER_PARAM  */
 /* End Aztec 2.1 mheroux mod */
-#define AZ_PROC_SIZE           (6+SIZEOF_MPI_AZCOMM)
+#define AZ_PROC_SIZE           (7+SIZEOF_MPI_AZCOMM)
 #define AZ_STATUS_SIZE         11
 #define AZ_COMM_SIZE          AZ_send_list
 #define AZ_CONV_INFO_SIZE      8
@@ -576,7 +576,8 @@
 #define AZ_node                (SIZEOF_MPI_AZCOMM+1)
 #define AZ_N_procs             (SIZEOF_MPI_AZCOMM+2)
 #define AZ_dim                 (SIZEOF_MPI_AZCOMM+3)
-#define AZ_Comm_Set            (SIZEOF_MPI_AZCOMM+4)
+#define AZ_MPI_Tag             (SIZEOF_MPI_AZCOMM+4)
+#define AZ_Comm_Set            (SIZEOF_MPI_AZCOMM+5)
 
 #define AZ_Done_by_User        7139
 

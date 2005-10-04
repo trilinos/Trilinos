@@ -57,8 +57,6 @@
 
 extern int az_iterate_id;
 
-int AZ_sys_msg_type = AZ_MSG_TYPE;
-
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
@@ -126,8 +124,8 @@ void AZ_exchange_bdry(double x[], int data_org[], int proc_config[])
 
   /**************************** execution begins ******************************/
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
 #ifdef AZTEC_MPI 
   if ( proc_config[AZ_Comm_Set] != AZ_Done_by_User) {
@@ -478,8 +476,8 @@ int AZ_gsum_int(int val, int proc_config[])
 
   node            = proc_config[AZ_node];
   nprocs          = proc_config[AZ_N_procs];
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   /* Find next lower power of 2. */
 
@@ -644,8 +642,8 @@ double AZ_gsum_double(double val, int proc_config[])
   node   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   /* Find next lower power of 2. */
 
@@ -811,8 +809,8 @@ double AZ_gmax_double(double val, int proc_config[])
   node   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   /* Find next lower power of 2. */
 
@@ -977,8 +975,8 @@ double AZ_gmin_double(double val, int proc_config[])
   node   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   /* Find next lower power of 2. */
 
@@ -1143,8 +1141,8 @@ int AZ_gmax_int(int val, int proc_config[])
   node   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   /* Find next lower power of 2. */
 
@@ -1337,8 +1335,8 @@ int AZ_gmin_int(int val, int proc_config[])
   node   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   /* Find next lower power of 2. */
 
@@ -1510,8 +1508,8 @@ void AZ_gdot_vec(int N, double dots[], double dots2[], int proc_config[])
   node   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   /* Find next lower power of 2. */
 
@@ -1664,7 +1662,7 @@ void AZ_print_sync_start(int proc, int do_print_line, int proc_config[])
 
   /**************************** execution begins ******************************/
 
-  type = AZ_sys_msg_type;
+  type = proc_config[AZ_MPI_Tag];
 
   if (proc_config[AZ_node] != 0) {
     from = proc - 1;
@@ -1729,8 +1727,8 @@ void AZ_print_sync_end(int proc_config[], int do_print_line)
 
   proc = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   if (proc < nprocs -1) to = proc + 1;
   else {
@@ -1806,8 +1804,8 @@ void AZ_sync(int proc_config[])
 
   node   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   /*  Find next lower power of 2. */
 
@@ -1967,8 +1965,8 @@ void AZ_gsum_vec_int(int vals[], int vals2[], int length, int proc_config[])
   node   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   /* Find next lower power of 2. */
 
@@ -2146,8 +2144,8 @@ void AZ_gappend(int vals[], int *cur_length, int total_length,
   node   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   /* Find next lower power of 2. */
 
@@ -2508,8 +2506,8 @@ unsigned int AZ_broadcast_info(char buffer[], int proc_config[],
   nprocs = proc_config[AZ_N_procs];
   proc   = proc_config[AZ_node];
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   /* Find location of largest bit. */
 

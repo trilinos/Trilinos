@@ -205,7 +205,6 @@ int AZ_adjust_N_nz_to_fit_memory(int N,int N_int_arrays, int N_dbl_arrays)
    return(N);
 }
 
-extern int AZ_sys_msg_type;
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
@@ -243,8 +242,8 @@ void AZ_combine_overlapped_values(int sym_flag,int data_org[],int options[],
 
   /* first send the external points to the neighbors */
  
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + 
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + 
                      AZ_MSG_TYPE;
 
   /* figure out longest message to be received and allocate space for it. */

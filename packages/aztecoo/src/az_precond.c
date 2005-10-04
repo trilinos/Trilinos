@@ -65,7 +65,6 @@ extern void AZ_calc_blk_diag_inv(double *val, int *indx, int *bindx, int *rpntr,
 extern void jacobi(double val[], double x[], int data_org[]);
 
 extern int az_iterate_id;
-extern int AZ_sys_msg_type;
 
 /*---------------------------------------------------------------------------*/
 
@@ -519,7 +518,7 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
 
   } while (multilevel_flag);
 
-  AZ_sys_msg_type = AZ_MSG_TYPE;           /* reset all the message types.   */
+  proc_config[AZ_MPI_Tag] = AZ_MSG_TYPE;   /* reset all the message types.   */
                                            /* This is to make sure that all  */
                                            /* processors (even those without */
                                            /* any preconditioning work) have */

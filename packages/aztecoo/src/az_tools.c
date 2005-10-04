@@ -58,7 +58,6 @@
 #include <float.h>
 #include "az_aztec.h"
 
-extern int AZ_sys_msg_type;
 extern int AZ_using_fortran;
 
 /******************************************************************************/
@@ -756,8 +755,8 @@ void AZ_set_message_info(int N_external, int extern_index[], int N_update,
   for (i = 0 ; i < num_send_neighbors+1 ; i++ ) send_list[i] = 0;
 
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS +AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS +AZ_MSG_TYPE;
 
 
   /* first post receives */
@@ -849,8 +848,8 @@ void AZ_set_message_info(int N_external, int extern_index[], int N_update,
 
 
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   lens = (int *) AZ_allocate((num_recv_neighbors+1)*sizeof(int));
   if (lens == NULL) {
@@ -904,8 +903,8 @@ void AZ_set_message_info(int N_external, int extern_index[], int N_update,
 
 
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
 
   j = 0;
@@ -2002,8 +2001,8 @@ int oldk, iii, *ext_copy, **exch_buffers, exch_count,
 
     /* send a zero length message to processors in the neigh_list */
 
-    type            = AZ_sys_msg_type;
-    AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE)%AZ_NUM_MSGS + AZ_MSG_TYPE;
+    type            = proc_config[AZ_MPI_Tag];
+    proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE)%AZ_NUM_MSGS + AZ_MSG_TYPE;
 
 
     /* post receives */
@@ -2029,8 +2028,8 @@ int oldk, iii, *ext_copy, **exch_buffers, exch_count,
     }
 
 
-    type            = AZ_sys_msg_type;
-    AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE)%AZ_NUM_MSGS + AZ_MSG_TYPE;
+    type            = proc_config[AZ_MPI_Tag];
+    proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE)%AZ_NUM_MSGS + AZ_MSG_TYPE;
 
     k               = N_external - first_extern;
     if (k > AZ_MAX_MESSAGE_SIZE) k = AZ_MAX_MESSAGE_SIZE;
@@ -2590,10 +2589,10 @@ void AZ_read_update(int *N_update, int *update[], int proc_config[],
 
     /* read the update elements from the file '.update' */
 
-    type            = AZ_sys_msg_type;
-    AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE)%AZ_NUM_MSGS +AZ_MSG_TYPE;
-    type2           = AZ_sys_msg_type;
-    AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE)%AZ_NUM_MSGS +AZ_MSG_TYPE;
+    type            = proc_config[AZ_MPI_Tag];
+    proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE)%AZ_NUM_MSGS +AZ_MSG_TYPE;
+    type2           = proc_config[AZ_MPI_Tag];
+    proc_config[AZ_MPI_Tag] = (type2+1-AZ_MSG_TYPE)%AZ_NUM_MSGS +AZ_MSG_TYPE;
 
     /*
      * Processor 0 reads file '.update' and distributes the lists to the other
@@ -2918,10 +2917,10 @@ a file speficied by the input argument datafile instead of .update
 
     /* read the update elements from the data file */
 
-    type            = AZ_sys_msg_type;
-    AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE)%AZ_NUM_MSGS +AZ_MSG_TYPE;
-    type2           = AZ_sys_msg_type;
-    AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE)%AZ_NUM_MSGS +AZ_MSG_TYPE;
+    type            = proc_config[AZ_MPI_Tag];
+    proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE)%AZ_NUM_MSGS +AZ_MSG_TYPE;
+    type2           = proc_config[AZ_MPI_Tag];
+    proc_config[AZ_MPI_Tag] = (type2+1-AZ_MSG_TYPE)%AZ_NUM_MSGS +AZ_MSG_TYPE;
 
     /*
      * Processor 0 reads the data file and distributes the lists to the other
@@ -3105,10 +3104,10 @@ int AZ_read_external(int N_external, int external[],
   proc   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
-  type2           = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type2           = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type2+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   if (proc == 0) {
     temp_buffer = NULL;
@@ -3311,10 +3310,10 @@ void AZ_read_msr_matrix(int update[], double **val, int **bindx, int N_update,
   /**************************** execution begins ******************************/
 
   AZ__MPI_comm_space_ok();
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
-  type2           = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type2           = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type2+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   proc   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
@@ -3623,10 +3622,10 @@ file specified by the input argument datafile instead from a file called
   /**************************** execution begins ******************************/
 
   AZ__MPI_comm_space_ok();
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
-  type2           = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type2           = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type2+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   proc   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
@@ -4099,10 +4098,10 @@ void AZ_check_update(int update[], int N_update, int proc_config[])
   proc   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
-  type2           = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type2           = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type2+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   /* compute the total number of update elements */
 

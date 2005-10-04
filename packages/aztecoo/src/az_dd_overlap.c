@@ -32,8 +32,6 @@
 #include <math.h>
 #include "az_aztec.h"
 
-extern int AZ_sys_msg_type;             
-
 #define ALLOCATE      1
 #define FREE_IT       2
 #define UPDATE_IT     3
@@ -339,8 +337,8 @@ char str[80];
     enlarged_Rownum = tRownum;
 
 
-    type    =AZ_sys_msg_type;
-    AZ_sys_msg_type =(AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + 
+    type    =proc_config[AZ_MPI_Tag];
+    proc_config[AZ_MPI_Tag] =(type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + 
                                       AZ_MSG_TYPE;
     off_set = enlarged_N;
     for (i = 0 ; i < num_neigh; i++ ) {
@@ -367,8 +365,8 @@ char str[80];
 
     /* Obtain the number of columns in each new row */
 
-    type            =AZ_sys_msg_type;
-    AZ_sys_msg_type =(AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + 
+    type            =proc_config[AZ_MPI_Tag];
+    proc_config[AZ_MPI_Tag] =(type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + 
                                     AZ_MSG_TYPE;
     off_set = enlarged_N+1;
     for (i = 0 ; i < num_neigh; i++ ) {
@@ -411,8 +409,8 @@ char str[80];
 
     /* Obtain the diagonal entry of the new rows    */
 
-    type =AZ_sys_msg_type;
-    AZ_sys_msg_type =(AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + 
+    type =proc_config[AZ_MPI_Tag];
+    proc_config[AZ_MPI_Tag] =(type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + 
                               AZ_MSG_TYPE;
 
     off_set = enlarged_N;
@@ -441,8 +439,8 @@ char str[80];
 
     /* Obtain the off-diagonal column indices */
 
-    type            =AZ_sys_msg_type;
-    AZ_sys_msg_type =(AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS +
+    type            =proc_config[AZ_MPI_Tag];
+    proc_config[AZ_MPI_Tag] =(type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS +
                                    AZ_MSG_TYPE;
     off_set = enlarged_N;
     for (i = 0 ; i < num_neigh; i++ ) {
@@ -469,8 +467,8 @@ char str[80];
 
     /* Obtain the off-diagonal values */
 
-    type            =AZ_sys_msg_type;
-    AZ_sys_msg_type =(AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS +AZ_MSG_TYPE;
+    type            =proc_config[AZ_MPI_Tag];
+    proc_config[AZ_MPI_Tag] =(type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS +AZ_MSG_TYPE;
    
     off_set = 0;
     for (i = 0 ; i < num_neigh; i++) {
@@ -1116,8 +1114,8 @@ void PAZ_set_message_info(int N_external, int N_update,
   for (i = 0 ; i < num_send_neighbors; i++ ) send_list[i] = 0;
 
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS +AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS +AZ_MSG_TYPE;
 
 
   /* first post receives */
@@ -1200,8 +1198,8 @@ void PAZ_set_message_info(int N_external, int N_update,
 
 
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   lens = (int *) BV_ALLOC((num_recv_neighbors+1)*sizeof(int));
   if (lens == NULL) {
@@ -1256,8 +1254,8 @@ void PAZ_set_message_info(int N_external, int N_update,
 
 
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
 
   j = 0;
@@ -1637,8 +1635,8 @@ void AZ_setup_sendlist(int N_ext, int externs[], int send_proc[],
    /*    1) processor to which it must send rows         */
    /*    2) number of rows to be sent to each processor  */
 
-   type            =AZ_sys_msg_type;
-   AZ_sys_msg_type =(AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+   type            =proc_config[AZ_MPI_Tag];
+   proc_config[AZ_MPI_Tag] =(type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
    for (i = 0 ; i < N_send; i++ ) {
       send_proc[i] = -1;
@@ -1670,8 +1668,8 @@ void AZ_setup_sendlist(int N_ext, int externs[], int send_proc[],
 
    /* now receive the actual row numbers */
 
-   type            =AZ_sys_msg_type;
-   AZ_sys_msg_type =(AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+   type            =proc_config[AZ_MPI_Tag];
+   proc_config[AZ_MPI_Tag] =(type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
 
    for (i = 0 ; i < N_send; i++ ) {

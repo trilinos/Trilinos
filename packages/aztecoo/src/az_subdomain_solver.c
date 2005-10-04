@@ -592,8 +592,6 @@ void AZ_init_subdomain_solver(struct context *context)
       context->N_large_int_arrays= 2;
 }
 
-extern int AZ_sys_msg_type;
-
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
@@ -734,7 +732,7 @@ int  t1, t2, t3, i, t4, t5 = 0;
           if (context->proc_config[AZ_node] != 0 ) 
              sub_options[AZ_output] = AZ_none;
 
-          t3 = AZ_sys_msg_type;
+          t3 = context->proc_config[AZ_MPI_Tag];
 
           /* fix data_org */
 
@@ -794,7 +792,7 @@ int  t1, t2, t3, i, t4, t5 = 0;
           sub_options[AZ_output] = t2;
           context->A_overlapped->data_org = hold_data_org;
           AZ_free(new_data_org);
-          AZ_sys_msg_type = t3;
+          context->proc_config[AZ_MPI_Tag] = t3;
        }
    }
       
