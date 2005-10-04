@@ -1,5 +1,7 @@
 /*!  \mainpage Introduction to Galeri
 
+  \image html galeri.png
+
 The Galeri package is a small Trilinos package, based on Epetra and Teuchos,
 whose aim is to easily generate 
 Epetra_Map, Epetra_CrsMatrix and Epetra_VbrMatrix objects. 
@@ -16,14 +18,16 @@ The main functionalities of this package are:
 - Generation of Epetra_CrsMatrix objects. For a list of supported matrices, 
   see \ref gl_GalleryCrsMatrix and
   \ref gl_matrices_ex;
-- Generation of finite element problems, see \ref gl_FiniteElements and
-  examples \ref gl_fe_grid, \ref gl_fe_lapl and \ref gl_fe_adv;
-- Some utilities, see \ref gl_Utils and \ref gl_Utils_ex;
-- A Python interface, see \ref gl_Python.
+- Discretization of scalar, linear second-order PDE problems using finite
+  element, see \ref gl_FiniteElements and examples \ref gl_fe_grid, \ref
+  gl_fe_lapl and \ref gl_fe_adv;
+- Creation of a VBR matrix and other utilities, see \ref gl_Utils.
+- \ref gl_Python.
 
-For the copyright, see \ref gl_Copyright. For the
-latest version of the README and ChangeLog can be found, see \ref gl_README
-and \ref gl_ChangeLog.
+See also the \ref gl_Copyright, the 
+latest version of the \ref gl_README
+and \ref gl_ChangeLog files.
+
 */
 
 /*!

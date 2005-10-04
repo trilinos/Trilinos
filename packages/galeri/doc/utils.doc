@@ -1,9 +1,6 @@
 /*! \page gl_Utils Utilities
 
 <!-- ---------------------------------------------------------------- -->
-\section gl_GalleryRowMatrix Creating an Epetra_RowMatrix
-
-<!-- ---------------------------------------------------------------- -->
 \section gl_GalleryVbrMatrix Creating an Epetra_VbrMatrix
 
 An Epetra_CrsMatrix can be "extended" to form an Epetra_VbrMatrix. This may be
