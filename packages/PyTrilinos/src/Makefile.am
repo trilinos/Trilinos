@@ -39,7 +39,9 @@ CORE = \
 	$(srcdir)/NumPyWrapper.cpp \
 	$(srcdir)/NumPyArray.cpp
 
-EXTRA_DIST = PyEpetra_Utils.h PyTeuchos_Utils.h
+EXTRA_DIST = PyEpetra_Utils.h  \
+	     PyTeuchos_Utils.h \
+	     numeric.i
 
 EXTRA_MPI_H =
 EXTRA_MPI = 
