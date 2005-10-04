@@ -1783,7 +1783,6 @@ void AZ_transform_norowreordering(int proc_config[], int *external[],
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
-extern int AZ_sys_msg_type;
 void AZ_input_msr_matrix_nodiag(char datafile[], int update[], double **val, int **bindx, 
 												 int N_update, int proc_config[])
 
@@ -1823,10 +1822,10 @@ file specified by the input argument datafile instead from a file called
 
   /**************************** execution begins ******************************/
 
-  type            = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
-  type2           = AZ_sys_msg_type;
-  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type            = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type2           = proc_config[AZ_MPI_Tag];
+  proc_config[AZ_MPI_Tag] = (type2+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
   proc   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
