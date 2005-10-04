@@ -69,6 +69,7 @@ class EpetraPyCommTestCase(unittest.TestCase):
     def testMyPID(self):
         "Test Epetra.PyComm MyPID method"
         pid = self.comm.MyPID()
+        self.assert_(pid < self.comm.NumProc())
         if self.commType == "Serial":
             self.assertEqual(pid, 0)
         else:
@@ -96,12 +97,430 @@ class EpetraPyCommTestCase(unittest.TestCase):
         self.assertEqual(f.read(), self.output)
         f.close()
 
-#     def testSumAllInt(self):
-#         "Test Epetra.PyComm SumAll method for single int"
-#         n = self.comm.NumProc()
-#         myInt = self.comm.MyPID()
-#         sumInts = self.comm.SumAll(myInt)
-#         self.assertEquals(sumInts, n*(n-1)/2)
+    def testBroadcastBadArg(self):
+        "Test Epetra.PyComm Broadcast method with bad argument"
+        self.assertRaises(TypeError, self.comm.Broadcast, None, 0)
+
+    def testBroadcastBadType(self):
+        "Test Epetra.PyComm Broadcast method with bad type array"
+        myArray = ones((3,3),'f')  # Float type not supported by Epetra
+        self.assertRaises(TypeError, self.comm.Broadcast, myArray, 0)
+
+    def testBroadcastNoncontiguous(self):
+        "Test Epetra.PyComm Broadcast method with noncontiguous array"
+        baseArray = zeros((5,5),'d')
+        myArray   = baseArray[1:3,1:3]  # Noncontiguous array
+        self.assertRaises(TypeError, self.comm.Broadcast, myArray, 0)
+
+    def testBroadcastInt(self):
+        "Test Epetra.PyComm Broadcast method for ints"
+        rootVals = array([5,0,4,1,3,2],'i')
+        if self.comm.MyPID() == 0:
+            myVals = array(rootVals)
+        else:
+            myVals = array([-1,-1,-1,-1,-1,-1],'i')
+        self.comm.Broadcast(myVals, 0)
+        for i in range(len(rootVals)):
+            self.assertEquals(myVals[i], rootVals[i])
+
+    def testBroadcastInt2D(self):
+        "Test Epetra.PyComm Broadcast method for 2D int array"
+        rootVals = array([[5,0],[4,1]],'i')
+        if self.comm.MyPID() == 0:
+            myVals = array(rootVals)
+        else:
+            myVals = array([[-1,-1],[-1,-1]],'i')
+        self.comm.Broadcast(myVals, 0)
+        for i in range(2):
+            for j in range(2):
+                self.assertEquals(myVals[i,j], rootVals[i,j])
+
+    def testBroadcastDouble(self):
+        "Test Epetra.PyComm Broadcast method for doubles"
+        rootVals = array([5,0,4,1,3,2],'d')
+        if self.comm.MyPID() == 0:
+            myVals = array(rootVals)
+        else:
+            myVals = array([-1,-1,-1,-1,-1,-1],'d')
+        self.comm.Broadcast(myVals, 0)
+        for i in range(len(rootVals)):
+            self.assertEquals(myVals[i], rootVals[i])
+
+    def testBroadcastDouble2D(self):
+        "Test Epetra.PyComm Broadcast method for 2D double array"
+        rootVals = array([[5,0],[4,1]],'d')
+        if self.comm.MyPID() == 0:
+            myVals = array(rootVals)
+        else:
+            myVals = array([[-1,-1],[-1,-1]],'d')
+        self.comm.Broadcast(myVals, 0)
+        for i in range(2):
+            for j in range(2):
+                self.assertEquals(myVals[i,j], rootVals[i,j])
+
+    def testGatherAllBadArg(self):
+        "Test Epetra.PyComm GatherAll method with bad arguments"
+        self.assertRaises(TypeError, self.comm.GatherAll, None)
+
+    def testGatherAllBadType(self):
+        "Test Epetra.PyComm GatherAll method with bad type array"
+        myArray  = ones((3,3),'f')  # Float type not supported by Epetra
+        self.assertRaises(TypeError, self.comm.GatherAll, myArray)
+
+    def testGatherAllInt(self):
+        "Test Epetra.PyComm GatherAll method for ints"
+        myPID      = self.comm.MyPID()
+        length     = 4*self.comm.NumProc()
+        globalVals = arange(length, typecode='i')
+        myVals     = array(globalVals[4*myPID:4*(myPID+1)])
+        allVals    = self.comm.GatherAll(myVals)
+        allVals.shape = (length,)
+        for i in range(len(globalVals)):
+            self.assertEquals(allVals[i], globalVals[i])
+
+    def testGatherAllInt2D(self):
+        "Test Epetra.PyComm GatherAll method for 2D int array"
+        myPID      = self.comm.MyPID()
+        numProc    = self.comm.NumProc()
+        globalVals = zeros((numProc,2,2),'i')
+        for i in range(numProc):
+            globalVals[i,:,:] = [[1,2],[3,4]]
+        myVals     = globalVals[myPID,:,:]
+        allVals    = self.comm.GatherAll(myVals)
+        for p in range(numProc):
+            for i in range(2):
+                for j in range(2):
+                    self.assertEquals(allVals[p,i,j], globalVals[p,i,j])
+
+#     def testGatherAllIntList(self):
+#         "Test Epetra.PyComm GatherAll method for a int list"
+#         myPID      = self.comm.MyPID()
+#         length     = 4*self.comm.NumProc()
+#         globalVals = list(range(length))
+#         myVals     = globalVals[4*myPID:4*(myPID+1)]
+#         allVals    = self.comm.GatherAll(myVals)
+#         self.assertEquals(allVals.flat,array(globalVals))
+
+    def testGatherAllIntNoncontiguous(self):
+        "Test Epetra.PyComm GatherAll method with noncontiguous int array"
+        baseArray = arange(20,typecode='i')
+        baseArray.shape = (4,5)
+        myArray   = baseArray[1:3,1:4] # Noncontiguous
+        allArray  = self.comm.GatherAll(myArray)
+        numProc   = self.comm.NumProc()
+        self.assertEquals(allArray.shape, (numProc,2,3))
+        for p in range(numProc):
+            self.assertEquals(allArray[p,:,:], myArray)
+
+    def testGatherAllDouble(self):
+        "Test Epetra.PyComm GatherAll method for doubles"
+        myPID      = self.comm.MyPID()
+        length     = 4*self.comm.NumProc()
+        globalVals = arange(length, typecode='d')
+        myVals     = array(globalVals[4*myPID:4*(myPID+1)])
+        allVals    = self.comm.GatherAll(myVals)
+        allVals.shape = (length,)
+        for i in range(len(globalVals)):
+            self.assertEquals(allVals[i], globalVals[i])
+
+    def testGatherAllDouble2D(self):
+        "Test Epetra.PyComm GatherAll method for 2D double array"
+        myPID      = self.comm.MyPID()
+        numProc    = self.comm.NumProc()
+        globalVals = zeros((numProc,2,2),'d')
+        for i in range(numProc):
+            globalVals[i,:,:] = [[1,2],[3,4]]
+        myVals     = globalVals[myPID,:,:]
+        allVals    = self.comm.GatherAll(myVals)
+        for p in range(len(globalVals)):
+            for i in range(2):
+                for j in range(2):
+                    self.assertEquals(allVals[p,i,j], globalVals[p,i,j])
+
+    def testGatherAllDoubleNoncontiguous(self):
+        "Test Epetra.PyComm GatherAll method with noncontiguous double array"
+        baseArray = arange(20,typecode='d')
+        baseArray.shape = (5,4)
+        myArray   = baseArray[1:4,1:3] # Noncontiguous
+        allArray  = self.comm.GatherAll(myArray)
+        numProc   = self.comm.NumProc()
+        self.assertEquals(allArray.shape, (numProc,3,2))
+        for i in range(numProc):
+            self.assertEquals(allArray[i,:,:], myArray)
+
+    def testSumAllBadArg(self):
+        "Test Epetra.PyComm SumAll method with bad arguments"
+        self.assertRaises(TypeError, self.comm.SumAll, None)
+
+    def testSumAllBadType(self):
+        "Test Epetra.PyComm SumAll method with bad type array"
+        partialSums = ones((3,3),'f')  # Float type not supported by Epetra
+        self.assertRaises(TypeError, self.comm.SumAll, partialSums)
+
+    def testSumAllInt(self):
+        "Test Epetra.PyComm SumAll method for ints"
+        numProc     = self.comm.NumProc()
+        partialSums = arange(3,typecode='i')
+        globalSums  = self.comm.SumAll(partialSums)
+        for i in range(len(partialSums)):
+            self.assertEquals(globalSums[i], numProc*partialSums[i])
+
+    def testSumAllInt2D(self):
+        "Test Epetra.PyComm SumAll method for 2D int array"
+        numProc     = self.comm.NumProc()
+        partialSums = arange(12,typecode='i')
+        partialSums.shape = (3,4)
+        globalSums  = self.comm.SumAll(partialSums)
+        for i in range(3):
+            for j in range(4):
+                self.assertEquals(globalSums[i,j], numProc*partialSums[i,j])
+
+    def testSumAllIntNoncontiguous(self):
+        "Test Epetra.PyComm SumAll method with noncontiguous int array"
+        numProc     = self.comm.NumProc()
+        baseArray   = arange(15,typecode='i')
+        baseArray.shape = (3,5)
+        partialSums = baseArray[1:2,1:4]  # Noncontiguous
+        globalSums  = self.comm.SumAll(partialSums)
+        for i in range(1):
+            for j in range(3):
+                self.assertEquals(globalSums[i,j], numProc*partialSums[i,j])
+
+    def testSumAllDouble(self):
+        "Test Epetra.PyComm SumAll method for doubles"
+        numProc     = self.comm.NumProc()
+        partialSums = arange(4,typecode='d')
+        globalSums  = self.comm.SumAll(partialSums)
+        for i in range(len(partialSums)):
+            self.assertEquals(globalSums[i], numProc*partialSums[i])
+
+    def testSumAllDouble2D(self):
+        "Test Epetra.PyComm SumAll method for 2D double array"
+        numProc     = self.comm.NumProc()
+        partialSums = arange(15,typecode='d')
+        partialSums.shape = (5,3)
+        globalSums  = self.comm.SumAll(partialSums)
+        for i in range(5):
+            for j in range(3):
+                self.assertEquals(globalSums[i,j], numProc*partialSums[i,j])
+
+    def testSumAllDoubleNoncontiguous(self):
+        "Test Epetra.PyComm SumAll method with noncontiguous double array"
+        numProc     = self.comm.NumProc()
+        baseArray   = arange(20,typecode='d')
+        baseArray.shape = (5,4)
+        partialSums = baseArray[1:4,1:3]  # Noncontiguous
+        globalSums  = self.comm.SumAll(partialSums)
+        for i in range(3):
+            for j in range(2):
+                self.assertEquals(globalSums[i,j], numProc*partialSums[i,j])
+
+    def testMaxAllBadArg(self):
+        "Test Epetra.PyComm MaxAll method with bad arguments"
+        self.assertRaises(TypeError, self.comm.MaxAll, None)
+
+    def testMaxAllBadType(self):
+        "Test Epetra.PyComm MaxAll method with bad type array"
+        partialMaxs = ones((3,3),'f')  # Float type not supported by Epetra
+        self.assertRaises(TypeError, self.comm.MaxAll, partialMaxs)
+
+    def testMaxAllInt(self):
+        "Test Epetra.PyComm MaxAll method for ints"
+        numProc     = self.comm.NumProc()
+        baseArray   = arange(5,typecode='i')
+        partialMaxs = array(baseArray) * (self.comm.MyPID()+1)
+        globalMaxs  = self.comm.MaxAll(partialMaxs)
+        for i in range(len(baseArray)):
+            self.assertEquals(globalMaxs[i], numProc*baseArray[i])
+
+    def testMaxAllInt2D(self):
+        "Test Epetra.PyComm MaxAll method for 2D int array"
+        numProc     = self.comm.NumProc()
+        baseArray   = arange(9,typecode='i')
+        baseArray.shape = (3,3)
+        partialMaxs = array(baseArray) * (self.comm.MyPID()+1)
+        globalMaxs  = self.comm.MaxAll(partialMaxs)
+        for i in range(3):
+            for j in range(3):
+                self.assertEquals(globalMaxs[i,j], numProc*baseArray[i,j])
+
+    def testMaxAllIntNoncontiguous(self):
+        "Test Epetra.PyComm MaxAll method with noncontiguous int array"
+        numProc     = self.comm.NumProc()
+        baseArray   = arange(25,typecode='i')
+        baseArray.shape = (5,5)
+        baseMaxs    = baseArray[1:4,1:4]  # Noncontiguous
+        partialMaxs = baseMaxs * (self.comm.MyPID()+1)
+        globalMaxs  = self.comm.MaxAll(partialMaxs)
+        for i in range(3):
+            for j in range(3):
+                self.assertEquals(globalMaxs[i,j], numProc*baseMaxs[i,j])
+
+    def testMaxAllDouble(self):
+        "Test Epetra.PyComm MaxAll method for doubles"
+        numProc     = self.comm.NumProc()
+        baseArray   = arange(6,typecode='d')
+        partialMaxs = array(baseArray) * (self.comm.MyPID()+1)
+        globalMaxs  = self.comm.MaxAll(partialMaxs)
+        for i in range(len(baseArray)):
+            self.assertEquals(globalMaxs[i], numProc*baseArray[i])
+
+    def testMaxAllDouble2D(self):
+        "Test Epetra.PyComm MaxAll method for 2D double array"
+        numProc     = self.comm.NumProc()
+        baseArray   = arange(16,typecode='d')
+        baseArray.shape = (4,4)
+        partialMaxs = array(baseArray) * (self.comm.MyPID()+1)
+        globalMaxs  = self.comm.MaxAll(partialMaxs)
+        for i in range(4):
+            for j in range(4):
+                self.assertEquals(globalMaxs[i,j], numProc*baseArray[i,j])
+
+    def testMaxAllDoubleNoncontiguous(self):
+        "Test Epetra.PyComm MaxAll method with noncontiguous double array"
+        numProc     = self.comm.NumProc()
+        baseArray   = arange(20,typecode='d')
+        baseArray.shape = (4,5)
+        baseMaxs    = baseArray[1:3,1:4] # Noncontiguous
+        partialMaxs = baseMaxs * (self.comm.MyPID()+1)
+        globalMaxs  = self.comm.MaxAll(partialMaxs)
+        for i in range(2):
+            for j in range(3):
+                self.assertEquals(globalMaxs[i,j], numProc*baseMaxs[i,j])
+
+    def testMinAllBadArg(self):
+        "Test Epetra.PyComm MinAll method with bad arguments"
+        self.assertRaises(TypeError, self.comm.MinAll, None)
+
+    def testMinAllBadType(self):
+        "Test Epetra.PyComm MinAll method with bad type array"
+        partialMins = ones((3,3),'f')  # Float type not supported by Epetra
+        self.assertRaises(TypeError, self.comm.MinAll, partialMins)
+
+    def testMinAllInt(self):
+        "Test Epetra.PyComm MinAll method for ints"
+        baseArray   = arange(5,typecode='i')
+        partialMins = array(baseArray) * (self.comm.MyPID()+1)
+        globalMins  = self.comm.MinAll(partialMins)
+        for i in range(len(baseArray)):
+            self.assertEquals(globalMins[i], baseArray[i])
+
+    def testMinAllInt2D(self):
+        "Test Epetra.PyComm MinAll method for 2D int array"
+        baseArray    = arange(18,typecode="i")
+        baseArray.shape = (3,6)
+        partialMins = baseArray * (self.comm.MyPID()+1)
+        globalMins  = self.comm.MinAll(partialMins)
+        for i in range(3):
+            for j in range(6):
+                self.assertEquals(globalMins[i,j], baseArray[i,j])
+
+    def testMinAllIntNoncontiguous(self):
+        "Test Epetra.PyComm MinAll method with noncontiguous int array"
+        baseArray   = arange(24,typecode='i')
+        baseArray.shape = (4,6)
+        baseArray    = baseArray[1:3,1:5]  # Noncontiguous
+        partialMins = baseArray * (self.comm.MyPID()+1)
+        globalMins  = self.comm.MinAll(partialMins)
+        for i in range(2):
+            for j in range(4):
+                self.assertEquals(globalMins[i,j], baseArray[i,j])
+
+    def testMinAllDouble(self):
+        "Test Epetra.PyComm MinAll method for doubles"
+        baseArray   = arange(4,typecode='d')
+        partialMins = array(baseArray) * (self.comm.MyPID()+1)
+        globalMins  = self.comm.MinAll(partialMins)
+        for i in range(len(baseArray)):
+            self.assertEquals(globalMins[i], baseArray[i])
+
+    def testMinAllDouble2D(self):
+        "Test Epetra.PyComm MinAll method for 2D double array"
+        baseArray    = arange(30,typecode="d")
+        baseArray.shape = (6,5)
+        partialMins = baseArray * (self.comm.MyPID()+1)
+        globalMins  = self.comm.MinAll(partialMins)
+        for i in range(6):
+            for j in range(5):
+                self.assertEquals(globalMins[i,j], baseArray[i,j])
+
+    def testMinAllDoubleNoncontiguous(self):
+        "Test Epetra.PyComm MinAll method with noncontiguous double array"
+        baseArray   = arange(36,typecode='d')
+        baseArray.shape = (6,6)
+        baseArray    = baseArray[1:4,1:4]  # Noncontiguous
+        partialMins = baseArray * (self.comm.MyPID()+1)
+        globalMins  = self.comm.MinAll(partialMins)
+        for i in range(3):
+            for j in range(3):
+                self.assertEquals(globalMins[i,j], baseArray[i,j])
+
+    def testScanSumBadArg(self):
+        "Test Epetra.PyComm ScanSum method with bad arguments"
+        self.assertRaises(TypeError, self.comm.ScanSum, None)
+
+    def testScanSumBadType(self):
+        "Test Epetra.PyComm ScanSum method with bad type array"
+        myVals = ones((3,3),'f')  # Float type not supported by Epetra
+        self.assertRaises(TypeError, self.comm.ScanSum, myVals)
+
+    def testScanSumInt(self):
+        "Test Epetra.PyComm ScanSum method for ints"
+        myPIN    = self.comm.MyPID() + 1
+        myVals   = arange(3,typecode='i')
+        scanSums = self.comm.ScanSum(myVals)
+        for i in range(len(myVals)):
+            self.assertEquals(scanSums[i], myPIN*myVals[i])
+
+    def testScanSumInt2D(self):
+        "Test Epetra.PyComm ScanSum method for 2D int array"
+        myPIN    = self.comm.MyPID() + 1
+        myVals   = arange(12,typecode='i')
+        myVals.shape = (3,4)
+        scanSums = self.comm.ScanSum(myVals)
+        for i in range(3):
+            for j in range(4):
+                self.assertEquals(scanSums[i,j], myPIN*myVals[i,j])
+
+    def testScanSumIntNoncontiguous(self):
+        "Test Epetra.PyComm ScanSum method with noncontiguous int array"
+        myPIN    = self.comm.MyPID() + 1
+        baseArray = arange(15,typecode='i')
+        baseArray.shape = (3,5)
+        myVals    = baseArray[1:2,1:4]  # Noncontiguous
+        scanSums  = self.comm.ScanSum(myVals)
+        for i in range(1):
+            for j in range(3):
+                self.assertEquals(scanSums[i,j], myPIN*myVals[i,j])
+
+    def testScanSumDouble(self):
+        "Test Epetra.PyComm ScanSum method for doubles"
+        myPIN    = self.comm.MyPID() + 1
+        myVals   = arange(4,typecode='d')
+        scanSums = self.comm.ScanSum(myVals)
+        for i in range(len(myVals)):
+            self.assertEquals(scanSums[i], myPIN*myVals[i])
+
+    def testScanSumDouble2D(self):
+        "Test Epetra.PyComm ScanSum method for 2D double array"
+        myPIN    = self.comm.MyPID() + 1
+        myVals   = arange(15,typecode='d')
+        myVals.shape = (5,3)
+        scanSums = self.comm.ScanSum(myVals)
+        for i in range(5):
+            for j in range(3):
+                self.assertEquals(scanSums[i,j], myPIN*myVals[i,j])
+
+    def testScanSumDoubleNoncontiguous(self):
+        "Test Epetra.PyComm ScanSum method with noncontiguous double array"
+        myPIN    = self.comm.MyPID() + 1
+        baseArray = arange(20,typecode='d')
+        baseArray.shape = (5,4)
+        myVals    = baseArray[1:4,1:3]  # Noncontiguous
+        scanSums  = self.comm.ScanSum(myVals)
+        for i in range(3):
+            for j in range(2):
+                self.assertEquals(scanSums[i,j], myPIN*myVals[i,j])
 
 ##########################################################################
 
