@@ -771,6 +771,26 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   // get the nullspace
   double* nullsp = interface_.Get_Nullspace(i,ml_numPDE_,ml_dim_nullsp_);
 
+#if 0
+  // if there is a nullspace, scale it to length 1
+  if (nullsp)
+  {
+    int nrow = OperatorRangeMap().NumMyElements();
+    for (int v=0; v<ml_dim_nullsp_; ++v)
+    {
+      double length=0.0;
+      for (int i=0; i<nrow; ++i)
+      {
+        double val = nullsp[v*nrow + i];
+        length += val*val;
+       }
+       length = sqrt(length);
+      for (int i=0; i<nrow; ++i)
+        nullsp[v*nrow + i] /= length;
+    }
+  }
+#endif
+
   // run adaptive setup phase
   if (adaptns_>0)
     Ml_Nox_adaptivesetup(&nullsp,fineJac_,ml_numPDE_,ml_dim_nullsp_);
@@ -1515,14 +1535,15 @@ bool ML_NOX::ML_Nox_Preconditioner::Ml_Nox_adaptivesetup(double** oldns,
   List.set("use default null space", false);
   List.set("smoother: type", "symmetric Gauss-Seidel"); // or "MLS" and use 
   //List.set("smoother: type", "MLS"); 
-  //List.set("smoother: MLS polynomial order",4); 
-  List.set("smoother: sweeps", 3);
+  //List.set("smoother: MLS polynomial order",5); 
+  List.set("smoother: sweeps", 2);
   List.set("smoother: damping factor", 1.0);
   List.set("coarse: type", "Amesos-KLU");
   List.set("coarse: max size", ml_maxcoarsesize_);
+  List.set("max levels", ml_nlevel_);
   List.set("adapt: max reduction", 0.1);
-  List.set("adapt: iters fine", 45);
-  List.set("adapt: iters coarse", 35);
+  List.set("adapt: iters fine", 35);
+  List.set("adapt: iters coarse", 20);
   List.set("aggregation: damping", 1.33);
   List.set("aggregation: type", "Uncoupled");  // or "METIS", not "VBMETIS"
   
@@ -1585,6 +1606,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Ml_Nox_adaptivesetup(double** oldns,
   {
     for (int i=0; i<sol->MyLength(); ++i)
       solptr[i] = (*oldns)[v*sol->MyLength() + i];
+    Comm().Barrier();
     interface_.PrintSol(v);
   }
   cout << "Nullspace was printed to GID\n";
