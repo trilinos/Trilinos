@@ -591,6 +591,9 @@ cleanUp();
         # Stop MPI
         if ($comm eq "mpi" && $mpiStop) { system("$mpiStop 1>/dev/null 2>/dev/null"); }
         
+        # Perform coverage tasks.
+        if ($coverage) { coverage(); }
+        
     } # run()
     
     ############################################################################
@@ -1203,6 +1206,103 @@ cleanUp();
         }
     
     } # parseTestGroup()
+    
+    ############################################################################
+    # coverage()
+    #
+    # Perform coverage tasks.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub coverage {
+    
+        chdir $trilinosDir or die "cannot chdir to $trilinosDir, died";
+        
+        my $command = "./commonTools/test/coverage/gcovmerge --with-directories ";
+        $command .= "--exclude=test/ --exclude=example/ --exclude=examples/ ";
+        $command .= "--exclude=doc/ --source-dir=$trilinosDir/packages --with-count ";
+        $command .= "--with-percent $buildDir/packages";
+        my $output = `$command`;
+        my $exitStatus = $?;
+        
+        chdir $resultsDir or die "cannot chdir to $resultsDir, died";
+        mkdir "coverage" or die "cannot create directory \"coverage\", died";
+        
+        my $summaryFile = "$resultsDir/coverage/summary.txt";
+        open (SUMMARY, ">$summaryFile") 
+            or die "can't open test coverage summary file $summaryFile for writing, died";
+              
+        print SUMMARY $output;        
+        close SUMMARY;
+        
+        use File::Find;
+        find (\&createTree, ("$buildDir/packages"));
+        find (\&copyGcov, ("$buildDir/packages"));
+        
+    } # coverage()
+    
+    ############################################################################
+    # createTree()
+    #
+    # Create directory tree under test/coverage
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub createTree {
+    
+        use File::Basename;
+        my $absFile = $File::Find::name;
+        my $file = basename($absFile);
+        my $dir = dirname($absFile);
+        
+        # Is this file a directory?
+        if (-e $file && -d $file && $file ne "packages" && $file ne "CVS") {
+        
+            my $destination = $absFile;
+            $destination =~ s/$buildDir\/packages/$resultsDir\/coverage/;
+            
+            if (!(-e $destination && -d $destination)) {
+                mkdir "$destination" or die "cannot create directory $destination, died";   
+            }
+        
+        }
+           
+    } # createTree()
+    
+    ############################################################################
+    # copyGcov()
+    #
+    # Copy all .gcov files
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub copyGcov {
+    
+        use File::Basename;
+        my $absFile = $File::Find::name;
+        my $file = basename($absFile);
+        my $dir = dirname($absFile);
+        
+        if ($file =~ m/\.gcov$/) {
+            
+            my $destination = $dir;
+            $destination =~ s/$buildDir\/packages/$resultsDir\/coverage/;
+            
+            my $output = `cp $absFile $destination`;
+            my $exitStatus = $?;
+        
+        }
+           
+    } # copyGcov()
     
     ############################################################################
     # cleanUp()
