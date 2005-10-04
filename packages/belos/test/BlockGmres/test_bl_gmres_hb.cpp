@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 	
 	bool verbose = 0;
 	//
-        if((argc < 2 || argc > 4)&& MyPID==0) {
+        if((argc < 2)&& MyPID==0) {
         cerr << "Usage: " << argv[0]
          << " [ -v ] [ HB_filename ]" << endl
          << "where:" << endl
