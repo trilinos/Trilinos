@@ -385,6 +385,13 @@ int main(int argc, char *argv[])
         std::cout << "z[" << i << "]=" << z[i] << std::endl;
     }
 
+    double norm_z, sum_z = 0.0;
+    for (unsigned int i = 0; i < n; ++i) 
+       sum_z += Teuchos::ScalarTraits<double>::magnitude(z[i] - 1.0)*Teuchos::ScalarTraits<double>::magnitude(z[i] - 1.0);
+    norm_z = Teuchos::ScalarTraits<double>::squareroot( sum_z );     
+    if (pid==0)
+      std::cout << "Two-norm of vector (z-1.0) : "<< norm_z << std::endl;
+
 #ifdef EPETRA_MPI
     MPI_Finalize(); 
 #endif
@@ -396,5 +403,15 @@ int main(int argc, char *argv[])
     delete Inner;
     delete Outer;
 
-    return(0);
+  if (norm_z > 1e-10) {
+        if (pid==0)
+                cout << "End Result: TEST FAILED" << endl;
+        return -1;
+  }
+  //
+  // Default return value
+  //
+  if (pid==0)
+    cout << "End Result: TEST PASSED" << endl;
+  return 0;
 }
