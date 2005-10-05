@@ -26,6 +26,8 @@
 # ************************************************************************
 #@HEADER
 
+EXTRA_DIST = Makefile
+
 if USING_EXPORT_MAKEFILES
 
 install-data-local:

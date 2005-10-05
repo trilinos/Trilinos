@@ -206,6 +206,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+EXTRA_DIST = Makefile
 all: all-am
 
 .SUFFIXES:
