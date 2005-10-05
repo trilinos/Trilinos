@@ -2,13 +2,10 @@
 try:
   import setpath
 except ImportError:
-  from PyTrilinos import ML, Triutils, AztecOO, Epetra
+  from PyTrilinos import Epetra, AztecOO, Triutils, ML
   print "Using installed versions of ML, Triutils, AztecOO, Epetra"
 else:
-  import ML
-  import Triutils
-  import AztecOO
-  import Epetra
+  import Epetra, AztecOO, Triutils, ML
 
 # builds the linear system matrix and sets up starting solution and
 # right-hand side
