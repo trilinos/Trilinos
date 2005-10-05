@@ -18,6 +18,8 @@ static Epetra_Comm* Epetra_Comm_ = 0;
 // ====================================================================== 
 ML_Comm* GetML_Comm() 
 {
+  if (ML_Comm_ == 0) Init();
+
   return(ML_Comm_);
 }
 
