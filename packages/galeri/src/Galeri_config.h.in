@@ -38,9 +38,6 @@
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 
-/* Define if want to build with galeri_amesos enabled */
-#undef HAVE_GALERI_AMESOS
-
 /* Define if want to build galeri-examples */
 #undef HAVE_GALERI_EXAMPLES
 

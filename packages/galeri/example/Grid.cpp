@@ -39,11 +39,10 @@ int main(int argc, char *argv[])
     double lz = 1.0;
 
     // Uncomment one of the following:
-    //TriangleRectangleGrid Grid(Comm, nx, ny, mx, my, lx, ly);
+    TriangleRectangleGrid Grid(Comm, nx, ny, mx, my, lx, ly);
     //QuadRectangleGrid Grid(Comm, nx, ny, mx, my, lx, ly);
     //TetCubeGrid Grid(Comm, nx, ny, nz, mx, my, mz, lx, ly, lz);
     //HexCubeGrid Grid(Comm, nx, ny, nz, mx, my, mz, lx, ly, lz);
-    FileGrid Grid(Comm, "SquareInSquare.grid");
 
     // just work on processor 0, only to reduce the output
     if (!Comm.MyPID()) 
@@ -54,7 +53,7 @@ int main(int argc, char *argv[])
       cout << "Number of dimensions = " << Grid.NumDimensions() << endl;
       cout << "Number of vertices per element = " << Grid.NumVerticesPerElement() << endl;
       cout << "Number of faces per element = " << Grid.NumFacesPerElement() << endl;
-      cout << "NUmber of vertices per face = " << Grid.NumVerticesPerFace() << endl;
+      cout << "Number of vertices per face = " << Grid.NumVerticesPerFace() << endl;
       cout << "Element type = " << Grid.ElementType() << endl;
 
       cout << "Number of elements: global = " << Grid.NumGlobalElements();
@@ -103,7 +102,7 @@ int main(int argc, char *argv[])
     }
     
     // The following instructions can be used to visualize with MEDIT
-#if 1
+#if 0
     MEDITInterface MEDIT(Comm);
 
     // We need to define a vector to plot, in this case constant

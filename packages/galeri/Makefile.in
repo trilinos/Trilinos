@@ -96,7 +96,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
-	$(top_srcdir)/config/tac_arg_with_package.m4 \
 	$(top_srcdir)/config/tac_enable_python.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -164,8 +163,6 @@ F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
-HAVE_GALERI_AMESOS_FALSE = @HAVE_GALERI_AMESOS_FALSE@
-HAVE_GALERI_AMESOS_TRUE = @HAVE_GALERI_AMESOS_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
@@ -314,8 +311,8 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
-@HAVE_MPI_FALSE@NEW_PACKAGE_CHECK_COMM = serial
-@HAVE_MPI_TRUE@NEW_PACKAGE_CHECK_COMM = mpi
+@HAVE_MPI_FALSE@GALERI_CHECK_COMM = serial
+@HAVE_MPI_TRUE@GALERI_CHECK_COMM = mpi
 all: all-recursive
 
 .SUFFIXES:
@@ -716,77 +713,77 @@ uninstall-info: uninstall-info-recursive
 all-local:
 	@echo "Trilinos package new_package built successfully"
 
-# run-examples:
-# 	@echo
-# 	@echo "==================================="
-# 	@echo "Running the New_Package examples..."
-# 	@echo "==================================="
-# 	@echo
-# 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-# 	@echo
-# 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-# 	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-# 	--comm=$(NEW_PACKAGE_CHECK_COMM) \
-# 	--mpi-go="$(TRILINOS_MPI_GO)" \
-# 	--build-dir=$(TRILINOS_BUILD_DIR) \
-# 	--category=New_PackageExamples \
-# 	--output-dir=@abs_top_builddir@/test/runtests-results \
-# 	--verbosity=1 \
-# 	--packages=new_package
-
-# run-tests:
-# 	@echo
-# 	@echo "================================"
-# 	@echo "Running the New_Package tests..."
-# 	@echo "================================"
-# 	@echo
-# 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-# 	@echo
-# 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-# 	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-# 	--comm=$(NEW_PACKAGE_CHECK_COMM) \
-# 	--mpi-go="$(TRILINOS_MPI_GO)" \
-# 	--build-dir=$(TRILINOS_BUILD_DIR) \
-# 	--category=FRAMEWORK \
-# 	--output-dir=@abs_top_builddir@/test/runtests-results \
-# 	--verbosity=1 \
-# 	--packages=new_package
-
-# run-pyexamples:
-# 	@echo
-# 	@echo "=========================================="
-# 	@echo "Running the Python/New_Package examples..."
-# 	@echo "=========================================="
-# 	@echo
-# 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-# 	@echo
-# 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-# 	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-# 	--comm=$(NEW_PACKAGE_CHECK_COMM) \
-# 	--mpi-go="$(TRILINOS_MPI_GO)" \
-# 	--build-dir=$(TRILINOS_BUILD_DIR) \
-# 	--category=New_PackagePyExamples \
-# 	--output-dir=@abs_top_builddir@/test/runtests-results \
-# 	--verbosity=1 \
-# 	--packages=new_package
-
-run-pytests:
+run-examples:
 	@echo
-	@echo "======================================="
-	@echo "Running the Python/New_Package tests..."
-	@echo "======================================="
+	@echo "=============================="
+	@echo "Running the Galeri examples..."
+	@echo "=============================="
 	@echo
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
 	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(NEW_PACKAGE_CHECK_COMM) \
+	--comm=$(GALERI_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=New_PackagePyTests \
+	--category=GaleriExamples \
 	--output-dir=@abs_top_builddir@/test/runtests-results \
 	--verbosity=1 \
-	--packages=new_package
+	--packages=galeri
+
+run-tests:
+	@echo
+	@echo "==========================="
+	@echo "Running the Galeri tests..."
+	@echo "==========================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(GALERI_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=FRAMEWORK \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=galeri
+
+run-pyexamples:
+	@echo
+	@echo "====================================="
+	@echo "Running the Python/Galeri examples..."
+	@echo "====================================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(GALERI_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=GaleriPyExamples \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=galeri
+
+run-pytests:
+	@echo
+	@echo "=================================="
+	@echo "Running the Python/Galeri tests..."
+	@echo "=================================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(GALERI_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=GaleriPyTests \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=galeri
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(AdvDiff2D_SOURCES) $(CrsMatrix_SOURCES) $(Grid_SOURCES) $(Laplacian3D_SOURCES) $(LinearProblem_SOURCES) $(Map_SOURCES) $(MultiVector_SOURCES) $(VbrMatrix_SOURCES)
+SOURCES = $(AdvDiff2D_SOURCES) $(CrsMatrix_SOURCES) $(Grid_SOURCES) $(Laplacian3D_SOURCES) $(LinearProblem_SOURCES) $(Map_SOURCES) $(VbrMatrix_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -66,8 +66,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = Map$(EXEEXT) CrsMatrix$(EXEEXT) VbrMatrix$(EXEEXT) \
-	MultiVector$(EXEEXT) LinearProblem$(EXEEXT) Grid$(EXEEXT) \
-	Laplacian3D$(EXEEXT) AdvDiff2D$(EXEEXT)
+	LinearProblem$(EXEEXT) Grid$(EXEEXT) Laplacian3D$(EXEEXT) \
+	AdvDiff2D$(EXEEXT)
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -92,7 +92,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
-	$(top_srcdir)/config/tac_arg_with_package.m4 \
 	$(top_srcdir)/config/tac_enable_python.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -109,13 +108,10 @@ am_Grid_OBJECTS = Grid-Grid.$(OBJEXT)
 Grid_OBJECTS = $(am_Grid_OBJECTS)
 am_Laplacian3D_OBJECTS = Laplacian3D-Laplacian3D.$(OBJEXT)
 Laplacian3D_OBJECTS = $(am_Laplacian3D_OBJECTS)
-am__DEPENDENCIES_1 =
 am_LinearProblem_OBJECTS = LinearProblem-LinearProblem.$(OBJEXT)
 LinearProblem_OBJECTS = $(am_LinearProblem_OBJECTS)
 am_Map_OBJECTS = Map-Map.$(OBJEXT)
 Map_OBJECTS = $(am_Map_OBJECTS)
-am_MultiVector_OBJECTS = MultiVector-MultiVector.$(OBJEXT)
-MultiVector_OBJECTS = $(am_MultiVector_OBJECTS)
 am_VbrMatrix_OBJECTS = VbrMatrix-VbrMatrix.$(OBJEXT)
 VbrMatrix_OBJECTS = $(am_VbrMatrix_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
@@ -127,7 +123,6 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Laplacian3D-Laplacian3D.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LinearProblem-LinearProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Map-Map.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/MultiVector-MultiVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/VbrMatrix-VbrMatrix.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -136,11 +131,10 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(AdvDiff2D_SOURCES) $(CrsMatrix_SOURCES) $(Grid_SOURCES) \
 	$(Laplacian3D_SOURCES) $(LinearProblem_SOURCES) $(Map_SOURCES) \
-	$(MultiVector_SOURCES) $(VbrMatrix_SOURCES)
+	$(VbrMatrix_SOURCES)
 DIST_SOURCES = $(AdvDiff2D_SOURCES) $(CrsMatrix_SOURCES) \
 	$(Grid_SOURCES) $(Laplacian3D_SOURCES) \
-	$(LinearProblem_SOURCES) $(Map_SOURCES) $(MultiVector_SOURCES) \
-	$(VbrMatrix_SOURCES)
+	$(LinearProblem_SOURCES) $(Map_SOURCES) $(VbrMatrix_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -180,8 +174,6 @@ F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
-HAVE_GALERI_AMESOS_FALSE = @HAVE_GALERI_AMESOS_FALSE@
-HAVE_GALERI_AMESOS_TRUE = @HAVE_GALERI_AMESOS_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
@@ -276,12 +268,6 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@HAVE_GALERI_AMESOS_FALSE@AMESOS_INCLUDES = 
-@HAVE_GALERI_AMESOS_TRUE@AMESOS_INCLUDES = $(top_builddir)/../amesos/src \
-@HAVE_GALERI_AMESOS_TRUE@		  $(top_srcdir)/../amesos/src
-
-@HAVE_GALERI_AMESOS_FALSE@AMESOS_LIBS = 
-@HAVE_GALERI_AMESOS_TRUE@AMESOS_LIBS = -L/$(top_builddir)/../amesos/src -lamesos
 Map_SOURCES = $(srcdir)/Map.cpp
 Map_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
 Map_CXXFLAGS = $(GALERI_INCLUDES)
@@ -294,10 +280,6 @@ VbrMatrix_SOURCES = $(srcdir)/VbrMatrix.cpp
 VbrMatrix_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
 VbrMatrix_CXXFLAGS = $(GALERI_INCLUDES)
 VbrMatrix_LDADD = $(GALERI_LIBS)
-MultiVector_SOURCES = $(srcdir)/MultiVector.cpp
-MultiVector_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
-MultiVector_CXXFLAGS = $(GALERI_INCLUDES)
-MultiVector_LDADD = $(GALERI_LIBS)
 LinearProblem_SOURCES = $(srcdir)/LinearProblem.cpp
 LinearProblem_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
 LinearProblem_CXXFLAGS = $(GALERI_INCLUDES)
@@ -308,8 +290,8 @@ Grid_CXXFLAGS = $(GALERI_INCLUDES)
 Grid_LDADD = $(GALERI_LIBS)
 Laplacian3D_SOURCES = $(srcdir)/Laplacian3D.cpp
 Laplacian3D_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
-Laplacian3D_CXXFLAGS = $(GALERI_INCLUDES) $(AMESOS_INCLUDES)
-Laplacian3D_LDADD = $(GALERI_LIBS) $(AMESOS_LIBS)
+Laplacian3D_CXXFLAGS = $(GALERI_INCLUDES) 
+Laplacian3D_LDADD = $(GALERI_LIBS)
 AdvDiff2D_SOURCES = $(srcdir)/AdvDiff2D.cpp
 AdvDiff2D_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
 AdvDiff2D_CXXFLAGS = $(GALERI_INCLUDES)
@@ -368,9 +350,6 @@ LinearProblem$(EXEEXT): $(LinearProblem_OBJECTS) $(LinearProblem_DEPENDENCIES)
 Map$(EXEEXT): $(Map_OBJECTS) $(Map_DEPENDENCIES) 
 	@rm -f Map$(EXEEXT)
 	$(CXXLINK) $(Map_LDFLAGS) $(Map_OBJECTS) $(Map_LDADD) $(LIBS)
-MultiVector$(EXEEXT): $(MultiVector_OBJECTS) $(MultiVector_DEPENDENCIES) 
-	@rm -f MultiVector$(EXEEXT)
-	$(CXXLINK) $(MultiVector_LDFLAGS) $(MultiVector_OBJECTS) $(MultiVector_LDADD) $(LIBS)
 VbrMatrix$(EXEEXT): $(VbrMatrix_OBJECTS) $(VbrMatrix_DEPENDENCIES) 
 	@rm -f VbrMatrix$(EXEEXT)
 	$(CXXLINK) $(VbrMatrix_LDFLAGS) $(VbrMatrix_OBJECTS) $(VbrMatrix_LDADD) $(LIBS)
@@ -387,7 +366,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Laplacian3D-Laplacian3D.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearProblem-LinearProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Map-Map.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiVector-MultiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VbrMatrix-VbrMatrix.Po@am__quote@
 
 .cpp.o:
@@ -501,22 +479,6 @@ Map-Map.obj: $(srcdir)/Map.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Map-Map.Po' tmpdepfile='$(DEPDIR)/Map-Map.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Map_CXXFLAGS) $(CXXFLAGS) -c -o Map-Map.obj `if test -f '$(srcdir)/Map.cpp'; then $(CYGPATH_W) '$(srcdir)/Map.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Map.cpp'; fi`
-
-MultiVector-MultiVector.o: $(srcdir)/MultiVector.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MultiVector_CXXFLAGS) $(CXXFLAGS) -MT MultiVector-MultiVector.o -MD -MP -MF "$(DEPDIR)/MultiVector-MultiVector.Tpo" -c -o MultiVector-MultiVector.o `test -f '$(srcdir)/MultiVector.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiVector.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MultiVector-MultiVector.Tpo" "$(DEPDIR)/MultiVector-MultiVector.Po"; else rm -f "$(DEPDIR)/MultiVector-MultiVector.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MultiVector.cpp' object='MultiVector-MultiVector.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MultiVector-MultiVector.Po' tmpdepfile='$(DEPDIR)/MultiVector-MultiVector.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MultiVector_CXXFLAGS) $(CXXFLAGS) -c -o MultiVector-MultiVector.o `test -f '$(srcdir)/MultiVector.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiVector.cpp
-
-MultiVector-MultiVector.obj: $(srcdir)/MultiVector.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MultiVector_CXXFLAGS) $(CXXFLAGS) -MT MultiVector-MultiVector.obj -MD -MP -MF "$(DEPDIR)/MultiVector-MultiVector.Tpo" -c -o MultiVector-MultiVector.obj `if test -f '$(srcdir)/MultiVector.cpp'; then $(CYGPATH_W) '$(srcdir)/MultiVector.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MultiVector.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MultiVector-MultiVector.Tpo" "$(DEPDIR)/MultiVector-MultiVector.Po"; else rm -f "$(DEPDIR)/MultiVector-MultiVector.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MultiVector.cpp' object='MultiVector-MultiVector.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MultiVector-MultiVector.Po' tmpdepfile='$(DEPDIR)/MultiVector-MultiVector.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MultiVector_CXXFLAGS) $(CXXFLAGS) -c -o MultiVector-MultiVector.obj `if test -f '$(srcdir)/MultiVector.cpp'; then $(CYGPATH_W) '$(srcdir)/MultiVector.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MultiVector.cpp'; fi`
 
 VbrMatrix-VbrMatrix.o: $(srcdir)/VbrMatrix.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(VbrMatrix_CXXFLAGS) $(CXXFLAGS) -MT VbrMatrix-VbrMatrix.o -MD -MP -MF "$(DEPDIR)/VbrMatrix-VbrMatrix.Tpo" -c -o VbrMatrix-VbrMatrix.o `test -f '$(srcdir)/VbrMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/VbrMatrix.cpp; \

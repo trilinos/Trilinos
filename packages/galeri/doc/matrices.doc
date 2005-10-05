@@ -94,7 +94,7 @@ The list of supported matrices is now reported in alphabetical order.
   \f]
   The default values are those given by \c Biharmonic2D.
 
-- \c Biharmonic (MAP2D, PAR): Creates a matrix corresponding to the
+- \c Biharmonic2D (MAP2D, PAR): Creates a matrix corresponding to the
   discrete biharmonic operator,
   \f[
   \frac{1}{h^4} \;
@@ -177,7 +177,7 @@ The complex eigenvalues are of the form a \f$k \sqrt{-1}\f$ and
 - \c Hilbert (MAP, MATLAB, DENSE, PAR): This is a famous example of a badly conditioned
   matrix. The elements are defined as \f$A_{i,j} = 1/(i+j)\f$
 
-- \c JordBlock (MAP, MATLAB, PAR): Creates a Jordan block with eigenvalue \c
+- \c JordanBlock (MAP, MATLAB, PAR): Creates a Jordan block with eigenvalue \c
   lambda.   The default value is \c lambda=0.1;
 
 - \c KMS (MAP, MATLAB, DENSE, PAR): Create the \f$n \times n\f$ Kac-Murdock-Szego
@@ -295,7 +295,7 @@ simple upwind stencil is used for the convective term. Here,
   \f]
   The default values are \c a=8, \c "b = c = d = e = z 1 = z 2 = z 3 = z 4 = -1".
 
-- \c Stretched (MAP2D, PAR): Creates a matrix corresponding to the following
+- \c Stretched2D (MAP2D, PAR): Creates a matrix corresponding to the following
   stencil:
   \f[
   \left[

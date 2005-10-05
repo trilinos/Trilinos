@@ -34,6 +34,7 @@ Cross2D(const Epetra_Map* Map, const int nx, const int ny,
     int NumEntries = 0;
     GetNeighboursCartesian2d(MyGlobalElements[i], nx, ny, 
 			     left, right, lower, upper);
+
     if (left != -1) 
     {
       Indices[NumEntries] = left;
@@ -91,6 +92,8 @@ Cross2D(const Epetra_Map* Map, const int nx, const int ny,
   for (int i = 0 ; i < NumMyElements ; ++i) 
   {
     int NumEntries = 0;
+    GetNeighboursCartesian2d(MyGlobalElements[i], nx, ny, 
+			     left, right, lower, upper);
 
     if (left != -1) 
     {
@@ -119,6 +122,7 @@ Cross2D(const Epetra_Map* Map, const int nx, const int ny,
 
     Indices[NumEntries] = MyGlobalElements[i];
     Values[NumEntries] = A[i];
+    ++NumEntries;
 
     Matrix->InsertGlobalValues(MyGlobalElements[i], NumEntries, 
                                Values, Indices);

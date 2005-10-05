@@ -42,11 +42,11 @@ EXAMPLE_SUITE = exGaleri
 
 SETPATH = setpath.py
 
-all: $(TEST_SUITE)
+all: $(EXAMPLE_SUITE)
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
 # Run the test script
-test%: $(srcdir)/test%.py
+ex%: $(srcdir)/extest%.py
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
 # Clean target
