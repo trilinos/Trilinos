@@ -117,15 +117,16 @@ def main():
     print "lambda_max(D * A) using CG     = ", max_eig
   # 9) Compute all the eigenvalues of a matrix, using LAPACK
   #    (MLAPI will convert the matrix into dense format). In this case,
-  #    the imaginary part (EI) is zero
-  ER = ML.MultiVector()
-  EI = ML.MultiVector()
-  ML.Eig(A, ER, EI)
-  ER.Sort()
-  if Comm.MyPID() == 0:
-    for i in xrange(NumGlobalRows):
-      print "lambda_%d = %e" % (i, ER[i,0])
-  ER.Sort()
+  #    the imaginary part (EI) is zero. This can be done only in serial
+  #    for the moment.
+  if Comm.NumProc() == 1:
+    ER = ML.MultiVector()
+    EI = ML.MultiVector()
+    ML.Eig(A, ER, EI)
+    ER.Sort()
+    if Comm.MyPID() == 0:
+      for i in xrange(NumGlobalRows):
+        print "lambda_%d = %e" % (i, ER[i,0])
   # 10) Get the lower triangular part of a distributed matrix
   L = ML.PyMatrix(RowSpace, RowSpace)
   for i in MyGlobalRows:

@@ -48,7 +48,7 @@ class MultiLevel:
       List = {
         "aggregation: type": "MIS",
         "aggregation: threshold": 0.00,
-        "PDE aggregation": 1
+        "PDE equations": 1
       }
       Ptent = ML.GetPNonSmoothed(A, ThisNS, NextNS, List)
       # ...and smooth it. Here we skip the diagonal scaling
@@ -147,9 +147,9 @@ def main():
     x = x + prec_res 
     # compute the energy of the error
     diff = x - x_exact
-    ###print "iter ", i, " ||x - x_exact||_A = ", diff * (Matrix * diff)
+    norm = diff * diff  # or use diff * (Matrix * diff)
     if comm.MyPID() == 0:
-      print "iter ", i, " ||x - x_exact||_2 = ", diff * diff
+      print "iter ", i, " ||x - x_exact||_2 = ", norm
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

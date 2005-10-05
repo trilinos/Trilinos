@@ -99,6 +99,8 @@ def MultiLevelCycle(A, P, R, S, b_f, level, MaxLevels):
 def main():
   # Defines a communicator (serial or parallel, depending on how Trilinos
   # was configured), and creates a matrix corresponding to a 1D Laplacian.
+  Comm = Epetra.PyComm()
+
   n = 1000
   FineSpace = ML.Space(n)
   
@@ -174,7 +176,9 @@ def main():
     x = x + prec_res 
     # compute the energy of the error
     diff = x - x_exact
-    print "iter ", i, " ||x - x_exact||_A = ", diff * (A[0] * diff)
+    norm = diff * (A[0] * diff)
+    if Comm.MyPID() == 0:
+      print "iter ", i, " ||x - x_exact||_A = ", norm
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the
