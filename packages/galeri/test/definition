@@ -2,10 +2,10 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK, INSTALL, GaleriTests) {
-    DIRS = VerySimple;
+(FRAMEWORK, INSTALL, GaleriExamples) {
+    DIRS = ../example;
     ARGS = -v;
-    COMM = SERIAL, MPI(1-4);
+    COMM = SERIAL, MPI(1);
 }
 
 (FRAMEWORK, INSTALL, GaleriTests) {
