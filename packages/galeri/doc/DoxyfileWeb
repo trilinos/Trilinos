@@ -48,4 +48,6 @@ INPUT                 += ../src/FiniteElements
 
 EXAMPLE_PATH           = ../example ../
 
+IMAGE_PATH             = ./ 
+
 GENERATE_TAGFILE       = ../../common/tag_files/galeri.tag
