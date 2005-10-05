@@ -36,6 +36,7 @@
 #include "mrtr_utils.H"
 #include "mrtr_segment.H"
 #include "mrtr_segment_linear1D.H"
+#include "mrtr_segment_bilineartri.H"
 #include "mrtr_node.H"
 
 /*----------------------------------------------------------------------*
@@ -48,6 +49,12 @@ MRTR::Segment* MRTR::AllocateSegment(int type)
     case MRTR::Segment::seg_Linear1D:
       {
         MRTR::Segment_Linear1D* tmp = new MRTR::Segment_Linear1D();
+        return tmp;
+      }
+    break;
+    case MRTR::Segment::seg_BiLinearTri:
+      {
+        MRTR::Segment_BiLinearTri* tmp = new MRTR::Segment_BiLinearTri();
         return tmp;
       }
     break;
@@ -91,6 +98,18 @@ MRTR::Function* MRTR::AllocateFunction(MRTR::Function::FunctionType type)
     case MRTR::Function::func_DualLinear1D:
       {
         MRTR::Function_DualLinear1D* tmp = new MRTR::Function_DualLinear1D();
+        return tmp;
+      }
+    break;
+    case MRTR::Function::func_LinearTri:
+      {
+        MRTR::Function_LinearTri* tmp = new MRTR::Function_LinearTri();
+        return tmp;
+      }
+    break;
+    case MRTR::Function::func_DualLinearTri:
+      {
+        MRTR::Function_DualLinearTri* tmp = new MRTR::Function_DualLinearTri();
         return tmp;
       }
     break;

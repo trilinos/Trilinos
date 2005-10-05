@@ -229,7 +229,7 @@ bool MRTR::Node::Print() const
 { 
   cout << "Node " << setw(6) << Id_ << "\tCoords ";
   for (int i=0; i<3; ++i)
-    cout << setw(10) << x_[i] << " ";
+    cout << setw(12) << x_[i] << " ";
 
   cout << "Normal " ;
   for (int i=0; i<3; ++i)

@@ -21,6 +21,7 @@
 #include "mrtr_functions.H"
 #include "mrtr_segment.H"
 #include "mrtr_segment_linear1D.H"
+#include "mrtr_segment_bilinearquad.H"
 #include "mrtr_node.H"
 #include "mrtr_interface.H"
 #include "mrtr_manager.H"
@@ -196,7 +197,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     //-----------------------------------------------------------------
     // manually choose mortar (master side)
     // mortar side is either 0 or 1 or -2 for automatic
-    interface->SetMortarSide(-2);
+    interface->SetMortarSide(1);
 
     //-----------------------------------------------------------------
     // set linear shape functions on both sides, 
@@ -226,8 +227,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     if (side==1 || side==0)
     {
       side     = interface->OtherSide(side);
-      MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
-      //MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
+      //MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
+      MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
       interface->SetFunctionAllSegmentsSide(side,1,func);
       delete func; func = NULL;
     }
@@ -259,21 +260,218 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     if (gline2) delete [] gline2;
     if (gnode1) delete [] gnode1;
     if (gnode2) delete [] gnode2;
-    if (interface) delete interface;
+    if (interface) delete interface; interface = NULL;
     
   //-------------------------------------------------------------------
   } // for (int k=0; k<ninter; ++k) loop over mortar interfaces
+  delete [] ids;
 
+  //-------------------------------------------------------------------
+  //-------------------------------------------------------------------
+  //-------------------------------------------------------------------
+  //-------------------------------------------------------------------
+  //-------------------------------------------------------------------
+  //-------------------------------------------------------------------
+
+  //-------------------------------------------------------------------
+  // count number of 3D mortar interfaces 
+  ninter = cca_mrtr_3D_numinterfaces(&ids,design);
+
+  //-------------------------------------------------------------------
+  // loop over number of mortar interfaces 
+  for (int k=0; k<ninter; ++k)
+  {
+    
+    //-----------------------------------------------------------------
+    // create an interface class
+    
+    int id = ids[k];
+    interface = new MRTR::Interface(id,false,mrtr_manager->Comm(),outlevel);
+  
+    //-----------------------------------------------------------------
+    // find dsurfs for given interface id
+
+    DSURF* dsurf1 = NULL;
+    DSURF* dsurf2 = NULL;
+    bool ok = cca_mrtr_3D_finddsurfs(id,&dsurf1,&dsurf2,design);
+  
+    //-----------------------------------------------------------------
+    // find all gsurfs on dsurf1/dsurf2
+
+    int ngsurf1=0;
+    int ngsurf2=0;
+    GSURF** gsurf1 = NULL;  
+    GSURF** gsurf2 = NULL;  
+    ngsurf1 = cca_mrtr_3D_find_gsurfs_on_dsurf(&gsurf1,dsurf1,actdis);  
+    ngsurf2 = cca_mrtr_3D_find_gsurfs_on_dsurf(&gsurf2,dsurf2,actdis);  
+  
+    // loop all gsurfs and create segment classes from them
+    
+    // side 0 of interface
+    for (int i=0; i<ngsurf1; ++i)
+    {
+      // only my own segments
+      if (gsurf1[i]->ngvol>1)
+        dserror("ERR: gsurf attached to more then one gvol");
+      if (gsurf1[i]->gvol[0]->element->proc != MyPID) continue;
+      
+      int* nodeIds = NULL;
+      MRTR::Segment::SegmentType typ = MRTR::Segment::seg_none;
+      if (!cca_mrtr_3D_prepare_gsurf_data(gsurf1[i],&nodeIds,&typ))
+        dserror("ERR: cannot find nodal topology");
+      
+      MRTR::Segment* seg;
+      if (typ==MRTR::Segment::seg_BiLinearQuad)
+        seg = new MRTR::Segment_BiLinearQuad(gsurf1[i]->Id,gsurf1[i]->ngnode,nodeIds);  
+      else
+        dserror("Unknown type of 2D element"); 
+        
+      delete [] nodeIds;
+      bool ok = interface->AddSegment(*seg,0); 
+      delete seg; seg = NULL;      
+    }
+    
+    // side 1 of interface
+    for (int i=0; i<ngsurf2; ++i)
+    {
+      // only my own segments
+      if (gsurf2[i]->ngvol>1)
+        dserror("ERR: gsurf attached to more then one gvol");
+      if (gsurf2[i]->gvol[0]->element->proc != MyPID) continue;
+      
+      int* nodeIds = NULL;
+      MRTR::Segment::SegmentType typ = MRTR::Segment::seg_none;
+      if (!cca_mrtr_3D_prepare_gsurf_data(gsurf2[i],&nodeIds,&typ))
+        dserror("ERR: cannot find nodal topology");
+      
+      MRTR::Segment* seg;
+      if (typ==MRTR::Segment::seg_BiLinearQuad)
+        seg = new MRTR::Segment_BiLinearQuad(gsurf2[i]->Id,gsurf2[i]->ngnode,nodeIds);
+      else
+        dserror("Unknown type of 2D element"); 
+
+      delete [] nodeIds;
+      bool ok = interface->AddSegment(*seg,1); 
+      delete seg; seg = NULL;      
+    }
+  
+    //-----------------------------------------------------------------
+    // find all gnodes on dsurf1/dsurf2
+    
+    int ngnode1 = 0;
+    int ngnode2 = 0;
+    GNODE** gnode1 = NULL;
+    GNODE** gnode2 = NULL;
+    
+    ngnode1 = cca_mrtr_3D_find_gnodes_on_dsurf(&gnode1,dsurf1,actdis);
+    ngnode2 = cca_mrtr_3D_find_gnodes_on_dsurf(&gnode2,dsurf2,actdis);
+  
+    // side 0 of interface
+    for (int i=0; i<ngnode1; ++i)
+    {
+      // only my own nodes
+      if (gnode1[i]->node->proc != MyPID) continue;
+      MRTR::Node* node = 
+        new MRTR::Node(gnode1[i]->Id,gnode1[i]->node->x,
+                       gnode1[i]->node->numdf,gnode1[i]->node->dof);
+                       
+      bool ok = interface->AddNode(*node,0);
+      delete node; node = NULL;
+    }
+  
+    // side 1 of interface
+    for (int i=0; i<ngnode2; ++i)
+    {
+      // only my own nodes
+      if (gnode2[i]->node->proc != MyPID) continue;
+      MRTR::Node* node = 
+        new MRTR::Node(gnode2[i]->Id,gnode2[i]->node->x,
+                       gnode2[i]->node->numdf,gnode2[i]->node->dof);
+                       
+      bool ok = interface->AddNode(*node,1);
+      delete node; node = NULL;
+    }
+  
+    //-----------------------------------------------------------------
+    // manually choose mortar (master side)
+    // mortar side is either 0 or 1 or -2 for automatic
+    interface->SetMortarSide(1);
+
+    //-----------------------------------------------------------------
+    // set linear shape functions on both sides, 
+    // set additional dual shape functions on non-mortar side 
+    // Currently ONLY linear functions!!!!
+    if (interface->MortarSide() != -2)
+    {
+      MRTR::Function_LinearTri* func = new MRTR::Function_LinearTri();
+      interface->SetFunctionAllSegmentsSide(0,0,func);
+      interface->SetFunctionAllSegmentsSide(1,0,func);
+      delete func; 
+    }
+    // mortar side is not yet chosen, we cannot set functions.
+    // So we just set what kind of functions we want to have set
+    // The Mortar::Manager is setting the functions later accordingly
+    else
+    {
+      interface->SetFunctionTypes(MRTR::Function::func_LinearTri,      // the isoparametric function
+                                  //MRTR::Function::func_DualLinearTri); // the LM space
+                                  MRTR::Function::func_LinearTri); // the LM space
+    }
+      
+    //-----------------------------------------------------------------
+    // get the mortar side and set dual linear shape function to non mortar side
+
+    int side = interface->MortarSide();
+    if (side==1 || side==0)
+    {
+      side     = interface->OtherSide(side);
+      //MRTR::Function_DualLinearTri* func = new MRTR::Function_LinearTri();
+      MRTR::Function_LinearTri* func = new MRTR::Function_LinearTri();
+      interface->SetFunctionAllSegmentsSide(side,1,func);
+      delete func; func = NULL;
+    }
+    
+    //-----------------------------------------------------------------
+    // set type of projection to be used on this interface
+
+    interface->SetProjectionType(MRTR::Interface::proj_continousnormalfield);    
+    //interface->SetProjectionType(MRTR::Interface::proj_orthogonal);    
+    
+    //-----------------------------------------------------------------
+    // Complete interface 
+
+    ok = interface->Complete();
+    if (!ok)
+    {
+      cout << "***ERR*** interface->Complete() returned false\n";
+      exit(EXIT_FAILURE);
+    }
+    
+    //-----------------------------------------------------------------
+    // Add interface to Mortar Manager 
+    mrtr_manager->AddInterface(*interface); // deep copy
+
+    //-----------------------------------------------------------------
+    // tidy up 
+
+    if (gsurf1) delete [] gsurf1;
+    if (gsurf2) delete [] gsurf2;
+    if (gnode1) delete [] gnode1;
+    if (gnode2) delete [] gnode2;
+    if (interface) delete interface; interface = NULL;
+    
+  //-------------------------------------------------------------------
+  }// for (int k=0; k<ninter; ++k) loop over mortar interfaces
+  delete [] ids;
+  
+#if 1
   //-----------------------------------------------------------------
   // print all interfaces
   fflush(stdout);
   comm->Barrier();
-
-#if 0
   cout << *mrtr_manager;
 #endif  
 
-  delete [] ids;
   return (1);
 }
 
@@ -291,11 +489,15 @@ int compute_mortar(SPARSE_TYP* arraytyp, SPARSE_ARRAY* array, DESIGN *design)
   int* ids    = NULL;
   int  ninter = cca_mrtr_2D_numinterfaces(&ids,design);
   if (ninter==0)
+    if (ids) delete [] ids;
+
+  ninter += cca_mrtr_3D_numinterfaces(&ids,design);
+  if (ninter==0)
   {
     if (ids) delete [] ids;
-    return (1);
+    return 1;
   }
-
+  
   //-------------------------------------------------------------------
   // check type of matrix, currently only msr/spooles supported
   int *update = NULL;

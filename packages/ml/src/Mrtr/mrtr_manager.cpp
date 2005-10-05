@@ -407,7 +407,7 @@ bool MRTR::Manager::Mortar_Integrate()
         break;
       }
     }
-    if (!foundit); // we have to chose mortar sides ourself
+    if (!foundit) // we have to chose mortar sides ourself
       ChooseMortarSide();
   }  
 

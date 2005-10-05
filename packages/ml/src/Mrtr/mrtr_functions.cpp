@@ -220,5 +220,81 @@ bool MRTR::Function_DualLinear1D::EvaluateFunction(
 }
 
 
+//=======================================================================
+// the linear 2D triangle shape function
+//=======================================================================
+/*----------------------------------------------------------------------*
+ |  Clone an existing object                                 mwgee 10/05|
+ |  this methods takes the base class ptr MRTR::Function*               |
+ |  but actually needs to clone the derived type                        |
+ |  MRTR::Function_DualLinear1D*                                        |
+ |  It then returns the derived type                                    |
+ |  Note that this functionality is extremely important, it's not       |
+ |  'just another clone'                                                |
+ *----------------------------------------------------------------------*/
+MRTR::Function* MRTR::Function_LinearTri::Clone() const
+{
+  MRTR::Function_LinearTri* newclass = new MRTR::Function_LinearTri(*this);
+  return newclass;
+}
+
+/*----------------------------------------------------------------------*
+ | evaluate the function (2D)                                mwgee 10/05|
+ | xi     (in)  natural coordinates -1/-1<*xi<1/1 where to eval         |
+ | val    (out) function values, if NULL on input, no evaluation        |
+ | valdim (in)  dimension of val                                        |
+ | deriv  (out) derivatives of functions at xi, if NULL on input,       |
+ |              no evaluation                                           | 
+ *----------------------------------------------------------------------*/
+bool MRTR::Function_LinearTri::EvaluateFunction(
+                                            const double* xi, double* val, 
+                                            const int valdim, double* deriv)
+{ 
+    cout << "***ERR*** MRTR::Function_LinearTri::EvaluateFunction:\n"
+         << "***ERR*** not yet impl.\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  return true;
+}
+
+
+//=======================================================================
+// the linear 2D triangle shape function
+//=======================================================================
+/*----------------------------------------------------------------------*
+ |  Clone an existing object                                 mwgee 10/05|
+ |  this methods takes the base class ptr MRTR::Function*               |
+ |  but actually needs to clone the derived type                        |
+ |  MRTR::Function_DualLinear1D*                                        |
+ |  It then returns the derived type                                    |
+ |  Note that this functionality is extremely important, it's not       |
+ |  'just another clone'                                                |
+ *----------------------------------------------------------------------*/
+MRTR::Function* MRTR::Function_DualLinearTri::Clone() const
+{
+  MRTR::Function_DualLinearTri* newclass = new MRTR::Function_DualLinearTri(*this);
+  return newclass;
+}
+
+/*----------------------------------------------------------------------*
+ | evaluate the function (2D)                                mwgee 10/05|
+ | xi     (in)  natural coordinates -1/-1<*xi<1/1 where to eval         |
+ | val    (out) function values, if NULL on input, no evaluation        |
+ | valdim (in)  dimension of val                                        |
+ | deriv  (out) derivatives of functions at xi, if NULL on input,       |
+ |              no evaluation                                           | 
+ *----------------------------------------------------------------------*/
+bool MRTR::Function_DualLinearTri::EvaluateFunction(
+                                            const double* xi, double* val, 
+                                            const int valdim, double* deriv)
+{ 
+    cout << "***ERR*** MRTR::Function_DualLinearTri::EvaluateFunction:\n"
+         << "***ERR*** not yet impl.\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  return true;
+}
+
+
 
 #endif // TRILINOS_PACKAGE

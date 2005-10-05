@@ -132,10 +132,10 @@ bool MRTR::Segment::Print() const
     cout << " Typ Linear1D   ";
   if (stype_ == MRTR::Segment::seg_Quadratic1D)
     cout << " Typ Quadratic1D";
-  if (stype_ == MRTR::Segment::seg_Bilinear2D)
-    cout << " Typ BiLinear2D ";
-  if (stype_ == MRTR::Segment::seg_Biquadratic2D)
-    cout << " Typ Quadratic2D";
+  if (stype_ == MRTR::Segment::seg_BiLinearQuad)
+    cout << " Typ BiLinearQuad ";
+  if (stype_ == MRTR::Segment::seg_BiLinearTri)
+    cout << " Typ BiLinearTri";
   if (stype_ == MRTR::Segment::seg_none)
     cout << " Typ NONE       ";
   cout << " #Nodes " << nodeId_.size() << " Nodes: ";
@@ -242,11 +242,11 @@ double* MRTR::Segment::BuildNormalAtNode(int nid)
   int lid = GetLocalNodeId(nid);
   
   // depending on what type of segment I am get local coordinates
-  double xi;
-  LocalCoordinatesOfNode(lid,&xi);
+  double xi[2];
+  LocalCoordinatesOfNode(lid,xi);
   
   // build an outward unit normal at xi
-  return BuildNormal(&xi);
+  return BuildNormal(xi);
 }
 
 /*----------------------------------------------------------------------*

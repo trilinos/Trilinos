@@ -33,11 +33,11 @@
 /* ******************************************************************** */
 #ifdef TRILINOS_PACKAGE
 
-#include "mrtr_segment_linear1D.H"
+#include "mrtr_segment_bilineartri.H"
 #include "mrtr_interface.H"
 
 /*----------------------------------------------------------------------*
- |  ctor (public)                                            mwgee 06/05|
+ |  ctor (public)                                            mwgee 10/05|
  |  id               (in)  a unique segment id                          |
  |  nnode            (in)  number of nodes on this segment              |
  |  nodeId           (in)  unique node ids of nodes on this segment     |
@@ -53,36 +53,36 @@
  |                                  important to compute the direction  |
  |                                  of the outward normal of the segment|
  *----------------------------------------------------------------------*/
-MRTR::Segment_Linear1D::Segment_Linear1D(int id, int nnode, int* nodeId) :
+MRTR::Segment_BiLinearTri::Segment_BiLinearTri(int id, int nnode, int* nodeId) :
 MRTR::Segment(id,nnode,nodeId)
 {
-  stype_ = MRTR::Segment::seg_Linear1D;
+  stype_ = MRTR::Segment::seg_BiLinearTri;
 }
 
 /*----------------------------------------------------------------------*
- |  ctor (public)                                            mwgee 07/05|
+ |  ctor (public)                                            mwgee 10/05|
  |  This constructor should not be used by the user, it is used         |
  |  internally together with Pack/Unpack for communication              |
  *----------------------------------------------------------------------*/
-MRTR::Segment_Linear1D::Segment_Linear1D() :
+MRTR::Segment_BiLinearTri::Segment_BiLinearTri() :
 MRTR::Segment()
 {
   stype_ = MRTR::Segment::seg_none;
 }
 
 /*----------------------------------------------------------------------*
- |  copy-ctor (public)                                       mwgee 06/05|
+ |  copy-ctor (public)                                       mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment_Linear1D::Segment_Linear1D(MRTR::Segment_Linear1D& old) :
+MRTR::Segment_BiLinearTri::Segment_BiLinearTri(MRTR::Segment_BiLinearTri& old) :
 MRTR::Segment(old)
 {
   // all date lives in the base class and is copied in MRTR::Segment(old)
 }
 
 /*----------------------------------------------------------------------*
- | pack all data in this segment into a vector               mwgee 07/05|
+ | pack all data in this segment into a vector               mwgee 10/05|
  *----------------------------------------------------------------------*/
-int* MRTR::Segment_Linear1D::Pack(int* size)
+int* MRTR::Segment_BiLinearTri::Pack(int* size)
 { 
   // note: first there has to be the size and second there has to be the type
   // *size = *size  + stype_ + Id_ + nodeId_.size() + nnode*sizeof(int) + Nfunctions() + 2*Nfunctions()*sizeof(int)
@@ -108,7 +108,7 @@ int* MRTR::Segment_Linear1D::Pack(int* size)
   
   if (count != *size)
   {
-    cout << "***ERR*** MRTR::Segment_Linear1D::Pack:\n"
+    cout << "***ERR*** MRTR::Segment_BiLinearTri::Pack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -118,9 +118,9 @@ int* MRTR::Segment_Linear1D::Pack(int* size)
 }
 
 /*----------------------------------------------------------------------*
- | unpack all data from a vector into this class             mwgee 07/05|
+ | unpack all data from a vector into this class             mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Segment_Linear1D::UnPack(int* pack)
+bool MRTR::Segment_BiLinearTri::UnPack(int* pack)
 { 
   // note: first there has to be the size and second there has to be the type
   int count = 0;
@@ -143,7 +143,7 @@ bool MRTR::Segment_Linear1D::UnPack(int* pack)
   
   if (count != size)
   {
-    cout << "***ERR*** MRTR::Segment_Linear1D::UnPack:\n"
+    cout << "***ERR*** MRTR::Segment_BiLinearTri::UnPack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -153,132 +153,96 @@ bool MRTR::Segment_Linear1D::UnPack(int* pack)
 }
 
 /*----------------------------------------------------------------------*
- |  dtor (public)                                            mwgee 06/05|
+ |  dtor (public)                                            mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment_Linear1D::~Segment_Linear1D()
+MRTR::Segment_BiLinearTri::~Segment_BiLinearTri()
 { 
   // data held in base class is destroyed by base class destructor
 }
 
 /*----------------------------------------------------------------------*
- |  clone this segment (public)                              mwgee 06/05|
+ |  clone this segment (public)                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment* MRTR::Segment_Linear1D::Clone()
+MRTR::Segment* MRTR::Segment_BiLinearTri::Clone()
 { 
-  MRTR::Segment_Linear1D* newseg = new MRTR::Segment_Linear1D(*this);
+  MRTR::Segment_BiLinearTri* newseg = new MRTR::Segment_BiLinearTri(*this);
   return (newseg);
 }
 
 /*----------------------------------------------------------------------*
- |  << operator                                              mwgee 06/05|
+ |  << operator                                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MRTR::Segment_Linear1D& seg)
+ostream& operator << (ostream& os, const MRTR::Segment_BiLinearTri& seg)
 {
   seg.Print(); 
   return os;
 }
 
 /*----------------------------------------------------------------------*
- | build an outward normal at a node adjacent to this        mwgee 07/05|
+ | build an outward normal at a node adjacent to this        mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Segment_Linear1D::LocalCoordinatesOfNode(int lid, double* xi)
+bool MRTR::Segment_BiLinearTri::LocalCoordinatesOfNode(int lid, double* xi)
 { 
-  if (lid==0) xi[0] = -1.0;
-  else if (lid==1) xi[0] = 1.0;
-  else 
+  if (lid==0)
   {
-    cout << "***ERR*** MRTR::Segment_Linear1D::LocalCoordinatesOfNode:\n"
-  	 << "***ERR*** Segment " << Id() << ": node number " << lid << " out of range\n"
-  	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    xi[0] = 0.0;
+    xi[1] = 0.0;
+  }
+  else if (lid==1)
+  {
+    xi[0] = 1.0;
+    xi[1] = 0.0;
+  }
+  else if (lid==2)
+  {
+    xi[0] = 0.0;
+    xi[1] = 1.0;
+  }
+  else
+  {
+    cout << "***ERR*** MRTR::Segment_BiLinearTri::LocalCoordinatesOfNode:\n"
+         << "***ERR*** local node number out of range\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
   }
   return true;
 }
 
 /*----------------------------------------------------------------------*
- | build basis vectors and metric at given point xi          mwgee 07/05|
+ | build basis vectors and metric at given point xi          mwgee 10/05|
  *----------------------------------------------------------------------*/
-double MRTR::Segment_Linear1D::Metric(double* xi, double g[], double G[][3])
+double MRTR::Segment_BiLinearTri::Metric(double* xi, double g[], double G[][3])
 { 
-  // get nodal coordinates
-  const double* x[2];
-  x[0] = nodeptr_[0]->X();
-  x[1] = nodeptr_[1]->X();
-  
-  // get shape functions
-  double val[2];
-  double deriv[2];
-  functions_[0]->EvaluateFunction(xi,val,2,deriv);
-
-  double glocal[2];
-  double* gl;
-  if (g) gl = g;
-  else   gl = glocal;
-  
-  // build covariant basis vector g = partial x / partial theta sup i
-  for (int dim=0; dim<2; ++dim)
-  {
-    gl[dim] = 0.0;
-    for (int node=0; node<2; ++node)
-      gl[dim] += deriv[node] * x[node][dim];
-  }
-  
-  // build metric tensor G sub ij = g sub i dot g sub j
-  // in this 1D case, it's a scalar
-  if (G)
-  {
-    G[0][0] = 0;
-    for (int i=0; i<2; ++i) G[0][0] += gl[i]*gl[i];
-  }
-
-  // FIXME: look at file shell8/s8_tvmr.c & shell8/s8_static_keug.c 
-  // build dA as g1 cross g2
-  // in this linear case, it's just the length of g
-  double dl = sqrt(gl[0]*gl[0]+gl[1]*gl[1]);
-  
-  return dl;
+  cout << "***ERR*** MRTR::Segment_BiLinearTri::Metric:\n"
+       << "***ERR*** not impl.\n"
+       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+  exit(EXIT_FAILURE);     
+  return 0.0;
 }
 
 /*----------------------------------------------------------------------*
- | build an outward normal at a node adjacent to this        mwgee 07/05|
+ | build an outward normal at a node adjacent to this        mwgee 10/05|
  | returns allocated vector of length 3 with outward normal             |
  *----------------------------------------------------------------------*/
-double* MRTR::Segment_Linear1D::BuildNormal(double* xi)
+double* MRTR::Segment_BiLinearTri::BuildNormal(double* xi)
 { 
-  // build the metric vectors at this local coordinates xi
-  double g[3]; for (int i=0; i<3; ++i) g[i] = 0.0;
-  double dl;
-  dl = Metric(xi,g,NULL);
-  
-  // in 3D, the outward normal is g1 cross g2, in 2D, the normal is
-  // n1 = g2 and n2 = -g1
-  double* n = new double[3];
-  n[0] = g[1];
-  n[1] = -g[0];
-  n[2] = 0.0;
-  double length = sqrt(n[0]*n[0]+n[1]*n[1]);
-  n[0] /= length;
-  n[1] /= length;
-  return n;
+  cout << "***ERR*** MRTR::Segment_BiLinearTri::BuildNormal:\n"
+       << "***ERR*** not impl.\n"
+       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+  exit(EXIT_FAILURE);     
+  return NULL;
 }
 
 /*----------------------------------------------------------------------*
- | compute the length (Area) of this segment                 mwgee 07/05|
+ | compute the length (Area) of this segment                 mwgee 10/05|
  *----------------------------------------------------------------------*/
-double MRTR::Segment_Linear1D::Area()
+double MRTR::Segment_BiLinearTri::Area()
 { 
-  // get nodal coordinates
-  const double* x[2];
-  x[0] = nodeptr_[0]->X();
-  x[1] = nodeptr_[1]->X();
-
-  // build vector from x[0] to x[1]
-  double tangent[2];
-  tangent[0] = x[1][0] - x[0][0];
-  tangent[1] = x[1][1] - x[0][1];
-
-  double length = sqrt(tangent[0]*tangent[0]+tangent[1]*tangent[1]);
-  return length;
+  cout << "***ERR*** MRTR::Segment_BiLinearQuad::Area:\n"
+       << "***ERR*** not impl.\n"
+       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+  exit(EXIT_FAILURE);     
+  return 0.0;
 }
 
 

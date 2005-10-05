@@ -38,6 +38,7 @@
 #include "mrtr_projector.H"
 #include "mrtr_utils.H"
 #include "mrtr_pnode.H"
+#include "mrtr_segment_bilineartri.H"
 
 
 /*----------------------------------------------------------------------*
@@ -301,14 +302,47 @@ bool MRTR::Interface::AddSegment(MRTR::Segment& seg, int side)
     return false;
   }
   
-  // copy the segment
-  MRTR::Segment* tmp = seg.Clone();
+  if (seg.Type()==MRTR::Segment::seg_BiLinearQuad)
+  {
+    if (seg.Nnode() != 4)
+    {
+      cout << "***ERR*** MRTR::Interface::AddSegment:\n"
+           << "***ERR*** Unknown number of nodes " << seg.Nnode() << "for BilinearQuad\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+    // split the quad into 2 triangles
+    int ids1[3];
+    ids1[0] = seg.NodeIds()[0];
+    ids1[1] = seg.NodeIds()[1];
+    ids1[2] = seg.NodeIds()[2];
+    int ids2[3];
+    ids2[0] = seg.NodeIds()[0];
+    ids2[1] = seg.NodeIds()[2];
+    ids2[2] = seg.NodeIds()[3];
+
+    // create 2 triangles, give second one the negative id
+    MRTR::Segment* tmp1 = new MRTR::Segment_BiLinearTri(seg.Id(),3,ids1);
+    MRTR::Segment* tmp2 = new MRTR::Segment_BiLinearTri(-seg.Id(),3,ids2);
+    
+    // add 2 triangles
+    map<int,MRTR::Segment*>* s = 0;
+    if (side==0) s = &(seg_[0]);
+    else         s = &(seg_[1]);
+    s->insert(pair<int,MRTR::Segment*>(tmp1->Id(),tmp1));    
+    s->insert(pair<int,MRTR::Segment*>(tmp2->Id(),tmp2));    
+  }
+  else // all other types of segments
+  {
+    // copy the segment
+    MRTR::Segment* tmp = seg.Clone();
   
-  // add segment
-  map<int,MRTR::Segment*>* s = 0;
-  if (side==0) s = &(seg_[0]);
-  else         s = &(seg_[1]);
-  s->insert(pair<int,MRTR::Segment*>(tmp->Id(),tmp));
+    // add segment
+    map<int,MRTR::Segment*>* s = 0;
+    if (side==0) s = &(seg_[0]);
+    else         s = &(seg_[1]);
+    s->insert(pair<int,MRTR::Segment*>(tmp->Id(),tmp));
+  }
 
   return true;
 }

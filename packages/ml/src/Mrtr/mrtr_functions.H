@@ -115,6 +115,52 @@ public:
   virtual MRTR::Function* Clone() const;
 };
 
+/*----------------------------------------------------------------------*
+ |  the linear triangle shape function                             10/05|
+ *----------------------------------------------------------------------*/
+class Function_LinearTri : public MRTR::Function 
+{
+public:
+  
+  // ctor
+  Function_LinearTri() { type_=MRTR::Function::func_LinearTri;}
+  
+  // copy-ctor
+  Function_LinearTri(const MRTR::Function_LinearTri& old) {type_=old.type_;}
+
+  // dtor
+  virtual ~Function_LinearTri() {}
+
+  // evaluate the shape function
+  bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
+
+  // need a clone functionality to do a deep copy
+  virtual MRTR::Function* Clone() const;
+};
+
+/*----------------------------------------------------------------------*
+ |  the dual linear triangle shape function                        10/05|
+ *----------------------------------------------------------------------*/
+class Function_DualLinearTri : public MRTR::Function 
+{
+public:
+  
+  // ctor
+  Function_DualLinearTri() { type_=MRTR::Function::func_DualLinearTri;}
+  
+  // copy-ctor
+  Function_DualLinearTri(const MRTR::Function_DualLinearTri& old) {type_=old.type_;}
+
+  // dtor
+  virtual ~Function_DualLinearTri() {}
+
+  // evaluate the shape function
+  bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
+
+  // need a clone functionality to do a deep copy
+  virtual MRTR::Function* Clone() const;
+};
+
 
 
 

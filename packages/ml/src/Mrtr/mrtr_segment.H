@@ -61,8 +61,8 @@ public:
     seg_none,
     seg_Linear1D,
     seg_Quadratic1D,
-    seg_Bilinear2D,
-    seg_Biquadratic2D
+    seg_BiLinearQuad,
+    seg_BiLinearTri
   };
 
   //------------- methods used from base class

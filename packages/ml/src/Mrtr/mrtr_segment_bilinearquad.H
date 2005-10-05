@@ -33,69 +33,72 @@
 /* ******************************************************************** */
 #ifdef TRILINOS_PACKAGE
 
-#ifndef MRTR_FUNCTION_H
-#define MRTR_FUNCTION_H
+#ifndef MRTR_SEGMENT_BILINEARQUAD_H
+#define MRTR_SEGMENT_BILINEARQUAD_H
 
 #include <ctime>
 #include <iostream>
+#include <map>
+
+#include "mrtr_segment.H"
+#include "mrtr_functions.H"
+#include "mrtr_utils.H"
 
 using namespace std;
 
 namespace MRTR
 {
 
-
-/*----------------------------------------------------------------------*
- |  the virtual function all segment functions have to inherit     06/05|
- *----------------------------------------------------------------------*/
-class Function 
+class  Segment_BiLinearQuad : public MRTR::Segment
 {
 public:
-
-  // types of functions
-  enum FunctionType
-  {
-    func_none,
-    func_Constant1D,
-    func_Linear1D,
-    func_DualLinear1D,
-    func_LinearTri,
-    func_DualLinearTri
-  };
   
   // ctor
-  Function() {};
+  explicit Segment_BiLinearQuad(int id, int nnode, int* nodeId);
+  
+  // ctor (for internal use only) to be used together with Pack()/UnPack()
+  explicit Segment_BiLinearQuad();
   
   // copy-ctor
-  Function(const MRTR::Function& old) {type_ = old.type_;}
+  Segment_BiLinearQuad(MRTR::Segment_BiLinearQuad& old);
   
   // dtor
-  virtual ~Function() {}
+  virtual ~Segment_BiLinearQuad();
 
-  // return a string specifiying the type of derived function
-  MRTR::Function::FunctionType Type() const { return type_;}
+  // clone
+  MRTR::Segment* Clone();
+
+  // (derived) pack function for communication
+  int* Pack(int* size);
   
-  // evaluate the function
-  virtual bool EvaluateFunction(const double* xi, double* val, const int valdim, 
-                                double* deriv) = 0;
+  // (derived) unpack function for communication
+  bool UnPack(int* pack);
+  
+  // (derived) build an outward normal at a node adjacent to this
+  double* BuildNormal(double* xi);
+  
+  // (derived) integrate the are of this segment
+  double Area();
+  
+  // (derived) build the basis vector and metrix tensor at a given point in element
+  double Metric(double* xi, double g[], double G[][3]);
 
-  // need a clone functionality to do a deep copy
-  // have a look at the Function_Linear1D how this is done, it's important!
-  virtual MRTR::Function* Clone() const = 0;
+  // (derived) get local coordinates at a node in LOCAL numbering
+  bool LocalCoordinatesOfNode(int lid, double* xi);
+  
 
-protected:
+protected:  
 
-  MRTR::Function::FunctionType type_;
-
-  // Note that this base class does not hold any data.
-  // If Your derived class needs to hold data, make sure it's carefully
-  // taken care of in the copy-ctor!
+  // don't want = operator
+  Segment_BiLinearQuad operator = (const Segment& old);
 
 };
 
-
 } // namespace MRTR
 
+// << operator
+ostream& operator << (ostream& os, const MRTR::Segment_BiLinearQuad& seg);
 
-#endif // MRTR_FUNCTION_H
+
+#endif // MRTR_SEGMENT_BILINEARQUAD_H
 #endif // TRILINOS_PACKAGE
