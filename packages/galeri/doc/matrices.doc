@@ -2,8 +2,8 @@
 
 Given an already created Epetra_Map, Galeri can construct an Epetra_CrsMatrix
 object that has this Map as RowMatrixRowMap(). A simple example is as follows.
-Let \c Map be an \c Epetra_Map* object; then, a diagonal matrix with 
-\f$\lambda = 2.0\f$ on
+Let \c Map be an already created \c Epetra_Map* object; then, a diagonal matrix with 
+\f$a = 2.0\f$ on
 the diagonal can be created using the instructions
 
 \verbatim
@@ -15,9 +15,12 @@ List.set("a", 2.0);
 Epetra_CrsMatrix* Matrix = CreateCrsMatrix(MatrixType, Map, List);
 \endverbatim
 
-A biharmonic operator can be created like this:
+More interesting matrices can be easily created. For example, a 2D biharmonic
+operator can be created like this:
 
 \verbatim
+List.set("nx", 10);
+List.set("ny", 10);
 Epetra_CrsMatrix* Matrix = Galeri.Create("Biharmonic2D", Map, List);
 \endverbatim
 
@@ -50,7 +53,7 @@ The output is:
 To present the list of supported matrices we adopt the following symbols:
 - MATLAB: please refer to the MATLAB documentation for more details on the
   properties of this matrix;
-- DIAG: the matrix is dense (but still stored as Epetra_CrsMatrix);
+- DENSE: the matrix is dense (but still stored as Epetra_CrsMatrix);
 - MAP: the number of elements and its distribution are determined from the
   input map;
 - MAP2D: the input map has been created by CreateMap(), using MapType = \c
@@ -58,9 +61,11 @@ To present the list of supported matrices we adopt the following symbols:
   list;
 - MAP3D: the input map has been created by CreateMap(), using MapType = \c
   Cartesian3D. The values of \c nx, \c ny and \c nz are still available in the
-  input list.
-- SER: the matrix can be obtained in serial environments only.
+  input list;
+- SER: the matrix can be obtained in serial environments only;
 - PAR: the matrix can be obtained in parallel (and serial) environments.
+- The symbol \f$A_{i,j}\f$ indicates the \f$(i,j)\f$ matrix of the element in
+  MATLAB notation (that is, starting from 1).
 
 <P>
 The list of supported matrices is now reported in alphabetical order. 
@@ -78,7 +83,14 @@ The list of supported matrices is now reported in alphabetical order.
   \end{tabular}
   \right] .
   \f]
-  The default values are those given by \c Laplace2DFourthOrder.
+  The default values are those given by \c Laplace2DFourthOrder. A
+  non-default value must be set in the input parameter list before
+  creating the matrix. For example, to specify the value of \f$ee\f$, one
+  should do
+  \verbatim
+  List.set("ee", 12.0);
+  Matrix = Galeri.Create("BigCross2D", Map, List);
+  \endverbatim
 
 - \c BigStar2D (MAP2D, PAR): Creates a matrix corresponding to the stencil
   \f[
@@ -127,7 +139,15 @@ The list of supported matrices is now reported in alphabetical order.
   \end{tabular}
   \right] .
   \f]
-  The default values are \c a=5, \c b=c=d=e=-1.
+  The default values are 
+  \verbatim 
+  List.set("a", 4.0);
+  List.set("b", -1.0);
+  List.set("c", -1.0);
+  List.set("d", -1.0);
+  List.set("e", -1.0);
+  \endverbatim
+
   For example, to approximate the 2D Helmhotlz equation
   \f[
   - \nabla u - \sigma u = f \quad \quad (\sigma \geq 0)
@@ -143,18 +163,28 @@ The list of supported matrices is now reported in alphabetical order.
   \end{tabular}
   \right] 
   \f]
-  and \f$\sigma = 0.1, h = 1/nx\f$, one can set \c "a = 4 - 0.1 * h * h",
-  \c "b = c = d = e = -1.0". The factor \f$\frac{1}{h^2}\f$ can be considered by
+  and \f$\sigma = 0.1, h = 1/nx\f$, one can set 
+  \verbatim
+  List.set("a", 4 - 0.1 * h * h);
+  List.set("b", -1.0);
+  List.set("c", -1.0);
+  List.set("d", -1.0);
+  List.set("e", -1.0);
+  \endverbatim
+  The factor \f$\frac{1}{h^2}\f$ can be considered by
   scaling the input parameters.
 
 - \c Cross3D (MAP3D, PAR): Similar to the Cross2D case. The matrix
-  stencil correspond to that of a 3D Laplace operator on a structured
+  stencil correspond to that of a 3D Laplace operator on a structured 3D
     grid. On a given x-y plane, the stencil is as in \c Laplace2D. The
     value on the plane below is set using \c f, the value on the
     plane above with \c g.
 
 - \c Diag (MAP, PAR): Creates \f$ a I\f$, where \f$I\f$ is the identity matrix of
-  size \c n. The default value is \c a=1.0.
+  size \c n. The default value is 
+  \verbatim
+  List.set("a", 1.0);
+  \endverbatim
 
 - \c Fiedler (MAP, MATLAB, DENSE, PAR): Creates a matrix whose element are \f$A_{i,j} = | i - j |\f$.
   The matrix is symmetric, and has a dominant positive
@@ -171,11 +201,13 @@ A = \left[
   \right].
 \f]
 The complex eigenvalues are of the form a \f$k \sqrt{-1}\f$ and 
-\f$-k \sqrt{-1}\f$, for \f$1 \leq k \leq n/2\f$.  The default value for
-\c a=-1.
+\f$-k \sqrt{-1}\f$, for \f$1 \leq k \leq n/2\f$.  The default value is
+\verbatim
+List.set("a", -1.0);
+\endverbatim
 
 - \c Hilbert (MAP, MATLAB, DENSE, PAR): This is a famous example of a badly conditioned
-  matrix. The elements are defined as \f$A_{i,j} = 1/(i+j)\f$
+  matrix. The elements are defined in MATLAB notation as \f$A_{i,j} = 1/(i+j)\f$.
 
 - \c JordanBlock (MAP, MATLAB, PAR): Creates a Jordan block with eigenvalue \c
   lambda.   The default value is \c lambda=0.1;
@@ -293,7 +325,18 @@ simple upwind stencil is used for the convective term. Here,
   \end{tabular}
   \right] .
   \f]
-  The default values are \c a=8, \c "b = c = d = e = z 1 = z 2 = z 3 = z 4 = -1".
+  The default values are 
+  \verbatim
+  List.set("a", 8.0);
+  List.set("b", -1.0);
+  List.set("c", -1.0);
+  List.set("d", -1.0);
+  List.set("e", -1.0);
+  List.set("z1", -1.0);
+  List.set("z2", -1.0);
+  List.set("z3", -1.0);
+  List.set("z4", -1.0);
+  \endverbatim
 
 - \c Stretched2D (MAP2D, PAR): Creates a matrix corresponding to the following
   stencil:
@@ -317,7 +360,12 @@ simple upwind stencil is used for the convective term. Here,
   \end{tabular}
   \right] .
   \f]
-  The default values are \c "a = 2.0, b = c =-1".
+  The default values are 
+  \verbatim
+  List.set("a", 2.0);
+  List.set("b", -1.0);
+  List.set("c", -1.0);
+  \endverbatim
 
 - \c UniFlow2D (MAP2D, PAR): Returns a matrix corresponding to the
   finite-difference discretization of the problem
@@ -331,11 +379,15 @@ simple upwind stencil is used for the convective term. Here,
     v_x = cos(\alpha) V, \quad \quad \quad v_y =  sin(\alpha) V 
     \f]
     that corresponds to an unidirectional 2D flow. The default values are
-    \c "alpha=.0, diff=1e-5, conv=1".
+    \verbatim
+    List.set("alpha", .0);
+    List.set("diff", 1e-5);
+    List.set("conv", 1.0);
+    \endverbatim
     
 */
 
-/*! \page gl_matrices_ex Usage of CreateCrsMatrix()
+/*! \page gl_matrices_ex Example of Usage of CreateCrsMatrix()
 
 File galeri/example/Matrix.cpp contains an example of usage.
 
