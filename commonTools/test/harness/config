@@ -30,7 +30,7 @@ RUN (beowulf-nightly-mpi) {
     INVOKE-CONFIGURE    = linux-beowulf-mpi;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 16;
-    MPI-START           = lamboot;
+    MPI-START           = lamboot /home/mnphenow/.lamhosts;
     MPI-STOP            = lamhalt;    
     TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnphenow;
