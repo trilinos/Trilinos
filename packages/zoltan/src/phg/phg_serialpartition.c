@@ -350,6 +350,9 @@ static int timer_cpart=-1, timer_gather=-1, timer_refine=-1;
       for (i = 0; i < phg->nVtx; i++)
         part[i] = spart[i];
     }
+{/* KDDKDD DO NOT COMMIT */
+   uprintf(phg->comm, "KDDLEAVESERIALPART bal= %f part_sizes=(%f,%f)\n", Zoltan_PHG_Compute_Balance(zz, phg, part_sizes, numPart, part),part_sizes[0], part_sizes[1]);fflush(stdout);
+} /* KDDKDD DO NOT COMMIT */
     ZOLTAN_FREE(&spart);
     ZOLTAN_FREE(&bestvals);
   }
@@ -1145,6 +1148,19 @@ int err = ZOLTAN_OK;
 
   MPI_Allreduce(local, global, 2, MPI_FLOAT_INT, MPI_MINLOC, 
                 phg_comm->Communicator);
+
+{ /* KDDKDD DO NOT COMMIT */
+int i, leftcnt=0, rightcnt=0;
+float left=0., right=0., max=0., min=INT_MAX;
+for (i = 0; i < shg->nVtx; i++) {
+  if (spart[i] == 0) {left += shg->vwgt[i]; leftcnt++;}
+  else {right += shg->vwgt[i]; rightcnt++;}
+  if (shg->vwgt[i] > max) max = shg->vwgt[i];
+  if (shg->vwgt[i] < min) min = shg->vwgt[i];
+}
+uprintf(phg_comm, "KDDSERIALPART wgt=(%f,%f) cnt=(%d,%d) mycuts=%f globalcuts=%f maxvwgt=%f minvwgt=%f\n", left, right, leftcnt, rightcnt,local[1].val, global[1].val, max, min);
+} /* KDDKDD DO NOT COMMIT */
+
 
   if (hgp->output_level)
     uprintf(phg_comm,
