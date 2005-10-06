@@ -46,7 +46,7 @@ int Zoltan_PHG_rdivide(
 )
 {
   char *yo = "Zoltan_PHG_rdivide";
-  int i, j, mid, ierr=ZOLTAN_OK; 
+  int i, j, mid, ierr=ZOLTAN_OK, procmid; 
   int *pins[2] = {NULL,NULL}, *lpins[2] = {NULL,NULL};
   Partition part=NULL;
   HGraph *left=NULL, *right=NULL;
@@ -67,7 +67,7 @@ int Zoltan_PHG_rdivide(
   int do_timing = (hgp->use_timers > 1);
   int detail_timing = (hgp->use_timers > 3);
 
-  if (!hg->nVtx)  /* UVC: no vertex; no need for recursion!? */
+  if (!hg->dist_x[hgc->nProc_x])  /* UVC: no vertex; no need for recursion!? */
       return ierr;
   
   if (do_timing) { 
@@ -185,7 +185,7 @@ int Zoltan_PHG_rdivide(
       ierr = split_hypergraph (pins, hg, left, part, 0, zz, &leftw, &rightw);
       if (ierr != ZOLTAN_OK) 
           goto End;
-      if (!left->nVtx) { /* left is empty */
+      if (!left->dist_x[hgc->nProc_x]) { /* left is empty */
           Zoltan_HG_HGraph_Free (left);
           left = NULL;
       }          
@@ -202,7 +202,7 @@ int Zoltan_PHG_rdivide(
   
       if (ierr != ZOLTAN_OK)
           goto End;
-      if (!right->nVtx) { /* right is empty */
+      if (!right->dist_x[hgc->nProc_x]) { /* right is empty */
           Zoltan_HG_HGraph_Free (right);
           right = NULL;
       }
@@ -216,16 +216,7 @@ int Zoltan_PHG_rdivide(
   if (detail_timing) 
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_split, hgc->Communicator);
 
-  if (hgp->proc_split && hgc->nProc>1 && left && right) {
-      PHGComm  leftcomm, rightcomm;
-      HGraph  newleft, newright;
-      int *leftvmap=NULL, *rightvmap=NULL, 
-          *leftdest=NULL, *rightdest=NULL, procmid;
-      ZOLTAN_COMM_OBJ *plan=NULL;    
-
-      if (detail_timing) 
-        ZOLTAN_TIMER_START(zz->ZTime, timer_redist, hgc->Communicator);
-      
+  if (hgp->proc_split && (hgc->nProc>1) && left && right) {
       /* redistribute left and right parts */
       procmid = (int)((float) (hgc->nProc-1) 
                     * (float) left->dist_x[hgc->nProc_x] 
@@ -240,13 +231,33 @@ int Zoltan_PHG_rdivide(
       uprintf(hgc, "before redistribute for left procmid=%d ---------------\n",
                     procmid);
 #endif
+  } else
+      procmid = 0;
+
+      /* if we want proc_split and there are more than one procs avail, and
+         the left and right exist and they have enough vertex to distribute */
+  if (hgp->proc_split && (hgc->nProc>1) && left && right && 
+      (left->dist_x[hgc->nProc_x]>2*(procmid+1)) &&
+      (right->dist_x[hgc->nProc_x]>2*(hgc->nProc-procmid))) {
+      PHGComm  leftcomm, rightcomm;
+      HGraph  newleft, newright;
+      int *leftvmap=NULL, *rightvmap=NULL, 
+          *leftdest=NULL, *rightdest=NULL;
+      ZOLTAN_COMM_OBJ *plan=NULL;    
+
+      if (detail_timing) 
+        ZOLTAN_TIMER_START(zz->ZTime, timer_redist, hgc->Communicator);
       
+#ifdef _DEBUG1
+      uprintf(hgc, "before redistribute for left procmid=%d ---------------\n",
+                    procmid);
+#endif
       Zoltan_PHG_Redistribute(zz, hgp, left, 0, procmid, &leftcomm, 
                               &newleft, &leftvmap, &leftdest);
       if (hgp->output_level >= PHG_DEBUG_LIST)     
-          uprintf(hgc, "Left: H(%d, %d, %d) ----> H(%d, %d, %d) Weights=(%.2lf, %.2lf)\n", left->nVtx,
-                  left->nEdge, left->nPins, newleft.nVtx, newleft.nEdge,
-                  newleft.nPins, leftw, rightw);
+          uprintf(hgc, "Left: H(%d, %d, %d) ----> H(%d, %d, %d) Weights=(%.2lf, %.2lf)\n",
+                  left->nVtx, left->nEdge, left->nPins,
+                  newleft.nVtx, newleft.nEdge, newleft.nPins, leftw, rightw);
       Zoltan_HG_HGraph_Free (left);
       
 #ifdef _DEBUG1
