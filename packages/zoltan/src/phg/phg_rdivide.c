@@ -1,7 +1,7 @@
 /*****************************************************************************
  * Zoltan Library for Parallel Applications                                  *
  * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
- * For more info, see the RADME file in the top-level Zoltan directory.     *
+ * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
 /*****************************************************************************
  * CVS File Information :
@@ -185,6 +185,10 @@ int Zoltan_PHG_rdivide(
       ierr = split_hypergraph (pins, hg, left, part, 0, zz, &leftw, &rightw);
       if (ierr != ZOLTAN_OK) 
           goto End;
+      if (!left->nVtx) { /* left is empty */
+          Zoltan_HG_HGraph_Free (left);
+          left = NULL;
+      }          
   } else {
       for (i = 0; i < hg->nVtx; ++i)
           if (part[i]==0)
@@ -198,6 +202,10 @@ int Zoltan_PHG_rdivide(
   
       if (ierr != ZOLTAN_OK)
           goto End;
+      if (!right->nVtx) { /* right is empty */
+          Zoltan_HG_HGraph_Free (right);
+          right = NULL;
+      }
   } else {
       for (i = 0; i < hg->nVtx; ++i)
           if (part[i]==1)
@@ -222,6 +230,8 @@ int Zoltan_PHG_rdivide(
       procmid = (int)((float) (hgc->nProc-1) 
                     * (float) left->dist_x[hgc->nProc_x] 
                     / (float) hg->dist_x[hgc->nProc_x]);
+      if ((procmid+1)>(hgc->nProc-1)) /* just to be sure :) */
+          procmid =  hgc->nProc-1;    
 #ifdef _DEBUG1
       if (procmid<0 || (procmid+1>hgc->nProc-1))
           errexit("hey hey Proc Number range is [0, %d] prcomid=%d "
@@ -234,9 +244,9 @@ int Zoltan_PHG_rdivide(
       Zoltan_PHG_Redistribute(zz, hgp, left, 0, procmid, &leftcomm, 
                               &newleft, &leftvmap, &leftdest);
       if (hgp->output_level >= PHG_DEBUG_LIST)     
-          uprintf(hgc, "Left: H(%d, %d, %d) ----> H(%d, %d, %d)\n", left->nVtx,
+          uprintf(hgc, "Left: H(%d, %d, %d) ----> H(%d, %d, %d) Weights=(%.2lf, %.2lf)\n", left->nVtx,
                   left->nEdge, left->nPins, newleft.nVtx, newleft.nEdge,
-                  newleft.nPins);
+                  newleft.nPins, leftw, rightw);
       Zoltan_HG_HGraph_Free (left);
       
 #ifdef _DEBUG1
@@ -245,9 +255,9 @@ int Zoltan_PHG_rdivide(
       Zoltan_PHG_Redistribute(zz, hgp, right, procmid+1, hgc->nProc-1,
                               &rightcomm, &newright, &rightvmap, &rightdest);
       if (hgp->output_level >= PHG_DEBUG_LIST)     
-          uprintf(hgc, "Right: H(%d, %d, %d) ----> H(%d, %d, %d)\n",
+          uprintf(hgc, "Right: H(%d, %d, %d) ----> H(%d, %d, %d) Weights=(%.2lf, %.2lf)\n",
                   right->nVtx, right->nEdge, right->nPins, newright.nVtx, 
-                  newright.nEdge, newright.nPins);
+                  newright.nEdge, newright.nPins, leftw, rightw);
       Zoltan_HG_HGraph_Free (right);
       
       if (detail_timing) 
