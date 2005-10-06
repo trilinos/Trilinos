@@ -62,8 +62,8 @@ MPI_Comm CommWorld();
 #endif
 
 // Ignore directives
-%ignore *::Broadcast(int*,   int,int) const;      // These are replaced by %extend below:
-%ignore *::Broadcast(double*,int,int) const;      //   Broadcast(PyObject*,int)
+%ignore *::Broadcast(int*,   int,    int) const;  // These are replaced by %extend below:
+%ignore *::Broadcast(double*,int,    int) const;  //   Broadcast(PyObject*,int)
 %ignore *::GatherAll(int*,   int*   ,int) const;  // These are replaced by %extend below:
 %ignore *::GatherAll(double*,double*,int) const;  //   GatherAll(PyObject*)
 %ignore *::SumAll(   int*,   int*   ,int) const;  // These are replaced by %extend below:
@@ -98,18 +98,19 @@ MPI_Comm CommWorld();
 %include "Epetra_MpiComm.h"
 #endif
 
-// Extend directives.  Many of the communicator methods take C arrays
-// as input or output arguments.  These extensions allow the python
-// user to use Numeric arrays instead, and for pure input arrays, any
-// python object that can be used to construct a Numeric array.
-// Typemaps are not used because these methods are overloaded by array
-// type, and the SWIG overloading mechanism cannot disambiguate arrays
-// by type.  I only extend the base class (Epetra_Comm), which is
-// where I do type checking, and rely on polymorphism for the derived
-// classes.  Also, I do not return an int, but rather raise an
-// exception if the routines return a non-zero error code.  Output
-// arrays are moved from the arguement list to being returned by the
-// method.
+/* Extend directives.  Many of the communicator methods take C arrays
+ * as input or output arguments.  These extensions allow the python
+ * user to use Numeric arrays instead, and for pure input arrays, any
+ * python object that can be used to construct a Numeric array.
+ * Typemaps are not used because these methods are overloaded by array
+ * type, and the SWIG overloading mechanism cannot disambiguate arrays
+ * by type.  I only extend the base class (Epetra_Comm), which is
+ * where I do type checking, and rely on python's polymorphism for the
+ * derived classes.  Also, I do not return an int, but rather raise an
+ * exception if the routines return a non-zero error code.  Output
+ * arrays are moved from the argument list to being returned by the
+ * method.
+ */
 %extend Epetra_Comm {
 
   PyObject* Broadcast(PyObject* myObj, int root) {
@@ -117,9 +118,8 @@ MPI_Comm CommWorld();
     PyArrayObject* myArray;
     myArray = obj_to_array_no_conversion(myObj, PyArray_NOTYPE);
     if (!myArray || !require_contiguous(myArray)) goto fail;
-    count = 1;
-    for (int i=0; i<myArray->nd; ++i) count *= myArray->dimensions[i];
-    type = array_type(myArray);
+    count = PyArray_SIZE(myArray);
+    type  = array_type(myArray);
     if (type == PyArray_INT) {
       int* myVals = (int*)myArray->data;
       result = self->Broadcast(myVals,count,root);
@@ -151,9 +151,8 @@ MPI_Comm CommWorld();
 						       &is_new_object);
     if (!myArray) goto fail;
     type    = array_type(myArray);
-    myCount = 1;
-    for (int i=0; i<myArray->nd; ++i) myCount *= myArray->dimensions[i];
-    allND = myArray->nd + 1;
+    myCount = PyArray_SIZE(myArray);
+    allND   = myArray->nd + 1;
     int allDims[allND];
     allDims[0] = self->NumProc();
     for (int i=1; i<allND; ++i) allDims[i] = myArray->dimensions[i-1];
@@ -192,9 +191,8 @@ MPI_Comm CommWorld();
     partialArray= obj_to_array_contiguous_allow_conversion(partialObj, PyArray_NOTYPE,
 							   &is_new_object);
     if (!partialArray) goto fail;
-    type  = array_type(partialArray);
-    count = 1;
-    for (int i=0; i<partialArray->nd; ++i) count *= partialArray->dimensions[i];
+    type      = array_type(partialArray);
+    count     = PyArray_SIZE(partialArray);
     globalObj = PyArray_FromDims(partialArray->nd, partialArray->dimensions, type);
     if (type == PyArray_INT) {
       int* partialVals = (int*)partialArray->data;
@@ -229,9 +227,8 @@ MPI_Comm CommWorld();
     partialArray = obj_to_array_contiguous_allow_conversion(partialObj, PyArray_NOTYPE,
 							    &is_new_object);
     if (!partialArray) goto fail;
-    type  = array_type(partialArray);
-    count = 1;
-    for (int i=0; i<partialArray->nd; ++i) count *= partialArray->dimensions[i];
+    type      = array_type(partialArray);
+    count     = PyArray_SIZE(partialArray);
     globalObj = PyArray_FromDims(partialArray->nd, partialArray->dimensions, type);
     if (type == PyArray_INT) {
       int* partialMaxs = (int*)partialArray->data;
@@ -266,9 +263,8 @@ MPI_Comm CommWorld();
     partialArray = obj_to_array_contiguous_allow_conversion(partialObj, PyArray_NOTYPE,
 							    &is_new_object);
     if (!partialArray) goto fail;
-    type  = array_type(partialArray);
-    count = 1;
-    for (int i=0; i<partialArray->nd; ++i) count *= partialArray->dimensions[i];
+    type      = array_type(partialArray);
+    count     = PyArray_SIZE(partialArray);
     globalObj = PyArray_FromDims(partialArray->nd, partialArray->dimensions, type);
     if (type == PyArray_INT) {
       int* partialMins = (int*)partialArray->data;
@@ -303,9 +299,8 @@ MPI_Comm CommWorld();
     myArray= obj_to_array_contiguous_allow_conversion(myObj, PyArray_NOTYPE,
 						      &is_new_object);
     if (!myArray) goto fail;
-    type  = array_type(myArray);
-    count = 1;
-    for (int i=0; i<myArray->nd; ++i) count *= myArray->dimensions[i];
+    type    = array_type(myArray);
+    count   = PyArray_SIZE(myArray);
     scanObj = PyArray_FromDims(myArray->nd, myArray->dimensions, type);
     if (type == PyArray_INT) {
       int* myVals   = (int*)myArray->data;
