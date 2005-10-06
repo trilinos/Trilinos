@@ -337,7 +337,7 @@ bool ML_NOX::ML_Nox_Preconditioner::SetDimensions(int spatialDimension,
     
   }
   ml_dim_nullsp_ = dimNS;
-  ml_dim_nullsp_ = ml_dim_nullsp2_;
+  ml_dim_nullsp2_ = ml_dim_nullsp_;
   return true;
 }                              
 
