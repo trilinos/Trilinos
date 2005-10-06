@@ -124,7 +124,7 @@ int *spart = NULL;             /* Partition vectors for shg. */
 int *new_part = NULL;          /* Ptr to new partition vector. */
 float *bestvals = NULL;        /* Best cut values found so far */
 int worst, new_cand;
-float worst_cut;
+float bal, cut, worst_cut;
 int fine_timing = (hgp->use_timers > 2);
 static int timer_cpart=-1, timer_gather=-1, timer_refine=-1; 
 
@@ -285,13 +285,14 @@ static int timer_cpart=-1, timer_gather=-1, timer_refine=-1;
       }
 
       /* Decide if candidate is in the top tier or not. */
-      /* Selection criteria should be the same as in pick_best()! */
+      /* Our objective is a combination of cuts and balance */
 
-      /* bal = Zoltan_PHG_Compute_Balance(zz, shg, part_sizes, numPart, new_part); */
-      /* For now, we ignore balance as all our methods produce reasonable balances. */
+      bal = Zoltan_PHG_Compute_Balance(zz, shg, part_sizes, numPart, new_part); 
+      cut = Zoltan_PHG_Compute_ConCut(shg->comm, shg, new_part, numPart, &ierr);
       
-      bestvals[new_cand] = Zoltan_PHG_Compute_ConCut(shg->comm, 
-             shg, new_part, numPart, &ierr);
+      /* Use ratio-cut as our objective. There are many other options! */
+      bestvals[new_cand] = cut/(MAX(2.-bal, 0.0001)); /* avoid divide-by-0 */
+
       if (ierr < 0) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                          "Error returned from Zoltan_PHG_Compute_ConCut.");
@@ -1098,7 +1099,8 @@ float cut, bal;
 int err = ZOLTAN_OK;
 
   /* find best local partition */
-  /* for now, only look at cuts not balance. */
+  /* if cut values are given on input use these (may be ratio-cut),
+     otherwise, only look at cuts not balance. (EB should never happen) */
 
   mybest = 0;
   /* local[0].val = Zoltan_PHG_Compute_Balance(zz, shg, part_sizes, numPart, spart); */
