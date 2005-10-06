@@ -546,6 +546,7 @@ private:
   int                                   ml_spatialDimension_; // spatial dimension of the problem
   int                                   ml_numPDE_;        // number of pdes per node
   int                                   ml_dim_nullsp_;    // dimension of nullspace
+  int                                   ml_dim_nullsp2_;   // dimension of nullspace
   string                                ml_coarsentype_;   // type of coarsening algorithm: Uncoupled MIS METIS VBMETIS
   int                                   ml_nnodeperagg_;   // objective number of nodes per aggregate with coarsentypes METIS & VBMETIS
   string                                ml_smoothertype_;  // type of smoothing algorithm: SGS BSGS Jacobi

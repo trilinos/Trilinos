@@ -144,6 +144,7 @@ comm_(comm)
   ml_N_levels_      = 3;
   ml_numPDE_        = 3;
   ml_dim_nullsp_    = 3;
+  ml_dim_nullsp2_   = ml_dim_nullsp_;
   ml_coarsentype_   = "Uncoupled";
   ml_printlevel_    = 8;
   ml_nnodeperagg_   = 9;
@@ -336,6 +337,7 @@ bool ML_NOX::ML_Nox_Preconditioner::SetDimensions(int spatialDimension,
     
   }
   ml_dim_nullsp_ = dimNS;
+  ml_dim_nullsp_ = ml_dim_nullsp2_;
   return true;
 }                              
 
@@ -769,6 +771,7 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   else
      i = fineJac_->NumMyRows();
   // get the nullspace
+  ml_dim_nullsp_ = ml_dim_nullsp2_;
   double* nullsp = interface_.Get_Nullspace(i,ml_numPDE_,ml_dim_nullsp_);
 
 #if 0
