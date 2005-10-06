@@ -403,7 +403,7 @@ int main(int argc, char *argv[])
     delete Inner;
     delete Outer;
 
-  if (norm_z > 1e-10) {
+  if (norm_z > 1e-10 || Teuchos::ScalarTraits<double>::isnaninf( norm_z ) ) {
         if (pid==0)
                 cout << "End Result: TEST FAILED" << endl;
         return -1;
