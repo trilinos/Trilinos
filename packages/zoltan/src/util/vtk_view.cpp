@@ -939,6 +939,33 @@ int read_broadcast_input_options(int &argc, char **argv)
       }
     }
 
+    if (fname_opts.file_type == HYPERGRAPH_FILE){
+      // We don't have a way to visualize the hyperedges at this point
+      // in time.  But some hypergraph files may have an associated
+      // Chaco mesh that we can display, along with the partitioning
+      // of vertices.
+      //
+      // Ideas for visualizing hypergraph partitionings:
+      // We could read in the hypergraph file, create a vtkPolyData
+      // containing the edges, and then use vtkGraphLayoutFilter to
+      // get a vtkPolyData that we can render.  Another nice thing
+      // would be a call back where every hit of a key causes the
+      // next hyperedge to by highlighted.  The color of the vertices
+      // would represent the partition.  For small hypergraphs, we
+      // would be able to step through and see how the hyperedges are 
+      // cut.  More difficult would be offsetting the edges from the 
+      // vertices so we can see the separate overlapping hyperedges.
+  
+      fname_opts.file_type = CHACO_FILE;
+  
+      if (Proc == 0){
+        cout << 
+          "Warning: Hyperedge visualization not implemented yet." << endl;
+        cout << 
+          "We'll search for a Chaco file and display that if found." << endl;
+      }
+    }
+  
     if (input_ok && 
         (fname_opts.file_type != CHACO_FILE) &&
         (fname_opts.file_type != NEMESIS_FILE)){
