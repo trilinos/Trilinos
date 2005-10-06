@@ -153,10 +153,12 @@ MPI_Comm CommWorld();
     type    = array_type(myArray);
     myCount = PyArray_SIZE(myArray);
     allND   = myArray->nd + 1;
-    int allDims[allND];
-    allDims[0] = self->NumProc();
-    for (int i=1; i<allND; ++i) allDims[i] = myArray->dimensions[i-1];
-    allObj = PyArray_FromDims(allND, allDims, type);
+    { // Scope this to make allDims array temporary
+      int allDims[allND];
+      allDims[0] = self->NumProc();
+      for (int i=1; i<allND; ++i) allDims[i] = myArray->dimensions[i-1];
+      allObj = PyArray_FromDims(allND, allDims, type);
+    }
     if (!allObj) goto fail;
     if (type == PyArray_INT) {
       int* myVals  = (int*)myArray->data;
