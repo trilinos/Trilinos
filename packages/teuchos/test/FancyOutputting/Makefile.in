@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(FancyOutputting1_test_SOURCES)
+SOURCES = $(FancyOutputting1_test_SOURCES) $(FancyOutputting2_test_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-bin_PROGRAMS = FancyOutputting1_test$(EXEEXT)
+bin_PROGRAMS = FancyOutputting1_test$(EXEEXT) \
+	FancyOutputting2_test$(EXEEXT)
 subdir = test/FancyOutputting
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -105,19 +106,26 @@ PROGRAMS = $(bin_PROGRAMS)
 am_FancyOutputting1_test_OBJECTS = FancyOutputting1_test.$(OBJEXT) \
 	Teuchos_VerboseObject1.$(OBJEXT) Teuchos_OSTab1.$(OBJEXT)
 FancyOutputting1_test_OBJECTS = $(am_FancyOutputting1_test_OBJECTS)
+am_FancyOutputting2_test_OBJECTS = FancyOutputting2_test.$(OBJEXT) \
+	Teuchos_VerboseObject2.$(OBJEXT)
+FancyOutputting2_test_OBJECTS = $(am_FancyOutputting2_test_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/FancyOutputting1_test.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/FancyOutputting2_test.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_OSTab1.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_VerboseObject1.Po
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_VerboseObject1.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_VerboseObject2.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(FancyOutputting1_test_SOURCES)
-DIST_SOURCES = $(FancyOutputting1_test_SOURCES)
+SOURCES = $(FancyOutputting1_test_SOURCES) \
+	$(FancyOutputting2_test_SOURCES)
+DIST_SOURCES = $(FancyOutputting1_test_SOURCES) \
+	$(FancyOutputting2_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -263,8 +271,14 @@ FancyOutputting1_test_SOURCES = \
 	$(top_srcdir)/src/Teuchos_OSTab1.cpp
 
 FancyOutputting1_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
-AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 FancyOutputting1_test_LDADD = $(TEUCHOS_LIBS)
+FancyOutputting2_test_SOURCES = \
+	$(srcdir)/FancyOutputting2_test.cpp \
+	$(top_srcdir)/src/Teuchos_VerboseObject2.cpp
+
+FancyOutputting2_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+FancyOutputting2_test_LDADD = $(TEUCHOS_LIBS)
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 all: all-am
 
 .SUFFIXES:
@@ -324,6 +338,9 @@ clean-binPROGRAMS:
 FancyOutputting1_test$(EXEEXT): $(FancyOutputting1_test_OBJECTS) $(FancyOutputting1_test_DEPENDENCIES) 
 	@rm -f FancyOutputting1_test$(EXEEXT)
 	$(CXXLINK) $(FancyOutputting1_test_LDFLAGS) $(FancyOutputting1_test_OBJECTS) $(FancyOutputting1_test_LDADD) $(LIBS)
+FancyOutputting2_test$(EXEEXT): $(FancyOutputting2_test_OBJECTS) $(FancyOutputting2_test_DEPENDENCIES) 
+	@rm -f FancyOutputting2_test$(EXEEXT)
+	$(CXXLINK) $(FancyOutputting2_test_LDFLAGS) $(FancyOutputting2_test_OBJECTS) $(FancyOutputting2_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -332,8 +349,10 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FancyOutputting1_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FancyOutputting2_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_OSTab1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_VerboseObject1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_VerboseObject2.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -398,6 +417,38 @@ Teuchos_OSTab1.obj: $(top_srcdir)/src/Teuchos_OSTab1.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_OSTab1.Po' tmpdepfile='$(DEPDIR)/Teuchos_OSTab1.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_OSTab1.obj `if test -f '$(top_srcdir)/src/Teuchos_OSTab1.cpp'; then $(CYGPATH_W) '$(top_srcdir)/src/Teuchos_OSTab1.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/Teuchos_OSTab1.cpp'; fi`
+
+FancyOutputting2_test.o: $(srcdir)/FancyOutputting2_test.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FancyOutputting2_test.o -MD -MP -MF "$(DEPDIR)/FancyOutputting2_test.Tpo" -c -o FancyOutputting2_test.o `test -f '$(srcdir)/FancyOutputting2_test.cpp' || echo '$(srcdir)/'`$(srcdir)/FancyOutputting2_test.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FancyOutputting2_test.Tpo" "$(DEPDIR)/FancyOutputting2_test.Po"; else rm -f "$(DEPDIR)/FancyOutputting2_test.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FancyOutputting2_test.cpp' object='FancyOutputting2_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FancyOutputting2_test.Po' tmpdepfile='$(DEPDIR)/FancyOutputting2_test.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FancyOutputting2_test.o `test -f '$(srcdir)/FancyOutputting2_test.cpp' || echo '$(srcdir)/'`$(srcdir)/FancyOutputting2_test.cpp
+
+FancyOutputting2_test.obj: $(srcdir)/FancyOutputting2_test.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FancyOutputting2_test.obj -MD -MP -MF "$(DEPDIR)/FancyOutputting2_test.Tpo" -c -o FancyOutputting2_test.obj `if test -f '$(srcdir)/FancyOutputting2_test.cpp'; then $(CYGPATH_W) '$(srcdir)/FancyOutputting2_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FancyOutputting2_test.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FancyOutputting2_test.Tpo" "$(DEPDIR)/FancyOutputting2_test.Po"; else rm -f "$(DEPDIR)/FancyOutputting2_test.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FancyOutputting2_test.cpp' object='FancyOutputting2_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FancyOutputting2_test.Po' tmpdepfile='$(DEPDIR)/FancyOutputting2_test.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FancyOutputting2_test.obj `if test -f '$(srcdir)/FancyOutputting2_test.cpp'; then $(CYGPATH_W) '$(srcdir)/FancyOutputting2_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FancyOutputting2_test.cpp'; fi`
+
+Teuchos_VerboseObject2.o: $(top_srcdir)/src/Teuchos_VerboseObject2.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_VerboseObject2.o -MD -MP -MF "$(DEPDIR)/Teuchos_VerboseObject2.Tpo" -c -o Teuchos_VerboseObject2.o `test -f '$(top_srcdir)/src/Teuchos_VerboseObject2.cpp' || echo '$(srcdir)/'`$(top_srcdir)/src/Teuchos_VerboseObject2.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_VerboseObject2.Tpo" "$(DEPDIR)/Teuchos_VerboseObject2.Po"; else rm -f "$(DEPDIR)/Teuchos_VerboseObject2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/src/Teuchos_VerboseObject2.cpp' object='Teuchos_VerboseObject2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_VerboseObject2.Po' tmpdepfile='$(DEPDIR)/Teuchos_VerboseObject2.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_VerboseObject2.o `test -f '$(top_srcdir)/src/Teuchos_VerboseObject2.cpp' || echo '$(srcdir)/'`$(top_srcdir)/src/Teuchos_VerboseObject2.cpp
+
+Teuchos_VerboseObject2.obj: $(top_srcdir)/src/Teuchos_VerboseObject2.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_VerboseObject2.obj -MD -MP -MF "$(DEPDIR)/Teuchos_VerboseObject2.Tpo" -c -o Teuchos_VerboseObject2.obj `if test -f '$(top_srcdir)/src/Teuchos_VerboseObject2.cpp'; then $(CYGPATH_W) '$(top_srcdir)/src/Teuchos_VerboseObject2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/Teuchos_VerboseObject2.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_VerboseObject2.Tpo" "$(DEPDIR)/Teuchos_VerboseObject2.Po"; else rm -f "$(DEPDIR)/Teuchos_VerboseObject2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/src/Teuchos_VerboseObject2.cpp' object='Teuchos_VerboseObject2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_VerboseObject2.Po' tmpdepfile='$(DEPDIR)/Teuchos_VerboseObject2.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_VerboseObject2.obj `if test -f '$(top_srcdir)/src/Teuchos_VerboseObject2.cpp'; then $(CYGPATH_W) '$(top_srcdir)/src/Teuchos_VerboseObject2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/Teuchos_VerboseObject2.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
