@@ -226,11 +226,25 @@ double MRTR::Segment_BiLinearTri::Metric(double* xi, double g[], double G[][3])
  *----------------------------------------------------------------------*/
 double* MRTR::Segment_BiLinearTri::BuildNormal(double* xi)
 { 
-  cout << "***ERR*** MRTR::Segment_BiLinearTri::BuildNormal:\n"
-       << "***ERR*** not impl.\n"
-       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-  exit(EXIT_FAILURE);     
-  return NULL;
+  // linear triangles are planar, so we don't care were exactly to build the normal
+  
+  // build base vectors
+  double g1[3];
+  double g2[3];
+  for (int i=0; i<3; ++i)
+  {
+    g1[i] = Nodes()[1]->X()[i] - Nodes()[0]->X()[i];  
+    g2[i] = Nodes()[2]->X()[i] - Nodes()[0]->X()[i]; 
+  }
+  
+  // build normal as their cross product
+  double* n = new double[3];
+  
+  n[0] = g1[1]*g2[2] - g1[2]*g2[1];
+  n[1] = g1[0]*g2[2] - g1[2]*g2[0];
+  n[2] = g1[0]*g2[1] - g1[1]*g2[0];
+  
+  return n;
 }
 
 /*----------------------------------------------------------------------*
@@ -238,11 +252,18 @@ double* MRTR::Segment_BiLinearTri::BuildNormal(double* xi)
  *----------------------------------------------------------------------*/
 double MRTR::Segment_BiLinearTri::Area()
 { 
-  cout << "***ERR*** MRTR::Segment_BiLinearQuad::Area:\n"
-       << "***ERR*** not impl.\n"
-       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-  exit(EXIT_FAILURE);     
-  return 0.0;
+  double xi[2];
+  xi[0] = xi[1] = 0.0;
+  
+  double* n = BuildNormal(xi);
+
+  double a = 0.0;
+  for (int i=0; i<3; ++i)
+    a+= n[i]*n[i];
+  
+  delete [] n;
+
+  return (sqrt(a)/2.0);
 }
 
 

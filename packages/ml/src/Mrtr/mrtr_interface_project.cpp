@@ -82,12 +82,12 @@ bool MRTR::Interface::Project()
   for (int side=0; side<2; ++side)
     for (ncurr=rnode_[side].begin(); ncurr!=rnode_[side].end(); ++ncurr)
     {
-#if 1
-      cout << *(ncurr->second);
+#if 0
+      cout << "side " << side << ": " << *(ncurr->second);
 #endif
       ncurr->second->BuildAveragedNormal();
 #if 1
-      cout << *(ncurr->second);
+      cout << "side " << side << ": " << *(ncurr->second);
 #endif
     }
 
