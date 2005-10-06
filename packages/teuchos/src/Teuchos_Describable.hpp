@@ -29,18 +29,9 @@
 #ifndef TEUCHOS_DESCRIBABLE_HPP
 #define TEUCHOS_DESCRIBABLE_HPP
 
-#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
 
 namespace Teuchos {
-
-/** \brief Verbosity level */
-enum EVerbosityLevel {
-	VERB_DEFAULT=0  ///< Generate output as defined by the object
-	,VERB_LOW=1     ///< Generate only a minimal amount of output
-	,VERB_MEDIUM=2  ///< Generate more output
-	,VERB_HIGH=3    ///< Generate a high level of output
-	,VERB_EXTREME=4 ///< Generate the most output possible
-};
 
 /** \brief Base class for all objects that can describe themselves and
  * their current state.

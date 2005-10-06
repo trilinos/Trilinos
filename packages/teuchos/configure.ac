@@ -715,6 +715,7 @@ AC_CONFIG_FILES([
 		test/LAPACK/Makefile
 		test/DenseMatrix/Makefile
 		test/dyn_cast/Makefile
+		test/FancyOutputting/Makefile
 		test/ParameterList/Makefile
 		test/Containers/Makefile
 		test/Time/Makefile

@@ -26,14 +26,22 @@
 # ************************************************************************
 #@HEADER
 
-if HAVE_TEUCHOS_EXTENDED
-CONTAINERS_SUBDIR = Containers
-XML_SUBDIR = XML
-FANCY_OUTPUTTING_SUBDIR = FancyOutputting
-endif
-STANDARD_SUBDIRS = scripts BLAS DenseMatrix dyn_cast LAPACK ParameterList RefCountPtr Time Workspace
+EXEEXT = .exe
 
-SUBDIRS = $(STANDARD_SUBDIRS) $(CONTAINERS_SUBDIR) $(XML_SUBDIR) $(FANCY_OUTPUTTING_SUBDIR)
+include $(top_builddir)/Makefile.export.teuchos
 
-EXTRA_DIST = definition
+bin_PROGRAMS = FancyOutputting1_test
 
+FancyOutputting1_test_SOURCES = \
+	$(srcdir)/FancyOutputting1_test.cpp \
+	$(top_srcdir)/src/Teuchos_VerboseObject1.cpp \
+	$(top_srcdir)/src/Teuchos_OSTab1.cpp
+
+FancyOutputting1_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
+
+FancyOutputting1_test_LDADD = $(TEUCHOS_LIBS)
+
+# This is already added part of TEUCHOS_LIBS and therefore automake does not need to add this again!
+LIBS =
