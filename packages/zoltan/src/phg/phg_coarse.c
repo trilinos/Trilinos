@@ -20,13 +20,6 @@ extern "C" {
 
 
 #define COARSEN_WITH_NET_SHUFFLING
-/*
-The following define converts one of the three allreduce operation into
-reduce_scatter followed by gather. But it doesn't seem to be performaning 
-any better than Allreduce itself...
-
-#define REDUCE_VIA_SCATTER_GATHER
-*/
     
 /* UVC:
    - COARSEN_WITH_NET_SHUFFLING is made the default one; since it seems to
@@ -1001,31 +994,9 @@ int Zoltan_PHG_Coarsening
 
   /* UVC TODO to compute global hash; right now we'll use SUM (UVC TODO: try:bitwise xor);
      we need to check if this is good, if not we need to find a better way */
-
-
-  if (c_hg->nEdge) {
-#ifdef REDUCE_VIA_SCATTER_GATHER
-      int *recvcnts=NULL, *disp=NULL;
-
-
-      if (!(recvcnts = (int *) ZOLTAN_MALLOC(hgc->nProc_x * sizeof(int)))
-          || !(disp = (int *) ZOLTAN_MALLOC(hgc->nProc_x * sizeof(int))))
-          MEMORY_ERROR;
-      for (disp[0]=i=0; i<hgc->nProc_x-1; ++i) {
-          recvcnts[i] = c_hg->nEdge / hgc->nProc_x;
-          disp[i+1] = disp[i] + recvcnts[i];
-      }
-      recvcnts[i] = c_hg->nEdge - (c_hg->nEdge / hgc->nProc_x) * (hgc->nProc_x-1);
-
-      MPI_Reduce_scatter(lhash, vmark, recvcnts, MPI_INT, MPI_SUM, hgc->row_comm);
-      MPI_Allgatherv(vmark, recvcnts[hgc->myProc_x], MPI_INT, 
-                     hash, recvcnts, disp, MPI_INT, hgc->row_comm);
-
-      Zoltan_Multifree(__FILE__, __LINE__, 2, &recvcnts, &disp);
-#else
+  if (c_hg->nEdge) 
       MPI_Allreduce(lhash, hash, c_hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
-#endif
-  }
+
   Zoltan_Multifree(__FILE__, __LINE__, 3, &vmark, &ahvertex, &ahindex);
   
 #ifdef _DEBUG1
