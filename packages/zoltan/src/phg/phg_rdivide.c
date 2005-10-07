@@ -288,7 +288,11 @@ int Zoltan_PHG_rdivide(
           /* I'm on the left part so I should partition newleft */
           hgp->bal_tol = balanceTol(hgp, 0, bisec_part_sizes,
                                     leftw+rightw, leftw);
-
+          if (hgp->output_level >= PHG_DEBUG_LIST)     
+              uprintf(hgc, "Left: H(%d, %d, %d) OldI: %.2lf NewI: %.2lf\n",
+                      newleft.nVtx, newleft.nEdge, newleft.nPins,
+                      save_bal_tol, hgp->bal_tol);          
+          
           ierr = rdivide_and_prepsend (lo, mid, part, zz, &newleft, hgp, 
                                        level+1, proclist, sendbuf, 
                                        leftdest, leftvmap, &nsend,
@@ -306,6 +310,10 @@ int Zoltan_PHG_rdivide(
           /* I'm on the right part so I should partition newright */
           hgp->bal_tol = balanceTol(hgp, 1, bisec_part_sizes,
                                     leftw+rightw, rightw);
+          if (hgp->output_level >= PHG_DEBUG_LIST)     
+              uprintf(hgc, "Right: H(%d, %d, %d) OldI: %.2lf NewI: %.2lf\n",
+                      newright.nVtx, newright.nEdge, newright.nPins,
+                      save_bal_tol, hgp->bal_tol);
 
           ierr |= rdivide_and_prepsend (mid+1, hi, part, zz, &newright, hgp, 
                                         level+1, proclist, sendbuf, 
@@ -369,13 +377,13 @@ int Zoltan_PHG_rdivide(
       if (left) {
           float save_bal_tol=hgp->bal_tol;
           
-          if (hgp->output_level >= PHG_DEBUG_LIST)     
-              uprintf(hgc, "Left: H(%d, %d, %d)\n",
-                            left->nVtx, left->nEdge, left->nPins);
-
           hgp->bal_tol = balanceTol(hgp, 0, bisec_part_sizes,
                                     leftw+rightw, leftw);
-
+          if (hgp->output_level >= PHG_DEBUG_LIST)     
+              uprintf(hgc, "Left: H(%d, %d, %d) OldI: %.2lf NewI: %.2lf\n",
+                      left->nVtx, left->nEdge, left->nPins,
+                      save_bal_tol, hgp->bal_tol);          
+          
           if (do_timing)  /* Stop timer before recursion */
               ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide,
                                 hgc->Communicator);
@@ -393,12 +401,14 @@ int Zoltan_PHG_rdivide(
       if (right) {
           float save_bal_tol=hgp->bal_tol;
           
-          if (hgp->output_level >= PHG_DEBUG_LIST)     
-              uprintf(hgc, "Right: H(%d, %d, %d)\n",
-                      right->nVtx, right->nEdge, right->nPins);
           hgp->bal_tol = balanceTol(hgp, 1, bisec_part_sizes,
                                     leftw+rightw, rightw);
+          if (hgp->output_level >= PHG_DEBUG_LIST)     
+              uprintf(hgc, "Right: H(%d, %d, %d) OldI: %.2lf NewI: %.2lf\n",
+                      right->nVtx, right->nEdge, right->nPins,
+                      save_bal_tol, hgp->bal_tol);
 
+          
           if (do_timing)  /* Stop timer before recursion */
               ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide,
                                 hgc->Communicator);
