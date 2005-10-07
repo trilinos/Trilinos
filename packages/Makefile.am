@@ -86,17 +86,17 @@ endif
 
 if BUILD_CAPO
 CAPO_SUBDIR = capo
-CAPO_LIB_BUILD_CMND = ;
+CAPO_LIB_BUILD_CMND = echo "capo does not support all-libs yet";
 endif
 
 if BUILD_CLAPS
 CLAPS_SUBDIR = claps
-CLAPS_LIB_BUILD_CMND = ;
+CLAPS_LIB_BUILD_CMND = echo "claps does not support all-libs yet";
 endif
 
 if BUILD_DIDASKO
 DIDASKO_SUBDIR = didasko
-DIDASKO_LIB_BUILD_CMND = ;
+DIDASKO_LIB_BUILD_CMND = echo "disasko does not support all-libs yet";
 endif
 
 if BUILD_EPETRA
@@ -116,27 +116,27 @@ endif
 
 if BUILD_KOKKOS
 KOKKOS_SUBDIR = kokkos
-KOKKOS_LIB_BUILD_CMND = ;
+KOKKOS_LIB_BUILD_CMND = echo "kokkos does not support all-libs yet";
 endif
 
 if BUILD_KOMPLEX
 KOMPLEX_SUBDIR = komplex
-KOMPLEX_LIB_BUILD_CMND = ;
+KOMPLEX_LIB_BUILD_CMND = echo "komplex does not support all-libs yet";
 endif
 
 if BUILD_MEROS
 MEROS_SUBDIR = meros
-MEROS_LIB_BUILD_CMND = ;
+MEROS_LIB_BUILD_CMND = echo "meros does not support all-libs yet";
 endif
 
 if BUILD_ML
 ML_SUBDIR = ml
-ML_LIB_BUILD_CMND = ;
+ML_LIB_BUILD_CMND = echo "ml does not support all-libs yet";
 endif
 
 if BUILD_NEW_PACKAGE
 NEW_PACKAGE_SUBDIR = new_package
-NEW_PACKAGE_LIB_BUILD_CMND = ;
+NEW_PACKAGE_LIB_BUILD_CMND = echo "new_package does not support all-libs yet";
 endif
 
 if BUILD_NOX
@@ -146,7 +146,7 @@ endif
 
 if BUILD_PLIRIS
 PLIRIS_SUBDIR = pliris
-PLIRIS_LIB_BUILD_CMND = ;
+PLIRIS_LIB_BUILD_CMND = echo "pliris does not support all-libs yet";
 endif
 
 if BUILD_PYTRILINOS
@@ -171,7 +171,7 @@ endif
 
 if BUILD_TPETRA
 TPETRA_SUBDIR = tpetra
-TPETRA_LIB_BUILD_CMND = ;
+TPETRA_LIB_BUILD_CMND = echo "tpetra does not support all-libs yet";
 endif
 
 if BUILD_TRIUTILS
@@ -181,22 +181,22 @@ endif
 
 if BUILD_TSF
 TSF_SUBDIR = TSF
-TSF_LIB_BUILD_CMND = ;
+TSF_LIB_BUILD_CMND = echo "TSF does not support all-libs yet";
 endif
 
 if BUILD_TSFCORE
 TSFCORE_SUBDIR = TSFCore
-TSFCORE_LIB_BUILD_CMND = ;
+TSFCORE_LIB_BUILD_CMND = echo "TSFCore does not support all-libs yet";
 endif
 
 if BUILD_TSFCOREUTILS
 TSFCOREUTILS_SUBDIR = TSFCoreUtils
-TSFCOREUTILS_LIB_BUILD_CMND = ;
+TSFCOREUTILS_LIB_BUILD_CMND = echo "TSFCoreUtils does not support all-libs yet";
 endif
 
 if BUILD_TSFEXTENDED
 TSFEXTENDED_SUBDIR = TSFExtended
-TSFEXTENDED_LIB_BUILD_CMND = ;
+TSFEXTENDED_LIB_BUILD_CMND = echo "TSFExtended does not support all-libs yet";
 endif
 
 # Must list the packages in the order that they are built!
