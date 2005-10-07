@@ -767,8 +767,9 @@ static int greedy_order (
   int esize, *vtx_count=NULL, *visited=NULL, *cut[2];
   int vwgtdim = hg->VtxWeightDim;
   int err=ZOLTAN_OK;
-  double weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
-  double *gain = NULL, *edge_sum = NULL, delta;
+  double weight_sum= 0.0, part_sum= 0.0, old_sum;
+  double delta=0.0, cutoff=0.0;
+  double *gain = NULL, *edge_sum = NULL;
   double damp_factor, psize_sum= 0.0;
   char msg[128];
   HEAP h[2];
@@ -1164,8 +1165,8 @@ uprintf(phg_comm, "KDDSERIALPART wgt=(%f,%f) cnt=(%d,%d) mycuts=%f globalcuts=%f
 
   if (hgp->output_level)
     uprintf(phg_comm,
-            "Local Bal: %.3lf Cut= %.2lf   Global: bal= %.3lf  Cut= %.2lf\n", 
-             local[0].val, local[1].val, global[0].val, global[1].val);
+            "Local Ratio Cut= %.2lf   Global Ratio Cut= %.2lf\n", 
+             local[1].val, global[1].val);
 
   /* What do we say is "best"?   For now, say lowest cut size. */
   MPI_Bcast(spart, shg->nVtx, MPI_INT, global[1].rank, 
