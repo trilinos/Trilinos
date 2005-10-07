@@ -29,5 +29,5 @@ foreach(@old_to_new_file_list) {
 	#print "new_file_name = \'$new_file_name\'\n";
 	my $cmnd = "cp ${old_dir}/${old_file_name} ${new_dir}/${new_file_name}";
 	#print "${cmnd}\n";
-	system($cmnd)==0 || die "Error: $?";
+	system($cmnd)==0 || die "Error, could not executed the command \'$cmnd\': $?";
 }
