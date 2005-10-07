@@ -36,8 +36,9 @@ namespace Thyra {
 /** \brief Concrete implementation of a scalar product for a Euclidean vector
  * space (i.e. using the dot product).
  *
- * This subclass will work with any <tt>VectorBase</tt> or
- * <tt>MultiVectorBase</tt> implementation no matter what.
+ * Because this subclass is implemented using an RTOp, it will work with any
+ * <tt>VectorBase</tt> or <tt>MultiVectorBase</tt> implementation no matter
+ * what.
  *
  * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
  */

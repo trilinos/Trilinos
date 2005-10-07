@@ -33,12 +33,12 @@
 
 namespace Thyra {
 
-/** \brief Concrete implementation of a scalar product using a
- * symmetric positive definite linear operator..
+/** \brief Concrete implementation of a scalar product using a symmetric
+ * positive-definite linear operator.
  *
  * This subclass will work with any <tt>VectorBase</tt> or
- * <tt>MultiVectorBase</tt> implementation who's vector spaces are
- * compatible with the underlying linear operator object..
+ * <tt>MultiVectorBase</tt> implementation who's vector spaces are compatible
+ * with the underlying symmetric positive-definite linear operator object.
  *
  * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
  */

@@ -305,7 +305,7 @@ private:
 
 };
 
-/** \defgroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp Helper functions for creating scaled/adjoined linear operators.
+/** \defgroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp Helper functions for creating scaled/adjoint linear operators.
 
 These are helper functions for creating and manipulating
 <tt>ScaledAdjointLinearOp</tt> objects.  In general, clients should create

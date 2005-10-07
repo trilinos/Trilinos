@@ -70,10 +70,10 @@ private:
   // Declare your classes private data
   ...
 public:
-  // Declare you classes constructors, destructor and other initialization functions
+  // Declare you classes constructors, destructor, and other initialization functions
   ...
 protected:
-  // Override the version of euclideanApply() that takes explicit data
+  // Override of the version of euclideanApply() that takes explicit vector data
   void euclideanApply(
     const ETransp                                M_trans
     ,const RTOpPack::SubVectorT<Scalar>          &x_in
@@ -89,11 +89,11 @@ protected:
       const Index  y_dim  = y_out->subDim();
       // Perform operation the operation
       if( real_trans(M_trans) == ::Thyra::NOTRANS ) {
-        // Perform the non-transposed operator: y = alpha*M*x + beta*y
+        // Perform the non-transposed operation: y = alpha*M*x + beta*y
         ...
       }
       else {
-        // Perform the transposed operation: y = alpha*M'*x + beta*y
+        // Perform the transposed operation:     y = alpha*M'*x + beta*y
         ...
       }
   };
@@ -113,7 +113,7 @@ public:
   // Declare you classes constructors, destructor and other initialization functions
   ...
 protected:
-  // Override the version of euclideanApply() that takes explicit data
+  // Override of the version of euclideanApply() that takes explicit vector data
   void euclideanApply(
     const ETransp                                M_trans
     ,const RTOpPack::SubVectorT<double>          &x_in
@@ -129,11 +129,11 @@ protected:
       const Index  y_dim  = y_out->subDim();
       // Perform operation the operation
       if( real_trans(M_trans) == ::Thyra::NOTRANS ) {
-        // Perform the non-transposed operator: y = alpha*M*x + beta*y
+        // Perform the non-transposed operation: y = alpha*M*x + beta*y
         ...
       }
       else {
-        // Perform the transposed operation: y = alpha*M'*x + beta*y
+        // Perform the transposed operation:     y = alpha*M'*x + beta*y
         ...
       }
   };
@@ -194,7 +194,7 @@ protected:
    *
    * @param forceUnitStride  [in]
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li><tt>this->forceUnitStride() == forceUnitStride</tt>
    * </ul>
    */
@@ -202,7 +202,7 @@ protected:
 
   /** Construct to uninitialized
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li><tt>this->domain().get() == NULL</tt>
    * <li><tt>this->range().get() == NULL</tt>
    * </ul>
@@ -214,12 +214,12 @@ protected:
    * @param  range    [in] Smart pointer to range space
    * @param  domain   [in] Smart pointer to domain space
    *
-   * Precondition:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt>range.get()  != NULL</tt>
    * <li><tt>domain.get() != NULL</tt>
    * </ul>
    *
-   * Postcondition:<ul>
+   * <b>Postconditions:</b><ul>
    * <li><tt>this->range().get()  == range.get()</tt>
    * <li><tt>this->domain().get() == domain.get()</tt>
    * </ul>
@@ -234,12 +234,12 @@ protected:
    * @param  dimRange   [in] The dimension of the serial range space
    * @param  dimDomain  [in] The dimension of the serial domain space
    *
-   * Precondition:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt>dimRange  > 0</tt>
    * <li><tt>dimDomain > 0</tt>
    * </ul>
    *
-   * Postcondition:<ul>
+   * <b>Postconditions:</b><ul>
    * <li><tt>this->range()->dim()  == dimRange</tt>
    * <li><tt>this->domain()->dim() == dimDomain</tt>
    * <li><tt>dynamic_cast<const SerialVectorSpaceStd<Scalar>*>(this->range().get())  != NULL</tt>

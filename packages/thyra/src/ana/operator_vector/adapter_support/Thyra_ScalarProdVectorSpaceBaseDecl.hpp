@@ -56,11 +56,13 @@ namespace Thyra {
  * a new <tt>VectorSpaceBase</tt> subclass which can have many
  * repercussions.
  *
- * The reason that this machinery in this base subclass is separated
- * out from the base <tt>VectorSpaceBase</tt> interface class is that,
- * first it would clutter the base interface since this machinery is
- * an implementation artifact and, second every <tt>VectorSpaceBase</tt>
- * subclass will not utilize this machinery.
+ * The reason that this machinery in this base subclass is separated out from
+ * the <tt>VectorSpaceDefaultBase</tt> interface class is that, first it would
+ * clutter the base interface since this machinery is an implementation
+ * artifact and, second, every <tt>VectorSpaceBase</tt> subclass will not
+ * utilize this machinery.  For example, composite (see
+ * <tt>ProductVectorSpaceBase</tt>) and decorator subclasses should not derive
+ * from this subclass.
  *
  * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
  */
@@ -73,19 +75,19 @@ public:
 
   /** \brief Construct to use dot product as the default.
    *
-   * Postconditions:<ul>
-   * <li><tt>dynamic_cast<const DotProd<Scalar>*>(&*this->getScalarProd()) != NULL</tt>
+   * <b>Postconditions:</b><ul>
+   * <li><tt>dynamic_cast<const EuclideanScalarProd<Scalar>*>(&*this->getScalarProd()) != NULL</tt>
    * </ul>
    */
   ScalarProdVectorSpaceBase();
 
   /** \brief Construct with a different scalar product.
    *
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt>scalarProd.get()!=NULL</tt> (throw <tt>std::invalid_argument</tt>)
    * </ul>
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li><tt>this->getScalarProd().get() == scalarProd.get()</tt>
    * </ul>
    */
@@ -98,11 +100,11 @@ public:
    * call back on this base implementation to set the actual scalar
    * product object.
    *
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt>scalarProd.get()!=NULL</tt> (throw <tt>std::invalid_argument</tt>)
    * </ul>
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li><tt>this->getScalarProd().get() == scalarProd.get()</tt>
    * </ul>
    */

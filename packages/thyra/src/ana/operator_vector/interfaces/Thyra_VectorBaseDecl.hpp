@@ -142,7 +142,7 @@ public:
   /** \brief . */
   using MultiVectorBase<Scalar>::col;
 
-  /** @name Public pure virtual functions (must be overridden by subclass) */
+  /** @name Space membership */
   //@{
 
   /** \brief Return a smart pointer to the vector space that this vector
@@ -162,6 +162,11 @@ public:
    * <tt>*this</tt> vector object.
    */
   virtual Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > space() const = 0;
+
+  //@}
+
+  /** @name Reduction/Transformation operator support */
+  //@{
 
   /** \brief Apply a reduction/transformation operator over a set of vectors:
    * <tt>op(op(v[0]...v[nv-1],z[0]...z[nz-1]),(*reduct_obj)) ->
@@ -426,7 +431,7 @@ public:
 
   //@}
 
-  /** @name Overridden from Teuchos::Describable */
+  /** @name Public functions overridden from Teuchos::Describable */
   //@{
 
   /** \brief Generates a default outputting for all vectors.

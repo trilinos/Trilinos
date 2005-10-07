@@ -52,7 +52,7 @@ public:
   /** \brief . */
   virtual ~VectorSpaceFactoryBase() {}
 
-  /** @name Pure virtual functions that must be overridden */
+  /** @name Public pure virtual functions that must be overridden */
   //@{
 
   /** \brief Create a vector space of the given dimension.

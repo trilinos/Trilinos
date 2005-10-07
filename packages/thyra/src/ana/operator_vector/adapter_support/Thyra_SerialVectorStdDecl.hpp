@@ -33,23 +33,23 @@
 
 namespace Thyra {
 
-/** \brief General extensible implementation of serial vectors.
+/** \brief General concrete <tt>VectorBase</tt> implementation of serial
+ * vectors.
  *
  * This class can be used either as a view of a vector data or as a
  * storage for vector data (with any underlying storage type).
  *
- * To create with storage with the dimension of <tt>dim</tt> just call
- * the constructor <tt>SerialVectorStd(dim)</tt> or after construction
- * you can call <tt>this->initialize(dim)</tt>.
+ * To create with storage with the dimension of <tt>dim</tt> just call the
+ * constructor <tt>%SerialVectorStd(dim)</tt> or after construction you can
+ * call <tt>this->initialize(dim)</tt>.
  *
- * To simply create a view of a vector <tt>v</tt> with stride
- * <tt>vs</tt>, without ownership just call
- * <tt>SerialVectorStd(Teuchos::rcp(v,false),vs)</tt> or after
- * construction call
- * <tt>this->initialize(Teuchos::rcp(v,false),vs)</tt>.
+ * To simply create a view of a vector <tt>v</tt> with stride <tt>vs</tt>,
+ * without ownership just call
+ * <tt>%SerialVectorStd(Teuchos::rcp(v,false),vs)</tt> or after construction
+ * call <tt>this->initialize(Teuchos::rcp(v,false),vs)</tt>.
  *
- * To use another storage type, such as an
- * <tt>std::vector<Scalar></tt>, construct as:
+ * To use another storage type, such as an <tt>std::vector<Scalar></tt>,
+ * construct as:
  *
  \code
 
@@ -115,14 +115,14 @@ public:
    *                a <tt>SerialVectorSpace</tt> object of dimension <tt>dim</tt> is allocated for this
    *                role.  The default is <tt>Teuchos::null</tt>.
    *
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li> [<tt>vecSpc.get()!=NULL</tt>] <tt>dim == vecSpc->dim()</tt> (throw <tt>std::invalid_argument</tt>)
    * <li> [<tt>vecSpc.get()!=NULL</tt>] <tt>vecSpc->createMember()</tt> must create vectors that are compatible
    *      with <tt>*this</tt> (i.e. <tt>getSubVector()</tt>, <tt>commitSubVector()</tt> behave the same as with
    *      this class).
    * </ul>
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li> [<tt>vecSpc.get()!=NULL</tt>] <tt>vecSpc.get() == this->space().get()</tt>
    * <li> [<tt>vecSpc.get()==NULL</tt>] <tt>dynamic_cast<const SerialVectorSpaceStd<Scalar>*>(this->space().get()) != NULL</tt>
    * <li> <tt>this->space()->dim() == dim</tt>

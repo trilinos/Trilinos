@@ -1,0 +1,72 @@
+/** \dir src Main library source code for the %Thyra package
+
+*/
+
+/** \dir src/ana Contains all code related to the direct support of abstract numerical algorithms (ANAs)
+
+*/
+
+/** \dir src/ana/operator_vector Contains all code related basic ANA operator, vector, multi-vector, and vector space interfaces.
+
+*/
+
+/** \dir src/ana/operator_vector/interfaces Contains source files for the fundamental operator/vector interfaces with minimal default implementation code.
+
+See \ref Thyra_Op_Vec_foundational_interfaces_sec for more details.
+
+*/
+
+/** \dir src/ana/operator_vector/extended_interfaces Contains source files for extended interoperability interfaces based on the fundamental operator/vector interfaces.
+
+See \ref Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp for more details.
+
+Code in this directory depends on code in the directories:<ul>
+<li>src/ana/operator_vector/interfaces
+</ul>
+and their dependent directories.
+
+*/
+
+/** \dir src/ana/operator_vector/adapter_support Contains source files for code to support the create of concrete adatpers for the fundamental operator/vector interfaces.
+
+This particular directory contains the minimal amount of code needed to
+provide default implementations for as many of the pure virtual functions in
+the fundamental operator/vector interfaces as is reasonable.
+
+See \ref Thyra_Op_Vec_Adapters_grp for more details.
+
+Code in this directory depends on code in the directories:<ul>
+<li>src/ana/operator_vector/interfaces
+<li>src/ana/operator_vector/ana_support
+</ul>
+and their dependent directories.
+
+*/
+
+/** \dir src/ana/operator_vector/adapter_support/serial Contains additional source files for support of serial operator/vector subclasses.
+
+Code in this directory depends on code in the directories:<ul>
+<li>src/ana/operator_vector/adapter_support
+</ul>
+and their dependent directories.
+
+*/
+
+/** \dir src/ana/operator_vector/adapter_support/mpi Contains source files for support of MPI-based SPMD operator/vector subclasses.
+
+Code in this directory depends on code in the directories:<ul>
+<li>src/ana/operator_vector/adapter_support
+</ul>
+and their dependent directories.
+
+*/
+
+/** \dir src/ana/operator_vector/ana_support Contains source files for support of developing ANA algorithms using the fundamental operator/vector interfaces
+
+Code in this directory depends on code in the directories:<ul>
+<li>src/ana/operator_vector/interface
+<li>src/ana/operator_vector/adapter_support
+</ul>
+and their dependent directories.
+
+*/

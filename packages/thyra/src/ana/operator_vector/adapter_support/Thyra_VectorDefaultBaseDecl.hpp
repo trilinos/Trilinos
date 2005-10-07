@@ -57,7 +57,7 @@ namespace Thyra {
  * <tt>%VectorDefaultBase</tt> should not have to re-override any of these
  * functions.
  *
- * \ingroup Thyra_Op_Vec_general_adapter_support_code_grp
+ * \ingroup Thyra_Op_Vec_Adapters_grp
  */
 template<class Scalar>
 class VectorDefaultBase

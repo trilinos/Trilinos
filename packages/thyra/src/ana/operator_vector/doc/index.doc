@@ -40,7 +40,7 @@ the %Thyra Operator/Vector Interfaces.
 
 \section Thyra_Op_Vec_foundational_interfaces_sec Foundational Thyra Operator/Vector Interfaces
 
-\image html ThyraOperatorVectorSimple.gif "Foundational Thyra operator/vector interfaces (Note: above graphic not hyper-linked!)"
+\image html ThyraOperatorVectorSimple.gif "Foundational Thyra operator/vector interfaces (Note: above graphic is not hyper-linked!)"
 
 The most fundamental abstract interfaces contained in the %Thyra package
 (and shown in the above UML class diagram) are:
@@ -229,7 +229,7 @@ to to define an iterative linear solver such as GMRES or CG.
 
 */
 
-/** \defgroup Thyra_Op_Vec_faq_grp Frequently Asked Questions (FAQ) about Thyra Operator/Vector Softwrae
+/** \defgroup Thyra_Op_Vec_faq_grp Frequently Asked Questions (FAQ) about Thyra Operator/Vector Software
 
 \section Thyra_Op_Vec_faq_outline_sec Outline
 
@@ -428,7 +428,7 @@ extended operator/vector interfaces define new types of functionality.
 
 \section Thyra_Op_Vec_Interoperability_Fundamental_Interfaces_sec Fundamental Interfaces
 
-\image html ThyraOperatorVector.gif "Fundamental vector and linear operator interfaces (Note: above graphic not hyper-linked!)"
+\image html ThyraOperatorVector.gif "Fundamental vector and linear operator interfaces (Note: above graphic is not hyper-linked!)"
 
 The above UML class diagram is a more detailed version of the UML
 class diagram shown in the \ref index "introduction" for the
@@ -540,37 +540,34 @@ interfaces in order to provide implementations for the most common use
 cases.
 
 One of the main motivations behind the design of the \ref
-Thyra_Op_Vec_foundational_interfaces_sec is
-the uniform support for many different computing environments such as
-serial shared-memory (i.e. SMP) and a variety of distributed-memory
-models (e.g. SPMD (single program, multiple data), client-server,
-master-slave and client-server/master-slave).  While this is the case,
-the overwhelming majority of concrete implementations of these types
-will be in more typical SMP serial shared-memory or SPMD
-distributed-memory environments.  Because of this, the Trilinos
-package %Thyra contains a set of base subclasses that makes the
-development of concrete vector space, vector, multi-vector and linear
-operator subclasses as easy as possible.  However, the \ref
-Thyra_Op_Vec_foundational_interfaces_sec 
-allow for almost limitless possibilities with respect to the types of
-possible implementations so it is not possible to provide pre-packaged
-support for all of the possibilities.
+Thyra_Op_Vec_foundational_interfaces_sec is the uniform support for many
+different computing environments such as serial shared-memory (i.e. SMP) and a
+variety of distributed-memory models (e.g. SPMD (single program, multiple
+data), client-server, master-slave and client-server/master-slave).  While
+this is the case, the overwhelming majority of concrete implementations of
+these types will be in more typical SMP serial shared-memory or SPMD
+distributed-memory environments.  Because of this, the Trilinos package %Thyra
+contains a set of base subclasses that makes the development of concrete
+vector space, vector, multi-vector and linear operator subclasses as easy as
+possible.  However, the \ref Thyra_Op_Vec_foundational_interfaces_sec allow
+for almost limitless possibilities with respect to the types of
+implementations so it is not reasonable to provide pre-packaged support for
+all of the possibilities.
 
-<b>Heads Up!</b> In case you think you will have to develop your own
-concrete <tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt> or
+<b>Heads Up!</b> In case you think you will have to develop your own concrete
+<tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt> or
 <tt>Thyra::MultiVectorBase</tt> subclasses in addition to whatever
-<tt>Thyra::LinearOpBase</tt> subclasses that you need for you
-application, you are probably wrong!  You most likely will not need to
-create any concrete <tt>Thyra::VectorSpaceBase</tt>,
-<tt>Thyra::VectorBase</tt> or <tt>Thyra::MultiVectorBase</tt> subclasses
-and instead should only need to develop concrete
-<tt>Thyra::LinearOpBase</tt> subclass(es) by deriving from
+<tt>Thyra::LinearOpBase</tt> subclasses that you need for you application, you
+are probably wrong!  You most likely will not need to create any concrete
+<tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt> or
+<tt>Thyra::MultiVectorBase</tt> subclasses and instead should only need to
+develop concrete <tt>Thyra::LinearOpBase</tt> subclass(es) by deriving from
 <tt>Thyra::SerialLinearOpBase</tt> for serial platforms or
-<tt>Thyra::MPILinearOpBase</tt> for MPI SPMD platforms.  As
-described below, general yet efficient implementations of concrete
-concrete <tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt> or
-<tt>Thyra::MultiVectorBase</tt> subclasses for serial and MPI SPMD
-platforms are already available.
+<tt>Thyra::MPILinearOpBase</tt> for MPI SPMD platforms.  As described below,
+general yet efficient implementations of concrete
+<tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt> and
+<tt>Thyra::MultiVectorBase</tt> subclasses for serial and MPI SPMD platforms
+are already available.
 
 Next, we provide a description of the various types of support code
 for creating concrete implementations as well as concrete
@@ -581,18 +578,48 @@ you are interested in.
 
 <ol>
 
+<li><b>Basic default implementation node subclasses</b>
+
+The following subclasses directly derive from \ref
+Thyra_Op_Vec_foundational_interfaces_sec and provide general default
+implementations for as many virtual functions as reasonable:
+
+<ul>
+
+<li><tt>Thyra::VectorSpaceDefaultBase</tt> should be a direct or indirect base
+class of almost every <tt>Thyra::VectorSpaceBase</tt> subclass.  This node
+subclass provides the default implementation
+<tt>Thyra::VectorSpaceDefaultBase::createMembers()</tt> using
+<tt>Thyra::MultiVectorCols</tt>.  Therefore, a subclass need only provide a
+<tt>VectorBase</tt> implementation and override
+<tt>Thyra::VectorSpaceBase::createMember()</tt> and related functions.
+
+<li><tt>Thyra::MultiVectorDefaultBase</tt> should be a direct or indirect base
+class of almost every <tt>Thyra::MultiVectorBase</tt> subclass.  This node
+subclass provides a default of every inherited virtual function from the base
+class <tt>Thyra::MultiVectorBase</tt> in terms of just
+<tt>Thyra::MultiVectorBase::col()</tt>.  While many of these default function
+implementations are highly non-optimal, the none the less allow for rapid
+prototyping of new <tt>Thyra::MultiVectorBase</tt> subclasses.
+
+<li><tt>Thyra::VectorDefaultBase</tt> should be a direct or indirect base
+class of almost every <tt>Thyra::VectorBase</tt> subclass.  This node subclass
+provides full general and efficient implementations of all of the inherited
+virtual functions from the base class <tt>Thyra::MultiVectorBase</tt>.
+
+</ul>
+
 <li><b>\ref Thyra_Op_Vec_basic_adapter_support_grp</b>
 
-Click on the above link if you want to know about high-level support
-subclasses for separating out the definition of the scalar product
-from the data structures and factory methods for specific computing
-platforms.  All of the concrete %Thyra implementation subclasses
-outlined below derive from and use these base interfaces.  However,
-knowing the details of these base interfaces is not critical to
-developing concrete implementations in most situations unless
-application-defined scalar products are needed.  The default euclidean
-scalar product is used automatically by default and if that is all you
-need then you can ignore these base classes.
+Click \ref Thyra_Op_Vec_basic_adapter_support_grp "here" if you want to know
+about high-level support subclasses for separating out the definition of the
+scalar product from the data structures and factory methods for specific
+computing platforms.  All of the concrete %Thyra implementation subclasses
+outlined below derive from and use these base interfaces.  However, knowing
+the details of these base interfaces is not critical for developing concrete
+implementations in most situations unless application-defined scalar products
+are needed.  The Euclidean scalar product is used automatically by default and
+if that is all you need then you can ignore these base classes.
 
 <li><b>Support subclasses for specific types of computing platforms</b>
 
@@ -607,25 +634,26 @@ cases, most of the concrete implementation software that you need for
 
 <ol>
 
-<li>\ref <b>\ref Thyra_Op_Vec_serial_adapters_grp</b>
+<li><b>\ref Thyra_Op_Vec_serial_adapters_grp</b>
 
-Click on the above link if you want to know about support for
-developing %Thyra subclass implementations for serial shared-memory
-platforms.  Since these are the most commonly used computing platform
-by applied mathematicians and academic researchers, these subclasses
-should be the most commonly used by this group.  Note that the above
-link also describes very general and efficient concrete serial
-subclasses for vector spaces, vectors and multi-vectors as well as a
-support class for creating concrete linear operator implementations.
+Click \ref Thyra_Op_Vec_serial_adapters_grp "here" if you want to know about
+support for developing %Thyra subclass implementations for serial
+shared-memory platforms.  Since these are the most commonly used computing
+platforms by applied mathematicians and academic researchers, these subclasses
+should be the most commonly used by this group.  Note that the above link also
+describes very general and efficient concrete serial subclasses for vector
+spaces, vectors and multi-vectors as well as a support class for creating
+concrete linear operator implementations.
 
-<li>\ref <b>\ref Thyra_Op_Vec_mpi_adapters_grp</b>
+<li><b>\ref Thyra_Op_Vec_mpi_adapters_grp</b>
 
-Click on the above link if you want to know about support for developing
-%Thyra subclass implementations for SPMD distributed-memory platforms.  These
-platforms are the most commonly used in large-scale scientific computing.
-Note that the above link also describes very general and efficient concrete
-MPI SPMD subclasses for vector spaces, vectors and multi-vectors as well as a
-support class for creating concrete linear operator implementations.
+Click \ref Thyra_Op_Vec_mpi_adapters_grp "here" if you want to know about
+support for developing %Thyra subclass implementations for SPMD
+distributed-memory platforms.  These platforms are most commonly used in
+large-scale scientific computing.  Note that the above link also describes
+very general and efficient concrete MPI SPMD subclasses for vector spaces,
+vectors, and multi-vectors as well as a support class for creating concrete
+SPMD linear operator implementations.
 
 </ol>
 
@@ -677,7 +705,7 @@ from the basic vector and multi-vector data structures and the factory methods
 for creating them.  The base subclasses for supporting application-defined
 scalar products are shown in the UML class diagram below.
 
-\image html ScalarProdVectorSpaceBase.gif "Support base subclasses for abstracting application-specific scalar products (Note: above graphic not hyperlinked!)"
+\image html ScalarProdVectorSpaceBase.gif "Support base subclasses for abstracting application-specific scalar products (Note: above graphic is not hyperlinked!)"
 
 The classes shown in the above UML class diagram are described below:
 
@@ -705,23 +733,25 @@ relationship in the above UML class diagram).
 
 <li><tt>Thyra::EuclideanLinearOpBase</tt> is a base subclass that allows the
 development of general concrete implementations of
-<tt>%Thyra::%LinearOpBase</tt> subclasses that are independent of an
-application-specific scalar product.  This base subclass defines the functions
-<tt>Thyra::EuclideanLinearOpBase::euclideanApply()</tt> which are called by
-<tt>Thyra::ScalarProdBase::apply()</tt> to modify the application of a
-Euclidean linear operator for the definition of the scalar product (see the C++
-code for the overridden <tt>Thyra::EuclideanLinearOpBase::apply()</tt>
-functions).  This base class is most helpful for the definition of concrete
+<tt>%Thyra::%LinearOpBase</tt> that are independent of an application-specific
+scalar product.  This base subclass defines the functions
+<tt>Thyra::EuclideanLinearOpBase::euclideanApply()</tt> and
+<tt>Thyra::EuclideanLinearOpBase::euclideanApplyTranspose()</tt> which are
+called by <tt>Thyra::ScalarProdBase::apply()</tt> to modify the application of
+an Euclidean linear operator for the definition of the scalar product (see the
+C++ code for the overridden <tt>Thyra::EuclideanLinearOpBase::apply()</tt> and
+<tt>Thyra::EuclideanLinearOpBase::applyTranspose()</tt> functions).  This base
+class is most helpful for the definition of concrete
 <tt>Thyra::MultiVectorBase</tt> subclasses.  More specialized linear operators
 that already define the operator with respect to application-specific scalar
-product should not derive from this subclass but should instead derived
+product should not derive from this subclass but should instead derive
 directly from <tt>%Thyra:%LinearOpBase</tt>.
 
 </ul>
 
 The base subclasses <tt>Thyra::ScalarProdVectorSpaceBase</tt> and
-<tt>Thyra::EuclideanLinearOpBase</tt> are used for almost all of the
-concrete Thyra subclass implementations in the %Thyra package.
+<tt>Thyra::EuclideanLinearOpBase</tt> are used for almost all of the other
+adapter support subclasses and concrete implementations in the %Thyra package.
 
 */
 
@@ -733,21 +763,20 @@ concrete Thyra subclass implementations in the %Thyra package.
 shared-memory vector spaces, vectors and multi-vectors which are
 described here.
 
-When interfacing to most other well designed packages, there should be
-no need to create new such subclasses for concrete serial
-shared-memory vector spaces, vectors or multi-vectors given the
-subclasses described below.
+Given the subclasses described below, there should be no need to create new
+concrete serial shared-memory vector spaces, vectors or multi-vectors when
+interfacing to most other well designed software.
 
-\section Thyra_Op_Vec_serial_adapters_classes_sec Subclasses for Serial Thyra Implementations
+\section Thyra_Op_Vec_serial_adapters_classes_sec Subclasses for Serial Implementations
 
 <ol>
 
 <li> <b>\ref Thyra_Op_Vec_adapters_serial_support_grp</b>
 
-Click on the above link if you want to know about the basic support
-base subclasses for a common type of serial vector and multi-vector
-implementation that all of the concrete implementations described
-below depend on.
+Click \ref Thyra_Op_Vec_adapters_serial_support_grp "here" if you want to know
+about the basic support node subclasses for a common type of serial vector and
+multi-vector implementation that all of the concrete implementations described
+below derive from.
 
 <li> <b>Concrete Serial Subclasses</b>
 
@@ -760,9 +789,9 @@ mentioned above.
 
 <li> <b>\ref Thyra_Op_Vec_adapters_serial_concrete_std_grp</b>
 
-Click on the above link if you want to know about some general, yet
-very efficient, concrete implementations of serial vector
-spaces, vectors and multi-vectors.
+Click \ref Thyra_Op_Vec_adapters_serial_concrete_std_grp "here" if you want to
+know about some general, yet very efficient, concrete implementations of
+serial vector spaces, vectors and multi-vectors.
 
 </ol>
 
@@ -771,9 +800,8 @@ spaces, vectors and multi-vectors.
 \section Thyra_Op_Vec_serial_adapters_examples_sec Example Subclasses for Serial Shared-Memory Platforms
 
 The only example that one should need for how to provide a serial
-implementation for the
-\ref Thyra_Op_Vec_foundational_interfaces_sec "foundational Thyra operator/vector interfaces
-is provided below:
+implementation for the \ref Thyra_Op_Vec_foundational_interfaces_sec is
+provided below:
 
 <ul>
 
@@ -796,74 +824,71 @@ name and then modify the new subclass as needed.
 
 */
 
-/** \defgroup Thyra_Op_Vec_adapters_serial_support_grp Thyra Operator/Vector Base Support Subclasses for Serial Shared-Memory Thyra Implementations
+/** \defgroup Thyra_Op_Vec_adapters_serial_support_grp Thyra Operator/Vector Base Support Subclasses for Serial Shared-Memory Implementations
 
 \ingroup Thyra_Op_Vec_serial_adapters_grp
 
-\brief The package %Thyra includes base subclasses for serial vector
-spaces, vectors, multi-vectors and linear operators.
+\brief The package %Thyra includes node subclasses for serial vector spaces,
+vectors, multi-vectors, and linear operators.
 
 The UML class diagram below shows the subclasses described here:
 
-\image html SerialVectorSpaceBase.gif "Support base subclasses for serial shared-memory Thyra implementations (Note: above graphic not hyperlinked!)"
+\image html SerialVectorSpaceBase.gif "Support base subclasses for serial shared-memory Thyra implementations (Note: above graphic is not hyperlinked!)"
 
 \section Thyra_Op_Vec_serial_adapters_classes_sec Base Subclasses for Serial Shared-Memory Platforms
 
-The following subclasses represent general yet very efficient base
-subclasses that almost all serial shared-memory vector space, vector
-and multi-vector subclasses can and should inherit from:
+The following subclasses represent general yet very efficient node subclasses
+that almost all serial shared-memory vector space, vector and multi-vector
+subclasses can and should inherit from.
 
 <ul>
 
-<li><tt>Thyra::SerialVectorSpaceBase</tt> is a useful base subclass
-for defining concrete serial vector space subclasses.  This subclass
-simply overrides <tt>%Thyra::VectorSpaceBase::isCompatible()</tt> to
-return <tt>true</tt> if the other vector space is in core and is the
-same dimension since this should all that should be required for
-serial vectors and multi-vectors to be 100\% compatible.
+<li><tt>Thyra::SerialVectorSpaceBase</tt> is a useful node subclass for
+defining concrete serial vector space subclasses.  This subclass simply
+overrides <tt>%Thyra::VectorSpaceBase::isCompatible()</tt> to return
+<tt>true</tt> if the other vector space is in core and is the same dimension
+since this is all that should be required for serial vectors and multi-vectors
+to be 100\% compatible.
 
-<li><tt>Thyra::SerialVectorBase</tt> is a useful base subclass for
-defining concrete serial vector subclasses.  This base class provides
-a very general implementation for
-<tt>%Thyra::%VectorBase::%applyOp()</tt> that relies on explicit vector
-element access.  All that a concrete subclass must do to is to provide
-explicit access to vector data in overrides of the
-virtual <tt>%Thyra::%SerialVectorBase::%getData()</tt> functions.
+<li><tt>Thyra::SerialVectorBase</tt> is a useful node subclass for defining
+concrete serial vector subclasses.  This base class provides a very general
+implementation for <tt>%Thyra::%VectorBase::%applyOp()</tt> that relies on
+explicit vector element access.  All that a concrete subclass must do to is to
+provide explicit access to vector data in overrides of the virtual
+<tt>Thyra::SerialVectorBase::getData()</tt> functions.
 
-<li><tt>Thyra::SerialMultiVectorBase</tt> is a useful base subclass
-for defining concrete serial multi-vector subclasses.  This base class
-provides implementations for both
-<tt>%Thyra::%MultiVectorBase::%applyOp()</tt> and
+<li><tt>Thyra::SerialMultiVectorBase</tt> is a useful node subclass for
+defining concrete serial multi-vector subclasses.  This base class provides
+implementations for both <tt>%Thyra::%MultiVectorBase::%applyOp()</tt> and
 <tt>%Thyra::%MultiVectorBase::%apply()</tt> that relies on explicit
-multi-vector element access.  All that a concrete subclass must do is
-to provide explicit access to multi-vector data in overrides of the
-<tt>%Thyra::SerialMultiVectorBase::getData()</tt> functions.  Note
-in general that the override of
-<tt>%Thyra::MultiVectorBase::apply()</tt> is a level-3 BLAS operation
-and this base class uses <tt>Teuchos::BLAS::GEMM()</tt> to access
-optimized level-3 BLAS.  This assumes that the %Teuchos package has
-been configured to use optimized BLAS (for the data types
-<tt>float</tt>, <tt>double</tt>, <tt>std::complex<float></tt> and
+multi-vector element access.  All that a concrete subclass must do is to
+provide explicit access to multi-vector data in overrides of the
+<tt>Thyra::SerialMultiVectorBase::getData()</tt> functions.  Note in general
+that the override of <tt>Thyra::MultiVectorBase::apply()</tt> is a level-3
+BLAS operation and this base class uses <tt>Teuchos::BLAS::GEMM()</tt> to
+access optimized level-3 BLAS.  This assumes that the %Teuchos package has
+been configured to use optimized BLAS (for the data types <tt>float</tt>,
+<tt>double</tt>, <tt>std::complex<float></tt> and
 <tt>std::complex<double></tt> of course).
 
 </ul>
 
 The above base subclasses <tt>Thyra::SerialVectorBase</tt> and
 <tt>Thyra::SerialMultiVectorBase</tt> should provide very efficient
-implementations of all of the operations defined on
-<tt>Thyra::VectorBase</tt> and <tt>Thyra::SerialVector</tt> for serial
-shared-memory platforms.  All that concrete subclasses must provide is
-explicit access to vector and multi-vector data.
+implementations of all of the operations defined on <tt>Thyra::VectorBase</tt>
+and <tt>Thyra::MultiVectorBase</tt> for serial shared-memory platforms.  All
+that concrete subclasses must provide is explicit access to vector and
+multi-vector data.
 
 \section Thyra_Op_Vec_serial_adapters_linear_op_sec Base Subclasses for Serial Thyra::LinearOpBase Implementations
 
 To facilitate the creation of concrete serial linear operators the
 following simple but very general base class is supplied:
 
-<ul> <li><tt>Thyra::SerialLinearOpBase</tt> is a general base
-subclass for serial shared-memory platforms that only requires
-concrete subclass implementations to override one function that accepts
-explicit vector data.  </ul>
+<ul> <li><tt>Thyra::SerialLinearOpBase</tt> is a general node subclass for
+serial shared-memory platforms that only requires concrete subclass
+implementations to override one function that accepts explicit vector data.
+</ul>
 
 */
 
@@ -871,61 +896,58 @@ explicit vector data.  </ul>
 
 \ingroup Thyra_Op_Vec_serial_adapters_grp
 
-\brief The package %Thyra includes general, yet very efficient
-concrete subclass implementations for serial vector spaces, vectors,
-multi-vectors and linear operators.
+\brief The package %Thyra includes general, yet very efficient, concrete
+subclass implementations for serial vector spaces, vectors, multi-vectors, and
+linear operators.
 
 The UML class diagram below shows the subclasses described here:
 
-\image html SerialVectorSpaceStd.gif "Concrete subclasses for serial shared-memory Thyra implementations (Note: above graphic not hyperlinked!)"
+\image html SerialVectorSpaceStd.gif "Concrete subclasses for serial shared-memory Thyra implementations (Note: above graphic is not hyperlinked!)"
 
 <ul>
 
 <li><tt>Thyra::SerialVectorSpaceFactoryStd</tt> is a general concrete
 implementation of a factory for serial vector spaces that creates
-<tt>%Thyra::SerialVectorSpaceStd</tt> objects of any given dimension.
-This subclass is used to provide the default implementation of
-<tt>%Thyra::VectorSpaceBase::smallVecSpcFcty()</tt>.  As a result,
-<tt>%Thyra::SerialVectorSpaceStd</tt> is the default implementation of
-the domain space of the default multi-vectors returned from
-<tt>%Thyra::VectorSpaceBase::createMembers()</tt>.
+<tt>%Thyra::%SerialVectorSpaceStd</tt> objects of any given dimension.  This
+subclass is used to provide the default implementation of
+<tt>%Thyra::VectorSpaceDefaultBase::smallVecSpcFcty()</tt>.  As a result,
+<tt>%Thyra::%SerialVectorSpaceStd</tt> is the default implementation of the
+domain space of the default multi-vectors returned from
+<tt>%Thyra::%VectorSpaceDefaultBase::%createMembers()</tt>.
 
-<li><tt>Thyra::SerialVectorSpaceStd</tt> is a general concrete
-implementation for serial vector spaces that creates
-<tt>%Thyra::SerialVectorStd</tt> and
-<tt>%Thyra::SerialMultiVectorStd</tt> objects.  All this subclass
-really does is provide trivial implementations for the factory methods
-<tt>%Thyra::VectorSpaceBase::createMember()</tt> and
-<tt>%Thyra::VectorSpaceBase::createMembers()</tt>.
+<li><tt>Thyra::SerialVectorSpaceStd</tt> is a general concrete implementation
+for serial vector spaces that creates <tt>%Thyra::SerialVectorStd</tt> and
+<tt>%Thyra::SerialMultiVectorStd</tt> objects.  All this subclass really does
+is provide trivial implementations for the factory methods
+<tt>%Thyra::%VectorSpaceBase::%createMember()</tt> and
+<tt>%Thyra::%VectorSpaceBase::%createMembers()</tt>.
 
 <li><tt>Thyra::SerialVectorStd</tt> is an efficient general concrete
-implementation for serial vectors.  All this subclass does is provide
-storage for a serial vector and return pointers to that storage to the
+implementation for serial vectors.  All this subclass does is provide storage
+for a serial vector and return pointers to that storage to the
 <tt>%Thyra::SerialVectorBase</tt> base class through the overridden
-<tt>%Thyra::SerialVectorStd::getData()</tt> functions.  This concrete
-subclass has constructors that accept arbitrary strided data and can
-trivially handle any underlying data storage format due to the magic
-of <tt>%Teuchos::RefCountPtr</tt>.
+<tt>%Thyra::SerialVectorStd::getData()</tt> functions.  This concrete subclass
+has constructors that accept arbitrary strided data and can trivially handle
+any underlying data storage format due to the magic of
+<tt>%Teuchos::RefCountPtr</tt>.
 
-<li><tt>Thyra::SerialMultiVectorStd</tt> is an efficient general
-concrete implementation for serial multi-vectors.  All this subclass
-does is provide storage for a serial multi-vector and return pointers
-to that storage (and leading dimension) to the
-<tt>%Thyra::SerialMultiVectorBase</tt> base class through the
-overridden <tt>%Thyra::SerialMultiVectorStd::getData()</tt> functions.
-This concrete subclass has constructors that accept column-major data
-and can trivially handle any underlying data storage format due to the
+<li><tt>Thyra::SerialMultiVectorStd</tt> is an efficient general concrete
+implementation for serial multi-vectors.  All this subclass does is provide
+storage for a serial multi-vector and return pointers to that storage (and
+leading dimension) to the <tt>%Thyra::SerialMultiVectorBase</tt> base class
+through the overridden <tt>%Thyra::SerialMultiVectorStd::getData()</tt>
+functions.  This concrete subclass has constructors that accept column-major
+data and can trivially handle any underlying data storage format due to the
 magic of <tt>%Teuchos::RefCountPtr</tt>.
 
 </ul>
 
 The above concrete subclasses provide very general and very efficient
-implementations for serial vector space, vector and multi-vector
-objects.  There should almost never be a need to develop any other
-serial subclasses for these objects.  However, if for some reason one
-decides that one wants to develop new such subclasses then the above
-concrete subclasses should provide an adequate example for how to do
-so.
+implementations for serial vector space, vector, and multi-vector objects.
+There should almost never be a need to develop any other serial subclasses for
+these objects.  However, if for some reason one decides that one wants to
+develop new such subclasses then the above concrete subclasses should provide
+an adequate example for how to do so.
 
 */
 
@@ -933,14 +955,12 @@ so.
 
 \ingroup Thyra_Op_Vec_Adapters_grp
 
-\brief The package %Thyra includes subclasses for common MPI-based
-SPMD vector spaces, vectors and multi-vectors which are described
-here.
+\brief The package %Thyra includes subclasses for common MPI-based SPMD vector
+spaces, vectors, and multi-vectors which are described here.
 
-When interfacing to most other well designed packages, there should be
-no need to create new such subclasses for concrete MPI-based SPMD
-vector spaces, vectors or multi-vectors given the subclasses described
-below.
+When interfacing to most other well designed packages, there should be no need
+to create new concrete MPI-based SPMD vector space, vector or multi-vector
+subclasses given the subclasses described below.
 
 \section Thyra_Op_Vec_mpi_adapters_classes_sec Subclasses for MPI SPMD Thyra Implementations
 
@@ -948,10 +968,10 @@ below.
 
 <li> <b>\ref Thyra_Op_Vec_adapters_MPI_support_grp</b>
 
-Click on the above link if you want to know about the basic support
-base subclasses for a common type of MPI-based SPMD vector and
-multi-vector implementation that all of the concrete implementations
-described below depend on.
+Click \ref Thyra_Op_Vec_adapters_MPI_support_grp "here" if you want to know
+about the basic support base subclasses for a common type of MPI-based SPMD
+vector and multi-vector implementation that all of the concrete
+implementations described below depend on.
 
 <li> <b>Concrete MPI-based SPMD subclasses</b>
 
@@ -964,13 +984,15 @@ mentioned above.
 
 <li> <b>\ref Thyra_Op_Vec_adapters_MPI_concrete_std_grp</b>
 
-Click on the above link if you want to know about some general, yet
-very efficient, concrete implementations of MPI-based SPMD vector
-spaces, vectors and multi-vectors.
+Click \ref Thyra_Op_Vec_adapters_MPI_concrete_std_grp "here" if you want to
+know about some general, yet very efficient, concrete implementations of
+MPI-based SPMD vector spaces, vectors and multi-vectors.
 
 <li> <b><a href="../../../../../../epetra/thyra/doc/html/index.html">Epetra to Thyra Operator/Vector Adapters</a></b> (separate doxygen collection)
 
-Click on the above link if you want to know about some general code that takes Epetra objects and creates %Thyra wrappers for them.
+Click <a href="../../../../../../epetra/thyra/doc/html/index.html">here</a> if
+you want to know about some general code that takes Epetra objects and creates
+%Thyra wrappers for them.
 
 </ol>
 
@@ -988,7 +1010,7 @@ multi-vectors that are described here.
 
 The UML class diagram below shows the subclasses described here:
 
-\image html MPIVectorSpaceBase.gif "Support base subclasses for MPI SPMD distributed-memory Thyra implementations (Note: above graphic not hyperlinked!)"
+\image html MPIVectorSpaceBase.gif "Support base subclasses for MPI SPMD distributed-memory Thyra implementations (Note: above graphic is not hyperlinked!)"
 
 The base subclasses described here provide support for a simple, yet
 general, category of MPI-based SPMD vectors, multi-vectors and vector
@@ -1057,7 +1079,7 @@ vector data.  </ul>
 implementations of MPI-based vector space, vector and multi-vector
 subclasses.
 
-\image html MPIVectorSpaceStd.gif "Concrete subclasses for MPI-based SPMD distributed-memory Thyra implementations (Note: above graphic not hyperlinked!)"
+\image html MPIVectorSpaceStd.gif "Concrete subclasses for MPI-based SPMD distributed-memory Thyra implementations (Note: above graphic is not hyperlinked!)"
 
 \section Thyra_Op_Vec_adapters_MPI_concrete_std_classes_grp Concrete MPI-based SPMD Subclasses
 

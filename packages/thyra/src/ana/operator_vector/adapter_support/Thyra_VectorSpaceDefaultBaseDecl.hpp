@@ -57,7 +57,7 @@ namespace Thyra {
  * parallel) may require an override of the <tt>smallVecSpcFcty()</tt> method
  * to return a specialized type of <tt>VectorSpaceFactoryBase</tt> object.
  *
- * \ingroup Thyra_Op_Vec_general_adapter_support_code_grp
+ * \ingroup Thyra_Op_Vec_Adapters_grp
  */
 template<class Scalar>
 class VectorSpaceDefaultBase : virtual public VectorSpaceBase<Scalar> {

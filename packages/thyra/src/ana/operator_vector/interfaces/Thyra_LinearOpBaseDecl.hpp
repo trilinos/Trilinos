@@ -202,7 +202,7 @@ template<class RangeScalar, class DomainScalar>
 class LinearOpBase : virtual public Teuchos::Describable {
 public:
 
-  /** @name Pure virtual functions (must be overridden by subclass) */
+  /** @name Public pure virtual functions (must be overridden by subclass) */
   //@{
 
   /** \brief Return a smart pointer for the range space for <tt>this</tt> operator.
@@ -286,7 +286,7 @@ public:
 
   //@}
 
-  /** @name Virtual functions with default implementations */
+  /** @name Public virtual functions with default implementations */
   //@{
 
   /** \brief Determines if <tt>apply()</tt> supports this <tt>conj</tt> argument.
@@ -368,7 +368,7 @@ public:
 
   //@}
 
-  /** @name Overridden from Teuchos::Describable */
+  /** @name Public functions overridden from Teuchos::Describable */
   //@{
 
   /** \brief Generates a default outputting for all linear operators.

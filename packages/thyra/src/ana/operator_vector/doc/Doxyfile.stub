@@ -7,6 +7,7 @@ OUTPUT_DIRECTORY       = ../src/ana/operator_vector/doc
 # What and how documentation is extracted
 #
 INPUT                  = ../src/ana/operator_vector/doc/index.doc \
+                         ../src/ana/operator_vector/doc/dirs.doc \
                          ../src/ana/operator_vector/interfaces \
                          ../src/ana/operator_vector/extended_interfaces \
                          ../src/ana/operator_vector/adapter_support \

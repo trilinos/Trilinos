@@ -59,9 +59,9 @@ namespace Thyra {
  * definitions of <tt>%ScalarProdBase</tt> (i.e. <tt>EuclideanScalarProd</tt>)
  * will work for any vector space implementation since they only rely on
  * <tt>RTOp</tt> operators.  In other cases, however, an application-specific
- * scalar product may a have dependency of the data-structure of vector and
- * multi-vector objects in which case one can not use this with any vector or
- * multi-vector.
+ * scalar product may a have dependency on the data-structure of vector and
+ * multi-vector objects in which case one can not just use this with any
+ * vector or multi-vector implementation.
  *
  * This interface class also defines functions to modify the application of a
  * Euclidean linear operator to insert the definition of the application
@@ -81,7 +81,7 @@ public:
 
   //@}
   
-  /** @name Pure virtual functions that must be overridden */
+  /** @name Public pure virtual functions that must be overridden */
   //@{
 
   /** \brief Return the scalar product of each column in two multi-vectors in the vector space.
@@ -92,14 +92,14 @@ public:
    *                      scalar products <tt>scalar_prod[j-1] = this->scalarProd(*X.col(j),*Y.col(j))</tt>,
    *                      for <tt>j = 1 ... X.domain()->dim()</tt>.
    *
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt>X.domain()->isCompatible(*Y.domain())</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * <li><tt>X.range()->isCompatible(*Y.range())</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
-   * <li>The MultiVectors <tt>X</tt> and <tt>Y</tt> are compatible with this implementation or
+   * <li>The MultiVectorBase objects <tt>X</tt> and <tt>Y</tt> are <em>compatible</em> with this implementation or
    *     an exception will be thrown.
    * </ul>
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li><tt>scalar_prod[j-1] = this->scalarProd(*X.col(j),*Y.col(j))</tt>, for <tt>j = 1 ... X.domain()->dim()</tt>
    * </ul>
    */
@@ -108,6 +108,25 @@ public:
 
   /** \brief Modify the application of a Euclidean linear operator by
    * inserting the vector space's scalar product.
+   *
+   * Note that one responsibility of an implementation of this function is to
+   * provide the block scalar product implementation of
+   * <tt>MultiVectorBase</tt> objects that derive from
+   * <tt>EuclideanLinearOpBase</tt>.  For example, let <tt>M</tt> be a
+   * <tt>%MultiVectorBase</tt> object and consider the operation
+   
+   <tt>Y = adjoint(M)*X</tt>
+
+   * where <tt>M_trans==CONJTRANS</tt>.  This function may, or many not, call
+   * the <tt>EuclideanLinearOpBase::euclideanApplyTranspose()</tt> function in
+   * order to implement this block Scalar product.
+   *
+   * Note that the special case of <tt>M==X</tt> should also be supported
+   * which provides the symmetric operation
+   
+   <tt>Y = adjoint(X)*X</tt>
+
+   * that can be performed in half the flops as the general case.
    *
    * ToDo: Finish documentation!
    */
@@ -122,18 +141,18 @@ public:
 
   //@}
 
-  /** @name Virtual functions with default implementations */
+  /** @name Public virtual functions with default implementations */
   //@{
 
   /** \brief Return the scalar product of two vectors in the vector space.
    *
-   * Preconditions:<ul>
-   * <li>The vectors <tt>X</tt> and <tt>Y</tt> are compatible with this implementation or
-   *     an exception will be thrown.
+   * <b>Preconditions:</b><ul>
+   * <li>The vectors <tt>x</tt> and <tt>y</tt> are <em>compatible</em> with <tt>*this</tt>
+   *     implementation or an exception will be thrown.
    * <li><tt>x.space()->isCompatible(*y.space())</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * </ul>
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li>The scalar product is returned.
    * </ul>
    *

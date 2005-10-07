@@ -33,10 +33,11 @@
 
 namespace Thyra {
 
-/** \brief General concrete <tt>%VectorSpaceBase</tt> subclass for serial vectors and multi-vectors.
+/** \brief General concrete <tt>%VectorSpaceBase</tt> subclass for serial
+ * vectors and multi-vectors.
  *
- * The default copy constructor and assignment operators are allowed
- * since they have the correct semantics.
+ * The default copy constructor and assignment operators are allowed since
+ * they have the correct semantics.
  *
  * \ingroup Thyra_Op_Vec_adapters_serial_concrete_std_grp
  */
@@ -70,9 +71,9 @@ public:
 
   /// Returns 0 if uninitialized
   Index dim() const;
-  /// Returns a <tt>SerialVector</tt> object.
+  /// Returns a <tt>SerialVectorStd</tt> object.
   Teuchos::RefCountPtr<VectorBase<Scalar> > createMember() const;
-  /// Returns a <tt>SerialMultiVector</tt> object.
+  /// Returns a <tt>SerialMultiVectorStd</tt> object.
   Teuchos::RefCountPtr< MultiVectorBase<Scalar> > createMembers(int numMembers) const;
   /// Clones the object as promised
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > clone() const;

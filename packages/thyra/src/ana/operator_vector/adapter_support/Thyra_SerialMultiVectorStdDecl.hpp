@@ -33,20 +33,17 @@
 
 namespace Thyra {
 
-/** \brief Highly optimized concrete implementation subclass for
- * serial shared-memory multi-vectors.
+/** \brief General, yet efficient, concrete <tt>MultiVectorBase</tt>
+ * implementation subclass for serial shared-memory multi-vectors.
  *
- * This subclass provides a very efficient and very general concrete
- * implementation of a <tt>Thyra::MultiVectorBase</tt> object.
+ * Objects of this type generally should not be constructed directly by a
+ * client but instead by using the concrete vector space subclass
+ * <tt>SerialVectorSpaceStd</tt> using the function
+ * <tt>Thyra::SerialVectorSpaceStd::createMembers()</tt>.
  *
- * Objects of this type generally should not be constructed directly
- * by a client but instead by using the concrete vector space subclass
- * <tt>Thyra::SerialVectorSpace</tt> and using the function
- * <tt>Thyra::SerialVectorSpace::createMembers()</tt>.
- *
- * The storage type can be anything since a
- * <tt>Teuchos::RefCountPtr</tt> is used to pass in the values pointer
- * into the constructor and <tt>initialize()</tt>.
+ * The storage type can be anything since a <tt>Teuchos::RefCountPtr</tt> is
+ * used to pass in the values pointer into the constructor and
+ * <tt>initialize()</tt>.
  *
  * \ingroup Thyra_Op_Vec_adapters_serial_concrete_std_grp
  */
@@ -81,12 +78,12 @@ public:
 
   /** \brief Initialize.
    *
-   * @param  range     [in] Smart pointer to <tt>SerialVector</tt> object
-   *                   that defines the data distribution for <tt>mpiSpace()</tt> and <tt>range()</tt>.
-   * @param  domain    [in] Smart pointer to <tt>ScalarProdVectorSpaceBase</tt> object
-   *                   that defines <tt>domain()</tt> space.
+   * @param  range     [in] Smart pointer to the vector space object
+   *                   that defines the range.
+   * @param  domain    [in] Smart pointer to the vector space object
+   *                   that defines the domain.
    *
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt>range.get()!=NULL</tt>
    * <li><tt>domain.get()!=NULL</tt>
    * </ul>
@@ -101,24 +98,29 @@ public:
 
   /** \brief Initialize.
    *
-   * @param  range     [in] Smart pointer to <tt>SerialVector</tt> object
-   *                   that defines the data distribution for <tt>mpiSpace()</tt> and <tt>range()</tt>.
-   * @param  domain    [in] Smart pointer to <tt>ScalarProdVectorSpaceBase</tt> object
-   *                   that defines <tt>domain()</tt> space.
+   * @param  range     [in] Smart pointer to the vector space object
+   *                   that defines the range.
+   * @param  domain    [in] Smart pointer to the vector space object
+   *                   that defines the domain.
    * @param  values    [in] Smart pointer to beginning of Fortran-style column-major
    *                   array that defines the local values in the multi-vector.
-   *                   This array must be at least of dimension <tt>range->leadingDim()*domain->dim()</tt>
+   *                   This array must be at least of dimension <tt>leadingDim*domain->dim()</tt>
    *                   and <tt>(&*values)[ (i-1) + (j-1)*leadingDim ]</tt> gives the local value
-   *                   of the one-based <tt>(i,j)</tt> entry where <tt>i=1...mpiSpace()->localSubDim()</tt>
+   *                   of the one-based <tt>(i,j)</tt> entry where <tt>i=1...range()->dim()</tt>
    *                   and <tt>j=1...domain->dim()</tt>.
    * @param  leadingDim
    *                   [in] The leading dimension of the multi-vector.
    *
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt>range.get()!=NULL</tt>
    * <li><tt>domain.get()!=NULL</tt>
    * <li><tt>values.get()!=NULL</tt>
-   * <li><tt>leadingDim >= range->localSubDim()</tt>
+   * <li><tt>leadingDim >= range->dim()</tt>
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   * <li><tt>this->rangeScalarProdVecSpc().get() == range.get()</tt>
+   * <li><tt>this->domainScalarProdVecSpc().get() == domain.get()</tt>
    * </ul>
    */
   void initialize(
@@ -130,8 +132,10 @@ public:
 
   /** \brief Set to an uninitialized state.
    *
-   * Postconditions:<ul>
-   * <li><tt>this->mpiSpace().get() == NULL</tt>.
+   * <b>Postconditions:</b><ul>
+   * <li><tt>this->rangeScalarProdVecSpc().get() == NULL</tt>
+   * <li><tt>this->domainScalarProdVecSpc().get() == NULL</tt>
+   * </ul>
    */
   void uninitialize(
     Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >         *range         = NULL
