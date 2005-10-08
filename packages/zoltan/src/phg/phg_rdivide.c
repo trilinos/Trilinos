@@ -15,8 +15,10 @@
 #include "phg_distrib.h"
 
 
-/*
 #define _DEBUG1
+
+
+/*
 #define _DEBUG2
 #define _DEBUG3
 */
@@ -211,7 +213,25 @@ int Zoltan_PHG_rdivide(
           if (part[i]==1)
               final[hg->vmap[i]] = hi;
   }
+#ifdef _DEBUG1
+  for (i=0; i<hg->nVtx; ++i)
+      if (part[i]<0 || part[i]>1)
+          errexit("During recursive bisection for [%d, %d] invalid partvec[%d]=%d\n", lo, hi, i, part[i]);
+  if (left || right) {
+      double ltotw=0, totw=0.0, imbal, targetw0;
+      for (i=0; i<hg->nVtx; ++i)
+          ltotw += hg->vwgt[i];
+      MPI_Allreduce(&ltotw, &totw, 1, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
+      targetw0=totw*bisec_part_sizes[0];
+      imbal = (targetw0==0.0) ? 0.0 : fabs(leftw-targetw0)/targetw0;      
+      uprintf(hgc, "Total Vertex Weight=%.2lf   LeftW=%.2lf   RightW=%.2lf  tps=(%.2lf, %.2lf)  ib=%.2lf\n", totw, leftw, rightw, bisec_part_sizes[0], bisec_part_sizes[1], imbal);
+      if ((totw - (leftw+rightw)) > 0.000001)
+          errexit("During recursive bisection for [%d, %d] totw (%.2lf) !=  Left(%.2lf) + Right(%.2lf)\n", lo, hi, totw, leftw, rightw);
+  }
+#endif
+
   Zoltan_Multifree (__FILE__, __LINE__, 2, &pins[0], &part);
+
   
   if (detail_timing) 
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_split, hgc->Communicator);
@@ -483,131 +503,6 @@ static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz,
 
 
 
-#if 0
-/* UVCUVC: TODO CHECK
-   this old code is not used anymore, it is the version that
-   doesn't do processor split. If processor split becomes
-   overhead in some systems when we decide not to use it;
-   then this code needs to be revised to make sure that
-   it has all the "new" features; such as adaptive balance adjustment.
-*/
-
-/* recursively divides problem into 2 parts until all p found */
-int Zoltan_PHG_rdivide_NoProcSplit(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
-                       PHGPartParams *hgp, int level)
-{
-  char *yo = "Zoltan_PHG_rdivide";
-  int i, j, mid, ierr=ZOLTAN_OK, *pins[2] = {NULL,NULL}, *lpins[2] = {NULL,NULL};
-  Partition part=NULL;
-  HGraph *left=NULL, *right=NULL;
-  PHGComm *hgc = hg->comm;
-  float bisec_part_sizes[2]={0.0,0.0};    /* Target partition sizes; dimension is 2 
-                                     because we are doing bisection */
-
-  hg->redl = hgp->redl;
-  
-  /* only one part remaining, record results and exit */
-  if (lo == hi) {
-    for (i = 0; i < hg->nVtx; ++i)
-      final [hg->vmap[i]] = lo;
-    return ZOLTAN_OK;
-  }
-  for (i = 0; i < hg->nVtx; i++)
-    part[i] = final[i];
-
-  if (hg->nVtx && !(part = (Partition) ZOLTAN_MALLOC (hg->nVtx * sizeof (int))))
-      MEMORY_ERROR;
-
-  /* bipartition current hypergraph with appropriate split ratio */
-  mid = (lo+hi)/2;
-  bisec_part_sizes[0] = bisec_part_sizes[1] = 0.;
-  for (i = lo; i <= mid; i++)  bisec_part_sizes[0] += hgp->part_sizes[i];
-  for (i = lo; i <= hi;  i++)  bisec_part_sizes[1] += hgp->part_sizes[i];
-  bisec_part_sizes[0] = (double) bisec_part_sizes[0] / (double) bisec_part_sizes[1];
-  bisec_part_sizes[1] = 1. - bisec_part_sizes[0];
-
-  ierr = Zoltan_PHG_Partition (zz, hg, 2, bisec_part_sizes, part, hgp, level);
-  if (ierr != ZOLTAN_OK)
-      goto End;
-
-  if (hgp->output_level)
-    uprintf(hgc, "Rdivide(%d, %d): %.1lf\n", lo, hi, Zoltan_PHG_Compute_NetCut(hgc, hg, part, 2));
-    
-  /* if only two parts total, record results and exit */
-  if (lo + 1 == hi)  {
-    for (i = 0; i < hg->nVtx; ++i)
-      final [hg->vmap[i]] = ((part[i] == 0) ? lo : hi);
-    ZOLTAN_FREE (&part);
-    return ZOLTAN_OK;
-  }
-
-  if (hg->nEdge && (!(pins[0] = (int*) ZOLTAN_CALLOC (2 * hg->nEdge, sizeof(int)))
-   || !(lpins[0] = (int*) ZOLTAN_CALLOC (2 * hg->nEdge, sizeof(int)))))
-      MEMORY_ERROR;
-  if (pins[0] && lpins[0]) {
-      pins[1]  = &( pins[0][hg->nEdge]);
-      lpins[1] = &(lpins[0][hg->nEdge]);
-  }
-     
-  /* Initial calculation of the local pin distribution  (sigma in UVC's papers)  */
-  for (i = 0; i < hg->nEdge; ++i)
-      for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
-        ++(lpins[part[hg->hvertex[j]]][i]);
-        
-  /* now compute global pin distribution */
-  if (hg->nEdge)
-      MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, 
-                    hgc->row_comm);
-  ZOLTAN_FREE (&lpins[0]);                        /* we don't need lpins */
-    
-  /* recursively divide in two parts and repartition hypergraph */
-  if (mid>lo) { /* only split if we really need it */
-      if (!(left = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
-          MEMORY_ERROR;
-      
-      ierr = split_hypergraph (pins, hg, left, part, 0, zz);
-      if (ierr != ZOLTAN_OK) 
-          goto End;
-
-      ierr = Zoltan_PHG_rdivide (lo, mid, final, zz, left, hgp, level+1);
-      Zoltan_HG_HGraph_Free (left);
-      if (ierr != ZOLTAN_OK) 
-          goto End;
-  } else {
-      for (i = 0; i < hg->nVtx; ++i)
-          if (part[i]==0)
-              final [hg->vmap[i]] = lo;
-  }
-
-  if (hi>mid+1) { /* only split if we need it */
-      if (!(right = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
-          MEMORY_ERROR;
-      ierr = split_hypergraph (pins, hg, right, part, 1, zz);
-  
-      ZOLTAN_FREE (&pins[0]); /* we don't need pins */
-      
-      if (ierr != ZOLTAN_OK)
-          goto End;
-
-      ierr = Zoltan_PHG_rdivide (mid+1, hi, final, zz, right, hgp, level+1);
-      Zoltan_HG_HGraph_Free (right);
-  } else {
-      ZOLTAN_FREE (&pins[0]); /* we don't need pins */
-      for (i = 0; i < hg->nVtx; ++i)
-          if (part[i]==1)
-              final [hg->vmap[i]] = hi;
-  }
-      /* remove alloc'ed structs */
- End:
-  Zoltan_Multifree (__FILE__, __LINE__, 5, &pins[0], &lpins[0], &part, &left, &right);
-
-  return ierr;
-}
-
-#endif
-
-
-
 
 static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition part,
                              int partid, ZZ *zz, double *splitpw, double *otherpw)
@@ -648,7 +543,7 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
               /* UVC: TODO CHECK we're only using 1st weight! Right now this will be used
                  to compute balance ratio! Check this code when multiconstraint is added!
               */              
-              pw[0] += (double) ohg->vwgt[i*nhg->VtxWeightDim];
+              pw[0] += ohg->vwgt[i*nhg->VtxWeightDim];
               memcpy(&nhg->vwgt[v*nhg->VtxWeightDim], &ohg->vwgt[i*nhg->VtxWeightDim], 
                      nhg->VtxWeightDim * sizeof(float)); 
           } else
