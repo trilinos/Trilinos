@@ -112,12 +112,12 @@ int    best_imbalance, imbalance;
      for (i = 0; i < hg->nVtx; i++)
         part_weight[part[i]] += hg->vwgt[i];
      total_weight = part_weight[0] + part_weight[1];
-     }
+  }
   else  {
      total_weight = (double)(hg->nVtx);
      for (i = 0; i < hg->nVtx; i++)
         part_weight[part[i]] += 1.0;
-     }
+  }
   max_weight[0] = total_weight * bal_tol * part_sizes[0];
   max_weight[1] = total_weight * bal_tol * part_sizes[1];
 
@@ -129,11 +129,11 @@ int    best_imbalance, imbalance;
    || !(locked      = (int*)   ZOLTAN_CALLOC(hg->nVtx,    sizeof(int)))
    || !(locked_list = (int*)   ZOLTAN_CALLOC(hg->nVtx,    sizeof(int)))
    || !(gain        = (double*)ZOLTAN_CALLOC(hg->nVtx,    sizeof(double))) ) {
-         Zoltan_Multifree(__FILE__,__LINE__, 4, &pins[0], &locked, &locked_list,
+     Zoltan_Multifree(__FILE__,__LINE__, 4, &pins[0], &locked, &locked_list,
           &gain);
-         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-         return ZOLTAN_MEMERR;
-         }
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+     return ZOLTAN_MEMERR;
+  }
   pins[1] = &(pins[0][hg->nEdge]);
 
   /* Initial calculation of the pins distribution and gain values */
@@ -147,7 +147,7 @@ int    best_imbalance, imbalance;
            gain[i] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
         else if (pins[1-part[i]][edge] == 0)
            gain[i] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
-        }
+     }
 
   /* Initialize the heaps and fill them with the gain values */
   Zoltan_Heap_Init(zz, &heap[0], hg->nVtx);
@@ -234,11 +234,11 @@ int    best_imbalance, imbalance;
             best_locked  = number_locked;
             best_cutsize = cur_cutsize;
             no_better_steps = 0;
-            }
+        }
         if (hgp->output_level > HG_DEBUG_LIST+1)
            printf ("%4d %6d %2d->%2d %7.2f %f %f\n", step, vertex, sour, dest,
             error, cur_cutsize - cutsize_beforepass, cur_cutsize);
-        }
+    }
 
 #ifdef _DEBUG
     uprintf(hg->comm, "Best CUT=%6.0lf at move %d\n", best_cutsize, best_locked);
@@ -256,7 +256,7 @@ int    best_imbalance, imbalance;
         part_weight[dest] += (hg->vwgt ? hg->vwgt[vertex] : 1.0);
         Zoltan_Heap_Input(&heap[dest], vertex, gain[vertex]);
         locked[vertex] = 0;
-        }
+     }
 
      /* only update data structures if we're going to do another pass */
      if ((best_cutsize < cutsize_beforepass) &&  (round < hgp->fm_loop_limit)) {         
