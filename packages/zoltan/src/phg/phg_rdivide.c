@@ -196,6 +196,27 @@ int Zoltan_PHG_rdivide(
           if (part[i]==0)
               final[hg->vmap[i]] = lo;
   }
+{/* KDDKDD DO NOT COMMIT */
+static int KDDcnt = 0;
+if (left) {
+      double ltotw=0, totw=0.0, sumlwgt=0.0;
+      for (i=0; i<hg->nVtx; ++i)
+          ltotw += hg->vwgt[i];
+      MPI_Allreduce(&ltotw, &totw, 1, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
+      ltotw = 0.;
+      for (i=0; i<left->nVtx; ++i)
+          ltotw += left->vwgt[i];
+      MPI_Allreduce(&ltotw, &sumlwgt, 1, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
+      uprintf(hgc, "*%d* KDDLEFT (%d of %d) Weight=%.2lf   LeftW=%.2lf or %.2lf   RightW=%.2lf  tps=(%.2lf, %.2lf)  \n", KDDcnt, left->nVtx, hg->nVtx, totw, leftw, sumlwgt, rightw, bisec_part_sizes[0], bisec_part_sizes[1]);
+      if ((totw - (leftw+rightw)) > 0.000001) {
+uprintf(hgc, "*%d* KDDLEFTERR %f != %f + %f\n", KDDcnt, totw, leftw, rightw);
+          errexit("During recursive bisection for [%d, %d] totw (%.2lf) !=  Left(%.2lf) + Right(%.2lf)\n", lo, hi, totw, leftw, rightw);
+      }
+}
+KDDcnt++;
+}
+/* KDDKDD DO NOT COMMIT */
+
 
   if (hi>mid+1) { /* only split if we need it */
       if (!(right = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
@@ -213,6 +234,26 @@ int Zoltan_PHG_rdivide(
           if (part[i]==1)
               final[hg->vmap[i]] = hi;
   }
+{/* KDDKDD DO NOT COMMIT */
+static int KDDcnt = 0;
+if (right) {
+      double ltotw=0, totw=0.0, sumlwgt=0.0;
+      for (i=0; i<hg->nVtx; ++i)
+          ltotw += hg->vwgt[i];
+      MPI_Allreduce(&ltotw, &totw, 1, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
+      ltotw = 0.;
+      for (i=0; i<right->nVtx; ++i)
+          ltotw += right->vwgt[i];
+      MPI_Allreduce(&ltotw, &sumlwgt, 1, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
+      uprintf(hgc, "*%d* KDDRIGHT (%d of %d) Weight=%.2lf   LeftW=%.2lf  RightW=%.2lf or %.2lf  tps=(%.2lf, %.2lf)  \n", KDDcnt, right->nVtx, hg->nVtx, totw, leftw, rightw, sumlwgt, bisec_part_sizes[0], bisec_part_sizes[1]);
+      if ((totw - (leftw+rightw)) > 0.000001) {
+uprintf(hgc, "*%d* KDDRIGHTERR %f != %f + %f\n", KDDcnt, totw, leftw, rightw);
+          errexit("During recursive bisection for [%d, %d] totw (%.2lf) !=  Left(%.2lf) + Right(%.2lf)\n", lo, hi, totw, leftw, rightw);
+      }
+}
+KDDcnt++;
+}
+/* KDDKDD DO NOT COMMIT */
 #ifdef _DEBUG1
   for (i=0; i<hg->nVtx; ++i)
       if (part[i]<0 || part[i]>1)
@@ -530,7 +571,7 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
       tmap[i] = (part[i] == partid) ? nhg->nVtx++ : -1; 
 
   /* save vertex and edge weights if they exist */
-  if (ohg->vwgt && nhg->VtxWeightDim)
+  if (nhg->nVtx && ohg->vwgt && nhg->VtxWeightDim)
     nhg->vwgt=(float*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(float)*nhg->VtxWeightDim);
   if (nhg->nVtx && (nhg->vmap = (int*) ZOLTAN_MALLOC (nhg->nVtx * sizeof (int)))==NULL)
       MEMORY_ERROR;
@@ -539,7 +580,7 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
       int v=tmap[i];
       if (v!=-1) {
           nhg->vmap[v] = ohg->vmap[i];
-          if (nhg->vwgt) {
+          if (nhg->VtxWeightDim) {
               /* UVC: TODO CHECK we're only using 1st weight! Right now this will be used
                  to compute balance ratio! Check this code when multiconstraint is added!
               */              
@@ -549,7 +590,7 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
           } else
               pw[0] += 1.0;
       } else {
-          pw[1] += (nhg->vwgt) ? ohg->vwgt[i*nhg->VtxWeightDim] : 1.0;
+          pw[1] += (nhg->VtxWeightDim) ? ohg->vwgt[i*nhg->VtxWeightDim] : 1.0;
       }
       
   }
