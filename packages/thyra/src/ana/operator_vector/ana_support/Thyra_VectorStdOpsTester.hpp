@@ -278,7 +278,7 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   Scalar beta;
 
   // Test V_StVpV
-  if(out) *out << "\nV_StVpV(&*z,alpha,*v1,*v2);\n";
+  if(out) *out << "\nTesting V_StVpV(&*z,alpha,*v1,*v2) ...\n";
   v1 = createMember(vecSpc);
   v2 = createMember(vecSpc);
   v3 = createMember(vecSpc);
@@ -293,15 +293,14 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   Vp_V(&*z,*v2,alpha);
   V_V(&*x,*v3);
   Vp_V(&*x,*z,Scalar(-ST::one()));
-  if(!testRelErr<Scalar>(
+  if(!testMaxErr<Scalar>(
        "norm_2(*x)",norm_2(*x)
-       ,"0.0",ST::zero()
        ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
        )
     ) success=false;
 
   // Test Vp_V
-  if(out) *out << "\nVp_V(&*v1,*v2,beta);\n";
+  if(out) *out << "\nTesting Vp_V(&*v1,*v2,beta) ...\n";
   v1 = createMember(vecSpc);
   v2 = createMember(vecSpc);
   v3 = createMember(vecSpc);
@@ -316,15 +315,14 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   V_S(&*v3,alpha);
   V_StVpV(&*z,beta,*v3,*v2);
   V_StVpV(&*x,Scalar(-ST::one()),*z,*v1);
-  if(!testRelErr<Scalar>(
+  if(!testMaxErr<Scalar>(
        "norm_2(*x)",norm_2(*x)
-       ,"0.0",ST::zero()
        ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
        )
     ) success=false;
   
   // Test Vp_V
-  if(out) *out << "\nVp_V(&*v1,*v2);\n";
+  if(out) *out << "\nTesting Vp_V(&*v1,*v2) ...\n";
   v1 = createMember(vecSpc);
   v2 = createMember(vecSpc);
   v3 = createMember(vecSpc);
@@ -338,15 +336,14 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   V_S(&*v3,alpha);
   V_StVpV(&*z,ST::one(),*v3,*v2);
   V_StVpV(&*x,Scalar(-ST::one()),*z,*v1);
-  if(!testRelErr<Scalar>(
+  if(!testMaxErr<Scalar>(
        "norm_2(*x)",norm_2(*x)
-       ,"0.0",ST::zero()
        ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
        )
     ) success=false;
 
   // Test V_S
-  if(out) *out << "\nV_S(&*v1,alpha);\n";
+  if(out) *out << "\nTesting V_S(&*v1,alpha) ...\n";
   v1 = createMember(vecSpc);
   v2 = createMember(vecSpc);
   z  = createMember(vecSpc);
@@ -354,16 +351,15 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   assign(&*v1,alpha);
   V_S(&*v2,alpha);
   V_StVpV(&*z,Scalar(-ST::one()),*v1,*v2);
-  if(!testRelErr<Scalar>(
+  if(!testMaxErr<Scalar>(
        "norm_2(*z)",norm_2(*z)
-       ,"0.0",ST::zero()
        ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
        )
     ) success=false;
 
   
   // Test V_V
-  if(out) *out << "\nV_V(&*v1,*v2);\n";
+  if(out) *out << "\nTesting V_V(&*v1,*v2) ...\n";
   v1 = createMember(vecSpc);
   v2 = createMember(vecSpc);
   z  = createMember(vecSpc);
@@ -371,9 +367,8 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   randomize(Scalar(Scalar(-10)*ST::one()),Scalar(Scalar(10)*ST::one()),&*v1);
   V_V(&*v2,*v1);
   V_StVpV(&*z,Scalar(-ST::one()),*v1,*v2);
-  if(!testRelErr<Scalar>(
+  if(!testMaxErr<Scalar>(
        "norm_2(*z)",norm_2(*z)
-       ,"0.0",ST::zero()
        ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
        )
     ) success=false;
