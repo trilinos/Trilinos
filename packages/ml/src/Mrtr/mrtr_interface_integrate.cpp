@@ -112,10 +112,8 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   }
   else
   {
-    cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
-         << "***ERR*** Interface " << Id() << " 2D interface integration not yet impl.\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    ok = Integrate_3D(M,D);
+    if (!ok) return false;
   }
 
   //-------------------------------------------------------------------

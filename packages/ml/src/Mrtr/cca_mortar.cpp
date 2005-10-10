@@ -466,7 +466,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
   }// for (int k=0; k<ninter; ++k) loop over mortar interfaces
   delete [] ids;
   
-#if 1
+#if 0
   //-----------------------------------------------------------------
   // print all interfaces
   fflush(stdout);

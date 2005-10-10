@@ -523,7 +523,7 @@ bool MRTR::Manager::Mortar_Integrate()
     M_ = new Epetra_CrsMatrix(Copy,*saddlemap_,40,false);
   }
 
-
+  cout << *this;
   //-------------------------------------------------------------------
   // integrate all interfaces
   {
