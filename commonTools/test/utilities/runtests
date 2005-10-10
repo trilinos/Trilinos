@@ -1224,7 +1224,7 @@ cleanUp();
         my $command = "./commonTools/test/coverage/gcovmerge --with-directories ";
         $command .= "--exclude=test/ --exclude=example/ --exclude=examples/ ";
         $command .= "--exclude=doc/ --source-dir=$trilinosDir/packages --with-count ";
-        $command .= "--with-percent $buildDir/packages";
+        $command .= "--with-percent --with-full-paths $buildDir/packages";
         my $output = `$command`;
         my $exitStatus = $?;
         
