@@ -49,7 +49,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-/*!        \class Anasazi::BlockDavidson
+/*!     \class Anasazi::BlockDavidson
 
         \brief This class implements the block Davidson method, an iterative
         method for solving symmetric eigenvalue problems.
@@ -235,7 +235,8 @@ namespace Anasazi {
       _os <<"******************* CURRENT STATUS *******************"<<endl;
       _os <<"The number of iterations performed is " <<_iter<<endl;
       _os <<"The number of restarts performed is "<<_numRestarts<<endl;
-      _os <<"The current block size is "<<_blockSize<<endl;
+      _os <<"The block size is "<<_blockSize<<endl;
+      _os <<"The maximum number of blocks is "<<_maxBlock<<endl;
       _os <<"The number of eigenvalues requested is "<<_nev<<endl;
       _os <<"The number of eigenvalues computed is "<<_knownEV<<endl;
       _os <<"The requested residual tolerance is "<<_residual_tolerance<<endl;
