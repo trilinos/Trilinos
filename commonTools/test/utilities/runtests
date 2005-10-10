@@ -915,15 +915,15 @@ cleanUp();
                                                         }
                                                         if ($host =~ m/atlantis/) {                                                            
                                                             if ($testEntry{'descendDirs'} eq "YES") {
-                                                                $testEntry{'command'} = "$mpiGo $numProc -d $buildDir/packages/$package/test/".$testEntry{'directory'}." ".$testEntry{'name'}." $arg";
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                             } else { 
-                                                                $testEntry{'command'} = "$mpiGo $numProc -d $buildDir/packages/$package/test/ ".$testEntry{'directory'}."/".$testEntry{'name'}." $arg";
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                             }
                                                         } else {
                                                             if ($testEntry{'descendDirs'} eq "YES") {
-                                                                $testEntry{'command'} = "$mpiGo $numProc ./".$testEntry{'name'}." ".$arg;
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc ./".$testEntry{'name'}." ".$arg;
                                                             } else { 
-                                                                $testEntry{'command'} = "$mpiGo $numProc ./".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc ./".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                             }
                                                         }
                                                         push(@testListAoH, { %testEntry });
@@ -934,15 +934,15 @@ cleanUp();
                                                     if ($numProc <= $maxProc) { 
                                                         if ($host =~ m/atlantis/) {
                                                             if ($testEntry{'descendDirs'} eq "YES") {
-                                                                $testEntry{'command'} = "$mpiGo $numProc -d $buildDir/packages/$package/test/".$testEntry{'directory'}." ".$testEntry{'name'}." $arg";
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                             } else { 
-                                                                $testEntry{'command'} = "$mpiGo $numProc -d $buildDir/packages/$package/test/ ".$testEntry{'directory'}."/".$testEntry{'name'}." $arg";
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                             }
                                                         } else {
                                                             if ($testEntry{'descendDirs'} eq "YES") {
-                                                                $testEntry{'command'} = "$mpiGo $numProc ./".$testEntry{'name'}." ".$arg;
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc ./".$testEntry{'name'}." ".$arg;
                                                             } else { 
-                                                                $testEntry{'command'} = "$mpiGo $numProc ./".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc ./".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                             }
                                                         }
                                                         push(@testListAoH, { %testEntry });
@@ -956,15 +956,15 @@ cleanUp();
                                             my $numProc = $maxProc;
                                             if ($host =~ m/atlantis/) {
                                                 if ($testEntry{'descendDirs'} eq "YES") {
-                                                    $testEntry{'command'} = "$mpiGo $numProc -d $buildDir/packages/$package/test/".$testEntry{'directory'}." ".$testEntry{'name'}." $arg";
+                                                    $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                 } else { 
-                                                    $testEntry{'command'} = "$mpiGo $numProc -d $buildDir/packages/$package/test/ ".$testEntry{'directory'}."/".$testEntry{'name'}." $arg";
+                                                    $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                 }
                                             } else {
                                                 if ($testEntry{'descendDirs'} eq "YES") {
-                                                    $testEntry{'command'} = "$mpiGo $numProc ./".$testEntry{'name'}." ".$arg;
+                                                    $testEntry{'command'} = "$mpiGo"."$numProc ./".$testEntry{'name'}." ".$arg;
                                                 } else { 
-                                                    $testEntry{'command'} = "$mpiGo $numProc ./".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                    $testEntry{'command'} = "$mpiGo"."$numProc ./".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                 }
                                             }
                                             push(@testListAoH, { %testEntry });
