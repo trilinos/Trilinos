@@ -132,7 +132,7 @@ bool MRTR::Interface::Integrate_2D(Epetra_CrsMatrix& M,
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Integrate_MasterSide_2D:\n"
+      cout << "***ERR*** MRTR::Interface::Integrate_2D:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;

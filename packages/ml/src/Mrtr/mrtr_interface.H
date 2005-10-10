@@ -258,7 +258,14 @@ private:
   // integrate the overlap of 2 segments in 2D (master/slave contribution)
   bool Integrate_2D_Section(MRTR::Segment& sseg,MRTR::Segment& mseg,
                             Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
+
+  // control routine of the integration of the master/slave side in 3D
+  bool Integrate_3D(Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
   
+  // integrate the overlap of 2 segments in 3D (master/slave contribution)
+  bool Integrate_3D_Section(MRTR::Segment& sseg,MRTR::Segment& mseg,
+                            Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
+
 private:
   
   int                     Id_;           // the interface Id                      
