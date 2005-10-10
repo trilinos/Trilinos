@@ -9801,7 +9801,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 		#examples/VanderPol/Makefile
 		#examples/Original_Examples/Makefile
 		#])
-                                                                                                    ac_config_files="$ac_config_files Makefile src/Makefile examples/Makefile examples/Simple/Makefile examples/Brusselator/Makefile examples/Reed/Makefile examples/VanderPol/Makefile examples/Rpm_Test/Makefile examples/Tcubed/Makefile examples/Elezgaray/Makefile"
+                                                                                                              ac_config_files="$ac_config_files Makefile Makefile.export.capo src/Makefile examples/Makefile examples/Simple/Makefile examples/Brusselator/Makefile examples/Reed/Makefile examples/VanderPol/Makefile examples/Rpm_Test/Makefile examples/Tcubed/Makefile examples/Elezgaray/Makefile"
 
 
 
@@ -10397,6 +10397,7 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+  "Makefile.export.capo" ) CONFIG_FILES="$CONFIG_FILES Makefile.export.capo" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "examples/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
   "examples/Simple/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Simple/Makefile" ;;

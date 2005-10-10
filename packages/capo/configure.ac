@@ -415,6 +415,7 @@ AC_SUBST(ac_aux_dir)
 		#])
 AC_CONFIG_FILES([
 		Makefile 
+		Makefile.export.capo
 		src/Makefile
 		examples/Makefile
 		examples/Simple/Makefile
