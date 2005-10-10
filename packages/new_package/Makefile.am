@@ -53,24 +53,27 @@ ACLOCAL	= aclocal -I config
 #np# new package so that the files can be used in creating the 
 #np# configure script for other packages. 
 EXTRA_DIST = \
-config/ac_cxx_bool.m4                   config/depcomp \
-config/ac_cxx_have_std.m4               config/install-sh \
-config/ac_cxx_have_stl.m4               config/missing \
-config/ac_cxx_mutable.m4                config/mkinstalldirs \
-config/ac_cxx_namespaces.m4             config/tac_arg_check_mpi.m4 \
-config/ac_cxx_new_for_scoping.m4        config/tac_arg_config_mpi.m4 \
-config/ac_cxx_reinterpret_cast.m4 \
-config/tac_arg_enable_compiler_options.m4 \
-config/ac_cxx_std_ios_base_fmtflags.m4  config/tac_arg_enable_feature.m4 \
-config/ac_cxx_std_sprintf.m4            config/tac_arg_enable_option.m4 \
-config/ac_prompt_user.m4                config/tac_arg_with_ar.m4 \
-config/ac_prompt_user_no_define.m4      config/tac_arg_with_blaslib.m4 \
-config/acx_blas.m4                      config/tac_arg_with_compiler.m4 \
-config/acx_check_dos_filesys.m4         config/tac_arg_with_flags.m4 \
-config/acx_lapack.m4                    config/tac_arg_with_incdirs.m4 \
-config/acx_pthread.m4                   config/tac_arg_with_lapacklib.m4 \
-config/config.guess                     config/tac_arg_with_libdirs.m4 \
-config/config.sub                       config/tac_arg_with_package.m4 \
+config/ac_cxx_bool.m4                     config/depcomp \
+config/ac_cxx_have_std.m4                 config/install-sh \
+config/ac_cxx_have_stl.m4                 config/missing \
+config/ac_cxx_mutable.m4                  config/mkinstalldirs \
+config/ac_cxx_namespaces.m4               config/tac_arg_check_mpi.m4 \
+config/ac_cxx_new_for_scoping.m4          config/tac_arg_config_mpi.m4 \
+config/ac_cxx_reinterpret_cast.m4         config/generate-makeoptions.pl \
+config/replace-install-prefix.pl          config/tac_arg_enable_can_use_package.m4 \
+config/tac_arg_enable_compiler_options.m4 config/tac_arg_enable_export-makefiles.m4 \
+config/ac_cxx_std_ios_base_fmtflags.m4    config/tac_arg_enable_feature.m4 \
+config/ac_cxx_std_sprintf.m4              config/tac_arg_enable_option.m4 \
+config/ac_prompt_user.m4                  config/tac_arg_with_ar.m4 \
+config/ac_prompt_user_no_define.m4        config/tac_arg_with_blaslib.m4 \
+config/acx_blas.m4                        config/tac_arg_with_compiler.m4 \
+config/acx_check_dos_filesys.m4           config/tac_arg_with_flags.m4 \
+config/acx_lapack.m4                      config/tac_arg_with_incdirs.m4 \
+config/acx_pthread.m4                     config/tac_arg_with_lapacklib.m4 \
+config/config.guess                       config/tac_arg_with_libdirs.m4 \
+config/config.sub                         config/tac_arg_with_package.m4 \
+config/strip_dup_incl_paths.pl            config/strip_dup_libs_.pl \
+config/tac_arg_with_perl.pl \
 bootstrap 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -98,6 +101,41 @@ all-local:
 	@echo "Trilinos package new_package built successfully"
 
 ## #######################################################################
+## Target for circular dependencies
+## #######################################################################
+all-libs:
+	cd src ; make all-libs
+
+## #######################################################################
+## Export Makefile Installation
+## #######################################################################
+if USING_EXPORT_MAKEFILES
+
+install-exec-hook:
+	cp $(top_builddir)/Makefile.export.new_package $(exec_prefix)/include/.
+	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
+		--exec-prefix=$(exec_prefix) \
+		--my-export-makefile=Makefile.export.new_package \
+		--my-abs-top-srcdir=@abs_top_srcdir@ \
+		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
+		--my-abs-lib-dirs=@abs_top_builddir@/src \
+		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
+		new_package > $(exec_prefix)/include/Makefile.export.new_package.macros
+
+uninstall-hook:
+	rm -f $(exec_prefix)/include/Makefile.export.new_package
+	rm -f $(exec_prefix)/include/Makefile.export.new_package.macros
+
+else
+
+install-exec-hook:
+
+uninstall-hook:
+
+endif
+
+## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
 #  #np# - Most packages should have an example and a full suite 
@@ -112,7 +150,7 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-if BUILD_PYTHON
+if PYTHON_USE
 PYTHON_SUBDIR=python
 endif
 

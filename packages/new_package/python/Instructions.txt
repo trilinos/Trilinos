@@ -3,20 +3,20 @@
 
                   Bill Spotz, wfspotz@sandia.gov
 
-                          April 10, 2005
+                          October 7, 2005
 
 I have compiled a list of necessary steps to generate wrappers for
 your Trilinos package to interface it with python.  The workhorse for
-doing this is swig (Simple Wrapper Interface Generator).  It takes an
-interface file (*.i -- which lists header files and contains other
+doing this is swig (Simple Wrapper and Interface Generator).  It takes
+an interface file (*.i -- which lists header files and contains other
 directives) and generates a wrapper file (*_wrap.cpp) and a python
-proxy file (*.py).  The C++ file must be compiled into a shared
-object or dynamic library, depending on the platform.  There are two
-portable ways to do this.  One, write a python script (called
+proxy file (*.py).  The generated C++ file must be compiled into a
+shared object or dynamic library, depending on the platform.  There
+are two portable ways to do this.  One, write a python script (called
 setup.py by convention) that imports the distutils module and define
 the package and extensions using distutils classes and functions.  Or
 two, use libtool.  This New_Package package has been wrapped with the
-first method.  See NOX/LOCA for an example of the second.
+first method.
 
 While the Trilinos project tries to impose as few restrictions on
 packages as possible, there is great benefit in following a few
@@ -44,23 +44,42 @@ keep current documentation on which header files of which packages
 have been wrapped.  In the CVS repository, this directory structure is
 currently
 
-     YOUR_PACKAGE/python/            Subdirectories
-     YOUR_PACKAGE/python/doc         Documentation
-     YOUR_PACKAGE/python/example     Example scripts
-     YOUR_PACKAGE/python/src*        Interface files, source files,
-                                     setup.py and __init__.py scripts 
-     YOUR_PACKAGE/python/src*/.deps  Dummy file, used to force
-                                     creation of dependency directory
-                                     in build tree
-     YOUR_PACKAGE/python/test        Test scripts
+    python/                          Subdirectories
+    python/Makefile.*                Automake/autoconf Makefiles
+    python/doc                       Documentation directory
+    python/doc/Makefile.*            Automake/autoconf Makefiles
+    python/example                   Example scripts directory
+    python/example/Makefile.*        Automake/autoconf Makefiles
+    python/example/setpath.py        Python script that sets the
+                                       python search path
+    python/example/ex*.py            Example scripts
+    python/src                       Source file directory
+    python/src/.deps                 Dependency directory
+    python/src/.deps/dummy           Empty dummy file, used to force
+                                       creation of dependency directory
+                                       in build tree
+    python/src/Makefile.*            Automake/autoconf Makefiles
+    python/src/TRILINOS_HOME_DIR.in  Creates text file with full path
+                                       to Trilinos source directory
+    python/src/__init__.py.in        Creates python module
+                                       initialization file
+    python/src/setup.py              Python script for building and
+                                       installing extension modules
+    python/src/*.i                   SWIG interface files
+    python/test               	     Test scripts directory
+    python/test/Makefile.*           Automake/autoconf Makefiles
+    python/test/setpath.py           Python script that sets the
+                                       python search path
+    python/test/test*.py             Unit test scripts
 
-A third benefit is that it will allow the test harness to search for
+A third benefit is that it allows the test harness to search for
 python scripts to run automatically.
 
-The New_Package package has been wrapped to provide an example of how
-it is done.  You will also need to become familiar with writing swig
-interface files and setup.py scripts.  My hope is that there is
-enough here to get you most of the way.
+The new_package package has been wrapped to provide an example of how
+Trilinos packages can provide a python interface while following these
+standards.  You will also need to become familiar with writing swig
+interface files and setup.py scripts.  My hope is that the new_package
+wrappers will provide sufficient examples to get you most of the way.
 
 To add python wrappers to your existing Trilinos package, do the
 following:
@@ -72,7 +91,15 @@ following:
      ac_python_module.m4
      az_python.m4
      swig.am
-     tac_python_enable.m4
+     tac_enable_python.m4
+
+   The following files are often already in package config
+   directories, but you should double check to make sure they are
+   there:
+
+     string_replace.pl
+     strip_dup_incl_paths.pl
+     strip_dup_libs.pl
 
 2. Edit YOUR_PACKAGE/configure.ac.  Copy the following lines into
    YOUR_PACKAGE/configure.ac:
@@ -89,6 +116,7 @@ following:
 
      python/Makefile
      python/src/Makefile
+     python/src/TRILINOS_HOME_DIR
      python/src/__init__.py
      python/src/.deps/dummy
      python/test/Makefile
@@ -103,7 +131,7 @@ following:
 
 3. Edit YOUR_PACKAGE/Makefile.am to contain the following:
 
-     if BUILD_PYTHON
+     if PYTHON_USE
      PYTHON_SUBDIR=python
      endif
 
@@ -116,8 +144,10 @@ following:
 
 In YOUR_PACKAGE/python/src, do the following:
 
-5. Edit Makefile.am.  Change the definition of SWIG_CXXFLAGS to be a
-   complete list of needed "-I" include directories and "-D"
+5. Edit Makefile.am.  If your package supports an export Makefile, you
+   should only need to change the name of the export Makefile included
+   near the top of the file.  Change the definition of SWIG_CXXFLAGS
+   to be a complete list of needed "-I" include directories and "-D"
    definitions (and anything else) that swig will need to generate the
    wrappers.  Change the definition of INTERFACES to be a list of the
    swig interface files that should be wrapped.  (Note that a python
@@ -127,14 +157,50 @@ In YOUR_PACKAGE/python/src, do the following:
 
 6. Edit the __init__.py.in file.  Change the definition of the list
    "all" to include the names of all of the modules in your package.
+   Many packages will have just one module name, but if your package
+   supports namespaces, you should have multiple modules.
 
-7. Edit the setup.py script.  This file is hopefully documented
-   sufficiently that you can read through it and change the variable
-   values and definitions to what is needed for your package.  The
-   important thing is to define the package properly and provide all
-   of the correct source files, include directories, library
-   directories, libraries, compiler arguments and linker arguments
-   needed to build each extension.
+7. Edit the setup.py script.
+
+   a. The first crucial component of getting the setup.py script to
+      work is to transfer make variables (especially those determined
+      during configuration) to the setup.py script.  If your
+      python/src/Makefile.am "include"s all the needed export
+      Makefiles, this process should be completely automated.  There
+      is a line in the setup.py script:
+
+        globals().update(makeVars)
+
+      After this line, every make variable from python/src/Makefile in
+      the build directory will be a variable in the python global
+      namespace.  The names will be the same names as the make
+      variables and the values will be python strings.
+
+   b. Change references to variables NEW_PACKAGE_INCLUDES and
+      NEW_PACKAGE_LIBS to variable names more appropriate for your
+      package.  If your package supports an export Makefile and you
+      have included it in python/src/Makefile.am, then
+      YOUR_PACKAGE_INCLUDES and YOUR_PACKAGE_LIBS should automatically
+      be in the python global namespace.
+
+   c. When the python variable named "options" is set, make sure to
+      include the contributions from all of the required packages.
+      Again, if you generate a proper export Makefile, you should
+      only need contributions from YOUR_PACKAGE_INCLUDES and
+      YOUR_PACKAGE_LIBS.
+
+   d. When you define the python extension(s) using the Extension()
+      class, the first argument is the module name and the second
+      argument is a list of the source files that must be compiled and
+      linked to create the module.  This always includes the wrapper
+      file generated by swig, but you can add additional files to this
+      list.  The rest of the arguments should not need to be changed.
+
+   e. The call to function "setup" at the end of the script is the key
+      to the setup.py script.  Make sure the module names are correct
+      in all the arguments and that the ext_modules keyword argument
+      is a complete list of all the extension modules you wish to
+      have included in your top-level module.
 
 8. Remove the SWIG interface file, python/src/New_Package.i, or change
    the name to python/src/YOUR_PACKAGE.i.  Create any additional
@@ -166,8 +232,9 @@ you can go on to the following steps:
     logic for finding epetra's path in new_package's setpath.py as a
     guide.
 
-11. The test scripts can be invoked by running "make check".  Debug
-    if necessary.
+11. Running "make" will copy the test and example scripts from the
+    source directory to the build directory.  They can be run
+    directly.
 
 12. Repeat steps 9--11 for the python/example subdirectory.  The
     Makefile defines EXAMPLE_SUITE instead of TEST_SUITE, but

@@ -26,6 +26,10 @@
 # ************************************************************************
 # @HEADER
 
+# Include the export Makefiles
+include $(top_builddir)/Makefile.export.new_package
+include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
+
 # Swahili support
 if HAVE_NEWP_SWAHILI
   NEWP_SWAHILI_FLAG = -DNEWP_SWAHILI
@@ -40,10 +44,9 @@ endif
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = \
-	-I$(top_srcdir)/src  \
-	$(NEWP_SWAHILI_FLAG) \
-	$(MPI_FLAG)
+SWIG_CXXFLAGS = $(NEW_PACKAGE_INCLUDES) \
+		$(NEWP_SWAHILI_FLAG)    \
+		$(MPI_FLAG)
 
 # Default make target
 all-am: build

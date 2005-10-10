@@ -41,10 +41,6 @@ from MakefileVariables import *
 
 # Build the makeVars dictionary by processing relevant Makefiles
 makeVars = { }
-makeVars.update(processMakefile(os.path.join("..","..","..","epetra"    ,
-                                             "Makefile.export.epetra"    )))
-makeVars.update(processMakefile(os.path.join("..","..","..","PyTrilinos",
-                                             "Makefile.export.pytrilinos")))
 makeVars.update(processMakefile("Makefile"))
 
 # Import the variable names and values into the global namespace.  This is
@@ -59,6 +55,7 @@ except KeyError:
     version = makeVars.get("VERSION","??")
 
 # Initialize arguments that will be needed by the Extension class
+define_macros      = [("HAVE_CONFIG_H", "1")]
 include_dirs       = [srcdir]
 library_dirs       = [      ]
 libraries          = [      ]
@@ -66,19 +63,11 @@ extra_link_args    = [      ]
 extra_compile_args = CPPFLAGS.split() + CXXFLAGS.split()
 uniquifyList(extra_compile_args)
 
-# New_Package does not support the export Makefile system, so we need to build
-# the NEW_PACKAGE_INCLUDES and NEW_PACKAGE_LIBS variables from scratch
-NEW_PACKAGE_INCLUDES = "-I%s -I%s" % (os.path.normpath(os.path.join(top_srcdir,"src")),
-                                      os.path.normpath(os.path.join(top_builddir,"src")))
-NEW_PACKAGE_LIBS     = "-L%s -lnew_package" % os.path.normpath(os.path.join(top_builddir,"src"))
-
 # Get the relevant Makefile export variable values, split them into lists of
 # strings, add them together to obtain a big list of option strings, and then
 # remove any duplicate entries
 options = NEW_PACKAGE_INCLUDES.split() + \
           NEW_PACKAGE_LIBS.split()     + \
-          EPETRA_INCLUDES.split()      + \
-          EPETRA_LIBS.split()          + \
           PYTRILINOS_INCLUDES.split()  + \
           PYTRILINOS_LIBS.split()
 uniquifyList(options)
@@ -109,7 +98,7 @@ sysconfig._config_vars["CXX"] = CXX
 # _New_Package extension module
 _New_Package = Extension("PyTrilinos._New_Package",
                          [newPackageWrap],
-                         define_macros      = [("HAVE_CONFIG_H", "1")],
+                         define_macros      = define_macros,
                          include_dirs       = include_dirs,
                          library_dirs       = library_dirs,
                          libraries          = libraries,
