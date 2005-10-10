@@ -19,6 +19,7 @@
 #                  [--with-count]                   \
 #                  [--with-percent]                 \
 #                  [--with-report=REP]              \
+#                  [--with-full-paths]              \
 #                  [--help]                         \
 #                  build-dir
 #
@@ -88,6 +89,9 @@
 #            option, then the filename for the report
 #            will be coverage.html.
 #
+#        --with-full-paths
+#            Outputs full pathnames instead of abbrieviated file names. 
+#
 #
 # Written by Joe Outzen, for the Trilinos project.
 # Modified by Chris Baker (cgbaker@sandia.gov)   2005-07-31
@@ -114,6 +118,7 @@ $show_count = 0;
 $show_percent = 0;
 @not_executed = ();
 $gen_report = 0;
+$full_paths = 0;
 
 # parse command-line options
 if (@ARGV == 0){
@@ -169,6 +174,9 @@ foreach (@ARGV){
     elsif(/--with-report/){
         $gen_report = 1;        
         $report_fn = "coverage.html";
+    }
+    elsif(/--with-full-paths/){
+	$full_paths = 1;
     }
     elsif(/--help/){
         print "gcovmerge\n";
@@ -258,6 +266,9 @@ foreach (@ARGV){
         print "           If --with-report is given without the REP\n";
         print "           option, then the filename for the report\n";
         print "           will be coverage.html.\n";
+	print "\n";
+	print "       --with-full-paths\n";
+	print "           Outputs full pathnames instead of abbrieviated file names.\n";
         print "\n";
         print "       --help\n";
         print "           Print this help output and exit.\n";
@@ -474,6 +485,9 @@ foreach(keys(%source_files)){
 # output the results for files
 foreach(sort(keys(%source_files))){
     $fn = $_;
+    if($full_paths){
+	$fn = $source_files{$fn}.$fn;
+    }
     $exec = $file_exec{$source_files{$_}.$_};
     $comp = $file_comp{$source_files{$_}.$_};
     if ($exec ne undef){

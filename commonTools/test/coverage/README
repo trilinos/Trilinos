@@ -102,6 +102,8 @@ the path):
        If --with-report is given without the REP
        option, then the filename for the report
        will be coverage.html.
+   --with-full-paths
+       Outputs full pathnames instead of abbrieviated file names.
 
 Running gcovmerge with the default options from the Trilinos level will most
 likely generate too much information to really use.  Specifying the search path
