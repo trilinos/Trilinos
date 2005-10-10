@@ -37,6 +37,7 @@
 #include "mrtr_node.H"
 #include "mrtr_segment.H"
 #include "mrtr_interface.H"
+#include "mrtr_utils.H"
 
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 07/05|
@@ -60,18 +61,19 @@ bool MRTR::Projector::ProjectNodetoSegment_NodalNormal(MRTR::Node& node,
                                                        MRTR::Segment& seg, 
 						       double xi[])
 {
-#if 0
-  cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
-  cout << "Segment\n" << seg;
-  MRTR::Node** nodes = seg.Nodes();
-  cout << *nodes[0];
-  cout << *nodes[1];
-#endif
+  // 2D version of the problem
   if (IsTwoDimensional())
   {
+#if 0
+    cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
+    cout << "Segment\n" << seg;
+    MRTR::Node** nodes = seg.Nodes();
+    cout << *nodes[0];
+    cout << *nodes[1];
+#endif
     // we do a newton iteration for the projection coordinates xi
     // set starting value to the middle of the segment
-    double eta = -0.8;
+    double eta = 0.0;
     int    i = 0;
     double F,dF,deta;
     for (i=0; i<10; ++i)
@@ -96,13 +98,47 @@ bool MRTR::Projector::ProjectNodetoSegment_NodalNormal(MRTR::Node& node,
     xi[0] = eta;
     return true;
   }
+  // 3D version of the problem
   else
   {
-    cout << "***ERR*** MRTR::Projector::ProjectNodetoSegment_NodalNormal:\n"
-    	 << "***ERR*** 3D projection not yet impl.\n"
-    	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
+#if 0
+    cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
+    cout << "Segment " << seg;
+    MRTR::Node** nodes = seg.Nodes();
+    cout << *nodes[0];
+    cout << *nodes[1];
+    cout << *nodes[2];
+#endif
+    // we do a newton iteration for the projection coordinates xi
+    // set starting value to the middle of the segment
+    double eta[2]; eta[0] = eta[1] = 1./3.;
+    double alpha = 0.01;
+    int    i=0;
+    double F[3], dF[3][3], deta[3];
+    double eps;
+    for (i=0; i<30; ++i)
+    {
+      evaluate_FgradF_3D_NodalNormal(F,dF,node,seg,eta,alpha);
+      eps = MRTR::dot(F,F,3);
+      if (eps < 1.0e-10) break;
+      // cout << eps << endl;
+      MRTR::solve33(dF,deta,F);
+      eta[0] -= deta[0];
+      eta[1] -= deta[1];
+      alpha  -= deta[2];      
+    }    
+    if (eps>1.0e-10)
+    {
+      cout << "***WRN*** MRTR::Projector::ProjectNodetoSegment_NodalNormal:\n"
+      	   << "***WRN*** 3D Newton iteration failed to converge\n"
+      	   << "***WRN*** #iterations = " << i << endl
+      	   << "***WRN*** eps = " << eps << " eta[3] = " << eta[0] << "/" << eta[1] << "/" << alpha << "\n"
+           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    }
+#if 1
+    cout << "#iterations = " << i << " eps = " << eps << " eta = " << eta[0] << "/" << eta[1] << endl;
+#endif
+  } // 
   return true;
 }
 
@@ -240,6 +276,7 @@ bool MRTR::Projector::ProjectNodetoSegment_SegmentNormal(MRTR::Node& node,
 #if 0
   cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
 #endif
+  // 2D case
   if (IsTwoDimensional())
   {
     // we do a newton iteration for the projection coordinates xi
@@ -269,12 +306,46 @@ bool MRTR::Projector::ProjectNodetoSegment_SegmentNormal(MRTR::Node& node,
     xi[0] = eta;
     return true;
   }
+  // 3D case
   else
   {
-    cout << "***ERR*** MRTR::Projector::ProjectNodetoSegment_SegmentNormal:\n"
-    	 << "***ERR*** 3D projection not yet impl.\n"
-    	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+#if 0
+    cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
+    cout << "Segment " << seg;
+    MRTR::Node** nodes = seg.Nodes();
+    cout << *nodes[0];
+    cout << *nodes[1];
+    cout << *nodes[2];
+#endif
+    // we do a newton iteration for the projection coordinates xi
+    // set starting value to the middle of the segment
+    double eta[2]; eta[0] = eta[1] = 1./3.;
+    double alpha = 0.01;
+    int    i=0;
+    double F[3], dF[3][3], deta[3];
+    double eps;
+    for (i=0; i<30; ++i)
+    {
+      evaluate_FgradF_3D_SegmentNormal(F,dF,node,seg,eta,alpha);
+      eps = MRTR::dot(F,F,3);
+      if (eps < 1.0e-10) break;
+      //cout << eps << endl;
+      MRTR::solve33(dF,deta,F);
+      eta[0] -= deta[0];
+      eta[1] -= deta[1];
+      alpha  -= deta[2];      
+    }    
+    if (eps>1.0e-10)
+    {
+      cout << "***WRN*** MRTR::Projector::ProjectNodetoSegment_NodalNormal:\n"
+      	   << "***WRN*** 3D Newton iteration failed to converge\n"
+      	   << "***WRN*** #iterations = " << i << endl
+      	   << "***WRN*** eps = " << eps << " eta[3] = " << eta[0] << "/" << eta[1] << "/" << alpha << "\n"
+           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    }
+#if 1
+    cout << "#iterations = " << i << " eps = " << eps << " eta = " << eta[0] << "/" << eta[1] << endl;
+#endif
   }
   return true;
 }

@@ -325,6 +325,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
         seg = new MRTR::Segment_BiLinearQuad(gsurf1[i]->Id,gsurf1[i]->ngnode,nodeIds);  
       else
         dserror("Unknown type of 2D element"); 
+      
+      cout << *seg;
         
       delete [] nodeIds;
       bool ok = interface->AddSegment(*seg,0); 

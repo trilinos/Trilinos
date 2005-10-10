@@ -374,7 +374,6 @@ bool MRTR::Node::BuildAveragedNormal()
     delete [] n; n = NULL;
   } // for (int i=0; i<nseg; ++i)
 
-  for (int i=0; i<3; ++i) n_[i] /= weight;
   double length = sqrt(n_[0]*n_[0]+n_[1]*n_[1]+n_[2]*n_[2]);
   for (int i=0; i<3; ++i) n_[i] /= length;
 

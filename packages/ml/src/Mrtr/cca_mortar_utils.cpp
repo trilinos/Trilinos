@@ -302,16 +302,16 @@ int cca_mrtr_3D_prepare_gsurf_data(GSURF* gsurf, int** nodeIds,
     if (findnode(gsurf->ngnode,gsurfids,eleids[1]))
     {
       // node 4 is on gsurf
-      if (findnode(gsurf->ngnode,gsurfids,eleids[4]))
+      if (findnode(gsurf->ngnode,gsurfids,eleids[5]))
       {
         // node 5 is on gsurf
-        if (findnode(gsurf->ngnode,gsurfids,eleids[5]))
+        if (findnode(gsurf->ngnode,gsurfids,eleids[4]))
         {
           foundit = true;
           (*nodeIds)[0] = eleids[0];
           (*nodeIds)[1] = eleids[1];
-          (*nodeIds)[2] = eleids[4];
-          (*nodeIds)[3] = eleids[5];
+          (*nodeIds)[2] = eleids[5];
+          (*nodeIds)[3] = eleids[4];
           return (1);
         }
       }
@@ -381,9 +381,9 @@ int cca_mrtr_3D_prepare_gsurf_data(GSURF* gsurf, int** nodeIds,
         {
           foundit = true;
           (*nodeIds)[0] = eleids[0];
-          (*nodeIds)[1] = eleids[3];
-          (*nodeIds)[2] = eleids[2];
-          (*nodeIds)[3] = eleids[1];
+          (*nodeIds)[1] = eleids[4];
+          (*nodeIds)[2] = eleids[7];
+          (*nodeIds)[3] = eleids[3];
           return (1);
         }
       }

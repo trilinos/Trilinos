@@ -200,9 +200,8 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
     }
 
 #if 0
-    cout << "snode " << snode->Id() << " closenode " << closenode->Id() << endl;
-    cout << "snode\n" << *snode;
-    cout << "closenode\n" << *closenode;
+    cout << "snode     " << *snode;
+    cout << "closenode " << *closenode;
 #endif    
 
     // get segments attached to closest node cnode
@@ -226,7 +225,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
       projector.ProjectNodetoSegment_NodalNormal(*snode,*(segs[i]),xi);
       
       // check whether xi is better then previous projections
-      if (IsOneDimensional())
+      if (IsOneDimensional()) // 2D case
       {
         if (abs(xi[0]) < abs(bestdist[0])) 
 	{ 
@@ -235,42 +234,44 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
 	  bestseg = segs[i];
 	}
       }
-      else
+      else // 3D case
       {
-	double dist  = sqrt(xi[0]*xi[0]+xi[1]*xi[1]);
-	double bdist = sqrt(bestdist[0]*bestdist[0]+bestdist[1]*bestdist[1]); 
-        // it's better in both directions
-	if (abs(xi[0])<abs(bestdist[0]) && abs(xi[1])<abs(bestdist[1]))
-	{
-	  bestdist[0] = xi[0];
-	  bestdist[1] = xi[1];
-	  bestseg = segs[i];
-	}
-	//it's better in one direction and 'in' in the other
-	else if ((abs(xi[0])<abs(bestdist[0]) && abs(xi[1]) < 1.2) ||
-	         (abs(xi[1])<abs(bestdist[1]) && abs(xi[0]) < 1.2) )
-	{
-	  bestdist[0] = xi[0];
-	  bestdist[1] = xi[1];
-	  bestseg = segs[i];
-	}
-	// it's better by radius
-	else if (dist<bdist)
-	{
-	  bestdist[0] = xi[0];
-	  bestdist[1] = xi[1];
-	  bestseg = segs[i];
-	}
+	// compute the distance to the center of an element
+        double third = 1./3.;
+        // it's 'inside'
+        if ( (abs(xi[0])<1.2 && abs(xi[1])<1.2*(1.-xi[0])) &&
+             (xi[0]>=0.0 && xi[1]>=0.0) )
+        {
+          // it's better in both directions
+	  if (abs(xi[0]-third)<abs(bestdist[0]-third) && abs(xi[1]-third)<abs(bestdist[1]-third))
+	  {
+	    bestdist[0] = xi[0];
+	    bestdist[1] = xi[1];
+	    bestseg = segs[i];
+	  }
+	  //it's better in one direction and 'in' in the other
+	  else if ((abs(xi[0]-third)<abs(bestdist[0]-third) && xi[1] < 1.2*(1.-xi[0])) ||
+	           (abs(xi[1]-third)<abs(bestdist[1]-third) && abs(xi[0]) < 1.2) )
+	  {
+	    bestdist[0] = xi[0];
+	    bestdist[1] = xi[1];
+	    bestseg = segs[i];
+	  }
+        }
       }
     } // for (int i=0; i<nseg; ++i)
     
     // check whether the bestseg and bestdist are inside the segment
-    // (with some tolerance of 10%)
+    // (with some tolerance of 20%)
     bool ok = false;
     if (IsOneDimensional())
+    {
       if (abs(bestdist[0]) < 1.2) ok = true;
+    }
     else
-      if (abs(bestdist[0])<1.2 && abs(bestdist[1])<1.2) ok = true;
+    {
+      if (abs(bestdist[0])<1.2 && abs(bestdist[1])<1.2*(1.-bestdist[0])) ok = true;
+    }
     
     if (ok)  // the projection is good
     {
@@ -330,7 +331,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
         MRTR::Segment* seg = NULL;
         if (sid!=-1)
           seg = GetSegmentView(sid);
-        if (!snode)
+        if (!snode || !seg)
         {
           cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
                << "***ERR*** Cannot get view of node or segment\n"
@@ -392,7 +393,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
     
     if (foundit)
     {
-#if 0
+#if 1
       cout << "Node without projection:\n" << *snode;        
       cout << "...get's lagrange multipliers\n\n";
 #endif
@@ -518,7 +519,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
     } // for (int i=0; i<nseg; ++i)
     
     // check whether the bestseg/bestdist are inside that segment
-    // (with some tolerance of 20%)
+    // (with some tolerance of 10%)
     bool ok = false;
     if (IsOneDimensional())
       if (abs(bestdist[0]) < 1.1) ok = true;

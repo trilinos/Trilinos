@@ -250,10 +250,42 @@ bool MRTR::Function_LinearTri::EvaluateFunction(
                                             const double* xi, double* val, 
                                             const int valdim, double* deriv)
 { 
+  if (!val && !deriv) return true;
+  
+  // for this function, we get 3 values and six derivatives
+  if (valdim<3) 
+  {
     cout << "***ERR*** MRTR::Function_LinearTri::EvaluateFunction:\n"
-         << "***ERR*** not yet impl.\n"
+         << "***ERR*** valdim<3 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
+  }
+  
+  if (!xi)
+  {
+    cout << "***ERR*** MRTR::Function_LinearTri::EvaluateFunction:\n"
+         << "***ERR*** xi=NULL on input\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  if (val)
+  {
+    val[0] = 1. - xi[0] - xi[1]; 
+    val[1] = xi[0];
+    val[2] = xi[1];
+  }
+  
+  if (deriv)
+  {
+    deriv[0] = -1.;
+    deriv[1] = -1.;
+    deriv[2] = 1.;
+    deriv[3] = 0.;
+    deriv[4] = 0.;
+    deriv[5] = 1.;
+  }
+  
   return true;
 }
 

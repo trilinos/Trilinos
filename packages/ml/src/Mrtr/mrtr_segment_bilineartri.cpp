@@ -35,6 +35,7 @@
 
 #include "mrtr_segment_bilineartri.H"
 #include "mrtr_interface.H"
+#include "mrtr_utils.H"
 
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 10/05|
@@ -227,7 +228,7 @@ double MRTR::Segment_BiLinearTri::Metric(double* xi, double g[], double G[][3])
 double* MRTR::Segment_BiLinearTri::BuildNormal(double* xi)
 { 
   // linear triangles are planar, so we don't care were exactly to build the normal
-  
+
   // build base vectors
   double g1[3];
   double g2[3];
@@ -240,10 +241,8 @@ double* MRTR::Segment_BiLinearTri::BuildNormal(double* xi)
   // build normal as their cross product
   double* n = new double[3];
   
-  n[0] = g1[1]*g2[2] - g1[2]*g2[1];
-  n[1] = g1[0]*g2[2] - g1[2]*g2[0];
-  n[2] = g1[0]*g2[1] - g1[1]*g2[0];
-  
+  MRTR::cross(n,g1,g2);
+
   return n;
 }
 
