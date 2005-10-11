@@ -30,7 +30,7 @@
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = \
-	setpath.py testNewPackage.py
+	setpath.py testNew_Package.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -38,7 +38,7 @@ EXTRA_DIST = \
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of tests
-TEST_SUITE = testNewPackage
+TEST_SUITE = testNew_Package
 
 SETPATH = setpath.py
 
