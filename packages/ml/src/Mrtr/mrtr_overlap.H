@@ -72,17 +72,32 @@ private:
   // don't want copy-ctor
   Overlap(MRTR::Overlap& old);
 
+  // compute intersection between 2 lines in local coordinates
+  bool intersect_line2D(int s, int m, double* alpha, double* beta, double* xi);
+
+  // build line information from triangles
+  bool build_lines();
+
 private:
 
 MRTR::Interface&    inter_;
 MRTR::Segment&      sseg_;
 MRTR::Segment&      mseg_;
 
-bool                overlap_;  // true if segments overlap
-int                 nnode_;    // # of master nodes
-double              xi_[4][2]; // local coords of mnodes projected onto sseg
-bool                in_[4];    // true if projection of mnodes is inside sseg
+bool                overlap_;   // true if segments overlap
+int                 nnode_;     // # of master nodes
 
+double              mxi_[3][2]; // local coords of mnodes projected onto sseg
+bool                min_[3];    // true if projection of mnodes is inside sseg
+bool                havemxi_;   // flag indicating whether mxi_ and min_ have been build
+
+double              sxi_[3][2]; // local coords of snodes projected onto mseg
+bool                sin_[3];    // true if projection of snodes is inside mseg
+bool                havesxi_;   // flag indicating whether sxi_ and sin_ have been build
+
+double              sline_[3][4]; // 3 lines of sseg_ in sseg_'s local coords
+double              mline_[3][4]; // 3 lines of mseg_in sseg_'s local coords
+bool                haveline_;    // flag indicating whether line info has been build
 };
 
 } // namespace MRTR

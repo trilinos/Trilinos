@@ -182,6 +182,15 @@ double MRTR::dot(const double* g1, const double* g2, const int dim)
 bool MRTR::solve22(const double A[][2], double* x, const double* b)
 {
   double det = A[0][0]*A[1][1]-A[0][1]*A[1][0];
+  if (abs(det)<1.0e-10)
+  {
+    cout << "***ERR*** MRTR::solve22:\n"
+         << "***ERR*** Determinant is zero\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+    
+  }
+  det = 1/det;
   x[0] = det*A[1][1]*b[0]-det*A[0][1]*b[1];
   x[1] = det*A[0][0]*b[1]-det*A[1][0]*b[0];
   return true;
