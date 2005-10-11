@@ -88,7 +88,7 @@ if NEWP_SWAHILI:
     extra_compile_args.append("-DNEWP_SWAHILI")
 
 # Define the strings that refer to the required local source files
-newPackageWrap = "New_Package_wrap.cpp"
+new_packageWrap = "New_Package_wrap.cpp"
 
 # Compiler and linker
 sysconfig.get_config_vars()
@@ -97,7 +97,7 @@ sysconfig._config_vars["CXX"] = CXX
 
 # _New_Package extension module
 _New_Package = Extension("PyTrilinos._New_Package",
-                         [newPackageWrap],
+                         [new_packageWrap],
                          define_macros      = define_macros,
                          include_dirs       = include_dirs,
                          library_dirs       = library_dirs,

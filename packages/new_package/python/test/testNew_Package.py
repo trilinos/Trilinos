@@ -52,7 +52,7 @@ haveSwahili = "Newp_Jambo" in dir(New_Package)
 
 ####################################################################
 
-class NewPackageTestCase(unittest.TestCase):
+class New_PackageTestCase(unittest.TestCase):
     "TestCase class for New_Package module"
 
     def testVersion(self):
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
 
     # Add the test cases to the test suite
-    suite.addTest(unittest.makeSuite(NewPackageTestCase))
+    suite.addTest(unittest.makeSuite(New_PackageTestCase))
 
     # Create a communicator
     comm = Epetra.PyComm()

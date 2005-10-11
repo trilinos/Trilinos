@@ -33,10 +33,11 @@ where the options are
     --version
             Print the version number and exit
 
-The argument "your_package" can also be used to specify your package name.  The
-script will determine if this name is best described as lower case, upper case,
-or capitalized, and determine the other name versions appropriately, unless
-these other name versions are specified via the command line options.
+The argument "your_package" can also be used to specify your package name, and
+is typically all that is required.  The script will determine if this name is
+best described as lower case, upper case, or capitalized, and determine the
+other name versions appropriately, unless these other name versions are
+specified via the command line options.
 
 CreatePythonDir.py will create a directory named <lower_name>_python that mimics
 the new_package/python directory with the exception that all of the references
@@ -48,12 +49,13 @@ to your package.
 
 __version__ = "1.0"
 __author__  = "Bill Spotz"
-__date__    = "Oct 10 2005"
+__date__    = "Oct 11 2005"
 
 # System imports
 from   getopt  import *
 import os
 import os.path
+import stat
 import sys
 
 # Data
@@ -65,6 +67,7 @@ filesToProcess = ["Makefile.am",
                   os.path.join("src",     "TRILINOS_HOME_DIR.in"),
                   os.path.join("src",     "__init__.py.in"      ),
                   os.path.join("src",     "setup.py"            ),
+                  os.path.join("src",     ".deps", "dummy.in"   ),
                   os.path.join("test",    "Makefile.am"         ),
                   os.path.join("test",    "setpath.py"          ),
                   os.path.join("test",    "testNew_Package.py"  ) ]
@@ -72,11 +75,26 @@ oldCapital     = "New_Package"
 oldLower       = "new_package"
 oldUpper       = "NEW_PACKAGE"
 
+###################
+# Utility Functions
+###################
+
+def mode(file):
+    """Return the permissions mode of a file"""
+    return stat.S_IMODE(os.stat(file)[stat.ST_MODE])
+
 def substitute(lines, old, new):
+    """Loop over lines (a list of strings), replacing all occurences of string
+    old with string new"""
     for i in range(len(lines)):
         lines[i] = lines[i].replace(old,new)
 
 def processFile(fileName,oldDir,newDir,newCapital,newLower,newUpper):
+    """Take file oldDir/filename and make a modified copy in newDir/filename.
+    The filename and the content of the file may be altered if the strings
+    oldCapital, oldLower or oldUpper are present; they will be changed to
+    newCapital, newLower and newUpper respectively.  The new file will have the
+    same permissions as the old file."""
     oldPath = os.path.join(oldDir,fileName)
     newPath = os.path.join(newDir,fileName.replace(oldCapital,newCapital))
     lines   = file(oldPath,"r").readlines()
@@ -84,8 +102,16 @@ def processFile(fileName,oldDir,newDir,newCapital,newLower,newUpper):
     substitute(lines, oldLower,   newLower  )
     substitute(lines, oldUpper,   newUpper  )
     file(newPath,"w").writelines(lines)
+    os.chmod(newPath, mode(oldPath))
+
+##############
+# Main Routine
+##############
 
 def main():
+    """Main routine.  Process the command line arguments, create the new
+    directory structure, and replace the old package name with the new package
+    name (capitalized, lower case and upper case versions of it)."""
 
     # Initialization
     (progDir,progName) = os.path.split(sys.argv[0])
@@ -165,6 +191,8 @@ def main():
     for file in filesToProcess:
         if verbose: print "Processing", file
         processFile(file, oldDir, newDir, newCapital, newLower, newUpper)
+
+################################################################################
 
 if __name__ == "__main__":
     main()
