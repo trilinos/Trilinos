@@ -38,7 +38,13 @@ noinst_PROGRAMS = Tcubed
 Tcubed_SOURCES = $(srcdir)/Basis.C $(srcdir)/Tcubed_FiniteElementProblem.C \
 	 $(srcdir)/Tcubed_interface.cpp $(srcdir)/Tcubed_main.cpp
 Tcubed_DEPENDENCIES = $(common_dependencies)
-Tcubed_LDADD = $(common_ldadd)
+Tcubed_LDADD = $(common_ldadd) \
+	$(top_builddir)/src/libcapo.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(top_builddir)/../thyra/src/libthyra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
 
 #
 # Common stuff
@@ -57,9 +63,10 @@ EXPORT_INCLUDES = $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES)
 EXPORT_LIBS = $(CAPO_EXTRA_LIBS) $(CAPO_LIBS)
 endif
 
-AM_CPPFLAGS = $(EXPORT_INCLUDES)
+AM_CPPFLAGS = $(EXPORT_INCLUDES) $(EPETRA_INCLUDES) $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES) $(TEUCHOS_INCLUDES) -I$(srcdir)/../../src
 
-common_ldadd = $(EXPORT_LIBS)
+
+common_ldadd = $(EXPORT_LIBS) $(EPETRA_LIBS) $(CAPO_EXTRA_LIBS) $(CAPO_LIBS) $(TEUCHOS_LIBS) $(THYRA_LIBS) $(NOX_LIBS)
 
 # This is already added part of CAPO_LIBS and therefore automake does not need to add this again!
 LIBS =

@@ -108,6 +108,7 @@ branch1_OBJECTS = $(am_branch1_OBJECTS)
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(CAPO_LIBS))
 am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
+am__DEPENDENCIES_3 =
 am_branch2_OBJECTS = bruss_main2.$(OBJEXT) bruss_integrator.$(OBJEXT) \
 	bruss_interface.$(OBJEXT)
 branch2_OBJECTS = $(am_branch2_OBJECTS)
@@ -249,11 +250,29 @@ branch1_SOURCES = $(srcdir)/bruss_main1.cpp $(srcdir)/bruss_integrator.cpp $(src
 branch2_SOURCES = $(srcdir)/bruss_main2.cpp $(srcdir)/bruss_integrator.cpp $(srcdir)/bruss_interface.cpp
 branch3_SOURCES = $(srcdir)/bruss_main3.cpp $(srcdir)/bruss_integrator.cpp $(srcdir)/bruss_interface.cpp
 branch1_DEPENDENCIES = $(common_dependencies)
-branch1_LDADD = $(common_ldadd)
+branch1_LDADD = $(common_ldadd) $(top_builddir)/src/libcapo.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(top_builddir)/../thyra/src/libthyra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+
 branch2_DEPENDENCIES = $(common_dependencies)
-branch2_LDADD = $(common_ldadd)
+branch2_LDADD = $(common_ldadd) $(top_builddir)/src/libcapo.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(top_builddir)/../thyra/src/libthyra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+
 branch3_DEPENDENCIES = $(common_dependencies)
-branch3_LDADD = $(common_ldadd)
+branch3_LDADD = $(common_ldadd) $(top_builddir)/src/libcapo.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(top_builddir)/../thyra/src/libthyra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+
 
 #
 # Common stuff
@@ -265,8 +284,8 @@ common_dependencies = \
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES))
 @USING_GNUMAKE_FALSE@EXPORT_LIBS = $(CAPO_EXTRA_LIBS) $(CAPO_LIBS)
 @USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(CAPO_EXTRA_LIBS) $(CAPO_LIBS))
-AM_CPPFLAGS = $(EXPORT_INCLUDES)
-common_ldadd = $(EXPORT_LIBS)
+AM_CPPFLAGS = $(EXPORT_INCLUDES) $(EPETRA_INCLUDES) $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES) $(TEUCHOS_INCLUDES) -I$(srcdir)/../../src
+common_ldadd = $(EXPORT_LIBS) $(EPETRA_LIBS) $(CAPO_EXTRA_LIBS) $(CAPO_LIBS) $(TEUCHOS_LIBS) $(THYRA_LIBS) $(NOX_LIBS)
 all: all-am
 
 .SUFFIXES:

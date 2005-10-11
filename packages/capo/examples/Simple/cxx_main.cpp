@@ -170,6 +170,7 @@ int main(int argc, char *argv[])
   */
 
   // Build a parameter list
+
   Teuchos::RefCountPtr<CAPO::Parameter_List> PL;
   PL = Teuchos::rcp(new CAPO::Parameter_List);
   cout << "Successfully Created a Parameter List" << endl;

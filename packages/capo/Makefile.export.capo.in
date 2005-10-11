@@ -5,11 +5,11 @@ include @abs_top_builddir@/../thyra/Makefile.export.thyra
 # library, and to link the Capo library with another package of an
 # application.
 _CAPO_INCLUDES = \
-  $(THYRA_INCLUDES) \
+  $(THYRA_INCLUDES) $(TEUCHOS_INCLUDES)\
   -I@abs_top_srcdir@/src \
-  -I@abs_top_builddir@/src
+  -I@abs_top_builddir@/src 
 
-_CAPO_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lcapo $(THYRA_LIBS) @LIBS@ @FLIBS@ 
+_CAPO_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lcapo $(THYRA_LIBS) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@ 
 
 @USING_GNUMAKE_TRUE@CAPO_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_CAPO_INCLUDES))
 @USING_GNUMAKE_TRUE@CAPO_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_CAPO_LIBS))
@@ -23,9 +23,9 @@ include @abs_top_builddir@/../epetra/Makefile.export.epetra
 # the Capo' examples and tests, but that are not required to compile or link
 # Capo itself.
 
-_CAPO_EXTRA_INCLUDES = $(EPETRA_INCLUDES)
+_CAPO_EXTRA_INCLUDES = $(EPETRA_INCLUDES) $(TEUCHOS_INCLUDES)
 
-_CAPO_EXTRA_LIBS = $(EPETRA_LIBS)
+_CAPO_EXTRA_LIBS = $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(THYRA_LIBS) $(CAPO_LIBS)
 
 @USING_GNUMAKE_TRUE@CAPO_EXTRA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_CAPO_EXTRA_INCLUDES))
 @USING_GNUMAKE_TRUE@CAPO_EXTRA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_CAPO_EXTRA_LIBS))
