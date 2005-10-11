@@ -30,6 +30,7 @@
 #define EPETRA_EXT_MODEL_EVALUATOR_HPP
 
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_Describable.hpp"
 
 class Epetra_Map;
 class Epetra_Vector;
@@ -41,7 +42,7 @@ namespace EpetraExt {
  *
  * ToDo: Finish Documentation!
  */
-class ModelEvaluator {
+class ModelEvaluator : virtual public Teuchos::Describable {
 public:
 
   /** \name Public types */
@@ -62,28 +63,56 @@ public:
   public:
     /** \brief. */
     InArgs();
+    /** \brief .  */
+    int Np() const;
+    /** \brief. */
     void set_x_dot( const Teuchos::RefCountPtr<const Epetra_Vector> &x_dot );
+    /** \brief. */
     Teuchos::RefCountPtr<const Epetra_Vector> get_x_dot() const;
+    /** \brief. */
     void set_x( const Teuchos::RefCountPtr<const Epetra_Vector> &x );
+    /** \brief. */
     Teuchos::RefCountPtr<const Epetra_Vector> get_x() const;
+    /** \brief. */
+    void set_p( int l, const Teuchos::RefCountPtr<const Epetra_Vector> &p_l );
+    /** \brief. */
+    Teuchos::RefCountPtr<const Epetra_Vector> get_p(int l) const;
+    /** \brief. */
     void set_t( double t );
+    /** \brief. */
     double get_alpha() const;
+    /** \brief. */
     void set_alpha( double alpha );
+    /** \brief. */
     double get_beta() const;
+    /** \brief. */
     void set_beta( double beta );
+    /** \brief. */
     double get_t() const;
+    /** \brief. */
     bool supports(EInArgsMembers arg) const;
   protected:
     /** \brief . */
+    void _setModelEvalDescription( const std::string &modelEvalDescription );
+    /** \brief . */
+    void _set_Np(int Np);
+    /** \brief . */
     void _setSupports( EInArgsMembers arg, bool supports );
   private:
+    // types
+    typedef std::vector<Teuchos::RefCountPtr<const Epetra_Vector> > p_t;
+    // data
+    std::string                                modelEvalDescription_;
     Teuchos::RefCountPtr<const Epetra_Vector>  x_dot_;
     Teuchos::RefCountPtr<const Epetra_Vector>  x_;
+    p_t                                        p_;
     double                                     t_;
     double                                     alpha_;
     double                                     beta_;
     bool supports_[NUM_E_IN_ARGS_MEMBERS];
+    // functions
     void assert_supports(EInArgsMembers arg) const;
+    void assert_l(int l) const;
   };
 
   /** \brief.  */
@@ -94,31 +123,93 @@ public:
   static const int NUM_E_OUT_ARGS_MEMBERS=2;
 
   /** \brief . */
+  enum EDerivativeLinearity {
+    DERIV_LINEARITY_UNKNOWN      ///< .
+    ,DERIV_LINEARITY_CONST       ///< .
+    ,DERIV_LINEARITY_NONCONST    ///< .
+  };
+  /** \brief . */
+  enum ERankStatus {
+    DERIV_RANK_UNKNOWN       ///< .
+    ,DERIV_RANK_FULL         ///< .
+    ,DERIV_RANK_DEFICIENT    ///< .
+  };
+
+  /** \breif . */
+  struct DerivativeProperties {
+    /** \breif . */
+    EDerivativeLinearity     linearity;
+    /** \breif . */
+    ERankStatus              rank;
+    /** \breif . */
+    bool                     supportsAdjoint;
+    /** \brief . */
+    DerivativeProperties()
+      :linearity(DERIV_LINEARITY_UNKNOWN),rank(DERIV_RANK_UNKNOWN),supportsAdjoint(false) {}
+    /** \brief . */
+    DerivativeProperties(
+      EDerivativeLinearity in_linearity, ERankStatus in_rank, bool in_supportsAdjoint
+      ):linearity(in_linearity),rank(in_rank),supportsAdjoint(in_supportsAdjoint) {}
+  };
+
+  /** \brief . */
   class OutArgs {
   public:
     /** \brief. */
     OutArgs();
+    /** \brief .  */
+    int Ng() const;
+    /** \brief. */
     void set_f( const Teuchos::RefCountPtr<Epetra_Vector> &f );
+    /** \brief. */
     Teuchos::RefCountPtr<Epetra_Vector> get_f() const;
+    /** \brief Set <tt>g(j)</tt> where <tt>1 <= j && j <= this->Ng()</tt>.  */
+    void set_g( int j, const Teuchos::RefCountPtr<Epetra_Vector> &g_j );
+    /** \brief Get <tt>g(j)</tt> where <tt>1 <= j && j <= this->Ng()</tt>.  */
+    Teuchos::RefCountPtr<Epetra_Vector> get_g(int j) const;
+    /** \brief. */
     void set_W( const Teuchos::RefCountPtr<Epetra_Operator> &W );
+    /** \brief. */
     Teuchos::RefCountPtr<Epetra_Operator> get_W() const;
+    /** \brief . */
+    DerivativeProperties get_W_properties() const;
+    /** \brief. */
     bool supports(EOutArgsMembers arg) const;
   protected:
     /** \brief . */
+    void _setModelEvalDescription( const std::string &modelEvalDescription );
+    /** \brief . */
+    void _set_Ng(int Ng);
+    /** \brief . */
     void _setSupports( EOutArgsMembers arg, bool supports );
+    /** \brief . */
+    void _set_W_properties( const DerivativeProperties &W_properties );
   private:
+    // types
+    typedef std::vector<Teuchos::RefCountPtr<Epetra_Vector> > g_t;
+    // data
+    std::string                            modelEvalDescription_;
     Teuchos::RefCountPtr<Epetra_Vector>    f_;
+    g_t                                    g_;
     Teuchos::RefCountPtr<Epetra_Operator>  W_;
+    DerivativeProperties                   W_properties_;
     bool supports_[NUM_E_OUT_ARGS_MEMBERS];
+    // functions
     void assert_supports(EOutArgsMembers arg) const;
+    void assert_j(int j) const;
   };
 
   //@}
 
-  /** \brief . */
-  virtual ~ModelEvaluator() {}
+  /** \name Destructor */
+  //@{
 
-  /** \name Pure virtual functions that must be overridden by subclasses. */
+  /** \brief . */
+  virtual ~ModelEvaluator();
+
+  //@}
+
+  /** \name Vector maps */
   //@{
 
   /** \breif . */
@@ -126,6 +217,67 @@ public:
 
   /** \breif . */
   virtual Teuchos::RefCountPtr<const Epetra_Map> get_f_map() const = 0;
+
+  /** \breif . */
+  virtual Teuchos::RefCountPtr<const Epetra_Map> get_p_map(int l) const;
+
+  /** \breif . */
+  virtual Teuchos::RefCountPtr<const Epetra_Map> get_g_map(int j) const;
+
+  //@}
+
+  /** \name Initial guesses for variables/parameters */
+  //@{
+
+  /** \brief . */
+  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
+
+  /** \brief . */
+  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_p_init(int l) const;
+
+  /** \brief . */
+  virtual double get_t_init() const;
+
+  //@}
+
+  /** \name Bounds for variables/parameters */
+  //@{
+
+  /** \brief . */
+  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_lower_bounds() const;
+
+  /** \brief . */
+  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_upper_bounds() const;
+
+  /** \brief . */
+  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_p_lower_bounds(int l) const;
+
+  /** \brief . */
+  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_p_upper_bounds(int l) const;
+
+  /** \brief . */
+  virtual double get_t_lower_bound() const;
+
+  /** \brief . */
+  virtual double get_t_upper_bound() const;
+
+  //@}
+
+  /** \name Factory functions for creating derivative objects */
+  //@{
+
+  /** \brief If supported, create a <tt>Epetra_Operator</tt> object for
+   * <tt>W</tt> to be evaluated.
+   *
+   * The default implementation returns <tt>return.get()==NULL</tt>
+   * (i.e. implicit solvers are not supported by default).
+   */
+  virtual Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
+
+  //@}
+
+  /** \name Computational functions */
+  //@{
 
   /** \brief . */
   virtual InArgs createInArgs() const = 0;
@@ -138,31 +290,6 @@ public:
 
   //@}
 
-  /** \name Virtual functions with default implementations. */
-  //@{
-
-  /** \brief Return an optional initial guess for x.
-   *
-   * If an initial guess is not supported then <tt>return.get()==NULL</tt>.
-   */
-  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
-
-  /** \brief Return an optional initial guess for t.
-   *
-   * If an initial guess is not supported then <tt>return==0.0</tt>.
-   */
-  virtual double get_t_init() const;
-
-  /** \brief If supported, create a <tt>Epetra_Operator</tt> object for
-   * <tt>W</tt> to be evaluated.
-   *
-   * The default implementation returns <tt>return.get()==NULL</tt>
-   * (i.e. implicit solvers are not supported by default).
-   */
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
-
-  //@}
-
 protected:
 
   /** \name Protected types */
@@ -172,14 +299,24 @@ protected:
   class InArgsSetup : public InArgs {
   public:
     /** \brief . */
-    void setSupports( EInArgsMembers arg, bool supports = true ) { _setSupports(arg,supports); }
+    void setModelEvalDescription( const std::string &modelEvalDescription );
+    /** \brief . */
+    void set_Np(int Np);
+    /** \brief . */
+    void setSupports( EInArgsMembers arg, bool supports = true );
   };
 
   /** \brief . */
   class OutArgsSetup : public OutArgs {
   public:
     /** \brief . */
-    void setSupports( EOutArgsMembers arg, bool supports = true ) { _setSupports(arg,supports); }
+    void setModelEvalDescription( const std::string &modelEvalDescription );
+    /** \brief . */
+    void set_Ng(int Ng);
+    /** \brief . */
+    void setSupports( EOutArgsMembers arg, bool supports = true );
+    /** \brief . */
+    void set_W_properties( const DerivativeProperties &W_properties );
   };
 
   //@}
@@ -187,18 +324,15 @@ protected:
 };
 
 // ///////////////////////////
-// Definitions
+// Inline Functions
 
+//
 // ModelEvaluator::InArgs
+//
 
 inline
-ModelEvaluator::InArgs::InArgs()
-{
-  std::fill_n(&supports_[0],NUM_E_IN_ARGS_MEMBERS,false);
-  t_     = 0.0;
-  alpha_ = 0.0;
-  beta_  = 0.0;
-}
+int ModelEvaluator::InArgs::Np() const
+{ return p_.size(); }
 
 inline
 void ModelEvaluator::InArgs::set_x_dot( const Teuchos::RefCountPtr<const Epetra_Vector> &x_dot )
@@ -215,6 +349,14 @@ void ModelEvaluator::InArgs::set_x( const Teuchos::RefCountPtr<const Epetra_Vect
 inline
 Teuchos::RefCountPtr<const Epetra_Vector> ModelEvaluator::InArgs::get_x() const
 { assert_supports(IN_ARG_x); return x_; }
+
+inline
+void ModelEvaluator::InArgs::set_p( int l, const Teuchos::RefCountPtr<const Epetra_Vector> &p_l )
+{ assert_l(l); p_[l-1] = p_l; }
+
+inline
+Teuchos::RefCountPtr<const Epetra_Vector> ModelEvaluator::InArgs::get_p(int l) const
+{ assert_l(l); return p_[l-1]; }
 
 inline
 void ModelEvaluator::InArgs::set_t( double t )
@@ -241,39 +383,25 @@ double ModelEvaluator::InArgs::get_beta() const
 { assert_supports(IN_ARG_beta); return beta_; }
 
 inline
-bool ModelEvaluator::InArgs::supports(EInArgsMembers arg) const
+void ModelEvaluator::InArgs::_setModelEvalDescription( const std::string &modelEvalDescription )
 {
-#ifdef _DEBUG
-  TEST_FOR_EXCEPTION(int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
-#endif
-  return supports_[arg];
+  modelEvalDescription_ = modelEvalDescription;
 }
 
 inline
-void ModelEvaluator::InArgs::_setSupports( EInArgsMembers arg, bool supports )
+void ModelEvaluator::InArgs::_set_Np(int Np)
 {
-#ifdef _DEBUG
-  TEST_FOR_EXCEPTION(int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
-#endif
-  supports_[arg] = supports;
+  p_.resize(Np);
 }
 
-inline
-void ModelEvaluator::InArgs::assert_supports(EInArgsMembers arg) const
-{
-  TEST_FOR_EXCEPTION(
-    !supports_[arg], std::logic_error
-    ,"EpetraExt::ModelEvaluator::InArgs::assert_supports(arg), Error, "
-    "The argument arg = " << arg << " is not supported!"
-    );
-}
-
+//
 // ModelEvaluator::OutArgs
+//
 
 inline
-ModelEvaluator::OutArgs::OutArgs()
-{
-  std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false);
+int ModelEvaluator::OutArgs::Ng() const
+{ 
+  return g_.size();
 }
 
 inline
@@ -283,54 +411,88 @@ inline
 Teuchos::RefCountPtr<Epetra_Vector> ModelEvaluator::OutArgs::get_f() const { return f_; }
 
 inline
+void ModelEvaluator::OutArgs::set_g( int j, const Teuchos::RefCountPtr<Epetra_Vector> &g_j )
+{
+  assert_j(j);
+  g_[j-1] = g_j;
+}
+
+inline
+Teuchos::RefCountPtr<Epetra_Vector> ModelEvaluator::OutArgs::get_g(int j) const
+{
+  assert_j(j);
+  return g_[j-1];
+}
+
+inline
 void ModelEvaluator::OutArgs::set_W( const Teuchos::RefCountPtr<Epetra_Operator> &W ) { W_ = W; }
 
 inline
 Teuchos::RefCountPtr<Epetra_Operator> ModelEvaluator::OutArgs::get_W() const { return W_; }
 
 inline
-bool ModelEvaluator::OutArgs::supports(EOutArgsMembers arg) const
+ModelEvaluator::DerivativeProperties ModelEvaluator::OutArgs::get_W_properties() const
 {
-#ifdef _DEBUG
-  TEST_FOR_EXCEPTION(int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
-#endif
-  return supports_[arg];
+  return W_properties_;
 }
 
 inline
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supports )
+void ModelEvaluator::OutArgs::_setModelEvalDescription( const std::string &modelEvalDescription )
 {
-#ifdef _DEBUG
-  TEST_FOR_EXCEPTION(int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
-#endif
-  supports_[arg] = supports;
+  modelEvalDescription_ = modelEvalDescription;
 }
 
 inline
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsMembers arg) const
+void ModelEvaluator::OutArgs::_set_Ng(int Ng)
 {
-  TEST_FOR_EXCEPTION(
-    !supports_[arg], std::logic_error
-    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(arg), Error, "
-    "The argument arg = " << arg << " is not supported!"
-    );
+  g_.resize(Ng);
 }
 
-// ModelEvaluator
+inline
+void ModelEvaluator::OutArgs::_set_W_properties( const DerivativeProperties &W_properties )
+{
+  W_properties_ = W_properties;
+}
+
+//
+// ModelEvaluatorBase::InArgsSetup
+//
 
 inline
-Teuchos::RefCountPtr<const Epetra_Vector>
-ModelEvaluator::get_x_init() const
-{ return Teuchos::null; }
+void ModelEvaluator::InArgsSetup::setModelEvalDescription( const std::string &modelEvalDescription )
+{
+  this->_setModelEvalDescription(modelEvalDescription);
+}
 
 inline
-double ModelEvaluator::get_t_init() const
-{ return 0.0; }
+void ModelEvaluator::InArgsSetup::set_Np(int Np)
+{ this->_set_Np(Np); }
 
 inline
-Teuchos::RefCountPtr<Epetra_Operator>
-ModelEvaluator::create_W() const
-{ return Teuchos::null; }
+void ModelEvaluator::InArgsSetup::setSupports( EInArgsMembers arg, bool supports )
+{ this->_setSupports(arg,supports); }
+
+//
+// ModelEvaluatorBase::OutArgsSetup
+//
+
+inline
+void ModelEvaluator::OutArgsSetup::setModelEvalDescription( const std::string &modelEvalDescription )
+{
+  this->_setModelEvalDescription(modelEvalDescription);
+}
+
+inline
+void ModelEvaluator::OutArgsSetup::set_Ng(int Ng)
+{ this->_set_Ng(Ng); }
+
+inline
+void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsMembers arg, bool supports )
+{ this->_setSupports(arg,supports); }
+
+inline
+void ModelEvaluator::OutArgsSetup::set_W_properties( const DerivativeProperties &W_properties )
+{ this->_set_W_properties(W_properties); }
 
 } // namespace EpetraExt
 

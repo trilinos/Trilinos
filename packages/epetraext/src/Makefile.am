@@ -316,7 +316,8 @@ endif
 EXTRA_MODEL_EVALUATOR_H = \
      $(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.h
 
-EXTRA_MODEL_EVALUATOR =
+EXTRA_MODEL_EVALUATOR = \
+     $(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.cpp
 
 if BUILD_MODEL_EVALUATOR
 

@@ -51,9 +51,21 @@ void EpetraModelEvaluator::initialize(
   )
 {
   epetraModel_ = epetraModel;
+  //
   W_factory_ = W_factory;
+  //
   x_space_ = create_MPIVectorSpaceBase( x_map_ = epetraModel_->get_x_map() );
   f_space_ = create_MPIVectorSpaceBase( f_map_ = epetraModel_->get_f_map() );
+  //
+  EpetraExt::ModelEvaluator::InArgs inArgs = epetraModel_->createInArgs();
+  p_map_.resize(inArgs.Np()); p_space_.resize(inArgs.Np());
+  for( int l = 1; l <= static_cast<int>(p_space_.size()); ++l )
+    p_space_[l-1] = create_MPIVectorSpaceBase( p_map_[l-1] = epetraModel_->get_p_map(l) );
+  //
+  EpetraExt::ModelEvaluator::OutArgs outArgs = epetraModel_->createOutArgs();
+  g_map_.resize(outArgs.Ng()); g_space_.resize(outArgs.Ng());
+  for( int j = 1; j <= static_cast<int>(g_space_.size()); ++j )
+    g_space_[j-1] = create_MPIVectorSpaceBase( g_map_[j-1] = epetraModel_->get_g_map(j) );
 }
 
 Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> EpetraModelEvaluator::getEpetraModel() const
@@ -74,6 +86,16 @@ void EpetraModelEvaluator::uninitialize(
 
 // Overridden from ModelEvaulator.
 
+int EpetraModelEvaluator::Np() const
+{
+  return p_space_.size();
+}
+
+int EpetraModelEvaluator::Ng() const
+{
+  return g_space_.size();
+}
+
 Teuchos::RefCountPtr<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_x_space() const
 {
@@ -86,15 +108,72 @@ EpetraModelEvaluator::get_f_space() const
   return f_space_;
 }
 
+Teuchos::RefCountPtr<const VectorSpaceBase<double> >
+EpetraModelEvaluator::get_p_space(int l) const
+{
+  TEST_FOR_EXCEPT( ! ( 1 <= l && l <= this->Np() ) );
+  return p_space_[l-1];
+}
+
+Teuchos::RefCountPtr<const VectorSpaceBase<double> >
+EpetraModelEvaluator::get_g_space(int j) const
+{
+  TEST_FOR_EXCEPT( ! ( 1 <= j && j <= this->Ng() ) );
+  return g_space_[j-1];
+}
+
 Teuchos::RefCountPtr<const VectorBase<double> >
 EpetraModelEvaluator::get_x_init() const
 {
   return create_MPIVectorBase( epetraModel_->get_x_init(), x_space_ );
 }
 
+Teuchos::RefCountPtr<const VectorBase<double> >
+EpetraModelEvaluator::get_p_init(int l) const
+{
+  TEST_FOR_EXCEPT( ! ( 1 <= l && l <= this->Np() ) );
+  return create_MPIVectorBase( epetraModel_->get_p_init(l), p_space_[l-1] );
+}
+
 double EpetraModelEvaluator::get_t_init() const
 {
   return epetraModel_->get_t_init();
+}
+
+Teuchos::RefCountPtr<const VectorBase<double> >
+EpetraModelEvaluator::get_x_lower_bounds() const
+{
+  return create_MPIVectorBase( epetraModel_->get_x_lower_bounds(), x_space_ );
+}
+
+Teuchos::RefCountPtr<const VectorBase<double> >
+EpetraModelEvaluator::get_x_upper_bounds() const
+{
+  return create_MPIVectorBase( epetraModel_->get_x_upper_bounds(), x_space_ );
+}
+
+Teuchos::RefCountPtr<const VectorBase<double> >
+EpetraModelEvaluator::get_p_lower_bounds(int l) const
+{
+  TEST_FOR_EXCEPT( ! ( 1 <= l && l <= this->Np() ) );
+  return create_MPIVectorBase( epetraModel_->get_p_lower_bounds(l), p_space_[l-1] );
+}
+
+Teuchos::RefCountPtr<const VectorBase<double> >
+EpetraModelEvaluator::get_p_upper_bounds(int l) const
+{
+  TEST_FOR_EXCEPT( ! ( 1 <= l && l <= this->Np() ) );
+  return create_MPIVectorBase( epetraModel_->get_p_upper_bounds(l), p_space_[l-1] );
+}
+
+double EpetraModelEvaluator::get_t_lower_bound() const
+{
+  return epetraModel_->get_t_lower_bound();
+}
+
+double EpetraModelEvaluator::get_t_upper_bound() const
+{
+  return epetraModel_->get_t_upper_bound();
 }
 
 Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
@@ -114,6 +193,8 @@ EpetraModelEvaluator::InArgs<double> EpetraModelEvaluator::createInArgs() const
   InArgsSetup<double> inArgs;
   typedef EpetraExt::ModelEvaluator EME;
   EME::InArgs epetraInArgs = epetraModel.createInArgs();
+  inArgs.setModelEvalDescription(this->description());
+  inArgs.set_Np(epetraInArgs.Np());
   inArgs.setSupports(IN_ARG_x_dot,epetraInArgs.supports(EME::IN_ARG_x_dot));
   inArgs.setSupports(IN_ARG_x,epetraInArgs.supports(EME::IN_ARG_x));
   inArgs.setSupports(IN_ARG_t,epetraInArgs.supports(EME::IN_ARG_t));
@@ -128,8 +209,11 @@ EpetraModelEvaluator::OutArgs<double> EpetraModelEvaluator::createOutArgs() cons
   OutArgsSetup<double> outArgs;
   typedef EpetraExt::ModelEvaluator EME;
   EME::OutArgs epetraOutArgs = epetraModel.createOutArgs();
+  outArgs.setModelEvalDescription(this->description());
+  outArgs.set_Ng(epetraOutArgs.Ng());
   outArgs.setSupports(OUT_ARG_f,epetraOutArgs.supports(EME::OUT_ARG_f));
   outArgs.setSupports(OUT_ARG_W,epetraOutArgs.supports(EME::OUT_ARG_W));
+  outArgs.set_W_properties(convert(epetraOutArgs.get_W_properties()));
   return outArgs;
 }
 
@@ -199,4 +283,57 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
 
 }
 
+// Public functions overridden from Teuchos::Describable
+
+std::string EpetraModelEvaluator::description() const
+{
+  std::ostringstream oss;
+  oss << "EpetraExt::EpetraModelEvaluator{epetraModel=";
+  if(epetraModel_.get())
+    oss << "\'"<<epetraModel_->description()<<"\'";
+  else
+    oss << "NULL";
+  oss << "}";
+  return oss.str();
+}
+
 } // namespace Thyra
+
+
+//
+// Non-member utility functions
+//
+
+Thyra::ModelEvaluatorBase::DerivativeProperties
+Thyra::convert( const EpetraExt::ModelEvaluator::DerivativeProperties &derivativeProperties )
+{
+  ModelEvaluatorBase::EDerivativeLinearity linearity;
+  switch(derivativeProperties.linearity) {
+    case EpetraExt::ModelEvaluator::DERIV_LINEARITY_UNKNOWN:
+      linearity = ModelEvaluatorBase::DERIV_LINEARITY_UNKNOWN;
+      break;
+    case EpetraExt::ModelEvaluator::DERIV_LINEARITY_CONST:
+      linearity = ModelEvaluatorBase::DERIV_LINEARITY_CONST;
+      break;
+    case  EpetraExt::ModelEvaluator::DERIV_LINEARITY_NONCONST:
+      linearity = ModelEvaluatorBase::DERIV_LINEARITY_NONCONST;
+      break;
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
+  ModelEvaluatorBase::ERankStatus rank;
+  switch(derivativeProperties.rank) {
+    case EpetraExt::ModelEvaluator::DERIV_RANK_UNKNOWN:
+      rank = ModelEvaluatorBase::DERIV_RANK_UNKNOWN;
+      break;
+    case EpetraExt::ModelEvaluator::DERIV_RANK_FULL:
+      rank = ModelEvaluatorBase::DERIV_RANK_FULL;
+      break;
+    case EpetraExt::ModelEvaluator::DERIV_RANK_DEFICIENT:
+      rank = ModelEvaluatorBase::DERIV_RANK_DEFICIENT;
+      break;
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
+  return ModelEvaluatorBase::DerivativeProperties(linearity,rank,derivativeProperties.supportsAdjoint);
+}

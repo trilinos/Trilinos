@@ -70,30 +70,45 @@ public:
 
   //@}
 
-  /** \name Overridden from ModelEvaulator. */
+  /** \name Public functions overridden from ModelEvaulator. */
   //@{
 
   /** \brief . */
+	int Np() const;
+  /** \brief . */
+	int Ng() const;
+  /** \brief . */
   Teuchos::RefCountPtr<const VectorSpaceBase<double> > get_x_space() const;
-
   /** \brief . */
   Teuchos::RefCountPtr<const VectorSpaceBase<double> > get_f_space() const;
-
+  /** \brief . */
+	Teuchos::RefCountPtr<const VectorSpaceBase<double> > get_p_space(int l) const;
+  /** \brief . */
+	Teuchos::RefCountPtr<const VectorSpaceBase<double> > get_g_space(int j) const;
   /** \brief . */
   Teuchos::RefCountPtr<const VectorBase<double> > get_x_init() const;
-
+  /** \brief . */
+	Teuchos::RefCountPtr<const VectorBase<double> > get_p_init(int l) const;
   /** \brief . */
   double get_t_init() const;
-
+  /** \brief . */
+  Teuchos::RefCountPtr<const VectorBase<double> > get_x_lower_bounds() const;
+  /** \brief . */
+  Teuchos::RefCountPtr<const VectorBase<double> > get_x_upper_bounds() const;
+  /** \brief . */
+	Teuchos::RefCountPtr<const VectorBase<double> > get_p_lower_bounds(int l) const;
+  /** \brief . */
+	Teuchos::RefCountPtr<const VectorBase<double> > get_p_upper_bounds(int l) const;
+  /** \brief . */
+  double get_t_lower_bound() const;
+  /** \brief . */
+  double get_t_upper_bound() const;
   /** \brief . */
   Teuchos::RefCountPtr<LinearOpWithSolveBase<double> > create_W() const;
-
   /** \brief . */
   ModelEvaluatorBase::InArgs<double> createInArgs() const;
-
   /** \brief . */
   ModelEvaluatorBase::OutArgs<double> createOutArgs() const;
-
   /** \brief . */
   void evalModel(
     const ModelEvaluatorBase::InArgs<double>    &inArgs
@@ -102,16 +117,44 @@ public:
 
   //@}
 
+  /** \name Public functions overridden from Teuchos::Describable. */
+  //@{
+
+  /** \brief . */
+  std::string description() const;
+
+  //@}
+
 private:
+
+  // ////////////////////
+  // Private types
+
+  typedef std::vector<Teuchos::RefCountPtr<const Epetra_Map> > p_map_t;
+  typedef std::vector<Teuchos::RefCountPtr<const Epetra_Map> > g_map_t;
+
+  typedef std::vector<Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> > > p_space_t;
+  typedef std::vector<Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> > > g_space_t;
+
+  // ////////////////////
+  // Private data mebers
 
   Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>              epetraModel_;
   Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >  W_factory_;
   Teuchos::RefCountPtr<const Epetra_Map>                    x_map_;
+  p_map_t                                                   p_map_;
+  g_map_t                                                   g_map_;
   Teuchos::RefCountPtr<const Epetra_Map>                    f_map_;
   Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >   x_space_;
+  p_space_t                                                 p_space_;
   Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >   f_space_;
+  g_space_t                                                 g_space_;
   
 };
+
+/** \brief . */
+ModelEvaluatorBase::DerivativeProperties
+convert( const EpetraExt::ModelEvaluator::DerivativeProperties &derivativeProperties );
 
 } // namespace Thyra
 

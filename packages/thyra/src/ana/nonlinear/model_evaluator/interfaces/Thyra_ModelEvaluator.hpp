@@ -94,6 +94,8 @@ public:
     bool supports(EInArgsMembers arg) const;
   protected:
     /** \brief . */
+    void _setModelEvalDescription( const std::string &modelEvalDescription );
+    /** \brief . */
     void _set_Np(int Np);
     /** \brief . */
     void _setSupports( EInArgsMembers arg, bool supports );
@@ -101,6 +103,7 @@ public:
     // types
     typedef std::vector<Teuchos::RefCountPtr<const VectorBase<Scalar> > > p_t;
     // data
+    std::string                                      modelEvalDescription_;
     Teuchos::RefCountPtr<const VectorBase<Scalar> >  x_dot_;
     Teuchos::RefCountPtr<const VectorBase<Scalar> >  x_;
     p_t                                              p_;
@@ -177,15 +180,18 @@ public:
     bool supports(EOutArgsMembers arg) const;
   protected:
     /** \brief . */
+    void _setModelEvalDescription( const std::string &modelEvalDescription );
+    /** \brief . */
     void _set_Ng(int Ng);
     /** \brief . */
     void _setSupports( EOutArgsMembers arg, bool supports );
     /** \brief . */
-    void _set_W_properties( const DerivativeProperties &W_properties ) const;
+    void _set_W_properties( const DerivativeProperties &W_properties );
   private:
     // types
-    typedef std::vector<Teuchos::RefCountPtr<const VectorBase<Scalar> > > g_t;
+    typedef std::vector<Teuchos::RefCountPtr<VectorBase<Scalar> > > g_t;
     // data
+    std::string                                           modelEvalDescription_;
     Teuchos::RefCountPtr<VectorBase<Scalar> >             f_;
     g_t                                                   g_;
     Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >  W_;
@@ -210,6 +216,8 @@ protected:
   class InArgsSetup : public InArgs<Scalar> {
   public:
     /** \brief . */
+    void setModelEvalDescription( const std::string &modelEvalDescription );
+    /** \brief . */
     void set_Np(int Np);
     /** \brief . */
     void setSupports( EInArgsMembers arg, bool supports = true );
@@ -220,11 +228,13 @@ protected:
   class OutArgsSetup : public OutArgs<Scalar> {
   public:
     /** \brief . */
+    void setModelEvalDescription( const std::string &modelEvalDescription );
+    /** \brief . */
     void set_Ng(int Ng);
     /** \brief . */
     void setSupports( EOutArgsMembers arg, bool supports = true );
     /** \brief . */
-    void set_W_properties( const DerivativeProperties &W_properties ) const;
+    void set_W_properties( const DerivativeProperties &W_properties );
   };
 
   //@}
@@ -774,7 +784,7 @@ void eval_f_W(
 // //////////////////////////////////
 // Inline Defintions
 
-
+// ToDo: Put Inline Definitions here!
 
 // //////////////////////////////////
 // Definitions
@@ -853,11 +863,16 @@ Scalar ModelEvaluatorBase::InArgs<Scalar>::get_beta() const
 template<class Scalar>
 bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
 {
-#ifdef _DEBUG
-  TEST_FOR_EXCEPTION(int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
-#endif
+  TEST_FOR_EXCEPTION(
+    int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
+    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
+    );
   return supports_[arg];
 }
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::_setModelEvalDescription( const std::string &modelEvalDescription )
+{ modelEvalDescription_ = modelEvalDescription; }
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::_set_Np(int Np)
@@ -868,9 +883,9 @@ void ModelEvaluatorBase::InArgs<Scalar>::_set_Np(int Np)
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::_setSupports( EInArgsMembers arg, bool supports )
 {
-#ifdef _DEBUG
-  TEST_FOR_EXCEPTION(int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
-#endif
+  TEST_FOR_EXCEPTION(
+    int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
+    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!");
   supports_[arg] = supports;
 }
 
@@ -879,7 +894,8 @@ void ModelEvaluatorBase::InArgs<Scalar>::assert_supports(EInArgsMembers arg) con
 {
   TEST_FOR_EXCEPTION(
     !supports_[arg], std::logic_error
-    ,"Thyra::ModelEvaluatorBase::InArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(arg), Error, "
+    ,"Thyra::ModelEvaluatorBase::InArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(arg): "
+    "*this = \'"<<modelEvalDescription_<<"\': Error, "
     "The argument arg = " << arg << " is not supported!"
     );
 }
@@ -889,7 +905,8 @@ void ModelEvaluatorBase::InArgs<Scalar>::assert_l(int l) const
 {
   TEST_FOR_EXCEPTION(
     !( 1 <= l && l <= Np() ), std::logic_error
-    ,"Thyra::ModelEvaluatorBase::InArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_l(l), Error, "
+    ,"Thyra::ModelEvaluatorBase::InArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_l(l): "
+    " *this = \'"<<modelEvalDescription_<<"\': Error, "
     "The parameter l = " << l << " is not in the range [1,"<<Np()<<"]!"
     );
 }
@@ -942,11 +959,16 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_W_properties() const
 template<class Scalar>
 bool ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsMembers arg) const
 {
-#ifdef _DEBUG
-  TEST_FOR_EXCEPTION(int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
-#endif
+  TEST_FOR_EXCEPTION(
+    int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
+    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
+    );
   return supports_[arg];
 }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setModelEvalDescription( const std::string &modelEvalDescription )
+{ modelEvalDescription_ = modelEvalDescription; }
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_set_Ng(int Ng)
@@ -957,14 +979,15 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_set_Ng(int Ng)
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsMembers arg, bool supports )
 {
-#ifdef _DEBUG
-  TEST_FOR_EXCEPTION(int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error,"Error, arg="<<arg<<" is invalid!");
-#endif
+  TEST_FOR_EXCEPTION(
+    int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
+    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
+    );
   supports_[arg] = supports;
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_set_W_properties( const DerivativeProperties &W_properties ) const
+void ModelEvaluatorBase::OutArgs<Scalar>::_set_W_properties( const DerivativeProperties &W_properties )
 {
   W_properties_ = W_properties;
 }
@@ -974,7 +997,8 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsMembers arg) c
 {
   TEST_FOR_EXCEPTION(
     !supports_[arg], std::logic_error
-    ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(arg), Error, "
+    ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(arg): "
+    "*this = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument arg = " << arg << " is not supported!"
     );
 }
@@ -984,14 +1008,19 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_j(int j) const
 {
   TEST_FOR_EXCEPTION(
     !( 1 <= j && j <= Ng() ), std::logic_error
-    ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_j(j), Error, "
-    "The auxiliary function j = " << j << " is not in the range [1,"<<Ng()<<"]!"
+    ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_j(j): "
+    "*this = \'"<<modelEvalDescription_<<"\': Error, "
+    "The auxiliary function g(j) index j = " << j << " is not in the range [1,"<<Ng()<<"]!"
     );
 }
 
 //
 // ModelEvaluatorBase::InArgsSetup
 //
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgsSetup<Scalar>::setModelEvalDescription( const std::string &modelEvalDescription )
+{ this->_setModelEvalDescription(modelEvalDescription); }
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgsSetup<Scalar>::set_Np(int Np)
@@ -1006,6 +1035,10 @@ void ModelEvaluatorBase::InArgsSetup<Scalar>::setSupports( EInArgsMembers arg, b
 //
 
 template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setModelEvalDescription( const std::string &modelEvalDescription )
+{ this->_setModelEvalDescription(modelEvalDescription); }
+
+template<class Scalar>
 void ModelEvaluatorBase::OutArgsSetup<Scalar>::set_Ng(int Ng)
 { this->_set_Ng(Ng); }
 
@@ -1014,10 +1047,8 @@ void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports( EOutArgsMembers arg,
 { this->_setSupports(arg,supports); }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgsSetup<Scalar>::set_W_properties( const DerivativeProperties &W_properties ) const
-{
-  this->_set_W_properties(W_properties);
-}
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::set_W_properties( const DerivativeProperties &W_properties )
+{ this->_set_W_properties(W_properties); }
 
 //
 // ModelEvaluator
@@ -1041,9 +1072,8 @@ ModelEvaluator<Scalar>::get_p_space(int l) const
 {
 	TEST_FOR_EXCEPTION(
 		true,std::logic_error
-		,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()
-    <<">::get_p_space(l): Error, this function was not overridden in \'"
-    <<this->description()<<"\'!"
+		,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_p_space(l): "
+    "Error, this function was not overridden in *this = \'"<<this->description()<<"\'!"
 		);
 	return Teuchos::null;
 }
@@ -1054,8 +1084,8 @@ ModelEvaluator<Scalar>::get_g_space(int j) const
 {
 	TEST_FOR_EXCEPTION(
 		true,std::logic_error
-		,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()
-    <<">::get_g_space(j): Error, this function was not overridden in \'"
+		,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_g_space(j): "
+    " Error, this function was not overridden in \'"
     <<this->description()<<"\'!"
 		);
 	return Teuchos::null;
