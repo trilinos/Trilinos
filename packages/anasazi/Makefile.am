@@ -112,7 +112,12 @@ if BUILD_ANASAZI_THYRA
 THYRA_SUBDIR = thyra
 endif
 
-SUBDIRS = src $(UTIL_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(THYRA_SUBDIR)
+if PYTHON_USE
+PYTHON_SUBDIR=python
+endif
+
+SUBDIRS = src $(UTIL_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(THYRA_SUBDIR) \
+	  $(PYTHON_SUBDIR)
 
 
 ## #######################################################################

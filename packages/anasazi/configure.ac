@@ -321,6 +321,11 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetra, thyra, EPETRA_THYRA, BUILD_EPETRA_THYRA, 
 #TAC_ARG_ENABLE_CAN_USE_PACKAGE(teuchos, complex, TEUCHOS_COMPLEX, BUILD_TEUCHOS_COMPLEX, yes, [Build examples/tests which use complex code], [Build examples/tests which use complex<> code.  Can be overridden with --disable-teuchos-complex])
 
 # ------------------------------------------------------------------------
+# Enable optional python wrappers
+# ------------------------------------------------------------------------
+TAC_ENABLE_PYTHON
+
+# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -451,10 +456,17 @@ AC_CONFIG_FILES([
 		thyra/test/Makefile
 		thyra/example/MVOPTester/Makefile
 		thyra/test/MVOPTester/Makefile
-        thyra/test/LOBPCG/Makefile
-        thyra/test/BlockKrylovSchur/Makefile
-        thyra/test/BlockDavidson/Makefile
-		])
+                thyra/test/LOBPCG/Makefile
+                thyra/test/BlockKrylovSchur/Makefile
+                thyra/test/BlockDavidson/Makefile
+                python/Makefile
+                python/src/Makefile
+                python/src/TRILINOS_HOME_DIR
+                python/src/__init__.py
+                python/src/.deps/dummy
+                python/test/Makefile
+                python/example/Makefile
+	        ])
 
 AC_OUTPUT()
 
