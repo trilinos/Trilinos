@@ -232,4 +232,17 @@ you can go on to the following steps:
     Makefile defines EXAMPLE_SUITE instead of TEST_SUITE, but
     otherwise the procedure is the same.
 
+Test Harness
+
+13. Any of the test or example scripts you want to be run as part of
+    the nightly test harness should be added to the
+    your_package/test/definition file.  See any supported package as
+    an example.
+
+Bugzilla
+
+14. Now that your package has a python interface, be sure to inform
+    the bugzilla administrator, so that he can add "Python wrappers"
+    as a valid component of the package for the reporting of bugs.
+
 Good luck!
