@@ -39,6 +39,8 @@
 #include "mrtr_segment.H"
 #include "mrtr_interface.H"
 #include "mrtr_utils.H"
+#include "mrtr_point.H"
+#include "mrtr_edge.H"
 
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 10/05|
@@ -73,6 +75,14 @@ MRTR::Overlap::~Overlap()
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::intersect_line2D(int s, int m, double* alpha, double* beta, double* xi)
 {
+  if (!haveline_)
+  {
+    cout << "***ERR*** MRTR::Overlap::intersect_line2D:\n"
+         << "***ERR*** line information has to be build before intersecting them\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
   double A[2][2];
   double x[2];
   double b[2];
@@ -100,7 +110,23 @@ bool MRTR::Overlap::intersect_line2D(int s, int m, double* alpha, double* beta, 
   }
 
   if ( 0. <= x[0] && x[0] <= 1. && 0. <= x[1] && x[1] <= 1. )
+  {
+    if (xi)
+    {
+      double xitest[2];
+      xitest[0] = mline_[m][0] + x[1]*(mline_[m][2] - mline_[m][0]);
+      xitest[1] = mline_[m][1] + x[1]*(mline_[m][3] - mline_[m][1]);
+      if ( abs(xi[0]-xitest[0])>1.0e-10 || abs(xi[1]-xitest[1])>1.0e-10)
+      {
+        cout << " xi     " << xi[0] << "/" << xi[1] << endl; 
+        cout << " xitest " << xitest[0] << "/" << xitest[1] << endl; 
+        cout << "***WRN*** MRTR::Overlap::intersect_line2D:\n"
+             << "***WRN*** weired result in intersecting lines\n"
+             << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      }
+    }
     return true; 
+  }
   return false;
 }
 
@@ -146,6 +172,110 @@ bool MRTR::Overlap::build_lines()
   return true;
 }
 
+/*----------------------------------------------------------------------*
+ |  project master nodes onto slave element (private)        mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::build_mxi()
+{
+  // project the master segment's nodes onto the slave segment
+  for (int i=0; i<4; ++i) min_[i] = false;
+               nnode_ = mseg_.Nnode();
+  MRTR::Node** mnode  = mseg_.Nodes();
+  MRTR::Projector projector(inter_.IsOneDimensional());
+  for (int i=0; i<nnode_; ++i)
+  {
+    // project node i onto sseg
+    projector.ProjectNodetoSegment_SegmentNormal(*mnode[i],sseg_,mxi_[i]);
+    // check whether i is inside sseg
+    if (mxi_[i][0]<=1. && mxi_[i][1]<=abs(1.-mxi_[i][0]) && mxi_[i][0]>=0. && mxi_[i][1]>=0.)
+    {
+      min_[i]   = true;
+      cout << "OVERLAP: master node in: " << i << endl;
+    }
+  }
+  havemxi_ = true;
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  project slave nodes onto master element (private)        mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::build_sxi()
+{
+  for (int i=0; i<4; ++i) sin_[i] = false;
+  MRTR::Node** snode  = sseg_.Nodes();
+  MRTR::Projector projector(inter_.IsOneDimensional());
+  for (int i=0; i<nnode_; ++i)
+  {
+    // project slave node i onto mseg
+    projector.ProjectNodetoSegment_NodalNormal(*snode[i],mseg_,sxi_[i]);
+    // check whether i is inside sseg
+    if (sxi_[i][0]<=1. && sxi_[i][1]<=abs(1.-sxi_[i][0]) && sxi_[i][0]>=0. && sxi_[i][1]>=0.)
+    {
+      sin_[i] = true;
+      cout << "OVERLAP: slave node in: " << i << endl;
+    }
+  }
+  havesxi_ = true;
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  get a view from a point (private)                        mwgee 10/05|
+ *----------------------------------------------------------------------*/
+MRTR::Point* MRTR::Overlap::PointView(int id)
+{
+  map<int,MRTR::Point*>::iterator curr = p_.find(id);
+  if (curr != p_.end())
+    return curr->second;
+  else
+    return NULL;
+}
+
+/*----------------------------------------------------------------------*
+ |  get a view from a edge (private)                         mwgee 10/05|
+ *----------------------------------------------------------------------*/
+MRTR::Edge* MRTR::Overlap::EdgeView(int id)
+{
+  map<int,MRTR::Edge*>::iterator curr = e_.find(id);
+  if (curr != e_.end())
+    return curr->second;
+  else
+    return NULL;
+}
+
+/*----------------------------------------------------------------------*
+ |  add point to polygon (private)                           mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::AddPoint(MRTR::Point* p)
+{
+  map<int,MRTR::Point*>::iterator curr = p_.find(p->Id());
+  if (curr != p_.end())
+  {
+    delete curr->second;
+    curr->second = p;
+  }
+  else
+    p_.insert(pair<int,MRTR::Point*>(p->Id(),p));
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  add edge to polygon (private)                            mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::AddEdge(MRTR::Edge* e)
+{
+  map<int,MRTR::Edge*>::iterator curr = e_.find(e->Id());
+  if (curr != e_.end())
+  {
+    delete curr->second;
+    curr->second = e;
+  }
+  else
+    e_.insert(pair<int,MRTR::Edge*>(e->Id(),e));
+  return true;
+}
+
 
 /*----------------------------------------------------------------------*
  |  determine whether 2 triangles overlap (public)           mwgee 10/05|
@@ -170,7 +300,7 @@ bool MRTR::Overlap::HaveOverlap()
     {
       overlap_ = true;
       min_[i]   = true;
-      cout << "OVERLAP: master node in: " << i << endl;
+      //cout << "OVERLAP: master node in: " << i << endl;
       return true;
     }
   }
@@ -188,7 +318,7 @@ bool MRTR::Overlap::HaveOverlap()
     if (sxi_[i][0]<=1. && sxi_[i][1]<=abs(1.-sxi_[i][0]) && sxi_[i][0]>=0. && sxi_[i][1]>=0.)
     {
       sin_[i] = true;
-      cout << "OVERLAP: slave node in: " << i << endl;
+      //cout << "OVERLAP: slave node in: " << i << endl;
       overlap_ = true;
       return true;
     }
@@ -206,11 +336,11 @@ bool MRTR::Overlap::HaveOverlap()
   {
     for (int j=0; j<3; ++j)
     {
-      double alpha,beta,eta[2];
-      bool ok = intersect_line2D(i,j,&alpha,&beta,eta);
+      double eta[2];
+      bool ok = intersect_line2D(i,j,NULL,NULL,eta);
       if (ok) 
       {
-        cout << "OVERLAP: sline " << i << " intersects mline " << j << endl;
+        //cout << "OVERLAP: sline " << i << " intersects mline " << j << endl;
         overlap_ = true;
         return true;
       }
@@ -221,6 +351,55 @@ bool MRTR::Overlap::HaveOverlap()
   return false;
 }
 
+/*----------------------------------------------------------------------*
+ |  compute the overlap (public)                             mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::ComputeOverlap()
+{
+  // project master nodes onto slave segment if not already done
+  if (!havemxi_)
+    havemxi_ = build_mxi();
+
+  // project slave nodes onto master segment if not already done
+  if (!havesxi_)
+    havesxi_ = build_sxi();
+  
+  // compute information about the edges of the slave/master triangle
+  if (!haveline_)
+    haveline_ = build_lines();
+
+#if 1
+  // debugging output
+  cout << "OVERLAP: Slave Segment\n" << sseg_;
+  cout << "OVERLAP: Master Segment\n" << mseg_;
+  cout << "node 0: " << mxi_[0][0] << "/" << mxi_[0][1] << endl
+       << "     1: " << mxi_[1][0] << "/" << mxi_[1][1] << endl
+       << "     2: " << mxi_[2][0] << "/" << mxi_[2][1] << endl;
+#endif
+
+  // create master nodes and edges and push them on the polygon
+  // do nodes
+  MRTR::Point* point;
+  point = new MRTR::Point(0,&mxi_[0][0]);
+  AddPoint(point);
+  point = new MRTR::Point(1,&mxi_[1][0]);
+  AddPoint(point);
+  point = new MRTR::Point(2,&mxi_[2][0]);
+  AddPoint(point);
+  
+  // do edges
+  MRTR::Edge* edge;
+  edge = new MRTR::Edge(0,0,1);
+  AddEdge(edge);    
+  edge = new MRTR::Edge(1,1,2);    
+  AddEdge(edge);    
+  edge = new MRTR::Edge(2,2,0);    
+  AddEdge(edge);    
+  
+  
+
+  return false;
+}
 
 
 

@@ -119,6 +119,8 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
                                            Epetra_CrsMatrix& M,
                                            Epetra_CrsMatrix& D)
 { 
+  bool ok;
+  
   // if one of the segments is quadratic, we have to do something here
   if (sseg.Type()!=MRTR::Segment::seg_BiLinearTri || mseg.Type()!=MRTR::Segment::seg_BiLinearTri)
   {
@@ -131,9 +133,15 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
   // first determine whether there is an overlap between sseg and mseg
   // for this purpose, the 'overlapper' class us used
   MRTR::Overlap overlap(sseg,mseg,*this);
-  bool ok = overlap.HaveOverlap(); 
-  if (!ok) // there is nothing to do if there's no overlap
+  //ok = overlap.HaveOverlap(); 
+  //if (!ok) // there is nothing to do if there's no overlap
+    //return true;
+
+  // determine the overlap triangulation
+  ok = overlap.ComputeOverlap();
+  if (!ok) // there is no overlap
     return true;
+  
 
 
   return false;

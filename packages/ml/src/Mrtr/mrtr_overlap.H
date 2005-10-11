@@ -39,6 +39,7 @@
 #include <ctime>
 #include <iostream>
 #include <iomanip>
+#include <map>
 
 
 using namespace std;
@@ -52,6 +53,8 @@ namespace MRTR
 class MRTR::Interface;
 class MRTR::Segment;
 class MRTR::Node;
+class MRTR::Point;
+class MRTR::Edge;
 
 class  Overlap 
 {
@@ -60,11 +63,14 @@ public:
   // ctor
   explicit Overlap(MRTR::Segment& sseg, MRTR::Segment& mseg, MRTR::Interface& inter);
   
-  // determine overlap between 2 segments
-  bool HaveOverlap();
-  
   // dtor
   virtual ~Overlap();
+  
+  // determine whether overlap between 2 segments exists
+  bool HaveOverlap();
+  
+  // compute overlap between 2 segments
+  bool ComputeOverlap();
   
 private:  
   // don't want = operator
@@ -77,7 +83,20 @@ private:
 
   // build line information from triangles
   bool build_lines();
+  // build projection of master nodes onto slave segment
+  bool build_mxi();
+  // build projection of slave nodes onto master segment
+  bool build_sxi();
 
+  // add point to the polygon
+  bool AddPoint(MRTR::Point* p);
+  // add edge to the polygon
+  bool AddEdge(MRTR::Edge* e);
+  // get view point from polygon
+  MRTR::Point* PointView(int id);
+  // get view from edge from the polygon
+  MRTR::Edge* EdgeView(int id);
+  
 private:
 
 MRTR::Interface&    inter_;
@@ -98,9 +117,12 @@ bool                havesxi_;   // flag indicating whether sxi_ and sin_ have be
 double              sline_[3][4]; // 3 lines of sseg_ in sseg_'s local coords
 double              mline_[3][4]; // 3 lines of mseg_in sseg_'s local coords
 bool                haveline_;    // flag indicating whether line info has been build
-};
+
+map<int,MRTR::Point*> p_;         // map of point on the polygon
+map<int,MRTR::Edge*>  e_;         // map of edges on the polygon
+
+}; // class Overlap
 
 } // namespace MRTR
-
 #endif // MRTR_OVERLAP_H
 #endif // TRILINOS_PACKAGE
