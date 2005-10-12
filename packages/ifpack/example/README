@@ -10,39 +10,27 @@ order:
 			    The example details all the phases of
 			    IFPACK. Difficulty = beginners.
 
-- Ifpack_ex_MatrixMarket.cpp reads an MatrixMarket matrix (a simple
-                             format that contains i,j and a(i,j) of
-			     all nonzero elements), redistribute
-			     the matrix to all avaialble processes
-			     (using a linear distribution), and
-			     solve the problem with AztecOO and IFPACK.
-			     Matrices downloaded from 
-			     math.nist.gov/MatrixMarket/ in .mtx
-			     format can be used with this example. A
-			     small example is reported.
-			     Difficulty = beginners.
+- Ifpack_ex_Amesos.cpp      shows how to use exact LU solvers on
+                            each subdomain, using Amesos. This example
+			    is very similar to the previous one.
+			    Difficulty = beginners.
 
-- Ifpack_ex_Amesos.cpp       shows how to use exact LU solvers on
-                             each subdomain, using Amesos. This example
-			     is very similar to the previous one.
-			     Difficulty = beginners.
+- Ifpack_ex_ICT.cpp         shows how to define incomplete Cholesky 
+                            factorizations and tune parameters. Although
+			    an ICT factorization can be constructed using
+			    the Factory (as done in file
+			    Ifpack_ex_Factory.cpp), this example tells
+			    the real story: how to define an 
+			    Ifpack_AdditiveSchwar which uses ICT on
+			    each subdomain.
+			    Difficulty: intermediate.
 
-- Ifpack_ex_Ict.cpp          shows how to define incomplete Cholesky 
-                             factorizations and tune parameters. Although
-			     an ICT factorization can be constructed using
-			     the Factory (as done in file
-			     Ifpack_ex_Factory.cpp), this example tells
-			     the real story: how to define an 
-			     Ifpack_AdditiveSchwar which uses ICT on
-			     each subdomain.
-			     Difficulty: intermediate.
+- Ifpack_ex_BlockRelaxation.cpp  shows the usage of block relaxation
+                                 preconditioners, like Jacobi or
+                                 Gauss-Seidel.
+			         Difficulty: intermediate.
 
-- Ifpack_ex_BlockPrec.cpp    shows how to define block preconditioner
-                             in the more general case, using
-			     Ipfack_AdditiveSchwarz.
-			     Difficulty: advanced.
-
-The examples require triutils (--enable-triutils) to generate the linear
+The examples require Galeri (--enable-galeri) to generate the linear
 system matrix, and AztecOO (--enable-aztecoo) to solve the corresponding
 linear system. Ifpack_ex_Amesos.cpp requires Amesos (--enable-amesos).
 
@@ -51,12 +39,11 @@ Other examples are reported to explain internally used tools. These
 examples are meant to be read by developers, or users that will
 need to hack the IFPACK source code.
 
-- Ifpack_ex_Filtering.cpp        shows the use of Ifpack_DropFilter,
-                                 Ifpack_SparsityFilter, and 
-				 Ifpack_SingletonFilter.
-			         Difficulty: for developers.
+- Ifpack_ex_Filtering.cpp   shows the use of Ifpack_DropFilter,
+                            Ifpack_SparsityFilter, and 
+                            Ifpack_SingletonFilter.
+			    Difficulty: for developers.
 
-- Ifpack_ex_SingletonFilter.cpp  shows how to solve a linear system that
-                                 contains singletons.
-			         Difficulty: for developers.
+- Ifpack_ex_Reordering.cpp  shows how to reorder a matrix.
+			    Difficulty: for developers.
 

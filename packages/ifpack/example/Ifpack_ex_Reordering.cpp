@@ -50,8 +50,6 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-#ifdef HAVE_IFPACK_TEUCHOS
-
   // only one process
   if (Comm.NumProc() != 1) {
 #ifdef HAVE_MPI
@@ -100,8 +98,9 @@ int main(int argc, char *argv[])
 
   A.FillComplete();
 
+#ifdef HAVE_IFPACK_TEUCHOS
   // print the sparsity to file, postscript format
-  Ifpack_PrintSparsity(A,"OrigA.ps");
+  ////Ifpack_PrintSparsity(A,"OrigA.ps");
 
   // create the reordering...
   Ifpack_RCMReordering Reorder;
@@ -115,10 +114,7 @@ int main(int argc, char *argv[])
   Ifpack_ReorderFilter ReordA(&A,&Reorder);
 
   // print the sparsity to file, postscript format
-  Ifpack_PrintSparsity(ReordA,"ReordA.ps");
-
-#else
-  puts("Please configure ifpack with --enable-teuchos to run this example");
+  ////Ifpack_PrintSparsity(ReordA,"ReordA.ps");
 #endif
 
 #ifdef HAVE_MPI

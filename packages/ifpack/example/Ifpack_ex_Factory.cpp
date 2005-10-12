@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_AZTECOO)  && defined(HAVE_IFPACK_TEUCHOS) && defined(HAVE_IFPACK_TRIUTILS) 
+
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -36,13 +36,12 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_LinearProblem.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 #include "Teuchos_ParameterList.hpp"
 #include "AztecOO.h"
 #include "Ifpack.h"
 #include "Ifpack_AdditiveSchwarz.h"
-
-using namespace Trilinos_Util;
 
 int main(int argc, char *argv[])
 {
@@ -54,18 +53,15 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // size of the global matrix (must be a square number)
-  const int NumPoints = 10000;
+  Teuchos::ParameterList GaleriList;
 
-  // build the matrix corresponding to a 2D Laplacian on a
-  // structured grid.
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", NumPoints);
-  // for simplicity, linear map.
-  Gallery.Set("map_type", "linear");
-
-  // get the pointer to the linear system matrix
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
+  // The problem is defined on a 2D grid, global size is nx * nx.
+  int nx = 30; 
+  GaleriList.set("n", nx * nx);
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", nx);
+  Epetra_Map* Map = Galeri::CreateMap("Linear", Comm, GaleriList);
+  Epetra_RowMatrix* A = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
 
   // =============================================================== //
   // B E G I N N I N G   O F   I F P A C K   C O N S T R U C T I O N //
@@ -138,41 +134,14 @@ int main(int argc, char *argv[])
 
   cout << *Prec;
 
-  // delete the preconditioner
+  // delete memory
   delete Prec;
+  delete Map;
+  delete A;
   
 #ifdef HAVE_MPI
   MPI_Finalize() ; 
 #endif
 
-    return(EXIT_SUCCESS);
-}
-
-#else
-
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-
-int main(int argc, char *argv[])
-{
-
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  puts("please configure IFPACK with --enable-aztecoo --enable-teuchos");
-  puts("--enable-triutils to run this test");
-
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
   return(EXIT_SUCCESS);
 }
-
-#endif
