@@ -136,7 +136,7 @@ double MFLOCANSpaceInner(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d)
   LMCEV *u0 = (LMCEV *) MFNVectorGetData(v0);
   LMCEV *u1 = (LMCEV *) MFNVectorGetData(v1);
 
-  double dotp = data->grp.computeScaledDotProduct(*u0,*u1);
+  double dotp = data->grp->computeScaledDotProduct(*u0,*u1);
 
 #ifdef MFTIMINGS
     MFTimeMFNSpaceInner+=clock()-starttime;

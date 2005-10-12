@@ -56,18 +56,19 @@ int MFLOCAProjectForBB(MFNVector,double*,void*);
 
 double MFPrintMetricLOCA(double*,double*);
 
-LOCAData::LOCAData(NOX::Solver::Generic& s, 
-		   LOCA::MultiContinuation::AbstractStrategy& g, 
-		   NOX::Parameter::List& par,
-		   NOX::StatusTest::Generic& st,
-		   list<ParamData>& conParamData) :
+LOCAData::LOCAData(
+     const Teuchos::RefCountPtr<NOX::Solver::Generic>& s, 
+     const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>& g, 
+     const Teuchos::RefCountPtr<NOX::Parameter::List>& par,
+     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& st,
+     const Teuchos::RefCountPtr< list<ParamData> >& conParamData) :
   solver(s), 
   grp(g), 
   p(par), 
   status(st),
   paramData(conParamData),
   space(NULL), 
-  np(g.getNumParams()),
+  np(g->getNumParams()),
   maxNonlinearIterations(1.0),
   aggressiveness(0.0),
   radius(-1.0),
@@ -120,11 +121,11 @@ int MFLOCAProjectToDraw(MFNVector u, double *x, void *d)
   LOCAData* data = (LOCAData *)d; 
 
   if(x==(double*)NULL)
-    return data->grp.projectToDrawDimension();
+    return data->grp->projectToDrawDimension();
 
   LMCEV* v = (LMCEV *)MFNVectorGetData(u);
 
-  data->grp.projectToDraw(*v, x);
+  data->grp->projectToDraw(*v, x);
 
   return 0;
  }
@@ -140,46 +141,47 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
   for (i=0; i<k; i++) {
     MFNVector tmp =  MFMColumn(mPhi,i);
     LMCEV* tmp2 = (LMCEV *) MFNVectorGetData(tmp);
-    data->grp.setPredictorTangentDirection(*tmp2, i);
+    data->grp->setPredictorTangentDirection(*tmp2, i);
     MFFreeNVector(tmp);
   }
   
   LMCEV* u0 = (LMCEV *) MFNVectorGetData(vu0);
-  data->grp.setPrevX(*u0);
-  data->grp.setX(*u0);
+  data->grp->setPrevX(*u0);
+  data->grp->setX(*u0);
   for (i=0; i<k; i++) {
-    data->grp.setStepSize(0.0, i);
+    data->grp->setStepSize(0.0, i);
   }
 
   if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
     cout << "\n" << LOCA::Utils::fill(72, '~') << "\n";
     cout << "Start of Continuation Step " << stepNumber <<" : " << endl;
-    list<ParamData>::iterator it = data->paramData.begin();
+    list<ParamData>::iterator it = data->paramData->begin();
     for (i=0; i<k; i++) {
       cout << "\tParameter: " << it->name << " = " 
-	   << LOCA::Utils::sci(data->grp.getContinuationParameter(i))
+	   << LOCA::Utils::sci(data->grp->getContinuationParameter(i))
 	   << endl;
       it++;
     }
     cout << LOCA::Utils::fill(72, '~') << "\n" << endl;
   }
 
-  data->grp.computeF();
-  data->solver.reset(data->grp, data->status, data->p.sublist("NOX"));
-  NOX::StatusTest::StatusType status = data->solver.solve();
+  data->grp->computeF();
+  data->solver->reset(data->grp, data->status, 
+		      Teuchos::rcp(&(data->p->sublist("NOX")),false));
+  NOX::StatusTest::StatusType status = data->solver->solve();
     
   if (status != NOX::StatusTest::Converged) {
     if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
       cout << endl << LOCA::Utils::fill(72, '~') << endl;
       cout << "Continuation Step Number " << stepNumber 
            << " experienced a convergence failure in\n"
-           << "the nonlinear solver after "<< data->solver.getNumIterations() 
+           << "the nonlinear solver after "<< data->solver->getNumIterations() 
 	   <<" Iterations\n";
       cout << "Value of continuation parameters at failed step:" << endl;
-      list<ParamData>::iterator it = data->paramData.begin();
+      list<ParamData>::iterator it = data->paramData->begin();
       for (i=0; i<k; i++) {
 	cout << "\tParameter: " << it->name << " = " 
-	     << LOCA::Utils::sci(data->grp.getContinuationParameter(i))
+	     << LOCA::Utils::sci(data->grp->getContinuationParameter(i))
 	     << endl;
 	it++;
       }
@@ -190,23 +192,23 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
   else {
     LMCEV* u = (LMCEV *) MFNVectorGetData(vu);
      
-    dynamic_cast<NOX::Abstract::Group&>(data->grp) = 
-      data->solver.getSolutionGroup();
-    *u = data->grp.getX(); /* overloaded deep copy */
-    data->grp.notifyCompletedStep();
+    *(Teuchos::rcp_dynamic_cast<NOX::Abstract::Group>(data->grp)) = 
+      data->solver->getSolutionGroup();
+    *u = data->grp->getX(); /* overloaded deep copy */
+    data->grp->notifyCompletedStep();
     
     if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
       cout << "\n" << LOCA::Utils::fill(72, '~') << "\n";
       cout << "End of Continuation Step " << stepNumber << " : " << endl;
-      list<ParamData>::iterator it = data->paramData.begin();
+      list<ParamData>::iterator it = data->paramData->begin();
       for (i=0; i<k; i++) {
 	cout << "\tParameter: " << it->name << " = " 
-	     << LOCA::Utils::sci(data->grp.getContinuationParameter(i))
+	     << LOCA::Utils::sci(data->grp->getContinuationParameter(i))
 	     << endl;
 	it++;
       }
       cout << "--> Step Converged in "
-           << data->solver.getNumIterations() 
+           << data->solver->getNumIterations() 
 	   <<" Nonlinear Solver Iterations!\n";
       cout << LOCA::Utils::fill(72, '~') << "\n" << endl;
 
@@ -223,11 +225,11 @@ int MFTangentLOCA(int n,int k,MFNVector vu,MFNKMatrix mPhi,void *d)
    LOCAData* data = (LOCAData *)d;
 
    LMCEV* u0 = (LMCEV *) MFNVectorGetData(vu);
-   data->grp.setX(*u0);
-   data->grp.computePredictor();
+   data->grp->setX(*u0);
+   data->grp->computePredictor();
 
    const LOCA::MultiContinuation::ExtendedMultiVector& pred = 
-     data->grp.getPredictorTangent();
+     data->grp->getPredictorTangent();
 
    for (int i=0; i<k; i++) {
      LMCEV* t = dynamic_cast<LMCEV*>(pred[i].clone());
@@ -248,7 +250,7 @@ double MFScaleLOCA(int n,int k,MFNVector u,MFNKMatrix Phi,void *d)
     data->radius = 0.0;
     data->minRadius = 0.0;
     data->maxRadius = 0.0;
-    list<ParamData>::iterator it = data->paramData.begin();
+    list<ParamData>::iterator it = data->paramData->begin();
     for (int i=0; i<k; i++) {
       double dpidsj = 0.0;
       for (int j=0; j<k; j++) {
@@ -267,7 +269,7 @@ double MFScaleLOCA(int n,int k,MFNVector u,MFNKMatrix Phi,void *d)
     data->maxRadius /= (double) k;
   }
   else {
-    NOX::StatusTest::StatusType status = data->solver.getStatus();
+    NOX::StatusTest::StatusType status = data->solver->getStatus();
     if (status != NOX::StatusTest::Converged) {
       data->radius *= 0.7;
       if (data->radius < data->minRadius)
@@ -276,7 +278,7 @@ double MFScaleLOCA(int n,int k,MFNVector u,MFNKMatrix Phi,void *d)
     }
     else {
       double numNonlinearSteps = 
-	static_cast<double>(data->solver.getNumIterations());
+	static_cast<double>(data->solver->getNumIterations());
       double factor = (data->maxNonlinearIterations - numNonlinearSteps) 
 	/ (data->maxNonlinearIterations);
       data->radius *= (1.0 + data->aggressiveness * factor * factor);

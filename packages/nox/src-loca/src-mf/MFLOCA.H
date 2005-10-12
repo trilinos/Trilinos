@@ -60,17 +60,18 @@ struct ParamData {
 };
 
 struct LOCAData {
-  LOCAData(NOX::Solver::Generic& s, 
-	   LOCA::MultiContinuation::AbstractStrategy& g, 
-	   NOX::Parameter::List& par,
-	   NOX::StatusTest::Generic& st,
-	   list<ParamData>& conParamData);
+  LOCAData(
+     const Teuchos::RefCountPtr<NOX::Solver::Generic>& s, 
+     const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>& g, 
+     const Teuchos::RefCountPtr<NOX::Parameter::List>& par,
+     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& st,
+     const Teuchos::RefCountPtr< list<ParamData> >& conParamData);
 
-  NOX::Solver::Generic& solver;
-  LOCA::MultiContinuation::AbstractStrategy& grp;
-  NOX::Parameter::List& p;
-  NOX::StatusTest::Generic& status;
-  list<ParamData>& paramData;
+  Teuchos::RefCountPtr<NOX::Solver::Generic> solver;
+  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> grp;
+  Teuchos::RefCountPtr<NOX::Parameter::List> p;
+  Teuchos::RefCountPtr<NOX::StatusTest::Generic> status;
+  Teuchos::RefCountPtr< list<ParamData> > paramData;
   MFNSpace space;
   int np;
   double maxNonlinearIterations;

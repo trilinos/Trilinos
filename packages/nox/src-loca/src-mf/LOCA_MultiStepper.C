@@ -188,9 +188,9 @@ LOCA::MultiStepper::reset(const Teuchos::RefCountPtr<LOCA::MultiContinuation::Ab
 
   // Create solver using initial conditions
   solverPtr = Teuchos::rcp(new NOX::Solver::Manager(
-					   *curGroupPtr, 
-					   *statusTestPtr,
-					   *parsedParams->getSublist("NOX")));
+					   curGroupPtr, 
+					   statusTestPtr,
+					   parsedParams->getSublist("NOX")));
 
   printInitializationInfo();
 
@@ -233,16 +233,17 @@ LOCA::MultiStepper::run() {
 
   // Create new solver using new continuation groups and combo status test
   solverPtr = Teuchos::rcp(new NOX::Solver::Manager(
-					   *curGroupPtr, *statusTestPtr,
-					   *parsedParams->getSublist("NOX")));
+					   curGroupPtr, statusTestPtr,
+					   parsedParams->getSublist("NOX")));
 
   MFImplicitMF M;
   MFNRegion Omega;
   MFAtlas A;
   MFNVector u0;
   MFContinuationMethod H;
-  LOCAData* data = new LOCAData(*solverPtr, *curGroupPtr, *paramListPtr, 
-				*statusTestPtr, conParamData);
+  LOCAData* data = new LOCAData(solverPtr, curGroupPtr, paramListPtr, 
+				statusTestPtr, 
+				Teuchos::rcp(&conParamData,false));
   M=MFIMFCreateLOCA(data);
   Omega=MFNRegionCreateLOCA(data);
   u0=MFCreateLOCANVectorWithData(dynamic_cast<LMCEV *>(curGroupPtr->getX().clone()));

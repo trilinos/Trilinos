@@ -57,8 +57,8 @@ int LOCATest(MFNVector u, void *d)
    LMCEV* v = (LMCEV *)MFNVectorGetData(u);
    LOCAData* data = (LOCAData*) d;
 
-   list<ParamData>::iterator it = data->paramData.begin();
-   for (unsigned int i=0; i<data->paramData.size(); i++) {
+   list<ParamData>::iterator it = data->paramData->begin();
+   for (unsigned int i=0; i<data->paramData->size(); i++) {
 
      if (v->getScalar(i) < it->minValue)
        return 0;
