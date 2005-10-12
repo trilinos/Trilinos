@@ -385,7 +385,9 @@ ApplyInverseJacobi(const Epetra_MultiVector& RHS, Epetra_MultiVector& LHS) const
 
     IFPACK_CHK_ERR(Apply(LHS,*A_times_LHS));
     IFPACK_CHK_ERR(A_times_LHS->Update(1.0,RHS,-1.0));
-    IFPACK_CHK_ERR(LHS.Multiply(DampingFactor_, *A_times_LHS, *Diagonal_, 1.0));
+    for (int v = 0 ; v < NumVectors ; ++v)
+      IFPACK_CHK_ERR(LHS(v)->Multiply(DampingFactor_, *(*A_times_LHS)(v), 
+                                     *Diagonal_, 1.0));
 
   }
   delete A_times_LHS;
@@ -535,12 +537,13 @@ ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       int NumEntries;
       int col;
       double diag = d_ptr[i];
-      double dtemp = 0.0;
 
       IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
                                                &Values[0], &Indices[0]));
 
       for (int m = 0 ; m < NumVectors ; ++m) {
+
+        double dtemp = 0.0;
 
         for (int k = 0 ; k < NumEntries ; ++k) {
 
@@ -557,13 +560,13 @@ ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       int NumEntries;
       int col;
       double diag = d_ptr[i];
-      double dtemp = 0.0;
 
       IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
                                                &Values[0], &Indices[0]));
 
       for (int m = 0 ; m < NumVectors ; ++m) {
 
+        double dtemp = 0.0;
         for (int k = 0 ; k < NumEntries ; ++k) {
 
           col = Indices[k];
