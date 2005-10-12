@@ -105,6 +105,7 @@ am_elezgaray_OBJECTS = elezgaray-EA_main.$(OBJEXT) \
 	elezgaray-EA_integrator.$(OBJEXT) \
 	elezgaray-EA_interface.$(OBJEXT)
 elezgaray_OBJECTS = $(am_elezgaray_OBJECTS)
+am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -287,7 +288,7 @@ elezgaray_LDADD = $(top_builddir)/src/libcapo.a \
 	$(top_builddir)/../thyra/src/libthyra.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
-	-llapack -lblas -lg2c
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
 
 all: all-am
 
