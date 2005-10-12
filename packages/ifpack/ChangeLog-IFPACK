@@ -31,6 +31,14 @@ Please submit IFPACK bugs at software.sandia.gov/buzgilla.
 
 ------------------------------------------------------------------------------
 	
+Oct 2005:
+
+*) Added support for the Galeri package. Now matrices are no longer created
+   using Triutils' matrix gallery, but with the improved Galeri one. Also
+   fixed minor bugs.
+
+------------------------------------------------------------------------------
+	
 Jun 2005:
 
 *) Added Makefile.export.ifpack. Users who want to take advantage of
