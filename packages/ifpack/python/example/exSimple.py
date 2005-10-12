@@ -1,14 +1,13 @@
 #! /usr/bin/env python
 try:
   import setpath
-except:
-  from PyTrilinos import Epetra, Triutils, AztecOO, IFPACK
-  print "Using system-installed Epetra, Triutils, AztecOO, IFPACK"
-else:
   import Epetra
-  import Triutils
+  import Galeri
   import AztecOO
   import IFPACK
+except:
+  from PyTrilinos import Epetra, Galeri, AztecOO, IFPACK
+  print "Using system-installed Epetra, Galeri, AztecOO, IFPACK"
 
 import sys
 
@@ -21,15 +20,23 @@ def main():
 
   args = sys.argv[1:]
   if len(args) == 0:
-    Gallery = Triutils.CrsMatrixGallery("recirc_2d", Comm)
-    Gallery.Set("nx", 100)
-    Gallery.Set("ny", 100)
-    Matrix = Gallery.GetMatrix()
-    Exact = Gallery.GetExactSolution()
-    LHS = Gallery.GetStartingSolution()
-    RHS = Gallery.GetRHS()
+    nx = 30; ny = 30
+    GaleriList = {
+      "n": nx * ny,
+      "nx": nx,
+      "ny": ny
+    }
+    Map = Galeri.CreateMap("Linear", Comm, GaleriList)
+    Matrix = Galeri.CreateCrsMatrix("Recirc2D", Map, GaleriList)
+    Exact = Epetra.Vector(Map); 
+    LHS = Epetra.Vector(Map); 
+    RHS = Epetra.Vector(Map); 
+    Exact.Random()       # fix exact solution
+    LHS.PutScalar(0.0)   # fix starting solution
+    Matrix.Multiply(False, Exact, RHS) # fix rhs corresponding to Exact
   else:
-    Map, Matrix, LHS, RHS, Exact = Triutils.ReadHB(args[0], Comm);
+    ##Map, Matrix, LHS, RHS, Exact = Triutils.ReadHB(args[0], Comm);
+    print "ERRRRORRRR"
 
   # Creates the IFPACK preconditioner, in this case an incomplete
   # Cholesky factorization, with fill-in of 5
