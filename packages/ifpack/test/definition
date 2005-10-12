@@ -10,9 +10,10 @@
            ILU,
 	   IlukGraph,
 	   OverlappingRowMatrix,
-	   Relaxation,
            PreconditionerFactory,
-	   SetParameters;
+	   Relaxation,
+	   SetParameters,
+           TestAll;
     ARGS = -v;
     COMM = SERIAL, MPI(1-4);
 }
