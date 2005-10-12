@@ -409,10 +409,37 @@ protected:
  * model can be interpreted in a wide variety of ways and can be mapped into a
  * number of different optimization problems.
  *
- * \subsection Thyra_ME_derivatives_sec Function derivatives
+ * \subsection Thyra_ME_derivatives_sec Function derivatives and sensitivities
  *
  * A model can also optionally support various derivatives of the underlying
- * model functions.
+ * model functions.  The primary use for these derivatives is in the
+ * computation of varyious types of sensitivities.  Specifically, direct and
+ * adjoint sensitivities will be considered.
+ *
+ *
+ * To illustrate the issues involved, consider a single auxiliary parameter
+ * <tt>p</tt> and a single auxiliary response function <tt>g</tt> of the form
+ * <tt>(x,p) => g</tt> where there is not dependance on <tt>t</tt> or
+ * <tt>x_dot</tt>.  Assuming that <tt>(x,p) ==> f</tt> defines the state
+ * equation <tt>f(x,p)=0</tt> and that <tt>D(f)/D(x)</tt> is full rank, then
+ * <tt>f(x,p)=0</tt> defines the implicit function <tt>p ==> x(p)</tt>.  Given
+ * this implicit function, the reduced auxiliary function is
+ *
+ * <tt>g_hat(p) = g(x(p),p)</tt>
+ *
+ * The reduced derivative <tt>D(g_hat)/D(p)</tt> is given as:
+ *
+ * <tt>D(g_hat)/D(p) = D(g)/D(x) * D(x)/D(p) + D(g)/D(p)
+ *
+ * where <tt>D(x)/D(p) = - [D(f)/D(x)]^{-1} * [D(f)/D(p)]
+ *
+ * Restated, the reduced derivative <tt>D(g_hat)/D(p)</tt> is given as:
+ *
+ * <tt>D(g_hat)/D(p) = - [D(g)/D(x)] * [D(f)/D(x)]^{-1} * [D(f)/D(p)] + D(g)/D(p)
+ *
+ * The reduced derivative <tt>D(g_hat)/D(p)</tt> can be computed using the
+ * direct or the adjoint approahces.
+ *
  *
  * <ul>
  *
@@ -422,7 +449,7 @@ protected:
  *     
  *     <li><b>State variable derivatives</b>
  *
- *     <tt>W = alpha*d(f)/d(x_dot) + beta*d(f)/d(x)</tt>
+ *     <tt>W = alpha*D(f)/D(x_dot) + beta*D(f)/D(x)</tt>
  *
  *     This is derivative operator is a special object that is derived from
  *     the <tt>LinearOpWithSolveBase</tt> interface and therefore supports
@@ -431,22 +458,13 @@ protected:
  *     
  *     <li><b>Auxiliary parameter derivatives</b>
  *
- *     <tt>dfdp(l) = d(f)/d(p(l))</tt>, for <tt>l=1...Np</tt>
+ *     <tt>DfDp(l) = D(f)/D(p(l))</tt>, for <tt>l=1...Np</tt>
  *
- *     These are derivative operators that support the <tt>LinearOpBase</tt>
- *     interface.  These objects are created with the
- *     <tt>create_dfdp(int)</tt> function.  These objects can also be created
- *     as multi-vector objects using <tt>create_dfdp_adj_mv(int)</tt> and them
- *     passed into <tt>evalModel()</tt>.  Note that when
- *     <tt>create_dfdp_adj_mv(int)</tt> is used to create this object that the
- *     multi-vector is actually the adjoint of the forward operator
- *     <tt>d(f)/d(p(l))</tt> and it is up to the client to keep this straight.
- *     Separate functions are used to set the forward operator and the
- *     multi-vector form of this object (see
- *     <tt>ModelEvaluatorBase::OutArgs</tt>).
- *
- *     ToDo: Add the functions <tt>create_dfdp(int)</tt> and
- *     <tt>create_dfdp_adj_mv(int)</tt>!
+ *     These are derivative objects that represent the derivative of the state
+ *     function <tt>f</tt> with respect to the auxiliary parameters
+ *     <tt>p(l)</tt>.  This object can either be represented and manipulated
+ *     in a very abstract fashion through the <tt>LinearOpBase</tt> interface
+ *     interface or as a multi-vector object.
  *
  *     </ul>
  *
