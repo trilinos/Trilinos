@@ -33,21 +33,28 @@ EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 
 EXEEXT = .exe
 
-EXAMPLE = Ifpack_ex_Factory              \
-          Ifpack_ex_Amesos               \
-          Ifpack_ex_ICT                  \
-          Ifpack_ex_BlockRelaxation      \
-          Ifpack_ex_MatrixMarket         \
-          Ifpack_ex_Reordering           \
-          Ifpack_ex_Filtering            \
-          Ifpack_ex_SingletonFilter     
-          
-noinst_PROGRAMS = $(EXAMPLE)
+EXAMPLE_CORE =	Ifpack_ex_Reordering           \
+		Ifpack_ex_Filtering           
+
+if HAVE_IFPACK_AZTECOO
+if HAVE_IFPACK_TEUCHOS
+if HAVE_IFPACK_GALERI
+EXAMPLE_EXT = Ifpack_ex_Factory              \
+	      Ifpack_ex_Amesos               \
+	      Ifpack_ex_ICT                  \
+	      Ifpack_ex_BlockRelaxation
+else
+EXAMPLE_EXT =
+endif
+endif
+endif
+
+noinst_PROGRAMS = $(EXAMPLE_CORE) $(EXAMPLE_EXT)
 
 Ifpack_ex_Factory_SOURCES      = $(srcdir)/Ifpack_ex_Factory.cpp
 Ifpack_ex_Factory_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 Ifpack_ex_Factory_CXXFLAGS     = $(EXAMPLE_INCLUDES)
-Ifpack_ex_Factory_LDADD        = $(EXAMPLE_LIBS)
+Ifpack_ex_Factory_LDADD        = $(EXAMPLE_LIBS) 
 
 Ifpack_ex_Amesos_SOURCES      = $(srcdir)/Ifpack_ex_Amesos.cpp
 Ifpack_ex_Amesos_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
@@ -64,11 +71,6 @@ Ifpack_ex_BlockRelaxation_DEPENDENCIES = $(top_builddir)/src/libifpack.a
 Ifpack_ex_BlockRelaxation_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 Ifpack_ex_BlockRelaxation_LDADD        = $(EXAMPLE_LIBS)
 
-Ifpack_ex_MatrixMarket_SOURCES      = $(srcdir)/Ifpack_ex_MatrixMarket.cpp
-Ifpack_ex_MatrixMarket_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
-Ifpack_ex_MatrixMarket_CXXFLAGS     = $(EXAMPLE_INCLUDES)
-Ifpack_ex_MatrixMarket_LDADD        = $(EXAMPLE_LIBS) 
-
 Ifpack_ex_Reordering_SOURCES      = $(srcdir)/Ifpack_ex_Reordering.cpp
 Ifpack_ex_Reordering_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 Ifpack_ex_Reordering_CXXFLAGS     = $(EXAMPLE_INCLUDES)
@@ -78,8 +80,3 @@ Ifpack_ex_Filtering_SOURCES      = $(srcdir)/Ifpack_ex_Filtering.cpp
 Ifpack_ex_Filtering_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 Ifpack_ex_Filtering_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 Ifpack_ex_Filtering_LDADD        = $(EXAMPLE_LIBS)
-
-Ifpack_ex_SingletonFilter_SOURCES      = $(srcdir)/Ifpack_ex_SingletonFilter.cpp
-Ifpack_ex_SingletonFilter_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
-Ifpack_ex_SingletonFilter_CXXFLAGS     = $(EXAMPLE_INCLUDES)
-Ifpack_ex_SingletonFilter_LDADD        = $(EXAMPLE_LIBS) 

@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP HAVE_IFPACK_AZTECOO_TRUE HAVE_IFPACK_AZTECOO_FALSE HAVE_IFPACK_TRIUTILS_TRUE HAVE_IFPACK_TRIUTILS_FALSE HAVE_IFPACK_TEUCHOS_TRUE HAVE_IFPACK_TEUCHOS_FALSE HAVE_IFPACK_AMESOS_TRUE HAVE_IFPACK_AMESOS_FALSE HAVE_IFPACK_EPETRAEXT_TRUE HAVE_IFPACK_EPETRAEXT_FALSE HAVE_IFPACK_METIS_TRUE HAVE_IFPACK_METIS_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP HAVE_IFPACK_AZTECOO_TRUE HAVE_IFPACK_AZTECOO_FALSE HAVE_IFPACK_GALERI_TRUE HAVE_IFPACK_GALERI_FALSE HAVE_IFPACK_TEUCHOS_TRUE HAVE_IFPACK_TEUCHOS_FALSE HAVE_IFPACK_AMESOS_TRUE HAVE_IFPACK_AMESOS_FALSE HAVE_IFPACK_EPETRAEXT_TRUE HAVE_IFPACK_EPETRAEXT_FALSE HAVE_IFPACK_METIS_TRUE HAVE_IFPACK_METIS_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -894,14 +894,13 @@ Optional Features:
   --enable-ifpack-aztecoo Enable AztecOO support. AztecOO, a Trilinos package,
                           is used in some of the examples for solve the linear
                           system.
-  --enable-triutils       Enable TRIUTILS support. Triutils, a Trilinos
-                          package, is used in some IFPACK examples to
-                          construct the linear system. Can be overridden with
-                          --disable-ifpack-triutils.
-  --enable-ifpack-triutils
-                          Enable TRIUTILS support. Triutils, a Trilinos
-                          package, is used in some IFPACK examples to
-                          construct the linear system.
+  --enable-galeri         Enable Galeri support. Galeri, a Trilinos package,
+                          is used in some IFPACK examples to construct the
+                          linear system. Can be overridden with
+                          --disable-ifpack-Galeri.
+  --enable-ifpack-galeri  Enable Galeri support. Galeri, a Trilinos package,
+                          is used in some IFPACK examples to construct the
+                          linear system.
   --enable-teuchos        Enable TEUCHOS support. The parameters list of
                           Teuchos, a Trilinos package, can be used in several
                           IFPACK classes. Can be overridden with
@@ -3873,7 +3872,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3876:" \
+echo "$as_me:3875:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7139,7 +7138,7 @@ fi
 # - Epetra is required. The configure stops if Epetra is not enabled.
 # - AztecOO is used in some examples.
 # - Amesos is used by Ifpack_Amesos
-# - Triutils is used in some examples, to generate the linear system.
+# - Galeri is used in some examples, to generate the linear system.
 # - Teuchos is used for the parameters list in several classes.
 # - EpetraExt is used in some examples
 # ------------------------------------------------------------------------
@@ -7199,37 +7198,37 @@ fi
 #
 
 
-# Check whether --enable-triutils or --disable-triutils was given.
-if test "${enable_triutils+set}" = set; then
-  enableval="$enable_triutils"
-  ac_cv_implicit_use_triutils=$enableval
+# Check whether --enable-galeri or --disable-galeri was given.
+if test "${enable_galeri+set}" = set; then
+  enableval="$enable_galeri"
+  ac_cv_implicit_use_galeri=$enableval
 else
-  ac_cv_implicit_use_triutils=no
+  ac_cv_implicit_use_galeri=no
 fi;
 
 if test "Xyes" != "Xno"; then
-  ac_cv_ifpack_using_triutils_default=$ac_cv_implicit_use_triutils
+  ac_cv_ifpack_using_galeri_default=$ac_cv_implicit_use_galeri
 else
-  ac_cv_ifpack_using_triutils_default=no
+  ac_cv_ifpack_using_galeri_default=no
 fi
 
-# Check whether --enable-ifpack-triutils or --disable-ifpack-triutils was given.
-if test "${enable_ifpack_triutils+set}" = set; then
-  enableval="$enable_ifpack_triutils"
-  ac_cv_use_triutils=$enableval
+# Check whether --enable-ifpack-galeri or --disable-ifpack-galeri was given.
+if test "${enable_ifpack_galeri+set}" = set; then
+  enableval="$enable_ifpack_galeri"
+  ac_cv_use_galeri=$enableval
 else
-  ac_cv_use_triutils=$ac_cv_ifpack_using_triutils_default
+  ac_cv_use_galeri=$ac_cv_ifpack_using_galeri_default
 fi;
 
-echo "$as_me:$LINENO: checking whether to build optional triutils dependent code in ifpack" >&5
-echo $ECHO_N "checking whether to build optional triutils dependent code in ifpack... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to build optional galeri dependent code in ifpack" >&5
+echo $ECHO_N "checking whether to build optional galeri dependent code in ifpack... $ECHO_C" >&6
 
-if test "X$ac_cv_use_triutils" != "Xno"; then
+if test "X$ac_cv_use_galeri" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_IFPACK_TRIUTILS 1
+#define HAVE_IFPACK_GALERI 1
 _ACEOF
 
 else
@@ -7239,12 +7238,12 @@ fi
 
 
 
-if test "X$ac_cv_use_triutils" = "Xyes"; then
-  HAVE_IFPACK_TRIUTILS_TRUE=
-  HAVE_IFPACK_TRIUTILS_FALSE='#'
+if test "X$ac_cv_use_galeri" = "Xyes"; then
+  HAVE_IFPACK_GALERI_TRUE=
+  HAVE_IFPACK_GALERI_FALSE='#'
 else
-  HAVE_IFPACK_TRIUTILS_TRUE='#'
-  HAVE_IFPACK_TRIUTILS_FALSE=
+  HAVE_IFPACK_GALERI_TRUE='#'
+  HAVE_IFPACK_GALERI_FALSE=
 fi
 
 
@@ -8662,7 +8661,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8665: \"$ac_link\") >&5
+(eval echo $as_me:8664: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8740,7 +8739,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8743: \"$ac_link\") >&5
+(eval echo $as_me:8742: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11466,7 +11465,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11469: \"$ac_link\") >&5
+(eval echo $as_me:11468: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11544,7 +11543,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11547: \"$ac_link\") >&5
+(eval echo $as_me:11546: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11941,10 +11940,10 @@ echo "$as_me: error: conditional \"HAVE_IFPACK_AZTECOO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${HAVE_IFPACK_TRIUTILS_TRUE}" && test -z "${HAVE_IFPACK_TRIUTILS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_IFPACK_TRIUTILS\" was never defined.
+if test -z "${HAVE_IFPACK_GALERI_TRUE}" && test -z "${HAVE_IFPACK_GALERI_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_IFPACK_GALERI\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_IFPACK_TRIUTILS\" was never defined.
+echo "$as_me: error: conditional \"HAVE_IFPACK_GALERI\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -12712,8 +12711,8 @@ s,@USING_GNUMAKE_FALSE@,$USING_GNUMAKE_FALSE,;t t
 s,@EGREP@,$EGREP,;t t
 s,@HAVE_IFPACK_AZTECOO_TRUE@,$HAVE_IFPACK_AZTECOO_TRUE,;t t
 s,@HAVE_IFPACK_AZTECOO_FALSE@,$HAVE_IFPACK_AZTECOO_FALSE,;t t
-s,@HAVE_IFPACK_TRIUTILS_TRUE@,$HAVE_IFPACK_TRIUTILS_TRUE,;t t
-s,@HAVE_IFPACK_TRIUTILS_FALSE@,$HAVE_IFPACK_TRIUTILS_FALSE,;t t
+s,@HAVE_IFPACK_GALERI_TRUE@,$HAVE_IFPACK_GALERI_TRUE,;t t
+s,@HAVE_IFPACK_GALERI_FALSE@,$HAVE_IFPACK_GALERI_FALSE,;t t
 s,@HAVE_IFPACK_TEUCHOS_TRUE@,$HAVE_IFPACK_TEUCHOS_TRUE,;t t
 s,@HAVE_IFPACK_TEUCHOS_FALSE@,$HAVE_IFPACK_TEUCHOS_FALSE,;t t
 s,@HAVE_IFPACK_AMESOS_TRUE@,$HAVE_IFPACK_AMESOS_TRUE,;t t

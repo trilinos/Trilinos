@@ -65,6 +65,9 @@
 /* Define if want to build ifpack-examples */
 #undef HAVE_IFPACK_EXAMPLES
 
+/* Define if want to build with ifpack enabled */
+#undef HAVE_IFPACK_GALERI
+
 /* Define if you want to build Ifpack's ParameterList interface */
 #undef HAVE_IFPACK_METIS
 
@@ -73,9 +76,6 @@
 
 /* Define if want to build with ifpack enabled */
 #undef HAVE_IFPACK_TEUCHOS
-
-/* Define if want to build with ifpack enabled */
-#undef HAVE_IFPACK_TRIUTILS
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H

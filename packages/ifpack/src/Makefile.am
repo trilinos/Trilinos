@@ -282,10 +282,10 @@ else
 HAVE_IFPACK_AZTECOO_LIBS =
 endif
 
-if HAVE_IFPACK_TRIUTILS
-HAVE_IFPACK_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; $(MAKE) all-libs
+if HAVE_IFPACK_GALERI
+HAVE_IFPACK_GALERI_LIBS = cd $(top_builddir)/../galeri ; $(MAKE) all-libs
 else
-HAVE_IFPACK_TRIUTILS_LIBS =
+HAVE_IFPACK_GALERI_LIBS =
 endif
 
 if HAVE_IFPACK_TEUCHOS
@@ -310,7 +310,7 @@ all-libs:
 	$(MAKE) libifpack.a
 	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
 	$(HAVE_IFPACK_AZTECOO_LIBS)
-	$(HAVE_IFPACK_TRIUTILS_LIBS)
+	$(HAVE_IFPACK_GALERI_LIBS)
 	$(HAVE_IFPACK_TEUCHOS_LIBS)
 	$(HAVE_IFPACK_AMESOS_LIBS)
 	$(HAVE_IFPACK_EPETRAEXT_LIBS)
