@@ -226,14 +226,14 @@ AC_CXX_STD_SPRINTF
 # - Epetra is required. The configure stops if Epetra is not enabled.
 # - AztecOO is used in some examples.
 # - Amesos is used by Ifpack_Amesos
-# - Triutils is used in some examples, to generate the linear system.
+# - Galeri is used in some examples, to generate the linear system.
 # - Teuchos is used for the parameters list in several classes.
 # - EpetraExt is used in some examples
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, aztecoo, IFPACK_AZTECOO, HAVE_IFPACK_AZTECOO, yes, [Enable AztecOO support. AztecOO, a Trilinos package, is used in some of the examples for solve the linear system.], [Enable AztecOO support. AztecOO, a Trilinos package, is used in some of the examples for solve the linear system. Can be overridden with --disable-ifpack-aztecoo.])
 #
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, triutils, IFPACK_TRIUTILS, HAVE_IFPACK_TRIUTILS, yes, [Enable TRIUTILS support. Triutils, a Trilinos package, is used in some IFPACK examples to construct the linear system.], [Enable TRIUTILS support. Triutils, a Trilinos package, is used in some IFPACK examples to construct the linear system. Can be overridden with --disable-ifpack-triutils.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, galeri, IFPACK_GALERI, HAVE_IFPACK_GALERI, yes, [Enable Galeri support. Galeri, a Trilinos package, is used in some IFPACK examples to construct the linear system.], [Enable Galeri support. Galeri, a Trilinos package, is used in some IFPACK examples to construct the linear system. Can be overridden with --disable-ifpack-Galeri.])
 #
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, teuchos, IFPACK_TEUCHOS, HAVE_IFPACK_TEUCHOS, yes, [Enable TEUCHOS support. The parameters list of Teuchos, a Trilinos package, can be used in several IFPACK classes.], [Enable TEUCHOS support. The parameters list of Teuchos, a Trilinos package, can be used in several IFPACK classes. Can be overridden with --disable-ifpack-teuchos.])
 #
