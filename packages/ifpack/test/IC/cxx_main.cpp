@@ -28,7 +28,6 @@
 // @HEADER
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_TEUCHOS) && defined(HAVE_IFPACK_TRIUTILS)
 
 #include "Epetra_ConfigDefs.h"
 #ifdef HAVE_MPI
@@ -45,8 +44,8 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Export.h"
 #include "AztecOO.h"
-#include "Trilinos_Util.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 #include "Ifpack_CrsIct.h"
 #include "Ifpack.h"
 
@@ -64,8 +63,6 @@ string toString(const double& x) {
   return string(s);
 }
 
-using namespace Trilinos_Util;
-
 // main driver
 
 int main(int argc, char *argv[]) {
@@ -81,14 +78,16 @@ int main(int argc, char *argv[]) {
   bool verbose = false; 
   if (MyPID==0) verbose = true;
 
-  // size of the global matrix.
-  const int NumPoints = 900;
-
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", NumPoints);
-  Epetra_CrsMatrix* A = dynamic_cast<Epetra_CrsMatrix*>(Gallery.GetMatrix());
-  Epetra_MultiVector* LHS = Gallery.GetStartingSolution();
-  Epetra_MultiVector* RHS = Gallery.GetRHS();
+  // The problem is defined on a 2D grid, global size is nx * nx.
+  int nx = 30;
+  Teuchos::ParameterList GaleriList;
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", nx);
+  Epetra_Map* Map = Galeri::CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* A = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
+  Epetra_MultiVector* LHS = new Epetra_MultiVector(*Map, 1);
+  Epetra_MultiVector* RHS = new Epetra_MultiVector(*Map, 1);
+  LHS->PutScalar(0.0); RHS->Random();
 
   // ============================ //
   // Construct ILU preconditioner //
@@ -137,7 +136,6 @@ int main(int argc, char *argv[]) {
 
   int OldIters = solver.NumIters();
 
-
   if (ICT!=0) delete ICT;
 				       
   // now rebuild the same preconditioner using ICT, we expect the same
@@ -172,27 +170,15 @@ int main(int argc, char *argv[]) {
   if (OldIters != NewIters)
     IFPACK_CHK_ERR(-1);
 
-  if (Prec!=0) delete Prec;
+  delete Prec;
+  delete A;
+  delete LHS;
+  delete RHS;
+  delete Map;
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 
-return 0 ;
+  return(EXIT_SUCCESS);
 }
-
-#else
-
-#include <stdlib.h>
-#include <stdio.h>
-
-int main(int argc, char *argv[])
-{
-  puts("Please configure Didasko with:\n"
-       "--enable-epetra\n"
-       "--enable-teuchos\n"
-       "--enable-amesos");
-
-  return 0;
-}
-#endif

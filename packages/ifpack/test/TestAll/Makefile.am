@@ -33,9 +33,19 @@ EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 
 EXEEXT = .exe
 
+if HAVE_IFPACK_AMESOS
+if HAVE_IFPACK_AZTECOO
+if HAVE_IFPACK_GALERI
+if HAVE_IFPACK_TEUCHOS
+
 noinst_PROGRAMS = TestAll
 
 TestAll_SOURCES      = $(srcdir)/cxx_main.cpp
 TestAll_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 TestAll_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestAll_LDADD        = $(EXAMPLE_LIBS)
+
+endif
+endif
+endif
+endif

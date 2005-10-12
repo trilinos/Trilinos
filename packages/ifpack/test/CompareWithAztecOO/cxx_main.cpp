@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_TEUCHOS)
+
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -37,9 +37,9 @@
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "AztecOO.h"
 #include "Ifpack_Graph_Epetra_RowMatrix.h"
@@ -50,13 +50,11 @@
 
 bool verbose = false;
 
-using namespace Trilinos_Util;
-
-bool CompareWithAztecOO(Epetra_LinearProblem* Problem, const string what,
+bool CompareWithAztecOO(Epetra_LinearProblem& Problem, const string what,
                        int Overlap, int ival)
 {
 
-  AztecOO AztecOOSolver(*Problem);
+  AztecOO AztecOOSolver(Problem);
   AztecOOSolver.SetAztecOption(AZ_solver,AZ_gmres);
   AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
   AztecOOSolver.SetAztecOption(AZ_overlap,Overlap);
@@ -66,9 +64,9 @@ bool CompareWithAztecOO(Epetra_LinearProblem* Problem, const string what,
   AztecOOSolver.SetAztecParam(AZ_athresh, 0.0);
   AztecOOSolver.SetAztecParam(AZ_rthresh, 0.0);
 
-  Epetra_MultiVector& RHS = *(Problem->GetRHS());
-  Epetra_MultiVector& LHS = *(Problem->GetLHS());
-  Epetra_RowMatrix* A = Problem->GetMatrix();
+  Epetra_MultiVector& RHS = *(Problem.GetRHS());
+  Epetra_MultiVector& LHS = *(Problem.GetLHS());
+  Epetra_RowMatrix* A = Problem.GetMatrix();
 
   LHS.Random();
   A->Multiply(false,LHS,RHS);
@@ -214,23 +212,17 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // process the command line
-  Teuchos::CommandLineProcessor CLP;
-  // matrix name
-  string MatrixName = "laplace_3d";
-  // global size
-  int NumPoints = 27000;
-  CLP.setOption("matrix", &MatrixName, "Matrix name for Gallery (ex: laplace_2d)");
-  CLP.setOption("size", &NumPoints, "Size of the problem. Note: this may need to be a square/cube depending on specified matrix name");
+  int nx = 30;
+  Teuchos::ParameterList GaleriList;
+  GaleriList.set("n", nx * nx);
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", nx);
 
-  CLP.throwExceptions(false);
-  CLP.parse(argc,argv);
-  
-  CrsMatrixGallery Gallery(MatrixName,Comm);
-  Gallery.Set("problem_size", NumPoints);
-  Gallery.Set("map_type", "linear");
-
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
+  Epetra_Map* Map = Galeri::CreateMap("Linear", Comm, GaleriList);
+  Epetra_RowMatrix* A = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
+  Epetra_Vector LHS(*Map);
+  Epetra_Vector RHS(*Map);
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
 
   int TestPassed = true;
 
@@ -271,6 +263,9 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
+  delete Map;
+  delete A;
+
 #ifdef HAVE_MPI
   MPI_Finalize() ; 
 #endif
@@ -278,32 +273,3 @@ int main(int argc, char *argv[])
 
   exit(EXIT_SUCCESS);
 }
-
-#else
-
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-
-int main(int argc, char *argv[])
-{
-
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  puts("please configure IFPACK with --eanble-aztecoo --enable-teuchos");
-  puts("to run this test");
-
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
-  return(EXIT_SUCCESS);
-}
-
-#endif

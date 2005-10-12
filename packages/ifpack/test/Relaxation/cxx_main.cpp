@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_AMESOS) && defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_TEUCHOS)
+
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -36,7 +36,10 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Epetra_Map.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
+#include "Galeri_Utils.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Ifpack_PointRelaxation.h"
 #include "Ifpack_BlockRelaxation.h"
@@ -44,21 +47,19 @@
 #include "Ifpack_Amesos.h"
 #include "AztecOO.h"
 
-using namespace Trilinos_Util;
 static bool verbose = false;
 static bool SymmetricGallery = false;
 static bool Solver = AZ_gmres;
-
+const int NumVectors = 3;
 
 // ====================================================================== 
-int CompareBlockOverlap(CrsMatrixGallery& Gallery, int Overlap)
+int CompareBlockOverlap(Epetra_RowMatrix* A, int Overlap)
 {
+  Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
+  Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
+  LHS.PutScalar(0.0); RHS.Random();
 
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
-
-  Epetra_MultiVector& RHS = *(Problem->GetRHS());
-  Epetra_MultiVector& LHS = *(Problem->GetLHS());
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
 
   Teuchos::ParameterList List;
   List.set("relaxation: damping factor", 1.0);
@@ -76,7 +77,7 @@ int CompareBlockOverlap(CrsMatrixGallery& Gallery, int Overlap)
   Prec.Compute();
 
   // set AztecOO solver object
-  AztecOO AztecOOSolver(*Problem);
+  AztecOO AztecOOSolver(Problem);
   AztecOOSolver.SetAztecOption(AZ_solver,Solver);
   if (verbose)
     AztecOOSolver.SetAztecOption(AZ_output,32);
@@ -90,15 +91,13 @@ int CompareBlockOverlap(CrsMatrixGallery& Gallery, int Overlap)
 }
 
 // ====================================================================== 
-int CompareBlockSizes(string PrecType,
-                      CrsMatrixGallery& Gallery, int NumParts)
+int CompareBlockSizes(string PrecType, Epetra_RowMatrix* A, int NumParts)
 {
+  Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
+  Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
+  LHS.PutScalar(0.0); RHS.Random();
 
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
-
-  Epetra_MultiVector& RHS = *(Problem->GetRHS());
-  Epetra_MultiVector& LHS = *(Problem->GetLHS());
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
 
   Teuchos::ParameterList List;
   List.set("relaxation: damping factor", 1.0);
@@ -115,7 +114,7 @@ int CompareBlockSizes(string PrecType,
   Prec.Compute();
 
   // set AztecOO solver object
-  AztecOO AztecOOSolver(*Problem);
+  AztecOO AztecOOSolver(Problem);
   AztecOOSolver.SetAztecOption(AZ_solver,Solver);
   if (verbose)
     AztecOOSolver.SetAztecOption(AZ_output,32);
@@ -129,15 +128,13 @@ int CompareBlockSizes(string PrecType,
 }
 
 // ====================================================================== 
-bool ComparePointAndBlock(string PrecType,
-                          CrsMatrixGallery& Gallery, int sweeps)
+bool ComparePointAndBlock(string PrecType, Epetra_RowMatrix* A, int sweeps)
 {
+  Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
+  Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
+  LHS.PutScalar(0.0); RHS.Random();
 
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
-
-  Epetra_MultiVector& RHS = *(Problem->GetRHS());
-  Epetra_MultiVector& LHS = *(Problem->GetLHS());
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
 
   // Set up the list
   Teuchos::ParameterList List;
@@ -153,7 +150,6 @@ bool ComparePointAndBlock(string PrecType,
   // get the number of iterations with point relaxation //
   // ================================================== //
   {
-
     RHS.PutScalar(1.0);
     LHS.PutScalar(0.0);
 
@@ -162,7 +158,7 @@ bool ComparePointAndBlock(string PrecType,
     Point.Compute();
 
     // set AztecOO solver object
-    AztecOO AztecOOSolver(*Problem);
+    AztecOO AztecOOSolver(Problem);
     AztecOOSolver.SetAztecOption(AZ_solver,Solver);
     if (verbose)
       AztecOOSolver.SetAztecOption(AZ_output,32);
@@ -170,12 +166,12 @@ bool ComparePointAndBlock(string PrecType,
       AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Point);
 
-    AztecOOSolver.Iterate(1550,1e-5);
+    AztecOOSolver.Iterate(1550,1e-2);
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     ItersPoint = AztecOOSolver.NumIters();
     // some output
-    if (verbose && Problem->GetMatrix()->Comm().MyPID() == 0) {
+    if (verbose && Problem.GetMatrix()->Comm().MyPID() == 0) {
       cout << "Iterations  = " << ItersPoint << endl;
       cout << "Norm of the true residual = " << TrueResidual << endl;
     }
@@ -194,7 +190,7 @@ bool ComparePointAndBlock(string PrecType,
     Block.Compute();
 
     // set AztecOO solver object
-    AztecOO AztecOOSolver(*Problem);
+    AztecOO AztecOOSolver(Problem);
     AztecOOSolver.SetAztecOption(AZ_solver,Solver);
     if (verbose)
       AztecOOSolver.SetAztecOption(AZ_output,32);
@@ -202,12 +198,12 @@ bool ComparePointAndBlock(string PrecType,
       AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Block);
 
-    AztecOOSolver.Iterate(1550,1e-5);
+    AztecOOSolver.Iterate(1550,1e-2);
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     ItersBlock = AztecOOSolver.NumIters();
     // some output
-    if (verbose && Problem->GetMatrix()->Comm().MyPID() == 0) {
+    if (verbose && Problem.GetMatrix()->Comm().MyPID() == 0) {
       cout << "Iterations " << ItersBlock << endl;
       cout << "Norm of the true residual = " << TrueResidual << endl;
     }
@@ -230,17 +226,13 @@ bool ComparePointAndBlock(string PrecType,
 }
 
 // ====================================================================== 
-bool KrylovTest(string PrecType,
-                CrsMatrixGallery& Gallery)
+bool KrylovTest(string PrecType, Epetra_RowMatrix* A)
 {
+  Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
+  Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
+  LHS.PutScalar(0.0); RHS.Random();
 
-  // The following methods of CrsMatrixGallery are used to get pointers
-  // to internally stored Epetra_RowMatrix and Epetra_LinearProblem.
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
-
-  Epetra_MultiVector& LHS = *(Problem->GetLHS());
-  LHS.PutScalar(0.0);
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
 
   // Set up the list
   Teuchos::ParameterList List;
@@ -265,7 +257,7 @@ bool KrylovTest(string PrecType,
     Point.Compute();
 
     // set AztecOO solver object
-    AztecOO AztecOOSolver(*Problem);
+    AztecOO AztecOOSolver(Problem);
     AztecOOSolver.SetAztecOption(AZ_solver,Solver);
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Point);
@@ -274,7 +266,7 @@ bool KrylovTest(string PrecType,
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     // some output
-    if (verbose && Problem->GetMatrix()->Comm().MyPID() == 0) {
+    if (verbose && Problem.GetMatrix()->Comm().MyPID() == 0) {
       cout << "Norm of the true residual = " << TrueResidual << endl;
     }
     Iters1 = AztecOOSolver.NumIters();
@@ -291,7 +283,7 @@ bool KrylovTest(string PrecType,
     LHS.PutScalar(0.0);
 
     // set AztecOO solver object
-    AztecOO AztecOOSolver(*Problem);
+    AztecOO AztecOOSolver(Problem);
     AztecOOSolver.SetAztecOption(AZ_solver,Solver);
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Point);
@@ -299,7 +291,7 @@ bool KrylovTest(string PrecType,
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     // some output
-    if (verbose && Problem->GetMatrix()->Comm().MyPID() == 0) {
+    if (verbose && Problem.GetMatrix()->Comm().MyPID() == 0) {
       cout << "Norm of the true residual = " << TrueResidual << endl;
     }
     Iters10 = AztecOOSolver.NumIters();
@@ -323,19 +315,14 @@ bool KrylovTest(string PrecType,
 }
 
 // ====================================================================== 
-bool BasicTest(string PrecType,
-               CrsMatrixGallery& Gallery)
+bool BasicTest(string PrecType, Epetra_RowMatrix* A)
 {
+  Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
+  Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
+  LHS.PutScalar(0.0); RHS.Random();
 
-  // The following methods of CrsMatrixGallery are used to get pointers
-  // to internally stored Epetra_RowMatrix and Epetra_LinearProblem.
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
-
-  Epetra_MultiVector& RHS = *(Problem->GetRHS());
-  Epetra_MultiVector& LHS = *(Problem->GetLHS());
-
-  LHS.PutScalar(0.0);
+  double starting_residual = Galeri::ComputeNorm(A, &LHS, &RHS);
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
 
   // Set up the list
   Teuchos::ParameterList List;
@@ -352,17 +339,13 @@ bool BasicTest(string PrecType,
 
   // compute the real residual
 
-  double residual, diff;
-  Gallery.ComputeResidual(&residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(&diff);
-
-  if (verbose && A->Comm().MyPID()==0) {
-    cout << "||b-Ax||_2 = " << residual << endl;
-    cout << "||x_exact - x||_2 = " << diff << endl;
-  }
+  double residual = Galeri::ComputeNorm(A, &LHS, &RHS);
+  
+  if (A->Comm().MyPID() == 0 && verbose)
+    cout << "||A * x - b||_2 (scaled) = " << residual / starting_residual << endl;
   
   // Jacobi is very slow to converge here
-  if (residual < 1e-2) {
+  if (residual / starting_residual < 1e-2) {
     if (verbose)
       cout << "Test passed" << endl;
     return(true);
@@ -377,7 +360,6 @@ bool BasicTest(string PrecType,
 // ====================================================================== 
 int main(int argc, char *argv[])
 {
-
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
@@ -395,15 +377,16 @@ int main(int argc, char *argv[])
   }
 
   // size of the global matrix. 
-  const int NumPoints = 900;
-
-  CrsMatrixGallery Gallery("", Comm);
-  Gallery.Set("problem_size", NumPoints);
-  Gallery.Set("map_type", "linear");
+  Teuchos::ParameterList GaleriList;
+  int nx = 30; 
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", nx);
+  Epetra_Map* Map = Galeri::CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* A;
   if (SymmetricGallery)
-    Gallery.Set("problem_type", "laplace_2d");
+    A = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
   else
-    Gallery.Set("problem_type", "recirc_2d");
+    A = Galeri::CreateCrsMatrix("Recirc2D", Map, GaleriList);
 
   // test the preconditioner
   int TestPassed = true;
@@ -412,14 +395,15 @@ int main(int argc, char *argv[])
   // first verify that we can get convergence //
   // with all point relaxation methods        //
   // ======================================== //
-  if(!BasicTest("Jacobi",Gallery))
+
+  if(!BasicTest("Jacobi",A))
     TestPassed = false;
 
-  if(!BasicTest("symmetric Gauss-Seidel",Gallery))
+  if(!BasicTest("symmetric Gauss-Seidel",A))
     TestPassed = false;
 
   if (!SymmetricGallery) {
-    if(!BasicTest("Gauss-Seidel",Gallery))
+    if(!BasicTest("Gauss-Seidel",A))
       TestPassed = false;
   }
 
@@ -427,11 +411,11 @@ int main(int argc, char *argv[])
   // check uses as preconditioners //
   // ============================= //
   
-  if(!KrylovTest("symmetric Gauss-Seidel",Gallery))
+  if(!KrylovTest("symmetric Gauss-Seidel",A))
     TestPassed = false;
 
   if (!SymmetricGallery) {
-    if(!KrylovTest("Gauss-Seidel",Gallery))
+    if(!KrylovTest("Gauss-Seidel",A))
       TestPassed = false;
   }
 
@@ -440,23 +424,23 @@ int main(int argc, char *argv[])
   // ================================== //
 
   TestPassed = TestPassed && 
-    ComparePointAndBlock("Jacobi",Gallery,1);
+    ComparePointAndBlock("Jacobi",A,1);
 
   TestPassed = TestPassed && 
-    ComparePointAndBlock("Jacobi",Gallery,10);
+    ComparePointAndBlock("Jacobi",A,10);
 
   TestPassed = TestPassed && 
-    ComparePointAndBlock("symmetric Gauss-Seidel",Gallery,1);
+    ComparePointAndBlock("symmetric Gauss-Seidel",A,1);
 
   TestPassed = TestPassed && 
-    ComparePointAndBlock("symmetric Gauss-Seidel",Gallery,10);
+    ComparePointAndBlock("symmetric Gauss-Seidel",A,10);
 
   if (!SymmetricGallery) {
     TestPassed = TestPassed && 
-      ComparePointAndBlock("Gauss-Seidel",Gallery,1);
+      ComparePointAndBlock("Gauss-Seidel",A,1);
 
     TestPassed = TestPassed && 
-      ComparePointAndBlock("Gauss-Seidel",Gallery,10);
+      ComparePointAndBlock("Gauss-Seidel",A,10);
   }
 
   // ============================ //
@@ -465,9 +449,9 @@ int main(int argc, char *argv[])
   
   {
     int Iters4, Iters8, Iters16;
-    Iters4 = CompareBlockSizes("Jacobi",Gallery,4);
-    Iters8 = CompareBlockSizes("Jacobi",Gallery,8);
-    Iters16 = CompareBlockSizes("Jacobi",Gallery,16);
+    Iters4 = CompareBlockSizes("Jacobi",A,4);
+    Iters8 = CompareBlockSizes("Jacobi",A,8);
+    Iters16 = CompareBlockSizes("Jacobi",A,16);
     if ((Iters16 > Iters8) && (Iters8 > Iters4)) {
       if (verbose)
         cout << "Test passed" << endl;
@@ -485,9 +469,9 @@ int main(int argc, char *argv[])
   
   {
     int Iters0, Iters2, Iters4;
-    Iters0 = CompareBlockOverlap(Gallery,0);
-    Iters2 = CompareBlockOverlap(Gallery,2);
-    Iters4 = CompareBlockOverlap(Gallery,4);
+    Iters0 = CompareBlockOverlap(A,0);
+    Iters2 = CompareBlockOverlap(A,2);
+    Iters4 = CompareBlockOverlap(A,4);
     if ((Iters4 < Iters2) && (Iters2 < Iters0)) {
       if (verbose)
         cout << "Test passed" << endl;
@@ -508,6 +492,9 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
   
+  delete A;
+  delete Map;
+
 #ifdef HAVE_MPI
   MPI_Finalize(); 
 #endif
@@ -515,37 +502,5 @@ int main(int argc, char *argv[])
   cout << endl;
   cout << "Test `TestRelaxation.exe' passed!" << endl;
   cout << endl;
-  exit(EXIT_SUCCESS);
-}
-
-#else
-
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-
-int main(int argc, char *argv[])
-{
-
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  puts("please configure IFPACK with:");
-  puts("--eanble-aztecoo");
-  puts("--enable-teuchos");
-  puts("--enable-amesos");
-  puts("to run this test");
-
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
   return(EXIT_SUCCESS);
 }
-
-#endif

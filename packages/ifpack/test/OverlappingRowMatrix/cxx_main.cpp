@@ -27,8 +27,7 @@
 // @HEADER
 
 #include "Ifpack_ConfigDefs.h"
-// FIXME: this test has to be re-enabled
-#if defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_AMESOS) && defined(HAVE_IFPACK_TEUCHOS) 
+
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -40,17 +39,15 @@
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
 #include "Epetra_Time.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Ifpack_OverlappingRowMatrix.h"
 #include "Ifpack_LocalFilter.h"
 #include "Ifpack_Utils.h"
 
-using namespace Trilinos_Util;
-
 int main(int argc, char *argv[])
 {
-
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
@@ -59,16 +56,21 @@ int main(int argc, char *argv[])
 #endif
 
   if (Comm.NumProc() == 1)
+  {
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     exit(EXIT_SUCCESS);
+  }
 
-  // size of the global matrix. 
-  const int NumPoints = 10000;
+  Teuchos::ParameterList GaleriList;
+  int nx = 100; 
+  GaleriList.set("n", nx * nx);
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", nx);
+  Epetra_Map* Map = Galeri::CreateMap("Linear", Comm, GaleriList);
+  Epetra_CrsMatrix* A = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
 
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", NumPoints);
-  Gallery.Set("map_type", "linear");
-
-  Epetra_RowMatrix& A = *(Gallery.GetMatrix());
   int OverlapLevel = 5;
   Epetra_Time Time(Comm);
 
@@ -78,17 +80,17 @@ int main(int argc, char *argv[])
   // ======================================== //
  
   Time.ResetStartTime();
-  Ifpack_OverlappingRowMatrix B(&A,OverlapLevel);
+  Ifpack_OverlappingRowMatrix B(A,OverlapLevel);
   if (Comm.MyPID() == 0)
     cout << "Time to create B = " << Time.ElapsedTime() << endl;
 
   int NumGlobalRowsB = B.NumGlobalRows();
   int NumGlobalNonzerosB = B.NumGlobalNonzeros();
 
-  Epetra_Vector X(A.RowMatrixRowMap());
-  Epetra_Vector Y(A.RowMatrixRowMap());
-  for (int i = 0 ; i < A.NumMyRows() ; ++i) 
-    X[i] = 1.0* A.RowMatrixRowMap().GID(i);
+  Epetra_Vector X(A->RowMatrixRowMap());
+  Epetra_Vector Y(A->RowMatrixRowMap());
+  for (int i = 0 ; i < A->NumMyRows() ; ++i) 
+    X[i] = 1.0* A->RowMatrixRowMap().GID(i);
   Y.PutScalar(0.0);
 
   Epetra_Vector ExtX_B(B.RowMatrixRowMap());
@@ -110,7 +112,7 @@ int main(int argc, char *argv[])
 
   Time.ResetStartTime();
   Epetra_CrsMatrix& C = 
-    *(Ifpack_CreateOverlappingCrsMatrix(&A,OverlapLevel));
+    *(Ifpack_CreateOverlappingCrsMatrix(A,OverlapLevel));
   if (Comm.MyPID() == 0)
     cout << "Time to create C = " << Time.ElapsedTime() << endl;
 
@@ -141,42 +143,16 @@ int main(int argc, char *argv[])
 
   Ifpack_LocalFilter D(&B);
 
+  // free memory
+  delete A;
+  delete Map;
+
 #ifdef HAVE_MPI
   MPI_Finalize() ; 
 #endif
 
   if (Comm.MyPID() == 0)
     cout << "Test `TestOverlappingRowMatrix.exe' passed!" << endl;
-  exit(EXIT_SUCCESS);
-}
 
-#else
-
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-
-int main(int argc, char *argv[])
-{
-
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  if (Comm.MyPID() == 0) {
-    puts("please configure IFPACK with --eanble-aztecoo --enable-teuchos");
-    puts("--enable-amesos to run this test");
-  }
-
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
   return(EXIT_SUCCESS);
 }
-
-#endif

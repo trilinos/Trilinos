@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_AMESOS) && defined(HAVE_IFPACK_TEUCHOS)
+
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #endif
@@ -35,27 +35,29 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
+#include "Galeri_Utils.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Ifpack_DenseContainer.h"
 #include "Ifpack_SparseContainer.h"
 #include "Ifpack_Amesos.h"
 
-using namespace Trilinos_Util;
 static bool verbose = false;
 
 // ======================================================================
-bool TestContainer(string Type, CrsMatrixGallery& Gallery)
+bool TestContainer(string Type, Epetra_RowMatrix* A)
 {
-
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
-
-  Epetra_MultiVector& RHS = *(Problem->GetRHS());
-  Epetra_MultiVector& LHS = *(Problem->GetLHS());
-  Epetra_RowMatrix* A = Problem->GetMatrix();
-
-  int NumVectors = RHS.NumVectors();
+  int NumVectors = 3;
   int NumMyRows = A->NumMyRows();
+
+  Epetra_MultiVector LHS_exact(A->RowMatrixRowMap(), NumVectors);
+  Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
+  Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
+  LHS_exact.Random(); LHS.PutScalar(0.0); 
+  A->Multiply(false, LHS_exact, RHS);
+
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
 
   if (verbose) {
     cout << "Container type = " << Type << endl;
@@ -102,31 +104,20 @@ bool TestContainer(string Type, CrsMatrixGallery& Gallery)
        LHS[j][i] = Container->LHS(i,j);
     }
 
-  // check residual
-  double* residual = new double[NumVectors];
-  double *diff = new double[NumVectors];
-
-  Gallery.ComputeResidual(residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(diff);
+  double residual = Galeri::ComputeNorm(&LHS, &LHS_exact);
 
   if (A->Comm().MyPID() == 0 && verbose) {
-    for (int i = 0 ; i < NumVectors ; ++i) {
-      cout << "eq " << i << ", ||b-Ax||_2 = " << residual[i] << endl;
-      cout << "eq " << i << ", ||x_exact - x||_2 = " << diff[i] << endl;
-    }
+    cout << ", ||x_exact - x||_2 = " << residual << endl;
     cout << *Container;
   }
 
   bool passed = false;
-  if ((residual[0] < 1e-5) && (diff[0] < 1e-5))
+  if (residual < 1e-5)
     passed = true;
 
-  delete [] residual;
-  delete [] diff;
   delete Container;
 
   return(passed);
-
 }
 
 // ======================================================================
@@ -143,19 +134,19 @@ int main(int argc, char *argv[])
 
   verbose = (Comm.MyPID() == 0);
 
-  const int NumPoints = 900;
+  const int nx = 30;
+  Teuchos::ParameterList GaleriList;
+  GaleriList.set("n", nx * nx);
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", nx);
 
-  CrsMatrixGallery Gallery("laplace_2d", SerialComm);
-  Gallery.Set("problem_size", NumPoints);
-  Gallery.Set("map_type", "linear");
-  Gallery.Set("num_vectors", 5);
-
+  Epetra_Map* Map = Galeri::CreateMap("Linear", Comm, GaleriList);
+  Epetra_RowMatrix* Matrix = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
+  
   int TestPassed = true;
 
-  if (!TestContainer("dense",Gallery))
-    TestPassed = false;
-  if (!TestContainer("sparse",Gallery))
-    TestPassed = false;
+  if (!TestContainer("dense",Matrix))  TestPassed = false;
+  if (!TestContainer("sparse",Matrix)) TestPassed = false;
 
   if (TestPassed)
     cout << "Test `TestContainer.exe' passed!" << endl;
@@ -164,38 +155,12 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
+  delete Matrix;
+  delete Map;
+
 #ifdef HAVE_MPI
   MPI_Finalize(); 
 #endif
 
-  exit(EXIT_SUCCESS);
-}
-
-#else
-
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-
-int main(int argc, char *argv[])
-{
-
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  puts("please configure IFPACK with --enable-teuchos");
-  puts("--enable-amesos to run this test");
-
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
   return(EXIT_SUCCESS);
 }
-
-#endif

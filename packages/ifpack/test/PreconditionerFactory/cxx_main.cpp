@@ -31,7 +31,7 @@
 #endif
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_TEUCHOS) && defined(HAVE_IFPACK_AZTECOO)
+
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -40,7 +40,9 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Epetra_Map.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack.h"
@@ -50,8 +52,6 @@
 #ifdef HAVE_IFPACK_AMESOS
 #include "Amesos_TestRowMatrix.h"
 #endif
-
-using namespace Trilinos_Util;
 
 // =======================================================================
 // GOAL: test that the names in the factory do not change. This test
@@ -67,14 +67,12 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // size of the global matrix. 
-  const int NumPoints = 9;
-
-  CrsMatrixGallery Gallery("minij", Comm);
-  Gallery.Set("problem_size", NumPoints);
-  Gallery.Set("map_type", "interlaced");
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
-
+  Teuchos::ParameterList GaleriList;
+  const int n = 9; 
+  GaleriList.set("n", n);
+  Epetra_Map* Map = Galeri::CreateMap("Linear", Comm, GaleriList);
+  Epetra_CrsMatrix* A = Galeri::CreateCrsMatrix("Minij", Map, GaleriList);
+  
   Ifpack Factory;
   Ifpack_Preconditioner* Prec;
 
@@ -154,36 +152,10 @@ int main(int argc, char *argv[])
   MPI_Finalize() ; 
 #endif
 
+  delete A;
+  delete Map;
+
   if (Comm.MyPID() == 0)
     cout << "Test `PrecondititonerFactory.exe' passed!" << endl;
   return(EXIT_SUCCESS);
 }
-
-#else
-
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-
-int main(int argc, char *argv[])
-{
-
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  puts("please configure IFPACK with --enable-teuchos --enable-aztecoo");
-  puts("to run this test");
-
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
-  return(EXIT_SUCCESS);
-}
-
-#endif

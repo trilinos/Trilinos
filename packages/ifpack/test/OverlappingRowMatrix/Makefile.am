@@ -33,9 +33,19 @@ EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 
 EXEEXT = .exe
 
+if HAVE_IFPACK_AMESOS
+if HAVE_IFPACK_AZTECOO
+if HAVE_IFPACK_GALERI
+if HAVE_IFPACK_TEUCHOS
+
 noinst_PROGRAMS = TestOverlappingRowMatrix
 
 TestOverlappingRowMatrix_SOURCES      = $(srcdir)/cxx_main.cpp
 TestOverlappingRowMatrix_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 TestOverlappingRowMatrix_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestOverlappingRowMatrix_LDADD        = $(EXAMPLE_LIBS)
+
+endif
+endif
+endif
+endif

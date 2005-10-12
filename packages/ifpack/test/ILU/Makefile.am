@@ -33,9 +33,18 @@ EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 
 EXEEXT = .exe
 
+if HAVE_IFPACK_AZTECOO
+if HAVE_IFPACK_GALERI
+if HAVE_IFPACK_TEUCHOS
+
 noinst_PROGRAMS = TestILU
 
 TestILU_SOURCES      = $(srcdir)/cxx_main.cpp
 TestILU_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 TestILU_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestILU_LDADD        = $(EXAMPLE_LIBS)
+
+endif
+endif
+endif
+

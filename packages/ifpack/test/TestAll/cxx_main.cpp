@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_AMESOS) && defined(HAVE_IFPACK_TEUCHOS)
+
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -36,7 +36,8 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_AdditiveSchwarz.h"
@@ -53,8 +54,6 @@
 #include "Ifpack_LinearPartitioner.h"
 #include "Ifpack_GreedyPartitioner.h"
 #include "Ifpack_METISPartitioner.h"
-
-using namespace Trilinos_Util;
 
 template <class T>
 bool Test(Epetra_RowMatrix* Matrix, Teuchos::ParameterList& List)
@@ -122,13 +121,13 @@ int main(int argc, char *argv[])
 
   bool verbose = (Comm.MyPID() == 0);
 
-  // size of the global matrix. 
-  const int NumPoints = 900;
-
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", NumPoints);
-  Gallery.Set("map_type", "linear");
-  Epetra_RowMatrix* Matrix = Gallery.GetMatrix();
+  Teuchos::ParameterList GaleriList;
+  const int nx = 30;
+  GaleriList.set("n", nx * nx);
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", nx);
+  Epetra_Map* Map = Galeri::CreateMap("Linear", Comm, GaleriList);
+  Epetra_RowMatrix* Matrix = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
 
   Teuchos::ParameterList List, DefaultList;
 
@@ -186,40 +185,14 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
+  delete Matrix;
+  delete Map;
+
 #ifdef HAVE_MPI
   MPI_Finalize(); 
 #endif
   if (verbose)
     cout << "Test `TestAll.exe' passed!" << endl;
 
-  exit(EXIT_SUCCESS);
-}
-
-#else
-
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-
-int main(int argc, char *argv[])
-{
-
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  puts("please configure IFPACK with --eanble-aztecoo --enable-teuchos");
-  puts("--enable-amesos to run this test");
-
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
   return(EXIT_SUCCESS);
 }
-
-#endif
