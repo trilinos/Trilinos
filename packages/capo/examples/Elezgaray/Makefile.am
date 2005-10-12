@@ -86,4 +86,4 @@ elezgaray_LDADD = $(top_builddir)/src/libcapo.a \
 	$(top_builddir)/../thyra/src/libthyra.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
-	-llapack -lblas -lg2c
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
