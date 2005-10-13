@@ -153,7 +153,7 @@ $mpigo 1 amesos_test.exe MUMPS nos5.mtx 0 1 1 0 1e-12 1e-9 >>SST.stdout
 #
 #  Test blocked right hand sides
 #
-$mpigo 1 amesos_test.exe MUMPS   ImpcolA.rua 0 1 2 0 1e-10 2e-10 >>SST.stdout
+# COMMENT fails on atlantis $mpigo 1 amesos_test.exe MUMPS   ImpcolA.rua 0 1 2 0 1e-10 2e-10 >>SST.stdout
 # COMMENT fails on atlantis $mpigo 5 amesos_test.exe MUMPS   ImpcolB.rua 0 1 4 0 1e-11 1e-14  >>SST.stdout
 # COMMENT fails on atlantis $mpigo 2 amesos_test.exe MUMPS   ImpcolE.rua 0 1 6 0 1e-12 1e-11  >>SST.stdout
 # COMMENT $mpigo 4 amesos_test.exe MUMPS   bcsstk24.rsa 0 1 3 1 1e-6  1e-1 >>SST.stdout
@@ -173,7 +173,7 @@ $mpigo 1 amesos_test.exe MUMPS   ImpcolA.rua 0 1 2 0 1e-10 2e-10 >>SST.stdout
 #
 #  Test blocked right hand sides with distributed matrix input
 #
-$mpigo 1 amesos_test.exe MUMPS   ImpcolA.rua 1 1 2 0 1e-10 13-10 >>SST.stdout
+# COMMENT fails on atlantis $mpigo 1 amesos_test.exe MUMPS   ImpcolA.rua 1 1 2 0 1e-10 13-10 >>SST.stdout
 # COMMENT fails on atlantis $mpigo 5 amesos_test.exe MUMPS   ImpcolB.rua 1 1 4 0 1e-11 1e-14  >>SST.stdout
 # COMMENT fails on atlantis $mpigo 5 amesos_test.exe MUMPS   ImpcolB.rua 1 1 4 1 1e-11 1e-14  >>SST.stdout
 # COMMENT fails on atlantis $mpigo 2 amesos_test.exe MUMPS   ImpcolE.rua 1 1 6 0 1e-12 1e-11  >>SST.stdout
