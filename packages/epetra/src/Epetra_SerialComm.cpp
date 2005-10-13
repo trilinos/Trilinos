@@ -53,12 +53,21 @@ int Epetra_SerialComm::Broadcast(int * Values, int Count, int Root) const {
   return(0);
 }
 //=============================================================================
+int Epetra_SerialComm::Broadcast(long * Values, int Count, int Root) const {
+  return(0);
+}
+//=============================================================================
 int Epetra_SerialComm::GatherAll(double * MyVals, double * AllVals, int Count) const {
   for (int i=0; i<Count; ++i) AllVals[i] = MyVals[i];
   return(0);
 }
 //=============================================================================
 int Epetra_SerialComm::GatherAll(int * MyVals, int * AllVals, int Count) const {
+  for (int i=0; i<Count; ++i) AllVals[i] = MyVals[i];
+  return(0);
+}
+//=============================================================================
+int Epetra_SerialComm::GatherAll(long * MyVals, long * AllVals, int Count) const {
   for (int i=0; i<Count; ++i) AllVals[i] = MyVals[i];
   return(0);
 }
@@ -73,12 +82,22 @@ int Epetra_SerialComm::SumAll(int * PartialSums, int * GlobalSums, int Count) co
   return(0);
 }
 //=============================================================================
+int Epetra_SerialComm::SumAll(long * PartialSums, long * GlobalSums, int Count) const {
+  for (int i=0; i<Count; i++) GlobalSums[i] = PartialSums[i];
+  return(0);
+}
+//=============================================================================
 int Epetra_SerialComm::MaxAll(double * PartialMaxs, double * GlobalMaxs, int Count) const {
   for (int i=0; i<Count; i++) GlobalMaxs[i] = PartialMaxs[i];
   return(0);
 }
 //=============================================================================
 int Epetra_SerialComm::MaxAll(int * PartialMaxs, int * GlobalMaxs, int Count) const {
+  for (int i=0; i<Count; i++) GlobalMaxs[i] = PartialMaxs[i];
+  return(0);
+}
+//=============================================================================
+int Epetra_SerialComm::MaxAll(long * PartialMaxs, long * GlobalMaxs, int Count) const {
   for (int i=0; i<Count; i++) GlobalMaxs[i] = PartialMaxs[i];
   return(0);
 }
@@ -93,12 +112,22 @@ int Epetra_SerialComm::MinAll(int * PartialMins, int * GlobalMins, int Count) co
   return(0);
 }
 //=============================================================================
+int Epetra_SerialComm::MinAll(long * PartialMins, long * GlobalMins, int Count) const {
+  for (int i=0; i<Count; i++) GlobalMins[i] = PartialMins[i];
+  return(0);
+}
+//=============================================================================
 int Epetra_SerialComm::ScanSum(double * MyVals, double * ScanSums, int Count) const {
   for (int i=0; i<Count; i++) ScanSums[i] = MyVals[i];
   return(0);
 }
 //=============================================================================
 int Epetra_SerialComm::ScanSum(int * MyVals, int * ScanSums, int Count) const {
+  for (int i=0; i<Count; i++) ScanSums[i] = MyVals[i];
+  return(0);
+}
+//=============================================================================
+int Epetra_SerialComm::ScanSum(long * MyVals, long * ScanSums, int Count) const {
   for (int i=0; i<Count; i++) ScanSums[i] = MyVals[i];
   return(0);
 }

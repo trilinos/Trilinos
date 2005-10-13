@@ -86,31 +86,45 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   //@{ \name Broadcast Methods
   //! Epetra_SerialComm Broadcast function.
   /*! A no-op for a serial communicator.
-    \param Values InOut
+    \param MyVals InOut
            On entry, the root processor contains the list of values.  On exit,
 	   all processors will have the same list of values.  Note that values must be
 	   allocated on all processor before the broadcast.
     \param Count In
-           On entry, contains the length of the list of Values.
+           On entry, contains the length of the list of MyVals.
     \param Root In
-           On entry, contains the processor from which all processors will receive a copy of Values.
+           On entry, contains the processor from which all processors will receive a copy of MyVals.
   */
 
   int Broadcast(double * MyVals, int Count, int Root) const;
 
   //! Epetra_SerialComm Broadcast function.
   /*! A no-op for a serial communicator.
-    \param Values InOut
+    \param MyVals InOut
            On entry, the root processor contains the list of values.  On exit,
 	   all processors will have the same list of values.  Note that values must be
 	   allocated on all processor before the broadcast.
     \param Count In
-           On entry, contains the length of the list of Values.
+           On entry, contains the length of the list of MyVals.
     \param Root In
-           On entry, contains the processor from which all processors will receive a copy of Values.
+           On entry, contains the processor from which all processors will receive a copy of MyVals.
   */
 
   int Broadcast(int * MyVals, int Count, int Root) const;
+
+  //! Epetra_SerialComm Broadcast function.
+  /*! A no-op for a serial communicator.
+    \param MyVals InOut
+           On entry, the root processor contains the list of values.  On exit,
+	   all processors will have the same list of values.  Note that values must be
+	   allocated on all processor before the broadcast.
+    \param Count In
+           On entry, contains the length of the list of MyVals.
+    \param Root In
+           On entry, contains the processor from which all processors will receive a copy of MyVals.
+  */
+
+  int Broadcast(long * MyVals, int Count, int Root) const;
   //@}
 
   //@{ \name Gather Methods
@@ -137,6 +151,18 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   */
 
   int GatherAll(int * MyVals, int * AllVals, int Count) const;
+
+  //! Epetra_SerialComm All Gather function.
+  /*! A copy for a serial communicator.
+    \param MyVals In
+           On entry, contains the list of values, to be sent to all processors.
+    \param AllVals Out
+           On exit, contains the list of values from all processors. Must by of size NumProc*Count.
+    \param Count In
+           On entry, contains the length of the list of MyVals.
+  */
+
+  int GatherAll(long * MyVals, long * AllVals, int Count) const;
   //@}
 
   //@{ \name Sum Methods
@@ -164,6 +190,18 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
            On entry, contains the length of the list of values.
   */
   int SumAll(int * PartialSums, int * GlobalSums, int Count) const;
+
+  //! Epetra_SerialComm Global Sum function.
+  /*! A copy for a serial communicator.
+    \param PartialSums In
+           On entry, contains the list of values, usually partial sums computed locally,
+	   to be summed across all processors.
+    \param GlobalSums Out
+           On exit, contains the list of values summed across all processors.
+    \param Count In
+           On entry, contains the length of the list of values.
+  */
+  int SumAll(long * PartialSums, long * GlobalSums, int Count) const;
   //@}
 
   //@{ \name Max/Min Methods
@@ -179,7 +217,6 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   */
   int MaxAll(double * PartialMaxs, double * GlobalMaxs, int Count) const;
 
-
   //! Epetra_SerialComm Global Max function.
   /*! A copy for a serial communicator.
     \param PartialMaxs In
@@ -191,6 +228,18 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
            On entry, contains the length of the list of values.
   */
   int MaxAll(int * PartialMaxs, int * GlobalMaxs, int Count) const;
+
+  //! Epetra_SerialComm Global Max function.
+  /*! A copy for a serial communicator.
+    \param PartialMaxs In
+           On entry, contains the list of values, usually partial maxs computed locally;
+					 using these Partial Maxs, the max across all processors will be computed.
+    \param GlobalMaxs Out
+           On exit, contains the list of maxs computed across all processors.
+    \param Count In
+           On entry, contains the length of the list of values.
+  */
+  int MaxAll(long * PartialMaxs, long * GlobalMaxs, int Count) const;
 
   //! Epetra_SerialComm Global Min function.
   /*! A copy for a serial communicator.
@@ -204,7 +253,6 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   */
   int MinAll(double * PartialMins, double * GlobalMins, int Count) const;
 
-
   //! Epetra_SerialComm Global Min function.
   /*! A copy for a serial communicator.
     \param PartialMins In
@@ -216,6 +264,18 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
            On entry, contains the length of the list of values.
   */
   int MinAll(int * PartialMins, int * GlobalMins, int Count) const;
+
+  //! Epetra_SerialComm Global Min function.
+  /*! A copy for a serial communicator.
+    \param PartialMins In
+           On entry, contains the list of values, usually partial mins computed locally;
+					 using these Partial Mins, the min across all processors will be computed.
+    \param GlobalMins Out
+           On exit, contains the list of mins computed across all processors.
+    \param Count In
+           On entry, contains the length of the list of values.
+  */
+  int MinAll(long * PartialMins, long * GlobalMins, int Count) const;
   //@}
 
   //@{ \name Parallel Prefix Methods
@@ -230,7 +290,6 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   */
   int ScanSum(double * MyVals, double * ScanSums, int Count) const;
 
-
   //! Epetra_SerialComm Scan Sum function.
   /*! A copy for a serial communicator.
     \param MyVals In
@@ -241,6 +300,17 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
            On entry, contains the length of the list of values.
   */
   int ScanSum(int * MyVals, int * ScanSums, int Count) const;
+
+  //! Epetra_SerialComm Scan Sum function.
+  /*! A copy for a serial communicator.
+    \param MyVals In
+           On entry, contains the list of values to be summed across all processors.
+    \param ScanSums Out
+           On exit, contains the list of values summed across processors 0 through i.
+    \param Count In
+           On entry, contains the length of the list of values.
+  */
+  int ScanSum(long * MyVals, long * ScanSums, int Count) const;
   //@}
 
   //@{ \name Attribute Accessor Methods

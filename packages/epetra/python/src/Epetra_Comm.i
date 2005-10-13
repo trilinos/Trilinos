@@ -62,18 +62,24 @@ MPI_Comm CommWorld();
 #endif
 
 // Ignore directives
-%ignore *::Broadcast(int*,   int,    int) const;  // These are replaced by %extend below:
-%ignore *::Broadcast(double*,int,    int) const;  //   Broadcast(PyObject*,int)
-%ignore *::GatherAll(int*,   int*   ,int) const;  // These are replaced by %extend below:
-%ignore *::GatherAll(double*,double*,int) const;  //   GatherAll(PyObject*)
-%ignore *::SumAll(   int*,   int*   ,int) const;  // These are replaced by %extend below:
-%ignore *::SumAll(   double*,double*,int) const;  //   SumAll(PyObject*)
-%ignore *::MaxAll(   int*,   int*   ,int) const;  // These are replaced by %extend below:
-%ignore *::MaxAll(   double*,double*,int) const;  //   MaxAll(PyObject*)
-%ignore *::MinAll(   int*,   int*   ,int) const;  // These are replaced by %extend below:
-%ignore *::MinAll(   double*,double*,int) const;  //   MinAll(PyObject*)
-%ignore *::ScanSum(  int*,   int*   ,int) const;  // These are replaced by %extend below:
-%ignore *::ScanSum(  double*,double*,int) const;  //   ScanSum(PyObject*)
+%ignore *::Broadcast(int*   ,int    ,int) const;  // These are replaced by %extend below:
+%ignore *::Broadcast(long*  ,int    ,int) const;  //   Broadcast(PyObject*,int)
+%ignore *::Broadcast(double*,int    ,int) const;
+%ignore *::GatherAll(int*   ,int*   ,int) const;  // These are replaced by %extend below:
+%ignore *::GatherAll(long*  ,long*  ,int) const;  //   GatherAll(PyObject*)
+%ignore *::GatherAll(double*,double*,int) const;
+%ignore *::SumAll(   int*   ,int*   ,int) const;  // These are replaced by %extend below:
+%ignore *::SumAll(   long*  ,long*  ,int) const;  //   SumAll(PyObject*)
+%ignore *::SumAll(   double*,double*,int) const;
+%ignore *::MaxAll(   int*   ,int*   ,int) const;  // These are replaced by %extend below:
+%ignore *::MaxAll(   long*  ,long*  ,int) const;  //   MaxAll(PyObject*)
+%ignore *::MaxAll(   double*,double*,int) const;
+%ignore *::MinAll(   int*   ,int*   ,int) const;  // These are replaced by %extend below:
+%ignore *::MinAll(   long*  ,long*  ,int) const;  //   MinAll(PyObject*)
+%ignore *::MinAll(   double*,double*,int) const;
+%ignore *::ScanSum(  int*   ,int*   ,int) const;  // These are replaced by %extend below:
+%ignore *::ScanSum(  long*  ,long*  ,int) const;  //   ScanSum(PyObject*)
+%ignore *::ScanSum(  double*,double*,int) const;
 %ignore Epetra_SerialComm::operator=(const Epetra_SerialComm &);
 #ifdef HAVE_MPI
 %ignore Epetra_MpiComm::operator=(const Epetra_MpiComm &);
@@ -124,12 +130,16 @@ MPI_Comm CommWorld();
       int* myVals = (int*)myArray->data;
       result = self->Broadcast(myVals,count,root);
     }
+    else if (type == PyArray_LONG) {
+      long* myVals = (long*)myArray->data;
+      result = self->Broadcast(myVals,count,root);
+    }
     else if (type == PyArray_DOUBLE) {
       double* myVals = (double*)myArray->data;
       result = self->Broadcast(myVals,count,root);
     }
     else {
-      PyErr_Format(PyExc_TypeError, "Require int or double array, got %s array",
+      PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
 		   typecode_string(type));
       goto fail;
     }
@@ -165,13 +175,18 @@ MPI_Comm CommWorld();
       int* allVals = (int*)((PyArrayObject*)allObj)->data;
       result = self->GatherAll(myVals,allVals,myCount);
     }
+    else if (type == PyArray_LONG) {
+      long* myVals  = (long*)myArray->data;
+      long* allVals = (long*)((PyArrayObject*)allObj)->data;
+      result = self->GatherAll(myVals,allVals,myCount);
+    }
     else if (type == PyArray_DOUBLE) {
       double* myVals  = (double*)myArray->data;
       double* allVals = (double*)((PyArrayObject*)allObj)->data;
       result = self->GatherAll(myVals,allVals,myCount);
     }
     else {
-      PyErr_Format(PyExc_TypeError, "Require int or double array, got %s array",
+      PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
 		   typecode_string(type));
       goto fail;
     }
@@ -201,13 +216,18 @@ MPI_Comm CommWorld();
       int* globalVals  = (int*)((PyArrayObject*)globalObj)->data;
       result = self->SumAll(partialVals,globalVals,count);
     }
+    else if (type == PyArray_LONG) {
+      long* partialVals = (long*)partialArray->data;
+      long* globalVals  = (long*)((PyArrayObject*)globalObj)->data;
+      result = self->SumAll(partialVals,globalVals,count);
+    }
     else if (type == PyArray_DOUBLE) {
       double* partialVals = (double*)partialArray->data;
       double* globalVals  = (double*)((PyArrayObject*)globalObj)->data;
       result = self->SumAll(partialVals,globalVals,count);
     }
     else {
-      PyErr_Format(PyExc_TypeError, "Require int or double array, got %s array",
+      PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
 		   typecode_string(type));
       goto fail;
     }
@@ -237,13 +257,18 @@ MPI_Comm CommWorld();
       int* globalMaxs  = (int*)((PyArrayObject*)globalObj)->data;
       result = self->MaxAll(partialMaxs,globalMaxs,count);
     }
+    else if (type == PyArray_LONG) {
+      long* partialMaxs = (long*)partialArray->data;
+      long* globalMaxs  = (long*)((PyArrayObject*)globalObj)->data;
+      result = self->MaxAll(partialMaxs,globalMaxs,count);
+    }
     else if (type == PyArray_DOUBLE) {
       double* partialMaxs = (double*)partialArray->data;
       double* globalMaxs  = (double*)((PyArrayObject*)globalObj)->data;
       result = self->MaxAll(partialMaxs,globalMaxs,count);
     }
     else {
-      PyErr_Format(PyExc_TypeError, "Require int or double array, got %s array",
+      PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
 		   typecode_string(type));
       goto fail;
     }
@@ -273,13 +298,18 @@ MPI_Comm CommWorld();
       int* globalMins  = (int*)((PyArrayObject*)globalObj)->data;
       result = self->MinAll(partialMins,globalMins,count);
     }
+    else if (type == PyArray_LONG) {
+      long* partialMins = (long*)partialArray->data;
+      long* globalMins  = (long*)((PyArrayObject*)globalObj)->data;
+      result = self->MinAll(partialMins,globalMins,count);
+    }
     else if (type == PyArray_DOUBLE) {
       double* partialMins = (double*)partialArray->data;
       double* globalMins  = (double*)((PyArrayObject*)globalObj)->data;
       result = self->MinAll(partialMins,globalMins,count);
     }
     else {
-      PyErr_Format(PyExc_TypeError, "Require int or double array, got %s array",
+      PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
 		   typecode_string(type));
       goto fail;
     }
@@ -309,13 +339,18 @@ MPI_Comm CommWorld();
       int* scanSums = (int*)((PyArrayObject*)scanObj)->data;
       result = self->ScanSum(myVals,scanSums,count);
     }
+    else if (type == PyArray_LONG) {
+      long* myVals   = (long*)myArray->data;
+      long* scanSums = (long*)((PyArrayObject*)scanObj)->data;
+      result = self->ScanSum(myVals,scanSums,count);
+    }
     else if (type == PyArray_DOUBLE) {
       double* myVals   = (double*)myArray->data;
       double* scanSums = (double*)((PyArrayObject*)scanObj)->data;
       result = self->ScanSum(myVals,scanSums,count);
     }
     else {
-      PyErr_Format(PyExc_TypeError, "Require int or double array, got %s array",
+      PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
 		   typecode_string(type));
       goto fail;
     }

@@ -114,6 +114,20 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
   */
 
   int Broadcast(int * MyVals, int Count, int Root) const;
+
+  //! Epetra_MpiSmpComm Broadcast function.
+  /*! Take list of input values from the root processor and sends to all other processors.
+    \param Values InOut
+           On entry, the root processor contains the list of values.  On exit,
+	   all processors will have the same list of values.  Note that values must be
+	   allocated on all processor before the broadcast.
+    \param Count In
+           On entry, contains the length of the list of Values.
+    \param Root In
+           On entry, contains the processor from which all processors will receive a copy of Values.
+  */
+
+  int Broadcast(long * MyVals, int Count, int Root) const;
   //@}
 
   //@{ \name Gather Methods
@@ -142,6 +156,19 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
   */
 
   int GatherAll(int * MyVals, int * AllVals, int Count) const;
+
+  //! Epetra_MpiSmpComm All Gather function.
+  /*!Take list of input values from all processors in the communicator and creates an ordered contiguous list of
+    those values on each processor.
+    \param MyVals In
+           On entry, contains the list of values, to be sent to all processors.
+    \param AllVals Out
+           On exit, contains the list of values from all processors. Must by of size NumProc*Count.
+    \param Count In
+           On entry, contains the length of the list of MyVals.
+  */
+
+  int GatherAll(long * MyVals, long * AllVals, int Count) const;
   //@}
 
   //@{ \name Sum Methods
@@ -171,6 +198,19 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
            On entry, contains the length of the list of values.
   */
   int SumAll(int * PartialSums, int * GlobalSums, int Count) const;
+
+  //! Epetra_MpiSmpComm Global Sum function.
+  /*!Take list of input values from all processors in the communicator, computes the sum and returns the
+    sum to all processors.
+    \param PartialSums In
+           On entry, contains the list of values, usually partial sums computed locally,
+	   to be summed across all processors.
+    \param GlobalSums Out
+           On exit, contains the list of values summed across all processors.
+    \param Count In
+           On entry, contains the length of the list of values.
+  */
+  int SumAll(long * PartialSums, long * GlobalSums, int Count) const;
   //@}
 
   //@{ \name Max/Min Methods
@@ -187,7 +227,6 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
   */
   int MaxAll(double * PartialMaxs, double * GlobalMaxs, int Count) const;
 
-
   //! Epetra_MpiSmpComm Global Max function.
   /*!Take list of input values from all processors in the communicator, computes the max and returns the
     max to all processors.
@@ -200,6 +239,19 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
            On entry, contains the length of the list of values.
   */
   int MaxAll(int * PartialMaxs, int * GlobalMaxs, int Count) const;
+
+  //! Epetra_MpiSmpComm Global Max function.
+  /*!Take list of input values from all processors in the communicator, computes the max and returns the
+    max to all processors.
+    \param PartialMaxs In
+           On entry, contains the list of values, usually partial maxs computed locally;
+					 using these Partial Maxs, the max across all processors will be computed.
+    \param GlobalMaxs Out
+           On exit, contains the list of maxs computed across all processors.
+    \param Count In
+           On entry, contains the length of the list of values.
+  */
+  int MaxAll(long * PartialMaxs, long * GlobalMaxs, int Count) const;
 
   //! Epetra_MpiSmpComm Global Min function.
   /*! Take list of input values from all processors in the communicator, computes the min and returns the
@@ -214,7 +266,6 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
   */
   int MinAll(double * PartialMins, double * GlobalMins, int Count) const;
 
-
   //! Epetra_MpiSmpComm Global Min function.
   /*!Take list of input values from all processors in the communicator, computes the max and returns the
     max to all processors.
@@ -227,6 +278,19 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
            On entry, contains the length of the list of values.
   */
   int MinAll(int * PartialMins, int * GlobalMins, int Count) const;
+
+  //! Epetra_MpiSmpComm Global Min function.
+  /*!Take list of input values from all processors in the communicator, computes the max and returns the
+    max to all processors.
+    \param PartialMins In
+           On entry, contains the list of values, usually partial mins computed locally;
+					 using these Partial Mins, the min across all processors will be computed.
+    \param GlobalMins Out
+           On exit, contains the list of mins computed across all processors.
+    \param Count In
+           On entry, contains the length of the list of values.
+  */
+  int MinAll(long * PartialMins, long * GlobalMins, int Count) const;
   //@}
 
   //@{ \name Parallel Prefix Methods
@@ -243,7 +307,6 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
   */
   int ScanSum(double * MyVals, double * ScanSums, int Count) const;
 
-
   //! Epetra_MpiSmpComm Scan Sum function.
   /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
     to all processors such that processor i contains the sum of values from processor 0 up to and including
@@ -256,6 +319,19 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
            On entry, contains the length of the list of values.
   */
   int ScanSum(int * MyVals, int * ScanSums, int Count) const;
+
+  //! Epetra_MpiSmpComm Scan Sum function.
+  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
+    to all processors such that processor i contains the sum of values from processor 0 up to and including
+    processor i.
+    \param MyVals In
+           On entry, contains the list of values to be summed across all processors.
+    \param ScanSums Out
+           On exit, contains the list of values summed across processors 0 through i.
+    \param Count In
+           On entry, contains the length of the list of values.
+  */
+  int ScanSum(long * MyVals, long * ScanSums, int Count) const;
   //@}
 
   //@{ \name Attribute Accessor Methods
