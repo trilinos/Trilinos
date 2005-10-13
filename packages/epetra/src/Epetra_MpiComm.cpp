@@ -102,7 +102,7 @@ int Epetra_MpiComm::SumAll(int * PartialSums, int * GlobalSums, int Count) const
   return(0);
 }
 //=============================================================================
-int Epetra_MpiComm::SumAll(int * PartialSums, int * GlobalSums, int Count) const {
+int Epetra_MpiComm::SumAll(long * PartialSums, long * GlobalSums, int Count) const {
   EPETRA_CHK_ERR(CheckInput(PartialSums,Count));
   EPETRA_CHK_ERR(CheckInput(GlobalSums,Count));
   EPETRA_CHK_ERR(MPI_Allreduce(PartialSums, GlobalSums, Count, MPI_INT, MPI_SUM, MpiCommData_->Comm_));

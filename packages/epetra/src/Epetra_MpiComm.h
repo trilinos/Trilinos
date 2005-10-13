@@ -395,9 +395,10 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   
   int CheckInput(double * ptr, int count) const {if ((ptr==0) && (count>0)) return(-1); return(0);};
   int CheckInput(int * ptr, int count) const {if ((ptr==0) && (count>0)) return(-1); return(0);};
+  int CheckInput(long * ptr, int count) const {if ((ptr==0) && (count>0)) return(-1); return(0);};
 
-	void CleanupData();
-	Epetra_MpiCommData * MpiCommData_;
+  void CleanupData();
+  Epetra_MpiCommData * MpiCommData_;
 
 };
 #endif /* EPETRA_MPICOMM_H */
