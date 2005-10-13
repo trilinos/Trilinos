@@ -35,15 +35,25 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include <algorithm>
 
+#define DBL_R_NUM
+extern "C" {
+#include "dscmain.h"
+}
+
+class Amesos_Dscpack_Pimpl {
+public:
+  DSC_Solver	MyDSCObject_;
+} ;
 //=============================================================================
 Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob ) : 
+  PrivateDscpackData_( rcp( new Amesos_Dscpack_Pimpl() ) ),
   DscNumProcs(-1), // will be set later
   MaxProcs_(-1)
 {  
   Problem_ = &prob ; 
   A_and_LU_built = false ; 
   FirstCallToSolve_ = true ; 
-  MyDSCObject_ = DSC_Begin() ; 
+  PrivateDscpackData_->MyDSCObject_ = DSC_Begin() ; 
 
   MyDscRank = -1 ; 
 }
@@ -56,10 +66,10 @@ Amesos_Dscpack::~Amesos_Dscpack(void)
   if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
 
   if ( MyDscRank>=0 && A_and_LU_built ) { 
-    DSC_FreeAll( MyDSCObject_ ) ; 
-    DSC_Close0( MyDSCObject_ ) ; 
+    DSC_FreeAll( PrivateDscpackData_->MyDSCObject_ ) ; 
+    DSC_Close0( PrivateDscpackData_->MyDSCObject_ ) ; 
   }
-  DSC_End( MyDSCObject_ ) ; 
+  DSC_End( PrivateDscpackData_->MyDSCObject_ ) ; 
 }
 
 //=============================================================================
@@ -225,12 +235,12 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
 
 #if 0
   if (MyDscRank>=0 && A_and_LU_built) { 
-    DSC_ReFactorInitialize(MyDSCObject);
+    DSC_ReFactorInitialize(PrivateDscpackData_->MyDSCObject);
   }
 #endif
   //  if ( ! A_and_LU_built ) { 
-  //    DSC_End( MyDSCObject ) ; 
-  //    MyDSCObject = DSC_Begin() ;
+  //    DSC_End( PrivateDscpackData_->MyDSCObject ) ; 
+  //    PrivateDscpackData_->MyDSCObject = DSC_Begin() ;
   //  } 
 
   // MS // here I continue with the old code...
@@ -242,12 +252,12 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   while ( DscNumProcs * 2 <=EPETRA_MIN( MaxProcs_, DscMax ) )  DscNumProcs *= 2 ;
   
   MyDscRank = -1; 
-  DSC_Open0( MyDSCObject_, DscNumProcs, &MyDscRank, comm1.Comm()) ; 
+  DSC_Open0( PrivateDscpackData_->MyDSCObject_, DscNumProcs, &MyDscRank, comm1.Comm()) ; 
   
   NumLocalCols = 0 ; // This is for those processes not in the Dsc grid
   if ( MyDscRank >= 0 ) { 
     assert( MyPID_ == MyDscRank ) ; 
-    AMESOS_CHK_ERR( DSC_Order ( MyDSCObject_, OrderCode, numrows, &Ap[0], &Ai[0], 
+    AMESOS_CHK_ERR( DSC_Order ( PrivateDscpackData_->MyDSCObject_, OrderCode, numrows, &Ap[0], &Ai[0], 
 				&Replicates[0], &NumGlobalCols, &NumLocalStructs, 
 				&NumLocalCols, &NumLocalNonz, 
 				&GlobalStructNewColNum, &GlobalStructNewNum, 
@@ -260,7 +270,7 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
     int MaxSingleBlock; 
     
     const int Limit = 5000000 ;  //  Memory Limit set to 5 Terabytes 
-    AMESOS_CHK_ERR( DSC_SFactor ( MyDSCObject_, &TotalMemory_, 
+    AMESOS_CHK_ERR( DSC_SFactor ( PrivateDscpackData_->MyDSCObject_, &TotalMemory_, 
 				  &MaxSingleBlock, Limit, DSC_LBLAS3, DSC_DBLAS2 ) ) ; 
     
   }
@@ -292,7 +302,7 @@ int Amesos_Dscpack::PerformNumericFactorization()
   vector<double> MyANonZ;
 #if 0
     if ( IsNumericFactorizationOK_ ) { 
-      DSC_ReFactorInitialize(MyDSCObject);
+      DSC_ReFactorInitialize(PrivateDscpackData_->MyDSCObject);
     }
 #endif
 
@@ -366,8 +376,9 @@ int Amesos_Dscpack::PerformNumericFactorization()
     for ( int j = 0; j < num_entries_this_row; j++ ) { 
       int NewColNumber = sort_array[j].first ; 
       if ( NewRowNumber <= NewColNumber ) MyANonZ[ NonZIndex++ ] = sort_array[j].second ; 
+
 #ifndef USE_LOCAL
-      assert( NonZIndex <= NumLocalNonz );
+      assert( NonZIndex <= NumLocalNonz );  // This assert can fail on non-symmetric matrices
 #endif
     }
   }
@@ -378,7 +389,7 @@ int Amesos_Dscpack::PerformNumericFactorization()
     assert( NonZIndex == NumLocalNonz );
 #endif
     
-    AMESOS_CHK_ERR( DSC_NFactor ( MyDSCObject_, SchemeCode, &MyANonZ[0], 
+    AMESOS_CHK_ERR( DSC_NFactor ( PrivateDscpackData_->MyDSCObject_, SchemeCode, &MyANonZ[0], 
 				  DSC_LLT,  DSC_LBLAS3, DSC_DBLAS2 ) ) ;
     
   }        //     if ( MyDscRank >= 0 ) 
@@ -490,9 +501,9 @@ int Amesos_Dscpack::Solve()
       for ( int i = 0; i < NumLocalCols; i++ ) { 
 	ValuesInNewOrder[i] = dscmapBvalues[DscColMap().LID( LocalStructOldNum[i] ) +j*dscmapBlda ] ;
       }
-      AMESOS_CHK_ERR( DSC_InputRhsLocalVec ( MyDSCObject_, &ValuesInNewOrder[0], NumLocalCols ) ) ;
-      AMESOS_CHK_ERR( DSC_Solve ( MyDSCObject_ ) ) ; 
-      AMESOS_CHK_ERR( DSC_GetLocalSolution ( MyDSCObject_, &ValuesInNewOrder[0], NumLocalCols ) ) ; 
+      AMESOS_CHK_ERR( DSC_InputRhsLocalVec ( PrivateDscpackData_->MyDSCObject_, &ValuesInNewOrder[0], NumLocalCols ) ) ;
+      AMESOS_CHK_ERR( DSC_Solve ( PrivateDscpackData_->MyDSCObject_ ) ) ; 
+      AMESOS_CHK_ERR( DSC_GetLocalSolution ( PrivateDscpackData_->MyDSCObject_, &ValuesInNewOrder[0], NumLocalCols ) ) ; 
       for ( int i = 0; i < NumLocalCols; i++ ) { 
 	dscmapXvalues[DscColMap().LID( LocalStructOldNum[i] ) +j*dscmapXlda ] = ValuesInNewOrder[i];
       }
@@ -543,7 +554,7 @@ void Amesos_Dscpack::PrintStatus() const
   }
 
   if ( MyDscRank >= 0 ) 
-    DSC_DoStats( MyDSCObject_ );
+    DSC_DoStats( PrivateDscpackData_->MyDSCObject_ );
 
   if (!MyPID_)
     PrintLine();

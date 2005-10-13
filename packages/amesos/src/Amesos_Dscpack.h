@@ -41,16 +41,14 @@
 #include "Epetra_Import.h"
 #include "Teuchos_RefCountPtr.hpp"
 
+// Amesos_Dscpack_Pimpl contains a pointer to the structure defined in 
+// dscmain.h.  This prevents Amesos_Dscpack.h from having to include dscmain.h.
 //
-//  dscmain.h does not check to make sure that it is not called twice,
-//  hence the following check:
-//
-#ifndef DSC_LBLAS1
-#define DBL_R_NUM
-extern "C" {
-#include "dscmain.h"
-}
+//  Doxygen does not handle forward class references well.
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+class Amesos_Dscpack_Pimpl ; 
 #endif
+
 
 //! Amesos_Dscpack:  An object-oriented wrapper for Dscpack.
 /*!  Amesos_Dscpack will solve a linear systems of equations: <TT>A X = B</TT>
@@ -152,7 +150,7 @@ private:
   //! Pointer to the linear problem.
   const Epetra_LinearProblem * Problem_;
 
-  DSC_Solver	MyDSCObject_;
+  Teuchos::RefCountPtr<Amesos_Dscpack_Pimpl> PrivateDscpackData_; 
 
   bool FirstCallToSolve_;
   //! Tells us whether to free them

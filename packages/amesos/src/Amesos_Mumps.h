@@ -111,14 +111,14 @@ class Amesos_EpetraInterface;
   \author Marzio Sala, 9214
   
 */
-// Amesos_Mumps_Pimpl contains a pointer to two structures defined in 
-// klu.h:  klu_symbolic and klu_numeric.  This prevents Amesos_Klu.h 
-// from having to include klu.h.
+
+// Amesos_Mumps_Pimpl contains a pointer to the structures defined in 
+// dmumps.h and smumps.h.  This prevents Amesos_Mumps.h 
+// from having to include dmumps.h.
 //
 //  Doxygen does not handle forward class references well.
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 class Amesos_Mumps_Pimpl ; 
-class Amesos_StandardIndex ; 
 #endif
 
 class Amesos_Mumps: public Amesos_BaseSolver,
