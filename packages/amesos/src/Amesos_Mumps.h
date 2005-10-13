@@ -60,13 +60,6 @@ class Amesos_EpetraInterface;
 #define AMESOS_TYPE float
 #endif
 
-extern "C" {
-#ifndef HAVE_AMESOS_SMUMPS
-#include "dmumps_c.h"
-#else
-#include "smumps_c.h"
-#endif
-}
 
 //! Amesos_Mumps:  An object-oriented wrapper for CERFACS' MUMPS.
 /*!  Amesos_Mumps is an interface to the CERFACS' sparse parallel direct
@@ -118,6 +111,16 @@ extern "C" {
   \author Marzio Sala, 9214
   
 */
+// Amesos_Mumps_Pimpl contains a pointer to two structures defined in 
+// klu.h:  klu_symbolic and klu_numeric.  This prevents Amesos_Klu.h 
+// from having to include klu.h.
+//
+//  Doxygen does not handle forward class references well.
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+class Amesos_Mumps_Pimpl ; 
+class Amesos_StandardIndex ; 
+#endif
+
 class Amesos_Mumps: public Amesos_BaseSolver,
                     private Amesos_Time, 
                     private Amesos_NoCopiable, 
@@ -277,37 +280,25 @@ public:
     float if option \c --enable-amesos-smumps is enabled, \c double
     otherwise.
    */
-  AMESOS_TYPE * GetRINFO() 
-  {
-    return (MDS.rinfo);
-  }
+  AMESOS_TYPE * GetRINFO() ;
 
   //! Gets the pointer to the INFO array (defined on all processes).
   /*! Gets the pointer to the internally stored INFO array, of type \c int.
    */
-  int * GetINFO() 
-  {
-    return (MDS.info);
-  }
+  int * GetINFO() ;
 
   //! Gets the pointer to the RINFOG array (defined on host only).
   /*! Gets the pointer to the internally stored RINFOG array (defined on
     the host process only), of type \c float if option \c
     --enable-amesos-smumps is enabled, \c double otherwise.
    */
-  AMESOS_TYPE * GetRINFOG()
-  {
-    return (MDS.rinfog);
-  }
+  AMESOS_TYPE * GetRINFOG() ;
 
   //! Get the pointer to the INFOG array (defined on host only).
   /*! Gets the pointer to the internally stored INFOG (defined on the
     host process only) array, of type \c int.
    */
-  int * GetINFOG()
-  {
-    return (MDS.infog);
-  }
+  int * GetINFOG() ;
 
   //! Copies the input array (of size 40) into the internally stored ICNTL array.
   int SetICNTL(int * ictnl);
@@ -341,6 +332,8 @@ public:
 
 protected:
   
+  Teuchos::RefCountPtr<Amesos_Mumps_Pimpl> PrivateMumpsData_; 
+
   //! Returns a reference to the linear system matrix.
   Epetra_RowMatrix& Matrix();
 
@@ -377,14 +370,6 @@ protected:
 
 
   bool NoDestroy_ ;  // Set true to prevent memory freeing
-
-#ifndef HAVE_AMESOS_SMUMPS  
-  //! Mumps data structure for double-precision
-  DMUMPS_STRUC_C MDS;
-#else
-  //! Mumps data structure for single-precision
-  SMUMPS_STRUC_C MDS;
-#endif
   
   //! row indices of nonzero elements
   vector <int> Row;
