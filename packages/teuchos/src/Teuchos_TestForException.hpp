@@ -130,6 +130,45 @@ void TestForException_break();
  */
 #define TEST_FOR_EXCEPT(throw_exception_test) TEST_FOR_EXCEPTION(throw_exception_test,std::logic_error,"Error!")
 
+/** \brief This macro is the same as <tt>TEST_FOR_EXCEPTION()</tt> except that the
+ * exception will be caught, the message printed, and then rethrown.
+ *
+ * @param  throw_exception_test
+ *               [in] See <tt>TEST_FOR_EXCEPTION()</tt>.
+ * @param  Exception
+ *               [in] See <tt>TEST_FOR_EXCEPTION()</tt>.
+ * @param  msg   [in] See <tt>TEST_FOR_EXCEPTION()</tt>.
+ * @param  out_ptr
+ *               [in] If <tt>out_ptr!=NULL</tt> then <tt>*out_ptr</tt> will receive
+ *               a printout of a line of output that gives the exception type and
+ *               the error message that is generated.
+ */
+#define TEST_FOR_EXCEPTION_PRINT(throw_exception_test,Exception,msg,out_ptr) \
+try { \
+  TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg); \
+} \
+catch(const std::exception &except) { \
+  ostream *l_out_ptr = (out_ptr); \
+  if(l_out_ptr) { \
+    *l_out_ptr \
+      << "\nThorwing an std::exception of type \'"<<typeid(except).name()<<"\' with the error message: " \
+      << except.what(); \
+  } \
+  throw; \
+}
+
+/** \brief This macro is the same as <tt>TEST_FOR_EXCEPT()</tt> except that the
+ * exception will be caught, the message printed, and then rethrown.
+ *
+ * @param  throw_exception_test
+ *               [in] See <tt>TEST_FOR_EXCEPT()</tt>.
+ * @param  out_ptr
+ *               [in] If <tt>out_ptr!=NULL</tt> then <tt>*out_ptr</tt> will receive
+ *               a printout of a line of output that gives the exception type and
+ *               the error message that is generated.
+ */
+#define TEST_FOR_EXCEPT_PRINT(throw_exception_test,out_ptr) TEST_FOR_EXCEPTION_PRINT(throw_exception_test,std::logic_error,"Error!",out_ptr)
+
 //@}
 
 #endif // TEUCHOS_TEST_FOR_EXCEPTION_H

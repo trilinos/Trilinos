@@ -30,6 +30,7 @@
 #define TEUCHOS_FANCY_O_STREAM_HPP
 
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 namespace Teuchos {
 
@@ -64,6 +65,7 @@ public:
     ,const bool                                                    showLinePrefix
     ,const int                                                     maxLenLinePrefix
     ,const bool                                                    showTabCount
+    ,const bool                                                    showProcRank
     );
 
   /** \brief . */
@@ -74,6 +76,7 @@ public:
     ,const bool                                                    showLinePrefix
     ,const int                                                     maxLenLinePrefix
     ,const bool                                                    showTabCount
+    ,const bool                                                    showProcRank
     );
 
   /** \brief . */
@@ -90,6 +93,12 @@ public:
 
   /** \brief . */
   void setShowTabCount(const bool showTabCount);
+
+  /** \brief . */
+  void setShowProcRank(const bool showProcRank);
+
+  /** \brief .*/
+  void setProcRankAndSize( const int procRank, const int numProcs );
 
   /** \brief . */
   void pushTab(const int tabs);
@@ -210,6 +219,10 @@ private:
   bool                                                     showLinePrefix_;
   int                                                      maxLenLinePrefix_;
   bool                                                     showTabCount_;
+  bool                                                     showProcRank_;
+  int                                                      procRank_;
+  int                                                      numProcs_;
+  int                                                      rankPrintWidth_;
   
   int                      tabIndent_;
   tabIndentStack_t         tabIndentStack_;
@@ -222,7 +235,7 @@ private:
 
   void writeChars( const char_type s[], std::streamsize n );
 
-  void writeBeginningOfLine();
+  void writeFrontMatter();
   
 };
 
@@ -260,6 +273,7 @@ public:
     ,const bool                                                    showLinePrefix    = false
     ,const int                                                     maxLenLinePrefix  = 10
     ,const bool                                                    showTabCount      = false
+    ,const bool                                                    showProcRank      = false
     );
 
   /** \brief . */
@@ -270,6 +284,7 @@ public:
     ,const bool                                                    showLinePrefix    = false
     ,const int                                                     maxLenLinePrefix  = 10
     ,const bool                                                    showTabCount      = false
+    ,const bool                                                    showProcRank      = false
     );
 
   /** \brief. */
@@ -279,13 +294,22 @@ public:
   const std::basic_string<char_type,traits_type>& getTabIndentStr();
 
   /** \brief .*/
-  void setShowLinePrefix(const bool showLinePrefix);
+  basic_FancyOStream& setShowAllFrontMatter(const bool showAllFrontMatter);
 
   /** \brief .*/
-  void setMaxLenLinePrefix(const bool maxLenLinePrefix);
+  basic_FancyOStream& setShowLinePrefix(const bool showLinePrefix);
+
+  /** \brief .*/
+  basic_FancyOStream& setMaxLenLinePrefix(const bool maxLenLinePrefix);
 
   /** \brief . */
-  void setShowTabCount(const bool showTabCount);
+  basic_FancyOStream& setShowTabCount(const bool showTabCount);
+
+  /** \brief . */
+  basic_FancyOStream& setShowProcRank(const bool showProcRank);
+
+  /** \brief . */
+  basic_FancyOStream& setProcRankAndSize( const int procRank, const int numProcs );
 
   /** \brief. */
   void pushTab(const int tabs = 1);
@@ -390,9 +414,10 @@ basic_FancyOStream_buf<CharT,Traits>::basic_FancyOStream_buf(
   ,const bool                                                    showLinePrefix
   ,const int                                                     maxLenLinePrefix
   ,const bool                                                    showTabCount
+  ,const bool                                                    showProcRank
   )
 {
-  this->initialize(oStream,tabIndentStr,startingTab,showLinePrefix,maxLenLinePrefix,showTabCount);
+  this->initialize(oStream,tabIndentStr,startingTab,showLinePrefix,maxLenLinePrefix,showTabCount,showProcRank);
 }
 
 template<typename CharT, typename Traits>
@@ -403,6 +428,7 @@ void basic_FancyOStream_buf<CharT,Traits>::initialize(
   ,const bool                                                    showLinePrefix
   ,const int                                                     maxLenLinePrefix
   ,const bool                                                    showTabCount
+  ,const bool                                                    showProcRank
   )
 {
   oStream_ = oStream;
@@ -410,6 +436,10 @@ void basic_FancyOStream_buf<CharT,Traits>::initialize(
   showLinePrefix_ = showLinePrefix;
   maxLenLinePrefix_ = maxLenLinePrefix;
   showTabCount_ = showTabCount;
+  showProcRank_ = showProcRank;
+  procRank_ = GlobalMPISession::getRank();
+  numProcs_ = GlobalMPISession::getNProc();
+  rankPrintWidth_ = int(std::log10(float(numProcs_)))+1;
   tabIndent_ = startingTab;
   tabIndentStack_.resize(0);
   linePrefixStack_.resize(0);
@@ -447,6 +477,19 @@ template<typename CharT, typename Traits>
 void basic_FancyOStream_buf<CharT,Traits>::setShowTabCount(const bool showTabCount)
 {
   showTabCount_ = showTabCount;
+}
+
+template<typename CharT, typename Traits>
+void basic_FancyOStream_buf<CharT,Traits>::setShowProcRank(const bool showProcRank)
+{
+  showProcRank_ = showProcRank;
+}
+
+template<typename CharT, typename Traits>
+void basic_FancyOStream_buf<CharT,Traits>::setProcRankAndSize( const int procRank, const int numProcs )
+{
+  procRank_ = procRank;
+  numProcs_ = numProcs;
 }
 
 template<typename CharT, typename Traits>
@@ -537,7 +580,7 @@ void basic_FancyOStream_buf<CharT,Traits>::writeChars( const char_type s[], std:
     }
     // Write the beginning of the line if we need to
     if(wroteNewline_) {
-      writeBeginningOfLine();
+      writeFrontMatter();
       wroteNewline_ = false;
     }
     // Write up to the newline or the end of the string
@@ -552,10 +595,16 @@ void basic_FancyOStream_buf<CharT,Traits>::writeChars( const char_type s[], std:
 }
 
 template<typename CharT, typename Traits>
-void basic_FancyOStream_buf<CharT,Traits>::writeBeginningOfLine()
+void basic_FancyOStream_buf<CharT,Traits>::writeFrontMatter()
 {
   bool didOutput = false;
+  if(showProcRank_) {
+    *oStream_ << "p=" << std::right << std::setw(rankPrintWidth_) << procRank_;
+    didOutput = true;
+  }
   if(showLinePrefix_) {
+    if(didOutput)
+      *oStream_ << ", ";
     *oStream_ << std::left << std::setw(maxLenLinePrefix_);
     if(linePrefixStack_.size()) {
       *oStream_ << this->getTopLinePrefix();
@@ -593,8 +642,9 @@ basic_FancyOStream<CharT,Traits>::basic_FancyOStream(
   ,const bool                                                    showLinePrefix
   ,const int                                                     maxLenLinePrefix
   ,const bool                                                    showTabCount
+  ,const bool                                                    showProcRank
  )
-  : ostream_t(NULL), streambuf_(oStream,tabIndentStr,startingTab,showLinePrefix,maxLenLinePrefix,showTabCount)
+  : ostream_t(NULL), streambuf_(oStream,tabIndentStr,startingTab,showLinePrefix,maxLenLinePrefix,showTabCount,showProcRank)
 {
   this->init(&streambuf_);
 }
@@ -607,9 +657,10 @@ void basic_FancyOStream<CharT,Traits>::initialize(
   ,const bool                                                    showLinePrefix
   ,const int                                                     maxLenLinePrefix
   ,const bool                                                    showTabCount
+  ,const bool                                                    showProcRank
   )
 {
-  streambuf_.initialize(oStream,tabIndentStr,startingTab,showLinePrefix,maxLenLinePrefix,showTabCount);
+  streambuf_.initialize(oStream,tabIndentStr,startingTab,showLinePrefix,maxLenLinePrefix,showTabCount,showProcRank);
   this->init(&streambuf_);
 }
 
@@ -628,21 +679,53 @@ basic_FancyOStream<CharT,Traits>::getTabIndentStr()
 }
 
 template<typename CharT, typename Traits>
-void basic_FancyOStream<CharT,Traits>::setShowLinePrefix(const bool showLinePrefix)
+basic_FancyOStream<CharT,Traits>&
+basic_FancyOStream<CharT,Traits>::setShowAllFrontMatter(const bool showAllFrontMatter)
+{
+  streambuf_.setShowLinePrefix(showAllFrontMatter);
+  streambuf_.setShowTabCount(showAllFrontMatter);
+  streambuf_.setShowProcRank(showAllFrontMatter);
+  return *this;
+}
+
+template<typename CharT, typename Traits>
+basic_FancyOStream<CharT,Traits>&
+basic_FancyOStream<CharT,Traits>::setShowLinePrefix(const bool showLinePrefix)
 {
   streambuf_.setShowLinePrefix(showLinePrefix);
+  return *this;
 }
 
 template<typename CharT, typename Traits>
-void basic_FancyOStream<CharT,Traits>::setMaxLenLinePrefix(const bool maxLenLinePrefix)
+basic_FancyOStream<CharT,Traits>&
+ basic_FancyOStream<CharT,Traits>::setMaxLenLinePrefix(const bool maxLenLinePrefix)
 {
   streambuf_.setMaxLenLinePrefix(maxLenLinePrefix);
+  return *this;
 }
 
 template<typename CharT, typename Traits>
-void basic_FancyOStream<CharT,Traits>::setShowTabCount(const bool showTabCount)
+basic_FancyOStream<CharT,Traits>&
+basic_FancyOStream<CharT,Traits>::setShowTabCount(const bool showTabCount)
 {
   streambuf_.setShowTabCount(showTabCount);
+  return *this;
+}
+
+template<typename CharT, typename Traits>
+basic_FancyOStream<CharT,Traits>&
+basic_FancyOStream<CharT,Traits>::setShowProcRank(const bool showProcRank)
+{
+  streambuf_.setShowProcRank(showProcRank);
+  return *this;
+}
+
+template<typename CharT, typename Traits>
+basic_FancyOStream<CharT,Traits>&
+basic_FancyOStream<CharT,Traits>::setProcRankAndSize( const int procRank, const int numProcs )
+{
+  streambuf_.setProcRankAndSize(procRank,numProcs);
+  return *this;
 }
 
 template<typename CharT, typename Traits>

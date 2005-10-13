@@ -1,6 +1,10 @@
 #include "Teuchos_VerboseObject2.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_dyn_cast.hpp"
+#include "Teuchos_Version.hpp"
 
 // This is a typical function that would be present in Trilinos right now what
 // does not know about FancyOStream and does not derive from VerboseObject.
@@ -92,14 +96,33 @@ int main(int argc, char* argv[])
   using Teuchos::VerboseObject;
   using Teuchos::OSTab;
   using Teuchos::dyn_cast;
+  using Teuchos::CommandLineProcessor;
 
   bool success = true;
 
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  const int procRank = Teuchos::GlobalMPISession::getRank();
+  const int numProcs = Teuchos::GlobalMPISession::getNProc();
+
   try {
+
+    // Get some commandline options
+    CommandLineProcessor clp(false); // Don't throw exceptions
+    bool printOnAllProcs = true;
+    clp.setOption( "print-on-all-procs", "print-on-root-proc", &printOnAllProcs, "Print on all processors or just the root processor?" );
+    CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
+    if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
+
+    // Here we setup a stream to print to on this processor
+    Teuchos::oblackholestream black_hole_out;
+    std::ostream &this_proc_out = ( procRank==0 || printOnAllProcs ? std::cerr : black_hole_out );
+    // Note that above we print to std::cerr since it is unbuffered and more
+    // likely to generate readable output in parallel.  Also note how easily
+    // we have turned off output on slave processors if asked!
 
     // Start by setting up a defualt FancyOStream with a new indent string.
     // This output stream object will be used by default for all VerboseObject outputting
-    VerboseObject::setDefaultOStream(rcp(new FancyOStream(rcp(&std::cout,false),"  ")));
+    VerboseObject::setDefaultOStream(rcp(new FancyOStream(rcp(&this_proc_out,false),"  ")));
 
     // Here I am just grabbing the default output stream
     RefCountPtr<FancyOStream>
@@ -107,43 +130,71 @@ int main(int argc, char* argv[])
     // Note that the VerboseObject manages FancyOStream objects and not just
     // std::ostream objects.  This is important to the design and very
     // resonable I think.
-    
+
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << Teuchos::Teuchos_Version() << endl << endl;
+
     //
     // Now I call doAlgorithmStuff() a bunch of times with different setups to
     // show the different kinds of line prefix options
     //
   
-    std::cout << "\n***\n*** Testing VerboseObject base class use\n***\n";
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << "\n***\n*** Testing VerboseObject base class use\n***\n";
   
-    std::cout << "\n*** Algorithm output with no line prefixes\n\n";
-
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << "\n*** Algorithm output with no front matter\n\n";
+    out->setShowAllFrontMatter(false);
     doAlgorithmStuff();
   
-    std::cout << "\n*** Algorithm output with line prefixes\n\n";
-
-    VerboseObject::getDefaultOStream()->setShowLinePrefix(true);
-
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << "\n*** Algorithm output with processor ranks\n\n";
+    out->setShowAllFrontMatter(false).setShowProcRank(true);
     doAlgorithmStuff();
   
-    std::cout << "\n*** Algorithm output with line prefixes and tab counts\n\n";
-
-    VerboseObject::getDefaultOStream()->setShowTabCount(true);
-
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << "\n*** Algorithm output with line prefix names\n\n";
+    out->setShowAllFrontMatter(false).setShowLinePrefix(true);
     doAlgorithmStuff();
   
-    std::cout << "\n*** Algorithm output with tab counts\n\n";
-
-    VerboseObject::getDefaultOStream()->setShowLinePrefix(false);
-
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << "\n*** Algorithm output with tab counts\n\n";
+    out->setShowAllFrontMatter(false).setShowTabCount(true);
     doAlgorithmStuff();
+  
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << "\n*** Algorithm output with line prefix names and tab counts\n\n";
+    out->setShowAllFrontMatter(false).setShowLinePrefix(true).setShowTabCount(true);
+    doAlgorithmStuff();
+  
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << "\n*** Algorithm output with processor ranks and line prefix names\n\n";
+    out->setShowAllFrontMatter(false).setShowProcRank(true).setShowLinePrefix(true);
+    doAlgorithmStuff();
+  
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << "\n*** Algorithm output with processor ranks and tab counts\n\n";
+    out->setShowAllFrontMatter(false).setShowProcRank(true).setShowTabCount(true);
+    doAlgorithmStuff();
+  
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << "\n*** Algorithm output with processor ranks, line prefix names, and tab counts\n\n";
+    out->setShowAllFrontMatter(false).setShowProcRank(true).setShowLinePrefix(true).setShowTabCount(true);
+    doAlgorithmStuff();
+
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << "\n***\n*** Do some more simple tests to make sure things work correctly\n***\n\n";
 
     //
     // Now I do some other simple tests just to see that FancyOStream is working
     // correctly
     //
 
-    std::cout << "\n***\n*** Testing basic FancyOStream and OSTab classes\n***\n\n";
-
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1).setShowTabCount(true);
+    out->setProcRankAndSize(mpiSession.getRank(),mpiSession.getNProc());
+    
+    *out << "\n***\n*** Testing basic FancyOStream and OSTab classes\n***\n\n";
+    
     *out << "\nThis is very good output\nand I like it a lot!\n";
     *out << "";
     *out << "\n";
@@ -177,7 +228,7 @@ int main(int argc, char* argv[])
          << dyn_cast<std::ostringstream>(*out2->getOStream()).str();
     
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cout,success)
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success)
     
   return ( success ? 0 : 1 );
   
