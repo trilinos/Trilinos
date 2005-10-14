@@ -59,6 +59,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
 	$(srcdir)/Teuchos_dyn_cast.hpp \
+	$(srcdir)/Teuchos_FancyOStream.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
 	$(srcdir)/Teuchos_GlobalMPISession.hpp \
@@ -89,6 +90,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_Time.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp \
 	$(srcdir)/Teuchos_Utils.hpp \
+	$(srcdir)/Teuchos_VerboseObject.hpp \
 	$(srcdir)/Teuchos_VerbosityLevel.hpp \
 	$(srcdir)/Teuchos_Workspace.hpp
 
@@ -110,6 +112,7 @@ CORE = \
 	$(srcdir)/Teuchos_Time.cpp \
 	$(srcdir)/Teuchos_TimeMonitor.cpp \
 	$(srcdir)/Teuchos_Utils.cpp \
+	$(srcdir)/Teuchos_VerboseObject.cpp \
 	$(srcdir)/Teuchos_Workspace.cpp
 
 EXTRA_EXTENDED_H = \

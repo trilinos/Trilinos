@@ -26,73 +26,51 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_VerboseObject2.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 namespace Teuchos {
 
 // Private static data members
 
 RefCountPtr<FancyOStream>
-VerboseObject::defaultOStream_ = rcp(new FancyOStream(rcp(&std::cout,false)));
-
-EVerbosityLevel
-VerboseObject::defaultVerbLevel_ = VERB_DEFAULT;
+VerboseObjectBase::defaultOStream_ = rcp(new FancyOStream(rcp(&std::cout,false)));
 
 // Public static member functions
 
-void VerboseObject::setDefaultOStream( const RefCountPtr<FancyOStream> &defaultOStream )
+void VerboseObjectBase::setDefaultOStream( const RefCountPtr<FancyOStream> &defaultOStream )
 {
   defaultOStream_ = defaultOStream;
 }
 
 RefCountPtr<FancyOStream>
-VerboseObject::getDefaultOStream()
+VerboseObjectBase::getDefaultOStream()
 {
   return defaultOStream_;
 }
 
-void VerboseObject::setDefaultVerbLevel( const EVerbosityLevel defaultVerbLevel)
-{
-  defaultVerbLevel_ = defaultVerbLevel;
-}
-
-EVerbosityLevel VerboseObject::getDefaultVerbLevel()
-{
-  return defaultVerbLevel_;
-}
-
 // Constructors/Initializers
 
-VerboseObject::VerboseObject(
-  const EVerbosityLevel              verbLevel
-  ,const RefCountPtr<FancyOStream>   &oStream
+VerboseObjectBase::VerboseObjectBase(
+  const RefCountPtr<FancyOStream>   &oStream
   )
 {
-  this->initializeVerboseObject(verbLevel,oStream);
+  this->initializeVerboseObjectBase(oStream);
 }
 
-void VerboseObject::initializeVerboseObject(
-  const EVerbosityLevel              verbLevel
-  ,const RefCountPtr<FancyOStream>   &oStream
+void VerboseObjectBase::initializeVerboseObjectBase(
+  const RefCountPtr<FancyOStream>   &oStream
   )
 {
-  thisVerbLevel_ = verbLevel;
   thisOStream_ = oStream;
 }
 
-VerboseObject& VerboseObject::setOStream(const RefCountPtr<FancyOStream> &oStream)
+VerboseObjectBase& VerboseObjectBase::setOStream(const RefCountPtr<FancyOStream> &oStream)
 {
   thisOStream_ = oStream;
   return *this;
 }
 
-VerboseObject& VerboseObject::setVerbLevel(const EVerbosityLevel verbLevel)
-{
-  thisVerbLevel_ = verbLevel;
-  return *this;
-}
-
-VerboseObject& VerboseObject::setLinePrefix(const std::string &linePrefix)
+VerboseObjectBase& VerboseObjectBase::setLinePrefix(const std::string &linePrefix)
 {
   thisLinePrefix_ = linePrefix;
   return *this;
@@ -101,25 +79,39 @@ VerboseObject& VerboseObject::setLinePrefix(const std::string &linePrefix)
 // Query functions
 
 RefCountPtr<FancyOStream>
-VerboseObject::getOStream() const
+VerboseObjectBase::getOStream() const
 {
   if(!thisOStream_.get())
     return defaultOStream_;
   return thisOStream_;
 }
 
-EVerbosityLevel VerboseObject::getVerbLevel() const
+std::string VerboseObjectBase::getLinePrefix() const
 {
-  if(thisVerbLevel_ == VERB_DEFAULT)
-    return defaultVerbLevel_;
-  return thisVerbLevel_;
+  return thisLinePrefix_;
 }
 
 // Utility functions
 
-OSTab VerboseObject::getOSTab(const int tabs,const std::string &linePrefix) const
+OSTab VerboseObjectBase::getOSTab(const int tabs,const std::string &linePrefix) const
 {
-  return OSTab(this->getOStream(),tabs,linePrefix.length() ? linePrefix : thisLinePrefix_);
+  return OSTab( this->getOStream(), tabs, linePrefix.length() ? linePrefix : this->getLinePrefix() );
 }
+
+// //////////////////////////////////
+// Initialization classes
+
+/*
+
+unsigned short int InitializeVerboseObjectBase::count_ = 0;
+
+InitializeVerboseObjectBase::InitializeVerboseObjectBase()
+{
+  if(count_++==0) {
+    VerboseObjectBase::setDefaultOStream(rcp(new FancyOStream(rcp(&std::cout,false))));
+  }
+}
+
+*/
 
 } // namespace Teuchos

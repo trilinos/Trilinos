@@ -6,7 +6,7 @@
     TESTS = RefCountPtr/RefCountPtr_test.exe;
     ARGS = --verbose;
     EXIT-STATUS = STRING-COMPARISON;
-    COMM = MPI;
+    COMM = MPI,SERIAL;
 }
 
 (FRAMEWORK) {
@@ -43,6 +43,12 @@
 (FRAMEWORK,INSTALL) {
     TESTS = ParameterList/ParameterList_test.exe;
     ARGS = --v;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI,SERIAL;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = FancyOutputting/FancyOutputting_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI,SERIAL;
 }

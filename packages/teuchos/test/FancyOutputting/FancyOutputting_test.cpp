@@ -1,4 +1,4 @@
-#include "Teuchos_VerboseObject2.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -24,7 +24,7 @@ void someDumbFunction( std::ostream &out, const std::string &indentSpacer )
 // outputting.  Note that the use of the OSTab class requires initialization
 // using VerboseObject::getOSTab(...) which takes care of the hassles and is
 // easy to use.
-class AlgorithmA : public Teuchos::VerboseObject {
+class AlgorithmA : public Teuchos::VerboseObject<AlgorithmA> {
 public:
   //
   AlgorithmA()
@@ -34,6 +34,9 @@ public:
   //
   void doAlgorithm()
     {
+      using Teuchos::OSTab;
+      // Get the verbosity that we are going to use
+      Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
       // Here I grab the stream that I will use for outputting.  It is a good
       // idea to grab the RCP to this object just to be safe.
       Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
@@ -41,14 +44,24 @@ public:
       // indent since I might assume that the caller will do the indentation.
       // I am not sure who should be responsible for this but we just need to
       // come up with a convention
-      Teuchos::OSTab tab = this->getOSTab(0); // This sets the line prefix but does not change the indent!
-      *out << "\nEntering AlgorithmA::doAlgorithm()\n";
+      OSTab tab = this->getOSTab(0); // This sets the line prefix but does not change the indent!
+      if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+        *out << "\nEntering AlgorithmA::doAlgorithm()\n";
       if(1) {
         // Here I use a simple macro for the typical case of one tab indent to
         // save typing.  The idea is that this should be as easy to write as
         // OSTab tab; but is more general.
         TEUCHOS_OSTAB;
-        *out << "\nI am \"smart\" code that knows about FancyOStream and OSTab ...\n";
+        if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+          *out << "\nI am \"smart\" code that knows about FancyOStream and OSTab ...\n";
+        if(1) {
+          // Here I temporaraly turn off tabbing so that I can print an imporant warning message.
+          OSTab tab = this->getOSTab(OSTab::DISABLE_TABBING);
+          if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+            *out << "\n***\n*** Warning, I am doing something very dangerous so watch out!!!\n***\n";
+        }
+        if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+          *out << "\nHere I am doing some more stuff and printing with indenting turned back on!\n";
         if(1) {
           // Here I am going to be calling a dumb piece of code that does not
           // know about the FancyOStream system and will not use tabs or
@@ -56,7 +69,7 @@ public:
           // falls in this category.  The first thing I do is manually indent
           // the stream one tab and set a line prefix for the dumb code since
           // it may not do this itself.
-          Teuchos::OSTab tab = this->getOSTab(1,"DUMB_ALGO");
+          OSTab tab = this->getOSTab(1,"DUMB_ALGO");
           // Now a Pass in the updated FancyOStream object, which is properly
           // indented now, through the std::ostream interface.  I also pass in
           // the string that is being used for creating tabs.  The output from
@@ -65,7 +78,8 @@ public:
           someDumbFunction(*out,out->getTabIndentStr());
         }
       }
-      *out << "\nLeaving AlgorithmA::doAlgorithm()\n";
+      if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+        *out << "\nLeaving AlgorithmA::doAlgorithm()\n";
     }
 };
 
@@ -81,11 +95,36 @@ void doAlgorithmStuff()
   // by calling algoA.setOStream(...).
   
   // Now I call the algorithm which will print to its default output stream
+  Teuchos::OSTab tab = algoA.getOSTab();
   algoA.doAlgorithm();
   
   *algoA.getOStream() << std::endl;
   
 }
+
+//
+// Test that static initailziation of VerboseObjectBase works!
+//
+
+/*
+
+class TestVerboseObjectBaseInitialization {
+public:
+  TestVerboseObjectBaseInitialization()
+    {
+      // Print to the default default OStream to make sure that the initialization
+      // trick worked!
+      *Teuchos::VerboseObjectBase::getDefaultOStream() << "\n***\n*** Printing to default OStream before main() even starts!\n***\n";
+    }
+};
+
+static TestVerboseObjectBaseInitialization testVerboseObjectBaseInitialization;
+
+*/
+
+//
+// Main driver program
+//
 
 int main(int argc, char* argv[])
 {
@@ -93,7 +132,7 @@ int main(int argc, char* argv[])
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
   using Teuchos::FancyOStream;
-  using Teuchos::VerboseObject;
+  using Teuchos::VerboseObjectBase;
   using Teuchos::OSTab;
   using Teuchos::dyn_cast;
   using Teuchos::CommandLineProcessor;
@@ -122,11 +161,11 @@ int main(int argc, char* argv[])
 
     // Start by setting up a defualt FancyOStream with a new indent string.
     // This output stream object will be used by default for all VerboseObject outputting
-    VerboseObject::setDefaultOStream(rcp(new FancyOStream(rcp(&this_proc_out,false),"  ")));
+    VerboseObjectBase::setDefaultOStream(rcp(new FancyOStream(rcp(&this_proc_out,false),"  ")));
 
     // Here I am just grabbing the default output stream
     RefCountPtr<FancyOStream>
-      out = VerboseObject::getDefaultOStream();
+      out = VerboseObjectBase::getDefaultOStream();
     // Note that the VerboseObject manages FancyOStream objects and not just
     // std::ostream objects.  This is important to the design and very
     // resonable I think.
@@ -181,6 +220,13 @@ int main(int argc, char* argv[])
     *out << "\n*** Algorithm output with processor ranks, line prefix names, and tab counts\n\n";
     out->setShowAllFrontMatter(false).setShowProcRank(true).setShowLinePrefix(true).setShowTabCount(true);
     doAlgorithmStuff();
+  
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << "\n*** Algorithm output with processor ranks, line prefix names, and tab counts but no output for AlgorithmA\n\n";
+    Teuchos::VerboseObject<AlgorithmA>::setDefaultVerbLevel(Teuchos::VERB_NONE);
+    out->setShowAllFrontMatter(false).setShowProcRank(true).setShowLinePrefix(true).setShowTabCount(true);
+    doAlgorithmStuff();
+    Teuchos::VerboseObject<AlgorithmA>::setDefaultVerbLevel(Teuchos::VERB_DEFAULT);
 
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n***\n*** Do some more simple tests to make sure things work correctly\n***\n\n";
@@ -226,9 +272,12 @@ int main(int argc, char* argv[])
 
     *out << "\n***\n*** Now outputting the latent output that was sent to out2\n***\n\n"
          << dyn_cast<std::ostringstream>(*out2->getOStream()).str();
+
+    if(success)
+      *out << "\nEnd Result: TEST PASSED" << std::endl;
     
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success)
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
     
   return ( success ? 0 : 1 );
   

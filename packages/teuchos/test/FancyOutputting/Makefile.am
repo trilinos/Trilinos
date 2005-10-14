@@ -30,24 +30,14 @@ EXEEXT = .exe
 
 include $(top_builddir)/Makefile.export.teuchos
 
-bin_PROGRAMS = FancyOutputting1_test FancyOutputting2_test
+bin_PROGRAMS = FancyOutputting_test
 
-FancyOutputting1_test_SOURCES = \
-	$(srcdir)/FancyOutputting1_test.cpp \
-	$(top_srcdir)/src/Teuchos_VerboseObject1.cpp \
-	$(top_srcdir)/src/Teuchos_OSTab1.cpp
+FancyOutputting_test_SOURCES = \
+	$(srcdir)/FancyOutputting_test.cpp
 
-FancyOutputting1_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+FancyOutputting_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 
-FancyOutputting1_test_LDADD = $(TEUCHOS_LIBS)
-
-FancyOutputting2_test_SOURCES = \
-	$(srcdir)/FancyOutputting2_test.cpp \
-	$(top_srcdir)/src/Teuchos_VerboseObject2.cpp
-
-FancyOutputting2_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
-
-FancyOutputting2_test_LDADD = $(TEUCHOS_LIBS)
+FancyOutputting_test_LDADD = $(TEUCHOS_LIBS)
 
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 

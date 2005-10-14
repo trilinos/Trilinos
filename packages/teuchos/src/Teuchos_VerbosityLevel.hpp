@@ -35,11 +35,12 @@ namespace Teuchos {
 
 /** \brief Verbosity level */
 enum EVerbosityLevel {
-	VERB_DEFAULT=0  ///< Generate output as defined by the object
-	,VERB_LOW=1     ///< Generate only a minimal amount of output
-	,VERB_MEDIUM=2  ///< Generate more output
-	,VERB_HIGH=3    ///< Generate a high level of output
-	,VERB_EXTREME=4 ///< Generate the most output possible
+	VERB_DEFAULT=-1  ///< Generate output as defined by the object
+	,VERB_NONE=0     ///< Generate no output
+	,VERB_LOW=1      ///< Generate only a minimal amount of output
+	,VERB_MEDIUM=2   ///< Generate more output
+	,VERB_HIGH=3     ///< Generate a high level of output
+	,VERB_EXTREME=4  ///< Generate the most output possible
 };
 
 } // namespace Teuchos
