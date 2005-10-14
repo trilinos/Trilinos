@@ -119,7 +119,7 @@ public:
   void pushDisableTabbing();
 
   /** \brief . */
-  bool popDisableTabbing();
+  void popDisableTabbing();
   
 protected:
   
@@ -367,7 +367,7 @@ public:
   void pushDisableTabbing();
 
   /** \brief . */
-  bool popDisableTabbing();
+  void popDisableTabbing();
 
   //@}
   
@@ -594,7 +594,7 @@ void basic_FancyOStream_buf<CharT,Traits>::pushDisableTabbing()
 }
 
 template<typename CharT, typename Traits>
-bool basic_FancyOStream_buf<CharT,Traits>::popDisableTabbing()
+void basic_FancyOStream_buf<CharT,Traits>::popDisableTabbing()
 {
   --enableTabbingStack_;
 }
@@ -841,7 +841,7 @@ void basic_FancyOStream<CharT,Traits>::pushDisableTabbing()
 }
 
 template<typename CharT, typename Traits>
-bool basic_FancyOStream<CharT,Traits>::popDisableTabbing()
+void basic_FancyOStream<CharT,Traits>::popDisableTabbing()
 {
   return streambuf_.popDisableTabbing();
 }
