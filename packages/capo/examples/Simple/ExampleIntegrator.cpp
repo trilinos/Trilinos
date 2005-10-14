@@ -20,7 +20,7 @@
 //  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, In(Bc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
@@ -76,7 +76,7 @@ ExampleIntegrator::~ExampleIntegrator()
 // Creation Date : 06/09/05
 //------------------------------------------------------------------
 
-bool::ExampleIntegrator::Integrate(Epetra_Vector *y, const Epetra_Vector &x, \
+bool ExampleIntegrator::Integrate(Epetra_Vector *y, const Epetra_Vector &x, \
 				   double t, double lambda)
 {
   y->Scale(t*lambda,x);
