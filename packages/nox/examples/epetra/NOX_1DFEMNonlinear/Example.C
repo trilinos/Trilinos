@@ -40,6 +40,7 @@
 // NOX Objects
 #include "NOX.H"
 #include "NOX_Epetra.H"
+#include "NOX_Parameter_Teuchos2NOX.H"
 
 // Trilinos Objects
 #ifdef HAVE_MPI
@@ -235,8 +236,23 @@ int main(int argc, char *argv[])
   combo->addStatusTest(converged);
   combo->addStatusTest(maxiters);
 
+#ifdef HAVE_TEUCHOS_EXPAT
+  // Test writing of param list to XML file, and rereading it
+  // into a new parameter list.
+  NOX::Parameter::Teuchos2NOX pl_converter;
+
+  cout << "Writing parameter list to \"input.xml\"" << cout;
+  pl_converter.SaveToXMLFile("input.xml", *nlParamsPtr);
+
+  cout << "Reading parameter list from \"input.xml\"" << cout;
+  Teuchos::RefCountPtr<NOX::Parameter::List> finalParamsPtr
+    = pl_converter.ReadFromXMLFile("input.xml");
+#else
+  Teuchos::RefCountPtr<NOX::Parameter::List> finalParamsPtr = nlParamsPtr;
+#endif
+
   // Create the method
-  NOX::Solver::Manager solver(grp, combo, nlParamsPtr);
+  NOX::Solver::Manager solver(grp, combo, finalParamsPtr);
   NOX::StatusTest::StatusType status = solver.solve();
 
   if (status != NOX::StatusTest::Converged)

@@ -48,13 +48,16 @@ class List {
   //! Parameter container typedef
   typedef map<string, Entry> Map;
 
-  //! Parameter container const iterator typedef
-  typedef Map::const_iterator ConstIterator;
-
   //! Parameter container iterator typedef
   typedef Map::iterator Iterator;
 
 public:
+
+  /* Made this typedef public so that we can use iterators in
+   * converting to Teuchos parameter list.  Just like the
+   * Teuchos paramter list -- CRJ 21 Sept 2005 */
+  //! Parameter container const iterator typedef
+  typedef Map::const_iterator ConstIterator;
 
   //! Constructor
   List();
@@ -197,7 +200,17 @@ public:
   //! Printing 
   ostream& print(ostream& stream, int indent = 0) const;
 
-private:
+  /* Added these methods to facilitate conversion to Teuchos parameter lists
+   * -- crj 28 Sept 2005 */
+  //@{ \name Read-only access to the iterator
+  //! An iterator pointing to the first entry
+  ConstIterator begin() const ;
+
+  //! An iterator pointing beyond the last entry
+  ConstIterator end() const ;
+
+
+public:
 
   //! Check to see if "l" or any of its sublists is "this"
   bool isRecursive(const List& l) const;

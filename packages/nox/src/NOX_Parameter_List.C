@@ -66,7 +66,7 @@ void List::unused() const
   for (ConstIterator i = params.begin(); i != params.end(); ++i) {
     if (!(entry(i).isUsed())) {
       std::cerr << "WARNING: Parameter \"" << name(i) << "\" " << entry(i)
-		<< " is unused" << endl;
+              << " is unused" << endl;
     }
   }
 }
@@ -444,6 +444,17 @@ ostream& List::print(ostream& stream, int indent) const
 	stream << name(i) << " = " << entry(i) << endl;
     }
   return stream;
+}
+
+
+List::ConstIterator List::begin() const
+{
+  return params.begin();
+} 
+
+List::ConstIterator List::end() const
+{
+  return params.end();
 }
 
 

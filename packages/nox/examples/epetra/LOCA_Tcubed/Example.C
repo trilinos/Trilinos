@@ -41,6 +41,7 @@
 // LOCA Objects
 #include "LOCA.H"
 #include "LOCA_Epetra.H"
+#include "NOX_Parameter_Teuchos2NOX.H"
 
 // Trilinos Objects
 #ifdef HAVE_MPI
@@ -277,8 +278,22 @@ int main(int argc, char *argv[])
   combo.addStatusTest(wrms);
   combo.addStatusTest(maxiters);
 
+#ifdef HAVE_TEUCHOS_EXPAT
+  // Test writing of param list to XML file, and rereading it
+  // into a new parameter list.
+  NOX::Parameter::Teuchos2NOX pl_converter;
+                                                                                                                                        
+  cout << "Writing parameter list to \"input.xml\"" << cout;
+  pl_converter.SaveToXMLFile("input.xml", paramList);
+                                                                                                                                        
+  cout << "Reading parameter list from \"input.xml\"" << cout;
+  Teuchos::RefCountPtr<NOX::Parameter::List> paramList2 = pl_converter.ReadFromXMLFile("input.xml");
+#else
+  NOX::Parameter::List* paramList2 = &paramList;
+#endif
+
   // Create the stepper  
-  LOCA::Stepper stepper(grp, combo, paramList);
+  LOCA::Stepper stepper(grp, combo, *paramList2);
   LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
   if (status != LOCA::Abstract::Iterator::Finished)

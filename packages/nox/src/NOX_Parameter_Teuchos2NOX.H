@@ -40,7 +40,10 @@ namespace NOX {
   namespace Parameter {
 
     /**
-     * Teuchos2NOX converts a Teuchos parameter list to a NOX parameter list
+     * Teuchos2NOX has methods to convert a Teuchos parameter list 
+     * to a NOX parameter list, as well as the reverse. There are
+     * also methods to read and write XML files using the converters
+     * and the Teuchos parameter list utilities.
      *
      * @author Kevin Long
      */
@@ -50,10 +53,21 @@ namespace NOX {
       /** Construct a Teuchos2NOX converter */
       Teuchos2NOX(){;}
       
-      /** */
-      Teuchos::RefCountPtr<Parameter::List> toNOX(const Teuchos::ParameterList& tpl) const ;
+      /** Utility to Convert a Teuchos::ParameterList to a NOX::Parameter::List */
+      Teuchos::RefCountPtr<NOX::Parameter::List> toNOX(const Teuchos::ParameterList& tpl) const ;
+
+      /** Utility to Convert a NOX::Parameter::List to a Teuchos::ParameterList */
+      Teuchos::ParameterList toTeuchos(const NOX::Parameter::List& npl) const ;
+
+#ifdef HAVE_TEUCHOS_EXPAT
+      /** Utility to write a NOX::Parameter::List to an XML file (via Teuchos) */
+      void SaveToXMLFile(const string filename, const NOX::Parameter::List& npl) const;
+
+      /** Utility to read a NOX::Parameter::List from an XML file (via Teuchos) */
+      Teuchos::RefCountPtr<NOX::Parameter::List> ReadFromXMLFile(const string filename) const;
+#endif //#ifdef HAVE_TEUCHOS_EXPAT
+
     protected:
-      
    
     }; // class Teuchos2NOX
   } // namespace Parameter

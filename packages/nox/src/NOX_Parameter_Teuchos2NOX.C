@@ -29,13 +29,28 @@
 
 #include "NOX_Parameter_Teuchos2NOX.H"
 
-using namespace NOX::Parameter;
+// Included for XML stuff
+#include "Teuchos_XMLObject.hpp"
+#include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_FileInputSource.hpp"
+#include "Teuchos_XMLParameterListReader.hpp"
 
+// Teuchos typedefs
+typedef Teuchos::map<string, Teuchos::ParameterEntry> tMap;
+typedef tMap::iterator tIterator;
+typedef tMap::const_iterator tConstIterator;
+
+// NOX typedefs
+typedef map<string, NOX::Parameter::Entry> nMap;
+typedef nMap::iterator nIterator;
+typedef nMap::const_iterator nConstIterator;
+
+using namespace NOX::Parameter;
 using namespace Teuchos;
 
-RefCountPtr<List> Teuchos2NOX::toNOX(const ParameterList& p) const
+RefCountPtr<NOX::Parameter::List> Teuchos2NOX::toNOX(const ParameterList& p) const
 {
-  RefCountPtr<List> rtn = rcp(new List());
+  RefCountPtr<NOX::Parameter::List> rtn = rcp(new NOX::Parameter::List());
 
   for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i)
     {
@@ -72,5 +87,104 @@ RefCountPtr<List> Teuchos2NOX::toNOX(const ParameterList& p) const
   return rtn;
 }
 
+ParameterList Teuchos2NOX::toTeuchos(const NOX::Parameter::List& npl) const
+{
+  ParameterList rtn;
 
+  for (nConstIterator i=npl.begin(); i!=npl.end(); ++i)
+    {
+      const Entry& val = npl.entry(i);
+      const string& name = npl.name(i);
+      
+      if (val.isList())
+        {
+          rtn.sublist(name) = toTeuchos(val.getListValue());
+        }
+      else if (val.isInt())
+        {
+	  rtn.set(name, val.getIntValue());
+        }
+      else if (val.isDouble())
+        {
+	  rtn.set(name, val.getDoubleValue());
+        }
+      else if (val.isBool())
+        {
+	  rtn.set(name, val.getBoolValue());
+        }
+      else if (val.isString())
+        {
+	  rtn.set(name, val.getStringValue());
+        }
+      else if (val.isArbitrary())
+        {
+	  // crj 9/29/05
+	  // WARNING - Converting arbitrary values to Teuchos::ParameterList
+	  //	has not been tested.  I don't know if it makes sense or not.
+	  cerr << "Teuchos2NOX::toTeuchos - Warning: detected arbitrary value"
+		<< " in NOX::Parameter::List.  This is untested and might not." 
+		<< "  Make sense in what needs to be done in Teuchos."  << endl;
+	  rtn.set(name, val.getArbitraryValue().clone());
+        }
+      else
+        {
+	  cerr << "NOX::Parameter::Teuchos2NOX::toTeuchos - unrecognized type "
+		<< "name " << name << " value " << val << endl;
+	  throw "NOX Error";
+        }
+    }
+
+  return rtn;
+}
+
+#ifdef HAVE_TEUCHOS_EXPAT
+
+void Teuchos2NOX::SaveToXMLFile(const string filename, const Parameter::List& npl) const
+{
+  /////////////////////////////////////////////////
+  //  Convert the Parameter::List to an XML file
+  ///////////////////////////////////////////////// 
+
+  // create a parameter list converter
+  NOX::Parameter::Teuchos2NOX pl_converter;
+
+  // Convert the nox parameter list to a teuchos parameter list
+  Teuchos::ParameterList tpl = pl_converter.toTeuchos(npl);
+
+  // create a xml converter
+  Teuchos::XMLParameterListWriter xml_converter;
+
+  // Convert the teuchos parameter list to an XMLObject
+  Teuchos::XMLObject xml_pl = xml_converter.toXML(tpl);
+
+  // Write the xml to a file
+  ofstream of(filename.c_str()); 
+  of << xml_pl << endl;
+  of.close();
+}
+
+RefCountPtr<NOX::Parameter::List> Teuchos2NOX::ReadFromXMLFile(const string filename) const
+{
+  // read in a file using teuchos
+  Teuchos::FileInputSource fileSrc(filename);
+
+  // Convert the file data into an xml object
+  Teuchos::XMLObject xml_obj = fileSrc.getObject();
+
+  // Create a xml to teuchos::parameterlist converter
+  Teuchos::XMLParameterListReader xml_to_pl_converter;
+
+  // convert the teuchos xml object to a parameter list
+  Teuchos::ParameterList pl = xml_to_pl_converter.toParameterList(xml_obj);
+
+  // create a parameter list to list converter
+  NOX::Parameter::Teuchos2NOX pl_converter;
+
+  // convert the parameter list to a nox list
+  RefCountPtr<NOX::Parameter::List> l = pl_converter.toNOX(pl);
+
+  return l;
+}
+
+#endif //#ifdef HAVE_TEUCHOS_EXPAT
 
