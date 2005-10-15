@@ -44,6 +44,7 @@
 
 (FRAMEWORK, INSTALL, EpetraPyTests) {
       DIRS = ../python/test;
+      EXIT-STATUS = STRING-COMPARISON;
       COMM = SERIAL, MPI(1-4);
 }
 
