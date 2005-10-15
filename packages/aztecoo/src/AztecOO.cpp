@@ -428,7 +428,11 @@ int AztecOO::SetUserMatrix(Epetra_RowMatrix * UserMatrix) {
   SetProcConfig(UserMatrix->Comm());
   EPETRA_CHK_ERR(SetUserOperator(UserMatrix));
   AZ_set_MATFREE(Amat_, (void *) UserMatrixData_, Epetra_Aztec_matvec);
-  int N_ghost = UserMatrix->NumMyCols() - UserMatrix->NumMyRows();
+  //int N_ghost = UserMatrix->NumMyCols() - UserMatrix->NumMyRows();
+  int N_ghost = 0;
+  if (UserMatrix->RowMatrixImporter()!=0)
+    N_ghost = UserMatrix->RowMatrixImporter()->NumRecv();
+  
   AZ_set_MATFREE_getrow(Amat_, (void *) UserMatrixData_, Epetra_Aztec_getrow,
 			Epetra_Aztec_comm_wrapper,N_ghost,proc_config_);
 
@@ -467,7 +471,11 @@ int AztecOO::SetPrecMatrix(Epetra_RowMatrix * PrecMatrix) {
   // Aztec needs upper bound for matrix norm if doing polynomial preconditioning
   if (PrecMatrix->HasNormInf())
 		AZ_set_MATFREE_matrix_norm(Pmat_, PrecMatrix->NormInf()); 
-  int N_ghost = PrecMatrix->NumMyCols() - PrecMatrix->NumMyRows();
+  //int N_ghost = PrecMatrix->NumMyCols() - PrecMatrix->NumMyRows();
+  int N_ghost = 0;
+  if (PrecMatrix->RowMatrixImporter()!=0)
+    N_ghost = PrecMatrix->RowMatrixImporter()->NumRecv();
+
   AZ_set_MATFREE_getrow(Pmat_, (void *) PrecMatrixData_, Epetra_Aztec_getrow,
 			Epetra_Aztec_comm_wrapper,N_ghost,proc_config_);
     
