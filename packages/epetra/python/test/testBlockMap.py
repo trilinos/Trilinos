@@ -185,13 +185,15 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(EpetraBlockMapTestCase))
 
     # Create a communicator
-    comm = Epetra.PyComm()
+    comm    = Epetra.PyComm()
+    iAmRoot = comm.MyPID() == 0
 
     # Run the test suite
-    if comm.MyPID() == 0: print >>sys.stderr, \
+    if iAmRoot: print >>sys.stderr, \
        "\n***********************\nTesting Epetra.BlockMap\n***********************\n"
-    verbosity = 2 * int(comm.MyPID() == 0)
+    verbosity = 2 * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
-    sys.exit(len(result.errors) + len(result.failures))
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))[0]
+    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
