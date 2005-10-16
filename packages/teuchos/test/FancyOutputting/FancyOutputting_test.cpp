@@ -103,24 +103,25 @@ void doAlgorithmStuff()
 }
 
 //
-// Test that static initailziation of VerboseObjectBase works!
+// Test that static initailziation of VerboseObjectBase and VerboseObject works!
 //
-
-/*
 
 class TestVerboseObjectBaseInitialization {
 public:
   TestVerboseObjectBaseInitialization()
     {
+      // Get the verbosity level for AlgorithmA
+      Teuchos::EVerbosityLevel verbLevel = Teuchos::VerboseObject<AlgorithmA>::getDefaultVerbLevel();
+      TEST_FOR_EXCEPT_PRINT(verbLevel!=Teuchos::VERB_DEFAULT,&std::cerr);
       // Print to the default default OStream to make sure that the initialization
       // trick worked!
-      *Teuchos::VerboseObjectBase::getDefaultOStream() << "\n***\n*** Printing to default OStream before main() even starts!\n***\n";
+      *Teuchos::VerboseObjectBase::getDefaultOStream()
+        << "\n***\n*** Printing to default OStream before main() even starts!\n***\n\n"
+        << std::flush;
     }
 };
 
 static TestVerboseObjectBaseInitialization testVerboseObjectBaseInitialization;
-
-*/
 
 //
 // Main driver program
@@ -155,9 +156,9 @@ int main(int argc, char* argv[])
     // Here we setup a stream to print to on this processor
     Teuchos::oblackholestream black_hole_out;
     std::ostream &this_proc_out = ( procRank==0 || printOnAllProcs ? std::cerr : black_hole_out );
-    // Note that above we print to std::cerr since it is unbuffered and more
-    // likely to generate readable output in parallel.  Also note how easily
-    // we have turned off output on slave processors if asked!
+    // Note that we print to std::cerr instead of std::cout so that data
+    // printed in parallel have a better chance of ending up together.  Also,
+    // note how easily we have turned off output on slave processors if asked!
 
     // Start by setting up a defualt FancyOStream with a new indent string.
     // This output stream object will be used by default for all VerboseObject outputting
@@ -171,7 +172,7 @@ int main(int argc, char* argv[])
     // resonable I think.
 
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
-    *out << Teuchos::Teuchos_Version() << endl << endl;
+    *out << std::endl << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
     //
     // Now I call doAlgorithmStuff() a bunch of times with different setups to

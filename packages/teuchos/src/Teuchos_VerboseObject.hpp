@@ -127,10 +127,10 @@ public:
   
 private:
 
-  static RefCountPtr<FancyOStream>   defaultOStream_;
-
   RefCountPtr<FancyOStream>   thisOStream_;
   std::string                 thisLinePrefix_;
+
+  static RefCountPtr<FancyOStream>& privateDefaultOStream();
 
 };
 
@@ -199,32 +199,32 @@ public:
   
 private:
 
-  static EVerbosityLevel  defaultVerbLevel_;
   EVerbosityLevel         thisVerbLevel_;
+
+  static EVerbosityLevel&  privateDefaultVerbLevel();
+
 
 };
 
 // //////////////////////////////////
 // Template defintions
 
-// Private static data members
-
-template<class ObjectType>
-EVerbosityLevel
-VerboseObject<ObjectType>::defaultVerbLevel_ = VERB_DEFAULT;
+//
+// VerboseObject
+//
 
 // Public static member functions
 
 template<class ObjectType>
 void VerboseObject<ObjectType>::setDefaultVerbLevel( const EVerbosityLevel defaultVerbLevel)
 {
-  defaultVerbLevel_ = defaultVerbLevel;
+  privateDefaultVerbLevel() = defaultVerbLevel;
 }
 
 template<class ObjectType>
 EVerbosityLevel VerboseObject<ObjectType>::getDefaultVerbLevel()
 {
-  return defaultVerbLevel_;
+  return privateDefaultVerbLevel();
 }
 
 // Constructors/Initializers
@@ -262,29 +262,18 @@ template<class ObjectType>
 EVerbosityLevel VerboseObject<ObjectType>::getVerbLevel() const
 {
   if(thisVerbLevel_ == VERB_DEFAULT)
-    return defaultVerbLevel_;
+    return getDefaultVerbLevel();
   return thisVerbLevel_;
 }
 
-// ////////////////////////////////////////
-// Initialization classes to make sure
-// that static data is initialized
-// before it is used in other pre-main()
-// code.  See Item #47 in Effective C++
-// ////////////////////////////////////////
+// Private static members
 
-/*
-
-class InitializeVerboseObjectBase {
-public:
-  InitializeVerboseObjectBase();
-private:
-  static unsigned short int count_;
-};
-
-static InitializeVerboseObjectBase initializeVerboseObjectBase;
-
-*/
+template<class ObjectType>
+EVerbosityLevel& VerboseObject<ObjectType>::privateDefaultVerbLevel()
+{
+  static EVerbosityLevel defaultVerbLevel = VERB_DEFAULT;
+  return defaultVerbLevel;
+}
 
 } // namespace Teuchos
 

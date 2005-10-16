@@ -32,20 +32,23 @@ namespace Teuchos {
 
 // Private static data members
 
-RefCountPtr<FancyOStream>
-VerboseObjectBase::defaultOStream_ = rcp(new FancyOStream(rcp(&std::cout,false)));
+RefCountPtr<FancyOStream>& VerboseObjectBase::privateDefaultOStream()
+{
+  static RefCountPtr<FancyOStream> defaultOStream = rcp(new FancyOStream(rcp(&std::cout,false)));
+  return defaultOStream;
+}
 
 // Public static member functions
 
 void VerboseObjectBase::setDefaultOStream( const RefCountPtr<FancyOStream> &defaultOStream )
 {
-  defaultOStream_ = defaultOStream;
+  privateDefaultOStream() = defaultOStream;
 }
 
 RefCountPtr<FancyOStream>
 VerboseObjectBase::getDefaultOStream()
 {
-  return defaultOStream_;
+  return privateDefaultOStream();
 }
 
 // Constructors/Initializers
@@ -82,7 +85,7 @@ RefCountPtr<FancyOStream>
 VerboseObjectBase::getOStream() const
 {
   if(!thisOStream_.get())
-    return defaultOStream_;
+    return getDefaultOStream();
   return thisOStream_;
 }
 
@@ -97,21 +100,5 @@ OSTab VerboseObjectBase::getOSTab(const int tabs,const std::string &linePrefix) 
 {
   return OSTab( this->getOStream(), tabs, linePrefix.length() ? linePrefix : this->getLinePrefix() );
 }
-
-// //////////////////////////////////
-// Initialization classes
-
-/*
-
-unsigned short int InitializeVerboseObjectBase::count_ = 0;
-
-InitializeVerboseObjectBase::InitializeVerboseObjectBase()
-{
-  if(count_++==0) {
-    VerboseObjectBase::setDefaultOStream(rcp(new FancyOStream(rcp(&std::cout,false))));
-  }
-}
-
-*/
 
 } // namespace Teuchos
