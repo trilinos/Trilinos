@@ -300,23 +300,33 @@ public:
   explicit
   basic_FancyOStream(
     const RefCountPtr< std::basic_ostream<char_type,traits_type> > &oStream
-    ,const std::basic_string<char_type,traits_type>                &tabIndentStr     = "\t"
+    ,const std::basic_string<char_type,traits_type>                &tabIndentStr     = "  "
     ,const int                                                     startingTab       = 0
     ,const bool                                                    showLinePrefix    = false
     ,const int                                                     maxLenLinePrefix  = 10
     ,const bool                                                    showTabCount      = false
-    ,const bool                                                    showProcRank      = false
+    ,const bool                                                    showProcRank
+#ifdef HAVE_MPI
+                                                                                     = true
+#else
+                                                                                     = false
+#endif
     );
 
   /** \brief . */
   void initialize(
     const RefCountPtr< std::basic_ostream<char_type,traits_type> > &oStream
-    ,const std::basic_string<char_type,traits_type>                &tabIndentStr     = "\t"
+    ,const std::basic_string<char_type,traits_type>                &tabIndentStr     = "  "
     ,const int                                                     startingTab       = 0
     ,const bool                                                    showLinePrefix    = false
     ,const int                                                     maxLenLinePrefix  = 10
     ,const bool                                                    showTabCount      = false
-    ,const bool                                                    showProcRank      = false
+    ,const bool                                                    showProcRank
+#ifdef HAVE_MPI
+                                                                                     = true
+#else
+                                                                                     = false
+#endif
     );
 
   /** \brief. */
