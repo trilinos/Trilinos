@@ -667,7 +667,7 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType,float>::GETRI(const OrdinalType n, float* A, const OrdinalType lda, const OrdinalType* IPIV, float* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
-    SGETRI_F77(&n, A, &lda, IPIV, WORK, lwork, info);
+    SGETRI_F77(&n, A, &lda, IPIV, WORK, &lwork, info);
   }
   
   template<typename OrdinalType>
@@ -1277,7 +1277,7 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType,complex<float> >::GETRI(const OrdinalType n, complex<float>* A, const OrdinalType lda, const OrdinalType* IPIV, complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
-    CGETRI_F77(&n, A, &lda, IPIV, WORK, lwork, info);
+    CGETRI_F77(&n, A, &lda, IPIV, WORK, &lwork, info);
   }
   
   template<typename OrdinalType>
@@ -1512,7 +1512,7 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType,complex<double> >::GETRI(const OrdinalType n, complex<double>* A, const OrdinalType lda, const OrdinalType* IPIV, complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
-    ZGETRI_F77(&n, A, &lda, IPIV, WORK, lwork, info);
+    ZGETRI_F77(&n, A, &lda, IPIV, WORK, &lwork, info);
   }
   
   template<typename OrdinalType>
