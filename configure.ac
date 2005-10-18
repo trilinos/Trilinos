@@ -111,6 +111,8 @@ TAC_ARG_ENABLE_FEATURE(tpetra, [Build tpetra], TPETRA, no)
 
 TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, no)
 
+TAC_ARG_ENABLE_FEATURE(galeri, [Build galeri], GALERI, no)
+
 TAC_ARG_ENABLE_FEATURE(tsf, [Build TSF], TSF, no)
 
 TAC_ARG_ENABLE_FEATURE(tsfcore, [Build TSFCore], TSFCORE, no)
@@ -130,6 +132,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
  	test "X$ac_cv_use_tsfcore" != "Xno" ||
 	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno" ||
+	test "X$ac_cv_use_galeri" != "Xno" || 
 	test "X$ac_cv_use_amesos" != "Xno" || 
  	test "X$ac_cv_use_anasazi" != "Xno" ||
 	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" ||
@@ -173,6 +176,7 @@ AM_CONDITIONAL(BUILD_KOKKOS, test "X$BUILD_KOKKOS" != "Xno")
 
 if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" || 
+	test "X$ac_cv_use_galeri" != "Xno" || 
 	test "X$ac_cv_use_tsf" != "Xno" || 
         test "X$ac_cv_use_tsfextended" != "Xno" ||
  	test "X$ac_cv_use_amesos" != "Xno" || 
@@ -216,8 +220,18 @@ if test "X$ac_cv_use_triutils" != "Xno" ||
 else
   BUILD_TRIUTILS=no
 fi
-
 AM_CONDITIONAL(BUILD_TRIUTILS, test "X$BUILD_TRIUTILS" != "Xno")
+
+if test "X$ac_cv_use_galeri" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/galeri])
+  BUILD_GALERI=yes
+  if test "X$ac_cv_use_galeri_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-galeri"
+  fi
+else
+  BUILD_GALERI=no
+fi
+AM_CONDITIONAL(BUILD_GALERI, test "X$BUILD_GALERI" != "Xno")
 
 if test "X$ac_cv_use_ifpack" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/ifpack])
