@@ -9,7 +9,9 @@
 #include "MLAPI_Gallery.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_DistributedMatrix.h"
+#if defined(HAVE_ML_TRIUTILS)
 #include "Trilinos_Util_CrsMatrixGallery.h"
+#endif
 
 using namespace std;
 
