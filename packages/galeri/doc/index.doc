@@ -14,17 +14,17 @@ techniques, on both 2D and 3D unstructured grids.
 
 The main functionalities of this package are:
 - Generation of Epetra_Map objects. See:
-  - For a list of supported maps, \ref gl_GalleryMap;
-  - \ref gl_maps_ex;
+  - For a list of supported maps, see \ref gl_GalleryMaps;
+  - \ref gl_maps_ex.
 - Generation of Epetra_CrsMatrix objects. See:
   - For a list of supported matrices, \ref gl_GalleryCrsMatrix;
-  - \ref gl_matrices_ex;
+  - \ref gl_matrices_ex.
 - Discretization of scalar, linear second-order PDE problems using finite
   element. See:
   - \ref gl_FiniteElements;
   - \ref gl_fe_grid;
   - \ref gl_fe_lapl;
-  - \ref gl_fe_adv;
+  - \ref gl_fe_adv.
 - Creation of a VBR matrix and other utilities. See:
   - \ref gl_Utils.
 - \ref gl_Python.
