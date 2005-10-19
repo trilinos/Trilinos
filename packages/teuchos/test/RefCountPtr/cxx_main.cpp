@@ -27,13 +27,11 @@
 // @HEADER
 
 #include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_Version.hpp"
-
-#ifdef HAVE_MPI
-#  include "mpi.h"
-#endif
 
 #ifdef HAVE_TEUCHOS_BOOST
 #  include "Teuchos_RefCountPtrBoostSharedPtrConversions.hpp"
@@ -78,13 +76,21 @@ A_g_return  = 1,
 
 */
 
+class C;
+
 class A {
 	int A_g_, A_f_;
 public:
 	A() : A_g_(A_g_return), A_f_(A_f_return) {}
-	virtual ~A() { A_g_ = -1; A_f_ = -1; }
+	virtual ~A(); // See below
 	virtual int A_g() { return A_g_; }
 	virtual int A_f() const { return A_f_; }
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+private:
+  Teuchos::RefCountPtr<C> c_;
+public:
+  void set_C(const Teuchos::RefCountPtr<C> &c ) { c_ = c; }
+#endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
 };
 
 class B1 : virtual public A {
@@ -109,12 +115,20 @@ class C : virtual public B1, virtual public B2
 {
 	int C_g_, C_f_;
 public:
-	C() : C_g_(C_g_return), C_f_(C_f_return) {}
+	C() : C_g_(C_g_return),C_f_(C_f_return) {}
 	~C() { C_g_ = -1; C_f_ = -1; }
 	virtual int C_g() { return C_g_; }
 	virtual int C_f() const { return C_f_; }
-	
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+private:
+  Teuchos::RefCountPtr<A> a_;
+public:
+  void set_A(const Teuchos::RefCountPtr<A> &a ) { a_ = a; }
+#endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
 };
+
+// Need to put this here if we have circular references
+A::~A() { A_g_ = -1; A_f_ = -1; }
 
 class Get_A_f_return {
   const A *a_;
@@ -192,15 +206,6 @@ public:
 
 int main( int argc, char* argv[] ) {
 
-#ifdef HAVE_MPI
-	// Initialize MPI if we are running in parallel.
-	MPI_Init( &argc, &argv ); 
-	int procRank = -1;
-	MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
-
-    if (procRank == 0) {
-#endif
-
 	using Teuchos::RefCountPtr;
 	using Teuchos::DeallocDelete;
 	using Teuchos::deallocFunctorDelete;
@@ -219,7 +224,13 @@ int main( int argc, char* argv[] ) {
 	using Teuchos::get_optional_dealloc;
 	using Teuchos::CommandLineProcessor;
 	
-	bool verbose = true;
+	bool success = true, verbose = true;
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  const int procRank = Teuchos::GlobalMPISession::getRank();
+
+  Teuchos::oblackholestream blackhole;
+  std::ostream &out = ( procRank == 0 ? std::cout : blackhole );
 
 	try {
 
@@ -228,21 +239,17 @@ int main( int argc, char* argv[] ) {
 		clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
 		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 		if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
-#ifdef HAVE_MPI
-			MPI_Finalize();
-#endif
-			cout << "\nEnd Result: TEST FAILED" << endl;
+			out << "\nEnd Result: TEST FAILED" << endl;
 			return parse_return;
 		}
 
-    Teuchos::oblackholestream blackhole;
     blackhole << "\nThis should not print anywhere.\n";
 
-    if (verbose)
-      std::cout << std::endl << Teuchos::Teuchos_Version() << std::endl;
+    if(verbose)
+      out << std::endl << Teuchos::Teuchos_Version() << std::endl;
 
 		if(verbose)
-			std::cout << "\nTesting basic RefCountPtr functionality ...\n";
+			out << "\nTesting basic RefCountPtr functionality ...\n";
 
 		// Create some smart pointers
 
@@ -463,12 +470,12 @@ int main( int argc, char* argv[] ) {
 #ifdef SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS_PRINT
 		const void *c_ptr5_base = dynamic_cast<void*>(c_ptr5);
 		if(verbose) {
-			std::cout << "\nSize of C = " << sizeof(C) << std::endl;
-			std::cout << "Base address of object of type C        = " << dynamic_cast<void*>(c_ptr5) << std::endl;
-			std::cout << "Offset to address of object of type C   = " << ((long int)c_ptr5                   - (long int)c_ptr5_base) << std::endl;
-			std::cout << "Offset of B1 object in object of type C = " << ((long int)static_cast<B1*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
-			std::cout << "Offset of B2 object in object of type C = " << ((long int)static_cast<B2*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
-			std::cout << "Offset of A object in object of type C  = " << ((long int)static_cast<A*>(c_ptr5)  - (long int)c_ptr5_base) << std::endl;
+			out << "\nSize of C = " << sizeof(C) << std::endl;
+			out << "Base address of object of type C        = " << dynamic_cast<void*>(c_ptr5) << std::endl;
+			out << "Offset to address of object of type C   = " << ((long int)c_ptr5                   - (long int)c_ptr5_base) << std::endl;
+			out << "Offset of B1 object in object of type C = " << ((long int)static_cast<B1*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
+			out << "Offset of B2 object in object of type C = " << ((long int)static_cast<B2*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
+			out << "Offset of A object in object of type C  = " << ((long int)static_cast<A*>(c_ptr5)  - (long int)c_ptr5_base) << std::endl;
 		}
 #endif // SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS_PRINT
 		A *a_rptr5 = c_ptr5;    // Here the address has changed and is no longer the same as the base address
@@ -520,10 +527,23 @@ int main( int argc, char* argv[] ) {
     a_ptr1 = rcp( new C, deallocFunctorHandleDelete<A>(deallocHandleA), true );
     a_ptr1 = null;
 
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+    
+		if(verbose)
+			out << "\nCreate a circular reference that will case a memory leak! ...\n";
+    if(1) {
+      RefCountPtr<A> a = rcp(new A());
+      RefCountPtr<C> c = rcp(new C());
+      a->set_C(c);
+      c->set_A(a);
+    }
+
+#endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+
 #ifdef HAVE_TEUCHOS_BOOST
 
 		if(verbose)
-			std::cout << "\nTesting basic RefCountPtr compatibility with boost::shared_ptr ...\n";
+			out << "\nTesting basic RefCountPtr compatibility with boost::shared_ptr ...\n";
 
     boost::shared_ptr<A>  a_sptr1(new C());
     RefCountPtr<A>        a_rsptr1 = rcp(a_sptr1);
@@ -539,37 +559,20 @@ int main( int argc, char* argv[] ) {
 #endif // HAVE_TEUCHOS_BOOST
 
 		if(verbose)
-			std::cout << "\nAll tests for RefCountPtr seem to check out!\n";
+			out << "\nAll tests for RefCountPtr seem to check out!\n";
 
 	} // end try
-	catch( const std::exception &excpt ) {
-		if(verbose)
-			std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
-#ifdef HAVE_MPI
-		MPI_Finalize();
-#endif
-		return -1;
-	}
-	catch( ... ) {
-		if(verbose)
-			std::cerr << "*** Caught an unknown exception\n";
-#ifdef HAVE_MPI
-		MPI_Finalize();
-#endif
-		return -1;
-	}
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
+  
+  try {
+    // This should show that the A and C RCP objects are still around!
+    Teuchos::PrivateUtilityPack::print_active_RefCountPtr_nodes(out);
+	} // end try
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
+  
+  if(success)
+    out << "\nEnd Result: TEST PASSED" << std::endl;	
 
-#ifdef HAVE_MPI
-    } // end if( procRank == 0 )
-	// Finalize the MPI session if we are running in parallel.
-	MPI_Finalize();
-#endif
-
-    cout << "\nEnd Result: TEST PASSED" << endl;	
-
-#ifdef HAVE_MPI
-    if ( procRank == 0 )
-#endif
-	return 0;
+  return ( success ? 0 : 1 );
 
 }

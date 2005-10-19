@@ -28,6 +28,7 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 namespace Teuchos {
 
@@ -90,5 +91,77 @@ void RefCountPtr_node::impl_pre_delete_extra_data()
 }
 
 } // namespace PrivateUtilityPack
-} // namespace Teuchos
 
+typedef std::map<PrivateUtilityPack::RefCountPtr_node*,std::string>  rcp_node_list_t;
+
+rcp_node_list_t rcp_node_list;
+
+void PrivateUtilityPack::add_new_RefCountPtr_node( RefCountPtr_node* rcp_node, const std::string &info )
+{
+  rcp_node_list[rcp_node] = info;
+}
+
+void PrivateUtilityPack::remove_RefCountPtr_node( RefCountPtr_node* rcp_node )
+{
+  const rcp_node_list_t::iterator itr = rcp_node_list.find(rcp_node);
+  TEST_FOR_EXCEPT_PRINT(itr==rcp_node_list.end(),&std::cerr);
+  rcp_node_list.erase(itr);
+}
+
+void PrivateUtilityPack::print_active_RefCountPtr_nodes(std::ostream &out)
+{
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
+  std::cerr << "\nCalled PrivateUtilityPack::print_active_RefCountPtr_nodes() : rcp_node_list.size() = " << rcp_node_list.size() << "\n";
+#endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
+  rcp_node_list_t::const_iterator itr = rcp_node_list.begin();
+  if(itr != rcp_node_list.end()) {
+    out
+      << "\n***"
+      << "\n*** Warning! The following Teucho::RefCountPtr_node objects were created but have"
+      << "\n*** not been destoryed yet.  This may be an indication that these objects may"
+      << "\n*** be involved in a circular dependency!  A memory checking tool may complain"
+      << "\n*** that these objects are not destoryed correctly."
+      << "\n***\n";
+    while( itr != rcp_node_list.end() ) {
+      const rcp_node_list_t::value_type
+        entry = *itr;
+      out << "\n  RefCountPtr_node address = \'" << entry.first << "\', information = " << entry.second;
+      ++itr;
+    }
+    out << "\n";
+  }
+}
+
+namespace PrivateUtilityPack {
+
+PrintActiveRefCountPtrNodes::PrintActiveRefCountPtrNodes()
+{
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
+  std::cerr << "\nCalled PrintActiveRefCountPtrNodes::PrintActiveRefCountPtrNodes() : count = " << count_ << "\n";
+#endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
+  ++count_;
+}
+
+PrintActiveRefCountPtrNodes::~PrintActiveRefCountPtrNodes()
+{
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
+  std::cerr << "\nCalled PrintActiveRefCountPtrNodes::~PrintActiveRefCountPtrNodes() : count = " << count_ << "\n";
+#endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
+  if(--count_ == 0 ) {
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
+    std::cerr << "\nPrint active nodes!\n";
+#endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
+    print_active_RefCountPtr_nodes(std::cerr);
+  }
+}
+
+void PrintActiveRefCountPtrNodes::foo()
+{
+  int dummy = count_;
+}
+
+int PrintActiveRefCountPtrNodes::count_ = 0;
+
+} // namespace PrivateUtilityPack
+
+} // namespace Teuchos

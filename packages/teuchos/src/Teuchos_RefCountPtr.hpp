@@ -44,6 +44,8 @@
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_map.hpp"
 
+//#define TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES // Define this on command line to keep track of this!
+
 // /////////////////////////////////////////////////////////////////////////
 // Inline implementations below, not for the client to look at.
 
@@ -52,6 +54,9 @@ namespace Teuchos {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 namespace PrivateUtilityPack {
+
+//
+class RefCountPtr_node;
 
 // Assert that the pointer is not null
 void throw_null( const std::string &type_name );
@@ -147,7 +152,41 @@ private:
 
 }; // end class RefCountPtr_node_tmpl<T>
 
+// Add new RCP to global list
+void add_new_RefCountPtr_node( RefCountPtr_node* rcp_node, const std::string &info );
+
+// Remove RCP from global list
+void remove_RefCountPtr_node( RefCountPtr_node* rcp_node );
+
+// Print global list
+void print_active_RefCountPtr_nodes(std::ostream &out);
+
+// Print global list on destruction
+class PrintActiveRefCountPtrNodes {
+public:
+  PrintActiveRefCountPtrNodes();
+  ~PrintActiveRefCountPtrNodes();
+  void foo();
+private:
+  static int count_;
+};
+
 }	// end namespace PrivateUtilityPack 
+
+} // namespace Teuchos
+
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+
+namespace {
+// This static variable should be delcared before all other static variables
+// that depend on RefCountPtr and therefore This static varaible should be
+// deleted *after* all of these other static variables that depend on
+// RefCountPtr go away!
+Teuchos::PrivateUtilityPack::PrintActiveRefCountPtrNodes printActiveRefCountPtrNodes;
+} // namespace
+#endif
+
+namespace Teuchos {
 
 #endif
 
@@ -183,7 +222,13 @@ template<class T>
 REFCOUNTPTR_INLINE
 RefCountPtr<T>::~RefCountPtr()
 {
-	if(node_ && node_->deincr_count() == 0 ) delete node_;
+	if(node_ && node_->deincr_count() == 0 ) {
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+    printActiveRefCountPtrNodes.foo(); // Make sure this object is used!
+    remove_RefCountPtr_node(node_);
+#endif
+    delete node_;
+  }
 }
 
 template<class T>
@@ -193,6 +238,9 @@ RefCountPtr<T>& RefCountPtr<T>::operator=(const RefCountPtr<T>& r_ptr) {
 		if( r_ptr.node_ == node_ )
 			return *this; // Assignment to self!
 		if( !node_->deincr_count() ) {
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+      remove_RefCountPtr_node(node_);
+#endif
 			delete node_;
 		}
 	}
@@ -277,7 +325,15 @@ inline
 RefCountPtr<T>::RefCountPtr( T* p, bool has_ownership )
 	: ptr_(p)
 	, node_( p ? new PrivateUtilityPack::RefCountPtr_node_tmpl<T,DeallocDelete<T> >(p,DeallocDelete<T>(),has_ownership) : NULL )
-{}
+{
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+  if(node_) {
+    std::ostringstream os;
+    os << "{T=\'"<<typeid(T).name()<<"\',Concrete T=\'"<<typeid(*p).name()<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
+    add_new_RefCountPtr_node(node_,os.str());
+  }
+#endif
+}
 
 template<class T>
 REFCOUNTPTR_INLINE
@@ -285,7 +341,15 @@ template<class Dealloc_T>
 RefCountPtr<T>::RefCountPtr( T* p, Dealloc_T dealloc, bool has_ownership )
 	: ptr_(p)
 	, node_( p ? new PrivateUtilityPack::RefCountPtr_node_tmpl<T,Dealloc_T>(p,dealloc,has_ownership) : NULL )
-{}
+{
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+  if(node_) {
+    std::ostringstream os;
+    os << "{T=\'"<<typeid(T).name()<<"\',Concrete T=\'"<<typeid(*p).name()<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
+    add_new_RefCountPtr_node(node_,os.str());
+  }
+#endif
+}
 
 template<class T>
 inline
