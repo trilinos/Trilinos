@@ -21,7 +21,7 @@ Comm = Epetra.PyComm()
 # catch the integer exception that is thrown if the matrix file
 # cannot be opened
 try:
-  Map, Matrix, X, B, Xexact = Galeri.ReadHB("gre__q115.rua", Comm);
+  Map, Matrix, X, B, Xexact = Galeri.ReadHB("gre__115.rua", Comm);
 except:
   print "Problems reading matrix file, perhaps you are in"
   print "the wrong directory"
