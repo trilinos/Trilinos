@@ -188,7 +188,6 @@ bool MRTR::solve22(const double A[][2], double* x, const double* b)
          << "***ERR*** Determinant is zero\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
-    
   }
   det = 1/det;
   x[0] = det*A[1][1]*b[0]-det*A[0][1]*b[1];
@@ -224,4 +223,18 @@ bool MRTR::solve33(const double A[][3], double* x, const double* b)
 
   return true;
 }
+
+/*----------------------------------------------------------------------*
+ | get the '10' digit from a pos. int                        mwgee 10/05|
+ *----------------------------------------------------------------------*/
+int MRTR::digit_ten(int number)
+{
+  number = abs(number);
+  if (number<10) return 0;
+  number /= 10; 
+  number = number%10;
+  return number;
+}
+
+
 #endif // TRILINOS_PACKAGE

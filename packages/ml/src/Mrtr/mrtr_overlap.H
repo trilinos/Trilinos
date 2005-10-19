@@ -41,6 +41,9 @@
 #include <iomanip>
 #include <map>
 
+#include "mrtr_point.H"
+#include "mrtr_edge.H"
+
 
 using namespace std;
 
@@ -53,12 +56,26 @@ namespace MRTR
 class MRTR::Interface;
 class MRTR::Segment;
 class MRTR::Node;
-class MRTR::Point;
-class MRTR::Edge;
 
 class  Overlap 
 {
 public:
+
+  enum Polygon_Type
+  {
+    poly_none,
+    poly_1_2_same,
+    poly_1_2_dif,
+    poly_1_4_same,
+    poly_1_4_dif,
+    poly_2_2_same,
+    poly_2_2_dif,
+    poly_3_0,
+    poly_0_0,
+    poly_0_4_same,
+    poly_0_4_dif,
+    poly_0_2
+  };
   
   // ctor
   explicit Overlap(MRTR::Segment& sseg, MRTR::Segment& mseg, MRTR::Interface& inter);
@@ -66,10 +83,7 @@ public:
   // dtor
   virtual ~Overlap();
   
-  // determine whether overlap between 2 segments exists
-  bool HaveOverlap();
-  
-  // compute overlap between 2 segments
+  // compute overlap between 2 segments and it's triangulation
   bool ComputeOverlap();
   
 private:  
@@ -78,8 +92,7 @@ private:
   // don't want copy-ctor
   Overlap(MRTR::Overlap& old);
 
-  // compute intersection between 2 lines in local coordinates
-  bool intersect_line2D(int s, int m, double* alpha, double* beta, double* xi);
+private:
 
   // build line information from triangles
   bool build_lines();
@@ -87,15 +100,29 @@ private:
   bool build_mxi();
   // build projection of slave nodes onto master segment
   bool build_sxi();
+  // build the outward normal to the sseg
+  bool build_normal();
+  
+  // perform clipping algorithm
+  bool Clipelements();
+  // test whether a point is inside or outside of a clip edge
+  bool Clip_TestPoint(const double* N, const double* PE, const double* P);
+  // find intersection of clipping edge with line
+  bool Clip_Intersect(double* N,double* PE,double* P0,double* P1,double* xi);
 
-  // add point to the polygon
-  bool AddPoint(MRTR::Point* p);
-  // add edge to the polygon
-  bool AddEdge(MRTR::Edge* e);
-  // get view point from polygon
-  MRTR::Point* PointView(int id);
-  // get view from edge from the polygon
-  MRTR::Edge* EdgeView(int id);
+  // add a point to the polygon
+  bool Clip_AddPointtoPolygon(int id, double* P);
+  // remove a point from the polygon
+  bool Clip_RemovePointfromPolygon(const int id,const double* P);
+  // get the size of the nodal polygon
+  int Clip_SizePolygon() { return p_.size(); }
+  // get view of point in polygon, calling routine is responsible for freeing
+  MRTR::Point** Clip_PointView();
+
+  // add edge to polygon
+  bool Clip_AddEdgetoPolygon(int id, int node0, int node1);
+  // get view from an edge
+  MRTR::Edge* GetEdgeViewfromPolygon(int id);
   
 private:
 
@@ -107,19 +134,18 @@ bool                overlap_;   // true if segments overlap
 int                 nnode_;     // # of master nodes
 
 double              mxi_[3][2]; // local coords of mnodes projected onto sseg
-bool                min_[3];    // true if projection of mnodes is inside sseg
 bool                havemxi_;   // flag indicating whether mxi_ and min_ have been build
 
-double              sxi_[3][2]; // local coords of snodes projected onto mseg
-bool                sin_[3];    // true if projection of snodes is inside mseg
+double              sxi_[3][2]; // local coords of snodes 
+double              sn_[3][2];   // outward normal to sseg's edges in local coords
 bool                havesxi_;   // flag indicating whether sxi_ and sin_ have been build
 
 double              sline_[3][4]; // 3 lines of sseg_ in sseg_'s local coords
 double              mline_[3][4]; // 3 lines of mseg_in sseg_'s local coords
 bool                haveline_;    // flag indicating whether line info has been build
 
-map<int,MRTR::Point*> p_;         // map of point on the polygon
-map<int,MRTR::Edge*>  e_;         // map of edges on the polygon
+map<int,MRTR::Point*> p_;
+map<int,MRTR::Edge*>  e_;
 
 }; // class Overlap
 

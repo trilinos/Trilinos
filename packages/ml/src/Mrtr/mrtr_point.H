@@ -60,6 +60,12 @@ public:
   
   // get point id
   int Id() { return id_; }
+  
+  // return view of coords
+  const double* Xi() { return &xi_[0]; }
+
+  // set Xi coords
+  bool SetXi(double* xi) { xi_[0] = xi[0]; xi_[1] = xi[1]; return true; }
 
 private:
 

@@ -61,6 +61,14 @@ public:
   // get edge id
   int Id() { return id_; }
 
+  // set node ids
+  bool SetNodes(int node0, int node1) 
+  { nodeid_[0] = node0;
+    nodeid_[1] = node1; return true;}
+    
+  // get view from nodal ids
+  const int* GetNodesView() { return &nodeid_[0]; }
+
 private:
 
   // don't want = operator
