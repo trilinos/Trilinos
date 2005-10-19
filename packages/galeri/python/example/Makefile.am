@@ -46,7 +46,7 @@ all: $(EXAMPLE_SUITE)
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
 # Run the test script
-ex%: $(srcdir)/extest%.py
+ex%: $(srcdir)/ex%.py
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
 # Clean target
