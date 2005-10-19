@@ -3,12 +3,10 @@
 
 #include "Galeri_ConfigDefs.h"
 #include "Galeri_Exception.h"
-
-class Epetra_Map;
-class Epetra_CrsMatrix;
-namespace Teuchos {
-  class ParameterList;
-}
+#include "Epetra_Comm.h"
+#include "Epetra_Map.h"
+#include "Epetra_CrsMatrix.h"
+#include "Teuchos_ParameterList.hpp"
 
 namespace Galeri {
 

@@ -520,7 +520,7 @@ void ReadHB(char *data_file, const Epetra_Comm  &comm,
       if (in_file == NULL)
 	{
 	  printf("Error: Cannot open file: %s\n",data_file);
-	  exit(1);
+          throw(-1);
 	}
 
       /* Get information about the array stored in the file specified in the  */
@@ -532,7 +532,7 @@ void ReadHB(char *data_file, const Epetra_Comm  &comm,
       if (in_file == NULL)
 	{
 	  printf("Error: Cannot open file: %s\n",data_file);
-	  exit(1);
+	  throw(1);
 	}
       
       readHB_header(in_file, Title, Key, Type, &numGlobalEquations, &N_columns, 

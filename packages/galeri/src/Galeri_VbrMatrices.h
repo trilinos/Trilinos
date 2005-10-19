@@ -3,8 +3,8 @@
 
 #include "Galeri_ConfigDefs.h"
 #include "Galeri_Exception.h"
-class Epetra_VbrMatrix;
-class Epetra_CrsMatrix;
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
 
 namespace Galeri {
 

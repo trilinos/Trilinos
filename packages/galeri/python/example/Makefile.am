@@ -29,8 +29,7 @@
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = exGaleri.py \
-	     setpath.py
+EXTRA_DIST = exGaleri.py exReadHB.py setpath.py gre__115.rua
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -38,16 +37,18 @@ EXTRA_DIST = exGaleri.py \
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of examples
-EXAMPLE_SUITE = exGaleri
+EXAMPLE_SUITE = exGaleri exReadHB
 
 SETPATH = setpath.py
 
 all: $(EXAMPLE_SUITE)
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
-# Run the test script
-ex%: $(srcdir)/ex%.py
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
+exGaleri: $(srcdir)/exGaleri.py
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/exGaleri.py . ; fi
+
+exReadHB: $(srcdir)/exReadHB.py
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/exReadHB.py $(srcdir)/gre__115.rua . ; fi
 
 # Clean target
 clean:
