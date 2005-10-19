@@ -79,7 +79,11 @@ Galeri requires the Epetra and Teuchos modules of PyTrilinos.
 #include "PyTeuchos_Utils.h"
 // Only needed to let SWIG define SWIGTYPE_p_Epetra_Vector, otherwise
 // underfined. 
-void Galeri_Dummy(Epetra_Vector* xxx);
+void Galeri_Dummy(Epetra_Vector* xxx)
+{
+  cout << "Don't use this..." << endl;
+}
+
 %}
 
 %import "Epetra.i"
@@ -110,10 +114,7 @@ using namespace std;
 %include "Galeri_CrsMatrices.h"
 %include "Galeri_VbrMatrices.h"
 %include "Galeri_Utils.h"
-void Galeri_Dummy(Epetra_Vector* xxx)
-{
-  cout << "Don't use this..." << endl;
-}
+void Galeri_Dummy(Epetra_Vector* xxx);
 
 namespace Galeri {
 %typemap(argout) (Epetra_Map       *& OutMap,
