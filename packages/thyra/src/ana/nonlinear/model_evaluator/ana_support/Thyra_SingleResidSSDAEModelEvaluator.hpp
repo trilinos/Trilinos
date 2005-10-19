@@ -268,6 +268,7 @@ SingleResidSSDAEModelEvaluator<Scalar>::createOutArgs() const
   typedef ModelEvaluatorBase MEB;
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setSupports(MEB::OUT_ARG_f);
+  outArgs.setSupports(MEB::OUT_ARG_W);
   return outArgs;
 }
 

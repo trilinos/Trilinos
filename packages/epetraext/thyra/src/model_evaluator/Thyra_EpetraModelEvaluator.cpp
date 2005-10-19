@@ -208,9 +208,10 @@ EpetraModelEvaluator::OutArgs<double> EpetraModelEvaluator::createOutArgs() cons
   const EpetraExt::ModelEvaluator &epetraModel = *epetraModel_;
   OutArgsSetup<double> outArgs;
   typedef EpetraExt::ModelEvaluator EME;
+  EME::InArgs  epetraInArgs  = epetraModel.createInArgs();
   EME::OutArgs epetraOutArgs = epetraModel.createOutArgs();
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Ng(epetraOutArgs.Ng());
+  outArgs.set_Np_Ng(epetraInArgs.Np(),epetraOutArgs.Ng());
   outArgs.setSupports(OUT_ARG_f,epetraOutArgs.supports(EME::OUT_ARG_f));
   outArgs.setSupports(OUT_ARG_W,epetraOutArgs.supports(EME::OUT_ARG_W));
   outArgs.set_W_properties(convert(epetraOutArgs.get_W_properties()));

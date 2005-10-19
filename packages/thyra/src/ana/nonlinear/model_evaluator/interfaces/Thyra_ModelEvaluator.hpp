@@ -116,13 +116,63 @@ public:
     void assert_l(int l) const;
   };
 
-  /** \brief .  */
-  enum EOutArgsMembers {
-    OUT_ARG_f ///< .
-    ,OUT_ARG_W ///< .
+  /** \brief . */
+  enum EDerivativeMultiVectorOrientation {
+    DERIV_MV_BY_COL           ///< .
+    ,DERIV_TRANS_MV_BY_ROW    ///< .
   };
-  /** \brief .  */
-  static const int NUM_E_OUT_ARGS_MEMBERS=2;
+
+  /** \brief Simple aggregate class for a derivative object represented as a
+   * column-wise multi-vector or its transpose as a row-wise multi-vector.
+   */
+  template<class Scalar>
+  class DerivativeMultiVector {
+  public:
+    /** \brief . */
+    DerivativeMultiVector() {}
+    /** \brief . */
+    DerivativeMultiVector(
+      const Teuchos::RefCountPtr<MultiVectorBase<Scalar> >  &mv
+      ,const EDerivativeMultiVectorOrientation              orientation = DERIV_MV_BY_COL
+      ) : mv_(mv), orientation_(orientation) {}
+    /** \brief . */
+    void changeOrientation( const EDerivativeMultiVectorOrientation orientation )
+      { orientation_ = orientation; };
+    /** \brief . */
+    Teuchos::RefCountPtr<MultiVectorBase<Scalar> > getMultiVector() const
+      { return mv_; }
+    /** \brief . */
+    EDerivativeMultiVectorOrientation getOrientation() const
+      { return orientation_; }
+  private:
+    Teuchos::RefCountPtr<MultiVectorBase<Scalar> >   mv_;
+    EDerivativeMultiVectorOrientation                orientation_;
+  };
+
+  /** \brief Simple aggregate class that stores a derivative object
+   * as a general linear operator or as a multi-vector.
+   */
+  template<class Scalar>
+  class Derivative {
+  public:
+    /** \brief . */
+    Derivative() {}
+    /** \brief . */
+    Derivative( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &lo )
+      : lo_(lo) {}
+    /** \brief . */
+    Derivative( const DerivativeMultiVector<Scalar> &dmv )
+      : dmv_(dmv) {}
+    /** \brief . */
+    Teuchos::RefCountPtr<LinearOpBase<Scalar> > getLinearOp() const
+      { return lo_; }
+    /** \brief . */
+    DerivativeMultiVector<Scalar> getDerivativeMultiVector() const
+      { return dmv_; }
+  private:
+    Teuchos::RefCountPtr<LinearOpBase<Scalar> >   lo_;
+    DerivativeMultiVector<Scalar>                 dmv_;
+  };
 
   /** \brief . */
   enum EDerivativeLinearity {
@@ -153,6 +203,29 @@ public:
       EDerivativeLinearity in_linearity, ERankStatus in_rank, bool in_supportsAdjoint
       ):linearity(in_linearity),rank(in_rank),supportsAdjoint(in_supportsAdjoint) {}
   };
+
+  /** \brief .  */
+  enum EOutArgsMembers {
+    OUT_ARG_f       ///< .
+    ,OUT_ARG_W      ///< .
+  };
+  /** \brief .  */
+  static const int NUM_E_OUT_ARGS_MEMBERS=3;
+
+  /** \brief . */
+  enum EOutArgsDfDp {
+    OUT_ARG_DfDp   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgsDgDx {
+    OUT_ARG_DgDx   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgsDgDp {
+    OUT_ARG_DgDp   ///< .
+  };
   
   /** \brief . */
   template<class Scalar>
@@ -161,14 +234,24 @@ public:
     /** \brief .  */
     OutArgs();
     /** \brief .  */
+    int Np() const;
+    /** \brief .  */
     int Ng() const;
+    /** \brief .  */
+    bool supports(EOutArgsMembers arg) const;
+    /** \brief <tt>1 <= l && l <= Np()</tt>.  */
+    bool supports(EOutArgsDfDp arg, int l) const;
+    /** \brief <tt>1 <= j && j <= Ng()</tt>.  */
+    bool supports(EOutArgsDgDx arg, int j) const;
+    /** \brief <tt>1 <= j && j <= Ng()</tt> and <tt>1 <= l && l <= Np()</tt>.  */
+    bool supports(EOutArgsDgDp arg, int j, int l) const;
     /** \brief .  */
     void set_f( const Teuchos::RefCountPtr<VectorBase<Scalar> > &f );
     /** \brief .  */
     Teuchos::RefCountPtr<VectorBase<Scalar> > get_f() const;
-    /** \brief Set <tt>g(j)</tt> where <tt>1 <= j && j <= this->Ng()</tt>.  */
+    /** \brief .  */
     void set_g( int j, const Teuchos::RefCountPtr<VectorBase<Scalar> > &g_j );
-    /** \brief Get <tt>g(j)</tt> where <tt>1 <= j && j <= this->Ng()</tt>.  */
+    /** \brief .  */
     Teuchos::RefCountPtr<VectorBase<Scalar> > get_g(int j) const;
     /** \brief .  */
     void set_W( const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &W );
@@ -177,28 +260,73 @@ public:
     /** \brief . */
     DerivativeProperties get_W_properties() const;
     /** \brief .  */
-    bool supports(EOutArgsMembers arg) const;
+    void set_DfDp( const Derivative<Scalar> &DfDp_l, int l );
+    /** \brief .  */
+    Derivative<Scalar> get_DfDp(int l) const;
+    /** \brief . */
+    DerivativeProperties get_DfDp_properties(int l) const;
+    /** \brief .  */
+    void set_DgDx( const Derivative<Scalar> &DgDx_j, int j );
+    /** \brief .  */
+    Derivative<Scalar> get_DgDx(int j) const;
+    /** \brief . */
+    DerivativeProperties get_DgDx_properties(int j) const;
+    /** \brief .  */
+    void set_DgDp( const Derivative<Scalar> &DgDp_j_l, int j, int l );
+    /** \brief .  */
+    Derivative<Scalar> get_DgDp(int j, int l) const;
+    /** \brief . */
+    DerivativeProperties get_DgDp_properties(int j, int l) const;
   protected:
     /** \brief . */
     void _setModelEvalDescription( const std::string &modelEvalDescription );
     /** \brief . */
-    void _set_Ng(int Ng);
+    void _set_Np_Ng(int Np, int Ng);
     /** \brief . */
     void _setSupports( EOutArgsMembers arg, bool supports );
     /** \brief . */
-    void _set_W_properties( const DerivativeProperties &W_properties );
+    void _setSupports( EOutArgsDfDp arg, int l, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgsDgDx arg, int j, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgsDgDp arg, int j, int l, bool supports );
+    /** \brief . */
+    void _set_W_properties( const DerivativeProperties &properties );
+    /** \brief . */
+    void _set_DfDp_properties( int l, const DerivativeProperties &properties );
+    /** \brief . */
+    void _set_DgDx_properties( int j, const DerivativeProperties &properties );
+    /** \brief . */
+    void _set_DgDp_properties( int j, int l, const DerivativeProperties &properties );
   private:
     // types
-    typedef std::vector<Teuchos::RefCountPtr<VectorBase<Scalar> > > g_t;
+    typedef std::vector<Teuchos::RefCountPtr<VectorBase<Scalar> > >     g_t;
+    typedef std::vector<Derivative<Scalar> >                            deriv_t;
+    typedef std::vector<DerivativeProperties>                           deriv_properties_t;
+    typedef std::vector<bool>                                           supports_t;
     // data
     std::string                                           modelEvalDescription_;
+    bool                                                  supports_[NUM_E_OUT_ARGS_MEMBERS];
+    supports_t                                            supports_DfDp_;   // Np
+    supports_t                                            supports_DgDx_;   // Ng
+    supports_t                                            supports_DgDp_;   // Ng x Np
     Teuchos::RefCountPtr<VectorBase<Scalar> >             f_;
-    g_t                                                   g_;
+    g_t                                                   g_;               // Ng
     Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >  W_;
     DerivativeProperties                                  W_properties_;
-    bool supports_[NUM_E_OUT_ARGS_MEMBERS];
+    deriv_t                                               DfDp_;            // Np
+    deriv_properties_t                                    DfDp_properties_; // Np
+    deriv_t                                               DgDx_;            // Np
+    deriv_properties_t                                    DgDx_properties_; // Ng
+    deriv_t                                               DgDp_;            // Ng x Np
+    deriv_properties_t                                    DgDp_properties_; // Ng x Np
+    
     // functions
     void assert_supports(EOutArgsMembers arg) const;
+    void assert_supports(EOutArgsDfDp arg, int l) const;
+    void assert_supports(EOutArgsDgDx arg, int j) const;
+    void assert_supports(EOutArgsDgDp arg, int j, int l) const;
+    void assert_l(int l) const;
     void assert_j(int j) const;
   };
 
@@ -230,16 +358,41 @@ protected:
     /** \brief . */
     void setModelEvalDescription( const std::string &modelEvalDescription );
     /** \brief . */
-    void set_Ng(int Ng);
+    void set_Np_Ng(int Np, int Ng);
     /** \brief . */
     void setSupports( EOutArgsMembers arg, bool supports = true );
     /** \brief . */
-    void set_W_properties( const DerivativeProperties &W_properties );
+    void setSupports(EOutArgsDfDp arg, int l, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgsDgDx arg, int j, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgsDgDp arg, int j, int l, bool supports = true );
+    /** \brief . */
+    void set_W_properties( const DerivativeProperties &properties );
+    /** \brief . */
+    void set_DfDp_properties( int l, const DerivativeProperties &properties );
+    /** \brief . */
+    void set_DgDx_properties( int j, const DerivativeProperties &properties );
+    /** \brief . */
+    void set_DgDp_properties( int j, int l, const DerivativeProperties &properties );
   };
 
   //@}
 
 };
+
+/** \defgroup Thyra_MEB_helper_functions_grp Helper functions for Thyra::ModelEvaluatorBase.
+ *
+ */
+//@{
+
+/** \brief . */
+std::string toString(ModelEvaluatorBase::EInArgsMembers);
+
+/** \brief . */
+std::string toString(ModelEvaluatorBase::EOutArgsMembers);
+
+//@}
 
 /** \brief Base interface for evaluating a stateless "model" that can be
  * mapped into a number of different types of problems.
@@ -288,7 +441,7 @@ protected:
  *
  * <tt>x</tt>
  *
- * <li>State variables derivative w.r.t. <tt>t</tt> vector:
+ * <li><b>State variables derivative w.r.t. <tt>t</tt> vector:</b>
  *
  * <tt>x_dot</tt>
  *
@@ -660,6 +813,90 @@ public:
    */
   virtual Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > create_W() const;
 
+  /** \brief If supported, create a linear operator derivative object for
+   * <tt>D(f)/D(p(l))</tt>.
+	 *
+	 * <b>Preconditions:</b><ul>
+	 * <li><tt>this->Np() > 0</tt>
+	 * <li><tt>1 <= l <= this->Np()</tt>
+	 * </ul>
+   *
+   * The default implementation returns <tt>return.get()==NULL</tt>
+   * (i.e. no sensitivities are supported by default).
+   */
+  virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
+
+  /** \brief If supported, create a multi-vector derivative object for
+   * <tt>D(f)/D(p(l))</tt> or <tt>D(f)/D(p(l))^T</tt>.
+	 *
+	 * <b>Preconditions:</b><ul>
+	 * <li><tt>this->Np() > 0</tt>
+	 * <li><tt>1 <= l <= this->Np()</tt>
+	 * </ul>
+   *
+   * The default implementation returns <tt>return.getMultiVector().get()==NULL</tt>
+   * (i.e. no sensitivities are supported by default).
+   */
+  virtual DerivativeMultiVector<Scalar> create_DfDp_mv(int l) const;
+
+  // ToDo: Add functions for creating D(g(j))/D(x_dot) if needed!
+
+  /** \brief If supported, create a linear operator derivative object for
+   * <tt>D(g(j))/D(x)</tt>.
+	 *
+	 * <b>Preconditions:</b><ul>
+	 * <li><tt>this->Ng() > 0</tt>
+	 * <li><tt>1 <= j <= this->Ng()</tt>
+	 * </ul>
+   *
+   * The default implementation returns <tt>return.get()==NULL</tt>
+   * (i.e. no sensitivities are supported by default).
+   */
+  virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
+
+  /** \brief If supported, create a multi-vector derivative object for
+   * <tt>D(g(j))/D(x)</tt> or <tt>D(g(j))/D(x)^T</tt>.
+	 *
+	 * <b>Preconditions:</b><ul>
+	 * <li><tt>this->Ng() > 0</tt>
+	 * <li><tt>1 <= j <= this->Ng()</tt>
+	 * </ul>
+   *
+   * The default implementation returns <tt>return.getMultiVector().get()==NULL</tt>
+   * (i.e. no sensitivities are supported by default).
+   */
+  virtual DerivativeMultiVector<Scalar> create_DgDx_mv(int j) const;
+
+  /** \brief If supported, create a linear operator derivative object for
+   * <tt>D(g(j))/D(p(l))</tt>.
+	 *
+	 * <b>Preconditions:</b><ul>
+	 * <li><tt>this->Ng() > 0</tt>
+	 * <li><tt>this->Np() > 0</tt>
+	 * <li><tt>1 <= j <= this->Ng()</tt>
+	 * <li><tt>1 <= l <= this->Np()</tt>
+	 * </ul>
+   *
+   * The default implementation returns <tt>return.get()==NULL</tt>
+   * (i.e. no sensitivities are supported by default).
+   */
+  virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
+
+  /** \brief If supported, create a multi-vector derivative object for
+   * <tt>D(g(j))/D(p(l))</tt> or <tt>D(g(j))/D(p(l))^T</tt>.
+	 *
+	 * <b>Preconditions:</b><ul>
+	 * <li><tt>this->Ng() > 0</tt>
+	 * <li><tt>this->Np() > 0</tt>
+	 * <li><tt>1 <= j <= this->Ng()</tt>
+	 * <li><tt>1 <= l <= this->Np()</tt>
+	 * </ul>
+   *
+   * The default implementation returns <tt>return.getMultiVector().get()==NULL</tt>
+   * (i.e. no sensitivities are supported by default).
+   */
+  virtual DerivativeMultiVector<Scalar> create_DgDp_mv( int j, int l ) const;
+  
   //@}
 
   /** \name Computational functions */
@@ -799,13 +1036,54 @@ void eval_f_W(
 
 }
 
+} // namespace Thyra
+
 // //////////////////////////////////
 // Inline Defintions
 
-// ToDo: Put Inline Definitions here!
+
+//
+// Thyra_MEB_helper_functions_grp
+//
+
+inline
+std::string Thyra::toString(ModelEvaluatorBase::EInArgsMembers arg)
+{
+  switch(arg) {
+    case ModelEvaluatorBase::IN_ARG_x_dot:
+      return "OUT_ARG_x_dot";
+    case ModelEvaluatorBase::IN_ARG_x:
+      return "OUT_ARG_x";
+    case ModelEvaluatorBase::IN_ARG_t:
+      return "OUT_ARG_t";
+    case ModelEvaluatorBase::IN_ARG_alpha:
+      return "OUT_ARG_alpha";
+    case ModelEvaluatorBase::IN_ARG_beta:
+      return "OUT_ARG_beta";
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
+  return ""; // Will never be executed!
+}
+
+inline
+std::string Thyra::toString(ModelEvaluatorBase::EOutArgsMembers arg)
+{
+  switch(arg) {
+    case ModelEvaluatorBase::OUT_ARG_f:
+      return "OUT_ARG_f";
+    case ModelEvaluatorBase::OUT_ARG_W:
+      return "OUT_ARG_W";
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
+  return ""; // Will never be executed!
+}
 
 // //////////////////////////////////
 // Definitions
+
+namespace Thyra {
 
 //
 // ModelEvaluatorBase::InArgs
@@ -914,7 +1192,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::assert_supports(EInArgsMembers arg) con
     !supports_[arg], std::logic_error
     ,"Thyra::ModelEvaluatorBase::InArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(arg): "
     "*this = \'"<<modelEvalDescription_<<"\': Error, "
-    "The argument arg = " << arg << " is not supported!"
+    "The argument arg = " << toString(arg) << " is not supported!"
     );
 }
 
@@ -938,41 +1216,12 @@ ModelEvaluatorBase::OutArgs<Scalar>::OutArgs()
 { std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false); }
 
 template<class Scalar>
+int ModelEvaluatorBase::OutArgs<Scalar>::Np() const
+{ return DfDp_.size(); }
+
+template<class Scalar>
 int ModelEvaluatorBase::OutArgs<Scalar>::Ng() const
 { return g_.size(); }
-
-template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_f( const Teuchos::RefCountPtr<VectorBase<Scalar> > &f )
-{ f_ = f; }
-
-template<class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
-ModelEvaluatorBase::OutArgs<Scalar>::get_f() const
-{ return f_; }
-
-template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_g( int j, const Teuchos::RefCountPtr<VectorBase<Scalar> > &g_j )
-{ assert_j(j); g_[j-1] = g_j; }
-
-template<class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
-ModelEvaluatorBase::OutArgs<Scalar>::get_g(int j) const
-{ assert_j(j); return g_[j-1]; }
-
-template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_W( const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &W )
-{ W_ = W; }
-
-template<class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
-ModelEvaluatorBase::OutArgs<Scalar>::get_W() const { return W_; }
-
-template<class Scalar>
-ModelEvaluatorBase::DerivativeProperties
-ModelEvaluatorBase::OutArgs<Scalar>::get_W_properties() const
-{
-  return W_properties_;
-}
 
 template<class Scalar>
 bool ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsMembers arg) const
@@ -985,13 +1234,174 @@ bool ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsMembers arg) const
 }
 
 template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsDfDp arg, int l) const
+{
+  assert_l(l);
+  return supports_DfDp_[l-1];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsDgDx arg, int j) const
+{
+  assert_j(j);
+  return supports_DgDx_[l-1];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsDgDp arg, int j, int l) const
+{
+  assert_j(j);
+  assert_l(l);
+  return supports_DgDp_[ (j-1)*Np() + (l-1) ];
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_f( const Teuchos::RefCountPtr<VectorBase<Scalar> > &f )
+{
+  assert_supports(OUT_ARG_f);
+  f_ = f;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<VectorBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_f() const
+{
+  assert_supports(OUT_ARG_f);
+  return f_;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_g( int j, const Teuchos::RefCountPtr<VectorBase<Scalar> > &g_j )
+{
+  assert_j(j);
+  g_[j-1] = g_j;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<VectorBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_g(int j) const
+{ 
+  assert_j(j);
+  return g_[j-1];
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_W( const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &W )
+{
+  assert_supports(OUT_ARG_W);
+  W_ = W;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_W() const
+{
+  assert_supports(OUT_ARG_W);
+  return W_;
+}
+
+template<class Scalar>
+ModelEvaluatorBase::DerivativeProperties
+ModelEvaluatorBase::OutArgs<Scalar>::get_W_properties() const
+{
+  return W_properties_;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_DfDp( const Derivative<Scalar> &DfDp_l, int l )
+{
+  assert_supports(OUT_ARG_DfDp,l);
+  DfDp_[l-1] = DfDp_l;
+}
+
+template<class Scalar>
+ModelEvaluatorBase::Derivative<Scalar>
+ModelEvaluatorBase::OutArgs<Scalar>::get_DfDp(int l) const
+{
+  assert_supports(OUT_ARG_DfDp,l);
+  return DfDp_[l-1];
+}
+
+template<class Scalar>
+ModelEvaluatorBase::DerivativeProperties
+ModelEvaluatorBase::OutArgs<Scalar>::get_DfDp_properties(int l) const
+{
+  assert_supports(OUT_ARG_DfDp,l);
+  return DfDp_properties_[l-1];
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_DgDx( const Derivative<Scalar> &DgDx_j, int j )
+{
+  assert_supports(OUT_ARG_DgDx,j);
+  DgDx_[j-1] = DgDx_j;
+}
+
+template<class Scalar>
+ModelEvaluatorBase::Derivative<Scalar>
+ModelEvaluatorBase::OutArgs<Scalar>::get_DgDx(int j) const
+{
+  assert_supports(OUT_ARG_DgDx,j);
+  return DgDx_[j-1];
+}
+
+template<class Scalar>
+ModelEvaluatorBase::DerivativeProperties
+ModelEvaluatorBase::OutArgs<Scalar>::get_DgDx_properties(int j) const
+{
+  assert_supports(OUT_ARG_DgDx,j);
+  return DgDx_properties_[j-1];
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_DgDp( const Derivative<Scalar> &DgDp_j_l, int j, int l )
+{
+  assert_supports(OUT_ARG_DgDp,j,l);
+  DgDp_[ (j-1)*Np() + (l-1) ] = DgDp_j_l;
+}
+
+template<class Scalar>
+ModelEvaluatorBase::Derivative<Scalar>
+ModelEvaluatorBase::OutArgs<Scalar>::get_DgDp(int j, int l) const
+{
+  assert_supports(OUT_ARG_DgDp,j,l);
+  return DgDp_[ (j-1)*Np() + (l-1) ];
+}
+
+template<class Scalar>
+ModelEvaluatorBase::DerivativeProperties
+ModelEvaluatorBase::OutArgs<Scalar>::get_DgDp_properties(int j, int l) const
+{
+  assert_supports(OUT_ARG_DgDp,j,l);
+  return DgDp_properties_[ (j-1)*Np() + (l-1) ];
+}
+
+// protected
+
+template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setModelEvalDescription( const std::string &modelEvalDescription )
 { modelEvalDescription_ = modelEvalDescription; }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_set_Ng(int Ng)
+void ModelEvaluatorBase::OutArgs<Scalar>::_set_Np_Ng(int Np, int Ng)
 {
-  g_.resize(Ng);
+  if(Np) {
+    supports_DfDp_.resize(Np);        std::fill_n(supports_DfDp_.begin(),Np,false);
+    DfDp_.resize(Np);                 std::fill_n(DfDp_.begin(),Np,Derivative<Scalar>());
+    DfDp_properties_.resize(Np);      std::fill_n(DfDp_properties_.begin(),Np,DerivativeProperties());
+  }
+  if(Ng) {
+    g_.resize(Ng);                    std::fill_n(g_.begin(),Ng,Teuchos::null);
+    supports_DgDx_.resize(Ng);        std::fill_n(supports_DgDx_.begin(),Ng,false);
+    DgDx_.resize(Ng);                 std::fill_n(DgDx_.begin(),Ng,Derivative<Scalar>());
+    DgDx_properties_.resize(Ng);      std::fill_n(DgDx_properties_.begin(),Ng,DerivativeProperties());
+  }
+  if(Np && Ng) {
+    const int NpNg = Np*Ng;
+    supports_DgDp_.resize(NpNg);        std::fill_n(supports_DgDp_.begin(),NpNg,false);
+    DgDp_.resize(NpNg);                 std::fill_n(DgDp_.begin(),NpNg,Derivative<Scalar>());
+    DgDp_properties_.resize(NpNg);      std::fill_n(DgDp_properties_.begin(),NpNg,DerivativeProperties());
+  }
 }
 
 template<class Scalar>
@@ -1005,10 +1415,55 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsMembers arg, boo
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_set_W_properties( const DerivativeProperties &W_properties )
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsDfDp arg, int l, bool supports )
 {
-  W_properties_ = W_properties;
+  assert_l(l);
+  supports_DfDp_[l-1] = supports;
 }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsDgDx arg, int j, bool supports )
+{
+  assert_j(j);
+  supports_DgDx_[j-1] = supports;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsDgDp arg, int j, int l, bool supports )
+{
+  assert_j(j);
+  assert_l(l);
+  supports_DgDp_[ (j-1)*Np() + (l-1) ] = supports;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_set_W_properties( const DerivativeProperties &properties )
+{
+  W_properties_ = properties;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_set_DfDp_properties( int l, const DerivativeProperties &properties )
+{
+  assert_supports(OUT_ARG_DfDp,l);
+  DfDp_properties_[l-1] = properties;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_set_DgDx_properties( int j, const DerivativeProperties &properties )
+{
+  assert_supports(OUT_ARG_DgDx,j);
+  DgDx_properties_[j-1] = properties;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_set_DgDp_properties( int j, int l, const DerivativeProperties &properties )
+{
+  assert_supports(OUT_ARG_DgDp,j,l);
+  DgDp_properties_[ (j-1)*Np() + (l-1) ] = properties;
+}
+
+// private
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsMembers arg) const
@@ -1017,7 +1472,54 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsMembers arg) c
     !supports_[arg], std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(arg): "
     "*this = \'"<<modelEvalDescription_<<"\': Error,"
-    "The argument arg = " << arg << " is not supported!"
+    "The argument arg = " << toString(arg) << " is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsDfDp arg, int l) const
+{
+  assert_l(l);
+  TEST_FOR_EXCEPTION(
+    !supports_DfDp_[l-1], std::logic_error
+    ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(OUT_ARG_DfDp,l): "
+    "*this = \'"<<modelEvalDescription_<<"\': Error,"
+    "The argument DfDp(l) with index l = " << l << " is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsDgDx arg, int j) const
+{
+  assert_j(j);
+  TEST_FOR_EXCEPTION(
+    !supports_DgDx_[j-1], std::logic_error
+    ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(OUT_ARG_DgDx,j): "
+    "*this = \'"<<modelEvalDescription_<<"\': Error,"
+    "The argument DgDx(j) with index j = " << j << " is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsDgDp arg, int j, int l) const
+{
+  assert_j(j);
+  TEST_FOR_EXCEPTION(
+    !supports_DgDx_[ (j-1)*Np() + (l-1) ], std::logic_error
+    ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(OUT_ARG_DgDp,j,l): "
+    "*this = \'"<<modelEvalDescription_<<"\': Error,"
+    "The argument DgDp(j,l) with indexes j = " << j << " and l = " << l << " is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_l(int l) const
+{
+  TEST_FOR_EXCEPTION(
+    !( 1 <= l && l <= Np() ), std::logic_error
+    ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_l(l): "
+    "*this = \'"<<modelEvalDescription_<<"\': Error, "
+    "The parameter subvector p(l) index l = " << l << " is not in the range [1,"<<Np()<<"]!"
     );
 }
 
@@ -1057,16 +1559,46 @@ void ModelEvaluatorBase::OutArgsSetup<Scalar>::setModelEvalDescription( const st
 { this->_setModelEvalDescription(modelEvalDescription); }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgsSetup<Scalar>::set_Ng(int Ng)
-{ this->_set_Ng(Ng); }
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::set_Np_Ng(int Np, int Ng)
+{ this->_set_Np_Ng(Np,Ng); }
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports( EOutArgsMembers arg, bool supports )
 { this->_setSupports(arg,supports); }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgsSetup<Scalar>::set_W_properties( const DerivativeProperties &W_properties )
-{ this->_set_W_properties(W_properties); }
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports( EOutArgsDfDp arg, int l, bool supports )
+{ this->_setSupports(arg,l,supports); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports( EOutArgsDgDx arg, int j, bool supports )
+{ this->_setSupports(arg,j,supports); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports( EOutArgsDgDp arg, int j, int l, bool supports )
+{ this->_setSupports(arg,j,l,supports); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::set_W_properties( const DerivativeProperties &properties )
+{ this->_set_W_properties(properties); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::set_DfDp_properties( int l, const DerivativeProperties &properties )
+{
+  this->_set_DfDp_properties(l,properties);
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::set_DgDx_properties( int j, const DerivativeProperties &properties )
+{
+  this->_set_DgDx_properties(j,properties);
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::set_DgDp_properties( int j, int l, const DerivativeProperties &properties )
+{
+  this->_set_DgDp_properties(j,l,properties);
+}
 
 //
 // ModelEvaluator
@@ -1165,6 +1697,37 @@ Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
 ModelEvaluator<Scalar>::create_W() const
 { return Teuchos::null; }
 
+template<class Scalar>
+Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+ModelEvaluator<Scalar>::create_DfDp_op(int l) const
+{ return Teuchos::null; }
+
+template<class Scalar>
+ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+ModelEvaluator<Scalar>::create_DfDp_mv(int l) const
+{ return DerivativeMultiVector<Scalar>(); }
+
+template<class Scalar>
+Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+ModelEvaluator<Scalar>::create_DgDx_op(int j) const
+{ return Teuchos::null; }
+
+template<class Scalar>
+ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+ModelEvaluator<Scalar>::create_DgDx_mv(int j) const
+{ return DerivativeMultiVector<Scalar>(); }
+
+template<class Scalar>
+Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+ModelEvaluator<Scalar>::create_DgDp_op( int j, int l ) const
+{ return Teuchos::null; }
+
+template<class Scalar>
+ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+ModelEvaluator<Scalar>::create_DgDp_mv( int j, int l ) const
+{ return DerivativeMultiVector<Scalar>(); }
+
 } // namespace Thyra
+
 
 #endif // THYRA_MODEL_EVALUATOR_HPP
