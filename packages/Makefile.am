@@ -114,6 +114,11 @@ IFPACK_SUBDIR = ifpack
 IFPACK_LIB_BUILD_CMND = cd ifpack ; $(MAKE) all-libs ;
 endif
 
+if BUILD_GALERI
+GALERI_SUBDIR = ifpack
+GALERI_LIB_BUILD_CMND = cd galeri ; $(MAKE) all-libs ;
+endif
+
 if BUILD_KOKKOS
 KOKKOS_SUBDIR = kokkos
 KOKKOS_LIB_BUILD_CMND = echo "kokkos does not support all-libs yet";
@@ -213,6 +218,7 @@ SUBDIRS = \
 	$(AZTECOO_SUBDIR)      \
 	$(AMESOS_SUBDIR)       \
 	$(IFPACK_SUBDIR)       \
+	$(GALERI_SUBDIR)       \
 	$(KOMPLEX_SUBDIR)      \
 	$(CLAPS_SUBDIR)        \
 	$(TSFCOREUTILS_SUBDIR) \
@@ -242,6 +248,7 @@ all-libs:
 	$(AZTECOO_LIB_BUILD_CMND)
 	$(AMESOS_LIB_BUILD_CMND)
 	$(IFPACK_LIB_BUILD_CMND)
+	$(GALERI_LIB_BUILD_CMND)
 	$(KOMPLEX_LIB_BUILD_CMND)
 	$(CLAPS_LIB_BUILD_CMND)
 	$(TSFCOREUTILS_LIB_BUILD_CMND)
