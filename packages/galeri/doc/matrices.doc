@@ -1,6 +1,10 @@
 /*!  \page gl_GalleryCrsMatrix Creating an Epetra_CrsMatrix
 
-Given an already created Epetra_Map, Galeri can construct an Epetra_CrsMatrix
+<P>This file first gives an example of how to create an Epetra_CrsMatrix object,
+then it details the supported matrices and gives a list of required
+parameters.
+
+<P>Given an already created Epetra_Map, Galeri can construct an Epetra_CrsMatrix
 object that has this Map as RowMatrixRowMap(). A simple example is as follows.
 Let \c Map be an already created \c Epetra_Map* object; then, a diagonal matrix with 
 \f$a = 2.0\f$ on

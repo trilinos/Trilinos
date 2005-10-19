@@ -1,6 +1,9 @@
 /*!  \page gl_GalleryMaps Creating an Epetra_Map
 
-A simple code that creates an Epetra_Map is as follows. First, we need to
+<P>This file first gives an example of how to create an Epetra_Map object, then
+it details the supported maps and gives a list of required parameters.
+
+<P>A simple code that creates an Epetra_Map is as follows. First, we need to
 include \c Galeri_Maps.h, and the required Epetra and Teuchos header files. 
 
 \verbatim

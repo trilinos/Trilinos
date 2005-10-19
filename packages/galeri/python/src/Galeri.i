@@ -31,7 +31,20 @@
 // This documentation string will be the python help facility help
 // string
 %define GALERI_DOCSTRING
-"Galeri: Matrix Generation Package."
+"Galeri: Matrix Generation Package.
+The Galeri module allows an easy creation of Epetra_Map's and
+Epetra_CrsMatrix's.  Use the python help() facility for local documentation on
+classes and methods, or see the on-line documentation for more in-depth
+information. Also give a look to the examples in galeri/python/example.
+
+The most important classes of the IFPACK module are:
+- Galeri.CreateMap()
+- Galeri.CreateCrsMatrix()
+- Galeri.ReadHB()
+
+Galeri requires the Epetra and Teuchos modules of PyTrilinos.
+"
+
 %enddef
 
 // Define the module name, its package and documentation string
@@ -45,6 +58,7 @@
 #include "Galeri_Version.h"
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
+#include "Galeri_VbrMatrices.h"
 #include "Galeri_Utils.h"
 #include "Galeri_ReadHB.h"
 #include "Epetra_Comm.h"
@@ -91,6 +105,7 @@ using namespace std;
 %include "Galeri_Version.h"
 %include "Galeri_Maps.h"
 %include "Galeri_CrsMatrices.h"
+%include "Galeri_VbrMatrices.h"
 %include "Galeri_Utils.h"
 
 namespace Galeri {

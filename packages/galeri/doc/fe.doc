@@ -1,5 +1,8 @@
 /*!  \page gl_FiniteElements The Finite Element Module
 
+<P>This file gives an overview of the finite element module of Galeri.
+
+<P>
 An alternative way to produce example matrices is to define a finite element
 problem. The Galeri package contains (in the Galeri::FiniteElement namespace)
 a set of classes that can be used to discretize scalar,

@@ -1,3 +1,10 @@
+Oct-05
+------
+
+*) Added a reader, copied from triutils, to read H/B matrices.
+*) Added support for VBR matrices and ReadHB to the Python module.
+*) The web site now contains some FAQs and other information.
+
 Sep-05
 ------
 

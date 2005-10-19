@@ -13,15 +13,20 @@ to discretize scalar second order elliptic problems using Galerkin and SUPG
 techniques, on both 2D and 3D unstructured grids.
 
 The main functionalities of this package are:
-- Generation of Epetra_Map objects. For a list of supported maps, 
-  see \ref gl_GalleryMaps or check \ref gl_maps_ex;
-- Generation of Epetra_CrsMatrix objects. For a list of supported matrices, 
-  see \ref gl_GalleryCrsMatrix or check
-  \ref gl_matrices_ex;
+- Generation of Epetra_Map objects. See:
+  - For a list of supported maps, \ref gl_GalleryMap;
+  - \ref gl_maps_ex;
+- Generation of Epetra_CrsMatrix objects. See:
+  - For a list of supported matrices, \ref gl_GalleryCrsMatrix;
+  - \ref gl_matrices_ex;
 - Discretization of scalar, linear second-order PDE problems using finite
-  element, see \ref gl_FiniteElements and examples \ref gl_fe_grid, \ref
-  gl_fe_lapl and \ref gl_fe_adv;
-- Creation of a VBR matrix and other utilities, see \ref gl_Utils.
+  element. See:
+  - \ref gl_FiniteElements;
+  - \ref gl_fe_grid;
+  - \ref gl_fe_lapl;
+  - \ref gl_fe_adv;
+- Creation of a VBR matrix and other utilities. See:
+  - \ref gl_Utils.
 - \ref gl_Python.
 
 See also the \ref gl_Copyright, the 
