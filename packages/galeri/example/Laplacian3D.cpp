@@ -124,8 +124,8 @@ int main(int argc, char *argv[])
     // NOTE: Solve() IS A SIMPLE FUNCTION BASED ON LAPACK, //
     // THEREFORE THE MATRIX IS CONVERTED TO DENSE FORMAT.  //
     // IT WORKS IN SERIAL ONLY.                            //
-    // EVEN MEDIUM-SIZED MATRICES WILL REQUIRE A LOT OF    //
-    // MEMORY A CPU-TIME! USERS SHOULD CONSIDER            //
+    // EVEN MEDIUM-SIZED MATRICES MAY REQUIRE A LOT OF     //
+    // MEMORY AND CPU-TIME! USERS SHOULD CONSIDER INSTEAD  //
     // AZTECOO, ML, IFPACK OR OTHER SOLVERS.               //
     // =================================================== //
 
