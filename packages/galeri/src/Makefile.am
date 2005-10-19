@@ -31,6 +31,8 @@ CORE_H = $(srcdir)/Galeri_Maps.h                       \
 	 $(srcdir)/Galeri_VbrMatrices.h                \
          $(srcdir)/Galeri_Exception.h                  \
 	 $(srcdir)/Galeri_Utils.h                      \
+	 $(srcdir)/Galeri_ReadHB.h                     \
+	 $(srcdir)/iohb.h                              \
 	 $(srcdir)/Maps/Galeri_Linear.h                \
 	 $(srcdir)/Maps/Galeri_Interlaced.h            \
 	 $(srcdir)/Maps/Galeri_Random.h                \
@@ -81,7 +83,9 @@ CORE_H = $(srcdir)/Galeri_Maps.h                       \
 CORE = $(srcdir)/Galeri_Maps.cpp        \
        $(srcdir)/Galeri_CrsMatrices.cpp \
        $(srcdir)/Galeri_VbrMatrices.cpp \
-       $(srcdir)/Galeri_Utils.cpp
+       $(srcdir)/Galeri_Utils.cpp       \
+       $(srcdir)/Galeri_ReadHB.cpp      \
+       $(srcdir)/iohb.cpp
 
 AM_CPPFLAGS = -I$(srcdir)                      \
               -I$(top_srcdir)/../epetra/src    \

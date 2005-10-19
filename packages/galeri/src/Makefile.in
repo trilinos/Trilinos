@@ -105,7 +105,8 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 libgaleri_a_DEPENDENCIES =
 am__objects_1 = Galeri_Maps.$(OBJEXT) Galeri_CrsMatrices.$(OBJEXT) \
-	Galeri_VbrMatrices.$(OBJEXT) Galeri_Utils.$(OBJEXT)
+	Galeri_VbrMatrices.$(OBJEXT) Galeri_Utils.$(OBJEXT) \
+	Galeri_ReadHB.$(OBJEXT) iohb.$(OBJEXT)
 am_libgaleri_a_OBJECTS = $(am__objects_1)
 libgaleri_a_OBJECTS = $(am_libgaleri_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
@@ -113,8 +114,10 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Galeri_CrsMatrices.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Galeri_Maps.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Galeri_ReadHB.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Galeri_Utils.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Galeri_VbrMatrices.Po
+@AMDEP_TRUE@	./$(DEPDIR)/Galeri_VbrMatrices.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/iohb.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -263,6 +266,8 @@ CORE_H = $(srcdir)/Galeri_Maps.h                       \
 	 $(srcdir)/Galeri_VbrMatrices.h                \
          $(srcdir)/Galeri_Exception.h                  \
 	 $(srcdir)/Galeri_Utils.h                      \
+	 $(srcdir)/Galeri_ReadHB.h                     \
+	 $(srcdir)/iohb.h                              \
 	 $(srcdir)/Maps/Galeri_Linear.h                \
 	 $(srcdir)/Maps/Galeri_Interlaced.h            \
 	 $(srcdir)/Maps/Galeri_Random.h                \
@@ -312,7 +317,9 @@ CORE_H = $(srcdir)/Galeri_Maps.h                       \
 CORE = $(srcdir)/Galeri_Maps.cpp        \
        $(srcdir)/Galeri_CrsMatrices.cpp \
        $(srcdir)/Galeri_VbrMatrices.cpp \
-       $(srcdir)/Galeri_Utils.cpp
+       $(srcdir)/Galeri_Utils.cpp       \
+       $(srcdir)/Galeri_ReadHB.cpp      \
+       $(srcdir)/iohb.cpp
 
 AM_CPPFLAGS = -I$(srcdir)                      \
               -I$(top_srcdir)/../epetra/src    \
@@ -459,8 +466,10 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Galeri_CrsMatrices.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Galeri_Maps.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Galeri_ReadHB.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Galeri_Utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Galeri_VbrMatrices.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iohb.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -541,6 +550,38 @@ Galeri_Utils.obj: $(srcdir)/Galeri_Utils.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Galeri_Utils.Po' tmpdepfile='$(DEPDIR)/Galeri_Utils.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Galeri_Utils.obj `if test -f '$(srcdir)/Galeri_Utils.cpp'; then $(CYGPATH_W) '$(srcdir)/Galeri_Utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Galeri_Utils.cpp'; fi`
+
+Galeri_ReadHB.o: $(srcdir)/Galeri_ReadHB.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Galeri_ReadHB.o -MD -MP -MF "$(DEPDIR)/Galeri_ReadHB.Tpo" -c -o Galeri_ReadHB.o `test -f '$(srcdir)/Galeri_ReadHB.cpp' || echo '$(srcdir)/'`$(srcdir)/Galeri_ReadHB.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Galeri_ReadHB.Tpo" "$(DEPDIR)/Galeri_ReadHB.Po"; else rm -f "$(DEPDIR)/Galeri_ReadHB.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Galeri_ReadHB.cpp' object='Galeri_ReadHB.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Galeri_ReadHB.Po' tmpdepfile='$(DEPDIR)/Galeri_ReadHB.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Galeri_ReadHB.o `test -f '$(srcdir)/Galeri_ReadHB.cpp' || echo '$(srcdir)/'`$(srcdir)/Galeri_ReadHB.cpp
+
+Galeri_ReadHB.obj: $(srcdir)/Galeri_ReadHB.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Galeri_ReadHB.obj -MD -MP -MF "$(DEPDIR)/Galeri_ReadHB.Tpo" -c -o Galeri_ReadHB.obj `if test -f '$(srcdir)/Galeri_ReadHB.cpp'; then $(CYGPATH_W) '$(srcdir)/Galeri_ReadHB.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Galeri_ReadHB.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Galeri_ReadHB.Tpo" "$(DEPDIR)/Galeri_ReadHB.Po"; else rm -f "$(DEPDIR)/Galeri_ReadHB.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Galeri_ReadHB.cpp' object='Galeri_ReadHB.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Galeri_ReadHB.Po' tmpdepfile='$(DEPDIR)/Galeri_ReadHB.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Galeri_ReadHB.obj `if test -f '$(srcdir)/Galeri_ReadHB.cpp'; then $(CYGPATH_W) '$(srcdir)/Galeri_ReadHB.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Galeri_ReadHB.cpp'; fi`
+
+iohb.o: $(srcdir)/iohb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT iohb.o -MD -MP -MF "$(DEPDIR)/iohb.Tpo" -c -o iohb.o `test -f '$(srcdir)/iohb.cpp' || echo '$(srcdir)/'`$(srcdir)/iohb.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/iohb.Tpo" "$(DEPDIR)/iohb.Po"; else rm -f "$(DEPDIR)/iohb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/iohb.cpp' object='iohb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/iohb.Po' tmpdepfile='$(DEPDIR)/iohb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o iohb.o `test -f '$(srcdir)/iohb.cpp' || echo '$(srcdir)/'`$(srcdir)/iohb.cpp
+
+iohb.obj: $(srcdir)/iohb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT iohb.obj -MD -MP -MF "$(DEPDIR)/iohb.Tpo" -c -o iohb.obj `if test -f '$(srcdir)/iohb.cpp'; then $(CYGPATH_W) '$(srcdir)/iohb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/iohb.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/iohb.Tpo" "$(DEPDIR)/iohb.Po"; else rm -f "$(DEPDIR)/iohb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/iohb.cpp' object='iohb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/iohb.Po' tmpdepfile='$(DEPDIR)/iohb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o iohb.obj `if test -f '$(srcdir)/iohb.cpp'; then $(CYGPATH_W) '$(srcdir)/iohb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/iohb.cpp'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
