@@ -53,7 +53,7 @@ class Point
 public:
 
   // ctor
-  Point(int id, double* xi);
+  Point(const int id, const double* xi);
   
   // dtor
   virtual ~Point();

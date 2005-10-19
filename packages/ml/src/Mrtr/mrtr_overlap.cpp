@@ -68,17 +68,41 @@ haveline_(false)
  *----------------------------------------------------------------------*/
 MRTR::Overlap::~Overlap()
 {
-  map<int,MRTR::Point*>::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
-    if (pcurr->second)
-      delete pcurr->second;
-  p_.clear();
+  Clip_DestroyPointPolygon(p_);
 
   map<int,MRTR::Edge*>::iterator ecurr;
   for (ecurr=e_.begin(); ecurr != e_.end(); ++ecurr)
     if (ecurr->second)
       delete ecurr->second;
   e_.clear();
+}
+
+/*----------------------------------------------------------------------*
+ |  destroy a polygon of points (private)                    mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::Clip_DestroyPointPolygon(map<int,MRTR::Point*>& p)
+{
+  map<int,MRTR::Point*>::iterator pcurr;
+  for (pcurr=p.begin(); pcurr != p.end(); ++pcurr)
+    if (pcurr->second)
+      delete pcurr->second;
+  p.clear();
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  copy a polygon of points (private)                       mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::Clip_CopyPointPolygon(map<int,MRTR::Point*>& from, map<int,MRTR::Point*>& to)
+{
+  map<int,MRTR::Point*>::iterator pcurr;
+  for (pcurr=from.begin(); pcurr != from.end(); ++pcurr)
+    if (pcurr->second)
+    {
+      MRTR::Point* tmp = new MRTR::Point(pcurr->second->Id(),pcurr->second->Xi());
+      to.insert(pair<int,MRTR::Point*>(tmp->Id(),tmp));
+    }
+  return true;
 }
 
 /*----------------------------------------------------------------------*
@@ -214,6 +238,159 @@ bool MRTR::Overlap::ComputeOverlap()
   
 
   return false;
+}
+
+/*----------------------------------------------------------------------*
+ |  find intersection (private)                              mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::Clip_Intersect(double* N,double* PE,double* P0,double* P1,double* xi)
+{
+  double P1P0[2];
+  P1P0[0] = P1[0] - P0[0];
+  P1P0[1] = P1[1] - P0[1];
+
+  // determine the denominator first
+  double denom = -(N[0]*P1P0[0] + N[1]*P1P0[1]);
+  
+  // if the denom is zero, then lines are parallel, no intersection
+  if (fabs(denom)<1.0e-10)
+    return false;
+    
+  double alpha = (N[0]*(P0[0]-PE[0]) + N[1]*(P0[1]-PE[1]))/denom;
+  
+  // alpha is the line parameter of the line P0 - p1
+  // if it's outside 0 <= alpha <= 1 there is no intersection
+  if (alpha<0.0 || 1.0<alpha)
+    return false;
+    
+  // Compute the coord xi of the intersecting point
+  xi[0] = P0[0] + alpha*P1P0[0];
+  xi[1] = P0[1] + alpha*P1P0[1];
+
+  //cout << "OVERLAP Clip_Intersect: found intersection xi " << xi[0] << "/" << xi[1] << endl;
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  test point (private)                                     mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::Clip_TestPoint(const double* N, const double* PE, const double* P)
+{
+  double PPE[2];
+  PPE[0] = P[0] - PE[0];
+  PPE[1] = P[1] - PE[1];
+
+  double dotproduct = PPE[0]*N[0]+PPE[1]*N[1];
+  //cout << "OVERLAP Clip_TestPoint: dotproduct " << dotproduct << endl;
+
+  if (dotproduct>1.0e-10)
+    return false;
+  else
+    return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  add point (private)                                      mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::Clip_AddPointtoPolygon(int id, double* P)
+{
+  // check whether this point is already in there
+  map<int,MRTR::Point*>::iterator curr = p_.find(id);
+  // it's there
+  if (curr != p_.end())
+    curr->second->SetXi(P);
+  else
+  {
+    //cout << "OVERLAP Clip_AddPointtoPolygon: added point " << id << endl;
+    MRTR::Point* p = new MRTR::Point(id,P);
+    p_.insert(pair<int,MRTR::Point*>(id,p));
+  }
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  remove point (private)                                      mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::Clip_RemovePointfromPolygon(const int id,const double* P)
+{
+  // check whether this point is in there
+  MRTR::Point* p;
+  map<int,MRTR::Point*>::iterator curr = p_.find(id);
+  if (curr != p_.end())
+  {
+    if (curr->second) delete curr->second;
+    p_.erase(id);
+    //cout << "OVERLAP Clip_RemovePointfromPolygon: removed point " << id << endl;
+    return true;
+  }
+  else
+  {
+    //cout << "OVERLAP Clip_RemovePointfromPolygon: do nothing\n";
+    return false;
+  }
+}
+
+/*----------------------------------------------------------------------*
+ |  add edge (private)                                       mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::Clip_AddEdgetoPolygon(int id, int node0, int node1)
+{
+  // check whether this edge is already in there
+  map<int,MRTR::Edge*>::iterator curr = e_.find(id);
+  // it's there
+  if (curr != e_.end())
+    curr->second->SetNodes(node0,node1);
+  else
+  {
+    cout << "OVERLAP Clip_AddEdgetoPolygon: added edge " << id << " between nodes " << node0 << " - " << node1 << endl;
+    MRTR::Edge* e = new MRTR::Edge(id,node0,node1);
+    e_.insert(pair<int,MRTR::Edge*>(id,e));
+  }
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  get edge view (private)                                  mwgee 10/05|
+ *----------------------------------------------------------------------*/
+MRTR::Edge* MRTR::Overlap::GetEdgeViewfromPolygon(int id)
+{
+  // check whether this edge is already in there
+  map<int,MRTR::Edge*>::iterator curr = e_.find(id);
+  // it's there
+  if (curr != e_.end())
+    return curr->second;
+  else
+    return NULL;
+}
+
+/*----------------------------------------------------------------------*
+ |  get point view (private)                                 mwgee 10/05|
+ *----------------------------------------------------------------------*/
+MRTR::Point** MRTR::Overlap::Clip_PointView()
+{
+  // allocate vector of ptrs
+  MRTR::Point** points;
+  if (Clip_SizePolygon())
+    points = new MRTR::Point*[Clip_SizePolygon()];
+  else 
+    return NULL;
+  
+  // get the point views
+  int count=0;
+  map<int,MRTR::Point*>::iterator pcurr;
+  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
+  {
+    points[count] = pcurr->second;
+    ++count;
+  }
+  if (count != Clip_SizePolygon())
+  {
+    cout << "***ERR*** MRTR::Overlap::Clip_PointView:\n"
+         << "***ERR*** number of point wrong\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  return points;
 }
 
 /*----------------------------------------------------------------------*
@@ -597,9 +774,11 @@ bool MRTR::Overlap::Clipelements()
   {
   //---------------------------------------------------------------------------
   case poly_1_2_same:
+    Clip_FixPolygon_1_2_same(np,point);
   break;  
   //---------------------------------------------------------------------------
   case poly_1_2_dif:
+    Clip_FixPolygon_1_2_dif(np,point);
   break;  
   //---------------------------------------------------------------------------
   case poly_1_4_same:
@@ -652,159 +831,144 @@ bool MRTR::Overlap::Clipelements()
 
 
 /*----------------------------------------------------------------------*
- |  find intersection (private)                              mwgee 10/05|
+ |  fix polygon in the case 1_2_dif (private)                mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_Intersect(double* N,double* PE,double* P0,double* P1,double* xi)
+bool MRTR::Overlap::Clip_FixPolygon_1_2_dif(int np, MRTR::Point** point)
 {
-  double P1P0[2];
-  P1P0[0] = P1[0] - P0[0];
-  P1P0[1] = P1[1] - P0[1];
-
-  // determine the denominator first
-  double denom = -(N[0]*P1P0[0] + N[1]*P1P0[1]);
-  
-  // if the denom is zero, then lines are parallel, no intersection
-  if (fabs(denom)<1.0e-10)
-    return false;
-    
-  double alpha = (N[0]*(P0[0]-PE[0]) + N[1]*(P0[1]-PE[1]))/denom;
-  
-  // alpha is the line parameter of the line P0 - p1
-  // if it's outside 0 <= alpha <= 1 there is no intersection
-  if (alpha<0.0 || 1.0<alpha)
-    return false;
-    
-  // Compute the coord xi of the intersecting point
-  xi[0] = P0[0] + alpha*P1P0[0];
-  xi[1] = P0[1] + alpha*P1P0[1];
-
-  //cout << "OVERLAP Clip_Intersect: found intersection xi " << xi[0] << "/" << xi[1] << endl;
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  test point (private)                                     mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_TestPoint(const double* N, const double* PE, const double* P)
-{
-  double PPE[2];
-  PPE[0] = P[0] - PE[0];
-  PPE[1] = P[1] - PE[1];
-
-  double dotproduct = PPE[0]*N[0]+PPE[1]*N[1];
-  //cout << "OVERLAP Clip_TestPoint: dotproduct " << dotproduct << endl;
-
-  if (dotproduct>1.0e-10)
-    return false;
-  else
-    return true;
-}
-
-/*----------------------------------------------------------------------*
- |  add point (private)                                      mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_AddPointtoPolygon(int id, double* P)
-{
-  // check whether this point is already in there
-  map<int,MRTR::Point*>::iterator curr = p_.find(id);
-  // it's there
-  if (curr != p_.end())
-    curr->second->SetXi(P);
-  else
-  {
-    //cout << "OVERLAP Clip_AddPointtoPolygon: added point " << id << endl;
-    MRTR::Point* p = new MRTR::Point(id,P);
-    p_.insert(pair<int,MRTR::Point*>(id,p));
-  }
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  remove point (private)                                      mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_RemovePointfromPolygon(const int id,const double* P)
-{
-  // check whether this point is in there
-  MRTR::Point* p;
-  map<int,MRTR::Point*>::iterator curr = p_.find(id);
-  if (curr != p_.end())
-  {
-    if (curr->second) delete curr->second;
-    p_.erase(id);
-    //cout << "OVERLAP Clip_RemovePointfromPolygon: removed point " << id << endl;
-    return true;
-  }
-  else
-  {
-    //cout << "OVERLAP Clip_RemovePointfromPolygon: do nothing\n";
-    return false;
-  }
-}
-
-/*----------------------------------------------------------------------*
- |  add edge (private)                                       mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_AddEdgetoPolygon(int id, int node0, int node1)
-{
-  // check whether this edge is already in there
-  map<int,MRTR::Edge*>::iterator curr = e_.find(id);
-  // it's there
-  if (curr != e_.end())
-    curr->second->SetNodes(node0,node1);
-  else
-  {
-    cout << "OVERLAP Clip_AddEdgetoPolygon: added edge " << id << " between nodes " << node0 << " - " << node1 << endl;
-    MRTR::Edge* e = new MRTR::Edge(id,node0,node1);
-    e_.insert(pair<int,MRTR::Edge*>(id,e));
-  }
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  get edge view (private)                                  mwgee 10/05|
- *----------------------------------------------------------------------*/
-MRTR::Edge* MRTR::Overlap::GetEdgeViewfromPolygon(int id)
-{
-  // check whether this edge is already in there
-  map<int,MRTR::Edge*>::iterator curr = e_.find(id);
-  // it's there
-  if (curr != e_.end())
-    return curr->second;
-  else
-    return NULL;
-}
-
-/*----------------------------------------------------------------------*
- |  get point view (private)                                 mwgee 10/05|
- *----------------------------------------------------------------------*/
-MRTR::Point** MRTR::Overlap::Clip_PointView()
-{
-  // allocate vector of ptrs
-  MRTR::Point** points;
-  if (Clip_SizePolygon())
-    points = new MRTR::Point*[Clip_SizePolygon()];
-  else 
-    return NULL;
-  
-  // get the point views
+  // identify the slave edges with the 2 intersections
+  int sedge[2];
   int count=0;
-  map<int,MRTR::Point*>::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
+  for (int p=0; p<np; ++p)
   {
-    points[count] = pcurr->second;
+    if (point[p]->Id() >= 100) continue;
+    sedge[count] = MRTR::digit_ten(point[p]->Id());
     ++count;
   }
-  if (count != Clip_SizePolygon())
+  
+  // identify the slave node between them
+  int prevedge = -1;
+  int spoint = -1;
+  int nextedge = -1;
+  // order the edges
+  if (sedge[0]>sedge[1])
   {
-    cout << "***ERR*** MRTR::Overlap::Clip_PointView:\n"
-         << "***ERR*** number of point wrong\n"
+    int tmp = sedge[0];
+    sedge[0] = sedge[1];
+    sedge[1] = tmp;
+  }
+  if (sedge[0]==0 && sedge[1]==1) 
+  {
+    spoint = 1;
+    prevedge = 0;
+    nextedge = 1;
+  }
+  else if (sedge[0]==1 && sedge[1]==2)
+  {
+    spoint = 2;
+    prevedge = 1;
+    nextedge = 2;
+  }
+  else if (sedge[0]==0 && sedge[1]==2)
+  {
+    spoint=0;
+    prevedge = 2;
+    nextedge = 0;
+  }
+  else
+  {
+    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_1_2_dif:\n"
+         << "***ERR*** can't find slave point\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  return points;
+  
+  // create a new polygon
+  map<int,MRTR::Point*> newpolygon;
+  
+  // put in the slave point as point 0
+  MRTR::Point* newpoint = new MRTR::Point(0,&sxi_[spoint][0]);
+  newpolygon.insert(pair<int,MRTR::Point*>(0,newpoint));  
+  
+  // find the intersection on the NEXT edge and put it in as 1
+  for (int p=0; p<np; ++p)
+    if ( MRTR::digit_ten(point[p]->Id()) == nextedge )
+    {
+      newpoint = new MRTR::Point(1,point[p]->Xi());
+      newpolygon.insert(pair<int,MRTR::Point*>(1,newpoint));
+      break;  
+    }
+    
+  // find the internal mnode and put it in the polygon as 2
+  for (int p=0; p<np; ++p)
+    if (point[p]->Id() >= 100)
+    {
+      newpoint = new MRTR::Point(2,point[p]->Xi());
+      newpolygon.insert(pair<int,MRTR::Point*>(2,newpoint));
+      break;  
+    }
+  
+  // find the intersection on the PREVIOUS edge and put it in as 3
+  for (int p=0; p<np; ++p)
+    if ( MRTR::digit_ten(point[p]->Id()) == prevedge )
+    {
+      newpoint = new MRTR::Point(3,point[p]->Xi());
+      newpolygon.insert(pair<int,MRTR::Point*>(3,newpoint));
+      break;  
+    }
+    
+  // destroy the old polygon
+  Clip_DestroyPointPolygon(p_);
+  
+  // Deep Copy the newpolygon to the old polygon
+  Clip_CopyPointPolygon(newpolygon,p_);
+
+  // destroy the new polygon
+  Clip_DestroyPointPolygon(newpolygon);
+  
+#if 1
+  // printout the polygon
+  map<int,MRTR::Point*>::iterator pcurr;
+  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
+    if (pcurr->second)
+      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
+           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
+#endif  
+  return true;
 }
 
 
+/*----------------------------------------------------------------------*
+ |  fix polygon in the case 1_2_same (private)                mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::Clip_FixPolygon_1_2_same(int np, MRTR::Point** point)
+{
+  // identify the slave edge
+  int sedge;
+  for (int p=0; p<np; ++p)
+  {
+    if (point[p]->Id() >= 100) continue;
+    sedge = MRTR::digit_ten(point[p]->Id());
+    break;
+  }
+  
+  // get the parameterization of the 2 intersections on this edge
+  
+  
+
+
+
+
+  
+#if 0
+  // printout the polygon
+  map<int,MRTR::Point*>::iterator pcurr;
+  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
+    if (pcurr->second)
+      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
+           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
+#endif  
+  return true;
+}
 
 
 

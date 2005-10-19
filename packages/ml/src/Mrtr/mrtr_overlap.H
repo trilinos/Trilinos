@@ -110,6 +110,11 @@ private:
   // find intersection of clipping edge with line
   bool Clip_Intersect(double* N,double* PE,double* P0,double* P1,double* xi);
 
+  // fix the polygon for case 1_2_dif
+  bool Clip_FixPolygon_1_2_dif(int np, MRTR::Point** point);
+  // fix the polygon for case 1_2_same
+  bool Clip_FixPolygon_1_2_same(int np, MRTR::Point** point);
+
   // add a point to the polygon
   bool Clip_AddPointtoPolygon(int id, double* P);
   // remove a point from the polygon
@@ -118,6 +123,10 @@ private:
   int Clip_SizePolygon() { return p_.size(); }
   // get view of point in polygon, calling routine is responsible for freeing
   MRTR::Point** Clip_PointView();
+  // destroy a point polygon
+  bool Clip_DestroyPointPolygon(map<int,MRTR::Point*>& p);
+  // copy a point polygon to another polygon
+  bool Clip_CopyPointPolygon(map<int,MRTR::Point*>& from, map<int,MRTR::Point*>& to);
 
   // add edge to polygon
   bool Clip_AddEdgetoPolygon(int id, int node0, int node1);
