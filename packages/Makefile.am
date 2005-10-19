@@ -115,7 +115,7 @@ IFPACK_LIB_BUILD_CMND = cd ifpack ; $(MAKE) all-libs ;
 endif
 
 if BUILD_GALERI
-GALERI_SUBDIR = ifpack
+GALERI_SUBDIR = galeri 
 GALERI_LIB_BUILD_CMND = cd galeri ; $(MAKE) all-libs ;
 endif
 
