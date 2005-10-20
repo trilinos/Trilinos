@@ -294,7 +294,8 @@ CORE_H = \
 	$(srcdir)/Rythmos_Stepper.hpp \
 	$(srcdir)/Rythmos_BackwardEulerStepper.hpp \
 	$(srcdir)/Rythmos_ForwardEulerStepper.hpp \
-	$(srcdir)/Rythmos_ExplicitRKStepper.hpp
+	$(srcdir)/Rythmos_ExplicitRKStepper.hpp \
+	$(srcdir)/Rythmos_ExplicitTaylorPolynomialStepper.hpp
 
 CORE = \
 	$(srcdir)/Rythmos_Version.cpp
