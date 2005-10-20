@@ -124,15 +124,41 @@ namespace Anasazi {
     {
       int numvecs = index.size();
       std::vector<int> index_plus(index);
-      // Anasazi::MultiVecTraits uses [0,numvecs-1] indexing, 
-      // while Thyra uses [1,numvecs] indexing
+
+      // We do not assume that the indices are sorted, nor do we check that
+      // index.size() > 0. This code is fail-safe, in the sense that a zero
+      // length index vector will pass the error on the Thyra.
+
+      // Thyra has two ways to create an indexed View:
+      // * contiguous (via a range of columns)
+      // * indexed (via a vector of column indices)
+      // The former is significantly more efficient than the latter, in terms of
+      // computations performed with/against the created view.
+      // We will therefore check to see if the given indices are contiguous, and
+      // if so, we will use the contiguous view creation method.
+      
+      // Anasazi::MultiVecTraits uses 0-indexing, while Thyra uses 1-indexing. 
+      // Increment the indices as we check for contiguity.
+      int lb = index_plus[0]+1;
+      bool contig = true;
       for (int i=0; i<numvecs; i++) {
         index_plus[i]++;
+        if (lb+i != index_plus[i]) contig = false;
       }
-      // create a view to the relevant part of the source multivector
-      Teuchos::RefCountPtr< TMVB > cc = mv.subView( numvecs, &(index_plus[0]) );
+
+      Teuchos::RefCountPtr< TMVB > cc;
+      if (contig) {
+        RangePack::Range1D rng(lb,lb+numvecs-1);
+        // create a contiguous view to the relevant part of the source multivector
+        cc = mv.subView(rng);
+      }
+      else {
+        // create an indexed view to the relevant part of the source multivector
+        cc = mv.subView( numvecs, &(index_plus[0]) );
+      }
       return cc;
     }
+
 
     /*! \brief Creates a new const MultiVectorBase that shares the selected contents of \c mv (shallow copy).
 
@@ -143,13 +169,38 @@ namespace Anasazi {
     {
       int numvecs = index.size();
       std::vector<int> index_plus(index);
-      // Anasazi::MultiVecTraits uses [0,numvecs-1] indexing, 
-      // while Thyra uses [1,numvecs] indexing
+
+      // We do not assume that the indices are sorted, nor do we check that
+      // index.size() > 0. This code is fail-safe, in the sense that a zero
+      // length index vector will pass the error on the Thyra.
+
+      // Thyra has two ways to create an indexed View:
+      // * contiguous (via a range of columns)
+      // * indexed (via a vector of column indices)
+      // The former is significantly more efficient than the latter, in terms of
+      // computations performed with/against the created view.
+      // We will therefore check to see if the given indices are contiguous, and
+      // if so, we will use the contiguous view creation method.
+      
+      // Anasazi::MultiVecTraits uses 0-indexing, while Thyra uses 1-indexing. 
+      // Increment the indices as we check for contiguity.
+      int lb = index_plus[0]+1;
+      bool contig = true;
       for (int i=0; i<numvecs; i++) {
         index_plus[i]++;
+        if (lb+i != index_plus[i]) contig = false;
       }
-      // create a view to the relevant part of the source multivector
-      Teuchos::RefCountPtr< const TMVB > cc = mv.subView( numvecs, &(index_plus[0]) );
+
+      Teuchos::RefCountPtr< const TMVB > cc;
+      if (contig) {
+        RangePack::Range1D rng(lb,lb+numvecs-1);
+        // create a contiguous view to the relevant part of the source multivector
+        cc = mv.subView(rng);
+      }
+      else {
+        // create an indexed view to the relevant part of the source multivector
+        cc = mv.subView( numvecs, &(index_plus[0]) );
+      }
       return cc;
     }
 
