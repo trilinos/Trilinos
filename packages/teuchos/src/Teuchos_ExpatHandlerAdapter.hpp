@@ -56,7 +56,7 @@ extern "C"
   void expatCharacterDataHandler(void* handler,
                                  const XML_Char* s,
                                  int len);
-};
+}
 
 #endif
 
