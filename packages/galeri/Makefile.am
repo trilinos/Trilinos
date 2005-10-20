@@ -97,6 +97,9 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 all-local:
 	@echo "Trilinos package new_package built successfully"
 
+all-libs:
+	cd $(top_builddir)/src ; $(MAKE) all-libs
+
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################

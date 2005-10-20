@@ -713,6 +713,9 @@ uninstall-info: uninstall-info-recursive
 all-local:
 	@echo "Trilinos package new_package built successfully"
 
+all-libs:
+	cd $(top_builddir)/src ; $(MAKE) all-libs
+
 run-examples:
 	@echo
 	@echo "=============================="
