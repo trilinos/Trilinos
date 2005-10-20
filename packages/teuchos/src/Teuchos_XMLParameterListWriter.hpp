@@ -29,7 +29,7 @@
 #ifndef Teuchos_XMLPARAMETERLISTWRITER_H
 #define Teuchos_XMLPARAMETERLISTWRITER_H
 
-/*! \file Teuchos_XMLObject.hpp
+/*! \file Teuchos_XMLParameterListWriter.hpp
     \brief Writes a ParameterList to an XML object
 */
 
