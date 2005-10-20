@@ -59,7 +59,7 @@ AC_CONFIG_SRCDIR(/src/Galeri_Version.h)
 # config.sub, config.guess) and M4 files.
 
 #
-# #np# This a a subdirectory of Trilinos/packages/new_package that contains
+# #np# This a a subdirectory of Trilinos/packages/galeri that contains
 # #np# a number of useful m4 files.  Any package that uses these m4 files
 # #np# will have to add them to the repository.  The m4 files perform various
 # #np# common checks and set common variable values to minimize redundant work.
@@ -262,7 +262,7 @@ AC_F77_WRAPPERS
 
 # If a package does not have tests or examples, the corresponding check(s)
 # should be pulled out of the "if" statement below.
-#if test "X$ac_cv_use_new_package_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+#if test "X$ac_cv_use_galeri_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 if test "X$ac_cv_use_galeri_tests" != "Xno" || test "X$ac_cv_use_galeri_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))

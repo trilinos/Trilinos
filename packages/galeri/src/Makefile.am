@@ -26,7 +26,9 @@
 # ************************************************************************
 # @HEADER
 
-CORE_H = $(srcdir)/Galeri_Maps.h                       \
+CORE_H = $(srcdir)/Galeri_Version.h                    \
+	 $(srcdir)/Galeri_ConfigDefs.h                 \
+	 $(srcdir)/Galeri_Maps.h                       \
 	 $(srcdir)/Galeri_CrsMatrices.h                \
 	 $(srcdir)/Galeri_VbrMatrices.h                \
          $(srcdir)/Galeri_Exception.h                  \
@@ -38,6 +40,8 @@ CORE_H = $(srcdir)/Galeri_Maps.h                       \
 	 $(srcdir)/Maps/Galeri_Random.h                \
          $(srcdir)/Maps/Galeri_Cartesian2D.h           \
          $(srcdir)/Maps/Galeri_Cartesian3D.h           \
+	 $(srcdir)/CrsMatrices/Galeri_BigCross2D.h        \
+	 $(srcdir)/CrsMatrices/Galeri_BigStar2D.h         \
 	 $(srcdir)/CrsMatrices/Galeri_Cauchy.h            \
 	 $(srcdir)/CrsMatrices/Galeri_KMS.h               \
 	 $(srcdir)/CrsMatrices/Galeri_Ris.h               \

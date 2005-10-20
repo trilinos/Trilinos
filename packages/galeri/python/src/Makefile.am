@@ -65,3 +65,5 @@ clean-local:
 	$(RM) -r ../../packages
 
 CLEANFILES += $(WRAPPERS) $(PROXIES)
+
+EXTRA_DIST = Galeri.i setup.py
