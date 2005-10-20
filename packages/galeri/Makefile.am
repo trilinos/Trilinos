@@ -6,8 +6,8 @@
 # @HEADER
 # ************************************************************************
 # 
-#                     New_Package Example Package
-#                 Copyright (2004) Sandia Corporation
+#                     Galeri Matrix Generation Package
+#                 Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -95,7 +95,22 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #The following line helps the test harness recover from build errors.
                                                                                 
 all-local:
-	@echo "Trilinos package new_package built successfully"
+	@echo 
+	@echo "        +----------------------------------------------------+"
+	@echo "        | Trilinos package Galeri built successfully         |"
+	@echo "        |                                                    |"
+	@echo "        | You might want to type \"$(MAKE) run-examples\" to      |"
+	@echo "        | verify that all the Galeri examples run            |"
+	@echo "        | successfully. For more details, please refer to    |"
+	@echo "        | Trilinos/doc/check_installation.txt.               |"
+	@echo "        |                                                    |"
+	@echo "        | Please send questions/comments to:                 |"
+	@echo "        | - galeri-users@software.sandia.gov                 |"
+	@echo "        | - galeri-developers@software.sandia.gov            |"
+	@echo "        |                                                    |"
+	@echo "        | Have fun!                                          |"
+	@echo "        +----------------------------------------------------+"
+	@echo 
 
 all-libs:
 	cd $(top_builddir)/src ; $(MAKE) all-libs
@@ -103,9 +118,6 @@ all-libs:
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  At present, new_package only offers src and example.
-#  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
 
 if BUILD_TESTS
 TEST_SUBDIR=test
