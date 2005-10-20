@@ -515,13 +515,23 @@ void ReadHB(char *data_file, const Epetra_Comm  &comm,
 
   hbb = 0; hbxexact = 0; hbb = 0;
 
+  int ok = 1;
+
   if(comm.MyPID() == 0)  { 
-      in_file = fopen( data_file, "r");
-      if (in_file == NULL)
-	{
-	  printf("Error: Cannot open file: %s\n",data_file);
-          throw(-1);
-	}
+    in_file = fopen( data_file, "r");
+    if (in_file == NULL)
+    {
+      printf("Error: Cannot open file: %s\n",data_file);
+      ok = 0;
+    }
+  }
+
+  // we need to take care that all processors throw an exception here
+  comm.Broadcast(&ok, 1, 0);
+
+  if (ok == 0) throw(-1);
+
+  if(comm.MyPID() == 0)  { 
 
       /* Get information about the array stored in the file specified in the  */
       /* argument list:                                                       */
