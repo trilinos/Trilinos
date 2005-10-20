@@ -1524,7 +1524,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
             count = aggr_index[i] + 1;
          }
       }
-      /* this seems to be obsolete, but I'm not sure mwgee 10/05
+      /* this seems to be obsolete, but I'm not sure mwgee 10/05 */
       else
       {
           fprintf(stderr,"%d : CoarsenVBMETIS error : aggr_index[%d] < 0\nsomething wrong with exlusion of Dirichlet rows\n",
