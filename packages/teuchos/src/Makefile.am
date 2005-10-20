@@ -74,6 +74,9 @@ CORE_H = \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
+	$(srcdir)/Teuchos_PolynomialTraits.hpp \
+	$(srcdir)/Teuchos_PolynomialDecl.hpp \
+	$(srcdir)/Teuchos_Polynomial.hpp \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
 	$(srcdir)/Teuchos_RawMPITraits.hpp \
 	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
