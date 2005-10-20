@@ -32,6 +32,9 @@
 #include "Teuchos_Describable.hpp"
 #include "Thyra_LinearOpWithSolveBase.hpp"
 
+#include "Teuchos_Polynomial.hpp"
+#include "Thyra_PolynomialVectorTraits.hpp"
+
 namespace Thyra {
 
 /** \brief Base subclass for <tt>ModelEvaluator</tt> that defines some basic
@@ -49,12 +52,14 @@ public:
   enum EInArgsMembers {
     IN_ARG_x_dot ///< .
     ,IN_ARG_x ///< .
+    ,IN_ARG_x_dot_poly ///< .
+    ,IN_ARG_x_poly ///< .
     ,IN_ARG_t ///< .
     ,IN_ARG_alpha ///< .
     ,IN_ARG_beta ///< .
   };
   /** \brief .  */
-  static const int NUM_E_IN_ARGS_MEMBERS=5;
+  static const int NUM_E_IN_ARGS_MEMBERS=7;
 
   /** \brief . */
   template<class Scalar>
@@ -74,6 +79,14 @@ public:
     void set_x( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x );
     /** \brief .  */
     Teuchos::RefCountPtr<const VectorBase<Scalar> > get_x() const;
+    /** \brief .  */
+    void set_x_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_poly );
+    /** \brief .  */
+    Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_poly() const;
+    /** \brief .  */
+    void set_x_dot_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly );
+    /** \brief .  */
+    Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_dot_poly() const;
     /** \brief Set <tt>p(l)</tt> where <tt>1 <= l && l <= this->Np()</tt>.  */
     void set_p( int l, const Teuchos::RefCountPtr<const VectorBase<Scalar> > &p_l );
     /** \brief Get <tt>p(l)</tt> where <tt>1 <= l && l <= this->Np()</tt>.  */
@@ -106,6 +119,8 @@ public:
     std::string                                      modelEvalDescription_;
     Teuchos::RefCountPtr<const VectorBase<Scalar> >  x_dot_;
     Teuchos::RefCountPtr<const VectorBase<Scalar> >  x_;
+    Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > x_dot_poly_;
+    Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > x_poly_;
     p_t                                              p_;
     ScalarMag                                        t_;
     Scalar                                           alpha_;
@@ -187,13 +202,13 @@ public:
     ,DERIV_RANK_DEFICIENT    ///< .
   };
 
-  /** \breif . */
+  /** \brief . */
   struct DerivativeProperties {
-    /** \breif . */
+    /** \brief . */
     EDerivativeLinearity     linearity;
-    /** \breif . */
+    /** \brief . */
     ERankStatus              rank;
-    /** \breif . */
+    /** \brief . */
     bool                     supportsAdjoint;
     /** \brief . */
     DerivativeProperties()
@@ -208,9 +223,10 @@ public:
   enum EOutArgsMembers {
     OUT_ARG_f       ///< .
     ,OUT_ARG_W      ///< .
+    ,OUT_ARG_f_poly ///< .
   };
   /** \brief .  */
-  static const int NUM_E_OUT_ARGS_MEMBERS=3;
+  static const int NUM_E_OUT_ARGS_MEMBERS=4;
 
   /** \brief . */
   enum EOutArgsDfDp {
@@ -277,6 +293,10 @@ public:
     Derivative<Scalar> get_DgDp(int j, int l) const;
     /** \brief . */
     DerivativeProperties get_DgDp_properties(int j, int l) const;
+    /** \brief .  */
+    void set_f_poly( const Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > > &f_poly );
+    /** \brief .  */
+    Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > > get_f_poly() const;
   protected:
     /** \brief . */
     void _setModelEvalDescription( const std::string &modelEvalDescription );
@@ -320,6 +340,7 @@ public:
     deriv_properties_t                                    DgDx_properties_; // Ng
     deriv_t                                               DgDp_;            // Ng x Np
     deriv_properties_t                                    DgDp_properties_; // Ng x Np
+    Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > > f_poly_;
     
     // functions
     void assert_supports(EOutArgsMembers arg) const;
@@ -608,6 +629,23 @@ std::string toString(ModelEvaluatorBase::EOutArgsMembers);
  *     the <tt>LinearOpWithSolveBase</tt> interface and therefore supports
  *     linear solves.  Objects of this type are created with the function
  *     <tt>create_W()</tt> before they are computed in <tt>evalModel()</tt>.
+ *
+ *     <li><b>State variable Taylor coefficients</b>
+ *
+ *     <tt>x_poly = </tt> \f$\sum_{i=0}^d x_i t^i\f$,
+ *     <tt>x_dot_poly = </tt> \f$\sum_{i=0}^d-1 (i+1)x_{i+1} t^i\f$,
+ *     <tt>f_poly = </tt> \f$\sum_{i=0}^{d-1} f_i t^i\f$.
+ *
+ *     <tt> x_poly </tt> is a given polynomial of degree \f$d\f$ and
+ *     <tt> x_dot_poly = </tt> \f$d/dt\f$ <tt> x_poly </tt>, then
+ *     <tt> f_poly = f(x_poly, x_dot_poly, t) + </tt> \f$O(t^{d})\f$ where
+ *     \f$f_i = 1/k! d^k/dt^k f(x(t),\dot{x}(t),t), i=0,\dots,d-1\f$ are
+ *     the Taylor series coefficient of \f$f\f$.  The polynomials 
+ *     <tt> x_poly, </tt> <tt> x_dot_poly, </tt> and <tt> f_poly </tt> 
+ *     are represented by Teuchos::Polynomial objects where each coefficient
+ *     is a Thyra::VectorBase object.  The Taylor series coefficients of
+ *     \f$f\f$ can easily be computed using automatic differentiation, but
+ *     this is generally the only means of doing so.
  *     
  *     <li><b>Auxiliary parameter derivatives</b>
  *
@@ -670,10 +708,10 @@ public:
   /** \name Vector spaces */
   //@{
 
-  /** \breif . */
+  /** \brief . */
   virtual Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_x_space() const = 0;
 
-  /** \breif . */
+  /** \brief . */
   virtual Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const = 0;
 
 	/** \brief Return the vector space for the auxiliary parameters
@@ -1036,6 +1074,60 @@ void eval_f_W(
 
 }
 
+/** \brief . */
+template<class Scalar>
+inline 
+void eval_f_poly(
+  const ModelEvaluator<Scalar>                                    &model
+  ,const Teuchos::Polynomial< VectorBase<Scalar> >                &x_poly
+  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag   &t
+  ,Teuchos::Polynomial< VectorBase<Scalar> >                      *f_poly
+  )
+{
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
+  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+
+  inArgs.set_x_poly(Teuchos::rcp(&x_poly,false));
+  if(inArgs.supports(MEB::IN_ARG_t))
+    inArgs.set_t(t);
+
+  outArgs.set_f_poly(Teuchos::rcp(f_poly,false));
+
+  model.evalModel(inArgs,outArgs);
+
+}
+
+/** \brief . */
+template<class Scalar>
+inline 
+void eval_f_poly(
+  const ModelEvaluator<Scalar>                                    &model
+  ,const Teuchos::Polynomial< VectorBase<Scalar> >                &x_dot_poly
+  ,const VectorBase<Scalar>                                       &x_poly
+  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag   &t
+  ,Teuchos::Polynomial< VectorBase<Scalar> >                      *f_poly
+  )
+{
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
+  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+
+  inArgs.set_x_dot_poly(Teuchos::rcp(&x_dot_poly,false));
+  inArgs.set_x_poly(Teuchos::rcp(&x_poly,false));
+  if(inArgs.supports(MEB::IN_ARG_t))
+    inArgs.set_t(t);
+
+  outArgs.set_f_poly(Teuchos::rcp(f_poly,false));
+
+  model.evalModel(inArgs,outArgs);
+
+}
+
 } // namespace Thyra
 
 // //////////////////////////////////
@@ -1121,6 +1213,24 @@ template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
 ModelEvaluatorBase::InArgs<Scalar>::get_x() const
 { assert_supports(IN_ARG_x); return x_; }
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly )
+{ assert_supports(IN_ARG_x_dot_poly); x_dot_poly_ = x_dot_poly; }
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > >
+ModelEvaluatorBase::InArgs<Scalar>::get_x_dot_poly() const
+{ assert_supports(IN_ARG_x_dot_poly); return x_dot_poly_; }
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_x_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_poly )
+{ assert_supports(IN_ARG_x_poly); x_poly_ = x_poly; }
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > >
+ModelEvaluatorBase::InArgs<Scalar>::get_x_poly() const
+{ assert_supports(IN_ARG_x_poly); return x_poly_; }
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::set_p( int l, const Teuchos::RefCountPtr<const VectorBase<Scalar> > &p_l )
@@ -1244,7 +1354,7 @@ template<class Scalar>
 bool ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsDgDx arg, int j) const
 {
   assert_j(j);
-  return supports_DgDx_[l-1];
+  return supports_DgDx_[j-1];
 }
 
 template<class Scalar>
@@ -1375,6 +1485,15 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_DgDp_properties(int j, int l) const
   assert_supports(OUT_ARG_DgDp,j,l);
   return DgDp_properties_[ (j-1)*Np() + (l-1) ];
 }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_f_poly( const Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > > &f_poly )
+{ f_poly_ = f_poly; }
+
+template<class Scalar>
+Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > >
+ModelEvaluatorBase::OutArgs<Scalar>::get_f_poly() const
+{ return f_poly_; }
 
 // protected
 

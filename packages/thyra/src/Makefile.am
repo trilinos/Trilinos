@@ -130,7 +130,8 @@ ANA_OPERATOR_VECTOR_EXTENDED_INTERFACES_H = \
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_ProductVectorSpaceBase.hpp\
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_ScaledAdjointLinearOpBase.hpp\
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_ScaledAdjointLinearOpBaseDecl.hpp\
-  $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_SolveSupportTypes.hpp
+  $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_SolveSupportTypes.hpp \
+  $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_PolynomialVectorTraits.hpp
 
 ANA_OPERATOR_VECTOR_ANA_SUPPORT_H = \
   $(srcdir)/ana/operator_vector/ana_support/Thyra_DiagonalLinearOp.hpp\
