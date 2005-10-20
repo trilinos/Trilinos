@@ -382,7 +382,8 @@ am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/block/EpetraExt_BlockMultiVector.h \
 	$(srcdir)/block/EpetraExt_BlockVector.h \
 	$(srcdir)/block/EpetraExt_BlockUtility.h \
-	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.h
+	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.h \
+	$(srcdir)/model_evaluator/EpetraExt_PolynomialVectorTraits.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -773,7 +774,8 @@ EXTRA_MATLAB = \
 @BUILD_MATLAB_TRUE@   $(EXTRA_MATLAB)
 
 EXTRA_MODEL_EVALUATOR_H = \
-     $(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.h
+     $(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.h \
+     $(srcdir)/model_evaluator/EpetraExt_PolynomialVectorTraits.h
 
 EXTRA_MODEL_EVALUATOR = \
      $(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.cpp

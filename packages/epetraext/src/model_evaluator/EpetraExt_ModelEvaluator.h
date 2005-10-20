@@ -31,6 +31,8 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_Describable.hpp"
+#include "Teuchos_Polynomial.hpp"
+#include "EpetraExt_PolynomialVectorTraits.h"
 
 class Epetra_Map;
 class Epetra_Vector;
@@ -52,11 +54,13 @@ public:
   enum EInArgsMembers {
     IN_ARG_x_dot
     ,IN_ARG_x
+    ,IN_ARG_x_dot_poly 
+    ,IN_ARG_x_poly 
     ,IN_ARG_t
     ,IN_ARG_alpha
     ,IN_ARG_beta
   };
-  static const int NUM_E_IN_ARGS_MEMBERS=5;
+  static const int NUM_E_IN_ARGS_MEMBERS=7;
 
   /** \brief . */
   class InArgs {
@@ -73,6 +77,13 @@ public:
     void set_x( const Teuchos::RefCountPtr<const Epetra_Vector> &x );
     /** \brief. */
     Teuchos::RefCountPtr<const Epetra_Vector> get_x() const;
+    void set_x_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > &x_poly );
+    /** \brief .  */
+    Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > get_x_poly() const;
+    /** \brief .  */
+    void set_x_dot_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > &x_dot_poly );
+    /** \brief .  */
+    Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > get_x_dot_poly() const;
     /** \brief. */
     void set_p( int l, const Teuchos::RefCountPtr<const Epetra_Vector> &p_l );
     /** \brief. */
@@ -105,6 +116,8 @@ public:
     std::string                                modelEvalDescription_;
     Teuchos::RefCountPtr<const Epetra_Vector>  x_dot_;
     Teuchos::RefCountPtr<const Epetra_Vector>  x_;
+    Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > x_dot_poly_;
+    Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > x_poly_;
     p_t                                        p_;
     double                                     t_;
     double                                     alpha_;
@@ -119,8 +132,9 @@ public:
   enum EOutArgsMembers {
     OUT_ARG_f
     ,OUT_ARG_W
+    ,OUT_ARG_f_poly
   };
-  static const int NUM_E_OUT_ARGS_MEMBERS=2;
+  static const int NUM_E_OUT_ARGS_MEMBERS=3;
 
   /** \brief . */
   enum EDerivativeLinearity {
@@ -173,6 +187,10 @@ public:
     Teuchos::RefCountPtr<Epetra_Operator> get_W() const;
     /** \brief . */
     DerivativeProperties get_W_properties() const;
+    /** \brief .  */
+    void set_f_poly( const Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > &f_poly );
+    /** \brief .  */
+    Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > get_f_poly() const;
     /** \brief. */
     bool supports(EOutArgsMembers arg) const;
   protected:
@@ -193,6 +211,7 @@ public:
     g_t                                    g_;
     Teuchos::RefCountPtr<Epetra_Operator>  W_;
     DerivativeProperties                   W_properties_;
+    Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > f_poly_;
     bool supports_[NUM_E_OUT_ARGS_MEMBERS];
     // functions
     void assert_supports(EOutArgsMembers arg) const;
@@ -350,6 +369,24 @@ inline
 Teuchos::RefCountPtr<const Epetra_Vector> ModelEvaluator::InArgs::get_x() const
 { assert_supports(IN_ARG_x); return x_; }
 
+inline 
+void ModelEvaluator::InArgs::set_x_dot_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > &x_dot_poly )
+{ assert_supports(IN_ARG_x_dot_poly); x_dot_poly_ = x_dot_poly; }
+
+inline 
+Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> >
+ModelEvaluator::InArgs::get_x_dot_poly() const
+{ assert_supports(IN_ARG_x_dot_poly); return x_dot_poly_; }
+
+inline 
+void ModelEvaluator::InArgs::set_x_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > &x_poly )
+{ assert_supports(IN_ARG_x_poly); x_poly_ = x_poly; }
+
+inline 
+Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> >
+ModelEvaluator::InArgs::get_x_poly() const
+{ assert_supports(IN_ARG_x_poly); return x_poly_; }
+
 inline
 void ModelEvaluator::InArgs::set_p( int l, const Teuchos::RefCountPtr<const Epetra_Vector> &p_l )
 { assert_l(l); p_[l-1] = p_l; }
@@ -435,6 +472,15 @@ ModelEvaluator::DerivativeProperties ModelEvaluator::OutArgs::get_W_properties()
 {
   return W_properties_;
 }
+
+inline
+void ModelEvaluator::OutArgs::set_f_poly( const Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > &f_poly )
+{ f_poly_ = f_poly; }
+
+inline
+Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> >
+ModelEvaluator::OutArgs::get_f_poly() const
+{ return f_poly_; }
 
 inline
 void ModelEvaluator::OutArgs::_setModelEvalDescription( const std::string &modelEvalDescription )

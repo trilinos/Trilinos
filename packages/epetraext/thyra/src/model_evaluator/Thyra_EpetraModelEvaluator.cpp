@@ -197,6 +197,9 @@ EpetraModelEvaluator::InArgs<double> EpetraModelEvaluator::createInArgs() const
   inArgs.set_Np(epetraInArgs.Np());
   inArgs.setSupports(IN_ARG_x_dot,epetraInArgs.supports(EME::IN_ARG_x_dot));
   inArgs.setSupports(IN_ARG_x,epetraInArgs.supports(EME::IN_ARG_x));
+  inArgs.setSupports(IN_ARG_x_dot_poly,
+		     epetraInArgs.supports(EME::IN_ARG_x_dot_poly));
+  inArgs.setSupports(IN_ARG_x_poly,epetraInArgs.supports(EME::IN_ARG_x_poly));
   inArgs.setSupports(IN_ARG_t,epetraInArgs.supports(EME::IN_ARG_t));
   inArgs.setSupports(IN_ARG_alpha,epetraInArgs.supports(EME::IN_ARG_alpha));
   inArgs.setSupports(IN_ARG_beta,epetraInArgs.supports(EME::IN_ARG_beta));
@@ -214,6 +217,8 @@ EpetraModelEvaluator::OutArgs<double> EpetraModelEvaluator::createOutArgs() cons
   outArgs.set_Np_Ng(epetraInArgs.Np(),epetraOutArgs.Ng());
   outArgs.setSupports(OUT_ARG_f,epetraOutArgs.supports(EME::OUT_ARG_f));
   outArgs.setSupports(OUT_ARG_W,epetraOutArgs.supports(EME::OUT_ARG_W));
+  outArgs.setSupports(OUT_ARG_f_poly,
+		      epetraOutArgs.supports(EME::OUT_ARG_f_poly));
   outArgs.set_W_properties(convert(epetraOutArgs.get_W_properties()));
   return outArgs;
 }
@@ -237,6 +242,33 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
   RefCountPtr<const VectorBase<double> > x;
   if( inArgs.supports(IN_ARG_x) && (x = inArgs.get_x()).get() )
     epetraInArgs.set_x(get_Epetra_Vector(*x_map_,x));
+
+  RefCountPtr<const Teuchos::Polynomial< VectorBase<double> > > x_dot_poly;
+  Teuchos::RefCountPtr<Epetra_Vector> epetra_ptr;
+  if( inArgs.supports(IN_ARG_x_dot_poly) && \
+      (x_dot_poly = inArgs.get_x_dot_poly()).get() ) {
+    RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > epetra_x_dot_poly = 
+      Teuchos::rcp(new Teuchos::Polynomial<Epetra_Vector>(x_dot_poly->degree()));
+    for (unsigned int i=0; i<=x_dot_poly->degree(); i++) {
+      epetra_ptr = 
+	Teuchos::rcp_const_cast<Epetra_Vector>(get_Epetra_Vector(*x_map_, x_dot_poly->getCoefficient(i)));
+      epetra_x_dot_poly->setCoefficientPtr(i,epetra_ptr);
+    }
+    epetraInArgs.set_x_dot_poly(epetra_x_dot_poly);
+  }
+
+  RefCountPtr<const Teuchos::Polynomial< VectorBase<double> > > x_poly;
+  if( inArgs.supports(IN_ARG_x_poly) && \
+      (x_poly = inArgs.get_x_poly()).get() ) {
+    RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > epetra_x_poly = 
+      Teuchos::rcp(new Teuchos::Polynomial<Epetra_Vector>(x_poly->degree()));
+    for (unsigned int i=0; i<=x_poly->degree(); i++) {
+      epetra_ptr = 
+	Teuchos::rcp_const_cast<Epetra_Vector>(get_Epetra_Vector(*x_map_, x_poly->getCoefficient(i)));
+      epetra_x_poly->setCoefficientPtr(i,epetra_ptr);
+    }
+    epetraInArgs.set_x_poly(epetra_x_poly);
+  }
 
   if( inArgs.supports(IN_ARG_t) )
     epetraInArgs.set_t(inArgs.get_t());
@@ -267,6 +299,20 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
       eW = epetraModel_->create_W();
     }
     epetraOutArgs.set_W(eW);
+  }
+
+  RefCountPtr<const Teuchos::Polynomial< VectorBase<double> > > f_poly;
+  if( outArgs.supports(OUT_ARG_f_poly) && \
+      (f_poly = outArgs.get_f_poly()).get() ) {
+    RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > epetra_f_poly = 
+      Teuchos::rcp(new Teuchos::Polynomial<Epetra_Vector>(f_poly->degree()));
+    for (unsigned int i=0; i<=f_poly->degree(); i++) {
+      epetra_ptr = 
+	Teuchos::rcp_const_cast<Epetra_Vector>(get_Epetra_Vector(*f_map_,
+								 f_poly->getCoefficient(i)));
+      epetra_f_poly->setCoefficientPtr(i,epetra_ptr);
+    }
+    epetraOutArgs.set_f_poly(epetra_f_poly);
   }
 
   // Do the evaluation
