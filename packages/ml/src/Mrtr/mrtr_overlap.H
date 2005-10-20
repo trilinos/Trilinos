@@ -108,12 +108,20 @@ private:
   // test whether a point is inside or outside of a clip edge
   bool Clip_TestPoint(const double* N, const double* PE, const double* P);
   // find intersection of clipping edge with line
-  bool Clip_Intersect(double* N,double* PE,double* P0,double* P1,double* xi);
+  bool Clip_Intersect(const double* N,const double* PE,const double* P0,const double* P1,double* xi);
+  // find parameterization alpha for point on line
+  double Clip_ParameterPointOnLine(const double* P0,const double* P1,const double* P);
 
   // fix the polygon for case 1_2_dif
   bool Clip_FixPolygon_1_2_dif(int np, MRTR::Point** point);
   // fix the polygon for case 1_2_same
   bool Clip_FixPolygon_1_2_same(int np, MRTR::Point** point);
+  // fix the polygon for case 2_2_same
+  bool Clip_FixPolygon_2_2_same(int np, MRTR::Point** point);
+  // fix the polygon for case 2_2_dif
+  bool Clip_FixPolygon_2_2_dif(int np, MRTR::Point** point);
+  // fix the polygon for case 1_4_same
+  bool Clip_FixPolygon_1_4_same(int np, MRTR::Point** point);
 
   // add a point to the polygon
   bool Clip_AddPointtoPolygon(int id, double* P);

@@ -236,5 +236,11 @@ int MRTR::digit_ten(int number)
   return number;
 }
 
+/*----------------------------------------------------------------------*
+ | swap 2 kinds                                              mwgee 10/05|
+ | this template is given in mrtr_utils.H                               |
+ *----------------------------------------------------------------------*/
+// template<typename kind> void swap(kind& a, kind& b);
+
 
 #endif // TRILINOS_PACKAGE

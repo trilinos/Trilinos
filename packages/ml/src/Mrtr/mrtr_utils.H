@@ -67,7 +67,14 @@ double MRTR::dot(const double* g1, const double* g2, const int dim);
 bool MRTR::solve22(const double A[][2], double* x, const double* b);
 bool MRTR::solve33(const double A[][3], double* x, const double* b);
 int MRTR::digit_ten(int i);
-
+template<typename kind>
+void swap(kind& a, kind& b)
+{
+  kind tmp = a;
+  a = b;
+  b = tmp;
+  return;
+}
 
 
 } // namespace MRTR

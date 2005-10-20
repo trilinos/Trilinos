@@ -243,7 +243,7 @@ bool MRTR::Overlap::ComputeOverlap()
 /*----------------------------------------------------------------------*
  |  find intersection (private)                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_Intersect(double* N,double* PE,double* P0,double* P1,double* xi)
+bool MRTR::Overlap::Clip_Intersect(const double* N,const double* PE,const double* P0,const double* P1,double* xi)
 {
   double P1P0[2];
   P1P0[0] = P1[0] - P0[0];
@@ -287,6 +287,23 @@ bool MRTR::Overlap::Clip_TestPoint(const double* N, const double* PE, const doub
     return false;
   else
     return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  find parameterization alpha for point on line (private)  mwgee 10/05|
+ *----------------------------------------------------------------------*/
+double MRTR::Overlap::Clip_ParameterPointOnLine(const double* P0,const double* P1,const double* P)
+{
+  double dist1 = sqrt( (P[0]-P0[0])*(P[0]-P0[0])+(P[1]-P0[1])*(P[1]-P0[1]) );
+  double dist2 = sqrt( (P1[0]-P0[0])*(P1[0]-P0[0])+(P1[1]-P0[1])*(P1[1]-P0[1]) );
+  if (dist2<1.0e-10) 
+  {
+    cout << "***ERR*** MRTR::Overlap::Clip_ParameterPointOnLine:\n"
+         << "***ERR*** edge length too small, division by near zero\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  return (dist1/dist2);
 }
 
 /*----------------------------------------------------------------------*
@@ -782,15 +799,18 @@ bool MRTR::Overlap::Clipelements()
   break;  
   //---------------------------------------------------------------------------
   case poly_1_4_same:
+    Clip_FixPolygon_1_4_same(np,point);
   break;  
   //---------------------------------------------------------------------------
   case poly_1_4_dif:
   break;  
   //---------------------------------------------------------------------------
   case poly_2_2_same:
+    Clip_FixPolygon_2_2_same(np,point);
   break;  
   //---------------------------------------------------------------------------
   case poly_2_2_dif:
+    Clip_FixPolygon_2_2_dif(np,point);
   break;  
   //---------------------------------------------------------------------------
   case poly_3_0:
@@ -851,11 +871,7 @@ bool MRTR::Overlap::Clip_FixPolygon_1_2_dif(int np, MRTR::Point** point)
   int nextedge = -1;
   // order the edges
   if (sedge[0]>sedge[1])
-  {
-    int tmp = sedge[0];
-    sedge[0] = sedge[1];
-    sedge[1] = tmp;
-  }
+    MRTR::swap(sedge[0],sedge[1]);
   if (sedge[0]==0 && sedge[1]==1) 
   {
     spoint = 1;
@@ -944,22 +960,166 @@ bool MRTR::Overlap::Clip_FixPolygon_1_2_same(int np, MRTR::Point** point)
 {
   // identify the slave edge
   int sedge;
+  MRTR::Point* sedgepoint[2];
+  int count=0;
   for (int p=0; p<np; ++p)
   {
     if (point[p]->Id() >= 100) continue;
     sedge = MRTR::digit_ten(point[p]->Id());
-    break;
+    sedgepoint[count] = point[p];
+    ++count;
+  }
+  if (count != 2)
+  {
+    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_1_2_same:\n"
+         << "***ERR*** number of intersections wrong\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
   }
   
   // get the parameterization of the 2 intersections on this edge
+  double alpha[2];
+  alpha[0] = Clip_ParameterPointOnLine(&sline_[sedge][0],&sline_[sedge][2],sedgepoint[0]->Xi());
+  alpha[1] = Clip_ParameterPointOnLine(&sline_[sedge][0],&sline_[sedge][2],sedgepoint[1]->Xi());
   
+  // sort them in ascending order
+  if (alpha[1]<alpha[0])
+  {
+    MRTR::swap(alpha[0],alpha[1]);
+    MRTR::swap(sedgepoint[0],sedgepoint[1]);
+  }
+
+  // create a new polygon
+  map<int,MRTR::Point*> newpolygon;
   
+  // put in the first intersecting point on the edge
+  MRTR::Point* newpoint = new MRTR::Point(0,sedgepoint[0]->Xi());
+  newpolygon.insert(pair<int,MRTR::Point*>(0,newpoint));  
+  
+  // put in the second intersecting point on the edge
+  newpoint = new MRTR::Point(1,sedgepoint[1]->Xi());
+  newpolygon.insert(pair<int,MRTR::Point*>(1,newpoint));  
 
+  // put in the inner point as thrid point
+  for (int p=0; p<np; ++p)
+    if (point[p]->Id() >= 100)
+    {
+      newpoint = new MRTR::Point(2,point[p]->Xi());
+      newpolygon.insert(pair<int,MRTR::Point*>(2,newpoint));
+      break;  
+    }
+  
+  // destroy the old polygon
+  Clip_DestroyPointPolygon(p_);
+  
+  // Deep Copy the newpolygon to the old polygon
+  Clip_CopyPointPolygon(newpolygon,p_);
 
-
+  // destroy the new polygon
+  Clip_DestroyPointPolygon(newpolygon);
 
   
-#if 0
+#if 1
+  // printout the polygon
+  map<int,MRTR::Point*>::iterator pcurr;
+  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
+    if (pcurr->second)
+      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
+           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
+#endif  
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  fix polygon in the case 2_2_same (private)               mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::Clip_FixPolygon_2_2_same(int np, MRTR::Point** point)
+{
+  // identify the slave edge
+  int sedge;
+  MRTR::Point* sedgepoint[2];
+  MRTR::Point* inpoint[2];
+  int count1=0;
+  int count2=0;
+  for (int p=0; p<np; ++p)
+  {
+    if (point[p]->Id() >= 100) 
+    {
+      inpoint[count2] = point[p];
+      ++count2;
+    }
+    else
+    {
+      sedge = MRTR::digit_ten(point[p]->Id());
+      sedgepoint[count1] = point[p];
+      ++count1;
+    }
+  }
+  if (count1 != 2 || count2 !=2)
+  {
+    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_1_2_same:\n"
+         << "***ERR*** number of intersections or number of inner nodes wrong\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  // get the parameterization of the 2 intersections on this edge
+  double alpha[2];
+  alpha[0] = Clip_ParameterPointOnLine(&sline_[sedge][0],&sline_[sedge][2],sedgepoint[0]->Xi());
+  alpha[1] = Clip_ParameterPointOnLine(&sline_[sedge][0],&sline_[sedge][2],sedgepoint[1]->Xi());
+  
+  // sort them in ascending order
+  if (alpha[1]<alpha[0])
+  {
+    MRTR::swap(alpha[0],alpha[1]);
+    MRTR::swap(sedgepoint[0],sedgepoint[1]);
+  }
+  
+  // get the order of the inner nodes in the polygon right
+  // for this, we have to test intersection of lines
+  // line1: sedgepoint[1] - inpoint[0]
+  // line2: inpoint[1] - sedgepoint[0]
+  // line1 will serve as a clipedge
+  const double* PE = sedgepoint[1]->Xi();
+  double N[2];
+  N[0] = inpoint[0]->Xi()[1] - sedgepoint[1]->Xi()[1];
+  N[1] = -(inpoint[0]->Xi()[0] - sedgepoint[1]->Xi()[0]);
+  double xi[2];
+  bool cross = Clip_Intersect(N,PE,inpoint[1]->Xi(),sedgepoint[0]->Xi(),xi);
+  // if lines cross, we have to swap inpoints
+  if (cross)
+    MRTR::swap(inpoint[0],inpoint[1]);
+
+  // create a new polygon
+  map<int,MRTR::Point*> newpolygon;
+  
+  // put in the first intersecting point on the edge
+  MRTR::Point* newpoint = new MRTR::Point(0,sedgepoint[0]->Xi());
+  newpolygon.insert(pair<int,MRTR::Point*>(0,newpoint));  
+  
+  // put in the second intersecting point on the edge
+  newpoint = new MRTR::Point(1,sedgepoint[1]->Xi());
+  newpolygon.insert(pair<int,MRTR::Point*>(1,newpoint));  
+
+  // put in first inner point
+  newpoint = new MRTR::Point(2,inpoint[0]->Xi());
+  newpolygon.insert(pair<int,MRTR::Point*>(2,newpoint));  
+    
+  // put in second inner point
+  newpoint = new MRTR::Point(3,inpoint[1]->Xi());
+  newpolygon.insert(pair<int,MRTR::Point*>(3,newpoint));  
+  
+  // destroy the old polygon
+  Clip_DestroyPointPolygon(p_);
+  
+  // Deep Copy the newpolygon to the old polygon
+  Clip_CopyPointPolygon(newpolygon,p_);
+
+  // destroy the new polygon
+  Clip_DestroyPointPolygon(newpolygon);
+
+  
+#if 1
   // printout the polygon
   map<int,MRTR::Point*>::iterator pcurr;
   for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
@@ -971,9 +1131,281 @@ bool MRTR::Overlap::Clip_FixPolygon_1_2_same(int np, MRTR::Point** point)
 }
 
 
+/*----------------------------------------------------------------------*
+ |  fix polygon in the case 2_2_dif (private)                mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::Clip_FixPolygon_2_2_dif(int np, MRTR::Point** point)
+{
+  // identify the slave edge
+  int sedge[2];
+  MRTR::Point* sedgepoint[2];
+  MRTR::Point* inpoint[2];
+  int count1=0;
+  int count2=0;
+  for (int p=0; p<np; ++p)
+  {
+    if (point[p]->Id() >= 100) 
+    {
+      inpoint[count2] = point[p];
+      ++count2;
+    }
+    else
+    {
+      sedge[count1] = MRTR::digit_ten(point[p]->Id());
+      sedgepoint[count1] = point[p];
+      ++count1;
+    }
+  }
+  if (count1 != 2 || count2 !=2)
+  {
+    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_1_2_same:\n"
+         << "***ERR*** number of intersections or number of inner nodes wrong\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+
+  // identify the slave node between them
+  int prevedge = -1;
+  int spoint = -1;
+  int nextedge = -1;
+  // order the edges
+  if (sedge[0]>sedge[1])
+  {
+    MRTR::swap(sedge[0],sedge[1]);
+    MRTR::swap(sedgepoint[0],sedgepoint[1]);
+  }
+  if (sedge[0]==0 && sedge[1]==1) 
+  {
+    spoint = 1;
+    prevedge = 0;
+    nextedge = 1;
+  }
+  else if (sedge[0]==1 && sedge[1]==2)
+  {
+    spoint = 2;
+    prevedge = 1;
+    nextedge = 2;
+  }
+  else if (sedge[0]==0 && sedge[1]==2)
+  {
+    spoint=0;
+    prevedge = 2;
+    nextedge = 0;
+  }
+  else
+  {
+    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_1_2_dif:\n"
+         << "***ERR*** can't find slave point\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  
+  // get the order of the inner nodes in the polygon right
+  // for this, we have to test intersection of lines
+  // line1: sedgepoint[1] - inpoint[0]
+  // line2: inpoint[1] - sedgepoint[0]
+  // line1 will serve as a clipedge
+  const double* PE = sedgepoint[1]->Xi();
+  double N[2];
+  N[0] = inpoint[0]->Xi()[1] - sedgepoint[1]->Xi()[1];
+  N[1] = -(inpoint[0]->Xi()[0] - sedgepoint[1]->Xi()[0]);
+  double xi[2];
+  bool cross = Clip_Intersect(N,PE,inpoint[1]->Xi(),sedgepoint[0]->Xi(),xi);
+  // if lines cross, we have to swap inpoints
+  if (cross)
+    MRTR::swap(inpoint[0],inpoint[1]);
+
+  // create a new polygon
+  map<int,MRTR::Point*> newpolygon;
+  
+  // put in the first intersecting point on the edge
+  MRTR::Point* newpoint = new MRTR::Point(0,sedgepoint[0]->Xi());
+  newpolygon.insert(pair<int,MRTR::Point*>(0,newpoint));  
+  
+  // put in the slave point between the 2 intersections
+  newpoint = new MRTR::Point(1,&sxi_[spoint][0]);
+  newpolygon.insert(pair<int,MRTR::Point*>(1,newpoint));  
+  
+  // put in the second intersecting point on the edge
+  newpoint = new MRTR::Point(2,sedgepoint[1]->Xi());
+  newpolygon.insert(pair<int,MRTR::Point*>(2,newpoint));  
+
+  // put in first inner point
+  newpoint = new MRTR::Point(3,inpoint[0]->Xi());
+  newpolygon.insert(pair<int,MRTR::Point*>(3,newpoint));  
+    
+  // put in second inner point
+  newpoint = new MRTR::Point(4,inpoint[1]->Xi());
+  newpolygon.insert(pair<int,MRTR::Point*>(4,newpoint));  
+  
+  // destroy the old polygon
+  Clip_DestroyPointPolygon(p_);
+  
+  // Deep Copy the newpolygon to the old polygon
+  Clip_CopyPointPolygon(newpolygon,p_);
+
+  // destroy the new polygon
+  Clip_DestroyPointPolygon(newpolygon);
+
+  
+#if 1
+  // printout the polygon
+  map<int,MRTR::Point*>::iterator pcurr;
+  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
+    if (pcurr->second)
+      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
+           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
+#endif  
+  return true;
+}
 
 
+/*----------------------------------------------------------------------*
+ |  fix polygon in the case 1_4_same (private)               mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::Clip_FixPolygon_1_4_same(int np, MRTR::Point** point)
+{
+  // identify the slave edges
+  int sedge[4];
+  MRTR::Point* sedgepoint[4];
+  MRTR::Point* inpoint;
+  int count1=0;
+  int count2=0;
+  for (int p=0; p<np; ++p)
+  {
+    if (point[p]->Id() >= 100) 
+    {
+      inpoint = point[p];
+      ++count2;
+    }
+    else
+    {
+      sedge[count1] = MRTR::digit_ten(point[p]->Id());
+      sedgepoint[count1] = point[p];
+      ++count1;
+    }
+  }
+  if (count1 != 4 || count2 !=1)
+  {
+    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_1_2_same:\n"
+         << "***ERR*** number of intersections or number of inner nodes wrong\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  // sort the edge points by rising edge numbers
+  if (sedge[3]<sedge[2])
+  {
+    MRTR::swap(sedge[3],sedge[2]);
+    MRTR::swap(sedgepoint[3],sedgepoint[2]);
+  }
+  if (sedge[2]<sedge[1])
+  {
+    MRTR::swap(sedge[2],sedge[1]);
+    MRTR::swap(sedgepoint[2],sedgepoint[1]);
+  }
+  if (sedge[1]<sedge[0])
+  {
+    MRTR::swap(sedge[1],sedge[0]);
+    MRTR::swap(sedgepoint[1],sedgepoint[0]);
+  }
+  
+  // sort sedge[2] and segde[3] according to parameterization on that line
+  double alpha[2];
+  alpha[0] = Clip_ParameterPointOnLine(&sline_[sedge[2]][0],&sline_[sedge[2]][2],sedgepoint[2]->Xi());
+  alpha[1] = Clip_ParameterPointOnLine(&sline_[sedge[3]][0],&sline_[sedge[3]][2],sedgepoint[3]->Xi());
+  if (alpha[1]<alpha[0])
+    MRTR::swap(sedgepoint[2],sedgepoint[3]);
 
+  // sort sedge[0] and segde[1] according to parameterization on that line
+  alpha[0] = Clip_ParameterPointOnLine(&sline_[sedge[0]][0],&sline_[sedge[0]][2],sedgepoint[0]->Xi());
+  alpha[1] = Clip_ParameterPointOnLine(&sline_[sedge[1]][0],&sline_[sedge[1]][2],sedgepoint[1]->Xi());
+  if (alpha[1]<alpha[0])
+    MRTR::swap(sedgepoint[0],sedgepoint[1]);
+
+  // identify the slave node between the intersections
+  int spoint = -1;
+  if (sedge[0]==0 && sedge[2]==1) 
+    spoint = 1;
+  else if (sedge[0]==1 && sedge[2]==2)
+    spoint = 2;
+  else if (sedge[0]==0 && sedge[2]==2)
+    spoint=0;
+  else
+  {
+    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_1_4_same:\n"
+         << "***ERR*** can't find slave point\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n"; 
+    exit(EXIT_FAILURE);
+  }
+  
+  // see whether the line spoint - inpoint intersects with
+  //             the line sedgepoint[0] - sedgepoint[3]
+  // line sedgepoint[0] - sedgpoint[3] surfs as clip edge
+  const double* PE = sedgepoint[0]->Xi();
+  double N[2];
+  N[0] =  sedgepoint[3]->Xi()[1] - sedgepoint[0]->Xi()[1];
+  N[1] =  -(sedgepoint[3]->Xi()[0] - sedgepoint[0]->Xi()[0]);
+  double xi[2];
+  bool cross = Clip_Intersect(N,PE,&sxi_[spoint][0],inpoint->Xi(),xi);
+
+  // create a new polygon
+  map<int,MRTR::Point*> newpolygon;
+
+  // put in sedgepoint[0]
+  MRTR::Point* newpoint = new MRTR::Point(0,sedgepoint[0]->Xi());
+  newpolygon.insert(pair<int,MRTR::Point*>(0,newpoint));  
+  // put in sedgepoint[1]
+  newpoint = new MRTR::Point(1,sedgepoint[1]->Xi());
+  newpolygon.insert(pair<int,MRTR::Point*>(1,newpoint));  
+
+  if (cross)
+  {
+    // the polygon has the order sedgepoint[0] - sedgepoint[1] - inpoint - sedgepoint[2] - sedgepoint[3]
+    // put in inpoint
+    newpoint = new MRTR::Point(2,inpoint->Xi());
+    newpolygon.insert(pair<int,MRTR::Point*>(2,newpoint));  
+    // put in sedgepoint[2]
+    newpoint = new MRTR::Point(3,sedgepoint[2]->Xi());
+    newpolygon.insert(pair<int,MRTR::Point*>(3,newpoint));  
+    // put in sedgepoint[3]
+    newpoint = new MRTR::Point(4,sedgepoint[3]->Xi());
+    newpolygon.insert(pair<int,MRTR::Point*>(4,newpoint));  
+  }
+  else
+  {
+    // the polygon has the order sedgepoint[0] - sedgepoint[1] - sedgepoint[2] - sedgepoint[3] - inpoint
+    // put in sedgepoint[2]
+    newpoint = new MRTR::Point(2,sedgepoint[2]->Xi());
+    newpolygon.insert(pair<int,MRTR::Point*>(2,newpoint));  
+    // put in sedgepoint[3]
+    newpoint = new MRTR::Point(3,sedgepoint[3]->Xi());
+    newpolygon.insert(pair<int,MRTR::Point*>(3,newpoint));  
+    // put in inpoint
+    newpoint = new MRTR::Point(4,inpoint->Xi());
+    newpolygon.insert(pair<int,MRTR::Point*>(4,newpoint));  
+  }
+
+  // destroy the old polygon
+  Clip_DestroyPointPolygon(p_);
+  
+  // Deep Copy the newpolygon to the old polygon
+  Clip_CopyPointPolygon(newpolygon,p_);
+
+  // destroy the new polygon
+  Clip_DestroyPointPolygon(newpolygon);
+  
+#if 1
+  // printout the polygon
+  map<int,MRTR::Point*>::iterator pcurr;
+  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
+    if (pcurr->second)
+      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
+           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
+#endif  
+  return true;
+}
 
 
 
