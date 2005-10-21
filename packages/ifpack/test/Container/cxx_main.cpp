@@ -42,6 +42,7 @@
 #include "Ifpack_DenseContainer.h"
 #include "Ifpack_SparseContainer.h"
 #include "Ifpack_Amesos.h"
+#include "Ifpack_LocalFilter.h"
 
 static bool verbose = false;
 
@@ -107,7 +108,7 @@ bool TestContainer(string Type, Epetra_RowMatrix* A)
   double residual = Galeri::ComputeNorm(&LHS, &LHS_exact);
 
   if (A->Comm().MyPID() == 0 && verbose) {
-    cout << ", ||x_exact - x||_2 = " << residual << endl;
+    cout << "||x_exact - x||_2 = " << residual << endl;
     cout << *Container;
   }
 
@@ -143,18 +144,23 @@ int main(int argc, char *argv[])
   Epetra_Map* Map = Galeri::CreateMap("Linear", Comm, GaleriList);
   Epetra_RowMatrix* Matrix = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
   
+  Ifpack_LocalFilter* LocalMatrix = new Ifpack_LocalFilter(Matrix);
   int TestPassed = true;
 
-  if (!TestContainer("dense",Matrix))  TestPassed = false;
-  if (!TestContainer("sparse",Matrix)) TestPassed = false;
+  if (!TestContainer("dense",LocalMatrix))  TestPassed = false;
+  if (!TestContainer("sparse",LocalMatrix)) TestPassed = false;
 
   if (TestPassed)
-    cout << "Test `TestContainer.exe' passed!" << endl;
+  {
+    if (verbose)
+      cout << "Test `TestContainer.exe' passed!" << endl;
+  }
   else {
     cout << "Test `TestContainer.exe' FAILED!" << endl;
     exit(EXIT_FAILURE);
   }
-
+  
+  delete LocalMatrix;
   delete Matrix;
   delete Map;
 
