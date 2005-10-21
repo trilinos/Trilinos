@@ -44,6 +44,7 @@
 # NOX Python tests
 (FRAMEWORK,INSTALL,NOXPyTests) {
     DIRS = ../python/test;
+    EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI(1-4);
 }
 
