@@ -116,3 +116,4 @@ if __name__ == "__main__":
     # Exit with a code that indicates the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))[0]
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    sys.exit(errsPlusFails)
