@@ -10,5 +10,6 @@
 
 (FRAMEWORK, INSTALL, New_PackagePyTests) {
     DIRS = ../python/test;
+    EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI(1-4);
 }
