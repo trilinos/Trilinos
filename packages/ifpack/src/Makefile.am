@@ -164,6 +164,7 @@ COMP = \
 	$(srcdir)/Ifpack_Graph_Epetra_CrsGraph.cpp  \
 	$(srcdir)/Ifpack_Utils.cpp                  \
 	$(srcdir)/Ifpack_HashTable.cpp              \
+	$(srcdir)/Ifpack_Amesos.cpp                 \
 	$(srcdir)/Ifpack_OverlappingPartitioner.cpp \
 	$(srcdir)/Ifpack_LinearPartitioner.cpp      \
 	$(srcdir)/Ifpack_GreedyPartitioner.cpp      \

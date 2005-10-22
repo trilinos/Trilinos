@@ -60,7 +60,9 @@ int main(int argc, char *argv[])
   // The problem is defined on a 2D grid, global size is nx * nx.
   int nx = 30; 
   GaleriList.set("nx", nx);
-  GaleriList.set("ny", nx);
+  GaleriList.set("ny", nx * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
   Epetra_Map* Map = Galeri::CreateMap("Cartesian2D", Comm, GaleriList);
   Epetra_RowMatrix* A = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
 

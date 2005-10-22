@@ -82,7 +82,9 @@ int main(int argc, char *argv[]) {
   int nx = 30;
   Teuchos::ParameterList GaleriList;
   GaleriList.set("nx", nx);
-  GaleriList.set("ny", nx);
+  GaleriList.set("ny", nx * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
   Epetra_Map* Map = Galeri::CreateMap("Cartesian2D", Comm, GaleriList);
   Epetra_CrsMatrix* A = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
   Epetra_MultiVector* LHS = new Epetra_MultiVector(*Map, 1);
