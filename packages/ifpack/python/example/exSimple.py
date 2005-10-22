@@ -35,8 +35,11 @@ def main():
     LHS.PutScalar(0.0)   # fix starting solution
     Matrix.Multiply(False, Exact, RHS) # fix rhs corresponding to Exact
   else:
-    ##Map, Matrix, LHS, RHS, Exact = Triutils.ReadHB(args[0], Comm);
-    print "ERRRRORRRR"
+    try:
+      Map, Matrix, LHS, RHS, Exact = Triutils.ReadHB(args[0], Comm);
+    except:
+      print "Specified matrix cannot be found"
+      exit(0)
 
   # Creates the IFPACK preconditioner, in this case an incomplete
   # Cholesky factorization, with fill-in of 5
