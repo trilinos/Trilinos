@@ -33,6 +33,7 @@
 #include "Ifpack_ICT.h"
 #include "Ifpack_Condest.h"
 #include "Ifpack_Utils.h"
+#include "Ifpack_HashTable.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
@@ -41,6 +42,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Util.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Hashtable.hpp"
 
 //==============================================================================
 // FIXME: allocate Comm_ and Time_ the first Initialize() call
@@ -168,6 +170,9 @@ int Ifpack_ICT::Compute()
   int diag_idx = 0;
   EPETRA_CHK_ERR(H_->InsertGlobalValues(0,1,&diag_val, &diag_idx));
 
+  int oldSize = RowNnz;
+  Ifpack_HashTable::Init(oldSize + 1, oldSize + 1);
+
   // start factorization for line 1
   for (int row_i = 1 ; row_i < NumMyRows_ ; ++row_i) {
 
@@ -181,8 +186,7 @@ int Ifpack_ICT::Compute()
     if (LOF == 0) LOF = 1;
 
     // convert line `row_i' into STL map for fast access
-    map<int,double> SingleRow;
-    map<int,double>::iterator where;
+    Ifpack_HashTable Hash(oldSize * 2 + 1);
 
     double h_ii = 0.0;
     for (int i = 0 ; i < RowNnz ; ++i) {
@@ -191,7 +195,9 @@ int Ifpack_ICT::Compute()
         h_ii = AbsoluteThreshold() * EPETRA_SGN(v) + RelativeThreshold() * v;
       }
       else if (RowIndices[i] < row_i)
-        SingleRow[RowIndices[i]] = RowValues[i];
+      {
+        Hash.Add(RowIndices[i], RowValues[i]);
+      }
     }
       
     // form element (row_i, col_j)
@@ -201,9 +207,8 @@ int Ifpack_ICT::Compute()
 
       short int flops = 0;
       double h_ij = 0.0, h_jj = 0.0;
-      where = SingleRow.find(col_j);
-      if (where != SingleRow.end())
-        h_ij = SingleRow[(*where).first];
+      // note: Get() returns 0.0 if col_j is not found
+      h_ij = Hash.Get(col_j);
 
       // get pointers to row `col_j'
       int* ColIndices;
@@ -217,9 +222,10 @@ int Ifpack_ICT::Compute()
         if (col_k == col_j)
           h_jj = ColValues[k];
         else {
-          where = SingleRow.find(col_k);
-          if (where != SingleRow.end()) {
-            h_ij -= ColValues[k] * SingleRow[(*where).first];
+          double xxx = Hash.Get(col_k);
+          if (xxx != 0.0)
+          {
+            h_ij -= ColValues[k] * xxx;
             flops += 2;
           }
         }
@@ -228,58 +234,89 @@ int Ifpack_ICT::Compute()
       h_ij /= h_jj;
 
       if (IFPACK_ABS(h_ij) > DropTolerance_)
-        SingleRow[col_j] = h_ij;
+      {
+        Hash.Replace(col_j, h_ij);
+      }
     
       // only approx
       ComputeFlops_ += 2.0 * flops + 1;
     }
 
-    int size = SingleRow.size();
+    int size = Hash.Size();
 
     vector<double> AbsRow(size);
     int count = 0;
-    for (where = SingleRow.begin() ; where != SingleRow.end() ; ++where) {
-      AbsRow[count++] = IFPACK_ABS((*where).second);
+    
+    // +1 because I use the extra position for diagonal in insert
+    vector<int> keys(size + 1);
+    vector<double> values(size + 1);
+
+    Hash.Arrayify(&keys[0], &values[0]);
+    /*
+    Hash.Reset();
+    count = 0;
+    for (int i = 0 ; i < Hash.Size() ; ++i)
+    {
+      double val;
+      Hash.Next(val);
+      AbsRow[count++] = IFPACK_ABS(val);
     }
+    */
+    for (int i = 0 ; i < size ; ++i)
+    {
+      AbsRow[i] = IFPACK_ABS(values[i]);
+    }
+    count = size;
 
     double cutoff = 0.0;
     if (count > LOF) {
-      nth_element(AbsRow.begin(), AbsRow.end() + LOF, AbsRow.end(), 
+      nth_element(AbsRow.begin(), AbsRow.begin() + LOF, AbsRow.begin() + count, 
                   greater<double>());
       cutoff = AbsRow[LOF];
     }
 
-    // fix the diagonal element
-    for (where = SingleRow.begin() ; where != SingleRow.end() ; ++where) {
-      h_ii -= ((*where).second) * ((*where).second);
+    for (int i = 0 ; i < size ; ++i)
+    {
+      h_ii -= values[i] * values[i];
     }
+
     if (h_ii < 0.0) h_ii = 1e-12;;
 
-    SingleRow[row_i] = sqrt(h_ii);
+    h_ii = sqrt(h_ii);
 
     // only approx, + 1 == sqrt
-    ComputeFlops_ += 2 * SingleRow.size() + 1;
+    ComputeFlops_ += 2 * size + 1;
 
     double DiscardedElements = 0.0;
 
-    for (where = SingleRow.begin() ; where != SingleRow.end() ; ++where) {
-      if (IFPACK_ABS((*where).second) > cutoff || ((*where).first == row_i)) {
-        IFPACK_CHK_ERR(H_->InsertGlobalValues(row_i,1, &((*where).second),
-                                              (int*)&((*where).first)));
+    count = 0;
+    for (int i = 0 ; i < size ; ++i)    
+    { 
+      if (IFPACK_ABS(values[i]) > cutoff)
+      {
+        values[count] = values[i];
+        keys[count] = keys[i];
+        ++count;
       }
-      else
-        DiscardedElements += (*where).second;
+      else  
+        DiscardedElements += values[i];
     }
 
-    // FIXME: not so sure of that!
     if (RelaxValue() != 0.0) {
       DiscardedElements *= RelaxValue();
-      IFPACK_CHK_ERR(H_->InsertGlobalValues(row_i,1, &DiscardedElements,
-                                            &row_i));
+      h_ii += DiscardedElements;
     }
 
+    values[count] = h_ii;
+    keys[count] = row_i;
+    ++count;
+
+    H_->InsertGlobalValues(row_i, count, &(values[0]), (int*)&(keys[0]));
+
+    oldSize = size;
   }
 
+  Ifpack_HashTable::Finalize();
   IFPACK_CHK_ERR(H_->FillComplete());
 
 #if 0

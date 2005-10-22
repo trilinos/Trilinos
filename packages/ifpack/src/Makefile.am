@@ -89,34 +89,34 @@ DIST_H =
 DIST = 
 
 COMP_H = \
-	$(srcdir)/Ifpack_IlukGraph.h          \
-	$(srcdir)/Ifpack_CrsRiluk.h           \
-	$(srcdir)/Ifpack_ILU.h             \
-	$(srcdir)/Ifpack_ILUT.h             \
-	$(srcdir)/Ifpack_OverlapGraph.h       \
-	$(srcdir)/Ifpack_ScalingType.h        \
-	$(srcdir)/Ifpack_CrsIct.h             \
-	$(srcdir)/Ifpack_ICT.h               \
-	$(srcdir)/Ifpack_IC.h               \
-	$(srcdir)/Ifpack_IC_Utils.h         \
-	$(srcdir)/icrout_cholesky_mex.h       \
-        $(srcdir)/ifp_parameters.h		\
-	$(srcdir)/Ifpack_Preconditioner.h     \
-	$(srcdir)/Ifpack_CondestType.h        \
-	$(srcdir)/Ifpack_Condest.h            \
-	$(srcdir)/Ifpack.h                    \
+	$(srcdir)/Ifpack_IlukGraph.h           \
+	$(srcdir)/Ifpack_CrsRiluk.h            \
+	$(srcdir)/Ifpack_ILU.h                 \
+	$(srcdir)/Ifpack_ILUT.h                \
+	$(srcdir)/Ifpack_OverlapGraph.h        \
+	$(srcdir)/Ifpack_ScalingType.h         \
+	$(srcdir)/Ifpack_CrsIct.h              \
+	$(srcdir)/Ifpack_ICT.h                 \
+	$(srcdir)/Ifpack_IC.h                  \
+	$(srcdir)/Ifpack_IC_Utils.h            \
+	$(srcdir)/icrout_cholesky_mex.h        \
+        $(srcdir)/ifp_parameters.h	       \
+	$(srcdir)/Ifpack_Preconditioner.h      \
+	$(srcdir)/Ifpack_CondestType.h         \
+	$(srcdir)/Ifpack_Condest.h             \
+	$(srcdir)/Ifpack.h                     \
 	$(srcdir)/Ifpack_PointRelaxation.h     \
 	$(srcdir)/Ifpack_BlockRelaxation.h     \
 	$(srcdir)/Ifpack_Container.h           \
 	$(srcdir)/Ifpack_SparseContainer.h     \
-	$(srcdir)/Ifpack_DenseContainer.h     \
+	$(srcdir)/Ifpack_DenseContainer.h      \
 	$(srcdir)/Ifpack_AdditiveSchwarz.h     \
 	$(srcdir)/Ifpack_LocalFilter.h         \
 	$(srcdir)/Ifpack_DropFilter.h          \
 	$(srcdir)/Ifpack_SparsityFilter.h      \
 	$(srcdir)/Ifpack_ReorderFilter.h       \
 	$(srcdir)/Ifpack_SingletonFilter.h     \
-	$(srcdir)/Ifpack_DiagonalFilter.h     \
+	$(srcdir)/Ifpack_DiagonalFilter.h      \
 	$(srcdir)/Ifpack_Graph.h               \
         $(srcdir)/Ifpack_Graph_Epetra_RowMatrix.h \
 	$(srcdir)/Ifpack_Graph_Epetra_CrsGraph.h  \
@@ -126,53 +126,53 @@ COMP_H = \
 	$(srcdir)/Ifpack_GreedyPartitioner.h      \
 	$(srcdir)/Ifpack_METISPartitioner.h       \
 	$(srcdir)/Ifpack_EquationPartitioner.h    \
-	$(srcdir)/Ifpack_UserPartitioner.h      \
-	$(srcdir)/Ifpack_Amesos.h                 \
+	$(srcdir)/Ifpack_UserPartitioner.h        \
 	$(srcdir)/Ifpack_Utils.h                  \
+	$(srcdir)/Ifpack_HashTable.h              \
+	$(srcdir)/Ifpack_Amesos.h                 \
 	$(srcdir)/Ifpack_Reordering.h             \
 	$(srcdir)/Ifpack_RCMReordering.h          \
-	$(srcdir)/Ifpack_SPARSKIT.h \
+	$(srcdir)/Ifpack_SPARSKIT.h               \
 	$(srcdir)/Ifpack_METISReordering.h        \
 	$(srcdir)/Ifpack_OverlappingRowMatrix.h
 
 
 COMP = \
-	$(srcdir)/Ifpack_IlukGraph.cpp           \
-	$(srcdir)/Ifpack_CrsRiluk.cpp            \
-	$(srcdir)/Ifpack_ILU.cpp              \
-	$(srcdir)/Ifpack_ILUT.cpp              \
-	$(srcdir)/Ifpack_CrsIct.cpp              \
-	$(srcdir)/Ifpack_ICT.cpp                \
-	$(srcdir)/Ifpack_IC.cpp                \
-	$(srcdir)/Ifpack_IC_Utils.cpp          \
-	$(srcdir)/Ifpack_OverlapGraph.cpp        \
-	$(srcdir)/icrout_cholesky_mex.c          \
-	$(srcdir)/icrout_quicksort.c             \
-	$(srcdir)/ifp_parameters.cpp             \
-	$(srcdir)/Ifpack_PointRelaxation.cpp \
-	$(srcdir)/Ifpack_Condest.cpp         \
-	$(srcdir)/Ifpack.cpp                 \
-	$(srcdir)/Ifpack_DenseContainer.cpp     \
-	$(srcdir)/Ifpack_LocalFilter.cpp     \
+	$(srcdir)/Ifpack_IlukGraph.cpp              \
+	$(srcdir)/Ifpack_CrsRiluk.cpp               \
+	$(srcdir)/Ifpack_ILU.cpp                    \
+	$(srcdir)/Ifpack_ILUT.cpp                   \
+	$(srcdir)/Ifpack_CrsIct.cpp                 \
+	$(srcdir)/Ifpack_ICT.cpp                    \
+	$(srcdir)/Ifpack_IC.cpp                     \
+	$(srcdir)/Ifpack_IC_Utils.cpp               \
+	$(srcdir)/Ifpack_OverlapGraph.cpp           \
+	$(srcdir)/icrout_cholesky_mex.c             \
+	$(srcdir)/icrout_quicksort.c                \
+	$(srcdir)/ifp_parameters.cpp                \
+	$(srcdir)/Ifpack_PointRelaxation.cpp        \
+	$(srcdir)/Ifpack_Condest.cpp                \
+	$(srcdir)/Ifpack.cpp                        \
+	$(srcdir)/Ifpack_DenseContainer.cpp         \
+	$(srcdir)/Ifpack_LocalFilter.cpp            \
 	$(srcdir)/Ifpack_DropFilter.cpp             \
 	$(srcdir)/Ifpack_SparsityFilter.cpp         \
 	$(srcdir)/Ifpack_ReorderFilter.cpp          \
 	$(srcdir)/Ifpack_SingletonFilter.cpp        \
-	$(srcdir)/Ifpack_DiagonalFilter.cpp        \
+	$(srcdir)/Ifpack_DiagonalFilter.cpp         \
 	$(srcdir)/Ifpack_Graph_Epetra_RowMatrix.cpp \
 	$(srcdir)/Ifpack_Graph_Epetra_CrsGraph.cpp  \
-	$(srcdir)/Ifpack_Amesos.cpp                 \
 	$(srcdir)/Ifpack_Utils.cpp                  \
+	$(srcdir)/Ifpack_HashTable.cpp              \
 	$(srcdir)/Ifpack_OverlappingPartitioner.cpp \
 	$(srcdir)/Ifpack_LinearPartitioner.cpp      \
 	$(srcdir)/Ifpack_GreedyPartitioner.cpp      \
 	$(srcdir)/Ifpack_METISPartitioner.cpp       \
 	$(srcdir)/Ifpack_EquationPartitioner.cpp    \
-	$(srcdir)/Ifpack_UserPartitioner.cpp      \
+	$(srcdir)/Ifpack_UserPartitioner.cpp        \
 	$(srcdir)/Ifpack_RCMReordering.cpp          \
 	$(srcdir)/Ifpack_METISReordering.cpp        \
 	$(srcdir)/Ifpack_OverlappingRowMatrix.cpp
-
 
 # ------------------------------------------------------------------------
 # Ifpack library specifications
