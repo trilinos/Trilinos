@@ -66,7 +66,7 @@ int CompareBlockOverlap(Epetra_RowMatrix* A, int Overlap)
   List.set("relaxation: type", "Jacobi");
   List.set("relaxation: sweeps",1);
   List.set("partitioner: overlap", Overlap);
-  List.set("partitioner: type", "greedy");
+  List.set("partitioner: type", "linear");
   List.set("partitioner: local parts", 16);
 
   RHS.PutScalar(1.0);
@@ -103,7 +103,7 @@ int CompareBlockSizes(string PrecType, Epetra_RowMatrix* A, int NumParts)
   List.set("relaxation: damping factor", 1.0);
   List.set("relaxation: type", PrecType);
   List.set("relaxation: sweeps",1);
-  List.set("partitioner: type", "greedy");
+  List.set("partitioner: type", "linear");
   List.set("partitioner: local parts", NumParts);
 
   RHS.PutScalar(1.0);
@@ -454,6 +454,7 @@ int main(int argc, char *argv[])
     Iters4 = CompareBlockSizes("Jacobi",A,4);
     Iters8 = CompareBlockSizes("Jacobi",A,8);
     Iters16 = CompareBlockSizes("Jacobi",A,16);
+
     if ((Iters16 > Iters8) && (Iters8 > Iters4)) {
       if (verbose)
         cout << "Test passed" << endl;
@@ -468,7 +469,7 @@ int main(int argc, char *argv[])
   // ================================== //
   // verify effect of overlap in Jacobi //
   // ================================== //
-  
+
   {
     int Iters0, Iters2, Iters4;
     Iters0 = CompareBlockOverlap(A,0);
