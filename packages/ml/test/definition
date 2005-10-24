@@ -27,9 +27,9 @@
            MultiLevelPreconditioner_NonSym,
            MultiLevelPreconditioner_Sym,
          # Scalability,
-           SelfSmoother,
          # VerySimple,
-         # Zoltan;
+         # Zoltan,
+           SelfSmoother;
     COMM = SERIAL, MPI;
 }
 
