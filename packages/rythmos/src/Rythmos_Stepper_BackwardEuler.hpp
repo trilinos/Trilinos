@@ -27,8 +27,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef Rythmos_BACKWARD_EULER_STEPPER_H
-#define Rythmos_BACKWARD_EULER_STEPPER_H
+#ifndef Rythmos_STEPPER_BACKWARD_EULER_H
+#define Rythmos_STEPPER_BACKWARD_EULER_H
 
 #include "Rythmos_Stepper.hpp"
 #include "Teuchos_RefCountPtr.hpp"
@@ -209,4 +209,4 @@ std::ostream& BackwardEulerStepper<Scalar>::describe(
 
 } // namespace Rythmos
 
-#endif //Rythmos_BACKWARD_EULER_STEPPER_H
+#endif //Rythmos_STEPPER_BACKWARD_EULER_H
