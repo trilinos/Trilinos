@@ -75,6 +75,7 @@ void swap(kind& a, kind& b)
   b = tmp;
   return;
 }
+void MRTR::sort(double* dlist, int N, int* list2);
 
 
 } // namespace MRTR

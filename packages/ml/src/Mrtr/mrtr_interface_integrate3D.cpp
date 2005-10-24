@@ -143,7 +143,6 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
     return true;
   
 
-
   return false;
 }
 

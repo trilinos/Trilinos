@@ -58,14 +58,23 @@ public:
   // dtor
   virtual ~Point();
   
+  // print
+  void Print() const;
+
   // get point id
-  int Id() { return id_; }
+  inline int Id() { return id_; }
   
-  // return view of coords
-  const double* Xi() { return &xi_[0]; }
+  // return view of local coords
+  inline const double* Xi() { return &xi_[0]; }
+
+  // return view of global coords
+  inline const double* X() { return &x_[0]; }
 
   // set Xi coords
-  bool SetXi(double* xi) { xi_[0] = xi[0]; xi_[1] = xi[1]; return true; }
+  bool SetXi(const double* xi) { xi_[0] = xi[0]; xi_[1] = xi[1]; return true; }
+
+  // set x coords
+  bool SetX(const double* x) { x_[0] = x[0]; x_[1] = x[1]; x_[2] = x[2]; return true; }
 
 private:
 
@@ -76,13 +85,19 @@ private:
 
 private:
 
-  int     id_;
-  double  xi_[2];
+  int     id_;     // id of this point
+  double  xi_[2];  // local coords in some slave elements coord system
+  double  x_[3];   // global coords
 
 
 }; // class Point
 
 
 } // namespace MRTR
+
+// << operator
+std::ostream& operator << (ostream& os, const MRTR::Point& point);
+
+
 #endif // MRTR_POINT_H
 #endif // TRILINOS_PACKAGE

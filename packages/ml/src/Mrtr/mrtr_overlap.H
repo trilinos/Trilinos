@@ -71,6 +71,7 @@ public:
     poly_2_2_same,
     poly_2_2_dif,
     poly_3_0,
+    poly_0_6,
     poly_0_0,
     poly_0_4_same,
     poly_0_4_dif,
@@ -83,8 +84,9 @@ public:
   // dtor
   virtual ~Overlap();
   
-  // compute overlap between 2 segments and it's triangulation
+  // compute overlap between 2 segments and it's polygon
   bool ComputeOverlap();
+  
   
 private:  
   // don't want = operator
@@ -103,7 +105,7 @@ private:
   // build the outward normal to the sseg
   bool build_normal();
   
-  // perform clipping algorithm
+  //-------------------------------------------- perform clipping algorithm
   bool Clipelements();
   // test whether a point is inside or outside of a clip edge
   bool Clip_TestPoint(const double* N, const double* PE, const double* P);
@@ -122,24 +124,53 @@ private:
   bool Clip_FixPolygon_2_2_dif(int np, MRTR::Point** point);
   // fix the polygon for case 1_4_same
   bool Clip_FixPolygon_1_4_same(int np, MRTR::Point** point);
+  // fix the polygon for case 1_4_dif
+  bool Clip_FixPolygon_1_4_dif(int np, MRTR::Point** point);
+  // fix the polygon for case 3_0
+  bool Clip_FixPolygon_3_0(int np, MRTR::Point** point);
+  // fix the polygon for case 0_0
+  bool Clip_FixPolygon_0_0(int np, MRTR::Point** point);
+  // fix the polygon for case 0_4_same
+  bool Clip_FixPolygon_0_4_same(int np, MRTR::Point** point);
+  // fix the polygon for case 0_4_dif
+  bool Clip_FixPolygon_0_4_dif(int np, MRTR::Point** point);
+  // fix the polygon for case 0_2
+  bool Clip_FixPolygon_0_2(int np, MRTR::Point** point);
+  // fix the polygon for case 0_6
+  bool Clip_FixPolygon_0_6(int np, MRTR::Point** point);
 
+  //------------------------------------------ tools to handle the polygon map
   // add a point to the polygon
-  bool Clip_AddPointtoPolygon(int id, double* P);
+  bool Clip_AddPointtoPolygon(const int id, const double* P);
+  bool Clip_AddPointtoPolygon(map<int,MRTR::Point*>& p, const int id, const double* P);
   // remove a point from the polygon
   bool Clip_RemovePointfromPolygon(const int id,const double* P);
   // get the size of the nodal polygon
   int Clip_SizePolygon() { return p_.size(); }
   // get view of point in polygon, calling routine is responsible for freeing
   MRTR::Point** Clip_PointView();
+  MRTR::Point** Clip_PointView(map<int,MRTR::Point*>& p);
   // destroy a point polygon
   bool Clip_DestroyPointPolygon(map<int,MRTR::Point*>& p);
   // copy a point polygon to another polygon
   bool Clip_CopyPointPolygon(map<int,MRTR::Point*>& from, map<int,MRTR::Point*>& to);
 
+  //---------edge stuff, maybe not necessary
   // add edge to polygon
   bool Clip_AddEdgetoPolygon(int id, int node0, int node1);
   // get view from an edge
   MRTR::Edge* GetEdgeViewfromPolygon(int id);
+
+  // -------------------------------------finding a convex hull for the polygon
+  // create a convex hull of a set of given points in 2D
+  bool ConvexHull(map<int,MRTR::Point*>& p);
+  bool MakeRightTurnUpper(int i,map<int,MRTR::Point*>& hull);
+  bool MakeRightTurnLower(int i,map<int,MRTR::Point*>& hull);
+  void RemovePointBefore(int i,map<int,MRTR::Point*>& hull);
+  void RemovePointAfter(int i,map<int,MRTR::Point*>& hull);
+
+  //-------------------------------------------make triangulization of polygon
+  bool Triangulization();
   
 private:
 

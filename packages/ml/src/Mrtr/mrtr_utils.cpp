@@ -242,5 +242,116 @@ int MRTR::digit_ten(int number)
  *----------------------------------------------------------------------*/
 // template<typename kind> void swap(kind& a, kind& b);
 
+/*----------------------------------------------------------------------*
+ | sort dlist                                                mwgee 10/05|
+  dlist:           On input, values to be sorted. On output, sorted values
+                   (i.e., dlist[i] <= dlist[i+1]).
+
+  N:               length of vector 'dlist'.
+
+  list2:           If on input,
+                   a) list2 = NULL: it is unchanged on output,
+                   b) list2 is a list associated with 'list':
+                   on output, if dlist[k] on input is now element 'j' on output,
+                   list2[j] on output is list2[k].
+ *----------------------------------------------------------------------*/
+void MRTR::sort(double* dlist, int N, int* list2)
+{
+  int    l, r, j, i, flag;
+  int    RR2;
+  double dRR, dK;
+
+  if (N <= 1) return;
+
+  l    = N / 2 + 1;
+  r    = N - 1;
+  l    = l - 1;
+  dRR  = dlist[l - 1];
+  dK   = dlist[l - 1];
+
+  if (list2 != NULL) {
+     RR2 = list2[l - 1];
+     while (r != 0) {
+        j = l;
+        flag = 1;
+
+        while (flag == 1) {
+           i = j;
+           j = j + j;
+
+           if (j > r + 1)
+              flag = 0;
+           else {
+              if (j < r + 1)
+                 if (dlist[j] > dlist[j - 1]) j = j + 1;
+
+              if (dlist[j - 1] > dK) {
+                 dlist[ i - 1] = dlist[ j - 1];
+                 list2[i - 1] = list2[j - 1];
+              }
+              else {
+                 flag = 0;
+              }
+           }
+        }
+        dlist[ i - 1] = dRR;
+        list2[i - 1] = RR2;
+
+        if (l == 1) {
+           dRR  = dlist [r];
+           RR2 = list2[r];
+           dK = dlist[r];
+           dlist[r ] = dlist[0];
+           list2[r] = list2[0];
+           r = r - 1;
+         }
+         else {
+            l   = l - 1;
+            dRR  = dlist[ l - 1];
+            RR2 = list2[l - 1];
+            dK   = dlist[l - 1];
+         }
+      }
+      dlist[ 0] = dRR;
+      list2[0] = RR2;
+   }
+   else {
+      while (r != 0) {
+         j = l;
+         flag = 1;
+         while (flag == 1) {
+            i = j;
+            j = j + j;
+            if (j > r + 1)
+               flag = 0;
+            else {
+               if (j < r + 1)
+                  if (dlist[j] > dlist[j - 1]) j = j + 1;
+               if (dlist[j - 1] > dK) {
+                  dlist[ i - 1] = dlist[ j - 1];
+               }
+               else {
+                  flag = 0;
+               }
+            }
+         }
+         dlist[ i - 1] = dRR;
+         if (l == 1) {
+            dRR  = dlist [r];
+            dK = dlist[r];
+            dlist[r ] = dlist[0];
+            r = r - 1;
+         }
+         else {
+            l   = l - 1;
+            dRR  = dlist[ l - 1];
+            dK   = dlist[l - 1];
+         }
+      }
+      dlist[ 0] = dRR;
+   }
+  return;
+}
+
 
 #endif // TRILINOS_PACKAGE

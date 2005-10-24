@@ -192,7 +192,7 @@ bool MRTR::Segment::SetFunction(int id, MRTR::Function* func)
  | deriv  (out)  derivatives of functions at xi, if NULL on input,      |
  |               no evaluation                                          | 
  *----------------------------------------------------------------------*/
-bool MRTR::Segment::EvaluateFunction(int id, double* xi, double* val, 
+bool MRTR::Segment::EvaluateFunction(int id, const double* xi, double* val, 
                                      int valdim, double* deriv)
 { 
   map<int,MRTR::Function*>::iterator curr = functions_.find(id);

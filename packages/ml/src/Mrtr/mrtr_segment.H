@@ -107,7 +107,7 @@ public:
   MRTR::Function* GetFunction(int id);
   
   // evaluate shape function with certain id;
-  bool EvaluateFunction(int id, double* xi, double* val, int valdim, double* deriv);
+  bool EvaluateFunction(int id, const double* xi, double* val, int valdim, double* deriv);
   
   // build an outward normal at a node adjacent to this
   double* BuildNormalAtNode(int nid);
