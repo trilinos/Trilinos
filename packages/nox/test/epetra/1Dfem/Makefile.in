@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) $(1DfemScaled_SOURCES) $(1DfemTransient_SOURCES)
+SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) $(1DfemMLPreconditioner_SOURCES) $(1DfemScaled_SOURCES) $(1DfemTransient_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -69,6 +69,7 @@ host_triplet = @host@
 @BUILD_EPETRA_TESTS_TRUE@noinst_PROGRAMS = 1Dfem$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	1DfemScaled$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	1DfemTransient$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@	1DfemMLPreconditioner$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	$(am__EXEEXT_1)
 subdir = test/epetra/1Dfem
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -115,6 +116,9 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@	$(NOX_TEST_LIBS))
 am_1DfemBelos_OBJECTS = 1DfemInterface.$(OBJEXT) 1DfemBelos.$(OBJEXT)
 1DfemBelos_OBJECTS = $(am_1DfemBelos_OBJECTS)
+am_1DfemMLPreconditioner_OBJECTS = 1DfemInterface.$(OBJEXT) \
+	1DfemMLPreconditioner.$(OBJEXT)
+1DfemMLPreconditioner_OBJECTS = $(am_1DfemMLPreconditioner_OBJECTS)
 am_1DfemScaled_OBJECTS = 1DfemInterface.$(OBJEXT) \
 	1DfemPrePostOperator.$(OBJEXT) 1DfemScaled.$(OBJEXT)
 1DfemScaled_OBJECTS = $(am_1DfemScaled_OBJECTS)
@@ -126,6 +130,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/1Dfem.Po ./$(DEPDIR)/1DfemBelos.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemInterface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemMLPreconditioner.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemPrePostOperator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemScaled.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemTransient.Po
@@ -139,9 +144,11 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) \
-	$(1DfemScaled_SOURCES) $(1DfemTransient_SOURCES)
+	$(1DfemMLPreconditioner_SOURCES) $(1DfemScaled_SOURCES) \
+	$(1DfemTransient_SOURCES)
 DIST_SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) \
-	$(1DfemScaled_SOURCES) $(1DfemTransient_SOURCES)
+	$(1DfemMLPreconditioner_SOURCES) $(1DfemScaled_SOURCES) \
+	$(1DfemTransient_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -410,6 +417,16 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
                               $(top_builddir)/src-epetra/libnoxepetra.a
 
 1DfemTransient_LDADD = $(TEST_LIBS)
+1DfemMLPreconditioner_SOURCES = \
+	                 $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemMLPreconditioner.C
+
+1DfemMLPreconditioner_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemMLPreconditioner_LDADD = $(TEST_LIBS)
 1DfemBelos_SOURCES = \
 	                 $(srcdir)/1DfemInterface.H \
                          $(srcdir)/1DfemInterface.C \
@@ -463,6 +480,9 @@ clean-noinstPROGRAMS:
 1DfemBelos$(EXEEXT): $(1DfemBelos_OBJECTS) $(1DfemBelos_DEPENDENCIES) 
 	@rm -f 1DfemBelos$(EXEEXT)
 	$(CXXLINK) $(1DfemBelos_LDFLAGS) $(1DfemBelos_OBJECTS) $(1DfemBelos_LDADD) $(LIBS)
+1DfemMLPreconditioner$(EXEEXT): $(1DfemMLPreconditioner_OBJECTS) $(1DfemMLPreconditioner_DEPENDENCIES) 
+	@rm -f 1DfemMLPreconditioner$(EXEEXT)
+	$(CXXLINK) $(1DfemMLPreconditioner_LDFLAGS) $(1DfemMLPreconditioner_OBJECTS) $(1DfemMLPreconditioner_LDADD) $(LIBS)
 1DfemScaled$(EXEEXT): $(1DfemScaled_OBJECTS) $(1DfemScaled_DEPENDENCIES) 
 	@rm -f 1DfemScaled$(EXEEXT)
 	$(CXXLINK) $(1DfemScaled_LDFLAGS) $(1DfemScaled_OBJECTS) $(1DfemScaled_LDADD) $(LIBS)
@@ -479,6 +499,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1Dfem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemBelos.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemMLPreconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemPrePostOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemScaled.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemTransient.Po@am__quote@
@@ -562,6 +583,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemBelos.Po' tmpdepfile='$(DEPDIR)/1DfemBelos.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemBelos.obj `if test -f '$(srcdir)/1DfemBelos.C'; then $(CYGPATH_W) '$(srcdir)/1DfemBelos.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemBelos.C'; fi`
+
+1DfemMLPreconditioner.o: $(srcdir)/1DfemMLPreconditioner.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemMLPreconditioner.o -MD -MP -MF "$(DEPDIR)/1DfemMLPreconditioner.Tpo" -c -o 1DfemMLPreconditioner.o `test -f '$(srcdir)/1DfemMLPreconditioner.C' || echo '$(srcdir)/'`$(srcdir)/1DfemMLPreconditioner.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemMLPreconditioner.Tpo" "$(DEPDIR)/1DfemMLPreconditioner.Po"; else rm -f "$(DEPDIR)/1DfemMLPreconditioner.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemMLPreconditioner.C' object='1DfemMLPreconditioner.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemMLPreconditioner.Po' tmpdepfile='$(DEPDIR)/1DfemMLPreconditioner.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemMLPreconditioner.o `test -f '$(srcdir)/1DfemMLPreconditioner.C' || echo '$(srcdir)/'`$(srcdir)/1DfemMLPreconditioner.C
+
+1DfemMLPreconditioner.obj: $(srcdir)/1DfemMLPreconditioner.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemMLPreconditioner.obj -MD -MP -MF "$(DEPDIR)/1DfemMLPreconditioner.Tpo" -c -o 1DfemMLPreconditioner.obj `if test -f '$(srcdir)/1DfemMLPreconditioner.C'; then $(CYGPATH_W) '$(srcdir)/1DfemMLPreconditioner.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemMLPreconditioner.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemMLPreconditioner.Tpo" "$(DEPDIR)/1DfemMLPreconditioner.Po"; else rm -f "$(DEPDIR)/1DfemMLPreconditioner.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemMLPreconditioner.C' object='1DfemMLPreconditioner.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemMLPreconditioner.Po' tmpdepfile='$(DEPDIR)/1DfemMLPreconditioner.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemMLPreconditioner.obj `if test -f '$(srcdir)/1DfemMLPreconditioner.C'; then $(CYGPATH_W) '$(srcdir)/1DfemMLPreconditioner.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemMLPreconditioner.C'; fi`
 
 1DfemScaled.o: $(srcdir)/1DfemScaled.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemScaled.o -MD -MP -MF "$(DEPDIR)/1DfemScaled.Tpo" -c -o 1DfemScaled.o `test -f '$(srcdir)/1DfemScaled.C' || echo '$(srcdir)/'`$(srcdir)/1DfemScaled.C; \
