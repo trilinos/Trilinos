@@ -182,6 +182,9 @@ int main(int argc, char *argv[])
       TEST_FOR_EXCEPT(true);
     }
     Rythmos::Stepper<double> &stepper = *stepper_ptr;
+#ifdef Rythmos_DEBUG
+    cout << stepper.describe(cout,Teuchos::VERB_EXTREME," ","  ");
+#endif // Rythmos_DEBUG
 
     double t0 = 0.0;
     double t1 = finalTime;
@@ -191,6 +194,9 @@ int main(int argc, char *argv[])
     for (int i=1 ; i<=N ; ++i)
     {
       double dt_taken = stepper.TakeStep(dt);
+#ifdef Rythmos_DEBUG
+      cout << stepper.describe(cout,Teuchos::VERB_EXTREME," ","  ");
+#endif // Rythmos_DEBUG
       if (dt_taken != dt)
       {
         cerr << "Error, stepper took step of dt = " << dt_taken << " when asked to take step of dt = " << dt << std::endl;

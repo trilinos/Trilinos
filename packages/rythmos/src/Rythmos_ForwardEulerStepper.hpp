@@ -61,6 +61,18 @@ class ForwardEulerStepper : public Stepper<Scalar>
 
     /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
+    
+    /** \brief . */
+    std::string description() const;
+
+    /** \brief . */
+    std::ostream& describe(
+      std::ostream                &out
+      ,const Teuchos::EVerbosityLevel      verbLevel
+      ,const std::string          leadingIndent
+      ,const std::string          indentSpacer
+      ) const;
+
 
   private:
 
@@ -134,6 +146,33 @@ Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ForwardEulerStepper<Scala
   return(residual_vector_);
 }
 
+template<class Scalar>
+std::string ForwardEulerStepper<Scalar>::description() const
+{
+  std::string name = "Rythmos::ForwardEulerStepper";
+  return(name);
+}
+
+template<class Scalar>
+std::ostream& ForwardEulerStepper<Scalar>::describe(
+      std::ostream                &out
+      ,const Teuchos::EVerbosityLevel      verbLevel
+      ,const std::string          leadingIndent
+      ,const std::string          indentSpacer
+      ) const
+{
+  if (verbLevel == Teuchos::VERB_EXTREME)
+  {
+    out << description() << "::describe" << std::endl;
+    out << "model_ = " << std::endl;
+    out << model_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    out << "solution_vector_ = " << std::endl;
+    out << solution_vector_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    out << "residual_vector_ = " << std::endl;
+    out << residual_vector_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+  }
+  return(out);
+}
 
 } // namespace Rythmos
 

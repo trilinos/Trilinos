@@ -161,6 +161,17 @@ namespace Rythmos {
     //! Return solution vector at current time
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
 
+    /** \brief . */
+    std::string description() const;
+
+    /** \brief . */
+    std::ostream& describe(
+      std::ostream                &out
+      ,const Teuchos::EVerbosityLevel      verbLevel
+      ,const std::string          leadingIndent
+      ,const std::string          indentSpacer
+      ) const;
+
   protected:
 
     //! Computes a local Taylor series solution to the ODE
@@ -489,6 +500,48 @@ namespace Rythmos {
 	rho = tmp;
     }
     return rho;
+  }
+
+  template<class Scalar>
+  std::string ExplicitTaylorPolynomialStepper<Scalar>::description() const
+  {
+    std::string name = "Rythmos::ExplicitTaylorPolynomialStepper";
+    return(name);
+  }
+
+  template<class Scalar>
+  std::ostream& ExplicitTaylorPolynomialStepper<Scalar>::describe(
+        std::ostream                &out
+        ,const Teuchos::EVerbosityLevel      verbLevel
+        ,const std::string          leadingIndent
+        ,const std::string          indentSpacer
+        ) const
+  {
+    if (verbLevel == Teuchos::VERB_EXTREME)
+    {
+      out << description() << "::describe" << std::endl;
+      out << "model = " << std::endl;
+      out << model->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+      out << "x_vector = " << std::endl;
+      out << x_vector->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+      out << "x_dot_vector = " << std::endl;
+      out << x_dot_vector->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+      out << "f_vector = " << std::endl;
+      out << f_vector->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+      out << "x_poly = " << std::endl;
+      out << x_poly->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+      out << "f_poly = " << std::endl;
+      out << f_poly->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+      out << "t = " << t << std::endl;
+      out << "t_initial = " << t_initial << std::endl;
+      out << "t_final = " << t_final << std::endl;
+      out << "local_error_tolerance = " << local_error_tolerance << std::endl;
+      out << "min_step_size = " << min_step_size << std::endl;
+      out << "max_step_size = " << max_step_size << std::endl;
+      out << "degree = " << degree << std::endl;
+      out << "linc = " << linc << std::endl;
+    }
+    return(out);
   }
 
 

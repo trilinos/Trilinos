@@ -33,12 +33,13 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
+#include "Teuchos_Describable.hpp"
 
 namespace Rythmos {
 
 /** \brief Base class for defining stepper functionality. */
 template<class Scalar> 
-class Stepper
+class Stepper : virtual public Teuchos::Describable
 {
   public:
     
@@ -53,6 +54,18 @@ class Stepper
 
     /// Get solution vector
     virtual Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const = 0;
+
+    /// description stub
+    virtual std::string description() const = 0;
+
+    /// describe stub
+    virtual std::ostream& describe(
+      std::ostream                &out
+      ,const Teuchos::EVerbosityLevel      verbLevel
+      ,const std::string          leadingIndent
+      ,const std::string          indentSpacer
+      ) const = 0;
+
     
 };
 

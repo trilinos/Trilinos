@@ -69,6 +69,18 @@ class BackwardEulerStepper : public Stepper<Scalar>
     /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
 
+    /** \brief . */
+    std::string description() const;
+
+    /** \brief . */
+    std::ostream& describe(
+      std::ostream                &out
+      ,const Teuchos::EVerbosityLevel      verbLevel
+      ,const std::string          leadingIndent
+      ,const std::string          indentSpacer
+      ) const;
+
+
   private:
 
     Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
@@ -159,6 +171,41 @@ Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > BackwardEulerStepper<Scal
   return(f_);
 }
 
+template<class Scalar>
+std::string BackwardEulerStepper<Scalar>::description() const
+{
+  std::string name = "Rythmos::BackwardEulerStepper";
+  return(name);
+}
+
+template<class Scalar>
+std::ostream& BackwardEulerStepper<Scalar>::describe(
+      std::ostream                &out
+      ,const Teuchos::EVerbosityLevel      verbLevel
+      ,const std::string          leadingIndent
+      ,const std::string          indentSpacer
+      ) const
+{
+  if (verbLevel == Teuchos::VERB_EXTREME)
+  {
+    out << description() << "::describe" << std::endl;
+    out << "model_ = " << std::endl;
+    out << model_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    out << "solver_ = " << std::endl;
+    out << solver_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    out << "x_ = " << std::endl;
+    out << x_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    out << "scaled_x_old_ = " << std::endl;
+    out << scaled_x_old_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    out << "f_ = " << std::endl;
+    out << f_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    out << "t_ = " << t_ << std::endl;
+    out << "t_old_ = " << t_old_ << std::endl;
+//    out << "neModel_ = " << std::endl;
+//    out << neModel_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+  }
+  return(out);
+}
 
 } // namespace Rythmos
 

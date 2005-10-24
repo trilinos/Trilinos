@@ -58,6 +58,17 @@ class ExplicitRKStepper : public Stepper<Scalar>
 
     /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
+    
+    /** \brief . */
+    std::string description() const;
+
+    /** \brief . */
+    std::ostream& describe(
+      std::ostream                &out
+      ,const Teuchos::EVerbosityLevel      verbLevel
+      ,const std::string          leadingIndent
+      ,const std::string          indentSpacer
+      ) const;
 
   private:
 
@@ -271,6 +282,48 @@ Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ExplicitRKStepper<Scalar>
 {
   return(solution_vector_);
 }
+
+template<class Scalar>
+std::string ExplicitRKStepper<Scalar>::description() const
+{
+  std::string name = "Rythmos::ExplicitRKStepper";
+  return(name);
+}
+
+template<class Scalar>
+std::ostream& ExplicitRKStepper<Scalar>::describe(
+      std::ostream                &out
+      ,const Teuchos::EVerbosityLevel      verbLevel
+      ,const std::string          leadingIndent
+      ,const std::string          indentSpacer
+      ) const
+{
+  if (verbLevel == Teuchos::VERB_EXTREME)
+  {
+    out << description() << "::describe" << std::endl;
+    out << "model_ = " << std::endl;
+    out << model_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    out << "solution_vector_ = " << std::endl;
+    out << solution_vector_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    for (int i=0 ; i<stages_ ; ++i)
+    {
+      out << "k_vector_[" << i << "] = " << std::endl;
+      out << k_vector_[i]->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    }
+    out << "ktemp_vector_ = " << std::endl;
+    out << ktemp_vector_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    for (int i=0 ; i<stages_ ; ++i)
+      for (int j=0 ; j<stages_ ; ++j)
+        out << "b_A[" << i << "][" << j << "] = " << b_A[i][j] << std::endl;
+    for (int i=0 ; i<stages_ ; ++i)
+      out << "b_b[" << i << "] = " << b_b[i] << std::endl;
+    for (int i=0 ; i<stages_ ; ++i)
+      out << "b_c[" << i << "] = " << b_c[i] << std::endl;
+    out << "t_ = " << t_ << std::endl;
+  }
+  return(out);
+}
+
 
 } // namespace Rythmos
 
