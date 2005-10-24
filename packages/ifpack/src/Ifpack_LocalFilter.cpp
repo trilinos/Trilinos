@@ -90,10 +90,10 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix) :
 //==============================================================================
 Ifpack_LocalFilter::~Ifpack_LocalFilter()
 {
-  if (Map_)
-    delete Map_;
   if (Diagonal_)
     delete Diagonal_;
+  if (Map_)
+    delete Map_;
   if (SerialComm_)
     delete SerialComm_;
 }

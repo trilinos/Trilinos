@@ -106,6 +106,9 @@ Ifpack_SingletonFilter::~Ifpack_SingletonFilter()
 {
   if (Diagonal_)
     delete Diagonal_;
+
+  if (Map_)
+    delete Map_;
 }
 
 //==============================================================================
