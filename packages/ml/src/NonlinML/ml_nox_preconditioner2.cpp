@@ -298,7 +298,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
       
       // check the matrix for zero rows and fix the main diagonal
       if (fixdiagonal_)
-         fix_MainDiagonal(tmpMat,i);
+         fix_MainDiagonal(&tmpMat,i);
       
       // get the coarse interface from the matfreelevel
       ML_NOX::Nox_CoarseProblem_Interface* coarseinterface = 

@@ -151,13 +151,9 @@ public:
    This constructor does NOT actually create the Multilevel hierarchy and the
    methods, this is done by a call to computePreconditioner.
    \param interface (In) : ref to an ML_NOX::Ml_Nox_Fineinterface derived class
-   \param dm        (In) : ref to the fine level DomainMap
-   \param rm        (In) : ref to the fine level RangeMap
    \param comm      (In) : the Epetra_Comm to be used
    */
   explicit ML_Nox_Preconditioner(ML_NOX::Ml_Nox_Fineinterface& interface,
-                                 const Epetra_Map&             dm,
-                                 const Epetra_Map&             rm,
                                  const Epetra_Comm&            comm);
 
   
@@ -388,13 +384,13 @@ public:
   /*! 
    Derived from Epetra_Operator, get fine level OperatorDomainMap.
    */
-  const Epetra_Map & OperatorDomainMap() const {return(DomainMap_);}
+  const Epetra_Map & OperatorDomainMap() const {return interface_.getMap();}
 
   //! Get fine level OperatorRangeMap.
   /*! 
    Derived from Epetra_Operator, get fine level OperatorRangeMap.
    */
-  const Epetra_Map & OperatorRangeMap() const {return(RangeMap_);}
+  const Epetra_Map & OperatorRangeMap() const {return interface_.getMap();}
   
   //! Check initialization flag of the instant of this class
   /*! 
@@ -494,7 +490,7 @@ private:
 
   // utils
   bool Set_Smoothers();
-  bool fix_MainDiagonal(Epetra_CrsMatrix* A, int level) const;
+  bool fix_MainDiagonal(Epetra_CrsMatrix** A, int level) const;
   bool test_nullspace(int dimns, double* nullsp, Epetra_CrsMatrix* Jac) const;
   Epetra_CrsMatrix* ML_Nox_computeFineLevelJacobian(const Epetra_Vector& x);
  
@@ -527,8 +523,8 @@ private:
   bool                                  fixdiagonal_;
   bool                                  islinearPrec_;     // do standard linear ML-SA-Preconditioner (not matrixfree!)) 
   ML_NOX::Ml_Nox_Fineinterface&         interface_;        // the user interface
-  Epetra_Map                            DomainMap_;        // the operators domain map
-  Epetra_Map                            RangeMap_;         // the operators range map
+  //Epetra_Map                            DomainMap_;        // the operators domain map
+  //Epetra_Map                            RangeMap_;         // the operators range map
   const Epetra_Comm&                    comm_;             // the communicator;
   bool                                  destroyfineJac_;   // flag to indicate this class destroys the fineJac_
   Epetra_CrsMatrix*                     fineJac_;          // fine grid matrix (only used when ismatrixfree_=false)
