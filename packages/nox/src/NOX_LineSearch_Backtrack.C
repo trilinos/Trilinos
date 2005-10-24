@@ -38,11 +38,14 @@
 #include "NOX_Solver_Generic.H"
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
+#include "NOX_MeritFunction_Generic.H"
+#include "NOX_GlobalData.H"
 
-NOX::LineSearch::Backtrack::Backtrack(const NOX::Utils& u, NOX::Parameter::List& params) :
-  utils(u)
+NOX::LineSearch::Backtrack::
+Backtrack(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	  NOX::Parameter::List& params)
 {
-  reset(params);
+  reset(gd, params);
 }
 
 NOX::LineSearch::Backtrack::~Backtrack()
@@ -50,8 +53,13 @@ NOX::LineSearch::Backtrack::~Backtrack()
 
 }
 
-bool NOX::LineSearch::Backtrack::reset(NOX::Parameter::List& params)
+bool NOX::LineSearch::Backtrack::
+reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+      NOX::Parameter::List& params)
 { 
+  utils = gd->getUtils();
+  meritFunctionPtr = gd->getMeritFunction();
+
   NOX::Parameter::List& p = params.sublist("Backtrack");
 
   minStep = p.getParameter("Minimum Step", 1.0e-12);
@@ -59,34 +67,25 @@ bool NOX::LineSearch::Backtrack::reset(NOX::Parameter::List& params)
   recoveryStep = p.getParameter("Recovery Step", defaultStep);
   maxIters = p.getParameter("Max Iters", 100);
 
-  const string tmp = p.getParameter("Decrease Condition", "Max Norm");
-  
-  if (tmp == "Max Norm")
-    normType = NOX::Abstract::Vector::MaxNorm;
-  else if (tmp == "Two Norm")
-    normType = NOX::Abstract::Vector::TwoNorm;
-  else 
-  {
-    utils.out() << "NOX::LineSearch::Backtrack::reset - Invalid choice \"" << tmp 
-	 << "\" for \"Decrease Condition\"" << endl;
+  reductionFactor = p.getParameter("Reduction Factor", 0.5);
+  if ((reductionFactor <= 0.0)  || (reductionFactor >= 1.0)) {
+    utils->err() << "NOX::LineSearch::Backtrack::reset - Invalid choice \"" 
+		 << reductionFactor << "\" for \"Reduction Factor\"!  " 
+		 << "Value must be greater than zero and less than 1.0."
+		 << endl;
     throw "NOX Error";
   }
 
   return true;
 }
 
-double NOX::LineSearch::Backtrack::getNormF(const NOX::Abstract::Group& grp) const
-{
-  return (normType == NOX::Abstract::Vector::MaxNorm) ? 
-    grp.getF().norm(normType) : grp.getNormF();
-}
-
-bool NOX::LineSearch::Backtrack::compute(NOX::Abstract::Group& grp, double& step, 
-					 const NOX::Abstract::Vector& dir,
-					 const NOX::Solver::Generic& s)
+bool NOX::LineSearch::Backtrack::
+compute(NOX::Abstract::Group& grp, double& step, 
+	const NOX::Abstract::Vector& dir,
+	const NOX::Solver::Generic& s)
 {
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
-  double oldF = getNormF(oldGrp);
+  double oldF = meritFunctionPtr->computef(oldGrp);
   double newF;
   bool isFailed = false;
 
@@ -98,32 +97,34 @@ bool NOX::LineSearch::Backtrack::compute(NOX::Abstract::Group& grp, double& step
   rtype = grp.computeF();    
   if (rtype != NOX::Abstract::Group::Ok)
   {
-    utils.err() << "NOX::LineSearch::BackTrack::compute - Unable to compute F" << endl;
+    utils->err() << "NOX::LineSearch::BackTrack::compute - Unable to compute F"
+		<< endl;
     throw "NOX Error";
   }
 
-  newF = getNormF(grp);
+  newF = meritFunctionPtr->computef(grp);
   int nIters = 1;
 
-  if (utils.isPrintType(Utils::InnerIteration)) 
+  if (utils->isPrintType(Utils::InnerIteration)) 
   {
-   utils.out() << "\n" << Utils::fill(72) << "\n" << "-- Backtrack Line Search -- \n";
+   utils->out() << "\n" << Utils::fill(72) << "\n" 
+	       << "-- Backtrack Line Search -- \n";
   }
 
   while ((newF >= oldF) && (!isFailed)) 
   {
 
-    if (utils.isPrintType(Utils::InnerIteration)) 
+    if (utils->isPrintType(Utils::InnerIteration)) 
     {
-      utils.out() << setw(3) << nIters << ":";
-      utils.out() << " step = " << utils.sciformat(step);
-      utils.out() << " oldF = " << utils.sciformat(oldF);
-      utils.out() << " newF = " << utils.sciformat(newF);
-      utils.out() << endl;
+      utils->out() << setw(3) << nIters << ":";
+      utils->out() << " step = " << utils->sciformat(step);
+      utils->out() << " old f = " << utils->sciformat(oldF);
+      utils->out() << " new f = " << utils->sciformat(newF);
+      utils->out() << endl;
     }
 
     nIters ++;
-    step = step * 0.5;
+    step = step * reductionFactor;
 
     if ((step < minStep) || (nIters > maxIters)) 
     {
@@ -136,24 +137,24 @@ bool NOX::LineSearch::Backtrack::compute(NOX::Abstract::Group& grp, double& step
     rtype = grp.computeF();    
     if (rtype != NOX::Abstract::Group::Ok)
     {
-      utils.err() << "NOX::LineSearch::BackTrack::compute - Unable to compute F" << endl;
+      utils->err() << "NOX::LineSearch::BackTrack::compute - Unable to compute F" << endl;
       throw "NOX Error";
     }
 
-    newF = getNormF(grp);
+    newF = meritFunctionPtr->computef(grp);
   } 
 
-  if (utils.isPrintType(Utils::InnerIteration)) 
+  if (utils->isPrintType(Utils::InnerIteration)) 
   {
-    utils.out() << setw(3) << nIters << ":";
-    utils.out() << " step = " << utils.sciformat(step);
-    utils.out() << " oldF = " << utils.sciformat(oldF);
-    utils.out() << " newF = " << utils.sciformat(newF);
+    utils->out() << setw(3) << nIters << ":";
+    utils->out() << " step = " << utils->sciformat(step);
+    utils->out() << " old f = " << utils->sciformat(oldF);
+    utils->out() << " new f = " << utils->sciformat(newF);
     if (isFailed)
-      utils.out() << " (USING RECOVERY STEP!)" << endl;
+      utils->out() << " (USING RECOVERY STEP!)" << endl;
     else
-      utils.out() << " (STEP ACCEPTED!)" << endl;
-    utils.out() << Utils::fill(72) << "\n" << endl;
+      utils->out() << " (STEP ACCEPTED!)" << endl;
+    utils->out() << Utils::fill(72) << "\n" << endl;
   }
 
   return (!isFailed);

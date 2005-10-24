@@ -30,60 +30,41 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_PARAMETER_LINESEARCHCONSTRUCTOR_H
-#define NOX_PARAMETER_LINESEARCHCONSTRUCTOR_H
+#ifndef NOX_EPETRA_VECTORSPACE_L2_H
+#define NOX_EPETRA_VECTORSPACE_L2_H
 
-#include "NOX_Common.H"		// class data element (string)
-#include "NOX_LineSearch_Generic.H"
+#include "NOX_Epetra_VectorSpace.H" // base class
 
 namespace NOX {
 
-namespace Parameter {
+namespace Epetra {
 
-/*! 
-  \brief Support for user-defined line searches.
+  /*! \brief Concrete class for an L2 vector space.
 
-  This object has the ability to be passed via a NOX::Parameter::List
-  and to generate new line searches.
+    This class allows users to override the inner product and norm
+    used by the NOX::Epetra::Vector class.  The most frequent use of
+    this class is for introducing a weighted norm throughout NOX.
 
-  It is able to be passed via a NOX::Parameter::List because it is
-  derived from NOX::Parameter::Arbitrary class.
+  */
+  class VectorSpaceL2 : public NOX::Epetra::VectorSpace {
 
-  It is used by NOX::LineSearch::Manager to generate a user-defined
-  direction via the newLineSearch() function.
-
-  The user can write a method that derives from this one or use the
-  templated default method, NOX::Parameter::LineSearchConstructorT.
-*/
-
-class LineSearchConstructor : public Arbitrary 
-{
-  
-public:
-  
-  //! Default Constructor
-  LineSearchConstructor() {};
+  public:
+    
+  //! Constructor
+  VectorSpaceL2();
   
   //! Destructor
-  virtual ~LineSearchConstructor() {};
+  virtual ~VectorSpaceL2();
 
-  // derived
-  virtual LineSearchConstructor* clone() const = 0;
+  virtual double innerProduct(const Epetra_Vector& a, 
+			      const Epetra_Vector& b) const;
 
-  // derived
-  virtual const string& getType() const = 0;
-
-  // derived
-  virtual ostream& print(ostream& stream, int indent = 0) const { return stream; };
-  
-  /*! 
-    \brief Construct a new direction and return its pointer.
-  */
-  virtual NOX::LineSearch::Generic* newLineSearch(const NOX::Utils& u, NOX::Parameter::List& p) const = 0;
+  virtual double norm(const Epetra_Vector& a,
+		      NOX::Abstract::Vector::NormType = 
+		      NOX::Abstract::Vector::TwoNorm) const;
 
 };
-
-} // namespace Parameter
+} // namespace Epetra
 } // namespace NOX
 
 #endif

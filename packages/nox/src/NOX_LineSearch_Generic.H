@@ -33,17 +33,20 @@
 #ifndef NOX_LINESEARCH_GENERIC_H
 #define NOX_LINESEARCH_GENERIC_H
 
+#include "Teuchos_RefCountPtr.hpp"
+
 namespace NOX {
-namespace Abstract {
-class Vector;
-class Group;
-}
-namespace Solver {
-class Generic;
-}
-namespace Parameter {
-class List;
-}
+  class GlobalData;
+  namespace Abstract {
+    class Vector;
+    class Group;
+  }
+  namespace Solver {
+    class Generic;
+  }
+  namespace Parameter {
+    class List;
+  }
 }
 
 namespace NOX {
@@ -68,7 +71,8 @@ public:
   virtual ~Generic() {};
 
   //! Reset parameters
-  virtual bool reset(NOX::Parameter::List& params) = 0;
+  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+		     NOX::Parameter::List& params) = 0;
   
   //! Perform a line search
   /*!

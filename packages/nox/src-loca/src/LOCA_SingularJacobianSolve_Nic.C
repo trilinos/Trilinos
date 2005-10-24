@@ -87,8 +87,8 @@ LOCA::SingularJacobianSolve::Nic::compute(
     "LOCA::SingularJacobianSolve::Nic::compute()";
   NOX::Abstract::Group::ReturnType finalStatus;
 
-  double alpha = approxNullVec.dot(input)
-               / approxNullVec.dot(jacApproxNullVec);
+  double alpha = approxNullVec.innerProduct(input)
+               / approxNullVec.innerProduct(jacApproxNullVec);
 
   NOX::Abstract::Vector* tmpInput  = input.clone(NOX::DeepCopy);
   tmpInput->update(-alpha, jacApproxNullVec, 1.0);
@@ -118,13 +118,13 @@ LOCA::SingularJacobianSolve::Nic::computeMulti(
   NOX::Abstract::Group::ReturnType status, finalStatus;
   finalStatus = NOX::Abstract::Group::Ok;
 
-  double denom = approxNullVec.dot(jacApproxNullVec);
+  double denom = approxNullVec.innerProduct(jacApproxNullVec);
 
   double* alphas = new double[nVecs];
   NOX::Abstract::Vector** tmpInputs  = new NOX::Abstract::Vector*[nVecs];
 
   for (int i=0; i<nVecs; i++) {
-    alphas[i] = approxNullVec.dot(*(inputs[i])) / denom;
+    alphas[i] = approxNullVec.innerProduct(*(inputs[i])) / denom;
     tmpInputs[i] = inputs[i]->clone(NOX::DeepCopy);
     tmpInputs[i]->update(-alphas[i], jacApproxNullVec, 1.0);
   }

@@ -40,10 +40,10 @@
 #include "NOX_Utils.H"	                // class data element
 #include "NOX_Solver_PrePostOperator.H" // class data element
 
+// Forward declaration
 namespace NOX {
-  namespace Parameter {
-    class UserNorm;
-    class MeritFunction;
+  namespace MeritFunction {
+    class Generic;
   }
 }
 
@@ -247,7 +247,7 @@ public:
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t);
   virtual NOX::StatusTest::StatusType getStatus();
-  virtual NOX::StatusTest::StatusType iterate();
+  virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
@@ -267,43 +267,39 @@ protected:
 
 protected:
   
+  //! Pointer to the global data object.
+  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+
+  //! Printing Utils
+  Teuchos::RefCountPtr<NOX::Utils> utilsPtr;
+
   //! Current solution.
   Teuchos::RefCountPtr<NOX::Abstract::Group> solnPtr;		
 
   //! Previous solution pointer. 
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Group* oldSolnPtr;	
-  //! Previous solution reference.
-  NOX::Abstract::Group& oldSoln;	
+  Teuchos::RefCountPtr<NOX::Abstract::Group> oldSolnPtr;
 
   //! Current search direction.pointer.
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* newtonVecPtr;
-  //! Current Newton direction.reference.
-  NOX::Abstract::Vector& newtonVec;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> newtonVecPtr;
 
   //! Current search direction.pointer.
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* cauchyVecPtr;
-  //! Current Cauchy direction.reference.
-  NOX::Abstract::Vector& cauchyVec;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> cauchyVecPtr;
 
   //! Extra vector used in computations
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* aVecPtr;
-  //! Extra vector
-  NOX::Abstract::Vector& aVec;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> aVecPtr;
 
   //! Extra vector used in computations
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* bVecPtr;
-  //! Extra vector
-  NOX::Abstract::Vector& bVec;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> bVecPtr;
 
   //! Stopping test.
   Teuchos::RefCountPtr<NOX::StatusTest::Generic> testPtr;		
@@ -313,9 +309,6 @@ protected:
 
   //! Input parameters.
   Teuchos::RefCountPtr<NOX::Parameter::List> paramsPtr;	
-
-  //! Printing Utils
-  NOX::Utils utils;
 
   //! %Newton %Search %Direction. 
   NOX::Direction::Manager newton; 
@@ -379,11 +372,8 @@ protected:
   //! Type of step to be taken.
   StepType stepType;
 
-  //! Stores a user supplied norm if supplied in the parameter list.
-  NOX::Parameter::UserNorm* userNormPtr;
-  
   //! Stores a user supplied merit function if supplied in the parameter list.
-  NOX::Parameter::MeritFunction* userMeritFuncPtr;
+  Teuchos::RefCountPtr<NOX::MeritFunction::Generic> meritFuncPtr;
 
   //! If set to true, the minimum improvement ratio condition uses an Ared/Pred approach. 
   bool useAredPredRatio;

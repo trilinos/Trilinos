@@ -253,7 +253,7 @@ LOCA::LAPACK::Group::computeScaledDotProduct(
 				       const NOX::Abstract::Vector& a,
 				       const NOX::Abstract::Vector& b) const
 {
-  return a.dot(b) / a.length();
+  return a.innerProduct(b) / a.length();
 }
 
 void

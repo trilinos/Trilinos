@@ -30,60 +30,47 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_PARAMETER_DIRECTIONCONSTRUCTORT_H
-#define NOX_PARAMETER_DIRECTIONCONSTRUCTORT_H
+#ifndef NOX_EPETRA_VECTORSPACE_H
+#define NOX_EPETRA_VECTORSPACE_H
 
-#include "NOX_Common.H"		// class data element (string)
-#include "NOX_Parameter_DirectionConstructor.H"
+#include "NOX_Abstract_Vector.H"  // For NormType
+
+// Forward declaration
+class Epetra_Vector;
 
 namespace NOX {
 
-namespace Parameter {
+namespace Epetra {
 
-/*! 
-  \brief Templated instantiation of NOX::Parameter::DirectionConstructor.
+  /*! \brief Pure virtual base class for the vector space used by NOX::Epetra::Vectors.
 
-  This templated class provides an instantiation of
-  NOX::Parameter::DirectionConstructor for any direction class derived
-  from NOX::Direction::Generic.
+    This class allows users to override the inner product and norm
+    used by the NOX::Epetra::Vector class.  The most frequent use of
+    this class is for introducing a weighted norm throughout NOX.
 
-  The name of the direction can optionally be included as an argument
-  to the constructor.
-*/
-template <class T> class DirectionConstructorT : public DirectionConstructor
-{
-  
-public:
-  
-  //! Default Constructor. Sets the name to "Templated Direction Constructor".
-  DirectionConstructorT() : name("Templated Direction Constructor") {};
+  */
+  class VectorSpace {
+    
+  public:
+    
+    //! Constructor
+    VectorSpace() {};
+    
+    //! Destructor
+    virtual ~VectorSpace() {};
+    
+    //! Computes the inner product: <a,b>. 
+    virtual double innerProduct(const Epetra_Vector& a, 
+				const Epetra_Vector& b) const = 0;
 
-  //! Constructor with the direction name.
-  DirectionConstructorT(const string& n) : name(n) {};
-  
-  //! Destructor
-  ~DirectionConstructorT() {};
-
-  //derived
-  DirectionConstructor* clone() const { return new DirectionConstructorT<T>(name); };
-
-  //derived
-  const string& getType() const { return name; };
-
-  //derived
-  ostream& print(ostream& stream, int indent = 0) const {return stream;} ;
-
-  //! Constructs and direction of type T and returns its pointer.
-  NOX::Direction::Generic* newDirection(const NOX::Utils& u, NOX::Parameter::List& p) const { return new T(u,p); };
-
-private:
-
-  //! Descriptive name of the direction that this object can generate.
-  const string name;
-
-};
-
-} // namespace Parameter
+    //! Computes the norm.
+    /*! For an L2 norm, the computation is: sqrt( <a,a> ). */
+    virtual double norm(const Epetra_Vector& a,
+			NOX::Abstract::Vector::NormType = 
+			NOX::Abstract::Vector::TwoNorm) const = 0;
+    
+  };
+} // namespace Epetra
 } // namespace NOX
 
 #endif

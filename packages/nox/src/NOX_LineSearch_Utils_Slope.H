@@ -35,10 +35,11 @@
 
 #include "NOX_Common.H"
 #include "NOX_Utils.H"
+#include "Teuchos_RefCountPtr.hpp"
 
 // Forward declaration
 namespace NOX {
-  class Utils;
+  class GlobalData;
   namespace Abstract {
     class Vector;
     class Group;
@@ -61,10 +62,13 @@ class Slope {
 public:
 
   //! Default constructor
-  Slope(const NOX::Utils& utils);
+  Slope(const Teuchos::RefCountPtr<NOX::GlobalData>& gd);
 
   //! Destructor
   virtual ~Slope();
+
+  //! Reset method.
+  void reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd);
 
   //! Compute the inner product of the given direction and the gradient associated with the given group.
   /*!
@@ -76,7 +80,8 @@ public:
     Here \f$d\f$ represents the input parameter \c dir and \f$\nabla
     f(x)\f$ is the gradient associated with the given group.
   */
-  double computeSlope(const NOX::Abstract::Vector& dir, const NOX::Abstract::Group& grp);
+  double computeSlope(const NOX::Abstract::Vector& dir, 
+		      const NOX::Abstract::Group& grp);
 
   //! This is a variant of the computeSlope() method above optimized to work with out having to compute an explicit Jacobian.  
   /*!
@@ -105,7 +110,8 @@ where \f$\eta\f$ is a scalar perturbation calculated by:
 \f$ \lambda \f$ is a constant fixed at 1.0e-6.
 
   */
-  double computeSlopeWithOutJac(const NOX::Abstract::Vector& dir, const NOX::Abstract::Group& grp);
+  double computeSlopeWithOutJac(const NOX::Abstract::Vector& dir, 
+				const NOX::Abstract::Group& grp);
 
 private:
   //! Disallow default constructor.
@@ -117,10 +123,10 @@ private:
   NOX::Utils utils;
 
   //! A vector that *may* be used in computeSlope()
-  NOX::Abstract::Vector* vecPtr;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> vecPtr;
 
   //! An extra group that will only be allocated if computeSlopeWithOutJac() is called.
-  NOX::Abstract::Group* grpPtr;
+  Teuchos::RefCountPtr<NOX::Abstract::Group> grpPtr;
 
 };
 } // namespace Utils

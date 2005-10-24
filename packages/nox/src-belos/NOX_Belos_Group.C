@@ -46,11 +46,10 @@
 #include "BelosBlockGmres.hpp"
 #include "BelosBlockCG.hpp"
 
-NOX::Belos::Group::Group(NOX::Abstract::Group& g,
+NOX::Belos::Group::Group(const Teuchos::RefCountPtr<NOX::Abstract::Group>& g,
 			 NOX::Parameter::List& printParams)
-  : grpPtr(&g),
-    ownsGroup(false),
-    newtonVecPtr(g.getX().clone(NOX::ShapeCopy)),
+  : grpPtr(g),
+    newtonVecPtr(g->getX().clone(NOX::ShapeCopy)),
     isValidNewton(false),
     utils(printParams),
     myPID(printParams.getParameter("MyPID", 0))
@@ -60,7 +59,6 @@ NOX::Belos::Group::Group(NOX::Abstract::Group& g,
 NOX::Belos::Group::Group(const NOX::Belos::Group& source, 
 			  NOX::CopyType type)
   : grpPtr(source.grpPtr->clone(type)),
-    ownsGroup(true),
     newtonVecPtr(source.newtonVecPtr->clone(type)),
     isValidNewton(false),
     utils(source.utils),
@@ -73,9 +71,7 @@ NOX::Belos::Group::Group(const NOX::Belos::Group& source,
 
 NOX::Belos::Group::~Group() 
 {
-  if (ownsGroup)
-    delete grpPtr;
-  delete newtonVecPtr;
+
 }
 
 NOX::Belos::Group&
@@ -104,10 +100,12 @@ NOX::Belos::Group::operator=(const NOX::Abstract::Group& source)
     dynamic_cast<const NOX::Belos::Group&>(source);
 }
 
-NOX::Abstract::Group*
+Teuchos::RefCountPtr<NOX::Abstract::Group>
 NOX::Belos::Group::clone(NOX::CopyType type) const 
 {
-  return new NOX::Belos::Group(*this, type);
+  Teuchos::RefCountPtr<NOX::Belos::Group> newGrp = 
+    Teuchos::rcp(new NOX::Belos::Group(*this, type));
+  return newGrp;
 }
 
 void
@@ -395,7 +393,8 @@ double
 NOX::Belos::Group::getNormNewtonSolveResidual() const 
 {
   NOX::Abstract::Group::ReturnType status;
-  NOX::Abstract::Vector *residual = getF().clone(NOX::DeepCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> residual = 
+    getF().clone(NOX::DeepCopy);
   
   status = applyJacobian(*newtonVecPtr, *residual);
   if (status != NOX::Abstract::Group::Ok) {
@@ -405,8 +404,6 @@ NOX::Belos::Group::getNormNewtonSolveResidual() const
 
   residual->update(1.0, getF(), 1.0);
   double resid_norm = residual->norm();
-
-  delete residual;
 
   return resid_norm;
 }

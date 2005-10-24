@@ -1,8 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
-
 //@HEADER
 // ************************************************************************
 // 
@@ -36,13 +34,14 @@
 #define NOX_DIRECTION_UTILS_INEXACTNEWTON_H
 
 #include "NOX_Common.H"  // for string
+#include "Teuchos_RefCountPtr.hpp"
 
 // Forward declaration
 namespace NOX {
   class Utils;
+  class GlobalData;
   namespace Parameter {
     class List;
-    class UserNorm;
   }
   namespace Abstract {
     class Vector;
@@ -172,13 +171,14 @@ class InexactNewton {
 public:
 
   //! Constructor
-  InexactNewton(const NOX::Utils& u, NOX::Parameter::List& directionSublist);
+  InexactNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+		NOX::Parameter::List& directionSublist);
 
   //! Destructor
   virtual ~InexactNewton();
 
   //! Reset the utilities
-  virtual bool reset(const NOX::Utils& u, 
+  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
 		     NOX::Parameter::List& directionSublist);
 
   //! Called each iteration to reset the forcing term (ie, the
@@ -199,8 +199,11 @@ private:
 
 private:
 
+  //! Global data pointer.  Keep this so the parameter list remains valid.
+  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+
   //! Printing Utilities
-  const NOX::Utils* printing;
+  Teuchos::RefCountPtr<NOX::Utils> printing;
 
   //! Type of forcing term calculations available
   enum ForcingTermType {
@@ -223,10 +226,10 @@ private:
   NOX::Parameter::List* paramsPtr;
 
   //! Vector containing the predicted RHS
-  NOX::Abstract::Vector* predRhs;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> predRhs;
 
   //! Vector containing the step direction
-  NOX::Abstract::Vector* stepDir;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> stepDir;
 
   //! Current linear solve tolerance.
   double eta_k;
@@ -246,9 +249,6 @@ private:
   //! Name of the direction method that forcing terms will be used by.
   string directionMethod;
   
-  //! Used to store a user defined norm object.
-  NOX::Parameter::UserNorm* userNorm;
-
   //! Parameter used for Type 2 forcing term calculation.
   double alpha;
 
@@ -261,5 +261,4 @@ private:
 } // namespace Utils
 } // namespace Direction
 } // namespace NOX
-#endif
 #endif

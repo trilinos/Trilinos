@@ -492,7 +492,7 @@ LOCA::BorderedSystem::EpetraHouseholder::computeHouseholderVector(
   V_p(0,0) = 1.0;
   V_x[0] = A_x[col];
 
-  double sigma = A_x[col].dot(A_x[col]);
+  double sigma = A_x[col].innerProduct(A_x[col]);
   for (int i=col+1; i<A_p.numRows(); i++)    
     sigma += A_p(i,col)*A_p(i,col);
 

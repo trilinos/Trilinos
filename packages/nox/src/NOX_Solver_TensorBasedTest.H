@@ -40,122 +40,12 @@
 #include "NOX_LineSearch_Manager.H" // class data element
 #include "NOX_Direction_Tensor.H"   // class data element
 #include "NOX_Parameter_List.H"	    // class data element
-#include "NOX_Utils.H"              // class data element
+#include "NOX_LineSearch_Tensor.H"  // class data element
 
-#include "NOX_LineSearch_Generic.H" // base class
-#include "NOX_LineSearch_Utils_Printing.H"  // class data member
-#include "NOX_LineSearch_Utils_Counters.H"  // class data member
-#include "NOX_LineSearch_Utils_Slope.H"     // class data member
-
+// Forward declarations
 namespace NOX {
-namespace LineSearch { 
-
-class Tensor : public Generic {
-
-public:
-
-  //! Constructor
-  Tensor(const NOX::Utils& u, NOX::Parameter::List& params);
-
-  //! Destructor
-  ~Tensor();
-  
-  // derived
-  bool reset(NOX::Parameter::List& lsParams);
-
-  // derived
-  bool compute(NOX::Abstract::Group& newgrp, double& step, 
-	       const NOX::Abstract::Vector& dir,
-	       const NOX::Solver::Generic& s);
-
-protected:
-
-  //! Performs a standard tensor linesearch (tensor or Newton direction)
-  bool performLinesearch(NOX::Abstract::Group& newsoln,
-			 double& step,
-			 const NOX::Abstract::Vector& dir,
-			 const NOX::Solver::Generic& s,
-			 const NOX::Direction::Tensor& direction);
-
-  //! Returns true if converged.
-  bool checkConvergence(double newValue, double oldValue, double oldSlope, double step,
-			double eta, int nIters, int nNonlinearIters) const;
-
-  //! Select lambda for linesearch (quadratic or halving)
-  double selectLambda(double newf, double oldf,
-		      double oldfprime, double lambda);
-
-  //! Prints a warning message saying that the slope is negative
-  void printBadSlopeWarning(double slope) const;
-
-protected:
-
-  //! Type of tensor linesearch
-  enum LineSearchType {Curvilinear, Standard, Dual, Newton};
-  
-  //! Algorithms used to determine convergence of the line search
-  enum ConvergenceCriteriaType {
-    //! Sufficient decrease condition
-    ArmijoGoldstein, 
-    //! Ared/Pred condition
-    AredPred,
-    //! Just accept the first step
-    None
-  };
-
-  //! Types of lambda selection 
-  enum LambdaSelectionType {Halving, Quadratic};
-
-  //! Flag for lambda selection (Halving/Quadratic)
-  LambdaSelectionType lambdaSelection;
-
-  //! Choice of convergence criteria
-  ConvergenceCriteriaType suffDecrCond;
-
-  //! Choice of line search
-  LineSearchType lsType;
-  
-  //! Flag for Newton direction
-  bool isNewtonDirection;
-
-  //! Minimum step length (i.e., when we give up)
-  double minStep;
- 
-  //! Default step
-  double defaultStep;
-
-  //! Default step for linesearch failure
-  double recoveryStep;
-
-  //! Maximum iterations
-  int maxIters;
-
-  //! Scaling factor for the Armijo-Goldstein condition
-  double alpha;
-
-  //! Pointer to the input parameter list.  We need this to create an "Output" sublist to store output parameters from the counter object.  
-  NOX::Parameter::List* paramsPtr;
-
-  //! Printing Utils
-  NOX::Utils utils;
-  
-  //! Common line search printing utilities.
-  NOX::LineSearch::Utils::Printing print;
-
-  //! Common common counters for line searches.
-  NOX::LineSearch::Utils::Counters counter;
-
-  //! Common slope calculations for line searches.
-  NOX::LineSearch::Utils::Slope slopeObj;
-
-  //! Counter for number of Jacobian-vector products
-  mutable int multsJv;
-
-};
-} // namespace LineSearch
-} // namespace NOX
-
-
+  class GlobalData;
+}
 
 namespace NOX {
 namespace Solver {
@@ -244,7 +134,7 @@ public:
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
   virtual NOX::StatusTest::StatusType getStatus();
-  virtual NOX::StatusTest::StatusType iterate();
+  virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
@@ -264,22 +154,20 @@ protected:
 
 protected:
   
+  //! Pointer to the global data object.
+  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+
+  //! Utils
+  Teuchos::RefCountPtr<NOX::Utils> utilsPtr;
+  
   //! Current solution.
   Teuchos::RefCountPtr<NOX::Abstract::Group> solnptr;		
 
   //! Previous solution pointer. 
-  /*! We have both a pointer and a reference because we need to create
-    a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Group* oldsolnptr;	
-  //! Previous solution reference.
-  NOX::Abstract::Group& oldsoln;	
+  Teuchos::RefCountPtr<NOX::Abstract::Group> oldsolnptr;
 
   //! Current search direction.pointer.
-  /*! We have both a pointer and a reference because we need to create
-    a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* dirptr;
-  //! Current search direction.reference.
-  NOX::Abstract::Vector& dir;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> dirptr;
 
   //! Stopping test.
   Teuchos::RefCountPtr<NOX::StatusTest::Generic> testptr;		
@@ -290,9 +178,6 @@ protected:
   //! Input parameters.
   Teuchos::RefCountPtr<NOX::Parameter::List> paramsPtr;	
 
-  //! Utils
-  NOX::Utils utils;
-  
   //! Linesearch
   NOX::LineSearch::Tensor lineSearch;
   
@@ -300,7 +185,7 @@ protected:
   NOX::Direction::Tensor direction;  // This is Direction::Manager in LSBased
 
   //! Current step.
-  double step;			
+  double stepSize;			
 
   //! Number of nonlinear iterations.
   int niter;

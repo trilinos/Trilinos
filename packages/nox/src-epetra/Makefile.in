@@ -116,13 +116,14 @@ LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libnoxepetra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 = NOX_Epetra_Vector.$(OBJEXT) \
+	NOX_Epetra_VectorSpace_L2.$(OBJEXT) \
+	NOX_Epetra_VectorSpace_ScaledL2.$(OBJEXT) \
 	NOX_Epetra_MultiVector.$(OBJEXT) NOX_Epetra_Group.$(OBJEXT) \
-	NOX_Epetra_LinearSystemAztecOO.$(OBJEXT) \
+	NOX_Epetra_LinearSystem_AztecOO.$(OBJEXT) \
 	NOX_Epetra_MatrixFree.$(OBJEXT) \
 	NOX_Epetra_FiniteDifference.$(OBJEXT) \
 	NOX_Epetra_FiniteDifferenceColoring.$(OBJEXT) \
 	NOX_Epetra_Scaling.$(OBJEXT) \
-	NOX_Epetra_Operator_JacobiPrec.$(OBJEXT) \
 	NOX_Epetra_BroydenOperator.$(OBJEXT)
 am__objects_2 =
 am_libnoxepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2)
@@ -134,12 +135,13 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_FiniteDifference.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_FiniteDifferenceColoring.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_Group.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_LinearSystemAztecOO.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_MatrixFree.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_MultiVector.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_Operator_JacobiPrec.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_Scaling.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_Vector.Po
+@AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_Vector.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_VectorSpace_L2.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_VectorSpace_ScaledL2.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -153,18 +155,20 @@ SOURCES = $(libnoxepetra_a_SOURCES)
 DIST_SOURCES = $(libnoxepetra_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/NOX_Epetra.H \
 	$(srcdir)/NOX_Epetra_Vector.H \
+	$(srcdir)/NOX_Epetra_VectorSpace.H \
+	$(srcdir)/NOX_Epetra_VectorSpace_L2.H \
+	$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.H \
 	$(srcdir)/NOX_Epetra_MultiVector.H \
 	$(srcdir)/NOX_Epetra_Group.H \
 	$(srcdir)/NOX_Epetra_Interface_Required.H \
 	$(srcdir)/NOX_Epetra_Interface_Jacobian.H \
 	$(srcdir)/NOX_Epetra_Interface_Preconditioner.H \
 	$(srcdir)/NOX_Epetra_LinearSystem.H \
-	$(srcdir)/NOX_Epetra_LinearSystemAztecOO.H \
+	$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.H \
 	$(srcdir)/NOX_Epetra_MatrixFree.H \
 	$(srcdir)/NOX_Epetra_FiniteDifference.H \
 	$(srcdir)/NOX_Epetra_FiniteDifferenceColoring.H \
-	$(srcdir)/NOX_Epetra_Scaling.H $(srcdir)/NOX_Epetra_Operator.H \
-	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.H \
+	$(srcdir)/NOX_Epetra_Scaling.H \
 	$(srcdir)/NOX_Epetra_BroydenOperator.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
@@ -201,6 +205,8 @@ BUILD_BELOS_TESTS_FALSE = @BUILD_BELOS_TESTS_FALSE@
 BUILD_BELOS_TESTS_TRUE = @BUILD_BELOS_TESTS_TRUE@
 BUILD_EPETRA_EXAMPLES_FALSE = @BUILD_EPETRA_EXAMPLES_FALSE@
 BUILD_EPETRA_EXAMPLES_TRUE = @BUILD_EPETRA_EXAMPLES_TRUE@
+BUILD_EPETRA_MULTIPHYSICS_FALSE = @BUILD_EPETRA_MULTIPHYSICS_FALSE@
+BUILD_EPETRA_MULTIPHYSICS_TRUE = @BUILD_EPETRA_MULTIPHYSICS_TRUE@
 BUILD_EPETRA_TESTS_FALSE = @BUILD_EPETRA_TESTS_FALSE@
 BUILD_EPETRA_TESTS_TRUE = @BUILD_EPETRA_TESTS_TRUE@
 BUILD_LAPACK_EXAMPLES_FALSE = @BUILD_LAPACK_EXAMPLES_FALSE@
@@ -397,31 +403,33 @@ target_vendor = @target_vendor@
 EPETRA_H = \
 	$(srcdir)/NOX_Epetra.H \
 	$(srcdir)/NOX_Epetra_Vector.H \
+	$(srcdir)/NOX_Epetra_VectorSpace.H \
+	$(srcdir)/NOX_Epetra_VectorSpace_L2.H \
+	$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.H \
 	$(srcdir)/NOX_Epetra_MultiVector.H \
 	$(srcdir)/NOX_Epetra_Group.H \
 	$(srcdir)/NOX_Epetra_Interface_Required.H \
 	$(srcdir)/NOX_Epetra_Interface_Jacobian.H \
 	$(srcdir)/NOX_Epetra_Interface_Preconditioner.H \
 	$(srcdir)/NOX_Epetra_LinearSystem.H \
-	$(srcdir)/NOX_Epetra_LinearSystemAztecOO.H \
+	$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.H \
         $(srcdir)/NOX_Epetra_MatrixFree.H \
         $(srcdir)/NOX_Epetra_FiniteDifference.H \
         $(srcdir)/NOX_Epetra_FiniteDifferenceColoring.H \
 	$(srcdir)/NOX_Epetra_Scaling.H \
-	$(srcdir)/NOX_Epetra_Operator.H \
-	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.H \
 	$(srcdir)/NOX_Epetra_BroydenOperator.H
 
 EPETRA = \
 	$(srcdir)/NOX_Epetra_Vector.C \
+	$(srcdir)/NOX_Epetra_VectorSpace_L2.C \
+	$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C \
 	$(srcdir)/NOX_Epetra_MultiVector.C \
 	$(srcdir)/NOX_Epetra_Group.C \
-	$(srcdir)/NOX_Epetra_LinearSystemAztecOO.C \
+	$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C \
         $(srcdir)/NOX_Epetra_MatrixFree.C \
         $(srcdir)/NOX_Epetra_FiniteDifference.C \
         $(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C \
 	$(srcdir)/NOX_Epetra_Scaling.C \
-	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C \
 	$(srcdir)/NOX_Epetra_BroydenOperator.C
 
 
@@ -545,12 +553,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_FiniteDifference.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_FiniteDifferenceColoring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_Group.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_LinearSystemAztecOO.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_MatrixFree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_MultiVector.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_Operator_JacobiPrec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_Scaling.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_Vector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_VectorSpace_L2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_VectorSpace_ScaledL2.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -584,6 +593,38 @@ NOX_Epetra_Vector.obj: $(srcdir)/NOX_Epetra_Vector.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_Vector.obj `if test -f '$(srcdir)/NOX_Epetra_Vector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_Vector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_Vector.C'; fi`
 
+NOX_Epetra_VectorSpace_L2.o: $(srcdir)/NOX_Epetra_VectorSpace_L2.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_VectorSpace_L2.o -MD -MP -MF "$(DEPDIR)/NOX_Epetra_VectorSpace_L2.Tpo" -c -o NOX_Epetra_VectorSpace_L2.o `test -f '$(srcdir)/NOX_Epetra_VectorSpace_L2.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_VectorSpace_L2.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_VectorSpace_L2.Tpo" "$(DEPDIR)/NOX_Epetra_VectorSpace_L2.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_VectorSpace_L2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_VectorSpace_L2.C' object='NOX_Epetra_VectorSpace_L2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_VectorSpace_L2.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_VectorSpace_L2.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_VectorSpace_L2.o `test -f '$(srcdir)/NOX_Epetra_VectorSpace_L2.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_VectorSpace_L2.C
+
+NOX_Epetra_VectorSpace_L2.obj: $(srcdir)/NOX_Epetra_VectorSpace_L2.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_VectorSpace_L2.obj -MD -MP -MF "$(DEPDIR)/NOX_Epetra_VectorSpace_L2.Tpo" -c -o NOX_Epetra_VectorSpace_L2.obj `if test -f '$(srcdir)/NOX_Epetra_VectorSpace_L2.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_VectorSpace_L2.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_VectorSpace_L2.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_VectorSpace_L2.Tpo" "$(DEPDIR)/NOX_Epetra_VectorSpace_L2.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_VectorSpace_L2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_VectorSpace_L2.C' object='NOX_Epetra_VectorSpace_L2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_VectorSpace_L2.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_VectorSpace_L2.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_VectorSpace_L2.obj `if test -f '$(srcdir)/NOX_Epetra_VectorSpace_L2.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_VectorSpace_L2.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_VectorSpace_L2.C'; fi`
+
+NOX_Epetra_VectorSpace_ScaledL2.o: $(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_VectorSpace_ScaledL2.o -MD -MP -MF "$(DEPDIR)/NOX_Epetra_VectorSpace_ScaledL2.Tpo" -c -o NOX_Epetra_VectorSpace_ScaledL2.o `test -f '$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_VectorSpace_ScaledL2.Tpo" "$(DEPDIR)/NOX_Epetra_VectorSpace_ScaledL2.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_VectorSpace_ScaledL2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C' object='NOX_Epetra_VectorSpace_ScaledL2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_VectorSpace_ScaledL2.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_VectorSpace_ScaledL2.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_VectorSpace_ScaledL2.o `test -f '$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C
+
+NOX_Epetra_VectorSpace_ScaledL2.obj: $(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_VectorSpace_ScaledL2.obj -MD -MP -MF "$(DEPDIR)/NOX_Epetra_VectorSpace_ScaledL2.Tpo" -c -o NOX_Epetra_VectorSpace_ScaledL2.obj `if test -f '$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_VectorSpace_ScaledL2.Tpo" "$(DEPDIR)/NOX_Epetra_VectorSpace_ScaledL2.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_VectorSpace_ScaledL2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C' object='NOX_Epetra_VectorSpace_ScaledL2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_VectorSpace_ScaledL2.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_VectorSpace_ScaledL2.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_VectorSpace_ScaledL2.obj `if test -f '$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C'; fi`
+
 NOX_Epetra_MultiVector.o: $(srcdir)/NOX_Epetra_MultiVector.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_MultiVector.o -MD -MP -MF "$(DEPDIR)/NOX_Epetra_MultiVector.Tpo" -c -o NOX_Epetra_MultiVector.o `test -f '$(srcdir)/NOX_Epetra_MultiVector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_MultiVector.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_MultiVector.Tpo" "$(DEPDIR)/NOX_Epetra_MultiVector.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_MultiVector.Tpo"; exit 1; fi
@@ -616,21 +657,21 @@ NOX_Epetra_Group.obj: $(srcdir)/NOX_Epetra_Group.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_Group.obj `if test -f '$(srcdir)/NOX_Epetra_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_Group.C'; fi`
 
-NOX_Epetra_LinearSystemAztecOO.o: $(srcdir)/NOX_Epetra_LinearSystemAztecOO.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_LinearSystemAztecOO.o -MD -MP -MF "$(DEPDIR)/NOX_Epetra_LinearSystemAztecOO.Tpo" -c -o NOX_Epetra_LinearSystemAztecOO.o `test -f '$(srcdir)/NOX_Epetra_LinearSystemAztecOO.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_LinearSystemAztecOO.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_LinearSystemAztecOO.Tpo" "$(DEPDIR)/NOX_Epetra_LinearSystemAztecOO.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_LinearSystemAztecOO.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_LinearSystemAztecOO.C' object='NOX_Epetra_LinearSystemAztecOO.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_LinearSystemAztecOO.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_LinearSystemAztecOO.TPo' @AMDEPBACKSLASH@
+NOX_Epetra_LinearSystem_AztecOO.o: $(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_LinearSystem_AztecOO.o -MD -MP -MF "$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Tpo" -c -o NOX_Epetra_LinearSystem_AztecOO.o `test -f '$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Tpo" "$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C' object='NOX_Epetra_LinearSystem_AztecOO.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_LinearSystemAztecOO.o `test -f '$(srcdir)/NOX_Epetra_LinearSystemAztecOO.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_LinearSystemAztecOO.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_LinearSystem_AztecOO.o `test -f '$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C
 
-NOX_Epetra_LinearSystemAztecOO.obj: $(srcdir)/NOX_Epetra_LinearSystemAztecOO.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_LinearSystemAztecOO.obj -MD -MP -MF "$(DEPDIR)/NOX_Epetra_LinearSystemAztecOO.Tpo" -c -o NOX_Epetra_LinearSystemAztecOO.obj `if test -f '$(srcdir)/NOX_Epetra_LinearSystemAztecOO.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_LinearSystemAztecOO.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_LinearSystemAztecOO.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_LinearSystemAztecOO.Tpo" "$(DEPDIR)/NOX_Epetra_LinearSystemAztecOO.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_LinearSystemAztecOO.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_LinearSystemAztecOO.C' object='NOX_Epetra_LinearSystemAztecOO.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_LinearSystemAztecOO.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_LinearSystemAztecOO.TPo' @AMDEPBACKSLASH@
+NOX_Epetra_LinearSystem_AztecOO.obj: $(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_LinearSystem_AztecOO.obj -MD -MP -MF "$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Tpo" -c -o NOX_Epetra_LinearSystem_AztecOO.obj `if test -f '$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Tpo" "$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C' object='NOX_Epetra_LinearSystem_AztecOO.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_LinearSystemAztecOO.obj `if test -f '$(srcdir)/NOX_Epetra_LinearSystemAztecOO.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_LinearSystemAztecOO.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_LinearSystemAztecOO.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_LinearSystem_AztecOO.obj `if test -f '$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C'; fi`
 
 NOX_Epetra_MatrixFree.o: $(srcdir)/NOX_Epetra_MatrixFree.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_MatrixFree.o -MD -MP -MF "$(DEPDIR)/NOX_Epetra_MatrixFree.Tpo" -c -o NOX_Epetra_MatrixFree.o `test -f '$(srcdir)/NOX_Epetra_MatrixFree.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_MatrixFree.C; \
@@ -695,22 +736,6 @@ NOX_Epetra_Scaling.obj: $(srcdir)/NOX_Epetra_Scaling.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_Scaling.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_Scaling.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_Scaling.obj `if test -f '$(srcdir)/NOX_Epetra_Scaling.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_Scaling.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_Scaling.C'; fi`
-
-NOX_Epetra_Operator_JacobiPrec.o: $(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_Operator_JacobiPrec.o -MD -MP -MF "$(DEPDIR)/NOX_Epetra_Operator_JacobiPrec.Tpo" -c -o NOX_Epetra_Operator_JacobiPrec.o `test -f '$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_Operator_JacobiPrec.Tpo" "$(DEPDIR)/NOX_Epetra_Operator_JacobiPrec.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_Operator_JacobiPrec.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C' object='NOX_Epetra_Operator_JacobiPrec.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_Operator_JacobiPrec.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_Operator_JacobiPrec.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_Operator_JacobiPrec.o `test -f '$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
-
-NOX_Epetra_Operator_JacobiPrec.obj: $(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_Operator_JacobiPrec.obj -MD -MP -MF "$(DEPDIR)/NOX_Epetra_Operator_JacobiPrec.Tpo" -c -o NOX_Epetra_Operator_JacobiPrec.obj `if test -f '$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_Operator_JacobiPrec.Tpo" "$(DEPDIR)/NOX_Epetra_Operator_JacobiPrec.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_Operator_JacobiPrec.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C' object='NOX_Epetra_Operator_JacobiPrec.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_Operator_JacobiPrec.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_Operator_JacobiPrec.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_Operator_JacobiPrec.obj `if test -f '$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C'; fi`
 
 NOX_Epetra_BroydenOperator.o: $(srcdir)/NOX_Epetra_BroydenOperator.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_BroydenOperator.o -MD -MP -MF "$(DEPDIR)/NOX_Epetra_BroydenOperator.Tpo" -c -o NOX_Epetra_BroydenOperator.o `test -f '$(srcdir)/NOX_Epetra_BroydenOperator.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_BroydenOperator.C; \

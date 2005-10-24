@@ -36,109 +36,95 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
-#include "NOX_Parameter_LineSearchConstructor.H"
+#include "NOX_GlobalData.H"
 
 // All the different line searches
 #include "NOX_LineSearch_FullStep.H"
 #include "NOX_LineSearch_Backtrack.H"
 #include "NOX_LineSearch_Polynomial.H"
 #include "NOX_LineSearch_MoreThuente.H"
-#ifdef WITH_PRERELEASE
 #include "NOX_LineSearch_NonlinearCG.H"
-#endif
 
-NOX::LineSearch::Manager::Manager(const NOX::Utils& u, NOX::Parameter::List& params) :
-  utils(u),
-  method(""),
-  ptr(NULL)
+NOX::LineSearch::Manager::
+Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd) :
+  utils(gd->getUtils()),
+  method("")
 {
-  reset(params);
+  
+}
+
+NOX::LineSearch::Manager::
+Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+	NOX::Parameter::List& params) :
+  method("")
+{
+  reset(gd, params);
 }
 
 NOX::LineSearch::Manager::~Manager()
-{
-  delete ptr;
+{ 
+
 }
 
-bool NOX::LineSearch::Manager::reset(Parameter::List& params)
+bool NOX::LineSearch::Manager::
+reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+      Parameter::List& params)
 {
-   string newmethod = params.getParameter("Method", "Full Step");
+  utils = gd->getUtils();
 
+  string newmethod = params.getParameter("Method", "Full Step");
+  
   // If the method has not changeed, just call reset on the method.
-  if (method == newmethod) 
-  {
-    return ptr->reset(params);
+  if (method == newmethod) {
+      return ptr->reset(gd, params);
   }
 
   method = newmethod;
-  delete ptr;
-  ptr = NULL;
-    
+  
   if (method == "Full Step")
-    ptr = new FullStep(params);
+    ptr = Teuchos::rcp(new FullStep(gd, params));
   else if (method == "Backtrack")
-    ptr = new Backtrack(utils, params);
+    ptr = Teuchos::rcp(new Backtrack(gd, params));
   else if (method == "Polynomial")
-    ptr = new Polynomial(utils, params);
+    ptr = Teuchos::rcp(new Polynomial(gd, params));
   else if (method == "More'-Thuente")
-    ptr = new MoreThuente(utils, params);
-#ifdef WITH_PRERELEASE
+    ptr = Teuchos::rcp(new MoreThuente(gd, params));
   else if (method == "NonlinearCG")
-    ptr = new NonlinearCG(utils, params);
-#endif
-  else if (method == "User Defined")
-  {
-    // Check that the corresponding Direction parameter exists
-    if (!params.isParameterArbitrary("User Defined Constructor"))
-    {
-      printWarning("reset", "No \"User Defined Constructor\" specified");
-      return false;
+    ptr = Teuchos::rcp(new NonlinearCG(gd, params));
+  else if (method == "User Defined") {
+    if (params.INVALID_TEMPLATE_QUALIFIER
+	isParameterRcp<NOX::LineSearch::Generic>
+	("User Defined Line Search")) {
+      
+      ptr = params.INVALID_TEMPLATE_QUALIFIER
+	getRcpParameter<NOX::LineSearch::Generic>
+	("User Defined Line Search");
+      ptr->reset(gd, params);
     }
-    
-    // Extract the Arbitrary Parameter
-    const NOX::Parameter::Arbitrary& ap = 
-      params.getArbitraryParameter("User Defined Constructor");
-    
-    // Dynamically cast the Arbitrary Parameter to a LineSearchConstructor Parameter
-    const NOX::Parameter::LineSearchConstructor* lscPtr = 
-      dynamic_cast<const NOX::Parameter::LineSearchConstructor*>(&ap);
-    
-    // Check that the cast was successful
-    if (lscPtr == NULL)
-    {
-      printWarning("reset", "Cannot do dynamic cast from Arbitrary to LineSearchConstructor");
-      return false;
-    }
-    
-    // Create a new direction from the LineSearchConstructor object
-    ptr = lscPtr->newLineSearch(utils, params);
-    
-    // Check that the creation was successful
-    if (ptr == NULL) 
-    {
-      printWarning("reset", "LineSearchConstructor object failed to create new direction");
-      return false;
+    else {
+      this->printWarning("reset", " a \"User Defined\" line search was chosen for the \"Method\" in the \"Line Search\" sublist, but a Teuchos::RefCountPtr<NOX::LineSearch::Generic> object was not found in the parameter list!");
+      throw "NOX Error";
     }
   }
-  else 
-  {
-    printWarning("reset", "invalid choice (" + method + ") for linesearch method");
-    return false;
+  else {
+    this->printWarning("reset()", 
+	   "Invalid choice for \"Method\" in \"Line Search\" sublist!");
+    throw "NOX Error";
   }
-
-  return (ptr != NULL);
+  
+  return (!Teuchos::is_null(ptr));
 }
 
-bool NOX::LineSearch::Manager::compute(Abstract::Group& newgrp, double& step, 
-		      const Abstract::Vector& dir,
-		      const Solver::Generic& s) 
+bool NOX::LineSearch::Manager::
+compute(Abstract::Group& newgrp, double& step, const Abstract::Vector& dir,
+	const Solver::Generic& s) 
 {
   return ptr->compute(newgrp, step, dir, s);
 }
 
-
-void NOX::LineSearch::Manager::printWarning(const string& name, const string& warning)
+void NOX::LineSearch::Manager::
+printWarning(const string& name, const string& warning)
 {
-  if (utils.isPrintType(NOX::Utils::Warning)) 
-    utils.out() << "Calling NOX::LineSearch::Manager::" << name << " - " << warning << endl;
+  utils->out(NOX::Utils::Warning) << "Calling NOX::LineSearch::Manager::" 
+				  << name << " - " << warning << endl;
 }

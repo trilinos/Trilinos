@@ -35,10 +35,14 @@
 
 #include "NOX_LineSearch_Generic.H" // base class
 #include "NOX_Abstract_Vector.H" // for NOX::Abstract::Vector::NormType
+#include "Teuchos_RefCountPtr.hpp"
 
 // Forward declarations
 namespace NOX {
-class Utils;
+  class Utils;
+  namespace MeritFunction {
+    class Generic;
+  }
 }
 
 namespace NOX {
@@ -47,12 +51,12 @@ namespace LineSearch {
 //! Generic backtracking line search.
 /*!  This line search starts with the step length defined by "Default
   Step". It checks to see if the norm of the right hand side (RHS) has
-  been reduced. It so, it exits successfully. Otherwise, it reduces
-  the step length by a factor of one-half. It continues to repeat this
-  procedure until it either finds a reduction in the norm of the RHS
-  or the step is less than that specified by "Minimum Step". In the
-  later case, the line search has failed, and we take the step defined
-  by "Recovery Step".
+  been reduced. If so, it exits successfully. Otherwise, it reduces
+  the step length by the reduction factor (defaults to one-half). It
+  continues to repeat this procedure until it either finds a reduction
+  in the norm of the RHS or the step is less than that specified by
+  "Minimum Step". In the later case, the line search has failed, and
+  we take the step defined by "Recovery Step".
 
   This line search can be called via NOX::LineSearch::Manager.
  
@@ -65,11 +69,7 @@ namespace LineSearch {
 <li> "Recovery Step" - step to take when the line search fails
      (defaults to value for "Default Step")
 <li> "Max Iters" - maximum number of iterations (i.e., RHS computations)
-<li> "Decrease Condition" - choices are the following:
-     <ul>
-     <li> "Max Norm" - simple decrease using the infinity norm of the RHS (default)
-     <li> "Two Norm" - simple decrease using the Euclidean norm of the RHS
-     </ul>
+<li> "Reduction Factor" - A multiplier between zero and one that reduces the step size between line search iterations
 </ul>
  */  
 
@@ -78,13 +78,15 @@ class Backtrack : public Generic {
 public:
 
   //! Constructor
-  Backtrack(const NOX::Utils& u, NOX::Parameter::List& params);
+  Backtrack(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	    NOX::Parameter::List& params);
 
   //! Destructor
   ~Backtrack();
   
   // derived
-  bool reset(NOX::Parameter::List& params);
+  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	     NOX::Parameter::List& params);
 
   // derived
   bool compute(NOX::Abstract::Group& newgrp, double& step, 
@@ -92,16 +94,12 @@ public:
 	       const NOX::Solver::Generic& s);
   
 private:
-
-  /*! \brief Compute the correct norm (according to the input
-      parameters) of the given grp. 
-  */
-  double getNormF(const NOX::Abstract::Group& grp) const;
-
-private:
   
   //! Printing Utilities
-  const NOX::Utils& utils;
+  Teuchos::RefCountPtr<NOX::Utils> utils;
+
+  //! Merit function
+  Teuchos::RefCountPtr<NOX::MeritFunction::Generic> meritFunctionPtr;
 
    //! Minimum step length (i.e., when we give up)
   double minStep;
@@ -112,12 +110,11 @@ private:
   //! Default step for linesearch failure
   double recoveryStep;
 
+  double reductionFactor;
+
   //! Maximum number of iterations
   int maxIters;
   
-  //! Norm used in simple decrease condition
-  NOX::Abstract::Vector::NormType normType;
-
 };
 } // namespace LineSearch
 } // namespace NOX

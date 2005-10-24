@@ -27,16 +27,15 @@
 // ************************************************************************
 //@HEADER
 
-#ifdef WITH_PRERELEASE
-
 #ifndef NOX_LINESEARCH_NONLINEARCG_H
 #define NOX_LINESEARCH_NONLINEARCG_H
 
 #include "NOX_LineSearch_Generic.H" // base class
+#include "Teuchos_RefCountPtr.hpp"
 
 // Forward declarations
 namespace NOX {
-class Utils;
+  class Utils;
 }
 
 namespace NOX {
@@ -136,13 +135,15 @@ class NonlinearCG : public Generic {
 public:
 
   //! Constructor
-  NonlinearCG(const NOX::Utils& u, NOX::Parameter::List& params);
+  NonlinearCG(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	      NOX::Parameter::List& params);
 
   //! Destructor
   ~NonlinearCG();
   
   // derived
-  bool reset(NOX::Parameter::List& params);
+  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	     NOX::Parameter::List& params);
 
   // derived
   bool compute(NOX::Abstract::Group& newgrp, double& step, 
@@ -157,16 +158,15 @@ private:
                             const Abstract::Group& grp);
 
   //! Printing utilities
-  const NOX::Utils& utils;
+  Teuchos::RefCountPtr<NOX::Utils> utils;
 
   //! Temporary Vector pointer used to compute directional derivatives
-  NOX::Abstract::Vector* vecPtr;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> vecPtr;
 
   //! Temporary Group pointer used to compute directional derivatives
-  NOX::Abstract::Group* grpPtr;
+  Teuchos::RefCountPtr<NOX::Abstract::Group> grpPtr;
 
 };
 } // namespace LineSearch
 } // namespace NOX
-#endif
 #endif

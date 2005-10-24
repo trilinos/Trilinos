@@ -42,7 +42,6 @@ using namespace NOX::StatusTest;
 
 NormUpdate::NormUpdate(double tol, Abstract::Vector::NormType ntype, ScaleType stype) :
   status(Unevaluated),
-  updateVectorPtr(NULL),
   normType(ntype),
   scaleType(stype),
   tolerance(tol),
@@ -52,7 +51,6 @@ NormUpdate::NormUpdate(double tol, Abstract::Vector::NormType ntype, ScaleType s
 
 NormUpdate::NormUpdate(double tol, ScaleType stype) :
   status(Unevaluated),
-  updateVectorPtr(NULL),
   normType(NOX::Abstract::Vector::TwoNorm),
   scaleType(stype),
   tolerance(tol),
@@ -62,7 +60,7 @@ NormUpdate::NormUpdate(double tol, ScaleType stype) :
 
 NormUpdate::~NormUpdate()
 {
-  delete updateVectorPtr;
+
 }
 
 StatusType NormUpdate::checkStatus(const Solver::Generic& problem, 
@@ -97,7 +95,7 @@ StatusType NormUpdate::checkStatus(const Solver::Generic& problem,
   const Abstract::Vector& oldSoln = problem.getPreviousSolutionGroup().getX();
   const Abstract::Vector& curSoln = problem.getSolutionGroup().getX();
 
-  if (updateVectorPtr == NULL) 
+  if (Teuchos::is_null(updateVectorPtr)) 
     updateVectorPtr = curSoln.clone();
 
   updateVectorPtr->update(1.0, curSoln, -1.0, oldSoln, 0.0); 

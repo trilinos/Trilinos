@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Epetra_LinearSystemAztecOO.H"	// class definition
+#include "NOX_Epetra_LinearSystem_AztecOO.H"	// class definition
 
 // NOX includes
 #include "NOX_Epetra_Interface_Required.H"
@@ -69,130 +69,113 @@
 
 //***********************************************************************
 NOX::Epetra::LinearSystemAztecOO::
-LinearSystemAztecOO(NOX::Parameter::List& printParams_, 
-		    NOX::Parameter::List& linearSolverParams, 
-		    NOX::Epetra::Interface::Required& iReq, 
-		    Epetra_Vector& cloneVector,
-		    NOX::Epetra::Scaling* s):
-  printParams(printParams_),
-  utils(printParams_),
-  jacInterfacePtr(0),
+LinearSystemAztecOO(
+ NOX::Parameter::List& printParams, 
+ NOX::Parameter::List& linearSolverParams, 
+ const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+ const NOX::Epetra::Vector& cloneVector,
+ const Teuchos::RefCountPtr<NOX::Epetra::Scaling> s):
+  utils(printParams),
   jacType(EpetraOperator),
-  jacPtr(0),
-  ownsJacOperator(false),
-  precInterfacePtr(0),
   precType(EpetraOperator),
-  precPtr(0),
-  ownsPrecOperator(false),
   precMatrixSource(UseJacobian),
-  aztecSolverPtr(new AztecOO()),
-  ifpackGraphPtr(0),
-  ifpackPreconditionerPtr(0),
-  newIfpackPreconditionerPtr(0),
 #ifdef HAVE_NOX_ML_EPETRA
   MLPreconditionerPtr(0),
 #endif
   scaling(s),
-  tmpVectorPtr(new Epetra_Vector(cloneVector)),
   conditionNumberEstimate(0.0),
   isPrecConstructed(false),
   precQueryCounter(0),
   maxAgeOfPrec(1),
-  timer(cloneVector.Comm()),
+  timer(cloneVector.getEpetraVector().Comm()),
   timeCreatePreconditioner(0.0),
   timeApplyJacbianInverse(0.0)
 {
+  // Allocate solver
+  aztecSolverPtr = Teuchos::rcp(new AztecOO());
+  tmpVectorPtr = Teuchos::rcp(new NOX::Epetra::Vector(cloneVector));
+
   // Neither Jacobian or Preconditioner are supplied
-  createJacobianOperator(linearSolverParams, iReq, cloneVector);
-  createPrecOperator(linearSolverParams, iReq, cloneVector);
+  createJacobianOperator(printParams, linearSolverParams, iReq, cloneVector);
+  createPrecOperator(printParams, linearSolverParams, iReq, cloneVector);
 
   reset(linearSolverParams);
 }
 
 //***********************************************************************
 NOX::Epetra::LinearSystemAztecOO::
-LinearSystemAztecOO(NOX::Parameter::List& printParams_, 
-		    NOX::Parameter::List& linearSolverParams,  
-		    NOX::Epetra::Interface::Required& iReq, 
-		    NOX::Epetra::Interface::Jacobian& iJac, 
-		    Epetra_Operator& jacobian,
-		    Epetra_Vector& cloneVector,
-		    NOX::Epetra::Scaling* s):
-  printParams(printParams_),
-  utils(printParams_),
-  jacInterfacePtr(&iJac),
+LinearSystemAztecOO(
+ NOX::Parameter::List& printParams, 
+ NOX::Parameter::List& linearSolverParams,  
+ const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+ const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian>& iJac, 
+ const Teuchos::RefCountPtr<Epetra_Operator>& jacobian,
+ const NOX::Epetra::Vector& cloneVector,
+ const Teuchos::RefCountPtr<NOX::Epetra::Scaling> s):
+  utils(printParams),
+  jacInterfacePtr(iJac),
   jacType(EpetraOperator),
-  jacPtr(&jacobian),
-  ownsJacOperator(false),
-  precInterfacePtr(0),
+  jacPtr(jacobian),
   precType(EpetraOperator),
-  precPtr(0),
-  ownsPrecOperator(false),
   precMatrixSource(UseJacobian),
-  aztecSolverPtr(new AztecOO()),
-  ifpackGraphPtr(0),
-  ifpackPreconditionerPtr(0),
-  newIfpackPreconditionerPtr(0),
 #ifdef HAVE_NOX_ML_EPETRA
   MLPreconditionerPtr(0),
 #endif
   scaling(s),
-  tmpVectorPtr(new Epetra_Vector(cloneVector)),
   conditionNumberEstimate(0.0),
   isPrecConstructed(false),
   precQueryCounter(0),
   maxAgeOfPrec(1),
-  timer(cloneVector.Comm()),
+  timer(cloneVector.getEpetraVector().Comm()),
   timeCreatePreconditioner(0.0),
   timeApplyJacbianInverse(0.0)
 {
+  // Allocate solver
+  aztecSolverPtr = Teuchos::rcp(new AztecOO());
+  tmpVectorPtr = Teuchos::rcp(new NOX::Epetra::Vector(cloneVector));
+
   // Jacobian operator is supplied 
   jacType = getOperatorType(*jacPtr);
   // Preconditioner is not supplied
-  createPrecOperator(linearSolverParams, iReq, cloneVector);
+  createPrecOperator(printParams, linearSolverParams, iReq, cloneVector);
 
   reset(linearSolverParams);
 }
 
 //***********************************************************************
 NOX::Epetra::LinearSystemAztecOO::
-LinearSystemAztecOO(NOX::Parameter::List& printParams_, 
-		    NOX::Parameter::List& linearSolverParams, 
-		    NOX::Epetra::Interface::Required& iReq, 
-		    NOX::Epetra::Interface::Preconditioner& iPrec, 
-		    Epetra_Operator& preconditioner,
-		    Epetra_Vector& cloneVector,
-		    NOX::Epetra::Scaling* s):
-  printParams(printParams_),
-  utils(printParams_),
-  jacInterfacePtr(0),
+LinearSystemAztecOO(
+ NOX::Parameter::List& printParams, 
+ NOX::Parameter::List& linearSolverParams, 
+ const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+ const Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner>& iPrec, 
+ const Teuchos::RefCountPtr<Epetra_Operator>& preconditioner,
+ const NOX::Epetra::Vector& cloneVector,
+ const Teuchos::RefCountPtr<NOX::Epetra::Scaling> s):
+  utils(printParams),
   jacType(EpetraOperator),
-  jacPtr(0),
-  ownsJacOperator(false),
-  precInterfacePtr(&iPrec),
+  precInterfacePtr(iPrec),
   precType(EpetraOperator),
-  precPtr(&preconditioner),
-  ownsPrecOperator(false),
+  precPtr(preconditioner),
   precMatrixSource(SeparateMatrix),
-  aztecSolverPtr(new AztecOO()),
-  ifpackGraphPtr(0),
-  ifpackPreconditionerPtr(0),
-  newIfpackPreconditionerPtr(0),
 #ifdef HAVE_NOX_ML_EPETRA
   MLPreconditionerPtr(0),
 #endif
   scaling(s),
-  tmpVectorPtr(new Epetra_Vector(cloneVector)),
   conditionNumberEstimate(0.0),
   isPrecConstructed(false),
   precQueryCounter(0),
   maxAgeOfPrec(1),
-  timer(cloneVector.Comm()),
+  timer(cloneVector.getEpetraVector().Comm()),
   timeCreatePreconditioner(0.0),
   timeApplyJacbianInverse(0.0)
 {
+  // Allocate solver
+  aztecSolverPtr = Teuchos::rcp(new AztecOO());
+  tmpVectorPtr = Teuchos::rcp(new NOX::Epetra::Vector(cloneVector));
+
   // Jacobian operator is not supplied
-  createJacobianOperator(linearSolverParams, iReq, cloneVector);
+  createJacobianOperator(printParams, linearSolverParams, iReq, cloneVector);
   // Preconditioner operator is supplied
   precType = getOperatorType(*precPtr);
 
@@ -201,42 +184,39 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams_,
 
 //***********************************************************************
 NOX::Epetra::LinearSystemAztecOO::
-LinearSystemAztecOO(NOX::Parameter::List& printParams_, 
-		    NOX::Parameter::List& linearSolverParams,
-		    NOX::Epetra::Interface::Jacobian& iJac, 
-		    Epetra_Operator& jacobian,
-		    NOX::Epetra::Interface::Preconditioner& iPrec, 
-		    Epetra_Operator& preconditioner,
-		    Epetra_Vector& cloneVector,
-		    NOX::Epetra::Scaling* s):
-  printParams(printParams_),
-  utils(printParams_),
-  jacInterfacePtr(&iJac),
+LinearSystemAztecOO(
+ NOX::Parameter::List& printParams, 
+ NOX::Parameter::List& linearSolverParams,
+ const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian>& iJac, 
+ const Teuchos::RefCountPtr<Epetra_Operator>& jacobian,
+ const Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner>& iPrec, 
+ const Teuchos::RefCountPtr<Epetra_Operator>& preconditioner,
+ const NOX::Epetra::Vector& cloneVector,
+ const Teuchos::RefCountPtr<NOX::Epetra::Scaling> s):
+  utils(printParams),
+  jacInterfacePtr(iJac),
   jacType(EpetraOperator),
-  jacPtr(&jacobian),
-  ownsJacOperator(false),
-  precInterfacePtr(&iPrec),
+  jacPtr(jacobian),
+  precInterfacePtr(iPrec),
   precType(EpetraOperator),
-  precPtr(&preconditioner),
-  ownsPrecOperator(false),
+  precPtr(preconditioner),
   precMatrixSource(SeparateMatrix),
-  aztecSolverPtr(new AztecOO()),
-  ifpackGraphPtr(0),
-  ifpackPreconditionerPtr(0),
-  newIfpackPreconditionerPtr(0),
 #ifdef HAVE_NOX_ML_EPETRA
   MLPreconditionerPtr(0),
 #endif
   scaling(s),
-  tmpVectorPtr(new Epetra_Vector(cloneVector)),
   conditionNumberEstimate(0.0),
   isPrecConstructed(false),
   precQueryCounter(0),
   maxAgeOfPrec(1),
-  timer(cloneVector.Comm()),
+  timer(cloneVector.getEpetraVector().Comm()),
   timeCreatePreconditioner(0.0),
   timeApplyJacbianInverse(0.0)
 {
+  // Allocate solver
+  aztecSolverPtr = Teuchos::rcp(new AztecOO());
+  tmpVectorPtr = Teuchos::rcp(new NOX::Epetra::Vector(cloneVector));
+
   // Both operators are supplied
   jacType = getOperatorType(*jacPtr);
   precType = getOperatorType(*precPtr);
@@ -248,16 +228,6 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams_,
 NOX::Epetra::LinearSystemAztecOO::~LinearSystemAztecOO() 
 {
   destroyPreconditioner();
-  if (ownsJacOperator) {
-    delete jacPtr;
-    jacPtr = 0;
-  }
-  if (ownsPrecOperator) {
-    delete precPtr;
-    precPtr = 0;
-  }
-  delete aztecSolverPtr;
-  delete tmpVectorPtr;
 }
 
 //***********************************************************************
@@ -479,26 +449,27 @@ setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
 }
 
 //***********************************************************************
-bool NOX::Epetra::LinearSystemAztecOO::
-createJacobianOperator(NOX::Parameter::List& lsParams,
-		       NOX::Epetra::Interface::Required& iReq, 
-		       const Epetra_Vector& cloneVector)
+bool NOX::Epetra::LinearSystemAztecOO::createJacobianOperator(
+       NOX::Parameter::List& printParams,
+       NOX::Parameter::List& lsParams,
+       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+       const NOX::Epetra::Vector& cloneVector)
 {
   string choice = lsParams.getParameter("Jacobian Operator", "Matrix-Free");
 
   if (choice == "Matrix-Free") {
-    jacPtr = new MatrixFree(utils, iReq, cloneVector);
+    jacPtr = 
+      Teuchos::rcp(new MatrixFree(printParams, iReq, cloneVector));
     jacInterfacePtr = 
-      dynamic_cast<NOX::Epetra::Interface::Jacobian*>(jacPtr);
+      Teuchos::rcp_dynamic_cast<NOX::Epetra::Interface::Jacobian>(jacPtr);
     jacType = EpetraOperator;
-    ownsJacOperator = true;
   }
   else if (choice == "Finite Difference") {
-    jacPtr = new FiniteDifference(printParams, iReq, cloneVector);
+    jacPtr = 
+      Teuchos::rcp(new FiniteDifference(printParams, iReq, cloneVector));
     jacInterfacePtr = 
-      dynamic_cast<NOX::Epetra::Interface::Jacobian*>(jacPtr);
+      Teuchos::rcp_dynamic_cast<NOX::Epetra::Interface::Jacobian>(jacPtr);
     jacType = EpetraRowMatrix;
-    ownsJacOperator = true;
   }
   else    
     throwError("createJacobianOperator", 
@@ -508,27 +479,25 @@ createJacobianOperator(NOX::Parameter::List& lsParams,
 }
 
 //***********************************************************************
-bool NOX::Epetra::LinearSystemAztecOO::
-createPrecOperator(NOX::Parameter::List& lsParams,
-		   NOX::Epetra::Interface::Required& iReq, 
-		   const Epetra_Vector& cloneVector)
+bool NOX::Epetra::LinearSystemAztecOO::createPrecOperator(
+       NOX::Parameter::List& printParams,
+       NOX::Parameter::List& lsParams,
+       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+       const NOX::Epetra::Vector& cloneVector)
 {
   string choice = lsParams.getParameter("Preconditioner Operator", 
 					"Use Jacobian");
 
   if (choice == "Use Jacobian") {
-    precPtr = 0;
-    precInterfacePtr = 0;
     precType = jacType;
-    ownsPrecOperator = false;
     precMatrixSource = UseJacobian;
   }
   else if (choice == "Finite Difference") {
-    precPtr = new FiniteDifference(printParams, iReq, cloneVector);
-    precInterfacePtr = 
-      dynamic_cast<NOX::Epetra::Interface::Preconditioner*>(precPtr);
+    precPtr = 
+      Teuchos::rcp(new FiniteDifference(printParams, iReq, cloneVector));
+    precInterfacePtr = Teuchos::rcp_dynamic_cast
+      <NOX::Epetra::Interface::Preconditioner>(precPtr);
     precType = EpetraRowMatrix;
-    ownsPrecOperator = true;
     precMatrixSource = SeparateMatrix;
   }
   else    
@@ -581,7 +550,7 @@ applyJacobianInverse(Parameter::List &p,
     result.init(0.0);
 
   // Create Epetra linear problem object for the linear solve
-  Epetra_LinearProblem Problem(solveJacOpPtr, 
+  Epetra_LinearProblem Problem(solveJacOpPtr.get(), 
   			       &(result.getEpetraVector()), 
 			       &(nonConstInput.getEpetraVector()));
 
@@ -593,9 +562,9 @@ applyJacobianInverse(Parameter::List &p,
   aztecSolverPtr->SetRHS(&(nonConstInput.getEpetraVector()));
 
   // ************* Begin linear system scaling *******************
-  if (scaling != 0) {
+  if ( !Teuchos::is_null(scaling) ) {
 
-    if (!manualScaling)
+    if ( !manualScaling )
       scaling->computeScaling(Problem);
     
     scaling->scaleLinearSystem(Problem);
@@ -628,7 +597,7 @@ applyJacobianInverse(Parameter::List &p,
   aztecStatus = aztecSolverPtr->Iterate(maxit, tol);
   
   // Unscale the linear system
-  if (scaling != 0)
+  if ( !Teuchos::is_null(scaling) )
     scaling->unscaleLinearSystem(Problem);
 
   // Set the output parameters in the "Output" sublist
@@ -686,7 +655,7 @@ applyRightPreconditioning(bool useTranspose,
     // use of IFPACK preconditioners if available!  
 
     // Zero out the temporary vector
-    tmpVectorPtr->PutScalar(0.0);
+    tmpVectorPtr->init(0.0);
 
     // Turn off printing in Aztec when using applyRightPreconditioner
     aztecSolverPtr->SetAztecOption(AZ_output,AZ_none);
@@ -694,7 +663,7 @@ applyRightPreconditioning(bool useTranspose,
     // Get the number of iterations in the preconditioner
     int numIters = params.getParameter("AztecOO Preconditioner Iterations", 1);
     
-    AztecOO_Operator prec(aztecSolverPtr, numIters);
+    AztecOO_Operator prec(aztecSolverPtr.get(), numIters);
     
     errorCode = prec.ApplyInverse(input.getEpetraVector(), 
 				  result.getEpetraVector());
@@ -768,7 +737,7 @@ bool NOX::Epetra::LinearSystemAztecOO::checkPreconditionerValidity()
   else if (precAlgorithm == UserDefined_){
     
     // Make sure a separate operator was supplied by the user
-    if (precPtr == 0) {
+    if (Teuchos::is_null(precPtr)) {
       throwError("checkPreconditionerValidity", "Preconditioiner is NULL!");
     }
     return true;
@@ -779,7 +748,7 @@ bool NOX::Epetra::LinearSystemAztecOO::checkPreconditionerValidity()
 
 //***********************************************************************
 bool NOX::Epetra::LinearSystemAztecOO::
-createPreconditioner(Epetra_Vector& x, Parameter::List& p, 
+createPreconditioner(const NOX::Epetra::Vector& x, Parameter::List& p, 
 		     bool recomputeGraph) const
 {
   double startTime = timer.WallTime();  
@@ -789,8 +758,10 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
   }
 
   // Apply Scaling
-  Epetra_LinearProblem Problem(jacPtr, tmpVectorPtr, tmpVectorPtr);
-  if (scaling != 0) {
+  Epetra_LinearProblem Problem(jacPtr.get(), 
+			       &(tmpVectorPtr->getEpetraVector()), 
+			       &(tmpVectorPtr->getEpetraVector()));
+  if ( !Teuchos::is_null(scaling) ) {
     if (!manualScaling)
       scaling->computeScaling(Problem);
     
@@ -806,12 +777,13 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
     if (precMatrixSource == UseJacobian) {
       // The Jacobian has already been evaluated at the current solution.
       // Just set and enforce explicit constuction
-      aztecSolverPtr->SetPrecMatrix(dynamic_cast<Epetra_RowMatrix*>(jacPtr));
+      aztecSolverPtr->SetPrecMatrix(dynamic_cast<Epetra_RowMatrix*>(jacPtr.get()));
       aztecSolverPtr->ConstructPreconditioner(conditionNumberEstimate);
     }
     else if (precMatrixSource == SeparateMatrix) {
       Epetra_RowMatrix& precMatrix = dynamic_cast<Epetra_RowMatrix&>(*precPtr);
-      precInterfacePtr->computePreconditioner(x, *precPtr, &p);    
+      precInterfacePtr->computePreconditioner(x.getEpetraVector(), 
+					      *precPtr, &p);    
       aztecSolverPtr->SetPrecMatrix(&precMatrix);
       aztecSolverPtr->ConstructPreconditioner(conditionNumberEstimate);
     }
@@ -821,13 +793,14 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
     
     if (precMatrixSource == UseJacobian) {
       createIfpackPreconditioner(p);
-      aztecSolverPtr->SetPrecOperator(ifpackPreconditionerPtr);
+      aztecSolverPtr->SetPrecOperator(ifpackPreconditionerPtr.get());
     }
     else if (precMatrixSource == SeparateMatrix) {
       
-      precInterfacePtr->computePreconditioner(x, *precPtr, &p);
+      precInterfacePtr->computePreconditioner(x.getEpetraVector(),
+					      *precPtr, &p);
       createIfpackPreconditioner(p);
-      aztecSolverPtr->SetPrecOperator(ifpackPreconditionerPtr);
+      aztecSolverPtr->SetPrecOperator(ifpackPreconditionerPtr.get());
     }
 
   }
@@ -835,13 +808,14 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
     
     if (precMatrixSource == UseJacobian) {
       createNewIfpackPreconditioner(p);
-      aztecSolverPtr->SetPrecOperator(newIfpackPreconditionerPtr);
+      aztecSolverPtr->SetPrecOperator(newIfpackPreconditionerPtr.get());
     }
     else if (precMatrixSource == SeparateMatrix) {
       
-      precInterfacePtr->computePreconditioner(x, *precPtr, &p);
+      precInterfacePtr->computePreconditioner(x.getEpetraVector(),
+					      *precPtr, &p);
       createNewIfpackPreconditioner(p);
-      aztecSolverPtr->SetPrecOperator(newIfpackPreconditionerPtr);
+      aztecSolverPtr->SetPrecOperator(newIfpackPreconditionerPtr.get());
     }
 
   }
@@ -854,7 +828,8 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
     }
     else if (precMatrixSource == SeparateMatrix) {
       
-      precInterfacePtr->computePreconditioner(x, *precPtr, &p);
+      precInterfacePtr->computePreconditioner(x.getEpetraVector(),
+					      *precPtr, &p);
       createMLPreconditioner(p);
       aztecSolverPtr->SetPrecOperator(MLPreconditionerPtr);
     }
@@ -863,15 +838,16 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
 #endif
   else if (precAlgorithm == UserDefined_) {
 
-    precInterfacePtr->computePreconditioner(x, *precPtr, &p);
-    aztecSolverPtr->SetPrecOperator(precPtr);
+    precInterfacePtr->computePreconditioner(x.getEpetraVector(),
+					    *precPtr, &p);
+    aztecSolverPtr->SetPrecOperator(precPtr.get());
 
   }
 
   isPrecConstructed = true; 
 
   // Unscale the linear system
-  if (scaling != 0)
+  if ( !Teuchos::is_null(scaling) )
     scaling->unscaleLinearSystem(Problem);
 
   double endTime = timer.WallTime();
@@ -890,9 +866,9 @@ createIfpackPreconditioner(Parameter::List& p) const
 {
   //for ifpack we need a VBR or CRS matrix to get the correct graph
 
-  if (ifpackGraphPtr != 0) 
+  if ( !Teuchos::is_null(ifpackGraphPtr) ) 
     throwError("createIfpackPreconditioner", "Ifpack Graph NOT NULL");
-  if (ifpackPreconditionerPtr != 0) 
+  if ( !Teuchos::is_null(ifpackPreconditionerPtr)) 
     throwError("createIfpackPreconditioner", "Ifpack Prec NOT NULL");
 
   if (utils.isPrintType(Utils::Debug))
@@ -906,19 +882,21 @@ createIfpackPreconditioner(Parameter::List& p) const
     Epetra_VbrMatrix* vbr = 0;
 
     if (precMatrixSource == UseJacobian)
-      vbr = dynamic_cast<Epetra_VbrMatrix*>(jacPtr);
+      vbr = dynamic_cast<Epetra_VbrMatrix*>(jacPtr.get());
     else if (precMatrixSource == SeparateMatrix)
-      vbr = dynamic_cast<Epetra_VbrMatrix*>(precPtr);
+      vbr = dynamic_cast<Epetra_VbrMatrix*>(precPtr.get());
 
     if (vbr == 0)
       throwError("createIfpackPreconditioner", 
 		 "Dynamic cast to VBR Matrix failed!");
 
-    ifpackGraphPtr = new Ifpack_IlukGraph(vbr->Graph(),
-					  p.getParameter("Fill Factor", 1),
-					  p.getParameter("Overlap", 0));
+    ifpackGraphPtr = 
+      Teuchos::rcp(new Ifpack_IlukGraph(vbr->Graph(),
+					p.getParameter("Fill Factor", 1),
+					p.getParameter("Overlap", 0)));
     ifpackGraphPtr->ConstructFilledGraph();
-    ifpackPreconditionerPtr = new Ifpack_CrsRiluk(*ifpackGraphPtr);
+    ifpackPreconditionerPtr = 
+      Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
     ifpackPreconditionerPtr->InitValues(*vbr);
     ifpackPreconditionerPtr->Factor();
     return true;
@@ -930,19 +908,21 @@ createIfpackPreconditioner(Parameter::List& p) const
     Epetra_CrsMatrix* crs = 0;
 
     if (precMatrixSource == UseJacobian)
-      crs = dynamic_cast<Epetra_CrsMatrix*>(jacPtr);
+      crs = dynamic_cast<Epetra_CrsMatrix*>(jacPtr.get());
     else if (precMatrixSource == SeparateMatrix)
-      crs = dynamic_cast<Epetra_CrsMatrix*>(precPtr);
+      crs = dynamic_cast<Epetra_CrsMatrix*>(precPtr.get());
 
     if (crs == 0)
       throwError("createIfpackPreconditioner", 
 		 "Dynamic cast to CRS Matrix failed!");
 
-    ifpackGraphPtr = new Ifpack_IlukGraph(crs->Graph(),
-					  p.getParameter("Fill Factor", 1),
-					  p.getParameter("Overlap", 0));
+    ifpackGraphPtr = 
+      Teuchos::rcp(new Ifpack_IlukGraph(crs->Graph(),
+					p.getParameter("Fill Factor", 1),
+					p.getParameter("Overlap", 0)));
     ifpackGraphPtr->ConstructFilledGraph();
-    ifpackPreconditionerPtr = new Ifpack_CrsRiluk(*ifpackGraphPtr);
+    ifpackPreconditionerPtr = 
+      Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
     ifpackPreconditionerPtr->InitValues(*crs);
     ifpackPreconditionerPtr->Factor();
     return true;
@@ -957,9 +937,9 @@ createIfpackPreconditioner(Parameter::List& p) const
     NOX::Epetra::FiniteDifference* FDoperator = 0;
 
     if (precMatrixSource == UseJacobian)
-      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(jacPtr);
+      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(jacPtr.get());
     else if (precMatrixSource == SeparateMatrix)
-      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(precPtr);
+      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(precPtr.get());
 
     if (FDoperator != 0)
       crs = &(FDoperator->getUnderlyingMatrix());
@@ -968,11 +948,13 @@ createIfpackPreconditioner(Parameter::List& p) const
       throwError("createIfpackPreconditioner", 
 		 "FiniteDifference: Underlying matrix NOT CRS Matrix!");
 
-    ifpackGraphPtr = new Ifpack_IlukGraph(crs->Graph(),
-					  p.getParameter("Fill Factor", 1),
-					  p.getParameter("Overlap", 0));
+    ifpackGraphPtr = 
+      Teuchos::rcp(new Ifpack_IlukGraph(crs->Graph(),
+					p.getParameter("Fill Factor", 1),
+					p.getParameter("Overlap", 0)));
     ifpackGraphPtr->ConstructFilledGraph();
-    ifpackPreconditionerPtr = new Ifpack_CrsRiluk(*ifpackGraphPtr);
+    ifpackPreconditionerPtr = 
+      Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
     ifpackPreconditionerPtr->InitValues(*crs);
     ifpackPreconditionerPtr->Factor();
     return true;
@@ -993,7 +975,7 @@ createNewIfpackPreconditioner(Parameter::List& p) const
 {
   //for ifpack we need a VBR or CRS matrix to get the correct graph
 
-  if (newIfpackPreconditionerPtr != 0) 
+  if ( !Teuchos::is_null(newIfpackPreconditionerPtr) ) 
     throwError("createNewIfpackPreconditioner", "Ifpack Prec NOT NULL");
 
   // Ensure we have a valid Teuchos parameter list to pass to Ifpack
@@ -1022,18 +1004,18 @@ createNewIfpackPreconditioner(Parameter::List& p) const
     Epetra_VbrMatrix* vbr = 0;
 
     if (precMatrixSource == UseJacobian)
-      vbr = dynamic_cast<Epetra_VbrMatrix*>(jacPtr);
+      vbr = dynamic_cast<Epetra_VbrMatrix*>(jacPtr.get());
     else if (precMatrixSource == SeparateMatrix)
-      vbr = dynamic_cast<Epetra_VbrMatrix*>(precPtr);
+      vbr = dynamic_cast<Epetra_VbrMatrix*>(precPtr.get());
 
     if (vbr == 0)
       throwError("createIfpackPreconditioner", 
 		 "Dynamic cast to VBR Matrix failed!");
 
-    newIfpackPreconditionerPtr = Factory.Create(
+    newIfpackPreconditionerPtr = Teuchos::rcp(Factory.Create(
       p.getParameter("Ifpack Preconditioner", "ILU"), 
       vbr, 
-      p.getParameter("Overlap", 0) );
+      p.getParameter("Overlap", 0) ));
     newIfpackPreconditionerPtr->SetParameters(*teuchosParams);
     newIfpackPreconditionerPtr->Initialize();
     newIfpackPreconditionerPtr->Compute();
@@ -1046,18 +1028,18 @@ createNewIfpackPreconditioner(Parameter::List& p) const
     Epetra_CrsMatrix* crs = 0;
 
     if (precMatrixSource == UseJacobian)
-      crs = dynamic_cast<Epetra_CrsMatrix*>(jacPtr);
+      crs = dynamic_cast<Epetra_CrsMatrix*>(jacPtr.get());
     else if (precMatrixSource == SeparateMatrix)
-      crs = dynamic_cast<Epetra_CrsMatrix*>(precPtr);
+      crs = dynamic_cast<Epetra_CrsMatrix*>(precPtr.get());
 
     if (crs == 0)
       throwError("createNewIfpackPreconditioner", 
 		 "Dynamic cast to CRS Matrix failed!");
 
-    newIfpackPreconditionerPtr = Factory.Create(
+    newIfpackPreconditionerPtr = Teuchos::rcp(Factory.Create(
       p.getParameter("Ifpack Preconditioner", "ILU"), 
       crs, 
-      p.getParameter("Overlap", 0) );
+      p.getParameter("Overlap", 0) ));
     newIfpackPreconditionerPtr->SetParameters(*teuchosParams);
     newIfpackPreconditionerPtr->Initialize();
     newIfpackPreconditionerPtr->Compute();
@@ -1073,9 +1055,9 @@ createNewIfpackPreconditioner(Parameter::List& p) const
     NOX::Epetra::FiniteDifference* FDoperator = 0;
 
     if (precMatrixSource == UseJacobian)
-      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(jacPtr);
+      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(jacPtr.get());
     else if (precMatrixSource == SeparateMatrix)
-      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(precPtr);
+      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(precPtr.get());
 
     if (FDoperator != 0)
       crs = &(FDoperator->getUnderlyingMatrix());
@@ -1084,10 +1066,10 @@ createNewIfpackPreconditioner(Parameter::List& p) const
       throwError("createNewIfpackPreconditioner", 
 		 "FiniteDifference: Underlying matrix NOT CRS Matrix!");
 
-    newIfpackPreconditionerPtr = Factory.Create(
+    newIfpackPreconditionerPtr = Teuchos::rcp(Factory.Create(
       p.getParameter("Ifpack Preconditioner", "ILU"), 
       crs, 
-      p.getParameter("Overlap", 0) );
+      p.getParameter("Overlap", 0) ));
     newIfpackPreconditionerPtr->SetParameters(*teuchosParams);
     newIfpackPreconditionerPtr->Initialize();
     newIfpackPreconditionerPtr->Compute();
@@ -1131,9 +1113,9 @@ createMLPreconditioner(Parameter::List& p) const
     Epetra_CrsMatrix* crs = 0;
 
     if (precMatrixSource == UseJacobian)
-      crs = dynamic_cast<Epetra_CrsMatrix*>(jacPtr);
+      crs = dynamic_cast<Epetra_CrsMatrix*>(jacPtr.get());
     else if (precMatrixSource == SeparateMatrix)
-      crs = dynamic_cast<Epetra_CrsMatrix*>(precPtr);
+      crs = dynamic_cast<Epetra_CrsMatrix*>(precPtr.get());
 
     if (crs == 0)
       throwError("createMLPreconditioner", 
@@ -1153,9 +1135,9 @@ createMLPreconditioner(Parameter::List& p) const
     NOX::Epetra::FiniteDifference* FDoperator = 0;
 
     if (precMatrixSource == UseJacobian)
-      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(jacPtr);
+      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(jacPtr.get());
     else if (precMatrixSource == SeparateMatrix)
-      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(precPtr);
+      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(precPtr.get());
 
     if (FDoperator != 0)
       crs = &(FDoperator->getUnderlyingMatrix());
@@ -1189,14 +1171,11 @@ bool NOX::Epetra::LinearSystemAztecOO::destroyPreconditioner() const
     }
     // For IFPACK Preconditioners
     else if (precAlgorithm == Ifpack_) {
-      delete ifpackPreconditionerPtr;
-      ifpackPreconditionerPtr = 0;
-      delete ifpackGraphPtr;
-      ifpackGraphPtr = 0;
+      ifpackPreconditionerPtr = Teuchos::null;
+      ifpackGraphPtr = Teuchos::null;
     }
     else if (precAlgorithm == NewIfpack_) {
-      delete newIfpackPreconditionerPtr;
-      newIfpackPreconditionerPtr = 0;
+      newIfpackPreconditionerPtr = Teuchos::null;
     }
 #ifdef HAVE_NOX_ML_EPETRA
     else if (precAlgorithm == ML_) {
@@ -1242,17 +1221,19 @@ NOX::Epetra::LinearSystemAztecOO::getOperatorType(const Epetra_Operator& Op)
 }
 
 //***********************************************************************
-bool NOX::Epetra::LinearSystemAztecOO::computeJacobian(Epetra_Vector& x)
+bool NOX::Epetra::LinearSystemAztecOO::
+computeJacobian(const NOX::Epetra::Vector& x)
 {
-  bool success = jacInterfacePtr->computeJacobian(x, *jacPtr);
+  bool success = jacInterfacePtr->computeJacobian(x.getEpetraVector(), 
+						  *jacPtr);
   return success;
 }
 
 //***********************************************************************
 void NOX::Epetra::LinearSystemAztecOO::
-resetScaling(NOX::Epetra::Scaling& scalingObject)
+resetScaling(const Teuchos::RefCountPtr<NOX::Epetra::Scaling>& scalingObject)
 {
-  scaling = &scalingObject;
+  scaling = scalingObject;
   return;
 }
 
@@ -1268,37 +1249,37 @@ throwError(const string& functionName, const string& errorMsg) const
 }
 
 //***********************************************************************
-const NOX::Epetra::Interface::Jacobian& 
+Teuchos::RefCountPtr<const NOX::Epetra::Interface::Jacobian> 
 NOX::Epetra::LinearSystemAztecOO::getJacobianInterface() const
 {
-  return *jacInterfacePtr;
+  return jacInterfacePtr;
 }
 
 //***********************************************************************
-const NOX::Epetra::Interface::Preconditioner& 
+Teuchos::RefCountPtr<const NOX::Epetra::Interface::Preconditioner> 
 NOX::Epetra::LinearSystemAztecOO::getPrecInterface() const
 {
-  return *precInterfacePtr;
+  return precInterfacePtr;
 }
 
 //***********************************************************************
-const Epetra_Operator& 
+Teuchos::RefCountPtr<const Epetra_Operator>
 NOX::Epetra::LinearSystemAztecOO::getJacobianOperator() const
 {
-  return *jacPtr;
+  return jacPtr;
 }
 
-Epetra_Operator& 
+Teuchos::RefCountPtr<Epetra_Operator>
 NOX::Epetra::LinearSystemAztecOO::getJacobianOperator()
 {
-  return *jacPtr;
+  return jacPtr;
 }
 
 //***********************************************************************
-const Epetra_Operator& 
+Teuchos::RefCountPtr<const Epetra_Operator>
 NOX::Epetra::LinearSystemAztecOO::getPrecOperator() const
 {
-  return *precPtr;
+  return precPtr;
 }
 
 //***********************************************************************
@@ -1367,9 +1348,10 @@ NOX::Epetra::LinearSystemAztecOO::getTimeApplyJacobianInverse() const
   return timeApplyJacbianInverse;
 }
 
+//***********************************************************************
 void
 NOX::Epetra::LinearSystemAztecOO::setJacobianOperatorForSolve(
-					 const Epetra_Operator& solveJacOp)
+	       const Teuchos::RefCountPtr<const Epetra_Operator>& solveJacOp)
 {
   // Store existing aztec preconditioner for possible reuse
   Epetra_Operator* prevPrecOperator = NULL;
@@ -1377,24 +1359,25 @@ NOX::Epetra::LinearSystemAztecOO::setJacobianOperatorForSolve(
     prevPrecOperator = aztecSolverPtr->GetPrecOperator();
   }
 
-  solveJacOpPtr = const_cast<Epetra_Operator*>(&solveJacOp);
-  OperatorType solveOpType = getOperatorType(solveJacOp);
+  solveJacOpPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solveJacOp);
+  OperatorType solveOpType = getOperatorType(*solveJacOp);
   if ((solveOpType == EpetraRowMatrix) ||
       (solveOpType == EpetraVbrMatrix) ||
       (solveOpType == EpetraCrsMatrix)) {
-    aztecSolverPtr->SetUserMatrix(dynamic_cast<Epetra_RowMatrix*>(solveJacOpPtr));
+    aztecSolverPtr->SetUserMatrix(dynamic_cast<Epetra_RowMatrix*>(solveJacOpPtr.get()));
   }
   else
-    aztecSolverPtr->SetUserOperator(solveJacOpPtr);
+    aztecSolverPtr->SetUserOperator(solveJacOpPtr.get());
 
   if( prevPrecOperator )
     aztecSolverPtr->SetPrecOperator(prevPrecOperator);
 }
 
+//***********************************************************************
 void
 NOX::Epetra::LinearSystemAztecOO::setPrecOperatorForSolve(
-					 const Epetra_Operator& solvePrecOp)
+	       const Teuchos::RefCountPtr<const Epetra_Operator>& solvePrecOp)
 {
-  Epetra_Operator* solvePrecOpPtr = const_cast<Epetra_Operator*>(&solvePrecOp);
-  aztecSolverPtr->SetPrecOperator(solvePrecOpPtr);
+  solvePrecOpPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solvePrecOp);
+  aztecSolverPtr->SetPrecOperator(solvePrecOpPtr.get());
 }

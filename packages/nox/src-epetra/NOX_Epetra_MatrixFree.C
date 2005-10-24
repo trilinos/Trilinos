@@ -29,9 +29,11 @@
 
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
+#include "Epetra_Vector.h"
 #include "Epetra_RowMatrix.h"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Epetra_Vector.H"
+#include "NOX_Epetra_VectorSpace.H"
 #include "NOX_Epetra_Interface_Required.H"
 #include "NOX_Utils.H"
 
@@ -40,17 +42,15 @@
 using namespace NOX;
 using namespace NOX::Epetra;
 
-MatrixFree::MatrixFree(const NOX::Utils& u, Interface::Required& i, 
-		       const Epetra_Vector& x, bool p) :
+MatrixFree::MatrixFree(NOX::Parameter::List& printParams, 
+		       const Teuchos::RefCountPtr<Interface::Required>& i, 
+		       const NOX::Epetra::Vector& x, bool p) :
   label("NOX::Matrix-Free"),
   interface(i),
   currentX(x),
   perturbX(x),
   fo(x),
   fp(x),
-  fmPtr(0),
-  epetraMap(0),
-  ownsMap(false),
   diffType(Forward),
   lambda(1.0e-6),
   eta(0.0),
@@ -58,39 +58,34 @@ MatrixFree::MatrixFree(const NOX::Utils& u, Interface::Required& i,
   computeEta(true),
   useGroupForComputeF(false),
   useNewPerturbation(p),
-  groupPtr(0),
-  utils(u)
+  utils(printParams)
 {
   // Zero out Vectors
-  perturbX.PutScalar(0.0);
-  fo.PutScalar(0.0);
-  fp.PutScalar(0.0);
+  perturbX.init(0.0);
+  fo.init(0.0);
+  fp.init(0.0);
 
   // Epetra_Operators require Epetra_Maps, so anyone using block maps
   // (Epetra_BlockMap) won't be able to directly use the AztecOO solver.
   // We get around this by creating an Epetra_Map from the Epetra_BlockMap.
   const Epetra_Map* testMap = 0;
-  testMap = dynamic_cast<const Epetra_Map*>(&currentX.Map());
+  testMap = dynamic_cast<const Epetra_Map*>(&currentX.getEpetraVector().Map());
   if (testMap != 0) {
-    epetraMap = testMap;
-    ownsMap = false;
+    epetraMap = Teuchos::rcp(new Epetra_Map(*testMap));
   }
   else {
-    int size = currentX.Map().NumGlobalPoints();
-    int mySize = currentX.Map().NumMyPoints();
-    int indexBase = currentX.Map().IndexBase();
-    const Epetra_Comm& comm = currentX.Map().Comm();
-    epetraMap = new Epetra_Map(size, mySize, indexBase, comm);
-    ownsMap = true;
+    int size = currentX.getEpetraVector().Map().NumGlobalPoints();
+    int mySize = currentX.getEpetraVector().Map().NumMyPoints();
+    int indexBase = currentX.getEpetraVector().Map().IndexBase();
+    const Epetra_Comm& comm = currentX.getEpetraVector().Map().Comm();
+    epetraMap = Teuchos::rcp(new Epetra_Map(size, mySize, indexBase, comm));
   }
 
 }
 
 MatrixFree::~MatrixFree()
 {
-  delete groupPtr;
-  if (ownsMap)
-    delete epetraMap;
+
 }
 
 int MatrixFree::SetUseTranspose(bool UseTranspose)
@@ -118,47 +113,38 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
    *               eta
    */
 
+  // Convert X and Y from an Epetra_MultiVector to a Epetra_Vectors
+  // and NOX::epetra::Vectors.  This is done so we use a consistent
+  // vector space for norms and inner products.
+  Teuchos::RefCountPtr<Epetra_Vector> wrappedX = 
+    Teuchos::rcp(new Epetra_Vector(View, X, 0));
+  Teuchos::RefCountPtr<Epetra_Vector> wrappedY = 
+    Teuchos::rcp(new Epetra_Vector(View, Y, 0));
+  NOX::Epetra::Vector nevX(wrappedX, NOX::Epetra::Vector::CreateView);
+  NOX::Epetra::Vector nevY(wrappedY, NOX::Epetra::Vector::CreateView);
+
   // Compute perturbation constant, eta
   // Taken from LOCA v1.0 manual SAND2002-0396 p. 28 eqn. 2.43
   // eta = lambda*(lambda + 2norm(u)/2norm(x))
   double solutionNorm = 1.0;
   double vectorNorm = 1.0;
 
-  int test = currentX.Norm2(&solutionNorm);
-
-  // Make sure the norm computed correctly
-  if (test != 0) {
-    if (utils.isPrintType(Utils::Warning))
-      utils.out() << "Warning: NOX::Epetra::MatrixFree::Apply() - solutionNorm "
-	   << "failed!" << endl;
-    solutionNorm = 1.0;
-  }
-
-  test = X.Norm2(&vectorNorm);
-
-  // Make sure the norm computed correctly
-  if (test != 0) {
-    if (utils.isPrintType(Utils::Warning))
-      utils.out() << "Warning: NOX::Epetra::MatrixFree::Apply() - vectorNorm failed!"
-	   << endl;
-    vectorNorm = 1.0;
-  }
+  solutionNorm = currentX.norm();
+  vectorNorm = currentX.getVectorSpace()->norm(*wrappedX);
 
   // Make sure the norm is not zero, otherwise we can get an inf perturbation
   if (vectorNorm == 0.0) {
-    //if (NOX::Utils::doPrint(Utils::Warning))
-    //utils.out() << "Warning: NOX::Epetra::MatrixFree::Apply() - vectorNorm is zero"
-    //<< endl;
+    //utils.out(Utils::Warning) << "Warning: NOX::Epetra::MatrixFree::Apply() - vectorNorm is zero" << endl;
     vectorNorm = 1.0;
   }
 
   // Create an extra perturbed residual vector pointer if needed
   if ( diffType == Centered )
-    if ( !fmPtr )
-      fmPtr = new Epetra_Vector(fo);
+    if ( Teuchos::is_null(fmPtr) )
+      fmPtr = Teuchos::rcp(new NOX::Epetra::Vector(fo));
 
   // Create a reference to the extra perturbed residual vector
-  Epetra_Vector& fm = *fmPtr;
+  NOX::Epetra::Vector& fm = *fmPtr;
 
   double scaleFactor = 1.0;
   if ( diffType == Backward )
@@ -166,17 +152,15 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   if (computeEta) {
     if (useNewPerturbation) {
-      double dotprod;
-      test  = currentX.Dot(X, &dotprod);
-      if (dotprod==0.0) dotprod = 1.0e-12;
-      //eta = lambda*(1.0e-8/lambda + fabs(dotprod)/vectorNorm);
-      eta = lambda*(1.0e-12/lambda + fabs(dotprod)/(vectorNorm * vectorNorm)) * dotprod/fabs(dotprod);
+      double dotprod = currentX.getVectorSpace()->
+	innerProduct(currentX.getEpetraVector(), *wrappedX);
+      if (dotprod==0.0) 
+	dotprod = 1.0e-12;
+      eta = lambda*(1.0e-12/lambda + fabs(dotprod)/(vectorNorm * vectorNorm)) 
+	* dotprod/fabs(dotprod);
     }
     else
       eta = lambda*(lambda + solutionNorm/vectorNorm);
-
-    //utils.out() << "New Pert = " << eta << endl;
-    //utils.out() << "Old Pert = " << lambda*(lambda + solutionNorm/vectorNorm) << endl;
   }
   else
     eta = userEta;
@@ -184,41 +168,41 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // Compute the perturbed RHS
   perturbX = currentX;
   Y = X;
-  Y.Scale(eta);
-  perturbX.Update(1.0,Y,1.0);
+  Y.Scale(eta); 
+  perturbX.update(1.0,nevY,1.0);
 
   if (!useGroupForComputeF)
-    interface.computeF(perturbX, fp, NOX::Epetra::Interface::Required::MF_Res);
+    interface->computeF(perturbX.getEpetraVector(), fp.getEpetraVector(), 
+			NOX::Epetra::Interface::Required::MF_Res);
   else{
-    NOX::Epetra::Vector noxX(perturbX, NOX::DeepCopy, true);
-    groupPtr->setX(noxX);
+    groupPtr->setX(perturbX);
     groupPtr->computeF();
     fp = dynamic_cast<const NOX::Epetra::Vector&>
-      (groupPtr->getF()).getEpetraVector();
+      (groupPtr->getF());
   }
 
   if ( diffType == Centered ) {
     Y.Scale(-2.0);
-    perturbX.Update(scaleFactor,Y,1.0);
+    perturbX.update(scaleFactor,nevY,1.0);
     if (!useGroupForComputeF)
-      interface.computeF(perturbX, fm, NOX::Epetra::Interface::Required::MF_Res);
+      interface->computeF(perturbX.getEpetraVector(), fm.getEpetraVector(), 
+			  NOX::Epetra::Interface::Required::MF_Res);
     else{
-      NOX::Epetra::Vector noxX(perturbX, NOX::DeepCopy, true);
-      groupPtr->setX(noxX);
+      groupPtr->setX(perturbX);
       groupPtr->computeF();
       fm = dynamic_cast<const NOX::Epetra::Vector&>
-        (groupPtr->getF()).getEpetraVector();
+        (groupPtr->getF());
     }
   }
 
   // Compute the directional derivative
   if ( diffType != Centered ) {
-    Y.Update(1.0, fp, -1.0, fo, 0.0);
-    Y.Scale( 1.0/(scaleFactor * eta) );
+    nevY.update(1.0, fp, -1.0, fo, 0.0);
+    nevY.scale( 1.0/(scaleFactor * eta) );
   }
   else {
-    Y.Update(1.0, fp, -1.0, fm, 0.0);
-    Y.Scale( 1.0/(2.0 * eta) );
+    nevY.update(1.0, fp, -1.0, fm, 0.0);
+    nevY.scale( 1.0/(2.0 * eta) );
   }
 
   return 0;
@@ -258,7 +242,7 @@ bool MatrixFree::HasNormInf() const
 
 const Epetra_Comm & MatrixFree::Comm() const
 {
-  return currentX.Map().Comm();
+  return currentX.getEpetraVector().Map().Comm();
 }
 const Epetra_Map& MatrixFree::OperatorDomainMap() const
 {
@@ -280,13 +264,13 @@ bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 
   bool ok = false;
   if (!useGroupForComputeF)
-    ok = interface.computeF(x, fo, NOX::Epetra::Interface::Required::MF_Res);
+    ok = interface->computeF(x, fo.getEpetraVector(), 
+			     NOX::Epetra::Interface::Required::MF_Res);
   else {
-    NOX::Epetra::Vector noxX(currentX, NOX::DeepCopy, true);
-    groupPtr->setX(noxX);
+    groupPtr->setX(currentX);
     groupPtr->computeF();
     fo = dynamic_cast<const NOX::Epetra::Vector&>
-      (groupPtr->getF()).getEpetraVector();
+      (groupPtr->getF());
     ok = true;
   }
   return ok;
@@ -318,11 +302,9 @@ double MatrixFree::getPerturbation() const
   return eta;
 }
 
-void MatrixFree::setGroupForComputeF(NOX::Abstract::Group& group)
+void MatrixFree::setGroupForComputeF(const NOX::Abstract::Group& group)
 {
   useGroupForComputeF = true;
-  delete groupPtr;
-  groupPtr = 0;
   groupPtr = group.clone();
   return;
 }

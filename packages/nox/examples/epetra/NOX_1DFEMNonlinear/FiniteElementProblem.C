@@ -87,7 +87,7 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
 
   // Construct Linear Objects  
   Importer = new Epetra_Import(*OverlapMap, *StandardMap);
-  initialSolution = new Epetra_Vector(*StandardMap);
+  initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
   AA = new Epetra_CrsGraph(Copy, *StandardMap, 5);
 
   // Allocate the memory for a matrix dynamically (i.e. the graph is dynamic).
@@ -96,7 +96,7 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
   // Create a second matrix using graph of first matrix - this creates a 
   // static graph so we can refill the new matirx after FillComplete()
   // is called.
-  A = new Epetra_CrsMatrix (Copy, *AA);
+  A = Teuchos::rcp(new Epetra_CrsMatrix (Copy, *AA));
   A->FillComplete();
 }
 
@@ -104,8 +104,6 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
 FiniteElementProblem::~FiniteElementProblem()
 {
   delete AA;
-  delete A;
-  delete initialSolution;
   delete Importer;
   delete OverlapMap;
   delete StandardMap;
@@ -123,10 +121,12 @@ bool FiniteElementProblem::evaluate(FillType f,
   if (flag == F_ONLY) {
     rhs = tmp_rhs;
   } else if (flag == MATRIX_ONLY) {
-    A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
+    // RPP: A doesn't need to be set, we are implicitly filling tmp_matrix 
+    // with a shared jacobian.
+    //A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
   } else if (flag == ALL) { 
     rhs = tmp_rhs;
-    A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
+    //A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
   } else {
     cout << "ERROR: FiniteElementProblem::fillMatrix() - FillType flag is broken" << endl;
     throw;
@@ -231,14 +231,14 @@ bool FiniteElementProblem::evaluate(FillType f,
   return true;
 }
 
-Epetra_Vector& FiniteElementProblem::getSolution()
+Teuchos::RefCountPtr<Epetra_Vector> FiniteElementProblem::getSolution()
 {
-  return *initialSolution;
+  return initialSolution;
 }
   
-Epetra_CrsMatrix& FiniteElementProblem::getJacobian()
+Teuchos::RefCountPtr<Epetra_CrsMatrix> FiniteElementProblem::getJacobian()
 {
-  return *A;
+  return A;
 }
 
 Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)

@@ -35,24 +35,30 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Parameter_List.H"
-#include "NOX_Parameter_MeritFunction.H"
 #include "NOX_Utils.H"
+#include "NOX_MeritFunction_Generic.H"
+#include "NOX_GlobalData.H"
 
-NOX::Direction::SteepestDescent::SteepestDescent(const NOX::Utils& u, 
-						 NOX::Parameter::List& params) :
-  utils(u),
-  tmpVecPtr(NULL)
+NOX::Direction::SteepestDescent::
+SteepestDescent(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+		NOX::Parameter::List& params)
 {
-  reset(params);
+  reset(gd, params);
 }
 
 NOX::Direction::SteepestDescent::~SteepestDescent()
 {
-  delete tmpVecPtr;
+
 }
 
-bool NOX::Direction::SteepestDescent::reset(NOX::Parameter::List& params)
+bool NOX::Direction::SteepestDescent::
+reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+      NOX::Parameter::List& params)
 {
+  globalDataPtr = gd;
+  utils = gd->getUtils();
+  meritFuncPtr = gd->getMeritFunction();
+
   NOX::Parameter::List& p = params.sublist("Steepest Descent");
 
   const string tmp = p.getParameter("Scaling Type", "2-Norm");
@@ -65,17 +71,9 @@ bool NOX::Direction::SteepestDescent::reset(NOX::Parameter::List& params)
   else if (tmp == "None")
     scaleType = NOX::Direction::SteepestDescent::None;
   else {
-    utils.out() << "NOX::Direction::SteepestDescent::reset - Invalid choice \""
-	  << tmp << "\" for \"Scaling Type\"" << endl;
+    utils->out() << "NOX::Direction::SteepestDescent::reset - Invalid choice "
+		 << "\"" << tmp << "\" for \"Scaling Type\"" << endl;
     throw "NOX Error";
-  }
-
-  // Check for a user defined merit function
-  meritFuncPtr = 0;
-  if (p.isParameterArbitrary("User Defined Merit Function")) {
-    meritFuncPtr = const_cast<NOX::Parameter::MeritFunction*>
-      (dynamic_cast<const NOX::Parameter::MeritFunction*>
-       (&(p.getArbitraryParameter("User Defined Merit Function"))));
   }
 
  return true;
@@ -97,63 +95,38 @@ bool NOX::Direction::SteepestDescent::compute(Abstract::Vector& dir,
   if (status != NOX::Abstract::Group::Ok) 
     throwError("compute", "Unable to compute Jacobian");
 
-  // Compute the gradient at the current solution
-  if (meritFuncPtr != 0) {
-    meritFuncPtr->computeSteepestDescentDir(soln, dir);
-  }
-  else {
+  // Scale
+  switch (scaleType) {
 
-    status = soln.computeGradient();
-    if (status != NOX::Abstract::Group::Ok) 
-      throwError("compute", "Unable to compute gradient");
+  case NOX::Direction::SteepestDescent::TwoNorm:
     
-    // Get the gradient direction.
-    dir = soln.getGradient();
-
-    // Scale
-    switch (scaleType) {
-
-    case NOX::Direction::SteepestDescent::TwoNorm:
-
-      dir.scale(-1.0/dir.norm());
-      break;
-
-    case NOX::Direction::SteepestDescent::FunctionTwoNorm:
+    meritFuncPtr->computeGradient(soln, dir);
+    dir.scale(-1.0/dir.norm());
+    break;
+    
+  case NOX::Direction::SteepestDescent::FunctionTwoNorm:
+    
+    meritFuncPtr->computeGradient(soln, dir);
+    dir.scale(-1.0/soln.getNormF());
+    break;
+    
+  case NOX::Direction::SteepestDescent::QuadMin:
+    
+    meritFuncPtr->computeQuadraticMinimizer(soln, dir);
       
-      dir.scale(-1.0/soln.getNormF());
-      break;
-
-    case NOX::Direction::SteepestDescent::QuadMin:
-      {
-	// If necessary, allocate space for tmpVecPtr
-	if (tmpVecPtr == NULL) 
-	  tmpVecPtr = soln.getX().clone(NOX::ShapeCopy);
-	
-	// Create a local reference
-	Abstract::Vector& tmpVec(*tmpVecPtr);
+    break;
     
-	// Compute denominator
-	status = soln.applyJacobian(dir, tmpVec);
-	if (status != NOX::Abstract::Group::Ok) 
-	  throwError("compute", "Unable to compute apply Jacobian");
-	
-	// Scale
-	dir.scale( -1.0 * dir.dot(dir) / tmpVec.dot(tmpVec) );
-	
-	break;
-      }
-
-    case NOX::Direction::SteepestDescent::None:
-
-      dir.scale( -1.0 );
-      break;
-
-    default:
+  case NOX::Direction::SteepestDescent::None:
     
-      throwError("compute", "Invalid scaleType");
+    meritFuncPtr->computeGradient(soln, dir);
+    dir.scale( -1.0 );
+    break;
 
-    }
-  } // end of else case for the "if (meritFuncPtr != 0)"
+  default:
+    
+    throwError("compute", "Invalid scaleType");
+    
+  }
 
   return true;
 }
@@ -168,8 +141,8 @@ bool NOX::Direction::SteepestDescent::compute(Abstract::Vector& dir,
 void NOX::Direction::SteepestDescent::throwError(const string& functionName, 
 						 const string& errorMsg)
 {
-    if (utils.isPrintType(Utils::Error))
-      utils.err() << "NOX::Direction::SteepestDescent::" << functionName 
+    if (utils->isPrintType(Utils::Error))
+      utils->err() << "NOX::Direction::SteepestDescent::" << functionName 
 	   << " - " << errorMsg << endl;
     throw "NOX Error";
 }

@@ -128,8 +128,8 @@ public:
   //! Check current convergence and failure status. 
   virtual NOX::StatusTest::StatusType getStatus() = 0;
 
-  //! Do one nonlinear method iteration and return status.
-  virtual NOX::StatusTest::StatusType iterate() = 0;
+  //! Do one nonlinear step in the iteration sequence and return status.
+  virtual NOX::StatusTest::StatusType step() = 0;
 
   /*! 
     \brief Solve the nonlinear problem and return final status.

@@ -49,7 +49,6 @@ NormWRMS::NormWRMS(double rtol_, double atol_, double BDFmult_, double tol_,
   rtol(rtol_),
   atolIsScalar(true),
   atol(atol_),
-  atolVec(0),
   factor(BDFmult_),
   tolerance(tol_),
   alpha(alpha_),
@@ -57,21 +56,20 @@ NormWRMS::NormWRMS(double rtol_, double atol_, double BDFmult_, double tol_,
   beta(beta_),
   achievedTol(0.0),
   status(Unconverged),
-  u(0),
-  v(0),
   printCriteria2Info(false),
   printCriteria3Info(false)
 {
 
 }
 
-NormWRMS::NormWRMS(double rtol_, Abstract::Vector& atolVec_, double BDFmult_,
-		   double tol_, double alpha_, double beta_) :
+NormWRMS::NormWRMS(double rtol_, 
+		   const Teuchos::RefCountPtr<NOX::Abstract::Vector>& atolVec_,
+		   double BDFmult_, double tol_, double alpha_, double beta_) :
   value(0.0),
   rtol(rtol_),
   atolIsScalar(false),
   atol(0.0),
-  atolVec(0),
+  atolVec(atolVec_),
   factor(BDFmult_),
   tolerance(tol_),
   alpha(alpha_),
@@ -79,19 +77,15 @@ NormWRMS::NormWRMS(double rtol_, Abstract::Vector& atolVec_, double BDFmult_,
   beta(beta_),
   achievedTol(0.0),
   status(Unconverged),
-  u(0),
-  v(0),
   printCriteria2Info(false),
   printCriteria3Info(false)
 {
-  atolVec = atolVec_.clone();
+
 }
 
 NormWRMS::~NormWRMS()
 {
-  delete atolVec;
-  delete u;
-  delete v;
+
 }
 
 StatusType NormWRMS::
@@ -125,9 +119,9 @@ checkStatus(const Solver::Generic& problem,
 
   // Create the working vectors if this is the first time this
   // operator is called.
-  if (u == 0)
+  if (Teuchos::is_null(u))
     u = x.clone(NOX::ShapeCopy);
-  if (v == 0)
+  if (Teuchos::is_null(v))
     v = x.clone(NOX::ShapeCopy);
   
   // Create the weighting vector u = RTOL |x| + ATOL
@@ -147,7 +141,6 @@ checkStatus(const Solver::Generic& problem,
   v->reciprocal(*u);
 
   // u = x - oldx (i.e., the update)
-  //TGK - small changes, saves one function call
   u->update(1.0, x, -1.0, oldsoln.getX(), 0.0);
 
   // u = Cp * u @ v (where @ represents an elementwise multiply)
@@ -175,7 +168,8 @@ checkStatus(const Solver::Generic& problem,
   else 
   {
     printCriteria2Info = true;
-    computedStepSize = (dynamic_cast<const Solver::LineSearchBased*>(&problem))->getStepSize();
+    computedStepSize = 
+      (dynamic_cast<const Solver::LineSearchBased*>(&problem))->getStepSize();
     
     if (computedStepSize >= alpha)
       status2 = Converged;

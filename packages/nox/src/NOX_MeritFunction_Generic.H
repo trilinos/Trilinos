@@ -30,10 +30,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_PARAMETER_MERITFUNCTION_H
-#define NOX_PARAMETER_MERITFUNCTION_H
-
-#include "NOX_Parameter_Arbitrary.H" // base class
+#ifndef NOX_MERITFUNCTION_GENERIC_H
+#define NOX_MERITFUNCTION_GENERIC_H
 
 #include "NOX_Common.H"  // for ostream
 
@@ -47,12 +45,11 @@ namespace NOX {
 
 namespace NOX {
 
-namespace Parameter {
+namespace MeritFunction {
 
-//! Derived from NOX::Parameter::Arbitrary class to support a user defined merit function that can be passed to line searches through the parameter list.
+//! Base class to support a user defined merit function that can be passed to line searches and directions through the parameter list.
 /*!
   This class allows the user to define their own merit function for use in a line search.  Each line search type will specify in it's input parameter list if it supports this functionality.
-
 
 To create and use a user defined merit function:
 
@@ -72,34 +69,34 @@ class Foo : public NOX::Parameter::MeritFunction {
 
 \code
 Foo foo();
-params.sublist("Line Search").sublist("Polynomial").setParameter("User Defined Merit Function", foo);
+params.sublist("Solver Options").setParameter("User Defined Merit Function", foo);
 \endcode
 
 </ol>
 
 */
-class MeritFunction : public virtual NOX::Parameter::Arbitrary {
+class Generic {
 
  public:			
 
   //! Default Constructor.
-  MeritFunction(){};
+  Generic(){};
 
   //! Destructor.
-  ~MeritFunction(){};
+  virtual ~Generic(){};
 
-  //! Computes the merit function \f$ f \f$ to be used in a line search.
+  //! Computes the merit function, \f$ f(x) \f$.
   virtual double computef(const NOX::Abstract::Group& grp) const = 0;
 
-  //! Computes the gradient of the merit function, \f$ \nabla f \f$.  
-  virtual bool computeGradient(const NOX::Abstract::Group& group,
+  //! Computes the gradient of the merit function, \f$ \nabla f \f$, and returns the result in the \c result vector.  
+  virtual void computeGradient(const NOX::Abstract::Group& group,
 			       NOX::Abstract::Vector& result) const = 0;
 
-  //! Compute the inner product of the given direction and the gradient associated with the merit function.
+  //! Computes the inner product of the given direction and the gradient associated with the merit function.  Returns the steepest descent direction in the \c result vector.
   /*!
-    Calculates and returns \f$ zeta \f$:
+    Calculates and returns \f$ \zeta \f$:
     \f[
-    \zeta = \nabla f(x)^T d
+      \zeta = \nabla f(x)^T d
     \f]
 
     Here \f$d\f$ represents the input parameter \c dir and \f$\nabla
@@ -107,25 +104,48 @@ class MeritFunction : public virtual NOX::Parameter::Arbitrary {
   */
   virtual double computeSlope(const NOX::Abstract::Vector& dir,
 			      const NOX::Abstract::Group& grp) const = 0;
-
-  //!Compute the quadratic model for the given merit function.
+  
+  //! Compute the quadratic model,\f$ m(d) \f$, for the given merit function.
   /*! Computes and returns \f$ m(d) \f$:
     \f[
-    m(d) = f(x) + \nabla f(x)^T d + d^T \nabla^2 f(x) d 
+      m(d) = f(x) + \nabla f(x)^T d + d^T \nabla^2 f(x) d + d^T \mathbf{B} d 
     \f]
 
-    Here \f$d\f$ represents the input parameter \c dir and \f$\nabla^2
-    f(x)\f$ is the Hessian of the merit function.
+    Here \f$d\f$ represents the input parameter \c dir. \f$ B \f$ is
+    the Hessian of the merit function,\f$\nabla^2 f(x)\f$, but can be
+    approximated with the restriction that it is a symmetric and has
+    uniform boundedness in the iterate sequence (see J. Nocedal and
+    S. J. Wright, "Numerical Optimization", Springer, 1999. Chapters 4
+    and 6).
   */
   virtual double computeQuadraticModel(const NOX::Abstract::Vector& dir,
-				  const NOX::Abstract::Group& grp) const = 0;
+				   const NOX::Abstract::Group& grp) const = 0;
 
-  //! Computes the steepest descent direction of the merit function.
-  virtual bool computeSteepestDescentDir(const NOX::Abstract::Group& group,
-				  NOX::Abstract::Vector& result) const = 0;
+  //! Computes the vector in the steepest descent direction that minimizes the quadratic model.
+  /*! The quadratic model is defined as: 
+    \f[ 
+      m(d) = f(x) + \nabla f(x)^T d + d^T \nabla^2 f(x) d + d^T \mathbf{B} d 
+    \f]
+    
+    where \f$ B \f$ is ideally the Hessian of the merit
+    function,\f$\nabla^2 f(x)\f$, but can be approximated with the
+    restriction that it is a symmetric and has uniform boundedness in
+    the iterate sequence (see J. Nocedal and S. J. Wright, "Numerical
+    Optimization", Springer, 1999. Chapters 4 and 6).
+
+    The \c result vector should be computed as:
+    \f[
+      result = -\frac{\nabla f^T \nabla f}{\nabla f^T B \nabla f} \nabla f
+    \f]
+  */
+  virtual void computeQuadraticMinimizer(const NOX::Abstract::Group& grp,
+				     NOX::Abstract::Vector& result) const = 0;
+
+  //! Returns the name of the merit function.
+  virtual const string& name() const = 0;
 
 };
-} // namespace Parameter
+} // namespace MeritFunction
 } // namespace NOX
 
 #endif

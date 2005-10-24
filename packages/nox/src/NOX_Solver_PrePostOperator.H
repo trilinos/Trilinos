@@ -80,7 +80,7 @@ private:
 public:
 
   //! Ctor.
-  PrePostOperator(const NOX::Utils& utils, 
+  PrePostOperator(const Teuchos::RefCountPtr<NOX::Utils>& utils, 
 		  NOX::Parameter::List& solverOptionsSubList);
 
   //! Destructor.
@@ -88,7 +88,8 @@ public:
 
   //! Resets the pre/post operator.
   virtual void
-  reset(const NOX::Utils& utils, NOX::Parameter::List& solverOptionsSublist);
+  reset(const Teuchos::RefCountPtr<NOX::Utils>& utils, 
+	NOX::Parameter::List& solverOptionsSublist);
 
   //! User defined method that will be executed at the start of a call to NOX::Solver::Generic::iterate().
   virtual void runPreIterate(const NOX::Solver::Generic& solver);

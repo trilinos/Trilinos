@@ -193,11 +193,12 @@ namespace LOCA {
       norm(const NOX::Abstract::Vector& weights) const;
 
       /*! 
-       * \brief NOX::Abstract::Vector dot function.  Computes dot product 
-       * of each stored vector and combines to compute dot product
+       * \brief NOX::Abstract::Vector innerProduct function.
+       *  Computes inner product * of each stored vector and combines to
+       *  compute inner product
        */
       virtual double 
-      dot(const NOX::Abstract::Vector& y) const;
+      innerProduct(const NOX::Abstract::Vector& y) const;
   
       /*! 
        * \brief NOX::Abstract::Vector length function.  Computes sum of 

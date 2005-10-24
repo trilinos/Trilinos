@@ -35,9 +35,9 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
 #include "NOX_Parameter_List.H"
-#include "NOX_Parameter_UserNorm.H"
-#include "NOX_Parameter_MeritFunction.H"
+#include "NOX_MeritFunction_Generic.H"
 #include "NOX_Utils.H"
+#include "NOX_GlobalData.H"
 
 using namespace NOX;
 using namespace NOX::Solver;
@@ -46,26 +46,21 @@ TrustRegionBased::
 TrustRegionBased(const Teuchos::RefCountPtr<Abstract::Group>& grp,
 		 const Teuchos::RefCountPtr<StatusTest::Generic>& t,
 		 const Teuchos::RefCountPtr<Parameter::List>& p) :
-  solnPtr(grp),		// pointer to grp
-  oldSolnPtr(grp->clone(DeepCopy)), // create via clone
-  oldSoln(*oldSolnPtr),		// reference to just-created pointer
-  newtonVecPtr(grp->getX().clone(ShapeCopy)), // create via clone 
-  newtonVec(*newtonVecPtr),	// reference to just-created pointer
-  cauchyVecPtr(grp->getX().clone(ShapeCopy)), // create via clone 
-  cauchyVec(*cauchyVecPtr),	// reference to just-created pointer
-  aVecPtr(grp->getX().clone(ShapeCopy)), // create via clone 
-  aVec(*aVecPtr),		// reference to just-created pointer
-  bVecPtr(grp->getX().clone(ShapeCopy)), // create via clone 
-  bVec(*bVecPtr),		// reference to just-created pointer
-  testPtr(t),			// pointer to t
-  paramsPtr(p),			// copy p
-  utils(paramsPtr->sublist("Printing")), // inititalize utils
-  newton(utils),		// initialize direction
-  cauchy(utils),       		// initialize direction
-  userNormPtr(0),
-  userMeritFuncPtr(0),
+  globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
+  utilsPtr(globalDataPtr->getUtils()), 
+  solnPtr(grp),		
+  oldSolnPtr(grp->clone(DeepCopy)), 
+  newtonVecPtr(grp->getX().clone(ShapeCopy)), 
+  cauchyVecPtr(grp->getX().clone(ShapeCopy)), 
+  aVecPtr(grp->getX().clone(ShapeCopy)), 
+  bVecPtr(grp->getX().clone(ShapeCopy)), 
+  testPtr(t),			
+  paramsPtr(p),			
+  newton(globalDataPtr),
+  cauchy(globalDataPtr),
+  meritFuncPtr(globalDataPtr->getMeritFunction()),
   useAredPredRatio(false),
-  prePostOperator(utils, paramsPtr->sublist("Solver Options"))
+  prePostOperator(utilsPtr, paramsPtr->sublist("Solver Options"))
 {
   init();
 }
@@ -79,21 +74,24 @@ void TrustRegionBased::init()
   status = StatusTest::Unconverged;
 
   // Print out initialization information
-  if (utils.isPrintType(NOX::Utils::Parameters)) {
-    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
-    utils.out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
-    paramsPtr->print(utils.out(),5);
+  if (utilsPtr->isPrintType(NOX::Utils::Parameters)) {
+    utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utilsPtr->out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
+    paramsPtr->print(utilsPtr->out(),5);
   }
 
   // Set default parameter settings using getParameter() if they are not set
   paramsPtr->sublist("Direction").getParameter("Method", "Newton");
-  paramsPtr->sublist("Cauchy Direction").getParameter("Method", "Steepest Descent");
-  paramsPtr->sublist("Cauchy Direction").sublist("Steepest Descent").getParameter("Scaling Type", "Quadratic Model Min");
+  paramsPtr->sublist("Cauchy Direction").
+    getParameter("Method", "Steepest Descent");
+  paramsPtr->sublist("Cauchy Direction").sublist("Steepest Descent").
+    getParameter("Scaling Type", "Quadratic Model Min");
 
-  newton.reset(paramsPtr->sublist("Direction"));
-  cauchy.reset(paramsPtr->sublist("Cauchy Direction"));
+  newton.reset(globalDataPtr, paramsPtr->sublist("Direction"));
+  cauchy.reset(globalDataPtr, paramsPtr->sublist("Cauchy Direction"));
 
-  minRadius = paramsPtr->sublist("Trust Region").getParameter("Minimum Trust Region Radius", 1.0e-6);
+  minRadius = paramsPtr->sublist("Trust Region").
+    getParameter("Minimum Trust Region Radius", 1.0e-6);
   if (minRadius <= 0) 
     invalid("Minimum Trust Region Radius", minRadius);
 
@@ -130,59 +128,18 @@ void TrustRegionBased::init()
     sublist("Solver Options").getParameter("Status Test Check Type", 
 					   NOX::StatusTest::Minimal);
 
-  // Check for a user defined Norm
-  if (paramsPtr->sublist("Trust Region").
-      isParameterArbitrary("User Defined Norm")) {
-    const NOX::Parameter::UserNorm& un = 
-      dynamic_cast<const NOX::Parameter::UserNorm&>(paramsPtr->
-      sublist("Trust Region").getArbitraryParameter("User Defined Norm"));
-    userNormPtr = const_cast<NOX::Parameter::UserNorm*>(&un);
-
-    /*
-    // RPP: Hack!!  Need to get the scaling vectors computed.
-    solnPtr->computeF();
-    solnPtr->computeJacobian();
-    solnPtr->computeNewton(paramsPtr->sublist("Direction").sublist("Newton").sublist("Linear Solver"));
-    */
-  }
-
-  // Check for a user defined Merit Function
-  if (paramsPtr->sublist("Trust Region").
-      isParameterArbitrary("User Defined Merit Function")) {
-    const NOX::Parameter::MeritFunction& mf = 
-      dynamic_cast<const NOX::Parameter::MeritFunction&>
-      (paramsPtr->sublist("Trust Region").
-       getArbitraryParameter("User Defined Merit Function"));
-    userMeritFuncPtr = const_cast<NOX::Parameter::MeritFunction*>(&mf);
-  }
-
   // Check for the using Homer Walker's Ared/Pred ratio calculation
   useAredPredRatio = 
-    paramsPtr->sublist("Trust Region").getParameter("Use Ared/Pred Ratio Calculation", false);
-
-  // Compute F of initital guess
-  solnPtr->computeF();
-  if (userMeritFuncPtr != 0) {
-    newF = userMeritFuncPtr->computef(*solnPtr);
-  }
-  else 
-    newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
-
-  // Test the initial guess
-  status = testPtr->checkStatus(*this, checkType);
-
-  if (utils.isPrintType(NOX::Utils::Parameters)) {
-    utils.out() << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
-    testPtr->print(utils.out(), 5);
-    utils.out() <<"\n" << NOX::Utils::fill(72) << "\n";
-  }
+    paramsPtr->sublist("Trust Region").
+    getParameter("Use Ared/Pred Ratio Calculation", false);
 
 }
 
 //PRIVATE
-void NOX::Solver::TrustRegionBased::invalid(const string& name, double value) const
+void NOX::Solver::TrustRegionBased::
+invalid(const string& name, double value) const
 {
-  utils.err() << "NOX::Solver::TrustRegionBased::init - " 
+  utilsPtr->err() << "NOX::Solver::TrustRegionBased::init - " 
        << "Invalid \"" << name << "\" (" << value << ")" 
        << endl;
   throw "NOX Error";
@@ -193,11 +150,12 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
       const Teuchos::RefCountPtr<StatusTest::Generic>& t, 
       const Teuchos::RefCountPtr<Parameter::List>& p) 
 {
+  globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
+  utilsPtr = globalDataPtr->getUtils(); 
   solnPtr = grp;
   testPtr = t;
   paramsPtr = p;			
-  utils.reset(paramsPtr->sublist("Printing"));
-  prePostOperator.reset(utils, paramsPtr->sublist("Solver Options"));
+  prePostOperator.reset(utilsPtr, paramsPtr->sublist("Solver Options"));
   init();
   return true;
 }
@@ -216,34 +174,18 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
   status = StatusTest::Unconverged;
 
   // Print out initialization information
-  if (utils.isPrintType(NOX::Utils::Parameters)) {
-    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
-    utils.out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
-    paramsPtr->print(utils.out(),5);
+  if (utilsPtr->isPrintType(NOX::Utils::Parameters)) {
+    utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utilsPtr->out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
+    paramsPtr->print(utilsPtr->out(),5);
   }
 
-  // Compute F of initital guess
-  solnPtr->computeF();
-  if (userMeritFuncPtr != 0) {
-    newF = userMeritFuncPtr->computef(*solnPtr);
-  }
-  else 
-    newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
-
-  // Test the initial guess
-  status = testPtr->checkStatus(*this, checkType);
-
-  if (utils.isPrintType(NOX::Utils::Parameters)) {
-    utils.out() << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
-    testPtr->print(utils.out(), 5);
-    utils.out() <<"\n" << NOX::Utils::fill(72) << "\n";
-  }
   return true;
 }
 
 TrustRegionBased::~TrustRegionBased() 
 {
-  delete oldSolnPtr;
+  
 }
 
 
@@ -252,9 +194,20 @@ NOX::StatusTest::StatusType TrustRegionBased::getStatus()
   return status;
 }
 
-NOX::StatusTest::StatusType TrustRegionBased::iterate()
+NOX::StatusTest::StatusType TrustRegionBased::step()
 {
   prePostOperator.runPreIterate(*this);
+
+  if (nIter == 0) {
+    // Compute F of initital guess
+    solnPtr->computeF();
+    newF = meritFuncPtr->computef(*solnPtr);
+    
+    // Test the initial guess
+    status = testPtr->checkStatus(*this, checkType);
+    
+    printUpdate();
+  }
 
   // First check status
   if (status != StatusTest::Unconverged) 
@@ -266,19 +219,19 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
 
   // Compute Cauchy and Newton points
   bool ok;
-  ok = newton.compute(newtonVec, soln, *this);
+  ok = newton.compute(*newtonVecPtr, soln, *this);
   if (!ok) 
   {
-    utils.out() << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Newton direction" << endl;
+    utilsPtr->out() << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Newton direction" << endl;
     status = StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
     return status;
   }
 
-  ok = cauchy.compute(cauchyVec, soln, *this);
+  ok = cauchy.compute(*cauchyVecPtr, soln, *this);
   if (!ok) 
   {
-    utils.err() << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Cauchy direction" << endl;
+    utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Cauchy direction" << endl;
     status = StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
     return status;
@@ -286,11 +239,7 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
 
   if (nIter == 0) 
   {
-    if (userNormPtr != 0) {
-      radius = userNormPtr->norm(newtonVec);
-    }
-    else 
-      radius = newtonVec.norm();
+    radius = newtonVecPtr->norm();
     
     if (radius < minRadius)
       radius = 2 * minRadius;
@@ -300,99 +249,76 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
   nIter ++;
 
   // Copy current soln to the old soln.
-  oldSoln = soln;
+  *oldSolnPtr = *solnPtr;
   // RPP: Can't just copy over oldf.  Scaling could change between iterations
   // so user Merit Functions could be out of sync
-  if (userMeritFuncPtr != 0) {
-    oldF = userMeritFuncPtr->computef(oldSoln);
-  }
-  else 
-    oldF = newF;
+  oldF = meritFuncPtr->computef(*oldSolnPtr);
 
   // Improvement ratio = (oldF - newF) / (mold - mnew)
   double ratio = -1;
 
-  if (utils.isPrintType(NOX::Utils::InnerIteration)) 
+  if (utilsPtr->isPrintType(NOX::Utils::InnerIteration)) 
   {
-    utils.out() << NOX::Utils::fill(72) << endl;
-    utils.out() << "-- Trust Region Inner Iteration --" << endl;
+    utilsPtr->out() << NOX::Utils::fill(72) << endl;
+    utilsPtr->out() << "-- Trust Region Inner Iteration --" << endl;
   }
 
   // Trust region subproblem loop
   while ((ratio < minRatio) && (radius > minRadius)) 
   {
 
-    Abstract::Vector* dirPtr;
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> dirPtr;
     double step;
 
     // Trust region step
-    double newtonVecNorm = 0.0;
-    double cauchyVecNorm = 0.0;
-    if (userNormPtr != 0) {
-      newtonVecNorm = userNormPtr->norm(newtonVec);
-      cauchyVecNorm = userNormPtr->norm(cauchyVec);
-    }
-    else { 
-      newtonVecNorm = newtonVec.norm();
-      cauchyVecNorm = cauchyVec.norm();
-    }
+    double newtonVecNorm = newtonVecPtr->norm();
+    double cauchyVecNorm = cauchyVecPtr->norm();
 
     if (newtonVecNorm <= radius) 
     {
       stepType = TrustRegionBased::Newton;
       step = 1.0;
-      dirPtr = &newtonVec;
+      dirPtr = newtonVecPtr;
     }
     else if (cauchyVecNorm >= radius) 
     {
       stepType = TrustRegionBased::Cauchy;
       step = radius / cauchyVecNorm;
-      dirPtr = &cauchyVec;
+      dirPtr = cauchyVecPtr;
     }
     else 
     {			// Dogleg computation
 
       // aVec = newtonVec - cauchyVec
-      aVec.update(1.0, newtonVec, -1.0, cauchyVec, 0.0);
+      aVecPtr->update(1.0, *newtonVecPtr, -1.0, *cauchyVecPtr, 0.0);
       
       // cta = cauchyVec' * aVec
-      double cta = 0.0;
+      double cta = cauchyVecPtr->innerProduct(*aVecPtr);
       // ctc = cauchyVec' * cauchyVec
-      double ctc = 0.0;
+      double ctc = cauchyVecPtr->innerProduct(*cauchyVecPtr);
       // ata = aVec' * aVec
-      double ata = 0.0;
-
-      if (userNormPtr != 0) {
-	cta = userNormPtr->dot(cauchyVec, aVec);
-	ctc = userNormPtr->dot(cauchyVec, cauchyVec);
-	ata = userNormPtr->dot(aVec, aVec);
-      }
-      else {
-	cta = cauchyVec.dot(aVec);
-	ctc = cauchyVec.dot(cauchyVec);
-	ata = aVec.dot(aVec);
-      }
+      double ata = aVecPtr->innerProduct(*aVecPtr);
 
       // sqrt of quadratic equation
       double tmp = (cta * cta) - ((ctc - (radius * radius)) * ata);
       if (tmp < 0) {
-	utils.err() << "NOX::Solver::TrustRegionBased::iterate - invalid computation" << endl;
+	utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - invalid computation" << endl;
 	throw "NOX Error";
       }
       
       // final soln to quadratic equation
       double gamma = (sqrt(tmp) - cta) / ata;
       if ((gamma < 0) || (gamma > 1)) {
-	utils.err() << "NOX::Solver::TrustRegionBased::iterate - invalid trust region step" << endl;
+	utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - invalid trust region step" << endl;
 	throw "NOX Error";
       }
       
       // final direction computation
-      aVec.update(1.0 - gamma, cauchyVec, gamma, newtonVec, 0.0);
+      aVecPtr->update(1.0 - gamma, *cauchyVecPtr, gamma, *newtonVecPtr, 0.0);
 
       // solution
       stepType = TrustRegionBased::Dogleg;
-      dirPtr = &aVec;
+      dirPtr = aVecPtr;
       step = 1.0;
     }
     
@@ -400,20 +326,16 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
     const Abstract::Vector& dir = *dirPtr;
 
     // Calculate true step length
-    if (userNormPtr != 0) {
-      dx = step * userNormPtr->norm(dir);
-    }
-    else
-      dx = step * dir.norm();
+    dx = step * dir.norm();
 
     // Compute new X
-    soln.computeX(oldSoln, dir, step);
+    soln.computeX(*oldSolnPtr, dir, step);
 
     // Compute F for new current solution.
     NOX::Abstract::Group::ReturnType rtype = soln.computeF();
     if (rtype != NOX::Abstract::Group::Ok) 
     {
-      utils.err() << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << endl;
+      utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << endl;
       throw "NOX Error";
     }
 
@@ -423,55 +345,39 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
     if (useAredPredRatio) {
 
       // bVec = F(x) + J d
-      rtype = oldSoln.applyJacobian(*dirPtr, bVec);
+      rtype = oldSolnPtr->applyJacobian(*dirPtr, *bVecPtr);
       if (rtype != NOX::Abstract::Group::Ok) 
       {
-	utils.out() << "NOX::Solver::TrustRegionBased::iterate - "
+	utilsPtr->out() << "NOX::Solver::TrustRegionBased::iterate - "
 	     << "unable to compute F" << endl;
 	throw "NOX Error";
       }
-      bVec.update(1.0, oldSoln.getF(), 1.0);
+      bVecPtr->update(1.0, oldSolnPtr->getF(), 1.0);
 
       // Compute norms
-      double oldNormF = 0.0;
-      double newNormF = 0.0;
-      double normFLinear = 0.0;
-      if (userNormPtr != 0) {
-	oldNormF = userNormPtr->norm(oldSoln.getF());
-	newNormF = userNormPtr->norm(soln.getF());
-	normFLinear = userNormPtr->norm(bVec);
-      }
-      else {
-	oldNormF = oldSoln.getNormF();
-	newNormF = soln.getNormF();
-	normFLinear = bVec.norm();
-      }
+      double oldNormF = oldSolnPtr->getNormF();
+      double newNormF = soln.getNormF();
+      double normFLinear = bVecPtr->norm();
 
       ratio = (oldNormF - newNormF) / (oldNormF - normFLinear);
 
       // Print the ratio values if requested
-      if (utils.isPrintType(NOX::Utils::InnerIteration)) {
-      double numerator = oldNormF - newNormF;
-      double denominator = oldNormF - normFLinear;
-	utils.out() << "Ratio computation: " << utils.sciformat(numerator) << "/" 
-	     << utils.sciformat(denominator) << "=" << ratio << endl;
+      if (utilsPtr->isPrintType(NOX::Utils::InnerIteration)) {
+	double numerator = oldNormF - newNormF;
+	double denominator = oldNormF - normFLinear;
+	utilsPtr->out() << "Ratio computation: " 
+			<< utilsPtr->sciformat(numerator) << "/" 
+			<< utilsPtr->sciformat(denominator) << "=" 
+			<< ratio << endl;
       }
 
       // Update the merit function (newF used when printing iteration status)
-      if (userMeritFuncPtr != 0) {
-	newF = userMeritFuncPtr->computef(*solnPtr);
-      }
-      else 
-	newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
+      newF = meritFuncPtr->computef(*solnPtr);
 
     }
     else {  // Default ratio computation
 
-      if (userMeritFuncPtr != 0) {
-	newF = userMeritFuncPtr->computef(*solnPtr);
-      }
-      else 
-	newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
+      newF = meritFuncPtr->computef(*solnPtr);
       
       if (newF >= oldF) 
       {
@@ -480,27 +386,24 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
       else 
       {
 	  
-	rtype = oldSoln.applyJacobian(*dirPtr, bVec);
+	rtype = oldSolnPtr->applyJacobian(*dirPtr, *bVecPtr);
 	if (rtype != NOX::Abstract::Group::Ok) 
 	{
-	  utils.err() << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << endl;
+	  utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << endl;
 	  throw "NOX Error";
 	}
 	double numerator = oldF - newF;
 	double denominator = 0.0;
 	  
-	if (userMeritFuncPtr != 0) {
-	  denominator = fabs(oldF - userMeritFuncPtr->
-			     computeQuadraticModel(dir,oldSoln));
-	}
-	else 
-	  denominator = fabs(dir.dot(oldSoln.getGradient()) + 
-			     0.5 * bVec.dot(bVec));
+	denominator = fabs(oldF - meritFuncPtr->
+			   computeQuadraticModel(dir,*oldSolnPtr));
 	
 	ratio = numerator / denominator;
-	if (utils.isPrintType(NOX::Utils::InnerIteration))
-	  utils.out() << "Ratio computation: " << utils.sciformat(numerator) << "/" 
-	       << utils.sciformat(denominator) << "=" << ratio << endl;
+	if (utilsPtr->isPrintType(NOX::Utils::Debug))
+	  utilsPtr->out() << "Ratio computation: " 
+			  << utilsPtr->sciformat(numerator) << "/" 
+			  << utilsPtr->sciformat(denominator) << "=" 
+			  << utilsPtr->sciformat(ratio) << endl;
 	
 	// WHY IS THIS CHECK HERE?
 	if ((denominator < 1.0e-12) && ((newF / oldF) >= 0.5))
@@ -508,37 +411,33 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
       }
     }
 
-    if (utils.isPrintType(Utils::InnerIteration)) {
-      utils.out() << "radius = " << utils.sciformat(radius, 1);
-      utils.out() << " ratio = " << setprecision(1) << setw(3) << ratio;
-      utils.out() << " f = " << utils.sciformat(sqrt(2*newF));
-      utils.out() << " oldF = " << utils.sciformat(sqrt(2*oldF));
-      utils.out() << " ";
+    if (utilsPtr->isPrintType(Utils::InnerIteration)) {
+      utilsPtr->out() << "radius = " << utilsPtr->sciformat(radius, 1);
+      utilsPtr->out() << " ratio = " << setprecision(2) << setw(4) << ratio;
+      utilsPtr->out() << " f = " << utilsPtr->sciformat(sqrt(2*newF));
+      utilsPtr->out() << " old f = " << utilsPtr->sciformat(sqrt(2*oldF));
+      utilsPtr->out() << " ";
 
       switch(stepType) {
       case TrustRegionBased::Newton:
-	utils.out() << "Newton";
+	utilsPtr->out() << "Newton";
 	break;
       case TrustRegionBased::Cauchy:
-	utils.out() << "Cauchy";
+	utilsPtr->out() << "Cauchy";
 	break;
       case TrustRegionBased::Dogleg:
-	utils.out() << "Dogleg";
+	utilsPtr->out() << "Dogleg";
 	break;
       }
 
-      utils.out() << endl;
+      utilsPtr->out() << endl;
     }
 
     // Update trust region
     if (ratio < contractTriggerRatio) 
     {
       if (stepType == TrustRegionBased::Newton) {
-	if (userNormPtr != 0) {
-	  radius = userNormPtr->norm(newtonVec);
-	}
-	else 
-	  radius = newtonVec.norm();
+	radius = newtonVecPtr->norm();
       }
       radius = NOX_MAX(contractFactor * radius, minRadius);
     }
@@ -553,27 +452,22 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
   // Evaluate the current status
   if ((radius <= minRadius) && (ratio < minRatio)) 
   {
-    if (utils.isPrintType(Utils::InnerIteration))
-      utils.out() << "Using recovery step and resetting trust region." << endl;
-    soln.computeX(oldSoln, newtonVec, recoveryStep);
+    if (utilsPtr->isPrintType(Utils::InnerIteration))
+      utilsPtr->out() << "Using recovery step and resetting trust region." << endl;
+    soln.computeX(*oldSolnPtr, *newtonVecPtr, recoveryStep);
     soln.computeF();
-    if (userNormPtr != 0) {
-      radius = userNormPtr->norm(newtonVec);
-    }
-    else
-      radius = newtonVec.norm();
+    radius = newtonVecPtr->norm();
     /*if (radius < minRadius)
       radius = 2 * minRadius;*/
   }
 
   status = test.checkStatus(*this, checkType);
  
-  if (utils.isPrintType(Utils::InnerIteration)) 
-    utils.out() << NOX::Utils::fill(72) << endl;
+  if (utilsPtr->isPrintType(Utils::InnerIteration)) 
+    utilsPtr->out() << NOX::Utils::fill(72) << endl;
 
   prePostOperator.runPostIterate(*this);
 
-  // Return status.
   return status;
 }
 
@@ -581,11 +475,9 @@ NOX::StatusTest::StatusType TrustRegionBased::solve()
 {
   prePostOperator.runPreSolve(*this);
 
-  printUpdate();
-
   // Iterate until converged or failed
   while (status == StatusTest::Unconverged) {
-    status = iterate();
+    status = step();
     printUpdate();
   }
 
@@ -605,7 +497,7 @@ const Abstract::Group& TrustRegionBased::getSolutionGroup() const
 
 const Abstract::Group& TrustRegionBased::getPreviousSolutionGroup() const
 {
-  return oldSoln;
+  return *oldSolnPtr;
 }
 
 int TrustRegionBased::getNumIterations() const
@@ -623,34 +515,34 @@ void TrustRegionBased::printUpdate()
 {
   // Print the status test parameters at each iteration if requested  
   if ((status == StatusTest::Unconverged) && 
-      (utils.isPrintType(NOX::Utils::OuterIterationStatusTest))) {
-    utils.out() << NOX::Utils::fill(72) << "\n";
-    utils.out() << "-- Status Test Results --\n";    
-    testPtr->print(utils.out());
-    utils.out() << NOX::Utils::fill(72) << "\n";
+      (utilsPtr->isPrintType(NOX::Utils::OuterIterationStatusTest))) {
+    utilsPtr->out() << NOX::Utils::fill(72) << "\n";
+    utilsPtr->out() << "-- Status Test Results --\n";    
+    testPtr->print(utilsPtr->out());
+    utilsPtr->out() << NOX::Utils::fill(72) << "\n";
   }
   
   double fmax = solnPtr->getF().norm(Abstract::Vector::MaxNorm);
-  if (utils.isPrintType(NOX::Utils::OuterIteration)) {
-    utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
-    utils.out() << "-- Newton Trust-Region Step " << nIter << " -- \n";
-    utils.out() << "f = " << utils.sciformat(sqrt(2*newF));
-    utils.out() << " fmax = " << utils.sciformat(fmax);
-    utils.out() << "  dx = " << utils.sciformat(dx);
-    utils.out() << "  radius = " << utils.sciformat(radius);
+  if (utilsPtr->isPrintType(NOX::Utils::OuterIteration)) {
+    utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utilsPtr->out() << "-- Newton Trust-Region Step " << nIter << " -- \n";
+    utilsPtr->out() << "f = " << utilsPtr->sciformat(sqrt(2*newF));
+    utilsPtr->out() << " fmax = " << utilsPtr->sciformat(fmax);
+    utilsPtr->out() << "  dx = " << utilsPtr->sciformat(dx);
+    utilsPtr->out() << "  radius = " << utilsPtr->sciformat(radius);
     if (status == StatusTest::Converged)
-      utils.out() << " (Converged!)";
+      utilsPtr->out() << " (Converged!)";
     if (status == StatusTest::Failed)
-      utils.out() << " (Failed!)";
-    utils.out() << "\n" << NOX::Utils::fill(72) << "\n" << endl;
+      utilsPtr->out() << " (Failed!)";
+    utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n" << endl;
   }
   
   if ((status != StatusTest::Unconverged) && 
-      (utils.isPrintType(NOX::Utils::OuterIteration))) {
-    utils.out() << NOX::Utils::fill(72) << "\n";
-    utils.out() << "-- Final Status Test Results --\n";    
-    testPtr->print(utils.out());
-    utils.out() << NOX::Utils::fill(72) << "\n";
+      (utilsPtr->isPrintType(NOX::Utils::OuterIteration))) {
+    utilsPtr->out() << NOX::Utils::fill(72) << "\n";
+    utilsPtr->out() << "-- Final Status Test Results --\n";    
+    testPtr->print(utilsPtr->out());
+    utilsPtr->out() << NOX::Utils::fill(72) << "\n";
   }
 }
 

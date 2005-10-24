@@ -1,5 +1,3 @@
-#ifdef WITH_PRERELEASE
-
 // $Id$ 
 // $Source$ 
 
@@ -40,25 +38,25 @@
 #include "NOX_Solver_Generic.H"
 #include "NOX_Solver_LineSearchBased.H"
 #include "NOX_Utils.H"
+#include "NOX_GlobalData.H"
 
 //------------------------------------------------------------
 
 NOX::Direction::Broyden::BroydenMemoryUnit::BroydenMemoryUnit() 
 {
-  sptr = NULL;
   lambda = 0;
   snormsqr = 0;
 }
 
 NOX::Direction::Broyden::BroydenMemoryUnit::~BroydenMemoryUnit() 
 {
-  delete sptr;
+
 }
 
 void NOX::Direction::Broyden::BroydenMemoryUnit::reset(const NOX::Abstract::Vector& d)
 {
   // Copy d into s
-  if (sptr == NULL)
+  if (Teuchos::is_null(sptr))
     sptr = d.clone(DeepCopy);
   else
     *sptr = d;
@@ -80,7 +78,8 @@ void NOX::Direction::Broyden::BroydenMemoryUnit::setStep(double step)
   }
 }
 
-const NOX::Abstract::Vector* NOX::Direction::Broyden::BroydenMemoryUnit::sPtr() const
+Teuchos::RefCountPtr<const NOX::Abstract::Vector> NOX::Direction::Broyden::
+BroydenMemoryUnit::sPtr() const
 {
   return sptr;
 }
@@ -168,22 +167,25 @@ NOX::Direction::Broyden::BroydenMemory::operator[](int i)
 
 //------------------------------------------------------------
 
-NOX::Direction::Broyden::Broyden(const NOX::Utils& u, Parameter::List& p) :
-  utils(u),
+NOX::Direction::Broyden::
+Broyden(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, Parameter::List& p) :
   lsParamsPtr(NULL),
-  oldJacobianGrpPtr(NULL),
-  inexactNewtonUtils(u, p)
+  inexactNewtonUtils(gd, p)
 {
-  reset(p);
+  reset(gd, p);
 }
 
 NOX::Direction::Broyden::~Broyden()
 {
-  delete oldJacobianGrpPtr;
+
 }
 
-bool NOX::Direction::Broyden::reset(Parameter::List& params)
+bool NOX::Direction::Broyden::
+reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, Parameter::List& params)
 {
+  globalDataPtr = gd;
+  utils = gd->getUtils();
+
   NOX::Parameter::List&  p = params.sublist("Broyden");
 
   // Save a pointer to the Linear Solver sublist
@@ -194,7 +196,7 @@ bool NOX::Direction::Broyden::reset(Parameter::List& params)
   //lsParamsPtr->getParameter("Tolerance", 1.0e-4);
 
   // Reset the inexact Newton Utilities (including linear solve tolerance)
-  inexactNewtonUtils.reset(utils, params);
+  inexactNewtonUtils.reset(gd, params);
 
   // Get the restart frequency
   cntMax = p.getParameter("Restart Frequency", 10);
@@ -238,7 +240,7 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
     memory.reset();
 
     // Update group
-    if (oldJacobianGrpPtr == NULL)
+    if (Teuchos::is_null(oldJacobianGrpPtr))
       oldJacobianGrpPtr = soln.clone(NOX::DeepCopy);
     else
       // RPP - update the entire group (this grabs state vectors in xyce).
@@ -247,8 +249,8 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
       *oldJacobianGrpPtr = soln;
 
     // Calcuate new Jacobian
-    if (utils.isPrintType(NOX::Utils::Details))
-      utils.out() << "       Recomputing Jacobian" << endl;
+    if (utils->isPrintType(NOX::Utils::Details))
+      utils->out() << "       Recomputing Jacobian" << endl;
  
     status = oldJacobianGrpPtr->computeJacobian();
     if (status != NOX::Abstract::Group::Ok) 
@@ -290,12 +292,13 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
 
     // Information corresponding to index i
     double step;
-    const NOX::Abstract::Vector* sPtr;
+    Teuchos::RefCountPtr<const NOX::Abstract::Vector> sPtr;
 
     // Information corresponding to index i + 1 
     // (initialized for i = -1)
     double stepNext = memory[0].step();
-    const NOX::Abstract::Vector* sPtrNext = memory[0].sPtr();
+    Teuchos::RefCountPtr<const NOX::Abstract::Vector> sPtrNext = 
+      memory[0].sPtr();
 
     // Intermediate storage
     double a, b, c, denom;
@@ -309,7 +312,7 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
 
       a = step / stepNext;
       b = step - 1;
-      c = sPtr->dot(dir) / memory[i].sNormSqr();
+      c = sPtr->innerProduct(dir) / memory[i].sNormSqr();
 
       dir.update(a * c, *sPtrNext, b * c, *sPtr, 1.0);
     }
@@ -317,7 +320,7 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
     step = stepNext;
     sPtr = sPtrNext;
 
-    a = sPtr->dot(dir);		// <s,z>
+    a = sPtr->innerProduct(dir);		// <s,z>
     b = memory[m-1].sNormSqr();	// ||s||^2
     c = (step - 1) * a;		// (\lambda-1) <s,z>
     denom = b - step * a;	// ||s||^2 - \lambda <s,z>
@@ -357,13 +360,7 @@ bool NOX::Direction::Broyden::doRestart(NOX::Abstract::Group& soln,
 
 void NOX::Direction::Broyden::throwError(const string& functionName, const string& errorMsg)
 {
-    if (utils.isPrintType(NOX::Utils::Error))
-      utils.err() << "NOX::Direction::Broyden::" << functionName << " - " << errorMsg << endl;
+    if (utils->isPrintType(NOX::Utils::Error))
+      utils->err() << "NOX::Direction::Broyden::" << functionName << " - " << errorMsg << endl;
     throw "NOX Error";
 }
-
-
-
-
-#endif
-

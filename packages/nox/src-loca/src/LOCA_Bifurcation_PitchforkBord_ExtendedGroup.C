@@ -967,5 +967,5 @@ double
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::lTransNorm(
 					const NOX::Abstract::Vector& n) const
 {
-  return lengthVecPtr->dot(n) / lengthVecPtr->length();
+  return lengthVecPtr->innerProduct(n) / lengthVecPtr->length();
 }

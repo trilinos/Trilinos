@@ -42,7 +42,7 @@ NOX::Abstract::Vector& NOX::Abstract::Vector::random(bool useSeed, int seed)
   return *this;
 }
 
-void NOX::Abstract::Vector::print() const
+void NOX::Abstract::Vector::print(std::ostream& stream) const
 {
   return;
 }

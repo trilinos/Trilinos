@@ -37,26 +37,27 @@
 #include "NOX_Solver_Generic.H"
 #include "NOX_Solver_LineSearchBased.H"
 #include "NOX_Utils.H"
-#include "NOX_Parameter_UserNorm.H"
+#include "NOX_GlobalData.H"
 
 
-NOX::Direction::Newton::Newton(const NOX::Utils& u, NOX::Parameter::List& p) :
-  utils(u),
-  predRhs(NULL),
-  stepDir(NULL)
-  
+NOX::Direction::Newton::
+Newton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+       NOX::Parameter::List& p)
 {
-  reset(p);
+  reset(gd, p);
 }
 
 NOX::Direction::Newton::~Newton()
 {
-  delete predRhs;
-  delete stepDir;
 }
 
-bool NOX::Direction::Newton::reset(NOX::Parameter::List& params)
+bool NOX::Direction::Newton::
+reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+      NOX::Parameter::List& params)
 {
+  globalDataPtr = gd;
+  utils = gd->getUtils();
+
   paramsPtr = &params;
 
   NOX::Parameter::List& p = params.sublist("Newton");
@@ -80,26 +81,6 @@ bool NOX::Direction::Newton::reset(NOX::Parameter::List& params)
     alpha = p.getParameter("Forcing Term Alpha", 1.5);
     gamma = p.getParameter("Forcing Term Gamma", 0.9);
     eta_k = eta_min;
-    
-    userNorm = 0;
-    if (p.isParameter("Forcing Term User Defined Norm")) {
-
-      NOX::Parameter::Arbitrary& arbitrary = 
-	const_cast<NOX::Parameter::Arbitrary&>
-	(p.getArbitraryParameter("Forcing Term User Defined Norm"));
-
-      userNorm = dynamic_cast<NOX::Parameter::UserNorm*>(&arbitrary);
-
-      if (userNorm == 0) {
-	if (utils.isPrintType(Utils::Warning)) {
-	  utils.out() << "WARNING: NOX::Direction::Newton::resetForcingTerm() - "
-	       << "\"Forcing Term User Defined Norm\" is not of type "
-	       << "NOX::Parameter::UserNorm!\n" 
-	       << "Defaulting to L-2 Norms!" << endl; 
-	}
-      }
-
-    }
   }
 
   return true;
@@ -122,10 +103,10 @@ bool NOX::Direction::Newton::compute(NOX::Abstract::Vector& dir,
 		     solver.getNumIterations(), solver);
   }
   else { 
-    if (utils.isPrintType(Utils::Details)) {
-      utils.out() << "       CALCULATING FORCING TERM" << endl;
-      utils.out() << "       Method: Constant" << endl;
-      utils.out() << "       Forcing Term: " << eta_k << endl;
+    if (utils->isPrintType(Utils::Details)) {
+      utils->out() << "       CALCULATING FORCING TERM" << endl;
+      utils->out() << "       Method: Constant" << endl;
+      utils->out() << "       Forcing Term: " << eta_k << endl;
     }
   }
 
@@ -145,8 +126,8 @@ bool NOX::Direction::Newton::compute(NOX::Abstract::Vector& dir,
   }
   else if ((status != NOX::Abstract::Group::Ok) &&
 	   (doRescue == true)) {
-    if (utils.isPrintType(NOX::Utils::Warning))
-      utils.out() << "WARNING: NOX::Direction::Newton::compute() - Linear solve "
+    if (utils->isPrintType(NOX::Utils::Warning))
+      utils->out() << "WARNING: NOX::Direction::Newton::compute() - Linear solve "
 	   << "failed to achieve convergence - using the step anyway " 
 	   << "since \"Rescue Bad Newton Solve\" is true " << endl;
   }
@@ -186,9 +167,9 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
 
   const string indent = "       ";
 
-  if (utils.isPrintType(Utils::Details)) {
-    utils.out() << indent << "CALCULATING FORCING TERM" << endl;
-    utils.out() << indent << "Method: " << method << endl;
+  if (utils->isPrintType(Utils::Details)) {
+    utils->out() << indent << "CALCULATING FORCING TERM" << endl;
+    utils->out() << indent << "Method: " << method << endl;
   }
 
 
@@ -209,10 +190,10 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       // oldsoln.getNormLastLinearSolveResidual(normpredf);
       
       // Create a new vector to be the predicted RHS
-      if (predRhs == NULL) {
+      if (Teuchos::is_null(predRhs)) {
 	predRhs = oldsoln.getF().clone(ShapeCopy);
       }
-      if (stepDir == NULL) {
+      if (Teuchos::is_null(stepDir)) {
 	stepDir = oldsoln.getF().clone(ShapeCopy);
       }
       
@@ -221,8 +202,8 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       
       // Compute predRhs = Jacobian * step * dir
       if (!(oldsoln.isJacobian())) {
-	if (utils.isPrintType(Utils::Details)) {
-	  utils.out() << "WARNING: NOX::Direction::Newton::resetForcingTerm() - "
+	if (utils->isPrintType(Utils::Details)) {
+	  utils->out() << "WARNING: NOX::Direction::Newton::resetForcingTerm() - "
 	       << "Jacobian is out of date! Recomputing Jacobian." << endl;
 	}
 	const_cast<NOX::Abstract::Group&>(oldsoln).computeJacobian();
@@ -237,34 +218,23 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       double normf = 0.0;
       double normoldf = 0.0;
 
-      if (userNorm != 0) {
-	if (utils.isPrintType(Utils::Details)) {
-	  utils.out() << indent << "Forcing Term Norm: " << userNorm->getType()
-	       << endl;
-	}
-	normpredf = userNorm->norm(*predRhs);
-	normf = userNorm->norm(soln.getF());
-	normoldf = userNorm->norm(oldsoln.getF());
+      if (utils->isPrintType(Utils::Details)) {
+	utils->out() << indent << "Forcing Term Norm: Using L-2 Norm."
+		     << endl;
       }
-      else {
-	if (utils.isPrintType(Utils::Details)) {
-	  utils.out() << indent << "Forcing Term Norm: Using L-2 Norm."
-	       << endl;
-	}
-	normpredf = predRhs->norm();
-	normf = soln.getNormF();
-	normoldf = oldsoln.getNormF();
-      }      
+      normpredf = predRhs->norm();
+      normf = soln.getNormF();
+      normoldf = oldsoln.getNormF();
 
       // Compute forcing term
       eta_k = fabs(normf - normpredf) / normoldf;
       
       // Some output
-      if (utils.isPrintType(Utils::Details)) {
-	utils.out() << indent << "Residual Norm k-1 =             " << normoldf << "\n";
-	utils.out() << indent << "Residual Norm Linear Model k =  " << normpredf << "\n";
-	utils.out() << indent << "Residual Norm k =               " << normf << "\n";
-	utils.out() << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
+      if (utils->isPrintType(Utils::Details)) {
+	utils->out() << indent << "Residual Norm k-1 =             " << normoldf << "\n";
+	utils->out() << indent << "Residual Norm Linear Model k =  " << normpredf << "\n";
+	utils->out() << indent << "Residual Norm k =               " << normf << "\n";
+	utils->out() << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
       }
       
       // Impose safeguard and constraints ...
@@ -289,32 +259,22 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       double normf = 0.0;
       double normoldf = 0.0;
       
-      if (userNorm != 0) {
-	if (utils.isPrintType(Utils::Details)) {
-	  utils.out() << indent << "Forcing Term Norm: " << userNorm->getType()
-	       << endl;
-	}
-	normf = userNorm->norm(soln.getF());
-	normoldf = userNorm->norm(oldsoln.getF());
+      if (utils->isPrintType(Utils::Details)) {
+	utils->out() << indent << "Forcing Term Norm: Using L-2 Norm."
+		     << endl;
       }
-      else {
-	if (utils.isPrintType(Utils::Details)) {
-	  utils.out() << indent << "Forcing Term Norm: Using L-2 Norm."
-	       << endl;
-	}
-	normf = soln.getNormF();
-	normoldf = oldsoln.getNormF();
-      }  
+      normf = soln.getNormF();
+      normoldf = oldsoln.getNormF();
 
       const double residual_ratio = normf / normoldf;
       
       eta_k = gamma * pow(residual_ratio, alpha);
       
       // Some output
-      if (utils.isPrintType(Utils::Details)) {
-	utils.out() << indent << "Residual Norm k-1 =             " << normoldf << "\n";
-	utils.out() << indent << "Residual Norm k =               " << normf << "\n";
-	utils.out() << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
+      if (utils->isPrintType(Utils::Details)) {
+	utils->out() << indent << "Residual Norm k-1 =             " << normoldf << "\n";
+	utils->out() << indent << "Residual Norm k =               " << normf << "\n";
+	utils->out() << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
       }
       
       // Impose safeguard and constraints ... 
@@ -329,8 +289,8 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
 
   else {
     
-    if (utils.isPrintType(Utils::Warning))
-      utils.out() << "NOX::Direction::Newton::resetForcingTerm "
+    if (utils->isPrintType(Utils::Warning))
+      utils->out() << "NOX::Direction::Newton::resetForcingTerm "
 	   << "- invalid forcing term method (" << method << ")" << endl;
 
     return false;
@@ -340,15 +300,15 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
   paramsPtr->sublist("Newton").sublist("Linear Solver")
     .setParameter("Tolerance", eta_k);
 
-  if (utils.isPrintType(Utils::Details)) 
-    utils.out() << indent << "Forcing Term: " << eta_k << endl;
+  if (utils->isPrintType(Utils::Details)) 
+    utils->out() << indent << "Forcing Term: " << eta_k << endl;
   
   return true;
 }
 
 void NOX::Direction::Newton::throwError(const string& functionName, const string& errorMsg)
 {
-    if (utils.isPrintType(Utils::Error))
-      utils.err() << "NOX::Direction::Newton::" << functionName << " - " << errorMsg << endl;
+    if (utils->isPrintType(Utils::Error))
+      utils->err() << "NOX::Direction::Newton::" << functionName << " - " << errorMsg << endl;
     throw "NOX Error";
 }

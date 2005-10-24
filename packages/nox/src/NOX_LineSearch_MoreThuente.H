@@ -37,13 +37,13 @@
 
 #include "NOX_LineSearch_Utils_Printing.H"  // data class member
 #include "NOX_LineSearch_Utils_Counters.H"  // data class member
-#include "NOX_LineSearch_Utils_Slope.H"  // data class member
+#include "NOX_LineSearch_Utils_Slope.H"     // data class member
+#include "Teuchos_RefCountPtr.hpp"          // data class member
 
 // Forward Declarations
-namespace NOX{
-  namespace Parameter {
-    class UserNorm;
-    class MeritFunction;
+namespace NOX {
+  namespace MeritFunction {
+    class Generic;
   }
 }
 
@@ -192,13 +192,15 @@ class MoreThuente : public Generic {
 public:
 
   //! Constructor
-  MoreThuente(const NOX::Utils& u, NOX::Parameter::List& params);
-
+  MoreThuente(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	      NOX::Parameter::List& params);
+  
   //! Destructor
   ~MoreThuente();
   
   // derived
-  bool reset(NOX::Parameter::List& params);
+  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	     NOX::Parameter::List& params);
 
   // derived
   bool compute(NOX::Abstract::Group& newgrp, double& step, 
@@ -356,7 +358,9 @@ private:
 
    */
   int cvsrch(NOX::Abstract::Group& newgrp, double& step, 
-	     const NOX::Abstract::Group& oldgrp, const NOX::Abstract::Vector& dir, const Solver::Generic& s);
+	     const NOX::Abstract::Group& oldgrp, 
+	     const NOX::Abstract::Vector& dir, 
+	     const Solver::Generic& s);
 
 
   //! More'-Thuente's cstep subroutine.
@@ -441,10 +445,15 @@ private:
 
 private:
 
+  //! Global data pointer.  Keep this so the parameter list remains valid.
+  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+
   //! Common line search printing utilities.
   NOX::LineSearch::Utils::Printing print;
+
   //! Common common counters for line searches.
   NOX::LineSearch::Utils::Counters counter;
+
   //! Common slope calculations for line searches.
   NOX::LineSearch::Utils::Slope slope;
 
@@ -489,17 +498,8 @@ private:
   //! If set to true the value of \f$ s^TJ^Tf \f$ is estimated using a directional derivative.  This eliminates having to compute the Jacobian at each inner iteration of the line search.  
   bool useOptimizedSlopeCalc;
 
-  //! Set to true if the user supplied their own definition of the norm through the parameter list using a NOX::Parameter::UserNorm derived class.
-  bool userDefinedNorm;
-
-  //! Set to true if the user supplied their own definition of the merit function through the parameter list using a NOX::Parameter::MeritFunction derived class.
-  bool userDefinedMeritFunction;
-
-  //! Stores a user defined norm.
-  NOX::Parameter::UserNorm* userNormPtr;
-
-  //! Stores a user defined merit function.
-  NOX::Parameter::MeritFunction* meritFuncPtr;
+  //! Stores the merit function.
+  Teuchos::RefCountPtr<NOX::MeritFunction::Generic> meritFuncPtr;
 
 };
 } // namespace LineSearch

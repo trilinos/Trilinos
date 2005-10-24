@@ -34,6 +34,7 @@
 #define NOX_ABSTRACT_VECTOR_H
 
 #include "NOX_Common.H"  // for NOX_Config.h
+#include "Teuchos_RefCountPtr.hpp"
 
 // Forward declaration of MultiVector class
 namespace NOX {
@@ -196,12 +197,15 @@ public:
 
     If type is NOX::DeepCopy, then we need to create an exact replica
     of "this". Otherwise, if type is NOX::ShapeCopy, we need only
-    replicate the shape of "this". Note that there is <em>no assumption</em>
-    that a vector created by ShapeCopy is initialized to zeros.
+    replicate the shape of "this" (the memory is allocated for the
+    objects, but the current values are not copied into the
+    vector). Note that there is <em>no assumption</em> that a vector
+    created by ShapeCopy is initialized to zeros.
 
     \return Pointer to newly created vector or NULL if clone is not supported. 
   */
-  virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
+  virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+  clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
 
   /*! 
    * \brief Create a MultiVector with \c numVecs+1 columns out of an array of 
@@ -252,15 +256,15 @@ public:
 
   //@}
 
-  //@{ \name Dot products.
+  //@{ \name Inner product.
 
-  //! Dot product with \c y.
+  //! Inner product with \c y.
   /*! 
-    Here x represents this vector, and we compute its dot product with y as follows:
+    Here x represents this vector, and we compute its inner product with y as follows:
     \f[ \langle x,y \rangle = \sum_{i=1}^n x_i y_i \f] 
     \return \f$\langle x,y \rangle\f$
    */
-  virtual double dot(const NOX::Abstract::Vector& y) const = 0;
+  virtual double innerProduct(const NOX::Abstract::Vector& y) const = 0;
   
   //@}
 
@@ -272,8 +276,8 @@ public:
    */
   virtual int length() const = 0;
 
-  //! Print the vector.  This is meant for debugging purposes only and does not need to be defined.
-  virtual void print() const;
+  //! Print the vector.  To be used for debugging only.  
+  virtual void print(std::ostream& stream) const;
 
 }; // class Vector
 } // namespace Abstract

@@ -318,7 +318,7 @@ LOCA::Continuation::NaturalGroup::computeGradient()
   }
   gradientVec.getXVec() = grpPtr->getGradient();
   gradientVec.getParam() = 
-    derivResidualParamPtr->dot(fVec.getXVec())  + fVec.getParam();
+    derivResidualParamPtr->innerProduct(fVec.getXVec())  + fVec.getParam();
 
   isValidGradient = true;
 
@@ -463,7 +463,7 @@ LOCA::Continuation::NaturalGroup::applyJacobianTranspose(
 						 callingFunction);
 
   // compute df/dp^T x
-  result_param = derivResidualParamPtr->dot(input_x) + input_param;
+  result_param = derivResidualParamPtr->innerProduct(input_x) + input_param;
 
   return finalStatus;
 }

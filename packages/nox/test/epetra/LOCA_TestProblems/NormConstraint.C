@@ -126,7 +126,7 @@ NormConstraint::setParams(
 NOX::Abstract::Group::ReturnType
 NormConstraint::computeConstraints()
 {
-  constraints(0,0) = 0.5 * n * (*x)[0].dot((*x)[0]) - p.getValue("Constraint Param");
+  constraints(0,0) = 0.5 * n * (*x)[0].innerProduct((*x)[0]) - p.getValue("Constraint Param");
 
   isValidConstraints = true;
 

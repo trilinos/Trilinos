@@ -113,10 +113,11 @@ int main(int argc, char *argv[])
   FiniteElementProblem Problem(NumGlobalElements, Comm);
 
   // Get the vector from the Problem
-  Epetra_Vector& soln = Problem.getSolution();
+  Teuchos::RefCountPtr<Epetra_Vector> soln = Problem.getSolution();
+  NOX::Epetra::Vector noxSoln(soln, NOX::Epetra::Vector::CreateView);
 
   // Initialize Solution
-  soln.PutScalar(1.0);
+  soln->PutScalar(1.0);
   
   // Begin Nonlinear Solver ************************************
 
@@ -167,24 +168,26 @@ int main(int argc, char *argv[])
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
   // NLS_PetraGroupInterface
-  Problem_Interface interface(Problem);
+  Teuchos::RefCountPtr<Problem_Interface> interface = 
+    Teuchos::rcp(new Problem_Interface(Problem));
 
   // Create the Epetra_RowMatrix using Finite Difference with Coloring
 #ifndef HAVE_NOX_EPETRAEXT
   bool verbose = false;
-  Epetra_MapColoring* colorMap = Epetra_Transform::
-        CrsGraph_MapColoring( verbose )( Problem.getGraph());
+  Teuchos::RefCountPtr<Epetra_MapColoring> colorMap = Teuchos::rcp(Epetra_Transform::CrsGraph_MapColoring( verbose )( *(Problem.getGraph())));
   Epetra_Transform::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
-  vector<Epetra_IntVector>* columns = 
-                                     colorMapIndex(Problem.getGraph());
+  Teuchos::RefCountPtr< vector<Epetra_IntVector> > columns = 
+    Teuchos::rcp(colorMapIndex(*(Problem.getGraph())));
 #else
   bool verbose = false;
   EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
     EpetraExt::CrsGraph_MapColoring::GREEDY;
   EpetraExt::CrsGraph_MapColoring tmpMapColoring( algType, verbose );
-  Epetra_MapColoring* colorMap = &tmpMapColoring(Problem.getGraph());
+  Teuchos::RefCountPtr<Epetra_MapColoring> colorMap = 
+    Teuchos::rcp(&tmpMapColoring(*(Problem.getGraph())));
   EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
-  vector<Epetra_IntVector>* columns = &colorMapIndex(Problem.getGraph());
+  Teuchos::RefCountPtr< vector<Epetra_IntVector> > columns = 
+    Teuchos::rcp(&colorMapIndex(*(Problem.getGraph())));
 #endif
 
   // Use this constructor to create the graph numerically as a means of timing
@@ -194,26 +197,24 @@ int main(int argc, char *argv[])
   // Or use this as the standard way of using finite differencing with coloring
   // where the application is responsible for creating the matrix graph 
   // beforehand, ie as is done in Problem.
-  NOX::Epetra::Interface::Required& iReq = interface;
-  NOX::Epetra::FiniteDifferenceColoring A(iReq, soln, Problem.getGraph(),
-					  *colorMap, *columns);
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifferenceColoring> A = 
+    Teuchos::rcp(new NOX::Epetra::FiniteDifferenceColoring(printParams,
+							   iReq, noxSoln, 
+							   Problem.getGraph(),
+							   colorMap, 
+							   columns));
 
   // Create the linear system
-  NOX::Epetra::Interface::Jacobian& iJac = interface;
-  NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
-					  iReq, iJac, A, soln);
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+						      iReq, iJac, A, noxSoln));
 
   // Create the Group
-  NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
   Teuchos::RefCountPtr<NOX::Epetra::Group> grp =
-    Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, initialGuess, 
+    Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, noxSoln, 
 					linSys)); 
-
-  // Use an Epetra Scaling object if desired
-  Epetra_Vector scaleVec(soln);
-  NOX::Epetra::Scaling scaling;
-  scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
-  //grp.setLinearSolveScaling(scaling);
 
   // ATOL vector if using NOX::StatusTest::WRMS
   NOX::Epetra::Vector weights(soln);
@@ -269,11 +270,11 @@ int main(int argc, char *argv[])
   // Print solution
   char file_name[25];
   FILE *ifp;
-  int NumMyElements = soln.Map().NumMyElements();
+  int NumMyElements = soln->Map().NumMyElements();
   (void) sprintf(file_name, "output.%d",MyPID);
   ifp = fopen(file_name, "w");
   for (i=0; i<NumMyElements; i++)
-    fprintf(ifp, "%d  %E\n", soln.Map().MinMyGID()+i, finalSolution[i]);
+    fprintf(ifp, "%d  %E\n", soln->Map().MinMyGID()+i, finalSolution[i]);
   fclose(ifp);
 
 #ifdef HAVE_MPI

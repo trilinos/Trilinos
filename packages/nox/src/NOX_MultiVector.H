@@ -34,6 +34,7 @@
 #define NOX_MULTIVECTOR_H
 
 #include "NOX_Abstract_MultiVector.H" // base class
+#include "Teuchos_RefCountPtr.hpp"
 
 namespace NOX {
 
@@ -180,25 +181,25 @@ namespace NOX {
      * \return Pointer to newly created vector or NULL if clone is not 
      * supported. 
      */
-    virtual NOX::Abstract::MultiVector* 
+    virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
     clone(NOX::CopyType type = NOX::DeepCopy) const;
 
     //! Creates a new multi-vector with \c numvecs columns
-    virtual NOX::Abstract::MultiVector* 
+    virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
     clone(int numvecs) const;
 
     /*! 
      * \brief Creates a new multi-vector with \c index.size() columns whose 
      * columns are copies of the columns of \c *this given by \c index.
      */
-    virtual NOX::Abstract::MultiVector* 
+    virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
     subCopy(const vector<int>& index) const;
 
     /*! 
      * \brief Creates a new multi-vector with \c index.size() columns that 
      * shares the columns of \c *this given by \c index.
      */
-    virtual NOX::Abstract::MultiVector* 
+    virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
     subView(const vector<int>& index) const;
 
     //@}
@@ -232,15 +233,12 @@ namespace NOX {
     virtual int numVectors() const;
 
     //! Print the vector.  This is meant for debugging purposes only 
-    virtual void print() const;
+    virtual void print(std::ostream& stream) const;
 
   protected:
     
     //! Stores pointers to NOX::Abstract::Vector's
-    vector<NOX::Abstract::Vector*> vecs;
-
-    //! Stores flags indicating whether we own each vector
-    vector<int> ownsVecs;
+    vector< Teuchos::RefCountPtr<NOX::Abstract::Vector> > vecs;
 
     //! Create %MultiVector holding \c numvecs vectors
     MultiVector(int numvecs);

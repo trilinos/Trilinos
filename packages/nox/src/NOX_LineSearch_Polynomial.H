@@ -38,12 +38,13 @@
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member
 #include "NOX_LineSearch_Utils_Counters.H"  // class data member
 #include "NOX_LineSearch_Utils_Slope.H"     // class data member
+#include "Teuchos_RefCountPtr.hpp"          // class data member
 
+// Forward Declarations
 namespace NOX {
-namespace Parameter {
-class UserNorm;
-class MeritFunction;
-}
+  namespace MeritFunction {
+    class Generic;
+  }
 }
 
 namespace NOX {
@@ -313,13 +314,15 @@ class Polynomial : public Generic {
 public:
 
   //! Constructor
-  Polynomial(const NOX::Utils& u, NOX::Parameter::List& params);
-
+  Polynomial(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	     NOX::Parameter::List& params);
+  
   //! Destructor
   ~Polynomial();
   
   // derived
-  bool reset(NOX::Parameter::List& params);
+  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	     NOX::Parameter::List& params);
 
   // derived
   bool compute(NOX::Abstract::Group& newgrp, double& step, 
@@ -430,20 +433,6 @@ protected:
 		 double step) const;
 
 
-  //! Computes the value of the merit function
-  /*!
-    If a "User Defined Merit Function" parameter is specified, then
-    the NOX::Parameter::MeritFunction::computeF function on the
-    user-supplied merit function is used.
-
-    Otherwise, we compute and return
-
-    \f[
-    \frac{1}{2} \| F(x) \|^2
-    \f]
-   */
-  double computePhi(const NOX::Abstract::Group& grp);
-
   //! Compute the value used to determine sufficient decrease
   /*!
     If the "Sufficient Decrease Condition" is set to "Ared/Pred", then
@@ -458,25 +447,6 @@ protected:
     \param phi - Should be equal to computePhi(grp).
   */
   double computeValue(const NOX::Abstract::Group& grp, double phi);
-
-
-  //! Compute \f$ \phi'(0) \f$
-  /*!
-
-    If a "User Defined Merit Function" is provided, then we use
-    NOX::Parameter::MeritFunction::computeSlope to compute this value.
-
-    Otherwise, we are using the standard merit function, so we want to
-    compute
-    \f[
-    d^T (J(x_{\rm old})^T F(x_{\rm old}))
-    \f]
-    To do this, we use NOX::LineSearch::Utils::Slope.
-
-    \param grp Should correspond to s.getPreviousSolutionGroup() from compute().
-   */
-  double computeSlope(const NOX::Abstract::Vector& dir, 
-		      const NOX::Abstract::Group& grp);
 
   //! Used to print opening remarks for each call to compute().
   void printOpeningRemarks() const;
@@ -572,11 +542,12 @@ protected:
     "Use Counters" parameter.*/
   bool useCounter;
 
+  //! Global data pointer.  Keep this so the parameter list remains valid.
+  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+
   //! Pointer to the input parameter list. 
   /*! We need this to later create an "Output" sublist to store output
       parameters from #counterUtil. 
-
-      This should not be deleted in the destructor 
   */
   NOX::Parameter::List* paramsPtr;
 
@@ -589,13 +560,8 @@ protected:
   //! Common slope calculations for line searches.
   NOX::LineSearch::Utils::Slope slopeUtil;
 
-  //! Pointer to a user supplied norm.
-  /*! This should not be deleted in the destructor */
-  NOX::Parameter::UserNorm* userNormPtr;
-
   //! Pointer to a user supplied merit function.
-  /*! This should not be deleted in the destructor */
-  NOX::Parameter::MeritFunction* meritFuncPtr;
+  Teuchos::RefCountPtr<NOX::MeritFunction::Generic> meritFuncPtr;
 
 };
 } // namespace LineSearch

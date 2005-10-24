@@ -35,6 +35,7 @@
 
 #include "NOX_Abstract_Group.H"         // base class and data member
 #include "NOX_Utils.H"
+#include "Teuchos_RefCountPtr.hpp"
 
 namespace NOX { 
 
@@ -58,7 +59,8 @@ namespace NOX {
       public:
 
       //! Constructor
-      Group(NOX::Abstract::Group& g, NOX::Parameter::List& printParams);
+      Group(const Teuchos::RefCountPtr<NOX::Abstract::Group>& g, 
+	    NOX::Parameter::List& printParams);
 
       //! Copy constructor.
       Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
@@ -79,7 +81,7 @@ namespace NOX {
       operator=(const NOX::Abstract::Group& source);
      
       //! Cloning function
-      virtual NOX::Abstract::Group* 
+      virtual Teuchos::RefCountPtr<NOX::Abstract::Group> 
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Set the solution vector, x, to y.
@@ -192,13 +194,10 @@ namespace NOX {
     protected:
 
       //! Stores the underlying group
-      NOX::Abstract::Group* grpPtr;  
-
-      //! Flag indicating whether we own the underlying group
-      bool ownsGroup;
+      Teuchos::RefCountPtr<NOX::Abstract::Group> grpPtr;  
 
       //! Vector to store the Newton vector
-      NOX::Abstract::Vector *newtonVecPtr;
+      Teuchos::RefCountPtr<NOX::Abstract::Vector> newtonVecPtr;
 
       //! Flag indicating whether Newton vector is valid
       bool isValidNewton;

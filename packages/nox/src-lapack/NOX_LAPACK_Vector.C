@@ -191,9 +191,12 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::scale(const NOX::LAPACK::Vector& a)
   return *this;
 }
 
-NOX::Abstract::Vector* NOX::LAPACK::Vector::clone(CopyType type) const
+Teuchos::RefCountPtr<NOX::Abstract::Vector> NOX::LAPACK::Vector::
+clone(CopyType type) const
 {
-  return new NOX::LAPACK::Vector(*this, type);
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmp;
+  tmp = Teuchos::rcp(new NOX::LAPACK::Vector(*this, type));
+  return tmp;
 }
 
 double NOX::LAPACK::Vector::norm(NOX::Abstract::Vector::NormType type) const
@@ -246,15 +249,16 @@ double NOX::LAPACK::Vector::norm(const NOX::LAPACK::Vector& weights) const
   return value;
 }
 
-double NOX::LAPACK::Vector::dot(const NOX::Abstract::Vector& y) const
+double NOX::LAPACK::Vector::innerProduct(const NOX::Abstract::Vector& y) const
 {
-  return dot(dynamic_cast<const NOX::LAPACK::Vector&>(y));
+  return innerProduct(dynamic_cast<const NOX::LAPACK::Vector&>(y));
 }
 
-double NOX::LAPACK::Vector::dot(const NOX::LAPACK::Vector& y) const
+double NOX::LAPACK::Vector::innerProduct(const NOX::LAPACK::Vector& y) const
 {
   if (y.length() != n) {
-    cerr << "NOX::LAPACK::Vector::dot - size mismatch for y vector" << endl;
+    cerr << "NOX::LAPACK::Vector::innerProduct - size mismatch for y vector" 
+	 << endl;
     throw "NOX::LAPACK Error";
   }
 
@@ -300,8 +304,8 @@ ostream& operator<<(ostream& stream, const NOX::LAPACK::Vector& v)
   return v.leftshift(stream);
 }
 
-void NOX::LAPACK::Vector::print() const
+void NOX::LAPACK::Vector::print(std::ostream& stream) const
 {
-  cout << *this << endl;
+  stream << *this << endl;
 }
 

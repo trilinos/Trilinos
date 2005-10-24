@@ -1,8 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
-
 //@HEADER
 // ************************************************************************
 // 
@@ -40,21 +38,18 @@
 #include "NOX_Solver_Generic.H"
 #include "NOX_Solver_LineSearchBased.H"
 #include "NOX_Utils.H"
+#include "NOX_GlobalData.H"
 #include "NOX_Parameter_List.H"
-#include "NOX_Parameter_UserNorm.H"
 
 // **************************************************************************
 // *** Constructor
 // **************************************************************************
 NOX::Direction::Utils::InexactNewton::
-InexactNewton(const NOX::Utils& u, NOX::Parameter::List& directionSublist) :
-  printing(0),
-  paramsPtr(0),
-  predRhs(0),
-  stepDir(0),
-  userNorm(0)
+InexactNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+	      NOX::Parameter::List& directionSublist) :
+  paramsPtr(0)
 {
-  reset(u, directionSublist);
+  reset(gd, directionSublist);
 }
 
 // **************************************************************************
@@ -62,17 +57,17 @@ InexactNewton(const NOX::Utils& u, NOX::Parameter::List& directionSublist) :
 // **************************************************************************
 NOX::Direction::Utils::InexactNewton::~InexactNewton()
 {
-  delete predRhs;
-  delete stepDir;
 }
 
 // **************************************************************************
 // *** reset
 // **************************************************************************
 bool NOX::Direction::Utils::InexactNewton::
-reset(const NOX::Utils& u, NOX::Parameter::List& directionSublist)
+reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+      NOX::Parameter::List& directionSublist)
 {
-  printing = &u;
+  globalDataPtr = gd;
+  printing = gd->getUtils();
   paramsPtr = &directionSublist;
 
   directionMethod = paramsPtr->getParameter("Method", "Newton");
@@ -106,25 +101,6 @@ reset(const NOX::Utils& u, NOX::Parameter::List& directionSublist)
     gamma = p.getParameter("Forcing Term Gamma", 0.9);
     eta_k = eta_min;
     
-    userNorm = 0;
-    if (p.isParameter("Forcing Term User Defined Norm")) {
-
-      NOX::Parameter::Arbitrary& arbitrary = 
-	const_cast<NOX::Parameter::Arbitrary&>
-	(p.getArbitraryParameter("Forcing Term User Defined Norm"));
-
-      userNorm = dynamic_cast<NOX::Parameter::UserNorm*>(&arbitrary);
-
-      if (userNorm == 0) {
-	if (printing->isPrintType(NOX::Utils::Warning)) {
-	  printing->out() << "WARNING: NOX::InexactNewtonUtils::resetForcingTerm() - "
-	       << "\"Forcing Term User Defined Norm\" is not of type "
-	       << "NOX::Parameter::UserNorm!\n" 
-	       << "Defaulting to L-2 Norms!" << endl; 
-	}
-      }
-
-    }
   }
 
   return true;
@@ -197,10 +173,10 @@ computeForcingTerm(const NOX::Abstract::Group& soln,
       // oldsoln.getNormLastLinearSolveResidual(normpredf);
       
       // Create a new vector to be the predicted RHS
-      if (predRhs == 0) {
+      if (Teuchos::is_null(predRhs)) {
 	predRhs = oldsoln.getF().clone(ShapeCopy);
       }
-      if (stepDir == 0) {
+      if (Teuchos::is_null(stepDir)) {
 	stepDir = oldsoln.getF().clone(ShapeCopy);
       }
       
@@ -221,28 +197,14 @@ computeForcingTerm(const NOX::Abstract::Group& soln,
       predRhs->update(1.0, oldsoln.getF(), 1.0);
       
       // Compute the norms
-      double normpredf = 0.0;
-      double normf = 0.0;
-      double normoldf = 0.0;
+      double normpredf = predRhs->norm();
+      double normf = soln.getNormF();
+      double normoldf = oldsoln.getNormF();
 
-      if (userNorm != 0) {
-	if (printing->isPrintType(NOX::Utils::Details)) {
-	  printing->out() << indent << "Forcing Term Norm: " << userNorm->getType()
-	       << endl;
-	}
-	normpredf = userNorm->norm(*predRhs);
-	normf = userNorm->norm(soln.getF());
-	normoldf = userNorm->norm(oldsoln.getF());
+      if (printing->isPrintType(NOX::Utils::Details)) {
+	printing->out() << indent << "Forcing Term Norm: Using L-2 Norm."
+			<< endl;
       }
-      else {
-	if (printing->isPrintType(NOX::Utils::Details)) {
-	  printing->out() << indent << "Forcing Term Norm: Using L-2 Norm."
-	       << endl;
-	}
-	normpredf = predRhs->norm();
-	normf = soln.getNormF();
-	normoldf = oldsoln.getNormF();
-      }      
 
       // Compute forcing term
       eta_k = fabs(normf - normpredf) / normoldf;
@@ -276,25 +238,13 @@ computeForcingTerm(const NOX::Abstract::Group& soln,
     }
     else {
 
-      double normf = 0.0;
-      double normoldf = 0.0;
+      double normf = soln.getNormF();
+      double normoldf = oldsoln.getNormF();
       
-      if (userNorm != 0) {
-	if (printing->isPrintType(NOX::Utils::Details)) {
-	  printing->out() << indent << "Forcing Term Norm: " << userNorm->getType()
-	       << endl;
-	}
-	normf = userNorm->norm(soln.getF());
-	normoldf = userNorm->norm(oldsoln.getF());
+      if (printing->isPrintType(NOX::Utils::Details)) {
+	printing->out() << indent << "Forcing Term Norm: Using L-2 Norm."
+			<< endl;
       }
-      else {
-	if (printing->isPrintType(NOX::Utils::Details)) {
-	  printing->out() << indent << "Forcing Term Norm: Using L-2 Norm."
-	       << endl;
-	}
-	normf = soln.getNormF();
-	normoldf = oldsoln.getNormF();
-      }  
 
       const double residual_ratio = normf / normoldf;
       
@@ -302,9 +252,12 @@ computeForcingTerm(const NOX::Abstract::Group& soln,
       
       // Some output
       if (printing->isPrintType(NOX::Utils::Details)) {
-	printing->out() << indent << "Residual Norm k-1 =             " << normoldf << "\n";
-	printing->out() << indent << "Residual Norm k =               " << normf << "\n";
-	printing->out() << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
+	printing->out() << indent << "Residual Norm k-1 =             " 
+			<< normoldf << "\n";
+	printing->out() << indent << "Residual Norm k =               " 
+			<< normf << "\n";
+	printing->out() << indent << "Calculated eta_k (pre-bounds) = " 
+			<< eta_k << endl;
       }
       
       // Impose safeguard and constraints ... 
@@ -343,5 +296,3 @@ throwError(const string& functionName, const string& errorMsg)
 // **************************************************************************
 // **************************************************************************
 // **************************************************************************
-
-#endif

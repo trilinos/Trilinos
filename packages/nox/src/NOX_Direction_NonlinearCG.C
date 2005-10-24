@@ -30,8 +30,6 @@
 // ************************************************************************
 //@HEADER
 
-#ifdef WITH_PRERELEASE
-
 #include "NOX_Direction_NonlinearCG.H"	// class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
@@ -39,25 +37,25 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
+#include "NOX_GlobalData.H"
 
 using namespace NOX;
 using namespace NOX::Direction;
 
-NonlinearCG::NonlinearCG(const NOX::Utils& u, Parameter::List& params) :
-  utils(u),
-  oldSolnPtr(0),			// pointer to old Soln Grp
-  tmpVecPtr(0),				// reference to xgrp
-  oldDirPtr(0),				// reference to xgrp
-  oldDescentDirPtr(0),			// reference to xgrp
-  diffVecPtr(0),			// reference to xgrp
+NonlinearCG::NonlinearCG(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+			 Parameter::List& params) :
   paramsPtr(0)
 {
-  reset(params);
+  reset(gd, params);
 }
 
 
-bool NonlinearCG::reset(Parameter::List& params) 
+bool NonlinearCG::
+reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+      Parameter::List& params) 
 {
+  globalDataPtr = gd;
+  utils = gd->getUtils();
   paramsPtr = &params;
   NOX::Parameter::List& nlcgParams = paramsPtr->sublist("Nonlinear CG");
   restartFrequency = nlcgParams.getParameter("Restart Frequency", 10);
@@ -68,10 +66,7 @@ bool NonlinearCG::reset(Parameter::List& params)
 
 NonlinearCG::~NonlinearCG() 
 {
-  delete tmpVecPtr; tmpVecPtr = 0;
-  delete diffVecPtr; diffVecPtr = 0;
-  delete oldDescentDirPtr; oldDescentDirPtr = 0;
-  delete oldDirPtr; oldDirPtr = 0;
+
 }
 
 
@@ -81,14 +76,14 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
   Abstract::Group::ReturnType ok;
 
   // Initialize vector memory if haven't already
-  if(oldDirPtr==0)
+  if(Teuchos::is_null(oldDirPtr))
     oldDirPtr = soln.getX().clone(NOX::ShapeCopy);
-  if(oldDescentDirPtr==0)
+  if(Teuchos::is_null(oldDescentDirPtr))
     oldDescentDirPtr = soln.getX().clone(NOX::ShapeCopy);
   // These are conditionally created
-  if(diffVecPtr==0 && usePRbeta)
+  if(Teuchos::is_null(diffVecPtr) && usePRbeta)
     diffVecPtr = soln.getX().clone(NOX::ShapeCopy);
-  if(tmpVecPtr==0 && doPrecondition)
+  if(Teuchos::is_null(tmpVecPtr) && doPrecondition)
     tmpVecPtr = soln.getX().clone(NOX::ShapeCopy);
 
   // Create references to vectors for convenience
@@ -108,8 +103,8 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
   ok = soln.computeF();
   if (ok != Abstract::Group::Ok) {
-    if (utils.isPrintType(Utils::Warning))
-      utils.out() << "NOX::Direction::NonlinearCG::compute - Unable to compute F." 
+    if (utils->isPrintType(Utils::Warning))
+      utils->out() << "NOX::Direction::NonlinearCG::compute - Unable to compute F." 
            << endl;
     return false;
   }
@@ -118,16 +113,16 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
     if(!soln.isJacobian())
       ok = soln.computeJacobian();
       if (ok != Abstract::Group::Ok) {
-        if (utils.isPrintType(Utils::Warning))
-          utils.out() << "NOX::Direction::NonlinearCG::compute - "
+        if (utils->isPrintType(Utils::Warning))
+          utils->out() << "NOX::Direction::NonlinearCG::compute - "
                << "Unable to compute Jacobian." << endl;
         return false;
       }
     tmpVec = dir;
     ok = soln.applyRightPreconditioning(false, paramsPtr->sublist("Nonlinear CG").sublist("Linear Solver"), tmpVec, dir);
     if (ok != Abstract::Group::Ok) {
-      if (utils.isPrintType(Utils::Warning))
-        utils.out() << "NOX::Direction::NonlinearCG::compute - "
+      if (utils->isPrintType(Utils::Warning))
+        utils->out() << "NOX::Direction::NonlinearCG::compute - "
              << "Unable to apply Right Preconditioner." << endl;
       return false;
     }
@@ -151,14 +146,14 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
       diffVec = dir;
       diffVec.update(-1.0, oldDescentDir, 1.0); 
 
-      double denominator = oldDescentDir.dot(oldSoln.getF());
+      double denominator = oldDescentDir.innerProduct(oldSoln.getF());
 
-      beta = diffVec.dot(soln.getF()) / denominator;
+      beta = diffVec.innerProduct(soln.getF()) / denominator;
 
     // Constrain beta >= 0
       if(beta < 0.0) {
-        if (utils.isPrintType(Utils::OuterIteration))
-          utils.out() << "BETA < 0, (" << beta << ") --> Resetting to zero" << endl;
+        if (utils->isPrintType(Utils::OuterIteration))
+          utils->out() << "BETA < 0, (" << beta << ") --> Resetting to zero" << endl;
         beta = 0.0;
       }
     } 
@@ -166,9 +161,9 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
     {
 //                     Fletcher-Reeves beta
 
-      double denominator = oldDescentDir.dot(oldSoln.getF());
+      double denominator = oldDescentDir.innerProduct(oldSoln.getF());
 
-      beta = dir.dot(soln.getF()) / denominator;
+      beta = dir.innerProduct(soln.getF()) / denominator;
 
     } // End of orthogonalization
 
@@ -177,8 +172,8 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
     if( (niter % restartFrequency)==0)
     {
-       if (utils.isPrintType(Utils::OuterIteration))
-         utils.out() << "Resetting beta --> 0" << endl;
+       if (utils->isPrintType(Utils::OuterIteration))
+         utils->out() << "Resetting beta --> 0" << endl;
 
        beta = 0 ;  // Restart with Steepest Descent direction
     }
@@ -199,5 +194,3 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 {
   return NOX::Direction::Generic::compute( dir, soln, solver );
 }
-
-#endif

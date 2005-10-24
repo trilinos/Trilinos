@@ -493,7 +493,7 @@ LOCA::Bifurcation::TPBord::NicDayModifiedBorderingGroup::deflatedJacobianInverse
 
   // Compute deflatedInput = input - (u^T*input)*u
   NOX::Abstract::Vector *deflatedInput = input.clone(NOX::DeepCopy);
-  r = u.dot(input);
+  r = u.innerProduct(input);
   deflatedInput->update(-r, u, 1.0);
 
   // Solve J*result = deflatedInput

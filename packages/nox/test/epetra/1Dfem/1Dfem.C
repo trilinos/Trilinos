@@ -108,14 +108,18 @@ int main(int argc, char *argv[])
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
-  Interface interface(NumGlobalElements, Comm);
+  Teuchos::RefCountPtr<Interface> interface = 
+    Teuchos::rcp(new Interface(NumGlobalElements, Comm));
 
   // Get the vector from the Problem
-  Epetra_Vector& soln = interface.getSolution();
+  Teuchos::RefCountPtr<Epetra_Vector> soln = interface->getSolution();
+  Teuchos::RefCountPtr<NOX::Epetra::Vector> noxSoln = 
+    Teuchos::rcp(new NOX::Epetra::Vector(soln, 
+					 NOX::Epetra::Vector::CreateView));
 
   // Set the PDE factor (for nonlinear forcing term).  This could be specified
   // via user input.
-  interface.setPDEfactor(1000.0);
+  interface->setPDEfactor(1000.0);
 
   // Begin Nonlinear Solver ************************************
 
@@ -148,11 +152,6 @@ int main(int argc, char *argv[])
     printParams.setParameter("Output Information", NOX::Utils::Error +
 			     NOX::Utils::TestDetails);
 
-  // Uncomment the following to redirect output to a file
-  //Teuchos::RefCountPtr<std::ostream> out = 
-  //  Teuchos::rcp(new ofstream("roger.txt"));
-  //printParams.setParameter<std::ostream>("Output Stream", out);
-
   // Create a print class for controlling output below
   NOX::Utils printing(printParams);
 
@@ -170,74 +169,12 @@ int main(int argc, char *argv[])
   NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
   lsParams.setParameter("Aztec Solver", "GMRES");  
   lsParams.setParameter("Max Iterations", 800);  
-  lsParams.setParameter("Tolerance", 1e-4);  
-  //lsParams.setParameter("Max Age Of Prec", 3);
+  lsParams.setParameter("Tolerance", 1e-4);
 
   // Various Preconditioner options
-  //lsParams.setParameter("Preconditioner", "None");
   //lsParams.setParameter("Preconditioner", "AztecOO");
   lsParams.setParameter("Preconditioner", "Ifpack");
   lsParams.setParameter("Max Age Of Prec", 5);
-
-  // New Ifpack interface
-  //lsParams.setParameter("Preconditioner", "New Ifpack");
-  Teuchos::ParameterList IfpackList;
-
-
-#ifdef HAVE_NOX_ML_EPETRA
-  // Comment out the previous Preconditioner spec and uncomment this line
-  // to turn on ML 
-  //lsParams.setParameter("Preconditioner", "ML");
-  // create a parameter list for ML options
-  Teuchos::ParameterList MLList;
-#endif
-
-  //lsParams.setParameter("Jacobian Operator", "Finite Difference");
-  //lsParams.setParameter("Jacobian Operator", "Matrix-Free");
-  //lsParams.setParameter("Preconditioner Operator", "Finite Difference");
-
-  // Set specific Preconditioning Package options if valid
-  if( lsParams.getParameter("Preconditioner", "None") == "New Ifpack" ) {
-    lsParams.setParameter("Ifpack Preconditioner", "ILU");
-    // Can fill Ifpack options into IfpackList here
-
-    lsParams.setParameter("Ifpack Teuchos Parameter List", &IfpackList);
-  }
-
-#ifdef HAVE_NOX_ML_EPETRA
-  if( lsParams.getParameter("Preconditioner", "None") == "ML" ) {
-    // This Teuchos parameter list is needed for ML
-  
-    // These specifications come straight from the example in 
-    // Trilinos/packages/ml/example/ml_example_epetra_preconditioner.cpp
-  
-    // set defaults for classic smoothed aggregation
-    ML_Epetra::SetDefaults("SA",MLList);
-    // maximum number of levels
-    MLList.set("max levels",5);
-    MLList.set("increasing or decreasing","decreasing");
-    // use Uncoupled scheme to create the aggregate,
-    // from level 3 use the better but more expensive MIS
-    MLList.set("aggregation: type", "Uncoupled");
-    MLList.set("aggregation: type (level 3)", "MIS");
-    // smoother is Gauss-Seidel. Example file
-    // ml_example_epetra_preconditioner_2level.cpp shows how to use
-    // AZTEC's preconditioners as smoothers
-    MLList.set("smoother: type","Gauss-Seidel");
-    // use both pre and post smoothing
-    MLList.set("smoother: pre or post", "both");
-    // solve with serial direct solver KLU
-    MLList.set("coarse: type","Jacobi");
-  
-    lsParams.setParameter("ML Teuchos Parameter List", &MLList);
-  }
-#endif
-
-  // Use an Epetra Scaling object if desired
-  Epetra_Vector scaleVec(soln);
-  NOX::Epetra::Scaling scaling;
-  scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
-  //grp.setLinearSolveScaling(scaling);
 
   // Add a user defined pre/post operator object
   Teuchos::RefCountPtr<UserPrePostOperator> ppo =
@@ -251,53 +188,39 @@ int main(int argc, char *argv[])
 
   // Create all possible Epetra_Operators.
   // 1. User supplied (Epetra_RowMatrix)
-  //Epetra_RowMatrix& Analytic = interface.getJacobian();
+  Teuchos::RefCountPtr<Epetra_RowMatrix> Analytic = interface->getJacobian();
   // 2. Matrix-Free (Epetra_Operator)
-  NOX::Epetra::MatrixFree MF(printing, interface, soln);
+  Teuchos::RefCountPtr<NOX::Epetra::MatrixFree> MF = 
+    Teuchos::rcp(new NOX::Epetra::MatrixFree(printParams, interface, 
+					     *noxSoln));
   // 3. Finite Difference (Epetra_RowMatrix)
-  NOX::Epetra::FiniteDifference FD(interface, soln);
+  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifference> FD = 
+    Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, interface, 
+						   *soln));
 
-  // Four constructors to create the Linear System
-  NOX::Epetra::Interface::Required& iReq = interface;
-
-  // **** Ctor #1 - No Jac and No Prec
-  //NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams, 
-  //				      iReq, soln);
-
-  // **** Ctor #2 - Jac but no Prec
-  //NOX::Epetra::Interface::Jacobian& iJac = FD;
-  //NOX::Epetra::Interface::Jacobian& iJac = interface;
-  //NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
-  //				     iReq, iJac, FD, soln);
-
-  // **** Ctor #3 - Prec but no Jac
-  //NOX::Epetra::Interface::Preconditioner& iPrec = FD;
-  //NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
-  //				      iReq, iPrec, FD, soln);
-
-  // **** Ctor #4 - Prec and Jac
-  NOX::Epetra::Interface::Jacobian& iJac = MF;
-  NOX::Epetra::Interface::Preconditioner& iPrec = FD;
-  NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
-					     iJac, MF, iPrec, FD, soln);
-					     //&scaling);
-
+  // Create the linear system
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = MF;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> iPrec = FD;
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+						      //interface, 
+						      iJac, MF, 
+						      iPrec, FD, 
+						      *soln));
+  
   // Create the Group
-  NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
+  NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
   Teuchos::RefCountPtr<NOX::Epetra::Group> grpPtr = 
     Teuchos::rcp(new NOX::Epetra::Group(printParams, 
 					iReq, 
 					initialGuess, 
 					linSys));  
-  NOX::Epetra::Group& grp = *(grpPtr.get());
+  NOX::Epetra::Group& grp = *grpPtr;
 
   // uncomment the following for loca supergroups
-  MF.setGroupForComputeF(grp);
-  FD.setGroupForComputeF(grp);
-
-  // Test group accessor
-  //const NOX::Epetra::LinearSystem& lins = grp.getLinearSystem();
-  //lins.createPreconditioner(soln, lsParams, false);
+  //MF->setGroupForComputeF(*grpPtr);
+  //FD->setGroupForComputeF(*grpPtr);
 
   // Create the convergence tests
   Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
@@ -328,13 +251,14 @@ int main(int argc, char *argv[])
   NOX::Solver::Manager solver(grpPtr, combo, nlParamsPtr);
   NOX::StatusTest::StatusType solvStatus = solver.solve();
 
-  //
-  // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
-  const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
-  //
-
   // End Nonlinear Solver **************************************
+
+  // Get the Epetra_Vector with the final solution from the solver
+  const NOX::Epetra::Group& finalGroup = 
+    dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+  const Epetra_Vector& finalSolution = 
+    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).
+    getEpetraVector();
 
   // Output the parameter list
   if (verbose) {
@@ -346,17 +270,15 @@ int main(int argc, char *argv[])
     }
   }
 
-  //
   // Print solution
   char file_name[25];
   FILE *ifp;
-  int NumMyElements = soln.Map().NumMyElements();
+  int NumMyElements = soln->Map().NumMyElements();
   (void) sprintf(file_name, "output.%d",MyPID);
   ifp = fopen(file_name, "w");
   for (int i=0; i<NumMyElements; i++)
-    fprintf(ifp, "%d  %E\n", soln.Map().MinMyGID()+i, finalSolution[i]);
+    fprintf(ifp, "%d  %E\n", soln->Map().MinMyGID()+i, finalSolution[i]);
   fclose(ifp);
-  //
 
 
   // Tests

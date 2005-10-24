@@ -61,12 +61,15 @@ bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator&
 
   fdcJac->computeJacobian(x);
 
+  return true;
 }
 
 bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M, NOX::Parameter::List* precParams)
 {
   cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jaciban only for this test problem!" << endl;
   throw 1;
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 

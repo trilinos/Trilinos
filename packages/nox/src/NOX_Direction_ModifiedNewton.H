@@ -37,11 +37,16 @@
 
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Parameter_List.H"	   // class data element 
+#include "Teuchos_RefCountPtr.hpp"
 
+// Forward Declarations
+namespace NOX {
+  class Utils;  
+  class GlobalData;
+}
+                   
 
 namespace NOX {
-  class Utils;                     // Forward declaration
-
 namespace Direction {
 
 //! %Modified Newton direction computation
@@ -73,13 +78,15 @@ class ModifiedNewton : public Generic {
 public:
 
   //! Constructor
-  ModifiedNewton(const NOX::Utils& u, NOX::Parameter::List& params);
+  ModifiedNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+		 NOX::Parameter::List& params);
 
   //! Destructor
   virtual ~ModifiedNewton();
 
   // derived
-  virtual bool reset(NOX::Parameter::List& params);
+  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+		     NOX::Parameter::List& params);
 
   // derived
   virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
@@ -111,8 +118,11 @@ private:
 
 private:
 
+  //! Global data pointer.  Keep this so the parameter list remains valid.
+  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+
   //! Printing Utilities
-  const NOX::Utils& utils;
+  Teuchos::RefCountPtr<NOX::Utils> utils;
 
   //! "Direction" sublist with parameters for the direction vector
   /*! 
@@ -124,14 +134,8 @@ private:
   //! Determined based on "Rescue Bad Newton Solve". Used in rescueBadNewtonSolve
   bool doRescue;
   
-  //! Vector containing the predicted RHS
-  NOX::Abstract::Vector* predRhs;
-
-  //! Vector containing the computed direction
-  NOX::Abstract::Vector* stepDir;
-
   //! Group containing the old Jacobian
-  Abstract::Group* oldJacobianGrpPtr;
+  Teuchos::RefCountPtr<NOX::Abstract::Group> oldJacobianGrpPtr;
 
   //! Integer counting how old the Jacobian is
   int ageOfJacobian;

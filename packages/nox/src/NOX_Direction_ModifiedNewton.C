@@ -37,15 +37,13 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
+#include "NOX_GlobalData.H"
 
-NOX::Direction::ModifiedNewton::ModifiedNewton(const NOX::Utils& u,
-                                               NOX::Parameter::List& p) :
-  utils(u),
-  predRhs(NULL),
-  stepDir(NULL),
-  oldJacobianGrpPtr(NULL)
+NOX::Direction::ModifiedNewton::
+ModifiedNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	       NOX::Parameter::List& p)
 {
-  reset(p);
+  reset(gd, p);
   ageOfJacobian = -1;
   if (p.sublist("Modified-Newton").getParameter("Max Age of Jacobian", 10) < 0)
     p.sublist("Modified-Newton").setParameter("Max Age of Jacobian", 0);
@@ -53,13 +51,15 @@ NOX::Direction::ModifiedNewton::ModifiedNewton(const NOX::Utils& u,
 
 NOX::Direction::ModifiedNewton::~ModifiedNewton()
 {
-  delete predRhs;
-  delete stepDir;
-  delete oldJacobianGrpPtr;
 }
 
-bool NOX::Direction::ModifiedNewton::reset(NOX::Parameter::List& params)
+bool NOX::Direction::ModifiedNewton::
+reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+      NOX::Parameter::List& params)
 {
+  globalDataPtr = gd;
+  utils = gd->getUtils();
+  
   paramsPtr = &params;
 
   NOX::Parameter::List& p = params.sublist("Modified-Newton");
@@ -71,9 +71,10 @@ bool NOX::Direction::ModifiedNewton::reset(NOX::Parameter::List& params)
   return true;
 }
 
-bool NOX::Direction::ModifiedNewton::compute(NOX::Abstract::Vector& dir, 
-                                             NOX::Abstract::Group& soln, 
-                                             const NOX::Solver::Generic& solver)
+bool NOX::Direction::ModifiedNewton::
+compute(NOX::Abstract::Vector& dir, 
+	NOX::Abstract::Group& soln, 
+	const NOX::Solver::Generic& solver)
 {
   NOX::Abstract::Group::ReturnType status;
 
@@ -84,7 +85,7 @@ bool NOX::Direction::ModifiedNewton::compute(NOX::Abstract::Vector& dir,
 
   maxAgeOfJacobian = paramsPtr->sublist("Modified-Newton").getParameter("Max Age of Jacobian", 10);
 
-  if (oldJacobianGrpPtr == NULL) {
+  if (Teuchos::is_null(oldJacobianGrpPtr)) {
     oldJacobianGrpPtr = soln.clone(DeepCopy);
   }
   NOX::Abstract::Group& oldJacobianGrp = *oldJacobianGrpPtr;
@@ -115,8 +116,8 @@ bool NOX::Direction::ModifiedNewton::compute(NOX::Abstract::Vector& dir,
     }
     else if ((status != NOX::Abstract::Group::Ok) &&
              (doRescue == true)) {
-      if (utils.isPrintType(NOX::Utils::Warning))
-        utils.out() << "WARNING: NOX::Direction::ModifiedNewton::compute() - "
+      if (utils->isPrintType(NOX::Utils::Warning))
+        utils->out() << "WARNING: NOX::Direction::ModifiedNewton::compute() - "
              << "Linear solve failed to achieve convergence - "
              << "using the step anyway since \"Rescue Bad Newton Solve\" "
              << "is true. Also, flagging recompute of Jacobian." << endl;
@@ -160,16 +161,16 @@ bool  NOX::Direction::ModifiedNewton::rescueBadNewtonSolve(const NOX::Abstract::
     return false;
 
   // Otherwise, we just print a warning and keep going
-  if (utils.isPrintType(NOX::Utils::Warning))
-    utils.out() << "WARNING: NOX::Direction::ModifiedNewton::compute - Unable to achieve desired linear solve accuracy." << endl;
+  if (utils->isPrintType(NOX::Utils::Warning))
+    utils->out() << "WARNING: NOX::Direction::ModifiedNewton::compute - Unable to achieve desired linear solve accuracy." << endl;
   return true;
 
 }
 
 void NOX::Direction::ModifiedNewton::throwError(const string& functionName, const string& errorMsg)
 {
-  if (utils.isPrintType(NOX::Utils::Error))
-    utils.err() << "NOX::Direction::ModifiedNewton::" << functionName << " - " << errorMsg << endl;
+  if (utils->isPrintType(NOX::Utils::Error))
+    utils->err() << "NOX::Direction::ModifiedNewton::" << functionName << " - " << errorMsg << endl;
   throw "NOX Error";
 }
 

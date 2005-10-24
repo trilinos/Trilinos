@@ -78,6 +78,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_MapColoring.h"
 #include "Epetra_Vector.h"
+#include "Epetra_IntVector.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
@@ -146,10 +147,12 @@ int main(int argc, char *argv[])
   // Epetra objects for the problem and allows calls to the 
   // function (F) and Jacobian evaluation routines.
   Brusselator::OverlapType OType = Brusselator::NODES;
-  Brusselator Problem(NumGlobalNodes, Comm, OType);
+  Teuchos::RefCountPtr<Brusselator> Problem = 
+    Teuchos::rcp(new Brusselator(NumGlobalNodes, Comm, OType));
 
   // Get the vector from the Problem
-  Epetra_Vector& soln = Problem.getSolution();
+  Teuchos::RefCountPtr<Epetra_Vector> soln = Problem->getSolution();
+  NOX::Epetra::Vector noxSoln(soln, NOX::Epetra::Vector::CreateView);
 
   // Begin Nonlinear Solver ************************************
 
@@ -185,32 +188,12 @@ int main(int argc, char *argv[])
   // Sublist for line search 
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   searchParams.setParameter("Method", "Full Step");
-  //searchParams.setParameter("Method", "Interval Halving");
-  //searchParams.setParameter("Method", "Polynomial");
-  //searchParams.setParameter("Method", "NonlinearCG");
-  //searchParams.setParameter("Method", "Quadratic");
-  //searchParams.setParameter("Method", "More'-Thuente");
 
   // Sublist for direction
   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
   dirParams.setParameter("Method", "Newton");
   NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
     newtonParams.setParameter("Forcing Term Method", "Constant");
-    //newtonParams.setParameter("Forcing Term Method", "Type 1");
-    //newtonParams.setParameter("Forcing Term Method", "Type 2");
-    //newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-4);
-    //newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
-  //dirParams.setParameter("Method", "Steepest Descent");
-  //NOX::Parameter::List& sdParams = dirParams.sublist("Steepest Descent");
-    //sdParams.setParameter("Scaling Type", "None");
-    //sdParams.setParameter("Scaling Type", "2-Norm");
-    //sdParams.setParameter("Scaling Type", "Quadratic Model Min");
-  //dirParams.setParameter("Method", "NonlinearCG");
-  //NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
-    //nlcgParams.setParameter("Restart Frequency", 2000);
-    //nlcgParams.setParameter("Precondition", "On");
-    //nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
-    //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
 
   // Sublist for linear solver for the Newton method
   NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
@@ -219,34 +202,14 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Tolerance", 1e-4);
   lsParams.setParameter("Output Frequency", 0);    
   lsParams.setParameter("Preconditioner", "AztecOO"); 
-  //lsParams.setParameter("Aztec Preconditioner", "ilu"); 
-  //lsParams.setParameter("Overlap", 2);  
-  //lsParams.setParameter("Graph Fill", 2); 
-  //lsParams.setParameter("Aztec Preconditioner", "ilut"); 
-  //lsParams.setParameter("Overlap", 2);   
-  //lsParams.setParameter("Fill Factor", 2);   
-  //lsParams.setParameter("Drop Tolerance", 1.0e-12);   
-  //lsParams.setParameter("Aztec Preconditioner", "Polynomial"); 
-  //lsParams.setParameter("Polynomial Order", 6); 
 
   // Create the interface between the test problem and the nonlinear solver
-  Problem_Interface interface(Problem);
+  Teuchos::RefCountPtr<Problem_Interface> interface = 
+    Teuchos::rcp(new Problem_Interface(*Problem));
 
-  // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
-  // 1. User supplied (Epetra_RowMatrix)
-  //Epetra_RowMatrix& A = Problem.getJacobian(); // Default
-  //NOX::Epetra::Interface::Jacobian& iJac = interface;
-  // 2. Matrix-Free (Epetra_Operator)
-  //NOX::Epetra::MatrixFree A(interface, soln);
-  // 3. Finite Difference (Epetra_RowMatrix)
-  //NOX::Epetra::FiniteDifference FD(interface, soln, Problem.getGraph());
-  //  A.setDifferenceMethod(NOX::Epetra::FiniteDifference::Backward);
-  // 4. Jacobi Preconditioner
-  //NOX::Epetra::JacobiPreconditioner Prec(soln);
-  // 5. Finite Difference with Coloring......uncomment the following
-// -------------- Uncomment this block to use coloring --------------- //
 #ifndef HAVE_NOX_EPETRAEXT 
   utils.out() << "Cannot use Coloring without package epetraext !!!!" << endl;
+  utils.out() << "Test passed!" << endl;
   exit(0);
 #else 
   // Create a timer for performance
@@ -260,45 +223,44 @@ int main(int argc, char *argv[])
   bool distance1 = false; 
   EpetraExt::CrsGraph_MapColoring tmpMapColoring(
     algType, reordering, distance1, verbosityLevel);
-  Epetra_MapColoring* colorMap = &tmpMapColoring(Problem.getGraph());
+  Teuchos::RefCountPtr<Epetra_MapColoring> colorMap = 
+    Teuchos::rcp(&tmpMapColoring(*(Problem->getGraph())));
   EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
-  vector<Epetra_IntVector>* columns = &colorMapIndex(Problem.getGraph());
+  Teuchos::RefCountPtr< std::vector<Epetra_IntVector> > columns = 
+    Teuchos::rcp(&colorMapIndex(*(Problem->getGraph())));
 
-  NOX::Epetra::FiniteDifferenceColoring FDC(interface, soln, 
-                                             Problem.getGraph(),
-                                             *colorMap, *columns, 
-                                             colorParallel,
-                                             distance1);
-                                             //1.0e-6, 0.e0);
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifferenceColoring> FDC = 
+    Teuchos::rcp(new NOX::Epetra::FiniteDifferenceColoring(printParams,
+							   iReq, 
+							   noxSoln, 
+							   Problem->getGraph(),
+							   colorMap, 
+							   columns, 
+							   colorParallel,
+							   distance1));
+
   if (verbose)
     printf("\n[%d]\tTime to color Jacobian --> %e sec.  for %d colors.\n\n",
 	   MyPID,fillTime.ElapsedTime(), colorMap->NumColors());
 
-  FDC.setDifferenceMethod(NOX::Epetra::FiniteDifference::Centered);
+  FDC->setDifferenceMethod(NOX::Epetra::FiniteDifference::Centered);
 
 // -------------- End of block needed to use coloring --------------- */
 
 
-  // Use an Epetra Scaling object if desired
-  Epetra_Vector scaleVec(soln);
-  NOX::Epetra::Scaling scaling;
-  scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
-  //grp.setLinearSolveScaling(scaling);
-
-  NOX::Epetra::Interface::Required& iReq = interface;
-
   // Create the Linear System
-  NOX::Epetra::Interface::Jacobian& iJac = FDC;
-  NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
-                                          iReq, iJac, FDC, soln);
-                                          //&scaling);
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = FDC;
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+						      iReq, iJac, FDC, 
+						      noxSoln));
 
   // Create the Group
-  NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
   Teuchos::RefCountPtr<NOX::Epetra::Group> grpPtr = 
     Teuchos::rcp(new NOX::Epetra::Group(printParams, 
 					iReq, 
-					initialGuess, 
+					noxSoln, 
 					linSys));  
   NOX::Epetra::Group& grp = *(grpPtr.get());
 
@@ -319,18 +281,18 @@ int main(int argc, char *argv[])
   int maxTimeSteps = 3;
   int timeStep = 0;
   double time = 0.;
-  double dt = Problem.getdt();
+  double dt = Problem->getdt();
   
   // Print initial solution
   char file_name[25];
   FILE *ifp;
-  Epetra_Vector& xMesh = Problem.getMesh();
+  Epetra_Vector& xMesh = *(Problem->getMesh());
   int NumMyNodes = xMesh.Map().NumMyElements();
   (void) sprintf(file_name, "output.%d_%d",MyPID,timeStep);
   ifp = fopen(file_name, "w");
   for (i=0; i<NumMyNodes; i++)
     fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, 
-                                 xMesh[i], soln[2*i], soln[2*i+1]);
+	    xMesh[i], (*soln)[2*i], (*soln)[2*i+1]);
   fclose(ifp);
   
   NOX::StatusTest::StatusType status = NOX::StatusTest::Unconverged;
@@ -364,12 +326,12 @@ int main(int argc, char *argv[])
     (void) sprintf(file_name, "output.%03d_%05d",MyPID,timeStep);
     ifp = fopen(file_name, "w");
     for (i=0; i<NumMyNodes; i++)
-      fprintf(ifp, "%d  %E  %E  %E\n", soln.Map().MinMyGID()+i,
+      fprintf(ifp, "%d  %E  %E  %E\n", soln->Map().MinMyGID()+i,
                                    xMesh[i], finalSolution[2*i],
                                    finalSolution[2*i+1]);
     fclose(ifp);
 
-    Problem.reset(finalSolution);
+    Problem->reset(finalSolution);
     grp.setX(finalSolution);
     solver.reset(grpPtr, combo, nlParamsPtr);
     grp.computeF();

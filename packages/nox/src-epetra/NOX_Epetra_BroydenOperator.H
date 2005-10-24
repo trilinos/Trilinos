@@ -89,22 +89,28 @@ class BroydenOperator : public NOX::Abstract::PrePostOperator,
  public:
 
   //! Constructor taking an initial matrix to be updated
-  BroydenOperator(NOX::Parameter::List & nlParams, Epetra_Vector & solnVec,
-                  Epetra_CrsMatrix & broydMat0, bool verbose = false);
+  BroydenOperator(NOX::Parameter::List & nlParams, 
+		  Epetra_Vector & solnVec,
+                  const Teuchos::RefCountPtr<Epetra_CrsMatrix>& broydMat0, 
+		  bool verbose = false);
 
   //! Constructor taking an initial matrix to be updated along with a Jacobian matrix whose values replace those of the %Broyden update.
-  BroydenOperator(NOX::Parameter::List & nlParams, Epetra_Vector & solnVec,
-                  Epetra_CrsMatrix & broydMat0, 
-		  NOX::Epetra::Interface::Jacobian & jacInt,
-                  Epetra_CrsMatrix & jacMatrix, 
-		  bool verbose = false);
+  BroydenOperator(
+       NOX::Parameter::List & nlParams, 
+       Epetra_Vector & solnVec,
+       const Teuchos::RefCountPtr<Epetra_CrsMatrix>& broydMat0, 
+       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian>& jacInt,
+       const Teuchos::RefCountPtr<Epetra_CrsMatrix>& jacMatrix, 
+       bool verbose = false);
 
   //! Constructor taking an initial matrix to be updated along with a preconditioning matrix whose values replace those of the %Broyden update.
-  BroydenOperator(NOX::Parameter::List & nlParams, Epetra_Vector & solnVec,
-                  Epetra_CrsMatrix & broydMat0,
-		  NOX::Epetra::Interface::Preconditioner & precInt,
-                  Epetra_CrsMatrix & precMatrix, 
-		  bool verbose = false);
+  BroydenOperator(
+   NOX::Parameter::List & nlParams, 
+   Epetra_Vector & solnVec,
+   const Teuchos::RefCountPtr<Epetra_CrsMatrix>& broydMat0,
+   const Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner>& precInt,
+   const Teuchos::RefCountPtr<Epetra_CrsMatrix>& precMatrix, 
+   bool verbose = false);
 
   //! Copy Constructor
   BroydenOperator(const BroydenOperator &);
@@ -114,7 +120,7 @@ class BroydenOperator : public NOX::Abstract::PrePostOperator,
 
   //! Return a reference to the %Broyden matrix.  The matrix is not owned but is obtained from the client at construction.
   Epetra_CrsMatrix & getBroydenMatrix()
-  { return crsMatrix; };
+  { return *crsMatrix; };
 
  protected:
 
@@ -139,21 +145,21 @@ class BroydenOperator : public NOX::Abstract::PrePostOperator,
 
   bool verbose;
 
-  NOX::Epetra::Vector * updateVectorPtr;
+  Teuchos::RefCountPtr<NOX::Epetra::Vector> updateVectorPtr;
   NOX::Epetra::Vector & updateVector;
 
-  NOX::Epetra::Vector * broydenVecPtr;
-  NOX::Epetra::Vector * residualVecPtr;
+  Teuchos::RefCountPtr<NOX::Epetra::Vector> broydenVecPtr;
+  Teuchos::RefCountPtr<NOX::Epetra::Vector> residualVecPtr;
 
-  NOX::Epetra::Vector * tempVecPtr;
+  Teuchos::RefCountPtr<NOX::Epetra::Vector> tempVecPtr;
 
-  Epetra_CrsMatrix & crsMatrix;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> crsMatrix;
 
-  NOX::Epetra::Interface::Jacobian * jacIntPtr;
-  Epetra_CrsMatrix * jacMatrixPtr;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacIntPtr;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> jacMatrixPtr;
 
-  NOX::Epetra::Interface::Preconditioner * precIntPtr;
-  Epetra_CrsMatrix * precMatrixPtr;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> precIntPtr;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> precMatrixPtr;
 
   std::string myType;
 };

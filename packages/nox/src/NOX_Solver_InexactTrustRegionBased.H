@@ -30,8 +30,6 @@
 // ************************************************************************
 //@HEADER
 
-#ifdef WITH_PRERELEASE
-
 #ifndef NOX_SOLVER_INEXACTTRUSTREGIONBASED_H
 #define NOX_SOLVER_INEXACTTRUSTREGIONBASED_H
 
@@ -41,14 +39,16 @@
 #include "NOX_LineSearch_Manager.H" 
 #include "NOX_Direction_Manager.H"  
 #include "NOX_Parameter_List.H"	    
-#include "NOX_Utils.H"	            
 #include "NOX_Direction_Utils_InexactNewton.H" 
 #include "NOX_Solver_PrePostOperator.H"
+#include "Teuchos_RefCountPtr.hpp"
 
+// Forward declarations
 namespace NOX {
-  namespace Parameter {
-    class UserNorm;
-    class MeritFunction;
+  class Utils;
+  class GlobalData;
+  namespace MeritFunction {
+    class Generic;
   }
 }
 
@@ -288,7 +288,7 @@ public:
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t);
   virtual NOX::StatusTest::StatusType getStatus();
-  virtual NOX::StatusTest::StatusType iterate();
+  virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
@@ -325,13 +325,8 @@ protected:
   /*! Defaults to the L-2 norm but could use a user defined norm also. */
   virtual double computeNorm(const NOX::Abstract::Vector& v);
 
-  //! Computes the merit function of a given solution group.
-  /*! Defaults to \f$ \frac{1}{2}\| F \|^2 \f$ but can be a 
-    user defined merit funtion.
-  */
-  virtual double computeMeritFunction(NOX::Abstract::Group& grp);
-
 protected:
+
   //! Type of Trust Region algorithm to use.
   enum TrustRegionType {
     //! Basic trust region method for nonlinear systems (Nocedal and Wright?).
@@ -353,6 +348,12 @@ protected:
     Failed
   };
 
+  //! Pointer to the global data object.
+  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+
+  //! Utils
+  Teuchos::RefCountPtr<NOX::Utils> utils;
+  
   //! Current status of the trust region inner iteration.
   InnerIterationReturnType innerIterationStatus;
 
@@ -360,62 +361,31 @@ protected:
   Teuchos::RefCountPtr<NOX::Abstract::Group> solnPtr;		
 
   //! Previous solution pointer. 
-  /*! We have both a pointer and a reference because we need to create
-    a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Group* oldSolnPtr;	
-  //! Previous solution reference.
-  NOX::Abstract::Group& oldSoln;	
+  Teuchos::RefCountPtr<NOX::Abstract::Group> oldSolnPtr;	
 
-  //! Current search direction.pointer.
-  /*! We have both a pointer and a reference because we need to create
-    a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* newtonVecPtr;
-  //! Current Newton direction.reference.
-  NOX::Abstract::Vector& newtonVec;
+  //! Current newton direction pointer.
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> newtonVecPtr;
 
-  //! Current search direction.pointer.
-  /*! We have both a pointer and a reference because we need to create
-    a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* cauchyVecPtr;
-  //! Current Cauchy direction.reference.
-  NOX::Abstract::Vector& cauchyVec;
+  //! Current cauchy direction pointer.
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> cauchyVecPtr;
 
   //! Extra vector used in computations
-  /*! We have both a pointer and a reference because we need to create
-    a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* rCauchyVecPtr;
-  //! Extra vector
-  NOX::Abstract::Vector& rCauchyVec;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> rCauchyVecPtr;
 
   //! Extra vector used in computations
-  /*! We have both a pointer and a reference because we need to create
-    a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* residualVecPtr;
-  //! Extra vector
-  NOX::Abstract::Vector& residualVec;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> residualVecPtr;
 
   //! Extra vector used in computations
-  /*! We have both a pointer and a reference because we need to create
-    a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* aVecPtr;
-  //! Extra vector
-  NOX::Abstract::Vector& aVec;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> aVecPtr;
 
   //! Extra vector used in computations
-  /*! We have both a pointer and a reference because we need to create
-    a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* bVecPtr;
-  //! Extra vector
-  NOX::Abstract::Vector& bVec;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> bVecPtr;
 
   //! Stopping test.
   Teuchos::RefCountPtr<NOX::StatusTest::Generic> testPtr;		
 
   //! Input parameters.
   Teuchos::RefCountPtr<NOX::Parameter::List> paramsPtr;	
-
-  //! Printing utilities.
-  NOX::Utils utils;
 
   //! Inexact Newton utitilities.
   NOX::Direction::Utils::InexactNewton inNewtonUtils;
@@ -491,11 +461,8 @@ protected:
   //! Type of step to be taken.
   StepType stepType;
 
-  //! Stores a user supplied norm if supplied in the parameter list.
-  NOX::Parameter::UserNorm* userNormPtr;
-  
-  //! Stores a user supplied merit function if supplied in the parameter list.
-  NOX::Parameter::MeritFunction* userMeritFuncPtr;
+  //! Stores merit function supplied by global data.
+  Teuchos::RefCountPtr<NOX::MeritFunction::Generic> meritFuncPtr;
 
   //! If set to true, the initial guess for the Newton direction computation will use the Cauchy direction as the initial guess. 
   bool useCauchyInNewtonDirection;
@@ -538,5 +505,3 @@ protected:
 } // namespace NOX
 
 #endif
-
-#endif // WITH_PRERELEASE

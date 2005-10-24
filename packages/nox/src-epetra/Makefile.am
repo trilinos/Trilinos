@@ -40,31 +40,33 @@
 EPETRA_H = \
 	$(srcdir)/NOX_Epetra.H \
 	$(srcdir)/NOX_Epetra_Vector.H \
+	$(srcdir)/NOX_Epetra_VectorSpace.H \
+	$(srcdir)/NOX_Epetra_VectorSpace_L2.H \
+	$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.H \
 	$(srcdir)/NOX_Epetra_MultiVector.H \
 	$(srcdir)/NOX_Epetra_Group.H \
 	$(srcdir)/NOX_Epetra_Interface_Required.H \
 	$(srcdir)/NOX_Epetra_Interface_Jacobian.H \
 	$(srcdir)/NOX_Epetra_Interface_Preconditioner.H \
 	$(srcdir)/NOX_Epetra_LinearSystem.H \
-	$(srcdir)/NOX_Epetra_LinearSystemAztecOO.H \
+	$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.H \
         $(srcdir)/NOX_Epetra_MatrixFree.H \
         $(srcdir)/NOX_Epetra_FiniteDifference.H \
         $(srcdir)/NOX_Epetra_FiniteDifferenceColoring.H \
 	$(srcdir)/NOX_Epetra_Scaling.H \
-	$(srcdir)/NOX_Epetra_Operator.H \
-	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.H \
 	$(srcdir)/NOX_Epetra_BroydenOperator.H
 
 EPETRA = \
 	$(srcdir)/NOX_Epetra_Vector.C \
+	$(srcdir)/NOX_Epetra_VectorSpace_L2.C \
+	$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C \
 	$(srcdir)/NOX_Epetra_MultiVector.C \
 	$(srcdir)/NOX_Epetra_Group.C \
-	$(srcdir)/NOX_Epetra_LinearSystemAztecOO.C \
+	$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C \
         $(srcdir)/NOX_Epetra_MatrixFree.C \
         $(srcdir)/NOX_Epetra_FiniteDifference.C \
         $(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C \
 	$(srcdir)/NOX_Epetra_Scaling.C \
-	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C \
 	$(srcdir)/NOX_Epetra_BroydenOperator.C
 
 # ------------------------------------------------------------------------

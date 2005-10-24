@@ -33,19 +33,22 @@
 #ifndef NOX_DIRECTION_GENERIC_H
 #define NOX_DIRECTION_GENERIC_H
 
+#include "Teuchos_RefCountPtr.hpp"
+
 // Forward declarations
 namespace NOX {
-namespace Abstract {
-class Vector;
-class Group;
-}
-namespace Solver {
-class Generic;
-class LineSearchBased;
-}
-namespace Parameter {
-class List;
-}
+  class GlobalData;
+  namespace Abstract {
+    class Vector;
+    class Group;
+  }
+  namespace Solver {
+    class Generic;
+    class LineSearchBased;
+  }
+  namespace Parameter {
+    class List;
+  }
 }
 
 namespace NOX {
@@ -77,7 +80,8 @@ public:
   virtual ~Generic() {};
 
   //! Reset direction based on possibly new parameters.
-  virtual bool reset(NOX::Parameter::List& params) = 0;
+  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+		     NOX::Parameter::List& params) = 0;
   
   /*!
     \brief Compute the direction vector, \c dir, for a specific method given

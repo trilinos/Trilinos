@@ -31,68 +31,80 @@
 //@HEADER
 
 #include "NOX_Epetra_Vector.H"
-
 #include "NOX_Epetra_MultiVector.H"
 #include "Epetra_Vector.h"
+#include "NOX_Epetra_VectorSpace_L2.H"
 
-NOX::Epetra::Vector::Vector(Epetra_Vector& source, NOX::CopyType type,
-			    bool createView)
+NOX::Epetra::Vector::
+Vector(const Teuchos::RefCountPtr<Epetra_Vector>& source,
+       NOX::Epetra::Vector::MemoryType memoryType, 
+       NOX::CopyType type,
+       Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vs)
 {
-  if (createView) {
-    ownsEpetraVector = false;
-    epetraVec = &source;
-  }
+  if (Teuchos::is_null(vs))
+    vectorSpace = Teuchos::rcp(new NOX::Epetra::VectorSpaceL2);
+  else
+    vectorSpace = vs;
+
+  if (memoryType == NOX::Epetra::Vector::CreateView)
+    epetraVec = source;
   else {
-    ownsEpetraVector = true;
 
     switch (type) {
       
     case DeepCopy:		// default behavior
       
-      epetraVec = new Epetra_Vector(source); 
+      epetraVec = Teuchos::rcp(new Epetra_Vector(*source));
       break;
       
     case ShapeCopy:
       
-      epetraVec = new Epetra_Vector(source.Map()); 
+      epetraVec = Teuchos::rcp(new Epetra_Vector(source->Map())); 
       break;  
     }
+
   }
 }
 
-NOX::Epetra::Vector::Vector(const Epetra_Vector& source, NOX::CopyType type) :
-  ownsEpetraVector(true)
+NOX::Epetra::Vector::Vector(const Epetra_Vector& source, NOX::CopyType type,
+			    Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vs)
 {
+  if (Teuchos::is_null(vs))
+    vectorSpace = Teuchos::rcp(new NOX::Epetra::VectorSpaceL2);
+  else
+    vectorSpace = vs;
+
   switch (type) {
 
   case DeepCopy:		// default behavior
 
-    epetraVec = new Epetra_Vector(source); 
+    epetraVec = Teuchos::rcp(new Epetra_Vector(source)); 
     break;
 
   case ShapeCopy:
 
-    epetraVec = new Epetra_Vector(source.Map()); 
+    epetraVec = Teuchos::rcp(new Epetra_Vector(source.Map())); 
     break;  
 
   }
 }
 
 NOX::Epetra::Vector::Vector(const NOX::Epetra::Vector& source, 
-			    NOX::CopyType type) :
-  ownsEpetraVector(true)
+			    NOX::CopyType type)
 {
+  vectorSpace = source.vectorSpace;
 
   switch (type) {
 
   case DeepCopy:		// default behavior
 
-    epetraVec = new Epetra_Vector(source.getEpetraVector()); 
+    epetraVec = Teuchos::rcp(new Epetra_Vector(source.getEpetraVector())); 
     break;
 
   case ShapeCopy:
 
-    epetraVec = new Epetra_Vector(source.getEpetraVector().Map()); 
+    epetraVec = 
+      Teuchos::rcp(new Epetra_Vector(source.getEpetraVector().Map())); 
     break;  
 
   }
@@ -100,8 +112,7 @@ NOX::Epetra::Vector::Vector(const NOX::Epetra::Vector& source,
 
 NOX::Epetra::Vector::~Vector()
 {
-  if (ownsEpetraVector)
-    delete epetraVec;
+
 }
 
 NOX::Abstract::Vector& NOX::Epetra::Vector::operator=(const Epetra_Vector& source)
@@ -173,30 +184,32 @@ NOX::Abstract::Vector& NOX::Epetra::Vector::scale(double alpha)
   return *this;
 }
 
-NOX::Abstract::Vector& NOX::Epetra::Vector::update(double alpha, const NOX::Abstract::Vector& a, 
-				 double gamma)
+NOX::Abstract::Vector& NOX::Epetra::Vector::
+update(double alpha, const NOX::Abstract::Vector& a, double gamma)
 {
   return update(alpha, dynamic_cast<const NOX::Epetra::Vector&>(a), gamma);
 }
 
-NOX::Abstract::Vector& NOX::Epetra::Vector::update(double alpha, const NOX::Epetra::Vector& a, 
-				 double gamma)
+NOX::Abstract::Vector& NOX::Epetra::Vector::
+update(double alpha, const NOX::Epetra::Vector& a, double gamma)
 {
   epetraVec->Update(alpha, a.getEpetraVector(), gamma);
   return *this;
 }
 
-NOX::Abstract::Vector& NOX::Epetra::Vector::update(double alpha, const NOX::Abstract::Vector& a, 
-				 double beta, const NOX::Abstract::Vector& b,
-				 double gamma)
+NOX::Abstract::Vector& NOX::Epetra::Vector::
+update(double alpha, const NOX::Abstract::Vector& a, 
+       double beta, const NOX::Abstract::Vector& b,
+       double gamma)
 {
   return update(alpha, dynamic_cast<const NOX::Epetra::Vector&>(a), 
 		beta, dynamic_cast<const NOX::Epetra::Vector&>(b), gamma);
 }
 
-NOX::Abstract::Vector& NOX::Epetra::Vector::update(double alpha, const NOX::Epetra::Vector& a, 
-				 double beta, const NOX::Epetra::Vector& b,
-				 double gamma)
+NOX::Abstract::Vector& NOX::Epetra::Vector::
+update(double alpha, const NOX::Epetra::Vector& a, 
+       double beta, const NOX::Epetra::Vector& b,
+       double gamma)
 {
   epetraVec->Update(alpha, a.getEpetraVector(), beta, b.getEpetraVector(), gamma);
   return *this;
@@ -213,9 +226,11 @@ NOX::Abstract::Vector& NOX::Epetra::Vector::scale(const NOX::Epetra::Vector& a)
   return *this;
 }
 
-NOX::Abstract::Vector* NOX::Epetra::Vector::clone(CopyType type) const
+Teuchos::RefCountPtr<NOX::Abstract::Vector> NOX::Epetra::Vector::
+clone(CopyType type) const
 {
-  NOX::Abstract::Vector* newVec = new NOX::Epetra::Vector(*epetraVec, type);
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> newVec = 
+    Teuchos::rcp(new NOX::Epetra::Vector(*epetraVec, type, vectorSpace));
   return newVec;
 }
 
@@ -276,7 +291,7 @@ NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
   }
 
   NOX::Epetra::MultiVector* mv = 
-    new NOX::Epetra::MultiVector(*epetra_mv, type, false);
+    new NOX::Epetra::MultiVector(*epetra_mv, type);
 
   delete epetra_mv;
 
@@ -285,20 +300,7 @@ NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
 
 double NOX::Epetra::Vector::norm(NOX::Abstract::Vector::NormType type) const
 {
-  double n;
-  switch (type) {
-  case MaxNorm:
-    epetraVec->NormInf(&n);
-    break;
-  case OneNorm:
-    epetraVec->Norm1(&n);
-    break;
-  case TwoNorm:
-  default:
-   epetraVec->Norm2(&n);
-   break;
-  }
-  return n;
+  return vectorSpace->norm(*epetraVec, type);
 }
 
 double NOX::Epetra::Vector::norm(const NOX::Abstract::Vector& weights) const
@@ -312,16 +314,14 @@ double NOX::Epetra::Vector::norm(const NOX::Epetra::Vector& weights) const
     throw "NOX-Epetra Error";
 }
 
-double NOX::Epetra::Vector::dot(const NOX::Abstract::Vector& y) const
+double NOX::Epetra::Vector::innerProduct(const NOX::Abstract::Vector& y) const
 {
-  return dot(dynamic_cast<const NOX::Epetra::Vector&>(y));
+  return innerProduct(dynamic_cast<const NOX::Epetra::Vector&>(y));
 }
 
-double NOX::Epetra::Vector::dot(const NOX::Epetra::Vector& y) const
+double NOX::Epetra::Vector::innerProduct(const NOX::Epetra::Vector& y) const
 {
-  double dot;
-  epetraVec->Dot(y.getEpetraVector(), &dot);
-  return dot;
+  return vectorSpace->innerProduct(*epetraVec, y.getEpetraVector());
 }
 
 int NOX::Epetra::Vector::length() const
@@ -329,8 +329,14 @@ int NOX::Epetra::Vector::length() const
   return epetraVec->GlobalLength();
 }
 
-void NOX::Epetra::Vector::print() const
+void NOX::Epetra::Vector::print(std::ostream& stream) const
 {
-  epetraVec->Print(cout);
+  epetraVec->Print(stream);
   return;
+}
+
+Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> 
+NOX::Epetra::Vector::getVectorSpace() const
+{
+  return vectorSpace;
 }

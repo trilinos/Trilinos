@@ -93,7 +93,7 @@ public:
 
   NOX::StatusTest::StatusType getStatus();
 
-  NOX::StatusTest::StatusType iterate();
+  NOX::StatusTest::StatusType step();
 
   NOX::StatusTest::StatusType solve();
 

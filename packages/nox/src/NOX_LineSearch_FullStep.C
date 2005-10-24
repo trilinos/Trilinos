@@ -37,15 +37,16 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Parameter_List.H"
-#include "NOX_Utils.H"
-
+#include "NOX_GlobalData.H"
 
 using namespace NOX;
 using namespace NOX::LineSearch;
 
-FullStep::FullStep(Parameter::List& params) 
+FullStep::FullStep(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+		   Parameter::List& params) 
 {
-  reset(params);
+  NOX::Parameter::List& p = params.sublist("Full Step");
+  stepSize = p.getParameter("Full Step", 1.0);
 }
 
 FullStep::~FullStep()
@@ -53,10 +54,11 @@ FullStep::~FullStep()
 
 }
 
-bool FullStep::reset(Parameter::List& params)
+bool FullStep::reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+		     Parameter::List& params)
 {
   NOX::Parameter::List& p = params.sublist("Full Step");
-  fullstep = p.getParameter("Full Step", 1.0);
+  stepSize = p.getParameter("Full Step", 1.0);
   return true;
 }
 
@@ -64,7 +66,7 @@ bool FullStep::compute(Abstract::Group& grp, double& step,
 		       const Abstract::Vector& dir,
 		       const Solver::Generic& s)
 {
-  step = fullstep;
+  step = stepSize;
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
   grp.computeX(oldGrp, dir, step);
   return true;

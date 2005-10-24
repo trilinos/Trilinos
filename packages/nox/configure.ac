@@ -565,6 +565,11 @@ AC_SUBST(MF_LIBS)
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, epetraext, NOX_EPETRAEXT, BUILD_NOX_EPETRAEXT_SUPPORT, yes, [Build epetraext support into the noxepetra library.], [Implicitly build epetraext support into the noxepetra library. Can be overridden with --<en|dis>able-nox-epetraext.])
 
 # ------------------------------------------------------------------------
+# NOX-Epetra Multiphysics support
+# ------------------------------------------------------------------------
+AM_CONDITIONAL(BUILD_EPETRA_MULTIPHYSICS, false)
+
+# ------------------------------------------------------------------------
 # NOX-Epetra-ML support
 # ------------------------------------------------------------------------
 

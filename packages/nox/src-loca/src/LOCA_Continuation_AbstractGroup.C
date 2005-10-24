@@ -61,7 +61,7 @@ LOCA::Continuation::AbstractGroup::computeScaledDotProduct(
 					 const NOX::Abstract::Vector& a,
 					 const NOX::Abstract::Vector& b) const
 {
-  return a.dot(b);
+  return a.innerProduct(b);
 }
 
 NOX::Abstract::Group::ReturnType

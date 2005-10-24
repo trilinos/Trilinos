@@ -236,12 +236,12 @@ double Vector::norm(const Vector& weights) const
   return n;
 }
 
-double Vector::dot(const Abstract::Vector& y) const
+double Vector::innerProduct(const Abstract::Vector& y) const
 {
-  return dot(dynamic_cast<const Vector&>(y));
+  return innerProduct(dynamic_cast<const Vector&>(y));
 }
 
-double Vector::dot(const Vector& y) const
+double Vector::innerProduct(const Vector& y) const
 {
   double dotprod;
   VecDot(y.getPetscVector(), petscVec, &dotprod);

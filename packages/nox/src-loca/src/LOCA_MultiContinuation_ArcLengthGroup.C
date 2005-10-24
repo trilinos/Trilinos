@@ -169,7 +169,7 @@ LOCA::MultiContinuation::ArcLengthGroup::scaleTangent()
 	// Estimate dpds
 	thetaOld = theta[i];
 	sv->getScalars().scale(thetaOld*thetaOld);
-	dpdsOld = 1.0/sqrt(sv->dot(*v));
+	dpdsOld = 1.0/sqrt(sv->innerProduct(*v));
 
 	if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
 	  cout << endl 
@@ -195,7 +195,7 @@ LOCA::MultiContinuation::ArcLengthGroup::scaleTangent()
 	sv->getScalars().scale(thetaNew*thetaNew / (thetaOld*thetaOld));
 	
 	// Calculate new dpds using new scale factor
-	dpdsNew = 1.0/sqrt(sv->dot(*v));
+	dpdsNew = 1.0/sqrt(sv->innerProduct(*v));
 	
 	if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
 	  cout << endl 

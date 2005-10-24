@@ -33,27 +33,35 @@
 #include "NOX_LineSearch_Utils_Slope.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
+#include "NOX_GlobalData.H"
 
-NOX::LineSearch::Utils::Slope::Slope(const NOX::Utils& u) :
-  utils(u), vecPtr(0), grpPtr(0)
+NOX::LineSearch::Utils::Slope::
+Slope(const Teuchos::RefCountPtr<NOX::GlobalData>& gd) :
+  utils(*(gd->getUtils()))
 {
 
 }
 
 NOX::LineSearch::Utils::Slope::~Slope()
 {
-  delete vecPtr;
-  delete grpPtr;
+
 }
 
-double NOX::LineSearch::Utils::Slope::computeSlope(const Abstract::Vector& dir, const Abstract::Group& grp) 
+void NOX::LineSearch::Utils::Slope::
+reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd)
+{
+  utils = *(gd->getUtils());
+}
+
+double NOX::LineSearch::Utils::Slope::
+computeSlope(const Abstract::Vector& dir, const Abstract::Group& grp) 
 {
    if (grp.isGradient()) 
-     return(dir.dot(grp.getGradient()));
+     return(dir.innerProduct(grp.getGradient()));
 
   // Allocate space for vecPtr if necessary
-  if (vecPtr == 0) 
-    vecPtr = dir.clone(ShapeCopy);
+   if (Teuchos::is_null(vecPtr)) 
+     vecPtr = dir.clone(ShapeCopy);
 
   // v = J * dir
   NOX::Abstract::Group::ReturnType status = grp.applyJacobian(dir,*vecPtr);
@@ -72,16 +80,17 @@ double NOX::LineSearch::Utils::Slope::computeSlope(const Abstract::Vector& dir, 
   }
 
   // Return <v, F> = F' * J * dir = <J'F, dir> = <g, dir>
-  return(vecPtr->dot(grp.getF()));
+  return(vecPtr->innerProduct(grp.getF()));
 }
 
-double NOX::LineSearch::Utils::Slope::computeSlopeWithOutJac(const Abstract::Vector& dir, 
-							     const Abstract::Group& grp) 
+double NOX::LineSearch::Utils::Slope::
+computeSlopeWithOutJac(const Abstract::Vector& dir, 
+		       const Abstract::Group& grp) 
 {
   // Allocate space for vecPtr and grpPtr if necessary
-  if (vecPtr == 0) 
+  if (Teuchos::is_null(vecPtr)) 
     vecPtr = dir.clone(ShapeCopy);
-  if (grpPtr == 0)
+  if (Teuchos::is_null(grpPtr))
     grpPtr = grp.clone(ShapeCopy);
 
   // Check that F exists
@@ -115,5 +124,5 @@ double NOX::LineSearch::Utils::Slope::computeSlopeWithOutJac(const Abstract::Vec
   // Compute Js = (F(x + eta * dir) - F(x))/eta
   vecPtr->update(-1.0/eta, grp.getF(), 1.0/eta, grpPtr->getF(), 0.0);
   
-  return(vecPtr->dot(grp.getF()));
+  return(vecPtr->innerProduct(grp.getF()));
 }

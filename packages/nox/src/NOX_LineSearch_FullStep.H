@@ -53,13 +53,15 @@ class FullStep : public Generic {
 public:
 
   //! Constructor
-  FullStep(NOX::Parameter::List& params);
+  FullStep(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	   NOX::Parameter::List& params);
 
   //! Destructor
   ~FullStep();
   
   // derived
-  bool reset(NOX::Parameter::List& params);
+  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	     NOX::Parameter::List& params);
 
   // derived
   bool compute(NOX::Abstract::Group& newgrp, double& step, 
@@ -68,7 +70,7 @@ public:
 private:
 
   //! Full step length
-  double fullstep;
+  double stepSize;
 };
 } // namespace LineSearch
 } // namespace NOX

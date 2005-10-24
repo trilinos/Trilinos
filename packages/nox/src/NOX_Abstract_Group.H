@@ -28,25 +28,26 @@
 // (rppawlo@sandia.gov), Sandia National Laboratories.
 // 
 // ************************************************************************
- //@HEADER
+//@HEADER
 
- #ifndef NOX_ABSTRACT_GROUP_H
- #define NOX_ABSTRACT_GROUP_H
+#ifndef NOX_ABSTRACT_GROUP_H
+#define NOX_ABSTRACT_GROUP_H
 
- #include "NOX_Abstract_Vector.H" // for NOX::CopyType
- #include "NOX_Common.H" // for string 
+#include "NOX_Abstract_Vector.H" // for NOX::CopyType
+#include "NOX_Common.H" // for string 
+#include "Teuchos_RefCountPtr.hpp" 
 
- namespace NOX {
-   namespace Parameter {
-     class List;
-   }
-   namespace Abstract {
-     class MultiVector;
-   }
- }
+namespace NOX {
+  namespace Parameter {
+    class List;
+  }
+  namespace Abstract {
+    class MultiVector;
+  }
+}
 
- namespace NOX { 
- namespace Abstract { 
+namespace NOX { 
+namespace Abstract { 
 
  /*!  
    \brief %NOX pure abstract interface to a "group"; i.e., a
@@ -492,16 +493,19 @@
 
   /*! 
     \brief Create a new %Group of the same derived type as this one by
-    cloning this one, and return a pointer to the new group.  
+    cloning this one, and return a ref count pointer to the new group.  
 
-    If type is NOX::DeepCopy, then we need to create an exact replica of
-    "this". Otherwise, if type is NOX::ShapeCopy, we need only replicate
-    the shape of "this". Returns NULL if clone is not supported.
+    If type is NOX::DeepCopy, then we need to create an exact replica
+    of "this". Otherwise, if type is NOX::ShapeCopy, we need only
+    replicate the shape of "this" (only the memory is allocated, the
+    values are not copied into the vectors and Jacobian). Returns NULL
+    if clone is not supported.
 
     \note Any <em>shared data</em> should have its ownership transfered to this
     group from the source for a NOX::DeepCopy.
   */
-  virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
+   virtual Teuchos::RefCountPtr<NOX::Abstract::Group> 
+   clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
 
   //@}
 

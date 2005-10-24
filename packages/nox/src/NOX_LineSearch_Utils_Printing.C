@@ -34,8 +34,9 @@
 #include "NOX_Utils.H"
 #include "NOX_Common.H"
 
-NOX::LineSearch::Utils::Printing::Printing(const NOX::Utils& u) :
-  NOX::Utils(u)
+NOX::LineSearch::Utils::Printing::
+Printing(const Teuchos::RefCountPtr<NOX::Utils>& u) :
+  NOX::Utils(*u)
 {
 
 }
@@ -45,19 +46,41 @@ NOX::LineSearch::Utils::Printing::~Printing()
 
 }
 
-void NOX::LineSearch::Utils::Printing::printStep(int n, double step, double oldf, double newf, const string s, bool unscaleF) const
+void NOX::LineSearch::Utils::Printing::
+reset(const Teuchos::RefCountPtr<NOX::Utils>& u)
+{
+  NOX::Utils* tmp = this;
+  tmp = u.get();
+}
+
+void NOX::LineSearch::Utils::Printing::
+printOpeningRemarks(const string& lineSearchName) const
+{
+  if (this->isPrintType(NOX::Utils::InnerIteration)) 
+    {
+      this->out() << "\n" << NOX::Utils::fill(72) << "\n" 
+		  << "-- " << lineSearchName << " -- \n";
+    }
+}
+
+
+void NOX::LineSearch::Utils::Printing::
+printStep(int n, double step, double oldf, double newf, const string s, 
+	  bool unscaleF) const
 {
   if (isPrintType(NOX::Utils::InnerIteration)) 
   {
     this->out() << setw(3) << n << ":";
     this->out() << NOX::Utils::fill(1,' ') << "step = " << sciformat(step);
     if (unscaleF == true) {
-      this->out() << NOX::Utils::fill(1,' ') << "oldf = " << sciformat(sqrt(2. * oldf));
-      this->out() << NOX::Utils::fill(1,' ') << "newf = " << sciformat(sqrt(2. * newf));
+      this->out() << NOX::Utils::fill(1,' ') << "old f = " 
+		  << sciformat(sqrt(2. * oldf));
+      this->out() << NOX::Utils::fill(1,' ') << "new f = " 
+		  << sciformat(sqrt(2. * newf));
     }
     else {
-      this->out() << NOX::Utils::fill(1,' ') << "oldf = " << sciformat(oldf);
-      this->out() << NOX::Utils::fill(1,' ') << "newf = " << sciformat(newf);
+      this->out() << NOX::Utils::fill(1,' ') << "old f = " << sciformat(oldf);
+      this->out() << NOX::Utils::fill(1,' ') << "new f = " << sciformat(newf);
     }
     if (!s.empty()) 
     {

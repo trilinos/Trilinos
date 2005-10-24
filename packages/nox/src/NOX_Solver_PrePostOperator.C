@@ -50,8 +50,9 @@ NOX::Solver::PrePostOperator& NOX::Solver::PrePostOperator::
 operator=(const PrePostOperator& p)
 { return *this; }
 
-NOX::Solver::PrePostOperator::PrePostOperator(const NOX::Utils& utils,
-					      NOX::Parameter::List& p) :
+NOX::Solver::PrePostOperator::
+PrePostOperator(const Teuchos::RefCountPtr<NOX::Utils>& utils,
+		NOX::Parameter::List& p) :
   havePrePostOperator(false)
 { reset(utils, p); }
 
@@ -59,7 +60,7 @@ NOX::Solver::PrePostOperator::~PrePostOperator()
 { }
 
 void NOX::Solver::PrePostOperator::
-reset(const NOX::Utils& utils, NOX::Parameter::List& p)
+reset(const Teuchos::RefCountPtr<NOX::Utils>& utils, NOX::Parameter::List& p)
 {
   havePrePostOperator = false;
 

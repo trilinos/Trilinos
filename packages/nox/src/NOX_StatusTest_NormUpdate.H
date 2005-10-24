@@ -35,6 +35,7 @@
 
 #include "NOX_StatusTest_Generic.H"	// base class
 #include "NOX_Abstract_Vector.H"        // for NormType
+#include "Teuchos_RefCountPtr.hpp"
 
 // Forward declaration
 namespace NOX {
@@ -156,7 +157,7 @@ private:
   NOX::StatusTest::StatusType status;
 
   //! Vector containing the update for the current outer iteration 
-  NOX::Abstract::Vector* updateVectorPtr;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> updateVectorPtr;
 
   //! Type of norm to use
   NOX::Abstract::Vector::NormType normType;

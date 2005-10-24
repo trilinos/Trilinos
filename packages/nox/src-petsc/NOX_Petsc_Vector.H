@@ -142,11 +142,11 @@ class Vector : public Abstract::Vector {
 
   //@}
 
-  //@{ \name Dot products
+  //@{ \name Inner products
 
-  virtual double dot(const Vector& y) const;
+  virtual double innerProduct(const Vector& y) const;
   //! See above.
-  virtual double dot(const Abstract::Vector& y) const;
+  virtual double innerProduct(const Abstract::Vector& y) const;
 
   //@}
 

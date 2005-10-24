@@ -38,8 +38,9 @@
 // Forward declaration
 namespace NOX {
 class Utils;
-  namespace Parameter {
-    class MeritFunction;
+  class GlobalData;
+  namespace MeritFunction {
+    class Generic;
   }
 }
 
@@ -96,16 +97,19 @@ public:
     //! Scale by the 2-norm of F
     FunctionTwoNorm, 
     //! No scaling at all
-    None};
+    None
+  };
 
   //! Constructor
-  SteepestDescent(const NOX::Utils& u, NOX::Parameter::List& params);
+  SteepestDescent(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+		  NOX::Parameter::List& params);
 
   //! Destructor
   ~SteepestDescent();
 
   // derived
-  bool reset(NOX::Parameter::List& params);
+  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	     NOX::Parameter::List& params);
 
   // derived
   bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
@@ -122,17 +126,20 @@ private:
 
 private:
 
+  //! Global data pointer.  Keep this so any stored parameter list remains valid.
+  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+
   //! Printing Utils
-  const NOX::Utils& utils;
+  Teuchos::RefCountPtr<NOX::Utils> utils;
 
   //! Temporary vector used in Cauchy scaling factor calculation
-  NOX::Abstract::Vector* tmpVecPtr;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmpVecPtr;
 
   //! Type of scaling of the Cauchy direction
   ScalingType scaleType;
 
   //! Pointer to a user defined merit function
-  NOX::Parameter::MeritFunction* meritFuncPtr;
+  Teuchos::RefCountPtr<NOX::MeritFunction::Generic> meritFuncPtr;
   
 };
 } // namespace Direction

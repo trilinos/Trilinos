@@ -304,11 +304,13 @@ public:
     parameter "Jacobian Operator".  Defaults to using a 
     NOX::Epetra::MatrixFree object.
    */
-  LinearSystemAztecOO(NOX::Parameter::List& printingParams, 
-		      NOX::Parameter::List& linearSolverParams,
-		      NOX::Epetra::Interface::Required& iReq, 
-		      Epetra_Vector& cloneVector,
-		      NOX::Epetra::Scaling* scalingObject = 0);
+  LinearSystemAztecOO(
+    NOX::Parameter::List& printingParams, 
+    NOX::Parameter::List& linearSolverParams,
+    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+    const NOX::Epetra::Vector& cloneVector,
+    const Teuchos::RefCountPtr<NOX::Epetra::Scaling> scalingObject = 
+    Teuchos::null);
 
   //! Constructor with a user supplied Jacobian Operator only.  
   /*! Either there is no preconditioning or the preconditioner will be 
@@ -316,13 +318,15 @@ public:
     Epetra_RowMatrix class can be used with an internal preconditioner. 
     See the parameter key "Preconditioner Operator" for more details.
    */
-  LinearSystemAztecOO(NOX::Parameter::List& printingParams, 
-		      NOX::Parameter::List& linearSolverParams, 
-		      NOX::Epetra::Interface::Required& iReq, 
-		      NOX::Epetra::Interface::Jacobian& iJac, 
-		      Epetra_Operator& J,
-		      Epetra_Vector& cloneVector,
-		      NOX::Epetra::Scaling* scalingObject = 0);
+  LinearSystemAztecOO(
+    NOX::Parameter::List& printingParams, 
+    NOX::Parameter::List& linearSolverParams, 
+    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian>& iJac, 
+    const Teuchos::RefCountPtr<Epetra_Operator>& J,
+    const NOX::Epetra::Vector& cloneVector,
+    const Teuchos::RefCountPtr<NOX::Epetra::Scaling> scalingObject = 
+    Teuchos::null);
 
   //! Constructor with a user supplied Preconditioner Operator only.  
   /*! Jacobian operator will be constructed internally based on the
@@ -330,25 +334,29 @@ public:
     parameter key "Jacobian Operator" for more details.  Defaults 
     to using a NOX::Epetra::MatrixFree object.
    */
-  LinearSystemAztecOO(NOX::Parameter::List& printingParams, 
-		      NOX::Parameter::List& linearSolverParams, 
-		      NOX::Epetra::Interface::Required& i, 
-		      NOX::Epetra::Interface::Preconditioner& iPrec, 
-		      Epetra_Operator& M,
-		      Epetra_Vector& cloneVector,
-		      NOX::Epetra::Scaling* scalingObject = 0);
-
+  LinearSystemAztecOO(
+    NOX::Parameter::List& printingParams, 
+    NOX::Parameter::List& linearSolverParams, 
+    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
+    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner>& iPrec,
+    const Teuchos::RefCountPtr<Epetra_Operator>& M,
+    const NOX::Epetra::Vector& cloneVector,
+    const Teuchos::RefCountPtr<NOX::Epetra::Scaling> scalingObject = 
+    Teuchos::null);
+  
   //! Constructor with user supplied separate objects for the
   //! Jacobian (J) and %Preconditioner (M).  
   //! linearSolverParams is the "Linear %Solver" sublist of parameter list.
-  LinearSystemAztecOO(NOX::Parameter::List& printingParams, 
-		      NOX::Parameter::List& linearSolverParams, 
-		      NOX::Epetra::Interface::Jacobian& iJac, 
-		      Epetra_Operator& J,  
-		      NOX::Epetra::Interface::Preconditioner& iPrec, 
-		      Epetra_Operator& M,
-		      Epetra_Vector& cloneVector,
-		      NOX::Epetra::Scaling* scalingObject = 0);
+  LinearSystemAztecOO(
+    NOX::Parameter::List& printingParams, 
+    NOX::Parameter::List& linearSolverParams, 
+    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian>& iJac, 
+    const Teuchos::RefCountPtr<Epetra_Operator>& J,  
+    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner>& iPrec, 
+    const Teuchos::RefCountPtr<Epetra_Operator>& M,
+    const NOX::Epetra::Vector& cloneVector,
+    const Teuchos::RefCountPtr<NOX::Epetra::Scaling> scalingObject = 
+    Teuchos::null);
 
   //! Destructor.
   virtual ~LinearSystemAztecOO();
@@ -368,7 +376,7 @@ public:
 				   const NOX::Epetra::Vector& input, 
 				   NOX::Epetra::Vector& result) const;
 
-  virtual bool createPreconditioner(Epetra_Vector& x, 
+  virtual bool createPreconditioner(const NOX::Epetra::Vector& x, 
 				    NOX::Parameter::List& linearSolverParams,
 				    bool recomputeGraph) const;
   
@@ -384,27 +392,27 @@ public:
   virtual void reset(NOX::Parameter::List& linearSolverParams);
 
   //! Sets the diagonal scaling vector(s) used in scaling the linear system.  See NOX::Epetra::Scaling for details on how to specify scaling of the linear system.  
-  void resetScaling(NOX::Epetra::Scaling& scalingObject);
+  void resetScaling(const Teuchos::RefCountPtr<NOX::Epetra::Scaling>& s);
 
   //! Compute the Jacobian 
-  virtual bool computeJacobian(Epetra_Vector& x);
+  virtual bool computeJacobian(const NOX::Epetra::Vector& x);
 
   //! NOX::Interface::Jacobian accessor
-  virtual const NOX::Epetra::Interface::Jacobian& 
+  virtual Teuchos::RefCountPtr<const NOX::Epetra::Interface::Jacobian> 
   getJacobianInterface() const;
 
   //! NOX::Interface::Preconditioiner accessor
-  virtual const NOX::Epetra::Interface::Preconditioner& 
+  virtual Teuchos::RefCountPtr<const NOX::Epetra::Interface::Preconditioner> 
   getPrecInterface() const;
 
   //! Jacobian Epetra_Operator accessor
-  virtual const Epetra_Operator& getJacobianOperator() const;
+  virtual Teuchos::RefCountPtr<const Epetra_Operator> getJacobianOperator() const;
 
   //! Jacobian Epetra_Operator accessor
-  virtual Epetra_Operator& getJacobianOperator();
+  virtual Teuchos::RefCountPtr<Epetra_Operator> getJacobianOperator();
 
   //! Preconditioner Epetra_Operator accessor (only the base matrix if using an internal preconditioner - aztecoo or ifpack). 
-  virtual const Epetra_Operator& getPrecOperator() const;
+  virtual Teuchos::RefCountPtr<const Epetra_Operator> getPrecOperator() const;
 
   //! Return preconditioner operator generated and stored in AztecOO
   virtual const Epetra_Operator& getGeneratedPrecOperator() const;
@@ -421,12 +429,10 @@ public:
   double getTimeApplyJacobianInverse() const;
 
   //! Set Jacobian operator for solve
-  virtual void 
-  setJacobianOperatorForSolve(const Epetra_Operator& solveJacOp);
+  virtual void setJacobianOperatorForSolve(const Teuchos::RefCountPtr<const Epetra_Operator>& solveJacOp);
 
   //! Set preconditioner operator for solve
-  virtual void 
-  setPrecOperatorForSolve(const Epetra_Operator& solvePrecOp);
+  virtual void setPrecOperatorForSolve(const Teuchos::RefCountPtr<const Epetra_Operator>& solvePrecOp);
 
 protected:
 
@@ -435,18 +441,22 @@ protected:
 			       AztecOO& aztec) const;
   
   //! Creates an internally owned Epetra_Operator for the Jacobian. 
-  virtual bool createJacobianOperator(NOX::Parameter::List& lsParams,
-				   NOX::Epetra::Interface::Required& iReq, 
-				   const Epetra_Vector& cloneVector); 
+  virtual bool createJacobianOperator(
+       NOX::Parameter::List& printParams,
+       NOX::Parameter::List& lsParams,
+       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+       const NOX::Epetra::Vector& cloneVector); 
 
   //! Creates an internally owned Epetra_Operator for the Preconditioner. 
-  virtual bool createPrecOperator(NOX::Parameter::List& lsParams,
-				  NOX::Epetra::Interface::Required& iReq, 
-				  const Epetra_Vector& cloneVector); 
+  virtual bool createPrecOperator(
+       NOX::Parameter::List& printParams,
+       NOX::Parameter::List& lsParams,
+       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+       const NOX::Epetra::Vector& cloneVector); 
 
   //! Checks to make sure that the supplied operators are valid for the requested preconditioning options set in the parameter list. 
   virtual bool checkPreconditionerValidity();
-  
+
   /*! 
     \brief 
     Allocates the objects required for using ifpack preconditioners
@@ -493,35 +503,26 @@ protected:
 
 protected:
 
-  //! Printing Parameters List
-  NOX::Parameter::List printParams;
-
   //! Printing Utilities object
   NOX::Utils utils;
 
   //! Reference to the user supplied Jacobian interface functions
-  NOX::Epetra::Interface::Jacobian* jacInterfacePtr;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInterfacePtr;
 
   //! Type of operator for the Jacobian.
   OperatorType jacType;
   
   //! Pointer to the Jacobian operator.
-  mutable Epetra_Operator* jacPtr;
-
-  //! True if this object created and owns the jacobian operator.
-  bool ownsJacOperator;
+  mutable Teuchos::RefCountPtr<Epetra_Operator> jacPtr;
 
   //! Reference to the user supplied preconditioner interface functions
-  NOX::Epetra::Interface::Preconditioner* precInterfacePtr;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> precInterfacePtr;
 
   //! Type of operator for the preconditioner. 
   OperatorType precType;
 
   //! Pointer to the preconditioner operator.
-  mutable Epetra_Operator* precPtr;
-
-  //! True if this object created and owns the preconditioner operator.
-  bool ownsPrecOperator;
+  mutable Teuchos::RefCountPtr<Epetra_Operator> precPtr;
 
   //! Source of the RowMatrix if using an AztecOO native preconditioner 
   enum PreconditionerMatrixSourceType {UseJacobian, 
@@ -532,23 +533,25 @@ protected:
   PreconditionerType precAlgorithm;
   
   //! Aztec solver object.
-  mutable AztecOO* aztecSolverPtr;
+  mutable Teuchos::RefCountPtr<AztecOO> aztecSolverPtr;
 
   /*! 
     \brief Stores the ifpack graph. 
     Mutable since the applyRightPreconditioner() is a const method.
   */
-  mutable Ifpack_IlukGraph* ifpackGraphPtr;
+  mutable Teuchos::RefCountPtr<Ifpack_IlukGraph> ifpackGraphPtr;
 
   /*! \brief Stores the ifpack preconditioner.
     Mutable since the applyRightPreconditioner() is a const method.
   */
-  mutable Ifpack_CrsRiluk* ifpackPreconditionerPtr;
+  mutable Teuchos::RefCountPtr<Ifpack_CrsRiluk> 
+  ifpackPreconditionerPtr;
 
   /*! \brief Stores the new ifpack preconditioner.
     Mutable since the applyRightPreconditioner() is a const method.
   */
-  mutable Ifpack_Preconditioner* newIfpackPreconditionerPtr;
+  mutable Teuchos::RefCountPtr<Ifpack_Preconditioner> 
+  newIfpackPreconditionerPtr;
 
 #ifdef HAVE_NOX_ML_EPETRA
   /*! \brief Stores the ml preconditioner.
@@ -558,10 +561,10 @@ protected:
 #endif
 
   //! Scaling object supplied by the user
-  NOX::Epetra::Scaling* scaling;
+  Teuchos::RefCountPtr<NOX::Epetra::Scaling> scaling;
 
   //! An extra temporary vector, only allocated if needed.
-  mutable Epetra_Vector* tmpVectorPtr;
+  mutable Teuchos::RefCountPtr<NOX::Epetra::Vector> tmpVectorPtr;
 
   mutable double conditionNumberEstimate;
 
@@ -592,8 +595,11 @@ protected:
   //! Total time spent in applyJacobianInverse (sec.).
   mutable double timeApplyJacbianInverse;
 
-  //! Jacobian operator that will be used in solves
-  Epetra_Operator* solveJacOpPtr;
+  //! Override the Jacobian operator that will be used in solves.
+  Teuchos::RefCountPtr<Epetra_Operator> solveJacOpPtr;
+
+  //! Override the Preconditioner operator that will be used in solves.
+  Teuchos::RefCountPtr<Epetra_Operator> solvePrecOpPtr;
 
 };
 

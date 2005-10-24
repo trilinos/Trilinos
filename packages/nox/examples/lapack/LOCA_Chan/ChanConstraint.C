@@ -122,7 +122,7 @@ ChanConstraint::setParams(
 NOX::Abstract::Group::ReturnType
 ChanConstraint::computeConstraints()
 {
-  constraints(0,0) = 0.5 * (*x)[0].dot((*x)[0]) / n - p.getValue("gamma");
+  constraints(0,0) = 0.5 * (*x)[0].innerProduct((*x)[0]) / n - p.getValue("gamma");
   isValidConstraints = true;
 
   return NOX::Abstract::Group::Ok;

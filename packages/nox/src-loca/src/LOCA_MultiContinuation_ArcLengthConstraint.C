@@ -159,7 +159,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeConstraints()
   secant->multiply(1.0, scaledTangent, constraints);
   for (int i=0; i<arcLengthGroup->getNumParams(); i++)
     constraints(i,0) -= arcLengthGroup->getStepSize(i) * 
-      scaledTangent[i].dot(tangent[i]);
+      scaledTangent[i].innerProduct(tangent[i]);
 
   delete secant;
 

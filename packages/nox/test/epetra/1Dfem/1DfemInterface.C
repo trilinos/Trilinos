@@ -56,11 +56,8 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
   StandardMap(0),
   OverlapMap(0),
   Importer(0),
-  initialSolution(0),
   rhs(0),
-  Graph(0),
-  jacobian(0),
-  xptr(0)
+  Graph(0)
 {
 
   // Construct a Source Map that puts approximately the same 
@@ -101,19 +98,19 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
 
   // Construct Linear Objects  
   Importer = new Epetra_Import(*OverlapMap, *StandardMap);
-  initialSolution = new Epetra_Vector(*StandardMap);
+  initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
 
   // Assign non-zero entries in the graph
   createGraph();
 
   // Construct a matrix
-  jacobian = new Epetra_CrsMatrix (Copy, *Graph);
+  jacobian = Teuchos::rcp(new Epetra_CrsMatrix (Copy, *Graph));
 
   // Clean-up 
   jacobian->FillComplete();
 
   // Create the nodal coordinates
-  xptr = new Epetra_Vector(*StandardMap);
+  xptr = Teuchos::rcp(new Epetra_Vector(*StandardMap));
   double Length = xmax - xmin;
   double dx = Length/((double) NumGlobalElements-1);
   for (int i=0; i < NumMyElements; i++) {
@@ -127,11 +124,8 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
 // Destructor
 Interface::~Interface()
 {
-  delete jacobian;
   delete Graph;
   delete Importer;
-  delete initialSolution;
-  delete xptr;
   delete OverlapMap;
   delete StandardMap;
 }
@@ -290,19 +284,19 @@ bool Interface::evaluate(NOX::Epetra::Interface::Required::FillType flag,
   return true;
 }
 
-Epetra_Vector& Interface::getSolution()
+Teuchos::RefCountPtr<Epetra_Vector> Interface::getSolution()
 {
-  return *initialSolution;
+  return initialSolution;
 }
   
-Epetra_Vector& Interface::getMesh()
+Teuchos::RefCountPtr<Epetra_Vector> Interface::getMesh()
 {
-  return *xptr;
+  return xptr;
 }
   
-Epetra_CrsMatrix& Interface::getJacobian()
+Teuchos::RefCountPtr<Epetra_CrsMatrix> Interface::getJacobian()
 {
-  return *jacobian;
+  return jacobian;
 }
 
 bool Interface::createGraph()

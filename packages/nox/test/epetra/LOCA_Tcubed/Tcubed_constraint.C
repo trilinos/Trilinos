@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
     pVector.addParameter("Left BC", 0.0);
     pVector.addParameter("Right BC", 0.1);
     pVector.addParameter("Constraint Param", 
-			 0.5*locaSoln.dot(locaSoln) / locaSoln.length());
+			 0.5*locaSoln.innerProduct(locaSoln) / locaSoln.length());
 
     // Create the Group
     Teuchos::RefCountPtr<LOCA::Epetra::Group> grp = 

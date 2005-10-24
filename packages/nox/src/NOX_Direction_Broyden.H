@@ -1,8 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
-
 //@HEADER
 // ************************************************************************
 // 
@@ -40,6 +38,7 @@
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Direction_Utils_InexactNewton.H" // class data element
 #include "NOX_Parameter_List.H"	   // class data element 
+#include "Teuchos_RefCountPtr.hpp" // class data element
 
 // Forward declaration
 namespace NOX {
@@ -172,7 +171,7 @@ public:
     void setStep(double step);
 
     //! Get pointer to \f$s\f$
-    const NOX::Abstract::Vector* sPtr() const;
+    Teuchos::RefCountPtr<const NOX::Abstract::Vector> sPtr() const;
     
     //! Get the step, \f$\lambda\f$
     double step() const;
@@ -183,7 +182,7 @@ public:
   private:
     
     //! A pointer to the \f$s\f$-vector
-    NOX::Abstract::Vector* sptr;
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> sptr;
     
     /*! 
         \brief The associated step length, i.e., \f$\lambda\f$
@@ -312,13 +311,15 @@ public:
 public:
 
   //! Constructor
-  Broyden(const NOX::Utils& u, NOX::Parameter::List& params);
+  Broyden(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+	  NOX::Parameter::List& params);
 
   //! Destructor
   virtual ~Broyden();
 
   // derived
-  virtual bool reset(NOX::Parameter::List& params);
+  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+		     NOX::Parameter::List& params);
 
   //! Not supported for this direction - only works for line search based solver
   virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
@@ -360,8 +361,11 @@ NOX::Direction::Broyden::<functionName> - <errorMsg>
 
 private:
 
+  //! Global data pointer.  Keep this so the parameter list remains valid.
+  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+
   //! Printing Utils
-  const NOX::Utils& utils;
+  Teuchos::RefCountPtr<NOX::Utils> utils;
 
   //! "Linear Solver" sublist from "Direction"/"Broyden"
   /*! 
@@ -371,7 +375,7 @@ private:
   NOX::Parameter::List* lsParamsPtr;
 
   //! Group to hold the "old" Jacobian
-  NOX::Abstract::Group* oldJacobianGrpPtr;
+  Teuchos::RefCountPtr<NOX::Abstract::Group> oldJacobianGrpPtr;
 
   /*! 
     \brief Counter of how many times the Jacobian associated with
@@ -405,5 +409,4 @@ private:
 } // namespace Direction
 } // namespace NOX
 
-#endif
 #endif

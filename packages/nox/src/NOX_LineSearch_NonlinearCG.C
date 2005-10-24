@@ -27,8 +27,6 @@
 // ************************************************************************
 //@HEADER
 
-#ifdef WITH_PRERELEASE
-
 #include "NOX_LineSearch_NonlinearCG.H"
 
 #include "NOX_Common.H"
@@ -37,37 +35,38 @@
 #include "NOX_Solver_Generic.H"
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
+#include "NOX_GlobalData.H"
 
-using namespace NOX;
-using namespace NOX::LineSearch;
-
-NonlinearCG::NonlinearCG(const NOX::Utils& u, Parameter::List& params) :
-  utils(u),
-  vecPtr(0),
-  grpPtr(0)
+NOX::LineSearch::NonlinearCG::
+NonlinearCG(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	    Parameter::List& params)
 {
-  reset(params);
+  reset(gd, params);
 }
 
-NonlinearCG::~NonlinearCG()
+NOX::LineSearch::NonlinearCG::~NonlinearCG()
 {
 
 }
 
-bool NonlinearCG::reset(Parameter::List& params)
+bool NOX::LineSearch::NonlinearCG::
+reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+      Parameter::List& params)
 { 
+  utils = gd->getUtils();
   //NOX::Parameter::List& p = params.sublist("NonlinearCG");
   return true;
 }
 
-bool NonlinearCG::compute(Abstract::Group& newgrp, 
-		     double& step, 
-		     const Abstract::Vector& dir,
-		     const Solver::Generic& s) 
+bool NOX::LineSearch::NonlinearCG::compute(Abstract::Group& newgrp, 
+			       double& step, 
+			       const Abstract::Vector& dir,
+			       const Solver::Generic& s) 
 {
-  if (utils.isPrintType(NOX::Utils::InnerIteration))
+  if (utils->isPrintType(NOX::Utils::InnerIteration))
   {
-    utils.out() << "\n" << NOX::Utils::fill(72) << "\n" << "-- NonlinearCG Line Search -- \n";
+    utils->out() << "\n" << NOX::Utils::fill(72) << "\n" 
+		<< "-- NonlinearCG Line Search -- \n";
   }
 
   const Abstract::Group& oldgrp = s.getPreviousSolutionGroup();
@@ -77,40 +76,41 @@ bool NonlinearCG::compute(Abstract::Group& newgrp,
   // Note that the following could be wrapped with a while loop to allow
   // iterations to be attempted 
 
-  double numerator = oldgrp.getF().dot(dir);
-  double denominator = computeDirectionalDerivative(dir, oldgrp).dot(dir);
+  double numerator = oldgrp.getF().innerProduct(dir);
+  double denominator = 
+    computeDirectionalDerivative(dir, oldgrp).innerProduct(dir);
 
   step = - numerator / denominator;
   newgrp.computeX(oldgrp, dir, step);
   newgrp.computeF(); 
 
-  double checkOrthogonality = fabs( newgrp.getF().dot(dir) ); 
+  double checkOrthogonality = fabs( newgrp.getF().innerProduct(dir) ); 
 
-  if (utils.isPrintType(Utils::InnerIteration)) {
-    utils.out() << setw(3) << "1" << ":";
-    utils.out() << " step = " << utils.sciformat(step);
-    utils.out() << " orth = " << utils.sciformat(checkOrthogonality);
-    utils.out() << "\n" << NOX::Utils::fill(72) << "\n" << endl;
+  if (utils->isPrintType(Utils::InnerIteration)) {
+    utils->out() << setw(3) << "1" << ":";
+    utils->out() << " step = " << utils->sciformat(step);
+    utils->out() << " orth = " << utils->sciformat(checkOrthogonality);
+    utils->out() << "\n" << NOX::Utils::fill(72) << "\n" << endl;
   }
   
   return true;
 }
 
 
-NOX::Abstract::Vector& NonlinearCG::computeDirectionalDerivative(
-                                const Abstract::Vector& dir,
-                                const Abstract::Group& grp)
+NOX::Abstract::Vector& NOX::LineSearch::NonlinearCG::
+computeDirectionalDerivative(const Abstract::Vector& dir,
+			     const Abstract::Group& grp)
 {
   // Allocate space for vecPtr and grpPtr if necessary
-  if (vecPtr == 0)
+  if (Teuchos::is_null(vecPtr))
     vecPtr = dir.clone(ShapeCopy);
-  if (grpPtr == 0)
+  if (Teuchos::is_null(grpPtr))
     grpPtr = grp.clone(ShapeCopy);
 
   // Check that F exists
   if (!grp.isF())
   {
-    utils.out() << "NOX::LineSearch::NonlinearCG::computeDirectionalDerivative "
+    utils->out() << "NOX::LineSearch::NonlinearCG::computeDirectionalDerivative "
          << "- Invalid F" << endl;
     throw "NOX Error";
   }
@@ -141,5 +141,3 @@ NOX::Abstract::Vector& NonlinearCG::computeDirectionalDerivative(
 
   return(*vecPtr);
 }
-
-#endif

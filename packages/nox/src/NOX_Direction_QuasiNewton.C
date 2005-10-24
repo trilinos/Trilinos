@@ -39,13 +39,12 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
+#include "NOX_GlobalData.H"
 
 //------------------------------------------------------------
 
 NOX::Direction::QuasiNewton::MemoryUnit::MemoryUnit() 
 {
-  sPtr = NULL;
-  yPtr = NULL;
   sdotyValue = 0;
   ydotyValue = 0;
   rhoValue = 0;
@@ -53,8 +52,7 @@ NOX::Direction::QuasiNewton::MemoryUnit::MemoryUnit()
 
 NOX::Direction::QuasiNewton::MemoryUnit::~MemoryUnit() 
 {
-  delete sPtr;
-  delete yPtr;
+
 }
 
 void NOX::Direction::QuasiNewton::MemoryUnit::reset(const Abstract::Vector& newX, 
@@ -62,7 +60,7 @@ void NOX::Direction::QuasiNewton::MemoryUnit::reset(const Abstract::Vector& newX
 							 const Abstract::Vector& newG, 
 							 const Abstract::Vector& oldG)
 {
-  if (sPtr == NULL)
+  if (Teuchos::is_null(sPtr))
   {
     sPtr = newX.clone(ShapeCopy);
     yPtr = newX.clone(ShapeCopy);
@@ -70,8 +68,8 @@ void NOX::Direction::QuasiNewton::MemoryUnit::reset(const Abstract::Vector& newX
 
   sPtr->update(1.0, newX, -1.0, oldX, 0.0);
   yPtr->update(1.0, newG, -1.0, oldG, 0.0);
-  sdotyValue = sPtr->dot(*yPtr);
-  ydotyValue = yPtr->dot(*yPtr);
+  sdotyValue = sPtr->innerProduct(*yPtr);
+  ydotyValue = yPtr->innerProduct(*yPtr);
   rhoValue = 1.0 / sdotyValue;
 }
 
@@ -159,19 +157,24 @@ NOX::Direction::QuasiNewton::Memory::operator[](int i) const
 
 //------------------------------------------------------------
 
-NOX::Direction::QuasiNewton::QuasiNewton(const NOX::Utils& u, Parameter::List& p) :
-  utils(u),
+NOX::Direction::QuasiNewton::
+QuasiNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+	    Parameter::List& p) :
   paramsPtr(NULL)
 {
-  reset(p);
+  reset(gd, p);
 }
 
 NOX::Direction::QuasiNewton::~QuasiNewton()
 {
 }
 
-bool NOX::Direction::QuasiNewton::reset(Parameter::List& params)
+bool NOX::Direction::QuasiNewton::
+reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+      Parameter::List& params)
 {
+  globalDataPtr = gd;
+  utils = gd->getUtils();
   paramsPtr = &params;
   NOX::Parameter::List& p = params.sublist("Quasi-Newton");
   memory.reset(p.getParameter("Memory", 5));
@@ -222,7 +225,7 @@ bool NOX::Direction::QuasiNewton::compute(NOX::Abstract::Vector& dir,
   
     for (int i = m-1; i >= 0; i --)
     {
-      alpha[i] = memory[i].rho() * dir.dot( memory[i].s() );
+      alpha[i] = memory[i].rho() * dir.innerProduct( memory[i].s() );
       dir.update(-1.0 * alpha[i], memory[i].y(), 1.0);
     }
 
@@ -230,7 +233,7 @@ bool NOX::Direction::QuasiNewton::compute(NOX::Abstract::Vector& dir,
 
     for (int i = 0; i < m; i ++)
     {
-      beta = memory[i].rho() * dir.dot( memory[i].y() );
+      beta = memory[i].rho() * dir.innerProduct( memory[i].y() );
       dir.update(alpha[i] - beta, memory[i].s(), 1.0);
     }
   }
@@ -238,18 +241,21 @@ bool NOX::Direction::QuasiNewton::compute(NOX::Abstract::Vector& dir,
   return true;
 }
 
-bool NOX::Direction::QuasiNewton::compute(NOX::Abstract::Vector& dir, 
-					  NOX::Abstract::Group& soln, 
-					  const Solver::LineSearchBased& solver)
+bool NOX::Direction::QuasiNewton::
+compute(NOX::Abstract::Vector& dir, 
+	NOX::Abstract::Group& soln, 
+	const Solver::LineSearchBased& solver)
 {
   return NOX::Direction::Generic::compute( dir, soln, solver );
 }
 
-void NOX::Direction::QuasiNewton::throwError(const string& functionName, const string& errorMsg)
+void NOX::Direction::QuasiNewton::throwError(const string& functionName, 
+					     const string& errorMsg)
 {
-    if (utils.isPrintType(Utils::Error))
-      utils.err() << "NOX::Direction::QuasiNewton::" << functionName << " - " << errorMsg << endl;
-    throw "NOX Error";
+  if (utils->isPrintType(Utils::Error))
+    utils->err() << "NOX::Direction::QuasiNewton::" << functionName 
+		 << " - " << errorMsg << endl;
+  throw "NOX Error";
 }
 
 

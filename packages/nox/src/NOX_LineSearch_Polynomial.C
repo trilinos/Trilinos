@@ -38,17 +38,18 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Parameter_List.H"
-#include "NOX_Parameter_UserNorm.H"
-#include "NOX_Parameter_MeritFunction.H"
+#include "NOX_MeritFunction_Generic.H"
+#include "NOX_GlobalData.H"
 
-NOX::LineSearch::Polynomial::Polynomial(const NOX::Utils& u, Parameter::List& params) :
+NOX::LineSearch::Polynomial::
+Polynomial(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	   Parameter::List& params) :
+  globalDataPtr(gd),
   paramsPtr(NULL),
-  print(u),
-  slopeUtil(u),
-  userNormPtr(NULL),
-  meritFuncPtr(NULL)
+  print(gd->getUtils()),
+  slopeUtil(gd)
 {
-  reset(params);
+  reset(gd, params);
 }
 
 NOX::LineSearch::Polynomial::~Polynomial()
@@ -56,9 +57,15 @@ NOX::LineSearch::Polynomial::~Polynomial()
 
 }
 
-bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
+bool NOX::LineSearch::Polynomial::
+reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+      Parameter::List& params)
 { 
+  globalDataPtr = gd;
+  meritFuncPtr = gd->getMeritFunction();
+  print.reset(gd->getUtils());
   paramsPtr = &params;
+  slopeUtil.reset(gd);
 
   NOX::Parameter::List& p = params.sublist("Polynomial");
   
@@ -114,24 +121,6 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
   maxIncreaseIter = p.getParameter("Maximum Iteration for Increase", 0);
   maxRelativeIncrease = p.getParameter("Allowed Relative Increase", 1.e2);
 
-  // Determine if a User Defined Norm is present
-  userNormPtr = NULL;
-  if (p.isParameterArbitrary("User Defined Norm"))
-  {
-    userNormPtr = const_cast<NOX::Parameter::UserNorm*>
-      (dynamic_cast<const NOX::Parameter::UserNorm*>
-       (&(p.getArbitraryParameter("User Defined Norm"))));
-  }
-
-  // Determine the merit function to use
-  meritFuncPtr = NULL;
-  if (p.isParameterArbitrary("User Defined Merit Function")) 
-  {
-    meritFuncPtr = const_cast<NOX::Parameter::MeritFunction*>
-      (dynamic_cast<const NOX::Parameter::MeritFunction*>
-       (&(p.getArbitraryParameter("User Defined Merit Function"))));
-  }
-
   // Is increase allowed?
   doAllowIncrease = (maxIncreaseIter > 0);
 
@@ -163,14 +152,14 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
 
   // Computations with old group
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
-  double oldPhi = computePhi(oldGrp);	// \phi(0)
+  double oldPhi = meritFuncPtr->computef(oldGrp);	// \phi(0)
   double oldValue = computeValue(oldGrp, oldPhi);
-  double oldSlope = computeSlope(dir, oldGrp);
+  double oldSlope = meritFuncPtr->computeSlope(dir, oldGrp);
 
   // Computations with new group
   step = defaultStep;
   updateGrp(newGrp, oldGrp, dir, step);
-  double newPhi = computePhi(newGrp);
+  double newPhi = meritFuncPtr->computef(newGrp);
   double newValue = computeValue(newGrp, newPhi);
 
   bool isConverged = false;
@@ -183,7 +172,8 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
     isFailed = true;
   }
   else 
-    isConverged = checkConvergence(newValue, oldValue, oldSlope, step, eta, nIters, nNonlinearIters);
+    isConverged = checkConvergence(newValue, oldValue, oldSlope, step, 
+				   eta, nIters, nNonlinearIters);
 
   // Increment the number of newton steps requiring a line search
   if ((useCounter) && (!isConverged))
@@ -196,7 +186,8 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
 
   while ((!isConverged) && (!isFailed)) 
   {
-    print.printStep(nIters, step, oldValue, newValue, "", (suffDecrCond != AredPred));
+    print.printStep(nIters, step, oldValue, newValue, 
+		    "", (suffDecrCond != AredPred));
 
     if (nIters > maxIters) 
     {
@@ -236,7 +227,8 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
       prevPhi = newPhi;
       prevStep = step;
 
-      step = - (oldSlope * prevStep * prevStep) / (2.0 * (prevPhi - oldPhi - prevStep * oldSlope)) ;
+      step = - (oldSlope * prevStep * prevStep) / 
+	(2.0 * (prevPhi - oldPhi - prevStep * oldSlope)) ;
 
     }
 
@@ -253,7 +245,8 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
       double term2 = prevPrevPhi - oldPhi - prevPrevStep * oldSlope ;
       
       double a = 1.0 / (prevStep - prevPrevStep) * 
-	(term1 / (prevStep * prevStep) - term2 / (prevPrevStep * prevPrevStep)) ;
+	(term1 / (prevStep * prevStep) - term2 / 
+	 (prevPrevStep * prevPrevStep)) ;
       
       double b = 1.0 / (prevStep - prevPrevStep) *
 	(-1.0 * term1 * prevPrevStep / (prevStep * prevStep) +
@@ -299,7 +292,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
     
     // Update the new group and compute new measures
     updateGrp(newGrp, oldGrp, dir, step);
-    newPhi = computePhi(newGrp);
+    newPhi = meritFuncPtr->computef(newGrp);
     newValue = computeValue(newGrp, newPhi);
     
     nIters ++;
@@ -307,7 +300,8 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
     if (useCounter)
       counter.incrementNumIterations();
 
-    isConverged = checkConvergence(newValue, oldValue, oldSlope, step, eta, nIters, nNonlinearIters);
+    isConverged = checkConvergence(newValue, oldValue, oldSlope, step, 
+				   eta, nIters, nNonlinearIters);
     
   } // End while loop 
 
@@ -329,7 +323,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
     else
     {
       updateGrp(newGrp, oldGrp, dir, step);
-      newPhi = computePhi(newGrp);
+      newPhi = meritFuncPtr->computef(newGrp);
       newValue = computeValue(newGrp, newPhi);
     }
   }
@@ -345,11 +339,12 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
   return (!isFailed);
 }
 
-bool NOX::LineSearch::Polynomial::checkConvergence(double newValue, double oldValue, 
-						      double oldSlope,
-						      double step, double eta, 
-						      int nIters,
-						      int nNonlinearIters) const
+bool NOX::LineSearch::Polynomial::
+checkConvergence(double newValue, double oldValue, 
+		 double oldSlope,
+		 double step, double eta, 
+		 int nIters,
+		 int nNonlinearIters) const
 {
   if ((nIters == 1) && (doForceInterpolation))
     return false;
@@ -386,10 +381,11 @@ bool NOX::LineSearch::Polynomial::checkConvergence(double newValue, double oldVa
   return returnVal;
 }
 
-bool NOX::LineSearch::Polynomial::updateGrp(NOX::Abstract::Group& newGrp, 
-					    const NOX::Abstract::Group& oldGrp, 
-					    const NOX::Abstract::Vector& dir, 
-					    double step) const
+bool NOX::LineSearch::Polynomial::
+updateGrp(NOX::Abstract::Group& newGrp, 
+	  const NOX::Abstract::Group& oldGrp, 
+	  const NOX::Abstract::Vector& dir, 
+	  double step) const
 {
   newGrp.computeX(oldGrp, dir, step);
 
@@ -400,85 +396,38 @@ bool NOX::LineSearch::Polynomial::updateGrp(NOX::Abstract::Group& newGrp,
   return true;
 }
 
-double NOX::LineSearch::Polynomial::computePhi(const NOX::Abstract::Group& grp)
-{
-  double phi = 0;
-
-  if (meritFuncPtr != 0) 
-  {
-    phi = meritFuncPtr->computef(grp);
-  }
-  else
-  { 
-    phi = grp.getNormF();
-    phi = 0.5 * phi * phi;
-  }
-
-  return phi;
-}
-
-double NOX::LineSearch::Polynomial::computeValue(const NOX::Abstract::Group& grp, double phi)
+double NOX::LineSearch::Polynomial::
+computeValue(const NOX::Abstract::Group& grp, double phi)
 {
   double value = phi;
 
   if (suffDecrCond == AredPred) 
   {
-    if (userNormPtr != NULL)
-      value = userNormPtr->norm(grp.getF());
-    else
-      value = grp.getNormF();
+    value = grp.getNormF();
   }
 
   return value;
-}
-
-
-double NOX::LineSearch::Polynomial::computeSlope(const NOX::Abstract::Vector& dir, 
-						 const NOX::Abstract::Group& grp)
-{
-  double s;
-
-  if (meritFuncPtr != NULL) 
-  {
-    s = meritFuncPtr->computeSlope(dir, grp);
-  }
-  else 
-  {
-    if ( grp.isJacobian() )
-      s = slopeUtil.computeSlope(dir, grp);
-    else 
-      s = slopeUtil.computeSlopeWithOutJac(dir, grp);
-  }
-
-  return s;
 }
 
 void NOX::LineSearch::Polynomial::printOpeningRemarks() const
 {
   if (print.isPrintType(NOX::Utils::InnerIteration)) 
   {
-    print.out() << "\n" << NOX::Utils::fill(72) << "\n" << "-- Polynomial Line Search -- \n";
+    print.out() << "\n" << NOX::Utils::fill(72) << "\n" 
+		<< "-- Polynomial Line Search -- \n";
   }
 
   if (print.isPrintType(NOX::Utils::Details)) 
   {
-    if (userNormPtr != NULL)
-      print.out() << "       Norms = Using a user defined norm" << endl;
-    else 
-      print.out() << "       Norms = L-2" << endl;
-  
-    if (meritFuncPtr != NULL) 
-      print.out() << "       Merit Function = User Defined" << endl;
-    else 
-      print.out() << "       Merit Function = 0.5 * || F || * || F ||" << endl;
+    if (!Teuchos::is_null(meritFuncPtr)) 
+      print.out() << "       Merit Function = " << meritFuncPtr->name() 
+		  << endl;
   }
 }
 
 void NOX::LineSearch::Polynomial::printBadSlopeWarning(double slope) const
 {
-  if (print.isPrintType(NOX::Utils::Warning))
-    print.out() << "WARNING: Computed slope is positive (slope = " 
-	 << slope
-	 << ").\n" << "Using recovery step!" 
-	 << endl;
+    print.out(NOX::Utils::Warning) 
+      << "WARNING: Computed slope is positive (slope = " 
+      << slope << ").\n" << "Using recovery step!" << endl;
 }

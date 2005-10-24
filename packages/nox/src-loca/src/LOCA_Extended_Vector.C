@@ -359,14 +359,14 @@ LOCA::Extended::Vector::norm(const NOX::Abstract::Vector& weights) const
 }
 
 double 
-LOCA::Extended::Vector::dot(const NOX::Abstract::Vector& y) const
+LOCA::Extended::Vector::innerProduct(const NOX::Abstract::Vector& y) const
 {
   const LOCA::Extended::Vector& Y = 
     dynamic_cast<const LOCA::Extended::Vector&>(y);
   double d = 0.0;
   
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
-    d += vectorPtrs[i]->dot(*(Y.vectorPtrs[i]));
+    d += vectorPtrs[i]->innerProduct(*(Y.vectorPtrs[i]));
   for (int i=0; i<numScalars; i++)
     d += ((*scalarsPtr)(i,0))*((*Y.scalarsPtr)(i,0));
 

@@ -57,12 +57,12 @@
 **  (.) Need to look at Feng-Pulliam method with right preconditioning
 **  and nonzero initial guess.  Right now it appears to work, but it
 **  seems incorrect because of the following 2 lines:
-**     //vecz[iterations] = sPtr->dot(dir)/normU;
+**     //vecz[iterations] = sPtr->innerProduct(dir)/normU;
 **     vecz[iterations] = dir0xsc/normS/normU;  // bwb - works with right prec
 **  It seems the first should be used based on Dan's code and his defn of ss.
 **  Also, if d0_in_subspace_Vm then the line
 **     double cc = inner_product(iterations, vecz, yn) - dir0xsc/normS; 
-**  cannot use sPtr->dot(dir), presumably because the dot product must
+**  cannot use sPtr->innerProduct(dir), presumably because the dot product must
 **  use the original sc and not Minv'*sc, hence dir0xsc/normS.  I bet if I
 **  work this out on paper, then I would find that d0'*sc should use
 **  original sc and not Minv'*sc because d0 added in after right
@@ -108,25 +108,16 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
+#include "NOX_GlobalData.H"
 #include "stdio.h"  // for printf()
 
 // **************************************************************************
 // *** Constructor
 // **************************************************************************
-NOX::Direction::Tensor::Tensor(const NOX::Utils& u,
+NOX::Direction::Tensor::Tensor(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
 			       NOX::Parameter::List& params) :
-  utils(u),
-  inexactNewtonUtils(u, params)
+  inexactNewtonUtils(gd, params)
 {
-  scPtr = NULL;
-  acPtr = NULL;
-  jcxshatPtr = NULL;
-  mtinvscPtr = NULL;
-  vecw = NULL;
-  dTensor = NULL;
-  dInitial = NULL;
-  dTLambda = NULL;
-  dNewton = NULL;
   hess = NULL;
   givensC = NULL;
   givensS = NULL;
@@ -145,7 +136,7 @@ NOX::Direction::Tensor::Tensor(const NOX::Utils& u,
   vecq = NULL;
   vecz = NULL;
 
-  reset(params);
+  reset(gd, params);
 }
 
 
@@ -155,19 +146,6 @@ NOX::Direction::Tensor::~Tensor()
   printf("multsMv = %d   (direction)\n", multsMv);
   printf("multsJv = %d   (direction)\n", multsJv);
 #endif
-  
-  delete scPtr;
-  delete acPtr;
-  
-  for (int i=0; i<maxDim; i++)
-    delete basisVptr[i];
-  if (maxDim > 0)
-    delete [] basisVptr;
-  delete vecw;
-  delete dTensor;
-  delete dInitial;
-  delete dTLambda;
-  delete dNewton;
   
   delete_matrix(hess);
   delete_matrix(givensC);
@@ -180,8 +158,6 @@ NOX::Direction::Tensor::~Tensor()
     delete [] qk;
     delete [] q1subdiag;
     delete [] qNorm2;
-    if (precondition == Right && isMinvTransAvailable)
-      delete mtinvscPtr;
   }
 
   if (isSubspaceAugmented) {
@@ -198,8 +174,13 @@ NOX::Direction::Tensor::~Tensor()
 }
 
 
-bool NOX::Direction::Tensor::reset(NOX::Parameter::List& params)
+bool NOX::Direction::Tensor::
+reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+      NOX::Parameter::List& params)
 {
+  globalDataPtr = gd;
+  utils = gd->getUtils();
+  
   /*  bwb -
    *  May need code if repeatedly calling reset().
    *  Memory leaks might be an issue here.
@@ -218,7 +199,7 @@ bool NOX::Direction::Tensor::reset(NOX::Parameter::List& params)
   localParamsPtr = &(p.sublist("Linear Solver"));
 
   // Reset the inexact Newton Utilities (including linear solve tolerance)
-  inexactNewtonUtils.reset(utils, params);
+  inexactNewtonUtils.reset(gd, params);
   tol = localParams.getParameter("Tolerance", 1e-4);
 
   // Krylov solver parameters
@@ -236,24 +217,24 @@ bool NOX::Direction::Tensor::reset(NOX::Parameter::List& params)
     requestedBaseStep = TensorStep3;
   }
   else if (choice == "Tensor2") {
-    utils.out() << "Tensor step 2 is requested\n";
+    utils->out() << "Tensor step 2 is requested\n";
     requestedBaseStep = TensorStep2;
   }
   else if (choice == "Tensor2+") {
-    utils.out() << "Tensor step 2+ is requested\n";
+    utils->out() << "Tensor step 2+ is requested\n";
     requestedBaseStep = TensorStep2;
     isSubspaceAugmented = true;
   }
   else if (choice == "TensorFP") {
-    utils.out() << "Feng-Pulliam tensor step is requested\n";
+    utils->out() << "Feng-Pulliam tensor step is requested\n";
     requestedBaseStep = TensorStepFP;
   }
   else if (choice == "Newton") {
-    utils.out() << "Newton step is requested\n";
+    utils->out() << "Newton step is requested\n";
     requestedBaseStep = NewtonStep;
   }
   else {
-    utils.out() << "Warning: NOX::Direction::Tensor::reset() - the choice of "
+    utils->out() << "Warning: NOX::Direction::Tensor::reset() - the choice of "
 	 << "\"Compute Step\" parameter is invalid." << endl;
     requestedBaseStep = TensorStep3;
   }
@@ -351,7 +332,8 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
     if (isSubspaceAugmented) maxDim++;     // bwb - needed for V?
     
     /* may need to delete these pointers if reset more than once - bwb */
-    basisVptr = new NOX::Abstract::Vector* [maxDim];
+    //basisVptr = new NOX::Abstract::Vector* [maxDim];
+    basisVptr.resize(maxDim);
     for (int i=0; i<maxDim; i++)
       basisVptr[i] = soln.getX().clone(ShapeCopy);
     
@@ -445,7 +427,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
       applyPreconditioner(false, soln, *localParamsPtr, *vecw, *jcxshatPtr,
 			  "compute");
     }
-    //jcxshatNorm2 = jcxshatPtr->dot(*jcxshatPtr); // bwb - move here sometime
+    //jcxshatNorm2 = jcxshatPtr->innerProduct(*jcxshatPtr); // bwb - move here sometime
   }
   acPtr->update(1.0, solver.getPreviousSolutionGroup().getF(), -1.0);
   acPtr->update(-1.0, soln.getF(), 1.0);    
@@ -453,17 +435,17 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
     acPtr->scale(1/(normS*normS*normS*normS));
 
 #if DEBUG_LEVEL > 1
-  utils.out() << "Current Point: " << soln.getX().length() 
+  utils->out() << "Current Point: " << soln.getX().length() 
        << "  " << soln.getX().norm() << "  "; 
   soln.getX().print();
-  utils.out() << "Current F: ";
+  utils->out() << "Current F: ";
   soln.getF().print();
-  utils.out() << "Previous F: "; 
+  utils->out() << "Previous F: "; 
   solver.getPreviousSolutionGroup().getF().print();
-  utils.out() << "Previous direction: " << scPtr->length() 
+  utils->out() << "Previous direction: " << scPtr->length() 
        << "  " << normS << "  "; 
   scPtr->print();
-  utils.out() << "Tensor term ac: " << acPtr->length() 
+  utils->out() << "Tensor term ac: " << acPtr->length() 
        << "  " << acPtr->norm() << "  ";
   acPtr->print();
 #endif // DEBUG_LEVEL
@@ -479,7 +461,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
       isParameter("Adjusted Tolerance"))
     lsTol = solver.getParameterList().sublist("Line Search").
       getParameter("Adjusted Tolerance", tol);
-  utils.out() << "Adjusted tolerance = " << lsTol << endl;
+  utils->out() << "Adjusted tolerance = " << lsTol << endl;
   
   // Compute inexact forcing term if requested.
   tol = inexactNewtonUtils.computeForcingTerm(soln,
@@ -512,7 +494,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 	// a bad Newton step.
       {
 	*dInitial = *dNewton;
-	utils.out() << " Using Newton step instead of Tensor step in restart " << errTol/tol
+	utils->out() << " Using Newton step instead of Tensor step in restart " << errTol/tol
 	     << endl;
       }
 #endif
@@ -525,19 +507,19 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 #ifdef ALPHA_CORRECTION
     NOX::Abstract::Vector* vecPtr = soln.getX().clone(ShapeCopy);
     soln.applyJacobian(*dNewton, *vecPtr);      multsJv++;
-    double alpha = -vecPtr->dot(soln.getF()) / vecPtr->dot(*vecPtr);
+    double alpha = -vecPtr->innerProduct(soln.getF()) / vecPtr->innerProduct(*vecPtr);
     printf("    Alpha correction (dNewton) = %e\n", alpha); 
 
     if ( !(requestedStep == NewtonStep  ||  requestedStep == TensorStepFP)) {
       soln.applyJacobian(*dTensor, *vecPtr);      multsJv++;
-      double std = scPtr->dot(*dTensor);
+      double std = scPtr->innerProduct(*dTensor);
       std = std*std;
-      double aa = acPtr->dot(*acPtr) * std * std;
-      double ab = acPtr->dot(*vecPtr) * std;
-      double ac = acPtr->dot(soln.getF()) * std;
-      double bb = vecPtr->dot(*vecPtr);
-      double bc = vecPtr->dot(soln.getF());
-      double cc = soln.getF().dot(soln.getF());
+      double aa = acPtr->innerProduct(*acPtr) * std * std;
+      double ab = acPtr->innerProduct(*vecPtr) * std;
+      double ac = acPtr->innerProduct(soln.getF()) * std;
+      double bb = vecPtr->innerProduct(*vecPtr);
+      double bc = vecPtr->innerProduct(soln.getF());
+      double cc = soln.getF().innerProduct(soln.getF());
       double qval = 0.0;
       alpha = minQuartic(aa, 2*ab, 2*ac+bb, 2*bc, cc, true, qval);
       printf("    Alpha correction (dTensor) = %e\n", alpha); 
@@ -574,10 +556,12 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 
     // Compute the tensor terms....
     // (note that ac is not multiplied by 2)
-    NOX::Abstract::Vector* sPtr = soln.getX().clone(ShapeCopy);
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> sPtr = 
+      soln.getX().clone(ShapeCopy);
     *sPtr = *scPtr;
     sPtr->scale(1/normS);
-    NOX::Abstract::Vector* aPtr = soln.getF().clone(ShapeCopy);
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> aPtr = 
+      soln.getF().clone(ShapeCopy);
     *aPtr = *acPtr;
     aPtr->scale(normS*normS);
     
@@ -610,18 +594,18 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
       
       // Compute some vectors...
       for (int i=0; i<iterations+1; i++) 
-	vecz[i] = aPtr->dot(*basisVptr[i]);
+	vecz[i] = aPtr->innerProduct(*basisVptr[i]);
       for (int i=0; i<iterations; i++)
 	applyGivens(givensC[0][i], givensS[0][i], vecz[i], vecz[i+1]);
       double* yt = backsolve(hess, vecz, pindex, iterations);
       for (int i=0; i<iterations; i++) 
-	vecz[i] = sPtr->dot(*basisVptr[i]);
+	vecz[i] = sPtr->innerProduct(*basisVptr[i]);
     
       // Form beta equation...
       double aa = inner_product(iterations, vecz, yt);
       double bb = 1.0;
       double cc = inner_product(iterations, vecz, yn) - dir0xsc/normS;
-                                                      //sPtr->dot(dir);
+                                                      //sPtr->innerProduct(dir);
       double qval = 0;
       double beta = calculateBeta(aa, bb, cc, qval, lambdaBar, normS);
       
@@ -674,7 +658,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
       
       // Construct right-most column...
       for (int i=0; i<iterations+1; i++) 
-	vecz[i] = vecw->dot(*basisVptr[i]);
+	vecz[i] = vecw->innerProduct(*basisVptr[i]);
       for (int i=0; i<iterations; i++)
 	applyGivens(givensC[0][i], givensS[0][i], vecz[i], vecz[i+1]);
       double eta = 1.0 - inner_product(iterations, vecz, vecz);
@@ -697,7 +681,8 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 	matC[iterations][j] = 0;
       matC[iterations][iterations] = gamma;
             
-      NOX::Abstract::Vector* bPtr = soln.getF().clone(ShapeCopy);
+      Teuchos::RefCountPtr<NOX::Abstract::Vector> bPtr = 
+	soln.getF().clone(ShapeCopy);
       *bPtr = soln.getF();
       if (precondition == Left) {
 	*dTensor = *bPtr;  // temporary vector
@@ -712,7 +697,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 
       // Calculate tp = C\C'\(inv(Q)*(V'*b))
       for (int i=0; i<iterations+1; i++)          // tp = V(:,1:i+1)'*(-b)
-	vecz[i] = basisVptr[i]->dot(*bPtr);
+	vecz[i] = basisVptr[i]->innerProduct(*bPtr);
       for (int i=0; i<iterations; i++)            // tp = inv(Q)*tp
 	applyGivens(givensC[0][i], givensS[0][i], vecz[i], vecz[i+1]);
       for (int i=iterations-1; i>=0; i--) {       // tp = [R'*tp(1:i);u'*(-b)
@@ -720,14 +705,14 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 	for (int j=i-1; j>=0; j--)
 	  vecz[i] += vecz[j]*hess[j][i];
       }
-      vecz[iterations] = vecw->dot(*bPtr);
+      vecz[iterations] = vecw->innerProduct(*bPtr);
       vectmp = backsolve(matC, vecz, pindex, iterations+1, 0, true);
       vecf   = backsolve(matC, vectmp, pindex, iterations+1);
       delete vectmp;  vectmp = NULL;
       
       // Calculate tp = C\C'\(inv(Q)*(V'*ac))
       for (int i=0; i<iterations+1; i++)          // tp = V(:,1:i+1)'*(-b)
-	vecz[i] = basisVptr[i]->dot(*aPtr);
+	vecz[i] = basisVptr[i]->innerProduct(*aPtr);
       for (int i=0; i<iterations; i++)            // tp = inv(Q)*tp
 	applyGivens(givensC[0][i], givensS[0][i], vecz[i], vecz[i+1]);
       for (int i=iterations-1; i>=0; i--) {       // tp = [R'*tp(1:i);u'*(-b)
@@ -735,15 +720,15 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 	for (int j=i-1; j>=0; j--)
 	  vecz[i] += vecz[j]*hess[j][i];
       }
-      vecz[iterations] = vecw->dot(*aPtr);
+      vecz[iterations] = vecw->innerProduct(*aPtr);
       vectmp = backsolve(matC, vecz, pindex, iterations+1, 0, true);
       yt     = backsolve(matC, vectmp, pindex, iterations+1);
       delete vectmp;  vectmp = NULL;
 
       // Calculate sb
       for (int i=0; i<iterations; i++) 
-	vecz[i] = sPtr->dot(*basisVptr[i]);
-      //vecz[iterations] = sPtr->dot(*dInitial)/normU; // doesn't work w/ right
+	vecz[i] = sPtr->innerProduct(*basisVptr[i]);
+      //vecz[iterations] = sPtr->innerProduct(*dInitial)/normU; // doesn't work w/ right
       vecz[iterations] = dir0xsc/normS/normU;    // bwb - works with right prec
 
       // Form beta equation...
@@ -781,9 +766,9 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
       dTensor->update(yt[iterations]/normU, *dInitial, 1);// add in initial dir
 
 #if DEBUG_LEVEL > 2
-      utils.out() << "yt ";
+      utils->out() << "yt ";
       print_vector(iterations, yt);
-      utils.out() << "yn ";
+      utils->out() << "yn ";
       print_vector(iterations, yn);
       printf("qbeta equation: %e  %e  %e\n", aa, bb, cc);
       printf("qbeta results : %e  %e  %e\n", beta, qval, lambdaBar);
@@ -791,15 +776,11 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 
       delete [] yt;
       delete [] vecf;
-      delete bPtr;
     }  // endif (isDir0)
     
 #ifdef CHECK_RESIDUALS
     printDirectionInfo("dTensor (F-P)", *dTensor, soln, solver, true);
 #endif  // CHECK_RESIDUALS
-
-    delete sPtr;
-    delete aPtr;
 
     // Set search direction...
     dir = *dTensor;
@@ -811,14 +792,14 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
   if (requestedStep == TensorStepFP) {
     NOX::Abstract::Vector* vecPtr = soln.getX().clone(ShapeCopy);
     soln.applyJacobian(*dTensor, *vecPtr);      multsJv++;
-    double std = scPtr->dot(*dTensor);
+    double std = scPtr->innerProduct(*dTensor);
     std = std*std;
-    double aa = acPtr->dot(*acPtr) * std * std;
-    double ab = acPtr->dot(*vecPtr) * std;
-    double ac = acPtr->dot(soln.getF()) * std;
-    double bb = vecPtr->dot(*vecPtr);
-    double bc = vecPtr->dot(soln.getF());
-    double cc = soln.getF().dot(soln.getF());
+    double aa = acPtr->innerProduct(*acPtr) * std * std;
+    double ab = acPtr->innerProduct(*vecPtr) * std;
+    double ac = acPtr->innerProduct(soln.getF()) * std;
+    double bb = vecPtr->innerProduct(*vecPtr);
+    double bc = vecPtr->innerProduct(soln.getF());
+    double cc = soln.getF().innerProduct(soln.getF());
     double qval = 0.0;
     double alpha = minQuartic(aa, 2*ab, 2*ac+bb, 2*bc, cc, true, qval);
     printf("    Alpha correction (dTensor) = %e\n", alpha); 
@@ -905,10 +886,10 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
   isDir0 = (dInitial->norm() == 0);
   if (!isDir0) {
     soln.applyJacobian(*dInitial, *vecw);      multsJv++;
-    dir0xsc = scPtr->dot(*dInitial);
+    dir0xsc = scPtr->innerProduct(*dInitial);
 #if DEBUG_LEVEL > 0
-    utils.out() << " Initial guess \"dir\" is NOT zero\n";
-    utils.out() << " dir0xsc = " << dir0xsc << "\n";
+    utils->out() << " Initial guess \"dir\" is NOT zero\n";
+    utils->out() << " dir0xsc = " << dir0xsc << "\n";
 #endif
   }
   else
@@ -989,7 +970,7 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
 
   // Work with the vector Jc*sc    
   if (isAugmentSubspace) {
-    jcxshatNorm2 = jcxshatPtr->dot(*jcxshatPtr);  // bwb - move up sometime
+    jcxshatNorm2 = jcxshatPtr->innerProduct(*jcxshatPtr);  // bwb - move up sometime
     gamma2 = jcxshatNorm2;
   }
 
@@ -1006,13 +987,13 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
     if (j != p)
       *basisVptr[p] = *basisVptr[j];
     for (int i=0; i<p; i++) {
-      factorR[i][j] = basisVptr[j]->dot(*basisVptr[i]);
+      factorR[i][j] = basisVptr[j]->innerProduct(*basisVptr[i]);
       basisVptr[j]->update(-factorR[i][j], *basisVptr[i], 1.0);
     }
     factorR[p][j] = basisVptr[p]->norm();
     if (factorR[p][j] == 0.0) {
 #if DEBUG_LEVEL > 0
-      utils.out() << "Note: vector " << p+1 << " is linearly dependent on others "
+      utils->out() << "Note: vector " << p+1 << " is linearly dependent on others "
 	   << "and will not be inlcuded\n";
 #endif
     }
@@ -1024,8 +1005,8 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
   int p1 = p; // Save value of this p in the event of block breakdown
   
 #if DEBUG_LEVEL > 1
-  utils.out() << "p = " << p << endl;
-  utils.out() << "factorR matrix:\n";
+  utils->out() << "p = " << p << endl;
+  utils->out() << "factorR matrix:\n";
   print_matrix(maxp,maxp,factorR);
 #endif
 
@@ -1058,28 +1039,28 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
     printf("norm(v%d) = %e\n", i,
 	   basisVptr[i]->norm(NOX::Abstract::Vector::TwoNorm));
     for (int j=i; j<maxp; j++) {
-      double temp = basisVptr[i]->dot(*basisVptr[j]);
+      double temp = basisVptr[i]->innerProduct(*basisVptr[j]);
       printf("<v%d,v%d> = %e\n", i, j, temp);
     }
   }
 #endif
 
 #if DEBUG_LEVEL > 1
-  utils.out() << "normS = " << Utils::sci(normS) << endl;
-  utils.out() << "vecg ";
+  utils->out() << "normS = " << Utils::sci(normS) << endl;
+  utils->out() << "vecg ";
   print_vector(maxDim, vecg);
-  utils.out() << "vecq ";
+  utils->out() << "vecq ";
   print_vector(maxDim, vecq);
 #endif
 
 #if DEBUG_LEVEL > 1
-  utils.out() << "prev F: "; 
+  utils->out() << "prev F: "; 
   solver.getPreviousSolutionGroup().getF().print();
-  utils.out() << "Basis 0: ";
+  utils->out() << "Basis 0: ";
   basisVptr[0]->print();
-  utils.out() << "Basis 1: ";
+  utils->out() << "Basis 1: ";
   basisVptr[1]->print();
-  utils.out() << "Basis 2: ";
+  utils->out() << "Basis 2: ";
   basisVptr[2]->print();
 #endif
 
@@ -1093,8 +1074,8 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
 
   // Form ghost column of H...
   if (isAugmentSubspace) {
-    hk[0] = basisVptr[0]->dot(*jcxshatPtr);
-    hk[1] = basisVptr[1]->dot(*jcxshatPtr);
+    hk[0] = basisVptr[0]->innerProduct(*jcxshatPtr);
+    hk[1] = basisVptr[1]->innerProduct(*jcxshatPtr);
     ztz = hk[0]*hk[0] + hk[1]*hk[1];
   }
 
@@ -1157,14 +1138,14 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
   
     // Perform modified Gram-Schmidt....
     for (int j=0; j<k+p; j++) {
-      newHessCol[j] = basisVptr[k+p]->dot(*basisVptr[j]);
+      newHessCol[j] = basisVptr[k+p]->innerProduct(*basisVptr[j]);
       basisVptr[k+p]->update(-newHessCol[j], *basisVptr[j], 1.0);
     }
     newHessCol[k+p] = basisVptr[k+p]->norm();
 
     // Reorthogonalize against first column only....
     for (int j=0; j<1; j++) {
-      double hr = basisVptr[k+p]->dot(*basisVptr[j]);
+      double hr = basisVptr[k+p]->innerProduct(*basisVptr[j]);
       newHessCol[j] += hr;
       basisVptr[k+p]->update(-hr, *basisVptr[j], 1.0);
     }
@@ -1176,10 +1157,10 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
 	((reorth ==AsNeeded) &&
 	 (normav2 == 0 || log10(normav/normav2) > 10))) {
 #if DEBUG_LEVEL > 0
-      utils.out() << "Reorthogonalize...\n";
+      utils->out() << "Reorthogonalize...\n";
 #endif
       for (int j=1; j<k+p; j++) {
-	double hr = basisVptr[k+p]->dot(*basisVptr[j]);
+	double hr = basisVptr[k+p]->innerProduct(*basisVptr[j]);
         newHessCol[j] += hr;
 	basisVptr[k+p]->update(-hr, *basisVptr[j], 1.0);
       }
@@ -1193,13 +1174,13 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
       // Breakdown in the Arnoldi process
       if (p == 1) {
 #if DEBUG_LEVEL > 0
-	utils.out() << "Breakdown: solution in subspace now\n";
+	utils->out() << "Breakdown: solution in subspace now\n";
 #endif
 	breakdown = true;
       }
       else {
 #if DEBUG_LEVEL > 0
-	utils.out() << "Breakdown in block Arnoldi method, reducing block size.\n";
+	utils->out() << "Breakdown in block Arnoldi method, reducing block size.\n";
 #endif
 	p--;
       }
@@ -1210,8 +1191,8 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
 	     k, newHessCol[k+p], log10(normav/newHessCol[k+p]));
 #endif
 #if DEBUG_LEVEL > 2
-      utils.out() << "Iteration " << k << ":\n";
-      utils.out() << "newHessCol ";
+      utils->out() << "Iteration " << k << ":\n";
+      utils->out() << "newHessCol ";
       print_vector(k+p1+1, newHessCol);
 #endif 
 #ifdef STORE_HESSENBERG
@@ -1228,14 +1209,14 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
       
       // Construct orthogonal Hessenberg Q1 using 3 vectors...
       if (precondition == Right  &&  isMinvTransAvailable) 
-	vkts = basisVptr[k]->dot(*mtinvscPtr);
+	vkts = basisVptr[k]->innerProduct(*mtinvscPtr);
       else if (precondition == Right) {
 	applyPreconditioner(false, soln, *localParamsPtr, *basisVptr[k], *vecw,
 			    "compute");
-	vkts = vecw->dot(*scPtr);
+	vkts = vecw->innerProduct(*scPtr);
       }
       else
-	vkts = basisVptr[k]->dot(*scPtr);
+	vkts = basisVptr[k]->innerProduct(*scPtr);
 
       qkk = vkts;
       qkkm1 = -qkNorm2 / qkk;
@@ -1251,7 +1232,7 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
       // Form ghost column of H and Q1...
       if (isAugmentSubspace) {
 	if (gamma2 > 0)
-	  hk[k+p] = basisVptr[k+p]->dot(*jcxshatPtr);
+	  hk[k+p] = basisVptr[k+p]->innerProduct(*jcxshatPtr);
 	else
 	  hk[k+p] = 0;
 	ztz += hk[k+p]*hk[k+p];
@@ -1494,7 +1475,7 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
     double temp = basisVptr[i]->norm(NOX::Abstract::Vector::TwoNorm);
     if (fabs(temp-1) > 1e-14)  printf("norm(v%d) = %e\n", i, temp);
     for (int j=i; j<iterations; j++) {
-      double temp = basisVptr[i]->dot(*basisVptr[j]);
+      double temp = basisVptr[i]->innerProduct(*basisVptr[j]);
       if (fabs(temp - (i==j?1:0))>1e-8)
 	printf("<v%d,v%d> = %e\n", i, j, temp);
     }
@@ -1503,12 +1484,12 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
 
 #if DEBUG_LEVEL > 1
 #ifdef STORE_HESSENBERG
-  utils.out() << "Original Hessenberg: \n";
+  utils->out() << "Original Hessenberg: \n";
   print_matrix(maxDim,kmax,hess2);
 #endif
-  utils.out() << "\n\nModified Hessenberg: \n";
+  utils->out() << "\n\nModified Hessenberg: \n";
   print_matrix(maxDim,kmax,hess);
-  utils.out() << "modified vecg ";
+  utils->out() << "modified vecg ";
   print_vector(maxDim, vecg);
 #endif
   
@@ -1554,9 +1535,9 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
   if (isAugmentSubspace) dNewton->update(-yn[k1]/normS, *scPtr, 1);
 
 #if DEBUG_LEVEL > 1
-  utils.out() << "yn ";
+  utils->out() << "yn ";
   print_vector(iterations, yn);
-  utils.out() << "Newton Direction 1: ";
+  utils->out() << "Newton Direction 1: ";
   dNewton->print();
 #endif
 #ifdef CHECK_RESIDUALS
@@ -1581,16 +1562,16 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
 
 
 #if DEBUG_LEVEL > 1
-  utils.out() << "Hessenberg: \n";
+  utils->out() << "Hessenberg: \n";
   print_matrix(maxDim, kmax, hess);
-  utils.out() << "vecg ";
+  utils->out() << "vecg ";
   print_vector(maxDim, vecg);
-  utils.out() << "vecq ";
+  utils->out() << "vecq ";
   print_vector(maxDim, vecq);
   printf("normS = %e, y1 = %e\n", normS, y1);
-  utils.out() << "vecz ";
+  utils->out() << "vecz ";
   print_vector(maxDim, vecz);
-  utils.out() << "pindex ";
+  utils->out() << "pindex ";
   print_vector(iterations, pindex);
 #endif
   
@@ -1664,9 +1645,9 @@ NOX::Direction::Tensor::computeTensorStep(const NOX::Abstract::Group& soln,
   isCLParamsCalculated = false;
 
 #if DEBUG_LEVEL > 1
-  utils.out() << "yt ";
+  utils->out() << "yt ";
   print_vector(iterations, yt);
-  utils.out() << "Tensor Direction: "; 
+  utils->out() << "Tensor Direction: "; 
   dTensor->print();
 #endif
 #if DEBUG_LEVEL > 0
@@ -1781,8 +1762,8 @@ NOX::Direction::Tensor::computeCurvilinearStep2(NOX::Abstract::Vector& dir,
     // quadratic formula for calculating beta = s'*dTensor.  Here we
     // back-calculate these quantities.
     vecw->update(1.0, *dTLambda, -lambdaBar, *dNewton, 0);
-    double c = basisVptr[0]->dot(*vecw) * normS;
-    stJinvF = -basisVptr[0]->dot(*dNewton) * normS;
+    double c = basisVptr[0]->innerProduct(*vecw) * normS;
+    stJinvF = -basisVptr[0]->innerProduct(*dNewton) * normS;
     beta = -lambdaBar * stJinvF + c;
     stJinvA = -2*c / (beta*beta);
 
@@ -1826,7 +1807,7 @@ NOX::Direction::Tensor::computeCurvilinearStep2(NOX::Abstract::Vector& dir,
     // Calculate beta(lambda)
     discriminant = 1 - 4*0.5*stJinvA*stJinvF*lambda;
     if (discriminant < 0) {
-      utils.out() << "Warning: discriminant is negative ("<< discriminant << ").\n";
+      utils->out() << "Warning: discriminant is negative ("<< discriminant << ").\n";
       discriminant = 0;
     }
     largeRoot = (-1 - sqrt(discriminant)) / (2*0.5*stJinvA);
@@ -1888,8 +1869,8 @@ const NOX::Abstract::Vector& NOX::Direction::Tensor::getNewton() const
 void NOX::Direction::Tensor::throwError(const string& functionName,
 					const string& errorMsg) const
 {
-  if (utils.isPrintType(NOX::Utils::Error))
-    utils.err() << "NOX::Direction::Tensor::" << functionName << " - " << errorMsg <<
+  if (utils->isPrintType(NOX::Utils::Error))
+    utils->err() << "NOX::Direction::Tensor::" << functionName << " - " << errorMsg <<
       endl;
   throw "NOX Error";
 }
@@ -1900,7 +1881,7 @@ void** NOX::Direction::Tensor::allocate_matrix(int rows, int cols,
 {
   if (a) {
     // delete_matrix(a);
-    utils.out() << "Warning: Possibly a previously allocated matrix\n";
+    utils->out() << "Warning: Possibly a previously allocated matrix\n";
   }
 
   // allocate memory for storing a rectangular cols x rows matrix
@@ -1920,7 +1901,7 @@ void* NOX::Direction::Tensor::allocate_vector(int n, int*& x) const
 {
   if (x) {
     // delete x;
-    utils.out() << "Warning: Possibly a previously allocated vector\n";
+    utils->out() << "Warning: Possibly a previously allocated vector\n";
   }
 
   x = new int [n];
@@ -1933,7 +1914,7 @@ void* NOX::Direction::Tensor::allocate_vector(int n, double*& x) const
 {
   if (x) {
     // delete x;
-    utils.out() << "Warning: Possibly a previously allocated vector\n";
+    utils->out() << "Warning: Possibly a previously allocated vector\n";
   }
 
   x = new double [n];
@@ -2312,7 +2293,7 @@ double NOX::Direction::Tensor::calculateBeta(double qa, double qb, double qc,
     qval = qa*beta*beta + qb*beta + qc;
     lambdaBar = qb*qb / (4*qa*qc);
 #if DEBUG_LEVEL > 0
-    utils.out() << "  ####  LambdaBar = " << lambdaBar << "  ####\n";
+    utils->out() << "  ####  LambdaBar = " << lambdaBar << "  ####\n";
 #endif
   }
   else {
@@ -2320,7 +2301,7 @@ double NOX::Direction::Tensor::calculateBeta(double qa, double qb, double qc,
     lambdaBar = 1.0;
     if (fabs(qa*qc/qb) < 1e-8) {
 #if DEBUG_LEVEL > 0
-      utils.out() << " Quadratic equation is relatively linear\n";
+      utils->out() << " Quadratic equation is relatively linear\n";
 #endif 
       beta = -qc/qb;
     }
@@ -2350,10 +2331,9 @@ double NOX::Direction::Tensor::getNormModelResidual(
 				       const NOX::Solver::Generic& solver,
 				       bool isTensorModel) const
 {
-  NOX::Abstract::Vector* residualPtr = NULL;
-
   // Compute residual of Newton model...
-  residualPtr = soln.getF().clone(ShapeCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> residualPtr = 
+    soln.getF().clone(ShapeCopy);
   soln.applyJacobian(dir, *residualPtr);      multsJv++;
   residualPtr->update(1.0, soln.getF(), 1.0);
 
@@ -2361,8 +2341,10 @@ double NOX::Direction::Tensor::getNormModelResidual(
 
 #ifdef DEPRECATED_CODE
     // Compute the tensor term ac....
-    Abstract::Vector* sPtr = soln.getX().clone(ShapeCopy);
-    Abstract::Vector* aPtr = soln.getF().clone(ShapeCopy);
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> sPtr = 
+      soln.getX().clone(ShapeCopy);
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> aPtr = 
+      soln.getF().clone(ShapeCopy);
     *sPtr = soln.getX();
     sPtr->update(1.0, solver.getPreviousSolutionGroup().getX(), -1.0);
     double normS = sPtr->norm();
@@ -2372,16 +2354,14 @@ double NOX::Direction::Tensor::getNormModelResidual(
     aPtr->scale(1/(normS*normS));
     sPtr->scale(1/normS);
 
-    double beta = sPtr->dot(dir);
+    double beta = sPtr->innerProduct(dir);
     printf(" sc'*dt           = %e\n", beta*normS);
     printf(" norm(dt) = %e\n", dir.norm());
     residualPtr->update(beta*beta, *aPtr, 1.0);
 
-    delete aPtr;
-    delete sPtr;
 #endif
     
-    double beta = scPtr->dot(dir);
+    double beta = scPtr->innerProduct(dir);
     printf(" sc'*dt           = %e\n", beta);
     printf(" norm(dt) = %e\n", dir.norm());
     residualPtr->update(beta*beta, *acPtr, 1.0);
@@ -2389,15 +2369,14 @@ double NOX::Direction::Tensor::getNormModelResidual(
   }
 
   if (precondition == Left) {
-    NOX::Abstract::Vector* tmpPtr = soln.getF().clone(ShapeCopy);
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> tmpPtr = 
+      soln.getF().clone(ShapeCopy);
     *tmpPtr = *residualPtr;
     applyPreconditioner(false, soln, *localParamsPtr, *tmpPtr, *residualPtr,
 			"compute");
-    delete tmpPtr;
   }
   
   double modelNorm = residualPtr->norm();
-  delete residualPtr;
   return modelNorm;
 }
 
@@ -2406,10 +2385,10 @@ double NOX::Direction::Tensor::getDirectionalDerivative(
 				       const NOX::Abstract::Vector& dir,
 				       const NOX::Abstract::Group& soln) const
 {
-  NOX::Abstract::Vector* tmpPtr = soln.getF().clone(ShapeCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmpPtr = 
+    soln.getF().clone(ShapeCopy);
   soln.applyJacobian(dir,*tmpPtr);      multsJv++;
-  double fprime = tmpPtr->dot(soln.getF());
-  delete tmpPtr;
+  double fprime = tmpPtr->innerProduct(soln.getF());
   return fprime;
 }
 

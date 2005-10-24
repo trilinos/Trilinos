@@ -38,8 +38,8 @@
 #include "NOX_Solver_LineSearchBased.H"	 // LineSearch method
 #include "NOX_Solver_TrustRegionBased.H" // Trust region method
 #include "NOX_Solver_TensorBased.H"      // Tensor method
-#ifdef WITH_PRERELEASE
 #include "NOX_Solver_InexactTrustRegionBased.H" // Inexact Trust region method
+#ifdef WITH_PRERELEASE
 #include "NOX_Solver_TensorBasedTest.H"  // Tensor-Krylov method
 #endif
 
@@ -106,11 +106,11 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
     {
       ptr = new TensorBased(grp, tests, params);
     } 
-#ifdef WITH_PRERELEASE
     else if (method == "Inexact Trust Region Based") 
     {
       ptr = new InexactTrustRegionBased(grp, tests, params);
     } 
+#ifdef WITH_PRERELEASE
     else if (method == "Tensor-Krylov Based") 
     {
       ptr = new TensorBasedTest(grp, tests, params);
@@ -155,10 +155,10 @@ NOX::StatusTest::StatusType NOX::Solver::Manager::getStatus()
   return ptr->getStatus();
 }
 
-NOX::StatusTest::StatusType NOX::Solver::Manager::iterate()
+NOX::StatusTest::StatusType NOX::Solver::Manager::step()
 {
-  checkNullPtr("iterate");
-  return ptr->iterate();
+  checkNullPtr("step");
+  return ptr->step();
 }
 
 NOX::StatusTest::StatusType NOX::Solver::Manager::solve()

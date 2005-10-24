@@ -35,10 +35,12 @@
 
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Common.H"            // class data element (string)
+#include "Teuchos_RefCountPtr.hpp" 
 
 // Forward declaration
 namespace NOX {
-class Utils;
+  class Utils;
+  class GlobalData;
 }
 
 namespace NOX {
@@ -104,16 +106,18 @@ class Manager : public Generic {
 public:
 
   //! Empty Constructor
-  Manager(const NOX::Utils& u);
+  Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd);
 
   //! Constructor
-  Manager(const NOX::Utils& u, NOX::Parameter::List& params);
+  Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	  NOX::Parameter::List& params);
 
   //! Destructor
   ~Manager();
 
   // derived
-  bool reset(NOX::Parameter::List& params);
+  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	     NOX::Parameter::List& params);
 
   // derived
   bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
@@ -136,13 +140,13 @@ private:
 private:
 
   //! Printing Utils.
-  const NOX::Utils& utils;
+  Teuchos::RefCountPtr<NOX::Utils> utils;
 
   //! Method name.
   string method;
 
   //! Pointer to actual direction calculation method.
-  NOX::Direction::Generic* ptr;
+  Teuchos::RefCountPtr<NOX::Direction::Generic> ptr;
 
 };
 } // namespace Direction

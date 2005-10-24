@@ -38,7 +38,7 @@ LOCA::Bifurcation::TPBord::AbstractGroup::innerProduct(
 				              const NOX::Abstract::Vector& x,
 					      const NOX::Abstract::Vector& y) 
 {
-  return x.dot(y);
+  return x.innerProduct(y);
 }
 
 NOX::Abstract::Group::ReturnType

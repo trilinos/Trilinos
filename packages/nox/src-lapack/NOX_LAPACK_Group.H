@@ -157,7 +157,8 @@ namespace NOX {
 
       //@}
 
-      virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
+      virtual Teuchos::RefCountPtr<NOX::Abstract::Group> 
+      clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Print out the group
       void print() const;

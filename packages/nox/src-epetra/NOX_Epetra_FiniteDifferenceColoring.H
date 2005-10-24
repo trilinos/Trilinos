@@ -34,6 +34,7 @@
 #include "NOX_Epetra_FiniteDifference.H"    // base class
 
 #include "NOX_Common.H"          // for <string>
+#include "Teuchos_RefCountPtr.hpp"
 
 #include "vector"                // for column indices from coloring
 #include "list"                  //
@@ -140,44 +141,27 @@ class FiniteDifferenceColoring : public FiniteDifference {
  public:
  
   //! Constructor with output control
-  FiniteDifferenceColoring(NOX::Parameter::List& printingParams,
-                           Interface::Required& i, 
-			   const Epetra_Vector& initialGuess, 
-                           Epetra_MapColoring& colorMap,
-                           vector<Epetra_IntVector>& columns,
-                           bool parallelColoring = false, 
-                           bool distance1 = false, 
-                           double beta = 1.0e-6, double alpha = 1.0e-4);
-
-  //! Constructor
-  FiniteDifferenceColoring(Interface::Required& i, 
-			   const Epetra_Vector& initialGuess, 
-                           Epetra_MapColoring& colorMap,
-                           vector<Epetra_IntVector>& columns,
-                           bool parallelColoring = false, 
-                           bool distance1 = false, 
-                           double beta = 1.0e-6, double alpha = 1.0e-4);
+  FiniteDifferenceColoring(
+      NOX::Parameter::List& printingParams,
+      const Teuchos::RefCountPtr<Interface::Required>& i, 
+      const NOX::Epetra::Vector& initialGuess, 
+      const Teuchos::RefCountPtr<Epetra_MapColoring>& colorMap,
+      const Teuchos::RefCountPtr< vector<Epetra_IntVector> >& columns,
+      bool parallelColoring = false, 
+      bool distance1 = false, 
+      double beta = 1.0e-6, double alpha = 1.0e-4);
 
   //! Constructor with output control
-  FiniteDifferenceColoring(NOX::Parameter::List& printingParams,
-                           Interface::Required& i, 
-			   const Epetra_Vector& initialGuess, 
-                           Epetra_CrsGraph& rawGraph,
-                           Epetra_MapColoring& colorMap,
-                           vector<Epetra_IntVector>& columns,
-                           bool parallelColoring = false,
-                           bool distance1 = false, 
-                           double beta = 1.0e-6, double alpha = 1.0e-4);
-
-  //! Constructor
-  FiniteDifferenceColoring(Interface::Required& i, 
-			   const Epetra_Vector& initialGuess, 
-                           Epetra_CrsGraph& rawGraph,
-                           Epetra_MapColoring& colorMap,
-                           vector<Epetra_IntVector>& columns,
-                           bool parallelColoring = false,
-                           bool distance1 = false, 
-                           double beta = 1.0e-6, double alpha = 1.0e-4);
+  FiniteDifferenceColoring(
+      NOX::Parameter::List& printingParams,
+      const Teuchos::RefCountPtr<Interface::Required>& i, 
+      const NOX::Epetra::Vector& initialGuess, 
+      const Teuchos::RefCountPtr<Epetra_CrsGraph>& rawGraph,
+      const Teuchos::RefCountPtr<Epetra_MapColoring>& colorMap,
+      const Teuchos::RefCountPtr< vector<Epetra_IntVector> >& columns,
+      bool parallelColoring = false,
+      bool distance1 = false, 
+      double beta = 1.0e-6, double alpha = 1.0e-4);
 
   //! Pure virtual destructor
   virtual ~FiniteDifferenceColoring();
@@ -203,10 +187,10 @@ protected:
   bool distance1;
 
   //! Color Map created by external algorithm 
-  const Epetra_MapColoring* colorMap;
+  Teuchos::RefCountPtr<const Epetra_MapColoring> colorMap;
 
   //! vector of Epetra_IntVectors containing columns corresponding to a given row and color
-  vector<Epetra_IntVector>* columns;
+  Teuchos::RefCountPtr< vector<Epetra_IntVector> > columns;
 
   //! Number of colors in Color Map 
   int numColors;

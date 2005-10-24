@@ -34,6 +34,7 @@
 #define NOX_SHARED_OBJECT_TEMPLATE_H
 
 #include "NOX_Common.H"
+#include "Teuchos_RefCountPtr.hpp"
 
 namespace NOX {
 
@@ -50,37 +51,34 @@ class SharedObject {
 public:
 
   //! Constructor
-  SharedObject(Object& newObject) : object(&newObject), owner(0){};
+  SharedObject(const Teuchos::RefCountPtr<Object>& newObject) : 
+    object(newObject), owner(NULL) {};
 
   //! Destructor
   ~SharedObject(){};
 
-  //! Get a non-const reference to the underlying matrix (an epetra operator)
-  Object& getObject(const Owner* newOwner)
+  //! Get a non-const reference to the underlying object
+  Teuchos::RefCountPtr<Object> 
+  getObject(const Owner* newOwner)
   {
     owner = newOwner;
-    return *object;
+    return object;
   };
 
-  //! Return a const reference to the Jacobian
-  const Object& getObject() const { return *object;};
+  //! Return a const reference to the underlying object
+  Teuchos::RefCountPtr<const Object> getObject() const 
+  { return object;};
 
   //! Return true if testOwner is the owner of the Jacobian
-  bool isOwner(const Owner* checkOwner) const {return (owner == checkOwner);};
-
-  //! Essentially, this function allows the underlying Epetra_Object to be changed.  We need this if the operator is destroyed and a new one is created during the NOX::Epetra::Interface::computeJacobian() call. 
-  bool setObject(Object& newObject)
-  {
-    object = &newObject;
-    return true;
-  };
+  bool isOwner(const Owner* checkOwner) const 
+  {return (owner == checkOwner);};
 
 protected:
 
-  //! Pointer to Epetra Jacobian matrix 
-  Object* object;
+  //! Pointer to the shared object.
+  Teuchos::RefCountPtr<Object> object;
 
-  //! Pointer to const group that owns Jacobian
+  //! Pointer to const object that owns the shared object.
   const Owner* owner;
 };
 

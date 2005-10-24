@@ -29,10 +29,13 @@
 
 //NOX::Epetra Objects
 #include "NOX_Parameter_List.H"
+#include "NOX_Epetra_VectorSpace.H"
+#include "NOX_Epetra_VectorSpace_L2.H"
+#include "NOX_Epetra_VectorSpace_ScaledL2.H"
 #include "NOX_Epetra_Vector.H"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_LinearSystem.H"
-#include "NOX_Epetra_LinearSystemAztecOO.H"
+#include "NOX_Epetra_LinearSystem_AztecOO.H"
 #include "NOX_Epetra_Scaling.H"
 #include "NOX_Epetra_Interface_Required.H"
 #include "NOX_Epetra_Interface_Jacobian.H"
@@ -40,7 +43,5 @@
 #include "NOX_Epetra_MatrixFree.H"
 #include "NOX_Epetra_FiniteDifference.H"
 #include "NOX_Epetra_FiniteDifferenceColoring.H"
-#include "NOX_Epetra_Operator.H"
-#include "NOX_Epetra_Operator_JacobiPrec.H"
 #include "NOX_Epetra_BroydenOperator.H"
 

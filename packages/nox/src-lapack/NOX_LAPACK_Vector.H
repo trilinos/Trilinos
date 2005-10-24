@@ -125,7 +125,8 @@ namespace NOX {
       //@{ \name Creating new Vectors. 
   
       // derived
-      NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const;
+      Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+      clone(NOX::CopyType type = NOX::DeepCopy) const;
   
       //@}
   
@@ -140,11 +141,11 @@ namespace NOX {
   
       //@}
   
-      //@{ \name Dot products
+      //@{ \name Inner products
   
       // derived
-      double dot(const NOX::LAPACK::Vector& y) const;
-      double dot(const NOX::Abstract::Vector& y) const;
+      double innerProduct(const NOX::LAPACK::Vector& y) const;
+      double innerProduct(const NOX::Abstract::Vector& y) const;
   
       //@}
   
@@ -166,7 +167,7 @@ namespace NOX {
       ostream& leftshift(ostream& stream) const;
 
       // derived
-      void print() const;
+      void print(std::ostream& stream) const;
 
     private:
 

@@ -208,7 +208,7 @@ LOCA::Continuation::HouseholderGroup::computeHouseholderVector()
   NOX::Abstract::Vector& houseX = houseVec.getXVec();
   double& houseP = houseVec.getParam();
 
-  double sigma = houseX.dot(houseX);
+  double sigma = houseX.innerProduct(houseX);
 
   if (sigma == 0.0) {
     beta = 0.0;
@@ -245,7 +245,7 @@ LOCA::Continuation::HouseholderGroup::computeHouseholderVector()
 //   NOX::Abstract::Vector& houseX = houseVec.getXVec();
 //   double& houseP = houseVec.getParam();
 
-//   double sigma = tanX.dot(tanX);
+//   double sigma = tanX.innerProduct(tanX);
 //   houseX = tanX;
 
 //   if (sigma == 0.0) {

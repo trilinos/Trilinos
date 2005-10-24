@@ -59,11 +59,15 @@ class Printing : public NOX::Utils {
 public:
 
   //! Default constructor
-  Printing(const NOX::Utils& u);
+  Printing(const Teuchos::RefCountPtr<NOX::Utils>& u);
 
   //! Destructor
   virtual ~Printing();
 
+  void reset(const Teuchos::RefCountPtr<NOX::Utils>& u);
+
+  //! Prints the opening information.
+  void printOpeningRemarks(const string& lineSearchName) const;
 
   //! Print out step information for the inner iterations of a line search algorithm.
   /*!
@@ -84,7 +88,8 @@ public:
     \phi(x) = \frac{1}{2} \|F(x)\|^2 \f$.
 
   */
-  void printStep(int n, double step, double oldf, double newf, const string s = "", bool unscaleF = true) const;
+  void printStep(int n, double step, double oldf, double newf, 
+		 const string s = "", bool unscaleF = true) const;
 
 };
 } // namespace Utils

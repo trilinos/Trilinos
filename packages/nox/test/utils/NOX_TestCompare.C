@@ -31,6 +31,7 @@
 //@HEADER
 
 #include "NOX_TestCompare.H"
+#include "Teuchos_RefCountPtr.hpp"
 
 NOX::TestCompare::TestCompare(std::ostream& outputStream, 
 			      const NOX::Utils& utilities) :
@@ -221,8 +222,8 @@ double NOX::TestCompare::computeVectorNorm(
 				   double rtol, double atol)
 {
   // Compute atol + rtol*|vec_expected|
-  NOX::Abstract::Vector *tmp1 = vec.clone(NOX::ShapeCopy);
-  NOX::Abstract::Vector *tmp2 = vec.clone(NOX::ShapeCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmp1 = vec.clone(NOX::ShapeCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmp2 = vec.clone(NOX::ShapeCopy);
   tmp1->init(atol);
   tmp2->abs(vec_expected);
   tmp1->update(rtol, *tmp2, 1.0);
@@ -238,9 +239,6 @@ double NOX::TestCompare::computeVectorNorm(
   tmp1->scale(*tmp2);
 
   double inf_norm = tmp1->norm(NOX::Abstract::Vector::MaxNorm);
-
-  delete tmp1;
-  delete tmp2;
 
   return inf_norm;
 }

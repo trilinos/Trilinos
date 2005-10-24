@@ -210,7 +210,7 @@ Anasazi::LOCAMultiVec::MvTransMv(
   
   for (j=0; j<n; j++)
     for (i=0; i<m; i++)
-      Bvals[j*ldb + i] = alpha * mvPtrs[j]->dot(*(A_vec->mvPtrs[i]));
+      Bvals[j*ldb + i] = alpha * mvPtrs[j]->innerProduct(*(A_vec->mvPtrs[i]));
 }
 
 
@@ -224,7 +224,7 @@ Anasazi::LOCAMultiVec::MvDot(const Anasazi::MultiVec<double>& A,
     dynamic_cast<Anasazi::LOCAMultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); assert(A_vec!=NULL);
   if (A_vec && b && ( b->size() >= n )) {
     for (j=0; j<n; j++)
-      (*b)[j] = mvPtrs[j]->dot(*(A_vec->mvPtrs[j]));
+      (*b)[j] = mvPtrs[j]->innerProduct(*(A_vec->mvPtrs[j]));
   }
 }
 

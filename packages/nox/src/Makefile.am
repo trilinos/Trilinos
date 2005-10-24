@@ -47,6 +47,7 @@ libnox_a_SOURCES = \
 	$(DIRECTION) \
 	$(PARAMETER) \
 	$(SOLVER) \
+	$(MERITFUNCTION) \
 	$(STATUSTEST) \
 	$(UTILS) \
 	$(MULTIVECS)
@@ -65,6 +66,7 @@ include_HEADERS = \
 	$(DIRECTION_H) \
 	$(PARAMETER_H) \
 	$(SOLVER_H) \
+	$(MERITFUNCTION_H) \
 	$(STATUSTEST_H) \
 	$(UTILS_H) \
 	$(MULTIVECS_H)
@@ -77,27 +79,19 @@ include_HEADERS = \
 if BUILD_PRERELEASE
 
 nodist_include_HEADERS = \
-	$(srcdir)/NOX_Direction_Tensor.H \
-	$(srcdir)/NOX_Solver_InexactTrustRegionBased.H \
 	$(srcdir)/NOX_Solver_TensorBasedTest.H \
-	$(srcdir)/NOX_LineSearch_NonlinearCG.H \
-	$(srcdir)/NOX_Direction_NonlinearCG.H \
+	$(srcdir)/NOX_LineSearch_Tensor.H \
+	$(srcdir)/NOX_Direction_Tensor.H \
 	$(srcdir)/NOX_Direction_QuasiNewton.H \
-	$(srcdir)/NOX_Direction_Broyden.H \
-	$(srcdir)/NOX_Direction_ModifiedNewton.H \
-        $(srcdir)/NOX_Direction_Utils_InexactNewton.H
+	$(srcdir)/NOX_Direction_ModifiedNewton.H
 
 
 nodist_libnox_a_SOURCES = \
-	$(srcdir)/NOX_Direction_Tensor.C \
-	$(srcdir)/NOX_Solver_InexactTrustRegionBased.C \
 	$(srcdir)/NOX_Solver_TensorBasedTest.C \
-	$(srcdir)/NOX_LineSearch_NonlinearCG.C \
-	$(srcdir)/NOX_Direction_NonlinearCG.C \
+	$(srcdir)/NOX_LineSearch_Tensor.C \
+	$(srcdir)/NOX_Direction_Tensor.C \
 	$(srcdir)/NOX_Direction_QuasiNewton.C \
-	$(srcdir)/NOX_Direction_Broyden.C \
-	$(srcdir)/NOX_Direction_ModifiedNewton.C \
-        $(srcdir)/NOX_Direction_Utils_InexactNewton.C
+	$(srcdir)/NOX_Direction_ModifiedNewton.C
 
 endif
 
@@ -147,6 +141,7 @@ LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Backtrack.H \
 	$(srcdir)/NOX_LineSearch_Manager.H \
 	$(srcdir)/NOX_LineSearch_MoreThuente.H \
+	$(srcdir)/NOX_LineSearch_NonlinearCG.H \
 	$(srcdir)/NOX_LineSearch_Polynomial.H 
 
 LINESEARCH = \
@@ -157,29 +152,30 @@ LINESEARCH = \
 	$(srcdir)/NOX_LineSearch_Backtrack.C \
 	$(srcdir)/NOX_LineSearch_Manager.C \
 	$(srcdir)/NOX_LineSearch_MoreThuente.C \
+	$(srcdir)/NOX_LineSearch_NonlinearCG.C \
 	$(srcdir)/NOX_LineSearch_Polynomial.C 
 
 DIRECTION_H = \
 	$(srcdir)/NOX_Direction_Generic.H \
 	$(srcdir)/NOX_Direction_Manager.H \
 	$(srcdir)/NOX_Direction_Newton.H \
-	$(srcdir)/NOX_Direction_SteepestDescent.H 
+	$(srcdir)/NOX_Direction_Broyden.H \
+	$(srcdir)/NOX_Direction_NonlinearCG.H \
+	$(srcdir)/NOX_Direction_SteepestDescent.H \
+        $(srcdir)/NOX_Direction_Utils_InexactNewton.H
 
 DIRECTION = \
 	$(srcdir)/NOX_Direction_Manager.C \
 	$(srcdir)/NOX_Direction_Generic.C \
 	$(srcdir)/NOX_Direction_Newton.C \
-	$(srcdir)/NOX_Direction_SteepestDescent.C 
+	$(srcdir)/NOX_Direction_Broyden.C \
+	$(srcdir)/NOX_Direction_NonlinearCG.C \
+	$(srcdir)/NOX_Direction_SteepestDescent.C \
+        $(srcdir)/NOX_Direction_Utils_InexactNewton.C
 
 PARAMETER_H = \
 	$(srcdir)/NOX_Parameter_Entry.H \
         $(srcdir)/NOX_Parameter_Arbitrary.H \
-        $(srcdir)/NOX_Parameter_UserNorm.H \
-        $(srcdir)/NOX_Parameter_MeritFunction.H \
-	$(srcdir)/NOX_Parameter_DirectionConstructor.H \
-	$(srcdir)/NOX_Parameter_DirectionConstructorT.H \
-	$(srcdir)/NOX_Parameter_LineSearchConstructor.H \
-	$(srcdir)/NOX_Parameter_LineSearchConstructorT.H \
 	$(srcdir)/NOX_Parameter_AnyPtr.H \
 	$(srcdir)/NOX_Parameter_Rcp.H \
 	$(srcdir)/NOX_Parameter_List.H \
@@ -195,6 +191,7 @@ SOLVER_H = \
 	$(srcdir)/NOX_Solver_Manager.H \
 	$(srcdir)/NOX_Solver_LineSearchBased.H \
 	$(srcdir)/NOX_Solver_TrustRegionBased.H \
+	$(srcdir)/NOX_Solver_InexactTrustRegionBased.H \
 	$(srcdir)/NOX_Solver_TensorBased.H \
 	$(srcdir)/NOX_Solver_PrePostOperator.H
 
@@ -202,8 +199,16 @@ SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
 	$(srcdir)/NOX_Solver_LineSearchBased.C \
 	$(srcdir)/NOX_Solver_TrustRegionBased.C \
+	$(srcdir)/NOX_Solver_InexactTrustRegionBased.C \
 	$(srcdir)/NOX_Solver_TensorBased.C \
 	$(srcdir)/NOX_Solver_PrePostOperator.C
+
+MERITFUNCTION_H = \
+	$(srcdir)/NOX_MeritFunction_Generic.H \
+	$(srcdir)/NOX_MeritFunction_SumOfSquares.H
+
+MERITFUNCTION = \
+	$(srcdir)/NOX_MeritFunction_SumOfSquares.C
 
 STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Generic.H \
@@ -231,12 +236,14 @@ UTILS_H = \
 	$(srcdir)/NOX_Utils.H \
         $(srcdir)/NOX_SharedObjectTemplate.H \
 	$(srcdir)/NOX_Random.H \
-        $(srcdir)/NOX_Version.H
+        $(srcdir)/NOX_Version.H \
+	$(srcdir)/NOX_GlobalData.H
 
 UTILS = \
 	$(srcdir)/NOX_Utils.C \
 	$(srcdir)/NOX_Random.C \
-        $(srcdir)/NOX_Version.C
+        $(srcdir)/NOX_Version.C \
+	$(srcdir)/NOX_GlobalData.C
 
 MULTIVECS_H = \
 	$(srcdir)/NOX_MultiVector.H

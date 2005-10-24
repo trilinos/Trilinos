@@ -49,19 +49,19 @@ using namespace NOX::Epetra;
 // This constructor is needed for inheritance but is inadequate for using
 // coloring in parallel since the raw matrix graph is not known.
 FiniteDifferenceColoring::FiniteDifferenceColoring(
-                             NOX::Parameter::List& printingParams,
-                             Interface::Required& i,
-                             const Epetra_Vector& x,
-                             Epetra_MapColoring& colorMap_,
-                             vector<Epetra_IntVector>& columns_,
-			     bool parallelColoring,
-                             bool distance1_,
-                             double beta_, double alpha_) :
+	 NOX::Parameter::List& printingParams,
+	 const Teuchos::RefCountPtr<Interface::Required>& i,
+	 const NOX::Epetra::Vector& x,
+	 const Teuchos::RefCountPtr<Epetra_MapColoring>& colorMap_,
+	 const Teuchos::RefCountPtr< vector<Epetra_IntVector> >& columns_,
+	 bool parallelColoring,
+	 bool distance1_,
+	 double beta_, double alpha_) :
   FiniteDifference(printingParams, i, x, beta_, alpha_),
   coloringType(NOX_SERIAL),
   distance1(distance1_),
-  colorMap(&colorMap_),
-  columns(&columns_),
+  colorMap(colorMap_),
+  columns(columns_),
   numColors(colorMap->NumColors()),
   maxNumColors(colorMap->MaxNumColors()),
   colorList(colorMap->ListOfColors()),
@@ -83,53 +83,20 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
 }
 
 FiniteDifferenceColoring::FiniteDifferenceColoring(
-                             Interface::Required& i,
-                             const Epetra_Vector& x,
-                             Epetra_MapColoring& colorMap_,
-                             vector<Epetra_IntVector>& columns_,
-			     bool parallelColoring,
-                             bool distance1_,
-                             double beta_, double alpha_) :
-  FiniteDifference(i, x, beta_, alpha_),
-  coloringType(NOX_SERIAL),
-  distance1(distance1_),
-  colorMap(&colorMap_),
-  columns(&columns_),
-  numColors(colorMap->NumColors()),
-  maxNumColors(colorMap->MaxNumColors()),
-  colorList(colorMap->ListOfColors()),
-  cMap(0),
-  Importer(0),
-  colorVect(0),
-  betaColorVect(0),
-  mappedColorVect(0),
-  xCol_perturb(0),
-  columnMap(0),
-  rowColImporter(0)
-{
-  label = "NOX::FiniteDifferenceColoring Jacobian";
-
-  if( parallelColoring )
-    coloringType = NOX_PARALLEL;
-
-  createColorContainers();
-}
-
-FiniteDifferenceColoring::FiniteDifferenceColoring(
-                             NOX::Parameter::List& printingParams,
-                             Interface::Required& i,
-                             const Epetra_Vector& x,
-                             Epetra_CrsGraph& rawGraph_,
-                             Epetra_MapColoring& colorMap_,
-                             vector<Epetra_IntVector>& columns_,
-			     bool parallelColoring,
-                             bool distance1_,
-                             double beta_, double alpha_) :
+         NOX::Parameter::List& printingParams,
+	 const Teuchos::RefCountPtr<Interface::Required>& i,
+	 const NOX::Epetra::Vector& x,
+	 const Teuchos::RefCountPtr<Epetra_CrsGraph>& rawGraph_,
+	 const Teuchos::RefCountPtr<Epetra_MapColoring>& colorMap_,
+	 const Teuchos::RefCountPtr< vector<Epetra_IntVector> >& columns_,
+	 bool parallelColoring,
+	 bool distance1_,
+	 double beta_, double alpha_) :
   FiniteDifference(printingParams, i, x, rawGraph_, beta_, alpha_),
   coloringType(NOX_SERIAL),
   distance1(distance1_),
-  colorMap(&colorMap_),
-  columns(&columns_),
+  colorMap(colorMap_),
+  columns(columns_),
   numColors(colorMap->NumColors()),
   maxNumColors(colorMap->MaxNumColors()),
   colorList(colorMap->ListOfColors()),
@@ -137,43 +104,9 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
   Importer(0),
   colorVect(0),
   betaColorVect(0),
-  mappedColorVect(new Epetra_Vector(rawGraph_.ColMap())),
-  xCol_perturb(new Epetra_Vector(rawGraph_.ColMap())),
-  columnMap(&rawGraph_.ColMap()),
-  rowColImporter(new Epetra_Import(*columnMap, map))
-{
-  label = "NOX::FiniteDifferenceColoring Jacobian";
-
-  if( parallelColoring )
-    coloringType = NOX_PARALLEL;
-
-  createColorContainers();
-}
-
-FiniteDifferenceColoring::FiniteDifferenceColoring(
-                             Interface::Required& i,
-                             const Epetra_Vector& x,
-                             Epetra_CrsGraph& rawGraph_,
-                             Epetra_MapColoring& colorMap_,
-                             vector<Epetra_IntVector>& columns_,
-			     bool parallelColoring,
-                             bool distance1_,
-                             double beta_, double alpha_) :
-  FiniteDifference(i, x, rawGraph_, beta_, alpha_),
-  coloringType(NOX_SERIAL),
-  distance1(distance1_),
-  colorMap(&colorMap_),
-  columns(&columns_),
-  numColors(colorMap->NumColors()),
-  maxNumColors(colorMap->MaxNumColors()),
-  colorList(colorMap->ListOfColors()),
-  cMap(0),
-  Importer(0),
-  colorVect(0),
-  betaColorVect(0),
-  mappedColorVect(new Epetra_Vector(rawGraph_.ColMap())),
-  xCol_perturb(new Epetra_Vector(rawGraph_.ColMap())),
-  columnMap(&rawGraph_.ColMap()),
+  mappedColorVect(new Epetra_Vector(rawGraph_->ColMap())),
+  xCol_perturb(new Epetra_Vector(rawGraph_->ColMap())),
+  columnMap(&(rawGraph_->ColMap())),
   rowColImporter(new Epetra_Import(*columnMap, map))
 {
   label = "NOX::FiniteDifferenceColoring Jacobian";
@@ -225,8 +158,8 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
 
   // Create an extra perturbed residual vector pointer if needed
   if ( diffType == Centered )
-    if ( !fmPtr )
-      fmPtr = new Epetra_Vector(x);
+    if ( Teuchos::is_null(fmPtr) )
+      fmPtr = Teuchos::rcp(new Epetra_Vector(x));
 
   // Create a reference to the extra perturbed residual vector
   Epetra_Vector& fm = *fmPtr;

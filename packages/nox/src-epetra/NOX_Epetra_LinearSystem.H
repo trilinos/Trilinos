@@ -33,9 +33,10 @@
 #ifndef NOX_EPETRA_LINEARSYSTEM_H
 #define NOX_EPETRA_LINEARSYSTEM_H
 
-#include "NOX_Epetra_Vector.H"	// class data element
-#include "NOX_Utils.H"          // class data element
-#include "NOX_Common.H"         // class data element (string)
+#include "NOX_Epetra_Vector.H"	    // class data element
+#include "NOX_Utils.H"              // class data element
+#include "NOX_Common.H"             // class data element (string)
+#include "Teuchos_RefCountPtr.hpp"  // class data element
 
 // Forward declares
 namespace NOX {
@@ -129,10 +130,11 @@ public:
     See NOX::Epetra::Scaling for details on how to specify scaling 
     of the linear system.  
    */
-  virtual void resetScaling(NOX::Epetra::Scaling& scalingObject) = 0;
+  virtual void 
+  resetScaling(const Teuchos::RefCountPtr<NOX::Epetra::Scaling>& s) = 0;
 
   //! Evaluates the Jacobian based on the solution vector x.
-  virtual bool computeJacobian(Epetra_Vector& x) = 0;
+  virtual bool computeJacobian(const NOX::Epetra::Vector& x) = 0;
  
   /*! 
     \brief Explicitly constructs a preconditioner based on the solution vector x and the parameter list p.  
@@ -141,7 +143,7 @@ public:
     preconditioner is created. The NOX::Epetra::Group controls the
     isValid flag for the preconditioner and will control when to call this.
   */
-  virtual bool createPreconditioner(Epetra_Vector& x, 
+  virtual bool createPreconditioner(const NOX::Epetra::Vector& x, 
 				    NOX::Parameter::List& p,
 				    bool recomputeGraph) const = 0;
 
@@ -161,10 +163,11 @@ public:
     { return false; } 
 
   //! Return Jacobian operator
-  virtual const Epetra_Operator& getJacobianOperator() const = 0;
+  virtual Teuchos::RefCountPtr<const Epetra_Operator> 
+  getJacobianOperator() const = 0;
 
   //! Return Jacobian operator
-  virtual Epetra_Operator& getJacobianOperator() = 0;
+  virtual Teuchos::RefCountPtr<Epetra_Operator> getJacobianOperator() = 0;
 
   //! Return preconditioner operator
   virtual const Epetra_Operator& getGeneratedPrecOperator() const = 0;
@@ -173,12 +176,12 @@ public:
   virtual Epetra_Operator& getGeneratedPrecOperator() = 0;
 
   //! Set Jacobian operator for solve
-  virtual void 
-  setJacobianOperatorForSolve(const Epetra_Operator& solveJacOp) = 0;
+  virtual void setJacobianOperatorForSolve(const 
+		 Teuchos::RefCountPtr<const Epetra_Operator>& solveJacOp) = 0;
 
   //! Set preconditioner operator for solve
-  virtual void 
-  setPrecOperatorForSolve(const Epetra_Operator& solvePrecOp) = 0;
+  virtual void setPrecOperatorForSolve(const 
+		 Teuchos::RefCountPtr<const Epetra_Operator>& solvePrecOp) = 0;
 };
 
 } // namespace Epetra

@@ -39,7 +39,7 @@ NOX::Belos::MultiVector::MultiVector(NOX::Abstract::MultiVector& noxMultiVec)
 }
 
 NOX::Belos::MultiVector::MultiVector(const NOX::Belos::MultiVector& source)
-  : vecPtr(source.vecPtr->clone(NOX::DeepCopy)),
+  : vecPtr(source.vecPtr->clone(NOX::DeepCopy).release()),
     ownsVec(true)
 {
 }
@@ -70,14 +70,14 @@ NOX::Belos::MultiVector::operator=(const NOX::Belos::MultiVector& source)
 ::Belos::MultiVec<double>*
 NOX::Belos::MultiVector::Clone(const int numvecs)
 {
-  NOX::Abstract::MultiVector *newVec = vecPtr->clone(numvecs);
+  NOX::Abstract::MultiVector *newVec = vecPtr->clone(numvecs).release();
   return new NOX::Belos::MultiVector(*newVec, true);
 }
 
 ::Belos::MultiVec<double>*
 NOX::Belos::MultiVector::CloneCopy()
 {
-  NOX::Abstract::MultiVector *newVec = vecPtr->clone(NOX::ShapeCopy);
+  NOX::Abstract::MultiVector *newVec = vecPtr->clone(NOX::ShapeCopy).release();
   return new NOX::Belos::MultiVector(*newVec, true);
 }
 
@@ -85,7 +85,7 @@ NOX::Belos::MultiVector::CloneCopy()
 NOX::Belos::MultiVector::CloneCopy(int index[], int numvecs)
 {
   vector<int> idx(index, index+numvecs);
-  NOX::Abstract::MultiVector *newVec = vecPtr->subCopy(idx);
+  NOX::Abstract::MultiVector *newVec = vecPtr->subCopy(idx).release();
   return new NOX::Belos::MultiVector(*newVec, true);
 }
  
@@ -93,7 +93,7 @@ NOX::Belos::MultiVector::CloneCopy(int index[], int numvecs)
 NOX::Belos::MultiVector::CloneView(int index[], int numvecs)
 {
   vector<int> idx(index, index+numvecs);
-  NOX::Abstract::MultiVector *newVec = vecPtr->subView(idx);
+  NOX::Abstract::MultiVector *newVec = vecPtr->subView(idx).release();
   return new NOX::Belos::MultiVector(*newVec, true);
 }
 
@@ -201,7 +201,7 @@ NOX::Belos::MultiVector::MvInit(double alpha)
 void
 NOX::Belos::MultiVector::MvPrint(ostream& os)
 {
-  vecPtr->print();
+  vecPtr->print(os);
 }
 
 NOX::Abstract::MultiVector&

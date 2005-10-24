@@ -30,8 +30,6 @@
 // ************************************************************************
 //@HEADER
 
-#ifdef WITH_PRERELEASE
-
 #ifndef SOLVER_NONLINEARCG_H
 #define SOLVER_NONLINEARCG_H
 
@@ -39,7 +37,8 @@
 
 // Forward declaration
 namespace NOX {
-class Utils;
+  class Utils;
+  class GlobalData;
 }
 
 namespace NOX {
@@ -148,13 +147,15 @@ class NonlinearCG : public Generic {
 public:
 
   //! Constructor. 
-  NonlinearCG(const NOX::Utils& u, Parameter::List& params);
+  NonlinearCG(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	      Parameter::List& params);
 
   //! Destructor.
   virtual ~NonlinearCG();
 
   //! derived
-  virtual bool reset(Parameter::List& p);
+  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+		     Parameter::List& p);
 
   //! derived
   virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
@@ -166,29 +167,32 @@ public:
 
 private:
   
+  //! Global data pointer.  Keep this so the parameter list remains valid.
+  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+
   //! Printing Utils
-  const NOX::Utils& utils;
+  Teuchos::RefCountPtr<NOX::Utils> utils;
 
   //! Previous solution pointer. 
   const Abstract::Group* oldSolnPtr;	
 
   //! Temporary vector used in applying preconditioner.
-  Abstract::Vector* tmpVecPtr;
+  Teuchos::RefCountPtr<Abstract::Vector> tmpVecPtr;
 
   //! Previous search direction pointer.
   /*! The current search direction is found by orthogonalizing against the
       previous search direction.  This vector provides storage for the 
       old search direction. */
-  Abstract::Vector* oldDirPtr;
+  Teuchos::RefCountPtr<Abstract::Vector> oldDirPtr;
 
   //! Pointer to previous descent direction.
   /*! This vector stores the old descent direction which was orthogonalized
       to determine the old search direction.  It is needed in the numerator
       of the expression for Polak-Ribiere \f$ \beta \f$. */
-  Abstract::Vector* oldDescentDirPtr;  
+  Teuchos::RefCountPtr<Abstract::Vector> oldDescentDirPtr;  
 
   //! Temporary vector used in computing the numerator of Polak-Ribiere \f$ \beta \f$.
-  Abstract::Vector* diffVecPtr;  
+  Teuchos::RefCountPtr<Abstract::Vector> diffVecPtr;  
 
   //! Input parameters.
   Parameter::List* paramsPtr;	
@@ -212,5 +216,4 @@ private:
 } // namespace Direction
 } // namespace NOX
 
-#endif
 #endif

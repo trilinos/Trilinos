@@ -40,6 +40,7 @@
 #include "NOX_Direction_Manager.H"  // class data element
 #include "NOX_Parameter_List.H"	    // class data element
 #include "NOX_Utils.H"	            // class data element
+#include "Teuchos_RefCountPtr.hpp"  // class data element
 
 #include "NOX_LineSearch_Generic.H" // base class
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member
@@ -274,7 +275,7 @@ public:
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
   virtual NOX::StatusTest::StatusType getStatus();
-  virtual NOX::StatusTest::StatusType iterate();
+  virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
@@ -342,57 +343,49 @@ protected:
   
 protected:
   
+  //! Pointer to the global data object.
+  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+
+  //! Printing Utils
+  Teuchos::RefCountPtr<NOX::Utils> utilsPtr;
+
   //! Current solution.
   Teuchos::RefCountPtr<NOX::Abstract::Group> solnPtr;		
 
   //! Previous solution pointer. 
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Group* oldSolnPtr;	
-  //! Previous solution reference.
-  NOX::Abstract::Group& oldSoln;	
+  Teuchos::RefCountPtr<NOX::Abstract::Group> oldSolnPtr;	
 
   //! Current Newton direction (pointer).
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* newtonVecPtr;
-  //! Current Newton direction (reference).
-  NOX::Abstract::Vector& newtonVec;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> newtonVecPtr;
 
   //! Current tensor direction (pointer).
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* tensorVecPtr;
-  //! Current tensor direction (reference).
-  NOX::Abstract::Vector& tensorVec;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> tensorVecPtr;
 
   //! Current tensor term vector (pointer).
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* aVecPtr;
-  //! Current tensor term vector (reference).
-  NOX::Abstract::Vector& aVec;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> aVecPtr;
 
   //! Vector to previous point (pointer).
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* sVecPtr;
-  //! Vector to previous point (reference).
-  NOX::Abstract::Vector& sVec;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> sVecPtr;
 
   //! Working vector (pointer).
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* tmpVecPtr;
-  //! Working vector (reference).
-  NOX::Abstract::Vector& tmpVec;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmpVecPtr;
 
   //! Residual vector (pointer).
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* residualVecPtr;
-  //! Working vector (reference).
-  NOX::Abstract::Vector& residualVec;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> residualVecPtr;
 
   //! Stopping test.
   Teuchos::RefCountPtr<NOX::StatusTest::Generic> testPtr;		
@@ -412,11 +405,8 @@ protected:
   //! Parameters for the Linear Solver of the local model.
   NOX::Parameter::List* linearParamsPtr;	
 
-  //! Printing Utils
-  NOX::Utils utils;
-
   //! Current step.
-  double step;			
+  double stepSize;			
 
   //! Value of sc'*dt.
   double beta;

@@ -40,53 +40,49 @@
 
 using namespace NOX;
 using namespace NOX::Epetra;
+using namespace Teuchos;
 
 Group::Group(NOX::Parameter::List& printParams,
-	     NOX::Epetra::Interface::Required& i, 
-	     NOX::Epetra::Vector& x):
+	     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
+	     const NOX::Epetra::Vector& x):
   utils(printParams),
-  xVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(DeepCopy))),
+  xVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(x.clone(DeepCopy))),
   xVector(*xVectorPtr),    
-  RHSVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
+  RHSVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(x.clone(ShapeCopy))),
   RHSVector(*RHSVectorPtr), 
-  gradVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
+  gradVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(x.clone(ShapeCopy))),
   gradVector(*gradVectorPtr), 
-  NewtonVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
+  NewtonVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(x.clone(ShapeCopy))),
   NewtonVector(*NewtonVectorPtr),
-  tmpVectorPtr(0),
   normRHS(0.0),
   normNewtonSolveResidual(0),
   conditionNumber(0.0),
-  azConditionNumberPtr(0),
-  sharedLinearSystemPtr(0), 
   sharedLinearSystem(*sharedLinearSystemPtr),
-  userInterface(i)
+  userInterfacePtr(i)
 {
   // Set all isValid flags to false
   resetIsValid();
 }
 
 Group::Group(NOX::Parameter::List& printParams,
-		   NOX::Epetra::Interface::Required& i, 
-		   NOX::Epetra::Vector& x,
-		   NOX::Epetra::LinearSystem& linSys):
+	     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
+	     const NOX::Epetra::Vector& x,
+	     const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys):
   utils(printParams),
-  xVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(DeepCopy))),
+  xVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(x.clone(DeepCopy))),
   xVector(*xVectorPtr),    
-  RHSVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
+  RHSVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(x.clone(ShapeCopy))),
   RHSVector(*RHSVectorPtr), 
-  gradVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
+  gradVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(x.clone(ShapeCopy))),
   gradVector(*gradVectorPtr), 
-  NewtonVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
+  NewtonVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(x.clone(ShapeCopy))),
   NewtonVector(*NewtonVectorPtr),
-  tmpVectorPtr(0),
   normRHS(0.0),
   normNewtonSolveResidual(0),
   conditionNumber(0.0),
-  azConditionNumberPtr(0),
-  sharedLinearSystemPtr(new NOX::SharedObject<NOX::Epetra::LinearSystem, NOX::Epetra::Group>(linSys)), 
+  sharedLinearSystemPtr(Teuchos::rcp(new SharedObject<NOX::Epetra::LinearSystem, NOX::Epetra::Group>(linSys))), 
   sharedLinearSystem(*sharedLinearSystemPtr),
-  userInterface(i)
+  userInterfacePtr(i)
 {
   // Set all isValid flags to false
   resetIsValid();
@@ -94,19 +90,17 @@ Group::Group(NOX::Parameter::List& printParams,
 
 Group::Group(const Group& source, CopyType type) :
   utils(source.utils),
-  xVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(source.xVector.clone(type))),
+  xVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(source.xVector.clone(type))),
   xVector(*xVectorPtr),    
-  RHSVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(source.RHSVector.clone(type))),
+  RHSVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(source.RHSVector.clone(type))),
   RHSVector(*RHSVectorPtr), 
-  gradVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(source.gradVector.clone(type))),
+  gradVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(source.gradVector.clone(type))),
   gradVector(*gradVectorPtr), 
-  NewtonVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(source.NewtonVector.clone(type))),
+  NewtonVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(source.NewtonVector.clone(type))),
   NewtonVector(*NewtonVectorPtr), 
-  tmpVectorPtr(0),
-  azConditionNumberPtr(0),
-  sharedLinearSystemPtr(0),
-  sharedLinearSystem(source.sharedLinearSystem),
-  userInterface(source.userInterface)
+  sharedLinearSystemPtr(source.sharedLinearSystemPtr),
+  sharedLinearSystem(*sharedLinearSystemPtr),
+  userInterfacePtr(source.userInterfacePtr)
 {
  
   switch (type) {
@@ -114,9 +108,9 @@ Group::Group(const Group& source, CopyType type) :
   case DeepCopy:
     
     isValidRHS = source.isValidRHS;
+    isValidJacobian = source.isValidJacobian;
     isValidGrad = source.isValidGrad;
     isValidNewton = source.isValidNewton;
-    isValidJacobian = source.isValidJacobian;
     isValidNormNewtonSolveResidual = source.isValidNormNewtonSolveResidual;
     isValidConditionNumber = source.isValidConditionNumber;
     normRHS = source.normRHS;
@@ -125,7 +119,7 @@ Group::Group(const Group& source, CopyType type) :
     isValidPreconditioner = source.isValidPreconditioner;
     isValidSolverJacOp = source.isValidSolverJacOp;
     
-    // New copy takes ownership of the shared Jacobian
+    // New copy takes ownership of the shared Jacobian for DeepCopy
     if (isValidJacobian)
       sharedLinearSystem.getObject(this);
 
@@ -144,13 +138,6 @@ Group::Group(const Group& source, CopyType type) :
 
 Group::~Group() 
 {
-  delete azConditionNumberPtr;
-  delete tmpVectorPtr;
-  delete sharedLinearSystemPtr;
-  delete NewtonVectorPtr;
-  delete gradVectorPtr;
-  delete RHSVectorPtr;
-  delete xVectorPtr;
 }
 
 void Group::resetIsValid() //private
@@ -166,13 +153,14 @@ void Group::resetIsValid() //private
   return;
 }
 
-Abstract::Group* Group::clone(CopyType type) const 
+Teuchos::RefCountPtr<NOX::Abstract::Group> Group::clone(CopyType type) const 
 {
-  NOX::Abstract::Group* newgrp = new NOX::Epetra::Group(*this, type);
+  Teuchos::RefCountPtr<NOX::Abstract::Group> newgrp = 
+    Teuchos::rcp(new NOX::Epetra::Group(*this, type));
   return newgrp;
 }
 
-Abstract::Group& Group::operator=(const Abstract::Group& source)
+Abstract::Group& Group::operator=(const NOX::Abstract::Group& source)
 {
   return operator=(dynamic_cast<const Group&> (source));
 }
@@ -230,7 +218,7 @@ void Group::setX(const Abstract::Vector& y)
 void Group::setX(const NOX::Epetra::Vector& y) 
 {
   if (isPreconditioner()) {
-    sharedLinearSystem.getObject(this).destroyPreconditioner();
+    sharedLinearSystem.getObject(this)->destroyPreconditioner();
   }
   resetIsValid();
   xVector = y;
@@ -254,7 +242,7 @@ void Group::computeX(const Group& grp,
 		     double step) 
 {
   if (isPreconditioner())
-    sharedLinearSystem.getObject(this).destroyPreconditioner();
+    sharedLinearSystem.getObject(this)->destroyPreconditioner();
   resetIsValid();
   xVector.update(1.0, grp.xVector, step, d);
   return;
@@ -267,7 +255,7 @@ Abstract::Group::ReturnType Group::computeF()
 
   bool status = false;
   
-  status = userInterface.computeF(xVector.getEpetraVector(), RHSVector.getEpetraVector(), NOX::Epetra::Interface::Required::Residual);
+  status = userInterfacePtr->computeF(xVector.getEpetraVector(), RHSVector.getEpetraVector(), NOX::Epetra::Interface::Required::Residual);
 
   if (status == false) {
     cout << "ERROR: Epetra::Group::computeF() - fill failed!!!"
@@ -291,8 +279,8 @@ Abstract::Group::ReturnType Group::computeJacobian()
   // Fill the Jacobian 
   bool status = false;
   
-  status = sharedLinearSystem.getObject(this).
-    computeJacobian(xVector.getEpetraVector());
+  status = sharedLinearSystem.getObject(this)->
+    computeJacobian(xVector);
 
   if (status == false) {
     cout << "ERROR: NOX::Epetra::Group::computeJacobian() - fill failed!!!"
@@ -322,8 +310,8 @@ Abstract::Group::ReturnType Group::computeGradient()
   }
   
   // Compute grad = Jacobian^T * RHS.
-  sharedLinearSystem.getObject(this).applyJacobianTranspose(RHSVector,
-							    gradVector);
+  sharedLinearSystem.getObject(this)->applyJacobianTranspose(RHSVector,
+							     gradVector);
 
   // Update state
   isValidGrad = true;
@@ -385,7 +373,7 @@ Abstract::Group::ReturnType Group::applyJacobian(const NOX::Epetra::Vector& inpu
     return Abstract::Group::BadDependency;
 
   // Apply the Jacobian
-  bool status = sharedLinearSystem.getObject().applyJacobian(input, result);
+  bool status = sharedLinearSystem.getObject()->applyJacobian(input, result);
 
   return status == true ? Abstract::Group::Ok : Abstract::Group::Failed;
 }
@@ -403,21 +391,21 @@ Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, con
     return Abstract::Group::BadDependency;
 
   if (!isValidSolverJacOp) {
-    sharedLinearSystem.getObject(this).setJacobianOperatorForSolve(sharedLinearSystem.getObject(this).getJacobianOperator());
+    sharedLinearSystem.getObject(this)->setJacobianOperatorForSolve(sharedLinearSystem.getObject(this)->getJacobianOperator());
     isValidSolverJacOp = true;
   }
   
   bool reusePrec = 
-    sharedLinearSystem.getObject(this).checkPreconditionerReuse();
+    sharedLinearSystem.getObject(this)->checkPreconditionerReuse();
 
   if (!isPreconditioner()  && !reusePrec ) {
-    sharedLinearSystem.getObject(this).destroyPreconditioner();
-    sharedLinearSystem.getObject(this)
-      .createPreconditioner(xVector.getEpetraVector(), p, false);
+    sharedLinearSystem.getObject(this)->destroyPreconditioner();
+    sharedLinearSystem.getObject(this)->
+      createPreconditioner(xVector, p, false);
     isValidPreconditioner = true;
   }
 
-  bool status = sharedLinearSystem.getObject(this).applyJacobianInverse(p, input, result);
+  bool status = sharedLinearSystem.getObject(this)->applyJacobianInverse(p, input, result);
 
   return status == true ? Abstract::Group::Ok : Abstract::Group::NotConverged;
 }
@@ -435,7 +423,7 @@ Abstract::Group::ReturnType Group::applyJacobianTranspose(const NOX::Epetra::Vec
   if (!isJacobian()) 
     return Abstract::Group::BadDependency;
   
-  bool status = sharedLinearSystem.getObject().applyJacobianTranspose(input, result);
+  bool status = sharedLinearSystem.getObject()->applyJacobianTranspose(input, result);
 
   return status == true ? Abstract::Group::Ok : Abstract::Group::Failed;
 }
@@ -462,13 +450,13 @@ Abstract::Group::ReturnType Group::applyRightPreconditioning(
   bool success = false;
   
   if (!isPreconditioner()) {
-    sharedLinearSystem.getObject(this).destroyPreconditioner();
-    sharedLinearSystem.getObject(this).createPreconditioner(xVector.getEpetraVector(), linearSolverParams, false);
+    sharedLinearSystem.getObject(this)->destroyPreconditioner();
+    sharedLinearSystem.getObject(this)->createPreconditioner(xVector, linearSolverParams, false);
     isValidPreconditioner = true;
   }
 
-  success = sharedLinearSystem.getObject()
-    .applyRightPreconditioning(useTranspose, linearSolverParams, input, result);
+  success = sharedLinearSystem.getObject()->
+    applyRightPreconditioning(useTranspose, linearSolverParams, input, result);
 
   if (success == true) 
     return Abstract::Group::Ok;
@@ -574,17 +562,19 @@ Abstract::Group::ReturnType NOX::Epetra::Group::getNormLastLinearSolveResidual(d
   return NOX::Abstract::Group::BadDependency;
 }  
   
-NOX::Epetra::Interface::Required& Group::getRequiredInterface()
+Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> Group::
+getRequiredInterface()
 {
-  return userInterface;
+  return userInterfacePtr;
 }
  
-const NOX::Epetra::LinearSystem& Group::getLinearSystem() const
+Teuchos::RefCountPtr<const NOX::Epetra::LinearSystem> Group::
+getLinearSystem() const
 {
   return sharedLinearSystem.getObject();
 }
 
-NOX::Epetra::LinearSystem& Group::getLinearSystem()
+Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> Group::getLinearSystem()
 {
   return sharedLinearSystem.getObject(this);
 }
@@ -609,12 +599,13 @@ bool Group::computeNormNewtonSolveResidual ()
   }
   
   // Allocate the tmpVectorPtr if not already done (deleted in ~Group)   
-  if (tmpVectorPtr == 0) {
-    tmpVectorPtr = new Epetra_Vector(RHSVector.getEpetraVector());
+  if (Teuchos::is_null(tmpVectorPtr)) {
+    tmpVectorPtr = 
+      Teuchos::rcp(new Epetra_Vector(RHSVector.getEpetraVector()));
   }
   NOX::Epetra::Vector tmpNoxVector(*tmpVectorPtr, ShapeCopy); 
 
-  sharedLinearSystem.getObject().applyJacobian(NewtonVector, tmpNoxVector);    
+  sharedLinearSystem.getObject()->applyJacobian(NewtonVector, tmpNoxVector);
   tmpNoxVector.update(1.0, RHSVector, 1.0);
   normNewtonSolveResidual = tmpNoxVector.norm();
   
@@ -634,11 +625,11 @@ computeJacobianConditionNumber(int maxIters, double tolerance,
       throw "NOX Error";
     }
     
-    if (azConditionNumberPtr == 0)
-      azConditionNumberPtr = new AztecOOConditionNumber;
+    if (Teuchos::is_null(azConditionNumberPtr))
+      azConditionNumberPtr = Teuchos::rcp(new AztecOOConditionNumber);
     
     azConditionNumberPtr->
-      initialize(sharedLinearSystem.getObject().getJacobianOperator(),
+      initialize(*(sharedLinearSystem.getObject()->getJacobianOperator()),
 		 AztecOOConditionNumber::GMRES_, krylovSubspaceSize,
 		 printOutput);
    

@@ -46,8 +46,6 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
   dt(5.0e-1),
   overlapType(OType_),
   ColumnToOverlapImporter(0),
-  AA(0),
-  A(0),
   Comm(&comm),
   NumGlobalNodes(numGlobalNodes)
 {
@@ -192,9 +190,9 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
   // Construct Linear Objects  
   Importer = new Epetra_Import(*OverlapMap, *StandardMap);
   nodeImporter = new Epetra_Import(*OverlapNodeMap, *StandardNodeMap);
-  initialSolution = new Epetra_Vector(*StandardMap);
+  initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
   oldSolution = new Epetra_Vector(*StandardMap);
-  AA = new Epetra_CrsGraph(Copy, *StandardMap, 0);
+  AA = Teuchos::rcp(new Epetra_CrsGraph(Copy, *StandardMap, 0));
 
   // Allocate the memory for a matrix dynamically (i.e. the graph is dynamic).
   if( overlapType == NODES )
@@ -214,12 +212,12 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
   // depending on the choice of Jacobian operator
   if( overlapType == ELEMENTS ) {
     ColumnToOverlapImporter = new Epetra_Import(AA->ColMap(),*OverlapMap);
-    A = new Epetra_CrsMatrix (Copy, *AA);
+    A = Teuchos::rcp(new Epetra_CrsMatrix (Copy, *AA));
     A->FillComplete();
   }
 
   // Create the nodal coordinates
-  xptr = new Epetra_Vector(*StandardNodeMap);
+  xptr = Teuchos::rcp(new Epetra_Vector(*StandardNodeMap));
   double Length= xmax - xmin;
   dx=Length/((double) NumGlobalNodes-1);
   for (i=0; i < NumMyNodes; i++) {
@@ -233,10 +231,6 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
 // Destructor
 Brusselator::~Brusselator()
 {
-  delete A;
-  //delete AA;
-  delete xptr;
-  delete initialSolution;
   delete oldSolution;
   delete nodeImporter;
   delete Importer;
@@ -491,14 +485,14 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   return true;
 }
 
-Epetra_Vector& Brusselator::getSolution()
+Teuchos::RefCountPtr<Epetra_Vector> Brusselator::getSolution()
 {
-  return *initialSolution;
+  return initialSolution;
 }
   
-Epetra_CrsMatrix& Brusselator::getJacobian()
+Teuchos::RefCountPtr<Epetra_CrsMatrix> Brusselator::getJacobian()
 {
-  if( A ) return *A;
+  if( Teuchos::is_null(A) ) return A;
   else {
     cout << "No valid Jacobian matrix for this problem.  This is likely the"
          << " result of overlapping NODES rather than ELEMENTS.\n" << endl;
@@ -506,9 +500,9 @@ Epetra_CrsMatrix& Brusselator::getJacobian()
   }
 }
 
-Epetra_Vector& Brusselator::getMesh()
+Teuchos::RefCountPtr<Epetra_Vector> Brusselator::getMesh()
 { 
-  return *xptr;
+  return xptr;
 }
 
 Epetra_Vector& Brusselator::getOldSoln()
@@ -521,9 +515,9 @@ double Brusselator::getdt()
   return dt;
 }
 
-Epetra_CrsGraph& Brusselator::getGraph()
+Teuchos::RefCountPtr<Epetra_CrsGraph> Brusselator::getGraph()
 {
-  return *AA;
+  return AA;
 }
 
 

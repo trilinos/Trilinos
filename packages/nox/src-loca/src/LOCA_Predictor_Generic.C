@@ -108,7 +108,7 @@ LOCA::Predictor::Generic::setPredictorOrientation(
   secant->update(-1.0, prevXMultiVec[0], 1.0);
 
   for (int i=0; i<result.numVectors(); i++)
-    if (secant->dot(result[i])*stepSize[i] < 0.0)
+    if (secant->innerProduct(result[i])*stepSize[i] < 0.0)
       result[i].scale(-1.0);
 
   delete secant;

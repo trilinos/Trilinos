@@ -184,8 +184,8 @@ LOCA::AnasaziOperator::ShiftInvert::rayleighQuotient(
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
 
-  rq_r = evec_r.dot(*tmp_r) + evec_i.dot(*tmp_i);
-  rq_i = evec_r.dot(*tmp_i) - evec_i.dot(*tmp_r);
+  rq_r = evec_r.innerProduct(*tmp_r) + evec_i.innerProduct(*tmp_i);
+  rq_i = evec_r.innerProduct(*tmp_i) - evec_i.innerProduct(*tmp_r);
 
   // Make sure mass matrix is up-to-date
   status = grp->computeMassMatrix();
@@ -204,8 +204,8 @@ LOCA::AnasaziOperator::ShiftInvert::rayleighQuotient(
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
 
-  double m_r = evec_r.dot(*tmp_r) + evec_i.dot(*tmp_i);
-  double m_i = evec_r.dot(*tmp_i) - evec_i.dot(*tmp_r);
+  double m_r = evec_r.innerProduct(*tmp_r) + evec_i.innerProduct(*tmp_i);
+  double m_i = evec_r.innerProduct(*tmp_i) - evec_i.innerProduct(*tmp_r);
   double m = m_r*m_r + m_i*m_i;
 
   // Compute z^T J z / z^T M z

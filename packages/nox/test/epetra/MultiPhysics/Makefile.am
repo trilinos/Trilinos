@@ -42,7 +42,9 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 EXEEXT = .exe
 
 if BUILD_EPETRA_TESTS
+if BUILD_EPETRA_MULTIPHYSICS
 noinst_PROGRAMS = example
+endif
 endif
 
 example_SOURCES = $(srcdir)/Example.C \

@@ -34,6 +34,7 @@
 #define NOX_EPETRA_MULTIVECTOR_H
 
 #include "NOX_Abstract_MultiVector.H" // base class
+#include "Teuchos_RefCountPtr.hpp"
 
 // Forward declaration
 class Epetra_MultiVector;
@@ -53,15 +54,31 @@ namespace NOX {
 
     public:			
 
-      //! Construct by copying map and/or elements of an Epetra_MultiVector.
-      /*! Option for creating a "View": Construct a NOX::Epetra::MultiVector 
-	using the SAME memory location used in the source Epetra_MultiVector.
-	WARNING: A View can be dangerous since multiple objects can access
-	the same memory locations.  
+      //! Type of memory management to use when constructing the vector.
+      enum MemoryType {
+	//! Keeps a pointer to and uses the actual Epetra_Vector passed in.
+	CreateView,
+	//! Allocates a new underlying Epetra_Vector object.
+	CreateCopy
+      };
+      
+      /*! \brief Constructor that creates a COPY or VIEW of the Epetra_MultiVector.
+ 
+        NOTE: This ctor should just always create a view.  It should
+        be implicit from the fact that a RefCountPtr object is being
+        passed in that a persisting relationship is present.  However,
+        since this could cause confusion, the default is to make a
+        copy and if a user wants a view, they must pass in an explicit
+        flag.
+
+        A VIEW of a vector uses the same underlying memory.  WARNING:
+        A View can be dangerous since multiple objects can access the
+        same memory locations.
       */
-      MultiVector(Epetra_MultiVector& source, 
+      MultiVector(const Teuchos::RefCountPtr<Epetra_MultiVector>& source, 
 		  NOX::CopyType type = NOX::DeepCopy,
-		  bool createView = false);
+		  NOX::Epetra::MultiVector::MemoryType memoryType = 
+		  NOX::Epetra::MultiVector::CreateCopy);
 
       //! Construct by copying map and/or elements of an Epetra_MultiVector.
       MultiVector(const Epetra_MultiVector& source, 
@@ -206,24 +223,25 @@ namespace NOX {
        * \return Pointer to newly created vector or NULL if clone is not 
        * supported. 
        */
-      virtual NOX::Abstract::MultiVector* 
+      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
       clone(CopyType type = DeepCopy) const;
 
       //! Creates a new multi-vector with \c numvecs columns
-      virtual NOX::Abstract::MultiVector* clone(int numvecs) const;
+      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+      clone(int numvecs) const;
 
       /*! 
        * \brief Creates a new multi-vector with \c index.size() columns whose 
        * columns are copies of the columns of \c *this given by \c index.
        */
-      virtual NOX::Abstract::MultiVector* 
+      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
       subCopy(const vector<int>& index) const;
 
       /*! 
        * \brief Creates a new multi-vector with \c ndex.size() columns that 
        * shares the columns of \c *this given by \c index.
        */
-      virtual NOX::Abstract::MultiVector* 
+      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
       subView(const vector<int>& index) const;
 
       //@}
@@ -256,12 +274,12 @@ namespace NOX {
       virtual int numVectors() const;
 
       //! Print the vector.  This is meant for debugging purposes only 
-      virtual void print() const;
+      virtual void print(std::ostream& stream) const;
 
     protected:
 
        //! Pointer to petra vector owned by this object
-      Epetra_MultiVector* epetraMultiVec;
+      Teuchos::RefCountPtr<Epetra_MultiVector> epetraMultiVec;
 
       //! NOX::Epetra::Vector's for each column of the multivector
       /*!

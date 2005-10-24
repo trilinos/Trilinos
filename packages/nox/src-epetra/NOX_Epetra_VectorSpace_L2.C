@@ -30,60 +30,42 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_PARAMETER_DIRECTIONCONSTRUCTOR_H
-#define NOX_PARAMETER_DIRECTIONCONSTRUCTOR_H
+#include "NOX_Epetra_VectorSpace_L2.H"
+#include "Epetra_Vector.h"
 
-#include "NOX_Common.H"		// class data element (string)
-#include "NOX_Direction_Generic.H"
-
-namespace NOX {
-
-namespace Parameter {
-
-/*! 
-  \brief Support for user-defined directions.
-
-  This object has the ability to be passed via a NOX::Parameter::List
-  and to generate new directions.
-
-  It is able to be passed via a NOX::Parameter::List because it is
-  derived from NOX::Parameter::Arbitrary class.
-
-  It is used by NOX::Direction::Manager to generate a user-defined
-  direction via the newDirection() function.
-
-  The user can write a method that derives from this one or use the
-  templated default method, NOX::Parameter::DirectionConstructorT.
-*/
-
-class DirectionConstructor : public Arbitrary 
+NOX::Epetra::VectorSpaceL2::VectorSpaceL2()
 {
   
-public:
+}
+
+NOX::Epetra::VectorSpaceL2::~VectorSpaceL2()
+{
   
-  //! Default Constructor
-  DirectionConstructor() {};
-  
-  //! Destructor
-  virtual ~DirectionConstructor() {};
+}
 
-  // derived
-  virtual DirectionConstructor* clone() const = 0;
+double NOX::Epetra::VectorSpaceL2::
+innerProduct(const Epetra_Vector& a, const Epetra_Vector& b) const
+{
+  double dot;
+  a.Dot(b, &dot);
+  return dot;
+}
 
-  // derived
-  virtual const string& getType() const = 0;
-
-  // derived
-  virtual ostream& print(ostream& stream, int indent = 0) const { return stream; };
-  
-  /*! 
-    \brief Construct a new direction and return its pointer.
-  */
-  virtual NOX::Direction::Generic* newDirection(const NOX::Utils& u, NOX::Parameter::List& p) const = 0;
-
-};
-
-} // namespace Parameter
-} // namespace NOX
-
-#endif
+double NOX::Epetra::VectorSpaceL2::
+norm(const Epetra_Vector& a, NOX::Abstract::Vector::NormType type) const
+{
+  double n;
+  switch (type) {
+  case NOX::Abstract::Vector::MaxNorm:
+    a.NormInf(&n);
+    break;
+  case NOX::Abstract::Vector::OneNorm:
+    a.Norm1(&n);
+    break;
+  case NOX::Abstract::Vector::TwoNorm:
+  default:
+   a.Norm2(&n);
+   break;
+  }
+  return n;
+}

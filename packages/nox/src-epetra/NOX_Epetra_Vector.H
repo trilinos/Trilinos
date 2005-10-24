@@ -33,10 +33,17 @@
 #ifndef NOX_EPETRA_VECTOR_H
 #define NOX_EPETRA_VECTOR_H
 
-#include "NOX_Abstract_Vector.H" // base class
+#include "NOX_Abstract_Vector.H"     // base class
+#include "Teuchos_RefCountPtr.hpp"   // class data element
+#include "NOX_Epetra_VectorSpace.H"  // class data element
 
-// Forward declaration
+// Forward declarations
 class Epetra_Vector;
+namespace NOX {
+  namespace Epetra {
+    class VectorSpace;
+  }
+}
 
 namespace NOX {
 
@@ -47,21 +54,44 @@ namespace Epetra {
 class Vector : public virtual NOX::Abstract::Vector {
 
  public:			
+  
+  //! Type of memory management to use when constructing the vector.
+  enum MemoryType {
+    //! Keeps a pointer to and uses the actual Epetra_Vector passed in.
+    CreateView,
+    //! Allocates a new underlying Epetra_Vector object.
+    CreateCopy
+  };
 
-  //! Construct by copying map and/or elements of an Epetra_Vector.
-  /*! Option for creating a "View": Construct a NOX::Epetra::Vector 
-    using the SAME memory location used in the source Epetra_Vector.
+  /*! \brief Constructor that creates a COPY or VIEW of the Epetra_Vector.
+ 
+    NOTE: This ctor should just always create a view.  It should be
+    implicit from the fact that a RefCountPtr object is being passed
+    in that a persisting relationship is present.  However, since this
+    could cause confusion, the default is to make a copy and if a user
+    wants a view, they must pass in an explicit flag.
+
+    A VIEW of a vector uses the same underlying memory.  
     WARNING: A View can be dangerous since multiple objects can access
     the same memory locations.  
    */
-  Vector(Epetra_Vector& source, NOX::CopyType type = NOX::DeepCopy,
-	 bool createView = false);
+  Vector(const Teuchos::RefCountPtr<Epetra_Vector>& source, 
+	 NOX::Epetra::Vector::MemoryType memoryType = 
+	 NOX::Epetra::Vector::CreateCopy,
+	 NOX::CopyType type = NOX::DeepCopy,
+	 Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vs = 
+	 Teuchos::null);
 
   //! Construct by copying map and/or elements of an Epetra_Vector.
-  Vector(const Epetra_Vector& source, NOX::CopyType type = NOX::DeepCopy);
+  /*! Allocates an entirely new vector. Does NOT allow for a view. */
+  Vector(const Epetra_Vector& source, 
+	 NOX::CopyType type = NOX::DeepCopy,
+	 Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vs = 
+	 Teuchos::null);
 
   //! Copy constructor.
-  Vector(const NOX::Epetra::Vector& source, NOX::CopyType type = NOX::DeepCopy);
+  Vector(const NOX::Epetra::Vector& source, 
+	 NOX::CopyType type = NOX::DeepCopy);
 
   //! Destruct Vector.
   ~Vector();
@@ -85,6 +115,8 @@ class Vector : public virtual NOX::Abstract::Vector {
   virtual NOX::Abstract::Vector& random(bool useSeed = false, int seed = 1);
 
   //! Copies source vector into "this".
+  /*! NOTE: this will NOT copy the underlying vector space into the
+    new vector. */
   virtual NOX::Abstract::Vector& operator=(const Epetra_Vector& y);
 
   // derived
@@ -130,7 +162,8 @@ class Vector : public virtual NOX::Abstract::Vector {
   //@{ \name Creating new Vectors. 
 
   // derived
-  virtual NOX::Abstract::Vector* clone(CopyType type = DeepCopy) const;
+  virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+  clone(CopyType type = DeepCopy) const;
 
   /*! 
    * \brief Create a MultiVector with \c numVecs+1 columns out of an array of 
@@ -166,11 +199,11 @@ class Vector : public virtual NOX::Abstract::Vector {
 
   //@}
 
-  //@{ \name Dot products
+  //@{ \name Inner products
 
   // derived
-  virtual double dot(const NOX::Epetra::Vector& y) const;
-  virtual double dot(const NOX::Abstract::Vector& y) const;
+  virtual double innerProduct(const NOX::Epetra::Vector& y) const;
+  virtual double innerProduct(const NOX::Abstract::Vector& y) const;
 
   //@}
 
@@ -178,15 +211,19 @@ class Vector : public virtual NOX::Abstract::Vector {
   virtual int length() const;
 
   // derived
-  virtual void print() const;
+  virtual void print(std::ostream& stream) const;
+
+  //! Returns the NOX::Epetra::VectorSpace associated with this vector.
+  virtual Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> 
+  getVectorSpace() const;
 
  protected:
   
   //! Pointer to petra vector owned by this object
-  Epetra_Vector* epetraVec;
+  Teuchos::RefCountPtr<Epetra_Vector> epetraVec;
 
-  //! True if *this created (i.e. allocated the memory for) the underlying Epetra_Vector.
-  bool ownsEpetraVector;
+  //! Pointer to the vector space. 
+  Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vectorSpace;
 
 };
 } // namespace Epetra

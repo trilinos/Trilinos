@@ -240,7 +240,7 @@ LOCA::Epetra::Group::computeScaledDotProduct(
 				       const NOX::Abstract::Vector& b) const
 {
   if (scaleVecPtr == NULL)
-    return a.dot(b) / a.length();
+    return a.innerProduct(b) / a.length();
   else {
     NOX::Abstract::Vector* as = a.clone(NOX::DeepCopy);
     NOX::Abstract::Vector* bs = b.clone(NOX::DeepCopy);
@@ -248,7 +248,7 @@ LOCA::Epetra::Group::computeScaledDotProduct(
 
     as->scale(*scaleVecPtr);
     bs->scale(*scaleVecPtr);
-    d = as->dot(*bs);
+    d = as->innerProduct(*bs);
 
     delete as;
     delete bs;

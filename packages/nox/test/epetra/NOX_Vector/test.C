@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
     if( fabs(noxVec1->getEpetraVector()[i]) < 1.e-8 ) noxVec1->getEpetraVector()[i] = 1.e-8;
 
   noxVec2->reciprocal(*noxVec1);
-  double product = noxVec1->dot(*noxVec2);
+  double product = noxVec1->innerProduct(*noxVec2);
 
   status += tester.testValue( product, expectedOneNorm,
                               tolerance, "Random, Reciprocal and Dot Test", aComp);

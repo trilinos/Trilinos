@@ -69,6 +69,7 @@ NOX::Utils& NOX::Utils::operator=(const NOX::Utils& source)
   myPID = source.myPID;
   printProc = source.printProc;
   precision = source.precision;
+  blackholeStream = source.blackholeStream;
   printStream = source.printStream;
   myStream = source.myStream;
   errorStream = source.errorStream;

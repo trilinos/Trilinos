@@ -103,10 +103,11 @@ int main(int argc, char *argv[])
   FiniteElementProblem Problem(NumGlobalElements, Comm);
 
   // Get the vector from the Problem
-  Epetra_Vector& soln = Problem.getSolution();
+  Teuchos::RefCountPtr<Epetra_Vector> soln = Problem.getSolution();
+  NOX::Epetra::Vector noxSoln(soln, NOX::Epetra::Vector::CreateView);
 
   // Initialize Solution
-  soln.PutScalar(1.0);
+  soln->PutScalar(1.0);
   
   // Begin Nonlinear Solver ************************************
 
@@ -173,43 +174,40 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Aztec Solver", "GMRES");  
   lsParams.setParameter("Max Iterations", 800);  
   lsParams.setParameter("Tolerance", 1e-4); 
-  lsParams.setParameter("Preconditioner", "Ifpack");
+  lsParams.setParameter("Preconditioner", "None");
+  //lsParams.setParameter("Preconditioner", "Ifpack");
   lsParams.setParameter("Max Age Of Prec", 5); 
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
   // NOX_Epetra_Interface
-  Problem_Interface interface(Problem);
+  Teuchos::RefCountPtr<Problem_Interface> interface = 
+    Teuchos::rcp(new Problem_Interface(Problem));
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
-  Epetra_RowMatrix& Analytic = Problem.getJacobian();
+  Teuchos::RefCountPtr<Epetra_RowMatrix> Analytic = Problem.getJacobian();
   // 2. Matrix-Free (Epetra_Operator)
-  NOX::Epetra::MatrixFree MF(utils, interface, soln);
+  Teuchos::RefCountPtr<NOX::Epetra::MatrixFree> MF = 
+    Teuchos::rcp(new NOX::Epetra::MatrixFree(printParams, interface, noxSoln));
   // 3. Finite Difference (Epetra_RowMatrix)
-  NOX::Epetra::FiniteDifference FD(interface, soln);
-  //  A.setDifferenceMethod(NOX::Epetra::FiniteDifference::Backward);
-  // 4. Jacobi Preconditioner
-  //NOX::Epetra::JacobiPreconditioner Prec(soln);
+  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifference> FD = 
+    Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, interface, noxSoln));
 
   // Create the linear system
-  NOX::Epetra::Interface::Required& iReq = interface;
-  NOX::Epetra::Interface::Jacobian& iJac = interface;
-  NOX::Epetra::Interface::Preconditioner& iPrec = interface;
-  NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
-					  iReq, iJac, Analytic, soln);
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = MF;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> iPrec = 
+    interface;
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+						      iReq, iJac, MF,
+						      noxSoln));
 
   // Create the Group
-  NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
   Teuchos::RefCountPtr<NOX::Epetra::Group> grp =
-    Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, initialGuess, 
+    Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, noxSoln, 
 					linSys)); 
-
-  // Use an Epetra Scaling object if desired
-  Epetra_Vector scaleVec(soln);
-  NOX::Epetra::Scaling scaling;
-  scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
-  //grp.setLinearSolveScaling(scaling);
 
   // Create the convergence tests
   Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
@@ -276,11 +274,11 @@ int main(int argc, char *argv[])
   // Print solution
   char file_name[25];
   FILE *ifp;
-  int NumMyElements = soln.Map().NumMyElements();
+  int NumMyElements = soln->Map().NumMyElements();
   (void) sprintf(file_name, "output.%d",MyPID);
   ifp = fopen(file_name, "w");
   for (i=0; i<NumMyElements; i++)
-    fprintf(ifp, "%d  %E\n", soln.Map().MinMyGID()+i, finalSolution[i]);
+    fprintf(ifp, "%d  %E\n", soln->Map().MinMyGID()+i, finalSolution[i]);
   fclose(ifp);
 
 #ifdef HAVE_MPI

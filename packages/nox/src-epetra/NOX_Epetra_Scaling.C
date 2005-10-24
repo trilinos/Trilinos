@@ -36,29 +36,34 @@
 
 #include "NOX_Utils.H"
 
-NOX::Epetra::Scaling::Scaling() :
-  tmpVectorPtr(0)
+NOX::Epetra::Scaling::Scaling()
 {
   
 }
 
 NOX::Epetra::Scaling::~Scaling()
 {
-  delete tmpVectorPtr;
+
 }
 
-void NOX::Epetra::Scaling::addUserScaling(ScaleType type, Epetra_Vector& D)
+void NOX::Epetra::Scaling::addUserScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D)
 {
+  if ( Teuchos::is_null(tmpVectorPtr) ) 
+    tmpVectorPtr = Teuchos::rcp(new Epetra_Vector(*D));
+
   scaleType.push_back(type);
   sourceType.push_back(UserDefined);
-  scaleVector.push_back(&D);
+  scaleVector.push_back(D);
 }
 
-void NOX::Epetra::Scaling::addRowSumScaling(ScaleType type, Epetra_Vector& D)
+void NOX::Epetra::Scaling::addRowSumScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D)
 {
+  if ( Teuchos::is_null(tmpVectorPtr) )
+    tmpVectorPtr = Teuchos::rcp(new Epetra_Vector(*D));
+
   scaleType.push_back(type);
   sourceType.push_back(RowSum);
-  scaleVector.push_back(&D);
+  scaleVector.push_back(D);
 }
 
 void NOX::Epetra::Scaling::computeScaling(const Epetra_LinearProblem& problem)
@@ -69,7 +74,7 @@ void NOX::Epetra::Scaling::computeScaling(const Epetra_LinearProblem& problem)
  
     if (sourceType[i] == RowSum) {
       
-      diagonal = scaleVector[i];
+      diagonal = scaleVector[i].get();
 
       // Make sure the Jacobian is an Epetra_RowMatrix, otherwise we can't 
       // perform a row sum scale!
@@ -95,13 +100,10 @@ void NOX::Epetra::Scaling::scaleLinearSystem(Epetra_LinearProblem& problem)
   Epetra_Vector* diagonal = 0;
   for (unsigned int i = 0; i < scaleVector.size(); i ++) {
  
-    diagonal = scaleVector[i];
+    diagonal = scaleVector[i].get();
 
     if (scaleType[i] == Left) {
  
-      if (tmpVectorPtr == 0)
-	tmpVectorPtr = new Epetra_Vector(*diagonal);
-     
       tmpVectorPtr->Reciprocal(*diagonal);
       problem.LeftScale(*tmpVectorPtr);
 
@@ -117,15 +119,12 @@ void NOX::Epetra::Scaling::unscaleLinearSystem(Epetra_LinearProblem& problem)
   Epetra_Vector* diagonal = 0;
   for (unsigned int i = 0; i < scaleVector.size(); i ++) {
     
-    diagonal = scaleVector[i];
+    diagonal = scaleVector[i].get();
     
     if (scaleType[i] == Left) { 
       problem.LeftScale(*diagonal);
     }
     else if (scaleType[i] == Right) {
-
-      if (tmpVectorPtr == 0)
-	tmpVectorPtr = new Epetra_Vector(*diagonal);
 
       tmpVectorPtr->Reciprocal(*diagonal);
       problem.RightScale(*tmpVectorPtr);
@@ -145,10 +144,7 @@ void NOX::Epetra::Scaling::applyRightScaling(const Epetra_Vector& input,
     for (unsigned int i = 0; i < scaleVector.size(); i ++) {
       
       if (scaleType[i] == Right) {
-	diagonal = scaleVector[i];
-	
-	if (tmpVectorPtr == 0)
-	  tmpVectorPtr = new Epetra_Vector(*diagonal);
+	diagonal = scaleVector[i].get();
 	
 	tmpVectorPtr->Reciprocal(*diagonal);
 	
@@ -169,10 +165,7 @@ void NOX::Epetra::Scaling::applyLeftScaling(const Epetra_Vector& input,
     for (unsigned int i = 0; i < scaleVector.size(); i ++) {
       
       if (scaleType[i] == Left) {
-	diagonal = scaleVector[i];
-	
-	if (tmpVectorPtr == 0)
-	  tmpVectorPtr = new Epetra_Vector(*diagonal);
+	diagonal = scaleVector[i].get();
 	
 	tmpVectorPtr->Reciprocal(*diagonal);
 	

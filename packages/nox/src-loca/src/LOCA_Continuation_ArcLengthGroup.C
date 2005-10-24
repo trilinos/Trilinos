@@ -353,7 +353,7 @@ LOCA::Continuation::ArcLengthGroup::computeGradient()
 						   callingFunction);
   }
   gradientVec.getXVec() = grpPtr->getGradient();
-  gradientVec.getParam() = derivResidualParamPtr->dot(fVec.getXVec());
+  gradientVec.getParam() = derivResidualParamPtr->innerProduct(fVec.getXVec());
   gradientVec.update(fVec.getParam(), predictorVec, 1.0);
 
   isValidGradient = true;
@@ -519,7 +519,7 @@ LOCA::Continuation::ArcLengthGroup::applyJacobianTranspose(
 						 callingFunction);
 
   // compute df/dp^T x
-  result_param = derivResidualParamPtr->dot(input_x);
+  result_param = derivResidualParamPtr->innerProduct(input_x);
 
   // compute [J^T x; df/dp^T x] + input_p * [dx/ds; dp/ds]
   c_result.update(input_param, predictorVec, 1.0);

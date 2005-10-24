@@ -383,15 +383,17 @@ int main(int argc, char *argv[])
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
-  TransientInterface interface(NumGlobalElements, Comm, -20.0, 20.0);
+  Teuchos::RefCountPtr<TransientInterface> interface = 
+    Teuchos::rcp(new TransientInterface(NumGlobalElements, Comm, -20.0, 20.0));
   double dt = 0.10;
-  interface.setdt(dt);
+  interface->setdt(dt);
 
   // Set the PDE nonlinear coefficient for this problem
-  interface.setPDEfactor(1.0);
+  interface->setPDEfactor(1.0);
 
   // Get the vector from the Problem
-  Epetra_Vector& soln = interface.getSolution();
+  Teuchos::RefCountPtr<Epetra_Vector> soln = interface->getSolution();
+  NOX::Epetra::Vector noxSoln(soln, NOX::Epetra::Vector::CreateView);
 
   // Begin Nonlinear Solver ************************************
 
@@ -440,65 +442,28 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Aztec Solver", "GMRES");  
   lsParams.setParameter("Max Iterations", 800);  
   lsParams.setParameter("Tolerance", 1e-4);  
-  //lsParams.setParameter("Preconditioner", "None");
   lsParams.setParameter("Preconditioner", "AztecOO");
-  //lsParams.setParameter("Jacobian Operator", "Finite Difference");
-  //lsParams.setParameter("Jacobian Operator", "Matrix-Free");
-  //lsParams.setParameter("Preconditioner Operator", "Finite Difference");
-
-  // Use an Epetra Scaling object if desired
-  //Epetra_Vector scaleVec(soln);
-  //NOX::Epetra::Scaling scaling;
-  //scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
-  //grp.setLinearSolveScaling(scaling);
 
   // Create all possible Epetra_Operators.
   // 1. User supplied (Epetra_RowMatrix)
-  Epetra_RowMatrix& Analytic = interface.getJacobian();
+  Teuchos::RefCountPtr<Epetra_RowMatrix> Analytic = interface->getJacobian();
   // 2. Matrix-Free (Epetra_Operator)
-  NOX::Epetra::MatrixFree MF(utils, interface, soln);
-  // 3. Finite Difference (Epetra_RowMatrix)
-  NOX::Epetra::FiniteDifference FD(interface, soln);
 
   // Four constructors to create the Linear System
-  NOX::Epetra::Interface::Required& iReq = interface;
-
-  // **** Ctor #1 - No Jac and No Prec
-  //NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams, 
-  //				      iReq, soln);
-
-  // **** Ctor #2 - Jac but no Prec
-  NOX::Epetra::Interface::Jacobian& iJac = interface;
-  NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
-  				     iReq, iJac, Analytic, soln);
-
-  // **** Ctor #3 - Prec but no Jac
-  //NOX::Epetra::Interface::Preconditioner& iPrec = FD;
-  //NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
-  //				      iReq, iPrec, FD, soln);
-
-  // **** Ctor #4 - Prec and Jac
-  //NOX::Epetra::Interface::Jacobian& iJac = interface;
-  //NOX::Epetra::Interface::Preconditioner& iPrec = interface;
-  //NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
-//					     iJac, Analytic, iPrec, Analytic, soln);
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+						      iReq, iJac, Analytic, 
+						      noxSoln));
 
   // Create the Group
-  NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true); 
   Teuchos::RefCountPtr<NOX::Epetra::Group> grpPtr = 
     Teuchos::rcp(new NOX::Epetra::Group(printParams, 
 					iReq, 
-					initialGuess, 
+					noxSoln, 
 					linSys));  
   NOX::Epetra::Group& grp = *(grpPtr.get());
-
-  // uncomment the following for loca supergroups
-  MF.setGroupForComputeF(grp);
-  FD.setGroupForComputeF(grp);
-
-  // Test group accessor
-  //const NOX::Epetra::LinearSystem& lins = grp.getLinearSystem();
-  //lins.createPreconditioner(soln, lsParams, false);
 
   // Create the convergence tests
   Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
@@ -539,7 +504,7 @@ int main(int argc, char *argv[])
   ifp = fopen(file_name, "w");
   for (int i=0; i<NumMyElements; i++)
     fprintf(ifp, "%d  %E  %E\n", soln.Map().MinMyGID()+i,
-             interface.getMesh()[i], soln[i]);
+             interface->getMesh()[i], soln[i]);
   fclose(ifp);
 #endif
 
@@ -569,7 +534,7 @@ int main(int argc, char *argv[])
     // Get the Epetra_Vector with the final solution from the solver
     const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
     const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
-    //Epetra_Vector& exactSolution = interface.getExactSoln(time);
+    //Epetra_Vector& exactSolution = interface->getExactSoln(time);
     
 
     // End Nonlinear Solver **************************************
@@ -580,11 +545,11 @@ int main(int argc, char *argv[])
     ifp = fopen(file_name, "w");
     for (int i=0; i<NumMyElements; i++)
       fprintf(ifp, "%d  %E  %E  %E\n", soln.Map().MinMyGID()+i,
-              interface.getMesh()[i], finalSolution[i],exactSolution[i]);
+              interface->getMesh()[i], finalSolution[i],exactSolution[i]);
     fclose(ifp);
 #endif
 
-    interface.reset(finalSolution);
+    interface->reset(finalSolution);
     grp.setX(finalSolution);
     solver.reset(grpPtr, combo, nlParamsPtr);
     grp.computeF();

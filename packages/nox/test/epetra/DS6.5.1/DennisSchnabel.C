@@ -82,14 +82,14 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
 
   // Construct Linear Objects  
   Importer = new Epetra_Import(*OverlapMap, *StandardMap);
-  initialSolution = new Epetra_Vector(*StandardMap);
+  initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
   AA = new Epetra_CrsGraph(Copy, *StandardMap, 5);
 
   // Allocate the memory for a matrix dynamically (i.e. the graph is dynamic).
   generateGraph(*AA);
 
   // Use the graph AA to create a Matrix.
-  A = new Epetra_CrsMatrix (Copy, *AA);
+  A = Teuchos::rcp(new Epetra_CrsMatrix (Copy, *AA));
 
   // Transform the global matrix coordinates to local so the matrix can 
   // be operated upon.
@@ -100,8 +100,6 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
 DennisSchnabel::~DennisSchnabel()
 {
   delete AA;
-  delete A;
-  delete initialSolution;
   delete Importer;
   delete OverlapMap;
   delete StandardMap;
@@ -201,14 +199,14 @@ bool DennisSchnabel::evaluate(
   return true;
 }
 
-Epetra_Vector& DennisSchnabel::getSolution()
+Teuchos::RefCountPtr<Epetra_Vector> DennisSchnabel::getSolution()
 {
-  return *initialSolution;
+  return initialSolution;
 }
   
-Epetra_CrsMatrix& DennisSchnabel::getJacobian()
+Teuchos::RefCountPtr<Epetra_CrsMatrix> DennisSchnabel::getJacobian()
 {
-  return *A;
+  return A;
 }
 
 Epetra_CrsGraph& DennisSchnabel::generateGraph(Epetra_CrsGraph& AA)

@@ -38,7 +38,8 @@
 
 #include "NOX_Common.H"
 #include "Epetra_Import.h"
-#include "Epetra_Vector.h"
+#include "NOX_Epetra_Vector.H"
+#include "Teuchos_RefCountPtr.hpp"
 
 // Forward Declarations
 class Epetra_Comm;
@@ -79,9 +80,14 @@ class MatrixFree : public Epetra_Operator,
   //! Define types for use of the perturbation parameter \f$ \delta\f$.
   enum DifferenceType {Forward, Backward, Centered};
 
-  //! Constructor
-  MatrixFree(const NOX::Utils& u, NOX::Epetra::Interface::Required& i, 
-	     const Epetra_Vector& x, bool useNewPerturbation = false);
+  /*! \brief Constructor
+
+    The vector \c x is used to clone the solution vector.
+  */
+  MatrixFree(NOX::Parameter::List& printParams, 
+	     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
+	     const NOX::Epetra::Vector& cloneVector, 
+	     bool useNewPerturbation = false);
 
   //! Pure virtual destructor
   virtual ~MatrixFree();
@@ -160,8 +166,8 @@ class MatrixFree : public Epetra_Operator,
   //! Returns the most recently used value of the perturbation parameter \f$ \eta \f$.
   double getPerturbation() const;
 
-  //! Register a NOX::Abstract::Group derived object and use the computeF() method of that group for the perturbation instead of the NOX::Epetra::Interface::Required::computeF() method.  This is required for LOCA to get the operators correct during homotopy.
-  void setGroupForComputeF(NOX::Abstract::Group& group);
+  //! Clone a NOX::Abstract::Group derived object and use the computeF() method of that group for the perturbation instead of the NOX::Epetra::Interface::Required::computeF() method.  This is required for LOCA to get the operators correct during homotopy.
+  void setGroupForComputeF(const NOX::Abstract::Group& group);
 
 protected:
 
@@ -169,32 +175,27 @@ protected:
   string label;
 
   //! User provided interface function
-  NOX::Epetra::Interface::Required& interface;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> interface;
 
   //! The current solution vector
-  Epetra_Vector currentX;
+  NOX::Epetra::Vector currentX;
 
   //! Perturbed solution vector
-  mutable Epetra_Vector perturbX;
+  mutable NOX::Epetra::Vector perturbX;
 
   //! Function evaluation at currentX
-  mutable Epetra_Vector fo;
+  mutable NOX::Epetra::Vector fo;
 
   //! Function evaluation at perturbX
-  mutable Epetra_Vector fp;
+  mutable NOX::Epetra::Vector fp;
 
   //! Optional pointer to function evaluation at -perturbX - needed only for centered finite differencing
-  mutable Epetra_Vector* fmPtr;
+  mutable Teuchos::RefCountPtr<NOX::Epetra::Vector> fmPtr;
 
   //! Epetra_Map object used in the returns of the Epetra_Operator derived methods.
   /*! If the user is using Epetra_BlockMaps, then NOX::Epetra::MatrixFree must create an equivalent Epetra_Map from the Epetra_BlockMap that can be used as the return object of the OperatorDomainMap() and OperatorRangeMap() methods.
    */
-  const Epetra_Map* epetraMap;
-
-  //! Set to true if the epetraMap is created by NOX::Epetra::MatrixFree.
-  /*! If the user is using Epetra_BlockMaps, then NOX::Epetra::MatrixFree must create an equivalent Epetra_Map from the Epetra_BlockMap that can be used as the return object of the OperatorDomainMap() and OperatorRangeMap() methods.  This flag tells the destructor whether or not to destroy the Epetra_Map.
-   */
-  bool ownsMap;
+  Teuchos::RefCountPtr<const Epetra_Map> epetraMap;
 
   //! Define types for use of the perturbation parameter \f$ \delta\f$.
   DifferenceType diffType;
@@ -214,11 +215,11 @@ protected:
   //! Flag to enables the use of a group instead of the interface for the computeF() calls in the directional difference calculation.
   bool useGroupForComputeF;
 
-  //! A new perturbation formulation developed by C. T. Kelley and A. G. Salniger can be used by the constructor flag useNewPerturbation = true.
+  //! A new perturbation formulation developed by C. T. Kelley and A. G. Salinger can be used by the constructor flag useNewPerturbation = true.
   bool useNewPerturbation;
 
-  //! Pointer to the group for computeF() calls.
-  NOX::Abstract::Group* groupPtr;
+  //! Pointer to the group for possible use in computeF() calls.
+  Teuchos::RefCountPtr<NOX::Abstract::Group> groupPtr;
 
   //! Printing utilities.
   NOX::Utils utils;

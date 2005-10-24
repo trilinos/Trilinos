@@ -35,6 +35,7 @@
 
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Parameter_List.H"	   // class data element 
+#include "Teuchos_RefCountPtr.hpp"
 
 // Forward declaration
 namespace NOX {
@@ -189,13 +190,15 @@ class Newton : public Generic {
 public:
 
   //! Constructor
-  Newton(const NOX::Utils& u, NOX::Parameter::List& params);
+  Newton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+	 NOX::Parameter::List& params);
 
   //! Destructor
   virtual ~Newton();
 
   // derived
-  virtual bool reset(NOX::Parameter::List& params);
+  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+		     NOX::Parameter::List& params);
 
   // derived
   virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
@@ -223,8 +226,11 @@ private:
 
 private:
 
+  //! Global data pointer.  Keep this so the parameter list remains valid.
+  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+
   //! Printing Utilities
-  const NOX::Utils& utils;
+  Teuchos::RefCountPtr<NOX::Utils> utils;
 
   //! "Direction" sublist with parameters for the direction vector
   /*! 
@@ -237,10 +243,10 @@ private:
   bool doRescue;
 
   //! Vector containing the predicted RHS
-  NOX::Abstract::Vector* predRhs;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> predRhs;
 
   //! Vector containing the computed direction
-  NOX::Abstract::Vector* stepDir;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> stepDir;
 
   //! Flag used to determine if adjustable forcing term is being used.
   bool useAdjustableForcingTerm;
@@ -260,9 +266,6 @@ private:
   //! Name of the method used for calculating the inexact forcing term.
   string method;
   
-  //! Used to store a user defined norm object.
-  NOX::Parameter::UserNorm* userNorm;
-
   //! Parameter used for Type 2 forcing term calculation.
   double alpha;
 

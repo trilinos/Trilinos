@@ -365,11 +365,10 @@ INPUT                  = ../src \
                          ../src-lapack \
                          ../src-epetra \
                          ../src-petsc \
-                         ../example-lapack \
+                         ../src-belos \
                          ../src-loca/src \
                          ../src-loca/src-lapack \
-                         ../src-loca/src-epetra \
-                         ../src-loca/example-lapack
+                         ../src-loca/src-epetra
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 

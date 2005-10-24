@@ -32,12 +32,12 @@
 
 #include "NOX_Common.H"           // for <string>
 #include "NOX_Abstract_Vector.H"  // 
+#include "Teuchos_RefCountPtr.hpp"
 
 // Forward Declarations
 class Epetra_Vector;
 class Epetra_RowMatrix;
 class Epetra_LinearProblem;
-
 namespace NOX {
   class Utils;
 }
@@ -46,10 +46,7 @@ namespace NOX {
 
 namespace Epetra {
 
-  /*! \brief Object to control scaling of a linear system.  
-
-  Scaling of the linear system can affect the Nonlinear solves if using 
-  an inexact Newton method.  We must account for computed norms.
+  /*! \brief Object to control scaling of vectors and linear systems.  
 
   Currently this assumes a diagonal scaling only!  Once epetra can 
   do matrix-matrix multiplies we will expand this class.
@@ -72,12 +69,12 @@ public:
   virtual ~Scaling();
   
   //! Add a user supplied diagonal scale vector to the scaling object.
-  virtual void addUserScaling(ScaleType type, Epetra_Vector& D);
+  virtual void addUserScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D);
 
   //! Add "Row Sum" scaling to the scaling object.  The supplied vector is used to store the current row sum vector.
-  virtual void addRowSumScaling(ScaleType type, Epetra_Vector& D);
+  virtual void addRowSumScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D);
 
-  //! Computes Row Sum scaling diagonal vectors.  Only needs to be called if a row sum scaling has been rewuested.
+  //! Computes Row Sum scaling diagonal vectors.  Only needs to be called if a row sum scaling has been requested.
   virtual void computeScaling(const Epetra_LinearProblem& problem);
 
   //! Scales the linear system.
@@ -106,10 +103,10 @@ private:
   vector<SourceType> sourceType;
 
   //! Scaling vector pointer
-  vector<Epetra_Vector*> scaleVector;
+  vector< Teuchos::RefCountPtr<Epetra_Vector> > scaleVector;
 
   //! Temporary vector
-  Epetra_Vector* tmpVectorPtr;
+  Teuchos::RefCountPtr<Epetra_Vector> tmpVectorPtr;
 
 };
 }  // namespace Epetra

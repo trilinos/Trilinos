@@ -107,14 +107,16 @@ int main(int argc, char *argv[])
   // Create the FiniteElementProblem class.  This creates all required
   // Epetra objects for the problem and allows calls to the 
   // function (RHS) and Jacobian evaluation routines.
-  Interface interface(NumGlobalElements, Comm);
-  interface.setPDEfactor(1000.0);
+  Teuchos::RefCountPtr<Interface> interface = 
+    Teuchos::rcp(new Interface(NumGlobalElements, Comm));
+  interface->setPDEfactor(1000.0);
 
   // Get the vector from the Problem
-  Epetra_Vector& soln = interface.getSolution();
-
+  Teuchos::RefCountPtr<Epetra_Vector> soln = interface->getSolution();
+  NOX::Epetra::Vector noxSoln(soln, NOX::Epetra::Vector::CreateView);
+  
   // Initialize Solution
-  soln.PutScalar(1.0);
+  soln->PutScalar(1.0);
   
   // Begin Nonlinear Solver ************************************
 
@@ -125,7 +127,6 @@ int main(int argc, char *argv[])
 
   // Set the nonlinear solver method
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
-  //nlParams.setParameter("Nonlinear Solver", "Trust Region Based");
 
   // Set the printing parameters in the "Printing" sublist
   NOX::Parameter::List& printParams = nlParams.sublist("Printing");
@@ -150,35 +151,12 @@ int main(int argc, char *argv[])
   // Sublist for line search 
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   searchParams.setParameter("Method", "Full Step");
-  //searchParams.setParameter("Method", "Interval Halving");
-  //searchParams.setParameter("Method", "Polynomial");
-  //searchParams.setParameter("Method", "NonlinearCG");
-  //searchParams.setParameter("Method", "Quadratic");
-  //searchParams.setParameter("Method", "More'-Thuente");
 
   // Sublist for direction
   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-//  dirParams.setParameter("Method", "Modified-Newton");
-//  NOX::Parameter::List& newtonParams = dirParams.sublist("Modified-Newton");
-//    newtonParams.setParameter("Max Age of Jacobian", 2);
   dirParams.setParameter("Method", "Newton");
   NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
-    newtonParams.setParameter("Forcing Term Method", "Constant");
-    //newtonParams.setParameter("Forcing Term Method", "Type 1");
-    //newtonParams.setParameter("Forcing Term Method", "Type 2");
-    //newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-4);
-    //newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
-  //dirParams.setParameter("Method", "Steepest Descent");
-  //NOX::Parameter::List& sdParams = dirParams.sublist("Steepest Descent");
-    //sdParams.setParameter("Scaling Type", "None");
-    //sdParams.setParameter("Scaling Type", "2-Norm");
-    //sdParams.setParameter("Scaling Type", "Quadratic Model Min");
-  //dirParams.setParameter("Method", "NonlinearCG");
-  //NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
-    //nlcgParams.setParameter("Restart Frequency", 2000);
-    //nlcgParams.setParameter("Precondition", "On");
-    //nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
-    //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
+  newtonParams.setParameter("Forcing Term Method", "Constant");
 
   // Sublist for linear solver for the Newton method
   NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
@@ -193,28 +171,22 @@ int main(int argc, char *argv[])
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
-  Epetra_RowMatrix& A = interface.getJacobian();
+  Teuchos::RefCountPtr<Epetra_RowMatrix> A = interface->getJacobian();
 
   // Create the linear system
-  NOX::Epetra::Interface::Required& iReq = interface;
-  NOX::Epetra::Interface::Jacobian& iJac = interface;
-  NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
-					  iReq, iJac, A, soln);
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+						      iReq, iJac, A, noxSoln));
 
   // Create the Group
-  NOX::Epetra::Vector nv(soln, NOX::DeepCopy, true);
   Teuchos::RefCountPtr<NOX::Epetra::Group> grpPtr = 
     Teuchos::rcp(new NOX::Epetra::Group(printParams, 
 					iReq, 
-					nv, 
+					noxSoln, 
 					linSys));  
   NOX::Epetra::Group& grp = *(grpPtr.get());
-
-  // Use an Epetra Scaling object if desired
-  Epetra_Vector scaleVec(soln);
-  NOX::Epetra::Scaling scaling;
-  scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
-  //grp.setLinearSolveScaling(scaling);
 
   // Create the convergence tests
   Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
@@ -243,7 +215,7 @@ int main(int argc, char *argv[])
 
   // Create the belos group
   Teuchos::RefCountPtr<NOX::Belos::Group> belos_grp = 
-    Teuchos::rcp(new NOX::Belos::Group(grp, printParams));
+    Teuchos::rcp(new NOX::Belos::Group(grpPtr, printParams));
 
   // Create the method
   NOX::Solver::Manager solver(belos_grp, combo, nlParamsPtr);

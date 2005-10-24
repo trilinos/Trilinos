@@ -98,16 +98,17 @@ int main(int argc, char *argv[])
   DennisSchnabel Problem(NumGlobalElements, Comm);
 
   // Get the vector from the Problem
-  Epetra_Vector& soln = Problem.getSolution();
+  Teuchos::RefCountPtr<Epetra_Vector> soln = Problem.getSolution();
+  NOX::Epetra::Vector noxSoln(soln, NOX::Epetra::Vector::CreateView);
 
   // Initialize Solution
   if (MyPID==0) {
-    soln[0]=2.0;
+    (*soln)[0]=2.0;
     if (NumProc==1) 
-      soln[1]=0.5;
+      (*soln)[1]=0.5;
   } 
   else 
-    soln[0]=0.5;
+    (*soln)[0]=0.5;
 
   // Begin Nonlinear Solver ************************************
 
@@ -179,26 +180,27 @@ int main(int argc, char *argv[])
     lsParams.setParameter("Output Frequency", 1);    
 
   // Create the interface between the test problem and the nonlinear solver
-  Problem_Interface interface(Problem);
+  Teuchos::RefCountPtr<Problem_Interface> interface = 
+    Teuchos::rcp(new Problem_Interface(Problem));
   
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
-  Epetra_RowMatrix& A = Problem.getJacobian();
+  Teuchos::RefCountPtr<Epetra_RowMatrix> A = Problem.getJacobian();
 
   // Create the callback interfaces for filling the residual and Jacbian
-  NOX::Epetra::Interface::Required& iReq = interface;
-  NOX::Epetra::Interface::Jacobian& iJac = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
 
   // Create the Linear System
-  NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
-                                             iReq, iJac, A, soln);
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+						      iReq, iJac, A, noxSoln));
 
   // Create the Group
-  NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
   Teuchos::RefCountPtr<NOX::Epetra::Group> grpPtr = 
     Teuchos::rcp(new NOX::Epetra::Group(printParams, 
 					iReq, 
-					initialGuess, 
+					noxSoln, 
 					linSys)); 
 
   // Create the convergence tests
@@ -233,11 +235,11 @@ int main(int argc, char *argv[])
   // Print solution
   char file_name[25];
   FILE *ifp;
-  int NumMyElements = soln.Map().NumMyElements();
+  int NumMyElements = soln->Map().NumMyElements();
   (void) sprintf(file_name, "output.%d",MyPID);
   ifp = fopen(file_name, "w");
   for (i=0; i<NumMyElements; i++)
-    fprintf(ifp, "%d  %E\n", soln.Map().MinMyGID()+i, finalSolution[i]);
+    fprintf(ifp, "%d  %E\n", soln->Map().MinMyGID()+i, finalSolution[i]);
   fclose(ifp);
 
   // Report results

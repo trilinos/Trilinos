@@ -877,7 +877,7 @@ double
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::lTransNorm(
 					const NOX::Abstract::Vector& n) const
 {
-  return lengthVec->dot(n) / lengthVec->length();
+  return lengthVec->innerProduct(n) / lengthVec->length();
 }
 
 void

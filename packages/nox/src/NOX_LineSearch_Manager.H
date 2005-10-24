@@ -33,11 +33,13 @@
 #ifndef NOX_LINESEARCH_MANAGER_H
 #define NOX_LINESEARCH_MANAGER_H
 
-#include "NOX_LineSearch_Generic.H" // base class
-#include "NOX_Common.H"		    // class data element (string)
+#include "NOX_LineSearch_Generic.H"     // base class
+#include "NOX_Common.H"		        // class data element (string)
+#include "Teuchos_RefCountPtr.hpp"      // class data element
 
+// Forward declarations
 namespace NOX {
-class Utils;
+  class Utils;
 }
 
 namespace NOX {
@@ -103,14 +105,19 @@ class Manager : public Generic {
 
 public:
 
+  //! Empty constructor, reset must be called if this ctor is used.
+  Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd);
+
   //! Constructor
-  Manager(const NOX::Utils& u, NOX::Parameter::List& params);
+  Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	  NOX::Parameter::List& params);
 
   //! Destructor
   ~Manager();
 
   // derived
-  bool reset(NOX::Parameter::List& params);
+  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+	     NOX::Parameter::List& params);
 
   // derived
   bool compute(NOX::Abstract::Group& newgrp, double& step, 
@@ -123,19 +130,19 @@ private:
     \brief Prints a warning message. 
     
     \param name - Name of the subroutine where the error occurs
-    \param warning - The warning
+    \param warning - The warning message 
   */
   void printWarning(const string& name, const string& warning);
 
 private:
   //! Printing utilities
-  const NOX::Utils& utils;
+  Teuchos::RefCountPtr<NOX::Utils> utils;
 
   //! Method name
   string method;
 
   //! Pointer to method
-  NOX::LineSearch::Generic* ptr;
+  Teuchos::RefCountPtr<NOX::LineSearch::Generic> ptr;
 
 };
 } // namespace LineSearch

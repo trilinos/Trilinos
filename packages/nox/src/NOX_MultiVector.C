@@ -33,7 +33,7 @@
 #include "NOX_MultiVector.H"
 
 NOX::MultiVector::MultiVector(int numVecs) :
-  vecs(numVecs), ownsVecs(numVecs)
+  vecs(numVecs)
 {
   if (numVecs <= 0) {
     cerr << "NOX::MultiVector:  Error!  Multivector" 
@@ -44,7 +44,7 @@ NOX::MultiVector::MultiVector(int numVecs) :
 
 NOX::MultiVector::MultiVector(const NOX::Abstract::Vector& v, int numVecs,
 			      NOX::CopyType type) :
-  vecs(numVecs), ownsVecs(numVecs)
+  vecs(numVecs)
 {
   if (numVecs <= 0) {
     cerr << "NOX::MultiVector:  Error!  Multivector" 
@@ -54,14 +54,13 @@ NOX::MultiVector::MultiVector(const NOX::Abstract::Vector& v, int numVecs,
 
   for (int i=0; i<numVecs; i++) {
     vecs[i] = v.clone(type);
-    ownsVecs[i] = 1;
   }
 }
 
 NOX::MultiVector::MultiVector(const NOX::Abstract::Vector* const* vs,
 			      int numVecs,
 			      NOX::CopyType type) :
-  vecs(numVecs), ownsVecs(numVecs)
+  vecs(numVecs)
 {
   if (numVecs <= 0) {
     cerr << "NOX::MultiVector:  Error!  Multivector" 
@@ -71,25 +70,21 @@ NOX::MultiVector::MultiVector(const NOX::Abstract::Vector* const* vs,
 
   for (int i=0; i<numVecs; i++) {
     vecs[i] = vs[i]->clone(type);
-    ownsVecs[i] = 1;
   }
 }
 
 NOX::MultiVector::MultiVector(const NOX::MultiVector& source,
 			      NOX::CopyType type) :
-  vecs(source.vecs.size()), ownsVecs(source.vecs.size())
+  vecs(source.vecs.size())
 {
   for (unsigned int i=0; i<source.vecs.size(); i++) {
     vecs[i] = source.vecs[i]->clone(type);
-    ownsVecs[i] = 1;
   }
 }
 
 NOX::MultiVector::~MultiVector()
 {
-  for (unsigned int i=0; i<vecs.size(); i++) 
-    if (vecs[i] != NULL && ownsVecs[i])
-      delete vecs[i];
+
 }
 
 NOX::Abstract::MultiVector& 
@@ -163,11 +158,9 @@ NOX::MultiVector::augment(const NOX::MultiVector& source)
   int sz = vecs.size();
   int newsize = sz + source.vecs.size();
   vecs.resize(newsize);
-  ownsVecs.resize(newsize);
 
   for (unsigned int i=0; i<source.vecs.size(); i++) {
     vecs[sz+i] = source.vecs[i]->clone(NOX::DeepCopy);
-    ownsVecs[sz+i] = 1;
   }
 
   return *this;
@@ -306,47 +299,49 @@ NOX::MultiVector::update(Teuchos::ETransp transb, double alpha,
   return *this;
 }
 
-NOX::Abstract::MultiVector* 
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
 NOX::MultiVector::clone(NOX::CopyType type) const
 {
-  return new NOX::MultiVector(*this, type);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp = 
+    Teuchos::rcp(new NOX::MultiVector(*this, type));
+  return tmp;
 }
 
-NOX::Abstract::MultiVector* 
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
 NOX::MultiVector::clone(int numvecs) const
 {
-  NOX::MultiVector* tmp = new NOX::MultiVector(numvecs);
+  Teuchos::RefCountPtr<NOX::MultiVector> tmp = 
+    Teuchos::rcp(new NOX::MultiVector(numvecs));
   for (int i=0; i<numvecs; i++) {
     tmp->vecs[i] = vecs[0]->clone(NOX::ShapeCopy);
-    tmp->ownsVecs[i] = 1;
   }
   return tmp;
 }
 
-NOX::Abstract::MultiVector* 
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 NOX::MultiVector::subCopy(const vector<int>& index) const
 {
-  NOX::MultiVector* tmp = new NOX::MultiVector(index.size());
+  Teuchos::RefCountPtr<NOX::MultiVector> tmp = 
+    Teuchos::rcp(new NOX::MultiVector(index.size()));
   int ind;
   for (unsigned int i=0; i<index.size(); i++) {
     ind = index[i];
     checkIndex(ind);
     tmp->vecs[i] = vecs[ind]->clone(NOX::DeepCopy);
-    tmp->ownsVecs[i] = 1;
   }
   return tmp;
 }
 
-NOX::Abstract::MultiVector* 
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
 NOX::MultiVector::subView(const vector<int>& index) const
 {
-  NOX::MultiVector* tmp = new NOX::MultiVector(index.size());
+  Teuchos::RefCountPtr<NOX::MultiVector> tmp = 
+    Teuchos::rcp(new NOX::MultiVector(index.size()));
   int ind;
   for (unsigned int i=0; i<index.size(); i++) {
     ind = index[i];
     checkIndex(ind);
     tmp->vecs[i] = vecs[ind];
-    tmp->ownsVecs[i] = 0;
   }
   return tmp;
 }
@@ -375,7 +370,7 @@ NOX::MultiVector::multiply(double alpha, const NOX::MultiVector& y,
 {
   for (unsigned int i=0; i<y.vecs.size(); i++) {
     for (unsigned int j=0; j<vecs.size(); j++) {
-      b(i,j) = alpha*(y.vecs[i]->dot(*(vecs[j])));
+      b(i,j) = alpha*(y.vecs[i]->innerProduct(*(vecs[j])));
     }
   }
 }
@@ -393,10 +388,10 @@ NOX::MultiVector::numVectors() const
 }
 
 void 
-NOX::MultiVector::print() const
+NOX::MultiVector::print(std::ostream& stream) const
 {
   for (unsigned int i=0; i<vecs.size(); i++)
-    vecs[i]->print();
+    vecs[i]->print(stream);
 }
 
 void 
