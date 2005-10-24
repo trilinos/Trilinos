@@ -422,6 +422,8 @@ AC_CONFIG_FILES([
 		src/Makefile
 		example/Makefile
 		example/basicExample/Makefile
+		example/epetra/Makefile
+		example/epetra/1Dfem/Makefile
 		example/verySimple/Makefile
 		example/refCountPtrExample/Makefile
 		example/refCountPtrExample2/Makefile

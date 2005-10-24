@@ -11130,7 +11130,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                                        ac_config_files="$ac_config_files Makefile Makefile.export.rythmos src/Makefile example/Makefile example/basicExample/Makefile example/verySimple/Makefile example/refCountPtrExample/Makefile example/refCountPtrExample2/Makefile example/constExample/Makefile example/classExample/Makefile test/Makefile test/unitTests/Makefile"
+                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export.rythmos src/Makefile example/Makefile example/basicExample/Makefile example/epetra/Makefile example/epetra/1Dfem/Makefile example/verySimple/Makefile example/refCountPtrExample/Makefile example/refCountPtrExample2/Makefile example/constExample/Makefile example/classExample/Makefile test/Makefile test/unitTests/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11855,6 +11855,8 @@ do
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "example/basicExample/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/basicExample/Makefile" ;;
+  "example/epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/epetra/Makefile" ;;
+  "example/epetra/1Dfem/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/epetra/1Dfem/Makefile" ;;
   "example/verySimple/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/verySimple/Makefile" ;;
   "example/refCountPtrExample/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/refCountPtrExample/Makefile" ;;
   "example/refCountPtrExample2/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/refCountPtrExample2/Makefile" ;;
