@@ -106,17 +106,8 @@ class Ifpack_HashTable
       throw(-1);
     }
 
-    if (Container_ == 0)
-    {
-      Container_ = new Node * [size];
-      ContainerSize_ = size;
-    }
-    else if (ContainerSize_ < size)
-    {
-      delete[] Container_;
-      Container_ = new Node * [size];
-      ContainerSize_ = size;
-    }
+    Container_ = new Node * [size];
+
     for (int i = 0; i < size; ++i) Container_[i] = 0;
 
     NumValues_ = 0;
@@ -124,16 +115,13 @@ class Ifpack_HashTable
     Data_ = FirstData_;
   }
 
-  static void Init(const int size, const int ContainerSize)
+  static void Init(const int size)
   {
     FirstData_ = new NodeArray;
     FirstData_->size = size;
     FirstData_->Array = new Node[FirstData_->size];
     FirstData_->pos = 0;
     FirstData_->Next = 0;
-
-    Container_ = new Node* [ContainerSize];
-    ContainerSize_ = ContainerSize;
   }
 
   static void Finalize()
@@ -147,12 +135,11 @@ class Ifpack_HashTable
       FirstData_ = Next;
     }
     while (Next != 0);
-    delete[] Container_;
   }
 
   ~Ifpack_HashTable()
   {
-    // do-nothing, all data is free'd in the class method Finalize().
+    delete[] Container_;
   }
 
   void Replace(const int key, const double value)
@@ -182,8 +169,6 @@ class Ifpack_HashTable
         // array has already been allocated, use it
         Data_ = Data_->Next;
         Data_->pos = 0;
-        Next = &(Data_->Array[Data_->pos]);
-        ++(Data_->pos);
       }
       else
       {
@@ -196,6 +181,8 @@ class Ifpack_HashTable
         Data_->Next = NextArray;
         Data_ = NextArray;
       }
+      Next = &(Data_->Array[Data_->pos]);
+      ++(Data_->pos);
     }
     return (Next);
   }
@@ -259,8 +246,7 @@ class Ifpack_HashTable
   int end_; // last non-empty container
   static NodeArray* Data_; // used to store data
   static NodeArray* FirstData_; // pointer to the first NodeArray.
-  static Node** Container_;
-  static int ContainerSize_;
+  Node** Container_;
 
   int Size_;
   unsigned int Seed_;
