@@ -44,7 +44,7 @@ EXEEXT = .exe
 EXAMPLE = DS6_5_1
 
 if BUILD_EPETRA_TESTS
-noinst_PROGRAMS = DS6_5_1
+noinst_PROGRAMS = DS6_5_1 DS6_5_1_TrustRegion
 endif
 
 DS6_5_1_SOURCES = $(srcdir)/DennisSchnabel.C \
@@ -58,3 +58,15 @@ DS6_5_1_DEPENDENCIES = \
                        $(top_builddir)/src-epetra/libnoxepetra.a
 
 DS6_5_1_LDADD = $(TEST_LIBS)
+
+DS6_5_1_TrustRegion_SOURCES = $(srcdir)/DennisSchnabel.C \
+                  $(srcdir)/DennisSchnabel.H \
+                  $(srcdir)/Example_TrustRegion.C \
+                  $(srcdir)/Problem_Interface.C \
+                  $(srcdir)/Problem_Interface.H
+
+DS6_5_1_TrustRegion_DEPENDENCIES = \
+                       $(top_builddir)/src/libnox.a \
+                       $(top_builddir)/src-epetra/libnoxepetra.a
+
+DS6_5_1_TrustRegion_LDADD = $(TEST_LIBS)
