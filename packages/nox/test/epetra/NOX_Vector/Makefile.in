@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(NOX_Epetra_Vector_SOURCES)
+SOURCES = $(NOX_Epetra_Vector_SOURCES) $(NOX_Epetra_VectorSpace_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -66,7 +66,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@BUILD_EPETRA_TESTS_TRUE@noinst_PROGRAMS = NOX_Epetra_Vector$(EXEEXT)
+@BUILD_EPETRA_TESTS_TRUE@noinst_PROGRAMS = NOX_Epetra_Vector$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@	NOX_Epetra_VectorSpace$(EXEEXT)
 subdir = test/epetra/NOX_Vector
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -108,17 +109,21 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(NOX_TEST_LIBS))
+am_NOX_Epetra_VectorSpace_OBJECTS = vectorSpace.$(OBJEXT)
+NOX_Epetra_VectorSpace_OBJECTS = $(am_NOX_Epetra_VectorSpace_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/test.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/test.Po ./$(DEPDIR)/vectorSpace.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(NOX_Epetra_Vector_SOURCES)
-DIST_SOURCES = $(NOX_Epetra_Vector_SOURCES)
+SOURCES = $(NOX_Epetra_Vector_SOURCES) \
+	$(NOX_Epetra_VectorSpace_SOURCES)
+DIST_SOURCES = $(NOX_Epetra_Vector_SOURCES) \
+	$(NOX_Epetra_VectorSpace_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -359,6 +364,13 @@ NOX_Epetra_Vector_DEPENDENCIES = \
                           $(top_builddir)/test/utils/libnoxtestutils.a
 
 NOX_Epetra_Vector_LDADD = $(TEST_LIBS)
+NOX_Epetra_VectorSpace_SOURCES = $(srcdir)/vectorSpace.C
+NOX_Epetra_VectorSpace_DEPENDENCIES = \
+                          $(top_builddir)/src/libnox.a \
+                          $(top_builddir)/src-epetra/libnoxepetra.a \
+                          $(top_builddir)/test/utils/libnoxtestutils.a
+
+NOX_Epetra_VectorSpace_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -398,6 +410,9 @@ clean-noinstPROGRAMS:
 NOX_Epetra_Vector$(EXEEXT): $(NOX_Epetra_Vector_OBJECTS) $(NOX_Epetra_Vector_DEPENDENCIES) 
 	@rm -f NOX_Epetra_Vector$(EXEEXT)
 	$(CXXLINK) $(NOX_Epetra_Vector_LDFLAGS) $(NOX_Epetra_Vector_OBJECTS) $(NOX_Epetra_Vector_LDADD) $(LIBS)
+NOX_Epetra_VectorSpace$(EXEEXT): $(NOX_Epetra_VectorSpace_OBJECTS) $(NOX_Epetra_VectorSpace_DEPENDENCIES) 
+	@rm -f NOX_Epetra_VectorSpace$(EXEEXT)
+	$(CXXLINK) $(NOX_Epetra_VectorSpace_LDFLAGS) $(NOX_Epetra_VectorSpace_OBJECTS) $(NOX_Epetra_VectorSpace_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -406,6 +421,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vectorSpace.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -438,6 +454,22 @@ test.obj: $(srcdir)/test.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test.Po' tmpdepfile='$(DEPDIR)/test.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test.obj `if test -f '$(srcdir)/test.C'; then $(CYGPATH_W) '$(srcdir)/test.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test.C'; fi`
+
+vectorSpace.o: $(srcdir)/vectorSpace.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT vectorSpace.o -MD -MP -MF "$(DEPDIR)/vectorSpace.Tpo" -c -o vectorSpace.o `test -f '$(srcdir)/vectorSpace.C' || echo '$(srcdir)/'`$(srcdir)/vectorSpace.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vectorSpace.Tpo" "$(DEPDIR)/vectorSpace.Po"; else rm -f "$(DEPDIR)/vectorSpace.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vectorSpace.C' object='vectorSpace.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vectorSpace.Po' tmpdepfile='$(DEPDIR)/vectorSpace.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o vectorSpace.o `test -f '$(srcdir)/vectorSpace.C' || echo '$(srcdir)/'`$(srcdir)/vectorSpace.C
+
+vectorSpace.obj: $(srcdir)/vectorSpace.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT vectorSpace.obj -MD -MP -MF "$(DEPDIR)/vectorSpace.Tpo" -c -o vectorSpace.obj `if test -f '$(srcdir)/vectorSpace.C'; then $(CYGPATH_W) '$(srcdir)/vectorSpace.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vectorSpace.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vectorSpace.Tpo" "$(DEPDIR)/vectorSpace.Po"; else rm -f "$(DEPDIR)/vectorSpace.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vectorSpace.C' object='vectorSpace.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/vectorSpace.Po' tmpdepfile='$(DEPDIR)/vectorSpace.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o vectorSpace.obj `if test -f '$(srcdir)/vectorSpace.C'; then $(CYGPATH_W) '$(srcdir)/vectorSpace.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vectorSpace.C'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

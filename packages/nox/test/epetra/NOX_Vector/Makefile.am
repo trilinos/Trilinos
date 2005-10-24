@@ -42,7 +42,7 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 EXEEXT = .exe
 
 if BUILD_EPETRA_TESTS
-noinst_PROGRAMS = NOX_Epetra_Vector
+noinst_PROGRAMS = NOX_Epetra_Vector NOX_Epetra_VectorSpace
 endif
 
 NOX_Epetra_Vector_SOURCES = $(srcdir)/test.C
@@ -53,3 +53,12 @@ NOX_Epetra_Vector_DEPENDENCIES = \
                           $(top_builddir)/test/utils/libnoxtestutils.a
 
 NOX_Epetra_Vector_LDADD = $(TEST_LIBS)
+
+NOX_Epetra_VectorSpace_SOURCES = $(srcdir)/vectorSpace.C
+
+NOX_Epetra_VectorSpace_DEPENDENCIES = \
+                          $(top_builddir)/src/libnox.a \
+                          $(top_builddir)/src-epetra/libnoxepetra.a \
+                          $(top_builddir)/test/utils/libnoxtestutils.a
+
+NOX_Epetra_VectorSpace_LDADD = $(TEST_LIBS)
