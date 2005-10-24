@@ -86,6 +86,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    thislevel_ml_     = 0;            // this level's local ML object 
    thislevel_ag_     = 0;            // this level's local ML_Aggregate object
    coarseinterface_  = 0;            // this level's coarse interface
+   coarseprepost_    = 0;
    xthis_            = 0;            // this level's current solution matching this level's map!!!!
    thislevel_A_      = 0;            // this level's NOX Matrixfree operator
    SmootherA_        = 0;            // this level's Epetra_CrsMatrix for thislevel_prec_
@@ -160,6 +161,10 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
                                       fineinterface_,level_,ml_printlevel_,
                                       P,&(graph->RowMap()),nlevel_);  
 
+   // generate this level's coarse prepostoperator
+   coarseprepost_ = new ML_NOX::Ml_Nox_CoarsePrePostOperator(*coarseinterface_,
+                                                             fineinterface_);    
+   
    // get the current solution to this level
    xthis_ = coarseinterface_->restrict_fine_to_this(xfine);
    
@@ -240,7 +245,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    nlParams_ = new NOX::Parameter::List();
    NOX::Parameter::List& printParams = nlParams_->sublist("Printing");        
    printParams.setParameter("MyPID", comm_.MyPID()); 
-   printParams.setParameter("Output Precision", 9);
+   printParams.setParameter("Output Precision", 14);
    printParams.setParameter("Output Processor", 0);
    if (ml_printlevel_>9)
       printParams.setParameter("Output Information",
@@ -252,6 +257,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
   else
       printParams.setParameter("Output Information",0);
 
+  nlParams_->sublist("Solver Options").setParameter("User Defined Pre/Post Operator", *coarseprepost_);
   nlParams_->setParameter("Nonlinear Solver", "Line Search Based");         
   NOX::Parameter::List& searchParams = nlParams_->sublist("Line Search");
   NOX::Parameter::List* lsParamsptr  = 0;
@@ -289,7 +295,8 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
 
      NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
      lsParamsptr = &lsParams;
-     lsParams.setParameter("Aztec Solver", "CG"); 
+     lsParams.setParameter("Size of Krylov Subspace", 100);
+     lsParams.setParameter("Aztec Solver", "GMRES"); 
      lsParams.setParameter("Max Iterations", nitersCG_);  
      lsParams.setParameter("Tolerance", conv_normF_); // FIXME? is this correct?
      if (ml_printlevel_>8)
@@ -334,33 +341,39 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
        // create the necessary interfaces   
        iPrec = this; 
        iReq  = coarseinterface_;
-       iJac  = this;
+       //iJac  = this;
+       thislevel_A_ = new NOX::EpetraNew::MatrixFree(*coarseinterface_,*xthis_,false);
      
        // create the initial guess vector
-       clone_  = new Epetra_Vector(*xthis_);
+       //clone_  = new Epetra_Vector(*xthis_);
 
        // create the linear system 
+       //azlinSys_ = new NOX::EpetraNew::LinearSystemAztecOO(
+       //                                               printParams,*lsParamsptr,
+       //                                               *iJac,*SmootherA_,*iPrec,
+       //                                               *thislevel_prec_,*clone_);
        azlinSys_ = new NOX::EpetraNew::LinearSystemAztecOO(
                                                       printParams,*lsParamsptr,
-                                                      *iJac,*SmootherA_,*iPrec,
-                                                      *thislevel_prec_,*clone_);
+                                                      *thislevel_A_,*thislevel_A_,*iPrec,
+                                                      *thislevel_prec_,*xthis_);
      }
      else // use a Broyden update for the Jacobian
      {
        // create the initial guess vector
-       clone_  = new Epetra_Vector(*xthis_);
+       //clone_  = new Epetra_Vector(*xthis_);
 
        // create the necessary interfaces   
        iPrec  = this; 
        iReq   = coarseinterface_;
-       Broyd_ = new NOX::EpetraNew::BroydenOperator(*nlParams_,*clone_,
+       Broyd_ = new NOX::EpetraNew::BroydenOperator(*nlParams_,*xthis_,
                                                     *SmootherA_,false);
-     
+       
        // create the linear system 
        azlinSys_ = new NOX::EpetraNew::LinearSystemAztecOO(
                                                    printParams,*lsParamsptr,
                                                    *Broyd_,*SmootherA_,*iPrec,
-                                                   *thislevel_prec_,*clone_);
+                                                   *thislevel_prec_,*xthis_);
+       
      }
      // create the group
      group_ = new NOX::EpetraNew::Group(printParams,*iReq,*initialGuess_,
@@ -540,6 +553,10 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    if (level_==2) exit(0);
 #endif   
 
+   // generate this level's coarse prepostoperator
+   coarseprepost_ = new ML_NOX::Ml_Nox_CoarsePrePostOperator(*coarseinterface_,
+                                                             fineinterface_);    
+
    // set up NOX's nlnCG on this level   
    nlParams_ = new NOX::Parameter::List();
    NOX::Parameter::List& printParams = nlParams_->sublist("Printing");        
@@ -560,6 +577,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
   else
       printParams.setParameter("Output Information",0);
 
+  nlParams_->sublist("Solver Options").setParameter("User Defined Pre/Post Operator", *coarseprepost_);
   nlParams_->setParameter("Nonlinear Solver", "Line Search Based");         
   NOX::Parameter::List& searchParams = nlParams_->sublist("Line Search");
   NOX::Parameter::List* lsParamsptr  = 0;
@@ -726,6 +744,10 @@ ML_NOX::ML_Nox_NonlinearLevel::~ML_Nox_NonlinearLevel()
    }
    else
       coarseinterface_ = 0;
+      
+   if (coarseprepost_) 
+     delete coarseprepost_;
+   coarseprepost_ = 0;
    
    if (thislevel_ag_)
       ML_Aggregate_Destroy(&thislevel_ag_);
