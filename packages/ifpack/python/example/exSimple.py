@@ -1,4 +1,6 @@
 #! /usr/bin/env python
+import sys
+
 try:
   import setpath
   import Epetra
@@ -6,10 +8,15 @@ try:
   import AztecOO
   import IFPACK
 except:
-  from PyTrilinos import Epetra, Galeri, AztecOO, IFPACK
-  print "Using system-installed Epetra, Galeri, AztecOO, IFPACK"
-
-import sys
+  try: 
+    # Loading Epetra should ensure MPI_Init() and MPI_Finalize()
+    from PyTrilinos import Epetra
+    from PyTrilinos import Galeri, AztecOO, IFPACK
+    print "Using system-installed Epetra, Galeri, AztecOO, IFPACK"
+  except:
+    print "You need the Epetra, AztecOO, Galeri and IFPACK"
+    print "modules to run this examples."
+    sys.exit(0)
 
 def main():
 
