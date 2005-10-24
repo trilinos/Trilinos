@@ -171,7 +171,7 @@ int Ifpack_ICT::Compute()
   EPETRA_CHK_ERR(H_->InsertGlobalValues(0,1,&diag_val, &diag_idx));
 
   int oldSize = RowNnz;
-  Ifpack_HashTable::Init(oldSize + 1, oldSize + 1);
+  Ifpack_HashTable::Init(A_.MaxNumEntries() + 1);
 
   // start factorization for line 1
   for (int row_i = 1 ; row_i < NumMyRows_ ; ++row_i) {
