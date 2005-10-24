@@ -214,8 +214,10 @@ class Laplace1D(Epetra.PyRowMatrix):
     self = args[0]
     return(self.RowMap_)
 
-  def Importer(*args):
-    return(Null)
+  def RowMatrixImporter(*args):
+    self = args[0]
+    Importer = Epetra.Import(self.RowMap_, self.RowMap_)
+    return(Importer)
 
 def main():
 
