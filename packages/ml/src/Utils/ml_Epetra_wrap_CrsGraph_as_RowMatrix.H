@@ -104,7 +104,7 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
    \param rm        (In) : ref to the RangeMap
    \param comm      (In) : the Epetra_Comm to be used
    */
-    CrsGraphWrapper(const Epetra_CrsGraph& graph, Epetra_Map& dm,Epetra_Map& rm,const Epetra_Comm& comm) : 
+    CrsGraphWrapper(const Epetra_CrsGraph& graph, const Epetra_Map& dm,const Epetra_Map& rm,const Epetra_Comm& comm) : 
     graph_(graph),
     DomainMap_(dm),
     RangeMap_(rm),
