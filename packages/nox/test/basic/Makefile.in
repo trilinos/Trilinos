@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(NOXPrintUtils_SOURCES)
+SOURCES = $(NOXPrintUtils_SOURCES) $(NOXSharedObjectTemplate_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -66,7 +66,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@BUILD_NOX_TESTS_TRUE@noinst_PROGRAMS = NOXPrintUtils$(EXEEXT)
+@BUILD_NOX_TESTS_TRUE@noinst_PROGRAMS = NOXPrintUtils$(EXEEXT) \
+@BUILD_NOX_TESTS_TRUE@	NOXSharedObjectTemplate$(EXEEXT)
 subdir = test/basic
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -108,17 +109,23 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(NOX_TEST_LIBS))
+am_NOXSharedObjectTemplate_OBJECTS =  \
+	NOXSharedObjectTemplate.$(OBJEXT)
+NOXSharedObjectTemplate_OBJECTS =  \
+	$(am_NOXSharedObjectTemplate_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/NOXPrintUtils.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/NOXPrintUtils.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NOXSharedObjectTemplate.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(NOXPrintUtils_SOURCES)
-DIST_SOURCES = $(NOXPrintUtils_SOURCES)
+SOURCES = $(NOXPrintUtils_SOURCES) $(NOXSharedObjectTemplate_SOURCES)
+DIST_SOURCES = $(NOXPrintUtils_SOURCES) \
+	$(NOXSharedObjectTemplate_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -357,6 +364,11 @@ NOXPrintUtils_DEPENDENCIES = \
                      $(top_builddir)/src/libnox.a
 
 NOXPrintUtils_LDADD = $(TEST_LIBS)
+NOXSharedObjectTemplate_SOURCES = $(srcdir)/NOXSharedObjectTemplate.C
+NOXSharedObjectTemplate_DEPENDENCIES = \
+                     $(top_builddir)/src/libnox.a
+
+NOXSharedObjectTemplate_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -396,6 +408,9 @@ clean-noinstPROGRAMS:
 NOXPrintUtils$(EXEEXT): $(NOXPrintUtils_OBJECTS) $(NOXPrintUtils_DEPENDENCIES) 
 	@rm -f NOXPrintUtils$(EXEEXT)
 	$(CXXLINK) $(NOXPrintUtils_LDFLAGS) $(NOXPrintUtils_OBJECTS) $(NOXPrintUtils_LDADD) $(LIBS)
+NOXSharedObjectTemplate$(EXEEXT): $(NOXSharedObjectTemplate_OBJECTS) $(NOXSharedObjectTemplate_DEPENDENCIES) 
+	@rm -f NOXSharedObjectTemplate$(EXEEXT)
+	$(CXXLINK) $(NOXSharedObjectTemplate_LDFLAGS) $(NOXSharedObjectTemplate_OBJECTS) $(NOXSharedObjectTemplate_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -404,6 +419,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOXPrintUtils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOXSharedObjectTemplate.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -436,6 +452,22 @@ NOXPrintUtils.obj: $(srcdir)/NOXPrintUtils.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOXPrintUtils.Po' tmpdepfile='$(DEPDIR)/NOXPrintUtils.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOXPrintUtils.obj `if test -f '$(srcdir)/NOXPrintUtils.C'; then $(CYGPATH_W) '$(srcdir)/NOXPrintUtils.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOXPrintUtils.C'; fi`
+
+NOXSharedObjectTemplate.o: $(srcdir)/NOXSharedObjectTemplate.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOXSharedObjectTemplate.o -MD -MP -MF "$(DEPDIR)/NOXSharedObjectTemplate.Tpo" -c -o NOXSharedObjectTemplate.o `test -f '$(srcdir)/NOXSharedObjectTemplate.C' || echo '$(srcdir)/'`$(srcdir)/NOXSharedObjectTemplate.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOXSharedObjectTemplate.Tpo" "$(DEPDIR)/NOXSharedObjectTemplate.Po"; else rm -f "$(DEPDIR)/NOXSharedObjectTemplate.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOXSharedObjectTemplate.C' object='NOXSharedObjectTemplate.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOXSharedObjectTemplate.Po' tmpdepfile='$(DEPDIR)/NOXSharedObjectTemplate.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOXSharedObjectTemplate.o `test -f '$(srcdir)/NOXSharedObjectTemplate.C' || echo '$(srcdir)/'`$(srcdir)/NOXSharedObjectTemplate.C
+
+NOXSharedObjectTemplate.obj: $(srcdir)/NOXSharedObjectTemplate.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOXSharedObjectTemplate.obj -MD -MP -MF "$(DEPDIR)/NOXSharedObjectTemplate.Tpo" -c -o NOXSharedObjectTemplate.obj `if test -f '$(srcdir)/NOXSharedObjectTemplate.C'; then $(CYGPATH_W) '$(srcdir)/NOXSharedObjectTemplate.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOXSharedObjectTemplate.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOXSharedObjectTemplate.Tpo" "$(DEPDIR)/NOXSharedObjectTemplate.Po"; else rm -f "$(DEPDIR)/NOXSharedObjectTemplate.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOXSharedObjectTemplate.C' object='NOXSharedObjectTemplate.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOXSharedObjectTemplate.Po' tmpdepfile='$(DEPDIR)/NOXSharedObjectTemplate.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOXSharedObjectTemplate.obj `if test -f '$(srcdir)/NOXSharedObjectTemplate.C'; then $(CYGPATH_W) '$(srcdir)/NOXSharedObjectTemplate.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOXSharedObjectTemplate.C'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
