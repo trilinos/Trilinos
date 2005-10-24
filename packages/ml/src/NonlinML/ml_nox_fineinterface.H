@@ -58,6 +58,7 @@
 #include "NOX_EpetraNew_Interface_Required.H"
 #include "NOX_EpetraNew_Interface_Jacobian.H"
 #include "NOX_EpetraNew_Interface_Preconditioner.H"
+#include "NOX_Parameter_PrePostOperator.H"
 
 //! ML_NOX: default namespace for all ML/NOX nonlinear methods
 namespace ML_NOX
@@ -96,7 +97,9 @@ namespace ML_NOX
 */  
 class  Ml_Nox_Fineinterface : public virtual NOX::EpetraNew::Interface::Required,
                               public virtual NOX::EpetraNew::Interface::Jacobian,
-                              public virtual NOX::EpetraNew::Interface::Preconditioner
+                              public virtual NOX::EpetraNew::Interface::Preconditioner,
+                              public virtual NOX::Parameter::PrePostOperator
+                              
 {
 public:
 
@@ -231,7 +234,7 @@ public:
   bool setnumcallscomputeF(int ncalls) { ncalls_computeF_=ncalls; return true; }
 
   // output method to look at the iterate
-#if 1
+#if 0
   virtual bool PrintSol(int id) = 0;
 #endif  
 
