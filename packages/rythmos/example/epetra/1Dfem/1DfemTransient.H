@@ -287,7 +287,8 @@ public:
     // Sync up processors to be safe
     Comm->Barrier();
    
-    jacout->FillComplete();
+    if (fillMatrix)
+      jacout->FillComplete();
   
     return true;
   }
