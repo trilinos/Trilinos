@@ -1,5 +1,4 @@
 #include "Amesos_ConfigDefs.h"
-#ifdef HAVE_AMESOS_SUPERLU
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -181,30 +180,3 @@ int main(int argc, char *argv[])
   return(EXIT_SUCCESS);
 
 }
-
-#else
-
-// SuperLU is not available. Sorry, we have to give up.
-
-#include <stdlib.h>
-#include <stdio.h>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#else
-#endif
-
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-#endif
-
-  puts("Please configure AMESOS with:");
-  puts("--enable-amesos-superlu");
-
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return(EXIT_SUCCESS);
-}
-#endif
