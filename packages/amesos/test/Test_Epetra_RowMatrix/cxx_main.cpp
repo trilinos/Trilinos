@@ -1,5 +1,4 @@
 #include "Amesos_ConfigDefs.h"
-#ifdef HAVE_AMESOS_TRIUTILS
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -12,10 +11,11 @@
 #include "Amesos.h"
 #include "Amesos_TestRowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 #include <vector>
 
-using namespace Trilinos_Util;
+using namespace Galeri;
 
 bool quiet = false ;
 
@@ -102,36 +102,30 @@ bool TestAmesos(char ProblemType[], Teuchos::ParameterList& AmesosList,
   return(true);
 }
 
-void driver(Epetra_Comm& Comm, const string Type, const bool UseTranspose, 
+void driver(Epetra_Comm& Comm, const bool IsSymmetric, const bool UseTranspose, 
             vector<string>& SolverType)
 {
-  CrsMatrixGallery Gallery(Type, Comm);
-  Gallery.Set("problem_size", 64);
-  Gallery.Set("num_vectors", 2);
+  string ProblemType;
+  if (IsSymmetric)
+    ProblemType = "Laplace2D";
+  else
+    ProblemType = "Recirc2D";
 
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
-  Epetra_RowMatrix* RowA = Problem->GetMatrix();
-  // I wanna use this class to be usre that the solver cannot cast
-  // to Epetra_CrsMatrix or Epetra_VbrMatrix.
-  Amesos_TestRowMatrix A(RowA);
+  Teuchos::ParameterList GaleriList;
+  GaleriList.set("nx", 8);
+  GaleriList.set("ny", 8 * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
 
-  Epetra_MultiVector* LHS = Problem->GetLHS();
-  Epetra_MultiVector* RHS = Problem->GetRHS();
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* Matrix = CreateCrsMatrix(ProblemType, Map, GaleriList);
+  Epetra_MultiVector LHS(*Map, 3); LHS.PutScalar(0.0);
+  Epetra_MultiVector RHS(*Map, 3); RHS.Random();
+
+  Amesos_TestRowMatrix A(Matrix);
 
   Amesos Factory;  
   
-#if 0
-  vector<string> SolverType;
-  SolverType.push_back("Amesos_Lapack");
-  SolverType.push_back("Amesos_Klu");
-  SolverType.push_back("Amesos_Umfpack");
-  SolverType.push_back("Amesos_Superlu");
-  SolverType.push_back("Amesos_Superludist"); 
-  SolverType.push_back("Amesos_Mumps");
-  SolverType.push_back("Amesos_Scalapack");
-  // NOTE: DSCPACK does not support RowMatrix's.
-#endif
-
   bool res;
 
   // If a given test fails, than the code stops, bue to the assert()
@@ -146,24 +140,27 @@ void driver(Epetra_Comm& Comm, const string Type, const bool UseTranspose,
       Teuchos::ParameterList AmesosList;
       AmesosList.set("Redistribute",false);
       res = TestAmesos((char*)Solver.c_str(), AmesosList, false, 
-                       &A, LHS, RHS);
+                       &A, &LHS, &RHS);
       assert (res == true);
       if (UseTranspose) {
         // solve transpose with matrix
         Teuchos::ParameterList AmesosList;
         res  = TestAmesos((char*)Solver.c_str(), AmesosList, true, 
-                          &A, LHS, RHS);
+                          &A, &LHS, &RHS);
         assert (res == true);
       }
     } 
     else
       if (!quiet && !Comm.MyPID()) 
       {
-	cerr << endl;
-	cerr << "WARNING: SOLVER `" << Solver << "' NOT TESTED" << endl;
-	cerr << endl;
+        cerr << endl;
+        cerr << "WARNING: SOLVER `" << Solver << "' NOT TESTED" << endl;
+        cerr << endl;
       }
   }
+
+  delete Matrix;
+  delete Map;
 }
 
 // =========== //
@@ -193,7 +190,7 @@ int main(int argc, char *argv[])
     SolverType.push_back("Amesos_Superlu");
     SolverType.push_back("Amesos_Mumps");
     SolverType.push_back("Amesos_Scalapack");
-    driver(Comm, "recirc_2d", true, SolverType);
+    driver(Comm, false, true, SolverType);
   }
  
   if (true)
@@ -202,7 +199,7 @@ int main(int argc, char *argv[])
     vector<string> SolverType;
     SolverType.push_back("Amesos_Pardiso");
     SolverType.push_back("Amesos_Superludist");
-    driver(Comm, "recirc_2d", false, SolverType);
+    driver(Comm, false, false, SolverType);
   }
 
   // I have some problems with Taucs with LAM
@@ -211,7 +208,7 @@ int main(int argc, char *argv[])
     // symmetric
     vector<string> SolverType;
     SolverType.push_back("Amesos_Taucs");
-    driver(Comm, "laplace_2d", false, SolverType);
+    driver(Comm, true, false, SolverType);
   }
 
 #ifdef HAVE_MPI
@@ -219,31 +216,3 @@ int main(int argc, char *argv[])
 #endif
   return(0); 
 }
-
-#else
-
-// Triutils is not available. Sorry, we have to give up.
-
-#include <stdlib.h>
-#include <stdio.h>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#else
-#endif
-
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-#endif
-
-  puts("Please configure AMESOS with --enable-triutils");
-  puts("to run this example");
-  
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return(0);
-}
-
-#endif
