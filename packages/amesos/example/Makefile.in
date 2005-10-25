@@ -65,10 +65,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = example_AmesosFactory$(EXEEXT) \
-	example_AmesosFactory_HB$(EXEEXT) \
-	example_AmesosFactory_Tridiag$(EXEEXT) \
-	compare_solvers$(EXEEXT)
+noinst_PROGRAMS = example_AmesosFactory_Tridiag$(EXEEXT) \
+	$(am__EXEEXT_1)
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -107,6 +105,10 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
 CONFIG_CLEAN_FILES =
+@HAVE_AMESOS_GALERI_TRUE@am__EXEEXT_1 =  \
+@HAVE_AMESOS_GALERI_TRUE@	example_AmesosFactory$(EXEEXT) \
+@HAVE_AMESOS_GALERI_TRUE@	example_AmesosFactory_HB$(EXEEXT) \
+@HAVE_AMESOS_GALERI_TRUE@	compare_solvers$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_compare_solvers_OBJECTS =  \
 	compare_solvers-compare_solvers.$(OBJEXT)
@@ -191,6 +193,8 @@ HAVE_AMESOS_DSCPACK_FALSE = @HAVE_AMESOS_DSCPACK_FALSE@
 HAVE_AMESOS_DSCPACK_TRUE = @HAVE_AMESOS_DSCPACK_TRUE@
 HAVE_AMESOS_EPETRAEXT_FALSE = @HAVE_AMESOS_EPETRAEXT_FALSE@
 HAVE_AMESOS_EPETRAEXT_TRUE = @HAVE_AMESOS_EPETRAEXT_TRUE@
+HAVE_AMESOS_GALERI_FALSE = @HAVE_AMESOS_GALERI_FALSE@
+HAVE_AMESOS_GALERI_TRUE = @HAVE_AMESOS_GALERI_TRUE@
 HAVE_AMESOS_KLU_FALSE = @HAVE_AMESOS_KLU_FALSE@
 HAVE_AMESOS_KLU_TRUE = @HAVE_AMESOS_KLU_TRUE@
 HAVE_AMESOS_KUNDERT_FALSE = @HAVE_AMESOS_KUNDERT_FALSE@
@@ -338,6 +342,8 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS))
 @USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES)
 @USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES))
+@HAVE_AMESOS_GALERI_FALSE@EXAMPLES_GALERI = 
+@HAVE_AMESOS_GALERI_TRUE@EXAMPLES_GALERI = example_AmesosFactory example_AmesosFactory_HB compare_solvers
 EXTRA_DIST = In_662_bus.rsa
 example_AmesosFactory_SOURCES = $(srcdir)/example_AmesosFactory.cpp
 example_AmesosFactory_DEPENDENCIES = $(top_builddir)/src/libamesos.a 

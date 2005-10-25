@@ -29,6 +29,9 @@
 /* Define if want to build amesos-examples */
 #undef HAVE_AMESOS_EXAMPLES
 
+/* Define if want to build with amesos enabled */
+#undef HAVE_AMESOS_GALERI
+
 /* Define if want to build amesos-klu */
 #undef HAVE_AMESOS_KLU
 
