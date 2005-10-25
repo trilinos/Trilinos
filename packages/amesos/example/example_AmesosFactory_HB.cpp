@@ -28,8 +28,11 @@
 // @HEADER
 
 #include "Amesos_ConfigDefs.h"
-// This example needs triutils to generate the linear system.
-#ifdef HAVE_AMESOS_TRIUTILS
+
+// This example needs Galeri to generate the linear system.
+// You must have configured Trilinos with --enable-galeri
+// in order to compile this example
+
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -44,7 +47,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
-#include "Trilinos_Util.h"
+#include "Galeri_ReadHB.h"
 
 // ==================== //
 // M A I N  D R I V E R //
@@ -60,12 +63,11 @@
 //
 // This example can be run with any number of processors.
 //
-// Author: Marzio Sala, SNL 2914
-// Last modified: Apr-05
+// Author: Marzio Sala, ETHZ/COLAB
+// Last modified: Oct-05
 
 int main(int argc, char *argv[]) 
 {
-
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -93,21 +95,21 @@ int main(int argc, char *argv[])
   Epetra_Vector* readb;
   Epetra_Vector* readxexact;
   
-  std::ifstream data_file;
-  data_file.open((char*)matrix_file.c_str());
-  if (!data_file.good()) 
+  try 
   {
-    std::cerr << "Error opening file\n";
+    Galeri::ReadHB(matrix_file.c_str(), Comm, readMap,
+                   readA, readx, readb, readxexact);
+  }
+  catch(...)
+  {
+    cout << "Caught exception, maybe file name is incorrect" << endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
-#endif
+#else
+    // not to break test harness
     exit(EXIT_SUCCESS);
+#endif
   }
-  data_file.close();
-
-  // Call routine to read in HB problem
-  Trilinos_Util_ReadHb2Epetra((char*)matrix_file.c_str(), Comm, readMap, 
-                              readA, readx, readb, readxexact);
 
   // Create uniform distributed map.
   // Note that linear map are used for simplicity only!
@@ -120,8 +122,6 @@ int main(int argc, char *argv[])
   const Epetra_Map &OriginalMap = readA->RowMatrixRowMap() ; 
   assert (OriginalMap.SameAs(*readMap)); 
   Epetra_Export exporter(OriginalMap, map);
-  Epetra_Export exporter2(OriginalMap, map);
-  Epetra_Export MatrixExporter(OriginalMap, map);
 
   Epetra_Vector x(map);          // distributed solution
   Epetra_Vector b(map);          // distributed rhs
@@ -134,6 +134,13 @@ int main(int argc, char *argv[])
   A.Export(*readA, exporter, Add);
   A.FillComplete();
     
+  // deletes memory
+  delete readMap;
+  delete readA; 
+  delete readx; 
+  delete readb;
+  delete readxexact;
+
   // Creates an epetra linear problem, contaning matrix
   // A, solution x and rhs b.
   Epetra_LinearProblem Problem(&A,&x,&b);
@@ -194,30 +201,3 @@ int main(int argc, char *argv[])
   return(EXIT_SUCCESS);
 
 } // end of main()
-
-#else
-
-// Triutils is not available. Sorry, we have to give up.
-
-#include <stdlib.h>
-#include <stdio.h>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#endif
-
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-#endif
-
-  puts("Please configure Amesos with:");
-  puts("--enable-triutils");
-  
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return(EXIT_SUCCESS);
-}
-
-#endif

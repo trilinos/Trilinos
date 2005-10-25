@@ -27,8 +27,11 @@
 // @HEADER
 
 #include "Amesos_ConfigDefs.h"
-// This example needs triutils to generate the linear system.
-#ifdef HAVE_AMESOS_TRIUTILS
+
+// This example needs Galeri to generate the linear system.
+// You must have configured Trilinos with --enable-galeri
+// in order to compile this example
+
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -37,13 +40,15 @@
 #endif
 #include "Amesos.h"
 #include "Epetra_RowMatrix.h"
-#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
 // following header file and namespace declaration
 // are  required by this example to generate the linear system,
 // not by Amesos itself.
-#include "Trilinos_Util_CrsMatrixGallery.h"
-using namespace Trilinos_Util;
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
+using namespace Teuchos;
+using namespace Galeri;
 
 // ==================== //
 // M A I N  D R I V E R //
@@ -81,7 +86,7 @@ using namespace Trilinos_Util;
 // NOTE: this example can be run with any number of processors.
 //
 // Author: Marzio Sala, SNL 9214
-// Last modified: Apr-05.
+// Last modified: Oct-05.
 
 int main(int argc, char *argv[]) 
 {
@@ -100,27 +105,28 @@ int main(int argc, char *argv[])
 			     // multiple RHS.
 
   // Initializes an Gallery object.
-  // NOTE: this example uses the Trilinos package triutils
+  // NOTE: this example uses the Trilinos package Galeri
   // to define in an easy way the linear system matrix.
   // The user can easily change the matrix type; consult the 
-  // Trilinos tutorial on the triutils chapter for more details.
-  // Note that Amesos itself is INDEPENDENT of triutils.
+  // Galeri documentation for mode details.
   //
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", NumGlobalRows);
-  Gallery.Set("num_vectors", NumVectors);
+  // Here the problem has size nx x ny, and the 2D Cartesian
+  // grid is divided into mx x my subdomains.
+  ParameterList GaleriList;
+  GaleriList.set("nx", 100);
+  GaleriList.set("ny", 100 * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
 
-  // Gets pointers to Gallery's objects. Matrix, LHS and
-  // RHS are constructed by Gallery. The matrix is actually
-  // stored as Epetra_CrsMatrix.
-  // `Problem' will be used in the Amesos contruction.
-  //
-  Epetra_MultiVector* LHS  = Gallery.GetStartingSolution();
-  Epetra_MultiVector* RHS  = Gallery.GetRHS();
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* Matrix = CreateCrsMatrix("Laplace2D", Map, GaleriList);
 
-  RHS->Random();         // random right-hand side
-  LHS->PutScalar(0.0);   // zero solution
+  // Creates vectors for right-hand side and solution, and the
+  // linear problem container.
+
+  Epetra_Vector LHS(*Map); LHS.PutScalar(0.0); // zero solution
+  Epetra_Vector RHS(*Map); RHS.Random();       // random rhs
+  Epetra_LinearProblem Problem(Matrix, &LHS, &RHS);
 
   // ===================================================== //
   // B E G I N N I N G   O F  T H E   AM E S O S   P A R T //
@@ -152,7 +158,7 @@ int main(int argc, char *argv[])
   // - Dscpack
   // 
   string SolverType = "Klu";
-  Solver = Factory.Create(SolverType, *Problem);
+  Solver = Factory.Create(SolverType, Problem);
 
   // Factory.Create() returns 0 if the requested solver
   // is not available
@@ -193,37 +199,30 @@ int main(int argc, char *argv[])
   //   are *not* required before NumericFactorization();
   // - solution and rhs are *not* required before calling
   //   Solve().
+  if (Comm.MyPID() == 0)
+    cout << "Starting symbolic factorization..." << endl;
   Solver->SymbolicFactorization();
+  
   // you can change the matrix values here
+  if (Comm.MyPID() == 0)
+    cout << "Starting numeric factorization..." << endl;
   Solver->NumericFactorization();
+  
   // you can change LHS and RHS here
+  if (Comm.MyPID() == 0)
+    cout << "Starting solution phase..." << endl;
   Solver->Solve();
 
   // =========================================== //
   // E N D   O F   T H E   A M E S O S   P A R T //
   // =========================================== //
 
-  // At this point we can check that the residual is
-  // small as it should be. NOTE: this check can be
-  // performed inside Amesos as well. Use
-  // List.set("ComputeTrueResidual",true) before
-  // calling SetParameters(List).
-  //
-  vector<double> residual(NumVectors);
-
-  Gallery.ComputeResidual(&residual[0]);
-
-  if (!Comm.MyPID()) 
-  {
-    for (int i = 0 ; i < NumVectors ; ++i)
-      cout << "After AMESOS solution, for vector " << i << ", ||b-Ax||_2 = " << residual[i] << endl;
-  }
-
   // delete Solver. MPI calls can occur.
   delete Solver;
     
-  if (residual[0] > 1e-5)
-    return(EXIT_FAILURE);
+  // delete the objects created by Galeri
+  delete Matrix;
+  delete Map;
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -232,31 +231,3 @@ int main(int argc, char *argv[])
   return(EXIT_SUCCESS);
 
 } // end of main()
-
-#else
-
-// Triutils is not available. Sorry, we have to give up.
-
-#include <stdlib.h>
-#include <stdio.h>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#endif
-
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-#endif
-
-  puts("Please configure Amesos with:");
-  puts("--enable-triutils");
-  
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return(EXIT_SUCCESS);
-}
-
-#endif
-

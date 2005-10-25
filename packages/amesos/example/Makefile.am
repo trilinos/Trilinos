@@ -38,7 +38,13 @@ endif
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = example_AmesosFactory example_AmesosFactory_HB example_AmesosFactory_Tridiag compare_solvers
+if HAVE_AMESOS_GALERI
+EXAMPLES_GALERI = example_AmesosFactory example_AmesosFactory_HB compare_solvers
+else
+EXAMPLES_GALERI =
+endif
+
+noinst_PROGRAMS = example_AmesosFactory_Tridiag $(EXAMPLES_GALERI)
 
 EXTRA_DIST = In_662_bus.rsa
 
