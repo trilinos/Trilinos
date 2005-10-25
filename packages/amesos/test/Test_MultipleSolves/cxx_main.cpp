@@ -1,5 +1,4 @@
 #include "Amesos_ConfigDefs.h"
-#ifdef HAVE_AMESOS_TRIUTILS
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -13,7 +12,11 @@
 #include "Epetra_CrsMatrix.h"
 #include "Amesos.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
+#include <vector>
+
+using namespace Galeri;
 
 bool TestAmesos(char ProblemType[],
 		Epetra_RowMatrix& A,
@@ -87,10 +90,6 @@ bool TestAmesos(char ProblemType[],
   
 }
 
-using namespace Trilinos_Util;
-
-#include <vector>
-
 int main(int argc, char *argv[]) {
 
 #ifdef HAVE_MPI
@@ -102,12 +101,14 @@ int main(int argc, char *argv[]) {
 
   int NumVectors = 2;
 
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", 100);
-  Gallery.Set("num_vectors", 5);
+  Teuchos::ParameterList GaleriList;
+  GaleriList.set("nx", 8);
+  GaleriList.set("ny", 8 * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
 
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
-  Epetra_RowMatrix* A = Problem->GetMatrix();
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
 
   Amesos Factory;  
   
@@ -139,6 +140,9 @@ int main(int argc, char *argv[]) {
       }
   }
    
+  delete A;
+  delete Map;
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
@@ -155,33 +159,3 @@ int main(int argc, char *argv[]) {
   }
 
 }
-
-#else
-
-// Triutils is not available. Sorry, we have to give up.
-
-#include <stdlib.h>
-#include <stdio.h>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#else
-#endif
-
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-#endif
-
-  puts("Please configure AMESOS with --enable-triutils");
-  puts("to run this example");
-  
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return(0);
-}
-
-#endif
-
-
