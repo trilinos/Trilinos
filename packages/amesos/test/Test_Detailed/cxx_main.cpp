@@ -1,5 +1,4 @@
 #include "Amesos_ConfigDefs.h"
-#ifdef HAVE_AMESOS_TRIUTILS
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -14,7 +13,8 @@
 #include "Amesos_BaseSolver.h"
 #include "Amesos_TestRowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 #include <vector>
 
 #ifdef HAVE_VALGRIND_H
@@ -27,7 +27,8 @@
 #endif 
 #endif 
 
-using namespace Trilinos_Util;
+using namespace Teuchos;
+using namespace Galeri;
 
 //=============================================================================
 bool CheckError(const string SolverType,
@@ -294,43 +295,36 @@ int SubMain( Epetra_Comm &Comm ) {
   //
   // C refers to a completely different matrix
  
-  int Size_AB = 900; // must be square
-  int Size_C = 30; // must be square
+  int Size_AB = 20; // A and B have size Size_AB * Size_AB
+  int Size_C = 30; 
   int NumVectors_AB = 7;
   int NumVectors_C = 13;
   
 #ifdef HAVE_VALGRIND 
   if ( RUNNING_ON_VALGRIND ) {
-   Size_AB = 36; // must be square
+   Size_AB = 6; // must be square
    Size_C = 6; 
    NumVectors_AB = 2;
    NumVectors_C = 3;
   }
 #endif
 
-  CrsMatrixGallery GalleryA("recirc_2d", Comm);
-  GalleryA.Set("problem_size", Size_AB);
-  GalleryA.Set("map_type", "interlaced");
-  GalleryA.Set("num_vectors", NumVectors_AB);
+  Teuchos::ParameterList GaleriList;
 
-  CrsMatrixGallery GalleryB("laplace_2d", Comm);
-  GalleryB.Set("problem_size", Size_AB);
-  GalleryB.Set("map_type", "interlaced");
-  GalleryB.Set("num_vectors", NumVectors_AB);
+  GaleriList.set("n", Size_AB * Size_AB);
+  GaleriList.set("nx", Size_AB);
+  GaleriList.set("ny", Size_AB);
+  Epetra_Map* Map_A = CreateMap("Interlaced", Comm, GaleriList);
+  Epetra_CrsMatrix* Matrix_A = CreateCrsMatrix("Recirc2D", Map_A, GaleriList);
+  Epetra_CrsMatrix* Matrix_B = CreateCrsMatrix("Laplace2D", Map_A, GaleriList);
 
-  CrsMatrixGallery GalleryC("minij", Comm);
-  GalleryC.Set("problem_size", Size_C);
-  GalleryC.Set("num_vectors", NumVectors_C);
+  GaleriList.set("n", Size_C);
+  Epetra_Map* Map_C = CreateMap("Interlaced", Comm, GaleriList);
+  Epetra_CrsMatrix* Matrix_C = CreateCrsMatrix("Minij", Map_A, GaleriList);
 
-  Epetra_RowMatrix* RowA = GalleryA.GetLinearProblem()->GetMatrix();
-  Epetra_RowMatrix* RowB = GalleryB.GetLinearProblem()->GetMatrix();
-  Epetra_RowMatrix* RowC = GalleryC.GetLinearProblem()->GetMatrix();
-
-  Amesos_TestRowMatrix A(RowA);
-  //  cout << " A= " ; 
-  //  dynamic_cast<Epetra_CrsMatrix *>(RowA)->Print( cout ) ; 
-  Amesos_TestRowMatrix B(RowB);
-  Amesos_TestRowMatrix C(RowC);
+  Amesos_TestRowMatrix A(Matrix_A);
+  Amesos_TestRowMatrix B(Matrix_B);
+  Amesos_TestRowMatrix C(Matrix_C);
 
   Epetra_MultiVector x_A(A.OperatorDomainMap(),NumVectors_AB);
   Epetra_MultiVector x_exactA(A.OperatorDomainMap(),NumVectors_AB);
@@ -372,8 +366,17 @@ int SubMain( Epetra_Comm &Comm ) {
       TestPassed = TestPassed && ok;
     }
     else
-      cout << "Solver " << Solver << " not available" << endl;
+    {
+      if (Comm.MyPID() == 0)
+        cout << "Solver " << Solver << " not available" << endl;
+    }
   }
+
+  delete Matrix_A;
+  delete Matrix_B;
+  delete Matrix_C;
+  delete Map_A;
+  delete Map_C;
 
   if (TestPassed) {
     if (Comm.MyPID() == 0)
@@ -383,7 +386,8 @@ int SubMain( Epetra_Comm &Comm ) {
   else {
     if (Comm.MyPID() == 0)
       cout << endl << "TEST FAILED" << endl << endl;
-    return(EXIT_FAILURE);
+    // exit without calling MPI_Finalize() to raise an error
+    exit(EXIT_FAILURE);
   }
 
 }
@@ -406,41 +410,11 @@ int main(int argc, char *argv[]) {
   Comm.Barrier();
 #endif
 
-  int retval = SubMain( Comm ) ;   // 
+  int retval = SubMain( Comm ) ; 
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
   return retval ; 
 }
-
-
-#else
-
-// Triutils is not available. Sorry, we have to give up.
-
-#include <stdlib.h>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#else
-#endif
-#include <stdio.h>
-
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-#endif
-
-  puts("Please configure AMESOS with --enable-triutils");
-  puts("to run this example");
-  
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return(0);
-}
-
-#endif
-
-

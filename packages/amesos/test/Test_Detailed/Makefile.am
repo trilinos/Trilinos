@@ -14,7 +14,11 @@ endif
 EXEEXT = .exe
 TEST = Test_Detailed
 
+if HAVE_AMESOS_GALERI
 noinst_PROGRAMS = $(TEST)
+else
+noinst_PROGRAMS = 
+endif
 
 Test_Detailed_SOURCES      = $(srcdir)/cxx_main.cpp
 Test_Detailed_DEPENDENCIES = $(top_builddir)/src/libamesos.a
