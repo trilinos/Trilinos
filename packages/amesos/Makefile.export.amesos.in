@@ -32,13 +32,13 @@ _AMESOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src $(AMESOS_THYRA_LIBS) -lamesos 
 @USING_GNUMAKE_FALSE@AMESOS_LIBS     = $(_AMESOS_LIBS)
 
 @HAVE_AMESOS_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
-
+@HAVE_AMESOS_GALERI_TRUE@include @abs_top_builddir@/../galeri/Makefile.export.galeri
 
 # These variables define the include path and libraries that can be used in
 # the Amesos' examples and tests, but that are not required to compile or link
 # Amesos itself.
-_AMESOS_EXTRA_INCLUDES = $(TRIUTILS_INCLUDES)
-_AMESOS_EXTRA_LIBS = $(TRIUTILS_LIBS)
+_AMESOS_EXTRA_INCLUDES = $(TRIUTILS_INCLUDES) $(GALERI_INCLUDES)
+_AMESOS_EXTRA_LIBS     = $(TRIUTILS_LIBS)     $(GALERI_LIBS)
 
 @USING_GNUMAKE_TRUE@AMESOS_EXTRA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_AMESOS_EXTRA_INCLUDES))
 @USING_GNUMAKE_TRUE@AMESOS_EXTRA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_AMESOS_EXTRA_LIBS))

@@ -320,6 +320,8 @@ fi
 
 AM_CONDITIONAL(HAVE_AMESOS_TRIUTILS, [test "X$ac_cv_use_triutils" != "Xno"])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, galeri, AMESOS_GALERI, HAVE_AMESOS_GALERI, yes, [Enable Galeri support. Galeri, a Trilinos package, is used in some Amesos examples to construct the linear system.], [Enable Galeri support. Galeri, a Trilinos package, is used in some Amesos examples to construct the linear system. Can be overridden with --disable-amesos-galeri.])
+
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
