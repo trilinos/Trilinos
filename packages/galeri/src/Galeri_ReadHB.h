@@ -7,7 +7,7 @@ class Epetra_Vector;
 
 namespace Galeri 
 {
-void ReadHB(char* data_file, const Epetra_Comm& comm, 
+void ReadHB(const char* data_file, const Epetra_Comm& comm, 
             Epetra_Map*& map,  Epetra_CrsMatrix*& A, 
             Epetra_Vector*& x, Epetra_Vector*& b,
             Epetra_Vector*& xexact);
