@@ -14,7 +14,11 @@ endif
 EXEEXT = .exe
 TEST = Test_LAPACK
 
+if HAVE_AMESOS_LAPACK
 noinst_PROGRAMS = $(TEST)
+else
+noinst_PROGRAMS =
+endif
 
 Test_LAPACK_SOURCES      = $(srcdir)/cxx_main.cpp
 Test_LAPACK_DEPENDENCIES = $(top_builddir)/src/libamesos.a
