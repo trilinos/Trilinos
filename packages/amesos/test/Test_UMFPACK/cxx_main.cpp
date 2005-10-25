@@ -1,5 +1,4 @@
 #include "Amesos_ConfigDefs.h"
-#if defined(HAVE_AMESOS_UMFPACK) && defined(HAVE_AMESOS_TRIUTILS)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -10,12 +9,11 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
+#include "Epetra_CrsMatrix.h"
 #include "Amesos_Umfpack.h"
 #include "Amesos_TestRowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Trilinos_Util_CrsMatrixGallery.h"
 #include <vector>
-using namespace Trilinos_Util;
 
 //=============================================================================
 bool CheckError(const Epetra_RowMatrix& A,
@@ -175,35 +173,3 @@ int main(int argc, char *argv[]) {
 #endif
   return(EXIT_SUCCESS);
 }
-
-#else
-
-// UMFPACK is not available. Sorry, we have to give up.
-
-#include <stdlib.h>
-#include <stdio.h>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#else
-#endif
-
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-#endif
-
-  puts("Please configure AMESOS with:");
-#ifndef HAVE_AMESOS_UMFPACK
-  puts("--enable-amesos-umfpack");
-#endif
-#ifndef HAVE_AMESOS_TRIUTILS
-  puts("--enable-amesos-triutils");
-#endif
-
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return(EXIT_SUCCESS);
-}
-#endif

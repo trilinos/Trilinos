@@ -14,7 +14,11 @@ endif
 EXEEXT = .exe
 TEST = Test_UMFPACK
 
+if HAVE_AMESOS_UMFPACK
 noinst_PROGRAMS = $(TEST)
+else
+noinst_PROGRAMS =
+endif
 
 Test_UMFPACK_SOURCES      = $(srcdir)/cxx_main.cpp
 Test_UMFPACK_DEPENDENCIES = $(top_builddir)/src/libamesos.a
