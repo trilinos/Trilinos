@@ -4,7 +4,7 @@
 //
 //
 #include "Amesos_ConfigDefs.h"
-#if defined(HAVE_AMESOS_DSCPACK) && defined(HAVE_AMESOS_TRIUTILS)
+
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -15,12 +15,11 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Time.h"
 #include "Epetra_Util.h"
+#include "Epetra_CrsMatrix.h"
 #include "Amesos_Dscpack.h"
 #include "Amesos_TestRowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Trilinos_Util_CrsMatrixGallery.h"
 #include <vector>
-using namespace Trilinos_Util;
 
 //=============================================================================
 bool CheckError(const Epetra_RowMatrix& A,
@@ -185,35 +184,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-
-#else
-
-// Triutils is not available. Sorry, we have to give up.
-
-#include <stdlib.h>
-#include <stdio.h>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#else
-#endif
-
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-#endif
-
-  puts("Please configure AMESOS with:");
-  puts("--enable-amesos-dscpack");
-  puts("--enable-triutils");
-  puts("to run this example");
-
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return(0);
-}
-
-#endif
-
-

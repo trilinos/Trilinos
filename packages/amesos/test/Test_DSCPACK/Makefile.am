@@ -14,7 +14,11 @@ endif
 EXEEXT = .exe
 TEST = Test_DSCPACK
 
+if HAVE_AMESOS_DSCPACK
 noinst_PROGRAMS = $(TEST)
+else
+noinst_PROGRAMS = 
+endif
 
 Test_DSCPACK_SOURCES      = $(srcdir)/cxx_main.cpp
 Test_DSCPACK_DEPENDENCIES = $(top_builddir)/src/libamesos.a
