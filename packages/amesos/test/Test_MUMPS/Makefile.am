@@ -14,7 +14,11 @@ endif
 EXEEXT = .exe
 TEST = Test_MUMPS
 
+if HAVE_AMESOS_MUMPS
 noinst_PROGRAMS = $(TEST)
+else
+noinst_PROGRAMS =
+endif
 
 Test_MUMPS_SOURCES      = $(srcdir)/cxx_main.cpp
 Test_MUMPS_DEPENDENCIES = $(top_builddir)/src/libamesos.a

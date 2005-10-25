@@ -1,5 +1,4 @@
 #include "Amesos_ConfigDefs.h"
-#if defined(HAVE_AMESOS_MUMPS) && defined(HAVE_AMESOS_TRIUTILS)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -10,11 +9,11 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Time.h"
+#include "Epetra_CrsMatrix.h"
 #include "Epetra_Util.h"
 #include "Amesos_Mumps.h"
 #include "Amesos_TestRowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Trilinos_Util_CrsMatrixGallery.h"
 #include <vector>
 using namespace Trilinos_Util;
 
@@ -187,39 +186,3 @@ int main(int argc, char *argv[]) {
 
   return(EXIT_SUCCESS);
 }
-
-#else
-
-// Triutils or mumps is not available. Sorry, we have to give up.
-
-#include <stdlib.h>
-#include <stdio.h>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#else
-#endif
-
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-#endif
-
-  puts("Please configure AMESOS with");
-#ifndef HAVE_AMESOS_MUMPS
-  puts("--enable-amesos-mumps");
-#endif
-#ifndef HAVE_AMESOS_TRIUTILS
-  puts("--enable-amesos-triutils");
-#endif
-  puts("to run this example");
-
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return(0);
-}
-
-#endif
-
-
