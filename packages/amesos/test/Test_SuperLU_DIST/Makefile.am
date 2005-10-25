@@ -14,7 +14,11 @@ endif
 EXEEXT = .exe
 TEST = Test_SuperLU_DIST
 
+if HAVE_AMESOS_SUPERLUDIST
 noinst_PROGRAMS = $(TEST)
+else
+noinst_PROGRAMS = 
+endif
 
 Test_SuperLU_DIST_SOURCES      = $(srcdir)/cxx_main.cpp
 Test_SuperLU_DIST_DEPENDENCIES = $(top_builddir)/src/libamesos.a

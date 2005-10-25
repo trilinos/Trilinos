@@ -1,5 +1,4 @@
 #include "Amesos_ConfigDefs.h"
-#ifdef HAVE_AMESOS_SUPERLUDIST
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -187,35 +186,3 @@ int main(int argc, char *argv[]) {
 #endif
   return(EXIT_SUCCESS);
 }
-
-#else
-
-// SuperLU_DIST is not available. Sorry, we have to give up.
-
-#include <stdlib.h>
-#include <stdio.h>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#else
-#endif
-
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-#endif
-  //
-  //  The -q switch allows us to test that Amesos_SuperLU_DIST is quiet.
-  bool verbose = true ;  
-  if ( argc > 1 && argv[1][0] == '-' &&  argv[1][1] == 'q' ) verbose = false ;
-  if ( verbose ) {
-    puts("Please configure Amesos with");
-    puts("--enable-amesos-superludist");
-  }
-
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return(EXIT_SUCCESS);
-}
-#endif
