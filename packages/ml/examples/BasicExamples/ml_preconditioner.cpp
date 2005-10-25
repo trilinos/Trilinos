@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
   // matrix is `recirc_2d' (advection-diffusion in a box, with
   // recirculating flow). In both cases, the global number of nodes 
   // must be a square number
-  CrsMatrixGallery Gallery("recirc_2d", Comm);
+  CrsMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", i);
   
   // The following methods of CrsMatrixGallery are used to get pointers
