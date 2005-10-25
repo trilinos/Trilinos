@@ -1054,6 +1054,7 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
 {
   // make a copy of the graph
   Epetra_CrsGraph* graph = ML_NOX::deepcopy_graph(interface_.getGraph());
+  Epetra_CrsGraph* cgraph = ML_NOX::deepcopy_graph(interface_.getModifiedGraph());
   
   // the block size of the graph here
   int bsize = ml_numPDE_;
@@ -1064,17 +1065,17 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
   // create coloring of the nodal graph
   if (ml_printlevel_>0 && comm_.MyPID()==0)
   {
-     cout << "matrixfreeML (level 0): Entering Coloring on level 0\n";
+     cout << "ML (level 0): Entering Coloring on level 0\n";
      fflush(stdout);
   }
 
 #if 1  
   Epetra_MapColoring* colorMap 
-            = ML_NOX::ML_Nox_collapsedcoloring(graph,bsize,false,ml_printlevel_);
+            = ML_NOX::ML_Nox_collapsedcoloring(cgraph,graph,bsize,false,ml_printlevel_);
   if (!colorMap) 
-    colorMap = ML_NOX::ML_Nox_standardcoloring(graph,false);
+    colorMap = ML_NOX::ML_Nox_standardcoloring(cgraph,false);
 #else
-  Epetra_MapColoring* colorMap = ML_NOX::ML_Nox_standardcoloring(graph,false);
+  Epetra_MapColoring* colorMap = ML_NOX::ML_Nox_standardcoloring(cgraph,false);
 #endif
 
   EpetraExt::CrsGraph_MapColoringIndex* colorMapIndex = 
@@ -1084,14 +1085,14 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
   double t1 = GetClock();
   if (ml_printlevel_>0 && comm_.MyPID()==0)
   {
-     cout << "matrixfreeML (level 0): Proc " << comm_.MyPID() <<" Coloring time is " << (t1-t0) << " sec\n";
+     cout << "ML (level 0): Proc " << comm_.MyPID() <<" Coloring time is " << (t1-t0) << " sec\n";
      fflush(stdout);
   }
   
   // construct the FiniteDifferenceColoring-Matrix
   if (ml_printlevel_>0 && comm_.MyPID()==0)
   {
-     cout << "matrixfreeML (level 0): Entering Construction FD-Operator on level 0\n";
+     cout << "ML (level 0): Entering Construction FD-Operator on level 0\n";
      fflush(stdout);
   }
 
@@ -1127,8 +1128,8 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
   t1 = GetClock();
   if (ml_printlevel_>0 && comm_.MyPID()==0)
   {
-     cout << "matrixfreeML (level 0): colored Finite Differencing time :" << (t1-t0) << " sec\n";
-     cout << "matrixfreeML (level 0): colored Finite Differencing number of calls to computeF : " 
+     cout << "ML (level 0): colored Finite Differencing time :" << (t1-t0) << " sec\n";
+     cout << "ML (level 0): colored Finite Differencing number of calls to computeF : " 
           << interface_.getnumcallscomputeF() << endl;
      fflush(stdout);
   }
@@ -1140,6 +1141,7 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
   A->FillComplete();
 
   // tidy up
+  delete cgraph;           cgraph = 0;
   delete FD;               FD = 0;
   delete colorMap;         colorMap = 0;
   delete colorMapIndex;    colorMapIndex = 0;
@@ -1182,6 +1184,8 @@ bool ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal(Epetra_CrsMatrix** A, int l
   {
      if (abs(diag[i])<1.0e-9)
      {
+        if (ml_printlevel_>9)
+          cout << "found zero diagonal entry in row " << i << ", fixing..." << endl;
         //check whether there are nonzero off-diagonal entries in that row
         int numentries;
         double* values;

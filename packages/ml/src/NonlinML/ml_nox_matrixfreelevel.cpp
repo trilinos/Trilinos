@@ -158,7 +158,7 @@ comm_(comm)
       fflush(stdout);
    }
    double t0 = GetClock();
-   colorMap_ = ML_NOX::ML_Nox_collapsedcoloring(graph_,bsize_,isDiagonalOnly,ml_printlevel_);
+   colorMap_ = ML_NOX::ML_Nox_collapsedcoloring(graph_,graph_,bsize_,isDiagonalOnly,ml_printlevel_);
    if (!colorMap_) colorMap_ = ML_NOX::ML_Nox_standardcoloring(graph_,isDiagonalOnly);
    colorMapIndex_ = new EpetraExt::CrsGraph_MapColoringIndex(*colorMap_);
    colorcolumns_  = &(*colorMapIndex_)(*graph_);
@@ -359,7 +359,7 @@ bool ML_NOX::ML_Nox_MatrixfreeLevel::recreateLevel(int level, int nlevel, int pl
       if (colorMapIndex_) delete colorMapIndex_; colorMapIndex_ = 0;
       if (colorcolumns_) delete colorcolumns_; colorcolumns_ = 0;
 
-      colorMap_ = ML_NOX::ML_Nox_collapsedcoloring(graph_,bsize_,isDiagonalOnly_,ml_printlevel_);
+      colorMap_ = ML_NOX::ML_Nox_collapsedcoloring(graph_,graph_,bsize_,isDiagonalOnly_,ml_printlevel_);
       if (!colorMap_) colorMap_ = ML_NOX::ML_Nox_standardcoloring(graph_,isDiagonalOnly_);
       colorMapIndex_ = new EpetraExt::CrsGraph_MapColoringIndex(*colorMap_);
       colorcolumns_  = &(*colorMapIndex_)(*graph_);

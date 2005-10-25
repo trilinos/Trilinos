@@ -95,25 +95,26 @@ Epetra_CrsGraph* ML_NOX::deepcopy_graph(const Epetra_CrsGraph* oldgraph)
  |  - the blocksize is constant everywhere                              |
  |  - degrees of freedom (rows) on a node(block) a contigous            |
  *----------------------------------------------------------------------*/
-Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph, 
+Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* cgraph,
+                                                     Epetra_CrsGraph* graph, 
                                                      const int bsize, 
                                                      bool diagonalonly,
 						     int printlevel)
 {
   // create a new rangemap for the amalgamated graph
-  int new_nummyrows     = graph->NumMyRows();
-  int new_numglobalrows = graph->NumGlobalRows();
+  int new_nummyrows     = cgraph->NumMyRows();
+  int new_numglobalrows = cgraph->NumGlobalRows();
   int lok=1;
   int gok=1;
-  if (new_nummyrows % bsize != 0 || new_numglobalrows % bsize != 0)
+  if (new_nummyrows % bsize != 0 || new_numglobalrows % bsize != 0) 
   {
     lok = 0;
     if (printlevel>5)
     cout << "**WRN**: ML_NOX::ML_Nox_collapsedcoloring:\n"
-         << "**WRN**: cannot amalgamate graph\n"
+         << "**WRN**: cannot amalgamate cgraph\n"
          << "**WRN**: numlocalrows%bsize= " << (new_nummyrows % bsize) << " numglobalrows%bsize= " << (new_numglobalrows % bsize) << endl;
   }
-  graph->Comm().MinAll(&lok,&gok,1);
+  cgraph->Comm().MinAll(&lok,&gok,1);
   if (!gok)
     return NULL;
 
@@ -127,14 +128,14 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
   // calculate which global rows are mine
   lok=1;
   gok=1;
-  for (int i=0; i<graph->RowMap().NumMyElements(); ++i)
+  for (int i=0; i<cgraph->RowMap().NumMyElements(); ++i)
   {
-    int old_grow = graph->RowMap().GID(i);
+    int old_grow = cgraph->RowMap().GID(i);
     if (old_grow<0)
     {
       if (printlevel>5)
       cout << "**WRN**: ML_NOX::ML_Nox_collapsedcoloring:\n"
-           << "**WRN**: graph->RowMap().GID() returned " <<  old_grow << endl
+           << "**WRN**: cgraph->RowMap().GID() returned " <<  old_grow << endl
            << "**WRN**: switching to none-collapsed coloring\n"
            << "**WRN**: file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       lok=0;
@@ -147,7 +148,7 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
     myRows[counter] = new_grow;
     ++counter;
   }
-  graph->Comm().MinAll(&lok,&gok,1);
+  cgraph->Comm().MinAll(&lok,&gok,1);
   if (!gok)
   {
     if (myRows) delete[] myRows;
@@ -162,7 +163,7 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
          << "**WRN**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; 
     lok=0;
   }
-  graph->Comm().MinAll(&lok,&gok,1);
+  cgraph->Comm().MinAll(&lok,&gok,1);
   if (!gok)
   {
     if (myRows) delete [] myRows;
@@ -170,10 +171,10 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
   }
   
   // create the BlockMap
-  Epetra_BlockMap newrowmap(new_numglobalrows,new_nummyrows,myRows,1,0,graph->Comm());
+  Epetra_BlockMap newrowmap(new_numglobalrows,new_nummyrows,myRows,1,0,cgraph->Comm());
   delete [] myRows; myRows = NULL;
 
-  // create the nodal graph
+  // create the nodal cgraph
   Epetra_CrsGraph nodegraph(Copy,newrowmap,27);
   
   // loop over NumMyElements in old graph and insert every bsize row in
@@ -183,14 +184,14 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
   
   lok=1;
   gok=1;
-  for (int i=0; i<graph->RowMap().NumMyElements(); ++i)
+  for (int i=0; i<cgraph->RowMap().NumMyElements(); ++i)
   {
-    int old_grow = graph->RowMap().GID(i);
+    int old_grow = cgraph->RowMap().GID(i);
     if (old_grow<0)
     {
       if (printlevel>5)
       cout << "**WRN**: ML_NOX::ML_Nox_collapsedcoloring:\n"
-           << "**WRN**: graph->RowMap().GID() returned " <<  old_grow << endl
+           << "**WRN**: cgraph->RowMap().GID() returned " <<  old_grow << endl
            << "**WRN**: switching to none-collapsed coloring\n"
            << "**WRN**: file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       lok=0;
@@ -201,15 +202,15 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
       break;  
     int new_grow = old_grow/bsize;
       
-    // extract the row from the old graph
+    // extract the row from the old cgraph
     int old_numindices;
     int* old_colindices;
-    int err = graph->ExtractMyRowView(i,old_numindices,old_colindices);
+    int err = cgraph->ExtractMyRowView(i,old_numindices,old_colindices);
     if (err)
     {
       if (printlevel>5)
       cout << "**WRN**: ML_NOX::ML_Nox_collapsedcoloring:\n"
-           << "**WRN**: graph->ExtractMyRowView returned " <<  err << endl
+           << "**WRN**: cgraph->ExtractMyRowView returned " <<  err << endl
            << "**WRN**: switching to none-collapsed coloring\n"
            << "**WRN**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; 
       lok=0;
@@ -217,7 +218,7 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
     if (lok==0)
       break;
     
-    // check whether the allocated row for the new graph is long enough
+    // check whether the allocated row for the new cgraph is long enough
     if (old_numindices>new_length)
     {
       new_length = old_numindices;
@@ -225,16 +226,16 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
       new_gindices = new int[new_length];
     }
     
-    // calculate the row in global numbering for the new graph
+    // calculate the row in global numbering for the new cgraph
     int new_numindices=0;
     for (int j=0; j<old_numindices; ++j)
     {
-      int old_gcol = graph->ColMap().GID(old_colindices[j]);
+      int old_gcol = cgraph->ColMap().GID(old_colindices[j]);
       if (old_gcol<0)
       {
         if (printlevel>5)
         cout << "**WRN**: ML_NOX::ML_Nox_collapsedcoloring:\n"
-             << "**WRN**: graph->ColMap().GID(old_colindices[j]) returned " <<  old_gcol << endl
+             << "**WRN**: cgraph->ColMap().GID(old_colindices[j]) returned " <<  old_gcol << endl
              << "**WRN**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; 
       }
       if (lok==0)
@@ -249,7 +250,7 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
     
     // insert the row in the new graph
     err = nodegraph.InsertGlobalIndices(new_grow,new_numindices,new_gindices);
-    if (err)
+    if (err!=0 && err !=1)
     {
       if (printlevel>5)
       cout << "**WRN**: ML_NOX::ML_Nox_collapsedcoloring:\n"
@@ -262,7 +263,7 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
       break;
   }
   // catch all errors that may have occurred in this loop
-  graph->Comm().MinAll(&lok,&gok,1);
+  cgraph->Comm().MinAll(&lok,&gok,1);
   if (!gok)
   {
     if (myRows) delete [] myRows;
@@ -289,26 +290,37 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
   int  node_ncolors = node_colorMap->NumColors();
   int* node_colors  = node_colorMap->ElementColors();
   int* node_loc     = node_colorMap->ListOfColors();
-  int* col_colors   = new int[graph->ColMap().NumMyElements()];
-  int j=0;
+  int* col_colors   = new int[cgraph->ColMap().NumMyElements()];
 
   // node_ncolors is a local value, we need the global highest color number here
   int lmax = 0;
   int gmax = 0;
   for (int i=0; i<node_ncolors; ++i)
     if (lmax<node_loc[i]) lmax = node_loc[i];
-  graph->Comm().MaxAll(&lmax,&gmax,1);
+  cgraph->Comm().MaxAll(&lmax,&gmax,1);
+
+#if 0
+  for (int i=0; i<nodegraph.ColMap().NumMyElements(); ++i)
+    cout << "node_colors[ " << i << "] " << node_colors[i] << endl;
+  
+  cout << "nodegraph.ColMap().NumMyElements() " << nodegraph.ColMap().NumMyElements() << endl;
+  cout << "cgraph->ColMap().NumMyElements()    " << cgraph->ColMap().NumMyElements() << endl;
+#endif
 
   // expand the colors to point wise columns
+  int j=0;
   for (int i=0; i<nodegraph.ColMap().NumMyElements(); ++i)
     for (int k=0; k<bsize; ++k)
     {
        col_colors[j] = node_colors[i]+k*gmax;
+#if 0
+       cout << "col_colors[ " << j << "] " << col_colors[j] << endl;
+#endif
        ++j;
     }
   lok=1;
   gok=1;
-  if (j!=graph->ColMap().NumMyElements())
+  if (j!=cgraph->ColMap().NumMyElements())
   {
     if (printlevel>5)
     cout << "**ERR**: ML_NOX::ML_Nox_collapsedcoloring:\n"
@@ -317,7 +329,7 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* graph,
          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     lok=0;
   }
-  graph->Comm().MinAll(&lok,&gok,1);
+  cgraph->Comm().MinAll(&lok,&gok,1);
   if (!gok)
   {
     if (myRows) delete [] myRows;

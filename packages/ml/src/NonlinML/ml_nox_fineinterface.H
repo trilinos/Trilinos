@@ -159,7 +159,8 @@ public:
       the fine level problem from the application.
    */
   virtual const Epetra_CrsGraph* getGraph() = 0;
-
+  virtual const Epetra_CrsGraph* getModifiedGraph() = 0;
+  
   //! Return the current solution from the application.
   /*! Return the current solution from the application.
       The ML_Nox_Preconditioner uses this method to get the current solution vector of
