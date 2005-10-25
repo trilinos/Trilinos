@@ -14,7 +14,15 @@ endif
 EXEEXT = .exe
 TEST = Test_KLU
 
+if HAVE_AMESOS_GALERI
+if HAVE_AMESOS_KLU
 noinst_PROGRAMS = $(TEST)
+else
+noinst_PROGRAMS = 
+endif
+else
+noinst_PROGRAMS = 
+endif
 
 Test_KLU_SOURCES      = $(srcdir)/cxx_main.cpp
 Test_KLU_DEPENDENCIES = $(top_builddir)/src/libamesos.a

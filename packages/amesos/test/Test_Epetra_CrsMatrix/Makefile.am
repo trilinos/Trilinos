@@ -14,7 +14,11 @@ endif
 EXEEXT = .exe
 TEST = Test_Epetra_CrsMatrix
 
+if HAVE_AMESOS_GALERI
 noinst_PROGRAMS = $(TEST)
+else
+noinst_PROGRAMS = 
+endif
 
 Test_Epetra_CrsMatrix_SOURCES      = $(srcdir)/cxx_main.cpp
 Test_Epetra_CrsMatrix_DEPENDENCIES = $(top_builddir)/src/libamesos.a

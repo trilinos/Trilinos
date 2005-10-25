@@ -1,5 +1,4 @@
 #include "Amesos_ConfigDefs.h"
-#ifdef HAVE_AMESOS_TRIUTILS
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -11,9 +10,11 @@
 #include "Epetra_CrsMatrix.h"
 #include "Amesos.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 #include <vector>
-using namespace Trilinos_Util;
+
+using namespace Galeri;
 
 // ====================================================================== 
 // this function tests two things:
@@ -110,15 +111,16 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", 64);
-  Gallery.Set("num_vectors", 2);
+  Teuchos::ParameterList GaleriList;
+  GaleriList.set("nx", 10);
+  GaleriList.set("ny", 10 * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
 
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
-  Epetra_RowMatrix* A = Problem->GetMatrix();
-
-  Epetra_MultiVector* LHS = Problem->GetLHS();
-  Epetra_MultiVector* RHS = Problem->GetRHS();
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
+  Epetra_MultiVector LHS(*Map, 3);
+  Epetra_MultiVector RHS(*Map, 3);
 
   Amesos Factory;  
   
@@ -136,7 +138,7 @@ int main(int argc, char *argv[])
 
   bool res;
 
-  // If a given test fails, than the code stops, bue to the assert()
+  // If a given test fails, than the code stops, due to the assert()
   // statement.
   for (unsigned int i = 0 ; i < SolverType.size() ; ++i) 
   {
@@ -148,7 +150,7 @@ int main(int argc, char *argv[])
 	// solve with matrix
 	Teuchos::ParameterList AmesosList;
 	res = TestAmesos((char*)Solver.c_str(), AmesosList, false, 
-                         A, LHS, RHS);
+                         A, &LHS, &RHS);
         assert (res == true);
       }
       if (1) {
@@ -156,7 +158,7 @@ int main(int argc, char *argv[])
 	if (Solver != "Amesos_Superludist") {// still not implementes
 	  Teuchos::ParameterList AmesosList;
 	  res  = TestAmesos((char*)Solver.c_str(), AmesosList, true, 
-                            A, LHS, RHS);
+                            A, &LHS, &RHS);
           assert (res == true);
 	}
       }
@@ -170,38 +172,11 @@ int main(int argc, char *argv[])
       }
   }
 
+  delete A;
+  delete Map;
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
   return(0); 
 }
-
-#else
-
-// Triutils is not available. Sorry, we have to give up.
-
-#include <stdlib.h>
-#include <stdio.h>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#else
-#endif
-
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-#endif
-
-  puts("Please configure AMESOS with --enable-triutils");
-  puts("to run this example");
-  
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return(0);
-}
-
-#endif
-
-
