@@ -38,11 +38,17 @@
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 
+/* Define if you want to build export makefiles. */
+#undef HAVE_EXPORT_MAKEFILES
+
 /* Define if want to build galeri-examples */
 #undef HAVE_GALERI_EXAMPLES
 
 /* Define if want to build galeri-tests */
 #undef HAVE_GALERI_TESTS
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#undef HAVE_GNUMAKE
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H

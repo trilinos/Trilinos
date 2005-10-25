@@ -157,6 +157,11 @@ TAC_ARG_WITH_AR
 TAC_ARG_CHECK_MPI
 
 # ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
+
+# ------------------------------------------------------------------------
 # Checks for header files - used in Epetra_ConfigDefs.h 
 # ------------------------------------------------------------------------
 
@@ -343,6 +348,7 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
 		Makefile.export
+		Makefile.export.galeri
 		src/Makefile
 		example/Makefile
 		test/Makefile
