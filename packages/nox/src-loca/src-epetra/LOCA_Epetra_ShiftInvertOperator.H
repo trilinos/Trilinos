@@ -77,10 +77,11 @@ namespace LOCA {
     public:
 
       //! Constructor
-      ShiftInvertOperator(const LOCA::Epetra::Group& grp, 
-			  const Epetra_Operator& jac, 
-			  const double& shift, 
-			  bool hasMassMatrix);
+      ShiftInvertOperator(
+		const Teuchos::RefCountPtr<const LOCA::Epetra::Group>& grp, 
+		const Teuchos::RefCountPtr<const Epetra_Operator>& jac, 
+		const double& shift, 
+		bool hasMassMatrix);
 
       //! Destructor
       virtual ~ShiftInvertOperator();
@@ -129,10 +130,10 @@ namespace LOCA {
     protected:  
   
       //! LOCA group
-      const LOCA::Epetra::Group& locagrp; 
+      Teuchos::RefCountPtr<const LOCA::Epetra::Group> locagrp; 
 
       //! Jacobian operator
-      const Epetra_Operator& jacOper;
+      Teuchos::RefCountPtr<const Epetra_Operator> jacOper;
 
       //! Shift value
       const double& shift_;

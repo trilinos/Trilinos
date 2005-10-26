@@ -130,10 +130,11 @@ LOCA::MultiContinuation::ArcLengthGroup::operator=(
     dynamic_cast<const LOCA::MultiContinuation::ArcLengthGroup&>(source);
 }
 
-NOX::Abstract::Group* 
+Teuchos::RefCountPtr<NOX::Abstract::Group>
 LOCA::MultiContinuation::ArcLengthGroup::clone(NOX::CopyType type) const
 {
-  return new LOCA::MultiContinuation::ArcLengthGroup(*this, type);
+  return 
+    Teuchos::rcp(new LOCA::MultiContinuation::ArcLengthGroup(*this, type));
 }
 
 LOCA::MultiContinuation::AbstractStrategy& 
@@ -161,14 +162,14 @@ LOCA::MultiContinuation::ArcLengthGroup::scaleTangent()
 	dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&tangentMultiVec[i]);
       sv = 
 	dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&scaledTangentMultiVec[i]);
-      grpPtr->scaleVector(sv->getXVec());
-      grpPtr->scaleVector(sv->getXVec());
+      grpPtr->scaleVector(*(sv->getXVec()));
+      grpPtr->scaleVector(*(sv->getXVec()));
       
       if (doArcLengthScaling) {
 	
 	// Estimate dpds
 	thetaOld = theta[i];
-	sv->getScalars().scale(thetaOld*thetaOld);
+	sv->getScalars()->scale(thetaOld*thetaOld);
 	dpdsOld = 1.0/sqrt(sv->innerProduct(*v));
 
 	if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
@@ -192,7 +193,7 @@ LOCA::MultiContinuation::ArcLengthGroup::scaleTangent()
 	// Recompute scale factor
 	recalculateScaleFactor(dpdsOld, thetaOld, thetaNew);
 	
-	sv->getScalars().scale(thetaNew*thetaNew / (thetaOld*thetaOld));
+	sv->getScalars()->scale(thetaNew*thetaNew / (thetaOld*thetaOld));
 	
 	// Calculate new dpds using new scale factor
 	dpdsNew = 1.0/sqrt(sv->innerProduct(*v));
@@ -246,7 +247,7 @@ LOCA::MultiContinuation::ArcLengthGroup::computeScaledDotProduct(
   const LOCA::MultiContinuation::ExtendedVector& my = 
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(y);
 
-  double val = grpPtr->computeScaledDotProduct(mx.getXVec(), my.getXVec());
+  double val = grpPtr->computeScaledDotProduct(*mx.getXVec(), *my.getXVec());
   for (int i=0; i<numParams; i++)
     val += theta[i] * theta[i] * mx.getScalar(i) * my.getScalar(i);
 

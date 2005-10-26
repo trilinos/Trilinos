@@ -95,13 +95,13 @@ namespace LOCA {
 	IMPORTANT: For homotopy to work correctly you should not change the starting and stopping parameter values (0.0 and 1.0 respectively) set in the "%Stepper" sublist.
       */
       Group(NOX::Parameter::List& locaSublist,
-	    LOCA::Homotopy::AbstractGroup& g,
+	    const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
 	    double scaleRandom = 1.0,
 	    double scaleInitialGuess = 0.0);
 
       //! Constructor with a user supplied random vector.
       Group(NOX::Parameter::List& locaSublist,
-	    LOCA::Homotopy::AbstractGroup& g,
+	    const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
 	    const NOX::Abstract::Vector& randomVector);
 
       //! Copy constructor.
@@ -126,7 +126,7 @@ namespace LOCA {
       virtual Group& operator=(const Group& source);
      
       //! Cloning function
-      virtual NOX::Abstract::Group* 
+      virtual Teuchos::RefCountPtr<NOX::Abstract::Group> 
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Set the parameter list in the group to p (pVector = p).  
@@ -282,19 +282,19 @@ namespace LOCA {
     protected:
 
       //! Stores the underlying loca group.
-      LOCA::Homotopy::AbstractGroup* grpPtr;   
+      Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup> grpPtr;   
   
       //! Stores the homotopy residual vector, \f$ g \f$.
-      NOX::Abstract::Vector* gVecPtr;
+      Teuchos::RefCountPtr<NOX::Abstract::Vector> gVecPtr;
 
       //! Stores the random Vector, \f$ a \f$.
-      NOX::Abstract::Vector* randomVecPtr;
+      Teuchos::RefCountPtr<NOX::Abstract::Vector> randomVecPtr;
 
       //! Stores the homotopy Newton vector, \f$ \frac{\partial r}{\partial x} \f$.
-      NOX::Abstract::Vector* newtonVecPtr;
+      Teuchos::RefCountPtr<NOX::Abstract::Vector> newtonVecPtr;
 
       //! Stores the homotopy gradient vector if needed, \f$ \frac{\partial r}{\partial x} \f$.
-      NOX::Abstract::Vector* gradVecPtr;
+      Teuchos::RefCountPtr<NOX::Abstract::Vector> gradVecPtr;
 
       //! Is residual vector valid
       bool isValidF;
@@ -323,9 +323,6 @@ namespace LOCA {
       
       //! Contains the string used to identify the homotopy parameter in the ParameterVector object.
       const string conParamLabel;
-
-      //! Tells whether the underlying group was created by the Group.  If so, the destructor should destroy the group.  
-      bool ownsGroup;
 
       //! Tracks whether the LOCA::Homotopy::Group method augmentJacobianForHomotopy is implemented.  If not, the augmentation is applied during the applyJacobian assuming a matrix-free implementation.
       bool augmentJacForHomotopyNotImplemented;

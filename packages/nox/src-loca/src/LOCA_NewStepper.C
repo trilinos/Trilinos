@@ -70,8 +70,8 @@ LOCA::NewStepper::NewStepper(
   paramListPtr(),
   stepperList(),
   solverPtr(),
-  curPredictorPtr(NULL),
-  prevPredictorPtr(NULL),
+  curPredictorPtr(),
+  prevPredictorPtr(),
   stepSizeManagerPtr(NULL),
   conParamName(),
   conParamIDs(1)
@@ -101,8 +101,8 @@ LOCA::NewStepper::NewStepper(
   paramListPtr(),
   stepperList(),
   solverPtr(),
-  curPredictorPtr(NULL),
-  prevPredictorPtr(NULL),
+  curPredictorPtr(),
+  prevPredictorPtr(),
   stepSizeManagerPtr(NULL),
   conParamName(),
   conParamIDs(1)
@@ -114,8 +114,6 @@ LOCA::NewStepper::NewStepper(
 LOCA::NewStepper::~NewStepper()
 {
   delete stepSizeManagerPtr;
-  delete curPredictorPtr;
-  delete prevPredictorPtr;
 }
 
 bool
@@ -123,8 +121,6 @@ LOCA::NewStepper::reset(const Teuchos::RefCountPtr<LOCA::MultiContinuation::Abst
 			const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
 			const Teuchos::RefCountPtr<NOX::Parameter::List>& p)
 {
-  delete curPredictorPtr;
-  delete prevPredictorPtr;
   delete stepSizeManagerPtr;
 
   paramListPtr = p;
@@ -317,9 +313,9 @@ LOCA::NewStepper::start() {
   // Set the initial step size
   curGroupPtr->setStepSize(stepSize);
 
-  prevGroupPtr = Teuchos::rcp(
-     dynamic_cast<LOCA::MultiContinuation::AbstractStrategy*>(
-	curGroupPtr->clone()));
+  prevGroupPtr = 
+    Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::AbstractStrategy>(
+	curGroupPtr->clone());
 
   // If nonlinear solve failed, return (this must be done after continuation
   // groups are created so Stepper::getSolutionGroup() functions correctly.
@@ -347,9 +343,9 @@ LOCA::NewStepper::start() {
     curGroupPtr->computePredictor();
   LOCA::ErrorCheck::checkReturnType(predictorStatus, callingFunction);
   curPredictorPtr =
-    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(curGroupPtr->getPredictorTangent()[0].clone(NOX::DeepCopy));
+    Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(curGroupPtr->getPredictorTangent()[0].clone(NOX::DeepCopy));
   prevPredictorPtr =
-    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(curGroupPtr->getPredictorTangent()[0].clone(NOX::ShapeCopy));
+    Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(curGroupPtr->getPredictorTangent()[0].clone(NOX::ShapeCopy));
 
   // Create new solver using new continuation groups and combo status test
   solverPtr = Teuchos::rcp(new NOX::Solver::Manager(

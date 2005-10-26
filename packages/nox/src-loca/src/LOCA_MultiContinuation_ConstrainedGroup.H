@@ -147,7 +147,7 @@ namespace LOCA {
       operator=(const NOX::Abstract::Group& source);
 
       //! Clone function
-      virtual NOX::Abstract::Group* 
+      virtual Teuchos::RefCountPtr<NOX::Abstract::Group>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Set the solution vector to y.
@@ -295,18 +295,6 @@ namespace LOCA {
       //! Returns the dimension of the project to draw array
       virtual int projectToDrawDimension() const;
 
-      //@}
-
-      /*! 
-       * @name Implementation of LOCA::Continuation::AbstractGroup
-       * virtual methods 
-       */
-      //@{
-
-      //! Assignment operator
-      virtual LOCA::Continuation::AbstractGroup& 
-      operator=(const LOCA::Continuation::AbstractGroup& source);
-
       //! Set the parameter vector in the group to p (pVector = p).  
       virtual void setParams(const ParameterVector& p);
 
@@ -324,13 +312,6 @@ namespace LOCA {
 
       //! Return copy of parameter indexed by (string) paramID
       virtual double getParam(string paramID) const;
-
-      /*! 
-       * Compute \f$\partial F/\partial p\f$ where \f$p\f$ is the 
-       * parameter indexed by paramID.
-       */
-      virtual NOX::Abstract::Group::ReturnType
-      computeDfDp(int paramID, NOX::Abstract::Vector& result);
 
       //! Compute a scaled dot product
       virtual double

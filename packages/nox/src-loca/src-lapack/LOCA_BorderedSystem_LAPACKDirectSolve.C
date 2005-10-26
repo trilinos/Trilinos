@@ -291,7 +291,7 @@ LOCA::BorderedSystem::LAPACKDirectSolve::applyInverse(
   else 
     numColsRHS = G->numCols();
 
-  const NOX::Abstract::MultiVector *FF;
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> FF;
   if (!isZeroF && isContiguous) {
     // create subindexing vectors
     vector<int> indexF(numColsRHS);
@@ -302,9 +302,9 @@ LOCA::BorderedSystem::LAPACKDirectSolve::applyInverse(
     FF = F->subView(indexF);
   }
   else if (!isZeroF)
-    FF = F;
+    FF = Teuchos::rcp(F, false);
   else
-    FF = NULL;
+    FF = Teuchos::null;
     
   // Concatenate F & G into a single matrix
   NOX::LAPACK::Matrix RHS(N,numColsRHS);
@@ -344,9 +344,6 @@ LOCA::BorderedSystem::LAPACKDirectSolve::applyInverse(
     for (int i=0; i<m; i++)
       Y(i,j) = RHS(n+i,j);
   }
-
-  if (!isZeroF && isContiguous)
-    delete FF;
 
   if (info != 0)
     return NOX::Abstract::Group::Failed;

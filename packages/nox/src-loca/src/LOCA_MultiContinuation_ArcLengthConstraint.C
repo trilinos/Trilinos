@@ -149,9 +149,8 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeConstraints()
     arcLengthGroup->getPredictorTangent();
 
   // Compute secant vector
-  LOCA::MultiContinuation::ExtendedMultiVector* secant = 
-    dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector*>(tangent.
-								clone(1));
+  Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> secant = 
+    Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(tangent.clone(1));
   (*secant)[0].update(1.0, arcLengthGroup->getX(), 
 		      -1.0, arcLengthGroup->getPrevX(), 0.0);
 
@@ -160,8 +159,6 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeConstraints()
   for (int i=0; i<arcLengthGroup->getNumParams(); i++)
     constraints(i,0) -= arcLengthGroup->getStepSize(i) * 
       scaledTangent[i].innerProduct(tangent[i]);
-
-  delete secant;
 
   isValidConstraints = true;
 
@@ -249,7 +246,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::getDX() const
   const LOCA::MultiContinuation::ExtendedMultiVector& tangent = 
     arcLengthGroup->getScaledPredictorTangent();
 
-  return &tangent.getXMultiVec();
+  return tangent.getXMultiVec().get();
 }
 
 bool

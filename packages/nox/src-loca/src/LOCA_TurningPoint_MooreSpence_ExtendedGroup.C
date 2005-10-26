@@ -105,8 +105,8 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
 						 1.0e-3);
 
   lengthMultiVec = 
-    Teuchos::rcp(lenVecPtr->createMultiVector(1, NOX::DeepCopy));
-  xMultiVec.getColumn(0).getNullVec() = *nullVecPtr;
+    lenVecPtr->createMultiVector(1, NOX::DeepCopy);
+  *(xMultiVec.getColumn(0)->getNullVec()) = *nullVecPtr;
 
   // Instantiate solver strategy
   solverStrategy = 
@@ -126,11 +126,11 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
   : globalData(source.globalData),
     parsedParams(source.parsedParams),
     turningPointParams(source.turningPointParams),
-    grpPtr(Teuchos::rcp(dynamic_cast<LOCA::TurningPoint::MooreSpence::AbstractGroup*>(source.grpPtr->clone(type)))),
+    grpPtr(Teuchos::rcp_dynamic_cast<LOCA::TurningPoint::MooreSpence::AbstractGroup>(source.grpPtr->clone(type))),
     xMultiVec(source.xMultiVec, type),
     fMultiVec(source.fMultiVec, type),
     newtonMultiVec(source.newtonMultiVec, type),
-    lengthMultiVec(Teuchos::rcp(source.lengthMultiVec->clone(type))),
+    lengthMultiVec(source.lengthMultiVec->clone(type)),
     xVec(),
     fVec(),
     ffMultiVec(),
@@ -211,11 +211,13 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::operator=(
    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedGroup&>(source);
 }
 
-NOX::Abstract::Group*
+Teuchos::RefCountPtr<NOX::Abstract::Group>
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::clone(
 						    NOX::CopyType type) const 
 {
-  return new LOCA::TurningPoint::MooreSpence::ExtendedGroup(*this, type);
+  return 
+    Teuchos::rcp(new LOCA::TurningPoint::MooreSpence::ExtendedGroup(*this, 
+								    type));
 }
 
 void
@@ -224,7 +226,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::setX(
 {
   const LOCA::TurningPoint::MooreSpence::ExtendedVector& yy = 
     dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedVector&>(y);
-  grpPtr->setX( yy.getXVec() );
+  grpPtr->setX( *yy.getXVec() );
   *xVec = y;
   setBifParam(xVec->getBifParam());
 
@@ -244,7 +246,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeX(
   const LOCA::TurningPoint::MooreSpence::ExtendedVector& dd = 
     dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedVector&>(d);
 
-  grpPtr->computeX(*(gg.grpPtr), dd.getXVec(), step);
+  grpPtr->computeX(*(gg.grpPtr), *dd.getXVec(), step);
   xVec->update(1.0, gg.getX(), step, dd, 0.0);
   setBifParam(xVec->getBifParam());
 
@@ -271,7 +273,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeF()
       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 						   callingFunction);
   }
-  fVec->getXVec() = grpPtr->getF();
+  *(fVec->getXVec()) = grpPtr->getF();
   
   // Compute underlying Jacobian
   if (!grpPtr->isJacobian()) {
@@ -282,14 +284,14 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeF()
   }
 
   // Compute J*n
-  status = grpPtr->applyJacobian(xVec->getNullVec(), 
-				 fVec->getNullVec());
+  status = grpPtr->applyJacobian(*(xVec->getNullVec()), 
+				 *(fVec->getNullVec()));
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
   
   // Compute phi^T*n
-  fVec->getBifParam() = lTransNorm(xVec->getNullVec()) - 1.0;
+  fVec->getBifParam() = lTransNorm(*(xVec->getNullVec())) - 1.0;
   
   isValidF = true;
 
@@ -309,7 +311,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeJacobian()
 
   // Compute underlying df/dp (may invalidate underlying data)
   status = grpPtr->computeDfDpMulti(bifParamID, 
-				    fMultiVec.getXMultiVec(), 
+				    *fMultiVec.getXMultiVec(), 
 				    isValidF);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
@@ -317,8 +319,8 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeJacobian()
 
   // Compute underlying dJn/dp (may invalidate underlying data)
   status = grpPtr->computeDJnDpMulti(bifParamID,
-				     xVec->getNullVec(), 
-				     fMultiVec.getNullMultiVec(), 
+				     *(xVec->getNullVec()), 
+				     *fMultiVec.getNullMultiVec(), 
 				     isValidF);
 
   finalStatus = 
@@ -328,10 +330,10 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeJacobian()
   solverStrategy->setBlocks(
 		  grpPtr, 
 		  Teuchos::rcp(this, false),
-		  Teuchos::rcp(&(xVec->getNullVec()), false), 
-		  Teuchos::rcp(&(fVec->getNullVec()), false),
-		  Teuchos::rcp(&(fMultiVec.getColumn(1).getXVec()), false), 
-		  Teuchos::rcp(&(fMultiVec.getColumn(1).getNullVec()), false));
+		  xVec->getNullVec(), 
+		  fVec->getNullVec(),
+		  fMultiVec.getColumn(1)->getXVec(), 
+		  fMultiVec.getColumn(1)->getNullVec());
 
   isValidJacobian = true;
 
@@ -360,16 +362,18 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeNewton(
   if (!isF()) {
     status = computeF();
     finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
   
   // Make sure Jacobian is valid
   if (!isJacobian()) {
     status = computeJacobian();
     finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
 
   // zero out newton vec -- used as initial guess for some linear solvers
@@ -379,7 +383,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeNewton(
   status = solverStrategy->solve(params, fMultiVec, newtonMultiVec, true);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+							   callingFunction);
 
   newtonVec->scale(-1.0);
 
@@ -394,9 +398,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobian(
 					  NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
-  NOX::Abstract::MultiVector* mv_input = 
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
     input.createMultiVector(1, NOX::DeepCopy);
-  NOX::Abstract::MultiVector* mv_result = 
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_result = 
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobian
@@ -405,10 +409,6 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobian(
 
   // Copy result
   result = (*mv_result)[0];
-
-  // delete temporary multivectors
-  delete mv_input;
-  delete mv_result;
 
   return status;
 }
@@ -419,9 +419,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTranspose(
 					  NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
-  NOX::Abstract::MultiVector* mv_input = 
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
     input.createMultiVector(1, NOX::DeepCopy);
-  NOX::Abstract::MultiVector* mv_result = 
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_result = 
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobianTranspose
@@ -430,10 +430,6 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTranspose(
 
   // Copy result
   result = (*mv_result)[0];
-
-  // delete temporary multivectors
-  delete mv_input;
-  delete mv_result;
 
   return status;
 }
@@ -445,9 +441,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianInverse(
 					  NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
-  NOX::Abstract::MultiVector* mv_input = 
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
     input.createMultiVector(1, NOX::DeepCopy);
-  NOX::Abstract::MultiVector* mv_result = 
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_result = 
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobianInverse
@@ -456,10 +452,6 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianInverse(
 
   // Copy result
   result = (*mv_result)[0];
-
-  // delete temporary multivectors
-  delete mv_input;
-  delete mv_result;
 
   return status;
 }
@@ -486,62 +478,69 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
     dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(result);
 
   // Get constant references to input vector components
-  const NOX::Abstract::MultiVector& input_x = tp_input.getXMultiVec();
-  const NOX::Abstract::MultiVector& input_null = tp_input.getNullMultiVec();
-  NOX::Abstract::MultiVector::DenseMatrix input_param = 
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_x = 
+    tp_input.getXMultiVec();
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_null = 
+    tp_input.getNullMultiVec();
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_param = 
     tp_input.getScalars();
 
   // Get non-constant references to result vector components
-  NOX::Abstract::MultiVector& result_x = tp_result.getXMultiVec();
-  NOX::Abstract::MultiVector& result_null = tp_result.getNullMultiVec();
-  NOX::Abstract::MultiVector::DenseMatrix result_param = 
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x = 
+    tp_result.getXMultiVec();
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_null = 
+    tp_result.getNullMultiVec();
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
     tp_result.getScalars();
 
   // Temporary vector
-  NOX::Abstract::MultiVector *tmp = input_null.clone(NOX::ShapeCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp = 
+    input_null->clone(NOX::ShapeCopy);
 
   // verify underlying Jacobian is valid
   if (!grpPtr->isJacobian()) {
     status = grpPtr->computeJacobian();
     finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
 
   // compute J*x
-  status = grpPtr->applyJacobianMultiVector(input_x, result_x);
+  status = grpPtr->applyJacobianMultiVector(*input_x, *result_x);
   finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
 
   // compute J*x + p*dR/dp
-  result_x.update(Teuchos::NO_TRANS, 1.0, dfdpMultiVec->getXMultiVec(), 
-		  input_param);
+  result_x->update(Teuchos::NO_TRANS, 1.0, *(dfdpMultiVec->getXMultiVec()), 
+		   *input_param);
 
   // compute J*y
-  status = grpPtr->applyJacobianMultiVector(input_null, result_null);
+  status = grpPtr->applyJacobianMultiVector(*input_null, *result_null);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+							   callingFunction);
 
   // compute J*y + p*dJy/dp
-  result_null.update(Teuchos::NO_TRANS, 1.0, dfdpMultiVec->getNullMultiVec(), 
-		     input_param);
+  result_null->update(Teuchos::NO_TRANS, 1.0, 
+		      *(dfdpMultiVec->getNullMultiVec()), 
+		      *input_param);
 
   // compute (dJy/dx)*x
-  status = grpPtr->computeDJnDxaMulti(xVec->getNullVec(), fVec->getNullVec(),
-				      input_x, *tmp);
+  status = grpPtr->computeDJnDxaMulti(*(xVec->getNullVec()), 
+				      *(fVec->getNullVec()),
+				      *input_x, *tmp);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+							   callingFunction);
   
   // compute (dJy/dx)*x + J*y + p*dJy/dp
-  result_null.update(1.0, *tmp, 1.0);
+  result_null->update(1.0, *tmp, 1.0);
 
   // compute l^T*y
-  lTransNorm(input_null, result_param);
-
-  delete tmp;
+  lTransNorm(*input_null, *result_param);
 
   return finalStatus;
 }
@@ -701,22 +700,22 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeDfDpMulti(
     dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(dfdp);
 
   // Compute df/dp
-  status = grpPtr->computeDfDpMulti(paramIDs, tp_dfdp.getXMultiVec(),
+  status = grpPtr->computeDfDpMulti(paramIDs, *tp_dfdp.getXMultiVec(),
 				    isValid_F);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+							   callingFunction);
 
   // Compute d(Jn)/dp
-  status = grpPtr->computeDJnDpMulti(paramIDs, xVec->getNullVec(),
-				     tp_dfdp.getNullMultiVec(), isValid_F);
+  status = grpPtr->computeDJnDpMulti(paramIDs, *(xVec->getNullVec()),
+				     *tp_dfdp.getNullMultiVec(), isValid_F);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+							   callingFunction);
 
   // Set parameter components
   if (!isValid_F)
-    tp_dfdp.getScalar(0,0) = lTransNorm(xVec->getNullVec());
+    tp_dfdp.getScalar(0,0) = lTransNorm(*(xVec->getNullVec()));
   for (int i=0; i<dfdp.numVectors()-1; i++)
     tp_dfdp.getScalar(0,i+1) = 0.0;
 
@@ -731,7 +730,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::projectToDraw(
   const LOCA::TurningPoint::MooreSpence::ExtendedVector& mx = 
     dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedVector&>(x);
 
-  grpPtr->projectToDraw(mx.getXVec(), px);
+  grpPtr->projectToDraw(*(mx.getXVec()), px);
   px[grpPtr->projectToDrawDimension()] = mx.getBifParam();
 }
 
@@ -739,14 +738,6 @@ int
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::projectToDrawDimension() const
 {
   return grpPtr->projectToDrawDimension() + 1;
-}
-
-LOCA::Continuation::AbstractGroup&
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::operator=(
-			const LOCA::Continuation::AbstractGroup& source)
-{
-  return *this = 
-   dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedGroup&>(source);
 }
 
 void
@@ -800,23 +791,6 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::getParam(string paramID) const
   return grpPtr->getParam(paramID);
 }
 
-NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeDfDp(int paramID, 
-					      NOX::Abstract::Vector& result)
-{
-  vector<int> paramIDs(1);
-  paramIDs[0] = paramID;
-  NOX::Abstract::MultiVector *dfdp = result.createMultiVector(2);
-  if (isValidF)
-    (*dfdp)[0] = *fVec;
-  NOX::Abstract::Group::ReturnType status = computeDfDpMulti(paramIDs, *dfdp,
-							     isValidF);
-  result = (*dfdp)[1];
-  delete dfdp;
-
-  return status;
-}
-
 void
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution(
 						  const double conParam) const 
@@ -837,7 +811,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution(
     cout << "\tPrinting Null Vector for bif param = " 
 	 << LOCA::Utils::sci(getBifParam()) << endl;
   }
-  grpPtr->printSolution(xVec->getNullVec(), xVec->getBifParam());
+  grpPtr->printSolution(*(xVec->getNullVec()), xVec->getBifParam());
 }
 
 void
@@ -859,12 +833,12 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution(
     cout << "\tPrinting Solution Vector for conParam = " 
 	 << LOCA::Utils::sci(conParam) << endl;
   }
-  grpPtr->printSolution(tp_x.getXVec(), conParam);
+  grpPtr->printSolution(*tp_x.getXVec(), conParam);
   if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
     cout << "\tPrinting Null Vector for bif param = " 
 	 << LOCA::Utils::sci(tp_x.getBifParam()) << endl;
   }
-  grpPtr->printSolution(tp_x.getNullVec(), tp_x.getBifParam());
+  grpPtr->printSolution(*tp_x.getNullVec(), tp_x.getBifParam());
 }
 
 double
@@ -905,14 +879,14 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::setupViews()
   index_f[0] = 0;
   index_dfdp[0] = 1;
   
-  xVec = Teuchos::rcp(dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedVector*>(&xMultiVec[0]), false);
-  fVec = Teuchos::rcp(dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedVector*>(&fMultiVec[0]), false);
-  newtonVec = Teuchos::rcp(dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedVector*>(&newtonMultiVec[0]), false);
-  lengthVec = Teuchos::rcp(&(*lengthMultiVec)[0], false);
+  xVec = xMultiVec.getColumn(0);
+  fVec = fMultiVec.getColumn(0);
+  newtonVec = newtonMultiVec.getColumn(0);
+  lengthVec = Teuchos::rcp(&(*lengthMultiVec)[0],false);
 
-  ffMultiVec = Teuchos::rcp(dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector*>(fMultiVec.subView(index_f)));
+  ffMultiVec = Teuchos::rcp_dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector>(fMultiVec.subView(index_f),true);
 
-  dfdpMultiVec = Teuchos::rcp(dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector*>(fMultiVec.subView(index_dfdp)));
+  dfdpMultiVec = Teuchos::rcp_dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector>(fMultiVec.subView(index_dfdp),true);
 
 }
 
@@ -923,7 +897,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(bool perturbSoln,
   xVec->getBifParam() = getBifParam();
 
   // Rescale length vector so that the normalization condition is met
-  double lVecDotNullVec = lTransNorm(xVec->getNullVec());
+  double lVecDotNullVec = lTransNorm(*(xVec->getNullVec()));
 
   if (lVecDotNullVec == 0.0) {
     globalData->locaErrorCheck->throwError(
@@ -934,19 +908,19 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(bool perturbSoln,
     cout << "\tIn LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(), scaling null vector by:" 
 	 << LOCA::Utils::sci(1.0 / lVecDotNullVec) << endl;
   }
-  xVec->getNullVec().scale(1.0/lVecDotNullVec);
+  xVec->getNullVec()->scale(1.0/lVecDotNullVec);
 
   if (perturbSoln) {
     if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
     cout << "\tIn LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(), applying random perturbation to initial solution of size:" 
 	 << LOCA::Utils::sci(perturbSize) << endl;
     }
-    NOX::Abstract::Vector *perturb = xVec->getXVec().clone(NOX::ShapeCopy);
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> perturb = 
+      xVec->getXVec()->clone(NOX::ShapeCopy);
     perturb->random();
-    perturb->scale(xVec->getXVec());
-    xVec->getXVec().update(perturbSize, *perturb, 1.0);
-    grpPtr->setX(xVec->getXVec());
-    delete perturb;
+    perturb->scale(*(xVec->getXVec()));
+    xVec->getXVec()->update(perturbSize, *perturb, 1.0);
+    grpPtr->setX(*(xVec->getXVec()));
   }
 }
 

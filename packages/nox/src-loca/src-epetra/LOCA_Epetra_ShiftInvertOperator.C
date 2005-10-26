@@ -29,7 +29,10 @@
 #include "LOCA_Epetra_ShiftInvertOperator.H"
 
 //==============================================================================
-LOCA::Epetra::ShiftInvertOperator::ShiftInvertOperator(const LOCA::Epetra::Group& grp, const Epetra_Operator& jac, const double& shift, bool hasMassMatrix) :
+LOCA::Epetra::ShiftInvertOperator::ShiftInvertOperator(
+		   const Teuchos::RefCountPtr<const LOCA::Epetra::Group>& grp, 
+		   const Teuchos::RefCountPtr<const Epetra_Operator>& jac, 
+		   const double& shift, bool hasMassMatrix) :
   locagrp(grp),
   jacOper(jac),
   shift_(shift),
@@ -57,7 +60,8 @@ LOCA::Epetra::ShiftInvertOperator::SetUseTranspose(bool UseTranspose)
 }
 
 int 
-LOCA::Epetra::ShiftInvertOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector&Y) const
+LOCA::Epetra::ShiftInvertOperator::Apply(const Epetra_MultiVector& X, 
+					 Epetra_MultiVector&Y) const
 {
   bool applyMass = massMatrix;
   double shift = shift_;
@@ -66,7 +70,7 @@ LOCA::Epetra::ShiftInvertOperator::Apply(const Epetra_MultiVector& X, Epetra_Mul
     Epetra_Vector yvec(View,Y,j);
     const NOX::Epetra::Vector Xvec(xvec); 
     NOX::Epetra::Vector Yvec(yvec);
-    locagrp.applyShiftedMatrix(Xvec,Yvec,shift);
+    locagrp->applyShiftedMatrix(Xvec,Yvec,shift);
     Epetra_Vector& result = Yvec.getEpetraVector();
     Y.Update(1.0,result,0.0);
   }
@@ -74,7 +78,8 @@ LOCA::Epetra::ShiftInvertOperator::Apply(const Epetra_MultiVector& X, Epetra_Mul
 } 
 
 int 
-LOCA::Epetra::ShiftInvertOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector&Y) const
+LOCA::Epetra::ShiftInvertOperator::ApplyInverse(const Epetra_MultiVector& X, 
+						Epetra_MultiVector&Y) const
 {
   LOCA::ErrorCheck::throwError(
 	  "LOCA::Epetra::ShiftInvertOperator::ApplyInverse",
@@ -112,17 +117,17 @@ LOCA::Epetra::ShiftInvertOperator::HasNormInf() const
 const Epetra_Comm&
 LOCA::Epetra::ShiftInvertOperator::Comm() const
 {
-  return jacOper.Comm();
+  return jacOper->Comm();
 }
 
 const Epetra_Map&
 LOCA::Epetra::ShiftInvertOperator::OperatorDomainMap() const
 {
-  return jacOper.OperatorDomainMap();
+  return jacOper->OperatorDomainMap();
 }
 
 const Epetra_Map&
 LOCA::Epetra::ShiftInvertOperator::OperatorRangeMap() const
 {
-  return jacOper.OperatorRangeMap();
+  return jacOper->OperatorRangeMap();
 }

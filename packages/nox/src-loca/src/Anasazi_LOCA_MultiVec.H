@@ -149,7 +149,7 @@ namespace Anasazi {
   protected:
 
     //! Array of vectors
-    vector< NOX::Abstract::Vector* > mvPtrs;
+    vector< Teuchos::RefCountPtr<NOX::Abstract::Vector> > mvPtrs;
 
     //! View or Copy
     Anasazi::DataAccess CV;

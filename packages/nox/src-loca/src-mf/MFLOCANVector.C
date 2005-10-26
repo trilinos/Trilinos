@@ -46,20 +46,24 @@ void MFLOCANVDiff(void*,void*,void*);
 void MFLOCANVAdd(void*,void*,void*);
 void MFLOCANVPrint(FILE*, void*);
 MFNVector MFCloneLOCANVector(void*);
-MFNVector MFCreateLOCANVectorWithData(LMCEV*);
+void MFFreeLOCANVectorData(void*);
+MFNVector MFCreateLOCANVectorWithData(const Teuchos::RefCountPtr<LMCEV>&);
 void MFSetError(int,char*,char*,int,char*);
 
 static char MFNVectorErrorMsg[256]="";
 
-void MFLOCANVDiff(void *adata,void *bdata, void *cdata)
+void MFLOCANVDiff(void *adata, void *bdata, void *cdata)
  {
   static char RoutineName[]={"MFLOCANVDiff"};
-  LMCEV  *a;
-  LMCEV  *b;
-  LMCEV  *c;
+  LOCANVectorData *a_vec_data;
+  LOCANVectorData *b_vec_data;
+  LOCANVectorData *c_vec_data;
+  Teuchos::RefCountPtr<LMCEV> a;
+  Teuchos::RefCountPtr<LMCEV> b;
+  Teuchos::RefCountPtr<LMCEV> c;
 
-  a=(LMCEV*)adata;
-  if(a==(LMCEV*)NULL)
+  a_vec_data = (LOCANVectorData*) adata;
+  if(a_vec_data==(LOCANVectorData*)NULL)
    {
     sprintf(MFNVectorErrorMsg,"Pointer to Vector Data for a (argument 1) is NULL");
     printf("%s -- %s\n",RoutineName,MFNVectorErrorMsg);fflush(stdout);
@@ -67,8 +71,8 @@ void MFLOCANVDiff(void *adata,void *bdata, void *cdata)
     return;
    }
 
-  b=(LMCEV*)bdata;
-  if(b==(LMCEV*)NULL)
+  b_vec_data = (LOCANVectorData*) bdata;
+  if(b_vec_data==(LOCANVectorData*)NULL)
    {
     sprintf(MFNVectorErrorMsg,"Pointer to Vector Data for b (argument 2) is NULL");
     printf("%s -- %s\n",RoutineName,MFNVectorErrorMsg);fflush(stdout);
@@ -76,14 +80,18 @@ void MFLOCANVDiff(void *adata,void *bdata, void *cdata)
     return;
    }
 
-  c=(LMCEV*)cdata;
-  if(c==(LMCEV*)NULL)
+  c_vec_data = (LOCANVectorData*) cdata;
+  if(c_vec_data==(LOCANVectorData*)NULL)
    {
     sprintf(MFNVectorErrorMsg,"Pointer to Vector Data for c (argument 3) is NULL");
     printf("%s -- %s\n",RoutineName,MFNVectorErrorMsg);fflush(stdout);
     MFSetError(12,RoutineName,MFNVectorErrorMsg,__LINE__,__FILE__);
     return;
    }
+
+  a = a_vec_data->u_ptr;
+  b = b_vec_data->u_ptr;
+  c = c_vec_data->u_ptr;
 
   c->update(1.0, *a, -1.0, *b, 0.0);
 
@@ -93,12 +101,16 @@ void MFLOCANVDiff(void *adata,void *bdata, void *cdata)
 void MFLOCANVAdd(void *adata,void *bdata,void *cdata)
  {
   static char RoutineName[]={"MFLOCANVAdd"};
-  LMCEV  *a;
-  LMCEV  *b;
-  LMCEV  *c;
 
-  a=(LMCEV*)adata;
-  if(a==(LMCEV*)NULL)
+  LOCANVectorData *a_vec_data;
+  LOCANVectorData *b_vec_data;
+  LOCANVectorData *c_vec_data;
+  Teuchos::RefCountPtr<LMCEV> a;
+  Teuchos::RefCountPtr<LMCEV> b;
+  Teuchos::RefCountPtr<LMCEV> c;
+
+  a_vec_data = (LOCANVectorData*) adata;
+  if(a_vec_data==(LOCANVectorData*)NULL)
    {
     sprintf(MFNVectorErrorMsg,"Pointer to Vector Data for a (argument 1) is NULL");
     printf("%s -- %s\n",RoutineName,MFNVectorErrorMsg);fflush(stdout);
@@ -106,8 +118,8 @@ void MFLOCANVAdd(void *adata,void *bdata,void *cdata)
     return;
    }
 
-  b=(LMCEV*)bdata;
-  if(b==(LMCEV*)NULL)
+  b_vec_data = (LOCANVectorData*) bdata;
+  if(b_vec_data==(LOCANVectorData*)NULL)
    {
     sprintf(MFNVectorErrorMsg,"Pointer to Vector Data for b (argument 2) is NULL");
     printf("%s -- %s\n",RoutineName,MFNVectorErrorMsg);fflush(stdout);
@@ -115,14 +127,18 @@ void MFLOCANVAdd(void *adata,void *bdata,void *cdata)
     return;
    }
 
-  c=(LMCEV*)cdata;
-  if(c==(LMCEV*)NULL)
+  c_vec_data = (LOCANVectorData*) cdata;
+  if(c_vec_data==(LOCANVectorData*)NULL)
    {
     sprintf(MFNVectorErrorMsg,"Pointer to Vector Data for c (argument 3) is NULL");
     printf("%s -- %s\n",RoutineName,MFNVectorErrorMsg);fflush(stdout);
     MFSetError(12,RoutineName,MFNVectorErrorMsg,__LINE__,__FILE__);
     return;
    }
+
+  a = a_vec_data->u_ptr;
+  b = b_vec_data->u_ptr;
+  c = c_vec_data->u_ptr;
 
   c->update(1.0, *a, 1.0, *b, 0.0);
 
@@ -132,25 +148,25 @@ void MFLOCANVAdd(void *adata,void *bdata,void *cdata)
 void MFLOCANVPrint(FILE *ifp, void *u)
  {
   static char RoutineName[]={"MFLOCANVPrint"};
-
-//   LMCEV* v= (LMCEV*)(u);
-//   cout << endl << RoutineName << ":  Vector has norm = " << v->norm() << endl;
-//   v->print();
-//   cout <<"----"<<endl;
-
  }
 
 MFNVector MFCloneLOCANVector(void *data)
  {
   static char RoutineName[]={"MFCloneLOCANVector"};
-  LMCEV *u;
-
-  u=(LMCEV*)data;
-
-  return  MFCreateLOCANVectorWithData(dynamic_cast<LMCEV*>(u->clone()));
+  LOCANVectorData *vec_data = (LOCANVectorData*) data;
+  Teuchos::RefCountPtr<LMCEV> u2 = 
+    Teuchos::rcp_dynamic_cast<LMCEV>(vec_data->u_ptr->clone(),true);
+  
+  return  MFCreateLOCANVectorWithData(u2);
  }
 
-MFNVector MFCreateLOCANVectorWithData(LMCEV *u)
+void MFFreeLOCANVectorData(void *data)
+{
+  LOCANVectorData *vec_data = (LOCANVectorData*) data;
+  delete vec_data;
+}
+
+MFNVector MFCreateLOCANVectorWithData(const Teuchos::RefCountPtr<LMCEV>& u)
  {
   static char RoutineName[]={"MFCreateLOCANVector"};
   MFNVector cthis;
@@ -163,13 +179,15 @@ MFNVector MFCreateLOCANVectorWithData(LMCEV *u)
 #endif
 
   cthis=MFCreateNVectorBaseClass("LOCA");
+  LOCANVectorData *vec_data = new LOCANVectorData(u);
 
-  MFNVectorSetData(cthis,u);
+  MFNVectorSetData(cthis,vec_data);
 
   MFNVectorSetDiff(cthis,MFLOCANVDiff);
   MFNVectorSetAdd(cthis,MFLOCANVAdd);
   MFNVectorSetClone(cthis,MFCloneLOCANVector);
   MFNVectorSetPrint(cthis,MFLOCANVPrint);
+  MFNVectorSetFreeData(cthis,MFFreeLOCANVectorData);
 
 #ifdef MFTIMINGS
     MFTimeMFCreateNVector+=clock()-starttime;

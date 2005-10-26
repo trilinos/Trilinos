@@ -246,7 +246,7 @@ LOCA::MultiStepper::run() {
 				Teuchos::rcp(&conParamData,false));
   M=MFIMFCreateLOCA(data);
   Omega=MFNRegionCreateLOCA(data);
-  u0=MFCreateLOCANVectorWithData(dynamic_cast<LMCEV *>(curGroupPtr->getX().clone()));
+  u0=MFCreateLOCANVectorWithData(Teuchos::rcp_dynamic_cast<LMCEV>(curGroupPtr->getX().clone()));
 
   H=MFCreateHendersonsMethod();
 

@@ -74,9 +74,9 @@ LOCA::MultiPredictor::Secant::Secant(
   initialized(source.initialized)
 {
   if (source.initialized) {
-    predictor = Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector*>(source.predictor->clone(type)));
+    predictor = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(source.predictor->clone(type));
 
-    secant = Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(source.secant->clone(type)));
+    secant = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(source.secant->clone(type));
   }
 }
 
@@ -95,9 +95,9 @@ LOCA::MultiPredictor::Secant::operator=(
     initialized = source.initialized;
 
     if (source.initialized) {
-      predictor = Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector*>(source.predictor->clone(NOX::DeepCopy)));
+      predictor = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(source.predictor->clone(NOX::DeepCopy));
 
-      secant = Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(source.secant->clone(NOX::DeepCopy)));
+      secant = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(source.secant->clone(NOX::DeepCopy));
     }
   }
 
@@ -126,10 +126,10 @@ LOCA::MultiPredictor::Secant::compute(
   if (!initialized) {
 
     // Allocate predictor vector
-    predictor = Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector*>(xVec.createMultiVector(numParams, NOX::ShapeCopy)));
+    predictor = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(xVec.createMultiVector(numParams, NOX::ShapeCopy));
     
     // Allocate secant
-    secant = Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(xVec.clone(NOX::ShapeCopy)));
+    secant = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(xVec.clone(NOX::ShapeCopy));
     
     initialized = true;
   }

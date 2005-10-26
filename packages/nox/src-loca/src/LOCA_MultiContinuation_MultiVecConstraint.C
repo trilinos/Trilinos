@@ -34,8 +34,8 @@
 
 LOCA::MultiContinuation::MultiVecConstraint::MultiVecConstraint(
     const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& dx_) :
-  dx(Teuchos::rcp(dx_->clone(NOX::DeepCopy))),
-  x(Teuchos::rcp(dx->clone(1))),
+  dx(dx_->clone(NOX::DeepCopy)),
+  x(dx->clone(1)),
   constraints(dx->numVectors(), 1),
   isValidConstraints(false)
 {
@@ -44,8 +44,8 @@ LOCA::MultiContinuation::MultiVecConstraint::MultiVecConstraint(
 LOCA::MultiContinuation::MultiVecConstraint::MultiVecConstraint(
 		  const LOCA::MultiContinuation::MultiVecConstraint& source, 
 		  NOX::CopyType type) : 
-  dx(Teuchos::rcp(source.dx->clone(type))),
-  x(Teuchos::rcp(source.x->clone(type))),
+  dx(source.dx->clone(type)),
+  x(source.x->clone(type)),
   constraints(source.constraints),
   isValidConstraints(false)
 {

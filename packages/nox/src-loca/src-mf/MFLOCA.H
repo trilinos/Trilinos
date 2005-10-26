@@ -82,12 +82,17 @@ struct LOCAData {
   double solutionMax;
 };
 
+struct LOCANVectorData {
+  LOCANVectorData(const Teuchos::RefCountPtr<LMCEV>& u) : u_ptr(u) {}
+  Teuchos::RefCountPtr<LMCEV> u_ptr;
+};
+
 extern "C" {
 
 MFNSpace MFCreateLOCANSpace(LOCAData*);
 MFNRegion MFNRegionCreateLOCA(LOCAData*);
 MFImplicitMF MFIMFCreateLOCA(LOCAData*);
-MFNVector MFCreateLOCANVectorWithData(LMCEV*);
+MFNVector MFCreateLOCANVectorWithData(const Teuchos::RefCountPtr<LMCEV>&);
 
 }
 

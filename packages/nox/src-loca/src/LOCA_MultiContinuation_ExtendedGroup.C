@@ -63,7 +63,7 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
     baseOnSecant(source.baseOnSecant)
 {
   predictor = source.predictor->clone(type);
-  conGroup = Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::ConstrainedGroup*>(source.conGroup->clone(type)));
+  conGroup = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ConstrainedGroup>(source.conGroup->clone(type));
   grpPtr = conGroup->getGroup();
   if (source.isValidPredictor && type == NOX::DeepCopy)
     isValidPredictor = true;
@@ -109,10 +109,10 @@ LOCA::MultiContinuation::ExtendedGroup::operator=(
     dynamic_cast<const LOCA::MultiContinuation::ExtendedGroup&>(source);
 }
 
-NOX::Abstract::Group*
+Teuchos::RefCountPtr<NOX::Abstract::Group>
 LOCA::MultiContinuation::ExtendedGroup::clone(NOX::CopyType type) const
 {
-  return new ExtendedGroup(*this, type);
+  return Teuchos::rcp(new ExtendedGroup(*this, type));
 }
 
 void
@@ -359,8 +359,8 @@ LOCA::MultiContinuation::ExtendedGroup::scaleTangent()
     for (int i=0; i<numParams; i++) {
       v = 
 	dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&scaledTangentMultiVec[i]);
-      grpPtr->scaleVector(v->getXVec());
-      grpPtr->scaleVector(v->getXVec());
+      grpPtr->scaleVector(*(v->getXVec()));
+      grpPtr->scaleVector(*(v->getXVec()));
     }
 
   }
@@ -468,7 +468,7 @@ LOCA::MultiContinuation::ExtendedGroup::computeScaledDotProduct(
   const LOCA::MultiContinuation::ExtendedVector& my = 
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(y);
 
-  double val = grpPtr->computeScaledDotProduct(mx.getXVec(), my.getXVec());
+  double val = grpPtr->computeScaledDotProduct(*mx.getXVec(), *my.getXVec());
   for (int i=0; i<numParams; i++)
     val += mx.getScalar(i) * my.getScalar(i);
 
@@ -491,7 +491,7 @@ LOCA::MultiContinuation::ExtendedGroup::projectToDraw(
     px[i] = x.getScalar(i);
 
   // fill remaining solution components
-  grpPtr->projectToDraw(x.getXVec(), px+numParams);
+  grpPtr->projectToDraw(*x.getXVec(), px+numParams);
 }
 
 LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(

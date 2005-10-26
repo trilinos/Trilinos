@@ -264,9 +264,9 @@ LOCA::BorderedSystem::EpetraAugmented::applyInverse(
    Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> cf;
    Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> ca;
    if (isContiguous) {
-     f = Teuchos::rcp(F->subView(indexF));
-     a = Teuchos::rcp(F->subView(indexA));
-     x = Teuchos::rcp(X.subView(indexF));
+     f = F->subView(indexF);
+     a = F->subView(indexA);
+     x = X.subView(indexF);
      cf = f;
      ca = a;
    }
@@ -303,22 +303,23 @@ LOCA::BorderedSystem::EpetraAugmented::applyInverse(
        Teuchos::rcp(&(nox_epetra_f->getEpetraMultiVector()), false);
      
      // Get linear system
-     NOX::Epetra::LinearSystem& linSys = grp->getLinearSystem();
+     Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> linSys = 
+       grp->getLinearSystem();
 
      // Get Jacobian
-     Teuchos::RefCountPtr<Epetra_Operator> jac =
-       Teuchos::rcp(&linSys.getJacobianOperator(), false);
+     Teuchos::RefCountPtr<Epetra_Operator> jac = 
+       linSys->getJacobianOperator();
 
      // Set Jacobian
-     linSys.setJacobianOperatorForSolve(*jac);
+     linSys->setJacobianOperatorForSolve(jac);
 
      // Create the preconditioner
-     linSys.destroyPreconditioner();
-     linSys.createPreconditioner(*((*epetra_x)(0)), params, false);
+     linSys->destroyPreconditioner();
+     linSys->createPreconditioner(*((*epetra_x)(0)), params, false);
 
      // Get preconditioner
      Teuchos::RefCountPtr<Epetra_Operator> prec =
-       Teuchos::rcp(&linSys.getGeneratedPrecOperator(), false);
+       Teuchos::rcp(&(linSys->getGeneratedPrecOperator()),false);
 
      // Create augmented operators
      LOCA::Epetra::AugmentedOp extended_jac(globalData, jac, epetra_a, 
@@ -327,8 +328,8 @@ LOCA::BorderedSystem::EpetraAugmented::applyInverse(
 					     epetra_b, C);
 
      // Set augmented operator in linear system
-     linSys.setJacobianOperatorForSolve(extended_jac);
-     linSys.setPrecOperatorForSolve(extended_prec);
+     linSys->setJacobianOperatorForSolve(Teuchos::rcp(&extended_jac,false));
+     linSys->setPrecOperatorForSolve(Teuchos::rcp(&extended_prec,false));
 
      // Create augmented Epetra vectors for x, f
      Teuchos::RefCountPtr<Epetra_MultiVector> epetra_augmented_x = 
@@ -337,10 +338,14 @@ LOCA::BorderedSystem::EpetraAugmented::applyInverse(
        extended_jac.buildEpetraAugmentedMultiVec(*epetra_f, G, true);
 
      // Create augmented NOX::Epetra::MultiVectors as views
-     NOX::Epetra::MultiVector nox_epetra_augmented_x(*epetra_augmented_x,
-						     NOX::DeepCopy, true);
-     NOX::Epetra::MultiVector nox_epetra_augmented_f(*epetra_augmented_f,
-						     NOX::DeepCopy, true);
+     NOX::Epetra::MultiVector nox_epetra_augmented_x(
+					 epetra_augmented_x,
+					 NOX::DeepCopy, 
+					 NOX::Epetra::MultiVector::CreateView);
+     NOX::Epetra::MultiVector nox_epetra_augmented_f(
+					 epetra_augmented_f,
+					 NOX::DeepCopy, 
+					 NOX::Epetra::MultiVector::CreateView);
 
      // Solve for each RHS
      int m = nox_epetra_augmented_x.numVectors();
@@ -348,7 +353,7 @@ LOCA::BorderedSystem::EpetraAugmented::applyInverse(
        extended_jac.init(*((*epetra_f)(i)));
        extended_prec.init(*((*epetra_f)(i)));
        bool stat = 
-	 linSys.applyJacobianInverse(
+	 linSys->applyJacobianInverse(
 		params, 
 		dynamic_cast<NOX::Epetra::Vector&>(nox_epetra_augmented_f[i]),
 		dynamic_cast<NOX::Epetra::Vector&>(nox_epetra_augmented_x[i]));
@@ -367,8 +372,8 @@ LOCA::BorderedSystem::EpetraAugmented::applyInverse(
 					     *epetra_augmented_x);
 
      // Set original Jacobian in linear system
-     linSys.setJacobianOperatorForSolve(*jac);
-     linSys.destroyPreconditioner();
+     linSys->setJacobianOperatorForSolve(jac);
+     linSys->destroyPreconditioner();
      //linSys.setPrecOperatorForSolve(*prec);
    }
 
@@ -510,7 +515,7 @@ LOCA::BorderedSystem::EpetraAugmented::solveBZero(
 						   callingFunction);
   }
   else {
-    NOX::Abstract::MultiVector *RHS;
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> RHS;
 
     if (isZeroF) {
       RHS = AA->clone(Y.numCols());
@@ -525,7 +530,6 @@ LOCA::BorderedSystem::EpetraAugmented::solveBZero(
     finalStatus = 
       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						   callingFunction);
-    delete RHS;
   }
 
   return finalStatus;

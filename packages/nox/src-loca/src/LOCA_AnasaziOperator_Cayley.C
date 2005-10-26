@@ -34,28 +34,26 @@
 #include "NOX_Parameter_List.H"
 #include "LOCA_ErrorCheck.H"
 
-LOCA::AnasaziOperator::Cayley::Cayley(NOX::Parameter::List& eigenParams_,
-				      NOX::Parameter::List& solverParams_,
-				      NOX::Abstract::Group& grp_)
+LOCA::AnasaziOperator::Cayley::Cayley(
+	      const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
+	      const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
+	      const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp_)
   : myLabel("Cayley Transformation"),
-    tmp_r(NULL),
-    tmp_i(NULL)
+    tmp_r(),
+    tmp_i()
 {
   reset(eigenParams_, solverParams_, grp_);
 }
 
 LOCA::AnasaziOperator::Cayley::~Cayley()
 {
-  if (tmp_r)
-    delete tmp_r;
-  if (tmp_i)
-    delete tmp_i;
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::AnasaziOperator::Cayley::reset(NOX::Parameter::List& eigenParams_,
-				     NOX::Parameter::List& solverParams_,
-				     NOX::Abstract::Group& grp_)
+LOCA::AnasaziOperator::Cayley::reset(
+	      const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
+	      const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
+	      const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp_)
 {
   string callingFunction = 
     "LOCA::AnasaziOperator::Cayley::reset()";
@@ -63,12 +61,12 @@ LOCA::AnasaziOperator::Cayley::reset(NOX::Parameter::List& eigenParams_,
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
-  eigenParams = &eigenParams_;
-  solverParams = &solverParams_;
-  grp = dynamic_cast<LOCA::TimeDependent::AbstractGroup*>(&grp_);
+  eigenParams = eigenParams_;
+  solverParams = solverParams_;
+  grp = Teuchos::rcp_dynamic_cast<LOCA::TimeDependent::AbstractGroup>(grp_);
 
   // ensure grp is of the right type
-  if (grp == NULL) {
+  if (grp == Teuchos::null) {
     LOCA::ErrorCheck::throwError(callingFunction,
      "Supplied group is not derived from LOCA::TimeDependent::AbstractGroup!");
   }
@@ -76,11 +74,6 @@ LOCA::AnasaziOperator::Cayley::reset(NOX::Parameter::List& eigenParams_,
   // Get parameters
   sigma = eigenParams->getParameter("Cayley Pole",0.0);
   mu = eigenParams->getParameter("Cayley Zero",0.0);
-
-  if (tmp_r)
-    delete tmp_r;
-  if (tmp_i)
-    delete tmp_i;
 
   // Compute Jacobian matrix
   status = grp->computeJacobian();
@@ -114,7 +107,7 @@ LOCA::AnasaziOperator::Cayley::apply(const NOX::Abstract::Vector& input,
   NOX::Abstract::Group::ReturnType status;
 
   // Allocate temporary vector
-  if (!tmp_r)
+  if (tmp_r == Teuchos::null)
     tmp_r = input.clone(NOX::ShapeCopy);
 
   // Compute (J-mu*M)*input
@@ -154,9 +147,9 @@ LOCA::AnasaziOperator::Cayley::rayleighQuotient(
     "LOCA::AnasaziOperator::Cayley::rayleighQuotient()";
 
   // Allocate temporary vectors
-  if (!tmp_r)
+  if (tmp_r == Teuchos::null)
     tmp_r = evec_r.clone(NOX::ShapeCopy);
-  if (!tmp_i)
+  if (tmp_i == Teuchos::null)
     tmp_i = evec_i.clone(NOX::ShapeCopy);
 
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;

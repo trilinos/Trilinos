@@ -74,19 +74,6 @@ namespace LOCA {
       //! Reset parameters
       virtual NOX::Abstract::Group::ReturnType 
       reset(NOX::Parameter::List& params);
-  
-      //! Compute the step size as described above
-      /*! 
-	Returns NOX::Abstract::Group::Failed if the computed step size is
-	smaller than the minimum step size
-      */
-      virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::Continuation::ExtendedGroup& curGroup,
-	      const LOCA::Continuation::ExtendedVector& predictor,
-	      const NOX::Solver::Generic& solver,
-	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
-	      const LOCA::Stepper& stepper,
-	      double& stepSize);
 
       //! Compute the step size as described above
       /*! 

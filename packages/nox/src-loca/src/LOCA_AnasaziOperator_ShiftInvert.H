@@ -78,9 +78,10 @@ namespace LOCA {
        * Argument \em grp must be of type LOCA::TimeDependent::AbstractGroup.
        * See class description for a list of eigenParams.
        */
-      ShiftInvert(NOX::Parameter::List& eigenParams,
-		  NOX::Parameter::List& solverParams,
-		  NOX::Abstract::Group& grp);
+      ShiftInvert(
+	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
 
       //! Destructor
       virtual ~ShiftInvert();
@@ -91,9 +92,9 @@ namespace LOCA {
        * See class description for a list of eigenParams.
        */
       virtual NOX::Abstract::Group::ReturnType 
-      reset(NOX::Parameter::List& eigenParams,
-	    NOX::Parameter::List& solverParams,
-	    NOX::Abstract::Group& grp);
+      reset(const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	    const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	    const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
 
       /*!
        * \brief Return name of this operator
@@ -139,19 +140,19 @@ namespace LOCA {
       string myLabel;
 
       //! Stores parameters relating to the operator
-      NOX::Parameter::List* eigenParams;
+      Teuchos::RefCountPtr<NOX::Parameter::List> eigenParams;
 
       //! Stores linear solver parameters
-      NOX::Parameter::List* solverParams;
+      Teuchos::RefCountPtr<NOX::Parameter::List> solverParams;
 
       //! Stores group representing Jacobian and Mass matrix
-      LOCA::TimeDependent::AbstractGroup* grp;
+      Teuchos::RefCountPtr<LOCA::TimeDependent::AbstractGroup> grp;
 
       //! Stores a temporary vector for computing Rayleigh quotients
-      mutable NOX::Abstract::Vector* tmp_r;
+      mutable Teuchos::RefCountPtr<NOX::Abstract::Vector> tmp_r;
 
       //! Stores a temporary vector for computing Rayleigh quotients
-      mutable NOX::Abstract::Vector* tmp_i;
+      mutable Teuchos::RefCountPtr<NOX::Abstract::Vector> tmp_i;
 
       //! Stores shift value
       double shift;

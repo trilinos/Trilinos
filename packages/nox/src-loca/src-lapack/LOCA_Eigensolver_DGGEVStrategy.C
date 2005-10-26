@@ -179,9 +179,9 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   std::vector<double> evals_r_tmp(n);
   std::vector<double> evals_i_tmp(n);
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> evecs_r_tmp = 
-    Teuchos::rcp(group.getX().createMultiVector(n, NOX::ShapeCopy));
+    group.getX().createMultiVector(n, NOX::ShapeCopy);
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector>evecs_i_tmp = 
-    Teuchos::rcp(group.getX().createMultiVector(n, NOX::ShapeCopy));
+    group.getX().createMultiVector(n, NOX::ShapeCopy);
   NOX::LAPACK::Vector* tmpr;
   NOX::LAPACK::Vector* tmpi;
   double rnext;
@@ -264,8 +264,8 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
 						 evals_r_tmp.begin()+nev));
   evals_i = Teuchos::rcp(new std::vector<double>(evals_i_tmp.begin(),
 						 evals_i_tmp.begin()+nev));
-  evecs_r = Teuchos::rcp(evecs_r_tmp->subCopy(perm_short));
-  evecs_i = Teuchos::rcp(evecs_i_tmp->subCopy(perm_short));
+  evecs_r = evecs_r_tmp->subCopy(perm_short);
+  evecs_i = evecs_i_tmp->subCopy(perm_short);
 
   // Print out eigenvalues
   if (globalData->locaUtils->doPrint(LOCA::Utils::StepperIteration)) {

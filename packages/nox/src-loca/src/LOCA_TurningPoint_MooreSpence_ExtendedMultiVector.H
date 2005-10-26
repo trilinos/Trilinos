@@ -123,45 +123,51 @@ namespace LOCA {
 	 * \brief Create a new multi-vector of the same underlying type by
 	 * cloning "this", and return a pointer to the new vector.  
 	 */
-	virtual NOX::Abstract::MultiVector* 
+	virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
 	//! Creates a new multi-vector with \c numvecs columns
-	virtual NOX::Abstract::MultiVector* 
+	virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 	clone(int numvecs) const;
 
 	/*! 
 	 * \brief Creates a new multi-vector with \c index.size() columns whose 
 	 * columns are copies of the columns of \c *this given by \c index.
 	 */
-	virtual NOX::Abstract::MultiVector* 
+	virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 	subCopy(const vector<int>& index) const;
 
 	/*! 
 	 * \brief Creates a new multi-vector with \c index.size() columns that 
 	 * shares the columns of \c *this given by \c index.
 	 */
-	virtual NOX::Abstract::MultiVector* 
+	virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 	subView(const vector<int>& index) const;
 
 	//! Returns the solution vector component of extended multivector
-	virtual const NOX::Abstract::MultiVector& getXMultiVec() const;
+	virtual Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> 
+	getXMultiVec() const;
 
 	//! Returns the solution vector component of extended vector
-	virtual NOX::Abstract::MultiVector& getXMultiVec();
+	virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+	getXMultiVec();
 
 	//! Returns the null vector component of extended multivector
-	virtual const NOX::Abstract::MultiVector& getNullMultiVec() const;
+	virtual Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> 
+	getNullMultiVec() const;
 
 	//! Returns the null vector component of extended vector
-	virtual NOX::Abstract::MultiVector& getNullMultiVec();
+	virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+	getNullMultiVec();
 
 	//! Returns ith column as an extended vector
-	virtual LOCA::TurningPoint::MooreSpence::ExtendedVector&
+	virtual 
+	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedVector>
 	getColumn(int i);
 
 	//! Returns ith column as an extended vector
-	virtual const LOCA::TurningPoint::MooreSpence::ExtendedVector&
+	virtual 
+	Teuchos::RefCountPtr<const LOCA::TurningPoint::MooreSpence::ExtendedVector>
 	getColumn(int i) const;
 
       protected:
@@ -177,7 +183,7 @@ namespace LOCA {
 	 * Returns a vector of type 
 	 * LOCA::TurningPoint::MooreSpence::ExtendedVector
 	 */
-	virtual LOCA::Extended::Vector* 
+	virtual Teuchos::RefCountPtr<LOCA::Extended::Vector>
 	generateVector(int nVecs, int nScalarRows) const;
 
       }; // class ExtendedVector

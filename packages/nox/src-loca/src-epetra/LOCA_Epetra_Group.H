@@ -95,23 +95,24 @@ namespace LOCA {
        * preconditioning.
        */
       Group(NOX::Parameter::List& printingParams, 
-	    LOCA::Epetra::Interface::Required& i, 
+	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
 	    NOX::Epetra::Vector& initialGuess,
 	    const LOCA::ParameterVector& p);
 
       //! Standard Constructor.
       Group(NOX::Parameter::List& printingParams, 
-	    LOCA::Epetra::Interface::Required& i, 
+	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
 	    NOX::Epetra::Vector& initialGuess, 
-	    NOX::Epetra::LinearSystem& linSys,
+	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
 	    const LOCA::ParameterVector& p);
 
       //! Constructor with time-dependent interface
-      Group(NOX::Parameter::List& printingParams,
-            LOCA::Epetra::Interface::TimeDependent& i,
-            NOX::Epetra::Vector& initialGuess,
-            NOX::Epetra::LinearSystem& linSys,
-	    const LOCA::ParameterVector& p);
+      Group(
+	NOX::Parameter::List& printingParams,
+        const Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent>& i,
+	NOX::Epetra::Vector& initialGuess,
+	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
+	const LOCA::ParameterVector& p);
 
 
       /*! 
@@ -140,7 +141,7 @@ namespace LOCA {
       operator=(const NOX::Epetra::Group& source);
 
       //! Cloning function
-      virtual NOX::Abstract::Group* 
+      virtual Teuchos::RefCountPtr<NOX::Abstract::Group>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Overloaded computeF()
@@ -349,7 +350,8 @@ namespace LOCA {
       //@}
 
       //! Return the userInterface.
-      virtual NOX::Epetra::Interface::Required& getUserInterface();
+      virtual Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> 
+      getUserInterface();
 
       //! Call the user interface print() routine, any vector
       virtual void printSolution(const NOX::Epetra::Vector& x,
@@ -359,7 +361,8 @@ namespace LOCA {
       void setScaleVector(const NOX::Abstract::Vector& s);
 
       //! Sets the Jacobian operator
-      void setJacobianOperatorForSolve(const Epetra_Operator& op) const;
+      void setJacobianOperatorForSolve(
+		 const Teuchos::RefCountPtr<const Epetra_Operator>& op) const;
 
     protected:
 
@@ -367,22 +370,19 @@ namespace LOCA {
       LOCA::ParameterVector params;
 
       //! Reference to the user supplied interface functions
-      LOCA::Epetra::Interface::Required& userInterface;
+      Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> userInterface;
 
-      /*! 
-       * \brief Flag indicating whether interface is derived from 
-       * LOCA::Epetra::Interface::TimeDependent
-       */
-      bool interfaceTime;
+      //! Reference to the user supplied interface functions
+      Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent> userInterfaceTime;
 
       //! Extra vector needed for intermediate calculations of LOCA routines.
       /*! NOTE: there already is a tmpVectorPtr in the NOX::Epetra::Group.  
        * This is a second temporary vector if that one extra isn't enough.
        */
-      Epetra_Vector* tmpVectorPtr2;
+      Teuchos::RefCountPtr<Epetra_Vector> tmpVectorPtr2;
 
       //! Stores a pointer to the scale vector
-      NOX::Abstract::Vector* scaleVecPtr;
+      Teuchos::RefCountPtr<NOX::Abstract::Vector> scaleVecPtr;
     };
 
   } // namespace Epetra

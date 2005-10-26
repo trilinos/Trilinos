@@ -34,38 +34,29 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::AnasaziOperator::JacobianInverse::JacobianInverse(
-					  NOX::Parameter::List& eigenParams_,
-					  NOX::Parameter::List& solverParams_,
-					  NOX::Abstract::Group& grp_)
+	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
+	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
+	       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp_)
   : myLabel("Jacobian Inverse"),
-    tmp_r(NULL),
-    tmp_i(NULL)
+    tmp_r(),
+    tmp_i()
 {
   reset(eigenParams_, solverParams_, grp_);
 }
 
 LOCA::AnasaziOperator::JacobianInverse::~JacobianInverse()
 {
-  if (tmp_r)
-    delete tmp_r;
-  if (tmp_i)
-    delete tmp_i;
 }
 
 NOX::Abstract::Group::ReturnType 
 LOCA::AnasaziOperator::JacobianInverse::reset(
-					  NOX::Parameter::List& eigenParams_,
-					  NOX::Parameter::List& solverParams_,
-					  NOX::Abstract::Group& grp_)
+	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
+	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
+	       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp_)
 {
-  eigenParams = &eigenParams_;
-  solverParams = &solverParams_;
-  grp = &grp_;
-
-  if (tmp_r)
-    delete tmp_r;
-  if (tmp_i)
-    delete tmp_i;
+  eigenParams = eigenParams_;
+  solverParams = solverParams_;
+  grp = grp_;
 
   // make sure Jacobian is up-to-date
   return grp->computeJacobian();
@@ -105,9 +96,9 @@ LOCA::AnasaziOperator::JacobianInverse::rayleighQuotient(
     "LOCA::AnasaziOperator::JacobianInverse::rayleighQuotient()";
 
   // Allocate temporary vectors
-  if (!tmp_r)
+  if (tmp_r == Teuchos::null)
     tmp_r = evec_r.clone(NOX::ShapeCopy);
-  if (!tmp_i)
+  if (tmp_i == Teuchos::null)
     tmp_i = evec_i.clone(NOX::ShapeCopy);
 
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;

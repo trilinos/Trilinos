@@ -37,9 +37,10 @@
 #include "LOCA_AnasaziOperator_Cayley.H"
 #include "LOCA_ErrorCheck.H"
 
-LOCA::AnasaziOperator::Manager::Manager(NOX::Parameter::List& eigenParams_,
-					NOX::Parameter::List& solverParams_,
-					NOX::Abstract::Group& grp_)
+LOCA::AnasaziOperator::Manager::Manager(
+	      const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
+	      const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
+	      const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp_)
   : opName(),
     op(NULL)
 {
@@ -52,11 +53,12 @@ LOCA::AnasaziOperator::Manager::~Manager()
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::AnasaziOperator::Manager::reset(NOX::Parameter::List& eigenParams,
-				      NOX::Parameter::List& solverParams,
-				      NOX::Abstract::Group& grp)
+LOCA::AnasaziOperator::Manager::reset(
+	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp)
 {
-  string newOpName = eigenParams.getParameter("Operator","Jacobian Inverse");
+  string newOpName = eigenParams->getParameter("Operator","Jacobian Inverse");
 
   if (opName != newOpName) {
     opName = newOpName;

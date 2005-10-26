@@ -33,9 +33,10 @@
 #ifndef LOCA_ABSTRACT_GROUP_H
 #define LOCA_ABSTRACT_GROUP_H
 
-#include "LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H"  // base class
-#include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"       // base class
-#include "LOCA_Homotopy_AbstractGroup.H"                      // base class
+// #include "LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H"  // base class
+// #include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"       // base class
+// #include "LOCA_Homotopy_AbstractGroup.H"                      // base class
+#include "LOCA_TimeDependent_AbstractGroup.H"
 #include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"// base class
 
 namespace LOCA { 
@@ -57,9 +58,10 @@ namespace LOCA {
      * future.
      */
     class Group : 
-      public LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup,
-      public LOCA::Bifurcation::TPBord::SingularSolveGroup,
-      public virtual LOCA::Homotopy::AbstractGroup,
+//       public LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup,
+//       public LOCA::Bifurcation::TPBord::SingularSolveGroup,
+//       public virtual LOCA::Homotopy::AbstractGroup,
+      public LOCA::TimeDependent::AbstractGroup,
       public LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup
     {
 
@@ -90,8 +92,8 @@ namespace LOCA {
       //@{
 
       //! Assignment operator
-      virtual LOCA::Continuation::AbstractGroup& 
-      operator=(const LOCA::Continuation::AbstractGroup& source);
+//       virtual LOCA::Continuation::AbstractGroup& 
+//       operator=(const LOCA::Continuation::AbstractGroup& source);
 
       //@}
 
@@ -102,8 +104,8 @@ namespace LOCA {
       //@{
 
       //! Assignment operator
-      virtual LOCA::Continuation::FiniteDifferenceGroup& 
-      operator=(const LOCA::Continuation::FiniteDifferenceGroup& source);
+//       virtual LOCA::Continuation::FiniteDifferenceGroup& 
+//       operator=(const LOCA::Continuation::FiniteDifferenceGroup& source);
 
       //@}
 
@@ -113,8 +115,8 @@ namespace LOCA {
       //@{
 
       //! Assignment operator
-      virtual LOCA::Bifurcation::TPBord::AbstractGroup& 
-      operator=(const LOCA::Bifurcation::TPBord::AbstractGroup& source);
+//       virtual LOCA::Bifurcation::TPBord::AbstractGroup& 
+//       operator=(const LOCA::Bifurcation::TPBord::AbstractGroup& source);
 
       /*!
        * \brief Solve a bordered system of equations
@@ -137,15 +139,15 @@ namespace LOCA {
        * \f]
        * The default implementation here is to throw an error.
        */
-      virtual NOX::Abstract::Group::ReturnType
-      applyBorderedJacobianInverse(bool trans,
-				   NOX::Parameter::List& params,
-				   const NOX::Abstract::Vector& a,
-				   const NOX::Abstract::Vector& b,
-				   const NOX::Abstract::Vector& vInput,
-				   double sInput,
-				   NOX::Abstract::Vector& vResult,
-				   double& sResult) const;
+//       virtual NOX::Abstract::Group::ReturnType
+//       applyBorderedJacobianInverse(bool trans,
+// 				   NOX::Parameter::List& params,
+// 				   const NOX::Abstract::Vector& a,
+// 				   const NOX::Abstract::Vector& b,
+// 				   const NOX::Abstract::Vector& vInput,
+// 				   double sInput,
+// 				   NOX::Abstract::Vector& vResult,
+// 				   double& sResult) const;
 
       //@}
 
@@ -155,8 +157,8 @@ namespace LOCA {
       //@{
 
       //! Assignment operator
-      virtual LOCA::Bifurcation::TPBord::FiniteDifferenceGroup& 
-      operator=(const LOCA::Bifurcation::TPBord::FiniteDifferenceGroup& source);
+//       virtual LOCA::Bifurcation::TPBord::FiniteDifferenceGroup& 
+//       operator=(const LOCA::Bifurcation::TPBord::FiniteDifferenceGroup& source);
       //@}
 
       /*! 
@@ -165,8 +167,8 @@ namespace LOCA {
       //@{
 
       //! Assignment operator
-      virtual LOCA::Bifurcation::TPBord::SingularSolveGroup& 
-      operator=(const LOCA::Bifurcation::TPBord::SingularSolveGroup& source);
+//       virtual LOCA::Bifurcation::TPBord::SingularSolveGroup& 
+//       operator=(const LOCA::Bifurcation::TPBord::SingularSolveGroup& source);
 
       //@}
 
@@ -201,21 +203,21 @@ namespace LOCA {
       //@{
       
       //! Assignment operator
-      virtual LOCA::Bifurcation::HopfBord::AbstractGroup& 
-      operator=(const LOCA::Bifurcation::HopfBord::AbstractGroup& source);
+//       virtual LOCA::Bifurcation::HopfBord::AbstractGroup& 
+//       operator=(const LOCA::Bifurcation::HopfBord::AbstractGroup& source);
 
       //! Solve \f$(J+i\omega B)(y+iz) = a+ib\f$
       /*!
        * Implementation here prints an error message and returns 
        * NOX::Abstract::Group::NotDefined.
        */
-      virtual NOX::Abstract::Group::ReturnType
-      applyComplexInverse(NOX::Parameter::List& params,
-			  const NOX::Abstract::Vector& input_real,
-			  const NOX::Abstract::Vector& input_imag,
-			  double frequency,
-			  NOX::Abstract::Vector& result_real,
-			  NOX::Abstract::Vector& result_imag) const;
+ //      virtual NOX::Abstract::Group::ReturnType
+//       applyComplexInverse(NOX::Parameter::List& params,
+// 			  const NOX::Abstract::Vector& input_real,
+// 			  const NOX::Abstract::Vector& input_imag,
+// 			  double frequency,
+// 			  NOX::Abstract::Vector& result_real,
+// 			  NOX::Abstract::Vector& result_imag) const;
 
       //@}
 
@@ -225,8 +227,8 @@ namespace LOCA {
       //@{
 
       //! Assignment operator
-      virtual LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& 
-      operator=(const LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& source);
+//       virtual LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& 
+//       operator=(const LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& source);
 
       //@}
 
@@ -236,8 +238,8 @@ namespace LOCA {
       //@{
 
       //! Assignment operator
-      virtual LOCA::Homotopy::AbstractGroup& 
-      operator=(const LOCA::Homotopy::AbstractGroup& source);
+//       virtual LOCA::Homotopy::AbstractGroup& 
+//       operator=(const LOCA::Homotopy::AbstractGroup& source);
 
       /*! 
        * \brief Replace Jacobian \f$J\f$ by \f$J+pI\f$ where \f$I\f$ is the 
@@ -247,8 +249,8 @@ namespace LOCA {
        * Implementation here prints an error message and returns 
        * NOX::Abstract::Group::NotDefined.
        */
-      virtual NOX::Abstract::Group::ReturnType 
-      augmentJacobianForHomotopy(double conParamValue);
+//       virtual NOX::Abstract::Group::ReturnType 
+//       augmentJacobianForHomotopy(double conParamValue);
 
       //@}
 

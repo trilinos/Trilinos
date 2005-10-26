@@ -269,9 +269,9 @@ LOCA::BorderedSystem::EpetraHouseholder::applyInverse(
    Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> cf;
    Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> ca;
    if (isContiguous) {
-     f = Teuchos::rcp(F->subView(indexF));
-     a = Teuchos::rcp(F->subView(indexA));
-     x = Teuchos::rcp(X.subView(indexF));
+     f = F->subView(indexF);
+     a = F->subView(indexA);
+     x = X.subView(indexF);
      cf = f;
      ca = a;
    }
@@ -297,12 +297,12 @@ LOCA::BorderedSystem::EpetraHouseholder::applyInverse(
 
      if (!isZeroG) {
 
-       tmp_x = Teuchos::rcp(x->clone(NOX::ShapeCopy));
+       tmp_x = x->clone(NOX::ShapeCopy);
        tmp_y = 
 	 Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(
 							       G->numRows(),
 							       G->numCols()));
-       RHS = Teuchos::rcp(x->clone(NOX::ShapeCopy));
+       RHS = x->clone(NOX::ShapeCopy);
 
        // Compute Z_y = R^-T * G
        Y.assign(*G);
@@ -343,15 +343,18 @@ LOCA::BorderedSystem::EpetraHouseholder::applyInverse(
       Teuchos::RefCountPtr<const Epetra_MultiVector> epetra_house_x = 
        Teuchos::rcp(&(nox_epetra_house_x->getEpetraMultiVector()), false);
      
-     const NOX::Epetra::LinearSystem& linSys = grp->getLinearSystem();
+     Teuchos::RefCountPtr<const NOX::Epetra::LinearSystem> linSys = 
+       grp->getLinearSystem();
      Teuchos::RefCountPtr<const Epetra_Operator> jac =
-       Teuchos::rcp(&linSys.getJacobianOperator(), false);
+       linSys->getJacobianOperator();
 
-     LOCA::Epetra::CompactWYOp op(jac, epetra_a, epetra_house_x,
-				  Teuchos::rcp(&house_p, false),
-				  Teuchos::rcp(&T, false));
+     Teuchos::RefCountPtr<LOCA::Epetra::CompactWYOp> op = 
+       Teuchos::rcp(new LOCA::Epetra::CompactWYOp(jac, epetra_a, 
+						  epetra_house_x,
+						  Teuchos::rcp(&house_p,false),
+						  Teuchos::rcp(&T, false)));
 
-     op.init(*epetra_x);
+     op->init(*epetra_x);
 
      grp->setJacobianOperatorForSolve(op);
 
@@ -362,9 +365,9 @@ LOCA::BorderedSystem::EpetraHouseholder::applyInverse(
 
      applyCompactWY(*x, Y, false, isZeroG, false);
 
-     op.finish();
+     op->finish();
 
-     grp->setJacobianOperatorForSolve(*jac);
+     grp->setJacobianOperatorForSolve(jac);
    }
 
    return finalStatus;
@@ -378,13 +381,13 @@ LOCA::BorderedSystem::EpetraHouseholder::factorConstraints()
 
   // Allocate house_x, house_p, beta if necesary, and copy dg/dx into house_x
   if (house_x.get() == NULL || house_x->numVectors() != numConstraints) {
-    house_x = Teuchos::rcp(B->clone(NOX::DeepCopy));
+    house_x = B->clone(NOX::DeepCopy);
     house_p.reshape(numConstraints, numConstraints);
     house_p.putScalar(0.0);
     T.reshape(numConstraints, numConstraints);
     T.putScalar(0.0);
     R.reshape(numConstraints, numConstraints);
-    v_x = Teuchos::rcp(B->clone(1));
+    v_x = B->clone(1);
   }
   else 
     *house_x = *B;
@@ -418,7 +421,7 @@ LOCA::BorderedSystem::EpetraHouseholder::factorConstraints()
     h_idx.resize(numConstraints-i);
     for (unsigned int j=0; j<h_idx.size(); j++)
       h_idx[j] = i+j;
-    h_x = Teuchos::rcp(house_x->subView(h_idx));
+    h_x = house_x->subView(h_idx);
 
     // Create view of columns i thru numConstraints-1 of R, starting at row i
     h_p = 
@@ -433,7 +436,7 @@ LOCA::BorderedSystem::EpetraHouseholder::factorConstraints()
 
       // Create view of columns 0 through i-1 of house_x
       y_idx.push_back(i-1);
-      y_x = Teuchos::rcp(house_x->subView(y_idx));
+      y_x = house_x->subView(y_idx);
       
       // Create view of columns 0 through i-1 of house_p, starting at row i
       y_p = 
@@ -744,7 +747,7 @@ LOCA::BorderedSystem::EpetraHouseholder::solveBZero(
 						   callingFunction);
   }
   else {
-    NOX::Abstract::MultiVector *RHS;
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> RHS;
 
     if (isZeroF) {
       RHS = AA->clone(Y.numCols());
@@ -759,7 +762,6 @@ LOCA::BorderedSystem::EpetraHouseholder::solveBZero(
     finalStatus = 
       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						   callingFunction);
-    delete RHS;
   }
 
   return finalStatus;

@@ -84,15 +84,18 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solve(
   NOX::Abstract::Group::ReturnType status;
   
   // Get components of input
-  const NOX::Abstract::MultiVector& input_x = input.getXMultiVec();
-  const NOX::Abstract::MultiVector& input_null = input.getNullMultiVec();
-  const NOX::Abstract::MultiVector::DenseMatrix& input_param = 
-    input.getScalars();
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_x = 
+    input.getXMultiVec();
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_null = 
+    input.getNullMultiVec();
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_param = input.getScalars();
 
   // Get components of result
-  NOX::Abstract::MultiVector& result_x = result.getXMultiVec();
-  NOX::Abstract::MultiVector& result_null = result.getNullMultiVec();
-  NOX::Abstract::MultiVector::DenseMatrix& result_param = 
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x = 
+    result.getXMultiVec();
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_null = 
+    result.getNullMultiVec();
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
     result.getScalars();
 
   int m = input.numVectors();
@@ -101,16 +104,16 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solve(
 
     // Get views of the first m-1 columns of input_param, result_param
     NOX::Abstract::MultiVector::DenseMatrix input_param_view(Teuchos::View,
-							     input_param,
+							     *input_param,
 							     1, m-1, 0, 0);
     NOX::Abstract::MultiVector::DenseMatrix result_param_view(Teuchos::View,
-							     result_param,
+							     *result_param,
 							     1, m-1, 0, 0);
     
 
     // Solve
-    status = solveContiguous(params, input_x, input_null, input_param_view,
-			     result_x, result_null, result_param_view);
+    status = solveContiguous(params, *input_x, *input_null, input_param_view,
+			     *result_x, *result_null, result_param_view);
   }
   else {
 
@@ -122,20 +125,24 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solve(
     // First m columns store input_x, input_null, result_x, result_null
     // respectively, last column stores dfdp, dJndp, J^-1 dfdp, J^-1 dJndp
     // respectively
-    NOX::Abstract::MultiVector* cont_input_x = input_x.clone(m+1);
-    NOX::Abstract::MultiVector* cont_input_null = input_null.clone(m+1);
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_x = 
+      input_x->clone(m+1);
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_null = 
+      input_null->clone(m+1);
 
-    NOX::Abstract::MultiVector* cont_result_x = result_x.clone(m+1);
-    NOX::Abstract::MultiVector* cont_result_null = result_null.clone(m+1);
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x = 
+      result_x->clone(m+1);
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null = 
+      result_null->clone(m+1);
 
     // Set first m columns to input_x
-    cont_input_x->setBlock(input_x, index_input);
+    cont_input_x->setBlock(*input_x, index_input);
 
     // Set last column to dfdp
     (*cont_input_x)[m] = *dfdp;
 
     // Set first m columns to input_null
-    cont_input_null->setBlock(input_null, index_input);
+    cont_input_null->setBlock(*input_null, index_input);
 
     // Set last column to dJndp
     (*cont_input_null)[m] = *dJndp;
@@ -146,25 +153,18 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solve(
 
     // Solve
     status = solveContiguous(params, *cont_input_x, *cont_input_null, 
-			     input_param, *cont_result_x, *cont_result_null, 
-			     result_param);
+			     *input_param, *cont_result_x, *cont_result_null, 
+			     *result_param);
 
     // Create views of first m columns for result_x, result_null
-    NOX::Abstract::MultiVector* cont_result_x_view = 
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x_view = 
       cont_result_x->subView(index_input);
-    NOX::Abstract::MultiVector* cont_result_null_view = 
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null_view = 
       cont_result_null->subView(index_input);
 
     // Copy first m columns back into result_x, result_null
-    result_x = *cont_result_x_view;
-    result_null = *cont_result_null_view;
-
-    delete cont_input_x;
-    delete cont_input_null;
-    delete cont_result_x;
-    delete cont_result_null;
-    delete cont_result_x_view;
-    delete cont_result_null_view;
+    *result_x = *cont_result_x_view;
+    *result_null = *cont_result_null_view;
   }
 
    return status;
@@ -211,11 +211,14 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous(
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
-  NOX::Abstract::MultiVector *A = result_x.subView(index_input);
-  NOX::Abstract::MultiVector *b = result_x.subView(index_dp);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A = 
+    result_x.subView(index_input);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> b = 
+    result_x.subView(index_dp);
 
   // compute (Jn)_x[A b]
-  NOX::Abstract::MultiVector *tmp = result_x.clone(NOX::ShapeCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp = 
+    result_x.clone(NOX::ShapeCopy);
   status = group->computeDJnDxaMulti(*nullVector, *JnVector, result_x,
 				     *tmp);
   finalStatus = 
@@ -239,8 +242,10 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous(
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
-  NOX::Abstract::MultiVector *C = result_null.subView(index_input);
-  NOX::Abstract::MultiVector *d = result_null.subView(index_dp);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> C = 
+    result_null.subView(index_input);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> d = 
+    result_null.subView(index_dp);
 
   // compute z = (h + phi^T C) / phi^T d
   tpGroup->lTransNorm(*C, result_param);
@@ -253,12 +258,6 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous(
 
   // compute C = -C + d*z (remember C is a sub-view of result_null)
   C->update(Teuchos::NO_TRANS, 1.0, *d, result_param, -1.0);
-
-  delete A;
-  delete b;
-  delete tmp;
-  delete C;
-  delete d;
 
   return finalStatus;
 }

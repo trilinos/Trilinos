@@ -42,14 +42,14 @@ namespace NOX {
 }
 
 namespace LOCA {
-  namespace Continuation {
+  namespace MultiContinuation {
     class AbstractGroup;
   }
-  namespace Bifurcation {
-    namespace HopfBord {
-      class AbstractGroup;
-    }
-  }
+//   namespace Bifurcation {
+//     namespace HopfBord {
+//       class AbstractGroup;
+//     }
+//   }
 }
 
 namespace LOCA {
@@ -87,149 +87,115 @@ public:
 
   //! Compute derivative of f with respect to parameter, identified by param_id
   virtual NOX::Abstract::Group::ReturnType 
-  computeDfDp(LOCA::Continuation::AbstractGroup& grp, int param_id,
-	      NOX::Abstract::Vector& result) const;
-
-  //! Compute derivative of f with respect to parameter, identified by param_id
-  virtual NOX::Abstract::Group::ReturnType 
-  computeDfDp(LOCA::Continuation::AbstractGroup& grp, 
+  computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp, 
 	      const vector<int>& param_ids,
 	      NOX::Abstract::MultiVector& result,
 	      bool isValidF) const;
 
   //! Compute derivative of Jn with respect to particular parameter param_id
   virtual NOX::Abstract::Group::ReturnType 
-  computeDJnDp(LOCA::Continuation::AbstractGroup& grp,
-	       const NOX::Abstract::Vector& nullVector,
-	       int param_id, NOX::Abstract::Vector& result) const;
-
-  //! Compute derivative of Jn with respect to parameter, given JnVector
-  virtual NOX::Abstract::Group::ReturnType 
-  computeDJnDp(LOCA::Continuation::AbstractGroup& grp,
-	       const NOX::Abstract::Vector& nullVector,
-	       int param_id,
-	       const NOX::Abstract::Vector& JnVector,
-	       NOX::Abstract::Vector& result) const;
-
-  //! Compute derivative of Jn with respect to particular parameter param_id
-  virtual NOX::Abstract::Group::ReturnType 
-  computeDJnDp(LOCA::Continuation::AbstractGroup&,
+  computeDJnDp(LOCA::MultiContinuation::AbstractGroup&,
 	       const vector<int>& paramIDs, 
 	       const NOX::Abstract::Vector& nullVector,
 	       NOX::Abstract::MultiVector& result,
 	       bool isValid) const;
 
-  //! Compute vector (Jn)_{x}a  given vector a
-  virtual NOX::Abstract::Group::ReturnType 
-  computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
-		const NOX::Abstract::Vector& nullVector,
-		const NOX::Abstract::Vector& aVector,
-		NOX::Abstract::Vector& result) const;
-  
-  //! Compute vector (Jn)_{x}a  given vector a, given JnVector
-  virtual NOX::Abstract::Group::ReturnType 
-  computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
-		const NOX::Abstract::Vector& nullVector,
-		const NOX::Abstract::Vector& aVector,
-		const NOX::Abstract::Vector& JnVector,
-		NOX::Abstract::Vector& result) const;
-
   //! Compute vector (Jn)_{x}a  given multi-vector a
   virtual NOX::Abstract::Group::ReturnType 
-  computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
+  computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 		const NOX::Abstract::Vector& nullVector,
 		const NOX::Abstract::MultiVector& aVector,
 		NOX::Abstract::MultiVector& result) const;
   
   //! Compute vector (Jn)_{x}a  given multi-vector a, given JnVector
   virtual NOX::Abstract::Group::ReturnType 
-  computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
+  computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 		const NOX::Abstract::Vector& nullVector,
 		const NOX::Abstract::MultiVector& aVector,
 		const NOX::Abstract::Vector& JnVector,
 		NOX::Abstract::MultiVector& result) const;
 
-  //! Compute derivative of (J+iwB)(y+iz) with respect to particular 
-  //! parameter param_id
-  virtual NOX::Abstract::Group::ReturnType 
-  computeDCeDp(LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
-	       const NOX::Abstract::Vector& yVector,
-	       const NOX::Abstract::Vector& zVector,
-	       double w,
-	       const int param_id, 
-	       NOX::Abstract::Vector& result_real,
-	       NOX::Abstract::Vector& result_imag) const;
+//   //! Compute derivative of (J+iwB)(y+iz) with respect to particular 
+//   //! parameter param_id
+//   virtual NOX::Abstract::Group::ReturnType 
+//   computeDCeDp(LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
+// 	       const NOX::Abstract::Vector& yVector,
+// 	       const NOX::Abstract::Vector& zVector,
+// 	       double w,
+// 	       const int param_id, 
+// 	       NOX::Abstract::Vector& result_real,
+// 	       NOX::Abstract::Vector& result_imag) const;
 
-  //! Compute derivative of (J+iwB)(y+iz) with respect to parameter, 
-  //! given (J+iwB)(y+iz) vectors
-  virtual NOX::Abstract::Group::ReturnType 
-  computeDCeDp(LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
-	       const NOX::Abstract::Vector& yVector,
-	       const NOX::Abstract::Vector& zVector,
-	       double w,
-	       const int param_id, 
-	       const NOX::Abstract::Vector& Ce_real,
-	       const NOX::Abstract::Vector& Ce_imag,
-	       NOX::Abstract::Vector& result_real,
-	       NOX::Abstract::Vector& result_imag) const;
+//   //! Compute derivative of (J+iwB)(y+iz) with respect to parameter, 
+//   //! given (J+iwB)(y+iz) vectors
+//   virtual NOX::Abstract::Group::ReturnType 
+//   computeDCeDp(LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
+// 	       const NOX::Abstract::Vector& yVector,
+// 	       const NOX::Abstract::Vector& zVector,
+// 	       double w,
+// 	       const int param_id, 
+// 	       const NOX::Abstract::Vector& Ce_real,
+// 	       const NOX::Abstract::Vector& Ce_imag,
+// 	       NOX::Abstract::Vector& result_real,
+// 	       NOX::Abstract::Vector& result_imag) const;
 
-  //! Compute vector (J+iwB)(y+iz))_{x}a  given vector a
-  virtual NOX::Abstract::Group::ReturnType 
-  computeDCeDxa(LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
-		const NOX::Abstract::Vector& yVector,
-		const NOX::Abstract::Vector& zVector,
-		double w,
-		const NOX::Abstract::Vector& aVector,
-		NOX::Abstract::Vector& result_real,
-		NOX::Abstract::Vector& result_imag) const;
+//   //! Compute vector (J+iwB)(y+iz))_{x}a  given vector a
+//   virtual NOX::Abstract::Group::ReturnType 
+//   computeDCeDxa(LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
+// 		const NOX::Abstract::Vector& yVector,
+// 		const NOX::Abstract::Vector& zVector,
+// 		double w,
+// 		const NOX::Abstract::Vector& aVector,
+// 		NOX::Abstract::Vector& result_real,
+// 		NOX::Abstract::Vector& result_imag) const;
   
-  //! Compute vector (J+iwB)(y+iz))_{x}a  given vector a, given 
-  //! (J+iwB)(y+iz) vector
-  virtual NOX::Abstract::Group::ReturnType 
-  computeDCeDxa(LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
-		const NOX::Abstract::Vector& yVector,
-		const NOX::Abstract::Vector& zVector,
-		double w,
-		const NOX::Abstract::Vector& aVector,
-		const NOX::Abstract::Vector& Ce_real,
-		const NOX::Abstract::Vector& Ce_imag,
-		NOX::Abstract::Vector& result_real,
-		NOX::Abstract::Vector& result_imag) const;
+//   //! Compute vector (J+iwB)(y+iz))_{x}a  given vector a, given 
+//   //! (J+iwB)(y+iz) vector
+//   virtual NOX::Abstract::Group::ReturnType 
+//   computeDCeDxa(LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
+// 		const NOX::Abstract::Vector& yVector,
+// 		const NOX::Abstract::Vector& zVector,
+// 		double w,
+// 		const NOX::Abstract::Vector& aVector,
+// 		const NOX::Abstract::Vector& Ce_real,
+// 		const NOX::Abstract::Vector& Ce_imag,
+// 		NOX::Abstract::Vector& result_real,
+// 		NOX::Abstract::Vector& result_imag) const;
 
-  //! Compute vector (J+iwB)(y+iz))_{x}a  given multi-vector a
-  virtual NOX::Abstract::Group::ReturnType 
-  computeDCeDxa(LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
-		const NOX::Abstract::Vector& yVector,
-		const NOX::Abstract::Vector& zVector,
-		double w,
-		const NOX::Abstract::MultiVector& aVector,
-		NOX::Abstract::MultiVector& result_real,
-		NOX::Abstract::MultiVector& result_imag) const;
+//   //! Compute vector (J+iwB)(y+iz))_{x}a  given multi-vector a
+//   virtual NOX::Abstract::Group::ReturnType 
+//   computeDCeDxa(LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
+// 		const NOX::Abstract::Vector& yVector,
+// 		const NOX::Abstract::Vector& zVector,
+// 		double w,
+// 		const NOX::Abstract::MultiVector& aVector,
+// 		NOX::Abstract::MultiVector& result_real,
+// 		NOX::Abstract::MultiVector& result_imag) const;
   
-  //! Compute vector (J+iwB)(y+iz))_{x}a  given multi-vector a, given 
-  //! (J+iwB)(y+iz) vector
-  virtual NOX::Abstract::Group::ReturnType 
-  computeDCeDxa(LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
-		const NOX::Abstract::Vector& yVector,
-		const NOX::Abstract::Vector& zVector,
-		double w,
-		const NOX::Abstract::MultiVector& aVector,
-		const NOX::Abstract::Vector& Ce_real,
-		const NOX::Abstract::Vector& Ce_imag,
-		NOX::Abstract::MultiVector& result_real,
-		NOX::Abstract::MultiVector& result_imag) const;
+//   //! Compute vector (J+iwB)(y+iz))_{x}a  given multi-vector a, given 
+//   //! (J+iwB)(y+iz) vector
+//   virtual NOX::Abstract::Group::ReturnType 
+//   computeDCeDxa(LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
+// 		const NOX::Abstract::Vector& yVector,
+// 		const NOX::Abstract::Vector& zVector,
+// 		double w,
+// 		const NOX::Abstract::MultiVector& aVector,
+// 		const NOX::Abstract::Vector& Ce_real,
+// 		const NOX::Abstract::Vector& Ce_imag,
+// 		NOX::Abstract::MultiVector& result_real,
+// 		NOX::Abstract::MultiVector& result_imag) const;
 
 protected:
 
   //! Perturb parameter param_id in the group's parameter vector,
   //! and return perturbation size
-  virtual double perturbParam(LOCA::Continuation::AbstractGroup& grp,
+  virtual double perturbParam(LOCA::MultiContinuation::AbstractGroup& grp,
 			      double& param,
                               int param_id) const;
 
   //! Perturb group's solution vector in direction of aVector,
   //! and return perturbation size
-  virtual double perturbXVec(LOCA::Continuation::AbstractGroup& grp,
+  virtual double perturbXVec(LOCA::MultiContinuation::AbstractGroup& grp,
 			     const NOX::Abstract::Vector& xVector,
                              const NOX::Abstract::Vector& aVector) const;
 

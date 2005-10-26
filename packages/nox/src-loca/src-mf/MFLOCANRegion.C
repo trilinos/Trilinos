@@ -38,6 +38,13 @@ extern "C" {
 #include <stdlib.h>
 
 int LOCATest(MFNVector, void *);
+void MFFreeLOCAData(void*);
+
+void MFFreeLOCAData(void* data)
+{
+  LOCAData* locaData = (LOCAData*) data;
+  delete locaData;
+}
 
 MFNRegion MFNRegionCreateLOCA(LOCAData* data)
  {
@@ -47,6 +54,7 @@ MFNRegion MFNRegionCreateLOCA(LOCAData* data)
   loca=MFNRegionCreateBaseClass("LOCA");
   MFNRegionSetTest(loca,LOCATest);
   MFNRegionSetData(loca,(void *)data);
+  MFNRegionSetFreeData(loca,MFFreeLOCAData);
 
   return(loca);
  }
@@ -54,23 +62,24 @@ MFNRegion MFNRegionCreateLOCA(LOCAData* data)
 int LOCATest(MFNVector u, void *d)
 {
    
-   LMCEV* v = (LMCEV *)MFNVectorGetData(u);
+   LOCANVectorData* v_data = (LOCANVectorData *)MFNVectorGetData(u);
    LOCAData* data = (LOCAData*) d;
 
    list<ParamData>::iterator it = data->paramData->begin();
    for (unsigned int i=0; i<data->paramData->size(); i++) {
 
-     if (v->getScalar(i) < it->minValue)
+     if (v_data->u_ptr->getScalar(i) < it->minValue)
        return 0;
 
-     if (v->getScalar(i) > it->maxValue)
+     if (v_data->u_ptr->getScalar(i) > it->maxValue)
        return 0;
 
      ++it;
 
    }
 
-   if (v->getXVec().norm(NOX::Abstract::Vector::MaxNorm) > data->solutionMax)
+   if (v_data->u_ptr->getXVec()->norm(NOX::Abstract::Vector::MaxNorm) > 
+       data->solutionMax)
      return 0;
    
    return 1;

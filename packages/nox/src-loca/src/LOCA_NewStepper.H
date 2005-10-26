@@ -209,10 +209,10 @@ namespace LOCA {
     Teuchos::RefCountPtr<NOX::Solver::Manager> solverPtr;
 
     //! Current predictor direction
-    LOCA::MultiContinuation::ExtendedVector* curPredictorPtr;
+    Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> curPredictorPtr;
 
     //! previous predictor direction
-    LOCA::MultiContinuation::ExtendedVector* prevPredictorPtr;
+    Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> prevPredictorPtr;
 
     //! Step size manager
     LOCA::StepSize::Manager* stepSizeManagerPtr;

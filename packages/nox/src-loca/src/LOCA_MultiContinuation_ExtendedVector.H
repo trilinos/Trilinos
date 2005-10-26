@@ -89,14 +89,15 @@ namespace LOCA {
       operator=(const NOX::Abstract::Vector& y);
 
       //! Assignment operator
-      virtual NOX::Abstract::Vector* 
+      virtual Teuchos::RefCountPtr<NOX::Abstract::Vector>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Returns the solution vector component of extended vector
-      virtual const NOX::Abstract::Vector& getXVec() const;
+      virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+      getXVec() const;
 
       //! Returns the solution vector component of extended vector
-      virtual NOX::Abstract::Vector& getXVec();
+      virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> getXVec();
 
     protected:
 
@@ -108,7 +109,7 @@ namespace LOCA {
        * Returns an empty multivector of type 
        * LOCA::MultiContinuation::ExtendedMultiVector
        */
-      virtual LOCA::Extended::MultiVector*
+      virtual Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
       generateMultiVector(int nColumns, int nVectorRows, 
 			  int nScalarRows) const;
 

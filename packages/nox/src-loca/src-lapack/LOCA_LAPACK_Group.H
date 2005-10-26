@@ -130,7 +130,8 @@ namespace LOCA {
       NOX::LAPACK::Group& operator=(const NOX::LAPACK::Group& source);
 
       //! Cloning function
-      NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
+      Teuchos::RefCountPtr<NOX::Abstract::Group> 
+      clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Overloaded computeF()
       /*!

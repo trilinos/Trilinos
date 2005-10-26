@@ -45,3 +45,16 @@ LOCA::MultiContinuation::AbstractGroup::projectToDrawDimension() const
 {
   return 1;
 }
+
+double
+LOCA::MultiContinuation::AbstractGroup::computeScaledDotProduct(
+					 const NOX::Abstract::Vector& a,
+					 const NOX::Abstract::Vector& b) const
+{
+  return a.innerProduct(b);
+}
+
+void
+LOCA::MultiContinuation::AbstractGroup::scaleVector(NOX::Abstract::Vector& x) const
+{
+}

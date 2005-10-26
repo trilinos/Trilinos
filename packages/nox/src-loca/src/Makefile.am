@@ -37,6 +37,105 @@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
+LOCA_OLD_H = \
+	$(srcdir)/LOCA_Continuation_AbstractGroup.H \
+	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
+	$(srcdir)/LOCA_Continuation_ExtendedGroup.H \
+	$(srcdir)/LOCA_Continuation_Manager.H \
+	$(srcdir)/LOCA_Continuation_NaturalGroup.H \
+	$(srcdir)/LOCA_Continuation_ArcLengthGroup.H \
+	$(srcdir)/LOCA_Continuation_HouseholderGroup.H \
+	$(srcdir)/LOCA_Extended_AbstractGroup.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_Generic.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_Manager.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_Default.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_Nic.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_AbstractGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.H \
+        $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.H \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.H \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.H \
+	$(srcdir)/LOCA_Bifurcation_Manager.H \
+	$(srcdir)/LOCA_Predictor_Generic.H \
+	$(srcdir)/LOCA_Predictor_Manager.H \
+	$(srcdir)/LOCA_Predictor_Constant.H \
+	$(srcdir)/LOCA_Predictor_Tangent.H \
+	$(srcdir)/LOCA_Predictor_Secant.H \
+	$(srcdir)/LOCA_Predictor_Random.H \
+	$(srcdir)/LOCA_Predictor_Restart.H \
+	$(srcdir)/LOCA_Stepper.H \
+	$(srcdir)/LOCA_Solver_Wrapper.H \
+	$(srcdir)/LOCA_StatusTest_Wrapper.H \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.H \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H \
+	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \
+        $(srcdir)/LOCA_Homotopy_Group.H
+
+LOCA_OLD = \
+	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_ExtendedVector.C \
+	$(srcdir)/LOCA_Continuation_ExtendedVector.C \
+	$(srcdir)/LOCA_Continuation_AbstractGroup.C \
+	$(srcdir)/LOCA_Continuation_ExtendedGroup.C \
+	$(srcdir)/LOCA_Continuation_Manager.C \
+	$(srcdir)/LOCA_Continuation_NaturalGroup.C \
+	$(srcdir)/LOCA_Continuation_ArcLengthGroup.C \
+	$(srcdir)/LOCA_Continuation_HouseholderGroup.C \
+	$(srcdir)/LOCA_Extended_AbstractGroup.C \
+	$(srcdir)/LOCA_SingularJacobianSolve_Manager.C \
+	$(srcdir)/LOCA_SingularJacobianSolve_Default.C \
+	$(srcdir)/LOCA_SingularJacobianSolve_Nic.C \
+	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.C \
+	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_AbstractGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.C \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.C \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.C \
+	$(srcdir)/LOCA_Bifurcation_Manager.C \
+	$(srcdir)/LOCA_Predictor_Generic.C \
+	$(srcdir)/LOCA_Predictor_Manager.C \
+	$(srcdir)/LOCA_Predictor_Constant.C \
+	$(srcdir)/LOCA_Predictor_Tangent.C \
+	$(srcdir)/LOCA_Predictor_Secant.C \
+	$(srcdir)/LOCA_Predictor_Random.C \
+	$(srcdir)/LOCA_Predictor_Restart.C \
+	$(srcdir)/LOCA_Stepper.C \
+	$(srcdir)/LOCA_Solver_Wrapper.C \
+	$(srcdir)/LOCA_StatusTest_Wrapper.C \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C \
+	$(srcdir)/LOCA_Homotopy_Group.C
+
 LOCA_ABSTRACT_H = \
         $(srcdir)/LOCA_Abstract_Group.H \
 	$(srcdir)/LOCA_Abstract_Iterator.H \
@@ -50,13 +149,11 @@ LOCA_ABSTRACT = \
 LOCA_EXTENDED_H = \
 	$(srcdir)/LOCA_Extended_Vector.H \
 	$(srcdir)/LOCA_Extended_MultiVector.H \
-	$(srcdir)/LOCA_Extended_AbstractGroup.H \
 	$(srcdir)/LOCA_Extended_MultiAbstractGroup.H
 
 LOCA_EXTENDED = \
 	$(srcdir)/LOCA_Extended_Vector.C \
 	$(srcdir)/LOCA_Extended_MultiVector.C \
-	$(srcdir)/LOCA_Extended_AbstractGroup.C \
 	$(srcdir)/LOCA_Extended_MultiAbstractGroup.C
 
 LOCA_BORDERED_SYSTEM_H = \
@@ -69,25 +166,9 @@ LOCA_BORDERED_SYSTEM = \
 	$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C \
 	$(srcdir)/LOCA_BorderedSystem_Factory.C
 
-LOCA_CONTINUATION_H = \
-	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
-	$(srcdir)/LOCA_Continuation_AbstractGroup.H \
-	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.H \
-	$(srcdir)/LOCA_Continuation_ExtendedGroup.H \
-	$(srcdir)/LOCA_Continuation_Manager.H \
-	$(srcdir)/LOCA_Continuation_NaturalGroup.H \
-	$(srcdir)/LOCA_Continuation_ArcLengthGroup.H \
-	$(srcdir)/LOCA_Continuation_HouseholderGroup.H
+LOCA_CONTINUATION_H =
 
-LOCA_CONTINUATION = \
-	$(srcdir)/LOCA_Continuation_ExtendedVector.C \
-	$(srcdir)/LOCA_Continuation_AbstractGroup.C \
-	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.C \
-	$(srcdir)/LOCA_Continuation_ExtendedGroup.C \
-	$(srcdir)/LOCA_Continuation_Manager.C \
-	$(srcdir)/LOCA_Continuation_NaturalGroup.C \
-	$(srcdir)/LOCA_Continuation_ArcLengthGroup.C \
-	$(srcdir)/LOCA_Continuation_HouseholderGroup.C
+LOCA_CONTINUATION = 
 
 LOCA_MULTICONTINUATION_H = \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedVector.H \
@@ -125,37 +206,12 @@ LOCA_MULTICONTINUATION = \
 	$(srcdir)/LOCA_MultiContinuation_ArcLengthConstraint.C \
 	$(srcdir)/LOCA_MultiContinuation_Factory.C
 
-LOCA_SINGULARSOLVE_H = \
-	$(srcdir)/LOCA_SingularJacobianSolve_Generic.H \
-	$(srcdir)/LOCA_SingularJacobianSolve_Manager.H \
-	$(srcdir)/LOCA_SingularJacobianSolve_Default.H \
-	$(srcdir)/LOCA_SingularJacobianSolve_Nic.H \
-	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.H \
-	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.H
+LOCA_SINGULARSOLVE_H = 
 
-LOCA_SINGULARSOLVE = \
-	$(srcdir)/LOCA_SingularJacobianSolve_Manager.C \
-	$(srcdir)/LOCA_SingularJacobianSolve_Default.C \
-	$(srcdir)/LOCA_SingularJacobianSolve_Nic.C \
-	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.C \
-	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.C
+LOCA_SINGULARSOLVE = 
 
 LOCA_BIFURCATION_H = \
-        $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.H \
-	$(srcdir)/LOCA_Bifurcation_TPBord_AbstractGroup.H \
-	$(srcdir)/LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.H \
-	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.H \
-        $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.H \
-	$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.H \
-	$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H \
 	$(srcdir)/LOCA_TimeDependent_AbstractGroup.H \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.H \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.H \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.H \
-	$(srcdir)/LOCA_Bifurcation_Manager.H \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.H \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.H \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_AbstractGroup.H \
@@ -168,21 +224,7 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_Bifurcation_Factory.H
 
 LOCA_BIFURCATION = \
-        $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.C \
-	$(srcdir)/LOCA_Bifurcation_TPBord_AbstractGroup.C \
-	$(srcdir)/LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.C \
-	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.C \
-	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.C \
-	$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.C \
-	$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.C \
 	$(srcdir)/LOCA_TimeDependent_AbstractGroup.C \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.C \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.C \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.C \
-	$(srcdir)/LOCA_Bifurcation_Manager.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C \
@@ -192,12 +234,9 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C \
 	$(srcdir)/LOCA_Bifurcation_Factory.C
 
-LOCA_HOMOTOPY_H = \
-	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \
-        $(srcdir)/LOCA_Homotopy_Group.H
+LOCA_HOMOTOPY_H = 
 
-LOCA_HOMOTOPY = \
-	$(srcdir)/LOCA_Homotopy_Group.C
+LOCA_HOMOTOPY = 
 
 LOCA_DERIVUTILS_H = \
         $(srcdir)/LOCA_DerivUtils.H
@@ -232,14 +271,7 @@ LOCA_PREDICTOR_H = \
 	$(srcdir)/LOCA_MultiPredictor_Secant.H \
 	$(srcdir)/LOCA_MultiPredictor_Random.H \
 	$(srcdir)/LOCA_MultiPredictor_Restart.H \
-	$(srcdir)/LOCA_MultiPredictor_Factory.H \
-	$(srcdir)/LOCA_Predictor_Generic.H \
-	$(srcdir)/LOCA_Predictor_Manager.H \
-	$(srcdir)/LOCA_Predictor_Constant.H \
-	$(srcdir)/LOCA_Predictor_Tangent.H \
-	$(srcdir)/LOCA_Predictor_Secant.H \
-	$(srcdir)/LOCA_Predictor_Random.H \
-	$(srcdir)/LOCA_Predictor_Restart.H
+	$(srcdir)/LOCA_MultiPredictor_Factory.H
 
 LOCA_PREDICTOR = \
 	$(srcdir)/LOCA_MultiPredictor_AbstractStrategy.C \
@@ -248,14 +280,7 @@ LOCA_PREDICTOR = \
 	$(srcdir)/LOCA_MultiPredictor_Secant.C \
 	$(srcdir)/LOCA_MultiPredictor_Random.C \
 	$(srcdir)/LOCA_MultiPredictor_Restart.C \
-	$(srcdir)/LOCA_MultiPredictor_Factory.C \
-	$(srcdir)/LOCA_Predictor_Generic.C \
-	$(srcdir)/LOCA_Predictor_Manager.C \
-	$(srcdir)/LOCA_Predictor_Constant.C \
-	$(srcdir)/LOCA_Predictor_Tangent.C \
-	$(srcdir)/LOCA_Predictor_Secant.C \
-	$(srcdir)/LOCA_Predictor_Random.C \
-	$(srcdir)/LOCA_Predictor_Restart.C
+	$(srcdir)/LOCA_MultiPredictor_Factory.C
 
 LOCA_STEPSIZE_H = \
 	$(srcdir)/LOCA_StepSize_Generic.H \
@@ -269,34 +294,14 @@ LOCA_STEPSIZE = \
 	$(srcdir)/LOCA_StepSize_Adaptive.C 
 
 LOCA_STEPPER_H = \
-	$(srcdir)/LOCA_Stepper.H \
 	$(srcdir)/LOCA_NewStepper.H
 
 LOCA_STEPPER = \
-	$(srcdir)/LOCA_Stepper.C \
 	$(srcdir)/LOCA_NewStepper.C
 
-LOCA_STATUSTEST_H = \
-	$(srcdir)/LOCA_Solver_Wrapper.H \
-	$(srcdir)/LOCA_StatusTest_Wrapper.H \
-	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.H \
-	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.H \
-	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H \
-	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H
+LOCA_STATUSTEST_H = 
 
-LOCA_STATUSTEST = \
-	$(srcdir)/LOCA_Solver_Wrapper.C \
-	$(srcdir)/LOCA_StatusTest_Wrapper.C \
-	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C \
-	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C \
-	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C \
-	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C
+LOCA_STATUSTEST = 
 
 LOCA_EIGENSOLVER_H = \
 	$(srcdir)/LOCA_Eigensolver_AbstractStrategy.H \
@@ -359,7 +364,6 @@ LOCA_H = \
         $(srcdir)/LOCA.H \
 	$(LOCA_EXTENDED_H) \
 	$(LOCA_BORDERED_SYSTEM_H) \
-	$(LOCA_CONTINUATION_H) \
 	$(LOCA_MULTICONTINUATION_H) \
 	$(LOCA_ANASAZI_H) \
 	$(LOCA_SINGULARSOLVE_H) \
@@ -379,7 +383,6 @@ LOCA_H = \
 LOCA = \
 	$(LOCA_EXTENDED) \
 	$(LOCA_BORDERED_SYSTEM) \
-	$(LOCA_CONTINUATION) \
 	$(LOCA_MULTICONTINUATION) \
 	$(LOCA_ANASAZI) \
 	$(LOCA_SINGULARSOLVE) \

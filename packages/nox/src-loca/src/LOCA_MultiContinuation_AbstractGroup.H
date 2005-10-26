@@ -33,8 +33,12 @@
 #ifndef LOCA_MULTICONTINUATION_ABSTRACTGROUP_H
 #define LOCA_MULTICONTINUATION_ABSTRACTGROUP_H
 
-#include "LOCA_Continuation_AbstractGroup.H"    // base class
+#include "NOX_Abstract_Group.H" // base class
 #include "NOX_Abstract_MultiVector.H"
+
+namespace LOCA {
+  class ParameterVector;
+}
 
 namespace LOCA { 
 
@@ -53,7 +57,7 @@ namespace LOCA {
      * the additional interface defined here.
     */
 
-    class AbstractGroup : public virtual LOCA::Continuation::AbstractGroup {
+    class AbstractGroup : public virtual NOX::Abstract::Group {
 
     public:
   
@@ -76,6 +80,24 @@ namespace LOCA {
       virtual void setParamsMulti(
 		     const vector<int>& paramIDs, 
 		     const NOX::Abstract::MultiVector::DenseMatrix& vals) = 0;
+
+      //! Set the parameter vector in the group to p (pVector = p).  
+      virtual void setParams(const LOCA::ParameterVector& p) = 0;
+
+       //! Set parameter indexed by (integer) paramID
+      virtual void setParam(int paramID, double val) = 0;
+
+      //! Set parameter indexed by (string) paramID
+      virtual void setParam(string paramID, double val) = 0;
+
+      //! Return a const reference to the ParameterVector owned by the group. 
+      virtual const LOCA::ParameterVector& getParams() const = 0;
+
+      //! Return copy of parameter indexed by (integer) paramID
+      virtual double getParam(int paramID) const = 0;
+
+      //! Return copy of parameter indexed by (string) paramID
+      virtual double getParam(string paramID) const = 0;
 
       /*! 
        * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
@@ -118,6 +140,15 @@ namespace LOCA {
        */
       virtual int projectToDrawDimension() const;
 
+      //! Compute a scaled dot product
+      /*! 
+       * The default implementation here just computes a.dot(b) but should
+       * be overloaded for any problem that his difficult scaling.
+       */
+      virtual double
+      computeScaledDotProduct(const NOX::Abstract::Vector& a,
+			      const NOX::Abstract::Vector& b) const;
+
       //@}
 
       /*! 
@@ -127,6 +158,26 @@ namespace LOCA {
        * therefore have empty or trivial implementations.
        */
       //@{
+
+      //! Function to print out solution and parameter after successful step
+      /*! 
+       * Empty default definition. 
+       */
+      virtual void printSolution(const double conParam) const {};
+
+      //! Function to print out a vector and parameter after successful step
+      /*! 
+       * Empty default definition. 
+       */
+      virtual void printSolution(const NOX::Abstract::Vector& x_,
+                                 const double conParam) const  {}
+
+      //! Scales a vector using scaling vector
+      /*!
+       * The default definition here is to do nothing, i.e., no scaling
+       */
+      virtual void
+      scaleVector(NOX::Abstract::Vector& x) const;
 
       //@}
 

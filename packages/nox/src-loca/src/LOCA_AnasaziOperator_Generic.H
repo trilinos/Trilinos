@@ -62,9 +62,9 @@ namespace LOCA {
 
       //! Reset parameters
       virtual NOX::Abstract::Group::ReturnType 
-      reset(NOX::Parameter::List& eigenParams,
-	    NOX::Parameter::List& solverParams,
-	    NOX::Abstract::Group& grp) = 0;
+      reset(const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	    const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	    const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp) = 0;
 
       /*!
        * \brief Return name of this operator

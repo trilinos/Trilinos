@@ -31,8 +31,6 @@
 //@HEADER
 
 #include "LOCA_StepSize_Adaptive.H"
-#include "LOCA_Continuation_ExtendedGroup.H"
-#include "LOCA_Stepper.H"
 #include "NOX_Solver_Generic.H"
 #include "LOCA_Utils.H"
 #include "LOCA_MultiContinuation_AbstractStrategy.H"
@@ -57,68 +55,6 @@ LOCA::StepSize::Adaptive::reset(NOX::Parameter::List& params)
     LOCA::StepSize::Constant::reset(params);
   
   agrValue = params.getParameter("Aggressiveness", 0.0);
-
-  return res;
-}
-
-NOX::Abstract::Group::ReturnType 
-LOCA::StepSize::Adaptive::compute(
-		       LOCA::Continuation::ExtendedGroup& curGroup,
-		       const LOCA::Continuation::ExtendedVector& predictor,
-		       const NOX::Solver::Generic& solver,
-		       const LOCA::Abstract::Iterator::StepStatus& stepStatus,
-		       const LOCA::Stepper& stepper,
-		       double& stepSize) 
-{
-  // If this is the first step, set step size to initial value
-  if (isFirstStep) {
-    double dpds = predictor.getParam();
-    if (dpds != 0.0) {
-      LOCA::StepSize::Constant::startStepSize /= dpds;
-      LOCA::StepSize::Constant::maxStepSize /= dpds;
-      LOCA::StepSize::Constant::minStepSize /= dpds;
-    }
-    LOCA::StepSize::Constant::isFirstStep = false;
-    stepSize = LOCA::StepSize::Constant::startStepSize;
-    prevStepSize = 0.0;
-  }
-  else {
-  
-    // A failed nonlinear solve cuts the step size in half
-    if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful) {
-      stepSize *= LOCA::StepSize::Constant::failedFactor;    
-    }
-    else {
-
-      double ds_ratio = curGroup.getStepSizeScaleFactor();
-      LOCA::StepSize::Constant::startStepSize *= ds_ratio;
-      LOCA::StepSize::Constant::maxStepSize *= ds_ratio;
-      LOCA::StepSize::Constant::minStepSize *= ds_ratio;
-
-      // Get maximum number of nonlinear iterations from stepper parameters
-      const NOX::Parameter::List& p = LOCA::Utils::getSublist("Stepper");
-      double maxNonlinearSteps 
-	= static_cast<double>(p.getParameter("Max Nonlinear Iterations", 15));
-      
-      // Get number of nonlinear iterations in last step
-      double numNonlinearSteps = 
-	static_cast<double>(solver.getNumIterations());
-
-      // Save successful stepsize as previous
-      prevStepSize = stepSize;
-
-      // adapive step size control
-      double factor = (maxNonlinearSteps - numNonlinearSteps) 
-               	      / (maxNonlinearSteps);
-
-      stepSize *= (1.0 + agrValue * factor * factor);
-
-      stepSize *= ds_ratio;
-    } 
-  }
-
-  // Clip step size to be within prescribed bounds
-  NOX::Abstract::Group::ReturnType res = clipStepSize(stepSize);
 
   return res;
 }

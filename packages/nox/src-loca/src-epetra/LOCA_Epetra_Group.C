@@ -41,49 +41,52 @@
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_Epetra_ShiftInvertOperator.H"
 #include "AztecOO.h"
-#include "NOX_Epetra_LinearSystemAztecOO.H"
+#include "NOX_Epetra_LinearSystem_AztecOO.H"
 
-LOCA::Epetra::Group::Group(NOX::Parameter::List& printingParams, 
-			      LOCA::Epetra::Interface::Required& i, 
-			      NOX::Epetra::Vector& initialGuess,
-			      const LOCA::ParameterVector& p) :
+LOCA::Epetra::Group::Group(
+	    NOX::Parameter::List& printingParams, 
+	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
+	    NOX::Epetra::Vector& initialGuess,
+	    const LOCA::ParameterVector& p) :
   NOX::Epetra::Group(printingParams, i, initialGuess),
   LOCA::Abstract::Group(),
   params(p),
   userInterface(i),
-  interfaceTime(false),
-  tmpVectorPtr2(0),
-  scaleVecPtr(NULL)
+  userInterfaceTime(),
+  tmpVectorPtr2(),
+  scaleVecPtr()
 {
 }
 
-LOCA::Epetra::Group::Group(NOX::Parameter::List& printingParams, 
-			      LOCA::Epetra::Interface::Required& i, 
-			      NOX::Epetra::Vector& initialGuess, 
-			      NOX::Epetra::LinearSystem& linSys,
-			      const LOCA::ParameterVector& p) :
+LOCA::Epetra::Group::Group(
+	    NOX::Parameter::List& printingParams, 
+	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
+	    NOX::Epetra::Vector& initialGuess, 
+	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
+	    const LOCA::ParameterVector& p) :
   NOX::Epetra::Group(printingParams, i, initialGuess, linSys),
   LOCA::Abstract::Group(),
   params(p),
   userInterface(i),
-  interfaceTime(false),
-  tmpVectorPtr2(0),
-  scaleVecPtr(NULL)
+  userInterfaceTime(),
+  tmpVectorPtr2(),
+  scaleVecPtr()
 {
 }
 
-LOCA::Epetra::Group::Group(NOX::Parameter::List& printingParams, 
-			      LOCA::Epetra::Interface::TimeDependent& i, 
-			      NOX::Epetra::Vector& initialGuess, 
-			      NOX::Epetra::LinearSystem& linSys,
-			      const LOCA::ParameterVector& p) :
+LOCA::Epetra::Group::Group(
+	NOX::Parameter::List& printingParams, 
+	const Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent>& i, 
+	NOX::Epetra::Vector& initialGuess, 
+	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
+	const LOCA::ParameterVector& p) :
   NOX::Epetra::Group(printingParams, i, initialGuess, linSys),
   LOCA::Abstract::Group(),
   params(p),
   userInterface(i), 
-  interfaceTime(true),
-  tmpVectorPtr2(0),
-  scaleVecPtr(NULL)
+  userInterfaceTime(i),
+  tmpVectorPtr2(),
+  scaleVecPtr()
 {
 }
 
@@ -93,25 +96,22 @@ LOCA::Epetra::Group::Group(const LOCA::Epetra::Group& source,
   LOCA::Abstract::Group(source, type),
   params(source.params),
   userInterface(source.userInterface),
-  interfaceTime(source.interfaceTime),
-  tmpVectorPtr2(0),
-  scaleVecPtr(NULL)
+  userInterfaceTime(source.userInterfaceTime),
+  tmpVectorPtr2(),
+  scaleVecPtr()
 {
-  if (source.scaleVecPtr != NULL)
+  if (source.scaleVecPtr != Teuchos::null)
     scaleVecPtr = source.scaleVecPtr->clone(NOX::DeepCopy);
 }
 
 LOCA::Epetra::Group::~Group() 
 {
-    delete tmpVectorPtr2;
-  if (scaleVecPtr != NULL)
-    delete scaleVecPtr;
 }
 
-NOX::Abstract::Group* 
+Teuchos::RefCountPtr<NOX::Abstract::Group>
 LOCA::Epetra::Group::clone(NOX::CopyType type) const 
 {
-  return new LOCA::Epetra::Group(*this, type);
+  return Teuchos::rcp(new LOCA::Epetra::Group(*this, type));
 }
 
 NOX::Abstract::Group& 
@@ -138,7 +138,10 @@ LOCA::Epetra::Group::operator=(const LOCA::Epetra::Group& source)
   params = source.params;
   NOX::Epetra::Group::operator=(source);
   LOCA::Abstract::Group::operator=(source);
-  if (source.scaleVecPtr != NULL)
+  params = source.params;
+  userInterface = source.userInterface;
+  userInterfaceTime = source.userInterfaceTime;
+  if (source.scaleVecPtr != Teuchos::null)
     scaleVecPtr = source.scaleVecPtr->clone(NOX::DeepCopy);
   return *this;
 }
@@ -184,7 +187,7 @@ LOCA::Epetra::Group::computeF()
     return Abstract::Group::Ok;
   
   // Set the parameters prior to computing F
-  userInterface.setParameters(params);
+  userInterface->setParameters(params);
   
   return NOX::Epetra::Group::computeF();
 }
@@ -197,7 +200,7 @@ LOCA::Epetra::Group::computeJacobian()
     return Abstract::Group::Ok;
   
   // Set the parameters prior to computing F
-  userInterface.setParameters(params);
+  userInterface->setParameters(params);
 
   return NOX::Epetra::Group::computeJacobian();
 }
@@ -208,7 +211,7 @@ LOCA::Epetra::Group::getParams() const
   return params;
 }
 
-NOX::Epetra::Interface::Required& 
+Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>
 LOCA::Epetra::Group::getUserInterface()
 {
   return userInterface;
@@ -224,7 +227,7 @@ void
 LOCA::Epetra::Group::printSolution(const NOX::Epetra::Vector& x_,
 				      const double conParam) const
 {
-  userInterface.printSolution(x_.getEpetraVector(), conParam);
+  userInterface->printSolution(x_.getEpetraVector(), conParam);
 }
 
 void
@@ -239,19 +242,16 @@ LOCA::Epetra::Group::computeScaledDotProduct(
 				       const NOX::Abstract::Vector& a,
 				       const NOX::Abstract::Vector& b) const
 {
-  if (scaleVecPtr == NULL)
+  if (scaleVecPtr == Teuchos::null)
     return a.innerProduct(b) / a.length();
   else {
-    NOX::Abstract::Vector* as = a.clone(NOX::DeepCopy);
-    NOX::Abstract::Vector* bs = b.clone(NOX::DeepCopy);
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> as = a.clone(NOX::DeepCopy);
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> bs = b.clone(NOX::DeepCopy);
     double d;
 
     as->scale(*scaleVecPtr);
     bs->scale(*scaleVecPtr);
     d = as->innerProduct(*bs);
-
-    delete as;
-    delete bs;
 
     return d;
   }
@@ -260,9 +260,6 @@ LOCA::Epetra::Group::computeScaledDotProduct(
 void
 LOCA::Epetra::Group::setScaleVector(const NOX::Abstract::Vector& s)
 {
-  if (scaleVecPtr != NULL)
-    delete scaleVecPtr;
-
   scaleVecPtr = s.clone(NOX::DeepCopy);
 
   return;
@@ -272,7 +269,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::Epetra::Group::computeMassMatrix()
 {
   // Hardwired for matrix-free mode on mass matrix, so this routine does nothing
-  if(interfaceTime)
+  if(userInterfaceTime != Teuchos::null)
     return NOX::Abstract::Group::Ok;
   else
     return NOX::Abstract::Group::BadDependency;
@@ -283,12 +280,12 @@ LOCA::Epetra::Group::applyMassMatrix(const NOX::Abstract::Vector& input,
                                         NOX::Abstract::Vector& result) const
 {
   // For matrix-free mode, call interface for applying mass matrix
-  if(interfaceTime){
+  if(userInterfaceTime != Teuchos::null){
      const NOX::Epetra::Vector& epetraInput = 
        dynamic_cast<const NOX::Epetra::Vector&>(input);
      NOX::Epetra::Vector& epetraResult =
        dynamic_cast<NOX::Epetra::Vector&>(result);
-     return dynamic_cast<LOCA::Epetra::Interface::TimeDependent&>(userInterface).applyMassMatrix(epetraInput,epetraResult);
+     return userInterfaceTime->applyMassMatrix(epetraInput,epetraResult);
   }
   else
     return NOX::Abstract::Group::BadDependency;
@@ -306,7 +303,8 @@ LOCA::Epetra::Group::applyShiftedMatrix(const NOX::Abstract::Vector& input,
                                            NOX::Abstract::Vector& result,
                                            double shift) const
 {
-  return applyShiftedMatrix(dynamic_cast<const NOX::Epetra::Vector&>(input), dynamic_cast<NOX::Epetra::Vector&>(result), shift);
+  return applyShiftedMatrix(dynamic_cast<const NOX::Epetra::Vector&>(input), 
+			    dynamic_cast<NOX::Epetra::Vector&>(result), shift);
 }
 
 NOX::Abstract::Group::ReturnType
@@ -320,21 +318,22 @@ LOCA::Epetra::Group::applyShiftedMatrix(
 
   applyJacobian(epetraInput,epetraResult);
 
-  if(interfaceTime) {
+  if(userInterfaceTime != Teuchos::null) {
 
    // If there is a mass matrix, shifted matrix is J + shift*M
 
-    NOX::Epetra::Vector massResult(epetraResult,NOX::ShapeCopy);
-    dynamic_cast<LOCA::Epetra::Interface::TimeDependent&>(userInterface).applyMassMatrix(epetraInput,massResult);
+    NOX::Epetra::Vector massResult(epetraResult, NOX::ShapeCopy);
 
-     epetraResult.update(shift,massResult,1.00);
+    userInterfaceTime->applyMassMatrix(epetraInput, massResult);
+
+    epetraResult.update(shift, massResult, 1.00);
   }
 
   else {
 
     // If no mass matrix, shifted matrix is J + shift*I
 
-     epetraResult.update(shift,epetraInput,1.00);
+     epetraResult.update(shift, epetraInput, 1.00);
   }
 
   return NOX::Abstract::Group::Ok;
@@ -349,28 +348,43 @@ LOCA::Epetra::Group::applyShiftedMatrixInverse(
 					    double shift)
                                            
 {
-  const NOX::Epetra::Vector& epetraInput = dynamic_cast<const NOX::Epetra::Vector&>(input);
-  NOX::Epetra::Vector& epetraResult = dynamic_cast<NOX::Epetra::Vector&>(result);
+  const NOX::Epetra::Vector& epetraInput = 
+    dynamic_cast<const NOX::Epetra::Vector&>(input);
+  NOX::Epetra::Vector& epetraResult = 
+    dynamic_cast<NOX::Epetra::Vector&>(result);
 
   // If shift is zero, just apply Jacobian inverse
 
   if(shift == 0.0) {
-    applyJacobianInverse(params,epetraInput,epetraResult);
+    applyJacobianInverse(params, epetraInput, epetraResult);
   }
   else {
 
-    // Otherwise, construct a shift and invert operator, and use AztecOO to solve linear system
+    // Otherwise, construct a shift and invert operator, and use AztecOO to 
+    // solve linear system
 
-    LOCA::Epetra::ShiftInvertOperator A(*this,sharedLinearSystem.getObject(this).getJacobianOperator(),shift,interfaceTime);
+    Teuchos::RefCountPtr<LOCA::Epetra::ShiftInvertOperator> A =
+      Teuchos::rcp(new LOCA::Epetra::ShiftInvertOperator(
+		  Teuchos::rcp(this,false),
+		  sharedLinearSystem.getObject(this)->getJacobianOperator(),
+		  shift,
+		  userInterfaceTime != Teuchos::null));
 
-    NOX::Epetra::Vector dummy(epetraResult,NOX::ShapeCopy);
+    NOX::Epetra::Vector dummy(epetraResult, NOX::ShapeCopy);
     Epetra_Vector& epetra_dummy = dummy.getEpetraVector();    
-    LOCA::Epetra::ShiftInvertInterface interface; 
+    Teuchos::RefCountPtr<LOCA::Epetra::ShiftInvertInterface> interface = 
+      Teuchos::rcp(new LOCA::Epetra::ShiftInvertInterface); 
     NOX::Parameter::List& solveList = params.sublist("NOX").sublist("Direction").sublist("Newton").sublist("Linear Solver");
 
-   NOX::Epetra::LinearSystemAztecOO shiftsys(params,solveList,userInterface,dynamic_cast<NOX::Epetra::Interface::Jacobian&>(interface),dynamic_cast<Epetra_Operator&>(A),epetra_dummy); 
+    NOX::Epetra::LinearSystemAztecOO shiftsys(
+	params,
+	solveList,
+	userInterface,
+	Teuchos::rcp_dynamic_cast<NOX::Epetra::Interface::Jacobian>(interface),
+	A,
+	epetra_dummy); 
 
-    shiftsys.setJacobianOperatorForSolve(dynamic_cast<Epetra_Operator&>(A));
+    shiftsys.setJacobianOperatorForSolve(A);
 
     shiftsys.applyJacobianInverse(params,epetraInput,epetraResult);
 
@@ -382,7 +396,7 @@ LOCA::Epetra::Group::applyShiftedMatrixInverse(
 void
 LOCA::Epetra::Group::scaleVector(NOX::Abstract::Vector& x) const
 {
-  if (scaleVecPtr == NULL)
+  if (scaleVecPtr == Teuchos::null)
     x.scale(1.0 / sqrt(static_cast<double>(x.length())));
   else 
     x.scale(*scaleVecPtr);
@@ -394,13 +408,13 @@ LOCA::Epetra::Group::projectToDraw(const NOX::Abstract::Vector& x,
 {
   const NOX::Epetra::Vector& ex = 
     dynamic_cast<const NOX::Epetra::Vector&>(x);
-  userInterface.projectToDraw(ex, px);
+  userInterface->projectToDraw(ex, px);
 }
 
 int
 LOCA::Epetra::Group::projectToDrawDimension() const
 {
-  return userInterface.projectToDrawDimension();
+  return userInterface->projectToDrawDimension();
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -408,20 +422,20 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
 {
 
   //Allocate temporary vectors if not aready done
-  if (tmpVectorPtr == 0)
-    tmpVectorPtr = new Epetra_Vector(xVector.getEpetraVector());
-  if (tmpVectorPtr2 == 0)
-    tmpVectorPtr2 = new Epetra_Vector(xVector.getEpetraVector());
+  if (tmpVectorPtr == Teuchos::null)
+    tmpVectorPtr = Teuchos::rcp(new Epetra_Vector(xVector.getEpetraVector()));
+  if (tmpVectorPtr2 == Teuchos::null)
+    tmpVectorPtr2 = Teuchos::rcp(new Epetra_Vector(xVector.getEpetraVector()));
 
   tmpVectorPtr2->PutScalar(1.0-conParamValue);
 
   // See if it is an Epetra_CrsMatrix
-  const Epetra_CrsMatrix* constTestCrs = 0;
-  Epetra_CrsMatrix* testCrs = 0;
-  constTestCrs = dynamic_cast<const Epetra_CrsMatrix*>
-    (&(sharedLinearSystem.getObject(this).getJacobianOperator()));
-  if (constTestCrs != 0) {
-    testCrs = const_cast<Epetra_CrsMatrix*>(constTestCrs);
+  Teuchos::RefCountPtr<const Epetra_CrsMatrix> constTestCrs;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> testCrs;
+  constTestCrs = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>
+    (sharedLinearSystem.getObject(this)->getJacobianOperator());
+  if (constTestCrs != Teuchos::null) {
+    testCrs = Teuchos::rcp_const_cast<Epetra_CrsMatrix>(constTestCrs);
     testCrs->Scale(conParamValue);
     testCrs->ExtractDiagonalCopy(*tmpVectorPtr);
     tmpVectorPtr->Update(1.0, *tmpVectorPtr2, 1.0);
@@ -431,12 +445,12 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
   }
 
   // See if it is an Epetra_VbrMatrix
-  const Epetra_VbrMatrix* constTestVbr = 0;
-  Epetra_VbrMatrix* testVbr = 0;
-  constTestVbr = dynamic_cast<const Epetra_VbrMatrix*>
-    (&(sharedLinearSystem.getObject(this).getJacobianOperator()));
-  if (testVbr != 0) {
-    testVbr = const_cast<Epetra_VbrMatrix*>(constTestVbr);
+  Teuchos::RefCountPtr<const Epetra_VbrMatrix> constTestVbr;
+  Teuchos::RefCountPtr<Epetra_VbrMatrix> testVbr;
+  constTestVbr = Teuchos::rcp_dynamic_cast<const Epetra_VbrMatrix>
+    (sharedLinearSystem.getObject(this)->getJacobianOperator());
+  if (constTestVbr != Teuchos::null) {
+    testVbr = Teuchos::rcp_const_cast<Epetra_VbrMatrix>(constTestVbr);
     testVbr->Scale(conParamValue);
     testVbr->ExtractDiagonalCopy(*tmpVectorPtr);
     tmpVectorPtr->Update(1.0, *tmpVectorPtr2, 1.0);
@@ -449,91 +463,11 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
   return LOCA::Abstract::Group::NotDefined;
 }
 
-// NOX::Abstract::Group::ReturnType 
-// LOCA::Epetra::Group::applyBorderedJacobianInverse(
-// 				     bool trans,
-// 				     NOX::Parameter::List& p,
-// 				     const NOX::Abstract::Vector& ca,
-// 				     const NOX::Abstract::Vector& cb,
-// 				     const NOX::Abstract::Vector& cvInput,
-// 				     double sInput,
-// 				     NOX::Abstract::Vector& vResult,
-// 				     double& sResult) const
-// {
-//   // Get non-const input
-//   NOX::Abstract::Vector& vInput = const_cast<NOX::Abstract::Vector&>(cvInput);
-//   NOX::Abstract::Vector& a = const_cast<NOX::Abstract::Vector&>(ca);
-//   NOX::Abstract::Vector& b = const_cast<NOX::Abstract::Vector&>(cb);
-
-//   // cast vectors to nox epetra vectors
-//   NOX::Epetra::Vector& nox_epetra_vInput = 
-//     dynamic_cast<NOX::Epetra::Vector&>(vInput);
-//   NOX::Epetra::Vector& nox_epetra_a = 
-//     dynamic_cast<NOX::Epetra::Vector&>(a);
-//   NOX::Epetra::Vector& nox_epetra_b = 
-//     dynamic_cast<NOX::Epetra::Vector&>(b);
-//   NOX::Epetra::Vector& nox_epetra_vResult = 
-//     dynamic_cast<NOX::Epetra::Vector&>(vResult);
-  
-//   // Get underlying epetra vectors
-//   Epetra_Vector& epetra_vInput = nox_epetra_vInput.getEpetraVector();
-//   Epetra_Vector& epetra_a = nox_epetra_a.getEpetraVector();
-//   Epetra_Vector& epetra_b = nox_epetra_b.getEpetraVector();
-//   Epetra_Vector& epetra_vResult = nox_epetra_vResult.getEpetraVector();
-
-//   // Get Jacobian, preconditioner operators
-//   const Epetra_Operator& cjac = 
-//     sharedLinearSystem.getObject(this).getJacobianOperator();
-//   const Epetra_Operator& cprec = 
-//     sharedLinearSystem.getObject(this).getGeneratedPrecOperator();
-//   Epetra_Operator& jac = const_cast<Epetra_Operator&>(cjac);
-//   Epetra_Operator& prec = const_cast<Epetra_Operator&>(cprec);
-
-//   // Build bordered matrix-free Jacobian, preconditioning operator
-//   LOCA::Epetra::BorderedOp extended_jac(jac, epetra_a, epetra_b);
-//   LOCA::Epetra::BorderedOp extended_prec(prec, epetra_a, epetra_b);
-//   extended_jac.SetUseTranspose(trans);
-//   extended_prec.SetUseTranspose(trans);
-
-//   // Build extended epetra vectors
-//   Epetra_Vector *epetra_extended_input = 
-//     extended_jac.buildEpetraExtendedVec(epetra_vInput, sInput, true);
-//   Epetra_Vector *epetra_extended_result = 
-//     extended_jac.buildEpetraExtendedVec(epetra_vResult, 0.0, false);
-
-//   // Build extended NOX::Epetra vectors
-//   NOX::Epetra::Vector nox_epetra_extended_input(*epetra_extended_input,
-// 						NOX::DeepCopy,
-// 						true);
-//   NOX::Epetra::Vector nox_epetra_extended_result(*epetra_extended_result,
-// 						 NOX::DeepCopy,
-// 						 true);
-
-//   bool status = 
-//     sharedLinearSystem.getObject(this).applyJacobianInverse(
-// 						   p, 
-// 						   nox_epetra_extended_input, 
-// 						   nox_epetra_extended_result,
-// 						   &extended_jac,
-// 						   &extended_prec);
-
-//   extended_jac.setEpetraExtendedVec(epetra_vResult, sResult, 
-// 				    *epetra_extended_result);
-  
-//   delete epetra_extended_input;
-//   delete epetra_extended_result;
-
-//   if (status) 
-//     return NOX::Abstract::Group::Ok;
-//   else
-//     return NOX::Abstract::Group::NotConverged;
-// }
-
 void
 LOCA::Epetra::Group::setJacobianOperatorForSolve(
-					      const Epetra_Operator& op) const
+		  const Teuchos::RefCountPtr<const Epetra_Operator>& op) const
 {
   // Set Jacobian operator for solve
-  sharedLinearSystem.getObject(this).setJacobianOperatorForSolve(op);
+  sharedLinearSystem.getObject(this)->setJacobianOperatorForSolve(op);
   isValidSolverJacOp = true;
 }

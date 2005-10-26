@@ -57,7 +57,7 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::CompositeConstraintMVDX(
   // Create new multivector to store all constraint derivatives
   if (i < numConstraintObjects)
     compositeDX = 
-      Teuchos::rcp(constraintMVDXPtrs[i]->getDX()->clone(totalNumConstraints));
+      constraintMVDXPtrs[i]->getDX()->clone(totalNumConstraints);
   else
     compositeDX = Teuchos::null;
 }
@@ -69,7 +69,7 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::CompositeConstraintMVDX(
   compositeDX()
 {
   if (source.compositeDX.get() != NULL)
-    compositeDX = Teuchos::rcp(source.compositeDX->clone(type));
+    compositeDX = source.compositeDX->clone(type);
   else
     compositeDX = Teuchos::null;
 }
@@ -87,7 +87,7 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::operator=(
     if (compositeDX.get() != NULL && source.compositeDX.get() != NULL)
       *compositeDX = *source.compositeDX;
     else if (source.compositeDX.get() != NULL)
-      compositeDX = Teuchos::rcp(source.compositeDX->clone(NOX::DeepCopy));
+      compositeDX = source.compositeDX->clone(NOX::DeepCopy);
     else
       compositeDX = Teuchos::null;
   }
@@ -136,7 +136,7 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::computeDX()
 							     callingFunction);
       
       // Copy columns of constraint dervative into composite
-      dx = Teuchos::rcp(compositeDX->subView(indices[i]));
+      dx = compositeDX->subView(indices[i]);
       *dx = *(constraintMVDXPtrs[i]->getDX());
     }
   }

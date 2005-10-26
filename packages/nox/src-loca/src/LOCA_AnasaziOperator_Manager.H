@@ -59,18 +59,18 @@ namespace LOCA {
     public:
 
       //! Constructor. 
-      Manager(NOX::Parameter::List& eigenParams,
-	      NOX::Parameter::List& solverParams,
-	      NOX::Abstract::Group& grp);
+      Manager(const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	      const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	      const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
 
       //! Destructor
       virtual ~Manager();
 
       //! Reset parameters
       virtual NOX::Abstract::Group::ReturnType 
-      reset(NOX::Parameter::List& eigenParams,
-	    NOX::Parameter::List& solverParams,
-	    NOX::Abstract::Group& grp);
+      reset(const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	    const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	    const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
 
       /*!
        * \brief Return name of this operator

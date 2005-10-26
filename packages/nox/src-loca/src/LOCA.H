@@ -33,8 +33,6 @@
 // Primary LOCA Objects
 #include "Teuchos_RefCountPtr.hpp"
 #include "NOX.H"
-#include "LOCA_Continuation_AbstractGroup.H"
-#include "LOCA_Stepper.H"
 #include "LOCA_NewStepper.H"
 #include "LOCA_Parameter_Vector.H"
 #include "LOCA_Parameter_Library.H"
@@ -45,31 +43,20 @@
 #include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
 
 // Bifurcation groups
-#include "LOCA_Bifurcation_TPBord_ExtendedVector.H"
-//#include "LOCA_Bifurcation_TPBord_ExtendedMultiVector.H"
-#include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
-#include "LOCA_Bifurcation_TPBord_ExtendedGroup.H"
-#include "LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.H"
-#include "LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.H"
-#include "LOCA_Bifurcation_PitchforkBord_ExtendedVector.H"
-#include "LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H"
 #include "LOCA_TimeDependent_AbstractGroup.H"
-#include "LOCA_Bifurcation_HopfBord_ExtendedVector.H"
-#include "LOCA_Bifurcation_HopfBord_AbstractGroup.H"
-#include "LOCA_Bifurcation_HopfBord_ExtendedGroup.H"
 
 // Homotopy group
-#include "LOCA_Homotopy_Group.H"
+// #include "LOCA_Homotopy_Group.H"
 
 #include "LOCA_Abstract_Group.H"
 #include "LOCA_Abstract_Factory.H"
 
 // Status tests
-#include "LOCA_StatusTest_Wrapper.H"
-#include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
-#include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
-#include "LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H"
-#include "LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H"
-#include "LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.H"
-#include "LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H"
-#include "LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H"
+// #include "LOCA_StatusTest_Wrapper.H"
+// #include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
+// #include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
+// #include "LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H"
+// #include "LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H"
+// #include "LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.H"
+// #include "LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H"
+// #include "LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H"

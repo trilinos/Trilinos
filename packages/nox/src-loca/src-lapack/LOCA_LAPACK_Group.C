@@ -140,9 +140,9 @@ LOCA::LAPACK::Group::operator=(const LOCA::LAPACK::Group& source) {
   return *this;
 }
 
-NOX::Abstract::Group*
+Teuchos::RefCountPtr<NOX::Abstract::Group>
 LOCA::LAPACK::Group::clone(NOX::CopyType type) const {
-  return new LOCA::LAPACK::Group(*this, type);
+  return Teuchos::rcp(new LOCA::LAPACK::Group(*this, type));
 }
 
 NOX::Abstract::Group::ReturnType

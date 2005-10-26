@@ -40,9 +40,10 @@ LOCA::Extended::Vector::Vector(int nvecs, int nscalars) :
   vectorPtrs(nvecs), 
   isView(nvecs), 
   numScalars(nscalars), 
-  scalarsPtr(NULL)
+  scalarsPtr()
 {
-  scalarsPtr = new NOX::Abstract::MultiVector::DenseMatrix(numScalars, 1);
+  scalarsPtr = 
+    Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(numScalars, 1));
 }
 
 LOCA::Extended::Vector::Vector(const LOCA::Extended::Vector& source, 
@@ -50,14 +51,15 @@ LOCA::Extended::Vector::Vector(const LOCA::Extended::Vector& source,
   vectorPtrs(source.vectorPtrs.size()), 
   isView(source.vectorPtrs.size()),
   numScalars(source.numScalars),
-  scalarsPtr(NULL)
+  scalarsPtr()
 {
   for (unsigned int i=0; i<vectorPtrs.size(); i++) {
     vectorPtrs[i] = source.vectorPtrs[i]->clone(type);
     isView[i] = false;
   }
 
-  scalarsPtr = new NOX::Abstract::MultiVector::DenseMatrix(*source.scalarsPtr);
+  scalarsPtr = 
+    Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(*source.scalarsPtr));
   
   if (type != NOX::DeepCopy)
     init(0.0);
@@ -66,11 +68,6 @@ LOCA::Extended::Vector::Vector(const LOCA::Extended::Vector& source,
 
 LOCA::Extended::Vector::~Vector()
 {
-  for (unsigned int i=0; i<vectorPtrs.size(); i++) {
-    if (!isView[i])
-      delete vectorPtrs[i];
-  }
-  delete scalarsPtr;
 }
 
 NOX::Abstract::Vector& 
@@ -103,13 +100,13 @@ LOCA::Extended::Vector::operator=(const LOCA::Extended::Vector& y)
   return *this;
 }
 
-NOX::Abstract::Vector* 
+Teuchos::RefCountPtr<NOX::Abstract::Vector>
 LOCA::Extended::Vector::clone(NOX::CopyType type) const
 {
-  return new LOCA::Extended::Vector(*this, type);
+  return Teuchos::rcp(new LOCA::Extended::Vector(*this, type));
 }
 
-NOX::Abstract::MultiVector* 
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 LOCA::Extended::Vector::createMultiVector(
 				   const NOX::Abstract::Vector* const* vecs,
 				   int numVecs, 
@@ -120,22 +117,22 @@ LOCA::Extended::Vector::createMultiVector(
     new const NOX::Abstract::Vector*[numVecs+1];
 
   // Pointer to sub-multivector of extended multivector
-  NOX::Abstract::MultiVector* submvec;
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> submvec;
 
   // Create empty extended multivector
-  LOCA::Extended::MultiVector *mvec = 
+  Teuchos::RefCountPtr<LOCA::Extended::MultiVector> mvec = 
     generateMultiVector(numVecs+1, vectorPtrs.size(), numScalars);
 
-  const LOCA::Extended::Vector* evec;
+  const LOCA::Extended::Vector *evec;
 
   // Create sub multivectors
   for (unsigned int i=0; i<vectorPtrs.size(); i++) {
 
     // Get the ith abstract vector from each column
-    subvecs[0] = vectorPtrs[i];
+    subvecs[0] = vectorPtrs[i].get();
     for (int j=0; j<numVecs; j++) {
       evec = dynamic_cast<const LOCA::Extended::Vector*>(vecs[j]);
-      subvecs[j+1] = evec->vectorPtrs[i];
+      subvecs[j+1] = evec->vectorPtrs[i].get();
     }
 
     // Create multivector for the ith row
@@ -161,15 +158,15 @@ LOCA::Extended::Vector::createMultiVector(
     
 }
 
-NOX::Abstract::MultiVector* 
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 LOCA::Extended::Vector::createMultiVector(int numVecs, 
 					  NOX::CopyType type) const
 {
   // Pointer to sub-multivector of extended multivector
-  NOX::Abstract::MultiVector* submvec;
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> submvec;
 
   // Create empty extended multivector
-  LOCA::Extended::MultiVector *mvec = 
+  Teuchos::RefCountPtr<LOCA::Extended::MultiVector> mvec = 
     generateMultiVector(numVecs, vectorPtrs.size(), numScalars);
 
   // Create sub multivectors
@@ -385,19 +382,19 @@ LOCA::Extended::Vector::length() const
 }
 
 void 
-LOCA::Extended::Vector::print() const
+LOCA::Extended::Vector::print(std::ostream& stream) const
 {
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
-    vectorPtrs[i]->print();
-  scalarsPtr->print(cout);
-  cout << endl;
+    vectorPtrs[i]->print(stream);
+  scalarsPtr->print(stream);
+  stream << std::endl;
 
 }
 
 void 
 LOCA::Extended::Vector::setVector(int i, const NOX::Abstract::Vector& v)
 {
-  if (vectorPtrs[i] != NULL) 
+  if (vectorPtrs[i] != Teuchos::null) 
     *(vectorPtrs[i]) = v;
   else
     vectorPtrs[i] = v.clone(NOX::DeepCopy);
@@ -405,12 +402,11 @@ LOCA::Extended::Vector::setVector(int i, const NOX::Abstract::Vector& v)
 }
 
 void 
-LOCA::Extended::Vector::setVectorView(int i, NOX::Abstract::Vector& v)
+LOCA::Extended::Vector::setVectorView(
+			 int i, 
+			 const Teuchos::RefCountPtr<NOX::Abstract::Vector>& v)
 {
-  if (vectorPtrs[i] != NULL) 
-    if (!isView[i])
-      delete vectorPtrs[i];
-  vectorPtrs[i] = &v;
+  vectorPtrs[i] = v;
   isView[i] = true;
 }
 
@@ -423,24 +419,24 @@ LOCA::Extended::Vector::setScalar(int i, double s)
 void
 LOCA::Extended::Vector::setScalarArray(double *sv)
 {
-  delete scalarsPtr;
-  scalarsPtr = new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
-							   sv,
-							   numScalars,
-							   numScalars,
-							   1);
+  scalarsPtr = 
+    Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
+							     sv,
+							     numScalars,
+							     numScalars,
+							     1));
 }
 
-const NOX::Abstract::Vector& 
+Teuchos::RefCountPtr<const NOX::Abstract::Vector>
 LOCA::Extended::Vector::getVector(int i) const
 {
-  return *vectorPtrs[i];
+  return vectorPtrs[i];
 }
 
-NOX::Abstract::Vector& 
+Teuchos::RefCountPtr<NOX::Abstract::Vector>
 LOCA::Extended::Vector::getVector(int i)
 {
-  return *vectorPtrs[i];
+  return vectorPtrs[i];
 }
 
 double 
@@ -455,16 +451,16 @@ LOCA::Extended::Vector::getScalar(int i)
   return (*scalarsPtr)(i,0);
 }
 
-const NOX::Abstract::MultiVector::DenseMatrix&
+Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>
 LOCA::Extended::Vector::getScalars() const
 {
-  return *scalarsPtr;
+  return scalarsPtr;
 }
 
-NOX::Abstract::MultiVector::DenseMatrix&
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix>
 LOCA::Extended::Vector::getScalars()
 {
-  return *scalarsPtr;
+  return scalarsPtr;
 }
 
 int
@@ -479,10 +475,11 @@ LOCA::Extended::Vector::getNumVectors() const
   return vectorPtrs.size();
 }
 
-LOCA::Extended::MultiVector*
+Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
 LOCA::Extended::Vector::generateMultiVector(int nColumns, int nVectorRows, 
 					    int nScalarRows) const
 {
-  return new LOCA::Extended::MultiVector(nColumns, nVectorRows, nScalarRows);
+  return Teuchos::rcp(new LOCA::Extended::MultiVector(nColumns, nVectorRows, 
+						      nScalarRows));
 }
 

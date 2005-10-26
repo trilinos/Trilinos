@@ -61,7 +61,7 @@ LOCA::MultiPredictor::Restart::Restart(
     Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> v =
       (*predParams).INVALID_TEMPLATE_QUALIFIER
         getRcpParameter<LOCA::MultiContinuation::ExtendedVector>(name);
-    predictor = Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector*>(v->createMultiVector(1, NOX::DeepCopy)));
+    predictor = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(v->createMultiVector(1, NOX::DeepCopy));
   }
   else
     globalData->locaErrorCheck->throwError(func, name + " is not a Teuchos::RefCountPtr to a LOCA::Extended::Vector nor a LOCA::Extended::MultiVector!");

@@ -133,10 +133,11 @@ double MFLOCANSpaceInner(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d)
 
   LOCAData* data = (LOCAData*) d;
 
-  LMCEV *u0 = (LMCEV *) MFNVectorGetData(v0);
-  LMCEV *u1 = (LMCEV *) MFNVectorGetData(v1);
+  LOCANVectorData *v0_data = (LOCANVectorData *) MFNVectorGetData(v0);
+  LOCANVectorData *v1_data = (LOCANVectorData *) MFNVectorGetData(v1);
 
-  double dotp = data->grp->computeScaledDotProduct(*u0,*u1);
+  double dotp = data->grp->computeScaledDotProduct(*(v0_data->u_ptr),
+						   *(v1_data->u_ptr));
 
 #ifdef MFTIMINGS
     MFTimeMFNSpaceInner+=clock()-starttime;
@@ -174,9 +175,9 @@ void MFLOCANSpaceScale(MFNSpace cthis,double s, MFNVector v,MFNVector w,void *d)
   starttime=clock();
 #endif
 
-  LMCEV* u = (LMCEV *) MFNVectorGetData(v);
-  LMCEV* ur = (LMCEV *) MFNVectorGetData(w);
-  ur->update(s, *u, 0.0);
+  LOCANVectorData* u_data = (LOCANVectorData *) MFNVectorGetData(v);
+  LOCANVectorData* ur_data = (LOCANVectorData *) MFNVectorGetData(w);
+  ur_data->u_ptr->update(s, *(u_data->u_ptr), 0.0);
 
 #ifdef MFTIMINGS
     MFTimeMFNSpaceScale+=clock()-starttime;

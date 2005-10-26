@@ -82,10 +82,8 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::setBlocks(
   dJndp = dJndp_;
 
   // Create multivectors for bordered solver
-  nullMultiVector = 
-    Teuchos::rcp(nullVector->createMultiVector(1, NOX::DeepCopy));
-  JnMultiVector = 
-    Teuchos::rcp(JnVector->createMultiVector(1, NOX::DeepCopy));
+  nullMultiVector = nullVector->createMultiVector(1, NOX::DeepCopy);
+  JnMultiVector = JnVector->createMultiVector(1, NOX::DeepCopy);
   s = JnVector->norm(NOX::Abstract::Vector::TwoNorm);
   JnMultiVector->scale(1.0/s);
 
@@ -108,15 +106,18 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solve(
   NOX::Abstract::Group::ReturnType status;
   
   // Get components of input
-  const NOX::Abstract::MultiVector& input_x = input.getXMultiVec();
-  const NOX::Abstract::MultiVector& input_null = input.getNullMultiVec();
-  const NOX::Abstract::MultiVector::DenseMatrix& input_param = 
-    input.getScalars();
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_x = 
+    input.getXMultiVec();
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_null = 
+    input.getNullMultiVec();
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_param = input.getScalars();
 
   // Get components of result
-  NOX::Abstract::MultiVector& result_x = result.getXMultiVec();
-  NOX::Abstract::MultiVector& result_null = result.getNullMultiVec();
-  NOX::Abstract::MultiVector::DenseMatrix& result_param = 
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x = 
+    result.getXMultiVec();
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_null = 
+    result.getNullMultiVec();
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
     result.getScalars();
 
   if (isContiguous) {
@@ -127,20 +128,24 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solve(
     for (int i=0; i<m+1; i++)
       index_input[i] = i;
 
-    NOX::Abstract::MultiVector* cont_input_x = input_x.clone(m+2);
-    NOX::Abstract::MultiVector* cont_input_null = input_null.clone(m+2);
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_x = 
+      input_x->clone(m+2);
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_null = 
+      input_null->clone(m+2);
 
-    NOX::Abstract::MultiVector* cont_result_x = result_x.clone(m+2);
-    NOX::Abstract::MultiVector* cont_result_null = result_null.clone(m+2);
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x = 
+      result_x->clone(m+2);
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null = 
+      result_null->clone(m+2);
 
     // Set first m+1 columns to input_x
-    cont_input_x->setBlock(input_x, index_input);
+    cont_input_x->setBlock(*input_x, index_input);
 
     // Initialize column m+2 to 0
     (*cont_input_x)[m+1].init(0.0);
 
     // Set first m+1 columns to input_null
-    cont_input_null->setBlock(input_null, index_input);
+    cont_input_null->setBlock(*input_null, index_input);
 
     // Initialize column m+2 to 0
     (*cont_input_null)[m+1].init(0.0);
@@ -151,10 +156,10 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solve(
 
     // Get views of the first m columns of input_param, result_param
     NOX::Abstract::MultiVector::DenseMatrix input_param_view(Teuchos::View,
-							     input_param,
+							     *input_param,
 							     1, m, 0, 0);
     NOX::Abstract::MultiVector::DenseMatrix result_param_view(Teuchos::View,
-							     result_param,
+							     *result_param,
 							     1, m, 0, 0);
     
 
@@ -164,21 +169,14 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solve(
 			     *cont_result_null, result_param_view);
 
     // Create views of first m+1 columns for result_x, result_null
-    NOX::Abstract::MultiVector* cont_result_x_view = 
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x_view = 
       cont_result_x->subView(index_input);
-    NOX::Abstract::MultiVector* cont_result_null_view = 
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null_view = 
       cont_result_null->subView(index_input);
 
     // Copy first m+1 columns back into result_x, result_null
-    result_x = *cont_result_x_view;
-    result_null = *cont_result_null_view;
-
-    delete cont_input_x;
-    delete cont_input_null;
-    delete cont_result_x;
-    delete cont_result_null;
-    delete cont_result_x_view;
-    delete cont_result_null_view;
+    *result_x = *cont_result_x_view;
+    *result_null = *cont_result_null_view;
   }
   else {
 
@@ -191,14 +189,18 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solve(
     // First m columns store input_x, input_null, result_x, result_null
     // respectively, next column stores dfdp, dJndp, J^-1 dfdp, J^-1 dJndp
     // respectively.  Last column is for solving (Jv)_x v
-    NOX::Abstract::MultiVector* cont_input_x = input_x.clone(m+2);
-    NOX::Abstract::MultiVector* cont_input_null = input_null.clone(m+2);
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_x = 
+      input_x->clone(m+2);
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_null = 
+      input_null->clone(m+2);
 
-    NOX::Abstract::MultiVector* cont_result_x = result_x.clone(m+2);
-    NOX::Abstract::MultiVector* cont_result_null = result_null.clone(m+2);
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x = 
+      result_x->clone(m+2);
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null = 
+      result_null->clone(m+2);
 
     // Set first m columns to input_x
-    cont_input_x->setBlock(input_x, index_input);
+    cont_input_x->setBlock(*input_x, index_input);
 
     // Set column m+1 to dfdp
     (*cont_input_x)[m] = *dfdp;
@@ -207,7 +209,7 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solve(
     (*cont_input_x)[m+1].init(0.0);
 
     // Set first m columns to input_null
-    cont_input_null->setBlock(input_null, index_input);
+    cont_input_null->setBlock(*input_null, index_input);
 
     // Set column m+1 to dJndp
     (*cont_input_null)[m] = *dJndp;
@@ -221,25 +223,18 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solve(
 
     // Solve
     status = solveContiguous(params, *cont_input_x, *cont_input_null, 
-			     input_param, *cont_result_x, *cont_result_null, 
-			     result_param);
+			     *input_param, *cont_result_x, *cont_result_null, 
+			     *result_param);
 
     // Create views of first m columns for result_x, result_null
-    NOX::Abstract::MultiVector* cont_result_x_view = 
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x_view = 
       cont_result_x->subView(index_input);
-    NOX::Abstract::MultiVector* cont_result_null_view = 
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null_view = 
       cont_result_null->subView(index_input);
 
     // Copy first m columns back into result_x, result_null
-    result_x = *cont_result_x_view;
-    result_null = *cont_result_null_view;
-
-    delete cont_input_x;
-    delete cont_input_null;
-    delete cont_result_x;
-    delete cont_result_null;
-    delete cont_result_x_view;
-    delete cont_result_null_view;
+    *result_x = *cont_result_x_view;
+    *result_null = *cont_result_null_view;
   }
 
    return status;
@@ -282,9 +277,9 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solveContiguous(
   NOX::Abstract::MultiVector::DenseMatrix tmp_mat_2(1, m+2);
 
   // Create view of first m+1 columns of input_x, result_x
-  NOX::Abstract::MultiVector* input_x_view = 
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> input_x_view = 
       input_x.subView(index_input_dp);
-  NOX::Abstract::MultiVector* result_x_view = 
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x_view = 
       result_x.subView(index_input_dp);
 
   // verify underlying Jacobian is valid
@@ -298,18 +293,21 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solveContiguous(
   
   // Solve  |J   u||A B| = |F df/dp|
   //        |v^T 0||a b|   |0   0  |
-  status = borderedSolver->applyInverse(params, input_x_view, NULL, 
+  status = borderedSolver->applyInverse(params, input_x_view.get(), NULL, 
 					*result_x_view, tmp_mat_1);
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
-  NOX::Abstract::MultiVector *A = result_x.subView(index_input);
-  NOX::Abstract::MultiVector *B = result_x.subView(index_dp);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A = 
+    result_x.subView(index_input);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> B = 
+    result_x.subView(index_dp);
   double b = tmp_mat_1(0,m);
 
   // compute (Jv)_x[A B v]
   result_x[m+1] = *nullVector;
-  NOX::Abstract::MultiVector *tmp = result_x.clone(NOX::ShapeCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp = 
+    result_x.clone(NOX::ShapeCopy);
   status = group->computeDJnDxaMulti(*nullVector, *JnVector, result_x,
 				     *tmp);
   finalStatus = 
@@ -330,14 +328,17 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solveContiguous(
 
   // Solve  |J   u||C D E| = |(Jv)_x A - G  (Jv)_x B - d(Jv)/dp  (Jv)_x v|
   //        |v^T 0||c d e|   |         0             0               0   |
-  status = borderedSolver->applyInverse(params, tmp, NULL, result_null,
+  status = borderedSolver->applyInverse(params, tmp.get(), NULL, result_null,
 					tmp_mat_2);
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
-  NOX::Abstract::MultiVector *C = result_null.subView(index_input);
-  NOX::Abstract::MultiVector *D = result_null.subView(index_dp);
-  NOX::Abstract::MultiVector *E = result_null.subView(index_null);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> C = 
+    result_null.subView(index_input);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> D = 
+    result_null.subView(index_dp);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> E = 
+    result_null.subView(index_null);
   double d = tmp_mat_2(0, m);
   double e = tmp_mat_2(0, m+1);
 
@@ -389,14 +390,6 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solveContiguous(
   C->update(Teuchos::NO_TRANS, -1.0, *E, alpha, 1.0);
   C->update(Teuchos::NO_TRANS, 1.0, *nullMultiVector, beta, 1.0);
 
-  delete input_x_view;
-  delete result_x_view;
-  delete A;
-  delete B;
-  delete tmp;
-  delete C;
-  delete D;
-  delete E;
   delete [] R;
 
   return finalStatus;

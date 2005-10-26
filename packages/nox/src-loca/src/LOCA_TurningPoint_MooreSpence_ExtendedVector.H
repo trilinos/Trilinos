@@ -94,7 +94,7 @@ namespace LOCA {
 	virtual ExtendedVector& operator=(const ExtendedVector& y);
 
 	//! Cloning function
-	virtual NOX::Abstract::Vector* 
+	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector>
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
 	//! Sets the %Vector by setting its three components 
@@ -103,19 +103,21 @@ namespace LOCA {
 			    double bifPar);
 
 	//! Returns the solution vector component of extended vector
-	virtual const NOX::Abstract::Vector& getXVec() const;
+	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+	getXVec() const;
 
 	//! Returns the null vector component of extended vector
-	virtual const NOX::Abstract::Vector& getNullVec() const;
+	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+	getNullVec() const;
 
 	//! Get %Bifurcation parameter
 	virtual double getBifParam() const;
 
 	//! Returns the solution vector component of extended vector
-	virtual NOX::Abstract::Vector& getXVec();
+	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> getXVec();
 
 	//! Returns the null vector component of extended vector
-	virtual NOX::Abstract::Vector& getNullVec();
+	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> getNullVec();
 
 	//! Get %Bifurcation parameter
 	virtual double& getBifParam();
@@ -130,7 +132,7 @@ namespace LOCA {
 	 * Returns an empty multivector of type 
 	 * LOCA::TurningPoint::MooreSpence::ExtendedMultiVector
 	 */
-	virtual LOCA::Extended::MultiVector*
+	virtual Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
 	generateMultiVector(int nColumns, int nVectorRows, 
 			    int nScalarRows) const;
 

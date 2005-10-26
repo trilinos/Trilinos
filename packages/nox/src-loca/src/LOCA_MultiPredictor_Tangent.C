@@ -67,11 +67,11 @@ LOCA::MultiPredictor::Tangent::Tangent(
   initialized(source.initialized)
 {
   if (source.initialized) {
-    fdfdp = Teuchos::rcp(source.fdfdp->clone(type));
+    fdfdp = source.fdfdp->clone(type);
   
-    tangent = Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector*>(source.tangent->clone(type)));
+    tangent = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(source.tangent->clone(type));
 
-    secant = Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(source.secant->clone(type)));
+    secant = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(source.secant->clone(type));
   }
 }
 
@@ -88,11 +88,11 @@ LOCA::MultiPredictor::Tangent::operator=(
     initialized = source.initialized;
 
     if (source.initialized) {
-      fdfdp = Teuchos::rcp(source.fdfdp->clone(NOX::DeepCopy));
+      fdfdp = source.fdfdp->clone(NOX::DeepCopy);
   
-      tangent = Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector*>(source.tangent->clone(NOX::DeepCopy)));
+      tangent = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(source.tangent->clone(NOX::DeepCopy));
 
-      secant = Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(source.secant->clone(NOX::DeepCopy)));
+      secant = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(source.secant->clone(NOX::DeepCopy));
     }
   }
 
@@ -128,22 +128,23 @@ LOCA::MultiPredictor::Tangent::compute(
   if (!initialized) {
 
     // Allocate dfdp
-    fdfdp = 
-      Teuchos::rcp(underlyingGroup->getX().createMultiVector(numParams+1, 
-							    NOX::ShapeCopy));
+    fdfdp = underlyingGroup->getX().createMultiVector(numParams+1, 
+						      NOX::ShapeCopy);
 
     // Allocate tangent
-    tangent = Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector*>(xVec.createMultiVector(numParams, NOX::ShapeCopy)));
+    tangent = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(xVec.createMultiVector(numParams, NOX::ShapeCopy));
     
     // Allocate secant
-    secant = Teuchos::rcp(dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(xVec.clone(NOX::ShapeCopy)));
+    secant = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(xVec.clone(NOX::ShapeCopy));
 
     initialized = true;
   }
 
   // Get references to x, parameter components of predictor
-  NOX::Abstract::MultiVector& tanX = tangent->getXMultiVec();
-  NOX::Abstract::MultiVector::DenseMatrix& tanP = tangent->getScalars();
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tanX = 
+    tangent->getXMultiVec();
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> tanP = 
+    tangent->getScalars();
 
   // Get continuation parameter IDs
   const vector<int>& conParamIDs = grp.getContinuationParameterIDs();
@@ -155,7 +156,8 @@ LOCA::MultiPredictor::Tangent::compute(
   vector<int> index_dfdp(conParamIDs.size());
   for (unsigned int i=0; i<conParamIDs.size(); i++)
     index_dfdp[i] = i+1;
-  NOX::Abstract::MultiVector *dfdp = fdfdp->subView(index_dfdp);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector>dfdp = 
+    fdfdp->subView(index_dfdp);
 
   // Scale dfdp by -1.0
   for (unsigned int i=0; i<conParamIDs.size(); i++)
@@ -170,21 +172,19 @@ LOCA::MultiPredictor::Tangent::compute(
   // Solve J*tanX = -df/dp
   status = underlyingGroup->applyJacobianInverseMultiVector(*linSolverParams, 
 							    *dfdp, 
-							    tanX);
+							    *tanX);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
 
   // Set parameter component equal to identity
-  tanP.putScalar(0.0);
+  tanP->putScalar(0.0);
   for (unsigned int i=0; i<conParamIDs.size(); i++)
-    tanP(i,i) = 1.0;
+    (*tanP)(i,i) = 1.0;
 
   // Set orientation based on parameter change
   setPredictorOrientation(baseOnSecant, stepSize, grp, prevXVec, 
 			  xVec, *secant, *tangent);
-
-  delete dfdp;
 
   return finalStatus;
 }

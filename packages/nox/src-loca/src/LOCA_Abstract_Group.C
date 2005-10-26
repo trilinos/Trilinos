@@ -35,25 +35,19 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Abstract::Group::Group(const LOCA::DerivUtils& d)
-  : LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(d),
-    LOCA::Bifurcation::TPBord::SingularSolveGroup(),
-    LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d)
+  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d)
 {
 }
 
 LOCA::Abstract::Group::Group(NOX::Parameter::List& params, 
 			     const LOCA::DerivUtils& d)
-  : LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(d),
-    LOCA::Bifurcation::TPBord::SingularSolveGroup(params),
-    LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d)
+  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d)
 {
 }
 
 LOCA::Abstract::Group::Group(const LOCA::Abstract::Group& source, 
 			     NOX::CopyType type)
-  : LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(source, type),
-    LOCA::Bifurcation::TPBord::SingularSolveGroup(source, type),
-    LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(source, type)
+  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(source, type)
 {
 }
 
@@ -62,40 +56,40 @@ LOCA::Abstract::Group::~Group()
 {
 }
 
-LOCA::Continuation::AbstractGroup&
-LOCA::Abstract::Group::operator=(
-			    const LOCA::Continuation::AbstractGroup& source)
-{
-  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-}
+// LOCA::Continuation::AbstractGroup&
+// LOCA::Abstract::Group::operator=(
+// 			    const LOCA::Continuation::AbstractGroup& source)
+// {
+//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+// }
 
-LOCA::Continuation::FiniteDifferenceGroup&
-LOCA::Abstract::Group::operator=(
-		      const LOCA::Continuation::FiniteDifferenceGroup& source)
-{
-  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-}
+// LOCA::Continuation::FiniteDifferenceGroup&
+// LOCA::Abstract::Group::operator=(
+// 		      const LOCA::Continuation::FiniteDifferenceGroup& source)
+// {
+//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+// }
 
-LOCA::Bifurcation::TPBord::AbstractGroup&
-LOCA::Abstract::Group::operator=(
-		     const LOCA::Bifurcation::TPBord::AbstractGroup& source)
-{
-  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-}
+// LOCA::Bifurcation::TPBord::AbstractGroup&
+// LOCA::Abstract::Group::operator=(
+// 		     const LOCA::Bifurcation::TPBord::AbstractGroup& source)
+// {
+//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+// }
 
-LOCA::Bifurcation::TPBord::FiniteDifferenceGroup&
-LOCA::Abstract::Group::operator=(
-	      const LOCA::Bifurcation::TPBord::FiniteDifferenceGroup& source)
-{
-  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-}
+// LOCA::Bifurcation::TPBord::FiniteDifferenceGroup&
+// LOCA::Abstract::Group::operator=(
+// 	      const LOCA::Bifurcation::TPBord::FiniteDifferenceGroup& source)
+// {
+//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+// }
 
-LOCA::Bifurcation::TPBord::SingularSolveGroup&
-LOCA::Abstract::Group::operator=(
-		   const LOCA::Bifurcation::TPBord::SingularSolveGroup& source)
-{
-  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-}
+// LOCA::Bifurcation::TPBord::SingularSolveGroup&
+// LOCA::Abstract::Group::operator=(
+// 		   const LOCA::Bifurcation::TPBord::SingularSolveGroup& source)
+// {
+//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+// }
 
 LOCA::TimeDependent::AbstractGroup&
 LOCA::Abstract::Group::operator=(
@@ -104,43 +98,43 @@ LOCA::Abstract::Group::operator=(
   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
 }
 
-LOCA::Bifurcation::HopfBord::AbstractGroup&
-LOCA::Abstract::Group::operator=(
-	       const LOCA::Bifurcation::HopfBord::AbstractGroup& source)
-{
-  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-}
+// LOCA::Bifurcation::HopfBord::AbstractGroup&
+// LOCA::Abstract::Group::operator=(
+// 	       const LOCA::Bifurcation::HopfBord::AbstractGroup& source)
+// {
+//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+// }
 
-LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup&
-LOCA::Abstract::Group::operator=(
-	       const LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& source)
-{
-  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-}
+// LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup&
+// LOCA::Abstract::Group::operator=(
+// 	       const LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& source)
+// {
+//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+// }
 
-LOCA::Homotopy::AbstractGroup&
-LOCA::Abstract::Group::operator=(
-			    const LOCA::Homotopy::AbstractGroup& source)
-{
-  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-}
+// LOCA::Homotopy::AbstractGroup&
+// LOCA::Abstract::Group::operator=(
+// 			    const LOCA::Homotopy::AbstractGroup& source)
+// {
+//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+// }
 
 LOCA::Abstract::Group&
 LOCA::Abstract::Group::operator=(const LOCA::Abstract::Group& source)
 {
 
   // Copy parent classes
-  LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup::operator=(source);
-  LOCA::Bifurcation::TPBord::SingularSolveGroup::operator=(source);
+//   LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup::operator=(source);
+//   LOCA::Bifurcation::TPBord::SingularSolveGroup::operator=(source);
   LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::operator=(source);
   return *this;
 }
 
-NOX::Abstract::Group::ReturnType 
-LOCA::Abstract::Group::augmentJacobianForHomotopy(double conParamValue)
-{
-  return NOX::Abstract::Group::NotDefined;
-}
+// NOX::Abstract::Group::ReturnType 
+// LOCA::Abstract::Group::augmentJacobianForHomotopy(double conParamValue)
+// {
+//   return NOX::Abstract::Group::NotDefined;
+// }
 
 NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::applyShiftedMatrixInverse(
@@ -155,35 +149,35 @@ LOCA::Abstract::Group::applyShiftedMatrixInverse(
   return NOX::Abstract::Group::NotDefined;
 }
 
-NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::applyComplexInverse(
-			       NOX::Parameter::List& params,
-			       const NOX::Abstract::Vector& input_real,
-			       const NOX::Abstract::Vector& input_imag,
-			       double frequency,
-			       NOX::Abstract::Vector& result_real,
-			       NOX::Abstract::Vector& result_imag) const
-{
-  LOCA::ErrorCheck::throwError("LOCA::Abstract::Group::applyComplexInverse",
-			       "No mass matrix defined for group");
-  return NOX::Abstract::Group::NotDefined;
-}
+// NOX::Abstract::Group::ReturnType
+// LOCA::Abstract::Group::applyComplexInverse(
+// 			       NOX::Parameter::List& params,
+// 			       const NOX::Abstract::Vector& input_real,
+// 			       const NOX::Abstract::Vector& input_imag,
+// 			       double frequency,
+// 			       NOX::Abstract::Vector& result_real,
+// 			       NOX::Abstract::Vector& result_imag) const
+// {
+//   LOCA::ErrorCheck::throwError("LOCA::Abstract::Group::applyComplexInverse",
+// 			       "No mass matrix defined for group");
+//   return NOX::Abstract::Group::NotDefined;
+// }
 
-NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::applyBorderedJacobianInverse(bool trans,
-				     NOX::Parameter::List& params,
-				     const NOX::Abstract::Vector& a,
-				     const NOX::Abstract::Vector& b,
-				     const NOX::Abstract::Vector& vInput,
-				     double sInput,
-				     NOX::Abstract::Vector& vResult,
-				     double& sResult) const
-{
-  LOCA::ErrorCheck::throwError(
-		       "LOCA::Abstract::Group::applyBorderedJacobianInverse",
-		       "Not defined for group");
-  return NOX::Abstract::Group::NotDefined;
-}
+// NOX::Abstract::Group::ReturnType
+// LOCA::Abstract::Group::applyBorderedJacobianInverse(bool trans,
+// 				     NOX::Parameter::List& params,
+// 				     const NOX::Abstract::Vector& a,
+// 				     const NOX::Abstract::Vector& b,
+// 				     const NOX::Abstract::Vector& vInput,
+// 				     double sInput,
+// 				     NOX::Abstract::Vector& vResult,
+// 				     double& sResult) const
+// {
+//   LOCA::ErrorCheck::throwError(
+// 		       "LOCA::Abstract::Group::applyBorderedJacobianInverse",
+// 		       "Not defined for group");
+//   return NOX::Abstract::Group::NotDefined;
+// }
 
 LOCA::MultiContinuation::AbstractGroup&
 LOCA::Abstract::Group::operator=(

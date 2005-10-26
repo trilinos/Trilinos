@@ -31,8 +31,6 @@
 //@HEADER
 
 #include "LOCA_StepSize_Manager.H"
-#include "LOCA_Continuation_ExtendedGroup.H"
-#include "LOCA_Stepper.H"
 #include "NOX_Solver_Generic.H"
 #include "LOCA_StepSize_Constant.H"
 #include "LOCA_StepSize_Adaptive.H"
@@ -75,26 +73,6 @@ LOCA::StepSize::Manager::reset(NOX::Parameter::List& params)
   }
 
   return NOX::Abstract::Group::Ok;
-}
-
-NOX::Abstract::Group::ReturnType 
-LOCA::StepSize::Manager::compute(
-			LOCA::Continuation::ExtendedGroup& curGroup,
-			const LOCA::Continuation::ExtendedVector& predictor,
-			const NOX::Solver::Generic& solver,
-			const LOCA::Abstract::Iterator::StepStatus& stepStatus,
-			const LOCA::Stepper& stepper,
-			double& stepSize) 
-{
-  if (stepSizePtr == NULL) {
-    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-      cout << "LOCA::StepSize::Manager::compute - Null pointer error" << endl;
-    }
-    return NOX::Abstract::Group::Failed;
-  }
-
-  return stepSizePtr->compute(curGroup, predictor, solver, stepStatus, 
-			      stepper, stepSize);
 }
 
 NOX::Abstract::Group::ReturnType 

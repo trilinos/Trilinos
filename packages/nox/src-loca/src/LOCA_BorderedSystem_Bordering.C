@@ -210,15 +210,11 @@ LOCA::BorderedSystem::Bordering::applyInverse(
    else if (isZeroB) {
 
      if (isContiguous) {
-       NOX::Abstract::MultiVector* f = F->subView(indexF);
-       NOX::Abstract::MultiVector* a = F->subView(indexA);
-       NOX::Abstract::MultiVector* x = X.subView(indexF);
+       Teuchos::RefCountPtr<NOX::Abstract::MultiVector> f = F->subView(indexF);
+       Teuchos::RefCountPtr<NOX::Abstract::MultiVector> a = F->subView(indexA);
+       Teuchos::RefCountPtr<NOX::Abstract::MultiVector> x = X.subView(indexF);
 
-       status = solveBZero(params, a, C.get(), f, G, *x, Y);
-
-       delete f;
-       delete a; 
-       delete x;
+       status = solveBZero(params, a.get(), C.get(), f.get(), G, *x, Y);
      }
      else 
        status = solveBZero(params, A.get(), C.get(), F, G, X, Y);
@@ -236,19 +232,18 @@ LOCA::BorderedSystem::Bordering::applyInverse(
 
      else {
        int numColsRHS = numColsF + numColsA;
-       NOX::Abstract::MultiVector* RHS = F->clone(numColsRHS);
-       NOX::Abstract::MultiVector* LHS = X.clone(numColsRHS);
-       NOX::Abstract::MultiVector* X1 = LHS->subView(indexF);
+       Teuchos::RefCountPtr<NOX::Abstract::MultiVector> RHS = 
+	 F->clone(numColsRHS);
+       Teuchos::RefCountPtr<NOX::Abstract::MultiVector> LHS = 
+	 X.clone(numColsRHS);
+       Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X1 = 
+	 LHS->subView(indexF);
        RHS->setBlock(*F, indexF);
        RHS->setBlock(*A, indexA);
       
        status = solveContiguous(params, A.get(), B.get(), C.get(), 
-				indexF, indexA, RHS, G, *LHS, Y);
+				indexF, indexA, RHS.get(), G, *LHS, Y);
        X = *X1;
-
-       delete X1;
-       delete RHS;
-       delete LHS;
      }
 
    }
@@ -313,7 +308,7 @@ LOCA::BorderedSystem::Bordering::solveBZero(
 						   callingFunction);
   }
   else {
-    NOX::Abstract::MultiVector *RHS;
+    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> RHS;
 
     if (isZeroF) {
       RHS = AA->clone(Y.numCols());
@@ -328,7 +323,6 @@ LOCA::BorderedSystem::Bordering::solveBZero(
     finalStatus = 
       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						   callingFunction);
-    delete RHS;
   }
 
   return finalStatus;
@@ -431,7 +425,8 @@ LOCA::BorderedSystem::Bordering::solveFZero(
     return finalStatus;
   }
 
-  NOX::Abstract::MultiVector *Xt = AA->clone(NOX::ShapeCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> Xt = 
+    AA->clone(NOX::ShapeCopy);
 
   // compute Xt = J^-1 A
   status = grp->applyJacobianInverseMultiVector(params, *AA, *Xt);
@@ -466,8 +461,6 @@ LOCA::BorderedSystem::Bordering::solveFZero(
   // compute X = -Xt*Y
   X.update(Teuchos::NO_TRANS, -1.0, *Xt, Y, -0.0);
 
-  delete Xt;
-
   return finalStatus;
 }
 
@@ -496,8 +489,8 @@ LOCA::BorderedSystem::Bordering::solveContiguous(
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
-  NOX::Abstract::MultiVector *X1 = X.subView(indexF);
-  NOX::Abstract::MultiVector *X2 = X.subView(indexA);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X1 = X.subView(indexF);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X2 = X.subView(indexA);
   
   // compute t1 = -B^T*X1, for efficiency t1 is stored in Y
   BB->multiplyDX(-1.0, *X1, Y);
@@ -531,9 +524,6 @@ LOCA::BorderedSystem::Bordering::solveContiguous(
 
   // compute X = X1 - X2*Y
   X1->update(Teuchos::NO_TRANS, -1.0, *X2, Y, 1.0);
-
-  delete X1;
-  delete X2;
 
   return finalStatus;
 }

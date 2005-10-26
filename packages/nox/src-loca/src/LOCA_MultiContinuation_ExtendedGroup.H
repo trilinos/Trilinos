@@ -126,7 +126,7 @@ namespace LOCA {
       operator=(const NOX::Abstract::Group& source);
 
       //! Cloning function
-      virtual NOX::Abstract::Group*
+      virtual Teuchos::RefCountPtr<NOX::Abstract::Group>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Set the solution vector to y.

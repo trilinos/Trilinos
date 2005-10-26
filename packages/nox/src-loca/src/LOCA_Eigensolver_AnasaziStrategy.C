@@ -124,8 +124,8 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   const NOX::Abstract::Vector& xVector = group.getX();
 
   // Create the operator and initial vector
-  LOCA::AnasaziOperator::Manager anasaziOperator(*eigenParams, *solverParams, 
-						 group);
+  LOCA::AnasaziOperator::Manager anasaziOperator(eigenParams, solverParams, 
+						 Teuchos::rcp(&group,false));
   Teuchos::RefCountPtr<Anasazi::LOCAMatrix> Amat = 
     Teuchos::rcp( new Anasazi::LOCAMatrix(anasaziOperator) );
   Teuchos::RefCountPtr<Anasazi::LOCAMultiVec> ivec =
@@ -188,8 +188,8 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   Teuchos::RefCountPtr<Anasazi::LOCAMultiVec> a_evecs_i = 
     Teuchos::rcp(dynamic_cast<Anasazi::LOCAMultiVec*>(evecs->CloneCopy(index_i)));
   NOX::Abstract::Vector& tmp = a_evecs_r->GetNOXVector(0);
-  evecs_r = Teuchos::rcp(tmp.createMultiVector(nev, NOX::ShapeCopy));
-  evecs_i = Teuchos::rcp(tmp.createMultiVector(nev, NOX::ShapeCopy));
+  evecs_r = tmp.createMultiVector(nev, NOX::ShapeCopy);
+  evecs_i = tmp.createMultiVector(nev, NOX::ShapeCopy);
   for (int i=0; i<nev; i++) {
     (*evecs_r)[i] = a_evecs_r->GetNOXVector(i);
     (*evecs_i)[i] = a_evecs_i->GetNOXVector(i);

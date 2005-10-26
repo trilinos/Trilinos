@@ -54,7 +54,7 @@ Anasazi::LOCAMultiVec::LOCAMultiVec(
 
   else
     for (unsigned int i=0; i<mvPtrs.size(); i++)
-      mvPtrs[i] = N_vecPtrs[i];
+      mvPtrs[i] = Teuchos::rcp(N_vecPtrs[i], false);
 }
 
 Anasazi::LOCAMultiVec::LOCAMultiVec(const Anasazi::LOCAMultiVec& source, 
@@ -89,9 +89,6 @@ Anasazi::LOCAMultiVec::LOCAMultiVec(Anasazi::DataAccess type,
 
 Anasazi::LOCAMultiVec::~LOCAMultiVec()
 {
-  if (CV == Anasazi::Copy)
-    for (unsigned int i=0; i<mvPtrs.size(); i++)
-      delete mvPtrs[i];
 }
 
 Anasazi::MultiVec<double>* 
@@ -136,12 +133,12 @@ Anasazi::LOCAMultiVec::SetBlock(const Anasazi::MultiVec<double>& A,
 {
   int i, ind;
   Anasazi::LOCAMultiVec *A_vec = 
-    dynamic_cast<Anasazi::LOCAMultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); assert(A_vec!=NULL);
+    dynamic_cast<Anasazi::LOCAMultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); 
+  assert(A_vec!=NULL);
   int MyNumVecs = mvPtrs.size();
   for (i=0; i<index.size(); i++) {
     ind = index[i];
     if (ind < MyNumVecs) {
-      delete mvPtrs[ind];
       mvPtrs[ind] = A_vec->mvPtrs[i]->clone(NOX::DeepCopy);
     }
   }
@@ -156,7 +153,8 @@ Anasazi::LOCAMultiVec::MvTimesMatAddMv(
 {
   int i,j;
   Anasazi::LOCAMultiVec *A_vec = 
-    dynamic_cast<Anasazi::LOCAMultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); assert(A_vec!=NULL);
+    dynamic_cast<Anasazi::LOCAMultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); 
+  assert(A_vec!=NULL);
   int m = B.numRows();
   int n = B.numCols();
   int ldb = B.stride();

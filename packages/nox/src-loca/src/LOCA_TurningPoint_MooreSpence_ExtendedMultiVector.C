@@ -38,10 +38,10 @@ LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
 				       int nColumns) :
   LOCA::Extended::MultiVector(nColumns, 2, 1)
 {
-  NOX::Abstract::MultiVector* mv1 = cloneVec.createMultiVector(nColumns, 
-							      NOX::ShapeCopy);
-  NOX::Abstract::MultiVector* mv2 = cloneVec.createMultiVector(nColumns, 
-							      NOX::ShapeCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv1 = 
+    cloneVec.createMultiVector(nColumns, NOX::ShapeCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv2 = 
+    cloneVec.createMultiVector(nColumns, NOX::ShapeCopy);
   LOCA::Extended::MultiVector::setMultiVectorPtr(0, mv1);
   LOCA::Extended::MultiVector::setMultiVectorPtr(1, mv2);
 }
@@ -55,7 +55,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
   LOCA::Extended::MultiVector::setMultiVectorPtr(0, xVec.clone(NOX::DeepCopy));
   LOCA::Extended::MultiVector::setMultiVectorPtr(1, 
 						 nullVec.clone(NOX::DeepCopy));
-  LOCA::Extended::MultiVector::getScalars() = bifParams;
+  *LOCA::Extended::MultiVector::getScalars() = bifParams;
 }
 
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
@@ -105,56 +105,55 @@ LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::operator=(const
   return *this;
 }
 
-NOX::Abstract::MultiVector* 
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::clone(NOX::CopyType type) const
 {
-  return new LOCA::TurningPoint::MooreSpence::ExtendedMultiVector(*this, type);
+  return 
+    Teuchos::rcp(new LOCA::TurningPoint::MooreSpence::ExtendedMultiVector(*this, type));
 }
 
-NOX::Abstract::MultiVector* 
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::clone(int numvecs) const
 {
   return 
-    new LOCA::TurningPoint::MooreSpence::ExtendedMultiVector(*this, numvecs);
+    Teuchos::rcp(new LOCA::TurningPoint::MooreSpence::ExtendedMultiVector(*this, numvecs));
 }
 
-NOX::Abstract::MultiVector* 
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::subCopy(
 					       const vector<int>& index) const
 {
   return 
-    new LOCA::TurningPoint::MooreSpence::ExtendedMultiVector(*this, index, 
-							     false);
+    Teuchos::rcp(new LOCA::TurningPoint::MooreSpence::ExtendedMultiVector(*this, index, false));
 }
 
-NOX::Abstract::MultiVector* 
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::subView(
 					      const vector<int>& index) const
 {
   return 
-    new LOCA::TurningPoint::MooreSpence::ExtendedMultiVector(*this, index, 
-							     true);
+    Teuchos::rcp(new LOCA::TurningPoint::MooreSpence::ExtendedMultiVector(*this, index, true));
 }
 
-const NOX::Abstract::MultiVector& 
+Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::getXMultiVec() const
 {
   return LOCA::Extended::MultiVector::getMultiVector(0);
 }
 
-NOX::Abstract::MultiVector& 
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::getXMultiVec()
 {
   return LOCA::Extended::MultiVector::getMultiVector(0);
 }
 
-const NOX::Abstract::MultiVector& 
+Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::getNullMultiVec() const
 {
   return LOCA::Extended::MultiVector::getMultiVector(1);
 }
 
-NOX::Abstract::MultiVector& 
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::getNullMultiVec()
 {
   return LOCA::Extended::MultiVector::getMultiVector(1);
@@ -166,22 +165,22 @@ LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
 {
 }
 
-LOCA::Extended::Vector*
+Teuchos::RefCountPtr<LOCA::Extended::Vector>
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::generateVector(
 							int nVecs, 
 							int nScalarRows) const
 {
-  return new LOCA::TurningPoint::MooreSpence::ExtendedVector;
+  return Teuchos::rcp(new LOCA::TurningPoint::MooreSpence::ExtendedVector);
 }
 
-LOCA::TurningPoint::MooreSpence::ExtendedVector&
+Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedVector>
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::getColumn(int i)
 {
-  return dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedVector&>(operator[](i));
+  return Teuchos::rcp_dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedVector>(getVector(i));
 }
 
-const LOCA::TurningPoint::MooreSpence::ExtendedVector&
+Teuchos::RefCountPtr<const LOCA::TurningPoint::MooreSpence::ExtendedVector>
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::getColumn(int i) const
 {
-  return dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedVector&>(operator[](i));
+  return Teuchos::rcp_dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedVector>(getVector(i));
 }

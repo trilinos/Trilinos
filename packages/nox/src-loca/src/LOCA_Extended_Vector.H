@@ -103,7 +103,7 @@ namespace LOCA {
       operator=(const Vector& y);
 
       //! Clone function.  Applies clone to each stored vector
-      virtual NOX::Abstract::Vector* 
+      virtual Teuchos::RefCountPtr<NOX::Abstract::Vector>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       /*! 
@@ -111,14 +111,14 @@ namespace LOCA {
        * of Vectors.  The vector stored under \c this will be the first 
        * column with the remaining \c numVecs columns given by \c vecs.
        */
-      virtual NOX::Abstract::MultiVector* 
+      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
       createMultiVector(const NOX::Abstract::Vector* const* vecs,
 			int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 
       /*! 
        * \brief Create a MultiVector with \c numVecs columns.
        */
-      virtual NOX::Abstract::MultiVector* 
+      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
       createMultiVector(int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 
       /*! 
@@ -211,7 +211,7 @@ namespace LOCA {
        * \brief NOX::Abstract::Vector print function.  For debugging purposes
        */
       virtual void 
-      print() const;
+      print(std::ostream& stream) const;
 
       //! Sets the ith vector
       virtual void 
@@ -219,7 +219,8 @@ namespace LOCA {
 
       //! Sets the ith vector as a view
       virtual void 
-      setVectorView(int i, NOX::Abstract::Vector& v);
+      setVectorView(int i, 
+		    const Teuchos::RefCountPtr<NOX::Abstract::Vector>& v);
 
       //! Sets the ith scalar
       virtual void 
@@ -229,12 +230,12 @@ namespace LOCA {
       virtual void
       setScalarArray(double *sv);
 
-      //! Returns const reference to the ith vector
-      virtual const NOX::Abstract::Vector& 
+      //! Returns const ref-count pointer to the ith vector
+      virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector>
       getVector(int i) const;
 
-      //! Returns reference to the ith vector
-      virtual NOX::Abstract::Vector& 
+      //! Returns ref-count pointer to the ith vector
+      virtual Teuchos::RefCountPtr<NOX::Abstract::Vector>
       getVector(int i);
 
       //! Returns copy of the ith scalar
@@ -246,11 +247,12 @@ namespace LOCA {
       getScalar(int i);
 
       //! Returns array of scalars
-      virtual const NOX::Abstract::MultiVector::DenseMatrix&
+      virtual 
+      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>
       getScalars() const;
 
       //! Returns array of scalars
-      virtual NOX::Abstract::MultiVector::DenseMatrix&
+      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix>
       getScalars();
 
       //! Returns number of scalars
@@ -271,14 +273,14 @@ namespace LOCA {
        * the createMultiVectors method returns a multivector of the 
        * appropriate type.
        */
-      virtual LOCA::Extended::MultiVector*
+      virtual Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
       generateMultiVector(int nColumns, int nVectorRows, 
 			  int nScalarRows) const;
 
     protected:
 
       //! Array of vector pointers
-      vector< NOX::Abstract::Vector* > vectorPtrs;
+      vector< Teuchos::RefCountPtr<NOX::Abstract::Vector> > vectorPtrs;
 
       //! Array indicating if each vector is a view
       vector< bool > isView;
@@ -287,7 +289,7 @@ namespace LOCA {
       int numScalars;
 
       //! Scalars
-      NOX::Abstract::MultiVector::DenseMatrix* scalarsPtr;
+      Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> scalarsPtr;
 
     }; // class Vector
   } // namspace Extended

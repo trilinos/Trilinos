@@ -122,7 +122,7 @@ namespace LOCA {
       operator=(const NOX::Abstract::Group& source);
 
       //! Clone function
-      virtual NOX::Abstract::Group* 
+      virtual Teuchos::RefCountPtr<NOX::Abstract::Group>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
       
       //@}

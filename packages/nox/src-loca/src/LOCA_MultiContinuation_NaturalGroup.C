@@ -101,10 +101,10 @@ LOCA::MultiContinuation::NaturalGroup::operator=(
     dynamic_cast<const LOCA::MultiContinuation::NaturalGroup&>(source);
 }
 
-NOX::Abstract::Group* 
+Teuchos::RefCountPtr<NOX::Abstract::Group>
 LOCA::MultiContinuation::NaturalGroup::clone(NOX::CopyType type) const
 {
-  return new LOCA::MultiContinuation::NaturalGroup(*this, type);
+  return Teuchos::rcp(new LOCA::MultiContinuation::NaturalGroup(*this, type));
 }
 
 LOCA::MultiContinuation::AbstractStrategy& 

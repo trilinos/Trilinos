@@ -123,9 +123,9 @@ int MFLOCAProjectToDraw(MFNVector u, double *x, void *d)
   if(x==(double*)NULL)
     return data->grp->projectToDrawDimension();
 
-  LMCEV* v = (LMCEV *)MFNVectorGetData(u);
+  LOCANVectorData* v_data = (LOCANVectorData *)MFNVectorGetData(u);
 
-  data->grp->projectToDraw(*v, x);
+  data->grp->projectToDraw(*(v_data->u_ptr), x);
 
   return 0;
  }
@@ -140,14 +140,14 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
   LOCAData* data = (LOCAData *)d;
   for (i=0; i<k; i++) {
     MFNVector tmp =  MFMColumn(mPhi,i);
-    LMCEV* tmp2 = (LMCEV *) MFNVectorGetData(tmp);
-    data->grp->setPredictorTangentDirection(*tmp2, i);
+    LOCANVectorData* tmp2_data = (LOCANVectorData *) MFNVectorGetData(tmp);
+    data->grp->setPredictorTangentDirection(*(tmp2_data->u_ptr), i);
     MFFreeNVector(tmp);
   }
   
-  LMCEV* u0 = (LMCEV *) MFNVectorGetData(vu0);
-  data->grp->setPrevX(*u0);
-  data->grp->setX(*u0);
+  LOCANVectorData* u0_data = (LOCANVectorData *) MFNVectorGetData(vu0);
+  data->grp->setPrevX(*(u0_data->u_ptr));
+  data->grp->setX(*(u0_data->u_ptr));
   for (i=0; i<k; i++) {
     data->grp->setStepSize(0.0, i);
   }
@@ -190,11 +190,11 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
     return 0;
   }
   else {
-    LMCEV* u = (LMCEV *) MFNVectorGetData(vu);
+    LOCANVectorData* u_data = (LOCANVectorData *) MFNVectorGetData(vu);
      
     *(Teuchos::rcp_dynamic_cast<NOX::Abstract::Group>(data->grp)) = 
       data->solver->getSolutionGroup();
-    *u = data->grp->getX(); /* overloaded deep copy */
+    *(u_data->u_ptr) = data->grp->getX(); /* overloaded deep copy */
     data->grp->notifyCompletedStep();
     
     if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
@@ -224,15 +224,16 @@ int MFTangentLOCA(int n,int k,MFNVector vu,MFNKMatrix mPhi,void *d)
 {
    LOCAData* data = (LOCAData *)d;
 
-   LMCEV* u0 = (LMCEV *) MFNVectorGetData(vu);
-   data->grp->setX(*u0);
+   LOCANVectorData* u0_data = (LOCANVectorData *) MFNVectorGetData(vu);
+   data->grp->setX(*(u0_data->u_ptr));
    data->grp->computePredictor();
 
    const LOCA::MultiContinuation::ExtendedMultiVector& pred = 
      data->grp->getPredictorTangent();
 
    for (int i=0; i<k; i++) {
-     LMCEV* t = dynamic_cast<LMCEV*>(pred[i].clone());
+     Teuchos::RefCountPtr<LMCEV> t = 
+       Teuchos::rcp_dynamic_cast<LMCEV>(pred[i].clone());
      MFNVector tmp =  MFCreateLOCANVectorWithData(t);
      MFMSetColumn(mPhi, i, tmp);
      MFFreeNVector(tmp);
@@ -255,8 +256,8 @@ double MFScaleLOCA(int n,int k,MFNVector u,MFNKMatrix Phi,void *d)
       double dpidsj = 0.0;
       for (int j=0; j<k; j++) {
 	MFNVector tmp =  MFMColumn(Phi,j);
-	LMCEV* tmp2 = (LMCEV *) MFNVectorGetData(tmp);
-	dpidsj += fabs(tmp2->getScalar(i));
+	LOCANVectorData* tmp2_data = (LOCANVectorData *) MFNVectorGetData(tmp);
+	dpidsj += fabs(tmp2_data->u_ptr->getScalar(i));
 	MFFreeNVector(tmp);
       }
       data->radius += it->initialStepSize / dpidsj;

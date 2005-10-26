@@ -155,7 +155,7 @@ namespace LOCA {
 	operator=(const NOX::Abstract::Group& source);
      
 	//! Cloning function
-	virtual NOX::Abstract::Group* 
+	virtual Teuchos::RefCountPtr<NOX::Abstract::Group>
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
 	//! Set the solution vector, x, to y.
@@ -371,15 +371,6 @@ namespace LOCA {
 	//! Returns the dimension of the project to draw array
 	virtual int projectToDrawDimension() const;
 
-	/*! 
-	 * @name Implementation of LOCA::Continuation::AbstractGroup virtual methods 
-	 */
-	//@{
-
-	//! Assignment operator
-	virtual LOCA::Continuation::AbstractGroup& 
-	operator=(const LOCA::Continuation::AbstractGroup& source);
-
 	//! Set the parameter vector in the group to p.
 	virtual void setParams(const ParameterVector& p);
 
@@ -397,26 +388,6 @@ namespace LOCA {
 
 	//! Return copy of parameter indexed by paramID
 	virtual double getParam(string paramID) const;
-
-	/*!
-	 * \brief Compute parameter derivative \f$dG/d\lambda\f$ for the 
-	 * extended system.
-	 */
-	/*!
-	   For a given parameter \f$\lambda\f$, this method computes the 
-	   derivative
-	   \f[
-	      \frac{\partial G(z,\lambda)}{\partial\lambda} = \left[
-	      \begin{array}{c}
-	         \frac{\partial F(x,p,\lambda)}{\partial\lambda} \\
-	         \frac{\partial Jn}{\partial\lambda} \\
-	         0
-	      \end{array}
-	      \right].
-	  \f]
-	*/
-	virtual NOX::Abstract::Group::ReturnType
-	computeDfDp(int paramID, NOX::Abstract::Vector& result);
 
 	/*! 
 	 * \brief Function to print out extended solution and continuation 
@@ -440,8 +411,6 @@ namespace LOCA {
 	 */
 	 virtual void printSolution(const NOX::Abstract::Vector& x_,
 				    const double conParam) const;
-
-	//@}
 
 	//! Get bifurcation parameter
 	double getBifParam() const;

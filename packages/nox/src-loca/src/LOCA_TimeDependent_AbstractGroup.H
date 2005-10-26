@@ -33,7 +33,7 @@
 #ifndef LOCA_TIMEDEPENDENT_ABSTRACTGROUP_H
 #define LOCA_TIMEDEPENDENT_ABSTRACTGROUP_H
 
-#include "LOCA_Continuation_AbstractGroup.H"    // base class
+#include "LOCA_MultiContinuation_AbstractGroup.H"    // base class
 
 namespace LOCA { 
 
@@ -52,7 +52,7 @@ namespace LOCA {
      * mass matrix is the identity.
      */
     class AbstractGroup : 
-      public virtual LOCA::Continuation::AbstractGroup {
+      public virtual LOCA::MultiContinuation::AbstractGroup {
 
     public:
   

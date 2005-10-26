@@ -35,29 +35,25 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::AnasaziOperator::ShiftInvert::ShiftInvert(
-					  NOX::Parameter::List& eigenParams_,
-					  NOX::Parameter::List& solverParams_,
-					  NOX::Abstract::Group& grp_)
+	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
+	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
+	       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp_)
   : myLabel("Shift-Invert"),
-    tmp_r(NULL),
-    tmp_i(NULL)
+    tmp_r(),
+    tmp_i()
 {
   reset(eigenParams_, solverParams_, grp_);
 }
 
 LOCA::AnasaziOperator::ShiftInvert::~ShiftInvert()
 {
-  if (tmp_r)
-    delete tmp_r;
-  if (tmp_i)
-    delete tmp_i;
 }
 
 NOX::Abstract::Group::ReturnType 
 LOCA::AnasaziOperator::ShiftInvert::reset(
-					  NOX::Parameter::List& eigenParams_,
-					  NOX::Parameter::List& solverParams_,
-					  NOX::Abstract::Group& grp_)
+	      const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
+	      const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
+	      const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp_)
 {
   string callingFunction = 
     "LOCA::AnasaziOperator::ShiftInvert::reset()";
@@ -65,23 +61,18 @@ LOCA::AnasaziOperator::ShiftInvert::reset(
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
-  eigenParams = &eigenParams_;
-  solverParams = &solverParams_;
-  grp = dynamic_cast<LOCA::TimeDependent::AbstractGroup*>(&grp_);
+  eigenParams = eigenParams_;
+  solverParams = solverParams_;
+  grp = Teuchos::rcp_dynamic_cast<LOCA::TimeDependent::AbstractGroup>(grp_);
 
   // ensure grp is of the right type
-  if (grp == NULL) {
+  if (grp == Teuchos::null) {
     LOCA::ErrorCheck::throwError(callingFunction,
      "Supplied group is not derived from LOCA::TimeDependent::AbstractGroup!");
   }
 
   // Get parameters
   shift = eigenParams->getParameter("Shift",0.0);
-
-  if (tmp_r)
-    delete tmp_r;
-  if (tmp_i)
-    delete tmp_i;
 
   // Compute Jacobian matrix
   status = grp->computeJacobian();
@@ -116,7 +107,7 @@ LOCA::AnasaziOperator::ShiftInvert::apply(
   NOX::Abstract::Group::ReturnType status;
 
   // Allocate temporary vector
-  if (!tmp_r)
+  if (tmp_r == Teuchos::null)
     tmp_r = input.clone(NOX::ShapeCopy);
 
   // Compute M*input
@@ -159,9 +150,9 @@ LOCA::AnasaziOperator::ShiftInvert::rayleighQuotient(
     "LOCA::AnasaziOperator::ShiftInvert::rayleighQuotient()";
 
   // Allocate temporary vectors
-  if (!tmp_r)
+  if (tmp_r == Teuchos::null)
     tmp_r = evec_r.clone(NOX::ShapeCopy);
-  if (!tmp_i)
+  if (tmp_i == Teuchos::null)
     tmp_i = evec_i.clone(NOX::ShapeCopy);
 
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
