@@ -147,13 +147,13 @@ namespace Teuchos
     void AXPY(const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const;
 
     //! Sum the absolute values of the entries of \c x.
-    ScalarType ASUM(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const;
+    typename ScalarTraits<ScalarType>::magnitudeType ASUM(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const;
 
     //! Form the dot product of the vectors \c x and \c y.
     ScalarType DOT(const OrdinalType n, const ScalarType* x, const OrdinalType incx, const ScalarType* y, const OrdinalType incy) const;
 
     //! Compute the 2-norm of the vector \c x.
-    ScalarType NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const;
+    typename ScalarTraits<ScalarType>::magnitudeType NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const;
 
     //! Return the index of the element of \c x with the maximum magnitude.
     OrdinalType IAMAX(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const;
@@ -284,11 +284,12 @@ namespace Teuchos
   } /* end AXPY */
 
   template<typename OrdinalType, typename ScalarType>
-  ScalarType BLAS<OrdinalType, ScalarType>::ASUM(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const
+  typename ScalarTraits<ScalarType>::magnitudeType BLAS<OrdinalType, ScalarType>::ASUM(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
-    ScalarType result = ScalarTraits<ScalarType>::zero();
+    typename ScalarTraits<ScalarType>::magnitudeType result = 
+      ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::zero();
     OrdinalType i, ix = izero;
     if( n > izero ) {
 	// Set the initial indices
@@ -327,11 +328,12 @@ namespace Teuchos
   } /* end DOT */
   
   template<typename OrdinalType, typename ScalarType>
-  ScalarType BLAS<OrdinalType, ScalarType>::NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const
+  typename ScalarTraits<ScalarType>::magnitudeType BLAS<OrdinalType, ScalarType>::NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
-    ScalarType result = ScalarTraits<ScalarType>::zero();
+    typename ScalarTraits<ScalarType>::magnitudeType result = 
+      ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::zero();
     OrdinalType i, ix = izero;
     if ( n > izero ) 
       {
