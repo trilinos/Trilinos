@@ -215,7 +215,7 @@ public:
    * The default implementation creates a generic NOX::MultiVector with
    * either Shape or Deep copies of the supplied vectors.
    */
-  virtual NOX::Abstract::MultiVector* 
+  virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
   createMultiVector(const NOX::Abstract::Vector* const* vecs,
 		    int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 
@@ -225,7 +225,7 @@ public:
    * The default implementation creates a generic NOX::MultiVector with
    * either Shape or Deep copies of the supplied vector.
    */
-  virtual NOX::Abstract::MultiVector* 
+  virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
   createMultiVector(int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 
   //@}
