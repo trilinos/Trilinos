@@ -69,7 +69,7 @@ enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK };
 
 int main(int argc, char *argv[])
 {
-  bool verbose = true; // verbosity level.
+  bool verbose = false; // verbosity level.
   bool result, success = true; // determine if the run was successfull
 
   try { // catch exceptions
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
       int myN = x_exact.MyLength();
       for ( int i=0 ; i<myN ; ++i)
       {
-        x_exact[i] = x0*pow(1+lambda[i]/N,N);
+        x_exact[i] = x0*pow(1+lambda[i]*dt,N);
       }
       x_numerical_exact_ptr = x_exact_ptr;
     } 
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
       int myN = x_exact.MyLength();
       for ( int i=0 ; i<myN ; ++i)
       {
-        x_exact[i] = x0*pow(1/(1-lambda[i]/N),N);
+        x_exact[i] = x0*pow(1/(1-lambda[i]*dt),N);
       }
       x_numerical_exact_ptr = x_exact_ptr;
     }
@@ -262,31 +262,45 @@ int main(int argc, char *argv[])
                 << ", \\Delta t = " << dt  << "." << std::endl;
     }
     int MyLength = x_computed.MyLength();
-    for (int i=0 ; i<MyLength ; ++i)
+    if (verbose)
     {
-      std::cout.precision(15);
-      std::cout << "lambda[" << MyPID*MyLength+i << "] = " << lambda[i] << std::endl;
-    }
-    // Print out computed and exact solutions:
-    for (int i=0 ; i<MyLength ; ++i)
-    {
-      std::cout.precision(15);
-      std::cout << "Computed: x[" << MyPID*MyLength+i << "] = ";
-      std::cout.width(20); std::cout << x_computed[i] << "\t";
-      std::cout << "Exact: x[" << MyPID*MyLength+i << "] = ";
-      std::cout.width(20); std::cout << x_star[i] << std::endl;
+      for (int i=0 ; i<MyLength ; ++i)
+      {
+        std::cout.precision(15);
+        std::cout << "lambda[" << MyPID*MyLength+i << "] = " << lambda[i] << std::endl;
+      }
+      // Print out computed and exact solutions:
+      for (int i=0 ; i<MyLength ; ++i)
+      {
+        std::cout.precision(15);
+        std::cout << "Computed: x[" << MyPID*MyLength+i << "] = ";
+        std::cout.width(20); std::cout << x_computed[i] << "\t";
+        std::cout << "Exact: x[" << MyPID*MyLength+i << "] = ";
+        std::cout.width(20); std::cout << x_star[i] << std::endl;
+      }
     }
     
     // Check numerics against exact numerical method for FE and BE case:
     double numerical_error = 0;
+    double numerical_error_mag = 0;
     if (x_numerical_exact_ptr.get())
     {
       const Epetra_Vector& x_numerical_exact = *x_numerical_exact_ptr;
       for ( int i=0 ; i<MyLength ; ++i)
       {
-        const double thisError = Thyra::relErr(x_numerical_exact[i],x_computed[i]);
-        numerical_error = std::max(thisError,numerical_error);
+        if (verbose) 
+        {
+          std::cout.precision(15);
+          std::cout << "Computed: x[" << MyPID*MyLength+i << "] = ";
+          std::cout.width(20); std::cout << x_computed[i] << "\t";
+          std::cout << "Numerical Exact: x[" << MyPID*MyLength+i << "] = ";
+          std::cout.width(20); std::cout << x_numerical_exact[i] << std::endl;
+        }
+        const double thisError = x_numerical_exact[i]-x_computed[i];
+        numerical_error += thisError*thisError;
+        numerical_error_mag += x_numerical_exact[i]*x_numerical_exact[i];
       }
+      numerical_error = sqrt(numerical_error)/sqrt(numerical_error_mag);
       result = Thyra::testMaxErr(
         "Exact numerical error",numerical_error
         ,"maxError",1.0e-12
@@ -298,12 +312,14 @@ int main(int argc, char *argv[])
 
     // Check numerics against exact DE solution:
     double error = 0;
+    double errorMag = 0;
     for (int i=0 ; i<MyLength ; ++i)
     {
-      const double thisError = Thyra::relErr(x_computed[i],x_star[i]);
-      error = std::max(thisError,error);
-      //error = ( thisError > error ? thisError : error );
+      const double thisError = x_computed[i]-x_star[i];
+      error += thisError*thisError;
+      errorMag += x_star[i]*x_star[i];
     }
+    error = sqrt(error)/sqrt(errorMag);
     result = Thyra::testMaxErr(
       "Exact DE solution error",error
       ,"maxError",maxError
