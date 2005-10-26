@@ -1977,10 +1977,10 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
    ML_Smoother    *smooth_ptr;
    ML_Sm_BGS_Data *dataptr;
    struct ML_CSR_MSRdata *ptr;
-   double *Amat_val = NULL;
-   int    *Amat_bindx = NULL;
-   double *Amat_epetval = NULL, *evals;
-   int    *Amat_epetbindx = NULL, *Amat_epetrowptr = NULL, *ecols;
+   double *Amat_MsrVal = NULL;
+   int    *Amat_MsrBindx = NULL;
+   double *Amat_CrsVal = NULL, *evals;
+   int    *Amat_CrsBindx = NULL, *Amat_CrsRowptr = NULL, *ecols;
    int *oldcols, blocksizeminusone;
    double *oldvals, *xptr, dtemp;
 
@@ -2011,31 +2011,34 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
    }
    if (Amat->getrow->func_ptr == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
-      Amat_val   = ptr->values;
-      Amat_bindx = ptr->columns;
+      Amat_MsrVal   = ptr->values;
+      Amat_MsrBindx = ptr->columns;
    }
 #ifdef AZTEC
-   else AZ_get_MSR_arrays(Amat, &Amat_bindx, &Amat_val);
+   else AZ_get_MSR_arrays(Amat, &Amat_MsrBindx, &Amat_MsrVal);
 #endif
 
+if (Amat_MsrBindx == NULL) {
+     if (Amat->getrow->func_ptr == CSR_getrow) {
+       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
+       Amat_CrsVal   = ptr->values;
+       Amat_CrsBindx = ptr->columns;
+       Amat_CrsRowptr = ptr->rowptr;
+      cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+      vals = (double *) ML_allocate(allocated_space*sizeof(double));
+      oldcols = cols;  oldvals = vals;
+     }
+   }
+
    allocated_space = Amat->max_nz_per_row+2;
-   if (Amat_bindx == NULL) {
 #ifdef ML_WITH_EPETRA
-     Epetra_ML_GetCrsDataptrs(Amat, &Amat_epetval, &Amat_epetbindx,&Amat_epetrowptr);
+   if ((Amat_MsrBindx == NULL) && (Amat_CrsBindx == NULL)){
+     Epetra_ML_GetCrsDataptrs(Amat, &Amat_CrsVal, &Amat_CrsBindx,&Amat_CrsRowptr);
      cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
      vals = (double *) ML_allocate(allocated_space*sizeof(double));
      oldcols = cols;  oldvals = vals;
-#else
-     if (Amat->comm->ML_mypid == 0)
-       pr_error("ML_Smoother_BlockGS: Epetra is not enabled.\n");
-     else
-#ifdef ML_MPI
-       MPI_Abort(MPI_COMM_WORLD, 1);
-#else
-       exit(1);
-#endif /*ifdef ML_MPI*/
-#endif /*ifdef ML_WITH_EPETRA*/
    }
+#endif /*ifdef ML_WITH_EPETRA*/
 
    correc = (double *) ML_allocate(blocksize*sizeof(double));
    if (correc == NULL) pr_error("Error in ML_BlockGaussSeidel:Not enough space\n");
@@ -2062,14 +2065,14 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 
       row = 0;
       xptr = x2;
-      if (Amat_epetbindx != NULL) {
-        evals = Amat_epetval;
-        ecols = Amat_epetbindx;
+      if (Amat_CrsBindx != NULL) {
+        evals = Amat_CrsVal;
+        ecols = Amat_CrsBindx;
 	for (i = 0; i < Nblocks; i++) {
 	   for (k = 0; k < blocksize; k++) {
 	    dtemp = 0.;
 	    vals = oldvals; cols = oldcols;
-	    for (j = Amat_epetrowptr[row]; j < Amat_epetrowptr[row+1]; j++) 
+	    for (j = Amat_CrsRowptr[row]; j < Amat_CrsRowptr[row+1]; j++) 
 		dtemp += (*evals++)*x2[*ecols++];
 	    correc[k]=rhs[row++]-dtemp;
 	  }
@@ -2077,13 +2080,13 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 	  for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
 	}
       }
-      else if (Amat_bindx != NULL) {
-	cols = &(Amat_bindx[Amat_bindx[0]]);
-	vals = &(Amat_val[Amat_bindx[0]]);
+      else if (Amat_MsrBindx != NULL) {
+	cols = &(Amat_MsrBindx[Amat_MsrBindx[0]]);
+	vals = &(Amat_MsrVal[Amat_MsrBindx[0]]);
 	for (i = 0; i < Nblocks; i++) {
 	  for (k = 0; k < blocksize; k++) {
-	    length = Amat_bindx[row+1] -  Amat_bindx[row];
-	    dtemp  = Amat_val[row]*x2[row];
+	    length = Amat_MsrBindx[row+1] -  Amat_MsrBindx[row];
+	    dtemp  = Amat_MsrVal[row]*x2[row];
 	    for (j = 0; j < length; j++) dtemp += (*vals++)*x2[*cols++];
 	    correc[k]=rhs[row++]-dtemp;
 	  }
@@ -2110,14 +2113,14 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 	blocksizeminusone = blocksize - 1;
 	row = Nblocks*blocksize - 1;
 	xptr = &(x2[row]);
-        if (Amat_epetbindx != NULL) {
+        if (Amat_CrsBindx != NULL) {
           evals--; ecols--;  /* set pointer to last element of */
                              /* arrays after forward sweep.    */
 	  for (i = Nblocks-1; i >= 0; i--) {
 	    for (k = blocksizeminusone; k >= 0; k--) {
 	      dtemp = 0.;
 	      vals = oldvals; cols = oldcols;
-	      for (j = Amat_epetrowptr[row]; j < Amat_epetrowptr[row+1]; j++) 
+	      for (j = Amat_CrsRowptr[row]; j < Amat_CrsRowptr[row+1]; j++) 
 		 dtemp += (*evals--)*x2[*ecols--];
 	      correc[k]=rhs[row--]-dtemp;
 	    }
@@ -2125,13 +2128,13 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 	    for (k = blocksizeminusone; k >= 0; k--)(*xptr--) += omega*correc[k];
 	  }
         }
-	else if (Amat_bindx != NULL) {
-	  cols = &(Amat_bindx[Amat_bindx[row+1]]);  cols--;
-	  vals = &(Amat_val[Amat_bindx[row+1]]);   vals--;
+	else if (Amat_MsrBindx != NULL) {
+	  cols = &(Amat_MsrBindx[Amat_MsrBindx[row+1]]);  cols--;
+	  vals = &(Amat_MsrVal[Amat_MsrBindx[row+1]]);   vals--;
 	  for (i = Nblocks-1; i >= 0; i--) {
 	    for (k = blocksizeminusone; k >= 0; k--) {
-	      length = Amat_bindx[row+1] -  Amat_bindx[row];
-	      dtemp = Amat_val[row]*x2[row];
+	      length = Amat_MsrBindx[row+1] -  Amat_MsrBindx[row];
+	      dtemp = Amat_MsrVal[row]*x2[row];
 	      for (j = 0; j < length; j++) dtemp += (*vals--)*x2[*cols--];
 	      correc[k]=rhs[row--]-dtemp;
 	    }
@@ -2164,7 +2167,7 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
    if (allocated_space != Amat->max_nz_per_row+2) {
       Amat->max_nz_per_row = allocated_space;
    }
-   if (Amat_bindx == NULL) {
+   if (Amat_MsrBindx == NULL) {
      ML_free(oldvals); ML_free(oldcols); 
    }
    ML_free(correc);
