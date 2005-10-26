@@ -65,7 +65,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i;
+  int ierr = 0;
   
   // scale factor to test arc-length scaling
   double scale = 1.0;
@@ -247,34 +247,27 @@ int main(int argc, char *argv[])
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
-  // NLS_PetraGroupInterface
-  Problem_Interface interface(Problem);
+  Teuchos::RefCountPtr<Problem_Interface> interface = 
+    Teuchos::rcp(new Problem_Interface(Problem));
+  Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
+  
+  // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
+  Teuchos::RefCountPtr<Epetra_RowMatrix> Amat = 
+    Teuchos::rcp(&Problem.getJacobian(),false);
 
-  // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner by 
-  // uncommenting one or more of the following lines:
-  // 1. User supplied (Epetra_RowMatrix)
-  Epetra_RowMatrix& A = Problem.getJacobian();
-  // 2. Matrix-Free (Epetra_Operator)
-  //NOX::Epetra::MatrixFree A(interface, soln);
-  // 3. Finite Difference (Epetra_RowMatrix)
-  //NOX::Epetra::FiniteDifference A(interface, soln);
-  // 4. Jacobi Preconditioner
-  //NOX::Epetra::JacobiPreconditioner Prec(soln);
-
-   // Create the linear systems
-  NOX::Epetra::LinearSystemAztecOO linsys(nlPrintParams, lsParams,
-					     interface, interface,
-					     A, soln);
+  // Create the linear systems
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams,
+						      iReq, iJac, Amat, soln));
 
   // Create the loca vector
   NOX::Epetra::Vector locaSoln(soln);
 
   // Create the Group
   Teuchos::RefCountPtr<LOCA::Epetra::Group> grp = 
-      Teuchos::rcp(new LOCA::Epetra::Group(nlPrintParams, interface, 
-					   locaSoln, linsys, pVector));
-
-   
+    Teuchos::rcp(new LOCA::Epetra::Group(nlPrintParams, iReq, locaSoln, linsys,
+					 pVector));
   grp->computeF();
 
   // Create the Solver convergence test

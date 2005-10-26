@@ -43,7 +43,7 @@ ChanConstraint::ChanConstraint(int N, const LOCA::ParameterVector& pVec) :
 {
   constraints.putScalar(0.0);
   NOX::LAPACK::Vector xx(n);
-  x = Teuchos::rcp(xx.createMultiVector(1));
+  x = xx.createMultiVector(1);
 }
 
 ChanConstraint::ChanConstraint(const ChanConstraint& source, 
@@ -52,7 +52,7 @@ ChanConstraint::ChanConstraint(const ChanConstraint& source,
   constraints(source.constraints),
   isValidConstraints(false),
   p(source.p),
-  x(Teuchos::rcp(source.x->clone(type)))
+  x(source.x->clone(type))
 {
   if (source.isValidConstraints && type == NOX::DeepCopy)
     isValidConstraints = true;

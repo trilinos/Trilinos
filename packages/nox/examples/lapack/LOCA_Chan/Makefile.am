@@ -45,13 +45,8 @@ AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 EXEEXT = .exe
 
 CHANCONT = chanContinuation
-CHANTP = chanTP
 CHANTPCONT = chanTPContinuation
-CHANHOMOTOPY = chanHomotopy
-CHANTPMOD = chanTP_ModifiedBordering
-CHANTPCONTMOD = chanTPContinuation_ModifiedBordering
-CHANTPNDMOD = chanTP_NicDayModifiedBordering
-CHANTPCONTNDMOD = chanTPContinuation_NicDayModifiedBordering
+#CHANHOMOTOPY = chanHomotopy
 CHANCONTCONSTRAINTS = chanContinuation_Constraints
 
 if BUILD_LIBLOCAMF
@@ -59,9 +54,8 @@ CHANMULTICONT = chanMultiContinuation
 endif
 
 if BUILD_LOCA_LAPACK_EXAMPLES
-noinst_PROGRAMS = $(CHANCONT) $(CHANTP) $(CHANTPCONT) $(CHANHOMOTOPY) \
-	          $(CHANTPMOD) $(CHANTPCONTMOD) $(CHANTPNDMOD) \
-		  $(CHANTPCONTNDMOD) $(CHANMULTICONT) $(CHANCONTCONSTRAINTS)
+noinst_PROGRAMS = $(CHANCONT) $(CHANTPCONT) \
+	          $(CHANMULTICONT) $(CHANCONTCONSTRAINTS)
 endif
 
 chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
@@ -76,14 +70,6 @@ chanContinuation_DEPENDENCIES = \
 
 chanContinuation_LDADD = $(EXAMPLE_LIBS)
 
-chanTP_SOURCES = $(srcdir)/ChanTP.C \
-		$(srcdir)/ChanProblemInterface.H \
-		$(srcdir)/ChanProblemInterface.C
-
-chanTP_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
-
-chanTP_LDADD = $(EXAMPLE_LIBS)
-
 chanTPContinuation_SOURCES = $(srcdir)/ChanTPContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
 		$(srcdir)/ChanProblemInterface.C
@@ -92,50 +78,13 @@ chanTPContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
 chanTPContinuation_LDADD = $(EXAMPLE_LIBS)
 
-chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C \
-		$(srcdir)/ChanProblemInterface.H \
-		$(srcdir)/ChanProblemInterface.C
+#chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C \
+#		$(srcdir)/ChanProblemInterface.H \
+#		$(srcdir)/ChanProblemInterface.C
 
-chanHomotopy_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
+#chanHomotopy_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
-chanHomotopy_LDADD = $(EXAMPLE_LIBS)
-
-chanTP_ModifiedBordering_SOURCES = $(srcdir)/ChanTP_ModifiedBordering.C \
-		$(srcdir)/ChanProblemInterface.H \
-		$(srcdir)/ChanProblemInterface.C
-
-chanTP_ModifiedBordering_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
-
-chanTP_ModifiedBordering_LDADD = $(EXAMPLE_LIBS)
-
-chanTPContinuation_ModifiedBordering_SOURCES = \
-		$(srcdir)/ChanTPContinuation_ModifiedBordering.C \
-		$(srcdir)/ChanProblemInterface.H \
-		$(srcdir)/ChanProblemInterface.C
-
-chanTPContinuation_ModifiedBordering_DEPENDENCIES = \
-	$(chanContinuation_DEPENDENCIES)
-
-chanTPContinuation_ModifiedBordering_LDADD = $(EXAMPLE_LIBS)
-
-chanTP_NicDayModifiedBordering_SOURCES = \
-		$(srcdir)/ChanTP_NicDayModifiedBordering.C \
-		$(srcdir)/ChanProblemInterface.H \
-		$(srcdir)/ChanProblemInterface.C
-
-chanTP_NicDayModifiedBordering_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
-
-chanTP_NicDayModifiedBordering_LDADD = $(EXAMPLE_LIBS)
-
-chanTPContinuation_NicDayModifiedBordering_SOURCES = \
-		$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C \
-		$(srcdir)/ChanProblemInterface.H \
-		$(srcdir)/ChanProblemInterface.C
-
-chanTPContinuation_NicDayModifiedBordering_DEPENDENCIES = \
-	$(chanContinuation_DEPENDENCIES)
-
-chanTPContinuation_NicDayModifiedBordering_LDADD = $(EXAMPLE_LIBS)
+#chanHomotopy_LDADD = $(EXAMPLE_LIBS)
 
 chanMultiContinuation_SOURCES = \
 	$(srcdir)/ChanMultiContinuation.C \

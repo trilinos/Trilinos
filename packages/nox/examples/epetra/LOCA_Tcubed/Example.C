@@ -65,7 +65,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i;
+  int ierr = 0;
   
   // scale factor to test arc-length scaling
   double scale = 1.0;
@@ -115,16 +115,17 @@ int main(int argc, char *argv[])
   // Begin LOCA Solver ************************************
 
   // Create parameter list
-  NOX::Parameter::List paramList;
+    Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
+      Teuchos::rcp(new NOX::Parameter::List);
 
   // Create LOCA sublist
-  NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
+  NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
 
   // Create the stepper sublist and set the stepper parameters
   NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
   //locaStepperList.setParameter("Continuation Method", "Natural");
-  //locaStepperList.setParameter("Continuation Method", "Arc Length");
-  locaStepperList.setParameter("Continuation Method", "Householder Arc Length");
+    locaStepperList.setParameter("Continuation Method", "Arc Length");
+    locaStepperList.setParameter("Bordered Solver Method", "Householder");
   locaStepperList.setParameter("Continuation Parameter", "Right BC");
   //locaStepperList.setParameter("Continuation Parameter", "Nonlinear Factor");
   locaStepperList.setParameter("Initial Value", 0.1/scale);
@@ -188,7 +189,7 @@ int main(int argc, char *argv[])
 			     LOCA::Utils::Parameters);
 
   // Create the "Solver" parameters sublist to be used with NOX Solvers
-  NOX::Parameter::List& nlParams = paramList.sublist("NOX");
+  NOX::Parameter::List& nlParams = paramList->sublist("NOX");
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
 
   // Create the NOX printing parameter list
@@ -240,43 +241,38 @@ int main(int argc, char *argv[])
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
-  // NLS_PetraGroupInterface
-  Problem_Interface interface(Problem);
-
-  // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner by 
-  // uncommenting one or more of the following lines:
-  // 1. User supplied (Epetra_RowMatrix)
-  Epetra_RowMatrix& A = Problem.getJacobian();
-  // 2. Matrix-Free (Epetra_Operator)
-  //NOX::Epetra::MatrixFree A(interface, soln);
-  // 3. Finite Difference (Epetra_RowMatrix)
-  //NOX::Epetra::FiniteDifference A(interface, soln);
-  // 4. Jacobi Preconditioner
-  //NOX::Epetra::JacobiPreconditioner Prec(soln);
+  Teuchos::RefCountPtr<Problem_Interface> interface = 
+    Teuchos::rcp(new Problem_Interface(Problem));
+  Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
+  
+  // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
+  Teuchos::RefCountPtr<Epetra_RowMatrix> Amat = 
+    Teuchos::rcp(&Problem.getJacobian(),false);
 
   // Create the linear systems
-  NOX::Epetra::LinearSystemAztecOO linsys(nlPrintParams, lsParams,
-					     interface, interface,
-					     A, soln);
-//   NOX::Epetra::LinearSystemAztecOO linsys(nlPrintParams, lsParams,
-// 					     interface, soln);
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams,
+						      iReq, iJac, Amat, soln));
 
   // Create the loca vector
   NOX::Epetra::Vector locaSoln(soln);
 
   // Create the Group
-  LOCA::Epetra::Group grp(nlPrintParams, interface, locaSoln, linsys,
-			  pVector);
-  grp.computeF();
+  Teuchos::RefCountPtr<LOCA::Epetra::Group> grp = 
+    Teuchos::rcp(new LOCA::Epetra::Group(nlPrintParams, iReq, locaSoln, linsys,
+					 pVector));
+  grp->computeF();
 
   // Create the Solver convergence test
   Teuchos::RefCountPtr<NOX::StatusTest::NormF> wrms = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
   Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(searchParams.getParameter("Max Iters", 10)));
-  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
-  combo.addStatusTest(wrms);
-  combo.addStatusTest(maxiters);
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+  combo->addStatusTest(wrms);
+  combo->addStatusTest(maxiters);
 
 #ifdef HAVE_TEUCHOS_EXPAT
   // Test writing of param list to XML file, and rereading it
@@ -284,16 +280,20 @@ int main(int argc, char *argv[])
   NOX::Parameter::Teuchos2NOX pl_converter;
                                                                                                                                         
   cout << "Writing parameter list to \"input.xml\"" << cout;
-  pl_converter.SaveToXMLFile("input.xml", paramList);
+  pl_converter.SaveToXMLFile("input.xml", *paramList);
                                                                                                                                         
   cout << "Reading parameter list from \"input.xml\"" << cout;
   Teuchos::RefCountPtr<NOX::Parameter::List> paramList2 = pl_converter.ReadFromXMLFile("input.xml");
 #else
-  NOX::Parameter::List* paramList2 = &paramList;
+  Teuchos::RefCountPtr<NOX::Parameter::List> paramList2 = paramList;
 #endif
 
+  // Create the Epetra Factory
+  Teuchos::RefCountPtr<LOCA::Epetra::Factory> factory = 
+    Teuchos::rcp(new LOCA::Epetra::Factory);
+
   // Create the stepper  
-  LOCA::Stepper stepper(grp, combo, *paramList2);
+  LOCA::NewStepper stepper(grp, combo, paramList, factory);
   LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
   if (status != LOCA::Abstract::Iterator::Finished)
@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
   if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    stepper.getParameterList().print(cout);
+    stepper.getParameterList()->print(cout);
     cout << endl;
   }
 

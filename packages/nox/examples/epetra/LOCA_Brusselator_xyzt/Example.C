@@ -338,44 +338,55 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Polynomial Order", 6); 
 
   // Create the interface between the test problem and the nonlinear solver
-  Problem_Interface interface(Problem);
+  Teuchos::RefCountPtr<Problem_Interface> interface = 
+    Teuchos::rcp(new Problem_Interface(Problem));
 
-  // Create the Epetra_RowMatrix
-  Epetra_RowMatrix& A = Problem.getJacobian();
+  // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
+  Teuchos::RefCountPtr<Epetra_RowMatrix> A = 
+    Teuchos::rcp(&Problem.getJacobian(),false);
 
 #ifdef DO_XYZT
   Epetra_MultiVector initGuess(soln.Map(), timeStepsPerProc);
   for (int i=0; i<timeStepsPerProc; i++) *(initGuess(i)) = soln;
 
-  LOCA::Epetra::Interface::xyzt ixyzt(interface, interface, interface,
-                                 initGuess, A, A, globalComm);
-  Epetra_RowMatrix& Axyzt = ixyzt.getJacobian();
-  Epetra_Vector& solnxyzt = ixyzt.getSolution();
+  Teuchos::RefCountPtr<LOCA::Epetra::Interface::xyzt> ixyzt = 
+    Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface, interface, 
+						   interface,
+						   initGuess, A, A, 
+						   globalComm));
+  Epetra_RowMatrix& Axyzt = ixyzt->getJacobian();
+  Epetra_Vector& solnxyzt = ixyzt->getSolution();
 
-  LOCA::Epetra::Interface::Required& iReq = ixyzt;
+  Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq = ixyzt;
 
   // Create the Linear System
-  NOX::Epetra::Interface::Jacobian& iJac = ixyzt;
-  NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
-                                          iReq, iJac, Axyzt, solnxyzt);
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = ixyzt;
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys =
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+						      iReq, iJac, Axyzt, 
+						      solnxyzt));
 
   NOX::Epetra::Vector initialGuess(solnxyzt, NOX::DeepCopy, true);
 #else
   // Use an Epetra Scaling object if desired
-  Epetra_Vector scaleVec(soln);
+  Teuchos::RefCountPtr<Epetra_Vector> scaleVec = 
+    Teuchos::rcp(new Epetra_Vector(soln));
   NOX::Epetra::Scaling scaling;
   scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
 
-  LOCA::Epetra::Interface::Required& iReq = interface;
+  Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq = interface;
 
   // Create the Linear System
-  NOX::Epetra::Interface::Jacobian& iJac = interface;
-  NOX::Epetra::LinearSystemAztecOO linSys(printParams, lsParams,
-                                          iReq, iJac, A, soln);
-                                          //&scaling);
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+						      iReq, iJac, A, soln));
+		                                      //&scaling);
 
   // Create the Group
-  NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
+  NOX::Epetra::Vector initialGuess(Teuchos::rcp(&soln,false), 
+				   NOX::Epetra::Vector::CreateView,
+				   NOX::DeepCopy);
 #endif
 
   // Create and initialize the parameter vector
