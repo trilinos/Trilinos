@@ -41,8 +41,8 @@
 #include <iomanip>
 #include <map>
 
+#include <Epetra_SerialComm.h>
 #include "mrtr_point.H"
-#include "mrtr_edge.H"
 
 
 using namespace std;
@@ -155,12 +155,6 @@ private:
   // copy a point polygon to another polygon
   bool Clip_CopyPointPolygon(map<int,MRTR::Point*>& from, map<int,MRTR::Point*>& to);
 
-  //---------edge stuff, maybe not necessary
-  // add edge to polygon
-  bool Clip_AddEdgetoPolygon(int id, int node0, int node1);
-  // get view from an edge
-  MRTR::Edge* GetEdgeViewfromPolygon(int id);
-
   // -------------------------------------finding a convex hull for the polygon
   // create a convex hull of a set of given points in 2D
   bool ConvexHull(map<int,MRTR::Point*>& p);
@@ -193,7 +187,7 @@ double              mline_[3][4]; // 3 lines of mseg_in sseg_'s local coords
 bool                haveline_;    // flag indicating whether line info has been build
 
 map<int,MRTR::Point*> p_;
-map<int,MRTR::Edge*>  e_;
+
 
 }; // class Overlap
 

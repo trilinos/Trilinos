@@ -66,7 +66,7 @@ public:
   explicit Node();
   
   // copy-ctor
-  Node(MRTR::Node& old);
+  Node(const MRTR::Node& old);
   
   // dtor
   virtual ~Node();

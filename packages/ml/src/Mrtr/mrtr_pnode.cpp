@@ -39,7 +39,7 @@
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::ProjectedNode::ProjectedNode(MRTR::Node& basenode, 
+MRTR::ProjectedNode::ProjectedNode(const MRTR::Node& basenode, 
                                    const double* xi, 
                                    MRTR::Segment* pseg) :
 MRTR::Node(basenode),
@@ -61,7 +61,7 @@ orthseg_(-1)
 /*----------------------------------------------------------------------*
  |  ctor for orthogonal projection (public)                  mwgee 08/05|
  *----------------------------------------------------------------------*/
-MRTR::ProjectedNode::ProjectedNode(MRTR::Node& basenode, 
+MRTR::ProjectedNode::ProjectedNode(const MRTR::Node& basenode, 
                                    const double* xi, 
                                    MRTR::Segment* pseg,
                                    int orthseg) :
@@ -98,7 +98,6 @@ MRTR::Node(old)
  *----------------------------------------------------------------------*/
 MRTR::ProjectedNode::~ProjectedNode()
 {
-  cout << "derived dtor\n"; 
   pseg_ = NULL; // this is just a 'referencing' ptr, not in charge of destroying
 }
 

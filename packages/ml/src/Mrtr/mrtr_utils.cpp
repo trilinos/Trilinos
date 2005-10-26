@@ -242,6 +242,8 @@ int MRTR::digit_ten(int number)
  *----------------------------------------------------------------------*/
 // template<typename kind> void swap(kind& a, kind& b);
 
+
+
 /*----------------------------------------------------------------------*
  | sort dlist                                                mwgee 10/05|
   dlist:           On input, values to be sorted. On output, sorted values

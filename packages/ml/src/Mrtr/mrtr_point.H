@@ -40,6 +40,7 @@
 #include <iostream>
 #include <iomanip>
 
+#include "mrtr_node.H"
 
 using namespace std;
 
@@ -47,6 +48,7 @@ using namespace std;
 
 namespace MRTR
 {
+
 
 class Point
 {
@@ -68,13 +70,16 @@ public:
   inline const double* Xi() { return &xi_[0]; }
 
   // return view of global coords
-  inline const double* X() { return &x_[0]; }
+  inline const double* X() { if (node_) return node_->X(); else return NULL; }
 
+  // return view of node
+  inline MRTR::Node* Node() { return node_; }
+  
   // set Xi coords
   bool SetXi(const double* xi) { xi_[0] = xi[0]; xi_[1] = xi[1]; return true; }
 
   // set x coords
-  bool SetX(const double* x) { x_[0] = x[0]; x_[1] = x[1]; x_[2] = x[2]; return true; }
+  bool SetNode(MRTR::Node* node) { node_ = node; return true; }
 
 private:
 
@@ -85,10 +90,9 @@ private:
 
 private:
 
-  int     id_;     // id of this point
-  double  xi_[2];  // local coords in some slave elements coord system
-  double  x_[3];   // global coords
-
+  int         id_;     // id of this point
+  double      xi_[2];  // local coords in some slave elements coord system
+  MRTR::Node* node_;   // a node at this point (contains real world coords)
 
 }; // class Point
 

@@ -36,6 +36,7 @@
 #include "mrtr_overlap.H"
 #include "mrtr_projector.H"
 #include "mrtr_node.H"
+#include "mrtr_pnode.H"
 #include "mrtr_segment.H"
 #include "mrtr_interface.H"
 #include "mrtr_utils.H"
@@ -60,7 +61,6 @@ haveline_(false)
     exit(EXIT_FAILURE);
   }
   p_.clear();
-  e_.clear();
 }
 
 /*----------------------------------------------------------------------*
@@ -68,13 +68,8 @@ haveline_(false)
  *----------------------------------------------------------------------*/
 MRTR::Overlap::~Overlap()
 {
+  // destroy the point map
   Clip_DestroyPointPolygon(p_);
-
-  map<int,MRTR::Edge*>::iterator ecurr;
-  for (ecurr=e_.begin(); ecurr != e_.end(); ++ecurr)
-    if (ecurr->second)
-      delete ecurr->second;
-  e_.clear();
 }
 
 /*----------------------------------------------------------------------*
@@ -358,39 +353,6 @@ bool MRTR::Overlap::Clip_RemovePointfromPolygon(const int id,const double* P)
     //cout << "OVERLAP Clip_RemovePointfromPolygon: do nothing\n";
     return false;
   }
-}
-
-/*----------------------------------------------------------------------*
- |  add edge (private)                                       mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_AddEdgetoPolygon(int id, int node0, int node1)
-{
-  // check whether this edge is already in there
-  map<int,MRTR::Edge*>::iterator curr = e_.find(id);
-  // it's there
-  if (curr != e_.end())
-    curr->second->SetNodes(node0,node1);
-  else
-  {
-    cout << "OVERLAP Clip_AddEdgetoPolygon: added edge " << id << " between nodes " << node0 << " - " << node1 << endl;
-    MRTR::Edge* e = new MRTR::Edge(id,node0,node1);
-    e_.insert(pair<int,MRTR::Edge*>(id,e));
-  }
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  get edge view (private)                                  mwgee 10/05|
- *----------------------------------------------------------------------*/
-MRTR::Edge* MRTR::Overlap::GetEdgeViewfromPolygon(int id)
-{
-  // check whether this edge is already in there
-  map<int,MRTR::Edge*>::iterator curr = e_.find(id);
-  // it's there
-  if (curr != e_.end())
-    return curr->second;
-  else
-    return NULL;
 }
 
 /*----------------------------------------------------------------------*
@@ -1719,18 +1681,35 @@ bool MRTR::Overlap::Triangulization()
   np = Clip_SizePolygon();
   MRTR::Point** points = Clip_PointView();
 
+  // create a MRTR::Node for every point
+  int dof[3]; dof[0] = dof[1] = dof[2] = -1;
+  
   // find real world coords for all points
+  // find real world normal for all points
+  // note that the polygon is in slave segment parameter space and is
+  // completely contained in the slave segment. we can therefore use
+  // slave segment values to interpolate polgon point values
   for (int i=0; i<np; ++i)
   {
     double x[3]; x[0] = x[1] = x[2] = 0.0;
+    double n[3]; n[0] = n[1] = n[2] = 0.0;
     double val[sseg_.Nnode()];
     sseg_.EvaluateFunction(0,points[i]->Xi(),val,sseg_.Nnode(),NULL);
     MRTR::Node** snodes = sseg_.Nodes();
     for (int j=0; j<sseg_.Nnode(); ++j)
       for (int k=0; k<3; ++k)
+      {
         x[k] += val[j]*snodes[j]->X()[k];
-    // set real world coord in point
-    points[i]->SetX(x);
+        n[k] += val[j]*snodes[j]->N()[k];
+      }
+    double length = sqrt(MRTR::dot(n,n,3));
+    for (int j=0; j<3; ++j) n[j] /= length;
+    // create a node with this coords and normal;
+    MRTR::Node* node = new MRTR::Node(points[i]->Id(),x,3,dof);
+    node->SetN(n);
+    // set node in point
+    points[i]->SetNode(node);
+    cout << *points[i];
   }  
 
   // find projection values for all points in polygon on mseg
@@ -1739,16 +1718,27 @@ bool MRTR::Overlap::Triangulization()
     MRTR::Projector projector(inter_.IsOneDimensional());
     for (int i=0; i<np; ++i)
     {
-      ;
+      MRTR::Node* node = points[i]->Node();
+      projector.ProjectNodetoSegment_NodalNormal(*node,mseg_,mxi);
+      // create a projected node and set it in node
+      MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*node,mxi,&mseg_);
+      node->SetProjectedNode(pnode);
+#if 1
+      if (mxi[0]<=1. && mxi[1]<=abs(1.-mxi[0]) && mxi[0]>=0. && mxi[1]>=0.)
+      cout << "OVERLAP: point " << points[i]->Id() << " is in mseg, mxi " << mxi[0] << " / " << mxi[1] << endl;
+      else
+      cout << "OVERLAP: point " << points[i]->Id() << " is NOT in mseg, mxi " << mxi[0] << " / " << mxi[1] << endl;
+#endif
+
     }
-    
-    
   }
 
+  // create the triangle elements
+  
+  
+  
   delete [] points;
   
-  // find function values of mseg and sseg  (3 functions) for all points
-
   return true;
 }
 

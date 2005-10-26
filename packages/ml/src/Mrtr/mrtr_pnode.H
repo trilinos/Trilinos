@@ -59,10 +59,10 @@ class  ProjectedNode : public MRTR::Node
 public:
   
   // ctor 
-  explicit ProjectedNode(MRTR::Node& basenode, const double* xi, MRTR::Segment* pseg);
+  explicit ProjectedNode(const MRTR::Node& basenode, const double* xi, MRTR::Segment* pseg);
   
   // ctor for the case of orthogonal projection 
-  explicit ProjectedNode(MRTR::Node& basenode, const double* xi, MRTR::Segment* pseg, int orthseg);
+  explicit ProjectedNode(const MRTR::Node& basenode, const double* xi, MRTR::Segment* pseg, int orthseg);
   
   // copy-ctor
   ProjectedNode(MRTR::ProjectedNode& old);

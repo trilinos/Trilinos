@@ -48,7 +48,7 @@
  *----------------------------------------------------------------------*/
 bool MRTR::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
                                                      double dF[][3],
-                                                     MRTR::Node& node, 
+                                                     const MRTR::Node& node, 
                                                      MRTR::Segment& seg, 
 	   					     double* eta,
                                                      double alpha)
@@ -133,7 +133,7 @@ bool MRTR::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
  *----------------------------------------------------------------------*/
 bool MRTR::Projector::evaluate_FgradF_3D_SegmentNormal(double* F,
                                                        double dF[][3],
-                                                       MRTR::Node& node, 
+                                                       const MRTR::Node& node, 
                                                        MRTR::Segment& seg, 
 	   					       double* eta,
                                                        double alpha)

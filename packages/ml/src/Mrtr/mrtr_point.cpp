@@ -45,9 +45,7 @@ id_(id)
 {
   xi_[0] = xi[0];
   xi_[1] = xi[1];
-  x_[0]  = 0.0;
-  x_[1]  = 0.0;
-  x_[2]  = 0.0;
+  node_ = NULL;
 }
 
 /*----------------------------------------------------------------------*
@@ -55,6 +53,11 @@ id_(id)
  *----------------------------------------------------------------------*/
 MRTR::Point::~Point()
 {
+  if (node_) 
+  {
+    delete node_;
+    node_ = NULL;
+  }
 }
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 10/05|
@@ -70,6 +73,8 @@ ostream& operator << (ostream& os, const MRTR::Point& point)
 void MRTR::Point::Print() const
 {
   cout << "Point " << id_ << " xi[0]/[1] = " << xi_[0] << " / " << xi_[1] << endl;
+  if (node_)
+    cout << *node_;
   return;
 }
 

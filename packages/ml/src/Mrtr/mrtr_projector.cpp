@@ -57,7 +57,7 @@ MRTR::Projector::~Projector()
 /*----------------------------------------------------------------------*
  |                                                           mwgee 07/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Projector::ProjectNodetoSegment_NodalNormal(MRTR::Node& node, 
+bool MRTR::Projector::ProjectNodetoSegment_NodalNormal(const MRTR::Node& node, 
                                                        MRTR::Segment& seg, 
 						       double xi[])
 {
@@ -156,7 +156,7 @@ bool MRTR::Projector::ProjectNodetoSegment_NodalNormal(MRTR::Node& node,
  |      xs  nodal coords of node (slave side)                           |
  |      ns  outward normal of node (slave side)                         |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_F_2D_NodalNormal(MRTR::Node& node, 
+double MRTR::Projector::evaluate_F_2D_NodalNormal(const MRTR::Node& node, 
                                                   MRTR::Segment& seg, 
 	      					  double eta)
 {
@@ -219,7 +219,7 @@ double MRTR::Projector::evaluate_F_2D_NodalNormal(MRTR::Node& node,
  |      xim,yim nodal coords of segment's nodes i (master side)         |
  |      nxs,nys outward normal of node (slave side)                     |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_gradF_2D_NodalNormal(MRTR::Node& node, 
+double MRTR::Projector::evaluate_gradF_2D_NodalNormal(const MRTR::Node& node, 
                                                       MRTR::Segment& seg, 
 	      				              double eta)
 {
@@ -272,7 +272,7 @@ double MRTR::Projector::evaluate_gradF_2D_NodalNormal(MRTR::Node& node,
 /*----------------------------------------------------------------------*
  |                                                           mwgee 07/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Projector::ProjectNodetoSegment_SegmentNormal(MRTR::Node& node, 
+bool MRTR::Projector::ProjectNodetoSegment_SegmentNormal(const MRTR::Node& node, 
                                                          MRTR::Segment& seg, 
 						         double xi[])
 {
@@ -367,7 +367,7 @@ bool MRTR::Projector::ProjectNodetoSegment_SegmentNormal(MRTR::Node& node,
  |      xs  nodal coords of slave nodes on segment                      |
  |      njs nodal outward normal of nodes xs (slave side)               |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_F_2D_SegmentNormal(MRTR::Node& node, 
+double MRTR::Projector::evaluate_F_2D_SegmentNormal(const MRTR::Node& node, 
                                                     MRTR::Segment& seg, 
 	      					    double eta)
 {
@@ -438,7 +438,7 @@ double MRTR::Projector::evaluate_F_2D_SegmentNormal(MRTR::Node& node,
  |      xm,ym   nodal coords of master node                             |
  |      nxjs,nyjs outward normals of node j (slave side)                |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_gradF_2D_SegmentNormal(MRTR::Node& node, 
+double MRTR::Projector::evaluate_gradF_2D_SegmentNormal(const MRTR::Node& node, 
                                                         MRTR::Segment& seg, 
 	      				                double eta)
 {
@@ -507,7 +507,7 @@ double MRTR::Projector::evaluate_gradF_2D_SegmentNormal(MRTR::Node& node,
 /*----------------------------------------------------------------------*
  |                                                           mwgee 08/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Projector::ProjectNodetoSegment_SegmentOrthogonal(MRTR::Node& node, 
+bool MRTR::Projector::ProjectNodetoSegment_SegmentOrthogonal(const MRTR::Node& node, 
                                                              MRTR::Segment& seg, 
 						             double xi[])
 {
@@ -563,7 +563,7 @@ bool MRTR::Projector::ProjectNodetoSegment_SegmentOrthogonal(MRTR::Node& node,
  |      xs  nodal coords of slave nodes on segment                      |
  |      njs nodal outward normal of nodes xs (slave side)               |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal(MRTR::Node& node, 
+double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal(const MRTR::Node& node, 
                                                         MRTR::Segment& seg, 
 	      					        double eta)
 {
@@ -627,7 +627,8 @@ double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal(MRTR::Node& node,
  |      Ni,Nj shape functions of segment                                |
  |      xis nodal coords of segment's nodes i (slave side)              |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal(MRTR::Node& node, 
+double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal(
+                                                        const MRTR::Node& node, 
                                                         MRTR::Segment& seg, 
 	      				                double eta)
 {
@@ -678,7 +679,7 @@ double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal(MRTR::Node& node,
  |                                                           mwgee 08/05|
  *----------------------------------------------------------------------*/
 bool MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
-                                                             MRTR::Node& snode, 
+                                                             const MRTR::Node& snode, 
                                                              MRTR::Segment& seg, 
 						             double xi[],
                                                              MRTR::Segment& sseg)
@@ -754,7 +755,7 @@ bool MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
  |      xs  nodal coords of slave nodes on segment                      |
  |      njs nodal outward normal of nodes xs (slave side)               |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(MRTR::Node& node, 
+double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(const MRTR::Node& node, 
                                                              MRTR::Segment& seg, 
 	      					             double eta,
                                                              double* g)
@@ -816,7 +817,7 @@ double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(MRTR::Node& node,
  |      xis nodal coords of segment's nodes i (slave side)              |
  *----------------------------------------------------------------------*/
 double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g(
-                                                        MRTR::Node& node, 
+                                                        const MRTR::Node& node, 
                                                         MRTR::Segment& seg, 
 	      				                double eta,
                                                         double* g)

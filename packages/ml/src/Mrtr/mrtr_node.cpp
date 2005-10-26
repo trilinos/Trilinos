@@ -88,7 +88,7 @@ iscorner_(false)
 /*----------------------------------------------------------------------*
  |  copy-ctor (public)                                       mwgee 06/05|
  *----------------------------------------------------------------------*/
-MRTR::Node::Node(MRTR::Node& old)
+MRTR::Node::Node(const MRTR::Node& old)
 {
   Id_ = old.Id();
   

@@ -69,15 +69,15 @@ public:
   //====2D/3D projection methods
   
   // project a node onto a segment along the node's normal
-  bool ProjectNodetoSegment_NodalNormal(MRTR::Node& node, MRTR::Segment& seg, double xi[]);
+  bool ProjectNodetoSegment_NodalNormal(const MRTR::Node& node, MRTR::Segment& seg, double xi[]);
   // project a node onto a segment along the interpolated segment's normal field
-  bool ProjectNodetoSegment_SegmentNormal(MRTR::Node& node, MRTR::Segment& seg, double xi[]);
+  bool ProjectNodetoSegment_SegmentNormal(const MRTR::Node& node, MRTR::Segment& seg, double xi[]);
 
   //====2D projection methods
   
   // project a node onto a segment orthogonal to the segment
-  bool ProjectNodetoSegment_SegmentOrthogonal(MRTR::Node& node, MRTR::Segment& seg, double xi[]);
-  bool ProjectNodetoSegment_Orthogonal_to_Slave(MRTR::Node& snode, MRTR::Segment& seg, double xi[], MRTR::Segment& sseg);
+  bool ProjectNodetoSegment_SegmentOrthogonal(const MRTR::Node& node, MRTR::Segment& seg, double xi[]);
+  bool ProjectNodetoSegment_Orthogonal_to_Slave(const MRTR::Node& snode, MRTR::Segment& seg, double xi[], MRTR::Segment& sseg);
 
 private:  
   // don't want = operator
@@ -88,28 +88,28 @@ private:
   //====2D projection methods
   
   // evaluate F and gradF functions for ProjectNodetoSegment_NodalNormal in 2D
-  double evaluate_F_2D_NodalNormal(MRTR::Node& node, MRTR::Segment& seg, double eta);  
-  double evaluate_gradF_2D_NodalNormal(MRTR::Node& node, MRTR::Segment& seg, double eta);
+  double evaluate_F_2D_NodalNormal(const MRTR::Node& node, MRTR::Segment& seg, double eta);  
+  double evaluate_gradF_2D_NodalNormal(const MRTR::Node& node, MRTR::Segment& seg, double eta);
 
   // evaluate F and gradF functions for ProjectNodetoSegment_SegmentNormal in 2D
-  double evaluate_F_2D_SegmentNormal(MRTR::Node& node, MRTR::Segment& seg, double eta);  
-  double evaluate_gradF_2D_SegmentNormal(MRTR::Node& node, MRTR::Segment& seg, double eta);
+  double evaluate_F_2D_SegmentNormal(const MRTR::Node& node, MRTR::Segment& seg, double eta);  
+  double evaluate_gradF_2D_SegmentNormal(const MRTR::Node& node, MRTR::Segment& seg, double eta);
 
   // evaluate F and gradF functions for ProjectNodetoSegment_SegmentOrthogonal in 2D
-  double evaluate_F_2D_SegmentOrthogonal(MRTR::Node& node, MRTR::Segment& seg, double eta);  
-  double evaluate_gradF_2D_SegmentOrthogonal(MRTR::Node& node, MRTR::Segment& seg, double eta);
+  double evaluate_F_2D_SegmentOrthogonal(const MRTR::Node& node, MRTR::Segment& seg, double eta);  
+  double evaluate_gradF_2D_SegmentOrthogonal(const MRTR::Node& node, MRTR::Segment& seg, double eta);
   
   // evalauate F and gradF functions for ProjectNodetoSegment_Orthogonal_to_Slave in 2D
-  double evaluate_F_2D_SegmentOrthogonal_to_g(MRTR::Node& node, MRTR::Segment& seg, double eta, double* g);  
-  double evaluate_gradF_2D_SegmentOrthogonal_to_g(MRTR::Node& node, MRTR::Segment& seg, double eta, double* g);
+  double evaluate_F_2D_SegmentOrthogonal_to_g(const MRTR::Node& node, MRTR::Segment& seg, double eta, double* g);  
+  double evaluate_gradF_2D_SegmentOrthogonal_to_g(const MRTR::Node& node, MRTR::Segment& seg, double eta, double* g);
   
   //====3D projection methods
 
   // evaluate F and gradF functions for ProjectNodetoSegment_NodalNormal in 3D
-  bool evaluate_FgradF_3D_NodalNormal(double* F,double dF[][3],MRTR::Node& node, 
+  bool evaluate_FgradF_3D_NodalNormal(double* F,double dF[][3],const MRTR::Node& node, 
                                       MRTR::Segment& seg,double* eta,double alpha);
   // evaluate F and gradF functions for ProjectNodetoSegment_SegmentNormal in 3D
-  bool evaluate_FgradF_3D_SegmentNormal(double* F,double dF[][3],MRTR::Node& node, 
+  bool evaluate_FgradF_3D_SegmentNormal(double* F,double dF[][3],const MRTR::Node& node, 
                                         MRTR::Segment& seg,double* eta,double alpha);
 
 private:
