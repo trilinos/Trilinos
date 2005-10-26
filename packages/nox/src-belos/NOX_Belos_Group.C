@@ -197,9 +197,9 @@ NOX::Belos::Group::applyJacobianInverse(NOX::Parameter::List& params,
 					NOX::Abstract::Vector& result) const 
 {
   // Create multivectors out of input, result
-  NOX::Abstract::MultiVector *inputs = 
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> inputs = 
     input.createMultiVector(NULL, 0, NOX::DeepCopy);
-  NOX::Abstract::MultiVector *results = 
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> results = 
     result.createMultiVector(NULL, 0, NOX::DeepCopy);
   
   // Call multivector version
@@ -208,10 +208,6 @@ NOX::Belos::Group::applyJacobianInverse(NOX::Parameter::List& params,
 
   // Copy result
   result = (*results)[0];
-
-  // Delete temporaries
-  delete inputs;
-  delete results;
 
   return res;
 }
