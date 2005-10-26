@@ -93,6 +93,7 @@ struct ML_Sm_BGS_Data_Struct
    int    *blocklengths;
    int    *blockmap;
    int    Nblocks;
+  int    optimized;
 };
 
 struct ML_Sm_ILUT_Data_Struct 
@@ -341,8 +342,10 @@ extern  int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *, ML_Comm *,
 extern  ML *ML_Smoother_Get_Hiptmair_nodal(ML *ml, int level, int);
 extern  int ML_dgetrs_special(int blocksize, double *ablock, int *ipiv, 
 			      double *correc);
-extern  int ML_permute_for_dgetrs_special(double *Z[], int Nblocks, int blocksize);
-
+extern  int ML_dgetrs_trans_special(int blocksize, double *ablock, int *ipiv, 
+			      double *correc);
+extern  int ML_permute_for_dgetrs_special(double *Z[], int Nblocks, int blocksize,
+                               ML_Sm_BGS_Data *block_data_widget);
 
 
 /* -------------------------------------------------------------------- */

@@ -1376,7 +1376,8 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
          ML_Smoother_Create_BGS_Data(&data);
 	 ML_Smoother_Gen_BGSFacts(&data, &(ml->Amat[i]), blocksize);
 	 ML_permute_for_dgetrs_special(data->blockfacts, 
-				       ml->Amat[i].invec_leng/blocksize,blocksize);
+				       ml->Amat[i].invec_leng/blocksize,blocksize,
+				       data);
 	 ml->pre_smoother[i].data_destroy = ML_Smoother_Clean_BGS_Data;
          sprintf(str,"BGS_pre%d",i);
      	 if (omega == ML_DEFAULT) 
@@ -1396,7 +1397,9 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
          ML_Smoother_Create_BGS_Data(&data);
 	 ML_Smoother_Gen_BGSFacts(&data, &(ml->Amat[i]), blocksize);
 	 ML_permute_for_dgetrs_special(data->blockfacts, 
-				       ml->Amat[i].invec_leng/blocksize,blocksize);
+				       ml->Amat[i].invec_leng/blocksize,blocksize,
+				       data);
+
 
 	 ml->post_smoother[i].data_destroy = ML_Smoother_Clean_BGS_Data;
          sprintf(str,"BGS_post%d",i);
@@ -1417,7 +1420,9 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
          ML_Smoother_Create_BGS_Data(&data);
 	 ML_Smoother_Gen_BGSFacts(&data, &(ml->Amat[i]), blocksize);
 	 ML_permute_for_dgetrs_special(data->blockfacts, 
-				       ml->Amat[i].invec_leng/blocksize,blocksize);
+				       ml->Amat[i].invec_leng/blocksize,blocksize,
+				       data);
+
          sprintf(str,"BGS_pre%d",i);
      	 if (omega == ML_DEFAULT) 
        	   ML_Smoother_ComputeOmegaViaSpectralradius(&(ml->Amat[i]), 
@@ -4427,7 +4432,6 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    **************************************/
    /* see man page for description of arguments */
    strcpy(trans,"N");
-   /*DGETRS_F77(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info,itmp);*/
    DGETRS_F77(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info);
    if (info < 0) {
      printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrs has ",-info);
@@ -4483,7 +4487,6 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
      rhs[i] = ML_gdot(lengV, V[i], res2, ml->comm);
 
    /* see man page for description of arguments */
-   /*DGETRS_F77(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info,itmp);*/
    DGETRS_F77(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info);
    if (info < 0) {
      printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrs has ",info);

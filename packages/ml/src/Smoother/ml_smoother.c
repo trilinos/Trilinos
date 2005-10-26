@@ -67,6 +67,8 @@ extern int Epetra_ML_GetCrsDataptrs(ML_Operator *data, double **values, int **co
 
 int ML_dgetrs_special(int blocksize, double *ablock, int *ipiv, double *correc  )
 {
+
+
   int ii, jj, pivot;
   double tmp;
     
@@ -96,13 +98,62 @@ int ML_dgetrs_special(int blocksize, double *ablock, int *ipiv, double *correc  
     return 0;
 } 
 
+int ML_dgetrs_trans_special(int blocksize, double *ablock, int *ipiv, double *correc  )
+{
+
+
+  int ii, jj, pivot;
+  double tmp;
+  static int count = 0;
+    
+  printf("count is %d\n",count); 
+  ablock = &(ablock[blocksize*blocksize]); ablock--;
+
+  /* Solve U^T*X = CORREC, overwriting CORREC with X. */
+
+  if (count == 12) {printf("things %d %u %u\n",blocksize,ablock,correc); fflush(stdout); }
+    for (ii = 0; ii < blocksize ; ii++) {
+      if (count == 12) {printf("%d, these are %e \n",ii,correc[ii]); fflush(stdout); }
+      if (count == 12) {printf("%d, these are %e \n",ii,*ablock); fflush(stdout); }
+      correc[ii] /= (*ablock--);
+      for (jj = blocksize-1; jj > ii ; jj--) {
+        correc[jj] -= (*ablock--)*correc[ii];
+      }
+    }
+    if (count == 12) {printf("first phase\n"); fflush(stdout); }
+
+    /* Solve L^T*X = CORREC, overwriting CORREC with X. */
+
+    for (ii = blocksize-1; ii >= 0; ii--) {
+      for (jj = ii-1; jj >= 0; jj--) {
+	correc[jj] -= correc[ii]*(*ablock--); 
+      }
+    }
+
+    /* Apply row interchanges to the right hand sides. */
+
+    for (ii = blocksize-1; ii >= 0; ii--) {
+      pivot         = ipiv[ii] - 1;
+      tmp           = correc[ii];
+      correc[   ii] = correc[pivot];
+      correc[pivot] = tmp;
+    }
+count++;
+    return 0;
+} 
+
 /* Permute a Nblocks sets of LAPACK factors in ablock[] so that */
 /* ML_dgetrs_special() can be used to solve them quickly.       */
 
-int ML_permute_for_dgetrs_special(double *Z[], int Nblocks, int blocksize)
- {
+int ML_permute_for_dgetrs_special(double *Z[], int Nblocks, int blocksize,
+		  ML_Sm_BGS_Data *block_data_widget)
+
+		 {
    double *newZ;
    int    count, i,j,k;
+
+   block_data_widget->optimized = 1;  /* record the fact that factors */
+                                      /* have been optimized.         */
    newZ = (double *) ML_allocate(sizeof(double)*(blocksize*blocksize+1));
 
    for (k = 0; k < Nblocks; k++) {
@@ -1945,6 +1996,15 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
    blocksize=dataptr->blocksize;
    Nblocks=Nrows/blocksize;
 
+   if (dataptr->optimized == 0) {
+     printf("ML_Smoother_BlockGS: Must first apply ML_permute_for_dgetrs_special()\n");
+     printf("                     to factors created by dgetrf() inorder to employ\n");
+     printf("                     the optimized version of back solve used here.\n");
+     exit(1);
+   }
+
+
+
    if (Amat->getrow->func_ptr == NULL) {
       pr_error("Error(ML_blockGaussSeidel): Need getrow() for smoother\n");
       ML_avoid_unused_param((void *) &outlen);
@@ -3489,6 +3549,7 @@ int ML_Smoother_Create_BGS_Data(ML_Sm_BGS_Data **data)
    ml_data->blocksize = -1;
    ml_data->blocklengths = NULL;
    ml_data->blockmap = NULL;
+   ml_data->optimized = 0;
    return 0;
 }
 
