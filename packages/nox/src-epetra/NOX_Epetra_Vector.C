@@ -234,7 +234,7 @@ clone(CopyType type) const
   return newVec;
 }
 
-NOX::Abstract::MultiVector* 
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 NOX::Epetra::Vector::createMultiVector(
 				    const NOX::Abstract::Vector* const* vecs,
 				    int numVecs, NOX::CopyType type) const
@@ -259,15 +259,15 @@ NOX::Epetra::Vector::createMultiVector(
 
   Epetra_MultiVector epetra_mv(View, map, v, numVecs+1);
 
-  NOX::Epetra::MultiVector* mv = 
-    new NOX::Epetra::MultiVector(epetra_mv, type);
+  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> mv = 
+    Teuchos::rcp(new NOX::Epetra::MultiVector(epetra_mv, type));
 
   delete [] v;
 
   return mv;
 }
 
-NOX::Abstract::MultiVector* 
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
 {
   if (numVecs <= 0) {
@@ -290,8 +290,8 @@ NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
     }
   }
 
-  NOX::Epetra::MultiVector* mv = 
-    new NOX::Epetra::MultiVector(*epetra_mv, type);
+  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> mv = 
+    Teuchos::rcp(new NOX::Epetra::MultiVector(*epetra_mv, type));
 
   delete epetra_mv;
 

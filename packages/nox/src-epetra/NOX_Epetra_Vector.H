@@ -173,7 +173,7 @@ class Vector : public virtual NOX::Abstract::Vector {
    * The implementation here creates a NOX::Epetra::MultiVector with
    * either Shape or Deep copies of the supplied vectors.
    */
-  virtual NOX::Abstract::MultiVector* 
+  virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
   createMultiVector(const NOX::Abstract::Vector* const* vecs,
 		    int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 
@@ -183,7 +183,7 @@ class Vector : public virtual NOX::Abstract::Vector {
    * The implementation here creates a NOX::Epetra::MultiVector with
    * either Shape or Deep copies of the supplied vector.
    */
-  virtual NOX::Abstract::MultiVector* 
+  virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
   createMultiVector(int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 
   //@}
