@@ -1395,9 +1395,12 @@ options:
 \choicebox{\tt null space: type}{[{\tt string}] If {\tt default vectors}, the
   default null space are used (no computation required). If {\tt
     pre-computed}, a pointer to the already-computed null is obtained from
-    option {\tt null space: vector}. If {\tt enriched}, \ML~will compute,
+    option {\tt null space: vectors}. If {\tt enriched}, \ML~will compute,
   using \anasazi, an approximation of the null space of the operator.
   Default: {\tt default vectors}.}
+
+\choicebox{\tt null space: vectors}{[{\tt double*}].  Pointer to user-supplied
+null space vectors.}
 
 \choicebox{\tt null space: vectors to compute}{[{\tt int}]. If {\tt null
   space: type} is set to {\tt enriched}, this option indicates the number of
