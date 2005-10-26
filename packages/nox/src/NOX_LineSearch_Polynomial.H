@@ -354,8 +354,8 @@ protected:
 
     <li> Last, we check the sufficient decrease condition. We return
     \b true if it's satisfied, and \b false otherwise. The condition
-    depends on the value of the "Sufficient Decrease Condition
-    Parameter", as follows.
+    depends on the value of "Sufficient Decrease Condition", 
+    as follows.
     
     <ul>
     <li> "Armijo-Goldstein": Return true if
@@ -373,7 +373,7 @@ protected:
     </ul>
 
     For the first two cases, \f$\alpha\f$ is specified by the
-    parameter "Alpha".
+    parameter "Alpha Factor".
 
     </ol>
     
@@ -510,7 +510,7 @@ protected:
 
   /*! \brief The \f$ \alpha \f$ for the Armijo-Goldstein condition, or
       the \f$ \alpha \f$ for the Ared/Pred condition; see
-      checkConvergence().  Uses "Alpha" parameter. */
+      checkConvergence().  Uses "Alpha Factor" parameter. */
   double alpha;
 
   /*! \brief Factor that limits the minimum size of the new step based
