@@ -43,6 +43,11 @@
 
 ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 {
+  initialize(params);
+}
+
+void ExampleApplication::initialize(Teuchos::ParameterList &params)
+{
   numElements_ = params.get<int>( "NumElements" );
 #ifdef HAVE_MPI
   MPI_Comm mpiComm = params.get<MPI_Comm>( "MPIComm" );
@@ -66,8 +71,9 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
 //  epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map( solnMap ) );
 
   // This is needed to extract the Epetra_CrsGraph for the Jacobian
-  Epetra_CrsMatrix &jacobian = problemInterfacePtr_->getJacobian();
-  W_graph_ = Teuchos::rcp(new Epetra_CrsGraph( jacobian.Graph() ) );
+//  Epetra_CrsMatrix &jacobian = problemInterfacePtr_->getJacobian();
+//  W_graph_ = Teuchos::rcp(new Epetra_CrsGraph( jacobian.Graph() ) );
+  W_graph_ = Teuchos::rcp(new Epetra_CrsGraph( problemInterfacePtr_->getGraph() ) );
 
 }
 
@@ -96,7 +102,8 @@ ExampleApplication::get_x_init() const
 Teuchos::RefCountPtr<Epetra_Operator>
 ExampleApplication::create_W() const
 {
-  return Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_));
+  Teuchos::RefCountPtr<Epetra_Operator> W = Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_));
+  return W;
 }
 
 EpetraExt::ModelEvaluator::InArgs

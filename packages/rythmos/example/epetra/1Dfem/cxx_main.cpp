@@ -82,14 +82,14 @@ int main(int argc, char *argv[])
     MPI_Comm_rank( mpiComm, &procRank );
 #endif // HAVE_MPI
 
-    int numElements = 101; // number of elements in vector
+    int numElements = 201; // number of elements in vector
     double finalTime = 1.0; // ODE final time
-    int N = 10;  // number of steps to take
+    int N = 100;  // number of steps to take
     const int num_methods = 3;
     const EMethod method_values[] = { METHOD_FE, METHOD_BE, METHOD_ERK };
     const char * method_names[] = { "FE", "BE", "ERK" };
     EMethod method_val = METHOD_BE;
-    double maxError = 1e-6;
+    double maxError = 0.01;
     bool version = false;  // display version information 
 
     // Parse the command-line options:
@@ -198,17 +198,23 @@ int main(int argc, char *argv[])
     }
     int MyLength = x_computed.MyLength();
     double error = 0;
+    double errorMag = 0;
     for (int i=0 ; i<MyLength ; ++i)
     {
-      std::cout.precision(15);
-      std::cout << "Computed: x[" << MyPID*MyLength+i << "] = ";
-      std::cout.width(20); std::cout << x_computed[i] << "\t";
-      std::cout << "Exact: x[" << MyPID*MyLength+i << "] = ";
-      std::cout.width(20); std::cout << x_star[i] << std::endl;
-      const double thisError = Thyra::relErr(x_computed[i],x_star[i]);
-      error = std::max(thisError,error);
-      //error = ( thisError > error ? thisError : error );
+      if(verbose)
+      {
+        std::cout.precision(15);
+        std::cout << "Computed: x[" << MyPID*MyLength+i << "] = ";
+        std::cout.width(20); std::cout << x_computed[i] << "\t";
+        std::cout << "Exact: x[" << MyPID*MyLength+i << "] = ";
+        std::cout.width(20); std::cout << x_star[i] << std::endl;
+      }
+      //const double thisError = Thyra::relErr(x_computed[i],x_star[i]);
+      const double thisError = x_computed[i]-x_star[i];
+      error += thisError*thisError;
+      errorMag += x_star[i]*x_star[i];
     }
+    error = sqrt(error)/sqrt(errorMag);
     result = Thyra::testMaxErr(
       "error",error
       ,"maxError",maxError

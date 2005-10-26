@@ -99,6 +99,9 @@ public:
 
   // Return a reference to the Epetra_Map used for the Solution Epetra_Vector
   Epetra_Map& getMap();
+  
+  // Return a reference to the Epetra_Graph used for the Jacobian
+  Epetra_CrsGraph& getGraph();
 
 protected:
 

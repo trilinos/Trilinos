@@ -303,6 +303,11 @@ Epetra_Map& Interface::getMap()
 {
   return *StandardMap;
 }
+
+Epetra_CrsGraph& Interface::getGraph()
+{
+  return *Graph;
+}
   
 Epetra_Vector& Interface::getMesh()
 {

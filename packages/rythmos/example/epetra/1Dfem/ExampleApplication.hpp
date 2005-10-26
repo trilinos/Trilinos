@@ -49,6 +49,9 @@ public:
   // Constructor
   ExampleApplication(Teuchos::ParameterList &params);
 
+  // Initialization
+  void initialize(Teuchos::ParameterList &params);
+
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{
 
