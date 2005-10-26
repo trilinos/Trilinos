@@ -168,10 +168,9 @@ int main(int argc, char *argv[])
     grp->setParams(p);
 
     // Change initial guess to a random vector
-    NOX::Abstract::Vector* xnew = grp->getX().clone();
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> xnew = grp->getX().clone();
     xnew->random();
     grp->setX(*xnew);
-    delete xnew;
 
     // Create the constraints object & constraint param IDs list
     constraints = Teuchos::rcp(new NormConstraint(n, p));
@@ -285,20 +284,20 @@ int main(int argc, char *argv[])
     C->random();
 
     // Set up left- and right-hand sides
-    F = Teuchos::rcp(grp->getX().createMultiVector(3));
+    F = grp->getX().createMultiVector(3);
     F->random();
     G = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,2));
     G->random();
-    X_bordering = Teuchos::rcp(F->clone(3));
+    X_bordering = F->clone(3);
     Y_bordering = 
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,2));
-    X_direct = Teuchos::rcp(F->clone(3));
+    X_direct = F->clone(3);
     Y_direct = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,2));
 
     // Setup A block as a view of the last column of F
     vector<int> indexA(1); 
     indexA[0] = 2;
-    A = Teuchos::rcp(F->subView(indexA));
+    A = F->subView(indexA);
 
     string testName;
 

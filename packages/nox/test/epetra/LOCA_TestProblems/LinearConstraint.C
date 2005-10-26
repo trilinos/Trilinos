@@ -48,8 +48,8 @@ LinearConstraint::LinearConstraint(int NumConstraints,
   dgdp(NumConstraints, pVec.length())
 {
   constraints.putScalar(0.0);
-  x = Teuchos::rcp(cloneVec.createMultiVector(1));
-  dgdx = Teuchos::rcp(cloneVec.createMultiVector(m));
+  x = cloneVec.createMultiVector(1);
+  dgdx = cloneVec.createMultiVector(m);
   dgdp.putScalar(0.0);
 }
 
@@ -58,8 +58,8 @@ LinearConstraint::LinearConstraint(const LinearConstraint& source,
   m(source.m),
   constraints(source.constraints),
   isValidConstraints(false),
-  x(Teuchos::rcp(source.x->clone(type))),
-  dgdx(Teuchos::rcp(source.dgdx->clone(type))),
+  x(source.x->clone(type)),
+  dgdx(source.dgdx->clone(type)),
   isZeroDgDx(source.isZeroDgDx),
   p(source.p),
   pvec(source.pvec),

@@ -168,10 +168,9 @@ int main(int argc, char *argv[])
     grp->setParams(p);
 
     // Change initial guess to a random vector
-    NOX::Abstract::Vector* xnew = grp->getX().clone();
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> xnew = grp->getX().clone();
     xnew->random();
     grp->setX(*xnew);
-    delete xnew;
 
     // Create the constraints object & constraint param IDs list
     constraints = Teuchos::rcp(new NormConstraint(n, p));
@@ -276,7 +275,7 @@ int main(int argc, char *argv[])
     grp->computeJacobian();
 
     // A
-    A = Teuchos::rcp(grp->getX().createMultiVector(1));
+    A = grp->getX().createMultiVector(1);
     A->random();
     
     // B
@@ -289,14 +288,14 @@ int main(int argc, char *argv[])
     C->random();
 
     // Set up left- and right-hand sides
-    F = Teuchos::rcp(grp->getX().createMultiVector(2));
+    F = grp->getX().createMultiVector(2);
     F->random();
     G = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,2));
     G->random();
-    X_bordering = Teuchos::rcp(F->clone(NOX::ShapeCopy));
+    X_bordering = F->clone(NOX::ShapeCopy);
     Y_bordering = 
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,2));
-    X_direct = Teuchos::rcp(F->clone(NOX::ShapeCopy));
+    X_direct = F->clone(NOX::ShapeCopy);
     Y_direct = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,2));
 
     string testName;

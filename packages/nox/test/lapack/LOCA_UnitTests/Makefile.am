@@ -81,7 +81,7 @@ borderedSolveNonContiguous_SOURCES = \
 	$(srcdir)/BorderedSolveNonContiguous.C
 
 borderedSolveNonContiguous_DEPENDENCIES = \
-	$(anasaziJacobianInverse_exe_DEPENDENCIES)
+	$(anasaziJacobianInverse_DEPENDENCIES)
 
 borderedSolveNonContiguous_LDADD = $(TEST_LIBS)
 
@@ -89,7 +89,7 @@ borderedSolveContiguous_SOURCES = \
 	$(srcdir)/BorderedSolveContiguous.C
 
 borderedSolveContiguous_DEPENDENCIES = \
-	$(anasaziJacobianInverse_exe_DEPENDENCIES)
+	$(anasaziJacobianInverse_DEPENDENCIES)
 
 borderedSolveContiguous_LDADD = $(TEST_LIBS)
 

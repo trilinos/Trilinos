@@ -44,7 +44,7 @@ NormConstraint::NormConstraint(int N, const LOCA::ParameterVector& pVec,
   isZeroDgDx(false)
 {
   constraints.putScalar(0.0);
-  x = Teuchos::rcp(cloneVec.createMultiVector(1));
+  x = cloneVec.createMultiVector(1);
 }
 
 NormConstraint::NormConstraint(const NormConstraint& source, 
@@ -53,7 +53,7 @@ NormConstraint::NormConstraint(const NormConstraint& source,
   constraints(source.constraints),
   isValidConstraints(false),
   p(source.p),
-  x(Teuchos::rcp(source.x->clone(type))),
+  x(source.x->clone(type)),
   isZeroDgDx(source.isZeroDgDx)
 {
   if (source.isValidConstraints && type == NOX::DeepCopy)

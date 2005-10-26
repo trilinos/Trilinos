@@ -283,32 +283,34 @@ int main(int argc, char *argv[])
     pVector.addParameter("Left BC", left_bc);
     pVector.addParameter("Right BC", right_bc);
 
-    // NLS_PetraGroupInterface
-    Problem_Interface interface(Problem);
+    // Create the interface between the test problem and the nonlinear solver
+    // This is created by the user using inheritance of the abstract base 
+    // class:
+    Teuchos::RefCountPtr<Problem_Interface> interface = 
+      Teuchos::rcp(new Problem_Interface(Problem));
+    Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq = interface;
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
     
     // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
-    Epetra_RowMatrix& Amat = Problem.getJacobian();
-
+    Teuchos::RefCountPtr<Epetra_RowMatrix> Amat = 
+      Teuchos::rcp(&Problem.getJacobian(),false);
+    
     // Create the linear systems
     Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, 
-							lsParams,
-							interface, 
-							interface,
+							lsParams, iReq, iJac, 
 							Amat, soln));
 
     // Create the loca vector
     NOX::Epetra::Vector locaSoln(soln);
 
     // Create the Group
-    grp = Teuchos::rcp(new LOCA::Epetra::Group(nlPrintParams, 
-					       interface, locaSoln, *linsys,
-					       pVector));
-    
+    grp = Teuchos::rcp(new LOCA::Epetra::Group(nlPrintParams, iReq, locaSoln, 
+					       linsys, pVector));
 
     // Change initial guess to a random vector
     Teuchos::RefCountPtr<NOX::Abstract::Vector> xnew = 
-      Teuchos::rcp(grp->getX().clone());
+      grp->getX().clone();
     xnew->random();
     grp->setX(*xnew);
 
@@ -373,7 +375,7 @@ int main(int argc, char *argv[])
     
     // B
     constraints->setX(grp->getX());
-    B = Teuchos::rcp(grp->getX().createMultiVector(nConstraints));
+    B = grp->getX().createMultiVector(nConstraints);
     B->random();
     constraints->setDgDx(*B);
     constraints->computeConstraints();    
@@ -385,16 +387,16 @@ int main(int argc, char *argv[])
     C->random();
 
     // Set up left- and right-hand sides
-    F = Teuchos::rcp(grp->getX().createMultiVector(nRHS+nConstraints));
+    F = grp->getX().createMultiVector(nRHS+nConstraints);
     F->random();
     G = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
 								 nRHS));
     G->random();
-    X_bordering = Teuchos::rcp(F->clone(nRHS+nConstraints));
+    X_bordering = F->clone(nRHS+nConstraints);
     Y_bordering = 
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
 							       nRHS));
-    X_householder = Teuchos::rcp(F->clone(nRHS+nConstraints));
+    X_householder = F->clone(nRHS+nConstraints);
     Y_householder = 
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
 							       nRHS));
@@ -406,9 +408,9 @@ int main(int argc, char *argv[])
       indexF[i] = i;
     for (int i=0; i<nConstraints; i++)
       indexA[i] = nRHS+i;
-    A = Teuchos::rcp(F->subView(indexA));
-    X_bordering_sol = Teuchos::rcp(X_bordering->subView(indexF));
-    X_householder_sol = Teuchos::rcp(X_householder->subView(indexF));
+    A = F->subView(indexA);
+    X_bordering_sol = X_bordering->subView(indexF);
+    X_householder_sol = X_householder->subView(indexF);
 
     string testName;
 
