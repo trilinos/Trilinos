@@ -58,7 +58,7 @@
 void test(Epetra_Comm& comm, Epetra_Map& map, Epetra_CrsMatrix& A, Epetra_Vector& xexact,
 		  Epetra_Vector& b, int dim, bool verbose, bool smallProblem, std::string const name);
 
-void outputResults(bool const verbose, int niters, std::string const name,
+void outputResults(bool const verbose, int niters, std::string const name, int neq, int nnz,
 				   double epetraInsertTime, double epetraFillCompleteTime, 
 				   double epetraMatvecTime, double epetraNumFlops, 
 				   double tpetraInsertTime, double tpetraFillCompleteTime,
@@ -267,6 +267,7 @@ void test(Epetra_Comm& comm, Epetra_Map& map, Epetra_CrsMatrix& A, Epetra_Vector
 	// to Ae.NumGlobalNonzeros() because we want to keep the states of Ae and At
 	// as identical as possible.)
 	A.FillComplete();
+	int neq = A.NumGlobalRows();
 	int nnz = A.NumGlobalNonzeros();
 	
 	// Next, compute how many times we should call the Multiply method, 
@@ -297,7 +298,7 @@ void test(Epetra_Comm& comm, Epetra_Map& map, Epetra_CrsMatrix& A, Epetra_Vector
 	// output results
 	// ------------------------------------------------------------------
 	
-	outputResults(verbose, niters, name, 
+	outputResults(verbose, niters, name, neq, nnz,
 				  epetraInsertTime, epetraFillCompleteTime, epetraMatvecTime, epetraNumFlops,
 				  tpetraInsertTime, tpetraFillCompleteTime, tpetraMatvecTime, tpetraNumFlops);
 	
@@ -342,7 +343,7 @@ void test(Epetra_Comm& comm, Epetra_Map& map, Epetra_CrsMatrix& A, Epetra_Vector
 //=========================================================================================
 // helper function to handle outputing the test results (but not the residuals)
 //=========================================================================================
-void outputResults(bool const verbose, int niters, std::string const name,
+void outputResults(bool const verbose, int niters, std::string const name, int neq, int nnz,
 				   double epetraInsertTime, double epetraFillCompleteTime, 
 				   double epetraMatvecTime, double epetraNumFlops, 
 				   double tpetraInsertTime, double tpetraFillCompleteTime,
@@ -382,18 +383,20 @@ void outputResults(bool const verbose, int niters, std::string const name,
 	commV.gatherAll(&tpetraMatvecTime, &tpetraMatvecTime_g[0], 1);
 	commV.gatherAll(&tpetraNumFlops, &tpetraNumFlops_g[0], 1);
 	
+	double const nnzPerRow(static_cast<double>(nnz) / static_cast<double>(neq));
+	
 	if(verbose) {
 		cout << "\n*************************************************************************************************" << endl;
-		cout << "Package name, Matrix Name, PID, Insert Time, FillComplete Time, Matvec Time, MFLOP Rate" << endl;
+		cout << "Package name, Matrix Name, NEQ, NNZ, NNZ/Row, PID, Insert Time, FillComplete Time, Matvec Time, MFLOP Rate" << endl;
 		cout << "*************************************************************************************************" << endl;
 		for(int i = 0; i < numProcs; i++) {
-			cout << "Epetra     " << name << setw(5) << i 
-				 << setw(15) << epetraInsertTime_g[i] << setw(15) << epetraFillCompleteTime_g[i] 
-				 << setw(15) << epetraMatvecTime_g[i] << setw(15) << (epetraNumFlops_g[i] / epetraMatvecTime_g[i] / 1000000.0) 
+			cout << "Epetra\t" << name << "\t" << neq << "\t" << nnz << "\t" << nnzPerRow << "\t" << i << "\t" 
+				 << epetraInsertTime_g[i] << "\t" << epetraFillCompleteTime_g[i] << "\t"
+				 << epetraMatvecTime_g[i] << "\t" << (epetraNumFlops_g[i] / epetraMatvecTime_g[i] / 1000000.0) 
 				 << endl;
-			cout << "Tpetra     " << name << setw(5) << i 
-				 << setw(15) << tpetraInsertTime_g[i] << setw(15) << tpetraFillCompleteTime_g[i] 
-				 << setw(15) << tpetraMatvecTime_g[i] << setw(15) << (tpetraNumFlops_g[i] / tpetraMatvecTime_g[i] / 1000000.0) 
+			cout << "Tpetra\t" << name << "\t" << neq << "\t" << nnz << "\t" << nnzPerRow << "\t" << i << "\t" 
+				 << tpetraInsertTime_g[i] << "\t" << tpetraFillCompleteTime_g[i] << "\t"
+				 << tpetraMatvecTime_g[i] << "\t" << (tpetraNumFlops_g[i] / tpetraMatvecTime_g[i] / 1000000.0) 
 				 << endl;
 		}
 		cout << "\n# Matvecs (niters) = " << niters_g << endl;
