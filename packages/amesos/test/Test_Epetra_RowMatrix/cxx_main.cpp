@@ -138,7 +138,7 @@ void driver(Epetra_Comm& Comm, const bool IsSymmetric, const bool UseTranspose,
     {
       // solve with matrix
       Teuchos::ParameterList AmesosList;
-      AmesosList.set("Redistribute",false);
+      AmesosList.set("Redistribute",true);
       res = TestAmesos((char*)Solver.c_str(), AmesosList, false, 
                        &A, &LHS, &RHS);
       assert (res == true);
