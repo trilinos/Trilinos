@@ -1116,6 +1116,8 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
 
   if (fd_centered_)
     FD->setDifferenceMethod(NOX::EpetraNew::FiniteDifferenceColoring::Centered);
+  else
+    FD->setDifferenceMethod(NOX::EpetraNew::FiniteDifferenceColoring::Forward);
 
   bool err = FD->computeJacobian(x); 
   if (err==false)
@@ -1182,10 +1184,11 @@ bool ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal(Epetra_CrsMatrix** A, int l
   
   for (int i=0; i<diag.MyLength(); i++)
   {
-     if (abs(diag[i])<1.0e-9)
+     // fix zero entries to be real dirichlet boundary constraints because they come from mesh tying
+     if (abs(diag[i])<1.0e-10)
      {
-        if (ml_printlevel_>9)
-          cout << "found zero diagonal entry in row " << i << ", fixing..." << endl;
+        if (ml_printlevel_>7)
+          printf("found zero diagonal entry %20.12e in row %d, fixing to be %e\n",diag[i],i,average);
         //check whether there are nonzero off-diagonal entries in that row
         int numentries;
         double* values;
@@ -1216,6 +1219,27 @@ bool ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal(Epetra_CrsMatrix** A, int l
 //          cout << "ML (level " << level << ") proc " << comm_.MyPID() << ":  fixing zero main diagonal in local row " << i << " to be : " << average << "\n";
         
         err = (*A)->ReplaceMyValues(i,1,&average,&i);
+        if (err)
+        {
+           cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal:\n"
+                << "**ERR**: A->ReplaceMyValues returned " << err << endl 
+                << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+        }
+     }
+     // fix small values to be resonably sized because they come from frictionless contact
+     else if (abs(diag[i])<1.0)
+     {
+       double small=10.0;
+       if (abs(diag[i])>small) small = abs(diag[i]);
+       if (ml_printlevel_>7)
+         printf("found tiny diagonal value %20.12e in row %d, fixing to be %e\n",diag[i],i,small);
+
+       // get global row id
+       int grid = (*A)->GRID(i);
+       if (grid<0) cout << "***ERR*** A->GRID(i) = " << grid << endl;
+       bcgid[grid] = 1;
+
+        err = (*A)->ReplaceMyValues(i,1,&small,&i);
         if (err)
         {
            cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal:\n"
