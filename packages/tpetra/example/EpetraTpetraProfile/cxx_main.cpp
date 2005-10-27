@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 		cout << "== Epetra Tpetra Profile" << endl;
 		cout << "== " << Epetra_Version() << endl;
 		cout << "== " << Tpetra::Tpetra_Version() << endl;
-		cout << "===========================================================================================\n\n";
+		cout << "===========================================================================================\n";
 	}
 	
 	if(argc < 2 && verbose) {
@@ -95,7 +95,24 @@ int main(int argc, char *argv[]) {
 		<< argv[0] << " mymatrix.hb" << endl << endl;
 		return(1);
 	}
-	
+
+#ifdef EPETRA_MPI
+	char processor_name[MPI_MAX_PROCESSOR_NAME];
+	int namelen;
+	MPI_Get_processor_name(processor_name,&namelen);
+	for(int i = 0; i < numProc; i++) {
+		if(i == myPID) {
+			cout << "Image " << i << " is " << processor_name << endl;
+		}
+		comm.Barrier();
+		comm.Barrier();
+		comm.Barrier();
+	}
+	if(verbose) {
+		cout << "===========================================================================================\n\n";
+	}
+#endif
+
 	// convert filename to std::string for output
 	std::string name(argv[1]); // construct string from null-terminated C-string
 	std::string::size_type idx = name.rfind('/');
