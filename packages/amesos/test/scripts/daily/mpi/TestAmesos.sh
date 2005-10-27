@@ -113,9 +113,10 @@ foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Detailed Test_UMFPA
 # foreach f ( Test_Epetra_RowMatrix )
   set TestRan = False
   cd $f
+  touch dummy.exe
   set exefiles = (*.exe)
-  if ( "${exefiles}X" != 'X' ) then
-    foreach g(*.exe)
+  foreach g(*.exe)
+    if ( $g != "dummy.exe" ) then
       set TestRan = True
       echo "" >>& ../$file
       echo "############" $g "##############" >>& ../$file
@@ -147,23 +148,20 @@ foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Detailed Test_UMFPA
           echo "  ******** Test w/ 4 proc failed ********" >>& ../$file
           echo "Errors for script " $g " are listed above." >>& ../$file2
           echo "################### " $g " ##################" >>& ../$file2
-	  $mpigo 4  ./$g -v >>& ../$file2
-          else
-          # Tests passed
-          echo "******** Test w/ 4 proc passed ********" >>& ../$file
+          $mpigo 4  ./$g -v >>& ../$file2
+        else
+           # Tests passed
+           echo "******** Test w/ 4 proc passed ********" >>& ../$file
         endif
         /bin/rm -f Amesos_OK
-      end
-    else
-      # This is not an automated test.
-      ./$g -v >>& ../$file
+      else
+        # This is not an automated test.
+        ./$g -v >>& ../$file
+      endif
     endif
-  endif
+  end
+  /bin/rm dummy.exe
   cd ..
-  if ( $TestRan != "True" ) then
-    echo "No executables were found in directory " $f 
-    set AnError = True
-  endif
 end
 
 # copy Summary file and Error file to standard out
