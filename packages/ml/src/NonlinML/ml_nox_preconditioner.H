@@ -501,7 +501,7 @@ private:
 
   // nonlinear multigrid functions
   //the FAS-preconditioner
-  bool ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Vector* x, int level, bool* converged) const;
+  bool ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Vector* x, int level, bool* converged, double* finenorm) const;
   // the FAS-solver
   bool ML_Nox_FAS_cycle1(Epetra_Vector* f, Epetra_Vector* x, int level, bool* converged);
 

@@ -837,6 +837,18 @@ ML_NOX::ML_Nox_NonlinearLevel::~ML_Nox_NonlinearLevel()
 bool ML_NOX::ML_Nox_NonlinearLevel::iterate(Epetra_Vector* f, Epetra_Vector* x, 
                                             int numiter)
 {
+  double norm = conv_normF_;
+  return iterate(f,x,numiter,&norm);
+}
+/*----------------------------------------------------------------------*
+ |  (public)                                                 m.gee 01/05|
+ |  iterate on f with initial guess x numiter times                     |
+ |  returns absolut value of result in x                                |
+ |  returns f matching x                                                |
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_NonlinearLevel::iterate(Epetra_Vector* f, Epetra_Vector* x, 
+                                            int numiter, double* norm)
+{
    if (!group_ || !solver_ || !combo2_)
    {
       cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::iterate:\n"
@@ -849,7 +861,7 @@ bool ML_NOX::ML_Nox_NonlinearLevel::iterate(Epetra_Vector* f, Epetra_Vector* x,
    group_->setX(X);
    
    // create the convergence test
-   create_Nox_Convergencetest(conv_normF_,conv_nupdate_,numiter);
+   create_Nox_Convergencetest(*norm,*norm,numiter);
   
    // make a soft reset of the NOX solver (see NOX manual)
    solver_->reset(*group_,*combo2_);
@@ -857,11 +869,13 @@ bool ML_NOX::ML_Nox_NonlinearLevel::iterate(Epetra_Vector* f, Epetra_Vector* x,
    // iterate
    if (ml_printlevel_ > 0 && comm_.MyPID() == 0 && coarseinterface_->isFAS()==false)
    {
-      cout << "ML (level " << level_ << "): Entering Nonlinear Smoother\n"; fflush(stdout);
+      printf("ML (level %d): Entering Nonlinear Smoother, Goal: %12.8e\n",level_,*norm); fflush(stdout);
+      //cout << "ML (level " << level_ << "): Entering Nonlinear Smoother, Goal: " << *norm << "\n"; fflush(stdout);
    }
    else if (ml_printlevel_ > 0 && comm_.MyPID() == 0 && coarseinterface_->isFAS()==true)
    {
-      cout << "ML (level " << level_ << "): Entering FAS-Nonlinear Smoother\n"; fflush(stdout);
+      printf("ML (level %d): Entering FAS-Nonlinear Smoother, Goal: %12.8e\n",level_,*norm); fflush(stdout);
+      //cout << "ML (level " << level_ << "): Entering FAS-Nonlinear Smoother, Goal: " << *norm << "\n"; fflush(stdout);
    }
 
    NOX::StatusTest::StatusType status = solver_->solve();
@@ -877,42 +891,50 @@ bool ML_NOX::ML_Nox_NonlinearLevel::iterate(Epetra_Vector* f, Epetra_Vector* x,
    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getF())).getEpetraVector();
 
    bool returnstatus=false;
-   double norm2=0.0;
-   if (ml_printlevel_ > 0)
-      finalF.Norm2(&norm2);
+   double norm2;
+   finalF.Norm2(&norm2);
+   *norm = norm2;
       
    if (status == NOX::StatusTest::Converged)
    {
       returnstatus = true;
       if (ml_printlevel_ > 0 && comm_.MyPID() == 0) {
-         cout << "ML (level " << level_ << "): NOX: " 
-              << niter << " iterations, Norm(F)=" 
-              << norm2 << " , Converged\n"; fflush(stdout);
+         //cout << "ML (level " << level_ << "): NOX: " 
+         //     << niter << " iterations, Norm(F)=" 
+         //     << norm2 << " , Converged\n"; fflush(stdout);
+         printf("ML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Converged\n",level_,niter,norm2);
+         fflush(stdout);
       }
    }
    else if (status == NOX::StatusTest::Unconverged)
    {
       returnstatus = false;
       if (ml_printlevel_ > 0 && comm_.MyPID() == 0) {
-         cout << "ML (level " << level_ << "): NOX: "
-              << niter << " iterations, Norm(F)=" 
-              << norm2 << ", Unconverged\n"; fflush(stdout);
+         //cout << "ML (level " << level_ << "): NOX: "
+         //     << niter << " iterations, Norm(F)=" 
+         //     << norm2 << ", Unconverged\n"; fflush(stdout);
+         printf("ML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Unonverged\n",level_,niter,norm2);
+         fflush(stdout);
       }
    }
    else if (status == NOX::StatusTest::Failed)
    {
       returnstatus = false;
       if (ml_printlevel_ > 0 && comm_.MyPID() == 0) {
-         cout << "ML (level " << level_ << "): NOX: " 
-              << niter << " iterations, Norm(F)=" << norm2 << ", Failed\n"; fflush(stdout);
+         //cout << "ML (level " << level_ << "): NOX: " 
+         //     << niter << " iterations, Norm(F)=" << norm2 << ", Failed\n"; fflush(stdout);
+         printf("ML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Failed\n",level_,niter,norm2);
+         fflush(stdout);
       }
    }
    else
    {
       returnstatus = false;
       if (comm_.MyPID() == 0)
-         cout << "ML (level " << level_ << "): ***WRN*** NOX returned unknown status, Norm(F)=" 
-              << norm2 << "\n"; fflush(stdout);
+         //cout << "ML (level " << level_ << "): ***WRN*** NOX returned unknown status, Norm(F)=" 
+         //     << norm2 << "\n"; fflush(stdout);
+         printf("ML (level %d): ***WRN*** NOX: return status unknown, Norm(F)=%12.8e , Failed\n",level_,norm2);
+         fflush(stdout);
    }
    
    // reset number of calls to coarseinterface->computeF

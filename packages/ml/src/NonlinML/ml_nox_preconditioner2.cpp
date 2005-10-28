@@ -404,10 +404,11 @@ int ML_NOX::ML_Nox_Preconditioner::ML_Nox_ApplyInverse_NonLinear(
    // get current guess and F
    const Epetra_Vector& currentSolution = 
    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();      
-   
+   const Epetra_Vector& currentF = 
+   (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getF())).getEpetraVector();
+   double norm2;
+   currentF.Norm2(&norm2);
 #if 0
-   //const Epetra_Vector& currentF = 
-   //(dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getF())).getEpetraVector();
    cout << "The residual X\n";
    cout << X;
    cout << "The current F\n";
@@ -423,7 +424,7 @@ int ML_NOX::ML_Nox_Preconditioner::ML_Nox_ApplyInverse_NonLinear(
       cout << "\n\n\nML :============Entering FAS-V-cycle============\n";
    bool converged = false;
    double t3 = GetClock();
-   ML_Nox_FAS_cycle(f,x,0,&converged); 
+   ML_Nox_FAS_cycle(f,x,0,&converged,&norm2); 
    double t4 = GetClock();
    if (ml_printlevel_>0 && comm_.MyPID()==0)
       cout << "ML :============V-cycle time is : " << (t4-t3) << " sec\n";
@@ -526,8 +527,12 @@ int ML_NOX::ML_Nox_Preconditioner::solve()
  |     on output the correction vector (level==0)                       |
  *----------------------------------------------------------------------*/
 bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Vector* x,
-                                                     int level, bool* converged) const
+                                                     int level, bool* converged, double* finenorm) const
 {
+   // we want to converge this level some digits better than the finer one
+   double thisnorm = *finenorm/10000;
+   if (thisnorm<FAS_normF_) thisnorm = FAS_normF_;
+   
    Epetra_Vector* fbar    = 0;
    Epetra_Vector* xbar    = 0;
    Epetra_Vector* fxbar   = 0;
@@ -544,7 +549,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Ve
       nlnLevel_[level]->setModifiedSystem(true,fbar,fxbar);
       // iterate on the FAS-problem
       if (FAS_coarsesmooth_>0)
-        *converged = nlnLevel_[level]->iterate(f,x,FAS_coarsesmooth_);
+        *converged = nlnLevel_[level]->iterate(f,x,FAS_coarsesmooth_,&thisnorm);
       // calculate the correction
       x->Update(-1.0,*xbar,1.0);
       // reset the system
@@ -566,10 +571,11 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Ve
    nlnLevel_[level]->setModifiedSystem(true,fbar,fxbar);
 
    //======presmoothing on the FAS system===========================
+   double prenorm = thisnorm;
    if (level > 0 && FAS_presmooth_>0)
-      *converged = nlnLevel_[level]->iterate(f,x,FAS_presmooth_);
+      *converged = nlnLevel_[level]->iterate(f,x,FAS_presmooth_,&prenorm);
    else if (level==0 && FAS_prefinesmooth_>0)
-      *converged = nlnLevel_[level]->iterate(f,x,FAS_prefinesmooth_);
+      *converged = nlnLevel_[level]->iterate(f,x,FAS_prefinesmooth_,&prenorm);
    // a converged level is enough to be happy, don't go any coarser
    if (*converged) 
    {
@@ -587,7 +593,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Ve
    
    //======call this cycle on next coarser level=========================
    bool coarseconverged=false;
-   ML_Nox_FAS_cycle(fcoarse,xcoarse,level+1,&coarseconverged);
+   ML_Nox_FAS_cycle(fcoarse,xcoarse,level+1,&coarseconverged,&prenorm);
    delete fcoarse; fcoarse = 0;
    
    //======prolong correction to this level==============================
@@ -599,11 +605,12 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Ve
    delete xcorrect; xcorrect = 0;
    
    //======do this level's FAS-iteration or postsmoothing================
+   double postnorm = thisnorm;
    // iterate
    if (level>0 && FAS_postsmooth_>0)
-      *converged = nlnLevel_[level]->iterate(f,x,FAS_postsmooth_);
+      *converged = nlnLevel_[level]->iterate(f,x,FAS_postsmooth_,&postnorm);
    else if (level==0 && FAS_postfinesmooth_>0)
-      *converged = nlnLevel_[level]->iterate(f,x,FAS_postfinesmooth_);
+      *converged = nlnLevel_[level]->iterate(f,x,FAS_postfinesmooth_,&postnorm);
    // reset the system
    nlnLevel_[level]->setModifiedSystem(false,NULL,NULL);
    // for FAS calulate the correction and tidy up

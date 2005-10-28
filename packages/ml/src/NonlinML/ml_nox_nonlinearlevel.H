@@ -156,6 +156,7 @@ public:
   
   // iterate on this level's nln problem numiter times or until NOX converged
   bool iterate(Epetra_Vector* f, Epetra_Vector* x, int numiter); 
+  bool iterate(Epetra_Vector* f, Epetra_Vector* x, int numiter, double* norm); 
   
   // restrict vector to next coarser level
   Epetra_Vector* restrict_to_next_coarser_level(Epetra_Vector* finevec, int current, int next) 
