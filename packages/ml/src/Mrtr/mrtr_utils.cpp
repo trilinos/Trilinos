@@ -37,6 +37,7 @@
 #include "mrtr_segment.H"
 #include "mrtr_segment_linear1D.H"
 #include "mrtr_segment_bilineartri.H"
+#include "mrtr_segment_bilinearquad.H"
 #include "mrtr_node.H"
 
 /*----------------------------------------------------------------------*
@@ -138,7 +139,72 @@ bool MRTR::DestroyMap(map<int,MRTR::Segment*>& m)
 {
   map<int,MRTR::Segment*>::iterator curr;
   for (curr=m.begin(); curr != m.end(); ++curr)
-    if (curr->second) delete curr->second;
+  {
+    if (!curr->second) continue;
+    switch (curr->second->Type())
+    {
+      case MRTR::Segment::seg_Linear1D:
+        {
+          MRTR::Segment_Linear1D* tmp = dynamic_cast<MRTR::Segment_Linear1D*>(curr->second);
+          if (!tmp)
+          {
+            cout << "***ERR*** MRTR::DestroyMap(map<int,MRTR::Segment*>& m):\n"
+                 << "***ERR*** segment is not a Segment_Linear1D\n"
+                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+            exit(EXIT_FAILURE);
+          }
+          delete tmp;
+          curr->second = NULL;
+        }
+      break;
+      case MRTR::Segment::seg_BiLinearQuad:
+        {
+          MRTR::Segment_BiLinearQuad* tmp = dynamic_cast<MRTR::Segment_BiLinearQuad*>(curr->second);
+          if (!tmp)
+          {
+            cout << "***ERR*** MRTR::DestroyMap(map<int,MRTR::Segment*>& m):\n"
+                 << "***ERR*** segment is not a Segment_BiLinearQuad\n"
+                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+            exit(EXIT_FAILURE);
+          }
+          delete tmp;
+          curr->second = NULL;
+        }
+      break;
+      case MRTR::Segment::seg_BiLinearTri:
+        {
+          MRTR::Segment_BiLinearTri* tmp = dynamic_cast<MRTR::Segment_BiLinearTri*>(curr->second);
+          if (!tmp)
+          {
+            cout << "***ERR*** MRTR::DestroyMap(map<int,MRTR::Segment*>& m):\n"
+                 << "***ERR*** segment is not a Segment_BiLinearTri\n"
+                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+            exit(EXIT_FAILURE);
+          }
+          delete tmp;
+          curr->second = NULL;
+        }
+      break;
+      case MRTR::Segment::seg_Quadratic1D:
+        cout << "***ERR*** MRTR::DestroyMap(map<int,MRTR::Segment*>& m):\n"
+             << "***ERR*** type seg_Quadratic1D not yet impl.\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      break;
+      case MRTR::Segment::seg_none:
+        cout << "***ERR*** MRTR::DestroyMap(map<int,MRTR::Segment*>& m):\n"
+             << "***ERR*** type is unknown, cannot destroy segment\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      break;
+      default:
+        cout << "***ERR*** MRTR::DestroyMap(map<int,MRTR::Segment*>& m):\n"
+             << "***ERR*** type is unknown, cannot destroy segment\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      break;
+    }
+  }
   m.clear();  
   return true;
 }
@@ -151,6 +217,105 @@ bool MRTR::DestroyMap(map<int,MRTR::Node*>& m)
   map<int,MRTR::Node*>::iterator curr;
   for (curr=m.begin(); curr != m.end(); ++curr)
     if (curr->second) delete curr->second;
+  m.clear();  
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ | destroy a function map                                    mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::DestroyMap(map<int,MRTR::Function*>& m)
+{
+  map<int,MRTR::Function*>::iterator curr;
+  for (curr=m.begin(); curr != m.end(); ++curr)
+  {
+    if (!curr->second) continue;
+    switch (curr->second->Type())
+    {
+      case MRTR::Function::func_Constant1D:
+        {
+          MRTR::Function_Constant1D* tmp = dynamic_cast<MRTR::Function_Constant1D*>(curr->second);
+          if (!tmp)
+          {
+            cout << "***ERR*** MRTR::DestroyMap(map<int,MRTR::Function*>& m):\n"
+                 << "***ERR*** dynamic_cast to Function_Constant1D failed\n"
+                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+            exit(EXIT_FAILURE);
+          }
+          delete tmp;
+          curr->second = NULL;
+        }
+      break;
+      case MRTR::Function::func_Linear1D:
+        {
+          MRTR::Function_Linear1D* tmp = dynamic_cast<MRTR::Function_Linear1D*>(curr->second);
+          if (!tmp)
+          {
+            cout << "***ERR*** MRTR::DestroyMap(map<int,MRTR::Function*>& m):\n"
+                 << "***ERR*** dynamic_cast to Function_Linear1D failed\n"
+                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+            exit(EXIT_FAILURE);
+          }
+          delete tmp;
+          curr->second = NULL;
+        }
+      break;
+      case MRTR::Function::func_DualLinear1D:
+        {
+          MRTR::Function_DualLinear1D* tmp = dynamic_cast<MRTR::Function_DualLinear1D*>(curr->second);
+          if (!tmp)
+          {
+            cout << "***ERR*** MRTR::DestroyMap(map<int,MRTR::Function*>& m):\n"
+                 << "***ERR*** dynamic_cast to Function_DualLinear1D failed\n"
+                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+            exit(EXIT_FAILURE);
+          }
+          delete tmp;
+          curr->second = NULL;
+        }
+      break;
+      case MRTR::Function::func_LinearTri:
+        {
+          MRTR::Function_LinearTri* tmp = dynamic_cast<MRTR::Function_LinearTri*>(curr->second);
+          if (!tmp)
+          {
+            cout << "***ERR*** MRTR::DestroyMap(map<int,MRTR::Function*>& m):\n"
+                 << "***ERR*** dynamic_cast to Function_LinearTri failed\n"
+                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+            exit(EXIT_FAILURE);
+          }
+          delete tmp;
+          curr->second = NULL;
+        }
+      break;
+      case MRTR::Function::func_DualLinearTri:
+        {
+          MRTR::Function_DualLinearTri* tmp = dynamic_cast<MRTR::Function_DualLinearTri*>(curr->second);
+          if (!tmp)
+          {
+            cout << "***ERR*** MRTR::DestroyMap(map<int,MRTR::Function*>& m):\n"
+                 << "***ERR*** dynamic_cast to Function_DualLinearTri failed\n"
+                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+            exit(EXIT_FAILURE);
+          }
+          delete tmp;
+          curr->second = NULL;
+        }
+      break;
+      case MRTR::Function::func_none:
+        cout << "***ERR*** MRTR::DestroyMap(map<int,MRTR::Function*>& m):\n"
+             << "***ERR*** type is unknown, cannot destroy segment\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      break;
+      default:
+        cout << "***ERR*** MRTR::DestroyMap(map<int,MRTR::Function*>& m):\n"
+             << "***ERR*** type is unknown, cannot destroy segment\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      break;
+    }
+  }
   m.clear();  
   return true;
 }

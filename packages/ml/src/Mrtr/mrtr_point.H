@@ -81,6 +81,8 @@ public:
   // set x coords
   bool SetNode(MRTR::Node* node) { node_ = node; return true; }
 
+  void StoreFunctionValues(int place, double* val, int valdim);
+
 private:
 
   // don't want = operator
@@ -90,10 +92,12 @@ private:
 
 private:
 
-  int         id_;     // id of this point
-  double      xi_[2];  // local coords in some slave elements coord system
-  MRTR::Node* node_;   // a node at this point (contains real world coords)
-
+  int            id_;         // id of this point
+  double         xi_[2];      // local coords in some slave elements coord system
+  MRTR::Node*    node_;       // a node at this point (contains real world coords)
+  vector<double> vals_[3];    // [0] values of shape function 0 from sseg
+                              // [1] values of shape function 1 from sseg
+                              // [2] values of shape function 0 from mseg
 }; // class Point
 
 

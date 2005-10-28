@@ -35,6 +35,7 @@
 
 #include "mrtr_segment.H"
 #include "mrtr_interface.H"
+#include "mrtr_utils.H"
 
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 06/05|
@@ -112,14 +113,7 @@ MRTR::Segment::~Segment()
 {
   nodeId_.clear();
   nodeptr_.clear();
-  map<int,MRTR::Function*>::iterator curr;
-  for (curr = functions_.begin(); curr != functions_.end(); ++curr)
-    if (curr->second)
-    {
-      delete curr->second;
-      curr->second = NULL;
-    }
-  functions_.clear();
+  MRTR::DestroyMap(functions_);
 }
 
 /*----------------------------------------------------------------------*
@@ -270,6 +264,39 @@ bool MRTR::Segment::GetPtrstoNodes(MRTR::Interface& interface)
     {
       cout << "***ERR*** MRTR::Segment::GetPtrstoNodes:\n"
            << "***ERR*** interface " << interface.Id() << " GetNodeView failed\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      exit(EXIT_FAILURE);     
+    }
+  }
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |                                                           mwgee 10/05|
+ | construct ptrs to nodes from vector                                  |
+ *----------------------------------------------------------------------*/
+bool MRTR::Segment::GetPtrstoNodes(vector<MRTR::Node*>& nodes)
+{ 
+  if (!nodeId_.size()) return false;
+  
+  // vector nodeptr_ might already exist, recreate it
+  nodeptr_.clear();
+  nodeptr_.resize(nodeId_.size());
+  
+  for (int i=0; i<nodeId_.size(); ++i)
+  {
+    bool foundit = true;
+    for (int j=0; j<nodes.size(); ++j)
+      if (nodes[j]->Id() == nodeId_[i])
+      {
+        foundit = true;
+        nodeptr_[i] = nodes[j];
+        break;
+      }
+    if (!foundit)
+    {
+      cout << "***ERR*** MRTR::Segment::GetPtrstoNodes:\n"
+           << "***ERR*** cannot find node " << nodeId_[i] << " in vector\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);     
     }

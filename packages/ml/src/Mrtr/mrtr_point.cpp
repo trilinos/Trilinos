@@ -46,6 +46,9 @@ id_(id)
   xi_[0] = xi[0];
   xi_[1] = xi[1];
   node_ = NULL;
+  vals_[0].clear();
+  vals_[1].clear();
+  vals_[2].clear();
 }
 
 /*----------------------------------------------------------------------*
@@ -58,6 +61,9 @@ MRTR::Point::~Point()
     delete node_;
     node_ = NULL;
   }
+  vals_[0].clear();
+  vals_[1].clear();
+  vals_[2].clear();
 }
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 10/05|
@@ -75,6 +81,17 @@ void MRTR::Point::Print() const
   cout << "Point " << id_ << " xi[0]/[1] = " << xi_[0] << " / " << xi_[1] << endl;
   if (node_)
     cout << *node_;
+  return;
+}
+
+/*----------------------------------------------------------------------*
+ |  store shape function values (public)                     mwgee 10/05|
+ *----------------------------------------------------------------------*/
+void MRTR::Point::StoreFunctionValues(int place, double* val, int valdim)
+{
+  vals_[place].resize(valdim);
+  for (int i=0; i<valdim; ++i)
+    vals_[place][i] = val[i];
   return;
 }
 

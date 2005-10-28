@@ -62,6 +62,7 @@ MRTR::Function* MRTR::AllocateFunction(MRTR::Function::FunctionType type);
 MRTR::Segment* MRTR::AllocateSegment(int type);
 bool MRTR::DestroyMap(map<int,MRTR::Segment*>& m);
 bool MRTR::DestroyMap(map<int,MRTR::Node*>& m);
+bool MRTR::DestroyMap(map<int,MRTR::Function*>& m);
 bool MRTR::cross(double* out, const double* g1, const double* g2);
 double MRTR::dot(const double* g1, const double* g2, const int dim);
 bool MRTR::solve22(const double A[][2], double* x, const double* b);

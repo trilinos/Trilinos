@@ -38,6 +38,7 @@
 #include "mrtr_node.H"
 #include "mrtr_pnode.H"
 #include "mrtr_segment.H"
+#include "mrtr_segment_bilineartri.H"
 #include "mrtr_interface.H"
 #include "mrtr_utils.H"
 
@@ -61,6 +62,7 @@ haveline_(false)
     exit(EXIT_FAILURE);
   }
   p_.clear();
+  s_.clear();
 }
 
 /*----------------------------------------------------------------------*
@@ -69,13 +71,15 @@ haveline_(false)
 MRTR::Overlap::~Overlap()
 {
   // destroy the point map
-  Clip_DestroyPointPolygon(p_);
+  DestroyPointPolygon(p_);
+  // destroy the segment map
+  MRTR::DestroyMap(s_);
 }
 
 /*----------------------------------------------------------------------*
  |  destroy a polygon of points (private)                    mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_DestroyPointPolygon(map<int,MRTR::Point*>& p)
+bool MRTR::Overlap::DestroyPointPolygon(map<int,MRTR::Point*>& p)
 {
   map<int,MRTR::Point*>::iterator pcurr;
   for (pcurr=p.begin(); pcurr != p.end(); ++pcurr)
@@ -88,7 +92,7 @@ bool MRTR::Overlap::Clip_DestroyPointPolygon(map<int,MRTR::Point*>& p)
 /*----------------------------------------------------------------------*
  |  copy a polygon of points (private)                       mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_CopyPointPolygon(map<int,MRTR::Point*>& from, map<int,MRTR::Point*>& to)
+bool MRTR::Overlap::CopyPointPolygon(map<int,MRTR::Point*>& from, map<int,MRTR::Point*>& to)
 {
   map<int,MRTR::Point*>::iterator pcurr;
   for (pcurr=from.begin(); pcurr != from.end(); ++pcurr)
@@ -201,36 +205,37 @@ bool MRTR::Overlap::build_normal()
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::ComputeOverlap()
 {
+
   // project master nodes onto slave segment if not already done
   if (!havemxi_)
     havemxi_ = build_mxi();
 
-  // project slave nodes onto master segment if not already done
-  if (!havesxi_)
-  {
-    havesxi_ = build_sxi();
-               build_normal();
-  }
+  // perform a quick test
+  bool ok = QuickOverlapTest();
+  if (!ok)
+    return false;
+
+  // build array of local sxi coords of nodes
+  havesxi_ = build_sxi();
+
+  // perform a quick test
+  bool ok = QuickOverlapTest();
+  if (!ok)
+    return false;
+
+  // build outward normal of edges of sseg (in local coords)
+  build_normal();
   
   // compute information about the edges of the slave/master triangle
   if (!haveline_)
     haveline_ = build_lines();
 
-#if 0
-  // debugging output
-  cout << "OVERLAP: Slave  " << sseg_;
-  cout << "OVERLAP: Master " << mseg_;
-  cout << "node 0: " << mxi_[0][0] << "/" << mxi_[0][1] << endl
-       << "     1: " << mxi_[1][0] << "/" << mxi_[1][1] << endl
-       << "     2: " << mxi_[2][0] << "/" << mxi_[2][1] << endl;
-#endif
-
-  
   // perform clipping algorithm
-  bool ok = Clipelements();
+  ok = Clipelements();
   if (!ok)
     return false;
   
+  // make a triangulation of the overlap polygon
   ok = Triangulization();
   if (!ok)
     return false;
@@ -307,7 +312,16 @@ double MRTR::Overlap::Clip_ParameterPointOnLine(const double* P0,const double* P
 /*----------------------------------------------------------------------*
  |  add point (private)                                      mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_AddPointtoPolygon(const int id,const double* P)
+bool MRTR::Overlap::AddSegment(int id, MRTR::Segment* seg)
+{
+  s_.insert(pair<int,MRTR::Segment*>(id,seg));
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  add point (private)                                      mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::AddPointtoPolygon(const int id,const double* P)
 {
   // check whether this point is already in there
   map<int,MRTR::Point*>::iterator curr = p_.find(id);
@@ -326,7 +340,7 @@ bool MRTR::Overlap::Clip_AddPointtoPolygon(const int id,const double* P)
 /*----------------------------------------------------------------------*
  |  add point (private)                                      mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_AddPointtoPolygon(map<int,MRTR::Point*>& p,const int id,const double* P)
+bool MRTR::Overlap::AddPointtoPolygon(map<int,MRTR::Point*>& p,const int id,const double* P)
 {
   MRTR::Point* point = new MRTR::Point(id,P);
   p.insert(pair<int,MRTR::Point*>(id,point));
@@ -336,7 +350,7 @@ bool MRTR::Overlap::Clip_AddPointtoPolygon(map<int,MRTR::Point*>& p,const int id
 /*----------------------------------------------------------------------*
  |  remove point (private)                                      mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_RemovePointfromPolygon(const int id,const double* P)
+bool MRTR::Overlap::RemovePointfromPolygon(const int id,const double* P)
 {
   // check whether this point is in there
   MRTR::Point* p;
@@ -358,12 +372,12 @@ bool MRTR::Overlap::Clip_RemovePointfromPolygon(const int id,const double* P)
 /*----------------------------------------------------------------------*
  |  get point view (private)                                 mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Point** MRTR::Overlap::Clip_PointView()
+MRTR::Point** MRTR::Overlap::PointView()
 {
   // allocate vector of ptrs
   MRTR::Point** points;
-  if (Clip_SizePolygon())
-    points = new MRTR::Point*[Clip_SizePolygon()];
+  if (SizePointPolygon())
+    points = new MRTR::Point*[SizePointPolygon()];
   else 
     return NULL;
   
@@ -375,7 +389,7 @@ MRTR::Point** MRTR::Overlap::Clip_PointView()
     points[count] = pcurr->second;
     ++count;
   }
-  if (count != Clip_SizePolygon())
+  if (count != SizePointPolygon())
   {
     cout << "***ERR*** MRTR::Overlap::Clip_PointView:\n"
          << "***ERR*** number of point wrong\n"
@@ -388,7 +402,7 @@ MRTR::Point** MRTR::Overlap::Clip_PointView()
 /*----------------------------------------------------------------------*
  |  get point view (private)                                 mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Point** MRTR::Overlap::Clip_PointView(map<int,MRTR::Point*>& p)
+MRTR::Point** MRTR::Overlap::PointView(map<int,MRTR::Point*>& p)
 {
   // allocate vector of ptrs
   MRTR::Point** points;
@@ -430,9 +444,9 @@ bool MRTR::Overlap::Clipelements()
   }
   
   // put all mseg nodes in polygon
-  Clip_AddPointtoPolygon(100+0,&mline_[0][0]);
-  Clip_AddPointtoPolygon(100+1,&mline_[1][0]);
-  Clip_AddPointtoPolygon(100+2,&mline_[2][0]);
+  AddPointtoPolygon(100+0,&mline_[0][0]);
+  AddPointtoPolygon(100+1,&mline_[1][0]);
+  AddPointtoPolygon(100+2,&mline_[2][0]);
   
   //===========================================================================
 
@@ -469,7 +483,7 @@ bool MRTR::Overlap::Clipelements()
       if (ok)
       {
         //cout << "OVERLAP Clipelements: adding intersection point " << 10*clipedge+medge << endl;
-        Clip_AddPointtoPolygon(10*clipedge+medge,xi);
+        AddPointtoPolygon(10*clipedge+medge,xi);
       }
     } // for (int medge=0; medge<3; ++medge)
   } // for (int clipedge=0; clipedge<3; ++clipedge)
@@ -480,8 +494,8 @@ bool MRTR::Overlap::Clipelements()
   // that are in the polygon
   // throw away al point that are not inside
   {
-    int           np    = Clip_SizePolygon();
-    MRTR::Point** point = Clip_PointView();
+    int           np    = SizePointPolygon();
+    MRTR::Point** point = PointView();
     int p;
     for (p=0; p<np; ++p)
     {
@@ -511,7 +525,7 @@ bool MRTR::Overlap::Clipelements()
       if (!ok)
       {
         //cout << "OVERLAP Clipelements: removing point " << point[p]->Id() << endl;
-        Clip_RemovePointfromPolygon(point[p]->Id(),P);
+        RemovePointfromPolygon(point[p]->Id(),P);
       }
             
     } // for (int p=0; p<np; ++p)
@@ -524,7 +538,7 @@ bool MRTR::Overlap::Clipelements()
   // if there are no points in the polygon, the sseg could still be completely inside
   // the mseg, now test for that case
   {
-    int np = Clip_SizePolygon();
+    int np = SizePointPolygon();
     if (np) cout << "OVERLAP Clipelements: # point in polygon after clipping " << np << endl;
     if  (!np)
     {
@@ -551,8 +565,8 @@ bool MRTR::Overlap::Clipelements()
 #if 1
   // make printout of the polygon so far
   {
-    int np    = Clip_SizePolygon();
-    MRTR::Point** point = Clip_PointView();
+    int np    = SizePointPolygon();
+    MRTR::Point** point = PointView();
     for (int p=0; p<np; ++p)
     {
       cout << "OVERLAP Clipelements: point " << setw(3) << point[p]->Id() 
@@ -567,8 +581,8 @@ bool MRTR::Overlap::Clipelements()
 
   // count how many corner nodes of mseg are in and how many
   // intersections there are
-  int np    = Clip_SizePolygon();
-  MRTR::Point** point = Clip_PointView();
+  int np    = SizePointPolygon();
+  MRTR::Point** point = PointView();
   int nmcorner=0;
   int nminter=0;
   for (int p=0; p<np; ++p)
@@ -921,7 +935,7 @@ bool MRTR::Overlap::Clip_FixPolygon_1_2_dif(int np, MRTR::Point** point)
   }
 
   // add the spoint to the polygon
-  Clip_AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);
+  AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);
   
   // find the convex hull for all points in polygon
   ConvexHull(p_);
@@ -1089,7 +1103,7 @@ bool MRTR::Overlap::Clip_FixPolygon_2_2_dif(int np, MRTR::Point** point)
   }
 
   // add the slave node to the polygon
-  Clip_AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);  
+  AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);  
   
   // find the convex hull for all points in polygon
   ConvexHull(p_);
@@ -1248,7 +1262,7 @@ bool MRTR::Overlap::Clip_FixPolygon_1_4_dif(int np, MRTR::Point** point)
   }
   
   // put the slave point in
-  Clip_AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);  
+  AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);  
 
   // find the convex hull for all points in polygon
   ConvexHull(p_);
@@ -1322,9 +1336,9 @@ bool MRTR::Overlap::Clip_FixPolygon_0_0(int np, MRTR::Point** point)
   
   
   // all slave points are in the master segment, add them
-  Clip_AddPointtoPolygon(1000+0,&sxi_[0][0]);  
-  Clip_AddPointtoPolygon(1000+1,&sxi_[1][0]);  
-  Clip_AddPointtoPolygon(1000+2,&sxi_[2][0]);  
+  AddPointtoPolygon(1000+0,&sxi_[0][0]);  
+  AddPointtoPolygon(1000+1,&sxi_[1][0]);  
+  AddPointtoPolygon(1000+2,&sxi_[2][0]);  
   
   
   // find the convex hull for all points in polygon
@@ -1468,7 +1482,7 @@ bool MRTR::Overlap::Clip_FixPolygon_0_4_dif(int np, MRTR::Point** point)
   }
   
   // put the slave point in
-  Clip_AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);  
+  AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);  
 
   // find the convex hull for all points in polygon
   ConvexHull(p_);
@@ -1558,24 +1572,24 @@ bool MRTR::Overlap::Clip_FixPolygon_0_2(int np, MRTR::Point** point)
 
   if (isin)
   {
-    Clip_AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);  
+    AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);  
   }
   else
   {
     if (spoint==0)
     {
-      Clip_AddPointtoPolygon(1000+1,&sxi_[1][0]);  
-      Clip_AddPointtoPolygon(1000+2,&sxi_[2][0]);  
+      AddPointtoPolygon(1000+1,&sxi_[1][0]);  
+      AddPointtoPolygon(1000+2,&sxi_[2][0]);  
     }
     else if (spoint==1)
     {
-      Clip_AddPointtoPolygon(1000+0,&sxi_[0][0]);  
-      Clip_AddPointtoPolygon(1000+2,&sxi_[2][0]);  
+      AddPointtoPolygon(1000+0,&sxi_[0][0]);  
+      AddPointtoPolygon(1000+2,&sxi_[2][0]);  
     }
     else if (spoint==2)
     {
-      Clip_AddPointtoPolygon(1000+0,&sxi_[0][0]);  
-      Clip_AddPointtoPolygon(1000+1,&sxi_[1][0]);  
+      AddPointtoPolygon(1000+0,&sxi_[0][0]);  
+      AddPointtoPolygon(1000+1,&sxi_[1][0]);  
     }
     else
     {
@@ -1646,14 +1660,14 @@ bool MRTR::Overlap::Clip_FixPolygon_0_6(int np, MRTR::Point** point)
 }
 
 /*----------------------------------------------------------------------*
- |  make a triangulization of a polygon (public)             mwgee 10/05|
+ |  make a triangulization of a polygon (private)             mwgee 10/05|
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::Triangulization()
 {
   // we have a polygon that is in clockwise order at this moment
 
   // if more than 3 points, find a center point
-  int np = Clip_SizePolygon();
+  int np = SizePointPolygon();
   if (np<3)
   {
     cout << "***ERR*** MRTR::Overlap::Triangulization:\n"
@@ -1664,7 +1678,7 @@ bool MRTR::Overlap::Triangulization()
   if (np>3) // we have to add a center point
   {
     double xi[2]; xi[0] = xi[1] = 0.0;
-    MRTR::Point** points = Clip_PointView();
+    MRTR::Point** points = PointView();
     for (int i=0; i<np; ++i)
     {
       const double* pxi = points[i]->Xi();
@@ -1674,12 +1688,12 @@ bool MRTR::Overlap::Triangulization()
     xi[0] /= np;
     xi[1] /= np;
     // create a point -1 as center point and add it to the polygon
-    Clip_AddPointtoPolygon(-1,xi);
+    AddPointtoPolygon(-1,xi);
     delete [] points;
   } // if (np>3)
   
-  np = Clip_SizePolygon();
-  MRTR::Point** points = Clip_PointView();
+  np = SizePointPolygon();
+  MRTR::Point** points = PointView();
 
   // create a MRTR::Node for every point
   int dof[3]; dof[0] = dof[1] = dof[2] = -1;
@@ -1733,16 +1747,109 @@ bool MRTR::Overlap::Triangulization()
     }
   }
 
-  // create the triangle elements
+  // every point has 3 values of the 3 shape functions of a triangle:
+  // 3 values from function 0 from sseg
+  // 3 values from function 1 from sseg
+  // 3 values from function 0 from mseg
+  for (int i=0; i<np; ++i)
+  {
+    double val[3];
+    // evaluate function 0 from sseg
+    sseg_.EvaluateFunction(0,points[i]->Xi(),val,3,NULL);
+    points[i]->StoreFunctionValues(0,val,3);
+    // evaluate function 1 from sseg
+    sseg_.EvaluateFunction(1,points[i]->Xi(),val,3,NULL);
+    points[i]->StoreFunctionValues(1,val,3);
+    // evaluate function 0 from mseg
+    mseg_.EvaluateFunction(0,points[i]->Node()->GetProjectedNode()->Xi(),val,3,NULL);
+    points[i]->StoreFunctionValues(2,val,3);
+  }
   
+  // create the triangle elements from polygon with centerpoint
+  // In case of np==3, there is no centerpoint
+  if (np>3)
+  {
+    // the polygon is in clockwise order, center point is points[0] and has
+    // id = -1
+    if (points[0]->Id() != -1)
+    {
+      cout << "***ERR*** MRTR::Overlap::Triangulization:\n"
+           << "***ERR*** points[0]->Id() is not -1\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      exit(EXIT_FAILURE);
+    }
+    int nodeid[3];
+    MRTR::Segment_BiLinearTri* tmp;
+    MRTR::Function_LinearTri* func = new Function_LinearTri();
+    for (int i=2; i<np; ++i)
+    {
+      // there are np-1 triangles
+      // triangle ids go from 0 to np-2
+      // a triangle is defined by nodes 0, i, i-1
+      nodeid[0]   = points[0]->Id();
+      nodeid[1]   = points[i]->Id();
+      nodeid[2] = points[i-1]->Id();
+      tmp = new MRTR::Segment_BiLinearTri(i-2,3,nodeid);
+      // set a linear shape function to this triangle
+      tmp->SetFunction(0,func);
+      // add triangle the *this class
+      AddSegment(tmp->Id(),tmp);
+    }
+    // add the last triangle defined by nodes 0, 1, np-1 separately
+    nodeid[0]   = points[0]->Id();
+    nodeid[1]   = points[1]->Id();
+    nodeid[2] = points[np-1]->Id();
+    tmp = new MRTR::Segment_BiLinearTri(np-2,3,nodeid);
+    // set a linear shape function to this triangle
+    tmp->SetFunction(0,func);
+    // add triangle the *this class
+    AddSegment(tmp->Id(),tmp);
+  }
+  else if (np==3) // single triangle without centerpoint
+  {
+    int nodeid[3];
+    MRTR::Segment_BiLinearTri* tmp;
+    MRTR::Function_LinearTri* func = new Function_LinearTri();
+    nodeid[0] = points[0]->Id();
+    nodeid[1] = points[1]->Id();
+    nodeid[2] = points[2]->Id();
+    tmp = new MRTR::Segment_BiLinearTri(0,3,nodeid);
+    // set a linear shape function to this triangle
+    tmp->SetFunction(0,func);
+    // add triangle the *this class
+    AddSegment(tmp->Id(),tmp);
+  }
+  else
+  {
+    cout << "***ERR*** MRTR::Overlap::Triangulization:\n"
+         << "***ERR*** # point in polygon < 3 ... very strange!!!\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
   
+  // create ptr topology between triangle and nodes in points
+  vector<MRTR::Node*> nodes(np);
+  for (int i=0; i<np; ++i) nodes[i] = points[i]->Node();
+  
+  // loop segments and get ptr to nodes in them
+  map<int,MRTR::Segment*>::iterator curr;
+  for (curr=s_.begin(); curr != s_.end(); ++curr)
+    curr->second->GetPtrstoNodes(nodes);
+  
+  nodes.clear();
   
   delete [] points;
   
   return true;
 }
 
-
+/*----------------------------------------------------------------------*
+ |  perform a quick search (private)                         mwgee 10/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::QuickOverlapTest()
+{
+  return true;
+}
 
 
 

@@ -49,7 +49,7 @@ bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
   int np = p.size();
 
   // sort points by xi[0] coordinate
-  MRTR::Point** points = Clip_PointView(p);
+  MRTR::Point** points = PointView(p);
   double* dlistx = new double[np];
   double* dlisty = new double[np];
   int* list2 = new int[np];
@@ -83,11 +83,11 @@ bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
   }
   
   // delete the old one
-  Clip_DestroyPointPolygon(p);
+  DestroyPointPolygon(p);
   // copy new one over
-  Clip_CopyPointPolygon(newp,p);
+  CopyPointPolygon(newp,p);
   // destroy the new one
-  Clip_DestroyPointPolygon(newp);
+  DestroyPointPolygon(newp);
   
   delete [] points;
   delete [] dlistx;
@@ -106,15 +106,15 @@ bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
   //===========================================================================
   // build the upper hull
   map<int,MRTR::Point*> upper;
-  points = Clip_PointView(p);
+  points = PointView(p);
   // put in the first 2 points
-  Clip_AddPointtoPolygon(upper,0,points[0]->Xi()); //cout << *points[0];
-  Clip_AddPointtoPolygon(upper,1,points[1]->Xi()); //cout << *points[1];
+  AddPointtoPolygon(upper,0,points[0]->Xi()); //cout << *points[0];
+  AddPointtoPolygon(upper,1,points[1]->Xi()); //cout << *points[1];
   //---------------------------------------------------------------------------
   for (int i=2; i<np; ++i)
   {
     // add point[i] to upper
-    Clip_AddPointtoPolygon(upper,i,points[i]->Xi()); //cout << *points[i];
+    AddPointtoPolygon(upper,i,points[i]->Xi()); //cout << *points[i];
 
     // find whether we still have a convex hull
     while (upper.size()>2 && !MakeRightTurnUpper(i,upper))
@@ -132,13 +132,13 @@ bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
   // build the lower hull
   map<int,MRTR::Point*> lower;
   // put in the first 2 points
-  Clip_AddPointtoPolygon(lower,np-1,points[np-1]->Xi()); //cout << *points[np-1];
-  Clip_AddPointtoPolygon(lower,np-2,points[np-2]->Xi()); //cout << *points[np-2];
+  AddPointtoPolygon(lower,np-1,points[np-1]->Xi()); //cout << *points[np-1];
+  AddPointtoPolygon(lower,np-2,points[np-2]->Xi()); //cout << *points[np-2];
   //---------------------------------------------------------------------------
   for (int i=np-3; i>=0; --i)
   {
     // add point[i] to lower
-    Clip_AddPointtoPolygon(lower,i,points[i]->Xi()); //cout << *points[i];
+    AddPointtoPolygon(lower,i,points[i]->Xi()); //cout << *points[i];
 
     // find whether we still have a convex hull
     while (lower.size()>2 && !MakeRightTurnLower(i,lower))
@@ -166,7 +166,7 @@ bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
   for (pcurr=upper.begin(); pcurr != upper.end(); ++pcurr)
   {
     //cout << *(pcurr->second);
-    Clip_AddPointtoPolygon(finalp,i,pcurr->second->Xi());
+    AddPointtoPolygon(finalp,i,pcurr->second->Xi());
     ++i;
   }
   
@@ -176,7 +176,7 @@ bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
   for (; pcurr != lower.begin(); --pcurr)
   {
     //cout << *(pcurr->second);
-    Clip_AddPointtoPolygon(finalp,i,pcurr->second->Xi());
+    AddPointtoPolygon(finalp,i,pcurr->second->Xi());
     ++i;
   }
 
@@ -191,11 +191,11 @@ bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
   }
   
   // copy the polygon over to the input map p
-  Clip_DestroyPointPolygon(p);
-  Clip_DestroyPointPolygon(upper);
-  Clip_DestroyPointPolygon(lower);
-  Clip_CopyPointPolygon(finalp,p);
-  Clip_DestroyPointPolygon(finalp);
+  DestroyPointPolygon(p);
+  DestroyPointPolygon(upper);
+  DestroyPointPolygon(lower);
+  CopyPointPolygon(finalp,p);
+  DestroyPointPolygon(finalp);
 
   return true;
 }

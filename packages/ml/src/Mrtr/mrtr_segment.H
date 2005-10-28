@@ -114,6 +114,7 @@ public:
   
   // construct ptrs to redundant nodes from my node id list
   bool GetPtrstoNodes(MRTR::Interface& interface);
+  bool GetPtrstoNodes(vector<MRTR::Node*>& nodes);
 
   // printout Segment
   virtual bool Print() const;

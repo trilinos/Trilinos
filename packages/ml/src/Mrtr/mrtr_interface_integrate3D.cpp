@@ -131,11 +131,8 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
   }
 
   // first determine whether there is an overlap between sseg and mseg
-  // for this purpose, the 'overlapper' class us used
+  // for this purpose, the 'overlapper' class is used
   MRTR::Overlap overlap(sseg,mseg,*this);
-  //ok = overlap.HaveOverlap(); 
-  //if (!ok) // there is nothing to do if there's no overlap
-    //return true;
 
   // determine the overlap triangulation
   ok = overlap.ComputeOverlap();
