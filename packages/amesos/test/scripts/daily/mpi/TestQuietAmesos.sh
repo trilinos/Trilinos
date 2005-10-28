@@ -102,14 +102,15 @@ echo `uname -a` >>& $file
 #  Set MPI_GROUP_MAX to allow this test to pass desipte bug #1210
 setenv MPI_COMM_MAX 4096
 setenv MPI_GROUP_MAX 4096
-    echo "TEST STARTED"
+echo "TEST STARTED"
 foreach f ( Test_Epetra_RowMatrix Test_SuperLU_DIST TestOptions )
   cd $f
+  touch dummy.exe
   set exefiles = (*.exe)
   set TestRan = False 
-  if ( "${exefiles}X" != 'X' ) then
-    foreach g(*.exe)
-    set TestRan = True
+  foreach g(*.exe)
+    if ( $g != "dummy.exe" ) then
+      set TestRan = True
       echo "" >>& ../$file
       echo "############" $g "##############" >>& ../$file
       if( "$2" == "True" ) then
@@ -158,13 +159,10 @@ foreach f ( Test_Epetra_RowMatrix Test_SuperLU_DIST TestOptions )
           echo "******** Test w/ 4 proc passed ********" >>& ../$file
         endif
         /bin/rm -f Amesos_OK
-      end
+      endif
     endif
-  endif
-  if ( $TestRan != "True" ) then
-    echo "No executables were found  " 
-    set AnError = True
-  endif
+  end
+  /bin/rm dummy.exe
   cd ..
 end
 
