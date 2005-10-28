@@ -88,6 +88,8 @@ public:
   // return the graph from the problem
   const Epetra_CrsGraph* getGraph() {const Epetra_CrsGraph& Graph = problem.getGraph();
                                      return(&Graph);}
+  const Epetra_CrsGraph* getModifiedGraph() {const Epetra_CrsGraph& Graph = problem.getGraph();
+                                     return(&Graph);}
                                      
   // return the current solution from the problem
   const Epetra_Vector* getSolution() {const Epetra_Vector& vec = problem.getSolution(); return &vec; }                                     
@@ -103,13 +105,21 @@ public:
   bool getBlockInfo(int *nblocks, int** blocks, int **block_pde)
   { *nblocks = 0; *blocks = 0; *block_pde = 0; return false; }
 
+  // derived from NOX::Parameter::PrePostOperator
+  NOX::Parameter::PrePostOperator* clone() const;
+
+  // derived from NOX::Parameter::PrePostOperator
+  const std::string& getType() const { return type_; }
+
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 
    *  auxiliary data required by the user's application for function/Jacobian
    *  evaluations that NOX does not need to know about.  This is type of 
    *  passdown class design by the application code.
    */ 
+
   FiniteElementProblem& problem;
+  std::string type_;
 };
 
 #endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)

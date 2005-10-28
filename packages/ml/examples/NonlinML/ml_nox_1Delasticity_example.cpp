@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
 			    NOX::Utils::Warning
                             );
 
-   //-----------------full Newton------------------------------
+   //----------------- Newton------------------------------
 #if 0
    bool isnlnCG = false;
    // Set the nonlinear solver method
@@ -184,8 +184,8 @@ int main(int argc, char *argv[])
    
    NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
    lsParams.setParameter("Aztec Solver", "CG"); 
-   lsParams.setParameter("Max Iterations", 5000);  
-   lsParams.setParameter("Tolerance", 1e-9);
+   lsParams.setParameter("Max Iterations", 100);  
+   lsParams.setParameter("Tolerance", 1e-7);
    lsParams.setParameter("Output Frequency", 50);   
 
    //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");
@@ -247,14 +247,15 @@ int main(int argc, char *argv[])
   // Begin Preconditioner ************************************
 
    int         maxlevel           = 6;           // max. # levels (minimum = 2 !)
-   int         maxcoarsesize      = 3000;           // the size ML stops generating coarser levels
+   int         maxcoarsesize      = 5000;           // the size ML stops generating coarser levels
    bool        islinearPrec       = false;       // preconditioner is linear MG-operator      
-   bool        matrixfree         = false;       // use Finite Diffeencing for operators      
-   bool        matfreelev0        = false;       // use FD on fine level only      
-   double      adaptiverecompute  = 100.0;       // recompute if residual is larger then this value
-   int         recomputestep      = 2;          // the MG hierarchy is recomputed after this iteration step
-   int         offset             = 5;         // every offset this preconditioner is recomputed             
-   int         ml_printlevel      = 9;           // ML-output-level (0-10)
+   bool        matrixfree         = true;       // use Finite Diffeencing for operators      
+   bool        matfreelev0        = true;       // use FD on fine level only      
+   double      adaptiverecompute  = 0.0;       // recompute if residual is larger then this value
+   int         recomputestep      = 0;          // the MG hierarchy is recomputed after this iteration step
+   int         offset             = 4000;         // every offset this preconditioner is recomputed             
+   int         adaptns            = 0;           // compute adaptive nullspace (additional kernel vectors)
+   int         ml_printlevel      = 6;           // ML-output-level (0-10)
 
    int         numPDE             = 1;           // dof per node
    int         dimNS              = 1;           // dimension of nullspace
@@ -262,15 +263,15 @@ int main(int argc, char *argv[])
    string      coarsentype        = "Uncoupled"; // Uncoupled METIS VBMETIS
    int         nnodeperagg        = 3;           // # nodes per agg for coarsening METIS and VBMETIS
 
-   bool        usenlnCG_fine      = true;        // use nlnCG or mod. Newton's method             
+   bool        usenlnCG_fine      = false;        // use nlnCG or mod. Newton's method             
    bool        usenlnCG           = true;
    bool        usenlnCG_coarse    = true;
 
    int         nitersCG_fine      = 10;          // # iterations of lin. CG in mod. Newton's method 
-   int         nitersCG           = 50;          
-   int         nitersCG_coarse    = 500;          
+   int         nitersCG           = 0;          
+   int         nitersCG_coarse    = 0;          
    
-   bool        useBroyden         = true;        // in case of Newton's method, use a Broyden update of the Jacobian
+   bool        useBroyden         = false;        // in case of Newton's method, use a Broyden update of the Jacobian
 
    double      fd_alpha           = 1.0e-07;     // FD-parameter alpha (see NOX manual)
    double      fd_beta            = 1.0e-06;     // FD-parameter beta (see NOX manual)
@@ -280,24 +281,24 @@ int main(int argc, char *argv[])
    string      smoothertype       = "MLS";       // SGS BSGS Jacobi MLS Bcheby AmesosKLU
    string      coarsesolve        = "AmesosKLU"; // SGS BSGS Jacobi MLS Bcheby AmesosKLU
    int         nsmooth_fine       = 5;
-   int         nsmooth            = 4;
+   int         nsmooth            = 3;
    int         nsmooth_coarse     = 1;
 
    double      FAS_normF          = 1.0e-06;     // convergence criteria
    double      FAS_nupdate        = 1.0e-07;     // minimum step size length
 
-   int         FAS_prefinesmooth  = 0;           // # presmooth iterations on fine level
+   int         FAS_prefinesmooth  = 1;           // # presmooth iterations on fine level
    int         FAS_presmooth      = 0;           // # presmooth iterations
    int         FAS_coarsesmooth   = 6;          // # smoothing iterations on coarse level  
    int         FAS_postsmooth     = 2;           // # postsmooth iterations
-   int         FAS_postfinesmooth = 3;           // # postsmooth iterations on fine level
+   int         FAS_postfinesmooth = 2;           // # postsmooth iterations on fine level
 
    int         FAS_maxcycle       = 250;         // max. # of FAS-cycles before we give up
                
    Epetra_Map map(nlnproblem.getMap());
 
    // create the preconditioner
-   ML_NOX::ML_Nox_Preconditioner Prec(fineinterface,map,map,Comm);
+   ML_NOX::ML_Nox_Preconditioner Prec(fineinterface,Comm);
 
    // set parameters
    Prec.SetNonlinearMethod(islinearPrec,maxlevel,
@@ -313,7 +314,7 @@ int main(int argc, char *argv[])
    Prec.SetSmoothers(fsmoothertype,smoothertype,coarsesolve);  
    Prec.SetSmootherSweeps(nsmooth_fine,nsmooth,nsmooth_coarse);                  
    
-   Prec.SetRecomputeOffset(offset,recomputestep,adaptiverecompute);
+   Prec.SetRecomputeOffset(offset,recomputestep,adaptiverecompute,adaptns);
    //Prec.SetRecomputeOffset(offset);
    Prec.SetConvergenceCriteria((FAS_normF),FAS_nupdate);
    Prec.SetFAScycle(FAS_prefinesmooth,FAS_presmooth,FAS_coarsesmooth,FAS_postsmooth,FAS_postfinesmooth,FAS_maxcycle);

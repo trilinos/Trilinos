@@ -42,7 +42,8 @@
 Problem_Interface::Problem_Interface(FiniteElementProblem& Problem) :
   ML_NOX::Ml_Nox_Fineinterface(),
   problem(Problem)
-{ 
+{
+  type_ = "Problem_Interface"; 
   return; 
 }
 
@@ -96,6 +97,11 @@ bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, Epetra_Ope
 {
   cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jaciban only for this test problem!" << endl;
   throw 1;
+}
+NOX::Parameter::PrePostOperator* Problem_Interface::clone() const
+{
+  Problem_Interface* tmp = new Problem_Interface(problem);
+  return tmp;
 }
 //-----------------------------------------------------------------------------
 #endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)
