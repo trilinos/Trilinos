@@ -185,4 +185,54 @@ void BlockCrsMatrix::LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Ro
 
   }
 }
+
+//==============================================================================
+void BlockCrsMatrix::ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, const int Col)
+{
+  int RowOffset = RowIndices_[Row] * Offset_;
+  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * Offset_;
+
+//  const Epetra_CrsGraph & BaseGraph = BaseMatrix.Graph();
+  const Epetra_BlockMap & BaseMap = BaseMatrix.RowMatrixRowMap();
+  const Epetra_BlockMap & BaseColMap = BaseMatrix.RowMatrixColMap();
+
+  // This routine extracts entries of a BaseMatrix from a big  BlockCrsMatrix
+  // It performs the following operation on the global IDs row-by-row
+  // BaseMatrix.val[i][j] = this->val[i+rowOffset][j+ColOffset] 
+
+  int MaxIndices = BaseMatrix.MaxNumEntries();
+  vector<int> Indices(MaxIndices);
+  vector<double> Values(MaxIndices);
+  int NumIndices;
+  int indx,icol;
+  double* BlkValues;
+  int *BlkIndices;
+  int BlkNumIndices;
+  int ierr=0;
+
+  for (int i=0; i<BaseMap.NumMyElements(); i++) {
+
+    // Get pointers to values and indices of whole block matrix row
+    int BaseRow = BaseMap.GID(i);
+    int myBlkBaseRow = this->RowMatrixRowMap().LID(BaseRow + RowOffset);
+    ierr = this->ExtractMyRowView(myBlkBaseRow, BlkNumIndices, BlkValues, BlkIndices); 
+
+    NumIndices = 0;
+    // Grab columns with global indices in correct range for this block
+    for( int l = 0; l < BlkNumIndices; ++l ) {
+       icol = this->RowMatrixColMap().GID(BlkIndices[l]);
+       indx = icol - ColOffset;
+       if (indx >= 0 && indx < Offset_) {
+         Indices[NumIndices] = indx;
+         Values[NumIndices] = BlkValues[l];
+	 NumIndices++;
+       }
+    }
+
+    //Load this row into base matrix
+    BaseMatrix.ReplaceGlobalValues(BaseRow, NumIndices, &Values[0], &Indices[0] );
+
+  }
+}
+
 } //namespace EpetraExt

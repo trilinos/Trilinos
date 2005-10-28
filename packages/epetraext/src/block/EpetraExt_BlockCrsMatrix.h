@@ -95,6 +95,8 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
   //! Routine for loading a base matrices values into the large Block Matrix
   //! For now, the row and column arguments are indices into RowStencil 
   void LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col);
+  void ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, const int Col);
+
 
  protected:
 
