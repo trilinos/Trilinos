@@ -38,6 +38,55 @@
 
 namespace Thyra {
 
+//
+// Simple utility class to copy back multi-vector entries
+//
+
+template<class Scalar>
+class CopyBackMPIMultiVectorEntries {
+public:
+  CopyBackMPIMultiVectorEntries(
+    const int numCols, const int cols[]
+    ,const Scalar *localValuesView, const Index localSubDim
+    ,Scalar *localValues,const Index leadingDim
+    )
+    :cols_(cols,cols+numCols)
+    ,localValuesView_(localValuesView),localSubDim_(localSubDim)
+    ,localValues_(localValues),leadingDim_(leadingDim)
+    {}
+  ~CopyBackMPIMultiVectorEntries()
+    {
+      //std::cout << "\nEntering CopyBackMPIMultiVectorEntries::~CopyBackMPIMultiVectorEntries()...\n";
+      // Copy from contiguous storage
+      const int    numCols = cols_.size();
+      const Scalar *lvv    = &*localValuesView_;
+      Scalar       *lv     = &*localValues_;
+      for( int k = 0; k < numCols; ++k ) {
+        const int col_k = cols_[k];
+        const Scalar *lvv_k  = lvv + localSubDim_*k;
+        Scalar       *lv_k   = lv + leadingDim_*(col_k-1);
+        //std::cout << "\nlvv_k = ["; for( int j = 0; j < localSubDim_; ++j ) std::cout << lvv_k[j] << ","; std::cout << "]\n";
+        std::copy( lvv_k, lvv_k + localSubDim_, lv_k );
+        //std::cout << "\nlv_k = ["; for( int j = 0; j < localSubDim_; ++j ) std::cout << lv_k[j] << ","; std::cout << "]\n";
+      }
+      //std::cout << "\nLeaving CopyBackMPIMultiVectorEntries::~CopyBackMPIMultiVectorEntries()\n";
+    }
+private:
+  std::vector<int>   cols_;
+  const Scalar       *localValuesView_;
+  Index              localSubDim_;
+  Scalar             *localValues_;
+  Index              leadingDim_;
+  // Not defined and not to be called
+  CopyBackMPIMultiVectorEntries();
+  CopyBackMPIMultiVectorEntries(const CopyBackMPIMultiVectorEntries&);
+  CopyBackMPIMultiVectorEntries& operator=(const CopyBackMPIMultiVectorEntries&);
+};
+
+//
+// MPIMultiVectorStd
+//
+
 // Constructors/initializers/accessors
 
 template<class Scalar>
@@ -160,6 +209,52 @@ MPIMultiVectorStd<Scalar>::subView( const Range1D& col_rng_in )
     );
 }
 
+template<class Scalar>
+Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+MPIMultiVectorStd<Scalar>::subView( const int numCols, const int cols[] ) const
+{
+  Teuchos::RefCountPtr<Scalar> localValuesView = createContiguousCopy(numCols,cols);
+  return 
+    Teuchos::rcp(
+      new MPIMultiVectorStd<Scalar>(
+        mpiRangeSpace_
+        ,Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
+          mpiRangeSpace_->smallVecSpcFcty()->createVecSpc(numCols)
+          ,true)
+        ,localValuesView
+        ,mpiRangeSpace_->localSubDim()
+        )
+      );
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+MPIMultiVectorStd<Scalar>::subView( const int numCols, const int cols[] )
+{
+  Teuchos::RefCountPtr<Scalar> localValuesView = createContiguousCopy(numCols,cols);
+  const Index localSubDim = mpiRangeSpace_->localSubDim();
+  Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+    view = Teuchos::rcp(
+      new MPIMultiVectorStd<Scalar>(
+        mpiRangeSpace_
+        ,Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
+          mpiRangeSpace_->smallVecSpcFcty()->createVecSpc(numCols)
+          ,true)
+        ,localValuesView
+        ,localSubDim
+        )
+      );
+  Teuchos::RefCountPtr<CopyBackMPIMultiVectorEntries<Scalar> >
+    copyBackView
+    = Teuchos::rcp(
+      new CopyBackMPIMultiVectorEntries<Scalar>(
+        numCols,cols,&*localValuesView,localSubDim,&*localValues_,leadingDim_
+        )
+      );
+  Teuchos::set_extra_data(copyBackView,"copyBackView",&view,Teuchos::PRE_DESTROY);
+  return view;
+}
+
 // Overridden from MPIMultiVectorBase
 
 template<class Scalar>
@@ -222,6 +317,39 @@ void MPIMultiVectorStd<Scalar>::freeLocalData( const Scalar *localValues ) const
   std::cerr << "\nMPIMultiVectorStd<Scalar>::commitLocalData() called!\n";
 #endif
   // Nothing to free
+}
+
+// private
+
+template<class Scalar>
+Teuchos::RefCountPtr<Scalar>
+MPIMultiVectorStd<Scalar>::createContiguousCopy( const int numCols, const int cols[] ) const
+{
+#ifdef _DEBUG
+  const VectorSpaceBase<Scalar>  &domain   = *domainSpace_;
+  const Index                    dimDomain = domain.dim();
+  const char msg_err[] = "MultiVectorDefaultBase<Scalar>::subView(numCols,cols[]): Error!";
+  TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
+#endif
+  const Index localSubDim = mpiRangeSpace_->localSubDim();
+  Teuchos::RefCountPtr<Scalar>
+    localValuesView = Teuchos::rcp( new Scalar[numCols*localSubDim], Teuchos::DeallocArrayDelete<Scalar>(), true );
+  // Copy to contiguous storage
+  const Scalar *lv   = &*localValues_;
+  Scalar       *lvv  = &*localValuesView;
+  for( int k = 0; k < numCols; ++k ) {
+    const int col_k = cols[k];
+#ifdef _DEBUG
+    TEST_FOR_EXCEPTION(
+      col_k < 1 || dimDomain < col_k, std::invalid_argument
+      ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [1,"<<dimDomain<<"]!"
+      );
+#endif
+    const Scalar *lv_k   = lv + leadingDim_*(col_k-1);
+    Scalar       *lvv_k  = lvv + localSubDim*k;
+    std::copy( lv_k, lv_k + localSubDim, lvv_k );
+  }
+  return localValuesView;
 }
 
 } // end namespace Thyra

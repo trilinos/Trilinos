@@ -54,7 +54,7 @@ namespace {
 void print_performance_stats(
 	const int        num_time_samples
 	,const double    raw_epetra_time
-	,const double    tsfcore_wrapped_time
+	,const double    thyra_wrapped_time
 	,bool            verbose
 	,std::ostream    &out
 	)
@@ -63,10 +63,10 @@ void print_performance_stats(
 		out
 			<< "\nAverage times (out of " << num_time_samples << " samples):\n"
 			<< "  Raw Epetra              = " << (raw_epetra_time/num_time_samples) << std::endl
-			<< "  Thyra Wrapped Epetra    = " << (tsfcore_wrapped_time/num_time_samples) << std::endl
+			<< "  Thyra Wrapped Epetra    = " << (thyra_wrapped_time/num_time_samples) << std::endl
 			<< "\nRelative performance of Thyra wrapped verses raw Epetra:\n"
-			<< "  ( raw epetra time / tsfcore wrapped time ) = ( " << raw_epetra_time << " / " << tsfcore_wrapped_time << " ) = "
-			<< (raw_epetra_time/tsfcore_wrapped_time) << std::endl;
+			<< "  ( raw epetra time / thyra wrapped time ) = ( " << raw_epetra_time << " / " << thyra_wrapped_time << " ) = "
+			<< (raw_epetra_time/thyra_wrapped_time) << std::endl;
 }
 
 inline
@@ -484,6 +484,8 @@ int main( int argc, char* argv[] )
 		RefCountPtr<const Thyra::LinearOpBase<Scalar> >
 			Op = rcp(new Thyra::EpetraLinearOp(epetra_op));
 
+    if(verbose && dumpAll) out << "\nOp=\n" << *Op;
+
 		if(verbose) out << "\n*** (B.7) Test EpetraLinearOp linear operator interface\n";
 
 		if(verbose) out << "\nChecking out linear operator interface of Op ...\n";
@@ -579,12 +581,19 @@ int main( int argc, char* argv[] )
 		RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
 			neV1_v1  = rcp_static_cast<const Thyra::MultiVectorBase<Scalar> >(neV1)->subView(col_rng),
 			neV1_v2  = rcp_static_cast<const Thyra::MultiVectorBase<Scalar> >(neV1)->subView(numCols,cols);
+    if(verbose && dumpAll) {
+      out << "\neV1_v1=\n" << *eV1_v1;
+      out << "\neV1_v2=\n" << *eV1_v2;
+      out << "\nneV1_v1=\n" << *neV1_v1;
+      out << "\nneV1_v2=\n" << *neV1_v2;
+    }
 
 		if(verbose) out << "\nPerforming eY_v1 = 2*Op*eV1_v1 ...\n";
 		timer.start(true);
 		apply( *Op, NOTRANS, *eV1_v1, &*eY->subView(col_rng), 2.0 );
 		timer.stop();
 		if(verbose) out << "  time = " << timer.totalElapsedTime() << " sec\n";
+    if(verbose && dumpAll) out << "\neV_v1=\n" << *eY->subView(col_rng);
 		if(!testRelErr("Thyra::norm_1(eY_v1)",Thyra::norm_1(*eY->subView(col_rng)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&out:NULL)) success=false;
 
 		if(verbose) out << "\nPerforming eY_v2 = 2*Op*eV1_v2 ...\n";
@@ -592,6 +601,7 @@ int main( int argc, char* argv[] )
 		apply( *Op, NOTRANS, *eV1_v2, &*eY->subView(numCols,cols), 2.0 );
 		timer.stop();
 		if(verbose) out << "  time = " << timer.totalElapsedTime() << " sec\n";
+    if(verbose && dumpAll) out << "\neV_v2=\n" << *eY->subView(numCols,cols);
 		if(!testRelErr("Thyra::norm_1(eY_v2)",Thyra::norm_1(*eY->subView(numCols,cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&out:NULL)) success=false;
 
 		if(verbose) out << "\nPerforming neY_v1 = 2*Op*eV1_v1 ...\n";
@@ -599,6 +609,7 @@ int main( int argc, char* argv[] )
 		apply( *Op, NOTRANS, *eV1_v1, &*neY->subView(col_rng), 2.0 );
 		timer.stop();
 		if(verbose) out << "  time = " << timer.totalElapsedTime() << " sec\n";
+    if(verbose && dumpAll) out << "\neV_v1=\n" << *eY->subView(col_rng);
 		if(!testRelErr("Thyra::norm_1(neY_v1)",Thyra::norm_1(*neY->subView(col_rng)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&out:NULL)) success=false;
 
 		if(verbose) out << "\nPerforming eY_v1 = 2*Op*neV1_v1 ...\n";
@@ -613,6 +624,7 @@ int main( int argc, char* argv[] )
 		apply( *Op, NOTRANS, *eV1_v2, &*neY->subView(numCols,cols), 2.0 );
 		timer.stop();
 		if(verbose) out << "  time = " << timer.totalElapsedTime() << " sec\n";
+    if(verbose && dumpAll) out << "\neV_v2=\n" << *eY->subView(numCols,cols);
 		if(!testRelErr("Thyra::norm_1(neY_v2)",Thyra::norm_1(*neY->subView(numCols,cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&out:NULL)) success=false;
 
 		if(verbose) out << "\nPerforming eY_v2 = 2*Op*neV1_v2 ...\n";
@@ -620,6 +632,7 @@ int main( int argc, char* argv[] )
 		apply( *Op, NOTRANS, *neV1_v2, &*eY->subView(numCols,cols), 2.0 );
 		timer.stop();
 		if(verbose) out << "  time = " << timer.totalElapsedTime() << " sec\n";
+    if(verbose && dumpAll) out << "\neV_v2=\n" << *eY->subView(numCols,cols);
 		if(!testRelErr("Thyra::norm_1(eY_v2)",Thyra::norm_1(*eY->subView(numCols,cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&out:NULL)) success=false;
 
 		if(verbose) out << "\n*** (B.10) Testing Vector and MultiVector view creation functions\n";
@@ -845,7 +858,7 @@ int main( int argc, char* argv[] )
 		// an issue when local_dim is small.
 		//
 
-		double raw_epetra_time, tsfcore_wrapped_time;
+		double raw_epetra_time, thyra_wrapped_time;
 		
 		if(verbose) out << "\n*** (C.1) Comparing the speed of RTOp verses raw Epetra_Vector operations\n";
 
@@ -878,10 +891,10 @@ int main( int argc, char* argv[] )
 			Thyra::assign( &*eV1, *eV2 );
 		}
 		timer.stop();
-		tsfcore_wrapped_time = timer.totalElapsedTime();
-		if(verbose) out << "  total time = " << tsfcore_wrapped_time << " sec\n";
+		thyra_wrapped_time = timer.totalElapsedTime();
+		if(verbose) out << "  total time = " << thyra_wrapped_time << " sec\n";
 		
-		print_performance_stats( num_time_loops_1, raw_epetra_time, tsfcore_wrapped_time, verbose, out );
+		print_performance_stats( num_time_loops_1, raw_epetra_time, thyra_wrapped_time, verbose, out );
 
 		// RAB: 2004/01/05: Note, the above relative performance is likely
 		// to be the worst of all of the others since RTOp operators are
@@ -929,10 +942,10 @@ int main( int argc, char* argv[] )
 			apply( *eV1, TRANS, *eV2, &*T );
 		}
 		timer.stop();
-		tsfcore_wrapped_time = timer.totalElapsedTime();
-		if(verbose) out << "  total time = " << tsfcore_wrapped_time << " sec\n";
+		thyra_wrapped_time = timer.totalElapsedTime();
+		if(verbose) out << "  total time = " << thyra_wrapped_time << " sec\n";
 	
-		print_performance_stats( num_time_loops_2, raw_epetra_time, tsfcore_wrapped_time, verbose, out );
+		print_performance_stats( num_time_loops_2, raw_epetra_time, thyra_wrapped_time, verbose, out );
 		
 		// RAB: 2004/01/05: Note, even though the Thyra adapter does
 		// not actually call Epetra_MultiVector::Multiply(...), the
@@ -974,10 +987,10 @@ int main( int argc, char* argv[] )
 			apply( *Op, NOTRANS, *eV1, &*eY, 2.0 );
 		}
 		timer.stop();
-		tsfcore_wrapped_time = timer.totalElapsedTime();
-		if(verbose) out << "  total time = " << tsfcore_wrapped_time << " sec\n";
+		thyra_wrapped_time = timer.totalElapsedTime();
+		if(verbose) out << "  total time = " << thyra_wrapped_time << " sec\n";
 		
-		print_performance_stats( num_time_loops_3, raw_epetra_time, tsfcore_wrapped_time, verbose, out );
+		print_performance_stats( num_time_loops_3, raw_epetra_time, thyra_wrapped_time, verbose, out );
 
 		// RAB: 2004/01/05: Note, the above Epetra adapter is a true
 		// adapter and simply calls Epetra_Operator::apply(...) so, except

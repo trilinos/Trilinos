@@ -87,7 +87,7 @@ public:
 	bool has_ownership() const {
 		return has_ownership_;
 	}
-	void set_extra_data( const any &extra_data, const std::string& name, bool force_unique, EPrePostDestruction destroy_when );
+	void set_extra_data( const any &extra_data, const std::string& name, EPrePostDestruction destroy_when, bool force_unique );
 	any& get_extra_data( const std::string& type_name, const std::string& name );
 	const any& get_extra_data( const std::string& type_name, const std::string& name ) const {
 		return const_cast<RefCountPtr_node*>(this)->get_extra_data(type_name,name);
@@ -498,10 +498,10 @@ Teuchos::rcp_dynamic_cast(const RefCountPtr<T1>& p1, bool throw_on_fail)
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
-void Teuchos::set_extra_data( const T1 &extra_data, const std::string& name, Teuchos::RefCountPtr<T2> *p, bool force_unique, EPrePostDestruction destroy_when )
+void Teuchos::set_extra_data( const T1 &extra_data, const std::string& name, Teuchos::RefCountPtr<T2> *p, EPrePostDestruction destroy_when, bool force_unique )
 {
 	p->assert_not_null();
-	p->access_node()->set_extra_data( extra_data, name, force_unique, destroy_when );
+	p->access_node()->set_extra_data( extra_data, name, destroy_when, force_unique );
 }
 
 template<class T1, class T2>

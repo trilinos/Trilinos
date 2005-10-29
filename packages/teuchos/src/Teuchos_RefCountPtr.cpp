@@ -42,7 +42,7 @@ void PrivateUtilityPack::throw_null( const std::string &type_name )
 
 namespace PrivateUtilityPack {
 
-void RefCountPtr_node::set_extra_data( const any &extra_data, const std::string& name, bool force_unique, EPrePostDestruction destroy_when )
+void RefCountPtr_node::set_extra_data( const any &extra_data, const std::string& name, EPrePostDestruction destroy_when, bool force_unique )
 {
 	if(extra_data_map_==NULL) {
 		extra_data_map_ = new extra_data_map_t;

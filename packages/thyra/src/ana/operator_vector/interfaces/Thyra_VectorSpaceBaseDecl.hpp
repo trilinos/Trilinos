@@ -117,8 +117,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
 createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubVectorT<Scalar> &raw_v );
 
-/** \brief Calls <tt>createMembersView(Teuchos::rcp(&vs,false),raw_v)</tt>.
- *
+/** \brief Calls <tt>createMemberView(Teuchos::rcp(&vs,false),raw_v)</tt>.
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >

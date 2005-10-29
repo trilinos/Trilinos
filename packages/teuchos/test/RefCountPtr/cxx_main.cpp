@@ -506,7 +506,7 @@ int main( int argc, char* argv[] ) {
 
     // Test pre-destruction of extra data
     int a_f_return = -2;
-    set_extra_data( Teuchos::rcp(new Get_A_f_return(&*a_ptr1,&a_f_return)), "a_f_return", &a_ptr1, true, Teuchos::PRE_DESTROY );
+    set_extra_data( Teuchos::rcp(new Get_A_f_return(&*a_ptr1,&a_f_return)), "a_f_return", &a_ptr1, Teuchos::PRE_DESTROY );
 
 		// Set pointers to null to force releasing any owned memory
 		a_ptr1 = null;

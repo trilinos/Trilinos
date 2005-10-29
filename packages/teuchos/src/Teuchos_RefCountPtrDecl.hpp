@@ -860,11 +860,6 @@ template<class T2, class T1> inline RefCountPtr<T2> rcp_dynamic_cast( const RefC
  *               extra data must be unique from any other such data or
  *               the other data will be overwritten.
  * @param  p     [out] On output, will be updated with the input <tt>extra_data</tt>
- * @param  force_unique
- *               [in] Determines if this type and name pair must be unique
- *               in which case if an object with this same type and name
- *               already exists, then an exception will be thrown.
- *               The default is <tt>true</tt> for safety.
  * @param  destroy_when
  *               [in] Determines when <tt>extra_data</tt> will be destoryed
  *               in relation to the underlying reference-counted object.
@@ -872,6 +867,11 @@ template<class T2, class T1> inline RefCountPtr<T2> rcp_dynamic_cast( const RefC
  *               will be deleted before the underlying reference-counted object.
  *               If <tt>destroy_when==POST_DESTROY</tt> (the default) then <tt>extra_data</tt>
  *               will be deleted after the underlying reference-counted object.
+ * @param  force_unique
+ *               [in] Determines if this type and name pair must be unique
+ *               in which case if an object with this same type and name
+ *               already exists, then an exception will be thrown.
+ *               The default is <tt>true</tt> for safety.
  *
  * If there is a call to this function with the same type of extra
  * data <tt>T1</tt> and same arguments <tt>p</tt> and <tt>name</tt>
@@ -906,22 +906,23 @@ template<class T2, class T1> inline RefCountPtr<T2> rcp_dynamic_cast( const RefC
  * with the non-member <tt>get_extra_data()</tt> functions.
  */
 template<class T1, class T2>
-void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<T2> *p, bool force_unique
-#ifndef __sun
-                     = true
-#endif
+void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<T2> *p
                      ,EPrePostDestruction destroy_when
 #ifndef __sun
                      = POST_DESTROY
+#endif
+                     ,bool force_unique
+#ifndef __sun
+                     = true
 #endif
 	);
 #ifdef __sun
 template<class T1, class T2>
 inline void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<T2> *p )
-{ set_extra_data( extra_data, name, p, true, POST_DESTROY ); }
+{ set_extra_data( extra_data, name, p, POST_DESTROY, true ); }
 template<class T1, class T2>
-inline void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<T2> *p, bool force_unique )
-{ set_extra_data( extra_data, name, p, force_unique, POST_DESTROY ); }
+inline void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<T2> *p, EPrePostDestruction destroy_when )
+{ set_extra_data( extra_data, name, p, destroy_when, true ); }
 #endif
 
 /** \brief Get a non-const reference to extra data associated with a <tt>RefCountPtr</tt> object.

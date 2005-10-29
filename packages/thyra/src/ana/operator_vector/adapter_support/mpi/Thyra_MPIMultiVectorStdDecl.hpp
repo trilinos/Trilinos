@@ -136,6 +136,10 @@ public:
   Teuchos::RefCountPtr<VectorBase<Scalar> > col(Index j);
   /** \brief . */
   Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const Range1D& col_rng );
+  /** \brief . */
+  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const;
+  /** \brief . */
+  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] );
   //@}
 
   /** @name Overridden from MPIMultiVectorBase */
@@ -162,6 +166,11 @@ private:
   Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >   domainSpace_;
   Teuchos::RefCountPtr<Scalar>                                     localValues_;
   Index                                                            leadingDim_;
+  
+  // ///////////////////////////////////////
+  // Private member functions
+
+  Teuchos::RefCountPtr<Scalar> createContiguousCopy( const int numCols, const int cols[] ) const;
   
 }; // end class MPIMultiVectorStd
 

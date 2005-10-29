@@ -202,7 +202,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     epetra_epetraFwdOp.get()==NULL, std::logic_error
     ,"Error, The input fwdOp object must be fully initialized before calling this function!"
     );
-  set_extra_data(epetraFwdOp,"AOOLOWSF::epetraFwdOp",&epetra_epetraFwdOp,false);
+  set_extra_data(epetraFwdOp,"AOOLOWSF::epetraFwdOp",&epetra_epetraFwdOp,Teuchos::POST_DESTROY,false);
   const ETransp
     overall_epetra_epetraFwdOpTransp
     = trans_trans(real_trans(wrappedFwdOpTransp),real_trans(epetra_epetraFwdOpTransp));
@@ -226,7 +226,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       epetra_epetraPrecOp.get()==NULL,std::logic_error
       ,"Error, The input precOp object must be fully initialized before calling this function!"
       );
-    set_extra_data(epetraPrecOp,"AOOLOWSF::epetraPrecOp",&epetra_epetraPrecOp,false);
+    set_extra_data(epetraPrecOp,"AOOLOWSF::epetraPrecOp",&epetra_epetraPrecOp,Teuchos::POST_DESTROY,false);
     overall_epetra_epetraPrecOpTransp
       = trans_trans(real_trans(wrappedPrecOpTransp),real_trans(epetra_epetraPrecOpTransp));
   }
@@ -383,7 +383,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     // Here we will be careful not to reset the forward operator in fears that
     // it will blow out the internally created stuff.
     aztecFwdSolver->SetUserOperator(const_cast<Epetra_Operator*>(&*aztec_epetra_epetraFwdOp));
-    set_extra_data(aztec_epetra_epetraFwdOp,"AOOLOWSF::aztec_epetra_epetraFwdOp",&aztecFwdSolver,false);
+    set_extra_data(aztec_epetra_epetraFwdOp,"AOOLOWSF::aztec_epetra_epetraFwdOp",&aztecFwdSolver,Teuchos::POST_DESTROY,false);
   }
   // Adjoint solve
   if( aztecAdjSolver.get() ) {
@@ -393,7 +393,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     else
       aztec_epetra_epetraAdjOp = rcp(new PO(1,epetraOps,epetraOpsTransp,epetraOpsApplyMode));
     aztecAdjSolver->SetUserOperator(const_cast<Epetra_Operator*>(&*aztec_epetra_epetraAdjOp));
-    set_extra_data(aztec_epetra_epetraAdjOp,"AOOLOWSF::aztec_epetra_epetraAdjOp",&aztecAdjSolver,false);
+    set_extra_data(aztec_epetra_epetraAdjOp,"AOOLOWSF::aztec_epetra_epetraAdjOp",&aztecAdjSolver,Teuchos::POST_DESTROY,false);
   }
   //
   // Process the preconditioner
@@ -427,7 +427,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
           "hand this over to aztec without making a copy which is not supported here!"
           );
         aztecFwdSolver->SetPrecMatrix(const_cast<Epetra_RowMatrix*>(&*rowmatrix_epetraFwdOp));
-        set_extra_data(rowmatrix_epetraFwdOp,"AOOLOWSF::rowmatrix_epetraFwdOp",&aztecFwdSolver,false);
+        set_extra_data(rowmatrix_epetraFwdOp,"AOOLOWSF::rowmatrix_epetraFwdOp",&aztecFwdSolver,Teuchos::POST_DESTROY,false);
       }
       setAztecPreconditioner = true;
       break;
@@ -450,7 +450,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
           "hand this over to aztec without making a copy which is not supported here!"
           );
         aztecFwdSolver->SetPrecMatrix(const_cast<Epetra_RowMatrix*>(&*rowmatrix_epetraPrecOp));
-        set_extra_data(rowmatrix_epetraPrecOp,"AOOLOWSF::rowmatrix_epetraPrecOp",&aztecFwdSolver,false);
+        set_extra_data(rowmatrix_epetraPrecOp,"AOOLOWSF::rowmatrix_epetraPrecOp",&aztecFwdSolver,Teuchos::POST_DESTROY,false);
       }
       setAztecPreconditioner = true;
       break;
@@ -474,7 +474,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       else
         aztec_fwd_epetra_epetraPrecOp = rcp(new PO(1,epetraOps,epetraOpsTransp,epetraOpsApplyMode));
       aztecFwdSolver->SetPrecOperator(const_cast<Epetra_Operator*>(&*aztec_fwd_epetra_epetraPrecOp));
-      set_extra_data(aztec_fwd_epetra_epetraPrecOp,"AOOLOWSF::aztec_fwd_epetra_epetraPrecOp",&aztecFwdSolver,false);
+      set_extra_data(aztec_fwd_epetra_epetraPrecOp,"AOOLOWSF::aztec_fwd_epetra_epetraPrecOp",&aztecFwdSolver,Teuchos::POST_DESTROY,false);
       // Adjoint solve
       if( aztecAdjSolver.get() && epetra_epetraPrecOpAdjointSupport == EPETRA_OP_ADJOINT_SUPPORTED ) {
         epetraOpsTransp[0] = ( overall_epetra_epetraPrecOpTransp==NOTRANS ? Teuchos::TRANS : Teuchos::NO_TRANS );
@@ -483,8 +483,8 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
         else
           aztec_adj_epetra_epetraPrecOp = rcp(new PO(1,epetraOps,epetraOpsTransp,epetraOpsApplyMode));
         aztecAdjSolver->SetPrecOperator(const_cast<Epetra_Operator*>(&*aztec_adj_epetra_epetraPrecOp));
-        set_extra_data(aztec_adj_epetra_epetraPrecOp,"AOOLOWSF::aztec_adj_epetra_epetraPrecOp",&aztecAdjSolver,false);
-        set_extra_data<bool>(true,"AOOLOWSF::setPrecondtionerOperator",&aztecFwdSolver,false);
+        set_extra_data(aztec_adj_epetra_epetraPrecOp,"AOOLOWSF::aztec_adj_epetra_epetraPrecOp",&aztecAdjSolver,Teuchos::POST_DESTROY,false);
+        set_extra_data<bool>(true,"AOOLOWSF::setPrecondtionerOperator",&aztecFwdSolver,Teuchos::POST_DESTROY,false);
       }
       break;
     }
@@ -499,7 +499,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       double condNumEst = -1.0;
       TEST_FOR_EXCEPT(0!=aztecFwdSolver->ConstructPreconditioner(condNumEst));
       //aztecFwdSolver->SetAztecOption(AZ_pre_calc, AZ_calc);
-      set_extra_data<bool>(true,"AOOLOWSF::constructedAztecPreconditoner",&aztecFwdSolver,false);
+      set_extra_data<bool>(true,"AOOLOWSF::constructedAztecPreconditoner",&aztecFwdSolver,Teuchos::POST_DESTROY,false);
     }
     else {
       //aztecFwdSolver->SetAztecOption(AZ_pre_calc, AZ_reuse);

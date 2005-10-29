@@ -111,7 +111,6 @@ VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::MutableSubVect
     Teuchos::rcp(new CopyVectorViewBack<Scalar>(&*v,raw_v))
     ,"CopyVectorViewBack"
     ,&v
-    ,true
     ,Teuchos::PRE_DESTROY
     );
   return v;
@@ -153,7 +152,6 @@ VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::MutableSubMul
     Teuchos::rcp(new CopyMultiVectorViewBack<Scalar>(&*mv,raw_mv))
     ,"CopyMultiVectorViewBack"
     ,&mv
-    ,true
     ,Teuchos::PRE_DESTROY
     );
   return mv;

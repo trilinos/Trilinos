@@ -247,7 +247,7 @@ Thyra::get_Epetra_Vector(
 	// in emvv will automatically commit the changes to the elements in
 	// the input v MultiVectorBase object (reguardless of its
 	// implementation).  This is truly an elegant result!
-	Teuchos::set_extra_data( emvv, "emvv", &epetra_v, true, Teuchos::PRE_DESTROY );
+	Teuchos::set_extra_data( emvv, "emvv", &epetra_v, Teuchos::PRE_DESTROY );
   // Also set the v itself as extra data just to be safe
 	Teuchos::set_extra_data( v, "v", &epetra_v );
   // We are done!
@@ -305,7 +305,7 @@ Thyra::get_Epetra_Vector(
 	// only a freeSubVector(...) and not a commit will be called.
 	// This is the whole reason there is a seperate implementation for
 	// the const and non-const cases.
-	Teuchos::set_extra_data( evv, "evv", &epetra_v, true, Teuchos::PRE_DESTROY );
+	Teuchos::set_extra_data( evv, "evv", &epetra_v, Teuchos::PRE_DESTROY );
   // Also set the v itself as extra data just to be safe
 	Teuchos::set_extra_data( v, "v", &epetra_v );
   // We are done!
@@ -377,7 +377,7 @@ Thyra::get_Epetra_MultiVector(
 	// in emmvv will automatically commit the changes to the elements in
 	// the input mv MultiVectorBase object (reguardless of its
 	// implementation).  This is truly an elegant result!
-	Teuchos::set_extra_data( emmvv, "emmvv", &epetra_mv, true, Teuchos::PRE_DESTROY );
+	Teuchos::set_extra_data( emmvv, "emmvv", &epetra_mv, Teuchos::PRE_DESTROY );
   // Also set the mv itself as extra data just to be safe
 	Teuchos::set_extra_data( mv, "mv", &epetra_mv );
   // We are done!
@@ -437,7 +437,7 @@ Thyra::get_Epetra_MultiVector(
 	// only a freeSubMultiVector(...) and not a commit will be called.
 	// This is the whole reason there is a seperate implementation for
 	// the const and non-const cases.
-	Teuchos::set_extra_data( emvv, "emvv", &epetra_mv, true, Teuchos::PRE_DESTROY );
+	Teuchos::set_extra_data( emvv, "emvv", &epetra_mv, Teuchos::PRE_DESTROY );
   // Also set the mv itself as extra data just to be safe
 	Teuchos::set_extra_data( mv, "mv", &epetra_mv );
   // We are done!

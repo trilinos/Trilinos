@@ -227,18 +227,14 @@ namespace Anasazi {
     {
       int m = B.numRows();
       int n = B.numCols();
-      // create a MultiVectorBase object to represent the matrix
-      Teuchos::RefCountPtr< TMVB > mat = Thyra::createMembers( A.domain(), n );
-      // get an explicit view which allows us to access the data
-      Thyra::ExplicitMutableMultiVectorView<ScalarType> mat_view(*mat);
-      // copy the data
-      for (int j=0; j<n; j++) {
-        for (int i=0; i<m; i++) {
-          mat_view(i+1,j+1) = B(i,j);
-        }
-      }
-      // perform the operation via A: mv <- alpha*A*mat + beta*mv
-      A.apply(Thyra::NONCONJ_ELE,*mat,&mv,alpha,beta);
+      // Create a view of the B object!
+      Teuchos::RefCountPtr< const TMVB >
+        B_thyra = Thyra::createMembersView(
+          A.domain()
+          ,RTOpPack::SubMultiVectorT<ScalarType>(0,m,0,n,&B(0,0),B.stride())
+          );
+      // perform the operation via A: mv <- alpha*A*B_thyra + beta*mv
+      A.apply(Thyra::NONCONJ_ELE,*B_thyra,&mv,alpha,beta);
     }
 
     /*! \brief Replace \c mv with \f$\alpha A + \beta B\f$.
@@ -265,18 +261,13 @@ namespace Anasazi {
       // Create a multivector to hold the result (m by n)
       int m = A.domain()->dim();
       int n = mv.domain()->dim();
-      Teuchos::RefCountPtr< TMVB > temp = Thyra::createMembers( A.domain(), n ); 
-      // Note: using the conjugate transpose as opposed to a simple transpose
-      A.applyTranspose(Thyra::CONJ_ELE,mv,&(*temp),alpha,Teuchos::ScalarTraits<ScalarType>::zero());
-      // Move the data from the temporary multivector into the SerialDenseMatrix
-      // To get the data out, we need a MutableMultiVectorView
-      Thyra::ExplicitMutableMultiVectorView<ScalarType> cc(*temp);
-      ScalarType *vals = cc.values();
-      for (int i=0; i<m; i++) {
-        for (int j=0; j<n; j++) {
-          B(i,j) = vals[i+j*m];
-        }
-      }
+      // Create a view of the B object!
+      Teuchos::RefCountPtr< TMVB >
+        B_thyra = Thyra::createMembersView(
+          A.domain()
+          ,RTOpPack::MutableSubMultiVectorT<ScalarType>(0,m,0,n,&B(0,0),B.stride())
+          );
+      A.applyTranspose(Thyra::CONJ_ELE,mv,&*B_thyra,alpha,Teuchos::ScalarTraits<ScalarType>::zero());
     }
 
     /*! \brief Compute a vector \c b where the components are the individual dot-products of the 

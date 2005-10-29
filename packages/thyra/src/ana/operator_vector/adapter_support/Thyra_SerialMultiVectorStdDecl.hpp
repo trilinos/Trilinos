@@ -166,6 +166,10 @@ public:
   Teuchos::RefCountPtr<VectorBase<Scalar> > col(Index j);
   /** \brief . */
   Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const Range1D& col_rng );
+  /** \brief . */
+  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const;
+  /** \brief . */
+  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] );
   //@}
 
   /** @name Overridden from SerialMultiVectorBase */
@@ -192,6 +196,11 @@ private:
   Index                                                              leadingDim_;
   Index                                                              numRows_; // Cached
   Index                                                              numCols_; // Cached
+  
+  // ///////////////////////////////////////
+  // Private member functions
+
+  Teuchos::RefCountPtr<Scalar> createContiguousCopy( const int numCols, const int cols[] ) const;
   
 }; // end class SerialMultiVectorStd
 
