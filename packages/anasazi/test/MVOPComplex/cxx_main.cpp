@@ -46,6 +46,9 @@ typedef ::complex<double> ScalarType;
 #else
 typedef double ScalarType
 #endif
+// Gets the type of magnitude type (for example, the magnitude type
+// of "complex<double>" is "double").
+typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
 
 #include "MyMultiVec.hpp"
 #include "MyOperator.hpp"

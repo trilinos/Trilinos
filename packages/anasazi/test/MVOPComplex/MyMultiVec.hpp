@@ -5,73 +5,103 @@
 #include "AnasaziMultiVec.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
-
+//! Simple example of a user's defined Anasazi::MultiVec class.
+/*! 
+ * This is a simple, single processor example of user's defined
+ * MultiVec-derived class. The class is templated with ScalarType;
+ * possible choices are, for example, "float", "double", or
+ * "complex<double>".
+ *
+ * To use this class, you must define (using typedef) type ScalarType
+ * and MagnitudeType. Generally, Teuchos::ScalarTraits can be used
+ * to automatically define the magnitude type, for example
+ * \code
+  typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+ * \endcode
+ *
+ * \author Oscar Chinallato (ETHZ/ICOS) and Marzio Sala (ETHZ/COLAB)
+ *
+ * \date Last modified on 01-Nov-05
+ */
 class MyMultiVec : public Anasazi::MultiVec<ScalarType>
 {
+public:
 
-  typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitudeType;
-
-  public:
-
+  //! Constructor for a \c NumberVecs vectors of length \c Length.
   MyMultiVec(const int Length, const int NumberVecs) :
     Length_(Length),
     NumberVecs_(NumberVecs)
   {
+    Check();
+
     data_.resize(NumberVecs);
     ownership_.resize(NumberVecs);
     
+    // Allocates memory to store the vectors.
     for (int v = 0 ; v < NumberVecs_ ; ++v)
-      {
-        data_[v] = new ScalarType[Length];
-        ownership_[v] = true;
-      }
-    
+    {
+      data_[v] = new ScalarType[Length];
+      ownership_[v] = true;
+    }
+
+    // Initializes all elements to zero.
     MvInit(0.0);
   }
   
+  //! Constructor with already allocated memory
   MyMultiVec(const int Length, const std::vector<ScalarType*>& rhs) :
     Length_(Length),
     NumberVecs_(rhs.size())
   {
+    Check();
+
     data_.resize(NumberVecs_);
     ownership_.resize(NumberVecs_);
     
+    // Copies pointers from input array, set ownership so that
+    // this memory is not free'd in the destructor
     for (int v = 0 ; v < NumberVecs_ ; ++v)
-      {
-        data_[v] = rhs[v];
-        ownership_[v] = false;
-      }
+    {
+      data_[v] = rhs[v];
+      ownership_[v] = false;
+    }
   }
   
+  //! Copy constructor, performs a deep copy.
   MyMultiVec(const MyMultiVec& rhs) :
     Length_(rhs.GetVecLength()),
     NumberVecs_(rhs.NumberVecs_)
   {
+    Check();
+
     data_.resize(NumberVecs_);
     ownership_.resize(NumberVecs_);
     
     for (int v = 0 ; v < NumberVecs_ ; ++v)
-      {
-        data_[v] = new ScalarType[Length_];
-        ownership_[v] = true;
-      }
+    {
+      data_[v] = new ScalarType[Length_];
+      ownership_[v] = true;
+    }
     
     for (int v = 0 ; v < NumberVecs_ ; ++v)
-      {
-        for (int i = 0 ; i < Length_ ; ++i)
-          (*this)(i, v) = rhs(i, v);
-      }
+    {
+      for (int i = 0 ; i < Length_ ; ++i)
+        (*this)(i, v) = rhs(i, v);
+    }
   }
   
+  //! Destructor
   ~MyMultiVec()
   {
-    // FIXME!
-    //        for (int v = 0 ; v < NumberVecs_ ; ++v)
-    //        if (ownership_[v]) delete[] data_[v];
+    for (int v = 0 ; v < NumberVecs_ ; ++v)
+      if (ownership_[v]) 
+        delete[] data_[v];
   }
   
+  //! Returns a clone of the current vector.
   MyMultiVec* Clone(const int NumberVecs) const
   {
+    // FIXME
     MyMultiVec* tmp = new MyMultiVec(Length_, NumberVecs);
     
     //   for (int v = 0 ; v < NumberVecs ; ++v)
@@ -81,11 +111,13 @@ class MyMultiVec : public Anasazi::MultiVec<ScalarType>
     return(tmp);
   }
   
+  // Returns a clone of the corrent multi-vector.
   MyMultiVec* CloneCopy() const
   {
     return(new MyMultiVec(*this));
   }
   
+  //! Returns a clone copy of specified vectors.
   MyMultiVec* CloneCopy(const std::vector< int > &index) const
   {
     int size = index.size();
@@ -98,6 +130,7 @@ class MyMultiVec : public Anasazi::MultiVec<ScalarType>
     return(tmp);
   }
   
+  //! Returns a view of current vector (shallow copy)
   MyMultiVec* CloneView(const std::vector< int > &index) 
   {
     int size = index.size();
@@ -109,6 +142,7 @@ class MyMultiVec : public Anasazi::MultiVec<ScalarType>
     return(new MyMultiVec(Length_, values));
   }
   
+  //! Returns a view of current vector (shallow copy), const version.
   const MyMultiVec* CloneView(const std::vector< int > &index) const
   {
     int size = index.size();
@@ -135,28 +169,57 @@ class MyMultiVec : public Anasazi::MultiVec<ScalarType>
 			const Teuchos::SerialDenseMatrix<int, ScalarType> &B, 
 			const ScalarType beta)
   {
-    MyMultiVec* MyA;
-    MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
-    assert(MyA!=NULL);
     
     assert (Length_ == A.GetVecLength());
     assert (B.numRows() == A.GetNumberVecs());
-    assert (B.numCols() == NumberVecs_);
-    
-    for (int v = 0 ; v < NumberVecs_ ; ++v)
+    assert (B.numCols() <= NumberVecs_);
+
+    MyMultiVec* MyA;
+    MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
+    assert(MyA!=NULL);
+
+    if (this == MyA)
+    {
+      // If this == A, then need additional storage ...
+      // This situation is a bit peculiar but it may be required by
+      // certain algorithms.
+      
+      std::vector<ScalarType> tmp(NumberVecs_);
+
+      for (int i = 0 ; i < Length_ ; ++i)
       {
-        for (int i = 0 ; i < Length_ ; ++i)
-	  {
-	    (*this)(i, v) *= beta; 
-	    ScalarType res = 0.0;
-	    for (int j = 0 ; j < A.GetNumberVecs() ; ++j)
-	      {
-		res +=  (*MyA)(i, j) * B(j, v);
-	      }
-	    
-	    (*this)(i, v) += alpha * res;
-	  }
+	for (int v = 0; v < NumberVecs_ ; ++v) tmp[v] = (*MyA)(i, v);
+
+        for (int v = 0 ; v < B.numCols() ; ++v)
+        {
+          (*this)(i, v) *= beta; 
+          ScalarType res = 0.0;
+          for (int j = 0 ; j < A.GetNumberVecs() ; ++j)
+          {
+            res +=  tmp[j] * B(j, v);
+          }
+
+          (*this)(i, v) += alpha * res;
+        }
       }
+    }
+    else
+    {
+      for (int i = 0 ; i < Length_ ; ++i)
+      {
+        for (int v = 0 ; v < B.numCols() ; ++v)
+        {
+          (*this)(i, v) *= beta; 
+          ScalarType res = 0.0;
+          for (int j = 0 ; j < A.GetNumberVecs() ; ++j)
+          {
+            res +=  (*MyA)(i, j) * B(j, v);
+          }
+
+          (*this)(i, v) += alpha * res;
+        }
+      }
+    }
   }
   
   // Replace *this with alpha * A + beta * B. 
@@ -228,20 +291,20 @@ class MyMultiVec : public Anasazi::MultiVec<ScalarType>
       }
   }
   
-  void MvNorm (std::vector<magnitudeType> *normvec) const
+  void MvNorm (std::vector<MagnitudeType> *normvec) const
   {
     assert (normvec != 0);
     assert (NumberVecs_ == (int)normvec->size());
     
     for (int v = 0 ; v < NumberVecs_ ; ++v)
       {
-        magnitudeType value = Teuchos::ScalarTraits<magnitudeType>::zero();
+        MagnitudeType value = Teuchos::ScalarTraits<MagnitudeType>::zero();
         for (int i = 0 ; i < Length_ ; ++i)
 	  {
-	    magnitudeType val = Teuchos::ScalarTraits<ScalarType>::magnitude((*this)(i, v));
+	    MagnitudeType val = Teuchos::ScalarTraits<ScalarType>::magnitude((*this)(i, v));
 	    value += val * val;
 	  }
-        (*normvec)[v] = Teuchos::ScalarTraits<magnitudeType>::squareroot(value);
+        (*normvec)[v] = Teuchos::ScalarTraits<MagnitudeType>::squareroot(value);
       }
   }
   
@@ -280,6 +343,7 @@ class MyMultiVec : public Anasazi::MultiVec<ScalarType>
   
   void MvPrint (ostream &os) const
   {
+    cout << "Object MyMultiVec" << endl;
     cout << "Number of rows = " << Length_ << endl;
     cout << "Number of vecs = " << NumberVecs_ << endl;
     
@@ -293,17 +357,17 @@ class MyMultiVec : public Anasazi::MultiVec<ScalarType>
   
   inline ScalarType& operator()(const int i, const int j)
   {
-    if (j < 0 || j >= NumberVecs_) throw(-1);
-    if (i < 0 || i >= Length_) throw(-2);
-    
+    // if (j < 0 || j >= NumberVecs_) throw(-1);
+    // if (i < 0 || i >= Length_) throw(-2);
+    // 
     return(data_[j][i]);
   }
   
   inline const ScalarType& operator()(const int i, const int j) const
   {
-    if (j < 0 || j >= NumberVecs_) throw(-1);
-    if (i < 0 || i >= Length_) throw(-2);
-    
+    // if (j < 0 || j >= NumberVecs_) throw(-1);
+    // if (i < 0 || i >= Length_) throw(-2);
+    // 
     return(data_[j][i]);
   }
   
@@ -318,11 +382,24 @@ class MyMultiVec : public Anasazi::MultiVec<ScalarType>
   }
   
 private:
-  const int Length_;
-  const int NumberVecs_;
-  std::vector<ScalarType*> data_;
-  std::vector<bool> ownership_;
-};
+  void Check()
+  {
+    if (Length_ <= 0)
+      throw("Length must be positive");
 
+    if (NumberVecs_ <= 0)
+      throw("Number of vectors must be positive");
+  }
+
+  //! Length of the vectors
+  const int Length_;
+  //! Number of multi-vectors
+  const int NumberVecs_;
+  //! Pointers to the storage of the vectors.
+  std::vector<ScalarType*> data_;
+  //! If \c true, then this object owns the vectors and must free them in dtor.
+  std::vector<bool> ownership_;
+
+};
 
 #endif // MY_MULTIVECTOR_HPP
