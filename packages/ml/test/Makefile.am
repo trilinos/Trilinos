@@ -31,10 +31,7 @@ SUBDIRS = MultiLevelPreconditioner_NonSym    \
 	  MultiLevelPreconditioner_Maxwell   \
 	  MultiLevelPreconditioner_Aux       \
 	  ML_Operator2Epetra_RowMatrix       \
-          Scalability                        \
-	  VerySimple                         \
 	  AztecSimple                        \
-          Zoltan                             \
           IFPACKSmoothers                    \
           MLAPICompare                       \
           MLAPILinearCombination             \
@@ -46,4 +43,3 @@ SUBDIRS = MultiLevelPreconditioner_NonSym    \
           SelfSmoother
 
 EXTRA_DIST = definition
-

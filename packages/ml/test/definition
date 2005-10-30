@@ -15,7 +15,7 @@
 	   ../examples/TwoLevelDD,
           #../examples/Visualization,
 	   ../examples/MLAPI;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL, MPI(1-4);
 }
 
 (FRAMEWORK, MLTests) {
@@ -30,14 +30,14 @@
          # VerySimple,
          # Zoltan,
            SelfSmoother;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL, MPI(1-4);
 }
 
 # These tests should only be run on 1, 4, 9, 16, or 25 processors.
 (FRAMEWORK, MLTests) {
      DIRS = MultiLevelPreconditioner_Aux,
             MLAPICompare;
-     COMM = SERIAL, MPI(4 9 16 25);
+     COMM = SERIAL, MPI(1-4);
 }
 
 #
