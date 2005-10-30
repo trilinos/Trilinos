@@ -342,7 +342,7 @@ endif
 
 include $(top_builddir)/Makefile.export
 
-EXPORT_INCLUDES = $(ML_INCLUDES)
+EXPORT_INCLUDES = $(ML_INCLUDES) $(GALERI_INCLUDES)
 
 AM_CPPFLAGS = $(EXPORT_INCLUDES) $(nox_incdir)
 
@@ -511,12 +511,6 @@ else
 ML_USING_EPETRAEXT_LIBS = 
 endif
 
-if ML_USING_TRIUTILS
-ML_USING_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; $(MAKE) all-libs 
-else
-ML_USING_TRIUTILS_LIBS = 
-endif
-
 all-libs:
 	$(MAKE) libml.a
 	$(ML_USING_EPETRA_LIBS)
@@ -526,4 +520,3 @@ all-libs:
 	$(ML_USING_ANASAZI_LIBS)
 	$(ML_USING_AZTECOO_LIBS)
 	$(ML_USING_EPETRAEXT_LIBS)
-	$(ML_USING_TRIUTILS_LIBS)

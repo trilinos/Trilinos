@@ -9,8 +9,9 @@
 #include "MLAPI_Gallery.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_DistributedMatrix.h"
-#if defined(HAVE_ML_TRIUTILS)
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#if defined(HAVE_ML_GALERI)
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 #endif
 
 using namespace std;
@@ -21,18 +22,22 @@ namespace MLAPI {
 Operator Gallery(const string ProblemType,
                  const Space& MySpace)
 {
-#if defined(HAVE_ML_TRIUTILS)
+#if defined(HAVE_ML_GALERI)
   int NumGlobalElements = MySpace.GetNumGlobalElements();
-  Trilinos_Util::CrsMatrixGallery Gallery(ProblemType.c_str(), GetEpetra_Comm());
-  Gallery.Set("problem_size", NumGlobalElements);
-  Epetra_CrsMatrix* EpetraA = new Epetra_CrsMatrix(*(Gallery.GetMatrix()));
-  
-  EpetraA->FillComplete();
 
+  Teuchos::ParameterList GaleriList;
+  GaleriList.set("n", NumGlobalElements);
+  Epetra_Map* Map = Galeri::CreateMap("Linear", GetEpetra_Comm(), GaleriList);
+  Epetra_CrsMatrix* EpetraA = Galeri::CreateCrsMatrix(ProblemType, Map,
+                                                      GaleriList);
+  
   Operator A(MySpace,MySpace,EpetraA);
+
+  delete Map;
+
   return (A);
 #else
-  ML_THROW("Configure with --enable-triutils", -1);
+  ML_THROW("Configure with --enable-galeri", -1);
 #endif
 
 }

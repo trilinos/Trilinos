@@ -87,10 +87,6 @@
 #include "ml_anasazi.h"
 #include "ml_FilterType.h"
 
-#ifdef HAVE_ML_TRIUTILS
-#include "Trilinos_Util_CommandLineParser.h"
-#endif
-
 #ifdef HAVE_ML_EPETRAEXT
 #include "EpetraExt_RowMatrixOut.h"
 #endif
