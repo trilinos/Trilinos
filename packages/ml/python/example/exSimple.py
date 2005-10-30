@@ -1,29 +1,36 @@
 #! /usr/bin/env python
+import sys
+
 try:
   import setpath
-except ImportError:
-  from PyTrilinos import Epetra, Triutils, AztecOO, ML
-  print "Using installed versions of Epetra, Triutils, AztecOO, ML"
-else:
   import Epetra
-  import Triutils
+  import Galeri
   import AztecOO
   import ML
+except ImportError:
+  from PyTrilinos import Epetra, Galeri, AztecOO, ML
+  print "Using installed versions of Epetra, Galeri, AztecOO, ML"
 
 def main():
 
   # builds the linear system matrix and sets up starting solution and
   # right-hand side
-  nx = 100
-  ny = 100
   Comm = Epetra.PyComm()
+  nx = 100
+  ny = 100 * Comm.NumProc()
 
-  Gallery = Triutils.CrsMatrixGallery("laplace_2d", Comm)
-  Gallery.Set("nx", nx)
-  Gallery.Set("ny", ny)
-  Matrix = Gallery.GetMatrix()
-  LHS = Gallery.GetStartingSolution()
-  RHS = Gallery.GetRHS()
+  List = {
+    "nx": nx,               # number of nodes in the X-direction
+    "ny": ny,               # number of nodes in the Y-directioN
+    "mx": 1,                # number of processors in the X-direction
+    "my": Comm.NumProc()    # number of processors in the Y-direction
+  }
+
+  Map = Galeri.CreateMap("Cartesian2D", Comm, List)
+  Matrix = Galeri.CreateCrsMatrix("Laplace2D", Map, List)
+
+  LHS = Epetra.Vector(Map); LHS.Random()
+  RHS = Epetra.Vector(Map); RHS.PutScalar(0.0)
 
   # sets up the parameters for ML using a python dictionary
   MLList = {
