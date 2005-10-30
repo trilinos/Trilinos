@@ -892,7 +892,7 @@ Optional Features:
                           examples are also disabled.) (default is yes)
   --enable-teuchos-abc    Enable array bounds checking (default is no)
   --enable-teuchos-complex
-                          Enable Teuchos complex code (default is no)
+                          Enable Teuchos complex code (default is yes)
   --enable-teuchos-extended
                           Enable Teuchos extended code (default is no)
   --enable-teuchos-arprec Enable Teuchos interface support for the ARbitrary
@@ -8790,7 +8790,7 @@ if test "${enable_teuchos_complex+set}" = set; then
   enableval="$enable_teuchos_complex"
   ac_cv_use_teuchos_complex=$enableval
 else
-  ac_cv_use_teuchos_complex=no
+  ac_cv_use_teuchos_complex=yes
 fi;
 
 echo "$as_me:$LINENO: checking whether to use teuchos-complex" >&5
