@@ -33,7 +33,7 @@
 #include "ml_config.h"
 #include "ml_common.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_MLAPI)
+#if defined(HAVE_ML_MLAPI) && defined(HAVE_ML_GALERI)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -47,7 +47,8 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 // includes required by ML
 
 #include "ml_include.h"
@@ -62,7 +63,7 @@
 #include "MLAPI_EpetraBaseOperator.h"
 
 using namespace Teuchos;
-using namespace Trilinos_Util;
+using namespace Galeri;
 using namespace ML_Epetra;
 using namespace MLAPI;
 
@@ -81,23 +82,29 @@ int main(int argc, char *argv[])
 #endif
   Epetra_Time Time(Comm);
 
-  int ProblemSize = 100;
+  int ProblemSize = 10;
   if (argc > 1) {
     ProblemSize = atoi(argv[1]);
   }
     
   Init();
   
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", ProblemSize * ProblemSize);
-  Epetra_RowMatrix*     A_Epetra       = Gallery.GetMatrix();
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
-  Epetra_MultiVector* B_Epetra = Gallery.GetStartingSolution();
-  Epetra_MultiVector* X_Epetra = Gallery.GetRHS();
-  Epetra_MultiVector R_Epetra(*X_Epetra);
+  ParameterList GalerList;
+  GalerList.set("nx", ProblemSize);
+  GalerList.set("ny", ProblemSize * Comm.NumProc());
+  GalerList.set("mx", 1);
+  GalerList.set("my", Comm.NumProc());
+
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GalerList);
+  Epetra_CrsMatrix* A_Epetra = CreateCrsMatrix("Laplace2D", Map, GalerList);
+  Epetra_MultiVector X_Epetra(*Map, 2);
+  Epetra_MultiVector B_Epetra(*Map, 2);
+  Epetra_MultiVector R_Epetra(X_Epetra);
   R_Epetra.PutScalar(0.0);
 
-  AztecOO solver(*Problem);
+  Epetra_LinearProblem Problem(A_Epetra, &X_Epetra, &B_Epetra);
+
+  AztecOO solver(Problem);
 
   Space S(A_Epetra->OperatorDomainMap());
   Operator A_MLAPI(S, S, A_Epetra, false);
@@ -119,15 +126,15 @@ int main(int argc, char *argv[])
     // EPETRA PART //
     // =========== //
 
-    X_Epetra->PutScalar(1.0);
-    B_Epetra->PutScalar(1.0);
+    X_Epetra.PutScalar(1.0);
+    B_Epetra.PutScalar(1.0);
     R_Epetra.PutScalar(0.0);
 
     Time.ResetStartTime();
     for (int i = 0 ; i < rep ; ++i) 
     {
-      A_Epetra->Multiply(false, *X_Epetra, R_Epetra);
-      R_Epetra.Update(1.0, *B_Epetra, -1.0);
+      A_Epetra->Multiply(false, X_Epetra, R_Epetra);
+      R_Epetra.Update(1.0, B_Epetra, -1.0);
 
     }
     time_Epetra = EPETRA_MIN(time_Epetra, Time.ElapsedTime());
@@ -221,8 +228,8 @@ int main(int argc, char *argv[])
   MLPConstructionTime = Time.ElapsedTime();
   Time.ResetStartTime();
 
-  X_Epetra->PutScalar(0.0);
-  B_Epetra->PutScalar(1.0);
+  X_Epetra.PutScalar(0.0);
+  B_Epetra.PutScalar(1.0);
 
   solver.SetPrecOperator(MLPPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg);
@@ -252,8 +259,8 @@ int main(int argc, char *argv[])
     new EpetraBaseOperator(A_Epetra->RowMatrixRowMap(),*Cycle);
   Time.ResetStartTime();
 
-  X_Epetra->PutScalar(0.0);
-  B_Epetra->PutScalar(1.0);
+  X_Epetra.PutScalar(0.0);
+  B_Epetra.PutScalar(1.0);
 
   solver.SetPrecOperator(MLAPIPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg);
@@ -283,24 +290,35 @@ int main(int argc, char *argv[])
          << ", diff = " << (MLAPITotal - MLPTotal) / MLPTotal * 100 << endl;
   }
 
+  delete A_Epetra;
+  delete Map;
+
 #ifdef EPETRA_MPI
-  MPI_Finalize() ;
+  MPI_Finalize();
 #endif
 
-  return 0 ;
-  
+  return(EXIT_SUCCESS);
 }
 
 #else
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
 
 int main(int argc, char *argv[])
 {
-  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils --enable-amesos --enable-ifpack");
-  
-  return 0;
-}
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+#endif
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-galeri --enable-amesos --enable-ifpack");
+  
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+  return(EXIT_SUCCESS);
+}
+#endif

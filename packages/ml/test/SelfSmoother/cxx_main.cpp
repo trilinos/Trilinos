@@ -27,14 +27,15 @@
 //@HEADER
 
 #include "ml_include.h"
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_MPI)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_MPI)
 
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 #include "AztecOO.h"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_Amesos.h"
@@ -42,7 +43,7 @@
 #include "ml_MultiLevelPreconditioner.h"
 
 using namespace Teuchos;
-using namespace Trilinos_Util;
+using namespace Galeri;
 
 // ====================================================================== 
 
@@ -51,9 +52,14 @@ int TestAdditiveSchwarz()
 {
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", 900);
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
+  ParameterList GaleriList;
+  GaleriList.set("nx", 8);
+  GaleriList.set("ny", 8 * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
+
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
 
   Epetra_Vector LHS(A->OperatorDomainMap());
   Epetra_Vector RHS(A->OperatorRangeMap());
@@ -82,18 +88,25 @@ int TestAdditiveSchwarz()
   solver.SetAztecOption(AZ_output, 32);
   solver.Iterate(500, 1e-12);
 
+  delete A;
+  delete Map;
+
   return(solver.NumIters());
 }
 
 // ====================================================================== 
-void TestML() 
+int TestML(const bool UseSelf) 
 {
-
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", 10000);
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
+  ParameterList GaleriList;
+  GaleriList.set("nx", 8);
+  GaleriList.set("ny", 8 * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
+
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
 
   Epetra_Vector LHS(A->OperatorDomainMap());
   Epetra_Vector RHS(A->OperatorRangeMap());
@@ -116,9 +129,8 @@ void TestML()
 
   // toggle the following to compare with more classical smoothing
 
-  bool UseSelf = true;
-
-  if (UseSelf) {
+  if (UseSelf) 
+  {
     MLList.set("smoother: type (level 0)", "Gauss-Seidel");
     MLList.set("smoother: type (level 1)", "self");
     MLList.set("smoother: type (level 2)", "self");
@@ -129,13 +141,14 @@ void TestML()
     ML_Epetra::SetDefaults("DD-ML", SelfList);
     SelfList.set("output", 0);
     SelfList.set("coarse: max size", 128);
-    SelfList.set("cycle applications", 1);
+    SelfList.set("cycle applications", 10);
     SelfList.set("aggregation: damping factor", 0.0);
     SelfList.set("smoother: pre or post", "both");
     SelfList.set("max levels", 5);
     SelfList.set("zero starting solution", true);
   } 
-  else {
+  else 
+  {
     MLList.set("smoother: type (level 0)", "Gauss-Seidel");
     MLList.set("smoother: type (level 1)", "IFPACK");
     MLList.set("smoother: type (level 2)", "IFPACK");
@@ -154,6 +167,11 @@ void TestML()
   solver.Iterate(500, 1e-12);
 
   delete MLPrec;
+
+  delete A;
+  delete Map;
+
+  return(solver.NumIters());
 }
 
 // ============== //
@@ -185,8 +203,18 @@ int main(int argc, char *argv[])
   if (diff > 5)
     exit(EXIT_FAILURE);
     
-  TestML();
+  ItersML = TestML(true);
+  ItersAm = TestML(false);
   
+  if (MyPID == 0)
+    cout << "ML iterations = " << ItersML
+         << ", Amesos iterations = " << ItersAm << endl;
+
+  diff = ItersML - ItersAm;
+  if (diff < 0) diff = -diff;
+  if (diff > 5)
+    exit(EXIT_FAILURE);
+    
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
@@ -213,7 +241,7 @@ int main(int argc, char *argv[])
   puts("--enable-epetra");
   puts("--enable-teuchos");
   puts("--enable-aztecoo");
-  puts("--enable-triutils");
+  puts("--enable-galeri");
   puts("--enable-ifpack");
   puts("--enable-mpi");
 
@@ -224,4 +252,4 @@ int main(int argc, char *argv[])
   exit(EXIT_SUCCESS);
 }
 
-#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */
+#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO) */

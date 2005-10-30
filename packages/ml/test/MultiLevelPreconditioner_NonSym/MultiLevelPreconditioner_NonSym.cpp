@@ -4,7 +4,7 @@
 
 #include "ml_config.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -18,41 +18,14 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
-
-
-#ifdef PACKAGE
-#undef PACKAGE
-#endif
-
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif
-
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif
-
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif
-
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif
-
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
-
-#ifdef VERSION
-#undef VERSION
-#endif
-
 #include "Teuchos_ParameterList.hpp"
 #include "ml_MultiLevelPreconditioner.h"
 #include "AztecOO.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 
-#include "Trilinos_Util_CrsMatrixGallery.h"
+using namespace Teuchos;
+using namespace Galeri;
 
 void PrintLine() 
 {
@@ -123,7 +96,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   // ================== //
   
   double Norm;
-  Epetra_Vector Ax(rhs->Map());
+  Epetra_MultiVector Ax(rhs->Map(), rhs->NumVectors());
   A->Multiply(false, *lhs, Ax);
   Ax.Update(1.0, *rhs, -1.0);
   Ax.Norm2(&Norm);
@@ -144,7 +117,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   
 }
 
-using namespace Trilinos_Util;
+using namespace Galeri;
 
 int main(int argc, char *argv[]) {
 
@@ -164,10 +137,19 @@ int main(int argc, char *argv[]) {
   // create linear problem //
   // ===================== //
 
-  CrsMatrixGallery Gallery("recirc_2d", Comm);
-  Gallery.Set("problem_size", 10000);
+  ParameterList GaleriList;
+  GaleriList.set("nx", 32);
+  GaleriList.set("ny", 32 * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
 
-  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* Matrix = CreateCrsMatrix("Recirc2D", Map, GaleriList);
+
+  Epetra_MultiVector LHS(*Map, 1);
+  Epetra_MultiVector RHS(*Map, 1);
+
+  Epetra_LinearProblem Problem(Matrix, &LHS, &RHS);
 
   Teuchos::ParameterList MLList;
 
@@ -177,64 +159,64 @@ int main(int argc, char *argv[]) {
   // no-default options //
   // ================== //
 
-  PrintLine();
+  if (Comm.MyPID() == 0) PrintLine();
 
   char mystring[80];
   strcpy(mystring,"no defaults");
-  TestMultiLevelPreconditioner(mystring, MLList, *Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
                                TotalErrorResidual, TotalErrorExactSol );
 
   // ====================== //
   // default options for DD //
   // ====================== //
 
-  PrintLine();
+  if (Comm.MyPID() == 0) PrintLine();
 
   ML_Epetra::SetDefaults("DD",MLList);
   strcpy(mystring,"DD");
-  TestMultiLevelPreconditioner(mystring, MLList, *Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
                                TotalErrorResidual, TotalErrorExactSol );
 
   // ========================================== //
   // default options for DD -- 16 aggr per proc //
   // ========================================== //
 
-  PrintLine();
+  if (Comm.MyPID() == 0) PrintLine();
 
   ML_Epetra::SetDefaults("DD",MLList);
   MLList.set("aggregation: local aggregates", 16);
-  TestMultiLevelPreconditioner(mystring, MLList, *Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
                                TotalErrorResidual, TotalErrorExactSol );
 
   // ========================= //
   // default options for DD-ML //
   // ========================= //
 
-  PrintLine();
+  if (Comm.MyPID() == 0) PrintLine();
 
   ML_Epetra::SetDefaults("DD-ML",MLList);
   strcpy(mystring,"DD-ML");
-  TestMultiLevelPreconditioner(mystring, MLList, *Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
                                TotalErrorResidual, TotalErrorExactSol );
 
   // ========================= //
   // default options for DD-ML //
   // ========================= //
 
-  PrintLine();
+  if (Comm.MyPID() == 0) PrintLine();
 
   ML_Epetra::SetDefaults("DD-ML",MLList);
   MLList.set("aggregation: nodes per aggregate (level 0)", 64);
   MLList.set("aggregation: nodes per aggregate (level 1)", 27);
-  TestMultiLevelPreconditioner(mystring, MLList, *Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
                                TotalErrorResidual, TotalErrorExactSol );
 
   // ===================== //
   // print out total error //
   // ===================== //
 
-  if (Comm.MyPID() == 0) {
-
+  if (Comm.MyPID() == 0) 
+  {
     cout << endl;
     cout << "......Total error for residual        = " << TotalErrorResidual << endl;
     cout << "......Total error for exact solution  = " << TotalErrorExactSol << endl;
@@ -247,6 +229,9 @@ int main(int argc, char *argv[]) {
     return( EXIT_FAILURE );
   }
 
+  delete Matrix;
+  delete Map;
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
@@ -255,7 +240,6 @@ int main(int argc, char *argv[]) {
     cout << endl << "Test `MultiLevelPreconditioner_NonSym.exe passed!" << endl;
 
   return (EXIT_SUCCESS);
-
 }
 
 #else
@@ -275,7 +259,7 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
+  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-galeri --enable-aztecoo");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -284,4 +268,4 @@ int main(int argc, char *argv[])
   return(0);
 }
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) HAVE_ML_AZTECOO */
+#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) HAVE_ML_AZTECOO */

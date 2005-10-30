@@ -4,7 +4,7 @@
 
 #include "ml_config.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -18,41 +18,15 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
-
-
-#ifdef PACKAGE
-#undef PACKAGE
-#endif
-
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif
-
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif
-
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif
-
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif
-
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
-
-#ifdef VERSION
-#undef VERSION
-#endif
-
 #include "Teuchos_ParameterList.hpp"
 #include "ml_MultiLevelPreconditioner.h"
 #include "AztecOO.h"
 
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
+
+using namespace Teuchos;
+using namespace Galeri;
 
 void PrintLine() 
 {
@@ -144,7 +118,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   
 }
 
-using namespace Trilinos_Util;
+using namespace Galeri;
 
 int main(int argc, char *argv[]) {
 
@@ -163,10 +137,22 @@ int main(int argc, char *argv[]) {
   // create linear problem //
   // ===================== //
 
-  CrsMatrixGallery Gallery("laplace_3d", Comm);
-  Gallery.Set("problem_size", 27000);
+  ParameterList GaleriList;
+  GaleriList.set("nx", 10);
+  GaleriList.set("ny", 10);
+  GaleriList.set("nz", 10 * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", 1);
+  GaleriList.set("mz", Comm.NumProc());
 
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
+  Epetra_Map* Map = CreateMap("Cartesian3D", Comm, GaleriList);
+  Epetra_CrsMatrix* Matrix = CreateCrsMatrix("Laplace3D", Map, GaleriList);
+
+  Epetra_Vector LHS(*Map);
+  Epetra_Vector RHS(*Map);
+  
+  Epetra_LinearProblem Problem(Matrix, &LHS, &RHS);
+
   Teuchos::ParameterList MLList;
   double TotalErrorResidual = 0.0, TotalErrorExactSol = 0.0;
 
@@ -174,37 +160,37 @@ int main(int argc, char *argv[]) {
   // default options for SA //
   // ====================== //
 
-  PrintLine();
+  if (Comm.MyPID() == 0) PrintLine();
 
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: type", "Gauss-Seidel");
   char mystring[80];
   strcpy(mystring,"SA");
-  TestMultiLevelPreconditioner(mystring, MLList, *Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
                                TotalErrorResidual, TotalErrorExactSol);
 
   // ============================== //
   // default options for SA, Jacobi //
   // ============================== //
 
-  PrintLine();
+  if (Comm.MyPID() == 0) PrintLine();
 
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: type", "Jacobi");
 
-  TestMultiLevelPreconditioner(mystring, MLList, *Problem, TotalErrorResidual,
+  TestMultiLevelPreconditioner(mystring, MLList, Problem, TotalErrorResidual,
                                TotalErrorExactSol);
 
   // =========================== //
   // default options for SA, MLS //
   // =========================== //
 
-  PrintLine();
+  if (Comm.MyPID() == 0) PrintLine();
 
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: type", "MLS");
 
-  TestMultiLevelPreconditioner(mystring, MLList, *Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
                                TotalErrorResidual, TotalErrorExactSol);
 
   // ===================== //
@@ -218,6 +204,9 @@ int main(int argc, char *argv[]) {
     cout << endl;
   }
 
+  delete Matrix;
+  delete Map;
+  
   if (TotalErrorResidual > 1e-8) {
     cerr << "Error: `MultiLevelPrecoditioner_Sym.exe' failed!" << endl;
     exit(EXIT_FAILURE);
@@ -231,7 +220,6 @@ int main(int argc, char *argv[]) {
     cerr << "`MultiLevelPrecoditioner_Sym.exe' passed!" << endl;
 
   return (EXIT_SUCCESS);
-
 }
 
 #else
@@ -250,13 +238,13 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
+  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-galeri --enable-aztecoo");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  return 0;
+  return(EXIT_SUCCESS);
 }
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) */

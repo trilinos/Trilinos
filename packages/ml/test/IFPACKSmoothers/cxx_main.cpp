@@ -1,6 +1,6 @@
 #include "ml_config.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_IFPACK)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALEREI) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_IFPACK)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -15,40 +15,12 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 
-
-#ifdef PACKAGE
-#undef PACKAGE
-#endif
-
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif
-
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif
-
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif
-
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif
-
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
-
-#ifdef VERSION
-#undef VERSION
-#endif
-
 #include "Teuchos_ParameterList.hpp"
 #include "ml_MultiLevelPreconditioner.h"
 #include "AztecOO.h"
 
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 
 void PrintLine() 
 {
@@ -61,7 +33,7 @@ void PrintLine()
   return;
 }
 
-using namespace Trilinos_Util;
+using namespace Galeri;
 using namespace Teuchos;
 using namespace ML_Epetra;
 
@@ -78,15 +50,21 @@ int main(int argc, char *argv[]) {
   // create linear problem //
   // ===================== //
   
-  CrsMatrixGallery Gallery("laplace_3d", Comm);
-  Gallery.Set("problem_size", 27000);
-  
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
-  Epetra_MultiVector& LHS = *(Gallery.GetStartingSolution());
-  Epetra_MultiVector& RHS = *(Gallery.GetRHS());
+  ParameterList GaleriList;
+  GaleriList.set("nx", 5);
+  GaleriList.set("ny", 5);
+  GaleriList.set("nz", 5 * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", 1);
+  GaleriList.set("mz", Comm.NumProc());
 
-  AztecOO solver(*Problem);
+  Epetra_Map* Map = CreateMap("Cartesian3D", Comm, GaleriList);
+  Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace3D", Map, GaleriList);
+  Epetra_MultiVector LHS(*Map, 2);
+  Epetra_MultiVector RHS(*Map, 2);
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
+
+  AztecOO solver(Problem);
 
   bool TestPassed = true;
 
@@ -203,6 +181,9 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
+  delete A;
+  delete Map;
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
@@ -229,13 +210,13 @@ int main(int argc, char *argv[])
 #endif
     
   puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo --enable-triutils --enable-ifpack");
+  puts("--enable-aztecoo --enable-galeri --enable-ifpack");
 
-#ifdef HAVEML_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  return 0;
+  return(EXIT_SUCCESS);
 }
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+#endif

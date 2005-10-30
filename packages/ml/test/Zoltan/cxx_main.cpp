@@ -26,12 +26,11 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-
 #include "ml_config.h"
 
+// To be modified to support Galeri and no longer Triutils
+// I am not sure when this test was executed and passed... MS
+#ifdef FIXME
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_ZOLTAN)
 
 #ifdef HAVE_MPI
@@ -205,3 +204,4 @@ int main(int argc, char *argv[])
 
 #endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_ZOLTAN) */
 
+#endif

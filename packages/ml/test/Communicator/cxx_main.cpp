@@ -1,31 +1,21 @@
 /* 
  * Goal of this test:
- * - compare the two converters from ML_Operator to Epetra_RowMatrix.
- *   ML offers two ways to convert from ML_Operator to an Epetra_RowMatrix
- *   derived class. The first way is ML_Operator2EpetraCrsMatrix, which
- *   creates a new Epetra_CrsMatrix, and fills it with the elements of the
- *   input ML_Operator. This is an expensive conversion.
- *   The other conversion is given by class ML_Epetra::RowMatrix, that defines
- *   suitable wraps from the ML data format, to the Epetra data format.
+ * - verify that ML is not using MPI functions outside the given communicator.
  *
  * This test will:
- * - create an Aztec matrix;
- * - convert this matrix into ML_Operator;
- * - create an Epetra_CrsMatrix;
- * - create an ML_Epetra::RowMatrix;
- * - multiply those two matrices by a random vector, and compare
- *   the results.
+ * - Create a matrix on processor 0 only
+ * - run ML on processor 0 only
  *
- * \date 29-Aug-04
+ * \date 27-Oct-05
  *
- * \author Marzio Sala, SNL 9214
+ * \author Marzio Sala, ETHZ/COLAB
  *
  */
 
 #include <iostream>
 #include <math.h>
 #include "ml_include.h"
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_MPI) && defined(HAVE_ML_IFPACK)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_MPI) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_GALERI)
 
 // epetra objects
 #ifdef HAVE_MPI
@@ -39,14 +29,15 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 // required to build the example matrix
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 // required by the linear system solver
 #include "AztecOO.h"
 // required by ML
 #include "ml_MultiLevelPreconditioner.h"
 
 using namespace Teuchos;
-using namespace Trilinos_Util;
+using namespace Galeri;
 
 // =========== //
 // main driver //
@@ -60,10 +51,14 @@ int main(int argc, char *argv[])
 
   if (Comm.MyPID() == 0) {
 
-    CrsMatrixGallery Gallery("laplace_2d", SerialComm);
-    Gallery.Set("problem_size", 100);
-    Epetra_RowMatrix* A = Gallery.GetMatrix();
-    //Epetra_CrsMatrix* CrsA = dynamic_cast<Epetra_CrsMatrix*>(A);
+    ParameterList GaleriList;
+    GaleriList.set("nx", 10);
+    GaleriList.set("ny", 10);
+    GaleriList.set("mx", 1);
+    GaleriList.set("my", 1);
+    
+    Epetra_Map* Map = CreateMap("Cartesian2D", SerialComm, GaleriList);
+    Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
 
     Epetra_Vector LHS(A->OperatorDomainMap());
     Epetra_Vector RHS(A->OperatorRangeMap());
@@ -91,6 +86,8 @@ int main(int argc, char *argv[])
     // destroy the preconditioner
     delete MLPrec;
 
+    delete A;
+    delete Map;
   }
 
   MPI_Finalize();
@@ -100,14 +97,27 @@ int main(int argc, char *argv[])
 
 #else
 
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
+
 int main(int argc, char *argv[])
 {
+
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+#endif
+
   puts("This test requires:");
   puts("--enable-epetra");
   puts("--enable-aztecoo");
   puts("--enable-mpi");
   puts("--enable-ifpack");
   puts("--enable-teuchos");
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
 
   // not to break tests
   return(EXIT_SUCCESS);

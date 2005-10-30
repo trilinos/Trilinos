@@ -28,7 +28,7 @@
 
 #include "ml_include.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -39,13 +39,17 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_LinearProblem.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Epetra_VbrMatrix.h"
+#include "Galeri_CrsMatrices.h"
 #include "AztecOO.h"
 #include "ml_MultiLevelPreconditioner.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
+#include "Galeri_VbrMatrices.h"
+#include "Galeri_Utils.h"
 
 using namespace Teuchos;
-using namespace Trilinos_Util;
+using namespace Galeri;
 
 // ============== //
 // example driver //
@@ -61,40 +65,49 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  VbrMatrixGallery Gallery("stretched_2d", Comm);
-  //VbrMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", Comm.NumProc() * 900);
-  Gallery.Set("map_type", "box");
+  ParameterList GaleriList;
+  GaleriList.set("nx", 10);
+  GaleriList.set("ny", 10 * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", 1 * Comm.NumProc());
+  GaleriList.set("lx", 1.0);
+  GaleriList.set("ly", 1.0 * Comm.NumProc());
+
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* CrsA = CreateCrsMatrix("Stretched2D", Map, GaleriList);
+
   int NumPDEs = 5;
-  Epetra_RowMatrix* A = Gallery.GetVbrMatrix(NumPDEs);
-  Epetra_LinearProblem* Problem = Gallery.GetVbrLinearProblem();
+  Epetra_VbrMatrix* VbrA = CreateVbrMatrix(CrsA, NumPDEs);
 
-  AztecOO solver(*Problem);
+  Epetra_MultiVector LHS(VbrA->Map(), 2);
+  Epetra_MultiVector RHS(VbrA->Map(), 2);
+  Epetra_LinearProblem Problem(VbrA, &LHS, &RHS);
 
-  ParameterList MLList;
+  Epetra_MultiVector* Coord = CreateCartesianCoordinates("2D", &(CrsA->Map()), 
+                                                         GaleriList);
+                                                         
+  double* x_coord = (*Coord)[0];
+  double* y_coord = (*Coord)[1];
 
-  ML_Epetra::SetDefaults("DD-ML",MLList);
-  
-  double* x_coord = 0;
-  double* y_coord = 0;
-  double* z_coord = 0; 
-
-  Gallery.GetCartesianCoordinates(x_coord, y_coord, z_coord);
-
-  for (int i = 0 ; i < A->NumMyRows() / NumPDEs ; ++i) 
+  for (int i = 0 ; i < CrsA->NumMyRows() ; ++i) 
   {
     x_coord[i] *= 100;
   }
 
+  AztecOO solver(Problem);
+
+  ParameterList MLList;
+
+  ML_Epetra::SetDefaults("DD-ML",MLList);
+
   int MaxLevels = 10;
 
   // this is the new stuff
-  MLList.set("aggregation: threshold", 0.05);
   MLList.set("aggregation: aux: enable", true);
   MLList.set("aggregation: aux: threshold", 0.05);
   MLList.set("x-coordinates", x_coord);
   MLList.set("y-coordinates", y_coord);
-  MLList.set("z-coordinates", z_coord);
+  MLList.set("z-coordinates", (double*)0);
   MLList.set("aggregation: aux: max levels", MaxLevels);
 
   MLList.set("coarse: max size", 1024);
@@ -106,13 +119,13 @@ int main(int argc, char *argv[])
   MLList.set("aggregation: type", "Uncoupled");
   MLList.set("smoother: type","symmetric Gauss-Seidel");
   MLList.set("smoother: pre or post", "both");
-  //MLList.set("low memory usage", true);
+  MLList.set("low memory usage", true);
 
 #ifdef HAVE_ML_AMESOS
   MLList.set("coarse: type","Amesos-KLU");
 #else
-  MLList.set("smoother: type","Jacobi");
-  MLList.set("coarse: type","Jacobi");
+  MLList.set("smoother: type","Gauss-Seidel");
+  MLList.set("coarse: type","Gauss-Seidel");
 #endif
 
 #ifdef IFPACK_SMOOTHER
@@ -135,12 +148,12 @@ int main(int argc, char *argv[])
   MLList.set("viz: enable", true);
   MLList.set("viz: x-coordinates", x_coord);
   MLList.set("viz: y-coordinates", y_coord);
-  MLList.set("viz: z-coordinates", z_coord);
+  MLList.set("viz: z-coordinates", (double*)0);
   MLList.set("viz: print starting solution", true);
 #endif
 
   ML_Epetra::MultiLevelPreconditioner * MLPrec = 
-    new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
+    new ML_Epetra::MultiLevelPreconditioner(*VbrA, MLList);
 
   // be sure that this is still ok
   MLPrec->ReComputePreconditioner();
@@ -171,6 +184,11 @@ int main(int argc, char *argv[])
   if (norm > 1e-5)
     exit(EXIT_FAILURE);
 
+  delete Coord;
+  delete VbrA;
+  delete CrsA;
+  delete Map;
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
@@ -196,7 +214,7 @@ int main(int argc, char *argv[])
   puts("--enable-epetra");
   puts("--enable-teuchos");
   puts("--enable-aztecoo");
-  puts("--enable-triutils");
+  puts("--enable-galeri");
 
 #ifdef HAVE_MPI
   MPI_Finalize();

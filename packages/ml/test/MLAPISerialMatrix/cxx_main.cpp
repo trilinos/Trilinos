@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
 #endif
-  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
+  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-ifpack --enable-aztecoo");
   
 #ifdef HAVE_MPI
   MPI_Finalize();
