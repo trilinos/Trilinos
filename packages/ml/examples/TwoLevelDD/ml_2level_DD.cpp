@@ -40,9 +40,10 @@
 // The C++ interface of ML (more precisely,
 // ML_Epetra::MultiLevelPreconditioner), required Trilinos to be
 // configured with --enable-epetra --enable-teuchos. This example
-// requires --enable-triutils (for the definition of the linear systems)
+// requires --enable-galeri (for the definition of the linear systems)
+// and --enable-aztecoo (for the solution of the linear system).
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -56,11 +57,12 @@
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "AztecOO.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 #include "ml_MultiLevelPreconditioner.h"
 
 using namespace Teuchos;
-using namespace Trilinos_Util;
+using namespace Galeri;
 
 // ============== //
 // example driver //
@@ -78,22 +80,34 @@ int main(int argc, char *argv[])
 
   Epetra_Time Time(Comm);
 
-  // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
+  // Create the linear problem using the Galeri package. 
   // Here, we are using a symmetric matrix; non-symmetric matrices
-  // can be defined as well. Please refer to the Trilinos tutorial
+  // can also be defined. Please refer to the Galeri documentation 
   // for more details.
+  // Here the grid has size nx x ny x nz, and it is subdivided into
+  // mx x my x mz subdomains (== processors).
 
-  CrsMatrixGallery Gallery("laplace_3d", Comm);
-  int nx = 20;
-  Gallery.Set("problem_size",nx * nx * nx);
+  ParameterList GaleriList;
+  GaleriList.set("nx", 8);
+  GaleriList.set("ny", 8);
+  GaleriList.set("nz", 8 * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", 1);
+  GaleriList.set("mz", Comm.NumProc());
+
+  Epetra_Map* Map = CreateMap("Cartesian3D", Comm, GaleriList);
+  Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace3D", Map, GaleriList);
+
+  // Construct the linear system with trivial solution
   
-  // retrive pointers for linear system matrix and linear problem
-  // The linear system matrix, solution and RHS are built by the Gallery
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
+  Epetra_Vector LHS(*Map); LHS.Random();
+  Epetra_Vector RHS(*Map); RHS.PutScalar(0.0);
+
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
 
   // Construct a solver object for this problem
-  AztecOO solver(*Problem);
+  
+  AztecOO solver(Problem);
 
   // =========================== begin of ML part ===========================
   
@@ -182,15 +196,17 @@ int main(int argc, char *argv[])
   
   // compute the real residual
 
-  double residual, diff;
-  Gallery.ComputeResidual(&residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(&diff);
+  double residual;
+  LHS.Norm2(&residual);
   
-  if( Comm.MyPID()==0 ) {
-    cout << "||b-Ax||_2 = " << residual << endl;
-    cout << "||x_exact - x||_2 = " << diff << endl;
+  if (Comm.MyPID() == 0)
+  {
+    cout << "||x_exact - x||_2 = " << residual << endl;
     cout << "Total Time = " << Time.ElapsedTime() << endl;
   }
+
+  delete A;
+  delete Map;
 
   if (residual > 1e-5)
     exit(EXIT_FAILURE);
@@ -199,8 +215,7 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
 
-  exit(EXIT_SUCCESS);
-  
+  return(EXIT_SUCCESS);
 }
 
 #else
@@ -217,8 +232,11 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo --enable-triutils");
+  puts("Please configure ML with:");
+  puts("--enable-epetra");
+  puts("--enable-teuchos");
+  puts("--enable-aztecoo");
+  puts("--enable-galeri");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -226,4 +244,4 @@ int main(int argc, char *argv[])
   
   exit(EXIT_SUCCESS);
 }
-#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */
+#endif 

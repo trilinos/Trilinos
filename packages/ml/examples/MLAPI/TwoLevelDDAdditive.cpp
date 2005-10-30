@@ -29,9 +29,8 @@
 
 #include "ml_config.h"
 #include "ml_common.h"
-#if defined(HAVE_ML_MLAPI)
+#if defined(HAVE_ML_MLAPI) && defined(HAVE_ML_GALERI)
 
-#include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Teuchos_ParameterList.hpp"
 #include "ml_include.h"
 #include "MLAPI_Space.h"
@@ -45,7 +44,6 @@
 #include "MLAPI_Krylov.h"
 
 using namespace Teuchos;
-using namespace Trilinos_Util;
 using namespace MLAPI;
 
 // ======================================= //
@@ -186,7 +184,7 @@ int main(int argc, char *argv[])
     Space FineSpace(NumGlobalElements);
 
     // define the linear system matrix, solution and RHS
-    Operator FineMatrix = Gallery("laplace_2d", FineSpace);
+    Operator FineMatrix = Gallery("Laplace2D", FineSpace);
 
     MultiVector LHS(FineSpace);
     MultiVector RHS(FineSpace);
@@ -248,10 +246,10 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   // finalize the MLAPI workspace
   Finalize();
-  MPI_Finalize() ;
+  MPI_Finalize();
 #endif
 
-  return 0 ;
+  return(EXIT_SUCCESS);
   
 }
 
@@ -265,11 +263,12 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("The ML API requires the following configuration options:");
+  puts("This MLAPI example requires the following configuration options:");
   puts("\t--enable-epetra");
   puts("\t--enable-teuchos");
   puts("\t--enable-ifpack");
   puts("\t--enable-amesos");
+  puts("\t--enable-galeri");
   puts("Please check your configure line.");
 
 #ifdef HAVE_MPI

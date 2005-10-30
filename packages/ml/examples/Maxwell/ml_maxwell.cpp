@@ -48,9 +48,9 @@
 // The C++ interface of ML (more precisely,
 // ML_Epetra::MultiLevelPreconditioner), required Trilinos to be
 // configured with --enable-epetra --enable-teuchos. This example
-// required --enable-triutils (for the definition of the linear systems)
+// requires --enable-aztecoo (for the solution of the linear systems)
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -844,8 +844,10 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo --enable-triutils");
+  puts("Please configure ML with:");
+  puts("--enable-epetra");
+  puts("--enable-teuchos");
+  puts("--enable-aztecoo");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -854,5 +856,5 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */
+#endif
 

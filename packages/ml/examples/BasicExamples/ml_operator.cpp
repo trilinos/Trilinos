@@ -32,22 +32,21 @@
 // from an Epetra_RowMatrix), then use
 // the resulting ML preconditioner within AztecOO.
 //
-// This file creates a matrix from the Triutils Gallery, 
+// This file creates a matrix from the Galeri package,
 // then solves the corresponding linear system using ML as a preconditioner. 
 //
 // From the command line, you may try something like that:
 // $ mpirun -np 4 ./ml_operator.exe
 //
-// For more options for Trilinos_Util::CrsMatrixGallery, consult the
-// Trilinos 4.0 tutorial
+// For more options for Galeri, please consult the Galeri documentation.
 //
-// \author Marzio Sala, SNL 9214
+// \author Marzio Sala, ETHZ/COLAB
 //
-// \date Last modified on 14-Jun-05
+// \date Last modified on 28-Oct-05
 
 #include "ml_include.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -60,12 +59,13 @@
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "AztecOO.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 #include "ml_epetra_utils.h"
 #include "ml_MultiLevelOperator.h"
 
 using namespace ML_Epetra;
-using namespace Trilinos_Util;
+using namespace Galeri;
 
 // =========== //
 // main driver //
@@ -82,24 +82,29 @@ int main(int argc, char *argv[])
 #endif
   
   Epetra_Time Time(Comm);
-  
-  // Creates a matrix corresponding to a 2D Laplacian on a
-  // Cartesian grid, with nx * nx rows.
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  int nx = 10; 
-  Gallery.Set("problem_size", nx * nx);
 
-  // get pointer to the linear system matrix
-  Epetra_CrsMatrix* A = Gallery.GetMatrix();
+  // Creates the linear problem using the Galeri package. 
+  // The grid has nx x ny nodes, divided into
+  // mx x my subdomains, each assigned to a different processor.
+  int nx = 8;
+  int ny = 8 * Comm.NumProc();
 
-  // get a pointer to the map
-  const Epetra_Map* Map = Gallery.GetMap();
+  Teuchos::ParameterList GaleriList;
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", ny);
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
 
-  // get a pointer to the linear system problem
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
-  
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
+
+  Epetra_Vector LHS(*Map); LHS.Random();
+  Epetra_Vector RHS(*Map); RHS.PutScalar(0.0);
+
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
+
   // Construct a solver object for this problem
-  AztecOO solver(*Problem);
+  AztecOO solver(Problem);
   
   // ================= MultiLevelOperator SECTION ========================
 
@@ -166,34 +171,32 @@ int main(int argc, char *argv[])
   solver.SetAztecOption(AZ_output, 16);
   solver.Iterate(500, 1e-8);
 
-  // The following is a check to verify that the real residual is small,
-  // using methods of the Gallery.
+  // The following is a check to verify that the real residual is small
 
-  double residual, diff, res2;
-  Gallery.ComputeResidual(&residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(&diff);
+  double residual;
+  LHS.Norm2(&residual);
   
-  (Gallery.GetExactSolution())->Norm2(&res2);
   if (Comm.MyPID() == 0) 
   {
     cout << "||b-Ax||_2 = " << residual << endl;
-    cout << "||x_exact - x||_2 = " << diff/res2 << endl;
     cout << "Total Time = " << Time.ElapsedTime() << endl;
   }
 
   ML_Aggregate_Destroy(&agg_object);
   ML_Destroy(&ml_handle);
 
+  delete A;
+  delete Map;
+
   // for testing purposes only
-  if (diff > 1e-5)
+  if (residual > 1e-5)
     exit(EXIT_FAILURE);
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  exit(EXIT_SUCCESS);
-  
+  return(EXIT_SUCCESS);
 }
 
 #else
@@ -213,13 +216,12 @@ int main(int argc, char *argv[])
   puts("Please configure ML with:");
   puts("--enable-epetra");
   puts("--enable-aztecoo");
-  puts("--enable-triutils");
+  puts("--enable-galeri");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
   
-  exit(EXIT_SUCCESS);
+  return(EXIT_SUCCESS);
 }
-
-#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */
+#endif

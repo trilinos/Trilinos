@@ -30,7 +30,7 @@
 #include "ml_config.h"
 #include "ml_common.h"
 
-#if defined(HAVE_ML_MLAPI)
+#if defined(HAVE_ML_MLAPI) && defined(HAVE_ML_GALERI)
 #include "MLAPI_Space.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_MultiVector.h"
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     Space FineSpace(NumGlobalElements);
 
     // define the linear system matrix, solution and RHS
-    Operator FineMatrix = Gallery("laplace_1d", FineSpace);
+    Operator FineMatrix = Gallery("Tridiag", FineSpace);
     MultiVector LHS(FineSpace);
     MultiVector RHS(FineSpace);
 
@@ -125,11 +125,12 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("The ML API requires the following configuration options:");
+  puts("This MLAPI example requires the following configuration options:");
   puts("\t--enable-epetra");
   puts("\t--enable-teuchos");
   puts("\t--enable-ifpack");
   puts("\t--enable-amesos");
+  puts("\t--enable-galeri");
   puts("Please check your configure line.");
 
 #ifdef HAVE_MPI

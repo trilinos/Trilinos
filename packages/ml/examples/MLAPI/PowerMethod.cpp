@@ -28,7 +28,7 @@
 
 #include "ml_config.h"
 #include "ml_common.h"
-#if defined(HAVE_ML_MLAPI)
+#if defined(HAVE_ML_MLAPI) && defined(HAVE_ML_GALERI)
 
 #include "MLAPI_Space.h"
 #include "MLAPI_Operator.h"
@@ -65,10 +65,10 @@ int main(int argc, char *argv[])
 
     // Define vectors and operator, based on `MySpace'. The linear system
     // matrix is created using the MLAPI Gallery, which is only a 
-    // convenient wrapper of the Triutils gallery.
+    // convenient wrapper of the Galeri package.
     
     MultiVector x(MySpace), y(MySpace);
-    Operator A = Gallery("laplace_1d", MySpace);
+    Operator A = Gallery("Tridiag", MySpace);
 
     // We can now start coding the power method. We want a random vector of
     // unitary 2-norm. First, we set random elements in the vector. Then,
@@ -131,11 +131,12 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("The ML API requires the following configuration options:");
+  puts("This MLAPI example requires the following configuration options:");
   puts("\t--enable-epetra");
   puts("\t--enable-teuchos");
   puts("\t--enable-ifpack");
   puts("\t--enable-amesos");
+  puts("\t--enable-galeri");
   puts("Please check your configure line.");
 
 #ifdef HAVE_MPI

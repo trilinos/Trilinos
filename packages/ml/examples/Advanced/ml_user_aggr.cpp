@@ -33,11 +33,12 @@
 #include "ml_include.h"
 
 // The C++ interface of ML (more precisely,
-// ML_Epetra::MultiLevelPreconditioner), required Trilinos to be
+// ML_Epetra::MultiLevelPreconditioner), requires Trilinos to be
 // configured with --enable-epetra --enable-teuchos. This example
-// required --enable-triutils (for the definition of the linear systems)
+// required --enable-galeri (for the definition of the linear systems)
+// and --enable-aztecoo (for the solution of the linear system).
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
 
 // epetra objects
 #ifdef HAVE_MPI
@@ -51,7 +52,9 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 // required to build the example matrix
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
+#include "Galeri_Utils.h"
 // required by the linear system solver
 #include "AztecOO.h"
 // required by ML
@@ -59,7 +62,7 @@
 #include "ml_agg_user.h"
 
 using namespace Teuchos;
-using namespace Trilinos_Util;
+using namespace Galeri;
 
 // ============================================= //
 // defines the label for this aggregation scheme //
@@ -200,24 +203,38 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", 100);
-  
-  // The following methods of CrsMatrixGallery are used to get pointers
-  // to internally stored Epetra_RowMatrix and Epetra_LinearProblem.
+  // `Laplace2D' is a symmetric matrix; an example of non-symmetric
+  // matrices is `Recirc2D' (advection-diffusion in a box, with
+  // recirculating flow). The grid has nx x ny nodes, divided into
+  // mx x my subdomains, each assigned to a different processor.
+  int nx = 8;
+  int ny = 8 * Comm.NumProc();
 
-  Epetra_RowMatrix * A = Gallery.GetMatrix();
-  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
+  ParameterList GaleriList;
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", ny);
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
 
-  double * x_coord = 0;
-  double * y_coord = 0;
-  double * z_coord = 0; // the problem is 2D, here z_coord will be NULL
-  
-  Gallery.GetCartesianCoordinates(x_coord, y_coord, z_coord);
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
+
+  // use the following Galeri function to get the
+  // coordinates for a Cartesian grid. 
+
+  Epetra_MultiVector* Coord = CreateCartesianCoordinates("2D", &(A->Map()),
+                                                         GaleriList);
+  double* x_coord = (*Coord)[0];
+  double* y_coord = (*Coord)[1];
+
+  // Create the linear problem, with a zero solution
+  Epetra_Vector LHS(*Map); LHS.Random();
+  Epetra_Vector RHS(*Map); RHS.PutScalar(0.0);
+
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
 
   // As we wish to use AztecOO, we need to construct a solver object for this problem
-  AztecOO solver(*Problem);
+  AztecOO solver(Problem);
 
   // =========================== begin of ML part ===========================
   
@@ -265,16 +282,19 @@ int main(int argc, char *argv[])
   
   // compute the real residual
 
-  double residual, diff;
-  Gallery.ComputeResidual(&residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(&diff);
-  
-  if( Comm.MyPID()==0 ) {
+  double residual;
+  LHS.Norm2(&residual);
+
+  if (Comm.MyPID() == 0) 
+  {
     cout << "||b-Ax||_2 = " << residual << endl;
-    cout << "||x_exact - x||_2 = " << diff << endl;
   }
 
-  if (residual > 1e-5)
+  delete Coord;
+  delete A;
+  delete Map;
+
+  if (residual > 1e-3)
     exit(EXIT_FAILURE);
 
 #ifdef EPETRA_MPI
@@ -300,7 +320,7 @@ int main(int argc, char *argv[])
 #endif
 
   puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo --enable-triutils");
+  puts("--enable-aztecoo --enable-galeri");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -309,4 +329,4 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */
+#endif 

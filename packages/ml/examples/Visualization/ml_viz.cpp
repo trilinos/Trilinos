@@ -43,9 +43,9 @@
 #include "ml_include.h"
 
 // the following code cannot be compiled without these Trilinos
-// packages. Note that triutils is required in the examples only (to
+// packages. Note that Galeri is required in the examples only (to
 // generate the linear system), not by the ML library
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -58,12 +58,15 @@
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
+#include "Galeri_VbrMatrices.h"
+#include "Galeri_Utils.h"
 
 #include "ml_MultiLevelPreconditioner.h"
 
 using namespace Teuchos;
-using namespace Trilinos_Util;
+using namespace Galeri;
 
 // =========== //
 // main driver //
@@ -79,40 +82,41 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
-  // Several matrix examples are supported; please refer to the
-  // Trilinos tutorial for more details.
-  // The matrix here is a VBR matrix, but the code works with any matrix
-  // as well. Just note that the coordinates refer to the block rows: if
-  // the matrix size if 10000*NumPDEEqns, the coordinate vectors are
-  // allocated of size 10000. 
+  // Create the linear problem using the Galeri package.
   
   int NumPDEEqns = 5;
 
-  VbrMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", 900);
+  Teuchos::ParameterList GaleriList;
+  int nx = 32;
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", nx * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
 
-  // retrive pointers for linear system matrix and linear problem
-  Epetra_RowMatrix* A = Gallery.GetVbrMatrix(NumPDEEqns);
-  Epetra_LinearProblem* Problem = Gallery.GetVbrLinearProblem();
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* CrsA = CreateCrsMatrix("Laplace2D", Map, GaleriList);
+  Epetra_VbrMatrix* A = CreateVbrMatrix(CrsA, NumPDEEqns);
 
-  // Construct a solver object for this problem
-  AztecOO solver(*Problem);
+  Epetra_Vector LHS(A->Map()); LHS.Random();
+  Epetra_Vector RHS(A->Map()); RHS.PutScalar(0.0);
+
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
+
+  AztecOO solver(Problem);
 
   // =========================== definition of coordinates =================
   
-  double* x_coord = 0;
-  double* y_coord = 0;
-  double* z_coord = 0; // the problem is 2D, here z_coord will be NULL
-  
-  // use the following triutils matrix gallery function to get the
+  // use the following Galeri function to get the
   // coordinates for a Cartesian grid. Note however that the
   // visualization capabilites of Trilinos accept non-structured grid as
   // well. Visualization and statistics occurs just after the ML
   // preconditioner has been build.
 
-  Gallery.GetCartesianCoordinates(x_coord, y_coord, z_coord);
-
+  Epetra_MultiVector* Coord = CreateCartesianCoordinates("2D", &(A->Map()),
+                                                         GaleriList);
+  double* x_coord = (*Coord)[0];
+  double* y_coord = (*Coord)[1];
+  
   // =========================== begin of ML part ===========================
   
   // create a parameter list for ML options
@@ -169,7 +173,7 @@ int main(int argc, char *argv[])
   MLList.set("viz: enable", true);
   MLList.set("x-coordinates", x_coord);
   MLList.set("y-coordinates", y_coord);
-  MLList.set("z-coordinates", z_coord);
+  MLList.set("z-coordinates", (double *)0);
   MLList.set("viz: print starting solution", true);
 
   // =============================== //
@@ -209,20 +213,18 @@ int main(int argc, char *argv[])
   // destroy the preconditioner
   delete MLPrec;
   
-  // delete memory for coordinates
-  if( x_coord ) delete [] x_coord;
-  if( y_coord ) delete [] y_coord;
-  if( z_coord ) delete [] z_coord;
-
   delete [] options;
   delete [] params;
   
+  delete A;
+  delete Coord;
+  delete Map;
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  exit(EXIT_SUCCESS);
-  
+  return(EXIT_SUCCESS);
 }
 
 #else
@@ -243,14 +245,13 @@ int main(int argc, char *argv[])
   puts("--enable-epetra");
   puts("--enable-teuchos");
   puts("--enable-aztecoo");
-  puts("--enable-triutils");
+  puts("--enable-galeri");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
   
-  return 0;
+  return(EXIT_SUCCESS);
 }
 
-#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */
-
+#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO) */

@@ -33,26 +33,19 @@
 // linear system using AztecOO and ML as a preconditioner. It finally
 // checks the accuracy of the computed solution.
 //
-// The problem should converge as follows:
+// \author Marzio Sala, ETHZ/COLAB
 //
-// proc       iterations       condition number
-//   1             14               1.78
-//   2             15               2.39
-//   4             15               2.20
-
-// \author Marzio Sala, SNL 9214
-//
-// \data Last modified on 19-Jan-05
+// \data Last modified on 28-Oct-05
 
 #include "ml_include.h"
 
 // The C++ interface of ML (more precisely,
 // ML_Epetra::MultiLevelPreconditioner), requires Trilinos to be
 // configured with --enable-epetra --enable-teuchos. This example also
-// requires --enable-triutils (for the definition of the linear systems)
+// requires --enable-galeri (for the definition of the linear systems)
 // and --enable-aztecoo (to solve the linear system)
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
 
 // epetra objects
 #ifdef HAVE_MPI
@@ -66,14 +59,15 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 // required to build the example matrix
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 // required by the linear system solver
 #include "AztecOO.h"
 // required by ML
 #include "ml_MultiLevelPreconditioner.h"
 
 using namespace Teuchos;
-using namespace Trilinos_Util;
+using namespace Galeri;
 
 // ============== //
 // example driver //
@@ -89,37 +83,42 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // Creates the linear problem using the class 
-  // `Trilinos_Util::CrsMatrixGallery.'
-  //
+  // Creates the linear problem using the Galeri package.
   // Several matrix examples are supported; please refer to the
-  // Trilinos tutorial for more details.
+  // Galeri documentation for more details.
   // Most of the examples using the ML_Epetra::MultiLevelPreconditioner
   // class are based on Epetra_CrsMatrix. Example
-  // `ml/examples/MatrixFormats/ml_EpetraVbr.cpp' shows how to define a
-  // Epetra_VbrMatrix.
-
-  int i;
+  // `ml_EpetraVbr.cpp' shows how to define a Epetra_VbrMatrix.
+  // `Laplace2D' is a symmetric matrix; an example of non-symmetric
+  // matrices is `Recirc2D' (advection-diffusion in a box, with
+  // recirculating flow). The grid has nx x ny nodes, divided into
+  // mx x my subdomains, each assigned to a different processor.
+  int nx;
   if (argc > 1)
-    i = (int) strtol(argv[1],NULL,10);
+    nx = (int) strtol(argv[1],NULL,10);
   else
-    i = 10000;
-  
-  // `laplace_2d' is a symmetric matrix; an example of non-symmetric
-  // matrix is `recirc_2d' (advection-diffusion in a box, with
-  // recirculating flow). In both cases, the global number of nodes 
-  // must be a square number
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", i);
-  
-  // The following methods of CrsMatrixGallery are used to get pointers
-  // to internally stored Epetra_RowMatrix and Epetra_LinearProblem.
-  Epetra_RowMatrix*     A       = Gallery.GetMatrix();
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
+    nx = 8;
+  int ny = 8 * Comm.NumProc();
+
+  ParameterList GaleriList;
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", ny);
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
+
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
+    
+  // Build a linear system with trivial solution, using a random vector
+  // as starting solution.
+  Epetra_Vector LHS(*Map); LHS.Random();
+  Epetra_Vector RHS(*Map); RHS.PutScalar(0.0);
+
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
 
   // As we wish to use AztecOO, we need to construct a solver object 
   // for this problem
-  AztecOO solver(*Problem);
+  AztecOO solver(Problem);
 
   // =========================== begin of ML part ===========================
   
@@ -207,25 +206,25 @@ int main(int argc, char *argv[])
   
   // compute the real residual
 
-  double residual, diff;
-  Gallery.ComputeResidual(&residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(&diff);
+  double residual;
+  LHS.Norm2(&residual);
   
   if( Comm.MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
-    cout << "||x_exact - x||_2 = " << diff << endl;
   }
 
   // for testing purposes
   if (residual > 1e-5)
     exit(EXIT_FAILURE);
 
+  delete A;
+  delete Map;
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  exit(EXIT_SUCCESS);
- 
+  return(EXIT_SUCCESS);
 }
 
 #else
@@ -246,13 +245,13 @@ int main(int argc, char *argv[])
   puts("--enable-epetra");
   puts("--enable-teuchos");
   puts("--enable-aztecoo");
-  puts("--enable-triutils");
+  puts("--enable-galeri");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
   
-  exit(EXIT_SUCCESS);
+  return(EXIT_SUCCESS);
 }
 
-#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */
+#endif

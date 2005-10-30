@@ -62,7 +62,7 @@
 // as it creates the distributed matrix anyway (which in that
 // case is simply a copy of the serial matrix).
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -84,7 +84,6 @@
 #include <fstream>
 
 using namespace Teuchos;
-using namespace Trilinos_Util;
 
 // ============== //
 // example driver //
@@ -248,7 +247,6 @@ int main(int argc, char *argv[])
   puts("--enable-epetra");
   puts("--enable-teuchos");
   puts("--enable-aztecoo");
-  puts("--enable-triutils");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -256,4 +254,4 @@ int main(int argc, char *argv[])
   return(EXIT_SUCCESS);
 }
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) */

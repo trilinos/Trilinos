@@ -34,9 +34,9 @@
 #include "ml_include.h"
 
 // the following code cannot be compiled without these Trilinos
-// packages. Note that triutils is required in the examples only (to
+// packages. Note that Galeri is required in the examples only (to
 // generate the linear system), not by the ML library
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -49,12 +49,14 @@
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
+#include "Galeri_VbrMatrices.h"
 
 #include "ml_MultiLevelPreconditioner.h"
 
 using namespace Teuchos;
-using namespace Trilinos_Util;
+using namespace Galeri;
 
 // ============== //
 // example driver //
@@ -70,10 +72,9 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // Creates the linear problem using the class 
-  // `Trilinos_Util::CrsMatrixGallery.'
+  // Creates the linear problem using the Galeri package.
   // Various matrix examples are supported; please refer to the
-  // Trilinos tutorial for more details.
+  // Galeri documentation for more details.
   // This matrix is a simple VBR matrix, constructed by replicating
   // a point-matrix on each unknown. This example is
   // useful to test the vector capabilities of ML, or to debug 
@@ -99,21 +100,29 @@ int main(int argc, char *argv[])
   //
   // Note also that this gallery matrix have no boundary nodes.
 
-  int i;
+  int nx;
   if (argc > 1)
-    i = (int) strtol(argv[1],NULL,10);
+    nx = (int) strtol(argv[1],NULL,10);
   else
-    i = 900;
+    nx = 16;
   
-  VbrMatrixGallery Gallery("laplace_2d_9pt", Comm);
-  Gallery.Set("problem_size", i);
-  
-  // retrive pointers for linear system matrix and linear problem
-  Epetra_RowMatrix * A = Gallery.GetVbrMatrix(NumPDEEqns);
-  Epetra_LinearProblem * Problem = Gallery.GetVbrLinearProblem();
+  Teuchos::ParameterList GaleriList;
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", nx * Comm.NumProc());
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
+
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* CrsA = CreateCrsMatrix("Star2D", Map, GaleriList);
+  Epetra_VbrMatrix* A = CreateVbrMatrix(CrsA, NumPDEEqns);
+
+  Epetra_Vector LHS(A->Map()); LHS.Random();
+  Epetra_Vector RHS(A->Map()); RHS.PutScalar(0.0);
+
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
 
   // Construct a solver object for this problem
-  AztecOO solver(*Problem);
+  AztecOO solver(Problem);
 
   // =========================== begin of ML part ===========================
   
@@ -178,26 +187,28 @@ int main(int argc, char *argv[])
 
   delete MLPrec;
   
-  // compute the real residual. Please refer to the Trilinos tutorial
-  // for more details. 
+  // compute the real residual. 
 
-  double residual, diff;
-  Gallery.ComputeResidualVbr(&residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutionsVbr(&diff);
+  double residual;
+  LHS.Norm2(&residual);
   
-  if( Comm.MyPID()==0 ) {
+  if (Comm.MyPID() == 0) 
+  {
     cout << "||b-Ax||_2 = " << residual << endl;
-    cout << "||x_exact - x||_2 = " << diff << endl;
   }
 
   if (residual > 1e-3)
     exit(EXIT_FAILURE);
 
+  delete A;
+  delete CrsA;
+  delete Map;
+
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 
-  exit(EXIT_SUCCESS);
+  return(EXIT_SUCCESS);
 }
 
 #else
@@ -218,12 +229,12 @@ int main(int argc, char *argv[])
   puts("--enable-epetra");
   puts("--enable-teuchos");
   puts("--enable-aztecoo");
-  puts("--enable-triutils");
+  puts("--enable-galeri");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
   
-  return 0;
+  return(EXIT_FAILURE);
 }
-#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */
+#endif

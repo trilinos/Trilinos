@@ -33,12 +33,10 @@
 #include "MLAPI_Space.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_MultiVector.h"
-#include "MLAPI_Gallery.h"
 #include "MLAPI_Expressions.h"
 #include "MLAPI_MultiLevelAdaptiveSA.h"
 #include "MLAPI_DistributedMatrix.h"
 #include "MLAPI_Krylov.h"
-
 
 using namespace Teuchos;
 using namespace MLAPI;
@@ -144,7 +142,7 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("The ML API requires the following configuration options:");
+  puts("This MLAPI example requires the following configuration options:");
   puts("\t--enable-epetra");
   puts("\t--enable-teuchos");
   puts("\t--enable-ifpack");

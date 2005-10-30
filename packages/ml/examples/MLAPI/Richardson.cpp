@@ -30,7 +30,7 @@
 #include "ml_config.h"
 #include "ml_common.h"
 
-#if defined(HAVE_ML_MLAPI)
+#if defined(HAVE_ML_MLAPI) && defined(HAVE_ML_GALERI)
 
 #include "MLAPI_Space.h"
 #include "MLAPI_Operator.h"
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 
     // define the linear system matrix.
     
-    Operator A = Gallery("laplace_2d", S);
+    Operator A = Gallery("Laplace2D", S);
 
     // set parameters for aggregation and smoothers
     // NOTE: only a limited subset of the parameters accepted by
@@ -166,11 +166,12 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("The ML API requires the following configuration options:");
+  puts("This MLAPI example requires the following configuration options:");
   puts("\t--enable-epetra");
   puts("\t--enable-teuchos");
   puts("\t--enable-ifpack");
   puts("\t--enable-amesos");
+  puts("\t--enable-galeri");
   puts("Please check your configure line.");
 
 #ifdef HAVE_MPI

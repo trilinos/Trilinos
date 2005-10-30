@@ -37,9 +37,9 @@
 // The C++ interface of ML (more precisely,
 // ML_Epetra::MultiLevelPreconditioner), requires Trilinos to be
 // configured with --enable-epetra --enable-teuchos. This example
-// required --enable-triutils (for the definition of the linear systems)
+// required --enable-galeri (for the definition of the linear systems)
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) 
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) 
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -51,11 +51,13 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
+#include "Galeri_Utils.h"
 #include "ml_MultiLevelPreconditioner.h"
 
 using namespace Teuchos;
-using namespace Trilinos_Util;
+using namespace Galeri;
 
 // ============== //
 // example driver //
@@ -71,24 +73,28 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // Creates the linear problem using the class 
-  // `Trilinos_Util::CrsMatrixGallery.'
+  // Creates the linear problem using the Galeri package. 
   // Several matrix examples are supported; please refer to the
-  // Trilinos tutorial for more details.
+  // Galeri documentation for more details.
   // Most of the examples using the ML_Epetra::MultiLevelPreconditioner
   // class are based on Epetra_CrsMatrix. Example
   // `ml_EpetraVbr.cpp' shows how to define a Epetra_VbrMatrix.
   
-  // `laplace_2d' is a symmetric matrix; an example of non-symmetric
-  // matrices is `recirc_2d' (advection-diffusion in a box, with
-  // recirculating flow). The number of nodes must be a square number
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  int ProblemSize = 256;
-  Gallery.Set("problem_size", ProblemSize);
-  
-  // The following methods of CrsMatrixGallery are used to get pointers
-  // to internally stored Epetra_RowMatrix and Epetra_LinearProblem.
-  Epetra_RowMatrix*     A       = Gallery.GetMatrix();
+  // `Laplace2D' is a symmetric matrix; an example of non-symmetric
+  // matrices is `Recirc2D' (advection-diffusion in a box, with
+  // recirculating flow). The grid has nx x ny nodes, divided into
+  // mx x my subdomains, each assigned to a different processor.
+  int nx = 8;
+  int ny = 8 * Comm.NumProc();
+
+  ParameterList GaleriList;
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", ny);
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
+
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
 
   // create a parameter list for ML options
   ParameterList MLList;
@@ -102,42 +108,17 @@ int main(int argc, char *argv[])
   // fix the smoother
   MLList.set("smoother: type","symmetric Gauss-Seidel");
 
-  // =================================== //
-  // V I S U A L I Z A T I O N   P A R T //
-  // =================================== //
-
-  // Here we set parameters to visualize the effect of the actual smoothers
-  // and the ML cycle on a random vector.
-  //
-  // First, we get the nodal coordinates. 
-  // NOTE: This example can work with VBR matrices as well.
-  // NOTE 2: memory for x_coord, y_coord and z_coord is allocated using
-  // `new' in GetCartesianCoordinates(). (Actually, z_coord is not allocated,
-  // as the problem is 2D.)
-
-  double* x_coord = 0;
-  double* y_coord = 0;
-  double* z_coord = 0; // the problem is 2D, here z_coord will be 0
-  
-  Gallery.GetCartesianCoordinates(x_coord, y_coord, z_coord);
-
-  // set parameters for visualization
-  
-  MLList.set("viz: enable", true);
-  MLList.set("viz: x-coordinates", x_coord);
-  MLList.set("viz: y-coordinates", y_coord);
-
   // create the preconditioning object.
   // Note that users need to set "viz: enable" == true in order to
   // visualize!
 
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
 
   // for 2D Cartesian grid, you can print the stencil of your operator
   // using this simple function.
   
-  MLPrec->PrintStencil2D(16,16);
+  MLPrec->PrintStencil2D(nx, ny);
 
   // ================================================= //
   // A N A L Y S I S   O F   T H E   H I E R A R C H Y //
@@ -182,12 +163,14 @@ int main(int argc, char *argv[])
 
   delete MLPrec;
 
+  delete A;
+  delete Map;
+
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 
-  exit(EXIT_SUCCESS);
-  
+  return(EXIT_SUCCESS);
 }
 
 #else
@@ -207,7 +190,8 @@ int main(int argc, char *argv[])
   puts("Please configure ML with:");
   puts("--enable-epetra");
   puts("--enable-teuchos");
-  puts("--enable-triutils");
+  puts("--enable-galeri");
+  puts("--enable-aztecoo");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -216,4 +200,4 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-#endif // #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS)
+#endif 

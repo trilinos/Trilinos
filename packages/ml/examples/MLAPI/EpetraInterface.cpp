@@ -27,13 +27,14 @@
 // ************************************************************************
 //@HEADER
 #include "ml_common.h"
-#if defined(HAVE_ML_MLAPI) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_MLAPI) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 // required to build the example matrix
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
 // required by the linear system solver
 #include "AztecOO.h"
 
@@ -45,7 +46,7 @@
 
 using namespace Teuchos;
 using namespace MLAPI;
-using namespace Trilinos_Util;
+using namespace Galeri;
 
 // ============== //
 // example driver //
@@ -53,7 +54,7 @@ using namespace Trilinos_Util;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -62,13 +63,24 @@ int main(int argc, char *argv[])
 #endif
 
   // get the epetra matrix from the Gallery
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", 10000);
+  int nx = 8;
+  int ny = 8 * Comm.NumProc();
 
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
+  ParameterList GaleriList;
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", ny);
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
 
-  AztecOO solver(*Problem);
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
+
+  Epetra_Vector LHS(*Map); LHS.Random();
+  Epetra_Vector RHS(*Map); RHS.PutScalar(0.0);
+
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
+
+  AztecOO solver(Problem);
 
   Init();
 
@@ -113,14 +125,16 @@ int main(int argc, char *argv[])
 
   // compute the real residual
 
-  double residual, diff;
-  Gallery.ComputeResidual(&residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(&diff);
+  double residual;
+  double TotalResidual = 0.0;
+  LHS.Norm2(&residual);
 
   if( Comm.MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
-    cout << "||x_exact - x||_2 = " << diff << endl;
   }
+
+  delete A;
+  delete Map;
 
   // for testing purposes
   if (residual > 1e-5)
@@ -130,8 +144,7 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
 
-  exit(EXIT_SUCCESS);
-  
+  return(EXIT_SUCCESS);
 }
 
 #else
@@ -144,18 +157,19 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("The ML API requires the following configuration options:");
+  puts("This MLAPI example requires the following configuration options:");
   puts("\t--enable-epetra");
   puts("\t--enable-teuchos");
   puts("\t--enable-ifpack");
   puts("\t--enable-amesos");
+  puts("\t--enable-galeri");
   puts("Please check your configure line.");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  return(0);
+  return(EXIT_SUCCESS);
 }
 
-#endif // #if defined(HAVE_ML_MLAPI)
+#endif
