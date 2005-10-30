@@ -9,6 +9,11 @@
 #include "Epetra_MpiComm.h"
 
 PyObject* Init_Argv(PyObject *args) {
+  int ierr = 0;
+  MPI_Initialized(&ierr);
+  if (ierr)
+    return Py_BuildValue("");
+
   int i, error, myid, size;
   int argc = 0;
   char **argv;
