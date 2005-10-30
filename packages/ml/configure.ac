@@ -465,12 +465,11 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, teuchos, ML_TEUCHOS, ML_USING_TEUCHOS, yes, [
 #
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, anasazi, ML_ANASAZI, ML_USING_ANASAZI, yes, [Enable ANASAZI support. Anasazi, a Trilinos package, can be used for eigenvalue estimates. Anasazi requires --enable_epetra and --enable-teuchos.], [Enable ANASAZI support. Anasazi, a Trilinos package, can be used for eigenvalue estimates. Anasazi requires --enable_epetra and --enable-teuchos. Can be overridden with --disable-ml-anasazi.])
 #
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, triutils, ML_TRIUTILS, ML_USING_TRIUTILS, yes, [Enable TRIUTILS support. Triutils, a Trilinos package, is used if some ML examples to construct the linear system. Triutils requires --enable_epetra.], [Enable TRIUTILS support. Triutils, a Trilinos package, is used if some ML examples to construct the linear system. Triutils requires --enable_epetra. Can be overridden with --disable-ml-triutils.])
-#
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, aztecoo, ML_AZTECOO, ML_USING_AZTECOO, yes, [Enable AztecOO support. AztecOO, a Trilinos package, can be used in adaptive preconditioning.  Requires --enable-epetra --enable-teuchos. See notes for --enable-ml_metis.], [Enable AztecOO support. AztecOO, a Trilinos package, can be used in adaptive preconditioning.  Requires --enable-epetra --enable-teuchos. See notes for --enable-ml_metis. Can be overridden with --disable-ml-aztecoo.])
 #
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, epetraext, ML_EPETRAEXT, ML_USING_EPETRAEXT, yes, [Enable EpetraExt support. EpetraExt requires --enable_epetra. See notes for --enable-ml_metis.], [Enable EpetraExt support. EpetraExt requires --enable_epetra. See notes for --enable-ml_metis. Can be overridden with --disable-ml-epetraext.])
 #
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, galeri, ML_GALERI, ML_USING_GALERI, yes, [Enable Galeri support. Galeri, a Trilinos package, is used in some ML examples to construct the linear system.], [Enable Galeri support.  Galeri, a Trilinos package, is used in some ML examples to construct the linear system.  Can be overridden with --disable-ml-galeri.])
 
 #if we're not using epetra, then build certain ML examples
 #without dependencies on libepetra.a (and use C linker for C files,
@@ -680,12 +679,9 @@ AC_CONFIG_FILES([
                 test/MultiLevelPreconditioner_Maxwell/Makefile
                 test/MultiLevelPreconditioner_Aux/Makefile
                 test/ML_Operator2Epetra_RowMatrix/Makefile
-                test/Scalability/Makefile
-                test/VerySimple/Makefile
                 test/AztecSimple/Makefile
                 test/2d_Poisson/Makefile
                 test/3d_Poisson/Makefile
-                test/Zoltan/Makefile
                 test/IFPACKSmoothers/Makefile
                 test/MLAPICompare/Makefile
                 test/MLAPILinearCombination/Makefile

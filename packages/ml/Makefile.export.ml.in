@@ -68,11 +68,11 @@ _ML_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lml $(EPETRA_LIBS) $(AMESOS_LIBS)
 # ML itself.
 ###########################################################################
 
-@ML_USING_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
+@ML_USING_GALERI_TRUE@include @abs_top_builddir@/../galeri/Makefile.export.galeri
 
-_ML_EXTRA_INCLUDES = $(TRIUTILS_INCLUDES)
+_ML_EXTRA_INCLUDES = $(GALERI_INCLUDES)
 
-_ML_EXTRA_LIBS = $(TRIUTILS_LIBS)
+_ML_EXTRA_LIBS = $(GALERI_LIBS)
 
 @USING_GNUMAKE_TRUE@ML_EXTRA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_ML_EXTRA_INCLUDES))
 @USING_GNUMAKE_TRUE@ML_EXTRA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_ML_EXTRA_LIBS))
