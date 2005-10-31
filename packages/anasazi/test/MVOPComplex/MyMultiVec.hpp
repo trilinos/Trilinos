@@ -402,4 +402,97 @@ private:
 
 };
 
+/*! \class MultiVecTraits< double, MyMultiVec >
+  \brief Template specialization of Anasazi::MultiVecTraits class using the MyMultiVec class.
+  */
+
+namespace Anasazi {
+
+template<>
+class MultiVecTraits<double, MyMultiVec>
+{
+  public:
+
+    static Teuchos::RefCountPtr<MyMultiVec> Clone( const MyMultiVec& mv, const int numvecs )
+    { 
+      return(Teuchos::rcp(mv.Clone(numvecs)));
+    } 
+
+    static Teuchos::RefCountPtr<MyMultiVec> CloneCopy( const MyMultiVec& mv )
+    { 
+      return(Teuchos::rcp(new MyMultiVec(mv)));
+    } 
+
+    static Teuchos::RefCountPtr<MyMultiVec> CloneCopy( const MyMultiVec& mv, const std::vector<int>& index )
+    { 
+      return(Teuchos::rcp(mv.CloneCopy(index)));
+    }
+
+    static Teuchos::RefCountPtr<MyMultiVec> CloneView( MyMultiVec& mv, const std::vector<int>& index )
+    { 
+      return(Teuchos::rcp(mv.CloneView(index)));
+    }
+
+    static Teuchos::RefCountPtr<const MyMultiVec> CloneView( const MyMultiVec& mv, const std::vector<int>& index )
+    { 
+      return(Teuchos::rcp(mv.CloneView(index)));
+    }
+
+    static int GetVecLength( const MyMultiVec& mv )
+    { return mv.GetVecLength(); }
+
+    static int GetNumberVecs( const MyMultiVec& mv )
+    { return mv.GetNumberVecs(); }
+
+    static void MvTimesMatAddMv( const double alpha, const MyMultiVec& A, 
+                                const Teuchos::SerialDenseMatrix<int,double>& B, 
+                                const double beta, MyMultiVec& mv )
+    { 
+      mv.MvTimesMatAddMv(alpha, A, B, beta);
+    }
+
+    static void MvAddMv( const double alpha, const MyMultiVec& A, const double beta, const MyMultiVec& B, MyMultiVec& mv )
+    { 
+      mv.MvAddMv(alpha, A, beta, B);
+    }
+
+    static void MvTransMv( const double alpha, const MyMultiVec& A, const MyMultiVec& mv, Teuchos::SerialDenseMatrix<int,double>& B )
+    { 
+      mv.MvTransMv(alpha, A, B);
+    }
+
+    static void MvDot( const MyMultiVec& mv, const MyMultiVec& A, std::vector<double>* b )
+    {
+      mv.MvDot(A, b);
+    }
+
+    static void MvNorm( const MyMultiVec& mv, std::vector<double>* normvec )
+    { 
+      mv.MvNorm(normvec);
+    }
+
+    static void SetBlock( const MyMultiVec& A, const std::vector<int>& index, MyMultiVec& mv )
+    { 
+      cout << "NOT DONE" << endl;
+      exit(0);
+    }
+
+    static void MvRandom( MyMultiVec& mv )
+    { 
+      mv.MvRandom();
+    }
+
+    static void MvInit( MyMultiVec& mv, double alpha = Teuchos::ScalarTraits<double>::zero() )
+    {
+      mv.MvInit(alpha);
+    }
+
+    static void MvPrint( const MyMultiVec& mv, ostream& os )
+    { 
+      mv.MvPrint(os);
+    }
+};        
+
+} // namespace Anasazi
+
 #endif // MY_MULTIVECTOR_HPP

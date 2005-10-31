@@ -113,4 +113,23 @@ private:
   std::vector<ScalarType> diag_;
 };
 
+namespace Anasazi 
+{
+  template <> 
+  class OperatorTraits < double, MyMultiVec, MyOperator >
+  {
+  public:
+    
+    /*! \brief This method takes the Epetra_MultiVector \c x and
+      applies the Epetra_Operator \c Op to it resulting in the Epetra_MultiVector \c y.
+    */    
+    static ReturnType Apply (const MyOperator& Op, const MyMultiVec& x, 
+			      MyMultiVec& y )
+    { 
+      return (Op.Apply( x, y ));
+    }
+  };
+
+} // namespace Anasazi
+  
 #endif //MY_OPERATOR_HPP

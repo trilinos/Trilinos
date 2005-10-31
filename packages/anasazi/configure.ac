@@ -436,6 +436,7 @@ AC_CONFIG_FILES([
 		util/ModeLaplace/Makefile
 		example/Makefile
 		example/BlockDavidson/Makefile
+		example/BlockJacobiDavidson/Makefile
 		example/BlockKrylovSchur/Makefile
 		example/LOBPCG/Makefile
 		example/MVOPTester/Makefile
