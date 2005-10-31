@@ -55,12 +55,6 @@ haveSwahili = "Newp_Jambo" in dir(New_Package)
 class New_PackageTestCase(unittest.TestCase):
     "TestCase class for New_Package module"
 
-    def testVersion(self):
-        "Test New_Package New_Package_Version function"
-        front   = "New_Package Version "
-        version = New_Package.New_Package_Version()
-        self.assertEquals(version[:len(front)], front)
-
     def setUp(self):
         self.comm = Epetra.PyComm()
         self.comm.Barrier()
@@ -68,6 +62,12 @@ class New_PackageTestCase(unittest.TestCase):
     def tearDown(self):
         # This will help tame the printing
         self.comm.Barrier()
+
+    def testVersion(self):
+        "Test New_Package New_Package_Version function"
+        front   = "New_Package Version "
+        version = New_Package.New_Package_Version()
+        self.assertEquals(version[:len(front)], front)
 
     def testHelloConstructor(self):
         "Test New_Package Hello constructor"
