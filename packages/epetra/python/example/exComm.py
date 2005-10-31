@@ -2,35 +2,14 @@
 
 # ============================================================================
 # Shows the usage of Epetra.PyComm().
-# Since the pure virtual Epetra_Comm requires integer and double pointers
-# (that are usually not defined within Python), you can replace the
-# Epetra_Comm operations with the following:
-#
-# >>> Comm = PyComm()
-# >>> target = Comm(<type>, source, root)
-#
-# where <type> is one of the following:
-# - Epetra.MINALL
-# - Epetra.MAXALL
-# - Epetra.SUMALL
-# - Epetra.SCANSUM
-# - Epetra.BROADCAST
-# and source is a Python's list.
-# NOTE: all the elements in a list MUST have the same type. Also,
-#       only integers and doubles are supported, since only these two
-#       types are supported by Epetra_Comm.
-#
-# The root processor (specified by root) is required only by Epetra.BROADCAST,
-# and ignored in all other cases.
-#
 #
 # The output of this example is trivial for serial runs. If you have
 # configured Trilinos with MPI support, you can try something like:
 # $ mpirun -np 4 python ./exComm.py
 #
-# \author Marzio Sala, 9214
+# \author Marzio Sala, 9214; Bill Spotz, 1433
 #
-# \date Last updated on 01-Aug-05
+# \date Last updated on 15-Oct-05
 # ============================================================================
 
 # "from PyTrilinos import ..." syntax.  Here, the setpath module adds the build
@@ -65,21 +44,18 @@ def main():
   Comm.Barrier()
 
   # get the maximum element
-  #target = Comm.GlobalOp(Epetra.MAXALL, source)
   target = Comm.MaxAll(source)
   if Comm.MyPID() == 0:
     print "MAXALL = ", target
   Comm.Barrier()
 
   # sum all the elements
-  #target = Comm.GlobalOp(Epetra.SUMALL, source)
   target = Comm.SumAll(source)
   if Comm.MyPID() == 0:
     print "SUMALL = ", target
   Comm.Barrier()
 
   # scansum
-  #target = Comm.GlobalOp(Epetra.SCANSUM, source)
   target = Comm.ScanSum(source)
   print "PE = ", base, ", SCANSUM = ", target
   Comm.Barrier()

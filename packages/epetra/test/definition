@@ -50,6 +50,7 @@
 
 (FRAMEWORK, INSTALL, EpetraPyExamples) {
       DIRS = ../python/example;
+      EXIT-STATUS = STRING-COMPARISON;
       COMM = SERIAL, MPI(1-4);
 }
 
