@@ -73,7 +73,7 @@ PyTrilinos To Do List
 
 ****** Wrap Epetra_Flops class
 
-****** Parallelization (wrap Epetra_MpiComm)
+[Done] Parallelization (wrap Epetra_MpiComm)
 
 ****** Clean up interface between Numeric arrays, double *'s and Epetra
        objects.
@@ -112,10 +112,9 @@ PyTrilinos To Do List
        Problem class, or come up with a cleaner solution.
 
 ==================================================
-Summer, 2005, List of Project Tasks (Tentative)
+Summer, 2006, List of Project Tasks (Tentative)
 
 * Complete wrapping of Epetra
-  - Epetra_MpiComm() and parallelization
   - Other classes
   - Interfacing with python Numeric
   - Unit tests
@@ -138,18 +137,8 @@ Summer, 2005, List of Project Tasks (Tentative)
   - Unit tests
   - Examples
 
-* Develop pytrilinos library
-  - Python/C API FILEs -> C++ iostreams
-  - Input Python containers -> C arrays
-  - Output C arrays -> Numeric arrays
-
 * Start wrapping new modules
-  - Teuchos (with Heidi Thornquist)
-  - AztecOO (with Marzio Sala)
   - Anasazi (with Heidi Thornquist)
-  - Ifpack  (with Marzio Sala)
-  - ML      (with Marzio Sala)
-  - Amesos  (with Marzio Sala)
   - etc.
 
 ==================================================
