@@ -74,6 +74,7 @@ int main(int argc, char *argv[])
   int NEV = 3; // FIXME: THIS WAS KMAX
   int SMIN = 20;
   int SMAX = 30;
+  // FIXME: if I set BLOCKSIZE = 2 then nothing good happens...
   int BLOCKSIZE = 1;
 
   // ============================================= //
@@ -151,6 +152,8 @@ int main(int argc, char *argv[])
                            
   // Solve the problem to the specified tolerances or length
   returnCode = MySolver.solve();
+
+  MySolver.currentStatus();
 
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
