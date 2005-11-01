@@ -187,14 +187,14 @@ int main(int argc, char *argv[])
   /* broadcast the command info to all of the processor */
   brdcst_cmd_info(Proc, &prob, &pio_info, &mesh);
 
+  zz->Set_Param("DEBUG_MEMORY", "1");
+
   if (!setup_zoltan(*zz, Proc, &prob, &mesh)) {
     Gen_Error(0, "fatal: Error returned from setup_zoltan\n");
     error_report(Proc);
     print_output = 0;
     goto End;
   }
-
-  zz->Set_Param("DEBUG_MEMORY", "1");
 
   srand(Proc);
 
@@ -289,9 +289,11 @@ int main(int argc, char *argv[])
 End:
   
   if (mesh.data_type == HYPERGRAPH)
-    {
+  {
     destroy_elem_dd();
-    }
+  }
+
+  delete zz;
 
   Zoltan_Memory_Stats();
 
@@ -314,8 +316,6 @@ End:
 
   free_mesh_arrays(&mesh);
   if (prob.params != NULL) free(prob.params);
-
-  delete zz;
 
   MPI_Finalize();
 
