@@ -77,7 +77,7 @@ function has been called or not.  Therefore, the C++ wrappers do not call
 <a href="ug_interface_init.html#Zoltan_Initialize"><I>Zoltan_Initialize</I> </a>
 for you.
 <li>
-You may want to allocate <B>Zoltan_Object</B>s dynamically so you can
+It is preferable to allocate <B>Zoltan_Object</B>s dynamically so you can
 explicitly delete them before your application exits. 
 (<B>Zoltan_Object</B>s allocated instead on the stack will be deleted 
 automatically at the completion of the scope in which they were created.)

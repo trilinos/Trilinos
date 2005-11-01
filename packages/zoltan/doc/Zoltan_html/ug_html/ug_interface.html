@@ -92,7 +92,69 @@ algorithm, it can do so.</td>
 in include/zoltan_types.h.</i></caption>
 </table></center>
 
+<h2>
+<a NAME="Naming conventions"></a><hr>Naming conventions</h2>
+The C, Fortran and C++ interfaces follow consistent naming conventions, as
+illustrated in the following table.
+<br> &nbsp;
 <p>
+<center><table BORDER WIDTH="90%" >
+<tr>
+<th align=center></th>
+<th align=center>C and Fortran</th>
+<th align=center>C++</th>
+</tr>
+<tr>
+<td align=left>Partitioning and migration functions<br>
+                 example: perform partitioning<br>
+                 example: assign a point to a partition</td>
+<td align=left><B>Zoltan_</b><i>function</i>()<br>
+    <b>Zoltan_LB_Partition()</b><br>
+    <b>Zoltan_LB_Point_Assign()</b><br> </td>
+<td align=left><B>Zoltan_Object::</b><i>function()</i><br>
+    <b>Zoltan_Object::LB_Partition()</b><br>
+    <b>Zoltan_Object::LB_Point_Assign()</b><br> </td>
+</tr>
+
+<tr>
+<td align=left>Unstructured communication<br>
+                 example: perform communication</td>
+<td align=left><B>Zoltan_Comm_</b><i>function</i><br>
+    <b>Zoltan_Comm_Do()</b></td>
+<td align=left><B>Zoltan_Comm::</b><i>function</i><br>
+    <b>Zoltan_Comm::Do()</b></td>
+</tr>
+
+<tr>
+<td align=left>Distributed data<br>
+                 example: find objects in a remote process</td>
+<td align=left><B>Zoltan_DD_</b><i>function</i><br>
+    <b>Zoltan_DD_Find()</b></td>
+<td align=left><B>Zoltan_DD::</b><i>function</i><br>
+    <b>Zoltan_DD::Find()</b></td> 
+</tr>
+
+<tr>
+<td align=left>Timers<br>
+               example: print timing results</td>
+<td align=left><B>Zoltan_Timer_</b><i>function</i><br>
+    <b>Zoltan_Timer_Print()</b></td>
+<td align=left><B>Zoltan_Timer::</b><i>function</i><br>
+    <b>Zoltan_Timer::Print()</b></td>
+</table></center>
+<p>
+
+In particular, the C++ <B>Zoltan_Object</b> class represents a load
+balancing instance and the methods that operate on it.  The method
+name is identical to the part of the C and Fortran function name that
+indicates the function performed.  A C++ <B>Zoltan_Comm</b> object
+represents an instance of unstructured communication, a C++
+<b>Zoltan_DD</b> object represents a distributed directory, and a
+C++ <b>Zoltan_Timer</b> object is a timer.  Their
+method names are derived similarly.
+
+<p>
+
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a> |&nbsp; <a href="ug_interface_init.html">Next:&nbsp;
 Initialization Functions</a>&nbsp; |&nbsp; <a href="ug_usage.html">Previous:&nbsp;
 Using the Library</a>]
