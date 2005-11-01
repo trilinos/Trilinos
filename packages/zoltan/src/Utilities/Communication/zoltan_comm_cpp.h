@@ -63,7 +63,7 @@ public:
 
   Zoltan_Comm (const Zoltan_Comm &plan) // Copy constructor
    {
-   this->Plan = Zoltan_Comm_Copy(plan->Plan);
+   this->Plan = Zoltan_Comm_Copy(plan.Plan);
    }
 
   ~Zoltan_Comm()
@@ -73,7 +73,7 @@ public:
 
   Zoltan_Comm & operator= (const Zoltan_Comm &plan) // Copy operator
   {
-    Zoltan_Comm_Copy_To(this->Plan, plan.Plan);
+    Zoltan_Comm_Copy_To(&this->Plan, plan.Plan);
 
     return *this;
   }
