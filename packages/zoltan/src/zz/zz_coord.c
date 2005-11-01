@@ -396,6 +396,9 @@ End:
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
+/*
+ * For debugging purposes, print out the coordinate transformation.
+ */
 void Zoltan_Print_Transformation(ZZ_Transform *tr)
 {
   int i;
@@ -418,6 +421,9 @@ void Zoltan_Print_Transformation(ZZ_Transform *tr)
     tr->CM[0], tr->CM[1], tr->CM[2],
     tr->Axis_Order[0], tr->Axis_Order[1], tr->Axis_Order[2]);
 }
+/*
+ * Copy a coordinate transformation structure.
+ */
 void Zoltan_Copy_Transformation(ZZ_Transform *to, ZZ_Transform *from)
 {
   int i, j;
@@ -433,6 +439,9 @@ void Zoltan_Copy_Transformation(ZZ_Transform *to, ZZ_Transform *from)
     to->Axis_Order[i] = from->Axis_Order[i];
   } 
 }
+/*
+ * Initialize a coordinate transformation structure.
+ */
 void Zoltan_Initialize_Transformation(ZZ_Transform *tr)
 {
   int i, j;
@@ -448,14 +457,13 @@ void Zoltan_Initialize_Transformation(ZZ_Transform *tr)
     tr->Axis_Order[i] = 0;
   } 
 }
+/*
+ * Decide whether the relative lengths of the edges of the oriented
+ * bounding box indicate the geometry is very flat in one or two directions.
+ */
 static int get_target_dimension(double *dist, int *order, 
                                 double skip_ratio, int d)
 {
-  /*
-   * Decide whether these distances indicate the geometry is
-   * very flat in one or two directions.
-   */
-
   int target_dim = 0;
   double flat;
   
@@ -494,6 +502,9 @@ static int get_target_dimension(double *dist, int *order,
 
   return target_dim;
 }
+/*
+ * Apply the transformation to the coordinates.
+ */
 static void transform_coordinates(double *coords, int num_obj, int d,
                                   ZZ_Transform *tr)
 {
@@ -536,7 +547,10 @@ static void transform_coordinates(double *coords, int num_obj, int d,
     }
   }
 }
-
+/*
+ * Calculate a 2x2 inertial matrix representing the
+ * locations of the 2-dimensional coordinates.
+ */
 static void inertial_matrix2D(ZZ *zstruct, double *X, 
                             int num_obj, double *cm, double (*im)[3])
 {
@@ -600,6 +614,10 @@ static void inertial_matrix2D(ZZ *zstruct, double *X,
   im[1][1] = yyt;
   im[0][1] = im[1][0] = xyt;
 }
+/*
+ * Calculate a 3x3 inertial matrix representing the
+ * locations of the 3-dimensional coordinates.
+ */
 static void inertial_matrix3D(ZZ *zstruct, double *X, 
                             int num_obj, double *cm, double (*im)[3])
 {
@@ -678,6 +696,12 @@ static void inertial_matrix3D(ZZ *zstruct, double *X,
   im[0][2] = im[2][0] = xzt;
   im[1][2] = im[2][1] = yzt;
 }
+/*
+ * Calculate the extent of the geometry in the directions indicated
+ * by the orthonormal eigenvectors of the inertial matrix.  This is
+ * essentially the dimensions of an oriented bounding box around
+ * the geometry.
+ */
 static void projected_distances(ZZ *zz, double *coords, int num_obj,
         double *cm, double (*evecs)[3], double *d, int dim, int aa, int *order)
 {
@@ -753,10 +777,12 @@ MPI_Comm local_comm;
 
   return;
 }
-
+/*
+ * Order the 2 or 3 lengths from longest to shortest.
+ */
 static void order_decreasing(double *d, int *order)
 {
-  if (d[0] > d[1]){     /* Order from longest to shortest direction */
+  if (d[0] > d[1]){
     if (d[0] > d[2]){
       order[0] = 0;
       if (d[1] > d[2]){
@@ -784,15 +810,15 @@ static void order_decreasing(double *d, int *order)
     }
   }
 }
+/* 
+ * Given a real symmetric matrix "m", find its eigenvectors.  Put
+ * the orthonormal eigenvectors in the columns of the matrix "evecs".
+ * Assume dim is 2 or 3.
+ */
+
 #define SIGN(a,b) ((b) < 0 ? -fabs(a) : fabs(a))
 static int eigenvectors(double (*m)[3], double (*evecs)[3], int dim)
 {
-  /* 
-   * Given a real symmetric matrix "m", find its eigenvectors.  Put
-   * the orthonormal eigenvectors in the columns of the matrix "evecs".
-   * Assume dim is 2 or 3.
-   */
-
   double d[3], e[3];
   int i, j, rc;
 
@@ -808,6 +834,18 @@ static int eigenvectors(double (*m)[3], double (*evecs)[3], int dim)
 
   return rc;
 }
+/*****************************************************************************
+ * The following two functions, tred2 and tqli, are taken from
+ * Numerical Recipes in C, the 2nd printing in 1990.  They were
+ * modified to use arrays beginning at index 0 rather than index 1.
+ * The calling arguments are changed slightly, for convenience, 
+ * limiting the functions to 2 or 3 dimensional problems.
+ ****************************************************************************/
+/*
+ * Householder reduction:
+ * Take a real symmetric 3x3 or 2x2 matrix "a" and decompose it 
+ * into an orthogonal Q and a tridiagonal matrix T.
+ */
 
 static void tred2(double (*a)[3],  /* Q on output */
                   int n,           /* dimension of problem (2 or 3) */
@@ -816,12 +854,6 @@ static void tred2(double (*a)[3],  /* Q on output */
 {
   int l, k, j, i;
   double scale, hh, h, g, f;
-
-  /*
-   * Householder reduction from "Numerical Recipes in C". 
-   * Take a real symmetric nxn matrix "a" and decompose it into
-   * an orthogonal Q and a tridiagonal matrix T.
-   */
 
   for (i=n-1; i>=1; i--){
     l = i - 1;
@@ -896,17 +928,18 @@ static void tred2(double (*a)[3],  /* Q on output */
   }
 }
 
+/*
+ * QL algorithm with implicit shifts.  
+ */ 
+
 static int tqli(double *d,     /* input from tred2, output is eigenvalues */
                  int n,        /* dimensions of problem (2 or 3) */
                  double *e,     /* input from tred2, output is garbage */
-                 double(*z)[3]) /* input from tred2, output columns are e-vectors */
+                 double(*z)[3]) /* input from tred2, output columns are e-vecs*/
 {
   int m, l, iter, i, k;
   double s, r, p, g, f, dd, c, b;
 
-  /*
-  ** QL algorithm with implicit shifts.  Straight out of "Numerical Recipes in C".
-  */ 
   e[0] = e[1]; 
   e[1] = e[2];
   e[2] = 0.0;
@@ -961,18 +994,6 @@ static int tqli(double *d,     /* input from tred2, output is eigenvalues */
       }
     } while (m != l);
   }
-  return 0;
-}
-static int almost_one(double d)
-{
-  double l = 1.0 - 10e-5; 
-  double r = 1.0 + 10e-5; 
-  double ad = fabs(d);
-
-  if ((ad >= l) && (ad <= r)){
-    return 1;
-  }
-
   return 0;
 }
 
