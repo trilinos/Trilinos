@@ -139,7 +139,7 @@ int            *numparts)       /* number of partitions in part list */
               box.hi[1] = ymax;
               box.hi[2] = zmax;
 
-              if (rib->Tran.Target_Dim == 0){
+              if (rib->Tran.Target_Dim <= 0){
                 Box_Assign3(zz, itree, &box, include_procs, include_parts, 
                           proc_array, parts, numparts, itree[0].right_leaf);
               }
@@ -174,7 +174,7 @@ int            *numparts)       /* number of partitions in part list */
               box.hi[0] = xmax;
               box.hi[1] = ymax;
 
-              if (rib->Tran.Target_Dim == 0){
+              if (rib->Tran.Target_Dim <= 0){
                 Box_Assign2(zz, itree, &box, include_procs, include_parts,
                             proc_array, parts, numparts, itree[0].right_leaf);
               }
