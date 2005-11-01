@@ -30,8 +30,6 @@
 #define _ANASAZI_MVOPTESTER_HPP
 
 // Assumptions that I have made:
-// * When clone(MV,int) creates a "new empty multivector", I assume empty means
-//   zero. Note: This doesn't cause a failure anymore, but just a warning.
 // * I assume/verify that a multivector must have at least one vector. This seems 
 //   to be consistent with Epetra_MultiVec.
 // * I do not assume that an operator is deterministic; I do assume that the
@@ -62,15 +60,13 @@ namespace Anasazi {
     /* MVT Contract:
 
          Clone(MV,int)
+         CloneCopy(MV)
+         CloneCopy(MV,vector<int>)
            USER: will request positive number of vectors
              MV: will return a multivector with exactly the number of
                    requested vectors.
-                 it would be nice if they were init'd to zero.
                  vectors are the same dimension as the cloned MV
          
-         CloneCopy(MV)
-
-         CloneCopy(MV,vector<int>)
 
          CloneView(MV,vector<int>) [const and non-const]
            USER: There is no assumed communication between creation and
@@ -191,9 +187,8 @@ namespace Anasazi {
        Verify:
        1) Clone() allows us to specify the number of vectors
        2) Clone() returns a multivector of the same dimension
-       3) Clone() gives us zero vectors (test their norms)
-       4) Vector norms shouldn't be negative
-       5) MvNorm result vector should not be resized
+       3) Vector norms shouldn't be negative
+       4) MvNorm result vector should not be resized
     *********************************************************************/
     {
       Teuchos::RefCountPtr<MV> B = MVT::Clone(*A,numvecs);
@@ -220,7 +215,6 @@ namespace Anasazi {
         }
         return Failed;
       }
-      bool NonEmptyWarning = false;
       for (i=0; i<numvecs; i++) {
         if ( norms[i] < zero ) {
           if ( om->isVerbosityAndPrint(Warning) ) {
@@ -228,14 +222,6 @@ namespace Anasazi {
                 << "Vector had negative norm." << endl;
           }
           return Failed;
-        }
-        else if ( norms[i] != zero && NonEmptyWarning == false ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << endl;
-            out << "Warning: testing MultiVecTraits::Clone()." << endl
-                << "Did not create zero vectors." << endl << endl;
-          }
-          NonEmptyWarning = true;
         }
       }
     }
