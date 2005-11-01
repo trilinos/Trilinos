@@ -40,8 +40,12 @@ namespace Thyra {
  * 
  * <ul>
  * <li>\ref Thyra_MVB_intro_sec
- * <li>\ref Thyra_MVB_col_access_sec
- * <li>\ref Thyra_MVB_subviews_sec
+ * <li>\ref Thyra_MVB_views_sec
+ *   <ul>
+ *   <li>\ref Thyra_MVB_col_access_sec
+ *   <li>\ref Thyra_MVB_subviews_sec
+ *   <li>\ref Thyra_MVB_view_behavior_sec
+ *   </ul>
  * <li>\ref Thyra_MVB_as_LO_sec
  *   <ul>
  *   <li>\ref Thyra_MVB_block_update_sec
@@ -64,8 +68,17 @@ namespace Thyra {
  * sides.  Every computing environment (serial, parallel, out-of-core etc.) 
  * should be able to define at least one reasonably efficient implementation
  * of this interface.
+ *
+ * \section Thyra_MVB_views_sec Changeable and non-changeable views
+ *
+ * This interface allows a client to create <tt>VectorBase</tt> and
+ * <tt>MultiVectorBase</tt> views of single and multiple columns of
+ * <tt>*this</tt> multi-vector, respectively.  These two views are described
+ * separately in the next two subsections.  The behavior of the vector and
+ * multi-vector views is very similar and the common behavior is described in
+ * the subsection \ref Thyra_MVB_view_behavior_sec.
  * 
- * \section Thyra_MVB_col_access_sec Accessing the individual columns as vector views
+ * \subsection Thyra_MVB_col_access_sec Accessing the individual columns as vector views
  * 
  * The individual columns of a multi-vector can be access using the non-const
  * and const versions of the <tt>col()</tt> function.  For example, the
@@ -94,7 +107,7 @@ namespace Thyra {
  * back to <tt>Y</tt> until the smart pointer returned from <tt>Y.col(j)</tt>
  * is deleted.
  * 
- * \section Thyra_MVB_subviews_sec Accessing collections of columns as multi-vector views
+ * \subsection Thyra_MVB_subviews_sec Accessing collections of columns as multi-vector views
  * 
  * Another important aspect of this interface is the ability to allow clients
  * to access non-changeable and changeable <tt>MultiVectorBase</tt> views of
@@ -124,6 +137,11 @@ namespace Thyra {
  * <b>Note:</b> In the above example <tt>*Y</tt> can be the same multi-vector
  * as <tt>X</tt>.
  *
+ * <b>Note:</b> In the above example <tt>*Y</tt> is not guaranteed to be
+ * updated until the view returned from <tt>Y->subView(Range1D(m-2,m)</tt> is
+ * destroyed (which occurs at the end of the statement in which it occurs in
+ * this case).
+ *
  * <!-- Warning! Do not reformat the below paragraph or the \ref links will break! --> 
  * The second form provides views of non-contiguous columns through
  * the functions
@@ -150,12 +168,154 @@ namespace Thyra {
 
  * <b>Note:</b> In the above example <tt>*Y</tt> can be the same multi-vector
  * as <tt>X</tt>.
+ *
+ * <b>Note:</b> In the above example <tt>*Y</tt> is not guaranteed to be
+ * updated until the view returned from
+ * <tt>Y->subView(3,arrayArg<int>(2,4,6)())</tt> is destroyed (which occurs at
+ * the end of the statement in which it occurs in this case).
  * 
  * In general, the first contiguous form of views will be more efficient that
  * the second non-contiguous form.  Therefore, user's should try to structure
  * their ANAs to use the contiguous form of multi-vector views if possible and
  * only result to the non-contiguous form of views when absolutely needed.
- * 
+ *
+ * \subsection Thyra_MVB_view_behavior_sec Common behavior of vector and multi-vector views
+ *
+ * When a view is created it may become a largely separate object from the
+ * parent multi-vector and the relationship between the two in undefined by
+ * this interface.  This is true whether we are talking about individual
+ * column vector views or contiguous or non-contiguous multiple-column
+ * multi-vector views which are described above.
+ *
+ * If <tt>X_view</tt> is some view of a parent multi-vector <tt>X</tt> the
+ * following restrictions apply:
+ *
+ * <ul>
+ *
+ * <li><b>Undefined behavior:</b> Changing the parent
+ *
+ * The client should not attempt to change the parent multi-vector <tt>X</tt>
+ * while any view is active.  The behavior of doing so is undefined.  For
+ * example, the value returned from the following function and the value of
+ * the parent multi-vector <tt>*X</tt> are undefined:
+
+ \code
+
+  template<class Scalar>
+  Scalar undefinedBehaviorFromChangingParent(
+    Thyra::MultiVectorBase<Scalar>   *X
+    )
+  {
+    // Create the view
+    Teuchos::RefCountPtr< Thyra::MultiVectorBase<Scalar> >
+      X_view = X->subView(RangePack::Range1D(1,1));
+    // Change the parent while the view is still active
+    Teuchos::assign( X, Teuchos::ScalarTraits<Scalar>::one() );
+    // Above, changing the parent multi-vector may or may not change the subview
+    return Teuchos::norm_1(*X_view); // The value returned is is undefined
+    // When the RCP X_view goes out of scope here, the state of the 
+    // parent multi-vector *X is undefined!
+  } 
+
+ \endcode
+
+ * <li><b>Undefined behavior:</b> Changing the view and accessing the parent while
+ * view is still active
+ *
+ * The client should not attempt to change the view <tt>X_view</tt> and then
+ * access the parent multi-vector <tt>X</tt> while the view is still active.
+ * The behavior of doing so is undefined.  For example, the value returned
+ * from the following function is undefined:
+
+ \code
+
+  template<class Scalar>
+  Scalar undefinedBehaviorFromChaningViewAndAccessingParent(
+    Thyra::MultiVectorBase<Scalar>   *X
+    )
+  {
+    // Create the view
+    Teuchos::RefCountPtr< Thyra::MultiVectorBase<Scalar> >
+      X_view = X->subView(RangePack::Range1D(1,1));
+    // Change the view
+    Teuchos::assign( *&X_view, Teuchos::ScalarTraits<Scalar>::one() );
+    // Above, changing the view may or may not immediately update the parent multi-vector
+    return Teuchos::norm_1(*X); // The value returned from the parent is undefined at this point
+    // When the RCP X_view goes out of scope here, the parent multi-vector
+    // *X is guaranteed to updated 
+  } 
+
+ \endcode
+
+ * <li><b>Undefined behavior:</b> Creating overlapping changeable views
+ *
+ * The client should not attempt to create overlapping changeable views.  If
+ * any of these changeable views is modified, the the behavior of the parent
+ * multi-vector is undefined.  For example, the state of the parent
+ * multi-vector <tt>*X</tt> is undefined after the following function returns:
+
+ \code
+
+  template<class Scalar>
+  Scalar undefinedBehaviorOfOverlappingViews(
+    Thyra::MultiVectorBase<Scalar>   *X
+    )
+  {
+    // Create two overlapping views
+    Teuchos::RefCountPtr< Thyra::MultiVectorBase<Scalar> >
+      X_view1 = X->subView(RangePack::Range1D(1,1)),
+      X_view2 = X->subView(RangePack::Range1D(1,1));
+    // Change one of the views but not the other
+    Teuchos::assign( *&X_view2, Teuchos::ScalarTraits<Scalar>::one() );
+    // When the RCPs X_view1 and X_view2 go out of scope here,
+    // the state of the parent multi-vector *X is undefined!
+  } 
+
+ \endcode
+ 
+ * Note that overlapping non-changeable views of a multi-vector are just fine
+ * since they do not change the state of the parent multi-vector.
+ *
+ * </ul>
+ *
+ * In general, to stay out of trouble with multi-vector views:
+ *
+ * <ul>
+ *
+ * <li>Never change or access the parent multi-vector while a changeable view
+ * is active.
+ *
+ * <li>Never create simultaneous changeable overlapping views.
+ *
+ * </ul>
+ *
+ * Note, however, that creating simultaneous non-overlapping non-changeable or
+ * changeable views is just fine as long as the parent multi-vector is not
+ * modified while the views are active.  For example, the final state of
+ * <tt>*X</tt> is well defined after the following function finishes
+ * executing:
+
+ \code
+
+  template<class Scalar>
+  Scalar wellDefinedBehaviorOfNonOverlappingViews(
+    Thyra::MultiVectorBase<Scalar>   *X
+    )
+  {
+    // Create two non-overlapping views
+    Teuchos::RefCountPtr< Thyra::MultiVectorBase<Scalar> >
+      X_view1 = X->subView(RangePack::Range1D(1,1)),
+      X_view2 = X->subView(RangePack::Range1D(2,2));
+    // Change the two views
+    Teuchos::assign( *&X_view1, Teuchos::ScalarTraits<Scalar>::zero() );
+    Teuchos::assign( *&X_view2, Teuchos::ScalarTraits<Scalar>::one() );
+    // When the RCPs X_view1 and X_view2 go out of scope here,
+    // the state of the parent multi-vector *X will be guaranteed to be
+    // updated to the values changed in these views.
+  } 
+
+ \endcode
+
  * \section Thyra_MVB_as_LO_sec MultiVectorBase as a linear operator
  * 
  * The <tt>%MultiVectorBase</tt> interface is derived from the
@@ -342,7 +502,8 @@ public:
    * <li> <tt>this->range()->isCompatible(*return->space()) == true</tt>
    * </ul>
    *
-   * <b>Note:</b> This view is to be used immediately and then released.
+   * See \ref Thyra_MVB_col_access_sec and \ref Thyra_MVB_view_behavior_sec
+   * for the behavior of this view.
    *
    * The default implementation of this function (which is the only
    * implementation needed by most subclasses) is based on the
@@ -364,7 +525,8 @@ public:
    * <li> <tt>this->range()->isCompatible(*return->space()) == true</tt>
    * </ul>
    *
-   * <b>Note:</b> This view is to be used immediately and then released.
+   * See \ref Thyra_MVB_col_access_sec and \ref Thyra_MVB_view_behavior_sec
+   * for the behavior of this view.
    *
    * <b>Note:</b> <tt>*this</tt> is not guaranteed to be modified until the
    * smart pointer returned by this function is destroyed.
@@ -396,7 +558,8 @@ public:
    *      for <tt>k=0...RangePack::full_range(colRng,1,this->domain()->dim()).ubound()-1</tt>
    * </ul>
    *
-   * <b>Note:</b> This view is to be used immediately and then released.
+   * See \ref Thyra_MVB_subviews_sec and \ref Thyra_MVB_view_behavior_sec for
+   * the behavior of this view.
    */
   virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const Range1D& colRng ) const = 0;
   
@@ -421,10 +584,8 @@ public:
    *      for <tt>k=0...RangePack::full_range(colRng,1,this->domain()->dim()).ubound()-1</tt>
    * </ul>
    *
-   * <b>Note:</b> This view is to be used immediately and then released.
-   *
-   * <b>Note:</b> <tt>*this</tt> is not guaranteed to be modified until the
-   * smart pointer returned by this function goes out of scope.
+   * See \ref Thyra_MVB_subviews_sec and \ref Thyra_MVB_view_behavior_sec for
+   * the behavior of this view.
    */
   virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const Range1D& colRng ) = 0;
 
@@ -450,7 +611,8 @@ public:
    *      for <tt>k=0...numCols-1</tt>
    * </ul>
    *
-   * <b>Note:</b> This view is to be used immediately and then released.
+   * See \ref Thyra_MVB_subviews_sec and \ref Thyra_MVB_view_behavior_sec for
+   * the behavior of this view.
    */
   virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const = 0;
 
@@ -476,10 +638,8 @@ public:
    *      for <tt>k=0...numCols-1</tt>
    * </ul>
    *
-   * <b>Note:</b> This view is to be used immediately and then released.
-   *
-   * <b>Note:</b> <tt>*this</tt> is not guaranteed to be modified until the
-   * smart pointer returned by this function goes out of scope.
+   * See \ref Thyra_MVB_subviews_sec and \ref Thyra_MVB_view_behavior_sec for
+   * the behavior of this view.
    */
   virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) = 0;
   
