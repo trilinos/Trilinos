@@ -72,9 +72,12 @@ namespace Anasazi {
 
          CloneCopy(MV,vector<int>)
 
-         CloneView(MV,vector<int>)
-
-         CloneView(const MV,vector<int>)
+         CloneView(MV,vector<int>) [const and non-const]
+           USER: There is no assumed communication between creation and
+           destruction of a view. I.e., after a view is created, changes to the
+           source multivector are not reflected in the view. Likewise, until
+           destruction of the view, changes in the view are not reflected in the
+           source multivector.
 
          GetVecLength 
              MV: will always be positive (MV cannot have zero vectors)
@@ -498,6 +501,7 @@ namespace Anasazi {
           return Failed;
         }
       }
+      /*
       MVT::MvInit(*B,zero);
       MVT::MvNorm(*C, &norms2); 
       for (i=0; i<numvecs_2; i++) {
@@ -509,6 +513,7 @@ namespace Anasazi {
           return Failed;
         }
       }
+      */
     }
 
 
@@ -550,6 +555,7 @@ namespace Anasazi {
           return Failed;
         }
       }
+      /*
       MVT::MvInit(const_cast<MV&>(*C),zero);
       MVT::MvNorm(*constB, &normsB); 
       for (i=0; i<numvecs_2; i++) {
@@ -561,6 +567,7 @@ namespace Anasazi {
           return Failed;
         }
       }
+      */
     }
 
 
