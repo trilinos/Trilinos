@@ -74,7 +74,6 @@ namespace Anasazi {
     static Teuchos::RefCountPtr<TMVB> Clone( const TMVB& mv, const int numvecs )
     { 
       Teuchos::RefCountPtr<TMVB> c = Thyra::createMembers( mv.range(), numvecs ); 
-      Thyra::assign(&(*c),Teuchos::ScalarTraits<ScalarType>::zero());
       return c;
     }
 
@@ -88,7 +87,7 @@ namespace Anasazi {
       // create the new multivector
       Teuchos::RefCountPtr< TMVB > cc = Thyra::createMembers( mv.range(), numvecs );
       // copy the data from the source multivector to the new multivector
-      Thyra::assign(&(*cc), mv);
+      Thyra::assign(&*cc, mv);
       return cc;
     }
 
@@ -109,9 +108,9 @@ namespace Anasazi {
       // create the new multivector
       Teuchos::RefCountPtr< TMVB > cc = Thyra::createMembers( mv.range(), numvecs );
       // create a view to the relevant part of the source multivector
-      Teuchos::RefCountPtr< const TMVB > relview = mv.subView( numvecs, &(index_plus[0]) );
+      Teuchos::RefCountPtr< const TMVB > view = mv.subView( numvecs, &(index_plus[0]) );
       // copy the data from the relevant view to the new multivector
-      Thyra::assign(&(*cc), *relview);
+      Thyra::assign(&*cc, *view);
       return cc;
     }
 
@@ -217,6 +216,7 @@ namespace Anasazi {
     { return mv.domain()->dim(); }
     //@}
 
+
     //@{ \name Update methods
 
     /*! \brief Update \c mv with \f$ \alpha AB + \beta mv \f$.
@@ -319,7 +319,7 @@ namespace Anasazi {
       // create a view to the relevant part of the destination multivector
       Teuchos::RefCountPtr< TMVB > reldest = mv.subView( numvecs, &(index_plus[0]) );
       // copy the data to the destination multivector subview
-      Thyra::assign(&(*reldest), *relsource);
+      Thyra::assign(&*reldest, *relsource);
     }
 
     /*! \brief Replace the vectors in \c mv with random vectors.
