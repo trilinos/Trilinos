@@ -46,6 +46,160 @@
 #include "AnasaziOutputManager.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
+/*!
+\class Anasazi::BlockJacobiDavidson
+
+\brief This class implements the block Jacobi-Davidson method, an iterative
+method for solving eigenvalue problems.
+
+The following discussion of the Jacobi-Davidson algorithm is derived from <I>
+O. Chinellato, The Complex-Symmetric Jacobi-Davidson Algorithm and its
+Application to the Computation of some Resonance Frequencies of Anisotropic
+Lossy Axisymmetric Cavities, PhD Thesis, ETHZ, 2005</I>, Chapter 6.4.
+
+The <I>Jacobi-Davidson Algorithm</I> was introduced by Sleijpen and van der
+Vorst in 1996, and it is a typical subspace solver, designed to compute a
+modest number of eigenpair approximations close to a given target \f$\tau\f$.
+The eigenproblem to be solved is: Find <TT>nev</TT> eigenvectors of
+\f[
+A U = \lambda B U
+\f]
+that are close to \f$\tau\f$.
+
+\fixme: something on A, B???
+
+In an abstract fashion, the algorithm can be written as follows:
+\f[
+\begin{tabular}{p{1cm}{l}}
+{\tt  1} &  Procedure JacobiDavidson$(A, B, \tau, U, \epsilon_{conv})$: \\
+{\tt  2} &  Do: \\
+{\tt  3} &  $\quad\quad$ $[\Theta, Z]$ := Extract$(A, B, U, \tau, \sigma)$ \\
+{\tt  4} &  $\quad\quad$ $[\Lambda, Q, U, \Theta, Z, r]$ := Convergence/Deflation$(\Theta, Z, \epsilon_{conv})$ \\
+{\tt  5} &  $\quad\quad$ $\tau$ := TargetSwitch$(r, \tau, \Theta)$ \\
+{\tt  6} &  $\quad\quad$ Solve $(A - \sigma B) c \approx - r$ \\
+{\tt  7} &  $\quad\quad$ $[U, \Theta, Z]$ := Restart($U, \Theta, Z, s_{min}, s_{max})$ \\
+{\tt  8} &  $\quad\quad$ $U$ := Orthogonalize$(B, Q, U, C)$ \\
+{\tt  9} &  EndProcedure 
+\end{tabular}
+\f]
+This template is composed of several building blocks. We will now give some details on the implementation of each of them.
+
+<P><B>Step 3: Subspace Extraction</B>. This step
+finds eigenpairs residing in a given subspace \f$\mathcal{U}\f$,
+which satify certain optimility conditions. Given the subspaces
+\f$\mathcal{U}\f$, \f$A \mathcal{U}\f$ and \f$B \mathcal{U}\f$, several
+strategies exist to extractthe (approximated) eigenpairs. Perhaps the best
+known is the <I>Ritz-Galerkin approach</I>, which first defines the reduced 
+operators:
+\f{eqnarray*}
+A_{\mathcal{U}} & = & \mathcal{U}^H A \mathcal{U} \\
+B_{\mathcal{U}} & = & \mathcal{U}^H B \mathcal{U},
+\f}
+then it computes the eigenpairs \f$(theta_i, z_i)\f$ of the reduced eigenproblem
+\f[
+A_{\mathcal{U}} z_i = \theta_i B_{\mathcal{U}} z_i.
+\f]
+Since this problem is dense, we can take advantage of LAPACK routines. This is done by the Anasazi::ProjectedEigenproblem class.
+
+Given \f$z_i\f$, one can recover the eigenvalue corresponding to \f$\theta_i\f$
+as
+\f[
+U_i = \mathcal{U} z_i.
+\f]
+The associated residuals can be expressed as \f$r(\theta_i, \mathcal{U} z_i) = A \mathcal{U} z_i - \theta_i B \mathcal{U} z_i\f$.
+
+
+<P><B>Step 4: Convergence, Deflation</B>. Each eigenpair approximation obtained from the extract component is associated witha residual \f$r(\theta_i, \mathcal{U} z_i)\f$. If the corresponding <I>residual norm</I> is smaller than a required tolerence \f$\epsilon_{conv}\f$, i.e. if
+\f[
+\frac{
+\| (\theta_i, \mathcal{U} z_i) \| 
+}{
+\| \mathcal{U} z_i  \|
+} = 
+\frac{
+\| A \mathcal{U} z_i - \theta_i B \mathcal{U} z_i  \|
+}{
+\| \mathcal{U} z_i \|
+} \leq \epsilon_{conv}
+\f]
+then the eigenpair is considered to be accurate enough and hence added to the
+space of already converged eigenpairs \f$(\Lambda, Q)\f$. The Convergence/Deflation component iterates over the extracted eigenpair approximations one at a time and checks for thir convergence. Each accepted eigenpari is appended to the space of the already copnvernged ones and the subspace \f$\mathcal{U}\f$ is adapted appropriately. If the overlall number of converged eigenpairs reached the desired number of eigenpairs <TT>nev</TT>, the process terminates. 
+ When an eigenpair is accepted, the search spaces are purged of all the components pointing in the directions of this pair. This guarantees that the same eigenvectors will not be found again, and it is called Deflation.
+In class
+Anasazi::BlockJacobiDavidson, \f$\Lambda\f$ and \f$Q\f$ are defined within the
+input Anasazi::Eigenproblem class. 
+
+
+<P><B>Step 5: Target Switch</B> FIXME
+
+
+<P>B>Step 6: Correction Equation</B>. The Jacobi-Davidson algorithm requires,
+  at each step, the expansion of the search space \f$\mathcal{U}\f$. Clearly,
+  the quality of the approximations depends on the procedure adopted to expand
+  this search space. A very elegant way to obtain good additional candidates
+  consists in solving the so called <I>correction equation</I>.  This equation
+  can be derived by considering the application of an eigenpair correction
+  \f$(\delta, c)\f$ to the eigenpair approximation 
+  \f$(\theta_1, \mathcal{U} z_1)\f$ in such a way
+  that the new residual \f$r(\theta_1 + \delta, \mathcal{U} z_1 + c)\f$ will vanish. By expanding the "corrected" residual we have
+\f[
+A(\mathcal{U} z_1 + c) - (\theta_1 + \delta) B (\mathcal{U} z_1 + c) = 0.
+\f]
+We can replace \f$(\theta_1 + \delta)\f$ with either \f$theta_1\f$ 
+(if the algorithm is close to converge to the desired eigenvalue, and
+ therefore \f$\delta\f$ will be small) or \f$\tau\f$ 
+(if the current approximation is too far from an actual eigenvalue). Therefore,
+  the above equation can be rewritten as
+\f[
+(A - \chi B)c = - r(\theta_1, \mathcal{U} z_1).
+\f]
+with an appropriate \f$\chi\f$. Obviously, \f$c = \mathcal{U} z_1\f$ satisfies
+this equation, yet without yeilding an additional direction. Therefore,
+  the space where the additional correction vector is searched must be restricted. According to Sleijpen and van der Vorst (1996), the space being B-orthogonal to the matrix \f$\hat{Q} = (Q, q)\f$, where \f$q\f$ is the actual eigenvector approximation, represents a reasonable choice. Hence, the correction equation to be solved reads
+\f[
+(A - \chi B) c =  r(\theta_1, \mathcal{U} z_1) \mbox{ s.t. }
+\hat{Q}^T B c = 0.
+\f]
+Note that this constraint offers the further advantage of inhibiting a potentially rapid condition number growth induced by the \f$\sigma's\f$ convergence towards a true eigenvalue. 
+
+
+Note that the correction equation is the major advantage of the
+Jacovi-Davidson algorthm over other iterative eigenvalue solvers. In contract
+to other algorithms where the subspace is augmented following strict rules,
+  the correction equation, which reflects the actual approximation status, is
+  solved in each iteration. In this way the algorithm is guarantee to adapt to
+  the actual situation which in turn promises a good performance.
+            
+
+<P><B>Step 7: Restart</B> 
+In order to keep the storage requirements low, the dimension of the
+subspace is reduced as soon as its dimension reaches an upper limit,
+\f$s_{max}\f$. When doing so, the keep the eigenvectors approximations
+associated with the \f$s_{min} -1\f$ best eigenpair approximations contained
+in the subspace, where \f$s_{min}\f$ denotes the lower dimension limit of
+the search space \f$\mathcal{U}\f$. This way, the algorithm maintains some
+of the approximations gained during the previous iterations. In contrast to Krylov-based solvers, for which a restart constritutes an involved task, this step can be carried out easily and efficiently, and it is implemented as follows:
+\f[
+\begin{tabular}{p{1cm}{l}}
+{\tt  1} &  Procedure Restart$(\mathcal{U}, \Theta, Z, s_{min}, s_{max})$ \\
+{\tt  2} &  Do: \\
+{\tt  3} &  $\quad\quad$If ($s = s_{max}$) Then \\
+{\tt  4} &  $\quad\quad\quad\quad$\mathcal{U} := \mathcal{U} Z(1:s_{max}, 1:s_{min -1)$ \\
+{\tt  5} &  $\quad\quad$End \\
+{\tt  6} &  $\quad\quad$Return (\mathcal{U}, \Theta, Z)$ \\
+{\tt  7} &  EndProcedure  \\
+\end{tabular}
+\f]
+
+
+
+
+
+
+\author Oscar Chinellato (ETHZ/ICOS), Sabine Emch (ETHZ), Marzio Sala (ETHZ/COLAB)
+
+\date Last updated on 01-Nov-05
+*/
 namespace Anasazi {
 
   template<class ScalarType, class MagnitudeType,  class MV, class OP>
@@ -83,6 +237,7 @@ namespace Anasazi {
       return(_numRestarts); 
     }
 
+    //! Get the number of iterations.
     int GetNumIters() const 
     {
       return(_iters); 
@@ -100,7 +255,6 @@ namespace Anasazi {
     }
 
     //@}
-
     //@{ \name Output methods.
 
     //! This method requests that the solver print out its current status to screen.
@@ -117,35 +271,53 @@ namespace Anasazi {
     // 
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
+    //! Problem to be solved.
     Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem;
+    //! Output manager to be used for any output operation.
     Teuchos::RefCountPtr<OutputManager<ScalarType> > _om;
+    //! Sorting manager to be used to sort the eigenvalues.
     Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sm;
+    //! Parameter list containing options for this solver.
     Teuchos::ParameterList _pl;
-    //
-    // Output stream from the output manager
-    //
+    //! Output stream, reference from the output manager
     std::ostream& _os;
-    //
-    // Information obtained from the eigenproblem
-    //
+    
+    // @}
+    // @{ \name Information obtained from the eigenproblem
+    
+    //! Operator A
     Teuchos::RefCountPtr<OP> _A;
+    //! Operator B
     Teuchos::RefCountPtr<OP> _B;
+    //! Preconditioner
     Teuchos::RefCountPtr<OP> _Prec;
+    //! Multi-vector that will contain the computed eigenvectors.
     Teuchos::RefCountPtr<MV> _evecs;
+    //! Will contain the computed eigenvalues.
     Teuchos::RefCountPtr<std::vector<ScalarType> > _evals;
-    //
-    // Internal data.
-    // 
+    
+    // @}
+    // @{ \name Internal data
+    
+    //! Tolerance for convergence
     ScalarType _residual_tolerance;
+    //! Target, the solver will compute the eigenvalues close to this value.
     ScalarType _TARGET;
+    //! Maximum number of allowed iterations.
     int _maxIters;
+    //! Block size.
     int _blockSize;
     int _SMIN;
     int _SMAX;
+    //! Number of requested eigenvalues.
     int _nev;
+    //! Number of performed restarts.
     int _numRestarts;
+    //! Number of performed iterations.
     int _iters;
+    //! Number of computed and accepted eigenvalues.
     int _knownEV;
+    //! Residual norm of computed and accepted eigenvalues.
     std::vector<MagnitudeType> _normR;
     //
     // Convenience typedefs
@@ -349,6 +521,7 @@ namespace Anasazi {
           delete Qtmp, BQtmp;
         }
 
+        // FIXME: WHAT TO DO IF B IS THE IDENTITY???
         // Now B-normalise the vector ...
         sublist[0] = _knownEV;
         Qtmp = _evecs->CloneView(sublist);
@@ -527,7 +700,7 @@ namespace Anasazi {
         Qtmp->MvTimesMatAddMv (1.0, (*AUtmp), Ztmp, 0.0);
         // Qtmp = Qtmp - theta[0]*AU*Z(:,1)
         Qtmp->MvTimesMatAddMv (-theta[conv+j], (*BUtmp), Ztmp, 1.0);
-        // FIXME: XXXXXXXXXXXXXXXXXXX
+        // FIXME: WHAT TO DO IF PREC IS THE IDENTITY??
         // if _Prec or _B are 0, the code crashes..
         _Prec->Apply((*Qtmp), (*Rtmp));
 
@@ -593,13 +766,12 @@ namespace Anasazi {
         s = s - conv - purged;
       }	  
 
-
       // Update the iteration step counter
       _iters++;
     }
 
     return(Ok);
-  }
+  } // solve()
 
   // ==========================================================================
   template <class ScalarType, class MagnitudeType, class MV, class OP>

@@ -24,19 +24,32 @@ is given by trait ProjectedEigenproblem<int, double, MV>.
 
 This class defines a generic approach that can be used to construct and
 solve the small, dense eigenproblem that occurs in several projection
-methods, like Davison and Jacobi-Davidson. The assumptions are as follows.
-The eigenproblem to be solved is
+methods, like Davison and Jacobi-Davidson. Extracting an eigenpair from a subspace is an important problem in tis own,
+considering the vast number of methods that rely on this ability.
+Unfortunately, extracting <I>optimal</I> eigenpairs from a subspace may
+beocome quite an involved task, mainly depending on the requirements the
+eigenpairs have to meet. 
+
+The assumptions are as follows.
+The (distributed, sparse) eigenproblem to be solved is
 \f[
 A V = \Lambda B V,
 \f]
 where \f$A\f$ and \f$B\f$ are two operators, \f$\Lambda\f$ is a diagonal
 matrix containing the eigenvalues and \f$V\f$ is a matrix containing the
-eigenvectors. During the projection method, the three spaces
-\f$\mathcal{U}\f$, \f$\mathcal{A U}\f$ and \f$\mathcal{B U}\f$ are defined by the algorithm. This class furnishes a way to construct and solve the reduced, projected problem
+eigenvectors. A method that constructs a search space \f$\mathcal{U}\f$ is adopted; this method requires the solution of the reduced problem
 \f[
-\mathcal{U}^H A \mathcal{U} Z = \Theta \mathcal{U}^H B \mathcal{U} Z
+\mathcal{U}^H A \mathcal{U} Z = \Theta \mathcal{U}^H B \mathcal{U} Z,
 \f]
-where \f$Z\f$ and \f$\Theta\f$ are the eigenvalues and eigenvectors of the reduced problem, respectively. 
+where \f$Z\f$ and \f$\Theta\f$ are the eigenvalues and eigenvectors of the reduced problem, respectively. This reduced problem can be written as
+\f[
+A_\mathcal{U} Z = \Theta B_\mathcal{U}
+\f]
+and it represents the original problem in the subspace defined by the search
+space. This class
+constructs the matrices \f$A_\mathcal{U}\f$ and \f$B_\mathcal{U}\f$, and solves
+the above equation using optimized methods, typically LAPACK routines. The user has to provide the the three spaces
+\f$\mathcal{U}\f$, \f$\mathcal{A U}\f$ and \f$\mathcal{B U}\f$ are defined by the algorithm. 
 
 The general usage is as follows. The class is templated with an OrdinalType
 (for example, \c int), a ScalarType (for example, \c double), and an
@@ -115,7 +128,13 @@ public:
 };
 
 /*!
-\brief Specialization for <int, double> of ProjectedEigenproblem
+\brief Specialization for <int, double> of ProjectedEigenproblem;
+see the documentation for Anasazi::ProjectedEigenproblem for more details.
+
+\author Oscar Chinellato (ETHZ/ICOS) and Marzio Sala (ETHZ/COLAB)
+
+\date Last updated on 01-Nov-05
+
 */
 template <class MV>
 class ProjectedEigenproblem<int, double, MV> { 
@@ -133,7 +152,14 @@ public:
     _work.resize(3*maxSize);
     _actualSize = 0;
     _maxSize = maxSize;
-    _MatrixType = MatrixType;
+    if (MatrixType == "General")
+      _MT = GENERAL;
+    else if (MatrixType == "Symmetric")
+      _MT = SYMMETRIC;
+    else if (MatrixType == "Hermitian")
+      _MT = HERMITIAN;
+    else
+      throw("Error, value of MatrixType is not correct");
   }
 
   //! Destructor.
@@ -219,7 +245,7 @@ private:
   std::vector<double> *_theta;
   Teuchos::SerialDenseMatrix<int,double> *_Z;   
   int _maxSize;
-  string _MatrixType;
+  MatrixType  _MT;
   std::map<int, const MV* > _U;
   std::map<int, const MV* > _AU;
   std::map<int, const MV* > _BU;
