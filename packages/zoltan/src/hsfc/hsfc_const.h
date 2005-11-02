@@ -24,8 +24,6 @@ extern "C" {
 /* function prototypes */
 
 int  Zoltan_HSFC_Set_Param (char *name, char *val) ;
-void Zoltan_HSFC_Free_Structure (ZZ*);
-int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ);
 void Zoltan_HSFC_Print_Structure(ZZ *zz);
 
 #ifdef __cplusplus
