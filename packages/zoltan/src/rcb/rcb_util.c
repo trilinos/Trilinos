@@ -148,7 +148,6 @@ int Zoltan_RCB_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
   int num_obj, max_obj, rc;
   RCB_STRUCT *to, *from;
   ZOLTAN_ID_PTR gids, lids;
-  int i,j;
 
   from = (RCB_STRUCT *)fromZZ->LB.Data_Structure;
   Zoltan_RCB_Free_Structure(toZZ);
