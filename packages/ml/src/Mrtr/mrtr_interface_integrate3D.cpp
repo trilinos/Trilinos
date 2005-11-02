@@ -132,14 +132,71 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
 
   // first determine whether there is an overlap between sseg and mseg
   // for this purpose, the 'overlapper' class is used
+  // It also build a triangulation of the overlap polygon if there is any
   MRTR::Overlap overlap(sseg,mseg,*this);
 
   // determine the overlap triangulation
   ok = overlap.ComputeOverlap();
   if (!ok) // there is no overlap
     return true;
-  
 
+  // # segments the overlap polygon was discretized with
+  int nseg = overlap.Nseg();
+  // view of segments
+  MRTR::Segment** segs = overlap.SegmentView();
+  
+  // integrator object
+  MRTR::Integrator integrator(3,IsOneDimensional());
+  
+  // loop segments and integrate them
+  for (int s=0; s<nseg; ++s)
+  {
+    MRTR::Segment* actseg = segs[s];
+    // get the points
+    int          np      = actseg->Nnode();
+    const int*   nodeid  = actseg->NodeIds();
+    vector<MRTR::Point*> points;
+    overlap.PointView(points,nodeid,np);
+    
+#if 1    
+    cout << "Segment " << actseg->Id() << " area " << actseg->Area() << endl;
+    cout << *actseg;
+    for (int i=0; i<np; ++i)
+      cout << *points[i];    
+#endif
+
+    // get the function values at the points
+    vector< vector<double>* > vals(np);
+    for (int i=0; i<np; ++i)
+      vals[i] = points[i]->FunctionValues();
+    
+#if 1
+    cout << "Function values:\n";
+    for (int i=0; i<np; ++i)
+    {
+      cout << "Values at point " << points[i]->Id() << endl;
+      cout << "shape function 0 from sseg\n";
+      for (int j=0; j<vals[i][0].size(); ++j)
+        cout << vals[i][0][j] << "   ";
+      cout << endl;
+      cout << "shape function 1 from sseg\n";
+      for (int j=0; j<vals[i][1].size(); ++j)
+        cout << vals[i][1][j] << "   ";
+      cout << endl;
+      cout << "shape function 0 from mseg\n";
+      for (int j=0; j<vals[i][2].size(); ++j)
+        cout << vals[i][2][j] << "   ";
+      cout << endl;
+    }
+#endif    
+          
+    points.clear();
+  } // for (int s=0; s<nseg; ++s)
+
+
+
+  if (segs) delete [] segs;
+  
   return false;
 }
 

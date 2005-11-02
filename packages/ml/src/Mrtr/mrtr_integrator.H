@@ -61,7 +61,7 @@ class Integrator
 public:
   
   // ctor
-  explicit Integrator(int ngp, bool twoD);
+  explicit Integrator(int ngp, bool oneD);
   
   // dtor
   virtual ~Integrator();

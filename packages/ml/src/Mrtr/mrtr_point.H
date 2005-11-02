@@ -81,7 +81,11 @@ public:
   // set x coords
   bool SetNode(MRTR::Node* node) { node_ = node; return true; }
 
+  // store function values in the vals_ vector
   void StoreFunctionValues(int place, double* val, int valdim);
+
+  // return ptr to vals_ vector
+  vector<double>* FunctionValues() { return vals_; }
 
 private:
 

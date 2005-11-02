@@ -77,6 +77,9 @@ public:
     poly_0_4_dif,
     poly_0_2
   };
+
+  // the interface class is a friend to this class
+  friend class Interface;
   
   // ctor
   explicit Overlap(MRTR::Segment& sseg, MRTR::Segment& mseg, MRTR::Interface& inter);
@@ -86,13 +89,39 @@ public:
   
   // compute overlap between 2 segments and it's polygon
   bool ComputeOverlap();
-  
-  
+    
 private:  
   // don't want = operator
   Overlap operator = (const Overlap& old);
   // don't want copy-ctor
   Overlap(MRTR::Overlap& old);
+
+protected:
+
+  //----------------------------------- tools to handle the triangulation map
+  // add a segment to the triangulization
+  bool AddSegment(int id, MRTR::Segment* seg);
+  // return # segments the overlap was discretized with
+  int Nseg() { return s_.size(); }
+  // get view of segments in triangulation map
+  MRTR::Segment** SegmentView();
+
+  //------------------------------------------ tools to handle the polygon map
+  // add a point to the polygon
+  bool AddPointtoPolygon(const int id, const double* P);
+  bool AddPointtoPolygon(map<int,MRTR::Point*>& p, const int id, const double* P);
+  // remove a point from the polygon
+  bool RemovePointfromPolygon(const int id,const double* P);
+  // get the size of the nodal polygon
+  int SizePointPolygon() { return p_.size(); }
+  // get view of point in polygon, calling routine is responsible for freeing
+  MRTR::Point** PointView();
+  MRTR::Point** PointView(map<int,MRTR::Point*>& p);
+  void PointView(vector<MRTR::Point*>& p,const int* nodeids,const int np);
+  // destroy a point polygon
+  bool DestroyPointPolygon(map<int,MRTR::Point*>& p);
+  // copy a point polygon to another polygon
+  bool CopyPointPolygon(map<int,MRTR::Point*>& from, map<int,MRTR::Point*>& to);
 
 private:
 
@@ -141,26 +170,6 @@ private:
   bool Clip_FixPolygon_0_2(int np, MRTR::Point** point);
   // fix the polygon for case 0_6
   bool Clip_FixPolygon_0_6(int np, MRTR::Point** point);
-
-  //------------------------------------------ tools to handle the polygon map
-  // add a point to the polygon
-  bool AddPointtoPolygon(const int id, const double* P);
-  bool AddPointtoPolygon(map<int,MRTR::Point*>& p, const int id, const double* P);
-  // remove a point from the polygon
-  bool RemovePointfromPolygon(const int id,const double* P);
-  // get the size of the nodal polygon
-  int SizePointPolygon() { return p_.size(); }
-  // get view of point in polygon, calling routine is responsible for freeing
-  MRTR::Point** PointView();
-  MRTR::Point** PointView(map<int,MRTR::Point*>& p);
-  // destroy a point polygon
-  bool DestroyPointPolygon(map<int,MRTR::Point*>& p);
-  // copy a point polygon to another polygon
-  bool CopyPointPolygon(map<int,MRTR::Point*>& from, map<int,MRTR::Point*>& to);
-
-  //----------------------------------- tools to handle the triangulization map
-  // add a segment to the triangulization
-  bool AddSegment(int id, MRTR::Segment* seg);
 
   // -------------------------------------finding a convex hull for the polygon
   // create a convex hull of a set of given points in 2D
