@@ -16,49 +16,51 @@ namespace Anasazi {
 /*!
 \class ProjectedEigenproblem
 
-\brief General approach to construct and solve the projected eigenproblem.
+\brief Pure virtual class to manage the construction and the solution of
+projected eigenproblems.
 
 ProjectedEigenproblem is a pure virtual class that defines the interface for
 every concrete ProjectedEigenproblem. Currently, one concrete implementation
-is given by trait ProjectedEigenproblem<int, double, MV>.
+is given by trait ProjectedEigenproblem<int, double, MV> (with MV<double>).
 
-This class defines a generic approach that can be used to construct and
-solve the small, dense eigenproblem that occurs in several projection
-methods, like Davison and Jacobi-Davidson. Extracting an eigenpair from a subspace is an important problem in tis own,
-considering the vast number of methods that rely on this ability.
-Unfortunately, extracting <I>optimal</I> eigenpairs from a subspace may
-beocome quite an involved task, mainly depending on the requirements the
-eigenpairs have to meet. 
+ProjectedEigenproblem encapsulates all it is needed to construct and solve the small, dense eigenproblem that occers in several projection
+methods, like Davison and Jacobi-Davidson. 
 
 The assumptions are as follows.
 The (distributed, sparse) eigenproblem to be solved is
 \f[
-A V = \Lambda B V,
+A X = \Lambda B X, \vspace{2cm} (1)
 \f]
 where \f$A\f$ and \f$B\f$ are two operators, \f$\Lambda\f$ is a diagonal
-matrix containing the eigenvalues and \f$V\f$ is a matrix containing the
-eigenvectors. A method that constructs a search space \f$\mathcal{U}\f$ is adopted; this method requires the solution of the reduced problem
+matrix containing the eigenvalues and \f$X\f$ is a matrix containing the
+eigenvectors. A method that constructs a search space \f$\mathcal{U}\f$ is
+adopted. Given \f$\mathcal{U}\f$, an approximate solution of (1) can be computed by solving the reduced eigenproblem
 \f[
-\mathcal{U}^H A \mathcal{U} Z = \Theta \mathcal{U}^H B \mathcal{U} Z,
+\begin{tabular}{rcl}
+$\mathcal{U}^H A \mathcal{U} \, Z$ & = & $\Theta \, \mathcal{U}^H B \mathcal{U} \, Z$ \\
+$A_\mathcal{U} \, Z$ & = & $\Theta \, B_\mathcal{U}$ \\
+\end{tabular}
 \f]
-where \f$Z\f$ and \f$\Theta\f$ are the eigenvalues and eigenvectors of the reduced problem, respectively. This reduced problem can be written as
-\f[
-A_\mathcal{U} Z = \Theta B_\mathcal{U}
-\f]
-and it represents the original problem in the subspace defined by the search
-space. This class
-constructs the matrices \f$A_\mathcal{U}\f$ and \f$B_\mathcal{U}\f$, and solves
-the above equation using optimized methods, typically LAPACK routines. The user has to provide the the three spaces
-\f$\mathcal{U}\f$, \f$\mathcal{A U}\f$ and \f$\mathcal{B U}\f$ are defined by the algorithm. 
+where \f$Z\f$ and \f$\Theta\f$ are the eigenvalues and eigenvectors of the
+reduced problem, respectively. This eigenproblem is a projection of the
+original problem in the subspace \f$\mathcal{U}\f$, and it is small, dense,
+and serial. Class ProjectedEigenproblem offers a set of capabilities to efficiently solve the projected problem, typically resorting to LAPACK routines.
 
 The general usage is as follows. The class is templated with an OrdinalType
 (for example, \c int), a ScalarType (for example, \c double), and an
-Anasazi::MultiVec<OrdinalType, ScalarType>. 
+Anasazi::MultiVec<ScalarType>. The search space
+\f$\mathcal{U}\f$ and the auxiliary spaces
+\f$\mathcal{U}_A = A \, \mathcal{U}\f$ and 
+\f$\mathcal{U}_B = B \, \mathcal{U}\f$ must be provided by the user.
 
 First, one has to instantiate an object,
 \verbatim
-ProjectedEigenproblem<int, ScalarType, MV> PE(MaxSize);
+string MatrixType = "Symmetric"; // type of matrix
+OrdinalType MaxSize = 16;        // maximum number of eigenvalues to compute
+ProjectedEigenproblem<OrdinalType, ScalarType, MV> PE(MatrixType, MaxSize);
 \endverbatim
+Other available matrix types are: \c "Hermitian" or \c "General".
+
 Then, pointers to already allocated Teuchos::SerialDenseMatrix's for \f$\Theta\f$ and \f$Z\f$ must be passed,
 \verbatim
 PE.SetTheta(&theta);
@@ -66,17 +68,12 @@ PE.SetZ(&Z);
 \endverbatim
 These Teuchos::SerialDenseMatrix objects will contain the computed eigenpairs.
 
-The matrix type can be specified using
-\verbatim
-PE.SetMatrixType("Symmetric");
-\endverbatim
-Other available types are: \c "Hermitian" or \c "General".
-
 Every time a vector (or a multi-vector) is added to the search spaces,
 one has to update the ProjectedEigenproblem components by using
 \verbatim
-PE.Add(IncrementU, IncrementA, IncrementB);
+PE.Add(IncrementU, IncrementAU, IncrementBU);
 \endverbatim
+Note that only the additional vectors are passed, <I>not</I> the entire spaces.
 At this point, one can extract eigenpair approximations from the space by
 simply calling
 \verbatim
@@ -84,9 +81,12 @@ PE.Extract()
 \endverbatim
 The eigenpair is returned in the \c theta and \c Z matrix defined by the user.
 
-\warning Still very incomplete...
+\note When the search space \f$\mathcal{U}\f$ is rotated (using a dense matrix
+<TT>Q</TT>), one should propagate this rotation to the projected eigenproblem
+as well, using method <TT>Rotate(Q)</TT>.
 
-\date Last updated on 26-Oct-05.
+
+\date Last updated on 01-Nov-05.
 
 \author Oscar Chinellato (ETHZ/ICOS) and Marzio Sala (ETHZ/COLAB)
 */
@@ -118,12 +118,13 @@ public:
   //! Extracts the eigenpairs from the reduced system.
   void Extract(); 
 
+  //! Applies a given rotation \c Q to the projected eigenproblem.
   void Rotate(const Teuchos::SerialDenseMatrix<OrdinalType,ScalarType> &Q); 
 
-  //! \fixme Move in the constuctor??
+  //! Sets the vector that will contain the computed eigenvalues.
   void SetTheta(const std::vector<ScalarType> theta); 
 
-  //! \fixme Move in the constuctor??
+  //! Sets the matrix that will contain the computed eigenvectors.
   void SetZ(const Teuchos::SerialDenseMatrix<OrdinalType,ScalarType> &Z); 
 };
 
@@ -221,11 +222,13 @@ public:
     _actualSize = Q.numCols();    
   }
 
+  //! Sets the vector that will contain the computed eigenvalues.
   void SetTheta(std::vector<double> *theta)  
   {
     _theta = theta;
   }
  
+  //! Sets the dense matrix that will contain the computed eigenvectors.
   void SetZ(Teuchos::SerialDenseMatrix<int,double> *Z)
   {
     _Z = Z;
@@ -233,6 +236,7 @@ public:
 
   void Print()
   {
+
     // FIXME: more details in a more comprehensible form!
     cout << _A << endl;
   }

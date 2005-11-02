@@ -91,10 +91,12 @@ which satify certain optimility conditions. Given the subspaces
 strategies exist to extractthe (approximated) eigenpairs. Perhaps the best
 known is the <I>Ritz-Galerkin approach</I>, which first defines the reduced 
 operators:
-\f{eqnarray*}
-A_{\mathcal{U}} & = & \mathcal{U}^H A \mathcal{U} \\
-B_{\mathcal{U}} & = & \mathcal{U}^H B \mathcal{U},
-\f}
+\f[
+\begin{tabular}{lcr}
+$A_{\mathcal{U}}$ & = & $\mathcal{U}^H A \mathcal{U}$ \\
+$B_{\mathcal{U}}$ & = & $\mathcal{U}^H B \mathcal{U}$, \\
+\end{tabular}
+\f]
 then it computes the eigenpairs \f$(theta_i, z_i)\f$ of the reduced eigenproblem
 \f[
 A_{\mathcal{U}} z_i = \theta_i B_{\mathcal{U}} z_i.
@@ -130,10 +132,10 @@ Anasazi::BlockJacobiDavidson, \f$\Lambda\f$ and \f$Q\f$ are defined within the
 input Anasazi::Eigenproblem class. 
 
 
-<P><B>Step 5: Target Switch</B> FIXME
+<P><B>Step 5: Target Switch</B>. The Jacobi-Davidson algorithm is a typical shift-and-invert algorithm; however, in contrast to Krylov space methods, the shift is allowed to vary from iteration to iteration. Choosing the shift close to an actual eigenvalue of the matrix pencil \f$(A, B)\f$ typically yeilds good subspace extensions in the direction of the eigenvector associated with this eigenvalue, which in turn will speed up the convergence towards this eigenpair. A possible strategy to define the target switch is as follows. As soon as the relative norm falls below the requested threshold, the shift is chosen to equal the approximation eigenvalue \f$\theta_i\f$.
 
 
-<P>B>Step 6: Correction Equation</B>. The Jacobi-Davidson algorithm requires,
+<P><B>Step 6: Correction Equation</B>. The Jacobi-Davidson algorithm requires,
   at each step, the expansion of the search space \f$\mathcal{U}\f$. Clearly,
   the quality of the approximations depends on the procedure adopted to expand
   this search space. A very elegant way to obtain good additional candidates
@@ -352,8 +354,8 @@ namespace Anasazi {
     _numRestarts(0),
     _iters(0),
     _TARGET(_pl.get("Target", 0.0)),
-    _SMIN(_pl.get("SMIN", 1)),
-    _SMAX(_pl.get("SMAX", 16)),
+    _SMIN(_pl.get("SMIN", 20)), 
+    _SMAX(_pl.get("SMAX", 30)),
     _knownEV(0)
   {
   }
@@ -373,7 +375,7 @@ namespace Anasazi {
       return Failed;
     }
     
-    // FIXME: Is this needed?
+    // Symmetric or Hermitian, but not general
     // Check the Anasazi::Eigenproblem is symmetric, if not, return failed.
     if (!_problem->IsSymmetric()) 
     {
@@ -431,7 +433,6 @@ namespace Anasazi {
     int s;
     std::vector<int> sublist;
 
-    // FIXME: is BU really necessary?
     Teuchos::RefCountPtr<MV> U, AU, BU;
     U  = MVT::Clone(*iVec, _SMAX);
     AU = MVT::Clone(*iVec, _SMAX);
@@ -443,7 +444,7 @@ namespace Anasazi {
     MV *BUtmp;
     MV *Rtmp;
 
-    _normR.resize(_SMAX); // container for norms
+    _normR.resize(_nev); // container for norms
     
     // working array
     std::vector<ScalarType> theta(_SMAX);
@@ -453,18 +454,16 @@ namespace Anasazi {
 
     // Allocate space for the residuals ...
     Teuchos::RefCountPtr<MV> R;
-    R = MVT::Clone(*iVec, _blockSize);
-    R->MvRandom();
+    R = MVT::CloneCopy(*iVec);
+    ///R = MVT::Clone(*iVec, _blockSize);
+    ///R->MvRandom();
 
-    // FIXME: are we using iVec ???
-    //
     // Allocate space for the result ...
-    int k;
-    int conv;   // number of converged eigenpairs
-    int purged; // number of deflated eigenpairs
+    int conv;   // number of converged eigenpairs per iteration
+    int purged; // number of deflated eigenpairs per iteration
     MV *Qtmp;
     MV *BQtmp;
-    // FIXME: what is BQ??
+
     Teuchos::RefCountPtr<MV> BQ;
     BQ = MVT::Clone(*iVec, _nev);
 
@@ -497,6 +496,7 @@ namespace Anasazi {
       sublist.resize(1);
       std::vector<ScalarType> eta(1);
       std::vector<MagnitudeType> nrm(1);
+      std::vector<MagnitudeType> nrm_q(1);
       for(int i=0; i < _blockSize; i++)
       {
         sublist[0] = i;
@@ -521,17 +521,26 @@ namespace Anasazi {
           delete Qtmp, BQtmp;
         }
 
-        // FIXME: WHAT TO DO IF B IS THE IDENTITY???
         // Now B-normalise the vector ...
         sublist[0] = _knownEV;
         Qtmp = _evecs->CloneView(sublist);
-        _B->Apply((*Rtmp), (*Qtmp));
+        if (_B.get() != 0)
+          _B->Apply((*Rtmp), (*Qtmp));
+        else
+          Qtmp->SetBlock(*Rtmp, sublist);
+
         Rtmp->MvDot((*Qtmp), &nrm);
         nrm[0] = sqrt(nrm[0]);
         Rtmp->MvAddMv(1.0/nrm[0], (*Rtmp), 0.0, (*Rtmp));
 
         sublist[0] = s;
         U->SetBlock((*Rtmp),sublist);
+
+        BUtmp = BU->CloneView(sublist);
+        if (_B.get() != 0)
+          _B->Apply((*Rtmp), (*BUtmp));
+        else
+          BUtmp->SetBlock((*Rtmp), sublist);
 
         delete Rtmp, Qtmp;
         s++;
@@ -547,7 +556,6 @@ namespace Anasazi {
       _A->Apply((*Utmp), (*AUtmp));
 
       BUtmp = BU->CloneView(sublist);
-      _B->Apply((*Utmp), (*BUtmp));
 
       // Update the ProjectedEigenproblem component by telling it
       // about the space increase
@@ -606,20 +614,28 @@ namespace Anasazi {
       Rtmp->MvTimesMatAddMv (-theta[0], (*BUtmp), Ztmp, 1.0);
       // nrm  = ||Rtmp|| 
       Rtmp->MvNorm(&nrm);
+      // 
+      sublist[0] = _knownEV;
+      Qtmp = _evecs->CloneView(sublist);
+      // Qtmp = U*Z(:,1)
+      Qtmp->MvTimesMatAddMv (1.0, (*Utmp), Ztmp, 1.0);
+      // nrm  = ||Rtmp|| 
+      Qtmp->MvNorm(&nrm_q);
 
-#if 0
-#define MIN(a,b) (a)<(b)?(a):(b)
+      nrm[0] /= nrm_q[0];
 
-      // FIXME: output manager
-      cout << "It: " << _iters << " _knownEV: " << _knownEV;
-      cout << " [" << nrm[0] << "]: ";
-      cout << "(" << theta[0] << ")";
-      int j = MIN(s,5);
-      for(int i=1; i<j; ++i){
-        cout << ", (" << theta[i] << ")";
+      if (_om->doPrint()) 
+      {
+        _os << "It: " << _iters << ", knownEV: " << _knownEV;
+        _os << ", s: " << s << ", rel_normr = " << nrm[0];
+        _os << ", theta_i = ";
+        _os << "(" << theta[0] << ")";
+        int j = ANASAZI_MIN(s,5);
+        for(int i=1; i<j; ++i){
+          _os << ", (" << theta[i] << ")";
+        }
+        _os << endl;
       }
-      cout << endl;
-#endif
 
       conv = 0;
       while(nrm[0] < _residual_tolerance){
@@ -627,13 +643,15 @@ namespace Anasazi {
         sublist.resize(1);
         sublist[0] = _knownEV;
         Qtmp = _evecs->CloneView(sublist);
-        // FIXME: the following was Q...
         BQtmp = BQ->CloneView(sublist);
 
         // Qtmp = U*Z(:,1)
         Qtmp->MvTimesMatAddMv (1.0, (*Utmp), Ztmp, 0.0);
         // BQtmp = B*Qtmp
-        _B->Apply((*Qtmp), (*BQtmp));
+        if (_B.get() != 0)
+          _B->Apply((*Qtmp), (*BQtmp));
+        else
+          BQtmp->SetBlock(*Qtmp, sublist);
 
         (*_evals)[_knownEV] = theta[conv];
         _normR[_knownEV] = nrm[0];
@@ -651,6 +669,15 @@ namespace Anasazi {
         // nrm  = ||Rtmp||
         Rtmp->MvNorm(&nrm);
 
+        sublist[0] = _knownEV;
+        Qtmp = _evecs->CloneView(sublist);
+        // Qtmp = U*Z(:,1)
+        Qtmp->MvTimesMatAddMv (1.0, (*Utmp), Ztmp, 1.0);
+        // nrm  = ||Rtmp|| 
+        Qtmp->MvNorm(&nrm_q);
+
+        nrm[0] /= nrm_q[0];
+
         delete Qtmp;
       }
 
@@ -664,7 +691,6 @@ namespace Anasazi {
       // end)                                                      //
       // ========================================================= //
       
-      // FIXME: Output manager everywhere!!!
       if (conv > 0)
       {
         if (_om->doPrint()) 
@@ -678,6 +704,15 @@ namespace Anasazi {
       // approximations and precondition them, i.e. compute the //
       // new search space directions                            //
       // ====================================================== //
+      
+      // SABINE: this is the section to be modified to get
+      // the J/D instead of D...
+      //
+      // To be added:
+      // - projector
+      // - implicit matrix A - \sigma B
+      // - Krylov solver
+      // - Preconditioner (???)
       
       Ztmp.shape(s,1);
 
@@ -700,11 +735,15 @@ namespace Anasazi {
         Qtmp->MvTimesMatAddMv (1.0, (*AUtmp), Ztmp, 0.0);
         // Qtmp = Qtmp - theta[0]*AU*Z(:,1)
         Qtmp->MvTimesMatAddMv (-theta[conv+j], (*BUtmp), Ztmp, 1.0);
-        // FIXME: WHAT TO DO IF PREC IS THE IDENTITY??
-        // if _Prec or _B are 0, the code crashes..
-        _Prec->Apply((*Qtmp), (*Rtmp));
+
+        if (_Prec.get() != 0)
+          _Prec->Apply((*Qtmp), (*Rtmp));
+        else
+          Rtmp->SetBlock(*Qtmp, sublist);
 
         delete Rtmp;
+
+        // SABINE... till here...
       }
 
       delete AUtmp, BUtmp, Qtmp;
@@ -795,7 +834,7 @@ namespace Anasazi {
       _os << endl;
       _os << "COMPUTED EIGENVALUES                 "<<endl;
       _os << std::setw(16) << std::right << "Eigenvalue" 
-          << std::setw(16) << std::right << "Ritz Residual"
+          << std::setw(24) << std::right << "Relative Residual"
           << endl;
       _os << "------------------------------------------------------"<<endl;
 
@@ -804,7 +843,7 @@ namespace Anasazi {
         for (int i = 0; i < _knownEV; i++) 
         {
           _os << std::setw(16) << std::right << (*_evals)[i]
-              << std::setw(16) << std::right << _normR[i]
+              << std::setw(24) << std::right << _normR[i]
               << endl;
         }
       } 
