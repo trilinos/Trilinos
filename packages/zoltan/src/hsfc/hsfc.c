@@ -629,12 +629,11 @@ int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
   }
 
   to = (HSFC_Data *)ZOLTAN_MALLOC(sizeof(HSFC_Data));
-  memset(to, 0, sizeof(HSFC_Data));
-
   if (!to){
     ZOLTAN_PRINT_ERROR(fromZZ->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
+  memset(to, 0, sizeof(HSFC_Data));
 
   toZZ->LB.Data_Structure = (void *)to;
 
