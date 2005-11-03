@@ -52,33 +52,29 @@ bool sillyPowerMethod(
   ,std::ostream                                                  *out          = NULL
   )
 {
-  typedef Teuchos::ScalarTraits<Scalar>   ST;         // We need to use ScalarTraits to support arbitrary types!         
-  typedef typename ST::magnitudeType      ScalarMag;  // This is the type for a norm
-  using Teuchos::arrayArg;
+  // Create some typedefs and some other stuff to make the code cleaner
+  using Teuchos::RefCountPtr; using Teuchos::arrayArg;
+  typedef Teuchos::ScalarTraits<Scalar> ST; typedef typename ST::magnitudeType ScalarMag;
+  typedef RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > VectorSpacePtr;
+  typedef RefCountPtr<Thyra::VectorBase<Scalar> > VectorPtr;
+  using Thyra::NOTRANS;
+  const Scalar one = ST::one();
   if(out) *out << "\nStarting power method ...\n\n";
-  // Create workspace vectors
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
-    q = createMember(A.domain()),
-    z = createMember(A.range()),
-    r = createMember(A.range());
-  // Randomize initial z
-  Thyra::seed_randomize<Scalar>(0); // Make repeated runs with same data unique
-  Thyra::randomize( Scalar(-ST::one()), Scalar(+ST::one()), &*z );
+  // Initialize
+  VectorPtr q = createMember(A.domain()), z = createMember(A.range()), r = createMember(A.range());
+  Thyra::seed_randomize<Scalar>(0);
+  Thyra::randomize( Scalar(-one), Scalar(+one), &*z );
   // Perform iterations
   for( int iter = 0; iter < maxNumIters; ++iter ) {
-    const ScalarMag z_nrm = Thyra::norm(*z);          // Compute natural norm of z
-    Thyra::V_StV( &*q, Scalar(ST::one()/z_nrm), *z ); // q = (1/||z}*z 
-    Thyra::apply( A, Thyra::NOTRANS , *q, &*z );      // z = A*q
-    *lambda = A.range()->scalarProd(*q,*z);           // lambda = <q,z> : Approximate maximum absolute eigenvalue
+    const ScalarMag z_nrm = norm(*z);       // Compute natural norm of z
+    V_StV( &*q, Scalar(one/z_nrm), *z );    // q = (1/||z}*z 
+    apply( A, NOTRANS , *q, &*z );          // z = A*q
+    *lambda = scalarProd(*q,*z);            // lambda = <q,z>    : Approximate maximum absolute eigenvalue
     if( iter%(maxNumIters/10) == 0 || iter+1 == maxNumIters ) {
-      Thyra::linear_combination(                      // r = z - lambda*q : Compute residual of eigenvalue equation
-        2,arrayArg<Scalar>(ST::one(),-*lambda)()
-        ,arrayArg<const Thyra::VectorBase<Scalar>*>(&*z,&*q)()
-        ,ST::zero(),&*r
-        );
-      const ScalarMag r_nrm = Thyra::norm(*r);        // Compute natural norm of r
+      V_StVpV(&*r,Scalar(-*lambda),*q,*z);  // r = -lambda*q + z : Compute residual of eigenvalue equation
+      const ScalarMag r_nrm = norm(*r);     // Compute natural norm of r
       if(out) *out << "Iter = " << iter << ", lambda = " << (*lambda) << ", ||A*q-lambda*q|| = " << r_nrm << std::endl;
-      if( r_nrm < tolerance ) return true;            // Success!
+      if( r_nrm < tolerance ) return true;  // Success!
     }
   }
   return false; // Failure

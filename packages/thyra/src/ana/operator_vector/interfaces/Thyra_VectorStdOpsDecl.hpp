@@ -53,6 +53,13 @@ namespace Thyra {
 template<class Scalar>
 Scalar sum( const VectorBase<Scalar>& v );
 
+/** \brief Scalar product <tt>result = <x,y></tt>.
+ *
+ * Returns <tt>x.space()->scalarProd(x,y)</tt>.
+ */
+template<class Scalar>
+Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
+
 /** \brief Natural norm: <tt>result = sqrt(<v,v>)</tt>.
  *
  * Returns <tt>Teuchos::ScalarTraits<Scalar>::squareroot(v.space()->scalarProd(v,v))</tt>.
@@ -401,6 +408,13 @@ void maxLessThanBound( const VectorBase<Scalar>& x, const Scalar &bound, Scalar 
 
 // /////////////////////////
 // Inline functions
+
+template<class Scalar>
+inline
+Scalar Thyra::scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
+{
+  return x.space()->scalarProd(x,y);
+}
 
 template<class Scalar>
 inline

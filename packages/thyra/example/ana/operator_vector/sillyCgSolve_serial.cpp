@@ -49,6 +49,7 @@ bool runCgSolveExample(
   const int                                                      dim
   ,const Scalar                                                  diagScale
   ,const bool                                                    symOp
+  ,const bool                                                    showAllTests
   ,const bool                                                    verbose
   ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType   tolerance
   ,const int                                                     maxNumIters
@@ -58,6 +59,7 @@ bool runCgSolveExample(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Thyra::multiply; using Thyra::scale;
   typedef typename ST::magnitudeType    ScalarMag;
+  const std::string is = "  ";
   bool success = true;
   bool result;
   if(verbose)
@@ -90,8 +92,8 @@ bool runCgSolveExample(
   Thyra::LinearOpTester<Scalar> linearOpTester;
   linearOpTester.set_all_error_tol(tolerance);
   linearOpTester.set_all_warning_tol(ScalarMag(ScalarMag(1e-2)*tolerance));
-  linearOpTester.show_all_tests(true);
-  result = linearOpTester.check(*A,verbose?&std::cout:0);
+  linearOpTester.show_all_tests(showAllTests);
+  result = linearOpTester.check(*A,verbose?&std::cout:0,is,is);
   if(!result) success = false;
   // (A.3) Create RHS vector b and set to a random value
   RefCountPtr<Thyra::VectorBase<Scalar> > b = createMember(A->range());
@@ -112,7 +114,7 @@ bool runCgSolveExample(
   // (A.6) Testing the linear operator used with the solve
   if(verbose) std::cout << "\nTesting the linear operator used with the solve ...\n";
   linearOpTester.check_for_symmetry(true);
-  result = linearOpTester.check(*A,verbose?&std::cout:0);
+  result = linearOpTester.check(*A,verbose?&std::cout:0,is,is);
   if(!result) success = false;
   //
   // (B) Solve the linear system with the silly CG solver
@@ -157,11 +159,12 @@ int main(int argc, char *argv[])
     // Read in command-line options
     //
 
-    int    dim         = 500;
-    double diagScale   = 1.001;
-    double tolerance   = 1e-4;
-    bool   symOp       = true;
-    int    maxNumIters = 300;
+    int    dim          = 500;
+    double diagScale    = 1.001;
+    double tolerance    = 1e-4;
+    bool   symOp        = true;
+    bool   showAllTests = false;
+    int    maxNumIters  = 300;
 
     CommandLineProcessor  clp(false); // Don't throw exceptions
 
@@ -169,6 +172,7 @@ int main(int argc, char *argv[])
     clp.setOption( "dim", &dim, "Dimension of the linear system." );
     clp.setOption( "diag-scale", &diagScale, "Scaling of the diagonal to improve conditioning." );
     clp.setOption( "sym-op", "unsym-op", &symOp, "Determines if the operator is symmetric or not." );
+    clp.setOption( "show-all-tests", "show-summary-only", &showAllTests, "Show all LinearOpTester tests or not" );
     clp.setOption( "tol", &tolerance, "Relative tolerance for linear system solve." );
     clp.setOption( "max-num-iters", &maxNumIters, "Maximum of CG iterations." );
 
@@ -178,21 +182,21 @@ int main(int argc, char *argv[])
     TEST_FOR_EXCEPTION( dim < 2, std::logic_error, "Error, dim=" << dim << " < 2 is not allowed!" );
 
     // Run using float
-    result = runCgSolveExample<float>(dim,diagScale,symOp,verbose,tolerance,maxNumIters);
+    result = runCgSolveExample<float>(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters);
     if(!result) success = false;
 
     // Run using double
-    result = runCgSolveExample<double>(dim,diagScale,symOp,verbose,tolerance,maxNumIters);
+    result = runCgSolveExample<double>(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters);
     if(!result) success = false;
 
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
 
     // Run using std::complex<float>
-    result = runCgSolveExample<std::complex<float> >(dim,diagScale,symOp,verbose,tolerance,maxNumIters);
+    result = runCgSolveExample<std::complex<float> >(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters);
     if(!result) success = false;
 
     // Run using std::complex<double>
-    result = runCgSolveExample<std::complex<double> >(dim,diagScale,symOp,verbose,tolerance,maxNumIters);
+    result = runCgSolveExample<std::complex<double> >(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters);
     if(!result) success = false;
 
 #endif
@@ -200,13 +204,13 @@ int main(int argc, char *argv[])
 #ifdef HAVE_TEUCHOS_GNU_MP
 
     // Run using mpf_class
-    result = runCgSolveExample<mpf_class>(dim,diagScale,symOp,verbose,tolerance,maxNumIters);
+    result = runCgSolveExample<mpf_class>(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters);
     if(!result) success = false;
 
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
 
     // Run using std::complex<mpf_class>
-    //result = runCgSolveExample<std::complex<mpf_class> >(dim,mpf_class(diagScale),symOp,verbose,mpf_class(tolerance),maxNumIters);
+    //result = runCgSolveExample<std::complex<mpf_class> >(dim,mpf_class(diagScale),symOp,showAllTests,verbose,mpf_class(tolerance),maxNumIters);
     //if(!result) success = false;
     //The above commented-out code throws a floating-point exception?
 
