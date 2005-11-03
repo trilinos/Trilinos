@@ -62,11 +62,11 @@ public:
 
   ~Zoltan_Object()
   {
-    // Warning: Zoltan_Destroy calls MPI.  If you are not using the
-    // C++ bindings for MPI, along with these C++ bindings for Zoltan,
-    // you may be calling MPI_Finalize() before this destructor gets
-    // called, unless you allocate and destroy Zoltan_Objects
-    // explicitly:
+    // Warning: Zoltan_Destroy calls MPI.   
+    // Do not call MPI_Finalize() before this destructor gets called. 
+    // Ensure that ZoltanObject's created on the stack are deleted 
+    // before MPI_Finalize().
+    // Alternatively, you can allocate and destroy Zoltan_Objects explicitly:
     //
     //   MPI_Init(...);
     //   Zoltan_Initialize(...);
@@ -74,9 +74,6 @@ public:
     //    ... more code ...
     //   delete zz;
     //   MPI_Finalize();
-    //
-    // ZoltanObject's created on the stack will be deleted at exit,
-    //  after MPI_Finalize().
 
     Zoltan_Destroy( &(this->ZZ_Ptr) );
   }
