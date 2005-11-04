@@ -215,7 +215,7 @@ Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::restrict_to_next_coarser_lev
 }
 
 /*----------------------------------------------------------------------*
- |  restrict a vector from level current to                  m.gee 01/05|
+ |  prolong a vector from level current to                   m.gee 01/05|
  |  next coarser level next                                             |
  |  returns ptr to coarse Epetra_Vector                                 |
  |  NOTE: the calling routine is responsible for deleteing the          |
@@ -340,7 +340,6 @@ Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::restrict_fine_to_this(
       for (i=0; i<level_; i++)
       {
          // allocate a vector matching level i+1
-         //Epetra_Vector* cvec = new Epetra_Vector(P_[i+1]->ColMap(),false);
          Epetra_Vector* cvec = new Epetra_Vector(P_[i+1]->OperatorDomainMap(),false);
          
          // multiply
@@ -405,7 +404,6 @@ Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::prolong_this_to_fine(
       for (i=level_; i>0; i--)
       {
          // allocate a vector matching level i-1
-         //Epetra_Vector* fvec = new Epetra_Vector(P_[i]->RowMap(),false);
          Epetra_Vector* fvec = new Epetra_Vector(P_[i]->OperatorRangeMap(),false);
          // multiply
          if (i==level_)
@@ -419,7 +417,7 @@ Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::prolong_this_to_fine(
          cvec = fvec;
       }
       // Note that the GIDs in cvec do NOT match those of the fineinterface as
-      // they match the P_[1]->RowMap.
+      // they match the P_[1]->RangeMap.
       // The LIDs and the map match, so we have to copy cvec to xfine_fineinterface
       // using LIDs
       const Epetra_CrsGraph* graph_fineinterface = fineinterface_.getGraph();
@@ -604,6 +602,7 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
      }
 #endif     
      if (Fcoarse) delete Fcoarse; Fcoarse = 0;
+     if (xcoarse) delete xcoarse; xcoarse = 0;
   } // level_ > 0
 
   // check for FAS option

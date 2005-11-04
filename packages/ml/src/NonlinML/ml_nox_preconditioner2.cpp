@@ -75,11 +75,14 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Nonlinearpreconditio
       P[i] = 0;
    for (i=1; i<ml_nlevel_; i++) // there is no Pmat on level 0
    {
+      double t1 = GetClock();
       int    maxnnz  = 0;
-      double cputime = 0.0;
+      double cputime;
       ML_Operator2EpetraCrsMatrix(&(ml_->Pmat[i]), P[i], maxnnz, false, cputime);
+      P[i]->OptimizeStorage();
+      double t2 = GetClock() - t1;
       if (ml_printlevel_>5 && 0 == comm_.MyPID())
-            cout << "ML (level " << i << "): extraction of P in " << cputime << " sec\n";
+            cout << "ML (level " << i << "): extraction of P in " << t2 << " sec\n";
    }
 
    // create the vector of nonlinear levels if it does not exist yet
@@ -161,7 +164,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Nonlinearpreconditio
       
    }
 
-   // in the nonlinear preocnditioner, we don't need the ml hierarchy anymore
+   // in the nonlinear preconditioner, we don't need the ml hierarchy anymore
    if (ag_)
    {
       ML_Aggregate_Destroy(&ag_);
@@ -191,11 +194,14 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
       P[i] = 0;
    for (i=1; i<ml_nlevel_; i++) // there is no Pmat on level 0
    {
+      double t1 = GetClock();
       int    maxnnz  = 0;
-      double cputime = 0.0;
+      double cputime;
       ML_Operator2EpetraCrsMatrix(&(ml_->Pmat[i]), P[i], maxnnz, false, cputime);
+      P[i]->OptimizeStorage();
+      double t2 = GetClock() - t1;
       if (ml_printlevel_>5 && 0 == comm_.MyPID())
-            cout << "ML (level " << i << "): extraction of P in " << cputime << " sec\n";
+            cout << "ML (level " << i << "): extraction of P in " << t2 << " sec\n";
    }
 
    // construct the vector of coarse level matrixfree problems
@@ -299,6 +305,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
       // check the matrix for zero rows and fix the main diagonal
       if (fixdiagonal_)
          fix_MainDiagonal(&tmpMat,i);
+      tmpMat->OptimizeStorage();
       
       // get the coarse interface from the matfreelevel
       ML_NOX::Nox_CoarseProblem_Interface* coarseinterface = 
@@ -434,6 +441,9 @@ int ML_NOX::ML_Nox_Preconditioner::ML_Nox_ApplyInverse_NonLinear(
    // copy correction to Y
    Y.Update(1.0,*x,0.0);
    
+   // tidy up
+   if (f) delete f;
+   if (x) delete x;
    
    return(0);
 }
@@ -505,10 +515,14 @@ int ML_NOX::ML_Nox_Preconditioner::solve()
          if (ml_printlevel_>0 && comm_.MyPID()==0)
             cout << "ML :============FAS converged after " << i << " V-cycles============\n"
                  << "ML :============solution time : " << (t2-t1) << " sec\n\n\n";
+         if (f) delete f;
+         if (x) delete x;
          return(0);
       }
       computePreconditioner(*x);
    }
+   if (f) delete f;
+   if (x) delete x;
    return(-1);
    }
 }

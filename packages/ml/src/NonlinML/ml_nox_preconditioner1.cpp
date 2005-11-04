@@ -78,8 +78,8 @@
  |  Constructor (public)                                     m.gee 11/04|
  *----------------------------------------------------------------------*/
 ML_NOX::ML_Nox_Preconditioner::ML_Nox_Preconditioner(
-                              ML_NOX::Ml_Nox_Fineinterface&    interface,
-                              const Epetra_Comm&               comm):
+                              ML_NOX::Ml_Nox_Fineinterface& interface,
+                              const Epetra_Comm&            comm):
 interface_(interface),
 //DomainMap_(dm),
 //RangeMap_(rm),
@@ -623,7 +623,9 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   if (matfreelev0_) 
      ismatrixfree_=true;
   
+  //---------------------------------------------------------------------
   // build hierarchy with given Jacobian
+  //---------------------------------------------------------------------
   if (ismatrixfree_ == false)
   {
     // check for valid Jacobian, if not, recompute
@@ -638,13 +640,16 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
            << "**ERR**: interface_.getJacobian() returned NULL\n"
            << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
     }
+    fineJac_->OptimizeStorage();
 
     // check for zero rows and fix the main diagonal of them
     if (fixdiagonal_) 
       fix_MainDiagonal(&fineJac_,0);
   }
 
+  //---------------------------------------------------------------------
   // build matrixfree hierachy and probe for all operators
+  //---------------------------------------------------------------------
   else if (ismatrixfree_ == true && matfreelev0_ == false ) 
   {
     // get the graph from the user-interface
@@ -667,7 +672,9 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
      ml_graphwrap_ = new ML_Epetra::CrsGraphWrapper(*fineGraph_,map,map,comm_);
   }
 
+  //---------------------------------------------------------------------
   // probe for operator on level 0 and switch to ismatrixfree_==false
+  //---------------------------------------------------------------------
   else if (ismatrixfree_ == true && matfreelev0_ == true)
   {
     fineJac_ = ML_Nox_computeFineLevelJacobian(x);
@@ -682,7 +689,9 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
     ismatrixfree_ = false;
   }
   
+  //---------------------------------------------------------------------
   // check whether ML and ML_Aggregate handles exist and (re)create them
+  //---------------------------------------------------------------------
   if (ag_ != NULL)
   {
     ML_Aggregate_Destroy(&ag_);
@@ -699,14 +708,18 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   else
     ML_Create(&ml_,ml_N_levels_);
   
+  //---------------------------------------------------------------------
   // set matrix for fine grid
   // NOTE: this is either a wrapped graph or the real fine grid Jacobian
+  //---------------------------------------------------------------------
   if (ismatrixfree_ == false)
     EpetraMatrix2MLMatrix(ml_,0,(dynamic_cast<Epetra_RowMatrix*>(fineJac_)));
   else
     EpetraMatrix2MLMatrix(ml_,0,(dynamic_cast<Epetra_RowMatrix*>(ml_graphwrap_)));
   
+  //---------------------------------------------------------------------
   // set coarsening scheme
+  //---------------------------------------------------------------------
   if (ml_coarsentype_ == "Uncoupled")
     ML_Aggregate_Set_CoarsenScheme_Uncoupled(ag_);
   if (ml_coarsentype_ == "MIS")
@@ -746,25 +759,31 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
        ML_Aggregate_Set_NodesPerAggr(ml_,ag_,i,ml_nnodeperagg_);
   }
   
+  //---------------------------------------------------------------------
   // set default damping factor
   if (ismatrixfree_ == true)
     ML_Aggregate_Set_DampingFactor(ag_, 0.0); // cannot do smoothed aggregation on a graph
   else
     ML_Aggregate_Set_DampingFactor(ag_, 1.5); // do smoothed aggregation on a Jacobian
 
+  //---------------------------------------------------------------------
   // set default threshold to zero
   ML_Aggregate_Set_Threshold(ag_, 0.0);
   
+  //---------------------------------------------------------------------
   // set max coarsest grid size
   ML_Aggregate_Set_MaxCoarseSize(ag_,ml_maxcoarsesize_);
   
+  //---------------------------------------------------------------------
   // Calculate spectral norm
   ML_Aggregate_Set_SpectralNormScheme_Calc(ag_);
   
+  //---------------------------------------------------------------------
   // set ML printlevel
   ML_Set_PrintLevel(ml_printlevel_);
   
-  // set the nullspace (currently default nullspace)
+  //---------------------------------------------------------------------
+  // set the nullspace
   if (ismatrixfree_ == true)
      i = ml_graphwrap_->NumMyRows();
   else
@@ -793,10 +812,12 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   }
 #endif
 
+  //---------------------------------------------------------------------
   // run adaptive setup phase
   if (adaptns_>0)
     Ml_Nox_adaptivesetup(&nullsp,fineJac_,ml_numPDE_,ml_dim_nullsp_);
   
+  //---------------------------------------------------------------------
   if (nullsp)
   {
 #if 0
@@ -820,10 +841,14 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
      }
      ML_Aggregate_Set_NullSpace(ag_,ml_numPDE_,ml_dim_nullsp_,NULL,i);
   }
+
+  //---------------------------------------------------------------------
   // keep the aggregation information
   ag_->keep_agg_information = 1;
   
+  //---------------------------------------------------------------------
   // build hierarchy
+  //---------------------------------------------------------------------
   ml_nlevel_ = ML_Gen_MGHierarchy_UsingAggregation(ml_,0,ML_INCREASING,ag_);
 
   if (ml_nlevel_<2)
@@ -950,11 +975,14 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
       P[i] = 0;
    for (i=1; i<ml_nlevel_; i++) // there is no Pmat on level 0
    {
+      double t1 = GetClock();
       int    maxnnz  = 0;
       double cputime = 0.0;
       ML_Operator2EpetraCrsMatrix(&(ml_->Pmat[i]), P[i], maxnnz, false, cputime);
+      P[i]->OptimizeStorage();
+      double t2 = GetClock() - t1;
       if (ml_printlevel_>0 && 0 == comm_.MyPID())
-            cout << "matrixfreeML (level " << i << "): extraction of P in " << cputime << " sec\n";
+            cout << "matrixfreeML (level " << i << "): extraction of P in " << t2 << " sec\n";
    }
    
    // construct the vector of coarse level problems
@@ -1054,7 +1082,7 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
 {
   // make a copy of the graph
   Epetra_CrsGraph* graph = ML_NOX::deepcopy_graph(interface_.getGraph());
-  Epetra_CrsGraph* cgraph = ML_NOX::deepcopy_graph(interface_.getModifiedGraph());
+  Epetra_CrsGraph* cgraph = const_cast<Epetra_CrsGraph*>(interface_.getModifiedGraph());
   
   // the block size of the graph here
   int bsize = ml_numPDE_;
@@ -1141,9 +1169,9 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
   Epetra_CrsMatrix* B = dynamic_cast<Epetra_CrsMatrix*>(&(FD->getUnderlyingMatrix()));                       
   Epetra_CrsMatrix* A = new Epetra_CrsMatrix(*B);
   A->FillComplete();
+  A->OptimizeStorage();
 
   // tidy up
-  delete cgraph;           cgraph = 0;
   delete FD;               FD = 0;
   delete colorMap;         colorMap = 0;
   delete colorMapIndex;    colorMapIndex = 0;

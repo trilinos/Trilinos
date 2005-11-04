@@ -120,8 +120,10 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
    }
    
+   // ------------------------------------------------------------------------
    // get the Jacobian of this level
    const Epetra_CrsGraph* graph = 0;
+   // ------------------------------------------------------------------------
    if (level_==0)
    {
       graph = fineinterface_.getGraph();
@@ -137,6 +139,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
       }
    }
+   // ------------------------------------------------------------------------
    else
    {
       // On coarse levels get Jacobian from hierarchy
@@ -145,6 +148,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
       double cputime=0.0;
       ML_Operator2EpetraCrsMatrix(&(ml_->Amat[level_]), SmootherA_, maxnnz, 
                                   false, cputime);
+      SmootherA_->OptimizeStorage();
       graph = &(SmootherA_->Graph());
    }
    
@@ -156,19 +160,23 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
    }
 
+   // ------------------------------------------------------------------------
    // generate this level's coarse interface
    coarseinterface_ = new ML_NOX::Nox_CoarseProblem_Interface(
                                       fineinterface_,level_,ml_printlevel_,
                                       P,&(graph->RowMap()),nlevel_);  
 
+   // ------------------------------------------------------------------------
    // generate this level's coarse prepostoperator
    coarseprepost_ = new ML_NOX::Ml_Nox_CoarsePrePostOperator(*coarseinterface_,
                                                              fineinterface_);    
    
+   // ------------------------------------------------------------------------
    // get the current solution to this level
    xthis_ = coarseinterface_->restrict_fine_to_this(xfine);
    
 
+   // ------------------------------------------------------------------------
    // create this level's preconditioner
    // We use a 1-level ML-hierarchy for that
    ML_Aggregate_Create(&thislevel_ag_);
@@ -241,7 +249,9 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    if (level_==2) exit(0);
 #endif   
 
+   // ------------------------------------------------------------------------
    // set up NOX on this level   
+   // ------------------------------------------------------------------------
    nlParams_ = new NOX::Parameter::List();
    NOX::Parameter::List& printParams = nlParams_->sublist("Printing");        
    printParams.setParameter("MyPID", comm_.MyPID()); 
@@ -479,19 +489,27 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
    }
    
+   // ------------------------------------------------------------------------
+   Mat->OptimizeStorage();
+
+   // ------------------------------------------------------------------------
    // get the current solution to this level
    xthis_ = coarseinterface_->restrict_fine_to_this(xfine);
 
+   // ------------------------------------------------------------------------
    // create this level's preconditioner
    // We use a 1-level ML-hierarchy for that
    ML_Aggregate_Create(&thislevel_ag_);
    ML_Create(&thislevel_ml_,1);
    
+   // ------------------------------------------------------------------------
    // set the Jacobian on level 0 of the local ml
    EpetraMatrix2MLMatrix(thislevel_ml_,0,
                          (dynamic_cast<Epetra_RowMatrix*>(Mat)));
    
+   // ------------------------------------------------------------------------
    // construct a 1-level ML-hierarchy on this level as a smoother   
+   // ------------------------------------------------------------------------
    ML_Set_PrintLevel(ml_printlevel_);  
    ML_Aggregate_Set_CoarsenScheme_Uncoupled(thislevel_ag_); 
    ML_Aggregate_Set_DampingFactor(thislevel_ag_, 0.0);
@@ -553,11 +571,14 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    if (level_==2) exit(0);
 #endif   
 
+   // ------------------------------------------------------------------------
    // generate this level's coarse prepostoperator
    coarseprepost_ = new ML_NOX::Ml_Nox_CoarsePrePostOperator(*coarseinterface_,
                                                              fineinterface_);    
 
-   // set up NOX's nlnCG on this level   
+   // ------------------------------------------------------------------------
+   // set up NOX on this level   
+   // ------------------------------------------------------------------------
    nlParams_ = new NOX::Parameter::List();
    NOX::Parameter::List& printParams = nlParams_->sublist("Printing");        
    printParams.setParameter("MyPID", comm_.MyPID()); 
