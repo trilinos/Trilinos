@@ -526,7 +526,7 @@ static int pmatching_ipm (ZZ *zz,
     }  
 
 #ifdef NEWER_PHASE3_REDUCTION
-  if (hgc->myProc_y == 0)
+  if (!cFLAG && hgc->myProc_y == 0)
     for (i = 0; i < total_nCandidates; i++) {
       float *f;
       master_data[i*3] = -1;
