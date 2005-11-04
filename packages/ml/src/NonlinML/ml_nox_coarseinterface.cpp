@@ -466,34 +466,6 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
      }
   }
 
-  // FIXME:: after intensive testing, this test might not be necessary
-  Epetra_Vector* xcoarse  = 0;
-#if 0
-  bool samemap = this_RowMap_->PointSameAs(x.Map());
-  if (samemap)
-  {
-#endif
-     xcoarse = new Epetra_Vector(*this_RowMap_,false);
-     xcoarse->Update(1.0,x,0.0);
-#if 0
-  }
-  else
-  {
-     cout << "**WRN** Maps are not equal in\n"
-          << "**WRN** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-     // this exporter exports from input map of x to the current graph_.RowMap
-     Epetra_Export* exporter = new Epetra_Export(x.Map(),*this_RowMap_);     
-     xcoarse = new Epetra_Vector(*this_RowMap_,false);
-     ierr = xcoarse->Export(x,*exporter,Insert);
-     if (ierr)
-     {
-        cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::computeF:\n"
-             << "**ERR**: export from x to xcoarse returned err=" << ierr <<"\n"
-             << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-     }
-     delete exporter; exporter = 0;
-  }
-#endif  
   if (ml_printlevel_>9 && x.Comm().MyPID()==0)
   {
      cout << "ML (level " << level_ << "): Call no " << nFcalls_ << " to Nox_CoarseProblem_Interface::computeF\n";
@@ -508,31 +480,8 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
      Epetra_Vector*         Ffine     = new Epetra_Vector(finegraph->RowMap(),false);
      Epetra_Vector*         xfine     = new Epetra_Vector(finegraph->RowMap(),false);
 
-     // FIXME:: after intensive testing, this test might not be necessary
-#if 0
-     samemap = xfine->Map().PointSameAs(xcoarse->Map());
-     if (samemap)
-     {
-#endif
-        xfine->Update(1.0,*xcoarse,0.0);
-#if 0
-     }
-     else
-     {
-        cout << "**WRN** Maps are not equal in\n"
-             << "**WRN** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        // create exporter from xcoarse->Map() to finegraph->RowMap()
-        Epetra_Export* exporter = new Epetra_Export(xcoarse->Map(),xfine->Map());
-        ierr = xfine->Export(*xcoarse,*exporter,Insert);
-        if (ierr)
-        {
-           cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::computeF:\n"
-                << "**ERR**: export from xcoarse to xfine returned err=" << ierr <<"\n"
-                << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-        }
-        delete exporter; exporter = 0;
-     }
-#endif
+     xfine->Update(1.0,x,0.0);
+
      // call fine level interface
      err = fineinterface_.computeF(*xfine,*Ffine,fillFlag);
      if (xfine) delete xfine; xfine = 0;
@@ -551,7 +500,6 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
 
      //tidy up
      if (importer) delete importer; importer = 0;
-     if (xcoarse)  delete xcoarse;  xcoarse  = 0;
      if (Ffine)    delete Ffine;    Ffine    = 0;
   }
   else // level_ > 0
@@ -559,7 +507,7 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
      // create Ffine and xfine matching the fine interface
      const Epetra_CrsGraph* finegraph = fineinterface_.getGraph();
      Epetra_Vector*         Ffine     = new Epetra_Vector(finegraph->RowMap(),false);
-     Epetra_Vector*         xfine     = prolong_this_to_fine(*xcoarse);
+     Epetra_Vector*         xfine     = prolong_this_to_fine(x);
      
      // call the fine grid user interface
      err = fineinterface_.computeF(*xfine,*Ffine,fillFlag);
@@ -575,34 +523,9 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
      Epetra_Vector* Fcoarse = restrict_fine_to_this(*Ffine);
      if (Ffine) delete Ffine; Ffine = 0;
      
-     // FIXME:: after intensive testing, this test might not be necessary
-#if 0
-     samemap = F.Map().PointSameAs(Fcoarse->Map());
-     if (samemap)
-     {
-#endif
-        F.Update(1.0,*Fcoarse,0.0);
-#if 0
-     }
-     else
-     {
-        cout << "**WRN** Maps are not equal in\n"
-             << "**WRN** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        // create importer from Fcoarse to F 
-        Epetra_Import* importer = new Epetra_Import(F.Map(),Fcoarse->Map()); 
-        // import F from Fcoarse
-        ierr = F.Import(*Fcoarse,*importer,Insert); 
-        if (ierr)
-        {
-           cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::computeF:\n"
-                << "**ERR**: import from Fcoarse to F returned err=" << ierr <<"\n"
-                << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-        }
-        if (importer) delete importer; importer = 0;
-     }
-#endif     
+     F.Update(1.0,*Fcoarse,0.0);
+
      if (Fcoarse) delete Fcoarse; Fcoarse = 0;
-     if (xcoarse) delete xcoarse; xcoarse = 0;
   } // level_ > 0
 
   // check for FAS option
@@ -614,19 +537,8 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
              << "**ERR**: isFAS is true and f-vector is NULL\n"
              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
      }
-#if 0
-     if (F.Map().SameAs(fbar_->Map())  != true ||
-         F.Map().SameAs(fxbar_->Map()) != true)
-     {
-        cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::computeF:\n"
-             << "**ERR**: mismatch in Maps of F and fbar_/fxbar_\n"
-             << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-     }
-#endif
      F.Update(-1.0,*fxbar_,1.0,*fbar_,1.0);
-
   }
-
   return err;
 }
 
