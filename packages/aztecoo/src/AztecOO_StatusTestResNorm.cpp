@@ -40,6 +40,8 @@ AztecOO_StatusTestResNorm::AztecOO_StatusTestResNorm(const Epetra_Operator & Ope
     lhs_(LHS),
     rhs_(RHS),
     tolerance_(Tolerance),
+    maxNumExtraIterations_(3),
+    numExtraIterations_(0),
     restype_(Implicit),
     resnormtype_(TwoNorm),
     scaletype_(NormOfInitRes),
@@ -48,6 +50,7 @@ AztecOO_StatusTestResNorm::AztecOO_StatusTestResNorm(const Epetra_Operator & Ope
     scaleweights_(0),
     scalevalue_(1.0),
     resvalue_(0.0),
+    convergedOnce_(false),
     status_(Unchecked),
     resvecrequired_(false),
     firstcallCheckStatus_(true),
@@ -181,10 +184,23 @@ AztecOO_StatusType AztecOO_StatusTestResNorm::CheckStatus(int CurrentIter,
   }
 
   testvalue_ = resvalue_/scalevalue_;
-  if (testvalue_>tolerance_)
-    status_ = Unconverged;
-  else if (testvalue_<=tolerance_)
+  if (testvalue_>tolerance_) 
+    if (convergedOnce_) {
+      if (numExtraIterations_<maxNumExtraIterations_) {
+	numExtraIterations_++;
+	status_ = Unconverged;
+      }
+      else {
+	status_ = PartialFailed;
+      }
+    }
+    else {
+      status_ = Unconverged;
+    }
+  else if (testvalue_<=tolerance_) {
+    convergedOnce_ = true;	  
     status_ = Converged;
+  }
   else
     status_ = NaN;
 

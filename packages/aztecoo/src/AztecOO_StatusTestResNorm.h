@@ -156,6 +156,16 @@ class AztecOO_StatusTestResNorm: public AztecOO_StatusTest {
     the initial tolerance was too tight or too lax.
   */
   int ResetTolerance(double Tolerance) {tolerance_ = Tolerance; return(0);};
+
+  //! Set the maximum number of extra iterations that will be performed in case the implicit residual succeeds that the true residual fails (default is 3).
+  /*! In some instance,especially with GMRES, the implicitly computed residual is an optimistic estimate of the true residual. In these cases,
+      especially when the tolerance is set very small, the iterative solver can never satisfy the tolerance with the explicit residual, so
+      we allow the user to limit the number of extra iterations that will be performed.  If the implicit residual is satisfied, then the value
+      set here will determine exactly how many extra iterations will be allowed to try and converge the explicit residual.  This value has no impact
+      status tests that are based on explicit residuals.
+      \param maxNumExtraIterations (In) Maximum number of extra iterations that will be performed in case the implicit residual succeeds that the true residual fails.
+  */
+  int SetMaxNumExtraIterations(int maxNumExtraIterations) {maxNumExtraIterations_ = maxNumExtraIterations; return(0);};
   //@}
 
   //@{ \name Methods that implement the AztecOO_StatusTest interface.
@@ -229,6 +239,12 @@ class AztecOO_StatusTestResNorm: public AztecOO_StatusTest {
    
   //! Tolerance used to determine convergence
   double tolerance_;
+   
+  //! Maximum number of extra iterations to be performed in case the implicit residual succeeds but the implicit one fails.
+  int maxNumExtraIterations_;
+   
+  //! Number of extra iterations already performed in case the implicit residual succeeds but the implicit one fails.
+  int numExtraIterations_;
  
   //! Type of residual to use (explicit or implicit)
   ResType restype_;
@@ -256,6 +272,9 @@ class AztecOO_StatusTestResNorm: public AztecOO_StatusTest {
 
   //! Test value = resvalue_ / scalevalue_
   double testvalue_;
+  
+  //! See if we have converged once before (used for implicit convergence)
+  bool convergedOnce_;
   
   //! Status
   AztecOO_StatusType status_;

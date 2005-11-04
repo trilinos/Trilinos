@@ -1286,7 +1286,7 @@ void AztecOO_StatusTest_wrapper(void * conv_test_obj,/* pointer to AztecOO_Statu
     *converged = 0;
   else if(Status==Converged)
     *converged = 1;
-  else if (Status==NaN)
+  else if (Status==NaN || Status==PartialFailed)
     *isnan = 1;
   else
     *isnan = 1; // Failed, treat same as isnan
