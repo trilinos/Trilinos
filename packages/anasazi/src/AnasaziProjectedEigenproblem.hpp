@@ -179,9 +179,9 @@ public:
     for(i=0; i < U.GetNumberVecs(); ++i){
       list[0] = i;
 
-      _U[_actualSize]  = U.CloneView(list);
-      _AU[_actualSize] = AU.CloneView(list);
-      _BU[_actualSize] = BU.CloneView(list);
+      _U[_actualSize]  = MVT::CloneView( U, list);
+      _AU[_actualSize] = MVT::CloneView( AU, list);
+      _BU[_actualSize] = MVT::CloneView( BU, list);
       _actualSize++;
     }
 
@@ -189,7 +189,7 @@ public:
     // Update _A (i.e. Atilde)
     for(i=0; i < _actualSize; ++i){
       for (j=0; j < U.GetNumberVecs(); ++j){
-	_U[i]->MvDot((*_AU[oldSize+j]), &Aij);
+	MVT::MvDot( *_U[i], *_AU[oldSize+j], &Aij);
 	_A(i, oldSize + j) = Aij[0];
       }
     }
@@ -250,10 +250,14 @@ private:
   Teuchos::SerialDenseMatrix<int,double> *_Z;   
   int _maxSize;
   MatrixType  _MT;
-  std::map<int, const MV* > _U;
-  std::map<int, const MV* > _AU;
-  std::map<int, const MV* > _BU;
+  std::map<int, Teuchos::RefCountPtr<const MV> > _U;
+  std::map<int, Teuchos::RefCountPtr<const MV> > _AU;
+  std::map<int, Teuchos::RefCountPtr<const MV> > _BU;
   Teuchos::LAPACK<int, double> _lapack;
+
+  // typedef for Anasazi::MultiVecTraits class, which should be used for any
+  // interaction with any multivectors.
+  typedef Anasazi::MultiVecTraits<double,MV> MVT;
 };
 
 } // namespace Anasazi

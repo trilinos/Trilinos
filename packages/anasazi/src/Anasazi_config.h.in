@@ -23,6 +23,9 @@
 /* Define if want to build anasazi-examples */
 #undef HAVE_ANASAZI_EXAMPLES
 
+/* Define if want to build anasazi-experimental */
+#undef HAVE_ANASAZI_EXPERIMENTAL
+
 /* Define if want to build with anasazi enabled */
 #undef HAVE_ANASAZI_IFPACK
 

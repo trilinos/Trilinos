@@ -26,5 +26,9 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = BlockDavidson BlockKrylovSchur LOBPCG MVOPTester
+if BUILD_ANASAZI_EXPERIMENTAL
+EXPERIMENTAL_SUBDIR = BlockJacobiDavidson
+endif
+
+SUBDIRS = BlockDavidson BlockKrylovSchur LOBPCG MVOPTester $(EXPERIMENTAL_SUBDIR)
 

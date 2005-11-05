@@ -303,8 +303,11 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 # Optional: Thyra, Triutils, Belos, AztecOO, and Ifpack
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_FEATURE_SUB(teuchos, complex, [Build examples/tests which use complex scalar type], TEUCHOS_COMPLEX, no)
+TAC_ARG_ENABLE_FEATURE_SUB(teuchos, complex, [Build examples/tests which use complex scalar type], TEUCHOS_COMPLEX, yes) 
 AM_CONDITIONAL(BUILD_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno"])
+
+TAC_ARG_ENABLE_FEATURE_SUB(anasazi, experimental, [Build examples/tests which use experimental code], ANASAZI_EXPERIMENTAL, no) 
+AM_CONDITIONAL(BUILD_ANASAZI_EXPERIMENTAL, [test "X$ac_cv_use_anasazi_experimental" != "Xno"])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, triutils, ANASAZI_TRIUTILS, BUILD_TRIUTILS, yes, [Build examples which use Triutils.], [Build examples which use Triutils. Can be overridden with --disable-anasazi-triutils.])
 

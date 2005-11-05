@@ -67,8 +67,8 @@ int main(int argc, char *argv[])
 
   Anasazi::ReturnType returnCode = Anasazi::Ok;	
 
-  int        DIM  = 100;
-  double     TOL    = 1e-8;
+  int            DIM  = 100;
+  ScalarType     TOL    = 1e-8;
 
   int MAXITER = 500;
   int NEV = 3; 
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
   // A = tridiag([-1,4,-1]), B=tridiag([-1,2,-1])  //
   // ============================================= //
 
-  double TARGET = 1.5;
+  ScalarType TARGET = 1.5;
 
   std::vector<ScalarType> A_Entries(3);
   A_Entries[0] = -1.0;
@@ -106,16 +106,16 @@ int main(int argc, char *argv[])
   // Sets up the solver //
   // ================== //
 
-  typedef MyMultiVec MV;        
-  typedef MyOperator OP;        
-  typedef Anasazi::MultiVecTraits<double, MyMultiVec> MVT;
+  typedef Anasazi::MultiVec<ScalarType> MV;        
+  typedef Anasazi::Operator<ScalarType> OP;        
+  //typedef Anasazi::MultiVecTraits<ScalarType, MyMultiVec> MVT;
 
-  Teuchos::RefCountPtr<MV> ivec = Teuchos::rcp(new MV(DIM, BLOCKSIZE));        
+  Teuchos::RefCountPtr<MV> ivec = Teuchos::rcp(new MyMultiVec(DIM, BLOCKSIZE));        
   ivec->MvRandom();
 
   // Create the eigenproblem.
-  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(A, B, ivec) );
+  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<ScalarType, MV, OP> > MyProblem =
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<ScalarType, MV, OP>(A, B, ivec) );
 
   MyProblem->SetPrec(K); 
 
@@ -129,13 +129,13 @@ int main(int argc, char *argv[])
   MyProblem->SetProblem();
 
   // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
-    Teuchos::rcp(new Anasazi::OutputManager<double>(MyPID));
+  Teuchos::RefCountPtr<Anasazi::OutputManager<ScalarType> > MyOM =
+    Teuchos::rcp(new Anasazi::OutputManager<ScalarType>(MyPID));
   MyOM->SetVerbosity(Anasazi::FinalSummary);	
 
   // Create a sort manager
-  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MyMultiVec, MyOperator> > MySM =
-    Teuchos::rcp(new Anasazi::BasicSort<double, MyMultiVec, MyOperator>("SM"));
+  Teuchos::RefCountPtr<Anasazi::BasicSort<ScalarType, MV, OP> > MySM =
+    Teuchos::rcp(new Anasazi::BasicSort<ScalarType, MV, OP>("SM"));
 
 
   // Create parameter list to pass into solver
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
   MyPL.set("Target", TARGET);
 
   // Initialize the Block Jacobi-Davidson solver
-  Anasazi::BlockJacobiDavidson<double, double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
+  Anasazi::BlockJacobiDavidson<ScalarType, MagnitudeType, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
                            
   // Solve the problem to the specified tolerances or length
   returnCode = MySolver.solve();
