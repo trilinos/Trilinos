@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
 #ifdef HAVE_TEMPLATE_QUALIFIER
   // Has a tolerance been chosen and is it a double-precision number?
   bool tol_double = false;
-  tol_double = My_List.template isType<double>("Tolerance");
+  tol_double = My_List.isType<double>("Tolerance");
 #endif
   // Has a drop tolerance been chosen and is it a double-precision number?
   dtol_double = Teuchos::isParameterType<double>(Prec_List, "Drop Tolerance"); 
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
   float tol;
 #ifdef HAVE_TEMPLATE_QUALIFIER
   // Get method that retrieves a parameter of a particular type.
-  tol = My_List.template get<float>("Tolerance");
+  tol = My_List.get<float>("Tolerance");
 
   /* In the above example, the first ``get'' method is a safe way of
      obtaining a parameter when its existence is indefinite but required.
@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
      is in a try/catch block:
   */
   try {
-    tol = My_List.template get<float>("Tolerance");
+    tol = My_List.get<float>("Tolerance");
   }
   catch ( std::exception& e) {
     tol = 1e-6;

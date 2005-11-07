@@ -235,8 +235,8 @@ int main(int argc, char *argv[])
     string nonlin_solver;
     tempMeth = true;
     try {
-      max_iters = PL_My_Polynomial.template get<int>("Max Iters");
-      nonlin_solver = PL_Main.template get<string>("Nonlinear Solver");
+      max_iters = PL_My_Polynomial.get<int>("Max Iters");
+      nonlin_solver = PL_Main.get<string>("Nonlinear Solver");
     }
     catch( std::exception& e ) { tempMeth = false; }  
     if (verbose) {
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
     tempMeth = false;
     FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
     try {
-	mbf = PL_LinSol.template get<float>( "Tol" );
+	mbf = PL_LinSol.get<float>( "Tol" );
     }
     catch( std::exception& e ) {
 	tempMeth = true;
@@ -320,8 +320,8 @@ int main(int argc, char *argv[])
     int* max_iters_ptr = 0;
     string* nonlin_solver_ptr;
 
-    max_iters_ptr = PL_My_Polynomial.template getPtr<int>("Max Iters");
-    nonlin_solver_ptr = PL_Main.template getPtr<string>("Nonlinear Solver");
+    max_iters_ptr = PL_My_Polynomial.getPtr<int>("Max Iters");
+    nonlin_solver_ptr = PL_Main.getPtr<string>("Nonlinear Solver");
 
     if (verbose) {
 	cout<< "Is the templated 'getPtr' method functional ... "<<endl;
@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
     float* mbf_ptr = 0;
     FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
 
-    mbf_ptr = PL_LinSol.template getPtr<float>( "Tol" );
+    mbf_ptr = PL_LinSol.getPtr<float>( "Tol" );
 
     if (!mbf_ptr)
 	FailedTests--;		
@@ -418,9 +418,9 @@ int main(int argc, char *argv[])
     // (This will only be tested if the compiler excepts "template" as a qualifier)
     //-----------------------------------------------------------
     bool PT1, PT2, PT3;
-    PT1 = PL_Polynomial.template isType<int>("Default Step");
-    PT2 = PL_Polynomial.template isType<long int>("Default Step");
-    PT3 = PL_Polynomial.template isType<string>("Interpolation Type");
+    PT1 = PL_Polynomial.isType<int>("Default Step");
+    PT2 = PL_Polynomial.isType<long int>("Default Step");
+    PT3 = PL_Polynomial.isType<string>("Interpolation Type");
     if (verbose) {
 	cout<< "Is the templated 'isType' method functional ... "<<endl;
 	cout<< "  Is the 'Default Step' of type 'int' ... ";
