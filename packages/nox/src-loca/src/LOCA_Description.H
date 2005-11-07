@@ -110,7 +110,7 @@ As in %NOX, all parameters are passed to %LOCA through parameter lists defined b
 
 \section stepper_params Stepper Parameters
 
-The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  The "LOCA" sublist contains parameters and sublists for the Stepper and various %LOCA support classes, while the "NOX" sublist contains parameters and sublists specific to %NOX solvers.  The %NOX sublist is passed directly to an instance of the NOX::Solver::Manager class in the Stepper and therefore has the same structure as any %NOX solver parameter list hierarchy.  Please see the <a href="./parameters.html">%NOX Parameter Reference</a> page for more details on the structure of this list.  
+The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  The "LOCA" sublist contains parameters and sublists for the Stepper and various %LOCA support classes, while the "NOX" sublist contains parameters and sublists specific to %NOX solvers.  The %NOX sublist is passed directly to an instance of the NOX::Solver::Manager class in the Stepper and therefore has the same structure as any %NOX solver parameter list hierarchy.  Please see the <a href="./parameters.html">%NOX Parameter Reference</a> page for more details on the structure of this list.
 
 <ul> 
 <li> "NOX" sublist -- See <a href="./parameters.html">%NOX Parameter Reference</a> for more details
