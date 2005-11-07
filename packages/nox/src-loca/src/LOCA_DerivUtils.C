@@ -39,15 +39,20 @@
 #include "NOX_Abstract_MultiVector.H"
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Common.H"  // For fabs function
+#include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
-LOCA::DerivUtils::DerivUtils(double perturb) :
+LOCA::DerivUtils::DerivUtils(
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    double perturb) :
+  globalData(global_data),
   perturb(perturb)
 {
   // assert (perturb>0.0);
 }
 
 LOCA::DerivUtils::DerivUtils(const DerivUtils& source) :
+  globalData(source.globalData),
   perturb(source.perturb)
 {
 
@@ -58,10 +63,10 @@ LOCA::DerivUtils::~DerivUtils()
  
 }
 
-LOCA::DerivUtils* 
+Teuchos::RefCountPtr<LOCA::DerivUtils> 
 LOCA::DerivUtils::clone(NOX::CopyType type) const
 {
-  return new DerivUtils(*this);  //Call Copy Constructor
+  return Teuchos::rcp(new DerivUtils(*this));  //Call Copy Constructor
 }
 
 NOX::Abstract::Group::ReturnType
@@ -81,7 +86,7 @@ LOCA::DerivUtils::computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp,
   // Compute base residual F
   if (!isValidF) {
     finalStatus = grp.computeF();
-    LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+    globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
     *f = grp.getF();
   }
   else
@@ -99,8 +104,9 @@ LOCA::DerivUtils::computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp,
     // Compute perturbed residual
     status = grp.computeF(); 
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
 
     // Difference perturbed and base vector 
     dfdp = &result[i+1];
@@ -133,12 +139,13 @@ LOCA::DerivUtils::computeDJnDp(LOCA::MultiContinuation::AbstractGroup& grp,
   // Compute base residual F
   if (!isValid) {
     finalStatus = grp.computeJacobian();
-    LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+    globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
 
     status = grp.applyJacobian(nullVector, *Jn);
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
   else
     finalStatus = NOX::Abstract::Group::Ok;
@@ -155,14 +162,15 @@ LOCA::DerivUtils::computeDJnDp(LOCA::MultiContinuation::AbstractGroup& grp,
     // Fill perturbed Jn vector
     status = grp.computeJacobian();
     finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
     dJndp = &result[i+1];
     status = grp.applyJacobian(nullVector, *dJndp);
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
 
     // Difference perturbed and base vector 
     dJndp->update(-1.0, *Jn, 1.0);
@@ -192,21 +200,21 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
   
   if (!grp.isJacobian()) {
     finalStatus = grp.computeJacobian();
-    LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+    globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
   }
   else
     finalStatus = NOX::Abstract::Group::Ok;
 
   status = grp.applyJacobian(nullVector, *baseJnVectorPtr);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   // Now that Jn is known, call other routine
   status = computeDJnDxa(grp, nullVector, aVector, *baseJnVectorPtr, result);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   return finalStatus;
 }
@@ -234,12 +242,13 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 
     // Fill perturbed Jn vector
     finalStatus = grp.computeJacobian();
-    LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+    globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
     
     status = grp.applyJacobian(nullVector, result[i]);
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
 
     // Difference perturbed and base vector 
     result[i].update(-1.0, JnVector, 1.0);
@@ -275,7 +284,7 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 
 //   if (!grp.isJacobian()) {
 //     finalStatus = grp.computeJacobian();
-//     LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+//     globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
 //   }
 //   else
 //     finalStatus = NOX::Abstract::Group::Ok;
@@ -283,19 +292,19 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 //   if (!grp.isMassMatrix()) {
 //     status = grp.computeMassMatrix();
 //     finalStatus = 
-//       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						   callingFunction);
 //   }
 //   else
 //     finalStatus = 
-//       LOCA::ErrorCheck::combineAndCheckReturnTypes(NOX::Abstract::Group::Ok, 
+//       globalData->locaErrorCheck->combineAndCheckReturnTypes(NOX::Abstract::Group::Ok, 
 // 						   finalStatus,
 // 						   callingFunction);
 
 //   status = grp.applyComplex(yVector, zVector, w, *baseCeRealVectorPtr, 
 // 			    *baseCeImagVectorPtr);
 //   finalStatus = 
-//     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						 callingFunction);
 
 //   // Now that Ce is known, call other routine
@@ -303,7 +312,7 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 //     computeDCeDp(grp, yVector, zVector, w, param_id, *baseCeRealVectorPtr, 
 // 		 *baseCeImagVectorPtr, result_real, result_imag);
 //   finalStatus = 
-//     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						 callingFunction);
 
 //   return finalStatus;
@@ -332,18 +341,18 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 
 //   // Compute perturbed Ce vectors
 //   finalStatus = grp.computeJacobian();
-//   LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+//   globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
 
 //   status = grp.computeMassMatrix();
 //   finalStatus = 
-//     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						 callingFunction);
 
 //   status = 
 //     grp.applyComplex(yVector, zVector, w, result_real,
 // 				  result_imag);
 //   finalStatus = 
-//     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						 callingFunction);
 
 //   // Difference perturbed and base vector and return approximate derivative
@@ -378,7 +387,7 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 
 //   if (!grp.isJacobian()) {
 //     finalStatus = grp.computeJacobian();
-//     LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+//     globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
 //   }
 //   else
 //     finalStatus = NOX::Abstract::Group::Ok;
@@ -386,19 +395,19 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 //   if (!grp.isMassMatrix()) {
 //     status = grp.computeMassMatrix();
 //     finalStatus = 
-//       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						   callingFunction);
 //   }
 //   else
 //     finalStatus = 
-//       LOCA::ErrorCheck::combineAndCheckReturnTypes(NOX::Abstract::Group::Ok, 
+//       globalData->locaErrorCheck->combineAndCheckReturnTypes(NOX::Abstract::Group::Ok, 
 // 						   finalStatus,
 // 						   callingFunction);
   
 //   status = grp.applyComplex(yVector, zVector, w, *baseCeRealVectorPtr, 
 // 			    *baseCeImagVectorPtr);
 //   finalStatus = 
-//     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						 callingFunction);
 
 //   // Now that Ce is known, call other routine
@@ -406,7 +415,7 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 //     computeDCeDxa(grp, yVector, zVector, w, aVector, *baseCeRealVectorPtr, 
 // 		  *baseCeImagVectorPtr, result_real, result_imag);
 //   finalStatus = 
-//     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						 callingFunction);
 
 //   return finalStatus;
@@ -437,18 +446,18 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 
 //   // Compute perturbed Ce vectors
 //   finalStatus = grp.computeJacobian();
-//   LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+//   globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
 
 //   status = grp.computeMassMatrix();
 //   finalStatus = 
-//     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						 callingFunction);
 
 //   status = 
 //     grp.applyComplex(yVector, zVector, w, result_real,
 // 				  result_imag);
 //   finalStatus = 
-//     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						 callingFunction);
 
 //   // Difference perturbed and base vector and return approximate derivative
@@ -483,7 +492,7 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 
 //   if (!grp.isJacobian()) {
 //     finalStatus = grp.computeJacobian();
-//     LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+//     globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
 //   }
 //   else
 //     finalStatus = NOX::Abstract::Group::Ok;
@@ -491,19 +500,19 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 //   if (!grp.isMassMatrix()) {
 //     status = grp.computeMassMatrix();
 //     finalStatus = 
-//       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						   callingFunction);
 //   }
 //   else
 //     finalStatus = 
-//       LOCA::ErrorCheck::combineAndCheckReturnTypes(NOX::Abstract::Group::Ok, 
+//       globalData->locaErrorCheck->combineAndCheckReturnTypes(NOX::Abstract::Group::Ok, 
 // 						   finalStatus,
 // 						   callingFunction);
 
 //   status = grp.applyComplex(yVector, zVector, w, *baseCeRealVectorPtr, 
 // 			    *baseCeImagVectorPtr);
 //   finalStatus = 
-//     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						 callingFunction);
 
 //   // Now that Ce is known, call other routine
@@ -511,7 +520,7 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 //     computeDCeDxa(grp, yVector, zVector, w, aVector, *baseCeRealVectorPtr, 
 // 		  *baseCeImagVectorPtr, result_real, result_imag);
 //   finalStatus = 
-//     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						 callingFunction);
 
 //   return finalStatus;
@@ -545,18 +554,18 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 
 //     // Compute perturbed Ce vectors
 //     finalStatus = grp.computeJacobian();
-//     LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+//     globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
 
 //     status = grp.computeMassMatrix();
 //     finalStatus = 
-//       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						   callingFunction);
 
 //     status = 
 //       grp.applyComplex(yVector, zVector, w, result_real[i],
 // 		       result_imag[i]);
 //     finalStatus = 
-//       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+//       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 // 						   callingFunction);
 
 //     // Difference perturbed and base vector and return approximate derivative

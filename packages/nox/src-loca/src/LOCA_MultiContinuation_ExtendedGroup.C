@@ -33,7 +33,6 @@
 #include "NOX_Parameter_List.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
-#include "LOCA_Utils.H"
 #include "LOCA_Parameter_Vector.H"
 #include "LOCA_MultiContinuation_AbstractGroup.H"
 #include "LOCA_MultiContinuation_ExtendedGroup.H"
@@ -508,9 +507,11 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
     predictor(pred),
     conGroup(),
     numParams(paramIDs.size()),
-    tangentMultiVec(grp->getX(), numParams, numParams, NOX::ShapeCopy),
-    scaledTangentMultiVec(grp->getX(), numParams, numParams, NOX::ShapeCopy),
-    prevXVec(grp->getX(), numParams),
+    tangentMultiVec(globalData, grp->getX(), numParams, numParams, 
+		    NOX::ShapeCopy),
+    scaledTangentMultiVec(globalData, grp->getX(), numParams, numParams, 
+			  NOX::ShapeCopy),
+    prevXVec(globalData, grp->getX(), numParams),
     conParamIDs(paramIDs),
     stepSize(numParams, 0.0),
     stepSizeScaleFactor(numParams, 1.0),

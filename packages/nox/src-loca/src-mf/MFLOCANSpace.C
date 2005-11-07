@@ -43,7 +43,6 @@ extern "C" {
 #include <MFTime.h>
 
 void MFSetError(int,char*,char*,int,char*);
-static char MFLOCANSpaceErrorMsg[256]="";
 
 double MFLOCANSpaceDistance(MFNSpace,MFNVector,MFNVector,void*);
 void MFLOCANSpaceDirection(MFNSpace,MFNVector,MFNVector,MFNVector,void*);
@@ -52,8 +51,7 @@ void MFLOCANSpaceScale(MFNSpace,double,MFNVector,MFNVector,void*);
 double MFLOCANSpaceInner(MFNSpace,MFNVector,MFNVector,void*);
 
 MFNSpace MFCreateLOCANSpace(LOCAData* data)
- {
-  static char RoutineName[]={"MFCreateLOCANSpace"};
+{
   MFNSpace cthis;
 
 #ifdef MFTIMINGS
@@ -75,11 +73,10 @@ MFNSpace MFCreateLOCANSpace(LOCAData* data)
     MFTimeMFCreateNSpace+=clock()-starttime;
 #endif
   return cthis;
- }
+}
 
 double MFLOCANSpaceDistance(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d)
- {
-  static char RoutineName[]={"MFNSpaceDistance"};
+{
   double result;
   MFNVector dv;
 
@@ -98,13 +95,10 @@ double MFLOCANSpaceDistance(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d)
     MFTimeMFNSpaceDistance+=clock()-starttime;
 #endif
   return sqrt(result);
- }
+}
 
 void MFLOCANSpaceDirection(MFNSpace cthis,MFNVector v0,MFNVector v1,MFNVector diff,void *d)
- {
-  static char RoutineName[]={"MFNSpaceDirection"};
-  int i;
-
+{
 #ifdef MFTIMINGS
   clock_t starttime;
 
@@ -118,11 +112,10 @@ void MFLOCANSpaceDirection(MFNSpace cthis,MFNVector v0,MFNVector v1,MFNVector di
     MFTimeMFNSpaceDirection+=clock()-starttime;
 #endif
   return;
- }
+}
 
 double MFLOCANSpaceInner(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d)
- {
-  static char RoutineName[]={"MFNSpaceInner"};
+{
 
 #ifdef MFTIMINGS
   clock_t starttime;
@@ -143,11 +136,11 @@ double MFLOCANSpaceInner(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d)
     MFTimeMFNSpaceInner+=clock()-starttime;
 #endif
   return dotp;
- }
+}
 
-void MFLOCANSpaceAdd(MFNSpace cthis,MFNVector v0,MFNVector v1,MFNVector sum,void *d)
- {
-  static char RoutineName[]={"MFNSpaceAdd"};
+void MFLOCANSpaceAdd(MFNSpace cthis,MFNVector v0,MFNVector v1,MFNVector sum,
+		     void *d)
+{
 
 #ifdef MFTIMINGS
   clock_t starttime;
@@ -162,12 +155,11 @@ void MFLOCANSpaceAdd(MFNSpace cthis,MFNVector v0,MFNVector v1,MFNVector sum,void
     MFTimeMFNSpaceAdd+=clock()-starttime;
 #endif
   return;
- }
+}
 
-void MFLOCANSpaceScale(MFNSpace cthis,double s, MFNVector v,MFNVector w,void *d)
- {
-  static char RoutineName[]={"MFNSpaceScale"};
-
+void MFLOCANSpaceScale(MFNSpace cthis,double s, MFNVector v,MFNVector w,
+		       void *d)
+{
 #ifdef MFTIMINGS
   clock_t starttime;
 
@@ -183,6 +175,6 @@ void MFLOCANSpaceScale(MFNSpace cthis,double s, MFNVector v,MFNVector w,void *d)
     MFTimeMFNSpaceScale+=clock()-starttime;
 #endif
   return;
- }
+}
 
 }

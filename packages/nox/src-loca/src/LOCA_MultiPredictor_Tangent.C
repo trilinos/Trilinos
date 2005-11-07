@@ -32,7 +32,7 @@
 
 #include "LOCA_MultiPredictor_Tangent.H"
 #include "LOCA_GlobalData.H"
-#include "LOCA_Utils.H"
+#include "NOX_Utils.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_MultiContinuation_AbstractGroup.H"
 #include "LOCA_MultiContinuation_ExtendedGroup.H"
@@ -115,8 +115,9 @@ LOCA::MultiPredictor::Tangent::compute(
   string callingFunction = "LOCA::MultiPredictor::Tangent::compute()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
-  if (globalData->locaUtils->doPrint(LOCA::Utils::StepperDetails))
-    cout << "\n\tCalling Predictor with method: Tangent" << endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails))
+    globalData->locaUtils->out() << 
+      "\n\tCalling Predictor with method: Tangent" << std::endl;
 
   // Number of continuation parameters
   int numParams = stepSize.size();

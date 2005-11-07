@@ -74,8 +74,10 @@ namespace LOCA {
 	/*!
 	 * Generates a multivector with \em nColumns columns from \em cloneVec
 	 */
-	ExtendedMultiVector(const NOX::Abstract::Vector& cloneVec,
-			    int nColumns);
+	ExtendedMultiVector(
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const NOX::Abstract::Vector& cloneVec,
+		    int nColumns);
   
 	//! Constructor.  
 	/*!
@@ -83,6 +85,7 @@ namespace LOCA {
 	 * \em bifParams
 	 */
 	ExtendedMultiVector(
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 		    const NOX::Abstract::MultiVector& xVec,
 		    const NOX::Abstract::MultiVector& nullVec,
 		    const NOX::Abstract::MultiVector::DenseMatrix& bifParams);
@@ -176,7 +179,9 @@ namespace LOCA {
 	/*!
 	 * Creates an empty multivector with \em nColumns columns
 	 */
-	ExtendedMultiVector(int nColumns);
+	ExtendedMultiVector(
+		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		     int nColumns);
 
 	//! Generate a derived extended vector
 	/*!

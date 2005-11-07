@@ -36,6 +36,7 @@
 #include <LOCA.H>
 #include <LOCA_MultiContinuation_AbstractStrategy.H>
 #include <LOCA_MultiContinuation_ExtendedVector.H>
+
 typedef LOCA::MultiContinuation::ExtendedVector LMCEV; 
 
 extern "C" {
@@ -61,12 +62,16 @@ struct ParamData {
 
 struct LOCAData {
   LOCAData(
+     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+     const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& top_params,
      const Teuchos::RefCountPtr<NOX::Solver::Generic>& s, 
      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>& g, 
      const Teuchos::RefCountPtr<NOX::Parameter::List>& par,
      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& st,
      const Teuchos::RefCountPtr< list<ParamData> >& conParamData);
 
+  Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+  Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> topParams;
   Teuchos::RefCountPtr<NOX::Solver::Generic> solver;
   Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> grp;
   Teuchos::RefCountPtr<NOX::Parameter::List> p;

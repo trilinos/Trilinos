@@ -36,8 +36,8 @@
 #include "LOCA_MultiContinuation_ConstrainedGroup.H"
 #include "LOCA_MultiPredictor_AbstractStrategy.H"
 #include "NOX_Parameter_List.H"
-#include "LOCA_ErrorCheck.H"
-#include "LOCA_Utils.H"
+#include "LOCA_GlobalData.H"
+#include "NOX_Utils.H"
 
 LOCA::MultiContinuation::ArcLengthGroup::ArcLengthGroup(
       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
@@ -172,22 +172,18 @@ LOCA::MultiContinuation::ArcLengthGroup::scaleTangent()
 	sv->getScalars()->scale(thetaOld*thetaOld);
 	dpdsOld = 1.0/sqrt(sv->innerProduct(*v));
 
-	if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-	  cout << endl 
-	       << "\t" 
-	       << LOCA::Utils::fill(64, '+') << endl 
-	       << "\t" 
-	       << "Arc-length scaling calculation for parameter " 
-	       << getContinuationParameterName(i) << ": " << endl
-	       << "\t" 
-	       << "Parameter component of predictor before rescaling = " 
-	       << LOCA::Utils::sci(dpdsOld) << endl
-	       << "\t" 
-	       << "Scale factor from previous step                   = "
-	       << LOCA::Utils::sci(thetaOld) << endl
-	       << "\t" 
-	       << "Parameter contribution to arc-length equation     = "
-	       << LOCA::Utils::sci(thetaOld*dpdsOld) << endl;
+	if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+	  globalData->locaUtils->out() << 
+	    std::endl << "\t" << 
+	    globalData->locaUtils->fill(64, '+') << std::endl << "\t" << 
+	    "Arc-length scaling calculation for parameter " << 
+	    getContinuationParameterName(i) << ": " << std::endl << "\t" << 
+	    "Parameter component of predictor before rescaling = " << 
+	    globalData->locaUtils->sciformat(dpdsOld) << std::endl << "\t" << 
+	    "Scale factor from previous step " << 
+	    globalData->locaUtils->sciformat(thetaOld) << std::endl << "\t" << 
+	    "Parameter contribution to arc-length equation     = " << 
+	    globalData->locaUtils->sciformat(thetaOld*dpdsOld) << std::endl;
 	}
 
 	// Recompute scale factor
@@ -198,18 +194,15 @@ LOCA::MultiContinuation::ArcLengthGroup::scaleTangent()
 	// Calculate new dpds using new scale factor
 	dpdsNew = 1.0/sqrt(sv->innerProduct(*v));
 	
-	if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-	  cout << endl 
-	       << "\t" 
-	       << "Parameter component of predictor after rescaling  = " 
-	       << LOCA::Utils::sci(dpdsNew) << endl
-	       << "\t" 
-	       << "New scale factor (theta)                          = "
-	       << LOCA::Utils::sci(thetaNew) << endl
-	       << "\t" 
-	       << "Parameter contribution to arc-length equation     = "
-	       << LOCA::Utils::sci(thetaNew*dpdsNew) << endl
-	       << "\t" << LOCA::Utils::fill(64, '+') << endl;
+	if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+	  globalData->locaUtils->out() << std::endl << "\t" << 
+	    "Parameter component of predictor after rescaling  = " << 
+	    globalData->locaUtils->sciformat(dpdsNew) << std::endl << "\t" << 
+	    "New scale factor (theta)                          = " << 
+	    globalData->locaUtils->sciformat(thetaNew) << std::endl << "\t" << 
+	    "Parameter contribution to arc-length equation     = " << 
+	    globalData->locaUtils->sciformat(thetaNew*dpdsNew) << std::endl << 
+	    "\t" << globalData->locaUtils->fill(64, '+') << std::endl;
 	}
       
 	// Rescale predictor vector

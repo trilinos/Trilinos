@@ -43,6 +43,10 @@
 #include "NOX_Epetra_Vector.H"
 #include "NOX_Epetra_Interface_Jacobian.H"
 
+// forward declarations
+namespace LOCA {
+  class GlobalData;
+}
 class Epetra_MultiVector;
 class Epetra_CrsMatrix;
 class Epetra_Map;
@@ -78,10 +82,11 @@ namespace LOCA {
 
       //! Constructor
       ShiftInvertOperator(
-		const Teuchos::RefCountPtr<const LOCA::Epetra::Group>& grp, 
-		const Teuchos::RefCountPtr<const Epetra_Operator>& jac, 
-		const double& shift, 
-		bool hasMassMatrix);
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RefCountPtr<const LOCA::Epetra::Group>& grp,
+		    const Teuchos::RefCountPtr<const Epetra_Operator>& jac, 
+		    const double& shift, 
+		    bool hasMassMatrix);
 
       //! Destructor
       virtual ~ShiftInvertOperator();
@@ -128,6 +133,9 @@ namespace LOCA {
       virtual const Epetra_Map & OperatorRangeMap() const;
  
     protected:  
+
+      //! Global data object
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
   
       //! LOCA group
       Teuchos::RefCountPtr<const LOCA::Epetra::Group> locagrp; 

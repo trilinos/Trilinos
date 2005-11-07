@@ -33,8 +33,7 @@
 #include "NOX_Parameter_List.H"
 #include "LOCA_MultiPredictor_Random.H"
 #include "LOCA_GlobalData.H"
-#include "LOCA_Utils.H"
-#include "LOCA_ErrorCheck.H"
+#include "NOX_Utils.H"
 #include "LOCA_MultiContinuation_ExtendedVector.H"
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H"
 
@@ -104,8 +103,9 @@ LOCA::MultiPredictor::Random::compute(
 	      const LOCA::MultiContinuation::ExtendedVector& prevXVec,
 	      const LOCA::MultiContinuation::ExtendedVector& xVec)
 {
-  if (globalData->locaUtils->doPrint(LOCA::Utils::StepperDetails))
-    cout << "\n\tCalling Predictor with method: Random" << endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails))
+    globalData->locaUtils->out() << 
+      "\n\tCalling Predictor with method: Random" << std::endl;
 
   // Number of continuation parameters
   int numParams = stepSize.size();

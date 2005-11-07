@@ -34,14 +34,19 @@
 #include "NOX_Solver_Generic.H"
 #include "LOCA_StepSize_Constant.H"
 #include "LOCA_StepSize_Adaptive.H"
-#include "LOCA_Utils.H"
+#include "LOCA_GlobalData.H"
+#include "LOCA_ErrorCheck.H"
 #include "LOCA_NewStepper.H"
 
-LOCA::StepSize::Manager::Manager(NOX::Parameter::List& params) :
+LOCA::StepSize::Manager::Manager(
+	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 NOX::Parameter::List& params) :
+  globalData(global_data),
   method(),
   stepSizePtr(NULL)
 {
-  reset(params);
+  reset(globalData, topParams, params);
 }
 
 LOCA::StepSize::Manager::~Manager()
@@ -50,8 +55,13 @@ LOCA::StepSize::Manager::~Manager()
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::StepSize::Manager::reset(NOX::Parameter::List& params) 
+LOCA::StepSize::Manager::reset(
+        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	NOX::Parameter::List& params) 
 {
+  globalData = globa_data;
+
   string newmethod = params.getParameter("Method", "Constant");
 
   if (method != newmethod) {
@@ -60,13 +70,15 @@ LOCA::StepSize::Manager::reset(NOX::Parameter::List& params)
     method = newmethod;
 
     if (method == "Constant")
-      stepSizePtr = new LOCA::StepSize::Constant(params);
+      stepSizePtr = new LOCA::StepSize::Constant(globalData, topParams, 
+						 params);
     else if (method == "Adaptive")
-      stepSizePtr = new LOCA::StepSize::Adaptive(params);
+      stepSizePtr = new LOCA::StepSize::Adaptive(globalData, topParams, 
+						 params);
     else {
-      if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-	cout << "LOCA::StepSize::Manager::reset() - invalid choice (" 
-	     << method << ") for step size method " << endl;
+      globalData->locaErrorCheck->throwError(
+		     "LOCA::StepSize::Manager::reset()", 
+		     "invalid choice (" + method + ") for step size method.");
       }
       return NOX::Abstract::Group::Failed;
     }
@@ -85,9 +97,9 @@ LOCA::StepSize::Manager::compute(
 		      double& stepSize) 
 {
   if (stepSizePtr == NULL) {
-    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-      cout << "LOCA::StepSize::Manager::compute - Null pointer error" << endl;
-    }
+    globalData->locaErrorCheck->throwError(
+					"LOCA::StepSize::Manager::compute()", 
+					"Null pointer error");
     return NOX::Abstract::Group::Failed;
   }
 

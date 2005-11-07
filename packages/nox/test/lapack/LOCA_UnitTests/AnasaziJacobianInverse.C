@@ -33,10 +33,6 @@
 #include "LOCA.H"
 #include "LOCA_LAPACK.H"
 
-#include "LOCA_GlobalData.H"
-#include "LOCA_Utils.H"
-#include "LOCA_ErrorCheck.H"
-#include "LOCA_Factory.H"
 #include "LOCA_Eigensolver_AbstractStrategy.H"
 #include "LOCA_Parameter_SublistParser.H"
 
@@ -64,23 +60,6 @@ int main(int argc, char *argv[])
       if (argv[1][0]=='-' && argv[1][1]=='v') 
 	verbose = true;
 
-    // Set up the problem interface
-    ChanProblemInterface chan(n, alpha, beta, scale);
-    LOCA::ParameterVector p;
-    p.addParameter("alpha",alpha);
-    p.addParameter("beta",beta);
-    p.addParameter("scale",scale);
-  
-    // Create a group which uses that problem interface. The group will
-    // be initialized to contain the default initial guess for the
-    // specified problem.
-    LOCA::LAPACK::Group grp(chan);
-    
-    grp.setParams(p);
-
-    grp.computeF();
-    grp.computeJacobian();
-
     // Create parameter list
     Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
       Teuchos::rcp(new NOX::Parameter::List);
@@ -104,21 +83,6 @@ int main(int argc, char *argv[])
     aList.setParameter("Sorting Order","LM");
     aList.setParameter("Debug Level",0);
 
-    // Set the LOCA Utilities
-    NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
-    if (verbose) {
-      locaUtilsList.setParameter("Output Information", 
-				 LOCA::Utils::Error + 
-				 LOCA::Utils::Warning +
-				 LOCA::Utils::StepperIteration +
-				 LOCA::Utils::StepperDetails +
-				 LOCA::Utils::Solver +
-				 LOCA::Utils::Parameters +
-				 LOCA::Utils::SolverDetails);
-    }
-    else
-      locaUtilsList.setParameter("Output Information", LOCA::Utils::Error);
-
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     NOX::Parameter::List& nlParams = paramList->sublist("NOX");
 
@@ -130,43 +94,45 @@ int main(int argc, char *argv[])
 				  NOX::Utils::OuterIteration + 
 				  NOX::Utils::InnerIteration + 
 				  NOX::Utils::Warning +
-				  NOX::Utils::TestDetails);
+				  NOX::Utils::TestDetails + 
+				  NOX::Utils::StepperIteration +
+				  NOX::Utils::StepperDetails);
      else
        nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
-
-    // Create printing utils
-    Teuchos::RefCountPtr<LOCA::Utils> locaUtils =
-      Teuchos::rcp(new LOCA::Utils);
-    locaUtils->setUtils(*paramList);
-
-    // Create error check
-    Teuchos::RefCountPtr<LOCA::ErrorCheck> locaErrorCheck = 
-      Teuchos::rcp(new LOCA::ErrorCheck);
-
-    Teuchos::RefCountPtr<LOCA::Factory> locaFactory;
-
-    // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> locaGlobalData =
-      Teuchos::rcp(new LOCA::GlobalData(locaUtils, 
-					locaErrorCheck, 
-					locaFactory));
-
-    // Create parsed parameter list
-    Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams = 
-      Teuchos::rcp(new LOCA::Parameter::SublistParser(locaGlobalData));
-    parsedParams->parseSublists(paramList);
 
     // Create LAPACK factory
     Teuchos::RefCountPtr<LOCA::Abstract::Factory> lapackFactory =
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
-    // Create factory
-    locaFactory = Teuchos::rcp(new LOCA::Factory(locaGlobalData, 
-						 lapackFactory));
+    // Create global data object
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+      LOCA::createGlobalData(paramList, lapackFactory);
+
+    // Create parsed parameter list
+    Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams = 
+      Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
+    parsedParams->parseSublists(paramList);
+
+    // Set up the problem interface
+    ChanProblemInterface chan(globalData, n, alpha, beta, scale);
+    LOCA::ParameterVector p;
+    p.addParameter("alpha",alpha);
+    p.addParameter("beta",beta);
+    p.addParameter("scale",scale);
+  
+    // Create a group which uses that problem interface. The group will
+    // be initialized to contain the default initial guess for the
+    // specified problem.
+    LOCA::LAPACK::Group grp(globalData, chan);
+    
+    grp.setParams(p);
+
+    grp.computeF();
+    grp.computeJacobian();
 
     // Create Anasazi eigensolver
     Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> anasaziStrategy
-      = locaFactory->createEigensolverStrategy(
+      = globalData->locaFactory->createEigensolverStrategy(
 				     parsedParams, 
 				     parsedParams->getSublist("Eigensolver"));
 
@@ -190,7 +156,7 @@ int main(int argc, char *argv[])
 
     // Create DGGEV eigensolver
     Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> dggevStrategy
-      = locaFactory->createEigensolverStrategy(
+      = globalData->locaFactory->createEigensolverStrategy(
 				      parsedParams,
 				      parsedParams->getSublist("Eigensolver"));
 
@@ -209,11 +175,14 @@ int main(int argc, char *argv[])
       ++ierr;
 
     // Check some statistics on the solution
-    NOX::Utils utils(nlPrintParams);
-    NOX::TestCompare testCompare(cout, utils);
+    NOX::TestCompare testCompare(globalData->locaUtils->out(), 
+				 *(globalData->locaUtils));
 
-    if (utils.isPrintType(NOX::Utils::TestDetails))
-      cout << endl << "***** Checking solution statistics *****" << endl;
+    if (globalData->locaUtils->isPrintType(NOX::Utils::TestDetails))
+      globalData->locaUtils->out() 
+	<< std::endl 
+	<< "***** Checking solution statistics *****" 
+	<< std::endl;
 
     // Check eigenvalues
     for (int i=0; i<nev; i++) {
@@ -225,8 +194,14 @@ int main(int argc, char *argv[])
 				    NOX::TestCompare::Relative);
     }
 
+    destroyGlobalData(globalData);
+
   }
 
+ catch (std::exception& e) {
+    cout << e.what() << endl;
+    ierr = 1;
+  } 
   catch (const char *s) {
     cout << s << endl;
     ierr = 1;

@@ -34,7 +34,7 @@
 #include "NOX_Parameter_List.H"
 #include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_GlobalData.H"
-#include "LOCA_Utils.H"
+#include "NOX_Utils.H"
 #include "LOCA_Factory.H"
 #include "LOCA_Eigensolver_AnasaziStrategy.H"
 #include "LOCA_EigenvalueSort_Strategies.H"
@@ -49,9 +49,10 @@
 
 LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams_,
 	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigParams) :
-  globalData(global_data)
+  globalData(global_data),
+  topParams(topParams_)
 {
 #ifdef HAVE_LOCA_ANASAZI
   eigenParams = eigParams;
@@ -114,22 +115,27 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
 		 Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_i)
 {
 #ifdef HAVE_LOCA_ANASAZI
-  if (globalData->locaUtils->doPrint(Utils::StepperIteration)) {
-    cout << "\n" << globalData->locaUtils->fill(64,'=')
-         << "\nAnasazi Eigensolver starting with block size " << blksz
-	 << "\n" << endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
+    globalData->locaUtils->out() << "\n" << 
+      globalData->locaUtils->fill(64,'=') << 
+      "\nAnasazi Eigensolver starting with block size " << blksz << 
+      "\n" << std::endl;
   }
 
   // Get reference to solution vector to clone
   const NOX::Abstract::Vector& xVector = group.getX();
 
   // Create the operator and initial vector
-  LOCA::AnasaziOperator::Manager anasaziOperator(eigenParams, solverParams, 
-						 Teuchos::rcp(&group,false));
+  Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy> anasaziOperator
+    = globalData->locaFactory->createAnasaziOperatorStrategy(
+						   topParams, 
+						   eigenParams,
+						   solverParams,
+						   Teuchos::rcp(&group,false));
   Teuchos::RefCountPtr<Anasazi::LOCAMatrix> Amat = 
-    Teuchos::rcp( new Anasazi::LOCAMatrix(anasaziOperator) );
+    Teuchos::rcp( new Anasazi::LOCAMatrix(globalData, anasaziOperator) );
   Teuchos::RefCountPtr<Anasazi::LOCAMultiVec> ivec =
-    Teuchos::rcp( new Anasazi::LOCAMultiVec(xVector, blksz) );
+    Teuchos::rcp( new Anasazi::LOCAMultiVec(globalData, xVector, blksz) );
   ivec->MvRandom();
 
   // Create an instance of the eigenproblem
@@ -151,7 +157,7 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   LOCABlockKrylovSchur.solve();
 
   // Look at the solutions once if debug=0
-  if (globalData->locaUtils->doPrint(Utils::StepperIteration)) 
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) 
     if (debug == 0) 
       LOCABlockKrylovSchur.currentStatus();
   
@@ -169,9 +175,10 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   evals_i = 
     Teuchos::rcp(new std::vector<double>(evals->begin()+narn, evals->end()));
 
-  if (globalData->locaUtils->doPrint(Utils::StepperIteration)) 
-    cout << "Untransformed eigenvalues (since the operator was " 
-	 << anasaziOperator.label() << ")" <<endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) 
+     globalData->locaUtils->out() << 
+       "Untransformed eigenvalues (since the operator was " << 
+       anasaziOperator->label() << ")" << std::endl;
   
   // Obtain the eigenvectors
   // The real part is stored in the first "nev" vectors and the imaginary 
@@ -201,41 +208,45 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   for (int i=0; i<nev; i++) {
 
     // Un-transform eigenvalues
-    anasaziOperator.transformEigenvalue((*evals_r)[i], (*evals_i)[i]);
+    anasaziOperator->transformEigenvalue((*evals_r)[i], (*evals_i)[i]);
 
     // Compute Rayleigh quotient
-    anasaziOperator.rayleighQuotient(a_evecs_r->GetNOXVector(i),
-				     a_evecs_i->GetNOXVector(i), 
-				     rq_r, rq_i);
+    anasaziOperator->rayleighQuotient(a_evecs_r->GetNOXVector(i),
+				      a_evecs_i->GetNOXVector(i), 
+				      rq_r, rq_i);
 
     // Print out untransformed eigenvalues and Rayleigh quotient residual
-    if (globalData->locaUtils->doPrint(Utils::StepperIteration)) {
-      cout << "Eigenvalue " << i << " : " 
-	   << globalData->locaUtils->sci((*evals_r)[i]) <<"  "
-	   << globalData->locaUtils->sci((*evals_i)[i]) << " i    :  RQresid "
-	   << globalData->locaUtils->sci(fabs((*evals_r)[i] - rq_r)) << "  "
-	   << globalData->locaUtils->sci(fabs((*evals_i)[i] - rq_i)) 
-	   << " i" << endl;
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
+       globalData->locaUtils->out() << "Eigenvalue " << i << " : " << 
+	 globalData->locaUtils->sciformat((*evals_r)[i]) << "  " << 
+	 globalData->locaUtils->sciformat((*evals_i)[i]) << 
+	 " i    :  RQresid " << 
+	 globalData->locaUtils->sciformat(fabs((*evals_r)[i] - rq_r)) << 
+	 "  " << 
+	 globalData->locaUtils->sciformat(fabs((*evals_i)[i] - rq_i)) << 
+	 " i" << std::endl;
     }
 
   }  
 
   // Print out remaining eigenvalue approximations from nev to 
   // final arnoldi size
-  if (globalData->locaUtils->doPrint(Utils::StepperIteration) && narn>nev) {
-    cout << "~~~~~~~ remaining eigenvalue approximations ~~~~~~~~~~~~" 
-	 << endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration) && 
+      narn>nev) {
+    globalData->locaUtils->out() << 
+      "~~~~~~~ remaining eigenvalue approximations ~~~~~~~~~~~~" << std::endl;
   }
   for (int i=nev; i<narn; i++) {
 
       // Un-transform eigenvalues
-    anasaziOperator.transformEigenvalue((*evals_r)[i], (*evals_i)[i]);
+    anasaziOperator->transformEigenvalue((*evals_r)[i], (*evals_i)[i]);
 
-      if (globalData->locaUtils->doPrint(Utils::StepperIteration) && 
-	  narn>nev) {
-	cout << "Eigenvalue " << i << " : " 
-	     << globalData->locaUtils->sci((*evals_r)[i]) << "  "
-	     << globalData->locaUtils->sci((*evals_i)[i]) << " i" <<endl;
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration) && 
+	narn>nev) {
+	globalData->locaUtils->out() << 
+	  "Eigenvalue " << i << " : " << 
+	  globalData->locaUtils->sciformat((*evals_r)[i]) << "  " << 
+	  globalData->locaUtils->sciformat((*evals_i)[i]) << " i" << std::endl;
       }
 
   }
@@ -244,16 +255,17 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
 //   if (saveEV > 0)
 //     saveEigenVectors(saveEV, evals, evecs);
 
-  if (globalData->locaUtils->doPrint(Utils::StepperIteration)) {
-    cout << "\nAnasazi Eigensolver finished.\n" 
-         << globalData->locaUtils->fill(64,'=') << "\n" << endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
+    globalData->locaUtils->out() << 
+      "\nAnasazi Eigensolver finished.\n" << 
+      globalData->locaUtils->fill(64,'=') << "\n" << std::endl;
   }
 #else
-  if (globalData->locaUtils->doPrint(Utils::StepperIteration)) {
-    cout << endl 
-	 << "Warning: LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues:"
-	 << endl
-         << "Anasazi Eigensolver requested but not compiled in!" << endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
+    globalData->locaUtils->out() << std::endl << 
+      "Warning: LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues:" << 
+      std::endl << 
+      "Anasazi Eigensolver requested but not compiled in!" << std::endl;
   }
   return NOX::Abstract::Group::Ok;
 #endif

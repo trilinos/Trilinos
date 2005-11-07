@@ -63,7 +63,8 @@ namespace LOCA {
       public:
   
 	//! Constructor.
-	FiniteDifferenceGroup(const LOCA::DerivUtils& deriv);
+	FiniteDifferenceGroup(
+		        const Teuchos::RefCountPtr<LOCA::DerivUtils>& deriv);
  
 	//! Copy constructor
 	FiniteDifferenceGroup(const FiniteDifferenceGroup& source, 

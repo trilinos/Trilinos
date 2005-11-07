@@ -31,35 +31,38 @@
 //@HEADER
 
 #include "LOCA_AnasaziOperator_JacobianInverse.H"
+#include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
 LOCA::AnasaziOperator::JacobianInverse::JacobianInverse(
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
-	       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp_)
-  : myLabel("Jacobian Inverse"),
+	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
+	const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp_)
+  : globalData(global_data),
+    myLabel("Jacobian Inverse"),
+    eigenParams(eigenParams_),
+    solverParams(solverParams_),
+    grp(grp_),
     tmp_r(),
     tmp_i()
 {
-  reset(eigenParams_, solverParams_, grp_);
+  string callingFunction = 
+    "LOCA::AnasaziOperator::JacobianInverse::JacobianInverse()";
+
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  // make sure Jacobian is up-to-date
+  status = grp->computeJacobian();
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 }
 
 LOCA::AnasaziOperator::JacobianInverse::~JacobianInverse()
 {
-}
-
-NOX::Abstract::Group::ReturnType 
-LOCA::AnasaziOperator::JacobianInverse::reset(
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
-	       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp_)
-{
-  eigenParams = eigenParams_;
-  solverParams = solverParams_;
-  grp = grp_;
-
-  // make sure Jacobian is up-to-date
-  return grp->computeJacobian();
 }
 
 const string&
@@ -107,18 +110,18 @@ LOCA::AnasaziOperator::JacobianInverse::rayleighQuotient(
   // Make sure Jacobian is up-to-date
   status = grp->computeJacobian();
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   status = grp->applyJacobian(evec_r, *tmp_r);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
   
   status = grp->applyJacobian(evec_i, *tmp_i);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   rq_r = evec_r.innerProduct(*tmp_r) + evec_i.innerProduct(*tmp_i);
   rq_i = evec_r.innerProduct(*tmp_i) - evec_i.innerProduct(*tmp_r);

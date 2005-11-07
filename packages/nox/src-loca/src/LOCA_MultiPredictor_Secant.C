@@ -32,8 +32,7 @@
 
 #include "LOCA_MultiPredictor_Secant.H"
 #include "LOCA_GlobalData.H"
-#include "LOCA_Utils.H"
-#include "LOCA_ErrorCheck.H"
+#include "NOX_Utils.H"
 #include "LOCA_Factory.H"
 #include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_MultiContinuation_ExtendedVector.H"
@@ -117,8 +116,9 @@ LOCA::MultiPredictor::Secant::compute(
 	      const LOCA::MultiContinuation::ExtendedVector& prevXVec,
 	      const LOCA::MultiContinuation::ExtendedVector& xVec)
 {
-  if (globalData->locaUtils->doPrint(LOCA::Utils::StepperDetails))
-    cout << "\n\tCalling Predictor with method: Secant" << endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails))
+    globalData->locaUtils->out() << 
+      "\n\tCalling Predictor with method: Secant" << std::endl;
 
   // Number of continuation parameters
   int numParams = stepSize.size();

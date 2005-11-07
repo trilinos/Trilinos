@@ -53,7 +53,7 @@ void MFSetError(int,char*,char*,int,char*);
 static char MFNVectorErrorMsg[256]="";
 
 void MFLOCANVDiff(void *adata, void *bdata, void *cdata)
- {
+{
   static char RoutineName[]={"MFLOCANVDiff"};
   LOCANVectorData *a_vec_data;
   LOCANVectorData *b_vec_data;
@@ -96,10 +96,10 @@ void MFLOCANVDiff(void *adata, void *bdata, void *cdata)
   c->update(1.0, *a, -1.0, *b, 0.0);
 
   return;
- }
+}
 
 void MFLOCANVAdd(void *adata,void *bdata,void *cdata)
- {
+{
   static char RoutineName[]={"MFLOCANVAdd"};
 
   LOCANVectorData *a_vec_data;
@@ -143,22 +143,20 @@ void MFLOCANVAdd(void *adata,void *bdata,void *cdata)
   c->update(1.0, *a, 1.0, *b, 0.0);
 
   return;
- }
+}
 
 void MFLOCANVPrint(FILE *ifp, void *u)
- {
-  static char RoutineName[]={"MFLOCANVPrint"};
- }
+{
+}
 
 MFNVector MFCloneLOCANVector(void *data)
- {
-  static char RoutineName[]={"MFCloneLOCANVector"};
+{
   LOCANVectorData *vec_data = (LOCANVectorData*) data;
   Teuchos::RefCountPtr<LMCEV> u2 = 
     Teuchos::rcp_dynamic_cast<LMCEV>(vec_data->u_ptr->clone(),true);
   
   return  MFCreateLOCANVectorWithData(u2);
- }
+}
 
 void MFFreeLOCANVectorData(void *data)
 {
@@ -167,8 +165,7 @@ void MFFreeLOCANVectorData(void *data)
 }
 
 MFNVector MFCreateLOCANVectorWithData(const Teuchos::RefCountPtr<LMCEV>& u)
- {
-  static char RoutineName[]={"MFCreateLOCANVector"};
+{
   MFNVector cthis;
 
 #ifdef MFTIMINGS

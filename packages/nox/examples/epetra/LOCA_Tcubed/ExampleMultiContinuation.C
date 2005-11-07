@@ -171,17 +171,6 @@ int main(int argc, char *argv[])
   predictorList.setParameter("Method", "Tangent");
   //predictorList.setParameter("Method", "Secant");
 
-  // Set the LOCA Utilities
-  NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
-  locaUtilsList.setParameter("MyPID", MyPID);
-  locaUtilsList.setParameter("Output Information", 
-			     LOCA::Utils::Warning +
-			     LOCA::Utils::StepperIteration +
-			     LOCA::Utils::StepperDetails +
-			     LOCA::Utils::Solver +
-			     LOCA::Utils::SolverDetails +
-			     LOCA::Utils::Parameters);
-
   // Create the "Solver" parameters sublist to be used with NOX Solvers
   NOX::Parameter::List& nlParams = paramList->sublist("NOX");
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
@@ -196,7 +185,9 @@ int main(int argc, char *argv[])
 			     NOX::Utils::LinearSolverDetails +
 			     NOX::Utils::Parameters + 
 			     NOX::Utils::Details + 
-			     NOX::Utils::Warning);
+			     NOX::Utils::Warning + 
+			     NOX::Utils::StepperIteration +
+			     NOX::Utils::StepperDetails);
 
   // Create the "Line Search" sublist for the "Line Search Based" solver
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
@@ -264,9 +255,18 @@ int main(int argc, char *argv[])
   // Create the loca vector
   NOX::Epetra::Vector locaSoln(soln);
 
+  // Create Epetra factory
+  Teuchos::RefCountPtr<LOCA::Abstract::Factory> epetraFactory =
+    Teuchos::rcp(new LOCA::Epetra::Factory);
+
+  // Create global data object
+  Teuchos::RefCountPtr<LOCA::GlobalData> globalData = 
+    LOCA::createGlobalData(paramList, epetraFactory);
+
   // Create the Group
   Teuchos::RefCountPtr<LOCA::Epetra::Group> grp = 
-    Teuchos::rcp(new LOCA::Epetra::Group(nlPrintParams, iReq, locaSoln, linsys,
+    Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, iReq, 
+					 locaSoln, linsys,
 					 pVector));
   grp->computeF();
 
@@ -281,27 +281,26 @@ int main(int argc, char *argv[])
   combo->addStatusTest(wrms);
   combo->addStatusTest(maxiters);
 
-  // Create the Epetra Factory
-  Teuchos::RefCountPtr<LOCA::Epetra::Factory> factory = 
-      Teuchos::rcp(new LOCA::Epetra::Factory);
-
   // Create the stepper  
-  LOCA::MultiStepper stepper(grp, combo, paramList, factory);
+  LOCA::MultiStepper stepper(globalData, grp, combo, paramList);
   LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-  if (status != LOCA::Abstract::Iterator::Finished)
-    if (MyPID==0) 
-      cout << "Stepper failed to converge!" << endl;
-
-  // End Nonlinear Solver **************************************
+  if (status != LOCA::Abstract::Iterator::Finished) {
+    if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
+      globalData->locaUtils->out() 
+	<< "Stepper failed to converge!" << std::endl;
+    }
 
   // Output the parameter list
-  if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
-    cout << endl << "Final Parameters" << endl
-	 << "****************" << endl;
-    stepper.getParameterList()->print(cout);
-    cout << endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
+    globalData->locaUtils->out() 
+      << std::endl << "Final Parameters" << std::endl
+      << "****************" << std::endl;
+    stepper.getParameterList()->print(globalData->locaUtils->out());
+    globalData->locaUtils->out() << std::endl;
   }
+
+  destroyGlobalData(globalData);
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;

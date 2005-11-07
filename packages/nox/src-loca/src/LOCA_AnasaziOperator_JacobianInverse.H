@@ -33,7 +33,17 @@
 #ifndef LOCA_ANASAZIOPERATOR_JACOBIANINVERSE_H
 #define LOCA_ANASAZIOPERATOR_JACOBIANINVERSE_H
 
-#include "LOCA_AnasaziOperator_Generic.H"  // base class
+#include "Teuchos_RefCountPtr.hpp" 
+
+#include "LOCA_AnasaziOperator_AbstractStrategy.H"  // base class
+
+// forward declarations
+namespace LOCA {
+  class GlobalData;
+  namespace Parameter {
+    class SublistParser;
+  }
+}
 
 namespace LOCA {
 
@@ -41,27 +51,23 @@ namespace LOCA {
     
     //! Anasazi operator for computing eigenvalues of the inverse-Jacobian
     /*! 
-     * This class implements the LOCA::AnasaziOperator::Generic interface
-     * for computing eigenvalues of the inverse-Jacobian.
+     * This class implements the LOCA::AnasaziOperator::AbstractStrategy 
+     * interface for computing eigenvalues of the inverse-Jacobian.
      */
-    class JacobianInverse : public LOCA::AnasaziOperator::Generic {
+    class JacobianInverse : public LOCA::AnasaziOperator::AbstractStrategy {
 
     public:
 
       //! Constructor. 
       JacobianInverse(
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
-	       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
+	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
 
       //! Destructor
       virtual ~JacobianInverse();
-
-      //! Reset parameters
-      virtual NOX::Abstract::Group::ReturnType 
-      reset(const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	    const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
-	    const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
 
       /*!
        * \brief Return name of this operator
@@ -98,6 +104,9 @@ namespace LOCA {
 		       double& rq_r, double& rq_i) const;
 
     protected:
+
+      //! Global data
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
       //! Name of this operator
       string myLabel;

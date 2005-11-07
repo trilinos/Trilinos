@@ -38,7 +38,7 @@
 #include "LOCA_GlobalData.H"
 #include "LOCA_Factory.H"
 #include "LOCA_Parameter_SublistParser.H"
-#include "LOCA_Utils.H"
+#include "NOX_Utils.H"
 #include "LOCA_ErrorCheck.H"
 
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
@@ -52,9 +52,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
     parsedParams(topParams),
     turningPointParams(tpParams),
     grpPtr(g),
-    xMultiVec(g->getX(), 2),
-    fMultiVec(g->getX(), 2),
-    newtonMultiVec(g->getX(), 2),
+    xMultiVec(globalData, g->getX(), 2),
+    fMultiVec(globalData, g->getX(), 2),
+    newtonMultiVec(globalData, g->getX(), 2),
     lengthMultiVec(),
     xVec(),
     fVec(),
@@ -795,21 +795,23 @@ void
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution(
 						  const double conParam) const 
 {
-  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-    cout << "LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution\n";
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution\n";
 
-    cout << "Turning Point located at: " << LOCA::Utils::sci(conParam) 
-	 << "   " 
-	 << LOCA::Utils::sci(getBifParam())
-	 << endl;
+    globalData->locaUtils->out() << "Turning Point located at: " << 
+      globalData->locaUtils->sciformat(conParam) << "   " << 
+      globalData->locaUtils->sciformat(getBifParam()) << std::endl;
 
-    cout << "\tPrinting Solution Vector for conParam = " 
-	 << LOCA::Utils::sci(conParam) << endl;
+    globalData->locaUtils->out() << 
+      "\tPrinting Solution Vector for conParam = " << 
+      globalData->locaUtils->sciformat(conParam) << std::endl;
   }
   grpPtr->printSolution(conParam);
-  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-    cout << "\tPrinting Null Vector for bif param = " 
-	 << LOCA::Utils::sci(getBifParam()) << endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "\tPrinting Null Vector for bif param = " << 
+      globalData->locaUtils->sciformat(getBifParam()) << std::endl;
   }
   grpPtr->printSolution(*(xVec->getNullVec()), xVec->getBifParam());
 }
@@ -822,21 +824,23 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution(
   const LOCA::TurningPoint::MooreSpence::ExtendedVector& tp_x = 
     dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedVector&>(x_);
 
-  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-    cout << "LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution\n";
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution\n";
 
-    cout << "Turning Point located at: " << LOCA::Utils::sci(conParam) 
-	 << "   " 
-	 << LOCA::Utils::sci(tp_x.getBifParam())
-	 << endl;
+    globalData->locaUtils->out() << "Turning Point located at: " << 
+      globalData->locaUtils->sciformat(conParam) << "   " << 
+      globalData->locaUtils->sciformat(tp_x.getBifParam()) << std::endl;
 
-    cout << "\tPrinting Solution Vector for conParam = " 
-	 << LOCA::Utils::sci(conParam) << endl;
+     globalData->locaUtils->out() << 
+       "\tPrinting Solution Vector for conParam = " << 
+       globalData->locaUtils->sciformat(conParam) << std::endl;
   }
   grpPtr->printSolution(*tp_x.getXVec(), conParam);
-  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-    cout << "\tPrinting Null Vector for bif param = " 
-	 << LOCA::Utils::sci(tp_x.getBifParam()) << endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "\tPrinting Null Vector for bif param = " << 
+      globalData->locaUtils->sciformat(tp_x.getBifParam()) << std::endl;
   }
   grpPtr->printSolution(*tp_x.getNullVec(), tp_x.getBifParam());
 }
@@ -904,16 +908,20 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(bool perturbSoln,
 		   "LOCA::TurningPoint::MooreSpence::ExtendedGroup::init()",
 		   "null vector can be orthogonal to length-scaling vector");
   }
-  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-    cout << "\tIn LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(), scaling null vector by:" 
-	 << LOCA::Utils::sci(1.0 / lVecDotNullVec) << endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "\tIn LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(), " << 
+      "scaling null vector by:" << 
+      globalData->locaUtils->sciformat(1.0 / lVecDotNullVec) << std::endl;
   }
   xVec->getNullVec()->scale(1.0/lVecDotNullVec);
 
   if (perturbSoln) {
-    if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-    cout << "\tIn LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(), applying random perturbation to initial solution of size:" 
-	 << LOCA::Utils::sci(perturbSize) << endl;
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+     globalData->locaUtils->out() << 
+       "\tIn LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(), " << 
+       "applying random perturbation to initial solution of size: " << 
+       globalData->locaUtils->sciformat(perturbSize) << endl;
     }
     Teuchos::RefCountPtr<NOX::Abstract::Vector> perturb = 
       xVec->getXVec()->clone(NOX::ShapeCopy);

@@ -33,9 +33,15 @@
 #ifndef CHANPROBLEMINTERFACE_H
 #define CHANPROBLEMINTERFACE_H
 
+#include "Teuchos_RefCountPtr.hpp"
+
 #include "LOCA_LAPACK_Interface.H" // base class
 #include "NOX_LAPACK_Vector.H" // class data element
 #include <fstream>
+
+namespace LOCA {
+  class GlobalData;
+}
 
 /*!
   \brief LOCA-LAPACK problem interface for the Chan problem.
@@ -57,10 +63,14 @@ class ChanProblemInterface :
 public:
 
   //! Constructor.  Also generates an initial guess
-  ChanProblemInterface(int N, double a, double b, double s);
+  ChanProblemInterface(
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    int N, double a, double b, double s);
  
   //! Constructor.  Also generates an initial guess
-  ChanProblemInterface(int N, double a, double b, double s, ofstream& file);
+  ChanProblemInterface(
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    int N, double a, double b, double s, ofstream& file);
 
   //! Destructor
   ~ChanProblemInterface() {};
@@ -98,6 +108,9 @@ private:
   double source_param(double a, double s);
 
 private:
+
+  //! Global data
+  Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
   //! Stores the initial guess
   NOX::LAPACK::Vector initialGuess;

@@ -167,8 +167,9 @@ LOCA::MultiContinuation::NaturalConstraint::computeDP(
   if (!isValidG && !isValidConstraints) {
     status = computeConstraints();
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
   if (!isValidG) {
     for (int i=0; i<constraints.numRows(); i++)

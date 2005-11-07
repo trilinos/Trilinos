@@ -33,10 +33,6 @@
 #include "LOCA.H"
 #include "LOCA_LAPACK.H"
 
-#include "LOCA_GlobalData.H"
-#include "LOCA_Utils.H"
-#include "LOCA_ErrorCheck.H"
-#include "LOCA_Factory.H"
 #include "LOCA_BorderedSystem_AbstractStrategy.H"
 #include "LOCA_Parameter_SublistParser.H"
 
@@ -50,7 +46,7 @@ Teuchos::RefCountPtr<NormConstraint> constraints;
 Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
 Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> bordering;
 Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> direct;
-Teuchos::RefCountPtr<NOX::Utils> utils;
+Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 Teuchos::RefCountPtr<NOX::TestCompare> testCompare;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> C;
@@ -67,8 +63,9 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
 	  const string& testName) {
   int ierr = 0;
 
-  if (utils->isPrintType(NOX::Utils::TestDetails))
-    cout << endl << "***** " << testName << " *****" << endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::TestDetails))
+    globalData->locaUtils->out() 
+      << std::endl << "***** " << testName << " *****" << std::endl;
 
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> a = 
     Teuchos::null;
@@ -153,8 +150,49 @@ int main(int argc, char *argv[])
       if (argv[1][0]=='-' && argv[1][1]=='v') 
 	verbose = true;
 
+    // Create parameter list
+    Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
+      Teuchos::rcp(new NOX::Parameter::List);
+
+    // Create LOCA sublist
+    NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
+
+    // Create the constraints list
+    NOX::Parameter::List& constraintsList = 
+      locaParamsList.sublist("Constraints");
+    constraintsList.setParameter("Bordered Solver Method", "Bordering");
+
+    // Create the "Solver" parameters sublist to be used with NOX Solvers
+    NOX::Parameter::List& nlParams = paramList->sublist("NOX");
+
+    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
+    if (verbose)
+       nlPrintParams.setParameter("Output Information", 
+				  NOX::Utils::Error +
+				  NOX::Utils::Details +
+				  NOX::Utils::OuterIteration + 
+				  NOX::Utils::InnerIteration + 
+				  NOX::Utils::Warning +
+				  NOX::Utils::TestDetails + 
+				  NOX::Utils::StepperIteration +
+				  NOX::Utils::StepperDetails);
+     else
+       nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
+
+    // Create LAPACK factory
+    Teuchos::RefCountPtr<LOCA::Abstract::Factory> lapackFactory =
+      Teuchos::rcp(new LOCA::LAPACK::Factory);
+
+    // Create global data object
+    globalData = LOCA::createGlobalData(paramList, lapackFactory);
+
+    // Create parsed parameter list
+    parsedParams = 
+      Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
+    parsedParams->parseSublists(paramList);
+
     // Set up the problem interface
-    ChanProblemInterface chan(n, alpha, beta, scale);
+    ChanProblemInterface chan(globalData, n, alpha, beta, scale);
     LOCA::ParameterVector p;
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
@@ -164,7 +202,7 @@ int main(int argc, char *argv[])
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    grp = Teuchos::rcp(new LOCA::LAPACK::Group(chan));
+    grp = Teuchos::rcp(new LOCA::LAPACK::Group(globalData, chan));
     grp->setParams(p);
 
     // Change initial guess to a random vector
@@ -178,81 +216,9 @@ int main(int argc, char *argv[])
       Teuchos::rcp(new vector<int>(1));
     (*constraintParamIDs)[0] = p.getIndex("alpha");
 
-    // Create parameter list
-    Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
-      Teuchos::rcp(new NOX::Parameter::List);
-
-    // Create LOCA sublist
-    NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
-
-    // Create the constraints list
-    NOX::Parameter::List& constraintsList = 
-      locaParamsList.sublist("Constraints");
-    constraintsList.setParameter("Bordered Solver Method", "Bordering");
-
-    // Set the LOCA Utilities
-    NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
-    if (verbose) {
-      locaUtilsList.setParameter("Output Information", 
-				 LOCA::Utils::Error + 
-				 LOCA::Utils::Warning +
-				 LOCA::Utils::StepperIteration +
-				 LOCA::Utils::StepperDetails +
-				 LOCA::Utils::Solver +
-				 LOCA::Utils::Parameters +
-				 LOCA::Utils::SolverDetails);
-    }
-    else
-      locaUtilsList.setParameter("Output Information", LOCA::Utils::Error);
-
-    // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = paramList->sublist("NOX");
-
-    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
-    if (verbose)
-       nlPrintParams.setParameter("Output Information", 
-				  NOX::Utils::Error +
-				  NOX::Utils::Details +
-				  NOX::Utils::OuterIteration + 
-				  NOX::Utils::InnerIteration + 
-				  NOX::Utils::Warning +
-				  NOX::Utils::TestDetails);
-     else
-       nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
-
-    // Create printing utils
-    Teuchos::RefCountPtr<LOCA::Utils> locaUtils =
-      Teuchos::rcp(new LOCA::Utils);
-    locaUtils->setUtils(*paramList);
-
-    // Create error check
-    Teuchos::RefCountPtr<LOCA::ErrorCheck> locaErrorCheck = 
-      Teuchos::rcp(new LOCA::ErrorCheck);
-
-    Teuchos::RefCountPtr<LOCA::Factory> locaFactory;
-
-    // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> locaGlobalData =
-      Teuchos::rcp(new LOCA::GlobalData(locaUtils, 
-					locaErrorCheck, 
-					locaFactory));
-
-    // Create parsed parameter list
-    parsedParams = 
-      Teuchos::rcp(new LOCA::Parameter::SublistParser(locaGlobalData));
-    parsedParams->parseSublists(paramList);
-
-    // Create LAPACK factory
-    Teuchos::RefCountPtr<LOCA::Abstract::Factory> lapackFactory =
-      Teuchos::rcp(new LOCA::LAPACK::Factory);
-
-    // Create factory
-    locaFactory = Teuchos::rcp(new LOCA::Factory(locaGlobalData, 
-						 lapackFactory));
-
     // Create bordering solver
     bordering
-      = locaFactory->createBorderedSystemStrategy(
+      = globalData->locaFactory->createBorderedSystemStrategy(
 				     parsedParams, 
 				     parsedParams->getSublist("Constraints"));
 
@@ -262,13 +228,14 @@ int main(int argc, char *argv[])
 
     // Create direct solver
     direct
-      = locaFactory->createBorderedSystemStrategy(
+      = globalData->locaFactory->createBorderedSystemStrategy(
 				     parsedParams, 
 				     parsedParams->getSublist("Constraints"));
 
     // Check some statistics on the solution
-    utils = Teuchos::rcp(new NOX::Utils(nlPrintParams));
-    testCompare = Teuchos::rcp(new NOX::TestCompare(cout, *utils));
+    testCompare = Teuchos::rcp(new NOX::TestCompare(
+				                 globalData->locaUtils->out(), 
+						 *(globalData->locaUtils)));
 
     // Evaluate blocks
     grp->computeF();
@@ -399,8 +366,14 @@ int main(int argc, char *argv[])
     testName = "Testing A,B,F,G=0, noncontiguous";
     ierr += testSolve(true, true, false, true, true, false,
 		      reltol, abstol, testName);
+
+    destroyGlobalData(globalData);
   }
 
+  catch (std::exception& e) {
+    cout << e.what() << endl;
+    ierr = 1;
+  }
   catch (const char *s) {
     cout << s << endl;
     ierr = 1;

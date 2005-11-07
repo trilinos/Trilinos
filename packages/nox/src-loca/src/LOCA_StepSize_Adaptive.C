@@ -32,16 +32,24 @@
 
 #include "LOCA_StepSize_Adaptive.H"
 #include "NOX_Solver_Generic.H"
-#include "LOCA_Utils.H"
 #include "LOCA_MultiContinuation_AbstractStrategy.H"
 #include "LOCA_MultiContinuation_ExtendedVector.H"
 #include "LOCA_NewStepper.H"
+#include "LOCA_Parameter_SublistParser.H"
 
-LOCA::StepSize::Adaptive::Adaptive(NOX::Parameter::List& params) :
-  LOCA::StepSize::Constant(params),
-  agrValue(0.0)
+LOCA::StepSize::Adaptive::Adaptive(
+	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& stepsizeParams) :
+  LOCA::StepSize::Constant(global_data, topParams, stepsizeParams)
 {
-  reset(params);
+  agrValue = stepsizeParams->getParameter("Aggressiveness", 0.0);
+
+  // Get maximum number of nonlinear iterations from stepper parameters
+  Teuchos::RefCountPtr<NOX::Parameter::List> p = 
+    topParams->getSublist("Stepper");
+  maxNonlinearSteps = 
+    static_cast<double>(p->getParameter("Max Nonlinear Iterations", 15));
 }
 
 LOCA::StepSize::Adaptive::~Adaptive()
@@ -49,18 +57,7 @@ LOCA::StepSize::Adaptive::~Adaptive()
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::StepSize::Adaptive::reset(NOX::Parameter::List& params) 
-{
-  NOX::Abstract::Group::ReturnType res = 
-    LOCA::StepSize::Constant::reset(params);
-  
-  agrValue = params.getParameter("Aggressiveness", 0.0);
-
-  return res;
-}
-
-NOX::Abstract::Group::ReturnType 
-LOCA::StepSize::Adaptive::compute(
+LOCA::StepSize::Adaptive::computeStepSize(
 		     LOCA::MultiContinuation::AbstractStrategy& curGroup,
 		     const LOCA::MultiContinuation::ExtendedVector& predictor,
 		     const NOX::Solver::Generic& solver,
@@ -92,11 +89,6 @@ LOCA::StepSize::Adaptive::compute(
       LOCA::StepSize::Constant::startStepSize *= ds_ratio;
       LOCA::StepSize::Constant::maxStepSize *= ds_ratio;
       LOCA::StepSize::Constant::minStepSize *= ds_ratio;
-
-      // Get maximum number of nonlinear iterations from stepper parameters
-      const NOX::Parameter::List& p = LOCA::Utils::getSublist("Stepper");
-      double maxNonlinearSteps 
-	= static_cast<double>(p.getParameter("Max Nonlinear Iterations", 15));
       
       // Get number of nonlinear iterations in last step
       double numNonlinearSteps = 

@@ -58,14 +58,20 @@ namespace LOCA {
     public:
 
       //! Constructor. 
-      Manager(NOX::Parameter::List& params);
+      Manager(
+	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 NOX::Parameter::List& params);
 
       //! Destructor
       virtual ~Manager();
 
       //! Reset parameters
       virtual NOX::Abstract::Group::ReturnType 
-      reset(NOX::Parameter::List& params);
+      reset(
+	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	NOX::Parameter::List& params);
 
       //! Computes step size based on step size control method
       virtual NOX::Abstract::Group::ReturnType 
@@ -86,6 +92,10 @@ namespace LOCA {
       virtual double getStartStepSize() const;
 
     protected:
+
+      //! Global data
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+
       //! Stores step size control method name
       string method;
 

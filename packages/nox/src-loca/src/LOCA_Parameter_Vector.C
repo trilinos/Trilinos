@@ -32,7 +32,7 @@
 
 #include "LOCA_Parameter_Vector.H" // class definition
 
-#include "LOCA_Utils.H"            // print utilities
+#include "Teuchos_TestForException.hpp" // for errors
 
 LOCA::ParameterVector::ParameterVector()
 {
@@ -118,39 +118,30 @@ LOCA::ParameterVector::operator=(const LOCA::ParameterVector& source)
 double& 
 LOCA::ParameterVector::operator[] (unsigned int i)
 {
-  if (i >= x.size()) {
-    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-      cout << "ERROR: LOCA::Parameter::Vector::operator[] - index is out "
-	   << "of range!" << endl;
-    }
-    throw "NOX Error";
-  }
+  TEST_FOR_EXCEPTION(i >= x.size(), 
+		     std::out_of_range,
+		     "Error:  LOCA::ParameterVector::operator[]:  " << 
+		     " Index " << i << " is out of range!");
   return x[i];
 }
 
 const double& 
 LOCA::ParameterVector::operator[] (unsigned int i) const
 {
-  if (i >= x.size()) {
-    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-      cout << "ERROR: LOCA::Parameter::Vector::operator[] const - index is "
-	   << "out of range!" << endl;
-    }
-    throw "NOX Error";
-  }
+  TEST_FOR_EXCEPTION(i >= x.size(), 
+		     std::out_of_range,
+		     "Error:  LOCA::ParameterVector::operator[]:  " << 
+		     " Index " << i << " is out of range!");
   return x[i];
 }
 
 void 
 LOCA::ParameterVector::setValue(unsigned int i, double value)
 {
-  if (i >= x.size()) {
-    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-      cout << "ERROR: LOCA::Parameter::Vector::setValue() - index is "
-	   << "out of range!" << endl;
-    }
-    throw "NOX Error";
-  }
+  TEST_FOR_EXCEPTION(i >= x.size(), 
+		     std::out_of_range,
+		     "Error:  LOCA::ParameterVector::setValue():  " << 
+		     " Index " << i << " is out of range!");
 
   x[i] = value;
   return;
@@ -159,32 +150,26 @@ LOCA::ParameterVector::setValue(unsigned int i, double value)
 void 
 LOCA::ParameterVector::setValue(string label, double value)
 {
-  if (!isParameter(label)) {
-    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-      cout << "ERROR: LOCA::Parameter::Vector::setValue() - label is "
-	   << "not valid!" << endl;
-    }
-    throw "NOX Error";
-  }
-  
   for (unsigned int i = 0; i < x.size(); i++) {
-    if (l[i] == label)
+    if (l[i] == label) {
       x[i] = value;
+      return;
+    }
   }
-  
-  return;
+
+  TEST_FOR_EXCEPTION(true, 
+		     std::invalid_argument,
+		     "Error:  LOCA::ParameterVector::setValue():  " << 
+		     " Label " << label << " is not valid!");
 }
 
 double 
 LOCA::ParameterVector::getValue(unsigned int i) const
 {
-  if (i >= x.size()) {
-    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-      cout << "ERROR: LOCA::Parameter::Vector::getValue(int) - index is "
-	   << "out of range!" << endl;
-    }
-    throw "NOX Error";
-  }
+  TEST_FOR_EXCEPTION(i >= x.size(), 
+		     std::out_of_range,
+		     "Error:  LOCA::ParameterVector::getValue():  " << 
+		     " Index " << i << " is out of range!");
   return x[i];
 }
 
@@ -196,12 +181,10 @@ LOCA::ParameterVector::getValue(string label) const
       return x[i];
   }
 
-  if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-    cout << "ERROR: LOCA::Parameter::Vector::getValue(string) - label is "
-	 << "not valid!" << endl;
-  }
-  throw "NOX Error";
-
+  TEST_FOR_EXCEPTION(true, 
+		     std::invalid_argument,
+		     "Error:  LOCA::ParameterVector::getValue():  " << 
+		     " Label " << label << " is not valid!");
   return 0.0;
 }
 
@@ -213,11 +196,10 @@ LOCA::ParameterVector::getIndex(string label) const
       return i;
   }
 
-  if (LOCA::Utils::doPrint(LOCA::Utils::Warning)) {
-    cout << "Warning: LOCA::ParameterVector::getIndex() - The string \"" 
-	 << label << "\" was not found!" << endl;
-  }
-
+  TEST_FOR_EXCEPTION(true, 
+		     std::invalid_argument,
+		     "Error:  LOCA::ParameterVector::getIndex():  " << 
+		     " Label " << label << " is not valid!");
   return -1;
 }
 
@@ -256,7 +238,7 @@ LOCA::ParameterVector::print(ostream& stream) const
   for (unsigned int i = 0; i < x.size(); i++) {
     stream << "\n    " << i << "    " << l[i] << " = " << x[i];
   }
-  cout << endl;
+  stream << std::endl;
 }
 
 ostream& 

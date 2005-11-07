@@ -33,6 +33,8 @@
 #ifndef LOCA_ABSTRACT_GROUP_H
 #define LOCA_ABSTRACT_GROUP_H
 
+#include "Teuchos_RefCountPtr.hpp"
+
 // #include "LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H"  // base class
 // #include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"       // base class
 // #include "LOCA_Homotopy_AbstractGroup.H"                      // base class
@@ -68,14 +70,18 @@ namespace LOCA {
     public:
 
       //! Default constructor.
-      Group(const DerivUtils& deriv = LOCA::DerivUtils());
+      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+
+      //! Default constructor.
+      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	    const Teuchos::RefCountPtr<DerivUtils>& deriv);
   
-      /*! 
-       * \brief Constructor with parameter list 
-       * (for LOCA::Bifurcation::TPBord::SingularSolveGroup).
-       */
-      Group(NOX::Parameter::List& params,
-	    const DerivUtils& deriv = LOCA::DerivUtils());
+//       /*! 
+//        * \brief Constructor with parameter list 
+//        * (for LOCA::Bifurcation::TPBord::SingularSolveGroup).
+//        */
+//       Group(NOX::Parameter::List& params,
+// 	    const DerivUtils& deriv = LOCA::DerivUtils());
  
       //! Copy constructor
       Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
@@ -302,6 +308,11 @@ namespace LOCA {
       operator=(const LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup& source);
 
       //@}
+
+    protected:
+
+      //! Global data
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
       
     };
   } // namespace Abstract

@@ -292,8 +292,9 @@ LOCA::BorderedSystem::Bordering::solveBZero(
     if (info != 0) {
       status = NOX::Abstract::Group::Failed;
       finalStatus = 
-	LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						     callingFunction);
+	globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							       finalStatus,
+							       callingFunction);
     }
   }
 
@@ -304,8 +305,9 @@ LOCA::BorderedSystem::Bordering::solveBZero(
     // Solve X = J^-1 F, note F must be nonzero
     status = grp->applyJacobianInverseMultiVector(params, *F, X);
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
   else {
     Teuchos::RefCountPtr<NOX::Abstract::MultiVector> RHS;
@@ -321,8 +323,9 @@ LOCA::BorderedSystem::Bordering::solveBZero(
     // Solve X = J^-1 (F-A*Y)
     status = grp->applyJacobianInverseMultiVector(params, *RHS, X);
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
 
   return finalStatus;
@@ -359,8 +362,9 @@ LOCA::BorderedSystem::Bordering::solveAZero(
     // Solve X = J^-1 F, note F must be nonzero
     status = grp->applyJacobianInverseMultiVector(params, *F, X);
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
 
   // Now compute Y
@@ -390,8 +394,9 @@ LOCA::BorderedSystem::Bordering::solveAZero(
     if (info != 0) {
       status = NOX::Abstract::Group::Failed;
       finalStatus = 
-	LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						     callingFunction);
+	globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							       finalStatus,
+							       callingFunction);
     }
   }
 
@@ -431,8 +436,8 @@ LOCA::BorderedSystem::Bordering::solveFZero(
   // compute Xt = J^-1 A
   status = grp->applyJacobianInverseMultiVector(params, *AA, *Xt);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
   
   // compute t2 = -B^T*Xt
   NOX::Abstract::MultiVector::DenseMatrix t(BB->numConstraints(),
@@ -454,8 +459,9 @@ LOCA::BorderedSystem::Bordering::solveFZero(
   if (info != 0) {
     status = NOX::Abstract::Group::Failed;
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
 
   // compute X = -Xt*Y
@@ -487,8 +493,8 @@ LOCA::BorderedSystem::Bordering::solveContiguous(
   // compute [X1 X2] = J^-1 [F A]
   status = grp->applyJacobianInverseMultiVector(params, *F, X);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X1 = X.subView(indexF);
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X2 = X.subView(indexA);
   
@@ -518,8 +524,9 @@ LOCA::BorderedSystem::Bordering::solveContiguous(
   if (info != 0) {
     status = NOX::Abstract::Group::Failed;
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
 
   // compute X = X1 - X2*Y

@@ -91,21 +91,25 @@ namespace LOCA {
        * Set hasMassMat to true if the system has a mass matrix
        * (Only relevant for eigenvalue and Hopf calculations).
        */
-      Group(LOCA::LAPACK::Interface& i, bool hasMassMat = false);
+      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	    LOCA::LAPACK::Interface& i, bool hasMassMat = false);
 
       //! Constructor with parameter list 
       /*!
        * Pass a parameter for singular matrix solves. (see 
        * LOCA::Bifurcation::TPBord::SingularSolveGroup)
        */
-      Group(NOX::Parameter::List& params,
+      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	    NOX::Parameter::List& params,
 	    LOCA::LAPACK::Interface& i, bool hasMassMat = false);
 
       //! Constructor with used and allocated dimensions of matrices
-      Group(LOCA::LAPACK::Interface& i, int m, int n, bool hasMassMat = false);
+      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	    LOCA::LAPACK::Interface& i, int m, int n, bool hasMassMat = false);
 
       //! Constructor with parameter list and with used, allocated dims
-      Group(NOX::Parameter::List& params,
+      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	    NOX::Parameter::List& params,
 	    LOCA::LAPACK::Interface& i, int m, int n, bool hasMassMat = false);
 
       //! Copy constructor

@@ -33,7 +33,17 @@
 #ifndef LOCA_STEPSIZE_CONSTANT_H
 #define LOCA_STEPSIZE_CONSTANT_H
 
-#include "LOCA_StepSize_Generic.H"  // base class
+#include "Teuchos_RefCountPtr.hpp" 
+
+#include "LOCA_StepSize_AbstractStrategy.H"  // base class
+
+// forward declarations
+namespace LOCA {
+  class GlobalData;
+  namespace Parameter {
+    class SublistParser;
+  }
+}
 
 namespace LOCA {
 
@@ -53,11 +63,11 @@ namespace LOCA {
      * For the first continuation step, the step size is chosen so that
      * step size times the parameter component of the predictor is equal
      * to the initial step size.  From then on, the step size is multiplied
-     * by the step size scale factor (see LOCA::Continuation::ExtendedGroup)
+     * by the step size scale factor (see 
+     ( LOCA::MultiContinuation::ArcLengthGroup)
      * which incorporates rescaling of the continuation parameter.
      *
-     * The parameters used by this class supplied in the constructor or reset
-     * method are:
+     * The parameters used by this class supplied in the constructor are:
      * <ul>
      * <li> "Max Step Size" - Largest valid step size (Default 1.0e+12)
      * <li> "Min Step Size" - Smallest valid step size (Default 1.0e-12)
@@ -69,32 +79,38 @@ namespace LOCA {
      *      than the initial step size. (Default 1.26 = \f$2^{1/3}\f$)
      * </ul>
      */
-    class Constant : public LOCA::StepSize::Generic {
+    class Constant : public LOCA::StepSize::AbstractStrategy {
 
     public:
 
       //! Constructor. 
-      Constant(NOX::Parameter::List& params);
+      Constant(
+         const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& stepsizeParams);
 
       //! Destructor
       virtual ~Constant();
 
-      //! Reset parameters given above
-      virtual NOX::Abstract::Group::ReturnType 
-      reset(NOX::Parameter::List& params);
-
       //! Compute the step size as described above
       /*! 
+       * \param curGroup [in] Current continuation group
+       * \param predictor [in] Current predictor direction
+       * \param solver [in] Solver from previous step
+       * \param stepStatus [in] Status of previous step
+       * \param stepper [in] Stepper
+       * \param stepSize [out] Computed step size
+       * \returns ReturnType code indicating success or failure
        * Returns NOX::Abstract::Group::Failed if the computed step size is
        * smaller than the minimum step size
        */
       virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::MultiContinuation::AbstractStrategy& curGroup,
-	      const LOCA::MultiContinuation::ExtendedVector& predictor,
-	      const NOX::Solver::Generic& solver,
-	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
-	      const LOCA::NewStepper& stepper,
-	      double& stepSize);
+      computeStepSize(LOCA::MultiContinuation::AbstractStrategy& curGroup,
+		      const LOCA::MultiContinuation::ExtendedVector& predictor,
+		      const NOX::Solver::Generic& solver,
+		      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
+		      const LOCA::NewStepper& stepper,
+		      double& stepSize);
 
       //! Returns previous step size
       virtual double getPrevStepSize() const;
@@ -116,6 +132,10 @@ namespace LOCA {
       clipStepSize(double& stepSize);
 
     protected:
+
+      //! Global data
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+
       //! Maximum step size
       double maxStepSize;
 

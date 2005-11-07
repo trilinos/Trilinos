@@ -34,10 +34,11 @@
 #include "LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.H"
 
 LOCA::TurningPoint::MooreSpence::ExtendedVector::ExtendedVector(
-					  const NOX::Abstract::Vector& xVec,
-					  const NOX::Abstract::Vector& nullVec,
-					  double bifParam) :
-  LOCA::Extended::Vector(2,1)
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const NOX::Abstract::Vector& xVec,
+		    const NOX::Abstract::Vector& nullVec,
+		    double bifParam) :
+  LOCA::Extended::Vector(global_data,2,1)
 {
   setVector(0, xVec);
   setVector(1, nullVec);
@@ -134,8 +135,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedVector::getBifParam()
   return getScalar(0);
 }
 
-LOCA::TurningPoint::MooreSpence::ExtendedVector::ExtendedVector() :
-  LOCA::Extended::Vector(2,1)
+LOCA::TurningPoint::MooreSpence::ExtendedVector::ExtendedVector(
+		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) :
+  LOCA::Extended::Vector(global_data,2,1)
 {
 }
 
@@ -145,5 +147,8 @@ LOCA::TurningPoint::MooreSpence::ExtendedVector::generateMultiVector(
 							int nVectorRows, 
 							int nScalarRows) const
 {
-  return Teuchos::rcp(new LOCA::TurningPoint::MooreSpence::ExtendedMultiVector(nColumns));
+  return 
+    Teuchos::rcp(new LOCA::TurningPoint::MooreSpence::ExtendedMultiVector(
+								    globalData,
+								    nColumns));
 }

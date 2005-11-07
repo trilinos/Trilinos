@@ -39,6 +39,7 @@
 
 // forward declarations
 namespace LOCA {
+  class GlobalData;
   namespace Extended {
     class MultiVector;
   }
@@ -83,10 +84,6 @@ namespace LOCA {
       friend class LOCA::Extended::MultiVector;
 
     public:
-  
-      //! %Vector constructor.
-      Vector(const vector< NOX::Abstract::Vector* > vv,
-	     const vector< double > vs);
 
       //! Copy constructor.
       Vector(const Vector& source, NOX::CopyType type = NOX::DeepCopy);
@@ -264,7 +261,8 @@ namespace LOCA {
     protected:
 
       //! %Vector constructor.
-      Vector(int nvecs, int nscalars);
+      Vector(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	     int nvecs, int nscalars);
 
       //! generate an extended multi-vector
       /*!
@@ -278,6 +276,9 @@ namespace LOCA {
 			  int nScalarRows) const;
 
     protected:
+
+      //! Global data
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
       //! Array of vector pointers
       vector< Teuchos::RefCountPtr<NOX::Abstract::Vector> > vectorPtrs;

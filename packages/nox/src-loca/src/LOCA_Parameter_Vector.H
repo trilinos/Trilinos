@@ -35,6 +35,11 @@
 
 #include "NOX_Common.H"  // for <iostream>, <vector>, and <string>
 
+// Forward declarations
+namespace LOCA {
+  class GlobalData;
+}
+
 namespace LOCA {
 
 /*! 
@@ -48,7 +53,7 @@ class ParameterVector {
 
 public:
   
-  //! Construct a vector of length n. Can optionally be initialized to a scalar value.
+  //! Constructor.
   ParameterVector();
 
   //! Copy constructor

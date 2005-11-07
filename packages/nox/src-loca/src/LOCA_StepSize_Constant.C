@@ -32,16 +32,27 @@
 
 #include "LOCA_StepSize_Constant.H"
 #include "NOX_Solver_Generic.H"
-#include "LOCA_Utils.H"
+#include "LOCA_GlobalData.H"
+#include "NOX_Utils.H"
 #include "LOCA_MultiContinuation_AbstractStrategy.H"
 #include "LOCA_MultiContinuation_ExtendedVector.H"
 #include "LOCA_NewStepper.H"
 
-LOCA::StepSize::Constant::Constant(NOX::Parameter::List& params) :
-  maxStepSize(0.0),
-  minStepSize(0.0)
+LOCA::StepSize::Constant::Constant(
+	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& stepsizeParams) :
+  globalData(global_data)
 {
-  reset(params);
+  maxStepSize = stepsizeParams->getParameter("Max Step Size", 1.0e+12);
+  minStepSize = stepsizeParams->getParameter("Min Step Size", 1.0e-12);
+  startStepSize = stepsizeParams->getParameter("Initial Step Size", 1.0);
+  failedFactor = 
+    stepsizeParams->getParameter("Failed Step Reduction Factor", 0.5);
+  successFactor = 
+    stepsizeParams->getParameter("Successful Step Increase Factor", 1.26);
+  prevStepSize = 0.0;
+  isFirstStep = true;
 }
 
 LOCA::StepSize::Constant::~Constant()
@@ -49,21 +60,7 @@ LOCA::StepSize::Constant::~Constant()
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::StepSize::Constant::reset(NOX::Parameter::List& params) 
-{
-  maxStepSize = params.getParameter("Max Step Size", 1.0e+12);
-  minStepSize = params.getParameter("Min Step Size", 1.0e-12);
-  startStepSize = params.getParameter("Initial Step Size", 1.0);
-  failedFactor = params.getParameter("Failed Step Reduction Factor", 0.5);
-  successFactor = params.getParameter("Successful Step Increase Factor", 1.26);
-  prevStepSize = 0.0;
-  isFirstStep = true;
-
-  return NOX::Abstract::Group::Ok;
-}
-
-NOX::Abstract::Group::ReturnType 
-LOCA::StepSize::Constant::compute(
+LOCA::StepSize::Constant::computeStepSize(
 		     LOCA::MultiContinuation::AbstractStrategy& curGroup,
 		     const LOCA::MultiContinuation::ExtendedVector& predictor,
 		     const NOX::Solver::Generic& solver,
@@ -142,9 +139,9 @@ LOCA::StepSize::Constant::clipStepSize(double& stepSize)
   if (fabs(stepSize) < minStepSize) {
     res = NOX::Abstract::Group::Failed;
     stepSize =  signStep*minStepSize;
-    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-      cout << "\n\tStep size reached minimum step size bound" 
-	   << endl;
+    if (globalData->locaUtils->isPrintType(NOX::Utils::Error)) {
+      globalData->locaUtils->err() << 
+	"\n\tStep size reached minimum step size bound" << std::endl;
     }
   }
 

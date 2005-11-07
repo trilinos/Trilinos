@@ -33,8 +33,18 @@
 #ifndef LOCA_ANASAZIOPERATOR_SHIFTINVERT_H
 #define LOCA_ANASAZIOPERATOR_SHIFTINVERT_H
 
-#include "LOCA_AnasaziOperator_Generic.H"  // base class
+#include "Teuchos_RefCountPtr.hpp" 
+
+#include "LOCA_AnasaziOperator_AbstractStrategy.H"  // base class
 #include "LOCA_TimeDependent_AbstractGroup.H"
+
+// forward declarations
+namespace LOCA {
+  class GlobalData;
+  namespace Parameter {
+    class SublistParser;
+  }
+}
 
 namespace LOCA {
 
@@ -44,9 +54,9 @@ namespace LOCA {
      * using shift-invert.
      */
     /*! 
-     * This class implements the LOCA::AnasaziOperator::Generic interface
-     * for computing generalized eigenvalues \f$\lambda\f$ and eigenvectors
-     * \f$z\f$ of the system
+     * This class implements the LOCA::AnasaziOperator::AbstractStrategt 
+     * interface for computing generalized eigenvalues \f$\lambda\f$ and 
+     * eigenvectors \f$z\f$ of the system
      *\f[
      *    J z = \lambda M z
      *\f]
@@ -59,17 +69,16 @@ namespace LOCA {
      * where \f$\omega\f$ is a real scalar.  The resulting eigenvalue is
      * \f$\lambda + \omega\f$.
      *
-     * The parameters used by this class supplied in the constructor or reset
-     * method are:
+     * The parameters used by this class supplied in the constructor are:
      * <ul>
      * <li> "Shift" - \f$\omega\f$ as defined above (Default 0.0)
      * </ul>
      *
-     * Also the \em grp argument to the constructor and reset method must
+     * Also the \em grp argument to the constructor must
      * be a child of LOCA::TimeDependent::AbstractGroup for the shift-invert
      * operations.
      */
-    class ShiftInvert : public LOCA::AnasaziOperator::Generic {
+    class ShiftInvert : public LOCA::AnasaziOperator::AbstractStrategy {
 
     public:
 
@@ -79,22 +88,14 @@ namespace LOCA {
        * See class description for a list of eigenParams.
        */
       ShiftInvert(
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
-	       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
+	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	const Teuchos::RefCountPtr<LOCA::TimeDependent::AbstractGroup>& grp);
 
       //! Destructor
       virtual ~ShiftInvert();
-
-      //! Reset parameters
-      /*!
-       * Argument \em grp must be of type LOCA::TimeDependent::AbstractGroup.
-       * See class description for a list of eigenParams.
-       */
-      virtual NOX::Abstract::Group::ReturnType 
-      reset(const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	    const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
-	    const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
 
       /*!
        * \brief Return name of this operator
@@ -135,6 +136,9 @@ namespace LOCA {
 		       double& rq_r, double& rq_i) const;
 
     protected:
+
+      //! Global data
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
       //! Name of this operator
       string myLabel;

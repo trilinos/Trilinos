@@ -31,11 +31,16 @@
 //@HEADER
 
 #include "Anasazi_LOCA_MultiVec.H"
+#include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
-Anasazi::LOCAMultiVec::LOCAMultiVec(const NOX::Abstract::Vector& N_vec, 
-				    int NumVecs) :
-  mvPtrs(NumVecs), CV(Anasazi::Copy)
+Anasazi::LOCAMultiVec::LOCAMultiVec(
+		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		     const NOX::Abstract::Vector& N_vec, 
+		     int NumVecs) :
+  globalData(global_data), 
+  mvPtrs(NumVecs), 
+  CV(Anasazi::Copy)
 {
   for (int i=0; i<NumVecs; i++) {
     mvPtrs[i] = N_vec.clone(NOX::ShapeCopy);
@@ -44,9 +49,12 @@ Anasazi::LOCAMultiVec::LOCAMultiVec(const NOX::Abstract::Vector& N_vec,
 }
 
 Anasazi::LOCAMultiVec::LOCAMultiVec(
-			      const vector<NOX::Abstract::Vector*> N_vecPtrs,
-			      Anasazi::DataAccess type) : 
-  mvPtrs(N_vecPtrs.size()), CV(type)
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const vector<NOX::Abstract::Vector*> N_vecPtrs,
+		    Anasazi::DataAccess type) : 
+  globalData(global_data), 
+  mvPtrs(N_vecPtrs.size()), 
+  CV(type)
 {
   if (type == Anasazi::Copy)
     for (unsigned int i=0; i<mvPtrs.size(); i++)
@@ -59,6 +67,7 @@ Anasazi::LOCAMultiVec::LOCAMultiVec(
 
 Anasazi::LOCAMultiVec::LOCAMultiVec(const Anasazi::LOCAMultiVec& source, 
 				    Anasazi::DataAccess type ) : 
+  globalData(source.globalData),
   mvPtrs(source.mvPtrs.size()),
   CV(type)
 {
@@ -74,16 +83,17 @@ Anasazi::LOCAMultiVec::LOCAMultiVec(const Anasazi::LOCAMultiVec& source,
 Anasazi::LOCAMultiVec::LOCAMultiVec(Anasazi::DataAccess type, 
 				    const Anasazi::LOCAMultiVec& source, 
 				    const std::vector<int>& index): 
-  mvPtrs(index.size()), CV(type)
+  globalData(source.globalData),
+  mvPtrs(index.size()), 
+  CV(type)
 {
-  int i;
 
   if (type == Anasazi::Copy)
-    for (i=0; i<index.size(); i++)
+    for (unsigned int i=0; i<index.size(); i++)
       mvPtrs[i] = source.mvPtrs[ index[i] ]->clone(NOX::DeepCopy);
   
   else
-    for (i=0; i<index.size(); i++)
+    for (unsigned int i=0; i<index.size(); i++)
       mvPtrs[i] = source.mvPtrs[ index[i] ];
 }
 
@@ -94,7 +104,7 @@ Anasazi::LOCAMultiVec::~LOCAMultiVec()
 Anasazi::MultiVec<double>* 
 Anasazi::LOCAMultiVec::Clone(const int NumVecs) const
 {
-  return new Anasazi::LOCAMultiVec(*(mvPtrs[0]),NumVecs);
+  return new Anasazi::LOCAMultiVec(globalData,*(mvPtrs[0]),NumVecs);
 }
 
 Anasazi::MultiVec<double>* 
@@ -131,12 +141,12 @@ void
 Anasazi::LOCAMultiVec::SetBlock(const Anasazi::MultiVec<double>& A, 
 				const std::vector<int>& index)
 {
-  int i, ind;
+  int ind;
   Anasazi::LOCAMultiVec *A_vec = 
     dynamic_cast<Anasazi::LOCAMultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); 
   assert(A_vec!=NULL);
   int MyNumVecs = mvPtrs.size();
-  for (i=0; i<index.size(); i++) {
+  for (unsigned int i=0; i<index.size(); i++) {
     ind = index[i];
     if (ind < MyNumVecs) {
       mvPtrs[ind] = A_vec->mvPtrs[i]->clone(NOX::DeepCopy);
@@ -160,7 +170,7 @@ Anasazi::LOCAMultiVec::MvTimesMatAddMv(
   int ldb = B.stride();
   double *Bvals = B.values();  	
   Anasazi::LOCAMultiVec *temp_vec = 
-    new Anasazi::LOCAMultiVec(*(mvPtrs[0]),n);
+    new Anasazi::LOCAMultiVec(globalData, *(mvPtrs[0]), n);
   temp_vec->MvInit(0.0);
   double one = 1.0;
   //
@@ -216,12 +226,11 @@ void
 Anasazi::LOCAMultiVec::MvDot(const Anasazi::MultiVec<double>& A, 
 			     std::vector<double>* b ) const
 {
-  int j;
   int n = mvPtrs.size();
   Anasazi::LOCAMultiVec *A_vec = 
     dynamic_cast<Anasazi::LOCAMultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); assert(A_vec!=NULL);
-  if (A_vec && b && ( b->size() >= n )) {
-    for (j=0; j<n; j++)
+  if (A_vec && b && ( b->size() >= static_cast<unsigned int>(n) )) {
+    for (int j=0; j<n; j++)
       (*b)[j] = mvPtrs[j]->innerProduct(*(A_vec->mvPtrs[j]));
   }
 }
@@ -260,7 +269,8 @@ Anasazi::LOCAMultiVec::GetNOXVector(int index)
   if (index < static_cast<int>(mvPtrs.size())) 
     return *(mvPtrs[index]);
   else {
-    ::LOCA::ErrorCheck::throwError("Anasazi::LOCAMultiVec::GetNOXVector()",
+    globalData->locaErrorCheck->throwError(
+				   "Anasazi::LOCAMultiVec::GetNOXVector()",
 				   "Invalid index");
     return *(mvPtrs[0]);
   }
@@ -272,7 +282,8 @@ Anasazi::LOCAMultiVec::GetNOXVector(int index) const
   if (index < static_cast<int>(mvPtrs.size())) 
     return *(mvPtrs[index]);
   else {
-    ::LOCA::ErrorCheck::throwError("Anasazi::LOCAMultiVec::GetNOXVector()",
+    globalData->locaErrorCheck->throwError(
+				   "Anasazi::LOCAMultiVec::GetNOXVector()",
 				   "Invalid index");
     return *(mvPtrs[0]);
   }

@@ -32,22 +32,34 @@
 
 #include "LOCA_Abstract_Group.H"
 #include "NOX_Parameter_List.H"
+#include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
-LOCA::Abstract::Group::Group(const LOCA::DerivUtils& d)
-  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d)
+LOCA::Abstract::Group::Group(
+		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data)
+  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(Teuchos::rcp(new LOCA::DerivUtils(global_data))),
+    globalData(global_data)
 {
 }
 
-LOCA::Abstract::Group::Group(NOX::Parameter::List& params, 
-			     const LOCA::DerivUtils& d)
-  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d)
+LOCA::Abstract::Group::Group(
+		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		     const Teuchos::RefCountPtr<LOCA::DerivUtils>& d)
+  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d),
+    globalData(global_data)
 {
 }
+
+// LOCA::Abstract::Group::Group(NOX::Parameter::List& params, 
+// 			     const LOCA::DerivUtils& d)
+//   : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d)
+// {
+// }
 
 LOCA::Abstract::Group::Group(const LOCA::Abstract::Group& source, 
 			     NOX::CopyType type)
-  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(source, type)
+  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(source, type),
+    globalData(source.globalData)
 {
 }
 
@@ -127,6 +139,7 @@ LOCA::Abstract::Group::operator=(const LOCA::Abstract::Group& source)
 //   LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup::operator=(source);
 //   LOCA::Bifurcation::TPBord::SingularSolveGroup::operator=(source);
   LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::operator=(source);
+  globalData = source.globalData;
   return *this;
 }
 
@@ -143,7 +156,7 @@ LOCA::Abstract::Group::applyShiftedMatrixInverse(
 					   NOX::Abstract::Vector& result,
 					   double shift)
 {
-  LOCA::ErrorCheck::throwError(
+  globalData->locaErrorCheck->throwError(
 			   "LOCA::Abstract::Group::applyShiftedMatrixInverse",
 			   "Not implemented for group");
   return NOX::Abstract::Group::NotDefined;
@@ -158,7 +171,7 @@ LOCA::Abstract::Group::applyShiftedMatrixInverse(
 // 			       NOX::Abstract::Vector& result_real,
 // 			       NOX::Abstract::Vector& result_imag) const
 // {
-//   LOCA::ErrorCheck::throwError("LOCA::Abstract::Group::applyComplexInverse",
+//   globalData->locaErrorCheck->throwError("LOCA::Abstract::Group::applyComplexInverse",
 // 			       "No mass matrix defined for group");
 //   return NOX::Abstract::Group::NotDefined;
 // }
@@ -173,7 +186,7 @@ LOCA::Abstract::Group::applyShiftedMatrixInverse(
 // 				     NOX::Abstract::Vector& vResult,
 // 				     double& sResult) const
 // {
-//   LOCA::ErrorCheck::throwError(
+//   globalData->locaErrorCheck->throwError(
 // 		       "LOCA::Abstract::Group::applyBorderedJacobianInverse",
 // 		       "Not defined for group");
 //   return NOX::Abstract::Group::NotDefined;

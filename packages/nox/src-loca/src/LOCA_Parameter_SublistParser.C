@@ -95,10 +95,6 @@ LOCA::Parameter::SublistParser::parseSublists(
   NOX::Parameter::List& stepsizeSublist = locaSublist.sublist("Step Size");
   sublistMap["Step Size"] = Teuchos::rcp(&stepsizeSublist, false);
 
-  // Utilities sublist
-  NOX::Parameter::List& utilitiesSublist = locaSublist.sublist("Utilities");
-  sublistMap["Utilities"] = Teuchos::rcp(&utilitiesSublist, false);
-
   // NOX sublist
   NOX::Parameter::List& noxSublist = topLevelParams->sublist("NOX");
   sublistMap["NOX"] = Teuchos::rcp(&noxSublist, false);

@@ -33,6 +33,8 @@
 #ifndef ANASAZI_LOCA_MATRIX_H
 #define ANASAZI_LOCA_MATRIX_H
 
+#include "Teuchos_RefCountPtr.hpp"
+
 // Anasazi includes
 #include "AnasaziOperator.hpp"
 #include "AnasaziMultiVec.hpp"
@@ -40,7 +42,12 @@
 #include "AnasaziReturnType.hpp"
 
 // LOCA includes
-#include "LOCA_AnasaziOperator_Generic.H"
+#include "LOCA_AnasaziOperator_AbstractStrategy.H"
+
+// forward declarations
+namespace LOCA {
+  class GlobalData;
+}
 
 namespace Anasazi {
 
@@ -50,7 +57,7 @@ namespace Anasazi {
   /*!
    * This class provides an implementation of the Anasazi::Matrix class
    * using LOCA operators.  The operator is represented by the 
-   * LOCA::AnasaziOperator::Generic class which serves as a base class
+   * LOCA::AnasaziOperator::AbstractStrategy class which serves as a base class
    * for many different types of operators, including shift-invert and
    * Generalized Cayley transformations.
    */
@@ -58,7 +65,9 @@ namespace Anasazi {
   public:
 
     //! Constructor
-    LOCAMatrix(::LOCA::AnasaziOperator::Generic& op);
+    LOCAMatrix(
+    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+    const Teuchos::RefCountPtr< ::LOCA::AnasaziOperator::AbstractStrategy>& op);
     
     //! Destructor
     ~LOCAMatrix();
@@ -67,9 +76,12 @@ namespace Anasazi {
     Anasazi::ReturnType Apply(const Anasazi::MultiVec<double>& x, 
 			      Anasazi::MultiVec<double>& y ) const;
   protected:
+
+    //! Global data
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
     
-    //! Reference to LOCA operator
-    ::LOCA::AnasaziOperator::Generic& locaOp;
+    //! LOCA operator
+    Teuchos::RefCountPtr< ::LOCA::AnasaziOperator::AbstractStrategy> locaOp;
     
   }; // class Matrix
 } // namespace Anasazi

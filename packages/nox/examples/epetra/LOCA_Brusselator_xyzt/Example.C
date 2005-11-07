@@ -256,17 +256,6 @@ int main(int argc, char *argv[])
   aList.setParameter("Restarts",2);
   aList.setParameter("Frequency",1);
   aList.setParameter("Debug Level",0);
-  
-  // Set the LOCA Utilities
-  NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
-  locaUtilsList.setParameter("MyPID", MyPID);
-  locaUtilsList.setParameter("Output Information", 
-			     LOCA::Utils::Warning +
-			     LOCA::Utils::StepperIteration +
-			     LOCA::Utils::StepperDetails +
-			     LOCA::Utils::Solver +
-			     LOCA::Utils::SolverDetails +
-			     LOCA::Utils::Parameters);
 
   // Create the "Solver" parameters sublist to be used with NOX Solvers
   NOX::Parameter::List& nlParams = paramList->sublist("NOX");
@@ -280,15 +269,14 @@ int main(int argc, char *argv[])
   printParams.setParameter("Output Precision", 3);
   printParams.setParameter("Output Processor", 0);
   printParams.setParameter("Output Information", 
-			NOX::Utils::OuterIteration + 
-			NOX::Utils::OuterIterationStatusTest + 
-			NOX::Utils::InnerIteration +
-			NOX::Utils::Parameters + 
-			NOX::Utils::Details + 
-			NOX::Utils::Warning);
-
-  // create parallel printing utilities
-  NOX::Utils utils(printParams);
+			   NOX::Utils::OuterIteration + 
+			   NOX::Utils::OuterIterationStatusTest + 
+			   NOX::Utils::InnerIteration +
+			   NOX::Utils::Parameters + 
+			   NOX::Utils::Details + 
+			   NOX::Utils::Warning + 
+			   NOX::Utils::StepperIteration +
+			   NOX::Utils::StepperDetails);
 
   // Sublist for line search 
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
@@ -394,8 +382,16 @@ int main(int argc, char *argv[])
   pVector.addParameter("alpha",0.6);
   pVector.addParameter("beta",2.0);
 
+  // Create Epetra factory
+  Teuchos::RefCountPtr<LOCA::Abstract::Factory> epetraFactory =
+    Teuchos::rcp(new LOCA::Epetra::Factory);
+
+  // Create global data object
+  Teuchos::RefCountPtr<LOCA::GlobalData> globalData = 
+    LOCA::createGlobalData(paramList, epetraFactory);
+
   Teuchos::RefCountPtr<LOCA::Epetra::Group> grp =
-    Teuchos::rcp(new LOCA::Epetra::Group(printParams,
+    Teuchos::rcp(new LOCA::Epetra::Group(globalData, printParams,
                  iReq, initialGuess, linSys, pVector));
 
   grp->computeF();
@@ -421,7 +417,7 @@ int main(int argc, char *argv[])
 
   // Create the method
   //NOX::Solver::Manager solver(grp, combo, nlParams);
-  LOCA::NewStepper stepper(grp, combo, paramList);
+  LOCA::NewStepper stepper(globalData, grp, combo, paramList);
 
   // Initialize time integration parameters
 #ifdef DO_XYZT
@@ -439,13 +435,14 @@ int main(int argc, char *argv[])
     timeStep++;
     time += dt;
   
-    utils.out() << "Time Step: " << timeStep << ",\tTime: " << time << endl;
+    globalData->locaUtils->out() 
+      << "Time Step: " << timeStep << ",\tTime: " << time << endl;
   
 //    NOX::StatusTest::StatusType status = solver.solve();
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
     if (status != LOCA::Abstract::Iterator::Finished)
-       if (MyPID==0) utils.out() << "Stepper failed to converge!" << endl;
+       globalData->locaUtils->out() << "Stepper failed to converge!" << endl;
 
 
     // Get the Epetra_Vector with the final solution from the solver
@@ -460,26 +457,28 @@ int main(int argc, char *argv[])
 
     Problem.reset(finalSolution);
     grp->setX(finalSolution);
-    stepper.reset(grp, combo, paramList);
+    stepper.reset(globalData, grp, combo, paramList);
     grp->computeF();
 #endif
 
   } // end time step while loop
 
   // Output the parameter list
-  if (utils.isPrintType(NOX::Utils::Parameters)) {
-    utils.out() << endl << "Final Parameters" << endl
-	 << "****************" << endl;
-    stepper.getParameterList()->print(utils.out());
-    utils.out() << endl;
-  }
+  if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
+      globalData->locaUtils->out() 
+	<< std::endl << "Final Parameters" << std::endl
+	<< "****************" << std::endl;
+      stepper.getParameterList()->print(globalData->locaUtils->out());
+      globalData->locaUtils->out() << std::endl;
+    }
 
   // Output timing info
-  if(MyPID==0)
-    utils.out() << "\nTimings :\n\tWallTime --> " << 
-	    myTimer.WallTime() - startWallTime << " sec."
-         << "\n\tElapsedTime --> " << myTimer.ElapsedTime() 
-         << " sec." << endl << endl;
+  globalData->locaUtils->out() << "\nTimings :\n\tWallTime --> " << 
+    myTimer.WallTime() - startWallTime << " sec."
+	      << "\n\tElapsedTime --> " << myTimer.ElapsedTime() 
+	      << " sec." << endl << endl;
+
+  destroyGlobalData(globalData);
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;

@@ -85,7 +85,11 @@ LOCA_OLD_H = \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H \
 	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \
-        $(srcdir)/LOCA_Homotopy_Group.H
+        $(srcdir)/LOCA_Homotopy_Group.H \
+	$(srcdir)/LOCA_StepSize_Generic.H \
+	$(srcdir)/LOCA_StepSize_Manager.H \
+	$(srcdir)/LOCA_AnasaziOperator_Generic.H \
+	$(srcdir)/LOCA_AnasaziOperator_Manager.H
 
 LOCA_OLD = \
 	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.C \
@@ -134,7 +138,9 @@ LOCA_OLD = \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C \
-	$(srcdir)/LOCA_Homotopy_Group.C
+	$(srcdir)/LOCA_Homotopy_Group.C \
+	$(srcdir)/LOCA_StepSize_Manager.C \
+	$(srcdir)/LOCA_AnasaziOperator_Manager.C
 
 LOCA_ABSTRACT_H = \
         $(srcdir)/LOCA_Abstract_Group.H \
@@ -245,11 +251,9 @@ LOCA_DERIVUTILS = \
         $(srcdir)/LOCA_DerivUtils.C
 
 LOCA_UTILS_H = \
-        $(srcdir)/LOCA_Utils.H \
         $(srcdir)/LOCA_ErrorCheck.H
 
 LOCA_UTILS = \
-        $(srcdir)/LOCA_Utils.C \
         $(srcdir)/LOCA_ErrorCheck.C
 
 LOCA_PARAMETER_H = \
@@ -283,15 +287,15 @@ LOCA_PREDICTOR = \
 	$(srcdir)/LOCA_MultiPredictor_Factory.C
 
 LOCA_STEPSIZE_H = \
-	$(srcdir)/LOCA_StepSize_Generic.H \
-	$(srcdir)/LOCA_StepSize_Manager.H \
+	$(srcdir)/LOCA_StepSize_AbstractStrategy.H \
 	$(srcdir)/LOCA_StepSize_Constant.H \
-	$(srcdir)/LOCA_StepSize_Adaptive.H 
+	$(srcdir)/LOCA_StepSize_Adaptive.H \
+	$(srcdir)/LOCA_StepSize_Factory.H
 
 LOCA_STEPSIZE = \
-	$(srcdir)/LOCA_StepSize_Manager.C \
 	$(srcdir)/LOCA_StepSize_Constant.C \
-	$(srcdir)/LOCA_StepSize_Adaptive.C 
+	$(srcdir)/LOCA_StepSize_Adaptive.C \
+	$(srcdir)/LOCA_StepSize_Factory.C
 
 LOCA_STEPPER_H = \
 	$(srcdir)/LOCA_NewStepper.H
@@ -335,11 +339,11 @@ LOCA_FACTORY = \
 if BUILD_LOCAANASAZI
 
 LOCA_ANASAZI_H = \
-	$(srcdir)/LOCA_AnasaziOperator_Generic.H \
+	$(srcdir)/LOCA_AnasaziOperator_AbstractStrategy.H \
 	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.H \
 	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.H \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
-	$(srcdir)/LOCA_AnasaziOperator_Manager.H \
+	$(srcdir)/LOCA_AnasaziOperator_Factory.H \
 	$(srcdir)/Anasazi_LOCA_MultiVec.H \
 	$(srcdir)/Anasazi_LOCA_Matrix.H \
 	$(srcdir)/Anasazi_LOCA_Sort.H
@@ -348,7 +352,7 @@ LOCA_ANASAZI = \
 	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C \
 	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.C \
-	$(srcdir)/LOCA_AnasaziOperator_Manager.C \
+	$(srcdir)/LOCA_AnasaziOperator_Factory.C \
 	$(srcdir)/Anasazi_LOCA_MultiVec.C \
 	$(srcdir)/Anasazi_LOCA_Matrix.C \
 	$(srcdir)/Anasazi_LOCA_Sort.C

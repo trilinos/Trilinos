@@ -32,7 +32,6 @@
 
 #include "ChanConstraint.H"
 #include "LOCA_Parameter_Vector.H"
-#include "LOCA_Utils.H"
 
 ChanConstraint::ChanConstraint(int N, const LOCA::ParameterVector& pVec) :
   n(N),

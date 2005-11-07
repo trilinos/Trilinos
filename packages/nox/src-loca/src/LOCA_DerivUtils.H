@@ -33,6 +33,8 @@
 #ifndef LOCA_DERIVUTILS_H
 #define LOCA_DERIVUTILS_H
 
+#include "Teuchos_RefCountPtr.hpp"
+
 #include "NOX_Abstract_Group.H" // For CopyType
 
 namespace NOX {
@@ -42,6 +44,7 @@ namespace NOX {
 }
 
 namespace LOCA {
+  class GlobalData;
   namespace MultiContinuation {
     class AbstractGroup;
   }
@@ -73,7 +76,8 @@ public:
   
   /*! \brief Default constructor.  perturb is the relative perturbation size 
     used in differencing calculations. */
-  DerivUtils(double perturb = 1.0e-6);
+  DerivUtils(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	     double perturb = 1.0e-6);
 
   //! Copy constructor.
   DerivUtils(const DerivUtils&);
@@ -83,7 +87,8 @@ public:
 
   /*! \brief Cloning function.  Creates a copy of the %DerivUtils object 
     of the same type. */
-  virtual DerivUtils* clone(NOX::CopyType type = NOX::DeepCopy) const;
+  virtual Teuchos::RefCountPtr<DerivUtils> 
+  clone(NOX::CopyType type = NOX::DeepCopy) const;
 
   //! Compute derivative of f with respect to parameter, identified by param_id
   virtual NOX::Abstract::Group::ReturnType 
@@ -208,6 +213,9 @@ protected:
                            const NOX::Abstract::Vector& aVector) const;
 
 protected:
+
+  //! Global data
+  Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
   //! Relative perturbation size using in differencing calculations.
   double perturb;

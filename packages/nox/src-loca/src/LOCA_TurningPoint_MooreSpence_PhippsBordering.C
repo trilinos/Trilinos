@@ -296,8 +296,8 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solveContiguous(
   status = borderedSolver->applyInverse(params, input_x_view.get(), NULL, 
 					*result_x_view, tmp_mat_1);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A = 
     result_x.subView(index_input);
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> B = 
@@ -311,8 +311,8 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solveContiguous(
   status = group->computeDJnDxaMulti(*nullVector, *JnVector, result_x,
 				     *tmp);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   // compute (Jv)_x[A B v] - [G d(Jn)/dp 0]
   tmp->update(-1.0, input_null, 1.0);
@@ -331,8 +331,8 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solveContiguous(
   status = borderedSolver->applyInverse(params, tmp.get(), NULL, result_null,
 					tmp_mat_2);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> C = 
     result_null.subView(index_input);
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> D = 

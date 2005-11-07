@@ -33,8 +33,15 @@
 #ifndef LOCA_ERRORCHECK_H
 #define LOCA_ERRORCHECK_H
 
+#include "Teuchos_RefCountPtr.hpp"
+
 #include "NOX_Common.H"          // for string
 #include "NOX_Abstract_Group.H"  // for ReturnType
+
+// forward declarations
+namespace LOCA {
+  class GlobalData;
+}
 
 namespace LOCA { 
   
@@ -49,7 +56,7 @@ namespace LOCA {
   public:
 
     //! Constructor
-    ErrorCheck();
+    ErrorCheck(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
 
     //! Destructor
     ~ErrorCheck();
@@ -58,14 +65,13 @@ namespace LOCA {
     enum ActionType {ThrowError, PrintWarning};
 
     //! Generic call to throw that prints info to the screen.
-    static void throwError(const string& callingFunction = "<Unknown Method>",
-			   const string& message = "",
-			   const string& throwLabel = "LOCA Error");
+    void throwError(const string& callingFunction = "<Unknown Method>",
+		    const string& message = "",
+		    const string& throwLabel = "LOCA Error");
 
     //! Generic printing algorithm for sending warnings to the screen.
-    static void printWarning(
-			  const string& callingFunction = "<Unknown Method>",
-			  const string& message = "");
+    void printWarning(const string& callingFunction = "<Unknown Method>",
+		      const string& message = "");
 
     //! Checks the supplied return type and performs an appropriate action
     /*!
@@ -79,7 +85,7 @@ namespace LOCA {
      * <li> NOX::Abstract::Group::NotConverged -- print a warning message
      * </ul>
      */
-    static void checkReturnType(
+    void checkReturnType(
 		  const NOX::Abstract::Group::ReturnType& status,
 		  const string& callingFunction = string("<Unknown Method>"));
 
@@ -88,7 +94,7 @@ namespace LOCA {
      * throw an error or print a warning to the screen based on the 
      * ActionType requested.
      */
-    static void checkReturnType(
+    void checkReturnType(
 		  const NOX::Abstract::Group::ReturnType& status,
 		  const ActionType& action,
 		  const string& callingFunction = string("<Unknown Method>"),
@@ -101,7 +107,7 @@ namespace LOCA {
      * if either is Failed, returns Failed, if either is NotConverged,
      * returns NotConverged, and otherwise returns Ok.
      */
-    static NOX::Abstract::Group::ReturnType 
+    NOX::Abstract::Group::ReturnType 
     combineReturnTypes(const NOX::Abstract::Group::ReturnType& status1,
 		       const NOX::Abstract::Group::ReturnType& status2);
 
@@ -110,7 +116,7 @@ namespace LOCA {
      * First combines \em status1 and \em status2 using combineReturnTypes()
      * and checks the first using checkReturnType().  
      */
-    static NOX::Abstract::Group::ReturnType 
+    NOX::Abstract::Group::ReturnType 
     combineAndCheckReturnTypes(
 		  const NOX::Abstract::Group::ReturnType& status1,
 		  const NOX::Abstract::Group::ReturnType& status2,
@@ -119,8 +125,12 @@ namespace LOCA {
   protected:
 
     //! Converts the NOX::Abstract::Group::ReturnType to a string
-    static string getReturnTypeString(
-			       NOX::Abstract::Group::ReturnType status);
+    string getReturnTypeString(NOX::Abstract::Group::ReturnType status);
+
+  protected:
+
+    //! Global data
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
   };
 } // namespace LOCA

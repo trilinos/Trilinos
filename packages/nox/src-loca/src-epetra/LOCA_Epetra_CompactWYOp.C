@@ -35,15 +35,17 @@
 
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
+#include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
-
 LOCA::Epetra::CompactWYOp::CompactWYOp(
+        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	const Teuchos::RefCountPtr<const Epetra_Operator>& jacOperator, 
 	const Teuchos::RefCountPtr<const Epetra_MultiVector>& A_multiVec, 
 	const Teuchos::RefCountPtr<const Epetra_MultiVector>& Y_x_multiVec,
 	const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& Y_p_matrix,
 	const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& T_matrix) :
+  globalData(global_data),
   label("LOCA::Epetra::CompactWYOp"),
   localMap(Y_x_multiVec->NumVectors(), 0, jacOperator->Comm()),
   J(jacOperator),
@@ -73,7 +75,8 @@ LOCA::Epetra::CompactWYOp::SetUseTranspose(bool UseTranspose)
   if (UseTranspose == false)
     return 0;
   else {
-    LOCA::ErrorCheck::throwError("LOCA::Epetra::CompactWYOp::SetUseTranspose",
+    globalData->locaErrorCheck->throwError(
+				 "LOCA::Epetra::CompactWYOp::SetUseTranspose",
 				 "Operator does not support transpose");
     return -1;
   }
@@ -84,7 +87,8 @@ LOCA::Epetra::CompactWYOp::Apply(const Epetra_MultiVector& Input,
 				 Epetra_MultiVector& Result) const
 {
   if (tmpMat1 == NULL || tmpMV == NULL) {
-    LOCA::ErrorCheck::throwError("LOCA::Epetra::CompactWYOp::Apply()",
+    globalData->locaErrorCheck->throwError(
+				 "LOCA::Epetra::CompactWYOp::Apply()",
 				 "Must call init() before Apply()!");
     return -1;
   }
@@ -106,7 +110,7 @@ int
 LOCA::Epetra::CompactWYOp::ApplyInverse(const Epetra_MultiVector& cInput, 
 					Epetra_MultiVector& Result) const
 {
-  LOCA::ErrorCheck::throwError(
+  globalData->locaErrorCheck->throwError(
 	  "LOCA::Epetra::CompactWYOp::SetUseTranspose",
 	  "Operator does not support ApplyInverse");
     return -1;

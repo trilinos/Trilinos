@@ -55,6 +55,9 @@ namespace LOCA {
     class AbstractStrategy;
     class AbstractGroup;
   }
+  namespace StepSize {
+    class AbstractStrategy;
+  }
   namespace BorderedSystem {
     class AbstractStrategy;
   }
@@ -65,6 +68,9 @@ namespace LOCA {
     class AbstractStrategy;
   }
   namespace SaveEigenData {
+    class AbstractStrategy;
+  }
+  namespace AnasaziOperator {
     class AbstractStrategy;
   }
   namespace TurningPoint {
@@ -116,7 +122,7 @@ namespace LOCA {
        */
       //@{
 
-       //! Create predictor strategy
+      //! Create predictor strategy
       virtual bool
       createPredictorStrategy(
        const string& strategyName,
@@ -143,6 +149,14 @@ namespace LOCA {
       const Teuchos::RefCountPtr<NOX::Parameter::List>& bifurcationParams,
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
       Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& strategy);
+
+      //! Create step size strategy
+      virtual bool
+      createStepSizeStrategy(
+         const string& strategyName,
+         const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& stepsizeParams,
+	 Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy>& strategy);
 
       //! Create bordered system solver strategy
       virtual bool
@@ -171,10 +185,20 @@ namespace LOCA {
       //! Create strategy to save eigenvector/value data
       virtual bool
       createSaveEigenDataStrategy(
-         const string& strategyName,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	 Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy>& strategy);
+        const string& strategyName,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy>& strategy);
+
+      //! Create Anasazi operator
+      virtual bool
+      createAnasaziOperatorStrategy(
+      const string& strategyName,
+      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+      const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
+      Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>& strategy);
 
       //! Create Moore-Spence turning point solver strategy
       virtual bool

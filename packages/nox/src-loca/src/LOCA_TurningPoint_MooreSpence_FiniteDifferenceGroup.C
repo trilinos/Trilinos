@@ -33,7 +33,7 @@
 #include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
 
 LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::FiniteDifferenceGroup(
-						     const LOCA::DerivUtils& d)
+			       const Teuchos::RefCountPtr<LOCA::DerivUtils>& d)
   : LOCA::MultiContinuation::FiniteDifferenceGroup(d)
 {
 }

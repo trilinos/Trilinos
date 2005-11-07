@@ -35,7 +35,7 @@
 #include "LOCA_GlobalData.H"
 #include "LOCA_Factory.H"
 #include "LOCA_ErrorCheck.H"
-#include "LOCA_Utils.H"
+#include "NOX_Utils.H"
 #include "LOCA_Parameter_SublistParser.H"
 
 #include "LOCA_Eigensolver_DGGEVStrategy.H"
@@ -80,7 +80,7 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   // eigenvalues.
 #ifndef HAVE_LAPACK_GENEV
   if (hasMassMatrix) {
-    if (globalData->locaUtils->doPrint(Utils::StepperIteration)) {
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
       globalData->locaErrorCheck->printWarning(
 	"LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues",
 	"LAPACK Generalized eigensolver (dggev) requested but not available!");
@@ -90,14 +90,16 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
 
 #endif
 
-  if (globalData->locaUtils->doPrint(Utils::StepperIteration)) {
-    cout << endl << globalData->locaUtils->fill(64,'=') << endl
-	 << "LAPACK ";
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
+    globalData->locaUtils->out() 
+      << std::endl << globalData->locaUtils->fill(64,'=') << std::endl
+      << "LAPACK ";
     if (hasMassMatrix) 
-      cout << "DGGEV ";
+      globalData->locaUtils->out() << "DGGEV ";
     else
-      cout << "DGEEV ";
-    cout << "Eigensolver starting." << endl << endl;;
+      globalData->locaUtils->out() << "DGEEV ";
+    globalData->locaUtils->out() << "Eigensolver starting." 
+				 << std::endl << std::endl;;
   }
 
   // Make sure Jacobian & mass matrices are fresh
@@ -268,16 +270,19 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   evecs_i = evecs_i_tmp->subCopy(perm_short);
 
   // Print out eigenvalues
-  if (globalData->locaUtils->doPrint(LOCA::Utils::StepperIteration)) {
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
     for (int i=0; i<nev; i++)
-      cout << "Eigenvalue " << i << " : " 
-	   << globalData->locaUtils->sci((*evals_r)[i]) << " " 
-	   << globalData->locaUtils->sci((*evals_i)[i]) << " i" << endl;
+      globalData->locaUtils->out() 
+	<< "Eigenvalue " << i << " : " 
+	<< globalData->locaUtils->sciformat((*evals_r)[i]) << " " 
+	<< globalData->locaUtils->sciformat((*evals_i)[i]) << " i" 
+	<< std::endl;
   }
 
-  if (globalData->locaUtils->doPrint(Utils::StepperIteration))
-    cout << "\nLAPACK Eigensolver finished.\n" 
-         << globalData->locaUtils->fill(64,'=') << "\n" << endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration))
+    globalData->locaUtils->out() 
+      << "\nLAPACK Eigensolver finished.\n" 
+      << globalData->locaUtils->fill(64,'=') << "\n" << std::endl;
 
   delete [] alphar;
   delete [] alphai;

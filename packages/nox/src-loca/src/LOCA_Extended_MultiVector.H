@@ -38,6 +38,7 @@
 
 // Forward declarations
 namespace LOCA {
+  class GlobalData;
   namespace Extended {
     class Vector;
   }
@@ -283,7 +284,8 @@ namespace LOCA {
     protected:
 
       //! Constructor that creates an empty multivector to be filled in later.
-      MultiVector(int nColumns, int nVectorRows, int nScalarRows);
+      MultiVector(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		  int nColumns, int nVectorRows, int nScalarRows);
 
       //@{ \name Additional interface derived classes must implement
 
@@ -325,6 +327,9 @@ namespace LOCA {
       //@}
 
     protected:
+
+      //! Global data
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
       /*! 
        * \brief Number of columns in each multivec and number of scalar 

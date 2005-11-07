@@ -209,8 +209,8 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous(
   // compute [A b] = J^-1 [F df/dp]
   status = group->applyJacobianInverseMultiVector(params, input_x, result_x);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A = 
     result_x.subView(index_input);
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> b = 
@@ -222,8 +222,8 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous(
   status = group->computeDJnDxaMulti(*nullVector, *JnVector, result_x,
 				     *tmp);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   // compute (Jn)_x[A b] - [G d(Jn)/dp]
   tmp->update(-1.0, input_null, 1.0);
@@ -240,8 +240,8 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous(
   // compute [C d] = J^-1 (Jn)_x[A b] - [G d(Jn)/dp]
   status = group->applyJacobianInverseMultiVector(params, *tmp, result_null);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> C = 
     result_null.subView(index_input);
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> d = 

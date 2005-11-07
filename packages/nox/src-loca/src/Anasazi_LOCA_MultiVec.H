@@ -33,6 +33,8 @@
 #ifndef ANASAZI_LOCA_MULTIVEC_H
 #define ANASAZI_LOCA_MULTIVEC_H
 
+#include "Teuchos_RefCountPtr.hpp"
+
 // Anasazi includes
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziConfigDefs.hpp"
@@ -40,6 +42,11 @@
 
 // NOX/LOCA includes
 #include "NOX_Abstract_Vector.H"
+
+// forward declarations
+namespace LOCA {
+  class GlobalData;
+}
 
 namespace Anasazi {
 
@@ -61,10 +68,12 @@ namespace Anasazi {
   public:
       
     //! Constructor
-    LOCAMultiVec(const NOX::Abstract::Vector& N_vec, int NumVecs );
+    LOCAMultiVec(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		 const NOX::Abstract::Vector& N_vec, int NumVecs );
 
     //! Constructor
-    LOCAMultiVec(const vector<NOX::Abstract::Vector*> N_vecPtrs, 
+    LOCAMultiVec(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		 const vector<NOX::Abstract::Vector*> N_vecPtrs, 
 		 Anasazi::DataAccess type = Anasazi::Copy );
 
     //! Constructor
@@ -147,6 +156,9 @@ namespace Anasazi {
     virtual const NOX::Abstract::Vector& GetNOXVector(int index) const;
   
   protected:
+
+    //! Global data
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
     //! Array of vectors
     vector< Teuchos::RefCountPtr<NOX::Abstract::Vector> > mvPtrs;

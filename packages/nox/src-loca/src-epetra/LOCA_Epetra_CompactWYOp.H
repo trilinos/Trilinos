@@ -42,6 +42,11 @@
 #include "NOX_Common.H"         // for string data member
 #include "NOX_Abstract_MultiVector.H" // for DenseMatrix
 
+// forward declarations
+namespace LOCA {
+  class GlobalData;
+}
+
 namespace LOCA {
 
   namespace Epetra {
@@ -72,6 +77,7 @@ namespace LOCA {
        *  compact WY representation.
        */
       CompactWYOp(
+        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	const Teuchos::RefCountPtr<const Epetra_Operator>& jacOperator, 
 	const Teuchos::RefCountPtr<const Epetra_MultiVector>& A_multiVec, 
 	const Teuchos::RefCountPtr<const Epetra_MultiVector>& Y_x_multiVec,
@@ -160,6 +166,9 @@ namespace LOCA {
 			  Epetra_MultiVector& result_p) const;
 
     protected:
+
+      //! Global data object
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
       //! Label for operator
       string label;

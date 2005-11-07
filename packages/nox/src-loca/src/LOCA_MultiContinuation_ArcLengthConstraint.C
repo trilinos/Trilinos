@@ -138,8 +138,9 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeConstraints()
   if (!arcLengthGroup->isPredictor()) {
     status = arcLengthGroup->computePredictor();
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
 
   // Get tangent vector
@@ -189,8 +190,9 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeDP(
   if (!isValidG && !isValidConstraints) {
     status = computeConstraints();
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
   if (!isValidG) {
     for (int i=0; i<constraints.numRows(); i++)

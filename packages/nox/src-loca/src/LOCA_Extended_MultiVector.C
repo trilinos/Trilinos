@@ -32,11 +32,13 @@
 
 #include "LOCA_Extended_MultiVector.H"
 #include "LOCA_Extended_Vector.H"
+#include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Extended::MultiVector::MultiVector(
 				   const LOCA::Extended::MultiVector& source,
 				   NOX::CopyType type) :
+  globalData(source.globalData),
   numColumns(source.numColumns),
   numMultiVecRows(source.numMultiVecRows),
   numScalarRows(source.numScalarRows),
@@ -61,6 +63,7 @@ LOCA::Extended::MultiVector::MultiVector(
 LOCA::Extended::MultiVector::MultiVector(
 				   const LOCA::Extended::MultiVector& source,
 				   int nColumns) :
+  globalData(source.globalData),
   numColumns(nColumns),
   numMultiVecRows(source.numMultiVecRows),
   numScalarRows(source.numScalarRows),
@@ -85,6 +88,7 @@ LOCA::Extended::MultiVector::MultiVector(
 LOCA::Extended::MultiVector::MultiVector(
 				   const LOCA::Extended::MultiVector& source,
 				   const vector<int>& index, bool view) :
+  globalData(source.globalData),
   numColumns(index.size()),
   numMultiVecRows(source.numMultiVecRows),
   numScalarRows(source.numScalarRows),
@@ -122,7 +126,7 @@ LOCA::Extended::MultiVector::MultiVector(
 								 numColumns));
     }
     else {
-      LOCA::ErrorCheck::throwError(
+      globalData->locaErrorCheck->throwError(
 		   "LOCA::Extended::MultiVector()",
 		   "Sub-view with non-contiguous indices is not supported");
     }
@@ -203,6 +207,8 @@ LOCA::Extended::MultiVector::operator=(
     // Verify dimensions are consistent
     checkDimensions("LOCA::Extended::MultiVector::operator=()", source);
 
+    globalData = source.globalData;
+
     // Copy multivecs
     for (int i=0; i<numMultiVecRows; i++)
       *(multiVectorPtrs[i]) = *(source.multiVectorPtrs[i]);
@@ -230,10 +236,12 @@ LOCA::Extended::MultiVector::setBlock(
   // Verify dimensions are consistent
   if (source.numMultiVecRows != numMultiVecRows || 
       source.numScalarRows != numScalarRows) 
-    LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::setBlock()",
+    globalData->locaErrorCheck->throwError(
+	"LOCA::Extended::MultiVector::setBlock()",
 	"Size of supplied multivector is incompatible with this multivector");
   if (static_cast<unsigned int>(source.numColumns) != index.size()) {
-    LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::setBlock()",
+   globalData->locaErrorCheck->throwError(
+	"LOCA::Extended::MultiVector::setBlock()",
 	"Size of supplied index vector is incompatible with this multivector");
   }
 
@@ -261,7 +269,7 @@ NOX::Abstract::MultiVector&
 LOCA::Extended::MultiVector::augment(const LOCA::Extended::MultiVector& source)
 {
   if (isView) {
-    LOCA::ErrorCheck::throwError(
+    globalData->locaErrorCheck->throwError(
 		   "LOCA::Extended::MultiVector::augment()",
 		   "Augmenting a multivector view is not supported");
   }
@@ -269,7 +277,8 @@ LOCA::Extended::MultiVector::augment(const LOCA::Extended::MultiVector& source)
   // Verify dimensions are consistent
   if (source.numMultiVecRows != numMultiVecRows ||
       source.numScalarRows != numScalarRows) 
-    LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::augment()",
+    globalData->locaErrorCheck->throwError(
+	"LOCA::Extended::MultiVector::augment()",
 	"Size of supplied multivector is incompatible with this multivector");
 
   // Augment each multivec
@@ -411,17 +420,20 @@ LOCA::Extended::MultiVector::update(
   // Verify dimensions are consistent
   if (a.numMultiVecRows != numMultiVecRows || 
       a.numScalarRows != numScalarRows) 
-    LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::update()",
+    globalData->locaErrorCheck->throwError(
+      "LOCA::Extended::MultiVector::update()",
       "Size of supplied multivector is incompatible with this multivector");
 
   if (transb == Teuchos::NO_TRANS) {
     if (a.numColumns != b.numRows() || numColumns != b.numCols()) 
-      LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::update()",
+      globalData->locaErrorCheck->throwError(
+	    "LOCA::Extended::MultiVector::update()",
 	    "Size of supplied matrix is incompatible with this multivector");
   }
   else
     if (a.numColumns != b.numCols() || numColumns != b.numRows()) 
-      LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::update()",
+      globalData->locaErrorCheck->throwError(
+	    "LOCA::Extended::MultiVector::update()",
 	    "Size of supplied matrix is incompatible with this multivector");
 
 
@@ -554,8 +566,9 @@ LOCA::Extended::MultiVector::multiply(
   // Verify dimensions are consistent
   if (y.numMultiVecRows != numMultiVecRows || y.numColumns != b.numRows() ||
       y.numScalarRows != numScalarRows || numColumns != b.numCols()) 
-    LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::multiply()",
-      "Size of supplied multivector/matrix is incompatible with this multivector");
+    globalData->locaErrorCheck->throwError(
+  "LOCA::Extended::MultiVector::multiply()",
+  "Size of supplied multivector/matrix is incompatible with this multivector");
 
   // Zero out b
   b.putScalar(0.0);
@@ -703,8 +716,11 @@ LOCA::Extended::MultiVector::getNumMultiVectors() const
   return numMultiVecRows;
 }
 
-LOCA::Extended::MultiVector::MultiVector(int nColumns, int nVectorRows,
-					 int nScalarRows) :
+LOCA::Extended::MultiVector::MultiVector(
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    int nColumns, int nVectorRows,
+		    int nScalarRows) :
+  globalData(global_data),
   numColumns(nColumns),
   numMultiVecRows(nVectorRows),
   numScalarRows(nScalarRows),
@@ -725,7 +741,8 @@ LOCA::Extended::MultiVector::MultiVector(int nColumns, int nVectorRows,
 Teuchos::RefCountPtr<LOCA::Extended::Vector> 
 LOCA::Extended::MultiVector::generateVector(int nVecs, int nScalarRows) const
 {
-  return Teuchos::rcp(new LOCA::Extended::Vector(nVecs, nScalarRows));
+  return Teuchos::rcp(new LOCA::Extended::Vector(globalData, nVecs, 
+						 nScalarRows));
 }
 
 void
@@ -745,7 +762,7 @@ LOCA::Extended::MultiVector::checkDimensions(
 {
   if (a.numMultiVecRows != numMultiVecRows || a.numColumns != numColumns ||
       a.numScalarRows != numScalarRows)
-    LOCA::ErrorCheck::throwError(callingFunction,
+    globalData->locaErrorCheck->throwError(callingFunction,
       "Size of supplied multivector is incompatible with this multivector");
 }
 
@@ -754,7 +771,8 @@ LOCA::Extended::MultiVector::checkIndex(const string& callingFunction,
 					int i) const 
 {
   if ( i < 0 || i >= numColumns ) 
-    LOCA::ErrorCheck::throwError(callingFunction, "Invalid column index");
+    globalData->locaErrorCheck->throwError(callingFunction, 
+					    "Invalid column index");
 }
 
 void 
@@ -762,16 +780,19 @@ LOCA::Extended::MultiVector::checkVectorRowIndex(const string& callingFunction,
 						 int i) const 
 {
   if ( i < 0 || i >= numMultiVecRows)
-    LOCA::ErrorCheck::throwError(callingFunction, "Invalid vector row index");
+    globalData->locaErrorCheck->throwError(callingFunction, 
+					    "Invalid vector row index");
 }
 void 
 LOCA::Extended::MultiVector::checkIndex(const string& callingFunction,
 					int i, int j) const 
 {
   if ( i < 0 || i >= numScalarRows ) 
-    LOCA::ErrorCheck::throwError(callingFunction, "Invalid row index");
+    globalData->locaErrorCheck->throwError(callingFunction, 
+					    "Invalid row index");
   if ( j < 0 || j >= numColumns ) 
-    LOCA::ErrorCheck::throwError(callingFunction, "Invalid column index");
+    globalData->locaErrorCheck->throwError(callingFunction, 
+					    "Invalid column index");
 }
 
 bool

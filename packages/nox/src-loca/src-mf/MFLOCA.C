@@ -30,9 +30,12 @@
 // ************************************************************************
 //@HEADER
 
-#include <MFLOCA.H>
-#include "LOCA_Utils.H"
-#include <LOCA_MultiContinuation_ExtendedMultiVector.H>
+#include "MFLOCA.H"
+#include "LOCA_MultiContinuation_ExtendedMultiVector.H"
+#include "LOCA_GlobalData.H"
+#include "LOCA_Parameter_SublistParser.H"
+#include "LOCA_ErrorCheck.H"
+#include "NOX_Utils.H"
 
 extern "C" {
 
@@ -42,7 +45,6 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 
-static char MFLOCAMFErrorMsg[256]="";
 void MFSetError(int,char*,char*,int,char*);
 void MFLOCAFreeData(void *data);
 
@@ -57,11 +59,15 @@ int MFLOCAProjectForBB(MFNVector,double*,void*);
 double MFPrintMetricLOCA(double*,double*);
 
 LOCAData::LOCAData(
+     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+     const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& top_params,
      const Teuchos::RefCountPtr<NOX::Solver::Generic>& s, 
      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>& g, 
      const Teuchos::RefCountPtr<NOX::Parameter::List>& par,
      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& st,
      const Teuchos::RefCountPtr< list<ParamData> >& conParamData) :
+  globalData(global_data),
+  topParams(top_params),
   solver(s), 
   grp(g), 
   p(par), 
@@ -76,17 +82,17 @@ LOCAData::LOCAData(
   minRadius(0.0),
   solutionMax(0.0)
 {
-  NOX::Parameter::List& stepperList = LOCA::Utils::getSublist("Stepper");
+  Teuchos::RefCountPtr<NOX::Parameter::List> stepperList = 
+    topParams->getSublist("Stepper");
   maxNonlinearIterations = 
-    static_cast<double>(stepperList.getParameter("Max Nonlinear Iterations", 
+    static_cast<double>(stepperList->getParameter("Max Nonlinear Iterations", 
 						 15));
-  aggressiveness = stepperList.getParameter("Aggressiveness", 0.0);
-  solutionMax = stepperList.getParameter("Max Solution Component", 1.0e16);
+  aggressiveness = stepperList->getParameter("Aggressiveness", 0.0);
+  solutionMax = stepperList->getParameter("Max Solution Component", 1.0e16);
 }
 
 MFImplicitMF MFIMFCreateLOCA(LOCAData* data)
  {
-  static char RoutineName[]={"MFIMFCreateLOCA"};
   MFImplicitMF loca;
   MFNSpace space;
 
@@ -152,17 +158,21 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
     data->grp->setStepSize(0.0, i);
   }
 
-  if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
-    cout << "\n" << LOCA::Utils::fill(72, '~') << "\n";
-    cout << "Start of Continuation Step " << stepNumber <<" : " << endl;
+  if (data->globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
+    data->globalData->locaUtils->out() 
+      << "\n" << data->globalData->locaUtils->fill(72, '~') << "\n";
+    data->globalData->locaUtils->out() 
+      << "Start of Continuation Step " << stepNumber <<" : " << std::endl;
     list<ParamData>::iterator it = data->paramData->begin();
     for (i=0; i<k; i++) {
-      cout << "\tParameter: " << it->name << " = " 
-	   << LOCA::Utils::sci(data->grp->getContinuationParameter(i))
-	   << endl;
+      data->globalData->locaUtils->out() 
+	<< "\tParameter: " << it->name << " = " 
+	<< data->globalData->locaUtils->sciformat(data->grp->getContinuationParameter(i))
+	<< std::endl;
       it++;
     }
-    cout << LOCA::Utils::fill(72, '~') << "\n" << endl;
+    data->globalData->locaUtils->out() 
+      << data->globalData->locaUtils->fill(72, '~') << "\n" << std::endl;
   }
 
   data->grp->computeF();
@@ -171,21 +181,27 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
   NOX::StatusTest::StatusType status = data->solver->solve();
     
   if (status != NOX::StatusTest::Converged) {
-    if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
-      cout << endl << LOCA::Utils::fill(72, '~') << endl;
-      cout << "Continuation Step Number " << stepNumber 
-           << " experienced a convergence failure in\n"
-           << "the nonlinear solver after "<< data->solver->getNumIterations() 
-	   <<" Iterations\n";
-      cout << "Value of continuation parameters at failed step:" << endl;
+    if (data->globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
+      data->globalData->locaUtils->out() 
+	<< std::endl << data->globalData->locaUtils->fill(72, '~') 
+	<< std::endl;
+      data->globalData->locaUtils->out() 
+	<< "Continuation Step Number " << stepNumber 
+	<< " experienced a convergence failure in\n"
+	<< "the nonlinear solver after "<< data->solver->getNumIterations() 
+	<<" Iterations\n";
+      data->globalData->locaUtils->out() 
+	<< "Value of continuation parameters at failed step:" << std::endl;
       list<ParamData>::iterator it = data->paramData->begin();
       for (i=0; i<k; i++) {
-	cout << "\tParameter: " << it->name << " = " 
-	     << LOCA::Utils::sci(data->grp->getContinuationParameter(i))
-	     << endl;
+	data->globalData->locaUtils->out() 
+	  << "\tParameter: " << it->name << " = " 
+	  << data->globalData->locaUtils->sciformat(data->grp->getContinuationParameter(i))
+	  << std::endl;
 	it++;
       }
-      cout << LOCA::Utils::fill(72, '~') << endl;
+      data->globalData->locaUtils->out() 
+	<< data->globalData->locaUtils->fill(72, '~') << std::endl;
     }
     return 0;
   }
@@ -197,22 +213,25 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
     *(u_data->u_ptr) = data->grp->getX(); /* overloaded deep copy */
     data->grp->notifyCompletedStep();
     
-    if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
-      cout << "\n" << LOCA::Utils::fill(72, '~') << "\n";
-      cout << "End of Continuation Step " << stepNumber << " : " << endl;
+    if (data->globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
+      data->globalData->locaUtils->out() 
+	<< "\n" << data->globalData->locaUtils->fill(72, '~') << "\n";
+      data->globalData->locaUtils->out() 
+	<< "End of Continuation Step " << stepNumber << " : " << std::endl;
       list<ParamData>::iterator it = data->paramData->begin();
       for (i=0; i<k; i++) {
-	cout << "\tParameter: " << it->name << " = " 
-	     << LOCA::Utils::sci(data->grp->getContinuationParameter(i))
-	     << endl;
+	data->globalData->locaUtils->out() 
+	  << "\tParameter: " << it->name << " = " 
+	  << data->globalData->locaUtils->sciformat(data->grp->getContinuationParameter(i))
+	  << std::endl;
 	it++;
       }
-      cout << "--> Step Converged in "
-           << data->solver->getNumIterations() 
-	   <<" Nonlinear Solver Iterations!\n";
-      cout << LOCA::Utils::fill(72, '~') << "\n" << endl;
-
-      //u->print();
+      data->globalData->locaUtils->out() 
+	<< "--> Step Converged in "
+	<< data->solver->getNumIterations() 
+	<<" Nonlinear Solver Iterations!\n";
+      data->globalData->locaUtils->out() 
+	<< data->globalData->locaUtils->fill(72, '~') << "\n" << std::endl;
     }
     ++stepNumber;
     return 1;
@@ -274,8 +293,9 @@ double MFScaleLOCA(int n,int k,MFNVector u,MFNKMatrix Phi,void *d)
     if (status != NOX::StatusTest::Converged) {
       data->radius *= 0.7;
       if (data->radius < data->minRadius)
-	LOCA::ErrorCheck::throwError("MFScaleLOCA()",
-				     "Reached minimum radius!");
+	data->globalData->locaErrorCheck->throwError(
+						   "MFScaleLOCA()",
+						   "Reached minimum radius!");
     }
     else {
       double numNonlinearSteps = 
@@ -288,7 +308,8 @@ double MFScaleLOCA(int n,int k,MFNVector u,MFNKMatrix Phi,void *d)
     }
   }   
 
-  cout << "radius = " << data->radius << endl;
+  data->globalData->locaUtils->out() 
+    << "radius = " << data->radius << std::endl;
   return data->radius; 
 }
 

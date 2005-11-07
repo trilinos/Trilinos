@@ -36,12 +36,35 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 #include "LOCA_Abstract_Iterator.H"    // base class
-#include "LOCA_Factory.H"              // class data element
 #include "NOX_Parameter_List.H"	       // class data element
 #include "NOX_Solver_Manager.H"	       // class data element
-#include "LOCA_StepSize_Manager.H"     // class data element
 #include "NOX_StatusTest_Generic.H"    // for enum StatusType
 #include "NOX_Common.H"                // for <string> class
+
+// forward declarations
+namespace LOCA {
+  class GlobalData;
+  namespace MultiContinuation {
+    class AbstractStrategy;
+    class AbstractGroup;
+    class ExtendedVector;
+  }
+  namespace MultiPredictor {
+    class AbstractStrategy;
+  }
+  namespace Eigensolver {
+    class AbstractStrategy;
+  }
+  namespace SaveEigenData {
+    class AbstractStrategy;
+  }
+  namespace StepSize {
+    class AbstractStrategy;
+  }
+  namespace Parameter {
+    class SublistParser;
+  }
+}
 
 namespace LOCA {
 
@@ -60,22 +83,18 @@ namespace LOCA {
   public:
 
     //! Constructor
-    NewStepper(const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+    NewStepper(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
 	       const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
 	       const Teuchos::RefCountPtr<NOX::Parameter::List>& p);
-
-    //! Constructor with user-provided factory
-    NewStepper(const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-	       const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& p,
-	       const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory);
 
     //! Destructor
     virtual ~NewStepper();
 
     //! Reset the Stepper to start a new continuation run
     virtual bool 
-    reset(const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+    reset(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	  const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
 	  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
 	  const Teuchos::RefCountPtr<NOX::Parameter::List>& p);
 
@@ -168,15 +187,6 @@ namespace LOCA {
 
     //! Parsed parameter list
     Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
-    
-    //! Factory
-    Teuchos::RefCountPtr<LOCA::Factory> locaFactory;
-
-    //! User-provided factory
-    Teuchos::RefCountPtr<LOCA::Abstract::Factory> factory;
-
-    //! Flag indicating whether we have a user-provided factory
-    bool haveFactory;
 
     //! Predictor strategy
     Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy> predictor;
@@ -214,8 +224,8 @@ namespace LOCA {
     //! previous predictor direction
     Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> prevPredictorPtr;
 
-    //! Step size manager
-    LOCA::StepSize::Manager* stepSizeManagerPtr;
+    //! Step size control strategy
+    Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy> stepSizeStrategyPtr;
 
     //! Name of continuation parameter
     string conParamName;

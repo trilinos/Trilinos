@@ -31,7 +31,10 @@
 //@HEADER
 #include <typeinfo>
 #include "LOCA_Parameter_Entry.H"
+#include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
+
+#include "Teuchos_TestForException.hpp" // for errors
 
 template <class ValueType>
 void
@@ -153,16 +156,14 @@ template <class ValueType>
 LOCA::Parameter::Entry<ValueType>&
 LOCA::Parameter::Library::getEntry(const string& name) {
 
-  const char *func = "LOCA::Parameter::Library::getEntry()";
+  const char *func = "LOCA::Parameter::Library::getEntry(): ";
 
   // Find map for this parameter name
   ParameterMapIterator paramIterator = getEntryMapIterator(name);
-  if (paramIterator == library.end()) {
-    LOCA::ErrorCheck::throwError(
-	   func,
-	   string("Parameter library has no set of entries for parameter ") + 
-	   name);
-  }
+  TEST_FOR_EXCEPTION(paramIterator == library.end(), 
+		     std::invalid_argument,
+		     func << "Parameter library has no set of entries for " << 
+		     "parameter " << name);
 
   // Convert typename ValueType to string
   string valueTypeString = getTypeName<ValueType>();
@@ -170,23 +171,19 @@ LOCA::Parameter::Library::getEntry(const string& name) {
   // Find entry corresponding to this ValueType
   ValueTypeMapIterator valueIterator = getEntryIterator(valueTypeString, 
 							paramIterator);
-  if (valueIterator == (*paramIterator).second->end()) {
-    LOCA::ErrorCheck::throwError(
-	   func,
-	   string("Parameter library has no entry for parameter ") + 
-	   name + string(" of type ") + valueTypeString);
-  }
+  TEST_FOR_EXCEPTION(valueIterator == (*paramIterator).second->end(), 
+		     std::invalid_argument,
+		     func << "Parameter library has no entry for parameter " <<
+		     name << " of type " << valueTypeString);
 
   // Cast entry to LOCA::Parameter::Entry<ValueType>
   LOCA::Parameter::Entry<ValueType>* entry = 
     dynamic_cast<LOCA::Parameter::Entry<ValueType>*>((*valueIterator).second);
-  if (entry == NULL) {
-    LOCA::ErrorCheck::throwError(
-	   func,
-	   string("Parameter entry for parameter ") + name + 
-	   string(" and type ") + valueTypeString + 
-	   string(" is not of the right type!"));
-  }
+  TEST_FOR_EXCEPTION(entry == NULL, 
+		     std::invalid_argument,
+		     func << "Parameter entry for parameter " << name <<  
+		     " and type " << valueTypeString <<
+		     " is not of the right type!");
 
   return *entry;
 }
@@ -195,16 +192,14 @@ template <class ValueType>
 const LOCA::Parameter::Entry<ValueType>&
 LOCA::Parameter::Library::getEntry(const string& name) const {
 
-  const char *func = "LOCA::Parameter::Library::getEntry()";
+  const char *func = "LOCA::Parameter::Library::getEntry(): ";
 
   // Find map for this parameter name
   ParameterMapConstIterator paramIterator = getEntryMapIterator(name);
-  if (paramIterator == library.end()) {
-    LOCA::ErrorCheck::throwError(
-	   func,
-	   string("Parameter library has no set of entries for parameter ") + 
-	   name);
-  }
+  TEST_FOR_EXCEPTION(paramIterator == library.end(), 
+		     std::invalid_argument,
+		     func << "Parameter library has no set of entries for " << 
+		     "parameter " << name);
 
   // Convert typename ValueType to string
   string valueTypeString = getTypeName<ValueType>();
@@ -212,23 +207,19 @@ LOCA::Parameter::Library::getEntry(const string& name) const {
   // Find entry corresponding to this ValueType
   ValueTypeMapConstIterator valueIterator = getEntryIterator(valueTypeString, 
 							     paramIterator);
-  if (valueIterator == (*paramIterator).second->end()) {
-    LOCA::ErrorCheck::throwError(
-	   func,
-	   string("Parameter library has no entry for parameter ") + 
-	   name + string(" of type ") + valueTypeString);
-  }
+  TEST_FOR_EXCEPTION(valueIterator == (*paramIterator).second->end(), 
+		     std::invalid_argument,
+		     func << "Parameter library has no entry for parameter " <<
+		     name << " of type " << valueTypeString);
 
   // Cast entry to LOCA::Parameter::Entry<ValueType>
   const LOCA::Parameter::Entry<ValueType>* entry = 
     dynamic_cast<const LOCA::Parameter::Entry<ValueType>*>((*valueIterator).second);
-  if (entry == NULL) {
-    LOCA::ErrorCheck::throwError(
-	   func,
-	   string("Parameter entry for parameter ") + name + 
-	   string(" and type ") + valueTypeString + 
-	   string(" is not of the right type!"));
-  }
+  TEST_FOR_EXCEPTION(entry == NULL, 
+		     std::invalid_argument,
+		     func << "Parameter entry for parameter " << name <<  
+		     " and type " << valueTypeString <<
+		     " is not of the right type!");
 
   return *entry;
 }

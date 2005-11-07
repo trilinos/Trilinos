@@ -27,9 +27,12 @@
 //@HEADER
 
 #include "LOCA_Epetra_ShiftInvertOperator.H"
+#include "LOCA_GlobalData.H"
+#include "LOCA_ErrorCheck.H"
 
-//==============================================================================
+//=============================================================================
 LOCA::Epetra::ShiftInvertOperator::ShiftInvertOperator(
+                   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 		   const Teuchos::RefCountPtr<const LOCA::Epetra::Group>& grp, 
 		   const Teuchos::RefCountPtr<const Epetra_Operator>& jac, 
 		   const double& shift, bool hasMassMatrix) :
@@ -52,7 +55,7 @@ LOCA::Epetra::ShiftInvertOperator::SetUseTranspose(bool UseTranspose)
   if (UseTranspose == false)
     return 0;
   else {
-    LOCA::ErrorCheck::throwError(
+    globalData->locaErrorCheck->throwError(
 	  "LOCA::Epetra::HouseholderJacOp::SetUseTranspose",
 	  "Operator does not support transpose");
     return -1;
@@ -63,7 +66,6 @@ int
 LOCA::Epetra::ShiftInvertOperator::Apply(const Epetra_MultiVector& X, 
 					 Epetra_MultiVector&Y) const
 {
-  bool applyMass = massMatrix;
   double shift = shift_;
   for (int j=0; j < X.NumVectors(); j++) {
     const Epetra_Vector xvec(Copy,X,j);
@@ -81,7 +83,7 @@ int
 LOCA::Epetra::ShiftInvertOperator::ApplyInverse(const Epetra_MultiVector& X, 
 						Epetra_MultiVector&Y) const
 {
-  LOCA::ErrorCheck::throwError(
+  globalData->locaErrorCheck->throwError(
 	  "LOCA::Epetra::ShiftInvertOperator::ApplyInverse",
 	  "Operator does not support ApplyInverse");
     return -1;
@@ -90,7 +92,7 @@ LOCA::Epetra::ShiftInvertOperator::ApplyInverse(const Epetra_MultiVector& X,
 double
 LOCA::Epetra::ShiftInvertOperator::NormInf() const
 {
-  LOCA::ErrorCheck::throwError(
+  globalData->locaErrorCheck->throwError(
 	  "LOCA::Epetra::ShiftInvertOperator::NormInf",
 	  "Operator does not support NormInf");
     return -1;

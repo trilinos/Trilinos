@@ -67,6 +67,16 @@ LOCA::Abstract::Factory::createBifurcationStrategy(
 }
 
 bool
+LOCA::Abstract::Factory::createStepSizeStrategy(
+        const string& strategyName,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& stepsizeParams,
+	Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy>& strategy)
+{
+  return false;
+}
+
+bool
 LOCA::Abstract::Factory::createBorderedSystemStrategy(
         const string& strategyName,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
@@ -102,6 +112,18 @@ LOCA::Abstract::Factory::createSaveEigenDataStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
 	 Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy>& strategy)
+{
+  return false;
+}
+
+bool
+LOCA::Abstract::Factory::createAnasaziOperatorStrategy(
+      const string& strategyName,
+      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+      const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+      const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
+      Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>& strategy)
 {
   return false;
 }

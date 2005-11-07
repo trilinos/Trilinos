@@ -60,7 +60,7 @@ namespace LOCA {
     public:
   
       //! Constructor.
-      FiniteDifferenceGroup(const DerivUtils& deriv);
+      FiniteDifferenceGroup(const Teuchos::RefCountPtr<DerivUtils>& deriv);
  
       //! Copy constructor
       FiniteDifferenceGroup(const FiniteDifferenceGroup& source, 
@@ -92,7 +92,7 @@ namespace LOCA {
     protected:
 
       //! Pointer to current DerivUtils derivative computation object
-      DerivUtils* derivPtr;
+      Teuchos::RefCountPtr<DerivUtils> derivPtr;
 
     };
   } // namespace MultiContinuation

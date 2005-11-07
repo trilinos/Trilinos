@@ -44,10 +44,12 @@ LOCA::Factory::Factory(
   predictorFactory(global_data),
   continuationFactory(global_data),
   bifurcationFactory(global_data),
+  stepsizeFactory(global_data),
   borderedFactory(global_data),
   eigensolverFactory(global_data),
   eigenvalueSortFactory(global_data),
   saveEigenFactory(global_data),
+  anasaziOperatorFactory(global_data),
   mooreSpenceSolverFactory(global_data)
 {
   // Set the factory member of the global data
@@ -63,10 +65,12 @@ LOCA::Factory::Factory(
   predictorFactory(global_data),
   continuationFactory(global_data),
   bifurcationFactory(global_data),
+  stepsizeFactory(global_data),
   borderedFactory(global_data),
   eigensolverFactory(global_data),
   eigenvalueSortFactory(global_data),
   saveEigenFactory(global_data),
+  anasaziOperatorFactory(global_data),
   mooreSpenceSolverFactory(global_data)
 {
   // Initialize user-defined factory
@@ -160,6 +164,32 @@ LOCA::Factory::createBifurcationStrategy(
   }
 
   strategy = bifurcationFactory.create(topParams, bifurcationParams, grp);
+
+  return strategy;
+}
+
+Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy>
+LOCA::Factory::createStepSizeStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& stepsizeParams)
+{
+  string methodName = "LOCA::Factory::createStepSizeStrategy()";
+  Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy> strategy;
+
+  // If we have a user-provided factory, first try creating the strategy
+  // using it
+  if (haveFactory) {
+    const string& strategyName = 
+      stepsizeFactory.strategyName(*stepsizeParams);
+    bool created = factory->createStepSizeStrategy(strategyName,
+						   topParams,
+						   stepsizeParams,
+						   strategy);
+    if (created)
+      return strategy;
+  }
+
+  strategy = stepsizeFactory.create(topParams, stepsizeParams);
 
   return strategy;
 }
@@ -264,6 +294,37 @@ LOCA::Factory::createSaveEigenDataStrategy(
   }
 
   strategy = saveEigenFactory.create(topParams, eigenParams);
+
+  return strategy;
+}
+
+Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>
+LOCA::Factory::createAnasaziOperatorStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	 const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp)
+{
+  string methodName = "LOCA::Factory::createAnasaziOperatorStrategy()";
+  Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy> strategy;
+
+  // If we have a user-provided factory, first try creating the strategy
+  // using it
+  if (haveFactory) {
+    const string& strategyName = 
+      anasaziOperatorFactory.strategyName(*eigenParams);
+    bool created = factory->createAnasaziOperatorStrategy(strategyName,
+							  topParams,
+							  eigenParams,
+							  solverParams,
+							  grp,
+							  strategy);
+    if (created)
+      return strategy;
+  }
+
+  strategy = anasaziOperatorFactory.create(topParams, eigenParams,
+					   solverParams, grp);
 
   return strategy;
 }

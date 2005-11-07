@@ -33,13 +33,14 @@
 #include "LOCA_LAPACK_Group.H"	// class definition
 #include "NOX_BLAS_Wrappers.H"
 #include "NOX_LAPACK_Wrappers.H"
-#include "LOCA_Utils.H"
 #include "Teuchos_LAPACK.hpp"
 
-LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface,
-			   bool hasMassMat) : 
+LOCA::LAPACK::Group::Group(
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    LOCA::LAPACK::Interface& interface,
+		    bool hasMassMat) : 
   NOX::LAPACK::Group(interface), 
-  LOCA::Abstract::Group(),
+  LOCA::Abstract::Group(global_data),
   locaProblemInterface(interface), 
   params(),
   massMatrix(),
@@ -51,11 +52,13 @@ LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface,
 				     jacobianMatrix.numCols());
 }
 
-LOCA::LAPACK::Group::Group(NOX::Parameter::List& params,
-			   LOCA::LAPACK::Interface& interface,
-			   bool hasMassMat) : 
+LOCA::LAPACK::Group::Group(
+		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		     NOX::Parameter::List& params,
+		     LOCA::LAPACK::Interface& interface,
+		     bool hasMassMat) : 
   NOX::LAPACK::Group(interface), 
-  LOCA::Abstract::Group(params),
+  LOCA::Abstract::Group(global_data),
   locaProblemInterface(interface), 
   params(),
   massMatrix(),
@@ -67,10 +70,12 @@ LOCA::LAPACK::Group::Group(NOX::Parameter::List& params,
 				     jacobianMatrix.numCols());
 }
 
-LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface,
-			   int m, int n, bool hasMassMat) : 
+LOCA::LAPACK::Group::Group(
+		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		     LOCA::LAPACK::Interface& interface,
+		     int m, int n, bool hasMassMat) : 
   NOX::LAPACK::Group(interface, m, n), 
-  LOCA::Abstract::Group(),
+  LOCA::Abstract::Group(global_data),
   locaProblemInterface(interface), 
   params(),
   massMatrix(),
@@ -81,11 +86,13 @@ LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface,
     massMatrix = NOX::LAPACK::Matrix(m, n);
 }
 
-LOCA::LAPACK::Group::Group(NOX::Parameter::List& params,
-			   LOCA::LAPACK::Interface& interface,
-			   int m, int n, bool hasMassMat) : 
+LOCA::LAPACK::Group::Group(
+		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		     NOX::Parameter::List& params,
+		     LOCA::LAPACK::Interface& interface,
+		     int m, int n, bool hasMassMat) : 
   NOX::LAPACK::Group(interface, m, n), 
-  LOCA::Abstract::Group(params),
+  LOCA::Abstract::Group(global_data),
   locaProblemInterface(interface), 
   params(),
   massMatrix(),

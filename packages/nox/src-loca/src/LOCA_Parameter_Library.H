@@ -33,6 +33,8 @@
 #ifndef LOCA_PARAMETER_LIBRARY_H
 #define LOCA_PARAMETER_LIBRARY_H
 
+#include "Teuchos_RefCountPtr.hpp"
+
 #include "NOX_Common.H"  // for <map>
 
 namespace LOCA {

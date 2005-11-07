@@ -94,13 +94,15 @@ namespace LOCA {
        * limited to simple algorithms like nonlinear-CG with no
        * preconditioning.
        */
-      Group(NOX::Parameter::List& printingParams, 
+      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	    NOX::Parameter::List& printingParams, 
 	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
 	    NOX::Epetra::Vector& initialGuess,
 	    const LOCA::ParameterVector& p);
 
       //! Standard Constructor.
-      Group(NOX::Parameter::List& printingParams, 
+      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	    NOX::Parameter::List& printingParams, 
 	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
 	    NOX::Epetra::Vector& initialGuess, 
 	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
@@ -108,6 +110,7 @@ namespace LOCA {
 
       //! Constructor with time-dependent interface
       Group(
+	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	NOX::Parameter::List& printingParams,
         const Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent>& i,
 	NOX::Epetra::Vector& initialGuess,

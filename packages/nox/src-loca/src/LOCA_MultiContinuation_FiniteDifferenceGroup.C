@@ -33,8 +33,8 @@
 #include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
 
 LOCA::MultiContinuation::FiniteDifferenceGroup::FiniteDifferenceGroup(
-					           const LOCA::DerivUtils& d)
-  : derivPtr(d.clone(NOX::DeepCopy))
+			      const Teuchos::RefCountPtr<LOCA::DerivUtils>& d)
+  : derivPtr(d)
 {
 }
 
@@ -47,7 +47,6 @@ LOCA::MultiContinuation::FiniteDifferenceGroup::FiniteDifferenceGroup(
 
 LOCA::MultiContinuation::FiniteDifferenceGroup::~FiniteDifferenceGroup() 
 {
-  delete derivPtr;
 }
 
 LOCA::MultiContinuation::FiniteDifferenceGroup&
@@ -55,8 +54,6 @@ LOCA::MultiContinuation::FiniteDifferenceGroup::operator=(
 		const LOCA::MultiContinuation::FiniteDifferenceGroup& source)
 {
   if (this != &source) {
-    delete derivPtr;
-  
     derivPtr = source.derivPtr->clone();
   }
   return *this;

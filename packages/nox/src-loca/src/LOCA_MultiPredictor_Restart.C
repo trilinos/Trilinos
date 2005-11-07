@@ -33,7 +33,7 @@
 #include "NOX_Parameter_List.H"
 #include "LOCA_MultiPredictor_Restart.H"
 #include "LOCA_GlobalData.H"
-#include "LOCA_Utils.H"
+#include "NOX_Utils.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_MultiContinuation_ExtendedVector.H"
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H"
@@ -110,8 +110,9 @@ LOCA::MultiPredictor::Restart::compute(
 	      const LOCA::MultiContinuation::ExtendedVector& prevXVec,
 	      const LOCA::MultiContinuation::ExtendedVector& xVec)
 {
-  if (globalData->locaUtils->doPrint(LOCA::Utils::StepperDetails))
-    cout << "\n\tCalling Predictor with method: Restart" << endl;
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails))
+    globalData->locaUtils->out() << 
+      "\n\tCalling Predictor with method: Restart" << std::endl;
 
   return NOX::Abstract::Group::Ok;
 }

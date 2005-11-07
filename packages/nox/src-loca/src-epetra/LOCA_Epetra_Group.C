@@ -37,19 +37,18 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
-#include "LOCA_Utils.H"
-#include "LOCA_ErrorCheck.H"
 #include "LOCA_Epetra_ShiftInvertOperator.H"
 #include "AztecOO.h"
 #include "NOX_Epetra_LinearSystem_AztecOO.H"
 
 LOCA::Epetra::Group::Group(
+	    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	    NOX::Parameter::List& printingParams, 
 	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
 	    NOX::Epetra::Vector& initialGuess,
 	    const LOCA::ParameterVector& p) :
   NOX::Epetra::Group(printingParams, i, initialGuess),
-  LOCA::Abstract::Group(),
+  LOCA::Abstract::Group(global_data),
   params(p),
   userInterface(i),
   userInterfaceTime(),
@@ -59,13 +58,14 @@ LOCA::Epetra::Group::Group(
 }
 
 LOCA::Epetra::Group::Group(
+	    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	    NOX::Parameter::List& printingParams, 
 	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
 	    NOX::Epetra::Vector& initialGuess, 
 	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
 	    const LOCA::ParameterVector& p) :
   NOX::Epetra::Group(printingParams, i, initialGuess, linSys),
-  LOCA::Abstract::Group(),
+  LOCA::Abstract::Group(global_data),
   params(p),
   userInterface(i),
   userInterfaceTime(),
@@ -75,13 +75,14 @@ LOCA::Epetra::Group::Group(
 }
 
 LOCA::Epetra::Group::Group(
+	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	NOX::Parameter::List& printingParams, 
 	const Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent>& i, 
 	NOX::Epetra::Vector& initialGuess, 
 	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
 	const LOCA::ParameterVector& p) :
   NOX::Epetra::Group(printingParams, i, initialGuess, linSys),
-  LOCA::Abstract::Group(),
+  LOCA::Abstract::Group(global_data),
   params(p),
   userInterface(i), 
   userInterfaceTime(i),
@@ -365,6 +366,7 @@ LOCA::Epetra::Group::applyShiftedMatrixInverse(
 
     Teuchos::RefCountPtr<LOCA::Epetra::ShiftInvertOperator> A =
       Teuchos::rcp(new LOCA::Epetra::ShiftInvertOperator(
+		  globalData,
 		  Teuchos::rcp(this,false),
 		  sharedLinearSystem.getObject(this)->getJacobianOperator(),
 		  shift,

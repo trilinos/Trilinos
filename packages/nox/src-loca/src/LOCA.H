@@ -30,13 +30,16 @@
 // This file should include ALL objects that the user
 // is required to instantiate to call LOCA!
 
-// Primary LOCA Objects
 #include "Teuchos_RefCountPtr.hpp"
 #include "NOX.H"
+
+// Primary LOCA Objects
+#include "LOCA_GlobalData.H"
+#include "LOCA_Factory.H"
+#include "LOCA_ErrorCheck.H"
 #include "LOCA_NewStepper.H"
 #include "LOCA_Parameter_Vector.H"
 #include "LOCA_Parameter_Library.H"
-#include "LOCA_Utils.H"
 
 #include "LOCA_MultiContinuation_AbstractGroup.H"
 #include "LOCA_MultiContinuation_ConstraintInterface.H"

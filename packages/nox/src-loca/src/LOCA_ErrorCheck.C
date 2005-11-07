@@ -31,17 +31,17 @@
 //@HEADER
 
 #include "LOCA_ErrorCheck.H"     // class definition
+#include "LOCA_GlobalData.H"
+#include "NOX_Utils.H"          // for printing utilities
 
-#include "LOCA_Utils.H"          // for printing utilities
-
-LOCA::ErrorCheck::ErrorCheck() 
+LOCA::ErrorCheck::ErrorCheck(
+		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) :
+  globalData(global_data)
 {
- 
 }
 
 LOCA::ErrorCheck::~ErrorCheck()
 {
-
 }
 
 
@@ -49,12 +49,12 @@ void LOCA::ErrorCheck::throwError(const string& callingFunction,
 				  const string& message, 
 				  const string& throwLabel)
 {
-  if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-    cout << "************************" << "\n";
-    cout << "ERROR: " << callingFunction << "\n";
+  if (globalData->locaUtils->isPrintType(NOX::Utils::Error)) {
+    globalData->locaUtils->err() << "************************" << "\n";
+    globalData->locaUtils->err() << "ERROR: " << callingFunction << "\n";
     if (message != "") 
-      cout << message << "\n";       
-    cout << "************************" << endl;
+      globalData->locaUtils->err() << message << "\n";       
+    globalData->locaUtils->err() << "************************" << std::endl;
   }
   throw (throwLabel.c_str());
   return;    
@@ -63,10 +63,10 @@ void LOCA::ErrorCheck::throwError(const string& callingFunction,
 void LOCA::ErrorCheck::printWarning(const string& callingFunction, 
 				    const string& message)
 {
-  if (LOCA::Utils::doPrint(LOCA::Utils::Warning)) {
-    cout << "WARNING: " << callingFunction << " - ";
+  if (globalData->locaUtils->isPrintType(NOX::Utils::Warning)) {
+    globalData->locaUtils->out() << "WARNING: " << callingFunction << " - ";
     if (message != "") 
-      cout << message << endl;     
+      globalData->locaUtils->out() << message << std::endl;     
   }  
   return;    
 }

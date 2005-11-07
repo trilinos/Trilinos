@@ -32,7 +32,6 @@
 
 #include "NormConstraint.H"
 #include "LOCA_Parameter_Vector.H"
-#include "LOCA_Utils.H"
 
 NormConstraint::NormConstraint(int N, const LOCA::ParameterVector& pVec,
 			       NOX::Abstract::Vector& cloneVec) :

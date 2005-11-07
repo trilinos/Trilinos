@@ -71,22 +71,27 @@ namespace LOCA {
        * Generates a multivector with nColumns from \em xVec amd
        * \em nScalarRows of zeros.
        */
-      ExtendedMultiVector(const NOX::Abstract::Vector& xVec, int nColumns,
-			  int nScalarRows, NOX::CopyType type = NOX::DeepCopy);
+      ExtendedMultiVector(
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const NOX::Abstract::Vector& xVec, int nColumns,
+		    int nScalarRows, NOX::CopyType type = NOX::DeepCopy);
   
       //! Constructor.  
       /*!
        * Initializes the scalar matrix to \em nScalarRows rows and 
        * \em xVec.numVectors() columns of zeros
        */
-      ExtendedMultiVector(const NOX::Abstract::MultiVector& xVec, 
-			  int nScalarRows);
+      ExtendedMultiVector(
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const NOX::Abstract::MultiVector& xVec, 
+		    int nScalarRows);
 
       //! Constructor.  
       /*!
        * Sets the scalar matrix explicitly
        */
       ExtendedMultiVector(
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 		    const NOX::Abstract::MultiVector& xVec,
 		    const NOX::Abstract::MultiVector::DenseMatrix& params);
 
@@ -161,7 +166,9 @@ namespace LOCA {
        * Creates an empty multivector with \em nColumns columns
        * and \em nScalarRows scalar rows 
        */
-      ExtendedMultiVector(int nColumns, int nScalarRows);
+      ExtendedMultiVector(
+		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		     int nColumns, int nScalarRows);
 
       //! Generate a derived extended vector
       /*!

@@ -34,10 +34,13 @@
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_LAPACK_Vector.H"
 #include "NOX_LAPACK_Matrix.H"
-#include "LOCA_Utils.H"
+#include "LOCA_GlobalData.H"
+#include "NOX_Utils.H"
 
-ChanProblemInterface::ChanProblemInterface(int N, double a, double b, 
-					   double s)  : 
+ChanProblemInterface::ChanProblemInterface(
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    int N, double a, double b, double s)  : 
+  globalData(global_data),
   initialGuess(N),
   alpha(a),
   beta(b),
@@ -48,8 +51,10 @@ ChanProblemInterface::ChanProblemInterface(int N, double a, double b,
   init();
 }
 
-ChanProblemInterface::ChanProblemInterface(int N, double a, double b, 
-					   double s, ofstream& file)  : 
+ChanProblemInterface::ChanProblemInterface(
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    int N, double a, double b, double s, ofstream& file)  : 
+  globalData(global_data),
   initialGuess(N),
   alpha(a),
   beta(b),
@@ -131,26 +136,30 @@ void
 ChanProblemInterface::printSolution(const NOX::LAPACK::Vector &x,
                                     const double conParam)
 {
-  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-    cout << "At parameter value: " << conParam 
-	 << "   the solution vector is\n";
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() 
+      << "At parameter value: " << conParam 
+      << "   the solution vector is\n";
 
     if (n < 8) {
-      for (int i=0; i<n; i++)  cout << " " << x(i);
+      for (int i=0; i<n; i++) 
+	globalData->locaUtils->out() << " " << x(i);
     }
     else {
-      for (int i=0; i<6; i++)  cout << " " << x(i);
-      cout << " ...";
-      for (int i=n-2; i<n; i++)  cout << " " << x(i);
+      for (int i=0; i<6; i++) 
+	globalData->locaUtils->out() << " " << x(i);
+       globalData->locaUtils->out() << " ...";
+      for (int i=n-2; i<n; i++)  
+	globalData->locaUtils->out() << " " << x(i);
     }
-    cout << endl;
+    globalData->locaUtils->out() << std::endl;
   }
 
   if (outputFilePtr != NULL) {
     (*outputFilePtr) << conParam << " ";
     for (int i=0; i<n; i++)
       (*outputFilePtr) << x(i) << " ";
-    (*outputFilePtr) << endl << endl;
+    (*outputFilePtr) << std::endl << std::endl;
   }
 
 }

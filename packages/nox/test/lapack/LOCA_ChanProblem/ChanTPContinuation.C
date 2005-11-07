@@ -55,28 +55,13 @@ int main(int argc, char *argv[])
       if (argv[1][0]=='-' && argv[1][1]=='v') 
 	verbose = true;
 
-    // Set up the problem interface
-    ChanProblemInterface chan(n, alpha, beta, scale);
-    LOCA::ParameterVector p;
-    p.addParameter("alpha",alpha);
-    p.addParameter("beta",beta);
-    p.addParameter("scale",scale);
-
-    // Create a group which uses that problem interface. The group will
-    // be initialized to contain the default initial guess for the
-    // specified problem.
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
-      Teuchos::rcp(new LOCA::LAPACK::Group(chan));
-    
-    grp->setParams(p);
-
     // Create initial guess for the null vector of jacobian
     Teuchos::RefCountPtr<NOX::Abstract::Vector> nullVec = 
       Teuchos::rcp(new NOX::LAPACK::Vector(n));
     nullVec->init(1.0);               // initial value 1.0
 
     // Create parameter list
-     Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
+    Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
       Teuchos::rcp(new NOX::Parameter::List);
 
     // Create LOCA sublist
@@ -136,22 +121,6 @@ int main(int argc, char *argv[])
     stepSizeList.setParameter("Failed Step Reduction Factor", 0.5);
     stepSizeList.setParameter("Successful Step Increase Factor", 1.26); // for constant
 
-    // Set the LOCA Utilities
-    NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
-    if (verbose) {
-      locaUtilsList.setParameter("Output Information", 
-				 LOCA::Utils::Error + 
-				 LOCA::Utils::Warning +
-				 LOCA::Utils::StepperIteration +
-				 LOCA::Utils::StepperDetails +
-				 LOCA::Utils::Solver +
-				 LOCA::Utils::Parameters +
-				 LOCA::Utils::SolverDetails);
-    }
-    
-    else
-      locaUtilsList.setParameter("Output Information", LOCA::Utils::Error);
-
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     NOX::Parameter::List& nlParams = paramList->sublist("NOX");
     nlParams.setParameter("Nonlinear Solver", "Line Search Based");
@@ -164,7 +133,9 @@ int main(int argc, char *argv[])
 				 NOX::Utils::InnerIteration +
 				 NOX::Utils::Details + 
 				 NOX::Utils::Warning +
-				 NOX::Utils::TestDetails);
+				 NOX::Utils::TestDetails + 
+				 NOX::Utils::StepperIteration +
+				 NOX::Utils::StepperDetails);
     else
        nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
 
@@ -172,6 +143,29 @@ int main(int argc, char *argv[])
     // Create the "Line Search" sublist for the "Line Search Based" solver
     NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
     searchParams.setParameter("Method", "Full Step");
+
+    // Create LAPACK Factory
+    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+      Teuchos::rcp(new LOCA::LAPACK::Factory);
+
+    // Create global data object
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+      LOCA::createGlobalData(paramList, lapackFactory);
+
+    // Set up the problem interface
+    ChanProblemInterface chan(globalData, n, alpha, beta, scale);
+    LOCA::ParameterVector p;
+    p.addParameter("alpha",alpha);
+    p.addParameter("beta",beta);
+    p.addParameter("scale",scale);
+
+    // Create a group which uses that problem interface. The group will
+    // be initialized to contain the default initial guess for the
+    // specified problem.
+    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
+      Teuchos::rcp(new LOCA::LAPACK::Group(globalData, chan));
+    
+    grp->setParams(p);
 
     // Set up the status tests
     Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA =
@@ -183,20 +177,17 @@ int main(int argc, char *argv[])
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
 					      statusTestA, statusTestB));
 
-    // Create LAPACK Factory
-    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
-      Teuchos::rcp(new LOCA::LAPACK::Factory);
-
     // Create the stepper  
-    LOCA::NewStepper stepper(grp, combo, paramList, lapackFactory);
+    LOCA::NewStepper stepper(globalData, grp, combo, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
     if (status != LOCA::Abstract::Iterator::Finished) {
       ierr = 1;
-      if (LOCA::Utils::doPrint(LOCA::Utils::Error))
-	cout << "Stepper failed to converge!" << endl;
+      if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
+	globalData->locaUtils->out() 
+	  << "Stepper failed to converge!" << std::endl;
     }
 
     // Get the final solution from the stepper
@@ -206,19 +197,23 @@ int main(int argc, char *argv[])
       dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup->getX());
 
     // Output the parameter list
-    if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
-      cout << endl << "Final Parameters" << endl
-	   << "****************" << endl;
-      stepper.getParameterList()->print(cout);
-      cout << endl;
+    if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
+      globalData->locaUtils->out() 
+	<< std::endl << "Final Parameters" << std::endl
+	<< "****************" << std::endl;
+      stepper.getParameterList()->print(globalData->locaUtils->out());
+      globalData->locaUtils->out() << std::endl;
     }
 
     // Check some statistics on the solution
-    NOX::Utils utils(nlPrintParams);
-    NOX::TestCompare testCompare(cout, utils);
-    
-    if (utils.isPrintType(NOX::Utils::TestDetails))
-      cout << endl << "***** Checking solutions statistics *****" << endl;
+     NOX::TestCompare testCompare(globalData->locaUtils->out(), 
+				 *(globalData->locaUtils));
+
+    if (globalData->locaUtils->isPrintType(NOX::Utils::TestDetails))
+      globalData->locaUtils->out() 
+	<< std::endl 
+	<< "***** Checking solution statistics *****" 
+	<< std::endl;
   
     // Check number of steps
     int numSteps = stepper.getStepNumber();
@@ -254,8 +249,14 @@ int main(int argc, char *argv[])
     ierr += testCompare.testValue(norm_x, norm_x_expected, 1.0e-4,
 				  "norm of final solution", 
 				  NOX::TestCompare::Relative);
+
+    destroyGlobalData(globalData);
   }
 
+  catch (std::exception& e) {
+    cout << e.what() << endl;
+    ierr = 1;
+  }
   catch (const char *s) {
     cout << s << endl;
     ierr = 1;

@@ -40,10 +40,12 @@
 #include "LOCA_MultiPredictor_Factory.H"
 #include "LOCA_MultiContinuation_Factory.H"
 #include "LOCA_Bifurcation_Factory.H"
+#include "LOCA_StepSize_Factory.H"
 #include "LOCA_BorderedSystem_Factory.H"
 #include "LOCA_Eigensolver_Factory.H"
 #include "LOCA_EigenvalueSort_Factory.H"
 #include "LOCA_SaveEigenData_Factory.H"
+#include "LOCA_AnasaziOperator_Factory.H"
 #include "LOCA_TurningPoint_MooreSpence_SolverFactory.H"
 
 // Forward declarations
@@ -148,6 +150,17 @@ namespace LOCA {
       const Teuchos::RefCountPtr<NOX::Parameter::List>& bifurcationParams,
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp);
 
+    //! Create step size control strategy
+    /*!
+     * Instantiates a step size control strategy based on the 
+     * "Method" parameter of the "Step Size" sublist.  See 
+     * LOCA::StepSize::Factory for a description of available strategies.
+     */
+    Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy>
+    createStepSizeStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& stepsizeParams);
+
     //! Create bordered system solver strategy
     /*!
      * Instantiates an bordered system solver strategy based on the 
@@ -194,6 +207,20 @@ namespace LOCA {
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
 
+    //! Create Anasazi operator strategy
+    /*!
+     * Instantiates an Anasazi operator strategy based on the "Operator" 
+     * parameter of the "Eigensolver" sublist.  See 
+     * LOCA::AnasaziOperator::Factory for a description of available 
+     * strategies.
+     */
+    Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>
+    createAnasaziOperatorStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	 const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
+
     //! Create Moore-Spence turning point solver strategy
     /*!
      * Instantiates a solver strategy based on the 
@@ -236,6 +263,9 @@ namespace LOCA {
     //! Bifurcation factory
     LOCA::Bifurcation::Factory bifurcationFactory;
 
+    //! Step size factory
+    LOCA::StepSize::Factory stepsizeFactory;
+
     //! Bordered system factory
     LOCA::BorderedSystem::Factory borderedFactory;
 
@@ -247,6 +277,9 @@ namespace LOCA {
 
     //! Save eigen data factory
     LOCA::SaveEigenData::Factory saveEigenFactory;
+
+    //! Anasazi operator factory
+    LOCA::AnasaziOperator::Factory anasaziOperatorFactory;
 
     //! Moore-Spence solver factory
     LOCA::TurningPoint::MooreSpence::SolverFactory mooreSpenceSolverFactory;

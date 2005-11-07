@@ -67,7 +67,8 @@ namespace LOCA {
     public:
   
       //! Constructor.
-      ExtendedVector(const NOX::Abstract::Vector& xVec, int nScalars);
+      ExtendedVector(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		     const NOX::Abstract::Vector& xVec, int nScalars);
 
       //! Copy constructor.
       ExtendedVector(const ExtendedVector& source, 
@@ -102,7 +103,8 @@ namespace LOCA {
     protected:
 
       //! Constructor
-      ExtendedVector(int nScalars);
+      ExtendedVector(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		     int nScalars);
 
       //! generate an extended multi-vector
       /*!

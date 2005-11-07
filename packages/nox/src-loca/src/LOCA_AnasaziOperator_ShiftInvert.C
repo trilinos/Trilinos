@@ -32,44 +32,27 @@
 
 #include "LOCA_AnasaziOperator_ShiftInvert.H"
 #include "NOX_Parameter_List.H"
+#include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
 LOCA::AnasaziOperator::ShiftInvert::ShiftInvert(
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
-	       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp_)
-  : myLabel("Shift-Invert"),
+	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
+	const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
+	const Teuchos::RefCountPtr<LOCA::TimeDependent::AbstractGroup>& grp_)
+  : globalData(global_data),
+    myLabel("Shift-Invert"),
+    eigenParams(eigenParams_),
+    solverParams(solverParams_),
     tmp_r(),
     tmp_i()
 {
-  reset(eigenParams_, solverParams_, grp_);
-}
-
-LOCA::AnasaziOperator::ShiftInvert::~ShiftInvert()
-{
-}
-
-NOX::Abstract::Group::ReturnType 
-LOCA::AnasaziOperator::ShiftInvert::reset(
-	      const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
-	      const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
-	      const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp_)
-{
   string callingFunction = 
-    "LOCA::AnasaziOperator::ShiftInvert::reset()";
+    "LOCA::AnasaziOperator::ShiftInvert::ShiftInvert()";
 
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
-
-  eigenParams = eigenParams_;
-  solverParams = solverParams_;
-  grp = Teuchos::rcp_dynamic_cast<LOCA::TimeDependent::AbstractGroup>(grp_);
-
-  // ensure grp is of the right type
-  if (grp == Teuchos::null) {
-    LOCA::ErrorCheck::throwError(callingFunction,
-     "Supplied group is not derived from LOCA::TimeDependent::AbstractGroup!");
-  }
 
   // Get parameters
   shift = eigenParams->getParameter("Shift",0.0);
@@ -77,16 +60,18 @@ LOCA::AnasaziOperator::ShiftInvert::reset(
   // Compute Jacobian matrix
   status = grp->computeJacobian();
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   // Compute mass matrix
   status = grp->computeMassMatrix();
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
-  
-  return finalStatus;
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
+}
+
+LOCA::AnasaziOperator::ShiftInvert::~ShiftInvert()
+{
 }
 
 const string&
@@ -113,8 +98,8 @@ LOCA::AnasaziOperator::ShiftInvert::apply(
   // Compute M*input
   status = grp->applyMassMatrix(input, *tmp_r);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   // Solve (J-omega*M)*output = M*input
   if (shift != 0.0) 
@@ -124,8 +109,8 @@ LOCA::AnasaziOperator::ShiftInvert::apply(
     status = grp->applyJacobianInverse(*solverParams, *tmp_r, output);
 
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
   
   return finalStatus;
 }
@@ -161,19 +146,19 @@ LOCA::AnasaziOperator::ShiftInvert::rayleighQuotient(
   // Make sure Jacobian is up-to-date
   status = grp->computeJacobian();
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   // Compute z^T J z
   status = grp->applyJacobian(evec_r, *tmp_r);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
   
   status = grp->applyJacobian(evec_i, *tmp_i);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   rq_r = evec_r.innerProduct(*tmp_r) + evec_i.innerProduct(*tmp_i);
   rq_i = evec_r.innerProduct(*tmp_i) - evec_i.innerProduct(*tmp_r);
@@ -181,19 +166,19 @@ LOCA::AnasaziOperator::ShiftInvert::rayleighQuotient(
   // Make sure mass matrix is up-to-date
   status = grp->computeMassMatrix();
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   // Compute z^T M z
   status = grp->applyMassMatrix(evec_r, *tmp_r);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
   
   status = grp->applyMassMatrix(evec_i, *tmp_i);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   double m_r = evec_r.innerProduct(*tmp_r) + evec_i.innerProduct(*tmp_i);
   double m_i = evec_r.innerProduct(*tmp_i) - evec_i.innerProduct(*tmp_r);

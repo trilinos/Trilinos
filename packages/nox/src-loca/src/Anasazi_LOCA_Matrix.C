@@ -32,9 +32,13 @@
 
 #include "Anasazi_LOCA_Matrix.H"
 #include "Anasazi_LOCA_MultiVec.H"
+#include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
-Anasazi::LOCAMatrix::LOCAMatrix(::LOCA::AnasaziOperator::Generic& op) :
+Anasazi::LOCAMatrix::LOCAMatrix(
+  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+  const Teuchos::RefCountPtr< ::LOCA::AnasaziOperator::AbstractStrategy>& op) :
+  globalData(global_data),
   locaOp(op) 
 {
 }
@@ -58,10 +62,11 @@ Anasazi::LOCAMatrix::Apply(const Anasazi::MultiVec<double>& x,
   
   int NumVecs = x_vec.GetNumberVecs();
   for (int i=0; i<NumVecs; i++) {
-    status = locaOp.apply(x_vec.GetNOXVector(i),y_vec.GetNOXVector(i)); 
+    status = locaOp->apply(x_vec.GetNOXVector(i),y_vec.GetNOXVector(i)); 
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
 
   if (finalStatus != NOX::Abstract::Group::Failed)

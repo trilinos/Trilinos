@@ -33,10 +33,6 @@
 #include "LOCA.H"
 #include "LOCA_Epetra.H"
 
-#include "LOCA_GlobalData.H"
-#include "LOCA_Utils.H"
-#include "LOCA_ErrorCheck.H"
-#include "LOCA_Factory.H"
 #include "LOCA_MultiContinuation_CompositeConstraintMVDX.H"
 #include "NOX_TestCompare.H"
 
@@ -94,23 +90,12 @@ int main(int argc, char *argv[])
     pVector.addParameter("Param 4", -0.78);
     pVector.addParameter("Param 5",  2.53);
 
-    // Set the LOCA Utilities
-    NOX::Parameter::List locaUtilsList;
-    locaUtilsList.setParameter("MyPID", MyPID);
-    if (verbose) {
-      locaUtilsList.setParameter("Output Information", 
-				 LOCA::Utils::Error + 
-				 LOCA::Utils::Warning +
-				 LOCA::Utils::StepperIteration +
-				 LOCA::Utils::StepperDetails +
-				 LOCA::Utils::Solver +
-				 LOCA::Utils::Parameters +
-				 LOCA::Utils::SolverDetails);
-    }
-    else
-      locaUtilsList.setParameter("Output Information", LOCA::Utils::Error);
+    // Create parameter list
+    Teuchos::RefCountPtr<NOX::Parameter::List> paramList =
+      Teuchos::rcp(new NOX::Parameter::List);
 
-    NOX::Parameter::List nlPrintParams;
+    NOX::Parameter::List& nlParams = paramList->sublist("NOX");
+    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
     nlPrintParams.setParameter("MyPID", MyPID);
     if (verbose)
        nlPrintParams.setParameter("Output Information", 
@@ -119,25 +104,15 @@ int main(int argc, char *argv[])
 				  NOX::Utils::OuterIteration + 
 				  NOX::Utils::InnerIteration + 
 				  NOX::Utils::Warning +
-				  NOX::Utils::TestDetails);
+				  NOX::Utils::TestDetails + 
+				  NOX::Utils::StepperIteration +
+				  NOX::Utils::StepperDetails);
      else
        nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
 
-    // Create printing utils
-    Teuchos::RefCountPtr<LOCA::Utils> locaUtils =
-      Teuchos::rcp(new LOCA::Utils);
-
-    // Create error check
-    Teuchos::RefCountPtr<LOCA::ErrorCheck> locaErrorCheck = 
-      Teuchos::rcp(new LOCA::ErrorCheck);
-
-    Teuchos::RefCountPtr<LOCA::Factory> locaFactory;
-
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> locaGlobalData =
-      Teuchos::rcp(new LOCA::GlobalData(locaUtils, 
-					locaErrorCheck, 
-					locaFactory));
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+      LOCA::createGlobalData(paramList);
 
     Epetra_Vector clone_vec(map);
     NOX::Epetra::Vector nox_clone_vec(clone_vec);
@@ -228,12 +203,10 @@ int main(int argc, char *argv[])
     constraintObjs[3] = linear_constraint;
 
     // Check some statistics on the solution
-    Teuchos::RefCountPtr<NOX::Utils> utils = 
-      Teuchos::rcp(new NOX::Utils(nlPrintParams));
-    Teuchos::RefCountPtr<NOX::TestCompare> testCompare = 
-      Teuchos::rcp(new NOX::TestCompare(cout, *utils));
+    NOX::TestCompare testCompare(globalData->locaUtils->out(), 
+				 *(globalData->locaUtils));
 
-    LOCA::MultiContinuation::CompositeConstraintMVDX composite(locaGlobalData,
+    LOCA::MultiContinuation::CompositeConstraintMVDX composite(globalData,
 							       constraintObjs);
     composite.setX(*x);
 
@@ -259,9 +232,9 @@ int main(int argc, char *argv[])
     const NOX::Abstract::MultiVector *dgdx_combined = 
       combined.getDX();
 
-    ierr += testCompare->testMultiVector(*dgdx_composite, *dgdx_combined, 
-					 reltol, abstol, 
-					 "CompositeConstraintMVDX::getDX()"); 
+    ierr += testCompare.testMultiVector(*dgdx_composite, *dgdx_combined, 
+					reltol, abstol, 
+					"CompositeConstraintMVDX::getDX()"); 
     
 
     //
@@ -279,9 +252,9 @@ int main(int argc, char *argv[])
     composite.multiplyDX(2.65, *A, composite_multiply);
     combined.multiplyDX(2.65, *A, combined_multiply);
 
-    ierr += testCompare->testMatrix(composite_multiply, combined_multiply, 
-				    reltol, abstol,
-				    "CompositeConstraintMVDX::multiplyDX()");
+    ierr += testCompare.testMatrix(composite_multiply, combined_multiply, 
+				   reltol, abstol,
+				   "CompositeConstraintMVDX::multiplyDX()");
     
     //
     // test addDX() (No Trans)
@@ -308,7 +281,7 @@ int main(int argc, char *argv[])
     composite.addDX(Teuchos::NO_TRANS, 1.45, B1, 2.78, *composite_add1);
     combined.addDX(Teuchos::NO_TRANS, 1.45, B1, 2.78, *combined_add1);
 
-    ierr += testCompare->testMultiVector(
+    ierr += testCompare.testMultiVector(
 			       *composite_add1, *combined_add1, 
 			       reltol, abstol, 
 			       "CompositeConstraintMVDX::addDX() (No Trans)"); 
@@ -320,13 +293,19 @@ int main(int argc, char *argv[])
     composite.addDX(Teuchos::TRANS, 1.45, B2, 2.78, *composite_add2);
     combined.addDX(Teuchos::TRANS, 1.45, B2, 2.78, *combined_add2);
 
-    ierr += testCompare->testMultiVector(
+    ierr += testCompare.testMultiVector(
 			       *composite_add2, *combined_add2, 
 			       reltol, abstol, 
 			       "CompositeConstraintMVDX::addDX() (Trans)");
 
+    destroyGlobalData(globalData);
+
   }
 
+  catch (std::exception& e) {
+    cout << e.what() << endl;
+    ierr = 1;
+  }
   catch (const char *s) {
     cout << s << endl;
     ierr = 1;

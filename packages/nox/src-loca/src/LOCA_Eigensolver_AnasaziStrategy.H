@@ -134,6 +134,9 @@ namespace LOCA {
       //! Global data
       Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
+      //! Parsed parameter list
+      Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> topParams;
+
 #ifdef HAVE_LOCA_ANASAZI
       //! Typedef to simplify templating
       typedef Anasazi::MultiVec<double> MV;

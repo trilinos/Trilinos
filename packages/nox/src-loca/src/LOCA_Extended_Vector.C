@@ -33,10 +33,13 @@
 #include "NOX_Random.H" //for NOX::Random
 #include "LOCA_Extended_Vector.H"  // Class definition
 #include "LOCA_Extended_MultiVector.H" // for createMultiVector
+#include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
-#include "LOCA_Utils.H"
 
-LOCA::Extended::Vector::Vector(int nvecs, int nscalars) :
+LOCA::Extended::Vector::Vector(
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    int nvecs, int nscalars) :
+  globalData(global_data),
   vectorPtrs(nvecs), 
   isView(nvecs), 
   numScalars(nscalars), 
@@ -48,6 +51,7 @@ LOCA::Extended::Vector::Vector(int nvecs, int nscalars) :
 
 LOCA::Extended::Vector::Vector(const LOCA::Extended::Vector& source, 
 			       NOX::CopyType type) :
+  globalData(source.globalData),
   vectorPtrs(source.vectorPtrs.size()), 
   isView(source.vectorPtrs.size()),
   numScalars(source.numScalars),
@@ -82,11 +86,15 @@ LOCA::Extended::Vector::operator=(const LOCA::Extended::Vector& y)
   if (this != &y) {
 
     if (numScalars != y.numScalars) 
-      LOCA::ErrorCheck::throwError("LOCA::Extended::Vector::operator=()",
+      globalData->locaErrorCheck->throwError(
+			       "LOCA::Extended::Vector::operator=()",
 			       "Number of scalars must match in assignment");
     if (vectorPtrs.size() != y.vectorPtrs.size())
-      LOCA::ErrorCheck::throwError("LOCA::Extended::Vector::operator=()",
+      globalData->locaErrorCheck->throwError(
+			       "LOCA::Extended::Vector::operator=()",
 			       "Number of vectors must match in assignment");
+
+    globalData = y.globalData;
 
     for (unsigned int i=0; i<vectorPtrs.size(); i++)
       *(vectorPtrs[i]) = *(y.vectorPtrs[i]);
@@ -479,7 +487,9 @@ Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
 LOCA::Extended::Vector::generateMultiVector(int nColumns, int nVectorRows, 
 					    int nScalarRows) const
 {
-  return Teuchos::rcp(new LOCA::Extended::MultiVector(nColumns, nVectorRows, 
+  return Teuchos::rcp(new LOCA::Extended::MultiVector(globalData, 
+						      nColumns, 
+						      nVectorRows, 
 						      nScalarRows));
 }
 

@@ -39,7 +39,7 @@
 #include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_BorderedSystem_AbstractStrategy.H"
 #include "LOCA_ErrorCheck.H"
-#include "LOCA_Utils.H"
+#include "NOX_Utils.H"
 #include "LOCA_Parameter_Vector.H"
 
 LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
@@ -55,10 +55,11 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
     grpPtr(g),
     constraintsPtr(constraints),
     numParams(paramIDs.size()),
-    xMultiVec(g->getX(), numParams+1, numParams, NOX::DeepCopy),
-    fMultiVec(g->getX(), numParams+1, numParams, NOX::ShapeCopy),
-    newtonMultiVec(g->getX(), numParams+1, numParams, NOX::ShapeCopy),
-    gradientMultiVec(g->getX(), 1, numParams, NOX::ShapeCopy),
+    xMultiVec(globalData, g->getX(), numParams+1, numParams, NOX::DeepCopy),
+    fMultiVec(globalData, g->getX(), numParams+1, numParams, NOX::ShapeCopy),
+    newtonMultiVec(globalData, g->getX(), numParams+1, numParams, 
+		   NOX::ShapeCopy),
+    gradientMultiVec(globalData, g->getX(), 1, numParams, NOX::ShapeCopy),
     xVec(),
     fVec(),
     ffMultiVec(),
@@ -278,8 +279,9 @@ LOCA::MultiContinuation::ConstrainedGroup::computeF()
   if (!grpPtr->isF()) {
     status = grpPtr->computeF();
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							      finalStatus,
+							      callingFunction);
   }
   *(fVec->getXVec()) = grpPtr->getF();
   
@@ -310,31 +312,35 @@ LOCA::MultiContinuation::ConstrainedGroup::computeJacobian()
 				    *fMultiVec.getXMultiVec(), 
 				    isValidF);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							    finalStatus,
+							    callingFunction);
 
   // Compute underlying Jacobian
   if (!grpPtr->isJacobian()) {
     status = grpPtr->computeJacobian();
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							      finalStatus,
+							      callingFunction);
   }
 
   // Compute constraint derivatives
   if (!constraintsPtr->isDX()) {
     status = constraintsPtr->computeDX();
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							      finalStatus,
+							      callingFunction);
   }
   status = 
     constraintsPtr->computeDP(constraintParamIDs,
 			      *fMultiVec.getScalars(),
 			      isValidF);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							    finalStatus,
+							    callingFunction);
 
   // Set blocks in bordered solver
   borderedSolver->setMatrixBlocks(
@@ -363,24 +369,27 @@ LOCA::MultiContinuation::ConstrainedGroup::computeGradient()
   if (!isF()) {
     status = computeF();
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							      finalStatus,
+							      callingFunction);
   }
   
   // Make sure Jacobian is valid
   if (!isJacobian()) {
     status = computeJacobian();
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							      finalStatus,
+							      callingFunction);
   }
   
   // Compute underlying gradient
   if (!grpPtr->isGradient()) {
     status = grpPtr->computeGradient();
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							      finalStatus,
+							      callingFunction);
   }
 
   // Get grad f
@@ -423,16 +432,18 @@ LOCA::MultiContinuation::ConstrainedGroup::computeNewton(
   if (!isF()) {
     status = computeF();
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							      finalStatus,
+							      callingFunction);
   }
   
   // Make sure Jacobian is valid
   if (!isJacobian()) {
     status = computeJacobian();
     finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							      finalStatus,
+							      callingFunction);
   }
 
   // zero out newton vec -- used as initial guess for some linear solvers
@@ -440,8 +451,9 @@ LOCA::MultiContinuation::ConstrainedGroup::computeNewton(
 
   status = applyJacobianInverseNewton(params);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							    finalStatus,
+							    callingFunction);
 
   newtonVec->scale(-1.0);
 
@@ -523,8 +535,8 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianMultiVector(
     "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianMultiVector()";
   
   if (!isJacobian()) {
-    LOCA::ErrorCheck::throwError(callingFunction,
-				 "Called with invalid Jacobian!");
+    globalData->locaErrorCheck->throwError(callingFunction,
+					    "Called with invalid Jacobian!");
   }
 
   // Cast inputs to continuation multivectors
@@ -560,8 +572,8 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeMultiVector(
     "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeMultiVector()";
   
   if (!isJacobian()) {
-    LOCA::ErrorCheck::throwError(callingFunction,
-				 "Called with invalid Jacobian!");
+    globalData->locaErrorCheck->throwError(callingFunction,
+					    "Called with invalid Jacobian!");
   }
 
   // Cast inputs to continuation multivectors
@@ -599,8 +611,8 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseMultiVector(
     "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseMultiVector()";
   
   if (!isJacobian()) {
-    LOCA::ErrorCheck::throwError(callingFunction,
-				 "Called with invalid Jacobian!");
+    globalData->locaErrorCheck->throwError(callingFunction,
+					    "Called with invalid Jacobian!");
   }
 
   // Cast inputs to continuation multivectors
@@ -692,7 +704,7 @@ LOCA::MultiContinuation::ConstrainedGroup::getNormNewtonSolveResidual() const
   LOCA::MultiContinuation::ExtendedVector residual = *fVec;
   
   finalStatus = applyJacobian(*newtonVec, residual);
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
 
   residual = residual.update(1.0, *fVec, 1.0);
   return residual.norm();
@@ -730,8 +742,8 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseNewton(
     "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseNewton()";
   
   if (!isJacobian()) {
-    LOCA::ErrorCheck::throwError(callingFunction,
-				 "Called with invalid Jacobian!");
+    globalData->locaErrorCheck->throwError(callingFunction,
+					    "Called with invalid Jacobian!");
   }
 
   // Get x, param components of f vector (we only want the parameter 
@@ -799,16 +811,18 @@ LOCA::MultiContinuation::ConstrainedGroup::computeDfDpMulti(
   status = grpPtr->computeDfDpMulti(paramIDs, *c_dfdp.getXMultiVec(), 
 				    isValid_F);
   finalStatus = 
-      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							    finalStatus,
+							    callingFunction);
 
   // Compute dg/dp
   status = constraintsPtr->computeDP(paramIDs, 
 				     *c_dfdp.getScalars(), 
 				     isValid_F);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							    finalStatus,
+							    callingFunction);
 
   return finalStatus;
 }
@@ -918,16 +932,18 @@ LOCA::MultiContinuation::ConstrainedGroup::printSolution(
   const LOCA::MultiContinuation::ExtendedVector& mx = 
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(x);
 
-  if (globalData->locaUtils->doPrint(LOCA::Utils::StepperDetails)) {
-    cout << "LOCA::MultiContinuation::ConstrainedGroup::printSolution\n";
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "LOCA::MultiContinuation::ConstrainedGroup::printSolution\n";
 
-    cout << "\tPrinting Solution Vector for conParam = " 
-	 << globalData->locaUtils->sci(conParam) << endl;
+    globalData->locaUtils->out() << 
+      "\tPrinting Solution Vector for conParam = " << 
+      globalData->locaUtils->sciformat(conParam) << std::endl;
   }
   grpPtr->printSolution(*mx.getXVec(), conParam);
-  if (globalData->locaUtils->doPrint(LOCA::Utils::StepperDetails)) {
-    cout << "\tPrinting constraint parameters\n";
-    mx.getScalars()->print(cout);
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << "\tPrinting constraint parameters\n";
+    mx.getScalars()->print(globalData->locaUtils->out());
   }
 }
 

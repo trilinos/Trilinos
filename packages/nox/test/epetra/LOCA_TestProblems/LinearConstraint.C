@@ -32,7 +32,6 @@
 
 #include "LinearConstraint.H"
 #include "LOCA_Parameter_Vector.H"
-#include "LOCA_Utils.H"
 
 LinearConstraint::LinearConstraint(int NumConstraints, 
 				   const LOCA::ParameterVector& pVec,

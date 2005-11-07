@@ -43,6 +43,10 @@ namespace NOX {
   }
 }
 namespace LOCA {
+  class GlobalData;
+  namespace Parameter {
+    class SublistParser;
+  }
   namespace MultiContinuation {
     class AbstractStrategy;
     class ExtendedVector;
@@ -76,7 +80,10 @@ namespace LOCA {
 
       //! Reset parameters
       virtual NOX::Abstract::Group::ReturnType 
-      reset(NOX::Parameter::List& params) = 0;
+      reset(
+	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	NOX::Parameter::List& params) = 0;
 
       /*! 
 	\brief Compute the step size.

@@ -47,21 +47,6 @@ int main()
 
   try {
 
-    // Set up the problem interface
-    ChanProblemInterface chan(n, alpha, beta, scale);
-    LOCA::ParameterVector p;
-    p.addParameter("alpha",alpha);
-    p.addParameter("beta",beta);
-    p.addParameter("scale",scale);
-  
-    // Create a group which uses that problem interface. The group will
-    // be initialized to contain the default initial guess for the
-    // specified problem.
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
-      Teuchos::rcp(new LOCA::LAPACK::Group(chan));
-    
-    grp->setParams(p);
-
     // Create parameter list
     Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
       Teuchos::rcp(new NOX::Parameter::List);
@@ -118,26 +103,41 @@ int main()
     predictorList.setParameter("Method", "Tangent");
     //predictorList.setParameter("Method", "Secant");
 
-    // Set the LOCA Utilities
-    NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
-    locaUtilsList.setParameter("Output Information", 
-			       LOCA::Utils::Warning +
-			       LOCA::Utils::StepperIteration +
-   			       LOCA::Utils::StepperDetails +
-			       LOCA::Utils::Solver +
-			       LOCA::Utils::Parameters +
-			       LOCA::Utils::SolverDetails);
-
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     NOX::Parameter::List& nlParams = paramList->sublist("NOX");
     nlParams.setParameter("Nonlinear Solver", "Line Search Based");
 
     NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
     nlPrintParams.setParameter("Output Information", 
-			  NOX::Utils::Details +
-			  NOX::Utils::OuterIteration + 
-			  NOX::Utils::InnerIteration + 
-			  NOX::Utils::Warning);
+			       NOX::Utils::Details +
+			       NOX::Utils::OuterIteration + 
+			       NOX::Utils::InnerIteration + 
+			       NOX::Utils::Warning + 
+			       NOX::Utils::StepperIteration +
+			       NOX::Utils::StepperDetails);
+
+    // Create LAPACK Factory
+    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+      Teuchos::rcp(new LOCA::LAPACK::Factory);
+
+    // Create global data object
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+      LOCA::createGlobalData(paramList, lapackFactory);
+
+    // Set up the problem interface
+    ChanProblemInterface chan(globalData, n, alpha, beta, scale);
+    LOCA::ParameterVector p;
+    p.addParameter("alpha",alpha);
+    p.addParameter("beta",beta);
+    p.addParameter("scale",scale);
+  
+    // Create a group which uses that problem interface. The group will
+    // be initialized to contain the default initial guess for the
+    // specified problem.
+    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
+      Teuchos::rcp(new LOCA::LAPACK::Group(globalData, chan));
+    
+    grp->setParams(p);
 
     // Set up the status tests
     Teuchos::RefCountPtr<NOX::StatusTest::NormF> normF = 
@@ -149,32 +149,35 @@ int main()
 					      normF, 
 					      maxIters));
 
-    // Create LAPACK Factory
-    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
-      Teuchos::rcp(new LOCA::LAPACK::Factory);
-
     // Create the stepper  
-    LOCA::MultiStepper stepper(grp, comboOR, paramList, lapackFactory);
+    LOCA::MultiStepper stepper(globalData, grp, comboOR, paramList);
 
     // Perform continuation run
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-    if (status != LOCA::Abstract::Iterator::Finished)
-      cout << "Stepper failed to converge!" << endl;
+    if (status != LOCA::Abstract::Iterator::Finished) {
+      if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
+	globalData->locaUtils->out() 
+	  << "Stepper failed to converge!" << std::endl;
+    }
 
     // Output the parameter list
-    if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
-      cout << endl << "Final Parameters" << endl
-	   << "****************" << endl;
-      stepper.getParameterList()->print(cout);
-      cout << endl;
+    if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
+      globalData->locaUtils->out() 
+	<< std::endl << "Final Parameters" << std::endl
+	<< "****************" << std::endl;
+      stepper.getParameterList()->print(globalData->locaUtils->out());
+      globalData->locaUtils->out() << std::endl;
     }
+
+    destroyGlobalData(globalData);
+
   }
 
-  catch (string& s) {
-    cout << s << endl;
+  catch (std::exception& e) {
+    cout << e.what() << endl;
   }
-  catch (char *s) {
+  catch (const char *s) {
     cout << s << endl;
   }
   catch (...) {
