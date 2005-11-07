@@ -86,22 +86,19 @@ MRTR::Segment::Segment(MRTR::Segment& old)
   nodeptr_ = old.nodeptr_; 
   
   // copy the functions
-  // this is a little tricky, as MRTR::Function is pure virtual and we want
-  // to copy the derived type. As we don't know what derived type it is, 
-  // we use it's Clone() method.  
-  map<int,MRTR::Function*>::iterator curr;
+  // this is not a deep copy but we simply copy the refcountptr
+  map< int,RefCountPtr<MRTR::Function> >::iterator curr;
   for (curr = old.functions_.begin(); curr != old.functions_.end(); ++curr)
   {
-    if (!curr->second)
+    if (curr->second == null)
     {
       cout << "***ERR*** MRTR::Segment::BaseClone(MRTR::Segment& old):\n"
-           << "***ERR*** function id " << curr->first << " is NULL\n"
+           << "***ERR*** function id " << curr->first << " is null\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);     
     }
-    MRTR::Function* oldf  = curr->second;
-    MRTR::Function* clone = oldf->Clone();
-    functions_.insert(pair<int,MRTR::Function*>(curr->first,clone));
+    RefCountPtr<MRTR::Function> newfunc = curr->second;
+    functions_.insert(pair< int,RefCountPtr<MRTR::Function> >(curr->first,newfunc));
   }
   
 }
@@ -113,7 +110,7 @@ MRTR::Segment::~Segment()
 {
   nodeId_.clear();
   nodeptr_.clear();
-  MRTR::DestroyMap(functions_);
+  functions_.clear();
 }
 
 /*----------------------------------------------------------------------*
@@ -136,7 +133,7 @@ bool MRTR::Segment::Print() const
   for (int i=0; i<nodeId_.size(); ++i)
     cout << setw(6) << nodeId_[i] << "  ";
   cout << "  #Functions " << functions_.size() << "  Types: ";
-  map<int,MRTR::Function*>::const_iterator curr;
+  map<int,RefCountPtr<MRTR::Function> >::const_iterator curr;
   for (curr=functions_.begin(); curr != functions_.end(); ++curr)
     cout << curr->second->Type() << "  ";
   cout << endl;
@@ -145,6 +142,8 @@ bool MRTR::Segment::Print() const
 
 /*----------------------------------------------------------------------*
  | attach a certain shape function to this segment           mwgee 06/05|
+ | the user is not supposed to destroy func!                            |
+ | the user can set func to several segments!                           |
  *----------------------------------------------------------------------*/
 bool MRTR::Segment::SetFunction(int id, MRTR::Function* func)
 { 
@@ -164,16 +163,48 @@ bool MRTR::Segment::SetFunction(int id, MRTR::Function* func)
   }
   
   // check for existing function with this id and evtentually overwrite
-  map<int,MRTR::Function*>::iterator curr = functions_.find(id);
+  map<int,RefCountPtr<MRTR::Function> >::iterator curr = functions_.find(id);
   if (curr != functions_.end())
   {
-    delete curr->second;
-    MRTR::Function* newfunc = func->Clone();
-    curr->second = newfunc;
+    curr->second = rcp(func);
     return true;
   }
-  MRTR::Function* newfunc = func->Clone();
-  functions_.insert(pair<int,MRTR::Function*>(id,newfunc));
+  RefCountPtr<MRTR::Function> newfunc = rcp(func);
+  functions_.insert(pair<int,RefCountPtr<MRTR::Function> >(id,newfunc));
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ | attach a certain shape function to this segment           mwgee 11/05|
+ | the user is not supposed to destroy func!                            |
+ | the user can set func to several segments!                           |
+ *----------------------------------------------------------------------*/
+bool MRTR::Segment::SetFunction(int id, RefCountPtr<MRTR::Function> func)
+{ 
+  if (id<0)
+  {
+    cout << "***ERR*** MRTR::Segment::SetFunction:\n"
+         << "***ERR*** id = " << id << " < 0 (out of range)\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  if (func==null)
+  {
+    cout << "***ERR*** MRTR::Segment::SetFunction:\n"
+         << "***ERR*** func = NULL on input\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  
+  // check for existing function with this id and evtentually overwrite
+  map<int,RefCountPtr<MRTR::Function> >::iterator curr = functions_.find(id);
+  if (curr != functions_.end())
+  {
+    curr->second = func;
+    return true;
+  }
+  RefCountPtr<MRTR::Function> newfunc = func;
+  functions_.insert(pair<int,RefCountPtr<MRTR::Function> >(id,newfunc));
   return true;
 }
 
@@ -189,7 +220,7 @@ bool MRTR::Segment::SetFunction(int id, MRTR::Function* func)
 bool MRTR::Segment::EvaluateFunction(int id, const double* xi, double* val, 
                                      int valdim, double* deriv)
 { 
-  map<int,MRTR::Function*>::iterator curr = functions_.find(id);
+  map<int,RefCountPtr<MRTR::Function> >::iterator curr = functions_.find(id);
   if (curr == functions_.end())
   {
     cout << "***ERR*** MRTR::Segment::EvaluateFunction:\n"
@@ -259,7 +290,7 @@ bool MRTR::Segment::GetPtrstoNodes(MRTR::Interface& interface)
   
   for (int i=0; i<nodeId_.size(); ++i)
   {
-    nodeptr_[i] = interface.GetNodeView(nodeId_[i]);
+    nodeptr_[i] = interface.GetNodeView(nodeId_[i]).get();
     if (!nodeptr_[i])
     {
       cout << "***ERR*** MRTR::Segment::GetPtrstoNodes:\n"
@@ -311,13 +342,14 @@ bool MRTR::Segment::GetPtrstoNodes(vector<MRTR::Node*>& nodes)
 MRTR::Function::FunctionType MRTR::Segment::FunctionType(int id)
 { 
   // find the function with id id
-  map<int,MRTR::Function*>::iterator curr = functions_.find(id);
+  map<int,RefCountPtr<MRTR::Function> >::iterator curr = functions_.find(id);
   if (curr==functions_.end()) 
     return MRTR::Function::func_none;
   else
     return curr->second->Type();
 }
 
+#if 0
 /*----------------------------------------------------------------------*
  |                                                           mwgee 07/05|
  | get ptr to function with id id                                       |
@@ -325,12 +357,12 @@ MRTR::Function::FunctionType MRTR::Segment::FunctionType(int id)
 MRTR::Function* MRTR::Segment::GetFunction(int id)
 { 
   // find the function with id id
-  map<int,MRTR::Function*>::iterator curr = functions_.find(id);
+  map<int,RefCountPtr<MRTR::Function> >::iterator curr = functions_.find(id);
   if (curr==functions_.end()) 
     return NULL;
   else
     return curr->second;
 }
-
+#endif
 
 #endif // TRILINOS_PACKAGE

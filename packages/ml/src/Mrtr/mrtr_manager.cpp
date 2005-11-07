@@ -44,14 +44,13 @@
 MRTR::Manager::Manager(Epetra_Comm& comm, int outlevel) :
 outlevel_(outlevel),
 comm_(comm),
-inputmap_(NULL),
-inputmatrixisdeep_(false),
-inputmatrix_(NULL),
-constraintsmap_(NULL),
-D_(NULL),
-M_(NULL),
-saddlemap_(NULL),
-saddlematrix_(NULL)
+inputmap_(null),
+inputmatrix_(null),
+constraintsmap_(null),
+D_(null),
+M_(null),
+saddlemap_(null),
+saddlematrix_(null)
 {
 }
 
@@ -60,35 +59,7 @@ saddlematrix_(NULL)
  *----------------------------------------------------------------------*/
 MRTR::Manager::~Manager()
 {
-  // delete interfaces
-  map<int,MRTR::Interface*>::iterator curr;
-  for (curr=interface_.begin(); curr != interface_.end(); ++curr)
-  {
-    if (curr->second)
-    {
-      delete curr->second;
-      curr->second = NULL;
-    }
-    else if (OutLevel()>0)
-      cout << "***WRN*** MRTR::Manager::~Manager:\n"
-           << "***WRN*** found NULL entry in map of interfaces\n"
-           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-  }
   interface_.clear();
-  
-  if (inputmap_) delete inputmap_; inputmap_ = NULL;
-  if (inputmatrix_) 
-  {
-    if (inputmatrixisdeep_)
-      delete inputmatrix_; 
-    inputmatrix_ = NULL;
-    inputmatrixisdeep_ = false;
-  }
-  if (constraintsmap_) delete constraintsmap_; constraintsmap_ = NULL;
-  if (D_) delete D_; D_ = NULL;
-  if (M_) delete M_; M_ = NULL;
-  if (saddlemap_) delete saddlemap_; saddlemap_ = NULL;
-  if (saddlematrix_) delete saddlematrix_; saddlematrix_ = NULL;
 }
 
 /*----------------------------------------------------------------------*
@@ -113,11 +84,11 @@ bool MRTR::Manager::Print() const
   
   comm_.Barrier();
 
-  map<int,MRTR::Interface*>::const_iterator curr;
+  map<int,RefCountPtr<MRTR::Interface> >::const_iterator curr;
   for (curr=interface_.begin(); curr!=interface_.end(); ++curr)
   {
-    MRTR::Interface* inter = curr->second;
-    if (!inter)
+    RefCountPtr<MRTR::Interface> inter = curr->second;
+    if (inter==null)
     {
       cout << "***ERR*** MRTR::Manager::Print:\n"
            << "***ERR*** found NULL entry in map of interfaces\n"
@@ -127,7 +98,7 @@ bool MRTR::Manager::Print() const
     cout << *inter;
   }
   comm_.Barrier();
-  if (inputmap_)
+  if (inputmap_ != null)
   {
     if (comm_.MyPID() == 0)
     cout << "\n------------------ Input RowMap of original Problem ---------------\n";
@@ -135,7 +106,7 @@ bool MRTR::Manager::Print() const
     cout << *inputmap_;
   }
   comm_.Barrier();
-  if (constraintsmap_)
+  if (constraintsmap_ != null)
   {
     if (comm_.MyPID() == 0)
     cout << "\n------------------ RowMap of Constraints ---------------\n";
@@ -143,7 +114,7 @@ bool MRTR::Manager::Print() const
     cout << *constraintsmap_;
   }
   comm_.Barrier();
-  if (D_)
+  if (D_ != null)
   {
     if (comm_.MyPID() == 0)
     cout << "\n------------------ Coupling Matrix D ---------------\n";
@@ -151,7 +122,7 @@ bool MRTR::Manager::Print() const
     cout << *D_;
   }
   comm_.Barrier();
-  if (M_)
+  if (M_ != null)
   {
     if (comm_.MyPID() == 0)
     cout << "\n------------------ Coupling Matrix M ---------------\n";
@@ -180,8 +151,8 @@ bool MRTR::Manager::AddInterface(MRTR::Interface& interface)
     return false;
   }
   
-  MRTR::Interface* tmp = new MRTR::Interface(interface);
-  interface_.insert(pair<int,MRTR::Interface*>(tmp->Id(),tmp));
+  RefCountPtr<MRTR::Interface> tmp = rcp(new MRTR::Interface(interface));
+  interface_.insert(pair<int,RefCountPtr<MRTR::Interface> >(tmp->Id(),tmp));
   
   return true;
 }
@@ -191,9 +162,7 @@ bool MRTR::Manager::AddInterface(MRTR::Interface& interface)
  *----------------------------------------------------------------------*/
 bool MRTR::Manager::SetInputMap(Epetra_Map* map)
 {
-  if (inputmap_)
-    delete inputmap_;
-  inputmap_ = new Epetra_Map(*map);
+  inputmap_ = rcp(new Epetra_Map(*map));
   return true;
 }
 
@@ -205,14 +174,13 @@ bool MRTR::Manager::SetInputMatrix(Epetra_CrsMatrix* inputmatrix, bool DeepCopy)
 {
   if (DeepCopy)
   {
-    inputmatrix_ = new Epetra_CrsMatrix(*inputmatrix);
-    inputmatrixisdeep_ = true;
+    inputmatrix_ = rcp(new Epetra_CrsMatrix(*inputmatrix));
     return true;
   }
   else
   {
-    inputmatrix_ = inputmatrix;
-    inputmatrixisdeep_ = false;
+    inputmatrix_ = rcp(inputmatrix);
+    inputmatrix_.release();
     return true;
   }
   return false;
@@ -296,14 +264,14 @@ int MRTR::Manager::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,do
  |  Choose dofs for lagrange multipliers (private)           mwgee 07/05|
  | Note that this is collective for ALL procs                           |
  *----------------------------------------------------------------------*/
-Epetra_Map* MRTR::Manager::LagrangeMultiplierDofs()
+RefCountPtr<Epetra_Map> MRTR::Manager::LagrangeMultiplierDofs()
 {
-  if (!inputmap_)
+  if (inputmap_==null)
   {
     cout << "***ERR*** MRTR::Manager::LagrangeMultiplierDofs:\n"
          << "***ERR*** inputmap==NULL, Need to set an input-rowmap first\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    return false;
+    return null;
   }
   
   // find the largest row number in inputmap
@@ -319,7 +287,7 @@ Epetra_Map* MRTR::Manager::LagrangeMultiplierDofs()
   // that have a projection
   // start with minLMGID and return maxLMGID+1 on a specific interface
   // Note this is collective for ALL procs
-  map<int,MRTR::Interface*>::iterator curr;
+  map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
   {
     length -= minLMGID;
@@ -329,7 +297,7 @@ Epetra_Map* MRTR::Manager::LagrangeMultiplierDofs()
       cout << "***ERR*** MRTR::Manager::LagrangeMultiplierDofs:\n"
            << "***ERR*** interface " << curr->second->Id() << " returned false\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      return false;
+      return null;
     }
     minLMGID = maxLMGID;
     length += maxLMGID;
@@ -342,7 +310,7 @@ Epetra_Map* MRTR::Manager::LagrangeMultiplierDofs()
   // and add it to the global one
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
   {
-    MRTR::Interface* inter = curr->second;
+    RefCountPtr<MRTR::Interface> inter = curr->second;
     vector<int>* lmids = inter->MyLMIds();
     if (count+lmids->size() > mylmids.size())
       mylmids.resize(mylmids.size()+5*lmids->size());
@@ -357,7 +325,7 @@ Epetra_Map* MRTR::Manager::LagrangeMultiplierDofs()
   // create the rowmap for the constraints
   // Note that this map contains the global communicator from the MRTR::Manager
   // NOT any interface local one
-  Epetra_Map* map = new Epetra_Map(gsize,lsize,&(mylmids[0]),0,comm_);
+  RefCountPtr<Epetra_Map> map = rcp(new Epetra_Map(gsize,lsize,&(mylmids[0]),0,comm_));
 
   // tidy up
   mylmids.clear();
@@ -384,7 +352,7 @@ bool MRTR::Manager::Mortar_Integrate()
 
   //-------------------------------------------------------------------
   // check whether we have an input map
-  if (!inputmap_)
+  if (inputmap_==null)
   {
     cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
          << "***ERR*** inputmap==NULL, Need to set an input-rowmap first\n"
@@ -396,7 +364,7 @@ bool MRTR::Manager::Mortar_Integrate()
   // check whether we have a mortar side chosen on each interface or 
   // whether we have to chose it here
   {
-    map<int,MRTR::Interface*>::iterator curr;
+    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
     bool foundit = true;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
@@ -416,7 +384,7 @@ bool MRTR::Manager::Mortar_Integrate()
   // if not, check for functions flag and set them
   {
     bool foundit = true;
-    map<int,MRTR::Interface*>::iterator curr;
+    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       int nseg             = curr->second->GlobalNsegment();
@@ -436,7 +404,7 @@ bool MRTR::Manager::Mortar_Integrate()
   //-------------------------------------------------------------------
   // build projections for all interfaces
   {
-    map<int,MRTR::Interface*>::iterator curr;
+    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       bool ok  = curr->second->Project();
@@ -456,7 +424,7 @@ bool MRTR::Manager::Mortar_Integrate()
   // function will be reduced by one
 #if 0
   {
-    map<int,MRTR::Interface*>::iterator curr;
+    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       bool ok = curr->second->DetectEndSegmentsandReduceOrder();
@@ -474,9 +442,8 @@ bool MRTR::Manager::Mortar_Integrate()
   // choose dofs for lagrange multipliers and set them to slave nodes
   // build the rowmap for the coupling matrices M and D
   {
-    if (constraintsmap_) delete constraintsmap_;
     constraintsmap_ = LagrangeMultiplierDofs();
-    if (!constraintsmap_)
+    if (constraintsmap_==null)
     {
       cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
            << "***ERR*** LagrangeMultiplierDofs() returned NULL\n"
@@ -508,29 +475,26 @@ bool MRTR::Manager::Mortar_Integrate()
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         exit(EXIT_FAILURE);
     }
-    if (saddlemap_) delete saddlemap_;
-    saddlemap_ = new Epetra_Map(numglobalelements,nummyelements,
-                                &(myglobalelements[0]),0,comm_);
+    saddlemap_ = rcp(new Epetra_Map(numglobalelements,nummyelements,
+                                &(myglobalelements[0]),0,comm_));
     myglobalelements.clear();
   }
 
   //-------------------------------------------------------------------
   // build the Epetra_CrsMatrix D and M
   {
-    if (D_) delete D_;
-    if (M_) delete M_;
-    D_ = new Epetra_CrsMatrix(Copy,*saddlemap_,5,false);
-    M_ = new Epetra_CrsMatrix(Copy,*saddlemap_,40,false);
+    D_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,5,false));
+    M_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,40,false));
   }
 
   cout << *this;
   //-------------------------------------------------------------------
   // integrate all interfaces
   {
-    map<int,MRTR::Interface*>::iterator curr;
+    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {  
-      MRTR::Interface* inter = curr->second;
+      RefCountPtr<MRTR::Interface> inter = curr->second;
 #if 0
       cout << "Integrating interface " << inter->Id() << endl;
 #endif
@@ -560,7 +524,7 @@ bool MRTR::Manager::Mortar_Integrate()
 Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
 {
   // check whether all interfaces are complete and integrated
-  map<int,MRTR::Interface*>::iterator curr;
+  map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
   {
     if (curr->second->IsComplete() == false)
@@ -580,7 +544,7 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
   }
   
   // check whether we have an inputmap
-  if (!inputmap_)
+  if (inputmap_==null)
   {
       cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
            << "***ERR*** No inputrowmap set\n"
@@ -589,7 +553,7 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
   }
   
   // check whether we have a constraintsmap_
-  if (!constraintsmap_)
+  if (constraintsmap_==null)
   {
       cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
            << "***ERR*** onstraintsmap is NULL\n"
@@ -598,7 +562,7 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
   }
   
   // check for saddlemap_
-  if (!saddlemap_)
+  if (saddlemap_==null)
   {
       cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
            << "***ERR*** saddlemap_==NULL\n"
@@ -607,7 +571,7 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
   }
 
   // check for inputmatrix
-  if (!inputmatrix_)
+  if (inputmatrix_==null)
   {
       cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
            << "***ERR*** No inputmatrix set\n"
@@ -616,7 +580,7 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
   }
 
   // check whether we have M and D matrices
-  if (!D_ || !M_)
+  if (D_==null || M_==null)
   {
       cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
            << "***ERR*** Matrix M or D is NULL\n"
@@ -625,8 +589,7 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
   }
   
   // create a matrix for the saddle problem and fill it
-  if (saddlematrix_) delete saddlematrix_; 
-  saddlematrix_ = new Epetra_CrsMatrix(Copy,*saddlemap_,90);
+  saddlematrix_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,90));
 
   // add values from inputmatrix
   MatrixMatrixAdd(*inputmatrix_,false,1.0,*saddlematrix_,0.0);
@@ -641,7 +604,7 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
 
   saddlematrix_->FillComplete();
 
-  return saddlematrix_;
+  return saddlematrix_.get();
 }
 
 /*----------------------------------------------------------------------*
@@ -651,8 +614,8 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
 bool MRTR::Manager::ChooseMortarSide()
 {
   // find all 2D interfaces
-  vector<MRTR::Interface*> inter(Ninterfaces());
-  map<int,MRTR::Interface*>::iterator curr;
+  vector<RefCountPtr<MRTR::Interface> > inter(Ninterfaces());
+  map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
   curr=interface_.begin();
   int count = 0;
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
@@ -681,7 +644,7 @@ bool MRTR::Manager::ChooseMortarSide()
  |                                                                 09/05|
  |  choose the mortar side for 1D interfaces                            |
  *----------------------------------------------------------------------*/
-bool MRTR::Manager::ChooseMortarSide_2D(vector<MRTR::Interface*> inter)
+bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > inter)
 {
   // number of interfaces
   int ninter = inter.size();

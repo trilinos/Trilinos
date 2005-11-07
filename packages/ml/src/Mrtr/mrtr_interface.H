@@ -107,7 +107,7 @@ public:
   inline const Epetra_Comm& gComm() const { return gcomm_; }
   
   // get intra-communicator of this interface
-  inline const Epetra_Comm* lComm() const { return lcomm_; }
+  inline const Epetra_Comm* lComm() const { return lcomm_.get(); }
   
   // get Mortar side, returns -1 if mortar side was not set
   //                  returns -2 of mortar side is chosen by MRTR::Manager
@@ -181,14 +181,14 @@ public:
   void SetProjectionType(MRTR::Interface::ProjectionType typ) { ptype_ = typ; } 
 
   // get a view of a MRTR::Node (of either side) specifying node id
-  MRTR::Node* GetNodeView(int nid);
+  RefCountPtr<MRTR::Node> GetNodeView(int nid);
 
   // get a view of ALL nodes on this interface (Complete() has to be called)
   // method allocates a vector, calling method is in charge of deleting it
   MRTR::Node** GetNodeView();
 
   // get a view of a MRTR::Segment (of either side) specifying seg id
-  MRTR::Segment* GetSegmentView(int sid);
+  RefCountPtr<MRTR::Segment> GetSegmentView(int sid);
   
   // get a view of ALL segments on this interface (Complete() has to be called)
   // method allocates a vector, calling methos is in charge of deleteing it
@@ -227,7 +227,7 @@ private:
   // get a view of a MRTR::Node (of either side) specifying node id
   // returns NULL if node id does not exist locally
   // returns NULL after call to Complete(), because all local nodes are destroyed
-  MRTR::Node* GetNodeViewLocal(int nid);
+  RefCountPtr<MRTR::Node> GetNodeViewLocal(int nid);
 
   // allreduce all segments of a side and store this redundant segs in rseg_[side];
   bool RedundantSegments(int side);
@@ -268,26 +268,26 @@ private:
 
 private:
   
-  int                     Id_;           // the interface Id                      
-  int                     outlevel_;     // output level (0-10)
-  bool                    oneD_;         // flag indicating 1D interface (opposed to 2D)
-  bool                    isComplete_;   // flag indicating whether InterfaceComplete() has been called
-  bool                    isIntegrated_; // flag indicating status of integration
-  Epetra_Comm&            gcomm_;        // the global communicator
-  Epetra_Comm*            lcomm_;        // the local communicator
-  int                     mortarside_;   // indicate which side (0 or 1) is mortar (master) side
-  ProjectionType          ptype_;        // type of projection used
+  int                                  Id_;           // the interface Id                      
+  int                                  outlevel_;     // output level (0-10)
+  bool                                 oneD_;         // flag indicating 1D interface (opposed to 2D)
+  bool                                 isComplete_;   // flag indicating whether InterfaceComplete() has been called
+  bool                                 isIntegrated_; // flag indicating status of integration
+  Epetra_Comm&                         gcomm_;        // the global communicator
+  RefCountPtr<Epetra_Comm>             lcomm_;        // the local communicator
+  int                                  mortarside_;   // indicate which side (0 or 1) is mortar (master) side
+  ProjectionType                       ptype_;        // type of projection used
   
-  map<int,MRTR::Segment*> seg_[2];       // local segments of interface (both sides)
-  map<int,MRTR::Segment*> rseg_[2];      // global segments of interface (both sides)
-  map<int,int>            segPID_;       // maps all global seg ids to process holding segment
+  map<int,RefCountPtr<MRTR::Segment> > seg_[2];       // local segments of interface (both sides)
+  map<int,RefCountPtr<MRTR::Segment> > rseg_[2];      // global segments of interface (both sides)
+  map<int,int>                         segPID_;       // maps all global seg ids to process holding segment
   
-  map<int,MRTR::Node*>    node_[2];      // local nodes of interface (both sides)
-  map<int,MRTR::Node*>    rnode_[2];     // global nodes of interface (both sides)
-  map<int,int>            nodePID_;      // maps all global node ids to process holding the node
+  map<int,RefCountPtr<MRTR::Node> >    node_[2];      // local nodes of interface (both sides)
+  map<int,RefCountPtr<MRTR::Node> >    rnode_[2];     // global nodes of interface (both sides)
+  map<int,int>                         nodePID_;      // maps all global node ids to process holding the node
   
-  MRTR::Function::FunctionType primal_;  // the type of functions to be set as trace space function
-  MRTR::Function::FunctionType dual_;    // the type of functions to be set as LM space function
+  MRTR::Function::FunctionType         primal_;       // the type of functions to be set as trace space function
+  MRTR::Function::FunctionType         dual_;         // the type of functions to be set as LM space function
   
 };
 

@@ -99,7 +99,7 @@ int* MRTR::Segment_Linear1D::Pack(int* size)
     pack[count++] = nodeId_[i];
   pack[count++] = Nfunctions();
   
-  map<int,MRTR::Function*>::iterator curr;
+  map<int,RefCountPtr<MRTR::Function> >::iterator curr;
   for (curr = functions_.begin(); curr != functions_.end(); ++curr)
   {
     pack[count++] = curr->first;
@@ -138,7 +138,8 @@ bool MRTR::Segment_Linear1D::UnPack(int* pack)
     int id   = pack[count++];
     int type = pack[count++];
     MRTR::Function* func = MRTR::AllocateFunction((MRTR::Function::FunctionType)type);
-    functions_.insert(pair<int,MRTR::Function*>(id,func));
+    RefCountPtr<MRTR::Function> rcptrfunc = rcp(func);
+    functions_.insert(pair<int,RefCountPtr<MRTR::Function> >(id,rcptrfunc));
   }
   
   if (count != size)

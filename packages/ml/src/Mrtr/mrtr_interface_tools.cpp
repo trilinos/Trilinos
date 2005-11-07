@@ -51,7 +51,7 @@ oneD_(oneD),
 isComplete_(false),
 isIntegrated_(false),
 gcomm_(comm),
-lcomm_(NULL),
+lcomm_(null),
 mortarside_(-1),
 ptype_(MRTR::Interface::proj_none),
 primal_(MRTR::Function::func_none),
@@ -79,30 +79,30 @@ dual_(old.dual_)
   for (int i=0; i<2; ++i)
   {
     // the local segment map
-    map<int,MRTR::Segment*>::const_iterator seg_curr;
+    map<int,RefCountPtr<MRTR::Segment> >::const_iterator seg_curr;
     for (seg_curr=old.seg_[i].begin(); seg_curr != old.seg_[i].end(); ++seg_curr)
     {
-      MRTR::Segment* tmpseg = seg_curr->second->Clone();
-      seg_[i].insert(pair<int,MRTR::Segment*>(tmpseg->Id(),tmpseg));
+      RefCountPtr<MRTR::Segment>  tmpseg = rcp(seg_curr->second->Clone());
+      seg_[i].insert(pair<int,RefCountPtr<MRTR::Segment> >(tmpseg->Id(),tmpseg));
     }
     // the global segment map
     for (seg_curr=old.rseg_[i].begin(); seg_curr != old.rseg_[i].end(); ++seg_curr)
     {
-      MRTR::Segment* tmpseg = seg_curr->second->Clone();
-      rseg_[i].insert(pair<int,MRTR::Segment*>(tmpseg->Id(),tmpseg));
+      RefCountPtr<MRTR::Segment> tmpseg = rcp(seg_curr->second->Clone());
+      rseg_[i].insert(pair<int,RefCountPtr<MRTR::Segment> >(tmpseg->Id(),tmpseg));
     }
     // the local node map
-    map<int,MRTR::Node*>::const_iterator node_curr;
+    map<int,RefCountPtr<MRTR::Node> >::const_iterator node_curr;
     for (node_curr=old.node_[i].begin(); node_curr != old.node_[i].end(); ++node_curr)
     {
-      MRTR::Node* tmpnode = new MRTR::Node(*(node_curr->second));
-      node_[i].insert(pair<int,MRTR::Node*>(tmpnode->Id(),tmpnode));
+      RefCountPtr<MRTR::Node> tmpnode = rcp( new MRTR::Node(*(node_curr->second)));
+      node_[i].insert(pair<int,RefCountPtr<MRTR::Node> >(tmpnode->Id(),tmpnode));
     }
     // the global node map
     for (node_curr=old.rnode_[i].begin(); node_curr != old.rnode_[i].end(); ++node_curr)
     {
-      MRTR::Node* tmpnode = new MRTR::Node(*(node_curr->second));
-      rnode_[i].insert(pair<int,MRTR::Node*>(tmpnode->Id(),tmpnode));
+      RefCountPtr<MRTR::Node> tmpnode = rcp(new MRTR::Node(*(node_curr->second)));
+      rnode_[i].insert(pair<int,RefCountPtr<MRTR::Node> >(tmpnode->Id(),tmpnode));
     }
   }
   // copy the PID maps
@@ -110,10 +110,7 @@ dual_(old.dual_)
   nodePID_ = old.nodePID_;
   
   // copy the local communicator of this interface
-  if (old.lcomm_)
-    lcomm_ = old.lcomm_->Clone();
-  else
-    lcomm_ = NULL;
+  lcomm_ = old.lcomm_;
     
   // rebuild the node-segment topology on this new interface
   BuildNodeSegmentTopology(); 
@@ -127,22 +124,20 @@ MRTR::Interface::~Interface()
   // delete segments
   for (int i=0; i<2; ++i)
   {
-    MRTR::DestroyMap(seg_[i]);
-    MRTR::DestroyMap(rseg_[i]);
+    seg_[i].clear();
+    rseg_[i].clear();
   } 
   
   // delete nodes
   for (int i=0; i<2; ++i)
   {
-    MRTR::DestroyMap(node_[i]);
-    MRTR::DestroyMap(rnode_[i]);
+    node_[i].clear();
+    rnode_[i].clear();
   } 
   
   // delete PID maps
   segPID_.clear();
   nodePID_.clear();
-  
-  if (lcomm_) delete lcomm_; lcomm_ = NULL;
 }
 
 /*----------------------------------------------------------------------*
@@ -152,7 +147,7 @@ bool MRTR::Interface::PrintSegments() const
 { 
   if (!lComm()) return true;
   
-  map<int,MRTR::Segment*>::const_iterator curr;
+  map<int,RefCountPtr<MRTR::Segment> >::const_iterator curr;
   for (int j=0; j<2; ++j) 
   {
     for (int k=0; k<lComm()->NumProc(); ++k) 
@@ -163,10 +158,10 @@ bool MRTR::Interface::PrintSegments() const
              << ":\t Segments Side " << j << endl;
         for (curr=rseg_[j].begin(); curr!=rseg_[j].end(); ++curr)
         {
-          MRTR::Segment* seg = curr->second;
+          RefCountPtr<MRTR::Segment> seg = curr->second;
           if (SegPID(seg->Id()) == k)
           {
-            if (!seg)
+            if (seg == null)
             {
               cout << "***ERR*** MRTR::Interface::PrintSegments:\n"
                    << "***ERR*** found NULL entry in map of segments\n"
@@ -191,7 +186,7 @@ bool MRTR::Interface::PrintNodes() const
 { 
   if (!lComm()) return true;
   
-  map<int,MRTR::Node*>::const_iterator curr;
+  map<int,RefCountPtr<MRTR::Node> >::const_iterator curr;
   
   for (int j=0; j<2; ++j)
   {
@@ -203,10 +198,10 @@ bool MRTR::Interface::PrintNodes() const
              << ":\t Nodes Side " << j << endl;
         for (curr=rnode_[j].begin(); curr!=rnode_[j].end(); ++curr)
         {
-          MRTR::Node* node = curr->second;
+          RefCountPtr<MRTR::Node> node = curr->second;
           if (NodePID(node->Id()) == k)
           {
-            if (!node)
+            if (node == null)
             {
               cout << "***ERR*** MRTR::Interface::PrintNodes:\n"
                    << "***ERR*** found NULL entry in map of nodes\n"
@@ -322,26 +317,26 @@ bool MRTR::Interface::AddSegment(MRTR::Segment& seg, int side)
     ids2[2] = seg.NodeIds()[3];
 
     // create 2 triangles, give second one the negative id
-    MRTR::Segment* tmp1 = new MRTR::Segment_BiLinearTri(seg.Id(),3,ids1);
-    MRTR::Segment* tmp2 = new MRTR::Segment_BiLinearTri(-seg.Id(),3,ids2);
+    RefCountPtr<MRTR::Segment> tmp1 = rcp( new MRTR::Segment_BiLinearTri(seg.Id(),3,ids1));
+    RefCountPtr<MRTR::Segment> tmp2 = rcp( new MRTR::Segment_BiLinearTri(-seg.Id(),3,ids2));
     
     // add 2 triangles
-    map<int,MRTR::Segment*>* s = 0;
+    map<int,RefCountPtr<MRTR::Segment> >* s = 0;
     if (side==0) s = &(seg_[0]);
     else         s = &(seg_[1]);
-    s->insert(pair<int,MRTR::Segment*>(tmp1->Id(),tmp1));    
-    s->insert(pair<int,MRTR::Segment*>(tmp2->Id(),tmp2));    
+    s->insert(pair<int,RefCountPtr<MRTR::Segment> >(tmp1->Id(),tmp1));    
+    s->insert(pair<int,RefCountPtr<MRTR::Segment> >(tmp2->Id(),tmp2));    
   }
   else // all other types of segments
   {
     // copy the segment
-    MRTR::Segment* tmp = seg.Clone();
+    RefCountPtr<MRTR::Segment> tmp = rcp( seg.Clone());
   
     // add segment
-    map<int,MRTR::Segment*>* s = 0;
+    map<int,RefCountPtr<MRTR::Segment> >* s = 0;
     if (side==0) s = &(seg_[0]);
     else         s = &(seg_[1]);
-    s->insert(pair<int,MRTR::Segment*>(tmp->Id(),tmp));
+    s->insert(pair<int,RefCountPtr<MRTR::Segment> >(tmp->Id(),tmp));
   }
 
   return true;
@@ -373,13 +368,13 @@ bool MRTR::Interface::AddNode(MRTR::Node& node, int side)
   }
   
   // copy the node
-  MRTR::Node* tmp = new MRTR::Node(node);
+  RefCountPtr<MRTR::Node>  tmp = rcp( new MRTR::Node(node));
   
   // add node
-  map<int,MRTR::Node*>* n = 0;
+  map<int,RefCountPtr<MRTR::Node> >* n = 0;
   if (side==0) n = &(node_[0]);
   else         n = &(node_[1]);
-  n->insert(pair<int,MRTR::Node*>(tmp->Id(),tmp));
+  n->insert(pair<int,RefCountPtr<MRTR::Node> >(tmp->Id(),tmp));
 
   return true;
 }
@@ -417,7 +412,7 @@ bool MRTR::Interface::SetFunctionAllSegmentsSide(int side,
   }
   
   // set the function to my own segments
-  map<int,MRTR::Segment*>::iterator scurr;
+  map<int,RefCountPtr<MRTR::Segment> >::iterator scurr;
   for (scurr=seg_[side].begin(); scurr!=seg_[side].end(); ++scurr)
     scurr->second->SetFunction(id,func);
 
@@ -649,21 +644,21 @@ int MRTR::Interface::OtherSide(int side)
  |  get view of a local node with node id nid                           |
  |  if sid is not a local node will return NULL                         |
  *----------------------------------------------------------------------*/
-MRTR::Node* MRTR::Interface::GetNodeViewLocal(int nid)
+RefCountPtr<MRTR::Node> MRTR::Interface::GetNodeViewLocal(int nid)
 { 
-  map<int,MRTR::Node*>::iterator curr = node_[0].find(nid);
+  map<int,RefCountPtr<MRTR::Node> >::iterator curr = node_[0].find(nid);
   if (curr != node_[0].end())
     return(curr->second);
   curr = node_[1].find(nid);
   if (curr != node_[1].end())
     return(curr->second);
-  return (NULL);
+  return (null);
 }
 
 /*----------------------------------------------------------------------*
  |  get view of a node with node id nid                                 |
  *----------------------------------------------------------------------*/
-MRTR::Node* MRTR::Interface::GetNodeView(int nid)
+RefCountPtr<MRTR::Node> MRTR::Interface::GetNodeView(int nid)
 { 
   if (!IsComplete())
   {
@@ -672,15 +667,15 @@ MRTR::Node* MRTR::Interface::GetNodeView(int nid)
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  if (!lComm()) return NULL;
+  if (!lComm()) return null;
   
-  map<int,MRTR::Node*>::iterator curr = rnode_[0].find(nid);
+  map<int,RefCountPtr<MRTR::Node> >::iterator curr = rnode_[0].find(nid);
   if (curr != rnode_[0].end())
     return(curr->second);
   curr = rnode_[1].find(nid);
   if (curr != rnode_[1].end())
     return(curr->second);
-  return (NULL);
+  return (null);
 }
 
 /*----------------------------------------------------------------------*
@@ -702,11 +697,11 @@ MRTR::Node** MRTR::Interface::GetNodeView()
   
   MRTR::Node** view = new MRTR::Node*[GlobalNnode()];
   int count=0;
-  map<int,MRTR::Node*>::iterator curr;
+  map<int,RefCountPtr<MRTR::Node> >::iterator curr;
   for (int i=0; i<2; ++i)
     for (curr=rnode_[i].begin(); curr != rnode_[i].end(); ++curr)
     {
-      view[count] = curr->second;
+      view[count] = curr->second.get();
       ++count;
     }
   return view;
@@ -715,7 +710,7 @@ MRTR::Node** MRTR::Interface::GetNodeView()
 /*----------------------------------------------------------------------*
  |  get view of a local segment with id sid                             |
  *----------------------------------------------------------------------*/
-MRTR::Segment* MRTR::Interface::GetSegmentView(int sid)
+RefCountPtr<MRTR::Segment>  MRTR::Interface::GetSegmentView(int sid)
 { 
   if (!IsComplete())
   {
@@ -724,15 +719,15 @@ MRTR::Segment* MRTR::Interface::GetSegmentView(int sid)
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  if (!lComm()) return NULL;
+  if (!lComm()) return null;
   
-  map<int,MRTR::Segment*>::iterator curr = rseg_[0].find(sid);
+  map<int,RefCountPtr<MRTR::Segment> >::iterator curr = rseg_[0].find(sid);
   if (curr != rseg_[0].end())
     return(curr->second);
   curr = rseg_[1].find(sid);
   if (curr != rseg_[1].end())
     return(curr->second);
-  return (NULL);
+  return (null);
 }
 
 /*----------------------------------------------------------------------*
@@ -752,12 +747,12 @@ MRTR::Segment** MRTR::Interface::GetSegmentView()
   if (!lComm()) return NULL;
   
   MRTR::Segment** segs = new MRTR::Segment*[GlobalNsegment()];
-  map<int,MRTR::Segment*>::iterator curr;
+  map<int,RefCountPtr<MRTR::Segment> >::iterator curr;
   int count=0;
   for (int i=0; i<2; ++i)
     for (curr=rseg_[i].begin(); curr != rseg_[i].end(); ++curr)
     {
-      segs[count] = curr->second;
+      segs[count] = curr->second.get();
       ++count;
     }
   return segs;
@@ -784,7 +779,7 @@ int MRTR::Interface::GetSide(MRTR::Segment* seg)
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  map<int,MRTR::Segment*>::iterator curr = rseg_[0].find(seg->Id());
+  map<int,RefCountPtr<MRTR::Segment> >::iterator curr = rseg_[0].find(seg->Id());
   if (curr != rseg_[0].end())
     return(0);
   curr = rseg_[1].find(seg->Id());
@@ -813,7 +808,7 @@ int MRTR::Interface::GetSide(MRTR::Node* node)
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  map<int,MRTR::Node*>::iterator curr = rnode_[0].find(node->Id());
+  map<int,RefCountPtr<MRTR::Node> >::iterator curr = rnode_[0].find(node->Id());
   if (curr != rnode_[0].end())
     return(0);
   curr = rnode_[1].find(node->Id());
@@ -842,7 +837,7 @@ int MRTR::Interface::GetSide(int nodeid)
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  map<int,MRTR::Node*>::iterator curr = rnode_[0].find(nodeid);
+  map<int,RefCountPtr<MRTR::Node> >::iterator curr = rnode_[0].find(nodeid);
   if (curr != rnode_[0].end())
     return(0);
   curr = rnode_[1].find(nodeid);
@@ -880,17 +875,19 @@ bool MRTR::Interface::RedundantSegments(int side)
   if (!lComm())
     return true;
   
-  map<int,MRTR::Segment*>* rmap = &(rseg_[side]);
+  map<int,RefCountPtr<MRTR::Segment> >* rmap = &(rseg_[side]);
   // check whether redundant map has been build before
   if (rmap->size() != 0)
     return true;
 
   // add my own segments to the redundant map
-  map<int,MRTR::Segment*>::const_iterator curr;
+  map<int,RefCountPtr<MRTR::Segment> >::const_iterator curr;
   for (curr=seg_[side].begin(); curr != seg_[side].end(); ++curr)
   {
-    MRTR::Segment* tmp = curr->second->Clone();
-    rmap->insert(pair<int,MRTR::Segment*>(curr->first,tmp));
+    //MRTR::Segment* tmp = curr->second->Clone();
+    // FIXME: is this ok? it's not a deep copy anymore.....
+    RefCountPtr<MRTR::Segment> tmp = curr->second;
+    rmap->insert(pair<int,RefCountPtr<MRTR::Segment> >(curr->first,tmp));
   }
   
   // loop over all procs and broadcast proc's segments
@@ -902,13 +899,13 @@ bool MRTR::Interface::RedundantSegments(int side)
     lcomm_->Broadcast(&nseg,1,proc);
 
     int  bsize = nseg*12;
-    int* bcast = NULL; 
+    vector<int> bcast; 
     
     // pack proc's segments
     if (proc==lcomm_->MyPID())
     {
        int  count = 0;
-       bcast = new int[bsize];
+       bcast.resize(bsize);
        for (curr=seg_[side].begin(); curr != seg_[side].end(); ++curr)
        {
          int  numint;
@@ -916,11 +913,7 @@ bool MRTR::Interface::RedundantSegments(int side)
          if (count+numint>=bsize)
          {
            bsize += 5* numint;
-           int* tmp = new int[bsize];
-           for (int j=0; j<count; ++j)
-             tmp[j] = bcast[j];
-           delete [] bcast;
-           bcast = tmp;
+           bcast.resize(bsize);
          }
          for (int i=0; i<numint; ++i)
            bcast[count++] = spack[i];
@@ -932,8 +925,8 @@ bool MRTR::Interface::RedundantSegments(int side)
     // broadcast proc's segments
     lcomm_->Broadcast(&bsize,1,proc);
     if (lcomm_->MyPID() != proc)
-      bcast = new int[bsize];
-    lcomm_->Broadcast(bcast,bsize,proc);
+      bcast.resize(bsize);
+    lcomm_->Broadcast(&bcast[0],bsize,proc);
     
     // Unpack proc's segments
     if (lcomm_->MyPID() != proc)
@@ -943,13 +936,13 @@ bool MRTR::Interface::RedundantSegments(int side)
       {
         // the type of segment is stored second in the pack
 	MRTR::Segment* tmp = AllocateSegment(bcast[count+1]);
-	//MRTR::Segment* tmp = new MRTR::Segment();
         tmp->UnPack(&(bcast[count]));
+        RefCountPtr<MRTR::Segment> tmp2 = rcp(tmp);
         count += bcast[count];
-        rmap->insert(pair<int,MRTR::Segment*>(tmp->Id(),tmp));
+        rmap->insert(pair<int,RefCountPtr<MRTR::Segment> >(tmp2->Id(),tmp2));
       }
     }
-    delete [] bcast; bcast = NULL;
+    bcast.clear();
   } // for (int proc=0; proc<lcomm_->NumProc(); ++proc)
   return true;
 }
@@ -984,17 +977,19 @@ bool MRTR::Interface::RedundantNodes(int side)
   if (!lComm())
     return true;
 
-  map<int,MRTR::Node*>* rmap = &(rnode_[side]);
+  map<int,RefCountPtr<MRTR::Node> >* rmap = &(rnode_[side]);
   // check whether redundant map has been build before
   if (rmap->size() != 0)
     return true;
 
   // add my own nodes to the redundant map
-  map<int,MRTR::Node*>::const_iterator curr;
+  map<int,RefCountPtr<MRTR::Node> >::const_iterator curr;
   for (curr=node_[side].begin(); curr != node_[side].end(); ++curr)
   {
-    MRTR::Node* tmp = new MRTR::Node(*(curr->second));
-    rmap->insert(pair<int,MRTR::Node*>(curr->first,tmp));
+    //MRTR::Node* tmp = new MRTR::Node(*(curr->second));
+    //FIXME: this is not a deep copy anymore. Is this ok?
+    RefCountPtr<MRTR::Node> tmp = curr->second;
+    rmap->insert(pair<int,RefCountPtr<MRTR::Node> >(curr->first,tmp));
   }
   
   // loop all procs and broadcast proc's nodes
@@ -1044,10 +1039,10 @@ bool MRTR::Interface::RedundantNodes(int side)
       int count=0;
       for (int i=0; i<nnode; ++i)
       {
-        MRTR::Node* tmp = new MRTR::Node();
+        RefCountPtr<MRTR::Node> tmp = rcp(new MRTR::Node());
         tmp->UnPack(&(bcast[count]));
         count += (int)bcast[count];
-        rmap->insert(pair<int,MRTR::Node*>(tmp->Id(),tmp));
+        rmap->insert(pair<int,RefCountPtr<MRTR::Node> >(tmp->Id(),tmp));
       }
     }    
     delete [] bcast; bcast = NULL;
@@ -1072,7 +1067,7 @@ bool MRTR::Interface::BuildNodeSegmentTopology()
   if (!lComm()) return true;
   
   // loop nodes and find their adjacent segments
-  map<int,MRTR::Node*>::iterator ncurr;
+  map<int,RefCountPtr<MRTR::Node> >::iterator ncurr;
   for (int side=0; side<2; ++side)
   {
     for (ncurr=rnode_[side].begin(); ncurr != rnode_[side].end(); ++ncurr)
@@ -1080,7 +1075,7 @@ bool MRTR::Interface::BuildNodeSegmentTopology()
   }
   
   // loop segments and find their adjacent nodes
-  map<int,MRTR::Segment*>::iterator scurr;
+  map<int,RefCountPtr<MRTR::Segment> >::iterator scurr;
   for (int side=0; side<2; ++side)
   {
     for (scurr=rseg_[side].begin(); scurr != rseg_[side].end(); ++scurr)
@@ -1114,14 +1109,14 @@ int MRTR::Interface::SetLMDofs(int minLMGID)
     int sside = OtherSide(mside);
     
     // loop nodes on slave side and set LMdofs for those who have a projection
-    map<int,MRTR::Node*>::iterator curr;
+    map<int,RefCountPtr<MRTR::Node> >::iterator curr;
     for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
     {
-      MRTR::Node* node = curr->second;
+      RefCountPtr<MRTR::Node> node = curr->second;
       
       // check whether this node has a projection
-      MRTR::ProjectedNode* pnode = node->GetProjectedNode();
-      if (!pnode) continue;
+      RefCountPtr<MRTR::ProjectedNode> pnode = node->GetProjectedNode();
+      if (pnode==null) continue;
       
       
       // get number of dofs on this node to choose the same number of dofs
@@ -1180,10 +1175,10 @@ vector<int>* MRTR::Interface::MyLMIds()
   lmids->resize(rnode_[sside].size()*10);
   int count=0;
     
-  map<int,MRTR::Node*>::iterator curr;
+  map<int,RefCountPtr<MRTR::Node> >::iterator curr;
   for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
   {
-    MRTR::Node* node = curr->second;
+    RefCountPtr<MRTR::Node> node = curr->second;
     if (NodePID(node->Id()) != lComm()->MyPID()) 
       continue;
     int  nlmdof = node->Nlmdof();
@@ -1230,14 +1225,14 @@ bool MRTR::Interface::DetectEndSegmentsandReduceOrder()
     */
     
     // loop all nodes on the slave side and find those with only one segment
-    map<int,MRTR::Node*>::iterator curr;
+    map<int,RefCountPtr<MRTR::Node> >::iterator curr;
     for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
     {
-      MRTR::Node* node = curr->second;
+      RefCountPtr<MRTR::Node> node = curr->second;
       bool foundit = false;
       if (node->Nseg()<2)
         foundit = true;
-      if (node->GetProjectedNode())
+      if (node->GetProjectedNode() != null)
         if (!(node->GetProjectedNode()->Segment()))
           foundit = true;
       if (!foundit)
@@ -1259,7 +1254,6 @@ bool MRTR::Interface::DetectEndSegmentsandReduceOrder()
           case MRTR::Function::func_DualLinear1D:
             tmp1 = new Function_Constant1D();
             segs[i]->SetFunction(1,tmp1);
-            delete tmp1; tmp1 = NULL;
           break;
           case MRTR::Function::func_none:
             cout << "***ERR*** MRTR::Interface::DetectEndSegmentsandReduceOrder:\n"
@@ -1335,7 +1329,6 @@ bool MRTR::Interface::SetFunctionsFromFunctionTypes()
       func1 = new MRTR::Function_Linear1D();
       SetFunctionAllSegmentsSide(0,0,func1);
       SetFunctionAllSegmentsSide(1,0,func1);
-      delete func1; func1 = NULL;
     break;
     case MRTR::Function::func_DualLinear1D:
       cout << "***WRN*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
@@ -1380,17 +1373,14 @@ bool MRTR::Interface::SetFunctionsFromFunctionTypes()
     case MRTR::Function::func_Linear1D:
       func1 = new MRTR::Function_Linear1D();
       SetFunctionAllSegmentsSide(side,1,func1);
-      delete func1; func1 = NULL;
     break;
     case MRTR::Function::func_DualLinear1D:
       func3 = new MRTR::Function_DualLinear1D();
       SetFunctionAllSegmentsSide(side,1,func3);
-      delete func3; func3 = NULL;
     break;
     case MRTR::Function::func_Constant1D:
       func2 = new MRTR::Function_Constant1D();
       SetFunctionAllSegmentsSide(side,1,func2);
-      delete func2; func2 = NULL;
     break;
     case MRTR::Function::func_none:
       cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"

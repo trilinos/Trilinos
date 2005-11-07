@@ -68,11 +68,11 @@ bool MRTR::Interface::Integrate_3D(Epetra_CrsMatrix& M,
 
   
   // loop over all segments of slave side
-  map<int,MRTR::Segment*>::iterator scurr;
+  map<int,RefCountPtr<MRTR::Segment> >::iterator scurr;
   for (scurr=rseg_[sside].begin(); scurr!=rseg_[sside].end(); ++scurr)
   {
     // the segment to be integrated
-    MRTR::Segment* actsseg = scurr->second;
+    RefCountPtr<MRTR::Segment> actsseg = scurr->second;
 
 #if 1
     cout << "\nActive sseg id " << actsseg->Id() << "\n\n";
@@ -92,10 +92,10 @@ bool MRTR::Interface::Integrate_3D(Epetra_CrsMatrix& M,
     if (!foundone) continue;
     
     // loop over all segments on the master side
-    map<int,MRTR::Segment*>::iterator mcurr;
+    map<int,RefCountPtr<MRTR::Segment> >::iterator mcurr;
     for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)    
     {
-      MRTR::Segment* actmseg = mcurr->second;
+      RefCountPtr<MRTR::Segment> actmseg = mcurr->second;
       
 #if 1
     cout << "Active mseg id " << actmseg->Id() << endl;
@@ -143,7 +143,8 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
   // # segments the overlap polygon was discretized with
   int nseg = overlap.Nseg();
   // view of segments
-  MRTR::Segment** segs = overlap.SegmentView();
+  vector<RefCountPtr<MRTR::Segment> > segs;
+  overlap.SegmentView(segs);
   
   // integrator object
   MRTR::Integrator integrator(3,IsOneDimensional());
@@ -151,7 +152,7 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
   // loop segments and integrate them
   for (int s=0; s<nseg; ++s)
   {
-    MRTR::Segment* actseg = segs[s];
+    RefCountPtr<MRTR::Segment> actseg = segs[s];
     // get the points
     int          np      = actseg->Nnode();
     const int*   nodeid  = actseg->NodeIds();
@@ -193,9 +194,7 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
     points.clear();
   } // for (int s=0; s<nseg; ++s)
 
-
-
-  if (segs) delete [] segs;
+  segs.clear();
   
   return false;
 }

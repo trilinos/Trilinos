@@ -70,16 +70,16 @@ public:
   inline const double* Xi() { return &xi_[0]; }
 
   // return view of global coords
-  inline const double* X() { if (node_) return node_->X(); else return NULL; }
+  inline const double* X() { if (node_ != null) return node_->X(); else return NULL; }
 
   // return view of node
-  inline MRTR::Node* Node() { return node_; }
+  inline RefCountPtr<MRTR::Node> Node() { return node_; }
   
   // set Xi coords
   bool SetXi(const double* xi) { xi_[0] = xi[0]; xi_[1] = xi[1]; return true; }
 
   // set x coords
-  bool SetNode(MRTR::Node* node) { node_ = node; return true; }
+  bool SetNode(MRTR::Node* node) { node_ = rcp(node); return true; }
 
   // store function values in the vals_ vector
   void StoreFunctionValues(int place, double* val, int valdim);
@@ -96,12 +96,12 @@ private:
 
 private:
 
-  int            id_;         // id of this point
-  double         xi_[2];      // local coords in some slave elements coord system
-  MRTR::Node*    node_;       // a node at this point (contains real world coords)
-  vector<double> vals_[3];    // [0] values of shape function 0 from sseg
-                              // [1] values of shape function 1 from sseg
-                              // [2] values of shape function 0 from mseg
+  int                      id_;      // id of this point
+  double                   xi_[2];   // local coords in some slave elements coord system
+  RefCountPtr<MRTR::Node>  node_;    // a node at this point (contains real world coords)
+  vector<double>           vals_[3]; // [0] values of shape function 0 from sseg
+                                     // [1] values of shape function 1 from sseg
+                                     // [2] values of shape function 0 from mseg
 }; // class Point
 
 

@@ -42,8 +42,10 @@
 #include <vector>
 #include <map>
 
+#include "Teuchos_RefCountPtr.hpp"
 
 using namespace std;
+using namespace Teuchos;
 
 // ----------   User Defined Includes   ----------
 
@@ -126,9 +128,9 @@ public:
   bool SetProjectedNode(MRTR::ProjectedNode* pnode);
   
   // get view of projected nodes (if there is any, otherwise NULL)
-  MRTR::ProjectedNode** GetProjectedNode(int& length);
+  RefCountPtr<MRTR::ProjectedNode>* GetProjectedNode(int& length);
   // get a view of the first projected node in the vector of projected nodes
-  MRTR::ProjectedNode*  GetProjectedNode();
+  RefCountPtr<MRTR::ProjectedNode>  GetProjectedNode();
   
   // set dof number for lagrange multiplier
   bool SetLagrangeMultiplierId(int LMId);
@@ -157,7 +159,7 @@ protected:
   vector<int>                  seg_;      // vector of segment ids adjacent to me
   vector<MRTR::Segment*>       segptr_;   // ptrs to segments length nseg_
 
-  vector<MRTR::ProjectedNode*> pnode_;    // the projected node on some segment
+  vector< RefCountPtr<MRTR::ProjectedNode> > pnode_;    // the projected node on some segment
 
 };
 

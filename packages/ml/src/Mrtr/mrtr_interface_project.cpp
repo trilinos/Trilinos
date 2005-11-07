@@ -64,7 +64,7 @@ bool MRTR::Interface::Project()
 
   //-------------------------------------------------------------------
   // interface segments need to have at least one function on each side
-  map<int,MRTR::Segment*>::iterator curr;
+  map<int,RefCountPtr<MRTR::Segment> >::iterator curr;
   for (int side=0; side<2; ++side)
     for (curr=rseg_[side].begin(); curr!=rseg_[side].end(); ++curr)
       if (curr->second->Nfunctions() < 1)
@@ -78,7 +78,7 @@ bool MRTR::Interface::Project()
     
   //-------------------------------------------------------------------
   // build nodal normals on both sides
-  map<int,MRTR::Node*>::iterator ncurr;
+  map<int,RefCountPtr<MRTR::Node> >::iterator ncurr;
   for (int side=0; side<2; ++side)
     for (ncurr=rnode_[side].begin(); ncurr!=rnode_[side].end(); ++ncurr)
     {
@@ -162,22 +162,22 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
   int sside = OtherSide(mside);
 
   // iterate over all nodes of the slave side and project those belonging to me
-  map<int,MRTR::Node*>::iterator scurr;
+  map<int,RefCountPtr<MRTR::Node> >::iterator scurr;
   for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
   {
-    MRTR::Node* snode = scurr->second;
+    RefCountPtr<MRTR::Node> snode = scurr->second;
     if (NodePID(snode->Id()) != lComm()->MyPID())
       continue;
     
     const double* sx = snode->X();
     double mindist = 1.0e+20;
-    MRTR::Node* closenode = NULL;
+    RefCountPtr<MRTR::Node> closenode = null;
     
     // find a node on the master side, that is closest to me
-    map<int,MRTR::Node*>::iterator mcurr;
+    map<int,RefCountPtr<MRTR::Node> >::iterator mcurr;
     for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
     {
-      MRTR::Node* mnode = mcurr->second;
+      RefCountPtr<MRTR::Node> mnode = mcurr->second;
       const double* mx = mnode->X();
       
       // build distance | mnode->X() - snode->X() |
@@ -191,7 +191,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
       }
       //cout << "snode " << snode->Id() << " mnode " << mnode->Id() << " mindist " << mindist  << " dist " << dist << endl;
     }
-    if (!closenode)
+    if (closenode == null)
     {
       cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
            << "***ERR*** Weired: for slave node " << snode->Id() << " no closest master node found\n"
@@ -294,7 +294,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
   lComm()->Barrier();
   
   // loop all slave nodes again and make the projections redundant
-  double* bcast = new double[4*rnode_[sside].size()]; // that's the max
+  vector<double> bcast(4*rnode_[sside].size());
   for (int proc=0; proc<lComm()->NumProc(); ++proc)
   {
     int blength = 0;
@@ -302,10 +302,10 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
     {
       for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
       {
-        MRTR::Node* snode = scurr->second;
+        RefCountPtr<MRTR::Node> snode = scurr->second;
         if (proc != NodePID(snode->Id())) continue; // I cannot have a projection on a node not owned by me
-        MRTR::ProjectedNode* pnode = snode->GetProjectedNode();
-        if (!pnode) continue; // this node does not have a projection
+        RefCountPtr<MRTR::ProjectedNode> pnode = snode->GetProjectedNode();
+        if (pnode==null) continue; // this node does not have a projection
         const double* xi = pnode->Xi();
         bcast[blength] = (double)pnode->Id();            
         ++blength;
@@ -328,7 +328,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
       }
     }
     lComm()->Broadcast(&blength,1,proc);
-    lComm()->Broadcast(bcast,blength,proc);
+    lComm()->Broadcast(&bcast[0],blength,proc);
     if (proc!=lComm()->MyPID())
     {
       int i;
@@ -337,18 +337,18 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
         int     nid = (int)bcast[i]; ++i;
         double  sid =      bcast[i]; ++i;
         double* xi  = &bcast[i];     ++i; ++i;
-        MRTR::Node* snode = GetNodeView(nid);
-        MRTR::Segment* seg = NULL;
+        RefCountPtr<MRTR::Node> snode = GetNodeView(nid);
+        RefCountPtr<MRTR::Segment> seg = null;
         if (sid!=-0.1)
           seg = GetSegmentView((int)sid);
-        if (!snode)
+        if (snode == null)
         {
           cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
                << "***ERR*** Cannot get view of node\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           exit(EXIT_FAILURE);
         }
-        MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*snode,xi,seg);
+        MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*snode,xi,seg.get());
         snode->SetProjectedNode(pnode);
       }
       if (i != blength)
@@ -360,7 +360,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
       }
     }
   } // for (int proc=0; proc<lComm()->NumProc(); ++proc)
-  delete [] bcast; bcast = NULL;
+  bcast.clear();
   lComm()->Barrier();
 
 #if 1
@@ -375,10 +375,10 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
   // introduced for that node.
   for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
   {
-    MRTR::Node* snode = scurr->second;
+    RefCountPtr<MRTR::Node> snode = scurr->second;
     
     // don't do anything on nodes that already have a projection
-    if (snode->GetProjectedNode())
+    if (snode->GetProjectedNode() != null)
       continue;
 
     // get segments adjacent to this node  
@@ -392,7 +392,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
       int nnode = segs[i]->Nnode();
       MRTR::Node** nodes = segs[i]->Nodes();
       for (int j=0; j<nnode; ++j)
-        if (nodes[j]->GetProjectedNode())
+        if (nodes[j]->GetProjectedNode() != null)
           if (nodes[j]->GetProjectedNode()->Segment())
           {
             foundit = true;
@@ -435,22 +435,22 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
   int sside = OtherSide(mside);
 
   // iterate over all nodes of the master side and project those belonging to me
-  map<int,MRTR::Node*>::iterator mcurr;
+  map<int,RefCountPtr<MRTR::Node> >::iterator mcurr;
   for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
   {
-    MRTR::Node* mnode = mcurr->second;
+    RefCountPtr<MRTR::Node> mnode = mcurr->second;
     if (NodePID(mnode->Id()) != lComm()->MyPID())
       continue;
     
     const double* mx = mnode->X();
     double mindist = 1.0e+20;
-    MRTR::Node* closenode = NULL;
+    RefCountPtr<MRTR::Node> closenode = null;
     
     // find a node on the slave side that is closest to me
-    map<int,MRTR::Node*>::iterator scurr;
+    map<int,RefCountPtr<MRTR::Node> >::iterator scurr;
     for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
     {
-      MRTR::Node* snode = scurr->second;
+      RefCountPtr<MRTR::Node> snode = scurr->second;
       const double* sx = snode->X();
       
       // build distance | snode->X() - mnode->X() |
@@ -463,7 +463,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
         closenode = snode;
       }
     } 
-    if (!closenode)
+    if (closenode == null)
     {
       cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
            << "***ERR*** Weired: for master node " << mnode->Id() << " no closest master node found\n"
@@ -551,8 +551,8 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
       // build the interpolated normal and overwrite the mnode normal with -n
       int          nsnode = bestseg->Nnode();
       MRTR::Node** snodes = bestseg->Nodes();
-      double* val   = new double[nsnode];
-      bestseg->EvaluateFunction(0,bestdist,val,nsnode,NULL);
+      vector<double> val(nsnode);
+      bestseg->EvaluateFunction(0,bestdist,&val[0],nsnode,NULL);
       double NN[3]; NN[0] = NN[1] = NN[2] = 0.0;
       for (int i=0; i<nsnode; ++i)
       {
@@ -560,7 +560,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
         for (int j=0; j<3; ++j)
           NN[j] -= val[i]*N[j];
       }
-      delete [] val; val = NULL;
+      val.clear();
       mnode->SetN(NN);
 
       // create projected node and store it in mnode
@@ -578,7 +578,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
 
   // loop all master nodes again and make the projection and the new normal redundant
   int bsize = 7*rnode_[mside].size();
-  double* bcast = new double[bsize]; // that's the max
+  vector<double> bcast(bsize);
   for (int proc=0; proc<lComm()->NumProc(); ++proc)
   {
     int blength = 0;
@@ -586,10 +586,10 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
     {
       for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
       {
-        MRTR::Node* mnode = mcurr->second;
+        RefCountPtr<MRTR::Node> mnode = mcurr->second;
         if (proc != NodePID(mnode->Id())) continue; // cannot have a projection on a node i don't own
-        MRTR::ProjectedNode* pnode = mnode->GetProjectedNode();
-        if (!pnode) continue; // this node does not have a projection
+        RefCountPtr<MRTR::ProjectedNode> pnode = mnode->GetProjectedNode();
+        if (pnode == null) continue; // this node does not have a projection
         const double* xi = pnode->Xi();
         const double* N  = mnode->N();
         bcast[blength] = (double)pnode->Id();
@@ -619,7 +619,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
       }
     }
     lComm()->Broadcast(&blength,1,proc);
-    lComm()->Broadcast(bcast,blength,proc);
+    lComm()->Broadcast(&bcast[0],blength,proc);
     if (proc!=lComm()->MyPID())
     {
       int i;
@@ -629,11 +629,11 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
         double  sid =      bcast[i];  ++i;
         double* xi  =      &bcast[i]; ++i; ++i; 
         double* n   =      &bcast[i]; ++i; ++i; ++i;
-        MRTR::Node*    mnode = GetNodeView(nid);
-        MRTR::Segment* seg   = NULL;
+        RefCountPtr<MRTR::Node> mnode = GetNodeView(nid);
+        RefCountPtr<MRTR::Segment> seg = null;
         if (sid != -0.1)
           seg = GetSegmentView((int)sid);
-        if (!mnode)
+        if (mnode == null)
         {
           cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
                << "***ERR*** Cannot get view of node\n"
@@ -641,7 +641,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
           exit(EXIT_FAILURE);
         }
         mnode->SetN(n);
-        MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*mnode,xi,seg);
+        MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*mnode,xi,seg.get());
         mnode->SetProjectedNode(pnode);
       }
       if (i != blength)
@@ -653,7 +653,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
       }
     }
   } // for (int proc=0; proc<lComm()->NumProc(); ++proc)
-  delete [] bcast; bcast = NULL;
+  bcast.clear();
 
   return true;
 }
@@ -699,22 +699,22 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
   int sside = OtherSide(mside);
 
   // iterate over all master nodes and project those belonging to me
-    map<int,MRTR::Node*>::iterator mcurr;
+    map<int,RefCountPtr<MRTR::Node> >::iterator mcurr;
   for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
   {
-    MRTR::Node* mnode = mcurr->second;
+    RefCountPtr<MRTR::Node> mnode = mcurr->second;
     if (NodePID(mnode->Id()) != lComm()->MyPID())
       continue;
       
     const double* mx = mnode->X();
     double mindist = 1.0e+20;
-    MRTR::Node* closenode = NULL;
+    RefCountPtr<MRTR::Node> closenode = null;
     
     // find a node on the slave side that is closest to me
-    map<int,MRTR::Node*>::iterator scurr;
+    map<int,RefCountPtr<MRTR::Node> >::iterator scurr;
     for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
     {
-      MRTR::Node* snode = scurr->second;
+      RefCountPtr<MRTR::Node> snode = scurr->second;
       const double* sx = snode->X();
       
       // build distance | snode->X() - mnode->X() |
@@ -727,7 +727,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
         closenode = snode;
       }
     } 
-    if (!closenode)
+    if (closenode == null)
     {
       cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
            << "***ERR*** Weired: for master node " << mnode->Id() << " no closest master node found\n"
@@ -805,7 +805,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
 
   // loop all master nodes again and make projection redundant
   int bsize = 4*rnode_[mside].size();
-  double* bcast = new double[bsize]; // that's the max
+  vector<double> bcast(bsize);
   for (int proc=0; proc<lComm()->NumProc(); ++proc)
   {
     int blength = 0;
@@ -813,10 +813,10 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     {
       for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
       {
-        MRTR::Node* mnode = mcurr->second;
+        RefCountPtr<MRTR::Node> mnode = mcurr->second;
         if (proc != NodePID(mnode->Id())) continue; // cannot have a projection on a node i don't own
-        MRTR::ProjectedNode* pnode = mnode->GetProjectedNode();
-        if (!pnode) continue; // this node does not have a projection
+        RefCountPtr<MRTR::ProjectedNode>  pnode = mnode->GetProjectedNode();
+        if (pnode == null) continue; // this node does not have a projection
         const double* xi = pnode->Xi();
         bcast[blength] = (double)pnode->Id();
         ++blength;
@@ -836,7 +836,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
       }
     } // if (proc==lComm()->MyPID())
     lComm()->Broadcast(&blength,1,proc);
-    lComm()->Broadcast(bcast,blength,proc);
+    lComm()->Broadcast(&bcast[0],blength,proc);
     if (proc!=lComm()->MyPID())
     {
       int i;
@@ -845,16 +845,16 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
         int     nid = (int)bcast[i];  ++i;
         int     sid = (int)bcast[i];  ++i;
         double* xi  =      &bcast[i]; ++i; ++i; 
-        MRTR::Node*    mnode = GetNodeView(nid);
-        MRTR::Segment* seg   = GetSegmentView(sid);
-        if (!mnode || !seg)
+        RefCountPtr<MRTR::Node> mnode = GetNodeView(nid);
+        RefCountPtr<MRTR::Segment> seg = GetSegmentView(sid);
+        if (mnode == null || seg == null)
         {
           cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
                << "***ERR*** Cannot get view of node or segment\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           exit(EXIT_FAILURE);
         }
-        MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*mnode,xi,seg);
+        MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*mnode,xi,seg.get());
         mnode->SetProjectedNode(pnode);
       }
       if (i != blength)
@@ -866,7 +866,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
       }
     } // if (proc!=lComm()->MyPID())
   }  // for (int proc=0; proc<lComm()->NumProc(); ++proc)
-  delete [] bcast; bcast = NULL;
+  bcast.clear();
 
   return true;
 }
@@ -889,10 +889,10 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
   int sside = OtherSide(mside);
 
   // iterate over all nodes of the slave side and project those belonging to me
-  map<int,MRTR::Node*>::iterator scurr;
+  map<int,RefCountPtr<MRTR::Node> >::iterator scurr;
   for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
   {
-    MRTR::Node* snode = scurr->second;
+    RefCountPtr<MRTR::Node> snode = scurr->second;
 
 #if 0
     cout << "now projecting\n " << *snode;
@@ -903,13 +903,13 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
     
     const double* sx = snode->X();
     double mindist = 1.0e+20;
-    MRTR::Node* closenode = NULL;
+    RefCountPtr<MRTR::Node> closenode = null;
     
     // find a node on the master side, that is closest to me
-    map<int,MRTR::Node*>::iterator mcurr;
+    map<int,RefCountPtr<MRTR::Node> >::iterator mcurr;
     for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
     {
-      MRTR::Node* mnode = mcurr->second;
+      RefCountPtr<MRTR::Node> mnode = mcurr->second;
       const double* mx = mnode->X();
       
       // build distance | mnode->X() - snode->X() |
@@ -923,7 +923,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
       }
       //cout << "snode " << snode->Id() << " mnode " << mnode->Id() << " mindist " << mindist  << " dist " << dist << endl;
     }
-    if (!closenode)
+    if (closenode == null)
     {
       cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
            << "***ERR*** Weired: for slave node " << snode->Id() << " no closest master node found\n"
@@ -994,10 +994,10 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
       {
         for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
         {
-          MRTR::Node* snode = scurr->second;
+          RefCountPtr<MRTR::Node> snode = scurr->second;
           if (proc != NodePID(snode->Id())) continue; // cannot have a projection on a node i don't own
           int npnode=0;
-          MRTR::ProjectedNode** pnode = snode->GetProjectedNode(npnode);        
+          RefCountPtr<MRTR::ProjectedNode>* pnode = snode->GetProjectedNode(npnode);        
           if (!pnode) continue; // no projection on this one
           bcast[blength] = (double)snode->Id();
           ++blength;
@@ -1037,15 +1037,15 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
         for (i=0; i<blength;)
         {
           int nid    = (int)bcast[i] ; ++i;
-          MRTR::Node* snode = GetNodeView(nid);
+          RefCountPtr<MRTR::Node> snode = GetNodeView(nid);
           int npnode = (int) bcast[i]; ++i;
           for (int j=0; j<npnode; ++j)
           {
             int sid     = (int)bcast[i]; ++i;
             double* xi  = &bcast[i];     ++i; ++i;
             int orthseg = (int)bcast[i]; ++i;
-            MRTR::Segment* seg   = GetSegmentView(sid);
-            MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*snode,xi,seg,orthseg);
+            RefCountPtr<MRTR::Segment> seg   = GetSegmentView(sid);
+            MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*snode,xi,seg.get(),orthseg);
             snode->SetProjectedNode(pnode);
           }
         }
@@ -1073,11 +1073,11 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
   // introduced for that node.
   for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
   {
-    MRTR::Node* snode = scurr->second;
+    RefCountPtr<MRTR::Node> snode = scurr->second;
     // do only my own nodes
 
     // don't do anything on nodes that already have a projection
-    if (snode->GetProjectedNode())
+    if (snode->GetProjectedNode() != null)
       continue;
 
     // get segments adjacent to this node  
@@ -1090,7 +1090,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
       int nnode = segs[i]->Nnode();
       MRTR::Node** nodes = segs[i]->Nodes();
       for (int j=0; j<nnode; ++j)
-        if (nodes[j]->GetProjectedNode())
+        if (nodes[j]->GetProjectedNode() != null)
           if (nodes[j]->GetProjectedNode()->Segment())
           {
             foundit = true;

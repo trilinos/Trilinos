@@ -127,9 +127,9 @@ MRTR::Node::Node(const MRTR::Node& old)
   
   pnode_.resize(old.pnode_.size());  
   for (int i=0; i<pnode_.size(); ++i)
-    if (old.pnode_[i])
+    if (old.pnode_[i].get() != NULL)
     {
-      pnode_[i] = new MRTR::ProjectedNode(*(old.pnode_[i]));
+      pnode_[i] = rcp(new MRTR::ProjectedNode(*(old.pnode_[i])));
     }    
 }
 
@@ -207,9 +207,6 @@ MRTR::Node::~Node()
   LMdof_.clear();
   seg_.clear();
   segptr_.clear();
-  for (int i=0; i<pnode_.size(); ++i)
-    if (pnode_[i])
-      delete pnode_[i];
   pnode_.clear();
 }
 
@@ -319,7 +316,7 @@ bool MRTR::Node::GetPtrstoSegments(MRTR::Interface& interface)
   for (int i=0; i<seg_.size(); ++i)
   {
     int sid = seg_[i];
-    segptr_[i] = interface.GetSegmentView(seg_[i]);
+    segptr_[i] = interface.GetSegmentView(seg_[i]).get();
     if (!segptr_[i])
     {
       cout << "***ERR*** MRTR::Node::GetPtrstoSegments:\n"
@@ -392,14 +389,14 @@ bool MRTR::Node::BuildAveragedNormal()
 bool MRTR::Node::SetProjectedNode(MRTR::ProjectedNode* pnode)
 { 
   pnode_.resize(pnode_.size()+1);
-  pnode_[pnode_.size()-1] = pnode;
+  pnode_[pnode_.size()-1] = rcp(pnode);
   return true;
 }
 
 /*----------------------------------------------------------------------*
  |  get projected nodes                                      mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::ProjectedNode** MRTR::Node::GetProjectedNode(int& length)
+RefCountPtr<MRTR::ProjectedNode>* MRTR::Node::GetProjectedNode(int& length)
 { 
   length = pnode_.size();
   if (length)
@@ -411,13 +408,13 @@ MRTR::ProjectedNode** MRTR::Node::GetProjectedNode(int& length)
 /*----------------------------------------------------------------------*
  |  get projected node                                       mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::ProjectedNode* MRTR::Node::GetProjectedNode()
+RefCountPtr<MRTR::ProjectedNode> MRTR::Node::GetProjectedNode()
 { 
   int length = pnode_.size();
   if (length)
     return pnode_[0];
   else
-    return NULL;
+    return null;
 }
 
 #endif // TRILINOS_PACKAGE

@@ -39,10 +39,16 @@
 #include <ctime>
 #include <iostream>
 
+#include "Teuchos_RefCountPtr.hpp"
+
+
 #include "mrtr_segment.H"
 #include "mrtr_functions.H"
+#include "mrtr_node.H"
+#include "mrtr_point.H"
 
 using namespace std;
+using namespace Teuchos;
 
 namespace MRTR
 {
@@ -60,14 +66,14 @@ class MRTR::Node;
 // MRTR::AllocateFunction in mrtr_utils.cpp
 MRTR::Function* MRTR::AllocateFunction(MRTR::Function::FunctionType type);
 MRTR::Segment* MRTR::AllocateSegment(int type);
-bool MRTR::DestroyMap(map<int,MRTR::Segment*>& m);
-bool MRTR::DestroyMap(map<int,MRTR::Node*>& m);
-bool MRTR::DestroyMap(map<int,MRTR::Function*>& m);
 bool MRTR::cross(double* out, const double* g1, const double* g2);
 double MRTR::dot(const double* g1, const double* g2, const int dim);
 bool MRTR::solve22(const double A[][2], double* x, const double* b);
 bool MRTR::solve33(const double A[][3], double* x, const double* b);
 int MRTR::digit_ten(int i);
+void MRTR::sort(double* dlist, int N, int* list2);
+
+// swap template
 template<typename kind>
 void swap(kind& a, kind& b)
 {
@@ -76,7 +82,21 @@ void swap(kind& a, kind& b)
   b = tmp;
   return;
 }
-void MRTR::sort(double* dlist, int N, int* list2);
+
+// after switching all mapes to contain RefCountPtr we
+// don't need these anymore
+/*
+// Destroy a map of pointers template
+template<typename kind1, typename kind2>
+void MRTR::DestroyMap(map<kind1,kind2*>& m)
+{
+  typename map<kind1,kind2*>::iterator curr;
+  for (curr=m.begin(); curr != m.end(); ++curr)
+    if (curr->second) delete curr->second;
+  m.clear();  
+  return;
+}
+*/
 
 
 } // namespace MRTR

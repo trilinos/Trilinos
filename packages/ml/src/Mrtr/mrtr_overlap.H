@@ -42,10 +42,14 @@
 #include <map>
 
 #include <Epetra_SerialComm.h>
+#include "Teuchos_RefCountPtr.hpp"
+
+
 #include "mrtr_point.H"
 
 
 using namespace std;
+using namespace Teuchos;
 
 // ----------   User Defined Includes   ----------
 
@@ -104,24 +108,22 @@ protected:
   // return # segments the overlap was discretized with
   int Nseg() { return s_.size(); }
   // get view of segments in triangulation map
-  MRTR::Segment** SegmentView();
+  void SegmentView(vector<RefCountPtr<MRTR::Segment> >& segs);
 
   //------------------------------------------ tools to handle the polygon map
   // add a point to the polygon
   bool AddPointtoPolygon(const int id, const double* P);
-  bool AddPointtoPolygon(map<int,MRTR::Point*>& p, const int id, const double* P);
+  bool AddPointtoPolygon(map<int,RefCountPtr<MRTR::Point> >& p, const int id, const double* P);
   // remove a point from the polygon
   bool RemovePointfromPolygon(const int id,const double* P);
   // get the size of the nodal polygon
   int SizePointPolygon() { return p_.size(); }
   // get view of point in polygon, calling routine is responsible for freeing
-  MRTR::Point** PointView();
-  MRTR::Point** PointView(map<int,MRTR::Point*>& p);
+  void PointView(vector<RefCountPtr<MRTR::Point> >& points);
+  void PointView(map<int,RefCountPtr<MRTR::Point> >& p, vector<RefCountPtr<MRTR::Point> >& points);
   void PointView(vector<MRTR::Point*>& p,const int* nodeids,const int np);
-  // destroy a point polygon
-  bool DestroyPointPolygon(map<int,MRTR::Point*>& p);
   // copy a point polygon to another polygon
-  bool CopyPointPolygon(map<int,MRTR::Point*>& from, map<int,MRTR::Point*>& to);
+  bool CopyPointPolygon(map<int,RefCountPtr<MRTR::Point> >& from, map<int,RefCountPtr<MRTR::Point> >& to);
 
 private:
 
@@ -147,63 +149,63 @@ private:
   double Clip_ParameterPointOnLine(const double* P0,const double* P1,const double* P);
 
   // fix the polygon for case 1_2_dif
-  bool Clip_FixPolygon_1_2_dif(int np, MRTR::Point** point);
+  bool Clip_FixPolygon_1_2_dif(int np, RefCountPtr<MRTR::Point>* point);
   // fix the polygon for case 1_2_same
-  bool Clip_FixPolygon_1_2_same(int np, MRTR::Point** point);
+  bool Clip_FixPolygon_1_2_same(int np, RefCountPtr<MRTR::Point>* point);
   // fix the polygon for case 2_2_same
-  bool Clip_FixPolygon_2_2_same(int np, MRTR::Point** point);
+  bool Clip_FixPolygon_2_2_same(int np, RefCountPtr<MRTR::Point>* point);
   // fix the polygon for case 2_2_dif
-  bool Clip_FixPolygon_2_2_dif(int np, MRTR::Point** point);
+  bool Clip_FixPolygon_2_2_dif(int np, RefCountPtr<MRTR::Point>* point);
   // fix the polygon for case 1_4_same
-  bool Clip_FixPolygon_1_4_same(int np, MRTR::Point** point);
+  bool Clip_FixPolygon_1_4_same(int np, RefCountPtr<MRTR::Point>* point);
   // fix the polygon for case 1_4_dif
-  bool Clip_FixPolygon_1_4_dif(int np, MRTR::Point** point);
+  bool Clip_FixPolygon_1_4_dif(int np, RefCountPtr<MRTR::Point>* point);
   // fix the polygon for case 3_0
-  bool Clip_FixPolygon_3_0(int np, MRTR::Point** point);
+  bool Clip_FixPolygon_3_0(int np, RefCountPtr<MRTR::Point>* point);
   // fix the polygon for case 0_0
-  bool Clip_FixPolygon_0_0(int np, MRTR::Point** point);
+  bool Clip_FixPolygon_0_0(int np, RefCountPtr<MRTR::Point>* point);
   // fix the polygon for case 0_4_same
-  bool Clip_FixPolygon_0_4_same(int np, MRTR::Point** point);
+  bool Clip_FixPolygon_0_4_same(int np, RefCountPtr<MRTR::Point>* point);
   // fix the polygon for case 0_4_dif
-  bool Clip_FixPolygon_0_4_dif(int np, MRTR::Point** point);
+  bool Clip_FixPolygon_0_4_dif(int np, RefCountPtr<MRTR::Point>* point);
   // fix the polygon for case 0_2
-  bool Clip_FixPolygon_0_2(int np, MRTR::Point** point);
+  bool Clip_FixPolygon_0_2(int np, RefCountPtr<MRTR::Point>* point);
   // fix the polygon for case 0_6
-  bool Clip_FixPolygon_0_6(int np, MRTR::Point** point);
+  bool Clip_FixPolygon_0_6(int np, RefCountPtr<MRTR::Point>* point);
 
   // -------------------------------------finding a convex hull for the polygon
   // create a convex hull of a set of given points in 2D
-  bool ConvexHull(map<int,MRTR::Point*>& p);
-  bool MakeRightTurnUpper(int i,map<int,MRTR::Point*>& hull);
-  bool MakeRightTurnLower(int i,map<int,MRTR::Point*>& hull);
-  void RemovePointBefore(int i,map<int,MRTR::Point*>& hull);
-  void RemovePointAfter(int i,map<int,MRTR::Point*>& hull);
+  bool ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p);
+  bool MakeRightTurnUpper(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
+  bool MakeRightTurnLower(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
+  void RemovePointBefore(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
+  void RemovePointAfter(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
 
   //-------------------------------------------make triangulization of polygon
   bool Triangulization();
   
 private:
 
-MRTR::Interface&    inter_;
-MRTR::Segment&      sseg_;
-MRTR::Segment&      mseg_;
+MRTR::Interface&                     inter_;
+MRTR::Segment&                       sseg_;
+MRTR::Segment&                       mseg_;
 
-bool                overlap_;   // true if segments overlap
-int                 nnode_;     // # of master nodes
+bool                                 overlap_;   // true if segments overlap
+int                                  nnode_;     // # of master nodes
 
-double              mxi_[3][2]; // local coords of mnodes projected onto sseg
-bool                havemxi_;   // flag indicating whether mxi_ and min_ have been build
+double                               mxi_[3][2]; // local coords of mnodes projected onto sseg
+bool                                 havemxi_;   // flag indicating whether mxi_ and min_ have been build
 
-double              sxi_[3][2]; // local coords of snodes 
-double              sn_[3][2];   // outward normal to sseg's edges in local coords
-bool                havesxi_;   // flag indicating whether sxi_ and sin_ have been build
+double                               sxi_[3][2]; // local coords of snodes 
+double                               sn_[3][2];   // outward normal to sseg's edges in local coords
+bool                                 havesxi_;   // flag indicating whether sxi_ and sin_ have been build
 
-double              sline_[3][4]; // 3 lines of sseg_ in sseg_'s local coords
-double              mline_[3][4]; // 3 lines of mseg_in sseg_'s local coords
-bool                haveline_;    // flag indicating whether line info has been build
+double                               sline_[3][4]; // 3 lines of sseg_ in sseg_'s local coords
+double                               mline_[3][4]; // 3 lines of mseg_in sseg_'s local coords
+bool                                 haveline_;    // flag indicating whether line info has been build
 
-map<int,MRTR::Point*>   p_;       // map holding polygon points and later points of triangulation
-map<int,MRTR::Segment*> s_;       // map holding segments of polygon triangulation
+map<int,RefCountPtr<MRTR::Point> >   p_;       // map holding polygon points and later points of triangulation
+map<int,RefCountPtr<MRTR::Segment> > s_;       // map holding segments of polygon triangulation
 
 
 }; // class Overlap

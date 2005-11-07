@@ -83,7 +83,7 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   // and two functions on the slave side
   int mside = MortarSide();
   int sside = OtherSide(mside);
-  map<int,MRTR::Segment*>::iterator scurr;
+  map<int,RefCountPtr<MRTR::Segment> >::iterator scurr;
   for (scurr=seg_[mside].begin(); scurr!=seg_[mside].end(); ++scurr)
     if (scurr->second->Nfunctions() < 1)
     {
@@ -145,11 +145,11 @@ bool MRTR::Interface::Integrate_2D(Epetra_CrsMatrix& M,
 
   
   // loop over all segments of slave side
-  map<int,MRTR::Segment*>::iterator scurr;
+  map<int,RefCountPtr<MRTR::Segment> >::iterator scurr;
   for (scurr=rseg_[sside].begin(); scurr!=rseg_[sside].end(); ++scurr)
   {
     // the segment to be integrated
-    MRTR::Segment* actsseg = scurr->second;
+    RefCountPtr<MRTR::Segment> actsseg = scurr->second;
 
 #if 0
     cout << "\nActive sseg id " << actsseg->Id() << "\n\n";
@@ -169,10 +169,10 @@ bool MRTR::Interface::Integrate_2D(Epetra_CrsMatrix& M,
     if (!foundone) continue;
     
     // loop over all segments on the master side
-    map<int,MRTR::Segment*>::iterator mcurr;
+    map<int,RefCountPtr<MRTR::Segment> >::iterator mcurr;
     for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)    
     {
-      MRTR::Segment* actmseg = mcurr->second;
+      RefCountPtr<MRTR::Segment> actmseg = mcurr->second;
       
 #if 0
     cout << "Active mseg id " << actmseg->Id() << endl;
@@ -233,37 +233,37 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   bool mnode0 = false;
   bool mnode1 = false;
   int foundcase =  0;
-  MRTR::ProjectedNode* is_spnode0 = NULL;
-  MRTR::ProjectedNode* is_spnode1 = NULL;
-  MRTR::ProjectedNode* is_mpnode0 = NULL;
-  MRTR::ProjectedNode* is_mpnode1 = NULL;
+  RefCountPtr<MRTR::ProjectedNode> is_spnode0 = null;
+  RefCountPtr<MRTR::ProjectedNode> is_spnode1 = null;
+  RefCountPtr<MRTR::ProjectedNode> is_mpnode0 = null;
+  RefCountPtr<MRTR::ProjectedNode> is_mpnode1 = null;
   
   // projection along continous normal field results in projection points
   // that are unique
   if (GetProjectionType() == proj_continousnormalfield)
   {  
-    if (snodes[0]->GetProjectedNode())
+    if (snodes[0]->GetProjectedNode() != null)
       if (snodes[0]->GetProjectedNode()->Segment())
         if (snodes[0]->GetProjectedNode()->Segment()->Id() == mseg.Id())
         {
           snode0     = true;
           is_spnode0 = snodes[0]->GetProjectedNode();
         }
-    if (snodes[1]->GetProjectedNode())
+    if (snodes[1]->GetProjectedNode() != null)
       if (snodes[1]->GetProjectedNode()->Segment())
         if (snodes[1]->GetProjectedNode()->Segment()->Id() == mseg.Id())
         {
           snode1     = true;
           is_spnode1 = snodes[1]->GetProjectedNode(); 
         }
-    if (mnodes[0]->GetProjectedNode())
+    if (mnodes[0]->GetProjectedNode() != null)
       if (mnodes[0]->GetProjectedNode()->Segment())
         if (mnodes[0]->GetProjectedNode()->Segment()->Id() == sseg.Id())
         {
           mnode0     = true;
           is_mpnode0 = mnodes[0]->GetProjectedNode();
         }
-    if (mnodes[1]->GetProjectedNode())
+    if (mnodes[1]->GetProjectedNode() != null)
       if (mnodes[1]->GetProjectedNode()->Segment())
         if (mnodes[1]->GetProjectedNode()->Segment()->Id() == sseg.Id())
         {
@@ -277,7 +277,7 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   else if (GetProjectionType() == proj_orthogonal)
   {
     int nspnode0;
-    MRTR::ProjectedNode** spnode0 = snodes[0]->GetProjectedNode(nspnode0);
+    RefCountPtr<MRTR::ProjectedNode>* spnode0 = snodes[0]->GetProjectedNode(nspnode0);
     if (spnode0)
       for (int i=0; i<nspnode0; ++i)
         if (spnode0[i]->Segment())
@@ -295,7 +295,7 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
             }
     
     int nspnode1;
-    MRTR::ProjectedNode** spnode1 = snodes[1]->GetProjectedNode(nspnode1);
+    RefCountPtr<MRTR::ProjectedNode>* spnode1 = snodes[1]->GetProjectedNode(nspnode1);
     if (spnode1)
       for (int i=0; i<nspnode1; ++i)
         if (spnode1[i]->Segment())
@@ -312,14 +312,14 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
               break;
             }
 
-    if (mnodes[0]->GetProjectedNode())
+    if (mnodes[0]->GetProjectedNode() != null)
       if (mnodes[0]->GetProjectedNode()->Segment())
         if (mnodes[0]->GetProjectedNode()->Segment()->Id() == sseg.Id())
         {
           mnode0     = true;
           is_mpnode0 = mnodes[0]->GetProjectedNode(); 
         }
-    if (mnodes[1]->GetProjectedNode())
+    if (mnodes[1]->GetProjectedNode() != null)
       if (mnodes[1]->GetProjectedNode()->Segment())
         if (mnodes[1]->GetProjectedNode()->Segment()->Id() == sseg.Id())
         {
@@ -329,8 +329,8 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   }
   
         
-  MRTR::ProjectedNode* nstart = NULL;
-  MRTR::ProjectedNode* nend   = NULL;
+  RefCountPtr<MRTR::ProjectedNode> nstart = null;
+  RefCountPtr<MRTR::ProjectedNode> nend   = null;
 
   // the xi range to integrate
   double sxia=999.0,sxib=999.0;
@@ -371,8 +371,8 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
     if (sxia>0.95)
     {
       ++foundcase;
-      nstart = NULL;
-      nend   = NULL;
+      nstart = null;
+      nend   = null;
     }
     else
     {
@@ -382,7 +382,7 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
       // 1.) mnodes[0] projects into a neighbor of sseg
       // 2.) mnodes[0]'s projection hast to be low in xi
       nend = mnodes[0]->GetProjectedNode();
-      if (nend) ok = true;
+      if (nend != null) ok = true;
       else      ok = false;
       if (ok)
       {
@@ -411,8 +411,8 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
       }
       else // do nothing?
       {
-        nstart = NULL;
-        nend   = NULL;
+        nstart = null;
+        nend   = null;
         ++foundcase;
       }
     }
@@ -432,7 +432,7 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
     // (into a neighbor master segment) and whether that projection point is
     // low in xi range (should be -1.0)
     nstart = snodes[0]->GetProjectedNode(); // check whether a projection exists 
-    if (!nstart) ok = false;
+    if (nstart == null) ok = false;
     if (ok) // projection nstart has to be in neighbour master element
     {
       if (!nstart->Segment()) ok = true; // nstart is virtual
@@ -461,8 +461,8 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
     else // do nothing?
     {
       ++ foundcase;
-      nstart = NULL;
-      nend = NULL; 
+      nstart = null;
+      nend = null; 
     }
   }
 
@@ -532,7 +532,7 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   }
   
   // there might be no overlap
-  if (!nstart && !nend)
+  if (nstart==null && nend==null)
     return true;
 
 #if 0  

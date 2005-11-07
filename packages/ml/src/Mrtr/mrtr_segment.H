@@ -41,9 +41,11 @@
 #include <map>
 #include <vector>
 
+#include "Teuchos_RefCountPtr.hpp"
 #include "mrtr_function.H"
 
 using namespace std;
+using namespace Teuchos;
 
 namespace MRTR
 {
@@ -102,9 +104,12 @@ public:
   
   // attach a function to this segment
   bool SetFunction(int id, MRTR::Function* func);
-  
+  bool SetFunction(int id, RefCountPtr<MRTR::Function> func);
+
+#if 0  
   // get ptr to function with id id
   MRTR::Function* GetFunction(int id);
+#endif
   
   // evaluate shape function with certain id;
   bool EvaluateFunction(int id, const double* xi, double* val, int valdim, double* deriv);
@@ -153,7 +158,7 @@ protected:
   vector<MRTR::Node*>      nodeptr_;    // vector with ptrs to nodes adj to me
 
   SegmentType              stype_;      // segment type
-  map<int,MRTR::Function*> functions_;  // functions that live on this segment
+  map< int,RefCountPtr<MRTR::Function> > functions_;  // functions that live on this segment
 
 };
 

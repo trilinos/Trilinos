@@ -48,12 +48,14 @@
 #endif
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
+#include "Teuchos_RefCountPtr.hpp"
 // mrtr includes
 #include "mrtr_segment.H"
 #include "mrtr_node.H"
 #include "mrtr_interface.H"
 
 using namespace std;
+using namespace Teuchos;
 
 namespace MRTR
 {
@@ -104,7 +106,7 @@ private:
   Manager(MRTR::Manager& old);
 
   // choose the dofs for lagrange multipliers
-  Epetra_Map* LagrangeMultiplierDofs();
+  RefCountPtr<Epetra_Map> LagrangeMultiplierDofs();
   
   // modified version of the epetraext matrixmatrixadd
   int MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double scalarA,
@@ -112,22 +114,21 @@ private:
 
   // automatically choose mortar side (called when mortarside==-2 on any interface)
   bool ChooseMortarSide();
-  bool ChooseMortarSide_2D(vector<MRTR::Interface*> inter);
+  bool ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > inter);
   
 private:
 
-  int                        outlevel_;       // output level (0-10)
-  Epetra_Comm&               comm_;           // communicator (global, contains ALL procs)
-  Epetra_Map*                inputmap_;       // the rowmap of the input matrix
-  bool                       inputmatrixisdeep_; // flagindicating whether the input matrix is owned by this class
-  Epetra_CrsMatrix*          inputmatrix_;    // the uncoupled matrix on input
-  Epetra_Map*                constraintsmap_; // the rowmap of M and D (both of them use comm_)
-  Epetra_CrsMatrix*          D_;              // the coupling matrix D
-  Epetra_CrsMatrix*          M_;              // the coupling matrix M
-  Epetra_Map*                saddlemap_;      // the rowmap of the saddlepointproblem
-  Epetra_CrsMatrix*          saddlematrix_;   // the matrix of the saddle problem;
+  int                           outlevel_;            // output level (0-10)
+  Epetra_Comm&                  comm_;                // communicator (global, contains ALL procs)
+  RefCountPtr<Epetra_Map>       inputmap_;            // the rowmap of the input matrix
+  RefCountPtr<Epetra_CrsMatrix> inputmatrix_;         // the uncoupled matrix on input
+  RefCountPtr<Epetra_Map>       constraintsmap_;      // the rowmap of M and D (both of them use comm_)
+  RefCountPtr<Epetra_CrsMatrix> D_;                   // the coupling matrix D
+  RefCountPtr<Epetra_CrsMatrix> M_;                   // the coupling matrix M
+  RefCountPtr<Epetra_Map>       saddlemap_;           // the rowmap of the saddlepointproblem
+  RefCountPtr<Epetra_CrsMatrix> saddlematrix_;        // the matrix of the saddle problem;
   
-  map<int,MRTR::Interface*>  interface_;      // the interfaces
+  map<int,RefCountPtr<MRTR::Interface> >  interface_; // the interfaces
 };
 
 } // namespace MRTR

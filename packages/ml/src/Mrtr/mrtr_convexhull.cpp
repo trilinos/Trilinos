@@ -43,22 +43,22 @@
 /*----------------------------------------------------------------------*
  |  create a convexhull of a set of points (private)         mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
+bool MRTR::Overlap::ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p)
 {
   // # points
   int np = p.size();
 
   // sort points by xi[0] coordinate
-  MRTR::Point** points = PointView(p);
-  double* dlistx = new double[np];
-  double* dlisty = new double[np];
-  int* list2 = new int[np];
+  vector<RefCountPtr<MRTR::Point> > points; PointView(p,points);
+  vector<double> dlistx(np);
+  vector<double> dlisty(np);
+  vector<int> list2(np);
   for (int i=0; i<np; ++i)
   {
     dlistx[i] = points[i]->Xi()[0];
     list2[i] = i;
   }
-  MRTR::sort(dlistx,np,list2);
+  MRTR::sort(&dlistx[0],np,&list2[0]);
 
   // get assoc. y-list
   for (int i=0; i<np; ++i)
@@ -75,26 +75,23 @@ bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
       }  
   
   // create a new polygon and put points in in sorted order
-  map<int,MRTR::Point*> newp;
+  map<int,RefCountPtr<MRTR::Point> > newp;
   for (int i=0; i<np; ++i)
   {
-    MRTR::Point* tmp = new MRTR::Point(i,points[list2[i]]->Xi());
-    newp.insert(pair<int,MRTR::Point*>(i,tmp));
+    RefCountPtr<MRTR::Point> tmp = rcp(new MRTR::Point(i,points[list2[i]]->Xi()));
+    newp.insert(pair<int,RefCountPtr<MRTR::Point> >(i,tmp));
   }
   
   // delete the old one
-  DestroyPointPolygon(p);
+  p.clear();
   // copy new one over
   CopyPointPolygon(newp,p);
   // destroy the new one
-  DestroyPointPolygon(newp);
+  newp.clear();
   
-  delete [] points;
-  delete [] dlistx;
-  delete [] dlisty;
-  delete [] list2;
+  points.clear();
 
-  map<int,MRTR::Point*>::iterator pcurr;
+  map<int,RefCountPtr<MRTR::Point> >::iterator pcurr;
 
 #if 0
   // printout the polygon
@@ -105,8 +102,8 @@ bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
 
   //===========================================================================
   // build the upper hull
-  map<int,MRTR::Point*> upper;
-  points = PointView(p);
+  map<int,RefCountPtr<MRTR::Point> > upper;
+  PointView(p,points);
   // put in the first 2 points
   AddPointtoPolygon(upper,0,points[0]->Xi()); //cout << *points[0];
   AddPointtoPolygon(upper,1,points[1]->Xi()); //cout << *points[1];
@@ -130,7 +127,7 @@ bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
 
   //===========================================================================
   // build the lower hull
-  map<int,MRTR::Point*> lower;
+  map<int,RefCountPtr<MRTR::Point> > lower;
   // put in the first 2 points
   AddPointtoPolygon(lower,np-1,points[np-1]->Xi()); //cout << *points[np-1];
   AddPointtoPolygon(lower,np-2,points[np-2]->Xi()); //cout << *points[np-2];
@@ -145,7 +142,7 @@ bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
       RemovePointAfter(i,lower);
 #if 0
   // printout the current lower hull
-  map<int,MRTR::Point*>::iterator pcurr;
+  map<int,RefCountPtr<MRTR::Point> >::iterator pcurr;
   for (pcurr=lower.begin(); pcurr != lower.end(); ++pcurr)
     if (pcurr->second)
       cout << *(pcurr->second);
@@ -153,13 +150,13 @@ bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
   } // for (int i=np-3; i>=0; --i)  
 
   //===========================================================================
-  delete [] points; points = NULL;
+  points.clear();
 
 
   //===========================================================================
   // join upper and lower hull
   // note not to put in duplicate start and end point
-  map<int,MRTR::Point*> finalp;
+  map<int,RefCountPtr<MRTR::Point> > finalp;
   
   // put upper hull in
   int i=0;
@@ -191,11 +188,11 @@ bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
   }
   
   // copy the polygon over to the input map p
-  DestroyPointPolygon(p);
-  DestroyPointPolygon(upper);
-  DestroyPointPolygon(lower);
+  p.clear();
+  upper.clear();
+  lower.clear();
   CopyPointPolygon(finalp,p);
-  DestroyPointPolygon(finalp);
+  finalp.clear();
 
   return true;
 }
@@ -204,13 +201,13 @@ bool MRTR::Overlap::ConvexHull(map<int,MRTR::Point*>& p)
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::MakeRightTurnUpper(int i,map<int,MRTR::Point*>& hull)
+bool MRTR::Overlap::MakeRightTurnUpper(int i,map<int,RefCountPtr<MRTR::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
   // the points i-1 and i-2 do not necessary have ids i-1 and i-2, they 
   // are just the 2 point BEFORE i (could have any id < i)
-  map<int,MRTR::Point*>::iterator curr = hull.find(i);
+  map<int,RefCountPtr<MRTR::Point> >::iterator curr = hull.find(i);
   if (curr==hull.end())
   {
     cout << "***ERR*** MRTR::Overlap::MakeRightTurn:\n"
@@ -218,11 +215,11 @@ bool MRTR::Overlap::MakeRightTurnUpper(int i,map<int,MRTR::Point*>& hull)
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  MRTR::Point* point = curr->second; //cout << *point;
+  RefCountPtr<MRTR::Point> point = curr->second; //cout << *point;
   curr--;
-  MRTR::Point* pointm1 = curr->second; //cout << *pointm1;
+  RefCountPtr<MRTR::Point> pointm1 = curr->second; //cout << *pointm1;
   curr--;
-  MRTR::Point* pointm2 = curr->second; //cout << *pointm2;
+  RefCountPtr<MRTR::Point> pointm2 = curr->second; //cout << *pointm2;
   double N[2];
   N[0] =  pointm1->Xi()[1] - pointm2->Xi()[1];
   N[1] = -(pointm1->Xi()[0] - pointm2->Xi()[0]);
@@ -246,13 +243,13 @@ bool MRTR::Overlap::MakeRightTurnUpper(int i,map<int,MRTR::Point*>& hull)
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::MakeRightTurnLower(int i,map<int,MRTR::Point*>& hull)
+bool MRTR::Overlap::MakeRightTurnLower(int i,map<int,RefCountPtr<MRTR::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
   // the points i-1 and i-2 do not necessary have ids i-1 and i-2, they 
   // are just the 2 point BEFORE i (could have any id < i)
-  map<int,MRTR::Point*>::iterator curr = hull.find(i);
+  map<int,RefCountPtr<MRTR::Point> >::iterator curr = hull.find(i);
   if (curr==hull.end())
   {
     cout << "***ERR*** MRTR::Overlap::MakeRightTurn:\n"
@@ -260,11 +257,11 @@ bool MRTR::Overlap::MakeRightTurnLower(int i,map<int,MRTR::Point*>& hull)
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  MRTR::Point* point = curr->second; //cout << *point;
+  RefCountPtr<MRTR::Point> point = curr->second; //cout << *point;
   curr++;
-  MRTR::Point* pointm1 = curr->second; //cout << *pointm1;
+  RefCountPtr<MRTR::Point> pointm1 = curr->second; //cout << *pointm1;
   curr++;
-  MRTR::Point* pointm2 = curr->second; //cout << *pointm2;
+  RefCountPtr<MRTR::Point> pointm2 = curr->second; //cout << *pointm2;
   double N[2];
   N[0] =  pointm1->Xi()[1] - pointm2->Xi()[1];
   N[1] = -(pointm1->Xi()[0] - pointm2->Xi()[0]);
@@ -288,12 +285,12 @@ bool MRTR::Overlap::MakeRightTurnLower(int i,map<int,MRTR::Point*>& hull)
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MRTR::Overlap::RemovePointBefore(int i,map<int,MRTR::Point*>& hull)
+void MRTR::Overlap::RemovePointBefore(int i,map<int,RefCountPtr<MRTR::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
   // the points i-1 does not necessary have id i-1  
-  map<int,MRTR::Point*>::iterator curr = hull.find(i);
+  map<int,RefCountPtr<MRTR::Point> >::iterator curr = hull.find(i);
   if (curr==hull.end())
   {
     cout << "***ERR*** MRTR::Overlap::RemovePointBefore:\n"
@@ -310,12 +307,12 @@ void MRTR::Overlap::RemovePointBefore(int i,map<int,MRTR::Point*>& hull)
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MRTR::Overlap::RemovePointAfter(int i,map<int,MRTR::Point*>& hull)
+void MRTR::Overlap::RemovePointAfter(int i,map<int,RefCountPtr<MRTR::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
   // the points i-1 does not necessary have id i-1  
-  map<int,MRTR::Point*>::iterator curr = hull.find(i);
+  map<int,RefCountPtr<MRTR::Point> >::iterator curr = hull.find(i);
   if (curr==hull.end())
   {
     cout << "***ERR*** MRTR::Overlap::RemovePointBefore:\n"

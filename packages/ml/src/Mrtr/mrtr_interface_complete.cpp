@@ -55,11 +55,10 @@ bool MRTR::Interface::Complete()
   bool ok = true;
   for (int i=0; i<2; ++i)
   {
-    map<int,MRTR::Node*>::const_iterator curr;
+    map<int,RefCountPtr<MRTR::Node> >::const_iterator curr;
     for (curr=node_[i].begin(); curr!=node_[i].end(); ++curr)
     {
-      MRTR::Node* node = curr->second;
-      if (!node)
+      if (curr->second == null)
       {
         cout << "***ERR*** MRTR::Interface::Complete:\n"
              << "***ERR*** Interface # " << Id_ << ":\n"
@@ -71,11 +70,10 @@ bool MRTR::Interface::Complete()
   }
   for (int i=0; i<2; ++i)
   {
-    map<int,MRTR::Segment*>::const_iterator curr;
+    map<int,RefCountPtr<MRTR::Segment> >::const_iterator curr;
     for (curr=seg_[i].begin(); curr!=seg_[i].end(); ++curr)
     {
-      MRTR::Segment* seg = curr->second;
-      if (!seg)
+      if (curr->second == null)
       {
         cout << "***ERR*** MRTR::Interface::Complete:\n"
              << "***ERR*** Interface # " << Id_ << ":\n"
@@ -105,17 +103,17 @@ bool MRTR::Interface::Complete()
         int sendsize =  0;
         if (proc==gcomm_.MyPID())
         {
-          map<int,MRTR::Segment*>::const_iterator curr;
+          map<int,RefCountPtr<MRTR::Segment> >::const_iterator curr;
           for (curr=seg_[side].begin(); curr!=seg_[side].end(); ++curr)
             sendsize += curr->second->Nnode();
         }
         gcomm_.Broadcast(&sendsize,1,proc);
         
         // create list of all nodes adjacent to segments on proc
-        int* ids = new int[sendsize];
+        vector<int> ids(sendsize);
         if (proc==gcomm_.MyPID())
         {
-          map<int,MRTR::Segment*>::const_iterator curr;
+          map<int,RefCountPtr<MRTR::Segment> >::const_iterator curr;
           int counter=0;
           for (curr=seg_[side].begin(); curr!=seg_[side].end(); ++curr)
           {
@@ -124,18 +122,18 @@ bool MRTR::Interface::Complete()
               ids[counter++] = segids[i];
           }
         }
-        gcomm_.Broadcast(ids,sendsize,proc);
+        gcomm_.Broadcast(&ids[0],sendsize,proc);
         
         // check on all processors for nodes in ids
-        int* foundit  = new int[sendsize];
-        int* gfoundit = new int[sendsize];
+        vector<int> foundit(sendsize);
+        vector<int> gfoundit(sendsize);
         for (int i=0; i<sendsize; ++i) 
         {
           foundit[i] = 0;
           if (node_[side].find(ids[i]) != node_[side].end()) 
             foundit[i] = 1;
         }
-        gcomm_.MaxAll(foundit,gfoundit,sendsize);
+        gcomm_.MaxAll(&foundit[0],&gfoundit[0],sendsize);
         for (int i=0; i<sendsize; ++i)
         {
           if (gfoundit[i]!=1)
@@ -145,18 +143,18 @@ bool MRTR::Interface::Complete()
                  << "***ERR*** cannot find segment's node # " << ids[i] << "\n"
                  << "***ERR*** in map of all nodes on all procs\n"
                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-            delete [] ids;
-            delete [] foundit;
-            delete [] gfoundit;
+            ids.clear();
+            foundit.clear();
+            gfoundit.clear();
             gcomm_.Barrier();
             return false;
           }
         }
         
         // tidy up
-        delete [] ids;
-        delete [] foundit;
-        delete [] gfoundit;
+        ids.clear();
+        foundit.clear();
+        gfoundit.clear();
       } // for (int size=0; side<2; ++side)
     } // for (int proc=0; proc<gcomm_.NumProc(); ++proc)
   }
@@ -168,8 +166,8 @@ bool MRTR::Interface::Complete()
   // interface so the interface will not block all other procs
   {
 #ifdef PARALLEL
-    int* lin = new int[gcomm_.NumProc()];
-    int* gin = new int[gcomm_.NumProc()];
+    vector<int> lin(gcomm_.NumProc());
+    vector<int> gin(gcomm_.NumProc());
     for (int i=0; i<gcomm_.NumProc(); ++i) lin[i] = 0;
     
     // check ownership of any segments
@@ -186,8 +184,8 @@ bool MRTR::Interface::Complete()
         lin[gcomm_.MyPID()] = 1;
         break;
       }
-    gcomm_.MaxAll(lin,gin,gcomm_.NumProc());
-    delete [] lin; lin = NULL;
+    gcomm_.MaxAll(&lin[0],&gin[0],gcomm_.NumProc());
+    lin.clear();
     
     // typecast the Epetra_Comm to Epetra_MpiComm
     Epetra_MpiComm* epetrampicomm = dynamic_cast<Epetra_MpiComm*>(&gcomm_);
@@ -210,7 +208,7 @@ bool MRTR::Interface::Complete()
       color = MPI_UNDEFINED;
       
     // tidy up
-    delete [] gin; gin = NULL;
+    gin.clear();
 
     // create the local communicator   
     MPI_Comm  mpi_global_comm = epetrampicomm->GetMpiComm();
@@ -219,9 +217,9 @@ bool MRTR::Interface::Complete()
 
     // create the new Epetra_MpiComm
     if (*mpi_local_comm == MPI_COMM_NULL)
-      lcomm_ = NULL;
+      lcomm_ = null;
     else
-      lcomm_ = new Epetra_MpiComm(*mpi_local_comm); // FIXME: who destroys the MPI_Comm inside?
+      lcomm_ = rcp(new Epetra_MpiComm(*mpi_local_comm)); // FIXME: who destroys the MPI_Comm inside?
 
 #if 0
     // test this stuff on the mpi level
@@ -272,19 +270,19 @@ bool MRTR::Interface::Complete()
       if (proc==lcomm_->MyPID())
         lnnodes = node_[0].size() + node_[1].size();
       lcomm_->Broadcast(&lnnodes,1,proc);
-      int* ids = new int[lnnodes];
+      vector<int> ids(lnnodes);
       if (proc==lcomm_->MyPID())
       {
-        map<int,MRTR::Node*>::const_iterator curr;
+        map<int,RefCountPtr<MRTR::Node> >::const_iterator curr;
         int counter=0;
         for (int side=0; side<2; ++side)
           for (curr=node_[side].begin(); curr!=node_[side].end(); ++curr)
             ids[counter++] = curr->first;
       }
-      lcomm_->Broadcast(ids,lnnodes,proc);
+      lcomm_->Broadcast(&ids[0],lnnodes,proc);
       for (int i=0; i<lnnodes; ++i)
         nodePID_.insert(pair<int,int>(ids[i],proc));
-      delete [] ids;
+      ids.clear();
     }
   
   //-------------------------------------------------------------------
@@ -296,19 +294,19 @@ bool MRTR::Interface::Complete()
       if (proc==lcomm_->MyPID())
         lnsegs = seg_[0].size() + seg_[1].size();
       lcomm_->Broadcast(&lnsegs,1,proc);
-      int* ids = new int[lnsegs];
+      vector<int> ids(lnsegs);
       if (proc==lcomm_->MyPID())
       {
-        map<int,MRTR::Segment*>::const_iterator curr;
+        map<int,RefCountPtr<MRTR::Segment> >::const_iterator curr;
         int counter=0;
         for (int side=0; side<2; ++side)
           for (curr=seg_[side].begin(); curr!=seg_[side].end(); ++curr)
             ids[counter++] = curr->first;
       }
-      lcomm_->Broadcast(ids,lnsegs,proc);
+      lcomm_->Broadcast(&ids[0],lnsegs,proc);
       for (int i=0; i<lnsegs; ++i)
         segPID_.insert(pair<int,int>(ids[i],proc));
-      delete [] ids;
+      ids.clear();
     }
   
   //-------------------------------------------------------------------
@@ -326,7 +324,7 @@ bool MRTR::Interface::Complete()
     int gmaxnnode = 0;
     for (int side=0; side<2; ++side)
     {
-      map<int,MRTR::Segment*>::const_iterator scurr;
+      map<int,RefCountPtr<MRTR::Segment> >::const_iterator scurr;
       for (scurr=seg_[side].begin(); scurr!=seg_[side].end(); ++scurr)
         if (lmaxnnode < scurr->second->Nnode())
           lmaxnnode = scurr->second->Nnode();
@@ -345,7 +343,7 @@ bool MRTR::Interface::Complete()
       // allocate vector to hold adjacency
       int offset = gmaxnnode+2;
       int size   = lnseg*offset;
-      int* adj   = new int[size];
+      vector<int> adj(size);
       
       // proc fills adjacency vector adj and broadcasts
       if (proc==lcomm_->MyPID())
@@ -353,10 +351,10 @@ bool MRTR::Interface::Complete()
         int count = 0;
         for (int side=0; side<2; ++side)
         {
-          map<int,MRTR::Segment*>::const_iterator scurr;
+          map<int,RefCountPtr<MRTR::Segment> >::const_iterator scurr;
           for (scurr=seg_[side].begin(); scurr!=seg_[side].end(); ++scurr)
           {
-            Segment* seg = scurr->second;
+            RefCountPtr<MRTR::Segment> seg = scurr->second;
             adj[count]   = seg->Id();
             adj[count+1] = seg->Nnode();
             const int* ids = seg->NodeIds();
@@ -366,7 +364,7 @@ bool MRTR::Interface::Complete()
           }
         }
       }
-      lcomm_->Broadcast(adj,size,proc);
+      lcomm_->Broadcast(&adj[0],size,proc);
       
       // all procs read adj and add segment to the nodes they own
       int count = 0;
@@ -380,8 +378,8 @@ bool MRTR::Interface::Complete()
           if (lcomm_->MyPID() == NodePID(nid))
           {
             // I own this node, so set the segment segid in it
-            MRTR::Node* node = GetNodeViewLocal(nid);
-            if (!node)
+            RefCountPtr<MRTR::Node> node = GetNodeViewLocal(nid);
+            if (node == null)
             {
               cout << "***ERR*** MRTR::Interface::Complete:\n"
                    << "***ERR*** cannot find node " << nid << endl
@@ -396,7 +394,7 @@ bool MRTR::Interface::Complete()
         }
         count += offset;
       }
-      delete [] adj;
+      adj.clear();
     } // for (int proc=0; proc<lcomm_->NumProc(); ++proc)
   } // if (lComm())
   
@@ -427,8 +425,8 @@ bool MRTR::Interface::Complete()
   // delete distributed nodes and segments
   for (int i=0; i<2; ++i)
   {
-    MRTR::DestroyMap(seg_[i]);
-    MRTR::DestroyMap(node_[i]);
+    seg_[i].clear();
+    node_[i].clear();
   }
 
 
