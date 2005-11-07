@@ -53,8 +53,9 @@ typedef std::complex<double> ScalarType;
 #elif HAVE_COMPLEX_H
 typedef ::complex<double> ScalarType;
 #endif
-#endif
+#else
 typedef double ScalarType;
+#endif
 
 // Gets the type of magnitude type (for example, the magnitude type
 // of "complex<double>" is "double").
@@ -218,7 +219,7 @@ namespace Tpetra {
       }
 
       //! Returns a Tpetra::Vector pointer to the i-th vector (const version).
-      Tpetra::Vector<OrdinalType, ScalarType> const* GetVector(const int i) const
+      const Tpetra::Vector<OrdinalType, ScalarType>* GetVector(const int i) const
       {
         return(array_[i].get());
       }
@@ -244,6 +245,15 @@ namespace Tpetra {
         for (OrdinalType i = OrdinalZero_ ; i < getNumVectors() ; ++i)
         {
           Values[i] = array_[i]->normInf();
+        }
+      }
+
+      void dotProduct(const MultiVector<OrdinalType, ScalarType>& A, 
+                      typename Teuchos::ScalarTraits<ScalarType>::magnitudeType* Values) const
+      {
+        for (int v = 0 ; v < getNumVectors() ; ++v)
+        {
+          Values[v] = GetVector(v)->dotProduct(*(A.GetVector(v)));
         }
       }
 
@@ -278,7 +288,7 @@ template<class OrdinalType, class ScalarType>
 class TpetraOperator : public Anasazi::Operator<ScalarType>
 {
 public:
-  TpetraOperator(Tpetra::CisMatrix<OrdinalType, ScalarType>& Op) :
+  TpetraOperator(Teuchos::RefCountPtr<Tpetra::CisMatrix<OrdinalType, ScalarType> > Op) :
     Op_(Op)
   {}
 
@@ -294,13 +304,13 @@ public:
     assert (MyY != 0);
 
     for (int i = 0 ; i < X.GetNumberVecs() ; ++i)
-      Op_.apply(*(MyX->GetVector(i)), *(MyY->GetVector(i)), false);
+      Op_->apply(*(MyX->GetVector(i)), *(MyY->GetVector(i)), false);
 
     return(Anasazi::Ok);
   }
 
 private:
-  Tpetra::CisMatrix<OrdinalType, ScalarType>& Op_;
+  Teuchos::RefCountPtr<Tpetra::CisMatrix<OrdinalType, ScalarType> > Op_;
 
 }; // class TpetraOperator
 
@@ -320,7 +330,7 @@ public:
     Tpetra::MultiVector<OrdinalType, ScalarType>(vectorSpace, list)
   {}
 
-  // This is a shalloe copy
+  // This is a shallow copy
   TpetraMultiVec(const Tpetra::VectorSpace<OrdinalType, ScalarType>& vectorSpace, 
                  std::vector<Teuchos::RefCountPtr<Tpetra::Vector<OrdinalType, ScalarType> > > list) :
     Tpetra::MultiVector<OrdinalType, ScalarType>(vectorSpace, list)
@@ -367,7 +377,7 @@ public:
   {
     std::vector<Tpetra::Vector<OrdinalType, ScalarType> const*> list(index.size());
     for (int i = 0 ; i < index.size() ; ++i)
-      list[i] = this->GetVector(i);
+      list[i] = this->GetVector(index[i]);
 
     return(new TpetraMultiVec(vectorSpace(), list));
   }
@@ -383,7 +393,7 @@ public:
   {
     std::vector<Teuchos::RefCountPtr<Tpetra::Vector<OrdinalType, ScalarType> > > list(index.size());
     for (int i = 0 ; i < index.size() ; ++i)
-      list[i] = this->GetRCP(i);
+      list[i] = this->GetRCP(index[i]);
 
     return(new TpetraMultiVec(vectorSpace(), list));
   }
@@ -420,7 +430,7 @@ public:
 
       for (int i = 0 ; i < getNumMyEntries() ; ++i)
       {
-	for (int v = 0; v < getNumMyEntries() ; ++v) tmp[v] = (*MyA)(i, v);
+	for (int v = 0; v < getNumVectors() ; ++v) tmp[v] = (*MyA)(i, v);
 
         for (int v = 0 ; v < B.numCols() ; ++v)
         {
@@ -459,8 +469,6 @@ public:
   void MvAddMv (const ScalarType alpha, const MultiVec<ScalarType>& A, const ScalarType beta,
                 const MultiVec<ScalarType>& B)
   {
-    // FIXME: only works in serial
-    
     TpetraMultiVec* MyA;
     MyA = dynamic_cast<TpetraMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
     assert (MyA != 0);
@@ -476,53 +484,39 @@ public:
 
   /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$\alpha A^T(*this)\f$.
   */
-  void MvTransMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, Teuchos::SerialDenseMatrix<int,ScalarType>& B ) const
+  void MvTransMv (const ScalarType alpha, const MultiVec<ScalarType>& A, Teuchos::SerialDenseMatrix<int,ScalarType>& B ) const
   {
-    // FIXME: only works in serial
-
     TpetraMultiVec* MyA;
     MyA = dynamic_cast<TpetraMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
     assert (MyA != 0);
     
-    assert (A.GetVecLength() == getNumMyEntries());
+    assert (A.GetVecLength() == getNumGlobalEntries());
     assert (getNumVectors() == B.numCols());
     assert (A.GetNumberVecs() == B.numRows());
     
+    // FIXME: DO ONLY HALF OF THIS...
     for (int v = 0 ; v < A.GetNumberVecs() ; ++v)
     {
       for (int w = 0 ; w < getNumVectors() ; ++w)
       {
-        ScalarType value = 0.0;
-        for (int i = 0 ; i < getNumMyEntries() ; ++i)
-        {
-          value += (*MyA)(i, v) * (*this)(i, w);
-        }
-        B(v, w) = alpha * value;
+        B(v, w) = alpha * MyA->GetVector(v)->dotProduct(*(GetVector(w)));
       }
     }
   }
 
   /*! \brief Compute a vector \c b where the components are the individual dot-products, i.e. \f$ b[i] = A[i]^T(this[i])\f$ where \c A[i] is the i-th column of \c A.
   */
-  void MvDot ( const MultiVec<ScalarType>& A, std::vector<ScalarType>* b ) const
+  void MvDot (const MultiVec<ScalarType>& A, std::vector<ScalarType>* b ) const
   {
-    // FIXME: only works in serial
-
-    TpetraMultiVec* MyA;
-    MyA = dynamic_cast<TpetraMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
+    const TpetraMultiVec* MyA;
+    MyA = dynamic_cast<const TpetraMultiVec*>(&A); 
     assert (MyA != 0);
     
     assert (getNumVectors() == (int)b->size());
     assert (getNumVectors() == A.GetNumberVecs());
-    assert (getNumMyEntries() == A.GetVecLength());
+    assert (getNumGlobalEntries() == A.GetVecLength());
     
-    for (int v = 0 ; v < getNumVectors() ; ++v)
-    {
-      ScalarType value = 0.0;
-      for (int i = 0 ; i < getNumMyEntries() ; ++i)
-        value += (*this)(i, v) * (*MyA)(i, v);
-      (*b)[v] = value;
-    }
+    this->dotProduct(*MyA, &((*b)[0]));
   }
 
   //@}
@@ -531,7 +525,7 @@ public:
   /*! \brief Compute the 2-norm of each individual vector of \c *this.  
     Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
     */
-  void MvNorm ( std::vector<Teuchos::ScalarTraits<ScalarType>::magnitudeType >* normvec ) const 
+  void MvNorm (std::vector<Teuchos::ScalarTraits<ScalarType>::magnitudeType >* normvec) const 
   {
     assert (normvec != 0);
     assert (getNumVectors() == (int)normvec->size());
@@ -553,13 +547,10 @@ public:
     assert (MyA != 0);
     
     assert (A.GetNumberVecs() >= (int)index.size());
-    assert (A.GetVecLength() == getNumMyEntries());
+    assert (A.GetVecLength() == getNumGlobalEntries());
     
-    cout << getNumMyEntries()  << endl;
-
     for (unsigned int v = 0 ; v < index.size() ; ++v)
     {
-      cout << index[v] << " .. " << getNumVectors() << endl;
       for (int i = 0 ; i < getNumMyEntries() ; ++i)
 	(*this)(i, index[v])  = (*MyA)(i, v);
     }
@@ -593,6 +584,46 @@ public:
 }; // class TpetraMultiVec
 }; // namespace Anasazi
 
+
+// Get zero and one for the OrdinalType
+
+OrdinalType const OrdinalZero = Teuchos::ScalarTraits<OrdinalType>::zero();
+OrdinalType const OrdinalOne  = Teuchos::ScalarTraits<OrdinalType>::one();
+
+// Get zero and one for the ScalarType
+
+ScalarType const ScalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
+ScalarType const ScalarOne  = Teuchos::ScalarTraits<ScalarType>::one();
+
+Teuchos::RefCountPtr<Anasazi::TpetraOperator<OrdinalType, ScalarType> >
+  CreateMatrix(Tpetra::VectorSpace<OrdinalType, ScalarType>& vectorSpace,
+               const ScalarType& a, const ScalarType& b, const ScalarType& c)
+{
+  Teuchos::RefCountPtr<Tpetra::CisMatrix<OrdinalType,ScalarType> > matrix =
+    Teuchos::rcp(new Tpetra::CisMatrix<OrdinalType, ScalarType>(vectorSpace));
+
+  OrdinalType NumMyElements = vectorSpace.elementSpace().getNumMyElements();
+  OrdinalType NumGlobalElements = vectorSpace.elementSpace().getNumGlobalElements();
+  std::vector<OrdinalType> const& MyGlobalElements = vectorSpace.elementSpace().getMyGlobalElements();
+
+  for (OrdinalType LID = OrdinalZero ; LID < NumMyElements ; ++LID)
+  {
+    OrdinalType GID = MyGlobalElements[LID];
+    if (GID != OrdinalZero)
+      matrix->submitEntry(Tpetra::Add, GID, b, GID - 1);
+    if (GID != NumGlobalElements - 1)
+      matrix->submitEntry(Tpetra::Add, GID, c, GID + 1);
+    matrix->submitEntry(Tpetra::Add, GID, a, GID);
+  }
+
+  matrix->fillComplete();
+
+  return(Teuchos::rcp(new Anasazi::TpetraOperator<OrdinalType, ScalarType>(matrix)));
+}
+
+
+
+
 // =========== //
 // main driver //
 // =========== //
@@ -614,19 +645,9 @@ int main(int argc, char *argv[])
   Tpetra::SerialComm<OrdinalType, ScalarType> Comm;
 #endif
 
-  // Get zero and one for the OrdinalType
-  
-  OrdinalType const OrdinalZero = Teuchos::ScalarTraits<OrdinalType>::zero();
-  OrdinalType const OrdinalOne  = Teuchos::ScalarTraits<OrdinalType>::one();
-
-  // Get zero and one for the ScalarType
-  
-  ScalarType const ScalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
-  ScalarType const ScalarOne  = Teuchos::ScalarTraits<ScalarType>::one();
-
   // Creates a vector of size `length', then set the elements values.
   
-  OrdinalType length    = OrdinalOne * 10;
+  OrdinalType length    = OrdinalOne * 100;
   OrdinalType indexBase = OrdinalZero;
 
   // 1) Creation of a platform
@@ -645,63 +666,19 @@ int main(int argc, char *argv[])
   Tpetra::VectorSpace<OrdinalType, ScalarType> 
     vectorSpace(elementSpace, platformV);
 
-  // 3) We now setup a matrix, which is diagonal.
-  //    To that aim, we need to extract the list of locally owned
-  //    ID's from elementSpace.
-  
-  OrdinalType NumMyElements = elementSpace.getNumMyElements();
-  vector<OrdinalType> MyGlobalElements = elementSpace.getMyGlobalElements();
-  
-  Tpetra::CisMatrix<OrdinalType,ScalarType> matrix(vectorSpace);
 
-  // stencil on a given row is [b a c]
-  ScalarType a = ScalarOne * 2;
-  ScalarType b = ScalarOne * (-1);
-  ScalarType c = ScalarOne * (-1);
+  typedef Anasazi::MultiVec<ScalarType> MV;        
+  typedef Anasazi::Operator<ScalarType> OP;        
+  typedef Anasazi::TpetraOperator<OrdinalType, ScalarType> TOP;        
+  typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
 
-  for (OrdinalType LID = OrdinalZero ; LID < NumMyElements ; ++LID)
-  {
-    OrdinalType GID = MyGlobalElements[LID];
-    if (GID != OrdinalZero)
-      matrix.submitEntry(Tpetra::Add, GID, b, GID - 1);
-    if (GID != length - 1)
-      matrix.submitEntry(Tpetra::Add, GID, c, GID + 1);
-    matrix.submitEntry(Tpetra::Add, GID, a, GID);
-  }
-
-  matrix.fillComplete();
-
-  //  ....
-
-  Tpetra::CisMatrix<OrdinalType,ScalarType> matrixB(vectorSpace);
-
-  for (OrdinalType LID = OrdinalZero ; LID < NumMyElements ; ++LID)
-  {
-    OrdinalType GID = MyGlobalElements[LID];
-    matrixB.submitEntry(Tpetra::Add, GID, a, GID);
-  }
-
-  matrixB.fillComplete();
-
-  OrdinalType NumVectors = OrdinalOne * 3;
-
-  Teuchos::RefCountPtr<Anasazi::TpetraOperator<OrdinalType, ScalarType> > A = 
-    Teuchos::rcp(new Anasazi::TpetraOperator<OrdinalType, ScalarType>(matrix));
-  Teuchos::RefCountPtr<Anasazi::TpetraOperator<OrdinalType, ScalarType> > B = 
-    Teuchos::rcp(new Anasazi::TpetraOperator<OrdinalType, ScalarType>(matrixB));
-  Teuchos::RefCountPtr<Anasazi::TpetraOperator<OrdinalType, ScalarType> > K = 
-    Teuchos::rcp(new Anasazi::TpetraOperator<OrdinalType, ScalarType>(matrix));
-
-
-
-
-
+  Teuchos::RefCountPtr<TOP> A = CreateMatrix(vectorSpace, ScalarOne * 4, -ScalarOne, -ScalarOne);
+  Teuchos::RefCountPtr<TOP> B = CreateMatrix(vectorSpace, ScalarOne * 2, -ScalarOne, -ScalarOne);
+  Teuchos::RefCountPtr<TOP> K = CreateMatrix(vectorSpace, ScalarOne, ScalarZero, ScalarZero);
 
   Anasazi::ReturnType returnCode = Anasazi::Ok;	
 
-  ScalarType     TOL    = 1e-8;
-
-  int MyPID = 0;
+  ScalarType TOL = 1e-4;
 
   int MAXITER = 500;
   int NEV = 3; 
@@ -710,16 +687,12 @@ int main(int argc, char *argv[])
   // FIXME: if I set BLOCKSIZE = 2 then nothing good happens...
   int BLOCKSIZE = 1;
 
-  ScalarType TARGET = 0.5;
+  ScalarType TARGET = 1.5;
 
   // ================== //
   // Sets up the solver //
   // ================== //
 
-  typedef Anasazi::MultiVec<ScalarType> MV;        
-  typedef Anasazi::Operator<ScalarType> OP;        
-  typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-  //typedef Anasazi::MultiVecTraits<ScalarType, MyMultiVec> MVT;
 
   Teuchos::RefCountPtr<MV> ivec = Teuchos::rcp(new Anasazi::TpetraMultiVec(vectorSpace, BLOCKSIZE));        
   ivec->MvRandom();
@@ -728,7 +701,7 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<ScalarType, MV, OP> > MyProblem =
     Teuchos::rcp( new Anasazi::BasicEigenproblem<ScalarType, MV, OP>(A, B, ivec) );
 
-  //MyProblem->SetPrec(K); 
+  MyProblem->SetPrec(K); 
 
   // Inform the eigenproblem that the operator A is symmetric
   MyProblem->SetSymmetric(true); 
@@ -741,7 +714,7 @@ int main(int argc, char *argv[])
 
   // Create an output manager to handle the I/O from the solver
   Teuchos::RefCountPtr<Anasazi::OutputManager<ScalarType> > MyOM =
-    Teuchos::rcp(new Anasazi::OutputManager<ScalarType>(MyPID));
+    Teuchos::rcp(new Anasazi::OutputManager<ScalarType>(Comm.getMyImageID()));
   MyOM->SetVerbosity(Anasazi::FinalSummary);	
 
   // Create a sort manager
@@ -752,7 +725,7 @@ int main(int argc, char *argv[])
   // Create parameter list to pass into solver
   // FIXME: ADD PARAMTERS
   Teuchos::ParameterList MyPL;
-  MyPL.set("Block Size", BLOCKSIZE);
+  MyPL.set("BlockSize", BLOCKSIZE);
   MyPL.set("SMIN", SMIN);
   MyPL.set("SMAX", SMAX);
   MyPL.set("Max Iters", MAXITER);
@@ -766,5 +739,9 @@ int main(int argc, char *argv[])
   returnCode = MySolver.solve();
 
   MySolver.currentStatus();
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
 
 }
