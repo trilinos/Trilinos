@@ -756,43 +756,43 @@ fi
 #  HAVE_AMESOS_KUNDERT is undef'd in Amesos_ConfigDefs.h 
 #
 
-if test "X$ac_cv_use_amesos_kundert" != "Xno"; then
-  AM_CONDITIONAL(HAVE_AMESOS_KUNDERT, true ) 
+#if test "X$ac_cv_use_amesos_kundert" != "Xno"; then
+#  AM_CONDITIONAL(HAVE_AMESOS_KUNDERT, true ) 
 
   # ------------------------------------------------------------------------
   # Setup Platform for Kundert
   # ------------------------------------------------------------------------
 
- case "$target" in
-  *freebsd*) PLATFORM=freebsd
-           ;;
-  *linux*) PLATFORM=linux
-         ;;
-  *sgi*) PLATFORM=sgi
-       ;;
-  *powerpc-apple*) PLATFORM=ppc
-      ;;
-  *powerpc-ibm-aix*) PLATFORM=aix
-      ;;
-  *solaris*) PLATFORM=solaris
-      ;;
-  i386*mingw32msvc) PLATFORM=mingw
-       ;;
-  alpha*-dec-osf*) PLATFORM=DEC
-       ;;
-  *)   if test "x$PLATFORM" = "x"; then
-         AC_MSG_NOTICE([Unrecognized target, using generic linux for PLATFORM])
-         Xyce_ARCH=linux
-         PLATFORM=linux
-       fi
-       ;;
- esac
-
- AC_MSG_NOTICE([Adding Platform Define $PLATFORM to CCFLAGS])
- CPPFLAGS="$CPPFLAGS -D$PLATFORM"
-else
+# case "$target" in
+#  *freebsd*) PLATFORM=freebsd
+#           ;;
+#  *linux*) PLATFORM=linux
+#         ;;
+#  *sgi*) PLATFORM=sgi
+#       ;;
+#  *powerpc-apple*) PLATFORM=ppc
+#      ;;
+#  *powerpc-ibm-aix*) PLATFORM=aix
+#      ;;
+#  *solaris*) PLATFORM=solaris
+#      ;;
+#  i386*mingw32msvc) PLATFORM=mingw
+#       ;;
+#  alpha*-dec-osf*) PLATFORM=DEC
+#       ;;
+#  *)   if test "x$PLATFORM" = "x"; then
+#         AC_MSG_NOTICE([Unrecognized target, using generic linux for PLATFORM])
+#         Xyce_ARCH=linux
+#         PLATFORM=linux
+#       fi
+#       ;;
+# esac
+#
+# AC_MSG_NOTICE([Adding Platform Define $PLATFORM to CCFLAGS])
+# CPPFLAGS="$CPPFLAGS -D$PLATFORM"
+#else
   AM_CONDITIONAL(HAVE_AMESOS_KUNDERT, false ) 
-fi
+#fi
 
 
 AC_LANG_POP
