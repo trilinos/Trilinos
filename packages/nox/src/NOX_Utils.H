@@ -123,8 +123,12 @@ public:				// types
     LinearSolverDetails = 0x40,   
     //! 2^7
     TestDetails = 0x80,
-    //! 2^8
-    Debug = 0x0100
+    //! 2^8 -- For LOCA
+    StepperIteration = 0x0100,
+    //! 2^9 -- For LOCA
+    StepperDetails = 0x0200,
+    //! 2^10
+    Debug = 0x01000
   };
 
 
