@@ -323,6 +323,8 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetra, thyra, EPETRA_THYRA, BUILD_EPETRA_THYRA, 
 
 #TAC_ARG_ENABLE_CAN_USE_PACKAGE(teuchos, complex, TEUCHOS_COMPLEX, BUILD_TEUCHOS_COMPLEX, yes, [Build examples/tests which use complex code], [Build examples/tests which use complex<> code.  Can be overridden with --disable-teuchos-complex])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, tpetra, ANASAZI_TPETRA, BUILD_ANASAZI_TPETRA, no, [Build examples which use Tpetra adapters.], [Build examples which use Tpetra adapters.  Can be overridden with --disable-anasazi-tpetra.])
+
 # ------------------------------------------------------------------------
 # Enable optional python wrappers
 # ------------------------------------------------------------------------
@@ -450,6 +452,7 @@ AC_CONFIG_FILES([
 		test/MVOPComplex/Makefile
 		test/MVOPTester/Makefile
 		test/LOBPCG/Makefile
+		test/MVOPTpetra/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile
