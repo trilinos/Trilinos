@@ -113,8 +113,11 @@ int main(int argc, char *argv[])
   }
   catch (Exception& rhs)
   {
-    rhs.Print();
-    exit(EXIT_FAILURE);
+    if (Comm.MyPID() == 0)
+    {
+      cerr << "Caught exception: ";
+      rhs.Print();
+    }
   }
 
 #ifdef HAVE_MPI

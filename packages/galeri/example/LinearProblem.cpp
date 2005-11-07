@@ -76,8 +76,10 @@ int main(int argv, char* argc[])
   catch (Galeri::Exception& rhs)
   {
     if (Comm.MyPID() == 0)
+    {
+      cerr << "Caught exception: ";
       rhs.Print();
-    exit(EXIT_FAILURE);
+    }
   }
 
 #ifdef HAVE_MPI
