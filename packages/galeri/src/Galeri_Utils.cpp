@@ -192,6 +192,7 @@ CreateCartesianCoordinates(const string CoordType,
       (*Coord)[2][i] = delta_z * iz;
     }
   }
+  else
   {
     throw(Exception(__FILE__, __LINE__,
                     "`CoordType' has incorrect value (" 
