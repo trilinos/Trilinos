@@ -26,21 +26,20 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_STANDARD_CATCH_MACROS_HPP
-#define TEUCHOS_STANDARD_CATCH_MACROS_HPP
+#include "Teuchos_exit.h"
+#include "Teuchos_TestForException.hpp"
 
-#include "Teuchos_ConfigDefs.hpp"
-
-#define TEUCHOS_STANDARD_CATCH_STATEMENTS(VERBOSE,ERR_STREAM,SUCCESS_FLAG) \
-	catch( const std::exception &excpt ) { \
-		if((VERBOSE)) \
-			(ERR_STREAM) << "*** Caught standard exception of type \'"<<typeid(excpt).name()<<"\' : " << excpt.what() << std::endl; \
-    (SUCCESS_FLAG) = false; \
-	} \
-	catch( ... ) { \
-		if((VERBOSE)) \
-			(ERR_STREAM) << "*** Caught an unknown exception\n"; \
-    (SUCCESS_FLAG) = false; \
-	}
-
-#endif // TEUCHOS_STANDARD_CATCH_MACROS_HPP
+void Teuchos_exit_helper(
+  char       file[]
+  ,int       line
+  ,char      msg[]
+  ,int       error_code
+  )
+{
+  TeuchosOStringStream omsg;
+  TestForException_break(); // Allows us to set a breakpoint!
+  omsg << file << ":" << line << ": error code = " << error_code;
+  if(msg)
+    omsg << ": " << msg;
+  throw std::logic_error(TEUCHOS_OSTRINGSTREAM_GET_C_STR(omsg));
+}

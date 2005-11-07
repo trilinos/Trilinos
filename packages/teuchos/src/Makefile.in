@@ -119,7 +119,8 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.cpp \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Describable.cpp \
-	$(srcdir)/Teuchos_dyn_cast.cpp $(srcdir)/Teuchos_Flops.cpp \
+	$(srcdir)/Teuchos_dyn_cast.cpp $(srcdir)/Teuchos_exit.cpp \
+	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
 	$(srcdir)/Teuchos_MPIReductionOpBase.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
@@ -152,8 +153,8 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 am__objects_1 = Teuchos_BLAS.$(OBJEXT) \
 	Teuchos_CommandLineProcessor.$(OBJEXT) \
 	Teuchos_CompObject.$(OBJEXT) Teuchos_Describable.$(OBJEXT) \
-	Teuchos_dyn_cast.$(OBJEXT) Teuchos_Flops.$(OBJEXT) \
-	Teuchos_GlobalMPISession.$(OBJEXT) \
+	Teuchos_dyn_cast.$(OBJEXT) Teuchos_exit.$(OBJEXT) \
+	Teuchos_Flops.$(OBJEXT) Teuchos_GlobalMPISession.$(OBJEXT) \
 	Teuchos_MPIReductionOpBase.$(OBJEXT) Teuchos_Object.$(OBJEXT) \
 	Teuchos_ParameterEntry.$(OBJEXT) \
 	Teuchos_ParameterList.$(OBJEXT) Teuchos_RefCountPtr.$(OBJEXT) \
@@ -221,7 +222,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_XMLObjectImplem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_XMLParameterListReader.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_XMLParameterListWriter.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_dyn_cast.Po
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_dyn_cast.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_exit.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -243,7 +245,7 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
-	$(srcdir)/Teuchos_dyn_cast.hpp \
+	$(srcdir)/Teuchos_dyn_cast.hpp $(srcdir)/Teuchos_exit.h \
 	$(srcdir)/Teuchos_FancyOStream.hpp $(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
 	$(srcdir)/Teuchos_GlobalMPISession.hpp \
@@ -465,6 +467,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
 	$(srcdir)/Teuchos_dyn_cast.hpp \
+	$(srcdir)/Teuchos_exit.h \
 	$(srcdir)/Teuchos_FancyOStream.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
@@ -509,6 +512,7 @@ CORE = \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Describable.cpp \
 	$(srcdir)/Teuchos_dyn_cast.cpp \
+	$(srcdir)/Teuchos_exit.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
 	$(srcdir)/Teuchos_MPIReductionOpBase.cpp \
@@ -823,6 +827,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_XMLParameterListReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_XMLParameterListWriter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_dyn_cast.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_exit.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -919,6 +924,22 @@ Teuchos_dyn_cast.obj: $(srcdir)/Teuchos_dyn_cast.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_dyn_cast.Po' tmpdepfile='$(DEPDIR)/Teuchos_dyn_cast.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_dyn_cast.obj `if test -f '$(srcdir)/Teuchos_dyn_cast.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_dyn_cast.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_dyn_cast.cpp'; fi`
+
+Teuchos_exit.o: $(srcdir)/Teuchos_exit.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_exit.o -MD -MP -MF "$(DEPDIR)/Teuchos_exit.Tpo" -c -o Teuchos_exit.o `test -f '$(srcdir)/Teuchos_exit.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_exit.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_exit.Tpo" "$(DEPDIR)/Teuchos_exit.Po"; else rm -f "$(DEPDIR)/Teuchos_exit.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_exit.cpp' object='Teuchos_exit.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_exit.Po' tmpdepfile='$(DEPDIR)/Teuchos_exit.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_exit.o `test -f '$(srcdir)/Teuchos_exit.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_exit.cpp
+
+Teuchos_exit.obj: $(srcdir)/Teuchos_exit.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_exit.obj -MD -MP -MF "$(DEPDIR)/Teuchos_exit.Tpo" -c -o Teuchos_exit.obj `if test -f '$(srcdir)/Teuchos_exit.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_exit.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_exit.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_exit.Tpo" "$(DEPDIR)/Teuchos_exit.Po"; else rm -f "$(DEPDIR)/Teuchos_exit.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_exit.cpp' object='Teuchos_exit.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_exit.Po' tmpdepfile='$(DEPDIR)/Teuchos_exit.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_exit.obj `if test -f '$(srcdir)/Teuchos_exit.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_exit.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_exit.cpp'; fi`
 
 Teuchos_Flops.o: $(srcdir)/Teuchos_Flops.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_Flops.o -MD -MP -MF "$(DEPDIR)/Teuchos_Flops.Tpo" -c -o Teuchos_Flops.o `test -f '$(srcdir)/Teuchos_Flops.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Flops.cpp; \

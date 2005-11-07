@@ -59,6 +59,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
 	$(srcdir)/Teuchos_dyn_cast.hpp \
+	$(srcdir)/Teuchos_exit.h \
 	$(srcdir)/Teuchos_FancyOStream.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
@@ -103,6 +104,7 @@ CORE = \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Describable.cpp \
 	$(srcdir)/Teuchos_dyn_cast.cpp \
+	$(srcdir)/Teuchos_exit.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
 	$(srcdir)/Teuchos_MPIReductionOpBase.cpp \

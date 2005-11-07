@@ -26,21 +26,33 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_STANDARD_CATCH_MACROS_HPP
-#define TEUCHOS_STANDARD_CATCH_MACROS_HPP
+#include "Teuchos_exit.h"
+#include "Teuchos_StandardCatchMacros.hpp"
+#include "some_c_func.h"
 
-#include "Teuchos_ConfigDefs.hpp"
+int main( int argc, char* argv[] ) {
 
-#define TEUCHOS_STANDARD_CATCH_STATEMENTS(VERBOSE,ERR_STREAM,SUCCESS_FLAG) \
-	catch( const std::exception &excpt ) { \
-		if((VERBOSE)) \
-			(ERR_STREAM) << "*** Caught standard exception of type \'"<<typeid(excpt).name()<<"\' : " << excpt.what() << std::endl; \
-    (SUCCESS_FLAG) = false; \
-	} \
-	catch( ... ) { \
-		if((VERBOSE)) \
-			(ERR_STREAM) << "*** Caught an unknown exception\n"; \
-    (SUCCESS_FLAG) = false; \
+  bool result, success = true;
+  
+  result = true;
+  try {
+    std::cerr << "\nRaise an exception with TEUCHOS_MSG_EXIT(...) right here in C++ code with a message ...\n";
+    TEUCHOS_MSG_EXIT("This exception is raised from C++ code!",1);
 	}
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,result);
+  if(result==true) success = false;
 
-#endif // TEUCHOS_STANDARD_CATCH_MACROS_HPP
+  result = true;
+	try {
+    std::cerr << "\nCall a C function that call TEUCHOS_EXIT(...) ...\n";
+    some_c_func();
+	}
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,result);
+  if(result==true) success = false;
+  
+  if(success)
+    std::cerr << "\nEnd Result: TEST PASSED" << std::endl;	
+  
+  return ( success ? 0 : 1 );
+  
+}

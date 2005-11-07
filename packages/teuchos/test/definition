@@ -9,6 +9,14 @@
     COMM = MPI,SERIAL;
 }
 
+# This does not work unless the C code is compiled
+# to work correctly when exceptions are thrown
+#(FRAMEWORK,INSTALL) {
+#    TESTS = exit/Teuchos_exit_test.exe;
+#    EXIT-STATUS = STRING-COMPARISON;
+#    COMM = SERIAL;
+#}
+
 (FRAMEWORK) {
     TESTS = Time/Time_test.exe;
     ARGS = -v;

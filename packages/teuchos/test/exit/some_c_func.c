@@ -1,4 +1,4 @@
-// @HEADER
+/* @HEADER
 // ***********************************************************************
 // 
 //                    Teuchos: Common Tools Package
@@ -25,22 +25,12 @@
 // 
 // ***********************************************************************
 // @HEADER
+*/
 
-#ifndef TEUCHOS_STANDARD_CATCH_MACROS_HPP
-#define TEUCHOS_STANDARD_CATCH_MACROS_HPP
+#include "some_c_func.h"
+#include "Teuchos_exit.h"
 
-#include "Teuchos_ConfigDefs.hpp"
-
-#define TEUCHOS_STANDARD_CATCH_STATEMENTS(VERBOSE,ERR_STREAM,SUCCESS_FLAG) \
-	catch( const std::exception &excpt ) { \
-		if((VERBOSE)) \
-			(ERR_STREAM) << "*** Caught standard exception of type \'"<<typeid(excpt).name()<<"\' : " << excpt.what() << std::endl; \
-    (SUCCESS_FLAG) = false; \
-	} \
-	catch( ... ) { \
-		if((VERBOSE)) \
-			(ERR_STREAM) << "*** Caught an unknown exception\n"; \
-    (SUCCESS_FLAG) = false; \
-	}
-
-#endif // TEUCHOS_STANDARD_CATCH_MACROS_HPP
+void some_c_func()
+{
+  TEUCHOS_EXIT(1);
+}
