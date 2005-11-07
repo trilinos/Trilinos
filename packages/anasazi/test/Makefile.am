@@ -27,7 +27,7 @@
 #@HEADER
 
 if BUILD_TEUCHOS_COMPLEX
-COMPLEX_SUBDIR = MVOPComplex
+COMPLEX_SUBDIR = MVOPComplex MVOPTpetra
 endif
 
 SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG MVOPTester $(COMPLEX_SUBDIR) scripts
