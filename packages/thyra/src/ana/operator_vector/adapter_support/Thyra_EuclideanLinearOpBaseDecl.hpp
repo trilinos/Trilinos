@@ -29,7 +29,7 @@
 #ifndef THYRA_EUCLIDEAN_LINEAR_OP_DECL_HPP
 #define THYRA_EUCLIDEAN_LINEAR_OP_DECL_HPP
 
-#include "Thyra_LinearOpBaseDecl.hpp"
+#include "Thyra_LinearOpDefaultBaseDecl.hpp"
 
 namespace Thyra {
 
@@ -45,7 +45,7 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
  */
 template<class RangeScalar, class DomainScalar>
-class EuclideanLinearOpBase : virtual public LinearOpBase<RangeScalar,DomainScalar> {
+class EuclideanLinearOpBase : virtual public LinearOpDefaultBase<RangeScalar,DomainScalar> {
 public:
 
   /** @name Pure virtual functions to override in subclasses */

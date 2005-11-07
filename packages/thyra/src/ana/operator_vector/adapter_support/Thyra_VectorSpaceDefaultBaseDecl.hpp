@@ -29,6 +29,7 @@
 #ifndef THYRA_VECTOR_SPACE_DEFAULT_BASE_DECL_HPP
 #define THYRA_VECTOR_SPACE_DEFAULT_BASE_DECL_HPP
 
+#include "Thyra_OperatorVectorAdapterSupportTypes.hpp"
 #include "Thyra_VectorSpaceBaseDecl.hpp"
 
 namespace Thyra {

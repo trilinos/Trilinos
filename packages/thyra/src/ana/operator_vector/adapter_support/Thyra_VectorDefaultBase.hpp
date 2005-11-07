@@ -42,6 +42,18 @@
 #include "Teuchos_TestForException.hpp"
 
 namespace Thyra {
+// Overridden from Teuchos::Describable
+
+template<class Scalar>
+std::ostream& VectorDefaultBase<Scalar>::describe(
+    std::ostream                         &out
+    ,const Teuchos::EVerbosityLevel      verbLevel
+    ,const std::string                   leadingIndent
+    ,const std::string                   indentSpacer
+    ) const
+{
+  return LinearOpDefaultBase<Scalar>::describe(out,verbLevel,leadingIndent,indentSpacer);
+}
 
 // Overridden from LinearOpBase
 

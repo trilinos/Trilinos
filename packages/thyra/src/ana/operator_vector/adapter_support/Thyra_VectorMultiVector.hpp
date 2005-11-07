@@ -75,7 +75,7 @@ void VectorMultiVector<Scalar>::uninitialize(
   mv_ = Teuchos::null;
 }
 
-// Overridden from OpBase (forwarded to this->mv())
+// Overridden from LinearOpBase (forwarded to this->mv())
 
 template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
@@ -96,8 +96,6 @@ bool VectorMultiVector<Scalar>::opSupported(ETransp M_trans) const
 {
   return mv_->opSupported(M_trans);
 }
-
-// Overridden from LinearOpBase (forwarded to this->mv())
 
 template<class Scalar>
 void VectorMultiVector<Scalar>::apply(

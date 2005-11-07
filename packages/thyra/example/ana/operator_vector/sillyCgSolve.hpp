@@ -54,12 +54,10 @@ bool sillyCgSolve(
   )
 {
   // Create some typedefs and some other stuff to make the code cleaner
-  using Teuchos::RefCountPtr;
   typedef Teuchos::ScalarTraits<Scalar> ST; typedef typename ST::magnitudeType ScalarMag;
-  typedef RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > VectorSpacePtr;
-  typedef RefCountPtr<Thyra::VectorBase<Scalar> > VectorPtr;
-  using Thyra::NOTRANS;
-  const Scalar one = ST::one(), zero = ST::zero();
+  const Scalar one = ST::one(), zero = ST::zero(); using Thyra::NOTRANS;
+  typedef Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > VectorSpacePtr;
+  typedef Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > VectorPtr;
   // Validate input
   TEST_FOR_EXCEPT(x==NULL);
   THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES("sillyCgSolve()",A,Thyra::NOTRANS,*x,&b); // Does A*x - b agree?
@@ -91,7 +89,7 @@ bool sillyCgSolve(
     const Scalar alpha = rho/scalarProd(*p,*q);   // rho/<p,q>          -> alpha
     Vp_StV( x,   Scalar(+alpha), *p );            // +alpha*p + x       -> x
     Vp_StV( &*r, Scalar(-alpha), *q );            // -alpha*q + r       -> r
-    rho_old = rho;                                // rho                -> rho_old (remember rho for next iter)
+    rho_old = rho;                                // rho                -> rho_old (remember for next iter)
   }
   return false; // Failure
 } // end sillyCgSolve

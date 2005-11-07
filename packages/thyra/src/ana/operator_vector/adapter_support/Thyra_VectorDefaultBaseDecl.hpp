@@ -76,6 +76,19 @@ public:
   /** \brief . */
   using MultiVectorDefaultBase<Scalar>::col;
 
+  /** @name Public functions overridden from Teuchos::Describable */
+  //@{
+  /** \brief Overridden to call <tt>LinearOpDefaultBase::describe()</tt> to
+   * disambiguate the call.
+   */
+  std::ostream& describe(
+    std::ostream                         &out
+    ,const Teuchos::EVerbosityLevel      verbLevel
+    ,const std::string                   leadingIndent
+    ,const std::string                   indentSpacer
+    ) const;
+  //@}
+
   /** @name Overridden from LinearOpBase (should never need to be overridden in subclasses) */
   //@{
   /// Returns <tt>this->space()</tt>

@@ -30,7 +30,7 @@
 #define THYRA_MULTI_VECTOR_DEFAULT_BASE_DECL_HPP
 
 #include "Thyra_MultiVectorBaseDecl.hpp"
-#include "RTOpPack_RTOpT.hpp"
+#include "Thyra_LinearOpDefaultBaseDecl.hpp"
 
 namespace Thyra {
 
@@ -52,18 +52,20 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_Adapters_grp
  */
 template<class Scalar>
-class MultiVectorDefaultBase : virtual public MultiVectorBase<Scalar>
+class MultiVectorDefaultBase
+  : virtual public MultiVectorBase<Scalar>
+  , virtual protected LinearOpDefaultBase<Scalar>
 {
 public:
 
   /** \brief . */
-  using MultiVectorBase<Scalar>::describe;
+  using LinearOpDefaultBase<Scalar>::describe;
   /** \brief . */
   using MultiVectorBase<Scalar>::applyOp;
   /** \brief . */
-  using MultiVectorBase<Scalar>::col; // Inject *all* functions!
+  using MultiVectorBase<Scalar>::col;
   /** \brief . */
-  using MultiVectorBase<Scalar>::subView; // Inject *all* functions!
+  using MultiVectorBase<Scalar>::subView;
 
   /** \name Overridden public member functions from MultiVectorBase */
   //@{

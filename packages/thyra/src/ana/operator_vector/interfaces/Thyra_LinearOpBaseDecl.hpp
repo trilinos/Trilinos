@@ -95,7 +95,7 @@ namespace Thyra {
  * many different ANAs will only support a single scalar type.  There is a lot
  * of support for single-scalar-type linear operators.
  *
- * First that there is a forward declaration for this class of the form
+ * First, note that there is a forward declaration for this class of the form
  
  \code
   template<class RangeScalar, class DomainScalar = RangeScalar> class LinearOpBase;
@@ -116,9 +116,9 @@ namespace Thyra {
  * <tt>range()</tt> may have specialized implementations of the scalar product
  * \f$<u,w>\f$ (i.e. \f$<u,w> \neq u^H w\f$ in general).  As a result, the
  * operator and adjoint operator must obey the defined scalar product.
- * Specifically, for any two vectors \f$w\f$ in the domain space
- * \f$\mathcal{D}\f$ and \f$u\f$ in the range space \f$\mathcal{R}\f$ the
- * adjoint operation must obey the adjoint property
+ * Specifically, for any two vectors \f$w\in\mathcal{D}\f$ (the domain space)
+ * and \f$u\in\mathcal{R}\f$ (the range space), the adjoint operation must
+ * obey the adjoint property
  *
  \f[
   <u,A v>_{\mathcal{R}} =\!= <A^H u, v>_{\mathcal{D}}
@@ -172,12 +172,12 @@ namespace Thyra {
  * This interface provides default implementations for the functions
  * <tt>applyTranspose()</tt> and <tt>applyTransposeSupports()</tt> where it is
  * assumed that the operator does not support transpose (or adjoint) operator
- * applications.  If transpose (and/or adjoint)operator applications can be
+ * applications.  If transpose (and/or adjoint) operator applications can be
  * supported, then the functions <tt>applyTranspose()</tt> and
  * <tt>applyTransposeSupports()</tt> should be overridden as well.
  *
  * If possible, the subclass should also override the <tt>clone()</tt>
- * function with allows clients to create copies of a <tt>LinearOpBase</tt>
+ * function which allows clients to create copies of a <tt>LinearOpBase</tt>
  * object.  This functionality is useful in some circumstances.  However, this
  * functionality is not required and the default <tt>clone()</tt>
  * implementation returns a null smart pointer object.
@@ -190,8 +190,8 @@ namespace Thyra {
  * applications.
  *
  * If, in addition to only supporting a single scalar type, a concrete
- * subclass can only support single RHS operator applications then perhaps the
- * node subclass <tt>SingleRhsLinearOpBase</tt> should be inherited from.
+ * subclass can only support single RHS operator applications, then perhaps
+ * the node subclass <tt>SingleRhsLinearOpBase</tt> should be inherited from.
  * This node subclass provides a version of
  * <tt>SingleRhsLinearOpBase::apply()</tt> that takes <tt>VectorBase</tt>
  * objects instead of <tt>MultiVectorBase</tt> objects.
@@ -365,45 +365,6 @@ public:
    * value but many good matrix-based linear operator implementations will.
    */
   virtual Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> > clone() const;
-
-  //@}
-
-  /** @name Public functions overridden from Teuchos::Describable */
-  //@{
-
-  /** \brief Generates a default outputting for all linear operators.
-   *
-   * Calls on the <tt>this->description()</tt> function for the name of the
-   * class (and possibly its instance name) and then if <tt>verbLevel >=
-   * VERB_EXTREME</tt>, then the linear operators elements themselves are
-   * printed as well.  The format of the output is as follows:
-   *
-   \verbatim
-
-   type = 'this->description()', rangeDim = m, domainDim = n
-     1:1:a11 1:2:a12 ... 1:n:a1n
-     2:1:a21 2:2:a22 ... 1:n:a2n
-     .       .           .
-     .       .           .
-     .       .           .
-     m:1:am1 m:2:am2 ... m:n:amn
-   \endverbatim
-   *
-   * The above matrix coefficients are with respect to the natural basis as
-   * defined by the scalar products.
-   *
-   * Before <tt>type = 'this->description()'</tt> is printed and after
-   * each newline, <tt>leadingIndent</tt> is output.  The
-   * <tt>index:value</tt> lines are offset an additional
-   * <tt>indentSpacer</tt> amount.  A newline is printed after the
-   * last <tt>m:n:amn</tt> entry.
-   */
-  std::ostream& describe(
-    std::ostream                         &out
-    ,const Teuchos::EVerbosityLevel      verbLevel
-    ,const std::string                   leadingIndent
-    ,const std::string                   indentSpacer
-    ) const;
 
   //@}
 

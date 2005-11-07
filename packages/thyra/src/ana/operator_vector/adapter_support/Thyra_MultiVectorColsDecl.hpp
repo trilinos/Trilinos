@@ -29,10 +29,10 @@
 #ifndef TSF_MULTI_VECTOR_COlS_DECL_HPP
 #define TSF_MULTI_VECTOR_COlS_DECL_HPP
 
-#include "Thyra_MultiVectorDefaultBase.hpp"
-#include "Thyra_VectorSpaceBase.hpp"
-#include "Thyra_VectorBase.hpp"
-#include "Thyra_SingleRhsLinearOpBase.hpp"
+#include "Thyra_MultiVectorDefaultBaseDecl.hpp"
+#include "Thyra_VectorSpaceBaseDecl.hpp"
+#include "Thyra_VectorBaseDecl.hpp"
+#include "Thyra_SingleRhsLinearOpBaseDecl.hpp"
 
 namespace Thyra {
 

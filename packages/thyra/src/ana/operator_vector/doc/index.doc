@@ -18,7 +18,6 @@ useful as a developer's reference and should only be used as such.
 <li> \ref Thyra_Op_Vec_foundational_interfaces_sec
 <li> \ref thyra_operator_vector_use_cases_sec
 <li> \ref thyra_operator_vector_examples_sec
-<li> \ref thyra_operator_vector_technicalities_sec
 <li> \ref Thyra_Op_Vec_faq_sec
 <li> \ref Thyra_Op_Vec_links_to_other_documentation_sec
 </ul>
@@ -118,74 +117,7 @@ program that demonstrates how product vectors and product spaces are
 created and used.
 
 </ol>
-\section thyra_operator_vector_technicalities_sec Some Technicalities about Thyra Operator/Vector and Dependent Software
 
-A few things about the software in the %Thyra package are worth
-mentioning:
-
-<ul>
-
-<li><b>Scalar and Index (Ordinal) data types</b>
-
-All of these interfaces are templated on a <b><tt>Scalar</tt></b> (i.e.
-floating-point) type and therefore almost all of %Thyra supports arbitrary
-scalar types such as complex types (e.g. <tt>std::complex<double></tt>),
-automatic differentiation types, interval types and extended precision types
-(i.e. <tt>mpf_class</tt>) in addition to simpler real types such as
-<tt>double</tt> and <tt>float</tt>.  The only requirement for the
-<tt>Scalar</tt> data type is that it have value semantics (i.e. default
-constructor, copy constructor, assignment operators) and define the basic
-overloaded operators <tt>operator+(...)</tt>, <tt>operator-(...)</tt>,
-<tt>operator*(...)</tt> and <tt>operator/(...)</tt>.  The traits class
-<tt>Teuchos::ScalarTraits</tt> provides a means to write <em>type
-independent</em> code and all of the %Thyra software uses this traits class.
-Any scalar type that is to be used as a <tt>Scalar</tt> must provide a
-specialization of this traits class (see source code for
-<tt>Teuchos_ScalarTraits.hpp</tt> for examples of how to do this).  In
-addition, if MPI is to be used then specializations of the traits classes
-<tt>Teuchos::PrimitiveTypeTraits</tt> and <tt>Teuchos::RawMPITraits</tt> must
-also be provided.
-
-The fundamental %Thyra interfaces and related software are not templated on an
-index (i.e. ordinal) type.  Instead, the type <tt>Thyra::Index</tt> is used
-which is just a typedef that is defined at configure time to be an integral
-type of sufficient size.  This type must be able to hold the value of the
-largest dimension of a vector space that will be used by an executable.  For
-most platforms and use cases, <b><tt>int</tt></b> is sufficient but in other
-cases <b><tt>long int</tt></b> may be necessary on some 64 bit platforms.  Not
-templating on the index (ordinal) type does not result in any degradation in
-usability, runtime speed, or storage usage for any use case.  However, certain
-types of subclasses of the %Thyra interfaces, such as sparse matrix
-subclasses, may need to be templated on a local index (ordinal) type.
-
-<li><b>Dynamic memory management</b>
-
-All of the code in the %Thyra package almost exclusively uses the
-<tt>%Teuchos</tt> smart reference counted pointer class
-<tt>Teuchos::RefCountPtr</tt> to handle dynamically allocated memory with
-object-oriented programming.  %Thyra also religiously uses the idioms
-described in <a
-href="http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf">this
-report</a> for passing object to and from functions that involve
-<tt>Teuchos::RefCountPtr</tt> .
-
-<li><b>Error (exception) handling</b>
-
-All error and general exception handling in the fundamental %Thyra interfaces
-and related software is performed using the built-in C++ exception handling
-mechanisms (i.e. <tt>try</tt>, <tt>throw</tt> and <tt>catch</tt>) and all
-thrown exceptions should inherit from the standard base class
-<tt>std::exception</tt>.  All exceptions in %Thyra software are thrown using
-the macros <tt>TEST_FOR_EXCEPTION()</tt> or <tt>TEST_FOR_EXCEPT()</tt>.  By
-consistently using these macros is is easy to set a breakpoint in a debugger
-just before an exception is thrown by setting a breakpoint on the function
-<tt>TestForException_break()</tt>.  If the code is configured with the macro
-<tt>_DEBUG</tt> defined (i.e. <tt>CPPFLAGS="-D_DEBUG ..."</tt>) then a lot of
-runtime validation is performed.  Whenever development work is being performed
-this macro should always be enabled since a lot of errors will be caught that
-would be hard to diagnose otherwise.
-
-</ul>
 
 \section Thyra_Op_Vec_faq_sec Frequently Asked Questions (FAQ)
 
@@ -1351,6 +1283,16 @@ linear operators.
 </ul>
 
 */
+
+/** \defgroup Thyra_Op_Vec_ANA_Development_support_code_grp General ANA support code
+ *
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
+ */
+
+/** \defgroup Thyra_Op_Vec_ANA_Development_support_code_utils_grp General ANA support code utilities
+ *
+ * \ingroup Thyra_Op_Vec_ANA_Development_support_code_grp
+ */
 
 //
 // Examples

@@ -32,8 +32,6 @@
 #include "Thyra_LinearOpBaseDecl.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
-#include "Thyra_AssertOp.hpp"
-#include "Thyra_describeLinearOp.hpp"
 
 namespace Thyra {
 
@@ -74,19 +72,6 @@ Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >
 LinearOpBase<RangeScalar,DomainScalar>::clone() const
 {
   return Teuchos::null;
-}
-
-// Overridden from Teuchos::Describable
-
-template<class RangeScalar, class DomainScalar>
-std::ostream& LinearOpBase<RangeScalar,DomainScalar>::describe(
-    std::ostream                         &out
-    ,const Teuchos::EVerbosityLevel      verbLevel
-    ,const std::string                   leadingIndent
-    ,const std::string                   indentSpacer
-    ) const
-{
-  return describeLinearOp(*this,out,verbLevel,leadingIndent,indentSpacer);
 }
 
 }	// end namespace Thyra

@@ -119,7 +119,7 @@ public:
 
   //@}
 
-  /** @name Overridden from OpBase (forwarded to this->mv()) */
+  /** @name Overridden from LinearOpBase (forwarded to this->mv()) */
   //@{
   /** \brief . */
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
@@ -127,10 +127,6 @@ public:
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
   /** \brief . */
   bool opSupported(ETransp M_trans) const;
-  //@}
-
-  /** @name Overridden from LinearOpBase (forwarded to this->mv()) */
-  //@{
   /** \brief . */
   void apply(
     const ETransp                     M_trans

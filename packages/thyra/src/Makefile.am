@@ -100,24 +100,17 @@ ANA_RTOP_OPS_LIB_H = \
   $(srcdir)/ana/rtop/ops_lib/RTOpPack_TOpAssignScalar.hpp
 
 ANA_OPERATOR_VECTOR_INTERFACES_H = \
-  $(srcdir)/ana/operator_vector/interfaces/Thyra_describeLinearOpDecl.hpp\
-  $(srcdir)/ana/operator_vector/interfaces/Thyra_describeLinearOp.hpp\
-  $(srcdir)/ana/operator_vector/interfaces/Thyra_AssertOp.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_LinearOpBase.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_LinearOpBaseDecl.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_MultiVectorBase.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_MultiVectorBaseDecl.hpp\
-  $(srcdir)/ana/operator_vector/interfaces/Thyra_MultiVectorStdOps.hpp\
-  $(srcdir)/ana/operator_vector/interfaces/Thyra_MultiVectorStdOpsDecl.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_OperatorVectorTypes.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_VectorBase.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_VectorBaseDecl.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_VectorSpaceBase.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_VectorSpaceBaseDecl.hpp\
   $(srcdir)/ana/operator_vector/interfaces/Thyra_VectorSpaceFactoryBase.hpp\
-  $(srcdir)/ana/operator_vector/interfaces/Thyra_VectorSpaceFactoryBaseDecl.hpp\
-  $(srcdir)/ana/operator_vector/interfaces/Thyra_VectorStdOps.hpp\
-  $(srcdir)/ana/operator_vector/interfaces/Thyra_VectorStdOpsDecl.hpp
+  $(srcdir)/ana/operator_vector/interfaces/Thyra_VectorSpaceFactoryBaseDecl.hpp
 
 ANA_OPERATOR_VECTOR_EXTENDED_INTERFACES_H = \
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_MultiVectorRandomizerBase.hpp\
@@ -134,6 +127,9 @@ ANA_OPERATOR_VECTOR_EXTENDED_INTERFACES_H = \
   $(srcdir)/ana/operator_vector/extended_interfaces/Thyra_PolynomialVectorTraits.hpp
 
 ANA_OPERATOR_VECTOR_ANA_SUPPORT_H = \
+  $(srcdir)/ana/operator_vector/ana_support/Thyra_describeLinearOpDecl.hpp\
+  $(srcdir)/ana/operator_vector/ana_support/Thyra_describeLinearOp.hpp\
+  $(srcdir)/ana/operator_vector/ana_support/Thyra_AssertOp.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_DiagonalLinearOp.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_DiagonalLinearOpDecl.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_ExplicitMultiVectorView.hpp\
@@ -143,6 +139,8 @@ ANA_OPERATOR_VECTOR_ANA_SUPPORT_H = \
   $(srcdir)/ana/operator_vector/ana_support/Thyra_LinearOpWithSolveTester.hpp \
   $(srcdir)/ana/operator_vector/ana_support/Thyra_LinearOpWithSolveTesterDecl.hpp \
   $(srcdir)/ana/operator_vector/ana_support/Thyra_MultiVectorAllocator.hpp\
+  $(srcdir)/ana/operator_vector/ana_support/Thyra_MultiVectorStdOps.hpp\
+  $(srcdir)/ana/operator_vector/ana_support/Thyra_MultiVectorStdOpsDecl.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_MultiVectorStdOpsTester.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_MultiVectorStdOpsTesterDecl.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_MultiVectorTester.hpp\
@@ -159,6 +157,8 @@ ANA_OPERATOR_VECTOR_ANA_SUPPORT_H = \
   $(srcdir)/ana/operator_vector/ana_support/Thyra_TestingToolsDecl.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_VectorSpaceTester.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_VectorSpaceTesterDecl.hpp\
+  $(srcdir)/ana/operator_vector/ana_support/Thyra_VectorStdOps.hpp\
+  $(srcdir)/ana/operator_vector/ana_support/Thyra_VectorStdOpsDecl.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_VectorStdOpsTester.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_VectorStdOpsTesterDecl.hpp\
   $(srcdir)/ana/operator_vector/ana_support/Thyra_VectorTester.hpp\
@@ -167,6 +167,7 @@ ANA_OPERATOR_VECTOR_ANA_SUPPORT_H = \
   $(srcdir)/ana/operator_vector/ana_support/Thyra_UniversalMultiVectorRandomizer.hpp
 
 ANA_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
+  $(srcdir)/ana/operator_vector/adapter_support/Thyra_OperatorVectorAdapterSupportTypes.hpp\
   $(srcdir)/ana/operator_vector/adapter_support/Thyra_SingleRhsLinearOpWithSolveBase.hpp\
   $(srcdir)/ana/operator_vector/adapter_support/Thyra_SingleRhsLinearOpWithSolveBaseDecl.hpp\
   $(srcdir)/ana/operator_vector/adapter_support/Thyra_SingleScalarLinearOpWithSolveBase.hpp\
@@ -175,6 +176,8 @@ ANA_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
   $(srcdir)/ana/operator_vector/adapter_support/Thyra_EuclideanLinearOpBaseDecl.hpp\
   $(srcdir)/ana/operator_vector/adapter_support/Thyra_EuclideanScalarProd.hpp\
   $(srcdir)/ana/operator_vector/adapter_support/Thyra_EuclideanScalarProdDecl.hpp\
+  $(srcdir)/ana/operator_vector/adapter_support/Thyra_LinearOpDefaultBase.hpp\
+  $(srcdir)/ana/operator_vector/adapter_support/Thyra_LinearOpDefaultBaseDecl.hpp\
   $(srcdir)/ana/operator_vector/adapter_support/Thyra_LinearOpScalarProd.hpp\
   $(srcdir)/ana/operator_vector/adapter_support/Thyra_LinearOpScalarProdDecl.hpp\
   $(srcdir)/ana/operator_vector/adapter_support/Thyra_MultiVectorDefaultBase.hpp\

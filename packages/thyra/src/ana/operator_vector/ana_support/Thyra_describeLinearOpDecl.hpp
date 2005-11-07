@@ -26,52 +26,26 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_SINGLE_SCALAR_LINEAR_OP_BASE_HPP
-#define THYRA_SINGLE_SCALAR_LINEAR_OP_BASE_HPP
+#ifndef THYRA_DESCRIBE_LINEAR_OP_DECL_HPP
+#define THYRA_DESCRIBE_LINEAR_OP_DECL_HPP
 
-#include "Thyra_SingleScalarLinearOpBaseDecl.hpp"
-#include "Thyra_LinearOpDefaultBase.hpp"
+#include "Thyra_OperatorVectorTypes.hpp"
 
 namespace Thyra {
 
-// Overridden from LinearOpBase
-
-template<class Scalar>
-bool SingleScalarLinearOpBase<Scalar>::applySupports( const EConj conj ) const
-{
-  return this->opSupported(applyConjToTrans(conj));
-}
-
-template<class Scalar>
-bool SingleScalarLinearOpBase<Scalar>::applyTransposeSupports( const EConj conj ) const
-{
-  return this->opSupported( applyTransposeConjToTrans(conj) );
-}
-
-template<class Scalar>
-void SingleScalarLinearOpBase<Scalar>::apply(
-  const EConj                       conj
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                     alpha
-  ,const Scalar                     beta
-  ) const
-{
-  this->apply(applyConjToTrans(conj),X,Y,alpha,beta);
-}
-
-template<class Scalar>
-void SingleScalarLinearOpBase<Scalar>::applyTranspose(
-  const EConj                       conj
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                     alpha
-  ,const Scalar                     beta
-  ) const
-{
-  this->apply(applyTransposeConjToTrans(conj),X,Y,alpha,beta);
-}
+/** \brief Basic implementation of a describe function for a linear operator.
+ *
+ * \ingroup Thyra_Op_Vec_ANA_Developmnet_support_code_grp
+ */
+template<class RangeScalar, class DomainScalar>
+std::ostream& describeLinearOp(
+  const LinearOpBase<RangeScalar,DomainScalar>   &A
+  ,std::ostream                                  &out
+  ,const Teuchos::EVerbosityLevel                verbLevel
+  ,const std::string                             leadingIndent
+  ,const std::string                             indentSpacer
+  );
 
 }	// end namespace Thyra
 
-#endif	// THYRA_SINGLE_SCALAR_LINEAR_OP_BASE_HPP
+#endif // THYRA_DESCRIBE_LINEAR_OP_DECL_HPP

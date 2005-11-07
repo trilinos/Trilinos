@@ -30,8 +30,8 @@
 #define THYRA_EUCLIDEAN_LINEAR_OP_HPP
 
 #include "Thyra_EuclideanLinearOpBaseDecl.hpp"
+#include "Thyra_LinearOpDefaultBase.hpp"
 #include "Thyra_ScalarProdVectorSpaceBase.hpp"
-#include "Thyra_LinearOpBase.hpp"
 #include "Thyra_ScalarProdBase.hpp"
 #include "Thyra_AssertOp.hpp"
 

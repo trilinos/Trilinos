@@ -29,7 +29,7 @@
 #ifndef THYRA_SINGLE_SCALAR_LINEAR_OP_BASE_DECL_HPP
 #define THYRA_SINGLE_SCALAR_LINEAR_OP_BASE_DECL_HPP
 
-#include "Thyra_LinearOpBaseDecl.hpp"
+#include "Thyra_LinearOpDefaultBaseDecl.hpp"
 
 namespace Thyra {
 
@@ -44,7 +44,7 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_general_adapter_support_code_grp
  */
 template<class Scalar>
-class SingleScalarLinearOpBase : virtual public LinearOpBase<Scalar> {
+class SingleScalarLinearOpBase : virtual public LinearOpDefaultBase<Scalar> {
 public:
 
   /** \brief . */

@@ -26,34 +26,19 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_SCALAR_PROD_HPP
-#define THYRA_SCALAR_PROD_HPP
+#ifndef THYRA_OPERATOR_VECTOR_ADAPTER_SUPPORT_TYPES_HPP
+#define THYRA_OPERATOR_VECTOR_ADAPTER_SUPPORT_TYPES_HPP
 
-#include "Thyra_ScalarProdBaseDecl.hpp"
-#include "Thyra_AssertOp.hpp"
-#include "Thyra_MultiVectorCols.hpp"
+#include "Thyra_OperatorVectorTypes.hpp"
 
 namespace Thyra {
 
-template<class Scalar>
-Scalar ScalarProdBase<Scalar>::scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const
-{
-  Scalar scalar_prods[1];
-#ifdef THYRA_VECTOR_DERIVE_FROM_MULTI_VECTOR
-  this->scalarProds(
-    static_cast<const MultiVectorBase<Scalar>&>(x)
-    ,static_cast<const MultiVectorBase<Scalar>&>(y)
-    ,scalar_prods
-    );
-#else
-  const MultiVectorCols<Scalar>
-    X( Teuchos::rcp( const_cast<VectorBase<Scalar>*>(&x), false ) ),
-    Y( Teuchos::rcp( const_cast<VectorBase<Scalar>*>(&y), false ) );
-  this->scalarProds(X,Y,scalar_prods);
-#endif
-  return scalar_prods[0];
-}
+template<class Scalar>                                        class ScalarProdBase;
+template<class Scalar>                                        class ScalarProdVectorSpaceBase;
+template<class RangeScalar, class DomainScalar = RangeScalar> class EuclideanLinearOpBase;
+template<class Scalar>                                        class SerialVectorSpaceBase;
+template<class Scalar>                                        class SerialVectorBase;
 
-} // end namespace Thyra
+} // namespace Thyra
 
-#endif  // THYRA_SCALAR_PROD_HPP
+#endif // THYRA_OPERATOR_VECTOR_ADAPTER_SUPPORT_TYPES_HPP

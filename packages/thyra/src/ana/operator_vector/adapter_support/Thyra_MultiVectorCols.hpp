@@ -30,6 +30,10 @@
 #define THYRA_MULTI_VECTOR_COLS_HPP
 
 #include "Thyra_MultiVectorColsDecl.hpp"
+#include "Thyra_MultiVectorDefaultBase.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "Thyra_SingleRhsLinearOpBase.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_VectorSpaceFactoryBase.hpp"
 #include "Teuchos_TestForException.hpp"

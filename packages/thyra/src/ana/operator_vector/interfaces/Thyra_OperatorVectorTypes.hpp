@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TSF_CORE_OPERATOR_VECTOR_TYPES_HPP
-#define TSF_CORE_OPERATOR_VECTOR_TYPES_HPP
+#ifndef THYRA_OPERATOR_VECTOR_TYPES_HPP
+#define THYRA_OPERATOR_VECTOR_TYPES_HPP
 
 #include "RTOpPack_Types.hpp"
 #include "Thyra_Range1D.hpp"
@@ -215,11 +215,7 @@ class OpNotSupported : public std::logic_error
 
 } // namespace Exceptions
 
-//
-// Thyra
-//
-
-// Core abstract interface classes
+// Fundamental ANA operator/vector interface classes
 
 template<class Scalar>                                        class VectorSpaceFactoryBase;
 template<class Scalar>                                        class VectorSpaceBase;
@@ -227,25 +223,6 @@ template<class RangeScalar, class DomainScalar = RangeScalar> class LinearOpBase
 template<class Scalar>                                        class MultiVectorBase;
 template<class Scalar>                                        class VectorBase;
 
-// Basic node support subclasses and interfaces
-
-template<class Scalar>                                        class ScalarProdBase;
-template<class Scalar>                                        class ScalarProdVectorSpaceBase;
-template<class RangeScalar, class DomainScalar = RangeScalar> class EuclideanLinearOpBase;
-template<class Scalar>                                        class SerialVectorSpaceBase;
-template<class Scalar>                                        class SerialVectorBase;
-
-// Basic concrete support subclasses
-
-template<class Scalar> class EuclideanScalarProd;
-template<class Scalar> class LinearOpScalarProd;
-template<class Scalar> class SerialVectorSpaceFactoryStd;
-template<class Scalar> class SerialVectorSpaceStd;
-template<class Scalar> class SerialVectorStd;
-template<class Scalar> class SerialMultiVectorStd;
-template<class Scalar> class MultiVectorCols;
-template<class Scalar> class VectorMultiVector;
-
 } // end namespace Thyra
 
-#endif // TSF_CORE_OPERATOR_VECTOR_TYPES_HPP
+#endif // THYRA_OPERATOR_VECTOR_TYPES_HPP

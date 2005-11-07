@@ -53,14 +53,12 @@ bool sillyPowerMethod(
   )
 {
   // Create some typedefs and some other stuff to make the code cleaner
-  using Teuchos::RefCountPtr; using Teuchos::arrayArg;
   typedef Teuchos::ScalarTraits<Scalar> ST; typedef typename ST::magnitudeType ScalarMag;
-  typedef RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > VectorSpacePtr;
-  typedef RefCountPtr<Thyra::VectorBase<Scalar> > VectorPtr;
-  using Thyra::NOTRANS;
-  const Scalar one = ST::one();
-  if(out) *out << "\nStarting power method ...\n\n";
+  const Scalar one = ST::one(); using Thyra::NOTRANS;
+  typedef Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > VectorSpacePtr;
+  typedef Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > VectorPtr;
   // Initialize
+  if(out) *out << "\nStarting power method ...\n\n";
   VectorPtr q = createMember(A.domain()), z = createMember(A.range()), r = createMember(A.range());
   Thyra::seed_randomize<Scalar>(0);
   Thyra::randomize( Scalar(-one), Scalar(+one), &*z );

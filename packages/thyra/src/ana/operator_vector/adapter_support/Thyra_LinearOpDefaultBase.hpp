@@ -26,26 +26,28 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_DESCRIBE_LINEAR_OP_DECL_HPP
-#define THYRA_DESCRIBE_LINEAR_OP_DECL_HPP
+#ifndef THYRA_LINEAR_OP_DEFAULT_BASE_HPP
+#define THYRA_LINEAR_OP_DEFAULT_BASE_HPP
 
-#include "Thyra_OperatorVectorTypes.hpp"
+#include "Thyra_LinearOpDefaultBaseDecl.hpp"
+#include "Thyra_LinearOpBase.hpp"
+#include "Thyra_describeLinearOp.hpp"
 
 namespace Thyra {
 
-/** \brief Basic implementation of a describe function for a linear operator.
- *
- * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
- */
+// Overridden from Teuchos::Describable
+
 template<class RangeScalar, class DomainScalar>
-std::ostream& describeLinearOp(
-  const LinearOpBase<RangeScalar,DomainScalar>   &A
-  ,std::ostream                                  &out
-  ,const Teuchos::EVerbosityLevel                verbLevel
-  ,const std::string                             leadingIndent
-  ,const std::string                             indentSpacer
-  );
+std::ostream& LinearOpDefaultBase<RangeScalar,DomainScalar>::describe(
+    std::ostream                         &out
+    ,const Teuchos::EVerbosityLevel      verbLevel
+    ,const std::string                   leadingIndent
+    ,const std::string                   indentSpacer
+    ) const
+{
+  return describeLinearOp(*this,out,verbLevel,leadingIndent,indentSpacer);
+}
 
 }	// end namespace Thyra
 
-#endif // THYRA_DESCRIBE_LINEAR_OP_DECL_HPP
+#endif // THYRA_LINEAR_OP_DEFAULT_BASE_HPP
