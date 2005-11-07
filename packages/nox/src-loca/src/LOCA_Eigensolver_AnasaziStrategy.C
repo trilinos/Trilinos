@@ -42,7 +42,6 @@
 #ifdef HAVE_LOCA_ANASAZI
 #include "Anasazi_LOCA_MultiVec.H"
 #include "Anasazi_LOCA_Matrix.H"
-#include "LOCA_AnasaziOperator_Manager.H"
 #include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #endif
