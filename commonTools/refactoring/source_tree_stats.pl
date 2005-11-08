@@ -65,7 +65,7 @@ print "\n";
 
 sub get_files_lines_semicolons_counts {
   my $file_ext = shift;
-  my $output = `find $basedir -name *.$file_ext -exec wc -l '{}' ';'`;
+  my $output = `find $basedir -name "*.$file_ext" -exec wc -l '{}' ';'`;
   my @output_lines = split('\n',$output);
   my $num_files = 0;
   my $num_lines = 0;
@@ -76,7 +76,7 @@ sub get_files_lines_semicolons_counts {
   }
   my $num_semicolons = 0;
   #$output = `find $basedir -name *.$file_ext -exec grep -Hc '\;' '{}' ';'`;
-  $output = `find $basedir -name *.$file_ext -exec grep -Hc '\\;' '{}' ';'`;
+  $output = `find $basedir -name "*.$file_ext" -exec grep -Hc '\\;' '{}' ';'`;
   #print "output =\n$output\n";
   @output_lines = split('\n',$output);
   foreach(@output_lines) {
