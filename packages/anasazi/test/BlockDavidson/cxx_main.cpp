@@ -99,14 +99,14 @@ int main(int argc, char *argv[])
   std::vector<double> brick_dim( space_dim );
   brick_dim[0] = 1.0;
   std::vector<int> elements( space_dim );
-  elements[0] = 1000;
+  elements[0] = 100;
 
   // Create default output manager 
   Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
 
   // Set verbosity level
   if (verbose)
-    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails + Anasazi::IterationDetails );
+    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
 
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
@@ -118,8 +118,8 @@ int main(int argc, char *argv[])
   // Eigensolver parameters
   int nev = 4;
   int blockSize = 5;
-  int maxBlocks = 20;
-  int maxIters = 50000;
+  int maxBlocks = 8;
+  int maxIters = 500;
   double tol = 1.0e-6;
   //
   // Create parameter list to pass into solver
