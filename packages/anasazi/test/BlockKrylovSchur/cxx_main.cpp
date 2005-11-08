@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 
   bool testFailed = false;
   bool verbose = 0;
-  std::string which("LM");
+  std::string which("SM");
 
   if (argc>1) {
     if (argv[1][0]=='-' && argv[1][1]=='v') {
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
   std::vector<double> brick_dim( space_dim );
   brick_dim[0] = 1.0;
   std::vector<int> elements( space_dim );
-  elements[0] = 10000;
+  elements[0] = 100;
 
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
   const int nev = 4;
   const int blockSize = 2;
   const int maxBlocks = 10;
-  const int maxRestarts = 5000;
+  const int maxRestarts = 500;
   const double tol = tolCG * 10.0;
 
   // create an epetra multivector
@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
 
   // Set verbosity level
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails + Anasazi::IterationDetails );
+    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
   }
 
   // Create a sorting manager to handle the sorting of eigenvalues in the solver
@@ -178,8 +178,8 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
   
   // Check eigenvalues with ModeLaplace
-  //  if (verbose)
-  //  info = testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
+  if (verbose)
+    info = testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
 
   Epetra_MultiVector tempvec(K->OperatorDomainMap(), evecs->NumVectors());	
   K->Apply( *evecs, tempvec );
