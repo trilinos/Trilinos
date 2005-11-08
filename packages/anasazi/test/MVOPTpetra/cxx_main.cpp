@@ -248,8 +248,7 @@ namespace Tpetra {
         }
       }
 
-      void dotProduct(const MultiVector<OrdinalType, ScalarType>& A, 
-                      typename Teuchos::ScalarTraits<ScalarType>::magnitudeType* Values) const
+      void dotProduct(const MultiVector<OrdinalType, ScalarType>& A, ScalarType* Values) const
       {
         for (int v = 0 ; v < getNumVectors() ; ++v)
         {
@@ -672,8 +671,8 @@ int main(int argc, char *argv[])
   typedef Anasazi::TpetraOperator<OrdinalType, ScalarType> TOP;        
   typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
 
-  Teuchos::RefCountPtr<TOP> A = CreateMatrix(vectorSpace, ScalarOne * 4, -ScalarOne, -ScalarOne);
-  Teuchos::RefCountPtr<TOP> B = CreateMatrix(vectorSpace, ScalarOne * 2, -ScalarOne, -ScalarOne);
+  Teuchos::RefCountPtr<TOP> A = CreateMatrix(vectorSpace, 4.0 * ScalarOne, -ScalarOne, -ScalarOne);
+  Teuchos::RefCountPtr<TOP> B = CreateMatrix(vectorSpace, 2.0 * ScalarOne, -ScalarOne, -ScalarOne);
   Teuchos::RefCountPtr<TOP> K = CreateMatrix(vectorSpace, ScalarOne, ScalarZero, ScalarZero);
 
   Anasazi::ReturnType returnCode = Anasazi::Ok;	
