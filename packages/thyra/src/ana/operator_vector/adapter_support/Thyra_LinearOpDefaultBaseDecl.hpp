@@ -43,6 +43,9 @@ template<class RangeScalar, class DomainScalar = RangeScalar>
 class LinearOpDefaultBase : virtual public LinearOpBase<RangeScalar,DomainScalar> {
 public:
 
+  /** \brief . */
+  using LinearOpBase<RangeScalar,DomainScalar>::apply;
+
   /** @name Public functions overridden from Teuchos::Describable */
   //@{
 
