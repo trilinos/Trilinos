@@ -626,8 +626,10 @@ bool MRTR::Overlap::Clipelements()
   // there are 12 cases watched out for
   // cases can be partially determined by looking at nminter and nmcorner
   MRTR::Overlap::Polygon_Type type = MRTR::Overlap::poly_none;
-  
+
+#if 0  
   cout << "OVERLAP Clipelements: corners in " << nmcorner << " intersections " << nminter << endl;
+#endif
 
   //---------------------------------------------------------------------------
   // cases 1_2
@@ -918,7 +920,7 @@ bool MRTR::Overlap::Clipelements()
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::Clip_FixPolygon_1_2_dif(int np, RefCountPtr<MRTR::Point>* point)
 {
-  cout << "OVERLAP This is case 1_2_dif\n";
+  //cout << "OVERLAP This is case 1_2_dif\n";
   
   // identify the slave edges with the 2 intersections
   int sedge[2];
@@ -987,7 +989,7 @@ bool MRTR::Overlap::Clip_FixPolygon_1_2_dif(int np, RefCountPtr<MRTR::Point>* po
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::Clip_FixPolygon_1_2_same(int np, RefCountPtr<MRTR::Point>* point)
 {
-  cout << "OVERLAP This is case 1_2_same\n";
+  //cout << "OVERLAP This is case 1_2_same\n";
 
   // make sure there's two intersections and one internal
   RefCountPtr<MRTR::Point> sedgepoint[2];
@@ -1031,7 +1033,7 @@ bool MRTR::Overlap::Clip_FixPolygon_1_2_same(int np, RefCountPtr<MRTR::Point>* p
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::Clip_FixPolygon_2_2_same(int np, RefCountPtr<MRTR::Point>* point)
 {
-  cout << "OVERLAP This is case 2_2_same\n";
+  //cout << "OVERLAP This is case 2_2_same\n";
 
   // identify the slave edge
   int sedge;
@@ -1082,7 +1084,7 @@ bool MRTR::Overlap::Clip_FixPolygon_2_2_same(int np, RefCountPtr<MRTR::Point>* p
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::Clip_FixPolygon_2_2_dif(int np, RefCountPtr<MRTR::Point>* point)
 {
-  cout << "OVERLAP This is case 2_2_dif\n";
+  //cout << "OVERLAP This is case 2_2_dif\n";
 
   // identify the slave edge
   int sedge[2];
@@ -1157,7 +1159,7 @@ bool MRTR::Overlap::Clip_FixPolygon_2_2_dif(int np, RefCountPtr<MRTR::Point>* po
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::Clip_FixPolygon_1_4_same(int np, RefCountPtr<MRTR::Point>* point)
 {
-  cout << "OVERLAP This is case 1_4_same\n";
+  //cout << "OVERLAP This is case 1_4_same\n";
 
   // identify the slave edges
   int sedge[4];
@@ -1208,7 +1210,7 @@ bool MRTR::Overlap::Clip_FixPolygon_1_4_same(int np, RefCountPtr<MRTR::Point>* p
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::Clip_FixPolygon_1_4_dif(int np, RefCountPtr<MRTR::Point>* point)
 {
-  cout << "OVERLAP This is case 1_4_dif\n";
+  //cout << "OVERLAP This is case 1_4_dif\n";
 
   // identify the slave edges
   int sedge[4];
@@ -1312,7 +1314,7 @@ bool MRTR::Overlap::Clip_FixPolygon_1_4_dif(int np, RefCountPtr<MRTR::Point>* po
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::Clip_FixPolygon_3_0(int np, RefCountPtr<MRTR::Point>* point)
 {
-  cout << "OVERLAP This is case 3_0\n";
+  //cout << "OVERLAP This is case 3_0\n";
 
   // make sure there's no intersections and three internal
   int count=0;
@@ -1352,7 +1354,7 @@ bool MRTR::Overlap::Clip_FixPolygon_3_0(int np, RefCountPtr<MRTR::Point>* point)
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::Clip_FixPolygon_0_0(int np, RefCountPtr<MRTR::Point>* point)
 {
-  cout << "OVERLAP This is case 0_0\n";
+  //cout << "OVERLAP This is case 0_0\n";
 
   // make sure there's no points in polygon
   if (np)
@@ -1390,7 +1392,7 @@ bool MRTR::Overlap::Clip_FixPolygon_0_0(int np, RefCountPtr<MRTR::Point>* point)
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::Clip_FixPolygon_0_4_same(int np, RefCountPtr<MRTR::Point>* point)
 {
-  cout << "OVERLAP This is case 0_4_same\n";
+  //cout << "OVERLAP This is case 0_4_same\n";
 
   // make sure there's two intersections and one internal
   int count1=0;
@@ -1432,7 +1434,7 @@ bool MRTR::Overlap::Clip_FixPolygon_0_4_same(int np, RefCountPtr<MRTR::Point>* p
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::Clip_FixPolygon_0_4_dif(int np, RefCountPtr<MRTR::Point>* point)
 {
-  cout << "OVERLAP This is case 0_4_dif\n";
+  //cout << "OVERLAP This is case 0_4_dif\n";
 
   // identify the slave edges
   int sedge[4];
@@ -1533,7 +1535,7 @@ bool MRTR::Overlap::Clip_FixPolygon_0_4_dif(int np, RefCountPtr<MRTR::Point>* po
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::Clip_FixPolygon_0_2(int np, RefCountPtr<MRTR::Point>* point)
 {
-  cout << "OVERLAP This is case 0_2\n";
+  //cout << "OVERLAP This is case 0_2\n";
 
   // identify the slave edges
   int sedge[2];
@@ -1651,7 +1653,7 @@ bool MRTR::Overlap::Clip_FixPolygon_0_2(int np, RefCountPtr<MRTR::Point>* point)
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::Clip_FixPolygon_0_6(int np, RefCountPtr<MRTR::Point>* point)
 {
-  cout << "OVERLAP This is case 0_6\n";
+  //cout << "OVERLAP This is case 0_6\n";
 
   // make sure there's 6 intersections and no internal
   int count1=0;
@@ -1752,7 +1754,11 @@ bool MRTR::Overlap::Triangulization()
     node->SetN(n);
     // set node in point
     points[i]->SetNode(node);
+
+#if 0
     cout << *points[i];
+#endif
+
   }  
 
   // find projection values for all points in polygon on mseg

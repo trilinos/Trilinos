@@ -137,9 +137,15 @@ public:
   
   // set the iscorner_ flag
   void SetCorner() { iscorner_ = true; return; }
+
   // query the iscorner_ flag
   bool IsCorner() { return iscorner_; }
   
+  // add a value to the Drow_ map
+  void AddDValue(double val, int col);
+  // add a value to the Mrow_ map
+  void AddMValue(double val, int col);
+
 protected:  
   // don't want = operator
   Node operator = (const Node& old);
@@ -158,6 +164,9 @@ protected:
 
   vector<int>                  seg_;      // vector of segment ids adjacent to me
   vector<MRTR::Segment*>       segptr_;   // ptrs to segments length nseg_
+
+  RefCountPtr<map<int,double> > Drow_;    // a nodal block row of D
+  RefCountPtr<map<int,double> > Mrow_;    // a nodal block row of D
 
   vector< RefCountPtr<MRTR::ProjectedNode> > pnode_;    // the projected node on some segment
 

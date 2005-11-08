@@ -60,6 +60,7 @@ namespace MRTR
 class MRTR::Interface;
 class MRTR::Segment;
 class MRTR::Node;
+class MRTR::Integrator;
 
 class  Overlap 
 {
@@ -84,6 +85,9 @@ public:
 
   // the interface class is a friend to this class
   friend class Interface;
+  
+  // the integrator class is a friend to this class
+  friend class Integrator;
   
   // ctor
   explicit Overlap(MRTR::Segment& sseg, MRTR::Segment& mseg, MRTR::Interface& inter);

@@ -43,8 +43,12 @@
 
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_CrsMatrix.h"
+#include "Teuchos_RefCountPtr.hpp"
+
+#include "mrtr_overlap.H"
 
 using namespace std;
+using namespace Teuchos;
 
 // ----------   User Defined Includes   ----------
 
@@ -67,13 +71,14 @@ public:
   virtual ~Integrator();
   
   // get the order of integration (== # gaussian points)
-  int Ngp() { return ngp_; }
+  inline int Ngp() { return ngp_; }
   
   // return the coordinate of a given gaussian point gp
-  double Coordinate(int gp) { return coords_[gp]; }
+  inline double Coordinate(int gp) { return coords_[gp]; }
+  inline double* Coordinate(int* gp) { return &coords_[*gp*2]; }
   
   // return the weight of a given gaussian point gp
-  double Weight(int gp) { return weights_[gp]; }
+  inline double Weight(int gp) { return weights_[gp]; }
 
 
   // integrate a 1D overlap between a slave and a master segment
@@ -91,13 +96,28 @@ public:
                 Epetra_CrsMatrix& D, Epetra_SerialDenseMatrix& Ddense);
 
 
-  // integrate modification of M
+  // integrate modification of M in 1D
   Epetra_SerialDenseMatrix* Integrate_2D_Mmod(MRTR::Segment& sseg, double sxia, double sxib,
                                               MRTR::Segment& mseg, double mxia, double mxib);
   // assemble the result -Mdense from the integration above into M
   bool Assemble_2D_Mod(MRTR::Interface& inter, MRTR::Segment& sseg, MRTR::Segment& mseg, 
                 Epetra_CrsMatrix& M, Epetra_SerialDenseMatrix& Mmod);
 
+
+  // integrate a 2D triangle overlap segment, master part M and slave part D
+  bool Integrate(RefCountPtr<MRTR::Segment> actseg,
+                 MRTR::Segment& sseg, 
+                 MRTR::Segment& mseg,
+                 Epetra_SerialDenseMatrix** Ddense, 
+                 Epetra_SerialDenseMatrix** Mdense, 
+                 MRTR::Overlap& overlap);
+
+  // Assemble D into nodes
+  bool Assemble(MRTR::Interface& inter,MRTR::Segment& sseg,Epetra_SerialDenseMatrix& Ddense);
+
+  // Assemble M into nodes
+  bool Assemble(MRTR::Interface& inter,MRTR::Segment& sseg,MRTR::Segment& mseg,
+                Epetra_SerialDenseMatrix& Mdense);
 
 private:  
   // don't want = operator

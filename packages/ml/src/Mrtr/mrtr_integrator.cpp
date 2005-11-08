@@ -45,129 +45,157 @@ MRTR::Integrator::Integrator(int ngp, bool oneD) :
 oneD_(oneD),
 ngp_(ngp)
 {
-  coords_.resize(ngp_);
-  weights_.resize(ngp_);
-  switch (ngp_)
+  if (oneD)
   {
-    case 1:
-      coords_[0]  = 0.0;
-      weights_[0] = 2.0; 
-    break;
-    case 2:
-      coords_[0]  = -sqrt((1./3.));
-      coords_[1]  = -coords_[0];
-      weights_[0] = 1.0; 
-      weights_[1] = 1.0; 
-    break;
-    case 3:
-      coords_[0]  = -0.77459667;
-      coords_[1]  = 0.0;
-      coords_[2]  = 0.77459667;
-      weights_[0] = 0.55555555; 
-      weights_[1] = 0.88888889; 
-      weights_[2] = 0.55555555; 
-    break;
-    case 4:
-      coords_[0]  = -0.86113631;
-      coords_[1]  = -0.33998104;
-      coords_[2]  = 0.33998104;
-      coords_[3]  = 0.86113631;
-      weights_[0] = 0.34785485; 
-      weights_[1] = 0.65214515; 
-      weights_[2] = 0.65214515; 
-      weights_[3] = 0.34785485; 
-    break;
-    case 5:
-      coords_[0]  = -0.90617985;
-      coords_[1]  = -0.53846931;
-      coords_[2]  = 0.0;
-      coords_[3]  = 0.53846931;
-      coords_[4]  = 0.90617985;
-      weights_[0] = 0.23692689; 
-      weights_[1] = 0.47862867; 
-      weights_[2] = 0.56888889; 
-      weights_[3] = 0.47862867; 
-      weights_[4] = 0.23692689; 
-    break;
-    case 6:
-      coords_[0]  = -0.93246951;
-      coords_[1]  = -0.66120939;
-      coords_[2]  = -0.23861918;
-      coords_[3]  = 0.23861918;
-      coords_[4]  = 0.66120939;
-      coords_[5]  = 0.93246951;
-      weights_[0] = 0.17132449; 
-      weights_[1] = 0.36076157; 
-      weights_[2] = 0.46791393; 
-      weights_[3] = 0.46791393; 
-      weights_[4] = 0.36076157; 
-      weights_[5] = 0.17132449; 
-    break;
-    case 7:
-      coords_[0]  = -0.94910791;
-      coords_[1]  = -0.74153119;
-      coords_[2]  = -0.40584515;
-      coords_[3]  = 0.0;
-      coords_[4]  = 0.40584515;
-      coords_[5]  = 0.74153119;
-      coords_[6]  = 0.94910791;
-      weights_[0] = 0.12948497; 
-      weights_[1] = 0.27970539; 
-      weights_[2] = 0.38183005; 
-      weights_[3] = 0.41795918; 
-      weights_[4] = 0.38183005; 
-      weights_[5] = 0.27970539; 
-      weights_[6] = 0.12948497; 
-    break;
-    case 8:
-      coords_[0]  = -0.96028986;
-      coords_[1]  = -0.79666648;
-      coords_[2]  = -0.52553241;
-      coords_[3]  = -0.18343464;
-      coords_[4]  = 0.18343464;
-      coords_[5]  = 0.52553241;
-      coords_[6]  = 0.79666648;
-      coords_[7]  = 0.96028986;
-      weights_[0] = 0.10122854; 
-      weights_[1] = 0.22238103; 
-      weights_[2] = 0.31370665; 
-      weights_[3] = 0.36268378; 
-      weights_[4] = 0.36268378; 
-      weights_[5] = 0.31370665; 
-      weights_[6] = 0.22238103; 
-      weights_[7] = 0.10122854; 
-    break;
-    case 10:
-      coords_[0]  = -0.97390653;
-      coords_[1]  = -0.86506337;
-      coords_[2]  = -0.67940957;
-      coords_[3]  = -0.43339539;
-      coords_[4]  = -0.14887434;
-      coords_[5]  = 0.14887434;
-      coords_[6]  = 0.43339539;
-      coords_[7]  = 0.67940957;
-      coords_[8]  = 0.86506337;
-      coords_[9]  = 0.97390653;
-      weights_[0] = 0.06667134; 
-      weights_[1] = 0.14945135; 
-      weights_[2] = 0.21908636; 
-      weights_[3] = 0.26926672; 
-      weights_[4] = 0.29552422; 
-      weights_[5] = 0.29552422; 
-      weights_[6] = 0.26926672; 
-      weights_[7] = 0.21908636; 
-      weights_[8] = 0.14945135; 
-      weights_[9] = 0.06667134; 
-    break;
-    default:
-      cout << "***ERR*** MRTR::Integrator::Integrator:\n"
-           << "***ERR*** given number of gaussian points " << ngp_ << "does not exist\n"
-           << "***ERR*** use 1, 2, 3, 4, 5, 6, 7, 8, 10 instead\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-    break;
+    coords_.resize(ngp_);
+    weights_.resize(ngp_);
+    switch (ngp_)
+    {
+      case 1:
+        coords_[0]  = 0.0;
+        weights_[0] = 2.0; 
+      break;
+      case 2:
+        coords_[0]  = -sqrt((1./3.));
+        coords_[1]  = -coords_[0];
+        weights_[0] = 1.0; 
+        weights_[1] = 1.0; 
+      break;
+      case 3:
+        coords_[0]  = -0.77459667;
+        coords_[1]  = 0.0;
+        coords_[2]  = 0.77459667;
+        weights_[0] = 0.55555555; 
+        weights_[1] = 0.88888889; 
+        weights_[2] = 0.55555555; 
+      break;
+      case 4:
+        coords_[0]  = -0.86113631;
+        coords_[1]  = -0.33998104;
+        coords_[2]  = 0.33998104;
+        coords_[3]  = 0.86113631;
+        weights_[0] = 0.34785485; 
+        weights_[1] = 0.65214515; 
+        weights_[2] = 0.65214515; 
+        weights_[3] = 0.34785485; 
+      break;
+      case 5:
+        coords_[0]  = -0.90617985;
+        coords_[1]  = -0.53846931;
+        coords_[2]  = 0.0;
+        coords_[3]  = 0.53846931;
+        coords_[4]  = 0.90617985;
+        weights_[0] = 0.23692689; 
+        weights_[1] = 0.47862867; 
+        weights_[2] = 0.56888889; 
+        weights_[3] = 0.47862867; 
+        weights_[4] = 0.23692689; 
+      break;
+      case 6:
+        coords_[0]  = -0.93246951;
+        coords_[1]  = -0.66120939;
+        coords_[2]  = -0.23861918;
+        coords_[3]  = 0.23861918;
+        coords_[4]  = 0.66120939;
+        coords_[5]  = 0.93246951;
+        weights_[0] = 0.17132449; 
+        weights_[1] = 0.36076157; 
+        weights_[2] = 0.46791393; 
+        weights_[3] = 0.46791393; 
+        weights_[4] = 0.36076157; 
+        weights_[5] = 0.17132449; 
+      break;
+      case 7:
+        coords_[0]  = -0.94910791;
+        coords_[1]  = -0.74153119;
+        coords_[2]  = -0.40584515;
+        coords_[3]  = 0.0;
+        coords_[4]  = 0.40584515;
+        coords_[5]  = 0.74153119;
+        coords_[6]  = 0.94910791;
+        weights_[0] = 0.12948497; 
+        weights_[1] = 0.27970539; 
+        weights_[2] = 0.38183005; 
+        weights_[3] = 0.41795918; 
+        weights_[4] = 0.38183005; 
+        weights_[5] = 0.27970539; 
+        weights_[6] = 0.12948497; 
+      break;
+      case 8:
+        coords_[0]  = -0.96028986;
+        coords_[1]  = -0.79666648;
+        coords_[2]  = -0.52553241;
+        coords_[3]  = -0.18343464;
+        coords_[4]  = 0.18343464;
+        coords_[5]  = 0.52553241;
+        coords_[6]  = 0.79666648;
+        coords_[7]  = 0.96028986;
+        weights_[0] = 0.10122854; 
+        weights_[1] = 0.22238103; 
+        weights_[2] = 0.31370665; 
+        weights_[3] = 0.36268378; 
+        weights_[4] = 0.36268378; 
+        weights_[5] = 0.31370665; 
+        weights_[6] = 0.22238103; 
+        weights_[7] = 0.10122854; 
+      break;
+      case 10:
+        coords_[0]  = -0.97390653;
+        coords_[1]  = -0.86506337;
+        coords_[2]  = -0.67940957;
+        coords_[3]  = -0.43339539;
+        coords_[4]  = -0.14887434;
+        coords_[5]  = 0.14887434;
+        coords_[6]  = 0.43339539;
+        coords_[7]  = 0.67940957;
+        coords_[8]  = 0.86506337;
+        coords_[9]  = 0.97390653;
+        weights_[0] = 0.06667134; 
+        weights_[1] = 0.14945135; 
+        weights_[2] = 0.21908636; 
+        weights_[3] = 0.26926672; 
+        weights_[4] = 0.29552422; 
+        weights_[5] = 0.29552422; 
+        weights_[6] = 0.26926672; 
+        weights_[7] = 0.21908636; 
+        weights_[8] = 0.14945135; 
+        weights_[9] = 0.06667134; 
+      break;
+      default:
+        cout << "***ERR*** MRTR::Integrator::Integrator:\n"
+             << "***ERR*** given number of gaussian points " << ngp_ << "does not exist\n"
+             << "***ERR*** use 1, 2, 3, 4, 5, 6, 7, 8, 10 instead\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      break;
+    }
+  } // if (oneD)
+  else
+  {
+    coords_.resize(2*ngp_);
+    weights_.resize(ngp_);
+    switch (ngp_)
+    {
+      case 3:
+        coords_[0]  = 0.5;
+        coords_[1]  = 0.0;
+        coords_[2]  = 0.5;
+        coords_[3]  = 0.5;
+        coords_[4]  = 0.0;
+        coords_[5]  = 0.5;
+        weights_[0] = 1./3.; 
+        weights_[1] = weights_[0]; 
+        weights_[2] = weights_[0]; 
+      break;
+      default:
+        cout << "***ERR*** MRTR::Integrator::Integrator:\n"
+             << "***ERR*** given number of gaussian points " << ngp_ << "does not exist\n"
+             << "***ERR*** use 3 instead\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      break;
+    }
   }
-
 
 }
 
@@ -574,6 +602,178 @@ bool MRTR::Integrator::Assemble_2D_Mod(MRTR::Interface& inter,
       } // for (int master=0; master<mseg.Nnode(); ++master)
     } // for (int sdof=0; sdof<snlmdof; ++sdof)
   } // for (int slave=0; slave<sseg.Nnode(); ++slave)
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  integrate a 2D triangle overlap segment (public)         mwgee 11/05|
+ |  contribution from the master/slave side M/D                         |
+ *----------------------------------------------------------------------*/
+bool MRTR::Integrator::Integrate(RefCountPtr<MRTR::Segment> actseg,
+                                 MRTR::Segment& sseg, 
+                                 MRTR::Segment& mseg, 
+                                 Epetra_SerialDenseMatrix** Ddense, 
+                                 Epetra_SerialDenseMatrix** Mdense, 
+                                 MRTR::Overlap& overlap)
+{
+  if (oneD_)
+  {
+    cout << "***ERR*** MRTR::Integrator::Integrate:\n"
+         << "***ERR*** Integrator was not constructed for 2D integration\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  if (Ngp() != 3)
+  {
+    cout << "***ERR*** MRTR::Integrator::Integrate:\n"
+         << "***ERR*** # Gaussian points != 3 in triangle integration\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  // we integrate the scalar function here
+  int nrow = sseg.Nnode();
+  int ncol = mseg.Nnode();
+  *Mdense = new Epetra_SerialDenseMatrix(nrow,ncol);
+  *Ddense = new Epetra_SerialDenseMatrix(nrow,nrow);
+
+  // get the points
+  const int np = actseg->Nnode();
+  const int* nodeid = actseg->NodeIds();
+  vector<MRTR::Point*> points;
+  overlap.PointView(points,nodeid,np);
+
+  // get the function values at the points
+  // slave segment function 0 is vals[point][0][0...np-1]
+  // slave segment function 1 is vals[point][1][0...np-1]
+  // master segment function 0 is vals[point][2][0...np-1]
+  vector< vector<double>* > vals(np);
+  for (int i=0; i<np; ++i)
+    vals[i] = points[i]->FunctionValues();
+
+  // get the area of the overlap segment
+  double area = actseg->Area();
+  if (area<0.0)
+  {
+    cout << "***ERR*** MRTR::Integrator::Integrate:\n"
+         << "***ERR*** overlap segment area is negative: " << area << endl
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  if (area<1.0e-4)
+    cout << "***WRN*** Integrating overlap segment with tiny area " << area << endl;
+  
+
+  // loop integration points
+  for (int gp=0; gp<Ngp(); ++gp)
+  {
+    double* eta   = Coordinate(&gp);
+    double weight = area*Weight(gp);
+    
+    
+    // evaluate the linear function 0 of the actseg at gaussian point
+    double val[np];
+    actseg->EvaluateFunction(0,eta,val,actseg->Nnode(),NULL);
+
+    // interpolate shape function 0 from sseg
+    // interpolate shape function 1 from sseg
+    double val_sfunc0[np];
+    double val_sfunc1[np];
+    double val_mfunc0[np];
+    for (int i=0; i<np; ++i) 
+    {
+      val_sfunc0[i] = 0.0;
+      val_sfunc1[i] = 0.0;
+      val_mfunc0[i] = 0.0;
+    }
+    for (int point=0; point<np; ++point)
+    {
+      val_sfunc0[0] += val[point]*vals[point][0][0];
+      val_sfunc0[1] += val[point]*vals[point][0][1];
+      val_sfunc0[2] += val[point]*vals[point][0][2];
+
+      val_sfunc1[0] += val[point]*vals[point][1][0];
+      val_sfunc1[1] += val[point]*vals[point][1][1];
+      val_sfunc1[2] += val[point]*vals[point][1][2];
+
+      val_mfunc0[0] += val[point]*vals[point][2][0];
+      val_mfunc0[1] += val[point]*vals[point][2][1];
+      val_mfunc0[2] += val[point]*vals[point][2][2];
+    }
+    
+    //cout << val_sfunc0[0] << " " << val_sfunc0[1] << " " << val_sfunc0[2] << endl;
+    //cout << val_sfunc1[0] << " " << val_sfunc1[1] << " " << val_sfunc1[2] << endl;
+    //cout << val_mfunc0[0] << " " << val_mfunc0[1] << " " << val_mfunc0[2] << endl;
+
+    // loop over all nodes (lm loop)
+    for (int lm=0; lm<sseg.Nnode(); ++lm)
+    {
+      // loop over all nodes (dof loop master)
+      for (int dof=0; dof<mseg.Nnode(); ++dof)
+      {
+        // multiply the 2 functions
+        double N1N2 = val_sfunc1[lm]*val_mfunc0[dof];
+        (**Mdense)(lm,dof) += (N1N2*weight);
+      }
+      
+      // loop over all nodes (dof loop slave)
+      for (int dof=0; dof<sseg.Nnode(); ++dof)
+      {
+        // multiply the 2 functions
+        double N1N2 = val_sfunc1[lm]*val_sfunc0[dof];
+        (**Ddense)(lm,dof) += (N1N2*weight);
+      }
+    }
+    
+  } // for (int gp=0; gp<Ngp(); ++gp)
+  
+  //cout << **Ddense;
+  //cout << **Mdense;
+  
+  vals.clear();
+
+  return true;
+}
+
+
+/*----------------------------------------------------------------------*
+ |  assemble contributions Ddense into slave nodes (public)  mwgee 11/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Integrator::Assemble(MRTR::Interface& inter,MRTR::Segment& sseg,
+                                Epetra_SerialDenseMatrix& Ddense)
+{
+  // get nodes
+  const int nnode    = sseg.Nnode();
+  MRTR::Node** snode = sseg.Nodes();
+
+  // set a row of Ddense in each snode
+  for (int row=0; row<nnode; ++row)
+    for (int col=0; col<nnode; ++col)
+      snode[row]->AddDValue(Ddense(row,col),snode[col]->Id());
+
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  assemble contributions Ddense into slave nodes (public)  mwgee 11/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
+                                MRTR::Segment& sseg,
+                                MRTR::Segment& mseg,
+                                Epetra_SerialDenseMatrix& Mdense)
+{
+  // get nodes
+  const int nsnode    = sseg.Nnode();
+  const int nmnode    = mseg.Nnode();
+  MRTR::Node** snode  = sseg.Nodes();
+  MRTR::Node** mnode  = mseg.Nodes();
+
+  // set a row of Ddense in each snode
+  for (int row=0; row<nsnode; ++row)
+    for (int col=0; col<nmnode; ++col)
+      snode[row]->AddMValue(Mdense(row,col),mnode[col]->Id());
+
   return true;
 }
 

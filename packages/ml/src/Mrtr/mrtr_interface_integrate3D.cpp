@@ -74,7 +74,7 @@ bool MRTR::Interface::Integrate_3D(Epetra_CrsMatrix& M,
     // the segment to be integrated
     RefCountPtr<MRTR::Segment> actsseg = scurr->second;
 
-#if 1
+#if 0
     cout << "\nActive sseg id " << actsseg->Id() << "\n\n";
 #endif
 
@@ -97,7 +97,7 @@ bool MRTR::Interface::Integrate_3D(Epetra_CrsMatrix& M,
     {
       RefCountPtr<MRTR::Segment> actmseg = mcurr->second;
       
-#if 1
+#if 0
     cout << "Active mseg id " << actmseg->Id() << endl;
 #endif
       // if there is an overlap, integrate the pair
@@ -119,8 +119,6 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
                                            Epetra_CrsMatrix& M,
                                            Epetra_CrsMatrix& D)
 { 
-  bool ok;
-  
   // if one of the segments is quadratic, we have to do something here
   if (sseg.Type()!=MRTR::Segment::seg_BiLinearTri || mseg.Type()!=MRTR::Segment::seg_BiLinearTri)
   {
@@ -135,8 +133,8 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
   // It also build a triangulation of the overlap polygon if there is any
   MRTR::Overlap overlap(sseg,mseg,*this);
 
-  // determine the overlap triangulation
-  ok = overlap.ComputeOverlap();
+  // determine the overlap triangulation if any
+  bool ok = overlap.ComputeOverlap();
   if (!ok) // there is no overlap
     return true;
 
@@ -151,52 +149,27 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
   
   // loop segments and integrate them
   for (int s=0; s<nseg; ++s)
-  {
+  {    
     RefCountPtr<MRTR::Segment> actseg = segs[s];
-    // get the points
-    int          np      = actseg->Nnode();
-    const int*   nodeid  = actseg->NodeIds();
-    vector<MRTR::Point*> points;
-    overlap.PointView(points,nodeid,np);
-    
-#if 1    
-    cout << "Segment " << actseg->Id() << " area " << actseg->Area() << endl;
-    cout << *actseg;
-    for (int i=0; i<np; ++i)
-      cout << *points[i];    
-#endif
 
-    // get the function values at the points
-    vector< vector<double>* > vals(np);
-    for (int i=0; i<np; ++i)
-      vals[i] = points[i]->FunctionValues();
+    // integrate master and slave part of this segment
+    Epetra_SerialDenseMatrix* Ddense = NULL;
+    Epetra_SerialDenseMatrix* Mdense = NULL;
+    integrator.Integrate(actseg,sseg,mseg,&Ddense,&Mdense,overlap);
     
-#if 1
-    cout << "Function values:\n";
-    for (int i=0; i<np; ++i)
-    {
-      cout << "Values at point " << points[i]->Id() << endl;
-      cout << "shape function 0 from sseg\n";
-      for (int j=0; j<vals[i][0].size(); ++j)
-        cout << vals[i][0][j] << "   ";
-      cout << endl;
-      cout << "shape function 1 from sseg\n";
-      for (int j=0; j<vals[i][1].size(); ++j)
-        cout << vals[i][1][j] << "   ";
-      cout << endl;
-      cout << "shape function 0 from mseg\n";
-      for (int j=0; j<vals[i][2].size(); ++j)
-        cout << vals[i][2][j] << "   ";
-      cout << endl;
-    }
-#endif    
+    // assemble temporarily into the nodes
+    integrator.Assemble(*this,sseg,*Ddense);    
+    integrator.Assemble(*this,sseg,mseg,*Mdense);    
+    
+    
+     if (Ddense) delete Ddense;
+     if (Mdense) delete Mdense;
           
-    points.clear();
   } // for (int s=0; s<nseg; ++s)
 
   segs.clear();
   
-  return false;
+  return true;
 }
 
 

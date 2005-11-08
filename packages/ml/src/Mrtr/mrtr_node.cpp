@@ -43,7 +43,9 @@
  *----------------------------------------------------------------------*/
 MRTR::Node::Node(int Id, const double* x, int ndof, const int* dof) :
 Id_(Id),
-iscorner_(false)
+iscorner_(false),
+Drow_(null),
+Mrow_(null)
 {
   seg_.resize(0);
   segptr_.resize(0);
@@ -68,7 +70,9 @@ iscorner_(false)
  *----------------------------------------------------------------------*/
 MRTR::Node::Node() :
 Id_(-1),
-iscorner_(false)
+iscorner_(false),
+Drow_(null),
+Mrow_(null)
 {
   seg_.resize(0);
   segptr_.resize(0);
@@ -130,7 +134,23 @@ MRTR::Node::Node(const MRTR::Node& old)
     if (old.pnode_[i].get() != NULL)
     {
       pnode_[i] = rcp(new MRTR::ProjectedNode(*(old.pnode_[i])));
-    }    
+    }
+  
+  if (old.Drow_ != null)
+  {
+    map<int,double>* tmp = new map<int,double>(*(old.Drow_));
+    Drow_ = rcp(tmp);
+  }
+  else
+    Drow_ = null;    
+
+  if (old.Mrow_ != null)
+  {
+    map<int,double>* tmp = new map<int,double>(*(old.Mrow_));
+    Mrow_ = rcp(tmp);
+  }
+  else
+    Mrow_ = null;    
 }
 
 /*----------------------------------------------------------------------*
@@ -208,6 +228,8 @@ MRTR::Node::~Node()
   seg_.clear();
   segptr_.clear();
   pnode_.clear();
+  Drow_ = null;
+  Mrow_ = null;
 }
 
 /*----------------------------------------------------------------------*
@@ -414,6 +436,36 @@ RefCountPtr<MRTR::ProjectedNode> MRTR::Node::GetProjectedNode()
     return pnode_[0];
   else
     return null;
+}
+
+/*----------------------------------------------------------------------*
+ |  add a value to the Drow_ map                             mwgee 11/05|
+ *----------------------------------------------------------------------*/
+void MRTR::Node::AddDValue(double val, int col)
+{ 
+  if (Drow_ == null)
+    Drow_ = rcp(new map<int,double>());
+    
+  map<int,double>* Dmap = Drow_.get();
+  
+  (*Dmap)[col] += val;
+
+  return;
+}
+
+/*----------------------------------------------------------------------*
+ |  add a value to the Drow_ map                             mwgee 11/05|
+ *----------------------------------------------------------------------*/
+void MRTR::Node::AddMValue(double val, int col)
+{ 
+  if (Mrow_ == null)
+    Mrow_ = rcp(new map<int,double>());
+    
+  map<int,double>* Mmap = Drow_.get();
+  
+  (*Mmap)[col] += val;
+
+  return;
 }
 
 #endif // TRILINOS_PACKAGE
