@@ -302,7 +302,7 @@ namespace Anasazi {
     // @{ \name Internal data
     
     //! Tolerance for convergence
-    ScalarType _residual_tolerance;
+    MagnitudeType _residual_tolerance;
     //! Target, the solver will compute the eigenvalues close to this value.
     ScalarType _TARGET;
     //! Maximum number of allowed iterations.
@@ -350,10 +350,10 @@ namespace Anasazi {
     _nev(problem->GetNEV()),
     _maxIters(_pl.get("Max Iters", 300)),
     _blockSize(_pl.get("Block Size", 1)),
-    _residual_tolerance(_pl.get("Tol", 1.0e-6)),
+    _residual_tolerance(_pl.get("Tol", Teuchos::ScalarTraits<MagnitudeType>::eps())),
     _numRestarts(0),
     _iters(0),
-    _TARGET(_pl.get("Target", 0.0)),
+    _TARGET(_pl.get("Target", Teuchos::ScalarTraits<ScalarType>::zero())),
     _SMIN(_pl.get("SMIN", 20)), 
     _SMAX(_pl.get("SMAX", 30)),
     _knownEV(0)
@@ -424,6 +424,13 @@ namespace Anasazi {
         _os << "ERROR : evals->size() is less than nev" << endl;
       return Failed;
     } 
+
+    // =============================== //
+    // templated values of 1's and 0's //
+    // =============================== //
+
+    ScalarType ScalarOne  = Teuchos::ScalarTraits<ScalarType>::one();
+    ScalarType ScalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
 
     // ===================== //
     // Start with allocation //
@@ -508,7 +515,7 @@ namespace Anasazi {
           Utmp  = U->CloneView(sublist);
           BUtmp = BU->CloneView(sublist);
           Rtmp->MvDot((*BUtmp), &eta);
-          Rtmp->MvAddMv(1.0, (*Rtmp), -eta[0], (*Utmp));
+          Rtmp->MvAddMv(ScalarOne, (*Rtmp), -eta[0], (*Utmp));
           delete Utmp, BUtmp;
         }
 
@@ -517,7 +524,7 @@ namespace Anasazi {
           Qtmp = _evecs->CloneView(sublist);
           BQtmp = BQ->CloneView(sublist);
           Rtmp->MvDot((*BQtmp), &eta);
-          Rtmp->MvAddMv(1.0, (*Rtmp), -eta[0], (*Qtmp));	      
+          Rtmp->MvAddMv(ScalarOne, (*Rtmp), -eta[0], (*Qtmp));	      
           delete Qtmp, BQtmp;
         }
 
@@ -529,9 +536,13 @@ namespace Anasazi {
         else
           Qtmp->SetBlock(*Rtmp, sublist);
 
-        Rtmp->MvDot((*Qtmp), &nrm);
-        nrm[0] = sqrt(nrm[0]);
-        Rtmp->MvAddMv(1.0/nrm[0], (*Rtmp), 0.0, (*Rtmp));
+        // FIXME: Oscar, va bene? ho cambiato nrm con nrm_q
+        std::vector<ScalarType> nrm_2(1);
+
+        Rtmp->MvDot((*Qtmp), &nrm_2);
+        nrm_2[0] = Teuchos::ScalarTraits<ScalarType>::squareroot(nrm_2[0]);
+        nrm[0] = Teuchos::ScalarTraits<ScalarType>::magnitude(nrm_2[0]);
+        Rtmp->MvAddMv(ScalarOne / nrm_2[0], (*Rtmp), ScalarZero, (*Rtmp)); 
 
         sublist[0] = s;
         U->SetBlock((*Rtmp),sublist);
@@ -609,21 +620,22 @@ namespace Anasazi {
 
       for(int i=0; i<s; ++i) {Ztmp[0][i] = Z[0][i];}
       // Rtmp = AU*Z(:,1)
-      Rtmp->MvTimesMatAddMv (1.0, (*AUtmp), Ztmp, 0.0); 
+      Rtmp->MvTimesMatAddMv (ScalarOne, (*AUtmp), Ztmp, ScalarZero); 
       // Rtmp = Rtmp - theta[0]*AU*Z(:,1)
-      Rtmp->MvTimesMatAddMv (-theta[0], (*BUtmp), Ztmp, 1.0);
+      Rtmp->MvTimesMatAddMv (-theta[0], (*BUtmp), Ztmp, ScalarOne);
       // nrm  = ||Rtmp|| 
       Rtmp->MvNorm(&nrm);
       // 
       sublist[0] = _knownEV;
       Qtmp = _evecs->CloneView(sublist);
       // Qtmp = U*Z(:,1)
-      Qtmp->MvTimesMatAddMv (1.0, (*Utmp), Ztmp, 1.0);
+      Qtmp->MvTimesMatAddMv (ScalarOne, (*Utmp), Ztmp, ScalarOne);
       // nrm  = ||Rtmp|| 
       Qtmp->MvNorm(&nrm_q);
 
       nrm[0] /= nrm_q[0];
 
+#if 1
       if (_om->doPrint()) 
       {
         _os << "It: " << _iters << ", knownEV: " << _knownEV;
@@ -636,6 +648,7 @@ namespace Anasazi {
         }
         _os << endl;
       }
+#endif
 
       conv = 0;
       while(nrm[0] < _residual_tolerance){
@@ -646,7 +659,7 @@ namespace Anasazi {
         BQtmp = BQ->CloneView(sublist);
 
         // Qtmp = U*Z(:,1)
-        Qtmp->MvTimesMatAddMv (1.0, (*Utmp), Ztmp, 0.0);
+        Qtmp->MvTimesMatAddMv (ScalarOne, (*Utmp), Ztmp, ScalarZero);
         // BQtmp = B*Qtmp
         if (_B.get() != 0)
           _B->Apply((*Qtmp), (*BQtmp));
@@ -663,7 +676,7 @@ namespace Anasazi {
         // Ztmp = Z(:,conv)
         for(int i=0; i<s; ++i) {Ztmp[0][i] = Z[conv][i];}
         // Rtmp = AU*Z(:,conv)
-        Rtmp->MvTimesMatAddMv (1.0, (*AUtmp), Ztmp, 0.0);
+        Rtmp->MvTimesMatAddMv (ScalarOne, (*AUtmp), Ztmp, ScalarZero);
         // Rtmp = Rtmp - theta[conv]*AU*Z(:,conv)
         Rtmp->MvTimesMatAddMv (-theta[conv], (*BUtmp), Ztmp, 1.0);
         // nrm  = ||Rtmp||
@@ -672,7 +685,7 @@ namespace Anasazi {
         sublist[0] = _knownEV;
         Qtmp = _evecs->CloneView(sublist);
         // Qtmp = U*Z(:,1)
-        Qtmp->MvTimesMatAddMv (1.0, (*Utmp), Ztmp, 1.0);
+        Qtmp->MvTimesMatAddMv (ScalarOne, (*Utmp), Ztmp, ScalarOne);
         // nrm  = ||Rtmp|| 
         Qtmp->MvNorm(&nrm_q);
 
@@ -732,9 +745,9 @@ namespace Anasazi {
 
         for(int i=0; i<s; ++i) {Ztmp[0][i] = Z[conv+j][i];}
         // Qtmp = AU*Z(:,1)
-        Qtmp->MvTimesMatAddMv (1.0, (*AUtmp), Ztmp, 0.0);
+        Qtmp->MvTimesMatAddMv (ScalarOne, (*AUtmp), Ztmp, ScalarZero);
         // Qtmp = Qtmp - theta[0]*AU*Z(:,1)
-        Qtmp->MvTimesMatAddMv (-theta[conv+j], (*BUtmp), Ztmp, 1.0);
+        Qtmp->MvTimesMatAddMv (-theta[conv+j], (*BUtmp), Ztmp, ScalarOne);
 
         if (_Prec.get() != 0)
           _Prec->Apply((*Qtmp), (*Rtmp));
@@ -787,9 +800,9 @@ namespace Anasazi {
           for(int j=0; j<(s-conv-purged); ++j)
             Ztmp(i,j) = Z(i,j+conv);
 
-        Utmp->MvTimesMatAddMv(1.0, (*Utmp), Ztmp, 0.0);
-        AUtmp->MvTimesMatAddMv(1.0, (*AUtmp), Ztmp, 0.0);
-        BUtmp->MvTimesMatAddMv(1.0, (*BUtmp), Ztmp, 0.0);
+        Utmp->MvTimesMatAddMv(ScalarOne, (*Utmp), Ztmp, ScalarZero);
+        AUtmp->MvTimesMatAddMv(ScalarOne, (*AUtmp), Ztmp, ScalarZero);
+        BUtmp->MvTimesMatAddMv(ScalarOne, (*BUtmp), Ztmp, ScalarZero);
 
         PE.Rotate(Ztmp);	    
 
