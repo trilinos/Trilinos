@@ -36,7 +36,7 @@ extern "C" {
 #ifdef ZZ_NEW_HASH
 /* EBEB Slightly improved hash function that fixes some weaknesses
         in the old hash function. An unfortunate side effect is
-        that the new hash function changes some anwers, therefore
+        that the new hash function changes some answers, therefore
         we have not yet replaced the old version. We should consider
         even stronger hash (like MD5) if we think good hashing is
         very important. 
@@ -48,6 +48,7 @@ extern "C" {
  *   key: a key to hash of type ZOLTAN_ID_PTR
  *   num_id_entries: the number of (ZOLTAN_ID_TYPE-sized) entries of the key to use
  *   n: the range of the hash function is 0..n-1
+ *      (n=0 returns an unsigned int in 0..INT_MAX; a bit faster)
  *
  * Return value:
  *   the hash value, an unsigned integer between 0 and n-1
@@ -87,6 +88,7 @@ unsigned int Zoltan_Hash(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n)
   }
 
   /* Then take care of the remaining bytes, if any */
+  /* This will never be executed when ZOLTAN_ID_PTR points to ints */
   rest = 0;
   for (byteptr = (char *)p; bytes > 0; bytes--, byteptr++){
     rest = (rest<<8) | (*byteptr);
@@ -104,11 +106,13 @@ unsigned int Zoltan_Hash(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n)
    * the bits around.
    */
 
-  /* Shift chosen for 32-bit ints but works for other cases too. */
-  h = (h<<15)^(h>>17);
+  if (n){
+    /* Shift targeted to 32-bit ints but works for other cases too. */
+    /* Take h mod n to get a value in [0,n) */
+    h = ((h<<15)^(h>>17))%n;
+  }
 
-  /* Return h mod n */
-  return (h%n);
+  return h;
 
 }
 
