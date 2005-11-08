@@ -47,7 +47,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 
 typedef int OrdinalType;
-#if 0
+#if 1
 #ifdef HAVE_COMPLEX
 typedef std::complex<double> ScalarType;
 #elif HAVE_COMPLEX_H
@@ -57,8 +57,6 @@ typedef ::complex<double> ScalarType;
 typedef double ScalarType;
 #endif
 
-// Gets the type of magnitude type (for example, the magnitude type
-// of "complex<double>" is "double").
 #include "AnasaziOperator.hpp"
 #include "AnasaziMultiVec.hpp"
 
@@ -189,8 +187,15 @@ namespace Tpetra {
       //! Sets all elements of all vectors to random value.
       void setAllToRandom()
       {
+        // FIXME: sets only the real part to random
         for (int i = 0 ; i < NumVectors_ ; ++i)
-          array_[i]->setAllToRandom();
+        {
+          //array_[i]->setAllToRandom();
+          for (int j = 0 ; j < array_[0]->getNumMyEntries() ; ++j)
+          {
+            (*array_[i])[j] = complex<double>(Teuchos::ScalarTraits<double>::random(), 0.0);
+          }
+        }
       }
 
       //! Prints the vector to cout. FIXME
@@ -228,7 +233,7 @@ namespace Tpetra {
       {
         for (OrdinalType i = OrdinalZero_ ; i < getNumVectors() ; ++i)
         {
-          Values[i] = array_[i]->norm1();
+          Values[i] = Teuchos::ScalarTraits<ScalarType>::magnitude(array_[i]->norm1());
         }
       }
 
@@ -236,7 +241,7 @@ namespace Tpetra {
       {
         for (OrdinalType i = OrdinalZero_ ; i < getNumVectors() ; ++i)
         {
-          Values[i] = ScalarOne_ * (array_[i]->norm2()); // FIXME: DOES NOT WORK WITH COMPLEX
+          Values[i] = Teuchos::ScalarTraits<ScalarType>::magnitude(array_[i]->norm2());
         }
       }
 
@@ -244,7 +249,7 @@ namespace Tpetra {
       {
         for (OrdinalType i = OrdinalZero_ ; i < getNumVectors() ; ++i)
         {
-          Values[i] = array_[i]->normInf();
+          Values[i] = Teuchos::ScalarTraits<ScalarType>::magnitude(array_[i]->normInf());
         }
       }
 
@@ -677,7 +682,7 @@ int main(int argc, char *argv[])
 
   Anasazi::ReturnType returnCode = Anasazi::Ok;	
 
-  ScalarType TOL = 1e-4;
+  Teuchos::ScalarTraits<ScalarType>::magnitudeType TOL = 1e-4;
 
   int MAXITER = 500;
   int NEV = 3; 
