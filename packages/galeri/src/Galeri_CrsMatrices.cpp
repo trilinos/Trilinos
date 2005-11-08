@@ -232,6 +232,15 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
   {
     int nx = List.get("nx", -1);
     int ny = List.get("ny", -1);
+    if (nx == -1 || ny == -1)
+    {
+      int n = Map->NumGlobalElements();
+      nx = (int)sqrt((double)n);
+      ny = nx;
+      if (nx * ny != n)
+        throw(Exception(__FILE__, __LINE__,
+                        "You need to specify nx and ny"));
+    }
 
     return(Matrices::Cross2D(Map, nx, ny, 4.0, -1.0, -1.0, -1.0, -1.0));
   }
@@ -239,6 +248,15 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
   {
     int nx = List.get("nx", -1);
     int ny = List.get("ny", -1);
+    if (nx == -1 || ny == -1)
+    {
+      int n = Map->NumGlobalElements();
+      nx = (int)sqrt((double)n);
+      ny = nx;
+      if (nx * ny != n)
+        throw(Exception(__FILE__, __LINE__,
+                        "You need to specify nx and ny"));
+    }
 
     return(Matrices::BigCross2D(Map, nx, ny, 60.0, -16.0, -16.0, -16.0, -16.0,
                                 1.0, 1.0, 1.0, 1.0));
@@ -247,6 +265,16 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
   {
     int nx = List.get("nx", -1);
     int ny = List.get("ny", -1);
+    if (nx == -1 || ny == -1)
+    {
+      int n = Map->NumGlobalElements();
+      nx = (int)sqrt((double)n);
+      ny = nx;
+      if (nx * ny != n)
+        throw(Exception(__FILE__, __LINE__,
+                        "You need to specify nx and ny"));
+    }
+
     double epsilon = List.get("epsilon", 0.1);
     double lx = List.get("lx", 1.0);
     double ly = List.get("ly", 1.0);
@@ -257,6 +285,16 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
   {
     int nx = List.get("nx", -1);
     int ny = List.get("ny", -1);
+    if (nx == -1 || ny == -1)
+    {
+      int n = Map->NumGlobalElements();
+      nx = (int)sqrt((double)n);
+      ny = nx;
+      if (nx * ny != n)
+        throw(Exception(__FILE__, __LINE__,
+                        "You need to specify nx and ny"));
+    }
+
     double conv = List.get("conv", 1.0);
     double diff = List.get("diff", 1.0e-5);
     double alpha = List.get("alpha", 0.0);
@@ -269,6 +307,16 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
   {
     int nx = List.get("nx", -1);
     int ny = List.get("ny", -1);
+    if (nx == -1 || ny == -1)
+    {
+      int n = Map->NumGlobalElements();
+      nx = (int)sqrt((double)n); 
+      ny = nx;
+      if (nx * ny != n)
+        throw(Exception(__FILE__, __LINE__,
+                        "You need to specify nx and ny"));
+    }
+
     double conv = List.get("conv", 1.0);
     double diff = List.get("diff", 1.0e-5);
     double lx = List.get("lx", 1.0);
@@ -281,6 +329,16 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     int nx = List.get("nx", -1);
     int ny = List.get("ny", -1);
     int nz = List.get("nz", -1);
+    if (nx == -1 || ny == -1 || nz == -1)
+    {
+      int n = Map->NumGlobalElements();
+      nx = (int)pow((double)n, 0.33334);
+      ny = nx; nz = nx;
+      if (nx * ny * nz != n)
+        throw(Exception(__FILE__, __LINE__,
+                        "You need to specify nx and ny"));
+    }
+
 
     return(Matrices::Cross3D(Map, nx, ny, nz, 6.0, -1.0, -1.0, 
                              -1.0, -1.0, -1.0, -1.0));

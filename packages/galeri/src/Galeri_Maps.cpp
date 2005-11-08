@@ -40,6 +40,10 @@ CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
 
     if (nx == -1 || ny == -1) 
     {
+      if (n <= 0)
+          throw(Exception(__FILE__, __LINE__,
+                          "If nx or ny are not set, then n must be set"));
+
       nx = (int)sqrt((double)n);
       ny = nx;
       if (nx * ny != n) 
@@ -74,6 +78,10 @@ CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
 
     if (nx == -1 || ny == -1 || nz == -1) 
     {
+      if (n <= 0)
+          throw(Exception(__FILE__, __LINE__,
+                          "If nx or ny or nz are not set, then n must be set"));
+
       nx = (int)pow((double)n, 0.333334);
       ny = nx;
       nz = nx;
