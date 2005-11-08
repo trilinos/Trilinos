@@ -66,8 +66,8 @@ bool MRTR::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
 
   // evaluate the first function set on segment at eta
   int nmnode = seg.Nnode();
-  double* val   = new double[nmnode];
-  double* deriv = new double[nmnode*2];
+  double val[100];  
+  double deriv[200];
   seg.EvaluateFunction(0,eta,val,nmnode,deriv);
   
   // get nodal coords of nodes and interpolate them
@@ -102,8 +102,6 @@ bool MRTR::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
     Nxeta2[1] += deriv[2*i+1]*X[1];
     Nxeta2[2] += deriv[2*i+1]*X[2];
   }
-  delete [] val; 
-  delete [] deriv; 
 
   const double* X = node.X();
   const double* n = node.N();
@@ -151,8 +149,8 @@ bool MRTR::Projector::evaluate_FgradF_3D_SegmentNormal(double* F,
 
   // evaluate the first function set on segment at eta
   int nsnode = seg.Nnode();
-  double* val   = new double[nsnode];
-  double* deriv = new double[nsnode*2];
+  double val[100];  
+  double deriv[200];
   seg.EvaluateFunction(0,eta,val,nsnode,deriv);
   
   // get nodal coords of nodes and interpolate them
@@ -207,8 +205,6 @@ bool MRTR::Projector::evaluate_FgradF_3D_SegmentNormal(double* F,
     Nneta2[1] += deriv[2*i+1]*n[1];
     Nneta2[2] += deriv[2*i+1]*n[2];
   }
-  delete [] val; 
-  delete [] deriv; 
 
   const double* X = node.X();
 

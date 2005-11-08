@@ -191,7 +191,7 @@ public:
   RefCountPtr<MRTR::Segment> GetSegmentView(int sid);
   
   // get a view of ALL segments on this interface (Complete() has to be called)
-  // method allocates a vector, calling methos is in charge of deleteing it
+  // method allocates a vector, calling method is in charge of deleteing it
   MRTR::Segment** GetSegmentView();
   
   // build averaged normals and project nodes to other side

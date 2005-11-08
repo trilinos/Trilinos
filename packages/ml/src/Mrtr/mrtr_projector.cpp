@@ -173,7 +173,7 @@ double MRTR::Projector::evaluate_F_2D_NodalNormal(const MRTR::Node& node,
   
   // evaluate the first function set on segment at eta
   int nmnode = seg.Nnode();
-  double* val = new double[nmnode];
+  double val[100];
   seg.EvaluateFunction(0,&eta,val,nmnode,NULL);
   
   // get nodal coords of nodes and interpolate them
@@ -193,8 +193,6 @@ double MRTR::Projector::evaluate_F_2D_NodalNormal(const MRTR::Node& node,
     Nx[0] += val[i]*X[0];
     Nx[1] += val[i]*X[1];
   }
-  
-  delete [] val; val = NULL;
   
   // subtract xs
   const double* X = node.X();
@@ -236,7 +234,7 @@ double MRTR::Projector::evaluate_gradF_2D_NodalNormal(const MRTR::Node& node,
   
   // evaluate derivatives of the first function set on segment at eta
   int nmnode = seg.Nnode();
-  double* deriv = new double[nmnode*2];
+  double deriv[200];
   seg.EvaluateFunction(0,&eta,NULL,nmnode,deriv);
   
   // get nodal coords of nodes and interpolate them
@@ -256,8 +254,6 @@ double MRTR::Projector::evaluate_gradF_2D_NodalNormal(const MRTR::Node& node,
     Nxeta[0] += deriv[i]*X[0];
     Nxeta[1] += deriv[i]*X[1];
   }
-  
-  delete [] deriv; deriv = NULL;
   
   // get the normal of node
   const double* n = node.N();
@@ -384,7 +380,7 @@ double MRTR::Projector::evaluate_F_2D_SegmentNormal(const MRTR::Node& node,
   
   // evaluate the first function set on segment at eta
   int nsnode = seg.Nnode();
-  double* val = new double[nsnode];
+  double val[100];
   seg.EvaluateFunction(0,&eta,val,nsnode,NULL);
   
   // get nodal coords and normals of slave nodes and interpolate them
@@ -410,8 +406,6 @@ double MRTR::Projector::evaluate_F_2D_SegmentNormal(const MRTR::Node& node,
     NN[1] += val[i]*N[1];
   }
 
-  delete [] val; val = NULL;
-  
   // subtract xm from interpolated coords Nx
   const double* X = node.X();
   Nx[0] -= X[0];
@@ -455,8 +449,8 @@ double MRTR::Projector::evaluate_gradF_2D_SegmentNormal(const MRTR::Node& node,
   
   // evaluate function and derivatives of the first function set on segment at eta
   int nsnode = seg.Nnode();
-  double* val   = new double[nsnode];
-  double* deriv = new double[nsnode*2];
+  double val[100];  
+  double deriv[200];
   seg.EvaluateFunction(0,&eta,val,nsnode,deriv);
   
   // several intermediate data:
@@ -491,9 +485,6 @@ double MRTR::Projector::evaluate_gradF_2D_SegmentNormal(const MRTR::Node& node,
     NNeta[0] += deriv[i]*N[0];
     NNeta[1] += deriv[i]*N[1];
   }
-  
-  delete [] deriv; deriv = NULL;
-  delete [] val;   val   = NULL;
   
   // get master node coords
   const double* xm = node.X();
@@ -580,7 +571,7 @@ double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal(const MRTR::Node& node,
   
   // evaluate the first function set on segment at eta
   int nsnode = seg.Nnode();
-  double* val = new double[nsnode];
+  double val[100];
   seg.EvaluateFunction(0,&eta,val,nsnode,NULL);
   
   // get nodal coords and normals of slave nodes and interpolate them
@@ -600,7 +591,6 @@ double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal(const MRTR::Node& node,
     Nx[0] += val[i]*X[0];
     Nx[1] += val[i]*X[1];
   }
-  delete [] val; val = NULL;
   
   // subtract xm from interpolated coords Nx
   const double* X = node.X();
@@ -645,7 +635,7 @@ double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal(
   
   // evaluate function and derivatives of the first function set on segment at eta
   int nsnode = seg.Nnode();
-  double* deriv = new double[nsnode*2];
+  double deriv[200];
   seg.EvaluateFunction(0,&eta,NULL,nsnode,deriv);
   
   // intermediate data:
@@ -667,8 +657,6 @@ double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal(
     Nxeta[0] += deriv[i]*X[0];
     Nxeta[1] += deriv[i]*X[1];
   }
-  
-  delete [] deriv; deriv = NULL;
   
   // calculate gradF
   double gradF =   Nxeta[0]*Nxeta[0] + Nxeta[1]*Nxeta[1];
@@ -773,7 +761,7 @@ double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(const MRTR::Node& n
   
   // evaluate the first function set on segment at eta
   int nsnode = seg.Nnode();
-  double* val = new double[nsnode];
+  double val[100];
   seg.EvaluateFunction(0,&eta,val,nsnode,NULL);
   
   // get nodal coords and normals of master nodes and interpolate them
@@ -793,7 +781,6 @@ double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(const MRTR::Node& n
     Nx[0] += val[i]*X[0];
     Nx[1] += val[i]*X[1];
   }
-  delete [] val; val = NULL;
   
   // subtract xs from interpolated coords Nx
   const double* X = node.X();
@@ -835,7 +822,7 @@ double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g(
   
   // evaluate function and derivatives of the first function set on segment at eta
   int nmnode = seg.Nnode();
-  double* deriv = new double[nmnode*2];
+  double deriv[200];
   seg.EvaluateFunction(0,&eta,NULL,nmnode,deriv);
   
   // intermediate data:
@@ -857,8 +844,6 @@ double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g(
     Nxeta[0] += deriv[i]*X[0];
     Nxeta[1] += deriv[i]*X[1];
   }
-  
-  delete [] deriv; deriv = NULL;
   
   // calculate gradF
   double gradF =   Nxeta[0]*g[0] + Nxeta[1]*g[1];

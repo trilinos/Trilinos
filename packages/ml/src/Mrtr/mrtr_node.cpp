@@ -309,8 +309,7 @@ bool MRTR::Node::GetPtrstoSegments(MRTR::Interface& interface)
   if (!interface.lComm()) return true;
   if (!seg_.size()) return false;
   
-  // vector segptr_ might already exist, delete it and build new
-  segptr_.clear();
+  // vector segptr_ might already exist, build new
   segptr_.resize(seg_.size());
   
   for (int i=0; i<seg_.size(); ++i)

@@ -227,8 +227,8 @@ int MRTR::Manager::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,do
   //Loop over B's rows and sum into
   int MaxNumEntries = EPETRA_MAX( Aprime->MaxNumEntries(), B.MaxNumEntries() );
   int NumEntries;
-  int * Indices = new int[MaxNumEntries];
-  double * Values = new double[MaxNumEntries];
+  vector<int> Indices(MaxNumEntries);
+  vector<double> Values(MaxNumEntries);
 
   int NumMyRows = A.NumMyRows();
   int Row, err;
@@ -238,22 +238,22 @@ int MRTR::Manager::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,do
     for( int i = 0; i < NumMyRows; ++i )
     {
       Row = Aprime->GRID(i);
-      EPETRA_CHK_ERR(Aprime->ExtractGlobalRowCopy(Row,MaxNumEntries,NumEntries,Values,Indices));
+      EPETRA_CHK_ERR(Aprime->ExtractGlobalRowCopy(Row,MaxNumEntries,NumEntries,&Values[0],&Indices[0]));
       if( scalarA != 1.0 )
         for( int j = 0; j < NumEntries; ++j ) Values[j] *= scalarA;
       if( B.Filled() ) {//Sum In Values
-        err = B.SumIntoGlobalValues( Row, NumEntries, Values, Indices );
+        err = B.SumIntoGlobalValues( Row, NumEntries, &Values[0], &Indices[0] );
         assert( err == 0 );
       }
       else {
-        err = B.InsertGlobalValues( Row, NumEntries, Values, Indices );
+        err = B.InsertGlobalValues( Row, NumEntries, &Values[0], &Indices[0] );
         assert( err == 0 || err == 1 );
       }
     }
   }
 
-  delete [] Indices;
-  delete [] Values;
+  Indices.clear();
+  Values.clear();
 
   if( Atrans ) delete Atrans;
 

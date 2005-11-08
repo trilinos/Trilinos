@@ -1001,13 +1001,13 @@ bool MRTR::Interface::RedundantNodes(int side)
     lcomm_->Broadcast(&nnode,1,proc);
     
     int bsize = nnode*3;
-    double* bcast = NULL;
+    vector<double> bcast;
     
     // pack proc's nodes
     if (proc==lcomm_->MyPID())
     {
       int count = 0;
-      bcast = new double[bsize];
+      bcast.resize(bsize);
       for (curr=node_[side].begin(); curr != node_[side].end(); ++curr)
       {
         int numdouble;
@@ -1015,10 +1015,7 @@ bool MRTR::Interface::RedundantNodes(int side)
         if (count+numdouble>=bsize)
         {
           bsize += 3*numdouble;
-          double* tmp = new double[bsize];
-          for (int j=0; j<count; ++j) tmp[j] = bcast[j];
-          delete [] bcast;
-          bcast = tmp;
+          bcast.resize(bsize);
         }
         for (int i=0; i<numdouble; ++i)
           bcast[count++] = npack[i];
@@ -1030,8 +1027,8 @@ bool MRTR::Interface::RedundantNodes(int side)
     // bcast proc's nodes
     lcomm_->Broadcast(&bsize,1,proc);
     if (lcomm_->MyPID() != proc)
-      bcast = new double[bsize];
-    lcomm_->Broadcast(bcast,bsize,proc);
+      bcast.resize(bsize);
+    lcomm_->Broadcast(&bcast[0],bsize,proc);
     
     // Unpack proc's nodes
     if (lcomm_->MyPID() != proc)
@@ -1045,7 +1042,7 @@ bool MRTR::Interface::RedundantNodes(int side)
         rmap->insert(pair<int,RefCountPtr<MRTR::Node> >(tmp->Id(),tmp));
       }
     }    
-    delete [] bcast; bcast = NULL;
+    bcast.clear();
   } // for (int proc=0; proc<lcomm_->NumProc(); ++proc)
   return true;
 }
