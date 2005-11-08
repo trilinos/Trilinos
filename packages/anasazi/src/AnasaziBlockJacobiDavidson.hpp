@@ -35,6 +35,108 @@
 #ifndef ANASAZI_BLOCK_JACOBI_DAVIDSON_HPP
 #define ANASAZI_BLOCK_JACOBI_DAVIDSON_HPP
 
+#include "AnasaziOperator.hpp"
+template <class ScalarType, class MV>
+class JacDavOp1 : public virtual Anasazi::Operator<ScalarType> {
+protected:
+	MV& _Q;
+        MV& _Qb;
+public:
+	JacDavOp1(MV &Q, MV &Qb) : _Q(Q), _Qb(Qb) {}
+	
+	virtual Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType> &mv1, Anasazi::MultiVec<ScalarType> &mv2) const {
+		int a=mv1.GetVecLength();
+		Teuchos::SerialDenseMatrix<int,ScalarType> H;
+		
+		if ((mv1.GetNumberVecs()!=mv1.GetNumberVecs()) || (a!=mv2.GetVecLength()) || (a!=_Qb.GetVecLength()) || (a!=_Q.GetVecLength()) || (_Q.GetNumberVecs()!=_Qb.GetNumberVecs())) return Anasazi::Failed;
+		
+		H.shapeUninitialized(_Qb.GetNumberVecs(), mv1.GetNumberVecs());
+		mv1.MvTransMv((ScalarType)1,_Qb,H);
+		mv2.MvAddMv((ScalarType)1,mv1,(ScalarType)0,mv2);
+		mv2.MvTimesMatAddMv((ScalarType)-1,_Q,H,(ScalarType)1);
+		
+		return Anasazi::Ok;
+	}
+};
+
+template <class ScalarType, class MV, class OP>
+class JacDavOp2 : public virtual Anasazi::Operator<ScalarType> {
+protected:
+	MV& _Qb;
+        MV& _Q;
+	Teuchos::RefCountPtr<OP> _A, _B;
+	ScalarType _sigma;
+public:
+	JacDavOp2(MV &Qb, MV &Q, Teuchos::RefCountPtr<OP> &A, ScalarType sigma, Teuchos::RefCountPtr<OP> &B) : _Q(Q), _Qb(Qb) {
+		_A=A;
+		_B=B;
+		_sigma=sigma;
+	}
+	
+	virtual Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType> &mv1, Anasazi::MultiVec<ScalarType> &mv2) const {
+		Anasazi::ReturnType info;
+		Teuchos::SerialDenseMatrix<int,ScalarType> H;
+		Anasazi::MultiVec<ScalarType> *h1;
+		
+		//mv2:=(A-sigma*B)*mv1
+		info=_A->Apply(mv1,mv2);
+		if (info!=Anasazi::Ok) return info;
+		
+		h1=mv2.Clone(mv2.GetNumberVecs());
+		info=_B->Apply(mv1,(*h1));
+		if (info!=Anasazi::Ok) return info;
+		
+		mv2.MvAddMv((ScalarType)1,mv2,-_sigma,(*h1));
+		
+		//H:=Q^(T)*(A-sigma*B)*mv1
+		H.shapeUninitialized(_Q.GetNumberVecs(), mv1.GetNumberVecs());
+		mv2.MvTransMv((ScalarType)1,_Q,H);
+				
+		//mv2:=(I-Qb*Q^(T))*(A-sigma*B)*mv1
+		mv2.MvTimesMatAddMv((ScalarType)-1,_Qb,H,(ScalarType)1);
+		
+		return Anasazi::Ok;
+	}
+};
+
+template <class ScalarType, class MV, class OP>
+class JacDavOp4 : public virtual Anasazi::Operator<ScalarType> {
+protected:
+	MV& _Qk;
+        MV& _Qb;
+	Teuchos::SerialDenseMatrix<int,ScalarType> _LkTrans, _Rk;
+	Teuchos::RefCountPtr<OP> _Kinv;
+	Teuchos::BLAS<int,ScalarType> blas;
+public:
+	JacDavOp4(MV &Qk, Teuchos::SerialDenseMatrix<int,ScalarType> LkTrans, Teuchos::SerialDenseMatrix<int,ScalarType> Rk, MV &Qb, Teuchos::RefCountPtr<OP> &Kinv)  : _Qk(Qk), _Qb(Qb), _LkTrans(LkTrans), _Rk(Rk) {
+		_Kinv=Kinv;
+	}
+	
+	virtual Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType> &mv1, Anasazi::MultiVec<ScalarType> &mv2) const {
+		Anasazi::ReturnType info;
+		Teuchos::SerialDenseMatrix<int,ScalarType> H;
+		
+		//mv2:=Kinv*mv1
+		info=_Kinv->Apply(mv1,mv2);
+		if (info!=Anasazi::Ok) return info;
+		
+		//H:=Qb^(T)*Kinv*mv1
+		H.shapeUninitialized(_Qb.GetNumberVecs(), mv1.GetNumberVecs());
+		mv2.MvTransMv((ScalarType)1,_Qb,H);
+		
+		//H=Lk^(-1)*Qb^(T)*Kinv*mv1 -> solve Lk*x=H
+		blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::LOWER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, H.numRows(), H.numCols(), (ScalarType)1, _LkTrans.values(), _LkTrans.stride(), H.values(), H.stride());
+		
+		//H=Rk^(-1)*Lk^(-1)*Qb^(T)*Kinv*mv1 -> solve Rk*x=H
+		blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::LOWER_TRI, Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, H.numRows(), H.numCols(), (ScalarType)1, _Rk.values(), _Rk.stride(), H.values(), H.stride());
+		
+		//mv2:=mv1+Qk*Rk^(-1)*Lk^(-1)*Qb^(T)*Kinv*mv1
+		mv2.MvTimesMatAddMv((ScalarType)-1, _Qk, H, (ScalarType)1);
+		
+		return Anasazi::Ok;
+	}
+};
+
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziEigensolver.hpp"
 #include "AnasaziEigenproblem.hpp"
@@ -45,6 +147,245 @@
 #include "AnasaziProjectedEigenproblem.hpp"
 #include "AnasaziOutputManager.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_BLAS.hpp"
+
+namespace Anasazi {
+
+// single-vector GMRES class, several minor fixes still needed
+
+template <class ScalarType, class MV, class OP>
+class GMRES {
+protected:
+	typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitudeType;	
+	
+	int _LSitmax; //maximum of iterations
+	int _LSitRestart; //number of iterations at which restarts occur
+	magnitudeType _epslin; //tolerance
+	
+	Teuchos::BLAS<int,ScalarType> blas; //used to access Teuchos blas functions
+	std::string _errorString; //error string (stores error information, if funcition solve returns Anasazi::Failed)
+	
+	static void UCosSin(const ScalarType x1, const ScalarType x2, magnitudeType &c, ScalarType &s); //calculates cos und sin for Givens Rotations
+	#if 0
+	void GivensU(const int i, const int j, const magnitudeType c, const ScalarType &s, Teuchos::SerialDenseMatrix<int, ScalarType> &m); //applies a Givens rotation to a Teuchos-Matrix
+	#endif
+	static void GivensU(const magnitudeType c, const ScalarType &s, ScalarType &x1, ScalarType &x2); //applies a Givens rotation to 2 specific numbers
+	
+	static double conjugate(const double t) {return t;} //calculates the complex conjugate
+	static std::complex<double> conjugate(const std::complex<double> &t) {return std::complex<double>(t.real(),-t.imag());} //calculates the complex conjugate
+	
+public:
+	GMRES() : _LSitmax(500), _epslin(1e-6), _LSitRestart(20)  {} //contructor
+	GMRES(const int itmax, const double tol, const int restart) : _LSitmax(itmax), _epslin(tol), _LSitRestart(restart) {
+		if (_LSitmax<0) _LSitmax=500;
+		if (_LSitRestart<1) _LSitRestart=20;	
+	}
+		
+	
+	void setMaxIter (const int i) {if (i>=0) _LSitmax=i;} //sets the maximum of iterations
+	void setTolerance(const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType e) {_epslin=e;} //sets the tolerance
+	void setRestart(const int i) {if (i>=1) _LSitRestart=i;} //sets the number of iterations at which restart occurs
+	std::string getErrString() {return _errorString;} //returns a failure string, which is only set, if the function solve returns Anasazi::Failed (undefined content in other cases)
+	
+	virtual Anasazi::ReturnType solve(OP &A, OP &Kinv, MV &b, MV &sol); //solves a specific equation A*sol=b with preconditioner Kinv
+};
+
+//----------------------------------------------------------------------------------------------
+//                                 *** IMPLEMENTATION ***
+//----------------------------------------------------------------------------------------------
+
+//solves a specific equation A*sol=b with preconditioner Kinv
+template <class ScalarType, class MV, class OP>
+Anasazi::ReturnType GMRES<ScalarType, MV, OP>::solve(OP &A, OP &Kinv, MV &b, MV &sol) {
+	int k=0, i, LSit;
+	magnitudeType rho;
+	
+	std::vector<magnitudeType> vn(1);
+	std::vector<ScalarType> vs(1);
+	std::vector<int> vi(1), vi2;
+	
+	MV *r, *ua, *uK;
+	std::vector<MV*> u(_LSitRestart+1);
+	Teuchos::SerialDenseMatrix<int,ScalarType> e, *z, R, s;
+	Teuchos::SerialDenseMatrix<int,magnitudeType> c;
+	Anasazi::ReturnType ok;
+	
+	//FIXME: eventuell auf mehr als einen Eingabe-Vektor erweitern
+	if (b.GetNumberVecs()!=1) {
+		_errorString="GMRES: only implemented for paramter b with 1 column";
+		return Anasazi::Failed;
+	}
+	if (sol.GetNumberVecs()!=1) {
+		_errorString="GMRES: only implemented for parameter sol with 1 column";
+		return Anasazi::Failed;
+	}
+	if (b.GetVecLength()!=sol.GetVecLength()) {
+		_errorString="GMRES: only implemented for b.GetLength()==sol.GetLength()";
+		return Anasazi::Failed;
+	}
+	
+	vi[0]=0;
+	r=b.Clone(1); //(*) 1 col
+	ok=A.Apply(sol,*r);
+	if (ok!=Anasazi::Ok) {
+		_errorString="GMRES: error applying operator A to r";
+		delete(r);
+		r=0;
+		return Anasazi::Failed;
+	}
+	r->MvAddMv((ScalarType)1,b,(ScalarType)-1,*r); //r=b-A*x
+	r->MvNorm(&vn);
+
+	ok=Kinv.Apply(*r,*r); //r=K^(-1)*(b-A*x)
+	if (ok!=Anasazi::Ok) {
+		_errorString="GMRES: error applying operator Kinv to r";
+		delete(r);
+		r=0;
+		return Anasazi::Failed;
+	}
+	r->MvNorm(&vn);
+	rho=vn[0];
+
+	e.shape(_LSitRestart+1,1); //alle Werte mit 0 initialisiert
+	e(0,0)=rho;
+	
+	for (i=0; i<=_LSitRestart; i++) u[i]=r->Clone(1);
+	if (rho!=(ScalarType)0) u[0]->MvAddMv((ScalarType)1/rho,*r,(ScalarType)0,*r); //u[0]=r/rho
+	else u[0]->MvAddMv((ScalarType)1,*r,(ScalarType)0,*(u[0]));
+	
+	ua=r->Clone(1); //(*) 1 col
+	uK=r->Clone(1); //(*) 1 col
+	R.shape(_LSitRestart+1,_LSitRestart+1); //(m) (_LSitRestart+1 x _LSitRestart+1)
+	c.shapeUninitialized(_LSitRestart,1); //(m) (_LSitRestart x 1)
+	s.shapeUninitialized(_LSitRestart,1); //(m) (_LSitRestart x 1)
+
+	k=0;
+	for (LSit=1; LSit<=_LSitmax; LSit++) {
+		ok=A.Apply(*(u[k]),*ua); //ua=A*u[k]
+		assert(ok==Anasazi::Ok);
+		ok=Kinv.Apply(*ua,*uK); //uK=A*u[k]
+		assert(ok==Anasazi::Ok);
+		
+		for (i=0; i<=k; i++) {
+			u[i]->MvDot(*uK,&vs);
+			R(i,k)=vs[0]; //R[i,k]=u[i]^(H)*u[k]
+			uK->MvAddMv((ScalarType)1,*uK,-R(i,k),*(u[i])); //uK=uK-R[i,k]*u[i]
+		}
+	
+		uK->MvNorm(&vn);
+		R(k+1,k)=vn[0]; //R[k+1,k]=norm(u[k+1]);
+		if (vn[0]!=0) u[k+1]->MvAddMv((ScalarType)1/R(k+1,k),*uK,(ScalarType)0,*uK); //u[k+1]=uK/R[k+1,k]
+		else u[k+1]->MvAddMv((ScalarType)1,*uK,(ScalarType)0,*uK);
+		
+		for (i=0; i<k; i++) {
+			GivensU(c(i,0),s(i,0),R(i,k),R(i+1,k));
+		}
+		UCosSin(R(k,k),R(k+1,k),c(k,0),s(k,0));
+		GivensU(c(k,0),s(k,0), R(k,k), R(k+1,k));
+		
+		//R(k+1,k)=(ScalarType)0; //Da ich weiss, dass dies 0 werden soll //unnoetig, wenn ich bei linSolve Dreiecksmatrix verwende
+		
+		GivensU(c(k,0),s(k,0), e(k,0),e(k+1,0));
+			
+                if (LSit % 10 == 1)
+                  cout << "iteration = " << LSit << ", res = " << Teuchos::ScalarTraits<ScalarType>::magnitude(e(k+1, 0)) << endl;
+
+		if (Teuchos::ScalarTraits<ScalarType>::magnitude(e(k+1,0))<=rho*_epslin) break;
+		
+		if (k+1==_LSitRestart) {
+			//printf("GMRES: RESTART\n");
+			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, k+1, 1, (ScalarType)1, R.values(), R.stride(), e.values(), e.stride());
+		
+			for (i=0; i<=k; i++) sol.MvAddMv((ScalarType)1,sol,e(i,0),*(u[i]));  //x:=x+U[:,0:k]*z
+			
+			ok=A.Apply(sol,*r);
+			assert(ok==Anasazi::Ok);
+			r->MvAddMv((ScalarType)1,b,(ScalarType)-1,*r); //r=b-A*x
+			ok=Kinv.Apply(*r,*r); //r=Kinv*r
+			assert(ok==Anasazi::Ok);
+			r->MvNorm(&vn); //eta=vn[0]=norm(r);
+			
+			assert(vn[0]!=(magnitudeType)0);
+			e.shape(_LSitRestart+1,1); //alle Werte mit 0 initialisiert
+			e(0,0)=vn[0];
+			
+			
+			u[0]->MvAddMv((ScalarType)1/vn[0],*r,(ScalarType)0,*(u[0])); //u[0]=r/eta
+			
+			k=-1;
+		}
+		
+		k++;
+	}
+	if ((LSit<=_LSitmax) && (rho!=0)) {
+		blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, k+1, 1, (ScalarType)1, R.values(), R.stride(), e.values(), e.stride());
+		
+		for (i=0; i<=k; i++) sol.MvAddMv((ScalarType)1,sol,e(i,0),*(u[i])); //x:=x+U[:,0:k]*z
+	}
+	
+	delete(r); //(#)
+	r=0;
+	for (i=0; i<=_LSitRestart; i++) delete(u[i]);
+	delete(ua); //(#)
+	ua=0;
+	delete(uK); //(#)
+	uK=0;
+	
+	if (LSit<=_LSitmax) {
+		return Anasazi::Ok;
+	} else {
+		return Anasazi::Unconverged;
+	}
+}
+
+//calculates cos und sin for Givens Rotations
+template <class ScalarType, class MV, class OP>
+void GMRES<ScalarType,MV,OP>::UCosSin(const ScalarType x1, const ScalarType x2, magnitudeType &c, ScalarType &s) {
+	ScalarType r;
+	magnitudeType l, l1, l2;
+	
+	l1=Teuchos::ScalarTraits<ScalarType>::magnitude(x1);
+	
+	if (l1 == (magnitudeType)0){
+		c = (magnitudeType)0;
+		s = (ScalarType)1;
+	} else {
+		l2=Teuchos::ScalarTraits<ScalarType>::magnitude(x2);
+		l=sqrt(l1*l1+l2*l2); //FIXME: koennte Problem wegen Overflow geben
+	
+		c = l1/l;
+		s = (x2/x1)*c;
+	}
+}
+
+#if 0
+//applies a Givens rotation to a Teuchos-Matrix
+template <class ScalarType, class MV, class OP>
+void GMRES<ScalarType, MV, OP>::GivensU(const int i, const int j, const magnitudeType c, const ScalarType &s, Teuchos::SerialDenseMatrix<int, ScalarType> &m) {
+	Teuchos::SerialDenseMatrix<int, ScalarType> *tmp;
+	
+	tmp=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::Copy,m.values()+i,m.stride(),1,m.numCols());
+	
+	this->blas.SCAL(m.numCols(), (ScalarType) c, m.values()+i, m.stride());
+	this->blas.AXPY(m.numCols(), conjugate(s), m.values()+j, m.stride(), m.values()+i, m.stride()); //m[:,i]=c*m[i]+conj(s)*m[:,j]
+	
+	this->blas.SCAL(m.numCols(), c, m.values()+j, m.stride());
+	this->blas.AXPY(m.numCols(), -s, tmp->values(), tmp->stride(), m.values()+j, m.stride()); //m[:,j]=-s*zi+c*z[:,j]
+	delete(tmp);
+	tmp=0;
+}
+#endif
+
+//applies a Givens rotation to 2 specific numbers
+template <class ScalarType, class MV, class OP>
+void GMRES<ScalarType, MV, OP>::GivensU(const magnitudeType c, const ScalarType &s, ScalarType &x1, ScalarType &x2) {
+	ScalarType h=x1;
+	
+	x1=c*x1+conjugate(s)*x2;
+	x2=c*x2-s*h;
+}
+
 
 /*!
 \class Anasazi::BlockJacobiDavidson
@@ -186,7 +527,7 @@ of the approximations gained during the previous iterations. In contrast to Kryl
 {\tt  1} &  Procedure Restart$(\mathcal{U}, \Theta, Z, s_{min}, s_{max})$ \\
 {\tt  2} &  Do: \\
 {\tt  3} &  $\quad\quad$If ($s = s_{max}$) Then \\
-{\tt  4} &  $\quad\quad\quad\quad$\mathcal{U} := \mathcal{U} Z(1:s_{max}, 1:s_{min -1)$ \\
+{\tt  4} &  $\quad\quad\quad\quad$\mathcal{U} := \mathcal{U} Z(1:s_{max}, 1:s_{min -1}$ \\
 {\tt  5} &  $\quad\quad$End \\
 {\tt  6} &  $\quad\quad$Return (\mathcal{U}, \Theta, Z)$ \\
 {\tt  7} &  EndProcedure  \\
@@ -202,7 +543,6 @@ of the approximations gained during the previous iterations. In contrast to Kryl
 
 \date Last updated on 01-Nov-05
 */
-namespace Anasazi {
 
   template<class ScalarType, class MagnitudeType,  class MV, class OP>
   class BlockJacobiDavidson : public Eigensolver<ScalarType,MV,OP> 
@@ -321,6 +661,10 @@ namespace Anasazi {
     int _knownEV;
     //! Residual norm of computed and accepted eigenvalues.
     std::vector<MagnitudeType> _normR;
+    bool _haveKinv;
+    int _LSIterMax;
+    double _elin, _gamma;
+    
     //
     // Convenience typedefs
     //
@@ -356,7 +700,11 @@ namespace Anasazi {
     _TARGET(_pl.get("Target", Teuchos::ScalarTraits<ScalarType>::zero())),
     _SMIN(_pl.get("SMIN", 20)), 
     _SMAX(_pl.get("SMAX", 30)),
-    _knownEV(0)
+    _knownEV(0),
+    _haveKinv(false), //FIXME, don't needed
+    _LSIterMax(_pl.get("KrylovSolver: MaxIters", 1550)),
+    _elin(_pl.get("KrylovSolver: Tolerance", 10e5 * Teuchos::ScalarTraits<MagnitudeType>::eps())), 
+    _gamma(_pl.get("gamma", 0.5)) // FIXME
   {
   }
 
@@ -437,7 +785,7 @@ namespace Anasazi {
     // ===================== //
     
     // Allocate the subspace U (and AU, BU), the Ritz-Galerkin matrix and the Ritz values ...
-    int s;
+    int SearchSpaceDim;
     std::vector<int> sublist;
 
     Teuchos::RefCountPtr<MV> U, AU, BU;
@@ -454,10 +802,11 @@ namespace Anasazi {
     _normR.resize(_nev); // container for norms
     
     // working array
-    std::vector<ScalarType> theta(_SMAX);
-    std::vector<int> perm(_SMAX), iperm(_SMAX);
-    Teuchos::SerialDenseMatrix<int, ScalarType> Z(_SMAX, _SMAX);
-    Teuchos::SerialDenseMatrix<int, ScalarType> Ztmp;
+    std::vector<ScalarType> theta(_SMAX), vc(1);
+    std::vector<int> perm(_SMAX), iperm(_SMAX), vQ(2), vQ2;
+    Teuchos::SerialDenseMatrix<int, ScalarType> Z(_SMAX, _SMAX), LkTrans(_nev,_nev), Rk(_nev,_nev);
+    Teuchos::SerialDenseMatrix<int, ScalarType> Ztmp, *lk, *rk;
+    Anasazi::Operator<ScalarType> *Ksys, *Asys;
 
     // Allocate space for the residuals ...
     Teuchos::RefCountPtr<MV> R;
@@ -468,11 +817,19 @@ namespace Anasazi {
     // Allocate space for the result ...
     int conv;   // number of converged eigenpairs per iteration
     int purged; // number of deflated eigenpairs per iteration
-    MV *Qtmp;
-    MV *BQtmp;
+    ScalarType sigma;
+    MV *Qtmp, *Qtmp2;
+    MV *BQtmp, *BQtmp2;
+    MV *KBQtmp, *KBQtmp2, *h;
 
-    Teuchos::RefCountPtr<MV> BQ;
-    BQ = MVT::Clone(*iVec, _nev);
+    Teuchos::RefCountPtr<MV> Q, BQ, KBQ;
+    Teuchos::BLAS<int,ScalarType> blas;
+    Anasazi::ReturnType ok;
+
+    // FIXME: why nev + 1???
+    Q = MVT::Clone(*iVec, _nev+1);
+    BQ = MVT::Clone(*iVec, _nev); 
+    KBQ = MVT::Clone(*iVec, _nev+1);
 
     // Instantiate the ProjectedEigenproblem component and set some of the values ...
     ProjectedEigenproblem<int, ScalarType, MV> PE("Symmetric", _SMAX);
@@ -480,7 +837,7 @@ namespace Anasazi {
     PE.SetZ(&Z);
 
     _knownEV = 0;
-    s = 0;
+    SearchSpaceDim = 0;
     _iters = 0;
 
     if (_om->doPrint()) 
@@ -510,7 +867,7 @@ namespace Anasazi {
         Rtmp = R->CloneView(sublist);
 
         // Gram-Schmidt reduce the vector ...
-        for(int j=0; j < s; j++){
+        for(int j=0; j < SearchSpaceDim; j++){
           sublist[0] = j;
           Utmp  = U->CloneView(sublist);
           BUtmp = BU->CloneView(sublist);
@@ -521,6 +878,7 @@ namespace Anasazi {
 
         for(int j=0; j < _knownEV; j++){
           sublist[0] = j;
+          // FIXME: _evecs or Q???
           Qtmp = _evecs->CloneView(sublist);
           BQtmp = BQ->CloneView(sublist);
           Rtmp->MvDot((*BQtmp), &eta);
@@ -530,6 +888,7 @@ namespace Anasazi {
 
         // Now B-normalise the vector ...
         sublist[0] = _knownEV;
+        // FIXME: evecs or Q???
         Qtmp = _evecs->CloneView(sublist);
         if (_B.get() != 0)
           _B->Apply((*Rtmp), (*Qtmp));
@@ -544,7 +903,7 @@ namespace Anasazi {
         nrm[0] = Teuchos::ScalarTraits<ScalarType>::magnitude(nrm_2[0]);
         Rtmp->MvAddMv(ScalarOne / nrm_2[0], (*Rtmp), ScalarZero, (*Rtmp)); 
 
-        sublist[0] = s;
+        sublist[0] = SearchSpaceDim;
         U->SetBlock((*Rtmp),sublist);
 
         BUtmp = BU->CloneView(sublist);
@@ -554,12 +913,12 @@ namespace Anasazi {
           BUtmp->SetBlock((*Rtmp), sublist);
 
         delete Rtmp, Qtmp;
-        s++;
+        SearchSpaceDim++;
       }
 
       // Update AU and BU ...
       sublist.resize(_blockSize);
-      for(int i=0; i<_blockSize; ++i) sublist[i]=(s-_blockSize) + i;
+      for(int i=0; i<_blockSize; ++i) sublist[i]=(SearchSpaceDim-_blockSize) + i;
 
       Utmp = U->CloneView(sublist);
 
@@ -585,19 +944,19 @@ namespace Anasazi {
       
       PE.Extract();
 
-      for(int i=0; i<s; ++i) {theta[i] -= _TARGET;}
-      _sm->sort((Eigensolver<ScalarType,MV,OP>*)NULL, s, &theta[0], &perm);
-      for(int i=0; i<s; ++i) {theta[i] += _TARGET;}
-      for(int i=0; i<s; ++i) { iperm[perm[i]]=i;}
+      for(int i=0; i<SearchSpaceDim; ++i) {theta[i] -= _TARGET;}
+      _sm->sort((Eigensolver<ScalarType,MV,OP>*)NULL, SearchSpaceDim, &theta[0], &perm);
+      for(int i=0; i<SearchSpaceDim; ++i) {theta[i] += _TARGET;}
+      for(int i=0; i<SearchSpaceDim; ++i) { iperm[perm[i]]=i;}
 
       // Permute the Z entries according to perm
-      Ztmp.shape(s,1);
+      Ztmp.shape(SearchSpaceDim,1);
 
-      for(int j=0; j<s; ++j){
+      for(int j=0; j<SearchSpaceDim; ++j){
         if (perm[j] != j){
-          for(int i=0; i<s; ++i) {Ztmp[0][i] = Z[j][i];}
-          for(int i=0; i<s; ++i) {Z[j][i] = Z[perm[j]][i];}
-          for(int i=0; i<s; ++i) {Z[perm[j]][i] = Ztmp[0][i];}
+          for(int i=0; i<SearchSpaceDim; ++i) {Ztmp[0][i] = Z[j][i];}
+          for(int i=0; i<SearchSpaceDim; ++i) {Z[j][i] = Z[perm[j]][i];}
+          for(int i=0; i<SearchSpaceDim; ++i) {Z[perm[j]][i] = Ztmp[0][i];}
 
           perm[iperm[j]] = perm[j];	  
         }  
@@ -605,10 +964,10 @@ namespace Anasazi {
 
       // Check for convergence of the approximative eigenpairs. If
       // some of them are accurate enough, add them to the space _evecs
-      Ztmp.shape(s,1);
+      Ztmp.shape(SearchSpaceDim,1);
 
-      sublist.resize(s);
-      for(int i=0; i<s; ++i) sublist[i]=i;	  
+      sublist.resize(SearchSpaceDim);
+      for(int i=0; i<SearchSpaceDim; ++i) sublist[i]=i;	  
 
       Utmp = U->CloneView(sublist);
       AUtmp = AU->CloneView(sublist);
@@ -618,7 +977,7 @@ namespace Anasazi {
       sublist[0] = 0;
       Rtmp = R->CloneView(sublist);
 
-      for(int i=0; i<s; ++i) {Ztmp[0][i] = Z[0][i];}
+      for(int i=0; i<SearchSpaceDim; ++i) {Ztmp[0][i] = Z[0][i];}
       // Rtmp = AU*Z(:,1)
       Rtmp->MvTimesMatAddMv (ScalarOne, (*AUtmp), Ztmp, ScalarZero); 
       // Rtmp = Rtmp - theta[0]*AU*Z(:,1)
@@ -639,10 +998,10 @@ namespace Anasazi {
       if (_om->doPrint()) 
       {
         _os << "It: " << _iters << ", knownEV: " << _knownEV;
-        _os << ", s: " << s << ", rel_normr = " << nrm[0];
+        _os << ", SearchSpaceDim: " << SearchSpaceDim << ", rel_normr = " << nrm[0];
         _os << ", theta_i = ";
         _os << "(" << theta[0] << ")";
-        int j = ANASAZI_MIN(s,5);
+        int j = ANASAZI_MIN(SearchSpaceDim,5);
         for(int i=1; i<j; ++i){
           _os << ", (" << theta[i] << ")";
         }
@@ -651,12 +1010,14 @@ namespace Anasazi {
 #endif
 
       conv = 0;
-      while(nrm[0] < _residual_tolerance){
-
+      while(nrm[0] < _residual_tolerance)
+      {
         sublist.resize(1);
         sublist[0] = _knownEV;
+        // FIXME: evecs or Q??
         Qtmp = _evecs->CloneView(sublist);
         BQtmp = BQ->CloneView(sublist);
+        KBQtmp = KBQ->CloneView(sublist);
 
         // Qtmp = U*Z(:,1)
         Qtmp->MvTimesMatAddMv (ScalarOne, (*Utmp), Ztmp, ScalarZero);
@@ -673,8 +1034,47 @@ namespace Anasazi {
         if (_knownEV == _nev) break;
         conv++;
 
+        if (_haveKinv) { //Kinv!=I //Annahme _Kinv!=I, wenn gesetzt
+          sublist[0]=_knownEV-1;
+          KBQ->SetBlock(*KBQtmp, sublist); //_Qk=[_Qk _qk]
+
+          if (_knownEV==1) {
+            LkTrans(0,0)=(ScalarType)1;
+            BQtmp->MvDot(*KBQtmp, &vc);
+            Rk(0,0)=vc[0];
+          } else {
+            lk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, LkTrans[_knownEV-1], LkTrans.stride(), _knownEV-1, 1); //(*)
+            vQ2.resize(_knownEV-1);
+            for (int i=0; i<_knownEV-1; i++) vQ2[i]=i;
+            h=KBQ->CloneView(vQ2); //(*)
+            BQtmp->MvTransMv((ScalarType)1, *h, *lk);
+            delete(h); //(#)
+
+            blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, lk->numRows(), lk->numCols(), (ScalarType)1, Rk.values(), Rk.stride(), lk->values(), lk->stride());
+
+            rk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, Rk[_knownEV-1], Rk.stride(), _knownEV-1, 1); //(*)
+            h=KBQ->CloneView(vQ2); //(*)
+            KBQtmp->MvTransMv((ScalarType)1, *h, *rk);
+            delete(h); //(#)
+
+            blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, rk->numRows(), rk->numCols(), (ScalarType)1, LkTrans.values(), LkTrans.stride(), rk->values(), rk->stride());
+
+            BQtmp->MvDot(*KBQtmp, &vc);
+            ScalarType rho=vc[0];
+            Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType> (1,1);
+            H->multiply(Teuchos::TRANS, Teuchos::NO_TRANS, (ScalarType)1, *lk, *rk, (ScalarType)0); //rho+=lk*rk
+            rho-=(*H)(0,0);
+            delete(H);
+            delete(lk);
+            delete(rk);
+
+            LkTrans(_knownEV-1,_knownEV-1)=Teuchos::ScalarTraits<ScalarType>::one(); //_Lk:=[Lk 0; lk^T 1]
+
+            Rk(_knownEV-1,_knownEV-1)=rho; //Rk:=[Rk rk; 0 rho]
+          }
+        }
         // Ztmp = Z(:,conv)
-        for(int i=0; i<s; ++i) {Ztmp[0][i] = Z[conv][i];}
+        for(int i=0; i<SearchSpaceDim; ++i) {Ztmp[0][i] = Z[conv][i];}
         // Rtmp = AU*Z(:,conv)
         Rtmp->MvTimesMatAddMv (ScalarOne, (*AUtmp), Ztmp, ScalarZero);
         // Rtmp = Rtmp - theta[conv]*AU*Z(:,conv)
@@ -718,19 +1118,15 @@ namespace Anasazi {
       // new search space directions                            //
       // ====================================================== //
       
-      // SABINE: this is the section to be modified to get
-      // the J/D instead of D...
-      //
-      // To be added:
       // - projector
       // - implicit matrix A - \sigma B
       // - Krylov solver
       // - Preconditioner (???)
       
-      Ztmp.shape(s,1);
+      Ztmp.shape(SearchSpaceDim,1);
 
-      sublist.resize(s);
-      for(int i=0; i<s; ++i) sublist[i]=i;	  
+      sublist.resize(SearchSpaceDim);
+      for(int i=0; i<SearchSpaceDim; ++i) sublist[i]=i;	  
 
       AUtmp = AU->CloneView(sublist);
       BUtmp = BU->CloneView(sublist);
@@ -738,12 +1134,15 @@ namespace Anasazi {
       sublist.resize(1);
       sublist[0]=_knownEV;	  
       Qtmp = _evecs->CloneView(sublist);
+      Qtmp = Q->CloneView(sublist);
+      BQtmp = BQ->CloneView(sublist);
+      KBQtmp = KBQ->CloneView(sublist);
 
       for(int j=0; j<_blockSize; ++j){
         sublist[0] = j;
         Rtmp = R->CloneView(sublist);
 
-        for(int i=0; i<s; ++i) {Ztmp[0][i] = Z[conv+j][i];}
+        for(int i=0; i<SearchSpaceDim; ++i) {Ztmp[0][i] = Z[conv+j][i];}
         // Qtmp = AU*Z(:,1)
         Qtmp->MvTimesMatAddMv (ScalarOne, (*AUtmp), Ztmp, ScalarZero);
         // Qtmp = Qtmp - theta[0]*AU*Z(:,1)
@@ -754,9 +1153,89 @@ namespace Anasazi {
         else
           Rtmp->SetBlock(*Qtmp, sublist);
 
-        delete Rtmp;
+	  //CORRECTION
+      	sublist[0]=_knownEV;
+	vQ2.resize(_knownEV+1);
+	for (int i=0; i<=_knownEV; i++) vQ2[i]=i;
+	//Qtmp2=_evecs->CloneView(vQ2);
+	Qtmp2 = Q->CloneView(sublist);
+	BQtmp2=BQ->CloneView(vQ2);
+	
+        // FIXME: Ksys is never deleted!
+	if (!_haveKinv) 
+        {
+		Ksys=new JacDavOp1<ScalarType,MV>(*Qtmp2, *BQtmp2); //Ksys:=I-Q*Qb^(T)
+        } else 
+        {
+          KBQtmp2=KBQ->CloneView(vQ2); //(*)
 
-        // SABINE... till here...
+          if (_knownEV==0) {
+            LkTrans(0,0)=(ScalarType)1;
+            BQtmp->MvDot(*KBQtmp, &vc);
+            Rk(0,0)=vc[0];
+          } else {
+            lk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, LkTrans[_knownEV], LkTrans.stride(), _knownEV, 1);
+            vQ2.resize(_knownEV);
+            h=KBQ->CloneView(vQ2); //(*)
+            BQtmp->MvTransMv((ScalarType)1, *h, *lk);
+            delete(h); //(#)
+
+            blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, lk->numRows(), lk->numCols(), (ScalarType)1, Rk.values(), Rk.stride(), lk->values(), lk->stride());
+
+            rk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, Rk[_knownEV], Rk.stride(), _knownEV, 1); //.shapeUninitialized(n-1,1);
+            h=BQ->CloneView(vQ2); //(*)
+            KBQtmp->MvTransMv((ScalarType)1, *h, *rk);
+            delete(h); //(#)
+
+            blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, rk->numRows(), rk->numCols(), (ScalarType)1, LkTrans.values(), LkTrans.stride(), rk->values(), rk->stride());
+
+            BQtmp->MvDot(*KBQtmp, &vc);
+            ScalarType rho=vc[0];
+            Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType> (1,1);
+            H->multiply(Teuchos::TRANS, Teuchos::NO_TRANS, (ScalarType)1, *lk, *rk, (ScalarType)0); //rho+=lk*rk
+            rho-=(*H)(0,0);
+            delete(H);
+
+            //FIXME: kann ich eventuell wegrationalisieren, wenn ich Matrix am Anfang auf 0 setze		
+            LkTrans(_knownEV,_knownEV)=Teuchos::ScalarTraits<ScalarType>::one(); //_Lk:=[Lk 0; lk^T 1]
+            Rk(_knownEV,_knownEV)=rho; //Rk:=[Rk rk; 0 rho]
+          }
+
+          Teuchos::SerialDenseMatrix<int,ScalarType> *LkTransView=new Teuchos::SerialDenseMatrix<int,ScalarType> (Teuchos::View, LkTrans.values(), LkTrans.stride(), _knownEV+1, _knownEV+1);
+
+          Teuchos::SerialDenseMatrix<int,ScalarType> *RkView=new Teuchos::SerialDenseMatrix<int,ScalarType> (Teuchos::View, Rk.values(), Rk.stride(), _knownEV+1, _knownEV+1);
+
+          //FIXME: entweder LkRkinv berechnen oder Operator der Gleichungssysteme loest		
+          Ksys=new JacDavOp4<ScalarType,MV,OP>(*KBQtmp2, *LkTransView, *RkView, *BQtmp2, _Prec); //Ksys:=(I-Qk*(Lk*Rk)^(-1)*Qb^(T))*K^(-1)
+        }
+
+	Asys=new JacDavOp2<ScalarType, MV, OP>(*BQtmp2, *Qtmp2, _A, sigma, _B); //Asys:=(I-Qb*Q^(T))*(_A-_sigma*_B)
+	
+	Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType>();
+	H->shapeUninitialized(_knownEV + 1,1);
+
+	Rtmp->MvTransMv(ScalarOne, *Qtmp2, *H);
+	MV * r=Rtmp->CloneCopy();
+	r->MvTimesMatAddMv(ScalarOne, *BQtmp2, *H, (ScalarType)-1); //r:=-(I-Qb*Q^(T))*_r
+	
+	//c:=KrylovSpaceSolver(Asys, r, c, max(_gamma^(-it), _elin, Ksys, _LSIterMax)
+	GMRES<ScalarType,MV,Anasazi::Operator<ScalarType> > gmres;
+	
+	gmres.setMaxIter(_LSIterMax);
+	gmres.setTolerance(_elin); //FIXME: max(gamma^it,_elin)
+	gmres.setRestart(50); //FIXME
+	
+	Rtmp->MvInit((ScalarType)0);
+
+        // FIXME
+        Rtmp->MvRandom();
+
+	ok=gmres.solve(*Asys, *Ksys, *r, *Rtmp); 
+	assert(ok==Anasazi::Ok); //FIXME: Fehlermeldung oder Anasazi::Failed
+      
+	
+	
+        delete Rtmp;
       }
 
       delete AUtmp, BUtmp, Qtmp;
@@ -768,17 +1247,18 @@ namespace Anasazi {
       // ========================================================= //
       
       purged = 0;
-      if ((s-conv+_blockSize)>_SMAX){
+      if ((SearchSpaceDim-conv+_blockSize)>_SMAX){
         // increment restart counter
         ++_numRestarts;
 
         // 
-        purged = (s-conv) - (_SMIN-_blockSize);
+        // FIXME: Why -1 in Sabine's code??
+        purged = (SearchSpaceDim-conv) - (_SMIN-_blockSize);
 
         if (_om->doPrint()) 
         {
-          _os << "[Restart (" << s - conv  << " -> "
-              << s - conv - purged << ")]" << endl;
+          _os << "[Restart (" << SearchSpaceDim - conv  << " -> "
+              << SearchSpaceDim - conv - purged << ")]" << endl;
         }
       } 
 
@@ -786,28 +1266,28 @@ namespace Anasazi {
       // and/restart behaviour
       if ((conv + purged)>0)
       {
-        sublist.resize(s);
-        for(int i=0; i<s; ++i) sublist[i] = i;
+        sublist.resize(SearchSpaceDim);
+        for(int i=0; i<SearchSpaceDim; ++i) sublist[i] = i;
 
         Utmp = U->CloneView(sublist);
         AUtmp = AU->CloneView(sublist);
         BUtmp = BU->CloneView(sublist);
 
-        sublist.resize(s-conv-purged);
-        for(int i=0; i<(s-conv-purged); ++i) sublist[i] = conv+i;
-        Ztmp.shapeUninitialized(s,s-conv-purged);
-        for(int i=0; i<s; ++i)
-          for(int j=0; j<(s-conv-purged); ++j)
+        sublist.resize(SearchSpaceDim-conv-purged);
+        for(int i=0; i<(SearchSpaceDim-conv-purged); ++i) sublist[i] = conv+i;
+        Ztmp.shapeUninitialized(SearchSpaceDim,SearchSpaceDim-conv-purged);
+        for(int i=0; i<SearchSpaceDim; ++i)
+          for(int j=0; j<(SearchSpaceDim-conv-purged); ++j)
             Ztmp(i,j) = Z(i,j+conv);
 
         Utmp->MvTimesMatAddMv(ScalarOne, (*Utmp), Ztmp, ScalarZero);
         AUtmp->MvTimesMatAddMv(ScalarOne, (*AUtmp), Ztmp, ScalarZero);
         BUtmp->MvTimesMatAddMv(ScalarOne, (*BUtmp), Ztmp, ScalarZero);
 
-        PE.Rotate(Ztmp);	    
+        PE.Rotate(Ztmp);
 
-        for(int i=0; i<s; ++i){
-          for(int j=0; j<(s-conv-purged); ++j){
+        for(int i=0; i<SearchSpaceDim; ++i){
+          for(int j=0; j<(SearchSpaceDim-conv-purged); ++j){
             Z(i,j) = Z(i,j+conv);
           }
         }
@@ -815,14 +1295,15 @@ namespace Anasazi {
         delete Utmp, AUtmp, BUtmp, Ztmp;
 
         // Finally, compute the new search space size
-        s = s - conv - purged;
-      }	  
+        SearchSpaceDim = SearchSpaceDim - conv - purged;
+      }
 
       // Update the iteration step counter
       _iters++;
     }
 
-    return(Ok);
+    if (_knownEV==_nev) return Ok;
+    else return(Unconverged);
   } // solve()
 
   // ==========================================================================
