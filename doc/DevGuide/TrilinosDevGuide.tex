@@ -210,6 +210,13 @@ current directory, type
 
 (Replace ``package\_name'' with the name of the package.)
 
+If the machine that is downloading Trilinos from software.sandia.gov has gzip
+available, it is possible to speed up the checkout process using the -z 
+option.  For example, to checkout all of Trilinos using the most aggressive 
+compression, type
+
+\DisplayCommand{cvs -z 9 checkout Trilinos}
+
 For those not familiar with CVS, a brief discussion covering some of the most 
 common CVS commands is available in Section~\ref{Section:CVS}.  For a more 
 complete listing of CVS commands, see the GNU CVS Home Page~\cite{CVS}.
