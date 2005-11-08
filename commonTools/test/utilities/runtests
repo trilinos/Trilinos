@@ -1231,7 +1231,7 @@ cleanUp();
         chdir $resultsDir or die "cannot chdir to $resultsDir, died";
         mkdir "coverage" or die "cannot create directory \"coverage\", died";
         
-        my $summaryFile = "$resultsDir/coverage/summary.txt";
+        my $summaryFile = "$resultsDir/coverage.txt";
         open (SUMMARY, ">$summaryFile") 
             or die "can't open test coverage summary file $summaryFile for writing, died";
               

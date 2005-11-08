@@ -211,7 +211,49 @@ exit $exitStatus;
         
         chdir "$resultsDirNameNew" or die "cannot cd to $resultsDirNameNew, died";
         
-        addFiles("$ttrDir/$resultsDirNameNew");
+        my @dirs = ();      
+        opendir(DIR, ".");   
+                             
+        while (defined (my $file = readdir(DIR))) {
+        
+            $file =~ s/^\.\///;     # remove initial "./"
+            $file =~ s/\n//;        # remove any newlines
+            if ($file eq "." || $file eq ".." || $file eq "CVS") { next; }
+            print "$file\n";
+            
+            $output = `cvs add $file 2>&1`;
+            $result = $?;
+            if ($result) { print "\n\n$output\n\n"; }
+            
+            my $filename = "$ttrDir/$resultsDirNameNew/$file";
+            if (-d $filename) {
+                push(@dirs, $filename);
+            }
+            
+        } # while ($file)
+        
+        closedir(DIR);
+        
+        foreach my $dir (@dirs) {        
+        
+            chdir "$dir";
+            opendir(DIR, $dir);    
+                                
+            while (defined (my $file = readdir(DIR))) {
+        
+                $file =~ s/^\.\///;     # remove initial "./"
+                $file =~ s/\n//;        # remove any newlines
+                if ($file eq "." || $file eq ".." || $file eq "CVS") { next; }
+                print "$file\n";
+            
+                $output = `cvs add $file 2>&1`;
+                $result = $?;
+                
+            } # while ($file)
+            
+            closedir(DIR);  
+                      
+        } # foreach ($dir)
                 
         chdir "$ttrDir/$resultsDirNameNew";
         $output = `cvs commit -m 'automatic reporting of results' 2>&1`;
@@ -231,47 +273,6 @@ exit $exitStatus;
         return 0;
         
     } # run()
-
-    ############################################################################
-    # addFiles()
-    #
-    # Recursively adds all files in this directory to the repository.
-    #
-    #   - args:     $dir        the directory to start from
-    #
-    #   - returns:  NONE
-    #
-
-    sub addFiles {
-        my $path = $_[0];
-        
-        chdir "$path";
-        my @dirs = ();      
-        opendir(DIR, $path);
-                             
-        while (defined (my $file = readdir(DIR))) {
-        
-            $file =~ s/^\.\///;     # remove initial "./"
-            $file =~ s/\n//;        # remove any newlines
-            if ($file eq "." || $file eq ".." || $file eq "CVS") { next; }
-            print "$file\n";
-            
-            my $output = `cvs add $file 2>&1`;
-            my $result = $?;
-            if ($result) { print "\n\n$output\n\n"; }
-            
-            my $filename = "$path/$file";
-            if (-d $filename) {
-                push(@dirs, $filename);
-            }
-            
-        } # while ($file)
-        
-        closedir(DIR);
-        
-        foreach my $dir (@dirs) { addFiles($dir); }
-           
-    } # addFiles()
 
     ############################################################################
     # cleanUp()
