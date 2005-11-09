@@ -1911,11 +1911,12 @@ int ML_Aggregate_LabelVertices(int vlist_cnt, int *vlist, int Vtype,
                            ML_Comm *comm, int aggr_index[])
 {
    int     i, j, k, m, N_remaining_vertices, index, select_flag, fproc, col;
-   int     NremainingRcvProcs, change_flag, *proc_flag, send_flag,nselected;
+   int     NremainingRcvProcs, change_flag, *proc_flag=NULL, send_flag,
+           nselected;
    int     *pref_list, col2, loop_cnt, *tlist, pref_cnt;
    int     pref_flag, pref_index;
    char    *in_preflist;
-   USR_REQ *Request;
+   USR_REQ *Request=NULL;
    int msg_type = 1041;
    unsigned int nbytes;
 #ifdef RANDMISROOTS
