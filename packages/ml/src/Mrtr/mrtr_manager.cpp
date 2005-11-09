@@ -44,6 +44,7 @@
 MRTR::Manager::Manager(Epetra_Comm& comm, int outlevel) :
 outlevel_(outlevel),
 comm_(comm),
+dimensiontype_(MRTR::Manager::manager_none),
 inputmap_(null),
 inputmatrix_(null),
 constraintsmap_(null),
@@ -283,8 +284,13 @@ RefCountPtr<Epetra_Map> MRTR::Manager::LagrangeMultiplierDofs()
   
   int length = 0;
   
+  // 2D problem:
   // loop interfaces and set LM dofs on the slave side for all slave nodes
   // that have a projection
+  // 3D problem:
+  // loop interfaces and set LM dofs on the slave side for all slave nodes
+  // that have an integrated row of D and M projection
+
   // start with minLMGID and return maxLMGID+1 on a specific interface
   // Note this is collective for ALL procs
   map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
@@ -316,6 +322,7 @@ RefCountPtr<Epetra_Map> MRTR::Manager::LagrangeMultiplierDofs()
       mylmids.resize(mylmids.size()+5*lmids->size());
     for (int i=0; i<lmids->size(); ++i)
       mylmids[count++] = (*lmids)[i];
+    delete lmids;
   }  
   mylmids.resize(count);
   int lsize = count;
@@ -333,17 +340,44 @@ RefCountPtr<Epetra_Map> MRTR::Manager::LagrangeMultiplierDofs()
   return map;
 }
 
-
-
-
-
-
 /*----------------------------------------------------------------------*
- |  integrate all mortar interfaces                       (public) 07/05|
+ |  integrate all mortar interfaces                       (public) 11/05|
  |  Note: All processors have to go in here!                            |
  *----------------------------------------------------------------------*/
 bool MRTR::Manager::Mortar_Integrate()
 {
+  //-------------------------------------------------------------------
+  // check for problem dimension
+  if (Dimension() == MRTR::Manager::manager_2D)
+    return Mortar_Integrate_2D();
+  else if (Dimension() == MRTR::Manager::manager_3D)
+    return Mortar_Integrate_3D();
+  else
+  {
+    cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+         << "***ERR*** problem dimension not set\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  return false;
+}
+
+/*----------------------------------------------------------------------*
+ |  integrate all mortar interfaces in 2D                 (public) 07/05|
+ |  Note: All processors have to go in here!                            |
+ *----------------------------------------------------------------------*/
+bool MRTR::Manager::Mortar_Integrate_2D()
+{
+  //-------------------------------------------------------------------
+  // check for problem dimension
+  if (Dimension() != MRTR::Manager::manager_2D)
+  {
+    cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+         << "***ERR*** problem dimension is not 2D?????\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+
   //-------------------------------------------------------------------
   // check whether we have interfaces
   int ninter = Ninterfaces();
@@ -357,7 +391,7 @@ bool MRTR::Manager::Mortar_Integrate()
     cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
          << "***ERR*** inputmap==NULL, Need to set an input-rowmap first\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    return false;
   }
   
   //-------------------------------------------------------------------
@@ -413,7 +447,7 @@ bool MRTR::Manager::Mortar_Integrate()
         cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on projection\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+        return false;
       }
     }
   }  
@@ -433,11 +467,12 @@ bool MRTR::Manager::Mortar_Integrate()
         cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false from DetectEndSegmentsandReduceOrder\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+        return false;
       }
     }
   }
 #endif
+
   //-------------------------------------------------------------------
   // choose dofs for lagrange multipliers and set them to slave nodes
   // build the rowmap for the coupling matrices M and D
@@ -448,63 +483,42 @@ bool MRTR::Manager::Mortar_Integrate()
       cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
            << "***ERR*** LagrangeMultiplierDofs() returned NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+      return false;
     }
   }
     
   //-------------------------------------------------------------------
   // build the map for the saddle point problem
   {
-    // the saddle point problem rowmap is the inputmap + the constraintmap
-    int numglobalelements = inputmap_->NumGlobalElements() +
-                            constraintsmap_->NumGlobalElements();
-    int nummyelements     = inputmap_->NumMyElements() +
-                            constraintsmap_->NumMyElements();
-    vector<int> myglobalelements(nummyelements);
-    int count = 0;
-    int* inputmyglobalelements = inputmap_->MyGlobalElements();
-    for (int i=0; i<inputmap_->NumMyElements(); ++i)
-      myglobalelements[count++] = inputmyglobalelements[i];
-    int* constraintsmyglobalelements = constraintsmap_->MyGlobalElements();
-    for (int i=0; i<constraintsmap_->NumMyElements(); ++i)
-      myglobalelements[count++] = constraintsmyglobalelements[i];
-    if (count != nummyelements)
+    bool ok = BuildSaddleMap();
+    if (!ok)
     {
-        cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
-             << "***ERR*** Mismatch in dimensions\n"
-             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+      cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+           << "***ERR*** BuildSaddleMap() returned false\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
     }
-    saddlemap_ = rcp(new Epetra_Map(numglobalelements,nummyelements,
-                                &(myglobalelements[0]),0,comm_));
-    myglobalelements.clear();
   }
+
 
   //-------------------------------------------------------------------
   // build the Epetra_CrsMatrix D and M
-  {
-    D_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,5,false));
-    M_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,40,false));
-  }
+  D_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,5,false));
+  M_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,40,false));
 
-  cout << *this;
   //-------------------------------------------------------------------
   // integrate all interfaces
   {
     map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {  
-      RefCountPtr<MRTR::Interface> inter = curr->second;
-#if 0
-      cout << "Integrating interface " << inter->Id() << endl;
-#endif
-      bool ok = inter->Mortar_Integrate(*D_,*M_);
+      bool ok = curr->second->Mortar_Integrate(*D_,*M_);
       if (!ok)
       {
         cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
-             << "***ERR*** interface " << inter->Id() << " returned false on integration\n"
+             << "***ERR*** interface " << curr->second->Id() << " returned false on integration\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+        return false;
       }
     }
   }
@@ -513,6 +527,282 @@ bool MRTR::Manager::Mortar_Integrate()
   // call FillComplete() on M_ and D_ 
   D_->FillComplete(*saddlemap_,*saddlemap_);
   M_->FillComplete(*saddlemap_,*saddlemap_);
+  
+  //-------------------------------------------------------------------
+  // print this
+  if (OutLevel()>9)
+    cout << *this;
+
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  integrate all mortar interfaces 3D case               (public) 11/05|
+ |  Note: All processors have to go in here!                            |
+ *----------------------------------------------------------------------*/
+bool MRTR::Manager::Mortar_Integrate_3D()
+{
+  //-------------------------------------------------------------------
+  // check for problem dimension
+  if (Dimension() != MRTR::Manager::manager_3D)
+  {
+    cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+         << "***ERR*** problem dimension is not 3D?????\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+
+  //-------------------------------------------------------------------
+  // check whether we have interfaces
+  int ninter = Ninterfaces();
+  if (!ninter)
+    return true;
+
+  //-------------------------------------------------------------------
+  // check whether we have an input map
+  if (inputmap_==null)
+  {
+    cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+         << "***ERR*** inputmap==NULL, Need to set an input-rowmap first\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  
+  //-------------------------------------------------------------------
+  // check whether we have a mortar side chosen on each interface or 
+  // whether we have to chose it here
+  {
+    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    bool foundit = true;
+    for (curr=interface_.begin(); curr != interface_.end(); ++curr)
+    {
+      int mside = curr->second->MortarSide();
+      if (mside==-2)
+      {
+        foundit = false;
+        break;
+      }
+    }
+    if (!foundit) // we have to chose mortar sides ourself
+      ChooseMortarSide();
+  }  
+
+  //-------------------------------------------------------------------
+  // check whether functions have been set on interfaces
+  // if not, check for functions flag and set them
+  {
+    bool foundit = true;
+    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    for (curr=interface_.begin(); curr != interface_.end(); ++curr)
+    {
+      int nseg             = curr->second->GlobalNsegment();
+      MRTR::Segment** segs = curr->second->GetSegmentView();
+      for (int i=0; i<nseg; ++i)
+        if (segs[i]->Nfunctions() < 1)
+        {
+          foundit = false;
+          break;
+        }
+      delete [] segs;
+      if (!foundit)
+        curr->second->SetFunctionsFromFunctionTypes();
+    }
+  } 
+  
+  //-------------------------------------------------------------------
+  // build normals for all interfaces
+  {
+    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    for (curr=interface_.begin(); curr != interface_.end(); ++curr)
+    {
+      bool ok = curr->second->BuildNormals();
+      if (!ok)
+      {
+        cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+             << "***ERR*** interface " << curr->second->Id() << " returned false on building normals\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        return false;
+      }
+    }
+  }  
+
+  //-------------------------------------------------------------------
+  // this is probably the place to put detection of end segments
+  // for each end segment, the order of the lagrange multiplier shape
+  // function will be reduced by one
+  // note that this is not yet implemented in 3D and is somehow
+  // quite difficult to detect automatically. user input?
+#if 0
+  {
+    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    for (curr=interface_.begin(); curr != interface_.end(); ++curr)
+    {
+      if (curr->second->IsOneDimensional())
+      {
+        bool ok = curr->second->DetectEndSegmentsandReduceOrder();
+        if (!ok)
+        {
+          cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+               << "***ERR*** interface " << curr->second->Id() << " returned false from DetectEndSegmentsandReduceOrder\n"
+               << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          return false;
+        }
+      }
+    }
+  }
+#endif
+
+  //-------------------------------------------------------------------
+  // integrate all interfaces
+  // NOTE: 2D and 3D integration difer:
+  // the 3D integration works without choosing lagrange multipliers
+  // in advance. All integrated rows of D and M are stored as
+  // scalars in the nodes
+  {
+    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    for (curr=interface_.begin(); curr != interface_.end(); ++curr)
+    {  
+      bool ok = curr->second->Mortar_Integrate();
+      if (!ok)
+      {
+        cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+             << "***ERR*** interface " << curr->second->Id() << " returned false on integration\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        return false;
+      }
+    }
+  }
+
+  //-------------------------------------------------------------------
+  // choose dofs for lagrange multipliers and set them to slave nodes
+  // build the rowmap for the coupling matrices M and D
+  {
+    constraintsmap_ = LagrangeMultiplierDofs();
+    if (constraintsmap_==null)
+    {
+      cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+           << "***ERR*** LagrangeMultiplierDofs() returned NULL\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+  }
+  
+  //-------------------------------------------------------------------
+  // build the map for the saddle point problem
+  {
+    bool ok = BuildSaddleMap();
+    if (!ok)
+    {
+      cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+           << "***ERR*** BuildSaddleMap() returned false\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+  }
+
+  //-------------------------------------------------------------------
+  // build the Epetra_CrsMatrix D and M
+  D_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,50,false));
+  M_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,40,false));
+
+  //-------------------------------------------------------------------
+  // now that we have all maps and dofs we can assemble from the nodes
+  {
+    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    for (curr=interface_.begin(); curr != interface_.end(); ++curr)
+    {  
+      bool ok = curr->second->Mortar_Assemble(*D_,*M_);
+      if (!ok)
+      {
+        cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+             << "***ERR*** interface " << curr->second->Id() << " returned false on assembly\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        return false;
+      }
+    }
+  }
+
+  //-------------------------------------------------------------------
+  // call FillComplete() on M_ and D_ 
+  D_->FillComplete(*saddlemap_,*saddlemap_);
+  M_->FillComplete(*saddlemap_,*saddlemap_);
+  
+  //-------------------------------------------------------------------
+  // print this
+  if (OutLevel()>9)
+    cout << *this;
+
+  return true;
+}
+
+
+/*----------------------------------------------------------------------*
+ | Create the saddle point problem map (private)             mwgee 11/05|
+ | Note that this is collective for ALL procs                           |
+ *----------------------------------------------------------------------*/
+bool MRTR::Manager::BuildSaddleMap()
+{
+  // check whether all interfaces are complete and integrated
+  map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+  for (curr=interface_.begin(); curr != interface_.end(); ++curr)
+  {
+    if (curr->second->IsComplete() == false)
+    {
+      cout << "***ERR*** MRTR::Manager::BuildSaddleMap:\n"
+           << "***ERR*** interface " << curr->second->Id() << " is not Complete()\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+    if (curr->second->IsIntegrated() == false)
+    {
+      cout << "***ERR*** MRTR::Manager::BuildSaddleMap:\n"
+           << "***ERR*** interface " << curr->second->Id() << " is not integrated yet\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+  }
+  
+  // check whether we have an inputmap
+  if (inputmap_==null)
+  {
+      cout << "***ERR*** MRTR::Manager::BuildSaddleMap:\n"
+           << "***ERR*** No inputrowmap set\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+  }
+  
+  // check whether we have a constraintsmap_
+  if (constraintsmap_==null)
+  {
+      cout << "***ERR*** MRTR::Manager::BuildSaddleMap:\n"
+           << "***ERR*** onstraintsmap is NULL\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+  }
+  
+  // the saddle point problem rowmap is the inputmap + the constraintmap
+  int numglobalelements = inputmap_->NumGlobalElements() +
+                          constraintsmap_->NumGlobalElements();
+  int nummyelements     = inputmap_->NumMyElements() +
+                          constraintsmap_->NumMyElements();
+  vector<int> myglobalelements(nummyelements);
+  int count = 0;
+  int* inputmyglobalelements = inputmap_->MyGlobalElements();
+  for (int i=0; i<inputmap_->NumMyElements(); ++i)
+    myglobalelements[count++] = inputmyglobalelements[i];
+  int* constraintsmyglobalelements = constraintsmap_->MyGlobalElements();
+  for (int i=0; i<constraintsmap_->NumMyElements(); ++i)
+    myglobalelements[count++] = constraintsmyglobalelements[i];
+  if (count != nummyelements)
+  {
+    cout << "***ERR*** MRTR::Manager::BuildSaddleMap:\n"
+         << "***ERR*** Mismatch in dimensions\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  saddlemap_ = rcp(new Epetra_Map(numglobalelements,nummyelements,
+                              &(myglobalelements[0]),0,comm_));
+  myglobalelements.clear();
   
   return true;
 }

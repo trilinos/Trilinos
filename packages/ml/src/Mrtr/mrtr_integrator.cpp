@@ -300,7 +300,6 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
       continue;
     
     // we want to add the row Mdense(slave,...) to the rows lmdof[sdof] 
-    // and                row Ddense(slave,...) to the rows lmdof[sdof] 
     // get the dofs of slave node snodes[slave];
     int        snlmdof = snodes[slave]->Nlmdof();
     const int* slmdof  = snodes[slave]->LMDof();
@@ -322,7 +321,7 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
       
       if (mndof != snlmdof)
       {
-        cout << "***ERR*** MRTR::Interface::Integrate_2D_Section:\n"
+        cout << "***ERR*** MRTR::Integrator::Assemble:\n"
              << "***ERR*** mismatch in number of lagrange multipliers and primal degrees of freedom:\n"
              << "***ERR*** slave node " << snodes[slave]->Id() << " master node " << mnodes[master]->Id() << "\n"
              << "***ERR*** # lagrange multipliers " << snlmdof << " # dofs " << mndof << "\n"
@@ -338,10 +337,10 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
         int err = M.SumIntoGlobalValues(row,1,&val,&col);
         if (err)
           err = M.InsertGlobalValues(row,1,&val,&col);
-        if (err)
+        if (err<0)
         {
           cout << "***ERR*** MRTR::Interface::Integrate_2D_Section:\n"
-               << "***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n"
+               << "***ERR*** Epetra_CrsMatrix::InsertGlobalValues returned an error\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           exit(EXIT_FAILURE);
         }
@@ -403,7 +402,7 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
         int err = D.SumIntoGlobalValues(row,1,&val,&col);
         if (err)
           err = D.InsertGlobalValues(row,1,&val,&col);
-        if (err)
+        if (err<0)
         {
           cout << "***ERR*** MRTR::Interface::Integrate_2D_Section:\n"
                << "***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n"
@@ -591,7 +590,7 @@ bool MRTR::Integrator::Assemble_2D_Mod(MRTR::Interface& inter,
           int err = M.SumIntoGlobalValues(row,1,&val,&col);
           if (err)
             err = M.InsertGlobalValues(row,1,&val,&col);
-          if (err)
+          if (err<0)
           {
             cout << "***ERR*** MRTR::Interface::Assemble_2D_Mod:\n"
                  << "***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n"
@@ -750,7 +749,14 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,MRTR::Segment& sseg,
   // set a row of Ddense in each snode
   for (int row=0; row<nnode; ++row)
     for (int col=0; col<nnode; ++col)
+    {
+      if (inter.NodePID(snode[row]->Id()) != inter.lComm()->MyPID())
+      { 
+        // cout << "Proc " << inter.lComm()->MyPID() << ": Node " << snode[row]->Id() << " not my node\n";
+        continue;
+      }
       snode[row]->AddDValue(Ddense(row,col),snode[col]->Id());
+    }
 
   return true;
 }
@@ -772,7 +778,14 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
   // set a row of Ddense in each snode
   for (int row=0; row<nsnode; ++row)
     for (int col=0; col<nmnode; ++col)
-      snode[row]->AddMValue(Mdense(row,col),mnode[col]->Id());
+    {
+      if (inter.NodePID(snode[row]->Id()) != inter.lComm()->MyPID()) 
+      {
+        // cout << "Proc " << inter.lComm()->MyPID() << ": Node " << snode[row]->Id() << " not my node\n";
+        continue;
+      }
+      snode[row]->AddMValue(-Mdense(row,col),mnode[col]->Id());
+    }
 
   return true;
 }

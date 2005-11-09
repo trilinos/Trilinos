@@ -45,13 +45,93 @@
 #include "Epetra_SerialDenseMatrix.h"
 
 /*----------------------------------------------------------------------*
- |  make mortar integration of this interface                           |
+ |  assemble values from integration                                    |
+ *----------------------------------------------------------------------*/
+bool MRTR::Interface::Mortar_Assemble(Epetra_CrsMatrix& D, 
+                                       Epetra_CrsMatrix& M)
+{ 
+  bool ok = false;
+  
+  //-------------------------------------------------------------------
+  if (IsOneDimensional())
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MRTR::Interface::Mortar_Assemble:\n"
+           << "***ERR*** This is not a 2D problem, we're in the wrong method here!!!\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+
+  //-------------------------------------------------------------------
+  // interface needs to be complete
+  if (!IsComplete())
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MRTR::Interface::Mortar_Assemble:\n"
+           << "***ERR*** Complete() not called on interface " << Id_ << "\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  
+  //-------------------------------------------------------------------
+  // send all procs not member of this interface's intra-comm out of here
+  if (!lComm()) return true;
+
+  //-------------------------------------------------------------------
+  // interface needs to have a mortar side assigned
+  if (MortarSide()==-1)
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MRTR::Interface::Mortar_Assemble:\n"
+           << "***ERR*** mortar side was not assigned on interface " << Id_ << "\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  
+  //-------------------------------------------------------------------
+  // interface need to be integrated
+  if (!IsIntegrated())
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MRTR::Interface::Mortar_Assemble:\n"
+           << "***ERR*** interface " << Id_ << " not integrated\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+
+  //-------------------------------------------------------------------
+  // call assembly of 2D and 3D problems
+  if (IsOneDimensional())
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MRTR::Interface::Mortar_Assemble:\n"
+           << "***ERR*** Mortar_Assemble for 2D problem not implemented\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  else
+    return Assemble_3D(D,M);
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  make mortar integration of this interface (2D problem)              |
  *----------------------------------------------------------------------*/
 bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D, 
                                        Epetra_CrsMatrix& M)
 { 
   bool ok = false;
   
+  //-------------------------------------------------------------------
+  if (!IsOneDimensional())
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+           << "***ERR*** This is not a 2D problem, we're in the wrong method here!!!\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+
   //-------------------------------------------------------------------
   // interface needs to be complete
   if (!IsComplete())
@@ -105,16 +185,88 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
     
   //-------------------------------------------------------------------
   // do the integration of the master and slave side
+  ok = Integrate_2D(M,D);
+  if (!ok) return false;
+
+  //-------------------------------------------------------------------
+  // set the flag that this interface has been successfully integrated
+  isIntegrated_ = true;
+  
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  make mortar integration of this interface (3D problem)              |
+ *----------------------------------------------------------------------*/
+bool MRTR::Interface::Mortar_Integrate()
+{ 
+  bool ok = false;
+  
+  //-------------------------------------------------------------------
   if (IsOneDimensional())
   {
-    ok = Integrate_2D(M,D);
-    if (!ok) return false;
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+           << "***ERR*** This is not a 3D problem, we're in the wrong method here!!!\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
   }
-  else
+
+  //-------------------------------------------------------------------
+  // interface needs to be complete
+  if (!IsComplete())
   {
-    ok = Integrate_3D(M,D);
-    if (!ok) return false;
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+           << "***ERR*** Complete() not called on interface " << Id_ << "\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
   }
+  
+  //-------------------------------------------------------------------
+  // send all procs not member of this interface's intra-comm out of here
+  if (!lComm()) return true;
+
+  //-------------------------------------------------------------------
+  // interface needs to have a mortar side assigned
+  if (MortarSide()==-1)
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+           << "***ERR*** mortar side was not assigned on interface " << Id_ << "\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  
+  //-------------------------------------------------------------------
+  // interface segments need to have at least one function on the mortar side
+  // and two functions on the slave side
+  int mside = MortarSide();
+  int sside = OtherSide(mside);
+  map<int,RefCountPtr<MRTR::Segment> >::iterator scurr;
+  for (scurr=seg_[mside].begin(); scurr!=seg_[mside].end(); ++scurr)
+    if (scurr->second->Nfunctions() < 1)
+    {
+      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+           << "***ERR*** interface " << Id_ << ", mortar side\n"
+           << "***ERR*** segment " << scurr->second->Id() << " needs at least 1 function set\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+  for (scurr=seg_[sside].begin(); scurr!=seg_[sside].end(); ++scurr)
+    if (scurr->second->Nfunctions() < 2)
+    {
+      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+           << "***ERR*** interface " << Id_ << ", slave side\n"
+           << "***ERR*** segment " << scurr->second->Id() << " needs at least 2 function set\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+    
+  //-------------------------------------------------------------------
+  // do the integration of the master and slave side
+  ok = Integrate_3D();
+  if (!ok) return false;
 
   //-------------------------------------------------------------------
   // set the flag that this interface has been successfully integrated

@@ -146,6 +146,10 @@ public:
   // add a value to the Mrow_ map
   void AddMValue(double val, int col);
 
+  // get M or D map
+  RefCountPtr<map<int,double> > GetD() { return Drow_; }
+  RefCountPtr<map<int,double> > GetM() { return Mrow_; }
+
 protected:  
   // don't want = operator
   Node operator = (const Node& old);

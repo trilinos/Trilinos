@@ -49,8 +49,7 @@
 /*----------------------------------------------------------------------*
  |  make mortar integration of master/slave side in 3D (2D interface)   |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::Integrate_3D(Epetra_CrsMatrix& M,
-                                   Epetra_CrsMatrix& D)
+bool MRTR::Interface::Integrate_3D()
 { 
   if (!IsComplete())
   {
@@ -102,7 +101,7 @@ bool MRTR::Interface::Integrate_3D(Epetra_CrsMatrix& M,
 #endif
       // if there is an overlap, integrate the pair
       // (whether there is an overlap or not will be checked inside)
-      Integrate_3D_Section(*actsseg,*actmseg,M,D);
+      Integrate_3D_Section(*actsseg,*actmseg);
       
     } // for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)  
   } // for (scurr=rseg_[sside].begin(); scurr!=rseg_[sside].end(); ++scurr)
@@ -115,9 +114,7 @@ bool MRTR::Interface::Integrate_3D(Epetra_CrsMatrix& M,
  | of 2 segments (3D version) IF there is an overlap                    |
  *----------------------------------------------------------------------*/
 bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg, 
-                                           MRTR::Segment& mseg,
-                                           Epetra_CrsMatrix& M,
-                                           Epetra_CrsMatrix& D)
+                                           MRTR::Segment& mseg)
 { 
   // if one of the segments is quadratic, we have to do something here
   if (sseg.Type()!=MRTR::Segment::seg_BiLinearTri || mseg.Type()!=MRTR::Segment::seg_BiLinearTri)
@@ -161,9 +158,8 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
     integrator.Assemble(*this,sseg,*Ddense);    
     integrator.Assemble(*this,sseg,mseg,*Mdense);    
     
-    
-     if (Ddense) delete Ddense;
-     if (Mdense) delete Mdense;
+    if (Ddense) delete Ddense;
+    if (Mdense) delete Mdense;
           
   } // for (int s=0; s<nseg; ++s)
 
@@ -173,6 +169,170 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
 }
 
 
+/*----------------------------------------------------------------------*
+ |  assemble integration of master/slave side in 3D (2D interface)      |
+ *----------------------------------------------------------------------*/
+bool MRTR::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
+{ 
+  if (!IsComplete())
+  {
+    cout << "***ERR*** MRTR::Interface::Assemble_3D:\n"
+         << "***ERR*** Complete() not called on interface " << Id_ << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  if (!lComm()) return true;
+
+  // get the sides
+  int mside = MortarSide();
+  int sside = OtherSide(mside);
+
+  //-------------------------------------------------------------------
+  // loop over all slave nodes
+  map<int,RefCountPtr<MRTR::Node> >::iterator curr;
+  for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+  {
+    // loop only my own nodes
+        if (NodePID(curr->second->Id()) != lComm()->MyPID())
+          continue;
+    
+    // get maps D and M from node
+    RefCountPtr<map<int,double> > Drow = curr->second->GetD();
+    RefCountPtr<map<int,double> > Mrow = curr->second->GetM();
+    
+    // if there's no D there's nothing to do
+    if (Drow==null)
+      continue;
+    
+    RefCountPtr<MRTR::Node> rowsnode = curr->second;
+    int snlmdof = rowsnode->Nlmdof();
+    const int* slmdof = rowsnode->LMDof();
+    cout << "Current row snode: " << rowsnode->Id() << endl;
+    
+
+  //-------------------------------------------------------------------
+  //-------------------------------------------------------------------
+    // assemble the Drow
+    map<int,double>::iterator rowcurr;
+    for (rowcurr=Drow->begin(); rowcurr!=Drow->end(); ++rowcurr)
+    {
+      int colnode = rowcurr->first;
+      double val  = rowcurr->second;
+      if (abs(val)<1.0e-9)
+        continue;
+        
+      // cout << "Current colsnode: " << colnode << endl;
+      
+      // get the colsnode
+      RefCountPtr<MRTR::Node> colsnode = GetNodeView(colnode);
+      if (colsnode==null)
+      {
+        cout << "***ERR*** MRTR::Interface::Assemble_3D:\n"
+             << "***ERR*** interface " << Id_ << ": cannot get view of node " << colnode << "\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        return false;
+      }
+      
+      // get the primal dofs
+      int sndof = colsnode->Ndof();
+      const int* sdof = colsnode->Dof();
+      if (snlmdof != sndof)
+      {
+        cout << "***ERR*** MRTR::Interface::Assemble_3D:\n"
+             << "***ERR*** interface " << Id_ << ": mismatch in # lagrange multipliers and primal variables\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        return false;
+      }
+      
+      for (int i=0; i<snlmdof; ++i)
+      {
+        int row = slmdof[i];
+        int col = sdof[i];
+        // cout << "Inserting D row/col:" << row << "/" << col << " val " << val << endl;
+        int err = D.SumIntoGlobalValues(row,1,&val,&col);
+        if (err)
+          err = D.InsertGlobalValues(row,1,&val,&col);
+        if (err<0)
+        {
+          cout << "***ERR*** MRTR::Interface::Assemble_3D:\n"
+               << "***ERR*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
+               << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          return false;
+        }
+        if (err && OutLevel()>9)
+        {
+          cout << "***WRN*** MRTR::Interface::Assemble_3D:\n"
+               << "***WRN*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
+               << "***WRN*** indicating that initial guess for memory of D too small\n"
+               << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        } 
+      } // for (int i=0; i<snlmdof; ++i)
+    } // for (rowcurr=Drow->begin(); rowcurr!=Drow->end(); ++rowcurr)
+
+
+  //-------------------------------------------------------------------
+  //-------------------------------------------------------------------
+    // assemble the Mrow
+    for (rowcurr=Mrow->begin(); rowcurr!=Mrow->end(); ++rowcurr)
+    {
+      int colnode = rowcurr->first;
+      double val  = rowcurr->second;
+      if (abs(val)<1.0e-9)
+        continue;
+        
+      // cout << "Current colmnode: " << colnode << endl;
+      
+      // get the colsnode
+      RefCountPtr<MRTR::Node> colmnode = GetNodeView(colnode);
+      if (colmnode==null)
+      {
+        cout << "***ERR*** MRTR::Interface::Assemble_3D:\n"
+             << "***ERR*** interface " << Id_ << ": cannot get view of node " << colnode << "\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        return false;
+      }
+      
+      // get the primal dofs
+      int mndof = colmnode->Ndof();
+      const int* mdof = colmnode->Dof();
+      if (snlmdof != mndof)
+      {
+        cout << "***ERR*** MRTR::Interface::Assemble_3D:\n"
+             << "***ERR*** interface " << Id_ << ": mismatch in # lagrange multipliers and primal variables\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        return false;
+      }
+      
+      for (int i=0; i<snlmdof; ++i)
+      {
+        int row = slmdof[i];
+        int col = mdof[i];
+        // cout << "Inserting M row/col:" << row << "/" << col << " val " << val << endl;
+        int err = M.SumIntoGlobalValues(row,1,&val,&col);
+        if (err)
+          err = M.InsertGlobalValues(row,1,&val,&col);
+        if (err<0)
+        {
+          cout << "***ERR*** MRTR::Interface::Assemble_3D:\n"
+               << "***ERR*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
+               << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          return false;
+        }
+        if (err && OutLevel()>9)
+        {
+          cout << "***WRN*** MRTR::Interface::Assemble_3D:\n"
+               << "***WRN*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
+               << "***WRN*** indicating that initial guess for memory of M too small\n"
+               << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        } 
+      } // for (int i=0; i<snlmdof; ++i)
+
+    } // for (rowcurr=Mrow->begin(); rowcurr!=Mrow->end(); ++rowcurr)
+  
+  } // for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+  
+  return true;
+}
 
 
 

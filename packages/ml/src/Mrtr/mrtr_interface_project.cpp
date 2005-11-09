@@ -41,6 +41,60 @@
 
 
 /*----------------------------------------------------------------------*
+ |  build averaged normals                                              |
+ *----------------------------------------------------------------------*/
+bool MRTR::Interface::BuildNormals()
+{ 
+  bool ok = false;
+  
+  //-------------------------------------------------------------------
+  // interface needs to be complete
+  if (!IsComplete())
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MRTR::Interface::Project:\n"
+           << "***ERR*** Complete() not called on interface " << Id_ << "\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  
+  //-------------------------------------------------------------------
+  // send all procs not member of this interface's intra-comm out of here
+  if (!lComm()) return true;
+
+  //-------------------------------------------------------------------
+  // interface segments need to have at least one function on each side
+  map<int,RefCountPtr<MRTR::Segment> >::iterator curr;
+  for (int side=0; side<2; ++side)
+    for (curr=rseg_[side].begin(); curr!=rseg_[side].end(); ++curr)
+      if (curr->second->Nfunctions() < 1)
+      {
+        cout << "***ERR*** MRTR::Interface::Project:\n"
+             << "***ERR*** interface " << Id_ << ", mortar side\n"
+             << "***ERR*** segment " << curr->second->Id() << " needs at least 1 function set\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        return false;
+      }
+    
+  //-------------------------------------------------------------------
+  // build nodal normals on both sides
+  map<int,RefCountPtr<MRTR::Node> >::iterator ncurr;
+  for (int side=0; side<2; ++side)
+    for (ncurr=rnode_[side].begin(); ncurr!=rnode_[side].end(); ++ncurr)
+    {
+#if 0
+      cout << "side " << side << ": " << *(ncurr->second);
+#endif
+      ncurr->second->BuildAveragedNormal();
+#if 0
+      cout << "side " << side << ": " << *(ncurr->second);
+#endif
+    }
+
+  return true;
+}
+
+/*----------------------------------------------------------------------*
  |  build averaged normals and make projection of nodes                 |
  *----------------------------------------------------------------------*/
 bool MRTR::Interface::Project()

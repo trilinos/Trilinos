@@ -1100,34 +1100,98 @@ int MRTR::Interface::SetLMDofs(int minLMGID)
 
   if (lComm())
   {
-    // FIXME: this is different for discontinous lagrange multipliers
-  
     int mside = MortarSide();
     int sside = OtherSide(mside);
     
-    // loop nodes on slave side and set LMdofs for those who have a projection
-    map<int,RefCountPtr<MRTR::Node> >::iterator curr;
-    for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+    if (IsOneDimensional())
     {
-      RefCountPtr<MRTR::Node> node = curr->second;
-      
-      // check whether this node has a projection
-      RefCountPtr<MRTR::ProjectedNode> pnode = node->GetProjectedNode();
-      if (pnode==null) continue;
-      
-      
-      // get number of dofs on this node to choose the same number of dofs
-      // for the LM
-      int ndof = node->Ndof();
-      
-      // set LM dofs to this node and it's projection
-      for (int i=0; i<ndof; ++i)
+      // loop nodes on slave side and set LMdofs for those who have a projection
+      map<int,RefCountPtr<MRTR::Node> >::iterator curr;
+      for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
       {
-        node->SetLagrangeMultiplierId(minLMGID+i);
-        pnode->SetLagrangeMultiplierId(minLMGID+i);
+        // check whether this node has a projection
+        RefCountPtr<MRTR::ProjectedNode> pnode = curr->second->GetProjectedNode();
+        if (pnode==null) continue;
+        
+        
+        // get number of dofs on this node to choose the same number of dofs
+        // for the LM
+        int ndof = curr->second->Ndof();
+        
+        // set LM dofs to this node and it's projection
+        for (int i=0; i<ndof; ++i)
+        {
+          curr->second->SetLagrangeMultiplierId(minLMGID+i);
+          pnode->SetLagrangeMultiplierId(minLMGID+i);
+        }
+        minLMGID += ndof;
+      } // for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+    } // if (IsOneDimensional())
+    else
+    {
+      // create redundant flags
+      vector<int> lhavelm(rnode_[sside].size());
+      vector<int> ghavelm(rnode_[sside].size());
+      for (int i=0; i<rnode_[sside].size(); ++i) lhavelm[i] = 0;
+      
+      // loop through redundant nodes and add my flags
+      int count=0;
+      map<int,RefCountPtr<MRTR::Node> >::iterator curr;
+      for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+      {
+        if (NodePID(curr->second->Id()) != lComm()->MyPID())
+        {
+          ++count;
+          continue;
+        }
+        RefCountPtr<map<int,double> > D = curr->second->GetD();
+        if (D==null)
+        {
+          ++count;
+          continue;
+        }
+        lhavelm[count] = 1;
+        ++count;
       }
-      minLMGID += ndof;
-    } // for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+      if (count != rnode_[sside].size())
+      {
+        cout << "***ERR*** MRTR::Interface::SetLMDofs:\n"
+             << "***ERR*** number of redundant nodes wrong\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        return (0);
+      }
+
+      // make the flags redundant
+      lComm()->MaxAll(&lhavelm[0],&ghavelm[0],lhavelm.size());
+      lhavelm.clear();
+
+      // loop through nodes again and set lm dofs according to ghavelm
+      count=0;
+      for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+      {
+        if (!ghavelm[count])
+        {
+          ++count;
+          continue;
+        }
+
+        // get number of dofs on this node to choose the same number of dofs
+        // for the LM
+        int ndof = curr->second->Ndof();
+        
+        // set LM dofs to this node and it's projection
+        for (int i=0; i<ndof; ++i)
+        {
+          curr->second->SetLagrangeMultiplierId(minLMGID+i);
+          RefCountPtr<MRTR::ProjectedNode> pnode = curr->second->GetProjectedNode();
+          if (pnode!=null)
+            pnode->SetLagrangeMultiplierId(minLMGID+i);
+        }
+        minLMGID += ndof;
+        ++count;
+      }
+      ghavelm.clear();
+    }
   } // if (lComm())
   
   // broadcast minLMGID to all procs including those not in intra-comm

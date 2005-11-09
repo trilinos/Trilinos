@@ -63,6 +63,13 @@ namespace MRTR
 class Manager 
 {
 public:
+
+  enum DimensionType
+  {
+    manager_none,
+    manager_2D,
+    manager_3D
+  };
   
   // ctor
   explicit Manager(Epetra_Comm& comm, int outlevel);
@@ -76,6 +83,12 @@ public:
   // get Printlevel (0-10)
   int OutLevel() { return outlevel_; }
 
+  // set the dimension type
+  void SetDimension(MRTR::Manager::DimensionType type) { dimensiontype_ = type; return; }
+  
+  // get the dimension type
+  MRTR::Manager::DimensionType Dimension() { return dimensiontype_; }
+  
   // add an interface to the mortar manager
   bool AddInterface(MRTR::Interface& interface);
 
@@ -105,6 +118,15 @@ private:
   Manager operator = (const Manager& old);
   Manager(MRTR::Manager& old);
 
+  // do integration of all interfaces 2D case
+  bool Mortar_Integrate_2D();
+  
+  // do integration of all interfaces 3D case
+  bool Mortar_Integrate_3D();
+  
+  // build the map for the saddle point problem
+  bool BuildSaddleMap();
+
   // choose the dofs for lagrange multipliers
   RefCountPtr<Epetra_Map> LagrangeMultiplierDofs();
   
@@ -120,6 +142,8 @@ private:
 
   int                           outlevel_;            // output level (0-10)
   Epetra_Comm&                  comm_;                // communicator (global, contains ALL procs)
+  DimensionType                 dimensiontype_;       // problem dimension
+
   RefCountPtr<Epetra_Map>       inputmap_;            // the rowmap of the input matrix
   RefCountPtr<Epetra_CrsMatrix> inputmatrix_;         // the uncoupled matrix on input
   RefCountPtr<Epetra_Map>       constraintsmap_;      // the rowmap of M and D (both of them use comm_)

@@ -174,8 +174,14 @@ public:
   // set a MRTR::Function derived class with id id to all segments on side side
   bool SetFunctionAllSegmentsSide(int side, int id, MRTR::Function* func);
 
-  // Integrate this interface
+  // Integrate this interface (2D problem)
   bool Mortar_Integrate(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M);
+  
+  // Integrate this interface (3D problem)
+  bool Mortar_Integrate();
+  
+  // Assemble values from integration this interface (3D problem)
+  bool Mortar_Assemble(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M);
   
   // set type of projection to be used
   void SetProjectionType(MRTR::Interface::ProjectionType typ) { ptype_ = typ; } 
@@ -196,6 +202,9 @@ public:
   
   // build averaged normals and project nodes to other side
   bool Project();
+
+  // build averaged normals 
+  bool BuildNormals();
 
   // set lagrange multipliers dofs to slave side starting from minLMGID
   int SetLMDofs(int minLMGID);
@@ -260,11 +269,13 @@ private:
                             Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
 
   // control routine of the integration of the master/slave side in 3D
-  bool Integrate_3D(Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
+  bool Integrate_3D();
   
   // integrate the overlap of 2 segments in 3D (master/slave contribution)
-  bool Integrate_3D_Section(MRTR::Segment& sseg,MRTR::Segment& mseg,
-                            Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
+  bool Integrate_3D_Section(MRTR::Segment& sseg,MRTR::Segment& mseg);
+
+  // Assemble values from integration this interface (3D problem)
+  bool Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M);
 
 private:
   

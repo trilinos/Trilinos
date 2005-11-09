@@ -461,7 +461,7 @@ void MRTR::Node::AddMValue(double val, int col)
   if (Mrow_ == null)
     Mrow_ = rcp(new map<int,double>());
     
-  map<int,double>* Mmap = Drow_.get();
+  map<int,double>* Mmap = Mrow_.get();
   
   (*Mmap)[col] += val;
 
