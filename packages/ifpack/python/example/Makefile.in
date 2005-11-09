@@ -260,9 +260,9 @@ AUTOMAKE_OPTIONS = foreign
 #
 EXTRA_DIST = setpath.py exSimple.py 
 MAINTAINERCLEANFILES = Makefile.in
-
 # Define the suite of examples
-EXAMPLE_SUITE = exSimple
+@HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@EXAMPLE_SUITE = exSimple
+EXAMPLE_SUITE = 
 SETPATH = setpath.py
 all: all-am
 
