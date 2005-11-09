@@ -8081,9 +8081,9 @@ _ACEOF
 
 fi
 
-echo "$as_me:$LINENO: checking whether the compiler accepts the \"template\" qualifier" >&5
-echo $ECHO_N "checking whether the compiler accepts the \"template\" qualifier... $ECHO_C" >&6
-if test "${ac_cv_cxx_template_qualifier+set}" = set; then
+echo "$as_me:$LINENO: checking whether the compiler requires invalid use of the \"template\" qualifier" >&5
+echo $ECHO_N "checking whether the compiler requires invalid use of the \"template\" qualifier... $ECHO_C" >&6
+if test "${ac_cv_cxx_invalid_template_qualifier+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
@@ -8116,7 +8116,8 @@ main ()
 {
 
    DummyClass my_dummy;
-   double temp = my_dummy.template get<double>();
+   DummyClass *my_dummy_ptr = &my_dummy;
+   double temp = my_dummy_ptr->template get<double>();
 
   ;
   return 0;
@@ -8144,12 +8145,12 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_cxx_template_qualifier=yes
+  ac_cv_cxx_invalid_template_qualifier=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ac_cv_cxx_template_qualifier=no
+ac_cv_cxx_invalid_template_qualifier=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
  ac_ext=cc
@@ -8160,12 +8161,18 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 fi
-echo "$as_me:$LINENO: result: $ac_cv_cxx_template_qualifier" >&5
-echo "${ECHO_T}$ac_cv_cxx_template_qualifier" >&6
-if test "$ac_cv_cxx_template_qualifier" = yes; then
+echo "$as_me:$LINENO: result: $ac_cv_cxx_invalid_template_qualifier" >&5
+echo "${ECHO_T}$ac_cv_cxx_invalid_template_qualifier" >&6
+if test "$ac_cv_cxx_invalid_template_qualifier" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_TEMPLATE_QUALIFIER
+#define INVALID_TEMPLATE_QUALIFIER template
+_ACEOF
+
+else
+
+cat >>confdefs.h <<\_ACEOF
+#define INVALID_TEMPLATE_QUALIFIER
 _ACEOF
 
 fi
@@ -9617,7 +9624,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9620: \"$ac_link\") >&5
+(eval echo $as_me:9627: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9695,7 +9702,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9698: \"$ac_link\") >&5
+(eval echo $as_me:9705: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12699,7 +12706,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:12702: \"$ac_link\") >&5
+(eval echo $as_me:12709: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12777,7 +12784,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:12780: \"$ac_link\") >&5
+(eval echo $as_me:12787: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

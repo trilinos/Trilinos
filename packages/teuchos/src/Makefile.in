@@ -80,6 +80,7 @@ DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
+	$(top_srcdir)/config/ac_cxx_invalid_template_qualifier.m4 \
 	$(top_srcdir)/config/ac_cxx_mutable.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_new_for_scoping.m4 \
@@ -87,7 +88,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_protected_nested_template_class_access.m4 \
 	$(top_srcdir)/config/ac_cxx_std_ios_base_fmtflags.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
-	$(top_srcdir)/config/ac_cxx_template_qualifier.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \

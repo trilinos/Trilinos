@@ -225,18 +225,18 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------
     // Check the templated 'get' method.
     //-----------------------------------------------------------
-
-#ifdef HAVE_TEMPLATE_QUALIFIER
+    //
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list using templated "get" method.
-    // (This will only be tested if the compiler excepts "template" as a qualifier)
+    // (This will be tested using the INVALID_TEMPLATE_QUALIFIER which indicates whether a
+    //  non-templated code needs ".template" before the method name )
     //-----------------------------------------------------------
     int max_iters = 0;
     string nonlin_solver;
     tempMeth = true;
     try {
-      max_iters = PL_My_Polynomial.get<int>("Max Iters");
-      nonlin_solver = PL_Main.get<string>("Nonlinear Solver");
+      max_iters = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER get<int>("Max Iters");
+      nonlin_solver = PL_Main.INVALID_TEMPLATE_QUALIFIER get<string>("Nonlinear Solver");
     }
     catch( std::exception& e ) { tempMeth = false; }  
     if (verbose) {
@@ -248,13 +248,14 @@ int main(int argc, char *argv[])
 
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list that we know is a bad "get".
-    // (This will only be tested if the compiler excepts "template" as a qualifier)
+    // (This will be tested using the INVALID_TEMPLATE_QUALIFIER which indicates whether a
+    //  non-templated code needs ".template" before the method name )
     //-----------------------------------------------------------
     float mbf = 0.0;
     tempMeth = false;
     FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
     try {
-	mbf = PL_LinSol.get<float>( "Tol" );
+	mbf = PL_LinSol.INVALID_TEMPLATE_QUALIFIER get<float>( "Tol" );
     }
     catch( std::exception& e ) {
 	tempMeth = true;
@@ -266,17 +267,15 @@ int main(int argc, char *argv[])
     if (tempMeth) { if (verbose) cout << "no" << endl; }
     else { if (verbose) cout << "yes" << endl; }
 
-#else // HAVE_TEMPLATE_QUALIFIER is not defined
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list using templated "get" method.
-    // (This will only be tested if the compiler does not except "template" as a qualifier)
+    // (This will be tested using the INVALID_TEMPLATE_QUALIFIER which indicates whether a
+    //  non-templated code needs ".template" before the method name )
     //-----------------------------------------------------------
-    int max_iters = 0;
-    string nonlin_solver;
     tempMeth = true;
     try {
-      max_iters = PL_My_Polynomial.get<int>("Max Iters");
-      nonlin_solver = PL_Main.get<string>("Nonlinear Solver");
+      max_iters = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER get<int>("Max Iters");
+      nonlin_solver = PL_Main.INVALID_TEMPLATE_QUALIFIER get<string>("Nonlinear Solver");
     }
     catch( std::exception& e ) { tempMeth = false; }  
     if (verbose) {
@@ -288,13 +287,11 @@ int main(int argc, char *argv[])
 
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list that we know is a bad "get".
-    // (This will only be tested if the compiler does not except "template" as a qualifier)
     //-----------------------------------------------------------
-    float mbf = 0.0;
     tempMeth = false;
     FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
     try {
-	mbf = PL_LinSol.get<float>( "Tol" );
+	mbf = PL_LinSol.INVALID_TEMPLATE_QUALIFIER get<float>( "Tol" );
     }
     catch( std::exception& e ) {
 	tempMeth = true;
@@ -305,23 +302,21 @@ int main(int argc, char *argv[])
     }
     if (tempMeth) { if (verbose) cout << "no" << endl; }
     else { if (verbose) cout << "yes" << endl; }
-
-#endif // HAVE_TEMPLATE_QUALIFIER
 
     //-----------------------------------------------------------
     // Check the templated 'getPtr' method.
     //-----------------------------------------------------------
 
-#ifdef HAVE_TEMPLATE_QUALIFIER
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list using templated "get" method.
-    // (This will only be tested if the compiler excepts "template" as a qualifier)
+    // (This will be tested using the INVALID_TEMPLATE_QUALIFIER which indicates whether a
+    //  non-templated code needs ".template" before the method name )
     //-----------------------------------------------------------
     int* max_iters_ptr = 0;
     string* nonlin_solver_ptr;
 
-    max_iters_ptr = PL_My_Polynomial.getPtr<int>("Max Iters");
-    nonlin_solver_ptr = PL_Main.getPtr<string>("Nonlinear Solver");
+    max_iters_ptr = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER getPtr<int>("Max Iters");
+    nonlin_solver_ptr = PL_Main.INVALID_TEMPLATE_QUALIFIER getPtr<string>("Nonlinear Solver");
 
     if (verbose) {
 	cout<< "Is the templated 'getPtr' method functional ... "<<endl;
@@ -336,12 +331,13 @@ int main(int argc, char *argv[])
 
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list that we know is a bad "get".
-    // (This will only be tested if the compiler excepts "template" as a qualifier)
+    // (This will be tested using the INVALID_TEMPLATE_QUALIFIER which indicates whether a
+    //  non-templated code needs ".template" before the method name )
     //-----------------------------------------------------------
     float* mbf_ptr = 0;
     FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
 
-    mbf_ptr = PL_LinSol.getPtr<float>( "Tol" );
+    mbf_ptr = PL_LinSol.INVALID_TEMPLATE_QUALIFIER getPtr<float>( "Tol" );
 
     if (!mbf_ptr)
 	FailedTests--;		
@@ -352,16 +348,14 @@ int main(int argc, char *argv[])
     if (!mbf_ptr) { if (verbose) cout << "no" << endl; }
     else { if (verbose) cout << "yes" << endl; }
 
-#else // HAVE_TEMPLATE_QUALIFIER
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list using templated "get" method.
-    // (This will only be tested if the compiler does not except "template" as a qualifier)
+    // (This will be tested using the INVALID_TEMPLATE_QUALIFIER which indicates whether a
+    //  non-templated code needs ".template" before the method name )
     //-----------------------------------------------------------
-    int* max_iters_ptr = 0;
-    string* nonlin_solver_ptr;
 
-    max_iters_ptr = PL_My_Polynomial.getPtr<int>("Max Iters");
-    nonlin_solver_ptr = PL_Main.getPtr<string>("Nonlinear Solver");
+    max_iters_ptr = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER getPtr<int>("Max Iters");
+    nonlin_solver_ptr = PL_Main.INVALID_TEMPLATE_QUALIFIER getPtr<string>("Nonlinear Solver");
 
     if (verbose) {
 	cout<< "Is the templated 'getPtr' method functional ... "<<endl;
@@ -376,12 +370,13 @@ int main(int argc, char *argv[])
 
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list that we know is a bad "get".
-    // (This will only be tested if the compiler does not except "template" as a qualifier)
+    // (This will be tested using the INVALID_TEMPLATE_QUALIFIER which indicates whether a
+    //  non-templated code needs ".template" before the method name )
     //-----------------------------------------------------------
-    float* mbf_ptr = 0;
+
     FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
 
-    mbf_ptr = PL_LinSol.getPtr<float>( "Tol" );
+    mbf_ptr = PL_LinSol.INVALID_TEMPLATE_QUALIFIER getPtr<float>( "Tol" );
 
     if (!mbf_ptr)
 	FailedTests--;		
@@ -391,8 +386,6 @@ int main(int argc, char *argv[])
     }
     if (!mbf_ptr) { if (verbose) cout << "no" << endl; }
     else { if (verbose) cout << "yes" << endl; }
-
-#endif // HAVE_TEMPLATE_QUALIFIER
 
     //-----------------------------------------------------------
     // Check the 'getParameter' helper function.
@@ -411,16 +404,15 @@ int main(int argc, char *argv[])
     if (tempMeth) { if (verbose) cout << "yes" << endl; }
     else { if (verbose) cout << "no" << endl; FailedTests++; }
 
-#ifdef HAVE_TEMPLATE_QUALIFIER
-
     //-----------------------------------------------------------
     // Check templated isType functionality
-    // (This will only be tested if the compiler excepts "template" as a qualifier)
+    // (This will be tested using the INVALID_TEMPLATE_QUALIFIER which indicates whether a
+    //  non-templated code needs ".template" before the method name )
     //-----------------------------------------------------------
     bool PT1, PT2, PT3;
-    PT1 = PL_Polynomial.isType<int>("Default Step");
-    PT2 = PL_Polynomial.isType<long int>("Default Step");
-    PT3 = PL_Polynomial.isType<string>("Interpolation Type");
+    PT1 = PL_Polynomial.INVALID_TEMPLATE_QUALIFIER isType<int>("Default Step");
+    PT2 = PL_Polynomial.INVALID_TEMPLATE_QUALIFIER isType<long int>("Default Step");
+    PT3 = PL_Polynomial.INVALID_TEMPLATE_QUALIFIER isType<string>("Interpolation Type");
     if (verbose) {
 	cout<< "Is the templated 'isType' method functional ... "<<endl;
 	cout<< "  Is the 'Default Step' of type 'int' ... ";
@@ -437,8 +429,6 @@ int main(int argc, char *argv[])
     }
     if (PT3) { if (verbose) cout<< "yes" << endl; }
     else { if (verbose) cout<< "no" << endl; FailedTests++; }
-
-#endif // HAVE_TEMPLATE_QUALIFIER
 
     //-----------------------------------------------------------
     // Check the 'isParameterType' helper function.
