@@ -82,10 +82,6 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
   virtual ~BlockCrsMatrix();
   //@}
   
-  //! Block Access: Not currently robust for distributed BaseGraphs
-  Epetra_CrsMatrix & Block( int Column ) { return *(Blocks_[0][Column]); }
-  Epetra_CrsMatrix & Block( int Row, int Column ) { return *(Blocks_[Row][Column]); }
-
   //! Local Stencil Info
   const std::vector<int> & Stencil( int i = 0 ) { return RowStencil_[i]; }
 
@@ -100,14 +96,9 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
 
  protected:
 
-  void AllocateBlocks_();
-  void DeleteBlocks_();
-
   Epetra_CrsGraph BaseGraph_;
 
   std::vector< std::vector<int> > RowStencil_;
-
-  std::vector< std::vector<Epetra_CrsMatrix*> > Blocks_;
 
   std::vector<int> RowIndices_; 
 

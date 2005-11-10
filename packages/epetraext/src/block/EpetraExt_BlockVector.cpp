@@ -37,14 +37,11 @@ namespace EpetraExt {
 // EpetraExt::BlockVector Constructor
 BlockVector::BlockVector(
       const Epetra_BlockMap & BaseMap,
-      const Epetra_BlockMap & GlobalMap,
-      int NumBlocks )
+      const Epetra_BlockMap & GlobalMap)
   : Epetra_Vector( GlobalMap ),
     BaseMap_( BaseMap ),
-    NumBlocks_( NumBlocks ),
     Offset_( BlockUtility::CalculateOffset( BaseMap ) )
 {
-  AllocateBlocks_();
 }
 
 //==========================================================================
@@ -52,44 +49,13 @@ BlockVector::BlockVector(
 BlockVector::BlockVector(const BlockVector& Source)
   : Epetra_Vector( dynamic_cast<const Epetra_Vector &>(Source) ),
     BaseMap_( Source.BaseMap_ ),
-    NumBlocks_( Source.NumBlocks_ ),
     Offset_( Source.Offset_ )
 {
-  AllocateBlocks_();
 }
 
 //=========================================================================
 BlockVector::~BlockVector()
 {
-  DeleteBlocks_();
-}
-
-//=========================================================================
-void BlockVector::AllocateBlocks_(void)
-{
-  if (BaseMap_.Comm().NumProc() > 1 && NumBlocks_ > 1) {
-     if (BaseMap_.Comm().MyPID()==0) 
-     cout << "Warning in BlockVector::AllocateBlocks_: This routine does not work\n" 
-	  << "\tfor multi-proc base vectors becasue of re-ordering of externals" <<endl;
-  }
-  
-  double * Ptrs;
-  ExtractView( &Ptrs );
-
-  Blocks_.resize( NumBlocks_ );
-  int NumElements = BaseMap_.NumMyElements();
-  for( int i = 0; i < NumBlocks_; ++i )
-    Blocks_[i] = new Epetra_Vector( View, BaseMap_, Ptrs+(i*NumElements) );
-}
-
-//=========================================================================
-void BlockVector::DeleteBlocks_(void)
-{
-  for( int i = 0; i < NumBlocks_; ++i )
-  {
-    delete Blocks_[i];
-    Blocks_[i] = 0;
-  }
 }
 
 //=========================================================================
@@ -114,7 +80,7 @@ int BlockVector::ExtractBlockValues(Epetra_Vector & BaseVector, int GlobalBlockR
 }
 
 //=========================================================================
-int BlockVector::LoadBlockValues(Epetra_Vector & BaseVector, int GlobalBlockRow) 
+int BlockVector::LoadBlockValues(const Epetra_Vector & BaseVector, int GlobalBlockRow) 
 {
    int IndexOffset = GlobalBlockRow * Offset_;
    int localIndex=0;

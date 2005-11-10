@@ -59,7 +59,7 @@ class BlockVector: public Epetra_Vector {
 	\param In 
 	NumBlocks - Number of local blocks
   */
-  BlockVector( const Epetra_BlockMap & BaseMap, const Epetra_BlockMap & GlobalMap, int NumBlocks = 1 );
+  BlockVector( const Epetra_BlockMap & BaseMap, const Epetra_BlockMap & GlobalMap);
   
   //! Copy constructor.
   BlockVector( const BlockVector & MV );
@@ -68,26 +68,15 @@ class BlockVector: public Epetra_Vector {
   virtual ~BlockVector();
   //@}
   
-  //! Block Access
-  Epetra_Vector & Block( int i = 0 ) { return *(Blocks_[i]); }
-  const Epetra_Vector & Block( int i = 0 ) const { return *(Blocks_[i]); }
-
   //! Extract a single block from a Block Vector: block row is global, not a stencil value
   int ExtractBlockValues( Epetra_Vector & BaseVec, int BlockRow) const;
 
   //! Load a single block into a Block Vector: block row is global, not a stencil value
-  int LoadBlockValues( Epetra_Vector & BaseVec, int BlockRow);
+  int LoadBlockValues(const Epetra_Vector & BaseVec, int BlockRow);
 	
  protected:
 
-  void AllocateBlocks_();
-  void DeleteBlocks_();
-
   Epetra_BlockMap BaseMap_;
-
-  std::vector<Epetra_Vector*> Blocks_;
-
-  int NumBlocks_;
 
   int Offset_;
 
