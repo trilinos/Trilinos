@@ -11,6 +11,7 @@
 /* ******************************************************************** */
 
 #include "ml_operator.h"
+#include "ml_lapack.h"
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -1277,6 +1278,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
   }
   return 0;
 }
+
    
 /* ******************************************************************** */
 /* Modify matrix so that it uses a getrow wrapper that will effectively */
@@ -1306,10 +1308,17 @@ ML_Operator *ML_Operator_ImplicitlyScale(ML_Operator *Amat, double scalar,
 				Amat->matvec->Nrows, ML_implicitscale_Matvec,
 				Amat->from_an_ml_operator);
 
-
   ML_Operator_Set_Getrow(matrix,Amat->getrow->Nrows,ML_implicitscale_Getrow);
   matrix->data_destroy   = ML_implicitscale_Destroy;
   if (OnDestroy_FreeChild) new_data->destroy_child = 1;
+
+
+  /* Note: this is need for any functions doing getrow(). The matvec  */
+  /* wrapper does not invoke communication as it is already contained */
+  /* in the lower level (unscaled) matvec function.                   */
+
+  if (Amat->getrow->pre_comm != NULL) 
+    ML_CommInfoOP_Clone( &(matrix->getrow->pre_comm),Amat->getrow->pre_comm); 
 
   return matrix;
 }
@@ -1358,8 +1367,194 @@ ML_Operator *ML_Operator_ImplicitlyVScale(ML_Operator *Amat, double* scale,
   matrix->data_destroy   = ML_implicitvscale_Destroy;
   if (OnDestroy_FreeChild) new_data->destroy_child = 1;
 
+  /* Note: this is need for any functions doing getrow(). The matvec  */
+  /* wrapper does not invoke communication as it is already contained */
+  /* in the lower level (unscaled) matvec function.                   */
+
+  if (Amat->getrow->pre_comm != NULL) 
+    ML_CommInfoOP_Clone( &(matrix->getrow->pre_comm),Amat->getrow->pre_comm); 
+
+
   return matrix;
 }
+int ML_Operator_ExplicitDinvA(int BlockSize, struct MLSthing *Dinv, 
+			      ML_Operator *A)
+{
+  int NRows, NCols, NBlockRows, MaxCols;
+  int **AllCols, *ColIndices, *temp, length, nz_ptr;
+  int NColsInBlockRow, BlockRow, Row, Col, i, j, kk, *columns = NULL;
+  int NTotalCols, *ColLocation, *newcols = NULL;
+  int info, one = 1, *newrowptr, allocated = 0, **perms;
+  double *vals = NULL, *newvals = NULL, *scratch, **blockdata;
+  struct ML_CSR_MSRdata *csr_data = NULL;
+  char *ColMarker, N[2];
+
+  strcpy(N,"N");
+  NRows      = A->outvec_leng;
+  NBlockRows = NRows/BlockSize;
+  MaxCols    = 20;
+  NCols = A->invec_leng;
+  blockdata  = Dinv->block_scaling->blockfacts;
+  perms      = Dinv->block_scaling->perms;
+
+
+  if (A->getrow->pre_comm != NULL)
+    NCols += ML_CommInfoOP_Compute_TotalRcvLength(A->getrow->pre_comm);
+  newrowptr  = (int *) ML_allocate(sizeof(int)*(NRows+1));
+
+  /* For each block row do the following:           */
+  /*   1. Record column numbers for all nonzeros.   */
+  /*   2. Store all nonzeros in column major form.  */
+  /*   3. For each column apply Dinv.               */
+  /*   4. Store result back in matrix. Note: this   */
+  /*      step might cause additional nonzeros so   */
+  /*      we need to allocated new space for result.*/
+
+  AllCols    = (int **) ML_allocate(sizeof(int *)*NBlockRows);
+  ColMarker = (char *) ML_allocate(sizeof(char)*NCols);
+
+  for (kk = 0 ; kk < NCols ; kk++) ColMarker[kk] = 'o';
+
+  newrowptr[0] = 0;
+  for (BlockRow = 0; BlockRow < NBlockRows; BlockRow++) {
+    ColIndices = (int *) ML_allocate(sizeof(int)*MaxCols);
+    NColsInBlockRow = 0;
+
+    /* For each BlockRow, record all the nonzero column indices */
+
+    for (kk = 0; kk < BlockSize; kk++) {
+      Row = BlockRow*BlockSize+kk;
+      ML_get_matrix_row(A,1,&Row,&allocated,&columns,&vals,&length,0);
+
+      for (j = 0; j < length; j++) {
+	Col = columns[j];
+	if (ColMarker[Col] == 'o') {
+	  if (NColsInBlockRow == MaxCols) {
+	    /* ColIndices is not long enough so  */
+	    /* we need to allocate a larger one. */
+
+	    temp = ColIndices;
+	    MaxCols += 10;
+	    ColIndices = (int *) ML_allocate(sizeof(int)*MaxCols);
+	    for (i = 0; i < NColsInBlockRow; i++) ColIndices[i] = temp[i];
+	    ML_free(temp);
+	  }
+	  ColIndices[NColsInBlockRow] = Col;
+	  NColsInBlockRow++;
+	  ColMarker[Col] = 'x';
+	}
+      }
+    }
+    for (kk = 0; kk < NColsInBlockRow; kk++) 
+      ColMarker[ColIndices[kk]] = 'o';
+    AllCols[BlockRow] = ColIndices;
+    NTotalCols += NColsInBlockRow;
+
+    /* For each row, record the new rowptrs (as we now */
+    /* know the number of columns in each BlockRow).   */
+
+    for (kk = 0; kk < BlockSize; kk++) {
+      Row = BlockRow*BlockSize+kk;
+      newrowptr[Row+1] = newrowptr[Row] + NColsInBlockRow;
+    }
+  }  /* Bottom of for (BlockRow = 0; .. */
+
+  newvals = (double *) ML_allocate(sizeof(double)*newrowptr[NRows]);
+  newcols = (int    *) ML_allocate(sizeof(int   )*newrowptr[NRows]);
+  scratch = (double *) ML_allocate(sizeof(double)*MaxCols*BlockSize);
+  ColLocation= (int *) ML_allocate(sizeof(int   )*NCols);
+  nz_ptr = 0;
+  for (BlockRow = 0; BlockRow < NBlockRows; BlockRow++) {
+    /* Record columns within the current BlockRow in 'scratch' */
+    /* putting them in column major form. To do this, we       */
+    /* need to locally number the column indices and store     */
+    /* them in 'ColLocation' so that we can figure out where   */
+    /* things should go in 'scratch'.                          */
+
+    ColIndices      = AllCols[BlockRow];
+    j               = BlockRow*BlockSize;
+    NColsInBlockRow = newrowptr[j+1]-newrowptr[j];
+    for (kk = 0; kk < NColsInBlockRow*BlockSize; kk++) scratch[kk] = 0.;
+
+    for (kk = 0; kk < NColsInBlockRow; kk++)
+      ColLocation[ColIndices[kk]] = kk;
+
+    for (kk = 0; kk < BlockSize; kk++) {
+      Row = BlockRow*BlockSize+kk;
+      ML_get_matrix_row(A,1,&Row,&allocated,&columns,&vals,&length,0);
+      for (j = 0; j < length; j++) {
+ 	scratch[ColLocation[columns[j]]*BlockSize + kk] = vals[j];
+      }
+    }
+
+    
+    /* Apply Dinv to each column stored in 'scratch'. */
+
+
+    if (Dinv->block_scaling->optimized == 0) {
+      /* To use the opitmized version, ML_permute_for_dgetrs_special() */
+      /* must be called after the factorization was computed.          */
+
+      for (kk = 0; kk < NColsInBlockRow; kk++) {
+        DGETRS_F77(N,&BlockSize,&one,blockdata[BlockRow],&BlockSize,
+		   perms[BlockRow], &(scratch[kk*BlockSize]),
+		   &BlockSize, &info);                                
+	if ( info != 0 ) {
+	  printf("dgetrs returns with %d at block %d\n",info,BlockRow); 
+	  exit(1);
+	}
+      }
+    }
+    else {
+      for (kk = 0; kk < NColsInBlockRow; kk++) {
+	ML_dgetrs_special(BlockSize, blockdata[BlockRow], perms[BlockRow], 
+			  &(scratch[kk*BlockSize]));
+      }
+    }
+
+    /* Store result in matrix. */
+
+    for (kk = 0; kk < BlockSize; kk++) {
+      for (j = 0; j < NColsInBlockRow; j++) {
+	newvals[nz_ptr  ] = scratch[j*BlockSize+kk];
+	newcols[nz_ptr++] = ColIndices[j];
+      }
+      ML_az_sort(&(newcols[newrowptr[Row]]),newrowptr[Row+1]-newrowptr[Row],
+		 NULL, &(newvals[newrowptr[Row]]));
+    }
+
+  }
+  csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct 
+							  ML_CSR_MSRdata));
+  csr_data->rowptr  = newrowptr;
+  csr_data->values  = newvals;
+  csr_data->columns = newcols;
+
+  if ((A->data_destroy != NULL) && (A->data != NULL)) {
+      A->data_destroy(A->data);
+      A->data = NULL;
+  }
+  ML_Operator_Set_ApplyFuncData(A,A->invec_leng, 
+				A->outvec_leng,csr_data,
+				A->matvec->Nrows, CSR_matvec,
+				A->from_an_ml_operator);
+
+  ML_Operator_Set_Getrow(A, A->getrow->Nrows,CSR_getrow);
+  A->data_destroy   = ML_CSR_MSRdata_Destroy;
+
+  for (kk = NBlockRows-1; kk >= 0; kk--) ML_free( AllCols[kk]);
+  if (vals != NULL) ML_free(vals);
+  if (columns != NULL) ML_free(columns);
+  if (ColLocation != NULL) ML_free(ColLocation);
+  if (scratch     != NULL) ML_free(scratch);
+  if (ColMarker   != NULL) ML_free(ColMarker);
+  if (AllCols     != NULL) ML_free(AllCols);
+
+  return 0;
+}
+      
+
+
 /* ******************************************************************** */
 /* Modify matrix so that it uses a getrow wrapper that will effectively */
 /* scale the matrix. Scaling is by the inverse of the block diagonal    */
@@ -1375,6 +1570,10 @@ ML_Operator *ML_Operator_ImplicitlyBlockDinvScale(ML_Operator *Amat)
 
   ML_Smoother_Create_BGS_Data(&data);
   ML_Smoother_Gen_BGSFacts(&data, Amat, Amat->num_PDEs);
+
+  ML_permute_for_dgetrs_special(data->blockfacts, 
+				Amat->invec_leng/Amat->num_PDEs,Amat->num_PDEs,data);
+
   widget->unscaled_matrix = Amat;
   widget->block_scaling   = data;
 

@@ -34,6 +34,7 @@ typedef struct ML_GetrowFunc_Struct ML_GetrowFunc;
 #include "ml_operatoragx.h"
 #include "ml_vec.h"
 #include "ml_gridagx.h"
+#include "ml_mls.h"
 
 #ifdef WKC
 #include <Epetra_Comm.h>
@@ -282,6 +283,9 @@ extern int ML_implicitvscale_Matvec(ML_Operator *Amat_in, int ilen, double p[],
 extern ML_Operator *ML_Operator_ImplicitlyVScale(ML_Operator *Amat, 
                                                  double* scale,
                                                  int OnDestroy_FreeChild);
+extern int ML_Operator_ExplicitDinvA(int BlockSize, 
+				      struct MLSthing *Dinv, ML_Operator *A);
+
 extern ML_Operator *ML_Operator_ImplicitlyBlockDinvScale(ML_Operator *Amat);
 extern void ML_implicitvscale_Destroy(void *data);
 extern int ML_implicitvcscale_Getrow(ML_Operator *data, int N_requested_rows, 
@@ -293,6 +297,9 @@ extern ML_Operator *ML_Operator_ImplicitlyVCScale(ML_Operator *Amat,
                                                  int OnDestroy_FreeChild);
 extern int ML_CSR_DropSmall(ML_Operator *Pe, double AbsoluteDrop,
 			    double RelativeRowDrop, double RelativeColDrop);
+extern ML_Operator *ML_CSRmatrix_ColumnSubset(ML_Operator *Amat, int Nsubset,
+					      int subset[]);
+
 
 /* amalagamation routines */
 extern int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size, 
