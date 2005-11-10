@@ -288,8 +288,10 @@ Anasazi::ReturnType GMRES<ScalarType, MV, OP>::solve(OP &A, OP &Kinv, MV &b, MV 
 		
 		GivensU(c(k,0),s(k,0), e(k,0),e(k+1,0));
 			
+#if 0
                 if (LSit % 10 == 1)
                   cout << "iteration = " << LSit << ", res = " << Teuchos::ScalarTraits<ScalarType>::magnitude(e(k+1, 0)) << endl;
+#endif
 
 		if (Teuchos::ScalarTraits<ScalarType>::magnitude(e(k+1,0))<=rho*_epslin) break;
 		
@@ -663,7 +665,7 @@ of the approximations gained during the previous iterations. In contrast to Kryl
     std::vector<MagnitudeType> _normR;
     bool _haveKinv;
     int _LSIterMax;
-    double _elin, _gamma;
+    double _elin, _gamma, _eswitch;
     
     //
     // Convenience typedefs
@@ -694,7 +696,7 @@ of the approximations gained during the previous iterations. In contrast to Kryl
     _nev(problem->GetNEV()),
     _maxIters(_pl.get("Max Iters", 300)),
     _blockSize(_pl.get("Block Size", 1)),
-    _residual_tolerance(_pl.get("Tol", Teuchos::ScalarTraits<MagnitudeType>::eps())),
+    _residual_tolerance(_pl.get("Tol", 10e5 * Teuchos::ScalarTraits<MagnitudeType>::eps())),
     _numRestarts(0),
     _iters(0),
     _TARGET(_pl.get("Target", Teuchos::ScalarTraits<ScalarType>::zero())),
@@ -704,7 +706,8 @@ of the approximations gained during the previous iterations. In contrast to Kryl
     _haveKinv(false), //FIXME, don't needed
     _LSIterMax(_pl.get("KrylovSolver: MaxIters", 1550)),
     _elin(_pl.get("KrylovSolver: Tolerance", 10e5 * Teuchos::ScalarTraits<MagnitudeType>::eps())), 
-    _gamma(_pl.get("gamma", 0.5)) // FIXME
+    _gamma(_pl.get("gamma", 0.5)), // FIXME
+    _eswitch(_pl.get("eswitch", 1e-4)) // FIXME
   {
   }
 
@@ -803,7 +806,7 @@ of the approximations gained during the previous iterations. In contrast to Kryl
     
     // working array
     std::vector<ScalarType> theta(_SMAX), vc(1);
-    std::vector<int> perm(_SMAX), iperm(_SMAX), vQ(2), vQ2;
+    std::vector<int> perm(_SMAX), iperm(_SMAX), vQ2;
     Teuchos::SerialDenseMatrix<int, ScalarType> Z(_SMAX, _SMAX), LkTrans(_nev,_nev), Rk(_nev,_nev);
     Teuchos::SerialDenseMatrix<int, ScalarType> Ztmp, *lk, *rk;
     Anasazi::Operator<ScalarType> *Ksys, *Asys;
@@ -828,7 +831,7 @@ of the approximations gained during the previous iterations. In contrast to Kryl
 
     // FIXME: why nev + 1???
     Q = MVT::Clone(*iVec, _nev+1);
-    BQ = MVT::Clone(*iVec, _nev); 
+    BQ = MVT::Clone(*iVec, _nev+1); // FIXME: WAS NOT +1
     KBQ = MVT::Clone(*iVec, _nev+1);
 
     // Instantiate the ProjectedEigenproblem component and set some of the values ...
@@ -926,6 +929,7 @@ of the approximations gained during the previous iterations. In contrast to Kryl
       _A->Apply((*Utmp), (*AUtmp));
 
       BUtmp = BU->CloneView(sublist);
+      _B->Apply(*Utmp,*BUtmp);
 
       // Update the ProjectedEigenproblem component by telling it
       // about the space increase
@@ -988,7 +992,7 @@ of the approximations gained during the previous iterations. In contrast to Kryl
       sublist[0] = _knownEV;
       Qtmp = _evecs->CloneView(sublist);
       // Qtmp = U*Z(:,1)
-      Qtmp->MvTimesMatAddMv (ScalarOne, (*Utmp), Ztmp, ScalarOne);
+      Qtmp->MvTimesMatAddMv (ScalarOne, (*Utmp), Ztmp, ScalarZero);
       // nrm  = ||Rtmp|| 
       Qtmp->MvNorm(&nrm_q);
 
@@ -1016,6 +1020,8 @@ of the approximations gained during the previous iterations. In contrast to Kryl
         sublist[0] = _knownEV;
         // FIXME: evecs or Q??
         Qtmp = _evecs->CloneView(sublist);
+        // FIXME: WHAT WAS THAT???
+#if 0
         BQtmp = BQ->CloneView(sublist);
         KBQtmp = KBQ->CloneView(sublist);
 
@@ -1026,6 +1032,7 @@ of the approximations gained during the previous iterations. In contrast to Kryl
           _B->Apply((*Qtmp), (*BQtmp));
         else
           BQtmp->SetBlock(*Qtmp, sublist);
+#endif
 
         (*_evals)[_knownEV] = theta[conv];
         _normR[_knownEV] = nrm[0];
@@ -1034,44 +1041,54 @@ of the approximations gained during the previous iterations. In contrast to Kryl
         if (_knownEV == _nev) break;
         conv++;
 
-        if (_haveKinv) { //Kinv!=I //Annahme _Kinv!=I, wenn gesetzt
-          sublist[0]=_knownEV-1;
-          KBQ->SetBlock(*KBQtmp, sublist); //_Qk=[_Qk _qk]
+        BQtmp=BQ->CloneView(sublist);
+        if (_B.get() != 0) _B->Apply((*Qtmp), (*BQtmp));
+        else BQtmp->SetBlock(*Qtmp, sublist);
 
-          if (_knownEV==1) {
-            LkTrans(0,0)=(ScalarType)1;
-            BQtmp->MvDot(*KBQtmp, &vc);
-            Rk(0,0)=vc[0];
-          } else {
-            lk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, LkTrans[_knownEV-1], LkTrans.stride(), _knownEV-1, 1); //(*)
-            vQ2.resize(_knownEV-1);
-            for (int i=0; i<_knownEV-1; i++) vQ2[i]=i;
-            h=KBQ->CloneView(vQ2); //(*)
-            BQtmp->MvTransMv((ScalarType)1, *h, *lk);
-            delete(h); //(#)
-
-            blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, lk->numRows(), lk->numCols(), (ScalarType)1, Rk.values(), Rk.stride(), lk->values(), lk->stride());
-
-            rk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, Rk[_knownEV-1], Rk.stride(), _knownEV-1, 1); //(*)
-            h=KBQ->CloneView(vQ2); //(*)
-            KBQtmp->MvTransMv((ScalarType)1, *h, *rk);
-            delete(h); //(#)
-
-            blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, rk->numRows(), rk->numCols(), (ScalarType)1, LkTrans.values(), LkTrans.stride(), rk->values(), rk->stride());
-
-            BQtmp->MvDot(*KBQtmp, &vc);
-            ScalarType rho=vc[0];
-            Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType> (1,1);
-            H->multiply(Teuchos::TRANS, Teuchos::NO_TRANS, (ScalarType)1, *lk, *rk, (ScalarType)0); //rho+=lk*rk
-            rho-=(*H)(0,0);
-            delete(H);
-            delete(lk);
-            delete(rk);
-
-            LkTrans(_knownEV-1,_knownEV-1)=Teuchos::ScalarTraits<ScalarType>::one(); //_Lk:=[Lk 0; lk^T 1]
-
-            Rk(_knownEV-1,_knownEV-1)=rho; //Rk:=[Rk rk; 0 rho]
-          }
+        //if (_haveKinv) { //Kinv!=I //Annahme _Kinv!=I, wenn gesetzt
+        if (!_Prec.get()) {
+                sublist[0]=_knownEV-1;
+		KBQtmp=KBQ->CloneView(sublist);
+		_Prec->Apply(*BQtmp, *KBQtmp);
+		KBQ->SetBlock(*KBQtmp, sublist); //_Qk=[_Qk _qk]
+			
+		if (_knownEV==1) {
+			LkTrans(0,0)=(ScalarType)1;
+			//printf("qk:\n");
+			//KBQtmp->MvPrint(std::cout);
+			//printf("qb:\n");
+			//BQtmp->MvPrint(std::cout);
+			BQtmp->MvDot(*KBQtmp, &vc);
+			Rk(0,0)=vc[0];
+		} else {
+			lk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, LkTrans[_knownEV-1], LkTrans.stride(), _knownEV-1, 1); //(*)
+			vQ2.resize(_knownEV-1);
+			for (int i=0; i<_knownEV-1; i++) vQ2[i]=i;
+			h=KBQ->CloneView(vQ2); //(*)
+			BQtmp->MvTransMv((ScalarType)1, *h, *lk);
+			delete(h); //(#)
+						
+			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, lk->numRows(), lk->numCols(), (ScalarType)1, Rk.values(), Rk.stride(), lk->values(), lk->stride());
+			
+			rk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, Rk[_knownEV-1], Rk.stride(), _knownEV-1, 1); //(*)
+			h=KBQ->CloneView(vQ2); //(*)
+			KBQtmp->MvTransMv((ScalarType)1, *h, *rk);
+			delete(h); //(#)
+			
+			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, rk->numRows(), rk->numCols(), (ScalarType)1, LkTrans.values(), LkTrans.stride(), rk->values(), rk->stride());
+			
+			BQtmp->MvDot(*KBQtmp, &vc);
+			ScalarType rho=vc[0];
+			Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType> (1,1);
+			H->multiply(Teuchos::TRANS, Teuchos::NO_TRANS, (ScalarType)1, *lk, *rk, (ScalarType)0); //rho+=lk*rk
+			rho-=(*H)(0,0);
+			delete(H);
+			delete(lk);
+			delete(rk);
+			
+			LkTrans(_knownEV-1,_knownEV-1)=Teuchos::ScalarTraits<ScalarType>::one(); //_Lk:=[Lk 0; lk^T 1]			
+			Rk(_knownEV-1,_knownEV-1)=rho; //Rk:=[Rk rk; 0 rho]
+		}
         }
         // Ztmp = Z(:,conv)
         for(int i=0; i<SearchSpaceDim; ++i) {Ztmp[0][i] = Z[conv][i];}
@@ -1112,16 +1129,15 @@ of the approximations gained during the previous iterations. In contrast to Kryl
         }
       }
 
+      //TARGET SWITCH
+      if (nrm[0]<_eswitch) sigma=theta[0];
+      else sigma=_TARGET;
+
       // ====================================================== //
       // Compute the residuals of the best blockSize eigenpair  //
       // approximations and precondition them, i.e. compute the //
       // new search space directions                            //
       // ====================================================== //
-      
-      // - projector
-      // - implicit matrix A - \sigma B
-      // - Krylov solver
-      // - Preconditioner (???)
       
       Ztmp.shape(SearchSpaceDim,1);
 
@@ -1145,8 +1161,11 @@ of the approximations gained during the previous iterations. In contrast to Kryl
         for(int i=0; i<SearchSpaceDim; ++i) {Ztmp[0][i] = Z[conv+j][i];}
         // Qtmp = AU*Z(:,1)
         Qtmp->MvTimesMatAddMv (ScalarOne, (*AUtmp), Ztmp, ScalarZero);
+        //FIXME with the following??
+        if (_B.get()) _B->Apply((*Qtmp), (*BQtmp));
+        else BQtmp->SetBlock(*Qtmp, sublist);
         // Qtmp = Qtmp - theta[0]*AU*Z(:,1)
-        Qtmp->MvTimesMatAddMv (-theta[conv+j], (*BUtmp), Ztmp, ScalarOne);
+        //Qtmp->MvTimesMatAddMv (-theta[conv+j], (*BUtmp), Ztmp, ScalarOne);
 
         if (_Prec.get() != 0)
           _Prec->Apply((*Qtmp), (*Rtmp));
@@ -1158,84 +1177,117 @@ of the approximations gained during the previous iterations. In contrast to Kryl
 	vQ2.resize(_knownEV+1);
 	for (int i=0; i<=_knownEV; i++) vQ2[i]=i;
 	//Qtmp2=_evecs->CloneView(vQ2);
-	Qtmp2 = Q->CloneView(sublist);
+	Qtmp2 = Q->CloneView(vQ2);
 	BQtmp2=BQ->CloneView(vQ2);
 	
         // FIXME: Ksys is never deleted!
-	if (!_haveKinv) 
+	if (!_Prec.get()) 
         {
 		Ksys=new JacDavOp1<ScalarType,MV>(*Qtmp2, *BQtmp2); //Ksys:=I-Q*Qb^(T)
         } else 
         {
-          KBQtmp2=KBQ->CloneView(vQ2); //(*)
+		sublist[0]=_knownEV;
+		_Prec->Apply(*BQtmp, *KBQtmp);
+		KBQtmp2=KBQ->CloneView(vQ2); //(*)
+		
+		/*
+		printf("q:\n");
+		Qtmp->MvPrint(std::cout);
+		printf("qb:\n");
+		BQtmp->MvPrint(std::cout);
+		printf("qk:\n");
+		KBQtmp->MvPrint(std::cout);
+		*/
+		
+		if (_knownEV==0) {
+			LkTrans(0,0)=(ScalarType)1;
+			BQtmp->MvDot(*KBQtmp, &vc);
+			cout << "vc:" << vc[0] << endl;
+			Rk(0,0)=vc[0];
+		} else {
+			lk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, LkTrans[_knownEV], LkTrans.stride(), _knownEV, 1);
+			vQ2.resize(_knownEV);
+			h=KBQ->CloneView(vQ2); //(*)
+			//printf("h:\n");
+			//h->MvPrint(std::cout);
+			BQtmp->MvTransMv((ScalarType)1, *h, *lk);
+			delete(h); //(#)
+						
+			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, lk->numRows(), lk->numCols(), (ScalarType)1, Rk.values(), Rk.stride(), lk->values(), lk->stride());
+			
+			rk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, Rk[_knownEV], Rk.stride(), _knownEV, 1);
+			h=BQ->CloneView(vQ2); //(*)
+			KBQtmp->MvTransMv((ScalarType)1, *h, *rk);
+			delete(h); //(#)
+		
+			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, rk->numRows(), rk->numCols(), (ScalarType)1, LkTrans.values(), LkTrans.stride(), rk->values(), rk->stride());
+			
+			BQtmp->MvDot(*KBQtmp, &vc);
+			ScalarType rho=vc[0];
+			Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType> (1,1);
+			H->multiply(Teuchos::TRANS, Teuchos::NO_TRANS, (ScalarType)1, *lk, *rk, (ScalarType)0); //rho+=lk*rk
+			rho-=(*H)(0,0);
+			delete(H);
+			delete(rk);
+			delete(lk);
 
-          if (_knownEV==0) {
-            LkTrans(0,0)=(ScalarType)1;
-            BQtmp->MvDot(*KBQtmp, &vc);
-            Rk(0,0)=vc[0];
-          } else {
-            lk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, LkTrans[_knownEV], LkTrans.stride(), _knownEV, 1);
-            vQ2.resize(_knownEV);
-            h=KBQ->CloneView(vQ2); //(*)
-            BQtmp->MvTransMv((ScalarType)1, *h, *lk);
-            delete(h); //(#)
+			LkTrans(_knownEV,_knownEV)=Teuchos::ScalarTraits<ScalarType>::one(); //_Lk:=[Lk 0; lk^T 1]
+			Rk(_knownEV,_knownEV)=rho; //Rk:=[Rk rk; 0 rho]
+		}
+		
+		Teuchos::SerialDenseMatrix<int,ScalarType> *LkTransView=new Teuchos::SerialDenseMatrix<int,ScalarType> (Teuchos::View, LkTrans.values(), LkTrans.stride(), _knownEV+1, _knownEV+1);
+		
+		Teuchos::SerialDenseMatrix<int,ScalarType> *RkView=new Teuchos::SerialDenseMatrix<int,ScalarType> (Teuchos::View, Rk.values(), Rk.stride(), _knownEV+1, _knownEV+1);
+	
+		/*
+		printf("Qk:\n");
+		KBQtmp2->MvPrint(std::cout);
+		printf("LkTrans:\n");
+		LkTransView->print(std::cout);
+		printf("Rk:\n");
+		RkView->print(std::cout);
+		printf("Qb:\n");
+		BQtmp2->MvPrint(std::cout);
+		*/
+	
+		Ksys=new JacDavOp4<ScalarType,MV,OP>(*KBQtmp2, *LkTransView, *RkView, *BQtmp2, _Prec); //Ksys:=(I-Qk*(Lk*Rk)^(-1)*Qb^(T))*K^(-1)
 
-            blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, lk->numRows(), lk->numCols(), (ScalarType)1, Rk.values(), Rk.stride(), lk->values(), lk->stride());
-
-            rk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, Rk[_knownEV], Rk.stride(), _knownEV, 1); //.shapeUninitialized(n-1,1);
-            h=BQ->CloneView(vQ2); //(*)
-            KBQtmp->MvTransMv((ScalarType)1, *h, *rk);
-            delete(h); //(#)
-
-            blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, rk->numRows(), rk->numCols(), (ScalarType)1, LkTrans.values(), LkTrans.stride(), rk->values(), rk->stride());
-
-            BQtmp->MvDot(*KBQtmp, &vc);
-            ScalarType rho=vc[0];
-            Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType> (1,1);
-            H->multiply(Teuchos::TRANS, Teuchos::NO_TRANS, (ScalarType)1, *lk, *rk, (ScalarType)0); //rho+=lk*rk
-            rho-=(*H)(0,0);
-            delete(H);
-
-            //FIXME: kann ich eventuell wegrationalisieren, wenn ich Matrix am Anfang auf 0 setze		
-            LkTrans(_knownEV,_knownEV)=Teuchos::ScalarTraits<ScalarType>::one(); //_Lk:=[Lk 0; lk^T 1]
-            Rk(_knownEV,_knownEV)=rho; //Rk:=[Rk rk; 0 rho]
-          }
-
-          Teuchos::SerialDenseMatrix<int,ScalarType> *LkTransView=new Teuchos::SerialDenseMatrix<int,ScalarType> (Teuchos::View, LkTrans.values(), LkTrans.stride(), _knownEV+1, _knownEV+1);
-
-          Teuchos::SerialDenseMatrix<int,ScalarType> *RkView=new Teuchos::SerialDenseMatrix<int,ScalarType> (Teuchos::View, Rk.values(), Rk.stride(), _knownEV+1, _knownEV+1);
-
-          //FIXME: entweder LkRkinv berechnen oder Operator der Gleichungssysteme loest		
-          Ksys=new JacDavOp4<ScalarType,MV,OP>(*KBQtmp2, *LkTransView, *RkView, *BQtmp2, _Prec); //Ksys:=(I-Qk*(Lk*Rk)^(-1)*Qb^(T))*K^(-1)
         }
 
-	Asys=new JacDavOp2<ScalarType, MV, OP>(*BQtmp2, *Qtmp2, _A, sigma, _B); //Asys:=(I-Qb*Q^(T))*(_A-_sigma*_B)
+	Asys=new JacDavOp2<ScalarType, MV, OP>(*BQtmp2, *Qtmp2, _A, _TARGET, _B); //Asys:=(I-Qb*Q^(T))*(_A-_sigma*_B) //FIXME:tau bzw. sigma
+
 	
 	Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType>();
 	H->shapeUninitialized(_knownEV + 1,1);
 
 	Rtmp->MvTransMv(ScalarOne, *Qtmp2, *H);
 	MV * r=Rtmp->CloneCopy();
-	r->MvTimesMatAddMv(ScalarOne, *BQtmp2, *H, (ScalarType)-1); //r:=-(I-Qb*Q^(T))*_r
+	r->MvTimesMatAddMv(ScalarOne, *BQtmp2, *H, -ScalarOne); //r:=-(I-Qb*Q^(T))*_r
 	
-	//c:=KrylovSpaceSolver(Asys, r, c, max(_gamma^(-it), _elin, Ksys, _LSIterMax)
 	GMRES<ScalarType,MV,Anasazi::Operator<ScalarType> > gmres;
 	
 	gmres.setMaxIter(_LSIterMax);
 	gmres.setTolerance(_elin); //FIXME: max(gamma^it,_elin)
-	gmres.setRestart(50); //FIXME
+	gmres.setRestart(500); //FIXME
 	
-	Rtmp->MvInit((ScalarType)0);
-
-        // FIXME
-        Rtmp->MvRandom();
+        // FIXME: Random or zero??
+        Rtmp->MvInit(0.0);
 
 	ok=gmres.solve(*Asys, *Ksys, *r, *Rtmp); 
+#if 0
+        if (ok!=Anasazi::Ok) {
+          printf("GMRES failed\n");
+          if (ok==Anasazi::Unconverged) printf("not converged\n");
+          else printf("numerical failure\n");
+        }
 	assert(ok==Anasazi::Ok); //FIXME: Fehlermeldung oder Anasazi::Failed
+#endif
       
 	
 	
+        delete Asys;
         delete Rtmp;
+        delete r;
       }
 
       delete AUtmp, BUtmp, Qtmp;
@@ -1252,7 +1304,6 @@ of the approximations gained during the previous iterations. In contrast to Kryl
         ++_numRestarts;
 
         // 
-        // FIXME: Why -1 in Sabine's code??
         purged = (SearchSpaceDim-conv) - (_SMIN-_blockSize);
 
         if (_om->doPrint()) 

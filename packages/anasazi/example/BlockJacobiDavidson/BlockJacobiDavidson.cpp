@@ -70,12 +70,12 @@ int main(int argc, char *argv[])
   int            DIM  = 100;
   ScalarType     TOL    = 1e-8;
 
-  int MAXITER = 500;
+  int MAXITER = 100;
   int NEV = 3; 
   int SMIN = 20;
   int SMAX = 30;
   // FIXME: if I set BLOCKSIZE = 2 then nothing good happens...
-  int BLOCKSIZE = 2;
+  int BLOCKSIZE = 1;
 
   // ============================================= //
   // Sets up the test problem, using the operators //
@@ -137,7 +137,6 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Anasazi::BasicSort<ScalarType, MV, OP> > MySM =
     Teuchos::rcp(new Anasazi::BasicSort<ScalarType, MV, OP>("SM"));
 
-
   // Create parameter list to pass into solver
   // FIXME: ADD PARAMTERS
   Teuchos::ParameterList MyPL;
@@ -147,6 +146,7 @@ int main(int argc, char *argv[])
   MyPL.set("Max Iters", MAXITER);
   MyPL.set("Tol", TOL);
   MyPL.set("Target", TARGET);
+  MyPL.set("Krylov: Max Iters", 1550);
 
   // Initialize the Block Jacobi-Davidson solver
   Anasazi::BlockJacobiDavidson<ScalarType, MagnitudeType, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
