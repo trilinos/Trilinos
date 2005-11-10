@@ -19,57 +19,26 @@ extern "C" {
 #include <stdlib.h>
 #include "phg.h"
 
-/* Flags indicating how pmatching_ipm should work.
-   These flags can be removed after we decide which versions work best. 
-   For now, since we are still debugging, SPARSE_CANDIDATES is ON and 
-   USE_SUBROUNDS is OFF.  The "working" version of the code has the
-   opposite value of SPARSE_CANDIDATES, and can use either value of 
-   USE_SUBROUNDS.
-*/
-#define SPARSE_CANDIDATES
 #undef  USE_SUBROUNDS
-#define NEW_PHASE3
 
-#define CANDIDATE_INDICES           /* Generate and send candidate index. */
-
-#define NEWER_PHASE3_REDUCTION /* Use candidate index to fill master_data */
-                               /* Requires both NEW_PHASE3 and 
-                                  CANDIDATE_INDICES. */
-
-    /*
-#define _DEBUG
-    */
-    
 static ZOLTAN_PHG_MATCHING_FN pmatching_local; /* function for local matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;   /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;   /* alternating ipm */
 
-static int Zoltan_PHG_match_isolated(ZZ *zz, HGraph *hg, Matching match, 
+static void phasethreereduce (void*, void*, int*, MPI_Datatype*);
+static int Zoltan_PHG_match_isolated(ZZ* zz, HGraph* hg, Matching match, 
                                      int small_degree);
 
-/* New phase 3 not ready yet. */
-#ifdef NEW_PHASE3
-struct triplet {
-    int candidate; /* gno of candidate vertex */
-    int partner;   /* gno of best match found so far */
-    float ip;      /* total inner product between candidate and partner */
-};
+typedef struct triplet {
+    int candidate;      /* gno of candidate vertex */
+    int partner;        /* gno of best match found so far */
+    float ip;           /* total inner product between candidate and partner */
+} Triplet;
 
-static struct triplet *Tmp_Best = NULL;  /* Temp buf used in MPI_Allreduce fn */
+static Triplet *Tmp_Best = NULL;  /* Temp buf used in MPI_Allreduce fn */
 static HGraph *HG_Ptr;
 
-/* special sorting routines */
-static void quicksort_list_inc_struct (
-  struct triplet * list, int start, int end);
-static void quickpart_list_inc_struct (
-  struct triplet *list, int start, int end, int *equal, int *larger);
-/* MPI_Op merge routine */
-static void phasethreemerge(void *, void *, int *, MPI_Datatype *);
 
-#endif
-#ifdef NEWER_PHASE3_REDUCTION
-static void phasethreereduce(void *, void *, int *, MPI_Datatype *);
-#endif  /* NEWER_PHASE3_REDUCTION */
 
 /*****************************************************************************/
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
@@ -296,11 +265,7 @@ static int pmatching_alt_ipm(
                
 #define ROUNDS_CONSTANT 8     /* controls the number of candidate vertices */ 
 #define IPM_TAG        28731  /* MPI message tag, arbitrary value */
-#ifdef CANDIDATE_INDICES
 #define HEADER_COUNT    4          /* Phase 2 send buffer header size in ints */
-#else
-#define HEADER_COUNT    3          /* Phase 2 send buffer header size in ints */
-#endif  /* CANDIDATE_INDICES */
 
 /* these thresholds need to become parameters in phg - maybe ??? */
 #define PSUM_THRESHOLD 0.0    /* ignore inner products (i.p.) < threshold */
@@ -374,43 +339,42 @@ static int calc_nCandidates (int num_vtx, int procs)
  
 
 /****************************************************************************/
-/* this routine is static so that it does not create a linker symbol.       */
 static int pmatching_ipm (ZZ *zz,
   HGraph* hg,
   Matching match,
   PHGPartParams *hgp)
 {
-  int i, j, k, n, m, round, vindex, kstart, *r, *s;   /* loop counters  */
-  int lno, count, old_kstart;                    /* temp variables */
-  int candidate_gno;        /* gno of current candidate */
-  int sendcnt, sendsize, reccnt, recsize, msgsize;    /* temp variables */
-  int nRounds;         /* # of matching rounds to be performed;       */
-                       /* identical on all procs in hgc->Communicator.*/
-  int nCandidates;     /* # of candidates on this proc; identical     */
-                       /* on all procs in hgc->col_comm.              */
-  int nTotal;          /* on a given proc, total # of candidates for which
-                          to compute inner products. When using 
-                          SPARSE_CANDIDATES, nTotal may differ among procs
-                          in a column; otherwise, nTotal is the same on
-                          all procs in the communicator.  */
-  int max_nTotal;      /* max within proc column of nTotal. */
-  int total_nCandidates; /* Sum of nCandidates across row. */
-  int *send = NULL,    /* working buffers, may be reused. */
+  int i, j, k, n, m, round, vindex, kstart, *r, *s;        /* loop counters  */
+  int lno, count, old_kstart;                              /* temp variables */
+  int candidate_gno;                             /* gno of current candidate */
+  int sendcnt, sendsize, reccnt, recsize, msgsize;         /* temp variables */
+  int nRounds;                /* # of matching rounds to be performed;       */
+                              /* identical on all procs in hgc->Communicator.*/
+  int nCandidates;            /* # of candidates on this proc; identical     */
+                              /* on all procs in hgc->col_comm.              */
+  int nTotal;                 /* on a given proc, total # of candidates for
+                               which to compute inner products. When using 
+                               SPARSE_CANDIDATES, nTotal may differ among procs
+                               in a column; otherwise, nTotal is the same on
+                               all procs in the communicator.  */
+  int max_nTotal;            /* max within proc column of nTotal. */
+  int total_nCandidates;     /* Sum of nCandidates across row. */
+  int *send = NULL,          /* working buffers, may be reused. */
       *dest = NULL,
       *size = NULL,
       *rec = NULL,
       *index = NULL,
       *aux = NULL;
-  int *visit = NULL,   /* fixed usage arrays, candidate visit order */
-      *cmatch = NULL,  /* working copy of match array */
-      *select = NULL,  /* current selected candidates */
-      *permute = NULL, /* reorder of candidates after global communicatio */
-      *edgebuf = NULL; /* holds received candidates for processing */
+  int *visit = NULL,       /* fixed usage arrays, candidate visit order */
+      *cmatch = NULL,      /* working copy of match array */
+      *select = NULL,      /* current selected candidates */
+      *permute = NULL,    /* reorder of candidates after global communication */
+      *edgebuf = NULL;    /* holds received candidates for processing */
   int nSend, nDest, nSize, nRec, nIndex, nEdgebuf; /* currently allocated size
                                                       of the corresponding
                                                       working buffers */
   float bestsum;      /* holds current best inner product */
-  float *sums = NULL, /* holds inner product of one candidate for each vertex */
+  float *sums = NULL, /* holds candidate's inner products with each local vtx */
         *f = NULL;    /* used to stuff floating value into integer message */
   PHGComm *hgc = hg->comm;
   int err = ZOLTAN_OK, old_row, row;
@@ -419,22 +383,24 @@ static int pmatching_ipm (ZZ *zz,
   int bestlno, partner_gno, nselect, edge;
   int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
   int cFLAG;                    /* if set, do only a column matching, c-ipm */
-  static int timer[7] = {-1, -1, -1, -1, -1, -1, -1};
-  char *yo = "pmatching_ipm";
-#ifdef NEW_PHASE3
-  struct triplet *local_best= NULL, *global_best= NULL;
+  Triplet *local_best= NULL, *global_best= NULL;
   MPI_Op phasethreeop;
   MPI_Datatype phasethreetype;
-#endif  /* NEW_PHASE3 */
-#ifdef CANDIDATE_INDICES
   int candidate_index;
   int first_candidate_index;
-#endif  /* CANDIDATE_INDICES */
+  static int timer[7] = {-1, -1, -1, -1, -1, -1, -1};
+  char *yo = "pmatching_ipm";
   
   
   ZOLTAN_TRACE_ENTER (zz, yo);
   MACRO_TIMER_START (0, "matching setup", 0);
  
+ if (sizeof (Triplet) != 3 * sizeof (int))  {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Quadword alignment error - must fix");
+    err = ZOLTAN_FATAL;
+    goto fini;
+  }
+    
   /* this restriction may be removed later, but for now NOTE this test */
   if (sizeof(int) < sizeof(float))  {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Code must be modified before using");
@@ -444,26 +410,18 @@ static int pmatching_ipm (ZZ *zz,
 
   /* set a flag if user wants a column matching or a full matching */
   cFLAG = strcasecmp(hgp->redm_str, "c-ipm") ? 0 : 1;
-
-#ifdef NEW_PHASE3
   if (!cFLAG) {
-    MPI_Type_contiguous(sizeof(struct triplet),MPI_CHAR, &phasethreetype);
-    MPI_Type_commit(&phasethreetype);
-#ifdef NEWER_PHASE3_REDUCTION
-    MPI_Op_create(&phasethreereduce, 1, &phasethreeop);
-#else
-    MPI_Op_create(&phasethreemerge, 1, &phasethreeop);
-#endif /* NEWER_PHASE3_REDUCTION */
+    MPI_Type_contiguous (sizeof(Triplet), MPI_CHAR, &phasethreetype);
+    MPI_Type_commit (&phasethreetype);
+    MPI_Op_create (&phasethreereduce, 1, &phasethreeop);
   }
-#endif /* NEW_PHASE3 */
 
   /* determine basic working parameters */
   nRounds     = cFLAG ? ROUNDS_CONSTANT : hgc->nProc_x * ROUNDS_CONSTANT;
   nCandidates = calc_nCandidates (hg->nVtx, cFLAG ? 1 : hgc->nProc_x); 
     
   /* determine maximum number of Vtx and Pins for storage allocation.*/
-  /* determine initial sum of all candidates total_nCandidates 
-     for storage allocation. */
+  /* determine initial sum of all candidates total_nCandidates- allocation. */
   if (cFLAG)  {
     total_nCandidates = nCandidates;
     max_nVtx  = hg->nVtx;
@@ -476,9 +434,8 @@ static int pmatching_ipm (ZZ *zz,
       count = hg->dist_x[i+1]-hg->dist_x[i];  /* number of vertices on proc i */
       if (count > max_nVtx)
         max_nVtx = count;
-#ifdef CANDIDATE_INDICES
-      if (i == hgc->myProc_x) first_candidate_index = total_nCandidates;
-#endif /* CANDIDATE_INDICES */
+      if (i == hgc->myProc_x)
+        first_candidate_index = total_nCandidates;
       total_nCandidates += calc_nCandidates (count, hgc->nProc_x);
     }
   }
@@ -492,61 +449,46 @@ static int pmatching_ipm (ZZ *zz,
 
   /* These 3 buffers are REALLOC'd iff necessary; this should be very rare */
   nSend    = max_nPins;   /* nSend/nEdgebuf are used for candidate exchange   */
-  nEdgebuf = max_nPins;   /* candidates sent as
-                             <candidate_gno, #pins, pin_list>        */
-  nRec     = max_nPins;
+  nRec     = max_nPins;  
+  nEdgebuf = max_nPins;   /* list of <candidate_gno, #pins, pin_list> */
 
   if (hg->nVtx)  
-    if (!(cmatch = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
-     || !(visit  = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
-     || !(aux    = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))     
-     || !(sums   = (float*) ZOLTAN_CALLOC(hg->nVtx,  sizeof(float)))) {
+    if (!(cmatch = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
+     || !(visit  = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
+     || !(aux    = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))     
+     || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(float)))) {
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
        err = ZOLTAN_MEMERR;
        goto fini;
     }
 
   if (!cFLAG && total_nCandidates && (hgc->myProc_y == 0))   /* Master row */
-    if (!(master_data = (int*) ZOLTAN_MALLOC(3 * total_nCandidates
-                                               * sizeof(int)))
-#ifndef NEW_PHASE3
-     || !(master_procs = (int*) ZOLTAN_MALLOC(total_nCandidates * sizeof(int)))
-#else   /* NEW_PHASE3 */
-     || !(global_best = (struct triplet*) ZOLTAN_MALLOC(total_nCandidates *
-                                                       sizeof(struct triplet)))
-#ifndef NEWER_PHASE3_REDUCTION
-     || !(Tmp_Best    = (struct triplet*) ZOLTAN_MALLOC(total_nCandidates *
-                                                       sizeof(struct triplet)))
-#endif  /* !NEWER_PHASE3_REDUCTION */
-#endif
-    ) {
+    if (!(master_data=(int*)ZOLTAN_MALLOC(3*total_nCandidates*sizeof(int))) ||
+     !(global_best=(Triplet*)ZOLTAN_MALLOC(total_nCandidates*sizeof(Triplet)))){
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
        err = ZOLTAN_MEMERR;
        goto fini;
     }  
 
-#ifdef NEWER_PHASE3_REDUCTION
   if (!cFLAG && hgc->myProc_y == 0)
     for (i = 0; i < total_nCandidates; i++) {
       float *f;
       master_data[i*3] = -1;
       master_data[i*3+1] = -1;
-      f = (float *) &(master_data[i*3+2]);
-      *f = -1.;
+      f = (float*) &(master_data[i*3+2]);
+      *f = -1.0;
     }
-#endif  /* NEWER_PHASE3_REDUCTION */
 
   if (!cFLAG)
-    if (!(edgebuf     = (int*) ZOLTAN_MALLOC(nEdgebuf   * sizeof(int)))) {
+    if (!(edgebuf = (int*) ZOLTAN_MALLOC(nEdgebuf   * sizeof(int)))) {
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
        err = ZOLTAN_MEMERR;
        goto fini;
     }  
   
-  if ((total_nCandidates && !(permute = (int*) ZOLTAN_MALLOC(total_nCandidates
-                                                             * sizeof(int))))
-   || (nCandidates && !(select = (int*) ZOLTAN_MALLOC(nCandidates 
-                                                      * sizeof(int))))
+  if ((total_nCandidates 
+   && !(permute = (int*) ZOLTAN_MALLOC(total_nCandidates * sizeof(int))))
+   || (nCandidates && !(select = (int*) ZOLTAN_MALLOC(nCandidates*sizeof(int))))
    || (nSend && !(send = (int*) ZOLTAN_MALLOC(nSend * sizeof(int))))
    || !(dest = (int*) ZOLTAN_MALLOC(nDest * sizeof(int)))
    || !(size = (int*) ZOLTAN_MALLOC(nSize * sizeof(int)))
@@ -620,47 +562,29 @@ static int pmatching_ipm (ZZ *zz,
        */
       s = send;
       n = 0;
-#ifdef CANDIDATE_INDICES
       candidate_index = first_candidate_index;
-#endif  /* CANDIDATE_INDICES */
       for (i = 0; i < sendcnt; i++)   {
         lno = select[i];
         candidate_gno = VTX_LNO_TO_GNO(hg, lno);
         /* Optimization: Send only vertices that are non-empty locally */
-#ifdef SPARSE_CANDIDATES
         if ((hg->vindex[lno+1] > hg->vindex[lno]) 
-         || (candidate_gno % hgc->nProc_y == hgc->myProc_y))
-#endif  /* SPARSE_CANDIDATES */
-        {
-          n++;  /* non-empty vertex */
-          *s++ = candidate_gno;
-#ifdef CANDIDATE_INDICES
-          *s++ = candidate_index;
-#endif  /* CANDIDATE_INDICES */
-          *s++ = hg->vindex[lno+1] - hg->vindex[lno];              /* count */
-          for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
-            *s++ = hg->vedge[j];                             /* lno of edge */
+         || (candidate_gno % hgc->nProc_y == hgc->myProc_y)) {
+            n++;  /* non-empty vertex */
+            *s++ = candidate_gno;
+            *s++ = candidate_index;
+            *s++ = hg->vindex[lno+1] - hg->vindex[lno];              /* count */
+            for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
+              *s++ = hg->vedge[j];                             /* lno of edge */
         }
-#ifdef CANDIDATE_INDICES
         candidate_index++;
-#endif  /* CANDIDATE_INDICES */
       }
       sendsize = s - send;
-/*
-      uprintf(hgc, "Debug: sendsize=%d, n=%d\n", sendsize, n);
-      uprintf(hgc, "Debug: %d out of %d candidates nonempty (%g%%)\n",
-            n, sendcnt, 100.*n/sendcnt);
-*/
     
       /* determine actual global number of candidates this round */
       /* n is actual number of local non-empty vertices */
       /* nTotal is the global number of candidate vertices sent in this row */
       MPI_Allreduce (&n, &nTotal, 1, MPI_INT, MPI_SUM, hgc->row_comm);
-#ifdef SPARSE_CANDIDATES
       MPI_Allreduce (&nTotal, &max_nTotal, 1, MPI_INT, MPI_MAX, hgc->col_comm);
-#else
-      max_nTotal = nTotal;   /* All column procs has same nTotal */
-#endif
       if (max_nTotal == 0) {
         if (hgp->use_timers > 3)
            ZOLTAN_TIMER_STOP (zz->ZTime, timer[1], hg->comm->Communicator);
@@ -689,27 +613,22 @@ static int pmatching_ipm (ZZ *zz,
       /* create random permutation of index into the edge buffer */
       i = 0;
       for (j = 0 ; j < nTotal  &&  i < recsize; j++)   {
-        permute[j] = i++;             /* save index of candidate_gno 
-                                         in permute[] */
-#ifdef CANDIDATE_INDICES
-        i++;                          /* skip candidate_index */
-#endif /* CANDIDATE_INDICES */
-        count      = edgebuf[i++];    /* count of edges */
-        i += count;                   /* skip over count edges */
+        permute[j] = i++;         /* save index of candidate_gno in permute[] */
+        i++;                      /* skip candidate_index */
+        count = edgebuf[i++];     /* count of edges */
+        i += count;               /* skip over count edges */
       }
 
-      /* Communication has grouped candidates by processor, rescramble! */
+      /* Communication has grouped candidates by processor, rescramble!     */
       /* Otherwise all candidates from proc column 0 will be matched first, */
       /* Future: Instead of Zoltan_Rand_Perm_Int, we could use              */
       /* Zoltan_PHG_Vertex_Visit_Order() to reorder the candidates          */
       /* but that routine uses a local hg so won't work on the candidates.  */
       if (hgc->nProc_x > 1) {
         Zoltan_Srand_Sync(Zoltan_Rand(NULL),&(hgc->RNGState_col),hgc->col_comm);
-#ifndef SPARSE_CANDIDATES
-        /* Bob thinks the permutation causes problems in accumulating
-         * the total inner products. */
+#ifdef RTHRTH
         Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));
-#endif  /* SPARSE_CANDIDATES */
+#endif 
       }
     }                           /* DONE:  if (cFLAG) else ...  */
     MACRO_TIMER_STOP (1);
@@ -736,10 +655,8 @@ static int pmatching_ipm (ZZ *zz,
       for (k = kstart; k < nTotal; k++)  {  
         if (!cFLAG)  { 
           r     = &edgebuf[permute[k]];
-          candidate_gno = *r++;                 /* gno of candidate vertex */
-#ifdef CANDIDATE_INDICES
+          candidate_gno   = *r++;          /* gno of candidate vertex */
           candidate_index = *r++;          /* candidate_index of vertex */
-#endif  /* CANDIDATE_INDICES */
           count = *r++;                    /* count of following hyperedges */
         }
         else
@@ -788,11 +705,8 @@ static int pmatching_ipm (ZZ *zz,
         if (count == 0)
           continue;         /* no partial sums to append to message */
 
-        /* HEADER_COUNT (row, candidate_gno, candidate_index (if 
-         *               CANDIDATE_INDICES), 
-         *               count of <lno, psum> pairs 
-         *               describing non-zero partial inner products).
-         */
+        /* HEADER_COUNT (row, candidate_gno, candidate_index, count of
+         * <lno, psum> pairs describing non-zero partial inner products)  */
         msgsize = HEADER_COUNT + 2 * count;
 
 #ifndef USE_SUBROUNDS
@@ -819,11 +733,9 @@ static int pmatching_ipm (ZZ *zz,
           size[sendcnt++] = msgsize;          /* size of message */
           sendsize       += msgsize;          /* cummulative size of message */
           
-          *s++ = hgc->myProc_y;      /* save my row (for merging) */
+          *s++ = hgc->myProc_y;               /* save my row (for merging) */
           *s++ = candidate_gno;
-#ifdef CANDIDATE_INDICES
           *s++ = candidate_index;
-#endif  /* CANDIDATE_INDICES */
           *s++ = count;
           for (i = 0; i < count; i++)  {          
             *s++ = aux[i];                          /* lno of partial sum */
@@ -866,12 +778,10 @@ static int pmatching_ipm (ZZ *zz,
           index[k++] = r - rec;   /* points at candidate_gno, not row */
           old_row = row;
         }
-        candidate_gno = *r++;
-#ifdef CANDIDATE_INDICES
+        candidate_gno   = *r++;
         candidate_index = *r++;
-#endif  /* CANDIDATE_INDICES */
         count = *r++;
-        r += (count * 2);
+        r += (2 * count);
       }
      
       /* save current positions into source rows within rec buffer */
@@ -895,9 +805,7 @@ static int pmatching_ipm (ZZ *zz,
         /* merge step: look for target candidate_gno from each row's data */
         for (i = 0; i < hgc->nProc_y; i++)  {
           if (rows[i] < &rec[recsize] && *rows[i] == candidate_gno)  {       
-#ifdef CANDIDATE_INDICES
             candidate_index = *(++rows[i]);   /* skip candidate index */
-#endif  /* CANDIDATE_INDICES */
             count = *(++rows[i]);
             for (j = 0; j < count; j++)  {
               lno = *(++rows[i]);         
@@ -916,21 +824,17 @@ static int pmatching_ipm (ZZ *zz,
             count++;   
 
         /* create <candidate_gno, candidate_index (if CANDIDATE_INDICES),
-         * count of <lno,tsum> pairs, <lno, tsum>> 
-         * in send array.
-         */           
+         * count of <lno,tsum> pairs, <lno, tsum>> in send array.         */
         if (count > 0)  {
           if ( (s - send) + ((HEADER_COUNT-1) + 2 * count) > nSend ) 
           {
             sendsize = s - send;
             MACRO_REALLOC (nSend + (HEADER_COUNT-1)+2*count, nSend, send); 
-                                   /*enlarge buffer*/
+                                   /* enlarge buffer */
             s = send + sendsize;   /* since realloc buffer could move */ 
           }      
           *s++ = candidate_gno;
-#ifdef CANDIDATE_INDICES
           *s++ = candidate_index;
-#endif  /* CANDIDATE_INDICES */
           *s++ = count;
         }  
         for (i = 0; i < m; i++)   {
@@ -946,7 +850,6 @@ static int pmatching_ipm (ZZ *zz,
       sendsize = s - send;   /* size (in ints) of send buffer */
       
       /* Communicate total inner product results to MASTER ROW */
-
       MPI_Gather(&sendsize, 1, MPI_INT, size, 1, MPI_INT, 0, hgc->col_comm);
 
       if (hgc->myProc_y == 0) {
@@ -968,13 +871,12 @@ static int pmatching_ipm (ZZ *zz,
       /* Determine best vertex and best sum for each candidate */
       if (hgc->myProc_y == 0) {   /* do following only if I am the MASTER ROW */
         for (r = rec; r < rec + recsize;)  {
-          candidate_gno = *r++;                    /* candidate's GNO */
-#ifdef CANDIDATE_INDICES
-          candidate_index = *r++;                  /* candidate's index */
-#endif  /* CANDIDATE_INDICES */
-          count = *r++;                    /* count of nonzero pairs */
-          bestsum = -1.0;                  /* any negative value will do */
-          bestlno = -1;                    /* any negative value will do */
+          candidate_gno   = *r++;                    /* candidate's GNO */
+          candidate_index = *r++;                    /* candidate's index */
+
+          count = *r++;                          /* count of nonzero pairs */
+          bestsum = -1.0;                        /* any negative value will do */
+          bestlno = -1;                          /* any negative value will do */
           for (i = 0; i < count; i++)  {
             lno =          *r++;
             f   =  (float*) r++;     
@@ -992,20 +894,11 @@ static int pmatching_ipm (ZZ *zz,
                         
           if (!cFLAG && bestsum > TSUM_THRESHOLD)  {
             cmatch[bestlno] = -1;  /* mark pending match to avoid conflicts */
-/* KDDKDD -- change master_data to triplet data structure always */
-#ifdef NEWER_PHASE3_REDUCTION
+
             master_data[candidate_index*3] = candidate_gno;
             master_data[1+candidate_index*3] = VTX_LNO_TO_GNO(hg, bestlno);
             f = (float*) &(master_data[2+candidate_index*3]);
-#else  /* !NEWER_PHASE3_REDUCTION */
-            *mp++ = candidate_gno;
-            *mp++ = VTX_LNO_TO_GNO(hg, bestlno);
-            f = (float*) mp++;
-#endif  /* NEWER_PHASE3_REDUCTION */
             *f = bestsum;
-#ifndef NEW_PHASE3
-            master_procs[nmaster] = VTX_TO_PROC_X(hg, candidate_gno);
-#endif  /* !NEW_PHASE3 */
             nmaster++;
           }
         }
@@ -1021,7 +914,7 @@ static int pmatching_ipm (ZZ *zz,
     if (cFLAG)
       continue;      /* skip phases 3 and 4, continue rounds */ 
     
-#ifdef NEW_PHASE3
+
     /************************ NEW PHASE 3: ********************************/
 
     MACRO_TIMER_START (4, "Matching Phase 3", 1);
@@ -1031,17 +924,12 @@ static int pmatching_ipm (ZZ *zz,
     if (hgc->myProc_y == 0) {
 
       /* Convert master_data to array of triplets with best potential matches.*/
-      local_best = (struct triplet *) master_data;
+      local_best = (Triplet *) master_data;
 
       /* A triplet is (candidate id, best match id, and best i.p. value) */
       /* Sort by candidate's global id; this is necessary to do the
          "merge" between processors efficiently. Can we use hash instead? */
-#ifndef NEWER_PHASE3_REDUCTION
-      quicksort_list_inc_struct(local_best, 0, nmaster-1);
 
-      for (i = nmaster; i < total_nCandidates; i++)
-        local_best[i].candidate = INT_MAX;
-#endif /* !NEWER_PHASE3_REDUCTION */
 
       /* DEBUG 
       for (i=0; i<nmaster; i++){
@@ -1051,7 +939,6 @@ static int pmatching_ipm (ZZ *zz,
 
       /* User-defined Allreduce to find max over inner product values;
          this will tell us the globally best "match" for each candidate. */
-
       HG_Ptr = hg;
       MPI_Allreduce(local_best, global_best, total_nCandidates, phasethreetype,
                     phasethreeop, hgc->row_comm);
@@ -1062,16 +949,14 @@ static int pmatching_ipm (ZZ *zz,
       for (i = 0; i < total_nCandidates; i++) {
         int cproc, vproc;
         candidate_gno = global_best[i].candidate;
-#ifdef  NEWER_PHASE3_REDUCTION
+
         /* Reinitialize master_data for next round */
         master_data[i*3] = master_data[i*3+1] = -1;
         f = (float *) &(master_data[i*3+2]);
         *f = -1.;
-        if (candidate_gno == -1) continue;
-#endif  /* NEWER_PHASE3_REDUCTION */
-#ifndef NEWER_PHASE3_REDUCTION
-        if (candidate_gno == INT_MAX) break;  /* All matches are processed */
-#endif  /* !NEWER_PHASE3_REDUCTION */
+        if (candidate_gno == -1)
+          continue;
+
         partner_gno = global_best[i].partner;
         cproc = VTX_TO_PROC_X(hg, candidate_gno);
         vproc = VTX_TO_PROC_X(hg, partner_gno);
@@ -1095,90 +980,7 @@ static int pmatching_ipm (ZZ *zz,
 
     MACRO_TIMER_STOP (4);                       /* end of phase 3 */
 
-#else /* Old phase 3 and 4 */
-    /************************ PHASE 3: **********************************/
 
-    MACRO_TIMER_START (4, "Matching Phase 3", 1);   
-    
-    /* MASTER ROW only: send best results to candidates' owners */
-    if (hgc->myProc_y == 0) {
-      err = communication_by_plan (zz, nmaster, master_procs, NULL, 3,
-       master_data, &reccnt, &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
-      if (err != ZOLTAN_OK)
-        goto fini;  
-
-    /* read each message (candidate id, best match id, and best i.p.) */ 
-      for (r = rec; r < rec + 3 * reccnt; )   {
-        candidate_gno = *r++;
-        partner_gno = *r++;
-        f      = (float*) r++;
-        bestsum = *f;            
-                             
-        /* Note: ties are broken to favor local over global matches */   
-        lno =  VTX_GNO_TO_LNO(hg, candidate_gno);  
-        if ((bestsum > sums[lno]) || (bestsum == sums[lno]
-         && VTX_TO_PROC_X(hg, candidate_gno) != hgc->myProc_x
-         && VTX_TO_PROC_X(hg, partner_gno) == hgc->myProc_x))    {        
-            index[lno] = partner_gno;
-            sums[lno] = bestsum;
-        }                   
-      }
-    }
-    MACRO_TIMER_STOP (4);
-    MACRO_TIMER_START (5, "Matching Phase 4", 1);
-                                          
-    /************************ PHASE 4: ************************************/
-        
-    /* Update match array.  Send messages to off-processor matches */
-    /* fill send buffer with messages. A message is two matched gno's */
-    /* Note: match to self if inner product is below threshold */
-    s = send; 
-    sendcnt = 0;
-    if (hgc->myProc_y == 0) {
-      for (i = 0; i < nselect; i++)   {
-        int d2;
-        lno = select[i];
-        candidate_gno = VTX_LNO_TO_GNO(hg, lno);
-        partner_gno = (sums[lno] > TSUM_THRESHOLD) ? index[lno] : candidate_gno;
-        d2 = VTX_TO_PROC_X(hg, partner_gno);
-            
-        /* Matching candidate_gno to partner_gno */
-        if (d2 == hgc->myProc_x) {
-          int v1 = VTX_GNO_TO_LNO(hg, partner_gno);             
-          match[v1] = lno;
-          match[lno] = v1;
-        }                         
-        else {
-          /* set candidate match info */
-          match[lno] = -partner_gno - 1;
-          /* candidate_gno is on this processor, but partner_gno is not.  Send
-             copy to owner of partner_gno. */
-          *s++ = candidate_gno;
-          *s++ = partner_gno;
-          dest[sendcnt++] = d2;
-        }
-      }
-        
-      /* send match results only to impacted parties */
-      err = communication_by_plan (zz, sendcnt, dest, NULL, 2, send, &reccnt,
-       &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+10);
-      if (err != ZOLTAN_OK)
-        goto fini;
-
-      /* update match array with current selections */
-      /* Note: -candidate_gno-1 designates an external 
-         match as a negative number */
-      for (r = rec; r < rec + 2 * reccnt; )  {   
-        candidate_gno = *r++;
-        partner_gno = *r++;
-        match[VTX_GNO_TO_LNO(hg, partner_gno)] = -candidate_gno - 1;
-      }      
-    }
-    
-    /* update match array to the entire column */   
-    MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
-    MACRO_TIMER_STOP (5);                       /* end of phase 4 */
-#endif /* ! NEW_PHASE3 */
   }                                             /* DONE: loop over rounds */
   
   MACRO_TIMER_START (6, "Matching Cleanup", 0);
@@ -1241,14 +1043,14 @@ static int pmatching_ipm (ZZ *zz,
 
 fini:
 
-#ifdef NEW_PHASE3
+
   if (!cFLAG) {
     MPI_Op_free(&phasethreeop);
     MPI_Type_free(&phasethreetype);
     ZOLTAN_FREE(&global_best);
     ZOLTAN_FREE(&Tmp_Best);
   }
-#endif
+
 
   Zoltan_Multifree (__FILE__, __LINE__, 15, &cmatch, &visit, &sums, &send,
    &dest, &size, &rec, &index, &aux, &permute, &edgebuf, &select, &rows,
@@ -1310,40 +1112,29 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 }
 
 /***************************************************************************/
-#ifdef NEWER_PHASE3_REDUCTION
 
-static void phasethreereduce(
+/* MPI_Op for computing the maximum inner-product for each candidate */
+static void phasethreereduce (
   void *tin, 
   void *tinout, 
-  int *tnum, 
-  MPI_Datatype *mytype
-)
+  int  *tnum, 
+  MPI_Datatype *mytype)
 {
-/* MPI_Op for computing the maximum inner-product for each candidate */
-
-int num = *tnum;
-struct triplet *in = (struct triplet *) tin;
-struct triplet *inout = (struct triplet *) tinout;
-int i;
+  int num = *tnum;
+  Triplet *in    = (Triplet*) tin;
+  Triplet *inout = (Triplet*) tinout;
+  int i;
 
   for (i = 0; i < num; i++) {
-
     if (in[i].candidate == -1 && inout[i].candidate == -1) 
-      /* No values set for this candidate */
-      continue;
+      continue;                         /* No values set for this candidate */
 
-    if (in[i].ip > inout[i].ip) {
-      /* in has larger inner product */
-      inout[i] = in[i];
-    }
-    else if (inout[i].ip > in[i].ip) {
-      /* inout already has larger inner product */
-      /* Don't need to do anything */
-    }
-    else { /* IP TIE */
-      int in_proc = VTX_TO_PROC_X(HG_Ptr, in[i].partner);
-      int inout_proc = VTX_TO_PROC_X(HG_Ptr, inout[i].partner);
-      int cand_proc = VTX_TO_PROC_X(HG_Ptr, in[i].candidate);
+    if (in[i].ip > inout[i].ip)
+      inout[i] = in[i];                 /* in has larger inner product */
+    else if (in[i].ip == inout[i].ip) {
+      int in_proc    = VTX_TO_PROC_X (HG_Ptr, in[i].partner);
+      int inout_proc = VTX_TO_PROC_X (HG_Ptr, inout[i].partner);
+      int cand_proc  = VTX_TO_PROC_X (HG_Ptr, in[i].candidate);
 
       /* Give preference to partners on candidate's processor */
       if (((in_proc == cand_proc) && (inout_proc == cand_proc))
@@ -1351,181 +1142,16 @@ int i;
         /* Both partners are on candidate's proc OR
            neither partner is on candidate's proc.
            Break ties by larger partner gno. */
-        if (in[i].partner > inout[i].partner) {
+        if (in[i].partner > inout[i].partner)
           inout[i] = in[i];
-        }
-        else {
-          /* Don't need to do anything here; 
-           * inout already has the better value 
-           */
-        }
       }
       else if (in_proc == cand_proc) {
-        /* Give preference to local partner */
-        inout[i] = in[i];
+        inout[i] = in[i];   /* Give preference to local partner */
       }
-      else /* inout_proc == cand_proc */ {
-        /* Don't need to do anything here; inout already has the better value */
-      } 
     } 
   }
 }
-#endif  /* NEWER_PHASE3_REDUCTION */
 
-#ifdef NEW_PHASE3
-
-static void phasethreemerge(
-  void *tin, 
-  void *tinout, 
-  int *tnum, 
-  MPI_Datatype *mytype
-)
-{
-/* MPI_Op for merging lists of triplets 
- * Assuming in and inout are sorted by candidate number.
- * Number of valid entries in each array is <= num.
- * Non-valid entries have candidate number INT_MAX; they are grouped
- * at the end of the arrays.
- * This function merges in and inout such that the output
- * array is sorted by candidate number and the largest inner product
- * value is chosen for each candidate.
- * Upon conclusion of the Allreduce, there will be num valid entries
- * in inout.
- */
-
-int num = *tnum;
-struct triplet *in = (struct triplet *) tin;
-struct triplet *inout = (struct triplet *) tinout;
-int i, o, t;  /* Position indices for in, inout, and Tmp_Best */
-int j;
-
-  i = o = t = 0;
-  while (i < num && o < num) {
-
-    /* Copy in candidates that are smaller than current inout candidate */
-    while ((i < num) && (in[i].candidate < inout[o].candidate)) {
-      Tmp_Best[t] = in[i];
-      t++; i++;
-    }
-
-    /* If reached end of in list, break. */
-    if (i == num) break;
-
-    /* Copy inout candidates that are smaller than current in candidate */
-    while ((o < num) && (inout[o].candidate < in[i].candidate)) {
-      Tmp_Best[t] = inout[o];
-      t++; o++;
-    } 
-   
-    /* If reached end of inout list, break. */
-    if (o == num) break;
-    
-    /* If reached end of valid values in both lists, break. */
-    if ((in[i].candidate == INT_MAX) && (inout[o].candidate == INT_MAX)) break;
-
-    /* If both lists contain the same candidate... */
-    if (in[i].candidate == inout[o].candidate) {
-      Tmp_Best[t].candidate = in[i].candidate;
-      if (in[i].ip > inout[o].ip) {
-        /* in has larger inner product */
-        Tmp_Best[t].ip = in[i].ip;
-        Tmp_Best[t].partner = in[i].partner;
-      }
-      else if (inout[o].ip > in[i].ip) {
-        /* inout has larger inner product */
-        Tmp_Best[t].ip = inout[o].ip;
-        Tmp_Best[t].partner = inout[o].partner;
-      }
-      else { /* IP TIE */
-        int in_proc = VTX_TO_PROC_X(HG_Ptr, in[i].partner);
-        int inout_proc = VTX_TO_PROC_X(HG_Ptr, inout[o].partner);
-        int cand_proc = VTX_TO_PROC_X(HG_Ptr, in[i].candidate);
-
-        /* Give preference to partners on candidate's processor */
-        if (((in_proc == cand_proc) && (inout_proc == cand_proc))
-         || ((in_proc != cand_proc) && (inout_proc != cand_proc))) {
-          /* Both partners are on candidate's proc OR
-             neither partner is on candidate's proc.
-             Break ties by larger partner gno. */
-          if (in[i].partner > inout[o].partner) {
-            Tmp_Best[t].ip = in[i].ip;
-            Tmp_Best[t].partner = in[i].partner;
-          }
-          else {
-            Tmp_Best[t].ip = inout[o].ip;
-            Tmp_Best[t].partner = inout[o].partner;
-          }
-        }
-        else if (in_proc == cand_proc) {
-          /* Give preference to local partner */
-          Tmp_Best[t].ip = in[i].ip;
-          Tmp_Best[t].partner = in[i].partner;
-        }
-        else /* inout_proc == cand_proc */ {
-          /* Give preference to local partner */
-          Tmp_Best[t].ip = inout[o].ip;
-          Tmp_Best[t].partner = inout[o].partner;
-        }
-      } 
-      t++; i++; o++;
-    } 
-  }
-
-  /* Copy valid extras from end of arrays. */
-  while ((i < num) && (in[i].candidate != INT_MAX)) {
-    Tmp_Best[t] = in[i];
-    t++; i++;
-  }
-  while ((o < num) && (inout[o].candidate != INT_MAX)) {
-    Tmp_Best[t] = inout[o];
-    t++; o++;
-  }
-
-  /* Copy result back into inout */
-  for (j = 0; j < t; j++)
-    inout[j] = Tmp_Best[j];
-}
-
-
-
-
-/* Sorting structs in increasing order. Criteria is first field in a struct. */
-/* Note: Customized for 'struct triplet'. C does not have templates! */
-static void quickpart_list_inc_struct (
-  struct triplet *list, int start, int end, int *equal, int *larger)
-{
-  int i, key;
-  struct triplet temp;
-
-  key = list ? list[(end+start)/2].candidate: 1;
-
-  *equal = *larger = start;
-  for (i = start; i <= end; i++)
-    if (list[i].candidate < key) {
-       temp              = list[i];
-       list[i]           = list[*larger];
-       list[(*larger)++] = list[*equal];
-       list[(*equal)++]  = temp;
-    }
-    else if (list[i].candidate == key) {
-       temp              = list[i];
-       list[i]           = list[*larger];
-       list[(*larger)++] = temp;
-    }
-}
-
-
-static void quicksort_list_inc_struct (struct triplet * list, int start, int end)
-{
-  int  equal, larger;
-
-  if (start < end) {
-     quickpart_list_inc_struct (list, start, end, &equal, &larger);
-     quicksort_list_inc_struct (list, start, equal-1);
-     quicksort_list_inc_struct (list, larger,end);
-  }
-}
-#endif  /* NEW_PHASE3 */
 
 #undef MACRO_REALLOC
 #undef MACRO_TIMER_START
