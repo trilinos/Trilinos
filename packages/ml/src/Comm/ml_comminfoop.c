@@ -406,11 +406,11 @@ int ML_CommInfoOP_Clone(ML_CommInfoOP **newone, ML_CommInfoOP *oldone)
 {
    int i, *neighbors;
 
-   if (oldone == NULL) 
-   {
+   if (oldone == NULL)    {
       *newone = NULL;
       return(0);
    }
+
    neighbors =(int *) ML_allocate((oldone->N_neighbors+1)*sizeof(int));
    if ( neighbors == NULL) 
    {
@@ -1156,6 +1156,79 @@ void ML_exchange_bdry(double x[], ML_CommInfoOP *comm_info, int start_location,
   comm_info->time += (GetClock() - t0);
 #endif
 } /* ML_exchange_bdry */
+
+void ML_exchange_Blocks(double **blockdata, double *ghostblocks, 
+                        ML_CommInfoOP *comm_info, ML_Comm *comm, int Size)
+{
+
+  double          *send_buf, *tempv;
+  int              type, N_neighbors, *temp, i, j, k, rtype;
+  int             count, kk;
+  USR_REQ         *request;
+  ML_NeighborList *neighbor;
+
+  printf("I don't believe this routine actually works yet.\n");
+  if (comm_info == NULL) return;
+  N_neighbors = comm_info->N_neighbors;
+  if (N_neighbors == 0) return;
+
+  /* Set up send messages: Gather send unknowns from blockdata */
+
+  if ( N_neighbors > 0 ) {
+     request = (USR_REQ  *)  ML_allocate(N_neighbors*sizeof(USR_REQ ));
+  } else request = NULL;
+
+  type = 2005;
+
+  /* post receives for all messages */
+
+  count = 0;
+  for (i = 0; i < N_neighbors; i++) {
+    neighbor = &(comm_info->neighbors[i]);
+    rtype = type;   j = sizeof(double)* neighbor->N_rcv*Size;
+    comm->USR_irecvbytes((void *) &(ghostblocks[count]), (unsigned int)j, 
+		&(neighbor->ML_id), &rtype, comm->USR_comm, request+i);
+    count += (neighbor->N_rcv*Size);
+  }
+
+
+  /* write out all messages */
+
+  for (i = 0; i < N_neighbors; i++) {
+    neighbor = &(comm_info->neighbors[i]);
+    j = sizeof(double)* neighbor->N_send*Size;
+    send_buf = (double *)  ML_allocate(j);
+    count = 0;
+    temp = comm_info->neighbors[i].send_list;
+
+    for (k = 0; k < neighbor->N_send; k++) {
+       for (kk = 0; kk < Size; kk++) {
+	          send_buf[count++] = blockdata[ temp[k] ][kk];
+        }
+    }
+
+#ifdef out
+    comm->USR_sendbytes((void *) send_buf, (unsigned) j, neighbor->ML_id, 
+                          rtype, comm->USR_comm);
+#endif
+    if (send_buf != NULL) ML_free(send_buf);
+  }
+
+  /* wait for all messages */
+  count = 0;
+  for (i = 0; i < N_neighbors; i++) {
+    neighbor = &(comm_info->neighbors[i]);
+    rtype = type;   j = sizeof(double)* neighbor->N_rcv*Size;
+    comm->USR_cheapwaitbytes((void *) &(ghostblocks[count]), 
+                             (unsigned int) j, &(neighbor->ML_id),
+                             &rtype, comm->USR_comm, request+i);
+    count += (neighbor->N_rcv*Size);
+  }
+  if ( N_neighbors > 0 ) ML_free(request);
+
+}
+
+
 
 int ML_CommInfoOP_Compute_TotalRcvLength(ML_CommInfoOP *comm_info)
 {

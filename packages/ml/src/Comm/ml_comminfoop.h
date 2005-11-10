@@ -119,6 +119,9 @@ extern void ML_create_unique_id(int N_local, int **map, ML_CommInfoOP *, ML_Comm
 extern void ML_cheap_exchange_bdry(double dtemp[], ML_CommInfoOP *comm_info,
                                    int start_location, int total_send,
                                    ML_Comm *comm);
+void ML_exchange_Blocks(double **blockdata, double *ghostblocks, 
+                        ML_CommInfoOP *comm_info, ML_Comm *comm, int);
+
 extern void ML_exchange_bdry(double dtemp[], ML_CommInfoOP *comm_info,
                              int start_location, ML_Comm *comm,
                              int overwrite_or_add, ML_Comm_Envelope *envelope);
