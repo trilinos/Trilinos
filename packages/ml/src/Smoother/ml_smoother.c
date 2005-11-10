@@ -104,23 +104,17 @@ int ML_dgetrs_trans_special(int blocksize, double *ablock, int *ipiv, double *co
 
   int ii, jj, pivot;
   double tmp;
-  static int count = 0;
     
-  printf("count is %d\n",count); 
   ablock = &(ablock[blocksize*blocksize]); ablock--;
 
   /* Solve U^T*X = CORREC, overwriting CORREC with X. */
 
-  if (count == 12) {printf("things %d %u %u\n",blocksize,ablock,correc); fflush(stdout); }
     for (ii = 0; ii < blocksize ; ii++) {
-      if (count == 12) {printf("%d, these are %e \n",ii,correc[ii]); fflush(stdout); }
-      if (count == 12) {printf("%d, these are %e \n",ii,*ablock); fflush(stdout); }
       correc[ii] /= (*ablock--);
       for (jj = blocksize-1; jj > ii ; jj--) {
         correc[jj] -= (*ablock--)*correc[ii];
       }
     }
-    if (count == 12) {printf("first phase\n"); fflush(stdout); }
 
     /* Solve L^T*X = CORREC, overwriting CORREC with X. */
 
@@ -138,7 +132,6 @@ int ML_dgetrs_trans_special(int blocksize, double *ablock, int *ipiv, double *co
       correc[   ii] = correc[pivot];
       correc[pivot] = tmp;
     }
-count++;
     return 0;
 } 
 
