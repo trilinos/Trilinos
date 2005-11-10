@@ -39,8 +39,8 @@ FARG                    = farg_typical
 MPI_LIB			= -lmpi
 MPI_LIBPATH		= -L/usr/lib
 
-PARMETIS_LIBPATH 	= -L/home/kddevin/ParMETIS3
-PARMETIS_INCPATH 	= -I/home/kddevin/ParMETIS3
+PARMETIS_LIBPATH 	= -L/home/kddevin/ParMETIS3_1
+PARMETIS_INCPATH 	= -I/home/kddevin/ParMETIS3_1
 
 #JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/alpha/lib
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
