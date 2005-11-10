@@ -859,7 +859,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
      Ptemp = ML_Operator_Create(Amat->comm);
      ML_2matmult(Amat, Pmatrix, Ptemp, ML_CSR_MATRIX );
-     ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs,1,1);
+     ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs,1,1, Amat);
      ML_Operator_Add(Pmatrix,Ptemp, &(ml->Pmat[clevel]),ML_CSR_MATRIX,
 		     -ag->smoothP_damping_factor / max_eigen);
      ML_Operator_Destroy(&Ptemp);
@@ -3014,7 +3014,6 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 /* function for advancing to the next coarser level with coarse level        */
 /* number larger than the fine levels                                        */
 /* ------------------------------------------------------------------------- */
-
 int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
 {
   ML_Operator *Amat;
@@ -3128,7 +3127,8 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
  */
 
 int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
-		 int blk_size, int transposeD, int transposePtemp)
+		 int blk_size, int transposeD, int transposePtemp,
+		 ML_Operator *Amatrix)
 /* tranposeD indicates whether we want to do inv(D) or inv(D^T) */
 /* transposePtemp indicates whether we need to first transpose the
    matrix so that the columns become the rows (and then later transpose
@@ -3149,7 +3149,8 @@ int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
   double **blockdata;
   char N[2];
   /*unsigned int   itmp=0;*/
-  int info, one = 1;
+  int info, one = 1, NghostBlocks;
+  double **ExpandedBlockData = NULL, *ghostblocks = NULL;
 
 
   if (transposePtemp == 1) {
@@ -3222,17 +3223,85 @@ int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
      if (transposeD == 1) strcpy(N,"T");
      else strcpy(N,"N");
 
-     for (i = 0; i < Rtemp->outvec_leng; i++) {
-       for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += blk_size) {
-	 block  = (csr_data->columns[j])/blk_size;
-	 /*MLFORTRAN(dgetrs)(N,&blk_size,&one,blockdata[block],&blk_size,*/
-	 DGETRS_F77(N,&blk_size,&one,blockdata[block],&blk_size,
-			   perms[block], &(values[j]),
-			   &blk_size, &info);
-			   /*&blk_size, &info, itmp);*/
-	 if ( info != 0 ) {
-	   printf("dgetrs returns with %d at block %d\n",info,i); 
-	   exit(1);
+     if (transposeD == 1) { /* inv(A^T) */
+
+       if (Rtemp->comm->ML_nprocs > 1) {
+	 /* Since we are scaling the columns, we must communicate */
+	 /* the block diagonals. To do this, we will first        */
+	 /* create an amalgamated communication list. Then, we    */
+	 /* will exchange the block diagonals.                    */
+
+	 ML_Operator_AmalgamateAndDropWeak(Amatrix, blk_size, 0.0);
+	 NghostBlocks = ML_CommInfoOP_Compute_TotalRcvLength(
+                             Amatrix->getrow->pre_comm);
+	 ghostblocks = (double *) ML_allocate(sizeof(double)*blk_size*
+					      blk_size*NghostBlocks);
+	 ML_exchange_Blocks(blockdata, ghostblocks, Amatrix->getrow->pre_comm,
+	                    Amatrix->comm, blk_size*blk_size);
+
+	 ExpandedBlockData = (double **) ML_allocate(sizeof(double *)*
+	                    (Amatrix->invec_leng+NghostBlocks+1));
+         for (i = 0; i < Amatrix->invec_leng; i++) 
+	     ExpandedBlockData[i] = blockdata[i];
+
+	 for (i = 0; i < NghostBlocks; i++) 
+	     ExpandedBlockData[i+Amatrix->invec_leng] = 
+                       &(ghostblocks[i*blk_size*blk_size]);
+	 ML_Operator_UnAmalgamateAndDropWeak(Amatrix, blk_size, 0.0);
+       }
+
+       if (mls_widget->block_scaling->optimized == 1) {
+	 /* To use the opitmized version, ML_permute_for_dgetrs_special() */
+	 /* must be called after the factorization was computed.          */
+
+	 for (i = 0; i < Rtemp->outvec_leng; i++) {
+	   for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += blk_size) {
+	     block  = (csr_data->columns[j])/blk_size;
+	     ML_dgetrs_trans_special(blk_size, blockdata[block], perms[block], 
+				     &(values[j]));
+	   }
+	 }
+       }
+       else {  /* unoptimized version of inv(A^T)  */
+	 for (i = 0; i < Rtemp->outvec_leng; i++) {
+	   for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += blk_size) {
+	     block  = (csr_data->columns[j])/blk_size;
+	     DGETRS_F77(N,&blk_size,&one,blockdata[block],&blk_size,
+	                perms[block], &(values[j]),
+			&blk_size, &info);
+	     if ( info != 0 ) {
+	       printf("dgetrs returns with %d at block %d\n",info,i); 
+	       exit(1);
+	     }
+	   }
+	 }
+       }
+     }
+     else {  /* inv(A) */
+       if (mls_widget->block_scaling->optimized == 1) {
+	 /* To use the opitmized version, ML_permute_for_dgetrs_special() */
+	 /* must be called after the factorization was computed.          */
+
+	 for (i = 0; i < Rtemp->outvec_leng; i++) {
+	   for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += blk_size) {
+	     block  = (csr_data->columns[j])/blk_size;
+	     ML_dgetrs_special(blk_size, blockdata[block], perms[block], 
+			       &(values[j]));
+	   }
+	 }
+       }
+       else { /* unoptimized version of inv(A) */
+	 for (i = 0; i < Rtemp->outvec_leng; i++) {
+	   for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += blk_size) {
+	     block  = (csr_data->columns[j])/blk_size;
+	     DGETRS_F77(N,&blk_size,&one,blockdata[block],&blk_size,
+	                perms[block], &(values[j]),
+			&blk_size, &info); 
+	     if ( info != 0 ) {
+	       printf("dgetrs returns with %d at block %d\n",info,i); 
+	       exit(1);
+	     }
+	   }
 	 }
        }
      }
@@ -3259,6 +3328,11 @@ int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
      }
      else {
        Ptemp->data = csr_data;
+     }
+
+
+     if (ghostblocks != NULL) {
+       ML_free(ghostblocks); ML_free(ExpandedBlockData);
      }
 
      return 0;
