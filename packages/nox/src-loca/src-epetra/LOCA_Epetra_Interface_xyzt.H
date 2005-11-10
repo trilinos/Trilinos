@@ -84,9 +84,13 @@ public:
    *  system. 
    */
 
-  xyzt(LOCA::Epetra::Interface::Required &iReq, NOX::Epetra::Interface::Jacobian &iJac,
-       LOCA::Epetra::Interface::MassMatrix &iMass, Epetra_MultiVector &splitMultiVec,
-       Epetra_RowMatrix &splitJac, Epetra_RowMatrix &splitMass, Epetra_Comm &globalComm);
+  xyzt(const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> &iReq,
+       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> &iJac,
+       const Teuchos::RefCountPtr<LOCA::Epetra::Interface::MassMatrix> &iMass,
+       const Epetra_MultiVector &splitMultiVec,
+       const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitJac,
+       const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitMass,
+       const Teuchos::RefCountPtr<Epetra_Comm> &globalComm);
 
   //! Destructor
   virtual ~xyzt();
@@ -115,12 +119,12 @@ public:
 private:
   
   // Info from split (spatial) problem, passed in to the constructor.
-  LOCA::Epetra::Interface::Required &iReq;
-  NOX::Epetra::Interface::Jacobian &iJac;
-  LOCA::Epetra::Interface::MassMatrix &iMass;
-  Epetra_RowMatrix& splitJac;
-  Epetra_RowMatrix& splitMass; // can be same object as splitJac
-  Epetra_Comm& globalComm;
+  Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac;
+  Teuchos::RefCountPtr<LOCA::Epetra::Interface::MassMatrix> iMass;
+  Teuchos::RefCountPtr<Epetra_RowMatrix> splitJac;
+  Teuchos::RefCountPtr<Epetra_RowMatrix> splitMass; // can be same object as splitJac
+  Teuchos::RefCountPtr<Epetra_Comm> globalComm;
 
   // xyzt objects created in constructor
   Epetra_Vector splitVec; //tmp space

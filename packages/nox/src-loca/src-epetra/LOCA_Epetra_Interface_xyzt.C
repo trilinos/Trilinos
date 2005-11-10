@@ -35,21 +35,24 @@
 
 using namespace  LOCA::Epetra::Interface;
 
-xyzt::xyzt(LOCA::Epetra::Interface::Required &iReq_,
-       NOX::Epetra::Interface::Jacobian &iJac_,
-       LOCA::Epetra::Interface::MassMatrix &iMass_,
-       Epetra_MultiVector &splitMultiVec_, Epetra_RowMatrix &splitJac_,
-       Epetra_RowMatrix &splitMass_, Epetra_Comm &globalComm_)
+xyzt::xyzt(
+       const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> &iReq_,
+       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> &iJac_,
+       const Teuchos::RefCountPtr<LOCA::Epetra::Interface::MassMatrix> &iMass_,
+       const Epetra_MultiVector &splitMultiVec_, 
+       const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitJac_,
+       const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitMass_, 
+       const Teuchos::RefCountPtr<Epetra_Comm> &globalComm_)
        : iReq(iReq_), iJac(iJac_), iMass(iMass_),
        splitJac(splitJac_), splitMass(splitMass_), globalComm(globalComm_),
        timeStepsPerProc(splitMultiVec_.NumVectors()), splitVec(*(splitMultiVec_(0))),
        splitRes(*(splitMultiVec_(0))), splitVecOld(*(splitMultiVec_(0))), solution(0),
        solutionOverlap(0), overlapImporter(0), jacobian(0), rowStencil(0),
-       rowIndex(0), numReplicas(globalComm_.NumProc() / splitMultiVec_.Comm().NumProc()),
-       replica(globalComm_.MyPID() / splitMultiVec_.Comm().NumProc()), conStep(0)
+       rowIndex(0), numReplicas(globalComm_->NumProc() / splitMultiVec_.Comm().NumProc()),
+       replica(globalComm_->MyPID() / splitMultiVec_.Comm().NumProc()), conStep(0)
 {
-   if (globalComm.MyPID()==0) cout  << "--------------XYZT Partition Info---------------"
-       << "\n\tNumProcs              = " << globalComm.NumProc()
+   if (globalComm->MyPID()==0) cout  << "--------------XYZT Partition Info---------------"
+       << "\n\tNumProcs              = " << globalComm->NumProc()
        << "\n\tSpatial Decomposition = " << splitMultiVec_.Comm().NumProc()
        << "\n\tNumber of Replicas    = " << numReplicas
        << "\n\tTime Steps per Proc   = " << timeStepsPerProc
@@ -68,11 +71,11 @@ xyzt::xyzt(LOCA::Epetra::Interface::Required &iReq_,
      (*rowIndex).push_back(i + replica*timeStepsPerProc);
    }
 
-   jacobian = new EpetraExt::BlockCrsMatrix(splitJac, *rowStencil, *rowIndex, globalComm);
+   jacobian = new EpetraExt::BlockCrsMatrix(*splitJac, *rowStencil, *rowIndex, *globalComm);
 
    // Construct global solution vector, the overlap vector, and importer between them
-   solution = new EpetraExt::BlockVector(splitJac.RowMatrixRowMap(), jacobian->RowMap());
-   solutionOverlap = new EpetraExt::BlockVector(splitJac.RowMatrixRowMap(), jacobian->ColMap());
+   solution = new EpetraExt::BlockVector(splitJac->RowMatrixRowMap(), jacobian->RowMap());
+   solutionOverlap = new EpetraExt::BlockVector(splitJac->RowMatrixRowMap(), jacobian->ColMap());
   
    overlapImporter = new Epetra_Import(solutionOverlap->Map(), solution->Map());
 
@@ -109,16 +112,16 @@ bool xyzt::computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fil
     int blockRowOld = (*rowIndex)[i] - 1;  //Hardwired for -1 in stencil
     if (blockRowOld >= 0)  {
       solutionOverlap->ExtractBlockValues(splitVecOld, blockRowOld);
-      iMass.setOldSolution(splitVecOld);
+      iMass->setOldSolution(splitVecOld);
     }
     else { //First time step gets static Xold, not part of block solution vector
-      iMass.setOldSolutionFirstStep();
+      iMass->setOldSolutionFirstStep();
     }
 
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
 
     splitRes.PutScalar(0.0);
-    stat = stat && iReq.computeF(splitVec,  splitRes, fillFlag);
+    stat = stat && iReq->computeF(splitVec,  splitRes, fillFlag);
 
     residual.LoadBlockValues(splitRes, (*rowIndex)[i]);
   }
@@ -144,24 +147,24 @@ bool xyzt::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
     int blockRowOld = (*rowIndex)[i] - 1;  //Hardwired for -1 in stencil
     if (blockRowOld >= 0)  {
       solutionOverlap->ExtractBlockValues(splitVecOld, blockRowOld);
-      iMass.setOldSolution(splitVecOld);
+      iMass->setOldSolution(splitVecOld);
     }
     else {
       //First time step gets static Xold, not part of block solution vector
-      iMass.setOldSolutionFirstStep();
+      iMass->setOldSolutionFirstStep();
     }
   
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
-    stat =  stat && iJac.computeJacobian( splitVec, Jac );
+    stat =  stat && iJac->computeJacobian( splitVec, Jac );
 
     // Hardwired for -1 0 stencil meaning [M J]
     if (blockRowOld >= 0) {
-      jacobian->LoadBlock(splitJac, i, 1);
-      stat = stat && iMass.computeMassMatrix( splitVecOld );
-      jacobian->LoadBlock(splitMass, i, 0);
+      jacobian->LoadBlock(*splitJac, i, 1);
+      stat = stat && iMass->computeMassMatrix( splitVecOld );
+      jacobian->LoadBlock(*splitMass, i, 0);
     }
     else {
-      jacobian->LoadBlock(splitJac, i, 0);
+      jacobian->LoadBlock(*splitJac, i, 0);
     }
   }
 
@@ -171,7 +174,7 @@ bool xyzt::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 
 void xyzt::setParameters(const LOCA::ParameterVector& params)
 {
-   iReq.setParameters(params);
+   iReq->setParameters(params);
 }
 
 void xyzt::printSolution(const Epetra_Vector& x, double conParam)
@@ -179,14 +182,14 @@ void xyzt::printSolution(const Epetra_Vector& x, double conParam)
   solution->Epetra_Vector::operator=(x);
 
   // Barriers force printing of all time steps in order
-  for (int j=0; j<replica; j++) globalComm.Barrier();
+  for (int j=0; j<replica; j++) globalComm->Barrier();
   for (int i=0; i < timeStepsPerProc; i++) {
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
     // Pass indexing data for possible application use in output naming convention
-    iMass.dataForPrintSolution(conStep, (*rowIndex)[i], numReplicas*timeStepsPerProc);
-    iReq.printSolution(splitVec, conParam);
+    iMass->dataForPrintSolution(conStep, (*rowIndex)[i], numReplicas*timeStepsPerProc);
+    iReq->printSolution(splitVec, conParam);
   }
-  for (int j=replica; j<numReplicas-1; j++) globalComm.Barrier();
+  for (int j=replica; j<numReplicas-1; j++) globalComm->Barrier();
 
   conStep++; // Counter for continuation step, used for printing
 }
