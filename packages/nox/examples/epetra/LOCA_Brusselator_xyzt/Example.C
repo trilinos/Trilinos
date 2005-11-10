@@ -148,7 +148,9 @@ int main(int argc, char *argv[])
 
   // Construct 2 different epetra communicators
   Epetra_MpiComm Comm(split_MPI_Comm);
-  Epetra_MpiComm globalComm(MPI_COMM_WORLD);
+  Teuchos::RefCountPtr<Epetra_MpiComm> globalComm
+    = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+
 
 #else
   // Create a communicator for Epetra objects
@@ -159,7 +161,8 @@ int main(int argc, char *argv[])
 #ifdef DO_XYZT
   int timeStepsPerProc= 1; // default
   if (argc>3) { timeStepsPerProc = atoi(argv[3]);}
-  Epetra_SerialComm globalComm;
+  Teuchos::RefCountPtr<Epetra_SerialComm> globalComm
+    = Teuchos::rcp(new Epetra_SerialComm);
 #endif
   Epetra_SerialComm Comm;
 #endif
@@ -342,7 +345,8 @@ int main(int argc, char *argv[])
 						   interface,
 						   initGuess, A, A, 
 						   globalComm));
-  Epetra_RowMatrix& Axyzt = ixyzt->getJacobian();
+  Teuchos::RefCountPtr<Epetra_RowMatrix> Axyzt =
+     Teuchos::rcp(&(ixyzt->getJacobian()),false);
   Epetra_Vector& solnxyzt = ixyzt->getSolution();
 
   Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq = ixyzt;
@@ -354,7 +358,7 @@ int main(int argc, char *argv[])
 						      iReq, iJac, Axyzt, 
 						      solnxyzt));
 
-  NOX::Epetra::Vector initialGuess(solnxyzt, NOX::DeepCopy, true);
+  NOX::Epetra::Vector initialGuess(solnxyzt);
 #else
   // Use an Epetra Scaling object if desired
   Teuchos::RefCountPtr<Epetra_Vector> scaleVec = 
