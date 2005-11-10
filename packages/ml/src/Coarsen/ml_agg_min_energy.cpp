@@ -218,7 +218,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   t0 =  GetClock();
 #endif
 
-  printf("1\n");
   ML_Operator* Amat = &(ml->Amat[level]); //already created and filled
   prev_P_tentatives = ag->P_tentative; // for keep_P_tentative
 
@@ -307,7 +306,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     UnscaledAmat = Amat;
     Amat = ML_Operator_ImplicitlyVScale(UnscaledAmat, Dinv, 0);
   }
-  printf("2\n");
 
   ML_Operator* DinvAmat = NULL;
   ML_Operator *DinvAP0_subset = NULL, *P0_T = NULL, *P0_TAP0 = NULL;
@@ -323,7 +321,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 
   ML_Operator *DinvAP0 = ML_Operator_Create(P0->comm);
   ML_2matmult(Amat, P0, DinvAP0, ML_CSR_MATRIX);
-  printf("3\n");
 
   // Scale result. Note: if Amat corresponds to a scalar PDE, the
   // point scaling is already incorporated into Amat so there is 
@@ -375,7 +372,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 
     // ML_CSR_DropSmall(DinvAP0_subset, 1e-4, 1e-4, 1e-4);
   }
-  printf("4\n");
 
   ML_Operator* DinvADinvAP0 = 0;
 
@@ -402,7 +398,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 				DinvADinvAP0);  
     // ML_CSR_DropSmall(DinvADinvAP0, 1e-4, 1e-4, 1e-4); 
   }
-  printf("5\n");
 
 
   switch (ag->minimizing_energy) {
@@ -455,7 +450,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
     exit(EXIT_FAILURE);
   }
-  printf("6\n");
 
   double temp_omega = -1., temp_den, temp_num;
   int flag;
@@ -482,7 +476,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 	if (temp_omega > 0.) ttemp_omega[ kkk] = temp_omega;
       }
     }
-  printf("7\n");
 
     // We might want to communicate this using P0_TAP0's exchange bdry?
 
@@ -547,7 +540,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     if (NumeratorAtRootPts   != Numerator  ) ML_free(NumeratorAtRootPts);
     ML_free(ttemp_omega);
   }
-  printf("8\n");
 
   int zero_local   = 0;
   double min_local = DBL_MAX;
@@ -673,7 +665,9 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
   ML_Operator_Transpose_byrow(P0, P0_trans);
   ML_2matmult(P0_trans, Amat, P0TA, ML_CSR_MATRIX);
 
-printf("SHOULD HAVE AN IF nPDEs == 1\n");
+  // This code should work just fine, however, it is a bit of a waste
+  // when num_PDEs = 1.
+
   ML_Operator* ttt = ML_Operator_ImplicitlyBlockDinvScale(Amat);
 
   ML_AGG_DinvP(P0TA, (MLSthing *) ttt->data, Amat->num_PDEs,1,0,Amat);
