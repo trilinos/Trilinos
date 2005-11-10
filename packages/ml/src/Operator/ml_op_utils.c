@@ -2362,6 +2362,7 @@ int ML_Operator_MisRootPts( ML_Operator *Amatrix,  int num_PDE_eqns,
      to point matrices */
    
    ML_Operator_AmalgamateAndDropWeak(Amatrix, num_PDE_eqns, 0.0);
+
    Nrows     /= num_PDE_eqns;
    nvertices  = Amatrix->outvec_leng;
 
@@ -2479,10 +2480,8 @@ int ML_Operator_MisRootPts( ML_Operator *Amatrix,  int num_PDE_eqns,
    if (rowi_col != NULL) ML_free(rowi_col);
    if (rowi_val != NULL) ML_free(rowi_val);
 
-
- (*aggr_index) = (int *) ML_allocate(sizeof(int)* ntotal*num_PDE_eqns);
- printf("ntotal is %d\n",ntotal);
- for (i = 0; i < ntotal; i++) (*aggr_index)[i] = -1;
+   (*aggr_index) = (int *) ML_allocate(sizeof(int)* ntotal*num_PDE_eqns);
+   for (i = 0; i < ntotal; i++) (*aggr_index)[i] = -1;
 
    vlist  = (int *) ML_allocate(sizeof(int)* nvertices);
    state  = (char *) ML_allocate(sizeof(char)* ntotal);
@@ -2524,9 +2523,20 @@ int ML_Operator_MisRootPts( ML_Operator *Amatrix,  int num_PDE_eqns,
    ML_free(bdry); 
    ML_free(columns); ML_free(rowptr);
 
+   /* communicate aggregate information so that ghost nodes which */
+   /* are root points are identified. Note: local ids ?associated */
+
+   dtemp = (double *) ML_allocate(sizeof(double)*(ntotal+1));
+   for (i = 0; i < aggr_count; i++) dtemp[i] = (double) (*aggr_index)[i];
+   ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm,nvertices,comm,
+                    ML_OVERWRITE,NULL);
+   for (i = nvertices; i < ntotal; i++) {
+      if (dtemp[i] != -1.) (*aggr_index)[i] = (int) dtemp[i];
+   }
+   ML_free(dtemp);
    ML_Operator_UnAmalgamateAndDropWeak(Amatrix, num_PDE_eqns, 0.0);
 
-   for (i = Nrows - 1; i >= 0; i-- ) {
+   for (i = ntotal - 1; i >= 0; i-- ) {
       for (j = num_PDE_eqns-1; j >= 0; j--) {
 	if ( (*aggr_index)[i] == -1) 
 	  (*aggr_index)[i*num_PDE_eqns+j] = -1;
@@ -2534,6 +2544,18 @@ int ML_Operator_MisRootPts( ML_Operator *Amatrix,  int num_PDE_eqns,
 	  (*aggr_index)[i*num_PDE_eqns+j] = num_PDE_eqns*(*aggr_index)[i] + j;
       }
    }
+
+   /* Renumber the aggregate indices so that they are consecutive.  */
+   /* This will make it easier to determine ghost/communication     */
+   /* information when these MIS points are used to compress columns*/
+   /* out of a matrix.                                              */
+   j = 0;
+   for (i = 0; i < ntotal*num_PDE_eqns; i++) {
+     if ( (*aggr_index)[i] != -1.) {
+       (*aggr_index)[i] = j++;
+     }
+   }
+
    return(aggr_count*num_PDE_eqns);
 }
 
@@ -2629,4 +2651,68 @@ int ML_CSR_DropSmall(ML_Operator *Pe, double AbsoluteDrop,
   if (col_maxs != NULL) ML_free(col_maxs);
   return 0;
 
+}
+/* Take a CSR matrix and remove all columns which are labelled as */
+/* -1 in the array 'subset' */
+
+ML_Operator *ML_CSRmatrix_ColumnSubset(ML_Operator *Amat, int Nsubset,
+					       int subset[])
+{
+  struct ML_CSR_MSRdata *csr_data;
+  int    *row_ptr, *columns, *newrowptr, *newcolumns;
+  double *values, *newvalues;
+  int    i, j, n, count, max_nz_per_row, nnz_in_row;
+  ML_Operator *Amat_subset;
+
+  /* This only works for CSR matrices */
+  if (Amat->getrow->func_ptr != CSR_getrow) return NULL;
+
+  n = Amat->outvec_leng;
+
+  csr_data = (struct ML_CSR_MSRdata *) Amat->data;
+  row_ptr = csr_data->rowptr;
+  columns = csr_data->columns;
+  values  = csr_data->values;
+
+  /* Count the number of nonzeros in the new compressed matrix */
+
+  count = 0;
+  for (i = 0; i < n ; i++) {
+    for (j = row_ptr[i]; j < row_ptr[i+1]; j++) {
+      if ( subset[columns[j]] != -1) count++;
+    }
+  }
+  newrowptr  = (int    *)  ML_allocate(sizeof(int)*(n+1));
+  newcolumns = (int    *)  ML_allocate(sizeof(int)*(count+1));
+  newvalues  = (double *)  ML_allocate(sizeof(double)*(count+1));
+  count      = 0;
+  newrowptr[0]   = 0;
+  max_nz_per_row = 0;
+  for (i = 0; i < n ; i++) {
+    nnz_in_row = 0;
+    for (j = row_ptr[i]; j < row_ptr[i+1]; j++) {
+      if ( subset[columns[j]] != -1) {
+	nnz_in_row++;
+	newvalues[count   ] = values[j];
+	newcolumns[count++] = subset[columns[j]];
+      }
+    }
+    if (nnz_in_row > max_nz_per_row) max_nz_per_row = nnz_in_row;
+    newrowptr[i+1] = count;
+  }
+  csr_data =(struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+  if (csr_data == NULL) pr_error("no space for csr_data\n");
+  csr_data->columns = newcolumns;
+  csr_data->values  = newvalues;
+  csr_data->rowptr  = newrowptr;
+  Amat_subset = ML_Operator_Create(Amat->comm);
+
+  ML_Operator_Set_ApplyFuncData(Amat_subset, Nsubset, n, csr_data, n, NULL, 0);
+  ML_Operator_Set_Getrow(Amat_subset, n, CSR_getrow);
+  ML_Operator_Set_ApplyFunc (Amat_subset, CSR_matvec);
+/* ML_CommInfoOP_Clone( &(Amat->getrow->pre_comm),   */
+  Amat_subset->data_destroy   = ML_CSR_MSRdata_Destroy;
+  Amat_subset->max_nz_per_row = max_nz_per_row;
+  Amat_subset->N_nonzeros     = count;
+return Amat_subset;
 }
