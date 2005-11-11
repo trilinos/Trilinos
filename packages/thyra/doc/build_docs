@@ -1,20 +1,31 @@
 #!/bin/bash
 
-pushd ../src/utils/doc ; ./generate_Doxyfile ; popd
-doxygen ../src/utils/doc/Doxyfile
+# Remove the directories to make sure that we don't have rebuild problems
+# that can sometimes happen with doxygen
 
-pushd ../src/ana/rtop/doc ; ./generate_Doxyfile ; popd
-doxygen ../src/ana/rtop/doc/Doxyfile
+rm -r ../src/utils/doc/html
 
-pushd ../../../doc/Thyra/linear_algebra_function_convention; make pdf ; popd
-cp ../../../doc/Thyra/linear_algebra_function_convention/LinearAlgebraFunctionConvention.pdf ../src/ana/operator_vector/doc/html/.
+rm -r ../src/ana/rtop/doc/html
 
-pushd ../src/ana/operator_vector/doc ; ./generate_Doxyfile ; popd
-doxygen ../src/ana/operator_vector/doc/Doxyfile
+rm -r ../src/ana/operator_vector/doc/html
 
-pushd ../src/ana/nonlinear/doc ; ./generate_Doxyfile ; popd
-doxygen ../src/ana/nonlinear/doc/Doxyfile
+rm -r ../src/ana/nonlinear/doc/html
 
-./generate_Doxyfile
-doxygen Doxyfile
+rm -r html
 
+# Create new directories manually since the doxygen exe under windows
+# seems to be messing this up.
+
+mkdir ../src/utils/doc/html
+
+mkdir ../src/ana/rtop/doc/html
+
+mkdir ../src/ana/operator_vector/doc/html
+
+mkdir ../src/ana/nonlinear/doc/html
+
+mkdir html
+
+# Build the documentation
+
+./build_docs_guts
