@@ -32,24 +32,34 @@ Kokkos contains a number of classes.  They can be categorized as follows:
 <li> Kokkos::CisMatrix class:  The base class describing the functionality that Kokkos needs from
 a sparse matrix object.  The Kokkos::HbMatrix is a default implementation.
 
-<li> Kokkos::MultiVector class: The base class describing the functionality that Kokkos
-     needs from a dense object. The Kokkos::AopMultiVector and Kokkos::2dMultiVector are
-     default implementations.
+<li> Kokkos::MultiVector class: The base class specifying the interface that 
+any multivector interfacing to Kokkos Operators classes must implement. The 
+Kokkos::DenseMultiVector is the default implementation.
 
-</ol>
+<li> Kokkos::Vector class: The base class specifying the interface that any 
+vector class interfacing to the Kokkos Operators classes must implement.  At 
+this time, the primary function provided by Kokkos::Vector is access to vector 
+data.  The Kokkos::DenseVector is the default implementation.
 
-<li> Reference Implementations of Fuction Classes:
+<li> Kokkos::SparseOperation class: A virtual class that defines the interface 
+for sparse matrix operations.  Three reference classes implement the
+Kokkos::SparseOperation base class.
 
 <ol>
 
-<li> Kokkos::BaseSparseOps: Provides a reference implementation of sparse matrix vector,
-sparse matrix multivector and sparse solve operations.  Provides support for reuse of
-structure.  All methods are virtual, allowing derived classes to selectively reimplement
-methods as needed.
+<li> Kokkos::BaseSparseMultiply: Provides basic functionality for computing 
+sparse matrix times vector, or sparse matrix times multivector operations.
 
-<li> Kokkos::BaseDenseOps: Provides a reference implementation of certain vector update
+<li> Kokkos::BaseSparseSolve: Provides basic functionality for computing 
+sparse triangular solves with one or more right-hand-side vectors. 
 
-kernels that are not part of the BLAS standard, but still important for performance.
+<li> Kokkos::PackedSparseMultiply: Provides basic functionality for computing 
+sparse matrix times vector, or sparse matrix times multivector operations.
+
+</ol>
+
+<li> Kokkos::Permutation: Specifies the interface that any permutation class which is intended for use with the Kokkos::Vector and Kokkos::MultiVector classes must implement.  This class is most important as a way for a Kokkos::SparseOperation object to define a row, column or two-sided permutation of the matrix that presumably improves performance of the sparse operation.
+
 </ol>
 
 <li> Utility classes. 
@@ -63,8 +73,8 @@ kernels that are not part of the BLAS standard, but still important for performa
      Kokkos computational
      classes accumulate FLOP counts associated with the \e this object of the computations.
 
-<li> Kokkos::CompObject class: Supports the registration of a Kokkos::Flops object with a
-     function class.
+<li> Kokkos::CompObject class: Supports the registration of a Kokkos::Flops 
+object with a Kokkos::SparseOperation object.
 </ol>
 </ul>
      
