@@ -290,6 +290,7 @@ namespace Tpetra {
 		
 			// compute local 1-norm
 			ScalarType localNorm = BLAS().ASUM(length, scalarPointer(), ordinalOne);
+
 			// call comm's sumAll method to compute global 1-norm
 			ScalarType globalNorm;
 			vectorSpace().comm().sumAll(&localNorm, &globalNorm, ordinalOne);
@@ -353,32 +354,60 @@ namespace Tpetra {
 			globalSum /= static_cast<ScalarType>(getNumGlobalEntries());
         
 			// update flops counter: 3n
-			updateFlops(length + length + length);
+			updateFlops(3 * vectorSpace().getNumGlobalElements());
 		
 			return(Teuchos::ScalarTraits<ScalarType>::squareroot(globalSum));
 		}
 
+                struct less_mag : public binary_function<ScalarType, ScalarType, bool> {
+                  bool operator()(ScalarType x, ScalarType y) { 
+                    return Teuchos::ScalarTraits<ScalarType>::magnitude(x) < 
+                           Teuchos::ScalarTraits<ScalarType>::magnitude(y); 
+                  }
+                };
+
+                struct greater_mag : public binary_function<ScalarType, ScalarType, bool> {
+                  bool operator()(ScalarType x, ScalarType y) { 
+                    return Teuchos::ScalarTraits<ScalarType>::magnitude(x) > 
+                           Teuchos::ScalarTraits<ScalarType>::magnitude(y); 
+                  }
+                };
+
 		//! Compute minimum value of vector.
 		ScalarType minValue() const {
-			return(*(min_element(scalarArray().begin(), scalarArray().end()))); // use STL min_element, takes constant time
+                  ScalarType localMin, globalMin;
+                  localMin = *(max_element(scalarArray().begin(), scalarArray().end(), less_mag())); // use STL max_element, takes constant time
+
+                  OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+                  vectorSpace().comm().sumAll(&localMin, &globalMin, ordinalOne);
+                  return(globalMin);
 		}
 
 		//! Compute maximum value of vector.
 		ScalarType maxValue() const {
-			return(*(max_element(scalarArray().begin(), scalarArray().end()))); // use STL max_element, takes constant time
+                  ScalarType localMax, globalMax;
+                  localMax = *(max_element(scalarArray().begin(), scalarArray().end(), greater_mag())); // use STL max_element, takes constant time
+
+                  OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+                  vectorSpace().comm().maxAll(&localMax, &globalMax, ordinalOne);
+                  return(globalMax);
 		}
 
 		//! Compute mean (average) value of vector.
 		ScalarType meanValue() const {
 			ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
-			ScalarType length = getNumMyEntries(); // implicit cast from OT to ST
+			OrdinalType length = getNumGlobalEntries(); // implicit cast from OT to ST
 			// use STL accumulate, takes linear time
-			ScalarType total = accumulate(scalarArray().begin(), scalarArray().end(), scalarZero); 
+			ScalarType localTotal = accumulate(scalarArray().begin(), scalarArray().end(), scalarZero); 
+
+                        ScalarType globalTotal;
+                        OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+                        vectorSpace().comm().sumAll(&localTotal, &globalTotal, ordinalOne);
         
 			// update flops counter: n
-			updateFlops(length);
+			updateFlops(getNumGlobalEntries());
         
-			return(total / length);
+			return(globalTotal / (ScalarType)getNumGlobalEntries());
 		}
 
 		//! Vector multiplication (elementwise) 
