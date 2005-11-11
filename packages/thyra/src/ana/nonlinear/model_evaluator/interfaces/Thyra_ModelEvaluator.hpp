@@ -434,7 +434,6 @@ std::string toString(ModelEvaluatorBase::EOutArgsMembers);
  * <li>\ref Thyra_ME_dev_notes_sec
  * </ul>
  *
- *
  * \section Thyra_ME_intro_sec Introduction
  *
  * The model represented by this interface is composed of the following
@@ -583,13 +582,12 @@ std::string toString(ModelEvaluatorBase::EOutArgsMembers);
  * model can be interpreted in a wide variety of ways and can be mapped into a
  * number of different optimization problems.
  *
- * \subsection Thyra_ME_derivatives_sec Function derivatives and sensitivities
+ * \section Thyra_ME_derivatives_sec Function derivatives and sensitivities
  *
  * A model can also optionally support various derivatives of the underlying
  * model functions.  The primary use for these derivatives is in the
  * computation of varyious types of sensitivities.  Specifically, direct and
  * adjoint sensitivities will be considered.
- *
  *
  * To illustrate the issues involved, consider a single auxiliary parameter
  * <tt>p</tt> and a single auxiliary response function <tt>g</tt> of the form
@@ -603,17 +601,16 @@ std::string toString(ModelEvaluatorBase::EOutArgsMembers);
  *
  * The reduced derivative <tt>D(g_hat)/D(p)</tt> is given as:
  *
- * <tt>D(g_hat)/D(p) = D(g)/D(x) * D(x)/D(p) + D(g)/D(p)
+ * <tt>D(g_hat)/D(p) = D(g)/D(x) * D(x)/D(p) + D(g)/D(p)</tt>
  *
- * where <tt>D(x)/D(p) = - [D(f)/D(x)]^{-1} * [D(f)/D(p)]
+ * where <tt>D(x)/D(p) = - [D(f)/D(x)]^{-1} * [D(f)/D(p)]</tt>
  *
  * Restated, the reduced derivative <tt>D(g_hat)/D(p)</tt> is given as:
  *
- * <tt>D(g_hat)/D(p) = - [D(g)/D(x)] * [D(f)/D(x)]^{-1} * [D(f)/D(p)] + D(g)/D(p)
+ * <tt>D(g_hat)/D(p) = - [D(g)/D(x)] * [D(f)/D(x)]^{-1} * [D(f)/D(p)] + D(g)/D(p)</tt>
  *
  * The reduced derivative <tt>D(g_hat)/D(p)</tt> can be computed using the
  * direct or the adjoint approahces.
- *
  *
  * <ul>
  *
@@ -632,20 +629,22 @@ std::string toString(ModelEvaluatorBase::EOutArgsMembers);
  *
  *     <li><b>State variable Taylor coefficients</b>
  *
- *     <tt>x_poly = </tt> \f$\sum_{i=0}^d x_i t^i\f$,
- *     <tt>x_dot_poly = </tt> \f$\sum_{i=0}^d-1 (i+1)x_{i+1} t^i\f$,
- *     <tt>f_poly = </tt> \f$\sum_{i=0}^{d-1} f_i t^i\f$.
+ *     <tt>x_poly =</tt> \f$\sum_{i=0}^d x_i t^i\f$,
  *
- *     <tt> x_poly </tt> is a given polynomial of degree \f$d\f$ and
- *     <tt> x_dot_poly = </tt> \f$d/dt\f$ <tt> x_poly </tt>, then
- *     <tt> f_poly = f(x_poly, x_dot_poly, t) + </tt> \f$O(t^{d})\f$ where
- *     \f$f_i = 1/k! d^k/dt^k f(x(t),\dot{x}(t),t), i=0,\dots,d-1\f$ are
- *     the Taylor series coefficient of \f$f\f$.  The polynomials 
- *     <tt> x_poly, </tt> <tt> x_dot_poly, </tt> and <tt> f_poly </tt> 
- *     are represented by Teuchos::Polynomial objects where each coefficient
- *     is a Thyra::VectorBase object.  The Taylor series coefficients of
- *     \f$f\f$ can easily be computed using automatic differentiation, but
- *     this is generally the only means of doing so.
+ *     <tt>x_dot_poly =</tt> \f$\sum_{i=0}^d-1 (i+1)x_{i+1} t^i\f$,
+ *
+ *     <tt>f_poly =</tt> \f$\sum_{i=0}^{d-1} f_i t^i\f$.
+ *
+ *     If <tt>x_poly</tt> is a given polynomial of degree \f$d\f$ and
+ *     <tt>x_dot_poly =</tt> \f$d(\f$<tt>x_poly</tt>\f$)/dt\f$, then <tt>f_poly
+ *     = f(x_poly, x_dot_poly, t) +</tt> \f$O(t^{d})\f$ where \f$f_i =
+ *     \frac{1}{k!} \frac{d^k}{dt^k} f(dx/dt ,x(t),t), i=0,\ldots,d-1\f$ are
+ *     the Taylor series coefficient of \f$f\f$.  The polynomials
+ *     <tt>x_poly</tt>, <tt>x_dot_poly</tt>, and <tt>f_poly</tt> are
+ *     represented by <tt>Teuchos::Polynomial</tt> objects where each
+ *     coefficient is a <tt>Thyra::VectorBase</tt> object.  The Taylor series
+ *     coefficients of \f$f\f$ can easily be computed using automatic
+ *     differentiation, but this is generally the only means of doing so.
  *     
  *     <li><b>Auxiliary parameter derivatives</b>
  *
@@ -663,7 +662,7 @@ std::string toString(ModelEvaluatorBase::EOutArgsMembers);
  *
  * </ul>
  *
- * \subsection Thyra_ME_dev_notes_sec Notes to subclass devleopers
+ * \section Thyra_ME_dev_notes_sec Notes to subclass devleopers
  *
  * This interface is setup so that the default problem type a set of nonlinear
  * equaitons <tt>f(x)=0</tt>.  Therefore, the only pure virtual response
