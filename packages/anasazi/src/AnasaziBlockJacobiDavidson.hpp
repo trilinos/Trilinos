@@ -744,6 +744,49 @@ public:
     BlockJacobiDavidson<ScalarType,MagnitudeType,MV,OP>& operator=
       (const BlockJacobiDavidson<ScalarType,MagnitudeType,MV,OP> &method);
 
+    Teuchos::RefCountPtr<MV> subMV(MV& rhs, int which)
+    {
+      std::vector<int> list(1);
+      list[0] = which;
+
+      Teuchos::RefCountPtr<MV> res = Teuchos::rcp(rhs.CloneView(list));
+      return(res);
+    }
+
+    Teuchos::RefCountPtr<MV> subMV(MV& rhs, int first, int last)
+    {
+      std::vector<int> list(last - first);
+      for (int i = first ; i < last ; ++i)
+        list[i - first] = i;
+
+      Teuchos::RefCountPtr<MV> res = Teuchos::rcp(rhs.CloneView(list));
+      return(res);
+    }
+
+    Teuchos::RefCountPtr<MV> subMV(Teuchos::RefCountPtr<MV>& rhs, int which)
+    {
+      std::vector<int> list(1);
+      list[0] = which;
+
+      Teuchos::RefCountPtr<MV> res = Teuchos::rcp(rhs->CloneView(list));
+      return(res);
+    }
+
+    Teuchos::RefCountPtr<MV> subMV(Teuchos::RefCountPtr<MV>& rhs, 
+                                   int first, int last)
+    {
+      std::vector<int> list(last - first);
+      for (int i = first ; i < last ; ++i)
+        list[i - first] = i;
+
+      Teuchos::RefCountPtr<MV> res = Teuchos::rcp(rhs->CloneView(list));
+      return(res);
+    }
+
+
+
+
+
     // 
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
@@ -997,26 +1040,29 @@ public:
 
       for(int i=0; i < _blockSize; i++)
       {
-        sublist[0] = i;
-        Rtmp = R->CloneView(sublist); //(*)
+        ///sublist[0] = i;
+        ///Rtmp = R->CloneView(sublist); //(*)
 
         // Gram-Schmidt reduce the vector ...
         for(int j=0; j < SearchSpaceSize ; j++){
-          sublist[0] = j;
-          Utmp  = U->CloneView(sublist); //(*)
-          BUtmp = BU->CloneView(sublist); //(*)
-          Rtmp->MvPseudoDot((*BUtmp), &eta);
-          Rtmp->MvAddMv(ScalarOne, (*Rtmp), -eta[0], (*Utmp));
-          delete Utmp, BUtmp; //(#)(#)
+          ///sublist[0] = j;
+          ///Utmp  = U->CloneView(sublist); //(*)
+          ///BUtmp = BU->CloneView(sublist); //(*)
+          subMV(R, i)->MvPseudoDot(*subMV(BU, j), &eta);
+          ///Rtmp->MvAddMv(ScalarOne, (*Rtmp), -eta[0], (*Utmp));
+          subMV(R, i)->MvAddMv(ScalarOne, *subMV(R, i), -eta[0], *subMV(U, j));
+          ///delete Utmp, BUtmp; //(#)(#)
         }
 
         for(int j=0; j < _knownEV; j++){
-          sublist[0] = j;
-          Qtmp = _evecs->CloneView(sublist);
-          BQtmp = BQ->CloneView(sublist); //(*)
-          Rtmp->MvPseudoDot((*BQtmp), &eta); 
-          Rtmp->MvAddMv(ScalarOne, (*Rtmp), -eta[0], (*Qtmp));	      
-          delete Qtmp, BQtmp; //(#)(#)
+          ///sublist[0] = j;
+          ///Qtmp = _evecs->CloneView(sublist);
+          ///BQtmp = BQ->CloneView(sublist); //(*)
+          ///Rtmp->MvPseudoDot((*BQtmp), &eta); 
+          subMV(R, i)->MvPseudoDot(*subMV(BQ, j), &eta);
+          ///Rtmp->MvAddMv(ScalarOne, (*Rtmp), -eta[0], (*Qtmp));	      
+          subMV(R, i)->MvAddMv(ScalarOne, *subMV(R, i), -eta[0], *subMV(_evecs, j));
+          ///delete Qtmp, BQtmp; //(#)(#)
         }
 	
         // Now B-normalise the vector ...
