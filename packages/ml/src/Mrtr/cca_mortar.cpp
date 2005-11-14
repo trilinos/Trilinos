@@ -395,7 +395,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     //-----------------------------------------------------------------
     // manually choose mortar (master side)
     // mortar side is either 0 or 1 or -2 for automatic
-    interface->SetMortarSide(0);
+    interface->SetMortarSide(1);
 
     //-----------------------------------------------------------------
     // set linear shape functions on both sides, 

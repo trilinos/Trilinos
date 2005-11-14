@@ -153,6 +153,14 @@ double MRTR::dot(const double* g1, const double* g2, const int dim)
 }
 
 /*----------------------------------------------------------------------*
+ | compute length of vector                                  mwgee 10/05|
+ *----------------------------------------------------------------------*/
+double MRTR::length(const double* g, const int dim)
+{
+  return sqrt(MRTR::dot(g,g,dim));
+}
+
+/*----------------------------------------------------------------------*
  | do 2x2 solve                                              mwgee 10/05|
  *----------------------------------------------------------------------*/
 bool MRTR::solve22(const double A[][2], double* x, const double* b)

@@ -73,7 +73,7 @@ bool MRTR::Interface::Integrate_3D()
     // the segment to be integrated
     RefCountPtr<MRTR::Segment> actsseg = scurr->second;
 
-#if 0
+#if 1
     cout << "\nActive sseg id " << actsseg->Id() << "\n\n";
 #endif
 
@@ -96,7 +96,7 @@ bool MRTR::Interface::Integrate_3D()
     {
       RefCountPtr<MRTR::Segment> actmseg = mcurr->second;
       
-#if 0
+#if 1
     cout << "Active mseg id " << actmseg->Id() << endl;
 #endif
       // if there is an overlap, integrate the pair

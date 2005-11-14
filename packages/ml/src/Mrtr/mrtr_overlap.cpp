@@ -52,7 +52,9 @@ mseg_(mseg),
 overlap_(false),
 havemxi_(false),
 havesxi_(false),
-haveline_(false)
+havelines_(false),
+havesxim_(false),
+havelinem_(false)
 {
   if (sseg.Type()!=MRTR::Segment::seg_BiLinearTri || mseg.Type()!=MRTR::Segment::seg_BiLinearTri)
   {
@@ -77,31 +79,16 @@ MRTR::Overlap::~Overlap()
 }
 
 /*----------------------------------------------------------------------*
- |  copy a polygon of points (private)                       mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::CopyPointPolygon(map<int,RefCountPtr<MRTR::Point> >& from, map<int,RefCountPtr<MRTR::Point> >& to)
-{
-  map<int,RefCountPtr<MRTR::Point> >::iterator pcurr;
-  for (pcurr=from.begin(); pcurr != from.end(); ++pcurr)
-    if (pcurr->second != null)
-    {
-      RefCountPtr<MRTR::Point> tmp = rcp(new MRTR::Point(pcurr->second->Id(),pcurr->second->Xi()));
-      to.insert(pair<int,RefCountPtr<MRTR::Point> >(tmp->Id(),tmp));
-    }
-  return true;
-}
-
-/*----------------------------------------------------------------------*
  |  build line info from triangles (private)                 mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::build_lines()
+bool MRTR::Overlap::build_lines_s()
 {
   if (!havemxi_)
   {
     cout << "***ERR*** MRTR::Overlap::build_lines:\n"
          << "***ERR*** projection of master element nodes has to be done before\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    return false;
   }
 
   // slave segment, line 0
@@ -134,6 +121,48 @@ bool MRTR::Overlap::build_lines()
 }
 
 /*----------------------------------------------------------------------*
+ |  build line info from triangles (private)                 mwgee 11/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::build_lines_m()
+{
+  if (!havesxim_)
+  {
+    cout << "***ERR*** MRTR::Overlap::build_lines:\n"
+         << "***ERR*** projection of slave element nodes has to be done before\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+
+  // master segment, line 0
+  mseg_.LocalCoordinatesOfNode(0,&mlinem_[0][0]);
+  mseg_.LocalCoordinatesOfNode(1,&mlinem_[0][2]);
+  // master segment, line 1
+  mseg_.LocalCoordinatesOfNode(1,&mlinem_[1][0]);
+  mseg_.LocalCoordinatesOfNode(2,&mlinem_[1][2]);
+  // master segment, line 2
+  mseg_.LocalCoordinatesOfNode(2,&mlinem_[2][0]);
+  mseg_.LocalCoordinatesOfNode(0,&mlinem_[2][2]);
+  
+  // slave segment, line 0
+  slinem_[0][0] = sxim_[0][0];
+  slinem_[0][1] = sxim_[0][1];
+  slinem_[0][2] = sxim_[1][0];
+  slinem_[0][3] = sxim_[1][1];
+  // slave segment, line 1
+  slinem_[1][0] = sxim_[1][0];
+  slinem_[1][1] = sxim_[1][1];
+  slinem_[1][2] = sxim_[2][0];
+  slinem_[1][3] = sxim_[2][1];
+  // slave segment, line 2
+  slinem_[2][0] = sxim_[2][0];
+  slinem_[2][1] = sxim_[2][1];
+  slinem_[2][2] = sxim_[0][0];
+  slinem_[2][3] = sxim_[0][1];
+
+  return true;
+}
+
+/*----------------------------------------------------------------------*
  |  project master nodes onto slave element (private)        mwgee 10/05|
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::build_mxi()
@@ -146,11 +175,11 @@ bool MRTR::Overlap::build_mxi()
   {
     // project node i onto sseg
     projector.ProjectNodetoSegment_SegmentNormal(*mnode[i],sseg_,mxi_[i]);
-#if 0
+#if 1
     // check whether i is inside sseg
     if (mxi_[i][0]<=1. && mxi_[i][1]<=abs(1.-mxi_[i][0]) && mxi_[i][0]>=0. && mxi_[i][1]>=0.)
     {
-      cout << "OVERLAP: master node in: " << i << endl;
+      cout << "OVERLAP: master node in: " << mnode[i]->Id() << endl;
     }
 #endif    
   }
@@ -159,7 +188,32 @@ bool MRTR::Overlap::build_mxi()
 }
 
 /*----------------------------------------------------------------------*
- |  project slave nodes onto master element (private)        mwgee 10/05|
+ |  project slave nodes onto master element (private)        mwgee 11/05|
+ *----------------------------------------------------------------------*/
+bool MRTR::Overlap::build_sxim()
+{
+  // project the master segment's nodes onto the slave segment
+  int nsnode = sseg_.Nnode();
+  MRTR::Node** snode  = sseg_.Nodes();
+  MRTR::Projector projector(inter_.IsOneDimensional());
+  for (int i=0; i<nsnode; ++i)
+  {
+    // project node i onto sseg
+    projector.ProjectNodetoSegment_NodalNormal(*snode[i],mseg_,sxim_[i]);
+#if 1
+    // check whether i is inside sseg
+    if (sxim_[i][0]<=1. && sxim_[i][1]<=abs(1.-sxim_[i][0]) && sxim_[i][0]>=0. && sxim_[i][1]>=0.)
+    {
+      cout << "OVERLAP: slave node in: " << snode[i]->Id() << endl;
+    }
+#endif    
+  }
+  havesxim_ = true;
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  get coords of slave nodes (private)                      mwgee 10/05|
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::build_sxi()
 {
@@ -180,12 +234,12 @@ bool MRTR::Overlap::build_sxi()
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::build_normal()
 {
-  sn_[0][0] = 0.;
-  sn_[0][1] = -1.;
-  sn_[1][0] = 1.;
-  sn_[1][1] = 1.;
-  sn_[2][0] = -1.;
-  sn_[2][1] = 0.;
+  n_[0][0] = 0.;
+  n_[0][1] = -1.;
+  n_[1][0] = 1.;
+  n_[1][1] = 1.;
+  n_[2][0] = -1.;
+  n_[2][1] = 0.;
   return true;
 }
 
@@ -194,25 +248,35 @@ bool MRTR::Overlap::build_normal()
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::ComputeOverlap()
 {
+  bool ok = false;
 
   // project master nodes onto slave segment if not already done
   if (!havemxi_)
     havemxi_ = build_mxi();
 
   // perform a quick test
-  bool ok = QuickOverlapTest();
+  ok = QuickOverlapTest();
   if (!ok)
     return false;
 
   // build array of local sxi coords of nodes
   havesxi_ = build_sxi();
 
+  // project slave nodes onto master segment
+  havesxim_ = build_sxim();
+
   // build outward normal of edges of sseg (in local coords)
   build_normal();
   
   // compute information about the edges of the slave/master triangle
-  if (!haveline_)
-    haveline_ = build_lines();
+  // in slave triangle coord system
+  if (!havelines_)
+    havelines_ = build_lines_s();
+
+  // compute information about the edges of the slave/master triangle
+  // in master triangle coord system
+  if (!havelinem_)
+    havelinem_ = build_lines_m();
 
   // perform clipping algorithm
   ok = Clipelements();
@@ -228,239 +292,11 @@ bool MRTR::Overlap::ComputeOverlap()
 }
 
 /*----------------------------------------------------------------------*
- |  find intersection (private)                              mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_Intersect(const double* N,const double* PE,const double* P0,const double* P1,double* xi)
-{
-  double P1P0[2];
-  P1P0[0] = P1[0] - P0[0];
-  P1P0[1] = P1[1] - P0[1];
-
-  // determine the denominator first
-  double denom = -(N[0]*P1P0[0] + N[1]*P1P0[1]);
-  
-  // if the denom is zero, then lines are parallel, no intersection
-  if (fabs(denom)<1.0e-10)
-    return false;
-    
-  double alpha = (N[0]*(P0[0]-PE[0]) + N[1]*(P0[1]-PE[1]))/denom;
-  
-  // alpha is the line parameter of the line P0 - p1
-  // if it's outside 0 <= alpha <= 1 there is no intersection
-  if (alpha<0.0 || 1.0<alpha)
-    return false;
-    
-  // Compute the coord xi of the intersecting point
-  xi[0] = P0[0] + alpha*P1P0[0];
-  xi[1] = P0[1] + alpha*P1P0[1];
-
-  //cout << "OVERLAP Clip_Intersect: found intersection xi " << xi[0] << "/" << xi[1] << endl;
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  test point (private)                                     mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_TestPoint(const double* N, const double* PE, const double* P)
-{
-  double PPE[2];
-  PPE[0] = P[0] - PE[0];
-  PPE[1] = P[1] - PE[1];
-
-  double dotproduct = PPE[0]*N[0]+PPE[1]*N[1];
-  //cout << "OVERLAP Clip_TestPoint: dotproduct " << dotproduct << endl;
-
-  if (dotproduct>1.0e-10)
-    return false;
-  else
-    return true;
-}
-
-/*----------------------------------------------------------------------*
- |  find parameterization alpha for point on line (private)  mwgee 10/05|
- *----------------------------------------------------------------------*/
-double MRTR::Overlap::Clip_ParameterPointOnLine(const double* P0,const double* P1,const double* P)
-{
-  double dist1 = sqrt( (P[0]-P0[0])*(P[0]-P0[0])+(P[1]-P0[1])*(P[1]-P0[1]) );
-  double dist2 = sqrt( (P1[0]-P0[0])*(P1[0]-P0[0])+(P1[1]-P0[1])*(P1[1]-P0[1]) );
-  if (dist2<1.0e-10) 
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_ParameterPointOnLine:\n"
-         << "***ERR*** edge length too small, division by near zero\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  return (dist1/dist2);
-}
-
-/*----------------------------------------------------------------------*
- |  add point (private)                                      mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::AddSegment(int id, MRTR::Segment* seg)
-{
-  RefCountPtr<MRTR::Segment> tmp = rcp(seg);
-  s_.insert(pair<int,RefCountPtr<MRTR::Segment> >(id,tmp));
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  add point (private)                                      mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::AddPointtoPolygon(const int id,const double* P)
-{
-  // check whether this point is already in there
-  map<int,RefCountPtr<MRTR::Point> >::iterator curr = p_.find(id);
-  // it's there
-  if (curr != p_.end())
-    curr->second->SetXi(P);
-  else
-  {
-    //cout << "OVERLAP Clip_AddPointtoPolygon: added point " << id << endl;
-    RefCountPtr<MRTR::Point> p = rcp(new MRTR::Point(id,P));
-    p_.insert(pair<int,RefCountPtr<MRTR::Point> >(id,p));
-  }
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  add point (private)                                      mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::AddPointtoPolygon(map<int,RefCountPtr<MRTR::Point> >& p,const int id,const double* P)
-{
-  RefCountPtr<MRTR::Point> point = rcp(new MRTR::Point(id,P));
-  p.insert(pair<int,RefCountPtr<MRTR::Point> >(id,point));
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  remove point (private)                                      mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::RemovePointfromPolygon(const int id,const double* P)
-{
-  // check whether this point is in there
-  map<int,RefCountPtr<MRTR::Point> >::iterator curr = p_.find(id);
-  if (curr != p_.end())
-  {
-    curr->second = null;
-    p_.erase(id);
-    //cout << "OVERLAP Clip_RemovePointfromPolygon: removed point " << id << endl;
-    return true;
-  }
-  else
-  {
-    //cout << "OVERLAP Clip_RemovePointfromPolygon: do nothing\n";
-    return false;
-  }
-}
-
-/*----------------------------------------------------------------------*
- |  get point view (private)                                 mwgee 10/05|
- *----------------------------------------------------------------------*/
-void MRTR::Overlap::PointView(vector<RefCountPtr<MRTR::Point> >& points)
-{
-  // allocate vector of ptrs
-  points.resize(SizePointPolygon());
-  
-  // get the point views
-  int count=0;
-  map<int,RefCountPtr<MRTR::Point> >::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
-  {
-    points[count] = pcurr->second;
-    ++count;
-  }
-  if (count != SizePointPolygon())
-  {
-    cout << "***ERR*** MRTR::Overlap::PointView:\n"
-         << "***ERR*** number of point wrong\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  return;
-}
-
-/*----------------------------------------------------------------------*
- |  get segment view (protected)                             mwgee 11/05|
- *----------------------------------------------------------------------*/
-void MRTR::Overlap::SegmentView(vector<RefCountPtr<MRTR::Segment> >& segs)
-{
-  // allocate vector of ptrs
-  segs.resize(Nseg());
-  
-  // get the segment views
-  int count=0;
-  map<int,RefCountPtr<MRTR::Segment> >::iterator curr;
-  for (curr=s_.begin(); curr != s_.end(); ++curr)
-  {
-    segs[count] = curr->second;
-    ++count;
-  }
-  if (count != Nseg())
-  {
-    cout << "***ERR*** MRTR::Overlap::SegmentView:\n"
-         << "***ERR*** number of segments wrong\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  return;
-}
-
-/*----------------------------------------------------------------------*
- |  get point view (private)                                 mwgee 10/05|
- *----------------------------------------------------------------------*/
-void MRTR::Overlap::PointView(map<int,RefCountPtr<MRTR::Point> >& p,
-                                       vector<RefCountPtr<MRTR::Point> >& points)
-{
-  // allocate vector of ptrs
-  int np = p.size();
-  points.resize(np);
-  
-  // get the point views
-  int count=0;
-  map<int,RefCountPtr<MRTR::Point> >::iterator pcurr;
-  for (pcurr=p.begin(); pcurr != p.end(); ++pcurr)
-  {
-    points[count] = pcurr->second;
-    ++count;
-  }
-  if (count != np)
-  {
-    cout << "***ERR*** MRTR::Overlap::PointView:\n"
-         << "***ERR*** number of point wrong\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  return;
-}
-
-/*----------------------------------------------------------------------*
- |  get point view (private)                                 mwgee 11/05|
- *----------------------------------------------------------------------*/
-void MRTR::Overlap::PointView(vector<MRTR::Point*>& p,const int* nodeids,const int np)
-{
-  p.resize(np);
-  
-  for (int i=0; i<np; ++i)
-  {
-    map<int,RefCountPtr<MRTR::Point> >::iterator pcurr = p_.find(nodeids[i]);
-    if (pcurr==p_.end())
-    {
-      cout << "***ERR*** MRTR::Overlap::PointView:\n"
-           << "***ERR*** cannot find point " << nodeids[i] << "\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-    }
-    p[i] = pcurr->second.get();
-  }
-  return;
-}
-
-/*----------------------------------------------------------------------*
  |  perform clipping algorithm (private)                     mwgee 10/05|
  *----------------------------------------------------------------------*/
 bool MRTR::Overlap::Clipelements()
 {
-  if (!havemxi_ || !havesxi_ || !haveline_)
+  if (!havemxi_ || !havesxi_ || !havelines_ || !havesxim_ || !havelinem_)
   {
     cout << "***ERR*** MRTR::Overlap::Clipelements:\n"
          << "***ERR*** initialization of Overlap class missing\n"
@@ -482,7 +318,7 @@ bool MRTR::Overlap::Clipelements()
     // point on that clip edge (dim 2)
     double* PE = &sline_[clipedge][0];
     // the outward normal to the clip edge (dim 2)
-    double* N = &sn_[clipedge][0];
+    double* N = &n_[clipedge][0];
 
     // loop edges of master segment and clip them against the clip edge
     // add all intersections
@@ -507,7 +343,7 @@ bool MRTR::Overlap::Clipelements()
       ok = Clip_Intersect(N,PE,P0,P1,xi);
       if (ok)
       {
-        //cout << "OVERLAP Clipelements: adding intersection point " << 10*clipedge+medge << endl;
+        cout << "OVERLAP Clipelements: adding intersection point " << 10*clipedge+medge << endl;
         AddPointtoPolygon(10*clipedge+medge,xi);
       }
     } // for (int medge=0; medge<3; ++medge)
@@ -517,9 +353,9 @@ bool MRTR::Overlap::Clipelements()
 
   // loop all clipedges and clip all points incl intersections 
   // that are in the polygon
-  // throw away al point that are not inside
+  // throw away all points that are not inside
   {
-    int           np    = SizePointPolygon();
+    int np = SizePointPolygon();
     
     vector<RefCountPtr<MRTR::Point> > point;
     PointView(point);
@@ -534,10 +370,10 @@ bool MRTR::Overlap::Clipelements()
         // point on that clip edge (dim 2)
         double* PE = &sline_[clipedge][0];
         // the outward normal to the clip edge (dim 2)
-        double* N = &sn_[clipedge][0];
+        double* N = &n_[clipedge][0];
         
         // clip point P against this edge
-        ok = Clip_TestPoint(N,PE,P);
+        ok = Clip_TestPoint(N,PE,P,1.0e-10);
         // leave point in
         if (ok) continue;
         // remove this point
@@ -551,7 +387,7 @@ bool MRTR::Overlap::Clipelements()
       // if not found inside, remove point
       if (!ok)
       {
-        //cout << "OVERLAP Clipelements: removing point " << point[p]->Id() << endl;
+        cout << "OVERLAP Clipelements: removing point " << point[p]->Id() << endl;
         RemovePointfromPolygon(point[p]->Id(),P);
       }
             
@@ -560,38 +396,60 @@ bool MRTR::Overlap::Clipelements()
   }
 
   //===========================================================================
-
-  // see whether there are points left in the polygon
-  // if there are no points in the polygon, the sseg could still be completely inside
-  // the mseg, now test for that case
+  // loop all slave nodes and clip against master element.
+  // put those slave nodes that are inside master element into polygon
+  // Note that this works in master triangle coords and the node that is put in
+  // is put in with slave triangle coords as the polygon is completely in
+  // slave triangle coords
+  // master point have ids 100,101,102
+  // slave points have ids 1000,1001,1002
+  // edge intersections have ids sedge*10+medge
+  
+  // try only to put slave points in if the polygon is not empty
+  int np = SizePointPolygon();
+  if (np)
   {
-    int np = SizePointPolygon();
-#if 0
-    if (np) cout << "OVERLAP Clipelements: # point in polygon after clipping " << np << endl;
-#endif
-    if  (!np)
+    for (int i=0; i<3; ++i)
     {
-      // we have to project 1 slave node onto the master element to make decision
-      // that sseg is not completely inside mseg
-      MRTR::Node** snode = sseg_.Nodes();
-      MRTR::Projector projector(inter_.IsOneDimensional());
-      double xi[2];
-      projector.ProjectNodetoSegment_NodalNormal(*snode[0],mseg_,xi);
-      if (xi[0]<=1. && xi[1]<=abs(1.-xi[0]) && xi[0]>=0. && xi[1]>=0.)
+      bool ok = true;
+      // get the slave point in master coords
+      double* P = sxim_[i];
+      
+      for (int clipedge=0; clipedge<3; ++clipedge)
       {
-        cout << "OVERLAP !!!!!! sseg is in mseg though clipping is zero!\n";
-        exit(EXIT_FAILURE);
+        // point on master clipedge
+        double* PE = &mlinem_[clipedge][0];
+        // the outward normal to the clip edge (dim 2)
+        double* N = &n_[clipedge][0];
+        
+        // clip point P against this edge
+        ok = Clip_TestPoint(N,PE,P,1.0e-5);
+        // put point in
+        if (ok) continue;
+        else
+        {
+          ok = false;
+          break;
+        }
+      } // for (int clipedge=0; clipedge<3; ++clipedge)
+      // don't put point in
+      if (!ok)
+        continue;
+      else
+      {
+        cout << "OVERLAP Clipelements: inserting slave point " << 1000+i << " xi="
+             << sxi_[i][0] << "/" << sxi_[i][1] << endl;
+        AddPointtoPolygon(1000+i,sxi_[i]);
       }
-      else 
-        return false;
-    }
+      
+    } // for (int i=0; i<3; ++i)
   }
 
   //===========================================================================
   //===========================================================================
   //===========================================================================
-
-#if 0
+  
+#if 1
   // make printout of the polygon so far
   {
     int np    = SizePointPolygon();
@@ -607,1088 +465,94 @@ bool MRTR::Overlap::Clipelements()
 #endif
 
   //===========================================================================
-
   // count how many corner nodes of mseg are in and how many
   // intersections there are
-  int np = SizePointPolygon();
-  vector<RefCountPtr<MRTR::Point> > point; PointView(point);
-  int nmcorner=0;
-  int nminter=0;
-  for (int p=0; p<np; ++p)
+  np = SizePointPolygon();
+
+  //===========================================================================
+  // if there are no points, there is still the chance that all slave points
+  // are inside the master element
+  if (!np)
   {
-    if (point[p]->Id() < 100) ++nminter;
-    else                      ++nmcorner;
-  }
-
-  // maybe its a good idea to collapse intersections with nodes (that are in)
-  // that are really close to each other
-
-  // there are 12 cases watched out for
-  // cases can be partially determined by looking at nminter and nmcorner
-  MRTR::Overlap::Polygon_Type type = MRTR::Overlap::poly_none;
-
-#if 0  
-  cout << "OVERLAP Clipelements: corners in " << nmcorner << " intersections " << nminter << endl;
-#endif
-
-  //---------------------------------------------------------------------------
-  // cases 1_2
-  if (nmcorner==1 && nminter==2)
-  {
-    int pair[3]; pair[0] = pair[1] = pair[2] = 0;
-    for (int p=0; p<np; ++p)
-    {
-      if (point[p]->Id()>=100) continue;
-      int ten = MRTR::digit_ten(point[p]->Id());
-      if (ten != 0 && ten != 1 && ten != 2)
-      {
-        cout << "***ERR*** MRTR::Overlap::Clipelements:\n"
-             << "***ERR*** weird overflow\n"
-             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
-      }
-      pair[ten] += 1;
-    }    
-    //// case 1_2_same (1 corner in, 2 intersections same edge)
     for (int i=0; i<3; ++i)
-      if (pair[i]==2)
-      {
-        type = MRTR::Overlap::poly_1_2_same;
-        break;
-      }
-    //// case 1_2_dif (1 corner in, 2 intersections different edges)
-    if (type == MRTR::Overlap::poly_none)
-      type = MRTR::Overlap::poly_1_2_dif;
-  }
-
-
-
-  //---------------------------------------------------------------------------
-  // cases 2_2
-  else if (nmcorner==2 && nminter==2)
-  {
-    int pair[3]; pair[0] = pair[1] = pair[2] = 0;
-    for (int p=0; p<np; ++p)
     {
-      if (point[p]->Id()>=100) continue;
-      int ten = MRTR::digit_ten(point[p]->Id());
-      if (ten != 0 && ten != 1 && ten != 2)
-      {
-        cout << "***ERR*** MRTR::Overlap::Clipelements:\n"
-             << "***ERR*** weird overflow\n"
-             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
-      }
-      pair[ten] += 1;
-    }    
-    //// case 2_2_same (2 corner in, 2 intersections same edge)
-    for (int i=0; i<3; ++i)
-      if (pair[i]==2)
-      {
-        type = MRTR::Overlap::poly_2_2_same;
-        break;
-      }
-    
-    //// case 2_2_dif (2 corner in, 2 intersections different edges)
-    if (type == MRTR::Overlap::poly_none)
-      type = MRTR::Overlap::poly_2_2_dif;
-  }
-
-
-
-  //---------------------------------------------------------------------------
-  // cases 0_4
-  else if (nmcorner==0 && nminter==4)
-  {
-    int pair[3]; pair[0] = pair[1] = pair[2] = 0;
-    for (int p=0; p<np; ++p)
-    {
-      if (point[p]->Id()>=100) continue;
-      int ten = MRTR::digit_ten(point[p]->Id());
-      if (ten != 0 && ten != 1 && ten != 2)
-      {
-        cout << "***ERR*** MRTR::Overlap::Clipelements:\n"
-             << "***ERR*** weird overflow\n"
-             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
-      }
-      pair[ten] += 1;
-    }    
-    //// case 0_4_same (pairs of 2 intersections on same edge)
-    int count=0;
-    for (int i=0; i<3; ++i)
-      if (pair[i]==2) ++count;
-    if (count==2)
-      type = MRTR::Overlap::poly_0_4_same;
-    
-    //// case 0_4_dif (pair of 2 intersections on same edge, other 2 on different edges)
-    else if (count==1)
-      type = MRTR::Overlap::poly_0_4_dif;
+      bool ok = true;
+      // get the slave point in master coords
+      double* P = sxim_[i];
       
-    //// there are no pairs
-    else
-    {
-      cout << "***ERR*** MRTR::Overlap::Clipelements:\n"
-           << "***ERR*** unknown case of polygon\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-    }
-  }
-
-
-
-  //---------------------------------------------------------------------------
-  // case 1_4 (1 corner in, 4 intersections) 
-  else if (nmcorner==1 && nminter==4)
-  {
-    int pair[3]; pair[0] = pair[1] = pair[2] = 0;
-    for (int p=0; p<np; ++p)
-    {
-      if (point[p]->Id()>=100) continue;
-      int ten = MRTR::digit_ten(point[p]->Id());
-      if (ten != 0 && ten != 1 && ten != 2)
+      for (int clipedge=0; clipedge<3; ++clipedge)
       {
-        cout << "***ERR*** MRTR::Overlap::Clipelements:\n"
-             << "***ERR*** weird overflow\n"
-             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
-      }
-      pair[ten] += 1;
-    }    
-    int count=0;
-    for (int i=0; i<3; ++i)
-      if (pair[i]==2) ++count;
-    //// case 1_4_same (1 corner in, pairs of 2 intersections on same edge)
-    if (count==2)
-      type = MRTR::Overlap::poly_1_4_same;
-    //// case 1_4_dif (1 corner in, 1 pair of intersections on same edge)
-    else if (count==1) 
-      type = MRTR::Overlap::poly_1_4_dif;
-    //// there are no pairs
-    else
-    {
-      cout << "***ERR*** MRTR::Overlap::Clipelements:\n"
-           << "***ERR*** unknown case of polygon\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-    }
-  }
-
-
-
-  //---------------------------------------------------------------------------
-  // case 0_2 (2 intersections on different edges)
-  else if (nmcorner==0 && nminter==2)
-  {
-    // intersections have to be on different edges
-    int pair[3]; pair[0] = pair[1] = pair[2] = 0;
-    for (int p=0; p<np; ++p)
-    {
-      if (point[p]->Id()>=100) continue;
-      int ten = MRTR::digit_ten(point[p]->Id());
-      if (ten != 0 && ten != 1 && ten != 2)
+        // point on master clipedge
+        double* PE = &mlinem_[clipedge][0];
+        // the outward normal to the clip edge (dim 2)
+        double* N = &n_[clipedge][0];
+        
+        // clip point P against this edge
+        ok = Clip_TestPoint(N,PE,P,1.0e-5);
+        // put point in
+        if (ok) continue;
+        else
+        {
+          ok = false;
+          break;
+        }
+      } // for (int clipedge=0; clipedge<3; ++clipedge)
+      // don't put point in
+      if (!ok)
+        continue;
+      else
       {
-        cout << "***ERR*** MRTR::Overlap::Clipelements:\n"
-             << "***ERR*** weird overflow\n"
-             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+        cout << "OVERLAP Clipelements: inserting slave point " << 1000+i << " xi="
+             << sxi_[i][0] << "/" << sxi_[i][1] << endl;
+        AddPointtoPolygon(1000+i,sxi_[i]);
       }
-      pair[ten] += 1;
-    }    
-    int count=0;
-    for (int i=0; i<3; ++i)
-      if (pair[i]==2) ++count;
-    if (count!=0)
+      
+    } // for (int i=0; i<3; ++i)
+    
+    //=========================================================================
+    // check again how many points there are inside
+    np = SizePointPolygon();
+    if (np>2); // all slave points are in master segment, just continue
+    else if (np && np <= 2)
     {
-      cout << "***ERR*** MRTR::Overlap::Clipelements:\n"
-           << "***ERR*** unknown case of polygon\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+      if (inter_.OutLevel()>5)
+        cout << "***WRN*** MRTR::Overlap::Clipelements:\n"
+             << "***WRN*** " << np << " slave nodes seem to be in master segment but no overlap detected\n"
+             << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
     }
-    else
-      type = MRTR::Overlap::poly_0_2;
-  }
-
-
-
-  //---------------------------------------------------------------------------
-  // case 0_6 (0 corners in, 6 intersections) 
-  else if (nmcorner==0 && nminter==6)
-    type = MRTR::Overlap::poly_0_6;
-
-
-
-  //---------------------------------------------------------------------------
-  // case 3_0 (3 corners in, mseg completely inside sseg) 
-  else if (nmcorner==3 && nminter==0)
-    type = MRTR::Overlap::poly_3_0;
-
-
-
-  //---------------------------------------------------------------------------
-  // case 0_0 (no corners in, sseg completely inside mseg)
-  else if (nmcorner==0 && nminter==0)
-    type = MRTR::Overlap::poly_0_0;
-
-
-
-  //---------------------------------------------------------------------------
-  // unknown case
-  else
-  {
-    cout << "***ERR*** MRTR::Overlap::Clipelements:\n"
-         << "***ERR*** unknown case of polygon\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    else // with none or less then 3 points in we assume no overlap
+      return false;
   }
 
   //===========================================================================
+  // maybe its a good idea to collapse intersections with nodes (that are in)
+  // that are really close to each other
+  if (p_.size()>3)
+    CollapsePoints(p_,1.0e-5);
 
+  //===========================================================================
+  // check again
+  np = SizePointPolygon();
+  if (np && np<3)
+  {
+    if (inter_.OutLevel()>5)
+      cout << "***WRN*** MRTR::Overlap::Clipelements:\n"
+           << "***WRN*** " << np << " nodes in polygon but could not detect overlap\n"
+           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  else if (!np)
+    return false;
+
+  //===========================================================================
   // finish the polygon
-  switch(type)
-  {
-  //---------------------------------------------------------------------------
-  case poly_1_2_same:
-    Clip_FixPolygon_1_2_same(np,&point[0]);
-  break;  
-  //---------------------------------------------------------------------------
-  case poly_1_2_dif:
-    Clip_FixPolygon_1_2_dif(np,&point[0]);
-  break;  
-  //---------------------------------------------------------------------------
-  case poly_1_4_same:
-    Clip_FixPolygon_1_4_same(np,&point[0]);
-  break;  
-  //---------------------------------------------------------------------------
-  case poly_1_4_dif:
-    Clip_FixPolygon_1_4_dif(np,&point[0]);
-  break;  
-  //---------------------------------------------------------------------------
-  case poly_2_2_same:
-    Clip_FixPolygon_2_2_same(np,&point[0]);
-  break;  
-  //---------------------------------------------------------------------------
-  case poly_2_2_dif:
-    Clip_FixPolygon_2_2_dif(np,&point[0]);
-  break;  
-  //---------------------------------------------------------------------------
-  case poly_3_0:
-    Clip_FixPolygon_3_0(np,&point[0]);
-  break;  
-  //---------------------------------------------------------------------------
-  case poly_0_0:
-    Clip_FixPolygon_0_0(np,&point[0]);
-  break;  
-  //---------------------------------------------------------------------------
-  case poly_0_4_same:
-    Clip_FixPolygon_0_4_same(np,&point[0]);
-  break;  
-  //---------------------------------------------------------------------------
-  case poly_0_4_dif:
-    Clip_FixPolygon_0_4_dif(np,&point[0]);
-  break;  
-  //---------------------------------------------------------------------------
-  case poly_0_2:
-    Clip_FixPolygon_0_2(np,&point[0]);
-  break;  
-  //---------------------------------------------------------------------------
-  case poly_0_6:
-    Clip_FixPolygon_0_6(np,&point[0]);
-  break;  
-  //---------------------------------------------------------------------------
-  case MRTR::Overlap::poly_none:
-    cout << "***ERR*** MRTR::Overlap::Clipelements:\n"
-         << "***ERR*** unknown case of polygon\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  break;
-  default:
-    cout << "***ERR*** MRTR::Overlap::Clipelements:\n"
-         << "***ERR*** unknown case of polygon\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  break;
-  }
-
-  point.clear();
+  ConvexHull(p_);  
+  
   return true;
 }
 
 
-/*----------------------------------------------------------------------*
- |  fix polygon in the case 1_2_dif (private)                mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_FixPolygon_1_2_dif(int np, RefCountPtr<MRTR::Point>* point)
-{
-  cout << "OVERLAP This is case 1_2_dif\n";
-  
-  // identify the slave edges with the 2 intersections
-  int sedge[2];
-  int count=0;
-  for (int p=0; p<np; ++p)
-  {
-    if (point[p]->Id() >= 100) continue;
-    sedge[count] = MRTR::digit_ten(point[p]->Id());
-    ++count;
-  }
-  
-  // identify the slave node between them
-  int prevedge = -1;
-  int spoint = -1;
-  int nextedge = -1;
-  // order the edges
-  if (sedge[0]>sedge[1])
-    MRTR::swap(sedge[0],sedge[1]);
-  if (sedge[0]==0 && sedge[1]==1) 
-  {
-    spoint = 1;
-    prevedge = 0;
-    nextedge = 1;
-  }
-  else if (sedge[0]==1 && sedge[1]==2)
-  {
-    spoint = 2;
-    prevedge = 1;
-    nextedge = 2;
-  }
-  else if (sedge[0]==0 && sedge[1]==2)
-  {
-    spoint=0;
-    prevedge = 2;
-    nextedge = 0;
-  }
-  else
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_1_2_dif:\n"
-         << "***ERR*** can't find slave point\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-
-  // add the spoint to the polygon
-  AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);
-  
-  // find the convex hull for all points in polygon
-  ConvexHull(p_);
-
-  
-#if 0
-  // printout the polygon
-  map<int,MRTR::Point*>::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
-    if (pcurr->second)
-      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
-           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
-#endif  
-  return true;
-}
-
-
-/*----------------------------------------------------------------------*
- |  fix polygon in the case 1_2_same (private)                mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_FixPolygon_1_2_same(int np, RefCountPtr<MRTR::Point>* point)
-{
-  cout << "OVERLAP This is case 1_2_same\n";
-
-  // make sure there's two intersections and one internal
-  RefCountPtr<MRTR::Point> sedgepoint[2];
-  int count1=0;
-  int count2=0;
-  for (int p=0; p<np; ++p)
-  {
-    if (point[p]->Id() >= 100) 
-    {
-      ++count2;
-      continue;
-    }
-    sedgepoint[count1] = point[p];
-    ++count1;
-  }
-  if (count1 != 2 || count2 != 1)
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_1_2_same:\n"
-         << "***ERR*** number of points wrong\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-
-  // find the convex hull for all points in polygon
-  ConvexHull(p_);
-
-  
-#if 0
-  // printout the polygon
-  map<int,MRTR::Point*>::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
-    if (pcurr->second)
-      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
-           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
-#endif  
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  fix polygon in the case 2_2_same (private)               mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_FixPolygon_2_2_same(int np, RefCountPtr<MRTR::Point>* point)
-{
-  cout << "OVERLAP This is case 2_2_same\n";
-
-  // identify the slave edge
-  int sedge;
-  RefCountPtr<MRTR::Point> sedgepoint[2];
-  RefCountPtr<MRTR::Point> inpoint[2];
-  int count1=0;
-  int count2=0;
-  for (int p=0; p<np; ++p)
-  {
-    if (point[p]->Id() >= 100) 
-    {
-      inpoint[count2] = point[p];
-      ++count2;
-    }
-    else
-    {
-      sedge = MRTR::digit_ten(point[p]->Id());
-      sedgepoint[count1] = point[p];
-      ++count1;
-    }
-  }
-  if (count1 != 2 || count2 !=2)
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_2_2_same:\n"
-         << "***ERR*** number of intersections or number of inner nodes wrong\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  
-  // find the convex hull for all points in polygon
-  ConvexHull(p_);
-  
-  
-#if 0
-  // printout the polygon
-  map<int,MRTR::Point*>::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
-    if (pcurr->second)
-      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
-           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
-#endif  
-  return true;
-}
-
-
-/*----------------------------------------------------------------------*
- |  fix polygon in the case 2_2_dif (private)                mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_FixPolygon_2_2_dif(int np, RefCountPtr<MRTR::Point>* point)
-{
-  cout << "OVERLAP This is case 2_2_dif\n";
-
-  // identify the slave edge
-  int sedge[2];
-  RefCountPtr<MRTR::Point> sedgepoint[2];
-  RefCountPtr<MRTR::Point> inpoint[2];
-  int count1=0;
-  int count2=0;
-  for (int p=0; p<np; ++p)
-  {
-    if (point[p]->Id() >= 100) 
-    {
-      inpoint[count2] = point[p];
-      ++count2;
-    }
-    else
-    {
-      sedge[count1] = MRTR::digit_ten(point[p]->Id());
-      sedgepoint[count1] = point[p];
-      ++count1;
-    }
-  }
-  if (count1 != 2 || count2 !=2)
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_2_2_dif:\n"
-         << "***ERR*** number of intersections or number of inner nodes wrong\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-
-  // identify the slave node between them
-  int spoint = -1;
-  // order the edges
-  if (sedge[0]>sedge[1])
-    MRTR::swap(sedge[0],sedge[1]);
-  if (sedge[0]==0 && sedge[1]==1) 
-    spoint = 1;
-  else if (sedge[0]==1 && sedge[1]==2)
-    spoint = 2;
-  else if (sedge[0]==0 && sedge[1]==2)
-    spoint=0;
-  else
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_2_2_dif:\n"
-         << "***ERR*** can't find slave point\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-
-  // add the slave node to the polygon
-  AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);  
-  
-  // find the convex hull for all points in polygon
-  ConvexHull(p_);
-
-
-
-
-#if 0
-  // printout the polygon
-  map<int,MRTR::Point*>::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
-    if (pcurr->second)
-      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
-           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
-#endif  
-  return true;
-}
-
-
-/*----------------------------------------------------------------------*
- |  fix polygon in the case 1_4_same (private)               mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_FixPolygon_1_4_same(int np, RefCountPtr<MRTR::Point>* point)
-{
-  cout << "OVERLAP This is case 1_4_same\n";
-
-  // identify the slave edges
-  int sedge[4];
-  RefCountPtr<MRTR::Point> sedgepoint[4];
-  RefCountPtr<MRTR::Point> inpoint;
-  int count1=0;
-  int count2=0;
-  for (int p=0; p<np; ++p)
-  {
-    if (point[p]->Id() >= 100) 
-    {
-      inpoint = point[p];
-      ++count2;
-    }
-    else
-    {
-      sedge[count1] = MRTR::digit_ten(point[p]->Id());
-      sedgepoint[count1] = point[p];
-      ++count1;
-    }
-  }
-  if (count1 != 4 || count2 !=1)
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_1_4_same:\n"
-         << "***ERR*** number of intersections or number of inner nodes wrong\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  
-  // find the convex hull for all points in polygon
-  ConvexHull(p_);
-
-  
-#if 0
-  // printout the polygon
-  map<int,MRTR::Point*>::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
-    if (pcurr->second)
-      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
-           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
-#endif  
-  return true;
-}
-
-
-/*----------------------------------------------------------------------*
- |  fix polygon in the case 1_4_dif (private)                mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_FixPolygon_1_4_dif(int np, RefCountPtr<MRTR::Point>* point)
-{
-  cout << "OVERLAP This is case 1_4_dif\n";
-
-  // identify the slave edges
-  int sedge[4];
-  RefCountPtr<MRTR::Point> sedgepoint[4];
-  RefCountPtr<MRTR::Point> inpoint;
-  int count1=0;
-  int count2=0;
-  for (int p=0; p<np; ++p)
-  {
-    if (point[p]->Id() >= 100) 
-    {
-      inpoint = point[p];
-      ++count2;
-    }
-    else
-    {
-      sedge[count1] = MRTR::digit_ten(point[p]->Id());
-      sedgepoint[count1] = point[p];
-      ++count1;
-    }
-  }
-  if (count1 != 4 || count2 !=1)
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_1_4_dif:\n"
-         << "***ERR*** number of intersections or number of inner nodes wrong\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  
-  // find the 2 intersection points that are 'lonely' on an edge
-  int lonelies[2];
-  count1=0;
-  for (int i=0; i<4; ++i)
-  {
-    bool foundagain=false;
-    for (int j=0; j<4; ++j)
-    {
-      if (j==i) continue;
-      if (sedge[j]==sedge[i])
-      {
-        foundagain = true;
-        break;
-      }
-    }
-    if (!foundagain)
-    {
-      lonelies[count1] = i;
-      ++count1;
-    }
-  }
-  if (count1 != 2)
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_1_4_dif:\n"
-         << "***ERR*** overflow appeared\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  
-  // identify the slave node between the 2 lonely points
-  int spoint = -1;
-  // get the lonely edges
-  int e[2];
-  e[0] = sedge[lonelies[0]];
-  e[1] = sedge[lonelies[1]];
-  // order the edges
-  if (e[0]>e[1])
-    MRTR::swap(e[0],e[1]);
-  if (e[0]==0 && e[1]==1) 
-    spoint = 1;
-  else if (e[0]==1 && e[1]==2)
-    spoint = 2;
-  else if (e[0]==0 && e[1]==2)
-    spoint=0;
-  else
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_1_4_dif:\n"
-         << "***ERR*** can't find slave point\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  
-  // put the slave point in
-  AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);  
-
-  // find the convex hull for all points in polygon
-  ConvexHull(p_);
-  
-#if 0
-  // printout the polygon
-  map<int,MRTR::Point*>::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
-    if (pcurr->second)
-      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
-           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
-#endif  
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  fix polygon in the case 3_0 (private)                    mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_FixPolygon_3_0(int np, RefCountPtr<MRTR::Point>* point)
-{
-  cout << "OVERLAP This is case 3_0\n";
-
-  // make sure there's no intersections and three internal
-  int count=0;
-  for (int p=0; p<np; ++p)
-  {
-    if (point[p]->Id() >= 100) 
-    {
-      ++count;
-      continue;
-    }
-  }
-  if (count != 3 )
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_3_0:\n"
-         << "***ERR*** number of points wrong\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-
-  // find the convex hull for all points in polygon
-  ConvexHull(p_);
-
-  
-#if 0
-  // printout the polygon
-  map<int,MRTR::Point*>::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
-    if (pcurr->second)
-      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
-           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
-#endif  
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  fix polygon in the case 0_0 (private)                    mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_FixPolygon_0_0(int np, RefCountPtr<MRTR::Point>* point)
-{
-  cout << "OVERLAP This is case 0_0\n";
-
-  // make sure there's no points in polygon
-  if (np)
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_0_0:\n"
-         << "***ERR*** number of points wrong\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  
-  
-  // all slave points are in the master segment, add them
-  AddPointtoPolygon(1000+0,&sxi_[0][0]);  
-  AddPointtoPolygon(1000+1,&sxi_[1][0]);  
-  AddPointtoPolygon(1000+2,&sxi_[2][0]);  
-  
-  
-  // find the convex hull for all points in polygon
-  ConvexHull(p_);
-
-  
-#if 0
-  // printout the polygon
-  map<int,MRTR::Point*>::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
-    if (pcurr->second)
-      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
-           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
-#endif  
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  fix polygon in the case 0_4_same (private)                mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_FixPolygon_0_4_same(int np, RefCountPtr<MRTR::Point>* point)
-{
-  cout << "OVERLAP This is case 0_4_same\n";
-
-  // make sure there's two intersections and one internal
-  int count1=0;
-  int count2=0;
-  for (int p=0; p<np; ++p)
-  {
-    if (point[p]->Id() >= 100) 
-    {
-      ++count2;
-      continue;
-    }
-    else ++count1;
-  }
-  if (count1 != 4 || count2 != 0)
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_0_4_same:\n"
-         << "***ERR*** number of points wrong\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-
-  // find the convex hull for all points in polygon
-  ConvexHull(p_);
-
-  
-#if 0
-  // printout the polygon
-  map<int,MRTR::Point*>::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
-    if (pcurr->second)
-      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
-           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
-#endif  
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  fix polygon in the case 0_4_dif (private)                mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_FixPolygon_0_4_dif(int np, RefCountPtr<MRTR::Point>* point)
-{
-  cout << "OVERLAP This is case 0_4_dif\n";
-
-  // identify the slave edges
-  int sedge[4];
-  RefCountPtr<MRTR::Point> sedgepoint[4];
-  int count1=0;
-  int count2=0;
-  for (int p=0; p<np; ++p)
-  {
-    if (point[p]->Id() >= 100) 
-      ++count2;
-    else
-    {
-      sedge[count1] = MRTR::digit_ten(point[p]->Id());
-      sedgepoint[count1] = point[p];
-      ++count1;
-    }
-  }
-  if (count1 != 4)
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_0_4_dif:\n"
-         << "***ERR*** number of intersections wrong\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  
-  // find the 2 intersection points that are 'lonely' on an edge
-  int lonelies[2];
-  count1=0;
-  for (int i=0; i<4; ++i)
-  {
-    bool foundagain=false;
-    for (int j=0; j<4; ++j)
-    {
-      if (j==i) continue;
-      if (sedge[j]==sedge[i])
-      {
-        foundagain = true;
-        break;
-      }
-    }
-    if (!foundagain)
-    {
-      lonelies[count1] = i;
-      ++count1;
-    }
-  }
-  if (count1 != 2)
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_0_4_dif:\n"
-         << "***ERR*** overflow appeared\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  
-  // identify the slave node between the 2 lonely points
-  int spoint = -1;
-  // get the lonely edges
-  int e[2];
-  e[0] = sedge[lonelies[0]];
-  e[1] = sedge[lonelies[1]];
-  // order the edges
-  if (e[0]>e[1])
-    MRTR::swap(e[0],e[1]);
-  if (e[0]==0 && e[1]==1) 
-    spoint = 1;
-  else if (e[0]==1 && e[1]==2)
-    spoint = 2;
-  else if (e[0]==0 && e[1]==2)
-    spoint=0;
-  else
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_0_4_dif:\n"
-         << "***ERR*** can't find slave point\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  
-  // put the slave point in
-  AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);  
-
-  // find the convex hull for all points in polygon
-  ConvexHull(p_);
-
-  
-#if 0
-  // printout the polygon
-  map<int,MRTR::Point*>::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
-    if (pcurr->second)
-      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
-           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
-#endif  
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  fix polygon in the case 0_2 (private)                    mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_FixPolygon_0_2(int np, RefCountPtr<MRTR::Point>* point)
-{
-  cout << "OVERLAP This is case 0_2\n";
-
-  // identify the slave edges
-  int sedge[2];
-  RefCountPtr<MRTR::Point> sedgepoint[2];
-  int count1=0;
-  int count2=0;
-  for (int p=0; p<np; ++p)
-  {
-    if (point[p]->Id() >= 100) 
-      ++count2;
-    else
-    {
-      sedge[count1] = MRTR::digit_ten(point[p]->Id());
-      sedgepoint[count1] = point[p];
-      ++count1;
-    }
-  }
-  if (count1 != 2)
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_0_2:\n"
-         << "***ERR*** number of intersections wrong\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  
-  // the 2 intersections have to be on different edges
-  if (sedge[0]==sedge[1])
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_0_2:\n"
-         << "***ERR*** weird: 2 intersecions on same edge and nothing else!\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  
-    // identify the slave node between the 2 edge
-  int spoint = -1;
-  // order the edges
-  if (sedge[0]>sedge[1])
-    MRTR::swap(sedge[0],sedge[1]);
-  if (sedge[0]==0 && sedge[1]==1) 
-    spoint = 1;
-  else if (sedge[0]==1 && sedge[1]==2)
-    spoint = 2;
-  else if (sedge[0]==0 && sedge[1]==2)
-    spoint=0;
-  else
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_0_2:\n"
-         << "***ERR*** can't find slave point\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  
-  // the polygon can now either contain spoint or the other 2 edges of sseg
-  // the only way to find out is to project spoint onto mseg
-  // if its in : put it in
-  //        out: put the other 2 in
-  MRTR::Node** snode = sseg_.Nodes();
-  MRTR::Projector projector(inter_.IsOneDimensional());
-  double xi[2];
-  bool isin = false;
-  projector.ProjectNodetoSegment_NodalNormal(*snode[spoint],mseg_,xi);
-  if (xi[0]<=1. && xi[1]<=abs(1.-xi[0]) && xi[0]>=0. && xi[1]>=0.)
-    isin = true;
-
-  if (isin)
-  {
-    AddPointtoPolygon(1000+spoint,&sxi_[spoint][0]);  
-  }
-  else
-  {
-    if (spoint==0)
-    {
-      AddPointtoPolygon(1000+1,&sxi_[1][0]);  
-      AddPointtoPolygon(1000+2,&sxi_[2][0]);  
-    }
-    else if (spoint==1)
-    {
-      AddPointtoPolygon(1000+0,&sxi_[0][0]);  
-      AddPointtoPolygon(1000+2,&sxi_[2][0]);  
-    }
-    else if (spoint==2)
-    {
-      AddPointtoPolygon(1000+0,&sxi_[0][0]);  
-      AddPointtoPolygon(1000+1,&sxi_[1][0]);  
-    }
-    else
-    {
-      cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_0_2:\n"
-           << "***ERR*** point " << spoint << " out of scope (0,1,2)\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-    }
-  }  
-  
-
-
-  // find the convex hull for all points in polygon
-  ConvexHull(p_);
-
-  
-#if 0
-  // printout the polygon
-  map<int,MRTR::Point*>::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
-    if (pcurr->second)
-      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
-           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
-#endif  
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  fix polygon in the case 0_6 (private)                    mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_FixPolygon_0_6(int np, RefCountPtr<MRTR::Point>* point)
-{
-  cout << "OVERLAP This is case 0_6\n";
-
-  // make sure there's 6 intersections and no internal
-  int count1=0;
-  int count2=0;
-  for (int p=0; p<np; ++p)
-  {
-    if (point[p]->Id() >= 100) 
-    {
-      ++count2;
-      continue;
-    }
-    else ++count1;
-  }
-  if (count1 != 6 || count2 != 0)
-  {
-    cout << "***ERR*** MRTR::Overlap::Clip_FixPolygon_0_6:\n"
-         << "***ERR*** number of points wrong\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-
-  // find the convex hull for all points in polygon
-  ConvexHull(p_);
-
-  
-#if 0
-  // printout the polygon
-  map<int,MRTR::Point*>::iterator pcurr;
-  for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
-    if (pcurr->second)
-      cout << "OVERLAP finished polygon point " << pcurr->second->Id()
-           << " xi " << pcurr->second->Xi()[0] << " / " << pcurr->second->Xi()[1] << endl;
-#endif  
-  return true;
-}
 
 /*----------------------------------------------------------------------*
  |  make a triangulization of a polygon (private)             mwgee 10/05|
@@ -1772,7 +636,7 @@ bool MRTR::Overlap::Triangulization()
       // create a projected node and set it in node
       MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*node,mxi,&mseg_);
       node->SetProjectedNode(pnode);
-#if 0
+#if 1
       if (mxi[0]<=1. && mxi[1]<=abs(1.-mxi[0]) && mxi[0]>=0. && mxi[1]>=0.)
       cout << "OVERLAP: point " << points[i]->Id() << " is in mseg, mxi " << mxi[0] << " / " << mxi[1] << endl;
       else
@@ -1846,8 +710,8 @@ bool MRTR::Overlap::Triangulization()
     MRTR::Segment_BiLinearTri* tmp;
     RefCountPtr<MRTR::Function_LinearTri> func = rcp(new Function_LinearTri());
     nodeid[0] = points[0]->Id();
-    nodeid[1] = points[1]->Id();
-    nodeid[2] = points[2]->Id();
+    nodeid[1] = points[2]->Id();
+    nodeid[2] = points[1]->Id();
     tmp = new MRTR::Segment_BiLinearTri(0,3,nodeid);
     // set a linear shape function to this triangle
     tmp->SetFunction(0,func);
@@ -1878,54 +742,6 @@ bool MRTR::Overlap::Triangulization()
   return true;
 }
 
-/*----------------------------------------------------------------------*
- |  perform a quick search (private)                         mwgee 10/05|
- *----------------------------------------------------------------------*/
-bool MRTR::Overlap::QuickOverlapTest()
-{
-  // we need the projection of the master element on the slave element 
-  // to do this test, otherwise we assmue we passed it
-  if (!havemxi_) 
-    return true;
-  
-  // find the max and min coords of slave and master points
-  double mmax[2]; 
-  mmax[0] = mxi_[0][0];
-  mmax[1] = mxi_[0][1];
-  double mmin[2]; 
-  mmin[0] = mxi_[0][0];
-  mmin[1] = mxi_[0][1];
-  for (int point=1; point<3; ++point)
-    for (int dim=0; dim<2; ++dim)
-    {
-      if (mmax[dim] < mxi_[point][dim]) 
-        mmax[dim] = mxi_[point][dim];
-      if (mmin[dim] > mxi_[point][dim]) 
-        mmin[dim] = mxi_[point][dim];
-    }
-
-
-  bool isin = false;
-  // check xi0 direction
-  if (  (0.0 < mmin[0] && mmin[0] < 1.0) ||
-        (0.0 < mmax[0] && mmax[0] < 1.0) ||
-        (mmin[0] < 0.0 && 1.0 < mmax[0])  )
-  isin = true;
-  
-  if (!isin) 
-    return false;
-
-  // check xi1 direction
-  if (  (0.0 < mmin[1] && mmin[1] < 1.0) ||
-        (0.0 < mmax[1] && mmax[1] < 1.0) ||
-        (mmin[1] < 0.0 && 1.0 < mmax[1])  )
-  isin = true;
-  
-  if (!isin)
-    return false;
-
-  return true;
-}
 
 
 

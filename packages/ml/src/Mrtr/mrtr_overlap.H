@@ -104,8 +104,48 @@ private:
   // don't want copy-ctor
   Overlap(MRTR::Overlap& old);
 
-protected:
+private:
 
+  // build line information from triangles in slave coord system
+  bool build_lines_s();
+  // build line information from triangles in master coord system
+  bool build_lines_m();
+  // build projection of master nodes onto slave segment
+  bool build_mxi();
+  // build projection of slave nodes onto master segment
+  bool build_sxim();
+  // build projection of slave nodes onto master segment
+  bool build_sxi();
+  // build the outward normal to the sseg
+  bool build_normal();
+  
+  //------------------------------------------ perform quick coarse search
+  bool QuickOverlapTest();
+
+  //-------------------------------------------- perform clipping algorithm
+  bool Clipelements();
+  // test whether a point is inside or outside of a clip edge
+  bool Clip_TestPoint(const double* N, const double* PE, const double* P, double eps);
+  // find intersection of clipping edge with line
+  bool Clip_Intersect(const double* N,const double* PE,const double* P0,const double* P1,double* xi);
+  // find parameterization alpha for point on line
+  double Clip_ParameterPointOnLine(const double* P0,const double* P1,const double* P);
+
+  // -------------------------------------finding a convex hull for the polygon
+  // create a convex hull of a set of given points in 2D
+  bool ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p);
+  bool MakeRightTurnUpper(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
+  bool MakeRightTurnLower(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
+  void RemovePointBefore(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
+  void RemovePointAfter(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
+
+  //-------------------------------------------make triangulization of polygon
+  bool Triangulization();
+  
+  //-----------------------------------------------------------collapse points
+  bool CollapsePoints(map<int,RefCountPtr<MRTR::Point> >& p, const double eps);
+  
+protected:
   //----------------------------------- tools to handle the triangulation map
   // add a segment to the triangulization
   bool AddSegment(int id, MRTR::Segment* seg);
@@ -131,65 +171,6 @@ protected:
 
 private:
 
-  // build line information from triangles
-  bool build_lines();
-  // build projection of master nodes onto slave segment
-  bool build_mxi();
-  // build projection of slave nodes onto master segment
-  bool build_sxi();
-  // build the outward normal to the sseg
-  bool build_normal();
-  
-  //------------------------------------------ perform quick coarse search
-  bool QuickOverlapTest();
-
-  //-------------------------------------------- perform clipping algorithm
-  bool Clipelements();
-  // test whether a point is inside or outside of a clip edge
-  bool Clip_TestPoint(const double* N, const double* PE, const double* P);
-  // find intersection of clipping edge with line
-  bool Clip_Intersect(const double* N,const double* PE,const double* P0,const double* P1,double* xi);
-  // find parameterization alpha for point on line
-  double Clip_ParameterPointOnLine(const double* P0,const double* P1,const double* P);
-
-  // fix the polygon for case 1_2_dif
-  bool Clip_FixPolygon_1_2_dif(int np, RefCountPtr<MRTR::Point>* point);
-  // fix the polygon for case 1_2_same
-  bool Clip_FixPolygon_1_2_same(int np, RefCountPtr<MRTR::Point>* point);
-  // fix the polygon for case 2_2_same
-  bool Clip_FixPolygon_2_2_same(int np, RefCountPtr<MRTR::Point>* point);
-  // fix the polygon for case 2_2_dif
-  bool Clip_FixPolygon_2_2_dif(int np, RefCountPtr<MRTR::Point>* point);
-  // fix the polygon for case 1_4_same
-  bool Clip_FixPolygon_1_4_same(int np, RefCountPtr<MRTR::Point>* point);
-  // fix the polygon for case 1_4_dif
-  bool Clip_FixPolygon_1_4_dif(int np, RefCountPtr<MRTR::Point>* point);
-  // fix the polygon for case 3_0
-  bool Clip_FixPolygon_3_0(int np, RefCountPtr<MRTR::Point>* point);
-  // fix the polygon for case 0_0
-  bool Clip_FixPolygon_0_0(int np, RefCountPtr<MRTR::Point>* point);
-  // fix the polygon for case 0_4_same
-  bool Clip_FixPolygon_0_4_same(int np, RefCountPtr<MRTR::Point>* point);
-  // fix the polygon for case 0_4_dif
-  bool Clip_FixPolygon_0_4_dif(int np, RefCountPtr<MRTR::Point>* point);
-  // fix the polygon for case 0_2
-  bool Clip_FixPolygon_0_2(int np, RefCountPtr<MRTR::Point>* point);
-  // fix the polygon for case 0_6
-  bool Clip_FixPolygon_0_6(int np, RefCountPtr<MRTR::Point>* point);
-
-  // -------------------------------------finding a convex hull for the polygon
-  // create a convex hull of a set of given points in 2D
-  bool ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p);
-  bool MakeRightTurnUpper(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
-  bool MakeRightTurnLower(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
-  void RemovePointBefore(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
-  void RemovePointAfter(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
-
-  //-------------------------------------------make triangulization of polygon
-  bool Triangulization();
-  
-private:
-
 MRTR::Interface&                     inter_;
 MRTR::Segment&                       sseg_;
 MRTR::Segment&                       mseg_;
@@ -197,16 +178,26 @@ MRTR::Segment&                       mseg_;
 bool                                 overlap_;   // true if segments overlap
 int                                  nnode_;     // # of master nodes
 
+//------------------ data in sseg_'s local coord system
 double                               mxi_[3][2]; // local coords of mnodes projected onto sseg
 bool                                 havemxi_;   // flag indicating whether mxi_ and min_ have been build
 
-double                               sxi_[3][2]; // local coords of snodes 
-double                               sn_[3][2];   // outward normal to sseg's edges in local coords
+double                               sxi_[3][2]; // local coords of snodes in sseg's coord system
+double                               n_[3][2];   // outward normal to segment's edges in local coords
 bool                                 havesxi_;   // flag indicating whether sxi_ and sin_ have been build
 
 double                               sline_[3][4]; // 3 lines of sseg_ in sseg_'s local coords
 double                               mline_[3][4]; // 3 lines of mseg_in sseg_'s local coords
-bool                                 haveline_;    // flag indicating whether line info has been build
+bool                                 havelines_;   // flag indicating whether line info has been build
+
+//------------------ data in mseg_'s local coord system
+double                               sxim_[3][2];  // coords of slave nodes on master segment
+bool                                 havesxim_;    // flag indicating whether sxim_ was built
+
+double                               slinem_[3][4]; // 3 lines of sseg_ in mseg_'s local coords
+double                               mlinem_[3][4]; // 3 lines of mseg_in mseg_'s local coords
+bool                                 havelinem_;   // flag indicating built of line information in master coords
+
 
 map<int,RefCountPtr<MRTR::Point> >   p_;       // map holding polygon points and later points of triangulation
 map<int,RefCountPtr<MRTR::Segment> > s_;       // map holding segments of polygon triangulation

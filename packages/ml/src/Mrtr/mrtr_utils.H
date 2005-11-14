@@ -68,6 +68,7 @@ MRTR::Function* MRTR::AllocateFunction(MRTR::Function::FunctionType type);
 MRTR::Segment* MRTR::AllocateSegment(int type);
 bool MRTR::cross(double* out, const double* g1, const double* g2);
 double MRTR::dot(const double* g1, const double* g2, const int dim);
+double MRTR::length(const double* g, const int dim);
 bool MRTR::solve22(const double A[][2], double* x, const double* b);
 bool MRTR::solve33(const double A[][3], double* x, const double* b);
 int MRTR::digit_ten(int i);
