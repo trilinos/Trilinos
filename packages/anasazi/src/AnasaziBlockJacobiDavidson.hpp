@@ -967,9 +967,9 @@ public:
       _os << "[Starting Solver]" << endl;
     }
 
-    // ========================================= //
-    // Start the (Block-) Davidson iteration ... //
-    // ========================================= //
+    // ================================================ //
+    // Start the (Block-) Jacobi/Davidson iteration ... //
+    // ================================================ //
     
     while(_iters < _maxIters)
     {
