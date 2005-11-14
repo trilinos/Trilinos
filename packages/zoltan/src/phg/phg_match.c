@@ -381,9 +381,10 @@ static int pmatching_ipm (ZZ *zz,
   int max_nPins, max_nVtx;       /* Global max # pins/proc and vtx/proc */
   int **rows = NULL;             /* used only in merging process */
   int bestlno, partner_gno, nselect, edge;
-  int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
+  Triplet *master_data = NULL;
+  int *master_procs = NULL;
   int cFLAG;                    /* if set, do only a column matching, c-ipm */
-  Triplet *local_best= NULL, *global_best= NULL;
+  Triplet *global_best = NULL;
   MPI_Op phasethreeop;
   MPI_Datatype phasethreetype;
   int candidate_index;
@@ -394,13 +395,7 @@ static int pmatching_ipm (ZZ *zz,
   
   ZOLTAN_TRACE_ENTER (zz, yo);
   MACRO_TIMER_START (0, "matching setup", 0);
- 
- if (sizeof (Triplet) != 3 * sizeof (int))  {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Quadword alignment error - must fix");
-    err = ZOLTAN_FATAL;
-    goto fini;
-  }
-    
+     
   /* this restriction may be removed later, but for now NOTE this test */
   if (sizeof(int) < sizeof(float))  {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Code must be modified before using");
@@ -420,8 +415,8 @@ static int pmatching_ipm (ZZ *zz,
   nRounds     = cFLAG ? ROUNDS_CONSTANT : hgc->nProc_x * ROUNDS_CONSTANT;
   nCandidates = calc_nCandidates (hg->nVtx, cFLAG ? 1 : hgc->nProc_x); 
     
-  /* determine maximum number of Vtx and Pins for storage allocation.*/
-  /* determine initial sum of all candidates total_nCandidates- allocation. */
+  /* determine maximum number of Vtx and Pins for storage allocation */
+  /* determine initial sum of all candidates = total_nCandidates==>allocation */
   if (cFLAG)  {
     total_nCandidates = nCandidates;
     max_nVtx  = hg->nVtx;
@@ -447,8 +442,8 @@ static int pmatching_ipm (ZZ *zz,
   nSize  = 1 + MAX(MAX(hgc->nProc_x,hgc->nProc_y),
                    MAX(total_nCandidates,max_nVtx));
 
-  /* These 3 buffers are REALLOC'd iff necessary; this should be very rare */
-  nSend    = max_nPins;   /* nSend/nEdgebuf are used for candidate exchange   */
+  /* These 3 buffers are REALLOC'd iff necessary; this should be very rare  */
+  nSend    = max_nPins;   /* nSend/nEdgebuf are used for candidate exchange */
   nRec     = max_nPins;  
   nEdgebuf = max_nPins;   /* list of <candidate_gno, #pins, pin_list> */
 
@@ -463,7 +458,7 @@ static int pmatching_ipm (ZZ *zz,
     }
 
   if (!cFLAG && total_nCandidates && (hgc->myProc_y == 0))   /* Master row */
-    if (!(master_data=(int*)ZOLTAN_MALLOC(3*total_nCandidates*sizeof(int))) ||
+    if (!(master_data=(Triplet*)ZOLTAN_MALLOC(total_nCandidates*sizeof(Triplet))) ||
      !(global_best=(Triplet*)ZOLTAN_MALLOC(total_nCandidates*sizeof(Triplet)))){
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
        err = ZOLTAN_MEMERR;
@@ -472,11 +467,9 @@ static int pmatching_ipm (ZZ *zz,
 
   if (!cFLAG && hgc->myProc_y == 0)
     for (i = 0; i < total_nCandidates; i++) {
-      float *f;
-      master_data[i*3] = -1;
-      master_data[i*3+1] = -1;
-      f = (float*) &(master_data[i*3+2]);
-      *f = -1.0;
+      master_data[i].candidate = -1;
+      master_data[i].partner   = -1;
+      master_data[i].ip        = -1.0;
     }
 
   if (!cFLAG)
@@ -505,8 +498,7 @@ static int pmatching_ipm (ZZ *zz,
    * an unmatched vertex. A matching between vertices i & j is indicated by 
    * match[i] = j & match[j] = i.  NOTE: a match to an off processor vertex is
    * indicated by a negative number, -(gno+1), and must use global numbers
-   * (gno's) and not local numbers, lno's, which are zero based.        */
-
+   * (gno's) and not local numbers, lno's, which are zero based per processor */
   /* Compute candidates' vertex visit order (selection). Random is default. */
   Zoltan_PHG_Vertex_Visit_Order (zz, hg, hgp, visit);
   
@@ -526,10 +518,10 @@ static int pmatching_ipm (ZZ *zz,
     
     /************************ PHASE 1: ***************************************/
     
-    mp = master_data;              /* mp is a pointer to the master data */
-    nmaster = 0;                   /* count of data accumulted in master row */    
+    for (i = 0; i < total_nCandidates; i++)
+       permute[i] = -1;
+    
     memcpy (cmatch, match, hg->nVtx * sizeof(int));  /* for temporary locking */
-
     if (cFLAG)
       /* select upto nCandidates unmatched vertices to locally match */
       for (nTotal=0; nTotal < nCandidates && vindex < hg->nVtx; vindex++)  {
@@ -627,7 +619,7 @@ static int pmatching_ipm (ZZ *zz,
       if (hgc->nProc_x > 1) {
         Zoltan_Srand_Sync(Zoltan_Rand(NULL),&(hgc->RNGState_col),hgc->col_comm);
 #ifdef RTHRTH
-        Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));
+        Zoltan_Rand_Perm_Int (permute, total_nCandidates, &(hgc->RNGState_col));
 #endif 
       }
     }                           /* DONE:  if (cFLAG) else ...  */
@@ -637,23 +629,19 @@ static int pmatching_ipm (ZZ *zz,
       
     /* for each candidate vertex, compute all local partial inner products */
     kstart = old_kstart = 0;         /* next candidate (of nTotal) to process */
-#ifdef USE_SUBROUNDS
-    while (kstart < nTotal)  { 
-/*
-   KMDKMD I think the override of the send-buffering with realloc removes
-   KMDKMD the need for the while loop.  Indeed, since nTotal can vary within
-   KMDKMD a processor column, and since there is column communication within
-   KMDKMD this while loop, the while condition will cause hangs when some
-   KMDKMD processor has nTotal=0.  We'll have to revisit this problem when
-   KMDKMD we reactivate the fixed-size send buffer.
-*/
-#endif
+    while (kstart < total_nCandidates)  { 
+
+if (kstart > 0)        
+printf ("RTHRTH    kstart > 0   RTHRTH\n");    
+
       MACRO_TIMER_START (2, "Matching kstart A", 0);
       sendsize = 0;                      /* position in send buffer */
       sendcnt = 0;                       /* count of messages in send buffer */
       s = send;                          /* start at send buffer origin */
-      for (k = kstart; k < nTotal; k++)  {  
-        if (!cFLAG)  { 
+      for (k = kstart; k < total_nCandidates; k++)  {  
+        if (!cFLAG)  {
+          if (permute[k] == -1)
+             continue; 
           r     = &edgebuf[permute[k]];
           candidate_gno   = *r++;          /* gno of candidate vertex */
           candidate_index = *r++;          /* candidate_index of vertex */
@@ -708,17 +696,6 @@ static int pmatching_ipm (ZZ *zz,
         /* HEADER_COUNT (row, candidate_gno, candidate_index, count of
          * <lno, psum> pairs describing non-zero partial inner products)  */
         msgsize = HEADER_COUNT + 2 * count;
-
-#ifndef USE_SUBROUNDS
-        /* EBEB Avoid buffer overflow by realloc. 
-                Temp hack for testing. Revisit this!  
-        */
-        if (msgsize+sendsize >= nSend){
-          int offset=s-send;
-          MACRO_REALLOC (2*(msgsize+nSend), nSend, send);
-          s = send+offset;    
-        }
-#endif
         
         /* iff necessary, resize send buffer to fit at least first message */
         if (sendcnt == 0 && (msgsize > nSend))  {
@@ -756,12 +733,9 @@ static int pmatching_ipm (ZZ *zz,
      
       /* synchronize all rows in this column to next kstart value */
       old_kstart = kstart;      
-#ifdef USE_SUBROUNDS
+
       MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
-#else
-      /* EBEB Skip synchronization. */
-      kstart = k;
-#endif
+
             
       /* Send inner product data in send buffer to appropriate rows */
       err = communication_by_plan (zz, sendcnt, dest, size, 1, send, &reccnt, 
@@ -780,7 +754,7 @@ static int pmatching_ipm (ZZ *zz,
         }
         candidate_gno   = *r++;
         candidate_index = *r++;
-        count = *r++;
+        count           = *r++;
         r += (2 * count);
       }
      
@@ -887,19 +861,16 @@ static int pmatching_ipm (ZZ *zz,
           }
          
           if (cFLAG && bestsum > TSUM_THRESHOLD)  {
-            match[bestlno]  = candidate_gno;
+            match[bestlno]       = candidate_gno;
             match[candidate_gno] = bestlno;
             cmatch[bestlno] = -1;         
           }
                         
           if (!cFLAG && bestsum > TSUM_THRESHOLD)  {
             cmatch[bestlno] = -1;  /* mark pending match to avoid conflicts */
-
-            master_data[candidate_index*3] = candidate_gno;
-            master_data[1+candidate_index*3] = VTX_LNO_TO_GNO(hg, bestlno);
-            f = (float*) &(master_data[2+candidate_index*3]);
-            *f = bestsum;
-            nmaster++;
+            master_data[candidate_index].candidate = candidate_gno;
+            master_data[candidate_index].partner = VTX_LNO_TO_GNO (hg, bestlno);
+            master_data[candidate_index].ip = bestsum;
           }
         }
       }
@@ -908,9 +879,9 @@ static int pmatching_ipm (ZZ *zz,
         MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
       }
       MACRO_TIMER_STOP (3);    
-#ifdef USE_SUBROUNDS
+
     }            /* DONE: kstart < max_nTotal loop */ 
-#endif
+
     if (cFLAG)
       continue;      /* skip phases 3 and 4, continue rounds */ 
     
@@ -922,25 +893,8 @@ static int pmatching_ipm (ZZ *zz,
     /* Only MASTER ROW computes best global match for candidates */
     /* EBEB or perhaps we can do this fully distributed? */
     if (hgc->myProc_y == 0) {
-
-      /* Convert master_data to array of triplets with best potential matches.*/
-      local_best = (Triplet *) master_data;
-
-      /* A triplet is (candidate id, best match id, and best i.p. value) */
-      /* Sort by candidate's global id; this is necessary to do the
-         "merge" between processors efficiently. Can we use hash instead? */
-
-
-      /* DEBUG 
-      for (i=0; i<nmaster; i++){
-        uprintf(hgc, "candidate # %d = %d\n", i, local_best[i].candidate); 
-      }
-      */
-
-      /* User-defined Allreduce to find max over inner product values;
-         this will tell us the globally best "match" for each candidate. */
       HG_Ptr = hg;
-      MPI_Allreduce(local_best, global_best, total_nCandidates, phasethreetype,
+      MPI_Allreduce(master_data, global_best, total_nCandidates, phasethreetype,
                     phasethreeop, hgc->row_comm);
 
       /* Look through array of "winners" and update match array. */
@@ -951,9 +905,9 @@ static int pmatching_ipm (ZZ *zz,
         candidate_gno = global_best[i].candidate;
 
         /* Reinitialize master_data for next round */
-        master_data[i*3] = master_data[i*3+1] = -1;
-        f = (float *) &(master_data[i*3+2]);
-        *f = -1.;
+        master_data[i].candidate = -1;
+        master_data[i].partner   = -1;
+        master_data[i].ip        = -1.0;
         if (candidate_gno == -1)
           continue;
 
@@ -977,10 +931,7 @@ static int pmatching_ipm (ZZ *zz,
 
     /* broadcast match array to the entire column */
     MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
-
     MACRO_TIMER_STOP (4);                       /* end of phase 3 */
-
-
   }                                             /* DONE: loop over rounds */
   
   MACRO_TIMER_START (6, "Matching Cleanup", 0);
@@ -1042,15 +993,12 @@ static int pmatching_ipm (ZZ *zz,
   MACRO_TIMER_STOP (6);
 
 fini:
-
-
   if (!cFLAG) {
     MPI_Op_free(&phasethreeop);
     MPI_Type_free(&phasethreetype);
     ZOLTAN_FREE(&global_best);
     ZOLTAN_FREE(&Tmp_Best);
   }
-
 
   Zoltan_Multifree (__FILE__, __LINE__, 15, &cmatch, &visit, &sums, &send,
    &dest, &size, &rec, &index, &aux, &permute, &edgebuf, &select, &rows,
