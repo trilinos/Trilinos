@@ -83,8 +83,9 @@ for option in options:
         extra_link_args.append(option)
 
 # Define the strings that refer to the required local source files
-epetraWrap         = "Epetra_wrap.cpp"
-epetraNumPyVector  = os.path.join(srcdir,"Epetra_NumPyVector.cpp" )
+srcFiles = ["Epetra_wrap.cpp",
+            os.path.join(srcdir,"Epetra_NumPyMultiVector.cpp"),
+            os.path.join(srcdir,"Epetra_NumPyVector.cpp"     ) ]
 
 # Compiler and linker
 sysconfig.get_config_vars()
@@ -93,7 +94,7 @@ sysconfig._config_vars["CXX"] = CXX
 
 # _Epetra extension module
 _Epetra = Extension("PyTrilinos._Epetra",
-                    [epetraWrap, epetraNumPyVector],
+                    srcFiles,
                     define_macros      = [("HAVE_CONFIG_H", "1")],
                     include_dirs       = include_dirs,
                     library_dirs       = library_dirs,

@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef EPETRA_NUMPYVECTOR_H
-#define EPETRA_NUMPYVECTOR_H
+#ifndef EPETRA_NUMPYMULTIVECTOR_H
+#define EPETRA_NUMPYMULTIVECTOR_H
 
 #define NO_IMPORT_ARRAY
 #include "numeric_include.h"
@@ -35,39 +35,44 @@
 #include "Epetra_SerialComm.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
-#include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
 
-class Epetra_NumPyVector : public Epetra_Vector {
+class Epetra_NumPyMultiVector : public Epetra_MultiVector {
 
 public:
 
-  Epetra_NumPyVector(const Epetra_BlockMap & blockMap, bool zeroOut=true);
-  Epetra_NumPyVector(const Epetra_NumPyVector & source);
-  Epetra_NumPyVector(const Epetra_BlockMap & blockMap, PyObject * pyObject);
-  //Epetra_NumPyVector(Epetra_DataAccess CV, const Epetra_NumPyVector & source, int index);
-  Epetra_NumPyVector(PyObject * pyObject);
+  Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMap, int numVectors, bool zeroOut=true);
+  Epetra_NumPyMultiVector(const Epetra_NumPyMultiVector & source);
+  Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMap, PyObject * pyObject);
+  Epetra_NumPyMultiVector(Epetra_DataAccess CV, const Epetra_NumPyMultiVector & source,
+			  PyObject * range);
+  Epetra_NumPyMultiVector(PyObject * pyObject);
 
-  ~Epetra_NumPyVector();
+  ~Epetra_NumPyMultiVector();
 
-  PyObject * getArray();
-  double Norm1() const;
-  double Norm2() const;
-  double NormInf() const;
-  double Dot(const Epetra_Vector & A) const;
+  PyObject * getArray() const;
+  PyObject * Norm1() const;
+  PyObject * Norm2() const;
+  PyObject * NormInf() const;
+  PyObject * Dot(const Epetra_MultiVector & A) const;
 
 private:
 
   // Private methods thus not callable
-  Epetra_NumPyVector();
+  Epetra_NumPyMultiVector();
 
   // Static helper functions
-  static Epetra_Map & getEpetraMap( PyObject *);
-  static double     * getSourceData(PyObject *);
+  static Epetra_Map & getEpetraMap(PyObject *);
+  static int        * getRange(    PyObject *);
+  static double     * getArrayFromObject(PyObject *);
+  static double     * getArrayFromMapAndObject(const Epetra_BlockMap &, PyObject *);
 
   // Static private data
   static const Epetra_SerialComm defaultComm;
   static       PyArrayObject *   tmp_array;
   static       Epetra_Map    *   tmp_map;
+  static       PyArrayObject *   tmp_range;
+  static       int               tmp_range_len;
 
   // Private data
   Epetra_BlockMap * map;

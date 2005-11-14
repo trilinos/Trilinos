@@ -62,8 +62,8 @@ double * Epetra_NumPyVector::getSourceData(PyObject * pyObject)
 
 // Constructors
 // =============================================================================
-Epetra_NumPyVector::Epetra_NumPyVector(Epetra_BlockMap & blockMap):
-  Epetra_Vector(blockMap, true)
+Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap & blockMap, bool zeroOut):
+  Epetra_Vector(blockMap, zeroOut)
 {
   // Create the array object
   int dims[ ] = { blockMap.NumMyElements() };
@@ -77,8 +77,20 @@ Epetra_NumPyVector::Epetra_NumPyVector(Epetra_BlockMap & blockMap):
 }
 
 // =============================================================================
-Epetra_NumPyVector::Epetra_NumPyVector(Epetra_BlockMap & blockMap,
-                                       PyObject        * pyObject):
+Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_NumPyVector & source):
+  Epetra_Vector(source)
+{
+  map = new Epetra_BlockMap(source.Map());
+  int dims[ ] = { map->NumMyElements() };
+  double *v = NULL;
+  ExtractView(&v);
+  array = (PyArrayObject *) PyArray_FromDimsAndData(1,dims,PyArray_DOUBLE,
+						    (char *)v);
+}
+
+// =============================================================================
+Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap & blockMap,
+                                       PyObject * pyObject):
   Epetra_Vector(View, blockMap, getSourceData(pyObject))
 {
   // Get the pointer to the array from static variable and clear
@@ -89,6 +101,19 @@ Epetra_NumPyVector::Epetra_NumPyVector(Epetra_BlockMap & blockMap,
   // Copy the Epetra_BlockMap
   map = new Epetra_BlockMap(blockMap);
 }
+
+// =============================================================================
+// Epetra_NumPyVector::Epetra_NumPyVector(Epetra_DataAccess CV, const Epetra_MultiVector & source,
+// 				       int index):
+//   Epetra_Vector(CV,source,index)
+// {
+//   map = new Epetra_BlockMap(source.Map());
+//   int dims[ ] = { map->NumMyElements() };
+//   double *v = NULL;
+//   ExtractView(&v);
+//   array = (PyArrayObject *) PyArray_FromDimsAndData(1,dims,PyArray_DOUBLE,
+// 						    (char *)v);
+// }
 
 // =============================================================================
 Epetra_NumPyVector::Epetra_NumPyVector(PyObject * pyObject):
@@ -120,3 +145,54 @@ PyObject * Epetra_NumPyVector::getArray()
   return PyArray_Return(array);
 }
 
+// =============================================================================
+double Epetra_NumPyVector::Norm1() const {
+  double result[1];
+  int status = Epetra_MultiVector::Norm1(result);
+  if (status) {
+    PyErr_Format(PyExc_RuntimeError, "Norm1 returned error code %d", status);
+    goto fail;
+  }
+  return result[0];
+ fail:
+  return NULL;
+}
+
+// =============================================================================
+double Epetra_NumPyVector::Norm2() const {
+  double result[1];
+  int status = Epetra_MultiVector::Norm2(result);
+  if (status) {
+    PyErr_Format(PyExc_RuntimeError, "Norm2 returned error code %d", status);
+    goto fail;
+  }
+  return result[0];
+ fail:
+  return NULL;
+}
+
+// =============================================================================
+double Epetra_NumPyVector::NormInf() const {
+  double result[1];
+  int status = Epetra_MultiVector::NormInf(result);
+  if (status) {
+    PyErr_Format(PyExc_RuntimeError, "NormInf returned error code %d", status);
+    goto fail;
+  }
+  return result[0];
+ fail:
+  return NULL;
+}
+
+// =============================================================================
+double Epetra_NumPyVector::Dot(const Epetra_Vector & A) const {
+  double result[1];
+  int status = Epetra_MultiVector::Dot(A, result);
+  if (status) {
+    PyErr_Format(PyExc_RuntimeError, "Dot returned error code %d", status);
+    goto fail;
+  }
+  return result[0];
+ fail:
+  return NULL;
+}

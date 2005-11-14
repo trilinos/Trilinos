@@ -178,8 +178,6 @@ can therefore be used everywhere Numeric vectors are accepted.
 #include "Epetra_CompObject.h"
 #include "Epetra_BLAS.h"
 #include "Epetra_LAPACK.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_MapColoring.h"
@@ -203,7 +201,6 @@ can therefore be used everywhere Numeric vectors are accepted.
 
 // Local includes
 #include "FileStream.h"
-#include "Epetra_NumPyVector.h"
 #include "NumPyArray.h"
 #include "NumPyWrapper.h"
 #include "PyEpetra_Utils.h"  
@@ -224,10 +221,6 @@ can therefore be used everywhere Numeric vectors are accepted.
 %ignore Epetra_BlockMap::operator=(const Epetra_BlockMap &);
 %ignore Epetra_Map::operator=(const Epetra_Map &);
 %ignore Epetra_LocalMap::operator=(const Epetra_LocalMap &);
-%ignore Epetra_MultiVector::operator=(const Epetra_MultiVector &);
-%ignore Epetra_MultiVector::operator[](int);         // See %extend MultiVector
-%ignore Epetra_MultiVector::operator[](int) const;   //       __getitem__()
-%ignore Epetra_MultiVector::operator()(int) const;
 %ignore Epetra_IntVector::operator=(const Epetra_IntVector &);
 %ignore Epetra_IntVector::operator[](int);           // See %extend IntVector
 %ignore Epetra_IntVector::operator[](int) const;     //       __getitem__()
@@ -289,7 +282,6 @@ can therefore be used everywhere Numeric vectors are accepted.
 %rename(CompObject          ) Epetra_CompObject;
 %rename(BLAS                ) Epetra_BLAS;
 %rename(LAPACK              ) Epetra_LAPACK;
-%rename(MultiVector         ) Epetra_MultiVector;
 %rename(IntVector           ) Epetra_IntVector;
 %rename(CrsGraph            ) Epetra_CrsGraph;
 %rename(MapColoring         ) Epetra_MapColoring;
@@ -309,7 +301,6 @@ can therefore be used everywhere Numeric vectors are accepted.
 %rename(Import              ) Epetra_Import;
 %rename(Export              ) Epetra_Export;
 %rename(Time                ) Epetra_Time;
-%rename(NumPyVector         ) Epetra_NumPyVector;
 
 // Auto-documentation feature
 %feature("autodoc", "1");
@@ -358,8 +349,9 @@ using namespace std;
 %include "Epetra_CompObject.h"
 %include "Epetra_BLAS.h"
 %include "Epetra_LAPACK.h"
-%include "Epetra_MultiVector.h"
-%include "Epetra_Vector.h"
+
+%include "Epetra_Vectors.i"
+
 %include "Epetra_IntVector.h"
 %include "Epetra_CrsGraph.h"
 %include "Epetra_MapColoring.h"
@@ -384,7 +376,6 @@ using namespace std;
 
 // Local interface includes
 %include "NumPyArray.h"
-%include "Epetra_NumPyVector.h"
 
 // Extensions
 %extend Epetra_Object {
@@ -421,115 +412,6 @@ using namespace std;
     Py_INCREF(Py_None);
     return Py_None;
   }
-}
-
-%extend Epetra_MultiVector {
-  double * & __getitem__(int i) {
-    return self->operator[](i);
-  }
-
-  PyObject * Norm1() {
-    int n = self->NumVectors();
-    double result[n];
-    int numVectors[1] = {n};
-    int status        = self->Norm1(result);
-    PyObject * output = Py_BuildValue("(iO)", status, 
-				      PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
-							      (char *)result));
-    return output;
-  }
-
-  PyObject * __setitem__(PyObject * args, double val) {
-    int i, j;
-    if (!PyArg_ParseTuple(args, "ii", &i, &j)) {
-      PyErr_SetString(PyExc_IndexError, "Invalid index");
-      return NULL;
-    }
-    (*self)[i][j] = val;
-    Py_INCREF(Py_None);
-    return Py_None;
-  }
-
-  void Set(const int vector, const int element, const double value) {
-    (*self)[vector][element] = value;
-  }
-
-  PyObject * __getitem__(PyObject * args) {
-    int i, j;
-    if (!PyArg_ParseTuple(args, "ii", &i, &j)) {
-      PyErr_SetString(PyExc_IndexError, "Invalid index");
-      return NULL;
-    }
-    double val = (*self)[i][j];
-    return PyFloat_FromDouble(val);
-  }
-
-  double Get(const int vector, const int element) {
-    return((*self)[vector][element]);
-  }
-
-  PyObject * Norm2() {
-    int n = self->NumVectors();
-    double result[n];
-    int numVectors[1] = {n};
-    int status        = self->Norm2(result);
-    PyObject * output = Py_BuildValue("(iO)", status,
-				      PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
-							      (char *)result));
-    return output;
-  }
-
-  PyObject * NormInf() {
-    int n = self->NumVectors();
-    double result[n];
-    int numVectors[1] = {n};
-    int status        = self->NormInf(result);
-    PyObject * output = Py_BuildValue("(iO)", status,
-				      PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
-							      (char *)result));
-    return output;
-  }
-
-   PyObject * Dot(const Epetra_MultiVector& A){
-    int n = self->NumVectors();
-    double result[n];
-    int numVectors[1] = {n};
-    int status        = self->Dot(A, result);
-    PyObject * output = Py_BuildValue("(iO)", status,
-				      PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
-							      (char *)result));
-    return output;
-   }
-}
-
-%extend Epetra_Vector{
-
-  PyObject * Norm1() {
-    double result[1];
-    int status        = self->Norm1(result);
-    PyObject * output = Py_BuildValue("(id)", status, result[0]);
-    return output;
-  }
-
- PyObject * Norm2() {
-    double result[1];
-    int status        = self->Norm2(result);
-    PyObject * output = Py_BuildValue("(id)", status, result[0]);
-    return output;
-  }
-
-  PyObject * NormInf() {
-    double result[1];
-    int status        = self->NormInf(result);
-    PyObject * output = Py_BuildValue("(id)", status, result[0]);    
-    return output;
-  }
-   PyObject * Dot(const Epetra_MultiVector& A){
-    double result[1];
-    int status        = self->Dot(A, result);
-    PyObject * output = Py_BuildValue("(id)", status, result[0]);
-    return output;
-   }
 }
 
 %extend Epetra_IntVector {
@@ -887,18 +769,43 @@ atexit.register(Finalize)
 
 from UserArray import *
 
+class MultiVector(UserArray,NumPyMultiVector):
+    def __init__(self, *args):
+        """
+        __init__(self, BlockMap map, int numVectors, bool zeroOut=True) -> MultiVector
+        __init__(self, MultiVector source) -> MultiVector
+        __init__(self, BlockMap map, PyObject array) -> MultiVector
+        __init__(self, DataAccess CV, MultiVector source, PyObject range) -> MultiVector
+        __init__(self, PyObject array) -> MultiVector
+        """
+        NumPyMultiVector.__init__(self, *args)
+        UserArray.__init__(self,self.getArray(),'d',1,0)
+    def __str__(self):
+        return str(self.array)
+    def __setattr__(self, key, value):
+        "Protect the 'array' and 'shape' attributes"
+        if key == "array":
+            if key in self.__dict__:
+                raise AttributeError, "Cannot change Epetra.MultiVector array attribute"
+        elif key == "shape":
+            value = tuple(value)
+            if len(value) < 2:
+                raise ValueError, "Epetra.MultiVector shape is " + str(value) + \
+		  " but must have minimum of 2 elements"
+        UserArray.__setattr__(self, key, value)
+
 class Vector(UserArray,NumPyVector):
     def __init__(self, *args):
         NumPyVector.__init__(self, *args)
         UserArray.__init__(self,self.getArray(),'d',0,1)
     def __str__(self):
         return str(self.array)
-    def __setattr__(self, name, value):
+    def __setattr__(self, key, value):
         "Protect the 'array' attribute"
-        if name == "array":
-            if name in self.__dict__:
+        if key == "array":
+            if key in self.__dict__:
                 raise AttributeError, "Cannot change Epetra.Vector array attribute"
-        UserArray.__setattr__(self, name, value)
+        UserArray.__setattr__(self, key, value)
 
 %}
 
