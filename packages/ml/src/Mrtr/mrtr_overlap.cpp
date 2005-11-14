@@ -175,7 +175,7 @@ bool MRTR::Overlap::build_mxi()
   {
     // project node i onto sseg
     projector.ProjectNodetoSegment_SegmentNormal(*mnode[i],sseg_,mxi_[i]);
-#if 1
+#if 0
     // check whether i is inside sseg
     if (mxi_[i][0]<=1. && mxi_[i][1]<=abs(1.-mxi_[i][0]) && mxi_[i][0]>=0. && mxi_[i][1]>=0.)
     {
@@ -200,7 +200,7 @@ bool MRTR::Overlap::build_sxim()
   {
     // project node i onto sseg
     projector.ProjectNodetoSegment_NodalNormal(*snode[i],mseg_,sxim_[i]);
-#if 1
+#if 0
     // check whether i is inside sseg
     if (sxim_[i][0]<=1. && sxim_[i][1]<=abs(1.-sxim_[i][0]) && sxim_[i][0]>=0. && sxim_[i][1]>=0.)
     {
@@ -343,7 +343,7 @@ bool MRTR::Overlap::Clipelements()
       ok = Clip_Intersect(N,PE,P0,P1,xi);
       if (ok)
       {
-        cout << "OVERLAP Clipelements: adding intersection point " << 10*clipedge+medge << endl;
+        // cout << "OVERLAP Clipelements: adding intersection point " << 10*clipedge+medge << endl;
         AddPointtoPolygon(10*clipedge+medge,xi);
       }
     } // for (int medge=0; medge<3; ++medge)
@@ -387,7 +387,7 @@ bool MRTR::Overlap::Clipelements()
       // if not found inside, remove point
       if (!ok)
       {
-        cout << "OVERLAP Clipelements: removing point " << point[p]->Id() << endl;
+        // cout << "OVERLAP Clipelements: removing point " << point[p]->Id() << endl;
         RemovePointfromPolygon(point[p]->Id(),P);
       }
             
@@ -437,8 +437,8 @@ bool MRTR::Overlap::Clipelements()
         continue;
       else
       {
-        cout << "OVERLAP Clipelements: inserting slave point " << 1000+i << " xi="
-             << sxi_[i][0] << "/" << sxi_[i][1] << endl;
+        //cout << "OVERLAP Clipelements: inserting slave point " << 1000+i << " xi="
+        //     << sxi_[i][0] << "/" << sxi_[i][1] << endl;
         AddPointtoPolygon(1000+i,sxi_[i]);
       }
       
@@ -449,7 +449,7 @@ bool MRTR::Overlap::Clipelements()
   //===========================================================================
   //===========================================================================
   
-#if 1
+#if 0
   // make printout of the polygon so far
   {
     int np    = SizePointPolygon();
@@ -502,8 +502,8 @@ bool MRTR::Overlap::Clipelements()
         continue;
       else
       {
-        cout << "OVERLAP Clipelements: inserting slave point " << 1000+i << " xi="
-             << sxi_[i][0] << "/" << sxi_[i][1] << endl;
+        //cout << "OVERLAP Clipelements: inserting slave point " << 1000+i << " xi="
+        //     << sxi_[i][0] << "/" << sxi_[i][1] << endl;
         AddPointtoPolygon(1000+i,sxi_[i]);
       }
       
@@ -636,7 +636,7 @@ bool MRTR::Overlap::Triangulization()
       // create a projected node and set it in node
       MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*node,mxi,&mseg_);
       node->SetProjectedNode(pnode);
-#if 1
+#if 0
       if (mxi[0]<=1. && mxi[1]<=abs(1.-mxi[0]) && mxi[0]>=0. && mxi[1]>=0.)
       cout << "OVERLAP: point " << points[i]->Id() << " is in mseg, mxi " << mxi[0] << " / " << mxi[1] << endl;
       else

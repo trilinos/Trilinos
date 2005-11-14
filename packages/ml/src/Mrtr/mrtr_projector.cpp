@@ -135,7 +135,7 @@ bool MRTR::Projector::ProjectNodetoSegment_NodalNormal(const MRTR::Node& node,
       	   << "***WRN*** eps = " << eps << " eta[3] = " << eta[0] << "/" << eta[1] << "/" << alpha << "\n"
            << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
-#if 1
+#if 0
     if (i>10)
       cout << "#iterations = " << i << " eps = " << eps << " eta = " << eta[0] << "/" << eta[1] << endl;
 #endif
@@ -342,7 +342,7 @@ bool MRTR::Projector::ProjectNodetoSegment_SegmentNormal(const MRTR::Node& node,
       	   << "***WRN*** eps = " << eps << " eta[3] = " << eta[0] << "/" << eta[1] << "/" << alpha << "\n"
            << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
-#if 1
+#if 0
     if (i>10)
       cout << "#iterations = " << i << " eps = " << eps << " eta = " << eta[0] << "/" << eta[1] << endl;
 #endif

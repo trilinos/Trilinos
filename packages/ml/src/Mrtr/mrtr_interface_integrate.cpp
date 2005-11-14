@@ -43,6 +43,7 @@
 #include "mrtr_integrator.H"
 
 #include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_Time.h"
 
 /*----------------------------------------------------------------------*
  |  assemble values from integration                                    |
@@ -50,8 +51,6 @@
 bool MRTR::Interface::Mortar_Assemble(Epetra_CrsMatrix& D, 
                                        Epetra_CrsMatrix& M)
 { 
-  bool ok = false;
-  
   //-------------------------------------------------------------------
   if (IsOneDimensional())
   {
@@ -123,6 +122,11 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   bool ok = false;
   
   //-------------------------------------------------------------------
+  // time this process
+  Epetra_Time time(*lComm());
+  time.ResetStartTime();
+
+  //-------------------------------------------------------------------
   if (!IsOneDimensional())
   {
     if (gcomm_.MyPID()==0)
@@ -192,6 +196,14 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   // set the flag that this interface has been successfully integrated
   isIntegrated_ = true;
   
+  //-------------------------------------------------------------------
+  // time this process
+  double t = time.ElapsedTime();
+  if (OutLevel()>5)
+  {
+    cout << "MRTR::Interface " << Id() << ": Integration on proc " << gComm().MyPID()
+         << " finished in " << time.ElapsedTime() << " sec\n"; fflush(stdout);
+  }
   return true;
 }
 
@@ -202,6 +214,11 @@ bool MRTR::Interface::Mortar_Integrate()
 { 
   bool ok = false;
   
+  //-------------------------------------------------------------------
+  // time this process
+  Epetra_Time time(*lComm());
+  time.ResetStartTime();
+
   //-------------------------------------------------------------------
   if (IsOneDimensional())
   {
@@ -272,6 +289,16 @@ bool MRTR::Interface::Mortar_Integrate()
   // set the flag that this interface has been successfully integrated
   isIntegrated_ = true;
   
+  //-------------------------------------------------------------------
+  // time this process
+  double t = time.ElapsedTime();
+  if (OutLevel()>5)
+  {
+    cout << "MRTR::Interface " << Id() << ": Integration on proc " << gComm().MyPID()
+         << " finished in " << time.ElapsedTime() << " sec\n"; fflush(stdout);
+  }
+
+  //-------------------------------------------------------------------
   return true;
 }
 

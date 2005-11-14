@@ -660,9 +660,11 @@ bool MRTR::Integrator::Integrate(RefCountPtr<MRTR::Segment> actseg,
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  if (area<1.0e-4)
+
+#if 0
+  if (area<1.0e-6)
     cout << "***WRN*** Integrating overlap segment with tiny area " << area << endl;
-  
+#endif  
 
   // loop integration points
   for (int gp=0; gp<Ngp(); ++gp)

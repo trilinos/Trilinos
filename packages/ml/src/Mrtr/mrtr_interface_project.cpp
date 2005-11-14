@@ -45,8 +45,6 @@
  *----------------------------------------------------------------------*/
 bool MRTR::Interface::BuildNormals()
 { 
-  bool ok = false;
-  
   //-------------------------------------------------------------------
   // interface needs to be complete
   if (!IsComplete())
@@ -373,7 +371,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
         bcast[blength] = xi[1];
         ++blength;
       } 
-      if (blength > 4*rnode_[sside].size())
+      if (blength > (int)(4*rnode_[sside].size()))
       {
         cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
              << "***ERR*** Overflow in communication buffer occured\n"
@@ -1069,10 +1067,10 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
             bcast[blength] = pnode[j]->OrthoSegment();
             ++blength;
           }
-          if (bcast.size() < blength+20) 
+          if ((int)bcast.size() < blength+20) 
             bcast.resize(bcast.size()+40);
         } // for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
-        if (blength>=bcast.size())
+        if (blength>=(int)bcast.size())
         {
           cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
                << "***ERR*** Overflow in communication buffer occured\n"

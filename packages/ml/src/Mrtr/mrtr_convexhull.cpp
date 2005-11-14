@@ -93,7 +93,7 @@ bool MRTR::Overlap::ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p)
 
   map<int,RefCountPtr<MRTR::Point> >::iterator pcurr;
 
-#if 1
+#if 0
   // printout the polygon
   cout << "Input polygon:\n";
   for (pcurr=p.begin(); pcurr != p.end(); ++pcurr)
@@ -178,7 +178,7 @@ bool MRTR::Overlap::ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p)
     ++i;
   }
 
-#if 1
+#if 0
   // printout the polygon
   cout << "Final polygon:\n";
   for (pcurr=finalp.begin(); pcurr != finalp.end(); ++pcurr)
@@ -357,7 +357,6 @@ bool MRTR::Overlap::CollapsePoints(map<int,RefCountPtr<MRTR::Point> >& p,
 
   // create  vector holding points to collapse
   vector<RefCountPtr<MRTR::Point> > collapse(points.size());
-  int count; 
 
   // loop points and compare coords
   for (int i=0; i<np; ++i)
@@ -366,7 +365,7 @@ bool MRTR::Overlap::CollapsePoints(map<int,RefCountPtr<MRTR::Point> >& p,
       continue;
     
     // put point i into vector with collapse points
-    cout << "Adding " << i << " to collapse\n";
+    // cout << "Adding " << i << " to collapse\n";
     collapse[0] = points[i];
     int count = 1;
     
@@ -378,10 +377,10 @@ bool MRTR::Overlap::CollapsePoints(map<int,RefCountPtr<MRTR::Point> >& p,
       xi1xi2[0] = points[j]->Xi()[0] - points[i]->Xi()[0];
       xi1xi2[1] = points[j]->Xi()[1] - points[i]->Xi()[1];
       double dist = MRTR::length(xi1xi2,2);
-      cout << "distance between " << i << " and " << j << " : " << dist << endl;
+      // cout << "distance between " << i << " and " << j << " : " << dist << endl;
       if (dist<eps)
       {
-        cout << "Adding " << j << " to collapse\n";
+        // cout << "Adding " << j << " to collapse\n";
         // add point2 to collapse vector
         collapse[count] = points[j];
         ++count;
@@ -392,8 +391,8 @@ bool MRTR::Overlap::CollapsePoints(map<int,RefCountPtr<MRTR::Point> >& p,
     // loop all nodes in the collapse vector and put in the one with an
     // id above 100 (if there is any)
     bool foundit = false;
-    if (count>1)
-      cout << "Collapsing " << count << " nodes\n";
+    //if (count>1)
+    //  cout << "Collapsing " << count << " nodes\n";
     for (int j=0; j<count; ++j)
     {
       if (collapse[j]->Id()>=100)

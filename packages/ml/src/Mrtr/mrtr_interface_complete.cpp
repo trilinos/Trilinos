@@ -93,7 +93,8 @@ bool MRTR::Interface::Complete()
   // (take in account that node might be on different processor)
   // this test is expensive and does not scale. It is therefore only performed
   // when user requests a high output level
-  if (OutLevel()>1)
+#if 1
+  if (OutLevel()>8)
   {
     for (int proc=0; proc<gcomm_.NumProc(); ++proc)
     {
@@ -158,7 +159,7 @@ bool MRTR::Interface::Complete()
       } // for (int size=0; side<2; ++side)
     } // for (int proc=0; proc<gcomm_.NumProc(); ++proc)
   }
-  
+#endif  
   //-------------------------------------------------------------------
   // find all procs that have business on this interface (own nodes/segments)
   // build a Epetra_comm that contains only those procs

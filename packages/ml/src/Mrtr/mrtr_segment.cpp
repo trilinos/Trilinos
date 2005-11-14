@@ -255,6 +255,13 @@ int MRTR::Segment::GetLocalNodeId(int nid)
       lid = i;
       break;
     }
+  if (lid<0)
+  {
+    cout << "***ERR*** MRTR::Segment::GetLocalNodeId:\n"
+         << "***ERR*** cannot find node " << nid << " in segment " << this->Id() << " list of nodes\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);     
+  }
   return lid;
 }
 

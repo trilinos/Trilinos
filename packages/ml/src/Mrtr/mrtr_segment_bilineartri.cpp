@@ -203,7 +203,7 @@ bool MRTR::Segment_BiLinearTri::LocalCoordinatesOfNode(int lid, double* xi)
   else
   {
     cout << "***ERR*** MRTR::Segment_BiLinearTri::LocalCoordinatesOfNode:\n"
-         << "***ERR*** local node number out of range\n"
+         << "***ERR*** local node number " << lid << " out of range (0..2)\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
   }

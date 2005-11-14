@@ -325,7 +325,6 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
         seg = new MRTR::Segment_BiLinearQuad(gsurf1[i]->Id,gsurf1[i]->ngnode,nodeIds);  
       else
         dserror("Unknown type of 2D element"); 
-      
       delete [] nodeIds;
       bool ok = interface->AddSegment(*seg,0); 
       delete seg; seg = NULL;      
@@ -349,7 +348,6 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
         seg = new MRTR::Segment_BiLinearQuad(gsurf2[i]->Id,gsurf2[i]->ngnode,nodeIds);
       else
         dserror("Unknown type of 2D element"); 
-
       delete [] nodeIds;
       bool ok = interface->AddSegment(*seg,1); 
       delete seg; seg = NULL;      
@@ -372,9 +370,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       // only my own nodes
       if (gnode1[i]->node->proc != MyPID) continue;
       MRTR::Node* node = 
-        new MRTR::Node(gnode1[i]->Id,gnode1[i]->node->x,
+        new MRTR::Node(gnode1[i]->node->Id,gnode1[i]->node->x,
                        gnode1[i]->node->numdf,gnode1[i]->node->dof);
-                       
       bool ok = interface->AddNode(*node,0);
       delete node; node = NULL;
     }
@@ -385,7 +382,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       // only my own nodes
       if (gnode2[i]->node->proc != MyPID) continue;
       MRTR::Node* node = 
-        new MRTR::Node(gnode2[i]->Id,gnode2[i]->node->x,
+        new MRTR::Node(gnode2[i]->node->Id,gnode2[i]->node->x,
                        gnode2[i]->node->numdf,gnode2[i]->node->dof);
                        
       bool ok = interface->AddNode(*node,1);

@@ -77,7 +77,7 @@ bool MRTR::Overlap::Clip_Intersect(const double* N,const double* PE,const double
   
   // alpha is the line parameter of the line P0 - p1
   // if it's outside 0 <= alpha <= 1 there is no intersection
-  cout << "OVERLAP Clip_Intersect: alpha " << alpha << endl;
+  // cout << "OVERLAP Clip_Intersect: alpha " << alpha << endl;
   
   // Compute the coord xi of the intersecting point
   xi[0] = P0[0] + alpha*P1P0[0];
@@ -86,7 +86,7 @@ bool MRTR::Overlap::Clip_Intersect(const double* N,const double* PE,const double
   if (alpha<0.0 || 1.0<alpha)
     return false;
     
-  cout << "OVERLAP Clip_Intersect: found intersection xi " << xi[0] << "/" << xi[1] << endl;
+  // cout << "OVERLAP Clip_Intersect: found intersection xi " << xi[0] << "/" << xi[1] << endl;
   return true;
 }
 
@@ -101,7 +101,7 @@ bool MRTR::Overlap::Clip_TestPoint(const double* N, const double* PE,
   PPE[1] = P[1] - PE[1];
 
   double dotproduct = PPE[0]*N[0]+PPE[1]*N[1];
-  cout << "OVERLAP Clip_TestPoint: dotproduct " << dotproduct << endl;
+  // cout << "OVERLAP Clip_TestPoint: dotproduct " << dotproduct << endl;
 
   if (dotproduct>eps)
     return false;
@@ -148,8 +148,8 @@ bool MRTR::Overlap::AddPointtoPolygon(const int id,const double* P)
     curr->second->SetXi(P);
   else
   {
-    cout << "OVERLAP Clip_AddPointtoPolygon: added point " << id 
-         << " xi=" << P[0] << "/" << P[1] << endl;
+    //cout << "OVERLAP Clip_AddPointtoPolygon: added point " << id 
+    //     << " xi=" << P[0] << "/" << P[1] << endl;
     RefCountPtr<MRTR::Point> p = rcp(new MRTR::Point(id,P));
     p_.insert(pair<int,RefCountPtr<MRTR::Point> >(id,p));
   }
@@ -177,12 +177,12 @@ bool MRTR::Overlap::RemovePointfromPolygon(const int id,const double* P)
   {
     curr->second = null;
     p_.erase(id);
-    cout << "OVERLAP Clip_RemovePointfromPolygon: removed point " << id << endl;
+    // cout << "OVERLAP Clip_RemovePointfromPolygon: removed point " << id << endl;
     return true;
   }
   else
   {
-    cout << "OVERLAP Clip_RemovePointfromPolygon: do nothing\n";
+    // cout << "OVERLAP Clip_RemovePointfromPolygon: do nothing\n";
     return false;
   }
 }
@@ -324,7 +324,10 @@ bool MRTR::Overlap::QuickOverlapTest()
   isin = true;
   
   if (!isin) 
+  {
+    //cout << "OVERLAP: " << sseg_.Id() << " and " << mseg_.Id() << " do NOT overlap in QuickOverlapTest\n";
     return false;
+  }
 
   // check xi1 direction
   if (  (0.0 < mmin[1] && mmin[1] < 1.0) ||
@@ -333,7 +336,10 @@ bool MRTR::Overlap::QuickOverlapTest()
   isin = true;
   
   if (!isin)
+  {
+    //cout << "OVERLAP: " << sseg_.Id() << " and " << mseg_.Id() << " do NOT overlap in QuickOverlapTest\n";
     return false;
+  }
 
   return true;
 }

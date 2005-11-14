@@ -45,6 +45,7 @@
 #include "mrtr_overlap.H"
 
 #include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_Time.h"
 
 /*----------------------------------------------------------------------*
  |  make mortar integration of master/slave side in 3D (2D interface)   |
@@ -73,12 +74,12 @@ bool MRTR::Interface::Integrate_3D()
     // the segment to be integrated
     RefCountPtr<MRTR::Segment> actsseg = scurr->second;
 
-#if 1
+#if 0
     cout << "\nActive sseg id " << actsseg->Id() << "\n\n";
 #endif
 
     // check whether I own at least one of the nodes on this slave segment
-    int nnode = actsseg->Nnode();
+    const int nnode = actsseg->Nnode();
     MRTR::Node** nodes = actsseg->Nodes();
     bool foundone = false;
     for (int i=0; i<nnode; ++i)
@@ -90,13 +91,17 @@ bool MRTR::Interface::Integrate_3D()
     // if none of the nodes belongs to me, do nothing on this segment
     if (!foundone) continue;
     
+    // time this process
+    //Epetra_Time time(*lComm());
+    //time.ResetStartTime();
+
     // loop over all segments on the master side
     map<int,RefCountPtr<MRTR::Segment> >::iterator mcurr;
     for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)    
     {
       RefCountPtr<MRTR::Segment> actmseg = mcurr->second;
       
-#if 1
+#if 0
     cout << "Active mseg id " << actmseg->Id() << endl;
 #endif
       // if there is an overlap, integrate the pair
@@ -104,6 +109,9 @@ bool MRTR::Interface::Integrate_3D()
       Integrate_3D_Section(*actsseg,*actmseg);
       
     } // for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)  
+
+    //cout << "time for this slave segment: " << time.ElapsedTime() << endl;
+
   } // for (scurr=rseg_[sside].begin(); scurr!=rseg_[sside].end(); ++scurr)
 
   return true;
@@ -207,7 +215,7 @@ bool MRTR::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
     RefCountPtr<MRTR::Node> rowsnode = curr->second;
     int snlmdof = rowsnode->Nlmdof();
     const int* slmdof = rowsnode->LMDof();
-    cout << "Current row snode: " << rowsnode->Id() << endl;
+    //cout << "Current row snode: " << rowsnode->Id() << endl;
     
 
   //-------------------------------------------------------------------

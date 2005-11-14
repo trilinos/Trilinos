@@ -1035,7 +1035,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
         {
           if (nodes[i][j]->IsCorner())
           {
-            if (bcast.size() <= bsize)
+            if ((int)bcast.size() <= bsize)
               bcast.resize(bsize+10);
             bcast[bsize] = j;
             ++bsize;  
@@ -1069,7 +1069,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
         for (int j=0; j<nnodes[i]; ++j)
           if (nodes[i][j]->IsCorner())
           {
-            if (cornernodes[i].size() <= bsize)
+            if ((int)cornernodes[i].size() <= bsize)
               cornernodes[i].resize(bsize+5);
             cornernodes[i][bsize] = nodes[i][j]->Id();
             ++bsize;

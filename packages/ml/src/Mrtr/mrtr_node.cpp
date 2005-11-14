@@ -336,7 +336,6 @@ bool MRTR::Node::GetPtrstoSegments(MRTR::Interface& interface)
   
   for (int i=0; i<seg_.size(); ++i)
   {
-    int sid = seg_[i];
     segptr_[i] = interface.GetSegmentView(seg_[i]).get();
     if (!segptr_[i])
     {
