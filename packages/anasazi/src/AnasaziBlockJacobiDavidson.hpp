@@ -244,7 +244,7 @@ public:
 //                                 *** IMPLEMENTATION ***
 //----------------------------------------------------------------------------------------------
 
-#if 1
+#if 0
 //solves a specific equation A*sol=b with preconditioner Kinv
 template <class ScalarType, class MV, class OP>
 Anasazi::ReturnType GMRES<ScalarType, MV, OP>::solve(OP &A, OP &Kinv, MV &b, MV &sol) {
@@ -279,10 +279,14 @@ Anasazi::ReturnType GMRES<ScalarType, MV, OP>::solve(OP &A, OP &Kinv, MV &b, MV 
 	
 	vi[0]=0;
 
-        u = b.Clone(1);                                       // u = b
-        ok = A.Apply(*sol, *u);                               // u = A*x
-        assert(ok == Anasazi::Ok);
-        u->MvAddMv((ScalarType)1, b, (ScalarType)-1, *u);     // u = b - u = b - A*x
+	r=b.Clone(1); //(*) 1 col
+	ok=A.Apply(sol,*r);
+	if (ok!=Anasazi::Ok) {
+		_errorString="GMRES: error applying operator A to r";
+		delete(r);
+		r=0;
+		return Anasazi::Failed;
+	}
 	r->MvAddMv((ScalarType)1,b,(ScalarType)-1,*r); //r:=b-A*x
 
 	ok=Kinv.Apply(*r,*r); //r:=K^(-1)*(b-A*x)
@@ -389,7 +393,7 @@ Anasazi::ReturnType GMRES<ScalarType, MV, OP>::solve(OP &A, OP &Kinv, MV &b, MV 
 template <class ScalarType, class MV, class OP>
 Anasazi::ReturnType GMRES<ScalarType, MV, OP>::solve(OP &A, OP &Kinv, MV &b, MV &x) {
 
-  int k=0, i, j, info, LSit;
+  int k=0, i, j, info;
   ScalarType work[2*_LSitRestart];
   magnitudeType a, rho, eta;
 	
@@ -436,8 +440,9 @@ Anasazi::ReturnType GMRES<ScalarType, MV, OP>::solve(OP &A, OP &Kinv, MV &b, MV 
   s.shape(_LSitRestart,1);                           //  s ~ zeros(_LSitRestart+1, 1)
 	
 
+  _restarts = 0;
   k=0;
-  for (LSit=1; LSit<=_LSitmax; LSit++) {
+  for (_LSit=1; _LSit<=_LSitmax; _LSit++) {
     vi[0] = k;
     uview = u->CloneView(vi); 
     ok = A.Apply(*uview, *uA);                          // uA = A*u[k]
@@ -507,13 +512,14 @@ Anasazi::ReturnType GMRES<ScalarType, MV, OP>::solve(OP &A, OP &Kinv, MV &b, MV 
       e.shape(_LSitRestart+1,1);                         // e = zeros(_LSitRestart+1, 1)
       e(0,0)=eta;                                        // e(1) = rho
  
+      _restarts++;
       k=-1;
     }
 		
     k++;
   }
 
-  if ((k != 0) || (LSit != _LSitmax)) {
+  if ((k != 0) || (_LSit != _LSitmax)) {
     
     blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
 	       k+1, 1, (ScalarType)1.0, R.values(), _LSitRestart + 1, e.values(), _LSitRestart + 1);         // e = R\e
@@ -566,26 +572,31 @@ void GMRES<ScalarType, MV, OP>::GivensU(const magnitudeType c, const ScalarType 
 	x2=c*x2-s*h;
 }
 
+
+  
 template <class ScalarType, class MV>
 class JacDavOp1 : public virtual Anasazi::Operator<ScalarType> {
 protected:
 	MV& _Q,& _Qb;
 public:
 	JacDavOp1(MV &Q, MV &Qb) : _Q(Q), _Qb(Qb) {}
-	
-	virtual Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType> &mv1, Anasazi::MultiVec<ScalarType> &mv2) const {
-		int a=mv1.GetVecLength();
-		Teuchos::SerialDenseMatrix<int,ScalarType> H;
-		
-		if ((mv1.GetNumberVecs()!=mv1.GetNumberVecs()) || (a!=mv2.GetVecLength()) || (a!=_Qb.GetVecLength()) || (a!=_Q.GetVecLength()) || (_Q.GetNumberVecs()!=_Qb.GetNumberVecs())) return Anasazi::Failed;
-		
-		H.shapeUninitialized(_Qb.GetNumberVecs(), mv1.GetNumberVecs());
-		mv1.MvTransMv((ScalarType)1,_Qb,H);
-		mv2.MvAddMv((ScalarType)1,mv1,(ScalarType)0,mv2);
-		mv2.MvTimesMatAddMv((ScalarType)-1,_Q,H,(ScalarType)1);
-		
-		return Anasazi::Ok;
-	}
+
+  //
+  // mv2 = (I - Q*Qb^T)*mv1
+  //
+  virtual Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType> &mv1, Anasazi::MultiVec<ScalarType> &mv2) const {
+    int a=mv1.GetVecLength();
+    Teuchos::SerialDenseMatrix<int,ScalarType> H;
+    
+    if ((mv1.GetNumberVecs()!=mv1.GetNumberVecs()) || (a!=mv2.GetVecLength()) || (a!=_Qb.GetVecLength()) || (a!=_Q.GetVecLength()) || (_Q.GetNumberVecs()!=_Qb.GetNumberVecs())) return Anasazi::Failed;
+    
+    H.shapeUninitialized(_Qb.GetNumberVecs(), mv1.GetNumberVecs());
+    mv1.MvTransMv((ScalarType)1,_Qb,H);
+    mv2.MvAddMv((ScalarType)1,mv1,(ScalarType)0,mv2);
+    mv2.MvTimesMatAddMv((ScalarType)-1,_Q,H,(ScalarType)1);
+    
+    return Anasazi::Ok;
+  }
 };
 
 template <class ScalarType, class MV, class OP>
@@ -940,7 +951,7 @@ public:
     // Allocate space for the result ...
     int conv = 0;   // number of converged eigenpairs per iteration
     int purged = 0; // number of deflated eigenpairs per iteration
-    ScalarType sigma;
+    std::vector<ScalarType> sigma(_blockSize);
     MV *Qtmp, *Qtmp2;
     MV *BQtmp, *BQtmp2;
     MV *KBQtmp, *KBQtmp2, *h;
@@ -994,7 +1005,7 @@ public:
           sublist[0] = j;
           Utmp  = U->CloneView(sublist); //(*)
           BUtmp = BU->CloneView(sublist); //(*)
-          Rtmp->MvDot((*BUtmp), &eta);
+          Rtmp->MvPseudoDot((*BUtmp), &eta);
           Rtmp->MvAddMv(ScalarOne, (*Rtmp), -eta[0], (*Utmp));
           delete Utmp, BUtmp; //(#)(#)
         }
@@ -1003,7 +1014,7 @@ public:
           sublist[0] = j;
           Qtmp = _evecs->CloneView(sublist);
           BQtmp = BQ->CloneView(sublist); //(*)
-          Rtmp->MvDot((*BQtmp), &eta); 
+          Rtmp->MvPseudoDot((*BQtmp), &eta); 
           Rtmp->MvAddMv(ScalarOne, (*Rtmp), -eta[0], (*Qtmp));	      
           delete Qtmp, BQtmp; //(#)(#)
         }
@@ -1016,7 +1027,7 @@ public:
         else
           Qtmp->SetBlock(*Rtmp, sublist);
 	
-	Rtmp->MvDot((*Qtmp), &eta);
+	Rtmp->MvPseudoDot((*Qtmp), &eta);
         eta[0] = Teuchos::ScalarTraits<ScalarType>::squareroot(eta[0]);
         // scaling of Rtmp
         Rtmp->MvAddMv(ScalarOne / eta[0], (*Rtmp), ScalarZero, (*Rtmp));
@@ -1148,7 +1159,6 @@ public:
 
         if (_knownEV == _nev) 
         {
-          delete Qtmp;
           break;
         }
         conv++;
@@ -1159,7 +1169,7 @@ public:
         {
 		if (_knownEV==1) {
 			LkTrans(0,0)=ScalarOne;
-			BQtmp->MvDot(*KBQtmp, &vc);
+			BQtmp->MvPseudoDot(*KBQtmp, &vc);
 			Rk(0,0)=vc[0];
 		} else {
 			lk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, LkTrans[_knownEV-1], LkTrans.stride(), _knownEV-1, 1); //(*)
@@ -1178,7 +1188,7 @@ public:
 			
 			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, rk->numRows(), rk->numCols(), ScalarOne, LkTrans.values(), LkTrans.stride(), rk->values(), rk->stride());
 			
-			BQtmp->MvDot(*KBQtmp, &vc);
+			BQtmp->MvPseudoDot(*KBQtmp, &vc);
 			ScalarType rho=vc[0];
 			Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType> (1,1); //(*)
 			H->multiply(Teuchos::TRANS, Teuchos::NO_TRANS, ScalarOne, *lk, *rk, ScalarZero); //rho+=lk*rk
@@ -1217,13 +1227,13 @@ public:
         // nrm  = ||Rtmp||
         Qtmp->MvNorm(&nrm_q);
         nrm[0] /= nrm_q[0];
+
       }
 
-      delete Rtmp;
-      delete Qtmp;
- 
+      delete Utmp, AUtmp, BUtmp;
+      delete Rtmp, Qtmp;
+
       if (_knownEV == _nev) {
-	delete Utmp, AUtmp, BUtmp;	
       	break;
       }
 
@@ -1240,12 +1250,44 @@ public:
         {
           _os << "[Converged (" << conv << ")]" << endl;
         }
+	
+	Ztmp2=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, Z[conv], Z.stride(), SearchSpaceSize, SearchSpaceSize - conv);
+	
+	sublist.resize(SearchSpaceSize);
+        for(int i=0; i<SearchSpaceSize; ++i) sublist[i] = i;
+
+        Utmp  = U->CloneView(sublist); //(*)
+        AUtmp = AU->CloneView(sublist); //(*)
+        BUtmp = BU->CloneView(sublist); //(*)
+	
+
+        Utmp->MvTimesMatAddMv(ScalarOne, (*Utmp), *Ztmp2, ScalarZero);
+        AUtmp->MvTimesMatAddMv(ScalarOne, (*AUtmp), *Ztmp2, ScalarZero);
+        BUtmp->MvTimesMatAddMv(ScalarOne, (*BUtmp), *Ztmp2, ScalarZero);
+
+        PE.Rotate(*Ztmp2);
+
+	Ztmp2->putScalar(ScalarZero);	
+	for(int i=0; i<(SearchSpaceSize-conv); ++i){
+	  theta[i] = theta[i+conv];
+	  Z(i,i) = ScalarOne;
+        }
+
+        delete Utmp, AUtmp, BUtmp, Ztmp2; //(#)(#)(#)(#)(#)(#)(#)
+
+        // Finally, compute the new search space size
+        SearchSpaceSize = SearchSpaceSize - conv;
+      }	  
+
+
+      
+      //TARGET SWITCH 
+      for(int i=0; i<_blockSize; ++i){
+ 	if (nrm[0]<nrm_q[0]*_eswitch) sigma[i] = theta[0];
+ 	else sigma[i] = _TARGET;
       }
 
-      //TARGET SWITCH
-      if (nrm[0]<nrm_q[0]*_eswitch) sigma=theta[0];
-      else sigma=_TARGET;
-      
+
       // ====================================================== //
       // Compute the residuals of the best blockSize eigenpair  //
       // approximations and precondition them, i.e. compute the //
@@ -1255,8 +1297,41 @@ public:
       sublist.resize(SearchSpaceSize);
       for(int i=0; i<SearchSpaceSize; ++i) sublist[i]=i;
 
+      Utmp  = U->CloneView(sublist); //(*)
+      AUtmp = AU->CloneView(sublist); //(*)
+      BUtmp = BU->CloneView(sublist); //(*)
+
       sublist.resize(1);
-      sublist[0]=_knownEV;
+      for (int i=0; i<_blockSize ; ++i){
+ 	sublist[0] = i;
+ 	Rtmp = R->CloneView(sublist);
+ 	Ztmp2 = new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, Z[i], Z.stride(), SearchSpaceSize, 1); //(*)	
+ 	Rtmp->MvTimesMatAddMv (ScalarOne, (*AUtmp), (*Ztmp2), ScalarZero);	
+	
+ 	sublist[0] = _knownEV;
+	Qtmp = _evecs->CloneView(sublist);
+ 	Qtmp->MvTimesMatAddMv (ScalarOne, (*BUtmp), (*Ztmp2), ScalarZero);	
+	
+	Rtmp->MvAddMv (ScalarOne, *Rtmp, -theta[i], *Qtmp);
+#if 0
+	// nrm = ||Rtmp||
+        Rtmp->MvNorm(&nrm);
+
+ 	sublist[0] = _knownEV;
+ 	Qtmp->MvTimesMatAddMv (ScalarOne, (*Utmp), (*Ztmp2), ScalarZero);	
+        // nrm  = ||Qtmp||	
+        Qtmp->MvNorm(&nrm_q);
+
+	//TARGET SWITCH
+	if (nrm[0]<nrm_q[0]*_eswitch) sigma[i]=theta[i];
+	else sigma[i]=_TARGET;
+#endif
+	
+ 	delete Rtmp, Qtmp, Ztmp2; //(#)
+      }
+
+      sublist.resize(1);
+      sublist[0] = _knownEV;
 
       Qtmp = _evecs->CloneView(sublist); //(*)
       BQtmp = BQ->CloneView(sublist); //(*)
@@ -1269,11 +1344,11 @@ public:
       KBQtmp2=KBQ->CloneView(vQ2); //(*)
       
       for(int j=0; j<_blockSize; ++j){
+
         sublist[0] = j;
         Rtmp = R->CloneView(sublist); //(*)
 
-	Ztmp2=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,Z[conv+j],Z.stride(),SearchSpaceSize,1); //(*)
-	
+	Ztmp2 = new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, Z[j], Z.stride(), SearchSpaceSize, 1); //(*)	
 	Qtmp->MvTimesMatAddMv (ScalarOne, *Utmp, *Ztmp2, ScalarZero); //Qtmp:=U*Z(:,conv+j)
 	delete(Ztmp2); //(#)
 	
@@ -1284,14 +1359,14 @@ public:
       	sublist[0]=_knownEV;
 		
 	if (!_Prec.get()) {
-		Ksys=new JacDavOp1<ScalarType,MV>(*Qtmp2, *BQtmp2); //Ksys:=I-Q*Qb^(T) //(*)
+		Ksys = new JacDavOp1<ScalarType,MV>(*Qtmp2, *BQtmp2); //Ksys:=I-Q*Qb^(T) //(*)
 	} else {
 		sublist[0]=_knownEV;
 		_Prec->Apply(*BQtmp, *KBQtmp); //Qk(:,_knownEV)=KBQtmp:=Prec*Qb(:,_knownEV)
 		
 		if (_knownEV==0) {
 			LkTrans(0,0)=ScalarOne; //Lk(0,0):=1
-			BQtmp->MvDot(*KBQtmp, &vc); //vc[0]:=BQtmp*KBQtmp //FIXME: Transpose in complex case
+			BQtmp->MvPseudoDot(*KBQtmp, &vc); //vc[0]:=BQtmp*KBQtmp //FIXME: Transpose in complex case
 			Rk(0,0)=vc[0];//Rk(0,0)=vc[0]
 		} else {
 			lk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, LkTrans[_knownEV], LkTrans.stride(), _knownEV, 1);
@@ -1309,7 +1384,7 @@ public:
 		
 			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, rk->numRows(), rk->numCols(), ScalarOne, LkTrans.values(), LkTrans.stride(), rk->values(), rk->stride());
 			
-			BQtmp->MvDot(*KBQtmp, &vc);
+			BQtmp->MvPseudoDot(*KBQtmp, &vc);
 			ScalarType rho=vc[0];
 			Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType> (1,1);
 			H->multiply(Teuchos::TRANS, Teuchos::NO_TRANS, ScalarOne, *lk, *rk, ScalarZero); //rho+=lk*rk
@@ -1329,7 +1404,7 @@ public:
 		Ksys=new JacDavOp4<ScalarType,MV,OP>(*KBQtmp2, *LkTransView, *RkView, *BQtmp2, _Prec); //Ksys:=(I-Qk*(Lk*Rk)^(-1)*Qb^(T))*K^(-1)
 	}
 
-	Asys=new JacDavOp2<ScalarType, MV, OP>(*BQtmp2, *Qtmp2, _A, sigma, _B); //Asys:=(I-Qb*Q^(T))*(_A-_sigma*_B) //(*)
+	Asys=new JacDavOp2<ScalarType, MV, OP>(*BQtmp2, *Qtmp2, _A, sigma[j], _B); //Asys:=(I-Qb*Q^(T))*(_A-_sigma*_B) //(*)
 	
 	Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType>(); //(*)
 	H->shapeUninitialized(_knownEV+1,1);
@@ -1374,62 +1449,40 @@ public:
       // ========================================================= //
       
       purged = 0;
-      if ((SearchSpaceSize-conv+_blockSize)>_SMAX){
-        // increment restart counter
-        ++_numRestarts;
-	
-        purged = (SearchSpaceSize-conv) - (_SMIN-_blockSize);
+      if ((SearchSpaceSize + _blockSize)>_SMAX){
+        purged = SearchSpaceSize - (_SMIN - _blockSize);
 
         if (_om->doPrint()) 
         {
-          _os << "[Restart (" << SearchSpaceSize - conv  << " -> "
-              << SearchSpaceSize - conv - purged << ")]" << endl;
+          _os << "[Restart (" << SearchSpaceSize  << " -> "
+              << SearchSpaceSize - purged << ")]" << endl;
         }
-      } 
 
-      // Reshape the Z matrix according to the convergence
-      // and/restart behaviour
-      if ((conv + purged)>0)
-      {
-      /*
-        Ztmp.shapeUninitialized(s,s-conv-purged);
-        for(int i=0; i<s; ++i)
-          for(int j=0; j<(s-conv-purged); ++j)
-            Ztmp(i,j) = Z(i,j+conv);
-	    */
+        // increment restart counter
+        ++_numRestarts;
 	
-	Ztmp2=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, Z[conv], Z.stride(), SearchSpaceSize, SearchSpaceSize-conv-purged);
+	// Reshape the Z matrix according to the restart behaviour	
+	Ztmp2=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, Z[0], Z.stride(), SearchSpaceSize, SearchSpaceSize-purged);
 	
 	sublist.resize(SearchSpaceSize);
         for(int i=0; i<SearchSpaceSize; ++i) sublist[i] = i;
 
-        Utmp = U->CloneCopy(sublist); //(*)
-        AUtmp = AU->CloneCopy(sublist); //(*)
-        BUtmp = BU->CloneCopy(sublist); //(*)
+        Utmp = U->CloneView(sublist); //(*)
+        AUtmp = AU->CloneView(sublist); //(*)
+        BUtmp = BU->CloneView(sublist); //(*)
 	
-	sublist.resize(SearchSpaceSize-conv-purged);
+	sublist.resize(SearchSpaceSize-purged);
 	
-	MV *Utmp2, *AUtmp2, *BUtmp2;
-	Utmp2 = U->CloneView(sublist); //(*)
-        AUtmp2 = AU->CloneView(sublist); //(*)
-        BUtmp2 = BU->CloneView(sublist); //(*)
-
-        Utmp2->MvTimesMatAddMv(ScalarOne, (*Utmp), *Ztmp2, ScalarZero);
-        AUtmp2->MvTimesMatAddMv(ScalarOne, (*AUtmp), *Ztmp2, ScalarZero);
-        BUtmp2->MvTimesMatAddMv(ScalarOne, (*BUtmp), *Ztmp2, ScalarZero);
+        Utmp->MvTimesMatAddMv(ScalarOne, (*Utmp), *Ztmp2, ScalarZero);
+        AUtmp->MvTimesMatAddMv(ScalarOne, (*AUtmp), *Ztmp2, ScalarZero);
+        BUtmp->MvTimesMatAddMv(ScalarOne, (*BUtmp), *Ztmp2, ScalarZero);
 
         PE.Rotate(*Ztmp2);
 
-        for(int i=0; i<SearchSpaceSize; ++i){
-          for(int j=0; j<(SearchSpaceSize-conv-purged); ++j){
-            Z(i,j) = Z(i,j+conv); //FIXME: kann vielleicht BLAS verwenden
-          }
-        }
-
-        delete Utmp, AUtmp, BUtmp, Utmp2, AUtmp2, BUtmp2, Ztmp2; //(#)(#)(#)(#)(#)(#)(#)
+        delete Utmp, AUtmp, BUtmp, Ztmp2; //(#)(#)(#)(#)(#)(#)(#)
 
         // Finally, compute the new search space size
-        SearchSpaceSize = SearchSpaceSize - conv - purged;
+        SearchSpaceSize = SearchSpaceSize - purged;
       }	  
     
 
