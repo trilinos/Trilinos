@@ -270,9 +270,56 @@ public:
 	  }
       }
   }
+
+  // Compute a dense matrix B through the matrix-matrix multiply alpha * A^H * (*this). 
+  void MvHermMv (ScalarType alpha, const Anasazi::MultiVec<ScalarType>& A, 
+		  Teuchos::SerialDenseMatrix< int, ScalarType >& B) const
+  {
+    MyMultiVec* MyA;
+    MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
+    assert (MyA != 0);
+    
+    assert (A.GetVecLength() == Length_);
+    assert (NumberVecs_ == B.numCols());
+    assert (A.GetNumberVecs() == B.numRows());
+    
+    for (int v = 0 ; v < A.GetNumberVecs() ; ++v)
+      {
+        for (int w = 0 ; w < NumberVecs_ ; ++w)
+	  {
+	    ScalarType value = 0.0;
+	    for (int i = 0 ; i < Length_ ; ++i)
+	      {
+		value += Teuchos::ScalarTraits<ScalarType>::conjugate((*MyA)(i, v)) * (*this)(i, w);
+	      }
+	    B(v, w) = alpha * value;
+	  }
+      }
+  }
+
   
-  // Compute a vector b where the components are the individual dot-products, i.e.b[i] = A[i]^T*this[i] where A[i] is the i-th column of A. 
+  // Compute a vector b where the components are the individual dot-products, i.e.b[i] = A[i]^H*this[i] where A[i] is the i-th column of A. 
   void MvDot (const Anasazi::MultiVec<ScalarType>& A, std::vector<ScalarType>* b) const
+  {
+    MyMultiVec* MyA;
+    MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
+    assert (MyA != 0);
+    
+    assert (NumberVecs_ == (int)b->size());
+    assert (NumberVecs_ == A.GetNumberVecs());
+    assert (Length_ == A.GetVecLength());
+    
+    for (int v = 0 ; v < NumberVecs_ ; ++v)
+      {
+        ScalarType value = 0.0;
+        for (int i = 0 ; i < Length_ ; ++i)
+          value += (*this)(i, v) * Teuchos::ScalarTraits<ScalarType>::conjugate((*MyA)(i, v));
+        (*b)[v] = value;
+      }
+  }
+
+  // Compute a vector b where the components are the individual dot-products, i.e.b[i] = A[i]^T*this[i] where A[i] is the i-th column of A. 
+  void MvPseudoDot (const Anasazi::MultiVec<ScalarType>& A, std::vector<ScalarType>* b) const
   {
     MyMultiVec* MyA;
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 

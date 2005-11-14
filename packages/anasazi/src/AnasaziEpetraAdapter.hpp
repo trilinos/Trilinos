@@ -158,9 +158,23 @@ namespace Anasazi {
     */
     void MvTransMv ( const double alpha, const MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B ) const;
 
-    /*! \brief Compute a vector \c b where the components are the individual dot-products, i.e. \f$ b[i] = A[i]^T(this[i])\f$ where \c A[i] is the i-th column of \c A.
+#ifdef HAVE_ANASAZI_EXPERIMENTAL
+    /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$\alpha A^H(*this)\f$.
+    */
+    void MvHermMv ( const double alpha, const MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B ) const
+    {MvTransMv ( alpha,  A,  B );}
+#endif
+
+    /*! \brief Compute a vector \c b where the components are the individual dot-products, i.e. \f$ b[i] = A[i]^H(this[i])\f$ where \c A[i] is the i-th column of \c A.
 	*/
     void MvDot ( const MultiVec<double>& A, std::vector<double>* b ) const;
+
+#ifdef HAVE_ANASAZI_EXPERIMENTAL
+    /*! \brief Compute a vector \c b where the components are the individual dot-products, i.e. \f$ b[i] = A[i]^T(this[i])\f$ where \c A[i] is the i-th column of \c A.
+	*/
+    void MvPseudoDot ( const MultiVec<double>& A, std::vector<double>* b ) const
+    {MvDot ( A, b );}
+#endif
 
     //@}
     //@{ \name Norm method
