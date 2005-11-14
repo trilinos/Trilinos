@@ -178,7 +178,7 @@ public:
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
     assert(MyA!=NULL);
 
-    if (this == MyA)
+    if (&(*this)(0,0) == &(*MyA)(0,0))
     {
       // If this == A, then need additional storage ...
       // This situation is a bit peculiar but it may be required by
