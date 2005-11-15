@@ -116,10 +116,9 @@ ZZ *Zoltan_Copy(ZZ *from)
 
   fail = Zoltan_Copy_To(to, from);
 
-  if (fail)
-    {
+  if (fail) {
     Zoltan_Destroy(&to);
-    }
+  }
 
   return to; 
 }
