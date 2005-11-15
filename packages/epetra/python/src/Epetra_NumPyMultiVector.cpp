@@ -205,16 +205,6 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMa
   // Copy the Epetra_BlockMap
   map = new Epetra_BlockMap(blockMap);
 
-  // Perform some checks
-  double ** eptr;
-  double * nptr;
-  ExtractView(&eptr);
-  nptr = (double *) (array->data);
-  assert(eptr[0] == nptr);
-
-  printf("Epetra  pointer is %d\n",int(eptr[0]));
-  printf("Numeric pointer is %d\n",int(nptr   ));
-
 }
 
 // =============================================================================

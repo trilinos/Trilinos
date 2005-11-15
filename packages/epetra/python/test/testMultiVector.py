@@ -388,13 +388,14 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         emv = Epetra.MultiVector(self.map,self.numPyArray)
         gid = 4
         lid = self.map.LID(gid)
-        print "pid = %d, lid = %d" % (self.comm.MyPID(), lid)
         self.assertEquals(emv[0,gid], 0.5)
-        print emv
-        emv.ReplaceGlobalValue(gid,0,5.0)
-        print emv
+        result = emv.ReplaceGlobalValue(gid,0,5.0)
         if lid >= 0:
+            self.assertEquals(result, 0)
             self.assertEquals(emv[0,lid], 5.0)
+        else:
+            self.assertEquals(result, -1)
+            self.assertEquals(emv[0,lid], 0.5)
 
 ##########################################################################
 

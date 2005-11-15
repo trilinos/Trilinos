@@ -779,7 +779,7 @@ class MultiVector(UserArray,NumPyMultiVector):
         __init__(self, PyObject array) -> MultiVector
         """
         NumPyMultiVector.__init__(self, *args)
-        UserArray.__init__(self,self.getArray(),'d',1,0)
+        UserArray.__init__(self,self.getArray(),'d',copy=False,savespace=False)
     def __str__(self):
         return str(self.array)
     def __setattr__(self, key, value):
@@ -797,7 +797,7 @@ class MultiVector(UserArray,NumPyMultiVector):
 class Vector(UserArray,NumPyVector):
     def __init__(self, *args):
         NumPyVector.__init__(self, *args)
-        UserArray.__init__(self,self.getArray(),'d',0,1)
+        UserArray.__init__(self,self.getArray(),'d',copy=False,savespace=False)
     def __str__(self):
         return str(self.array)
     def __setattr__(self, key, value):
