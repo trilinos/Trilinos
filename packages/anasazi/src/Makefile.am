@@ -118,6 +118,8 @@ DIST =
 
 COMP_H = \
 	$(srcdir)/AnasaziBlockDavidson.hpp \
+	$(srcdir)/AnasaziBlockJacobiDavidson.hpp \
+	$(srcdir)/AnasaziUtils.hpp \
 	$(srcdir)/AnasaziBlockKrylovSchur.hpp \
 	$(srcdir)/AnasaziLOBPCG.hpp
 
