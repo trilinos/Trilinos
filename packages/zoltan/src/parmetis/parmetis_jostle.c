@@ -1633,7 +1633,7 @@ char *val)                      /* value of variable */
           }
         }
       }
-      else {
+      else if (strcmp(name, "BALANCE_OBJ") != 0) {
         /* All integer parameters should be non-negative */
         if (result.ival < 0)
           status = 2; 
