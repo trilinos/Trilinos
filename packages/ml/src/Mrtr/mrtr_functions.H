@@ -161,6 +161,29 @@ public:
   virtual MRTR::Function* Clone() const;
 };
 
+/*----------------------------------------------------------------------*
+ |  the constant triangle shape function                           11/05|
+ *----------------------------------------------------------------------*/
+class Function_ConstantTri : public MRTR::Function 
+{
+public:
+  
+  // ctor
+  Function_ConstantTri() { type_=MRTR::Function::func_ConstantTri;}
+  
+  // copy-ctor
+  Function_ConstantTri(const MRTR::Function_ConstantTri& old) {type_=old.type_;}
+
+  // dtor
+  virtual ~Function_ConstantTri() {}
+
+  // evaluate the shape function
+  bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
+
+  // need a clone functionality to do a deep copy
+  virtual MRTR::Function* Clone() const;
+};
+
 
 
 

@@ -198,7 +198,6 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   
   //-------------------------------------------------------------------
   // time this process
-  double t = time.ElapsedTime();
   if (OutLevel()>5)
   {
     cout << "MRTR::Interface " << Id() << ": Integration on proc " << gComm().MyPID()
@@ -291,7 +290,6 @@ bool MRTR::Interface::Mortar_Integrate()
   
   //-------------------------------------------------------------------
   // time this process
-  double t = time.ElapsedTime();
   if (OutLevel()>5)
   {
     cout << "MRTR::Interface " << Id() << ": Integration on proc " << gComm().MyPID()

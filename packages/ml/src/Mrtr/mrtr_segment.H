@@ -104,7 +104,9 @@ public:
   
   // attach a function to this segment
   bool SetFunction(int id, MRTR::Function* func);
+#if 0
   bool SetFunction(int id, RefCountPtr<MRTR::Function> func);
+#endif
 
 #if 0  
   // get ptr to function with id id

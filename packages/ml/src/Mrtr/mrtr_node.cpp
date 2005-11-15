@@ -130,7 +130,7 @@ MRTR::Node::Node(const MRTR::Node& old)
     segptr_.resize(0);
   
   pnode_.resize(old.pnode_.size());  
-  for (int i=0; i<pnode_.size(); ++i)
+  for (int i=0; i<(int)pnode_.size(); ++i)
     if (old.pnode_[i].get() != NULL)
     {
       pnode_[i] = rcp(new MRTR::ProjectedNode(*(old.pnode_[i])));
@@ -170,10 +170,10 @@ double* MRTR::Node::Pack(int* size)
   for (int i=0; i<3; ++i)
     pack[count++] = n_[i];
   pack[count++] = (double)dof_.size();
-  for (int i=0; i<dof_.size(); ++i)
+  for (int i=0; i<(int)dof_.size(); ++i)
     pack[count++] = (double)dof_[i];
   pack[count++] = (double)seg_.size();
-  for (int i=0; i<seg_.size(); ++i)
+  for (int i=0; i<(int)seg_.size(); ++i)
     pack[count++] = (double)seg_[i];
 
   if (count != *size)
@@ -200,10 +200,10 @@ bool MRTR::Node::UnPack(double* pack)
   for (int i=0; i<3; ++i)
     n_[i] = pack[count++];
   dof_.resize((int)pack[count++]);  
-  for (int i=0; i<dof_.size(); ++i)
+  for (int i=0; i<(int)dof_.size(); ++i)
     dof_[i] = (int)pack[count++];
   seg_.resize((int)pack[count++]);
-  for (int i=0; i<seg_.size(); ++i)
+  for (int i=0; i<(int)seg_.size(); ++i)
     seg_[i] = (int)pack[count++];
     
   if (count != size)
@@ -255,14 +255,14 @@ bool MRTR::Node::Print() const
     cout << setw(12) << n_[i] << " ";
 
   cout << "#Dofs " << dof_.size() << " Dofs ";
-  for (int i=0; i<dof_.size(); ++i)
+  for (int i=0; i<(int)dof_.size(); ++i)
     cout << dof_[i] << " ";
 
   cout << "#LMDofs " << LMdof_.size();
   if (LMdof_.size())
   {
     cout << " LMDofs ";
-    for (int i=0; i<LMdof_.size(); ++i)
+    for (int i=0; i<(int)LMdof_.size(); ++i)
       cout << LMdof_[i] << " ";
   }
   
@@ -280,7 +280,7 @@ bool MRTR::Node::SetLagrangeMultiplierId(int LMId)
 { 
   // first check whether this dof has been set before
   // if so, do nothing
-  for (int i=0; i<LMdof_.size(); ++i)
+  for (int i=0; i<(int)LMdof_.size(); ++i)
     if (LMdof_[i] == LMId)
       return true;
       
@@ -302,7 +302,7 @@ bool MRTR::Node::AddSegment(int sid)
   if (seg_.size())
   {
     // search whether sid already exists in seg_
-    for (int i=0; i<seg_.size(); ++i)
+    for (int i=0; i<(int)seg_.size(); ++i)
       if (sid==seg_[i]) 
         return true;
     
@@ -334,7 +334,7 @@ bool MRTR::Node::GetPtrstoSegments(MRTR::Interface& interface)
   // vector segptr_ might already exist, build new
   segptr_.resize(seg_.size());
   
-  for (int i=0; i<seg_.size(); ++i)
+  for (int i=0; i<(int)seg_.size(); ++i)
   {
     segptr_[i] = interface.GetSegmentView(seg_[i]).get();
     if (!segptr_[i])

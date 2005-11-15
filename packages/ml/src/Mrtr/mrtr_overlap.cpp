@@ -679,7 +679,7 @@ bool MRTR::Overlap::Triangulization()
     }
     int nodeid[3];
     MRTR::Segment_BiLinearTri* tmp;
-    RefCountPtr<MRTR::Function_LinearTri> func = rcp(new Function_LinearTri());
+    MRTR::Function_LinearTri* func = new Function_LinearTri();
     for (int i=2; i<np; ++i)
     {
       // there are np-1 triangles
@@ -703,12 +703,13 @@ bool MRTR::Overlap::Triangulization()
     tmp->SetFunction(0,func);
     // add triangle to the *this class
     AddSegment(tmp->Id(),tmp);
+    if (func) delete func; func = NULL;
   }
   else if (np==3) // single triangle without centerpoint
   {
     int nodeid[3];
     MRTR::Segment_BiLinearTri* tmp;
-    RefCountPtr<MRTR::Function_LinearTri> func = rcp(new Function_LinearTri());
+    MRTR::Function_LinearTri* func = new Function_LinearTri();
     nodeid[0] = points[0]->Id();
     nodeid[1] = points[2]->Id();
     nodeid[2] = points[1]->Id();
@@ -717,6 +718,7 @@ bool MRTR::Overlap::Triangulization()
     tmp->SetFunction(0,func);
     // add triangle the *this class
     AddSegment(tmp->Id(),tmp);
+    if (func) delete func; func = NULL;
   }
   else
   {

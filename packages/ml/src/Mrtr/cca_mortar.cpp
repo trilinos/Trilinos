@@ -209,6 +209,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
       interface->SetFunctionAllSegmentsSide(0,0,func);
       interface->SetFunctionAllSegmentsSide(1,0,func);
+      delete func; func = NULL;
     }
     // mortar side is not yet chosen, we cannot set functions.
     // So we just set what kind of functions we want to have set
@@ -230,6 +231,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       //MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
       MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
       interface->SetFunctionAllSegmentsSide(side,1,func);
+      delete func; func = NULL;
     }
     
     //-----------------------------------------------------------------
@@ -392,7 +394,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     //-----------------------------------------------------------------
     // manually choose mortar (master side)
     // mortar side is either 0 or 1 or -2 for automatic
-    interface->SetMortarSide(1);
+    interface->SetMortarSide(0);
 
     //-----------------------------------------------------------------
     // set linear shape functions on both sides, 
@@ -403,6 +405,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       MRTR::Function_LinearTri* func = new MRTR::Function_LinearTri();
       interface->SetFunctionAllSegmentsSide(0,0,func);
       interface->SetFunctionAllSegmentsSide(1,0,func);
+      delete func; func = NULL;
     }
     // mortar side is not yet chosen, we cannot set functions.
     // So we just set what kind of functions we want to have set
@@ -424,6 +427,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       //MRTR::Function_DualLinearTri* func = new MRTR::Function_LinearTri();
       MRTR::Function_LinearTri* func = new MRTR::Function_LinearTri();
       interface->SetFunctionAllSegmentsSide(side,1,func);
+      delete func; func = NULL;
     }
     
     //-----------------------------------------------------------------

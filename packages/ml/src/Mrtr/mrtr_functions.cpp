@@ -291,7 +291,7 @@ bool MRTR::Function_LinearTri::EvaluateFunction(
 
 
 //=======================================================================
-// the linear 2D triangle shape function
+// the dual linear 2D triangle shape function
 //=======================================================================
 /*----------------------------------------------------------------------*
  |  Clone an existing object                                 mwgee 10/05|
@@ -327,6 +327,75 @@ bool MRTR::Function_DualLinearTri::EvaluateFunction(
   return true;
 }
 
+
+//=======================================================================
+// the constant 2D triangle shape function
+//=======================================================================
+/*----------------------------------------------------------------------*
+ |  Clone an existing object                                 mwgee 11/05|
+ |  this methods takes the base class ptr MRTR::Function*               |
+ |  but actually needs to clone the derived type                        |
+ |  MRTR::Function_DualLinear1D*                                        |
+ |  It then returns the derived type                                    |
+ |  Note that this functionality is extremely important, it's not       |
+ |  'just another clone'                                                |
+ *----------------------------------------------------------------------*/
+MRTR::Function* MRTR::Function_ConstantTri::Clone() const
+{
+  MRTR::Function_ConstantTri* newclass = new MRTR::Function_ConstantTri(*this);
+  return newclass;
+}
+
+/*----------------------------------------------------------------------*
+ | evaluate the function (2D)                                mwgee 11/05|
+ | xi     (in)  natural coordinates -1/-1<*xi<1/1 where to eval         |
+ | val    (out) function values, if NULL on input, no evaluation        |
+ | valdim (in)  dimension of val                                        |
+ | deriv  (out) derivatives of functions at xi, if NULL on input,       |
+ |              no evaluation                                           | 
+ *----------------------------------------------------------------------*/
+bool MRTR::Function_ConstantTri::EvaluateFunction(
+                                            const double* xi, double* val, 
+                                            const int valdim, double* deriv)
+{ 
+  if (!val && !deriv) return true;
+  
+  // for this function, we get 3 values and six derivatives
+  if (valdim<3) 
+  {
+    cout << "***ERR*** MRTR::Function_ConstantTri::EvaluateFunction:\n"
+         << "***ERR*** valdim<3 on input\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  if (!xi)
+  {
+    cout << "***ERR*** MRTR::Function_ConstantTri::EvaluateFunction:\n"
+         << "***ERR*** xi=NULL on input\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  if (val)
+  {
+    val[0] = 1.; 
+    val[1] = 1.;
+    val[2] = 1.;
+  }
+  
+  if (deriv)
+  {
+    deriv[0] = 0.;
+    deriv[1] = 0.;
+    deriv[2] = 0.;
+    deriv[3] = 0.;
+    deriv[4] = 0.;
+    deriv[5] = 0.;
+  }
+  
+  return true;
+}
 
 
 #endif // TRILINOS_PACKAGE

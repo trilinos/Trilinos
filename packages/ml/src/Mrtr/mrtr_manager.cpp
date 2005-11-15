@@ -320,7 +320,7 @@ RefCountPtr<Epetra_Map> MRTR::Manager::LagrangeMultiplierDofs()
     vector<int>* lmids = inter->MyLMIds();
     if (count+lmids->size() > mylmids.size())
       mylmids.resize(mylmids.size()+5*lmids->size());
-    for (int i=0; i<lmids->size(); ++i)
+    for (int i=0; i<(int)lmids->size(); ++i)
       mylmids[count++] = (*lmids)[i];
     delete lmids;
   }  
@@ -632,21 +632,18 @@ bool MRTR::Manager::Mortar_Integrate_3D()
   // function will be reduced by one
   // note that this is not yet implemented in 3D and is somehow
   // quite difficult to detect automatically. user input?
-#if 0
+#if 1
   {
     map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
-      if (curr->second->IsOneDimensional())
+      bool ok = curr->second->DetectEndSegmentsandReduceOrder();
+      if (!ok)
       {
-        bool ok = curr->second->DetectEndSegmentsandReduceOrder();
-        if (!ok)
-        {
-          cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
-               << "***ERR*** interface " << curr->second->Id() << " returned false from DetectEndSegmentsandReduceOrder\n"
-               << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-          return false;
-        }
+        cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+             << "***ERR*** interface " << curr->second->Id() << " returned false from DetectEndSegmentsandReduceOrder\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        return false;
       }
     }
   }
@@ -1133,7 +1130,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
        int actnodes[2]; 
        int actnoder[2]; 
        // loop cornernodes on inter[i]
-       for (int j=0; j<cornernodes[i].size(); ++j)
+       for (int j=0; j<(int)cornernodes[i].size(); ++j)
        {
          actnodes[0] = 0; actnodes[1] = 0;    
          if (inter[i]->lComm())
@@ -1151,7 +1148,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
            if (inter[k]->lComm())
              if (inter[k]->lComm()->MyPID()==0)
              {
-               for (int l=0; l<cornernodes[k].size(); ++l)
+               for (int l=0; l<(int)cornernodes[k].size(); ++l)
                {
                  if (actnoder[0]==cornernodes[k][l])
                  {
@@ -1268,7 +1265,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
            }
            
            // loop through cornernodes of inter[i]
-           for (int j=0; j<cornernodes[i].size(); ++j)
+           for (int j=0; j<(int)cornernodes[i].size(); ++j)
            {
              actnodes[0] = 0; actnodes[1] = 0;    
              if (inter[i]->lComm())
@@ -1286,7 +1283,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
                if (inter[k]->lComm()->MyPID()==0)
                {
                  // loop through inter[k]'s cornernode
-                 for (int l=0; l<cornernodes[k].size(); ++l)
+                 for (int l=0; l<(int)cornernodes[k].size(); ++l)
                  {
                    if (actnoder[0]==cornernodes[k][l])
                    {

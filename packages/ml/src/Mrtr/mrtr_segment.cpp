@@ -130,7 +130,7 @@ bool MRTR::Segment::Print() const
   if (stype_ == MRTR::Segment::seg_none)
     cout << " Typ NONE       ";
   cout << " #Nodes " << nodeId_.size() << " Nodes: ";
-  for (int i=0; i<nodeId_.size(); ++i)
+  for (int i=0; i<(int)nodeId_.size(); ++i)
     cout << setw(6) << nodeId_[i] << "  ";
   cout << "  #Functions " << functions_.size() << "  Types: ";
   map<int,RefCountPtr<MRTR::Function> >::const_iterator curr;
@@ -166,14 +166,15 @@ bool MRTR::Segment::SetFunction(int id, MRTR::Function* func)
   map<int,RefCountPtr<MRTR::Function> >::iterator curr = functions_.find(id);
   if (curr != functions_.end())
   {
-    curr->second = rcp(func);
+    curr->second = rcp(func->Clone());
     return true;
   }
-  RefCountPtr<MRTR::Function> newfunc = rcp(func);
+  RefCountPtr<MRTR::Function> newfunc = rcp(func->Clone());
   functions_.insert(pair<int,RefCountPtr<MRTR::Function> >(id,newfunc));
   return true;
 }
 
+#if 0
 /*----------------------------------------------------------------------*
  | attach a certain shape function to this segment           mwgee 11/05|
  | the user is not supposed to destroy func!                            |
@@ -207,6 +208,7 @@ bool MRTR::Segment::SetFunction(int id, RefCountPtr<MRTR::Function> func)
   functions_.insert(pair<int,RefCountPtr<MRTR::Function> >(id,newfunc));
   return true;
 }
+#endif
 
 /*----------------------------------------------------------------------*
  | evaluate the shape function id at the point xi            mwgee 06/05|
@@ -295,7 +297,7 @@ bool MRTR::Segment::GetPtrstoNodes(MRTR::Interface& interface)
   nodeptr_.clear();
   nodeptr_.resize(nodeId_.size());
   
-  for (int i=0; i<nodeId_.size(); ++i)
+  for (int i=0; i<(int)nodeId_.size(); ++i)
   {
     nodeptr_[i] = interface.GetNodeView(nodeId_[i]).get();
     if (!nodeptr_[i])
@@ -321,10 +323,10 @@ bool MRTR::Segment::GetPtrstoNodes(vector<MRTR::Node*>& nodes)
   nodeptr_.clear();
   nodeptr_.resize(nodeId_.size());
   
-  for (int i=0; i<nodeId_.size(); ++i)
+  for (int i=0; i<(int)nodeId_.size(); ++i)
   {
     bool foundit = true;
-    for (int j=0; j<nodes.size(); ++j)
+    for (int j=0; j<(int)nodes.size(); ++j)
       if (nodes[j]->Id() == nodeId_[i])
       {
         foundit = true;

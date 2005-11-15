@@ -60,7 +60,8 @@ public:
     func_Linear1D,
     func_DualLinear1D,
     func_LinearTri,
-    func_DualLinearTri
+    func_DualLinearTri,
+    func_ConstantTri
   };
   
   // ctor

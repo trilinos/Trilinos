@@ -95,7 +95,7 @@ int* MRTR::Segment_Linear1D::Pack(int* size)
   pack[count++] = (int)stype_;
   pack[count++] = Id_;
   pack[count++] = nodeId_.size();
-  for (int i=0; i<nodeId_.size(); ++i) 
+  for (int i=0; i<(int)nodeId_.size(); ++i) 
     pack[count++] = nodeId_[i];
   pack[count++] = Nfunctions();
   
@@ -128,7 +128,7 @@ bool MRTR::Segment_Linear1D::UnPack(int* pack)
   stype_    = (MRTR::Segment::SegmentType)pack[count++];
   Id_       = pack[count++];
   nodeId_.resize(pack[count++]);
-  for (int i=0; i<nodeId_.size(); ++i)
+  for (int i=0; i<(int)nodeId_.size(); ++i)
     nodeId_[i] = pack[count++];
   
   int nfunc = pack[count++];

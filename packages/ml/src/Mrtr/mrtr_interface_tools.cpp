@@ -1132,7 +1132,7 @@ int MRTR::Interface::SetLMDofs(int minLMGID)
       // create redundant flags
       vector<int> lhavelm(rnode_[sside].size());
       vector<int> ghavelm(rnode_[sside].size());
-      for (int i=0; i<rnode_[sside].size(); ++i) lhavelm[i] = 0;
+      for (int i=0; i<(int)rnode_[sside].size(); ++i) lhavelm[i] = 0;
       
       // loop through redundant nodes and add my flags
       int count=0;
@@ -1153,7 +1153,7 @@ int MRTR::Interface::SetLMDofs(int minLMGID)
         lhavelm[count] = 1;
         ++count;
       }
-      if (count != rnode_[sside].size())
+      if (count != (int)rnode_[sside].size())
       {
         cout << "***ERR*** MRTR::Interface::SetLMDofs:\n"
              << "***ERR*** number of redundant nodes wrong\n"
@@ -1246,7 +1246,7 @@ vector<int>* MRTR::Interface::MyLMIds()
     if (!nlmdof) 
       continue; 
     const int* ids = node->LMDof();
-    if (count+nlmdof>lmids->size())
+    if (count+nlmdof>(int)lmids->size())
       lmids->resize(lmids->size()+50*nlmdof);
     for (int i=0; i<nlmdof; ++i)
       (*lmids)[count++] = ids[i];
@@ -1306,7 +1306,7 @@ bool MRTR::Interface::DetectEndSegmentsandReduceOrder()
         MRTR::Function::FunctionType type = 
           segs[i]->FunctionType(1);
           
-        MRTR::Function_Constant1D* tmp1;  
+        MRTR::Function_Constant1D* tmp1 = NULL;  
         switch (type)
         {
           // for linear and dual linear reduce function order to constant
@@ -1329,16 +1329,58 @@ bool MRTR::Interface::DetectEndSegmentsandReduceOrder()
             exit(EXIT_FAILURE);     
           break;
         } // switch (type)
+        if (tmp1) delete tmp1; tmp1 = NULL;
       } // for (int i=0; i<node->Nseg(); ++i)
     } // for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
 
   } // if (IsOneDimensional())
   else
   {
-    cout << "***ERR*** MRTR::Interface::DetectEndSegmentsandReduceOrder:\n"
-         << "***ERR*** not impl. for 2D interfaces\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    return false;
+    // loop all nodes on the slave side and find those with 1 or 2 segments
+    map<int,RefCountPtr<MRTR::Node> >::iterator curr;
+    for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+    {
+      RefCountPtr<MRTR::Node> node = curr->second;
+      if (node->Nseg()>2) continue;
+      
+      MRTR::Segment** segs = node->Segments();
+      for (int i=0; i<node->Nseg(); ++i)
+      {
+        MRTR::Function::FunctionType type = 
+          segs[i]->FunctionType(1);
+      
+        MRTR::Function_ConstantTri* tmp1 = NULL;  
+        switch (type)
+        {
+          // for linear and dual linear reduce function order to constant
+          case MRTR::Function::func_ConstantTri:
+          break;
+          case MRTR::Function::func_LinearTri:
+          case MRTR::Function::func_DualLinearTri:
+            tmp1 = new Function_ConstantTri();
+            segs[i]->SetFunction(1,tmp1);
+          break;
+          case MRTR::Function::func_none:
+            cout << "***ERR*** MRTR::Interface::DetectEndSegmentsandReduceOrder:\n"
+                 << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is func_none\n"
+                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+            exit(EXIT_FAILURE);     
+          break;
+          default:
+            cout << "***ERR*** MRTR::Interface::DetectEndSegmentsandReduceOrder:\n"
+                 << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is unknown\n"
+                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+            exit(EXIT_FAILURE);     
+          break;
+        } // switch (type)
+        if (tmp1) delete tmp1; tmp1 = NULL;
+      } // for (int i=0; i<node->Nseg(); ++i)
+      
+      
+      
+    } // for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+    
+            
   }
 
   return true;
@@ -1390,6 +1432,7 @@ bool MRTR::Interface::SetFunctionsFromFunctionTypes()
       func1 = new MRTR::Function_Linear1D();
       SetFunctionAllSegmentsSide(0,0,func1);
       SetFunctionAllSegmentsSide(1,0,func1);
+      delete func1; func1 = NULL;
     break;
     case MRTR::Function::func_DualLinear1D:
       cout << "***WRN*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
@@ -1434,14 +1477,17 @@ bool MRTR::Interface::SetFunctionsFromFunctionTypes()
     case MRTR::Function::func_Linear1D:
       func1 = new MRTR::Function_Linear1D();
       SetFunctionAllSegmentsSide(side,1,func1);
+      delete func1; func1 = NULL;
     break;
     case MRTR::Function::func_DualLinear1D:
       func3 = new MRTR::Function_DualLinear1D();
       SetFunctionAllSegmentsSide(side,1,func3);
+      delete func3; func3 = NULL;
     break;
     case MRTR::Function::func_Constant1D:
       func2 = new MRTR::Function_Constant1D();
       SetFunctionAllSegmentsSide(side,1,func2);
+      delete func2; func2 = NULL;
     break;
     case MRTR::Function::func_none:
       cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
