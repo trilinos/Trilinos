@@ -187,6 +187,28 @@ int Zoltan_PHG_LoadBalStat(ZZ *zz, HGraph *hg)
     return ierr;
 }
 
+int Zoltan_PHG_isPrime(int n)
+{
+/* Naive program to test for primality. */
+/* Returns accurate results for n <= 50000. */
+static const int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
+43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127,
+131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199,
+211, 223};
+static const int numprimes = sizeof(primes) / sizeof(int);
+int i;
+int rootn;
+int isprime = 1;
+
+  rootn = sqrt((double)n)+1;
+  for (i = 0; primes[i] < rootn && i < numprimes; i++)
+    if (!(n%primes[i])) {
+      isprime = 0;
+      break;
+    }
+  return isprime;
+}
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

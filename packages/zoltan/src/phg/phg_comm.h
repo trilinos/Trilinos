@@ -24,6 +24,11 @@ extern "C" {
 /********************************************/
 /* Communication and Distribution variables */
 /********************************************/
+
+/* Smallest prime number of processors allowed when using 2D decompositions.
+   Larger prime numbers will be adjusted. */
+#define SMALL_PRIME 7
+
 struct PHGCommStruct {
   MPI_Comm Communicator;  /* MPI Communicator for all procs partitioning
                              this HG.  May not equal zz->Communicator when

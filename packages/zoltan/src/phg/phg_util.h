@@ -35,6 +35,8 @@ extern char *Zoltan_PHG_uMe(PHGComm *);
 extern void Zoltan_PHG_uprintf(PHGComm *, char *,...);
 extern void Zoltan_PHG_errexit(char *,...);
 
+extern int Zoltan_PHG_isPrime(int);
+
 extern void Zoltan_PHG_Find_Root(int, int, MPI_Comm, int *, int *);
 
 extern int Zoltan_PHG_LoadBalStat(ZZ *zz, HGraph *);

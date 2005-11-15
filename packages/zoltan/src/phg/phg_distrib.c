@@ -404,18 +404,6 @@ int Zoltan_PHG_Redistribute(
                                           ocomm->myProc-lo, hi-lo+1, 
                                           reqx, reqy, ncomm);
     
-    /* if new communicator is not NULL; this process is in that group
-       so compute the rest of the stuff that it will need */
-    if (nmpicomm!=MPI_COMM_NULL) {        
-#ifdef _DEBUG1
-        MPI_Comm_rank(nmpicomm, &ncomm->myProc);
-        if (ncomm->myProc != ocomm->myProc-lo)
-            errexit("Zoltan_PHG_Redistribute: ncomm->myProc(%d) != ocomm->myProc(%d)-lo(%d)", ncomm->myProc, ocomm->myProc, lo);
-#endif
-    } else {
-        ncomm->myProc = ncomm->myProc_x = ncomm->myProc_y = -1;
-    }
-
     v2Col = (int *) ZOLTAN_MALLOC(ohg->nVtx * sizeof(int));    
     n2Row = (int *) ZOLTAN_MALLOC(ohg->nEdge * sizeof(int));
 

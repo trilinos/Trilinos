@@ -135,7 +135,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
     if (timer_build < 0) 
       timer_build = Zoltan_Timer_Init(zz->ZTime, 1, "Build");
     if (timer_setupvmap < 0) 
-      timer_setupvmap = Zoltan_Timer_Init(zz->ZTime, 1, "Vmaps");
+      timer_setupvmap = Zoltan_Timer_Init(zz->ZTime, 0, "Vmaps");
   }
 
   if (hgp.use_timers) 
@@ -177,59 +177,66 @@ int **exp_to_part )         /* list of partitions to which exported objs
         goto End;
     if (do_timing)
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_parkway, zz->Communicator);
-  } else { /* it must be PHG */
-      /* UVC: if it is bisection anyways; no need to create vmap etc; 
-         rdivide is going to call Zoltan_PHG_Partition anyways... */
-      if (hgp.kway || zz->LB.Num_Global_Parts == 2) {/* call main V cycle routine */
-          err = Zoltan_PHG_Partition(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
-                                     hgp.part_sizes, parts, &hgp, 0);
-          if (err != ZOLTAN_OK) {
-              ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
-              goto End;
-          }
+  } 
+  else { /* it must be PHG */
+    /* UVC: if it is bisection anyways; no need to create vmap etc; 
+       rdivide is going to call Zoltan_PHG_Partition anyways... */
+    if (hgp.globalcomm.Communicator != MPI_COMM_NULL) {
+      /* This processor is part of the 2D data distribution; it should
+         participate in partitioning. */
+      if (hgp.kway || zz->LB.Num_Global_Parts == 2) {
+        /* call main V cycle routine */
+        err = Zoltan_PHG_Partition(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
+                                   hgp.part_sizes, parts, &hgp, 0);
+        if (err != ZOLTAN_OK) {
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
+          goto End;
+        }
       }
       else {
-          int i, p=zz->LB.Num_Global_Parts;
-          HGraph *hg = &zoltan_hg->HG;
-          
-          if (do_timing) 
-            ZOLTAN_TIMER_START(zz->ZTime, timer_setupvmap, zz->Communicator);
-          /* vmap associates original vertices to sub hypergraphs */
-          if (!(hg->vmap = (int*) ZOLTAN_MALLOC(hg->nVtx*sizeof (int))))  {
-              err = ZOLTAN_MEMERR;
-              ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-              goto End;
-          }
-          for (i = 0; i < hg->nVtx; ++i)
-              hg->vmap[i] = i;
-
-          if (do_timing) 
-            ZOLTAN_TIMER_STOP(zz->ZTime, timer_setupvmap, zz->Communicator);
-
-#if 0
-          /* UVCUVC: We now have "Adaptive Balance Adjustment" during
-             recursive bisection, hence we don't need the following code */
-             
-          /* tighten balance tolerance for recursive bisection process */
-          hgp.bal_tol = pow (hgp.bal_tol, 1.0 / ceil (log((double)p) / log(2.0)));
+        int i, p=zz->LB.Num_Global_Parts;
+        HGraph *hg = &zoltan_hg->HG;
+            
+        if (do_timing) 
+          ZOLTAN_TIMER_START(zz->ZTime, timer_setupvmap, zz->Communicator);
+        /* vmap associates original vertices to sub hypergraphs */
+        if (!(hg->vmap = (int*) ZOLTAN_MALLOC(hg->nVtx*sizeof (int))))  {
+          err = ZOLTAN_MEMERR;
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+          goto End;
+        }
+        for (i = 0; i < hg->nVtx; ++i)
+          hg->vmap[i] = i;
+  
+        if (do_timing) 
+          ZOLTAN_TIMER_STOP(zz->ZTime, timer_setupvmap, zz->Communicator);
+  
+  #if 0
+        /* UVCUVC: We now have "Adaptive Balance Adjustment" during
+           recursive bisection, hence we don't need the following code */
+               
+        /* tighten balance tolerance for recursive bisection process */
+        hgp.bal_tol = pow (hgp.bal_tol, 1.0 / ceil (log((double)p) / log(2.0)));
 #endif
           
-          /* partition hypergraph */
-          err = Zoltan_PHG_rdivide (0, p-1, parts, zz, hg, &hgp, 0);
-
-          if (hgp.output_level >= PHG_DEBUG_LIST)     
-              uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %s/%s/%s p=%d "
-                      "bal=%.2f cutl=%.2f\n", hg->info, hg->nVtx, hg->nEdge, hg->nPins,
-                      hgp.redm_str, hgp.coarsepartition_str, hgp.refinement_str, p,
-                      Zoltan_PHG_Compute_Balance(zz, hg, hgp.part_sizes, p, parts),
-                      Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p, &err));
-          
-          if (err != ZOLTAN_OK)  {
-              ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
-              goto End;
-          }
-          ZOLTAN_FREE (&zoltan_hg->HG.vmap);
+        /* partition hypergraph */
+        err = Zoltan_PHG_rdivide (0, p-1, parts, zz, hg, &hgp, 0);
+  
+        if (hgp.output_level >= PHG_DEBUG_LIST)     
+          uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %s/%s/%s p=%d "
+                  "bal=%.2f cutl=%.2f\n", 
+                  hg->info, hg->nVtx, hg->nEdge, hg->nPins,
+                  hgp.redm_str, hgp.coarsepartition_str, hgp.refinement_str, p,
+                  Zoltan_PHG_Compute_Balance(zz, hg, hgp.part_sizes, p, parts),
+                  Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p, &err));
+            
+        if (err != ZOLTAN_OK)  {
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
+          goto End;
+        }
+        ZOLTAN_FREE (&zoltan_hg->HG.vmap);
       }  
+    }
   }
         
   if (do_timing) {
@@ -270,9 +277,9 @@ End:
     static double balsum = 0.0, cutlsum = 0.0, cutnsum = 0.0;
     static double balmax = 0.0, cutlmax = 0.0, cutnmax = 0.0;
     static double balmin = 1e100, cutlmin = 1e100, cutnmin = 1e100;
-    double bal; 
-    double cutl;   /* Connnectivity cuts:  sum_over_edges((npart-1)*ewgt) */
-    double cutn;   /* Net cuts:  sum_over_edges((nparts>1)*ewgt) */
+    double bal = 0.; 
+    double cutl = 0.; /* Connnectivity cuts:  sum_over_edges((npart-1)*ewgt) */
+    double cutn = 0.; /* Net cuts:  sum_over_edges((nparts>1)*ewgt) */
 
     double rlocal[2];  /* local cut stats for removed edges */
     double rglobal[2]; /* global cut stats for removed edges */
@@ -284,12 +291,15 @@ End:
       ZOLTAN_TIMER_START(zz->ZTime, timer_finaloutput, zz->Communicator);
     }
 
-    bal = Zoltan_PHG_Compute_Balance(zz, hg, hgp.part_sizes,
-                                     zz->LB.Num_Global_Parts, parts);
-    cutl= Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts,
-                                    zz->LB.Num_Global_Parts, &err);
-    cutn = Zoltan_PHG_Compute_NetCut(hg->comm, hg, parts,
-                                     zz->LB.Num_Global_Parts);
+    if (hgp.globalcomm.Communicator != MPI_COMM_NULL) {
+      /* Processor participated in partitioning */
+      bal = Zoltan_PHG_Compute_Balance(zz, hg, hgp.part_sizes,
+                                       zz->LB.Num_Global_Parts, parts);
+      cutl= Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts,
+                                      zz->LB.Num_Global_Parts, &err);
+      cutn = Zoltan_PHG_Compute_NetCut(hg->comm, hg, parts,
+                                       zz->LB.Num_Global_Parts);
+    }
 
     if (!err) {
      
@@ -340,8 +350,12 @@ End:
 
   if (hgp.use_timers) {
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_all, zz->Communicator);
-    Zoltan_Timer_PrintAll(zz->ZTime, 0, zz->Communicator, stdout);
+    if (hgp.globalcomm.Communicator != MPI_COMM_NULL)
+      Zoltan_Timer_PrintAll(zz->ZTime, 0, hgp.globalcomm.Communicator, stdout);
   }
+
+  if (hgp.globalcomm.Communicator != MPI_COMM_NULL)
+    MPI_Comm_free(&(hgp.globalcomm.Communicator));
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return err;
@@ -357,6 +371,9 @@ static int Zoltan_PHG_Initialize_Params(
 {
   int err;
   char *yo = "Zoltan_PHG_Initialize_Params";
+  int nProc;
+  int usePrimeComm;
+  MPI_Comm communicator;
   
 
   memset(hgp, 0, sizeof(*hgp)); /* in the future if we forget to initialize
@@ -436,7 +453,20 @@ static int Zoltan_PHG_Initialize_Params(
   Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,
                            zz->Debug_Proc);
 
-  if (zz->LB.Method == PARKWAY) {
+  nProc = zz->Num_Proc;
+  usePrimeComm = 0;
+
+  if (zz->LB.Method == PHG) {
+    /* Test to determine whether we should change the number of processors
+       used for partitioning to make more efficient 2D decomposition */
+
+    if (hgp->nProc_x_req != 1 && hgp->nProc_y_req != 1)  /* Want 2D decomp */
+      if (zz->Num_Proc > SMALL_PRIME && Zoltan_PHG_isPrime(zz->Num_Proc)) 
+        /* 2D data decomposition is requested but we have a prime 
+         * number of processors. */
+        usePrimeComm = 1;
+  }
+  else if (zz->LB.Method == PARKWAY) {
     if (hgp->nProc_x_req>1) {
       err = ZOLTAN_FATAL;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "ParKway requires nProc_x=1 or -1.");
@@ -445,8 +475,20 @@ static int Zoltan_PHG_Initialize_Params(
     hgp->nProc_x_req = 1;
   }
 
-  err = Zoltan_PHG_Set_2D_Proc_Distrib(zz, zz->Communicator, zz->Proc, 
-                                       zz->Num_Proc, hgp->nProc_x_req, 
+  if (!usePrimeComm)
+    MPI_Comm_dup(zz->Communicator, &communicator);
+  else {
+    MPI_Group newgrp, zzgrp;
+    nProc--;
+    MPI_Comm_group(zz->Communicator, &zzgrp);
+    MPI_Group_excl(zzgrp, 1, &nProc, &newgrp);
+    MPI_Comm_create(zz->Communicator, newgrp, &communicator);
+    MPI_Group_free(&newgrp);
+    MPI_Group_free(&zzgrp);
+  }
+
+  err = Zoltan_PHG_Set_2D_Proc_Distrib(zz, communicator, zz->Proc, 
+                                       nProc, hgp->nProc_x_req, 
                                        hgp->nProc_y_req, 
                                        &hgp->globalcomm);
   if (err != ZOLTAN_OK) 
@@ -641,7 +683,10 @@ void Zoltan_PHG_HGraph_Print(
 
 int Zoltan_PHG_Set_2D_Proc_Distrib(
     ZZ *zz,                /* Input:  ZZ struct; for debuging   */
-    MPI_Comm Communicator, /* Input:  The MPI Communicator      */
+    MPI_Comm Communicator, /* Input:  The MPI Communicator; this communicator
+                                      may be MPI_COMM_NULL, as PHG_Redistribute
+                                      uses this function with MPI_COMM_NULL
+                                      to compute nProc_x and nProc_y.  */
     int proc,              /* Input:  Rank of current processor */
     int nProc,             /* Input:  Total # of processors     */    
     int nProc_x,           /* Input:  Suggested #procs in x-direction */
@@ -687,16 +732,19 @@ int ierr = ZOLTAN_OK;
     goto End;
   }
 
-  comm->zz = zz;
-  comm->myProc_x = proc % comm->nProc_x;
-  comm->myProc_y = proc / comm->nProc_x;
-  comm->Communicator = Communicator;
-  comm->myProc = proc;
   comm->nProc = nProc;
+  comm->Communicator = Communicator;
+  comm->zz = zz;
 
   if (Communicator==MPI_COMM_NULL) {
-      comm->col_comm = comm->row_comm = MPI_COMM_NULL;
+    comm->myProc_x = -1;
+    comm->myProc_y = -1;
+    comm->myProc = -1;
+    comm->col_comm = comm->row_comm = MPI_COMM_NULL;
   } else {
+    comm->myProc_x = proc % comm->nProc_x;
+    comm->myProc_y = proc / comm->nProc_x;
+    comm->myProc = proc;
     if ((MPI_Comm_split(Communicator, comm->myProc_x, comm->myProc_y, 
                         &comm->col_comm) != MPI_SUCCESS)
      || (MPI_Comm_split(Communicator, comm->myProc_y, comm->myProc_x, 

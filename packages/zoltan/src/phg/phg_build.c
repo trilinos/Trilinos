@@ -220,6 +220,7 @@ int nProc_x = phg->comm->nProc_x;
 int nProc_y = phg->comm->nProc_y;
 int myProc_x = phg->comm->myProc_x;
 int myProc_y = phg->comm->myProc_y;
+int proc_offset;
 
 float frac_x, frac_y;
 float *tmpwgts = NULL;
@@ -432,8 +433,11 @@ float *tmpwgts = NULL;
     dist_y[i] = (int) (i * frac_y);
   dist_y[nProc_y] = app.GnEdge;
   
-  nEdge = dist_y[myProc_y+1] - dist_y[myProc_y];
-  nVtx = dist_x[myProc_x+1] - dist_x[myProc_x];
+  /* myProc_y and myProc_x can be -1 when nProc is prime and we use a 2D
+   * decomposition.  One processor is excluded from the 2D communicator;
+   * for it, myProc_y and myProc_x == -1. */
+  nEdge = (myProc_y >= 0 ? dist_y[myProc_y+1] - dist_y[myProc_y] : 0);
+  nVtx  = (myProc_x >= 0 ? dist_x[myProc_x+1] - dist_x[myProc_x] : 0);
 
   /*
    * Build comm plan for sending non-zeros to their target processors in
@@ -529,14 +533,19 @@ float *tmpwgts = NULL;
      * within a row communicator.  The plan is used to send vertex weights
      * and partition assignments to the 2D distribution and/or 
      * to create return lists after partitioning
+     *
+     * Since for 2D decomposition and prime nProc we exclude a processor,
+     * we cannot use row_comm for this operation.  We'll simulate it,
+     * allowing the excluded processor to send its data to row 0.
      */
 
+    proc_offset = (myProc_y >= 0 ? myProc_y : 0) * nProc_x;
     for (i = 0; i < app.nVtx; i++)
-      proclist[i] = VTX_TO_PROC_X(phg, app.vtx_gno[i]);
+      proclist[i] = proc_offset + VTX_TO_PROC_X(phg, app.vtx_gno[i]);
       
     msg_tag++;
     ierr = Zoltan_Comm_Create(&(zhg->VtxPlan), app.nVtx, proclist, 
-                              phg->comm->row_comm, msg_tag, &nrecv);
+                              zz->Communicator, msg_tag, &nrecv);
     zhg->nRecv_GNOs = nrecv;
 
     zhg->Recv_GNOs = recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
@@ -582,8 +591,9 @@ float *tmpwgts = NULL;
    * to all processors within column.
    */
 
-  MPI_Allreduce(tmpparts, *input_parts, phg->nVtx, MPI_INT, MPI_MAX, 
-                phg->comm->col_comm);
+  if (phg->comm->col_comm != MPI_COMM_NULL)
+    MPI_Allreduce(tmpparts, *input_parts, phg->nVtx, MPI_INT, MPI_MAX, 
+                  phg->comm->col_comm);
 
   ZOLTAN_FREE(&tmpparts);
   
@@ -632,8 +642,9 @@ float *tmpwgts = NULL;
      * to all processors within column.
      */
 
-    MPI_Allreduce(tmpwgts, phg->vwgt, nwgt, MPI_FLOAT, MPI_MAX, 
-                  phg->comm->col_comm);
+    if (phg->comm->col_comm != MPI_COMM_NULL)
+      MPI_Allreduce(tmpwgts, phg->vwgt, nwgt, MPI_FLOAT, MPI_MAX, 
+                    phg->comm->col_comm);
   }
   else {
     /* Application did not specify object weights, but PHG code needs them.
@@ -654,8 +665,9 @@ float *tmpwgts = NULL;
         tmpwgts[i] = phg->vindex[i+1] - phg->vindex[i];
       }
       /* sum local degrees to global degrees and use as vtx weight */
-      MPI_Allreduce(tmpwgts, phg->vwgt, phg->nVtx, MPI_FLOAT, MPI_SUM, 
-                    phg->comm->col_comm);
+      if (phg->comm->col_comm != MPI_COMM_NULL)
+        MPI_Allreduce(tmpwgts, phg->vwgt, phg->nVtx, MPI_FLOAT, MPI_SUM, 
+                      phg->comm->col_comm);
     }
     else {
       /* unit weights */
@@ -695,8 +707,15 @@ float *tmpwgts = NULL;
       }
     }
     else {
+      /* 
+       * Since for 2D decomposition and prime nProc we exclude a processor,
+       * we cannot use col_comm for this operation.  We'll simulate it,
+       * allowing the excluded processor to send its data to col 0.
+       */
+      proc_offset = (myProc_x >= 0 ? myProc_x : 0);
       for (i = 0; i < app.nEdge; i++)
-        proclist[i] = EDGE_TO_PROC_Y(phg, app.edge_gno[i]);
+        proclist[i] = proc_offset 
+                    + EDGE_TO_PROC_Y(phg, app.edge_gno[i]) * nProc_x;
       
       msg_tag++;
       ierr = Zoltan_Comm_Create(&plan, app.nEdge, proclist, 
@@ -728,8 +747,9 @@ float *tmpwgts = NULL;
      * to all processors within row.
      */
 
-    MPI_Allreduce(tmpwgts, phg->ewgt, nwgt, MPI_FLOAT, MPI_MAX, 
-                  phg->comm->row_comm);
+    if (phg->comm->row_comm != MPI_COMM_NULL)
+      MPI_Allreduce(tmpwgts, phg->ewgt, nwgt, MPI_FLOAT, MPI_MAX, 
+                    phg->comm->row_comm);
   }
   else {
     /* KDDKDD  For now, do not assume uniform edge weights.

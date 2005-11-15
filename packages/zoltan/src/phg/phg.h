@@ -196,15 +196,8 @@ ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char*);
 /*******************/
 /* 2D Distribution */
 /*******************/
-extern int Zoltan_PHG_Set_2D_Proc_Distrib(
-    ZZ *zz,                /* Input:  ZZ struct; for debuging   */
-    MPI_Comm Communicator, /* Input:  The MPI Communicator      */
-    int proc,              /* Input:  Rank of current processor */
-    int nProc,             /* Input:  Total # of processors     */    
-    int nProc_x,           /* Input:  Suggested #procs in x-direction */
-    int nProc_y,           /* Input:  Suggested #procs in y-direction */
-    PHGComm *comm          /* Ouput: filled */
-    );
+extern int Zoltan_PHG_Set_2D_Proc_Distrib(ZZ *, MPI_Comm, int, int, int, int,
+                                          PHGComm *);
 
 extern int Zoltan_PHG_Gno_To_Proc_Block(int gno, int*, int);
     
