@@ -18,58 +18,60 @@
 # picking up a system-installed version and ensures that we are testing the
 # build module.
 try:
-  import setpath
-  import Epetra
+    import setpath
+    import Epetra
 except ImportError:
-  from PyTrilinos import Epetra
-  print "Using system-installed Epetra"
+    from PyTrilinos import Epetra
+    print "Using system-installed Epetra"
 
 from Numeric import *
 
 def main():
 
-  # Defines a communicator, which will be an Epetra.SerialComm or
-  # an Epetra.MpiComm depending on how Trilinos was configured
-  Comm = Epetra.PyComm()
-  base = Comm.MyPID() + 1
-  # Defines here some source variable.
-  source = [1.0*base, 2.0*base, 3.0*base]
-  print "PE = ", base, ", source = ", source
+    # Defines a communicator, which will be an Epetra.SerialComm or
+    # an Epetra.MpiComm depending on how Trilinos was configured
+    Comm = Epetra.PyComm()
+    base = Comm.MyPID() + 1
+    # Defines here some source variable.
+    source = [1.0*base, 2.0*base, 3.0*base]
+    print "PE = ", base, ", source = ", source
 
-  # get the mininum element
-  #target = Comm.GlobalOp(Epetra.MINALL, source)
-  target = Comm.MinAll(source)
-  if Comm.MyPID() == 0:
-    print "MINALL = ", target
-  Comm.Barrier()
+    # get the mininum element
+    #target = Comm.GlobalOp(Epetra.MINALL, source)
+    target = Comm.MinAll(source)
+    if Comm.MyPID() == 0:
+        print "MINALL = ", target
+    Comm.Barrier()
 
-  # get the maximum element
-  target = Comm.MaxAll(source)
-  if Comm.MyPID() == 0:
-    print "MAXALL = ", target
-  Comm.Barrier()
+    # get the maximum element
+    target = Comm.MaxAll(source)
+    if Comm.MyPID() == 0:
+        print "MAXALL = ", target
+    Comm.Barrier()
 
-  # sum all the elements
-  target = Comm.SumAll(source)
-  if Comm.MyPID() == 0:
-    print "SUMALL = ", target
-  Comm.Barrier()
+    # sum all the elements
+    target = Comm.SumAll(source)
+    if Comm.MyPID() == 0:
+        print "SUMALL = ", target
+    Comm.Barrier()
 
-  # scansum
-  target = Comm.ScanSum(source)
-  print "PE = ", base, ", SCANSUM = ", target
-  Comm.Barrier()
+    # scansum
+    target = Comm.ScanSum(source)
+    print "PE = ", base, ", SCANSUM = ", target
+    Comm.Barrier()
 
-  # broadcast from processor 0
-  if Comm.MyPID() == 0:
-    source = [10, 20]
-  else:
-    source = [0, 0]
+    # broadcast from processor 0
+    if Comm.MyPID() == 0:
+        source = [10, 20]
+    else:
+        source = [0, 0]
 
-  #target = Comm.GlobalOp(Epetra.BROADCAST, source, 0)
-  aSource = array(source,typecode='i')
-  Comm.Broadcast(aSource,0)
-  print "PE = ", base, ", BROADCAST = ", aSource
+    #target = Comm.GlobalOp(Epetra.BROADCAST, source, 0)
+    aSource = array(source,typecode='i')
+    Comm.Broadcast(aSource,0)
+    print "PE = ", base, ", BROADCAST = ", aSource
+
+    if Comm.MyPID() == 0: print "End Result: TEST PASSED"
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

@@ -89,6 +89,8 @@ def main():
   
   print Matrix
 
+  if Comm.MyPID() == 0: print "End Result: TEST PASSED"
+
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the
 # function if the script has been called as an executable from the UNIX command

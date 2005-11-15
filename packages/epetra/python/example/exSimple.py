@@ -52,11 +52,13 @@ def main():
     b     = Epetra.Vector(map)
     b.Random()
     x.Update(2.0, b, 0.0)   # x = 2*b
-    (status,xNorm) = x.Norm2()
-    (status,bNorm) = b.Norm2()
+    xNorm = x.Norm2()
+    bNorm = b.Norm2()
     if comm.MyPID() == 0:
       print "2 norm of x =", xNorm
       print "2 norm of b =", bNorm
+
+    if comm.MyPID() == 0: print "End Result: TEST PASSED"
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the

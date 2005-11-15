@@ -83,9 +83,11 @@ def main():
   X1_bis.Export(X2, Exporter, Epetra.Insert)
 
   X1_bis.Update(-1.0, X1, 1.0)
-  (ierr, Norm) = X1_bis.Norm2()
+  Norm = X1_bis.Norm2()
   if Comm.MyPID() == 0:
     print '||X1 - X1_bis||_2 = ', Norm
+
+  if Comm.MyPID() == 0: print "End Result: TEST PASSED"
 
 if __name__ == "__main__":
   main()
