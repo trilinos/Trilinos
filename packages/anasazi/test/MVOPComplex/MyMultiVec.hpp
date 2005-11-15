@@ -178,7 +178,7 @@ public:
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
     assert(MyA!=NULL);
 
-    if (&(*this)(0,0) == &(*MyA)(0,0))
+    if ((*this)[0] == (*MyA)[0])
     {
       // If this == A, then need additional storage ...
       // This situation is a bit peculiar but it may be required by
@@ -188,12 +188,13 @@ public:
 
       for (int i = 0 ; i < Length_ ; ++i)
       {
-	for (int v = 0; v < NumberVecs_ ; ++v) tmp[v] = (*MyA)(i, v);
+	for (int v = 0; v < A.GetNumberVecs() ; ++v) tmp[v] = (*MyA)(i, v);
 
         for (int v = 0 ; v < B.numCols() ; ++v)
         {
           (*this)(i, v) *= beta; 
-          ScalarType res = 0.0;
+          ScalarType res = Teuchos::ScalarTraits<ScalarType>::zero();
+
           for (int j = 0 ; j < A.GetNumberVecs() ; ++j)
           {
             res +=  tmp[j] * B(j, v);
