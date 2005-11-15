@@ -110,7 +110,7 @@ double * Epetra_NumPyMultiVector::getArrayFromMapAndObject(const Epetra_BlockMap
   // PyObject argument is an int
   if PyInt_Check(pyObject) {
     int numVectors = (int) PyInt_AsLong(pyObject);
-    int dimensions[ ] = { numVectors, blockMap.NumMyElements() };
+    int dimensions[ ] = { numVectors, blockMap.NumMyPoints() };
     tmp_array = (PyArrayObject *) PyArray_FromDims(2,dimensions,PyArray_DOUBLE);
 
   // PyObject argument is not an int ... try to build a contiguous PyArrayObject from it
@@ -119,14 +119,14 @@ double * Epetra_NumPyMultiVector::getArrayFromMapAndObject(const Epetra_BlockMap
 
     // If this fails, build a single vector with all zeros
     if (tmp_array == NULL) {
-      int dimensions[ ] = { 1, blockMap.NumMyElements() };
+      int dimensions[ ] = { 1, blockMap.NumMyPoints() };
       tmp_array = (PyArrayObject *) PyArray_FromDims(2,dimensions,PyArray_DOUBLE);
 
     // If the contiguous PyArrayObject built successfully, make sure it has the correct
     // number of dimensions
     } else {
       int   nd            = tmp_array->nd;
-      int   dimensions[ ] = { 1, blockMap.NumMyElements() };  // Default dimensions
+      int   dimensions[ ] = { 1, blockMap.NumMyPoints() };  // Default dimensions
       bool  reallocate    = false;
       int   arraySize     = 1;
       for (int i=0; i<tmp_array->nd; i++) arraySize *= tmp_array->dimensions[i];
@@ -169,7 +169,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMa
   Epetra_MultiVector(blockMap, numVectors, zeroOut)
 {
   // Create the array object
-  int dims[ ] = { numVectors, blockMap.NumMyElements() };
+  int dims[ ] = { numVectors, blockMap.NumMyPoints() };
   double **v = NULL;
   ExtractView(&v);
   array = (PyArrayObject *) PyArray_FromDimsAndData(2,dims,PyArray_DOUBLE,
@@ -184,7 +184,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_NumPyMultiVector &
   Epetra_MultiVector(source)
 {
   map = new Epetra_BlockMap(source.Map());
-  int dims[ ] = { NumVectors(), map->NumMyElements() };
+  int dims[ ] = { NumVectors(), map->NumMyPoints() };
   double **v = NULL;
   ExtractView(&v);
   array = (PyArrayObject *) PyArray_FromDimsAndData(2,dims,PyArray_DOUBLE,
@@ -195,7 +195,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_NumPyMultiVector &
 Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMap,
 						 PyObject * pyObject):
   Epetra_MultiVector(View, blockMap, getArrayFromMapAndObject(blockMap,pyObject),
-		     blockMap.NumMyElements(), tmp_array->dimensions[0])
+		     blockMap.NumMyPoints(), tmp_array->dimensions[0])
 {
   // Get the pointer to the array from static variable and clear
   assert(NULL != tmp_array);
@@ -244,7 +244,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
 // =============================================================================
 Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(PyObject * pyObject):
   Epetra_MultiVector(View, getEpetraMap(pyObject), getArrayFromObject(pyObject),
-		     tmp_map->NumMyElements(), tmp_array->dimensions[0]) 
+		     tmp_map->NumMyPoints(), tmp_array->dimensions[0]) 
 {
   // Store the pointer to the Epetra_Map
   assert(NULL != tmp_map);

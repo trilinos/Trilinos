@@ -370,3 +370,30 @@ MPI_Comm CommWorld();
     return NULL;
   }
 }
+
+// Python code.  This will be inserted directly into the python module
+%pythoncode %{
+
+# Call MPI_Init if appropriate
+import sys
+Init_Argv(sys.argv)
+del sys
+
+# Arrange for MPI_Finalize to be called at exit, if appropriate
+import atexit
+atexit.register(Finalize)
+
+%}
+
+#ifndef HAVE_MPI
+%pythoncode %{
+def PyComm():
+  "PyComm() -> Epetra.SerialComm"
+  return SerialComm();
+%}
+#else
+%pythoncode %{
+def PyComm():
+  return MpiComm(CommWorld());
+%}
+#endif

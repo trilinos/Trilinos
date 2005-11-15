@@ -10,9 +10,13 @@
 
 // Ignore directives
 %ignore Epetra_MultiVector::operator=(const Epetra_MultiVector &);
-%ignore Epetra_MultiVector::operator[](int);         // See %extend MultiVector
-%ignore Epetra_MultiVector::operator[](int) const;   //       __getitem__()
+%ignore Epetra_MultiVector::operator[](int);
+%ignore Epetra_MultiVector::operator[](int) const;
 %ignore Epetra_MultiVector::operator()(int) const;
+%ignore Epetra_MultiVector::ExtractCopy (double *, int   ) const;  // These Extract methods
+%ignore Epetra_MultiVector::ExtractCopy (double **       ) const;  // are given functionality
+%ignore Epetra_MultiVector::ExtractView (double **, int *) const;  // below in the %pythoncode
+%ignore Epetra_MultiVector::ExtractView (double ***      ) const;  // section
 
 // Rename directives
 %rename(NumPyMultiVector) Epetra_NumPyMultiVector;
@@ -26,112 +30,57 @@
 %include "Epetra_NumPyMultiVector.h"
 %include "Epetra_NumPyVector.h"
 
-// Extend directives
-// %extend Epetra_MultiVector {
-//   double * & __getitem__(int i) {
-//     return self->operator[](i);
-//   }
+// Python code.  Here we define the Epetra.MultiVector and
+// Epetra.Vector python classes, which multiply inherit from the
+// Numeric UserArray class (making these classes Numeric arrays) and
+// the Epetra_NumPyMultiVector or Epetra_NumPyVector class (making
+// these classes also Epetra objects).
+%pythoncode %{
 
-//   PyObject * Norm1() {
-//     int n = self->NumVectors();
-//     double result[n];
-//     int numVectors[1] = {n};
-//     int status        = self->Norm1(result);
-//     PyObject * output = Py_BuildValue("(iO)", status, 
-// 				      PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
-// 							      (char *)result));
-//     return output;
-//   }
+from UserArray import *
 
-//   PyObject * __setitem__(PyObject * args, double val) {
-//     int i, j;
-//     if (!PyArg_ParseTuple(args, "ii", &i, &j)) {
-//       PyErr_SetString(PyExc_IndexError, "Invalid index");
-//       return NULL;
-//     }
-//     (*self)[i][j] = val;
-//     Py_INCREF(Py_None);
-//     return Py_None;
-//   }
+class MultiVector(UserArray,NumPyMultiVector):
+    def __init__(self, *args):
+        """
+        __init__(self, BlockMap map, int numVectors, bool zeroOut=True) -> MultiVector
+        __init__(self, MultiVector source) -> MultiVector
+        __init__(self, BlockMap map, PyObject array) -> MultiVector
+        __init__(self, DataAccess CV, MultiVector source, PyObject range) -> MultiVector
+        __init__(self, PyObject array) -> MultiVector
+        """
+        NumPyMultiVector.__init__(self, *args)
+        UserArray.__init__(self,self.getArray(),'d',copy=False,savespace=False)
+    def __str__(self):
+        return str(self.array)
+    def __setattr__(self, key, value):
+        "Protect the 'array' and 'shape' attributes"
+        if key == "array":
+            if key in self.__dict__:
+                raise AttributeError, "Cannot change Epetra.MultiVector array attribute"
+        elif key == "shape":
+            value = tuple(value)
+            if len(value) < 2:
+                raise ValueError, "Epetra.MultiVector shape is " + str(value) + \
+		  " but must have minimum of 2 elements"
+        UserArray.__setattr__(self, key, value)
+    def ExtractCopy(self):
+        "ExtractCopy(self) -> NumericArray"
+        return array(self.array,copy=True)
+    def ExtractView(self):
+        "ExtractView(self) -> NumericArray"
+        return self.array
 
-//   void Set(const int vector, const int element, const double value) {
-//     (*self)[vector][element] = value;
-//   }
+class Vector(UserArray,NumPyVector):
+    def __init__(self, *args):
+        NumPyVector.__init__(self, *args)
+        UserArray.__init__(self,self.getArray(),'d',copy=False,savespace=False)
+    def __str__(self):
+        return str(self.array)
+    def __setattr__(self, key, value):
+        "Protect the 'array' attribute"
+        if key == "array":
+            if key in self.__dict__:
+                raise AttributeError, "Cannot change Epetra.Vector array attribute"
+        UserArray.__setattr__(self, key, value)
 
-//   PyObject * __getitem__(PyObject * args) {
-//     int i, j;
-//     if (!PyArg_ParseTuple(args, "ii", &i, &j)) {
-//       PyErr_SetString(PyExc_IndexError, "Invalid index");
-//       return NULL;
-//     }
-//     double val = (*self)[i][j];
-//     return PyFloat_FromDouble(val);
-//   }
-
-//   double Get(const int vector, const int element) {
-//     return((*self)[vector][element]);
-//   }
-
-//   PyObject * Norm2() {
-//     int n = self->NumVectors();
-//     double result[n];
-//     int numVectors[1] = {n};
-//     int status        = self->Norm2(result);
-//     PyObject * output = Py_BuildValue("(iO)", status,
-// 				      PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
-// 							      (char *)result));
-//     return output;
-//   }
-
-//   PyObject * NormInf() {
-//     int n = self->NumVectors();
-//     double result[n];
-//     int numVectors[1] = {n};
-//     int status        = self->NormInf(result);
-//     PyObject * output = Py_BuildValue("(iO)", status,
-// 				      PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
-// 							      (char *)result));
-//     return output;
-//   }
-
-//    PyObject * Dot(const Epetra_MultiVector& A){
-//     int n = self->NumVectors();
-//     double result[n];
-//     int numVectors[1] = {n};
-//     int status        = self->Dot(A, result);
-//     PyObject * output = Py_BuildValue("(iO)", status,
-// 				      PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE,
-// 							      (char *)result));
-//     return output;
-//    }
-// }
-
-// %extend Epetra_Vector{
-
-//   PyObject * Norm1() {
-//     double result[1];
-//     int status        = self->Norm1(result);
-//     PyObject * output = Py_BuildValue("(id)", status, result[0]);
-//     return output;
-//   }
-
-//  PyObject * Norm2() {
-//     double result[1];
-//     int status        = self->Norm2(result);
-//     PyObject * output = Py_BuildValue("(id)", status, result[0]);
-//     return output;
-//   }
-
-//   PyObject * NormInf() {
-//     double result[1];
-//     int status        = self->NormInf(result);
-//     PyObject * output = Py_BuildValue("(id)", status, result[0]);    
-//     return output;
-//   }
-//    PyObject * Dot(const Epetra_MultiVector& A){
-//     double result[1];
-//     int status        = self->Dot(A, result);
-//     PyObject * output = Py_BuildValue("(id)", status, result[0]);
-//     return output;
-//    }
-// }
+%}

@@ -750,76 +750,12 @@ fail:
   }
 }
 
-// Python code.  Here we set the __version__ string, call MPI_Init()
-// and arrange for MPI_Finalize to be called (if appropriate), and
-// declare classes that inherit both from Epetra objects and
-// UserArrays, to give users additional functionality.
+// Python code.  Here we set the __version__ string
 %pythoncode %{
 
 __version__ = Version().split()[2]
 
-# Call MPI_Init if appropriate
-import sys
-Init_Argv(sys.argv)
-del sys
-
-# Arrange for MPI_Finalize to be called at exit, if appropriate
-import atexit
-atexit.register(Finalize)
-
-from UserArray import *
-
-class MultiVector(UserArray,NumPyMultiVector):
-    def __init__(self, *args):
-        """
-        __init__(self, BlockMap map, int numVectors, bool zeroOut=True) -> MultiVector
-        __init__(self, MultiVector source) -> MultiVector
-        __init__(self, BlockMap map, PyObject array) -> MultiVector
-        __init__(self, DataAccess CV, MultiVector source, PyObject range) -> MultiVector
-        __init__(self, PyObject array) -> MultiVector
-        """
-        NumPyMultiVector.__init__(self, *args)
-        UserArray.__init__(self,self.getArray(),'d',copy=False,savespace=False)
-    def __str__(self):
-        return str(self.array)
-    def __setattr__(self, key, value):
-        "Protect the 'array' and 'shape' attributes"
-        if key == "array":
-            if key in self.__dict__:
-                raise AttributeError, "Cannot change Epetra.MultiVector array attribute"
-        elif key == "shape":
-            value = tuple(value)
-            if len(value) < 2:
-                raise ValueError, "Epetra.MultiVector shape is " + str(value) + \
-		  " but must have minimum of 2 elements"
-        UserArray.__setattr__(self, key, value)
-
-class Vector(UserArray,NumPyVector):
-    def __init__(self, *args):
-        NumPyVector.__init__(self, *args)
-        UserArray.__init__(self,self.getArray(),'d',copy=False,savespace=False)
-    def __str__(self):
-        return str(self.array)
-    def __setattr__(self, key, value):
-        "Protect the 'array' attribute"
-        if key == "array":
-            if key in self.__dict__:
-                raise AttributeError, "Cannot change Epetra.Vector array attribute"
-        UserArray.__setattr__(self, key, value)
-
 %}
-
-#ifndef HAVE_MPI
-%pythoncode %{
-def PyComm():
-  return SerialComm();
-%}
-#else
-%pythoncode %{
-def PyComm():
-  return MpiComm(CommWorld());
-%}
-#endif
 
 %include "Epetra_PyOperator.h"
 %include "Epetra_PyRowMatrix.h"
