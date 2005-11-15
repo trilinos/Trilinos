@@ -13,10 +13,13 @@
 %ignore Epetra_MultiVector::operator[](int);
 %ignore Epetra_MultiVector::operator[](int) const;
 %ignore Epetra_MultiVector::operator()(int) const;
-%ignore Epetra_MultiVector::ExtractCopy (double *, int   ) const;  // These Extract methods
-%ignore Epetra_MultiVector::ExtractCopy (double **       ) const;  // are given functionality
-%ignore Epetra_MultiVector::ExtractView (double **, int *) const;  // below in the %pythoncode
-%ignore Epetra_MultiVector::ExtractView (double ***      ) const;  // section
+%ignore Epetra_MultiVector::ExtractCopy(double *, int   ) const;  // These Extract methods
+%ignore Epetra_MultiVector::ExtractCopy(double **       ) const;  // are given functionality
+%ignore Epetra_MultiVector::ExtractView(double **, int *) const;  // below in the %pythoncode
+%ignore Epetra_MultiVector::ExtractView(double ***      ) const;  // section
+%ignore Epetra_MultiVector::ResetView(double **);   // These are expert
+%ignore Epetra_MultiVector::Values() const;         // methods not supported
+%ignore Epetra_MultiVector::Pointers() const;       // (or needed) in python
 
 // Rename directives
 %rename(NumPyMultiVector) Epetra_NumPyMultiVector;

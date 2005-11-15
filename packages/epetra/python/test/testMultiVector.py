@@ -394,8 +394,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
             self.assertEquals(result, 0)
             self.assertEquals(emv[0,lid], 5.0)
         else:
-            self.assertEquals(result, -1)
-            self.assertEquals(emv[0,lid], 0.5)
+            self.assertEquals(result, 1)
 
     def testReplaceGlobalValue2(self):
         "Test Epetra.MultiVector ReplaceGlobalValue method for BlockMaps"
@@ -410,8 +409,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
             self.assertEquals(result, 0)
             self.assertEquals(emv[0,lid,1], 5.0)
         else:
-            self.assertEquals(result, -1)
-            self.assertEquals(emv[0,lid,1], 0.5)
+            self.assertEquals(result, 1)
 
     def testSumIntoGlobalValue1(self):
         "Test Epetra.MultiVector SumIntoGlobalValue method"
@@ -424,8 +422,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
             self.assertEquals(result, 0)
             self.assertEquals(emv[0,lid], 1.0)
         else:
-            self.assertEquals(result, -1)
-            self.assertEquals(emv[0,lid], 0.5)
+            self.assertEquals(result, 1)
 
     def testSumIntoGlobalValue2(self):
         "Test Epetra.MultiVector SumIntoGlobalValue method for BlockMaps"
@@ -440,8 +437,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
             self.assertEquals(result, 0)
             self.assertEquals(emv[0,lid,1], 1.0)
         else:
-            self.assertEquals(result, -1)
-            self.assertEquals(emv[0,lid,1], 0.5)
+            self.assertEquals(result, 1)
 
     def testReplaceMyValue1(self):
         "Test Epetra.MultiVector ReplaceMyValue method"
@@ -566,6 +562,32 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         multiArray = [squareArray] * 8
         emv  = Epetra.MultiVector(self.map,multiArray)
         self.assertEquals(emv.Stride(), 9)
+
+    def testSeed(self):
+        "Test Epetra.MultiVector Seed method"
+        emv  = Epetra.MultiVector(self.map,1)
+        seed = emv.Seed()
+        max  = 2**31 - 1
+        self.assertEquals(seed>0,   True)
+        self.assertEquals(seed<max, True)
+
+    def testSetSeed1(self):
+        "Test Epetra.MultiVector SetSeed method"
+        emv    = Epetra.MultiVector(self.map,1)
+        seed   = 2005
+        result = emv.SetSeed(seed)
+        self.assertEquals(result,     0   )
+        self.assertEquals(emv.Seed(), seed)
+
+    def testSetSeed2(self):
+        "Test Epetra.MultiVector SetSeed method with negative seed"
+        emv  = Epetra.MultiVector(self.map,1)
+        seed = -2005
+        self.assertRaises(TypeError,emv.SetSeed,seed)
+
+#    def testPrint(self):
+#        "Test Epetra.MultiVector Print method"
+        
 
 ##########################################################################
 
