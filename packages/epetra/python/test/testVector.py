@@ -104,17 +104,15 @@ class EpetraVector1DTestCase(unittest.TestCase):
     def testNorm1(self):
         "Test Epetra.Vector 1D Norm1 method"
         epetraVector  = Epetra.Vector([-1,2,-3,4])
-        (status,norm) = epetraVector.Norm1()
-        self.assertEqual(status, 0 )
+        norm = epetraVector.Norm1()
         self.assertEqual(norm, 10.0)
 
     def testDot(self):
         "Test Epetra.Vector 1D Dot method"
         epetraVector1 = Epetra.Vector([-1, 2,-3, 4])
         epetraVector2 = Epetra.Vector([ 5, 1,-8,-7])
-        (status,dot)  = epetraVector1.Dot(epetraVector2)
-        self.assertEqual(status, 0)
-        self.assertEqual(dot,   -7)
+        dot = epetraVector1.Dot(epetraVector2)
+        self.assertEqual(dot, -7)
 
 ##########################################################################
 
