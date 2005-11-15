@@ -528,6 +528,45 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         self.assertEquals(emv[:], array[:])
         self.assertEquals(emv.getArray() is array, True)
 
+    def testNumVectors(self):
+        "Test Epetra.MultiVector NumVectors method"
+        for i in range(1,8):
+            emv = Epetra.MultiVector(self.map,i)
+            self.assertEquals(emv.NumVectors(), i)
+
+    def testMyLength(self):
+        "Test Epetra.MultiVector MyLength method"
+        a   = [self.numPyArray] * 3
+        emv = Epetra.MultiVector(self.map,a)
+        self.assertEquals(emv.MyLength(), self.length)
+
+    def testGlobalLength(self):
+        "Test Epetra.MultiVector GlobalLength method"
+        a   = [self.numPyArray] * 3
+        emv = Epetra.MultiVector(self.map,a)
+        self.assertEquals(emv.GlobalLength(), self.length*self.comm.NumProc())
+
+    def testConstantStride(self):
+        "Test Epetra.MultiVector ConstantStride method"
+        squareArray = [[-1.2,  3.4, -5.6],
+                       [ 7.8, -9.0,  1.2],
+                       [-3.4,  5.6, -7.8]]
+        multiArray = [squareArray] * 8
+        emv1  = Epetra.MultiVector(self.map,multiArray)
+        indexes = (0,2,3,7)
+        emv2  = Epetra.MultiVector(Epetra.View,emv1,indexes)
+        self.assertEquals(emv1.ConstantStride(), True )
+        self.assertEquals(emv2.ConstantStride(), False)
+
+    def testStride(self):
+        "Test Epetra.MultiVector Stride method"
+        squareArray = [[-1.2,  3.4, -5.6],
+                       [ 7.8, -9.0,  1.2],
+                       [-3.4,  5.6, -7.8]]
+        multiArray = [squareArray] * 8
+        emv  = Epetra.MultiVector(self.map,multiArray)
+        self.assertEquals(emv.Stride(), 9)
+
 ##########################################################################
 
 if __name__ == "__main__":
