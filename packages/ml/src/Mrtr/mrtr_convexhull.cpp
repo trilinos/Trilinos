@@ -43,13 +43,13 @@
 /*----------------------------------------------------------------------*
  |  create a convexhull of a set of points (private)         mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p)
+bool MOERTEL::Overlap::ConvexHull(map<int,RefCountPtr<MOERTEL::Point> >& p)
 {
   // # points
   int np = p.size();
 
   // sort points by xi[0] coordinate
-  vector<RefCountPtr<MRTR::Point> > points; PointView(p,points);
+  vector<RefCountPtr<MOERTEL::Point> > points; PointView(p,points);
   vector<double> dlistx(np);
   vector<double> dlisty(np);
   vector<int> list2(np);
@@ -58,7 +58,7 @@ bool MRTR::Overlap::ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p)
     dlistx[i] = points[i]->Xi()[0];
     list2[i] = i;
   }
-  MRTR::sort(&dlistx[0],np,&list2[0]);
+  MOERTEL::sort(&dlistx[0],np,&list2[0]);
 
   // get assoc. y-list
   for (int i=0; i<np; ++i)
@@ -69,17 +69,17 @@ bool MRTR::Overlap::ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p)
     if (dlistx[i]==dlistx[i+1])
       if (dlisty[i]>dlisty[i+1])
       {
-        MRTR::swap(dlistx[i],dlistx[i+1]);
-        MRTR::swap(dlisty[i],dlisty[i+1]);
-        MRTR::swap(list2[i],list2[i+1]);
+        MOERTEL::swap(dlistx[i],dlistx[i+1]);
+        MOERTEL::swap(dlisty[i],dlisty[i+1]);
+        MOERTEL::swap(list2[i],list2[i+1]);
       }  
   
   // create a new polygon and put points in in sorted order
-  map<int,RefCountPtr<MRTR::Point> > newp;
+  map<int,RefCountPtr<MOERTEL::Point> > newp;
   for (int i=0; i<np; ++i)
   {
-    RefCountPtr<MRTR::Point> tmp = rcp(new MRTR::Point(i,points[list2[i]]->Xi()));
-    newp.insert(pair<int,RefCountPtr<MRTR::Point> >(i,tmp));
+    RefCountPtr<MOERTEL::Point> tmp = rcp(new MOERTEL::Point(i,points[list2[i]]->Xi(),OutLevel()));
+    newp.insert(pair<int,RefCountPtr<MOERTEL::Point> >(i,tmp));
   }
   
   // delete the old one
@@ -91,7 +91,7 @@ bool MRTR::Overlap::ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p)
   
   points.clear();
 
-  map<int,RefCountPtr<MRTR::Point> >::iterator pcurr;
+  map<int,RefCountPtr<MOERTEL::Point> >::iterator pcurr;
 
 #if 0
   // printout the polygon
@@ -103,7 +103,7 @@ bool MRTR::Overlap::ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p)
 
   //===========================================================================
   // build the upper hull
-  map<int,RefCountPtr<MRTR::Point> > upper;
+  map<int,RefCountPtr<MOERTEL::Point> > upper;
   PointView(p,points);
   // put in the first 2 points
   AddPointtoPolygon(upper,0,points[0]->Xi()); //cout << *points[0];
@@ -119,7 +119,7 @@ bool MRTR::Overlap::ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p)
       RemovePointBefore(i,upper);
 #if 0
   // printout the current upper hull
-  map<int,MRTR::Point*>::iterator pcurr;
+  map<int,MOERTEL::Point*>::iterator pcurr;
   for (pcurr=upper.begin(); pcurr != upper.end(); ++pcurr)
     if (pcurr->second)
       cout << *(pcurr->second);
@@ -128,7 +128,7 @@ bool MRTR::Overlap::ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p)
 
   //===========================================================================
   // build the lower hull
-  map<int,RefCountPtr<MRTR::Point> > lower;
+  map<int,RefCountPtr<MOERTEL::Point> > lower;
   // put in the first 2 points
   AddPointtoPolygon(lower,np-1,points[np-1]->Xi()); //cout << *points[np-1];
   AddPointtoPolygon(lower,np-2,points[np-2]->Xi()); //cout << *points[np-2];
@@ -143,7 +143,7 @@ bool MRTR::Overlap::ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p)
       RemovePointAfter(i,lower);
 #if 0
   // printout the current lower hull
-  map<int,RefCountPtr<MRTR::Point> >::iterator pcurr;
+  map<int,RefCountPtr<MOERTEL::Point> >::iterator pcurr;
   for (pcurr=lower.begin(); pcurr != lower.end(); ++pcurr)
     if (pcurr->second)
       cout << *(pcurr->second);
@@ -157,7 +157,7 @@ bool MRTR::Overlap::ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p)
   //===========================================================================
   // join upper and lower hull
   // note not to put in duplicate start and end point
-  map<int,RefCountPtr<MRTR::Point> > finalp;
+  map<int,RefCountPtr<MOERTEL::Point> > finalp;
   
   // put upper hull in
   int i=0;
@@ -190,9 +190,10 @@ bool MRTR::Overlap::ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p)
   // nodes must be part of the convex hull
   if (finalp.size() != p.size())
   {
-    cout << "***WRN*** MRTR::Overlap::ConvexHull:\n"
-         << "***WRN*** size of convex hull " << finalp.size() << " not # nodes " << p.size() << endl
-         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    if (OutLevel()>8)
+    cout << "MOERTEL: ***WRN*** MOERTEL::Overlap::ConvexHull:\n"
+         << "MOERTEL: ***WRN*** size of convex hull " << finalp.size() << " not # nodes " << p.size() << endl
+         << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   }
   
   // copy the polygon over to the input map p
@@ -209,25 +210,25 @@ bool MRTR::Overlap::ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p)
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::MakeRightTurnUpper(int i,map<int,RefCountPtr<MRTR::Point> >& hull)
+bool MOERTEL::Overlap::MakeRightTurnUpper(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
   // the points i-1 and i-2 do not necessary have ids i-1 and i-2, they 
   // are just the 2 point BEFORE i (could have any id < i)
-  map<int,RefCountPtr<MRTR::Point> >::iterator curr = hull.find(i);
+  map<int,RefCountPtr<MOERTEL::Point> >::iterator curr = hull.find(i);
   if (curr==hull.end())
   {
-    cout << "***ERR*** MRTR::Overlap::MakeRightTurn:\n"
-         << "***ERR*** cannot find point " << i << " in convex hull\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    cout << "MOERTEL: ***ERR*** MOERTEL::Overlap::MakeRightTurn:\n"
+         << "MOERTEL: ***ERR*** cannot find point " << i << " in convex hull\n"
+         << "MOERTEL: ***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  RefCountPtr<MRTR::Point> point = curr->second; //cout << *point;
+  RefCountPtr<MOERTEL::Point> point = curr->second; //cout << *point;
   curr--;
-  RefCountPtr<MRTR::Point> pointm1 = curr->second; //cout << *pointm1;
+  RefCountPtr<MOERTEL::Point> pointm1 = curr->second; //cout << *pointm1;
   curr--;
-  RefCountPtr<MRTR::Point> pointm2 = curr->second; //cout << *pointm2;
+  RefCountPtr<MOERTEL::Point> pointm2 = curr->second; //cout << *pointm2;
   double N[2];
   N[0] =  pointm1->Xi()[1] - pointm2->Xi()[1];
   N[1] = -(pointm1->Xi()[0] - pointm2->Xi()[0]);
@@ -235,7 +236,7 @@ bool MRTR::Overlap::MakeRightTurnUpper(int i,map<int,RefCountPtr<MRTR::Point> >&
   P[0] = point->Xi()[0] - pointm1->Xi()[0];
   P[1] = point->Xi()[1] - pointm1->Xi()[1];
   
-  double dotp = MRTR::dot(N,P,2);
+  double dotp = MOERTEL::dot(N,P,2);
   if (dotp>=0.0000)
   {
     //cout << "Makes a right\n";
@@ -251,25 +252,25 @@ bool MRTR::Overlap::MakeRightTurnUpper(int i,map<int,RefCountPtr<MRTR::Point> >&
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::MakeRightTurnLower(int i,map<int,RefCountPtr<MRTR::Point> >& hull)
+bool MOERTEL::Overlap::MakeRightTurnLower(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
   // the points i-1 and i-2 do not necessary have ids i-1 and i-2, they 
   // are just the 2 point BEFORE i (could have any id < i)
-  map<int,RefCountPtr<MRTR::Point> >::iterator curr = hull.find(i);
+  map<int,RefCountPtr<MOERTEL::Point> >::iterator curr = hull.find(i);
   if (curr==hull.end())
   {
-    cout << "***ERR*** MRTR::Overlap::MakeRightTurn:\n"
+    cout << "***ERR*** MOERTEL::Overlap::MakeRightTurn:\n"
          << "***ERR*** cannot find point " << i << " in convex hull\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  RefCountPtr<MRTR::Point> point = curr->second; //cout << *point;
+  RefCountPtr<MOERTEL::Point> point = curr->second; //cout << *point;
   curr++;
-  RefCountPtr<MRTR::Point> pointm1 = curr->second; //cout << *pointm1;
+  RefCountPtr<MOERTEL::Point> pointm1 = curr->second; //cout << *pointm1;
   curr++;
-  RefCountPtr<MRTR::Point> pointm2 = curr->second; //cout << *pointm2;
+  RefCountPtr<MOERTEL::Point> pointm2 = curr->second; //cout << *pointm2;
   double N[2];
   N[0] =  pointm1->Xi()[1] - pointm2->Xi()[1];
   N[1] = -(pointm1->Xi()[0] - pointm2->Xi()[0]);
@@ -277,7 +278,7 @@ bool MRTR::Overlap::MakeRightTurnLower(int i,map<int,RefCountPtr<MRTR::Point> >&
   P[0] = point->Xi()[0] - pointm1->Xi()[0];
   P[1] = point->Xi()[1] - pointm1->Xi()[1];
   
-  double dotp = MRTR::dot(N,P,2);
+  double dotp = MOERTEL::dot(N,P,2);
   if (dotp>=0.0000)
   {
     //cout << "Makes a right\n";
@@ -293,15 +294,15 @@ bool MRTR::Overlap::MakeRightTurnLower(int i,map<int,RefCountPtr<MRTR::Point> >&
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MRTR::Overlap::RemovePointBefore(int i,map<int,RefCountPtr<MRTR::Point> >& hull)
+void MOERTEL::Overlap::RemovePointBefore(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
   // the points i-1 does not necessary have id i-1  
-  map<int,RefCountPtr<MRTR::Point> >::iterator curr = hull.find(i);
+  map<int,RefCountPtr<MOERTEL::Point> >::iterator curr = hull.find(i);
   if (curr==hull.end())
   {
-    cout << "***ERR*** MRTR::Overlap::RemovePointBefore:\n"
+    cout << "***ERR*** MOERTEL::Overlap::RemovePointBefore:\n"
          << "***ERR*** cannot find point " << i << " in convex hull\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -315,15 +316,15 @@ void MRTR::Overlap::RemovePointBefore(int i,map<int,RefCountPtr<MRTR::Point> >& 
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MRTR::Overlap::RemovePointAfter(int i,map<int,RefCountPtr<MRTR::Point> >& hull)
+void MOERTEL::Overlap::RemovePointAfter(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
   // the points i-1 does not necessary have id i-1  
-  map<int,RefCountPtr<MRTR::Point> >::iterator curr = hull.find(i);
+  map<int,RefCountPtr<MOERTEL::Point> >::iterator curr = hull.find(i);
   if (curr==hull.end())
   {
-    cout << "***ERR*** MRTR::Overlap::RemovePointBefore:\n"
+    cout << "***ERR*** MOERTEL::Overlap::RemovePointBefore:\n"
          << "***ERR*** cannot find point " << i << " in convex hull\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -338,7 +339,7 @@ void MRTR::Overlap::RemovePointAfter(int i,map<int,RefCountPtr<MRTR::Point> >& h
 /*----------------------------------------------------------------------*
  |  collapse points that are really close to one point       mwgee 11/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::CollapsePoints(map<int,RefCountPtr<MRTR::Point> >& p,
+bool MOERTEL::Overlap::CollapsePoints(map<int,RefCountPtr<MOERTEL::Point> >& p,
                                    const double eps)
 {
   // we don't want to collapse on a polygon that has just three or less points
@@ -349,14 +350,14 @@ bool MRTR::Overlap::CollapsePoints(map<int,RefCountPtr<MRTR::Point> >& p,
   int np = p.size();
 
   // get a view of all points
-  vector<RefCountPtr<MRTR::Point> > points; 
+  vector<RefCountPtr<MOERTEL::Point> > points; 
   PointView(p,points);
 
   // create a new map for collapsed points
-  map<int,RefCountPtr<MRTR::Point> > pnew;
+  map<int,RefCountPtr<MOERTEL::Point> > pnew;
 
   // create  vector holding points to collapse
-  vector<RefCountPtr<MRTR::Point> > collapse(points.size());
+  vector<RefCountPtr<MOERTEL::Point> > collapse(points.size());
 
   // loop points and compare coords
   for (int i=0; i<np; ++i)
@@ -376,7 +377,7 @@ bool MRTR::Overlap::CollapsePoints(map<int,RefCountPtr<MRTR::Point> >& p,
       double xi1xi2[2];
       xi1xi2[0] = points[j]->Xi()[0] - points[i]->Xi()[0];
       xi1xi2[1] = points[j]->Xi()[1] - points[i]->Xi()[1];
-      double dist = MRTR::length(xi1xi2,2);
+      double dist = MOERTEL::length(xi1xi2,2);
       // cout << "distance between " << i << " and " << j << " : " << dist << endl;
       if (dist<eps)
       {

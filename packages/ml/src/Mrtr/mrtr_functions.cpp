@@ -40,16 +40,16 @@
 //=======================================================================
 /*----------------------------------------------------------------------*
  |  Clone an existing object                                 mwgee 08/05|
- |  this methods takes the base class ptr MRTR::Function*               |
+ |  this methods takes the base class ptr MOERTEL::Function*               |
  |  but actually needs to clone the derived type                        |
- |  MRTR::Function_Constant1D*                                          |
+ |  MOERTEL::Function_Constant1D*                                          |
  |  It then returns the derived type                                    |
  |  Note that this functionality is extremely important, it's not       |
  |  'just another clone'                                                |
  *----------------------------------------------------------------------*/
-MRTR::Function* MRTR::Function_Constant1D::Clone() const
+MOERTEL::Function* MOERTEL::Function_Constant1D::Clone() const
 {
-  MRTR::Function_Constant1D* newclass = new MRTR::Function_Constant1D(*this);
+  MOERTEL::Function_Constant1D* newclass = new MOERTEL::Function_Constant1D(*this);
   return newclass;
 }
 
@@ -61,14 +61,14 @@ MRTR::Function* MRTR::Function_Constant1D::Clone() const
  | deriv  (out) derivatives of functions at xi, if NULL on input,       |
  |              no evaluation                                           | 
  *----------------------------------------------------------------------*/
-bool MRTR::Function_Constant1D::EvaluateFunction(const double* xi, double* val, 
+bool MOERTEL::Function_Constant1D::EvaluateFunction(const double* xi, double* val, 
                                                  const int valdim, double* deriv)
 { 
   if (!val && !deriv) return true;
   // for this linear function, we get 2 values and 2 derivatives
   if (valdim<2) 
   {
-    cout << "***ERR*** MRTR::Function_Constant1D::EvaluateFunction:\n"
+    cout << "***ERR*** MOERTEL::Function_Constant1D::EvaluateFunction:\n"
          << "***ERR*** valdim<2 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -76,7 +76,7 @@ bool MRTR::Function_Constant1D::EvaluateFunction(const double* xi, double* val,
   // check xi
   if (!xi)
   {
-    cout << "***ERR*** MRTR::Function_Constant1D::EvaluateFunction:\n"
+    cout << "***ERR*** MOERTEL::Function_Constant1D::EvaluateFunction:\n"
          << "***ERR*** xi=NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -102,16 +102,16 @@ bool MRTR::Function_Constant1D::EvaluateFunction(const double* xi, double* val,
 //=======================================================================
 /*----------------------------------------------------------------------*
  |  Clone an existing object                                 mwgee 06/05|
- |  this methods takes the base class ptr MRTR::Function*               |
+ |  this methods takes the base class ptr MOERTEL::Function*            |
  |  but actually needs to clone the derived type                        |
- |  MRTR::Function_Linear1D*                                            |
+ |  MOERTEL::Function_Linear1D*                                         |
  |  It then returns the derived type                                    |
  |  Note that this functionality is extremely important, it's not       |
  |  'just another clone'                                                |
  *----------------------------------------------------------------------*/
-MRTR::Function* MRTR::Function_Linear1D::Clone() const
+MOERTEL::Function* MOERTEL::Function_Linear1D::Clone() const
 {
-  MRTR::Function_Linear1D* newclass = new MRTR::Function_Linear1D(*this);
+  MOERTEL::Function_Linear1D* newclass = new MOERTEL::Function_Linear1D(*this);
   return newclass;
 }
 
@@ -123,14 +123,14 @@ MRTR::Function* MRTR::Function_Linear1D::Clone() const
  | deriv  (out) derivatives of functions at xi, if NULL on input,       |
  |              no evaluation                                           | 
  *----------------------------------------------------------------------*/
-bool MRTR::Function_Linear1D::EvaluateFunction(const double* xi, double* val, 
-                                               const int valdim, double* deriv)
+bool MOERTEL::Function_Linear1D::EvaluateFunction(const double* xi, double* val, 
+                                                  const int valdim, double* deriv)
 { 
   if (!val && !deriv) return true;
   // for this linear function, we get 2 values and 2 derivatives
   if (valdim<2) 
   {
-    cout << "***ERR*** MRTR::Function_Linear1D::EvaluateFunction:\n"
+    cout << "***ERR*** MOERTEL::Function_Linear1D::EvaluateFunction:\n"
          << "***ERR*** valdim<2 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -138,7 +138,7 @@ bool MRTR::Function_Linear1D::EvaluateFunction(const double* xi, double* val,
   // check xi
   if (!xi)
   {
-    cout << "***ERR*** MRTR::Function_Linear1D::EvaluateFunction:\n"
+    cout << "***ERR*** MOERTEL::Function_Linear1D::EvaluateFunction:\n"
          << "***ERR*** xi=NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -164,16 +164,16 @@ bool MRTR::Function_Linear1D::EvaluateFunction(const double* xi, double* val,
 //=======================================================================
 /*----------------------------------------------------------------------*
  |  Clone an existing object                                 mwgee 06/05|
- |  this methods takes the base class ptr MRTR::Function*               |
+ |  this methods takes the base class ptr MOERTEL::Function*            |
  |  but actually needs to clone the derived type                        |
- |  MRTR::Function_DualLinear1D*                                        |
+ |  MOERTEL::Function_DualLinear1D*                                     |
  |  It then returns the derived type                                    |
  |  Note that this functionality is extremely important, it's not       |
  |  'just another clone'                                                |
  *----------------------------------------------------------------------*/
-MRTR::Function* MRTR::Function_DualLinear1D::Clone() const
+MOERTEL::Function* MOERTEL::Function_DualLinear1D::Clone() const
 {
-  MRTR::Function_DualLinear1D* newclass = new MRTR::Function_DualLinear1D(*this);
+  MOERTEL::Function_DualLinear1D* newclass = new MOERTEL::Function_DualLinear1D(*this);
   return newclass;
 }
 
@@ -185,7 +185,7 @@ MRTR::Function* MRTR::Function_DualLinear1D::Clone() const
  | deriv  (out) derivatives of functions at xi, if NULL on input,       |
  |              no evaluation                                           | 
  *----------------------------------------------------------------------*/
-bool MRTR::Function_DualLinear1D::EvaluateFunction(
+bool MOERTEL::Function_DualLinear1D::EvaluateFunction(
                                             const double* xi, double* val, 
                                             const int valdim, double* deriv)
 { 
@@ -193,7 +193,7 @@ bool MRTR::Function_DualLinear1D::EvaluateFunction(
   // for this linear function, we get 2 values and 2 derivatives
   if (valdim<2) 
   {
-    cout << "***ERR*** MRTR::Function_DualLinear1D::EvaluateFunction:\n"
+    cout << "***ERR*** MOERTEL::Function_DualLinear1D::EvaluateFunction:\n"
          << "***ERR*** valdim<2 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -201,7 +201,7 @@ bool MRTR::Function_DualLinear1D::EvaluateFunction(
   // check xi
   if (!xi)
   {
-    cout << "***ERR*** MRTR::Function_DualLinear1D::EvaluateFunction:\n"
+    cout << "***ERR*** MOERTEL::Function_DualLinear1D::EvaluateFunction:\n"
          << "***ERR*** xi=NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -225,16 +225,16 @@ bool MRTR::Function_DualLinear1D::EvaluateFunction(
 //=======================================================================
 /*----------------------------------------------------------------------*
  |  Clone an existing object                                 mwgee 10/05|
- |  this methods takes the base class ptr MRTR::Function*               |
+ |  this methods takes the base class ptr MOERTEL::Function*            |
  |  but actually needs to clone the derived type                        |
- |  MRTR::Function_DualLinear1D*                                        |
+ |  MOERTEL::Function_DualLinear1D*                                     |
  |  It then returns the derived type                                    |
  |  Note that this functionality is extremely important, it's not       |
  |  'just another clone'                                                |
  *----------------------------------------------------------------------*/
-MRTR::Function* MRTR::Function_LinearTri::Clone() const
+MOERTEL::Function* MOERTEL::Function_LinearTri::Clone() const
 {
-  MRTR::Function_LinearTri* newclass = new MRTR::Function_LinearTri(*this);
+  MOERTEL::Function_LinearTri* newclass = new MOERTEL::Function_LinearTri(*this);
   return newclass;
 }
 
@@ -246,7 +246,7 @@ MRTR::Function* MRTR::Function_LinearTri::Clone() const
  | deriv  (out) derivatives of functions at xi, if NULL on input,       |
  |              no evaluation                                           | 
  *----------------------------------------------------------------------*/
-bool MRTR::Function_LinearTri::EvaluateFunction(
+bool MOERTEL::Function_LinearTri::EvaluateFunction(
                                             const double* xi, double* val, 
                                             const int valdim, double* deriv)
 { 
@@ -255,7 +255,7 @@ bool MRTR::Function_LinearTri::EvaluateFunction(
   // for this function, we get 3 values and six derivatives
   if (valdim<3) 
   {
-    cout << "***ERR*** MRTR::Function_LinearTri::EvaluateFunction:\n"
+    cout << "***ERR*** MOERTEL::Function_LinearTri::EvaluateFunction:\n"
          << "***ERR*** valdim<3 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -263,7 +263,7 @@ bool MRTR::Function_LinearTri::EvaluateFunction(
   
   if (!xi)
   {
-    cout << "***ERR*** MRTR::Function_LinearTri::EvaluateFunction:\n"
+    cout << "***ERR*** MOERTEL::Function_LinearTri::EvaluateFunction:\n"
          << "***ERR*** xi=NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -295,16 +295,16 @@ bool MRTR::Function_LinearTri::EvaluateFunction(
 //=======================================================================
 /*----------------------------------------------------------------------*
  |  Clone an existing object                                 mwgee 10/05|
- |  this methods takes the base class ptr MRTR::Function*               |
+ |  this methods takes the base class ptr MOERTEL::Function*            |
  |  but actually needs to clone the derived type                        |
- |  MRTR::Function_DualLinear1D*                                        |
+ |  MOERTEL::Function_DualLinear1D*                                     |
  |  It then returns the derived type                                    |
  |  Note that this functionality is extremely important, it's not       |
  |  'just another clone'                                                |
  *----------------------------------------------------------------------*/
-MRTR::Function* MRTR::Function_DualLinearTri::Clone() const
+MOERTEL::Function* MOERTEL::Function_DualLinearTri::Clone() const
 {
-  MRTR::Function_DualLinearTri* newclass = new MRTR::Function_DualLinearTri(*this);
+  MOERTEL::Function_DualLinearTri* newclass = new MOERTEL::Function_DualLinearTri(*this);
   return newclass;
 }
 
@@ -316,11 +316,11 @@ MRTR::Function* MRTR::Function_DualLinearTri::Clone() const
  | deriv  (out) derivatives of functions at xi, if NULL on input,       |
  |              no evaluation                                           | 
  *----------------------------------------------------------------------*/
-bool MRTR::Function_DualLinearTri::EvaluateFunction(
+bool MOERTEL::Function_DualLinearTri::EvaluateFunction(
                                             const double* xi, double* val, 
                                             const int valdim, double* deriv)
 { 
-    cout << "***ERR*** MRTR::Function_DualLinearTri::EvaluateFunction:\n"
+    cout << "***ERR*** MOERTEL::Function_DualLinearTri::EvaluateFunction:\n"
          << "***ERR*** not yet impl.\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -333,16 +333,16 @@ bool MRTR::Function_DualLinearTri::EvaluateFunction(
 //=======================================================================
 /*----------------------------------------------------------------------*
  |  Clone an existing object                                 mwgee 11/05|
- |  this methods takes the base class ptr MRTR::Function*               |
+ |  this methods takes the base class ptr MOERTEL::Function*            |
  |  but actually needs to clone the derived type                        |
- |  MRTR::Function_DualLinear1D*                                        |
+ |  MOERTEL::Function_DualLinear1D*                                     |
  |  It then returns the derived type                                    |
  |  Note that this functionality is extremely important, it's not       |
  |  'just another clone'                                                |
  *----------------------------------------------------------------------*/
-MRTR::Function* MRTR::Function_ConstantTri::Clone() const
+MOERTEL::Function* MOERTEL::Function_ConstantTri::Clone() const
 {
-  MRTR::Function_ConstantTri* newclass = new MRTR::Function_ConstantTri(*this);
+  MOERTEL::Function_ConstantTri* newclass = new MOERTEL::Function_ConstantTri(*this);
   return newclass;
 }
 
@@ -354,7 +354,7 @@ MRTR::Function* MRTR::Function_ConstantTri::Clone() const
  | deriv  (out) derivatives of functions at xi, if NULL on input,       |
  |              no evaluation                                           | 
  *----------------------------------------------------------------------*/
-bool MRTR::Function_ConstantTri::EvaluateFunction(
+bool MOERTEL::Function_ConstantTri::EvaluateFunction(
                                             const double* xi, double* val, 
                                             const int valdim, double* deriv)
 { 
@@ -363,7 +363,7 @@ bool MRTR::Function_ConstantTri::EvaluateFunction(
   // for this function, we get 3 values and six derivatives
   if (valdim<3) 
   {
-    cout << "***ERR*** MRTR::Function_ConstantTri::EvaluateFunction:\n"
+    cout << "***ERR*** MOERTEL::Function_ConstantTri::EvaluateFunction:\n"
          << "***ERR*** valdim<3 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -371,7 +371,7 @@ bool MRTR::Function_ConstantTri::EvaluateFunction(
   
   if (!xi)
   {
-    cout << "***ERR*** MRTR::Function_ConstantTri::EvaluateFunction:\n"
+    cout << "***ERR*** MOERTEL::Function_ConstantTri::EvaluateFunction:\n"
          << "***ERR*** xi=NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);

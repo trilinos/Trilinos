@@ -48,14 +48,14 @@
 /*----------------------------------------------------------------------*
  |  assemble values from integration                                    |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::Mortar_Assemble(Epetra_CrsMatrix& D, 
+bool MOERTEL::Interface::Mortar_Assemble(Epetra_CrsMatrix& D, 
                                        Epetra_CrsMatrix& M)
 { 
   //-------------------------------------------------------------------
   if (IsOneDimensional())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Mortar_Assemble:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Assemble:\n"
            << "***ERR*** This is not a 2D problem, we're in the wrong method here!!!\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -66,7 +66,7 @@ bool MRTR::Interface::Mortar_Assemble(Epetra_CrsMatrix& D,
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Mortar_Assemble:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Assemble:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -81,7 +81,7 @@ bool MRTR::Interface::Mortar_Assemble(Epetra_CrsMatrix& D,
   if (MortarSide()==-1)
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Mortar_Assemble:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Assemble:\n"
            << "***ERR*** mortar side was not assigned on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -92,7 +92,7 @@ bool MRTR::Interface::Mortar_Assemble(Epetra_CrsMatrix& D,
   if (!IsIntegrated())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Mortar_Assemble:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Assemble:\n"
            << "***ERR*** interface " << Id_ << " not integrated\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -103,7 +103,7 @@ bool MRTR::Interface::Mortar_Assemble(Epetra_CrsMatrix& D,
   if (IsOneDimensional())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Mortar_Assemble:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Assemble:\n"
            << "***ERR*** Mortar_Assemble for 2D problem not implemented\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -116,8 +116,8 @@ bool MRTR::Interface::Mortar_Assemble(Epetra_CrsMatrix& D,
 /*----------------------------------------------------------------------*
  |  make mortar integration of this interface (2D problem)              |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D, 
-                                       Epetra_CrsMatrix& M)
+bool MOERTEL::Interface::Mortar_Integrate(Epetra_CrsMatrix& D, 
+                                          Epetra_CrsMatrix& M)
 { 
   bool ok = false;
   
@@ -130,7 +130,7 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   if (!IsOneDimensional())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** This is not a 2D problem, we're in the wrong method here!!!\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -141,7 +141,7 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -156,7 +156,7 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   if (MortarSide()==-1)
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** mortar side was not assigned on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -167,11 +167,11 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   // and two functions on the slave side
   int mside = MortarSide();
   int sside = OtherSide(mside);
-  map<int,RefCountPtr<MRTR::Segment> >::iterator scurr;
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
   for (scurr=seg_[mside].begin(); scurr!=seg_[mside].end(); ++scurr)
     if (scurr->second->Nfunctions() < 1)
     {
-      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** interface " << Id_ << ", mortar side\n"
            << "***ERR*** segment " << scurr->second->Id() << " needs at least 1 function set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -180,7 +180,7 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   for (scurr=seg_[sside].begin(); scurr!=seg_[sside].end(); ++scurr)
     if (scurr->second->Nfunctions() < 2)
     {
-      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** interface " << Id_ << ", slave side\n"
            << "***ERR*** segment " << scurr->second->Id() << " needs at least 2 function set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -200,7 +200,7 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   // time this process
   if (OutLevel()>5)
   {
-    cout << "MRTR::Interface " << Id() << ": Integration on proc " << gComm().MyPID()
+    cout << "MOERTEL::Interface " << Id() << ": Integration on proc " << gComm().MyPID()
          << " finished in " << time.ElapsedTime() << " sec\n"; fflush(stdout);
   }
   return true;
@@ -209,7 +209,7 @@ bool MRTR::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
 /*----------------------------------------------------------------------*
  |  make mortar integration of this interface (3D problem)              |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::Mortar_Integrate()
+bool MOERTEL::Interface::Mortar_Integrate()
 { 
   bool ok = false;
   
@@ -222,7 +222,7 @@ bool MRTR::Interface::Mortar_Integrate()
   if (IsOneDimensional())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** This is not a 3D problem, we're in the wrong method here!!!\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -233,7 +233,7 @@ bool MRTR::Interface::Mortar_Integrate()
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -248,7 +248,7 @@ bool MRTR::Interface::Mortar_Integrate()
   if (MortarSide()==-1)
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** mortar side was not assigned on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -259,11 +259,11 @@ bool MRTR::Interface::Mortar_Integrate()
   // and two functions on the slave side
   int mside = MortarSide();
   int sside = OtherSide(mside);
-  map<int,RefCountPtr<MRTR::Segment> >::iterator scurr;
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
   for (scurr=seg_[mside].begin(); scurr!=seg_[mside].end(); ++scurr)
     if (scurr->second->Nfunctions() < 1)
     {
-      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** interface " << Id_ << ", mortar side\n"
            << "***ERR*** segment " << scurr->second->Id() << " needs at least 1 function set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -272,7 +272,7 @@ bool MRTR::Interface::Mortar_Integrate()
   for (scurr=seg_[sside].begin(); scurr!=seg_[sside].end(); ++scurr)
     if (scurr->second->Nfunctions() < 2)
     {
-      cout << "***ERR*** MRTR::Interface::Mortar_Integrate:\n"
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** interface " << Id_ << ", slave side\n"
            << "***ERR*** segment " << scurr->second->Id() << " needs at least 2 function set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -292,7 +292,7 @@ bool MRTR::Interface::Mortar_Integrate()
   // time this process
   if (OutLevel()>5)
   {
-    cout << "MRTR::Interface " << Id() << ": Integration on proc " << gComm().MyPID()
+    cout << "MOERTEL::Interface " << Id() << ": Integration on proc " << gComm().MyPID()
          << " finished in " << time.ElapsedTime() << " sec\n"; fflush(stdout);
   }
 
@@ -303,13 +303,13 @@ bool MRTR::Interface::Mortar_Integrate()
 /*----------------------------------------------------------------------*
  |  make mortar integration of master/slave side in 2D (1D interface)   |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::Integrate_2D(Epetra_CrsMatrix& M,
-                                   Epetra_CrsMatrix& D)
+bool MOERTEL::Interface::Integrate_2D(Epetra_CrsMatrix& M,
+                                      Epetra_CrsMatrix& D)
 { 
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Integrate_2D:\n"
+      cout << "***ERR*** MOERTEL::Interface::Integrate_2D:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -322,11 +322,11 @@ bool MRTR::Interface::Integrate_2D(Epetra_CrsMatrix& M,
 
   
   // loop over all segments of slave side
-  map<int,RefCountPtr<MRTR::Segment> >::iterator scurr;
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
   for (scurr=rseg_[sside].begin(); scurr!=rseg_[sside].end(); ++scurr)
   {
     // the segment to be integrated
-    RefCountPtr<MRTR::Segment> actsseg = scurr->second;
+    RefCountPtr<MOERTEL::Segment> actsseg = scurr->second;
 
 #if 0
     cout << "\nActive sseg id " << actsseg->Id() << "\n\n";
@@ -334,7 +334,7 @@ bool MRTR::Interface::Integrate_2D(Epetra_CrsMatrix& M,
 
     // check whether I own at least one of the nodes on this slave segment
     int nnode = actsseg->Nnode();
-    MRTR::Node** nodes = actsseg->Nodes();
+    MOERTEL::Node** nodes = actsseg->Nodes();
     bool foundone = false;
     for (int i=0; i<nnode; ++i)
       if (NodePID(nodes[i]->Id()) == lComm()->MyPID())
@@ -346,10 +346,10 @@ bool MRTR::Interface::Integrate_2D(Epetra_CrsMatrix& M,
     if (!foundone) continue;
     
     // loop over all segments on the master side
-    map<int,RefCountPtr<MRTR::Segment> >::iterator mcurr;
+    map<int,RefCountPtr<MOERTEL::Segment> >::iterator mcurr;
     for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)    
     {
-      RefCountPtr<MRTR::Segment> actmseg = mcurr->second;
+      RefCountPtr<MOERTEL::Segment> actmseg = mcurr->second;
       
 #if 0
     cout << "Active mseg id " << actmseg->Id() << endl;
@@ -369,15 +369,15 @@ bool MRTR::Interface::Integrate_2D(Epetra_CrsMatrix& M,
  | integrate the master/slave side's contribution from the overlap      |
  | of 2 segments (2D version) IF there is an overlap                    |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg, 
-                                           MRTR::Segment& mseg,
-                                           Epetra_CrsMatrix& M,
-                                           Epetra_CrsMatrix& D)
+bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg, 
+                                              MOERTEL::Segment& mseg,
+                                              Epetra_CrsMatrix& M,
+                                              Epetra_CrsMatrix& D)
 { 
   // if one of the segments is quadratic, we have to do something here
-  if (sseg.Type()!=MRTR::Segment::seg_Linear1D || mseg.Type()!=MRTR::Segment::seg_Linear1D)
+  if (sseg.Type()!=MOERTEL::Segment::seg_Linear1D || mseg.Type()!=MOERTEL::Segment::seg_Linear1D)
   {
-    cout << "***ERR*** MRTR::Interface::Integrate_2D_Section:\n"
+    cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
          << "***ERR*** Integration of other then linear segments not yet implemented\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -395,8 +395,8 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   // at all
   
   // get slave and master's projections of the end points
-  MRTR::Node** snodes = sseg.Nodes();
-  MRTR::Node** mnodes = mseg.Nodes();
+  MOERTEL::Node** snodes = sseg.Nodes();
+  MOERTEL::Node** mnodes = mseg.Nodes();
   
 #if 0
   cout << "snodes[0]\n" << *snodes[0];
@@ -410,10 +410,10 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   bool mnode0 = false;
   bool mnode1 = false;
   int foundcase =  0;
-  RefCountPtr<MRTR::ProjectedNode> is_spnode0 = null;
-  RefCountPtr<MRTR::ProjectedNode> is_spnode1 = null;
-  RefCountPtr<MRTR::ProjectedNode> is_mpnode0 = null;
-  RefCountPtr<MRTR::ProjectedNode> is_mpnode1 = null;
+  RefCountPtr<MOERTEL::ProjectedNode> is_spnode0 = null;
+  RefCountPtr<MOERTEL::ProjectedNode> is_spnode1 = null;
+  RefCountPtr<MOERTEL::ProjectedNode> is_mpnode0 = null;
+  RefCountPtr<MOERTEL::ProjectedNode> is_mpnode1 = null;
   
   // projection along continous normal field results in projection points
   // that are unique
@@ -454,7 +454,7 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   else if (GetProjectionType() == proj_orthogonal)
   {
     int nspnode0;
-    RefCountPtr<MRTR::ProjectedNode>* spnode0 = snodes[0]->GetProjectedNode(nspnode0);
+    RefCountPtr<MOERTEL::ProjectedNode>* spnode0 = snodes[0]->GetProjectedNode(nspnode0);
     if (spnode0)
       for (int i=0; i<nspnode0; ++i)
         if (spnode0[i]->Segment())
@@ -472,7 +472,7 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
             }
     
     int nspnode1;
-    RefCountPtr<MRTR::ProjectedNode>* spnode1 = snodes[1]->GetProjectedNode(nspnode1);
+    RefCountPtr<MOERTEL::ProjectedNode>* spnode1 = snodes[1]->GetProjectedNode(nspnode1);
     if (spnode1)
       for (int i=0; i<nspnode1; ++i)
         if (spnode1[i]->Segment())
@@ -506,8 +506,8 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   }
   
         
-  RefCountPtr<MRTR::ProjectedNode> nstart = null;
-  RefCountPtr<MRTR::ProjectedNode> nend   = null;
+  RefCountPtr<MOERTEL::ProjectedNode> nstart = null;
+  RefCountPtr<MOERTEL::ProjectedNode> nend   = null;
 
   // the xi range to integrate
   double sxia=999.0,sxib=999.0;
@@ -567,7 +567,7 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
         else
         {
           int nseg             = snodes[1]->Nseg();
-          MRTR::Segment** segs = snodes[1]->Segments();
+          MOERTEL::Segment** segs = snodes[1]->Segments();
           int segid = nend->Segment()->Id();
           for (int i=0; i<nseg; ++i)
             if (segid==segs[i]->Id()) { ok = true; break;}
@@ -616,7 +616,7 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
       else
       {
         int nseg             = mnodes[1]->Nseg();
-        MRTR::Segment** segs = mnodes[1]->Segments();
+        MOERTEL::Segment** segs = mnodes[1]->Segments();
         int segid = nstart->Segment()->Id();
         for (int i=0; i<nseg; ++i)
         if (segid == segs[i]->Id()) { ok = true; break; }
@@ -693,11 +693,11 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
 
   if (foundcase != 1)
   {
-    cout << "***ERR*** MRTR::Interface::Integrate_2D_Section:\n"
+    cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
          << "***ERR*** # cases that apply here: " << foundcase << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     cout << "Slave :" << sseg;
-    MRTR::Node** nodes = sseg.Nodes();
+    MOERTEL::Node** nodes = sseg.Nodes();
     cout << *nodes[0];
     cout << *nodes[1];
     cout << "Master:" << mseg;
@@ -721,7 +721,7 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   //        when using discontinous lambda, lambdas are attached to segment!
   
   // create an integrator instance of some given order
-  MRTR::Integrator integrator(5,IsOneDimensional());
+  MOERTEL::Integrator integrator(5,IsOneDimensional(),OutLevel());
   
   // do the integration of the master side
   Epetra_SerialDenseMatrix* Mdense = 
@@ -742,9 +742,9 @@ bool MRTR::Interface::Integrate_2D_Section(MRTR::Segment& sseg,
   // linear elements
   // vector valued PDE (ndof=2, e.g. elasticity)
   // |delta n| != 0
-  if (sseg.Type() == MRTR::Segment::seg_Linear1D && 
-      mseg.Type() == MRTR::Segment::seg_Linear1D)
-  if (sseg.FunctionType(1) == MRTR::Function::func_DualLinear1D)
+  if (sseg.Type() == MOERTEL::Segment::seg_Linear1D && 
+      mseg.Type() == MOERTEL::Segment::seg_Linear1D)
+  if (sseg.FunctionType(1) == MOERTEL::Function::func_DualLinear1D)
   if (snodes[0]->Nlmdof() == snodes[1]->Nlmdof() &&
       mnodes[0]->Ndof() == mnodes[1]->Ndof() &&
       snodes[0]->Nlmdof() == mnodes[0]->Ndof())

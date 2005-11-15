@@ -33,8 +33,8 @@
 /* ******************************************************************** */
 #ifdef TRILINOS_PACKAGE
 
-#ifndef MRTR_SEGMENT_H
-#define MRTR_SEGMENT_H
+#ifndef MOERTEL_SEGMENT_H
+#define MOERTEL_SEGMENT_H
 
 #include <ctime>
 #include <iostream>
@@ -47,11 +47,11 @@
 using namespace std;
 using namespace Teuchos;
 
-namespace MRTR
+namespace MOERTEL
 {
 
-class MRTR::Interface;
-class MRTR::Node;
+class MOERTEL::Interface;
+class MOERTEL::Node;
 
 class Segment 
 {
@@ -70,16 +70,19 @@ public:
   //------------- methods used from base class
 
   // ctor
-  Segment(int id, int nnode, int* nodeId);
+  Segment(int id, int nnode, int* nodeId, int outlevel);
   
   // ctor
-  Segment();
+  Segment(int outlevel);
   
   // copy-ctor
-  Segment(MRTR::Segment& old);
+  Segment(MOERTEL::Segment& old);
   
   // dtor
   virtual ~Segment();
+  
+  // return level of output
+  int OutLevel() { return outputlevel_; }
   
   // get id of this segment
   int Id() const { return Id_; }
@@ -88,29 +91,29 @@ public:
   int Nnode() const { return nodeId_.size(); }
   
   // get type of segment
-  MRTR::Segment::SegmentType Type() const { return stype_; }
+  MOERTEL::Segment::SegmentType Type() const { return stype_; }
   
   // get view of node Ids on this segment
   const int* NodeIds() const { return &(nodeId_[0]); }
   
   // return ptr vector to my nodes (might be NULL before call to Interface::Complete())
-  MRTR::Node** Nodes() { return &(nodeptr_[0]); }
+  MOERTEL::Node** Nodes() { return &(nodeptr_[0]); }
   
   // return number of functions set
   int Nfunctions() { return functions_.size(); }
   
   // return function type for a certain function id
-  MRTR::Function::FunctionType FunctionType(int id);
+  MOERTEL::Function::FunctionType FunctionType(int id);
   
   // attach a function to this segment
-  bool SetFunction(int id, MRTR::Function* func);
+  bool SetFunction(int id, MOERTEL::Function* func);
 #if 0
-  bool SetFunction(int id, RefCountPtr<MRTR::Function> func);
+  bool SetFunction(int id, RefCountPtr<MOERTEL::Function> func);
 #endif
 
 #if 0  
   // get ptr to function with id id
-  MRTR::Function* GetFunction(int id);
+  MOERTEL::Function* GetFunction(int id);
 #endif
   
   // evaluate shape function with certain id;
@@ -120,8 +123,8 @@ public:
   double* BuildNormalAtNode(int nid);
   
   // construct ptrs to redundant nodes from my node id list
-  bool GetPtrstoNodes(MRTR::Interface& interface);
-  bool GetPtrstoNodes(vector<MRTR::Node*>& nodes);
+  bool GetPtrstoNodes(MOERTEL::Interface& interface);
+  bool GetPtrstoNodes(vector<MOERTEL::Node*>& nodes);
 
   // printout Segment
   virtual bool Print() const;
@@ -133,7 +136,7 @@ public:
   //------------- pure virtual methods to be implemented in derived class
 
   // clone
-  virtual MRTR::Segment* Clone() = 0;
+  virtual MOERTEL::Segment* Clone() = 0;
 
   // pack function for communication
   virtual int* Pack(int* size) = 0;
@@ -156,18 +159,19 @@ public:
 protected:
 
   int                      Id_;         // this segments unique id
+  int                      outputlevel_;
   vector<int>              nodeId_;     // vector of unique node ids 
-  vector<MRTR::Node*>      nodeptr_;    // vector with ptrs to nodes adj to me
+  vector<MOERTEL::Node*>      nodeptr_;    // vector with ptrs to nodes adj to me
 
   SegmentType              stype_;      // segment type
-  map< int,RefCountPtr<MRTR::Function> > functions_;  // functions that live on this segment
+  map< int,RefCountPtr<MOERTEL::Function> > functions_;  // functions that live on this segment
 
 };
 
-} // namespace MRTR
+} // namespace MOERTEL
 
 // << operator
-ostream& operator << (ostream& os, const MRTR::Segment& seg);
+ostream& operator << (ostream& os, const MOERTEL::Segment& seg);
 
-#endif // MRTR_SEGMENT_H
+#endif // MOERTEL_SEGMENT_H
 #endif // TRILINOS_PACKAGE

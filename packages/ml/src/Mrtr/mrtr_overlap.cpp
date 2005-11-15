@@ -45,10 +45,12 @@
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Overlap::Overlap(MRTR::Segment& sseg, MRTR::Segment& mseg, MRTR::Interface& inter) :
+MOERTEL::Overlap::Overlap(MOERTEL::Segment& sseg, MOERTEL::Segment& mseg, 
+                          MOERTEL::Interface& inter, int outlevel) :
 inter_(inter),
 sseg_(sseg),
 mseg_(mseg),
+outputlevel_(outlevel),
 overlap_(false),
 havemxi_(false),
 havesxi_(false),
@@ -56,9 +58,9 @@ havelines_(false),
 havesxim_(false),
 havelinem_(false)
 {
-  if (sseg.Type()!=MRTR::Segment::seg_BiLinearTri || mseg.Type()!=MRTR::Segment::seg_BiLinearTri)
+  if (sseg.Type()!=MOERTEL::Segment::seg_BiLinearTri || mseg.Type()!=MOERTEL::Segment::seg_BiLinearTri)
   {
-    cout << "***ERR*** MRTR::Overlap::Overlap:\n"
+    cout << "***ERR*** MOERTEL::Overlap::Overlap:\n"
          << "***ERR*** Overlap of other then bilinear triangles not yet implemented\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -70,7 +72,7 @@ havelinem_(false)
 /*----------------------------------------------------------------------*
  |  dtor (public)                                            mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Overlap::~Overlap()
+MOERTEL::Overlap::~Overlap()
 {
   // destroy the point map
   p_.clear();
@@ -81,11 +83,11 @@ MRTR::Overlap::~Overlap()
 /*----------------------------------------------------------------------*
  |  build line info from triangles (private)                 mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::build_lines_s()
+bool MOERTEL::Overlap::build_lines_s()
 {
   if (!havemxi_)
   {
-    cout << "***ERR*** MRTR::Overlap::build_lines:\n"
+    cout << "***ERR*** MOERTEL::Overlap::build_lines:\n"
          << "***ERR*** projection of master element nodes has to be done before\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -123,11 +125,11 @@ bool MRTR::Overlap::build_lines_s()
 /*----------------------------------------------------------------------*
  |  build line info from triangles (private)                 mwgee 11/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::build_lines_m()
+bool MOERTEL::Overlap::build_lines_m()
 {
   if (!havesxim_)
   {
-    cout << "***ERR*** MRTR::Overlap::build_lines:\n"
+    cout << "***ERR*** MOERTEL::Overlap::build_lines:\n"
          << "***ERR*** projection of slave element nodes has to be done before\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -165,12 +167,12 @@ bool MRTR::Overlap::build_lines_m()
 /*----------------------------------------------------------------------*
  |  project master nodes onto slave element (private)        mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::build_mxi()
+bool MOERTEL::Overlap::build_mxi()
 {
   // project the master segment's nodes onto the slave segment
                nnode_ = mseg_.Nnode();
-  MRTR::Node** mnode  = mseg_.Nodes();
-  MRTR::Projector projector(inter_.IsOneDimensional());
+  MOERTEL::Node** mnode  = mseg_.Nodes();
+  MOERTEL::Projector projector(inter_.IsOneDimensional(),OutLevel());
   for (int i=0; i<nnode_; ++i)
   {
     // project node i onto sseg
@@ -190,12 +192,12 @@ bool MRTR::Overlap::build_mxi()
 /*----------------------------------------------------------------------*
  |  project slave nodes onto master element (private)        mwgee 11/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::build_sxim()
+bool MOERTEL::Overlap::build_sxim()
 {
   // project the master segment's nodes onto the slave segment
   int nsnode = sseg_.Nnode();
-  MRTR::Node** snode  = sseg_.Nodes();
-  MRTR::Projector projector(inter_.IsOneDimensional());
+  MOERTEL::Node** snode  = sseg_.Nodes();
+  MOERTEL::Projector projector(inter_.IsOneDimensional(),OutLevel());
   for (int i=0; i<nsnode; ++i)
   {
     // project node i onto sseg
@@ -215,7 +217,7 @@ bool MRTR::Overlap::build_sxim()
 /*----------------------------------------------------------------------*
  |  get coords of slave nodes (private)                      mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::build_sxi()
+bool MOERTEL::Overlap::build_sxi()
 {
   // this makes coords of snodes on the sseg local coord system
   sxi_[0][0] = 0.;
@@ -232,7 +234,7 @@ bool MRTR::Overlap::build_sxi()
 /*----------------------------------------------------------------------*
  |  outward normal to sseg's edges in local coords (private) mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::build_normal()
+bool MOERTEL::Overlap::build_normal()
 {
   n_[0][0] = 0.;
   n_[0][1] = -1.;
@@ -246,7 +248,7 @@ bool MRTR::Overlap::build_normal()
 /*----------------------------------------------------------------------*
  |  compute the overlap (public)                             mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::ComputeOverlap()
+bool MOERTEL::Overlap::ComputeOverlap()
 {
   bool ok = false;
 
@@ -294,11 +296,11 @@ bool MRTR::Overlap::ComputeOverlap()
 /*----------------------------------------------------------------------*
  |  perform clipping algorithm (private)                     mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clipelements()
+bool MOERTEL::Overlap::Clipelements()
 {
   if (!havemxi_ || !havesxi_ || !havelines_ || !havesxim_ || !havelinem_)
   {
-    cout << "***ERR*** MRTR::Overlap::Clipelements:\n"
+    cout << "***ERR*** MOERTEL::Overlap::Clipelements:\n"
          << "***ERR*** initialization of Overlap class missing\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -357,7 +359,7 @@ bool MRTR::Overlap::Clipelements()
   {
     int np = SizePointPolygon();
     
-    vector<RefCountPtr<MRTR::Point> > point;
+    vector<RefCountPtr<MOERTEL::Point> > point;
     PointView(point);
     int p;
     for (p=0; p<np; ++p)
@@ -453,7 +455,7 @@ bool MRTR::Overlap::Clipelements()
   // make printout of the polygon so far
   {
     int np    = SizePointPolygon();
-    vector<RefCountPtr<MRTR::Point> > point; PointView(point);
+    vector<RefCountPtr<MOERTEL::Point> > point; PointView(point);
     for (int p=0; p<np; ++p)
     {
       cout << "OVERLAP Clipelements: point " << setw(3) << point[p]->Id() 
@@ -515,10 +517,10 @@ bool MRTR::Overlap::Clipelements()
     if (np>2); // all slave points are in master segment, just continue
     else if (np && np <= 2)
     {
-      if (inter_.OutLevel()>5)
-        cout << "***WRN*** MRTR::Overlap::Clipelements:\n"
-             << "***WRN*** " << np << " slave nodes seem to be in master segment but no overlap detected\n"
-             << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      if (inter_.OutLevel()>8)
+        cout << "MOERTEL: ***WRN*** MOERTEL::Overlap::Clipelements:\n"
+             << "MOERTEL: ***WRN*** " << np << " slave nodes seem to be in master segment but no overlap detected\n"
+             << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
     else // with none or less then 3 points in we assume no overlap
@@ -536,10 +538,10 @@ bool MRTR::Overlap::Clipelements()
   np = SizePointPolygon();
   if (np && np<3)
   {
-    if (inter_.OutLevel()>5)
-      cout << "***WRN*** MRTR::Overlap::Clipelements:\n"
-           << "***WRN*** " << np << " nodes in polygon but could not detect overlap\n"
-           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    if (OutLevel()>8)
+      cout << "MOERTEL: ***WRN*** MOERTEL::Overlap::Clipelements:\n"
+           << "MOERTEL: ***WRN*** " << np << " nodes in polygon but could not detect overlap\n"
+           << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   else if (!np)
@@ -557,7 +559,7 @@ bool MRTR::Overlap::Clipelements()
 /*----------------------------------------------------------------------*
  |  make a triangulization of a polygon (private)             mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Triangulization()
+bool MOERTEL::Overlap::Triangulization()
 {
   // we have a polygon that is in clockwise order at this moment
 
@@ -565,7 +567,7 @@ bool MRTR::Overlap::Triangulization()
   int np = SizePointPolygon();
   if (np<3)
   {
-    cout << "***ERR*** MRTR::Overlap::Triangulization:\n"
+    cout << "***ERR*** MOERTEL::Overlap::Triangulization:\n"
          << "***ERR*** # point in polygon < 3 ... very strange!!!\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -573,7 +575,7 @@ bool MRTR::Overlap::Triangulization()
   if (np>3) // we have to add a center point
   {
     double xi[2]; xi[0] = xi[1] = 0.0;
-    vector<RefCountPtr<MRTR::Point> > points; PointView(points);
+    vector<RefCountPtr<MOERTEL::Point> > points; PointView(points);
     for (int i=0; i<np; ++i)
     {
       const double* pxi = points[i]->Xi();
@@ -588,9 +590,9 @@ bool MRTR::Overlap::Triangulization()
   } // if (np>3)
   
   np = SizePointPolygon();
-  vector<RefCountPtr<MRTR::Point> >  points; PointView(points);
+  vector<RefCountPtr<MOERTEL::Point> >  points; PointView(points);
 
-  // create a MRTR::Node for every point
+  // create a MOERTEL::Node for every point
   int dof[3]; dof[0] = dof[1] = dof[2] = -1;
   
   // find real world coords for all points
@@ -604,17 +606,17 @@ bool MRTR::Overlap::Triangulization()
     double n[3]; n[0] = n[1] = n[2] = 0.0;
     double val[sseg_.Nnode()];
     sseg_.EvaluateFunction(0,points[i]->Xi(),val,sseg_.Nnode(),NULL);
-    MRTR::Node** snodes = sseg_.Nodes();
+    MOERTEL::Node** snodes = sseg_.Nodes();
     for (int j=0; j<sseg_.Nnode(); ++j)
       for (int k=0; k<3; ++k)
       {
         x[k] += val[j]*snodes[j]->X()[k];
         n[k] += val[j]*snodes[j]->N()[k];
       }
-    double length = sqrt(MRTR::dot(n,n,3));
+    double length = sqrt(MOERTEL::dot(n,n,3));
     for (int j=0; j<3; ++j) n[j] /= length;
     // create a node with this coords and normal;
-    MRTR::Node* node = new MRTR::Node(points[i]->Id(),x,3,dof);
+    MOERTEL::Node* node = new MOERTEL::Node(points[i]->Id(),x,3,dof, OutLevel());
     node->SetN(n);
     // set node in point
     points[i]->SetNode(node);
@@ -628,13 +630,13 @@ bool MRTR::Overlap::Triangulization()
   // find projection values for all points in polygon on mseg
   {
     double mxi[2];
-    MRTR::Projector projector(inter_.IsOneDimensional());
+    MOERTEL::Projector projector(inter_.IsOneDimensional(),OutLevel());
     for (int i=0; i<np; ++i)
     {
-      RefCountPtr<MRTR::Node> node = points[i]->Node();
+      RefCountPtr<MOERTEL::Node> node = points[i]->Node();
       projector.ProjectNodetoSegment_NodalNormal(*node,mseg_,mxi);
       // create a projected node and set it in node
-      MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*node,mxi,&mseg_);
+      MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*node,mxi,&mseg_);
       node->SetProjectedNode(pnode);
 #if 0
       if (mxi[0]<=1. && mxi[1]<=abs(1.-mxi[0]) && mxi[0]>=0. && mxi[1]>=0.)
@@ -672,14 +674,14 @@ bool MRTR::Overlap::Triangulization()
     // id = -1
     if (points[0]->Id() != -1)
     {
-      cout << "***ERR*** MRTR::Overlap::Triangulization:\n"
+      cout << "***ERR*** MOERTEL::Overlap::Triangulization:\n"
            << "***ERR*** points[0]->Id() is not -1\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
     }
     int nodeid[3];
-    MRTR::Segment_BiLinearTri* tmp;
-    MRTR::Function_LinearTri* func = new Function_LinearTri();
+    MOERTEL::Segment_BiLinearTri* tmp;
+    MOERTEL::Function_LinearTri* func = new Function_LinearTri(OutLevel());
     for (int i=2; i<np; ++i)
     {
       // there are np-1 triangles
@@ -688,7 +690,7 @@ bool MRTR::Overlap::Triangulization()
       nodeid[0]   = points[0]->Id();
       nodeid[1]   = points[i]->Id();
       nodeid[2] = points[i-1]->Id();
-      tmp = new MRTR::Segment_BiLinearTri(i-2,3,nodeid);
+      tmp = new MOERTEL::Segment_BiLinearTri(i-2,3,nodeid,OutLevel());
       // set a linear shape function to this triangle
       tmp->SetFunction(0,func);
       // add triangle the *this class
@@ -698,7 +700,7 @@ bool MRTR::Overlap::Triangulization()
     nodeid[0]   = points[0]->Id();
     nodeid[1]   = points[1]->Id();
     nodeid[2] = points[np-1]->Id();
-    tmp = new MRTR::Segment_BiLinearTri(np-2,3,nodeid);
+    tmp = new MOERTEL::Segment_BiLinearTri(np-2,3,nodeid,OutLevel());
     // set a linear shape function to this triangle
     tmp->SetFunction(0,func);
     // add triangle to the *this class
@@ -708,12 +710,12 @@ bool MRTR::Overlap::Triangulization()
   else if (np==3) // single triangle without centerpoint
   {
     int nodeid[3];
-    MRTR::Segment_BiLinearTri* tmp;
-    MRTR::Function_LinearTri* func = new Function_LinearTri();
+    MOERTEL::Segment_BiLinearTri* tmp;
+    MOERTEL::Function_LinearTri* func = new Function_LinearTri(OutLevel());
     nodeid[0] = points[0]->Id();
     nodeid[1] = points[2]->Id();
     nodeid[2] = points[1]->Id();
-    tmp = new MRTR::Segment_BiLinearTri(0,3,nodeid);
+    tmp = new MOERTEL::Segment_BiLinearTri(0,3,nodeid,OutLevel());
     // set a linear shape function to this triangle
     tmp->SetFunction(0,func);
     // add triangle the *this class
@@ -722,18 +724,18 @@ bool MRTR::Overlap::Triangulization()
   }
   else
   {
-    cout << "***ERR*** MRTR::Overlap::Triangulization:\n"
+    cout << "***ERR*** MOERTEL::Overlap::Triangulization:\n"
          << "***ERR*** # point in polygon < 3 ... very strange!!!\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
   
   // create ptr topology between triangle and nodes in points
-  vector<MRTR::Node*> nodes(np);
+  vector<MOERTEL::Node*> nodes(np);
   for (int i=0; i<np; ++i) nodes[i] = points[i]->Node().get();
   
   // loop segments and set ptr to nodes in them
-  map<int,RefCountPtr<MRTR::Segment> >::iterator curr;
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator curr;
   for (curr=s_.begin(); curr != s_.end(); ++curr)
     curr->second->GetPtrstoNodes(nodes);
   

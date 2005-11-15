@@ -41,10 +41,10 @@
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
-MRTR::Manager::Manager(Epetra_Comm& comm, int outlevel) :
+MOERTEL::Manager::Manager(Epetra_Comm& comm, int outlevel) :
 outlevel_(outlevel),
 comm_(comm),
-dimensiontype_(MRTR::Manager::manager_none),
+dimensiontype_(MOERTEL::Manager::manager_none),
 inputmap_(null),
 inputmatrix_(null),
 constraintsmap_(null),
@@ -58,7 +58,7 @@ saddlematrix_(null)
 /*----------------------------------------------------------------------*
  |  dtor (public)                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
-MRTR::Manager::~Manager()
+MOERTEL::Manager::~Manager()
 {
   interface_.clear();
 }
@@ -66,7 +66,7 @@ MRTR::Manager::~Manager()
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 06/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MRTR::Manager& man)
+ostream& operator << (ostream& os, const MOERTEL::Manager& man)
 { 
   man.Print();
   return (os);
@@ -75,7 +75,7 @@ ostream& operator << (ostream& os, const MRTR::Manager& man)
 /*----------------------------------------------------------------------*
  |  print all data                                           mwgee 06/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Manager::Print() const
+bool MOERTEL::Manager::Print() const
 { 
   comm_.Barrier();
 
@@ -85,13 +85,13 @@ bool MRTR::Manager::Print() const
   
   comm_.Barrier();
 
-  map<int,RefCountPtr<MRTR::Interface> >::const_iterator curr;
+  map<int,RefCountPtr<MOERTEL::Interface> >::const_iterator curr;
   for (curr=interface_.begin(); curr!=interface_.end(); ++curr)
   {
-    RefCountPtr<MRTR::Interface> inter = curr->second;
+    RefCountPtr<MOERTEL::Interface> inter = curr->second;
     if (inter==null)
     {
-      cout << "***ERR*** MRTR::Manager::Print:\n"
+      cout << "***ERR*** MOERTEL::Manager::Print:\n"
            << "***ERR*** found NULL entry in map of interfaces\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -142,18 +142,18 @@ bool MRTR::Manager::Print() const
 /*----------------------------------------------------------------------*
  |  Add an interface (public)                                mwgee 06/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Manager::AddInterface(MRTR::Interface& interface) 
+bool MOERTEL::Manager::AddInterface(MOERTEL::Interface& interface) 
 {
   if (!interface.IsComplete())
   {
-    cout << "***ERR*** MRTR::Manager::AddInterface:\n"
+    cout << "***ERR*** MOERTEL::Manager::AddInterface:\n"
          << "***ERR*** Cannot add segment as Complete() was not called before\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   
-  RefCountPtr<MRTR::Interface> tmp = rcp(new MRTR::Interface(interface));
-  interface_.insert(pair<int,RefCountPtr<MRTR::Interface> >(tmp->Id(),tmp));
+  RefCountPtr<MOERTEL::Interface> tmp = rcp(new MOERTEL::Interface(interface));
+  interface_.insert(pair<int,RefCountPtr<MOERTEL::Interface> >(tmp->Id(),tmp));
   
   return true;
 }
@@ -161,7 +161,7 @@ bool MRTR::Manager::AddInterface(MRTR::Interface& interface)
 /*----------------------------------------------------------------------*
  |  Store the rowmap of the underlying matrix from the application 07/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Manager::SetInputMap(Epetra_Map* map)
+bool MOERTEL::Manager::SetInputMap(Epetra_Map* map)
 {
   inputmap_ = rcp(new Epetra_Map(*map));
   return true;
@@ -169,9 +169,9 @@ bool MRTR::Manager::SetInputMap(Epetra_Map* map)
 
 /*----------------------------------------------------------------------*
  |  Set ptr to the uncoupled matrix on input                       07/05|
- |  Note that MRTR::Manager does not make a deep copy here by default   |
+ |  Note that MOERTEL::Manager does not make a deep copy here by default   |
  *----------------------------------------------------------------------*/
-bool MRTR::Manager::SetInputMatrix(Epetra_CrsMatrix* inputmatrix, bool DeepCopy)
+bool MOERTEL::Manager::SetInputMatrix(Epetra_CrsMatrix* inputmatrix, bool DeepCopy)
 {
   if (DeepCopy)
   {
@@ -193,7 +193,7 @@ bool MRTR::Manager::SetInputMatrix(Epetra_CrsMatrix* inputmatrix, bool DeepCopy)
  |  NOTE:                                                               |
  |  - A has to be FillComplete, B must NOT be FillComplete()            |
  *----------------------------------------------------------------------*/
-int MRTR::Manager::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double scalarA,
+int MOERTEL::Manager::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double scalarA,
                       Epetra_CrsMatrix& B,double scalarB )
 {
   //
@@ -201,14 +201,14 @@ int MRTR::Manager::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,do
 
   if (!A.Filled())
   {
-     cout << "***ERR*** MRTR::Manager::MatrixMatrixAdd:\n"
+     cout << "***ERR*** MOERTEL::Manager::MatrixMatrixAdd:\n"
           << "***ERR*** FillComplete was not called on A\n"
           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
      exit(EXIT_FAILURE);
   }
   if (B.Filled())
   {
-     cout << "***ERR*** MRTR::Manager::MatrixMatrixAdd:\n"
+     cout << "***ERR*** MOERTEL::Manager::MatrixMatrixAdd:\n"
           << "***ERR*** FillComplete was called on B\n"
           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
      exit(EXIT_FAILURE);
@@ -265,11 +265,11 @@ int MRTR::Manager::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,do
  |  Choose dofs for lagrange multipliers (private)           mwgee 07/05|
  | Note that this is collective for ALL procs                           |
  *----------------------------------------------------------------------*/
-RefCountPtr<Epetra_Map> MRTR::Manager::LagrangeMultiplierDofs()
+RefCountPtr<Epetra_Map> MOERTEL::Manager::LagrangeMultiplierDofs()
 {
   if (inputmap_==null)
   {
-    cout << "***ERR*** MRTR::Manager::LagrangeMultiplierDofs:\n"
+    cout << "***ERR*** MOERTEL::Manager::LagrangeMultiplierDofs:\n"
          << "***ERR*** inputmap==NULL, Need to set an input-rowmap first\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return null;
@@ -293,14 +293,14 @@ RefCountPtr<Epetra_Map> MRTR::Manager::LagrangeMultiplierDofs()
 
   // start with minLMGID and return maxLMGID+1 on a specific interface
   // Note this is collective for ALL procs
-  map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+  map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
   {
     length -= minLMGID;
     maxLMGID = curr->second->SetLMDofs(minLMGID);
     if (!maxLMGID && maxLMGID!=minLMGID)
     {
-      cout << "***ERR*** MRTR::Manager::LagrangeMultiplierDofs:\n"
+      cout << "***ERR*** MOERTEL::Manager::LagrangeMultiplierDofs:\n"
            << "***ERR*** interface " << curr->second->Id() << " returned false\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return null;
@@ -316,7 +316,7 @@ RefCountPtr<Epetra_Map> MRTR::Manager::LagrangeMultiplierDofs()
   // and add it to the global one
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
   {
-    RefCountPtr<MRTR::Interface> inter = curr->second;
+    RefCountPtr<MOERTEL::Interface> inter = curr->second;
     vector<int>* lmids = inter->MyLMIds();
     if (count+lmids->size() > mylmids.size())
       mylmids.resize(mylmids.size()+5*lmids->size());
@@ -330,7 +330,7 @@ RefCountPtr<Epetra_Map> MRTR::Manager::LagrangeMultiplierDofs()
   comm_.SumAll(&lsize,&gsize,1);
   
   // create the rowmap for the constraints
-  // Note that this map contains the global communicator from the MRTR::Manager
+  // Note that this map contains the global communicator from the MOERTEL::Manager
   // NOT any interface local one
   RefCountPtr<Epetra_Map> map = rcp(new Epetra_Map(gsize,lsize,&(mylmids[0]),0,comm_));
 
@@ -344,17 +344,17 @@ RefCountPtr<Epetra_Map> MRTR::Manager::LagrangeMultiplierDofs()
  |  integrate all mortar interfaces                       (public) 11/05|
  |  Note: All processors have to go in here!                            |
  *----------------------------------------------------------------------*/
-bool MRTR::Manager::Mortar_Integrate()
+bool MOERTEL::Manager::Mortar_Integrate()
 {
   //-------------------------------------------------------------------
   // check for problem dimension
-  if (Dimension() == MRTR::Manager::manager_2D)
+  if (Dimension() == MOERTEL::Manager::manager_2D)
     return Mortar_Integrate_2D();
-  else if (Dimension() == MRTR::Manager::manager_3D)
+  else if (Dimension() == MOERTEL::Manager::manager_3D)
     return Mortar_Integrate_3D();
   else
   {
-    cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+    cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
          << "***ERR*** problem dimension not set\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -366,13 +366,13 @@ bool MRTR::Manager::Mortar_Integrate()
  |  integrate all mortar interfaces in 2D                 (public) 07/05|
  |  Note: All processors have to go in here!                            |
  *----------------------------------------------------------------------*/
-bool MRTR::Manager::Mortar_Integrate_2D()
+bool MOERTEL::Manager::Mortar_Integrate_2D()
 {
   //-------------------------------------------------------------------
   // check for problem dimension
-  if (Dimension() != MRTR::Manager::manager_2D)
+  if (Dimension() != MOERTEL::Manager::manager_2D)
   {
-    cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+    cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
          << "***ERR*** problem dimension is not 2D?????\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -388,7 +388,7 @@ bool MRTR::Manager::Mortar_Integrate_2D()
   // check whether we have an input map
   if (inputmap_==null)
   {
-    cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+    cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
          << "***ERR*** inputmap==NULL, Need to set an input-rowmap first\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -398,7 +398,7 @@ bool MRTR::Manager::Mortar_Integrate_2D()
   // check whether we have a mortar side chosen on each interface or 
   // whether we have to chose it here
   {
-    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     bool foundit = true;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
@@ -418,11 +418,11 @@ bool MRTR::Manager::Mortar_Integrate_2D()
   // if not, check for functions flag and set them
   {
     bool foundit = true;
-    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       int nseg             = curr->second->GlobalNsegment();
-      MRTR::Segment** segs = curr->second->GetSegmentView();
+      MOERTEL::Segment** segs = curr->second->GetSegmentView();
       for (int i=0; i<nseg; ++i)
         if (segs[i]->Nfunctions() < 1)
         {
@@ -438,13 +438,13 @@ bool MRTR::Manager::Mortar_Integrate_2D()
   //-------------------------------------------------------------------
   // build projections for all interfaces
   {
-    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       bool ok  = curr->second->Project();
       if (!ok)
       {
-        cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+        cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on projection\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -458,13 +458,13 @@ bool MRTR::Manager::Mortar_Integrate_2D()
   // function will be reduced by one
 #if 0
   {
-    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       bool ok = curr->second->DetectEndSegmentsandReduceOrder();
       if (!ok)
       {
-        cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+        cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false from DetectEndSegmentsandReduceOrder\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -480,7 +480,7 @@ bool MRTR::Manager::Mortar_Integrate_2D()
     constraintsmap_ = LagrangeMultiplierDofs();
     if (constraintsmap_==null)
     {
-      cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+      cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
            << "***ERR*** LagrangeMultiplierDofs() returned NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -493,7 +493,7 @@ bool MRTR::Manager::Mortar_Integrate_2D()
     bool ok = BuildSaddleMap();
     if (!ok)
     {
-      cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+      cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
            << "***ERR*** BuildSaddleMap() returned false\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -509,13 +509,13 @@ bool MRTR::Manager::Mortar_Integrate_2D()
   //-------------------------------------------------------------------
   // integrate all interfaces
   {
-    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {  
       bool ok = curr->second->Mortar_Integrate(*D_,*M_);
       if (!ok)
       {
-        cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+        cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on integration\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -540,13 +540,13 @@ bool MRTR::Manager::Mortar_Integrate_2D()
  |  integrate all mortar interfaces 3D case               (public) 11/05|
  |  Note: All processors have to go in here!                            |
  *----------------------------------------------------------------------*/
-bool MRTR::Manager::Mortar_Integrate_3D()
+bool MOERTEL::Manager::Mortar_Integrate_3D()
 {
   //-------------------------------------------------------------------
   // check for problem dimension
-  if (Dimension() != MRTR::Manager::manager_3D)
+  if (Dimension() != MOERTEL::Manager::manager_3D)
   {
-    cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+    cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
          << "***ERR*** problem dimension is not 3D?????\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -562,7 +562,7 @@ bool MRTR::Manager::Mortar_Integrate_3D()
   // check whether we have an input map
   if (inputmap_==null)
   {
-    cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+    cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
          << "***ERR*** inputmap==NULL, Need to set an input-rowmap first\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -572,7 +572,7 @@ bool MRTR::Manager::Mortar_Integrate_3D()
   // check whether we have a mortar side chosen on each interface or 
   // whether we have to chose it here
   {
-    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     bool foundit = true;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
@@ -592,11 +592,11 @@ bool MRTR::Manager::Mortar_Integrate_3D()
   // if not, check for functions flag and set them
   {
     bool foundit = true;
-    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       int nseg             = curr->second->GlobalNsegment();
-      MRTR::Segment** segs = curr->second->GetSegmentView();
+      MOERTEL::Segment** segs = curr->second->GetSegmentView();
       for (int i=0; i<nseg; ++i)
         if (segs[i]->Nfunctions() < 1)
         {
@@ -612,13 +612,13 @@ bool MRTR::Manager::Mortar_Integrate_3D()
   //-------------------------------------------------------------------
   // build normals for all interfaces
   {
-    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       bool ok = curr->second->BuildNormals();
       if (!ok)
       {
-        cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+        cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on building normals\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -634,13 +634,13 @@ bool MRTR::Manager::Mortar_Integrate_3D()
   // quite difficult to detect automatically. user input?
 #if 1
   {
-    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
       bool ok = curr->second->DetectEndSegmentsandReduceOrder();
       if (!ok)
       {
-        cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+        cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false from DetectEndSegmentsandReduceOrder\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -656,13 +656,13 @@ bool MRTR::Manager::Mortar_Integrate_3D()
   // in advance. All integrated rows of D and M are stored as
   // scalars in the nodes
   {
-    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {  
       bool ok = curr->second->Mortar_Integrate();
       if (!ok)
       {
-        cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+        cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on integration\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -677,7 +677,7 @@ bool MRTR::Manager::Mortar_Integrate_3D()
     constraintsmap_ = LagrangeMultiplierDofs();
     if (constraintsmap_==null)
     {
-      cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+      cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
            << "***ERR*** LagrangeMultiplierDofs() returned NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -690,7 +690,7 @@ bool MRTR::Manager::Mortar_Integrate_3D()
     bool ok = BuildSaddleMap();
     if (!ok)
     {
-      cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+      cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
            << "***ERR*** BuildSaddleMap() returned false\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -705,13 +705,13 @@ bool MRTR::Manager::Mortar_Integrate_3D()
   //-------------------------------------------------------------------
   // now that we have all maps and dofs we can assemble from the nodes
   {
-    map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+    map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {  
       bool ok = curr->second->Mortar_Assemble(*D_,*M_);
       if (!ok)
       {
-        cout << "***ERR*** MRTR::Manager::Mortar_Integrate:\n"
+        cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
              << "***ERR*** interface " << curr->second->Id() << " returned false on assembly\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -737,22 +737,22 @@ bool MRTR::Manager::Mortar_Integrate_3D()
  | Create the saddle point problem map (private)             mwgee 11/05|
  | Note that this is collective for ALL procs                           |
  *----------------------------------------------------------------------*/
-bool MRTR::Manager::BuildSaddleMap()
+bool MOERTEL::Manager::BuildSaddleMap()
 {
   // check whether all interfaces are complete and integrated
-  map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+  map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
   {
     if (curr->second->IsComplete() == false)
     {
-      cout << "***ERR*** MRTR::Manager::BuildSaddleMap:\n"
+      cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
            << "***ERR*** interface " << curr->second->Id() << " is not Complete()\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
     if (curr->second->IsIntegrated() == false)
     {
-      cout << "***ERR*** MRTR::Manager::BuildSaddleMap:\n"
+      cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
            << "***ERR*** interface " << curr->second->Id() << " is not integrated yet\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -762,7 +762,7 @@ bool MRTR::Manager::BuildSaddleMap()
   // check whether we have an inputmap
   if (inputmap_==null)
   {
-      cout << "***ERR*** MRTR::Manager::BuildSaddleMap:\n"
+      cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
            << "***ERR*** No inputrowmap set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -771,7 +771,7 @@ bool MRTR::Manager::BuildSaddleMap()
   // check whether we have a constraintsmap_
   if (constraintsmap_==null)
   {
-      cout << "***ERR*** MRTR::Manager::BuildSaddleMap:\n"
+      cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
            << "***ERR*** onstraintsmap is NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -792,7 +792,7 @@ bool MRTR::Manager::BuildSaddleMap()
     myglobalelements[count++] = constraintsmyglobalelements[i];
   if (count != nummyelements)
   {
-    cout << "***ERR*** MRTR::Manager::BuildSaddleMap:\n"
+    cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
          << "***ERR*** Mismatch in dimensions\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -808,22 +808,22 @@ bool MRTR::Manager::BuildSaddleMap()
  | Create the saddle point problem (public)                  mwgee 07/05|
  | Note that this is collective for ALL procs                           |
  *----------------------------------------------------------------------*/
-Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
+Epetra_CrsMatrix* MOERTEL::Manager::MakeSaddleProblem()
 {
   // check whether all interfaces are complete and integrated
-  map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+  map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
   {
     if (curr->second->IsComplete() == false)
     {
-      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
+      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
            << "***ERR*** interface " << curr->second->Id() << " is not Complete()\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
     }
     if (curr->second->IsIntegrated() == false)
     {
-      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
+      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
            << "***ERR*** interface " << curr->second->Id() << " is not integrated yet\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -833,7 +833,7 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
   // check whether we have an inputmap
   if (inputmap_==null)
   {
-      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
+      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
            << "***ERR*** No inputrowmap set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -842,7 +842,7 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
   // check whether we have a constraintsmap_
   if (constraintsmap_==null)
   {
-      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
+      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
            << "***ERR*** onstraintsmap is NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -851,7 +851,7 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
   // check for saddlemap_
   if (saddlemap_==null)
   {
-      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
+      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
            << "***ERR*** saddlemap_==NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -860,7 +860,7 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
   // check for inputmatrix
   if (inputmatrix_==null)
   {
-      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
+      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
            << "***ERR*** No inputmatrix set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -869,7 +869,7 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
   // check whether we have M and D matrices
   if (D_==null || M_==null)
   {
-      cout << "***ERR*** MRTR::Manager::MakeSaddleProblem:\n"
+      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
            << "***ERR*** Matrix M or D is NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -898,27 +898,22 @@ Epetra_CrsMatrix* MRTR::Manager::MakeSaddleProblem()
  |                                                                 09/05|
  |  choose the mortar side                                              |
  *----------------------------------------------------------------------*/
-bool MRTR::Manager::ChooseMortarSide()
+bool MOERTEL::Manager::ChooseMortarSide()
 {
-  // find all 2D interfaces
-  vector<RefCountPtr<MRTR::Interface> > inter(Ninterfaces());
-  map<int,RefCountPtr<MRTR::Interface> >::iterator curr;
+  // find all interfaces
+  vector<RefCountPtr<MOERTEL::Interface> > inter(Ninterfaces());
+  map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
   curr=interface_.begin();
   int count = 0;
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
   {
-    if (curr->second->IsOneDimensional())
-    {
       inter[count] = curr->second;
       ++count;
-    }
   }
   inter.resize(count);
   
   // call choice of the mortar side for all 1D interfaces
-  bool ok = ChooseMortarSide_2D(inter);
-
-  // for 2D interfaces not yet impl.
+  bool ok = ChooseMortarSide(inter);
 
   // tidy up
   inter.clear();  
@@ -931,21 +926,26 @@ bool MRTR::Manager::ChooseMortarSide()
  |                                                                 09/05|
  |  choose the mortar side for 1D interfaces                            |
  *----------------------------------------------------------------------*/
-bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > inter)
+bool MOERTEL::Manager::ChooseMortarSide(vector<RefCountPtr<MOERTEL::Interface> >& inter)
 {
   // number of interfaces
   int ninter = inter.size();
-  if (ninter < 2) return true;
+  if (ninter < 2) 
+  {
+    if (inter[0]->MortarSide() != 0 && inter[0]->MortarSide() != 1)
+      inter[0]->SetMortarSide(0);
+    return true;
+  }
   
   if (OutLevel()>5)
   {
     fflush(stdout);
     if (Comm().MyPID()==0)
     {
-      cout << "---MRTR::Manager: start interface coloring:\n";
+      cout << "---MOERTEL::Manager: start interface coloring:\n";
       for (int i=0; i<ninter; ++i)
         cout << "Interface " << inter[i]->Id() << " : Mortar Side : " << inter[i]->MortarSide() << endl;
-      cout << "---MRTR::Manager: finding common nodes on interfaces:\n";
+      cout << "---MOERTEL::Manager: finding common nodes on interfaces:\n";
     }
     fflush(stdout);
   }
@@ -957,7 +957,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
   
   
   // get a view of all nodes from all interfaces
-  vector<MRTR::Node**> nodes(ninter);
+  vector<MOERTEL::Node**> nodes(ninter);
   vector<int>          nnodes(ninter);
   for (int i=0; i<ninter; ++i)
   {
@@ -982,7 +982,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
         
       // the node we are currently looking for
       int actnodeid       = nodes[i][j]->Id();
-      MRTR::Node* inode   = nodes[i][j];
+      MOERTEL::Node* inode   = nodes[i][j];
       
       // search all other interfaces for this node
       for (int k=0; k<ninter; ++k)
@@ -990,7 +990,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
         if (k==i) 
           continue; // don't do the current interface
         
-        MRTR::Node* knode = NULL;
+        MOERTEL::Node* knode = NULL;
         for (int l=0; l<nnodes[k]; ++l)
           if (actnodeid==nodes[k][l]->Id())
           {
@@ -1082,7 +1082,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
   {
     fflush(stdout);
     if (Comm().MyPID()==0)
-      cout << "---MRTR::Manager: finding common nodes: " 
+      cout << "---MOERTEL::Manager: finding common nodes: " 
            << time.ElapsedTime() << " sec" << endl;
     fflush(stdout);
   }
@@ -1179,7 +1179,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
                      }
                      else
                      {
-                       cout << "***ERR*** MRTR::Manager::ChooseMortarSide_2D:\n"
+                       cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide_2D:\n"
                             << "***ERR*** Matrix M or D is NULL\n"
                             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
                        exit(EXIT_FAILURE);
@@ -1216,7 +1216,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
            // check whether a side has been set before and this side is differen?
            if (inter[i]->MortarSide()==1)
            {
-             cout << "***ERR*** MRTR::Manager::ChooseMortarSide_2D:\n"
+             cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide_2D:\n"
                   << "***ERR*** want to set mortar side to 0 but has been set to 1 before\n"
                   << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
              exit(EXIT_FAILURE);
@@ -1229,7 +1229,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
            // check whether a side has been set before and this side is differen?
            if (inter[i]->MortarSide()==0)
            {
-             cout << "***ERR*** MRTR::Manager::ChooseMortarSide_2D:\n"
+             cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide_2D:\n"
                   << "***ERR*** want to set mortar side to 1 but has been set to 0 before\n"
                   << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
              exit(EXIT_FAILURE);
@@ -1238,7 +1238,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
          }
          else
          {
-           cout << "***ERR*** MRTR::Manager::ChooseMortarSide_2D:\n"
+           cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide_2D:\n"
                 << "***ERR*** unknown type of coloring flag: " << flags[k] << "\n"
                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
            exit(EXIT_FAILURE);
@@ -1258,7 +1258,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
          {
            if (inter[k]->MortarSide()!=-2)
            {
-             cout << "***ERR*** MRTR::Manager::ChooseMortarSide_2D:\n"
+             cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide_2D:\n"
                   << "***ERR*** weird, this interface is not supposed to already have a mortar side assigned\n"
                   << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
              exit(EXIT_FAILURE);
@@ -1301,7 +1301,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
                        if (mortarside_s != -1)
                          if (mortarside_s != inter[k]->OtherSide(nodeside_k))
                          {
-                           cout << "***ERR*** MRTR::Manager::ChooseMortarSide_2D:\n"
+                           cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide_2D:\n"
                                 << "***ERR*** interface has a conflict that can not be resolved\n"
                                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
                            exit(EXIT_FAILURE);
@@ -1315,7 +1315,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
                        if (mortarside_s != -1)
                          if (mortarside_s != nodeside_k)
                          {
-                           cout << "***ERR*** MRTR::Manager::ChooseMortarSide_2D:\n"
+                           cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide_2D:\n"
                                 << "***ERR*** interface has a conflict that can not be resolved\n"
                                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
                            exit(EXIT_FAILURE);
@@ -1340,7 +1340,7 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
   {
     fflush(stdout);
     if (Comm().MyPID()==0)
-      cout << "---MRTR::Manager: coloring interfaces : " 
+      cout << "---MOERTEL::Manager: coloring interfaces : " 
            << time.ElapsedTime() << " sec" << endl;
     fflush(stdout);
   }
@@ -1350,10 +1350,10 @@ bool MRTR::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > in
     fflush(stdout);
     if (Comm().MyPID()==0)
     {
-      cout << "---MRTR::Manager: chosen mortar sides : \n";
+      cout << "---MOERTEL::Manager: chosen mortar sides : \n";
       for (int i=0; i<ninter; ++i)
         cout << "Interface " << inter[i]->Id() << " : Mortar Side : " << inter[i]->MortarSide() << endl;
-      cout << "---MRTR::Manager: end interface coloring\n";
+      cout << "---MOERTEL::Manager: end interface coloring\n";
     }
     fflush(stdout);
   }

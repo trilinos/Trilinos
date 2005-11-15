@@ -39,14 +39,14 @@
 /*----------------------------------------------------------------------*
  |  finalize construction of this interface                             |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::Complete()
+bool MOERTEL::Interface::Complete()
 { 
   if (IsComplete())
   {
     if (OutLevel()>0)
-      cout << "***WRN*** MRTR::Interface::InterfaceComplete:\n"
-           << "***WRN*** InterfaceComplete() was called before, do nothing\n"
-           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      cout << "MOERTEL: ***WRN*** MOERTEL::Interface::InterfaceComplete:\n"
+           << "MOERTEL: ***WRN*** InterfaceComplete() was called before, do nothing\n"
+           << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return true;
   }
   
@@ -55,12 +55,12 @@ bool MRTR::Interface::Complete()
   bool ok = true;
   for (int i=0; i<2; ++i)
   {
-    map<int,RefCountPtr<MRTR::Node> >::const_iterator curr;
+    map<int,RefCountPtr<MOERTEL::Node> >::const_iterator curr;
     for (curr=node_[i].begin(); curr!=node_[i].end(); ++curr)
     {
       if (curr->second == null)
       {
-        cout << "***ERR*** MRTR::Interface::Complete:\n"
+        cout << "***ERR*** MOERTEL::Interface::Complete:\n"
              << "***ERR*** Interface # " << Id_ << ":\n"
              << "***ERR*** found NULL entry in map of nodes\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -70,12 +70,12 @@ bool MRTR::Interface::Complete()
   }
   for (int i=0; i<2; ++i)
   {
-    map<int,RefCountPtr<MRTR::Segment> >::const_iterator curr;
+    map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator curr;
     for (curr=seg_[i].begin(); curr!=seg_[i].end(); ++curr)
     {
       if (curr->second == null)
       {
-        cout << "***ERR*** MRTR::Interface::Complete:\n"
+        cout << "***ERR*** MOERTEL::Interface::Complete:\n"
              << "***ERR*** Interface # " << Id_ << ":\n"
              << "***ERR*** found NULL entry in map of segments\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -104,7 +104,7 @@ bool MRTR::Interface::Complete()
         int sendsize =  0;
         if (proc==gcomm_.MyPID())
         {
-          map<int,RefCountPtr<MRTR::Segment> >::const_iterator curr;
+          map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator curr;
           for (curr=seg_[side].begin(); curr!=seg_[side].end(); ++curr)
             sendsize += curr->second->Nnode();
         }
@@ -114,7 +114,7 @@ bool MRTR::Interface::Complete()
         vector<int> ids(sendsize);
         if (proc==gcomm_.MyPID())
         {
-          map<int,RefCountPtr<MRTR::Segment> >::const_iterator curr;
+          map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator curr;
           int counter=0;
           for (curr=seg_[side].begin(); curr!=seg_[side].end(); ++curr)
           {
@@ -140,7 +140,7 @@ bool MRTR::Interface::Complete()
           if (gfoundit[i]!=1)
           {
             if (gcomm_.MyPID()==proc)
-            cout << "***ERR*** MRTR::Interface::Complete:\n"
+            cout << "***ERR*** MOERTEL::Interface::Complete:\n"
                  << "***ERR*** cannot find segment's node # " << ids[i] << "\n"
                  << "***ERR*** in map of all nodes on all procs\n"
                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -192,7 +192,7 @@ bool MRTR::Interface::Complete()
     Epetra_MpiComm* epetrampicomm = dynamic_cast<Epetra_MpiComm*>(&gcomm_);
     if (!epetrampicomm)
     {
-      cout << "***ERR*** MRTR::Interface::Complete:\n"
+      cout << "***ERR*** MOERTEL::Interface::Complete:\n"
            << "***ERR*** Interface " << Id() << ": Epetra_Comm is not an Epetra_MpiComm\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -253,7 +253,7 @@ bool MRTR::Interface::Complete()
     Epetra_SerialComm* serialcomm = dynamic_cast<Epetra_SerialComm*>(&gcomm_);
     if (!serialcomm)
     {
-      cout << "***ERR*** MRTR::Interface::Complete:\n"
+      cout << "***ERR*** MOERTEL::Interface::Complete:\n"
            << "***ERR*** Interface " << Id() << ": Epetra_Comm is not an Epetra_SerialComm\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -274,7 +274,7 @@ bool MRTR::Interface::Complete()
       vector<int> ids(lnnodes);
       if (proc==lcomm_->MyPID())
       {
-        map<int,RefCountPtr<MRTR::Node> >::const_iterator curr;
+        map<int,RefCountPtr<MOERTEL::Node> >::const_iterator curr;
         int counter=0;
         for (int side=0; side<2; ++side)
           for (curr=node_[side].begin(); curr!=node_[side].end(); ++curr)
@@ -298,7 +298,7 @@ bool MRTR::Interface::Complete()
       vector<int> ids(lnsegs);
       if (proc==lcomm_->MyPID())
       {
-        map<int,RefCountPtr<MRTR::Segment> >::const_iterator curr;
+        map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator curr;
         int counter=0;
         for (int side=0; side<2; ++side)
           for (curr=seg_[side].begin(); curr!=seg_[side].end(); ++curr)
@@ -325,7 +325,7 @@ bool MRTR::Interface::Complete()
     int gmaxnnode = 0;
     for (int side=0; side<2; ++side)
     {
-      map<int,RefCountPtr<MRTR::Segment> >::const_iterator scurr;
+      map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator scurr;
       for (scurr=seg_[side].begin(); scurr!=seg_[side].end(); ++scurr)
         if (lmaxnnode < scurr->second->Nnode())
           lmaxnnode = scurr->second->Nnode();
@@ -352,10 +352,10 @@ bool MRTR::Interface::Complete()
         int count = 0;
         for (int side=0; side<2; ++side)
         {
-          map<int,RefCountPtr<MRTR::Segment> >::const_iterator scurr;
+          map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator scurr;
           for (scurr=seg_[side].begin(); scurr!=seg_[side].end(); ++scurr)
           {
-            RefCountPtr<MRTR::Segment> seg = scurr->second;
+            RefCountPtr<MOERTEL::Segment> seg = scurr->second;
             adj[count]   = seg->Id();
             adj[count+1] = seg->Nnode();
             const int* ids = seg->NodeIds();
@@ -379,10 +379,10 @@ bool MRTR::Interface::Complete()
           if (lcomm_->MyPID() == NodePID(nid))
           {
             // I own this node, so set the segment segid in it
-            RefCountPtr<MRTR::Node> node = GetNodeViewLocal(nid);
+            RefCountPtr<MOERTEL::Node> node = GetNodeViewLocal(nid);
             if (node == null)
             {
-              cout << "***ERR*** MRTR::Interface::Complete:\n"
+              cout << "***ERR*** MOERTEL::Interface::Complete:\n"
                    << "***ERR*** cannot find node " << nid << endl
                    << "***ERR*** in map of all nodes on this proc\n"
                    << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -410,7 +410,7 @@ bool MRTR::Interface::Complete()
     ok += RedundantNodes(1);
     if (ok != 4)
     {
-      cout << "***ERR*** MRTR::Interface::Complete:\n"
+      cout << "***ERR*** MOERTEL::Interface::Complete:\n"
            << "***ERR*** building of redundant information failed\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);

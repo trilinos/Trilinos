@@ -33,8 +33,8 @@
 /* ******************************************************************** */
 #ifdef TRILINOS_PACKAGE
 
-#ifndef MRTR_FUNCTIONS_H
-#define MRTR_FUNCTIONS_H
+#ifndef MOERTEL_FUNCTIONS_H
+#define MOERTEL_FUNCTIONS_H
 
 #include <ctime>
 #include <iostream>
@@ -43,21 +43,25 @@
 
 using namespace std;
 
-namespace MRTR
+namespace MOERTEL
 {
 
 /*----------------------------------------------------------------------*
  |  the standard 1D-constant shape function                        08/05|
  *----------------------------------------------------------------------*/
-class Function_Constant1D : public MRTR::Function 
+class Function_Constant1D : public MOERTEL::Function 
 {
 public:
   
   // ctor
-  Function_Constant1D() {type_=MRTR::Function::func_Constant1D;}
+  Function_Constant1D(int out) :
+  MOERTEL::Function(out,MOERTEL::Function::func_Constant1D)
+  {}
   
   // copy-ctor
-  Function_Constant1D(const MRTR::Function_Constant1D& old) {type_=old.type_;}
+  Function_Constant1D(const MOERTEL::Function_Constant1D& old) :
+  MOERTEL::Function(old.outputlevel_,old.type_)
+  {}
 
   // dtor
   virtual ~Function_Constant1D() {}
@@ -66,21 +70,25 @@ public:
   bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
 
   // need a clone functionality to do a deep copy
-  MRTR::Function* Clone() const;
+  MOERTEL::Function* Clone() const;
 };
 
 /*----------------------------------------------------------------------*
  |  the standard 1D-linear shape function                          06/05|
  *----------------------------------------------------------------------*/
-class Function_Linear1D : public MRTR::Function 
+class Function_Linear1D : public MOERTEL::Function 
 {
 public:
   
   // ctor
-  Function_Linear1D() {type_=MRTR::Function::func_Linear1D;}
+  Function_Linear1D(int out) :
+  MOERTEL::Function(out,MOERTEL::Function::func_Linear1D)
+  {}
   
   // copy-ctor
-  Function_Linear1D(const MRTR::Function_Linear1D& old) {type_=old.type_;}
+  Function_Linear1D(const MOERTEL::Function_Linear1D& old) :
+  MOERTEL::Function(old.outputlevel_,old.type_)
+  {}
 
   // dtor
   virtual ~Function_Linear1D() {}
@@ -89,21 +97,25 @@ public:
   bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
 
   // need a clone functionality to do a deep copy
-  MRTR::Function* Clone() const;
+  MOERTEL::Function* Clone() const;
 };
 
 /*----------------------------------------------------------------------*
  |  the dual 1D linear shape function                              06/05|
  *----------------------------------------------------------------------*/
-class Function_DualLinear1D : public MRTR::Function 
+class Function_DualLinear1D : public MOERTEL::Function 
 {
 public:
   
   // ctor
-  Function_DualLinear1D() { type_=MRTR::Function::func_DualLinear1D;}
+  Function_DualLinear1D(int out) :
+  MOERTEL::Function(out,MOERTEL::Function::func_DualLinear1D)
+  {}
   
   // copy-ctor
-  Function_DualLinear1D(const MRTR::Function_DualLinear1D& old) {type_=old.type_;}
+  Function_DualLinear1D(const MOERTEL::Function_DualLinear1D& old) :
+  MOERTEL::Function(old.outputlevel_,old.type_)
+  {}
 
   // dtor
   virtual ~Function_DualLinear1D() {}
@@ -112,21 +124,25 @@ public:
   bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
 
   // need a clone functionality to do a deep copy
-  virtual MRTR::Function* Clone() const;
+  virtual MOERTEL::Function* Clone() const;
 };
 
 /*----------------------------------------------------------------------*
  |  the linear triangle shape function                             10/05|
  *----------------------------------------------------------------------*/
-class Function_LinearTri : public MRTR::Function 
+class Function_LinearTri : public MOERTEL::Function 
 {
 public:
   
   // ctor
-  Function_LinearTri() { type_=MRTR::Function::func_LinearTri;}
+  Function_LinearTri(int out) :
+  MOERTEL::Function(out,MOERTEL::Function::func_LinearTri)
+  {}
   
   // copy-ctor
-  Function_LinearTri(const MRTR::Function_LinearTri& old) {type_=old.type_;}
+  Function_LinearTri(const MOERTEL::Function_LinearTri& old) :
+  MOERTEL::Function(old.outputlevel_,old.type_)
+  {}
 
   // dtor
   virtual ~Function_LinearTri() {}
@@ -135,21 +151,25 @@ public:
   bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
 
   // need a clone functionality to do a deep copy
-  virtual MRTR::Function* Clone() const;
+  virtual MOERTEL::Function* Clone() const;
 };
 
 /*----------------------------------------------------------------------*
  |  the dual linear triangle shape function                        10/05|
  *----------------------------------------------------------------------*/
-class Function_DualLinearTri : public MRTR::Function 
+class Function_DualLinearTri : public MOERTEL::Function 
 {
 public:
   
   // ctor
-  Function_DualLinearTri() { type_=MRTR::Function::func_DualLinearTri;}
+  Function_DualLinearTri(int out) :
+  MOERTEL::Function(out,MOERTEL::Function::func_DualLinearTri)
+  {}
   
   // copy-ctor
-  Function_DualLinearTri(const MRTR::Function_DualLinearTri& old) {type_=old.type_;}
+  Function_DualLinearTri(const MOERTEL::Function_DualLinearTri& old) :
+  MOERTEL::Function(old.outputlevel_,old.type_)
+  {}
 
   // dtor
   virtual ~Function_DualLinearTri() {}
@@ -158,21 +178,25 @@ public:
   bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
 
   // need a clone functionality to do a deep copy
-  virtual MRTR::Function* Clone() const;
+  virtual MOERTEL::Function* Clone() const;
 };
 
 /*----------------------------------------------------------------------*
  |  the constant triangle shape function                           11/05|
  *----------------------------------------------------------------------*/
-class Function_ConstantTri : public MRTR::Function 
+class Function_ConstantTri : public MOERTEL::Function 
 {
 public:
   
   // ctor
-  Function_ConstantTri() { type_=MRTR::Function::func_ConstantTri;}
+  Function_ConstantTri(int out) :
+  MOERTEL::Function(out,MOERTEL::Function::func_ConstantTri)
+  {}
   
   // copy-ctor
-  Function_ConstantTri(const MRTR::Function_ConstantTri& old) {type_=old.type_;}
+  Function_ConstantTri(const MOERTEL::Function_ConstantTri& old) :
+  MOERTEL::Function(old.outputlevel_,old.type_)
+  {}
 
   // dtor
   virtual ~Function_ConstantTri() {}
@@ -181,15 +205,15 @@ public:
   bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
 
   // need a clone functionality to do a deep copy
-  virtual MRTR::Function* Clone() const;
+  virtual MOERTEL::Function* Clone() const;
 };
 
 
 
 
 
-} // namespace MRTR
+} // namespace MOERTEL
 
 
-#endif // MRTR_FUNCTION_LINEAR1D_H
+#endif // MOERTEL_FUNCTION_LINEAR1D_H
 #endif // TRILINOS_PACKAGE

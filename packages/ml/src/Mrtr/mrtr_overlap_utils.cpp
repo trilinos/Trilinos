@@ -45,14 +45,14 @@
 /*----------------------------------------------------------------------*
  |  copy a polygon of points (private)                       mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::CopyPointPolygon(map<int,RefCountPtr<MRTR::Point> >& from, map<int,RefCountPtr<MRTR::Point> >& to)
+bool MOERTEL::Overlap::CopyPointPolygon(map<int,RefCountPtr<MOERTEL::Point> >& from, map<int,RefCountPtr<MOERTEL::Point> >& to)
 {
-  map<int,RefCountPtr<MRTR::Point> >::iterator pcurr;
+  map<int,RefCountPtr<MOERTEL::Point> >::iterator pcurr;
   for (pcurr=from.begin(); pcurr != from.end(); ++pcurr)
     if (pcurr->second != null)
     {
-      RefCountPtr<MRTR::Point> tmp = rcp(new MRTR::Point(pcurr->second->Id(),pcurr->second->Xi()));
-      to.insert(pair<int,RefCountPtr<MRTR::Point> >(tmp->Id(),tmp));
+      RefCountPtr<MOERTEL::Point> tmp = rcp(new MOERTEL::Point(pcurr->second->Id(),pcurr->second->Xi(),pcurr->second->OutLevel()));
+      to.insert(pair<int,RefCountPtr<MOERTEL::Point> >(tmp->Id(),tmp));
     }
   return true;
 }
@@ -60,7 +60,7 @@ bool MRTR::Overlap::CopyPointPolygon(map<int,RefCountPtr<MRTR::Point> >& from, m
 /*----------------------------------------------------------------------*
  |  find intersection (private)                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_Intersect(const double* N,const double* PE,const double* P0,const double* P1,double* xi)
+bool MOERTEL::Overlap::Clip_Intersect(const double* N,const double* PE,const double* P0,const double* P1,double* xi)
 {
   double P1P0[2];
   P1P0[0] = P1[0] - P0[0];
@@ -93,7 +93,7 @@ bool MRTR::Overlap::Clip_Intersect(const double* N,const double* PE,const double
 /*----------------------------------------------------------------------*
  |  test point (private)                                     mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::Clip_TestPoint(const double* N, const double* PE, 
+bool MOERTEL::Overlap::Clip_TestPoint(const double* N, const double* PE, 
                                    const double* P, double eps)
 {
   double PPE[2];
@@ -112,13 +112,13 @@ bool MRTR::Overlap::Clip_TestPoint(const double* N, const double* PE,
 /*----------------------------------------------------------------------*
  |  find parameterization alpha for point on line (private)  mwgee 10/05|
  *----------------------------------------------------------------------*/
-double MRTR::Overlap::Clip_ParameterPointOnLine(const double* P0,const double* P1,const double* P)
+double MOERTEL::Overlap::Clip_ParameterPointOnLine(const double* P0,const double* P1,const double* P)
 {
   double dist1 = sqrt( (P[0]-P0[0])*(P[0]-P0[0])+(P[1]-P0[1])*(P[1]-P0[1]) );
   double dist2 = sqrt( (P1[0]-P0[0])*(P1[0]-P0[0])+(P1[1]-P0[1])*(P1[1]-P0[1]) );
   if (dist2<1.0e-10) 
   {
-    cout << "***ERR*** MRTR::Overlap::Clip_ParameterPointOnLine:\n"
+    cout << "***ERR*** MOERTEL::Overlap::Clip_ParameterPointOnLine:\n"
          << "***ERR*** edge length too small, division by near zero\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -129,20 +129,20 @@ double MRTR::Overlap::Clip_ParameterPointOnLine(const double* P0,const double* P
 /*----------------------------------------------------------------------*
  |  add segment (private)                                    mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::AddSegment(int id, MRTR::Segment* seg)
+bool MOERTEL::Overlap::AddSegment(int id, MOERTEL::Segment* seg)
 {
-  RefCountPtr<MRTR::Segment> tmp = rcp(seg);
-  s_.insert(pair<int,RefCountPtr<MRTR::Segment> >(id,tmp));
+  RefCountPtr<MOERTEL::Segment> tmp = rcp(seg);
+  s_.insert(pair<int,RefCountPtr<MOERTEL::Segment> >(id,tmp));
   return true;
 }
 
 /*----------------------------------------------------------------------*
  |  add point (private)                                      mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::AddPointtoPolygon(const int id,const double* P)
+bool MOERTEL::Overlap::AddPointtoPolygon(const int id,const double* P)
 {
   // check whether this point is already in there
-  map<int,RefCountPtr<MRTR::Point> >::iterator curr = p_.find(id);
+  map<int,RefCountPtr<MOERTEL::Point> >::iterator curr = p_.find(id);
   // it's there
   if (curr != p_.end())
     curr->second->SetXi(P);
@@ -150,8 +150,8 @@ bool MRTR::Overlap::AddPointtoPolygon(const int id,const double* P)
   {
     //cout << "OVERLAP Clip_AddPointtoPolygon: added point " << id 
     //     << " xi=" << P[0] << "/" << P[1] << endl;
-    RefCountPtr<MRTR::Point> p = rcp(new MRTR::Point(id,P));
-    p_.insert(pair<int,RefCountPtr<MRTR::Point> >(id,p));
+    RefCountPtr<MOERTEL::Point> p = rcp(new MOERTEL::Point(id,P,OutLevel()));
+    p_.insert(pair<int,RefCountPtr<MOERTEL::Point> >(id,p));
   }
   return true;
 }
@@ -159,20 +159,20 @@ bool MRTR::Overlap::AddPointtoPolygon(const int id,const double* P)
 /*----------------------------------------------------------------------*
  |  add point (private)                                      mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::AddPointtoPolygon(map<int,RefCountPtr<MRTR::Point> >& p,const int id,const double* P)
+bool MOERTEL::Overlap::AddPointtoPolygon(map<int,RefCountPtr<MOERTEL::Point> >& p,const int id,const double* P)
 {
-  RefCountPtr<MRTR::Point> point = rcp(new MRTR::Point(id,P));
-  p.insert(pair<int,RefCountPtr<MRTR::Point> >(id,point));
+  RefCountPtr<MOERTEL::Point> point = rcp(new MOERTEL::Point(id,P,OutLevel()));
+  p.insert(pair<int,RefCountPtr<MOERTEL::Point> >(id,point));
   return true;
 }
 
 /*----------------------------------------------------------------------*
  |  remove point (private)                                      mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::RemovePointfromPolygon(const int id,const double* P)
+bool MOERTEL::Overlap::RemovePointfromPolygon(const int id,const double* P)
 {
   // check whether this point is in there
-  map<int,RefCountPtr<MRTR::Point> >::iterator curr = p_.find(id);
+  map<int,RefCountPtr<MOERTEL::Point> >::iterator curr = p_.find(id);
   if (curr != p_.end())
   {
     curr->second = null;
@@ -190,14 +190,14 @@ bool MRTR::Overlap::RemovePointfromPolygon(const int id,const double* P)
 /*----------------------------------------------------------------------*
  |  get point view (private)                                 mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MRTR::Overlap::PointView(vector<RefCountPtr<MRTR::Point> >& points)
+void MOERTEL::Overlap::PointView(vector<RefCountPtr<MOERTEL::Point> >& points)
 {
   // allocate vector of ptrs
   points.resize(SizePointPolygon());
   
   // get the point views
   int count=0;
-  map<int,RefCountPtr<MRTR::Point> >::iterator pcurr;
+  map<int,RefCountPtr<MOERTEL::Point> >::iterator pcurr;
   for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
   {
     points[count] = pcurr->second;
@@ -205,7 +205,7 @@ void MRTR::Overlap::PointView(vector<RefCountPtr<MRTR::Point> >& points)
   }
   if (count != SizePointPolygon())
   {
-    cout << "***ERR*** MRTR::Overlap::PointView:\n"
+    cout << "***ERR*** MOERTEL::Overlap::PointView:\n"
          << "***ERR*** number of point wrong\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -216,14 +216,14 @@ void MRTR::Overlap::PointView(vector<RefCountPtr<MRTR::Point> >& points)
 /*----------------------------------------------------------------------*
  |  get segment view (protected)                             mwgee 11/05|
  *----------------------------------------------------------------------*/
-void MRTR::Overlap::SegmentView(vector<RefCountPtr<MRTR::Segment> >& segs)
+void MOERTEL::Overlap::SegmentView(vector<RefCountPtr<MOERTEL::Segment> >& segs)
 {
   // allocate vector of ptrs
   segs.resize(Nseg());
   
   // get the segment views
   int count=0;
-  map<int,RefCountPtr<MRTR::Segment> >::iterator curr;
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator curr;
   for (curr=s_.begin(); curr != s_.end(); ++curr)
   {
     segs[count] = curr->second;
@@ -231,7 +231,7 @@ void MRTR::Overlap::SegmentView(vector<RefCountPtr<MRTR::Segment> >& segs)
   }
   if (count != Nseg())
   {
-    cout << "***ERR*** MRTR::Overlap::SegmentView:\n"
+    cout << "***ERR*** MOERTEL::Overlap::SegmentView:\n"
          << "***ERR*** number of segments wrong\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -242,8 +242,8 @@ void MRTR::Overlap::SegmentView(vector<RefCountPtr<MRTR::Segment> >& segs)
 /*----------------------------------------------------------------------*
  |  get point view (private)                                 mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MRTR::Overlap::PointView(map<int,RefCountPtr<MRTR::Point> >& p,
-                                       vector<RefCountPtr<MRTR::Point> >& points)
+void MOERTEL::Overlap::PointView(map<int,RefCountPtr<MOERTEL::Point> >& p,
+                                       vector<RefCountPtr<MOERTEL::Point> >& points)
 {
   // allocate vector of ptrs
   int np = p.size();
@@ -251,7 +251,7 @@ void MRTR::Overlap::PointView(map<int,RefCountPtr<MRTR::Point> >& p,
   
   // get the point views
   int count=0;
-  map<int,RefCountPtr<MRTR::Point> >::iterator pcurr;
+  map<int,RefCountPtr<MOERTEL::Point> >::iterator pcurr;
   for (pcurr=p.begin(); pcurr != p.end(); ++pcurr)
   {
     points[count] = pcurr->second;
@@ -259,7 +259,7 @@ void MRTR::Overlap::PointView(map<int,RefCountPtr<MRTR::Point> >& p,
   }
   if (count != np)
   {
-    cout << "***ERR*** MRTR::Overlap::PointView:\n"
+    cout << "***ERR*** MOERTEL::Overlap::PointView:\n"
          << "***ERR*** number of point wrong\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -270,16 +270,16 @@ void MRTR::Overlap::PointView(map<int,RefCountPtr<MRTR::Point> >& p,
 /*----------------------------------------------------------------------*
  |  get point view (private)                                 mwgee 11/05|
  *----------------------------------------------------------------------*/
-void MRTR::Overlap::PointView(vector<MRTR::Point*>& p,const int* nodeids,const int np)
+void MOERTEL::Overlap::PointView(vector<MOERTEL::Point*>& p,const int* nodeids,const int np)
 {
   p.resize(np);
   
   for (int i=0; i<np; ++i)
   {
-    map<int,RefCountPtr<MRTR::Point> >::iterator pcurr = p_.find(nodeids[i]);
+    map<int,RefCountPtr<MOERTEL::Point> >::iterator pcurr = p_.find(nodeids[i]);
     if (pcurr==p_.end())
     {
-      cout << "***ERR*** MRTR::Overlap::PointView:\n"
+      cout << "***ERR*** MOERTEL::Overlap::PointView:\n"
            << "***ERR*** cannot find point " << nodeids[i] << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -292,7 +292,7 @@ void MRTR::Overlap::PointView(vector<MRTR::Point*>& p,const int* nodeids,const i
 /*----------------------------------------------------------------------*
  |  perform a quick search (private)                         mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Overlap::QuickOverlapTest()
+bool MOERTEL::Overlap::QuickOverlapTest()
 {
   // we need the projection of the master element on the slave element 
   // to do this test, otherwise we assmue we passed it

@@ -33,8 +33,8 @@
 /* ******************************************************************** */
 #ifdef TRILINOS_PACKAGE
 
-#ifndef MRTR_INTERFACE_H
-#define MRTR_INTERFACE_H
+#ifndef MOERTEL_INTERFACE_H
+#define MOERTEL_INTERFACE_H
 
 #include <ctime>
 #include <map>
@@ -55,7 +55,7 @@
 
 using namespace std;
 
-namespace MRTR
+namespace MOERTEL
 {
 
 class  Interface 
@@ -77,7 +77,7 @@ public:
   explicit Interface(int Id, bool oneD, Epetra_Comm& comm, int outlevel);
   
   // copy-ctor
-  Interface(MRTR::Interface& old);
+  Interface(MOERTEL::Interface& old);
   
   // dtor
   virtual ~Interface();
@@ -110,7 +110,7 @@ public:
   inline const Epetra_Comm* lComm() const { return lcomm_.get(); }
   
   // get Mortar side, returns -1 if mortar side was not set
-  //                  returns -2 of mortar side is chosen by MRTR::Manager
+  //                  returns -2 of mortar side is chosen by MOERTEL::Manager
   //                  and has not yet been chosen
   int MortarSide() { return mortarside_; }
 
@@ -121,8 +121,8 @@ public:
   ProjectionType GetProjectionType() const { return ptype_; }
 
   // find out which side a node or segment is on
-  int GetSide(MRTR::Segment* seg);
-  int GetSide(MRTR::Node* node);
+  int GetSide(MOERTEL::Segment* seg);
+  int GetSide(MOERTEL::Node* node);
   int GetSide(int nodeid);
 
   // get local number of segments on interface on side 0 or 1
@@ -163,16 +163,16 @@ public:
   bool Complete();
   
   // add a segment to this interface on side 0 or 1
-  bool AddSegment(MRTR::Segment& seg, int side);
+  bool AddSegment(MOERTEL::Segment& seg, int side);
   
   // add a node to this interface on side 0 or 1
-  bool AddNode(MRTR::Node& node, int side);
+  bool AddNode(MOERTEL::Node& node, int side);
 
   // manually choose the mortar (master) side of the interface
   bool SetMortarSide(int side);
 
-  // set a MRTR::Function derived class with id id to all segments on side side
-  bool SetFunctionAllSegmentsSide(int side, int id, MRTR::Function* func);
+  // set a MOERTEL::Function derived class with id id to all segments on side side
+  bool SetFunctionAllSegmentsSide(int side, int id, MOERTEL::Function* func);
 
   // Integrate this interface (2D problem)
   bool Mortar_Integrate(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M);
@@ -184,21 +184,21 @@ public:
   bool Mortar_Assemble(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M);
   
   // set type of projection to be used
-  void SetProjectionType(MRTR::Interface::ProjectionType typ) { ptype_ = typ; } 
+  void SetProjectionType(MOERTEL::Interface::ProjectionType typ) { ptype_ = typ; } 
 
-  // get a view of a MRTR::Node (of either side) specifying node id
-  RefCountPtr<MRTR::Node> GetNodeView(int nid);
+  // get a view of a MOERTEL::Node (of either side) specifying node id
+  RefCountPtr<MOERTEL::Node> GetNodeView(int nid);
 
   // get a view of ALL nodes on this interface (Complete() has to be called)
   // method allocates a vector, calling method is in charge of deleting it
-  MRTR::Node** GetNodeView();
+  MOERTEL::Node** GetNodeView();
 
-  // get a view of a MRTR::Segment (of either side) specifying seg id
-  RefCountPtr<MRTR::Segment> GetSegmentView(int sid);
+  // get a view of a MOERTEL::Segment (of either side) specifying seg id
+  RefCountPtr<MOERTEL::Segment> GetSegmentView(int sid);
   
   // get a view of ALL segments on this interface (Complete() has to be called)
   // method allocates a vector, calling method is in charge of deleteing it
-  MRTR::Segment** GetSegmentView();
+  MOERTEL::Segment** GetSegmentView();
   
   // build averaged normals and project nodes to other side
   bool Project();
@@ -216,8 +216,8 @@ public:
   bool DetectEndSegmentsandReduceOrder();
 
   // set the type of functions to be set to all segments 
-  bool SetFunctionTypes(MRTR::Function::FunctionType primal,
-                        MRTR::Function::FunctionType dual);
+  bool SetFunctionTypes(MOERTEL::Function::FunctionType primal,
+                        MOERTEL::Function::FunctionType dual);
   
   // set functions to segments from the previoulsy set function types
   bool SetFunctionsFromFunctionTypes();
@@ -233,10 +233,10 @@ private:
   // print local node information to cout
   bool PrintNodes() const;
 
-  // get a view of a MRTR::Node (of either side) specifying node id
+  // get a view of a MOERTEL::Node (of either side) specifying node id
   // returns NULL if node id does not exist locally
   // returns NULL after call to Complete(), because all local nodes are destroyed
-  RefCountPtr<MRTR::Node> GetNodeViewLocal(int nid);
+  RefCountPtr<MOERTEL::Node> GetNodeViewLocal(int nid);
 
   // allreduce all segments of a side and store this redundant segs in rseg_[side];
   bool RedundantSegments(int side);
@@ -265,14 +265,14 @@ private:
   bool Integrate_2D(Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
   
   // integrate the overlap of 2 segments in 2D (master/slave contribution)
-  bool Integrate_2D_Section(MRTR::Segment& sseg,MRTR::Segment& mseg,
+  bool Integrate_2D_Section(MOERTEL::Segment& sseg,MOERTEL::Segment& mseg,
                             Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
 
   // control routine of the integration of the master/slave side in 3D
   bool Integrate_3D();
   
   // integrate the overlap of 2 segments in 3D (master/slave contribution)
-  bool Integrate_3D_Section(MRTR::Segment& sseg,MRTR::Segment& mseg);
+  bool Integrate_3D_Section(MOERTEL::Segment& sseg,MOERTEL::Segment& mseg);
 
   // Assemble values from integration this interface (3D problem)
   bool Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M);
@@ -289,23 +289,23 @@ private:
   int                                  mortarside_;   // indicate which side (0 or 1) is mortar (master) side
   ProjectionType                       ptype_;        // type of projection used
   
-  map<int,RefCountPtr<MRTR::Segment> > seg_[2];       // local segments of interface (both sides)
-  map<int,RefCountPtr<MRTR::Segment> > rseg_[2];      // global segments of interface (both sides)
+  map<int,RefCountPtr<MOERTEL::Segment> > seg_[2];       // local segments of interface (both sides)
+  map<int,RefCountPtr<MOERTEL::Segment> > rseg_[2];      // global segments of interface (both sides)
   map<int,int>                         segPID_;       // maps all global seg ids to process holding segment
   
-  map<int,RefCountPtr<MRTR::Node> >    node_[2];      // local nodes of interface (both sides)
-  map<int,RefCountPtr<MRTR::Node> >    rnode_[2];     // global nodes of interface (both sides)
+  map<int,RefCountPtr<MOERTEL::Node> >    node_[2];      // local nodes of interface (both sides)
+  map<int,RefCountPtr<MOERTEL::Node> >    rnode_[2];     // global nodes of interface (both sides)
   map<int,int>                         nodePID_;      // maps all global node ids to process holding the node
   
-  MRTR::Function::FunctionType         primal_;       // the type of functions to be set as trace space function
-  MRTR::Function::FunctionType         dual_;         // the type of functions to be set as LM space function
+  MOERTEL::Function::FunctionType         primal_;       // the type of functions to be set as trace space function
+  MOERTEL::Function::FunctionType         dual_;         // the type of functions to be set as LM space function
   
 };
 
-} // namespace MRTR
+} // namespace MOERTEL
 
 // operator <<
-ostream& operator << (ostream& os, const MRTR::Interface& inter); 
+ostream& operator << (ostream& os, const MOERTEL::Interface& inter); 
 
-#endif // MRTR_INTERFACE_H
+#endif // MOERTEL_INTERFACE_H
 #endif // TRILINOS_PACKAGE

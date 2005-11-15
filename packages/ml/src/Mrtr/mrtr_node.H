@@ -33,8 +33,8 @@
 /* ******************************************************************** */
 #ifdef TRILINOS_PACKAGE
 
-#ifndef MRTR_NODE_H
-#define MRTR_NODE_H
+#ifndef MOERTEL_NODE_H
+#define MOERTEL_NODE_H
 
 #include <ctime>
 #include <iostream>
@@ -49,30 +49,33 @@ using namespace Teuchos;
 
 // ----------   User Defined Includes   ----------
 
-namespace MRTR
+namespace MOERTEL
 {
 
 // forward declarations
-class MRTR::Interface;
-class MRTR::Segment;
-class MRTR::ProjectedNode;
+class MOERTEL::Interface;
+class MOERTEL::Segment;
+class MOERTEL::ProjectedNode;
 
 class  Node 
 {
 public:
   
   // ctor
-  explicit Node(int Id, const double* x, int ndof, const int* dof);
+  explicit Node(int Id, const double* x, int ndof, const int* dof, int out);
   
   // ctor (for internal use only) to be used together with Pack()/UnPack()
-  explicit Node();
+  explicit Node(int out);
   
   // copy-ctor
-  Node(const MRTR::Node& old);
+  Node(const MOERTEL::Node& old);
   
   // dtor
   virtual ~Node();
 
+  // return level of output
+  int OutLevel() { return outputlevel_; }
+  
   // get id of this node
   int Id() const { return Id_; }
   
@@ -107,7 +110,7 @@ public:
   int* SegmentIds() { return &(seg_[0]); }
   
   // get view of segments adjacent to this node
-  MRTR::Segment** Segments() { return &(segptr_[0]); }
+  MOERTEL::Segment** Segments() { return &(segptr_[0]); }
     
   // add a segment id to my adjacency list (checking whether already present)
   bool AddSegment(int sid);
@@ -122,15 +125,15 @@ public:
   bool BuildAveragedNormal();
   
   // construct ptrs to redundant segments from my segment id list
-  bool GetPtrstoSegments(MRTR::Interface& interface);
+  bool GetPtrstoSegments(MOERTEL::Interface& interface);
   
   // store a ptr to a projeted node
-  bool SetProjectedNode(MRTR::ProjectedNode* pnode);
+  bool SetProjectedNode(MOERTEL::ProjectedNode* pnode);
   
   // get view of projected nodes (if there is any, otherwise NULL)
-  RefCountPtr<MRTR::ProjectedNode>* GetProjectedNode(int& length);
+  RefCountPtr<MOERTEL::ProjectedNode>* GetProjectedNode(int& length);
   // get a view of the first projected node in the vector of projected nodes
-  RefCountPtr<MRTR::ProjectedNode>  GetProjectedNode();
+  RefCountPtr<MOERTEL::ProjectedNode>  GetProjectedNode();
   
   // set dof number for lagrange multiplier
   bool SetLagrangeMultiplierId(int LMId);
@@ -160,6 +163,8 @@ protected:
   double                       x_[3];     // cordinates of this node 
   double                       n_[3];     // a nodal outward normal
 
+  int                          outputlevel_;
+
   bool                         iscorner_; // flag indicating whether this is a node
                                           // shared by several interfaces  
 
@@ -167,19 +172,19 @@ protected:
   vector<int>                  LMdof_;    // dofs ids of LM if this is slave side
 
   vector<int>                  seg_;      // vector of segment ids adjacent to me
-  vector<MRTR::Segment*>       segptr_;   // ptrs to segments length nseg_
+  vector<MOERTEL::Segment*>       segptr_;   // ptrs to segments length nseg_
 
   RefCountPtr<map<int,double> > Drow_;    // a nodal block row of D
   RefCountPtr<map<int,double> > Mrow_;    // a nodal block row of D
 
-  vector< RefCountPtr<MRTR::ProjectedNode> > pnode_;    // the projected node on some segment
+  vector< RefCountPtr<MOERTEL::ProjectedNode> > pnode_;    // the projected node on some segment
 
 };
 
-} // namespace MRTR
+} // namespace MOERTEL
 
 // << operator
-std::ostream& operator << (ostream& os, const MRTR::Node& node);
+std::ostream& operator << (ostream& os, const MOERTEL::Node& node);
 
-#endif // MRTR_NODE_H
+#endif // MOERTEL_NODE_H
 #endif // TRILINOS_PACKAGE

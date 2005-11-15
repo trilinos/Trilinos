@@ -218,11 +218,11 @@ int  cca_mrtr_3D_find_gsurfs_on_dsurf(GSURF*** gsurf, DSURF* dsurf,
  |  prepare data of a gline                                  m.gee 06/05|
  *----------------------------------------------------------------------*/
 int cca_mrtr_2D_prepare_gline_data(GLINE* gline, int** nodeIds,
-                                   MRTR::Segment::SegmentType* typ)
+                                   MOERTEL::Segment::SegmentType* typ)
 {
   // do typ of segment
-  if (gline->ngnode==2)      *typ = MRTR::Segment::seg_Linear1D;
-  else if (gline->ngnode==3) *typ = MRTR::Segment::seg_Quadratic1D;
+  if (gline->ngnode==2)      *typ = MOERTEL::Segment::seg_Linear1D;
+  else if (gline->ngnode==3) *typ = MOERTEL::Segment::seg_Quadratic1D;
   else cout << "***WRN*** gline " << gline->Id << " does not have 2 or 3 nodes\n";
   
   // The nodeIds of the segment have to be given in math positive order.
@@ -271,11 +271,11 @@ int cca_mrtr_2D_prepare_gline_data(GLINE* gline, int** nodeIds,
  *----------------------------------------------------------------------*/
 static bool findnode(int ngnode, int* gsurfids, int eleid);
 int cca_mrtr_3D_prepare_gsurf_data(GSURF* gsurf, int** nodeIds,
-                                   MRTR::Segment::SegmentType* typ)
+                                   MOERTEL::Segment::SegmentType* typ)
 {
   // do typ of segment
-  if (gsurf->ngnode==4)      *typ = MRTR::Segment::seg_BiLinearQuad;
-  else if (gsurf->ngnode==3) *typ = MRTR::Segment::seg_BiLinearTri;
+  if (gsurf->ngnode==4)      *typ = MOERTEL::Segment::seg_BiLinearQuad;
+  else if (gsurf->ngnode==3) *typ = MOERTEL::Segment::seg_BiLinearTri;
   else cout << "***WRN*** gsurf " << gsurf->Id << " does not have 4 or 3 nodes\n";
   
   // The nodeIds of the segment have to be given in math positive order.

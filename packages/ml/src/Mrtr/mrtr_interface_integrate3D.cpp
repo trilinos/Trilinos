@@ -50,12 +50,12 @@
 /*----------------------------------------------------------------------*
  |  make mortar integration of master/slave side in 3D (2D interface)   |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::Integrate_3D()
+bool MOERTEL::Interface::Integrate_3D()
 { 
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Integrate_3D:\n"
+      cout << "***ERR*** MOERTEL::Interface::Integrate_3D:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -68,11 +68,11 @@ bool MRTR::Interface::Integrate_3D()
 
   
   // loop over all segments of slave side
-  map<int,RefCountPtr<MRTR::Segment> >::iterator scurr;
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
   for (scurr=rseg_[sside].begin(); scurr!=rseg_[sside].end(); ++scurr)
   {
     // the segment to be integrated
-    RefCountPtr<MRTR::Segment> actsseg = scurr->second;
+    RefCountPtr<MOERTEL::Segment> actsseg = scurr->second;
 
 #if 0
     cout << "\nActive sseg id " << actsseg->Id() << "\n\n";
@@ -80,7 +80,7 @@ bool MRTR::Interface::Integrate_3D()
 
     // check whether I own at least one of the nodes on this slave segment
     const int nnode = actsseg->Nnode();
-    MRTR::Node** nodes = actsseg->Nodes();
+    MOERTEL::Node** nodes = actsseg->Nodes();
     bool foundone = false;
     for (int i=0; i<nnode; ++i)
       if (NodePID(nodes[i]->Id()) == lComm()->MyPID())
@@ -96,10 +96,10 @@ bool MRTR::Interface::Integrate_3D()
     //time.ResetStartTime();
 
     // loop over all segments on the master side
-    map<int,RefCountPtr<MRTR::Segment> >::iterator mcurr;
+    map<int,RefCountPtr<MOERTEL::Segment> >::iterator mcurr;
     for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)    
     {
-      RefCountPtr<MRTR::Segment> actmseg = mcurr->second;
+      RefCountPtr<MOERTEL::Segment> actmseg = mcurr->second;
       
 #if 0
     cout << "Active mseg id " << actmseg->Id() << endl;
@@ -121,13 +121,13 @@ bool MRTR::Interface::Integrate_3D()
  | integrate the master/slave side's contribution from the overlap      |
  | of 2 segments (3D version) IF there is an overlap                    |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg, 
-                                           MRTR::Segment& mseg)
+bool MOERTEL::Interface::Integrate_3D_Section(MOERTEL::Segment& sseg, 
+                                           MOERTEL::Segment& mseg)
 { 
   // if one of the segments is quadratic, we have to do something here
-  if (sseg.Type()!=MRTR::Segment::seg_BiLinearTri || mseg.Type()!=MRTR::Segment::seg_BiLinearTri)
+  if (sseg.Type()!=MOERTEL::Segment::seg_BiLinearTri || mseg.Type()!=MOERTEL::Segment::seg_BiLinearTri)
   {
-    cout << "***ERR*** MRTR::Interface::Integrate_3D_Section:\n"
+    cout << "***ERR*** MOERTEL::Interface::Integrate_3D_Section:\n"
          << "***ERR*** Integration of other then bilinear triangles not yet implemented\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -136,7 +136,7 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
   // first determine whether there is an overlap between sseg and mseg
   // for this purpose, the 'overlapper' class is used
   // It also build a triangulation of the overlap polygon if there is any
-  MRTR::Overlap overlap(sseg,mseg,*this);
+  MOERTEL::Overlap overlap(sseg,mseg,*this,OutLevel());
 
   // determine the overlap triangulation if any
   bool ok = overlap.ComputeOverlap();
@@ -146,16 +146,16 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
   // # segments the overlap polygon was discretized with
   int nseg = overlap.Nseg();
   // view of segments
-  vector<RefCountPtr<MRTR::Segment> > segs;
+  vector<RefCountPtr<MOERTEL::Segment> > segs;
   overlap.SegmentView(segs);
   
   // integrator object
-  MRTR::Integrator integrator(3,IsOneDimensional());
+  MOERTEL::Integrator integrator(3,IsOneDimensional(),OutLevel());
   
   // loop segments and integrate them
   for (int s=0; s<nseg; ++s)
   {    
-    RefCountPtr<MRTR::Segment> actseg = segs[s];
+    RefCountPtr<MOERTEL::Segment> actseg = segs[s];
 
     // integrate master and slave part of this segment
     Epetra_SerialDenseMatrix* Ddense = NULL;
@@ -180,11 +180,11 @@ bool MRTR::Interface::Integrate_3D_Section(MRTR::Segment& sseg,
 /*----------------------------------------------------------------------*
  |  assemble integration of master/slave side in 3D (2D interface)      |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
+bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::Assemble_3D:\n"
+    cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
          << "***ERR*** Complete() not called on interface " << Id_ << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -197,7 +197,7 @@ bool MRTR::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
 
   //-------------------------------------------------------------------
   // loop over all slave nodes
-  map<int,RefCountPtr<MRTR::Node> >::iterator curr;
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
   for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
   {
     // loop only my own nodes
@@ -212,7 +212,7 @@ bool MRTR::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
     if (Drow==null)
       continue;
     
-    RefCountPtr<MRTR::Node> rowsnode = curr->second;
+    RefCountPtr<MOERTEL::Node> rowsnode = curr->second;
     int snlmdof = rowsnode->Nlmdof();
     const int* slmdof = rowsnode->LMDof();
     //cout << "Current row snode: " << rowsnode->Id() << endl;
@@ -232,10 +232,10 @@ bool MRTR::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
       // cout << "Current colsnode: " << colnode << endl;
       
       // get the colsnode
-      RefCountPtr<MRTR::Node> colsnode = GetNodeView(colnode);
+      RefCountPtr<MOERTEL::Node> colsnode = GetNodeView(colnode);
       if (colsnode==null)
       {
-        cout << "***ERR*** MRTR::Interface::Assemble_3D:\n"
+        cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
              << "***ERR*** interface " << Id_ << ": cannot get view of node " << colnode << "\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -246,7 +246,7 @@ bool MRTR::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
       const int* sdof = colsnode->Dof();
       if (snlmdof != sndof)
       {
-        cout << "***ERR*** MRTR::Interface::Assemble_3D:\n"
+        cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
              << "***ERR*** interface " << Id_ << ": mismatch in # lagrange multipliers and primal variables\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -262,17 +262,17 @@ bool MRTR::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
           err = D.InsertGlobalValues(row,1,&val,&col);
         if (err<0)
         {
-          cout << "***ERR*** MRTR::Interface::Assemble_3D:\n"
+          cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                << "***ERR*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           return false;
         }
-        if (err && OutLevel()>9)
+        if (err && OutLevel()>0)
         {
-          cout << "***WRN*** MRTR::Interface::Assemble_3D:\n"
-               << "***WRN*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
-               << "***WRN*** indicating that initial guess for memory of D too small\n"
-               << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          cout << "MOERTEL: ***WRN*** MOERTEL::Interface::Assemble_3D:\n"
+               << "MOERTEL: ***WRN*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
+               << "MOERTEL: ***WRN*** indicating that initial guess for memory of D too small\n"
+               << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         } 
       } // for (int i=0; i<snlmdof; ++i)
     } // for (rowcurr=Drow->begin(); rowcurr!=Drow->end(); ++rowcurr)
@@ -291,10 +291,10 @@ bool MRTR::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
       // cout << "Current colmnode: " << colnode << endl;
       
       // get the colsnode
-      RefCountPtr<MRTR::Node> colmnode = GetNodeView(colnode);
+      RefCountPtr<MOERTEL::Node> colmnode = GetNodeView(colnode);
       if (colmnode==null)
       {
-        cout << "***ERR*** MRTR::Interface::Assemble_3D:\n"
+        cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
              << "***ERR*** interface " << Id_ << ": cannot get view of node " << colnode << "\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -305,7 +305,7 @@ bool MRTR::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
       const int* mdof = colmnode->Dof();
       if (snlmdof != mndof)
       {
-        cout << "***ERR*** MRTR::Interface::Assemble_3D:\n"
+        cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
              << "***ERR*** interface " << Id_ << ": mismatch in # lagrange multipliers and primal variables\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -321,17 +321,17 @@ bool MRTR::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
           err = M.InsertGlobalValues(row,1,&val,&col);
         if (err<0)
         {
-          cout << "***ERR*** MRTR::Interface::Assemble_3D:\n"
+          cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                << "***ERR*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           return false;
         }
-        if (err && OutLevel()>9)
+        if (err && OutLevel()>0)
         {
-          cout << "***WRN*** MRTR::Interface::Assemble_3D:\n"
-               << "***WRN*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
-               << "***WRN*** indicating that initial guess for memory of M too small\n"
-               << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          cout << "MOERTEL: ***WRN*** MOERTEL::Interface::Assemble_3D:\n"
+               << "MOERTEL: ***WRN*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
+               << "MOERTEL: ***WRN*** indicating that initial guess for memory of M too small\n"
+               << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         } 
       } // for (int i=0; i<snlmdof; ++i)
 

@@ -38,7 +38,7 @@ static class Epetra_SerialComm* comm;
 #endif
 
 // the mortar manager class
-static class MRTR::Manager* mrtr_manager;
+static class MOERTEL::Manager* mrtr_manager;
 class Epetra_CrsMatrix* saddleproblem;
 
 /*----------------------------------------------------------------------*
@@ -72,7 +72,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
   //-------------------------------------------------------------------
   // create the mortar manager
 
-  mrtr_manager = new MRTR::Manager(*comm,outlevel);
+  mrtr_manager = new MOERTEL::Manager(*comm,outlevel);
 
   //=================================== handle the line interfaces (2D)
   
@@ -82,18 +82,18 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
   int* ids    = NULL;
   int  ninter = cca_mrtr_2D_numinterfaces(&ids,design);
   if (ninter) 
-    mrtr_manager->SetDimension(MRTR::Manager::manager_2D);
+    mrtr_manager->SetDimension(MOERTEL::Manager::manager_2D);
   //-------------------------------------------------------------------
   // loop over number of mortar interfaces 
 
-  MRTR::Interface* interface = NULL;
+  MOERTEL::Interface* interface = NULL;
   for (int k=0; k<ninter; ++k)
   {
     //-----------------------------------------------------------------
     // create an interface class
 
     int id    = ids[k];
-    interface = new MRTR::Interface(id,true,mrtr_manager->Comm(),outlevel);
+    interface = new MOERTEL::Interface(id,true,mrtr_manager->Comm(),outlevel);
 
     //-----------------------------------------------------------------
     // find dlines for given interface id
@@ -124,12 +124,12 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
         cout << "***WRN*** gline " << i << " has more then one gsurf!\n";
       int* nodeIds = NULL; // new int[gline1[i]->ngnode];
       
-      MRTR::Segment::SegmentType typ = MRTR::Segment::seg_none;
+      MOERTEL::Segment::SegmentType typ = MOERTEL::Segment::seg_none;
       cca_mrtr_2D_prepare_gline_data(gline1[i],&nodeIds,&typ);  
 
-      MRTR::Segment* seg;
-      if (typ==MRTR::Segment::seg_Linear1D)
-        seg = new MRTR::Segment_Linear1D(gline1[i]->Id,gline1[i]->ngnode,nodeIds);
+      MOERTEL::Segment* seg;
+      if (typ==MOERTEL::Segment::seg_Linear1D)
+        seg = new MOERTEL::Segment_Linear1D(gline1[i]->Id,gline1[i]->ngnode,nodeIds,outlevel);
       else dserror("Unknown type of 1D segment");
       
       delete [] nodeIds;
@@ -147,12 +147,12 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
         cout << "***WRN*** gline " << i << " has more then one gsurf!\n";
 
       int* nodeIds = NULL;
-      MRTR::Segment::SegmentType typ = MRTR::Segment::seg_none;
+      MOERTEL::Segment::SegmentType typ = MOERTEL::Segment::seg_none;
       cca_mrtr_2D_prepare_gline_data(gline2[i],&nodeIds,&typ); 
 
-      MRTR::Segment* seg;
-      if (typ==MRTR::Segment::seg_Linear1D)
-        seg = new MRTR::Segment_Linear1D(gline2[i]->Id,gline2[i]->ngnode,nodeIds);
+      MOERTEL::Segment* seg;
+      if (typ==MOERTEL::Segment::seg_Linear1D)
+        seg = new MOERTEL::Segment_Linear1D(gline2[i]->Id,gline2[i]->ngnode,nodeIds,outlevel);
       else dserror("Unknown type of 1D segment");
       
       delete [] nodeIds;
@@ -176,9 +176,9 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     {
       // only my own nodes
       if (gnode1[i]->node->proc != MyPID) continue;
-      MRTR::Node* node = 
-        new MRTR::Node(gnode1[i]->Id,gnode1[i]->node->x,
-                       2/*gnode1[i]->node->numdf*/,gnode1[i]->node->dof);
+      MOERTEL::Node* node = 
+        new MOERTEL::Node(gnode1[i]->Id,gnode1[i]->node->x,
+                       2/*gnode1[i]->node->numdf*/,gnode1[i]->node->dof,outlevel);
       bool ok = interface->AddNode(*node,0);
       delete node; node = NULL;
     }
@@ -188,9 +188,9 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     {
       // only my own nodes
       if (gnode2[i]->node->proc != MyPID) continue;
-      MRTR::Node* node = 
-        new MRTR::Node(gnode2[i]->Id,gnode2[i]->node->x,
-                       2/*gnode2[i]->node->numdf*/,gnode2[i]->node->dof);
+      MOERTEL::Node* node = 
+        new MOERTEL::Node(gnode2[i]->Id,gnode2[i]->node->x,
+                       2/*gnode2[i]->node->numdf*/,gnode2[i]->node->dof,outlevel);
       bool ok = interface->AddNode(*node,1);
       delete node; node = NULL;
     }
@@ -206,7 +206,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     // Currently ONLY linear functions!!!!
     if (interface->MortarSide() != -2)
     {
-      MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
+      MOERTEL::Function_Linear1D* func = new MOERTEL::Function_Linear1D(outlevel);
       interface->SetFunctionAllSegmentsSide(0,0,func);
       interface->SetFunctionAllSegmentsSide(1,0,func);
       delete func; func = NULL;
@@ -216,9 +216,9 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     // The Mortar::Manager is setting the functions later accordingly
     else
     {
-      interface->SetFunctionTypes(MRTR::Function::func_Linear1D,      // the isoparametric function
-                                  //MRTR::Function::func_DualLinear1D); // the LM space
-                                  MRTR::Function::func_Linear1D); // the LM space
+      interface->SetFunctionTypes(MOERTEL::Function::func_Linear1D,      // the isoparametric function
+                                  //MOERTEL::Function::func_DualLinear1D); // the LM space
+                                  MOERTEL::Function::func_Linear1D); // the LM space
     }
 
     //-----------------------------------------------------------------
@@ -228,8 +228,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     if (side==1 || side==0)
     {
       side     = interface->OtherSide(side);
-      //MRTR::Function_Linear1D* func = new MRTR::Function_Linear1D();
-      MRTR::Function_DualLinear1D* func = new MRTR::Function_DualLinear1D();
+      //MOERTEL::Function_Linear1D* func = new MOERTEL::Function_Linear1D(outlevel);
+      MOERTEL::Function_DualLinear1D* func = new MOERTEL::Function_DualLinear1D(outlevel);
       interface->SetFunctionAllSegmentsSide(side,1,func);
       delete func; func = NULL;
     }
@@ -237,8 +237,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     //-----------------------------------------------------------------
     // set type of projection to be used on this interface
 
-    interface->SetProjectionType(MRTR::Interface::proj_continousnormalfield);    
-    //interface->SetProjectionType(MRTR::Interface::proj_orthogonal);    
+    interface->SetProjectionType(MOERTEL::Interface::proj_continousnormalfield);    
+    //interface->SetProjectionType(MOERTEL::Interface::proj_orthogonal);    
     
     //-----------------------------------------------------------------
     // Complete interface 
@@ -278,7 +278,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
   // count number of 3D mortar interfaces 
   ninter = cca_mrtr_3D_numinterfaces(&ids,design);
   if (ninter) 
-    mrtr_manager->SetDimension(MRTR::Manager::manager_3D);
+    mrtr_manager->SetDimension(MOERTEL::Manager::manager_3D);
   //-------------------------------------------------------------------
   // loop over number of mortar interfaces 
   for (int k=0; k<ninter; ++k)
@@ -288,7 +288,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     // create an interface class
     
     int id = ids[k];
-    interface = new MRTR::Interface(id,false,mrtr_manager->Comm(),outlevel);
+    interface = new MOERTEL::Interface(id,false,mrtr_manager->Comm(),outlevel);
   
     //-----------------------------------------------------------------
     // find dsurfs for given interface id
@@ -318,13 +318,13 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       if (gsurf1[i]->gvol[0]->element->proc != MyPID) continue;
       
       int* nodeIds = NULL;
-      MRTR::Segment::SegmentType typ = MRTR::Segment::seg_none;
+      MOERTEL::Segment::SegmentType typ = MOERTEL::Segment::seg_none;
       if (!cca_mrtr_3D_prepare_gsurf_data(gsurf1[i],&nodeIds,&typ))
         dserror("ERR: cannot find nodal topology");
       
-      MRTR::Segment* seg;
-      if (typ==MRTR::Segment::seg_BiLinearQuad)
-        seg = new MRTR::Segment_BiLinearQuad(gsurf1[i]->Id,gsurf1[i]->ngnode,nodeIds);  
+      MOERTEL::Segment* seg;
+      if (typ==MOERTEL::Segment::seg_BiLinearQuad)
+        seg = new MOERTEL::Segment_BiLinearQuad(gsurf1[i]->Id,gsurf1[i]->ngnode,nodeIds,outlevel);  
       else
         dserror("Unknown type of 2D element"); 
       delete [] nodeIds;
@@ -341,13 +341,13 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       if (gsurf2[i]->gvol[0]->element->proc != MyPID) continue;
       
       int* nodeIds = NULL;
-      MRTR::Segment::SegmentType typ = MRTR::Segment::seg_none;
+      MOERTEL::Segment::SegmentType typ = MOERTEL::Segment::seg_none;
       if (!cca_mrtr_3D_prepare_gsurf_data(gsurf2[i],&nodeIds,&typ))
         dserror("ERR: cannot find nodal topology");
       
-      MRTR::Segment* seg;
-      if (typ==MRTR::Segment::seg_BiLinearQuad)
-        seg = new MRTR::Segment_BiLinearQuad(gsurf2[i]->Id,gsurf2[i]->ngnode,nodeIds);
+      MOERTEL::Segment* seg;
+      if (typ==MOERTEL::Segment::seg_BiLinearQuad)
+        seg = new MOERTEL::Segment_BiLinearQuad(gsurf2[i]->Id,gsurf2[i]->ngnode,nodeIds,outlevel);
       else
         dserror("Unknown type of 2D element"); 
       delete [] nodeIds;
@@ -371,9 +371,9 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     {
       // only my own nodes
       if (gnode1[i]->node->proc != MyPID) continue;
-      MRTR::Node* node = 
-        new MRTR::Node(gnode1[i]->node->Id,gnode1[i]->node->x,
-                       gnode1[i]->node->numdf,gnode1[i]->node->dof);
+      MOERTEL::Node* node = 
+        new MOERTEL::Node(gnode1[i]->node->Id,gnode1[i]->node->x,
+                       gnode1[i]->node->numdf,gnode1[i]->node->dof,outlevel);
       bool ok = interface->AddNode(*node,0);
       delete node; node = NULL;
     }
@@ -383,9 +383,9 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     {
       // only my own nodes
       if (gnode2[i]->node->proc != MyPID) continue;
-      MRTR::Node* node = 
-        new MRTR::Node(gnode2[i]->node->Id,gnode2[i]->node->x,
-                       gnode2[i]->node->numdf,gnode2[i]->node->dof);
+      MOERTEL::Node* node = 
+        new MOERTEL::Node(gnode2[i]->node->Id,gnode2[i]->node->x,
+                       gnode2[i]->node->numdf,gnode2[i]->node->dof,outlevel);
                        
       bool ok = interface->AddNode(*node,1);
       delete node; node = NULL;
@@ -394,7 +394,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     //-----------------------------------------------------------------
     // manually choose mortar (master side)
     // mortar side is either 0 or 1 or -2 for automatic
-    interface->SetMortarSide(0);
+    interface->SetMortarSide(-2);
 
     //-----------------------------------------------------------------
     // set linear shape functions on both sides, 
@@ -402,7 +402,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     // Currently ONLY linear functions!!!!
     if (interface->MortarSide() != -2)
     {
-      MRTR::Function_LinearTri* func = new MRTR::Function_LinearTri();
+      MOERTEL::Function_LinearTri* func = new MOERTEL::Function_LinearTri(outlevel);
       interface->SetFunctionAllSegmentsSide(0,0,func);
       interface->SetFunctionAllSegmentsSide(1,0,func);
       delete func; func = NULL;
@@ -412,9 +412,9 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     // The Mortar::Manager is setting the functions later accordingly
     else
     {
-      interface->SetFunctionTypes(MRTR::Function::func_LinearTri,      // the isoparametric function
-                                  //MRTR::Function::func_DualLinearTri); // the LM space
-                                  MRTR::Function::func_LinearTri); // the LM space
+      interface->SetFunctionTypes(MOERTEL::Function::func_LinearTri,      // the isoparametric function
+                                  //MOERTEL::Function::func_DualLinearTri); // the LM space
+                                  MOERTEL::Function::func_LinearTri); // the LM space
     }
       
     //-----------------------------------------------------------------
@@ -424,8 +424,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     if (side==1 || side==0)
     {
       side     = interface->OtherSide(side);
-      //MRTR::Function_DualLinearTri* func = new MRTR::Function_LinearTri();
-      MRTR::Function_LinearTri* func = new MRTR::Function_LinearTri();
+      //MOERTEL::Function_DualLinearTri* func = new MOERTEL::Function_LinearTri(outlevel);
+      MOERTEL::Function_LinearTri* func = new MOERTEL::Function_LinearTri(outlevel);
       interface->SetFunctionAllSegmentsSide(side,1,func);
       delete func; func = NULL;
     }
@@ -433,8 +433,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     //-----------------------------------------------------------------
     // set type of projection to be used on this interface
 
-    interface->SetProjectionType(MRTR::Interface::proj_continousnormalfield);    
-    //interface->SetProjectionType(MRTR::Interface::proj_orthogonal);    
+    interface->SetProjectionType(MOERTEL::Interface::proj_continousnormalfield);    
+    //interface->SetProjectionType(MOERTEL::Interface::proj_orthogonal);    
     
     //-----------------------------------------------------------------
     // Complete interface 
@@ -584,6 +584,9 @@ int compute_mortar(SPARSE_TYP* arraytyp, SPARSE_ARRAY* array, DESIGN *design)
   if (saddleproblem) 
     delete saddleproblem; 
   saddleproblem = mrtr_manager->MakeSaddleProblem();
+
+  //-------------------------------------------------------------------
+  // copy the saddle point problem matrix back to ccarat in msr or spooles
   if (*arraytyp == msr)
   {
     cout << "***ERR** msr matrix not yet impl\n\n"; fflush(stdout);

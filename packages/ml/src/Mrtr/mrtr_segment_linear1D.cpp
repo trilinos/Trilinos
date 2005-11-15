@@ -53,10 +53,10 @@
  |                                  important to compute the direction  |
  |                                  of the outward normal of the segment|
  *----------------------------------------------------------------------*/
-MRTR::Segment_Linear1D::Segment_Linear1D(int id, int nnode, int* nodeId) :
-MRTR::Segment(id,nnode,nodeId)
+MOERTEL::Segment_Linear1D::Segment_Linear1D(int id, int nnode, int* nodeId, int out) :
+MOERTEL::Segment(id,nnode,nodeId,out)
 {
-  stype_ = MRTR::Segment::seg_Linear1D;
+  stype_ = MOERTEL::Segment::seg_Linear1D;
 }
 
 /*----------------------------------------------------------------------*
@@ -64,25 +64,24 @@ MRTR::Segment(id,nnode,nodeId)
  |  This constructor should not be used by the user, it is used         |
  |  internally together with Pack/Unpack for communication              |
  *----------------------------------------------------------------------*/
-MRTR::Segment_Linear1D::Segment_Linear1D() :
-MRTR::Segment()
+MOERTEL::Segment_Linear1D::Segment_Linear1D(int out) :
+MOERTEL::Segment(out)
 {
-  stype_ = MRTR::Segment::seg_none;
 }
 
 /*----------------------------------------------------------------------*
  |  copy-ctor (public)                                       mwgee 06/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment_Linear1D::Segment_Linear1D(MRTR::Segment_Linear1D& old) :
-MRTR::Segment(old)
+MOERTEL::Segment_Linear1D::Segment_Linear1D(MOERTEL::Segment_Linear1D& old) :
+MOERTEL::Segment(old)
 {
-  // all date lives in the base class and is copied in MRTR::Segment(old)
+  // all date lives in the base class and is copied in MOERTEL::Segment(old)
 }
 
 /*----------------------------------------------------------------------*
  | pack all data in this segment into a vector               mwgee 07/05|
  *----------------------------------------------------------------------*/
-int* MRTR::Segment_Linear1D::Pack(int* size)
+int* MOERTEL::Segment_Linear1D::Pack(int* size)
 { 
   // note: first there has to be the size and second there has to be the type
   // *size = *size  + stype_ + Id_ + nodeId_.size() + nnode*sizeof(int) + Nfunctions() + 2*Nfunctions()*sizeof(int)
@@ -99,7 +98,7 @@ int* MRTR::Segment_Linear1D::Pack(int* size)
     pack[count++] = nodeId_[i];
   pack[count++] = Nfunctions();
   
-  map<int,RefCountPtr<MRTR::Function> >::iterator curr;
+  map<int,RefCountPtr<MOERTEL::Function> >::iterator curr;
   for (curr = functions_.begin(); curr != functions_.end(); ++curr)
   {
     pack[count++] = curr->first;
@@ -108,7 +107,7 @@ int* MRTR::Segment_Linear1D::Pack(int* size)
   
   if (count != *size)
   {
-    cout << "***ERR*** MRTR::Segment_Linear1D::Pack:\n"
+    cout << "***ERR*** MOERTEL::Segment_Linear1D::Pack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -120,12 +119,12 @@ int* MRTR::Segment_Linear1D::Pack(int* size)
 /*----------------------------------------------------------------------*
  | unpack all data from a vector into this class             mwgee 07/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Segment_Linear1D::UnPack(int* pack)
+bool MOERTEL::Segment_Linear1D::UnPack(int* pack)
 { 
   // note: first there has to be the size and second there has to be the type
   int count = 0;
   int size  = pack[count++];
-  stype_    = (MRTR::Segment::SegmentType)pack[count++];
+  stype_    = (MOERTEL::Segment::SegmentType)pack[count++];
   Id_       = pack[count++];
   nodeId_.resize(pack[count++]);
   for (int i=0; i<(int)nodeId_.size(); ++i)
@@ -137,14 +136,14 @@ bool MRTR::Segment_Linear1D::UnPack(int* pack)
   {
     int id   = pack[count++];
     int type = pack[count++];
-    MRTR::Function* func = MRTR::AllocateFunction((MRTR::Function::FunctionType)type);
-    RefCountPtr<MRTR::Function> rcptrfunc = rcp(func);
-    functions_.insert(pair<int,RefCountPtr<MRTR::Function> >(id,rcptrfunc));
+    MOERTEL::Function* func = MOERTEL::AllocateFunction((MOERTEL::Function::FunctionType)type,OutLevel());
+    RefCountPtr<MOERTEL::Function> rcptrfunc = rcp(func);
+    functions_.insert(pair<int,RefCountPtr<MOERTEL::Function> >(id,rcptrfunc));
   }
   
   if (count != size)
   {
-    cout << "***ERR*** MRTR::Segment_Linear1D::UnPack:\n"
+    cout << "***ERR*** MOERTEL::Segment_Linear1D::UnPack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -156,7 +155,7 @@ bool MRTR::Segment_Linear1D::UnPack(int* pack)
 /*----------------------------------------------------------------------*
  |  dtor (public)                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment_Linear1D::~Segment_Linear1D()
+MOERTEL::Segment_Linear1D::~Segment_Linear1D()
 { 
   // data held in base class is destroyed by base class destructor
 }
@@ -164,16 +163,16 @@ MRTR::Segment_Linear1D::~Segment_Linear1D()
 /*----------------------------------------------------------------------*
  |  clone this segment (public)                              mwgee 06/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment* MRTR::Segment_Linear1D::Clone()
+MOERTEL::Segment* MOERTEL::Segment_Linear1D::Clone()
 { 
-  MRTR::Segment_Linear1D* newseg = new MRTR::Segment_Linear1D(*this);
+  MOERTEL::Segment_Linear1D* newseg = new MOERTEL::Segment_Linear1D(*this);
   return (newseg);
 }
 
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 06/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MRTR::Segment_Linear1D& seg)
+ostream& operator << (ostream& os, const MOERTEL::Segment_Linear1D& seg)
 {
   seg.Print(); 
   return os;
@@ -182,13 +181,13 @@ ostream& operator << (ostream& os, const MRTR::Segment_Linear1D& seg)
 /*----------------------------------------------------------------------*
  | build an outward normal at a node adjacent to this        mwgee 07/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Segment_Linear1D::LocalCoordinatesOfNode(int lid, double* xi)
+bool MOERTEL::Segment_Linear1D::LocalCoordinatesOfNode(int lid, double* xi)
 { 
   if (lid==0) xi[0] = -1.0;
   else if (lid==1) xi[0] = 1.0;
   else 
   {
-    cout << "***ERR*** MRTR::Segment_Linear1D::LocalCoordinatesOfNode:\n"
+    cout << "***ERR*** MOERTEL::Segment_Linear1D::LocalCoordinatesOfNode:\n"
   	 << "***ERR*** Segment " << Id() << ": node number " << lid << " out of range\n"
   	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -199,7 +198,7 @@ bool MRTR::Segment_Linear1D::LocalCoordinatesOfNode(int lid, double* xi)
 /*----------------------------------------------------------------------*
  | build basis vectors and metric at given point xi          mwgee 07/05|
  *----------------------------------------------------------------------*/
-double MRTR::Segment_Linear1D::Metric(double* xi, double g[], double G[][3])
+double MOERTEL::Segment_Linear1D::Metric(double* xi, double g[], double G[][3])
 { 
   // get nodal coordinates
   const double* x[2];
@@ -244,7 +243,7 @@ double MRTR::Segment_Linear1D::Metric(double* xi, double g[], double G[][3])
  | build an outward normal at a node adjacent to this        mwgee 07/05|
  | returns allocated vector of length 3 with outward normal             |
  *----------------------------------------------------------------------*/
-double* MRTR::Segment_Linear1D::BuildNormal(double* xi)
+double* MOERTEL::Segment_Linear1D::BuildNormal(double* xi)
 { 
   // build the metric vectors at this local coordinates xi
   double g[3]; for (int i=0; i<3; ++i) g[i] = 0.0;
@@ -266,7 +265,7 @@ double* MRTR::Segment_Linear1D::BuildNormal(double* xi)
 /*----------------------------------------------------------------------*
  | compute the length (Area) of this segment                 mwgee 07/05|
  *----------------------------------------------------------------------*/
-double MRTR::Segment_Linear1D::Area()
+double MOERTEL::Segment_Linear1D::Area()
 { 
   // get nodal coordinates
   const double* x[2];

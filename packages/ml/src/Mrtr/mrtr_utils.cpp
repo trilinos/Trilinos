@@ -43,30 +43,30 @@
 /*----------------------------------------------------------------------*
  | allocate a segment depending on the type                 mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment* MRTR::AllocateSegment(int type)
+MOERTEL::Segment* MOERTEL::AllocateSegment(int type, int out)
 {
   switch (type)
   {
-    case MRTR::Segment::seg_Linear1D:
+    case MOERTEL::Segment::seg_Linear1D:
       {
-        MRTR::Segment_Linear1D* tmp = new MRTR::Segment_Linear1D();
+        MOERTEL::Segment_Linear1D* tmp = new MOERTEL::Segment_Linear1D(out);
         return tmp;
       }
     break;
-    case MRTR::Segment::seg_BiLinearTri:
+    case MOERTEL::Segment::seg_BiLinearTri:
       {
-        MRTR::Segment_BiLinearTri* tmp = new MRTR::Segment_BiLinearTri();
+        MOERTEL::Segment_BiLinearTri* tmp = new MOERTEL::Segment_BiLinearTri(out);
         return tmp;
       }
     break;
-    case MRTR::Segment::seg_none:
-      cout << "***ERR*** MRTR::AllocateSegment:\n"
+    case MOERTEL::Segment::seg_none:
+      cout << "***ERR*** MOERTEL::AllocateSegment:\n"
            << "***ERR*** type is func_none, cannot allocate.\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
     break;
     default:
-      cout << "***ERR*** MRTR::AllocateSegment:\n"
+      cout << "***ERR*** MOERTEL::AllocateSegment:\n"
            << "***ERR*** type is unknown, cannot allocate new Segment\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -80,48 +80,48 @@ MRTR::Segment* MRTR::AllocateSegment(int type)
 /*----------------------------------------------------------------------*
  | allocate a function depending on the type                 mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::Function* MRTR::AllocateFunction(MRTR::Function::FunctionType type)
+MOERTEL::Function* MOERTEL::AllocateFunction(MOERTEL::Function::FunctionType type, int out)
 {
   switch (type)
   {
-    case MRTR::Function::func_Constant1D:
+    case MOERTEL::Function::func_Constant1D:
       {
-        MRTR::Function_Constant1D* tmp = new MRTR::Function_Constant1D();
+        MOERTEL::Function_Constant1D* tmp = new MOERTEL::Function_Constant1D(out);
         return tmp;
       }
     break;
-    case MRTR::Function::func_Linear1D:
+    case MOERTEL::Function::func_Linear1D:
       {
-        MRTR::Function_Linear1D* tmp = new MRTR::Function_Linear1D();
+        MOERTEL::Function_Linear1D* tmp = new MOERTEL::Function_Linear1D(out);
         return tmp;
       }
     break;
-    case MRTR::Function::func_DualLinear1D:
+    case MOERTEL::Function::func_DualLinear1D:
       {
-        MRTR::Function_DualLinear1D* tmp = new MRTR::Function_DualLinear1D();
+        MOERTEL::Function_DualLinear1D* tmp = new MOERTEL::Function_DualLinear1D(out);
         return tmp;
       }
     break;
-    case MRTR::Function::func_LinearTri:
+    case MOERTEL::Function::func_LinearTri:
       {
-        MRTR::Function_LinearTri* tmp = new MRTR::Function_LinearTri();
+        MOERTEL::Function_LinearTri* tmp = new MOERTEL::Function_LinearTri(out);
         return tmp;
       }
     break;
-    case MRTR::Function::func_DualLinearTri:
+    case MOERTEL::Function::func_DualLinearTri:
       {
-        MRTR::Function_DualLinearTri* tmp = new MRTR::Function_DualLinearTri();
+        MOERTEL::Function_DualLinearTri* tmp = new MOERTEL::Function_DualLinearTri(out);
         return tmp;
       }
     break;
-    case MRTR::Function::func_none:
-      cout << "***ERR*** MRTR::AllocateFunction:\n"
+    case MOERTEL::Function::func_none:
+      cout << "***ERR*** MOERTEL::AllocateFunction:\n"
            << "***ERR*** type is func_none, cannot allocate.\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
     break;
     default:
-      cout << "***ERR*** MRTR::AllocateFunction:\n"
+      cout << "***ERR*** MOERTEL::AllocateFunction:\n"
            << "***ERR*** type is unknown, cannot allocate new Function\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -134,7 +134,7 @@ MRTR::Function* MRTR::AllocateFunction(MRTR::Function::FunctionType type)
 /*----------------------------------------------------------------------*
  | do cross product                                          mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::cross(double* out, const double* g1, const double* g2)
+bool MOERTEL::cross(double* out, const double* g1, const double* g2)
 {
   out[0] = g1[1]*g2[2] - g1[2]*g2[1];
   out[1] = g1[2]*g2[0] - g1[0]*g2[2];
@@ -145,7 +145,7 @@ bool MRTR::cross(double* out, const double* g1, const double* g2)
 /*----------------------------------------------------------------------*
  | do dot product                                            mwgee 10/05|
  *----------------------------------------------------------------------*/
-double MRTR::dot(const double* g1, const double* g2, const int dim)
+double MOERTEL::dot(const double* g1, const double* g2, const int dim)
 {
   double result=0.0;
   for (int i=0; i<dim; ++i) result+=g1[i]*g2[i];
@@ -155,20 +155,20 @@ double MRTR::dot(const double* g1, const double* g2, const int dim)
 /*----------------------------------------------------------------------*
  | compute length of vector                                  mwgee 10/05|
  *----------------------------------------------------------------------*/
-double MRTR::length(const double* g, const int dim)
+double MOERTEL::length(const double* g, const int dim)
 {
-  return sqrt(MRTR::dot(g,g,dim));
+  return sqrt(MOERTEL::dot(g,g,dim));
 }
 
 /*----------------------------------------------------------------------*
  | do 2x2 solve                                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::solve22(const double A[][2], double* x, const double* b)
+bool MOERTEL::solve22(const double A[][2], double* x, const double* b)
 {
   double det = A[0][0]*A[1][1]-A[0][1]*A[1][0];
   if (abs(det)<1.0e-10)
   {
-    cout << "***ERR*** MRTR::solve22:\n"
+    cout << "***ERR*** MOERTEL::solve22:\n"
          << "***ERR*** Determinant is zero\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -182,7 +182,7 @@ bool MRTR::solve22(const double A[][2], double* x, const double* b)
 /*----------------------------------------------------------------------*
  | do 3x3 solve                                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::solve33(const double A[][3], double* x, const double* b)
+bool MOERTEL::solve33(const double A[][3], double* x, const double* b)
 {
   double B[3][3];
   
@@ -211,7 +211,7 @@ bool MRTR::solve33(const double A[][3], double* x, const double* b)
 /*----------------------------------------------------------------------*
  | get the '10' digit from a pos. int                        mwgee 10/05|
  *----------------------------------------------------------------------*/
-int MRTR::digit_ten(int number)
+int MOERTEL::digit_ten(int number)
 {
   number = abs(number);
   if (number<10) return 0;
@@ -241,7 +241,7 @@ int MRTR::digit_ten(int number)
                    on output, if dlist[k] on input is now element 'j' on output,
                    list2[j] on output is list2[k].
  *----------------------------------------------------------------------*/
-void MRTR::sort(double* dlist, int N, int* list2)
+void MOERTEL::sort(double* dlist, int N, int* list2)
 {
   int    l, r, j, i, flag;
   int    RR2;

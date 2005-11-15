@@ -43,14 +43,14 @@
 /*----------------------------------------------------------------------*
  |  build averaged normals                                              |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::BuildNormals()
+bool MOERTEL::Interface::BuildNormals()
 { 
   //-------------------------------------------------------------------
   // interface needs to be complete
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Project:\n"
+      cout << "***ERR*** MOERTEL::Interface::Project:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -62,12 +62,12 @@ bool MRTR::Interface::BuildNormals()
 
   //-------------------------------------------------------------------
   // interface segments need to have at least one function on each side
-  map<int,RefCountPtr<MRTR::Segment> >::iterator curr;
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator curr;
   for (int side=0; side<2; ++side)
     for (curr=rseg_[side].begin(); curr!=rseg_[side].end(); ++curr)
       if (curr->second->Nfunctions() < 1)
       {
-        cout << "***ERR*** MRTR::Interface::Project:\n"
+        cout << "***ERR*** MOERTEL::Interface::Project:\n"
              << "***ERR*** interface " << Id_ << ", mortar side\n"
              << "***ERR*** segment " << curr->second->Id() << " needs at least 1 function set\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -76,7 +76,7 @@ bool MRTR::Interface::BuildNormals()
     
   //-------------------------------------------------------------------
   // build nodal normals on both sides
-  map<int,RefCountPtr<MRTR::Node> >::iterator ncurr;
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator ncurr;
   for (int side=0; side<2; ++side)
     for (ncurr=rnode_[side].begin(); ncurr!=rnode_[side].end(); ++ncurr)
     {
@@ -95,7 +95,7 @@ bool MRTR::Interface::BuildNormals()
 /*----------------------------------------------------------------------*
  |  build averaged normals and make projection of nodes                 |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::Project()
+bool MOERTEL::Interface::Project()
 { 
   bool ok = false;
   
@@ -104,7 +104,7 @@ bool MRTR::Interface::Project()
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MRTR::Interface::Project:\n"
+      cout << "***ERR*** MOERTEL::Interface::Project:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -116,12 +116,12 @@ bool MRTR::Interface::Project()
 
   //-------------------------------------------------------------------
   // interface segments need to have at least one function on each side
-  map<int,RefCountPtr<MRTR::Segment> >::iterator curr;
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator curr;
   for (int side=0; side<2; ++side)
     for (curr=rseg_[side].begin(); curr!=rseg_[side].end(); ++curr)
       if (curr->second->Nfunctions() < 1)
       {
-        cout << "***ERR*** MRTR::Interface::Project:\n"
+        cout << "***ERR*** MOERTEL::Interface::Project:\n"
              << "***ERR*** interface " << Id_ << ", mortar side\n"
              << "***ERR*** segment " << curr->second->Id() << " needs at least 1 function set\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -130,7 +130,7 @@ bool MRTR::Interface::Project()
     
   //-------------------------------------------------------------------
   // build nodal normals on both sides
-  map<int,RefCountPtr<MRTR::Node> >::iterator ncurr;
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator ncurr;
   for (int side=0; side<2; ++side)
     for (ncurr=rnode_[side].begin(); ncurr!=rnode_[side].end(); ++ncurr)
     {
@@ -151,19 +151,19 @@ bool MRTR::Interface::Project()
   // Then projects master nodes along the same normal field on slave
   // surfaces. Overrides the normals in the master nodes by the negative
   // of the normal field of their projection point
-  if (GetProjectionType() == MRTR::Interface::proj_continousnormalfield)
+  if (GetProjectionType() == MOERTEL::Interface::proj_continousnormalfield)
   {
     ok = ProjectNodes_NormalField();
     if (!ok) return false;
   }
-  else if (GetProjectionType() == MRTR::Interface::proj_orthogonal)
+  else if (GetProjectionType() == MOERTEL::Interface::proj_orthogonal)
   {
     ok = ProjectNodes_Orthogonal();
     if (!ok) return false;
   }
   else
   {
-    cout << "***ERR*** MRTR::Interface::Project:\n"
+    cout << "***ERR*** MOERTEL::Interface::Project:\n"
          << "***ERR*** interface " << Id() << "\n"
          << "***ERR*** unknown type of nodal projection\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -176,11 +176,11 @@ bool MRTR::Interface::Project()
 /*----------------------------------------------------------------------*
  | do projection of nodes on master and slave side                      |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::ProjectNodes_NormalField()
+bool MOERTEL::Interface::ProjectNodes_NormalField()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::ProjectNodes_NormalField:\n"
+    cout << "***ERR*** MOERTEL::Interface::ProjectNodes_NormalField:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -199,11 +199,11 @@ bool MRTR::Interface::ProjectNodes_NormalField()
 /*----------------------------------------------------------------------*
  | project the slave nodes onto master segments along slave normal field|
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
+bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
+    cout << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -214,22 +214,22 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
   int sside = OtherSide(mside);
 
   // iterate over all nodes of the slave side and project those belonging to me
-  map<int,RefCountPtr<MRTR::Node> >::iterator scurr;
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator scurr;
   for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
   {
-    RefCountPtr<MRTR::Node> snode = scurr->second;
+    RefCountPtr<MOERTEL::Node> snode = scurr->second;
     if (NodePID(snode->Id()) != lComm()->MyPID())
       continue;
     
     const double* sx = snode->X();
     double mindist = 1.0e+20;
-    RefCountPtr<MRTR::Node> closenode = null;
+    RefCountPtr<MOERTEL::Node> closenode = null;
     
     // find a node on the master side, that is closest to me
-    map<int,RefCountPtr<MRTR::Node> >::iterator mcurr;
+    map<int,RefCountPtr<MOERTEL::Node> >::iterator mcurr;
     for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
     {
-      RefCountPtr<MRTR::Node> mnode = mcurr->second;
+      RefCountPtr<MOERTEL::Node> mnode = mcurr->second;
       const double* mx = mnode->X();
       
       // build distance | mnode->X() - snode->X() |
@@ -245,7 +245,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
     }
     if (closenode == null)
     {
-      cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
+      cout << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
            << "***ERR*** Weired: for slave node " << snode->Id() << " no closest master node found\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -258,10 +258,10 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
 
     // get segments attached to closest node cnode
     int  nseg = closenode->Nseg();
-    MRTR::Segment** segs = closenode->Segments(); 
+    MOERTEL::Segment** segs = closenode->Segments(); 
     
     // create a projection-iterator
-    MRTR::Projector projector(IsOneDimensional());
+    MOERTEL::Projector projector(IsOneDimensional(),OutLevel());
 
     // finding a good geometric projection is somehow 
     // critical. We work with some tolerance here and pick the 'best'
@@ -270,7 +270,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
     double bestdist[2];
     const double tol = 0.2;
     bestdist[0] = bestdist[1] = 1.0e+20;
-    MRTR::Segment* bestseg = NULL;
+    MOERTEL::Segment* bestseg = NULL;
     for (int i=0; i<nseg; ++i)
     {
       // project the slave node onto that master segment
@@ -332,14 +332,14 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
     if (ok)  // the projection is good
     {
       // create a projected node and store it in snode
-      MRTR::ProjectedNode* pnode 
-        = new MRTR::ProjectedNode(*snode,bestdist,bestseg);
+      MOERTEL::ProjectedNode* pnode 
+        = new MOERTEL::ProjectedNode(*snode,bestdist,bestseg);
       snode->SetProjectedNode(pnode);
     }
     else
     {
-      if (OutLevel()>5)
-        cout << "***WRN***: Projection s->m: Node " << snode->Id() << " does not have projection\n";
+      if (OutLevel()>6)
+        cout << "MOERTEL: ***WRN***: Projection s->m: Node " << snode->Id() << " does not have projection\n";
       snode->SetProjectedNode(NULL);
     }
   } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
@@ -354,9 +354,9 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
     {
       for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
       {
-        RefCountPtr<MRTR::Node> snode = scurr->second;
+        RefCountPtr<MOERTEL::Node> snode = scurr->second;
         if (proc != NodePID(snode->Id())) continue; // I cannot have a projection on a node not owned by me
-        RefCountPtr<MRTR::ProjectedNode> pnode = snode->GetProjectedNode();
+        RefCountPtr<MOERTEL::ProjectedNode> pnode = snode->GetProjectedNode();
         if (pnode==null) continue; // this node does not have a projection
         const double* xi = pnode->Xi();
         bcast[blength] = (double)pnode->Id();            
@@ -373,7 +373,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
       } 
       if (blength > (int)(4*rnode_[sside].size()))
       {
-        cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
+        cout << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
              << "***ERR*** Overflow in communication buffer occured\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         exit(EXIT_FAILURE);
@@ -389,23 +389,23 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
         int     nid = (int)bcast[i]; ++i;
         double  sid =      bcast[i]; ++i;
         double* xi  = &bcast[i];     ++i; ++i;
-        RefCountPtr<MRTR::Node> snode = GetNodeView(nid);
-        RefCountPtr<MRTR::Segment> seg = null;
+        RefCountPtr<MOERTEL::Node> snode = GetNodeView(nid);
+        RefCountPtr<MOERTEL::Segment> seg = null;
         if (sid!=-0.1)
           seg = GetSegmentView((int)sid);
         if (snode == null)
         {
-          cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
+          cout << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
                << "***ERR*** Cannot get view of node\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           exit(EXIT_FAILURE);
         }
-        MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*snode,xi,seg.get());
+        MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*snode,xi,seg.get());
         snode->SetProjectedNode(pnode);
       }
       if (i != blength)
       {
-        cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
+        cout << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
              << "***ERR*** Mismatch in dimension of recv buffer\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         exit(EXIT_FAILURE);
@@ -427,7 +427,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
   // introduced for that node.
   for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
   {
-    RefCountPtr<MRTR::Node> snode = scurr->second;
+    RefCountPtr<MOERTEL::Node> snode = scurr->second;
     
     // don't do anything on nodes that already have a projection
     if (snode->GetProjectedNode() != null)
@@ -435,14 +435,14 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
 
     // get segments adjacent to this node  
     int nseg             = snode->Nseg();
-    MRTR::Segment** segs = snode->Segments();
+    MOERTEL::Segment** segs = snode->Segments();
     
     // loop segments and check for other nodes with projection
     bool foundit = false;
     for (int i=0; i<nseg; ++i)
     {
       int nnode = segs[i]->Nnode();
-      MRTR::Node** nodes = segs[i]->Nodes();
+      MOERTEL::Node** nodes = segs[i]->Nodes();
       for (int j=0; j<nnode; ++j)
         if (nodes[j]->GetProjectedNode() != null)
           if (nodes[j]->GetProjectedNode()->Segment())
@@ -459,7 +459,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
       cout << "Node without projection:\n" << *snode;        
       cout << "...get's lagrange multipliers\n\n";
 #endif
-      MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*snode,NULL,NULL);
+      MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*snode,NULL,NULL);
       snode->SetProjectedNode(pnode);
     }
   } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
@@ -472,11 +472,11 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_NormalField()
 /*----------------------------------------------------------------------*
  | project nodes master to slave along slave cont. normal field         |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
+bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
+    cout << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -487,22 +487,22 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
   int sside = OtherSide(mside);
 
   // iterate over all nodes of the master side and project those belonging to me
-  map<int,RefCountPtr<MRTR::Node> >::iterator mcurr;
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator mcurr;
   for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
   {
-    RefCountPtr<MRTR::Node> mnode = mcurr->second;
+    RefCountPtr<MOERTEL::Node> mnode = mcurr->second;
     if (NodePID(mnode->Id()) != lComm()->MyPID())
       continue;
     
     const double* mx = mnode->X();
     double mindist = 1.0e+20;
-    RefCountPtr<MRTR::Node> closenode = null;
+    RefCountPtr<MOERTEL::Node> closenode = null;
     
     // find a node on the slave side that is closest to me
-    map<int,RefCountPtr<MRTR::Node> >::iterator scurr;
+    map<int,RefCountPtr<MOERTEL::Node> >::iterator scurr;
     for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
     {
-      RefCountPtr<MRTR::Node> snode = scurr->second;
+      RefCountPtr<MOERTEL::Node> snode = scurr->second;
       const double* sx = snode->X();
       
       // build distance | snode->X() - mnode->X() |
@@ -517,7 +517,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
     } 
     if (closenode == null)
     {
-      cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
+      cout << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
            << "***ERR*** Weired: for master node " << mnode->Id() << " no closest master node found\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -530,16 +530,16 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
     
     // get segments attached to closest node closenode
     int  nseg = closenode->Nseg();
-    MRTR::Segment** segs = closenode->Segments(); 
+    MOERTEL::Segment** segs = closenode->Segments(); 
     
     // create a projection operator
-    MRTR::Projector projector(IsOneDimensional());
+    MOERTEL::Projector projector(IsOneDimensional(),OutLevel());
     
     // loop these segments and find best projection
     double bestdist[2];
     const double tol = 0.2;
     bestdist[0] = bestdist[1] = 1.0e+20;
-    MRTR::Segment* bestseg = NULL;
+    MOERTEL::Segment* bestseg = NULL;
     for (int i=0; i<nseg; ++i)
     {
       // project the master node on the slave segment along the segments interpolated normal field
@@ -602,7 +602,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
     {
       // build the interpolated normal and overwrite the mnode normal with -n
       int          nsnode = bestseg->Nnode();
-      MRTR::Node** snodes = bestseg->Nodes();
+      MOERTEL::Node** snodes = bestseg->Nodes();
       vector<double> val(nsnode);
       bestseg->EvaluateFunction(0,bestdist,&val[0],nsnode,NULL);
       double NN[3]; NN[0] = NN[1] = NN[2] = 0.0;
@@ -616,14 +616,14 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
       mnode->SetN(NN);
 
       // create projected node and store it in mnode
-      MRTR::ProjectedNode* pnode
-        = new MRTR::ProjectedNode(*mnode,bestdist,bestseg);
+      MOERTEL::ProjectedNode* pnode
+        = new MOERTEL::ProjectedNode(*mnode,bestdist,bestseg);
       mnode->SetProjectedNode(pnode);
     }
     else // this mnode does not have a valid projection
     {
-      if (OutLevel()>5)
-        cout << "***WRN***: Projection m->s: Node " << mnode->Id() << " does not have projection\n";
+      if (OutLevel()>6)
+        cout << "MOERTEL: ***WRN***: Projection m->s: Node " << mnode->Id() << " does not have projection\n";
       mnode->SetProjectedNode(NULL);
     }
   } // for (scurr=rnode_[mside].begin(); scurr!=rnode_[mside].end(); ++scurr)
@@ -638,9 +638,9 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
     {
       for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
       {
-        RefCountPtr<MRTR::Node> mnode = mcurr->second;
+        RefCountPtr<MOERTEL::Node> mnode = mcurr->second;
         if (proc != NodePID(mnode->Id())) continue; // cannot have a projection on a node i don't own
-        RefCountPtr<MRTR::ProjectedNode> pnode = mnode->GetProjectedNode();
+        RefCountPtr<MOERTEL::ProjectedNode> pnode = mnode->GetProjectedNode();
         if (pnode == null) continue; // this node does not have a projection
         const double* xi = pnode->Xi();
         const double* N  = mnode->N();
@@ -664,7 +664,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
       }
       if (blength > bsize)
       {
-        cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
+        cout << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
              << "***ERR*** Overflow in communication buffer occured\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         exit(EXIT_FAILURE);
@@ -681,24 +681,24 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
         double  sid =      bcast[i];  ++i;
         double* xi  =      &bcast[i]; ++i; ++i; 
         double* n   =      &bcast[i]; ++i; ++i; ++i;
-        RefCountPtr<MRTR::Node> mnode = GetNodeView(nid);
-        RefCountPtr<MRTR::Segment> seg = null;
+        RefCountPtr<MOERTEL::Node> mnode = GetNodeView(nid);
+        RefCountPtr<MOERTEL::Segment> seg = null;
         if (sid != -0.1)
           seg = GetSegmentView((int)sid);
         if (mnode == null)
         {
-          cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
+          cout << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
                << "***ERR*** Cannot get view of node\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           exit(EXIT_FAILURE);
         }
         mnode->SetN(n);
-        MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*mnode,xi,seg.get());
+        MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*mnode,xi,seg.get());
         mnode->SetProjectedNode(pnode);
       }
       if (i != blength)
       {
-        cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
+        cout << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
              << "***ERR*** Mismatch in dimension of recv buffer\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         exit(EXIT_FAILURE);
@@ -713,11 +713,11 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_NormalField()
 /*----------------------------------------------------------------------*
  | do projection of nodes on master and slave side                      |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::ProjectNodes_Orthogonal()
+bool MOERTEL::Interface::ProjectNodes_Orthogonal()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::ProjectNodes_Orthogonal:\n"
+    cout << "***ERR*** MOERTEL::Interface::ProjectNodes_Orthogonal:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -736,11 +736,11 @@ bool MRTR::Interface::ProjectNodes_Orthogonal()
 /*----------------------------------------------------------------------*
  | project nodes master to slave along slave orthogonal         |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
+bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+    cout << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -751,22 +751,22 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
   int sside = OtherSide(mside);
 
   // iterate over all master nodes and project those belonging to me
-    map<int,RefCountPtr<MRTR::Node> >::iterator mcurr;
+    map<int,RefCountPtr<MOERTEL::Node> >::iterator mcurr;
   for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
   {
-    RefCountPtr<MRTR::Node> mnode = mcurr->second;
+    RefCountPtr<MOERTEL::Node> mnode = mcurr->second;
     if (NodePID(mnode->Id()) != lComm()->MyPID())
       continue;
       
     const double* mx = mnode->X();
     double mindist = 1.0e+20;
-    RefCountPtr<MRTR::Node> closenode = null;
+    RefCountPtr<MOERTEL::Node> closenode = null;
     
     // find a node on the slave side that is closest to me
-    map<int,RefCountPtr<MRTR::Node> >::iterator scurr;
+    map<int,RefCountPtr<MOERTEL::Node> >::iterator scurr;
     for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
     {
-      RefCountPtr<MRTR::Node> snode = scurr->second;
+      RefCountPtr<MOERTEL::Node> snode = scurr->second;
       const double* sx = snode->X();
       
       // build distance | snode->X() - mnode->X() |
@@ -781,7 +781,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     } 
     if (closenode == null)
     {
-      cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+      cout << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
            << "***ERR*** Weired: for master node " << mnode->Id() << " no closest master node found\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -790,15 +790,15 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
 
     // get segments attached to closest node closenode
     int  nseg = closenode->Nseg();
-    MRTR::Segment** segs = closenode->Segments(); 
+    MOERTEL::Segment** segs = closenode->Segments(); 
     
     // create a projection operator
-    MRTR::Projector projector(IsOneDimensional());
+    MOERTEL::Projector projector(IsOneDimensional(),OutLevel());
     
     // loop these segments and find best projection
     double bestdist[2];
     bestdist[0] = bestdist[1] = 1.0e+20;
-    MRTR::Segment* bestseg = NULL;
+    MOERTEL::Segment* bestseg = NULL;
     for (int i=0; i<nseg; ++i)
     {
       // project the master node orthogonally on the slave segment
@@ -817,7 +817,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
       }
       else
       {
-        cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+        cout << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
              << "***ERR*** not impl. for 3D\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         exit(EXIT_FAILURE);
@@ -834,7 +834,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     }
     else
     {
-      cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+      cout << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
            << "***ERR*** not impl. for 3D\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -843,14 +843,14 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     if (ok) // the projection is good
     {
       // create a projected node and store it in mnode
-      MRTR::ProjectedNode* pnode = 
-        new MRTR::ProjectedNode(*mnode,bestdist,bestseg);
+      MOERTEL::ProjectedNode* pnode = 
+        new MOERTEL::ProjectedNode(*mnode,bestdist,bestseg);
       mnode->SetProjectedNode(pnode);
     } 
     else // this mnode does not have a valid projection
     {
-      if (OutLevel()>5)
-      cout << "***WRN***: Node " << mnode->Id() << " does not have projection\n\n";
+      if (OutLevel()>6)
+      cout << "MOERTEL: ***WRN***: Node " << mnode->Id() << " does not have projection\n\n";
       //mnode->SetProjectedNode(NULL);
     }
   } // for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
@@ -865,9 +865,9 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     {
       for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
       {
-        RefCountPtr<MRTR::Node> mnode = mcurr->second;
+        RefCountPtr<MOERTEL::Node> mnode = mcurr->second;
         if (proc != NodePID(mnode->Id())) continue; // cannot have a projection on a node i don't own
-        RefCountPtr<MRTR::ProjectedNode>  pnode = mnode->GetProjectedNode();
+        RefCountPtr<MOERTEL::ProjectedNode>  pnode = mnode->GetProjectedNode();
         if (pnode == null) continue; // this node does not have a projection
         const double* xi = pnode->Xi();
         bcast[blength] = (double)pnode->Id();
@@ -881,7 +881,7 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
       } // for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
       if (blength>bsize)
       {
-        cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+        cout << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
              << "***ERR*** Overflow in communication buffer occured\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         exit(EXIT_FAILURE);
@@ -897,21 +897,21 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
         int     nid = (int)bcast[i];  ++i;
         int     sid = (int)bcast[i];  ++i;
         double* xi  =      &bcast[i]; ++i; ++i; 
-        RefCountPtr<MRTR::Node> mnode = GetNodeView(nid);
-        RefCountPtr<MRTR::Segment> seg = GetSegmentView(sid);
+        RefCountPtr<MOERTEL::Node> mnode = GetNodeView(nid);
+        RefCountPtr<MOERTEL::Segment> seg = GetSegmentView(sid);
         if (mnode == null || seg == null)
         {
-          cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+          cout << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
                << "***ERR*** Cannot get view of node or segment\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           exit(EXIT_FAILURE);
         }
-        MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*mnode,xi,seg.get());
+        MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*mnode,xi,seg.get());
         mnode->SetProjectedNode(pnode);
       }
       if (i != blength)
       {
-        cout << "***ERR*** MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
+        cout << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
              << "***ERR*** Mismatch in dimension of recv buffer: " << i << " != " << blength << "\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         exit(EXIT_FAILURE);
@@ -926,11 +926,11 @@ bool MRTR::Interface::ProjectNodes_MastertoSlave_Orthogonal()
 /*----------------------------------------------------------------------*
  | project the slave nodes onto master segments orthogonal              |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
+bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
 {
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
+    cout << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -941,10 +941,10 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
   int sside = OtherSide(mside);
 
   // iterate over all nodes of the slave side and project those belonging to me
-  map<int,RefCountPtr<MRTR::Node> >::iterator scurr;
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator scurr;
   for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
   {
-    RefCountPtr<MRTR::Node> snode = scurr->second;
+    RefCountPtr<MOERTEL::Node> snode = scurr->second;
 
 #if 0
     cout << "now projecting\n " << *snode;
@@ -955,13 +955,13 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
     
     const double* sx = snode->X();
     double mindist = 1.0e+20;
-    RefCountPtr<MRTR::Node> closenode = null;
+    RefCountPtr<MOERTEL::Node> closenode = null;
     
     // find a node on the master side, that is closest to me
-    map<int,RefCountPtr<MRTR::Node> >::iterator mcurr;
+    map<int,RefCountPtr<MOERTEL::Node> >::iterator mcurr;
     for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
     {
-      RefCountPtr<MRTR::Node> mnode = mcurr->second;
+      RefCountPtr<MOERTEL::Node> mnode = mcurr->second;
       const double* mx = mnode->X();
       
       // build distance | mnode->X() - snode->X() |
@@ -977,7 +977,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
     }
     if (closenode == null)
     {
-      cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
+      cout << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
            << "***ERR*** Weired: for slave node " << snode->Id() << " no closest master node found\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -985,14 +985,14 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
 
     // get segments attached to closest node cnode
     int  nmseg = closenode->Nseg();
-    MRTR::Segment** msegs = closenode->Segments(); 
+    MOERTEL::Segment** msegs = closenode->Segments(); 
     
     // create a projection-iterator
-    MRTR::Projector projector(IsOneDimensional());
+    MOERTEL::Projector projector(IsOneDimensional(),OutLevel());
 
     // loop segments and find all projections onto them
     int nsseg = snode->Nseg();
-    MRTR::Segment** ssegs = snode->Segments(); 
+    MOERTEL::Segment** ssegs = snode->Segments(); 
     for (int i=0; i<nmseg; ++i)
     {
       // loop all segments that are adjacent to the slave node
@@ -1011,7 +1011,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
         }
         else
         {
-          cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
+          cout << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
                << "***ERR*** not impl. for 3D\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           exit(EXIT_FAILURE);
@@ -1020,8 +1020,8 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
         if (ok) // the projection is good
         {
           // create a projected node and store it in snode
-          MRTR::ProjectedNode* pnode = 
-            new MRTR::ProjectedNode(*snode,xi,msegs[i],ssegs[j]->Id());
+          MOERTEL::ProjectedNode* pnode = 
+            new MOERTEL::ProjectedNode(*snode,xi,msegs[i],ssegs[j]->Id());
           snode->SetProjectedNode(pnode);
 #if 0
           cout << " snode id: " << pnode->Id()
@@ -1046,10 +1046,10 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
       {
         for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
         {
-          RefCountPtr<MRTR::Node> snode = scurr->second;
+          RefCountPtr<MOERTEL::Node> snode = scurr->second;
           if (proc != NodePID(snode->Id())) continue; // cannot have a projection on a node i don't own
           int npnode=0;
-          RefCountPtr<MRTR::ProjectedNode>* pnode = snode->GetProjectedNode(npnode);        
+          RefCountPtr<MOERTEL::ProjectedNode>* pnode = snode->GetProjectedNode(npnode);        
           if (!pnode) continue; // no projection on this one
           bcast[blength] = (double)snode->Id();
           ++blength;
@@ -1072,7 +1072,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
         } // for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
         if (blength>=(int)bcast.size())
         {
-          cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
+          cout << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
                << "***ERR*** Overflow in communication buffer occured\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           exit(EXIT_FAILURE);
@@ -1089,21 +1089,21 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
         for (i=0; i<blength;)
         {
           int nid    = (int)bcast[i] ; ++i;
-          RefCountPtr<MRTR::Node> snode = GetNodeView(nid);
+          RefCountPtr<MOERTEL::Node> snode = GetNodeView(nid);
           int npnode = (int) bcast[i]; ++i;
           for (int j=0; j<npnode; ++j)
           {
             int sid     = (int)bcast[i]; ++i;
             double* xi  = &bcast[i];     ++i; ++i;
             int orthseg = (int)bcast[i]; ++i;
-            RefCountPtr<MRTR::Segment> seg   = GetSegmentView(sid);
-            MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*snode,xi,seg.get(),orthseg);
+            RefCountPtr<MOERTEL::Segment> seg   = GetSegmentView(sid);
+            MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*snode,xi,seg.get(),orthseg);
             snode->SetProjectedNode(pnode);
           }
         }
         if (i != blength)
         {
-          cout << "***ERR*** MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
+          cout << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
                << "***ERR*** Mismatch in dimension of recv buffer: " << i << " != " << blength << "\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           exit(EXIT_FAILURE);
@@ -1125,7 +1125,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
   // introduced for that node.
   for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
   {
-    RefCountPtr<MRTR::Node> snode = scurr->second;
+    RefCountPtr<MOERTEL::Node> snode = scurr->second;
     // do only my own nodes
 
     // don't do anything on nodes that already have a projection
@@ -1134,13 +1134,13 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
 
     // get segments adjacent to this node  
     int nseg             = snode->Nseg();
-    MRTR::Segment** segs = snode->Segments();
+    MOERTEL::Segment** segs = snode->Segments();
     // loop segments and check for other nodes with projection
     bool foundit = false;
     for (int i=0; i<nseg; ++i)
     {
       int nnode = segs[i]->Nnode();
-      MRTR::Node** nodes = segs[i]->Nodes();
+      MOERTEL::Node** nodes = segs[i]->Nodes();
       for (int j=0; j<nnode; ++j)
         if (nodes[j]->GetProjectedNode() != null)
           if (nodes[j]->GetProjectedNode()->Segment())
@@ -1156,7 +1156,7 @@ bool MRTR::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
       cout << "Node without projection:\n" << *snode;        
       cout << "...get's lagrange multipliers\n\n";
 #endif
-      MRTR::ProjectedNode* pnode = new MRTR::ProjectedNode(*snode,NULL,NULL);
+      MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*snode,NULL,NULL);
       snode->SetProjectedNode(pnode);
     }
   }

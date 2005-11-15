@@ -46,19 +46,19 @@
  | Fi(eta,alpha) = xs+alpha*n-Ni*xi = 0                                 |
  | and its gradient                                                     |
  *----------------------------------------------------------------------*/
-bool MRTR::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
+bool MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
                                                      double dF[][3],
-                                                     const MRTR::Node& node, 
-                                                     MRTR::Segment& seg, 
+                                                     const MOERTEL::Node& node, 
+                                                     MOERTEL::Segment& seg, 
 	   					     double* eta,
                                                      double alpha)
 {
   // check the type of function on the segment
   // Here, we need a blinear triangle shape function
-  MRTR::Function::FunctionType type = seg.FunctionType(0);
-  if (type != MRTR::Function::func_LinearTri)
+  MOERTEL::Function::FunctionType type = seg.FunctionType(0);
+  if (type != MOERTEL::Function::func_LinearTri)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_FgradF_3D_NodalNormal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -71,10 +71,10 @@ bool MRTR::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
   seg.EvaluateFunction(0,eta,val,nmnode,deriv);
   
   // get nodal coords of nodes and interpolate them
-  MRTR::Node** mnodes = seg.Nodes();
+  MOERTEL::Node** mnodes = seg.Nodes();
   if (!mnodes)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_FgradF_3D_NodalNormal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -129,19 +129,19 @@ bool MRTR::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
  | Fi(eta,alpha) = Ni*xi+alpha*Ni*ni - xm = 0                           |
  | and its gradient                                                     |
  *----------------------------------------------------------------------*/
-bool MRTR::Projector::evaluate_FgradF_3D_SegmentNormal(double* F,
+bool MOERTEL::Projector::evaluate_FgradF_3D_SegmentNormal(double* F,
                                                        double dF[][3],
-                                                       const MRTR::Node& node, 
-                                                       MRTR::Segment& seg, 
+                                                       const MOERTEL::Node& node, 
+                                                       MOERTEL::Segment& seg, 
 	   					       double* eta,
                                                        double alpha)
 {
   // check the type of function on the segment
   // Here, we need a blinear triangle shape function
-  MRTR::Function::FunctionType type = seg.FunctionType(0);
-  if (type != MRTR::Function::func_LinearTri)
+  MOERTEL::Function::FunctionType type = seg.FunctionType(0);
+  if (type != MOERTEL::Function::func_LinearTri)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_F_3D_NodalNormal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_F_3D_NodalNormal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -154,10 +154,10 @@ bool MRTR::Projector::evaluate_FgradF_3D_SegmentNormal(double* F,
   seg.EvaluateFunction(0,eta,val,nsnode,deriv);
   
   // get nodal coords of nodes and interpolate them
-  MRTR::Node** snodes = seg.Nodes();
+  MOERTEL::Node** snodes = seg.Nodes();
   if (!snodes)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_FgradF_3D_SegmentNormal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_FgradF_3D_SegmentNormal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);

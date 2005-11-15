@@ -33,8 +33,8 @@
 /* ******************************************************************** */
 #ifdef TRILINOS_PACKAGE
 
-#ifndef MRTR_OVERLAP_H
-#define MRTR_OVERLAP_H
+#ifndef MOERTEL_OVERLAP_H
+#define MOERTEL_OVERLAP_H
 
 #include <ctime>
 #include <iostream>
@@ -53,14 +53,14 @@ using namespace Teuchos;
 
 // ----------   User Defined Includes   ----------
 
-namespace MRTR
+namespace MOERTEL
 {
 
 // forward declarations
-class MRTR::Interface;
-class MRTR::Segment;
-class MRTR::Node;
-class MRTR::Integrator;
+class MOERTEL::Interface;
+class MOERTEL::Segment;
+class MOERTEL::Node;
+class MOERTEL::Integrator;
 
 class  Overlap 
 {
@@ -90,19 +90,23 @@ public:
   friend class Integrator;
   
   // ctor
-  explicit Overlap(MRTR::Segment& sseg, MRTR::Segment& mseg, MRTR::Interface& inter);
+  explicit Overlap(MOERTEL::Segment& sseg, MOERTEL::Segment& mseg, 
+                   MOERTEL::Interface& inter, int outlevel);
   
   // dtor
   virtual ~Overlap();
   
   // compute overlap between 2 segments and it's polygon
   bool ComputeOverlap();
+  
+  // return the output level
+  int OutLevel() { return outputlevel_; }
     
 private:  
   // don't want = operator
   Overlap operator = (const Overlap& old);
   // don't want copy-ctor
-  Overlap(MRTR::Overlap& old);
+  Overlap(MOERTEL::Overlap& old);
 
 private:
 
@@ -133,47 +137,48 @@ private:
 
   // -------------------------------------finding a convex hull for the polygon
   // create a convex hull of a set of given points in 2D
-  bool ConvexHull(map<int,RefCountPtr<MRTR::Point> >& p);
-  bool MakeRightTurnUpper(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
-  bool MakeRightTurnLower(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
-  void RemovePointBefore(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
-  void RemovePointAfter(int i,map<int,RefCountPtr<MRTR::Point> >& hull);
+  bool ConvexHull(map<int,RefCountPtr<MOERTEL::Point> >& p);
+  bool MakeRightTurnUpper(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull);
+  bool MakeRightTurnLower(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull);
+  void RemovePointBefore(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull);
+  void RemovePointAfter(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull);
 
   //-------------------------------------------make triangulization of polygon
   bool Triangulization();
   
   //-----------------------------------------------------------collapse points
-  bool CollapsePoints(map<int,RefCountPtr<MRTR::Point> >& p, const double eps);
+  bool CollapsePoints(map<int,RefCountPtr<MOERTEL::Point> >& p, const double eps);
   
 protected:
   //----------------------------------- tools to handle the triangulation map
   // add a segment to the triangulization
-  bool AddSegment(int id, MRTR::Segment* seg);
+  bool AddSegment(int id, MOERTEL::Segment* seg);
   // return # segments the overlap was discretized with
   int Nseg() { return s_.size(); }
   // get view of segments in triangulation map
-  void SegmentView(vector<RefCountPtr<MRTR::Segment> >& segs);
+  void SegmentView(vector<RefCountPtr<MOERTEL::Segment> >& segs);
 
   //------------------------------------------ tools to handle the polygon map
   // add a point to the polygon
   bool AddPointtoPolygon(const int id, const double* P);
-  bool AddPointtoPolygon(map<int,RefCountPtr<MRTR::Point> >& p, const int id, const double* P);
+  bool AddPointtoPolygon(map<int,RefCountPtr<MOERTEL::Point> >& p, const int id, const double* P);
   // remove a point from the polygon
   bool RemovePointfromPolygon(const int id,const double* P);
   // get the size of the nodal polygon
   int SizePointPolygon() { return p_.size(); }
   // get view of point in polygon, calling routine is responsible for freeing
-  void PointView(vector<RefCountPtr<MRTR::Point> >& points);
-  void PointView(map<int,RefCountPtr<MRTR::Point> >& p, vector<RefCountPtr<MRTR::Point> >& points);
-  void PointView(vector<MRTR::Point*>& p,const int* nodeids,const int np);
+  void PointView(vector<RefCountPtr<MOERTEL::Point> >& points);
+  void PointView(map<int,RefCountPtr<MOERTEL::Point> >& p, vector<RefCountPtr<MOERTEL::Point> >& points);
+  void PointView(vector<MOERTEL::Point*>& p,const int* nodeids,const int np);
   // copy a point polygon to another polygon
-  bool CopyPointPolygon(map<int,RefCountPtr<MRTR::Point> >& from, map<int,RefCountPtr<MRTR::Point> >& to);
+  bool CopyPointPolygon(map<int,RefCountPtr<MOERTEL::Point> >& from, map<int,RefCountPtr<MOERTEL::Point> >& to);
 
 private:
 
-MRTR::Interface&                     inter_;
-MRTR::Segment&                       sseg_;
-MRTR::Segment&                       mseg_;
+MOERTEL::Interface&                     inter_;
+MOERTEL::Segment&                       sseg_;
+MOERTEL::Segment&                       mseg_;
+int                                  outputlevel_;
 
 bool                                 overlap_;   // true if segments overlap
 int                                  nnode_;     // # of master nodes
@@ -199,12 +204,12 @@ double                               mlinem_[3][4]; // 3 lines of mseg_in mseg_'
 bool                                 havelinem_;   // flag indicating built of line information in master coords
 
 
-map<int,RefCountPtr<MRTR::Point> >   p_;       // map holding polygon points and later points of triangulation
-map<int,RefCountPtr<MRTR::Segment> > s_;       // map holding segments of polygon triangulation
+map<int,RefCountPtr<MOERTEL::Point> >   p_;       // map holding polygon points and later points of triangulation
+map<int,RefCountPtr<MOERTEL::Segment> > s_;       // map holding segments of polygon triangulation
 
 
 }; // class Overlap
 
-} // namespace MRTR
-#endif // MRTR_OVERLAP_H
+} // namespace MOERTEL
+#endif // MOERTEL_OVERLAP_H
 #endif // TRILINOS_PACKAGE

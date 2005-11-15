@@ -33,8 +33,8 @@
 /* ******************************************************************** */
 #ifdef TRILINOS_PACKAGE
 
-#ifndef MRTR_SEGMENT_BILINEARTRI_H
-#define MRTR_SEGMENT_BILINEARTRI_H
+#ifndef MOERTEL_SEGMENT_BILINEARTRI_H
+#define MOERTEL_SEGMENT_BILINEARTRI_H
 
 #include <ctime>
 #include <iostream>
@@ -46,27 +46,27 @@
 
 using namespace std;
 
-namespace MRTR
+namespace MOERTEL
 {
 
-class  Segment_BiLinearTri : public MRTR::Segment
+class  Segment_BiLinearTri : public MOERTEL::Segment
 {
 public:
   
   // ctor
-  explicit Segment_BiLinearTri(int id, int nnode, int* nodeId);
+  explicit Segment_BiLinearTri(int id, int nnode, int* nodeId, int out);
   
   // ctor (for internal use only) to be used together with Pack()/UnPack()
-  explicit Segment_BiLinearTri();
+  explicit Segment_BiLinearTri(int out);
   
   // copy-ctor
-  Segment_BiLinearTri(MRTR::Segment_BiLinearTri& old);
+  Segment_BiLinearTri(MOERTEL::Segment_BiLinearTri& old);
   
   // dtor
   virtual ~Segment_BiLinearTri();
 
   // clone
-  MRTR::Segment* Clone();
+  MOERTEL::Segment* Clone();
 
   // (derived) pack function for communication
   int* Pack(int* size);
@@ -94,11 +94,11 @@ protected:
 
 };
 
-} // namespace MRTR
+} // namespace MOERTEL
 
 // << operator
-ostream& operator << (ostream& os, const MRTR::Segment_BiLinearTri& seg);
+ostream& operator << (ostream& os, const MOERTEL::Segment_BiLinearTri& seg);
 
 
-#endif // MRTR_SEGMENT_BILINEARTRI_H
+#endif // MOERTEL_SEGMENT_BILINEARTRI_H
 #endif // TRILINOS_PACKAGE

@@ -54,10 +54,10 @@
  |                                  important to compute the direction  |
  |                                  of the outward normal of the segment|
  *----------------------------------------------------------------------*/
-MRTR::Segment_BiLinearTri::Segment_BiLinearTri(int id, int nnode, int* nodeId) :
-MRTR::Segment(id,nnode,nodeId)
+MOERTEL::Segment_BiLinearTri::Segment_BiLinearTri(int id, int nnode, int* nodeId, int out) :
+MOERTEL::Segment(id,nnode,nodeId,out)
 {
-  stype_ = MRTR::Segment::seg_BiLinearTri;
+  stype_ = MOERTEL::Segment::seg_BiLinearTri;
 }
 
 /*----------------------------------------------------------------------*
@@ -65,25 +65,24 @@ MRTR::Segment(id,nnode,nodeId)
  |  This constructor should not be used by the user, it is used         |
  |  internally together with Pack/Unpack for communication              |
  *----------------------------------------------------------------------*/
-MRTR::Segment_BiLinearTri::Segment_BiLinearTri() :
-MRTR::Segment()
+MOERTEL::Segment_BiLinearTri::Segment_BiLinearTri(int out) :
+MOERTEL::Segment(out)
 {
-  stype_ = MRTR::Segment::seg_none;
 }
 
 /*----------------------------------------------------------------------*
  |  copy-ctor (public)                                       mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment_BiLinearTri::Segment_BiLinearTri(MRTR::Segment_BiLinearTri& old) :
-MRTR::Segment(old)
+MOERTEL::Segment_BiLinearTri::Segment_BiLinearTri(MOERTEL::Segment_BiLinearTri& old) :
+MOERTEL::Segment(old)
 {
-  // all date lives in the base class and is copied in MRTR::Segment(old)
+  // all date lives in the base class and is copied in MOERTEL::Segment(old)
 }
 
 /*----------------------------------------------------------------------*
  | pack all data in this segment into a vector               mwgee 10/05|
  *----------------------------------------------------------------------*/
-int* MRTR::Segment_BiLinearTri::Pack(int* size)
+int* MOERTEL::Segment_BiLinearTri::Pack(int* size)
 { 
   // note: first there has to be the size and second there has to be the type
   // *size = *size  + stype_ + Id_ + nodeId_.size() + nnode*sizeof(int) + Nfunctions() + 2*Nfunctions()*sizeof(int)
@@ -100,7 +99,7 @@ int* MRTR::Segment_BiLinearTri::Pack(int* size)
     pack[count++] = nodeId_[i];
   pack[count++] = Nfunctions();
   
-  map<int,RefCountPtr<MRTR::Function> >::iterator curr;
+  map<int,RefCountPtr<MOERTEL::Function> >::iterator curr;
   for (curr = functions_.begin(); curr != functions_.end(); ++curr)
   {
     pack[count++] = curr->first;
@@ -109,7 +108,7 @@ int* MRTR::Segment_BiLinearTri::Pack(int* size)
   
   if (count != *size)
   {
-    cout << "***ERR*** MRTR::Segment_BiLinearTri::Pack:\n"
+    cout << "***ERR*** MOERTEL::Segment_BiLinearTri::Pack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -121,12 +120,12 @@ int* MRTR::Segment_BiLinearTri::Pack(int* size)
 /*----------------------------------------------------------------------*
  | unpack all data from a vector into this class             mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Segment_BiLinearTri::UnPack(int* pack)
+bool MOERTEL::Segment_BiLinearTri::UnPack(int* pack)
 { 
   // note: first there has to be the size and second there has to be the type
   int count = 0;
   int size  = pack[count++];
-  stype_    = (MRTR::Segment::SegmentType)pack[count++];
+  stype_    = (MOERTEL::Segment::SegmentType)pack[count++];
   Id_       = pack[count++];
   nodeId_.resize(pack[count++]);
   for (int i=0; i<(int)nodeId_.size(); ++i)
@@ -138,14 +137,14 @@ bool MRTR::Segment_BiLinearTri::UnPack(int* pack)
   {
     int id   = pack[count++];
     int type = pack[count++];
-    MRTR::Function* func = MRTR::AllocateFunction((MRTR::Function::FunctionType)type);
-    RefCountPtr<MRTR::Function> rcptrfunc = rcp(func);
-    functions_.insert(pair<int,RefCountPtr<MRTR::Function> >(id,rcptrfunc));
+    MOERTEL::Function* func = MOERTEL::AllocateFunction((MOERTEL::Function::FunctionType)type,OutLevel());
+    RefCountPtr<MOERTEL::Function> rcptrfunc = rcp(func);
+    functions_.insert(pair<int,RefCountPtr<MOERTEL::Function> >(id,rcptrfunc));
   }
   
   if (count != size)
   {
-    cout << "***ERR*** MRTR::Segment_BiLinearTri::UnPack:\n"
+    cout << "***ERR*** MOERTEL::Segment_BiLinearTri::UnPack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -157,7 +156,7 @@ bool MRTR::Segment_BiLinearTri::UnPack(int* pack)
 /*----------------------------------------------------------------------*
  |  dtor (public)                                            mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment_BiLinearTri::~Segment_BiLinearTri()
+MOERTEL::Segment_BiLinearTri::~Segment_BiLinearTri()
 { 
   // data held in base class is destroyed by base class destructor
 }
@@ -165,16 +164,16 @@ MRTR::Segment_BiLinearTri::~Segment_BiLinearTri()
 /*----------------------------------------------------------------------*
  |  clone this segment (public)                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment* MRTR::Segment_BiLinearTri::Clone()
+MOERTEL::Segment* MOERTEL::Segment_BiLinearTri::Clone()
 { 
-  MRTR::Segment_BiLinearTri* newseg = new MRTR::Segment_BiLinearTri(*this);
+  MOERTEL::Segment_BiLinearTri* newseg = new MOERTEL::Segment_BiLinearTri(*this);
   return (newseg);
 }
 
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MRTR::Segment_BiLinearTri& seg)
+ostream& operator << (ostream& os, const MOERTEL::Segment_BiLinearTri& seg)
 {
   seg.Print(); 
   return os;
@@ -183,7 +182,7 @@ ostream& operator << (ostream& os, const MRTR::Segment_BiLinearTri& seg)
 /*----------------------------------------------------------------------*
  | build an outward normal at a node adjacent to this        mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Segment_BiLinearTri::LocalCoordinatesOfNode(int lid, double* xi)
+bool MOERTEL::Segment_BiLinearTri::LocalCoordinatesOfNode(int lid, double* xi)
 { 
   if (lid==0)
   {
@@ -202,7 +201,7 @@ bool MRTR::Segment_BiLinearTri::LocalCoordinatesOfNode(int lid, double* xi)
   }
   else
   {
-    cout << "***ERR*** MRTR::Segment_BiLinearTri::LocalCoordinatesOfNode:\n"
+    cout << "***ERR*** MOERTEL::Segment_BiLinearTri::LocalCoordinatesOfNode:\n"
          << "***ERR*** local node number " << lid << " out of range (0..2)\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -213,9 +212,9 @@ bool MRTR::Segment_BiLinearTri::LocalCoordinatesOfNode(int lid, double* xi)
 /*----------------------------------------------------------------------*
  | build basis vectors and metric at given point xi          mwgee 10/05|
  *----------------------------------------------------------------------*/
-double MRTR::Segment_BiLinearTri::Metric(double* xi, double g[], double G[][3])
+double MOERTEL::Segment_BiLinearTri::Metric(double* xi, double g[], double G[][3])
 { 
-  cout << "***ERR*** MRTR::Segment_BiLinearTri::Metric:\n"
+  cout << "***ERR*** MOERTEL::Segment_BiLinearTri::Metric:\n"
        << "***ERR*** not impl.\n"
        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   exit(EXIT_FAILURE);     
@@ -226,7 +225,7 @@ double MRTR::Segment_BiLinearTri::Metric(double* xi, double g[], double G[][3])
  | build an outward normal at a node adjacent to this        mwgee 10/05|
  | returns allocated vector of length 3 with outward normal             |
  *----------------------------------------------------------------------*/
-double* MRTR::Segment_BiLinearTri::BuildNormal(double* xi)
+double* MOERTEL::Segment_BiLinearTri::BuildNormal(double* xi)
 { 
   // linear triangles are planar, so we don't care were exactly to build the normal
 
@@ -242,7 +241,7 @@ double* MRTR::Segment_BiLinearTri::BuildNormal(double* xi)
   // build normal as their cross product
   double* n = new double[3];
   
-  MRTR::cross(n,g1,g2);
+  MOERTEL::cross(n,g1,g2);
 
   return n;
 }
@@ -250,7 +249,7 @@ double* MRTR::Segment_BiLinearTri::BuildNormal(double* xi)
 /*----------------------------------------------------------------------*
  | compute the length (Area) of this segment                 mwgee 10/05|
  *----------------------------------------------------------------------*/
-double MRTR::Segment_BiLinearTri::Area()
+double MOERTEL::Segment_BiLinearTri::Area()
 { 
   double xi[2];
   xi[0] = xi[1] = 0.0;

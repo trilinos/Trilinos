@@ -54,11 +54,11 @@
  |                                  important to compute the direction  |
  |                                  of the outward normal of the segment|
  *----------------------------------------------------------------------*/
-MRTR::Segment::Segment(int id, int nnode, int* nodeId)
+MOERTEL::Segment::Segment(int id, int nnode, int* nodeId, int outlevel) :
+Id_(id),
+outputlevel_(outlevel),
+stype_(MOERTEL::Segment::seg_none)
 {
-  Id_ = id;
-  stype_ = MRTR::Segment::seg_none;
-  
   nodeId_.resize(nnode);
   for (int i=0; i<nnode; ++i) nodeId_[i] = nodeId[i];
   nodeptr_.resize(0);
@@ -67,9 +67,10 @@ MRTR::Segment::Segment(int id, int nnode, int* nodeId)
 /*----------------------------------------------------------------------*
  | base class constructor                                    mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment::Segment() :
+MOERTEL::Segment::Segment(int outlevel) :
 Id_(-1),
-stype_(MRTR::Segment::seg_none)
+outputlevel_(outlevel),
+stype_(MOERTEL::Segment::seg_none)
 {
   nodeId_.resize(0);
   nodeptr_.resize(0); 
@@ -78,27 +79,28 @@ stype_(MRTR::Segment::seg_none)
 /*----------------------------------------------------------------------*
  | base class copy ctor                                      mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment::Segment(MRTR::Segment& old)
+MOERTEL::Segment::Segment(MOERTEL::Segment& old)
 { 
-  Id_      = old.Id_;
-  stype_   = old.stype_; 
-  nodeId_  = old.nodeId_;
-  nodeptr_ = old.nodeptr_; 
+  Id_          = old.Id_;
+  outputlevel_ = old.outputlevel_;
+  stype_       = old.stype_; 
+  nodeId_      = old.nodeId_;
+  nodeptr_     = old.nodeptr_; 
   
   // copy the functions
   // this is not a deep copy but we simply copy the refcountptr
-  map< int,RefCountPtr<MRTR::Function> >::iterator curr;
+  map< int,RefCountPtr<MOERTEL::Function> >::iterator curr;
   for (curr = old.functions_.begin(); curr != old.functions_.end(); ++curr)
   {
     if (curr->second == null)
     {
-      cout << "***ERR*** MRTR::Segment::BaseClone(MRTR::Segment& old):\n"
+      cout << "***ERR*** MOERTEL::Segment::BaseClone(MOERTEL::Segment& old):\n"
            << "***ERR*** function id " << curr->first << " is null\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);     
     }
-    RefCountPtr<MRTR::Function> newfunc = curr->second;
-    functions_.insert(pair< int,RefCountPtr<MRTR::Function> >(curr->first,newfunc));
+    RefCountPtr<MOERTEL::Function> newfunc = curr->second;
+    functions_.insert(pair< int,RefCountPtr<MOERTEL::Function> >(curr->first,newfunc));
   }
   
 }
@@ -106,7 +108,7 @@ MRTR::Segment::Segment(MRTR::Segment& old)
 /*----------------------------------------------------------------------*
  | base class destructor                                     mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment::~Segment()
+MOERTEL::Segment::~Segment()
 {
   nodeId_.clear();
   nodeptr_.clear();
@@ -116,24 +118,24 @@ MRTR::Segment::~Segment()
 /*----------------------------------------------------------------------*
  |  print segment                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Segment::Print() const
+bool MOERTEL::Segment::Print() const
 { 
   cout << "Segment " << setw(6) << Id_; 
-  if (stype_ == MRTR::Segment::seg_Linear1D)
+  if (stype_ == MOERTEL::Segment::seg_Linear1D)
     cout << " Typ Linear1D   ";
-  if (stype_ == MRTR::Segment::seg_Quadratic1D)
+  if (stype_ == MOERTEL::Segment::seg_Quadratic1D)
     cout << " Typ Quadratic1D";
-  if (stype_ == MRTR::Segment::seg_BiLinearQuad)
+  if (stype_ == MOERTEL::Segment::seg_BiLinearQuad)
     cout << " Typ BiLinearQuad ";
-  if (stype_ == MRTR::Segment::seg_BiLinearTri)
+  if (stype_ == MOERTEL::Segment::seg_BiLinearTri)
     cout << " Typ BiLinearTri";
-  if (stype_ == MRTR::Segment::seg_none)
+  if (stype_ == MOERTEL::Segment::seg_none)
     cout << " Typ NONE       ";
   cout << " #Nodes " << nodeId_.size() << " Nodes: ";
   for (int i=0; i<(int)nodeId_.size(); ++i)
     cout << setw(6) << nodeId_[i] << "  ";
   cout << "  #Functions " << functions_.size() << "  Types: ";
-  map<int,RefCountPtr<MRTR::Function> >::const_iterator curr;
+  map<int,RefCountPtr<MOERTEL::Function> >::const_iterator curr;
   for (curr=functions_.begin(); curr != functions_.end(); ++curr)
     cout << curr->second->Type() << "  ";
   cout << endl;
@@ -145,32 +147,32 @@ bool MRTR::Segment::Print() const
  | the user is not supposed to destroy func!                            |
  | the user can set func to several segments!                           |
  *----------------------------------------------------------------------*/
-bool MRTR::Segment::SetFunction(int id, MRTR::Function* func)
+bool MOERTEL::Segment::SetFunction(int id, MOERTEL::Function* func)
 { 
   if (id<0)
   {
-    cout << "***ERR*** MRTR::Segment::SetFunction:\n"
+    cout << "***ERR*** MOERTEL::Segment::SetFunction:\n"
          << "***ERR*** id = " << id << " < 0 (out of range)\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   if (!func)
   {
-    cout << "***ERR*** MRTR::Segment::SetFunction:\n"
+    cout << "***ERR*** MOERTEL::Segment::SetFunction:\n"
          << "***ERR*** func = NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   
   // check for existing function with this id and evtentually overwrite
-  map<int,RefCountPtr<MRTR::Function> >::iterator curr = functions_.find(id);
+  map<int,RefCountPtr<MOERTEL::Function> >::iterator curr = functions_.find(id);
   if (curr != functions_.end())
   {
     curr->second = rcp(func->Clone());
     return true;
   }
-  RefCountPtr<MRTR::Function> newfunc = rcp(func->Clone());
-  functions_.insert(pair<int,RefCountPtr<MRTR::Function> >(id,newfunc));
+  RefCountPtr<MOERTEL::Function> newfunc = rcp(func->Clone());
+  functions_.insert(pair<int,RefCountPtr<MOERTEL::Function> >(id,newfunc));
   return true;
 }
 
@@ -180,32 +182,32 @@ bool MRTR::Segment::SetFunction(int id, MRTR::Function* func)
  | the user is not supposed to destroy func!                            |
  | the user can set func to several segments!                           |
  *----------------------------------------------------------------------*/
-bool MRTR::Segment::SetFunction(int id, RefCountPtr<MRTR::Function> func)
+bool MOERTEL::Segment::SetFunction(int id, RefCountPtr<MOERTEL::Function> func)
 { 
   if (id<0)
   {
-    cout << "***ERR*** MRTR::Segment::SetFunction:\n"
+    cout << "***ERR*** MOERTEL::Segment::SetFunction:\n"
          << "***ERR*** id = " << id << " < 0 (out of range)\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   if (func==null)
   {
-    cout << "***ERR*** MRTR::Segment::SetFunction:\n"
+    cout << "***ERR*** MOERTEL::Segment::SetFunction:\n"
          << "***ERR*** func = NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   
   // check for existing function with this id and evtentually overwrite
-  map<int,RefCountPtr<MRTR::Function> >::iterator curr = functions_.find(id);
+  map<int,RefCountPtr<MOERTEL::Function> >::iterator curr = functions_.find(id);
   if (curr != functions_.end())
   {
     curr->second = func;
     return true;
   }
-  RefCountPtr<MRTR::Function> newfunc = func;
-  functions_.insert(pair<int,RefCountPtr<MRTR::Function> >(id,newfunc));
+  RefCountPtr<MOERTEL::Function> newfunc = func;
+  functions_.insert(pair<int,RefCountPtr<MOERTEL::Function> >(id,newfunc));
   return true;
 }
 #endif
@@ -219,13 +221,13 @@ bool MRTR::Segment::SetFunction(int id, RefCountPtr<MRTR::Function> func)
  | deriv  (out)  derivatives of functions at xi, if NULL on input,      |
  |               no evaluation                                          | 
  *----------------------------------------------------------------------*/
-bool MRTR::Segment::EvaluateFunction(int id, const double* xi, double* val, 
+bool MOERTEL::Segment::EvaluateFunction(int id, const double* xi, double* val, 
                                      int valdim, double* deriv)
 { 
-  map<int,RefCountPtr<MRTR::Function> >::iterator curr = functions_.find(id);
+  map<int,RefCountPtr<MOERTEL::Function> >::iterator curr = functions_.find(id);
   if (curr == functions_.end())
   {
-    cout << "***ERR*** MRTR::Segment::EvaluateFunction:\n"
+    cout << "***ERR*** MOERTEL::Segment::EvaluateFunction:\n"
          << "***ERR*** function id " << id << " does not exist on this segment\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -238,7 +240,7 @@ bool MRTR::Segment::EvaluateFunction(int id, const double* xi, double* val,
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 06/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MRTR::Segment& seg)
+ostream& operator << (ostream& os, const MOERTEL::Segment& seg)
 {
   seg.Print(); 
   return os;
@@ -248,7 +250,7 @@ ostream& operator << (ostream& os, const MRTR::Segment& seg)
  | get local numbering id for global node id on this segment mwgee 07/05|
  | return -1 of nid is not adjacent to this segment                     |
  *----------------------------------------------------------------------*/
-int MRTR::Segment::GetLocalNodeId(int nid)
+int MOERTEL::Segment::GetLocalNodeId(int nid)
 { 
   int lid=-1;
   for (int i=0; i<Nnode(); ++i)
@@ -259,7 +261,7 @@ int MRTR::Segment::GetLocalNodeId(int nid)
     }
   if (lid<0)
   {
-    cout << "***ERR*** MRTR::Segment::GetLocalNodeId:\n"
+    cout << "***ERR*** MOERTEL::Segment::GetLocalNodeId:\n"
          << "***ERR*** cannot find node " << nid << " in segment " << this->Id() << " list of nodes\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -270,7 +272,7 @@ int MRTR::Segment::GetLocalNodeId(int nid)
 /*----------------------------------------------------------------------*
  | build an outward normal at a node adjacent to this        mwgee 07/05|
  *----------------------------------------------------------------------*/
-double* MRTR::Segment::BuildNormalAtNode(int nid)
+double* MOERTEL::Segment::BuildNormalAtNode(int nid)
 { 
   // find this node in my list of nodes and get local numbering for it
   int lid = GetLocalNodeId(nid);
@@ -287,7 +289,7 @@ double* MRTR::Segment::BuildNormalAtNode(int nid)
  |                                                           mwgee 07/05|
  | construct ptrs to redundant nodes from my node id list               |
  *----------------------------------------------------------------------*/
-bool MRTR::Segment::GetPtrstoNodes(MRTR::Interface& interface)
+bool MOERTEL::Segment::GetPtrstoNodes(MOERTEL::Interface& interface)
 { 
   if (!interface.IsComplete()) return false;
   if (!interface.lComm()) return true;
@@ -302,7 +304,7 @@ bool MRTR::Segment::GetPtrstoNodes(MRTR::Interface& interface)
     nodeptr_[i] = interface.GetNodeView(nodeId_[i]).get();
     if (!nodeptr_[i])
     {
-      cout << "***ERR*** MRTR::Segment::GetPtrstoNodes:\n"
+      cout << "***ERR*** MOERTEL::Segment::GetPtrstoNodes:\n"
            << "***ERR*** interface " << interface.Id() << " GetNodeView failed\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);     
@@ -315,7 +317,7 @@ bool MRTR::Segment::GetPtrstoNodes(MRTR::Interface& interface)
  |                                                           mwgee 10/05|
  | construct ptrs to nodes from vector                                  |
  *----------------------------------------------------------------------*/
-bool MRTR::Segment::GetPtrstoNodes(vector<MRTR::Node*>& nodes)
+bool MOERTEL::Segment::GetPtrstoNodes(vector<MOERTEL::Node*>& nodes)
 { 
   if (!nodeId_.size()) return false;
   
@@ -335,7 +337,7 @@ bool MRTR::Segment::GetPtrstoNodes(vector<MRTR::Node*>& nodes)
       }
     if (!foundit)
     {
-      cout << "***ERR*** MRTR::Segment::GetPtrstoNodes:\n"
+      cout << "***ERR*** MOERTEL::Segment::GetPtrstoNodes:\n"
            << "***ERR*** cannot find node " << nodeId_[i] << " in vector\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);     
@@ -348,12 +350,12 @@ bool MRTR::Segment::GetPtrstoNodes(vector<MRTR::Node*>& nodes)
  |                                                           mwgee 07/05|
  | return type of function with certain id                              |
  *----------------------------------------------------------------------*/
-MRTR::Function::FunctionType MRTR::Segment::FunctionType(int id)
+MOERTEL::Function::FunctionType MOERTEL::Segment::FunctionType(int id)
 { 
   // find the function with id id
-  map<int,RefCountPtr<MRTR::Function> >::iterator curr = functions_.find(id);
+  map<int,RefCountPtr<MOERTEL::Function> >::iterator curr = functions_.find(id);
   if (curr==functions_.end()) 
-    return MRTR::Function::func_none;
+    return MOERTEL::Function::func_none;
   else
     return curr->second->Type();
 }
@@ -363,10 +365,10 @@ MRTR::Function::FunctionType MRTR::Segment::FunctionType(int id)
  |                                                           mwgee 07/05|
  | get ptr to function with id id                                       |
  *----------------------------------------------------------------------*/
-MRTR::Function* MRTR::Segment::GetFunction(int id)
+MOERTEL::Function* MOERTEL::Segment::GetFunction(int id)
 { 
   // find the function with id id
-  map<int,RefCountPtr<MRTR::Function> >::iterator curr = functions_.find(id);
+  map<int,RefCountPtr<MOERTEL::Function> >::iterator curr = functions_.find(id);
   if (curr==functions_.end()) 
     return NULL;
   else

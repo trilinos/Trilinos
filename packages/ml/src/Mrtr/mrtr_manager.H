@@ -33,8 +33,8 @@
 /* ******************************************************************** */
 #ifdef TRILINOS_PACKAGE
 
-#ifndef MRTR_MANAGER_H
-#define MRTR_MANAGER_H
+#ifndef MOERTEL_MANAGER_H
+#define MOERTEL_MANAGER_H
 
 #include <ctime>
 #include <iostream>
@@ -57,7 +57,7 @@
 using namespace std;
 using namespace Teuchos;
 
-namespace MRTR
+namespace MOERTEL
 {
 
 class Manager 
@@ -84,13 +84,13 @@ public:
   int OutLevel() { return outlevel_; }
 
   // set the dimension type
-  void SetDimension(MRTR::Manager::DimensionType type) { dimensiontype_ = type; return; }
+  void SetDimension(MOERTEL::Manager::DimensionType type) { dimensiontype_ = type; return; }
   
   // get the dimension type
-  MRTR::Manager::DimensionType Dimension() { return dimensiontype_; }
+  MOERTEL::Manager::DimensionType Dimension() { return dimensiontype_; }
   
   // add an interface to the mortar manager
-  bool AddInterface(MRTR::Interface& interface);
+  bool AddInterface(MOERTEL::Interface& interface);
 
   // printout this mortar manager
   bool Print() const;
@@ -116,7 +116,7 @@ public:
 private:  
   // don't want = operator and copy-ctor
   Manager operator = (const Manager& old);
-  Manager(MRTR::Manager& old);
+  Manager(MOERTEL::Manager& old);
 
   // do integration of all interfaces 2D case
   bool Mortar_Integrate_2D();
@@ -136,7 +136,7 @@ private:
 
   // automatically choose mortar side (called when mortarside==-2 on any interface)
   bool ChooseMortarSide();
-  bool ChooseMortarSide_2D(vector<RefCountPtr<MRTR::Interface> > inter);
+  bool ChooseMortarSide(vector<RefCountPtr<MOERTEL::Interface> >& inter);
   
 private:
 
@@ -152,13 +152,13 @@ private:
   RefCountPtr<Epetra_Map>       saddlemap_;           // the rowmap of the saddlepointproblem
   RefCountPtr<Epetra_CrsMatrix> saddlematrix_;        // the matrix of the saddle problem;
   
-  map<int,RefCountPtr<MRTR::Interface> >  interface_; // the interfaces
+  map<int,RefCountPtr<MOERTEL::Interface> >  interface_; // the interfaces
 };
 
-} // namespace MRTR
+} // namespace MOERTEL
 
 // << operator
-std::ostream& operator << (ostream& os, const MRTR::Manager& node);
+std::ostream& operator << (ostream& os, const MOERTEL::Manager& node);
 
-#endif // MRTR_MANAGER_H
+#endif // MOERTEL_MANAGER_H
 #endif // TRILINOS_PACKAGE

@@ -33,8 +33,8 @@
 /* ******************************************************************** */
 #ifdef TRILINOS_PACKAGE
 
-#ifndef MRTR_INTEGRATOR_H
-#define MRTR_INTEGRATOR_H
+#ifndef MOERTEL_INTEGRATOR_H
+#define MOERTEL_INTEGRATOR_H
 
 #include <ctime>
 #include <iostream>
@@ -52,23 +52,26 @@ using namespace Teuchos;
 
 // ----------   User Defined Includes   ----------
 
-namespace MRTR
+namespace MOERTEL
 {
 
 // forward declarations
-class MRTR::Interface;
-class MRTR::Segment;
-class MRTR::Node;
+class MOERTEL::Interface;
+class MOERTEL::Segment;
+class MOERTEL::Node;
 
 class Integrator 
 {
 public:
   
   // ctor
-  explicit Integrator(int ngp, bool oneD);
+  explicit Integrator(int ngp, bool oneD, int outlevel);
   
   // dtor
   virtual ~Integrator();
+  
+  // return the level of output
+  int OutLevel() { return outputlevel_; }
   
   // get the order of integration (== # gaussian points)
   inline int Ngp() { return ngp_; }
@@ -82,60 +85,61 @@ public:
 
 
   // integrate a 1D overlap between a slave and a master segment
-  Epetra_SerialDenseMatrix* Integrate(MRTR::Segment& sseg, double sxia, double sxib,
-                                      MRTR::Segment& mseg, double mxia, double mxib);
+  Epetra_SerialDenseMatrix* Integrate(MOERTEL::Segment& sseg, double sxia, double sxib,
+                                      MOERTEL::Segment& mseg, double mxia, double mxib);
   // assemble the result -Mdense from the integration above into M
-  bool Assemble(MRTR::Interface& inter, MRTR::Segment& sseg, MRTR::Segment& mseg, 
+  bool Assemble(MOERTEL::Interface& inter, MOERTEL::Segment& sseg, MOERTEL::Segment& mseg, 
                 Epetra_CrsMatrix& M, Epetra_SerialDenseMatrix& Mdense);
 
 
   // integrate a 1D slave segment
-  Epetra_SerialDenseMatrix* Integrate(MRTR::Segment& sseg, double sxia, double sxib);
+  Epetra_SerialDenseMatrix* Integrate(MOERTEL::Segment& sseg, double sxia, double sxib);
   // assemble the result Ddense from the integration above into D
-  bool Assemble(MRTR::Interface& inter, MRTR::Segment& sseg,  
+  bool Assemble(MOERTEL::Interface& inter, MOERTEL::Segment& sseg,  
                 Epetra_CrsMatrix& D, Epetra_SerialDenseMatrix& Ddense);
 
 
   // integrate modification of M in 1D
-  Epetra_SerialDenseMatrix* Integrate_2D_Mmod(MRTR::Segment& sseg, double sxia, double sxib,
-                                              MRTR::Segment& mseg, double mxia, double mxib);
+  Epetra_SerialDenseMatrix* Integrate_2D_Mmod(MOERTEL::Segment& sseg, double sxia, double sxib,
+                                              MOERTEL::Segment& mseg, double mxia, double mxib);
   // assemble the result -Mdense from the integration above into M
-  bool Assemble_2D_Mod(MRTR::Interface& inter, MRTR::Segment& sseg, MRTR::Segment& mseg, 
+  bool Assemble_2D_Mod(MOERTEL::Interface& inter, MOERTEL::Segment& sseg, MOERTEL::Segment& mseg, 
                 Epetra_CrsMatrix& M, Epetra_SerialDenseMatrix& Mmod);
 
 
   // integrate a 2D triangle overlap segment, master part M and slave part D
-  bool Integrate(RefCountPtr<MRTR::Segment> actseg,
-                 MRTR::Segment& sseg, 
-                 MRTR::Segment& mseg,
+  bool Integrate(RefCountPtr<MOERTEL::Segment> actseg,
+                 MOERTEL::Segment& sseg, 
+                 MOERTEL::Segment& mseg,
                  Epetra_SerialDenseMatrix** Ddense, 
                  Epetra_SerialDenseMatrix** Mdense, 
-                 MRTR::Overlap& overlap);
+                 MOERTEL::Overlap& overlap);
 
   // Assemble D into nodes
-  bool Assemble(MRTR::Interface& inter,MRTR::Segment& sseg,Epetra_SerialDenseMatrix& Ddense);
+  bool Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& sseg,Epetra_SerialDenseMatrix& Ddense);
 
   // Assemble M into nodes
-  bool Assemble(MRTR::Interface& inter,MRTR::Segment& sseg,MRTR::Segment& mseg,
+  bool Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& sseg,MOERTEL::Segment& mseg,
                 Epetra_SerialDenseMatrix& Mdense);
 
 private:  
   // don't want = operator
   Integrator operator = (const Integrator& old);
   // don't want copy-ctor
-  Integrator(MRTR::Integrator& old);
+  Integrator(MOERTEL::Integrator& old);
 
 private:
 
   bool           oneD_;    // dimension of the integration, true if 1-dimensional
   int            ngp_;     // order of the integration
+  int            outputlevel_; // output level (0-10)
   vector<double> coords_;  // vector holding gaussian point coordinates
   vector<double> weights_; // vector holding gaussian point weights
 
 
 };
 
-} // namespace MRTR
+} // namespace MOERTEL
 
-#endif // MRTR_INTEGRATOR_H
+#endif // MOERTEL_INTEGRATOR_H
 #endif // TRILINOS_PACKAGE

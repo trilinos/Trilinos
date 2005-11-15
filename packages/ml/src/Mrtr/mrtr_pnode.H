@@ -33,8 +33,8 @@
 /* ******************************************************************** */
 #ifdef TRILINOS_PACKAGE
 
-#ifndef MRTR_PROJECTNODE_H
-#define MRTR_PROJECTNODE_H
+#ifndef MOERTEL_PROJECTNODE_H
+#define MOERTEL_PROJECTNODE_H
 
 #include <ctime>
 #include <iostream>
@@ -47,25 +47,25 @@ using namespace std;
 
 // ----------   User Defined Includes   ----------
 
-namespace MRTR
+namespace MOERTEL
 {
 
 // forward declarations
-class MRTR::Interface;
-class MRTR::Segment;
+class MOERTEL::Interface;
+class MOERTEL::Segment;
 
-class  ProjectedNode : public MRTR::Node
+class  ProjectedNode : public MOERTEL::Node
 {
 public:
   
   // ctor 
-  explicit ProjectedNode(const MRTR::Node& basenode, const double* xi, MRTR::Segment* pseg);
+  explicit ProjectedNode(const MOERTEL::Node& basenode, const double* xi, MOERTEL::Segment* pseg);
   
   // ctor for the case of orthogonal projection 
-  explicit ProjectedNode(const MRTR::Node& basenode, const double* xi, MRTR::Segment* pseg, int orthseg);
+  explicit ProjectedNode(const MOERTEL::Node& basenode, const double* xi, MOERTEL::Segment* pseg, int orthseg);
   
   // copy-ctor
-  ProjectedNode(MRTR::ProjectedNode& old);
+  ProjectedNode(MOERTEL::ProjectedNode& old);
   
   // dtor
   virtual ~ProjectedNode();
@@ -77,7 +77,7 @@ public:
   const double* Xi() { return xi_; }
   
   // get view of segment I am on
-  MRTR::Segment* Segment() { return pseg_; }
+  MOERTEL::Segment* Segment() { return pseg_; }
   
   // get id of segment this projection is orthogonal to
   int OrthoSegment() { return orthseg_; }
@@ -89,15 +89,15 @@ protected:
 protected:
 
   double xi_[2];            // local coordinates of this projected node on pseg_;
-  MRTR::Segment* pseg_;     // segment this projected node is on
+  MOERTEL::Segment* pseg_;     // segment this projected node is on
   int orthseg_;             // id of segment this projection is orthogonal to
                             // (used only in orth. projection, otherwise -1)
 };
 
-} // namespace MRTR
+} // namespace MOERTEL
 
 // << operator
-std::ostream& operator << (ostream& os, const MRTR::ProjectedNode& pnode);
+std::ostream& operator << (ostream& os, const MOERTEL::ProjectedNode& pnode);
 
-#endif // MRTR_PROJECTNODE_H
+#endif // MOERTEL_PROJECTNODE_H
 #endif // TRILINOS_PACKAGE

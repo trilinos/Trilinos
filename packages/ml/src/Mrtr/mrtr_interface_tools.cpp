@@ -44,7 +44,7 @@
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
-MRTR::Interface::Interface(int Id,  bool oneD, Epetra_Comm& comm, int outlevel) :
+MOERTEL::Interface::Interface(int Id,  bool oneD, Epetra_Comm& comm, int outlevel) :
 Id_(Id),
 outlevel_(outlevel),
 oneD_(oneD),
@@ -53,9 +53,9 @@ isIntegrated_(false),
 gcomm_(comm),
 lcomm_(null),
 mortarside_(-1),
-ptype_(MRTR::Interface::proj_none),
-primal_(MRTR::Function::func_none),
-dual_(MRTR::Function::func_none)
+ptype_(MOERTEL::Interface::proj_none),
+primal_(MOERTEL::Function::func_none),
+dual_(MOERTEL::Function::func_none)
 {
   return;
 }
@@ -63,7 +63,7 @@ dual_(MRTR::Function::func_none)
 /*----------------------------------------------------------------------*
  |  copy-ctor (public)                                       mwgee 06/05|
  *----------------------------------------------------------------------*/
-MRTR::Interface::Interface(MRTR::Interface& old) :
+MOERTEL::Interface::Interface(MOERTEL::Interface& old) :
 Id_(old.Id_),
 outlevel_(old.outlevel_),
 oneD_(old.oneD_),
@@ -79,30 +79,30 @@ dual_(old.dual_)
   for (int i=0; i<2; ++i)
   {
     // the local segment map
-    map<int,RefCountPtr<MRTR::Segment> >::const_iterator seg_curr;
+    map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator seg_curr;
     for (seg_curr=old.seg_[i].begin(); seg_curr != old.seg_[i].end(); ++seg_curr)
     {
-      RefCountPtr<MRTR::Segment>  tmpseg = rcp(seg_curr->second->Clone());
-      seg_[i].insert(pair<int,RefCountPtr<MRTR::Segment> >(tmpseg->Id(),tmpseg));
+      RefCountPtr<MOERTEL::Segment>  tmpseg = rcp(seg_curr->second->Clone());
+      seg_[i].insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmpseg->Id(),tmpseg));
     }
     // the global segment map
     for (seg_curr=old.rseg_[i].begin(); seg_curr != old.rseg_[i].end(); ++seg_curr)
     {
-      RefCountPtr<MRTR::Segment> tmpseg = rcp(seg_curr->second->Clone());
-      rseg_[i].insert(pair<int,RefCountPtr<MRTR::Segment> >(tmpseg->Id(),tmpseg));
+      RefCountPtr<MOERTEL::Segment> tmpseg = rcp(seg_curr->second->Clone());
+      rseg_[i].insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmpseg->Id(),tmpseg));
     }
     // the local node map
-    map<int,RefCountPtr<MRTR::Node> >::const_iterator node_curr;
+    map<int,RefCountPtr<MOERTEL::Node> >::const_iterator node_curr;
     for (node_curr=old.node_[i].begin(); node_curr != old.node_[i].end(); ++node_curr)
     {
-      RefCountPtr<MRTR::Node> tmpnode = rcp( new MRTR::Node(*(node_curr->second)));
-      node_[i].insert(pair<int,RefCountPtr<MRTR::Node> >(tmpnode->Id(),tmpnode));
+      RefCountPtr<MOERTEL::Node> tmpnode = rcp( new MOERTEL::Node(*(node_curr->second)));
+      node_[i].insert(pair<int,RefCountPtr<MOERTEL::Node> >(tmpnode->Id(),tmpnode));
     }
     // the global node map
     for (node_curr=old.rnode_[i].begin(); node_curr != old.rnode_[i].end(); ++node_curr)
     {
-      RefCountPtr<MRTR::Node> tmpnode = rcp(new MRTR::Node(*(node_curr->second)));
-      rnode_[i].insert(pair<int,RefCountPtr<MRTR::Node> >(tmpnode->Id(),tmpnode));
+      RefCountPtr<MOERTEL::Node> tmpnode = rcp(new MOERTEL::Node(*(node_curr->second)));
+      rnode_[i].insert(pair<int,RefCountPtr<MOERTEL::Node> >(tmpnode->Id(),tmpnode));
     }
   }
   // copy the PID maps
@@ -119,7 +119,7 @@ dual_(old.dual_)
 /*----------------------------------------------------------------------*
  |  dtor (public)                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
-MRTR::Interface::~Interface()
+MOERTEL::Interface::~Interface()
 { 
   // delete segments
   for (int i=0; i<2; ++i)
@@ -143,11 +143,11 @@ MRTR::Interface::~Interface()
 /*----------------------------------------------------------------------*
  |  print segments of this interface to cout                  (public)  |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::PrintSegments() const
+bool MOERTEL::Interface::PrintSegments() const
 { 
   if (!lComm()) return true;
   
-  map<int,RefCountPtr<MRTR::Segment> >::const_iterator curr;
+  map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator curr;
   for (int j=0; j<2; ++j) 
   {
     for (int k=0; k<lComm()->NumProc(); ++k) 
@@ -158,12 +158,12 @@ bool MRTR::Interface::PrintSegments() const
              << ":\t Segments Side " << j << endl;
         for (curr=rseg_[j].begin(); curr!=rseg_[j].end(); ++curr)
         {
-          RefCountPtr<MRTR::Segment> seg = curr->second;
+          RefCountPtr<MOERTEL::Segment> seg = curr->second;
           if (SegPID(seg->Id()) == k)
           {
             if (seg == null)
             {
-              cout << "***ERR*** MRTR::Interface::PrintSegments:\n"
+              cout << "***ERR*** MOERTEL::Interface::PrintSegments:\n"
                    << "***ERR*** found NULL entry in map of segments\n"
                    << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
               return false;
@@ -182,11 +182,11 @@ bool MRTR::Interface::PrintSegments() const
 /*----------------------------------------------------------------------*
  |  print nodes of this interface to cout                     (public)  |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::PrintNodes() const
+bool MOERTEL::Interface::PrintNodes() const
 { 
   if (!lComm()) return true;
   
-  map<int,RefCountPtr<MRTR::Node> >::const_iterator curr;
+  map<int,RefCountPtr<MOERTEL::Node> >::const_iterator curr;
   
   for (int j=0; j<2; ++j)
   {
@@ -198,12 +198,12 @@ bool MRTR::Interface::PrintNodes() const
              << ":\t Nodes Side " << j << endl;
         for (curr=rnode_[j].begin(); curr!=rnode_[j].end(); ++curr)
         {
-          RefCountPtr<MRTR::Node> node = curr->second;
+          RefCountPtr<MOERTEL::Node> node = curr->second;
           if (NodePID(node->Id()) == k)
           {
             if (node == null)
             {
-              cout << "***ERR*** MRTR::Interface::PrintNodes:\n"
+              cout << "***ERR*** MOERTEL::Interface::PrintNodes:\n"
                    << "***ERR*** found NULL entry in map of nodes\n"
                    << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
               return false;
@@ -222,7 +222,7 @@ bool MRTR::Interface::PrintNodes() const
 /*----------------------------------------------------------------------*
  |  print interface to cout                                   (public)  |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::Print() const
+bool MOERTEL::Interface::Print() const
 { 
   
   if (!IsComplete())
@@ -237,16 +237,16 @@ bool MRTR::Interface::Print() const
   if (!lComm()) return true;
   if (gcomm_.MyPID()==0)
   {
-    cout << "===== MRTR Interface # " << Id() << " =====\n";
+    cout << "===== MOERTEL Interface # " << Id() << " =====\n";
     if (oneD_)
       cout << "Dimension: 1D\n";
     else
       cout << "Dimension: 2D\n";
-    if (GetProjectionType()==MRTR::Interface::proj_none)
+    if (GetProjectionType()==MOERTEL::Interface::proj_none)
       cout << "ProjectionType: none\n";
-    else if (GetProjectionType()==MRTR::Interface::proj_continousnormalfield)
+    else if (GetProjectionType()==MOERTEL::Interface::proj_continousnormalfield)
       cout << "ProjectionType: continousnormalfield\n";
-    else if (GetProjectionType()==MRTR::Interface::proj_orthogonal)
+    else if (GetProjectionType()==MOERTEL::Interface::proj_orthogonal)
       cout << "ProjectionType: orthogonal\n";
   }
   
@@ -266,7 +266,7 @@ bool MRTR::Interface::Print() const
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 06/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MRTR::Interface& inter)
+ostream& operator << (ostream& os, const MOERTEL::Interface& inter)
 { 
   inter.Print();
   return (os);
@@ -275,13 +275,13 @@ ostream& operator << (ostream& os, const MRTR::Interface& inter)
 /*----------------------------------------------------------------------*
  |  add a single segment to a specified side of the interface (public)  |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::AddSegment(MRTR::Segment& seg, int side)
+bool MOERTEL::Interface::AddSegment(MOERTEL::Segment& seg, int side)
 { 
   // check whether this interface has been finalized before
   if (IsComplete())
   {
     if (OutLevel()>0)
-      cout << "***ERR*** MRTR::Interface::AddSegment:\n"
+      cout << "***ERR*** MOERTEL::Interface::AddSegment:\n"
            << "***ERR*** Cannot add segment as Complete() was called before\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -291,17 +291,17 @@ bool MRTR::Interface::AddSegment(MRTR::Segment& seg, int side)
   if (side != 0 && side != 1)
   {
     if (OutLevel()>0)
-      cout << "***ERR*** MRTR::Interface::AddSegment:\n"
+      cout << "***ERR*** MOERTEL::Interface::AddSegment:\n"
            << "***ERR*** parameter side: " << side << " has to be 0 or 1\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   
-  if (seg.Type()==MRTR::Segment::seg_BiLinearQuad)
+  if (seg.Type()==MOERTEL::Segment::seg_BiLinearQuad)
   {
     if (seg.Nnode() != 4)
     {
-      cout << "***ERR*** MRTR::Interface::AddSegment:\n"
+      cout << "***ERR*** MOERTEL::Interface::AddSegment:\n"
            << "***ERR*** Unknown number of nodes " << seg.Nnode() << "for BilinearQuad\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -317,26 +317,26 @@ bool MRTR::Interface::AddSegment(MRTR::Segment& seg, int side)
     ids2[2] = seg.NodeIds()[3];
 
     // create 2 triangles, give second one the negative id
-    RefCountPtr<MRTR::Segment> tmp1 = rcp( new MRTR::Segment_BiLinearTri(seg.Id(),3,ids1));
-    RefCountPtr<MRTR::Segment> tmp2 = rcp( new MRTR::Segment_BiLinearTri(-seg.Id(),3,ids2));
+    RefCountPtr<MOERTEL::Segment> tmp1 = rcp( new MOERTEL::Segment_BiLinearTri(seg.Id(),3,ids1,seg.OutLevel()));
+    RefCountPtr<MOERTEL::Segment> tmp2 = rcp( new MOERTEL::Segment_BiLinearTri(-seg.Id(),3,ids2,seg.OutLevel()));
     
     // add 2 triangles
-    map<int,RefCountPtr<MRTR::Segment> >* s = 0;
+    map<int,RefCountPtr<MOERTEL::Segment> >* s = 0;
     if (side==0) s = &(seg_[0]);
     else         s = &(seg_[1]);
-    s->insert(pair<int,RefCountPtr<MRTR::Segment> >(tmp1->Id(),tmp1));    
-    s->insert(pair<int,RefCountPtr<MRTR::Segment> >(tmp2->Id(),tmp2));    
+    s->insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmp1->Id(),tmp1));    
+    s->insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmp2->Id(),tmp2));    
   }
   else // all other types of segments
   {
     // copy the segment
-    RefCountPtr<MRTR::Segment> tmp = rcp( seg.Clone());
+    RefCountPtr<MOERTEL::Segment> tmp = rcp( seg.Clone());
   
     // add segment
-    map<int,RefCountPtr<MRTR::Segment> >* s = 0;
+    map<int,RefCountPtr<MOERTEL::Segment> >* s = 0;
     if (side==0) s = &(seg_[0]);
     else         s = &(seg_[1]);
-    s->insert(pair<int,RefCountPtr<MRTR::Segment> >(tmp->Id(),tmp));
+    s->insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmp->Id(),tmp));
   }
 
   return true;
@@ -345,13 +345,13 @@ bool MRTR::Interface::AddSegment(MRTR::Segment& seg, int side)
 /*----------------------------------------------------------------------*
  |  add a single node to a specified side of the interface (public)     |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::AddNode(MRTR::Node& node, int side)
+bool MOERTEL::Interface::AddNode(MOERTEL::Node& node, int side)
 { 
   // check whether this interface has been finalized before
   if (IsComplete())
   {
     if (OutLevel()>0)
-      cout << "***ERR*** MRTR::Interface::AddNode:\n"
+      cout << "***ERR*** MOERTEL::Interface::AddNode:\n"
            << "***ERR*** Cannot add node as Complete() was called before\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -361,58 +361,58 @@ bool MRTR::Interface::AddNode(MRTR::Node& node, int side)
   if (side != 0 && side != 1)
   {
     if (OutLevel()>0)
-      cout << "***ERR*** MRTR::Interface::AddNode:\n"
+      cout << "***ERR*** MOERTEL::Interface::AddNode:\n"
            << "***ERR*** parameter side: " << side << " has to be 0 or 1\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   
   // copy the node
-  RefCountPtr<MRTR::Node>  tmp = rcp( new MRTR::Node(node));
+  RefCountPtr<MOERTEL::Node>  tmp = rcp( new MOERTEL::Node(node));
   
   // add node
-  map<int,RefCountPtr<MRTR::Node> >* n = 0;
+  map<int,RefCountPtr<MOERTEL::Node> >* n = 0;
   if (side==0) n = &(node_[0]);
   else         n = &(node_[1]);
-  n->insert(pair<int,RefCountPtr<MRTR::Node> >(tmp->Id(),tmp));
+  n->insert(pair<int,RefCountPtr<MOERTEL::Node> >(tmp->Id(),tmp));
 
   return true;
 }
 
 /*----------------------------------------------------------------------*
- |  set a MRTR::function derived class to all segments                  |
+ |  set a MOERTEL::function derived class to all segments                  |
  |  on a specified side                                                 |
  |  side      (in)    side of interface to set function to              |
  |  id        (in)    id of the function                                |
  |  func      (in)    ptr to function class to set to segments          |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::SetFunctionAllSegmentsSide(int side, 
-                                                 int id, MRTR::Function* func)
+bool MOERTEL::Interface::SetFunctionAllSegmentsSide(int side, 
+                                                 int id, MOERTEL::Function* func)
 { 
   if (side!=0 && side!=1)
   {
-    cout << "***ERR*** MRTR::Interface::SetFunctionAllSegmentsSide:\n"
+    cout << "***ERR*** MOERTEL::Interface::SetFunctionAllSegmentsSide:\n"
          << "***ERR*** side = " << side << " not equal 0 or 1\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   if (id<0)
   {
-    cout << "***ERR*** MRTR::Interface::SetFunctionAllSegmentsSide:\n"
+    cout << "***ERR*** MOERTEL::Interface::SetFunctionAllSegmentsSide:\n"
          << "***ERR*** id = " << id << " < 0 (out of range)\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   if (!func)
   {
-    cout << "***ERR*** MRTR::Interface::SetFunctionAllSegmentsSide:\n"
+    cout << "***ERR*** MOERTEL::Interface::SetFunctionAllSegmentsSide:\n"
          << "***ERR*** func = NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   
   // set the function to my own segments
-  map<int,RefCountPtr<MRTR::Segment> >::iterator scurr;
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
   for (scurr=seg_[side].begin(); scurr!=seg_[side].end(); ++scurr)
     scurr->second->SetFunction(id,func);
 
@@ -430,11 +430,11 @@ bool MRTR::Interface::SetFunctionAllSegmentsSide(int side,
  |  NOTE: This is a collective call that returns global number of       |
  |        segments of a side over all procs                             |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::SetMortarSide(int side)
+bool MOERTEL::Interface::SetMortarSide(int side)
 { 
   if (side!=0 && side!=1 && side!=-2)
   {
-    cout << "***ERR*** MRTR::Interface::SetMortarSide:\n"
+    cout << "***ERR*** MOERTEL::Interface::SetMortarSide:\n"
          << "***ERR*** side = " << side << " not equal 0 or 1\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     mortarside_=-1;
@@ -454,18 +454,18 @@ bool MRTR::Interface::SetMortarSide(int side)
  |        It returns 0 for procs not part of that intra-communcicator   |
  |        Complete() needs to be called before using this method        |
  *----------------------------------------------------------------------*/
-int MRTR::Interface::GlobalNsegment(int side)
+int MOERTEL::Interface::GlobalNsegment(int side)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::GlobalNsegment:\n"
+    cout << "***ERR*** MOERTEL::Interface::GlobalNsegment:\n"
          << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return -1;
   }
   if (side!=0 && side!=1)
   {
-    cout << "***ERR*** MRTR::Interface::GlobalNsegment:\n"
+    cout << "***ERR*** MOERTEL::Interface::GlobalNsegment:\n"
          << "***ERR*** side = " << side << " not equal 0 or 1\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return (-1);
@@ -486,11 +486,11 @@ int MRTR::Interface::GlobalNsegment(int side)
  |        It returns 0 for procs not part of that intra-communcicator   |
  |        Complete() needs to be called before using this method        |
  *----------------------------------------------------------------------*/
-int MRTR::Interface::GlobalNsegment()
+int MOERTEL::Interface::GlobalNsegment()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::GlobalNsegment:\n"
+    cout << "***ERR*** MOERTEL::Interface::GlobalNsegment:\n"
          << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return -1;
@@ -511,18 +511,18 @@ int MRTR::Interface::GlobalNsegment()
  |        It returns 0 for procs not part of that intra-communcicator   |
  |        Complete() needs to be called before using this method        |
  *----------------------------------------------------------------------*/
-int MRTR::Interface::GlobalNnode(int side)
+int MOERTEL::Interface::GlobalNnode(int side)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::GlobalNnode:\n"
+    cout << "***ERR*** MOERTEL::Interface::GlobalNnode:\n"
          << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return -1;
   }
   if (side!=0 && side!=1)
   {
-    cout << "***ERR*** MRTR::Interface::GlobalNnode:\n"
+    cout << "***ERR*** MOERTEL::Interface::GlobalNnode:\n"
          << "***ERR*** side = " << side << " not equal 0 or 1\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return (-1);
@@ -541,11 +541,11 @@ int MRTR::Interface::GlobalNnode(int side)
  |        It returns 0 for procs not part of that intra-communcicator   |
  |        Complete() needs to be called before using this method        |
  *----------------------------------------------------------------------*/
-int MRTR::Interface::GlobalNnode()
+int MOERTEL::Interface::GlobalNnode()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::GlobalNnode:\n"
+    cout << "***ERR*** MOERTEL::Interface::GlobalNnode:\n"
          << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return -1;
@@ -563,20 +563,21 @@ int MRTR::Interface::GlobalNnode()
  |  interface. If called from a proc that is not part of this           |
  |  intra-communicator, the method returns -1                           |
  *----------------------------------------------------------------------*/
-int MRTR::Interface::NodePID(int nid) const
+int MOERTEL::Interface::NodePID(int nid) const
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::NodePID:\n"
+    cout << "***ERR*** MOERTEL::Interface::NodePID:\n"
          << "***ERR*** Cannot search node, Complete() not called on interface " << Id_ << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return (-1);
   }
   if (!lComm())
   {
-    cout << "***WRN*** MRTR::Interface::NodePID:\n"
-         << "***WRN*** Proc " << gcomm_.MyPID() << " not part of intra-communicator of interface " << Id() << "\n"
-         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    if (OutLevel()>0)
+    cout << "MOERTEL: ***WRN*** MOERTEL::Interface::NodePID:\n"
+         << "MOERTEL: ***WRN*** Proc " << gcomm_.MyPID() << " not part of intra-communicator of interface " << Id() << "\n"
+         << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return (-1);
   }
   
@@ -585,7 +586,7 @@ int MRTR::Interface::NodePID(int nid) const
     return(curr->second);
   else
   {
-    cout << "***ERR*** MRTR::Interface::NodePID:\n"
+    cout << "***ERR*** MOERTEL::Interface::NodePID:\n"
          << "***ERR*** Proc/Intra-Proc " << gcomm_.MyPID() << "/" << lcomm_->MyPID() << ": Cannot find node " << nid << " on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return(-1);
@@ -595,20 +596,21 @@ int MRTR::Interface::NodePID(int nid) const
 /*----------------------------------------------------------------------*
  |  find PID (process id) for given segment id sid                      |
  *----------------------------------------------------------------------*/
-int MRTR::Interface::SegPID(int sid) const
+int MOERTEL::Interface::SegPID(int sid) const
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::SegPID:\n"
+    cout << "***ERR*** MOERTEL::Interface::SegPID:\n"
          << "***ERR*** Cannot search segment, Complete() not called on interface " << Id_ << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return (-1);
   }
   if (!lComm())
   {
-    cout << "***WRN*** MRTR::Interface::NodePID:\n"
-         << "***WRN*** Proc " << gcomm_.MyPID() << " not part of intra-communicator of interface " << Id() << "\n"
-         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    if (OutLevel()>0)
+    cout << "MOERTEL: ***WRN*** MOERTEL::Interface::NodePID:\n"
+         << "MOERTEL: ***WRN*** Proc " << gcomm_.MyPID() << " not part of intra-communicator of interface " << Id() << "\n"
+         << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return (-1);
   }
   
@@ -617,7 +619,7 @@ int MRTR::Interface::SegPID(int sid) const
     return(curr->second);
   else
   {
-    cout << "***ERR*** MRTR::Interface::SegPID:\n"
+    cout << "***ERR*** MOERTEL::Interface::SegPID:\n"
          << "***ERR*** Proc/Intra-Proc " << gcomm_.MyPID() << "/"<< lcomm_->MyPID() << ": Cannot find segment " << sid << "on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return(-1);
@@ -627,13 +629,13 @@ int MRTR::Interface::SegPID(int sid) const
 /*----------------------------------------------------------------------*
  |  find PID (process id) for given segment id sid                      |
  *----------------------------------------------------------------------*/
-int MRTR::Interface::OtherSide(int side)
+int MOERTEL::Interface::OtherSide(int side)
 { 
   if (side==0) return 1;
   else if (side==1) return 0;
   else
   {
-    cout << "***ERR*** MRTR::Interface::OtherSide:\n"
+    cout << "***ERR*** MOERTEL::Interface::OtherSide:\n"
          << "***ERR*** side " << side << " out of range (0 or 1)\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return -1;
@@ -644,9 +646,9 @@ int MRTR::Interface::OtherSide(int side)
  |  get view of a local node with node id nid                           |
  |  if sid is not a local node will return NULL                         |
  *----------------------------------------------------------------------*/
-RefCountPtr<MRTR::Node> MRTR::Interface::GetNodeViewLocal(int nid)
+RefCountPtr<MOERTEL::Node> MOERTEL::Interface::GetNodeViewLocal(int nid)
 { 
-  map<int,RefCountPtr<MRTR::Node> >::iterator curr = node_[0].find(nid);
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr = node_[0].find(nid);
   if (curr != node_[0].end())
     return(curr->second);
   curr = node_[1].find(nid);
@@ -658,18 +660,18 @@ RefCountPtr<MRTR::Node> MRTR::Interface::GetNodeViewLocal(int nid)
 /*----------------------------------------------------------------------*
  |  get view of a node with node id nid                                 |
  *----------------------------------------------------------------------*/
-RefCountPtr<MRTR::Node> MRTR::Interface::GetNodeView(int nid)
+RefCountPtr<MOERTEL::Node> MOERTEL::Interface::GetNodeView(int nid)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::GetNodeView:\n"
+    cout << "***ERR*** MOERTEL::Interface::GetNodeView:\n"
          << "***ERR*** Interface " << Id() << ": Complete() not called\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
   if (!lComm()) return null;
   
-  map<int,RefCountPtr<MRTR::Node> >::iterator curr = rnode_[0].find(nid);
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr = rnode_[0].find(nid);
   if (curr != rnode_[0].end())
     return(curr->second);
   curr = rnode_[1].find(nid);
@@ -684,20 +686,20 @@ RefCountPtr<MRTR::Node> MRTR::Interface::GetNodeView(int nid)
  | destroying it                                                        |
  | returns NULL if proc is not art of the local communicator            |
  *----------------------------------------------------------------------*/
-MRTR::Node** MRTR::Interface::GetNodeView()
+MOERTEL::Node** MOERTEL::Interface::GetNodeView()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::GetNodeView:\n"
+    cout << "***ERR*** MOERTEL::Interface::GetNodeView:\n"
          << "***ERR*** Interface " << Id() << ": Complete() not called\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
   if (!lComm()) return NULL;
   
-  MRTR::Node** view = new MRTR::Node*[GlobalNnode()];
+  MOERTEL::Node** view = new MOERTEL::Node*[GlobalNnode()];
   int count=0;
-  map<int,RefCountPtr<MRTR::Node> >::iterator curr;
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
   for (int i=0; i<2; ++i)
     for (curr=rnode_[i].begin(); curr != rnode_[i].end(); ++curr)
     {
@@ -710,18 +712,18 @@ MRTR::Node** MRTR::Interface::GetNodeView()
 /*----------------------------------------------------------------------*
  |  get view of a local segment with id sid                             |
  *----------------------------------------------------------------------*/
-RefCountPtr<MRTR::Segment>  MRTR::Interface::GetSegmentView(int sid)
+RefCountPtr<MOERTEL::Segment>  MOERTEL::Interface::GetSegmentView(int sid)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::GetSegmentView:\n"
+    cout << "***ERR*** MOERTEL::Interface::GetSegmentView:\n"
          << "***ERR*** Interface " << Id() << ": Complete() not called\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
   if (!lComm()) return null;
   
-  map<int,RefCountPtr<MRTR::Segment> >::iterator curr = rseg_[0].find(sid);
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator curr = rseg_[0].find(sid);
   if (curr != rseg_[0].end())
     return(curr->second);
   curr = rseg_[1].find(sid);
@@ -735,19 +737,19 @@ RefCountPtr<MRTR::Segment>  MRTR::Interface::GetSegmentView(int sid)
  |  method returns a ptr to a vector, calling method is in              |
  | charge of deleteing it                                               |
  *----------------------------------------------------------------------*/
-MRTR::Segment** MRTR::Interface::GetSegmentView()
+MOERTEL::Segment** MOERTEL::Interface::GetSegmentView()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::GetSegmentView:\n"
+    cout << "***ERR*** MOERTEL::Interface::GetSegmentView:\n"
          << "***ERR*** Interface " << Id() << ": Complete() not called\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
   if (!lComm()) return NULL;
   
-  MRTR::Segment** segs = new MRTR::Segment*[GlobalNsegment()];
-  map<int,RefCountPtr<MRTR::Segment> >::iterator curr;
+  MOERTEL::Segment** segs = new MOERTEL::Segment*[GlobalNsegment()];
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator curr;
   int count=0;
   for (int i=0; i<2; ++i)
     for (curr=rseg_[i].begin(); curr != rseg_[i].end(); ++curr)
@@ -762,24 +764,24 @@ MRTR::Segment** MRTR::Interface::GetSegmentView()
  |  find out which side a segment is on                                 |
  | returns -1 if it can't find the segment on either side               |
  *----------------------------------------------------------------------*/
-int MRTR::Interface::GetSide(MRTR::Segment* seg)
+int MOERTEL::Interface::GetSide(MOERTEL::Segment* seg)
 { 
   if (!lComm()) return -1;
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::GetSide:\n"
+    cout << "***ERR*** MOERTEL::Interface::GetSide:\n"
          << "***ERR*** Interface " << Id() << ": Complete() not called\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
   if (!lComm())
   {
-    cout << "***ERR*** MRTR::Interface::GetSide:\n"
+    cout << "***ERR*** MOERTEL::Interface::GetSide:\n"
          << "***ERR*** Interface " << Id() << ": Proc " << gcomm_.MyPID() << "not in intra-comm\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  map<int,RefCountPtr<MRTR::Segment> >::iterator curr = rseg_[0].find(seg->Id());
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator curr = rseg_[0].find(seg->Id());
   if (curr != rseg_[0].end())
     return(0);
   curr = rseg_[1].find(seg->Id());
@@ -792,23 +794,23 @@ int MRTR::Interface::GetSide(MRTR::Segment* seg)
  |  find out which side a node is on                                    |
  | returns -1 if it can't find the node on either side                  |
  *----------------------------------------------------------------------*/
-int MRTR::Interface::GetSide(MRTR::Node* node)
+int MOERTEL::Interface::GetSide(MOERTEL::Node* node)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::GetSide:\n"
+    cout << "***ERR*** MOERTEL::Interface::GetSide:\n"
          << "***ERR*** Interface " << Id() << ": Complete() not called\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
   if (!lComm())
   {
-    cout << "***ERR*** MRTR::Interface::GetSide:\n"
+    cout << "***ERR*** MOERTEL::Interface::GetSide:\n"
          << "***ERR*** Interface " << Id() << ": Proc " << gcomm_.MyPID() << "not in intra-comm\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  map<int,RefCountPtr<MRTR::Node> >::iterator curr = rnode_[0].find(node->Id());
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr = rnode_[0].find(node->Id());
   if (curr != rnode_[0].end())
     return(0);
   curr = rnode_[1].find(node->Id());
@@ -821,23 +823,23 @@ int MRTR::Interface::GetSide(MRTR::Node* node)
  |  find out which side a node is on                                    |
  | returns -1 if it can't find the node on either side                  |
  *----------------------------------------------------------------------*/
-int MRTR::Interface::GetSide(int nodeid)
+int MOERTEL::Interface::GetSide(int nodeid)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::GetSide:\n"
+    cout << "***ERR*** MOERTEL::Interface::GetSide:\n"
          << "***ERR*** Interface " << Id() << ": Complete() not called\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
   if (!lComm())
   {
-    cout << "***ERR*** MRTR::Interface::GetSide:\n"
+    cout << "***ERR*** MOERTEL::Interface::GetSide:\n"
          << "***ERR*** Interface " << Id() << ": Proc " << gcomm_.MyPID() << "not in intra-comm\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  map<int,RefCountPtr<MRTR::Node> >::iterator curr = rnode_[0].find(nodeid);
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr = rnode_[0].find(nodeid);
   if (curr != rnode_[0].end())
     return(0);
   curr = rnode_[1].find(nodeid);
@@ -854,18 +856,18 @@ int MRTR::Interface::GetSide(int nodeid)
  |       a call to BuildNodeSegmentTopology is necessary to complete    |
  |       the construction of redundant nodes/segments
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::RedundantSegments(int side)
+bool MOERTEL::Interface::RedundantSegments(int side)
 { 
   if (side != 0 && side != 1)
   {
-    cout << "***ERR*** MRTR::Interface::RedundantSegments:\n"
+    cout << "***ERR*** MOERTEL::Interface::RedundantSegments:\n"
          << "***ERR*** side=" << side << " out of range (0 or 1)\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::RedundantSegments:\n"
+    cout << "***ERR*** MOERTEL::Interface::RedundantSegments:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return (-1);
@@ -875,19 +877,19 @@ bool MRTR::Interface::RedundantSegments(int side)
   if (!lComm())
     return true;
   
-  map<int,RefCountPtr<MRTR::Segment> >* rmap = &(rseg_[side]);
+  map<int,RefCountPtr<MOERTEL::Segment> >* rmap = &(rseg_[side]);
   // check whether redundant map has been build before
   if (rmap->size() != 0)
     return true;
 
   // add my own segments to the redundant map
-  map<int,RefCountPtr<MRTR::Segment> >::const_iterator curr;
+  map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator curr;
   for (curr=seg_[side].begin(); curr != seg_[side].end(); ++curr)
   {
-    //MRTR::Segment* tmp = curr->second->Clone();
+    //MOERTEL::Segment* tmp = curr->second->Clone();
     // FIXME: is this ok? it's not a deep copy anymore.....
-    RefCountPtr<MRTR::Segment> tmp = curr->second;
-    rmap->insert(pair<int,RefCountPtr<MRTR::Segment> >(curr->first,tmp));
+    RefCountPtr<MOERTEL::Segment> tmp = curr->second;
+    rmap->insert(pair<int,RefCountPtr<MOERTEL::Segment> >(curr->first,tmp));
   }
   
   // loop over all procs and broadcast proc's segments
@@ -935,11 +937,11 @@ bool MRTR::Interface::RedundantSegments(int side)
       for (int i=0; i<nseg; ++i)
       {
         // the type of segment is stored second in the pack
-	MRTR::Segment* tmp = AllocateSegment(bcast[count+1]);
+	MOERTEL::Segment* tmp = AllocateSegment(bcast[count+1],OutLevel());
         tmp->UnPack(&(bcast[count]));
-        RefCountPtr<MRTR::Segment> tmp2 = rcp(tmp);
+        RefCountPtr<MOERTEL::Segment> tmp2 = rcp(tmp);
         count += bcast[count];
-        rmap->insert(pair<int,RefCountPtr<MRTR::Segment> >(tmp2->Id(),tmp2));
+        rmap->insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmp2->Id(),tmp2));
       }
     }
     bcast.clear();
@@ -956,18 +958,18 @@ bool MRTR::Interface::RedundantSegments(int side)
  |       a call to BuildNodeSegmentTopology is necessary to complete    |
  |       the construction of redundant nodes/segments
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::RedundantNodes(int side)
+bool MOERTEL::Interface::RedundantNodes(int side)
 { 
   if (side != 0 && side != 1)
   {
-    cout << "***ERR*** MRTR::Interface::RedundantNodes:\n"
+    cout << "***ERR*** MOERTEL::Interface::RedundantNodes:\n"
          << "***ERR*** side=" << side << " out of range (0 or 1)\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::RedundantNodes:\n"
+    cout << "***ERR*** MOERTEL::Interface::RedundantNodes:\n"
          << "***ERR*** Complete() not called on interface " << Id() << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return (-1);
@@ -977,19 +979,19 @@ bool MRTR::Interface::RedundantNodes(int side)
   if (!lComm())
     return true;
 
-  map<int,RefCountPtr<MRTR::Node> >* rmap = &(rnode_[side]);
+  map<int,RefCountPtr<MOERTEL::Node> >* rmap = &(rnode_[side]);
   // check whether redundant map has been build before
   if (rmap->size() != 0)
     return true;
 
   // add my own nodes to the redundant map
-  map<int,RefCountPtr<MRTR::Node> >::const_iterator curr;
+  map<int,RefCountPtr<MOERTEL::Node> >::const_iterator curr;
   for (curr=node_[side].begin(); curr != node_[side].end(); ++curr)
   {
-    //MRTR::Node* tmp = new MRTR::Node(*(curr->second));
+    //MOERTEL::Node* tmp = new MOERTEL::Node(*(curr->second));
     //FIXME: this is not a deep copy anymore. Is this ok?
-    RefCountPtr<MRTR::Node> tmp = curr->second;
-    rmap->insert(pair<int,RefCountPtr<MRTR::Node> >(curr->first,tmp));
+    RefCountPtr<MOERTEL::Node> tmp = curr->second;
+    rmap->insert(pair<int,RefCountPtr<MOERTEL::Node> >(curr->first,tmp));
   }
   
   // loop all procs and broadcast proc's nodes
@@ -1036,10 +1038,10 @@ bool MRTR::Interface::RedundantNodes(int side)
       int count=0;
       for (int i=0; i<nnode; ++i)
       {
-        RefCountPtr<MRTR::Node> tmp = rcp(new MRTR::Node());
+        RefCountPtr<MOERTEL::Node> tmp = rcp(new MOERTEL::Node(OutLevel()));
         tmp->UnPack(&(bcast[count]));
         count += (int)bcast[count];
-        rmap->insert(pair<int,RefCountPtr<MRTR::Node> >(tmp->Id(),tmp));
+        rmap->insert(pair<int,RefCountPtr<MOERTEL::Node> >(tmp->Id(),tmp));
       }
     }    
     bcast.clear();
@@ -1050,21 +1052,22 @@ bool MRTR::Interface::RedundantNodes(int side)
 /*----------------------------------------------------------------------*
  | (re)build the topology info between nodes and segments               |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::BuildNodeSegmentTopology()
+bool MOERTEL::Interface::BuildNodeSegmentTopology()
 { 
   if (!IsComplete())
   {
-    cout << "***WRN*** MRTR::Interface::BuildNodeSegmentTopology:\n"
-         << "***WRN*** Complete() not called on interface " << Id() << "\n"
-         << "***WRN*** Cannot build node<->segment topology\n"
-         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    if (OutLevel()>1)
+    cout << "MOERTEL: ***WRN*** MOERTEL::Interface::BuildNodeSegmentTopology:\n"
+         << "MOERTEL: ***WRN*** Complete() not called on interface " << Id() << "\n"
+         << "MOERTEL: ***WRN*** Cannot build node<->segment topology\n"
+         << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   
   if (!lComm()) return true;
   
   // loop nodes and find their adjacent segments
-  map<int,RefCountPtr<MRTR::Node> >::iterator ncurr;
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator ncurr;
   for (int side=0; side<2; ++side)
   {
     for (ncurr=rnode_[side].begin(); ncurr != rnode_[side].end(); ++ncurr)
@@ -1072,7 +1075,7 @@ bool MRTR::Interface::BuildNodeSegmentTopology()
   }
   
   // loop segments and find their adjacent nodes
-  map<int,RefCountPtr<MRTR::Segment> >::iterator scurr;
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
   for (int side=0; side<2; ++side)
   {
     for (scurr=rseg_[side].begin(); scurr != rseg_[side].end(); ++scurr)
@@ -1088,11 +1091,11 @@ bool MRTR::Interface::BuildNodeSegmentTopology()
  | used here                                                            |
  | Note that this is collective for ALL procs                           |
  *----------------------------------------------------------------------*/
-int MRTR::Interface::SetLMDofs(int minLMGID)
+int MOERTEL::Interface::SetLMDofs(int minLMGID)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::SetLMDofs:\n"
+    cout << "***ERR*** MOERTEL::Interface::SetLMDofs:\n"
          << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return (0);
@@ -1106,11 +1109,11 @@ int MRTR::Interface::SetLMDofs(int minLMGID)
     if (IsOneDimensional())
     {
       // loop nodes on slave side and set LMdofs for those who have a projection
-      map<int,RefCountPtr<MRTR::Node> >::iterator curr;
+      map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
       for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
       {
         // check whether this node has a projection
-        RefCountPtr<MRTR::ProjectedNode> pnode = curr->second->GetProjectedNode();
+        RefCountPtr<MOERTEL::ProjectedNode> pnode = curr->second->GetProjectedNode();
         if (pnode==null) continue;
         
         
@@ -1136,7 +1139,7 @@ int MRTR::Interface::SetLMDofs(int minLMGID)
       
       // loop through redundant nodes and add my flags
       int count=0;
-      map<int,RefCountPtr<MRTR::Node> >::iterator curr;
+      map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
       for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
       {
         if (NodePID(curr->second->Id()) != lComm()->MyPID())
@@ -1155,7 +1158,7 @@ int MRTR::Interface::SetLMDofs(int minLMGID)
       }
       if (count != (int)rnode_[sside].size())
       {
-        cout << "***ERR*** MRTR::Interface::SetLMDofs:\n"
+        cout << "***ERR*** MOERTEL::Interface::SetLMDofs:\n"
              << "***ERR*** number of redundant nodes wrong\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return (0);
@@ -1183,7 +1186,7 @@ int MRTR::Interface::SetLMDofs(int minLMGID)
         for (int i=0; i<ndof; ++i)
         {
           curr->second->SetLagrangeMultiplierId(minLMGID+i);
-          RefCountPtr<MRTR::ProjectedNode> pnode = curr->second->GetProjectedNode();
+          RefCountPtr<MOERTEL::ProjectedNode> pnode = curr->second->GetProjectedNode();
           if (pnode!=null)
             pnode->SetLagrangeMultiplierId(minLMGID+i);
         }
@@ -1210,11 +1213,11 @@ int MRTR::Interface::SetLMDofs(int minLMGID)
  | retrieve a vector containing a list of lm ids owned by this processor|
  | The calling routine is responsible for destroying this list          |
  *----------------------------------------------------------------------*/
-vector<int>* MRTR::Interface::MyLMIds()
+vector<int>* MOERTEL::Interface::MyLMIds()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::MyLMIds:\n"
+    cout << "***ERR*** MOERTEL::Interface::MyLMIds:\n"
          << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return (0);
@@ -1236,10 +1239,10 @@ vector<int>* MRTR::Interface::MyLMIds()
   lmids->resize(rnode_[sside].size()*10);
   int count=0;
     
-  map<int,RefCountPtr<MRTR::Node> >::iterator curr;
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
   for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
   {
-    RefCountPtr<MRTR::Node> node = curr->second;
+    RefCountPtr<MOERTEL::Node> node = curr->second;
     if (NodePID(node->Id()) != lComm()->MyPID()) 
       continue;
     int  nlmdof = node->Nlmdof();
@@ -1261,11 +1264,11 @@ vector<int>* MRTR::Interface::MyLMIds()
  | detect end segments and reduce the order of the lm shape functions   |
  | on these end segments                                                |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::DetectEndSegmentsandReduceOrder()
+bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::DetectEndSegmentsandReduceOrder:\n"
+    cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
          << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -1286,10 +1289,10 @@ bool MRTR::Interface::DetectEndSegmentsandReduceOrder()
     */
     
     // loop all nodes on the slave side and find those with only one segment
-    map<int,RefCountPtr<MRTR::Node> >::iterator curr;
+    map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
     for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
     {
-      RefCountPtr<MRTR::Node> node = curr->second;
+      RefCountPtr<MOERTEL::Node> node = curr->second;
       bool foundit = false;
       if (node->Nseg()<2)
         foundit = true;
@@ -1299,31 +1302,31 @@ bool MRTR::Interface::DetectEndSegmentsandReduceOrder()
       if (!foundit)
         continue;
       
-      MRTR::Segment** segs = node->Segments();
+      MOERTEL::Segment** segs = node->Segments();
 
       for (int i=0; i<node->Nseg(); ++i)
       {
-        MRTR::Function::FunctionType type = 
+        MOERTEL::Function::FunctionType type = 
           segs[i]->FunctionType(1);
           
-        MRTR::Function_Constant1D* tmp1 = NULL;  
+        MOERTEL::Function_Constant1D* tmp1 = NULL;  
         switch (type)
         {
           // for linear and dual linear reduce function order to constant
-          case MRTR::Function::func_Constant1D:
-          case MRTR::Function::func_Linear1D:
-          case MRTR::Function::func_DualLinear1D:
-            tmp1 = new Function_Constant1D();
+          case MOERTEL::Function::func_Constant1D:
+          case MOERTEL::Function::func_Linear1D:
+          case MOERTEL::Function::func_DualLinear1D:
+            tmp1 = new Function_Constant1D(OutLevel());
             segs[i]->SetFunction(1,tmp1);
           break;
-          case MRTR::Function::func_none:
-            cout << "***ERR*** MRTR::Interface::DetectEndSegmentsandReduceOrder:\n"
+          case MOERTEL::Function::func_none:
+            cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
                  << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is func_none\n"
                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
             exit(EXIT_FAILURE);     
           break;
           default:
-            cout << "***ERR*** MRTR::Interface::DetectEndSegmentsandReduceOrder:\n"
+            cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
                  << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is unknown\n"
                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
             exit(EXIT_FAILURE);     
@@ -1337,37 +1340,37 @@ bool MRTR::Interface::DetectEndSegmentsandReduceOrder()
   else
   {
     // loop all nodes on the slave side and find those with 1 or 2 segments
-    map<int,RefCountPtr<MRTR::Node> >::iterator curr;
+    map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
     for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
     {
-      RefCountPtr<MRTR::Node> node = curr->second;
+      RefCountPtr<MOERTEL::Node> node = curr->second;
       if (node->Nseg()>2) continue;
       
-      MRTR::Segment** segs = node->Segments();
+      MOERTEL::Segment** segs = node->Segments();
       for (int i=0; i<node->Nseg(); ++i)
       {
-        MRTR::Function::FunctionType type = 
+        MOERTEL::Function::FunctionType type = 
           segs[i]->FunctionType(1);
       
-        MRTR::Function_ConstantTri* tmp1 = NULL;  
+        MOERTEL::Function_ConstantTri* tmp1 = NULL;  
         switch (type)
         {
           // for linear and dual linear reduce function order to constant
-          case MRTR::Function::func_ConstantTri:
+          case MOERTEL::Function::func_ConstantTri:
           break;
-          case MRTR::Function::func_LinearTri:
-          case MRTR::Function::func_DualLinearTri:
-            tmp1 = new Function_ConstantTri();
+          case MOERTEL::Function::func_LinearTri:
+          case MOERTEL::Function::func_DualLinearTri:
+            tmp1 = new Function_ConstantTri(OutLevel());
             segs[i]->SetFunction(1,tmp1);
           break;
-          case MRTR::Function::func_none:
-            cout << "***ERR*** MRTR::Interface::DetectEndSegmentsandReduceOrder:\n"
+          case MOERTEL::Function::func_none:
+            cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
                  << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is func_none\n"
                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
             exit(EXIT_FAILURE);     
           break;
           default:
-            cout << "***ERR*** MRTR::Interface::DetectEndSegmentsandReduceOrder:\n"
+            cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
                  << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is unknown\n"
                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
             exit(EXIT_FAILURE);     
@@ -1391,8 +1394,8 @@ bool MRTR::Interface::DetectEndSegmentsandReduceOrder()
  | primal: type of shape function for the trace space                   |
  | dual:   type of shape function for the LM space                      |
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::SetFunctionTypes(MRTR::Function::FunctionType primal,
-                                       MRTR::Function::FunctionType dual)
+bool MOERTEL::Interface::SetFunctionTypes(MOERTEL::Function::FunctionType primal,
+                                       MOERTEL::Function::FunctionType dual)
 { 
   primal_ = primal;
   dual_   = dual;
@@ -1403,19 +1406,19 @@ bool MRTR::Interface::SetFunctionTypes(MRTR::Function::FunctionType primal,
  | set functions to all segments depending on the variables primal_     |
  | and dual_
  *----------------------------------------------------------------------*/
-bool MRTR::Interface::SetFunctionsFromFunctionTypes()
+bool MOERTEL::Interface::SetFunctionsFromFunctionTypes()
 { 
   if (!lComm()) return true;
   if (!IsComplete())
   {
-    cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+    cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
          << "***ERR*** interface " << Id() << " : Complete() was not called\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
   }
-  if (dual_==MRTR::Function::func_none)
+  if (dual_==MOERTEL::Function::func_none)
   {
-    cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+    cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
          << "***ERR*** interface " << Id() << " : no dual function type set\n"
          << "***ERR*** use SetFunctionTypes(..) to set function types\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -1423,38 +1426,47 @@ bool MRTR::Interface::SetFunctionsFromFunctionTypes()
   }
   
   // set the primal shape functions
-  MRTR::Function_Linear1D*     func1 = NULL;
-  MRTR::Function_Constant1D*   func2 = NULL;
-  MRTR::Function_DualLinear1D* func3 = NULL;
+  MOERTEL::Function_Linear1D*     func1 = NULL;
+  MOERTEL::Function_Constant1D*   func2 = NULL;
+  MOERTEL::Function_DualLinear1D* func3 = NULL;
+  MOERTEL::Function_LinearTri*    func4 = NULL;
   switch(primal_)
   {
-    case MRTR::Function::func_Linear1D:
-      func1 = new MRTR::Function_Linear1D();
+    case MOERTEL::Function::func_Linear1D:
+      func1 = new MOERTEL::Function_Linear1D(OutLevel());
       SetFunctionAllSegmentsSide(0,0,func1);
       SetFunctionAllSegmentsSide(1,0,func1);
       delete func1; func1 = NULL;
     break;
-    case MRTR::Function::func_DualLinear1D:
-      cout << "***WRN*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
-           << "***WRN*** interface " << Id() << " : setting discontious dual shape functions as\n"
-           << "***WRN*** primal isoparametric trace space function is probably a bad idea...\n"
-           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    case MOERTEL::Function::func_DualLinear1D:
+      cout << "MOERTEL: ***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
+           << "MOERTEL: ***ERR*** interface " << Id() << " : setting discontious dual shape functions as\n"
+           << "MOERTEL: ***ERR*** primal isoparametric trace space function is probably a bad idea...\n"
+           << "MOERTEL: ***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      exit(EXIT_FAILURE);     
     break;
-    case MRTR::Function::func_Constant1D:
-      cout << "***WRN*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
-           << "***WRN*** interface " << Id() << " : setting constant shape functions as\n"
-           << "***WRN*** primal isoparametric trace space function is probably a bad idea...\n"
-           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    case MOERTEL::Function::func_Constant1D:
+      cout << "MOERTEL: ***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
+           << "MOERTEL: ***ERR*** interface " << Id() << " : setting constant shape functions as\n"
+           << "MOERTEL: ***ERR*** primal isoparametric trace space function is probably a bad idea...\n"
+           << "MOERTEL: ***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      exit(EXIT_FAILURE);     
     break;
-    case MRTR::Function::func_none:
-      cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+    case MOERTEL::Function::func_LinearTri:
+      func4 = new MOERTEL::Function_LinearTri(OutLevel());
+      SetFunctionAllSegmentsSide(0,0,func4);
+      SetFunctionAllSegmentsSide(1,0,func4);
+      delete func4; func4 = NULL;
+    break;
+    case MOERTEL::Function::func_none:
+      cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
            << "***ERR*** interface " << Id() << " : no primal function type set\n"
            << "***ERR*** use SetFunctionTypes(..) to set function types\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);     
     break;
     default:
-      cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+      cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
            << "***ERR*** interface " << Id() << " : Unknown function type: " << primal_ << endl
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);     
@@ -1464,7 +1476,7 @@ bool MRTR::Interface::SetFunctionsFromFunctionTypes()
   int side = MortarSide();
   if (side != 1 && side != 0)
   {
-    cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+    cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
          << "***ERR*** interface " << Id() << " : Mortar Side not set set\n"
          << "***ERR*** use SetMortarSide(int side) to choose mortar side first\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -1474,30 +1486,35 @@ bool MRTR::Interface::SetFunctionsFromFunctionTypes()
 
   switch(dual_)
   {
-    case MRTR::Function::func_Linear1D:
-      func1 = new MRTR::Function_Linear1D();
+    case MOERTEL::Function::func_Linear1D:
+      func1 = new MOERTEL::Function_Linear1D(OutLevel());
       SetFunctionAllSegmentsSide(side,1,func1);
       delete func1; func1 = NULL;
     break;
-    case MRTR::Function::func_DualLinear1D:
-      func3 = new MRTR::Function_DualLinear1D();
+    case MOERTEL::Function::func_DualLinear1D:
+      func3 = new MOERTEL::Function_DualLinear1D(OutLevel());
       SetFunctionAllSegmentsSide(side,1,func3);
       delete func3; func3 = NULL;
     break;
-    case MRTR::Function::func_Constant1D:
-      func2 = new MRTR::Function_Constant1D();
+    case MOERTEL::Function::func_Constant1D:
+      func2 = new MOERTEL::Function_Constant1D(OutLevel());
       SetFunctionAllSegmentsSide(side,1,func2);
       delete func2; func2 = NULL;
     break;
-    case MRTR::Function::func_none:
-      cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+    case MOERTEL::Function::func_LinearTri:
+      func4 = new MOERTEL::Function_LinearTri(OutLevel());
+      SetFunctionAllSegmentsSide(side,1,func4);
+      delete func4; func4 = NULL;
+    break;
+    case MOERTEL::Function::func_none:
+      cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
            << "***ERR*** interface " << Id() << " : no dual function type set\n"
            << "***ERR*** use SetFunctionTypes(..) to set function types\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);     
     break;
     default:
-      cout << "***ERR*** MRTR::Interface::SetFunctionsFromFunctionTypes:\n"
+      cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
            << "***ERR*** interface " << Id() << " : Unknown function type: " << dual_ << endl
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);     

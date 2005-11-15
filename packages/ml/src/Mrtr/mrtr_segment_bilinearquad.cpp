@@ -53,10 +53,10 @@
  |                                  important to compute the direction  |
  |                                  of the outward normal of the segment|
  *----------------------------------------------------------------------*/
-MRTR::Segment_BiLinearQuad::Segment_BiLinearQuad(int id, int nnode, int* nodeId) :
-MRTR::Segment(id,nnode,nodeId)
+MOERTEL::Segment_BiLinearQuad::Segment_BiLinearQuad(int id, int nnode, int* nodeId, int out) :
+MOERTEL::Segment(id,nnode,nodeId,out)
 {
-  stype_ = MRTR::Segment::seg_BiLinearQuad;
+  stype_ = MOERTEL::Segment::seg_BiLinearQuad;
 }
 
 /*----------------------------------------------------------------------*
@@ -64,27 +64,26 @@ MRTR::Segment(id,nnode,nodeId)
  |  This constructor should not be used by the user, it is used         |
  |  internally together with Pack/Unpack for communication              |
  *----------------------------------------------------------------------*/
-MRTR::Segment_BiLinearQuad::Segment_BiLinearQuad() :
-MRTR::Segment()
+MOERTEL::Segment_BiLinearQuad::Segment_BiLinearQuad(int out) :
+MOERTEL::Segment(out)
 {
-  stype_ = MRTR::Segment::seg_none;
 }
 
 /*----------------------------------------------------------------------*
  |  copy-ctor (public)                                       mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment_BiLinearQuad::Segment_BiLinearQuad(MRTR::Segment_BiLinearQuad& old) :
-MRTR::Segment(old)
+MOERTEL::Segment_BiLinearQuad::Segment_BiLinearQuad(MOERTEL::Segment_BiLinearQuad& old) :
+MOERTEL::Segment(old)
 {
-  // all date lives in the base class and is copied in MRTR::Segment(old)
+  // all date lives in the base class and is copied in MOERTEL::Segment(old)
 }
 
 /*----------------------------------------------------------------------*
  | pack all data in this segment into a vector               mwgee 10/05|
  *----------------------------------------------------------------------*/
-int* MRTR::Segment_BiLinearQuad::Pack(int* size)
+int* MOERTEL::Segment_BiLinearQuad::Pack(int* size)
 { 
-  cout << "***ERR*** MRTR::Segment_BiLinearQuad::Pack:\n"
+  cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::Pack:\n"
        << "***ERR*** not impl.\n"
        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   exit(EXIT_FAILURE);     
@@ -94,9 +93,9 @@ int* MRTR::Segment_BiLinearQuad::Pack(int* size)
 /*----------------------------------------------------------------------*
  | unpack all data from a vector into this class             mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Segment_BiLinearQuad::UnPack(int* pack)
+bool MOERTEL::Segment_BiLinearQuad::UnPack(int* pack)
 { 
-  cout << "***ERR*** MRTR::Segment_BiLinearQuad::UnPack:\n"
+  cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::UnPack:\n"
        << "***ERR*** not impl.\n"
        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   exit(EXIT_FAILURE);     
@@ -106,7 +105,7 @@ bool MRTR::Segment_BiLinearQuad::UnPack(int* pack)
 /*----------------------------------------------------------------------*
  |  dtor (public)                                            mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment_BiLinearQuad::~Segment_BiLinearQuad()
+MOERTEL::Segment_BiLinearQuad::~Segment_BiLinearQuad()
 { 
   // data held in base class is destroyed by base class destructor
 }
@@ -114,16 +113,16 @@ MRTR::Segment_BiLinearQuad::~Segment_BiLinearQuad()
 /*----------------------------------------------------------------------*
  |  clone this segment (public)                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Segment* MRTR::Segment_BiLinearQuad::Clone()
+MOERTEL::Segment* MOERTEL::Segment_BiLinearQuad::Clone()
 { 
-  MRTR::Segment_BiLinearQuad* newseg = new MRTR::Segment_BiLinearQuad(*this);
+  MOERTEL::Segment_BiLinearQuad* newseg = new MOERTEL::Segment_BiLinearQuad(*this);
   return (newseg);
 }
 
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MRTR::Segment_BiLinearQuad& seg)
+ostream& operator << (ostream& os, const MOERTEL::Segment_BiLinearQuad& seg)
 {
   seg.Print(); 
   return os;
@@ -132,9 +131,9 @@ ostream& operator << (ostream& os, const MRTR::Segment_BiLinearQuad& seg)
 /*----------------------------------------------------------------------*
  | build an outward normal at a node adjacent to this        mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Segment_BiLinearQuad::LocalCoordinatesOfNode(int lid, double* xi)
+bool MOERTEL::Segment_BiLinearQuad::LocalCoordinatesOfNode(int lid, double* xi)
 { 
-  cout << "***ERR*** MRTR::Segment_BiLinearQuad::LocalCoordinatesOfNode:\n"
+  cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::LocalCoordinatesOfNode:\n"
        << "***ERR*** not impl.\n"
        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   exit(EXIT_FAILURE);     
@@ -144,9 +143,9 @@ bool MRTR::Segment_BiLinearQuad::LocalCoordinatesOfNode(int lid, double* xi)
 /*----------------------------------------------------------------------*
  | build basis vectors and metric at given point xi          mwgee 10/05|
  *----------------------------------------------------------------------*/
-double MRTR::Segment_BiLinearQuad::Metric(double* xi, double g[], double G[][3])
+double MOERTEL::Segment_BiLinearQuad::Metric(double* xi, double g[], double G[][3])
 { 
-  cout << "***ERR*** MRTR::Segment_BiLinearQuad::Metric:\n"
+  cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::Metric:\n"
        << "***ERR*** not impl.\n"
        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   exit(EXIT_FAILURE);     
@@ -157,9 +156,9 @@ double MRTR::Segment_BiLinearQuad::Metric(double* xi, double g[], double G[][3])
  | build an outward normal at a node adjacent to this        mwgee 10/05|
  | returns allocated vector of length 3 with outward normal             |
  *----------------------------------------------------------------------*/
-double* MRTR::Segment_BiLinearQuad::BuildNormal(double* xi)
+double* MOERTEL::Segment_BiLinearQuad::BuildNormal(double* xi)
 { 
-  cout << "***ERR*** MRTR::Segment_BiLinearQuad::BuildNormal:\n"
+  cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::BuildNormal:\n"
        << "***ERR*** not impl.\n"
        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   exit(EXIT_FAILURE);     
@@ -169,9 +168,9 @@ double* MRTR::Segment_BiLinearQuad::BuildNormal(double* xi)
 /*----------------------------------------------------------------------*
  | compute the length (Area) of this segment                 mwgee 10/05|
  *----------------------------------------------------------------------*/
-double MRTR::Segment_BiLinearQuad::Area()
+double MOERTEL::Segment_BiLinearQuad::Area()
 { 
-  cout << "***ERR*** MRTR::Segment_BiLinearQuad::Area:\n"
+  cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::Area:\n"
        << "***ERR*** not impl.\n"
        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   exit(EXIT_FAILURE);     

@@ -39,10 +39,10 @@
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::ProjectedNode::ProjectedNode(const MRTR::Node& basenode, 
+MOERTEL::ProjectedNode::ProjectedNode(const MOERTEL::Node& basenode, 
                                    const double* xi, 
-                                   MRTR::Segment* pseg) :
-MRTR::Node(basenode),
+                                   MOERTEL::Segment* pseg) :
+MOERTEL::Node(basenode),
 orthseg_(-1)
 {
   pseg_ = pseg;
@@ -61,11 +61,11 @@ orthseg_(-1)
 /*----------------------------------------------------------------------*
  |  ctor for orthogonal projection (public)                  mwgee 08/05|
  *----------------------------------------------------------------------*/
-MRTR::ProjectedNode::ProjectedNode(const MRTR::Node& basenode, 
+MOERTEL::ProjectedNode::ProjectedNode(const MOERTEL::Node& basenode, 
                                    const double* xi, 
-                                   MRTR::Segment* pseg,
+                                   MOERTEL::Segment* pseg,
                                    int orthseg) :
-MRTR::Node(basenode),
+MOERTEL::Node(basenode),
 orthseg_(orthseg)
 {
   pseg_ = pseg;
@@ -84,8 +84,8 @@ orthseg_(orthseg)
 /*----------------------------------------------------------------------*
  |  copy-ctor (public)                                       mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::ProjectedNode::ProjectedNode(MRTR::ProjectedNode& old) :
-MRTR::Node(old)
+MOERTEL::ProjectedNode::ProjectedNode(MOERTEL::ProjectedNode& old) :
+MOERTEL::Node(old)
 {
   pseg_    = old.pseg_;
   xi_[0]   = old.xi_[0];
@@ -96,7 +96,7 @@ MRTR::Node(old)
 /*----------------------------------------------------------------------*
  |  dtor (public)                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
-MRTR::ProjectedNode::~ProjectedNode()
+MOERTEL::ProjectedNode::~ProjectedNode()
 {
   pseg_ = NULL; // this is just a 'referencing' ptr, not in charge of destroying
 }
@@ -104,10 +104,10 @@ MRTR::ProjectedNode::~ProjectedNode()
 /*----------------------------------------------------------------------*
  |  print node                                               mwgee 06/05|
  *----------------------------------------------------------------------*/
-bool MRTR::ProjectedNode::Print() const
+bool MOERTEL::ProjectedNode::Print() const
 { 
   cout << "Projected ";
-  const MRTR::Node& basenode = dynamic_cast<const MRTR::Node&>(*this);
+  const MOERTEL::Node& basenode = dynamic_cast<const MOERTEL::Node&>(*this);
   cout << basenode;
   if (pseg_)
   {
@@ -126,7 +126,7 @@ bool MRTR::ProjectedNode::Print() const
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 06/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MRTR::ProjectedNode& pnode)
+ostream& operator << (ostream& os, const MOERTEL::ProjectedNode& pnode)
 { 
   pnode.Print();
   return (os);

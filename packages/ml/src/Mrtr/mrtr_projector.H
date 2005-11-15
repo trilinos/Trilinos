@@ -33,8 +33,8 @@
 /* ******************************************************************** */
 #ifdef TRILINOS_PACKAGE
 
-#ifndef MRTR_PROJECTOR_H
-#define MRTR_PROJECTOR_H
+#ifndef MOERTEL_PROJECTOR_H
+#define MOERTEL_PROJECTOR_H
 
 #include <ctime>
 #include <iostream>
@@ -45,23 +45,26 @@ using namespace std;
 
 // ----------   User Defined Includes   ----------
 
-namespace MRTR
+namespace MOERTEL
 {
 
 // forward declarations
-class MRTR::Interface;
-class MRTR::Segment;
-class MRTR::Node;
+class MOERTEL::Interface;
+class MOERTEL::Segment;
+class MOERTEL::Node;
 
 class  Projector 
 {
 public:
   
   // ctor
-  explicit Projector(bool twoD);
+  explicit Projector(bool twoD, int outlevel);
   
   // dtor
   virtual ~Projector();
+  
+  // return the outputlevel
+  int OutLevel() { return outputlevel_; }
   
   // return true if this is a 2D projector, otherwise false
   bool IsTwoDimensional() { return twoD_; }
@@ -69,56 +72,56 @@ public:
   //====2D/3D projection methods
   
   // project a node onto a segment along the node's normal
-  bool ProjectNodetoSegment_NodalNormal(const MRTR::Node& node, MRTR::Segment& seg, double xi[]);
+  bool ProjectNodetoSegment_NodalNormal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[]);
   // project a node onto a segment along the interpolated segment's normal field
-  bool ProjectNodetoSegment_SegmentNormal(const MRTR::Node& node, MRTR::Segment& seg, double xi[]);
+  bool ProjectNodetoSegment_SegmentNormal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[]);
 
   //====2D projection methods
   
   // project a node onto a segment orthogonal to the segment
-  bool ProjectNodetoSegment_SegmentOrthogonal(const MRTR::Node& node, MRTR::Segment& seg, double xi[]);
-  bool ProjectNodetoSegment_Orthogonal_to_Slave(const MRTR::Node& snode, MRTR::Segment& seg, double xi[], MRTR::Segment& sseg);
+  bool ProjectNodetoSegment_SegmentOrthogonal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[]);
+  bool ProjectNodetoSegment_Orthogonal_to_Slave(const MOERTEL::Node& snode, MOERTEL::Segment& seg, double xi[], MOERTEL::Segment& sseg);
 
 private:  
   // don't want = operator
   Projector operator = (const Projector& old);
   // don't want copy-ctor
-  Projector(MRTR::Projector& old);
+  Projector(MOERTEL::Projector& old);
 
   //====2D projection methods
   
   // evaluate F and gradF functions for ProjectNodetoSegment_NodalNormal in 2D
-  double evaluate_F_2D_NodalNormal(const MRTR::Node& node, MRTR::Segment& seg, double eta);  
-  double evaluate_gradF_2D_NodalNormal(const MRTR::Node& node, MRTR::Segment& seg, double eta);
+  double evaluate_F_2D_NodalNormal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);  
+  double evaluate_gradF_2D_NodalNormal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
 
   // evaluate F and gradF functions for ProjectNodetoSegment_SegmentNormal in 2D
-  double evaluate_F_2D_SegmentNormal(const MRTR::Node& node, MRTR::Segment& seg, double eta);  
-  double evaluate_gradF_2D_SegmentNormal(const MRTR::Node& node, MRTR::Segment& seg, double eta);
+  double evaluate_F_2D_SegmentNormal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);  
+  double evaluate_gradF_2D_SegmentNormal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
 
   // evaluate F and gradF functions for ProjectNodetoSegment_SegmentOrthogonal in 2D
-  double evaluate_F_2D_SegmentOrthogonal(const MRTR::Node& node, MRTR::Segment& seg, double eta);  
-  double evaluate_gradF_2D_SegmentOrthogonal(const MRTR::Node& node, MRTR::Segment& seg, double eta);
+  double evaluate_F_2D_SegmentOrthogonal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);  
+  double evaluate_gradF_2D_SegmentOrthogonal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
   
   // evalauate F and gradF functions for ProjectNodetoSegment_Orthogonal_to_Slave in 2D
-  double evaluate_F_2D_SegmentOrthogonal_to_g(const MRTR::Node& node, MRTR::Segment& seg, double eta, double* g);  
-  double evaluate_gradF_2D_SegmentOrthogonal_to_g(const MRTR::Node& node, MRTR::Segment& seg, double eta, double* g);
+  double evaluate_F_2D_SegmentOrthogonal_to_g(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta, double* g);  
+  double evaluate_gradF_2D_SegmentOrthogonal_to_g(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta, double* g);
   
   //====3D projection methods
 
   // evaluate F and gradF functions for ProjectNodetoSegment_NodalNormal in 3D
-  bool evaluate_FgradF_3D_NodalNormal(double* F,double dF[][3],const MRTR::Node& node, 
-                                      MRTR::Segment& seg,double* eta,double alpha);
+  bool evaluate_FgradF_3D_NodalNormal(double* F,double dF[][3],const MOERTEL::Node& node, 
+                                      MOERTEL::Segment& seg,double* eta,double alpha);
   // evaluate F and gradF functions for ProjectNodetoSegment_SegmentNormal in 3D
-  bool evaluate_FgradF_3D_SegmentNormal(double* F,double dF[][3],const MRTR::Node& node, 
-                                        MRTR::Segment& seg,double* eta,double alpha);
+  bool evaluate_FgradF_3D_SegmentNormal(double* F,double dF[][3],const MOERTEL::Node& node, 
+                                        MOERTEL::Segment& seg,double* eta,double alpha);
 
 private:
 
   bool twoD_;   // dimension of the projection, true if 2-dimensional
-
+  int  outputlevel_; // amount of output to be written (0-10)
 };
 
-} // namespace MRTR
+} // namespace MOERTEL
 
-#endif // MRTR_PROJECTOR_H
+#endif // MOERTEL_PROJECTOR_H
 #endif // TRILINOS_PACKAGE

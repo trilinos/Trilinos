@@ -33,8 +33,8 @@
 /* ******************************************************************** */
 #ifdef TRILINOS_PACKAGE
 
-#ifndef MRTR_UTILS_H
-#define MRTR_UTILS_H
+#ifndef MOERTEL_UTILS_H
+#define MOERTEL_UTILS_H
 
 #include <ctime>
 #include <iostream>
@@ -50,12 +50,12 @@
 using namespace std;
 using namespace Teuchos;
 
-namespace MRTR
+namespace MOERTEL
 {
 
 // forward declarations
-class MRTR::Segment;
-class MRTR::Node;
+class MOERTEL::Segment;
+class MOERTEL::Node;
 
 // NOTE::
 // for communication reasons, every single derived function class needs
@@ -63,16 +63,16 @@ class MRTR::Node;
 // So when introducing a new derived Function class, one needs to add
 // it's type to the enum FunctionType in the virtual base class in
 // mrtr_function.H and one needs to add a case to the function
-// MRTR::AllocateFunction in mrtr_utils.cpp
-MRTR::Function* MRTR::AllocateFunction(MRTR::Function::FunctionType type);
-MRTR::Segment* MRTR::AllocateSegment(int type);
-bool MRTR::cross(double* out, const double* g1, const double* g2);
-double MRTR::dot(const double* g1, const double* g2, const int dim);
-double MRTR::length(const double* g, const int dim);
-bool MRTR::solve22(const double A[][2], double* x, const double* b);
-bool MRTR::solve33(const double A[][3], double* x, const double* b);
-int MRTR::digit_ten(int i);
-void MRTR::sort(double* dlist, int N, int* list2);
+// MOERTEL::AllocateFunction in mrtr_utils.cpp
+MOERTEL::Function* MOERTEL::AllocateFunction(MOERTEL::Function::FunctionType type, int out);
+MOERTEL::Segment* MOERTEL::AllocateSegment(int type, int out);
+bool MOERTEL::cross(double* out, const double* g1, const double* g2);
+double MOERTEL::dot(const double* g1, const double* g2, const int dim);
+double MOERTEL::length(const double* g, const int dim);
+bool MOERTEL::solve22(const double A[][2], double* x, const double* b);
+bool MOERTEL::solve33(const double A[][3], double* x, const double* b);
+int MOERTEL::digit_ten(int i);
+void MOERTEL::sort(double* dlist, int N, int* list2);
 
 // swap template
 template<typename kind>
@@ -89,7 +89,7 @@ void swap(kind& a, kind& b)
 /*
 // Destroy a map of pointers template
 template<typename kind1, typename kind2>
-void MRTR::DestroyMap(map<kind1,kind2*>& m)
+void MOERTEL::DestroyMap(map<kind1,kind2*>& m)
 {
   typename map<kind1,kind2*>::iterator curr;
   for (curr=m.begin(); curr != m.end(); ++curr)
@@ -100,8 +100,8 @@ void MRTR::DestroyMap(map<kind1,kind2*>& m)
 */
 
 
-} // namespace MRTR
+} // namespace MOERTEL
 
 
-#endif // MRTR_UTILS_H
+#endif // MOERTEL_UTILS_H
 #endif // TRILINOS_PACKAGE

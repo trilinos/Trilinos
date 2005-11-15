@@ -41,9 +41,10 @@
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::Integrator::Integrator(int ngp, bool oneD) :
+MOERTEL::Integrator::Integrator(int ngp, bool oneD, int outlevel) :
 oneD_(oneD),
-ngp_(ngp)
+ngp_(ngp),
+outputlevel_(outlevel)
 {
   if (oneD)
   {
@@ -162,7 +163,7 @@ ngp_(ngp)
         weights_[9] = 0.06667134; 
       break;
       default:
-        cout << "***ERR*** MRTR::Integrator::Integrator:\n"
+        cout << "***ERR*** MOERTEL::Integrator::Integrator:\n"
              << "***ERR*** given number of gaussian points " << ngp_ << "does not exist\n"
              << "***ERR*** use 1, 2, 3, 4, 5, 6, 7, 8, 10 instead\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -188,7 +189,7 @@ ngp_(ngp)
         weights_[2] = weights_[0]; 
       break;
       default:
-        cout << "***ERR*** MRTR::Integrator::Integrator:\n"
+        cout << "***ERR*** MOERTEL::Integrator::Integrator:\n"
              << "***ERR*** given number of gaussian points " << ngp_ << "does not exist\n"
              << "***ERR*** use 3 instead\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -202,7 +203,7 @@ ngp_(ngp)
 /*----------------------------------------------------------------------*
  |  dtor (public)                                            mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::Integrator::~Integrator()
+MOERTEL::Integrator::~Integrator()
 {
   coords_.clear();
   weights_.clear();
@@ -224,9 +225,9 @@ MRTR::Integrator::~Integrator()
  | The calling routine is responsible for destroying the                |
  | Epetra_SerialDenseMatrix object                                      |
  *----------------------------------------------------------------------*/
-Epetra_SerialDenseMatrix* MRTR::Integrator::Integrate(MRTR::Segment& sseg, 
+Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate(MOERTEL::Segment& sseg, 
                                                       double sxia, double sxib,
-                                                      MRTR::Segment& mseg, 
+                                                      MOERTEL::Segment& mseg, 
                                                       double mxia, double mxib)
 {
   int nrow = sseg.Nnode();
@@ -284,14 +285,14 @@ Epetra_SerialDenseMatrix* MRTR::Integrator::Integrate(MRTR::Segment& sseg,
 /*----------------------------------------------------------------------*
  |  assemble the result -Mdense into M (public)              mwgee 08/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Integrator::Assemble(MRTR::Interface& inter, 
-                                MRTR::Segment& sseg, 
-                                MRTR::Segment& mseg, 
-                                Epetra_CrsMatrix& M, 
-                                Epetra_SerialDenseMatrix& Mdense)
+bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter, 
+                                   MOERTEL::Segment& sseg, 
+                                   MOERTEL::Segment& mseg, 
+                                   Epetra_CrsMatrix& M, 
+                                   Epetra_SerialDenseMatrix& Mdense)
 {
-  MRTR::Node** snodes = sseg.Nodes();
-  MRTR::Node** mnodes = mseg.Nodes();
+  MOERTEL::Node** snodes = sseg.Nodes();
+  MOERTEL::Node** mnodes = mseg.Nodes();
   
   for (int slave=0; slave<sseg.Nnode(); ++slave)
   {
@@ -321,7 +322,7 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
       
       if (mndof != snlmdof)
       {
-        cout << "***ERR*** MRTR::Integrator::Assemble:\n"
+        cout << "***ERR*** MOERTEL::Integrator::Assemble:\n"
              << "***ERR*** mismatch in number of lagrange multipliers and primal degrees of freedom:\n"
              << "***ERR*** slave node " << snodes[slave]->Id() << " master node " << mnodes[master]->Id() << "\n"
              << "***ERR*** # lagrange multipliers " << snlmdof << " # dofs " << mndof << "\n"
@@ -339,7 +340,7 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
           err = M.InsertGlobalValues(row,1,&val,&col);
         if (err<0)
         {
-          cout << "***ERR*** MRTR::Interface::Integrate_2D_Section:\n"
+          cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
                << "***ERR*** Epetra_CrsMatrix::InsertGlobalValues returned an error\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           exit(EXIT_FAILURE);
@@ -353,12 +354,12 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
 /*----------------------------------------------------------------------*
  |  assemble the result Ddense into D (public)               mwgee 08/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Integrator::Assemble(MRTR::Interface& inter, 
-                                MRTR::Segment& sseg, 
-                                Epetra_CrsMatrix& D, 
-                                Epetra_SerialDenseMatrix& Ddense)
+bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter, 
+                                   MOERTEL::Segment& sseg, 
+                                   Epetra_CrsMatrix& D, 
+                                   Epetra_SerialDenseMatrix& Ddense)
 {
-  MRTR::Node** snodes = sseg.Nodes();
+  MOERTEL::Node** snodes = sseg.Nodes();
   
   for (int rownode=0; rownode<sseg.Nnode(); ++rownode)
   {
@@ -386,7 +387,7 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
       
       if (nlmdof != ndof)
       {
-        cout << "***ERR*** MRTR::Interface::Integrate_2D_Section:\n"
+        cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
              << "***ERR*** mismatch in number of lagrange multipliers and primal degrees of freedom:\n"
              << "***ERR*** slave node " << snodes[rownode]->Id() << "\n"
              << "***ERR*** # lagrange multipliers " << nlmdof << " # dofs " << ndof << "\n"
@@ -404,7 +405,7 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
           err = D.InsertGlobalValues(row,1,&val,&col);
         if (err<0)
         {
-          cout << "***ERR*** MRTR::Interface::Integrate_2D_Section:\n"
+          cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
                << "***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           exit(EXIT_FAILURE);
@@ -425,7 +426,7 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
  | The calling routine is responsible for destroying the                |
  | Epetra_SerialDenseMatrix object                                      |
  *----------------------------------------------------------------------*/
-Epetra_SerialDenseMatrix* MRTR::Integrator::Integrate(MRTR::Segment& sseg, 
+Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate(MOERTEL::Segment& sseg, 
                                                       double sxia, double sxib)
 {
   int nrow = sseg.Nnode();
@@ -482,10 +483,10 @@ Epetra_SerialDenseMatrix* MRTR::Integrator::Integrate(MRTR::Segment& sseg,
  |                                            (public)       mwgee 08/05|
  | integrate the modification of the master side                        |
  *----------------------------------------------------------------------*/
-Epetra_SerialDenseMatrix* MRTR::Integrator::Integrate_2D_Mmod(
-                                                      MRTR::Segment& sseg, 
+Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate_2D_Mmod(
+                                                      MOERTEL::Segment& sseg, 
                                                       double sxia, double sxib,
-                                                      MRTR::Segment& mseg, 
+                                                      MOERTEL::Segment& mseg, 
                                                       double mxia, double mxib)
 {
   Epetra_SerialDenseMatrix* Mmod = new Epetra_SerialDenseMatrix(mseg.Nnode(),1);
@@ -541,14 +542,14 @@ Epetra_SerialDenseMatrix* MRTR::Integrator::Integrate_2D_Mmod(
 /*----------------------------------------------------------------------*
  |  assemble the modification -Mmod into M (public)          mwgee 08/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Integrator::Assemble_2D_Mod(MRTR::Interface& inter, 
-                                       MRTR::Segment& sseg, 
-                                       MRTR::Segment& mseg, 
-                                       Epetra_CrsMatrix& M, 
-                                       Epetra_SerialDenseMatrix& Mmod)
+bool MOERTEL::Integrator::Assemble_2D_Mod(MOERTEL::Interface& inter, 
+                                          MOERTEL::Segment& sseg, 
+                                          MOERTEL::Segment& mseg, 
+                                          Epetra_CrsMatrix& M, 
+                                          Epetra_SerialDenseMatrix& Mmod)
 {
-  MRTR::Node** snodes = sseg.Nodes();
-  MRTR::Node** mnodes = mseg.Nodes();
+  MOERTEL::Node** snodes = sseg.Nodes();
+  MOERTEL::Node** mnodes = mseg.Nodes();
   
   for (int slave=0; slave<sseg.Nnode(); ++slave)
   {
@@ -592,7 +593,7 @@ bool MRTR::Integrator::Assemble_2D_Mod(MRTR::Interface& inter,
             err = M.InsertGlobalValues(row,1,&val,&col);
           if (err<0)
           {
-            cout << "***ERR*** MRTR::Interface::Assemble_2D_Mod:\n"
+            cout << "***ERR*** MOERTEL::Interface::Assemble_2D_Mod:\n"
                  << "***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n"
                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
             exit(EXIT_FAILURE);
@@ -608,16 +609,16 @@ bool MRTR::Integrator::Assemble_2D_Mod(MRTR::Interface& inter,
  |  integrate a 2D triangle overlap segment (public)         mwgee 11/05|
  |  contribution from the master/slave side M/D                         |
  *----------------------------------------------------------------------*/
-bool MRTR::Integrator::Integrate(RefCountPtr<MRTR::Segment> actseg,
-                                 MRTR::Segment& sseg, 
-                                 MRTR::Segment& mseg, 
-                                 Epetra_SerialDenseMatrix** Ddense, 
-                                 Epetra_SerialDenseMatrix** Mdense, 
-                                 MRTR::Overlap& overlap)
+bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
+                                    MOERTEL::Segment& sseg, 
+                                    MOERTEL::Segment& mseg, 
+                                    Epetra_SerialDenseMatrix** Ddense, 
+                                    Epetra_SerialDenseMatrix** Mdense, 
+                                    MOERTEL::Overlap& overlap)
 {
   if (oneD_)
   {
-    cout << "***ERR*** MRTR::Integrator::Integrate:\n"
+    cout << "***ERR*** MOERTEL::Integrator::Integrate:\n"
          << "***ERR*** Integrator was not constructed for 2D integration\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -625,7 +626,7 @@ bool MRTR::Integrator::Integrate(RefCountPtr<MRTR::Segment> actseg,
   
   if (Ngp() != 3)
   {
-    cout << "***ERR*** MRTR::Integrator::Integrate:\n"
+    cout << "***ERR*** MOERTEL::Integrator::Integrate:\n"
          << "***ERR*** # Gaussian points != 3 in triangle integration\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -640,7 +641,7 @@ bool MRTR::Integrator::Integrate(RefCountPtr<MRTR::Segment> actseg,
   // get the points
   const int np = actseg->Nnode();
   const int* nodeid = actseg->NodeIds();
-  vector<MRTR::Point*> points;
+  vector<MOERTEL::Point*> points;
   overlap.PointView(points,nodeid,np);
 
   // get the function values at the points
@@ -655,16 +656,14 @@ bool MRTR::Integrator::Integrate(RefCountPtr<MRTR::Segment> actseg,
   double area = actseg->Area();
   if (area<0.0)
   {
-    cout << "***ERR*** MRTR::Integrator::Integrate:\n"
+    cout << "***ERR*** MOERTEL::Integrator::Integrate:\n"
          << "***ERR*** overlap segment area is negative: " << area << endl
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
 
-#if 0
-  if (area<1.0e-6)
-    cout << "***WRN*** Integrating overlap segment with tiny area " << area << endl;
-#endif  
+  if (area<1.0e-6 && OutLevel()>8)
+    cout << "MOERTEL: ***WRN*** Integrating overlap segment with tiny area " << area << endl;
 
   // loop integration points
   for (int gp=0; gp<Ngp(); ++gp)
@@ -741,12 +740,12 @@ bool MRTR::Integrator::Integrate(RefCountPtr<MRTR::Segment> actseg,
 /*----------------------------------------------------------------------*
  |  assemble contributions Ddense into slave nodes (public)  mwgee 11/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Integrator::Assemble(MRTR::Interface& inter,MRTR::Segment& sseg,
-                                Epetra_SerialDenseMatrix& Ddense)
+bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& sseg,
+                                   Epetra_SerialDenseMatrix& Ddense)
 {
   // get nodes
   const int nnode    = sseg.Nnode();
-  MRTR::Node** snode = sseg.Nodes();
+  MOERTEL::Node** snode = sseg.Nodes();
 
   // set a row of Ddense in each snode
   for (int row=0; row<nnode; ++row)
@@ -766,16 +765,16 @@ bool MRTR::Integrator::Assemble(MRTR::Interface& inter,MRTR::Segment& sseg,
 /*----------------------------------------------------------------------*
  |  assemble contributions Ddense into slave nodes (public)  mwgee 11/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Integrator::Assemble(MRTR::Interface& inter,
-                                MRTR::Segment& sseg,
-                                MRTR::Segment& mseg,
-                                Epetra_SerialDenseMatrix& Mdense)
+bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
+                                   MOERTEL::Segment& sseg,
+                                   MOERTEL::Segment& mseg,
+                                   Epetra_SerialDenseMatrix& Mdense)
 {
   // get nodes
   const int nsnode    = sseg.Nnode();
   const int nmnode    = mseg.Nnode();
-  MRTR::Node** snode  = sseg.Nodes();
-  MRTR::Node** mnode  = mseg.Nodes();
+  MOERTEL::Node** snode  = sseg.Nodes();
+  MOERTEL::Node** mnode  = mseg.Nodes();
 
   // set a row of Ddense in each snode
   for (int row=0; row<nsnode; ++row)

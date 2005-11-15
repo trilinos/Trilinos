@@ -26,14 +26,14 @@ bool cca_mrtr_2D_finddlines(int id, DLINE** dline1, DLINE** dline2, DESIGN* desi
 int  cca_mrtr_2D_find_glines_on_dline(GLINE*** gline, DLINE* dline, DISCRET* actdis);
 int  cca_mrtr_2D_find_gnodes_on_dline(GNODE*** gnode, DLINE* dline, DISCRET* actdis);
 int cca_mrtr_2D_prepare_gline_data(GLINE* gline, int** nodeIds,
-                                   MRTR::Segment::SegmentType* typ);
+                                   MOERTEL::Segment::SegmentType* typ);
 
 int  cca_mrtr_3D_numinterfaces(int **iids, DESIGN* design);
 bool cca_mrtr_3D_finddsurfs(int id, DSURF** dsurf1, DSURF** dsurf2, DESIGN* design);
 int  cca_mrtr_3D_find_gsurfs_on_dsurf(GSURF*** gsurf, DSURF* dsurf, 
                                       DISCRET* actdis);
 int cca_mrtr_3D_prepare_gsurf_data(GSURF* gline, int** nodeIds,
-                                   MRTR::Segment::SegmentType* typ);
+                                   MOERTEL::Segment::SegmentType* typ);
 int cca_mrtr_3D_find_gnodes_on_dsurf(GNODE*** gnode, DSURF* dsurf, DISCRET* actdis);
 #endif
 #endif // TRILINOS_PACKAGE

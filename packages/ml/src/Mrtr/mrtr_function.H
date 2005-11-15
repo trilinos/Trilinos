@@ -33,15 +33,15 @@
 /* ******************************************************************** */
 #ifdef TRILINOS_PACKAGE
 
-#ifndef MRTR_FUNCTION_H
-#define MRTR_FUNCTION_H
+#ifndef MOERTEL_FUNCTION_H
+#define MOERTEL_FUNCTION_H
 
 #include <ctime>
 #include <iostream>
 
 using namespace std;
 
-namespace MRTR
+namespace MOERTEL
 {
 
 
@@ -65,16 +65,25 @@ public:
   };
   
   // ctor
-  Function() {};
+  Function(int outlevel,MOERTEL::Function::FunctionType type) : 
+  type_(type),
+  outputlevel_(outlevel) 
+  {};
   
   // copy-ctor
-  Function(const MRTR::Function& old) {type_ = old.type_;}
+  Function(const MOERTEL::Function& old) :
+  type_(old.type_),
+  outputlevel_(old.outputlevel_)
+  {}
   
   // dtor
   virtual ~Function() {}
 
+  // return the output level
+  int OutLevel() { return outputlevel_; }
+  
   // return a string specifiying the type of derived function
-  MRTR::Function::FunctionType Type() const { return type_;}
+  MOERTEL::Function::FunctionType Type() const { return type_;}
   
   // evaluate the function
   virtual bool EvaluateFunction(const double* xi, double* val, const int valdim, 
@@ -82,11 +91,12 @@ public:
 
   // need a clone functionality to do a deep copy
   // have a look at the Function_Linear1D how this is done, it's important!
-  virtual MRTR::Function* Clone() const = 0;
+  virtual MOERTEL::Function* Clone() const = 0;
 
 protected:
 
-  MRTR::Function::FunctionType type_;
+  MOERTEL::Function::FunctionType type_;
+  int                          outputlevel_;
 
   // Note that this base class does not hold any data.
   // If Your derived class needs to hold data, make sure it's carefully
@@ -95,8 +105,8 @@ protected:
 };
 
 
-} // namespace MRTR
+} // namespace MOERTEL
 
 
-#endif // MRTR_FUNCTION_H
+#endif // MOERTEL_FUNCTION_H
 #endif // TRILINOS_PACKAGE

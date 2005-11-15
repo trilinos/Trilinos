@@ -42,23 +42,24 @@
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::Projector::Projector(bool twoD) :
-twoD_(twoD)
+MOERTEL::Projector::Projector(bool twoD, int outlevel) :
+twoD_(twoD),
+outputlevel_(outlevel)
 {
 }
 
 /*----------------------------------------------------------------------*
  |  dtor (public)                                            mwgee 07/05|
  *----------------------------------------------------------------------*/
-MRTR::Projector::~Projector()
+MOERTEL::Projector::~Projector()
 {
 }
 
 /*----------------------------------------------------------------------*
  |                                                           mwgee 07/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Projector::ProjectNodetoSegment_NodalNormal(const MRTR::Node& node, 
-                                                       MRTR::Segment& seg, 
+bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(const MOERTEL::Node& node, 
+                                                       MOERTEL::Segment& seg, 
 						       double xi[])
 {
   // 2D version of the problem
@@ -67,7 +68,7 @@ bool MRTR::Projector::ProjectNodetoSegment_NodalNormal(const MRTR::Node& node,
 #if 0
     cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
     cout << "Segment\n" << seg;
-    MRTR::Node** nodes = seg.Nodes();
+    MOERTEL::Node** nodes = seg.Nodes();
     cout << *nodes[0];
     cout << *nodes[1];
 #endif
@@ -86,11 +87,12 @@ bool MRTR::Projector::ProjectNodetoSegment_NodalNormal(const MRTR::Node& node,
     }
     if (abs(F)>1.0e-9)
     {
-      cout << "***WRN*** MRTR::Projector::ProjectNodetoSegment_NodalNormal:\n"
-      	   << "***WRN*** Newton iteration failed to converge\n"
-      	   << "***WRN*** #iterations = " << i << endl
-      	   << "***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
-           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      if (OutLevel()>3)
+      cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_NodalNormal:\n"
+      	   << "MOERTEL: ***WRN*** Newton iteration failed to converge\n"
+      	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
+      	   << "MOERTEL: ***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
+           << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
 #if 0
     cout << "#iterations = " << i << " F = " << F << " eta = " << eta << endl;
@@ -104,7 +106,7 @@ bool MRTR::Projector::ProjectNodetoSegment_NodalNormal(const MRTR::Node& node,
 #if 0
     cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
     cout << "Segment " << seg;
-    MRTR::Node** nodes = seg.Nodes();
+    MOERTEL::Node** nodes = seg.Nodes();
     cout << *nodes[0];
     cout << *nodes[1];
     cout << *nodes[2];
@@ -119,21 +121,22 @@ bool MRTR::Projector::ProjectNodetoSegment_NodalNormal(const MRTR::Node& node,
     for (i=0; i<30; ++i)
     {
       evaluate_FgradF_3D_NodalNormal(F,dF,node,seg,eta,alpha);
-      eps = MRTR::dot(F,F,3);
+      eps = MOERTEL::dot(F,F,3);
       if (eps < 1.0e-10) break;
       // cout << eps << endl;
-      MRTR::solve33(dF,deta,F);
+      MOERTEL::solve33(dF,deta,F);
       eta[0] -= deta[0];
       eta[1] -= deta[1];
       alpha  -= deta[2];      
     }    
     if (eps>1.0e-10)
     {
-      cout << "***WRN*** MRTR::Projector::ProjectNodetoSegment_NodalNormal:\n"
-      	   << "***WRN*** 3D Newton iteration failed to converge\n"
-      	   << "***WRN*** #iterations = " << i << endl
-      	   << "***WRN*** eps = " << eps << " eta[3] = " << eta[0] << "/" << eta[1] << "/" << alpha << "\n"
-           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      if (OutLevel()>3)
+      cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_NodalNormal:\n"
+      	   << "MOERTEL: ***WRN*** 3D Newton iteration failed to converge\n"
+      	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
+      	   << "MOERTEL: ***WRN*** eps = " << eps << " eta[3] = " << eta[0] << "/" << eta[1] << "/" << alpha << "\n"
+           << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
 #if 0
     if (i>10)
@@ -156,16 +159,16 @@ bool MRTR::Projector::ProjectNodetoSegment_NodalNormal(const MRTR::Node& node,
  |      xs  nodal coords of node (slave side)                           |
  |      ns  outward normal of node (slave side)                         |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_F_2D_NodalNormal(const MRTR::Node& node, 
-                                                  MRTR::Segment& seg, 
+double MOERTEL::Projector::evaluate_F_2D_NodalNormal(const MOERTEL::Node& node, 
+                                                  MOERTEL::Segment& seg, 
 	      					  double eta)
 {
   // check the type of function on the segment
   // Here, we need 1D functions set as function id 0
-  MRTR::Function::FunctionType type = seg.FunctionType(0);
-  if (type != MRTR::Function::func_Linear1D)
+  MOERTEL::Function::FunctionType type = seg.FunctionType(0);
+  if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_F_2D_NodalNormal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_NodalNormal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -179,10 +182,10 @@ double MRTR::Projector::evaluate_F_2D_NodalNormal(const MRTR::Node& node,
   // get nodal coords of nodes and interpolate them
   double Nx[2]; 
   Nx[0] = Nx[1] = 0.0;
-  MRTR::Node** mnodes = seg.Nodes();
+  MOERTEL::Node** mnodes = seg.Nodes();
   if (!mnodes)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_F_2D_NodalNormal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_NodalNormal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -217,16 +220,16 @@ double MRTR::Projector::evaluate_F_2D_NodalNormal(const MRTR::Node& node,
  |      xim,yim nodal coords of segment's nodes i (master side)         |
  |      nxs,nys outward normal of node (slave side)                     |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_gradF_2D_NodalNormal(const MRTR::Node& node, 
-                                                      MRTR::Segment& seg, 
+double MOERTEL::Projector::evaluate_gradF_2D_NodalNormal(const MOERTEL::Node& node, 
+                                                      MOERTEL::Segment& seg, 
 	      				              double eta)
 {
   // check the type of function on the segment
   // Here, we need 1D functions set as function id 0
-  MRTR::Function::FunctionType type = seg.FunctionType(0);
-  if (type != MRTR::Function::func_Linear1D)
+  MOERTEL::Function::FunctionType type = seg.FunctionType(0);
+  if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_gradF_2D_NodalNormal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_NodalNormal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -240,10 +243,10 @@ double MRTR::Projector::evaluate_gradF_2D_NodalNormal(const MRTR::Node& node,
   // get nodal coords of nodes and interpolate them
   double Nxeta[2]; 
   Nxeta[0] = Nxeta[1] = 0.0;
-  MRTR::Node** mnodes = seg.Nodes();
+  MOERTEL::Node** mnodes = seg.Nodes();
   if (!mnodes)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_F_2D_NodalNormal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_NodalNormal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -268,8 +271,8 @@ double MRTR::Projector::evaluate_gradF_2D_NodalNormal(const MRTR::Node& node,
 /*----------------------------------------------------------------------*
  |                                                           mwgee 07/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Projector::ProjectNodetoSegment_SegmentNormal(const MRTR::Node& node, 
-                                                         MRTR::Segment& seg, 
+bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(const MOERTEL::Node& node, 
+                                                         MOERTEL::Segment& seg, 
 						         double xi[])
 {
 #if 0
@@ -293,11 +296,12 @@ bool MRTR::Projector::ProjectNodetoSegment_SegmentNormal(const MRTR::Node& node,
     }
     if (abs(F)>1.0e-9)
     {
-      cout << "***WRN*** MRTR::Projector::ProjectNodetoSegment_SegmentNormal:\n"
-      	   << "***WRN*** Newton iteration failed to converge\n"
-      	   << "***WRN*** #iterations = " << i << endl
-      	   << "***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
-           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      if (OutLevel()>3)
+      cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal:\n"
+      	   << "MOERTEL: ***WRN*** Newton iteration failed to converge\n"
+      	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
+      	   << "MOERTEL: ***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
+           << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
 #if 0
     cout << "#iterations = " << i << " F = " << F << " eta = " << eta << endl;
@@ -311,7 +315,7 @@ bool MRTR::Projector::ProjectNodetoSegment_SegmentNormal(const MRTR::Node& node,
 #if 0
     cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
     cout << "Segment " << seg;
-    MRTR::Node** nodes = seg.Nodes();
+    MOERTEL::Node** nodes = seg.Nodes();
     cout << *nodes[0];
     cout << *nodes[1];
     cout << *nodes[2];
@@ -326,21 +330,22 @@ bool MRTR::Projector::ProjectNodetoSegment_SegmentNormal(const MRTR::Node& node,
     for (i=0; i<30; ++i)
     {
       evaluate_FgradF_3D_SegmentNormal(F,dF,node,seg,eta,alpha);
-      eps = MRTR::dot(F,F,3);
+      eps = MOERTEL::dot(F,F,3);
       if (eps < 1.0e-10) break;
       //cout << eps << endl;
-      MRTR::solve33(dF,deta,F);
+      MOERTEL::solve33(dF,deta,F);
       eta[0] -= deta[0];
       eta[1] -= deta[1];
       alpha  -= deta[2];      
     }    
     if (eps>1.0e-10)
     {
-      cout << "***WRN*** MRTR::Projector::ProjectNodetoSegment_NodalNormal:\n"
-      	   << "***WRN*** 3D Newton iteration failed to converge\n"
-      	   << "***WRN*** #iterations = " << i << endl
-      	   << "***WRN*** eps = " << eps << " eta[3] = " << eta[0] << "/" << eta[1] << "/" << alpha << "\n"
-           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      if (OutLevel()>3)
+      cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_NodalNormal:\n"
+      	   << "MOERTEL: ***WRN*** 3D Newton iteration failed to converge\n"
+      	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
+      	   << "MOERTEL: ***WRN*** eps = " << eps << " eta[3] = " << eta[0] << "/" << eta[1] << "/" << alpha << "\n"
+           << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
 #if 0
     if (i>10)
@@ -363,16 +368,16 @@ bool MRTR::Projector::ProjectNodetoSegment_SegmentNormal(const MRTR::Node& node,
  |      xs  nodal coords of slave nodes on segment                      |
  |      njs nodal outward normal of nodes xs (slave side)               |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_F_2D_SegmentNormal(const MRTR::Node& node, 
-                                                    MRTR::Segment& seg, 
+double MOERTEL::Projector::evaluate_F_2D_SegmentNormal(const MOERTEL::Node& node, 
+                                                    MOERTEL::Segment& seg, 
 	      					    double eta)
 {
   // check the type of function on the segment
   // Here, we need 1D functions set as function id 0
-  MRTR::Function::FunctionType type = seg.FunctionType(0);
-  if (type != MRTR::Function::func_Linear1D)
+  MOERTEL::Function::FunctionType type = seg.FunctionType(0);
+  if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_F_2D_SegmentNormal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentNormal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -388,10 +393,10 @@ double MRTR::Projector::evaluate_F_2D_SegmentNormal(const MRTR::Node& node,
   Nx[0] = Nx[1] = 0.0;
   double NN[2];
   NN[0] = NN[1] = 0.0;
-  MRTR::Node** snodes = seg.Nodes();
+  MOERTEL::Node** snodes = seg.Nodes();
   if (!snodes)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_F_2D_SegmentNormal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentNormal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -432,16 +437,16 @@ double MRTR::Projector::evaluate_F_2D_SegmentNormal(const MRTR::Node& node,
  |      xm,ym   nodal coords of master node                             |
  |      nxjs,nyjs outward normals of node j (slave side)                |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_gradF_2D_SegmentNormal(const MRTR::Node& node, 
-                                                        MRTR::Segment& seg, 
+double MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal(const MOERTEL::Node& node, 
+                                                        MOERTEL::Segment& seg, 
 	      				                double eta)
 {
   // check the type of function on the segment
   // Here, we need 1D functions set as function id 0
-  MRTR::Function::FunctionType type = seg.FunctionType(0);
-  if (type != MRTR::Function::func_Linear1D)
+  MOERTEL::Function::FunctionType type = seg.FunctionType(0);
+  if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_gradF_2D_SegmentNormal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -464,10 +469,10 @@ double MRTR::Projector::evaluate_gradF_2D_SegmentNormal(const MRTR::Node& node,
   double Nxeta[2];  Nxeta[0] = Nxeta[1] = 0.0;
   double NN[2];     NN[0] = NN[1] = 0.0;
   double NNeta[2];  NNeta[0] = NNeta[1] = 0.0;
-  MRTR::Node** snodes = seg.Nodes();
+  MOERTEL::Node** snodes = seg.Nodes();
   if (!snodes)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_gradF_2D_SegmentNormal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -498,8 +503,8 @@ double MRTR::Projector::evaluate_gradF_2D_SegmentNormal(const MRTR::Node& node,
 /*----------------------------------------------------------------------*
  |                                                           mwgee 08/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Projector::ProjectNodetoSegment_SegmentOrthogonal(const MRTR::Node& node, 
-                                                             MRTR::Segment& seg, 
+bool MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal(const MOERTEL::Node& node, 
+                                                             MOERTEL::Segment& seg, 
 						             double xi[])
 {
 #if 0
@@ -522,11 +527,12 @@ bool MRTR::Projector::ProjectNodetoSegment_SegmentOrthogonal(const MRTR::Node& n
     }
     if (abs(F)>1.0e-10)
     {
-      cout << "***WRN*** MRTR::Projector::ProjectNodetoSegment_SegmentOrthogonal:\n"
-      	   << "***WRN*** Newton iteration failed to converge\n"
-      	   << "***WRN*** #iterations = " << i << endl
-      	   << "***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
-           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      if (OutLevel()>3)
+      cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal:\n"
+      	   << "MOERTEL: ***WRN*** Newton iteration failed to converge\n"
+      	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
+      	   << "MOERTEL: ***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
+           << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
 #if 0
     cout << "#iterations = " << i << " F = " << F << " eta = " << eta << endl;
@@ -536,7 +542,7 @@ bool MRTR::Projector::ProjectNodetoSegment_SegmentOrthogonal(const MRTR::Node& n
   }
   else
   {
-    cout << "***ERR*** MRTR::Projector::ProjectNodetoSegment_SegmentOrthogonal:\n"
+    cout << "***ERR*** MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal:\n"
     	 << "***ERR*** 3D projection not yet impl.\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -554,16 +560,16 @@ bool MRTR::Projector::ProjectNodetoSegment_SegmentOrthogonal(const MRTR::Node& n
  |      xs  nodal coords of slave nodes on segment                      |
  |      njs nodal outward normal of nodes xs (slave side)               |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal(const MRTR::Node& node, 
-                                                        MRTR::Segment& seg, 
+double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal(const MOERTEL::Node& node, 
+                                                        MOERTEL::Segment& seg, 
 	      					        double eta)
 {
   // check the type of function on the segment
   // Here, we need 1D functions set as function id 0
-  MRTR::Function::FunctionType type = seg.FunctionType(0);
-  if (type != MRTR::Function::func_Linear1D)
+  MOERTEL::Function::FunctionType type = seg.FunctionType(0);
+  if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_F_2D_SegmentOrthogonal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -577,10 +583,10 @@ double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal(const MRTR::Node& node,
   // get nodal coords and normals of slave nodes and interpolate them
   double Nx[2]; 
   Nx[0] = Nx[1] = 0.0;
-  MRTR::Node** snodes = seg.Nodes();
+  MOERTEL::Node** snodes = seg.Nodes();
   if (!snodes)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_F_2D_SegmentOrthogonal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -617,17 +623,17 @@ double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal(const MRTR::Node& node,
  |      Ni,Nj shape functions of segment                                |
  |      xis nodal coords of segment's nodes i (slave side)              |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal(
-                                                        const MRTR::Node& node, 
-                                                        MRTR::Segment& seg, 
+double MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal(
+                                                        const MOERTEL::Node& node, 
+                                                        MOERTEL::Segment& seg, 
 	      				                double eta)
 {
   // check the type of function on the segment
   // Here, we need 1D functions set as function id 0
-  MRTR::Function::FunctionType type = seg.FunctionType(0);
-  if (type != MRTR::Function::func_Linear1D)
+  MOERTEL::Function::FunctionType type = seg.FunctionType(0);
+  if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -643,10 +649,10 @@ double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal(
   
   // get nodal coords and normals of nodes and interpolate them
   double Nxeta[2];  Nxeta[0] = Nxeta[1] = 0.0;
-  MRTR::Node** snodes = seg.Nodes();
+  MOERTEL::Node** snodes = seg.Nodes();
   if (!snodes)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -666,11 +672,11 @@ double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal(
 /*----------------------------------------------------------------------*
  |                                                           mwgee 08/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
-                                                             const MRTR::Node& snode, 
-                                                             MRTR::Segment& seg, 
+bool MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
+                                                             const MOERTEL::Node& snode, 
+                                                             MOERTEL::Segment& seg, 
 						             double xi[],
-                                                             MRTR::Segment& sseg)
+                                                             MOERTEL::Segment& sseg)
 {
 #if 0
   cout << "----- Projector: Node " << snode.Id() << " Segment " << seg.Id() << endl;
@@ -683,7 +689,7 @@ bool MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
     int lid = sseg.GetLocalNodeId(snode.Id());
     if (lid<0)
     {
-      cout << "***ERR*** MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
+      cout << "***ERR*** MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
     	   << "***ERR*** local node id could not be found\n"
       	   << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -711,11 +717,12 @@ bool MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
     }
     if (abs(F)>1.0e-10)
     {
-      cout << "***WRN*** MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
-      	   << "***WRN*** Newton iteration failed to converge\n"
-      	   << "***WRN*** #iterations = " << i << endl
-      	   << "***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
-           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      if (OutLevel()>3)
+      cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
+      	   << "MOERTEL: ***WRN*** Newton iteration failed to converge\n"
+      	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
+      	   << "MOERTEL: ***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
+           << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
 #if 0
     cout << "#iterations = " << i << " F = " << F << " eta = " << eta << endl;
@@ -725,7 +732,7 @@ bool MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
   }
   else
   {
-    cout << "***ERR*** MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
+    cout << "***ERR*** MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
     	 << "***ERR*** 3D projection not impl.\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -743,17 +750,17 @@ bool MRTR::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
  |      xs  nodal coords of slave nodes on segment                      |
  |      njs nodal outward normal of nodes xs (slave side)               |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(const MRTR::Node& node, 
-                                                             MRTR::Segment& seg, 
+double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(const MOERTEL::Node& node, 
+                                                             MOERTEL::Segment& seg, 
 	      					             double eta,
                                                              double* g)
 {
   // check the type of function on the segment
   // Here, we need 1D functions set as function id 0
-  MRTR::Function::FunctionType type = seg.FunctionType(0);
-  if (type != MRTR::Function::func_Linear1D)
+  MOERTEL::Function::FunctionType type = seg.FunctionType(0);
+  if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_F_2D_SegmentOrthogonal_to_g:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -767,10 +774,10 @@ double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(const MRTR::Node& n
   // get nodal coords and normals of master nodes and interpolate them
   double Nx[2]; 
   Nx[0] = Nx[1] = 0.0;
-  MRTR::Node** mnodes = seg.Nodes();
+  MOERTEL::Node** mnodes = seg.Nodes();
   if (!mnodes)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_F_2D_SegmentOrthogonal_to_g:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -803,18 +810,18 @@ double MRTR::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(const MRTR::Node& n
  |      Ni,Nj shape functions of segment                                |
  |      xis nodal coords of segment's nodes i (slave side)              |
  *----------------------------------------------------------------------*/
-double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g(
-                                                        const MRTR::Node& node, 
-                                                        MRTR::Segment& seg, 
+double MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g(
+                                                        const MOERTEL::Node& node, 
+                                                        MOERTEL::Segment& seg, 
 	      				                double eta,
                                                         double* g)
 {
   // check the type of function on the segment
   // Here, we need 1D functions set as function id 0
-  MRTR::Function::FunctionType type = seg.FunctionType(0);
-  if (type != MRTR::Function::func_Linear1D)
+  MOERTEL::Function::FunctionType type = seg.FunctionType(0);
+  if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -830,10 +837,10 @@ double MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g(
   
   // get nodal coords and normals of nodes and interpolate them
   double Nxeta[2];  Nxeta[0] = Nxeta[1] = 0.0;
-  MRTR::Node** mnodes = seg.Nodes();
+  MOERTEL::Node** mnodes = seg.Nodes();
   if (!mnodes)
   {
-    cout << "***ERR*** MRTR::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g:\n"
+    cout << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);

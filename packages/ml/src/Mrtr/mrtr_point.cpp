@@ -40,8 +40,9 @@
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Point::Point(const int id, const double* xi) :
-id_(id)
+MOERTEL::Point::Point(const int id, const double* xi, int out) :
+id_(id),
+outputlevel_(out)
 {
   xi_[0] = xi[0];
   xi_[1] = xi[1];
@@ -54,7 +55,7 @@ id_(id)
 /*----------------------------------------------------------------------*
  |  dtor (public)                                            mwgee 10/05|
  *----------------------------------------------------------------------*/
-MRTR::Point::~Point()
+MOERTEL::Point::~Point()
 {
   vals_[0].clear();
   vals_[1].clear();
@@ -63,7 +64,7 @@ MRTR::Point::~Point()
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MRTR::Point& point)
+ostream& operator << (ostream& os, const MOERTEL::Point& point)
 { 
   point.Print();
   return (os);
@@ -71,7 +72,7 @@ ostream& operator << (ostream& os, const MRTR::Point& point)
 /*----------------------------------------------------------------------*
  |  print (public)                                           mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MRTR::Point::Print() const
+void MOERTEL::Point::Print() const
 {
   cout << "Point " << id_ << " xi[0]/[1] = " << xi_[0] << " / " << xi_[1] << endl;
   if (node_ != null)
@@ -82,7 +83,7 @@ void MRTR::Point::Print() const
 /*----------------------------------------------------------------------*
  |  store shape function values (public)                     mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MRTR::Point::StoreFunctionValues(int place, double* val, int valdim)
+void MOERTEL::Point::StoreFunctionValues(int place, double* val, int valdim)
 {
   vals_[place].resize(valdim);
   for (int i=0; i<valdim; ++i)

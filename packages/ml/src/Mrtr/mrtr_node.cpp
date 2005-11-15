@@ -41,8 +41,9 @@
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
-MRTR::Node::Node(int Id, const double* x, int ndof, const int* dof) :
+MOERTEL::Node::Node(int Id, const double* x, int ndof, const int* dof, int out) :
 Id_(Id),
+outputlevel_(out),
 iscorner_(false),
 Drow_(null),
 Mrow_(null)
@@ -68,8 +69,9 @@ Mrow_(null)
  |  This constructor should not be used by the user, it is used         |
  |  used internally                                                     |
  *----------------------------------------------------------------------*/
-MRTR::Node::Node() :
+MOERTEL::Node::Node(int out) :
 Id_(-1),
+outputlevel_(out),
 iscorner_(false),
 Drow_(null),
 Mrow_(null)
@@ -92,10 +94,10 @@ Mrow_(null)
 /*----------------------------------------------------------------------*
  |  copy-ctor (public)                                       mwgee 06/05|
  *----------------------------------------------------------------------*/
-MRTR::Node::Node(const MRTR::Node& old)
+MOERTEL::Node::Node(const MOERTEL::Node& old)
 {
   Id_ = old.Id();
-  
+  outputlevel_ = old.outputlevel_;
   iscorner_ = old.iscorner_;
   
   for (int i=0; i<3; ++i) 
@@ -133,7 +135,7 @@ MRTR::Node::Node(const MRTR::Node& old)
   for (int i=0; i<(int)pnode_.size(); ++i)
     if (old.pnode_[i].get() != NULL)
     {
-      pnode_[i] = rcp(new MRTR::ProjectedNode(*(old.pnode_[i])));
+      pnode_[i] = rcp(new MOERTEL::ProjectedNode(*(old.pnode_[i])));
     }
   
   if (old.Drow_ != null)
@@ -156,7 +158,7 @@ MRTR::Node::Node(const MRTR::Node& old)
 /*----------------------------------------------------------------------*
  | pack data in this node into a vector                      mwgee 07/05|
  *----------------------------------------------------------------------*/
-double* MRTR::Node::Pack(int* size)
+double* MOERTEL::Node::Pack(int* size)
 {
   // *size = *size + Id_ + x_[3] + n_[3] + dof_.size() + ndof_*sizeof(double) + seg_.size() + nseg_*sizeof(double)
      *size = 1     + 1  +  3     + 3     +  1          + dof_.size()                + 1     + seg_.size();
@@ -178,7 +180,7 @@ double* MRTR::Node::Pack(int* size)
 
   if (count != *size)
   {
-    cout << "***ERR*** MRTR::Node::Pack:\n"
+    cout << "***ERR*** MOERTEL::Node::Pack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -190,7 +192,7 @@ double* MRTR::Node::Pack(int* size)
 /*----------------------------------------------------------------------*
  | unpack data from a vector in this class                   mwgee 07/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Node::UnPack(double* pack)
+bool MOERTEL::Node::UnPack(double* pack)
 {
   int count = 0;
   int size  = (int)pack[count++];
@@ -208,7 +210,7 @@ bool MRTR::Node::UnPack(double* pack)
     
   if (count != size)
   {
-    cout << "***ERR*** MRTR::Node::UnPack:\n"
+    cout << "***ERR*** MOERTEL::Node::UnPack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -221,7 +223,7 @@ bool MRTR::Node::UnPack(double* pack)
 /*----------------------------------------------------------------------*
  |  dtor (public)                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
-MRTR::Node::~Node()
+MOERTEL::Node::~Node()
 {
   dof_.clear();
   LMdof_.clear();
@@ -235,7 +237,7 @@ MRTR::Node::~Node()
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 06/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MRTR::Node& node)
+ostream& operator << (ostream& os, const MOERTEL::Node& node)
 { 
   node.Print();
   return (os);
@@ -244,7 +246,7 @@ ostream& operator << (ostream& os, const MRTR::Node& node)
 /*----------------------------------------------------------------------*
  |  print node                                               mwgee 06/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Node::Print() const
+bool MOERTEL::Node::Print() const
 { 
   cout << "Node " << setw(6) << Id_ << "\tCoords ";
   for (int i=0; i<3; ++i)
@@ -276,7 +278,7 @@ bool MRTR::Node::Print() const
 /*----------------------------------------------------------------------*
  |  set lagrange multiplier dof id                           mwgee 07/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Node::SetLagrangeMultiplierId(int LMId)
+bool MOERTEL::Node::SetLagrangeMultiplierId(int LMId)
 { 
   // first check whether this dof has been set before
   // if so, do nothing
@@ -297,7 +299,7 @@ bool MRTR::Node::SetLagrangeMultiplierId(int LMId)
  | (checking whether already present)                                   |
  | WRN: This is NOT a collective call!                                  |
  *----------------------------------------------------------------------*/
-bool MRTR::Node::AddSegment(int sid)
+bool MOERTEL::Node::AddSegment(int sid)
 {
   if (seg_.size())
   {
@@ -325,7 +327,7 @@ bool MRTR::Node::AddSegment(int sid)
  |                                                           mwgee 07/05|
  | construct ptrs to redundant segments from my segment id list         |
  *----------------------------------------------------------------------*/
-bool MRTR::Node::GetPtrstoSegments(MRTR::Interface& interface)
+bool MOERTEL::Node::GetPtrstoSegments(MOERTEL::Interface& interface)
 { 
   if (!interface.IsComplete()) return false;
   if (!interface.lComm()) return true;
@@ -339,7 +341,7 @@ bool MRTR::Node::GetPtrstoSegments(MRTR::Interface& interface)
     segptr_[i] = interface.GetSegmentView(seg_[i]).get();
     if (!segptr_[i])
     {
-      cout << "***ERR*** MRTR::Node::GetPtrstoSegments:\n"
+      cout << "***ERR*** MOERTEL::Node::GetPtrstoSegments:\n"
            << "***ERR*** Interface " << interface.Id() << ": GetSegmentView failed\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -351,7 +353,7 @@ bool MRTR::Node::GetPtrstoSegments(MRTR::Interface& interface)
 /*----------------------------------------------------------------------*
  |  build nodal normal                                       mwgee 07/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Node::BuildAveragedNormal()
+bool MOERTEL::Node::BuildAveragedNormal()
 { 
   // get segments adjacent to me
   int nseg = Nseg();
@@ -366,7 +368,7 @@ bool MRTR::Node::BuildAveragedNormal()
   
   for (int i=0; i<nseg; ++i)
   {
-    MRTR::Segment* seg = segptr_[i]; 
+    MOERTEL::Segment* seg = segptr_[i]; 
 
 #if 0
     cout << "Now averaging from Segment\n" << *seg;
@@ -374,7 +376,7 @@ bool MRTR::Node::BuildAveragedNormal()
 
     if (!seg)
     {
-      cout << "***ERR*** MRTR::Node::BuildAveragedNormal:\n"
+      cout << "***ERR*** MOERTEL::Node::BuildAveragedNormal:\n"
            << "***ERR*** Node " << Id() << ": Segment " << sid[i] << " not found -> fatal\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -406,7 +408,7 @@ bool MRTR::Node::BuildAveragedNormal()
 /*----------------------------------------------------------------------*
  |  set a projected node                                     mwgee 07/05|
  *----------------------------------------------------------------------*/
-bool MRTR::Node::SetProjectedNode(MRTR::ProjectedNode* pnode)
+bool MOERTEL::Node::SetProjectedNode(MOERTEL::ProjectedNode* pnode)
 { 
   pnode_.resize(pnode_.size()+1);
   pnode_[pnode_.size()-1] = rcp(pnode);
@@ -416,7 +418,7 @@ bool MRTR::Node::SetProjectedNode(MRTR::ProjectedNode* pnode)
 /*----------------------------------------------------------------------*
  |  get projected nodes                                      mwgee 07/05|
  *----------------------------------------------------------------------*/
-RefCountPtr<MRTR::ProjectedNode>* MRTR::Node::GetProjectedNode(int& length)
+RefCountPtr<MOERTEL::ProjectedNode>* MOERTEL::Node::GetProjectedNode(int& length)
 { 
   length = pnode_.size();
   if (length)
@@ -428,7 +430,7 @@ RefCountPtr<MRTR::ProjectedNode>* MRTR::Node::GetProjectedNode(int& length)
 /*----------------------------------------------------------------------*
  |  get projected node                                       mwgee 07/05|
  *----------------------------------------------------------------------*/
-RefCountPtr<MRTR::ProjectedNode> MRTR::Node::GetProjectedNode()
+RefCountPtr<MOERTEL::ProjectedNode> MOERTEL::Node::GetProjectedNode()
 { 
   int length = pnode_.size();
   if (length)
@@ -440,7 +442,7 @@ RefCountPtr<MRTR::ProjectedNode> MRTR::Node::GetProjectedNode()
 /*----------------------------------------------------------------------*
  |  add a value to the Drow_ map                             mwgee 11/05|
  *----------------------------------------------------------------------*/
-void MRTR::Node::AddDValue(double val, int col)
+void MOERTEL::Node::AddDValue(double val, int col)
 { 
   if (Drow_ == null)
     Drow_ = rcp(new map<int,double>());
@@ -455,7 +457,7 @@ void MRTR::Node::AddDValue(double val, int col)
 /*----------------------------------------------------------------------*
  |  add a value to the Drow_ map                             mwgee 11/05|
  *----------------------------------------------------------------------*/
-void MRTR::Node::AddMValue(double val, int col)
+void MOERTEL::Node::AddMValue(double val, int col)
 { 
   if (Mrow_ == null)
     Mrow_ = rcp(new map<int,double>());
