@@ -116,8 +116,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int* esizes = NULL;
   int nwgt;
   int ewgtdim = zz->Edge_Weight_Dim;
-  double hgraph_global_max[2];
-  double hgraph_global_min[2];
   double hgraph_global_sum[2];
   double hgraph_local_stats[2];
   ZHG* zhg;
@@ -405,11 +403,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
             
     MPI_Allreduce(hgraph_local_stats, hgraph_global_sum, 2,
                   MPI_DOUBLE, MPI_SUM, zz->Communicator);
-    MPI_Allreduce(hgraph_local_stats, hgraph_global_max, 2,
-                  MPI_DOUBLE, MPI_MAX, zz->Communicator);
-    MPI_Allreduce(hgraph_local_stats, hgraph_global_min, 2,
-                  MPI_DOUBLE, MPI_MIN, zz->Communicator);
-            
 
     ZOLTAN_FREE(&esizes);
     ZOLTAN_FREE(&egids);
@@ -692,13 +685,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       }
 
       if (have_hgraph_callbacks) {
-        printf("%s  cutl             :  %8.0f %8.0f %8.0f\n", yo, 
-                hgraph_global_min[0], 
-                hgraph_global_max[0], 
+        printf("%s  No. hyperedge cuts (cutl):            %8.0f\n", yo, 
                 hgraph_global_sum[0]);
-        printf("%s  cutn             :  %8.0f %8.0f %8.0f\n\n", yo,
-                hgraph_global_min[1], 
-                hgraph_global_max[1], 
+        printf("%s  No. cut hyperedges (cutn):            %8.0f\n\n", yo,
                 hgraph_global_sum[1]);
       }
       
