@@ -26,7 +26,7 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = AztecOO AztecOO_UserOpUserMat AztecOO_SetParameters scripts GMRES_Tests
+SUBDIRS = AztecOO AztecOO_UserOpUserMat AztecOO_StatusTest AztecOO_SetParameters scripts GMRES_Tests
 
 EXTRA_DIST = definition
 
