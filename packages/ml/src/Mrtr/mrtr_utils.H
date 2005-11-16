@@ -40,7 +40,8 @@
 #include <iostream>
 
 #include "Teuchos_RefCountPtr.hpp"
-
+#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialDenseSolver.h"
 
 #include "mrtr_segment.H"
 #include "mrtr_functions.H"

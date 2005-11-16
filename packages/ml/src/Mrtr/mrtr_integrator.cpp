@@ -614,7 +614,7 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
                                     MOERTEL::Segment& mseg, 
                                     Epetra_SerialDenseMatrix** Ddense, 
                                     Epetra_SerialDenseMatrix** Mdense, 
-                                    MOERTEL::Overlap& overlap)
+                                    MOERTEL::Overlap& overlap, double eps)
 {
   if (oneD_)
   {
@@ -635,9 +635,6 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
   // we integrate the scalar function here
   int nrow = sseg.Nnode();
   int ncol = mseg.Nnode();
-  *Mdense = new Epetra_SerialDenseMatrix(nrow,ncol);
-  *Ddense = new Epetra_SerialDenseMatrix(nrow,nrow);
-
   // get the points
   const int np = actseg->Nnode();
   const int* nodeid = actseg->NodeIds();
@@ -656,14 +653,26 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
   double area = actseg->Area();
   if (area<0.0)
   {
-    cout << "***ERR*** MOERTEL::Integrator::Integrate:\n"
-         << "***ERR*** overlap segment area is negative: " << area << endl
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    if (OutLevel()>3)
+    cout << "MOERTEL: ***ERR***  MOERTEL::Integrator::Integrate:\n"
+         << "MOERTEL: ***ERR***  overlap segment area is negative: " << area << endl
+         << "MOERTEL: ***ERR***  skipping....\n"
+         << "MOERTEL: ***ERR***  file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
   }
 
-  if (area<1.0e-6 && OutLevel()>8)
-    cout << "MOERTEL: ***WRN*** Integrating overlap segment with tiny area " << area << endl;
+  // get the area of the slave segment
+  double sarea = sseg.Area();
+  
+  if (abs(area/sarea)<eps)
+  {
+    if (OutLevel()>9)
+      cout << "MOERTEL: ***WRN*** Skipping overlap segment with tiny area " << area << endl;
+    return false;  
+  }
+
+  *Mdense = new Epetra_SerialDenseMatrix(nrow,ncol);
+  *Ddense = new Epetra_SerialDenseMatrix(nrow,nrow);
 
   // loop integration points
   for (int gp=0; gp<Ngp(); ++gp)
@@ -715,6 +724,7 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
         // multiply the 2 functions
         double N1N2 = val_sfunc1[lm]*val_mfunc0[dof];
         (**Mdense)(lm,dof) += (N1N2*weight);
+        // cout << "Adding integrated M value " << val_sfunc1[lm] << " * " << val_mfunc0[dof] << " * " << weight << endl;
       }
       
       // loop over all nodes (dof loop slave)

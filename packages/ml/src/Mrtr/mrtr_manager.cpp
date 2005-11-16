@@ -700,7 +700,7 @@ bool MOERTEL::Manager::Mortar_Integrate_3D()
   //-------------------------------------------------------------------
   // build the Epetra_CrsMatrix D and M
   D_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,50,false));
-  M_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,40,false));
+  M_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,100,false));
 
   //-------------------------------------------------------------------
   // now that we have all maps and dofs we can assemble from the nodes
@@ -1001,7 +1001,7 @@ bool MOERTEL::Manager::ChooseMortarSide(vector<RefCountPtr<MOERTEL::Interface> >
           continue;
           
         // found node actnodeid on interface i and k
-        if (OutLevel()>5)
+        if (OutLevel()>9)
         {
           cout << "Node " << actnodeid << " on interfaces " << inter[i]->Id() << " and " << inter[k]->Id() << endl;
           fflush(stdout);
@@ -1179,8 +1179,8 @@ bool MOERTEL::Manager::ChooseMortarSide(vector<RefCountPtr<MOERTEL::Interface> >
                      }
                      else
                      {
-                       cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide_2D:\n"
-                            << "***ERR*** Matrix M or D is NULL\n"
+                       cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
+                            << "***ERR*** weird\n"
                             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
                        exit(EXIT_FAILURE);
                      }
@@ -1213,13 +1213,14 @@ bool MOERTEL::Manager::ChooseMortarSide(vector<RefCountPtr<MOERTEL::Interface> >
          // side 0 has to be master, side 1 has to be slave
          else if (flagr[k]==2 && flagr[ninter+k]==3)
          {
-           // check whether a side has been set before and this side is differen?
+           // check whether a side has been set before and this side is different?
            if (inter[i]->MortarSide()==1)
            {
-             cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide_2D:\n"
-                  << "***ERR*** want to set mortar side to 0 but has been set to 1 before\n"
-                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-             exit(EXIT_FAILURE);
+             if (OutLevel()>3)
+             cout << "***WRN*** MOERTEL::Manager::ChooseMortarSide:\n"
+                  << "***WRN*** interface " << inter[i]->Id() << ": want to set mortar side to 0 but has been set to 1 before\n"
+                  << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+             continue;
            }
            inter[i]->SetMortarSide(0);
          }
@@ -1229,16 +1230,17 @@ bool MOERTEL::Manager::ChooseMortarSide(vector<RefCountPtr<MOERTEL::Interface> >
            // check whether a side has been set before and this side is differen?
            if (inter[i]->MortarSide()==0)
            {
-             cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide_2D:\n"
-                  << "***ERR*** want to set mortar side to 1 but has been set to 0 before\n"
-                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-             exit(EXIT_FAILURE);
+             if (OutLevel()>3)
+             cout << "***WRN*** MOERTEL::Manager::ChooseMortarSide:\n"
+                  << "***WRN*** interface " << inter[i]->Id() << ": want to set mortar side to 1 but has been set to 0 before\n"
+                  << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+             continue;
            }
            inter[i]->SetMortarSide(1);
          }
          else
          {
-           cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide_2D:\n"
+           cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
                 << "***ERR*** unknown type of coloring flag: " << flags[k] << "\n"
                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
            exit(EXIT_FAILURE);
@@ -1258,7 +1260,7 @@ bool MOERTEL::Manager::ChooseMortarSide(vector<RefCountPtr<MOERTEL::Interface> >
          {
            if (inter[k]->MortarSide()!=-2)
            {
-             cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide_2D:\n"
+             cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
                   << "***ERR*** weird, this interface is not supposed to already have a mortar side assigned\n"
                   << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
              exit(EXIT_FAILURE);
@@ -1301,7 +1303,7 @@ bool MOERTEL::Manager::ChooseMortarSide(vector<RefCountPtr<MOERTEL::Interface> >
                        if (mortarside_s != -1)
                          if (mortarside_s != inter[k]->OtherSide(nodeside_k))
                          {
-                           cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide_2D:\n"
+                           cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
                                 << "***ERR*** interface has a conflict that can not be resolved\n"
                                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
                            exit(EXIT_FAILURE);
@@ -1315,7 +1317,7 @@ bool MOERTEL::Manager::ChooseMortarSide(vector<RefCountPtr<MOERTEL::Interface> >
                        if (mortarside_s != -1)
                          if (mortarside_s != nodeside_k)
                          {
-                           cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide_2D:\n"
+                           cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
                                 << "***ERR*** interface has a conflict that can not be resolved\n"
                                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
                            exit(EXIT_FAILURE);

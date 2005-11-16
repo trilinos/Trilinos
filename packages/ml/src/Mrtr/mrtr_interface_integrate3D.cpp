@@ -160,7 +160,9 @@ bool MOERTEL::Interface::Integrate_3D_Section(MOERTEL::Segment& sseg,
     // integrate master and slave part of this segment
     Epetra_SerialDenseMatrix* Ddense = NULL;
     Epetra_SerialDenseMatrix* Mdense = NULL;
-    integrator.Integrate(actseg,sseg,mseg,&Ddense,&Mdense,overlap);
+    bool ok = integrator.Integrate(actseg,sseg,mseg,&Ddense,&Mdense,overlap,1.0e-04);
+    if (!ok)
+      continue;
     
     // assemble temporarily into the nodes
     integrator.Assemble(*this,sseg,*Ddense);    

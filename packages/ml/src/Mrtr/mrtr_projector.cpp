@@ -114,7 +114,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(const MOERTEL::Node& n
     // we do a newton iteration for the projection coordinates xi
     // set starting value to the middle of the segment
     double eta[2]; eta[0] = eta[1] = 1./3.;
-    double alpha = 0.01;
+    double alpha = 0.0;
     int    i=0;
     double F[3], dF[3][3], deta[3];
     double eps;

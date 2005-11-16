@@ -113,7 +113,7 @@ public:
                  MOERTEL::Segment& mseg,
                  Epetra_SerialDenseMatrix** Ddense, 
                  Epetra_SerialDenseMatrix** Mdense, 
-                 MOERTEL::Overlap& overlap);
+                 MOERTEL::Overlap& overlap, double eps);
 
   // Assemble D into nodes
   bool Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& sseg,Epetra_SerialDenseMatrix& Ddense);

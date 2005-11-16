@@ -184,27 +184,29 @@ bool MOERTEL::solve22(const double A[][2], double* x, const double* b)
  *----------------------------------------------------------------------*/
 bool MOERTEL::solve33(const double A[][3], double* x, const double* b)
 {
-  double B[3][3];
-  
-  B[0][0] =   A[0][0]*A[2][2] - A[2][1]*A[1][2];
-  B[1][0] = - A[1][0]*A[2][2] + A[2][0]*A[1][2];
-  B[2][0] =   A[1][0]*A[2][1] - A[2][0]*A[1][1];
-  B[0][1] = - A[0][1]*A[2][2] + A[2][1]*A[0][2];
-  B[1][1] =   A[0][0]*A[2][2] - A[2][0]*A[0][2];
-  B[2][1] = - A[0][0]*A[2][1] + A[2][0]*A[0][1];
-  B[0][2] =   A[0][1]*A[1][2] - A[1][1]*A[0][2];
-  B[1][2] = - A[0][0]*A[1][2] + A[1][0]*A[0][2];
-  B[2][2] =   A[0][0]*A[1][1] - A[1][0]*A[0][1];
-  
-  const double detinv = 1./(A[0][0]*B[0][0]+A[0][1]*B[1][0]+A[0][2]*B[2][0]);
-
+  Epetra_SerialDenseMatrix AA(3,3);
+  Epetra_SerialDenseMatrix XX(3,1);
+  Epetra_SerialDenseMatrix BB(3,1);
   for (int i=0; i<3; ++i)
   {
-    x[i] = 0.;
+    BB(i,0) = b[i];
     for (int j=0; j<3; ++j)
-      x[i] += B[i][j]*b[j]*detinv;
+      AA(i,j) = A[i][j];
   }
-
+  Epetra_SerialDenseSolver solver;
+  solver.SetMatrix(AA);
+  solver.SetVectors(XX,BB);
+  int err = solver.Solve();
+  if (err)
+  {
+    cout << "***ERR*** MOERTEL::solve33:\n"
+         << "***ERR*** Epetra_SerialDenseSolver::Solve returned an error\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  for (int i=0; i<3; ++i)
+    x[i] = XX(i,0);
+  
   return true;
 }
 
