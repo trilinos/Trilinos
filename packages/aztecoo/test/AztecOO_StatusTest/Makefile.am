@@ -28,11 +28,11 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = AztecOO
+noinst_PROGRAMS = AztecOO_StatusTest
 
-AztecOO_SOURCES = $(srcdir)/cxx_main.cpp
+AztecOO_StatusTest_SOURCES = $(srcdir)/cxx_main.cpp
 
-AztecOO_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a
+AztecOO_StatusTest_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a
 
 include $(top_builddir)/Makefile.export.aztecoo
 
@@ -44,10 +44,10 @@ EXPORT_LIBS = $(AZTECOO_LIBS)
 EXPORT_INC_PATH = $(AZTECOO_INCLUDES)
 endif
 
-##AztecOO_CXXFLAGS = -I$(top_srcdir)/src 
+##AztecOO_StatusTest_CXXFLAGS = -I$(top_srcdir)/src 
 
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 #Unsure why this test need to link to the BLAS on an IBM.
-AztecOO_LDADD = $(EXPORT_LIBS)
+AztecOO_StatusTest_LDADD = $(EXPORT_LIBS)
 

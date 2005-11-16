@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(AztecOO_SOURCES)
+SOURCES = $(AztecOO_StatusTest_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = AztecOO$(EXEEXT)
+noinst_PROGRAMS = AztecOO_StatusTest$(EXEEXT)
 subdir = test/AztecOO_StatusTest
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -103,8 +103,8 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/AztecOO_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_AztecOO_OBJECTS = cxx_main.$(OBJEXT)
-AztecOO_OBJECTS = $(am_AztecOO_OBJECTS)
+am_AztecOO_StatusTest_OBJECTS = cxx_main.$(OBJEXT)
+AztecOO_StatusTest_OBJECTS = $(am_AztecOO_StatusTest_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
@@ -118,8 +118,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(AztecOO_SOURCES)
-DIST_SOURCES = $(AztecOO_SOURCES)
+SOURCES = $(AztecOO_StatusTest_SOURCES)
+DIST_SOURCES = $(AztecOO_StatusTest_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -268,8 +268,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-AztecOO_SOURCES = $(srcdir)/cxx_main.cpp
-AztecOO_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a
+AztecOO_StatusTest_SOURCES = $(srcdir)/cxx_main.cpp
+AztecOO_StatusTest_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a
 @USING_GNUMAKE_FALSE@EXPORT_LIBS = $(AZTECOO_LIBS)
 @USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(AZTECOO_LIBS))
 @USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(AZTECOO_INCLUDES)
@@ -277,7 +277,7 @@ AztecOO_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 #Unsure why this test need to link to the BLAS on an IBM.
-AztecOO_LDADD = $(EXPORT_LIBS)
+AztecOO_StatusTest_LDADD = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -314,9 +314,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-AztecOO$(EXEEXT): $(AztecOO_OBJECTS) $(AztecOO_DEPENDENCIES) 
-	@rm -f AztecOO$(EXEEXT)
-	$(CXXLINK) $(AztecOO_LDFLAGS) $(AztecOO_OBJECTS) $(AztecOO_LDADD) $(LIBS)
+AztecOO_StatusTest$(EXEEXT): $(AztecOO_StatusTest_OBJECTS) $(AztecOO_StatusTest_DEPENDENCIES) 
+	@rm -f AztecOO_StatusTest$(EXEEXT)
+	$(CXXLINK) $(AztecOO_StatusTest_LDFLAGS) $(AztecOO_StatusTest_OBJECTS) $(AztecOO_StatusTest_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
