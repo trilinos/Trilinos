@@ -166,6 +166,11 @@ class AztecOO_StatusTestResNorm: public AztecOO_StatusTest {
       \param maxNumExtraIterations (In) Maximum number of extra iterations that will be performed in case the implicit residual succeeds that the true residual fails.
   */
   int SetMaxNumExtraIterations(int maxNumExtraIterations) {maxNumExtraIterations_ = maxNumExtraIterations; return(0);};
+
+  /** Return the maximum number of extra iterations that are performed if
+    the implicit residual succeeds while the true residual fails.
+  */
+  int GetMaxNumExtraIterations() {return(maxNumExtraIterations_);}
   //@}
 
   //@{ \name Methods that implement the AztecOO_StatusTest interface.

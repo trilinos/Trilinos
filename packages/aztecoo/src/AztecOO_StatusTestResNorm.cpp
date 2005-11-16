@@ -40,7 +40,7 @@ AztecOO_StatusTestResNorm::AztecOO_StatusTestResNorm(const Epetra_Operator & Ope
     lhs_(LHS),
     rhs_(RHS),
     tolerance_(Tolerance),
-    maxNumExtraIterations_(3),
+    maxNumExtraIterations_(0),
     numExtraIterations_(0),
     restype_(Implicit),
     resnormtype_(TwoNorm),

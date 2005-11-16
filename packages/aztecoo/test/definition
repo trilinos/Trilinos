@@ -14,8 +14,7 @@
 }
 
 (FRAMEWORK, AztecOOTests) {
-    DIRS = AztecOO,
-	         AztecOO_SetParameters;
+    DIRS = AztecOO, AztecOO_StatusTest, AztecOO_SetParameters;
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
