@@ -273,10 +273,34 @@ PyObject * Epetra_NumPyMultiVector::getArray() const
 }
 
 // =============================================================================
+PyObject * Epetra_NumPyMultiVector::Dot(const Epetra_MultiVector & a) const {
+  int    n = NumVectors();
+  double result[n];
+  int    numVectors[ ] = {n};
+  PyObject * po;
+  double   * data;  
+
+  int status = Epetra_MultiVector::Dot(a, result);
+
+  if (status) {
+    PyErr_Format(PyExc_RuntimeError, "Dot returned error code %d", status);
+    goto fail;
+  }
+  po   = PyArray_FromDims(1, numVectors, PyArray_DOUBLE);
+  data = (double*) (((PyArrayObject*)po)->data);
+  for (int i=0; i<n; i++) data[i] = result[i];
+  return po;
+ fail:
+  return NULL;
+}
+
+// =============================================================================
 PyObject * Epetra_NumPyMultiVector::Norm1() const {
   int    n = NumVectors();
   double result[n];
   int    numVectors[ ] = {n};
+  PyObject * po;
+  double   * data;
 
   int status = Epetra_MultiVector::Norm1(result);
 
@@ -284,7 +308,10 @@ PyObject * Epetra_NumPyMultiVector::Norm1() const {
     PyErr_Format(PyExc_RuntimeError, "Norm1 returned error code %d", status);
     goto fail;
   }
-  return PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE, (char *)result);
+  po   = PyArray_FromDims(1, numVectors, PyArray_DOUBLE);
+  data = (double*)(((PyArrayObject*)po)->data);
+  for (int i=0; i<n; i++) data[i] = result[i];
+  return po;
  fail:
   return NULL;
 }
@@ -294,6 +321,8 @@ PyObject * Epetra_NumPyMultiVector::Norm2() const {
   int    n = NumVectors();
   double result[n];
   int    numVectors[ ] = {n};
+  PyObject * po;
+  double   * data;
 
   int status = Epetra_MultiVector::Norm2(result);
 
@@ -301,7 +330,10 @@ PyObject * Epetra_NumPyMultiVector::Norm2() const {
     PyErr_Format(PyExc_RuntimeError, "Norm2 returned error code %d", status);
     goto fail;
   }
-  return PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE, (char *)result);
+  po   = PyArray_FromDims(1, numVectors, PyArray_DOUBLE);
+  data = (double*)(((PyArrayObject*)po)->data);
+  for (int i=0; i<n; i++) data[i] = result[i];
+  return po;
  fail:
   return NULL;
 }
@@ -311,6 +343,8 @@ PyObject * Epetra_NumPyMultiVector::NormInf() const {
   int    n = NumVectors();
   double result[n];
   int    numVectors[ ] = {n};
+  PyObject * po;
+  double   * data;  
 
   int status = Epetra_MultiVector::NormInf(result);
 
@@ -318,24 +352,99 @@ PyObject * Epetra_NumPyMultiVector::NormInf() const {
     PyErr_Format(PyExc_RuntimeError, "NormInf returned error code %d", status);
     goto fail;
   }
-  return PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE, (char *)result);
+  po   = PyArray_FromDims(1, numVectors, PyArray_DOUBLE);
+  data = (double*) (((PyArrayObject*)po)->data);
+  for (int i=0; i<n; i++) data[i] = result[i];
+  return po;
  fail:
   return NULL;
 }
 
 // =============================================================================
-PyObject * Epetra_NumPyMultiVector::Dot(const Epetra_MultiVector & A) const {
+PyObject * Epetra_NumPyMultiVector::NormWeighted(const Epetra_MultiVector & weights) const {
   int    n = NumVectors();
   double result[n];
   int    numVectors[ ] = {n};
+  PyObject * po;
+  double   * data;  
 
-  int status = Epetra_MultiVector::Dot(A, result);
+  int status = Epetra_MultiVector::NormWeighted(weights,result);
 
   if (status) {
-    PyErr_Format(PyExc_RuntimeError, "Dot returned error code %d", status);
+    PyErr_Format(PyExc_RuntimeError, "NormWeighted returned error code %d", status);
     goto fail;
   }
-  return PyArray_FromDimsAndData(1,numVectors, PyArray_DOUBLE, (char *)result);
+  po   = PyArray_FromDims(1, numVectors, PyArray_DOUBLE);
+  data = (double*) (((PyArrayObject*)po)->data);
+  for (int i=0; i<n; i++) data[i] = result[i];
+  return po;
  fail:
   return NULL;
 }
+
+// =============================================================================
+PyObject * Epetra_NumPyMultiVector::MinValue() const {
+  int    n = NumVectors();
+  double result[n];
+  int    numVectors[ ] = {n};
+  PyObject * po;
+  double   * data;  
+
+  int status = Epetra_MultiVector::MinValue(result);
+
+  if (status) {
+    PyErr_Format(PyExc_RuntimeError, "MinValue returned error code %d", status);
+    goto fail;
+  }
+  po   = PyArray_FromDims(1, numVectors, PyArray_DOUBLE);
+  data = (double*) (((PyArrayObject*)po)->data);
+  for (int i=0; i<n; i++) data[i] = result[i];
+  return po;
+ fail:
+  return NULL;
+}
+
+// =============================================================================
+PyObject * Epetra_NumPyMultiVector::MaxValue() const {
+  int    n = NumVectors();
+  double result[n];
+  int    numVectors[ ] = {n};
+  PyObject * po;
+  double   * data;  
+
+  int status = Epetra_MultiVector::MaxValue(result);
+
+  if (status) {
+    PyErr_Format(PyExc_RuntimeError, "MaxValue returned error code %d", status);
+    goto fail;
+  }
+  po   = PyArray_FromDims(1, numVectors, PyArray_DOUBLE);
+  data = (double*) (((PyArrayObject*)po)->data);
+  for (int i=0; i<n; i++) data[i] = result[i];
+  return po;
+ fail:
+  return NULL;
+}
+
+// =============================================================================
+PyObject * Epetra_NumPyMultiVector::MeanValue() const {
+  int    n = NumVectors();
+  double result[n];
+  int    numVectors[ ] = {n};
+  PyObject * po;
+  double   * data;  
+
+  int status = Epetra_MultiVector::MeanValue(result);
+
+  if (status) {
+    PyErr_Format(PyExc_RuntimeError, "MeanValue returned error code %d", status);
+    goto fail;
+  }
+  po   = PyArray_FromDims(1, numVectors, PyArray_DOUBLE);
+  data = (double*) (((PyArrayObject*)po)->data);
+  for (int i=0; i<n; i++) data[i] = result[i];
+  return po;
+ fail:
+  return NULL;
+}
+

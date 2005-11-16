@@ -51,10 +51,14 @@ public:
   ~Epetra_NumPyMultiVector();
 
   PyObject * getArray() const;
+  PyObject * Dot(const Epetra_MultiVector & a) const;
   PyObject * Norm1() const;
   PyObject * Norm2() const;
   PyObject * NormInf() const;
-  PyObject * Dot(const Epetra_MultiVector & A) const;
+  PyObject * NormWeighted(const Epetra_MultiVector & weights) const;
+  PyObject * MinValue() const;
+  PyObject * MaxValue() const;
+  PyObject * MeanValue() const;
 
 private:
 
