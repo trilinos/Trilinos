@@ -44,7 +44,7 @@ int                       Epetra_NumPyMultiVector::tmp_range_len = 0            
 
 // Static helper functions
 // =============================================================================
-Epetra_Map & Epetra_NumPyMultiVector::getEpetraMap(PyObject * pyObject)
+Epetra_Map & Epetra_NumPyMultiVector::getEpetraMapAndArray(PyObject * pyObject)
 {
   getArrayFromObject(pyObject);   // This creates the tmp_array
   const int totalLength = PyArray_Size((PyObject *)tmp_array);
@@ -54,7 +54,7 @@ Epetra_Map & Epetra_NumPyMultiVector::getEpetraMap(PyObject * pyObject)
 }
 
 // =============================================================================
-int * Epetra_NumPyMultiVector::getRange(PyObject * range)
+int * Epetra_NumPyMultiVector::getRangeFromObject(PyObject * range)
 {
   assert(NULL == tmp_range    );
   assert(0    == tmp_range_len);
@@ -211,7 +211,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMa
 Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
 						 const Epetra_NumPyMultiVector & source,
 						 PyObject * range):
-  Epetra_MultiVector(CV, (const Epetra_MultiVector &) source, getRange(range),
+  Epetra_MultiVector(CV, (const Epetra_MultiVector &) source, getRangeFromObject(range),
 		     tmp_range_len)
 {
   // Store the local map
@@ -243,7 +243,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
 
 // =============================================================================
 Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(PyObject * pyObject):
-  Epetra_MultiVector(View, getEpetraMap(pyObject), getArrayFromObject(pyObject),
+  Epetra_MultiVector(View, getEpetraMapAndArray(pyObject), (double*)(tmp_array->data),
 		     tmp_map->NumMyPoints(), tmp_array->dimensions[0]) 
 {
   // Store the pointer to the Epetra_Map

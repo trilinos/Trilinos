@@ -739,14 +739,14 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         self.assertEquals(len(meanValue),2     )
         self.assertEquals(meanValue[:],  result)
 
-    def testMultiply(self):
-        "Test Epetra.MultiVector Multiply method"
-        a = [self.numPyArray1,self.numPyArray2]
-        emv0 = Epetra.MultiVector(self.map,2)
-        emv1 = Epetra.MultiVector(self.map,a)
-        emv2 = Epetra.MultiVector(self.map,a)
-        self.assertEquals(emv0[:], 0.0)
-        result = emv0('T','N',1.0,emv1,emv2)
+#     def testMultiply(self):
+#         "Test Epetra.MultiVector Multiply method"
+#         a = [self.numPyArray1,self.numPyArray2]
+#         emv0 = Epetra.MultiVector(self.map,2)
+#         emv1 = Epetra.MultiVector(self.map,a)
+#         emv2 = Epetra.MultiVector(self.map,a)
+#         self.assertEquals(emv0[:], 0.0)
+#         result = emv0('T','N',1.0,emv1,emv2)
 
 ##########################################################################
 

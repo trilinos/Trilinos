@@ -66,9 +66,9 @@ private:
   Epetra_NumPyMultiVector();
 
   // Static helper functions
-  static Epetra_Map & getEpetraMap(PyObject *);
-  static int        * getRange(    PyObject *);
-  static double     * getArrayFromObject(PyObject *);
+  static Epetra_Map & getEpetraMapAndArray(PyObject *);
+  static int        * getRangeFromObject(  PyObject *);
+  static double     * getArrayFromObject(  PyObject *);
   static double     * getArrayFromMapAndObject(const Epetra_BlockMap &, PyObject *);
 
   // Static private data
