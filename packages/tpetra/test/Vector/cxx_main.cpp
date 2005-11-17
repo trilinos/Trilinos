@@ -125,7 +125,10 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	for(OrdinalType i = 0; i < myLength; i++)
 		scalarArray[i] = Teuchos::ScalarTraits<ScalarType>::random();
 
-	Tpetra::Vector<OrdinalType, ScalarType> vector1a(&scalarArray[0], myLength, vectorspace);
+	ScalarType* ptr = 0;
+	if(!scalarArray.empty())
+		ptr = &scalarArray[0];
+	Tpetra::Vector<OrdinalType, ScalarType> vector1a(ptr, myLength, vectorspace);
 	// cpy ctr
 	Tpetra::Vector<OrdinalType, ScalarType> v2(vector);
 	
@@ -143,8 +146,10 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	
 	// element access - [] operator
 	if(debug) cout << "Element access methods..." << endl;
-	ScalarType const temp1 = vector[1];
-	vector[0] = temp1;
+	if(vector.getNumMyEntries() > 1) {
+		ScalarType const temp1 = vector[1];
+		vector[0] = temp1;
+	}
 	
 	// set all to scalar
 	if(debug) cout << "setAllToScalar..." << endl;
@@ -204,6 +209,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	vector.meanValue();
 	// elementwiseMultiply
 	if(debug) cout << "elementwiseMultiply..." << endl;
+	ScalarType const temp1 = Teuchos::ScalarTraits<ScalarType>::random();
 	vector.elementwiseMultiply(temp1, vector1a, v2, scalar3);
 	// elementwiseReciprocalMultiply
 	if(debug) cout << "elementwiseReciprocalMultiply..." << endl;
