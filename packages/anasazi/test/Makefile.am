@@ -30,7 +30,11 @@ if BUILD_TEUCHOS_COMPLEX
 COMPLEX_SUBDIR = MVOPComplex MVOPTpetra
 endif
 
-SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG MVOPTester $(COMPLEX_SUBDIR) scripts
+if BUILD_ANASAZI_TPETRA
+TPETRA_SUBDIR = MVOPComplex MVOPTpetra
+endif
+
+SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG MVOPTester $(COMPLEX_SUBDIR) $(TPETRA_SUBDIR) scripts
 
 EXTRA_DIST = definition
  
