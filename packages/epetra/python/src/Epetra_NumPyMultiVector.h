@@ -50,7 +50,8 @@ public:
 
   ~Epetra_NumPyMultiVector();
 
-  PyObject * getArray() const;
+  PyObject * ExtractCopy() const;
+  PyObject * ExtractView() const;
   PyObject * Dot(const Epetra_MultiVector & a) const;
   PyObject * Norm1() const;
   PyObject * Norm2() const;

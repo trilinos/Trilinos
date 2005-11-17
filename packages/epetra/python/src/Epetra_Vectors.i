@@ -15,8 +15,8 @@
 %ignore Epetra_MultiVector::operator()(int) const;
 %ignore Epetra_MultiVector::ExtractCopy(double *, int   ) const;  // These Extract methods
 %ignore Epetra_MultiVector::ExtractCopy(double **       ) const;  // are given functionality
-%ignore Epetra_MultiVector::ExtractView(double **, int *) const;  // below in the %pythoncode
-%ignore Epetra_MultiVector::ExtractView(double ***      ) const;  // section
+%ignore Epetra_MultiVector::ExtractView(double **, int *) const;  // in the derived class
+%ignore Epetra_MultiVector::ExtractView(double ***      ) const;  // Epetra_NumPyMultiVector
 %ignore Epetra_MultiVector::ResetView(double **);   // These are expert
 %ignore Epetra_MultiVector::Values() const;         // methods not supported
 %ignore Epetra_MultiVector::Pointers() const;       // (or needed) in python
@@ -52,7 +52,7 @@ class MultiVector(UserArray,NumPyMultiVector):
         __init__(self, PyObject array) -> MultiVector
         """
         NumPyMultiVector.__init__(self, *args)
-        UserArray.__init__(self,self.getArray(),'d',copy=False,savespace=False)
+        UserArray.__init__(self,self.ExtractView(),'d',copy=False,savespace=False)
     def __str__(self):
         return str(self.array)
     def __setattr__(self, key, value):
@@ -66,17 +66,11 @@ class MultiVector(UserArray,NumPyMultiVector):
                 raise ValueError, "Epetra.MultiVector shape is " + str(value) + \
 		  " but must have minimum of 2 elements"
         UserArray.__setattr__(self, key, value)
-    def ExtractCopy(self):
-        "ExtractCopy(self) -> NumericArray"
-        return array(self.array,copy=True)
-    def ExtractView(self):
-        "ExtractView(self) -> NumericArray"
-        return self.array
 
 class Vector(UserArray,NumPyVector):
     def __init__(self, *args):
         NumPyVector.__init__(self, *args)
-        UserArray.__init__(self,self.getArray(),'d',copy=False,savespace=False)
+        UserArray.__init__(self,self.ExtractView(),'d',copy=False,savespace=False)
     def __str__(self):
         return str(self.array)
     def __setattr__(self, key, value):

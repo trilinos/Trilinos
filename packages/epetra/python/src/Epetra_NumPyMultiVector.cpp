@@ -171,7 +171,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMa
   // Create the array object
   int dims[ ] = { numVectors, blockMap.NumMyPoints() };
   double **v = NULL;
-  ExtractView(&v);
+  Epetra_MultiVector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_FromDimsAndData(2,dims,PyArray_DOUBLE,
 						    (char *)v[0]);
 
@@ -186,7 +186,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_NumPyMultiVector &
   map = new Epetra_BlockMap(source.Map());
   int dims[ ] = { NumVectors(), map->NumMyPoints() };
   double **v = NULL;
-  ExtractView(&v);
+  Epetra_MultiVector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_FromDimsAndData(2,dims,PyArray_DOUBLE,
 						    (char *)v[0]);
 }
@@ -218,7 +218,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
   map = new Epetra_BlockMap(source.Map());
 
   // Inintialize the local Numeric array
-  PyArrayObject * src_array = (PyArrayObject *) (source.getArray());
+  PyArrayObject * src_array = (PyArrayObject *) (source.ExtractView());
   int nd;
   // This shouldn't happen, but it does . . .
   if (NULL == src_array) nd = 2;
@@ -229,7 +229,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
   else for (int i=1; i<nd; i++) dims[i] = src_array->dimensions[i];
 
   double **v = NULL;
-  ExtractView(&v);
+  Epetra_MultiVector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_FromDimsAndData(nd,dims,PyArray_DOUBLE,
 						    (char *)v[0]);
 
@@ -266,7 +266,13 @@ Epetra_NumPyMultiVector::~Epetra_NumPyMultiVector()
 }
 
 // =============================================================================
-PyObject * Epetra_NumPyMultiVector::getArray() const
+PyObject * Epetra_NumPyMultiVector::ExtractCopy() const
+{
+  return PyArray_Copy(array);
+}
+
+// =============================================================================
+PyObject * Epetra_NumPyMultiVector::ExtractView() const
 {
   Py_INCREF(array);
   return PyArray_Return(array);

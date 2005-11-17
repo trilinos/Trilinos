@@ -515,6 +515,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         array = emv.ExtractCopy()
         self.assertEquals(type(array), ArrayType)
         self.assertEquals(emv[:], array[:])
+        self.assertEquals(emv.array is array, False)
 
     def testExtractView(self):
         "Test Epetra.MultiVector ExtractView method"
@@ -523,7 +524,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         array = emv.ExtractView()
         self.assertEquals(type(array), ArrayType)
         self.assertEquals(emv[:], array[:])
-        self.assertEquals(emv.getArray() is array, True)
+        self.assertEquals(emv.array is array, True)
 
     def testNumVectors(self):
         "Test Epetra.MultiVector NumVectors method"
