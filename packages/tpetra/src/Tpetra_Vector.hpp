@@ -354,7 +354,7 @@ namespace Tpetra {
 			globalSum /= static_cast<ScalarType>(getNumGlobalEntries());
         
 			// update flops counter: 3n
-			updateFlops(3 * vectorSpace().getNumGlobalElements());
+			updateFlops(3 * getNumGlobalEntries());
 		
 			return(Teuchos::ScalarTraits<ScalarType>::squareroot(globalSum));
 		}
@@ -407,7 +407,7 @@ namespace Tpetra {
 			// update flops counter: n
 			updateFlops(getNumGlobalEntries());
         
-			return(globalTotal / (ScalarType)getNumGlobalEntries());
+			return(globalTotal / static_cast<ScalarType>(getNumGlobalEntries()));
 		}
 
 		//! Vector multiplication (elementwise) 
