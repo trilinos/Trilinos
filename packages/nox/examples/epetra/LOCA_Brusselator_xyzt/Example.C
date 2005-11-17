@@ -101,7 +101,8 @@
 
 #ifdef HAVE_NOX_EPETRAEXT
 // Comment out following line for usual implicit time stepping on all procs
-//#define DO_XYZT 1
+#define DO_XYZT 1
+//#define DO_XYZT_PREC 1
 #endif
 
 #ifdef DO_XYZT
@@ -317,7 +318,11 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Max Iterations", 800);  
   lsParams.setParameter("Tolerance", 1e-6);
   lsParams.setParameter("Output Frequency", 50);    
-  lsParams.setParameter("Preconditioner", "AztecOO"); 
+#ifdef DO_XYZT_PREC
+  lsParams.setParameter("Preconditioner", "User Defined"); 
+#else
+  lsParams.setParameter("Preconditioner", "Ifpack"); 
+  //lsParams.setParameter("Preconditioner", "AztecOO"); 
   //lsParams.setParameter("Aztec Preconditioner", "ilu"); 
   //lsParams.setParameter("Overlap", 2);  
   //lsParams.setParameter("Graph Fill", 2); 
@@ -327,6 +332,7 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Drop Tolerance", 1.0e-12);   
   //lsParams.setParameter("Aztec Preconditioner", "Polynomial"); 
   //lsParams.setParameter("Polynomial Order", 6); 
+#endif
 
   // Create the interface between the test problem and the nonlinear solver
   Teuchos::RefCountPtr<Problem_Interface> interface = 
@@ -340,6 +346,60 @@ int main(int argc, char *argv[])
   Epetra_MultiVector initGuess(soln.Map(), timeStepsPerProc);
   for (int i=0; i<timeStepsPerProc; i++) *(initGuess(i)) = soln;
 
+#ifdef DO_XYZT_PREC
+  // Sublist for linear solver of the preconditioner
+  Teuchos::RefCountPtr<NOX::Parameter::List> precLSParams =
+       Teuchos::rcp(new NOX::Parameter::List(lsParams));
+  precLSParams->setParameter("Aztec Solver", "GMRES");  
+  precLSParams->setParameter("Preconditioner", "Ifpack");  
+  //precLSParams->setParameter("Preconditioner", "AztecOO");  
+  precLSParams->setParameter("Max Iterations", 800);  
+  precLSParams->setParameter("Tolerance", 1e-6);
+  precLSParams->setParameter("Output Frequency", 50);    
+  //precLSParams->setParameter("XYZTPreconditioner", "None"); 
+  precLSParams->setParameter("XYZTPreconditioner", "Global"); 
+  //precLSParams->setParameter("XYZTPreconditioner", "Sequential"); 
+  //precLSParams->setParameter("XYZTPreconditioner", "Parallel"); 
+  //precLSParams->setParameter("XYZTPreconditioner", "Parareal"); 
+  //precLSParams->setParameter("XYZTPreconditioner", "BlockDiagonal"); 
+
+  Teuchos::RefCountPtr<NOX::Parameter::List> precPrintParams =
+       Teuchos::rcp(new NOX::Parameter::List(printParams));
+  precPrintParams->setParameter("MyPID", MyPID); 
+  precPrintParams->setParameter("Output Precision", 3);
+  precPrintParams->setParameter("Output Processor", 0);
+  precPrintParams->setParameter("Output Information", 
+			NOX::Utils::OuterIteration + 
+			NOX::Utils::OuterIterationStatusTest + 
+			NOX::Utils::InnerIteration +
+			NOX::Utils::Parameters + 
+			NOX::Utils::Details + 
+			NOX::Utils::Warning);
+
+  Teuchos::RefCountPtr<LOCA::Epetra::Interface::xyzt> ixyzt = 
+    Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface, interface, 
+						   interface,
+						   initGuess, A, A, 
+						   globalComm, 
+						   precPrintParams.get(), precLSParams.get()));
+
+  Teuchos::RefCountPtr<Epetra_RowMatrix> Axyzt =
+     Teuchos::rcp(&(ixyzt->getJacobian()),false);
+  Epetra_Vector& solnxyzt = ixyzt->getSolution();
+  Teuchos::RefCountPtr<Epetra_Operator> Mxyzt = 
+     Teuchos::rcp(&(ixyzt->getPreconditioner()),false);
+
+  Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq = ixyzt;
+
+  // Create the Linear System
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = ixyzt;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> iPrec = 
+    Teuchos::rcp(&(ixyzt->getPreconditioner()),false);
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys =
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+						      iJac, Axyzt, iPrec, Mxyzt, 
+						      solnxyzt));
+#else
   Teuchos::RefCountPtr<LOCA::Epetra::Interface::xyzt> ixyzt = 
     Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface, interface, 
 						   interface,
@@ -357,7 +417,7 @@ int main(int argc, char *argv[])
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 						      iReq, iJac, Axyzt, 
 						      solnxyzt));
-
+#endif
   NOX::Epetra::Vector initialGuess(solnxyzt);
 #else
   // Use an Epetra Scaling object if desired
