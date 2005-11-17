@@ -1457,24 +1457,95 @@ int ML_NOX::ML_Nox_Preconditioner::ApplyInverse(
     cout << "**ERR**: tried to call ApplyInverse with isinit_ == false !\n";
     cout << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
   }
+  int err;
   if (islinearPrec_ == true)
-  {
-     int err = ML_Nox_ApplyInverse_Linear(X,Y);
-     if (err==0)
-       return(0);
-     else
-       return(-1);
-  }
+     err = ML_Nox_ApplyInverse_Linear(X,Y);
+
   else if (islinearPrec_ == false)
-  {
-     int err = ML_Nox_ApplyInverse_NonLinear(X,Y);
-     if (err==0)
-       return(0);
-     else
-       return(-1);
-  }
+     err = ML_Nox_ApplyInverse_NonLinear(X,Y);
+  
+#if 1
+  // make an Epetra_Vector
+  Epetra_Vector epetragradient(Copy,Y,0);
+
+  //cout << "Vector epetragradient before:\n";
+  //for (int i=0; i<epetragradient.Map().NumMyElements(); ++i) printf("%30.20f\n",epetragradient[i]);
+  
+  interface_.ApplyAllConstraints(epetragradient);
+
+  //cout << "Vector epetragradient after:\n";
+  //for (int i=0; i<epetragradient.Map().NumMyElements(); ++i) printf("%30.20f\n",epetragradient[i]);
+
+  Y.Scale(1.0,epetragradient);
+
+#endif
+
+#if 0
+  // Y is the gradient direction, in case we are solving a constrained problem, 
+  // we want to make sure that this gradient satisfies constraints.
+  // we create an artifical NOX::Solver::Manager her and then run it through
+  // postiterate
+  
+  // build a parameter list
+  NOX::Parameter::List nlParams;
+  NOX::Parameter::List& printParams = nlParams.sublist("Printing"); 
+  printParams.setParameter("Output Information",0);
+  NOX::Parameter::List& lsParams = nlParams.sublist("Linear Solver");
+  
+  // make an Epetra_Vector view
+  Epetra_Vector epetragradient(Copy,Y,0);
+  
+  // make a nox vector view
+  NOX::Epetra::Vector noxgradient(epetragradient,NOX::DeepCopy,false);
+
+  // build a linear system
+  NOX::EpetraNew::LinearSystemAztecOO azlinSys(printParams,lsParams,interface_,epetragradient);
+  
+  // build a group
+  NOX::EpetraNew::Group group(printParams,interface_,noxgradient,azlinSys);  
+
+  // build a pseudo convergence test
+  NOX::StatusTest::NormF normf(1.0,NOX::StatusTest::NormF::Unscaled);
+  
+  // build a manager
+  NOX::Solver::Manager solver(group,normf,nlParams);
+  
+  // get the solution group and set the vector to it
+  NOX::Abstract::Group & solgroup = 
+      const_cast<NOX::Abstract::Group &>(solver.getSolutionGroup());
+  
+  NOX::Epetra::Vector noxgradient2(noxgradient,NOX::DeepCopy);
+  solgroup.setX(noxgradient2);
+  
+  // call the interface postiterate method
+  interface_.runPostIterate(solver);
+  
+  // get the solution group again
+  solgroup = const_cast<NOX::Abstract::Group &>(solver.getSolutionGroup());
+  
+  // get the vector out of the solution group
+  const NOX::Epetra::Vector* noxoutgradient = 
+    dynamic_cast<const NOX::Epetra::Vector*>(&solgroup.getX());
+    
+  // get the underlying epetra vector
+  const Epetra_Vector& epetraoutgradient = noxoutgradient->getEpetraVector();
+  
+//  cout << "Vector Y before:\n";
+//  for (int i=0; i<Y.Map().NumMyElements(); ++i) printf("%30.20f\n",Y[0][i]);
+  
+  // update Y
+  Y.Scale(1.0,epetraoutgradient);
+
+//  cout << "Vector Y after:\n";
+//  for (int i=0; i<Y.Map().NumMyElements(); ++i) printf("%30.20f\n",Y[0][i]);
+#endif
+
+
+  if (!err) return (0);
+  else      return (-1);
+  
   cout << "**ERR**: ML_Nox_Preconditioner::ApplyInverse:\n";
-  cout << "**ERR**: something wrong with the flags ismatrixfree_ and islinearPrec_\n";
+  cout << "**ERR**: something wrong with the flag islinearPrec_\n";
   cout << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
   return(-1);
 }
@@ -1517,11 +1588,11 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
 {
    // choose some smoothers on level ==0
    if (ml_fsmoothertype_ == "SGS")
-      ML_Gen_Smoother_SymGaussSeidel(ml_,0,ML_BOTH,nsmooth_fine_,1.);
+      ML_Gen_Smoother_SymGaussSeidel(ml_,0,ML_BOTH,nsmooth_fine_,0.2);
    else if (ml_fsmoothertype_ == "Jacobi")
    {
-      ML_Gen_Smoother_Jacobi(ml_,0,ML_PRESMOOTHER, nsmooth_fine_,.4);
-      ML_Gen_Smoother_Jacobi(ml_,0,ML_POSTSMOOTHER,nsmooth_fine_,.4);
+      ML_Gen_Smoother_Jacobi(ml_,0,ML_PRESMOOTHER, nsmooth_fine_,0.2);
+      ML_Gen_Smoother_Jacobi(ml_,0,ML_POSTSMOOTHER,nsmooth_fine_,0.2);
    }
    else if (ml_fsmoothertype_ == "BSGS")
    {

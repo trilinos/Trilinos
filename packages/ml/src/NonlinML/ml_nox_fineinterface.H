@@ -198,6 +198,11 @@ public:
   virtual double* Get_Nullspace(const int nummyrows, const int numpde, 
                                 const int dim_nullsp) = 0;
   
+  
+  // Apply constraints
+  virtual void ApplyAllConstraints(Epetra_Vector& gradient) 
+  { std::cout << "virtual base method Ml_Nox_Fineinterface::ApplyAllConstraints dummy called\n"; return;}
+  
   // get block information
   //! Compute and return the block node information from the application.
   /*! Compute and return the block node information from the application. This method is called

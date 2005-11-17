@@ -168,6 +168,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
 
    // ------------------------------------------------------------------------
    // generate this level's coarse prepostoperator
+   if (level_==0)
    coarseprepost_ = new ML_NOX::Ml_Nox_CoarsePrePostOperator(*coarseinterface_,
                                                              fineinterface_);    
    
@@ -267,7 +268,8 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
   else
       printParams.setParameter("Output Information",0);
 
-  nlParams_->sublist("Solver Options").setParameter("User Defined Pre/Post Operator", *coarseprepost_);
+  if (level_==0)
+    nlParams_->sublist("Solver Options").setParameter("User Defined Pre/Post Operator", *coarseprepost_);
   nlParams_->setParameter("Nonlinear Solver", "Line Search Based");         
   NOX::Parameter::List& searchParams = nlParams_->sublist("Line Search");
   NOX::Parameter::List* lsParamsptr  = 0;
