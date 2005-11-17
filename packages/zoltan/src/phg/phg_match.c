@@ -23,7 +23,8 @@ extern "C" {
 
 static ZOLTAN_PHG_MATCHING_FN pmatching_local; /* function for local matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;   /* inner product matching */
-static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;   /* alternating ipm */
+static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;     /* alternating ipm */
+static ZOLTAN_PHG_MATCHING_FN pmatching_hybrid_ipm;  /* hybrid ipm */
 
 static void phasethreereduce (void*, void*, int*, MPI_Datatype*);
 static int Zoltan_PHG_match_isolated(ZZ* zz, HGraph* hg, Matching match, 
@@ -66,6 +67,8 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
         hgp->matching = pmatching_ipm;
     else if (!strcasecmp(hgp->redm_str, "a-ipm"))
         hgp->matching = pmatching_alt_ipm;
+    else if (!strcasecmp(hgp->redm_str, "h-ipm"))
+        hgp->matching = pmatching_hybrid_ipm;
     else {
         exist = 0;
         hgp->matching = NULL;
@@ -249,6 +252,35 @@ static int pmatching_alt_ipm(
 
   ++level;  /* we don't have access to level data, so keep track this way */
   old_nvtx = hg->nVtx;
+
+  /* set redm parameter back to original */
+  strcpy(hgp->redm_str, redm_orig);
+  
+  return ierr;
+}
+
+/**************************************************************************
+  Hybrid ipm method. First partial c-ipm, then full ipm on unmatched vtxs.
+ *************************************************************************/
+static int pmatching_hybrid_ipm(
+  ZZ *zz,
+  HGraph* hg,
+  Matching match,
+  PHGPartParams *hgp
+)
+{
+  int ierr = ZOLTAN_OK;
+  char redm_orig[MAX_PARAM_STRING_LEN];
+
+  strcpy(redm_orig, hgp->redm_str); /* save original parameter ("h-ipm") */
+
+  /* First do (partial) c-ipm. */
+  strcpy(hgp->redm_str, "c-ipm");
+  ierr = pmatching_ipm(zz, hg, match, hgp);  
+
+  /* Then full ipm on remaining unmatched vertices. */
+  strcpy(hgp->redm_str, "ipm");  
+  ierr = pmatching_ipm(zz, hg, match, hgp);  
 
   /* set redm parameter back to original */
   strcpy(hgp->redm_str, redm_orig);
@@ -883,7 +915,7 @@ printf ("RTHRTH    kstart > 0   RTHRTH\n");
     }            /* DONE: kstart < max_nTotal loop */ 
 
     if (cFLAG)
-      continue;      /* skip phases 3 and 4, continue rounds */ 
+      continue;      /* skip phase 3, continue rounds */ 
     
 
     /************************ NEW PHASE 3: ********************************/
