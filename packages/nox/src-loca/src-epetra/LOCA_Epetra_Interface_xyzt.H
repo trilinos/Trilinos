@@ -30,11 +30,14 @@
 #ifndef LOCA_EPETRA_INTERFACE_XYZT_H
 #define LOCA_EPETRA_INTERFACE_XYZT_H
 
+#include "LOCA.H"
 #include "NOX_Common.H"
 #include "LOCA_Epetra_Interface_Required.H"
 #include "NOX_Epetra_Interface_Jacobian.H"
+#include "NOX_Epetra_Interface_Preconditioner.H"
 #include "LOCA_Epetra_Interface_MassMatrix.H"
-  
+#include "LOCA_Epetra_xyztPrec.H"
+
 #ifdef HAVE_NOX_EPETRAEXT
 
 #include <iostream>
@@ -90,7 +93,9 @@ public:
        const Epetra_MultiVector &splitMultiVec,
        const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitJac,
        const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitMass,
-       const Teuchos::RefCountPtr<Epetra_Comm> &globalComm);
+       const Teuchos::RefCountPtr<Epetra_Comm> &globalComm,
+       NOX::Parameter::List *precPrintParams = 0, 
+       NOX::Parameter::List *precLSParams = 0);
 
   //! Destructor
   virtual ~xyzt();
@@ -111,10 +116,15 @@ public:
   //! LOCA Interface function for printing the solution
   virtual void printSolution(const Epetra_Vector& x_, double conParam);
 
+  virtual void throwError(const string& functionName, 
+			  const string& errorMsg) const;
+
   //! Accessor for the global solution BlockVector
   virtual EpetraExt::BlockVector& getSolution();
   //! Accessor for the global BlockCrsMatrix
   virtual EpetraExt::BlockCrsMatrix& getJacobian();
+  //! Accessor for the xyzt Preconditioner
+  virtual LOCA::Epetra::xyztPrec& getPreconditioner();
 
 private:
   
@@ -140,6 +150,10 @@ private:
   int conStep;
   std::vector< std::vector<int> >* rowStencil;
   std::vector<int>* rowIndex;
+  // xyztPrec object created in constructor
+  NOX::Parameter::List* precPrintParams;
+  NOX::Parameter::List* precLSParams;
+  LOCA::Epetra::xyztPrec* preconditioner;
 
 };
 } // namespace Interface

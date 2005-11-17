@@ -42,6 +42,7 @@ LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra_Group.H \
 	$(srcdir)/LOCA_Epetra_Interface_Required.H \
 	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
+	$(srcdir)/LOCA_Epetra_xyztPrec.H \
 	$(srcdir)/LOCA_Epetra_Interface_MassMatrix.H \
         $(srcdir)/LOCA_Epetra_Interface_TimeDependent.H \
 	$(srcdir)/LOCA_Epetra_CompactWYOp.H \
@@ -54,6 +55,7 @@ LOCA_EPETRA_H = \
 LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_Group.C \
 	$(srcdir)/LOCA_Epetra_Interface_xyzt.C \
+	$(srcdir)/LOCA_Epetra_xyztPrec.C \
 	$(srcdir)/LOCA_Epetra_CompactWYOp.C \
 	$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.C \

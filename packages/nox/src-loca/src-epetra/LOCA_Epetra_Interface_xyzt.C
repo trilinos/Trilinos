@@ -42,14 +42,30 @@ xyzt::xyzt(
        const Epetra_MultiVector &splitMultiVec_, 
        const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitJac_,
        const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitMass_, 
-       const Teuchos::RefCountPtr<Epetra_Comm> &globalComm_)
-       : iReq(iReq_), iJac(iJac_), iMass(iMass_),
-       splitJac(splitJac_), splitMass(splitMass_), globalComm(globalComm_),
-       timeStepsPerProc(splitMultiVec_.NumVectors()), splitVec(*(splitMultiVec_(0))),
-       splitRes(*(splitMultiVec_(0))), splitVecOld(*(splitMultiVec_(0))), solution(0),
-       solutionOverlap(0), overlapImporter(0), jacobian(0), rowStencil(0),
-       rowIndex(0), numReplicas(globalComm_->NumProc() / splitMultiVec_.Comm().NumProc()),
-       replica(globalComm_->MyPID() / splitMultiVec_.Comm().NumProc()), conStep(0)
+       const Teuchos::RefCountPtr<Epetra_Comm> &globalComm_,
+       NOX::Parameter::List *precPrintParams_,
+       NOX::Parameter::List *precLSParams_) :
+  iReq(iReq_), 
+  iJac(iJac_), 
+  iMass(iMass_),
+  splitJac(splitJac_), 
+  splitMass(splitMass_), 
+  globalComm(globalComm_),
+  timeStepsPerProc(splitMultiVec_.NumVectors()), 
+  splitVec(*(splitMultiVec_(0))),
+  splitRes(*(splitMultiVec_(0))), 
+  splitVecOld(*(splitMultiVec_(0))), 
+  solution(0),
+  solutionOverlap(0), 
+  overlapImporter(0), 
+  jacobian(0), 
+  rowStencil(0),
+  rowIndex(0), 
+  numReplicas(globalComm_->NumProc() / splitMultiVec_.Comm().NumProc()),
+  replica(globalComm_->MyPID() / splitMultiVec_.Comm().NumProc()), 
+  conStep(0),
+  precPrintParams(precPrintParams_), 
+  precLSParams(precLSParams_)
 {
    if (globalComm->MyPID()==0) cout  << "--------------XYZT Partition Info---------------"
        << "\n\tNumProcs              = " << globalComm->NumProc()
@@ -84,6 +100,14 @@ xyzt::xyzt(
    for (int i=0; i < timeStepsPerProc; i++) 
            solution->LoadBlockValues(*(splitMultiVec_(i)), (*rowIndex)[i]);
 
+   // Create preconditioner
+   if (precLSParams != 0) {
+     preconditioner = new LOCA::Epetra::xyztPrec(*jacobian, *solution, 
+						 *precPrintParams, *precLSParams, globalComm);
+     if (preconditioner != 0) {
+       cout << "LOCA::Epetra::Interface::xyzt - preconditioner created successfully" << endl;
+     }
+   }
    cout << "Ending xyzt constructor" << endl;
 }
 
@@ -202,6 +226,18 @@ EpetraExt::BlockVector& xyzt::getSolution()
 EpetraExt::BlockCrsMatrix& xyzt::getJacobian()
 {
   return  *jacobian; 
+}
+
+LOCA::Epetra::xyztPrec& xyzt::getPreconditioner()
+{
+  return  *preconditioner; 
+}
+
+void xyzt::throwError(const string& functionName, const string& errorMsg) const
+{
+  cout << "LOCA::Epetra::Interface::xyzt::" << functionName 
+	 << " - " << errorMsg << endl;
+  throw "LOCA Error";
 }
 
 #endif
