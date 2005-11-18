@@ -362,8 +362,6 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
    * Test DD copy functions
    */
 
-printf("Test DD copy functions\n");
-
   ddCopy = Zoltan_DD_Copy(dd);
 
   if (!ddCopy){
@@ -481,7 +479,6 @@ printf("Test DD copy functions\n");
    * Test the copy functions
    */
 
-printf("Test Comm copy functions\n");
   comm_copy = Zoltan_Comm_Copy(comm);
 
   if (!comm_copy){
