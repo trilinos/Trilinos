@@ -1,0 +1,34 @@
+The "external" Trilinos package makes it possible to easily add additional
+packages that are external to Trilinos to the Trilinos build process.
+
+To add a package with a top level directory called NEW (that has been properly
+set up, more about this below) to the build process:
+
+1. Put the code into a new directory Trilinos/packages/external/NEW. 
+
+2. In Trilinos/packages/external, type ./CustomizeExternal.csh NEW
+
+3. Build Trilinos in the usual way, adding any arguments necessary for NEW.
+
+Note that NEW can be a single package or a multilevel configure structure 
+like Trilinos.  If more than one package is to be added to the build process,
+it is easiest to set up a Trilinos-like level.
+
+The setup requirements for NEW are fairly minimal:
+
+1. NEW must recognize the "configure" command in the same way that Trilinos
+packages do.
+
+It is suggested that packages also:
+
+1. Use Autoconf and Automake.
+
+2. Support the same basic set of options that Trilinos packages support.
+
+3. Support the make install make target.
+
+4. Utilize makefile.export - both reading from other packages and producing
+a makefile.export.NEW file for other applications to use.  **If starting with
+makefile.export files from a Trilinos package, keep in mind that the 
+relative location of the top level Trilinos directory will be ../../../ 
+instead of ../../.
