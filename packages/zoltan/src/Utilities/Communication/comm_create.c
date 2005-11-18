@@ -313,8 +313,6 @@ Mem_Err:
     to->buf = NULL; \
   }
     
-#define COPY_FIELD(f) to->f = from->f;
-
 ZOLTAN_COMM_OBJ *Zoltan_Comm_Copy(ZOLTAN_COMM_OBJ *from)
 {
   ZOLTAN_COMM_OBJ *to = NULL;
@@ -343,17 +341,9 @@ int Zoltan_Comm_Copy_To(ZOLTAN_COMM_OBJ **toptr, ZOLTAN_COMM_OBJ *from)
 
     to = *toptr = (ZOLTAN_COMM_OBJ *)ZOLTAN_MALLOC(sizeof(ZOLTAN_COMM_OBJ));
 
-    MPI_Comm_dup(from->comm, &(to->comm));
+    *to = *from;
 
-    COPY_FIELD(nvals);
-    COPY_FIELD(nvals_recv);
-    COPY_FIELD(nrecvs);
-    COPY_FIELD(nsends);
-    COPY_FIELD(nindices_to);
-    COPY_FIELD(nindices_from);
-    COPY_FIELD(self_msg);
-    COPY_FIELD(max_send_size);
-    COPY_FIELD(total_recv_size);
+    MPI_Comm_dup(from->comm, &(to->comm));
 
     COPY_BUFFER(procs_to, int, to->nsends);
     COPY_BUFFER(procs_from, int, to->nrecvs);

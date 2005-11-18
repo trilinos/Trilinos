@@ -136,8 +136,6 @@ int Zoltan_DD_Create (
 
 /*******************  Copy functions  ***************************/
     
-#define COPY_FIELD(f) to->f = from->f;
-
 static void allocate_copy_list(DD_Node **new, DD_Node *l, int len);
 
 Zoltan_DD_Directory *Zoltan_DD_Copy(Zoltan_DD_Directory *from)
@@ -174,23 +172,10 @@ int Zoltan_DD_Copy_To(Zoltan_DD_Directory **toptr, Zoltan_DD_Directory *from)
       ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory."); 
       return ZOLTAN_MEMERR;
     }
+  
+    *to = *from;
 
     MPI_Comm_dup(from->comm, &(to->comm));
-
-    COPY_FIELD(my_proc);
-    COPY_FIELD(nproc);
-    COPY_FIELD(gid_length);
-    COPY_FIELD(lid_length);
-    COPY_FIELD(max_id_length);
-    COPY_FIELD(user_data_length);
-    COPY_FIELD(table_length);
-    COPY_FIELD(node_size);
-    COPY_FIELD(find_msg_size);
-    COPY_FIELD(update_msg_size);
-    COPY_FIELD(remove_msg_size);
-    COPY_FIELD(debug_level);
-    COPY_FIELD(hash);
-    COPY_FIELD(cleanup);
 
     for (i=0; i<to->table_length; i++){
       allocate_copy_list(&(to->table[i]), from->table[i], 
