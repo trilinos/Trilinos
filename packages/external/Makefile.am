@@ -20,7 +20,7 @@ ACLOCAL	= aclocal -I config
 #np# new package so that the files can be used in creating the 
 #np# configure script for other packages. 
 EXTRA_DIST = \
-config.guess  config.sub  install-sh  missing bootstrap 
+README config.guess  config.sub  install-sh  missing bootstrap 
 
 ## #######################################################################
 ## Tools in the auxillary directory 
