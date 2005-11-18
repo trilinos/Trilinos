@@ -37,7 +37,6 @@ extern "C" {
 
 static void Zoltan_Free_Structures(ZZ *);
 static void Zoltan_Init(ZZ *);
-static void Zoltan_Reset(ZZ *);
 static void Zoltan_Free_Zoltan_Struct_Members(ZZ *);
 
 /*****************************************************************************/
@@ -127,8 +126,6 @@ ZZ *Zoltan_Copy(ZZ *from)
 /****************************************************************************/
 /****************************************************************************/
 
-#define COPY_FIELD(f) to->f = from->f;
-
 int Zoltan_Copy_To(ZZ *to, ZZ *from)
 {
   /*
@@ -136,154 +133,23 @@ int Zoltan_Copy_To(ZZ *to, ZZ *from)
    * Zoltan_Struct.
    */
 
-  Zoltan_Reset(to);
+  Zoltan_Free_Zoltan_Struct_Members(to);
+  MPI_Comm_free(&(to->Communicator));
+
+  *to = *from;
 
   MPI_Comm_dup(from->Communicator, &(to->Communicator));
 
-  COPY_FIELD(Proc)
-  COPY_FIELD(Num_Proc)
-  COPY_FIELD(Num_GID)
-  COPY_FIELD(Num_LID)
-  COPY_FIELD(Debug_Level)
-  COPY_FIELD(Debug_Proc)
-  COPY_FIELD(Fortran)
-  COPY_FIELD(Tflops_Special)
-  COPY_FIELD(Deterministic)
-  COPY_FIELD(Obj_Weight_Dim)
-  COPY_FIELD(Edge_Weight_Dim)
-  COPY_FIELD(Timer)
-
-  COPY_FIELD(Get_Partition_Multi)
-  COPY_FIELD(Get_Partition_Multi_Fort)
-  COPY_FIELD(Get_Partition_Multi_Data)
-  COPY_FIELD(Get_Partition)
-  COPY_FIELD(Get_Partition_Fort)
-  COPY_FIELD(Get_Partition_Data)
-
-  COPY_FIELD(Get_Num_Edges)
-  COPY_FIELD(Get_Num_Edges_Fort)
-  COPY_FIELD(Get_Num_Edges_Data)
-  COPY_FIELD(Get_Num_Edges_Multi)
-  COPY_FIELD(Get_Num_Edges_Multi_Fort)
-  COPY_FIELD(Get_Num_Edges_Multi_Data)
-
-  COPY_FIELD(Get_Edge_List)
-  COPY_FIELD(Get_Edge_List_Fort)
-  COPY_FIELD(Get_Edge_List_Data)
-  COPY_FIELD(Get_Edge_List_Multi)
-  COPY_FIELD(Get_Edge_List_Multi_Fort)
-  COPY_FIELD(Get_Edge_List_Multi_Data)
-
-  COPY_FIELD(Get_Num_Geom)
-  COPY_FIELD(Get_Num_Geom_Fort)
-  COPY_FIELD(Get_Num_Geom_Data)
-
-  COPY_FIELD(Get_Geom_Multi)
-  COPY_FIELD(Get_Geom_Multi_Fort)
-  COPY_FIELD(Get_Geom_Multi_Data)
-
-  COPY_FIELD(Get_Geom)
-  COPY_FIELD(Get_Geom_Fort)
-  COPY_FIELD(Get_Geom_Data)
-
-  COPY_FIELD(Get_Num_Obj)
-  COPY_FIELD(Get_Num_Obj_Fort)
-  COPY_FIELD(Get_Num_Obj_Data)
-
-  COPY_FIELD(Get_Obj_List)
-  COPY_FIELD(Get_Obj_List_Fort)
-  COPY_FIELD(Get_Obj_List_Data)
-  COPY_FIELD(Get_First_Obj)
-  COPY_FIELD(Get_First_Obj_Fort)
-  COPY_FIELD(Get_First_Obj_Data)
-  COPY_FIELD(Get_Next_Obj)
-  COPY_FIELD(Get_Next_Obj_Fort)
-  COPY_FIELD(Get_Next_Obj_Data)
-
-  COPY_FIELD(Get_Num_Border_Obj)
-  COPY_FIELD(Get_Num_Border_Obj_Fort)
-  COPY_FIELD(Get_Num_Border_Obj_Data)
-  COPY_FIELD(Get_Border_Obj_List)
-  COPY_FIELD(Get_Border_Obj_List_Fort)
-  COPY_FIELD(Get_Border_Obj_List_Data)
-  COPY_FIELD(Get_First_Border_Obj)
-  COPY_FIELD(Get_First_Border_Obj_Fort)
-  COPY_FIELD(Get_First_Border_Obj_Data)
-  COPY_FIELD(Get_Next_Border_Obj)
-  COPY_FIELD(Get_Next_Border_Obj_Fort)
-  COPY_FIELD(Get_Next_Border_Obj_Data)
-
-  COPY_FIELD(Get_Num_Coarse_Obj)
-  COPY_FIELD(Get_Num_Coarse_Obj_Fort)
-  COPY_FIELD(Get_Num_Coarse_Obj_Data)
-
-  COPY_FIELD(Get_Coarse_Obj_List)
-  COPY_FIELD(Get_Coarse_Obj_List_Fort)
-  COPY_FIELD(Get_Coarse_Obj_List_Data)
-  COPY_FIELD(Get_First_Coarse_Obj)
-  COPY_FIELD(Get_First_Coarse_Obj_Fort)
-  COPY_FIELD(Get_First_Coarse_Obj_Data)
-  COPY_FIELD(Get_Next_Coarse_Obj)
-  COPY_FIELD(Get_Next_Coarse_Obj_Fort)
-  COPY_FIELD(Get_Next_Coarse_Obj_Data)
-
-  COPY_FIELD(Get_Num_Child)
-  COPY_FIELD(Get_Num_Child_Fort)
-  COPY_FIELD(Get_Num_Child_Data)
-
-  COPY_FIELD(Get_Child_List)
-  COPY_FIELD(Get_Child_List_Fort)
-  COPY_FIELD(Get_Child_List_Data)
-
-  COPY_FIELD(Get_Child_Weight)
-  COPY_FIELD(Get_Child_Weight_Fort)
-  COPY_FIELD(Get_Child_Weight_Data)
-
-  COPY_FIELD(Get_Num_HG_Edges)
-  COPY_FIELD(Get_Num_HG_Edges_Fort)
-  COPY_FIELD(Get_Num_HG_Edges_Data)
-
-  COPY_FIELD(Get_HG_Edge_List)
-  COPY_FIELD(Get_HG_Edge_List_Fort)
-  COPY_FIELD(Get_HG_Edge_List_Data)
-
-  COPY_FIELD(Get_HG_Edge_Info)
-  COPY_FIELD(Get_HG_Edge_Info_Fort)
-  COPY_FIELD(Get_HG_Edge_Info_Data)
-
-  COPY_FIELD(Get_Obj_Size)
-  COPY_FIELD(Get_Obj_Size_Fort)
-  COPY_FIELD(Get_Obj_Size_Data)
-  COPY_FIELD(Get_Obj_Size_Multi)
-  COPY_FIELD(Get_Obj_Size_Multi_Fort)
-  COPY_FIELD(Get_Obj_Size_Multi_Data)
-
-  COPY_FIELD(Pack_Obj)
-  COPY_FIELD(Pack_Obj_Fort)
-  COPY_FIELD(Pack_Obj_Data)
-  COPY_FIELD(Pack_Obj_Multi)
-  COPY_FIELD(Pack_Obj_Multi_Fort)
-  COPY_FIELD(Pack_Obj_Multi_Data)
-
-  COPY_FIELD(Unpack_Obj)
-  COPY_FIELD(Unpack_Obj_Fort)
-  COPY_FIELD(Unpack_Obj_Data)
-  COPY_FIELD(Unpack_Obj_Multi)
-  COPY_FIELD(Unpack_Obj_Multi_Fort)
-  COPY_FIELD(Unpack_Obj_Multi_Data)
-
-  COPY_FIELD(Get_Processor_Name)
-  COPY_FIELD(Get_Processor_Name_Data)
-
+  to->Machine_Desc = NULL;
   Zoltan_Copy_Machine_Desc(&(to->Machine_Desc), from->Machine_Desc);
   
+  to->Params = NULL;
   Zoltan_Copy_Params(&(to->Params), from->Params);
 
-  Zoltan_Timer_Copy_To(&(to->ZTime), from->ZTime);
+  to->ZTime = Zoltan_Timer_Copy(from->ZTime);
 
+  memset(&(to->LB), 0, sizeof(struct Zoltan_LB_Struct));
   Zoltan_LB_Copy_Struct(to, from);
-
-  Zoltan_Migrate_Copy_Struct(&(to->Migrate), &(from->Migrate));
 
   return 0;
 }
@@ -447,27 +313,6 @@ static void Zoltan_Init(ZZ* zz)
   zz->Pack_Obj_Data = NULL;
   zz->Unpack_Obj_Data = NULL;
   zz->Get_Obj_Size_Data = NULL;
-}
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
-
-static void Zoltan_Reset(ZZ *zz)
-{
-/*
- *  Function to reset fields of a Zoltan_Struct back to their
- *  initial state. 
- */
-  Zoltan_Free_Zoltan_Struct_Members(zz);
-  MPI_Comm_free(&(zz->Communicator));
-
-  Zoltan_Init(zz);
-  Zoltan_LB_Init(&(zz->LB), 0);
-  Zoltan_Migrate_Init(&(zz->Migrate));
-
-  zz->Communicator = MPI_COMM_NULL;
-  zz->Proc = -1;
-  zz->Num_Proc = 0;
 }
 
 #ifdef __cplusplus
