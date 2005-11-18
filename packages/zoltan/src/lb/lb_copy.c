@@ -31,8 +31,6 @@ extern "C" {
     to->buf = NULL; \
   }
 
-#define COPY_FIELD(f) to->f = from->f;
-
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -59,24 +57,7 @@ int proc = fromZZ->Proc;
     return ZOLTAN_OK;
   }
 
-  COPY_FIELD(Part_Info_Len);
-  COPY_FIELD(Part_Info_Max_Len);
-  COPY_FIELD(Num_Global_Parts);
-  COPY_FIELD(Num_Global_Parts_Param);
-  COPY_FIELD(Num_Local_Parts_Param);
-  COPY_FIELD(Prev_Global_Parts_Param);
-  COPY_FIELD(Prev_Local_Parts_Param);
-  COPY_FIELD(Single_Proc_Per_Part);
-  COPY_FIELD(Remap_Flag);
-  COPY_FIELD(Return_Lists);
-  COPY_FIELD(Uniform_Parts);
-  COPY_FIELD(Method);
-  COPY_FIELD(LB_Fn);
-  COPY_FIELD(Imb_Tol_Len);
-  COPY_FIELD(Free_Structure);
-  COPY_FIELD(Copy_Structure);
-  COPY_FIELD(Point_Assign);
-  COPY_FIELD(Box_Assign);
+  *to = *from;
 
   COPY_BUFFER(Part_Info, struct Zoltan_part_info, to->Part_Info_Max_Len);
 
@@ -103,39 +84,6 @@ int proc = fromZZ->Proc;
   } 
 
   return ZOLTAN_OK;
-}
-
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
-
-void Zoltan_Migrate_Copy_Struct(struct Zoltan_Migrate_Struct *to, 
-                                struct Zoltan_Migrate_Struct *from)
-{
-  if (!from || !to){
-    return;
-  }
-
-  COPY_FIELD(Auto_Migrate);
-  COPY_FIELD(Only_Proc_Changes);
-  COPY_FIELD(Pre_Migrate_PP );
-  COPY_FIELD(Pre_Migrate_PP_Fort);
-  COPY_FIELD(Pre_Migrate_PP_Data);
-  COPY_FIELD(Mid_Migrate_PP);
-  COPY_FIELD(Mid_Migrate_PP_Fort);
-  COPY_FIELD(Mid_Migrate_PP_Data);
-  COPY_FIELD(Post_Migrate_PP );
-  COPY_FIELD(Post_Migrate_PP_Fort);
-  COPY_FIELD(Post_Migrate_PP_Data);
-  COPY_FIELD(Pre_Migrate);
-  COPY_FIELD(Pre_Migrate_Fort);
-  COPY_FIELD(Pre_Migrate_Data);
-  COPY_FIELD(Mid_Migrate);
-  COPY_FIELD(Mid_Migrate_Fort );
-  COPY_FIELD(Mid_Migrate_Data);
-  COPY_FIELD(Post_Migrate);
-  COPY_FIELD(Post_Migrate_Fort);
-  COPY_FIELD(Post_Migrate_Data);
 }
 
 #ifdef __cplusplus

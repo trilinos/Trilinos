@@ -257,9 +257,6 @@ extern int Zoltan_LB_Remap(struct Zoltan_Struct *, int *, int, int *, int *,
 extern int Zoltan_LB_Copy_Struct(struct Zoltan_Struct *to, 
                                   struct Zoltan_Struct *from);
 
-extern void Zoltan_Migrate_Copy_Struct(struct Zoltan_Migrate_Struct *, 
-                                       struct Zoltan_Migrate_Struct *);
-
 /* PARTITIONING FUNCTIONS */
 extern ZOLTAN_LB_FN Zoltan_RCB;
 extern ZOLTAN_LB_FN Zoltan_Octpart;
