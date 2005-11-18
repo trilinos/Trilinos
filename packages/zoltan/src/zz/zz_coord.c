@@ -83,7 +83,7 @@ int Zoltan_Get_Coordinates(
   double dist[3];
   double im[3][3];
   double skip_ratio;
-  double flat, x;
+  double x;
   int order[3];
   int skip_dimensions, d, axis_aligned;
   int target_dim;
@@ -420,24 +420,6 @@ void Zoltan_Print_Transformation(ZZ_Transform *tr)
   printf("  Center of mass, axis order: (%lf %lf %lf), %d %d %d\n",
     tr->CM[0], tr->CM[1], tr->CM[2],
     tr->Axis_Order[0], tr->Axis_Order[1], tr->Axis_Order[2]);
-}
-/*
- * Copy a coordinate transformation structure.
- */
-void Zoltan_Copy_Transformation(ZZ_Transform *to, ZZ_Transform *from)
-{
-  int i, j;
-  to->Target_Dim = from->Target_Dim;
-
-  for (i=0; i<3; i++){
-    for (j=0; j<3; j++){
-      to->Transformation[i][j] = from->Transformation[i][j];
-      to->Evecs[i][j] = from->Evecs[i][j]; 
-    }
-    to->Permutation[i] = from->Permutation[i];
-    to->CM[i] = from->CM[i];
-    to->Axis_Order[i] = from->Axis_Order[i];
-  } 
 }
 /*
  * Initialize a coordinate transformation structure.
