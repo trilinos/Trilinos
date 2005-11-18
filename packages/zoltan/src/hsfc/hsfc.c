@@ -618,7 +618,7 @@ void Zoltan_HSFC_Free_Structure (ZZ *zz)
 int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
 {
   char *yo = "Zoltan_HSFC_Copy_Structure";
-  int i, j, len;
+  int len;
   HSFC_Data *from, *to;
 
   Zoltan_HSFC_Free_Structure(toZZ);
@@ -633,20 +633,10 @@ int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
     ZOLTAN_PRINT_ERROR(fromZZ->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
-  memset(to, 0, sizeof(HSFC_Data));
 
   toZZ->LB.Data_Structure = (void *)to;
 
-  Zoltan_Copy_Transformation(&(to->tran), &(from->tran));
-
-  for (i=0; i<3; i++){
-    to->bbox_hi[i] = from->bbox_hi[i];
-    to->bbox_lo[i] = from->bbox_lo[i];
-    to->bbox_extent[i] = from->bbox_extent[i];
-  }
-
-  to->ndimension = from->ndimension;
-  to->fhsfc = from->fhsfc;
+  *to = *from;
 
   if (from->final_partition){
     len = sizeof(Partition) * fromZZ->LB.Num_Global_Parts;
