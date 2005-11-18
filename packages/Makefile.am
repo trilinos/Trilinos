@@ -109,6 +109,11 @@ EPETRAEXT_SUBDIR = epetraext
 EPETRAEXT_LIB_BUILD_CMND = cd epetraext ; $(MAKE) all-libs ;
 endif
 
+if BUILD_EXTERNAL
+EXTERNAL_SUBDIR = external
+EXTERNAL_LIB_BUILD_CMND = echo "external does not support all-libs yet";
+endif
+
 if BUILD_IFPACK
 IFPACK_SUBDIR = ifpack
 IFPACK_LIB_BUILD_CMND = cd ifpack ; $(MAKE) all-libs ;
@@ -234,7 +239,8 @@ SUBDIRS = \
 	$(RYTHMOS_SUBDIR)      \
 	$(NEW_PACKAGE_SUBDIR)  \
 	$(TSFEXTENDED_SUBDIR)  \
-	$(DIDASKO_SUBDIR)
+	$(DIDASKO_SUBDIR) \
+	$(EXTERNAL_SUBDIR)
 
 all-libs:
 	$(TEUCHOS_LIB_BUILD_CMND)
@@ -265,3 +271,5 @@ all-libs:
 	$(NEW_PACKAGE_LIB_BUILD_CMND)
 	$(TSFEXTENDED_LIB_BUILD_CMND)
 	$(DIDASKO_LIB_BUILD_CMND)
+	$(EXTERNAL_LIB_BUILD_CMND)
+

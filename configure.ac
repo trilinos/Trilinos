@@ -61,6 +61,10 @@ TAC_ARG_ENABLE_DEFAULT_FEATURE(epetra, [Build epetra], EPETRA)
 
 TAC_ARG_ENABLE_DEFAULT_FEATURE(epetraext, [Build epetraext], EPETRAEXT)
 
+#The external package is a mechanism for adding external packages to the Trilinos
+#build process.
+TAC_ARG_ENABLE_FEATURE(external, [Build external package in packages/external], EXTERNAL, no)
+
 TAC_ARG_ENABLE_DEFAULT_FEATURE(ifpack, [Build ifpack], IFPACK)
 
 TAC_ARG_ENABLE_FEATURE(kokkos, [Build kokkos], KOKKOS, no)
@@ -473,6 +477,17 @@ else
   BUILD_DIDASKO=no
 fi
 AM_CONDITIONAL(BUILD_DIDASKO, test "X$BUILD_DIDASKO" != "Xno")
+
+if test "X$ac_cv_use_external" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/external])
+  BUILD_EXTERNAL=yes
+  if test "X$ac_cv_use_external_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-external"
+  fi
+else
+  BUILD_EXTERNAL=no
+fi
+AM_CONDITIONAL(BUILD_EXTERNAL, test "X$BUILD_EXTERNAL" != "Xno")
 
 AC_ARG_ENABLE(,[
 

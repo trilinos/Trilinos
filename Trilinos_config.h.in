@@ -33,6 +33,9 @@
 /* Define if want to build python */
 #undef HAVE_EPYTHON
 
+/* Define if want to build external */
+#undef HAVE_EXTERNAL
+
 /* Define if want to build galeri */
 #undef HAVE_GALERI
 
