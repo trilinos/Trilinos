@@ -1,0 +1,281 @@
+<!DOCTYPE html PUBLIC "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type"
+ content="text/html; charset=iso-8859-1">
+  <meta name="GENERATOR"
+ content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
+  <meta name="sandia.approved" content="SAND99-1377">
+  <meta name="author" content="karen devine, kddevin@sandia.gov">
+  <title>Zoltan User's Guide: Hypergraph Partitioning</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+--><!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#ffffff">
+<div align="right"><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_alg_parmetis.html">Next</a>&nbsp; |&nbsp; <a
+ href="ug_alg_reftree.html">Previous</a></i></b></div>
+<h2>
+<a name="Hypergraph Partitioning"></a>PHG: Hypergraph Partitioning</h2>
+Hypergraph partitioning is a very useful partitioning and
+load balancing method when connectivity data is available. It can be
+viewed as a more sophisticated alternative to
+the traditional graph partitioning.
+<p>TODO: Overview of hypergraph partitioning goes here!
+</p>
+<p>Zoltan provides access to several hypergraph partitioners:
+</p>
+<ul>
+  <li> PHG (Parallel Hypergraph Partitioner)
+  </li>
+  <li> PaToH (serial only)<br>
+  </li>
+  <li> ParKway?
+  </li>
+</ul>
+We recommend PaToH for serial partitioning and PHG for parallel
+partitioning (load balancing).<br>
+Zoltan-PHG is a fully parallel multilevel hypergraph partitioner. For
+further technical description, see [].<br>
+<br>
+Planned features currently not supported:<br>
+<ul>
+  <li>Adaptive (diffusive) repartitioning</li>
+  <li>Multiconstraint partitioning<br>
+  </li>
+</ul>
+&nbsp;
+<table nosave="" width="100%">
+  <tbody>
+    <tr>
+      <td valign="top"><b>Method String:</b></td>
+      <td><b>PHG</b></td>
+    </tr>
+    <tr>
+      <td><b>Parameters:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><span style="font-style: italic;">&nbsp;&nbsp;&nbsp;
+PHG_output_level</span><br>
+      </td>
+      <td style="vertical-align: top;">Level of verbosity; 0 is silent.<br>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top"><i>&nbsp;&nbsp;&nbsp; PHG_reduction_method</i></td>
+      <td>The method to use in matching/coarsening; currently these are
+available.&nbsp;
+      <br>
+      <span style="font-style: italic;">ipm</span> - inner product
+matching (a.k.a. heavy connectivity matching) <br>
+      <span style="font-style: italic;">c-ipm</span> -&nbsp; column
+ipm;&nbsp; faster method based on ipm within processor columns
+      <br>
+      <span style="font-style: italic;">a-ipm </span>- alternate
+between c-ipm and ipm <br>
+      <i>h-ipm - </i>hybrid ipm that&nbsp; uses partial c-ipm followed
+by ipm on each level
+      <br>
+      <span style="font-style: italic;">l-ipm </span>-&nbsp; local ipm
+on each processor. Fastest option&nbsp; but&nbsp; potentially poor
+quality.
+      <br>
+      <i><br>
+      </i></td>
+    </tr>
+    <tr>
+      <td>&nbsp;&nbsp;&nbsp; <span style="font-style: italic;">PHG_reduction_limit</span><br>
+      </td>
+      <td>Number of vertices at which to stop coarsening.<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
+ style="font-style: italic;">PHG_edge_scaling</span><br>
+      </td>
+      <td style="vertical-align: top;">Variations in "inner product"
+similarity metric (matching):<br>
+0 - standard inner product<br>
+1 - cosine similarity<br>
+2 - <br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
+ style="font-style: italic;">PHG_vertex_scaling</span><br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top">&nbsp;&nbsp;&nbsp; <i>PHG_coarse_partitioning</i></td>
+      <td>Method to partition the coarsest (smallest) hypergraph;
+typically done in serial:<br>
+      <span style="font-style: italic;">ran</span> - random<br>
+      <span style="font-style: italic;">lin</span> - linear<br>
+      <span style="font-style: italic;">gr0</span> - greedy method
+based on minimizing cuts<br>
+      <span style="font-style: italic;">gr1</span> - another greedy
+method<br>
+      <span style="font-style: italic;">gr2</span> - another greedy
+method<br>
+      <span style="font-style: italic;">gr3 </span>- another greedy
+method<br>
+      <span style="font-style: italic;">gr4</span> - another greedy
+method<br>
+      </td>
+    </tr>
+    <tr>
+      <td>&nbsp;&nbsp;&nbsp; <i>PHG_coarse_iterations</i></td>
+      <td>Number of times to do coarse partitioning on each processor<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
+ style="font-style: italic;">PHG_refinement</span><br>
+      </td>
+      <td style="vertical-align: top;">Refinement algorithm:<br>
+FM <br>
+NO - no refinement<br>
+      </td>
+    </tr>
+    <tr>
+      <td>&nbsp;&nbsp;&nbsp; <i>PHG_FM_LOOP_LIMIT</i></td>
+      <td>Loop limit in FM refinement. Higher number means more
+refinement. <br>
+      </td>
+    </tr>
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp;&nbsp; <span style="font-style: italic;">PHG_FM_MAX_NEG_MOVE</span><br>
+      </td>
+      <td nosave="">Maximum number of negative moves allowed in FM.<br>
+      </td>
+    </tr>
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp; <span style="font-style: italic;">PHG_PROC_SPLIT</span><br>
+      </td>
+      <td nosave="">Split hypergraph and processors at each level of
+bisection<br>
+      </td>
+    </tr>
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp; <span style="font-style: italic;">PHG_BAL_TOL_ADJUSTMENT</span><br>
+      </td>
+      <td nosave=""><br>
+      </td>
+    </tr>
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp; <span style="font-style: italic;">EDGE_SIZE_THRESHOLD</span><br>
+      </td>
+      <td nosave="">Ignore hyperedges greater than this fraction times
+number of vertices.<br>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top"><b>Default values:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>PARMETIS_METHOD</i> = RepartGDiffusion</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>PARMETIS_OUTPUT_LEVEL</i> = 0</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>PARMETIS_COARSE_ALG </i>= 2</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>PARMETIS_SEED </i>= 15</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>PARMETIS_ITR </i>= 100</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>USE_OBJ_SIZE </i>= 1</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>CHECK_GRAPH</i> = 1</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>SCATTER_GRAPH </i>= 1</td>
+    </tr>
+    <tr>
+      <td valign="top"><b>Required Query Functions:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td>For all submethods:</td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+or <b><a href="ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b><a
+ href="ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
+pair</td>
+    </tr>
+    <tr>
+      <td>Only PartGeom &amp; PartGeomKway:</td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b></td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td>
+      <b><a href="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b>
+or <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
+      </td>
+    </tr>
+    <tr nosave="" valign="top">
+      <td>All but PartGeom:</td>
+      <td nosave="">
+      <b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_FN</a></b>
+or
+      <b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b>
+      <br>
+      <b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_MULTI_FN">ZOLTAN_EDGE_LIST_MULTI_FN</a></b>
+or
+      <b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></b>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<p>
+</p>
+<hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
+ href="ug_alg_jostle.html">Next:&nbsp;
+Jostle</a>&nbsp; |&nbsp; <a href="ug_alg_reftree.html">Previous:&nbsp;
+Refinement Tree Partitioning</a>]
+</body>
+</html>
