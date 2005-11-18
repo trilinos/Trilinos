@@ -561,10 +561,6 @@ typedef struct Zoltan_Transform_Struct ZZ_Transform;
 extern int Zoltan_Get_Obj_List(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
                                int, float**, int **);
 
-extern int Zoltan_Copy_Obj_List( ZZ *, ZOLTAN_ID_PTR , ZOLTAN_ID_PTR *,
-  ZOLTAN_ID_PTR , ZOLTAN_ID_PTR *,
-  int , float *, float **, int *, int **, int *);
-
 extern int Zoltan_Print_Obj_List( ZZ *zz, ZOLTAN_ID_PTR Gids, ZOLTAN_ID_PTR Lids,
   int wdim, float *Weights, int *Parts, int howMany);
 
@@ -572,7 +568,6 @@ extern int Zoltan_Get_Coordinates(ZZ *, int, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
   int *, double **);
 
 extern void Zoltan_Print_Transformation(ZZ_Transform *tr);
-extern void Zoltan_Copy_Transformation(ZZ_Transform *to, ZZ_Transform *from);
 extern void Zoltan_Initialize_Transformation(ZZ_Transform *tr);
 
 #ifdef __cplusplus
