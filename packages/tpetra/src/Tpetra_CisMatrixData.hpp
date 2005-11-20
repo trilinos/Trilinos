@@ -55,6 +55,8 @@ namespace Tpetra {
 			, haveExporter_(false)
 			, importer_()
 			, exporter_()
+			, rowVec_()
+			, columnVec_()
 			, platform_(primaryDist.platform().clone())
 			, comm_(primaryDist.platform().createScalarComm())
 			, ordinalComm_(primaryDist.platform().createOrdinalComm())
@@ -81,6 +83,8 @@ namespace Tpetra {
 			, haveExporter_(false)
 			, importer_()
 			, exporter_()
+			, rowVec_()
+			, columnVec_()
 			, platform_(primaryDist.platform().clone())
 			, comm_(primaryDist.platform().createScalarComm())
 			, ordinalComm_(primaryDist.platform().createOrdinalComm())
@@ -128,6 +132,8 @@ namespace Tpetra {
 		bool haveExporter_;
 		Teuchos::RefCountPtr< Import<OrdinalType> > importer_;
 		Teuchos::RefCountPtr< Export<OrdinalType> > exporter_;
+		Teuchos::RefCountPtr< Vector<OrdinalType, ScalarType> > rowVec_;
+		Teuchos::RefCountPtr< Vector<OrdinalType, ScalarType> > columnVec_;
 
 		// Platform & Comm
 		Teuchos::RefCountPtr<Platform<OrdinalType, ScalarType> const> platform_;

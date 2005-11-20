@@ -336,6 +336,7 @@ namespace Tpetra {
 				if(!data().haveImporter_) {
 					data().importer_ = Teuchos::rcp(new Import<OrdinalType>(getDomainDist().elementSpace(), 
 																			getColumnDist().elementSpace()));
+					data().columnVec_ = Teuchos::rcp(new Vector<OrdinalType, ScalarType>(getColumnDist()));
 					data().haveImporter_ = true;
 				}
 			}
@@ -345,6 +346,7 @@ namespace Tpetra {
 				if(!data().haveExporter_) {
 					data().exporter_ = Teuchos::rcp(new Export<OrdinalType>(getRowDist().elementSpace(),
 																			getRangeDist().elementSpace()));
+					data().rowVec_ = Teuchos::rcp(new Vector<OrdinalType, ScalarType>(getRowDist()));
 					data().haveExporter_ = true;
 				}
 			}
@@ -732,12 +734,12 @@ namespace Tpetra {
 		// apply subfunction for non-transpose
 		void applyA(Vector<OrdinalType, ScalarType>& x, Vector<OrdinalType, ScalarType>& y) {
 			// temp vectors in case we need to import or export
-			Vector<OrdinalType, ScalarType> x2(getColumnDist());
-			Vector<OrdinalType, ScalarType> y2(getRowDist());
+			Vector<OrdinalType, ScalarType>* x2 = data().columnVec_.get();
+			Vector<OrdinalType, ScalarType>* y2 = data().rowVec_.get();
 
 			// do import if needed
 			if(data().haveImporter_)
-				x2.doImport(x, *(data().importer_), Insert);
+				x2->doImport(x, *(data().importer_), Insert);
 			
 			// setup variables Kokkos will use
 			OrdinalType kx_length = x.getNumMyEntries();
@@ -745,12 +747,12 @@ namespace Tpetra {
 			ScalarType* kx_values = x.scalarPointer();
 			ScalarType* ky_values = y.scalarPointer();
 			if(data().haveImporter_) {
-				kx_length = x2.getNumMyEntries();
-				kx_values = x2.scalarPointer();
+				kx_length = x2->getNumMyEntries();
+				kx_values = x2->scalarPointer();
 			}
 			if(data().haveExporter_) {
-				ky_length = y2.getNumMyEntries();
-				ky_values = y2.scalarPointer();
+				ky_length = y2->getNumMyEntries();
+				ky_values = y2->scalarPointer();
 			}
 
 			// setup kokkos x vector
@@ -770,18 +772,18 @@ namespace Tpetra {
 
 			// do export if needed
 			if(data().haveExporter_)
-				y.doExport(y2, *(data().exporter_), Add);
+				y.doExport(*y2, *(data().exporter_), Add);
 		}
 
 		// apply subfunction for transpose
 		void applyB(Vector<OrdinalType, ScalarType>& x, Vector<OrdinalType, ScalarType>& y) {
 			// temp vectors in case we need to import or export
-			Vector<OrdinalType, ScalarType> x2(getRowDist());
-			Vector<OrdinalType, ScalarType> y2(getColumnDist());
+			Vector<OrdinalType, ScalarType>* x2 = data().rowVec_.get();
+			Vector<OrdinalType, ScalarType>* y2 = data().columnVec_.get();
 			
 			// do import if needed
 			if(data().haveExporter_)
-				x2.doImport(x, *(data().exporter_), Insert);
+				x2->doImport(x, *(data().exporter_), Insert);
 
 			// setup variables Kokkos will use
 			OrdinalType kx_length = x.getNumMyEntries();
@@ -789,12 +791,12 @@ namespace Tpetra {
 			ScalarType* kx_values = x.scalarPointer();
 			ScalarType* ky_values = y.scalarPointer();
 			if(data().haveExporter_) {
-				kx_length = x2.getNumMyEntries();
-				kx_values = x2.scalarPointer();
+				kx_length = x2->getNumMyEntries();
+				kx_values = x2->scalarPointer();
 			}
 			if(data().haveImporter_) {
-				ky_length = y2.getNumMyEntries();
-				ky_values = y2.scalarPointer();
+				ky_length = y2->getNumMyEntries();
+				ky_values = y2->scalarPointer();
 			}
 
 			// setup kokkos x vector
@@ -814,7 +816,7 @@ namespace Tpetra {
 			
 			// do export if needed
 			if(data().haveImporter_)
-				y.doExport(y2, *(data().importer_), Add);
+				y.doExport(*y2, *(data().importer_), Add);
 		}
 
 	}; // CisMatrix class
