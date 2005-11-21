@@ -554,7 +554,7 @@ static int pmatching_ipm (ZZ *zz,
        permute[i] = -1;
     
     memcpy (cmatch, match, hg->nVtx * sizeof(int));  /* for temporary locking */
-    if (cFLAG)
+    if (cFLAG)  {
       /* select upto nCandidates unmatched vertices to locally match */
       for (nTotal=0; nTotal < nCandidates && vindex < hg->nVtx; vindex++)  {
         if (cmatch[visit[vindex]] == visit[vindex])  {         /* unmatched */
@@ -562,6 +562,8 @@ static int pmatching_ipm (ZZ *zz,
           cmatch[visit[vindex]] = -1;           /* mark it as a pending match */
         }
       }
+total_nCandidates = nTotal;
+    }
     else  {       
       /* Select upto nCandidates unmatched vertices to globally match. */
       for (sendcnt = 0; sendcnt < nCandidates && vindex < hg->nVtx; vindex++)  {
