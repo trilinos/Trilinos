@@ -157,7 +157,7 @@ class AztecOO_StatusTestResNorm: public AztecOO_StatusTest {
   */
   int ResetTolerance(double Tolerance) {tolerance_ = Tolerance; return(0);};
 
-  //! Set the maximum number of extra iterations that will be performed in case the implicit residual succeeds that the true residual fails (default is 3).
+  //! Set the maximum number of extra iterations that will be performed in case the implicit residual succeeds that the true residual fails (default is 0).
   /*! In some instance,especially with GMRES, the implicitly computed residual is an optimistic estimate of the true residual. In these cases,
       especially when the tolerance is set very small, the iterative solver can never satisfy the tolerance with the explicit residual, so
       we allow the user to limit the number of extra iterations that will be performed.  If the implicit residual is satisfied, then the value
