@@ -1,5 +1,6 @@
 #! /bin/sh
-#np# This file does not need to be edited, other than removing this line.
+## This version of bootstrap should be used when customizing external
+## for use with one or more external packages. 
 set -x
 # Only run aclocal if we need to create aclocal.m4
 aclocal -I config 
@@ -7,10 +8,4 @@ aclocal -I config
 #autoheader 
 automake --foreign --add-missing --copy
 autoconf
-#We always copy the bootstrap output to a .txt file so that if someone tries
-#to use the sed script more than once, we know what sting to replace with
-#the new input.  The default package name is always "sample".
-#We need a default because of make dist.
-cp configure configure.txt
-cp Makefile.in Makefile.txt
 

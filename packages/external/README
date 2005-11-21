@@ -11,13 +11,26 @@ set up, more about this below) to the build process:
 3. Build Trilinos in the usual way, adding any arguments necessary for NEW.
 
 Note that NEW can be a single package or a multilevel configure structure 
-like Trilinos.  If more than one package is to be added to the build process,
-it is easiest to set up a Trilinos-like level.
+like Trilinos.  If more than one package is to be added to the build process
+at the Trilinos/packages/external level, modify the above steps as follows:
+
+1. Put the code into new directories Trilinos/packages/external/NEW 
+Trilinos/packages/external/NEW1 (and so on)
+
+2. In Trilinos/packages/external, type ./CustomizeExternal.csh NEW NEW1 ...
+
+3. Build Trilinos in the usual way, adding any arguments necessary for NEW, 
+NEW1, ...
 
 The setup requirements for NEW are fairly minimal:
 
 1. NEW must recognize the "configure" command in the same way that Trilinos
 packages do.
+
+2. sed must be in your path.
+
+3. (When adding more than 1 package at the external/ level only) autoconf
+version 2.59 and automake version 1.8.2 must be in your path.
 
 It is suggested that packages also:
 
@@ -32,3 +45,4 @@ a makefile.export.NEW file for other applications to use.  **If starting with
 makefile.export files from a Trilinos package, keep in mind that the 
 relative location of the top level Trilinos directory will be ../../../ 
 instead of ../../.
+
