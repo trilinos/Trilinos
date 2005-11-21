@@ -33,8 +33,8 @@ include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 
-_AMESOS_PYTHON_INCLUDES = $(AMESOS_INCLUDES) $(AMESOS_EXTRA_INCLUDES) $(PYTRILINOS_INCLUDES)
-_AMESOS_PYTHON_LIBS     = $(AMESOS_LIBS)     $(AMESOS_EXTRA_LIBS)     $(PYTRILINOS_LIBS) 
+_AMESOS_PYTHON_INCLUDES = $(AMESOS_INCLUDES) $(PYTRILINOS_INCLUDES)
+_AMESOS_PYTHON_LIBS     = $(AMESOS_LIBS)     $(PYTRILINOS_LIBS) 
 
 if USING_GNUMAKE
 AMESOS_PYTHON_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_AMESOS_PYTHON_INCLUDES))
