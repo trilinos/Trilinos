@@ -143,6 +143,8 @@ struct PHGPartParamsStruct {
   int use_timers;       /* Flag indicating whether to time the PHG code. */
   float EdgeSizeThreshold;  /* % of global vtxs beyond which an edge is 
                                considered to be dense. */
+  float hybrid_keep_factor; /* h-ipm only: keep matches with i.p. values
+                               greater than this factor times the mean */
   char parkway_serpart[MAX_PARAM_STRING_LEN];  /* SerialPartitioner for parKway. */    
   char balance_obj[MAX_PARAM_STRING_LEN];  /* Balancing objective:
                                                 usually vertices (rows),

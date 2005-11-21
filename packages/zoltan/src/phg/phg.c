@@ -448,6 +448,7 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->num_coarse_iter = 1 + 9/zz->Num_Proc;
   hgp->part_sizes = part_sizes;
   hgp->EdgeSizeThreshold = 0.5;  
+  hgp->hybrid_keep_factor = 0.;
 
   /* Get application values of parameters. */
   Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,

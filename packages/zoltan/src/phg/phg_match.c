@@ -274,6 +274,10 @@ static int pmatching_hybrid_ipm(
 
   strcpy(redm_orig, hgp->redm_str); /* save original parameter ("h-ipm") */
 
+  /* Set parameter for how good ip values to keep. */
+  /* This could perhaps be a user parameter. */
+  hgp->hybrid_keep_factor = 1.0;
+
   /* First do (partial) c-ipm. */
   strcpy(hgp->redm_str, "c-ipm");
   ierr = pmatching_ipm(zz, hg, match, hgp);  
@@ -281,6 +285,9 @@ static int pmatching_hybrid_ipm(
   /* Then full ipm on remaining unmatched vertices. */
   strcpy(hgp->redm_str, "ipm");  
   ierr = pmatching_ipm(zz, hg, match, hgp);  
+
+  /* Reset hybrid_keep_factor to be safe. */
+  hgp->hybrid_keep_factor = 0.0;
 
   /* set redm parameter back to original */
   strcpy(hgp->redm_str, redm_orig);
@@ -421,6 +428,8 @@ static int pmatching_ipm (ZZ *zz,
   MPI_Datatype phasethreetype;
   int candidate_index;
   int first_candidate_index;
+  int num_matches_considered = 0;
+  double ipsum = 0.;
   static int timer[7] = {-1, -1, -1, -1, -1, -1, -1};
   char *yo = "pmatching_ipm";
   
@@ -894,7 +903,11 @@ printf ("RTHRTH    kstart > 0   RTHRTH\n");
             }      
           }
          
-          if (cFLAG && bestsum > TSUM_THRESHOLD)  {
+          /* For hybrid ipm, keep matches that are above average in c-ipm */
+          ipsum += bestsum;
+          num_matches_considered++;
+          if (cFLAG && bestsum > MAX(TSUM_THRESHOLD, 
+              hgp->hybrid_keep_factor*ipsum/num_matches_considered))  {
             match[bestlno]       = candidate_gno;
             match[candidate_gno] = bestlno;
             cmatch[bestlno] = -1;         
