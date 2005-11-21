@@ -4,7 +4,7 @@
 if( "$1" == "" ) then
   echo "External package name must be passed as argument.  Please see README."
 else
-  if "$2" == "") then
+  if ( "$2" == "" ) then
 
     set external_package=$1
     sed "s/sample/$external_package/g" backup/configure > configure
@@ -12,9 +12,8 @@ else
 
   else
 
-    set external_packages=$argv[*]
-    sed "s/sample/$external_packages/g" backup/configure.ac > configure.ac
-    sed "s/sample/$external_packages/g" backup/Makefile.am > Makefile.am
+    sed "s/sample/$argv[*]/g" backup/configure.ac > configure.ac
+    sed "s/sample/$argv[*]/g" backup/Makefile.am > Makefile.am
     ./bootstrap
 
   endif
