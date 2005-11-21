@@ -380,7 +380,13 @@ int Epetra_MpiDistributor::ComputeRecvs_( int my_proc,
   for( i = 0; i < nsends_+self_msg_; i++ )
     msg_count[ procs_to_[i] ] = 1;
 
+#if defined(REDUCE_SCATTER_BUG)
+// the bug is found in mpich on linux platforms
+  MPI_Reduce(msg_count, counts, nprocs, MPI_INT, MPI_SUM, 0, comm_);
+  MPI_Scatter(counts, 1, MPI_INT, &nrecvs_, 1, MPI_INT, 0, comm_);
+#else
   MPI_Reduce_scatter( msg_count, &nrecvs_, counts, MPI_INT, MPI_SUM, comm_ );
+#endif
 
   delete [] msg_count;
   delete [] counts;
