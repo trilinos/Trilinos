@@ -206,6 +206,9 @@ int isprime = 1;
       isprime = 0;
       break;
     }
+  if (isprime && n>50000) 
+      fprintf(stderr, "Warning: isPrime function may not be accurate for n(%)>50,000\n", n);
+  
   return isprime;
 }
 
