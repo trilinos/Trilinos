@@ -90,7 +90,34 @@ ML_NOX::Ml_Nox_CoarsePrePostOperator::~Ml_Nox_CoarsePrePostOperator()
 void ML_NOX::Ml_Nox_CoarsePrePostOperator::runPreSolve(const NOX::Solver::Generic& solver)
 {
 #if 0
-  cout << "Ml_Nox_CoarsePrePostOperator::runPreSolve called\n";    
+  cout << "Ml_Nox_CoarsePrePostOperator::runPreSolve called\n";
+  
+  // get the current solution out of the solver
+  NOX::Abstract::Group& solgroup = const_cast<NOX::Abstract::Group&>(solver.getSolutionGroup());
+  const NOX::Epetra::Vector* noxsolution = 
+    dynamic_cast<const NOX::Epetra::Vector*>(&solgroup.getX());
+  Epetra_Vector& epetrasolution = const_cast<Epetra_Vector&>(noxsolution->getEpetraVector());
+
+#if 1 // this is expensive and might be removed
+  // test whether we habe a level 0 (fine level) vector here
+  if (!epetrasolution.Map().PointSameAs(fineinterface_.getMap()))
+  {
+    cout << "**ERR**: Ml_Nox_CoarsePrePostOperator::runPreSolve:\n";
+    cout << "**ERR**: incoming vector map does not match fine interface.Map()\n";
+    cout << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
+  }
+#endif  
+
+  // make the application apply its constraints to this vector
+  fineinterface_.ApplyAllConstraints(epetrasolution);
+  
+  // put the vector back into the solver
+  solgroup = const_cast<NOX::Abstract::Group&>(solver.getSolutionGroup());
+  noxsolution = dynamic_cast<const NOX::Epetra::Vector*>(&solgroup.getX());
+  Epetra_Vector& epetrasolutionnew = const_cast<Epetra_Vector&>(noxsolution->getEpetraVector());
+
+  epetrasolutionnew.Scale(1.0,epetrasolution);  
+      
 #endif
   return;
 }

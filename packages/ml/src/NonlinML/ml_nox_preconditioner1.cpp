@@ -1465,19 +1465,15 @@ int ML_NOX::ML_Nox_Preconditioner::ApplyInverse(
      err = ML_Nox_ApplyInverse_NonLinear(X,Y);
   
 #if 1
-  // make an Epetra_Vector
-  Epetra_Vector epetragradient(Copy,Y,0);
-
   //cout << "Vector epetragradient before:\n";
   //for (int i=0; i<epetragradient.Map().NumMyElements(); ++i) printf("%30.20f\n",epetragradient[i]);
   
+  // call the application to enforce constraints on the gradient
+  Epetra_Vector epetragradient(View,Y,0);
   interface_.ApplyAllConstraints(epetragradient);
 
   //cout << "Vector epetragradient after:\n";
   //for (int i=0; i<epetragradient.Map().NumMyElements(); ++i) printf("%30.20f\n",epetragradient[i]);
-
-  Y.Scale(1.0,epetragradient);
-
 #endif
 
 #if 0

@@ -483,7 +483,16 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
      xfine->Update(1.0,x,0.0);
 
      // call fine level interface
-     err = fineinterface_.computeF(*xfine,*Ffine,fillFlag);
+     // in case the fillFlag is residual, sierra will not enforce constraints on it
+     // As we want (need) them enforced all the time in the preconditioner
+     // we switch the type to Prec
+     // We leave all other types unchanged as sierra does certain things on other types 
+     // which we still want to happen
+     FillType type = fillFlag;
+     if (fillFlag == NOX::EpetraNew::Interface::Required::Residual)
+       type = NOX::EpetraNew::Interface::Required::Prec;
+         
+     err = fineinterface_.computeF(*xfine,*Ffine,type);
      if (xfine) delete xfine; xfine = 0;
   
      // create importer from Ffine to F
@@ -509,8 +518,16 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
      Epetra_Vector*         Ffine     = new Epetra_Vector(finegraph->RowMap(),false);
      Epetra_Vector*         xfine     = prolong_this_to_fine(x);
      
-     // call the fine grid user interface
-     err = fineinterface_.computeF(*xfine,*Ffine,fillFlag);
+     // call fine level interface
+     // in case the fillFlag is residual, sierra will not enforce constraints on it
+     // As we want (need) them enforced all the time in the preconditioner
+     // we switch the type to Prec
+     // We leave all other types unchanged as sierra does certain things on other types 
+     // which we still want to happen
+     FillType type = fillFlag;
+     if (fillFlag == NOX::EpetraNew::Interface::Required::Residual)
+       type = NOX::EpetraNew::Interface::Required::Prec;
+     err = fineinterface_.computeF(*xfine,*Ffine,type);
      if (err==false)
      {
         cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::computeF:\n"

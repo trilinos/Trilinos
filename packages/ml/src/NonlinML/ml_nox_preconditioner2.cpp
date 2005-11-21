@@ -415,20 +415,14 @@ int ML_NOX::ML_Nox_Preconditioner::ML_Nox_ApplyInverse_NonLinear(
    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getF())).getEpetraVector();
    double norm2;
    currentF.Norm2(&norm2);
-#if 0
-   cout << "The residual X\n";
-   cout << X;
-   cout << "The current F\n";
-   cout << currentF;
-#endif   
    
    // make a copy of currentSolution and currentF
-   Epetra_Vector* f = new Epetra_Vector(Copy,X,0);
+   Epetra_Vector* f = new Epetra_Vector(View,X,0);
    Epetra_Vector* x = new Epetra_Vector(Copy,currentSolution,0);
    
    // call the cycle
    if (ml_printlevel_>0 && comm_.MyPID()==0)
-      cout << "\n\n\nML :============Entering FAS-V-cycle============\n";
+      cout << "\n\nML :============Entering Nonlinear V-cycle============\n";
    bool converged = false;
    double t3 = GetClock();
    ML_Nox_FAS_cycle(f,x,0,&converged,&norm2); 
@@ -436,10 +430,10 @@ int ML_NOX::ML_Nox_Preconditioner::ML_Nox_ApplyInverse_NonLinear(
    if (ml_printlevel_>0 && comm_.MyPID()==0)
       cout << "ML :============V-cycle time is : " << (t4-t3) << " sec\n";
    if (converged && ml_printlevel_>0 && comm_.MyPID()==0)
-      cout << "ML :============FAS-preconditioner converged============\n";
+      cout << "ML :============Nonlinear preconditioner converged====\n";
    
    // copy correction to Y
-   Y.Update(1.0,*x,0.0);
+   Y.Scale(1.0,*x);
    
    // tidy up
    if (f) delete f;
@@ -550,7 +544,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Ve
    Epetra_Vector* fbar    = 0;
    Epetra_Vector* xbar    = 0;
    Epetra_Vector* fxbar   = 0;
-   
+
    //======reached coarsest level========================================
    if (level==ml_coarsestlev_)
    {

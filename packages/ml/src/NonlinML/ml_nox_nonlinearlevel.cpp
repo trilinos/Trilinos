@@ -432,6 +432,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    thislevel_ml_     = 0;               // this level's local ML object 
    thislevel_ag_     = 0;               // this level's local ML_Aggregate object
    coarseinterface_  = coarseinterface; // this level's coarse interface
+   coarseprepost_    = 0;
    xthis_            = 0;               // this level's current solution matching this level's map!!!!
    thislevel_A_      = 0;               // this level's NOX Matrixfree operator
    SmootherA_        = 0;               // this level's Epetra_CrsMatrix for thislevel_prec_
@@ -575,8 +576,9 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
 
    // ------------------------------------------------------------------------
    // generate this level's coarse prepostoperator
-   coarseprepost_ = new ML_NOX::Ml_Nox_CoarsePrePostOperator(*coarseinterface_,
-                                                             fineinterface_);    
+   if (level_==0)
+      coarseprepost_ = new ML_NOX::Ml_Nox_CoarsePrePostOperator(*coarseinterface_,
+                                                                fineinterface_);    
 
    // ------------------------------------------------------------------------
    // set up NOX on this level   
@@ -600,7 +602,8 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
   else
       printParams.setParameter("Output Information",0);
 
-  nlParams_->sublist("Solver Options").setParameter("User Defined Pre/Post Operator", *coarseprepost_);
+  if (level_==0)
+    nlParams_->sublist("Solver Options").setParameter("User Defined Pre/Post Operator", *coarseprepost_);
   nlParams_->setParameter("Nonlinear Solver", "Line Search Based");         
   NOX::Parameter::List& searchParams = nlParams_->sublist("Line Search");
   NOX::Parameter::List* lsParamsptr  = 0;
