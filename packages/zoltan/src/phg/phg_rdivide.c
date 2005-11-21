@@ -48,7 +48,7 @@ int Zoltan_PHG_rdivide(
 )
 {
   char *yo = "Zoltan_PHG_rdivide";
-  int i, j, mid, ierr=ZOLTAN_OK, procmid; 
+  int i, j, mid, ierr=ZOLTAN_OK, leftend, rightstart; 
   int *pins[2] = {NULL,NULL}, *lpins[2] = {NULL,NULL};
   Partition part=NULL;
   HGraph *left=NULL, *right=NULL;
@@ -239,27 +239,39 @@ int Zoltan_PHG_rdivide(
 
   if (hgp->proc_split && (hgc->nProc>1) && left && right) {
       /* redistribute left and right parts */
-      procmid = (int)((float) (hgc->nProc-1) 
+      leftend = (int)((float) (hgc->nProc-1) 
                     * (float) left->dist_x[hgc->nProc_x] 
                     / (float) hg->dist_x[hgc->nProc_x]);
-      if ((procmid+1)>(hgc->nProc-1)) /* just to be sure :) */
-          procmid =  hgc->nProc-1;    
+      if ((leftend+1)>=hgc->nProc) /* just to be sure :) */
+          leftend =  hgc->nProc-1;    
+      
+      if (hgp->nProc_x_req != 1 && hgp->nProc_y_req != 1)  { /* Want 2D decomp */
+          if ((leftend+1) > SMALL_PRIME && Zoltan_PHG_isPrime(leftend+1))
+              --leftend; /* if it was prime just use one less #procs ( since it should be bigger than 7 it is safe to decrement)  */
+          rightstart = leftend + 1;
+          if ((hgc->nProc-rightstart) > SMALL_PRIME && Zoltan_PHG_isPrime(hgc->nProc-rightstart))
+          ++rightstart; /* #procs for right was prime so reduce the number of procs by increasing offset by one */
+      } else
+          rightstart = leftend + 1;
+      
 #ifdef _DEBUG1
-      if (procmid<0 || (procmid+1>hgc->nProc-1))
-          errexit("hey hey Proc Number range is [0, %d] prcomid=%d "
-                  "for left #pins=%d nPins=%d", hgc->nProc-1, procmid, 
-                   left->dist_x[hgc->nProc_x] , hg->dist_x[hgc->nProc_x]);
-      uprintf(hgc, "before redistribute for left procmid=%d ---------------\n",
-                    procmid);
+      if (leftend<0 || (leftend+1)>=hgc->nProc ||
+          rightstart<0 || rightstart>=hgc->nProc)
+          errexit("hey hey Proc Number range is [0, %d] leftend=%d rightstart=%d"
+                  "for left #pins=%d nPins=%d", hgc->nProc-1, leftend, rightstart,
+                  left->dist_x[hgc->nProc_x] , hg->dist_x[hgc->nProc_x]);
+      uprintf(hgc, "before redistribute for left nProc=%d leftend=%d  rightstart=%d  ---------------\n",
+              hgc->nProc, leftend, rightstart);
 #endif
-  } else
-      procmid = 0;
+  } else {
+      rightstart = leftend = -1;
+  }
 
       /* if we want proc_split and there are more than one procs avail, and
          the left and right exist and they have enough vertex to distribute */
-  if (hgp->proc_split && (hgc->nProc>1) && left && right && 
-      (left->dist_x[hgc->nProc_x]>2*(procmid+1)) &&
-      (right->dist_x[hgc->nProc_x]>2*(hgc->nProc-procmid))) {
+  if (rightstart != -1 && 
+      (left->dist_x[hgc->nProc_x]>2*(leftend+1)) &&
+      (right->dist_x[hgc->nProc_x]>2*(hgc->nProc-rightstart))) {
       PHGComm  leftcomm, rightcomm;
       HGraph  newleft, newright;
       int *leftvmap=NULL, *rightvmap=NULL, 
@@ -270,10 +282,10 @@ int Zoltan_PHG_rdivide(
         ZOLTAN_TIMER_START(zz->ZTime, timer_redist, hgc->Communicator);
       
 #ifdef _DEBUG1
-      uprintf(hgc, "before redistribute for left procmid=%d ---------------\n",
-                    procmid);
+      uprintf(hgc, "before redistribute for left leftend=%d ---------------\n",
+                    leftend);
 #endif
-      Zoltan_PHG_Redistribute(zz, hgp, left, 0, procmid, &leftcomm, 
+      Zoltan_PHG_Redistribute(zz, hgp, left, 0, leftend, &leftcomm, 
                               &newleft, &leftvmap, &leftdest);
       if (hgp->output_level >= PHG_DEBUG_LIST)     
           uprintf(hgc, "Left: H(%d, %d, %d) ----> H(%d, %d, %d) Weights=(%.2lf, %.2lf)\n",
@@ -284,7 +296,7 @@ int Zoltan_PHG_rdivide(
 #ifdef _DEBUG1
       uprintf(hgc, "before redistribute for right ++++++++++++++++++++++\n");
 #endif
-      Zoltan_PHG_Redistribute(zz, hgp, right, procmid+1, hgc->nProc-1,
+      Zoltan_PHG_Redistribute(zz, hgp, right, rightstart, hgc->nProc-1,
                               &rightcomm, &newright, &rightvmap, &rightdest);
       if (hgp->output_level >= PHG_DEBUG_LIST)     
           uprintf(hgc, "Right: H(%d, %d, %d) ----> H(%d, %d, %d) Weights=(%.2lf, %.2lf)\n",
@@ -293,7 +305,7 @@ int Zoltan_PHG_rdivide(
       Zoltan_HG_HGraph_Free (right);
       
       if (detail_timing) 
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_redist, hgc->Communicator);
+          ZOLTAN_TIMER_STOP(zz->ZTime, timer_redist, hgc->Communicator);
       
       nsend = MAX(newleft.nVtx, newright.nVtx);
       part = (Partition) ZOLTAN_MALLOC (nsend * sizeof (int));
@@ -303,7 +315,7 @@ int Zoltan_PHG_rdivide(
       if ((nsend && (!proclist || !sendbuf || !part)) ||
           (hg->nVtx && !recvbuf))
           MEMORY_ERROR;
-      if (hgc->myProc<=procmid) {
+      if (hgc->myProc<=leftend) {
           float save_bal_tol=hgp->bal_tol;
 
           /* I'm on the left part so I should partition newleft */
@@ -325,7 +337,7 @@ int Zoltan_PHG_rdivide(
           if (detail_timing) {
               ZOLTAN_TIMER_START(zz->ZTime, timer_wait, hgc->Communicator);
           }          
-      } else {
+      } else if (hgc->myProc>=rightstart) {
           float save_bal_tol=hgp->bal_tol;
 
           /* I'm on the right part so I should partition newright */
@@ -347,7 +359,8 @@ int Zoltan_PHG_rdivide(
           if (detail_timing) {
               ZOLTAN_TIMER_START(zz->ZTime, timer_wait, hgc->Communicator);
           }          
-      }
+      } else
+          nsend = 0; 
 
       if (detail_timing) {
           MPI_Barrier(hgc->Communicator);
@@ -355,7 +368,7 @@ int Zoltan_PHG_rdivide(
       }
 
       if (detail_timing) {
-        ZOLTAN_TIMER_START(zz->ZTime, timer_send, hgc->Communicator);
+          ZOLTAN_TIMER_START(zz->ZTime, timer_send, hgc->Communicator);
       }
       --msg_tag;
       ierr |= Zoltan_Comm_Create(&plan, nsend, proclist, hgc->Communicator,
