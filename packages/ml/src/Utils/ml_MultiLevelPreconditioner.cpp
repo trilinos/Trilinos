@@ -930,7 +930,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     //   (no node/edge in the name);             //
     // ========================================= //
     
-    if (List_.get("repartition: enable",false))
+    if (List_.get("repartition: enable",0))
     {
       ML_Repartition_Activate(ml_);
 
@@ -1023,7 +1023,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     // check whether coarse grid operators should be repartitioned among
     // processors
-    bool ShouldRepartition = List_.get("repartition: enable",false);
+    int ShouldRepartition = List_.get("repartition: enable",0);
 
     if (ShouldRepartition) {
 
