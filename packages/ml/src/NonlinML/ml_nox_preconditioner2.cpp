@@ -594,7 +594,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Ve
       if (fxbar) delete fxbar; fxbar = 0;
       return true;
    }
-
+   
    //======restrict to next coarse level=================================
    Epetra_Vector* xcoarse = nlnLevel_[level]->restrict_to_next_coarser_level(x,level,level+1);
    Epetra_Vector* fcoarse = nlnLevel_[level]->restrict_to_next_coarser_level(f,level,level+1);
@@ -608,6 +608,10 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Ve
    Epetra_Vector *xcorrect = nlnLevel_[level]->prolong_to_this_level(xcoarse,level,level+1);
    delete xcoarse; xcoarse = 0;
    
+   //===== apply constraints (this may or may not be in here, it converges better without,
+   // but is more stable with)
+   nlnLevel_[level]->ApplyAllConstraints(*xcorrect);
+
    //======update this level's solution==================================
    x->Update(1.0,*xcorrect,1.0);
    delete xcorrect; xcorrect = 0;

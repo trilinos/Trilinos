@@ -489,8 +489,8 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
      // We leave all other types unchanged as sierra does certain things on other types 
      // which we still want to happen
      FillType type = fillFlag;
-     if (fillFlag == NOX::EpetraNew::Interface::Required::Residual)
-       type = NOX::EpetraNew::Interface::Required::Prec;
+     //if (fillFlag == NOX::EpetraNew::Interface::Required::Residual)
+       //type = NOX::EpetraNew::Interface::Required::Prec;
          
      err = fineinterface_.computeF(*xfine,*Ffine,type);
      if (xfine) delete xfine; xfine = 0;
@@ -525,8 +525,8 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
      // We leave all other types unchanged as sierra does certain things on other types 
      // which we still want to happen
      FillType type = fillFlag;
-     if (fillFlag == NOX::EpetraNew::Interface::Required::Residual)
-       type = NOX::EpetraNew::Interface::Required::Prec;
+     //if (fillFlag == NOX::EpetraNew::Interface::Required::Residual)
+       //type = NOX::EpetraNew::Interface::Required::Prec;
      err = fineinterface_.computeF(*xfine,*Ffine,type);
      if (err==false)
      {
@@ -581,6 +581,31 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computePreconditioner(
        << "**ERR**: this  is NOT supposed to be called????????\n"
        << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
   return(true);
+}
+
+/*----------------------------------------------------------------------*
+ |  apply constraints                    (public)            m.gee 11/05|
+ *----------------------------------------------------------------------*/
+void ML_NOX::Nox_CoarseProblem_Interface::ApplyAllConstraints(Epetra_Vector& gradient)
+{
+  if (level_==0)
+  {
+    // cout << "Nox_CoarseProblem_Interface::ApplyAllConstraints: fine \n"; fflush(stdout);
+    fineinterface_.ApplyAllConstraints(gradient);
+    return;
+  }
+  else
+  {
+    // cout << "Nox_CoarseProblem_Interface::ApplyAllConstraints: coarse \n"; fflush(stdout);
+    Epetra_Vector* gradientfine = prolong_this_to_fine(gradient);
+    fineinterface_.ApplyAllConstraints(*gradientfine);
+    Epetra_Vector* gradientcoarse = restrict_fine_to_this(*gradientfine);
+    delete gradientfine;
+    gradient.Update(1.0,*gradientcoarse,0.0);
+    delete gradientcoarse;
+    return;
+  }
+  return;
 }
 //-----------------------------------------------------------------------------
 

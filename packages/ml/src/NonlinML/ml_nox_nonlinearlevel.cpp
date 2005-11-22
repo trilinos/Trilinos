@@ -169,8 +169,8 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    // ------------------------------------------------------------------------
    // generate this level's coarse prepostoperator
    if (level_==0)
-   coarseprepost_ = new ML_NOX::Ml_Nox_CoarsePrePostOperator(*coarseinterface_,
-                                                             fineinterface_);    
+     coarseprepost_ = new ML_NOX::Ml_Nox_CoarsePrePostOperator(*coarseinterface_,
+                                                               fineinterface_);    
    
    // ------------------------------------------------------------------------
    // get the current solution to this level
@@ -216,10 +216,12 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
       Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,coarsesolvetype,nsmooth_coarse);
   
    // create this level's preconditioner class
-   thislevel_prec_ = new ML_Epetra::MultiLevelOperator(
+   ML_Epetra::MultiLevelOperator* ml_tmp = new ML_Epetra::MultiLevelOperator(
                                                 thislevel_ml_,comm_,
                                                 SmootherA_->OperatorDomainMap(),
                                                 SmootherA_->OperatorRangeMap());
+   thislevel_prec_ = new ML_NOX::ML_Nox_ConstrainedMultiLevelOperator(ml_tmp,*coarseinterface_);
+   
    if (!thislevel_prec_)
    {
       cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
@@ -227,29 +229,6 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
    }
                                                                  
-#if 0
-   // intensive test of this level's ML-smoother
-   {
-   cout << "Test of smoother on level " << level_ << endl;
-   Epetra_Vector *out = new Epetra_Vector(Copy,*xthis_,0);
-   out->PutScalar(0.0);
-   cout << "Input\n";
-   xthis_->PutScalar(1.0);
-   SmootherA_->Multiply(false,*xthis_,*out);
-   xthis_->PutScalar(3.0);
-   cout << "rhs\n";
-   cout << *out;
-   double norm = 0.0;
-   out->Norm1(&norm);
-   cout << "Norm of rhs = " << norm << endl;
-   thislevel_prec_->ApplyInverse(*out,*xthis_);
-   cout << "result after smoother\n";
-   cout << *xthis_;
-   delete out; out = 0;
-   }
-   if (level_==2) exit(0);
-#endif   
-
    // ------------------------------------------------------------------------
    // set up NOX on this level   
    // ------------------------------------------------------------------------
@@ -341,7 +320,8 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
   
      // create the linear system 
      thislevel_linSys_ = new ML_NOX::Ml_Nox_LinearSystem(
-                                    *iJac,*thislevel_A_,*iPrec,*thislevel_prec_,
+                                    *iJac,*thislevel_A_,*iPrec,
+                                    coarseinterface_,*thislevel_prec_,
                                     *xthis_,ismatrixfree_,level_,ml_printlevel_);
      // create the group
      group_ = new NOX::EpetraNew::Group(printParams,*iReq,*initialGuess_,*thislevel_linSys_);
@@ -541,9 +521,12 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
       Set_Smoother(ml,ag,level_,nlevel,thislevel_ml_,thislevel_ag_,coarsesolvetype,nsmooth_coarse);
   
    // create this level's preconditioner class
-   thislevel_prec_ = new ML_Epetra::MultiLevelOperator(thislevel_ml_,comm_,
+   ML_Epetra::MultiLevelOperator* ml_tmp = new ML_Epetra::MultiLevelOperator(
+                                                       thislevel_ml_,comm_,
                                                        Mat->OperatorDomainMap(),
                                                        Mat->OperatorRangeMap());
+   thislevel_prec_ = new ML_NOX::ML_Nox_ConstrainedMultiLevelOperator(ml_tmp,*coarseinterface_);
+
    if (!thislevel_prec_)
    {
       cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
@@ -673,7 +656,8 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
   
      // create the linear system 
      thislevel_linSys_ = new ML_NOX::Ml_Nox_LinearSystem(
-                                    *iJac,*thislevel_A_,*iPrec,*thislevel_prec_,
+                                    *iJac,*thislevel_A_,*iPrec,
+                                    coarseinterface_,*thislevel_prec_,
                                     *xthis_,ismatrixfree_,level_,ml_printlevel_);
 
      // create the group

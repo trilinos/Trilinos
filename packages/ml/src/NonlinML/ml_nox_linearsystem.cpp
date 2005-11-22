@@ -53,6 +53,7 @@ ML_NOX::Ml_Nox_LinearSystem::Ml_Nox_LinearSystem(
                              NOX::EpetraNew::Interface::Jacobian& iJac,
                              Epetra_Operator& J,
                              NOX::EpetraNew::Interface::Preconditioner& iPrec,
+                             ML_NOX::Nox_CoarseProblem_Interface* coarseinterface,
                              Epetra_Operator& Prec,
                              const Epetra_Vector& soln,
                              bool ismatrixfree,
@@ -61,7 +62,8 @@ ML_NOX::Ml_Nox_LinearSystem::Ml_Nox_LinearSystem(
 iJac_(iJac),
 J_(J),
 iPrec_(iPrec),
-soln_(soln)
+soln_(soln),
+coarseinterface_(coarseinterface)
 {
    level_        = level;
    ismatrixfree_ = ismatrixfree;
@@ -86,6 +88,10 @@ soln_(soln)
    if (tmp2 && printlevel>9 && tmp->Comm().MyPID()==0)
       cout << "ML (level " << level << "): Preconditioner is a ML_Epetra::MultiLevelOperator\n";
    
+   ML_NOX::ML_Nox_ConstrainedMultiLevelOperator* tmp3 = dynamic_cast<ML_NOX::ML_Nox_ConstrainedMultiLevelOperator*>(&Prec);
+   if (tmp3 && printlevel>9 && tmp->Comm().MyPID()==0)
+      cout << "ML (level " << level << "): Preconditioner is a ML_NOX::ML_Nox_ConstrainedMultiLevelOperator\n";
+   
    Precptr_ = tmp;
 
    return;
@@ -96,6 +102,7 @@ soln_(soln)
  *----------------------------------------------------------------------*/
 ML_NOX::Ml_Nox_LinearSystem::~Ml_Nox_LinearSystem() 
 {
+  coarseinterface_ = NULL;
 }
 
 
@@ -137,6 +144,7 @@ bool ML_NOX::Ml_Nox_LinearSystem::applyRightPreconditioning(
    //                                      or a ML_Epetra::MultiLevelOperator
    // both implement an Epetra_Operator so we are happy here anyway
 
+#if 0
    Epetra_Operator* tmp = dynamic_cast<Epetra_Operator*>(Precptr_);
    if (!tmp)
    {
@@ -144,35 +152,54 @@ bool ML_NOX::Ml_Nox_LinearSystem::applyRightPreconditioning(
            << "**ERR**: supplied preconditioner is not a Epetra_Operator!\n"  
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
    }
+#endif
 
    // find out a little bit more detailed, just to know....
    ML_NOX::ML_Nox_Preconditioner* tmp1 = dynamic_cast<ML_NOX::ML_Nox_Preconditioner*>(Precptr_);
-   if (tmp1 && printlevel_>9 && tmp->Comm().MyPID()==0)
+   if (tmp1 && printlevel_>9 && tmp1->Comm().MyPID()==0)
       cout << "ML (level " << level_ << "): Preconditioner is a ML_NOX::ML_Nox_Preconditioner\n";
 
    if (tmp1)
-      ierr = tmp1->ApplyInverse(in,out);
+   {
+     ierr = tmp1->ApplyInverse(in,out);
+     if (!ierr) 
+        return true;
+     else       
+        return false;
+   }
    
    ML_Epetra::MultiLevelOperator* tmp2 = dynamic_cast<ML_Epetra::MultiLevelOperator*>(Precptr_);
-   if (tmp2 && printlevel_>9 && tmp->Comm().MyPID()==0)
+   if (tmp2 && printlevel_>9 && tmp2->Comm().MyPID()==0)
       cout << "ML (level " << level_ << "): Preconditioner is a ML_Epetra::MultiLevelOperator\n";
 
    if (tmp2)
-      ierr = tmp2->ApplyInverse(in,out);
+   {
+     ierr = tmp2->ApplyInverse(in,out);
+     if (!ierr) 
+       return true;
+     else       
+       return false;
+   }
    
-#if 0
-   cout << "ML_NOX::Ml_Nox_LinearSystem::applyRightPreconditioning:\n";
-   cout << "in on output:\n";
-   cout << in;
-   cout << "out on output:\n";
-   cout << out;
-   exit(0);
-#endif
+   ML_NOX::ML_Nox_ConstrainedMultiLevelOperator* tmp3 = dynamic_cast<ML_NOX::ML_Nox_ConstrainedMultiLevelOperator*>(Precptr_);
+   if (tmp3 && printlevel_>9 && tmp2->Comm().MyPID()==0)
+      cout << "ML (level " << level_ << "): Preconditioner is a ML_Epetra::MultiLevelOperator\n";
 
-   if (!ierr) 
-      return true;
-   else       
-      return false;
+   if (tmp3)
+   {
+     ierr = tmp3->ApplyInverse(in,out);
+     if (!ierr) 
+       return true;
+     else       
+       return false;
+   }
+   else
+   {
+      cout << "**ERR**: ML_Epetra::Ml_Nox_LinearSystem::applyRightPreconditioning:\n"
+           << "**ERR**: unknown type of preconditioning operator\n"  
+           << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+   }
+
 }
 
 /*----------------------------------------------------------------------*
@@ -221,11 +248,10 @@ bool ML_NOX::Ml_Nox_LinearSystem::createPreconditioner(
       }
       ML_Epetra::MultiLevelOperator* Prec2 = dynamic_cast<ML_Epetra::MultiLevelOperator*>(Precptr_);
       if (Prec2)
-      {
-         //bool status = Prec2->computePreconditioner(x);
-         // do nothing, the preconditioner is already created
          return true;
-      }
+      ML_NOX::ML_Nox_ConstrainedMultiLevelOperator* Prec3 = dynamic_cast<ML_NOX::ML_Nox_ConstrainedMultiLevelOperator*>(Precptr_);
+      if (Prec3)
+         return true;
       cout << "**ERR**: ML_Epetra::Ml_Nox_LinearSystem::createPreconditioner:\n"
            << "**ERR**: type of preconditioner unknown\n"  
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
@@ -236,14 +262,15 @@ bool ML_NOX::Ml_Nox_LinearSystem::createPreconditioner(
       // on a coarse level the preconditioner can only be a ML_Epetra::MultiLevelOperator
       // there is no need to compute it here, it's ready
       ML_Epetra::MultiLevelOperator* Prec2 = dynamic_cast<ML_Epetra::MultiLevelOperator*>(Precptr_);
-      if (!Prec2)
-      {
-         cout << "**ERR**: ML_Epetra::Ml_Nox_LinearSystem::createPreconditioner:\n"
-              << "**ERR**: preconditioner on level " << level_ << "is either 0 or not a ML_Epetra::MultiLevelOperator\n"  
-              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-      }
-      else
+      if (Prec2)
          return true;
+      ML_NOX::ML_Nox_ConstrainedMultiLevelOperator* Prec3 = dynamic_cast<ML_NOX::ML_Nox_ConstrainedMultiLevelOperator*>(Precptr_);
+      if (Prec3)
+         return true;
+      cout << "**ERR**: ML_Epetra::Ml_Nox_LinearSystem::createPreconditioner:\n"
+           << "**ERR**: type of preconditioner unknown\n"  
+           << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+      return false;
    }
    return false;
 }

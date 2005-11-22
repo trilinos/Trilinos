@@ -91,6 +91,8 @@
 #include "ml_nox_coarseinterface.H"
 #include "ml_nox_coarse_prepostoperator.H"
 
+#include "ml_nox_ConstrainedMultiLevelOperator.H"
+
 // the graph coloring class - EpetraExt headers
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
@@ -174,6 +176,10 @@ public:
   
   // Compute Jacobian (derived from NOX::EpetraNew::Interface::Jacobian)
   bool computeJacobian(const Epetra_Vector& x);
+  
+  // apply constrints using the coarse interface
+  void ApplyAllConstraints(Epetra_Vector& gradient) 
+  { coarseinterface_->ApplyAllConstraints(gradient); return; }
 
 private:
   // don't want copy-ctor and = operator
@@ -203,7 +209,7 @@ private:
   ML_NOX::Ml_Nox_CoarsePrePostOperator*        coarseprepost_;
   ML*                                          thislevel_ml_;     // this level's 1-Level ML as a smoother to this level's nlnCG
   ML_Aggregate*                                thislevel_ag_;     // this level's 1-Level ML as a smoother to this level's nlnCG
-  ML_Epetra::MultiLevelOperator*               thislevel_prec_;   // this level's 1-Level ML-smoother
+  ML_NOX::ML_Nox_ConstrainedMultiLevelOperator* thislevel_prec_;   // this level's 1-Level ML-smoother
   Epetra_Vector*                               xthis_;            // this level's current solution
 
   NOX::EpetraNew::MatrixFree*                  thislevel_A_;      // this level's Matrixfree operator

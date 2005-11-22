@@ -54,6 +54,8 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 
+#include "ml_nox_coarseinterface.H"
+
 // Forward declares
 namespace NOX {
   namespace EpetraNew {
@@ -81,6 +83,7 @@ public:
   Ml_Nox_LinearSystem(NOX::EpetraNew::Interface::Jacobian& iJac,
                       Epetra_Operator& J,
                       NOX::EpetraNew::Interface::Preconditioner& iPrec,
+                      ML_NOX::Nox_CoarseProblem_Interface* coarseinterface,
                       Epetra_Operator& Prec,
                       const Epetra_Vector& soln,
                       bool ismatrixfree,
@@ -239,6 +242,9 @@ private:
   
   // indicator for output level (0-10)
   int printlevel_;
+ 
+  // a coarse grid interface
+  ML_NOX::Nox_CoarseProblem_Interface* coarseinterface_;
   
 };
 

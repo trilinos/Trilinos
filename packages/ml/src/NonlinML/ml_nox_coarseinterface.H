@@ -152,6 +152,9 @@ public:
 
   // prolong vector from next coarser level to current level
   Epetra_Vector* prolong_to_this_level(Epetra_Vector* coarsevec, int current, int next);                                  
+
+  // apply constraints to the gradient
+  void ApplyAllConstraints(Epetra_Vector& gradient);
   
 private:  
   // don't want copy-ctor and = operator
