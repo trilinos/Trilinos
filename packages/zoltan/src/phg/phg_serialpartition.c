@@ -34,6 +34,7 @@ static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_ran;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_lin;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rip;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_ripk;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_spm;
 
 static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] = 
                                       {&coarse_part_gr0,
@@ -45,6 +46,7 @@ static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] =
                                        &coarse_part_lin,
                                        &coarse_part_rip,
                                        &coarse_part_ripk,
+                                       &coarse_part_spm,
                                       };
 
 static int local_coarse_partitioner(ZZ *, HGraph *, int, float *, Partition,
@@ -83,6 +85,7 @@ char *str, *str2;
   else if (!strcasecmp(str, "gr2"))   return coarse_part_gr2;
   else if (!strcasecmp(str, "gr3"))   return coarse_part_gr3;
   else if (!strcasecmp(str, "gr4"))   return coarse_part_gr4;
+  else if (!strcasecmp(str, "spm"))   return coarse_part_spm;
   else if (!strcasecmp(str, "no"))    return NULL;
   else {                              *ierr = ZOLTAN_FATAL; return NULL;}
 }
@@ -1158,6 +1161,122 @@ int err = ZOLTAN_OK;
 
 End:
   return err;
+}
+
+/**************************************************************************
+ * Spectral partitioning using the power method.
+ * Computes the second smallest eigenvector (Fiedler vector) of D-A'*A,
+ * which is the 2nd largest of (A'*A + alpha*I-D) for large enough alpha. 
+ *
+ * EBEB: Incomplete, not ready for use!!
+ * TODO: Account for edge weights.
+ */
+static int coarse_part_spm (
+  ZZ *zz,
+  HGraph *hg,
+  int p,
+  float *part_sizes,
+  Partition part,
+  PHGPartParams *hgp
+)
+{
+#if 1
+  char *yo = "coarse_part_spm";
+  ZOLTAN_PRINT_ERROR (zz->Proc, yo,"spectral partitioning not yet available.\n");
+  return -1;
+#else /* Experimental spectral code not ready yet. */
+    int i, j, k, iter, err=0, maxdeg;
+    int *order=NULL; 
+    float sum, sum2;
+    float *x=NULL, *xx=NULL, *deg=NULL;
+    float *y=NULL;
+    char *yo = "coarse_part_spm";
+
+    order  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int));
+    x      = (float *) ZOLTAN_MALLOC (3*hg->nVtx*sizeof(float));
+    y      = (float *) ZOLTAN_MALLOC (hg->nEdge*sizeof(float));
+    xx     = x + hg->nVtx;
+    deg    = xx + hg->nVtx;
+ 
+    if (!(order && x && y)) {
+        ZOLTAN_FREE ((void**) &order);
+        ZOLTAN_FREE ((void**) &x);
+        ZOLTAN_FREE ((void**) &y);
+        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+    }
+    for (i=0; i<hg->nVtx; i++)
+        order[i] = i;
+
+    /* Generate initial random vector. */
+    for (j=0; j<hg->nVtx; j++){
+      x[j] = ((float) Zoltan_Rand(NULL))/ZOLTAN_RAND_MAX; 
+    }
+
+    /* Compute vertex degrees = #edges */
+    maxdeg = 0;
+    for (i=0; i<hg->nVtx; i++){
+      deg[i] = (hg->vindex[i+1] - hg->vindex[i]);
+      maxdeg = MAX(maxdeg, deg[i]);
+    }
+
+    /* Power method for (A'*A+alpha*I-D) */
+    for (iter=0; iter<MIN(100,hg->nVtx); iter++){
+      /* y = A*x */
+      for (j=0; j<hg->nEdge; j++){
+        y[j] = 0.0;
+        for (k=hg->hindex[j]; k<hg->hindex[j+1]; k++) {
+          i = hg->hvertex[k];
+          y[j] += x[i];
+        }
+      }
+      /* xx = A'*y = A'*A*x */
+      for (i=0; i<hg->nVtx; i++){
+        xx[i] = 0.0;
+        for (k=hg->vindex[i]; k<hg->vindex[i+1]; k++) {
+          j = hg->vedge[k];
+          xx[i] += y[j];
+        }
+      }
+      /* xx += (maxdeg*I-D)*x  */
+      for (i=0; i<hg->nVtx; i++){
+        xx[i] += (maxdeg-deg[i])*x[i];
+      }
+      /* Project out constant term. */
+      /* First compute sum(xx) and norm(xx). */
+      sum = sum2 = 0.;
+      for (i=0; i<hg->nVtx; i++){
+        sum  += xx[i];
+        sum2 += xx[i]*xx[i];
+      }
+      /* xx = xx - (xx'*e)/(norm(xx)*norm(e)) *e  */
+      /* TODO : projection */
+
+      /* Scale: x = xx/norm(xx) */
+      for (i=0; i<hg->nVtx; i++){
+        x[i] = xx[i]/sqrt(sum2);
+      }
+
+#ifdef DEBUG_
+      /* Debug */
+      printf("Debug: spectral; iteration %d, Fiedler vector x: \n", iter);
+      for (i=0; i<hg->nVtx; i++) printf("%f ", x[i]);
+      printf("\n");
+#endif
+
+    }
+
+    /* Sort Fiedler vector entries. */
+    Zoltan_quicksort_pointer_dec_float(order, x, 0, hg->nVtx-1);
+
+    /* Call sequence partitioning. */
+    err = seq_part (zz, hg, order, p, part_sizes, part, hgp);
+
+    ZOLTAN_FREE (&order);
+    ZOLTAN_FREE (&x);
+    ZOLTAN_FREE (&y);
+    return err;
+#endif
 }
 
 #ifdef __cplusplus
