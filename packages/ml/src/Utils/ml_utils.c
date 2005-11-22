@@ -2629,6 +2629,23 @@ void ML_PauseForDebugger(ML_Comm *comm)
     }
   }
 }
+
+/* Function to sync up processors and execute one line at a time. */
+                                                                                
+void ML_Pause(ML_Comm *comm)
+{
+  char go = ' ';
+                                                                                
+  if (comm->ML_mypid == 0) {
+      printf( "** Press enter to continue > "); fflush(stdout);
+      scanf("%c",&go);
+  }
+#ifdef HAVE_MPI
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
+}
+
+
 void ML_use_param(void *data, int junk)
 {
   if ( (junk == -365) && (data == NULL)) printf("ML_avoid_unused_param\n");
