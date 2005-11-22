@@ -42,6 +42,7 @@
 \newcommand{\zoltan}  {{\sc Zoltan}}
 \newcommand{\nox}  {{\sc NOX}}
 \newcommand{\loca}  {{\sc Loca}}
+\newcommand{\paraview}  {{\sc ParaView}}
 \newcommand{\be}  {\begin{enumerate}}
 \newcommand{\ee}  {\end{enumerate}}
 % Maxwell abbreviations
@@ -242,7 +243,7 @@ configuring and building \ML\ is outlined in Section~\ref{configure}.
 Section~\ref{sec:getting_started} shows the basic usage of \ML\ as a
 black-box preconditioner for {\sc Epetra} matrices. The definition of
 (parallel) preconditioners using ML\_Epetra::MultiLevelPreconditioner is
-described. This class only requires the linear system matrix, and a list
+detailed. This class only requires the linear system matrix, and a list
 of options.  Available parameters for
 ML\_Epetra::MultiLevelPreconditioner are reported in Section
 \ref{all possible parameters}.  
@@ -367,7 +368,7 @@ use the examples.
 %
 \ML\ is configured and built using the GNU autoconf~\cite{Autoconf} and
 automake~\cite{Automake} tools.  It can be configured and build as a
-standalone package without or with {\sc Aztec 2.1} support (as described
+standalone package without or with {\sc Aztec 2.1} support (as detailed
 in Section~\ref{Standalone Mode} and~\ref{other packages}), or as a part
 of the \trilinos~framework~\cite{Trilinos-home-page} (as described in
 Section~\ref{sec:build:trilinos}). Even though \ML\ can be compiled and
@@ -529,10 +530,10 @@ packages also enable the interfaces to those packages within \ML.
 %
 \choicebox{\tt --enable-amesos}
 {Enables support for the \amesos~package.
- This package is necessary to use the \amesos\ interface in \ML\ to direct
- solvers.  The solvers currently available are
+  \amesos~is an interface with several direct solvers.  \ML\ supports
   \umfpack~\cite{umfpack-home-page}, \klu, \superludist~(1.0 and 2.0),
-  \superlu~$3.0$~\cite{superlu-home-page}, and \mumps~\cite{MUMPS}.}
+  \mumps~\cite{MUMPS}. This package is necessary to use the \amesos\ 
+    interface to direct solvers.}
 %
 \choicebox{\tt --enable-teuchos}
 {Enables support for the \teuchos~package.  This package is necessary to 
@@ -579,10 +580,8 @@ package level.
 %
 \choicebox{\tt --with-ml\_metis}{Enables interface for \metis~\cite{METIS}.}
 %
-\choicebox{\tt --with-ml\_parmetis2x}{ Enables interface for
-\parmetis~\cite{ParMETIS}, version $2.x$.}
-%
-\choicebox{\tt --with-ml\_zoltan}{ Enables interface for \zoltan~\cite{zoltan-home-page}.}
+\choicebox{\tt --with-ml\_parmetis2x}{ Enables interface for \parmetis,
+  version $2.x$.}
 %
 \choicebox{\tt --with-ml\_parmetis3x}{ Enables interface for \parmetis~\cite{ParMETIS}, version $3.x$.}
 %
@@ -602,15 +601,12 @@ Note: you cannot configure \ML\ with both this option and {\tt--enable-amesos}.}
 If one of the above options is enabled, then the user must specify the
 location of the header files, with the option
 \begin{verbatim}
---with-incdirs="-I/include-locations"
+--with-incdirs=<include-locations>
 \end{verbatim}
 (Header files for \trilinos~libraries are automatically located if \ML\ 
 is built through the \trilinos~{\tt configure}.)  In order to link the
 \ML~examples, the user must indicate the location of all the enabled
-packages' libraries\footnote{An example of configuration line that enables \metis~and \parmetis~might be as follows:
-{\tt ./configure --with-mpi-compilers --enable-ml\_metis --enable-ml\_parmetis3x --with-cflags="-I\$HOME/include" \
- --with-cppflags="-I\$HOME/include" \
- --with-ldflags="-L\$HOME/lib/LINUX\_MPI" --with-libs="-lparmetis-3.1 -lmetis-4.0" }.}
+packages' libraries
 , with the option
 \begin{verbatim}
 --with-ldflags="<lib-locations>"
@@ -624,10 +620,32 @@ which turns off compilation and linking of all Trilinos examples, or
 \begin{verbatim}
 --disable-ml-examples
 \end{verbatim}
-which turns off compilation and linking of \ML\ examples. 
+which turns off compilation and linking of \ML\ examples.
 
-\smallskip
+\vskip 0.25in
 
+\noindent
+Here is an example configure line, where \metis, \parmetis, \zoltan, and
+\superlu\ are all used:\\
+{\tt ./configure --with-mpi-compilers="/usr/local/mpich/bin"  
+ CXXFLAGS="-O3" CFLAGS="-O3" FFLAGS="-O3" 
+--cache-file=config.cache --with-gnumake 
+--with-ml\_metis --with-ml\_zoltan --with-ml\_parmetis3x 
+--with-ldflags="-L/usr/local/superlu-3.0/lib -L/usr/local/parmetis-3.1 
+-L/usr/local/zoltan/lib" 
+--with-libs="-lsuperlu -lparmetis -lmetis -lzoltan" 
+--with-incdirs="-I/usr/local/superlu-3.0/SRC -I/usr/local/parmetis-3.1 
+-I/usr/local/parmetis-3.1/METISLib -I/usr/local/parmetis-3.1/ParMETISLib
+-I/usr/local/zoltan/include"}
+
+%{\tt ./configure --with-mpi-compilers --enable-ml\_metis --enable-ml\_parmetis3x --with-cflags="-I\$HOME/include" \
+% --with-cppflags="-I\$HOME/include" \
+% --with-ldflags="-L\$HOME/lib/LINUX\_MPI" --with-libs="-lparmetis-3.1 -lmetis-4.0" }.}
+
+
+\vskip 0.25in
+
+\noindent
 More details about the installation of \trilinos~can be found at the
 \trilinos~web site,
 \begin{verbatim}
@@ -1042,17 +1060,22 @@ The \aztecoo~vectors \verb!options! and {\tt params} can be set using
 \hline
 \verb!Jacobi! & Use {\tt coarse: sweeps} steps of Jacobi (with damping
 parameter {\tt coarse: damping parameter}) as a solver. \\
-\verb!Gauss-Seidel! & Use  {\tt coarse: sweeps} steps of Gauss-Seidel(with damping
+\verb!Gauss-Seidel! & Use  {\tt coarse: sweeps} steps of Gauss-Seidel (with damping
 parameter {\tt coarse: damping parameter}) as a solver. \\ 
+\verb!MLS! & Use degree {\tt coarse: MLS polynomial order} Chebychev polynomial
+             as a solver. \\
+\verb!Hiptmair! & Use {\tt coarse: sweeps} steps of two-stage Hiptmair
+             smoothing, with subsmoother {\tt coarse: subsmoother type},
+             as a solver. \\
 \verb!Amesos-KLU! & Use \klu\ through \amesos. Coarse grid problem is shipped to
  proc 0, solved, and solution is broadcast \\
+\verb!Amesos-Superlu! & Use \superlu, version $3.0$, through \amesos. \\
 \verb!Amesos-UMFPACK! & Use \umfpack\ through \amesos. Coarse grid problem is shipped to
  proc 0, solved, and solution is broadcasted. \\
 \verb!Amesos-Superludist! & Use \superludist\ through \amesos. \\
 \verb!Amesos-MUMPS! & Use double precision version of \mumps~through
 \amesos. \\
-\verb!Amesos-Superlu! & Use \superlu\ through \amesos. \\
-\verb!SuperLU! & Use \ML\ interface to \superlu (deprecated). \\
+\verb!SuperLU! & Use \ML\ interface to \superlu (depreacated). \\
 \hline
 \end{tabular}
 \caption{ML\_Epetra::MultiLevelPreconditioner: Some of the available coarse
@@ -1062,6 +1085,91 @@ matrix solvers. Note: Amesos solvers requires
 \label{tab:ml:coarse}
 \end{center}
 \end{table}
+%
+%--------------------------------------------------------------------%
+\subsection{Parallel Performance}
+\label{parallel performance}
+%--------------------------------------------------------------------%
+%
+This section gives a few tips on tuning \ML's parallel performance.
+
+\subsubsection{Dynamic Load-balancing}
+\ML\ supports dynamic load-balancing of coarse-level matrices in the multigrid
+preconditioner.
+This is extremely important for two reasons.
+First, it is not unusual for the message-passing latency on a coarse level
+to be roughly equivalent to the latency of the fine level,
+even though the number of matrix unknowns on the coarse level is much smaller
+than on the fine level.
+Second, as the number of unknowns per processor becomes small, \ML's
+aggregation methods become less effective.
+The coarsening rate may drop, thus leading to more multigrid levels than one
+might observe in serial.
+
+We now give two code fragments to demonstrate how to use the repartitioning
+options.
+The complete description of options that control repartitioning is given in
+\S\ref{load balancing}.
+%In order to use the \zoltan\ package, you must also supply coordinates for the
+%fine grid matrix.  (See \S\ref{miscellaneous options}.)
+The following code demonstrates repartitioning for a matrix with
+unknowns that are node-based.
+\begin{verbatim}
+  Teuchos::ParameterList MLList;
+  MLList.set("repartition: enable",1);
+  MLList.set("repartition: max min ratio",1.3);
+  MLList.set("repartition: min per proc",500);
+  MLList.set("repartition: partitioner","Zoltan");
+  MLList.set("repartition: Zoltan dimensions",2);
+
+  // Zoltan requires coordinates
+  double *xcoord, *ycoord, *zcoord;
+
+  // user must load the coordinates, of coarse ...
+
+  MLList.set("x-coordinates", xcoord); 
+  MLList.set("y-coordinates", xcoord); 
+\end{verbatim}
+
+\noindent
+The following code demonstrates repartitioning for a matrix with
+unknowns that are edge-based.
+
+\begin{verbatim}
+  Teuchos::ParameterList MLList;
+  // these correspond to the main edge matrix
+  MLList.set("repartition: enable",1);
+  MLList.set("repartition: max min ratio",1.3);
+  MLList.set("repartition: min per proc",1000);
+  MLList.set("repartition: partitioner","Zoltan");
+
+  // Zoltan requires coordinates
+  double *xcoord, *ycoord, *zcoord;
+
+  // user must load the coordinates, of coarse ...
+
+  MLList.set("x-coordinates", xcoord); 
+  MLList.set("y-coordinates", ycoord); 
+  MLList.set("z-coordinates", zcoord); 
+
+  // these correspond to the auxiliary node matrix
+  MLList.set("repartition: node max min ratio",1.5);
+  MLList.set("repartition: node min per proc",300);
+  MLList.set("repartition: node partitioner","Zoltan");
+  MLList.set("repartition: Zoltan dimensions",3);
+
+  double *node_xcoord, *node_ycoord, *node_zcoord;
+
+  // user must load the coordinates, of coarse ...
+
+  MLList.set("x-coordinates", node_xcoord); 
+  MLList.set("y-coordinates", node_ycoord); 
+  MLList.set("z-coordinates", node_zcoord); 
+
+\end{verbatim}
+
+
+%\subsubsection{Smoothers}
 %
 %--------------------------------------------------------------------%
 \subsection{List of All Parameters for MultiLevelPreconditioner Class}
@@ -1310,33 +1418,37 @@ Damping factor in the coarse solver. Default: 0.67.}
 
 %------------------------------------%
 \subsubsection{Load-balancing Options}
+\label{load balancing}
 %------------------------------------%
 
-\choicebox{\tt repartition: enable}{[{\tt bool}] Enable/disable repartitioning.
-Default: {\tt false}.}
+\choicebox{\tt repartition: enable}{[{\tt int}] Enable/disable repartitioning.
+Default: {\tt 0} (off).}
 
 \choicebox{\tt repartition: partitioner}{[{\tt string}] Partitioning package
 to use. Can assume the following values: {\tt Zoltan, ParMETIS}. Default: {\tt
 Zoltan}.}
 
-\choicebox{\tt repartition: node max min ratio}{[{\tt double}] Specifies ratio
-of maximum
-nodes on a processor to minimum nodes on a processor.   If actual ratio is
-greater than this value, repartitioning occurs.  Otherwise, nothing is done.
+\choicebox{\tt repartition: max min ratio}{[{\tt double}] Specifies desired
+ratio of $g_{max} / g_{min}$, where $g_{max}$ is the maximum number rows over
+all processors, and $g_{min}$ is the minimum number of rows over all processors.
+If the actual ratio is larger, then repartitioning occurs.
 Default: 1.1.}
 
-\choicebox{\tt repartition: node min per proc}{[{\tt int}] Specifies the desired minimum
-number of nodes that should be on a processor once repartitioning is done.
+\choicebox{\tt repartition: min per proc}{[{\tt int}] Specifies desired
+minimum number of rows per processor.   If the actual number is greater,
+then repartitioning occurs.  Default: 20.}
+
+\choicebox{\tt repartition: node max min ratio}{[{\tt double}] Maxwell-specific
+option for auxiliary nodal hierarchy.  Specifies desired
+ratio of $g_{max} / g_{min}$, where $g_{max}$ is the maximum number rows over
+all processors, and $g_{min}$ is the minimum number of rows over all processors.
+If the actual ratio is larger, then repartitioning occurs.
+Default: 1.1.}
+
+\choicebox{\tt repartition: node min per proc}{[{\tt int}] Maxwell-specific
+option for auxiliary nodal hierarchy.  Specifies desired minimum number of rows
+per processor.  If the actual number is greater, then repartitioning occurs.
 Default: 20.}
-
-\choicebox{\tt repartition: edge max min ratio}{[{\tt double}] Maxwell-specific option.  Specifies ratio of maximum
-edges on a processor to minimum nodes on a processor.   If actual ratio is
-greater than this value, repartitioning occurs.  Otherwise, nothing is done.
-Default: 1.1.}
-
-\choicebox{\tt repartition: edge min per proc}{[{\tt int}] Maxwell-specific option.
-Specifies the desired minimum number of
-edges that should be on a processor once repartitioning is done. Default: 20.}
 
 \choicebox{\tt repartition: Zoltan dimensions}{[{\tt int}] Dimension of the
   problem. Can assume the following values: $\{2,3\}$.}
@@ -1360,25 +1472,26 @@ PDEs, the equation number to print.  Default: all equations.}
 
 %------------------------------------%
 \subsubsection{Miscellaneous}
+\label{miscellaneous options}
 %------------------------------------%
 
 \choicebox{\tt x-coordinates}{[{\tt double*}] Pointer to array of
-$x$-coordinates of mesh nodes.}
+$x$-coordinates of mesh nodes (edges, in the case of Maxwell).}
 
 \choicebox{\tt y-coordinates}{[{\tt double*}] Pointer to array of
-$y$-coordinates of mesh nodes.}
+$y$-coordinates of mesh nodes (edges, in the case of Maxwell).}
 
 \choicebox{\tt z-coordinates}{[{\tt double*}] Pointer to array of
-$z$-coordinates of mesh nodes.}
+$z$-coordinates of mesh nodes (edges, in the case of Maxwell).}
 
-\choicebox{\tt edge: x-coordinates}{[{\tt double*}] Pointer to array of
-$x$-coordinates of mesh edges. (Maxwell only)}
+\choicebox{\tt node: x-coordinates}{[{\tt double*}] Pointer to array of
+$x$-coordinates of mesh nodes. (Maxwell only)}
 
-\choicebox{\tt edge: y-coordinates}{[{\tt double*}] Pointer to array of
-$y$-coordinates of mesh edges. (Maxwell only)}
+\choicebox{\tt node: y-coordinates}{[{\tt double*}] Pointer to array of
+$y$-coordinates of mesh nodes. (Maxwell only)}
 
-\choicebox{\tt edge: z-coordinates}{[{\tt double*}] Pointer to array of
-$z$-coordinates of mesh edges. (Maxwell only)}
+\choicebox{\tt node: z-coordinates}{[{\tt double*}] Pointer to array of
+$z$-coordinates of mesh nodes. (Maxwell only)}
 
 %%% ======================= %%%
 %%% Detection of null space %%%
@@ -1856,23 +1969,73 @@ Aggregates generated by {\tt Uncoupled} and {\tt METIS} aggregation schemes
 can be visualized for serial and parallel runs, while aggregates generated
 using {\tt MIS} and {\tt ParMETIS} can be visualized only for serial runs.
 
-Data are stored on a file in a simple format. For each aggregate, the file
-contains a line of type
+Data can be stored in the ``xyz" format, readable by packages such as
+\verb!XD3D!~\cite{xd3d-home-page}.
+For each aggregate, the file contains a line of type
 \begin{verbatim}
 x-coord y-coord <z-coord> aggregate-number
 \end{verbatim}
 (\verb!z-coord! is present only for 3D computations.) 
-A visualization software, called \verb!XD3D!\footnote{More 
-  information about {\tt XD3D} can be found at the web site
-{\tt http://www.cmap.polytechnique.fr/\~jouve/xd3d/index.php.}}
-can be used to visualize files in this format, but only for 2D problems.
-Results are as reported in figure~\ref{fig:viz:aggr}.
+\verb!XD3D! can be used to visualize files in this format, but only for 2D
+problems.
+Results are reported in Figure~\ref{fig:viz:aggr}.
+
+Data can also be stored in the ``vtk legacy" format, readable by packages such
+as \paraview~\cite{paraview-home-page}.
+\paraview~ allows for 2D and 3D point clouds visualization.
+It is also possible to visualize sections of 3D data via cutting planes.
+In order to use this format, fine level coordinates must be supplied.
+Coarse level
+coordinates are derived from the fine level coordinates via the multigrid
+restriction operators.
+Data is stored as follows.
+The first section begins with the header
+\begin{verbatim}
+POINTS XX float
+\end{verbatim}
+where \verb!XX! is the total number of points.
+For each point, the coordinates are given as
+\begin{verbatim}
+x-coord y-coord <z-coord>
+\end{verbatim},
+Next, connectivity information is given in a pair-wise fashion.
+For example, if the $(i,j)$ entry of matrix $A$ is nonzero, then
+there is a line in the data file of the form
+\begin{verbatim}
+2 i j 
+\end{verbatim},
+where the first entry specifies the number of points that follow.
+(This first entry will always be 2 because the connectivity is pair-wise.)
+The next data section specifies the aggregate to which each point belongs.
+It begins with the header
+\begin{verbatim}
+POINT_DATA XX 
+SCALARS aggregate_number int 1
+LOOKUP_TABLE default
+\end{verbatim}
+The section then has a line for each point of the form
+\begin{verbatim}
+aggregate_number
+\end{verbatim}
+The final section specifies the solution (residual) at each point.
+The section begins with the header
+\begin{verbatim}
+SCALARS solution float 1
+LOOKUP_TABLE default
+\end{verbatim}
+and then has a line for each point of the form
+\begin{verbatim}
+solution_value
+\end{verbatim}
+With the exception of connectivity, all information is given in the same order.
+Hence, all information for the $j$th unknown can be found at the $j$th line of
+each section.
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=12cm]{aggregate_decomposition}
 \caption{Decomposition into aggregates. Uniform colors between blue spheres
-  represent the interior of aggregates.}
+represent the interior of aggregates.  Visualization was done with XD3D.}
 \label{fig:viz:aggr}
 \end{figure}
 
@@ -1893,6 +2056,8 @@ double* y_coord;
 // here we define the nodal coordinates...
 
 MLList.set("viz: enable", true);
+//you can also specify "xyz" on the line below
+MLList.set("viz: output format", "vtk");
 MLList.set("viz: x-coordinates", x_coord);
 MLList.set("viz: y-coordinates", y_coord);
 // by default the starting solution is not printed
@@ -1917,24 +2082,24 @@ MLPrec->VisualizeSmoothers(5,1);
 the requirements on the coordinates vectors.
 Results will be written in the following files:
 \begin{itemize}
-\item \verb!before-presmoother-eqX-levelY.xyz! contains the random vector
+\item \verb!before-presmoother-eqX-levelY.vtk! contains the random vector
 before
 the application of the presmoother, for equation \verb!X! at level 
 \verb!Y!;
-\item \verb!after-presmoother-eqX-levelY.xyz! contains the random vector after
+\item \verb!after-presmoother-eqX-levelY.vtk! contains the random vector after
 the application of the presmoother, for equation \verb!X! at level
 \verb!Y!;
-\item \verb!before-postsmoother-eqX-levelY.xyz! contains the random vector
+\item \verb!before-postsmoother-eqX-levelY.vtk! contains the random vector
 before
 the application of the postsmoother, for equation \verb!X! at level
 \verb!Y!;
-\item \verb!after-postsmoother-eqX-levelY.xyz! contains the random vector after
+\item \verb!after-postsmoother-eqX-levelY.vtk! contains the random vector after
 the application of the postsmoother, for equation \verb!X! at level
 \verb!Y!;
-\item \verb!before-cycle-eqX-levelY.xyz! contains the random vector
+\item \verb!before-cycle-eqX-levelY.vtk! contains the random vector
 before
 the application of the \ML cycle, for equation \verb!X! at the finest level;
-\item \verb!after-cycle-eqX-levelY.xyz! contains the random vector after
+\item \verb!after-cycle-eqX-levelY.vtk! contains the random vector after
 the application of the ML cycle, for equation \verb!X! at finest level.
 \end{itemize}
 
@@ -1942,7 +2107,8 @@ the application of the ML cycle, for equation \verb!X! at finest level.
 \centering
 \includegraphics[width=7cm]{before_cycle} \hspace{0.5cm}
 \includegraphics[width=7cm]{after_cycle}
-\caption{Starting solution (left) and solution after 10 \ML~cycles (right).}
+\caption{Starting solution (left) and solution after 10 \ML~cycles (right).
+Visualization was done using XD3D.}
 \label{fig:viz:cycle}
 \end{figure}
 
