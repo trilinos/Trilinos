@@ -29,7 +29,7 @@ Epetra_CrsMatrix* Vander(const Epetra_Map* Map, const double value)
     for (int j = 0 ; j < NumGlobalElements ; ++j) 
     {
       Indices[j] = j;
-      Values[j] = pow(value, NumGlobalElements - j - 1);
+      Values[j] = pow(value, (double)(NumGlobalElements - j - 1));
     }
 
     Matrix->InsertGlobalValues(MyGlobalElements[i], NumEntries, 

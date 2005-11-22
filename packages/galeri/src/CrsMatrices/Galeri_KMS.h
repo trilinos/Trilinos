@@ -29,7 +29,7 @@ Epetra_CrsMatrix* KMS(const Epetra_Map* Map, const double value)
     for (int j = 0 ; j < NumGlobalElements ; ++j) 
     {
       Indices[j] = j;
-      Values[j] = pow(value, abs(iGlobal - j));
+      Values[j] = pow(value, (double)(abs(iGlobal - j)));
     }
 
     Matrix->InsertGlobalValues(MyGlobalElements[i], NumEntries, 
