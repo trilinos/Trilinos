@@ -244,11 +244,13 @@ static int pmatching_alt_ipm(
 
   /* first level is 0 */
   if ((level&1) == 0)  /* alternate even-odd levels */
-    strcpy(hgp->redm_str, hgp->redm_fast); /* fast method is c-ipm for now */
+    strcpy(hgp->redm_str, hgp->redm_fast); /* fast method is typically c-ipm */
   else
     strcpy(hgp->redm_str, "ipm");  
 
-  ierr = pmatching_ipm(zz, hg, match, hgp);  /* only works for ipm and c-ipm! */
+  Zoltan_PHG_Set_Matching_Fn (hgp);  /* set pointer to the desired matching function */
+  ierr = hgp->matching (zz, hg, match, hgp);
+  hgp->matching = pmatching_alt_ipm;  /* reset function pointer */
 
   ++level;  /* we don't have access to level data, so keep track this way */
   old_nvtx = hg->nVtx;
