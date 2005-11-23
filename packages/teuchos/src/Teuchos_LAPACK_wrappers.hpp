@@ -26,11 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-// Kris
-// 06.11.03 -- Format cleanup
-// 06.17.03 -- Added LAPY2 and GEES by request
-// 07.08.03 -- Move into Teuchos package/namespace
-
 #ifndef _TEUCHOS_LAPACK_WRAPPERS_HPP_
 #define _TEUCHOS_LAPACK_WRAPPERS_HPP_
 
@@ -68,6 +63,7 @@
 #define DPORFS_F77  F77_FUNC(sporfs,SPORFS)
 #define DPOSVX_F77  F77_FUNC(sposvx,SPOSVX)
 #define DLAMCH_F77  F77_FUNC(slamch,SLAMCH)
+#define DTRTRS_F77  F77_FUNC(strtrs,STRTRS)
 #define DGELS_F77   F77_FUNC(sgels,SGELS)
 #define DGEEV_F77   F77_FUNC(sgeev,SGEEV)
 #define DGEHRD_F77  F77_FUNC(sgehrd,SGEHRD)
@@ -107,6 +103,7 @@
 #define ZPOEQU_F77  F77_FUNC(cpoequ,CPOEQU)
 #define ZPORFS_F77  F77_FUNC(cporfs,CPORFS)
 #define ZPOSVX_F77  F77_FUNC(cposvx,CPOSVX)
+#define ZTRTRS_F77  F77_FUNC(ctrtrs,CTRTRS)
 #define ZGELS_F77   F77_FUNC(cgels,CGELS)
 #define ZGEEV_F77   F77_FUNC(cgeev,CGEEV)
 #define ZGEHRD_F77  F77_FUNC(cgehrd,CGEHRD)
@@ -143,6 +140,7 @@
 #define DPOEQU_F77  F77_FUNC(dpoequ,DPOEQU)
 #define DPORFS_F77  F77_FUNC(dporfs,DPORFS)
 #define DPOSVX_F77  F77_FUNC(dposvx,DPOSVX)
+#define DTRTRS_F77  F77_FUNC(dtrtrs,DTRTRS)
 #define DLAMCH_F77  F77_FUNC(dlamch,DLAMCH)
 #define DGELS_F77   F77_FUNC(dgels,DGELS)
 #define DGEEV_F77   F77_FUNC(dgeev,DGEEV)
@@ -183,6 +181,7 @@
 #define ZPOEQU_F77  F77_FUNC(zpoequ,ZPOEQU)
 #define ZPORFS_F77  F77_FUNC(zporfs,ZPORFS)
 #define ZPOSVX_F77  F77_FUNC(zposvx,ZPOSVX)
+#define ZTRTRS_F77  F77_FUNC(ztrtrs,ZTRTRS)
 #define ZGELS_F77   F77_FUNC(zgels,ZGELS)
 #define ZGEEV_F77   F77_FUNC(zgeev,ZGEEV)
 #define ZGEHRD_F77  F77_FUNC(zgehrd,ZGEHRD)
@@ -219,6 +218,7 @@
 #define DPOEQU_F77  F77_FUNC(dpoequ,DPOEQU)
 #define DPORFS_F77  F77_FUNC(dporfs,DPORFS)
 #define DPOSVX_F77  F77_FUNC(dposvx,DPOSVX)
+#define DTRTRS_F77  F77_FUNC(dtrtrs,DTRTRS)
 #define DLAMCH_F77  F77_FUNC(dlamch,DLAMCH)
 #define DGELS_F77   F77_FUNC(dgels,DGELS)
 #define DGEEV_F77   F77_FUNC(dgeev,DGEEV)
@@ -259,6 +259,7 @@
 #define ZPOEQU_F77  F77_FUNC(zpoequ,ZPOEQU)
 #define ZPORFS_F77  F77_FUNC(zporfs,ZPORFS)
 #define ZPOSVX_F77  F77_FUNC(zposvx,ZPOSVX)
+#define ZTRTRS_F77  F77_FUNC(ztrtrs,ZTRTRS)
 #define ZGELS_F77   F77_FUNC(zgels,ZGELS)
 #define ZGEEV_F77   F77_FUNC(zgeev,ZGEEV)
 #define ZGEHRD_F77  F77_FUNC(zgehrd,ZGEHRD)
@@ -321,6 +322,7 @@
 #define DPOEQU_F77  F77_FUNC(dpoequ,DPOEQU)
 #define DPORFS_F77  F77_FUNC(dporfs,DPORFS)
 #define DPOSVX_F77  F77_FUNC(dposvx,DPOSVX)
+#define DTRTRS_F77  F77_FUNC(dtrtrs,DTRTRS)
 #define DLAMCH_F77  F77_FUNC(dlamch,DLAMCH)
 #define DGELS_F77   F77_FUNC(dgels,DGELS)
 #define DGEEV_F77   F77_FUNC(dgeev,DGEEV)
@@ -361,6 +363,7 @@
 #define ZPOEQU_F77  F77_FUNC(zpoequ,ZPOEQU)
 #define ZPORFS_F77  F77_FUNC(zporfs,ZPORFS)
 #define ZPOSVX_F77  F77_FUNC(zposvx,ZPOSVX)
+#define ZTRTRS_F77  F77_FUNC(ztrtrs,ZTRTRS)
 #define ZGELS_F77   F77_FUNC(zgels,ZGELS)
 #define ZGEEV_F77   F77_FUNC(zgeev,ZGEEV)
 #define ZGEHRD_F77  F77_FUNC(zgehrd,ZGEHRD)
@@ -394,6 +397,7 @@
 #define SPOEQU_F77  F77_FUNC(spoequ,SPOEQU)
 #define SPORFS_F77  F77_FUNC(sporfs,SPORFS)
 #define SPOSVX_F77  F77_FUNC(sposvx,SPOSVX)
+#define STRTRS_F77  F77_FUNC(strtrs,STRTRS)
 #define SGELS_F77   F77_FUNC(sgels,SGELS)
 #define SGEEV_F77   F77_FUNC(sgeev,SGEEV)
 #define SGEHRD_F77  F77_FUNC(sgehrd,SGEHRD)
@@ -433,6 +437,7 @@
 #define CPOEQU_F77  F77_FUNC(cpoequ,CPOEQU)
 #define CPORFS_F77  F77_FUNC(cporfs,CPORFS)
 #define CPOSVX_F77  F77_FUNC(cposvx,CPOSVX)
+#define CTRTRS_F77  F77_FUNC(ctrtrs,CTRTRS)
 #define CGELS_F77   F77_FUNC(cgels,CGELS)
 #define CGEEV_F77   F77_FUNC(cgeev,CGEEV)
 #define CGEHRD_F77  F77_FUNC(cgehrd,CGEHRD)
@@ -471,6 +476,7 @@ void PREFIX DPOSV_F77(Teuchos_fcd, const int* n, const int* nrhs, double* a, con
 void PREFIX DPOEQU_F77(const int* n, const double* a, const int* lda, double* s, double* scond, double* amax, int* info); 
 void PREFIX DPORFS_F77(Teuchos_fcd, const int* n, const int* nrhs, double* a, const int* lda, const double* af, const int* ldaf, const double* b, const int* ldb, double* x, const int* ldx, double* ferr, double* berr, double* work, int* iwork, int* info);
 void PREFIX DPOSVX_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, double* a, const int* lda, double* af, const int* ldaf, Teuchos_fcd, double* s, double* b, const int* ldb, double* x, const int* ldx, double* rcond, double* ferr, double* berr, double* work, int* iwork, int* info);
+void PREFIX DTRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, double* a, const int* lda, double* b, const int* ldb, int* info);
 
 // Single precision LAPACK linear solvers
 void PREFIX SGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrhs, float* a, const int* lda, float* b, const int* ldb, float* work, const int* lwork, int* info);
@@ -493,6 +499,7 @@ void PREFIX SPOSV_F77(Teuchos_fcd, const int* n, const int* nrhs, float* a, cons
 void PREFIX SPOEQU_F77(const int* n, const float* a, const int* lda, float* s, float* scond, float* amax, int* info); 
 void PREFIX SPORFS_F77(Teuchos_fcd, const int* n, const int* nrhs, float* a, const int* lda, const float* af, const int* ldaf, const float* b, const int* ldb, float* x, const int* ldx, float* ferr, float* berr, float* work, int* iwork, int* info);
 void PREFIX SPOSVX_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, float* a, const int* lda, float* af, const int* ldaf, Teuchos_fcd, float* s, float* b, const int* ldb, float* x, const int* ldx, float* rcond, float* ferr, float* berr, float* work, int* iwork, int* info);
+void PREFIX STRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, float* a, const int* lda, float* b, const int* ldb, int* info);
 
 // Double precision LAPACK eigen solvers
 void PREFIX DSPEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, double* ap, double* w, double* z, const int* ldz, double* work, int* info);
@@ -566,6 +573,7 @@ void PREFIX ZPOSV_F77(Teuchos_fcd, const int* n, const int* nrhs, complex<double
 void PREFIX ZPOEQU_F77(const int* n, const complex<double>* a, const int* lda, double* s, double* scond, double* amax, int* info); 
 void PREFIX ZPORFS_F77(Teuchos_fcd, const int* n, const int* nrhs, complex<double>* a, const int* lda, const complex<double>* af, const int* ldaf, const complex<double>* b, const int* ldb, complex<double>* x, const int* ldx, double* ferr, double* berr, complex<double>* work, double* rwork, int* info);
 void PREFIX ZPOSVX_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, complex<double>* a, const int* lda, complex<double>* af, const int* ldaf, Teuchos_fcd, double* s, complex<double>* b, const int* ldb, complex<double>* x, const int* ldx, double* rcond, double* ferr, double* berr, complex<double>* work, double* rwork, int* info);
+void PREFIX ZTRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, complex<double>* a, const int* lda, complex<double>* b, const int* ldb, int* info);
 
 // Single precision complex LAPACK linear solvers
 void PREFIX CGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrhs, complex<float>* a, const int* lda, complex<float>* b, const int* ldb, complex<float>* work, const int* lwork, int* info);
@@ -587,6 +595,7 @@ void PREFIX CPOSV_F77(Teuchos_fcd, const int* n, const int* nrhs, complex<float>
 void PREFIX CPOEQU_F77(const int* n, const complex<float>* a, const int* lda, float* s, float* scond, float* amax, int* info); 
 void PREFIX CPORFS_F77(Teuchos_fcd, const int* n, const int* nrhs, complex<float>* a, const int* lda, const complex<float>* af, const int* ldaf, const complex<float>* b, const int* ldb, complex<float>* x, const int* ldx, float* ferr, float* berr, complex<float>* work, float* rwork, int* info);
 void PREFIX CPOSVX_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, complex<float>* a, const int* lda, complex<float>* af, const int* ldaf, Teuchos_fcd, float* s, complex<float>* b, const int* ldb, complex<float>* x, const int* ldx, float* rcond, float* ferr, float* berr, complex<float>* work, float* rwork, int* info);
+void PREFIX CTRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, complex<float>* a, const int* lda, complex<float>* b, const int* ldb, int* info);
 
 // Double precision complex LAPACK eigen solvers
 void PREFIX ZSTEQR_F77(Teuchos_fcd, const int* n, double* D, double* E, complex<double>* Z, const int* ldz, complex<double>* work, int* info);
