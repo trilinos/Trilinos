@@ -32,6 +32,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRA_FEVECTOR_H
 #define EPETRA_FEVECTOR_H
 
+#include <Epetra_CombineMode.h>
 #include <Epetra_Map.h>
 #include <Epetra_MultiVector.h>
 class Epetra_IntSerialDenseVector;
@@ -122,7 +123,7 @@ class Epetra_FEVector : public Epetra_MultiVector {
       This is a collective method -- every processor must enter it before any
       will complete it.
    */
-   int GlobalAssemble();
+   int GlobalAssemble(Epetra_CombineMode mode = Add);
 
    /** Set whether or not non-local data values should be ignored.
     */

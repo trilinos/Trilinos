@@ -310,7 +310,7 @@ int Epetra_FEVector::inputNonlocalValues(int GID, int numValues,
 }
 
 //----------------------------------------------------------------------------
-int Epetra_FEVector::GlobalAssemble()
+int Epetra_FEVector::GlobalAssemble(Epetra_CombineMode mode)
 {
   //In this method we need to gather all the non-local (overlapping) data
   //that's been input on each processor, into the (probably) non-overlapping
@@ -343,15 +343,7 @@ int Epetra_FEVector::GlobalAssemble()
 
   Epetra_Export exporter(sourceMap, Map());
 
-  EPETRA_CHK_ERR( Export(nonlocalVector, exporter, Add) );
-
-  //and finally, reset the nonlocalCoefs_ values to 0.0, in case the user
-  //does some more data input followed by another globalAssemble.
-  for(i=0; i<numNonlocalIDs_; ++i) {
-    for(j=0; j<nonlocalElementSize_[i]; ++j) {
-      nonlocalCoefs_[i][j] = 0.0;
-    }
-  }
+  EPETRA_CHK_ERR( Export(nonlocalVector, exporter, mode) );
 
   destroyNonlocalData();
 
@@ -403,3 +395,4 @@ void Epetra_FEVector::destroyNonlocalData()
   }
   return;
 }
+
