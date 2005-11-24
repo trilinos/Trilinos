@@ -39,7 +39,7 @@
 #include "AnasaziOperator.hpp"
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziReturnType.hpp"
+#include "AnasaziTypes.hpp"
 
 // LOCA includes
 #include "LOCA_AnasaziOperator_AbstractStrategy.H"

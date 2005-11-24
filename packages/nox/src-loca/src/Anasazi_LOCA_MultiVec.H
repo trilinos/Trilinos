@@ -38,7 +38,7 @@
 // Anasazi includes
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziReturnType.hpp"
+#include "AnasaziTypes.hpp"
 
 // NOX/LOCA includes
 #include "NOX_Abstract_Vector.H"
