@@ -58,7 +58,7 @@ CORE_H = \
 	$(srcdir)/AnasaziOperator.hpp \
 	$(srcdir)/AnasaziOperatorTraits.hpp \
 	$(srcdir)/AnasaziOutputManager.hpp \
-	$(srcdir)/AnasaziReturnType.hpp \
+	$(srcdir)/AnasaziTypes.hpp \
 	$(srcdir)/AnasaziSortManager.hpp
 
 CORE = \

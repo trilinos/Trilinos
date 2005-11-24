@@ -36,7 +36,7 @@
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziOperator.hpp"
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziReturnType.hpp"
+#include "AnasaziTypes.hpp"
 
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Epetra_MultiVector.h"
@@ -156,25 +156,19 @@ namespace Anasazi {
 
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$\alpha A^T(*this)\f$.
     */
-    void MvTransMv ( const double alpha, const MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B ) const;
-
+    void MvTransMv ( const double alpha, const MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B 
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
-    /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$\alpha A^H(*this)\f$.
-    */
-    void MvHermMv ( const double alpha, const MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B ) const
-    {MvTransMv ( alpha,  A,  B );}
+		     , ConjType conj = Anasazi::CONJ
 #endif
-
+		     ) const;
+  
     /*! \brief Compute a vector \c b where the components are the individual dot-products, i.e. \f$ b[i] = A[i]^H(this[i])\f$ where \c A[i] is the i-th column of \c A.
 	*/
-    void MvDot ( const MultiVec<double>& A, std::vector<double>* b ) const;
-
+    void MvDot ( const MultiVec<double>& A, std::vector<double>* b
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
-    /*! \brief Compute a vector \c b where the components are the individual dot-products, i.e. \f$ b[i] = A[i]^T(this[i])\f$ where \c A[i] is the i-th column of \c A.
-	*/
-    void MvPseudoDot ( const MultiVec<double>& A, std::vector<double>* b ) const
-    {MvDot ( A, b );}
+		 , ConjType conj = Anasazi::CONJ
 #endif
+		 ) const;
 
     //@}
     //@{ \name Norm method
@@ -555,7 +549,11 @@ namespace Anasazi {
 
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Tmv \f$.
     */
-    static void MvTransMv( const double alpha, const Epetra_MultiVector& A, const Epetra_MultiVector& mv, Teuchos::SerialDenseMatrix<int,double>& B )
+    static void MvTransMv( const double alpha, const Epetra_MultiVector& A, const Epetra_MultiVector& mv, Teuchos::SerialDenseMatrix<int,double>& B
+#ifdef HAVE_ANASAZI_EXPERIMENTAL
+			   , ConjType conj = Anasazi::CONJ
+#endif
+			   )
     { 
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
       Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
@@ -566,7 +564,11 @@ namespace Anasazi {
     
     /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Tmv[i]\f$.
      */
-    static void MvDot( const Epetra_MultiVector& mv, const Epetra_MultiVector& A, std::vector<double>* b )
+    static void MvDot( const Epetra_MultiVector& mv, const Epetra_MultiVector& A, std::vector<double>* b
+#ifdef HAVE_ANASAZI_EXPERIMENTAL
+		       , ConjType conj = Anasazi::CONJ
+#endif
+		       )
     {
       int ret = mv.Dot( A, &(*b)[0] );
       assert( ret == 0 );

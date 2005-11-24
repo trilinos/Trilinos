@@ -33,7 +33,7 @@
         \brief Virtual base class which defines basic traits for the operator type
 */
 
-#include "AnasaziReturnType.hpp"
+#include "AnasaziTypes.hpp"
 #include "AnasaziConfigDefs.hpp"
 
 namespace Anasazi {

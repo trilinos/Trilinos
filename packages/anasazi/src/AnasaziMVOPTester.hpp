@@ -41,7 +41,7 @@
 
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
-#include "AnasaziReturnType.hpp"
+#include "AnasaziTypes.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "AnasaziOutputManager.hpp"
 

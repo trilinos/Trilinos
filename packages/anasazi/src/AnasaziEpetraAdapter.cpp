@@ -168,7 +168,11 @@ namespace Anasazi {
   //-------------------------------------------------------------
   
   void EpetraMultiVec::MvTransMv ( const double alpha, const MultiVec<double>& A,
-				   Teuchos::SerialDenseMatrix<int,double>& B) const
+				   Teuchos::SerialDenseMatrix<int,double>& B
+#ifdef HAVE_ANASAZI_EXPERIMENTAL
+				   , ConjType conj
+#endif
+				   ) const
   {    
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A));
     
@@ -187,7 +191,11 @@ namespace Anasazi {
   // 
   //-------------------------------------------------------------
   
-  void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>* b ) const
+  void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>* b
+#ifdef HAVE_ANASAZI_EXPERIMENTAL
+			       , ConjType conj
+#endif
+			       ) const
   {
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
     assert(A_vec!=NULL);

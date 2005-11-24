@@ -33,6 +33,7 @@
   \brief Virtual base class which defines basic traits for the multi-vector type
 */
 
+#include "AnasaziTypes.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
@@ -136,12 +137,20 @@ namespace Anasazi {
 
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Hmv \f$.
     */
-    static void MvTransMv( const ScalarType alpha, const MV& A, const MV& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B )
+    static void MvTransMv( const ScalarType alpha, const MV& A, const MV& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B
+#ifdef HAVE_ANASAZI_EXPERIMENTAL
+			   , ConjType conj = Anasazi::CONJ
+#endif
+			   )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     
     /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Hmv[i]\f$.
      */
-    static void MvDot ( const MV& mv, const MV& A, std::vector<ScalarType>* b ) 
+    static void MvDot ( const MV& mv, const MV& A, std::vector<ScalarType>* b
+#ifdef HAVE_ANASAZI_EXPERIMENTAL
+			, ConjType conj = Anasazi::CONJ
+#endif
+			) 
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
 
     //@}

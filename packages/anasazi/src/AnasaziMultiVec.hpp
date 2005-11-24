@@ -123,31 +123,21 @@ public:
 	   \c alpha * \c A^T * (\c *this).
 	*/
 
-	virtual void MvTransMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, Teuchos::SerialDenseMatrix<int,ScalarType>& B) const = 0;
-
+	virtual void MvTransMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, Teuchos::SerialDenseMatrix<int,ScalarType>& B
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
-	/*! \brief Compute a dense matrix \c B through the matrix-matrix multiply 
-	   \c alpha * \c A^H * (\c *this).
-	*/
-
-	virtual void MvHermMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, Teuchos::SerialDenseMatrix<int,ScalarType>& B) const = 0;
-
-#endif
-
-	/*! \brief Compute a vector \c b where the components are the individual dot-products, i.e.\c b[i] = \c A[i]^H*\c this[i] where \c A[i] is the i-th column of A.
-	*/
-
-	virtual void MvDot ( const MultiVec<ScalarType>& A, std::vector<ScalarType>* b ) const = 0;
-
-
+				 , ConjType conj = Anasazi::CONJ
+#endif				 
+				 ) const = 0;
+  
+        /*! \brief Compute a vector \c b where the components are the individual dot-products, i.e.\c b[i] = \c A[i]^H*\c this[i] where \c A[i] is the i-th column of A.
+   */
+  
+        virtual void MvDot ( const MultiVec<ScalarType>& A, std::vector<ScalarType>* b 
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
-	/*! \brief Compute a vector \c b where the components are the individual pseudo dot-products, i.e.\c b[i] = \c A[i]^T*\c this[i] where \c A[i] is the i-th column of A.
-	*/
-
-	virtual void MvPseudoDot ( const MultiVec<ScalarType>& A, std::vector<ScalarType>* b ) const = 0;
-
+			     , ConjType conj = Anasazi::CONJ
 #endif
-
+			     ) const = 0;
+  
 	//@}
 	//@{ \name Norm method
 
@@ -274,29 +264,30 @@ public:
     { mv.MvAddMv(alpha, A, beta, B); }
 
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Tmv \f$.
-    */
-    static void MvTransMv( ScalarType alpha, const MultiVec<ScalarType>& A, const MultiVec<ScalarType>& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B )
-    { mv.MvTransMv(alpha, A, B); }
-
+     */
+    static void MvTransMv( ScalarType alpha, const MultiVec<ScalarType>& A, const MultiVec<ScalarType>& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
-    /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Hmv \f$.
-    */
-    static void MvHermMv( ScalarType alpha, const MultiVec<ScalarType>& A, const MultiVec<ScalarType>& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B )
-    { mv.MvHermMv(alpha, A, B); }
+			   , ConjType conj = Anasazi::CONJ
 #endif
-
-
+			   )
+    { mv.MvTransMv(alpha, A, B
+#ifdef HAVE_ANASAZI_EXPERIMENTAL
+		   , conj
+#endif
+		   ); }
+    
     /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^H mv[i]\f$.
      */
-    static void MvDot( const MultiVec<ScalarType>& mv, const MultiVec<ScalarType>& A, std::vector<ScalarType>* b )
-    { mv.MvDot( A, b ); }
-
+    static void MvDot( const MultiVec<ScalarType>& mv, const MultiVec<ScalarType>& A, std::vector<ScalarType>* b
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
-    /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^T mv[i]\f$.
-     */
-    static void MvPseudoDot( const MultiVec<ScalarType>& mv, const MultiVec<ScalarType>& A, std::vector<ScalarType>* b )
-    { mv.MvPseudoDot( A, b ); }
+		       , ConjType conj = Anasazi::CONJ
 #endif
+		       )
+    { mv.MvDot( A, b
+#ifdef HAVE_ANASAZI_EXPERIMENTAL
+		, conj
+#endif
+		); }
 
     //@}
     //@{ \name Norm method

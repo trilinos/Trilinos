@@ -44,7 +44,7 @@
        \author Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
-#include "AnasaziReturnType.hpp"
+#include "AnasaziTypes.hpp"
 #include "AnasaziConfigDefs.hpp"
 
 namespace Anasazi {

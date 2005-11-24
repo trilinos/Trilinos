@@ -26,29 +26,31 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ANASAZI_RETURN_TYPE_HPP
-#define ANASAZI_RETURN_TYPE_HPP
+#ifndef ANASAZI_TYPES_HPP
+#define ANASAZI_TYPES_HPP
 
-/*! \file AnasaziReturnType.hpp
-  \brief Enumerated type used to pass back information from the eigensolver or linear algebra interfaces
+/*! \file AnasaziTypes.hpp
+  \brief Enumerated types used within Anasazi solvers and interfaces.
 */
 
-  /*!  \enum Anasazi::ReturnType
-    
-  \brief Enumerated type used to pass back information from the eigensolver or linear algebra interfaces.
-  
-  */
-  
 namespace Anasazi {
-
-	enum ReturnType		 
-	  {	
-	    Ok,           /*!< Computation completed sucessfully */	
-	    Undefined,    /*!< This operation is not defined */
-	    Unconverged,  /*!< This operation returned unconverged */ 
-	    Failed	  /*!< Numerical failure in the computation or input error */
-	  };
   
+  /*!  \enum Anasazi::ReturnType    
+    \brief Enumerated type used to pass back information from the eigensolver or linear algebra interfaces.  
+  */
+  enum ReturnType		 
+    {	
+      Ok,           /*!< Computation completed sucessfully */	
+      Undefined,    /*!< This operation is not defined */
+      Unconverged,  /*!< This operation returned unconverged */ 
+      Failed	  /*!< Numerical failure in the computation or input error */
+    };
+
+  enum ConjType {
+    NO_CONJ,      /*!< Not conjugated */
+    CONJ          /*!< Conjugated */
+  };
+
 }
 #endif
-// end of file AnasaziReturnType.hpp
+// end of file AnasaziTypes.hpp

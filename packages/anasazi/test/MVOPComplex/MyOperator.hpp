@@ -48,10 +48,8 @@ public:
   MyOperator(std::vector<ScalarType> diag) :
     NumRows_(diag.size())
   {
-    int i;
-
     diag_.resize(diag.size());
-    for(i=0; i<diag_.size(); ++i)
+    for(unsigned int i=0; i<diag_.size(); ++i)
       diag_[i] = diag[i];
   }
 

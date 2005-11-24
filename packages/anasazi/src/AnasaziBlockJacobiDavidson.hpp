@@ -577,13 +577,13 @@ namespace Anasazi {
         // Gram-Schmidt reduce the vector ...
         for(int j=0; j < SearchSpaceSize ; j++)
         {
-          CV(R, i)->MvPseudoDot(*CV(BU, j), &eta);
+          CV(R, i)->MvDot(*CV(BU, j), &eta, Anasazi::NO_CONJ);
           CV(R, i)->MvAddMv(ScalarOne, *CV(R, i), -eta[0], *CV(U, j));
         }
 
         for(int j=0; j < _knownEV; j++)
         {
-          CV(R, i)->MvPseudoDot(*CV(BQ, j), &eta);
+          CV(R, i)->MvDot(*CV(BQ, j), &eta, Anasazi::NO_CONJ);
           CV(R, i)->MvAddMv(ScalarOne, *CV(R, i), -eta[0], *CV(_evecs, j));
         }
 	
@@ -596,7 +596,7 @@ namespace Anasazi {
           CV(_evecs, _knownEV)->SetBlock(*CV(R, i), sublist);
         }
 	
-	CV(R, i)->MvPseudoDot(*CV(_evecs, _knownEV), &eta);
+	CV(R, i)->MvDot(*CV(_evecs, _knownEV), &eta, Anasazi::NO_CONJ);
         eta[0] = Teuchos::ScalarTraits<ScalarType>::squareroot(eta[0]);
         // scaling of Rtmp
         CV(R, i)->MvAddMv(ScalarOne / eta[0], *CV(R, i), ScalarZero, *CV(R, i));
@@ -714,8 +714,8 @@ namespace Anasazi {
 		if (_knownEV==1) {
 			LkTrans(0,0)=ScalarOne;
                         // FIXME: The following brings a bug...
-			BQtmp->MvPseudoDot(*KBQtmp, &vc);
-			//CV(BQ, _knownEV) ->MvPseudoDot(*CV(KBQ, _knownEV), &vc);
+			BQtmp->MvDot(*KBQtmp, &vc, Anasazi::NO_CONJ);
+			//CV(BQ, _knownEV) ->MvDot(*CV(KBQ, _knownEV), &vc, Anasazi::NO_CONJ);
 			Rk(0,0)=vc[0];
 		} else {
 			lk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, LkTrans[_knownEV-1], LkTrans.stride(), _knownEV-1, 1); //(*)
@@ -728,8 +728,8 @@ namespace Anasazi {
 			
 			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, rk->numRows(), rk->numCols(), ScalarOne, LkTrans.values(), LkTrans.stride(), rk->values(), rk->stride());
 			
-			BQtmp->MvPseudoDot(*KBQtmp, &vc);
-                        ///CV(BQ, _knownEV)->MvPseudoDot(*CV(KBQ, _knownEV), &vc);
+			BQtmp->MvDot(*KBQtmp, &vc, Anasazi::NO_CONJ);
+                        ///CV(BQ, _knownEV)->MvDot(*CV(KBQ, _knownEV), &vc, Anasazi::NO_CONJ);
 			ScalarType rho=vc[0];
 			Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType> (1,1); //(*)
 			H->multiply(Teuchos::TRANS, Teuchos::NO_TRANS, ScalarOne, *lk, *rk, ScalarZero); //rho+=lk*rk
@@ -883,7 +883,7 @@ namespace Anasazi {
 		
 		if (_knownEV==0) {
 			LkTrans(0,0)=ScalarOne; //Lk(0,0):=1
-			BQtmp->MvPseudoDot(*KBQtmp, &vc); //vc[0]:=BQtmp*KBQtmp //FIXME: Transpose in complex case
+			BQtmp->MvDot(*KBQtmp, &vc, Anasazi::NO_CONJ); //vc[0]:=BQtmp*KBQtmp //FIXME: Transpose in complex case
 			Rk(0,0)=vc[0];//Rk(0,0)=vc[0]
 		} else {
 			lk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, LkTrans[_knownEV], LkTrans.stride(), _knownEV, 1);
@@ -896,7 +896,7 @@ namespace Anasazi {
 		
 			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, rk->numRows(), rk->numCols(), ScalarOne, LkTrans.values(), LkTrans.stride(), rk->values(), rk->stride());
 			
-			BQtmp->MvPseudoDot(*KBQtmp, &vc);
+			BQtmp->MvDot(*KBQtmp, &vc, Anasazi::NO_CONJ);
 			ScalarType rho=vc[0];
 			Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType> (1,1);
 			H->multiply(Teuchos::TRANS, Teuchos::NO_TRANS, ScalarOne, *lk, *rk, ScalarZero); //rho+=lk*rk
