@@ -292,10 +292,10 @@ revert to their default values.
   int SetParameters( Teuchos::ParameterList &ParameterList ) ;
 
   //! Print timing information
-  void PrintTiming();
+  void PrintTiming() const;
   
   //! Print information about the factorization and solution phases.
-  void PrintStatus();
+  void PrintStatus() const;
   
   //@}
 

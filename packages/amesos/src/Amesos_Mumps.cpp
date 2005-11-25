@@ -808,7 +808,7 @@ int Amesos_Mumps::ComputeSchurComplement(bool flag, int NumSchurComplementRows,
 
 // ================================================ ====== ==== ==== == =
 
-void Amesos_Mumps::PrintStatus() 
+void Amesos_Mumps::PrintStatus() const
 {
 
   if( Comm().MyPID() != 0  ) return;
@@ -902,7 +902,7 @@ void Amesos_Mumps::CheckError()
 }
 
 // ================================================ ====== ==== ==== == =
-void Amesos_Mumps::PrintTiming()
+void Amesos_Mumps::PrintTiming() const
 {
   if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
     return;

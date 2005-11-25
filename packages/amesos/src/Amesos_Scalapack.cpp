@@ -998,7 +998,7 @@ int Amesos_Scalapack::Solve() {
 
 // ================================================ ====== ==== ==== == =
 
-void Amesos_Scalapack::PrintStatus() 
+void Amesos_Scalapack::PrintStatus() const
 {
 
   if( iam_ != 0  ) return;
@@ -1019,7 +1019,7 @@ void Amesos_Scalapack::PrintStatus()
 
 // ================================================ ====== ==== ==== == =
 
-void Amesos_Scalapack::PrintTiming()
+void Amesos_Scalapack::PrintTiming() const
 {
   if( iam_ ) return;
   

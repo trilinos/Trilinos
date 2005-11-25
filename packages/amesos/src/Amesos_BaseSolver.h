@@ -442,6 +442,11 @@ revert to their default values.
   //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
   virtual const Epetra_Comm & Comm() const = 0;
 
+  //! Prints status information about the current solver.
+  virtual void PrintStatus() const = 0;
+
+  //! Prints timing information about the current solver. 
+  virtual void PrintTiming() const = 0;
   //@}
 
 };

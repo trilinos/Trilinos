@@ -169,13 +169,13 @@ public:
     the various phases: symbolic and numeric factorization, solution,
     gather/scatter for vectors and matrices.
    */
-  void PrintTiming();
+  void PrintTiming() const;
   
   //! Prints information about the factorization and solution phases.
   /*! In the destruction phase, prints out some information furnished by
     MUMPS, like the amount of required memory, the MFLOPS.
    */
-  void PrintStatus();
+  void PrintStatus() const;
 
   //@}
 

@@ -409,7 +409,7 @@ int Amesos_Lapack::DenseToFactored()
 }
 
 // ================================================ ====== ==== ==== == =
-void Amesos_Lapack::PrintStatus()
+void Amesos_Lapack::PrintStatus() const
 {
   if (MyPID_) return;
 
@@ -437,7 +437,7 @@ void Amesos_Lapack::PrintStatus()
 }
 
 // ================================================ ====== ==== ==== == =
-void Amesos_Lapack::PrintTiming()
+void Amesos_Lapack::PrintTiming() const
 {
   if (MyPID_ != 0) return;
 
