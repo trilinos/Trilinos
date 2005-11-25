@@ -81,6 +81,7 @@ Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
 
   Problem_ = &prob ; 
 
+  // I have to skip timing on this, because the Comm object is not done yet
   dCreate_Dense_Matrix( &(data_->X), 
 			0, 
 			0, 
@@ -119,7 +120,6 @@ Amesos_Superlu::~Amesos_Superlu(void)
 // ====================================================================== 
 int Amesos_Superlu::SetParameters(Teuchos::ParameterList &ParameterList) 
 {
-
   // retrive general parameters
 
   SetStatusParameters( ParameterList );
@@ -147,8 +147,8 @@ bool Amesos_Superlu::MatrixShapeOK() const
 // ======================================================================
 int Amesos_Superlu::ConvertToSerial() 
 { 
-
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Entering ConvertToSerial()" << endl ; 
+  ResetTime(0);
+  ResetTime(1);
 
   RowMatrixA_ = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   if (RowMatrixA_ == 0)
@@ -190,6 +190,7 @@ int Amesos_Superlu::ConvertToSerial()
     // MS // Set zero element if not present, possibly add
     // MS // something to the diagonal
     double AddToDiag = 0.0;
+    // FIXME??
 #if 0
     if (iam_ == 0)
     {
@@ -212,8 +213,9 @@ int Amesos_Superlu::ConvertToSerial()
     SerialCrsMatrixA_->FillComplete();
     SerialMatrix_ = SerialCrsMatrixA_.get();
   }
-  
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving ConvertToSerial()" << endl ; 
+
+  AddTime("matrix redistribution", 0);
+  AddTime("overhead", 1);
 
   return(0);
 }
@@ -240,10 +242,11 @@ int Amesos_Superlu::Factor()
   // I suppose that the matrix has already been formed on processor 0
   // as SerialMatrix_.
 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Entering Factor()" << endl ; 
-
+  ResetTime(0);
   if (iam_ == 0) 
   {
+    ResetTime(1);
+
     if (NumGlobalRows_ != SerialMatrix_->NumGlobalRows() ||
         NumGlobalRows_ != SerialMatrix_->NumGlobalCols() ||
         NumGlobalRows_ != SerialMatrix_->NumMyRows() ||
@@ -272,17 +275,15 @@ int Amesos_Superlu::Factor()
       ColIndicesV_.resize(MaxNumEntries_);
       RowValuesV_.resize(MaxNumEntries_);
     }
+
     for ( MyRow = 0; MyRow < NumGlobalRows_ ; MyRow++ ) {
       if ( SuperluCrs != 0 ) {
-	EPETRA_CHK_ERR( SuperluCrs->
-			ExtractMyRowView( MyRow, NzThisRow, RowValues, 
-					  ColIndices ) != 0 ) ;
+	AMESOS_CHK_ERR(SuperluCrs->ExtractMyRowView( MyRow, NzThisRow, RowValues, ColIndices )) ;
       }
       else {
-	EPETRA_CHK_ERR( SerialMatrix_->
-			ExtractMyRowCopy( MyRow, MaxNumEntries_, 
-					  NzThisRow, &RowValuesV_[0], 
-					  &ColIndicesV_[0] ) != 0 );
+	AMESOS_CHK_ERR(SerialMatrix_->ExtractMyRowCopy( MyRow, MaxNumEntries_, NzThisRow, &RowValuesV_[0], 
+					  &ColIndicesV_[0]));
+
 	RowValues =  &RowValuesV_[0];
 	ColIndices = &ColIndicesV_[0];
       }
@@ -296,6 +297,8 @@ int Amesos_Superlu::Factor()
     assert( NumGlobalRows_ == MyRow );
     Ap_[ NumGlobalRows_ ] = Ai_index ; 
 
+    AddTime("overhead", 1);
+
     if ( FactorizationDone_ ) { 
       Destroy_SuperMatrix_Store(&data_->A);
       Destroy_SuperNode_Matrix(&data_->L);
@@ -307,7 +310,9 @@ int Amesos_Superlu::Factor()
 			    NumGlobalNonzeros_, &Aval_[0],
 			    &Ai_[0], &Ap_[0], SLU_NR, SLU_D, SLU_GE );
   }
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving Factor()" << endl ; 
+
+  AddTime("matrix conversion", 0);
+
   return 0;
 }   
 
@@ -319,9 +324,10 @@ int Amesos_Superlu::ReFactor()
   // there I have SerialMatrix_ stored at it should. 
   // Only processor 0 does something useful here.
 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Entering ReFactor()" << endl ; 
   if (iam_ == 0) 
   {
+    ResetTime(1);
+
     if (NumGlobalRows_ != SerialMatrix_->NumGlobalRows() ||
         NumGlobalRows_ != SerialMatrix_->NumGlobalCols() ||
         NumGlobalRows_ != SerialMatrix_->NumMyRows() ||
@@ -351,15 +357,11 @@ int Amesos_Superlu::ReFactor()
     }
     for ( MyRow = 0; MyRow < NumGlobalRows_ ; MyRow++ ) {
       if ( SuperluCrs != 0 ) {
-	EPETRA_CHK_ERR( SuperluCrs->
-			ExtractMyRowView( MyRow, NzThisRow, RowValues, 
-					  ColIndices ) != 0 ) ;
+	AMESOS_CHK_ERR(SuperluCrs->ExtractMyRowView(MyRow, NzThisRow, RowValues, ColIndices));
       }
       else {
-	EPETRA_CHK_ERR( SerialMatrix_->
-			ExtractMyRowCopy( MyRow, MaxNumEntries_, 
-					  NzThisRow, &RowValuesV_[0], 
-					  &ColIndicesV_[0] ) != 0 );
+	AMESOS_CHK_ERR(SerialMatrix_->ExtractMyRowCopy(MyRow, MaxNumEntries_,NzThisRow, &RowValuesV_[0], 
+                                                       &ColIndicesV_[0]));
 	RowValues =  &RowValuesV_[0];
 	ColIndices = &ColIndicesV_[0];
       }
@@ -376,6 +378,8 @@ int Amesos_Superlu::ReFactor()
     assert( NumGlobalRows_ == MyRow );
     Ap_[ NumGlobalRows_ ] = Ai_index ; 
     
+    AddTime("overhead", 1);
+
     assert ( FactorizationDone_ ) ; 
     Destroy_SuperMatrix_Store(&data_->A);
     Destroy_SuperNode_Matrix(&data_->L);
@@ -385,7 +389,7 @@ int Amesos_Superlu::ReFactor()
 			    NumGlobalNonzeros_, &Aval_[0],
 			    &Ai_[0], &Ap_[0], SLU_NR, SLU_D, SLU_GE );
   }
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving ReFactor()" << endl ; 
+
   return 0;
 }
 //
@@ -400,9 +404,9 @@ int Amesos_Superlu::SymbolicFactorization()
 // ======================================================================
 int Amesos_Superlu::NumericFactorization() 
 {
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Entering NumericFactorization()" << endl ; 
-  InitTime(Comm());
-  ResetTime();
+  InitTime(Comm(), 2);
+
+  ResetTime(0);
 
   ConvertToSerial(); 
 
@@ -474,25 +478,22 @@ int Amesos_Superlu::NumericFactorization()
 
   FactorizationDone_ = true; 
 
-  AddTime("numeric");
+  AddTime("numeric", 0);
 
   ++NumNumericFact_;
 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving NumericFactorization()" << endl ; 
   return(0);
 }
 
 // ====================================================================== 
 int Amesos_Superlu::Solve() 
 { 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Entering Solve()" << endl ; 
-
   if (!FactorizationDone_) {
     FactorizationOK_ = false;
     AMESOS_CHK_ERR(NumericFactorization());
   }
 
-  ResetTime();
+  ResetTime(1); // for "overhead'
 
   Epetra_MultiVector* vecX = Problem_->GetLHS(); 
   Epetra_MultiVector* vecB = Problem_->GetRHS(); 
@@ -521,13 +522,19 @@ int Amesos_Superlu::Solve()
   } 
   else 
   { 
+    ResetTime(0);
+
     SerialX = new Epetra_MultiVector(SerialMap(), nrhs); 
     SerialB = new Epetra_MultiVector(SerialMap(), nrhs); 
 
     SerialB->Import(*vecB, ImportToSerial(), Insert);
     SerialB = SerialB; 
     SerialX = SerialX; 
+
+    AddTime("vector redistribution", 0);
   } 
+
+  ResetTime(0);
 
   // Call SUPERLU's dgssvx to perform the solve
   // At this point I have, on processor 0, the solution vector
@@ -578,6 +585,8 @@ int Amesos_Superlu::Solve()
 	    &ferr_[0], &berr_[0], &(data_->mem_usage), &Ierr[0] );
 #endif
 
+    AddTime("overhead", 1); // NOTE: only timings on processor 0 will be meaningful
+
     SuperLUStat_t SLU_stat ;
     StatInit( &SLU_stat ) ;//    Copy the scheme used in dgssvx1.c 
     data_->SLU_options.Fact = FACTORED ; 
@@ -599,61 +608,27 @@ int Amesos_Superlu::Solve()
     StatFree( &SLU_stat ) ; 
   }
 
+  AddTime("solve", 0);
+
+  ResetTime(1); // for "overhead'
+
   //
   //  Copy X back to the original vector
   // 
   if (Comm().NumProc() != 1) 
   { 
+    ResetTime(0);
+
     vecX->Export(*SerialX, ImportToSerial(), Insert);
     delete SerialB;
     delete SerialX;
+
+    AddTime("vector redistribution", 0);
   } 
 
   //  All processes should return the same error code
   if (Comm().NumProc() != 1)
     Comm().Broadcast(&Ierr, 1, 0); 
-
-#if 0 
-  // MS // compute vector norms, as done in Amesos_Mumps
-  if (ComputeVectorNorms_ == true) 
-  {
-    double NormLHS, NormRHS;
-    for (int i = 0 ; i < nrhs ; ++i) 
-    {
-      AMESOS_CHK_ERR((*vecX)(i)->Norm2(&NormLHS));
-      AMESOS_CHK_ERR((*vecB)(i)->Norm2(&NormRHS));
-      if (Comm().MyPID() == 0) 
-      {
-	cout << "Amesos_Superlu : vector " << i << ", ||x|| = " << NormLHS
-	     << ", ||b|| = " << NormRHS << endl;
-      }
-    }
-  }
-  
-  // MS // add compute true residual, as done in Amesos_Mumps
-  if (ComputeTrueResidual_) 
-  {
-    double Norm;
-    Epetra_MultiVector Ax(vecB->Map(),nrhs);
-    for (int i = 0 ; i < nrhs ; ++i) 
-    {
-      (RowMatrixA_->Multiply(UseTranspose(), *((*vecX)(i)), Ax));
-      (Ax.Update(1.0, *((*vecB)(i)), -1.0));
-      (Ax.Norm2(&Norm));
-      
-      //
-      //  In Amesos_Klu, verbose_ turns this print statement on 
-      //
-      if (false && Comm().MyPID() == 0) 
-      {
-	cout << "Amesos_Superlu : Vector " << i << ", ||Ax - b|| = " << Norm << endl;
-      }
-    }
-  }
-  
-  SolTime_+= Time_->ElapsedTime();
-#else
-  AddTime("solve");
 
   if (ComputeTrueResidual_)
     ComputeTrueResidual(*(GetProblem()->GetMatrix()), *vecX, *vecB, 
@@ -662,12 +637,11 @@ int Amesos_Superlu::Solve()
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*vecX, *vecB, "Amesos_Superlu");
 
-#endif
+  AddTime("overhead", 1);
+
   ++NumSolve_;
 
-  if ( debug_ ) cout << __FILE__ << "::" << __LINE__ << " Leaving Solve()" << endl ; 
-
-  return(Ierr);
+  AMESOS_RETURN(Ierr);
 }
 
 // ================================================ ====== ==== ==== == =
@@ -702,8 +676,12 @@ void Amesos_Superlu::PrintTiming() const
   if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
     return;
 
+  double ConTime = GetTime("conversion");
+  double MatTime = GetTime("matrix redistribution");
+  double VecTime = GetTime("vector redistribution");
   double NumTime = GetTime("numeric");
   double SolTime = GetTime("solve");
+  double OveTime = GetTime("overhead");
 
   if (NumNumericFact_)
     NumTime /= NumNumericFact_;
@@ -714,14 +692,25 @@ void Amesos_Superlu::PrintTiming() const
   string p = "Amesos_Superlu : ";
   PrintLine();
 
-  cout << p << "Number of numeric factorizations = "
-       << NumNumericFact_ << endl;
+  cout << p << "Time to convert matrix to SuperLU format = " << ConTime << " (s)" << endl;
+  cout << p << "Time to redistribute matrix = " << MatTime << " (s)" << endl;
+  cout << p << "Time to redistribute vectors = " << VecTime << " (s)" << endl;
+  cout << p << "Number of numeric factorizations = " << NumNumericFact_ << endl;
   cout << p << "Time for num fact = "
-       << NumTime << " (s), avg = " << NumTime << " (s)" << endl;
-  cout << p << "Number of solve phases = "
-       << NumSolve_ << endl;
+       << NumTime * NumNumericFact_ << " (s), avg = " 
+       << NumTime << " (s)" << endl;
+  cout << p << "Number of solve phases = " << NumSolve_ << endl;
   cout << p << "Time for solve = "
-       << SolTime << " (s), avg = " << SolTime << " (s)" << endl;
+       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << endl;
+  double tt = NumTime * NumNumericFact_ + SolTime * NumSolve_;
+  if (tt != 0)
+  {
+    cout << p << "Total time spent in Amesos = " << tt << " (s) " << endl;
+    cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << endl;
+    cout << p << "(the above time does not include SuperLU time)" << endl;
+    cout << p << "Amesos interface time / total time = " << OveTime / tt << endl;
+  }
+
 
   PrintLine();
 

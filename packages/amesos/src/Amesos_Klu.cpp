@@ -57,9 +57,6 @@ public:
 #endif 
 } ;
 
-
-
-
 //=============================================================================
 Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   PrivateKluData_( rcp( new Amesos_Klu_Pimpl() ) ),
@@ -116,7 +113,6 @@ int Amesos_Klu::ExportToSerial()
 	AMESOS_CHK_ERR( -3 );
       }
     }
-
   }
   
   return 0;
@@ -131,8 +127,7 @@ int Amesos_Klu::ExportToSerial()
 
 int Amesos_Klu::CreateLocalMatrixAndExporters() 
 {
-
-  ResetTime();
+  ResetTime(0);
 
   RowMatrixA_ = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   if (RowMatrixA_ == 0) AMESOS_CHK_ERR(-1);
@@ -219,9 +214,10 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
     SerialCrsMatrixA_ = rcp( new Epetra_CrsMatrix(Copy, *SerialMap_, 0) ) ;
     SerialMatrix_ = &*SerialCrsMatrixA_ ;
   }
-AddTime("matrix redistribution");
 
-return 0;
+  AddTime("matrix redistribution", 0);
+
+  return(0);
 }
 
 //=============================================================================
@@ -242,9 +238,7 @@ return 0;
 //
 int Amesos_Klu::ConvertToKluCRS(bool firsttime)
 {
-
-  ResetTime();
-    
+  ResetTime(0);
 
   //
   //  Convert matrix to the form that Klu expects (Ap, VecAi, VecAval)
@@ -343,7 +337,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime)
     }
   }
 
-  AddTime("matrix conversion");
+  AddTime("matrix conversion", 0);
 
   return 0;
 }
@@ -381,7 +375,7 @@ int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
 //=============================================================================
 int Amesos_Klu::PerformSymbolicFactorization() 
 {
-  ResetTime();
+  ResetTime(0);
 
   if (MyPID_ == 0) {
 #if 0
@@ -396,7 +390,7 @@ int Amesos_Klu::PerformSymbolicFactorization()
     //    if ( PrivateKluData_->Symbolic_ == 0 ) AMESOS_CHK_ERR( 1 ) ;
   }
 
-  AddTime("symbolic");
+  AddTime("symbolic", 0);
 
   return 0;
 }
@@ -404,7 +398,12 @@ int Amesos_Klu::PerformSymbolicFactorization()
 //=============================================================================
 int Amesos_Klu::PerformNumericFactorization( ) 
 {
-  if (! TrustMe_ )   ResetTime();
+  // Changed this; it was "if (!TrustMe)...
+  // The behavior is not intuitive. Maybe we should introduce a new
+  // parameter, FastSolvers or something like that, that does not perform
+  // any AddTime, ResetTime, GetTime.
+  
+  ResetTime(0);
 
   if (MyPID_ == 0) {
 
@@ -467,7 +466,7 @@ int Amesos_Klu::PerformNumericFactorization( )
 
   }
 
-  if ( !TrustMe_ ) AddTime("numeric");
+  AddTime("numeric", 0);
 
   return 0;
 }
@@ -492,14 +491,14 @@ int Amesos_Klu::SymbolicFactorization()
   MyPID_    = Comm().MyPID();
   NumProcs_ = Comm().NumProc();
 
-
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
   
-  InitTime(Comm());
+  InitTime(Comm(), 2);
 
-  NumSymbolicFact_++;
+  ResetTime(1);
 
+  // "overhead" time for the following method is considered here
   AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
   assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols() );
 
@@ -524,11 +523,17 @@ int Amesos_Klu::SymbolicFactorization()
      }
   }
 
+  // "overhead" time for the following two methods is considered here
   AMESOS_CHK_ERR( ExportToSerial() );
 
   AMESOS_CHK_ERR( ConvertToKluCRS(true) );
 
+  AddTime("overhead", 1);
+
+  // All this time if KLU time
   AMESOS_CHK_ERR( PerformSymbolicFactorization() );
+
+  NumSymbolicFact_++;
 
   IsSymbolicFactorizationOK_ = true;
   
@@ -538,14 +543,14 @@ int Amesos_Klu::SymbolicFactorization()
 //=============================================================================
 int Amesos_Klu::NumericFactorization() 
 {
-
-  if ( !TrustMe_ ) { 
+  if ( !TrustMe_ ) 
+  { 
     IsNumericFactorizationOK_ = false;
     if (IsSymbolicFactorizationOK_ == false)
       AMESOS_CHK_ERR(SymbolicFactorization());
     
-    NumNumericFact_++;
-    
+    ResetTime(1); // "overhead" time
+
     Epetra_CrsMatrix *CrsMatrixA = dynamic_cast<Epetra_CrsMatrix *>(RowMatrixA_);
     if ( CrsMatrixA == 0 )   // hack to get around Bug #1502 
       AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
@@ -559,9 +564,14 @@ int Amesos_Klu::NumericFactorization()
     }  else {
       AMESOS_CHK_ERR( ConvertToKluCRS(false) );
     }
+
+    AddTime("overhead", 1);
   }
 
+  // this time is all for KLU
   AMESOS_CHK_ERR( PerformNumericFactorization() );
+
+  NumNumericFact_++;
 
   IsNumericFactorizationOK_ = true;
   
@@ -571,7 +581,6 @@ int Amesos_Klu::NumericFactorization()
 //=============================================================================
 int Amesos_Klu::Solve() 
 {
-
   Epetra_MultiVector* vecX ;
   Epetra_MultiVector* vecB ;
 
@@ -586,8 +595,8 @@ int Amesos_Klu::Solve()
     if (IsNumericFactorizationOK_ == false)
       AMESOS_CHK_ERR(NumericFactorization());
     
-    ++NumSolve_;
-    
+    ResetTime(1);
+
     //
     //  Reindex the LHS and RHS 
     //
@@ -611,7 +620,7 @@ int Amesos_Klu::Solve()
     
     //  Extract Serial versions of X and B
     
-    ResetTime();
+    ResetTime(0);
 
     //  Copy B to the serial version of B
     //
@@ -621,7 +630,6 @@ int Amesos_Klu::Solve()
       NumVectors_ = Problem_->GetRHS()->NumVectors() ; 
     } else {
       assert (UseDataInPlace_ == 0);
-
       
       if( NumVectors_ != Problem_->GetRHS()->NumVectors() ) {
 	NumVectors_ = Problem_->GetRHS()->NumVectors() ; 
@@ -638,17 +646,19 @@ int Amesos_Klu::Solve()
       SerialB_ = &*SerialBextract_ ;
       SerialX_ = &*SerialXextract_ ;
     }
-    AddTime("vector redistribution");
+    AddTime("vector redistribution", 0);
 
     //  Call KLU to perform the solve
     
-    ResetTime();
+    ResetTime(0);
     if (MyPID_ == 0) {
       AMESOS_CHK_ERR(SerialB_->ExtractView(&SerialBvalues_,&SerialXlda_ ));
       AMESOS_CHK_ERR(SerialX_->ExtractView(&SerialXBvalues_,&SerialXlda_ ));
       if (SerialXlda_ != NumGlobalElements_)
 	AMESOS_CHK_ERR(-1);
     }
+
+    AddTime("overhead", 1);
   }
   if ( MyPID_ == 0) {
     if ( NumVectors_ == 1 ) {
@@ -666,33 +676,35 @@ int Amesos_Klu::Solve()
     }
   }
 
-  if ( !TrustMe_ ) { 
-    AddTime("solve");
-    
-    //  Copy X back to the original vector
-    
-    ResetTime();
-    
-    if (UseDataInPlace_ == 0) {
-      ImportDomainToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecX->Map() ) );
-      vecX->Export( *SerialX_, *ImportDomainToSerial_, Insert ) ;
-      
-    } // otherwise we are already in place.
-    
-    AddTime("vector redistribution");
+  AddTime("solve", 0);
+
+  //  Copy X back to the original vector
+
+  ResetTime(0);
+  ResetTime(1);
+
+  if (UseDataInPlace_ == 0) {
+    ImportDomainToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecX->Map() ) );
+    vecX->Export( *SerialX_, *ImportDomainToSerial_, Insert ) ;
+
+  } // otherwise we are already in place.
+
+  AddTime("vector redistribution", 0);
 
 #if 0
-    //
-    //  ComputeTrueResidual causes TestOptions to fail on my linux box 
-    //  Bug #1147
-    if (ComputeTrueResidual_)
-      ComputeTrueResidual(*SerialMatrix_, *vecX, *vecB, UseTranspose(), "Amesos_Klu");
+  //
+  //  ComputeTrueResidual causes TestOptions to fail on my linux box 
+  //  Bug #1147
+  if (ComputeTrueResidual_)
+    ComputeTrueResidual(*SerialMatrix_, *vecX, *vecB, UseTranspose(), "Amesos_Klu");
 #endif
-    
-    if (ComputeVectorNorms_)
-      ComputeVectorNorms(*vecX, *vecB, "Amesos_Klu");
-    
-  }
+
+  if (ComputeVectorNorms_)
+    ComputeVectorNorms(*vecX, *vecB, "Amesos_Klu");
+
+  AddTime("overhead", 1);
+
+  ++NumSolve_;
 
   return(0) ;
 }
@@ -732,6 +744,7 @@ void Amesos_Klu::PrintTiming() const
   double SymTime = GetTime("symbolic");
   double NumTime = GetTime("numeric");
   double SolTime = GetTime("solve");
+  double OveTime = GetTime("overhead");
 
   if (NumSymbolicFact_)
     SymTime /= NumSymbolicFact_;
@@ -754,15 +767,24 @@ void Amesos_Klu::PrintTiming() const
   cout << p << "Number of symbolic factorizations = "
        << NumSymbolicFact_ << endl;
   cout << p << "Time for sym fact = "
-       << SymTime << " (s), avg = " << SymTime << " (s)" << endl;
+       << SymTime * NumSymbolicFact_ << " (s), avg = " << SymTime << " (s)" << endl;
   cout << p << "Number of numeric factorizations = "
        << NumNumericFact_ << endl;
   cout << p << "Time for num fact = "
-       << NumTime << " (s), avg = " << NumTime << " (s)" << endl;
+       << NumTime * NumNumericFact_ << " (s), avg = " << NumTime << " (s)" << endl;
   cout << p << "Number of solve phases = "
        << NumSolve_ << endl;
   cout << p << "Time for solve = "
-       << SolTime << " (s), avg = " << SolTime << " (s)" << endl;
+       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << endl;
+
+  double tt = SymTime * NumSymbolicFact_ + NumTime * NumNumericFact_ + SolTime * NumSolve_;
+  if (tt != 0)
+  {
+    cout << p << "Total time spent in Amesos = " << tt << " (s) " << endl;
+    cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << endl;
+    cout << p << "(the above time does not include KLU time)" << endl;
+    cout << p << "Amesos interface time / total time = " << OveTime / tt << endl;
+  }
 
   PrintLine();
 

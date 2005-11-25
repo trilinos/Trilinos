@@ -233,7 +233,7 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList )
 // ====================================================================== 
 int Amesos_Superludist::RedistributeA()
 {
-  ResetTime();
+  ResetTime(0);
   
   if (NumGlobalRows_ != RowMatrixA_->NumGlobalRows())
     AMESOS_CHK_ERR(-1); // something has changed
@@ -269,7 +269,7 @@ int Amesos_Superludist::RedistributeA()
   CrsUniformMatrix_->Import(*RowMatrixA_, Importer(), Add); 
   CrsUniformMatrix_->FillComplete(); 
 
-  AddTime("matrix conversion");
+  AddTime("matrix conversion", 0);
   
   return(0);
 }
@@ -277,6 +277,8 @@ int Amesos_Superludist::RedistributeA()
 // ====================================================================== 
 int Amesos_Superludist::Factor()
 {
+  ResetTime(1); // for "overhead"
+
   // FIXME????
   //  For now, if you change the shape of a matrix, you need to 
   //  create a new Amesos instance.
@@ -314,7 +316,7 @@ int Amesos_Superludist::Factor()
 
   //  Extract Ai_, Ap_ and Aval_ from UniformMatrix_
 
-  ResetTime();
+  ResetTime(0);
 
   int MyActualFirstElement = UniformMatrix().RowMatrixRowMap().MinMyGID() ; 
   int NumMyElements = UniformMatrix().NumMyRows() ; 
@@ -376,6 +378,8 @@ int Amesos_Superludist::Factor()
   assert( NumMyElements == MyRow );
   Ap_[ NumMyElements ] = Ai_index ; 
 
+  AddTime("overhead", 1);
+
   //
   //  Setup Superlu's grid 
   //
@@ -397,8 +401,8 @@ int Amesos_Superludist::Factor()
     }
   }
 
-  AddTime("matrix conversion");
-  ResetTime();
+  AddTime("matrix conversion", 0);
+  ResetTime(0);
 
   //
   //  Only those processes in the grid participate from here on
@@ -479,7 +483,7 @@ int Amesos_Superludist::Factor()
     PStatFree(&stat);
   }
 
-  AddTime("numeric");
+  AddTime("numeric", 0);
 
   return 0;
 }
@@ -514,7 +518,8 @@ int Amesos_Superludist::Factor()
 //
 int Amesos_Superludist::ReFactor( ) 
 {
-  ResetTime();
+  ResetTime(0);
+  ResetTime(1);
 
   //
   //  Update Ai_ and Aval_ (while double checking Ap_)
@@ -523,8 +528,8 @@ int Amesos_Superludist::ReFactor( )
     if(CrsUniformMatrix().Import(*RowMatrixA_, Importer(), Insert)) 
       AMESOS_CHK_ERR(-4); 
 
-  AddTime("matrix redistribution");
-  ResetTime();
+  AddTime("matrix redistribution", 0);
+  ResetTime(0);
 
   const Epetra_CrsMatrix *SuperluCrs = dynamic_cast<const Epetra_CrsMatrix *>(&UniformMatrix());
 
@@ -565,8 +570,9 @@ int Amesos_Superludist::ReFactor( )
   }
   if( Ap_[ NumMyElements ] != Ai_index ) AMESOS_CHK_ERR(-4); 
 
-  AddTime("matrix conversion");
-  ResetTime();
+  AddTime("matrix conversion", 0);
+  AddTime("overhead", 1);
+  ResetTime(0);
 
   if (Comm().MyPID() < nprow_ * npcol_) {
 
@@ -586,7 +592,7 @@ int Amesos_Superludist::ReFactor( )
     AMESOS_CHK_ERR( info ) ;
   } 
 
-  AddTime("numeric");
+  AddTime("numeric", 0);
 
   return 0;
 }
@@ -622,7 +628,7 @@ int Amesos_Superludist::NumericFactorization()
   if (!MatrixShapeOK())
     AMESOS_CHK_ERR(-1); // matrix not square
 
-  InitTime(Comm());
+  InitTime(Comm(), 2);
 
   if (FactorizationOK_ && ReuseSymbolic_)
     ReFactor();
@@ -630,6 +636,7 @@ int Amesos_Superludist::NumericFactorization()
     Factor();
 
   FactorizationOK_ = true;   
+
   NumNumericFact_++;
   
   return(0);
@@ -649,6 +656,8 @@ int Amesos_Superludist::Solve()
   if (!FactorizationOK_)
     AMESOS_CHK_ERR(NumericFactorization());
 
+  ResetTime(1);
+
   Epetra_MultiVector* vecX = Problem_->GetLHS(); 
   Epetra_MultiVector* vecB = Problem_->GetRHS(); 
 
@@ -667,9 +676,9 @@ int Amesos_Superludist::Solve()
   if (Redistribute_) 
   {
     vec_uni = Teuchos::rcp(new Epetra_MultiVector(*UniformMap_, nrhs)); 
-    ResetTime();
+    ResetTime(0);
     vec_uni->Import(*vecB, Importer(), Insert);
-    AddTime("vector redistribution");
+    AddTime("vector redistribution", 0);
   } 
   else 
   {
@@ -680,7 +689,9 @@ int Amesos_Superludist::Solve()
   int NumMyElements = vec_uni->MyLength(); 
   AMESOS_CHK_ERR(vec_uni->ExtractView(&values, &ldx)); 
 
-  ResetTime();
+  AddTime("overhead", 1);
+
+  ResetTime(0);
   
   /* Bail out if I do not belong in the grid. */
   if (Comm().MyPID() < nprow_ * npcol_) 
@@ -703,13 +714,15 @@ int Amesos_Superludist::Solve()
     PStatFree(&stat);
   }
 
-  AddTime("solve");
+  AddTime("solve", 0);
+
+  ResetTime(1);
   
   if (Redistribute_) 
   {
-    ResetTime();
+    ResetTime(0);
     vecX->Export(*vec_uni, Importer(), Insert);
-    AddTime("vector redistribution");
+    AddTime("vector redistribution", 0);
   }
 
   if (ComputeTrueResidual_)
@@ -719,6 +732,7 @@ int Amesos_Superludist::Solve()
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*vecX, *vecB, "Amesos_Superludist");
 
+  AddTime("overhead", 1);
   NumSolve_++;
   
   return(0);
@@ -770,6 +784,7 @@ void Amesos_Superludist::PrintTiming() const
   double VecTime = GetTime("vector redistribution");
   double NumTime = GetTime("numeric");
   double SolTime = GetTime("solve");
+  double OveTime = GetTime("overhead");
 
   if (NumNumericFact_)
     NumTime /= NumNumericFact_;
@@ -792,11 +807,20 @@ void Amesos_Superludist::PrintTiming() const
   cout << p << "Number of numeric factorizations = "
        << NumNumericFact_ << endl;
   cout << p << "Time for num fact = "
-       << NumTime << " (s), avg = " << NumTime << " (s)" << endl;
+       << NumTime * NumNumericFact_ << " (s), avg = " << NumTime << " (s)" << endl;
   cout << p << "Number of solve phases = "
        << NumSolve_ << endl;
   cout << p << "Time for solve = "
-       << SolTime << " (s), avg = " << SolTime << " (s)" << endl;
+       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << endl;
+
+  double tt = NumTime * NumNumericFact_ + SolTime * NumSolve_;
+  if (tt != 0)
+  {
+    cout << p << "Total time spent in Amesos = " << tt << " (s) " << endl;
+    cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << endl;
+    cout << p << "(the above time does not include SuperLU_DIST time)" << endl;
+    cout << p << "Amesos interface time / total time = " << OveTime / tt << endl;
+  }
 
   PrintLine();
 

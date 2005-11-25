@@ -72,7 +72,8 @@ Amesos_Umfpack::~Amesos_Umfpack(void)
 // are updated.
 int Amesos_Umfpack::ConvertToSerial(const bool FirstTime) 
 { 
-  ResetTime();
+  ResetTime(0);
+  ResetTime(1);
   
   const Epetra_Map &OriginalMap = Matrix()->RowMatrixRowMap() ; 
 
@@ -119,7 +120,8 @@ int Amesos_Umfpack::ConvertToSerial(const bool FirstTime)
     SerialMatrix_ = &SerialCrsMatrix();
   }
 
-  AddTime("matrix redistribution");
+  AddTime("matrix redistribution", 0);
+  AddTime("overhead", 1);
   
   return(0);
 } 
@@ -127,7 +129,8 @@ int Amesos_Umfpack::ConvertToSerial(const bool FirstTime)
 //=============================================================================
 int Amesos_Umfpack::ConvertToUmfpackCRS()
 {
-  ResetTime();
+  ResetTime(0);
+  ResetTime(1);
   
   //  Convert matrix to the form that Umfpack expects (Ap, Ai, Aval) 
 
@@ -178,7 +181,8 @@ int Amesos_Umfpack::ConvertToUmfpackCRS()
     Ap[MyRow] = Ai_index ; 
   }
 
-  AddTime("matrix conversion");
+  AddTime("matrix conversion", 0);
+  AddTime("overhead", 1);
   
   return 0;
 }   
@@ -190,7 +194,6 @@ int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList )
   // retrive UMFPACK's parameters from list.   //
   // default values defined in the constructor //
   // ========================================= //
-  
 
   // retrive general parameters
   SetStatusParameters( ParameterList ) ;
@@ -202,10 +205,13 @@ int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList )
 //=============================================================================
 int Amesos_Umfpack::PerformSymbolicFactorization() 
 {
-  ResetTime();
-
+  ResetTime(0);  
+  ResetTime(1);
+  
   double *Control = (double *) NULL, *Info = (double *) NULL ;
   
+  AddTime("overhead", 1);
+
   if (Symbolic) 
     umfpack_di_free_symbolic (&Symbolic) ;
   if (MyPID_== 0) {
@@ -214,7 +220,7 @@ int Amesos_Umfpack::PerformSymbolicFactorization()
 				&Symbolic, Control, Info) ;
   }
 
-  AddTime("symbolic");
+  AddTime("symbolic", 0);
 
   return 0;
 }
@@ -222,7 +228,7 @@ int Amesos_Umfpack::PerformSymbolicFactorization()
 //=============================================================================
 int Amesos_Umfpack::PerformNumericFactorization( ) 
 {
-  ResetTime();
+  ResetTime(0);
 
   RcondValidOnAllProcs_ = false ; 
   if (MyPID_ == 0) {
@@ -282,12 +288,14 @@ int Amesos_Umfpack::PerformNumericFactorization( )
     assert( status == 0 ) ; 
   }
   
-  AddTime("numeric");
+  AddTime("numeric", 0);
+  // nothing for "overhead" since all operations are within UFMPACK
   return 0;
 }
 
 //=============================================================================
-double Amesos_Umfpack::GetRcond() const {
+double Amesos_Umfpack::GetRcond() const 
+{
   if ( !RcondValidOnAllProcs_ ) {
     Comm().Broadcast( &Rcond_, 1, 0 ) ; 
     RcondValidOnAllProcs_ = true; 
@@ -312,7 +320,19 @@ int Amesos_Umfpack::SymbolicFactorization()
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
 
-  InitTime(Comm());
+  InitTime(Comm(), 2);
+
+  ResetTime(0); // this will track all time spent in Amesos most
+                // important functions, *including* UMFPACK functions
+
+  ResetTime(1); // this will track all time spent in this function
+                // that is not due to UMFPACK calls, and therefore it
+                // tracks down how much Amesos costs. The timer starts
+                // and ends in *each* method, unless the method does not
+                // perform any real operation. If a method calls another
+                // method, the timer will be stopped before the called
+                // method, then restared.
+                // All the time of this timer goes into "overhead"
 
   MyPID_    = Comm().MyPID();
   NumProcs_ = Comm().NumProc();
@@ -325,6 +345,7 @@ int Amesos_Umfpack::SymbolicFactorization()
   PerformSymbolicFactorization();
 
   IsSymbolicFactorizationOK_ = false; 
+
   return 0;
 }
 
@@ -355,13 +376,12 @@ int Amesos_Umfpack::NumericFactorization()
 //=============================================================================
 int Amesos_Umfpack::Solve() 
 { 
-
-  NumSolve_++;
-
   // if necessary, perform numeric factorization. 
   // This may call SymbolicFactorization() as well.
   if (!IsNumericFactorizationOK_)
     AMESOS_CHK_ERR(NumericFactorization()); 
+
+  ResetTime(1);
 
   Epetra_MultiVector* vecX = Problem_->GetLHS(); 
   Epetra_MultiVector* vecB = Problem_->GetRHS(); 
@@ -385,7 +405,7 @@ int Amesos_Umfpack::Solve()
     
   //  Copy B to the serial version of B
   //
-  ResetTime();
+  ResetTime(0);
   
   if (IsLocal_ == 1) { 
     SerialB = vecB ; 
@@ -400,13 +420,15 @@ int Amesos_Umfpack::Solve()
     SerialX = SerialXextract; 
   } 
 
-  AddTime("vector redistribution");
+  AddTime("vector redistribution", 0);
   
   //  Call UMFPACK to perform the solve
   //  Note:  UMFPACK uses a Compressed Column Storage instead of compressed row storage, 
   //  Hence to compute A X = B, we ask UMFPACK to perform A^T X = B and vice versa
 
-  ResetTime();
+  AddTime("overhead", 1);
+
+  ResetTime(0);
 
   int SerialBlda, SerialXlda ; 
   int UmfpackRequest = UseTranspose()?UMFPACK_A:UMFPACK_At ;
@@ -433,11 +455,12 @@ int Amesos_Umfpack::Solve()
     }
   }
     
-  AddTime("solve");
+  AddTime("solve", 0);
   
   //  Copy X back to the original vector
   
-  ResetTime();
+  ResetTime(0);
+  ResetTime(1);
 
   if ( IsLocal_ == 0 ) {
     vecX->Export(*SerialX, Importer(), Insert ) ;
@@ -445,7 +468,7 @@ int Amesos_Umfpack::Solve()
     if (SerialXextract) delete SerialXextract ;
   }
 
-  AddTime("vector redistribution");
+  AddTime("vector redistribution", 0);
 
   if (ComputeTrueResidual_)
   {
@@ -460,6 +483,11 @@ int Amesos_Umfpack::Solve()
 
   if (status)
     AMESOS_CHK_ERR(status);
+
+  NumSolve_++;
+
+  AddTime("overhead", 1); // Amesos overhead
+
   return(0);
 }
 
@@ -495,6 +523,7 @@ void Amesos_Umfpack::PrintTiming() const
   double SymTime = GetTime("symbolic");
   double NumTime = GetTime("numeric");
   double SolTime = GetTime("solve");
+  double OveTime = GetTime("overhead");
 
   if (NumSymbolicFact_)
     SymTime /= NumSymbolicFact_;
@@ -517,15 +546,25 @@ void Amesos_Umfpack::PrintTiming() const
   cout << p << "Number of symbolic factorizations = "
        << NumSymbolicFact_ << endl;
   cout << p << "Time for sym fact = "
-       << SymTime << " (s), avg = " << SymTime << " (s)" << endl;
+       << SymTime * NumSymbolicFact_ << " (s), avg = " 
+       << SymTime << " (s)" << endl;
   cout << p << "Number of numeric factorizations = "
        << NumNumericFact_ << endl;
   cout << p << "Time for num fact = "
-       << NumTime << " (s), avg = " << NumTime << " (s)" << endl;
+       << NumTime * NumNumericFact_ << " (s), avg = " 
+       << NumTime << " (s)" << endl;
   cout << p << "Number of solve phases = "
        << NumSolve_ << endl;
   cout << p << "Time for solve = "
-       << SolTime << " (s), avg = " << SolTime << " (s)" << endl;
+       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << endl;
+  double tt = SymTime * NumSymbolicFact_ + NumTime * NumNumericFact_ + SolTime * NumSolve_;
+  if (tt != 0)
+  {
+    cout << p << "Total time spent in Amesos = " << tt << " (s) " << endl;
+    cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << endl;
+    cout << p << "(the above time does not include UMFPACK time)" << endl;
+    cout << p << "Amesos interface time / total time = " << OveTime / tt << endl;
+  }
 
   PrintLine();
 

@@ -75,7 +75,6 @@ Amesos_Dscpack::~Amesos_Dscpack(void)
 //=============================================================================
 int Amesos_Dscpack::SetParameters(Teuchos::ParameterList &ParameterList) 
 {
-
   // ========================================= //
   // retrive DSCPACK's parameters from list.   //
   // default values defined in the constructor //
@@ -101,7 +100,8 @@ int Amesos_Dscpack::SetParameters(Teuchos::ParameterList &ParameterList)
 //=============================================================================
 int Amesos_Dscpack::PerformSymbolicFactorization()
 {
-  ResetTime();
+  ResetTime(0);
+  ResetTime(1);
 
   MyPID_    = Comm().MyPID();
   NumProcs_ = Comm().NumProc();
@@ -184,9 +184,9 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   assert( Ai_index == numentries ) ; 
   Ap[ numrows ] = Ai_index ; 
   
-  AddTime("matrix conversion");
+  AddTime("matrix conversion", 0);
 
-  ResetTime();
+  ResetTime(0);
 
   //
   //  Call Dscpack Symbolic Factorization
@@ -245,6 +245,7 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
 
   // MS // here I continue with the old code...
   
+  AddTime("overhead", 1);
 
   DscNumProcs = 1 ; 
   int DscMax = DSC_Analyze( numrows, &Ap[0], &Ai[0], &Replicates[0] );
@@ -277,7 +278,7 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   
   //  A_and_LU_built = true;   // If you uncomment this, TestOptions fails
   
-  AddTime("symbolic");
+  AddTime("symbolic", 0);
 
   return(0);
 }
@@ -285,7 +286,8 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
 //=============================================================================
 int Amesos_Dscpack::PerformNumericFactorization()
 {
-  ResetTime();
+  ResetTime(0);
+  ResetTime(1);
 
   Epetra_RowMatrix* RowMatrixA = Problem_->GetMatrix();
   if (RowMatrixA == 0)
@@ -383,6 +385,8 @@ int Amesos_Dscpack::PerformNumericFactorization()
     }
   }
   
+  AddTime("overhead", 1);
+
   if ( MyDscRank >= 0 ) { 
     const int SchemeCode = 1; 
 #ifndef USE_LOCAL
@@ -396,12 +400,13 @@ int Amesos_Dscpack::PerformNumericFactorization()
   
   IsNumericFactorizationOK_ = true ; 
 
-  AddTime("numeric");
+  AddTime("numeric", 0);
   
-  return 0;
+  return(0);
 }
 
-bool Amesos_Dscpack::MatrixShapeOK() const { 
+bool Amesos_Dscpack::MatrixShapeOK() const 
+{
   bool OK =  GetProblem()->IsOperatorSymmetric() ;
 
   //
@@ -419,7 +424,7 @@ int Amesos_Dscpack::SymbolicFactorization()
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
   
-  InitTime(Comm());
+  InitTime(Comm(), 2);
 
   AMESOS_CHK_ERR(PerformSymbolicFactorization());
 
@@ -451,7 +456,8 @@ int Amesos_Dscpack::Solve()
   if (IsNumericFactorizationOK_ == false) 
     AMESOS_CHK_ERR(NumericFactorization());
 
-  ResetTime();
+  ResetTime(0);
+  ResetTime(1);
   
   Epetra_RowMatrix *RowMatrixA = Problem_->GetMatrix();
   if (RowMatrixA == 0)
@@ -489,12 +495,14 @@ int Amesos_Dscpack::Solve()
 
   AMESOS_CHK_ERR(dscmapB.Import(*vecB, Importer(), Insert));
 
-  AddTime("vector redistribution");
-  ResetTime();
+  AddTime("vector redistribution", 0);
+  ResetTime(0);
   
   // MS // now solve the problem
   
   vector<double> ValuesInNewOrder( NumLocalCols ) ;
+
+  AddTime("overhead", 1);
 
   if ( MyDscRank >= 0 ) {
     for ( int j =0 ; j < NumVectors; j++ ) { 
@@ -510,12 +518,13 @@ int Amesos_Dscpack::Solve()
     }
   }
 
-  AddTime("solve");
-  ResetTime();
+  AddTime("solve", 0);
+  ResetTime(0);
+  ResetTime(1);
 
   vecX->Export( dscmapX, Importer(), Insert ) ;
 
-  AddTime("vector redistribution");
+  AddTime("vector redistribution", 0);
 
   if (ComputeTrueResidual_)
     ComputeTrueResidual(*(GetProblem()->GetMatrix()), *vecX, *vecB, 
@@ -523,6 +532,7 @@ int Amesos_Dscpack::Solve()
 
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*vecX, *vecB, "Amesos_Dscpack");
+  AddTime("overhead", 1);
   
   NumSolve_++;
 
@@ -574,6 +584,7 @@ void Amesos_Dscpack::PrintTiming() const
   double SymTime = GetTime("symbolic");
   double NumTime = GetTime("numeric");
   double SolTime = GetTime("solve");
+  double OveTime = GetTime("overhead");
 
   if (NumSymbolicFact_)
     SymTime /= NumSymbolicFact_;
@@ -596,15 +607,24 @@ void Amesos_Dscpack::PrintTiming() const
   cout << p << "Number of symbolic factorizations = "
        << NumSymbolicFact_ << endl;
   cout << p << "Time for sym fact = "
-       << SymTime << " (s), avg = " << SymTime << " (s)" << endl;
+       << SymTime * NumSymbolicFact_ << " (s), avg = " << SymTime << " (s)" << endl;
   cout << p << "Number of numeric factorizations = "
        << NumNumericFact_ << endl;
   cout << p << "Time for num fact = "
-       << NumTime << " (s), avg = " << NumTime << " (s)" << endl;
+       << NumTime * NumNumericFact_ << " (s), avg = " << NumTime << " (s)" << endl;
   cout << p << "Number of solve phases = "
        << NumSolve_ << endl;
   cout << p << "Time for solve = "
-       << SolTime << " (s), avg = " << SolTime << " (s)" << endl;
+       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << endl;
+
+  double tt = SymTime * NumSymbolicFact_ + NumTime * NumNumericFact_ + SolTime * NumSolve_;
+  if (tt != 0)
+  {
+    cout << p << "Total time spent in Amesos = " << tt << " (s) " << endl;
+    cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << endl;
+    cout << p << "(the above time does not include DSCPACK time)" << endl;
+    cout << p << "Amesos interface time / total time = " << OveTime / tt << endl;
+  }
 
   PrintLine();
 
