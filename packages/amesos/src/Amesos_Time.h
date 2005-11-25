@@ -5,6 +5,7 @@
 #include "Epetra_Time.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include <vector>
 
 using namespace Teuchos;
 
@@ -21,8 +22,9 @@ class Amesos_Time
 {
 public:
 
-  //! Default constructor.
-  Amesos_Time()
+  //! Default constructor to create \c size timers.
+  Amesos_Time() :
+    size_(1)
   {}
 
   //! Default destructor.
@@ -30,21 +32,25 @@ public:
   {}
 
   //! Initializes the Time object.
-  inline void InitTime(const Epetra_Comm& Comm)
+  inline void InitTime(const Epetra_Comm& Comm, int size = 1)
   {
-    Time_ = rcp(new Epetra_Time(Comm));
+    size_ = size;
+    Time_.resize(size_);
+
+    for (int i = 0 ; i < size_ ; ++i)
+      Time_[i] = rcp(new Epetra_Time(Comm));
   }
 
   //! Resets the internally stored time object.
-  inline void ResetTime()
+  inline void ResetTime(const int i = 0)
   {
-    Time_->ResetStartTime();
+    Time_[i]->ResetStartTime();
   }
 
   //! Adds to field \c what the time elapsed since last call to ResetTime().
-  inline void AddTime(const string what)
+  inline void AddTime(const string what, const int i = 0)
   {
-    data_.set(what, data_.get(what,0.0) + Time_->ElapsedTime());
+    data_.set(what, data_.get(what,0.0) + Time_[i]->ElapsedTime());
   }
 
   //! Gets the comulative time for field \c what.
@@ -54,8 +60,11 @@ public:
   }
 
 private:
+  //! Number of Epetra_Time objects allocated in \c this object.
+  int size_;
+
   //! Time object.
-  RefCountPtr<Epetra_Time> Time_;
+  std::vector<RefCountPtr<Epetra_Time> > Time_;
   
   //! Container for all fields.
   mutable ParameterList data_;
