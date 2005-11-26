@@ -104,7 +104,7 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #endif
   } 
   
-  if ((CT == "Amesos_Umfpack") || (CT == "UmfpacK")) { 
+  if ((CT == "Amesos_Umfpack") || (CT == "Umfpack")) { 
 #ifdef HAVE_AMESOS_UMFPACK
     return new Amesos_Umfpack(LinearProblem); 
 #else
