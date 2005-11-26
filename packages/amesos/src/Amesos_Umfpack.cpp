@@ -132,52 +132,35 @@ int Amesos_Umfpack::ConvertToUmfpackCRS()
   ResetTime(0);
   ResetTime(1);
   
-  //  Convert matrix to the form that Umfpack expects (Ap, Ai, Aval) 
+  // Convert matrix to the form that Umfpack expects (Ap, Ai, Aval),
+  // only on processor 0. The matrix has already been assembled in
+  // SerialMatrix_; if only one processor is used, then SerialMatrix_
+  // points to the problem's matrix.
 
-  assert( NumGlobalElements_ == SerialMatrix_->NumGlobalRows());
-  assert( NumGlobalElements_ == SerialMatrix_->NumGlobalCols());
-  assert( numentries_ == SerialMatrix_->NumGlobalNonzeros());
-  Ap.resize( NumGlobalElements_+1 );
-  Ai.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
-  Aval.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
+  if (MyPID_ == 0) 
+  {
+    Ap.resize( NumGlobalElements_+1 );
+    Ai.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
+    Aval.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
 
-  int NumEntries = SerialMatrix_->MaxNumEntries();
-  vector<int> Indices;
-  vector<double> Values;
-  Indices.resize(NumEntries);
-  Values.resize(NumEntries);
-  
-  if (MyPID_ == 0) {
+    int NumEntries = SerialMatrix_->MaxNumEntries();
 
     int NumEntriesThisRow;
     int Ai_index = 0 ; 
     int MyRow;
-    for (MyRow = 0 ; MyRow < NumGlobalElements_; MyRow++) {
-
+    for (MyRow = 0 ; MyRow < NumGlobalElements_; MyRow++) 
+    {
       int ierr;
+      Ap[MyRow] = Ai_index ; 
       ierr = SerialMatrix_->ExtractMyRowCopy(MyRow, NumEntries, 
 					     NumEntriesThisRow, 
-					     &Values[0], &Indices[0]);
+					     &Aval[Ai_index], &Ai[Ai_index]);
       if (ierr)
 	AMESOS_CHK_ERR(-1);
 
-      // MS // added on 15-Mar-05
-      if (AddToDiag_ != 0.0) {
-        for (int i = 0 ; i < NumEntriesThisRow ; ++i) {
-          if (Indices[i] == MyRow) {
-            Values[i] += AddToDiag_;
-            break;
-          }
-        }
-      }
-
-      Ap[MyRow] = Ai_index ; 
-      for ( int j = 0; j < NumEntriesThisRow; j++ ) { 
-	Ai[Ai_index] = Indices[j] ; 
-	Aval[Ai_index] = Values[j] ; 
-	Ai_index++;
-      }
+      Ai_index += NumEntriesThisRow;
     }
+
     Ap[MyRow] = Ai_index ; 
   }
 
@@ -205,13 +188,11 @@ int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList )
 //=============================================================================
 int Amesos_Umfpack::PerformSymbolicFactorization() 
 {
+  // MS // no overhead time in this method
   ResetTime(0);  
-  ResetTime(1);
   
-  double *Control = (double *) NULL, *Info = (double *) NULL ;
+  double *Control = (double *) NULL, *Info = (double *) NULL;
   
-  AddTime("overhead", 1);
-
   if (Symbolic) 
     umfpack_di_free_symbolic (&Symbolic) ;
   if (MyPID_== 0) {
@@ -228,6 +209,7 @@ int Amesos_Umfpack::PerformSymbolicFactorization()
 //=============================================================================
 int Amesos_Umfpack::PerformNumericFactorization( ) 
 {
+  // MS // no overhead time in this method
   ResetTime(0);
 
   RcondValidOnAllProcs_ = false ; 
@@ -289,7 +271,7 @@ int Amesos_Umfpack::PerformNumericFactorization( )
   }
   
   AddTime("numeric", 0);
-  // nothing for "overhead" since all operations are within UFMPACK
+
   return 0;
 }
 
@@ -466,7 +448,6 @@ int Amesos_Umfpack::Solve()
     
     for ( int j =0 ; j < NumVectors; j++ ) { 
       double *Control = (double *) NULL, *Info = (double *) NULL ;
-
 
       status = umfpack_di_solve (UmfpackRequest, &Ap[0], 
 				     &Ai[0], &Aval[0], 

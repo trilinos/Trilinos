@@ -184,8 +184,8 @@ int main(int argc, char *argv[])
     return(EXIT_SUCCESS);
   }
 
-  Solver->SymbolicFactorization();
-  Solver->NumericFactorization();
+  // Calling solve to compute the solution. This calls the symbolic
+  // factorization and the numeric factorization.
   Solver->Solve();
 
   // =========================================== //
