@@ -75,7 +75,19 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  string matrix_file = "662_bus.rsa"; // file containing the HB matrix.
+  string matrix_file;
+  string solver_type;
+
+  if (argc > 1)
+    matrix_file = argv[1]; // read it from command line
+  else
+    matrix_file = "matrix.rsa"; // file containing the HB matrix.
+
+  if (argc > 2)
+    solver_type = argv[2]; // read it form command line
+  else
+    solver_type = "Klu"; // default
+
   if (Comm.MyPID() == 0)
     cout << "Reading matrix `" << matrix_file << "'";
   
@@ -149,21 +161,26 @@ int main(int argc, char *argv[])
   // B E G I N N I N G   O F   T H E   A M E S O S   P A R T //
   // ======================================================= //
 
+  if (!Comm.MyPID()) 
+    cout << "Calling Amesos..." << endl;
+
   // For comments on the commands in this section, please
   // see file example_AmesosFactory.cpp.
   
-  string SolverType = "Klu";
   Amesos_BaseSolver* Solver = 0;
   Amesos Factory;
   
-  Solver = Factory.Create(SolverType,Problem);
+  Solver = Factory.Create(solver_type,Problem);
 
   // Factory.Create() returns 0 if the requested solver
   // is not available
   if (Solver == 0) {
-    cerr << "Selected solver is not available" << endl;
+    cerr << "Selected solver (" << solver_type << ") is not available" << endl;
     // return ok not to break test harness even if
     // the solver is not available
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     return(EXIT_SUCCESS);
   }
 
@@ -185,7 +202,10 @@ int main(int argc, char *argv[])
   Ax.Norm2(&residual);
 
   if (!Comm.MyPID()) 
-    cout << "After AMESOS solution, ||b-Ax||_2 = " << residual << endl;
+    cout << "After Amesos solution, ||b - A * x||_2 = " << residual << endl;
+
+  Solver->PrintStatus();
+  Solver->PrintTiming();
 
   // delete Solver. Do this before calling MPI_Finalize() because
   // MPI calls can occur.
