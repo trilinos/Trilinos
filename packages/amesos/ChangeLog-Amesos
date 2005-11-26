@@ -27,7 +27,26 @@ Amesos -- History of visible changes
 ====================================
 
 This file reports (some of) the visible changes to Amesos.
-Please submit Amesos bugs at software.sandia.gov/buzgilla.
+Please submit Amesos bugs at software.sandia.gov/bugzilla.
+
+------------------------------------------------------------------------------
+
+Nov 2005
+
+*) Increases the performances of the UMFPACK interface by a factor of
+   at least 2. This means that the time requires by the Amesos wrappers
+   is reduced by 2 -- the time required by UMFPACK still is unaffected.
+   [M. Sala]
+
+*) Added to (almost) all classes profiling to evaluate how much time
+   is spent in the amesos wrappers (that is, without considering any
+   of the time spent in the called solver). This time is printed on
+   screen when PrintTiming() is called.
+   [M. Sala]
+
+*) Added methods PrintStatus() and PrintTiming() to the Amesos_BaseSolver 
+   class.
+   [M. Sala]
 
 ------------------------------------------------------------------------------
 
