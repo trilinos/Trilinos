@@ -264,38 +264,19 @@ int Amesos_Superlu::Factor()
     int NzThisRow ;
     int Ai_index = 0 ; 
     int MyRow;
-    double *RowValues;
-    int *ColIndices;
-    vector<int> ColIndicesV_;
-    vector<double> RowValuesV_;
     int MaxNumEntries_ = SerialMatrix_->MaxNumEntries();
 
-    Epetra_CrsMatrix *SuperluCrs = dynamic_cast<Epetra_CrsMatrix *>(SerialMatrix_);
-    if ( SuperluCrs == 0 ) {
-      ColIndicesV_.resize(MaxNumEntries_);
-      RowValuesV_.resize(MaxNumEntries_);
+    for (MyRow = 0; MyRow < NumGlobalRows_ ; MyRow++ ) 
+    {
+      Ap_[MyRow] = Ai_index; 
+      int ierr;
+      ierr = SerialMatrix_->ExtractMyRowCopy(MyRow, MaxNumEntries_, NzThisRow, 
+                                             &Aval_[Ai_index], &Ai_[Ai_index]);
+      AMESOS_CHK_ERR(ierr);
+      Ai_index += NzThisRow;
     }
 
-    for ( MyRow = 0; MyRow < NumGlobalRows_ ; MyRow++ ) {
-      if ( SuperluCrs != 0 ) {
-	AMESOS_CHK_ERR(SuperluCrs->ExtractMyRowView( MyRow, NzThisRow, RowValues, ColIndices )) ;
-      }
-      else {
-	AMESOS_CHK_ERR(SerialMatrix_->ExtractMyRowCopy( MyRow, MaxNumEntries_, NzThisRow, &RowValuesV_[0], 
-					  &ColIndicesV_[0]));
-
-	RowValues =  &RowValuesV_[0];
-	ColIndices = &ColIndicesV_[0];
-      }
-      Ap_[MyRow] = Ai_index ; 
-      for ( int j = 0; j < NzThisRow; j++ ) { 
-	Ai_[Ai_index] = ColIndices[j] ; 
-	Aval_[Ai_index] = RowValues[j] ; 
-	Ai_index++;
-      }
-    }
-    assert( NumGlobalRows_ == MyRow );
-    Ap_[ NumGlobalRows_ ] = Ai_index ; 
+    Ap_[NumGlobalRows_] = Ai_index; 
 
     AddTime("overhead", 1);
 
@@ -311,11 +292,13 @@ int Amesos_Superlu::Factor()
 			    &Ai_[0], &Ap_[0], SLU_NR, SLU_D, SLU_GE );
   }
 
-  AddTime("matrix conversion", 0);
+  AddTime("conversion", 0);
 
   return 0;
 }   
 
+// ====================================================================== 
+// MS // What is the difference between ReFactor() and Factor()?
 // ====================================================================== 
 int Amesos_Superlu::ReFactor()
 {
@@ -392,7 +375,7 @@ int Amesos_Superlu::ReFactor()
 
   return 0;
 }
-//
+
 // ====================================================================== 
 int Amesos_Superlu::SymbolicFactorization() 
 {
@@ -420,10 +403,10 @@ int Amesos_Superlu::NumericFactorization()
 
   set_default_options( &SLUopt ) ; 
   if (FactorizationOK_) {
-    ReFactor() ; 
+    AMESOS_CHK_ERR(ReFactor());
     SLUopt.Fact = data_->refactor_option ;
   }  else { 
-    Factor() ; 
+    AMESOS_CHK_ERR(Factor());
     FactorizationOK_ = true;
     SLUopt.Fact = DOFACT;
   }
@@ -476,9 +459,9 @@ int Amesos_Superlu::NumericFactorization()
     StatFree( &SLU_stat ) ; 
   }
 
-  FactorizationDone_ = true; 
-
   AddTime("numeric", 0);
+
+  FactorizationDone_ = true; 
 
   ++NumNumericFact_;
 
@@ -626,10 +609,6 @@ int Amesos_Superlu::Solve()
     AddTime("vector redistribution", 0);
   } 
 
-  //  All processes should return the same error code
-  if (Comm().NumProc() != 1)
-    Comm().Broadcast(&Ierr, 1, 0); 
-
   if (ComputeTrueResidual_)
     ComputeTrueResidual(*(GetProblem()->GetMatrix()), *vecX, *vecB, 
                         UseTranspose(), "Amesos_Superlu");
@@ -640,6 +619,10 @@ int Amesos_Superlu::Solve()
   AddTime("overhead", 1);
 
   ++NumSolve_;
+
+  //  All processes should return the same error code
+  if (Comm().NumProc() != 1)
+    Comm().Broadcast(&Ierr, 1, 0); 
 
   AMESOS_RETURN(Ierr);
 }
