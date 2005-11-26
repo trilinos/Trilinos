@@ -181,7 +181,7 @@ int Amesos_Umfpack::ConvertToUmfpackCRS()
     Ap[MyRow] = Ai_index ; 
   }
 
-  AddTime("matrix conversion", 0);
+  AddTime("conversion", 0);
   AddTime("overhead", 1);
   
   return 0;
@@ -317,34 +317,39 @@ bool Amesos_Umfpack::MatrixShapeOK() const
 //=============================================================================
 int Amesos_Umfpack::SymbolicFactorization() 
 {
+  // MS // NOTE: If you change this method, also change
+  // MS // NumericFactorization(), because it performs part of the actions
+  // MS // of this method. This is to avoid to ship the matrix twice
+  // MS // (once for the symbolic factorization, and once for the numeric
+  // MS // factorization) when it is not necessary.
+  
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
 
   InitTime(Comm(), 2);
-
-  ResetTime(0); // this will track all time spent in Amesos most
-                // important functions, *including* UMFPACK functions
-
-  ResetTime(1); // this will track all time spent in this function
-                // that is not due to UMFPACK calls, and therefore it
-                // tracks down how much Amesos costs. The timer starts
-                // and ends in *each* method, unless the method does not
-                // perform any real operation. If a method calls another
-                // method, the timer will be stopped before the called
-                // method, then restared.
-                // All the time of this timer goes into "overhead"
+  // MS // Initialize two timers:
+  // MS // timer 1: this will track all time spent in Amesos most
+  // MS //          important functions, *including* UMFPACK functions
+  // MS // timer 2: this will track all time spent in this function
+  // MS //          that is not due to UMFPACK calls, and therefore it
+  // MS //          tracks down how much Amesos costs. The timer starts
+  // MS //          and ends in *each* method, unless the method does not
+  // MS //          perform any real operation. If a method calls another
+  // MS //          method, the timer will be stopped before the called
+  // MS //          method, then restared.
+  // MS //          All the time of this timer goes into "overhead"
 
   MyPID_    = Comm().MyPID();
   NumProcs_ = Comm().NumProc();
 
-  NumSymbolicFact_++;  
-
-  ConvertToSerial(true); 
-  ConvertToUmfpackCRS();
+  AMESOS_CHK_ERR(ConvertToSerial(true)); 
+  AMESOS_CHK_ERR(ConvertToUmfpackCRS());
   
-  PerformSymbolicFactorization();
+  AMESOS_CHK_ERR(PerformSymbolicFactorization());
 
-  IsSymbolicFactorizationOK_ = false; 
+  IsSymbolicFactorizationOK_ = true; 
+
+  NumSymbolicFact_++;  
 
   return 0;
 }
@@ -353,18 +358,34 @@ int Amesos_Umfpack::SymbolicFactorization()
 int Amesos_Umfpack::NumericFactorization() 
 {
   IsNumericFactorizationOK_ = false;
-  if (!IsSymbolicFactorizationOK_)
-    AMESOS_CHK_ERR(SymbolicFactorization());
-  
-  ConvertToSerial(false);
-  
-  ConvertToUmfpackCRS();
-  
-  if (!IsSymbolicFactorizationOK_) {
-    SymbolicFactorization();
-  }
 
-  PerformNumericFactorization();
+  if (IsSymbolicFactorizationOK_ == false)
+  {
+    // Call here what is needed, to avoid double shipping of the matrix
+    InitTime(Comm(), 2);
+
+    MyPID_    = Comm().MyPID();
+    NumProcs_ = Comm().NumProc();
+
+    AMESOS_CHK_ERR(ConvertToSerial(true)); 
+    AMESOS_CHK_ERR(ConvertToUmfpackCRS());
+  
+    AMESOS_CHK_ERR(PerformSymbolicFactorization());
+
+    IsSymbolicFactorizationOK_ = true; 
+
+    NumSymbolicFact_++;  
+
+    AMESOS_CHK_ERR(PerformNumericFactorization());
+  }
+  else
+  {
+    // need to reshuffle and reconvert because entry values may have changed
+    AMESOS_CHK_ERR(ConvertToSerial(false));
+    AMESOS_CHK_ERR(ConvertToUmfpackCRS());
+
+    AMESOS_CHK_ERR(PerformNumericFactorization());
+  }
 
   NumNumericFact_++;  
 
@@ -455,6 +476,8 @@ int Amesos_Umfpack::Solve()
     }
   }
     
+  if (status) AMESOS_CHK_ERR(status);
+
   AddTime("solve", 0);
   
   //  Copy X back to the original vector
@@ -480,9 +503,6 @@ int Amesos_Umfpack::Solve()
   if (ComputeVectorNorms_) {
     ComputeVectorNorms(*vecX, *vecB, "Amesos_Umfpack");
   }
-
-  if (status)
-    AMESOS_CHK_ERR(status);
 
   NumSolve_++;
 
