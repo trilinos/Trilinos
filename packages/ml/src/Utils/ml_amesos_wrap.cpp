@@ -201,8 +201,12 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 
   Epetra_Time Time(Amesos_Matrix->Comm());
 
-  A_Base->SymbolicFactorization();
-  double Time1 = Time.ElapsedTime();
+  // Changed on 27-Nov-05, MS
+  // It is faster to just call NumericFactorization(), otherwise the
+  // code might have to ship the matrix twice, first to gather the
+  // structure, then to gather the numerical values.
+  //A_Base->SymbolicFactorization();
+  //double Time1 = Time.ElapsedTime();
   Time.ResetStartTime();
   A_Base->NumericFactorization();
   double Time2 = Time.ElapsedTime();
@@ -212,17 +216,12 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 #ifdef TFLOP
   if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 ) {
     Level__ = curr_level;
-    printf("Amesos (level %d) : Time for symbolic fact = %f (s)\n",curr_level,Time1);
-    printf("Amesos (level %d) : Time for numerical fact = %f (s)\n",curr_level,Time2);
+    printf("Amesos (level %d) : Time for factorization = %f (s)\n",curr_level,Time2);
   }
 #else
   if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 ) {
     Level__ = curr_level;
-    cout << "Amesos (level " << curr_level
-	 << ") : Time for symbolic fact  = "
-	 << Time1 << " (s)" << endl;
-    cout << "Amesos (level " << curr_level
-	 << ") : Time for numerical fact = "
+    cout << "Amesos (level " << curr_level << ") : Time for factorization  = "
 	 << Time2 << " (s)" << endl;
   }
 #endif
