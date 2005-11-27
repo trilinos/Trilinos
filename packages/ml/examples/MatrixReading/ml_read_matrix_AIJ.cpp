@@ -58,9 +58,6 @@
 // This matrix is very small and it is included only to explain how
 // to write the .aij file.
 //
-// NOTE: this code is not efficient for serial runs,
-// as it creates the distributed matrix anyway (which in that
-// case is simply a copy of the serial matrix).
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO)
 
@@ -100,16 +97,24 @@ int main(int argc, char *argv[])
 #endif
 
   int NumRows;
-  int Offset;
   int NumElements;
+  int Offset;
   std::ifstream data_file;
 
-  if (Comm.MyPID() == 0) {
-
-    // proc 0 reads the number of rows, columns, nonzero elements and offset
+  if (Comm.MyPID() == 0) 
+  {
+    // proc 0 reads the number of rows, columns, nonzero elements
+    // The matrix is supposed to be square (otherwise ML doesn't work)
+    
     char *FileName = argv[1];
-    assert (FileName != 0);
-    string Title;
+    if (FileName == 0)
+    {
+      cerr << "Usage: <executable name> <matrix name>" << endl;
+#ifdef HAVE_MPI
+      MPI_Finalize();
+#endif
+      exit(EXIT_SUCCESS);
+    }
 
     data_file.open(FileName);
 
@@ -122,6 +127,7 @@ int main(int argc, char *argv[])
     data_file >> NumElements;
     data_file >> Offset;
 
+    cout << "Matrix name                = " << FileName << endl;
     cout << "Number of rows             = " << NumRows << endl;
     cout << "Number of nonzero elements = " << NumElements << endl;
     cout << "Offset                     = " << Offset << endl;
@@ -131,85 +137,129 @@ int main(int argc, char *argv[])
   
   // creates a map with all elements on proc 0
   Epetra_Map* SerialMap = new Epetra_Map(-1,NumRows,0,Comm);
-  Epetra_CrsMatrix* SerialMatrix;
-  SerialMatrix = new Epetra_CrsMatrix(Copy,*SerialMap,0);
+  Epetra_CrsMatrix* SerialMatrix = new Epetra_CrsMatrix(Copy,*SerialMap,0);
 
-  if (Comm.MyPID() == 0) {
-
+  if (Comm.MyPID() == 0) 
+  {
     // now proc 0 read the actual matrix, element by element
-    for (int i = 0 ; i < NumElements ; ++i) {
+    for (int i = 0 ; i < NumElements ; ++i) 
+    {
       int row;
       int col;
       double val;
       data_file >> row;
       data_file >> col;
+
+      if (row < Offset || col < Offset || row >= NumRows + Offset || col >= NumRows + Offset)
+      {
+        cout << "Something wrong at element " << i << endl;
+        cout << "row = " << row;
+        cout << ", col = " << col << ", while NumRows = " << NumRows << endl;
+        exit(EXIT_FAILURE);
+      }
+             
       data_file >> val;
       row -= Offset;
       col -= Offset;
-      SerialMatrix->InsertGlobalValues(row,1,&val,&col);
+      int ierr;
+      ierr = SerialMatrix->InsertGlobalValues(row,1,&val,&col);
+      if (ierr < 0)
+      {
+        cout << "Error at element " << i << endl;
+        ML_CHK_ERR(ierr);
+      }
+#if 0
+      // If only one half of a symmetric matrix is stored, then this
+      // part of the code will insert the other half as well.
+      if (row != col)
+      {
+        ierr = SerialMatrix->InsertGlobalValues(col,1,&val,&row);
+        if (ierr < 0)
+          ML_CHK_ERR(ierr);
+      }
+#endif
     }
-
+#if 0
+    // The matrix can still be modified here, for example this is to
+    // add or insert a diagonal value
+    for (int i = 0 ; i < NumRows ; ++i) 
+    {
+      double value = 3.99476e+16;
+      if (SerialMatrix->SumIntoGlobalValues(i, 1, &value, &i))
+        SerialMatrix->InsertGlobalValues(i, 1, &value, &i);
+    }
+#endif
   }
+
   SerialMatrix->FillComplete();
 
-  // need to create the distributed map, this
-  // is for simplicity linear
-  Comm.Broadcast(&NumRows,1,0);
-  Epetra_Map DistributedMap(NumRows, 0, Comm);
+  Epetra_Map* DistributedMap = 0;
+  Epetra_CrsMatrix* DistributedMatrix = 0;
 
-  Epetra_CrsMatrix DistributedMatrix(Copy, DistributedMap,0);
-
-  // creates the import 
-  Epetra_Import Importer(DistributedMap,*SerialMap);
-
-  ML_CHK_ERR(DistributedMatrix.Import(*SerialMatrix,
-				      Importer, Insert));
+  // Distributes the matrix but only if necessary
   
-  ML_CHK_ERR(DistributedMatrix.FillComplete());
-  
-  // can delete serial objects, no longer needed
-  delete SerialMap;
-  delete SerialMatrix;
+  if (Comm.NumProc() > 1)
+  {
+    // need to create the distributed map, this
+    // is for simplicity linear
+    Comm.Broadcast(&NumRows,1,0);
+    DistributedMap = new Epetra_Map(NumRows, 0, Comm);
+
+    DistributedMatrix = new Epetra_CrsMatrix(Copy, *DistributedMap,0);
+
+    // creates the import 
+    Epetra_Import Importer(*DistributedMap,*SerialMap);
+
+    ML_CHK_ERR(DistributedMatrix->Import(*SerialMatrix, Importer, Insert));
+
+    ML_CHK_ERR(DistributedMatrix->FillComplete());
+
+    // can delete serial objects, no longer needed
+    delete SerialMap;
+    delete SerialMatrix;
+  }
+  else
+  {
+    DistributedMap = SerialMap;
+    DistributedMatrix = SerialMatrix;
+  }
 
   // =========================== begin of ML part ===========================
 
   // create a parameter list for ML options
   ParameterList MLList;
 
-  ML_Epetra::SetDefaults("DD",MLList);
- 
-#ifdef HAVE_ML_IFPACK
-  // use IFPACK smoothers
-  MLList.set("smoother: type", "IFPACK");
-#else
-  MLList.set("smoother: type", "Aztec");
-#endif
+  ML_Epetra::SetDefaults("SA", MLList);
+  MLList.set("smoother: type (level 0)", "symmetric Gauss-Seidel");
+  MLList.set("smoother: type (level 1)", "Aztec");
+  MLList.set("aggregation: damping factor", 0.0);
+  MLList.set("PDE equations", 1);
 
-
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
-    new ML_Epetra::MultiLevelPreconditioner(DistributedMatrix, MLList);
+  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+    new ML_Epetra::MultiLevelPreconditioner(*DistributedMatrix, MLList);
 
   // =========================== end of ML part =============================
 
-  Epetra_Vector LHS(DistributedMap);       // solution vector
-  Epetra_Vector LHSexact(DistributedMap);  // exact solution, check later
-  Epetra_Vector RHS(DistributedMap);       // right-hand side
-  LHS.PutScalar(0.0);                      // zero starting solution
-  LHSexact.Random();                       // random exact solution
-  DistributedMatrix.Multiply(false,LHSexact,RHS);
+  Epetra_Vector LHS(*DistributedMap);       // solution vector
+  Epetra_Vector LHSexact(*DistributedMap);  // exact solution, check later
+  Epetra_Vector RHS(*DistributedMap);       // right-hand side
+  LHS.PutScalar(0.0);                       // zero starting solution
+  LHSexact.Random();                        // random exact solution
+  DistributedMatrix->Multiply(false,LHSexact,RHS);
   
-  Epetra_LinearProblem Problem(&DistributedMatrix,&LHS,&RHS);
+  Epetra_LinearProblem Problem(DistributedMatrix,&LHS,&RHS);
   AztecOO solver(Problem);
 
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
+  solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 32);
+  //solver.SetAztecOption(AZ_precond, AZ_none);
   solver.SetPrecOperator(MLPrec);
 
   // solve with 500 iterations and 1e-12 as tolerance on the
   // relative residual  
-  solver.Iterate(500, 1e-12);
+  solver.Iterate(500, 1e-8);
 
-  // delete the preconditioner. Do it BEFORE MPI_Finalize
+  // delete the preconditioner. Do it BEFORE calling MPI_Finalize
   delete MLPrec;
 
   // check the error
@@ -217,11 +267,9 @@ int main(int argc, char *argv[])
   double Norm;
   LHSexact.Norm2(&Norm);
 
-  if (Norm > 1e-3) {
-    cerr << "TEST FAILED" << endl;
-    exit(EXIT_FAILURE);
-  }
-  
+  delete DistributedMatrix;
+  delete DistributedMap;
+
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
