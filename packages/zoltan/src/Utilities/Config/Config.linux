@@ -93,8 +93,8 @@ DEFS 			=
 RANLIB			= ranlib
 AR			= ar r
 
-CC			= mpicc -Wall
-CPPC			= mpiCC -Wall
+CC			= mpicc -Wall -Werror-implicit-function-declaration
+CPPC			= mpiCC -Wall -Werror-implicit-function-declaration
 
 # ifeq "$(MPI_VERSION)" "lam"
 # INCLUDE_PATH		= -I$(LAMHOME)/include

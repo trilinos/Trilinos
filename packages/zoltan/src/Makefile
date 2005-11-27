@@ -233,28 +233,30 @@ HSFC_CSRC 	= hsfc_hilbert.c hsfc.c hsfc_box_assign.c hsfc_point_assign.c
 HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 
 ifdef ZOLTAN_HG
-
-PHG_CSRC 	= phg.c phg_build.c  \
+PHG_CSRC 	= phg.c phg_hypergraph.c phg_build.c phg_build_calls.c \
 		  phg_coarse.c phg_distrib.c phg_gather.c \
 		  phg_match.c phg_plot.c \
 		  phg_refinement.c phg_serialpartition.c \
 		  phg_Vcycle.c phg_rdivide.c phg_util.c \
-		  phg_scale.c phg_comm.c phg_order.c phg_parkway.c
-PHG_INC 	= phg.h phg_util.h
-
-GDEFINES       += -DZOLTAN_HG
-endif
-
-ifdef ZOLTAN_HG
-HG_CSRC 	= hg.c hg_build.c hg_build_calls.c hg_coarse.c hg_global.c \
-		  hg_group.c hg_local.c hg_scale.c \
-		  hg_match.c hg_pack.c hg_rdivide.c \
-		  hg_part.c hg_plot.c hg_hypergraph.c hg_patoh.c
-HG_INC 		= hg.h hg_hypergraph.h 
+		  phg_scale.c phg_comm.c phg_order.c \
+                  phg_parkway.c phg_patoh.c
+PHG_INC 	= phg.h phg_util.h phg_hypergraph.h 
 GDEFINES       += -DZOLTAN_HG
 else
-HG_CSRC		= hg_hypergraph.c
+HG_CSRC		= phg_hypergraph.c
 endif
+
+# ifdef ZOLTAN_HG
+# HG_CSRC 	= hg.c hg_build.c hg_build_calls.c hg_coarse.c hg_global.c \
+# 		  hg_group.c hg_local.c hg_scale.c \
+# 		  hg_match.c hg_pack.c hg_rdivide.c \
+# 		  hg_part.c hg_plot.c hg_hypergraph.c hg_patoh.c
+# HG_INC 		= hg.h hg_hypergraph.h 
+# GDEFINES       += -DZOLTAN_HG
+# else
+# HG_CSRC		= hg_hypergraph.c
+# endif
+
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
 		  key_params.c free_params.c bind_param.c
