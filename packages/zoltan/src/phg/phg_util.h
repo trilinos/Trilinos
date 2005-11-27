@@ -16,7 +16,7 @@
 
 #include <stdarg.h>
 #include "phg_comm.h"
-#include "hg_hypergraph.h"
+#include "phg_hypergraph.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

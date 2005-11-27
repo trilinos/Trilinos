@@ -43,7 +43,6 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_REDUCTION_LIMIT",             NULL,  "INT",    0},
   {"PHG_REDUCTION_METHOD",            NULL,  "STRING", 0},
   {"PHG_REDUCTION_METHOD_FAST",       NULL,  "STRING", 0},
-  {"PHG_REDUCTION_LOCAL_IMPROVEMENT", NULL,  "STRING", 0},
   {"PHG_VERTEX_VISIT_ORDER",          NULL,  "INT",    0},
   {"PHG_EDGE_SCALING",                NULL,  "INT",    0},
   {"PHG_VERTEX_SCALING",              NULL,  "INT",    0},
@@ -59,6 +58,8 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_BAL_TOL_ADJUSTMENT",          NULL,  "FLOAT",  0},  
   {"PARKWAY_SERPART",                 NULL,  "STRING", 0},
   {"BALANCE_OBJ",                     NULL,  "STRING", 0},
+  { "PATOH_ALLOC_POOL0",              NULL,  "INT",    0},
+  { "PATOH_ALLOC_POOL1",              NULL,  "INT",    0},   
   {NULL,                              NULL,  NULL,     0}     
 };
 
@@ -107,6 +108,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
                                       declared static so that, over multiple
                                       runs, can accumulate times.  */
   static int timer_retlist=-1;
+  static int timer_patoh=-1;
   static int timer_parkway=-1;
   static int timer_finaloutput=-1;
   static int timer_setupvmap=-1;
@@ -145,6 +147,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
     ZOLTAN_TIMER_START(zz->ZTime, timer_build, zz->Communicator);
     
   /* build initial Zoltan hypergraph from callback functions. */
+
   err = Zoltan_PHG_Build_Hypergraph (zz, &zoltan_hg, &parts, &hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph.");
@@ -177,7 +180,19 @@ int **exp_to_part )         /* list of partitions to which exported objs
         goto End;
     if (do_timing)
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_parkway, zz->Communicator);
-  } 
+  } else if (zz->LB.Method == PATOH) {
+    if (hgp.use_timers > 1) {
+      if (timer_patoh < 0)
+        timer_patoh = Zoltan_Timer_Init(zz->ZTime, 0, "HG_PaToH");
+      ZOLTAN_TIMER_START(zz->ZTime, timer_patoh, zz->Communicator);
+    }
+    err = Zoltan_PHG_PaToH(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
+                           parts, &hgp);
+    if (err != ZOLTAN_OK) 
+      goto End;
+    if (hgp.use_timers > 1)
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer_patoh, zz->Communicator);
+  }      
   else { /* it must be PHG */
     /* UVC: if it is bisection anyways; no need to create vmap etc; 
        rdivide is going to call Zoltan_PHG_Partition anyways... */
@@ -346,7 +361,7 @@ End:
   /* KDDKDD  End of printing section. */
   
   ZOLTAN_FREE(&parts);
-  Zoltan_HG_Free_Structure(zz);
+  Zoltan_PHG_Free_Structure(zz);
 
   if (hgp.use_timers) {
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_all, zz->Communicator);
@@ -361,6 +376,28 @@ End:
   return err;
 }
 
+/*****************************************************************************/
+
+void Zoltan_PHG_Free_Structure(ZZ *zz)
+{
+  /* frees all data associated with LB.Data_Structure for hypergraphs */
+  ZHG *zoltan_hg = (ZHG*) zz->LB.Data_Structure;
+
+  if (zoltan_hg != NULL) {
+    Zoltan_Multifree(__FILE__, __LINE__, 8, &zoltan_hg->GIDs,
+                                            &zoltan_hg->LIDs,
+                                            &zoltan_hg->Input_Parts,
+                                            &zoltan_hg->Output_Parts,
+                                            &zoltan_hg->Remove_EGIDs,
+                                            &zoltan_hg->Remove_ELIDs,
+                                            &zoltan_hg->Remove_Esize,
+                                            &zoltan_hg->Remove_Ewgt);
+    Zoltan_HG_HGraph_Free (&zoltan_hg->HG);
+    ZOLTAN_FREE (&zz->LB.Data_Structure);
+  }
+}
+
+    
 /*****************************************************************************/
 
 static int Zoltan_PHG_Initialize_Params(
@@ -389,8 +426,6 @@ static int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT", &hgp->redl);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD", hgp->redm_str);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD_FAST", hgp->redm_fast);
-  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LOCAL_IMPROVEMENT", 
-                                 hgp->redmo_str);  
   Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_VISIT_ORDER", &hgp->visit_order);
   Zoltan_Bind_Param(PHG_params, "PHG_EDGE_SCALING", &hgp->edge_scaling);
   Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_SCALING", &hgp->vtx_scaling);
@@ -413,12 +448,16 @@ static int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PARKWAY_SERPART",
                     hgp->parkway_serpart);  
   Zoltan_Bind_Param(PHG_params, "BALANCE_OBJ",
-                    hgp->balance_obj);  
+                    hgp->balance_obj);
+  Zoltan_Bind_Param(PHG_params,"PATOH_ALLOC_POOL0",
+                              (void*) &hgp->patoh_alloc_pool0);
+  Zoltan_Bind_Param(PHG_params,"PATOH_ALLOC_POOL1",
+                              (void*) &hgp->patoh_alloc_pool1);
+  
   
   /* Set default values */
   strncpy(hgp->redm_str,            "ipm",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->redm_fast,           "c-ipm", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->redmo_str,           "no",    MAX_PARAM_STRING_LEN);  
   strncpy(hgp->coarsepartition_str, "gr0",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->parkway_serpart,     "patoh", MAX_PARAM_STRING_LEN);
@@ -427,7 +466,6 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->use_timers = 0;
   hgp->proc_split = 1;
   hgp->LocalCoarsePartition = 0;
-  hgp->locmatching = NULL;
   hgp->edge_scaling = 0;
   hgp->vtx_scaling = 0;
   hgp->vtx_scal = NULL;  /* Array for storing vertex degree scale vector. 
@@ -449,7 +487,10 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->part_sizes = part_sizes;
   hgp->EdgeSizeThreshold = 0.25;  
   hgp->hybrid_keep_factor = 0.;
+  hgp->patoh_alloc_pool0 = 0;
+  hgp->patoh_alloc_pool1 = 0;
 
+  
   /* Get application values of parameters. */
   Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,
                            zz->Debug_Proc);
@@ -474,6 +515,12 @@ static int Zoltan_PHG_Initialize_Params(
       goto End;
     }
     hgp->nProc_x_req = 1;
+  } else if (zz->LB.Method == PATOH) {
+    if (zz->Num_Proc>1) {
+      err = ZOLTAN_FATAL;
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "PaToH only works with Num_Proc=1.");
+      goto End;
+    }
   }
 
   if (!usePrimeComm)

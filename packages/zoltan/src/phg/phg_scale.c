@@ -16,7 +16,6 @@
 extern "C" {
 #endif
 #include "phg.h"
-#include "hg_hypergraph.h"
 
 
 

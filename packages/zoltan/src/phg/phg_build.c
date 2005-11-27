@@ -20,7 +20,6 @@ extern "C" {
 #include "zz_const.h"
 #include "parmetis_jostle.h"
 #include "zz_util_const.h"
-#include "hg_hypergraph.h"
     
 #define MEMORY_ERROR { \
   ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
@@ -319,7 +318,7 @@ float *tmpwgts = NULL;
   app.nEdge = 0;
   app.nPins = 0;
   app.GnEdge = 0;
-  if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_HG_Edge_Info)
+  if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_HG_Edge_Info) {
     ierr = Zoltan_HG_Hypergraph_Callbacks(zz, zhg,
                                           app.GnVtx, hgp->EdgeSizeThreshold,
                                           hgp->final_output, &app.nEdge, 
@@ -327,9 +326,8 @@ float *tmpwgts = NULL;
                                           &app.esizes, &app.ewgt,
                                           &app.nPins, &app.pins, 
                                           &app.pin_procs);
-
-  else if ((zz->Get_Num_Edges != NULL || zz->Get_Num_Edges_Multi != NULL) &&
-           (zz->Get_Edge_List != NULL || zz->Get_Edge_List_Multi != NULL)) 
+  } else if ((zz->Get_Num_Edges != NULL || zz->Get_Num_Edges_Multi != NULL) &&
+             (zz->Get_Edge_List != NULL || zz->Get_Edge_List_Multi != NULL)) {
     ierr = Zoltan_HG_Graph_Callbacks(zz, zhg,
                                      app.GnVtx, hgp->EdgeSizeThreshold,
                                      hgp->final_output, &app.nEdge, 
@@ -338,7 +336,7 @@ float *tmpwgts = NULL;
                                      &app.nPins, &app.pins, 
                                      &app.pin_procs);
 
-  else {
+  } else {
     /* Partition without edge information?  Or return an error? */
   }
 

@@ -21,8 +21,9 @@ extern "C" {
 
 #undef  USE_SUBROUNDS
 
-static ZOLTAN_PHG_MATCHING_FN pmatching_local; /* function for local matching */
-static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;   /* inner product matching */
+
+static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;         /* inner product matching */
+static ZOLTAN_PHG_MATCHING_FN pmatching_local_ipm;   /* local ipm */
 static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;     /* alternating ipm */
 static ZOLTAN_PHG_MATCHING_FN pmatching_hybrid_ipm;  /* hybrid ipm */
 
@@ -48,23 +49,12 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
     
     if (!strcasecmp(hgp->redm_str, "no"))
         hgp->matching = NULL;
-    else if (!strncasecmp(hgp->redm_str, "l-", 2))  {
-        HGPartParams hp;
-
-        strcpy(hp.redm_str, hgp->redm_str+2);
-        strcpy(hp.redmo_str, hgp->redmo_str);
-        if (!Zoltan_HG_Set_Matching_Fn(&hp)) {
-            exist = 0;
-            hgp->matching = NULL;
-        } else {   
-            hgp->matching = pmatching_local; 
-            hgp->locmatching = hp.matching;
-            hgp->matching_opt = hp.matching_opt;
-        }
-    } else if (!strcasecmp(hgp->redm_str, "c-ipm"))
-        hgp->matching = pmatching_ipm;   
     else if (!strcasecmp(hgp->redm_str, "ipm"))
         hgp->matching = pmatching_ipm;
+    else if (!strcasecmp(hgp->redm_str, "l-ipm"))
+        hgp->matching = pmatching_local_ipm;           
+    else if (!strcasecmp(hgp->redm_str, "c-ipm"))
+        hgp->matching = pmatching_ipm;   
     else if (!strcasecmp(hgp->redm_str, "a-ipm"))
         hgp->matching = pmatching_alt_ipm;
     else if (!strcasecmp(hgp->redm_str, "h-ipm"))
@@ -192,7 +182,107 @@ End:
     return ierr;
 }
 
-static int pmatching_local(
+
+/*****************************************************************************/
+/* inner product matching                                                    */ 
+/* based on implementations by Rob Bisseling and Umit Catalyurek             */
+/* for each vertex, we match with the unmatched vertex which has the most    */
+/* hyperedges in common with it (ie, the pair with greatest inner product).  */
+/* by Aaron Becker, UIUC, Summer 2004                                        */
+/* 8/5/04  Erik says matching_ipm is nearly equivalent to matching_rhm;
+   but rhm uses a scaled inner product. */
+static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
+{
+    int   i, j, k, n, v1, v2, edge, maxindex;
+    float maxip;
+    int   *adj = NULL;
+    int   *order = NULL;
+    float *ips = NULL; 
+    char  *yo = "matching_ipm";
+
+    if (hg->nVtx && 
+        (!(ips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float))) 
+     || !(adj = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
+     || !(order = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int))))) {
+        Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &adj, &order);
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+    }
+    
+    for (i = 0; i < hg->nVtx; i++){
+        ips[i] = .0;
+        order[i] = i;
+    }
+ 
+    /* random node visit order is default */
+    /* other options may be added later */
+    Zoltan_Rand_Perm_Int (order, hg->nVtx, NULL);
+
+    /* for every vertex */
+    for (k = 0; k < hg->nVtx  &&  *limit > 0; k++) {
+        v1 = order[k];
+
+        if (match[v1] != v1)
+            continue;
+        
+        n = 0; /* number of neighbors */
+        /* for every hyperedge containing the vertex */
+        for (i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
+            edge = hg->vedge[i];
+                
+            /* for every other vertex in the hyperedge */
+            for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
+                v2 = hg->hvertex[j];
+                if (match[v2] != v2) {
+                    /* row swapping goes here */
+                }
+                else {
+                    if (ips[v2]==0.0)
+                        adj[n++] = v2;
+                    ips[v2] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                }
+            }
+        }
+
+        /* now choose the vector with greatest inner product */
+        maxip = 0;
+        maxindex = -1;
+        for (i = 0; i < n; i++) {
+            v2 = adj[i];
+            if (ips[v2] > maxip && v2 != v1 && match[v2] == v2) {
+                maxip = ips[v2];
+                maxindex = v2;
+            }
+            ips[v2] = 0;
+        }
+        if (maxindex != -1) {
+            match[v1] = maxindex;
+            match[maxindex] = v1;
+            (*limit)--;
+        } 
+        
+        /*
+          printf("Done with %d, best match is %d with product %d\n",
+                  v1, maxindex, maxip);
+         */
+    }
+
+    /*
+      printf("Final Matching:\n");
+      for(i = 0; i < hg->nVtx; i++)
+          printf("%2d ",i);
+      printf("\n");
+      for(i = 0; i < hg->nVtx; i++)
+          printf("%2d ",match[i]);
+      printf("\n");
+    */
+
+    Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &adj, &order);
+    return ZOLTAN_OK;
+}
+
+
+static int pmatching_local_ipm(
   ZZ *zz,
   HGraph *hg,
   Matching match,
@@ -202,12 +292,17 @@ static int pmatching_local(
     int limit=hg->nVtx, err=ZOLTAN_OK;
     PHGComm *hgc=hg->comm;
     int root_matchcnt, root_rank;
+
+    /* UVC: In order to simplify adding/testing old sequential matching codes easy
+       I'm keeping the interface same; just move your favorite matching code to this file
+       and change the function name in the next line */ 
+    err = matching_ipm(zz, hg, match, &limit);
     
-    err = hgp->locmatching (zz, hg, match, &limit);
-    
-    /* Optimization */
-    if (hgp->matching_opt) 
+    /* UVC: again to simplify testing Optimization; I'm leaving the call here, just
+     move your function and rename the call
+     if (hgp->matching_opt) 
         err = hgp->matching_opt (zz, hg, match, &limit);
+    */
     
     /* find the index of the proc in column group with the best match
        (max #matches); it will be our root proc */

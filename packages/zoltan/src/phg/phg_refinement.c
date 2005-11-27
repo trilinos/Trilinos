@@ -19,7 +19,8 @@ extern "C" {
 #include <math.h>
 #include <float.h>
 #include "phg.h"
-
+#include "zz_heap.h"
+    
 #define HANDLE_ISOLATED_VERTICES    
 #define USE_SERIAL_REFINEMENT_ON_ONE_PROC
 
@@ -70,6 +71,65 @@ static int refine_no (ZZ *zz,     /* Zoltan data structure */
 
 
 #ifdef USE_SERIAL_REFINEMENT_ON_ONE_PROC
+
+
+/****************************************************************************/
+
+int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
+ int *part, int **cut, double *gain, HEAP *heap)
+{
+int i, j, edge, v;
+
+  gain[vertex] = 0.0;
+  part[vertex] = dest;
+
+  for (i = hg->vindex[vertex]; i < hg->vindex[vertex+1]; i++) {
+     edge = hg->vedge[i];
+     if (cut[sour][edge] == 1) {
+        for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
+           v = hg->hvertex[j];
+           gain[v] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
+           if (heap)
+              Zoltan_Heap_Change_Value(&heap[part[v]], v, gain[v]);
+           }
+        }
+     else if (cut[sour][edge] == 2) {
+        for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
+           v = hg->hvertex[j];
+           if (part[v] == sour) {
+              gain[v] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+              if (heap)
+                 Zoltan_Heap_Change_Value(&heap[part[v]], v, gain[v]);
+              break;
+              }
+           }
+        }
+
+     if (cut[dest][edge] == 0) {
+        for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
+           v = hg->hvertex[j];
+           gain[v] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+           if (heap)
+              Zoltan_Heap_Change_Value(&heap[part[v]], v, gain[v]);
+           }
+        }
+     else if (cut[dest][edge] == 1) {
+        for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
+           v = hg->hvertex[j];
+           if (v != vertex && part[v] == dest) {
+              gain[v] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
+              if (heap)
+                 Zoltan_Heap_Change_Value(&heap[part[v]], v, gain[v]);
+              break;
+              }
+           }
+        }
+     cut[sour][edge]--;
+     cut[dest][edge]++;
+     }
+  return ZOLTAN_OK;
+}
+
 /****************************************************************************/
 /* Serial FM 2-way refinement, latest & greatest implementation.            */
 /****************************************************************************/
@@ -166,7 +226,7 @@ int    best_imbalance, imbalance;
   Zoltan_Heap_Make(&heap[1]);
 
   /* Initialize given partition as best partition */
-  best_cutsize = cutsize_beforepass = Zoltan_HG_hcut_size_total(hg, part);
+  best_cutsize = cutsize_beforepass = Zoltan_PHG_Compute_NetCut(hg->comm, hg, part, p);
   best_error = MAX (part_weight[0]-max_weight[0], part_weight[1]-max_weight[1]);
   best_imbalance = (part_weight[0]>max_weight[0])||(part_weight[1]>max_weight[1]);
   do {
@@ -176,7 +236,7 @@ int    best_imbalance, imbalance;
 
     round++;
     cutsize_beforepass = best_cutsize;
-    if (hgp->output_level > HG_DEBUG_LIST)
+    if (hgp->output_level > PHG_DEBUG_LIST)
       printf("ROUND %d:\nSTEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE\n",round);
 
     steplimit = (hgp->fm_max_neg_move < 0) ? hg->nVtx : hgp->fm_max_neg_move;
@@ -235,7 +295,7 @@ int    best_imbalance, imbalance;
             best_cutsize = cur_cutsize;
             no_better_steps = 0;
         }
-        if (hgp->output_level > HG_DEBUG_LIST+1)
+        if (hgp->output_level > PHG_DEBUG_LIST+1)
            printf ("%4d %6d %2d->%2d %7.2f %f %f\n", step, vertex, sour, dest,
             error, cur_cutsize - cutsize_beforepass, cur_cutsize);
     }

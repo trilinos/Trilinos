@@ -19,7 +19,7 @@ extern "C" {
 
 
 #include "zz_const.h"
-#include "hg_hypergraph.h"
+#include "phg_hypergraph.h"
 #include <limits.h>
 
 /*

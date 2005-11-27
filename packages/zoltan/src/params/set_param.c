@@ -35,7 +35,6 @@ extern "C" {
 #include "all_allo_const.h"
 #include "order_const.h"
 #ifdef ZOLTAN_HG
-#include "hg_const.h"
 #include "phg_const.h"    
 #endif
 #include "coloring_const.h"
@@ -57,7 +56,6 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_HSFC_Set_Param,
        Zoltan_Order_Set_Param,
 #ifdef ZOLTAN_HG
-       Zoltan_HG_Set_Param,
        Zoltan_PHG_Set_Param,
 #endif
        /* Zoltan_Set_Machine_Param, */

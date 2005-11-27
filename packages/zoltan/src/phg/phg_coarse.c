@@ -15,8 +15,10 @@
 extern "C" {
 #endif
 
+#include "zz_sort.h"    
 #include "phg.h"
 #include "zoltan_comm.h"
+
 
 
 #define COARSEN_WITH_NET_SHUFFLING

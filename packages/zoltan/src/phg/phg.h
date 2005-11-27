@@ -14,13 +14,12 @@
 #ifndef __ZOLTAN_PHG_H
 #define __ZOLTAN_PHG_H
 
-#include "phg_comm.h"
-#include "phg_const.h"
-#include "phg_util.h"
 #include "params_const.h"
 #include "zoltan_comm.h"
-#include "hg.h"  /* Needed only for definition of ZOLTAN_HG_MATCHING_FN */
-#include "hg_hypergraph.h"
+#include "zz_rand.h"
+#include "phg_const.h"
+#include "phg_util.h"
+#include "phg_hypergraph.h"
 
 
 #ifdef __cplusplus
@@ -29,40 +28,6 @@ extern "C" {
 #endif
 
 
-/************************************************/
-/* Mappings supporting the 2D data distribution */
-/************************************************/
-
-/* Mapping of global number to local number           */
-/* Code should call VTX_GNO_TO_LNO or EDGE_GNO_TO_LNO */
-
-#define GNO_TO_LNO(gno, dist, myblock) \
-    ((gno) - (dist)[(myblock)])
-#define VTX_GNO_TO_LNO(phg, gno) \
-    GNO_TO_LNO(gno, (phg)->dist_x, (phg)->comm->myProc_x)
-#define EDGE_GNO_TO_LNO(phg, gno) \
-    GNO_TO_LNO(gno, (phg)->dist_y, (phg)->comm->myProc_y)
-
-
-/* Mapping of local number to global number           */
-/* Code should call VTX_LNO_TO_GNO or EDGE_LNO_TO_GNO */
-
-#define LNO_TO_GNO(lno, dist, myblock) \
-    ((lno) + (dist)[(myblock)])
-#define VTX_LNO_TO_GNO(phg, lno) \
-    LNO_TO_GNO(lno, (phg)->dist_x, (phg)->comm->myProc_x)
-#define EDGE_LNO_TO_GNO(phg, lno) \
-    LNO_TO_GNO(lno, (phg)->dist_y, (phg)->comm->myProc_y)
-
-
-/* Mapping of global number to processor block.     */
-/* Code should call EDGE_TO_PROC_Y or VTX_TO_PROC_X */
-
-#define EDGE_TO_PROC_Y(phg, gno) \
-    Zoltan_PHG_Gno_To_Proc_Block((gno), (phg)->dist_y, (phg)->comm->nProc_y)
-
-#define VTX_TO_PROC_X(phg, gno) \
-    Zoltan_PHG_Gno_To_Proc_Block(gno, (phg)->dist_x, (phg)->comm->nProc_x)
 
 
 /* Function types for options to hypergraph partitioning */
@@ -95,8 +60,6 @@ struct PHGPartParamsStruct {
   char redmo_str[MAX_PARAM_STRING_LEN]; /* Matching optimization string*/
     
   ZOLTAN_PHG_MATCHING_FN *matching;    /* Pointers to Matching function */
-  ZOLTAN_HG_MATCHING_FN  *locmatching;  /* Pointer to local Matching function */
-  ZOLTAN_HG_MATCHING_FN  *matching_opt; /* Pointers to Matching optimization  */
     
   int edge_scaling;              /* type of hyperedge weight scaling */
   int vtx_scaling;               /* type of vertex scaling for inner product */
@@ -149,6 +112,8 @@ struct PHGPartParamsStruct {
   char balance_obj[MAX_PARAM_STRING_LEN];  /* Balancing objective:
                                                 usually vertices (rows),
                                                 but could be pins (nonzeros) */
+  int patoh_alloc_pool0,    /* to adjust patoh's memory pre-allocation amount */
+      patoh_alloc_pool1;    
 };
 
 typedef struct PHGPartParamsStruct PHGPartParams;
@@ -224,6 +189,7 @@ extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZHG**, Partition*, PHGPartParams*);
 extern void Zoltan_PHG_Plot(int, int, int, int*, int*, int*, char*);
 extern void Zoltan_PHG_Plot_2D_Distrib(ZZ*, HGraph*);
 
+extern int Zoltan_PHG_PaToH(ZZ *, HGraph *, int, int *, PHGPartParams*);    
 extern int Zoltan_PHG_ParKway(ZZ *, HGraph *, int, Partition, PHGPartParams* );
     
 

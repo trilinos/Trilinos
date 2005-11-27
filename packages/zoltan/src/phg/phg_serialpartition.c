@@ -16,9 +16,10 @@
 extern "C" {
 #endif
 
-
+#include "zz_sort.h"
 #include "phg.h"
-
+#include "zz_heap.h"
+    
 /* If adding a new coarse partitioning fn, add prototype here 
  * AND add entry to CoarsePartitionFns array 
  * AND increment NUM_COARSEPARTITION_FN.
