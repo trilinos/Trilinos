@@ -96,6 +96,17 @@ might point to the head of the data structure array.
 <p>As their last argument, all functions have 
 an <a href="ug_interface.html#Error Codes">error code</a> that should
 be set and returned by the registered function. 
+<p>
+If you are calling the Zoltan library from a C++ application, you may
+set the query function to be any class static function
+or any function
+defined outside of a class definition.  However, it is possible you
+will wish to set the query function to be an object method.
+In that case, you should
+write a query function that takes a pointer to the object as it's
+<I>data</I> field.  The query function can then call the object
+method.
+
 <br>&nbsp;
 <br>&nbsp;
 <p>
