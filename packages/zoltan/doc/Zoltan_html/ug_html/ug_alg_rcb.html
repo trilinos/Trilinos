@@ -164,7 +164,7 @@ cut.&nbsp; <br>
       </td>
     </tr>
 <tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> SKIP_DIMENSIONS</i></td>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> REDUCE_DIMENSIONS</i></td>
 <td>
 When a 3 dimensional geometry is almost flat, it may make more
 sense to treat it as a 2 dimensional geometry when applying the RCB
@@ -172,18 +172,18 @@ algorithm.  In this case, a 2 dimensional RCB calculation is applied to a plane
 that corresponds with the geometry. (This results in cuts that, while 
 still orthogonal, may no longer be axis aligned.)
 If this parameter is set to <B>1</B>, a 3 dimensional
-geometry will be treated as 2 dimensional if is very flat, 
-or 1 dimensional if it very thin.  A 2 dimensional geometry will
+geometry will be treated as 2 dimensional if it is very flat, 
+or 1 dimensional if it is very thin.  A 2 dimensional geometry will
 be treated as 1 dimensional if it is very thin.
 </td>
 </tr>
 <tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> SKIP_RATIO</i></td>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> DEGENERATE_RATIO</i></td>
 <td>
-If the <B>SKIP_DIMENSIONS</B> parameter is set, then this parameter
-determines when a geometry is considered to be flat.  
+If the <B>REDUCE_DIMENSIONS</B> parameter is set, then this parameter
+determines when a geometry is considered to be degenerate.  
 A bounding box which is oriented to the geometry is constructed, and
-the lengths of it's sides are tested against a ratio of 1 : <B>SKIP_RATIO</B>.
+the lengths of its sides are tested against a ratio of 1 : <B>DEGENERATE_RATIO</B>.
 </td>
 </tr>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_RECOMPUTE_BOX</i></td>
@@ -270,12 +270,12 @@ the largest and smallest side of a subdomain. Must be &gt; 1. <br>
     <tr>
       <td><br>
       </td>
-      <td><i>SKIP_DIMENSIONS</i> = 0</td>
+      <td><i>REDUCE_DIMENSIONS</i> = 0</td>
     </tr>
     <tr>
       <td><br>
       </td>
-      <td><i>SKIP_RATIO</i> = 10</td>
+      <td><i>DEGENERATE_RATIO</i> = 10</td>
     </tr>
     <tr>
       <td><br>

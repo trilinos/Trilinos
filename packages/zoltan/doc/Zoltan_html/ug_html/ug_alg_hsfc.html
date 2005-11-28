@@ -100,7 +100,7 @@ or to <b><a href="ug_interface_augment.html#Zoltan_LB_Box_PP_Assign">Zoltan_LB_B
 </tr>
 
 <tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> SKIP_DIMENSIONS</i></td>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> REDUCE_DIMENSIONS</i></td>
 <td>
 When a 3 dimensional geometry is almost flat, it may make more
 sense to treat it as a 2 dimensional geometry when applying the HSFC 
@@ -114,12 +114,12 @@ partitions will appear on the surface of a flat 3 dimensional object.
 </td>
 </tr>
 <tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> SKIP_RATIO</i></td>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> DEGENERATE_RATIO</i></td>
 <td>
-If the <B>SKIP_DIMENSIONS</B> parameter is set, then this parameter
+If the <B>REDUCE_DIMENSIONS</B> parameter is set, then this parameter
 determines when a geometry is considered to be flat.
 A bounding box which is oriented to the geometry is constructed, and
-the lengths of it's sides are tested against a ratio of 1 : <B>SKIP_RATIO</B>.
+the lengths of it's sides are tested against a ratio of 1 : <B>DEGENERATE_RATIO</B>.
 </td>
 </tr>
 
@@ -141,13 +141,13 @@ the lengths of it's sides are tested against a ratio of 1 : <B>SKIP_RATIO</B>.
 <tr>
 <td></td>
 
-<td><i>SKIP_DIMENSIONS</i> = 0</td>
+<td><i>REDUCE_DIMENSIONS</i> = 0</td>
 </tr>
 
 <tr>
 <td></td>
 
-<td><i>SKIP_RATIO</i> = 10</td>
+<td><i>DEGENERATE_RATIO</i> = 10</td>
 </tr>
 
 
