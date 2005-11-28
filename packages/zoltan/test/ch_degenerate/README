@@ -1,61 +1,11 @@
-##############################################################################
-# Zoltan Library for Parallel Applications                                   #
-# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
-# Zoltan is distributed under the GNU Lesser General Public License 2.1.     #
-# For more info, see the README file in the top-level Zoltan directory.      # 
-##############################################################################
-##############################################################################
-# CVS File Information
-#    $RCSfile$
-#    $Author$
-#    $Date$
-#    $Revision$
-##############################################################################
+"shaft" is shaft of 1000 points with dimensions 9 x 45 x 450.
+It is not axis-aligned.
 
--------------------------------------------------------------------------------
-ch_degenerate
-  Simple 3D geometries with degeneracies.  These can be used to test
-  the SKIP_DIMENSIONS option of RCB, RIB and HSFC.
+When processed with DEGENERATE_RATIO of 20, this will
+be considered to be a 2D geometry (450/9 > 20 but
+450/45 < 20).  When processed with DEGENERATE_RATIO of 9, 
+it will be treated as 1D (450/9 > 9 and 450/45 > 9).
 
-  Graph and coordinates included.  The graph files for the box, slab
-    and shaft are identical.
-
-  No vertex weights.
-
-  "slab" - 1000 vertices equally spaced in [0,9]x[0,900]x[0,450].  When
-    SKIP_DIMENSIONS is ON, this should be treated as a 2D object.
-
-  "rotated_slab" - This is the slab rotated off of the coordinate axes.
-
-  "shaft" - 1000 vertices equally spaced in [0,9]x[0,9]x[0,450].  When
-    SKIP_DIMENSIONS is ON, this should be treated as a 1D object.
-
-  "rotated_shaft" - This is the shaft rotated off of the coordinate axes.
-
-  "box" - 1000 vertices equally spaced in [0,9]x[0,9]x[0,9].  When
-    SKIP_DIMENSIONS is ON, no special action should be taken.
-
-  "rotated_box" - This is the box rotated off of the coordinate axes.
-
-Note that when the axis-aligned shaft is partitioned using hsfc, you may 
-get a warning that Zoltan could not achieve the desired level of balancing.  
-This is because the transformed shaft points line up along 10 points of the
-X-axis, with 100 points in the original shaft projecting to each of the
-10 points on the X-axis.  A 1-dimensional HSFC is then performed.  HSFC
-will not split up the points that project to the same point, so if the 
-number of processes does not evenly divide 10, there will be a large imbalance.
-
-The same warning can appear on either slab and shaft when using RCB with 
-RCB_RECTILINEAR_BLOCKS turned on, forcing all points that line up after
-projection into the same block.
-
-  Simple 2D geometry with degeneracies.
-
-  "bug" - This is a 2D data set with 60 points ranging along the y axis
-    from 0 to 58.  It should be treated as 1D if SKIP_DIMENSIONS is ON.
-    It is from the ch_bug test directory.
-
-  "line" - This is a line through the origin with y = x.  It should be
-    handled as 1D if SKIP_DIMENSIONS is ON.
-
--------------------------------------------------------------------------------
+This geometry can be used to test the REDUCE_DIMENSIONS
+parameter on degenerate geometries that are not axis-aligned,
+with transformation from 3D to 2D and from 3D to 1D.
