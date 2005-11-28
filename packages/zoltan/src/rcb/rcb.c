@@ -95,8 +95,8 @@ static PARAM_VARS RCB_params[] = {
                   { "RCB_MAX_ASPECT_RATIO", NULL, "DOUBLE", 0 },
                   { "AVERAGE_CUTS", NULL, "INT", 0 },
                   { "RCB_RECOMPUTE_BOX", NULL, "INT", 0 },
-                  { "SKIP_DIMENSIONS", NULL, "INT", 0 },
-                  { "SKIP_RATIO", NULL, "DOUBLE", 0 },
+                  { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
+                  { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
                   { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 
@@ -196,9 +196,9 @@ int Zoltan_RCB(
                               (void *) &max_aspect_ratio);
     Zoltan_Bind_Param(RCB_params, "RCB_RECOMPUTE_BOX",
                               (void *) &recompute_box);
-    Zoltan_Bind_Param(RCB_params, "SKIP_DIMENSIONS",
+    Zoltan_Bind_Param(RCB_params, "REDUCE_DIMENSIONS",
                               (void *) &idummy);
-    Zoltan_Bind_Param(RCB_params, "SKIP_RATIO",
+    Zoltan_Bind_Param(RCB_params, "DEGENERATE_RATIO",
                               (void *) &ddummy);
     Zoltan_Bind_Param(RCB_params, "AVERAGE_CUTS",
                               (void *) &average_cuts);

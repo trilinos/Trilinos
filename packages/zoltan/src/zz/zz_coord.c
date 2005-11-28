@@ -33,17 +33,17 @@ extern "C" {
  * This function gets a list of coordinates one way or the other,
  * i.e., by calling either Get_Geom_Multi or Get_Geom for each object.
  *
- * Note that for 2D or 3D RCB, RIB and HSFC with the SKIP_DIMENSIONS
+ * Note that for 2D or 3D RCB, RIB and HSFC with the REDUCE_DIMENSIONS
  * option on, Zoltan_Get_Coordinates is a global operation.  (A
  * global decision to transform coordinates may be made here.)  So
  * it must be called by all processes in the application or it will
  * hang.
  */
 
-static PARAM_VARS Skip_Dim_Params[] = {
+static PARAM_VARS Reduce_Dim_Params[] = {
                   { "KEEP_CUTS", NULL, "INT", 0 },
-                  { "SKIP_DIMENSIONS", NULL, "INT", 0 },
-                  { "SKIP_RATIO", NULL, "DOUBLE", 0 },
+                  { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
+                  { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
                   { NULL, NULL, NULL, 0 } };
 
 static void inertial_matrix2D(ZZ *zz, double *X, int num_obj, 
@@ -59,7 +59,7 @@ static void order_decreasing(double *d, int *order);
 static void transform_coordinates(double *coords, int num_obj, int d,
                                   ZZ_Transform *tr);
 static int get_target_dimension(double *dist, int *order, 
-                                double skip_ratio, int d);
+                                double deg_ratio, int d);
 
 #define NEAR_ONE(x) ((x >= .9999) && (x <= 1.0001))
 
@@ -82,10 +82,10 @@ int Zoltan_Get_Coordinates(
                           NULL to query functions when NUM_LID_ENTRIES == 0. */
   double dist[3];
   double im[3][3];
-  double skip_ratio;
+  double deg_ratio;
   double x;
   int order[3];
-  int skip_dimensions, d, axis_aligned;
+  int reduce_dimensions, d, axis_aligned;
   int target_dim;
   int ierr = ZOLTAN_OK;
   char msg[256];
@@ -155,7 +155,7 @@ int Zoltan_Get_Coordinates(
   }
 
   /*
-   * For RCB, RIB, and HSFC: if SKIP_DIMENSIONS was selected, compute the
+   * For RCB, RIB, and HSFC: if REDUCE_DIMENSIONS was selected, compute the
    * center of mass and inertial matrix of the coordinates.  
    *
    * For 3D problems: If the geometry is "flat", transform the points so the
@@ -174,26 +174,26 @@ int Zoltan_Get_Coordinates(
   if (((*num_dim == 3) || (*num_dim == 2)) && 
       ((zz->LB.Method==RCB) || (zz->LB.Method==RIB) || (zz->LB.Method==HSFC))){
 
-    Zoltan_Bind_Param(Skip_Dim_Params, "KEEP_CUTS", (void *)&i);
-    Zoltan_Bind_Param(Skip_Dim_Params, "SKIP_DIMENSIONS", 
-                     (void *)&skip_dimensions);
-    Zoltan_Bind_Param(Skip_Dim_Params, "SKIP_RATIO", (void *)&skip_ratio);
+    Zoltan_Bind_Param(Reduce_Dim_Params, "KEEP_CUTS", (void *)&i);
+    Zoltan_Bind_Param(Reduce_Dim_Params, "REDUCE_DIMENSIONS", 
+                     (void *)&reduce_dimensions);
+    Zoltan_Bind_Param(Reduce_Dim_Params, "DEGENERATE_RATIO", (void *)&deg_ratio);
 
-    skip_dimensions = 0;
-    skip_ratio = 10.0;
+    reduce_dimensions = 0;
+    deg_ratio = 10.0;
 
-    Zoltan_Assign_Param_Vals(zz->Params, Skip_Dim_Params, zz->Debug_Level,
+    Zoltan_Assign_Param_Vals(zz->Params, Reduce_Dim_Params, zz->Debug_Level,
                              zz->Proc, zz->Debug_Proc);
 
-    if (skip_dimensions == 0){
+    if (reduce_dimensions == 0){
       goto End;
     }
 
-    if (skip_ratio <= 1){
+    if (deg_ratio <= 1){
       if (zz->Proc == 0){
-        ZOLTAN_PRINT_WARN(0, yo, "SKIP_RATIO <= 1, setting it to 10.0");
+        ZOLTAN_PRINT_WARN(0, yo, "DEGENERATE_RATIO <= 1, setting it to 10.0");
       }
-      skip_ratio = 10.0;
+      deg_ratio = 10.0;
     }
 
     if (zz->LB.Method == RCB){
@@ -236,7 +236,7 @@ int Zoltan_Get_Coordinates(
         projected_distances(zz, *coords, num_obj, tran->CM, 
              tran->Evecs, dist, d, axis_aligned, tran->Axis_Order); 
 
-        target_dim = get_target_dimension(dist, order, skip_ratio, d);
+        target_dim = get_target_dimension(dist, order, deg_ratio, d);
 
         if (target_dim > 0){
           transform_coordinates(*coords, num_obj, d, tran);
@@ -273,7 +273,7 @@ int Zoltan_Get_Coordinates(
 
       if (rc){
         if (zz->Proc == 0){
-          ZOLTAN_PRINT_WARN(0, yo, "SKIP_DIMENSIONS calculation failed");
+          ZOLTAN_PRINT_WARN(0, yo, "REDUCE_DIMENSIONS calculation failed");
         }
         goto End; 
       }
@@ -324,7 +324,7 @@ int Zoltan_Get_Coordinates(
        * very flat in one or two directions.
        */
 
-      target_dim = get_target_dimension(dist, order, skip_ratio, d);
+      target_dim = get_target_dimension(dist, order, deg_ratio, d);
 
       if (target_dim > 0){
         /*
@@ -334,12 +334,12 @@ int Zoltan_Get_Coordinates(
           if (d == 2){
             sprintf(msg,
              "Geometry (~%lf x %lf), exceeds %lf to 1.0 ratio",
-              dist[order[0]], dist[order[1]], skip_ratio);
+              dist[order[0]], dist[order[1]], deg_ratio);
           }
           else{
             sprintf(msg,
              "Geometry (~%lf x %lf x %lf), exceeds %lf to 1.0 ratio",
-              dist[order[0]], dist[order[1]], dist[order[2]], skip_ratio);
+              dist[order[0]], dist[order[1]], dist[order[2]], deg_ratio);
           }
 
           ZOLTAN_PRINT_INFO(zz->Proc, yo, msg);
@@ -385,7 +385,7 @@ int Zoltan_Get_Coordinates(
         transform_coordinates(*coords, num_obj, d, tran);
 
       } /* If geometry is very flat */
-    }  /* If SKIP_DIMENSIONS is true */
+    }  /* If REDUCE_DIMENSIONS is true */
   } /* If 2-D or 3-D rcb, rib or hsfc */
 
 End:
@@ -444,7 +444,7 @@ void Zoltan_Initialize_Transformation(ZZ_Transform *tr)
  * bounding box indicate the geometry is very flat in one or two directions.
  */
 static int get_target_dimension(double *dist, int *order, 
-                                double skip_ratio, int d)
+                                double deg_ratio, int d)
 {
   int target_dim = 0;
   double flat;
@@ -456,14 +456,14 @@ static int get_target_dimension(double *dist, int *order,
     else{
       order[0] = 0; order[1] = 1;
     }
-    if (dist[order[1]] < (dist[order[0]] / skip_ratio)){
+    if (dist[order[1]] < (dist[order[0]] / deg_ratio)){
       target_dim = 1;
     }
   }
   else{
     order_decreasing(dist, order);
 
-    flat = dist[order[0]] / skip_ratio;
+    flat = dist[order[0]] / deg_ratio;
   
     if (dist[order[2]] < flat){
       /*

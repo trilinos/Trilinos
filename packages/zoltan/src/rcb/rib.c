@@ -66,8 +66,8 @@ static PARAM_VARS RIB_params[] = {
                { "RIB_OUTPUT_LEVEL", NULL, "INT", 0 },
                { "AVERAGE_CUTS", NULL, "INT", 0 },
                { "KEEP_CUTS", NULL, "INT", 0 },
-               { "SKIP_DIMENSIONS", NULL, "INT", 0 },
-               { "SKIP_RATIO", NULL, "DOUBLE", 0 },
+               { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
+               { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
                { NULL, NULL, NULL, 0 } };
 
 /*---------------------------------------------------------------------------*/
@@ -135,8 +135,8 @@ int Zoltan_RIB(
   Zoltan_Bind_Param(RIB_params, "RIB_OUTPUT_LEVEL", (void *) &stats);
   Zoltan_Bind_Param(RIB_params, "AVERAGE_CUTS", (void *) &average_cuts);
   Zoltan_Bind_Param(RIB_params, "KEEP_CUTS", (void *) &gen_tree);
-  Zoltan_Bind_Param(RIB_params, "SKIP_DIMENSIONS", (void *) &idummy);
-  Zoltan_Bind_Param(RIB_params, "SKIP_RATIO", (void *) &ddummy);
+  Zoltan_Bind_Param(RIB_params, "REDUCE_DIMENSIONS", (void *) &idummy);
+  Zoltan_Bind_Param(RIB_params, "DEGENERATE_RATIO", (void *) &ddummy);
 
   overalloc = RIB_DEFAULT_OVERALLOC;
   check_geom = DEFAULT_CHECK_GEOM;

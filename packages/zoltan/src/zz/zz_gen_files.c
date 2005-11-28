@@ -30,7 +30,7 @@ static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex,
            float **p_edge_wgts, int *glob_hedges, int *glob_pins);
 static int Zoltan_HG_Print_Hedges(ZZ *zz, FILE *fp, 
            int *hindex, ZOLTAN_ID_PTR hevtxs, float *hewgts);
-static int turn_off_skip_dimensions(ZZ *zz);
+static int turn_off_reduce_dimensions(ZZ *zz);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -75,7 +75,7 @@ int gen_geom, int gen_graph, int gen_hg)
   ZOLTAN_ID_PTR hevtxs;
   float *float_vwgt, *ewgts, *hewgts;
   double *xyz;
-  int i, j, k, num_obj, num_geom, num_edges, skip;
+  int i, j, k, num_obj, num_geom, num_edges, reduce;
   int glob_nvtxs, glob_edges, glob_hedges, glob_pins;
   int print_vtx_num = ZOLTAN_PRINT_VTX_NUM;
   char *yo = "Zoltan_Generate_Files";
@@ -160,13 +160,13 @@ int gen_geom, int gen_graph, int gen_hg)
       error = ZOLTAN_FATAL;
       goto End;
     }
-    skip = turn_off_skip_dimensions(zz);  /* don't transform coordinates */
+    reduce = turn_off_reduce_dimensions(zz);  /* don't transform coordinates */
 
     error = Zoltan_Get_Coordinates(zz, num_obj, global_ids, local_ids,
                                    &num_geom, &xyz);
 
-    if (skip){
-      Zoltan_Set_Param(zz, "SKIP_DIMENSIONS", "1");
+    if (reduce){
+      Zoltan_Set_Param(zz, "REDUCE_DIMENSIONS", "1");
     }
 
     if (error != ZOLTAN_OK && error != ZOLTAN_WARN) {
@@ -480,22 +480,22 @@ static int Zoltan_HG_Print_Hedges(ZZ *zz, FILE *fp,
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
-static int turn_off_skip_dimensions(ZZ *zz)
+static int turn_off_reduce_dimensions(ZZ *zz)
 {
-  int skip=0;
+  int reduce=0;
   PARAM_VARS param[2] = {
-     {"SKIP_DIMENSIONS", NULL, "INT", 0},
+     {"REDUCE_DIMENSIONS", NULL, "INT", 0},
      {NULL, NULL, NULL, 0}};
 
-  Zoltan_Bind_Param(param, "SKIP_DIMENSIONS", (void *)&skip);
+  Zoltan_Bind_Param(param, "REDUCE_DIMENSIONS", (void *)&reduce);
   Zoltan_Assign_Param_Vals(zz->Params, param, zz->Debug_Level, zz->Proc,
     zz->Debug_Proc);
 
-  if (skip){
-    Zoltan_Set_Param(zz, "SKIP_DIMENSIONS", "0");
+  if (reduce){
+    Zoltan_Set_Param(zz, "REDUCE_DIMENSIONS", "0");
   }
 
-  return skip;
+  return reduce;
 }
 
 
