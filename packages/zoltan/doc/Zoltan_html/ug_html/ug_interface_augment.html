@@ -226,6 +226,19 @@ intersects the box. To use this routine, the parameter <B>KEEP_CUTS</B>
 must be set to TRUE when the decomposition is generated. This parameter
 will cause the sequence of geometric cuts to be saved, which
 is necessary for <B>Zoltan_LB_Box_PP_Assign</B> to do its job.
+<p>
+Note that if the parameter <B>REDUCE_DIMENSIONS</B> was set to TRUE and
+the geometry was determined to be degenerate when decomposition was
+calculated, then the calculation was performed on transformed
+coordinates.  This means that <B>Zoltan_LB_Box_PP_Assign</B>
+must transform the supplied bounding box accordingly.  
+The transformed vertices are bounded again,
+and the partition intersections are calculated in the transformed
+space on this new bounding box.
+The impact of this is that <B>Zoltan_LB_Box_PP_Assign</B> may return
+partitions not actually intersecting the original bounding box, but
+it will not omit any partitions intersecting the original bounding
+box.
 <BR>&nbsp;
 
 <P>&nbsp;
