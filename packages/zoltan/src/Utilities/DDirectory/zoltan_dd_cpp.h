@@ -28,7 +28,7 @@
 #ifndef ZOLTAN_DD_CPP_H_
 #define ZOLTAN_DD_CPP_H_
 
-#include "zoltan.h"
+#include "zoltan_dd.h"
 
 class Zoltan_DD {
 
