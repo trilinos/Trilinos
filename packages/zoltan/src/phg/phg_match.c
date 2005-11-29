@@ -379,14 +379,14 @@ static int pmatching_hybrid_ipm(
   strcpy(hgp->redm_str, "c-ipm");
   ierr = pmatching_ipm(zz, hg, match, hgp);  
 
-  /* Then full ipm on remaining unmatched vertices. */
-  strcpy(hgp->redm_str, "ipm");  
-  ierr = pmatching_ipm(zz, hg, match, hgp);  
-
   /* Reset hybrid_keep_factor to be safe. */
   hgp->hybrid_keep_factor = 0.0;
 
-  /* set redm parameter back to original */
+  /* Then do full ipm on remaining unmatched vertices. */
+  strcpy(hgp->redm_str, "ipm");  
+  ierr = pmatching_ipm(zz, hg, match, hgp);  
+
+  /* Reset redm parameter back to original */
   strcpy(hgp->redm_str, redm_orig);
   
   return ierr;
@@ -771,8 +771,10 @@ total_nCandidates = nTotal;
     kstart = old_kstart = 0;         /* next candidate (of nTotal) to process */
     while (kstart < total_nCandidates)  { 
 
+#ifdef RTHRTH
 if (kstart > 0)        
 printf ("RTHRTH    kstart > 0   RTHRTH\n");    
+#endif
 
       MACRO_TIMER_START (2, "Matching kstart A", 0);
       sendsize = 0;                      /* position in send buffer */
