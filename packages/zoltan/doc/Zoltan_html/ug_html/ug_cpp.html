@@ -39,7 +39,7 @@ the appropriate header file and link with the Zoltan C library.
 <P><TABLE rules=cols,rows frame=box align=center cellpadding=5>
 <TR> <TH>header file</TH> <TH>class</TH></TR>
 <TR> <TD><I>include/zoltan_cpp.h</I></TD>
-     <TD><B>Zoltan_Object</B>, representing a 
+     <TD><B>Zoltan</B>, representing a 
      <a href="ug_interface_init.html">load balancing</a> instance</TD>
 <TR> <TD><I>Utilities/Communication/zoltan_comm_cpp.h</I></TD>
      <TD><B>Zoltan_Comm</B>, representing an 
@@ -81,14 +81,14 @@ function has been called or not.  Therefore, the C++ wrappers do not call
 <a href="ug_interface_init.html#Zoltan_Initialize"><I>Zoltan_Initialize</I> </a>
 for you.
 <li>
-It is preferable to allocate <B>Zoltan_Object</B>s dynamically so you can
+It is preferable to allocate <B>Zoltan</B> objects dynamically so you can
 explicitly delete them before your application exits. 
-(<B>Zoltan_Object</B>s allocated instead on the stack will be deleted 
+(<B>Zoltan</B> objects allocated instead on the stack will be deleted 
 automatically at the completion of the scope in which they were created.)
-The reason is that the <B>Zoltan_Object</B>
+The reason is that the <B>Zoltan</B>
 destructor calls Zoltan_Destroy(), which makes an MPI call to free
-the communicator in use by the <B>Zoltan_Object</B>.  However the
-MPI destructor may have been called before the <B>Zoltan_Object</B>
+the communicator in use by the <B>Zoltan</B> object.  However the
+MPI destructor may have been called before the <B>Zoltan</B>
 destructor.  In this case you
 would receive an error while your application is exiting.
 </ol>
@@ -106,16 +106,16 @@ This second point is illustrated in the good and bad example below.
 <TT>&nbsp;//<I>Initialize the Zoltan library with a C language call</I></TT><br>
 <TT>&nbsp;float version;</TT><br>
 <TT>&nbsp;Zoltan_Initialize</A>(argc, argv, &version);</TT><br><br>
-<TT>&nbsp;//<I>Dynamically create Zoltan_Object.</I></tt><br>
-<TT>&nbsp;Zoltan_Object *zz = new Zoltan_Object(MPI::COMM_WORLD);</tt><br>
+<TT>&nbsp;//<I>Dynamically create Zoltan object.</I></tt><br>
+<TT>&nbsp;Zoltan *zz = new Zoltan(MPI::COMM_WORLD);</tt><br>
 <TT>&nbsp;zz->Set_Param("LB_METHOD", "RCB");</tt><br><br> 
 <TT>&nbsp;//<I>Several lines of code would follow, working with zz</I></tt><br><br>
-<TT>&nbsp;//<I>Explicitly delete the Zoltan_Object</I></tt><br>
+<TT>&nbsp;//<I>Explicitly delete the Zoltan object</I></tt><br>
 <TT>&nbsp;delete zz;</tt><br>
 <TT>&nbsp;MPI::Finalize();</tt><br>
 <TT>&nbsp;}</tt><br>
 </TR>
-<CAPTION ALIGN=BOTTOM><I>Good example, Zoltan_Object is dynamically allocated
+<CAPTION ALIGN=BOTTOM><I>Good example, Zoltan object is dynamically allocated
 and explicity deleted before exit.</I></CAPTION>
 </TABLE></CENTER>
 <br>
@@ -126,7 +126,7 @@ and explicity deleted before exit.</I></CAPTION>
 <TD><A NAME="c++ item 2"></A>
 <TT>int main(int argc, char *argv[])</tt><br>
 <TT>{</tt><br>
-<TT>Zoltan_Object zz;</tt><br><br>
+<TT>Zoltan zz;</tt><br><br>
 <TT>&nbsp;MPI::Init(argc, argv);</tt><br>
 <TT>&nbsp;int rank = MPI::COMM_WORLD.Get_rank();</tt><br>
 <TT>&nbsp;int size = MPI::COMM_WORLD.Get_size();</tt><br><br>
@@ -139,7 +139,7 @@ and explicity deleted before exit.</I></CAPTION>
 <TT>&nbsp;}</tt><br>
 </TR>
 <CAPTION ALIGN=BOTTOM><I>Bad example, the MPI destructor may execute before the
-Zoltan_Object destructor at process exit.</I></CAPTION>
+Zoltan destructor at process exit.</I></CAPTION>
 </TABLE></CENTER>
 <br>
 <br>

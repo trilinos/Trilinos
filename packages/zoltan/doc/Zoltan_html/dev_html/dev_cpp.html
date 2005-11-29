@@ -64,7 +64,7 @@ link with the Zoltan C library.
 <P>The C language load balancing data stucture 
 (<B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>)
 and the C functions that operate on it are accessed
-through the C++ <B>Zoltan_Object</B> class, defined in <I>zoltan_cpp.h</I>.
+through the C++ <B>Zoltan</B> class, defined in <I>zoltan_cpp.h</I>.
 
 <P>The communication package is encapsulated the <B>Zoltan_Comm</B> class
 defined in <I>zoltan_comm_cpp.h</I>.
@@ -100,7 +100,7 @@ We remove the beginning of the C library name, the part that identifies
 the subset of the Zoltan library that the function is part of, and keep
 the last part of the C library name, the part that describes what the
 function does.  For example the C function <B>Zoltan_LB_Partition</B> becomes
-the C++ method <B>LB_Partition</B> in the class <B>Zoltan_Object</B> and
+the C++ method <B>LB_Partition</B> in the class <B>Zoltan</B> and
 C function <B>Zoltan_Comm_Create</B> becomes the C++ method
 <B>Create</B> in the class <B>Zoltan_Comm</B>.
 

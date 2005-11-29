@@ -218,10 +218,10 @@ Zoltan library routines.
 The <a href="ug_cpp.html">C++ interface</a> to 
 Zoltan is implemented in header files which define classes that
 wrap the Zoltan C library.  The file <I>include/zoltan_cpp.h</I> defines the
-<B>Zoltan_Object</B> class which encapsulates a load balancing data structure and the
+<B>Zoltan</B> class which encapsulates a load balancing data structure and the
 Zoltan load balancing functions which operate upon it.  Include this header file
 instead in your C++ application.  Note that C++ applications should call the
-C function <B>Zoltan_Initialize</B> before creating a <B>Zoltan_Object</B>.
+C function <B>Zoltan_Initialize</B> before creating a <B>Zoltan</B> object.
 <p>
 <a href="ug_fortran_apps.html">Fortran applications</a> must USE
 <a href="ug_fortran_api.html#fortran ug api zoltan module">module zoltan</a> and 
