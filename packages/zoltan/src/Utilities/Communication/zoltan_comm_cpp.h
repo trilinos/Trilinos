@@ -28,7 +28,7 @@
 #ifndef ZOLTAN_COMM_CPP_H_
 #define ZOLTAN_COMM_CPP_H_
 
-#include "comm.h"
+#include "zoltan_comm.h"
 
 class Zoltan_Comm {
 
@@ -132,10 +132,6 @@ public:
     {
     return Zoltan_Comm_Invert_Plan(&this->Plan);
     }
-
-  // For debugging and testing purposes
-
-  ZOLTAN_COMM_OBJ *Get_ZOLTAN_COMM_OBJ(){return this->Plan;} 
 
   // Static methods
 
