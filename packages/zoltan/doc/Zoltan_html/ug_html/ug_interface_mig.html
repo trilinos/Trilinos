@@ -618,21 +618,6 @@ found_procs</i>)&nbsp;
 </td>
 </tr>
 
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C++:</td>
-
-<td WIDTH="85%">
-int <b>Zoltan_Object::Compute_Destinations</b>
-(
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const int &<i>num_known</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> const <i>known_global_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> const <i>known_local_ids</i>, 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int * const <i>known_procs</i>, 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>num_found</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> &<i>found_global_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> &<i>found_local_ids</i>, 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int * &<i>found_procs</i>);&nbsp;</td>
-</tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Compute_Destinations</b> is a wrapper around 
@@ -722,20 +707,6 @@ export_procs</i>)
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
 </tr>
 
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C++:</td>
-
-<td WIDTH="85%">
-int <b>Zoltan_Object::Help_Migrate</b> (
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const int & <i>num_import</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> const <i>import_global_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> const <i>import_local_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int * const <i>import_procs</i>, 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const int & <i>num_export</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> const <i>export_global_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> const <i>export_local_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int * const <i>export_procs</i>);&nbsp;</td>
-</tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Help_Migrate</b> 

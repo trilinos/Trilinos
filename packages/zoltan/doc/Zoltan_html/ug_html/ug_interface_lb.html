@@ -709,26 +709,6 @@ num_export, export_global_ids, export_local_ids, export_procs</i>)&nbsp;
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
 </tr>
 
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C++:</td>
-
-<td WIDTH="85%">int <b>Zoltan_Object::LB_Balance</b> (
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>changes</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_gid_entries</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_lid_entries</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_import</i>,&nbsp;
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-&<i>import_global_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-&<i>import_local_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>import_procs</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_export</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-&<i>export_global_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-&<i>export_local_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>export_procs</i>);&nbsp;</td>
-</tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_LB_Balance</b> is a wrapper around
@@ -803,21 +783,6 @@ import_procs, export_global_ids, export_local_ids, export_procs</i>)&nbsp;
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
 </tr>
 
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C++:</td>
-
-<td WIDTH="85%">int <b>Zoltan_Object::LB_Free_Data</b> (
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-&<i>import_global_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-&<i>import_local_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>import_procs</i>,&nbsp;
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-&<i>export_global_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-&<i>export_local_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>export_procs</i>);&nbsp;</td>
-</tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_LB_Free_Data</b> frees the memory allocated
@@ -827,8 +792,7 @@ or
 Memory pointed to by the arguments is freed and the arguments are set to
 NULL in C or nullified in Fortran. NULL arguments may be passed to <b>Zoltan_LB_Free_Data</b>.
 Note that this function does not destroy the Zoltan data structure itself;
-it is deallocated through a call to <b><a href="ug_interface_init.html#Zoltan_Destroy">Zoltan_Destroy</a></b> in C and Fortran, and by the <B>Zoltan_Object</B> destructor
-in C++.
+it is deallocated through a call to <b><a href="ug_interface_init.html#Zoltan_Destroy">Zoltan_Destroy</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
