@@ -491,7 +491,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
     switch (ii) {
     case 0:
       ml_ptr = ml_;
-      else ml_ptr = ml_;
+      //??else ml_ptr = ml_;
       in_x_coord = List_.get("x-coordinates", (double *)0);
       in_y_coord = List_.get("y-coordinates", (double *)0);
       in_z_coord = List_.get("z-coordinates", (double *)0);
