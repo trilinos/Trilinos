@@ -180,12 +180,12 @@ public:
     return Zoltan_RCB_Box( ZZ_Ptr,part,&ndim,&xmin,&ymin,&zmin,&xmax,&ymax,&zmax);
   }
 
-  int LB_Free_Part( ZOLTAN_ID_PTR &global_ids,
-                    ZOLTAN_ID_PTR &local_ids,
-                    int * &procs,
-                    int * &to_part )
+  int LB_Free_Part( ZOLTAN_ID_PTR *global_ids,
+                    ZOLTAN_ID_PTR *local_ids,
+                    int **procs,
+                    int **to_part )
   {
-    return Zoltan_LB_Free_Part( &global_ids, &local_ids, &procs, &to_part );
+    return Zoltan_LB_Free_Part( global_ids, local_ids, procs, to_part );
   }
 
   int Set_Fn  ( const ZOLTAN_FN_TYPE &fn_type,
@@ -446,22 +446,22 @@ public:
                                     parts, &numparts );
   }
 
-  int Invert_Lists             ( const int &num_import,
-                                 ZOLTAN_ID_PTR const import_global_ids,
-                                 ZOLTAN_ID_PTR const import_local_ids,
-                                 int * const import_procs,
-                                 int * const import_to_part,
-                                 int &num_export,
-                                 ZOLTAN_ID_PTR &export_global_ids,
-                                 ZOLTAN_ID_PTR &export_local_ids,
-                                 int * &export_procs,
-                                 int * &export_to_part )
+  int Invert_Lists             ( const int &num_known,
+                                 ZOLTAN_ID_PTR const known_global_ids,
+                                 ZOLTAN_ID_PTR const known_local_ids,
+                                 int * const known_procs,
+                                 int * const known_to_part,
+                                 int &num_found,
+                                 ZOLTAN_ID_PTR &found_global_ids,
+                                 ZOLTAN_ID_PTR &found_local_ids,
+                                 int * &found_procs,
+                                 int * &found_to_part )
   {
     return Zoltan_Invert_Lists( ZZ_Ptr,
-                                num_import, import_global_ids, import_local_ids,
-                                import_procs, import_to_part,
-                                &num_export, &export_global_ids, &export_local_ids,
-                                &export_procs, &export_to_part );
+                                num_known, known_global_ids, known_local_ids,
+                                known_procs, known_to_part,
+                                &num_found, &found_global_ids, &found_local_ids,
+                                &found_procs, &found_to_part );
   }
 
   int Migrate          ( const int &num_import,
