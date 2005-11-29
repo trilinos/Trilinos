@@ -758,6 +758,12 @@ these arrays can be deallocated through a separate call to <b><a href="ug_interf
 <p>
 There is no explicit <B>Destroy</B> method in the C++ interface.  The <B>Zoltan</B>
 object is destroyed when the destructor executes.
+<p>
+As a side effect, <B>Zoltan_Destroy</B> (and the C++ <B>Zoltan</B>
+destructor) frees the MPI communicator that
+had been allocated for the structure.  So it is important that the
+application does not call <B>MPI_Finalize</B> before it calls
+<B>Zoltan_Destroy</B> or before the destructor executes.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
