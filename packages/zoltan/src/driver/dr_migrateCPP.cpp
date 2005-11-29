@@ -65,7 +65,7 @@ static int Use_Edge_Wgts = 0;         /* Flag indicating whether elements
 int migrate_elements(
   int Proc,
   MESH_INFO_PTR mesh,
-  Zoltan_Object &zz,
+  Zoltan &zz,
   int num_gid_entries, 
   int num_lid_entries,
   int num_imp,

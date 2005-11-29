@@ -359,7 +359,6 @@ Zoltan_Comm *comm;
    * Test copy operator and constructor
    */
 
-printf("Test DD copy functions\n");
   Zoltan_DD ddCopy(*dd);  // uses copy constructor
   Zoltan_DD ddNew;        // uses ordinary constructor
 

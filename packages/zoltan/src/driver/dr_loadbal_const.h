@@ -21,7 +21,7 @@
 
   #include "zoltan_cpp.h"
 
-  #define ZOLTAN_STRUCT Zoltan_Object &
+  #define ZOLTAN_STRUCT Zoltan &
 
   extern "C" {
 

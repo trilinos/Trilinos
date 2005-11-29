@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
   MyNumPts = exInitializePoints(&Pts, &Gids, rank, size);
 
   // Initialize Zoltan.  This is a C call.  The simple C++ code 
-  // that creates Zoltan_Objects does not keep track of whether 
+  // that creates Zoltan objects does not keep track of whether 
   // Zoltan_Initialize has been called.
 
   float version;
@@ -60,9 +60,9 @@ int main(int argc, char *argv[])
   // Create Zoltan object.  This calls Zoltan_Create.  
 
 #ifdef MPICPP
-  Zoltan_Object *zz = new Zoltan_Object(MPI::COMM_WORLD);
+  Zoltan *zz = new Zoltan(MPI::COMM_WORLD);
 #else
-  Zoltan_Object *zz = new Zoltan_Object(MPI_COMM_WORLD);
+  Zoltan *zz = new Zoltan(MPI_COMM_WORLD);
 #endif
 
   // General parameters:
@@ -125,12 +125,12 @@ int main(int argc, char *argv[])
 
   FreePoints();
 
-  // Implementation note:  A Zoltan_Object contains an MPI communicator.
-  //   When the Zoltan_Object is destroyed, it uses it's MPI communicator.
-  //   So it is important that the Zoltan_Object is destroyed before
+  // Implementation note:  A Zoltan object contains an MPI communicator.
+  //   When the Zoltan object is destroyed, it uses it's MPI communicator.
+  //   So it is important that the Zoltan object is destroyed before
   //   the MPI communicator is destroyed.  To ensure this, dynamically
-  //   allocate the Zoltan_Object, so you can explicitly destroy it.
-  //   If you create a Zoltan_Object on the stack, it's destructor will
+  //   allocate the Zoltan object, so you can explicitly destroy it.
+  //   If you create a Zoltan object on the stack, it's destructor will
   //   be invoked atexit, possibly after the communicator's
   //   destructor.
 

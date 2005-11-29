@@ -131,8 +131,8 @@ int main(int argc, char *argv[])
    *  MPI functions.)
    */
 
-  Zoltan_Object *zz = NULL;
-  zz = new Zoltan_Object();
+  Zoltan *zz = NULL;
+  zz = new Zoltan();
 
   /* initialize some variables */
   MESH_INFO  mesh;
@@ -258,6 +258,12 @@ int main(int argc, char *argv[])
       error_report(Proc);
       print_output = 0;
       goto End;
+    }
+
+    if (iteration == 1){
+      Zoltan zz2 = *zz;    /* test copy constructor */
+      Zoltan zz3;          /* default constructor */
+      zz3 = *zz;                  /* test copy operator  */
     }
 
     /* Reset the mesh data structure for next iteration. */

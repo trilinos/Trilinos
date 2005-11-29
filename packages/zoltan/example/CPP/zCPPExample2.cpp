@@ -1,12 +1,9 @@
 // $Id$
 //
-//  C++ example of Zoltan library, including test of
-//   copy constructor and copy operator.
+//  C++ example of Zoltan library
 //
 //  MPICPP - Define this if your C++ implementation of MPI works.
 //  NAMESPACES_OK - Define this if your system uses namespaces.
-//  TEST_COPY - Define this if you want to test the Zoltan C++
-//              copy operator and copy constructor.
 //
 
 #include <mpi.h>
@@ -18,7 +15,6 @@
 
 //#define MPICPP
 //#define NAMESPACES_OK
-#define TEST_COPY
 
 #ifdef NAMESPACES_OK
  using namespace std;
@@ -42,10 +38,10 @@ static int rank, size;
 
 static void FreePoints();
 static void MPIExit();
-static Zoltan_Object *makeZoltanObject(int method);
-static void SetRCB_Parameters(Zoltan_Object &);
-static void SetRIB_Parameters(Zoltan_Object &);
-static void SetHSFC_Parameters(Zoltan_Object &);
+static Zoltan *makeZoltanObject(int method);
+static void SetRCB_Parameters(Zoltan &);
+static void SetRIB_Parameters(Zoltan &);
+static void SetHSFC_Parameters(Zoltan &);
 
 int main(int argc, char *argv[])
 {
@@ -77,93 +73,19 @@ int main(int argc, char *argv[])
   // Create Zoltan object.  
 
   if (rank == 0) cout << "\nRecursive Coordinate Bisection" << endl;
-  Zoltan_Object *zz = makeZoltanObject(RCB);
-
-#ifdef TEST_COPY
-  // Create a copy - this will use the copy constructor
-
-  Zoltan_Object zzCopy = *zz;
-
-  // Check that the two look similar:
-  if (0 == rank){
-    cout << "RCB structure for original:" << endl;
-    zz->PrintRCB(10);
-
-    cout << "RCB structure for copy:" << endl;
-    zzCopy.PrintRCB(10);
-  }
+  Zoltan *zz = makeZoltanObject(RCB);
   delete zz;
-
-  // Verify copy is still valid after original was deleted
-
-  if (0 == rank){
-    cout << "RCB structure for copy, after deleting original:" << endl;
-    zzCopy.PrintRCB(10);
-  }
-#else
-  if (0 == rank){
-    zz->PrintRCB(10);
-  }
-  delete zz;
-#endif
 
   // Try RIB
 
   if (rank == 0) cout << "\nRecursive Inertial Bisection" << endl;
   zz = makeZoltanObject(RIB);
-
-#ifdef TEST_COPY
-  // Create a copy - this will use the copy constructor
-
-  Zoltan_Object RIBCopy = *zz;
-
-  // Create a copy using the copy operator
-
-  Zoltan_Object zzCopy2;
-  zzCopy2 = *zz;
-
-  if (0 == rank){
-    cout << "(" << rank << ") RIB structure for original:" << endl;
-    zz->PrintRIB(10);
-
-    cout << "(" << rank << ") RIB structure for copy from copy constructor:" << endl;
-    RIBCopy.PrintRIB(10);
-
-    cout << "(" << rank << ") RIB structure for copy from copy operator:" << endl;
-    zzCopy2.PrintRIB(10);
-  }
-#else
-  if (0 == rank){
-    zz->PrintRIB(10);
-  }
-#endif
-
   delete zz;
 
   // Try HSFC
 
   if (rank == 0) cout << "\nHilbert Space Filling Curve" << endl;
   zz = makeZoltanObject(HSFC);
-
-#ifdef TEST_COPY
-  // Create a copy - this will use the copy constructor
-
-  Zoltan_Object HSFCCopy = *zz;
-
-  // Check that the two look similar:
-  if (0 == rank){
-    cout << "(" << rank << ") HSFC structure for original:" << endl;
-    zz->PrintHSFC(10);
-
-    cout << "(" << rank << ") HSFC structure for copy:" << endl;
-    HSFCCopy.PrintHSFC(10);
-  }
-#else
-  if (rank == 0){
-    zz->PrintHSFC(10);
-  }
-#endif
-
   delete zz;
 
   FreePoints();
@@ -190,12 +112,12 @@ static void MPIExit()
 #endif
 }
 
-static Zoltan_Object *makeZoltanObject(int method)
+static Zoltan *makeZoltanObject(int method)
 {
 #ifdef MPICPP
-  Zoltan_Object *zz = new Zoltan_Object(MPI::COMM_WORLD);
+  Zoltan *zz = new Zoltan(MPI::COMM_WORLD);
 #else
-  Zoltan_Object *zz = new Zoltan_Object(MPI_COMM_WORLD);
+  Zoltan *zz = new Zoltan(MPI_COMM_WORLD);
 #endif
 
   if (method == RCB){
@@ -258,7 +180,7 @@ static Zoltan_Object *makeZoltanObject(int method)
 
   return zz;
 }
-static void SetRCB_Parameters(Zoltan_Object &zz)
+static void SetRCB_Parameters(Zoltan &zz)
 {
   /* General parameters */
 
@@ -274,7 +196,7 @@ static void SetRCB_Parameters(Zoltan_Object &zz)
   zz.Set_Param("RCB_OUTPUT_LEVEL", "0");
   zz.Set_Param("RCB_RECTILINEAR_BLOCKS", "1");
 }
-static void SetHSFC_Parameters(Zoltan_Object &zz)
+static void SetHSFC_Parameters(Zoltan &zz)
 {
   /* General parameters */
 
@@ -288,7 +210,7 @@ static void SetHSFC_Parameters(Zoltan_Object &zz)
 
   zz.Set_Param("KEEP_CUTS", "1");
 }
-static void SetRIB_Parameters(Zoltan_Object &zz)
+static void SetRIB_Parameters(Zoltan &zz)
 {
   /* General parameters */
 

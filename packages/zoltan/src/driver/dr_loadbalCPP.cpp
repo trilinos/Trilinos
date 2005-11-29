@@ -42,7 +42,7 @@ using namespace std;
 
 #include "zoltan_cpp.h"
 
-static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR, Zoltan_Object &);
+static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR, Zoltan &);
 
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to determine a new load balance.                    */
@@ -85,7 +85,7 @@ ZOLTAN_NUM_HG_EDGES_FN get_num_hg_edges;
 /*****************************************************************************/
 /*****************************************************************************/
 
-int setup_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
+int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
                  MESH_INFO_PTR mesh)
 {
 /* Local declarations. */
@@ -405,7 +405,7 @@ int setup_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
 /*****************************************************************************/
 /*****************************************************************************/
 
-int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
+int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
                MESH_INFO_PTR mesh, PARIO_INFO_PTR pio_info)
 {
 /* Local declarations. */
@@ -1490,16 +1490,16 @@ ELEM_INFO *elem, *found_elem = NULL;
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void test_point_drops(FILE *, double *, Zoltan_Object &,
+static void test_point_drops(FILE *, double *, Zoltan &,
   int, int *, int, int *, int, int);
-static void test_box_drops(FILE *, double *, double *, Zoltan_Object &,
+static void test_box_drops(FILE *, double *, double *, Zoltan &,
   int, int, int, int);
 
 static void test_drops(
   int Proc,
   MESH_INFO_PTR mesh, 
   PARIO_INFO_PTR pio_info,
-  Zoltan_Object &zz
+  Zoltan &zz
 )
 {
 FILE *fp;
@@ -1582,7 +1582,7 @@ int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
 static void test_point_drops(
   FILE *fp, 
   double *x, 
-  Zoltan_Object &zz,
+  Zoltan &zz,
   int Proc,
   int *procs,
   int proccnt,
@@ -1627,7 +1627,7 @@ static void test_box_drops(
   FILE *fp, 
   double *xlo, 
   double *xhi, 
-  Zoltan_Object &zz,
+  Zoltan &zz,
   int Proc, 
   int answer_proc,   /* If >= 0, an expected answer for proc. */
   int answer_part,   /* If >= 0, an expected answer for part. */
