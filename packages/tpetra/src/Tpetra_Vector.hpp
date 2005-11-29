@@ -619,16 +619,18 @@ namespace Tpetra {
 						   std::vector<OrdinalType> const& permuteFromLIDs) {
 			// cast sourceObj to a Tpetra::Vector so we can actually do something with it
 			Vector<OrdinalType, ScalarType> const& sourceVector = dynamic_cast<Vector<OrdinalType, ScalarType> const&>(sourceObj);
+			
+			std::vector<ScalarType> const& sourceArray = sourceVector.scalarArray();
+			std::vector<ScalarType>& destArray = scalarArray();
 
 			// the first numImportIDs GIDs are the same between source and target,
 			// we can just copy them
 			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numSameIDs; i++)
-				(*this)[i] = sourceVector[i];
+			    destArray[i] = sourceArray[i];
 
 			// next, do permutations
 			for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numPermuteIDs; i++)
-				(*this)[permuteToLIDs[i]] = sourceVector[permuteFromLIDs[i]];
-			
+			    destArray[permuteToLIDs[i]] = sourceArray[permuteFromLIDs[i]];
 			
 			return(0);
 		}
