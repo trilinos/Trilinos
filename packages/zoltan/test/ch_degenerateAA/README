@@ -1,4 +1,6 @@
-AAshaft is an axis-aligned shaft of 1000 points with
+$Id$ 
+
+AAshaft is an axis-aligned box of 1000 points with
 dimensions 9 x 45 x 450.
 
 When processed with DEGENERATE_RATIO of 20, this will
