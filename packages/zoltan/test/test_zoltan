@@ -23,8 +23,10 @@
 #
 
 # Chaco problems to run
-set ch_name  = (simple nograph vwgt ewgt bug onedbug grid20x19 film hammond)
-set ch_nproc = (4 4 3 4 3 3 5 6 8) # no. of procs
+#set ch_name  = (simple nograph vwgt ewgt bug degenerate onedbug grid20x19 film hammond)
+#set ch_nproc = (4 4 3 4 3 6 3 5 6 8) # no. of procs
+set ch_name  = (degenerate)
+set ch_nproc = (6) # no. of procs
 # Nemesis problems to run  
 set nem_name = (box_064 ti_300 ti_4k)
 set nem_nproc = (5 6 9) # no. of procs
@@ -149,19 +151,9 @@ while ( $#argv )
 
 end # while ( $#argv )
 
-# Chaco problems to run
-set ch_name = (simple nograph vwgt ewgt bug onedbug grid20x19 film hammond)
 if ( $yes_serial ) then
-  set ch_nproc = (1 1 1 1 1 1 1 1 1) # no. of procs
-else
-  set ch_nproc = (4 4 3 4 3 3 5 6 8) # no. of procs
+  set ch_nproc = (1 1 1 1 1 1 1 1 1 1) # no. of procs
 endif
-
-# Nemesis problems to run  
-set nem_name = (box_064 ti_300 ti_4k)
-set nem_nproc = (5 6 9) # no. of procs
-set nem_pdisk = (1 2 2) # parallel disk info
-
 
 # Determine what command to use to launch a parallel program based on $arch
 if (! $?run ) then
@@ -178,7 +170,7 @@ if (! $?run ) then
     case sun:
     case sgi32:
     case sgi64:
-      set run = "mpirun -np"
+      set run = "/Net/local/mpi/build/solaris/ch_p4/bin/mpirun -np"
       breaksw
     case bandito:
       set run = "/opt/mpich-intel/bin/mpirun -np"
@@ -314,6 +306,7 @@ if ( $yes_fortran ) then
       set ch_methods = ( $ch_methods rcb-avg rcb-avg-ts )
       set ch_methods = ( $ch_methods rcb-rect-avg rcb-rect-avg-ts )
       set ch_methods = ( $ch_methods rcb-partlocal1-avg rcb-partlocal1-avg-ts )
+      set ch_methods = ( $ch_methods rcb-1D rcb-2D)
     endif
   endif
   if (! $no_rib) then
@@ -327,6 +320,7 @@ if ( $yes_fortran ) then
       set ch_methods = ( $ch_methods rib-partlocal4 rib-partlocal4-ts )
       set ch_methods = ( $ch_methods rib-avg rib-avg-ts )
       set ch_methods = ( $ch_methods rib-partlocal1-avg rib-partlocal1-avg-ts )
+      set ch_methods = ( $ch_methods rib-1D rib-2D)
     endif
   endif
   if (! $no_hsfc) then
@@ -335,6 +329,7 @@ if ( $yes_fortran ) then
       set ch_methods = ( $ch_methods hsfc-partless hsfc-partmore )
       set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
       set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
+      set ch_methods = ( $ch_methods hsfc-1D hsfc-2D)
     endif
   endif
   if (! $no_oct) then
@@ -369,13 +364,13 @@ else
 
   # These Chaco problems are run only for C/C++ driver; F90 driver does not
   # read assignment input files or multiple weights.
-  if ( $yes_serial ) then
-    set ch_name = ($ch_name vwgt2 hammond2)
-    set ch_nproc = ($ch_nproc 1 1) # no. of procs
-  else
-    set ch_name = ($ch_name drake slac vwgt2 hammond2 brack2_3)
-    set ch_nproc = ($ch_nproc 3 9 2 6 5) # no. of procs
-  endif
+#  if ( $yes_serial ) then
+#    set ch_name = ($ch_name vwgt2 hammond2)
+#    set ch_nproc = ($ch_nproc 1 1) # no. of procs
+#  else
+#    set ch_name = ($ch_name drake slac vwgt2 hammond2 brack2_3)
+#    set ch_nproc = ($ch_nproc 3 9 2 6 5) # no. of procs
+#  endif
 
   if (! $no_rcb) then
     set ch_methods = ( $ch_methods rcb rcb-oneproc rcb-ts )
@@ -397,6 +392,7 @@ else
       set ch_methods = ( $ch_methods rcb-rect-avg rcb-rect-avg-ts )
       set ch_methods = ( $ch_methods rcb-partlocal1-avg rcb-partlocal1-avg-ts )
       set ch_methods = ( $ch_methods rcb-comparable rcb-norm2 rcb-norm3)
+      set ch_methods = ( $ch_methods rcb-1D rcb-2D)
     endif
     set nem_methods = ( $nem_methods rcb rcb-ts )
     if (! $old_interface) then
@@ -439,6 +435,7 @@ else
       set ch_methods = ( $ch_methods rib-partlocal4 rib-partlocal4-ts )
       set ch_methods = ( $ch_methods rib-avg rib-avg-ts )
       set ch_methods = ( $ch_methods rib-partlocal1-avg rib-partlocal1-avg-ts )
+      set ch_methods = ( $ch_methods rib-1D rib-2D)
     endif
     set nem_methods = ( $nem_methods rib rib-ts )
     if (! $old_interface) then
@@ -459,6 +456,7 @@ else
       set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
       set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
       set ch_methods = ( $ch_methods hsfc-partlocal6 hsfc-partlocal7 )
+      set ch_methods = ( $ch_methods hsfc-1D hsfc-2D)
     endif
     set nem_methods = ( $nem_methods hsfc )
     if (! $old_interface) then
