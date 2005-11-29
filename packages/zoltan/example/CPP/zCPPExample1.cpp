@@ -120,8 +120,10 @@ int main(int argc, char *argv[])
   
   // Free the memory allocated for lists returned by LB_Parition()
 
-  zz->LB_Free_Part(importGlobalIds, importLocalIds, importProcs, importToPart);
-  zz->LB_Free_Part(exportGlobalIds, exportLocalIds, exportProcs, exportToPart);
+  zz->LB_Free_Part(&importGlobalIds, &importLocalIds, &importProcs, 
+                   &importToPart);
+  zz->LB_Free_Part(&exportGlobalIds, &exportLocalIds, &exportProcs, 
+                   &exportToPart);
 
   FreePoints();
 
