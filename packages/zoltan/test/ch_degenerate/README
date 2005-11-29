@@ -1,4 +1,6 @@
-"shaft" is shaft of 1000 points with dimensions 9 x 45 x 450.
+$Id$
+
+"degenerate" is a box of 1000 points with dimensions 9 x 45 x 450.
 It is not axis-aligned.
 
 When processed with DEGENERATE_RATIO of 20, this will
