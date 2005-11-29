@@ -564,8 +564,8 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
     }
 
     /* Clean up */
-    zz.LB_Free_Part(import_gids, import_lids, import_procs, import_to_part);
-    zz.LB_Free_Part(export_gids, export_lids, export_procs, export_to_part);
+    zz.LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_to_part);
+    zz.LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_to_part);
   }
 
   if (Driver_Action & 2){
