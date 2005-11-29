@@ -16,7 +16,7 @@
 // C++ class representing a Zoltan_Struct object.
 //
 // Assumption: Zoltan_Initialize has been called prior to creating
-// a Zoltan_Object.
+// a Zoltan object.
 // ************************************************************************
 
 #ifndef ZOLTAN_CPP_H_
@@ -38,13 +38,13 @@ extern void Zoltan_HSFC_Print_Structure(struct Zoltan_Struct *zz);
   #include <string>
 #endif
 
-class Zoltan_Object {
+class Zoltan {
 
 public:
 
   // Constructor
 
-  Zoltan_Object (const MPI_Comm &communicator = MPI_COMM_WORLD) 
+  Zoltan (const MPI_Comm &communicator = MPI_COMM_WORLD) 
   {
   this->ZZ_Ptr = Zoltan_Create(communicator);
 
@@ -53,24 +53,24 @@ public:
 
   // Copy constructor
 
-  Zoltan_Object (const Zoltan_Object &zz)
+  Zoltan (const Zoltan &zz)
   {
   this->ZZ_Ptr = Zoltan_Copy(zz.ZZ_Ptr);
   }
 
   // Destructor
 
-  ~Zoltan_Object()
+  ~Zoltan()
   {
     // Warning: Zoltan_Destroy calls MPI.   
     // Do not call MPI_Finalize() before this destructor gets called. 
     // Ensure that ZoltanObject's created on the stack are deleted 
     // before MPI_Finalize().
-    // Alternatively, you can allocate and destroy Zoltan_Objects explicitly:
+    // Alternatively, you can allocate and destroy Zoltans explicitly:
     //
     //   MPI_Init(...);
     //   Zoltan_Initialize(...);
-    //   Zoltan_Object *zz = new Zoltan_Object();
+    //   Zoltan *zz = new Zoltan();
     //    ... more code ...
     //   delete zz;
     //   MPI_Finalize();
@@ -80,7 +80,7 @@ public:
 
   // Copy operator
 
-  Zoltan_Object & operator= (const Zoltan_Object &zz)
+  Zoltan & operator= (const Zoltan &zz)
   {
     Zoltan_Copy_To(this->ZZ_Ptr, zz.ZZ_Ptr);
 
@@ -504,26 +504,6 @@ public:
     free(fn);
 
     return rc;
-  }
-
-/*
-** for debugging
-**   RCB/RIB - len is the number of IDs to print out, -1 for all
-*/
-
-  void PrintRCB(int len)
-  {
-    Zoltan_RCB_Print_Structure(ZZ_Ptr, len);
-  }
-
-  void PrintRIB(int len)
-  {
-    Zoltan_RIB_Print_Structure(ZZ_Ptr, len);
-  }
-
-  void PrintHSFC(int len)
-  {
-    Zoltan_HSFC_Print_Structure(ZZ_Ptr);
   }
 
 private:
