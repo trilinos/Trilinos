@@ -49,6 +49,7 @@ type(PARIO_INFO) :: pio_info
 
 !/* Local declarations. */
   type(Zoltan_Struct), pointer :: zz_obj
+  type(Zoltan_Struct), pointer :: zz_obj_copy
 
 !  /* Variables returned by the load balancer */
   integer(Zoltan_INT),pointer :: import_gids(:)  !/* Global nums of elements to
@@ -91,8 +92,8 @@ type(PARIO_INFO) :: pio_info
 !/***************************** BEGIN EXECUTION ******************************/
 
   run_zoltan = .true.
-  nullify(zz_obj, import_gids, import_lids, import_procs, import_to_part, &
-                  export_gids, export_lids, export_procs, export_to_part)
+  nullify(zz_obj, zz_obj_copy, import_gids, import_lids, import_procs, &
+    import_to_part, export_gids, export_lids, export_procs, export_to_part)
 
 ! make Mesh passable to the callback functions
   mesh_wrapper%ptr => Mesh
@@ -347,6 +348,17 @@ type(PARIO_INFO) :: pio_info
         goto 9996
       endif
     endif
+
+!   /* Test the copy function */
+
+    zz_obj_copy => Zoltan_Copy(zz_obj)
+    if (.not.associated(zz_obj_copy)) then
+      print *, "fatal:  NULL object returned from Zoltan_Copy()"
+      run_zoltan = .false.
+      goto 9999
+    endif
+    call Zoltan_Destroy(zz_obj)
+    zz_obj = zz_obj_copy
 
 !  /* Evaluate the new balance */
     if (Proc == 0) then
