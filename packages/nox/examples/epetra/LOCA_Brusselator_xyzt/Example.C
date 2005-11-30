@@ -101,8 +101,9 @@
 
 #ifdef HAVE_NOX_EPETRAEXT
 // Comment out following line for usual implicit time stepping on all procs
-#define DO_XYZT 1
+//#define DO_XYZT 1
 //#define DO_XYZT_PREC 1
+#include "EpetraExt_MultiMpiComm.h"
 #endif
 
 #ifdef DO_XYZT
@@ -125,47 +126,20 @@ int main(int argc, char *argv[])
   }
   int NumGlobalNodes = atoi(argv[1]) + 1;
 
-#ifdef HAVE_MPI
-
 #ifdef DO_XYZT
   // MPI MANIPULATION FOR XYZT PROBLEMS
- 
-  int ierrmpi, size, rank;
-  ierrmpi = MPI_Comm_size(MPI_COMM_WORLD, &size);
-  ierrmpi = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-  int spatialProcs= 1; // default
+  int spatialProcs = 1; // default
   if (argc>2) { spatialProcs = atoi(argv[2]);}
-  int timeStepsPerProc= 1; // default
-  if (argc>3) { timeStepsPerProc = atoi(argv[3]);}
+  int numTimeSteps= 1; // default
+  if (argc>3) { numTimeSteps = atoi(argv[3]);}
 
-  if (size % spatialProcs != 0) {cout<<"ERROR: num spatial procs "<<spatialProcs
-     << " does not divide into num total procs " << size << endl;  exit(-1);  }
-
-  // Create split communicators, the size of spatial decomposition
-  MPI_Comm split_MPI_Comm;
-  int replica = rank/spatialProcs;
-  ierrmpi =  MPI_Comm_split(MPI_COMM_WORLD, replica, rank, &split_MPI_Comm);
-
-  // Construct 2 different epetra communicators
-  Epetra_MpiComm Comm(split_MPI_Comm);
-  Teuchos::RefCountPtr<Epetra_MpiComm> globalComm
-    = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-
+  Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm = 
+    Teuchos::rcp(new EpetraExt::MultiMpiComm(MPI_COMM_WORLD, spatialProcs, numTimeSteps));
+  Epetra_MpiComm& Comm = globalComm->SubDomainComm();
 
 #else
   // Create a communicator for Epetra objects
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
-#endif
-#else
-  cout << "RUNNING IN SERIAL, NOT MPI " << endl;
-#ifdef DO_XYZT
-  int timeStepsPerProc= 1; // default
-  if (argc>3) { timeStepsPerProc = atoi(argv[3]);}
-  Teuchos::RefCountPtr<Epetra_SerialComm> globalComm
-    = Teuchos::rcp(new Epetra_SerialComm);
-#endif
-  Epetra_SerialComm Comm;
 #endif
 
   // Create and reset the Timer
@@ -343,8 +317,8 @@ int main(int argc, char *argv[])
     Teuchos::rcp(&Problem.getJacobian(),false);
 
 #ifdef DO_XYZT
-  Epetra_MultiVector initGuess(soln.Map(), timeStepsPerProc);
-  for (int i=0; i<timeStepsPerProc; i++) *(initGuess(i)) = soln;
+  Epetra_MultiVector initGuess(soln.Map(), globalComm->NumTimeStepsOnDomain());
+  for (int i=0; i<globalComm->NumTimeStepsOnDomain(); i++) *(initGuess(i)) = soln;
 
 #ifdef DO_XYZT_PREC
   // Sublist for linear solver of the preconditioner
