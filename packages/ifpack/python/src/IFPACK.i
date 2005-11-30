@@ -67,6 +67,7 @@ Finally, the following functions are avaiable in the IFPACK module:
 #include "Epetra_MpiComm.h"
 #endif
 #include "Epetra_VbrMatrix.h"
+#include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Operator.h"
