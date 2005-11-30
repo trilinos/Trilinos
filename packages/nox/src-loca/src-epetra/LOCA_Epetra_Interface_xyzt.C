@@ -42,7 +42,7 @@ xyzt::xyzt(
        const Epetra_MultiVector &splitMultiVec_, 
        const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitJac_,
        const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitMass_, 
-       const Teuchos::RefCountPtr<Epetra_Comm> &globalComm_,
+       const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> &globalComm_,
        NOX::Parameter::List *precPrintParams_,
        NOX::Parameter::List *precLSParams_) :
   iReq(iReq_), 
@@ -51,7 +51,7 @@ xyzt::xyzt(
   splitJac(splitJac_), 
   splitMass(splitMass_), 
   globalComm(globalComm_),
-  timeStepsPerProc(splitMultiVec_.NumVectors()), 
+  timeStepsOnTimeDomain(splitMultiVec_.NumVectors()), 
   splitVec(*(splitMultiVec_(0))),
   splitRes(*(splitMultiVec_(0))), 
   splitVecOld(*(splitMultiVec_(0))), 
@@ -61,30 +61,31 @@ xyzt::xyzt(
   jacobian(0), 
   rowStencil(0),
   rowIndex(0), 
-  numReplicas(globalComm_->NumProc() / splitMultiVec_.Comm().NumProc()),
-  replica(globalComm_->MyPID() / splitMultiVec_.Comm().NumProc()), 
+  numTimeDomains(globalComm_->NumSubDomains()),
+  timeDomain(globalComm_->SubDomainRank()), 
   conStep(0),
   precPrintParams(precPrintParams_), 
   precLSParams(precLSParams_)
 {
-   if (globalComm->MyPID()==0) cout  << "--------------XYZT Partition Info---------------"
-       << "\n\tNumProcs              = " << globalComm->NumProc()
-       << "\n\tSpatial Decomposition = " << splitMultiVec_.Comm().NumProc()
-       << "\n\tNumber of Replicas    = " << numReplicas
-       << "\n\tTime Steps per Proc   = " << timeStepsPerProc
-       << "\n\tNumber of Time Steps  = " << numReplicas*timeStepsPerProc
-       << "\n-----------------------------------------------" << endl;
+   if (globalComm->MyPID()==0) 
+     cout  << "--------------XYZT Partition Info---------------"
+           << "\n\tNumProcs               = " << globalComm->NumProc()
+           << "\n\tSpatial Decomposition  = " << splitMultiVec_.Comm().NumProc()
+           << "\n\tNumber of Time Domains = " << numTimeDomains
+           << "\n\tTime Steps on Domain 0 = " << timeStepsOnTimeDomain
+           << "\n\tNumber of Time Steps   = " << globalComm->NumTimeSteps()
+           << "\n-----------------------------------------------" << endl;
 
    // Construct global block matrix graph from split jacobian and stencil
    // Each block has identical sparsity, and assumes mass matrix's sparsity 
    // is a subset of the Jacobian's
 
-   rowStencil = new std::vector< std::vector<int> >(timeStepsPerProc);
+   rowStencil = new std::vector< std::vector<int> >(timeStepsOnTimeDomain);
    rowIndex = new std::vector<int>;
-   for (int i=0; i < timeStepsPerProc; i++) {
-     if (replica!=0 || i!=0)  (*rowStencil)[i].push_back(-1);
+   for (int i=0; i < timeStepsOnTimeDomain; i++) {
+     if (timeDomain!=0 || i!=0)  (*rowStencil)[i].push_back(-1);
      (*rowStencil)[i].push_back(0);
-     (*rowIndex).push_back(i + replica*timeStepsPerProc);
+     (*rowIndex).push_back(i + globalComm->FirstTimeStepOnDomain());
    }
 
    jacobian = new EpetraExt::BlockCrsMatrix(*splitJac, *rowStencil, *rowIndex, *globalComm);
@@ -97,7 +98,7 @@ xyzt::xyzt(
 
 
    // Load initial guess into block solution vector
-   for (int i=0; i < timeStepsPerProc; i++) 
+   for (int i=0; i < timeStepsOnTimeDomain; i++) 
            solution->LoadBlockValues(*(splitMultiVec_(i)), (*rowIndex)[i]);
 
    // Create preconditioner
@@ -131,7 +132,7 @@ bool xyzt::computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fil
 
   EpetraExt::BlockVector residual(*solution);
 
-  for (int i=0; i < timeStepsPerProc; i++) {
+  for (int i=0; i < timeStepsOnTimeDomain; i++) {
 
     int blockRowOld = (*rowIndex)[i] - 1;  //Hardwired for -1 in stencil
     if (blockRowOld >= 0)  {
@@ -166,7 +167,7 @@ bool xyzt::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
   solution->Epetra_Vector::operator=(x);
   solutionOverlap->Import(*solution, *overlapImporter, Insert);
 
-  for (int i=0; i < timeStepsPerProc; i++) {
+  for (int i=0; i < timeStepsOnTimeDomain; i++) {
 
     int blockRowOld = (*rowIndex)[i] - 1;  //Hardwired for -1 in stencil
     if (blockRowOld >= 0)  {
@@ -206,14 +207,14 @@ void xyzt::printSolution(const Epetra_Vector& x, double conParam)
   solution->Epetra_Vector::operator=(x);
 
   // Barriers force printing of all time steps in order
-  for (int j=0; j<replica; j++) globalComm->Barrier();
-  for (int i=0; i < timeStepsPerProc; i++) {
+  for (int j=0; j<timeDomain; j++) globalComm->Barrier();
+  for (int i=0; i < timeStepsOnTimeDomain; i++) {
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
     // Pass indexing data for possible application use in output naming convention
-    iMass->dataForPrintSolution(conStep, (*rowIndex)[i], numReplicas*timeStepsPerProc);
+    iMass->dataForPrintSolution(conStep, (*rowIndex)[i], globalComm->NumTimeSteps());
     iReq->printSolution(splitVec, conParam);
   }
-  for (int j=replica; j<numReplicas-1; j++) globalComm->Barrier();
+  for (int j=timeDomain; j<numTimeDomains-1; j++) globalComm->Barrier();
 
   conStep++; // Counter for continuation step, used for printing
 }

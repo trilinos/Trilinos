@@ -54,6 +54,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 
+#include "EpetraExt_MultiMpiComm.h"
 #include "EpetraExt_BlockVector.h"
 #include "EpetraExt_BlockCrsMatrix.h"
 
@@ -82,9 +83,8 @@ public:
  
   //! Constructor
   /*! The interface, vector, and matrix arguments are all for the spatially
-   *  decomposed problem. The communicator and timeStepsPerProc arguments
-   *  give this class the information needed to construct the space-time
-   *  system. 
+   *  decomposed problem. The MultiMpiCOmm communicator gives this
+   *  class the information needed to construct the space-time system. 
    */
 
   xyzt(const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> &iReq,
@@ -93,7 +93,7 @@ public:
        const Epetra_MultiVector &splitMultiVec,
        const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitJac,
        const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitMass,
-       const Teuchos::RefCountPtr<Epetra_Comm> &globalComm,
+       const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> &globalComm,
        NOX::Parameter::List *precPrintParams = 0, 
        NOX::Parameter::List *precLSParams = 0);
 
@@ -134,7 +134,7 @@ private:
   Teuchos::RefCountPtr<LOCA::Epetra::Interface::MassMatrix> iMass;
   Teuchos::RefCountPtr<Epetra_RowMatrix> splitJac;
   Teuchos::RefCountPtr<Epetra_RowMatrix> splitMass; // can be same object as splitJac
-  Teuchos::RefCountPtr<Epetra_Comm> globalComm;
+  Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm;
 
   // xyzt objects created in constructor
   Epetra_Vector splitVec; //tmp space
@@ -144,9 +144,9 @@ private:
   EpetraExt::BlockVector* solution;
   EpetraExt::BlockVector* solutionOverlap;
   Epetra_Import* overlapImporter;
-  int timeStepsPerProc; // computed from NumVectors of initial guess MultiVector
-  int numReplicas;
-  int replica;
+  int timeStepsOnTimeDomain; 
+  int numTimeDomains;
+  int timeDomain;
   int conStep;
   std::vector< std::vector<int> >* rowStencil;
   std::vector<int>* rowIndex;
