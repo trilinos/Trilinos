@@ -88,6 +88,7 @@ Solver.Iterate(1550, 1e-5)
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
+#include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_PyOperator.h"
 #include "Epetra_PyRowMatrix.h"
