@@ -18,6 +18,12 @@
 #include "zoltan_types.h"
 #include <mpi.h>
 
+/*
+** Must define this function prototype before #ifdef __cplusplus
+** to avoid warning when compiling with C++ on solaris
+*/
+typedef unsigned int ZOLTAN_HASH_FN(ZOLTAN_ID_PTR, int, unsigned int);
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -58,8 +64,7 @@ int Zoltan_DD_Find (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
 int Zoltan_DD_Remove (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
  int count) ;
 
-int Zoltan_DD_Set_Hash_Fn (Zoltan_DD_Directory *dd,
- unsigned int (*hash) (ZOLTAN_ID_PTR, int, unsigned int)) ;
+int Zoltan_DD_Set_Hash_Fn (Zoltan_DD_Directory *dd, ZOLTAN_HASH_FN *hash);
 
 void Zoltan_DD_Stats (Zoltan_DD_Directory *dd) ;
 

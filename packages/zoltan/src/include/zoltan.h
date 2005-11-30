@@ -21,6 +21,12 @@
 #include "zoltan_mem.h"
 #include "zoltan_dd.h"
 
+/*
+ * Define this prior to #ifdef __cplusplus to avoid a 
+ * compiler warning when compiling C++ on Solaris
+ */
+typedef void ZOLTAN_VOID_FN(void);
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -2114,7 +2120,7 @@ extern void Zoltan_Destroy(
 extern int Zoltan_Set_Fn(
   struct Zoltan_Struct *zz,
   ZOLTAN_FN_TYPE fn_type,
-  void (*fn_ptr)(void),
+  ZOLTAN_VOID_FN *fn_ptr,
   void *data_ptr
 );
 
