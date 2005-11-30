@@ -117,6 +117,7 @@ print r.Norm2()
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
+#include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
