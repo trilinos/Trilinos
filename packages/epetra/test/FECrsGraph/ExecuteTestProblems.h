@@ -39,3 +39,5 @@ int Drumm3(const Epetra_Map& map, bool verbose);
 
 int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose);
 
+int rectangular(const Epetra_Comm& Comm, bool verbose);
+

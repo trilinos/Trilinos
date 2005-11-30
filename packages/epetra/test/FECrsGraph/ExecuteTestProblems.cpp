@@ -29,6 +29,7 @@
 #include "Epetra_BLAS.h"
 #include "ExecuteTestProblems.h"
 #include "Epetra_Comm.h"
+#include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_FECrsGraph.h"
@@ -538,6 +539,46 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
 
   delete A;
   delete graph;
+
+  return(0);
+}
+
+int rectangular(const Epetra_Comm& Comm, bool verbose)
+{
+  int mypid = Comm.MyPID();
+  int numlocalrows = 3;
+  Epetra_Map rowmap(-1, numlocalrows, 0, Comm);
+
+  int numglobalrows = numlocalrows*Comm.NumProc();
+
+  int numcols = 2*numglobalrows;
+
+  Epetra_FECrsGraph fegraph(Copy, rowmap, numcols);
+
+  int* cols = new int[numcols];
+  for(int j=0; j<numcols; ++j) cols[j] = j;
+
+  Epetra_Map domainmap(-1, numcols, 0, Comm);
+
+  int firstlocalrow = numlocalrows*mypid;
+  int lastlocalrow = numlocalrows*(mypid+1)-1;
+
+  for(int i=0; i<numglobalrows; ++i) {
+    //if i is a local row, then skip it. We want each processor to only
+    //load rows that belong on other processors.
+    if (i >= firstlocalrow && i <= lastlocalrow) continue;
+
+    EPETRA_CHK_ERR( fegraph.InsertGlobalIndices(1, &i, numcols, &(cols[0])) );
+  }
+
+  EPETRA_CHK_ERR( fegraph.GlobalAssemble(domainmap, rowmap) );
+
+  if (verbose) {
+    cout << "********************** fegraph **********************" << endl;
+    cout << fegraph << endl;
+  }
+
+  delete [] cols;
 
   return(0);
 }

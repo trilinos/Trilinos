@@ -31,6 +31,7 @@
 #include "Epetra_Time.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_MultiVector.h"
+#include "Epetra_Import.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
@@ -75,249 +76,52 @@ int main(int argc, char *argv[]) {
   //  Comm.Barrier();
 
   Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
+
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc(); 
 
-  if (verbose && MyPID==0)
-    cout << Epetra_Version() << endl << endl;
+  int numMyElements = 3;
+  int numGlobalElements = NumProc*numMyElements;
 
-  if (verbose) cout << Comm <<endl;
+  Epetra_BlockMap pll_map(numGlobalElements, numMyElements, 1, 0, Comm);
 
-  bool verbose1 = verbose;
+  Epetra_MultiVector pll_vec(pll_map, 1);
 
-  // Redefine verbose to only print on PE 0
-  if (verbose && rank!=0) verbose = false;
+  double* vals = pll_vec.Values();
 
-  int NumMyElements = 10000;
-  int NumMyElements1 = NumMyElements; // Needed for localmap
-  int NumGlobalElements = NumMyElements*NumProc+EPETRA_MIN(NumProc,3);
-  if (MyPID < 3) NumMyElements++;
-  int IndexBase = 0;
-  int ElementSize = 7;
-  int NumVectors = 4;
-  
-  // Test LocalMap constructor
-  // and Petra-defined uniform linear distribution constructor
+  for(int i=0; i<numMyElements; ++i) {
+    double val = (MyPID*numMyElements+i)*1.0;
+    vals[i] = val;
+  }
 
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_LocalMap(NumMyElements1, IndexBase, Comm)" << endl;
-  if (verbose) cout << "     and Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
+  std::cout << "pll_vec: " <<std::endl<< pll_vec << std::endl;
 
-  Epetra_LocalMap *LocalMap = new Epetra_LocalMap(NumMyElements1, IndexBase,
-                              Comm);
-  Epetra_BlockMap * BlockMap = new Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm);
-  EPETRA_TEST_ERR(MultiVectorTests(*BlockMap, NumVectors, verbose),ierr);
+ int numGlobal = pll_map.NumGlobalElements();
 
+  int my_pid = pll_map.Comm().MyPID();
 
-  EPETRA_TEST_ERR(MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose),ierr);
+  //construct a new Epetra_BlockMap where proc 0
+  //has all of the elements in pll_map.
 
-  delete BlockMap;
+  //numLocal == numGlobal if my_pid == 0,
+  //numLocal == 0 if my_pid != 0
+  int numLocal = my_pid==0 ? numGlobal : 0;
 
-  // Test User-defined linear distribution constructor
+  Epetra_BlockMap my_map(numGlobal, numLocal, 1, 0, pll_map.Comm());
 
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
+  //construct an import object
+  //with target==my_map, source==pll_map
 
-  BlockMap = new Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm);
+  Epetra_Import importer(my_map, pll_map);
 
-  EPETRA_TEST_ERR(MultiVectorTests(*BlockMap, NumVectors, verbose),ierr);
+  //construct the multivector that will hold all elements
+  //on proc 0
+  Epetra_MultiVector my_vec(my_map, pll_vec.NumVectors());
 
-  EPETRA_TEST_ERR(MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose),ierr);
+  //now import pll_vec's contents into my_vec
+  my_vec.Import(pll_vec, importer, Insert);
 
-  delete BlockMap;
-
-  // Test User-defined arbitrary distribution constructor
-  // Generate Global Element List.  Do in reverse for fun!
-
-  int * MyGlobalElements = new int[NumMyElements];
-  int MaxMyGID = (Comm.MyPID()+1)*NumMyElements-1+IndexBase;
-  if (Comm.MyPID()>2) MaxMyGID+=3;
-  for (i = 0; i<NumMyElements; i++) MyGlobalElements[i] = MaxMyGID-i;
-
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSize, IndexBase, Comm)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
-
-  BlockMap = new Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements, ElementSize,
-		      IndexBase, Comm);
-  EPETRA_TEST_ERR(MultiVectorTests(*BlockMap, NumVectors, verbose),ierr);
-
-  EPETRA_TEST_ERR(MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose),ierr);
-
-  delete BlockMap;
-
-  int * ElementSizeList = new int[NumMyElements];
-  int NumMyEquations = 0;
-  int NumGlobalEquations = 0;
-  for (i = 0; i<NumMyElements; i++) 
-    {
-      ElementSizeList[i] = i%6+2; // blocksizes go from 2 to 7
-      NumMyEquations += ElementSizeList[i];
-    }
-  ElementSize = 7; // Set to maximum for use in checkmap
-  NumGlobalEquations = Comm.NumProc()*NumMyEquations;
-
-  // Adjust NumGlobalEquations based on processor ID
-  if (Comm.NumProc() > 3)
-    {
-      if (Comm.MyPID()>2)
-	NumGlobalEquations += 3*((NumMyElements)%6+2);
-      else 
-	NumGlobalEquations -= (Comm.NumProc()-3)*((NumMyElements-1)%6+2);
-    }
-
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSizeList, IndexBase, Comm)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
-
-  BlockMap = new Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements, ElementSizeList,
-		      IndexBase, Comm);
-  EPETRA_TEST_ERR(MultiVectorTests(*BlockMap, NumVectors, verbose),ierr);
-
-  EPETRA_TEST_ERR(MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose),ierr);
-
-  // Test Copy constructor
-
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_BlockMap(*BlockMap)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
-
-  Epetra_BlockMap * BlockMap1 = new Epetra_BlockMap(*BlockMap);
-
-  EPETRA_TEST_ERR(MultiVectorTests(*BlockMap, NumVectors, verbose),ierr);
-
-  EPETRA_TEST_ERR(MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose),ierr);
-
-  delete [] ElementSizeList;
-  delete [] MyGlobalElements;
-  delete BlockMap;
-  delete BlockMap1;
-
-
-  // Test Petra-defined uniform linear distribution constructor
-
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, IndexBase, Comm)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
-
-  Epetra_Map * Map = new Epetra_Map(NumGlobalElements, IndexBase, Comm);
-  EPETRA_TEST_ERR(MultiVectorTests(*Map, NumVectors, verbose),ierr);
-
-  EPETRA_TEST_ERR(MatrixTests(*Map, *LocalMap, NumVectors, verbose),ierr);
-
-  delete Map;
-
-  // Test User-defined linear distribution constructor
-
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
-
-  Map = new Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm);
-
-  EPETRA_TEST_ERR(MultiVectorTests(*Map, NumVectors, verbose),ierr);
-
-  EPETRA_TEST_ERR(MatrixTests(*Map, *LocalMap, NumVectors, verbose),ierr);
-
-  delete Map;
-
-  // Test User-defined arbitrary distribution constructor
-  // Generate Global Element List.  Do in reverse for fun!
-
-  MyGlobalElements = new int[NumMyElements];
-  MaxMyGID = (Comm.MyPID()+1)*NumMyElements-1+IndexBase;
-  if (Comm.MyPID()>2) MaxMyGID+=3;
-  for (i = 0; i<NumMyElements; i++) MyGlobalElements[i] = MaxMyGID-i;
-
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,  IndexBase, Comm)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
-
-  Map = new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements, 
-		      IndexBase, Comm);
-  EPETRA_TEST_ERR(MultiVectorTests(*Map, NumVectors, verbose),ierr);
-
-  //EPETRA_TEST_ERR(MatrixTests(*Map, *LocalMap, NumVectors, verbose),ierr);
-
-  // Test Copy constructor
-
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_Map(*Map)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
- 
-  Epetra_Map Map1(*Map);
-
-  EPETRA_TEST_ERR(MultiVectorTests(*Map, NumVectors, verbose),ierr);
-
-  //EPETRA_TEST_ERR(MatrixTests(*Map, *LocalMap, NumVectors, verbose),ierr);
-
-  delete [] MyGlobalElements;
-  delete Map;
-  delete LocalMap;
-
-  if (verbose1)
-    {
-      // Test MultiVector MFLOPS for 2D Dot Product
-      int M = 27;
-      int N = 27;
-      int K = 10000;
-      Epetra_Map Map2(-1, K, IndexBase, Comm);
-      Epetra_LocalMap Map3(M, IndexBase, Comm);
-      
-      Epetra_MultiVector A(Map2,N);A.Random();
-      Epetra_MultiVector B(Map2,N);B.Random();
-      Epetra_MultiVector C(Map3,N);C.Random();
-
-      if (verbose) cout << "Testing Assignment operator" << endl;
-
-      double tmp1 = 1.00001* (double) (MyPID+1);
-      double tmp2 = tmp1;
-      A[1][1] = tmp1;
-      tmp2 = A[1][1];
-      cout << "On PE "<< MyPID << "  A[1][1] should equal = " << tmp1;
-      if (tmp1==tmp2) cout << " and it does!" << endl;
-      else cout << " but it equals " << tmp2;
- 
-      Comm.Barrier();
-	  
-      if (verbose) cout << "Testing MFLOPs" << endl;
-      Epetra_Flops counter;
-      C.SetFlopCounter(counter);
-      Epetra_Time mytimer(Comm);
-      C.Multiply('T', 'N', 0.5, A, B, 0.0);
-      double Multiply_time = mytimer.ElapsedTime();
-      double Multiply_flops = C.Flops();
-      if (verbose) cout << "\n\nTotal FLOPs = " << Multiply_flops << endl;
-      if (verbose) cout << "Total Time  = " << Multiply_time << endl;
-      if (verbose) cout << "MFLOPs      = " << Multiply_flops/Multiply_time/1000000.0 << endl;
-
-      Comm.Barrier();
-	  
-      // Test MultiVector ostream operator with Petra-defined uniform linear distribution constructor
-      // and a small vector
-      
-      Epetra_Map Map4(100, IndexBase, Comm);
-      double * Dp = new double[200]; 
-      for (j=0; j<2; j++)
-	for (i=0; i<100; i++)
-	  Dp[i+j*100] = i+j*100;
-      Epetra_MultiVector D(View, Map4,Dp, 100, 2);
-	  
-      if (verbose) cout << "\n\nTesting ostream operator:  Multivector  should be 100-by-2 and print i,j indices" 
-	   << endl << endl;
-      cout << D << endl;
-
-      Epetra_BlockMap Map5(-1, 25, 4, IndexBase, Comm);
-      Epetra_MultiVector D1(View, Map5,Dp, 100, 2);
-      if (verbose) cout << "\n\nTesting ostream operator:  Same Multivector as before except using BlockMap of 25x4" 
-	   << endl << endl;
-      cout << D1 << endl;
-
-      if (verbose) cout << "Traceback Mode value = " << D.GetTracebackMode() << endl;
-      delete [] Dp;
-    }
+  std::cout << "my_vec: " << std::endl << my_vec << std::endl;
 
 #ifdef EPETRA_MPI
   MPI_Finalize();

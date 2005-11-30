@@ -450,8 +450,7 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 			   const Epetra_SerialDenseMatrix& values,
 			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
-   /** Use a general sub-matrix into the global matrix to replace existing
-       values.
+   /** Use a general sub-matrix to replace existing values.
        For square structurally-symmetric sub-matrices, see the other
        overloading of this method.
 

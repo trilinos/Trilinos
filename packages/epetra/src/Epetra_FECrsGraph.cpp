@@ -327,6 +327,7 @@ int Epetra_FECrsGraph::GlobalAssemble(bool callFillComplete)
   //Now we need to call FillComplete on our temp graph. We need to
   //pass a DomainMap and RangeMap, which are not the same as the RowMap
   //and ColMap that we constructed the graph with.
+
   EPETRA_CHK_ERR(tempGrph->FillComplete(RowMap(), *sourceMap));
 
   Epetra_Export* exporter = new Epetra_Export(*sourceMap, RowMap());
@@ -352,3 +353,112 @@ int Epetra_FECrsGraph::GlobalAssemble(bool callFillComplete)
 
   return(0);
 }
+
+//----------------------------------------------------------------------------
+int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
+                                      const Epetra_Map& range_map,
+                                      bool callFillComplete)
+{
+  if (Map().Comm().NumProc() < 2 || ignoreNonLocalEntries_) {
+    if (callFillComplete) {
+      EPETRA_CHK_ERR( FillComplete(domain_map, range_map) );
+    }
+    return(0);
+  }
+
+  int i, j;
+
+  //In this method we need to gather all the non-local (overlapping) data
+  //that's been input on each processor, into the
+  //non-overlapping distribution defined by the map that 'this' graph was
+  //constructed with.
+
+  //First build a map that describes our nonlocal data.
+  //We'll use the arbitrary distribution constructor of Map.
+
+  Epetra_Map* sourceMap = new Epetra_Map(-1, numNonlocalRows_, nonlocalRows_,
+                                         Map().IndexBase(), Map().Comm());
+
+  //If sourceMap has global size 0, then no nonlocal data exists and we can
+  //skip most of this function.
+  if (sourceMap->NumGlobalElements() < 1) {
+    if (callFillComplete) {
+      EPETRA_CHK_ERR( FillComplete() );
+    }
+    delete sourceMap;
+    return(0);
+  }
+
+  //We also need to build a column-map, containing the columns in our
+  //nonlocal data. To do that, create a list of all column-indices that
+  //occur in our nonlocal rows.
+
+  int numCols = 0, allocLen = 0;
+  int* cols = NULL;
+  int insertPoint = -1;
+
+  for(i=0; i<numNonlocalRows_; ++i) {
+    for(j=0; j<nonlocalRowLengths_[i]; ++j) {
+      int col = nonlocalCols_[i][j];
+      int offset = Epetra_Util_binary_search(col, cols, numCols, insertPoint);
+      if (offset < 0) {
+        EPETRA_CHK_ERR( Epetra_Util_insert(col, insertPoint, cols,
+                                           numCols, allocLen) );
+      }
+    }
+  }
+
+  Epetra_Map* colMap = new Epetra_Map(-1, numCols, cols,
+                                      Map().IndexBase(), Map().Comm());
+
+  delete [] cols;
+  numCols = 0;
+  allocLen = 0;
+
+  //now we need to create a graph with sourceMap and colMap, and fill it with
+  //our nonlocal data so we can then export it to the correct owning processors
+
+  Epetra_CrsGraph* tempGrph = new Epetra_CrsGraph(Copy, *sourceMap, *colMap,
+                                                  nonlocalRowLengths_);
+
+  //Next we need to make sure the 'indices-are-global' attribute of tempGrph
+  //is set to true, in case this processor doesn't end up calling the
+  //InsertGlobalIndices method...
+
+  tempGrph->SetIndicesAreGlobal(true);
+
+  for(i=0; i<numNonlocalRows_; ++i) {
+    EPETRA_CHK_ERR( tempGrph->InsertGlobalIndices(nonlocalRows_[i],
+                                                  nonlocalRowLengths_[i],
+                                                  nonlocalCols_[i]) );
+  }
+
+  //Now we need to call FillComplete on our temp graph. We need to
+  //pass a DomainMap and RangeMap.
+
+  EPETRA_CHK_ERR(tempGrph->FillComplete(domain_map, range_map));
+
+  Epetra_Export* exporter = new Epetra_Export(*sourceMap, RowMap());
+
+  EPETRA_CHK_ERR(Export(*tempGrph, *exporter, Add));
+
+  if(callFillComplete) {
+    EPETRA_CHK_ERR(FillComplete(domain_map, range_map));
+  }
+
+  //now reset the values in our nonlocal data
+  for(i=0; i<numNonlocalRows_; ++i) {
+    for(j=0; j<nonlocalRowLengths_[i]; ++j) {
+      nonlocalCols_[i][j] = 0;
+    }
+    nonlocalRowLengths_[i] = 0;
+  }
+
+  delete exporter;
+  delete tempGrph;
+  delete sourceMap;
+  delete colMap;
+
+  return(0);
+}
+
