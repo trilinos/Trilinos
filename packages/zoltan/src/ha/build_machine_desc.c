@@ -123,7 +123,7 @@ int Zoltan_Free_Machine_Desc(MachineType **desc)
 /*******************************************************************/
 /*******************************************************************/
 
-int Zoltan_Copy_Machine_Desc(MachineType **to, MachineType *from)
+int Zoltan_Copy_Machine_Desc(MachineType **to, MachineType const *from)
 {
   MachineType *md = NULL;
 

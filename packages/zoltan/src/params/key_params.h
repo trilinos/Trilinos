@@ -22,8 +22,8 @@
 extern "C" {
 #endif
 
-extern int Zoltan_Set_Key_Param(ZZ *, char *, char *, int);
-extern void Zoltan_Print_Key_Params(ZZ *);
+extern int Zoltan_Set_Key_Param(ZZ *, const char *, const char *, int);
+extern void Zoltan_Print_Key_Params(ZZ const *);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

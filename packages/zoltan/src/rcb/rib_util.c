@@ -126,12 +126,13 @@ RIB_STRUCT    *rib;                   /* Data structure for RIB. */
     to->buf = NULL; \
   }
 
-int Zoltan_RIB_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
+int Zoltan_RIB_Copy_Structure(ZZ *toZZ, ZZ const *fromZZ)
 {
   char *yo = "Zoltan_RIB_Copy_Structure";
-  RIB_STRUCT *to, *from;
+  RIB_STRUCT *to;
+  RIB_STRUCT const *from;
 
-  from = (RIB_STRUCT *)fromZZ->LB.Data_Structure;
+  from = (RIB_STRUCT const *)fromZZ->LB.Data_Structure;
   Zoltan_RIB_Free_Structure(toZZ);
 
   if (!from){

@@ -27,7 +27,7 @@ extern int Zoltan_Get_Processor_Name(ZZ *, char *);
 extern int Zoltan_Build_Machine_Desc(ZZ *);
 
 extern int Zoltan_Free_Machine_Desc(MachineType **desc);
-extern int Zoltan_Copy_Machine_Desc(MachineType **to, MachineType *from);
+extern int Zoltan_Copy_Machine_Desc(MachineType **to, MachineType const *from);
 
 extern int Zoltan_Divide_Machine(ZZ *, int, float *, int, MPI_Comm, int *, 
                                  int *, int *, int *, int *, int *, int *,

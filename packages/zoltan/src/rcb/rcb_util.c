@@ -136,12 +136,13 @@ RCB_STRUCT *rcb;                      /* Data structure for RCB.             */
     to->buf = NULL; \
   }
 
-int Zoltan_RCB_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
+int Zoltan_RCB_Copy_Structure(ZZ *toZZ, ZZ const *fromZZ)
 {
   char *yo = "Zoltan_RCB_Copy_Structure";
-  RCB_STRUCT *to, *from;
+  RCB_STRUCT *to;
+  RCB_STRUCT const *from;
 
-  from = (RCB_STRUCT *)fromZZ->LB.Data_Structure;
+  from = (RCB_STRUCT const *)fromZZ->LB.Data_Structure;
   Zoltan_RCB_Free_Structure(toZZ);
 
   if (!from){

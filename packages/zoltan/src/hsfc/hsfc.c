@@ -615,14 +615,15 @@ void Zoltan_HSFC_Free_Structure (ZZ *zz)
 
 /* Copy an hsfc data structure */
 
-int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
+int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ const *fromZZ)
 {
   char *yo = "Zoltan_HSFC_Copy_Structure";
   int len;
-  HSFC_Data *from, *to;
+  HSFC_Data *to;
+  HSFC_Data const *from;
 
   Zoltan_HSFC_Free_Structure(toZZ);
-  from = (HSFC_Data *)fromZZ->LB.Data_Structure;
+  from = (HSFC_Data const *)fromZZ->LB.Data_Structure;
 
   if (!from){
     return ZOLTAN_OK;

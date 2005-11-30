@@ -47,7 +47,7 @@ PARAM_LIST **params)				/* parameters structure */
     *params = NULL;
 }
 
-int Zoltan_Copy_Params(PARAM_LIST **to, PARAM_LIST *from)
+int Zoltan_Copy_Params(PARAM_LIST **to, PARAM_LIST const *from)
 {
   PARAM_LIST *param;
   PARAM_LIST *prev;

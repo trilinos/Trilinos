@@ -66,16 +66,16 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
 
 int Zoltan_Set_Param(
 ZZ *zz,				/* Zoltan structure */
-char *name1,			/* parameter name */
-char *val1)			/* value to set this parameter to */
+const char *name1,		/* parameter name */
+const char *val1)		/* value to set this parameter to */
 {
     return Zoltan_Set_Param_Vec(zz, name1, val1, -1);
 }
 
 int Zoltan_Set_Param_Vec(
 ZZ *zz,				/* Zoltan structure */
-char *name1,			/* parameter name */
-char *val1,			/* value to set this parameter to */
+const char *name1,		/* parameter name */
+const char *val1,		/* value to set this parameter to */
 int index			/* index of vector parameter; -1 if scalar */
 )
 {

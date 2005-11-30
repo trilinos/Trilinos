@@ -91,19 +91,14 @@ public:
 
   int Set_Param( const std::string & param, const std::string & value )
   {
-    return Zoltan_Set_Param( ZZ_Ptr,
-                             const_cast<char*>(param.c_str()),
-                             const_cast<char*>(value.c_str()) );
+    return Zoltan_Set_Param( ZZ_Ptr, param.c_str(), value.c_str() );
   }
 
   //! Replaces Zoltan_Set_Param_Vec
   int Set_Param_Vec( const std::string & param, const std::string & value, 
                      const int &index )
   {
-    return Zoltan_Set_Param_Vec( ZZ_Ptr,
-                                 const_cast<char*>(param.c_str()),
-                                 const_cast<char*>(value.c_str()),
-                                 index );
+    return Zoltan_Set_Param_Vec( ZZ_Ptr, param.c_str(), value.c_str(), index);
   }
 
   int LB_Partition ( int &changes,

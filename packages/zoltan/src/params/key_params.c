@@ -59,8 +59,8 @@ static PARAM_VARS Key_params[] = {
 
 int Zoltan_Set_Key_Param(
 ZZ *zz,                         /* Zoltan structure */
-char *name,			/* name of variable */
-char *val,			/* value of variable */
+const char *name,		/* name of variable */
+const char *val,		/* value of variable */
 int  idx 			/* index of vector param, -1 if scalar */
 )
 {
@@ -320,7 +320,7 @@ int  idx 			/* index of vector param, -1 if scalar */
 /*
  *  Print key parameters.
  */
-void Zoltan_Print_Key_Params(ZZ *zz)
+void Zoltan_Print_Key_Params(ZZ const *zz)
 {
   int i;
   for (i=0; i<(zz->Obj_Weight_Dim?zz->Obj_Weight_Dim:1); i++)

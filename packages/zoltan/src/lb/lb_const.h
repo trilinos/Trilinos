@@ -38,7 +38,7 @@ typedef int ZOLTAN_LB_FN(struct Zoltan_Struct *, float *, int *,
 
 typedef void ZOLTAN_LB_FREE_DATA_FN(struct Zoltan_Struct *);
 
-typedef int ZOLTAN_LB_COPY_DATA_FN(struct Zoltan_Struct *to, struct Zoltan_Struct *from);
+typedef int ZOLTAN_LB_COPY_DATA_FN(struct Zoltan_Struct *to, struct Zoltan_Struct const *from);
 
 typedef int ZOLTAN_LB_POINT_ASSIGN_FN(struct Zoltan_Struct *, double *, int *, 
                                       int *);
@@ -254,7 +254,7 @@ extern int Zoltan_LB_Remap(struct Zoltan_Struct *, int *, int, int *, int *,
   int *, int);
 
 extern int Zoltan_LB_Copy_Struct(struct Zoltan_Struct *to, 
-                                  struct Zoltan_Struct *from);
+                               struct Zoltan_Struct const *from);
 
 /* PARTITIONING FUNCTIONS */
 extern ZOLTAN_LB_FN Zoltan_RCB;

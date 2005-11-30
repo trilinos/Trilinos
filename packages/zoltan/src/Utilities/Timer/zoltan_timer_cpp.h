@@ -49,14 +49,12 @@ public:
   }
 
   int Init(const int &use_barrier, const std::string & name) {
-    return Zoltan_Timer_Init(this->ZTStruct, use_barrier,
-                             const_cast<char*>(name.c_str()));
+    return Zoltan_Timer_Init(this->ZTStruct, use_barrier, name.c_str());
   }
 
   int Reset(const int &ts_idx, const int &use_barrier, 
             const std::string & name) {
-    return Zoltan_Timer_Reset(this->ZTStruct, ts_idx, use_barrier,
-                              const_cast<char*>(name.c_str()));
+    return Zoltan_Timer_Reset(this->ZTStruct, ts_idx, use_barrier, name.c_str());
   }
 
   int Start(const int &ts_idx, const MPI_Comm &comm) {

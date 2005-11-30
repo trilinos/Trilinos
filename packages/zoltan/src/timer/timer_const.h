@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-extern int Zoltan_Set_Timer_Param(char *, char *, int *);
+extern int Zoltan_Set_Timer_Param(const char *, const char *, int *);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

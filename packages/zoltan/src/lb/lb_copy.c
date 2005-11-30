@@ -43,13 +43,13 @@ extern "C" {
 /****************************************************************************/
 /****************************************************************************/
 
-int Zoltan_LB_Copy_Struct(ZZ *toZZ, ZZ *fromZZ)
+int Zoltan_LB_Copy_Struct(ZZ *toZZ, ZZ const *fromZZ)
 {
 char *yo = "Zoltan_LB_Copy_Struct";
 int proc = fromZZ->Proc;
 
   struct Zoltan_LB_Struct *to = &(toZZ->LB);
-  struct Zoltan_LB_Struct *from = &(fromZZ->LB);
+  struct Zoltan_LB_Struct const *from = &(fromZZ->LB);
 
   Zoltan_LB_Free_Struct(&(toZZ->LB));
 

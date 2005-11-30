@@ -36,7 +36,7 @@ extern "C" {
 /* Remove leading & trailing white space and convert to upper case. */
 
 int Zoltan_Clean_String(
-char *string1,			/* original string */
+const char *string1,			/* original string */
 char **pstring2) 		/* cleaned string to return */
 {
 

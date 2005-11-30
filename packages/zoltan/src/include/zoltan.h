@@ -2072,7 +2072,7 @@ extern struct Zoltan_Struct *Zoltan_Create(
  *                            If there is an error, NULL is returned.
  */
 
-extern struct Zoltan_Struct *Zoltan_Copy(struct Zoltan_Struct *from);
+extern struct Zoltan_Struct *Zoltan_Copy(struct Zoltan_Struct const *from);
 
 /*****************************************************************************/
 /*
@@ -2087,7 +2087,8 @@ extern struct Zoltan_Struct *Zoltan_Copy(struct Zoltan_Struct *from);
  *                            successfully copied to the first, 1 otherwise.
  */
 
-extern int Zoltan_Copy_To(struct Zoltan_Struct *to, struct Zoltan_Struct *from);
+extern int Zoltan_Copy_To(struct Zoltan_Struct *to, 
+                          struct Zoltan_Struct const *from);
 
 /*****************************************************************************/
 /*
@@ -2392,8 +2393,8 @@ extern int Zoltan_Set_HG_Edge_List_Fn(
 
 extern int Zoltan_Set_Param(
   struct Zoltan_Struct *zz, 
-  char *name, 
-  char *val
+  const char *name, 
+  const char *val
 );
 
 /*****************************************************************************/
@@ -2417,8 +2418,8 @@ extern int Zoltan_Set_Param(
 
 extern int Zoltan_Set_Param_Vec(
   struct Zoltan_Struct *zz, 
-  char *name, 
-  char *val,
+  const char *name, 
+  const char *val,
   int index
 );
 
@@ -2986,7 +2987,7 @@ extern int Zoltan_LB_Eval(
  *  Output:
  *    Return value  --  Error code.
  */
-extern int Zoltan_LB_Set_Part_Sizes(struct Zoltan_Struct *zz, int global_num,
+extern int Zoltan_LB_Set_Part_Sizes(struct Zoltan_Struct *zz, int global_num, 
   int len, int *part_ids, int *wgt_idx, float *part_sizes);
 
 /*

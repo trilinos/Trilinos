@@ -81,10 +81,10 @@ extern int Zoltan_Assign_Param_Vals(PARAM_LIST *, PARAM_VARS *, int, int, int);
 extern int Zoltan_Bind_Param(PARAM_VARS *, char *, void *);
 extern int Zoltan_Bind_Param_Vec(PARAM_VARS *, char *, void *, int);
 extern void Zoltan_Print_Params(PARAM_LIST *ptr);
-extern int Zoltan_Check_Param(char *, char *, PARAM_VARS *,
+extern int Zoltan_Check_Param(const char *, const char *, PARAM_VARS *,
     PARAM_UTYPE *, int *);
 extern void Zoltan_Free_Params(PARAM_LIST **);
-extern int Zoltan_Copy_Params(PARAM_LIST **to, PARAM_LIST *from);
+extern int Zoltan_Copy_Params(PARAM_LIST **to, PARAM_LIST const *from);
 
 
 #ifdef __cplusplus

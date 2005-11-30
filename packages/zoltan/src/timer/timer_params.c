@@ -27,8 +27,8 @@ extern "C" {
 /* Function to interpret and set timer parameters */
 
 int Zoltan_Set_Timer_Param(
-char *name,                     /* input:  name of variable */
-char *val,                      /* input:  value of variable */
+const char *name,                     /* input:  name of variable */
+const char *val,                      /* input:  value of variable */
 int *timer)                     /* output: timer type */
 {
     PARAM_UTYPE result;         /* value returned from Check_Param */

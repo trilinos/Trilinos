@@ -173,7 +173,7 @@ int Zoltan_Timer_Init(
   int use_barrier,      /* Flag indicating whether to perform a 
                            barrier operation before starting the
                            timer. */
-  char *name            /* Name of this timer */
+  const char *name            /* Name of this timer */
 )
 {
 /* Function that returns the index of the next available Timer timer. */
@@ -209,7 +209,7 @@ int Zoltan_Timer_Reset(
   int use_barrier,       /* Flag indicating whether to perform a 
                             barrier operation before starting the
                             timer. */
-  char *name             /* Name of this timer */
+  const char *name             /* Name of this timer */
 )
 {
 /* Initialize a timer for INUSE; reset its values to zero. */
