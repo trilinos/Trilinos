@@ -1595,6 +1595,28 @@ int status;
 int one_part, one_proc;
 int i;
 
+  if (test_both) {
+
+    // We removed obsolete functions from the C++ interface, so
+    // we need to call the C version of Zoltan_LB_Point_Assign
+
+    status = Zoltan_LB_Point_Assign(zz.Get_C_Handle(), x, &one_proc);
+    if (status != ZOLTAN_OK) 
+      fprintf(fp, "error returned from Zoltan_LB_Point_Assign()\n");
+    else  {
+      fprintf(fp, "%d Zoltan_LB_Point_Assign    (%e %e %e) on proc %d\n",
+              Proc, x[0], x[1], x[2], one_proc);
+      for (i = 0; i < proccnt; i++) 
+        if (one_proc == procs[i]) 
+          break;
+      if (i == proccnt) 
+        fprintf(fp, "%d Error:  processor %d (from Zoltan_LB_Point_Assign) "
+                    "not in proc list from Zoltan_LB_Box_Assign\n", 
+                    Proc, one_proc);
+    }
+  }
+  else fprintf(fp, "%d Zoltan_LB_Point_Assign not tested.\n", Proc);
+
   status = zz.LB_Point_PP_Assign(x, one_proc, one_part);
   if (status != ZOLTAN_OK) 
     fprintf(fp, "error returned from Zoltan_LB_Point_PP_Assign()\n");
@@ -1641,6 +1663,37 @@ double x[3];
 int i;
 
   fprintf(fp, "\n-------------------------------------------------------\n");
+
+  if (test_both) {
+
+    // We removed obsolete functions from the C++ interface, so
+    // we need to call the C version of Zoltan_LB_Box_Assign
+
+    status = Zoltan_LB_Box_Assign(zz.Get_C_Handle(),
+                                      xlo[0], xlo[1], xlo[2], 
+                                      xhi[0], xhi[1], xhi[2], 
+                                      procs, &proccnt);
+    if (status != ZOLTAN_OK) 
+      fprintf(fp, "error returned from Zoltan_LB_Box_Assign()\n");
+    else {
+      fprintf(fp, "%d Zoltan_LB_Box_Assign    LO: (%e %e %e)\n"
+                  "%d                         HI: (%e %e %e)\n", 
+                  Proc, xlo[0], xlo[1], xlo[2], Proc, xhi[0], xhi[1], xhi[2]);
+  
+      procfound = 0;
+      fprintf(fp, "       On %d Procs: ", proccnt);
+      for (i = 0; i < proccnt; i++) {
+        fprintf(fp, "%d ", procs[i]);
+        if (procs[i] == answer_proc) procfound = 1;
+      }
+      fprintf(fp, "\n");
+      if (answer_proc >= 0 && !procfound)
+        fprintf(fp, "%d Zoltan_LB_Box_Assign error:  "
+                     "expected proc %d not in output proc list\n",
+                      Proc, answer_proc);
+    }
+  }
+  else fprintf(fp, "%d Zoltan_LB_Box_Assign not tested.\n", Proc);
 
   status = zz.LB_Box_PP_Assign(xlo[0], xlo[1], xlo[2], 
                                        xhi[0], xhi[1], xhi[2], 
