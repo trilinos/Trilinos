@@ -149,7 +149,7 @@ Zoltan_DD_Directory *Zoltan_DD_Copy(Zoltan_DD_Directory *from)
 int Zoltan_DD_Copy_To(Zoltan_DD_Directory **toptr, Zoltan_DD_Directory *from)
 {
   static char *yo = "Zoltan_DD_Copy_To";
-  int i, ierr, proc = 0;
+  int i, proc = 0;
   Zoltan_DD_Directory *to= NULL;
 
   if (!toptr){
