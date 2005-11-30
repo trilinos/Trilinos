@@ -351,14 +351,14 @@ type(PARIO_INFO) :: pio_info
 
 !   /* Test the copy function */
 
-    zz_obj_copy => Zoltan_Copy(zz_obj)
-    if (.not.associated(zz_obj_copy)) then
-      print *, "fatal:  NULL object returned from Zoltan_Copy()"
-      run_zoltan = .false.
-      goto 9999
-    endif
-    call Zoltan_Destroy(zz_obj)
-    zz_obj = zz_obj_copy
+!   zz_obj_copy => Zoltan_Copy(zz_obj)
+!   if (.not.associated(zz_obj_copy)) then
+!     print *, "fatal:  NULL object returned from Zoltan_Copy()"
+!     run_zoltan = .false.
+!     goto 9999
+!   endif
+!   call Zoltan_Destroy(zz_obj)
+!   zz_obj = zz_obj_copy
 
 !  /* Evaluate the new balance */
     if (Proc == 0) then
