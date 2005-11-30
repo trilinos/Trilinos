@@ -501,6 +501,15 @@ public:
     return rc;
   }
 
+  // Access to the "C" language structure, required for use of
+  // Zoltan "C" functions.  (Deprecated "C" functions were not
+  // included in the C++ interface.)
+
+  Zoltan_Struct *Get_C_Handle(void)
+  {
+    return ZZ_Ptr;
+  }
+
 private:
 
   Zoltan_Struct * ZZ_Ptr; 
