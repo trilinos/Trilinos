@@ -578,32 +578,38 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, ml, NOX_ML_EPETRA, BUILD_NOX_EPETRA_ML_SUPPO
 # ------------------------------------------------------------------------
 # NOX/LOCA-Python Check.
 # ------------------------------------------------------------------------
-TAC_ENABLE_PYTHON
+# RPP: 11/30/2005 - disabling all python in NOX.  The refactor from
+# last month added smart pointers that phyton currently can't handle.
+# Until Bill Spotz fixes this for Trilinos in general, we can't
+# support python.  
+BUILD_NOX_PYTHON=no
+
+#TAC_ENABLE_PYTHON
 
 # Separate builds for loca and nox
-AC_ARG_ENABLE(nox-python,
-[AC_HELP_STRING([--disable-nox-python],[Used ONLY to disable the python supportin nox.  It cannot be used to enable python support.  Use the flag --enable-python to enable support.])],
-[
-  BUILD_NOX_PYTHON=${enableval}
-  if test X${BUILD_NOX_PYTHON} != Xno; then
-    echo "*****************************"
-    echo "NOX Configure ERROR - the flag \"--enable-nox-python\" is not"
-    echo "allowed!  To enable python support in nox, use --enable-python."
-    echo "The flag \"--disable-nox-python\" is allowed to specifically"
-    echo "disable nox python support while allowing python support in"
-    echo "other Trilinos packages."
-    echo "*****************************"
-    AC_MSG_ERROR([The flag \"--enable-nox-python\" is not allowed.])
-  fi
-],
-[
-  AC_ARG_ENABLE(python,
-  [],
-  [BUILD_NOX_PYTHON=${enableval}],
-  [BUILD_NOX_PYTHON=no]
-  )
-]
-)
+#AC_ARG_ENABLE(nox-python,
+#[AC_HELP_STRING([--disable-nox-python],[Used ONLY to disable the python supportin nox.  It cannot be used to enable python support.  Use the flag --enable-python to enable support.])],
+#[
+#  BUILD_NOX_PYTHON=${enableval}
+#  if test X${BUILD_NOX_PYTHON} != Xno; then
+#    echo "*****************************"
+#    echo "NOX Configure ERROR - the flag \"--enable-nox-python\" is not"
+#    echo "allowed!  To enable python support in nox, use --enable-python."
+#    echo "The flag \"--disable-nox-python\" is allowed to specifically"
+#    echo "disable nox python support while allowing python support in"
+#    echo "other Trilinos packages."
+#    echo "*****************************"
+#    AC_MSG_ERROR([The flag \"--enable-nox-python\" is not allowed.])
+#  fi
+#],
+#[
+#  AC_ARG_ENABLE(python,
+#  [],
+#  [BUILD_NOX_PYTHON=${enableval}],
+#  [BUILD_NOX_PYTHON=no]
+#  )
+#]
+#)
 
 if test X${BUILD_NOX_PYTHON} = Xyes && test X${BUILD_LOCA} = Xyes; then
   ## RPP: For now we have completely disabled python support in loca
@@ -709,7 +715,7 @@ fi
 
 if test X${ac_cv_use_anasazi} = Xyes; then
   TRILINOS_HEADER(anasazi,Anasazi_config.h,src)
-  TRILINOS_HEADER(anasazi,AnasaziReturnType.hpp,src)
+  TRILINOS_HEADER(anasazi,AnasaziTypes.hpp,src)
 fi
 
 if test X${BUILD_PYTHON} = Xyes && test X${ADDON_epetra} = Xyes; then

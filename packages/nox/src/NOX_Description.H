@@ -59,6 +59,9 @@
 
   \section announcements Announcements
 
+  11/2/2005: A major refctor of the nox development version has been finished. These changes will be incorporated into the next release of Trilinos: version 7.0.  These changes include:
+
+
   7/22/2005: IMPORTANT!  Over the next few months, NOX will be undergoing a major refactor.  Some changes that you will see in the development branch and (possibly) in the release of Trilinos 6.0 in September 2005 include:
 <ul>  
 <li> Makefile.export support.  All packages in Trilinos are switching over to supply users with Makefiles that users can include in their own projects to quikly link to NOX/LOCA.
