@@ -41,7 +41,9 @@
 #include "Epetra_VbrMatrix.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Trilinos_Util_Version.h"
+#include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
+
 void Trilinos_Util_ReadHb2Epetra(char *data_file,
 				 const Epetra_Comm  &comm, 
 				 Epetra_Map *& map, 
