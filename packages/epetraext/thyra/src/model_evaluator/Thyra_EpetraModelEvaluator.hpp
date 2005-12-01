@@ -106,6 +106,18 @@ public:
   /** \brief . */
   Teuchos::RefCountPtr<LinearOpWithSolveBase<double> > create_W() const;
   /** \brief . */
+  Teuchos::RefCountPtr<LinearOpBase<double> > create_DfDp_op(int l) const;
+  /** \brief . */
+  DerivativeMultiVector<double> create_DfDp_mv(int l, EDerivativeMultiVectorOrientation orientation) const;
+  /** \brief . */
+  Teuchos::RefCountPtr<LinearOpBase<double> > create_DgDx_op(int j) const;
+  /** \brief . */
+  DerivativeMultiVector<double> create_DgDx_mv(int j, EDerivativeMultiVectorOrientation orientation) const;
+  /** \brief . */
+  Teuchos::RefCountPtr<LinearOpBase<double> > create_DgDp_op( int j, int l ) const;
+  /** \brief . */
+  DerivativeMultiVector<double> create_DgDp_mv( int j, int l, EDerivativeMultiVectorOrientation orientation ) const;
+  /** \brief . */
   ModelEvaluatorBase::InArgs<double> createInArgs() const;
   /** \brief . */
   ModelEvaluatorBase::OutArgs<double> createOutArgs() const;
@@ -152,9 +164,33 @@ private:
   
 };
 
+//
+// Utility functions
+//
+
+/** \brief . */
+ModelEvaluatorBase::EDerivativeMultiVectorOrientation
+convert( const EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation &mvOrientation );
+
+/** \brief . */
+EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation
+convert( const ModelEvaluatorBase::EDerivativeMultiVectorOrientation &mvOrientation );
+
 /** \brief . */
 ModelEvaluatorBase::DerivativeProperties
 convert( const EpetraExt::ModelEvaluator::DerivativeProperties &derivativeProperties );
+
+/** \brief . */
+ModelEvaluatorBase::DerivativeSupport
+convert( const EpetraExt::ModelEvaluator::DerivativeSupport &derivativeSupport );
+
+/** \brief . */
+EpetraExt::ModelEvaluator::Derivative
+convert(
+  const ModelEvaluatorBase::Derivative<double>        &derivative
+  ,const Teuchos::RefCountPtr<const Epetra_Map>       &fnc_map
+  ,const Teuchos::RefCountPtr<const Epetra_Map>       &var_map
+  );
 
 } // namespace Thyra
 

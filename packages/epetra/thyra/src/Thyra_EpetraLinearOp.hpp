@@ -44,6 +44,15 @@ namespace Thyra {
  * <tt>Epetra_Operator::ApplyInverse()</tt>.  In addition, the user can
  * specify whether adjoints are supported or not.
  *
+ * <b>Partial Automatic Change Propagation:</b> This class shall maintain no
+ * state with respect to the <em>values</em> of the internally stored
+ * <tt>Epetra_Operator</tt> object.  Therefore, as long as the domain and
+ * range maps do not change, the the <tt>Epetra_Operator</tt> can be changed
+ * and this will automatically update <tt>*this</tt> object.  This simplifies
+ * some types of update operations.  Since this is a simple concrete class,
+ * this is harmless.  However, if the range and domain maps change, then one
+ * must call the <tt>this->initialize()</tt> function.
+ *
  * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 class EpetraLinearOp : virtual public EpetraLinearOpBase {

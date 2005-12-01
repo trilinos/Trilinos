@@ -187,6 +187,72 @@ EpetraModelEvaluator::create_W() const
   return W_factory_->createOp();
 }
 
+Teuchos::RefCountPtr<LinearOpBase<double> >
+EpetraModelEvaluator::create_DfDp_op(int l) const
+{
+  TEST_FOR_EXCEPT(true);
+  return Teuchos::null;
+}
+
+ModelEvaluatorBase::DerivativeMultiVector<double>
+EpetraModelEvaluator::create_DfDp_mv(int l, EDerivativeMultiVectorOrientation orientation) const
+{
+  return DerivativeMultiVector<double>(
+    orientation == DERIV_MV_BY_COL
+    ?create_MPIMultiVectorBase(
+      Teuchos::rcp(new Epetra_MultiVector(*f_map_,p_map_[l-1]->NumGlobalElements()))
+      ,f_space_,p_space_[l-1] )
+    :create_MPIMultiVectorBase(
+      Teuchos::rcp(new Epetra_MultiVector(*p_map_[l-1],f_map_->NumGlobalElements()))
+      ,p_space_[l-1],f_space_ )
+    ,orientation
+    );
+}
+
+Teuchos::RefCountPtr<LinearOpBase<double> >
+EpetraModelEvaluator::create_DgDx_op(int j) const
+{
+  TEST_FOR_EXCEPT(true);
+  return Teuchos::null;
+}
+
+ModelEvaluatorBase::DerivativeMultiVector<double>
+EpetraModelEvaluator::create_DgDx_mv(int j, EDerivativeMultiVectorOrientation orientation) const
+{
+  return DerivativeMultiVector<double>(
+    orientation == DERIV_MV_BY_COL
+    ?create_MPIMultiVectorBase(
+      Teuchos::rcp(new Epetra_MultiVector(*g_map_[j-1],x_map_->NumGlobalElements()))
+      ,g_space_[j-1],x_space_ )
+    :create_MPIMultiVectorBase(
+      Teuchos::rcp(new Epetra_MultiVector(*x_map_,g_map_[j-1]->NumGlobalElements()))
+      ,x_space_,g_space_[j-1] )
+    ,orientation
+    );
+}
+
+Teuchos::RefCountPtr<LinearOpBase<double> >
+EpetraModelEvaluator::create_DgDp_op( int j, int l ) const
+{
+  TEST_FOR_EXCEPT(true);
+  return Teuchos::null;
+}
+
+ModelEvaluatorBase::DerivativeMultiVector<double>
+EpetraModelEvaluator::create_DgDp_mv( int j, int l, EDerivativeMultiVectorOrientation orientation ) const
+{
+  return DerivativeMultiVector<double>(
+    orientation == DERIV_MV_BY_COL
+    ?create_MPIMultiVectorBase(
+      Teuchos::rcp(new Epetra_MultiVector(*g_map_[j-1],p_map_[l-1]->NumGlobalElements()))
+      ,g_space_[j-1],p_space_[l-1] )
+    :create_MPIMultiVectorBase(
+      Teuchos::rcp(new Epetra_MultiVector(*p_map_[l-1],g_map_[j-1]->NumGlobalElements()))
+      ,p_space_[l-1],g_space_[j-1] )
+    ,orientation
+    );
+}
+
 EpetraModelEvaluator::InArgs<double> EpetraModelEvaluator::createInArgs() const
 {
   const EpetraExt::ModelEvaluator &epetraModel = *epetraModel_;
@@ -213,13 +279,25 @@ EpetraModelEvaluator::OutArgs<double> EpetraModelEvaluator::createOutArgs() cons
   typedef EpetraExt::ModelEvaluator EME;
   EME::InArgs  epetraInArgs  = epetraModel.createInArgs();
   EME::OutArgs epetraOutArgs = epetraModel.createOutArgs();
+  const int Np = epetraOutArgs.Np(), Ng = epetraOutArgs.Ng();
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(epetraInArgs.Np(),epetraOutArgs.Ng());
+  outArgs.set_Np_Ng(Np,Ng);
   outArgs.setSupports(OUT_ARG_f,epetraOutArgs.supports(EME::OUT_ARG_f));
   outArgs.setSupports(OUT_ARG_W,epetraOutArgs.supports(EME::OUT_ARG_W));
-  outArgs.setSupports(OUT_ARG_f_poly,
-		      epetraOutArgs.supports(EME::OUT_ARG_f_poly));
   outArgs.set_W_properties(convert(epetraOutArgs.get_W_properties()));
+  for(int l=1; l<=Np; ++l) {
+    outArgs.setSupports(OUT_ARG_DfDp,l,convert(epetraOutArgs.supports(EME::OUT_ARG_DfDp,l)));
+    outArgs.set_DfDp_properties(l,convert(epetraOutArgs.get_DfDp_properties(l)));
+  }
+  for(int j=1; j<=Ng; ++j) {
+    outArgs.setSupports(OUT_ARG_DgDx,j,convert(epetraOutArgs.supports(EME::OUT_ARG_DgDx,j)));
+    outArgs.set_DgDx_properties(j,convert(epetraOutArgs.get_DgDx_properties(j)));
+  }
+  for(int j=1; j<=Ng; ++j) for(int l=1; l<=Np; ++l) {
+    outArgs.setSupports(OUT_ARG_DgDp,j,l,convert(epetraOutArgs.supports(EME::OUT_ARG_DgDp,j,l)));
+    outArgs.set_DgDp_properties(j,l,convert(epetraOutArgs.get_DgDp_properties(j,l)));
+  }
+  outArgs.setSupports(OUT_ARG_f_poly,epetraOutArgs.supports(EME::OUT_ARG_f_poly));
   return outArgs;
 }
 
@@ -242,6 +320,14 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
   RefCountPtr<const VectorBase<double> > x;
   if( inArgs.supports(IN_ARG_x) && (x = inArgs.get_x()).get() )
     epetraInArgs.set_x(get_Epetra_Vector(*x_map_,x));
+
+  if(1) {
+    RefCountPtr<const VectorBase<double> > p_l;
+    for(int l = 1;  l <= outArgs.Np(); ++l ) {
+      p_l = inArgs.get_p(l);
+      if(p_l.get()) epetraInArgs.set_p(l,get_Epetra_Vector(*p_map_[l-1],p_l));
+    }
+  }
 
   RefCountPtr<const Teuchos::Polynomial< VectorBase<double> > > x_dot_poly;
   Teuchos::RefCountPtr<Epetra_Vector> epetra_ptr;
@@ -287,6 +373,14 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
   if( outArgs.supports(OUT_ARG_f) && (f = outArgs.get_f()).get() )
     epetraOutArgs.set_f(get_Epetra_Vector(*f_map_,f));
 
+  if(1){
+    Teuchos::RefCountPtr<VectorBase<double> > g_j;
+    for(int j = 1;  j <= outArgs.Ng(); ++j ) {
+      g_j = outArgs.get_g(j);
+      if(g_j.get()) epetraOutArgs.set_g(j,get_Epetra_Vector(*g_map_[j-1],g_j));
+    }
+  }
+  
   RefCountPtr<LinearOpWithSolveBase<double> > W;
   RefCountPtr<const LinearOpBase<double> >    fwdW;
   Teuchos::RefCountPtr<Epetra_Operator>       eW;
@@ -299,6 +393,32 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
       eW = epetraModel_->create_W();
     }
     epetraOutArgs.set_W(eW);
+  }
+
+  if(1){
+    Derivative<double> DfDp_l;
+    for(int l = 1;  l <= outArgs.Np(); ++l ) {
+      if( !outArgs.supports(OUT_ARG_DfDp,l).none() && !(DfDp_l = outArgs.get_DfDp(l)).isEmpty() )
+        epetraOutArgs.set_DfDp(l,convert(DfDp_l,f_map_,p_map_[l-1]));
+    }
+  }
+
+  if(1){
+    Derivative<double> DgDx_j;
+    for(int j = 1;  j <= outArgs.Ng(); ++j ) {
+      if( !outArgs.supports(OUT_ARG_DgDx,j).none() && !(DgDx_j = outArgs.get_DgDx(j)).isEmpty() )
+        epetraOutArgs.set_DgDx(j,convert(DgDx_j,g_map_[j-1],x_map_));
+    }
+  }
+
+  if(1){
+    Derivative<double> DgDp_j_l;
+    for(int j = 1;  j <= outArgs.Ng(); ++j ) {
+      for(int l = 1;  l <= outArgs.Np(); ++l ) {
+        if( !outArgs.supports(OUT_ARG_DgDp,j,l).none() && !(DgDp_j_l = outArgs.get_DgDp(j,l)).isEmpty() )
+          epetraOutArgs.set_DgDp(j,l,convert(DgDp_j_l,g_map_[j-1],p_map_[l-1]));
+      }
+    }
   }
 
   RefCountPtr<const Teuchos::Polynomial< VectorBase<double> > > f_poly;
@@ -346,10 +466,37 @@ std::string EpetraModelEvaluator::description() const
 
 } // namespace Thyra
 
-
 //
 // Non-member utility functions
 //
+
+Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation
+Thyra::convert( const EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation &mvOrientation )
+{
+  switch(mvOrientation) {
+    case EpetraExt::ModelEvaluator::DERIV_MV_BY_COL :
+      return ModelEvaluatorBase::DERIV_MV_BY_COL;
+    case EpetraExt::ModelEvaluator::DERIV_TRANS_MV_BY_ROW :
+      return ModelEvaluatorBase::DERIV_TRANS_MV_BY_ROW;
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
+  return ModelEvaluatorBase::DERIV_MV_BY_COL; // Should never be called!
+}
+
+EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation
+Thyra::convert( const ModelEvaluatorBase::EDerivativeMultiVectorOrientation &mvOrientation )
+{
+  switch(mvOrientation) {
+    case ModelEvaluatorBase::DERIV_MV_BY_COL :
+      return EpetraExt::ModelEvaluator::DERIV_MV_BY_COL;
+    case ModelEvaluatorBase::DERIV_TRANS_MV_BY_ROW :
+      return EpetraExt::ModelEvaluator::DERIV_TRANS_MV_BY_ROW;
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
+  return EpetraExt::ModelEvaluator::DERIV_MV_BY_COL; // Should never be called!
+}
 
 Thyra::ModelEvaluatorBase::DerivativeProperties
 Thyra::convert( const EpetraExt::ModelEvaluator::DerivativeProperties &derivativeProperties )
@@ -384,3 +531,47 @@ Thyra::convert( const EpetraExt::ModelEvaluator::DerivativeProperties &derivativ
   }
   return ModelEvaluatorBase::DerivativeProperties(linearity,rank,derivativeProperties.supportsAdjoint);
 }
+
+Thyra::ModelEvaluatorBase::DerivativeSupport
+Thyra::convert( const EpetraExt::ModelEvaluator::DerivativeSupport &derivativeSupport )
+{
+  ModelEvaluatorBase::DerivativeSupport ds;
+  if(derivativeSupport.supports(EpetraExt::ModelEvaluator::DERIV_LINEAR_OP))
+    ds.plus(ModelEvaluatorBase::DERIV_LINEAR_OP);
+  if(derivativeSupport.supports(EpetraExt::ModelEvaluator::DERIV_MV_BY_COL))
+    ds.plus(ModelEvaluatorBase::DERIV_MV_BY_COL);
+  if(derivativeSupport.supports(EpetraExt::ModelEvaluator::DERIV_TRANS_MV_BY_ROW))
+    ds.plus(ModelEvaluatorBase::DERIV_TRANS_MV_BY_ROW);
+  return ds;
+}
+
+EpetraExt::ModelEvaluator::Derivative
+Thyra::convert(
+  const ModelEvaluatorBase::Derivative<double>        &derivative
+  ,const Teuchos::RefCountPtr<const Epetra_Map>       &fnc_map
+  ,const Teuchos::RefCountPtr<const Epetra_Map>       &var_map
+  )
+{
+  typedef ModelEvaluatorBase MEB;
+  if(derivative.getLinearOp().get()) {
+    return EpetraExt::ModelEvaluator::Derivative(
+      Teuchos::rcp_const_cast<Epetra_Operator>(
+        Teuchos::dyn_cast<const EpetraLinearOp>(*derivative.getLinearOp()).epetra_op()
+        )
+      );
+  }
+  else if(derivative.getDerivativeMultiVector().getMultiVector().get()) {
+    return EpetraExt::ModelEvaluator::Derivative(
+      EpetraExt::ModelEvaluator::DerivativeMultiVector(
+        get_Epetra_MultiVector(
+          derivative.getDerivativeMultiVector().getOrientation() == MEB::DERIV_MV_BY_COL
+          ? *fnc_map : *var_map
+          ,derivative.getDerivativeMultiVector().getMultiVector()
+          )
+        ,convert(derivative.getDerivativeMultiVector().getOrientation())
+        )
+      );
+  }
+  return EpetraExt::ModelEvaluator::Derivative();
+}
+

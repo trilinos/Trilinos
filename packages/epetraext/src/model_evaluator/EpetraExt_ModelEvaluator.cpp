@@ -28,6 +28,36 @@
 
 #include "EpetraExt_ModelEvaluator.h"
 
+namespace {
+
+Teuchos::RefCountPtr<Epetra_MultiVector>
+getMultiVector(
+  const std::string                                                    &modelEvalDescription
+  ,const EpetraExt::ModelEvaluator::Derivative                         &deriv
+  ,const std::string                                                   &derivName
+  ,const EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation  mvOrientation
+  )
+{
+  TEST_FOR_EXCEPTION(
+    deriv.getLinearOp().get() != NULL, std::logic_error
+    ,"For model \'" << modelEvalDescription << "\' the derivative \'"
+    << derivName << "\' is of type Epetra_Operator and not of type Epetra_MultiVector!"
+    );
+  Teuchos::RefCountPtr<Epetra_MultiVector>
+    mv = deriv.getDerivativeMultiVector().getMultiVector();
+  if(mv.get()) {
+    TEST_FOR_EXCEPTION(
+      deriv.getDerivativeMultiVector().getOrientation()!=mvOrientation, std::logic_error
+      ,"For model \'" << modelEvalDescription << "\' the derivative \'"
+      << derivName << "\' if not the orientation \'" << toString(mvOrientation)
+      << "\'"
+      );
+  }
+  return mv;
+}
+
+} // namespace
+
 namespace EpetraExt {
 
 //
@@ -96,6 +126,54 @@ bool ModelEvaluator::OutArgs::supports(EOutArgsMembers arg) const
   return supports_[arg];
 }
 
+const ModelEvaluator::DerivativeSupport&
+ModelEvaluator::OutArgs::supports(EOutArgsDfDp arg, int l) const
+{
+  assert_l(l);
+  return supports_DfDp_[l-1];
+}
+
+const ModelEvaluator::DerivativeSupport&
+ModelEvaluator::OutArgs::supports(EOutArgsDgDx arg, int j) const
+{
+  assert_j(j);
+  return supports_DgDx_[j-1];
+}
+
+const ModelEvaluator::DerivativeSupport&
+ModelEvaluator::OutArgs::supports(EOutArgsDgDp arg, int j, int l) const
+{
+  assert_j(j);
+  assert_l(l);
+  return supports_DgDp_[ (j-1)*Np() + (l-1) ];
+}
+
+void ModelEvaluator::OutArgs::_setModelEvalDescription( const std::string &modelEvalDescription )
+{
+  modelEvalDescription_ = modelEvalDescription;
+}
+
+void ModelEvaluator::OutArgs::_set_Np_Ng(int Np, int Ng)
+{
+  if(Np) {
+    supports_DfDp_.resize(Np);
+    DfDp_.resize(Np);                 std::fill_n(DfDp_.begin(),Np,Derivative());
+    DfDp_properties_.resize(Np);      std::fill_n(DfDp_properties_.begin(),Np,DerivativeProperties());
+  }
+  if(Ng) {
+    g_.resize(Ng);                    std::fill_n(g_.begin(),Ng,Teuchos::null);
+    supports_DgDx_.resize(Ng);
+    DgDx_.resize(Ng);                 std::fill_n(DgDx_.begin(),Ng,Derivative());
+    DgDx_properties_.resize(Ng);      std::fill_n(DgDx_properties_.begin(),Ng,DerivativeProperties());
+  }
+  if(Np && Ng) {
+    const int NpNg = Np*Ng;
+    supports_DgDp_.resize(NpNg);
+    DgDp_.resize(NpNg);                 std::fill_n(DgDp_.begin(),NpNg,Derivative());
+    DgDp_properties_.resize(NpNg);      std::fill_n(DgDp_properties_.begin(),NpNg,DerivativeProperties());
+  }
+}
+
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supports )
 {
   TEST_FOR_EXCEPTION(
@@ -105,6 +183,48 @@ void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supports )
   supports_[arg] = supports;
 }
 
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp arg, int l, const DerivativeSupport& supports )
+{
+  assert_l(l);
+  supports_DfDp_[l-1] = supports;
+}
+
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx arg, int j, const DerivativeSupport& supports )
+{
+  assert_j(j);
+  supports_DgDx_[j-1] = supports;
+}
+
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& supports )
+{
+  assert_j(j);
+  assert_l(l);
+  supports_DgDp_[ (j-1)*Np() + (l-1) ] = supports;
+}
+
+void ModelEvaluator::OutArgs::_set_W_properties( const DerivativeProperties &W_properties )
+{
+  W_properties_ = W_properties;
+}
+
+void ModelEvaluator::OutArgs::_set_DfDp_properties( int l, const DerivativeProperties &properties )
+{
+  assert_supports(OUT_ARG_DfDp,l);
+  DfDp_properties_[l-1] = properties;
+}
+
+void ModelEvaluator::OutArgs::_set_DgDx_properties( int j, const DerivativeProperties &properties )
+{
+  assert_supports(OUT_ARG_DgDx,j);
+  DgDx_properties_[j-1] = properties;
+}
+
+void ModelEvaluator::OutArgs::_set_DgDp_properties( int j, int l, const DerivativeProperties &properties )
+{
+  assert_supports(OUT_ARG_DgDp,j,l);
+  DgDp_properties_[ (j-1)*Np() + (l-1) ] = properties;
+}
+
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsMembers arg) const
 {
   TEST_FOR_EXCEPTION(
@@ -112,6 +232,49 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsMembers arg) const
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(arg): "
     "*this = \'"<<modelEvalDescription_<<"\': Error, "
     "The argument arg = " << arg << " is not supported!"
+    );
+}
+
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp arg, int l) const
+{
+  assert_l(l);
+  TEST_FOR_EXCEPTION(
+    supports_DfDp_[l-1].none(), std::logic_error
+    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DfDp,l): "
+    "*this = \'"<<modelEvalDescription_<<"\': Error,"
+    "The argument DfDp(l) with index l = " << l << " is not supported!"
+    );
+}
+
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx arg, int j) const
+{
+  assert_j(j);
+  TEST_FOR_EXCEPTION(
+    supports_DgDx_[j-1].none(), std::logic_error
+    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx,j): "
+    "*this = \'"<<modelEvalDescription_<<"\': Error,"
+    "The argument DgDx(j) with index j = " << j << " is not supported!"
+    );
+}
+
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp arg, int j, int l) const
+{
+  assert_j(j);
+  TEST_FOR_EXCEPTION(
+    supports_DgDx_[ (j-1)*Np() + (l-1) ].none(), std::logic_error
+    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp,j,l): "
+    "*this = \'"<<modelEvalDescription_<<"\': Error,"
+    "The argument DgDp(j,l) with indexes j = " << j << " and l = " << l << " is not supported!"
+    );
+}
+
+void ModelEvaluator::OutArgs::assert_l(int l) const
+{
+  TEST_FOR_EXCEPTION(
+    !( 1 <= l && l <= Np() ), std::logic_error
+    ,"Thyra::ModelEvaluator::OutArgs::assert_l(l): "
+    "*this = \'"<<modelEvalDescription_<<"\': Error, "
+    "The parameter subvector p(l) index l = " << l << " is not in the range [1,"<<Np()<<"]!"
     );
 }
 
@@ -186,4 +349,81 @@ Teuchos::RefCountPtr<Epetra_Operator>
 ModelEvaluator::create_W() const
 { return Teuchos::null; }
 
+Teuchos::RefCountPtr<Epetra_Operator>
+ModelEvaluator::create_DfDp_op(int l) const
+{ return Teuchos::null; }
+
+Teuchos::RefCountPtr<Epetra_Operator>
+ModelEvaluator::create_DgDx_op(int j) const
+{ return Teuchos::null; }
+
+Teuchos::RefCountPtr<Epetra_Operator>
+ModelEvaluator::create_DgDp_op( int j, int l ) const
+{ return Teuchos::null; }
+
 } // namespace EpetraExt
+
+//
+// Helper functions
+//
+
+std::string EpetraExt::toString( ModelEvaluator::EDerivativeMultiVectorOrientation orientation )
+{
+  switch(orientation) {
+    case ModelEvaluator::DERIV_MV_BY_COL:
+      return "DERIV_MV_BY_COL";
+    case ModelEvaluator::DERIV_TRANS_MV_BY_ROW:
+      return "DERIV_TRANS_MV_BY_ROW";
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
+  return ""; // Should never be called
+};
+
+Teuchos::RefCountPtr<Epetra_MultiVector>
+EpetraExt::get_DfDp_mv(
+  const int                                                            l
+  ,const ModelEvaluator::OutArgs                                       &outArgs
+  )
+{
+  std::ostringstream derivName; derivName << "DfDp("<<l<<")";
+  return getMultiVector(
+    outArgs.modelEvalDescription()
+    ,outArgs.get_DfDp(l)
+    ,derivName.str()
+    ,ModelEvaluator::DERIV_MV_BY_COL
+    );
+}
+
+Teuchos::RefCountPtr<Epetra_MultiVector>
+EpetraExt::get_DgDx_mv(
+  const int                                                            j
+  ,const ModelEvaluator::OutArgs                                       &outArgs
+  ,const EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation  mvOrientation
+  )
+{
+  std::ostringstream derivName; derivName << "DgDx("<<j<<")";
+  return getMultiVector(
+    outArgs.modelEvalDescription()
+    ,outArgs.get_DgDx(j)
+    ,derivName.str()
+    ,mvOrientation
+    );
+}
+
+Teuchos::RefCountPtr<Epetra_MultiVector>
+EpetraExt::get_DgDp_mv(
+  const int                                                            j
+  ,const int                                                           l
+  ,const ModelEvaluator::OutArgs                                       &outArgs
+  ,const EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation  mvOrientation
+  )
+{
+  std::ostringstream derivName; derivName << "DgDp("<<j<<","<<l<<")";
+  return getMultiVector(
+    outArgs.modelEvalDescription()
+    ,outArgs.get_DgDp(j,l)
+    ,derivName.str()
+    ,mvOrientation
+    );
+}
