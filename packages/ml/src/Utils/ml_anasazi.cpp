@@ -23,7 +23,7 @@
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziOutputManager.hpp"
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziReturnType.hpp"
+#include "AnasaziTypes.hpp"
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziOperator.hpp"
 
