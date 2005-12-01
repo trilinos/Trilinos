@@ -1358,7 +1358,8 @@ end function Zf90_Create
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Copy(zz_from)
-type(Zoltan_Struct), pointer :: Zf90_Copy, zz_from
+type(Zoltan_Struct), pointer :: Zf90_Copy
+type(Zoltan_Struct) INTENT_IN  zz_from
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_to, zz_addr
 integer(Zoltan_INT) :: nbytes, i
 logical :: isnull
