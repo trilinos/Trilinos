@@ -23,8 +23,8 @@
 <BODY BGCOLOR="#FFFFFF">
 
 <div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_degenerate.html">Next</a> &nbsp;
 |&nbsp; <a href="dev_reftree.html">Previous</a></i></b></div>
-
 
 <H2>
 <A NAME="HSFC"></A>Appendix: Hilbert Space Filling Curve (HSFC)</H2>
@@ -212,7 +212,6 @@ This algorithm will work for any space filling curve.  All that is necessary is 
 provide the tables (derieved from the curve's state transition diagram) in place of
 the Hilbert Space Filling Curve tables.
 
-<p>
 
 <BR>&nbsp;
 
@@ -238,6 +237,14 @@ Parameters</H3>
 <a href="../ug_html/ug_alg_hsfc.html">HSFC section</a> of the <B><A HREF="../ug_html/ug.html">Zoltan User's
 Guide</A></B>.  These can be set by use of the <b>Zoltan_HSFC_Set_Param</b> subroutine
 in the file <i>hsfc/hsfc.c</i>.
+<p>
+When the parameter <a href="../ug_html/ug_alg_hsfc.html">REDUCE_DIMENSIONS</a> 
+is specified, the HSFC algorithm will perform a lower dimensional
+partitioning if the geometry is found to be degenerate.  More information
+on detecting degenerate
+geometries may be found in another <a href="dev_degenerate.html">
+section</a>.
+
 
 <BR>&nbsp;
 
@@ -253,6 +260,8 @@ Main Routine</H3>
 <P>
 <HR WIDTH="100%">
 <BR>[<A HREF="dev.html">Table of Contents</A>&nbsp;
+|&nbsp; <a href="dev_degenerate.html">Next: &nbsp; Handling Degenerate Geometries</a>
+
 |&nbsp; <A HREF="dev_reftree.html"> Previous:&nbsp; Refinement Tree</A>]
 </BODY>
 </HTML>

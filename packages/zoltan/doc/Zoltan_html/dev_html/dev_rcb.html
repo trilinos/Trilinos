@@ -146,6 +146,14 @@ Parameters</H3>
 <a href="../ug_html/ug_alg_rcb.html">RCB section</a> of the <B><A HREF="../ug_html/ug.html">Zoltan User's
 Guide</A></B>.  These can be set by use of the <b>Zoltan_RCB_Set_Param</b> subroutine
 in the file <i>rcb/rcb.c</i>.
+
+<p>
+When the parameter <a href="../ug_html/ug_alg_rcb.html">REDUCE_DIMENSIONS</a> 
+is specified, the RCB algorithm will perform a lower dimensional
+partitioning if the geometry is found to be degenerate.  More information
+on detecting degenerate
+geometries may be found in another <a href="dev_degenerate.html">
+section</a>.
  
 <BR>&nbsp;
 
