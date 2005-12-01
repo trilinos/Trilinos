@@ -312,7 +312,6 @@ MATLAB =
 
 endif
 
-
 EXTRA_MODEL_EVALUATOR_H = \
      $(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.h \
      $(srcdir)/model_evaluator/EpetraExt_PolynomialVectorTraits.h
@@ -340,23 +339,41 @@ EXTRA_BLOCK_H = \
     $(srcdir)/block/EpetraExt_BlockCrsMatrix.h \
     $(srcdir)/block/EpetraExt_BlockMultiVector.h \
     $(srcdir)/block/EpetraExt_BlockVector.h \
-    $(srcdir)/block/EpetraExt_MultiMpiComm.h \
     $(srcdir)/block/EpetraExt_BlockUtility.h
 
 EXTRA_BLOCK = \
     $(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp \
     $(srcdir)/block/EpetraExt_BlockMultiVector.cpp \
     $(srcdir)/block/EpetraExt_BlockVector.cpp \
-    $(srcdir)/block/EpetraExt_MultiMpiComm.cpp \
     $(srcdir)/block/EpetraExt_BlockUtility.cpp
+
+EXTRA_BLOCK_MPI_H = \
+    $(srcdir)/block/EpetraExt_MultiMpiComm.h
+
+EXTRA_BLOCK_MPI = \
+    $(srcdir)/block/EpetraExt_MultiMpiComm.cpp
+
+if HAVE_MPI
+
+BLOCK_MPI_H = \
+	$(EXTRA_BLOCK_MPI_H)
+BLOCK_MPI = \
+	$(EXTRA_BLOCK_MPI)
+
+else
+
+BLOCK_MPI_H =
+BLOCK_MPI =
+
+endif
 
 if BUILD_BLOCK
 
 BLOCK_H = \
-   $(EXTRA_BLOCK_H)
+   $(EXTRA_BLOCK_H) $(BLOCK_MPI_H)
 
 BLOCK = \
-   $(EXTRA_BLOCK)
+   $(EXTRA_BLOCK) $(BLOCK_MPI)
 
 else
 

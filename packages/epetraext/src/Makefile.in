@@ -180,8 +180,8 @@ am__libepetraext_a_SOURCES_DIST =  \
 	$(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp \
 	$(srcdir)/block/EpetraExt_BlockMultiVector.cpp \
 	$(srcdir)/block/EpetraExt_BlockVector.cpp \
-	$(srcdir)/block/EpetraExt_MultiMpiComm.cpp \
 	$(srcdir)/block/EpetraExt_BlockUtility.cpp \
+	$(srcdir)/block/EpetraExt_MultiMpiComm.cpp \
 	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.cpp
 am__objects_1 = EpetraExt_ProductOperator.$(OBJEXT) \
 	EpetraExt_MatrixMatrix.$(OBJEXT)
@@ -248,15 +248,16 @@ am__objects_14 = EpetraExt_MatlabEngine.$(OBJEXT) \
 am__objects_16 = EpetraExt_BlockCrsMatrix.$(OBJEXT) \
 	EpetraExt_BlockMultiVector.$(OBJEXT) \
 	EpetraExt_BlockVector.$(OBJEXT) \
-	EpetraExt_MultiMpiComm.$(OBJEXT) \
 	EpetraExt_BlockUtility.$(OBJEXT)
-@BUILD_BLOCK_TRUE@am__objects_17 = $(am__objects_16)
-am__objects_18 = EpetraExt_ModelEvaluator.$(OBJEXT)
-@BUILD_MODEL_EVALUATOR_TRUE@am__objects_19 = $(am__objects_18)
+am__objects_17 = EpetraExt_MultiMpiComm.$(OBJEXT)
+@HAVE_MPI_TRUE@am__objects_18 = $(am__objects_17)
+@BUILD_BLOCK_TRUE@am__objects_19 = $(am__objects_16) $(am__objects_18)
+am__objects_20 = EpetraExt_ModelEvaluator.$(OBJEXT)
+@BUILD_MODEL_EVALUATOR_TRUE@am__objects_21 = $(am__objects_20)
 am_libepetraext_a_OBJECTS = $(am__objects_1) $(am__objects_4) \
 	$(am__objects_6) $(am__objects_8) $(am__objects_11) \
-	$(am__objects_13) $(am__objects_15) $(am__objects_17) \
-	$(am__objects_19)
+	$(am__objects_13) $(am__objects_15) $(am__objects_19) \
+	$(am__objects_21)
 libepetraext_a_OBJECTS = $(am_libepetraext_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -384,8 +385,8 @@ am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/block/EpetraExt_BlockCrsMatrix.h \
 	$(srcdir)/block/EpetraExt_BlockMultiVector.h \
 	$(srcdir)/block/EpetraExt_BlockVector.h \
-	$(srcdir)/block/EpetraExt_MultiMpiComm.h \
 	$(srcdir)/block/EpetraExt_BlockUtility.h \
+	$(srcdir)/block/EpetraExt_MultiMpiComm.h \
 	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.h \
 	$(srcdir)/model_evaluator/EpetraExt_PolynomialVectorTraits.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
@@ -796,23 +797,35 @@ EXTRA_BLOCK_H = \
     $(srcdir)/block/EpetraExt_BlockCrsMatrix.h \
     $(srcdir)/block/EpetraExt_BlockMultiVector.h \
     $(srcdir)/block/EpetraExt_BlockVector.h \
-    $(srcdir)/block/EpetraExt_MultiMpiComm.h \
     $(srcdir)/block/EpetraExt_BlockUtility.h
 
 EXTRA_BLOCK = \
     $(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp \
     $(srcdir)/block/EpetraExt_BlockMultiVector.cpp \
     $(srcdir)/block/EpetraExt_BlockVector.cpp \
-    $(srcdir)/block/EpetraExt_MultiMpiComm.cpp \
     $(srcdir)/block/EpetraExt_BlockUtility.cpp
+
+EXTRA_BLOCK_MPI_H = \
+    $(srcdir)/block/EpetraExt_MultiMpiComm.h
+
+EXTRA_BLOCK_MPI = \
+    $(srcdir)/block/EpetraExt_MultiMpiComm.cpp
+
+@HAVE_MPI_FALSE@BLOCK_MPI_H = 
+@HAVE_MPI_TRUE@BLOCK_MPI_H = \
+@HAVE_MPI_TRUE@	$(EXTRA_BLOCK_MPI_H)
+
+@HAVE_MPI_FALSE@BLOCK_MPI = 
+@HAVE_MPI_TRUE@BLOCK_MPI = \
+@HAVE_MPI_TRUE@	$(EXTRA_BLOCK_MPI)
 
 @BUILD_BLOCK_FALSE@BLOCK_H = 
 @BUILD_BLOCK_TRUE@BLOCK_H = \
-@BUILD_BLOCK_TRUE@   $(EXTRA_BLOCK_H)
+@BUILD_BLOCK_TRUE@   $(EXTRA_BLOCK_H) $(BLOCK_MPI_H)
 
 @BUILD_BLOCK_FALSE@BLOCK = 
 @BUILD_BLOCK_TRUE@BLOCK = \
-@BUILD_BLOCK_TRUE@   $(EXTRA_BLOCK)
+@BUILD_BLOCK_TRUE@   $(EXTRA_BLOCK) $(BLOCK_MPI)
 
 
 # ------------------------------------------------------------------------
@@ -1916,22 +1929,6 @@ EpetraExt_BlockVector.obj: $(srcdir)/block/EpetraExt_BlockVector.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockVector.obj `if test -f '$(srcdir)/block/EpetraExt_BlockVector.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_BlockVector.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_BlockVector.cpp'; fi`
 
-EpetraExt_MultiMpiComm.o: $(srcdir)/block/EpetraExt_MultiMpiComm.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_MultiMpiComm.o -MD -MP -MF "$(DEPDIR)/EpetraExt_MultiMpiComm.Tpo" -c -o EpetraExt_MultiMpiComm.o `test -f '$(srcdir)/block/EpetraExt_MultiMpiComm.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_MultiMpiComm.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_MultiMpiComm.Tpo" "$(DEPDIR)/EpetraExt_MultiMpiComm.Po"; else rm -f "$(DEPDIR)/EpetraExt_MultiMpiComm.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_MultiMpiComm.cpp' object='EpetraExt_MultiMpiComm.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_MultiMpiComm.Po' tmpdepfile='$(DEPDIR)/EpetraExt_MultiMpiComm.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_MultiMpiComm.o `test -f '$(srcdir)/block/EpetraExt_MultiMpiComm.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_MultiMpiComm.cpp
-
-EpetraExt_MultiMpiComm.obj: $(srcdir)/block/EpetraExt_MultiMpiComm.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_MultiMpiComm.obj -MD -MP -MF "$(DEPDIR)/EpetraExt_MultiMpiComm.Tpo" -c -o EpetraExt_MultiMpiComm.obj `if test -f '$(srcdir)/block/EpetraExt_MultiMpiComm.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_MultiMpiComm.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_MultiMpiComm.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_MultiMpiComm.Tpo" "$(DEPDIR)/EpetraExt_MultiMpiComm.Po"; else rm -f "$(DEPDIR)/EpetraExt_MultiMpiComm.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_MultiMpiComm.cpp' object='EpetraExt_MultiMpiComm.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_MultiMpiComm.Po' tmpdepfile='$(DEPDIR)/EpetraExt_MultiMpiComm.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_MultiMpiComm.obj `if test -f '$(srcdir)/block/EpetraExt_MultiMpiComm.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_MultiMpiComm.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_MultiMpiComm.cpp'; fi`
-
 EpetraExt_BlockUtility.o: $(srcdir)/block/EpetraExt_BlockUtility.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_BlockUtility.o -MD -MP -MF "$(DEPDIR)/EpetraExt_BlockUtility.Tpo" -c -o EpetraExt_BlockUtility.o `test -f '$(srcdir)/block/EpetraExt_BlockUtility.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_BlockUtility.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_BlockUtility.Tpo" "$(DEPDIR)/EpetraExt_BlockUtility.Po"; else rm -f "$(DEPDIR)/EpetraExt_BlockUtility.Tpo"; exit 1; fi
@@ -1947,6 +1944,22 @@ EpetraExt_BlockUtility.obj: $(srcdir)/block/EpetraExt_BlockUtility.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_BlockUtility.Po' tmpdepfile='$(DEPDIR)/EpetraExt_BlockUtility.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockUtility.obj `if test -f '$(srcdir)/block/EpetraExt_BlockUtility.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_BlockUtility.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_BlockUtility.cpp'; fi`
+
+EpetraExt_MultiMpiComm.o: $(srcdir)/block/EpetraExt_MultiMpiComm.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_MultiMpiComm.o -MD -MP -MF "$(DEPDIR)/EpetraExt_MultiMpiComm.Tpo" -c -o EpetraExt_MultiMpiComm.o `test -f '$(srcdir)/block/EpetraExt_MultiMpiComm.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_MultiMpiComm.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_MultiMpiComm.Tpo" "$(DEPDIR)/EpetraExt_MultiMpiComm.Po"; else rm -f "$(DEPDIR)/EpetraExt_MultiMpiComm.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_MultiMpiComm.cpp' object='EpetraExt_MultiMpiComm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_MultiMpiComm.Po' tmpdepfile='$(DEPDIR)/EpetraExt_MultiMpiComm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_MultiMpiComm.o `test -f '$(srcdir)/block/EpetraExt_MultiMpiComm.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_MultiMpiComm.cpp
+
+EpetraExt_MultiMpiComm.obj: $(srcdir)/block/EpetraExt_MultiMpiComm.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_MultiMpiComm.obj -MD -MP -MF "$(DEPDIR)/EpetraExt_MultiMpiComm.Tpo" -c -o EpetraExt_MultiMpiComm.obj `if test -f '$(srcdir)/block/EpetraExt_MultiMpiComm.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_MultiMpiComm.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_MultiMpiComm.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_MultiMpiComm.Tpo" "$(DEPDIR)/EpetraExt_MultiMpiComm.Po"; else rm -f "$(DEPDIR)/EpetraExt_MultiMpiComm.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_MultiMpiComm.cpp' object='EpetraExt_MultiMpiComm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_MultiMpiComm.Po' tmpdepfile='$(DEPDIR)/EpetraExt_MultiMpiComm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_MultiMpiComm.obj `if test -f '$(srcdir)/block/EpetraExt_MultiMpiComm.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_MultiMpiComm.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_MultiMpiComm.cpp'; fi`
 
 EpetraExt_ModelEvaluator.o: $(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_ModelEvaluator.o -MD -MP -MF "$(DEPDIR)/EpetraExt_ModelEvaluator.Tpo" -c -o EpetraExt_ModelEvaluator.o `test -f '$(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.cpp' || echo '$(srcdir)/'`$(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.cpp; \
