@@ -161,7 +161,7 @@ void ModelEvaluator::OutArgs::_set_Np_Ng(int Np, int Ng)
     DfDp_properties_.resize(Np);      std::fill_n(DfDp_properties_.begin(),Np,DerivativeProperties());
   }
   if(Ng) {
-    g_.resize(Ng);                    std::fill_n(g_.begin(),Ng,Teuchos::null);
+    g_.resize(Ng);
     supports_DgDx_.resize(Ng);
     DgDx_.resize(Ng);                 std::fill_n(DgDx_.begin(),Ng,Derivative());
     DgDx_properties_.resize(Ng);      std::fill_n(DgDx_properties_.begin(),Ng,DerivativeProperties());

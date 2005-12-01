@@ -130,6 +130,32 @@ public:
     void assert_l(int l) const;
   };
 
+  /** \brief. */
+  enum EEvalType {
+    EVAL_TYPE_EXACT                ///< Exact function evaluation
+    ,EVAL_TYPE_APPROX_DERIV        ///< An approximate derivative (i.e. for a Jacobian)
+    ,EVAL_TYPE_VERY_APPROX_DERIV   ///< A very approximate derivative (i.e. for a preconditioner)
+  };
+
+  /** \brief . */
+  template<class ObjType>
+  class Evaluation {
+  public:
+    /** \brief . */
+    Evaluation()
+      :obj_(Teuchos::null), evalType_(EVAL_TYPE_EXACT) {}
+    /** \brief . */
+    Evaluation( const Teuchos::RefCountPtr<ObjType> &obj, EEvalType evalType = EVAL_TYPE_EXACT )
+      :obj_(obj), evalType_(evalType) {}
+    /** \brief . */
+    Teuchos::RefCountPtr<ObjType> get() const { return obj_; }
+    /** \brief . */
+    EEvalType getType() const { return evalType_; }
+  private:
+    Teuchos::RefCountPtr<ObjType>  obj_;
+    EEvalType                      evalType_;
+  };
+  
   /** \brief . */
   enum EDerivativeMultiVectorOrientation {
     DERIV_MV_BY_COL           ///< .
@@ -314,13 +340,13 @@ public:
     /** \brief <tt>1 <= j && j <= Ng()</tt> and <tt>1 <= l && l <= Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp arg, int j, int l) const;
     /** \brief. */
-    void set_f( const Teuchos::RefCountPtr<Epetra_Vector> &f );
+    void set_f( const Evaluation<Epetra_Vector> &f );
     /** \brief. */
-    Teuchos::RefCountPtr<Epetra_Vector> get_f() const;
+    Evaluation<Epetra_Vector> get_f() const;
     /** \brief Set <tt>g(j)</tt> where <tt>1 <= j && j <= this->Ng()</tt>.  */
-    void set_g( int j, const Teuchos::RefCountPtr<Epetra_Vector> &g_j );
+    void set_g( int j, const Evaluation<Epetra_Vector> &g_j );
     /** \brief Get <tt>g(j)</tt> where <tt>1 <= j && j <= this->Ng()</tt>.  */
-    Teuchos::RefCountPtr<Epetra_Vector> get_g(int j) const;
+    Evaluation<Epetra_Vector> get_g(int j) const;
     /** \brief. */
     void set_W( const Teuchos::RefCountPtr<Epetra_Operator> &W );
     /** \brief. */
@@ -372,7 +398,7 @@ public:
     void _set_DgDp_properties( int j, int l, const DerivativeProperties &properties );
   private:
     // types
-    typedef std::vector<Teuchos::RefCountPtr<Epetra_Vector> > g_t;
+    typedef std::vector<Evaluation<Epetra_Vector> >           g_t;
     typedef std::vector<Derivative>                           deriv_t;
     typedef std::vector<DerivativeProperties>                 deriv_properties_t;
     typedef std::vector<DerivativeSupport>                    supports_t;
@@ -382,7 +408,7 @@ public:
     supports_t                             supports_DfDp_;   // Np
     supports_t                             supports_DgDx_;   // Ng
     supports_t                             supports_DgDp_;   // Ng x Np
-    Teuchos::RefCountPtr<Epetra_Vector>    f_;
+    Evaluation<Epetra_Vector>              f_;
     g_t                                    g_;
     Teuchos::RefCountPtr<Epetra_Operator>  W_;
     DerivativeProperties                   W_properties_;
@@ -693,20 +719,22 @@ int ModelEvaluator::OutArgs::Ng() const
 }
 
 inline
-void ModelEvaluator::OutArgs::set_f( const Teuchos::RefCountPtr<Epetra_Vector> &f ) { f_ = f; }
+void ModelEvaluator::OutArgs::set_f( const Evaluation<Epetra_Vector> &f ) { f_ = f; }
 
 inline
-Teuchos::RefCountPtr<Epetra_Vector> ModelEvaluator::OutArgs::get_f() const { return f_; }
+ModelEvaluator::Evaluation<Epetra_Vector>
+ModelEvaluator::OutArgs::get_f() const { return f_; }
 
 inline
-void ModelEvaluator::OutArgs::set_g( int j, const Teuchos::RefCountPtr<Epetra_Vector> &g_j )
+void ModelEvaluator::OutArgs::set_g( int j, const Evaluation<Epetra_Vector> &g_j )
 {
   assert_j(j);
   g_[j-1] = g_j;
 }
 
 inline
-Teuchos::RefCountPtr<Epetra_Vector> ModelEvaluator::OutArgs::get_g(int j) const
+ModelEvaluator::Evaluation<Epetra_Vector>
+ModelEvaluator::OutArgs::get_g(int j) const
 {
   assert_j(j);
   return g_[j-1];

@@ -201,8 +201,8 @@ void EpetraModelEval4DOpt::evalModel( const InArgs& inArgs, const OutArgs& outAr
   //
   // Get the output arguments
   //
-  Teuchos::RefCountPtr<Epetra_Vector>       f_inout = outArgs.get_f();
-  Teuchos::RefCountPtr<Epetra_Vector>       g_inout = outArgs.get_g(1);
+  Teuchos::RefCountPtr<Epetra_Vector>       f_inout = outArgs.get_f().get();
+  Teuchos::RefCountPtr<Epetra_Vector>       g_inout = outArgs.get_g(1).get();
   Teuchos::RefCountPtr<Epetra_Operator>     W_inout = outArgs.get_W();
   Teuchos::RefCountPtr<Epetra_MultiVector>  DfDp_inout = get_DfDp_mv(1,outArgs);
   Teuchos::RefCountPtr<Epetra_MultiVector>  DgDx_trans_inout = get_DgDx_mv(1,outArgs,DERIV_TRANS_MV_BY_ROW);

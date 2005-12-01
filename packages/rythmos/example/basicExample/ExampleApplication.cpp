@@ -186,8 +186,8 @@ void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs
   if(implicit_) 
   {
     const Epetra_Vector &x_dot = *inArgs.get_x_dot();
-    if(outArgs.get_f().get()) {
-      Epetra_Vector &f = *outArgs.get_f();
+    if(outArgs.get_f().get().get()) {
+      Epetra_Vector &f = *outArgs.get_f().get();
       for (int i=0 ; i<localNumElements ; ++i)
       {
         f[i] = x_dot[i] - lambda[i]*x[i];
@@ -228,7 +228,7 @@ void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs
   }
   else 
   {
-    Epetra_Vector &f = *outArgs.get_f();
+    Epetra_Vector &f = *outArgs.get_f().get();
     int localNumElements = x.MyLength();
     for (int i=0 ; i<localNumElements ; ++i)
     {
