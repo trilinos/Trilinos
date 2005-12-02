@@ -165,7 +165,7 @@ CreateCartesianCoordinates(const string CoordType,
     for (int i = 0 ; i < NumMyElements ; ++i) 
     {
       ix = MyGlobalElements[i] % nx;
-      iy = (MyGlobalElements[i] - ix) / ny;
+      iy = (MyGlobalElements[i] - ix) / nx;
 
       (*Coord)[0][i] = delta_x * ix;
       (*Coord)[1][i] = delta_y * iy;
