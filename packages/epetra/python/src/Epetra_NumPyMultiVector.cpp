@@ -46,10 +46,15 @@ int                       Epetra_NumPyMultiVector::tmp_range_len = 0            
 // =============================================================================
 Epetra_Map & Epetra_NumPyMultiVector::getEpetraMapAndArray(PyObject * pyObject)
 {
+  printf("Inside getEpetraMapAndArray\n");
   getArrayFromObject(pyObject);   // This creates the tmp_array
+  printf("Returned from getArrayFromObject\n");
   const int totalLength = PyArray_Size((PyObject *)tmp_array);
+  printf("Obtained totalLength\n");
   assert(NULL == tmp_map);
+  printf("About to construct Epetra_Map\n");
   tmp_map = new Epetra_Map(totalLength,0,defaultComm);
+  printf("Successfully constructed Epetra_Map\n");
   return *tmp_map;
 }
 

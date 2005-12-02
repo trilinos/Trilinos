@@ -68,7 +68,7 @@ Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap & blockMap, bool ze
   // Create the array object
   int dims[ ] = { blockMap.NumMyElements() };
   double *v = NULL;
-  ExtractView(&v);
+  Epetra_Vector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_FromDimsAndData(1,dims,PyArray_DOUBLE,
 						    (char *)v);
 
@@ -83,7 +83,7 @@ Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_NumPyVector & source):
   map = new Epetra_BlockMap(source.Map());
   int dims[ ] = { map->NumMyElements() };
   double *v = NULL;
-  ExtractView(&v);
+  Epetra_Vector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_FromDimsAndData(1,dims,PyArray_DOUBLE,
 						    (char *)v);
 }
@@ -137,6 +137,19 @@ Epetra_NumPyVector::~Epetra_NumPyVector()
 {
   Py_XDECREF(array);
   delete map;
+}
+
+// =============================================================================
+PyObject * Epetra_NumPyVector::ExtractCopy() const
+{
+  return PyArray_Copy(array);
+}
+
+// =============================================================================
+PyObject * Epetra_NumPyVector::ExtractView() const
+{
+  Py_INCREF(array);
+  return PyArray_Return(array);
 }
 
 // =============================================================================

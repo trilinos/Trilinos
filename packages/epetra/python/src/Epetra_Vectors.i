@@ -17,9 +17,11 @@
 %ignore Epetra_MultiVector::ExtractCopy(double **       ) const;  // are given functionality
 %ignore Epetra_MultiVector::ExtractView(double **, int *) const;  // in the derived class
 %ignore Epetra_MultiVector::ExtractView(double ***      ) const;  // Epetra_NumPyMultiVector
-%ignore Epetra_MultiVector::ResetView(double **);   // These are expert
-%ignore Epetra_MultiVector::Values() const;         // methods not supported
-%ignore Epetra_MultiVector::Pointers() const;       // (or needed) in python
+%ignore Epetra_MultiVector::ResetView(double **);     // These are expert
+%ignore Epetra_MultiVector::Values() const;           // methods not supported
+%ignore Epetra_MultiVector::Pointers() const;         // (or needed) in python
+%ignore Epetra_Vector::ExtractCopy(double * ) const;  // These Extract methods are given functionality
+%ignore Epetra_Vector::ExtractView(double **) const;  // in the derived class Epetra_NumPyMultiVector
 
 // Rename directives
 %rename(NumPyMultiVector) Epetra_NumPyMultiVector;

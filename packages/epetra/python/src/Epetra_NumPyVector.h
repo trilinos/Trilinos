@@ -49,6 +49,8 @@ public:
 
   ~Epetra_NumPyVector();
 
+  PyObject * ExtractCopy() const;
+  PyObject * ExtractView() const;
   PyObject * getArray();
   double Norm1() const;
   double Norm2() const;
