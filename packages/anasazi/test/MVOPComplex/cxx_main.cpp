@@ -34,21 +34,12 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziEpetraAdapter.hpp"
+#include "AnasaziMVOPTester.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
-#ifdef HAVE_COMPLEX
-typedef std::complex<double> ScalarType;
-#elif HAVE_COMPLEX_H
-typedef ::complex<double> ScalarType;
-#else
-typedef double ScalarType
-#endif
-// Gets the type of magnitude type (for example, the magnitude type
-// of "complex<double>" is "double").
-typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
 
 #include "MyMultiVec.hpp"
 #include "MyOperator.hpp"
@@ -70,15 +61,90 @@ int main(int argc, char *argv[])
 #endif
   bool verbose = 0;
 
+  // number of global elements
+  int dim = 100;
+  int blockSize = 5;
+
   if (argc>1) {
     if (argv[1][0]=='-' && argv[1][1]=='v') {
       verbose = true;
     }
   }
 
-  // Create a sort manager to sort for the eigenvalue with largest real part.
-  Anasazi::BasicSort<ScalarType, MyMultiVec, MyOperator> mySort("LR");
+#ifdef HAVE_COMPLEX
+  typedef std::complex<double> ST;
+#elif HAVE_COMPLEX_H
+  typedef ::complex<double> ST;
+#else
+  typedef double ST;
+  // no complex. quit with failure.
+  if (verbose && MyPID==0) {
+    cout << "Not compiled with complex support." << endl;
+    if (verbose && MyPID==0) {
+      cout << "End Result: TEST FAILED" << endl;
+    }
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
+  }
+#endif
 
+  // Issue several useful typedefs;
+  //typedef Anasazi::MultiVec<ST> MV;
+  typedef Anasazi::MultiVec<ST> MV;
+  typedef Anasazi::Operator<ST> OP;
+  typedef Anasazi::MultiVecTraits<ST,MV> MVT;
+  typedef Anasazi::OperatorTraits<ST,MV,OP> OPT;
+
+  // Create a MyMultiVec for cloning
+  std::vector<Teuchos::ScalarTraits<ST>::magnitudeType> v(blockSize);
+  Teuchos::RefCountPtr< MyMultiVec<ST> > ivec = Teuchos::rcp( new MyMultiVec<ST>(dim,blockSize) );
+  MVT::MvNorm(*ivec,&v);
+
+  // Create a MyOperator for testing against
+  Teuchos::RefCountPtr<MyOperator<ST> > op = Teuchos::rcp( new MyOperator<ST>(dim) );
+
+  // Create an output manager to handle the I/O from the solver
+  Teuchos::RefCountPtr<Anasazi::OutputManager<ST> > MyOM 
+    = Teuchos::rcp( new Anasazi::OutputManager<ST>( MyPID ) );
+  if (verbose) {
+    MyOM->SetVerbosity( Anasazi::Warning );
+  }
+
+  // test the multivector and its adapter
+  ierr = Anasazi::TestMultiVecTraits<ST,MV>(MyOM,ivec);
+  gerr |= ierr;
+  switch (ierr) {
+  case Anasazi::Ok:
+    if ( verbose && MyPID==0 ) {
+      cout << "*** EpetraAdapter PASSED TestMultiVecTraits()" << endl;
+    }
+    break;
+  case Anasazi::Failed:
+    if ( verbose && MyPID==0 ) {
+      cout << "*** EpetraAdapter FAILED TestMultiVecTraits() ***" 
+           << endl << endl;
+    }
+    break;
+  }
+
+  // test the operator and its adapter
+  ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,op);
+  gerr |= ierr;
+  switch (ierr) {
+  case Anasazi::Ok:
+    if ( verbose && MyPID==0 ) {
+      cout << "*** EpetraAdapter PASSED TestOperatorTraits()" << endl;
+    }
+    break;
+  case Anasazi::Failed:
+    if ( verbose && MyPID==0 ) {
+      cout << "*** EpetraAdapter FAILED TestOperatorTraits() ***" 
+           << endl << endl;
+    }
+    break;
+  }
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -86,7 +152,7 @@ int main(int argc, char *argv[])
 
   if (gerr) {
     if (verbose && MyPID==0)
-      cout << "End Result: TEST FAILED" << endl;	
+      cout << "End Result: TEST FAILED" << endl;
     return -1;
   }
   //

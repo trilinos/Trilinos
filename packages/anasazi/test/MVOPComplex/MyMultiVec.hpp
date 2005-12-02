@@ -3,7 +3,6 @@
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziMultiVec.hpp"
-#include "Teuchos_ScalarTraits.hpp"
 
 //! Simple example of a user's defined Anasazi::MultiVec class.
 /*! 
@@ -12,17 +11,11 @@
  * possible choices are, for example, "float", "double", or
  * "complex<double>".
  *
- * To use this class, you must define (using typedef) type ScalarType
- * and MagnitudeType. Generally, Teuchos::ScalarTraits can be used
- * to automatically define the magnitude type, for example
- * \code
-  typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
- * \endcode
- *
- * \author Oscar Chinallato (ETHZ/ICOS) and Marzio Sala (ETHZ/COLAB)
+ * \author Oscar Chinallato (ETHZ/ICOS) and Marzio Sala (ETHZ/COLAB) 
  *
  * \date Last modified on 01-Nov-05
  */
+template <class ScalarType>
 class MyMultiVec : public Anasazi::MultiVec<ScalarType>
 {
 public:
@@ -123,9 +116,11 @@ public:
     int size = index.size();
     MyMultiVec* tmp = new MyMultiVec(Length_, size);
     
-    for (unsigned int v = 0 ; v < index.size() ; ++v)
-      for (int i = 0 ; i < Length_ ; ++i)
-	(*tmp)(i, v) = (*this)(i, index[v]);
+    for (unsigned int v = 0 ; v < index.size() ; ++v) {
+      for (int i = 0 ; i < Length_ ; ++i) {
+        (*tmp)(i, v) = (*this)(i, index[v]);
+      }
+    }
     
     return(tmp);
   }
@@ -166,8 +161,8 @@ public:
   
   // Update *this with alpha * A * B + beta * (*this). 
   void MvTimesMatAddMv (const ScalarType alpha, const Anasazi::MultiVec<ScalarType> &A, 
-			const Teuchos::SerialDenseMatrix<int, ScalarType> &B, 
-			const ScalarType beta)
+                        const Teuchos::SerialDenseMatrix<int, ScalarType> &B, 
+                        const ScalarType beta)
   {
     
     assert (Length_ == A.GetVecLength());
@@ -178,25 +173,23 @@ public:
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
     assert(MyA!=NULL);
 
-    if ((*this)[0] == (*MyA)[0])
-    {
+    if ((*this)[0] == (*MyA)[0]) {
       // If this == A, then need additional storage ...
       // This situation is a bit peculiar but it may be required by
       // certain algorithms.
       
       std::vector<ScalarType> tmp(NumberVecs_);
 
-      for (int i = 0 ; i < Length_ ; ++i)
-      {
-	for (int v = 0; v < A.GetNumberVecs() ; ++v) tmp[v] = (*MyA)(i, v);
+      for (int i = 0 ; i < Length_ ; ++i) {
+        for (int v = 0; v < A.GetNumberVecs() ; ++v) {
+          tmp[v] = (*MyA)(i, v);
+        }
 
-        for (int v = 0 ; v < B.numCols() ; ++v)
-        {
+        for (int v = 0 ; v < B.numCols() ; ++v) {
           (*this)(i, v) *= beta; 
           ScalarType res = Teuchos::ScalarTraits<ScalarType>::zero();
 
-          for (int j = 0 ; j < A.GetNumberVecs() ; ++j)
-          {
+          for (int j = 0 ; j < A.GetNumberVecs() ; ++j) {
             res +=  tmp[j] * B(j, v);
           }
 
@@ -204,16 +197,12 @@ public:
         }
       }
     }
-    else
-    {
-      for (int i = 0 ; i < Length_ ; ++i)
-      {
-        for (int v = 0 ; v < B.numCols() ; ++v)
-        {
+    else {
+      for (int i = 0 ; i < Length_ ; ++i) {
+        for (int v = 0 ; v < B.numCols() ; ++v) {
           (*this)(i, v) *= beta; 
           ScalarType res = 0.0;
-          for (int j = 0 ; j < A.GetNumberVecs() ; ++j)
-          {
+          for (int j = 0 ; j < A.GetNumberVecs() ; ++j) {
             res +=  (*MyA)(i, j) * B(j, v);
           }
 
@@ -225,7 +214,7 @@ public:
   
   // Replace *this with alpha * A + beta * B. 
   void MvAddMv (const ScalarType alpha, const Anasazi::MultiVec<ScalarType>& A, 
-		const ScalarType beta,  const Anasazi::MultiVec<ScalarType>& B)
+                const ScalarType beta,  const Anasazi::MultiVec<ScalarType>& B)
   {
     MyMultiVec* MyA;
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
@@ -241,56 +230,52 @@ public:
     assert (Length_ == A.GetVecLength());
     assert (Length_ == B.GetVecLength());
     
-    for (int v = 0 ; v < NumberVecs_ ; ++v)
-      for (int i = 0 ; i < Length_ ; ++i)
-	(*this)(i, v) = alpha * (*MyA)(i, v) + beta * (*MyB)(i, v);
+    for (int v = 0 ; v < NumberVecs_ ; ++v) {
+      for (int i = 0 ; i < Length_ ; ++i) {
+        (*this)(i, v) = alpha * (*MyA)(i, v) + beta * (*MyB)(i, v);
+      }
+    }
   }
   
   // Compute a dense matrix B through the matrix-matrix multiply alpha * A^H * (*this). 
   void MvTransMv (ScalarType alpha, const Anasazi::MultiVec<ScalarType>& A, 
-		  Teuchos::SerialDenseMatrix< int, ScalarType >& B
+                  Teuchos::SerialDenseMatrix< int, ScalarType >& B
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
-		  , Anasazi::ConjType conj
+                  , Anasazi::ConjType conj
 #endif
-		  ) const
+                 ) const
   {
     MyMultiVec* MyA;
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
     assert (MyA != 0);
     
     assert (A.GetVecLength() == Length_);
-    assert (NumberVecs_ == B.numCols());
-    assert (A.GetNumberVecs() == B.numRows());
+    assert (NumberVecs_ <= B.numCols());
+    assert (A.GetNumberVecs() <= B.numRows());
     
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
     if (conj == Anasazi::CONJ) {
 #endif
-      for (int v = 0 ; v < A.GetNumberVecs() ; ++v)
-	{
-	  for (int w = 0 ; w < NumberVecs_ ; ++w)
-	    {
-	      ScalarType value = 0.0;
-	      for (int i = 0 ; i < Length_ ; ++i)
-		{
-		  value += Teuchos::ScalarTraits<ScalarType>::conjugate((*MyA)(i, v)) * (*this)(i, w);
-		}
-	      B(v, w) = alpha * value;
-	    }
-	}
+      for (int v = 0 ; v < A.GetNumberVecs() ; ++v) {
+        for (int w = 0 ; w < NumberVecs_ ; ++w) {
+          ScalarType value = 0.0;
+          for (int i = 0 ; i < Length_ ; ++i) {
+            value += Teuchos::ScalarTraits<ScalarType>::conjugate((*MyA)(i, v)) * (*this)(i, w);
+          }
+          B(v, w) = alpha * value;
+        }
+      }
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
     } else {
-      for (int v = 0 ; v < A.GetNumberVecs() ; ++v)
-	{
-	  for (int w = 0 ; w < NumberVecs_ ; ++w)
-	    {
-	      ScalarType value = 0.0;
-	      for (int i = 0 ; i < Length_ ; ++i)
-		{
-		  value += (*MyA)(i, v) * (*this)(i, w);
-		}
-	      B(v, w) = alpha * value;
-	    }
-	}
+      for (int v = 0 ; v < A.GetNumberVecs() ; ++v) {
+        for (int w = 0 ; w < NumberVecs_ ; ++w) {
+          ScalarType value = 0.0;
+          for (int i = 0 ; i < Length_ ; ++i) {
+            value += (*MyA)(i, v) * (*this)(i, w);
+          }
+          B(v, w) = alpha * value;
+        }
+      }
     }
 #endif
   }
@@ -299,62 +284,64 @@ public:
   // Compute a vector b where the components are the individual dot-products, i.e.b[i] = A[i]^H*this[i] where A[i] is the i-th column of A. 
   void MvDot (const Anasazi::MultiVec<ScalarType>& A, std::vector<ScalarType>* b
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
-	      , Anasazi::ConjType conj
+              , Anasazi::ConjType conj
 #endif
-	      ) const
+             ) const
   {
     MyMultiVec* MyA;
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
     assert (MyA != 0);
     
-    assert (NumberVecs_ == (int)b->size());
+    assert (NumberVecs_ <= (int)b->size());
     assert (NumberVecs_ == A.GetNumberVecs());
     assert (Length_ == A.GetVecLength());
     
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
     if (conj == Anasazi::CONJ) {
 #endif
-      for (int v = 0 ; v < NumberVecs_ ; ++v)
-	{
-	  ScalarType value = 0.0;
-	  for (int i = 0 ; i < Length_ ; ++i)
-	    value += (*this)(i, v) * Teuchos::ScalarTraits<ScalarType>::conjugate((*MyA)(i, v));
-	  (*b)[v] = value;
-	}
+      for (int v = 0 ; v < NumberVecs_ ; ++v) {
+        ScalarType value = 0.0;
+        for (int i = 0 ; i < Length_ ; ++i) {
+          value += (*this)(i, v) * Teuchos::ScalarTraits<ScalarType>::conjugate((*MyA)(i, v));
+        }
+        (*b)[v] = value;
+      }
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
     } else {
-      for (int v = 0 ; v < NumberVecs_ ; ++v)
-	{
-	  ScalarType value = 0.0;
-	  for (int i = 0 ; i < Length_ ; ++i)
-	    value += (*this)(i, v) * (*MyA)(i, v);
-	  (*b)[v] = value;
-	}
+      for (int v = 0 ; v < NumberVecs_ ; ++v) {
+        ScalarType value = 0.0;
+        for (int i = 0 ; i < Length_ ; ++i) {
+          value += (*this)(i, v) * (*MyA)(i, v);
+        }
+        (*b)[v] = value;
+      }
     }
 #endif
   }  
   
-  void MvNorm (std::vector<MagnitudeType> *normvec) const
+	void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec ) const 
   {
     assert (normvec != 0);
-    assert (NumberVecs_ == (int)normvec->size());
+    assert (NumberVecs_ <= (int)normvec->size());
+
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     
-    for (int v = 0 ; v < NumberVecs_ ; ++v)
-      {
-        MagnitudeType value = Teuchos::ScalarTraits<MagnitudeType>::zero();
-        for (int i = 0 ; i < Length_ ; ++i)
-	  {
-	    MagnitudeType val = Teuchos::ScalarTraits<ScalarType>::magnitude((*this)(i, v));
-	    value += val * val;
-	  }
-        (*normvec)[v] = Teuchos::ScalarTraits<MagnitudeType>::squareroot(value);
+    for (int v = 0 ; v < NumberVecs_ ; ++v) {
+      MagnitudeType value = Teuchos::ScalarTraits<MagnitudeType>::zero();
+      for (int i = 0 ; i < Length_ ; ++i) {
+        MagnitudeType val = Teuchos::ScalarTraits<ScalarType>::magnitude((*this)(i, v));
+        value += val * val;
       }
+      (*normvec)[v] = Teuchos::ScalarTraits<MagnitudeType>::squareroot(value);
+    }
   }
   
-  // Copy the vectors in A to a set of vectors in *this. The numvecs vectors in A are copied to a subset of vectors in *this indicated by the indices given in index.
+  // Copy the vectors in A to a set of vectors in *this. The numvecs vectors in 
+  // A are copied to a subset of vectors in *this indicated by the indices given 
+  // in index.
   // FIXME: not so clear what the size of A and index.size() are...
   void SetBlock (const Anasazi::MultiVec<ScalarType>& A, 
-		 const std::vector<int> &index)
+                 const std::vector<int> &index)
   {
     MyMultiVec* MyA;
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
@@ -363,25 +350,31 @@ public:
     assert (A.GetNumberVecs() >= (int)index.size());
     assert (A.GetVecLength() == Length_);
     
-    for (unsigned int v = 0 ; v < index.size() ; ++v)
-      for (int i = 0 ; i < Length_ ; ++i)
-	(*this)(i, index[v])  = (*MyA)(i, v);
+    for (unsigned int v = 0 ; v < index.size() ; ++v) {
+      for (int i = 0 ; i < Length_ ; ++i) {
+        (*this)(i, index[v])  = (*MyA)(i, v);
+      }
+    }
   }
   
   // Fill the vectors in *this with random numbers.
   virtual void  MvRandom ()
   {
-    for (int v = 0 ; v < NumberVecs_ ; ++v)
-      for (int i = 0 ; i < Length_ ; ++i)
-	(*this)(i, v) = Teuchos::ScalarTraits<ScalarType>::random();
+    for (int v = 0 ; v < NumberVecs_ ; ++v) {
+      for (int i = 0 ; i < Length_ ; ++i) {
+        (*this)(i, v) = Teuchos::ScalarTraits<ScalarType>::random();
+      }
+    }
   }
   
   // Replace each element of the vectors in *this with alpha.
   virtual void  MvInit (const ScalarType alpha)
   {
-    for (int v = 0 ; v < NumberVecs_ ; ++v)
-      for (int i = 0 ; i < Length_ ; ++i)
-	(*this)(i, v) = alpha;
+    for (int v = 0 ; v < NumberVecs_ ; ++v) {
+      for (int i = 0 ; i < Length_ ; ++i) {
+        (*this)(i, v) = alpha;
+      }
+    }
   }
   
   void MvPrint (ostream &os) const

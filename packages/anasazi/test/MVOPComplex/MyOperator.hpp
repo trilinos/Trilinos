@@ -18,6 +18,7 @@
  *
  * \date Last modified on 01-Nov-05
  */
+template <class ScalarType>
 class MyOperator : public Anasazi::Operator<ScalarType>
 {
 
@@ -59,14 +60,14 @@ public:
   
   //! Applies the tridiagonal or diagonal matrix to a multivector.
   Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-			    Anasazi::MultiVec<ScalarType>& Y) const
+                            Anasazi::MultiVec<ScalarType>& Y) const
   {
-    const MyMultiVec* MyX;
-    MyX = dynamic_cast<const MyMultiVec*>(&X); 
+    const MyMultiVec<ScalarType>* MyX;
+    MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
     assert (MyX != 0);
     
-    MyMultiVec* MyY;
-    MyY = dynamic_cast<MyMultiVec*>(&Y); 
+    MyMultiVec<ScalarType>* MyY;
+    MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
     assert (MyY != 0);
     
     assert (X.GetNumberVecs() == Y.GetNumberVecs());
@@ -80,11 +81,17 @@ public:
         for (int i = 0 ; i < X.GetVecLength() ; ++i)
         {
           if (i == 0)
+          {
             (*MyY)[v][i] = (d_ * (*MyX)[v][i] + u_ * (*MyX)[v][i + 1]);
+          }
           else if (i == X.GetVecLength() - 1)
+          {
             (*MyY)[v][i] = (d_ * (*MyX)[v][i] + l_ * (*MyX)[v][i-1]);
+          }
           else
+          {
             (*MyY)[v][i] = (d_ * (*MyX)[v][i] + l_ * (*MyX)[v][i-1] + u_ * (*MyX)[v][i+1]);
+          }
         }
       }
     } 
