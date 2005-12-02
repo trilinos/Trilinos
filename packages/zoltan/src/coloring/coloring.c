@@ -145,7 +145,7 @@ int Zoltan_Color(
   ss = 100;
   color_method = 'F';
   color_order = 'I';
-  comm_pattern = 'A';
+  comm_pattern = 'S';
 
   Zoltan_Assign_Param_Vals(zz->Params, Color_params, zz->Debug_Level, zz->Proc,
                            zz->Debug_Proc);
