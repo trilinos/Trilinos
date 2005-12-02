@@ -37,9 +37,6 @@
 #include "AnasaziOperatorTraits.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
-typedef double ScalarType;
-typedef double MagnitudeType;
-
 #include "MyOperator.hpp"
 #include "MyMultiVec.hpp"
 
@@ -63,6 +60,7 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
+  typedef double ScalarType;
   int MyPID = Comm.MyPID();
 
   Anasazi::ReturnType returnCode = Anasazi::Ok;	
@@ -88,19 +86,22 @@ int main(int argc, char *argv[])
   A_Entries[0] = -1.0;
   A_Entries[1] =  4.0;
   A_Entries[2] = -1.0;
-  Teuchos::RefCountPtr<MyOperator> A = Teuchos::rcp(new MyOperator(DIM, A_Entries));
+  Teuchos::RefCountPtr<MyOperator<ScalarType> > A = 
+    Teuchos::rcp(new MyOperator<ScalarType>(DIM, A_Entries));
 
   std::vector<ScalarType> B_Entries(3);
   B_Entries[0] = -1.0;
   B_Entries[1] =  2.0;
   B_Entries[2] = -1.0;
-  Teuchos::RefCountPtr<MyOperator> B = Teuchos::rcp(new MyOperator(DIM, B_Entries));
+  Teuchos::RefCountPtr<MyOperator<ScalarType> > B = 
+    Teuchos::rcp(new MyOperator<ScalarType>(DIM, B_Entries));
 
   std::vector<ScalarType> K_Entries(3);
   K_Entries[0] =  0.0;
   K_Entries[1] =  1.0 / (A_Entries[1] - TARGET * B_Entries[1]);
   K_Entries[2] =  0.0;
-  Teuchos::RefCountPtr<MyOperator> K = Teuchos::rcp(new MyOperator(DIM, K_Entries));
+  Teuchos::RefCountPtr<MyOperator<ScalarType> > K = 
+    Teuchos::rcp(new MyOperator<ScalarType>(DIM, K_Entries));
   
   // ================== //
   // Sets up the solver //
@@ -108,9 +109,9 @@ int main(int argc, char *argv[])
 
   typedef Anasazi::MultiVec<ScalarType> MV;        
   typedef Anasazi::Operator<ScalarType> OP;        
-  //typedef Anasazi::MultiVecTraits<ScalarType, MyMultiVec> MVT;
+  //typedef Anasazi::MultiVecTraits<ScalarType, MyMultiVec<ScalarType> > MVT;
 
-  Teuchos::RefCountPtr<MV> ivec = Teuchos::rcp(new MyMultiVec(DIM, BLOCKSIZE));        
+  Teuchos::RefCountPtr<MV> ivec = Teuchos::rcp(new MyMultiVec<ScalarType>(DIM, BLOCKSIZE));        
   ivec->MvRandom();
 
   // Create the eigenproblem.
@@ -149,6 +150,7 @@ int main(int argc, char *argv[])
   MyPL.set("Krylov: Max Iters", 1550);
 
   // Initialize the Block Jacobi-Davidson solver
+  typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
   Anasazi::BlockJacobiDavidson<ScalarType, MagnitudeType, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
                            
   // Solve the problem to the specified tolerances or length
