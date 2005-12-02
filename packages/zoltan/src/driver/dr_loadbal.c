@@ -421,6 +421,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 {
 /* Local declarations. */
   char *yo = "run_zoltan";
+  struct Zoltan_Struct *zz_copy;
 
   /* Variables returned by Zoltan */
   ZOLTAN_ID_PTR import_gids = NULL;  /* Global nums of objs to be imported   */
@@ -536,6 +537,21 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (Proc == 0)
       printf("DRIVER:  Total migration time = %g\n", maxtime);
+
+    /*
+     * Test copy function
+     */
+    zz_copy = Zoltan_Copy(zz);
+    if (zz_copy == NULL){
+        Gen_Error(0, "fatal:  Zoltan_Copy failure\n");
+        return 0;
+    }
+    if (Zoltan_Copy_To(zz, zz_copy)){
+        Gen_Error(0, "fatal:  Zoltan_Copy_To failure\n");
+        return 0;
+    }
+
+    Zoltan_Destroy(&zz_copy);
   
     /* Evaluate the new balance */
     if (Debug_Driver > 0) {
