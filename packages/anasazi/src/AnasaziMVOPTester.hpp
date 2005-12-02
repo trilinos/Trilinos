@@ -130,9 +130,11 @@ namespace Anasazi {
 
     typedef MultiVecTraits<ScalarType, MV>    MVT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
+    typedef typename SCT::magnitudeType       MagType;
 
-    const ScalarType one  = SCT::one();
-    const ScalarType zero = SCT::zero();
+    const ScalarType one      = SCT::one();
+    const ScalarType zero     = SCT::zero();
+    const MagType    zero_mag = Teuchos::ScalarTraits<MagType>::zero();
 
     // Don't change these two without checking the initialization of ind below
     const int numvecs   = 10;
@@ -192,7 +194,7 @@ namespace Anasazi {
     *********************************************************************/
     {
       Teuchos::RefCountPtr<MV> B = MVT::Clone(*A,numvecs);
-      std::vector<ScalarType> norms(2*numvecs);
+      std::vector<MagType> norms(2*numvecs);
       if ( MVT::GetNumberVecs(*B) != numvecs ) {
         if ( om->isVerbosityAndPrint(Warning) ) {
           out << "*** ERROR *** MultiVecTraits::Clone()." << endl
@@ -216,7 +218,7 @@ namespace Anasazi {
         return Failed;
       }
       for (i=0; i<numvecs; i++) {
-        if ( norms[i] < zero ) {
+        if ( norms[i] < zero_mag ) {
           if ( om->isVerbosityAndPrint(Warning) ) {
             out << "*** ERROR *** MultiVecTraits::Clone()." << endl
                 << "Vector had negative norm." << endl;
@@ -244,12 +246,12 @@ namespace Anasazi {
     *********************************************************************/
     {
       Teuchos::RefCountPtr<MV> B = MVT::Clone(*A,numvecs);
-      std::vector<ScalarType> norms(numvecs), norms2(numvecs);
+      std::vector<MagType> norms(numvecs), norms2(numvecs);
 
       MVT::MvInit(*B);
       MVT::MvNorm(*B, &norms);
       for (i=0; i<numvecs; i++) {
-        if ( norms[i] != zero ) {
+        if ( norms[i] != zero_mag ) {
           if ( om->isVerbosityAndPrint(Warning) ) {
             out << "*** ERROR *** MultiVecTraits::MvInit() "
                 << "and MultiVecTraits::MvNorm()" << endl
@@ -263,14 +265,14 @@ namespace Anasazi {
       MVT::MvRandom(*B);
       MVT::MvNorm(*B, &norms2);
       for (i=0; i<numvecs; i++) {
-        if ( norms[i] == zero || norms2[i] == zero ) {
+        if ( norms[i] == zero_mag || norms2[i] == zero_mag ) {
           if ( om->isVerbosityAndPrint(Warning) ) {
             out << "*** ERROR *** MultiVecTraits::MvRandom()." << endl
                 << "Random vector was empty (very unlikely)." << endl;
           }
           return Failed;
         }
-        else if ( norms[i] < zero || norms2[i] < zero ) {
+        else if ( norms[i] < zero_mag || norms2[i] < zero_mag ) {
           if ( om->isVerbosityAndPrint(Warning) ) {
             out << "*** ERROR *** MultiVecTraits::MvRandom()." << endl
                 << "Vector had negative norm." << endl;
@@ -303,13 +305,13 @@ namespace Anasazi {
     *********************************************************************/
     {
       Teuchos::RefCountPtr<MV> B = MVT::Clone(*A,numvecs);
-      std::vector<ScalarType> norms(numvecs);
+      std::vector<MagType> norms(numvecs);
 
       MVT::MvInit(*B,one);
       MVT::MvNorm(*B, &norms);
       bool BadNormWarning = false;
       for (i=0; i<numvecs; i++) {
-        if ( norms[i] < zero ) {
+        if ( norms[i] < zero_mag ) {
           if ( om->isVerbosityAndPrint(Warning) ) {
             out << "*** ERROR *** MultiVecTraits::MvRandom()." << endl
                 << "Vector had negative norm." << endl;
@@ -338,18 +340,18 @@ namespace Anasazi {
     *********************************************************************/
     {
       Teuchos::RefCountPtr<MV> B = MVT::Clone(*A,numvecs);
-      std::vector<ScalarType> norms(numvecs);
-      MVT::MvInit(*B, zero);
+      std::vector<MagType> norms(numvecs);
+      MVT::MvInit(*B, zero_mag);
       MVT::MvNorm(*B, &norms);
       for (i=0; i<numvecs; i++) {
-        if ( norms[i] < zero ) {
+        if ( norms[i] < zero_mag ) {
           if ( om->isVerbosityAndPrint(Warning) ) {
             out << "*** ERROR *** MultiVecTraits::MvInit()." << endl
                 << "Vector had negative norm." << endl;
           }
           return Failed;
         }
-        else if ( norms[i] != zero ) {
+        else if ( norms[i] != zero_mag ) {
           if ( om->isVerbosityAndPrint(Warning) ) {
             out << "*** ERROR *** MultiVecTraits::MvInit()." << endl
                 << "Zero vector should have norm zero." << endl;
@@ -367,7 +369,7 @@ namespace Anasazi {
     *********************************************************************/
     {
       Teuchos::RefCountPtr<MV> B, C;
-      std::vector<ScalarType> norms(numvecs), norms2(numvecs);
+      std::vector<MagType> norms(numvecs), norms2(numvecs);
 
       B = MVT::Clone(*A,numvecs);
       MVT::MvRandom(*B);
@@ -419,7 +421,7 @@ namespace Anasazi {
     *********************************************************************/
     {
       Teuchos::RefCountPtr<MV> B, C;
-      std::vector<ScalarType> norms(numvecs), norms2(numvecs);
+      std::vector<MagType> norms(numvecs), norms2(numvecs);
 
       B = MVT::Clone(*A,numvecs);
       MVT::MvRandom(*B);
@@ -464,7 +466,7 @@ namespace Anasazi {
     *********************************************************************/
     {
       Teuchos::RefCountPtr<MV> B, C;
-      std::vector<ScalarType> norms(numvecs), norms2(numvecs);
+      std::vector<MagType> norms(numvecs), norms2(numvecs);
 
       B = MVT::Clone(*A,numvecs); 
       MVT::MvRandom(*B);
@@ -512,7 +514,7 @@ namespace Anasazi {
     {
       Teuchos::RefCountPtr<MV> B;
       Teuchos::RefCountPtr<const MV> constB, C;
-      std::vector<ScalarType> normsB(numvecs), normsC(numvecs_2);
+      std::vector<MagType> normsB(numvecs), normsC(numvecs_2);
       std::vector<int> allind(numvecs);
       for (i=0; i<numvecs; i++) {
         allind[i] = i;
@@ -570,8 +572,8 @@ namespace Anasazi {
     *********************************************************************/
     {
       Teuchos::RefCountPtr<MV> B, C;
-      std::vector<ScalarType> normsB1(numvecs), normsB2(numvecs),
-                              normsC1(numvecs_2), normsC2(numvecs_2);
+      std::vector<MagType> normsB1(numvecs), normsB2(numvecs),
+                           normsC1(numvecs_2), normsC2(numvecs_2);
 
       B = MVT::Clone(*A,numvecs);
       C = MVT::Clone(*A,numvecs_2);
@@ -659,8 +661,8 @@ namespace Anasazi {
       const int BSize   = 10, 
                 CSize   = 6,
                 setSize = 5;
-      std::vector<ScalarType> normsB1(BSize), normsB2(BSize),
-                              normsC1(CSize), normsC2(CSize);
+      std::vector<MagType> normsB1(BSize), normsB2(BSize),
+                           normsC1(CSize), normsC2(CSize);
 
       B = MVT::Clone(*A,BSize);
       C = MVT::Clone(*A,CSize);
@@ -750,7 +752,7 @@ namespace Anasazi {
       const int p = 7;
       const int q = 9;
       Teuchos::RefCountPtr<MV> B, C;
-      std::vector<ScalarType> normsB(p), normsC(q);
+      std::vector<MagType> normsB(p), normsC(q);
       Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
 
       B = MVT::Clone(*A,p);
@@ -846,7 +848,7 @@ namespace Anasazi {
       const int q = 9;
       Teuchos::RefCountPtr<MV> B, C;
       vector<ScalarType> iprods(p+q);
-      std::vector<ScalarType> normsB(numvecs), normsC(numvecs);
+      std::vector<MagType> normsB(numvecs), normsC(numvecs);
 
       B = MVT::Clone(*A,p);
       C = MVT::Clone(*A,p);
@@ -910,9 +912,9 @@ namespace Anasazi {
     {
       const int p = 7;
       Teuchos::RefCountPtr<MV> B, C, D;
-      std::vector<ScalarType> normsB1(p), normsB2(p),
-                              normsC1(p), normsC2(p),
-                              normsD1(p), normsD2(p);
+      std::vector<MagType> normsB1(p), normsB2(p),
+                           normsC1(p), normsC2(p),
+                           normsD1(p), normsD2(p);
       ScalarType alpha = SCT::random(),
                   beta = SCT::random();
 
@@ -1061,8 +1063,8 @@ namespace Anasazi {
     {
       const int p = 7;
       Teuchos::RefCountPtr<MV> B, C, D;
-      std::vector<ScalarType> normsB(p),
-                              normsD(p);
+      std::vector<MagType> normsB(p),
+                           normsD(p);
       std::vector<int> lclindex(p);
       for (i=0; i<p; i++) lclindex[i] = i;
 
@@ -1115,8 +1117,8 @@ namespace Anasazi {
       const int p = 7, q = 5;
       Teuchos::RefCountPtr<MV> B, C;
       Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
-      std::vector<ScalarType> normsC1(q), normsC2(q),
-                              normsB1(p), normsB2(p);
+      std::vector<MagType> normsC1(q), normsC2(q),
+                           normsB1(p), normsB2(p);
       
       B = MVT::Clone(*A,p);
       C = MVT::Clone(*A,q);
@@ -1259,8 +1261,8 @@ namespace Anasazi {
       const int p = 5, q = 7;
       Teuchos::RefCountPtr<MV> B, C;
       Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
-      std::vector<ScalarType> normsC1(q), normsC2(q),
-                              normsB1(p), normsB2(p);
+      std::vector<MagType> normsC1(q), normsC2(q),
+                           normsB1(p), normsB2(p);
       
       B = MVT::Clone(*A,p);
       C = MVT::Clone(*A,q);
@@ -1421,14 +1423,15 @@ namespace Anasazi {
     typedef MultiVecTraits<ScalarType, MV>     MVT;
     typedef Teuchos::ScalarTraits<ScalarType>  SCT;
     typedef OperatorTraits<ScalarType, MV, OP> OPT;
+    typedef typename SCT::magnitudeType        MagType;
 
     const int numvecs = 10;
 
     Teuchos::RefCountPtr<MV> B = MVT::Clone(*A,numvecs), 
                              C = MVT::Clone(*A,numvecs);
 
-    std::vector<ScalarType> normsB1(numvecs), normsB2(numvecs),
-                            normsC1(numvecs), normsC2(numvecs);
+    std::vector<MagType> normsB1(numvecs), normsB2(numvecs),
+                         normsC1(numvecs), normsC2(numvecs);
     ReturnType ret;
     std::ostream &out(om->GetOStream());
     bool NonDeterministicWarning;
