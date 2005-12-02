@@ -103,11 +103,11 @@ $mpigo 1 amesos_test.exe LAPACK SuperLU.rua 0 1 1 0 2e-14 1e-13 >>SST.stdout
 #
 #  Test one process, three processes and three processes transposes, tiny distributed matrix, on LAPACK
 #
-$mpigo 1 amesos_test.exe LAPACK   fidapm05.rua 0 1 1 0  10000 1e-13 >>SST.stdout
-$mpigo 3 amesos_test.exe LAPACK   fidapm05.rua 1 1 1 0  10000 1e-13   >>SST.stdout
-$mpigo 3 amesos_test.exe LAPACK   fidapm05.rua 1 1 1 1   10000 1e-13  >>SST.stdout
-$mpigo 2 amesos_test.exe LAPACK   fidapm05.rua 1 1 4 1   10000 1e-13  >>SST.stdout
-$mpigo 4 amesos_test.exe LAPACK   fidapm05.rua 1 1 -3 1   10000 1e-13   >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK   fidapm05.rua 0 1 1 0  10000 1e-12 >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   fidapm05.rua 1 1 1 0  10000 1e-12   >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   fidapm05.rua 1 1 1 1   10000 1e-12  >>SST.stdout
+$mpigo 2 amesos_test.exe LAPACK   fidapm05.rua 1 1 4 1   10000 1e-12  >>SST.stdout
+$mpigo 4 amesos_test.exe LAPACK   fidapm05.rua 1 1 -3 1   10000 1e-12   >>SST.stdout
 #
 #  Test some more small matrices
 #
