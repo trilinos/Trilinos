@@ -22,3 +22,10 @@
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests) {
+    DIRS = MVOPComplex;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
