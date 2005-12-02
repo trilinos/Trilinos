@@ -1363,6 +1363,7 @@ type(Zoltan_Struct) INTENT_IN  zz_from
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_to, zz_addr
 integer(Zoltan_INT) :: nbytes, i
 logical :: isnull
+allocate(Zf90_Copy)
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz_from%addr%addr(i:i))
