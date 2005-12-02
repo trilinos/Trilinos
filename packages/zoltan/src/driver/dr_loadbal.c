@@ -662,6 +662,14 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
           if (Proc == 0) printf("\nAFTER coloring\n");
           /* Not yet impl. */
       }
+
+
+      /* Copy color info as "perm" into mesh structure */
+      for (i = 0; i < mesh->num_elems; i++){
+          int lid = lids[num_lid_entries * i + (num_lid_entries - 1)];
+          mesh->elements[lid].perm_value = color[i];
+      }
+
       
       /* Free color data */
       safe_free((void **) &color);
