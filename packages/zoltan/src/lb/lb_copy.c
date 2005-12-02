@@ -70,6 +70,7 @@ int proc = fromZZ->Proc;
   COPY_BUFFER(Imbalance_Tol, float, to->Imb_Tol_Len);
 
   if (from->Data_Structure) {
+    to->Data_Structure = NULL;
     if (!from->Copy_Structure)
       {
       /* 
