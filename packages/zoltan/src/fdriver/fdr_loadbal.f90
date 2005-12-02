@@ -359,7 +359,7 @@ type(PARIO_INFO) :: pio_info
     endif
 
     ierr = Zoltan_Copy_To(zz_obj, zz_obj_copy)
-    if (ierr != 0) then
+    if (ierr .ne. 0) then
       print *, "fatal:  error in Zoltan_Copy_To()"
       run_zoltan = .false.
       goto 9999
