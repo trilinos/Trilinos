@@ -80,6 +80,7 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
 MultiMpiComm::MultiMpiComm(const MultiMpiComm &MMC ) :
         Epetra_MpiComm(MMC), subComm(new Epetra_MpiComm(*(MMC.subComm))),
         numSubDomains(MMC.numSubDomains), subDomainRank(MMC.subDomainRank),
+	numTimeSteps(MMC.numTimeSteps), 
 	numTimeStepsOnDomain(MMC.numTimeStepsOnDomain), 
 	firstTimeStepOnDomain(MMC.firstTimeStepOnDomain) 
 {
