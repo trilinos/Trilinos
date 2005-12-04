@@ -90,7 +90,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = teuchos PyTrilinos thyra kokkos epetra triutils tpetra \
-	epetraext aztecoo amesos ifpack galeri komplex claps \
+	epetraext aztecoo galeri amesos ifpack komplex claps \
 	TSFCoreUtils TSFCore belos anasazi pliris ml TSF meros nox \
 	capo rythmos new_package TSFExtended didasko external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -290,9 +290,9 @@ SUBDIRS = \
 	$(TPETRA_SUBDIR)       \
 	$(EPETRAEXT_SUBDIR)    \
 	$(AZTECOO_SUBDIR)      \
+	$(GALERI_SUBDIR)       \
 	$(AMESOS_SUBDIR)       \
 	$(IFPACK_SUBDIR)       \
-	$(GALERI_SUBDIR)       \
 	$(KOMPLEX_SUBDIR)      \
 	$(CLAPS_SUBDIR)        \
 	$(TSFCOREUTILS_SUBDIR) \

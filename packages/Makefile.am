@@ -221,9 +221,9 @@ SUBDIRS = \
 	$(TPETRA_SUBDIR)       \
 	$(EPETRAEXT_SUBDIR)    \
 	$(AZTECOO_SUBDIR)      \
+	$(GALERI_SUBDIR)       \
 	$(AMESOS_SUBDIR)       \
 	$(IFPACK_SUBDIR)       \
-	$(GALERI_SUBDIR)       \
 	$(KOMPLEX_SUBDIR)      \
 	$(CLAPS_SUBDIR)        \
 	$(TSFCOREUTILS_SUBDIR) \
