@@ -16,12 +16,11 @@
 
 try:
   import setpath
+  import Epetra
+  import AztecOO
 except:
   from PyTrilinos import Epetra, AztecOO
   print "Using installed versions of Epetra, AztecOO"
-else:
-  import Epetra
-  import AztecOO
 
 class MyOperator(Epetra.PyOperator):
   def __init__(self, Map):
@@ -35,10 +34,19 @@ class MyOperator(Epetra.PyOperator):
     LHS = args[1]
     RHS = args[2]
     n = RHS.MyLength()
-    RHS[0, 0] = 2.0 * LHS[0, 0] - LHS[0, 1]
-    RHS[0, n - 1] = 2.0 * LHS[0, n - 1] - LHS[0, n - 2]
+    if LHS.NumVectors() != 1:
+      print "this Apply() function has been implemented for a single vector"
+      return(-1)
+
+    LHS_V = Epetra.DArray(LHS.Values(), n)
+    RHS_V = Epetra.DArray(RHS.Values(), n)
+
+    # I don't undestand why, but if I use the bracket operator the
+    # code crashes...
+    RHS_V[0] = 2.0 * LHS_V[0] - LHS_V[1]
+    RHS_V[n - 1] = 2.0 * LHS_V[n - 1] - LHS_V[n - 2]
     for i in xrange(1, n - 1):
-      RHS[0,i] = 2.0 * LHS[0,i] - LHS[0, i - 1] - LHS[0, i + 1]
+      RHS_V[i] = 2.0 * LHS_V[i] - LHS_V[i - 1] - LHS_V[i + 1]
     return(0)
 
   def ApplyInverse(*args):
@@ -71,10 +79,10 @@ def main():
     return
   Map = Epetra.Map(n, 0, Comm)
   Op = MyOperator(Map)
+
   print Op.Label()
-  # Use Multivectors, not vectors!
-  LHS = Epetra.MultiVector(Map, 1)
-  RHS = Epetra.MultiVector(Map, 1)
+  LHS = Epetra.Vector(Map)
+  RHS = Epetra.Vector(Map)
   
   RHS.PutScalar(1.0);
   LHS.PutScalar(0.0);
@@ -90,8 +98,8 @@ def main():
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the
 # function if the script has been called as an executable from the UNIX
-# command
-# line.  This also allows, for example, this file to be imported from a python
+# command line.  
+# This also allows, for example, this file to be imported from a python
 # debugger and main() called from there.
 if __name__ == "__main__":
   main()

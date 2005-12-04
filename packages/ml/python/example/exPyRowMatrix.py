@@ -14,24 +14,20 @@
 #   Epetra_RowMatrix's.
 #
 # Note: You might need to be able to allocate/use integer and double
-#       pointers or references. Some tools are available to do that;
-#       for example a new int array is allocated using NewInt(),
-#       an element is set using SetInt() and get using GetInt(),
-#       and the array is destroy'd using DeleteInt() -- equivalently
-#       for double arrays.
+#       pointers or references. Some tools are available for that:
+#       use for example the DArray and IArray classes of the Epetra module.
 #
-# \author Marzio Sala, 9214
+# \author Marzio Sala, ETHZ/COLAB
 #
-# \date Last updated on 31-Jul-05
+# \date Last updated on 04-Dec-05
 
 try:
   import setpath
+  import Epetra
+  import AztecOO
 except:
   from PyTrilinos import Epetra, AztecOO
   print "Using installed version of Epetra, AztecOO"
-else:
-  import Epetra
-  import AztecOO
 
 class Laplace1D(Epetra.PyRowMatrix):
   def __init__(self, n, Comm):
@@ -40,15 +36,10 @@ class Laplace1D(Epetra.PyRowMatrix):
     self.NumCols_ = n
     self.RowMap_  = Epetra.Map(self.NumRows_, 0, Comm)
     self.ColMap_  = Epetra.Map(self.NumCols_, 0, Comm)
-    self.NumEntries_ = Epetra.NewInt(1)
-    self.Indices_    = Epetra.NewInt(3)
-    self.Values_     = Epetra.NewDouble(3)
+    self.NumEntries_ = Epetra.IArray(1)
+    self.Indices_    = Epetra.IArray(3)
+    self.Values_     = Epetra.DArray(3)
 
-  def __del__(self):
-    Epetra.DeleteInt(self.NumEntries_);
-    Epetra.DeleteInt(self.Indices_);
-    Epetra.DeleteDouble(self.Values_);
-   
   def __str__(self):
     return("Laplace1D")
 
@@ -61,55 +52,60 @@ class Laplace1D(Epetra.PyRowMatrix):
     Values     = self.Values_
     NumEntries = self.NumEntries_
 
+    n = RHS.MyLength()
+    if LHS.NumVectors() != 1:
+      print "this Apply() function has been implemented for a single vector"
+      return(-1)
+
+    # I need to wrap the Values() array as DArray; if I use the bracket
+    # operator the code crashes...
+    LHS_V = Epetra.DArray(LHS.Values(), n)
+    RHS_V = Epetra.DArray(RHS.Values(), n)
+
     for i in xrange(self.NumRows_):
-      ierr = self.ExtractMyRowCopy(i, 5, NumEntries, Values, Indices)
+      ierr = self.ExtractMyRowCopy(i, 5, NumEntries.Values(), Values.Values(), Indices.Values())
       total = 0.0
-      for j in xrange(Epetra.GetInt(NumEntries,0)):
-        total = total + LHS[0,Epetra.GetInt(Indices,j)] * Epetra.GetDouble(Values,j)
-      RHS[0,i] = total  
+      for j in xrange(NumEntries[0]):
+        total = total + LHS_V[Indices[j]] * Values[j]
+      RHS_V[i] = total  
 
     return(0)
 
   def NumMyRowEntries(*args):
     self       = args[0]
     MyRow      = args[1]
-    NumEntries = args[2]
+    NumEntries = Epetra.IArray(args[2], 1)
     if MyRow == 0 | MyRow == self.NumRows_:
-      Epetra.SetInt(NumEntries, 0, 2)
+      NumEntries[0] = 2
     else:
-      Epetra.SetInt(NumEntries, 0, 3)
+      NumEntries[0] = 3
     return(0);
 
+  # Input to this function one has an int* pointer (NumEntries),
+  # a double* pointer (Values) and an int* pointer(Indices); these
+  # pointers are wrapped as IArray's and DArray's
   def ExtractMyRowCopy(*args):
     self    = args[0]
     MyRow   = args[1]
     Length  = args[2]
     if (Length < 3):
       return(-1)
-    NumEntries = args[3]
-    Values     = args[4]
-    Indices    = args[5]
+    NumEntries = Epetra.IArray(args[3], 1)
+    Values     = Epetra.DArray(args[4], Length)
+    Indices    = Epetra.IArray(args[5], Length)
     n = self.NumRows_
     if MyRow == 0:
-      Epetra.SetDouble(Values, 0, 2.0)
-      Epetra.SetDouble(Values, 1, -1.0)
-      Epetra.SetInt(Indices, 0, 0)
-      Epetra.SetInt(Indices, 1, 1)
-      Epetra.SetInt(NumEntries, 0, 2)
+      Indices[0] = 0; Indices[1] = 1
+      Values[0] = 2.0; Values[1] = -1.0
+      NumEntries[0] = 2
     elif MyRow == n - 1:
-      Epetra.SetDouble(Values, 0, 2.0)
-      Epetra.SetDouble(Values, 1, 1.0)
-      Epetra.SetInt(Indices, 0, n - 1)
-      Epetra.SetInt(Indices, 1, n - 2)
-      Epetra.SetInt(NumEntries, 0, 2)
+      Indices[0] = n - 1; Indices[1] = n - 2
+      Values[0] = 2.0; Values[1] = -1.0
+      NumEntries[0] = 2
     else:
-      Epetra.SetDouble(Values, 0, 2.0)
-      Epetra.SetDouble(Values, 1, -1.0)
-      Epetra.SetDouble(Values, 2, -1.0)
-      Epetra.SetInt(Indices, 0, MyRow)
-      Epetra.SetInt(Indices, 1, MyRow - 1)
-      Epetra.SetInt(Indices, 2, MyRow + 1);
-      Epetra.SetInt(NumEntries, 0, 3)
+      Indices[0] = MyRow; Indices[1] = MyRow - 1; Indices[2] = MyRow + 1
+      Values[0] = 2.0; Values[1] = -1.0; Values[2] = -1.0
+      NumEntries[0] = 3
     return(0)
 
   def ApplyInverse(*args):
@@ -228,18 +224,16 @@ def main():
     return
   Matrix = Laplace1D(n, Comm)
 
-  # Use Multivectors, not vectors!
-  LHS = Epetra.MultiVector(Matrix.Map(), 1)
-  RHS = Epetra.MultiVector(Matrix.Map(), 1)
-  LHS. PutScalar(0.0)
-  RHS. PutScalar(1.0)
+  LHS = Epetra.Vector(Matrix.Map())
+  RHS = Epetra.Vector(Matrix.Map())
+  LHS.PutScalar(0.0)
+  RHS.PutScalar(1.0)
   
   Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
   
   Solver.SetAztecOption(AztecOO.AZ_solver,AztecOO.AZ_gmres)
   Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_Jacobi)
   Solver.SetAztecOption(AztecOO.AZ_output, 16)
-  #Solver.SetPrecOperator(Prec)
   Solver.Iterate(1550, 1e-5)
   
   del Matrix
