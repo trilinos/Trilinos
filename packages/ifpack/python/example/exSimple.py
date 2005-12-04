@@ -71,7 +71,7 @@ def main():
 
   # Computes the 2-norm of the true residual
   LHS.Update(1.0, Exact, -1.0);
-  norm = LHS.Norm2()[1] / RHS.Norm2()[1]
+  norm = LHS.Norm2() / RHS.Norm2()
   if Comm.MyPID() == 0:
     print "After solution of the linear system:"
     print "||x - x_exact||_2 / ||b||_2 = ", norm
