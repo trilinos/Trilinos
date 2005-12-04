@@ -96,6 +96,7 @@ class PyRowMatrix: public Epetra_RowMatrix
     const Epetra_Comm& Comm_;
 }; 
 
+// The following are deprecated; use DArray and IArray wrappers instead
 void SetDouble(double* array, int pos, double val)
 {
   array[pos] = val;
