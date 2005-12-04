@@ -140,8 +140,8 @@ int main(int argc, char *argv[])
   // Prints out some information about the preconditioner
   cout << Prec;
 
-  delete Map;
   delete A;
+  delete Map;
 
 #ifdef HAVE_MPI
   MPI_Finalize(); 
