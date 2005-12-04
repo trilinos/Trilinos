@@ -10,11 +10,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Amesos.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Galeri_Maps.h"
-#include "Galeri_CrsMatrices.h"
 #include <vector>
-
-using namespace Galeri;
 
 // ====================================================================== 
 // this function tests two things:
@@ -111,16 +107,47 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  Teuchos::ParameterList GaleriList;
-  GaleriList.set("nx", 10);
-  GaleriList.set("ny", 10 * Comm.NumProc());
-  GaleriList.set("mx", 1);
-  GaleriList.set("my", Comm.NumProc());
+  int NumGlobalRows = 100 * Comm.NumProc();
 
-  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
-  Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
-  Epetra_MultiVector LHS(*Map, 3);
-  Epetra_MultiVector RHS(*Map, 3);
+  Epetra_Map Map(NumGlobalRows, 0, Comm);
+
+  Epetra_CrsMatrix Matrix(Copy, Map, 0);
+
+  int NumMyRows = Map.NumMyElements();
+  int* MyGlobalElements = Map.MyGlobalElements();
+
+  int Indices[3];
+  double Values[3];
+  int NumEntries;
+
+  for (int LRID = 0 ; LRID < NumMyRows ; ++LRID)
+  {
+    int GRID = MyGlobalElements[LRID];
+
+    Indices[0] = GRID;
+    Values[0] = 2.0;
+    NumEntries = 1;
+
+    if (GRID != 0)
+    {
+      Indices[NumEntries] = GRID - 1;
+      Values[NumEntries] = -1.0;
+      ++NumEntries;
+    }
+    if (GRID != NumGlobalRows - 1)
+    {
+      Indices[NumEntries] = GRID + 1;
+      Values[NumEntries] = -1.0;
+      ++NumEntries;
+    }
+
+    Matrix.InsertGlobalValues(GRID, NumEntries, Values, Indices);
+  }
+
+  Matrix.FillComplete();
+
+  Epetra_MultiVector LHS(Map, 3);
+  Epetra_MultiVector RHS(Map, 3);
 
   Amesos Factory;  
   
@@ -150,7 +177,7 @@ int main(int argc, char *argv[])
 	// solve with matrix
 	Teuchos::ParameterList AmesosList;
 	res = TestAmesos((char*)Solver.c_str(), AmesosList, false, 
-                         A, &LHS, &RHS);
+                         &Matrix, &LHS, &RHS);
         assert (res == true);
       }
       if (1) {
@@ -158,7 +185,7 @@ int main(int argc, char *argv[])
 	if (Solver != "Amesos_Superludist") {// still not implementes
 	  Teuchos::ParameterList AmesosList;
 	  res  = TestAmesos((char*)Solver.c_str(), AmesosList, true, 
-                            A, &LHS, &RHS);
+                            &Matrix, &LHS, &RHS);
           assert (res == true);
 	}
       }
@@ -171,9 +198,6 @@ int main(int argc, char *argv[])
 	cerr << endl;
       }
   }
-
-  delete A;
-  delete Map;
 
 #ifdef HAVE_MPI
   MPI_Finalize();
