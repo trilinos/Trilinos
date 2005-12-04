@@ -50,12 +50,15 @@ EXTRA_DIST = setpath.py exSimple.py
 ## #######################################################################
 MAINTAINERCLEANFILES = Makefile.in
 
-EXAMPLE_SUITE = 
 # Define the suite of examples
 if HAVE_IFPACK_GALERI
 if HAVE_IFPACK_AZTECOO
 EXAMPLE_SUITE = exSimple
+else
+EXAMPLE_SUITE = 
 endif
+else
+EXAMPLE_SUITE = 
 endif
 
 SETPATH = setpath.py
