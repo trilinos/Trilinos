@@ -45,15 +45,15 @@ Command (3) will check the Python module example scripts, and command
 
 ======================================================================
 
-As of 11 Aug 05, these make targets support the following packages:
+As of 20-Oct-05, these make targets support the following packages:
 
     run-examples:   epetra, epetraext, aztecoo, ifpack, amesos, ml,
-                    nox, didasko
+                    nox, didasko, galeri
 
     run-tests:      epetra, epetraext, aztecoo, ifpack, amesos, ml,
-                    nox, didasko
+                    nox, didasko, galeri
 
     run-pyexamples: epetra, epetraext, aztecoo, ifpack, amesos, ml,
-                    nox, didasko
+                    nox, didasko, galeri
 
-    run-pytests:    epetra, epetraext, new_package, nox
+    run-pytests:    epetra, epetraext, new_package, nox, galeri
