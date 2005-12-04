@@ -18,8 +18,7 @@
 %ignore Epetra_MultiVector::ExtractView(double **, int *) const;  // in the derived class
 %ignore Epetra_MultiVector::ExtractView(double ***      ) const;  // Epetra_NumPyMultiVector
 %ignore Epetra_MultiVector::ResetView(double **);     // These are expert
-%ignore Epetra_MultiVector::Values() const;           // methods not supported
-%ignore Epetra_MultiVector::Pointers() const;         // (or needed) in python
+%ignore Epetra_MultiVector::Pointers() const;         // method not supported in python
 %ignore Epetra_Vector::ExtractCopy(double * ) const;  // These Extract methods are given functionality
 %ignore Epetra_Vector::ExtractView(double **) const;  // in the derived class Epetra_NumPyMultiVector
 
@@ -83,3 +82,36 @@ class Vector(UserArray,NumPyVector):
         UserArray.__setattr__(self, key, value)
 
 %}
+
+%extend Epetra_MultiVector {
+  bool isMultiVector() {
+    return(true);
+  }
+
+  double __getitem__(int i, int j)
+  {
+    return((*self)[i][j]);
+  }
+
+  void __setitem__(int i, int j, double val)
+  {
+    (*self)[i][j] = val;
+  }
+}
+
+%extend Epetra_Vector {
+  bool isMultiVector() {
+    return(false);
+  }
+
+  double __getitem__(int i)
+  {
+    return((*self)[i]);
+  }
+
+  void __setitem__(int i, double val)
+  {
+    (*self)[i] = val;
+  }
+}
+
