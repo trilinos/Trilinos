@@ -207,6 +207,10 @@ can therefore be used everywhere Numeric vectors are accepted.
 
 #include "Epetra_PyOperator.h"
 #include "Epetra_PyRowMatrix.h"
+
+// tools for handling double* and int* pointers in Python
+#include "Epetra_IArray.h"
+#include "Epetra_DArray.h"
 %}
 
 %feature("director") PyOperator;
@@ -759,3 +763,30 @@ __version__ = Version().split()[2]
 
 %include "Epetra_PyOperator.h"
 %include "Epetra_PyRowMatrix.h"
+
+%include "Epetra_IArray.h"
+%include "Epetra_DArray.h"
+
+%extend IArray {
+  int __getitem__(int i)
+  {
+    return((*self)[i]);
+  }
+
+  void __setitem__(int i, int val)
+  {
+    (*self)[i] = val;
+  }
+}
+
+%extend DArray {
+  double __getitem__(int i)
+  {
+    return((*self)[i]);
+  }
+
+  void __setitem__(int i, double val)
+  {
+    (*self)[i] = val;
+  }
+}
