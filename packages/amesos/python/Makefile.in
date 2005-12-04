@@ -301,7 +301,7 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 @BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
-SUBDIRS = src $(EXAMPLE_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR) 
 all: all-recursive
 
 .SUFFIXES:

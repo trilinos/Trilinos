@@ -31,8 +31,6 @@ PERF_SUBDIR = Test_Performance
 else
 PERF_SUBDIR =
 endif
-                                                                                
-
 
 SUBDIRS = scripts \
 	  Test_Basic \
