@@ -89,6 +89,9 @@ def main():
   
   print Matrix
 
+  # synchronize processors
+  Comm.Barrier()
+
   if Comm.MyPID() == 0: print "End Result: TEST PASSED"
 
 # This is a standard Python construct.  Put the code to be executed in a

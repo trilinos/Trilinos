@@ -65,6 +65,9 @@ def main():
     NormInf = A.NormInf()
     if Comm.MyPID() == 0:
       print "inf norm of A =", NormInf
+ 
+    # synchronize processors
+    Comm.Barrier()
 
     if Comm.MyPID() == 0: print "End Result: TEST PASSED"
 

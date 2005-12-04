@@ -58,6 +58,9 @@ def main():
       print "2 norm of x =", xNorm
       print "2 norm of b =", bNorm
 
+    # synchronize processors
+    Comm.Barrier()
+
     if comm.MyPID() == 0: print "End Result: TEST PASSED"
 
 # This is a standard Python construct.  Put the code to be executed in a

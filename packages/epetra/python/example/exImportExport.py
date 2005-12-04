@@ -87,6 +87,9 @@ def main():
   if Comm.MyPID() == 0:
     print '||X1 - X1_bis||_2 = ', Norm
 
+  # synchronize processors
+  Comm.Barrier()
+
   if Comm.MyPID() == 0: print "End Result: TEST PASSED"
 
 if __name__ == "__main__":
