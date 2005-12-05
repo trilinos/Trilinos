@@ -37,6 +37,7 @@ extern "C" {
 /*  Parameters structure for parallel HG method.  */
 static PARAM_VARS PHG_params[] = {
   /* Add parameters here. */
+  {"HYPERGRAPH_PACKAGE",              NULL,  "STRING", 0},
   {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
   {"PHG_FINAL_OUTPUT",                NULL,  "INT",    0},
   {"FINAL_OUTPUT",                    NULL,  "INT",    0},
@@ -485,6 +486,7 @@ static int Zoltan_PHG_Initialize_Params(
   memset(hgp, 0, sizeof(*hgp)); /* in the future if we forget to initialize
                                    another param at least it will be 0 */
   
+  Zoltan_Bind_Param(PHG_params, "HYPERGRAPH_PACKAGE", &hgp->hgraph_pkg);
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL", &hgp->output_level);
   Zoltan_Bind_Param(PHG_params, "PHG_FINAL_OUTPUT", &hgp->final_output); 
   Zoltan_Bind_Param(PHG_params, "FINAL_OUTPUT", &hgp->final_output); 
@@ -515,9 +517,9 @@ static int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_BAL_TOL_ADJUSTMENT",
                                  (void*) &hgp->bal_tol_adjustment);  
   Zoltan_Bind_Param(PHG_params, "PARKWAY_SERPART",
-                                 hgp->parkway_serpart);  
+                                 (void *) hgp->parkway_serpart);  
   Zoltan_Bind_Param(PHG_params, "BALANCE_OBJ",
-                                 hgp->balance_obj);  
+                                 (void *) hgp->balance_obj);
   Zoltan_Bind_Param(PHG_params, "PHG_RANDOMIZE_INPUT",
                                  (void*) &hgp->RandomizeInitDist);  
   Zoltan_Bind_Param(PHG_params, "PATOH_ALLOC_POOL0",
@@ -527,6 +529,7 @@ static int Zoltan_PHG_Initialize_Params(
   
   
   /* Set default values */
+  strncpy(hgp->hgraph_pkg,       "default",  MAX_PARAM_STRING_LEN);
   strncpy(hgp->redm_str,            "ipm",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->redm_fast,           "c-ipm", MAX_PARAM_STRING_LEN);
   strncpy(hgp->coarsepartition_str, "gr0",   MAX_PARAM_STRING_LEN);
@@ -568,6 +571,21 @@ static int Zoltan_PHG_Initialize_Params(
 
   nProc = zz->Num_Proc;
   usePrimeComm = 0;
+
+  /* Reset LB.Method if hgraph_pkg was set using a parameter */
+  if (!strcasecmp(hgp->hgraph_pkg, "PHG"))
+    zz->LB.Method = PHG;
+  else if (!strcasecmp(hgp->hgraph_pkg, "PATOH"))
+    zz->LB.Method = PATOH;
+  else if (!strcasecmp(hgp->hgraph_pkg, "PARKWAY"))
+    zz->LB.Method = PARKWAY;
+  else if (!strcasecmp(hgp->hgraph_pkg, "default"))
+    ; /* do nothing; leave LB.Method as is */
+  else {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid hypergraph package.\n");
+    goto End;
+  }
+    
 
   if (zz->LB.Method == PHG) {
     /* Test to determine whether we should change the number of processors

@@ -46,6 +46,7 @@ typedef int ZOLTAN_PHG_REFINEMENT_FN(ZZ*, HGraph*, int, float *, Partition,
 /* Parameters to the hypergraph functions */
 /******************************************/
 struct PHGPartParamsStruct {
+  char hgraph_pkg[MAX_PARAM_STRING_LEN];  /* Hypergraph package (e.g., PHG) */
   float bal_tol;                 /* Balance tolerance in % of average */
   float bal_tol_adjustment;      /* balance tolerance adjustment;
                                     between [0-1.0]: it is % of bal_tol

@@ -94,7 +94,8 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     goto End;
 #endif
   }
-  else if (strcmp(method_upper, "PARMETIS") == 0) {
+  else if ((strcmp(method_upper, "GRAPH") == 0)
+           || (strcmp(method_upper, "PARMETIS") == 0)) {
     zz->LB.Method = PARMETIS;
     zz->LB.LB_Fn = Zoltan_ParMetis;
     zz->LB.Free_Structure = NULL;
@@ -134,9 +135,24 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Point_Assign = Zoltan_HSFC_Point_Assign;
     zz->LB.Box_Assign = Zoltan_HSFC_Box_Assign;
   }
-  else if (strcmp(method_upper, "PHG") == 0) {
+  else if ((strcmp(method_upper, "HYPERGRAPH") == 0) 
+           || (strcmp(method_upper, "PHG") == 0)
+           || (strcmp(method_upper, "PATOH") == 0)
+           || (strcmp(method_upper, "PARKWAY") == 0)){
+    /* The hypergraph methods have a lot in common. We allow
+       the user to either set the LB method to HYPERGRAPH and
+       select a package via the parameter HYPERGRAPH_PACKAGE,
+       or to set the LB method to be the package name (e.g. PHG, Patoh).
+       Either way, LB.Method will eventually be set to the
+       desired hypergraph package.
+    */
 #ifdef ZOLTAN_HG
-    zz->LB.Method = PHG;
+    if (!strcmp(method_upper, "PATOH"))
+      zz->LB.Method = PATOH;
+    else if (!strcmp(method_upper, "PARKWAY"))
+      zz->LB.Method = PARKWAY;
+    else /* HYPERGRAPH or PHG */
+      zz->LB.Method = PHG;
     zz->LB.LB_Fn = Zoltan_PHG;
     zz->LB.Free_Structure = Zoltan_PHG_Free_Structure;
     zz->LB.Copy_Structure = NULL;
@@ -144,39 +160,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Box_Assign = NULL;
 #else
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                       "PHG method selected but not compiled into Zoltan; "
-                       "Compile with ZOLTAN_HG=1.");
-    error = ZOLTAN_FATAL;
-    goto End;
-#endif
-  }
-  else if (strcmp(method_upper, "PATOH") == 0) {
-#ifdef ZOLTAN_HG
-    zz->LB.Method = PATOH;
-    zz->LB.LB_Fn = Zoltan_PHG;
-    zz->LB.Free_Structure = Zoltan_PHG_Free_Structure;
-    zz->LB.Copy_Structure = NULL;
-    zz->LB.Point_Assign = NULL;
-    zz->LB.Box_Assign = NULL;
-#else
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                       "PaToH method selected but HG not compiled into Zoltan; "
-                       "Compile with ZOLTAN_HG=1.");
-    error = ZOLTAN_FATAL;
-    goto End;
-#endif
-  }
-  else if (strcmp(method_upper, "PARKWAY") == 0) {
-#ifdef ZOLTAN_HG
-    zz->LB.Method = PARKWAY;
-    zz->LB.LB_Fn = Zoltan_PHG;
-    zz->LB.Free_Structure = Zoltan_PHG_Free_Structure;
-    zz->LB.Copy_Structure = NULL;
-    zz->LB.Point_Assign = NULL;
-    zz->LB.Box_Assign = NULL;
-#else
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                       "ParKway method selected but HG not compiled into Zoltan; "
+                       "Hypergraph method selected but not compiled into Zoltan; "
                        "Compile with ZOLTAN_HG=1.");
     error = ZOLTAN_FATAL;
     goto End;
