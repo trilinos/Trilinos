@@ -66,8 +66,8 @@ int Zoltan_Copy_Params(PARAM_LIST **to, PARAM_LIST const *from)
       return ZOLTAN_MEMERR;
     }
 
-    param->name = strdup(from->name);
-    param->new_val = strdup(from->new_val);
+    param->name = Zoltan_Strdup(from->name);
+    param->new_val = Zoltan_Strdup(from->new_val);
     param->index = from->index;
     param->next = NULL;
 
