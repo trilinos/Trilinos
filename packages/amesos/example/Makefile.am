@@ -41,10 +41,10 @@ EXEEXT = .exe
 if HAVE_AMESOS_GALERI
 EXAMPLES_GALERI = example_AmesosFactory example_AmesosFactory_HB compare_solvers
 else
-EXAMPLES_GALERI =
+EXAMPLES_GALERI = 
 endif
 
-noinst_PROGRAMS = example_AmesosFactory_Tridiag $(EXAMPLES_GALERI)
+noinst_PROGRAMS = a_trivial_mpi_test example_AmesosFactory_Tridiag $(EXAMPLES_GALERI)
 
 EXTRA_DIST = In_662_bus.rsa
 
@@ -67,6 +67,10 @@ compare_solvers_SOURCES      = $(srcdir)/compare_solvers.cpp
 compare_solvers_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
 compare_solvers_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 compare_solvers_LDADD        = $(EXAMPLE_LIBS)
+
+a_trivial_mpi_test_SOURCES      = $(srcdir)/a_trivial_mpi_test.cpp
+a_trivial_mpi_test_CXXFLAGS     = 
+a_trivial_mpi_test_LDADD        = 
 
 clean:  clean-am
 	rm -f  662_bus.rsa

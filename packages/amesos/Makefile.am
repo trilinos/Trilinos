@@ -186,6 +186,7 @@ run-examples:
 	@echo "Running the Amesos examples..."
 	@echo "=============================="
 	@echo
+	@echo "None of these examples should take more than a minute to execute on a typical compter"
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
@@ -204,6 +205,7 @@ run-tests:
 	@echo "Running the Amesos tests..."
 	@echo "==========================="
 	@echo
+	@echo "None of these tests should take more than a minute to execute on a typical computer"
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
@@ -211,7 +213,7 @@ run-tests:
 	--comm=$(AMESOS_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=AmesosTests \
+	--category=INSTALL \
 	--output-dir=@abs_top_builddir@/test/runtests-results \
 	--verbosity=1 \
 	--packages=amesos

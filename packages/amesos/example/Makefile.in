@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(compare_solvers_SOURCES) $(example_AmesosFactory_SOURCES) $(example_AmesosFactory_HB_SOURCES) $(example_AmesosFactory_Tridiag_SOURCES)
+SOURCES = $(a_trivial_mpi_test_SOURCES) $(compare_solvers_SOURCES) $(example_AmesosFactory_SOURCES) $(example_AmesosFactory_HB_SOURCES) $(example_AmesosFactory_Tridiag_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,8 +65,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = example_AmesosFactory_Tridiag$(EXEEXT) \
-	$(am__EXEEXT_1)
+noinst_PROGRAMS = a_trivial_mpi_test$(EXEEXT) \
+	example_AmesosFactory_Tridiag$(EXEEXT) $(am__EXEEXT_1)
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -110,6 +110,10 @@ CONFIG_CLEAN_FILES =
 @HAVE_AMESOS_GALERI_TRUE@	example_AmesosFactory_HB$(EXEEXT) \
 @HAVE_AMESOS_GALERI_TRUE@	compare_solvers$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
+am_a_trivial_mpi_test_OBJECTS =  \
+	a_trivial_mpi_test-a_trivial_mpi_test.$(OBJEXT)
+a_trivial_mpi_test_OBJECTS = $(am_a_trivial_mpi_test_OBJECTS)
+a_trivial_mpi_test_DEPENDENCIES =
 am_compare_solvers_OBJECTS =  \
 	compare_solvers-compare_solvers.$(OBJEXT)
 compare_solvers_OBJECTS = $(am_compare_solvers_OBJECTS)
@@ -130,7 +134,7 @@ example_AmesosFactory_Tridiag_OBJECTS =  \
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES =  \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/a_trivial_mpi_test-a_trivial_mpi_test.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/compare_solvers-compare_solvers.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Po \
@@ -140,11 +144,12 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(compare_solvers_SOURCES) $(example_AmesosFactory_SOURCES) \
+SOURCES = $(a_trivial_mpi_test_SOURCES) $(compare_solvers_SOURCES) \
+	$(example_AmesosFactory_SOURCES) \
 	$(example_AmesosFactory_HB_SOURCES) \
 	$(example_AmesosFactory_Tridiag_SOURCES)
-DIST_SOURCES = $(compare_solvers_SOURCES) \
-	$(example_AmesosFactory_SOURCES) \
+DIST_SOURCES = $(a_trivial_mpi_test_SOURCES) \
+	$(compare_solvers_SOURCES) $(example_AmesosFactory_SOURCES) \
 	$(example_AmesosFactory_HB_SOURCES) \
 	$(example_AmesosFactory_Tridiag_SOURCES)
 ETAGS = etags
@@ -361,6 +366,9 @@ compare_solvers_SOURCES = $(srcdir)/compare_solvers.cpp
 compare_solvers_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
 compare_solvers_CXXFLAGS = $(EXAMPLE_INCLUDES)
 compare_solvers_LDADD = $(EXAMPLE_LIBS)
+a_trivial_mpi_test_SOURCES = $(srcdir)/a_trivial_mpi_test.cpp
+a_trivial_mpi_test_CXXFLAGS = 
+a_trivial_mpi_test_LDADD = 
 all: all-am
 
 .SUFFIXES:
@@ -397,6 +405,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+a_trivial_mpi_test$(EXEEXT): $(a_trivial_mpi_test_OBJECTS) $(a_trivial_mpi_test_DEPENDENCIES) 
+	@rm -f a_trivial_mpi_test$(EXEEXT)
+	$(CXXLINK) $(a_trivial_mpi_test_LDFLAGS) $(a_trivial_mpi_test_OBJECTS) $(a_trivial_mpi_test_LDADD) $(LIBS)
 compare_solvers$(EXEEXT): $(compare_solvers_OBJECTS) $(compare_solvers_DEPENDENCIES) 
 	@rm -f compare_solvers$(EXEEXT)
 	$(CXXLINK) $(compare_solvers_LDFLAGS) $(compare_solvers_OBJECTS) $(compare_solvers_LDADD) $(LIBS)
@@ -416,6 +427,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/a_trivial_mpi_test-a_trivial_mpi_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compare_solvers-compare_solvers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Po@am__quote@
@@ -436,6 +448,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+a_trivial_mpi_test-a_trivial_mpi_test.o: $(srcdir)/a_trivial_mpi_test.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(a_trivial_mpi_test_CXXFLAGS) $(CXXFLAGS) -MT a_trivial_mpi_test-a_trivial_mpi_test.o -MD -MP -MF "$(DEPDIR)/a_trivial_mpi_test-a_trivial_mpi_test.Tpo" -c -o a_trivial_mpi_test-a_trivial_mpi_test.o `test -f '$(srcdir)/a_trivial_mpi_test.cpp' || echo '$(srcdir)/'`$(srcdir)/a_trivial_mpi_test.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/a_trivial_mpi_test-a_trivial_mpi_test.Tpo" "$(DEPDIR)/a_trivial_mpi_test-a_trivial_mpi_test.Po"; else rm -f "$(DEPDIR)/a_trivial_mpi_test-a_trivial_mpi_test.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/a_trivial_mpi_test.cpp' object='a_trivial_mpi_test-a_trivial_mpi_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/a_trivial_mpi_test-a_trivial_mpi_test.Po' tmpdepfile='$(DEPDIR)/a_trivial_mpi_test-a_trivial_mpi_test.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(a_trivial_mpi_test_CXXFLAGS) $(CXXFLAGS) -c -o a_trivial_mpi_test-a_trivial_mpi_test.o `test -f '$(srcdir)/a_trivial_mpi_test.cpp' || echo '$(srcdir)/'`$(srcdir)/a_trivial_mpi_test.cpp
+
+a_trivial_mpi_test-a_trivial_mpi_test.obj: $(srcdir)/a_trivial_mpi_test.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(a_trivial_mpi_test_CXXFLAGS) $(CXXFLAGS) -MT a_trivial_mpi_test-a_trivial_mpi_test.obj -MD -MP -MF "$(DEPDIR)/a_trivial_mpi_test-a_trivial_mpi_test.Tpo" -c -o a_trivial_mpi_test-a_trivial_mpi_test.obj `if test -f '$(srcdir)/a_trivial_mpi_test.cpp'; then $(CYGPATH_W) '$(srcdir)/a_trivial_mpi_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/a_trivial_mpi_test.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/a_trivial_mpi_test-a_trivial_mpi_test.Tpo" "$(DEPDIR)/a_trivial_mpi_test-a_trivial_mpi_test.Po"; else rm -f "$(DEPDIR)/a_trivial_mpi_test-a_trivial_mpi_test.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/a_trivial_mpi_test.cpp' object='a_trivial_mpi_test-a_trivial_mpi_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/a_trivial_mpi_test-a_trivial_mpi_test.Po' tmpdepfile='$(DEPDIR)/a_trivial_mpi_test-a_trivial_mpi_test.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(a_trivial_mpi_test_CXXFLAGS) $(CXXFLAGS) -c -o a_trivial_mpi_test-a_trivial_mpi_test.obj `if test -f '$(srcdir)/a_trivial_mpi_test.cpp'; then $(CYGPATH_W) '$(srcdir)/a_trivial_mpi_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/a_trivial_mpi_test.cpp'; fi`
 
 compare_solvers-compare_solvers.o: $(srcdir)/compare_solvers.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compare_solvers_CXXFLAGS) $(CXXFLAGS) -MT compare_solvers-compare_solvers.o -MD -MP -MF "$(DEPDIR)/compare_solvers-compare_solvers.Tpo" -c -o compare_solvers-compare_solvers.o `test -f '$(srcdir)/compare_solvers.cpp' || echo '$(srcdir)/'`$(srcdir)/compare_solvers.cpp; \
