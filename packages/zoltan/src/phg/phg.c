@@ -62,6 +62,7 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_BAL_TOL_ADJUSTMENT",          NULL,  "FLOAT",  0},  
   {"PARKWAY_SERPART",                 NULL,  "STRING", 0},
   {"BALANCE_OBJ",                     NULL,  "STRING", 0},
+  {"PHG_RANDOMIZE_INPUT",             NULL,  "INT",    0},    
   { "PATOH_ALLOC_POOL0",              NULL,  "INT",    0},
   { "PATOH_ALLOC_POOL1",              NULL,  "INT",    0},   
   {NULL,                              NULL,  NULL,     0}     
@@ -514,13 +515,15 @@ static int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_BAL_TOL_ADJUSTMENT",
                                  (void*) &hgp->bal_tol_adjustment);  
   Zoltan_Bind_Param(PHG_params, "PARKWAY_SERPART",
-                    hgp->parkway_serpart);  
+                                 hgp->parkway_serpart);  
   Zoltan_Bind_Param(PHG_params, "BALANCE_OBJ",
-                    hgp->balance_obj);
-  Zoltan_Bind_Param(PHG_params,"PATOH_ALLOC_POOL0",
-                              (void*) &hgp->patoh_alloc_pool0);
-  Zoltan_Bind_Param(PHG_params,"PATOH_ALLOC_POOL1",
-                              (void*) &hgp->patoh_alloc_pool1);
+                                 hgp->balance_obj);  
+  Zoltan_Bind_Param(PHG_params, "PHG_RANDOMIZE_INPUT",
+                                 (void*) &hgp->RandomizeInitDist);  
+  Zoltan_Bind_Param(PHG_params, "PATOH_ALLOC_POOL0",
+                                 (void*) &hgp->patoh_alloc_pool0);
+  Zoltan_Bind_Param(PHG_params, "PATOH_ALLOC_POOL1",
+                                 (void*) &hgp->patoh_alloc_pool1);
   
   
   /* Set default values */
@@ -553,11 +556,11 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->fm_max_neg_move = 250;  
   hgp->num_coarse_iter = 1 + 9/zz->Num_Proc;
   hgp->part_sizes = part_sizes;
+  hgp->RandomizeInitDist = 0;
   hgp->EdgeSizeThreshold = 0.25;  
   hgp->hybrid_keep_factor = 0.;
   hgp->patoh_alloc_pool0 = 0;
   hgp->patoh_alloc_pool1 = 0;
-
   
   /* Get application values of parameters. */
   Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,
@@ -674,6 +677,35 @@ HGraph *phg = &(zhg->HG);
     for (i = 0; i < zhg->nRecv_GNOs; i++)
       outparts[i] = hg_parts[zhg->Recv_GNOs[i]];
   }
+
+#ifdef KDDKDD_NOT_YET
+  if (zz->LB.Remap_Flag) {
+    int new_map;
+    int *newproc = (int *) ZOLTAN_MALLOC(nObj * sizeof(int));
+    if (nObj && !newproc) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+    for (i = 0; i < nObj; i++){
+      newproc[i] = Zoltan_LB_Part_To_Proc(zz, outparts[i],
+                                          &(zhg->GIDs[i*num_gid_entries]));
+      if (newproc[i]<0){
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+         "Zoltan_LB_Part_To_Proc returned invalid processor number.");
+        ierr = ZOLTAN_FATAL;
+        goto End;
+      }
+    }
+    
+    ierr = Zoltan_LB_Remap(zz, &new_map, nObj, newproc, zhg->Input_Parts,
+                           outparts, 1);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_LB_Remap");
+      goto End;
+    }
+  }
+#endif /* KDDKDD NOT YET */
 
 End:
   if (zhg->Recv_GNOs) ZOLTAN_FREE(&(zhg->Recv_GNOs));

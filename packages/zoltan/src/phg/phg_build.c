@@ -169,20 +169,6 @@ struct application_input {     /* Data provided by hypergraph callbacks. */
   int *edge_gno;                    /* Global numbers in range [0,GnEdge-1]
                                        for edges.  app.edge[i] is
                                        global number for this proc's edge i. */
-  int *vtxdist;                     /* Distribution of vertices
-                                       across original owning processors;
-                                       # vtxs on proc i == 
-                                       vtxdist[i+1] - vtxdist[i]. */
-                                    /* KDDKDD Needed only for linear initial
-                                       2D distribution; can remove if use other
-                                       initial distribution. */
-  int *edgedist;                    /* Distribution of edges
-                                       across original owning processors;
-                                       # edges on proc i == 
-                                       edgedist[i+1] - edgedist[i]. */
-                                    /* KDDKDD Needed only for linear initial
-                                       2D distribution; can remove if use other
-                                       initial distribution. */
   float *vwgt;                      /* Vertex weights. */
   float *ewgt;                      /* Edge weights. */
 } app;
@@ -204,7 +190,7 @@ int *proclist = NULL;
 int *sendbuf = NULL;
 int nnz, idx;
 int *nonzeros = NULL;
-int *tmp = NULL;
+int *tmparray = NULL;
 int *hindex = NULL, *hvertex = NULL;
 int *dist_x = NULL, *dist_y = NULL;
 int nEdge, nVtx, nwgt = 0;
@@ -224,6 +210,10 @@ int proc_offset;
 float frac_x, frac_y;
 float *tmpwgts = NULL;
 
+int *gtotal = NULL;  /* Temporary arrays used for distributing vertices/edges */
+int *mycnt = NULL;
+int *gcnt = NULL;
+
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /**************************************************/
@@ -236,9 +226,7 @@ float *tmpwgts = NULL;
   app.pins = NULL;
   app.pin_procs = NULL;
   app.pin_gno = NULL;
-  app.vtxdist = NULL;
   app.vtx_gno = NULL;
-  app.edgedist = NULL;
   app.edge_gno = NULL;
   app.vwgt = NULL;
   app.ewgt = NULL;
@@ -252,27 +240,6 @@ float *tmpwgts = NULL;
   }
 
   app.nVtx = zhg->nObj;
-
-  /* Build app.vtxdist as in Zoltan_Build_Graph. */
-
-  app.vtxdist = (int *)ZOLTAN_MALLOC(2 * (nProc+1) * sizeof(int));
-  if (!(app.vtxdist)) MEMORY_ERROR;
-
-  app.edgedist = app.vtxdist + nProc + 1;
-
-  /* Construct app.vtxdist[i] = the number of vertices on all procs < i. */
-  /* Scan to compute partial sums of the number of objs */
-
-  MPI_Scan (&app.nVtx, app.vtxdist, 1, MPI_INT, MPI_SUM, zz->Communicator);
-
-  /* Gather data from all procs */
-
-  MPI_Allgather (&(app.vtxdist[0]), 1, MPI_INT,
-                 &(app.vtxdist[1]), 1, MPI_INT, zz->Communicator);
-  app.vtxdist[0] = 0;
-  app.GnVtx = app.vtxdist[nProc];
-
-
 
   /* 
    * Correlate GIDs in edge_verts with local indexing in zhg to build the
@@ -289,26 +256,78 @@ float *tmpwgts = NULL;
                                                    sizeof(struct Hash_Node *));
     app.vtx_gno = (int *) ZOLTAN_MALLOC(app.nVtx * sizeof(int));
     if (!hash_nodes || !hash_tab || !app.vtx_gno) MEMORY_ERROR;
+  }
 
-    global_ids = zhg->GIDs;
+  global_ids = zhg->GIDs;
 
-    /* Assign consecutive numbers based on the order of the ids */
-    /* KDDKDD  For different (e.g., randomized) initial 2D distributions, 
-     * KDDKDD  change the way vtx_gno values are assigned. */
+  /* Assign consecutive numbers (gnos) based on the order of the ids */
+  if (hgp->RandomizeInitDist) { 
+    /* Randomize the input vertices */
+    int tmp;
+    gtotal = (int *) ZOLTAN_CALLOC(3*zz->Num_Proc+1, sizeof(int));
+    mycnt  = gtotal + zz->Num_Proc + 1;
+    gcnt   = mycnt + zz->Num_Proc;
+
+    /* Compute random processor bin. */
+    /* Temporarily store processor bin number in app.vtx_gno. */
+    /* Count how many local vtxs selected processor bin */
+    Zoltan_Srand(zz->Proc, NULL);
+    for (i = 0; i < app.nVtx; i++) {
+      app.vtx_gno[i] = Zoltan_Rand_InRange(NULL, zz->Num_Proc);
+      mycnt[app.vtx_gno[i]]++;
+    }
+    /* Compute prefix of mycnt */
+    MPI_Scan(mycnt, gcnt, zz->Num_Proc, MPI_INT, MPI_SUM, zz->Communicator);
+    MPI_Allreduce(mycnt, gtotal, zz->Num_Proc, MPI_INT, MPI_SUM, 
+                  zz->Communicator);
+
+    /* Compute first gno for vertices going to each target bin */
+    for (tmp = 0, i = 0; i < zz->Num_Proc; i++) {
+      gcnt[i] -= mycnt[i];
+      tmp += gtotal[i];
+      gtotal[i] = tmp - gtotal[i];
+    }
+    app.GnVtx = gtotal[zz->Num_Proc] = tmp;
+
+    /* Assign gnos sequential from gcnt[bin]. */
+    for (i=0; i< app.nVtx; i++) {
+      hash_tab[i] = NULL;
+      hash_nodes[i].gid = &(global_ids[i*num_gid_entries]);
+      tmp = app.vtx_gno[i];
+      hash_nodes[i].gno = app.vtx_gno[i] = gtotal[tmp] + gcnt[tmp];
+      gcnt[tmp]++;
+    }
+  }
+  else {
+    /* Linearly order the input vertices */
+    gtotal = (int *) ZOLTAN_MALLOC((nProc+1) * sizeof(int));
+    if (!gtotal) MEMORY_ERROR;
+
+    /* Construct gtotal[i] = the number of vertices on all procs < i. */
+    /* Scan to compute partial sums of the number of objs */
+
+    MPI_Scan (&app.nVtx, gtotal, 1, MPI_INT, MPI_SUM, zz->Communicator);
+
+    /* Gather data from all procs */
+
+    MPI_Allgather (&(gtotal[0]), 1, MPI_INT,
+                   &(gtotal[1]), 1, MPI_INT, zz->Communicator);
+    gtotal[0] = 0;
+    app.GnVtx = gtotal[nProc];
 
     for (i=0; i< app.nVtx; i++) {
       hash_tab[i] = NULL;
       hash_nodes[i].gid = &(global_ids[i*num_gid_entries]);
-      hash_nodes[i].gno = app.vtx_gno[i] =  app.vtxdist[zz->Proc]+i;
+      hash_nodes[i].gno = app.vtx_gno[i] =  gtotal[zz->Proc]+i;
     }
+  }
 
-    for (i=0; i< app.nVtx; i++){
-      /* insert hashed elements into hash table */
-      j = Zoltan_Hash(&(global_ids[i*num_gid_entries]), num_gid_entries,
-                      (unsigned int) app.nVtx);
-      hash_nodes[i].next = hash_tab[j];
-      hash_tab[j] = &hash_nodes[i];
-    }
+  for (i=0; i< app.nVtx; i++){
+    /* insert hashed elements into hash table */
+    j = Zoltan_Hash(&(global_ids[i*num_gid_entries]), num_gid_entries,
+                    (unsigned int) app.nVtx);
+    hash_nodes[i].next = hash_tab[j];
+    hash_tab[j] = &hash_nodes[i];
   }
 
   /***********************************************************************/
@@ -348,29 +367,60 @@ float *tmpwgts = NULL;
 
   /***********************************************************************/
   /* Impose a global hyperedge numbering */
-  /* Construct app.edgedist[i] = the number of edges on all procs < i. */
-  /* Scan to compute partial sums of the number of edges */
   /***********************************************************************/
 
   app.edge_gno = (int *) ZOLTAN_MALLOC(app.nEdge * sizeof(int));
   app.pin_gno = (int *) ZOLTAN_MALLOC(app.nPins * sizeof(int));
   if ((app.nEdge && !app.edge_gno) || (app.nPins && !app.pin_gno)) MEMORY_ERROR;
 
-  MPI_Scan (&app.nEdge, app.edgedist, 1, MPI_INT, MPI_SUM, zz->Communicator);
+  if (hgp->RandomizeInitDist) {  
+    /* Randomize the input edges */
+    int tmp;
+    memset(gtotal, 0, (3*zz->Num_Proc+1)*sizeof(int)); /* gtotal was alloc'ed
+                                                          for vertices */
 
-  /* Gather data from all procs */
+    /* Compute random processor bin. */
+    /* Temporarily store processor bin number in app.edge_gno. */
+    /* Count how many local vtxs selected processor bin */
+    for (i = 0; i < app.nEdge; i++) {
+      app.edge_gno[i] = Zoltan_Rand_InRange(NULL, zz->Num_Proc);
+      mycnt[app.edge_gno[i]]++;
+    }
+    /* Compute prefix of mycnt */
+    MPI_Scan(mycnt, gcnt, zz->Num_Proc, MPI_INT, MPI_SUM, zz->Communicator);
+    MPI_Allreduce(mycnt, gtotal, zz->Num_Proc, MPI_INT, MPI_SUM, 
+                  zz->Communicator);
 
-  MPI_Allgather (&(app.edgedist[0]), 1, MPI_INT,
-                 &(app.edgedist[1]), 1, MPI_INT, zz->Communicator);
-  app.edgedist[0] = 0;
-  app.GnEdge = app.edgedist[nProc];
+    /* Compute first gno for vertices going to each target bin */
+    for (tmp = 0, i = 0; i < zz->Num_Proc; i++) {
+      gcnt[i] -= mycnt[i];
+      tmp += gtotal[i];
+      gtotal[i] = tmp - gtotal[i];
+    }
+    app.GnEdge = gtotal[zz->Num_Proc] = tmp;
 
-  
-  /* Assign global numbers to edges. */
-  /* KDDKDD  For different (e.g., randomized) initial 2D distributions, 
-   * KDDKDD  change the way edge_gno values are assigned. */
-  for (i = 0; i < app.nEdge; i++)
-    app.edge_gno[i] = app.edgedist[zz->Proc] + i;
+    /* Assign gnos sequential from gcnt[bin]. */
+    for (i=0; i< app.nEdge; i++) {
+      tmp = app.edge_gno[i];
+      app.edge_gno[i] = gtotal[tmp] + gcnt[tmp];
+      gcnt[tmp]++;
+    }
+  }
+  else {
+    MPI_Scan (&app.nEdge, gtotal, 1, MPI_INT, MPI_SUM, zz->Communicator);
+
+    /* Gather data from all procs */
+
+    MPI_Allgather (&(gtotal[0]), 1, MPI_INT,
+                   &(gtotal[1]), 1, MPI_INT, zz->Communicator);
+    gtotal[0] = 0;
+    app.GnEdge = gtotal[nProc];
+
+    /* Assign global numbers to edges. */
+    for (i = 0; i < app.nEdge; i++)
+      app.edge_gno[i] = gtotal[zz->Proc] + i;
+  }
+  ZOLTAN_FREE(&gtotal);
    
   /***********************************************************************/
   /* 
@@ -485,28 +535,28 @@ float *tmpwgts = NULL;
 
   /* Unpack the non-zeros received. */
 
-  tmp = (int *) ZOLTAN_CALLOC(nEdge + 1, sizeof(int));
+  tmparray = (int *) ZOLTAN_CALLOC(nEdge + 1, sizeof(int));
   hindex = (int *) ZOLTAN_CALLOC(nEdge + 1, sizeof(int));
   hvertex = (int *) ZOLTAN_MALLOC(nnz * sizeof(int));
 
-  if (!tmp || !hindex || (nnz && !hvertex)) MEMORY_ERROR;
+  if (!tmparray || !hindex || (nnz && !hvertex)) MEMORY_ERROR;
 
   /* Count the number of nonzeros per hyperedge */
   for (i = 0; i < nnz; i++) {
     idx = EDGE_GNO_TO_LNO(phg, nonzeros[2*i]); 
-    tmp[idx]++;
+    tmparray[idx]++;
   }
 
   /* Compute prefix sum to represent hindex correctly. */
   for (i = 0; i < nEdge; i++)  {
-    hindex[i+1] = hindex[i] + tmp[i];
-    tmp[i] = 0;
+    hindex[i+1] = hindex[i] + tmparray[i];
+    tmparray[i] = 0;
   }
        
   for (i = 0; i < nnz; i++) {
     idx = EDGE_GNO_TO_LNO(phg, nonzeros[2*i]);
-    hvertex[hindex[idx] + tmp[idx]] = VTX_GNO_TO_LNO(phg, nonzeros[2*i+1]);
-    tmp[idx]++;
+    hvertex[hindex[idx] + tmparray[idx]] = VTX_GNO_TO_LNO(phg, nonzeros[2*i+1]);
+    tmparray[idx]++;
   }
 
 
@@ -761,21 +811,20 @@ End:
     Zoltan_HG_HGraph_Free(phg);
   }
   
-  Zoltan_Multifree(__FILE__, __LINE__, 12,  &app.egids,
-                                            &app.elids,
-                                            &app.pins, 
-                                            &app.esizes, 
-                                            &app.pin_procs, 
-                                            &app.pin_gno, 
-                                            &app.vwgt,
-                                            &app.ewgt,
-                                            &app.vtxdist,
-                                            &app.edge_gno,
-                                            &hash_nodes,
-                                            &hash_tab);
+  Zoltan_Multifree(__FILE__, __LINE__, 11, &app.egids,
+                                           &app.elids,
+                                           &app.pins, 
+                                           &app.esizes, 
+                                           &app.pin_procs, 
+                                           &app.pin_gno, 
+                                           &app.vwgt,
+                                           &app.ewgt,
+                                           &app.edge_gno,
+                                           &hash_nodes,
+                                           &hash_tab);
   if (zhg->Recv_GNOs != app.vtx_gno) 
     ZOLTAN_FREE(&app.vtx_gno);
-  ZOLTAN_FREE(&tmp);
+  ZOLTAN_FREE(&tmparray);
   ZOLTAN_FREE(&tmpwgts);
   ZOLTAN_FREE(&nonzeros);
   ZOLTAN_FREE(&proclist);

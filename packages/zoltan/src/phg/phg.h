@@ -112,6 +112,8 @@ struct PHGPartParamsStruct {
   char balance_obj[MAX_PARAM_STRING_LEN];  /* Balancing objective:
                                                 usually vertices (rows),
                                                 but could be pins (nonzeros) */
+  int RandomizeInitDist;  /* Flag indicating whether to randomly distribute
+                             vertices and edges passed as input to PHG. */
   int patoh_alloc_pool0,    /* to adjust patoh's memory pre-allocation amount */
       patoh_alloc_pool1;    
 };
