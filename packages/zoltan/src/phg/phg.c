@@ -696,10 +696,11 @@ HGraph *phg = &(zhg->HG);
       outparts[i] = hg_parts[zhg->Recv_GNOs[i]];
   }
 
-#ifdef KDDKDD_NOT_YET
   if (zz->LB.Remap_Flag) {
     int new_map;
     int *newproc = (int *) ZOLTAN_MALLOC(nObj * sizeof(int));
+    int num_gid_entries = zz->Num_GID;
+
     if (nObj && !newproc) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
       ierr = ZOLTAN_MEMERR;
@@ -722,8 +723,8 @@ HGraph *phg = &(zhg->HG);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_LB_Remap");
       goto End;
     }
+    ZOLTAN_FREE(&newproc);
   }
-#endif /* KDDKDD NOT YET */
 
 End:
   if (zhg->Recv_GNOs) ZOLTAN_FREE(&(zhg->Recv_GNOs));
