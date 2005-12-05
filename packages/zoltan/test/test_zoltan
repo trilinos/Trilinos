@@ -59,6 +59,7 @@ set no_hsfc = $?ZOLTAN_NO_HSFC
 set no_oct = $?ZOLTAN_NO_OCT
 set no_parmetis = $?ZOLTAN_NO_PARMETIS
 set no_order = $?ZOLTAN_NO_ORDER
+set no_color = $?ZOLTAN_NO_COLOR
 set no_reftree = $?ZOLTAN_NO_REFTREE
 set yes_jostle = $?ZOLTAN_YES_JOSTLE
 set yes_fortran = $?ZOLTAN_YES_FORTRAN
@@ -92,6 +93,8 @@ while ( $#argv )
      @ no_reftree = 1
   else if ( "$1" == "-no_order" ) then
      @ no_order = 1
+  else if ( "$1" == "-no_color" ) then
+     @ no_color = 1
   else if ( "$1" == "-yes_jostle" ) then
      @ yes_jostle = 1
   else if ( "$1" == "-yes_fortran" ) then
@@ -508,6 +511,11 @@ else
             order-parmetis-v$pmversion partkway-order-metis-v$pmversion )
         endif
       endif
+    endif
+  endif
+  if (! $no_color) then
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods color color-after-phg )
     endif
   endif
 endif
