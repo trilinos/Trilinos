@@ -24,6 +24,10 @@ extern "C" {
 
 
 /*
+#define CHECK_LEFTALONE_VERTICES
+*/
+    
+/*
  *  Main routine for Zoltan interface to hypergraph partitioning. 
  *  Also routines that build input data structures, set parameters, etc.
  */
@@ -70,6 +74,71 @@ static int Zoltan_PHG_Output_Parts(ZZ*, ZHG*, Partition);
 static int Zoltan_PHG_Return_Lists(ZZ*, ZHG*, int*, ZOLTAN_ID_PTR*, 
   ZOLTAN_ID_PTR*, int**, int**);
 
+#ifdef CHECK_LEFTALONE_VERTICES    
+static int findAndSaveLeftAloneVertices(ZZ *zz, HGraph *hg, int p, 
+                                 Partition parts,
+                                 PHGPartParams *hgp) 
+{
+    char *yo="findAndSaveLeftAloneVertices";
+    int *lneigh[2]={NULL, NULL}, *neigh[2]={NULL, NULL}, i, j, ierr=ZOLTAN_OK;
+    int *lpins=NULL, *pins=NULL;
+    PHGComm *hgc=hg->comm;
+
+    if (hg->nEdge && (!(lpins = (int*) ZOLTAN_CALLOC(p * hg->nEdge, sizeof(int))) ||
+                      !(pins  = (int*) ZOLTAN_MALLOC(p * hg->nEdge * sizeof(int)))))
+        MEMORY_ERROR;
+
+    for (i = 0; i < hg->nEdge; ++i)
+        for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
+            ++lpins[i*p+parts[hg->hvertex[j]]];
+    if (hg->nEdge)
+        MPI_Allreduce(lpins, pins, p*hg->nEdge, MPI_INT, MPI_SUM, 
+                      hgc->row_comm);
+    
+    if (hg->nVtx && !(lneigh[0]  = (int*) ZOLTAN_MALLOC(2 * hg->nVtx * sizeof(int))))
+        MEMORY_ERROR;
+    if (!hgc->myProc_y) 
+        if (hg->nVtx && !(neigh[0]  = (int*) ZOLTAN_MALLOC(2 * hg->nVtx * sizeof(int))))
+            MEMORY_ERROR;
+
+    if (hg->nVtx) {
+        lneigh[1] = &(lneigh[0][hg->nVtx]);
+        if (!hgc->myProc_y)
+            neigh[1] = &(neigh[0][hg->nVtx]);
+    }
+
+    for (i = 0; i < hg->nVtx; ++i) {
+        int pno = parts[i];
+        lneigh[0][i] = lneigh[1][i] = 0;
+        for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++) {
+            int edge = hg->vedge[j], k;
+            lneigh[0][i] += (pins[edge*p+pno]-1); /* exclude the vertex's itself */
+            for (k=0; k<p; ++k)
+                if (k!=pno)
+                    lneigh[1][i] += pins[edge*p+k];            
+        }
+    }
+    
+    if (hg->nVtx) 
+        MPI_Reduce(lneigh[0], neigh[0], 2*hg->nVtx, MPI_INT, MPI_SUM, 0, hgc->col_comm);
+
+    if (!hgc->myProc_y) {
+        int alone=0, galone=0;        
+        for (i=0; i<hg->nVtx; ++i)
+            if (!neigh[0] && neigh[1]) {
+                ++alone;
+                if (alone<10)
+                    uprintf(hgc, "vertex %d is alone in part %d but it has %d neighbours (!overcounted!) on other %d parts\n", i, parts[i], neigh[1]);
+            }
+        MPI_Reduce(&alone, &galone, 1, MPI_INT, MPI_SUM, 0, hgc->row_comm);
+        if (!hgc->myProc)
+            uprintf(hgc, "There are %d left-alone vertices\n", galone);        
+    }
+End:
+    Zoltan_Multifree(__FILE__,__LINE__, 4, &lpins, &pins, &lneigh[0], &neigh[0]);
+    return ierr;
+}
+#endif
  
  
 /******************************************************************************/
@@ -98,9 +167,10 @@ int **exp_to_part )         /* list of partitions to which exported objs
   ZHG *zoltan_hg = NULL;
   int nVtx;                        /* Temporary variable for base graph. */
   PHGPartParams hgp;               /* Hypergraph parameters. */
+  HGraph *hg = NULL;               /* Hypergraph itself */
   Partition parts = NULL;          /* Partition assignments in 
                                       2D distribution. */
-  int err = ZOLTAN_OK;
+  int err = ZOLTAN_OK, p=0;
   static int timer_all = -1;       /* Note:  this timer includes other
                                       timers and their synchronization time,
                                       so it will be a little high. */
@@ -155,7 +225,9 @@ int **exp_to_part )         /* list of partitions to which exported objs
   }
 
   zz->LB.Data_Structure = zoltan_hg;
-  nVtx = zoltan_hg->HG.nVtx;
+  hg = &zoltan_hg->HG;
+  nVtx = hg->nVtx;
+  p = zz->LB.Num_Global_Parts;  
   zoltan_hg->HG.redl = hgp.redl;     /* redl needs to be dynamic */
   /* RTHRTH -- redl may need to be scaled by number of procs */
   /* EBEB -- at least make sure redl > #procs */
@@ -164,7 +236,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
    
 /*
-  uprintf(zoltan_hg->HG.comm, "Zoltan_PHG kway=%d #parts=%d\n", hgp.kway, zz->LB.Num_Global_Parts);
+  uprintf(hg->comm, "Zoltan_PHG kway=%d #parts=%d\n", hgp.kway, zz->LB.Num_Global_Parts);
 */
 
 
@@ -174,7 +246,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
         timer_parkway = Zoltan_Timer_Init(zz->ZTime, 0, "PHG_ParKway");
       ZOLTAN_TIMER_START(zz->ZTime, timer_parkway, zz->Communicator);
     }
-    err = Zoltan_PHG_ParKway(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
+    err = Zoltan_PHG_ParKway(zz, hg, p,
                              parts, &hgp);
     if (err != ZOLTAN_OK) 
         goto End;
@@ -186,7 +258,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
         timer_patoh = Zoltan_Timer_Init(zz->ZTime, 0, "HG_PaToH");
       ZOLTAN_TIMER_START(zz->ZTime, timer_patoh, zz->Communicator);
     }
-    err = Zoltan_PHG_PaToH(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
+    err = Zoltan_PHG_PaToH(zz, hg, p,
                            parts, &hgp);
     if (err != ZOLTAN_OK) 
       goto End;
@@ -199,9 +271,11 @@ int **exp_to_part )         /* list of partitions to which exported objs
     if (hgp.globalcomm.Communicator != MPI_COMM_NULL) {
       /* This processor is part of the 2D data distribution; it should
          participate in partitioning. */
+
+        
       if (hgp.kway || zz->LB.Num_Global_Parts == 2) {
         /* call main V cycle routine */
-        err = Zoltan_PHG_Partition(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
+        err = Zoltan_PHG_Partition(zz, hg, p,
                                    hgp.part_sizes, parts, &hgp, 0);
         if (err != ZOLTAN_OK) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
@@ -209,9 +283,8 @@ int **exp_to_part )         /* list of partitions to which exported objs
         }
       }
       else {
-        int i, p=zz->LB.Num_Global_Parts;
-        HGraph *hg = &zoltan_hg->HG;
-            
+        int i;
+          
         if (do_timing) 
           ZOLTAN_TIMER_START(zz->ZTime, timer_setupvmap, zz->Communicator);
         /* vmap associates original vertices to sub hypergraphs */
@@ -226,13 +299,6 @@ int **exp_to_part )         /* list of partitions to which exported objs
         if (do_timing) 
           ZOLTAN_TIMER_STOP(zz->ZTime, timer_setupvmap, zz->Communicator);
   
-  #if 0
-        /* UVCUVC: We now have "Adaptive Balance Adjustment" during
-           recursive bisection, hence we don't need the following code */
-               
-        /* tighten balance tolerance for recursive bisection process */
-        hgp.bal_tol = pow (hgp.bal_tol, 1.0 / ceil (log((double)p) / log(2.0)));
-#endif
           
         /* partition hypergraph */
         err = Zoltan_PHG_rdivide (0, p-1, parts, zz, hg, &hgp, 0);
@@ -249,8 +315,11 @@ int **exp_to_part )         /* list of partitions to which exported objs
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
           goto End;
         }
-        ZOLTAN_FREE (&zoltan_hg->HG.vmap);
-      }  
+        ZOLTAN_FREE (&hg->vmap);
+      }
+#ifdef CHECK_LEFTALONE_VERTICES          
+      findAndSaveLeftAloneVertices(zz, hg, p, parts, &hgp);
+#endif      
     }
   }
         
@@ -287,7 +356,6 @@ End:
    * KDDKDD data collection, but it should NOT be included in the released
    * KDDKDD code.  */
   if ((err == ZOLTAN_OK) && hgp.final_output) {
-    HGraph *hg = &zoltan_hg->HG;
     static int nRuns=0;
     static double balsum = 0.0, cutlsum = 0.0, cutnsum = 0.0;
     static double balmax = 0.0, cutlmax = 0.0, cutnmax = 0.0;
