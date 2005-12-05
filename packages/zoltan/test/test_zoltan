@@ -171,8 +171,7 @@ if (! $?run ) then
     case sun:
     case sgi32:
     case sgi64:
-#      set run = "/Net/local/mpi/build/solaris/ch_p4/bin/mpirun -np"
-      set run = "mpirun -np"
+      set run = "/Net/local/mpi/build/solaris/ch_p4/bin/mpirun -np"
       breaksw
     case bandito:
       set run = "/opt/mpich-intel/bin/mpirun -np"
