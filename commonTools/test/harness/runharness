@@ -350,7 +350,8 @@ exit $exitStatus;
         my $string = "";        
         $string .= "BUILD_LABEL          = ".$buildOptions{'BUILD-LABEL'}."\n";
         $string .= "BUILD_START_TIME     = $runStartTime\n";
-        $string .= "BUILD_END_TIME       = $buildEndTime\n";
+        $string .= "BUILD_END_TIME       = $buildEndTime\n";       
+        $string .= "TIME_ZONE            = ".`date +%Z`."\n";    
         $string .= "BUILD_DIR            = ".$buildOptions{'BUILD-DIR'}."\n";
         $string .= "COMM                 = ".$buildOptions{'COMM'}."\n";  
         print BUILD_FILE $string;        
@@ -404,7 +405,7 @@ exit $exitStatus;
         $string .= "KERNEL_VERSION       = $kernelVersion\n";
         $string .= "PROCESSOR            = $processor\n";
         $string .= "MACHINE_HARDWARE     = $machineHardware\n";
-        $string .= "HARDWARE_PLATFORM    = $hardwarePlatform\n";        
+        $string .= "HARDWARE_PLATFORM    = $hardwarePlatform\n";     
         print MACHINE_FILE $string;        
         close MACHINE_FILE;
         
