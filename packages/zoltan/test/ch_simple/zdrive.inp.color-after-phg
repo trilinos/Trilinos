@@ -1,4 +1,4 @@
-Decomposition Method = none
+Decomposition Method = phg
 Zoltan Parameters = comm_pattern=S
 Zoltan Parameters = color_order=I
 Zoltan Parameters = coloring_method=F
