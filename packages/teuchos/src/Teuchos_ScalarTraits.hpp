@@ -40,8 +40,12 @@
 /*! \file Teuchos_ScalarTraits.hpp
     \brief Defines basic traits for the scalar field type.
 */
+ 
+#include "Teuchos_ConfigDefs.hpp"
 
+#ifndef HAVE_NUMERIC_LIMITS
 #include "Teuchos_LAPACK.hpp"
+#endif
 
 #ifdef HAVE_TEUCHOS_ARPREC
 #include "mp/mpreal.h"
