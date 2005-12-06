@@ -95,22 +95,6 @@ int main(int argc, char *argv[])
     }
   }
 
-  if (verbose && MyPID == 0) {
-    cout << Anasazi::Anasazi_Version() << endl << endl;
-  }
-
-#ifndef HAVE_ANASAZI_TRIUTILS
-  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
-#ifdef EPETRA_MPI
-  MPI_Finalize() ;
-#endif
-  if (verbose && MyPID==0)
-    cout << "End Result: TEST FAILED" << endl;	
-  return -1;
-#endif
-
-  Anasazi::ReturnType returnCode = Anasazi::Ok;  
-
 #ifdef HAVE_COMPLEX
   typedef std::complex<double> ST;
 #elif HAVE_COMPLEX_H
@@ -118,9 +102,9 @@ int main(int argc, char *argv[])
 #else
   typedef double ST;
   // no complex. quit with failure.
-  if (verbose && MyPID==0) {
+  if (verbose && MyPID == 0) {
     cout << "Not compiled with complex support." << endl;
-    if (verbose && MyPID==0) {
+    if (MyOM->doPrint()) {
       cout << "End Result: TEST FAILED" << endl;
     }
 #ifdef HAVE_MPI
@@ -138,6 +122,7 @@ int main(int argc, char *argv[])
   ST ONE  = SCT::one();
   ST ZERO = SCT::zero();
 
+
   // Create default output manager 
   RefCountPtr<Anasazi::OutputManager<ST> > MyOM 
     = rcp( new Anasazi::OutputManager<ST>( MyPID ) );
@@ -145,6 +130,23 @@ int main(int argc, char *argv[])
   if (verbose) {
     MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
   }
+
+  if (MyOM->doPrint()) {
+    cout << Anasazi::Anasazi_Version() << endl << endl;
+  }
+
+#ifndef HAVE_ANASAZI_TRIUTILS
+  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
+#ifdef EPETRA_MPI
+  MPI_Finalize() ;
+#endif
+  if (MyOM->doPrint()) {
+    cout << "End Result: TEST FAILED" << endl;	
+  }
+  return -1;
+#endif
+
+  Anasazi::ReturnType returnCode = Anasazi::Ok;  
 
   // Create the sort manager
   RefCountPtr<Anasazi::BasicSort<ST,MV,OP> > MySM = 
@@ -155,12 +157,13 @@ int main(int argc, char *argv[])
   double *dvals;
   int *colptr,*rowind;
   ST *cvals;
-  //info = readHB_newmat_double("mhd1280b.cua",&dim,&dim2,&nnz,
-                              //&colptr,&rowind,&dvals);
-  if (info) {
-    if (verbose && MyPID==0) {
+  nnz = -1;
+  info = readHB_newmat_double("mhd1280b.cua",&dim,&dim2,&nnz,
+                              &colptr,&rowind,&dvals);
+  if (info == 0 || nnz < 0) {
+    if (MyOM->doPrint()) {
       cout << "Error reading 'mhd1280b.cua'" << endl;
-      if (verbose && MyPID==0) {
+      if (MyOM->doPrint()) {
         cout << "End Result: TEST FAILED" << endl;
       }
 #ifdef HAVE_MPI
@@ -211,8 +214,9 @@ int main(int argc, char *argv[])
 #ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif
-    if (verbose && MyPID==0)
+    if (MyOM->doPrint()) {
       cout << "End Result: TEST FAILED" << endl;	
+    }
     return -1;
   }
 
@@ -254,15 +258,17 @@ int main(int argc, char *argv[])
 #endif
 
   if (testFailed) {
-    if (verbose && MyPID==0)
+    if (MyOM->doPrint()) {
       cout << "End Result: TEST FAILED" << endl;	
+    }
     return -1;
   }
   //
   // Default return value
   //
-  if (verbose && MyPID==0)
+  if (MyOM->doPrint()) {
     cout << "End Result: TEST PASSED" << endl;
+  }
   return 0;
 
 }	
