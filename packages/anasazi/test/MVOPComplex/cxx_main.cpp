@@ -118,12 +118,12 @@ int main(int argc, char *argv[])
   switch (ierr) {
   case Anasazi::Ok:
     if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter PASSED TestMultiVecTraits()" << endl;
+      cout << "*** MyMultiVec<complex> PASSED TestMultiVecTraits()" << endl;
     }
     break;
   case Anasazi::Failed:
     if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter FAILED TestMultiVecTraits() ***" 
+      cout << "*** MyMultiVec<complex> FAILED TestMultiVecTraits() ***" 
            << endl << endl;
     }
     break;
@@ -135,12 +135,12 @@ int main(int argc, char *argv[])
   switch (ierr) {
   case Anasazi::Ok:
     if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter PASSED TestOperatorTraits()" << endl;
+      cout << "*** MyMultiVec<complex> PASSED TestOperatorTraits()" << endl;
     }
     break;
   case Anasazi::Failed:
     if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter FAILED TestOperatorTraits() ***" 
+      cout << "*** MyMultiVec<complex> FAILED TestOperatorTraits() ***" 
            << endl << endl;
     }
     break;
