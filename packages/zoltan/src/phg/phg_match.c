@@ -21,7 +21,6 @@ extern "C" {
 
 #undef  USE_SUBROUNDS
 
-
 static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;         /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_local_ipm;   /* local ipm */
 static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;     /* alternating ipm */
@@ -57,8 +56,6 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
         hgp->matching = pmatching_ipm;   
     else if (!strcasecmp(hgp->redm_str, "a-ipm"))
         hgp->matching = pmatching_alt_ipm;
-    else if (!strcasecmp(hgp->redm_str, "h-ipm"))
-        hgp->matching = pmatching_hybrid_ipm;
     else {
         exist = 0;
         hgp->matching = NULL;
@@ -392,6 +389,7 @@ static int pmatching_hybrid_ipm(
   return ierr;
 }
 
+
 /****************************************************************************
  * inner product matching (with user selectable column variant, c-ipm)
  * Parallelized version of the serial algorithm (see hg_match.c)
@@ -401,7 +399,7 @@ static int pmatching_hybrid_ipm(
                
 #define ROUNDS_CONSTANT 8     /* controls the number of candidate vertices */ 
 #define IPM_TAG        28731  /* MPI message tag, arbitrary value */
-#define HEADER_COUNT    4          /* Phase 2 send buffer header size in ints */
+#define HEADER_COUNT    3          /* Phase 2 send buffer header size in ints */
 
 /* these thresholds need to become parameters in phg - maybe ??? */
 #define PSUM_THRESHOLD 0.0    /* ignore inner products (i.p.) < threshold */
@@ -493,7 +491,7 @@ static int pmatching_ipm (ZZ *zz,
                                SPARSE_CANDIDATES, nTotal may differ among procs
                                in a column; otherwise, nTotal is the same on
                                all procs in the communicator.  */
-  int max_nTotal;            /* max within proc column of nTotal. */
+/*  int max_nTotal;      */      /* max within proc column of nTotal. */
   int total_nCandidates;     /* Sum of nCandidates across row. */
   int *send = NULL,          /* working buffers, may be reused. */
       *dest = NULL,
@@ -513,10 +511,10 @@ static int pmatching_ipm (ZZ *zz,
   float *sums = NULL, /* holds candidate's inner products with each local vtx */
         *f = NULL;    /* used to stuff floating value into integer message */
   PHGComm *hgc = hg->comm;
-  int err = ZOLTAN_OK, old_row, row;
+  int err = ZOLTAN_OK;
   int max_nPins, max_nVtx;       /* Global max # pins/proc and vtx/proc */
-  int **rows = NULL;             /* used only in merging process */
-  int bestlno, partner_gno, nselect, edge;
+  int *rows = NULL;             /* used only in merging process */
+  int bestlno, partner_gno, edge;
   Triplet *master_data = NULL;
   int *master_procs = NULL;
   int cFLAG;                    /* if set, do only a column matching, c-ipm */
@@ -559,6 +557,7 @@ static int pmatching_ipm (ZZ *zz,
     total_nCandidates = nCandidates;
     max_nVtx  = hg->nVtx;
     max_nPins = hg->nPins;
+first_candidate_index = 0;    
   }
   else  {
     MPI_Allreduce(&hg->nPins, &max_nPins, 1, MPI_INT,MPI_MAX,hgc->Communicator);
@@ -625,7 +624,7 @@ static int pmatching_ipm (ZZ *zz,
    || !(size = (int*) ZOLTAN_MALLOC(nSize * sizeof(int)))
    || (nRec && !(rec = (int*) ZOLTAN_MALLOC(nRec * sizeof(int))))
    || !(index = (int*)  ZOLTAN_MALLOC(nIndex * sizeof(int)))
-   || !(rows = (int**) ZOLTAN_MALLOC((hgc->nProc_y + 1) * sizeof(int*)))) {
+   || !(rows = (int*) ZOLTAN_MALLOC((hgc->nProc_y + 1) * sizeof(int)))) {
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
      err = ZOLTAN_MEMERR;
      goto fini;
@@ -641,11 +640,10 @@ static int pmatching_ipm (ZZ *zz,
   Zoltan_PHG_Vertex_Visit_Order (zz, hg, hgp, visit);
   
   /* Loop processing ncandidates vertices per column each round.
-   * Each loop has 4 phases:
+   * Each loop has 3 phases, phase 3 may be repeated
    * Phase 1: send ncandidates vertices for global matching - horizontal comm
    * Phase 2: sum  inner products, find best in column - vertical communication
-   * Phase 3: return best sums to owner's column    - horizontal communication
-   * Phase 4: return actual match selections        - horizontal communication
+   * Phase 3: return best match selections        - horizontal communication
    *
    * No conflict resolution required because temp locking prevents conflicts. */
 
@@ -657,13 +655,14 @@ static int pmatching_ipm (ZZ *zz,
     /************************ PHASE 1: ***************************************/
     
     for (i = 0; i < total_nCandidates; i++)
-       permute[i] = -1;
-    
+       permute[i] = -1;            /* flags missing sparse candidates  */
+       
     memcpy (cmatch, match, hg->nVtx * sizeof(int));  /* for temporary locking */
     if (cFLAG)  {
       /* select upto nCandidates unmatched vertices to locally match */
       for (nTotal=0; nTotal < nCandidates && vindex < hg->nVtx; vindex++)  {
         if (cmatch[visit[vindex]] == visit[vindex])  {         /* unmatched */
+select[nTotal] = visit[vindex];        
           permute[nTotal++] = visit[vindex];    /* select it as a candidate */
           cmatch[visit[vindex]] = -1;           /* mark it as a pending match */
         }
@@ -678,7 +677,6 @@ total_nCandidates = nTotal;
           cmatch[visit[vindex]] = -1;           /* mark it as a pending match */
         }
       }
-      nselect = sendcnt;                          /* save for later use */
                         
       /* assure send buffer is large enough by first computing required size */
       sendsize = (HEADER_COUNT-1) * sendcnt;      /* takes care of header */
@@ -693,36 +691,18 @@ total_nCandidates = nTotal;
        * <candidate_gno, candidate_gno's edge count, list of edge lno's> 
        */
       s = send;
-      n = 0;
-      candidate_index = first_candidate_index;
       for (i = 0; i < sendcnt; i++)   {
         lno = select[i];
-        candidate_gno = VTX_LNO_TO_GNO(hg, lno);
-        /* Optimization: Send only vertices that are non-empty locally */
-        if ((hg->vindex[lno+1] > hg->vindex[lno]) 
-         || (candidate_gno % hgc->nProc_y == hgc->myProc_y)) {
-            n++;  /* non-empty vertex */
-            *s++ = candidate_gno;
-            *s++ = candidate_index;
-            *s++ = hg->vindex[lno+1] - hg->vindex[lno];              /* count */
+        if (hg->vindex[lno+1] > hg->vindex[lno]) {
+            *s++ = VTX_LNO_TO_GNO(hg, lno);
+            *s++ = i + first_candidate_index;               /* candidate index */
+            *s++ = hg->vindex[lno+1] - hg->vindex[lno];          /* edge count */
             for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
-              *s++ = hg->vedge[j];                             /* lno of edge */
+              *s++ = hg->vedge[j];                              /* lno of edge */
         }
-        candidate_index++;
       }
       sendsize = s - send;
-    
-      /* determine actual global number of candidates this round */
-      /* n is actual number of local non-empty vertices */
-      /* nTotal is the global number of candidate vertices sent in this row */
-      MPI_Allreduce (&n, &nTotal, 1, MPI_INT, MPI_SUM, hgc->row_comm);
-      MPI_Allreduce (&nTotal, &max_nTotal, 1, MPI_INT, MPI_MAX, hgc->col_comm);
-      if (max_nTotal == 0) {
-        if (hgp->use_timers > 3)
-           ZOLTAN_TIMER_STOP (zz->ZTime, timer[1], hg->comm->Communicator);
-        break;                          /* globally all work is done, so quit */
-      }
-      
+         
       /* communication to determine global size & displacements of rec buffer */
       MPI_Allgather (&sendsize, 1, MPI_INT, size, 1, MPI_INT, hgc->row_comm);
      
@@ -743,12 +723,12 @@ total_nCandidates = nTotal;
        hgc->row_comm);
          
       /* create random permutation of index into the edge buffer */
-      i = 0;
-      for (j = 0 ; j < nTotal  &&  i < recsize; j++)   {
-        permute[j] = i++;         /* save index of candidate_gno in permute[] */
-        i++;                      /* skip candidate_index */
-        count = edgebuf[i++];     /* count of edges */
-        i += count;               /* skip over count edges */
+      for (i = 0 ; i < recsize; )   {
+        int gno         = i++;              /* position of gno in edgebuf */
+        candidate_index = edgebuf[i++];
+        count           = edgebuf[i++];     /* count of edges */
+        i += count;                         /* skip over count edges */
+        permute[candidate_index] = gno ;    /* save position of gno in edgebuf */
       }
 
       /* Communication has grouped candidates by processor, rescramble!     */
@@ -769,29 +749,33 @@ total_nCandidates = nTotal;
       
     /* for each candidate vertex, compute all local partial inner products */
     kstart = old_kstart = 0;         /* next candidate (of nTotal) to process */
-    while (kstart < total_nCandidates)  { 
-
-#ifdef RTHRTH
+    while (kstart < total_nCandidates)  {
+      MACRO_TIMER_START (2, "Matching kstart A", 0);
+#ifdef RTHRTH    
 if (kstart > 0)        
-printf ("RTHRTH    kstart > 0   RTHRTH\n");    
+ printf ("RTHRTH    kstart > 0   RTHRTH\n");
 #endif
 
-      MACRO_TIMER_START (2, "Matching kstart A", 0);
+for (i = 0; i < hgc->nProc_y; i++)
+ rows[i] = -1;  /* to flag if data found for that row */
+
       sendsize = 0;                      /* position in send buffer */
       sendcnt = 0;                       /* count of messages in send buffer */
       s = send;                          /* start at send buffer origin */
-      for (k = kstart; k < total_nCandidates; k++)  {  
+      for (k = kstart; k < total_nCandidates; k++)  {
+        if (permute[k] == -1)
+          continue; 
+             
         if (!cFLAG)  {
-          if (permute[k] == -1)
-             continue; 
           r     = &edgebuf[permute[k]];
           candidate_gno   = *r++;          /* gno of candidate vertex */
           candidate_index = *r++;          /* candidate_index of vertex */
-          count = *r++;                    /* count of following hyperedges */
+          count = *r++;                    /* count of following hyperedges */       
         }
-        else
+        else  {
+candidate_index = k;
           candidate_gno = permute[k];  /* need to use next local vertex */
-                                  /* here candidate_gno is really a local id */
+        }                          /* here candidate_gno is really a local id */
                   
         /* now compute the row's nVtx inner products for kth candidate */
         m = 0;
@@ -804,8 +788,7 @@ printf ("RTHRTH    kstart > 0   RTHRTH\n");
             INNER_PRODUCT1(hg->ewgt[*r])
           else if ((hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
             INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[*r])
-                  
-        } else /* cFLAG */ {
+        }else /* cFLAG */ {
           if      ((hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
             INNER_PRODUCT2(1.0)
           else if ((hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
@@ -818,8 +801,7 @@ printf ("RTHRTH    kstart > 0   RTHRTH\n");
           
         /* if local vtx, remove self inner product (useless maximum) */
         if (cFLAG)
-          sums[candidate_gno] = 0.0;   /* for cFLAG, candidate_gno is really 
-                                          a local id */
+          sums[candidate_gno] = 0.0;   /* candidate_gno is really lno */ 
         else if (VTX_TO_PROC_X(hg, candidate_gno) == hgc->myProc_x)
           sums[VTX_GNO_TO_LNO(hg, candidate_gno)] = 0.0;
          
@@ -833,15 +815,15 @@ printf ("RTHRTH    kstart > 0   RTHRTH\n");
             sums[lno] = 0.0;         /* clear unwanted entries */  
         }     
         if (count == 0)
-          continue;         /* no partial sums to append to message */
+          continue;         /* no partial sums to append to message */       
 
-        /* HEADER_COUNT (row, candidate_gno, candidate_index, count of
+        /* HEADER_COUNT (candidate_gno, candidate_index, count of
          * <lno, psum> pairs describing non-zero partial inner products)  */
         msgsize = HEADER_COUNT + 2 * count;
         
         /* iff necessary, resize send buffer to fit at least first message */
         if (sendcnt == 0 && (msgsize > nSend))  {
-          MACRO_REALLOC (5*msgsize, nSend, send);  /* make send buffer bigger */
+          MACRO_REALLOC (2*msgsize, nSend, send);  /* make send buffer bigger */
           s = send;    
         }
 
@@ -851,10 +833,15 @@ printf ("RTHRTH    kstart > 0   RTHRTH\n");
                                                              total sum */
           size[sendcnt++] = msgsize;          /* size of message */
           sendsize       += msgsize;          /* cummulative size of message */
+          *s++            = candidate_gno;
           
-          *s++ = hgc->myProc_y;               /* save my row (for merging) */
-          *s++ = candidate_gno;
-          *s++ = candidate_index;
+if (rows[candidate_gno % hgc->nProc_y] == 1)          
+  *s++ = candidate_index;
+else {
+  *s++ = -candidate_index-1;
+  rows[candidate_gno % hgc->nProc_y] = 1; 
+  }  
+          
           *s++ = count;
           for (i = 0; i < count; i++)  {          
             *s++ = aux[i];                          /* lno of partial sum */
@@ -865,74 +852,56 @@ printf ("RTHRTH    kstart > 0   RTHRTH\n");
         }
         else  {           /* psum message doesn't fit into buffer */
           for (i = 0; i < count; i++)              
-            sums[aux[i]] = 0.0;        
-          break;
+            sums[aux[i]] = 0.0; 
+          break;   
         }  
       }                  /* DONE: loop over k */                    
-
+         
       MACRO_TIMER_STOP (2);
       MACRO_TIMER_START (3, "Matching kstart B", 0);
      
       /* synchronize all rows in this column to next kstart value */
       old_kstart = kstart;      
-
       MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
-
             
       /* Send inner product data in send buffer to appropriate rows */
       err = communication_by_plan (zz, sendcnt, dest, size, 1, send, &reccnt, 
        &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
       if (err != ZOLTAN_OK)
         goto fini;
-      
+        
       /* build index into receive buffer pointer for each new row of data */
-      old_row = -1;
+      for (i = 0; i < hgc->nProc_y; i++)
+        rows[i] = recsize;       /* sentinal in case no row's data available */
       k = 0;
-      for (r = rec; r < rec + recsize  &&  k < hgc->nProc_y; )  {     
-        row = *r++;        
-        if (row != old_row)  {
-          index[k++] = r - rec;   /* points at candidate_gno, not row */
-          old_row = row;
+      for (r = rec; r < rec + recsize; r++)
+        if (*r < 0) {
+          *r = -(*r) - 1;
+          rows[k++] = (r - rec) - 1;  /* points to gno */
         }
-        candidate_gno   = *r++;
-        candidate_index = *r++;
-        count           = *r++;
-        r += (2 * count);
-      }
-     
-      /* save current positions into source rows within rec buffer */
-      for (i = 0; i < k; i++)
-        rows[i] = &rec[index[i]];
-      for (i = k; i <= hgc->nProc_y; i++)
-        rows[i] = &rec[recsize];       /* in case no data came from a row */
-      
+       
       /* merge partial i.p. sum data to compute total inner products */
       s = send; 
       for (n = old_kstart; n < kstart; n++)  {
-        m = 0;        
-        /* here candidate_gno is really a local id when cFLAG */
-        candidate_gno = (cFLAG) ? permute[n] : edgebuf[permute[n]];
-               
-        /* Not sure if this test makes any speedup ???, works without! */
-        if (candidate_gno % hgc->nProc_y != hgc->myProc_y)
-          continue;                      /* this candidate_gno's partial IPs 
-                                            not sent to this proc */
-        
-        /* merge step: look for target candidate_gno from each row's data */
-        for (i = 0; i < hgc->nProc_y; i++)  {
-          if (rows[i] < &rec[recsize] && *rows[i] == candidate_gno)  {       
-            candidate_index = *(++rows[i]);   /* skip candidate index */
-            count = *(++rows[i]);
+        m = 0;       
+        for (i = 0; i < hgc->nProc_y; i++)  {      
+          if (rows[i] >= recsize)
+             continue;
+             
+          if (rec [rows[i]+1] == n) {            /* looking at candidate_index */
+candidate_gno = rec [rows[i]];
+            candidate_index = rec [++rows[i]];   /* skip candidate index */
+            count = rec [++rows[i]];
             for (j = 0; j < count; j++)  {
-              lno = *(++rows[i]);         
+              lno = rec [++rows[i]];         
               if (sums[lno] == 0.0)       /* is this first time for this lno? */
                 aux[m++] = lno;           /* then save the lno */          
-              sums[lno] += *(float*) (++rows[i]);    /* sum the psums */
+              sums[lno] += (float) rec [++rows[i]];    /* sum the psums */
             }
-            rows[i] += 2;                 /* skip past current psum,row */
+            rows[i] += 1;                 /* skip past current psum,row */
           }
         }
-          
+
         /* determine how many total inner products exceed threshold */
         count = 0;
         for (i = 0; i < m; i++)
@@ -964,7 +933,7 @@ printf ("RTHRTH    kstart > 0   RTHRTH\n");
         }     
       }
       sendsize = s - send;   /* size (in ints) of send buffer */
-      
+       
       /* Communicate total inner product results to MASTER ROW */
       MPI_Gather(&sendsize, 1, MPI_INT, size, 1, MPI_INT, 0, hgc->col_comm);
 
@@ -1029,7 +998,7 @@ printf ("RTHRTH    kstart > 0   RTHRTH\n");
     }            /* DONE: kstart < max_nTotal loop */ 
 
     if (cFLAG)
-      continue;      /* skip phase 3, continue rounds */ 
+      continue;      /* skip phases 3 and 4, continue rounds */ 
     
 
     /************************ NEW PHASE 3: ********************************/
