@@ -6,8 +6,8 @@
     DIRS = BlockDavidson,
            BlockKrylovSchur,
            LOBPCG,
-           ModalSolverUtils,
-           MVOPTester;
+           ModalSolverUtils;
+           # MVOPTester;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = -v;
     COMM = SERIAL, MPI;
