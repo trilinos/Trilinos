@@ -378,7 +378,7 @@ std::string EpetraExt::toString( ModelEvaluator::EDerivativeMultiVectorOrientati
       TEST_FOR_EXCEPT(true);
   }
   return ""; // Should never be called
-};
+}
 
 Teuchos::RefCountPtr<Epetra_MultiVector>
 EpetraExt::get_DfDp_mv(
