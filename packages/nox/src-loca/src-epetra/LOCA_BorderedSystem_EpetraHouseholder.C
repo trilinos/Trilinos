@@ -60,7 +60,8 @@ LOCA::BorderedSystem::EpetraHouseholder::EpetraHouseholder(
   isZeroB(true),
   isZeroC(true),
   isContiguous(false),
-  dblas()
+  dblas(),
+  dlapack()
 {
 }
 
@@ -675,10 +676,9 @@ LOCA::BorderedSystem::EpetraHouseholder::solveAZero(
     // Overwrite Y with Y = C^-1 * (G - B^T*X)
     NOX::Abstract::MultiVector::DenseMatrix M(*CC);
     int *ipiv = new int[M.numRows()];
-    Teuchos::LAPACK<int,double> L;
     int info;
-    L.GESV(M.numRows(), Y.numCols(), M.values(), M.stride(), ipiv, 
-	   Y.values(), Y.stride(), &info);
+    dlapack.GESV(M.numRows(), Y.numCols(), M.values(), M.stride(), ipiv, 
+		 Y.values(), Y.stride(), &info);
     if (info != 0) {
       status = NOX::Abstract::Group::Failed;
       finalStatus = 
@@ -727,12 +727,11 @@ LOCA::BorderedSystem::EpetraHouseholder::solveBZero(
     // Solve Y = C^-1 * G
     NOX::Abstract::MultiVector::DenseMatrix M(*CC);
     int *ipiv = new int[M.numRows()];
-    Teuchos::LAPACK<int,double> L;
     int info;
     
     Y.assign(*G);
-    L.GESV(M.numRows(), Y.numCols(), M.values(), M.stride(), ipiv, 
-	   Y.values(), Y.stride(), &info);
+    dlapack.GESV(M.numRows(), Y.numCols(), M.values(), M.stride(), ipiv, 
+		 Y.values(), Y.stride(), &info);
     delete [] ipiv;
     if (info != 0) {
       status = NOX::Abstract::Group::Failed;

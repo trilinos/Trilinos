@@ -39,6 +39,8 @@
 #include "NOX_Common.H"                // for string data member
 #include "NOX_Abstract_MultiVector.H"  // for DenseMatrix
 
+#include "Teuchos_LAPACK.hpp" // class data element
+
 // Forward declarations
 namespace LOCA {
   class GlobalData;
@@ -324,6 +326,9 @@ namespace LOCA {
 
       //! Flag indicating whether to use transpose of operator
       bool useTranspose;
+
+      //! LAPACK Wrappers
+      Teuchos::LAPACK<int,double> dlapack;
 
     };
   } // namespace Epetra

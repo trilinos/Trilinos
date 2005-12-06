@@ -36,6 +36,7 @@
 #include "LOCA_BorderedSystem_AbstractStrategy.H"  // base class
 
 #include "Teuchos_BLAS.hpp" // class data element
+#include "Teuchos_LAPACK.hpp" // class data element
 
 // forward declarations
 namespace LOCA {
@@ -453,6 +454,9 @@ namespace LOCA {
 
       //! BLAS Wrappers
       Teuchos::BLAS<int,double> dblas;
+
+      //! LAPACK Wrappers
+      Teuchos::LAPACK<int,double> dlapack;
 
     };
   } // namespace BorderedSystem

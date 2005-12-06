@@ -35,6 +35,7 @@
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
 #include "LOCA_LAPACK.H"
+#include "NOX_LAPACK_Wrappers.H"
 
 LOCA::BorderedSystem::LAPACKDirectSolve::LAPACKDirectSolve(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,

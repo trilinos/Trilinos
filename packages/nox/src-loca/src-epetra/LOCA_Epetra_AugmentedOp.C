@@ -238,7 +238,6 @@ LOCA::Epetra::AugmentedOp::ApplyInverse(const Epetra_MultiVector& Input,
   }
 
   // Solve (c - z^T*tmp1)^-1 * (input_y - z^T*result_x)  where z = a or b
-  Teuchos::LAPACK<int,double> L;
   int *ipiv = new int[numConstraints];
   int info;
   double *result_y_view; 
@@ -247,8 +246,8 @@ LOCA::Epetra::AugmentedOp::ApplyInverse(const Epetra_MultiVector& Input,
   double *tmp2_view;
   int tmp2_lda;
   tmp2.ExtractView(&tmp2_view, &tmp2_lda);
-  L.GESV(numConstraints, n, tmp2_view, tmp2_lda, ipiv, result_y_view, 
-	 result_y_lda, &info);
+  dlapack.GESV(numConstraints, n, tmp2_view, tmp2_lda, ipiv, result_y_view, 
+	       result_y_lda, &info);
   delete [] ipiv;
   if (info != 0) {
     globalData->locaErrorCheck->throwError(
