@@ -133,6 +133,15 @@ namespace Anasazi {
     //@}
   private:
     //
+    // Convenience typedefs
+    //
+    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef OperatorTraits<ScalarType,MV,OP> OPT;
+    typedef Teuchos::ScalarTraits<ScalarType> SCT;
+    typedef typename SCT::magnitudeType MagnitudeType;
+    typedef typename std::vector<ScalarType>::iterator STiter;
+    typedef typename std::vector<MagnitudeType>::iterator MTiter;
+    //
     // Internal methods
     //
     void accuracyCheck(const MV *X, const MV *MX,
@@ -158,9 +167,10 @@ namespace Anasazi {
     // Internal data.
     //
     const int _maxIter, _blockSize;
-    const ScalarType _residual_tolerance;
+    const MagnitudeType _residual_tolerance;
     int _numRestarts, _iter, _knownEV, _nevLocal;
-    std::vector<ScalarType> _theta, _normR, _resids;
+    std::vector<ScalarType> _theta;
+    std::vector<MagnitudeType> _normR, _resids;
     bool _error_flg;
     //
     // Internal utilities class required by eigensolver.
@@ -184,11 +194,6 @@ namespace Anasazi {
     // Counters
     //
     int _count_ApplyOp, _count_ApplyM, _count_ApplyPrec;
-    //
-    // Convenience typedefs
-    //
-    typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef OperatorTraits<ScalarType,MV,OP> OPT;
   };
   //
   // Implementation
@@ -803,9 +808,11 @@ namespace Anasazi {
       // Count the converged eigenvectors
       _nFound = 0;
       for (j = 0; j < _blockSize; ++j) {
-        _normR[j] = (_theta[j] == 0.0) ? _normR[j] : _normR[j]/_theta[j];
-        if (_normR[j] < _residual_tolerance) 
+        _normR[j] = (_theta[j] == 0.0) ? _normR[j] : _normR[j]/SCT::magnitude(_theta[j]);
+
+        if (_normR[j] < _residual_tolerance) {
           _nFound ++;
+        }
       }
       
       // Store the residual history
@@ -902,52 +909,46 @@ namespace Anasazi {
           localSize += _blockSize;
         continue;
       } // if (_nFound == 0)      
-          
+
+
       // Order the Ritz eigenvectors by putting the converged vectors at the beginning
       int firstIndex = _blockSize;
-      for (j = 0; j < _blockSize; ++j) {
+      for (j = 0; j < _blockSize; j++) {
         if (_normR[j] >= _residual_tolerance) {
           firstIndex = j;
           break;
         }
-      } // for (j = 0; j < _blockSize; ++j)
+      } // for (j = 0; j < _blockSize; j++)
       //
       // If the firstIndex comes before the number found, then we need
       // to move the converged eigenvectors to the front of the spectral
       // transformation.
       //
-      
-      ScalarType tmp_swap;
-      std::vector<ScalarType> tmp_swap_vec(localSize);
+
       while (firstIndex < _nFound) {
-        for (j = firstIndex; j < _blockSize; ++j) {
+        for (j = firstIndex; j < _blockSize; j++) {
           if (_normR[j] < _residual_tolerance) {
             //
             // Swap and j-th and firstIndex-th position
             //
-            blas.COPY(localSize, S[ j ], 1, &tmp_swap_vec[0], 1);
-            blas.COPY(localSize, S[ firstIndex ], 1, S[ j ], 1 );
-            blas.COPY(localSize, &tmp_swap_vec[0], 1, S[ firstIndex ], 1 );
+            std::swap_ranges<ScalarType*,ScalarType*>(S[j],S[j]+localSize,S[firstIndex]);
 
             // Swap _theta
-            tmp_swap = _theta[j];
-            _theta[j] = _theta[firstIndex];
-            _theta[firstIndex] = tmp_swap;
-
+            std::swap<ScalarType>(_theta[j],_theta[firstIndex]);
+            
             // Swap _normR
-            tmp_swap = _normR[j];
-            _normR[j] = _normR[firstIndex];
-            _normR[firstIndex] = tmp_swap;
+            std::swap<MagnitudeType>(_normR[j],_normR[firstIndex]);
             break;
           }
         }
-        for (j = 0; j < _blockSize; ++j) {
+        for (j = 0; j < _blockSize; j++) {
           if (_normR[j] >= _residual_tolerance) {
             firstIndex = j;
             break;
           }
-        } // for (j = 0; j < _blockSize; ++j)
+        } // for (j = 0; j < _blockSize; j++)
       } // while (firstIndex < _nFound)      
+
 
       //
       // Copy the converged eigenvalues and residuals.
@@ -957,9 +958,16 @@ namespace Anasazi {
         if ( _knownEV + _nFound  > _nev ) {
           leftOver = _knownEV + _nFound - _nev;
         }
-        blas.COPY( _nFound-leftOver, &_theta[0], 1, &(*_evals)[_knownEV], 1 ); 
-        blas.COPY( _nFound-leftOver, &_normR[0], 1, &_resids[_knownEV], 1 );
+        // Copy first _nFound-leftOver elements in _theta to range
+        // [_knownEV,_knownEV+_nFound-leftOver) in *_evals
+        std::copy<STiter,STiter>(_theta.begin(),_theta.begin()+_nFound-leftOver,
+                                 _evals->begin()+_knownEV);
+        // Copy first _nFound-leftOver elements in _normR to range
+        // [_knownEV,_knownEV+_nFound-leftOver) in _resids
+        std::copy<MTiter,MTiter>(_normR.begin(),_normR.begin()+_nFound-leftOver,
+                                 _resids.begin()+_knownEV);
       }
+
 
       //
       // Compute and store the converged eigenvectors 

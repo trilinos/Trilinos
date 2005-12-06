@@ -49,6 +49,7 @@
 #include "AnasaziOperatorTraits.hpp"
 #include "AnasaziOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 namespace Anasazi {
 
@@ -56,6 +57,8 @@ namespace Anasazi {
   class ModalSolverUtils 
   {  
   public:
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+    typedef typename Teuchos::ScalarTraits<ScalarType>  SCT;
     
     //@{ \name Constructor/Destructor
 
@@ -75,10 +78,10 @@ namespace Anasazi {
     int sortScalars(int n, ScalarType *y, int *perm = 0) const;
     
     //! Sort the vector of eigenvalues \c lambda, and optionally the corresponding multi-vector \c Q and residual vector \c resids. 
-    int sortScalars_Vectors(int n, ScalarType* lambda, MV* Q, std::vector<ScalarType>* resids = 0) const;
+    int sortScalars_Vectors(int n, ScalarType* lambda, MV* Q, std::vector<MagnitudeType>* resids = 0) const;
 
     //! Permute the vectors according to the permutation vector \c perm, and optionally the residual vector \c resids
-    int permuteVectors(const int n, const std::vector<int> &perm, MV &Q, std::vector<ScalarType>* resids = 0) const;
+    int permuteVectors(const int n, const std::vector<int> &perm, MV &Q, std::vector<MagnitudeType>* resids = 0) const;
 
     //@} 
 
@@ -149,17 +152,17 @@ namespace Anasazi {
     //! Return the maximum value of \f$R_i^T M X_j / || MR_i || || X_j ||\f$
     /*! \note When \c M is not specified, the identity is used.
      */
-    ScalarType errorOrthogonality(const MV *X, const MV *R, const OP *M = 0) const;
+    MagnitudeType errorOrthogonality(const MV *X, const MV *R, const OP *M = 0) const;
     
     //! Return the maximum coefficient of the matrix \f$X^T M X - I\f$
     /*! \note When M is not specified, the identity is used.
      */
-    ScalarType errorOrthonormality(const MV *X, const OP *M = 0) const;
+    MagnitudeType errorOrthonormality(const MV *X, const OP *M = 0) const;
     
     //! Return the maximum coefficient of the matrix \f$M * X - MX\f$ scaled by the maximum coefficient of \c MX.
     /*! \note When \c M is not specified, the identity is used.
      */
-    ScalarType errorEquality(const MV *X, const MV *MX, const OP *M = 0) const;
+    MagnitudeType errorEquality(const MV *X, const MV *MX, const OP *M = 0) const;
     
     //@}
     
@@ -246,7 +249,7 @@ namespace Anasazi {
   
   template<class ScalarType, class MV, class OP>
   int ModalSolverUtils<ScalarType, MV, OP>::sortScalars_Vectors( int n, ScalarType *lambda, MV *Q, 
-                                                                 std::vector<ScalarType> *resids ) const
+                                                                 std::vector<MagnitudeType> *resids ) const
   {
     // This routines sorts the scalars (stored in lambda) in ascending order.
     // The associated vectors (stored in Q) are accordingly ordered.
@@ -269,15 +272,11 @@ namespace Anasazi {
             if (lambda[j] > lambda[j+igap]) {
 
               // Swap two scalars
-              tmp = lambda[j];
-              lambda[j] = lambda[j+igap];
-              lambda[j+igap] = tmp;
+              std::swap<ScalarType>(lambda[j],lambda[j+igap]);
 
               // Swap residuals (if they exist)
               if (resids) {
-                tmp = (*resids)[j];
-                (*resids)[j] = (*resids)[j+igap];
-                (*resids)[j+igap] = tmp;
+                std::swap<MagnitudeType>((*resids)[j],(*resids)[j+igap]);
               }
 
               // Swap corresponding vectors
@@ -303,15 +302,11 @@ namespace Anasazi {
           for (j=i-igap; j>=0; j-=igap) {
             if (lambda[j] > lambda[j+igap]) {
               // Swap two scalars
-              tmp = lambda[j];
-              lambda[j] = lambda[j+igap];
-              lambda[j+igap] = tmp;
+              std::swap<ScalarType>(lambda[j],lambda[j+igap]);
               
               // Swap residuals (if they exist)
               if (resids) {
-                tmp = (*resids)[j];
-                (*resids)[j] = (*resids)[j+igap];
-                (*resids)[j+igap] = tmp;
+                std::swap<MagnitudeType>((*resids)[j],(*resids)[j+igap]);
               }              
             } 
             else {
@@ -331,7 +326,7 @@ namespace Anasazi {
               const int n,
               const std::vector<int> &perm, 
               MV &Q, 
-              std::vector<ScalarType>* resids) const
+              std::vector<MagnitudeType>* resids) const
   {
     // Permute the vectors according to the permutation vector \c perm, and
     // optionally the residual vector \c resids
@@ -339,8 +334,6 @@ namespace Anasazi {
     int i, j;
     std::vector<int> permcopy(perm), swapvec(n-1);
     std::vector<int> index(1);
-    int tmpi;
-    ScalarType tmp;
     ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
@@ -368,9 +361,7 @@ namespace Anasazi {
       }
 
       // Swap two scalars
-      tmpi = permcopy[j];
-      permcopy[j] = permcopy[i];
-      permcopy[i] = tmpi;
+      std::swap<int>( permcopy[j], permcopy[i] );
 
       swapvec[i] = j;
     }
@@ -384,9 +375,7 @@ namespace Anasazi {
 
       // Swap residuals (if they exist)
       if (resids) {
-        tmp = (*resids)[j];
-        (*resids)[j] = (*resids)[i];
-        (*resids)[i] = tmp;
+        std::swap<MagnitudeType>(  (*resids)[i], (*resids)[j] );
       }
 
       // Swap corresponding vectors
@@ -524,7 +513,7 @@ namespace Anasazi {
       int j;
       for (j = 0; j < xc; ++j) {
         
-        if (kappa*newDot[j] < oldDot[j]) {
+        if ( SCT::magnitude(kappa*newDot[j]) < SCT::magnitude(oldDot[j]) ) {
           
           // Apply another step of classical Gram-Schmidt
           //timeQtMult -= MyWatch.WallTime();
@@ -655,7 +644,7 @@ namespace Anasazi {
             //
             // Check if a correction is needed.
             //
-            if (kappa*newDot[0] < oldDot[0]) {
+            if ( SCT::magnitude(kappa*newDot[0]) < SCT::magnitude(oldDot[0]) ) {
               //
               // Apply the second step of Gram-Schmidt
               //
@@ -685,10 +674,11 @@ namespace Anasazi {
           //
           MVT::MvDot( *Xj, *oldMXj, &newDot );
           
-          if (newDot[0] > oldDot[0]*eps*eps) {
+          if ( SCT::magnitude(newDot[0]) > SCT::magnitude(oldDot[0]*eps*eps) ) {
             MVT::MvAddMv( one/Teuchos::ScalarTraits<ScalarType>::squareroot(newDot[0]), *Xj, zero, *Xj, *Xj );
-            if (M)
+            if (M) {
               MVT::MvAddMv( one/Teuchos::ScalarTraits<ScalarType>::squareroot(newDot[0]), *MXj, zero, *MXj, *MXj );
+            }
             rankDef = false;
             break;
           }
@@ -783,10 +773,11 @@ namespace Anasazi {
     int NB = 5 + lapack.ILAENV(1, lapack_name, lapack_opts, size, -1, -1, -1);
     int lwork = size*NB;
     std::vector<ScalarType> work(lwork);
+    std::vector<MagnitudeType> rwork(3*size-2);
     std::vector<ScalarType> tt( size );
     
     //  ScalarType tol = sqrt(eps);
-    ScalarType tol = 1e-12;
+    MagnitudeType tol = 1e-12;
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
 
@@ -812,15 +803,16 @@ namespace Anasazi {
         // Solve the generalized eigenproblem with LAPACK
         //
         info = 0;
-        lapack.SYGV(1, 'V', 'U', rank, KKcopy->values(), KKcopy->stride(), 
-                    MMcopy->values(), MMcopy->stride(), &tt[0], &work[0], lwork, &info);
+        lapack.HEGV(1, 'V', 'U', rank, KKcopy->values(), KKcopy->stride(), 
+                    MMcopy->values(), MMcopy->stride(), &tt[0], &work[0], lwork,
+                    &rwork[0], &info);
         //
         // Treat error messages
         //
         if (info < 0) {
           //            if (verbose > 0) {
           cerr << endl;
-          cerr << " In DSYGV, argument " << -info << "has an illegal value.\n";
+          cerr << " In HEGV, argument " << -info << "has an illegal value.\n";
           cerr << endl;
           //}
           return -20;
@@ -845,16 +837,16 @@ namespace Anasazi {
         MMcopy2.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*KKcopy,*U,zero);
         //blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS, rank, rank, size, one, KKcopy->values(), KKcopy->stride(), 
         //          U->values(), U->stride(), zero, MMcopy2.values(), MMcopy2.stride());
-        ScalarType maxNorm = zero;
-        ScalarType maxOrth = zero;
+        MagnitudeType maxNorm = SCT::magnitude(zero);
+        MagnitudeType maxOrth = SCT::magnitude(zero);
         for (i = 0; i < rank; ++i) {
           for (j = i; j < rank; ++j) {
             if (j == i)
-              maxNorm = (Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)-one) > maxNorm) 
-                ? Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)-one) : maxNorm;            
+              maxNorm = (SCT::magnitude(MMcopy2(i,j)-one) > maxNorm) 
+                ? SCT::magnitude(MMcopy2(i,j)-one) : maxNorm;            
             else 
-              maxOrth = (Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)) > maxOrth)
-                ? Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)) : maxOrth;
+              maxOrth = (SCT::magnitude(MMcopy2(i,j)) > maxOrth)
+                ? SCT::magnitude(MMcopy2(i,j)) : maxOrth;
           }
         }
         /*        if (verbose > 4) {
@@ -896,15 +888,16 @@ namespace Anasazi {
       // Solve the generalized eigenproblem with LAPACK
       //
       info = 0;
-      lapack.SYGV(1, 'V', 'U', size, KKcopy->values(), KKcopy->stride(), 
-                  MMcopy->values(), MMcopy->stride(), &tt[0], &work[0], lwork, &info);
+      lapack.HEGV(1, 'V', 'U', size, KKcopy->values(), KKcopy->stride(), 
+                  MMcopy->values(), MMcopy->stride(), &tt[0], &work[0], lwork,
+                  &rwork[0], &info);
       //
       // Treat error messages
       //
       if (info < 0) {
         //if (verbose > 0) {
         cerr << endl;
-        cerr << " In DSYGV, argument " << -info << "has an illegal value.\n";
+        cerr << " In HEGV, argument " << -info << "has an illegal value.\n";
         cerr << endl;
         //      }
         return -20;
@@ -915,7 +908,7 @@ namespace Anasazi {
         else {
           //        if (verbose > 0) {
           cerr << endl;
-          cerr << " In DSYGV, DPOTRF or DSYEV returned an error code (" << info << ").\n";
+          cerr << " In HEGV, DPOTRF or DHEEV returned an error code (" << info << ").\n";
           cerr << endl;
           //          }
           return -20; 
@@ -941,16 +934,16 @@ namespace Anasazi {
       //
       // Solve the generalized eigenproblem with LAPACK
       //
-      lapack.SYEV('V', 'U', size, KKcopy->values(), KKcopy->stride(), &tt[0], &work[0], lwork, &info);
+      lapack.HEEV('V', 'U', size, KKcopy->values(), KKcopy->stride(), &tt[0], &work[0], lwork, &rwork[0], &info);
       //
       // Treat error messages
       if (info != 0) {
         //      if (verbose > 0) {
         cerr << endl;
         if (info < 0) 
-          cerr << " In DSYEV, argument " << -info << " has an illegal value\n";
+          cerr << " In DHEEV, argument " << -info << " has an illegal value\n";
         else
-          cerr << " In DSYEV, the algorithm failed to converge (" << info << ").\n";
+          cerr << " In DHEEV, the algorithm failed to converge (" << info << ").\n";
         cerr << endl;
         //}
         info = -20;
@@ -980,23 +973,24 @@ namespace Anasazi {
   //-----------------------------------------------------------------------------
 
   template<class ScalarType, class MV, class OP>
-  ScalarType ModalSolverUtils<ScalarType, MV, OP>::errorOrthogonality(const MV *X, const MV *R, 
+  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType ModalSolverUtils<ScalarType, MV, OP>::errorOrthogonality(const MV *X, const MV *R, 
                                                                       const OP *M) const
   {
     // Return the maximum value of R_i^T * M * X_j / || MR_i || || X_j ||
     // When M is not specified, the identity is used.
-    ScalarType maxDot = Teuchos::ScalarTraits<ScalarType>::zero();
+    MagnitudeType maxDot = SCT::magnitude(SCT::zero());
     
     int xc = (X) ? MVT::GetNumberVecs( *X ) : 0;
     int rc = (R) ? MVT::GetNumberVecs( *R ) : 0;
     
-    if (xc*rc == 0)
+    if (xc*rc == 0) {
       return maxDot;
+    }
     
     int i, j;
     Teuchos::RefCountPtr<MV> MR;
-    std::vector<ScalarType> normMR( rc );
-    std::vector<ScalarType> normX( xc );
+    std::vector<MagnitudeType> normMR( rc );
+    std::vector<MagnitudeType> normX( xc );
     if (M) {
       MR = MVT::Clone( *R, rc );
       OPT::Apply( *M, *R, *MR );
@@ -1007,40 +1001,43 @@ namespace Anasazi {
     MVT::MvNorm( *MR, &normMR );
     MVT::MvNorm( *X, &normX );
 
-    ScalarType dot = Teuchos::ScalarTraits<ScalarType>::zero();
+    MagnitudeType dot = SCT::magnitude(SCT::zero());
     Teuchos::SerialDenseMatrix<int, ScalarType> xTMr( xc, rc );
     MVT::MvTransMv( 1.0, *X, *MR, xTMr );    
     for (i = 0; i < xc; ++i) {
       for (j = 0; j < rc; ++j) {
-        dot = Teuchos::ScalarTraits<ScalarType>::magnitude(xTMr(i,j))/(normMR[j]*normX[i]);
+        dot = SCT::magnitude(xTMr(i,j)) / (normMR[j]*normX[i]);
         maxDot = (dot > maxDot) ? dot : maxDot;
       }
     }
     
     return maxDot;
   }
-  
+
   template<class ScalarType, class MV, class OP>
-  ScalarType ModalSolverUtils<ScalarType, MV, OP>::errorOrthonormality(const MV *X, const OP *M) const
+  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType ModalSolverUtils<ScalarType, MV, OP>::errorOrthonormality(const MV *X, const OP *M) const
   {
     // Return the maximum coefficient of the matrix X^T * M * X - I
     // When M is not specified, the identity is used.
-    ScalarType maxDot = Teuchos::ScalarTraits<ScalarType>::zero();
-    ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+    MagnitudeType maxDot = SCT::magnitude(SCT::zero());
+    MagnitudeType one = SCT::magnitude(SCT::one());
     
     int xc = (X) ? MVT::GetNumberVecs( *X ) : 0;
-    if (xc == 0)
+    if (xc == 0) {
       return maxDot;
+    }
     
     int i, j;
     std::vector<int> index( 1 );
     std::vector<ScalarType> dot( 1 );
+    MagnitudeType tmpdot;
     Teuchos::RefCountPtr<MV> MXi;
     Teuchos::RefCountPtr<const MV> Xi;
 
     // Create space if there is a M matrix specified.
-    if (M)
+    if (M) {
       MXi = MVT::Clone( *X, 1 );
+    }
 
     for (i = 0; i < xc; ++i) {
       index[0] = i;
@@ -1055,33 +1052,34 @@ namespace Anasazi {
         index[0] = j;
         Xi = MVT::CloneView( *X, index );
         MVT::MvDot( *Xi, *MXi, &dot );
-        dot[0] = (i == j) ? fabs(dot[0] - one) : fabs(dot[0]);
-        maxDot = (dot[0] > maxDot) ? dot[0] : maxDot;
+        tmpdot = (i == j) ? SCT::magnitude(dot[0] - one) : SCT::magnitude(dot[0]);
+        maxDot = (tmpdot > maxDot) ? tmpdot : maxDot;
       }
     }
     
     return maxDot;    
   }
-  
+
   template<class ScalarType, class MV, class OP>
-  ScalarType ModalSolverUtils<ScalarType, MV, OP>::errorEquality(const MV *X, const MV *MX, 
+  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType ModalSolverUtils<ScalarType, MV, OP>::errorEquality(const MV *X, const MV *MX, 
                                                                  const OP *M) const
   {
     // Return the maximum coefficient of the matrix M * X - MX
     // scaled by the maximum coefficient of MX.
     // When M is not specified, the identity is used.
     
-    ScalarType maxDiff = Teuchos::ScalarTraits<ScalarType>::zero();
+    MagnitudeType maxDiff = SCT::magnitude(SCT::zero());
     
     int xc = (X) ? MVT::GetNumberVecs( *X ) : 0;
     int mxc = (MX) ? MVT::GetNumberVecs( *MX ) : 0;
     
-    if ((xc != mxc) || (xc*mxc == 0))
+    if ((xc != mxc) || (xc*mxc == 0)) {
       return maxDiff;
+    }
     
     int i;
-    ScalarType maxCoeffX = Teuchos::ScalarTraits<ScalarType>::zero();
-    std::vector<ScalarType> tmp( xc );
+    MagnitudeType maxCoeffX = SCT::magnitude(SCT::zero());
+    std::vector<MagnitudeType> tmp( xc );
     MVT::MvNorm( *MX, &tmp );
 
     for (i = 0; i < xc; ++i) {

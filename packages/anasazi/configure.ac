@@ -452,6 +452,7 @@ AC_CONFIG_FILES([
 		test/MVOPComplex/Makefile
 		test/MVOPTester/Makefile
 		test/LOBPCG/Makefile
+		test/LOBPCGComplex/Makefile
 		test/MVOPTpetra/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
@@ -463,17 +464,17 @@ AC_CONFIG_FILES([
 		thyra/test/Makefile
 		thyra/example/MVOPTester/Makefile
 		thyra/test/MVOPTester/Makefile
-                thyra/test/LOBPCG/Makefile
-                thyra/test/BlockKrylovSchur/Makefile
-                thyra/test/BlockDavidson/Makefile
-                python/Makefile
-                python/src/Makefile
-                python/src/TRILINOS_HOME_DIR
-                python/src/__init__.py
-                python/src/.deps/dummy
-                python/test/Makefile
-                python/example/Makefile
-	        ])
+		thyra/test/LOBPCG/Makefile
+		thyra/test/BlockKrylovSchur/Makefile
+		thyra/test/BlockDavidson/Makefile
+		python/Makefile
+		python/src/Makefile
+		python/src/TRILINOS_HOME_DIR
+		python/src/__init__.py
+		python/src/.deps/dummy
+		python/test/Makefile
+		python/example/Makefile
+		])
 
 AC_OUTPUT()
 
