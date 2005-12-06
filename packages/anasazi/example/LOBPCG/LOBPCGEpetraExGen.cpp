@@ -68,6 +68,30 @@ int main(int argc, char *argv[])
 #endif
   
   int MyPID = Comm.MyPID();
+
+  // Create an output manager to handle the I/O from the solver
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
+    Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
+  MyOM->SetVerbosity( Anasazi::FinalSummary );  
+
+  std::string which;
+  if (argc > 1) {
+    which = argv[1];
+  }
+  else {
+    which = "SM";
+  }
+  if ( which != "SM" && which != "LM" && which != "SR" && which != "LR" ) {
+    if (MyOM->doPrint()) {
+      std::cout << "Usage: " << argv[0] << " [sort string]" << endl
+        << "where:" << endl
+        << "sort string       - SM | LM | SR | LR" << endl << endl;
+    }
+#ifdef EPETRA_MPI
+    MPI_Finalize() ;
+#endif
+    return -1;
+  }
   
   Anasazi::ReturnType returnCode = Anasazi::Ok;  
 
@@ -87,20 +111,7 @@ int main(int argc, char *argv[])
   elements[0] = 10;
   elements[1] = 10;
   
-  // Create default output manager 
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-
-  // Set verbosity level
-  MyOM->SetVerbosity( Anasazi::FinalSummary );
-
   // Create the sort manager
-  std::string which;
-  if (argc > 1) {
-    which = argv[1];
-  }
-  else {
-    which = "SM";
-  }
   Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
      Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
 
@@ -154,6 +165,9 @@ int main(int argc, char *argv[])
 
   // Check that the solver returned Ok, if not exit example
   if (returnCode != Anasazi::Ok) {
+#ifdef EPETRA_MPI
+    MPI_Finalize() ;
+#endif
     return -1;
   }
   

@@ -62,6 +62,30 @@ int main(int argc, char *argv[]) {
 
   int MyPID = Comm.MyPID();
 
+  // Create an output manager to handle the I/O from the solver
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
+    Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
+  MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary );  
+
+  std::string which;
+  if (argc > 1) {
+    which = argv[1];
+  }
+  else {
+    which = "SM";
+  }
+  if ( which != "SM" && which != "LM" && which != "SR" && which != "LR" ) {
+    if (MyOM->doPrint()) {
+      std::cout << "Usage: " << argv[0] << " [sort string]" << endl
+        << "where:" << endl
+        << "sort string       - SM | LM | SR | LR" << endl << endl;
+    }
+#ifdef EPETRA_MPI
+    MPI_Finalize() ;
+#endif
+    return -1;
+  }
+
   //  Dimension of the matrix
   int nx = 10;        // Discretization points in any one direction.
   int NumGlobalElements = nx*nx;  // Size of matrix nx*nx
@@ -76,7 +100,7 @@ int main(int argc, char *argv[]) {
   int NumMyElements = Map.NumMyElements();
 
   std::vector<int> MyGlobalElements(NumMyElements);
-      Map.MyGlobalElements(&MyGlobalElements[0]);
+  Map.MyGlobalElements(&MyGlobalElements[0]);
 
   // Create an integer vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
@@ -97,13 +121,16 @@ int main(int argc, char *argv[]) {
 
   for (i=0; i<NumMyElements; i++) {
     if (MyGlobalElements[i] == 0 || MyGlobalElements[i] == NumGlobalElements-1 || 
-        MyGlobalElements[i] == nx-1 || MyGlobalElements[i] == nx*(nx-1) )
+        MyGlobalElements[i] == nx-1 || MyGlobalElements[i] == nx*(nx-1) ) {
       NumNz[i] = 3;
+    }
     else if (MyGlobalElements[i] < nx || MyGlobalElements[i] > nx*(nx-1) || 
-                         MyGlobalElements[i]%nx == 0 || (MyGlobalElements[i]+1)%nx == 0)
+             MyGlobalElements[i]%nx == 0 || (MyGlobalElements[i]+1)%nx == 0) {
       NumNz[i] = 4;
-    else
+    }
+    else {
       NumNz[i] = 5;
+    }
   }
 
   // Create an Epetra_Matrix
@@ -125,7 +152,7 @@ int main(int argc, char *argv[]) {
   Values[0] = -one/h2 - c; Values[1] = -one/h2 + c; Values[2] = -one/h2; Values[3]= -one/h2;
   double diag = 4.0 / h2;
   int NumEntries;
-  
+
   for (i=0; i<NumMyElements; i++)
   {
     if (MyGlobalElements[i]==0)
@@ -166,20 +193,20 @@ int main(int argc, char *argv[]) {
     }
     else if (MyGlobalElements[i] < nx)
     {
-                        Indices[0] = MyGlobalElements[i]-1;
-                        Indices[1] = MyGlobalElements[i]+1;
+      Indices[0] = MyGlobalElements[i]-1;
+      Indices[1] = MyGlobalElements[i]+1;
       Indices[2] = MyGlobalElements[i]+nx;
-                        NumEntries = 3;
-                        info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
+      NumEntries = 3;
+      info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
       assert( info==0 );
     }
     else if (MyGlobalElements[i] > nx*(nx-1))
     {
-                        Indices[0] = MyGlobalElements[i]-1;
-                        Indices[1] = MyGlobalElements[i]+1;
+      Indices[0] = MyGlobalElements[i]-1;
+      Indices[1] = MyGlobalElements[i]+1;
       Indices[2] = MyGlobalElements[i]-nx;
-                        NumEntries = 3;
-                        info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
+      NumEntries = 3;
+      info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
       assert( info==0 );
     }
     else if (MyGlobalElements[i]%nx == 0)
@@ -194,13 +221,13 @@ int main(int argc, char *argv[]) {
     else if ((MyGlobalElements[i]+1)%nx == 0)
     {
       Indices[0] = MyGlobalElements[i]-nx;
-                        Indices[1] = MyGlobalElements[i]+nx;
-                        NumEntries = 2;
-                        info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
+      Indices[1] = MyGlobalElements[i]+nx;
+      NumEntries = 2;
+      info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
       assert( info==0 );
-                        Indices[0] = MyGlobalElements[i]-1;
-                        NumEntries = 1;
-                        info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
+      Indices[0] = MyGlobalElements[i]-1;
+      NumEntries = 1;
+      info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
       assert( info==0 );
     }
     else
@@ -235,7 +262,6 @@ int main(int argc, char *argv[]) {
   int maxRestarts = 500;
   //  int step = 1;
   double tol = 1e-8;
-  string which="SM";  
   //
   // Create parameter list to pass into solver
   //
@@ -266,18 +292,14 @@ int main(int argc, char *argv[]) {
   MyProblem->SetNEV( nev );
   
   // Inform the eigenproblem that you are finishing passing it information
-        info = MyProblem->SetProblem();
-  if (info)
+  info = MyProblem->SetProblem();
+  if (info) {
     cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+  }
   
   // Create a sorting manager to handle the sorting of eigenvalues in the solver
   Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 
     Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
-
-  // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
-    Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-  MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary );  
 
   // Initialize the Block Arnoldi solver
   Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
@@ -286,8 +308,9 @@ int main(int argc, char *argv[]) {
   returnCode = MySolver.solve();
   
   // Check that the solver returned OK, if not exit example
-  if (returnCode != Anasazi::Ok)
-        return -1;
+  if (returnCode != Anasazi::Ok) {
+    return -1;
+  }
 
   // Retrieve eigenvalues
   Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
@@ -304,11 +327,11 @@ int main(int argc, char *argv[]) {
 
   // Get imaginary part, if needed.
   if (MyProblem->IsSymmetric()) {
-          evecr = evecs;
-        }
-        else {
-          evecr = Teuchos::rcp( new Epetra_MultiVector( View, *evecs, 0, nev ) );
-          eveci = Teuchos::rcp( new Epetra_MultiVector( View, *evecs, nev, nev ) );    
+    evecr = evecs;
+  }
+  else {
+    evecr = Teuchos::rcp( new Epetra_MultiVector( View, *evecs, 0, nev ) );
+    eveci = Teuchos::rcp( new Epetra_MultiVector( View, *evecs, nev, nev ) );    
   }    
   
   // Compute residuals.
@@ -319,13 +342,15 @@ int main(int argc, char *argv[]) {
   std::vector<double> normA(nev);
   std::vector<double> tempnrm(nev);
   Breal.putScalar(0.0); 
-  if (!MyProblem->IsSymmetric())
+  if (!MyProblem->IsSymmetric()) {
     Bimag.putScalar(0.0);
+  }
   for (i=0; i<nev; i++) { 
     normA[i] = 0.0;
     Breal(i,i) = (*evals)[i]; 
-    if (!MyProblem->IsSymmetric())
+    if (!MyProblem->IsSymmetric()) {
       Bimag(i,i) = (*evals)[nev+i]; 
+    }
   }
   A->Apply( *evecr, tempAevec );
   MVT::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, tempAevec );
@@ -341,20 +366,23 @@ int main(int argc, char *argv[]) {
   while (i < nev) {
     normA[i] = lapack.LAPY2( normA[i], tempnrm[i] );
     if (MyProblem->IsSymmetric()) {
-      if ((*evals)[i] != zero)
+      if ((*evals)[i] != zero) {
         normA[i] /= Teuchos::ScalarTraits<double>::magnitude((*evals)[i]);
+      }
       i++;
-    } else {
+    } 
+    else {
       normA[i] /= lapack.LAPY2( (*evals)[i], (*evals)[nev+i] );
       if ((*evals)[nev + i] != zero) {
         normA[i+1] = normA[i];
         i = i+2;
-      } else {
+      } 
+      else {
         i++;
       }
     }
   }
-        if (MyOM->doPrint()) {
+  if (MyOM->doPrint()) {
     cout<<endl<< "Actual Residuals"<<endl;
     cout<<"------------------------------------------------------"<<endl;
     if (MyProblem->IsSymmetric()) {
@@ -364,7 +392,8 @@ int main(int argc, char *argv[]) {
         cout<< (*evals)[i] << "\t\t"<< normA[i] << endl;
       }  
       cout<<"------------------------------------------------------"<<endl;
-    } else {
+    } 
+    else {
       cout<<"Real Part"<<"\t"<<"Imag Part"<<"\t"<<"Direct Residual"<<endl;
       cout<<"------------------------------------------------------"<<endl;
       for (i=0; i<nev; i++) {

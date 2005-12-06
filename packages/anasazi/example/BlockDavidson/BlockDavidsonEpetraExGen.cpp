@@ -61,9 +61,33 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
   
-  int MyPID = Comm.MyPID();
-  
   Anasazi::ReturnType returnCode = Anasazi::Ok;  
+  
+  int MyPID = Comm.MyPID();
+
+  // Create an output manager to handle the I/O from the solver
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
+    Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
+  MyOM->SetVerbosity( Anasazi::FinalSummary );  
+
+  std::string which;
+  if (argc > 1) {
+    which = argv[1];
+  }
+  else {
+    which = "SM";
+  }
+  if ( which != "SM" && which != "LM" && which != "SR" && which != "LR" ) {
+    if (MyOM->doPrint()) {
+      std::cout << "Usage: " << argv[0] << " [sort string]" << endl
+        << "where:" << endl
+        << "sort string       - SM | LM | SR | LR" << endl << endl;
+    }
+#ifdef EPETRA_MPI
+    MPI_Finalize() ;
+#endif
+    return -1;
+  }
 
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
@@ -81,12 +105,6 @@ int main(int argc, char *argv[])
   elements[0] = 10;
   elements[1] = 10;
   
-  // Create default output manager 
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-
-  // Set verbosity level
-  MyOM->SetVerbosity( Anasazi::FinalSummary );
-
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
   
@@ -129,13 +147,7 @@ int main(int argc, char *argv[])
     cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
 
   // Create the sort manager
-  std::string which;
-  if (argc > 1) {
-    which = argv[1];
-  }
-  else {
-    which = "SM";
-  }
+
   Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
      Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
   
@@ -161,8 +173,9 @@ int main(int argc, char *argv[])
   // Compute the direct residual
   std::vector<double> normV( evecs->NumVectors() );
   Teuchos::SerialDenseMatrix<int,double> T(evecs->NumVectors(), evecs->NumVectors());
-  for (int i=0; i<evecs->NumVectors(); i++)
+  for (int i=0; i<evecs->NumVectors(); i++) {
     T(i,i) = (*evals)[i];
+  }
   Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
   K->Apply( *evecs, Kvec );  
   Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
@@ -171,7 +184,7 @@ int main(int argc, char *argv[])
   info = Kvec.Norm2( &normV[0] );
   assert( info==0 );
 
-  if (MyPID == 0) {
+  if (MyOM->doPrint()) {
     cout<<"Actual Residuals"<<endl;
     cout<<"------------------------------------------------------"<<endl;
     cout<<"Eigenvalue"<<"\t\t"<<"Direct Residual"<<endl;
