@@ -215,7 +215,7 @@ $mpigo 1 amesos_test.exe SUPERLUDIST SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdo
 #
 #  A couple more matrices
 #
-$mpigo 1 amesos_test.exe SUPERLUDIST 662_bus_out.rsa 0 1 3 0 1e-11 1e-12 >>SST.stdout 
+$mpigo 1 amesos_test.exe SUPERLUDIST 662_bus_out.rsa 0 1 3 0 5e-11 1e-12 >>SST.stdout 
 # COMMENT fails on herouxsmp # COMMENT $mpigo 1 amesos_test.exe SUPERLUDIST meg1_out.rua 0 1 3 0 1e-04 1e-03 >>SST.stdout 
 echo "" >> SST.summary 
 echo "COMMENT End AmesosSuperludist.exe" >> SST.summary 
