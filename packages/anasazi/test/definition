@@ -7,7 +7,7 @@
            BlockKrylovSchur,
            LOBPCG,
            ModalSolverUtils;
-           # MVOPTester;
+           MVOPTester;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = -v;
     COMM = SERIAL, MPI;
