@@ -151,6 +151,7 @@ namespace LOCA {
 			    const LOCA::MultiContinuation::ExtendedVector& x, 
 			    double *px) const = 0;
 
+      //! Bring NOX::Abstract::Group::operator=() into scope
       using NOX::Abstract::Group::operator=;
 
     }; // Class AbstractStrategy
