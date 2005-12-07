@@ -85,6 +85,10 @@ struct LOCAData {
   double maxRadius;
   double minRadius;
   double solutionMax;
+private:
+  // Private to prohibit copying
+  LOCAData(const LOCAData&);
+  LOCAData& operator=(const LOCAData&);
 };
 
 struct LOCANVectorData {

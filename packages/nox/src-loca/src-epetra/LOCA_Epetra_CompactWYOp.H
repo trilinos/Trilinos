@@ -165,6 +165,14 @@ namespace LOCA {
 			  Epetra_MultiVector& result_x, 
 			  Epetra_MultiVector& result_p) const;
 
+    private:
+
+      //! Private to prohibit copying
+      CompactWYOp(const CompactWYOp&);
+
+      //! Private to prohibit copying
+      CompactWYOp& operator=(const CompactWYOp&);
+
     protected:
 
       //! Global data object

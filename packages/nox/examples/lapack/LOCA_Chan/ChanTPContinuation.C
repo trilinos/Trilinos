@@ -143,11 +143,6 @@ int main()
     NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
     searchParams.setParameter("Method", "Full Step");
 
-    // Create the newton and  linear solver parameters sublist
-    NOX::Parameter::List& directionParameters = nlParams.sublist("Direction");
-    NOX::Parameter::List& newtonParameters = directionParameters.sublist("Newton");
-    NOX::Parameter::List& linearSolverParameters = newtonParameters.sublist("Linear Solver");
-
     // Create LAPACK Factory
     Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
       Teuchos::rcp(new LOCA::LAPACK::Factory);

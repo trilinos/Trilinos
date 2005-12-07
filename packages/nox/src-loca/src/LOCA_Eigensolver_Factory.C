@@ -37,7 +37,9 @@
 #include "LOCA_Eigensolver_Factory.H"
 #include "LOCA_Eigensolver_AbstractStrategy.H"
 #include "LOCA_Eigensolver_DefaultStrategy.H"
+#ifdef HAVE_LOCA_ANASAZI
 #include "LOCA_Eigensolver_AnasaziStrategy.H"
+#endif
 
 LOCA::Eigensolver::Factory::Factory(
 	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
@@ -65,11 +67,17 @@ LOCA::Eigensolver::Factory::create(
       Teuchos::rcp(new LOCA::Eigensolver::DefaultStrategy(globalData,
 							  topParams,
 							  eigenParams));
-  else if (name == "Anasazi")
+  else if (name == "Anasazi") {
+#ifdef HAVE_LOCA_ANASAZI
     strategy = 
       Teuchos::rcp(new LOCA::Eigensolver::AnasaziStrategy(globalData,
 							  topParams,
 							  eigenParams));
+#else
+    globalData->locaErrorCheck->throwError(methodName,
+					   "Anasazi strategy requested, but LOCA was not configured with Anasazi support enabled.");
+#endif
+  }
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy

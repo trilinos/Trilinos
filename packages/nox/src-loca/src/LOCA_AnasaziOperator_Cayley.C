@@ -47,7 +47,9 @@ LOCA::AnasaziOperator::Cayley::Cayley(
     solverParams(solverParams_),
     grp(grp_),
     tmp_r(),
-    tmp_i()
+    tmp_i(),
+    sigma(0.0),
+    mu(0.0)
 {
   string callingFunction = 
     "LOCA::AnasaziOperator::Cayley::Cayley()";

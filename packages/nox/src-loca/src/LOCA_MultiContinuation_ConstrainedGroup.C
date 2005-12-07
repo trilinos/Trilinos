@@ -218,8 +218,9 @@ NOX::Abstract::Group&
 LOCA::MultiContinuation::ConstrainedGroup::operator=(
 					  const NOX::Abstract::Group& source)
 {
-  return *this = 
+  *this = 
     dynamic_cast<const LOCA::MultiContinuation::ConstrainedGroup&>(source);
+  return *this;
 }
 
 Teuchos::RefCountPtr<NOX::Abstract::Group>
@@ -714,8 +715,9 @@ LOCA::Extended::MultiAbstractGroup&
 LOCA::MultiContinuation::ConstrainedGroup::operator=(
 			      const LOCA::Extended::MultiAbstractGroup& source)
 {
-  return *this = 
+  *this = 
     dynamic_cast<const LOCA::MultiContinuation::ConstrainedGroup&>(source);
+  return *this;
 }
 
 Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
@@ -772,8 +774,9 @@ LOCA::MultiContinuation::AbstractGroup&
 LOCA::MultiContinuation::ConstrainedGroup::operator=(
 			 const LOCA::MultiContinuation::AbstractGroup& source)
 {
-  return *this = 
+  *this = 
     dynamic_cast<const LOCA::MultiContinuation::ConstrainedGroup&>(source);
+  return *this;
 }
 
 void

@@ -87,7 +87,8 @@ LOCA::MultiContinuation::ConstraintInterface&
 LOCA::MultiContinuation::NaturalConstraint::operator=(
 		   const LOCA::MultiContinuation::ConstraintInterface& source)
 {
-  return operator=(dynamic_cast<const LOCA::MultiContinuation::NaturalConstraint&>(source));
+  operator=(dynamic_cast<const LOCA::MultiContinuation::NaturalConstraint&>(source));
+  return *this;
 }
 
 Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>

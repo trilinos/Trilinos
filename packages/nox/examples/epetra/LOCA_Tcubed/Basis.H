@@ -45,6 +45,11 @@ class Basis {
   // Calculates the values of u and x at the specified gauss point
   void getBasis(int gp, double *x, double *u);
 
+ private:
+  // Private to prohibit copying
+  Basis(const Basis&);
+  Basis& operator=(const Basis&);
+
  public:
   // Variables that are calculated at the gauss point
   double *phi, *dphide; 

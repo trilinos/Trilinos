@@ -42,8 +42,22 @@
 FiniteElementProblem::FiniteElementProblem(int numGlobalElements, 
 					   Epetra_Comm& comm,
 					   double s) :
+  flag(F_ONLY),
+  StandardMap(NULL),
+  OverlapMap(NULL),
+  Importer(NULL),
+  initialSolution(NULL),
+  rhs(NULL),
+  AA(NULL),
+  A(NULL),
   Comm(&comm),
+  MyPID(0),
+  NumProc(0),
+  NumMyElements(0),
   NumGlobalElements(numGlobalElements),
+  factor(0.0),
+  leftBC(0.0),
+  rightBC(0.0),
   scale(s)
 {
 

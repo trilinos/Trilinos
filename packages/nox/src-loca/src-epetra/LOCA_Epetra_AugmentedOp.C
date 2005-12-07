@@ -61,7 +61,8 @@ LOCA::Epetra::AugmentedOp::AugmentedOp(
     result_y(NULL),
     tmp(NULL),
     haveParamComponent(false),
-    useTranspose(false)
+    useTranspose(false),
+    dlapack()
 {
 
   // Determine if this processor stores parameter component

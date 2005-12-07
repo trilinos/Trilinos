@@ -195,7 +195,8 @@ NOX::Abstract::MultiVector&
 LOCA::Extended::MultiVector::operator=(
 				   const NOX::Abstract::MultiVector& source)
 {
-  return operator=(dynamic_cast<const LOCA::Extended::MultiVector&>(source));
+  operator=(dynamic_cast<const LOCA::Extended::MultiVector&>(source));
+  return *this;
 }
 
 LOCA::Extended::MultiVector& 

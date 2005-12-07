@@ -131,6 +131,14 @@ namespace LOCA {
        * this operator.
        */
       virtual const Epetra_Map & OperatorRangeMap() const;
+
+    private:
+
+      //! Private to prohibit copying
+      ShiftInvertOperator(const ShiftInvertOperator&);
+
+      //! Private to prohibit copying
+      ShiftInvertOperator& operator=(const ShiftInvertOperator&);
  
     protected:  
 

@@ -45,8 +45,10 @@ LOCA::AnasaziOperator::ShiftInvert::ShiftInvert(
     myLabel("Shift-Invert"),
     eigenParams(eigenParams_),
     solverParams(solverParams_),
+    grp(grp_),
     tmp_r(),
-    tmp_i()
+    tmp_i(),
+    shift(0.0)
 {
   string callingFunction = 
     "LOCA::AnasaziOperator::ShiftInvert::ShiftInvert()";

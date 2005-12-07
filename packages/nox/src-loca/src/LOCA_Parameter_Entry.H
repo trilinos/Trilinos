@@ -124,6 +124,14 @@ namespace LOCA {
        */
       virtual void setIsInLibrary() { deleteFctr = true; }
 
+    private:
+
+      //! Private to prohibit copying
+      StandardEntry(const StandardEntry&);
+
+      //! Private to prohibit copying
+      StandardEntry& operator=(const StandardEntry&);
+
     protected:
 
       //! Flag indicating whether to delete function object in destructor
@@ -168,6 +176,14 @@ namespace LOCA {
 
        //! Get parameter value this object represents
       virtual ValueType get() const { return obj.*obj_val_ptr; }
+
+    private:
+
+      //! Private to prohibit copying
+      DefaultFunctor(const DefaultFunctor&);
+
+      //! Private to prohibit copying
+      DefaultFunctor& operator=(const DefaultFunctor&);
 
     protected:
 

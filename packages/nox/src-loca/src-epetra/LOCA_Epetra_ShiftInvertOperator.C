@@ -36,6 +36,7 @@ LOCA::Epetra::ShiftInvertOperator::ShiftInvertOperator(
 		   const Teuchos::RefCountPtr<const LOCA::Epetra::Group>& grp, 
 		   const Teuchos::RefCountPtr<const Epetra_Operator>& jac, 
 		   const double& shift, bool hasMassMatrix) :
+  globalData(global_data),
   locagrp(grp),
   jacOper(jac),
   shift_(shift),

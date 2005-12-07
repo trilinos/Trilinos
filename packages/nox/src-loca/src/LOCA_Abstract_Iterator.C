@@ -32,11 +32,21 @@
 #include "LOCA_Abstract_Iterator.H"    // class definition
 #include "NOX_Parameter_List.H"
 
-LOCA::Abstract::Iterator::Iterator()
+LOCA::Abstract::Iterator::Iterator() :
+  stepNumber(0),
+  numFailedSteps(0),
+  numTotalSteps(0),
+  maxSteps(100),
+  iteratorStatus(LOCA::Abstract::Iterator::NotFinished)
 {
 }
 
-LOCA::Abstract::Iterator::Iterator(NOX::Parameter::List& p)
+LOCA::Abstract::Iterator::Iterator(NOX::Parameter::List& p) :
+  stepNumber(0),
+  numFailedSteps(0),
+  numTotalSteps(0),
+  maxSteps(100),
+  iteratorStatus(LOCA::Abstract::Iterator::NotFinished)
 {
   resetIterator(p);
 }

@@ -77,7 +77,8 @@ LOCA::Extended::Vector::~Vector()
 NOX::Abstract::Vector& 
 LOCA::Extended::Vector::operator=(const NOX::Abstract::Vector& y)
 {
-  return operator=(dynamic_cast<const LOCA::Extended::Vector&>(y));
+  operator=(dynamic_cast<const LOCA::Extended::Vector&>(y));
+  return *this;
 }
 
 LOCA::Extended::Vector& 

@@ -50,6 +50,10 @@ LOCA::MultiContinuation::ArcLengthGroup::ArcLengthGroup(
 					   continuationParams,
 					   grp, pred, paramIDs),
     theta(paramIDs.size(), 1.0),
+    doArcLengthScaling(true),
+    gGoal(0.5),
+    gMax(0.0),
+    thetaMin(1.0e-3),
     isFirstRescale(true)
 {
   Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> cons 
@@ -110,24 +114,27 @@ LOCA::MultiContinuation::ExtendedGroup&
 LOCA::MultiContinuation::ArcLengthGroup::operator=(
 		        const LOCA::MultiContinuation::ExtendedGroup& source)
 {
-  return *this = 
+  *this = 
     dynamic_cast<const LOCA::MultiContinuation::ArcLengthGroup&>(source);
+  return *this;
 }
 
 LOCA::Extended::MultiAbstractGroup&
 LOCA::MultiContinuation::ArcLengthGroup::operator=(
 			      const LOCA::Extended::MultiAbstractGroup& source)
 {
-  return *this = 
+  *this = 
     dynamic_cast<const LOCA::MultiContinuation::ArcLengthGroup&>(source);
+  return *this;
 }
 
 NOX::Abstract::Group&
 LOCA::MultiContinuation::ArcLengthGroup::operator=(
 					  const NOX::Abstract::Group& source)
 {
-  return *this = 
+  *this = 
     dynamic_cast<const LOCA::MultiContinuation::ArcLengthGroup&>(source);
+  return *this;
 }
 
 Teuchos::RefCountPtr<NOX::Abstract::Group>
@@ -141,8 +148,9 @@ LOCA::MultiContinuation::AbstractStrategy&
 LOCA::MultiContinuation::ArcLengthGroup::operator=(
 			    const MultiContinuation::AbstractStrategy& source)
 {
-  return *this = 
+  *this = 
     dynamic_cast<const LOCA::MultiContinuation::ArcLengthGroup&>(source);
+  return *this;
 }
 
 void

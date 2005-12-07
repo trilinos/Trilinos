@@ -121,6 +121,10 @@ private:
   // inserts the global column indices into the Graph
   Epetra_CrsGraph& generateGraphUsingElements(Epetra_CrsGraph& AA);
 
+  // Private to prohibit copying
+  Brusselator(const Brusselator&);
+  Brusselator& operator=(const Brusselator&);
+
 private:
 
   double xmin;

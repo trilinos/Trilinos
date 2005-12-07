@@ -61,6 +61,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
     ffMultiVec(),
     dfdpMultiVec(),
     newtonVec(),
+    lengthVec(),
     solverStrategy(),
     index_f(1),
     index_dfdp(1),
@@ -207,8 +208,9 @@ NOX::Abstract::Group&
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::operator=(
 					   const NOX::Abstract::Group& source)
 {
-  return *this = 
+  *this = 
    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedGroup&>(source);
+  return *this;
 }
 
 Teuchos::RefCountPtr<NOX::Abstract::Group>
@@ -648,8 +650,9 @@ LOCA::Extended::MultiAbstractGroup&
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::operator=(
 			const LOCA::Extended::MultiAbstractGroup& source)
 {
-  return *this = 
+  *this = 
    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedGroup&>(source);
+  return *this;
 }
 
 Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
@@ -668,8 +671,9 @@ LOCA::MultiContinuation::AbstractGroup&
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::operator=(
 			const LOCA::MultiContinuation::AbstractGroup& source)
 {
-  return *this = 
+  *this = 
    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedGroup&>(source);
+  return *this;
 }
 
 void

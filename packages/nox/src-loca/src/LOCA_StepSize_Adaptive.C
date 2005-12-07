@@ -41,7 +41,9 @@ LOCA::StepSize::Adaptive::Adaptive(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& stepsizeParams) :
-  LOCA::StepSize::Constant(global_data, topParams, stepsizeParams)
+  LOCA::StepSize::Constant(global_data, topParams, stepsizeParams),
+  agrValue(0.0),
+  maxNonlinearSteps(0.0)
 {
   agrValue = stepsizeParams->getParameter("Aggressiveness", 0.0);
 

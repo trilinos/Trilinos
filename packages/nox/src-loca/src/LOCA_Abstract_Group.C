@@ -107,7 +107,8 @@ LOCA::TimeDependent::AbstractGroup&
 LOCA::Abstract::Group::operator=(
 			    const LOCA::TimeDependent::AbstractGroup& source)
 {
-  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+  operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+  return *this;
 }
 
 // LOCA::Bifurcation::HopfBord::AbstractGroup&
@@ -196,7 +197,8 @@ LOCA::MultiContinuation::AbstractGroup&
 LOCA::Abstract::Group::operator=(
 			 const LOCA::MultiContinuation::AbstractGroup& source)
 {
-  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+  operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+  return *this;
 }
 
 void
@@ -211,19 +213,22 @@ LOCA::MultiContinuation::FiniteDifferenceGroup&
 LOCA::Abstract::Group::operator=(
 		 const LOCA::MultiContinuation::FiniteDifferenceGroup& source)
 {
-  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+  operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+  return *this;
 }
 
 LOCA::TurningPoint::MooreSpence::AbstractGroup&
 LOCA::Abstract::Group::operator=(
 	 const LOCA::TurningPoint::MooreSpence::AbstractGroup& source)
 {
-  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+  operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+  return *this;
 }
 
 LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup&
 LOCA::Abstract::Group::operator=(
 	 const LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup& source)
 {
-  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+  operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+  return *this;
 }

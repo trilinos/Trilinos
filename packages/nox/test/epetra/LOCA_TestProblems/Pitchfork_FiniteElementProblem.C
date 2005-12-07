@@ -45,8 +45,22 @@
 Pitchfork_FiniteElementProblem::Pitchfork_FiniteElementProblem(
 						       int numGlobalElements, 
 						       Epetra_Comm& comm) :
+  flag(F_ONLY),
+  StandardMap(NULL),
+  OverlapMap(NULL),
+  Importer(NULL),
+  initialSolution(NULL),
+  rhs(NULL),
+  AA(NULL),
+  A(NULL),
   Comm(&comm),
-  NumGlobalElements(numGlobalElements)
+  MyPID(0),
+  NumProc(0),
+  NumMyElements(0),
+  NumGlobalElements(numGlobalElements),
+  lambda(0.0),
+  alpha(0.0),
+  beta(0.0)
 {
 
   // Commonly used variables

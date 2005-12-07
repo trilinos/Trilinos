@@ -253,7 +253,6 @@ LOCA_STATUSTEST =
 LOCA_EIGENSOLVER_H = \
 	$(srcdir)/LOCA_Eigensolver_AbstractStrategy.H \
 	$(srcdir)/LOCA_Eigensolver_DefaultStrategy.H \
-	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H \
 	$(srcdir)/LOCA_Eigensolver_Factory.H \
 	$(srcdir)/LOCA_EigenvalueSort_Strategies.H \
 	$(srcdir)/LOCA_EigenvalueSort_Factory.H \
@@ -263,7 +262,6 @@ LOCA_EIGENSOLVER_H = \
 
 LOCA_EIGENSOLVER = \
 	$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C \
-	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C \
 	$(srcdir)/LOCA_Eigensolver_Factory.C \
 	$(srcdir)/LOCA_EigenvalueSort_Strategies.C \
 	$(srcdir)/LOCA_EigenvalueSort_Factory.C \
@@ -289,7 +287,8 @@ LOCA_ANASAZI_H = \
 	$(srcdir)/LOCA_AnasaziOperator_Factory.H \
 	$(srcdir)/Anasazi_LOCA_MultiVec.H \
 	$(srcdir)/Anasazi_LOCA_Matrix.H \
-	$(srcdir)/Anasazi_LOCA_Sort.H
+	$(srcdir)/Anasazi_LOCA_Sort.H \
+	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H
 
 LOCA_ANASAZI = \
 	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C \
@@ -298,7 +297,8 @@ LOCA_ANASAZI = \
 	$(srcdir)/LOCA_AnasaziOperator_Factory.C \
 	$(srcdir)/Anasazi_LOCA_MultiVec.C \
 	$(srcdir)/Anasazi_LOCA_Matrix.C \
-	$(srcdir)/Anasazi_LOCA_Sort.C
+	$(srcdir)/Anasazi_LOCA_Sort.C \
+	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C
 
 else
 

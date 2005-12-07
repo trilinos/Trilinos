@@ -89,14 +89,16 @@ LOCA::Extended::MultiVector&
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::operator=(
 					 const LOCA::Extended::MultiVector& y)
 {
-  return operator=(dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(y));
+  operator=(dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(y));
+  return *this;
 }
 
 NOX::Abstract::MultiVector& 
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::operator=(
 					 const NOX::Abstract::MultiVector& y)
 {
- return operator=(dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(y));
+  operator=(dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(y));
+  return *this;
 }
 
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& 

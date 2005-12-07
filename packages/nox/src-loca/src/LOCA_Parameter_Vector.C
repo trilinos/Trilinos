@@ -34,7 +34,9 @@
 
 #include "Teuchos_TestForException.hpp" // for errors
 
-LOCA::ParameterVector::ParameterVector()
+LOCA::ParameterVector::ParameterVector() : 
+  x(),
+  l()
 {
 }
 

@@ -73,7 +73,19 @@ LOCA::NewStepper::NewStepper(
   prevPredictorPtr(),
   stepSizeStrategyPtr(),
   conParamName(),
-  conParamIDs(1)
+  conParamIDs(1),
+  startValue(0.0),
+  maxValue(0.0),
+  minValue(0.0),
+  stepSize(0.0),
+  maxNonlinearSteps(15),
+  targetValue(0.0),
+  isTargetStep(false),
+  doTangentFactorScaling(false),
+  tangentFactor(1.0),
+  minTangentFactor(0.1),
+  tangentFactorExponent(1.0),
+  calcEigenvalues(false)
 
 {
   reset(global_data, initialGuess, t, p);

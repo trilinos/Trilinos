@@ -55,6 +55,8 @@ LOCA::BorderedSystem::LAPACKDirectSolve::LAPACKDirectSolve(
   isZeroA(true),
   isZeroB(true),
   isZeroC(true),
+  isZeroF(true),
+  isZeroG(true),
   isContiguous(false)
 {
 }

@@ -51,10 +51,24 @@ LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams_,
 	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigParams) :
   globalData(global_data),
-  topParams(topParams_)
+  topParams(topParams_),
+  eigenParams(eigParams),
+  solverParams(),
+  blksz(1),
+  length(30),
+  nev(4),
+  tol(1.0e-7),
+  step(1),
+  restart(1),
+  debug(1),
+  which("LM"),
+  saveEV(0),
+  cayleyPole(0.0),
+  cayleyZero(0.0),
+  LOCA_PL(),
+  LOCA_OM(),
+  LOCASort()
 {
-#ifdef HAVE_LOCA_ANASAZI
-  eigenParams = eigParams;
   solverParams = topParams->getSublist("Linear Solver");
 
   // Get values out of parameter list
@@ -98,7 +112,6 @@ LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
 							    eigenParams);
   LOCASort =
     Teuchos::rcp(new Anasazi::LOCASort(sortingStrategy));
-#endif
 }
 
 LOCA::Eigensolver::AnasaziStrategy::~AnasaziStrategy() 
@@ -113,7 +126,6 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
 		 Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_r,
 		 Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_i)
 {
-#ifdef HAVE_LOCA_ANASAZI
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
     globalData->locaUtils->out() << "\n" << 
       globalData->locaUtils->fill(64,'=') << 
@@ -259,15 +271,6 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
       "\nAnasazi Eigensolver finished.\n" << 
       globalData->locaUtils->fill(64,'=') << "\n" << std::endl;
   }
-#else
-  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
-    globalData->locaUtils->out() << std::endl << 
-      "Warning: LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues:" << 
-      std::endl << 
-      "Anasazi Eigensolver requested but not compiled in!" << std::endl;
-  }
-  return NOX::Abstract::Group::Ok;
-#endif
 
   return NOX::Abstract::Group::Ok;
 }

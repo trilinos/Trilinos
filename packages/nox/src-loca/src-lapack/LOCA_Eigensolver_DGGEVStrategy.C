@@ -51,7 +51,9 @@ LOCA::Eigensolver::DGGEVStrategy::DGGEVStrategy(
 	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigParams) :
   globalData(global_data),
   topParams(tpParams),
-  eigenParams(eigParams)
+  eigenParams(eigParams),
+  nev(4),
+  which("LM")
 {
   nev = eigenParams->getParameter("NEV", 4);
   which = eigenParams->getParameter("Sorting Order","LM");

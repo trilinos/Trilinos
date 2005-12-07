@@ -61,14 +61,16 @@ NOX::Abstract::Vector&
 LOCA::TurningPoint::MooreSpence::ExtendedVector::operator=(
 					      const NOX::Abstract::Vector& y)
 {
-  return operator=(dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedVector&>(y));
+  operator=(dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedVector&>(y));
+  return *this;
 }
 
 LOCA::Extended::Vector& 
 LOCA::TurningPoint::MooreSpence::ExtendedVector::operator=(
 					     const LOCA::Extended::Vector& y)
 {
-  return operator=(dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedVector&>(y));
+  operator=(dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedVector&>(y));
+  return *this;
 }
 
 LOCA::TurningPoint::MooreSpence::ExtendedVector& 

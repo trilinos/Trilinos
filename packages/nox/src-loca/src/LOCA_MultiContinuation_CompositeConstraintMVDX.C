@@ -66,6 +66,7 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::CompositeConstraintMVDX(
 	      const LOCA::MultiContinuation::CompositeConstraintMVDX& source, 
 	      NOX::CopyType type) : 
   LOCA::MultiContinuation::CompositeConstraint(source),
+  constraintMVDXPtrs(source.constraintMVDXPtrs),
   compositeDX()
 {
   if (source.compositeDX.get() != NULL)
@@ -84,6 +85,7 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::operator=(
 {
   if (this != &source) {
     LOCA::MultiContinuation::CompositeConstraint::operator=(source);
+    constraintMVDXPtrs = source.constraintMVDXPtrs;
     if (compositeDX.get() != NULL && source.compositeDX.get() != NULL)
       *compositeDX = *source.compositeDX;
     else if (source.compositeDX.get() != NULL)
@@ -99,7 +101,8 @@ LOCA::MultiContinuation::ConstraintInterface&
 LOCA::MultiContinuation::CompositeConstraintMVDX::operator=(
 		   const LOCA::MultiContinuation::ConstraintInterface& source)
 {
-  return operator=(dynamic_cast<const LOCA::MultiContinuation::CompositeConstraintMVDX&>(source));
+  operator=(dynamic_cast<const LOCA::MultiContinuation::CompositeConstraintMVDX&>(source));
+  return *this;
 }
 
 Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>

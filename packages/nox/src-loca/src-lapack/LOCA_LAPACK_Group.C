@@ -120,17 +120,20 @@ LOCA::LAPACK::Group::~Group()
 
 NOX::Abstract::Group& 
 LOCA::LAPACK::Group::operator=(const NOX::Abstract::Group& source) {
-  return operator=(dynamic_cast<const LOCA::LAPACK::Group&>(source));
+  operator=(dynamic_cast<const LOCA::LAPACK::Group&>(source));
+  return *this;
 }
 
 LOCA::Abstract::Group& 
 LOCA::LAPACK::Group::operator=(const LOCA::Abstract::Group& source) {
-  return operator=(dynamic_cast<const LOCA::LAPACK::Group&>(source));
+  operator=(dynamic_cast<const LOCA::LAPACK::Group&>(source));
+  return *this;
 }
 
 NOX::LAPACK::Group&
 LOCA::LAPACK::Group::operator=(const NOX::LAPACK::Group& source) {
-  return operator=(dynamic_cast<const LOCA::LAPACK::Group&>(source));
+  operator=(dynamic_cast<const LOCA::LAPACK::Group&>(source));
+  return *this;
 }
 
 LOCA::LAPACK::Group& 

@@ -404,7 +404,9 @@ LOCA::EigenvalueSort::SmallestImaginary::sort(int n, double* r_evals,
 
 LOCA::EigenvalueSort::LargestRealInverseCayley::LargestRealInverseCayley(
 	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams)
+	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams) :
+  sigma(0.0),
+  mu(0.0)
 {
   sigma = eigenParams->getParameter("Cayley Pole",0.0);
   mu = eigenParams->getParameter("Cayley Zero",0.0);

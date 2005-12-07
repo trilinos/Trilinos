@@ -87,7 +87,7 @@ namespace LOCA {
     public:
   
       //! Default constructor
-      Library() {}
+      Library() : library() {}
 
       //! Destructor
       ~Library();

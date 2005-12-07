@@ -92,6 +92,12 @@ private:
   // Computes the derivative of the source term
   double source_deriv(double x);
 
+  // Private to prohibit copying
+  Pitchfork_FiniteElementProblem(const Pitchfork_FiniteElementProblem&);
+
+  // Private to prohibit copying
+  Pitchfork_FiniteElementProblem& operator=(const Pitchfork_FiniteElementProblem&);
+
 private:
 
   FillType flag;

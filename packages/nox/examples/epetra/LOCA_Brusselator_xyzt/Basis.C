@@ -32,7 +32,17 @@
 
 // Constructor
 Basis::Basis(int numSpec) :
-  NumSpecies(numSpec)
+  NumSpecies(numSpec),
+  phi(NULL),
+  dphide(NULL),
+  xx(0.0),
+  eta(0.0),
+  wt(0.0),
+  uu(NULL),
+  duu(NULL),
+  uuold(NULL),
+  duuold(NULL),
+  dx(0.0)
 {
   uu = new double[numSpec];
   duu = new double[numSpec];

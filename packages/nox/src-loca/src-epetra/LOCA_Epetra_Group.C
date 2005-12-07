@@ -118,19 +118,22 @@ LOCA::Epetra::Group::clone(NOX::CopyType type) const
 NOX::Abstract::Group& 
 LOCA::Epetra::Group::operator=(const NOX::Abstract::Group& source)
 {
-  return operator=(dynamic_cast<const Group&> (source));
+  operator=(dynamic_cast<const Group&> (source));
+  return *this;
 }
 
 LOCA::Abstract::Group& 
 LOCA::Epetra::Group::operator=(const LOCA::Abstract::Group& source)
 {
-  return operator=(dynamic_cast<const Group&> (source));
+  operator=(dynamic_cast<const Group&> (source));
+  return *this;
 }
 
 NOX::Abstract::Group& 
 LOCA::Epetra::Group::operator=(const NOX::Epetra::Group& source)
 {
-  return operator=(dynamic_cast<const Group&> (source));
+  operator=(dynamic_cast<const Group&> (source));
+  return *this;
 }
 
 LOCA::Epetra::Group& 

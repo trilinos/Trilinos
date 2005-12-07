@@ -95,16 +95,16 @@ LOCA::Extended::MultiVector&
 LOCA::MultiContinuation::ExtendedMultiVector::operator=(
 					 const LOCA::Extended::MultiVector& y)
 {
-  return 
-    operator=(dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(y));
+  operator=(dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(y));
+  return *this;
 }
 
 NOX::Abstract::MultiVector& 
 LOCA::MultiContinuation::ExtendedMultiVector::operator=(
 					 const NOX::Abstract::MultiVector& y)
 {
- return 
-   operator=(dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(y));
+ operator=(dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(y));
+ return *this;
 }
 
 LOCA::MultiContinuation::ExtendedMultiVector& 

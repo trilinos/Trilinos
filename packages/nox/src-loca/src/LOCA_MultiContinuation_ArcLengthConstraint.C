@@ -87,7 +87,8 @@ LOCA::MultiContinuation::ConstraintInterface&
 LOCA::MultiContinuation::ArcLengthConstraint::operator=(
 		   const LOCA::MultiContinuation::ConstraintInterface& source)
 {
-  return operator=(dynamic_cast<const LOCA::MultiContinuation::ArcLengthConstraint&>(source));
+  operator=(dynamic_cast<const LOCA::MultiContinuation::ArcLengthConstraint&>(source));
+  return *this;
 }
 
 Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>

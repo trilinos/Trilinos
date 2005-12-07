@@ -107,6 +107,12 @@ private:
   //! Computes the scaled source parameter
   double source_param(double a, double s);
 
+  //! Private to prohibit copying
+  ChanProblemInterface(const ChanProblemInterface&);
+  
+  //! Private to prohibit copying
+  ChanProblemInterface& operator=(const ChanProblemInterface&);
+
 private:
 
   //! Global data

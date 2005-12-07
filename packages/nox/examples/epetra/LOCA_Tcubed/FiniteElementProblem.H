@@ -85,6 +85,12 @@ private:
   // inserts the global column indices into the Graph
   Epetra_CrsGraph& generateGraph(Epetra_CrsGraph& AA);
 
+  // Private to prohibit copying
+  FiniteElementProblem(const FiniteElementProblem&);
+
+  // Private to prohibit copying
+  FiniteElementProblem& operator=(const FiniteElementProblem&);
+
 private:
 
   FillType flag;

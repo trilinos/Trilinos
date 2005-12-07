@@ -35,13 +35,11 @@
 
 #include "LOCA_Eigensolver_AbstractStrategy.H" // base class
 
-#ifdef HAVE_LOCA_ANASAZI
 #include "Teuchos_ParameterList.hpp"           // class element
 #include "AnasaziOutputManager.hpp"            // class element
 #include "Anasazi_LOCA_Sort.H"                 // class element
 #include "AnasaziMultiVec.hpp"                 // for typedef
 #include "AnasaziOperator.hpp"                 // for typedef
-#endif
 
 // Forward declarations
 namespace NOX {
@@ -137,7 +135,6 @@ namespace LOCA {
       //! Parsed parameter list
       Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> topParams;
 
-#ifdef HAVE_LOCA_ANASAZI
       //! Typedef to simplify templating
       typedef Anasazi::MultiVec<double> MV;
 
@@ -191,7 +188,6 @@ namespace LOCA {
 
       //! Sorting manager to handle the sorting of eigenvalues
       Teuchos::RefCountPtr<Anasazi::LOCASort> LOCASort;
-#endif
 
     }; // Class AnasaziStrategy
 

@@ -82,6 +82,14 @@ namespace LOCA {
       //! Returns underlying status test
       const NOX::StatusTest::Generic&
       getUnderlyingStatusTest() const;
+
+    private:
+
+      //! Private to prohibit copying
+      Wrapper(const Wrapper&);
+
+      //! Private to prohibit copying
+      Wrapper& operator=(const Wrapper&);
   
     protected:
 

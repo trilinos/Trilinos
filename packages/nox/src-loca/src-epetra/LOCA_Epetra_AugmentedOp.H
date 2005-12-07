@@ -268,6 +268,14 @@ namespace LOCA {
       int blockMap2PointMap(const Epetra_BlockMap& BlockMap,
 			    Epetra_Map*& PointMap) const;
 
+    private:
+
+      //! Private to prohibit copying
+      AugmentedOp(const AugmentedOp&);
+
+      //! Private to prohibit copying
+      AugmentedOp& operator=(const AugmentedOp&);
+
     protected:
 
       //! LOCA global data object

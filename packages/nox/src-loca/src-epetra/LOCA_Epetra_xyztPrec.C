@@ -35,13 +35,14 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
 	 EpetraExt::BlockVector &solution_,
 	 NOX::Parameter::List &precPrintParams_, 
 	 NOX::Parameter::List &precLSParams_, 
-	 const Teuchos::RefCountPtr<Epetra_Comm> globalComm_) : 
-  label("LOCA::Epetra::xyztPrec"), 
+	 const Teuchos::RefCountPtr<Epetra_Comm> globalComm_) :  
   jacobian(jacobian_),
   solution(solution_),
   printParams(precPrintParams_), 
   lsParams(precLSParams_), 
-  globalComm(globalComm_)
+  globalComm(globalComm_),
+  linSys(),
+  label("LOCA::Epetra::xyztPrec")
 {
 
   string prec = lsParams.getParameter("XYZTPreconditioner","None");
