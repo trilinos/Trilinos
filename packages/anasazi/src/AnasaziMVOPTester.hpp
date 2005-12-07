@@ -153,7 +153,7 @@ namespace Anasazi {
        last vector, and choose the others randomly.
     */
     ind[0] = 0;
-    ind[numvecs_2] = numvecs-1;
+    ind[numvecs_2-1] = numvecs-1;
     for (i=1; i<numvecs_2-1; i++) {
       ind[i] = rand() % numvecs;
     }
