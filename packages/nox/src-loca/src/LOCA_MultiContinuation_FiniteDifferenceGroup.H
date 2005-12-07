@@ -69,9 +69,12 @@ namespace LOCA {
       //! Destructor.
       virtual ~FiniteDifferenceGroup();
 
-      //! Assignment operator
-      virtual FiniteDifferenceGroup& 
-      operator=(const FiniteDifferenceGroup& source);
+      //! Copy
+      virtual void copy(const NOX::Abstract::Group& source);
+
+      //! Assignment
+      virtual NOX::Abstract::Group& 
+      operator=(const NOX::Abstract::Group& source);
 
       /*! 
        * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
@@ -88,6 +91,11 @@ namespace LOCA {
       computeDfDpMulti(const vector<int>& paramIDs, 
 		       NOX::Abstract::MultiVector& dfdp, 
 		       bool isValidF);
+
+    private:
+
+      //! Prohibit generation and use of operator=()
+      FiniteDifferenceGroup& operator=(const FiniteDifferenceGroup&);
 
     protected:
 

@@ -67,9 +67,8 @@ namespace LOCA {
       //! Destructor
       virtual ~AbstractStrategy() {}
 
-      //! Assignment
-      virtual AbstractStrategy& 
-      operator = (const AbstractStrategy& source) = 0;
+      //! Copy
+      virtual void copy(const NOX::Abstract::Group& source) = 0;
 
       //! Returns number of parameters
       virtual int getNumParams() const = 0;
@@ -151,6 +150,8 @@ namespace LOCA {
       virtual void projectToDraw(
 			    const LOCA::MultiContinuation::ExtendedVector& x, 
 			    double *px) const = 0;
+
+      using NOX::Abstract::Group::operator=;
 
     }; // Class AbstractStrategy
 

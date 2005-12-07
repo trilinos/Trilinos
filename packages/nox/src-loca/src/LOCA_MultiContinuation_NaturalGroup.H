@@ -85,33 +85,6 @@ namespace LOCA {
       //! Destructor.
       virtual ~NaturalGroup();
 
-      //! Assignment operator
-      virtual NaturalGroup& 
-      operator=(const NaturalGroup& source);
-
-      /*! 
-       * @name Implementation of LOCA::MultiContinuation::ExtendedGroup virtual methods
-       */
-      //@{
-
-      //! Assignment operator
-      virtual LOCA::MultiContinuation::ExtendedGroup& 
-      operator=(const LOCA::MultiContinuation::ExtendedGroup& source);
-
-      //@}
-
-      /*! 
-       * @name Implementation of LOCA::Extended::MultiAbstractGroup virtual 
-       * methods 
-       */
-      //@{
-
-      //! Assignment operator
-      virtual LOCA::Extended::MultiAbstractGroup& 
-      operator=(const LOCA::Extended::MultiAbstractGroup& source);
-
-      //@}
-
       /*! 
        * @name Implementation of NOX::Abstract::Group virtual methods 
        */
@@ -128,15 +101,20 @@ namespace LOCA {
       //@}
 
       /*! 
-       * @name Implementation of LOCA::Stepper::AbstractGroup virtual methods 
+       * @name Implementation of LOCA::MultiContinuation::AbstractStrategy virtual methods 
        */
       //@{
 
-      //! Assignment operator
-      virtual LOCA::MultiContinuation::AbstractStrategy&
-      operator=(const MultiContinuation::AbstractStrategy& source);
+      //! Copy
+      virtual void copy(const NOX::Abstract::Group& source);
 
       //@}
+
+    private:
+
+      //! Prohibit generation and use of operator=()
+      NaturalGroup& operator=(const NaturalGroup& source);
+
     };
 
   } // namespace MultiContinuation

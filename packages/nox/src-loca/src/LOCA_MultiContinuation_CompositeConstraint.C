@@ -80,10 +80,15 @@ LOCA::MultiContinuation::CompositeConstraint::~CompositeConstraint()
 {
 }
 
-LOCA::MultiContinuation::CompositeConstraint&
-LOCA::MultiContinuation::CompositeConstraint::operator=(
-		   const LOCA::MultiContinuation::CompositeConstraint& source)
+void
+LOCA::MultiContinuation::CompositeConstraint::copy(
+		   const LOCA::MultiContinuation::ConstraintInterface& src)
 {
+  const LOCA::MultiContinuation::CompositeConstraint& source = 
+    dynamic_cast<const LOCA::MultiContinuation::CompositeConstraint&>(src);
+
+
+  // I should copy the constraint objects instead of copying pointers?
   if (this != &source) {
     globalData = source.globalData;
     numConstraintObjects = source.numConstraintObjects;
@@ -94,16 +99,6 @@ LOCA::MultiContinuation::CompositeConstraint::operator=(
     isValidConstraints = source.isValidConstraints;
     isValidDX = source.isValidDX;
   }
-
-  return *this;
-}
-
-LOCA::MultiContinuation::ConstraintInterface& 
-LOCA::MultiContinuation::CompositeConstraint::operator=(
-		   const LOCA::MultiContinuation::ConstraintInterface& source)
-{
-  operator=(dynamic_cast<const LOCA::MultiContinuation::CompositeConstraint&>(source));
-  return *this;
 }
 
 Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>

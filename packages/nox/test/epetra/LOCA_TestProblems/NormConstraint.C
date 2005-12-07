@@ -63,9 +63,11 @@ NormConstraint::~NormConstraint()
 {
 }
 
-NormConstraint&
-NormConstraint::operator=(const NormConstraint& source)
+void
+NormConstraint::copy(const LOCA::MultiContinuation::ConstraintInterface& src)
 {
+  const NormConstraint& source = dynamic_cast<const NormConstraint&>(src);
+
   if (this != &source) {
     n = source.n;
     constraints = source.constraints;
@@ -74,16 +76,6 @@ NormConstraint::operator=(const NormConstraint& source)
     *x = *source.x;
     isZeroDgDx = source.isZeroDgDx;
   }
-
-  return *this;
-}
-
-LOCA::MultiContinuation::ConstraintInterface& 
-NormConstraint::operator=(
-		   const LOCA::MultiContinuation::ConstraintInterface& source)
-{
-  operator=(dynamic_cast<const NormConstraint&>(source));
-  return *this;
 }
 
 Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>

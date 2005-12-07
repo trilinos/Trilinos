@@ -333,8 +333,7 @@ LOCA::NewStepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
   //
 
   // Copy last solution
-  *Teuchos::rcp_dynamic_cast<NOX::Abstract::Group>(curGroupPtr) = 
-    solverPtr->getSolutionGroup();
+  curGroupPtr->copy(solverPtr->getSolutionGroup());
 
   // Return if iteration failed (reached max number of steps)
   if (itStatus == LOCA::Abstract::Iterator::Failed)
@@ -348,7 +347,7 @@ LOCA::NewStepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
     isTargetStep = true;
 
     // Save previous successful step information
-    *prevGroupPtr = *curGroupPtr;
+    prevGroupPtr->copy(*curGroupPtr);
 
     // Get bifurcation group if there is one, or solution group if not
     Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> underlyingGrp
@@ -403,8 +402,7 @@ LOCA::NewStepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
     NOX::StatusTest::StatusType solverStatus = solverPtr->solve();
 
     // Get solution
-    *Teuchos::rcp_dynamic_cast<NOX::Abstract::Group>(curGroupPtr) = 
-      solverPtr->getSolutionGroup();
+    curGroupPtr->copy(solverPtr->getSolutionGroup());
 
     if (solverStatus == NOX::StatusTest::Failed) {
       printEndStep(LOCA::Abstract::Iterator::Unsuccessful);
@@ -426,12 +424,12 @@ LOCA::NewStepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
   if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful) {
 
     // Restore previous step information
-    *curGroupPtr = *prevGroupPtr;
+    curGroupPtr->copy(*prevGroupPtr);
   }
   else {
 
     // Save previous successful step information
-    *prevGroupPtr = *curGroupPtr;
+    prevGroupPtr->copy(*curGroupPtr);
   }
 
   // Compute step size
@@ -475,8 +473,7 @@ LOCA::NewStepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
   }
 
   // Copy solution out of solver
-  *Teuchos::rcp_dynamic_cast<NOX::Abstract::Group>(curGroupPtr) = 
-    solverPtr->getSolutionGroup();
+  curGroupPtr->copy(solverPtr->getSolutionGroup());
 
   // Print successful info for end of step
   printEndStep(LOCA::Abstract::Iterator::Successful);

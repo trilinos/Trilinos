@@ -49,13 +49,23 @@ LOCA::MultiContinuation::FiniteDifferenceGroup::~FiniteDifferenceGroup()
 {
 }
 
-LOCA::MultiContinuation::FiniteDifferenceGroup&
-LOCA::MultiContinuation::FiniteDifferenceGroup::operator=(
-		const LOCA::MultiContinuation::FiniteDifferenceGroup& source)
+void
+LOCA::MultiContinuation::FiniteDifferenceGroup::copy(
+					    const NOX::Abstract::Group& src)
 {
+  const LOCA::MultiContinuation::FiniteDifferenceGroup& source = 
+    dynamic_cast<const LOCA::MultiContinuation::FiniteDifferenceGroup&>(src);
+
   if (this != &source) {
     derivPtr = source.derivPtr->clone();
   }
+}
+
+NOX::Abstract::Group&
+LOCA::MultiContinuation::FiniteDifferenceGroup::operator=(
+					    const NOX::Abstract::Group& source)
+{
+  copy(source);
   return *this;
 }
 

@@ -122,13 +122,6 @@ LOCA::Epetra::Group::operator=(const NOX::Abstract::Group& source)
   return *this;
 }
 
-LOCA::Abstract::Group& 
-LOCA::Epetra::Group::operator=(const LOCA::Abstract::Group& source)
-{
-  operator=(dynamic_cast<const Group&> (source));
-  return *this;
-}
-
 NOX::Abstract::Group& 
 LOCA::Epetra::Group::operator=(const NOX::Epetra::Group& source)
 {
@@ -141,7 +134,7 @@ LOCA::Epetra::Group::operator=(const LOCA::Epetra::Group& source)
 {
   params = source.params;
   NOX::Epetra::Group::operator=(source);
-  LOCA::Abstract::Group::operator=(source);
+  LOCA::Abstract::Group::copy(source);
   params = source.params;
   userInterface = source.userInterface;
   userInterfaceTime = source.userInterfaceTime;
@@ -269,6 +262,12 @@ LOCA::Epetra::Group::setScaleVector(const NOX::Abstract::Vector& s)
   return;
 }
 
+void
+LOCA::Epetra::Group::copy(const NOX::Abstract::Group& source)
+{
+  *this = source;
+}
+
 NOX::Abstract::Group::ReturnType
 LOCA::Epetra::Group::computeMassMatrix()
 {
@@ -296,7 +295,7 @@ LOCA::Epetra::Group::applyMassMatrix(const NOX::Abstract::Vector& input,
 }
 
 bool 
-LOCA::Epetra::Group::isMassMatrix()
+LOCA::Epetra::Group::isMassMatrix() const
 {
   return true;
 }

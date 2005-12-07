@@ -124,12 +124,6 @@ LOCA::LAPACK::Group::operator=(const NOX::Abstract::Group& source) {
   return *this;
 }
 
-LOCA::Abstract::Group& 
-LOCA::LAPACK::Group::operator=(const LOCA::Abstract::Group& source) {
-  operator=(dynamic_cast<const LOCA::LAPACK::Group&>(source));
-  return *this;
-}
-
 NOX::LAPACK::Group&
 LOCA::LAPACK::Group::operator=(const NOX::LAPACK::Group& source) {
   operator=(dynamic_cast<const LOCA::LAPACK::Group&>(source));
@@ -140,7 +134,7 @@ LOCA::LAPACK::Group&
 LOCA::LAPACK::Group::operator=(const LOCA::LAPACK::Group& source) {
 
   NOX::LAPACK::Group::operator=(source);
-  LOCA::Abstract::Group::operator=(source);
+  LOCA::Abstract::Group::copy(source);
 
   params = source.params;
   massMatrix = source.massMatrix;
@@ -290,6 +284,11 @@ LOCA::LAPACK::Group::printSolution(const NOX::Abstract::Vector& x_,
                                    const double conParam) const
 {
    printSolution(dynamic_cast<const NOX::LAPACK::Vector&>(x_), conParam);
+}
+
+void
+LOCA::LAPACK::Group::copy(const NOX::Abstract::Group& source) {
+  *this = source;
 }
 
 void
@@ -480,84 +479,4 @@ LOCA::LAPACK::Group::resetIsValid()
 {
   NOX::LAPACK::Group::resetIsValid();
   isValidMass = false;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::LAPACK::Group::applyBorderedJacobianInverse(bool useTrans,
-				   NOX::Parameter::List& params,
-				   const NOX::Abstract::Vector& a,
-				   const NOX::Abstract::Vector& b,
-				   const NOX::Abstract::Vector& vInput,
-				   double sInput,
-				   NOX::Abstract::Vector& vResult,
-				   double& sResult) const
-{
-  if (!isJacobian()) {
-    cerr << "ERROR: NOX::LAPACK::Group::applyJacobianInverse() - invalid Jacobian" << endl;
-    throw "NOX Error";
-  }
-
-  // Cast input, results to lapack vectors
-  const NOX::LAPACK::Vector& lapack_vInput = 
-    dynamic_cast<const NOX::LAPACK::Vector&>(vInput);
-  const NOX::LAPACK::Vector& lapack_a = 
-    dynamic_cast<const NOX::LAPACK::Vector&>(a);
-  const NOX::LAPACK::Vector& lapack_b = 
-    dynamic_cast<const NOX::LAPACK::Vector&>(b);
-  NOX::LAPACK::Vector& lapack_vResult = 
-    dynamic_cast<NOX::LAPACK::Vector&>(vResult);
-
-  int m = jacobianMatrix.numRows();
-  int n = jacobianMatrix.numCols();
-  int info;
-
-  int M = m+1;
-  int N = n+1;
-
-  const char *trans = "N";
-  if (useTrans)
-    trans = "T";
-
-  // Create and fill extended matrix
-  NOX::LAPACK::Matrix extendedJac(m+1, n+1);
-  for (int j=0; j<n; j++) {
-    for (int i=0; i<m; i++) 
-      extendedJac(i,j) = jacobianMatrix(i,j);
-    extendedJac(m, j) = lapack_b(j);
-  }
-  for (int i=0; i<m; i++)
-    extendedJac(i, n) = lapack_a(i);
-  extendedJac(m,n) = 0.0;
-
-  // Create and fill extended RHS
-  double *extendedInput = new double[m+1];
-  for (int i=0; i<m; i++)
-    extendedInput[i] = lapack_vInput(i);
-  extendedInput[m] = sInput;
-
-  // Create extended pivot array
-  int *extendedPivots = new int[m+1];
-  for (int i=0; i<m+1; i++)
-    extendedPivots[i] = 0;
-
-  // Factor extended matrix
-  DGETRF_F77(&M, &N, &extendedJac(0,0), &M, &extendedPivots[0], &info);
-
-  if (info != 0)
-    return NOX::Abstract::Group::Failed;
-
-  // Backsolve using LU factorization
-  DGETRS_F77(trans, &N, &NOX::LAPACK::i_one, &extendedJac(0,0), &M, 
-	     &extendedPivots[0], extendedInput, &M, &info);
-
-  // Copy out extended solution
-  for (int i=0; i<m; i++)
-    lapack_vResult(i) = extendedInput[i];
-  sResult = extendedInput[m];
-
-  delete [] extendedInput;
-  delete [] extendedPivots;
-    
-  return (info == 0) ? (NOX::Abstract::Group::Ok) : (NOX::Abstract::Group::Failed);
-
 }

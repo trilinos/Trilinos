@@ -63,32 +63,25 @@ LOCA::MultiContinuation::NaturalConstraint::~NaturalConstraint()
 {
 }
 
-LOCA::MultiContinuation::NaturalConstraint&
-LOCA::MultiContinuation::NaturalConstraint::operator=(
-		   const LOCA::MultiContinuation::NaturalConstraint& source)
-{
-  if (this != &source) {
-    globalData = source.globalData;
-    constraints.assign(source.constraints);
-    isValidConstraints = source.isValidConstraints;
-    conParamIDs = source.conParamIDs;
-  }
-
-  return *this;
-}
-
 void
 LOCA::MultiContinuation::NaturalConstraint::setNaturalGroup(const Teuchos::RefCountPtr<LOCA::MultiContinuation::NaturalGroup>& grp)
 {
   naturalGroup = grp;
 }
 
-LOCA::MultiContinuation::ConstraintInterface& 
-LOCA::MultiContinuation::NaturalConstraint::operator=(
-		   const LOCA::MultiContinuation::ConstraintInterface& source)
+void
+LOCA::MultiContinuation::NaturalConstraint::copy(
+		   const LOCA::MultiContinuation::ConstraintInterface& src)
 {
-  operator=(dynamic_cast<const LOCA::MultiContinuation::NaturalConstraint&>(source));
-  return *this;
+  const LOCA::MultiContinuation::NaturalConstraint& source = 
+    dynamic_cast<const LOCA::MultiContinuation::NaturalConstraint&>(src);
+
+  if (this != &source) {
+    globalData = source.globalData;
+    constraints.assign(source.constraints);
+    isValidConstraints = source.isValidConstraints;
+    conParamIDs = source.conParamIDs;
+  }
 }
 
 Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>

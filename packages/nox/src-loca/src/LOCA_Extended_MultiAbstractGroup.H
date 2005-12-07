@@ -74,10 +74,6 @@ namespace LOCA {
        */
       //@{
 
-      //! Assignment operator
-      virtual MultiAbstractGroup& 
-      operator=(const MultiAbstractGroup& source) = 0;
-
       //! Return underlying group
       /*!
        * This method should the underlying group data member.
@@ -129,6 +125,9 @@ namespace LOCA {
       getBaseLevelUnderlyingGroup();
 
       //@}
+
+      //! Bring NOX::Abstract::Group::operator=() into scope
+      using NOX::Abstract::Group::operator=;
 
     };
   } // namespace Extended

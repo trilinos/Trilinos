@@ -50,15 +50,6 @@ LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::~FiniteDifferenceGroup()
 {
 }
 
-LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup&
-LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::operator=(
-	 const LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup& source)
-{
-  LOCA::MultiContinuation::FiniteDifferenceGroup::operator=(source);
-
-  return *this;
-}
-
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::computeDJnDpMulti(
 				      const vector<int>& paramIDs, 

@@ -167,49 +167,11 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::~ExtendedGroup()
 {
 }
 
-LOCA::TurningPoint::MooreSpence::ExtendedGroup&
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::operator=(
-		 const LOCA::TurningPoint::MooreSpence::ExtendedGroup& source) 
-{
-
-  // Protect against A = A
-  if (this != &source) {
-    
-    // Copy values
-    globalData = source.globalData;
-    parsedParams = source.parsedParams;
-    turningPointParams = source.turningPointParams;
-    *grpPtr = *source.grpPtr;
-    xMultiVec = source.xMultiVec;
-    fMultiVec = source.fMultiVec;
-    newtonMultiVec = source.newtonMultiVec;
-    *lengthMultiVec = *source.lengthMultiVec;
-    index_f = source.index_f;
-    index_dfdp = source.index_dfdp;
-    bifParamID = source.bifParamID;
-    isValidF = source.isValidF;
-    isValidJacobian = source.isValidJacobian;
-    isValidNewton = source.isValidNewton;
-
-    // set up views again just to be safe
-    setupViews();
-
-    // Instantiate solver strategy
-    solverStrategy = 
-      globalData->locaFactory->createMooreSpenceSolverStrategy(
-				   parsedParams,
-				   turningPointParams);
-  }
-
-  return *this;
-}
-
 NOX::Abstract::Group&
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::operator=(
 					   const NOX::Abstract::Group& source)
 {
-  *this = 
-   dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedGroup&>(source);
+  copy(source);
   return *this;
 }
 
@@ -646,15 +608,6 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual() con
   return residual.norm();
 }
 
-LOCA::Extended::MultiAbstractGroup&
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::operator=(
-			const LOCA::Extended::MultiAbstractGroup& source)
-{
-  *this = 
-   dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedGroup&>(source);
-  return *this;
-}
-
 Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::getUnderlyingGroup() const
 {
@@ -667,13 +620,41 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::getUnderlyingGroup()
   return grpPtr;
 }
 
-LOCA::MultiContinuation::AbstractGroup&
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::operator=(
-			const LOCA::MultiContinuation::AbstractGroup& source)
+void
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::copy(
+					    const NOX::Abstract::Group& src)
 {
-  *this = 
-   dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedGroup&>(source);
-  return *this;
+  const LOCA::TurningPoint::MooreSpence::ExtendedGroup& source = 
+    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedGroup&>(src);
+
+  // Protect against A = A
+  if (this != &source) {
+    
+    // Copy values
+    globalData = source.globalData;
+    parsedParams = source.parsedParams;
+    turningPointParams = source.turningPointParams;
+    grpPtr->copy(*(source.grpPtr));
+    xMultiVec = source.xMultiVec;
+    fMultiVec = source.fMultiVec;
+    newtonMultiVec = source.newtonMultiVec;
+    *lengthMultiVec = *source.lengthMultiVec;
+    index_f = source.index_f;
+    index_dfdp = source.index_dfdp;
+    bifParamID = source.bifParamID;
+    isValidF = source.isValidF;
+    isValidJacobian = source.isValidJacobian;
+    isValidNewton = source.isValidNewton;
+
+    // set up views again just to be safe
+    setupViews();
+
+    // Instantiate solver strategy
+    solverStrategy = 
+      globalData->locaFactory->createMooreSpenceSolverStrategy(
+				   parsedParams,
+				   turningPointParams);
+  }
 }
 
 void

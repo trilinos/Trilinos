@@ -65,18 +65,14 @@ namespace LOCA {
       //! Destructor
       ~CompositeConstraintMVDX();
 
-      //! Assignment
-      virtual CompositeConstraintMVDX&
-      operator=(const CompositeConstraintMVDX& source);
-
       /*! 
        * @name Implementation of LOCA::MultiContinuation::ConstraintInterface 
        * virtual methods 
        */
       //@{
 
-      virtual ConstraintInterface& 
-      operator=(const ConstraintInterface& source);
+      //! Copy
+      virtual void copy(const ConstraintInterface& source);
 
       //! Cloning function
       virtual 
@@ -127,6 +123,12 @@ namespace LOCA {
       getDX() const;
 
       //@}
+
+    private:
+
+      //! Prohibit generation and use of operator=()
+      CompositeConstraintMVDX&
+      operator=(const CompositeConstraintMVDX& source);
 
     protected:
 

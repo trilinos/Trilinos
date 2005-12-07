@@ -68,82 +68,6 @@ LOCA::Abstract::Group::~Group()
 {
 }
 
-// LOCA::Continuation::AbstractGroup&
-// LOCA::Abstract::Group::operator=(
-// 			    const LOCA::Continuation::AbstractGroup& source)
-// {
-//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-// }
-
-// LOCA::Continuation::FiniteDifferenceGroup&
-// LOCA::Abstract::Group::operator=(
-// 		      const LOCA::Continuation::FiniteDifferenceGroup& source)
-// {
-//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-// }
-
-// LOCA::Bifurcation::TPBord::AbstractGroup&
-// LOCA::Abstract::Group::operator=(
-// 		     const LOCA::Bifurcation::TPBord::AbstractGroup& source)
-// {
-//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-// }
-
-// LOCA::Bifurcation::TPBord::FiniteDifferenceGroup&
-// LOCA::Abstract::Group::operator=(
-// 	      const LOCA::Bifurcation::TPBord::FiniteDifferenceGroup& source)
-// {
-//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-// }
-
-// LOCA::Bifurcation::TPBord::SingularSolveGroup&
-// LOCA::Abstract::Group::operator=(
-// 		   const LOCA::Bifurcation::TPBord::SingularSolveGroup& source)
-// {
-//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-// }
-
-LOCA::TimeDependent::AbstractGroup&
-LOCA::Abstract::Group::operator=(
-			    const LOCA::TimeDependent::AbstractGroup& source)
-{
-  operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-  return *this;
-}
-
-// LOCA::Bifurcation::HopfBord::AbstractGroup&
-// LOCA::Abstract::Group::operator=(
-// 	       const LOCA::Bifurcation::HopfBord::AbstractGroup& source)
-// {
-//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-// }
-
-// LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup&
-// LOCA::Abstract::Group::operator=(
-// 	       const LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& source)
-// {
-//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-// }
-
-// LOCA::Homotopy::AbstractGroup&
-// LOCA::Abstract::Group::operator=(
-// 			    const LOCA::Homotopy::AbstractGroup& source)
-// {
-//   return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-// }
-
-LOCA::Abstract::Group&
-LOCA::Abstract::Group::operator=(const LOCA::Abstract::Group& source)
-{
-
-  // Copy parent classes
-//   LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup::operator=(source);
-//   LOCA::Bifurcation::TPBord::SingularSolveGroup::operator=(source);
-  LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::operator=(source);
-  globalData = source.globalData;
-  return *this;
-}
-
 // NOX::Abstract::Group::ReturnType 
 // LOCA::Abstract::Group::augmentJacobianForHomotopy(double conParamValue)
 // {
@@ -177,28 +101,15 @@ LOCA::Abstract::Group::applyShiftedMatrixInverse(
 //   return NOX::Abstract::Group::NotDefined;
 // }
 
-// NOX::Abstract::Group::ReturnType
-// LOCA::Abstract::Group::applyBorderedJacobianInverse(bool trans,
-// 				     NOX::Parameter::List& params,
-// 				     const NOX::Abstract::Vector& a,
-// 				     const NOX::Abstract::Vector& b,
-// 				     const NOX::Abstract::Vector& vInput,
-// 				     double sInput,
-// 				     NOX::Abstract::Vector& vResult,
-// 				     double& sResult) const
-// {
-//   globalData->locaErrorCheck->throwError(
-// 		       "LOCA::Abstract::Group::applyBorderedJacobianInverse",
-// 		       "Not defined for group");
-//   return NOX::Abstract::Group::NotDefined;
-// }
-
-LOCA::MultiContinuation::AbstractGroup&
-LOCA::Abstract::Group::operator=(
-			 const LOCA::MultiContinuation::AbstractGroup& source)
+void
+LOCA::Abstract::Group::copy(const NOX::Abstract::Group& src)
 {
-  operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-  return *this;
+  const LOCA::Abstract::Group& source = 
+    dynamic_cast<const LOCA::Abstract::Group&>(src);
+
+  // Copy parent classes
+  LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::copy(src);
+  globalData = source.globalData;
 }
 
 void
@@ -209,26 +120,10 @@ LOCA::Abstract::Group::setParamsMulti(const vector<int>& paramIDs,
     setParam(paramIDs[i], vals(i,0));
 }
 
-LOCA::MultiContinuation::FiniteDifferenceGroup&
-LOCA::Abstract::Group::operator=(
-		 const LOCA::MultiContinuation::FiniteDifferenceGroup& source)
+NOX::Abstract::Group&
+LOCA::Abstract::Group::operator=(const NOX::Abstract::Group& source)
 {
-  operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-  return *this;
-}
 
-LOCA::TurningPoint::MooreSpence::AbstractGroup&
-LOCA::Abstract::Group::operator=(
-	 const LOCA::TurningPoint::MooreSpence::AbstractGroup& source)
-{
-  operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
-  return *this;
-}
-
-LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup&
-LOCA::Abstract::Group::operator=(
-	 const LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup& source)
-{
-  operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+  copy(source);
   return *this;
 }

@@ -83,9 +83,8 @@ namespace LOCA {
       //! Destructor
       virtual ~ConstraintInterface() {}
 
-      //! Assignment
-      virtual ConstraintInterface& 
-      operator=(const ConstraintInterface& source) = 0;
+      //! Copy
+      virtual void copy(const ConstraintInterface& source) = 0;
 
       //! Cloning function
       virtual 

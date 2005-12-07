@@ -114,10 +114,6 @@ namespace LOCA {
       //! Destructor.
       virtual ~ConstrainedGroup();
 
-       //! Assignment operator
-      virtual ConstrainedGroup& 
-      operator=(const ConstrainedGroup& source);
-
       //! Set constraint parameter \c i to value \c val
       virtual void setConstraintParameter(int i, double val);
 
@@ -246,10 +242,6 @@ namespace LOCA {
        */
       //@{
 
-      //! Assignment operator
-      virtual LOCA::Extended::MultiAbstractGroup& 
-      operator=(const LOCA::Extended::MultiAbstractGroup& source);
-
       //! Return underlying group
       virtual 
       Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
@@ -269,8 +261,7 @@ namespace LOCA {
       //@{
 
       //! Assignment operator
-      virtual LOCA::MultiContinuation::AbstractGroup& 
-      operator=(const LOCA::MultiContinuation::AbstractGroup& source);
+      virtual void copy(const NOX::Abstract::Group& source);
 
       //! Set parameters indexed by (integer) paramIDs
       virtual void setParamsMulti(
@@ -342,6 +333,11 @@ namespace LOCA {
 
       //! Sets up multivector views
       virtual void setupViews();
+
+    private:
+
+      //! Prevent generation and use of operator=()
+      ConstrainedGroup& operator=(const ConstrainedGroup& source);
 
     protected:
 

@@ -164,17 +164,6 @@ namespace LOCA {
       //@}
 
       /*! 
-       * @name Implementation of LOCA::Abstract::Group virtual methods.
-       */
-      //@{
-
-      //! Assignment operator
-      virtual LOCA::Abstract::Group& 
-      operator=(const LOCA::Abstract::Group& source);
-
-      //@}
-
-      /*! 
        * @name Implementation of LOCA::Continuation::AbstractGroup virtual methods.
        */
       //@{
@@ -225,6 +214,9 @@ namespace LOCA {
        * @name Implementation of LOCA::MultiContinuation::AbstractGroup virtual methods.
        */
       //@{
+
+      //! Copy
+      virtual void copy(const NOX::Abstract::Group& source);
 
       //! Projects solution to a few scalars for multiparameter continuation
       /*! 
@@ -279,7 +271,7 @@ namespace LOCA {
       applyMassMatrix(const NOX::Abstract::Vector& input,
 		      NOX::Abstract::Vector& result) const;
 
-      virtual bool isMassMatrix();
+      virtual bool isMassMatrix() const;
 
       //! Multiply the shifted matrix by a vector.
       //! (Currently only has matrix-free implementation.)
@@ -306,36 +298,6 @@ namespace LOCA {
        * @name Implementation of LOCA::Bifurcation::TPBord::AbstractGroup virtual methods.
        */
       //@{
-
-      /*!
-       * \brief Solve a bordered system of equations
-       */
-      /*!
-       * Compute the solution to the bordered system of equations
-       * \f[
-       *     \begin{bmatrix}
-       *        J & a \\
-       *        b^T & 0
-       *     \end{bmatrix}
-       *     \begin{bmatrix}
-       *        \text{vResult} \\
-       *        \text{sResult}
-       *     \end{bmatrix} = 
-       *     \begin{bmatrix}
-       *        \text{vInput} \\
-       *        \text{sInput}
-       *     \end{bmatrix}
-       * \f]
-       */
-//       virtual NOX::Abstract::Group::ReturnType
-//       applyBorderedJacobianInverse(bool trans,
-// 				   NOX::Parameter::List& params,
-// 				   const NOX::Abstract::Vector& a,
-// 				   const NOX::Abstract::Vector& b,
-// 				   const NOX::Abstract::Vector& vInput,
-// 				   double sInput,
-// 				   NOX::Abstract::Vector& vResult,
-// 				   double& sResult) const;
 
       //! Scales a vector using scaling vector
       /*! 

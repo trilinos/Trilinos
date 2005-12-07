@@ -57,20 +57,6 @@ LOCA::MultiContinuation::MultiVecConstraint::~MultiVecConstraint()
 {
 }
 
-LOCA::MultiContinuation::MultiVecConstraint&
-LOCA::MultiContinuation::MultiVecConstraint::operator=(
-		   const LOCA::MultiContinuation::MultiVecConstraint& source)
-{
-  if (this != &source) {
-    *dx = *source.dx;
-    *x = *source.x;
-    constraints.assign(source.constraints);
-    isValidConstraints = source.isValidConstraints;
-  }
-
-  return *this;
-}
-
 void
 LOCA::MultiContinuation::MultiVecConstraint::setDx(
 	    const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& dx_)
@@ -78,12 +64,19 @@ LOCA::MultiContinuation::MultiVecConstraint::setDx(
   *dx = *dx_;
 }
 
-LOCA::MultiContinuation::ConstraintInterface& 
-LOCA::MultiContinuation::MultiVecConstraint::operator=(
-		   const LOCA::MultiContinuation::ConstraintInterface& source)
+void
+LOCA::MultiContinuation::MultiVecConstraint::copy(
+		   const LOCA::MultiContinuation::ConstraintInterface& src)
 {
-  operator=(dynamic_cast<const LOCA::MultiContinuation::MultiVecConstraint&>(source));
-  return *this;
+  const LOCA::MultiContinuation::MultiVecConstraint& source = 
+    dynamic_cast<const LOCA::MultiContinuation::MultiVecConstraint&>(src);
+
+  if (this != &source) {
+    *dx = *source.dx;
+    *x = *source.x;
+    constraints.assign(source.constraints);
+    isValidConstraints = source.isValidConstraints;
+  }
 }
 
 Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>

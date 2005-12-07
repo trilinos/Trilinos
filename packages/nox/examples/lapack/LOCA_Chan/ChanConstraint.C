@@ -61,9 +61,11 @@ ChanConstraint::~ChanConstraint()
 {
 }
 
-ChanConstraint&
-ChanConstraint::operator=(const ChanConstraint& source)
+void
+ChanConstraint::copy(const LOCA::MultiContinuation::ConstraintInterface& src)
 {
+  const ChanConstraint& source = dynamic_cast<const ChanConstraint&>(src);
+
   if (this != &source) {
     n = source.n;
     constraints = source.constraints;
@@ -71,16 +73,6 @@ ChanConstraint::operator=(const ChanConstraint& source)
     p = source.p;
     *x = *source.x;
   }
-
-  return *this;
-}
-
-LOCA::MultiContinuation::ConstraintInterface& 
-ChanConstraint::operator=(
-		   const LOCA::MultiContinuation::ConstraintInterface& source)
-{
-  operator=(dynamic_cast<const ChanConstraint&>(source));
-  return *this;
 }
 
 Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>

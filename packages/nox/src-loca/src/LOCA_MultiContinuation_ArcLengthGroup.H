@@ -113,32 +113,6 @@ namespace LOCA {
       //! Destructor.
       virtual ~ArcLengthGroup();
 
-      //! Assignment operator
-      virtual ArcLengthGroup& 
-      operator=(const ArcLengthGroup& source);
-
-      /*! 
-       * @name Implementation of LOCA::MultiContinuation::ExtendedGroup virtual methods
-       */
-      //@{
-
-      //! Assignment operator
-      virtual LOCA::MultiContinuation::ExtendedGroup& 
-      operator=(const LOCA::MultiContinuation::ExtendedGroup& source);
-
-      //@}
-
-      /*! 
-       * @name Implementation of LOCA::Extended::AbstractGroup virtual methods 
-       */
-      //@{
-
-      //! Assignment operator
-      virtual LOCA::Extended::MultiAbstractGroup& 
-      operator=(const LOCA::Extended::MultiAbstractGroup& source);
-
-      //@}
-
       /*! 
        * @name Implementation of NOX::Abstract::Group virtual methods 
        */
@@ -155,13 +129,12 @@ namespace LOCA {
       //@}
 
       /*! 
-       * @name Implementation of LOCA::Stepper::AbstractGroup virtual methods 
+       * @name Implementation of LOCA::MultiContinuation::AbstractStrategy virtual methods 
        */
       //@{
 
-      //! Assignment operator
-      virtual LOCA::MultiContinuation::AbstractStrategy&
-      operator=(const MultiContinuation::AbstractStrategy& source);
+      //! Copy
+      virtual void copy(const NOX::Abstract::Group& source);
 
       //! Scales predictor
       virtual void scaleTangent();
@@ -176,6 +149,11 @@ namespace LOCA {
 					  double& thetaNew);
 
       //@}
+
+    private:
+
+      //! Prohibit generation and use of operator=()
+      ArcLengthGroup& operator=(const ArcLengthGroup& source);
 
     protected:
 

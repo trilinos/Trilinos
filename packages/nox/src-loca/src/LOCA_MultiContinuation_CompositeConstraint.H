@@ -68,18 +68,14 @@ namespace LOCA {
       //! Destructor
       ~CompositeConstraint();
 
-      //! Assignment
-      virtual CompositeConstraint&
-      operator=(const CompositeConstraint& source);
-
       /*! 
        * @name Implementation of LOCA::MultiContinuation::ConstraintInterface 
        * virtual methods 
        */
       //@{
 
-      virtual ConstraintInterface& 
-      operator=(const ConstraintInterface& source);
+      //! Copy
+      virtual void copy(const ConstraintInterface& source);
 
       //! Cloning function
       virtual 
@@ -163,6 +159,11 @@ namespace LOCA {
       virtual bool isDXZero() const;
 
       //@}
+
+    private:
+
+      //! Prohibit generation and use of operator=()
+      CompositeConstraint& operator=(const CompositeConstraint& source);
 
     protected:
 

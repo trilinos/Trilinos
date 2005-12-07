@@ -68,10 +68,6 @@ namespace LOCA {
        */
       //@{
       
-      //! Assignment operator
-      virtual AbstractGroup& 
-      operator=(const AbstractGroup& source) = 0;
-      
       /*! 
        * \brief Apply the inverse of the shifted matrix by a vector, as 
        * needed by the shift-and-invert and generalized Cayley transformations.
@@ -138,6 +134,9 @@ namespace LOCA {
                          double shift) const;
 
       //@}
+
+      //! Bring NOX::Abstract::Group::operator=() into scope
+      using NOX::Abstract::Group::operator=;
 
     };
   } // namespace TimeDependent

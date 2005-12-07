@@ -86,9 +86,6 @@ namespace LOCA {
 	 * These methods must be defined by any concrete implementation
 	 */
 	//@{
-  
-	//! Assignment operator
-	virtual AbstractGroup& operator=(const AbstractGroup& source) = 0;
 
 	/*! 
 	 * \brief Computes the derivative \f$\partial Jn/\partial p\f$ 
@@ -121,6 +118,9 @@ namespace LOCA {
 			   NOX::Abstract::MultiVector& result) = 0;
 
 	//@}
+
+	//! Bring NOX::Abstract::Group::operator=() into scope
+	using NOX::Abstract::Group::operator=;
 
       }; // class AbstractGroup
 

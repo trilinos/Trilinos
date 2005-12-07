@@ -89,103 +89,10 @@ namespace LOCA {
       //! Destructor.
       virtual ~Group();
 
-      //! Assignment operator
-      virtual Group& operator=(const Group& source);
-
-      /*! 
-       * @name Implementation of LOCA::Continuation::AbstractGroup virtual methods.
-       */
-      //@{
-
-      //! Assignment operator
-//       virtual LOCA::Continuation::AbstractGroup& 
-//       operator=(const LOCA::Continuation::AbstractGroup& source);
-
-      //@}
-
-      
-      /*! 
-       * @name Implementation of LOCA::Continuation::FiniteDifferenceGroup virtual methods.
-       */
-      //@{
-
-      //! Assignment operator
-//       virtual LOCA::Continuation::FiniteDifferenceGroup& 
-//       operator=(const LOCA::Continuation::FiniteDifferenceGroup& source);
-
-      //@}
-
-      /*! 
-       * @name Implementation of LOCA::Bifurcation::TPBord::AbstractGroup virtual methods.
-       */
-      //@{
-
-      //! Assignment operator
-//       virtual LOCA::Bifurcation::TPBord::AbstractGroup& 
-//       operator=(const LOCA::Bifurcation::TPBord::AbstractGroup& source);
-
-      /*!
-       * \brief Solve a bordered system of equations
-       */
-      /*!
-       * Compute the solution to the bordered system of equations
-       * \f[
-       *     \begin{bmatrix}
-       *        J & a \\
-       *        b^T & 0
-       *     \end{bmatrix}
-       *     \begin{bmatrix}
-       *        \text{vResult} \\
-       *        \text{sResult}
-       *     \end{bmatrix} = 
-       *     \begin{bmatrix}
-       *        \text{vInput} \\
-       *        \text{sInput}
-       *     \end{bmatrix}
-       * \f]
-       * The default implementation here is to throw an error.
-       */
-//       virtual NOX::Abstract::Group::ReturnType
-//       applyBorderedJacobianInverse(bool trans,
-// 				   NOX::Parameter::List& params,
-// 				   const NOX::Abstract::Vector& a,
-// 				   const NOX::Abstract::Vector& b,
-// 				   const NOX::Abstract::Vector& vInput,
-// 				   double sInput,
-// 				   NOX::Abstract::Vector& vResult,
-// 				   double& sResult) const;
-
-      //@}
-
-      /*! 
-       * @name Implementation of LOCA::Bifurcation::TPBord::FiniteDiffernceGroup virtual methods.
-       */
-      //@{
-
-      //! Assignment operator
-//       virtual LOCA::Bifurcation::TPBord::FiniteDifferenceGroup& 
-//       operator=(const LOCA::Bifurcation::TPBord::FiniteDifferenceGroup& source);
-      //@}
-
-      /*! 
-       * @name Implementation of LOCA::Bifurcation::TPBord::SingularSolveGroup virtual methods.
-       */
-      //@{
-
-      //! Assignment operator
-//       virtual LOCA::Bifurcation::TPBord::SingularSolveGroup& 
-//       operator=(const LOCA::Bifurcation::TPBord::SingularSolveGroup& source);
-
-      //@}
-
       /*! 
        * @name Implementation of LOCA::TimeDependent::AbstractGroup virtual methods.
        */
       //@{
-
-      //! Assignment operator
-      virtual LOCA::TimeDependent::AbstractGroup& 
-      operator=(const LOCA::TimeDependent::AbstractGroup& source);
 
       /*! 
        * \brief Apply the inverse of the shifted matrix by a vector, as 
@@ -207,10 +114,6 @@ namespace LOCA {
        * @name Implementation of LOCA::Bifurcation::HopfBord::AbstractGroup virtual methods.
        */
       //@{
-      
-      //! Assignment operator
-//       virtual LOCA::Bifurcation::HopfBord::AbstractGroup& 
-//       operator=(const LOCA::Bifurcation::HopfBord::AbstractGroup& source);
 
       //! Solve \f$(J+i\omega B)(y+iz) = a+ib\f$
       /*!
@@ -228,24 +131,9 @@ namespace LOCA {
       //@}
 
       /*! 
-       * @name Implementation of LOCA::Bifurcation::HopfBord::FiniteDiffernceGroup virtual methods.
-       */
-      //@{
-
-      //! Assignment operator
-//       virtual LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& 
-//       operator=(const LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& source);
-
-      //@}
-
-      /*! 
        * @name Implementation of LOCA::Homotopy::AbstractGroup virtual methods.
        */
       //@{
-
-      //! Assignment operator
-//       virtual LOCA::Homotopy::AbstractGroup& 
-//       operator=(const LOCA::Homotopy::AbstractGroup& source);
 
       /*! 
        * \brief Replace Jacobian \f$J\f$ by \f$J+pI\f$ where \f$I\f$ is the 
@@ -266,8 +154,7 @@ namespace LOCA {
       //@{
 
       //! Assignment operator
-      virtual LOCA::MultiContinuation::AbstractGroup& 
-      operator=(const LOCA::MultiContinuation::AbstractGroup& source);
+      virtual void copy(const NOX::Abstract::Group& source);
 
       //! Set parameters indexed by (integer) paramIDs
       virtual void 
@@ -277,37 +164,19 @@ namespace LOCA {
       //@}
 
       /*! 
-       * @name Implementation of LOCA::MultiContinuation::FiniteDifferenceGroup virtual methods.
+       * @name Implementation of NOX::Abstract::Group virtual methods.
        */
       //@{
 
-      //! Assignment operator
-      virtual LOCA::MultiContinuation::FiniteDifferenceGroup& 
-      operator=(const LOCA::MultiContinuation::FiniteDifferenceGroup& source);
+      virtual NOX::Abstract::Group& 
+      operator=(const NOX::Abstract::Group& source);
 
       //@}
 
-      /*! 
-       * @name Implementation of LOCA::TurningPoint::MooreSpence::AbstractGroup virtual methods.
-       */
-      //@{
+    private:
 
-      //! Assignment operator
-      virtual LOCA::TurningPoint::MooreSpence::AbstractGroup& 
-      operator=(const LOCA::TurningPoint::MooreSpence::AbstractGroup& source);
-
-      //@}
-
-      /*! 
-       * @name Implementation of LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup virtual methods.
-       */
-      //@{
-
-      //! Assignment operator
-      virtual LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup& 
-      operator=(const LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup& source);
-
-      //@}
+      //! Prohibit generation and use of operator=()
+      Group& operator=(const Group& source);
 
     protected:
 

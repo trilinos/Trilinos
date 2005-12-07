@@ -61,17 +61,15 @@ public:
   //! Destructor
   virtual ~NormConstraint();
 
-  //! Assignment
-  virtual NormConstraint& operator=(const NormConstraint& source);
-
   /*! 
    * @name Implementation of LOCA::MultiContinuation::ConstraintInterfaceMVDX
    * virtual methods 
    */
   //@{
 
-  virtual LOCA::MultiContinuation::ConstraintInterface& 
-  operator=(const LOCA::MultiContinuation::ConstraintInterface& source);
+  //! Copy
+  virtual void 
+  copy(const LOCA::MultiContinuation::ConstraintInterface& source);
 
   //! Cloning function
   virtual 
@@ -138,6 +136,11 @@ public:
    * is zero.
    */
   void setIsZeroDX(bool flag);
+
+private:
+
+  //! Prohibit generation and use of operator=()
+  NormConstraint& operator=(const NormConstraint& source);
 
 protected:
 

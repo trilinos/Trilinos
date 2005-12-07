@@ -79,12 +79,15 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::~CompositeConstraintMVDX()
 {
 }
 
-LOCA::MultiContinuation::CompositeConstraintMVDX&
-LOCA::MultiContinuation::CompositeConstraintMVDX::operator=(
-		   const LOCA::MultiContinuation::CompositeConstraintMVDX& source)
+void
+LOCA::MultiContinuation::CompositeConstraintMVDX::copy(
+		   const LOCA::MultiContinuation::ConstraintInterface& src)
 {
+  const LOCA::MultiContinuation::CompositeConstraintMVDX& source = 
+    dynamic_cast<const LOCA::MultiContinuation::CompositeConstraintMVDX&>(src);
+
   if (this != &source) {
-    LOCA::MultiContinuation::CompositeConstraint::operator=(source);
+    LOCA::MultiContinuation::CompositeConstraint::copy(source);
     constraintMVDXPtrs = source.constraintMVDXPtrs;
     if (compositeDX.get() != NULL && source.compositeDX.get() != NULL)
       *compositeDX = *source.compositeDX;
@@ -93,16 +96,6 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::operator=(
     else
       compositeDX = Teuchos::null;
   }
-
-  return *this;
-}
-
-LOCA::MultiContinuation::ConstraintInterface& 
-LOCA::MultiContinuation::CompositeConstraintMVDX::operator=(
-		   const LOCA::MultiContinuation::ConstraintInterface& source)
-{
-  operator=(dynamic_cast<const LOCA::MultiContinuation::CompositeConstraintMVDX&>(source));
-  return *this;
 }
 
 Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>

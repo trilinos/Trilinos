@@ -79,10 +79,6 @@ namespace LOCA {
       //! Destructor
       ~NaturalConstraint();
 
-      //! Assignment
-      virtual NaturalConstraint&
-      operator=(const NaturalConstraint& source);
-
       //! Set pointer to natural group
       virtual void setNaturalGroup(const Teuchos::RefCountPtr<LOCA::MultiContinuation::NaturalGroup>& grp);
 
@@ -92,8 +88,8 @@ namespace LOCA {
        */
       //@{
 
-      virtual ConstraintInterface& 
-      operator=(const ConstraintInterface& source);
+      //! Copy
+      virtual void copy(const ConstraintInterface& source);
 
       //! Cloning function
       virtual 
@@ -158,6 +154,11 @@ namespace LOCA {
       virtual bool isDXZero() const;
 
       //@}
+
+    private:
+
+      //! Prohibit generation and use of operator=()
+      NaturalConstraint& operator=(const NaturalConstraint& source);
 
     protected:
 

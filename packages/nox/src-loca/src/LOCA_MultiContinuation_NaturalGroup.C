@@ -64,43 +64,11 @@ LOCA::MultiContinuation::NaturalGroup::~NaturalGroup()
 {
 }
 
-LOCA::MultiContinuation::NaturalGroup&
-LOCA::MultiContinuation::NaturalGroup::operator=(
-		       const LOCA::MultiContinuation::NaturalGroup& source) 
-{
-
-  // Protect against A = A
-  if (this != &source) {
-    LOCA::MultiContinuation::ExtendedGroup::operator=(source);
-  }
-
-  return *this;
-}
-
-LOCA::MultiContinuation::ExtendedGroup&
-LOCA::MultiContinuation::NaturalGroup::operator=(
-		        const LOCA::MultiContinuation::ExtendedGroup& source)
-{
-  *this = 
-    dynamic_cast<const LOCA::MultiContinuation::NaturalGroup&>(source);
-  return *this;
-}
-
-LOCA::Extended::MultiAbstractGroup&
-LOCA::MultiContinuation::NaturalGroup::operator=(
-			      const LOCA::Extended::MultiAbstractGroup& source)
-{
-  *this = 
-    dynamic_cast<const LOCA::MultiContinuation::NaturalGroup&>(source);
-  return *this;
-}
-
 NOX::Abstract::Group&
 LOCA::MultiContinuation::NaturalGroup::operator=(
 					  const NOX::Abstract::Group& source)
 {
-  *this = 
-    dynamic_cast<const LOCA::MultiContinuation::NaturalGroup&>(source);
+  copy(source);
   return *this;
 }
 
@@ -110,13 +78,14 @@ LOCA::MultiContinuation::NaturalGroup::clone(NOX::CopyType type) const
   return Teuchos::rcp(new LOCA::MultiContinuation::NaturalGroup(*this, type));
 }
 
-LOCA::MultiContinuation::AbstractStrategy& 
-LOCA::MultiContinuation::NaturalGroup::operator=(
-			    const MultiContinuation::AbstractStrategy& source)
+void
+LOCA::MultiContinuation::NaturalGroup::copy(const NOX::Abstract::Group& src) 
 {
-  *this = 
-    dynamic_cast<const LOCA::MultiContinuation::NaturalGroup&>(source);
-  return *this;
+
+  // Protect against A = A
+  if (this != &src) {
+    LOCA::MultiContinuation::ExtendedGroup::copy(src);
+  }
 }
 
 

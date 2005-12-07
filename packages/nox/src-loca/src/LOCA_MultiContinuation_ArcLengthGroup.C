@@ -96,44 +96,11 @@ LOCA::MultiContinuation::ArcLengthGroup::~ArcLengthGroup()
 {
 }
 
-LOCA::MultiContinuation::ArcLengthGroup&
-LOCA::MultiContinuation::ArcLengthGroup::operator=(
-		       const LOCA::MultiContinuation::ArcLengthGroup& source) 
-{
-
-  // Protect against A = A
-  if (this != &source) {
-    LOCA::MultiContinuation::ExtendedGroup::operator=(source);
-    theta = source.theta;
-  }
-
-  return *this;
-}
-
-LOCA::MultiContinuation::ExtendedGroup&
-LOCA::MultiContinuation::ArcLengthGroup::operator=(
-		        const LOCA::MultiContinuation::ExtendedGroup& source)
-{
-  *this = 
-    dynamic_cast<const LOCA::MultiContinuation::ArcLengthGroup&>(source);
-  return *this;
-}
-
-LOCA::Extended::MultiAbstractGroup&
-LOCA::MultiContinuation::ArcLengthGroup::operator=(
-			      const LOCA::Extended::MultiAbstractGroup& source)
-{
-  *this = 
-    dynamic_cast<const LOCA::MultiContinuation::ArcLengthGroup&>(source);
-  return *this;
-}
-
 NOX::Abstract::Group&
 LOCA::MultiContinuation::ArcLengthGroup::operator=(
 					  const NOX::Abstract::Group& source)
 {
-  *this = 
-    dynamic_cast<const LOCA::MultiContinuation::ArcLengthGroup&>(source);
+  copy(source);
   return *this;
 }
 
@@ -144,13 +111,23 @@ LOCA::MultiContinuation::ArcLengthGroup::clone(NOX::CopyType type) const
     Teuchos::rcp(new LOCA::MultiContinuation::ArcLengthGroup(*this, type));
 }
 
-LOCA::MultiContinuation::AbstractStrategy& 
-LOCA::MultiContinuation::ArcLengthGroup::operator=(
-			    const MultiContinuation::AbstractStrategy& source)
+void
+LOCA::MultiContinuation::ArcLengthGroup::copy(const NOX::Abstract::Group& src) 
 {
-  *this = 
-    dynamic_cast<const LOCA::MultiContinuation::ArcLengthGroup&>(source);
-  return *this;
+
+  const LOCA::MultiContinuation::ArcLengthGroup& source = 
+    dynamic_cast<const LOCA::MultiContinuation::ArcLengthGroup&>(src);
+
+  // Protect against A = A
+  if (this != &source) {
+    LOCA::MultiContinuation::ExtendedGroup::copy(source);
+    theta = source.theta;
+    doArcLengthScaling = source.doArcLengthScaling;
+    gGoal = source.gGoal;
+    gMax = source.gMax;
+    thetaMin = source.thetaMin;
+    isFirstRescale = source.isFirstRescale;
+  }
 }
 
 void

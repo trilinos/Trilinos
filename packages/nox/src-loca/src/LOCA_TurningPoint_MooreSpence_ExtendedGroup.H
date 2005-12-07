@@ -142,9 +142,6 @@ namespace LOCA {
 	//! Destructor.
 	virtual ~ExtendedGroup();
 
-	//! Assignment operator
-	virtual ExtendedGroup& operator=(const ExtendedGroup& source);
-
 	/*! 
 	 * @name Implementation of NOX::Abstract::Group virtual methods 
 	 */
@@ -322,10 +319,6 @@ namespace LOCA {
 	 */
 	//@{
 	
-	//! Assignment operator
-	virtual LOCA::Extended::MultiAbstractGroup& 
-	operator=(const LOCA::Extended::MultiAbstractGroup& source);
-	
 	//! Return underlying group
 	virtual 
 	Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
@@ -345,8 +338,7 @@ namespace LOCA {
 	//@{
 
 	//! Assignment operator
-	virtual LOCA::MultiContinuation::AbstractGroup& 
-	operator=(const LOCA::MultiContinuation::AbstractGroup& source);
+	virtual void copy(const NOX::Abstract::Group& source);
 
 	//! Set parameters indexed by (integer) paramIDs
 	virtual void setParamsMulti(
@@ -435,6 +427,11 @@ namespace LOCA {
 
 	//! Initializes group
 	void init(bool perturbSoln = false, double perturbSize = 0.0);
+
+      private:
+
+	//! Prohibit generation and use of operator=()
+	ExtendedGroup& operator=(const ExtendedGroup&);
 
       protected:
 

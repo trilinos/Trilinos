@@ -73,8 +73,8 @@ namespace LOCA {
        */
       //@{
 
-      //! Assignment operator
-      virtual AbstractGroup& operator=(const AbstractGroup& source) = 0;
+      //! Copy the group (replaces operator = )
+      virtual void copy(const NOX::Abstract::Group& source) = 0;
 
       //! Set parameters indexed by (integer) paramIDs
       virtual void setParamsMulti(
@@ -180,6 +180,9 @@ namespace LOCA {
       scaleVector(NOX::Abstract::Vector& x) const;
 
       //@}
+
+      //! Bring NOX::Abstract::Group::operator=() into scope
+      using NOX::Abstract::Group::operator=;
 
     };
   } // namespace MultiContinuation

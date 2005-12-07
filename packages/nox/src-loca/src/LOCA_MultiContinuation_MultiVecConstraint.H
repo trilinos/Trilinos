@@ -61,10 +61,6 @@ namespace LOCA {
       //! Destructor
       ~MultiVecConstraint();
 
-      //! Assignment
-      virtual MultiVecConstraint&
-      operator=(const MultiVecConstraint& source);
-
       //! Set constraint vector
       virtual void setDx(
 	    const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& dx);
@@ -75,9 +71,8 @@ namespace LOCA {
        */
       //@{
 
-      //! Assignment
-      virtual ConstraintInterface& 
-      operator=(const ConstraintInterface& source);
+      //! Copy
+      virtual void copy(const ConstraintInterface& source);
 
       //! Cloning function
       virtual 
@@ -138,6 +133,11 @@ namespace LOCA {
       virtual bool isDXZero() const;
 
       //@}
+
+    private:
+
+      //! Prohibit generation and use of operator=()
+      MultiVecConstraint& operator=(const MultiVecConstraint& source);
 
     protected:
 

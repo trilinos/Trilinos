@@ -63,32 +63,25 @@ LOCA::MultiContinuation::ArcLengthConstraint::~ArcLengthConstraint()
 {
 }
 
-LOCA::MultiContinuation::ArcLengthConstraint&
-LOCA::MultiContinuation::ArcLengthConstraint::operator=(
-		   const LOCA::MultiContinuation::ArcLengthConstraint& source)
-{
-  if (this != &source) {
-    globalData = source.globalData;
-    constraints.assign(source.constraints);
-    isValidConstraints = source.isValidConstraints;
-    conParamIDs = source.conParamIDs;
-  }
-
-  return *this;
-}
-
 void
 LOCA::MultiContinuation::ArcLengthConstraint::setArcLengthGroup(const Teuchos::RefCountPtr<LOCA::MultiContinuation::ArcLengthGroup>& grp)
 {
   arcLengthGroup = grp;
 }
 
-LOCA::MultiContinuation::ConstraintInterface& 
-LOCA::MultiContinuation::ArcLengthConstraint::operator=(
-		   const LOCA::MultiContinuation::ConstraintInterface& source)
+void
+LOCA::MultiContinuation::ArcLengthConstraint::copy(
+		   const LOCA::MultiContinuation::ConstraintInterface& src)
 {
-  operator=(dynamic_cast<const LOCA::MultiContinuation::ArcLengthConstraint&>(source));
-  return *this;
+  const LOCA::MultiContinuation::ArcLengthConstraint& source = 
+    dynamic_cast<const LOCA::MultiContinuation::ArcLengthConstraint&>(src);
+
+  if (this != &source) {
+    globalData = source.globalData;
+    constraints.assign(source.constraints);
+    isValidConstraints = source.isValidConstraints;
+    conParamIDs = source.conParamIDs;
+  }
 }
 
 Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>

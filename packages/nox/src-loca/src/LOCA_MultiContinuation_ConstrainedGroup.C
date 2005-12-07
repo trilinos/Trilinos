@@ -141,44 +141,6 @@ LOCA::MultiContinuation::ConstrainedGroup::~ConstrainedGroup()
 {
 }
 
-LOCA::MultiContinuation::ConstrainedGroup&
-LOCA::MultiContinuation::ConstrainedGroup::operator=(
-		   const LOCA::MultiContinuation::ConstrainedGroup& source) 
-{
-
-  // Protect against A = A
-  if (this != &source) {
-    globalData = source.globalData;
-    parsedParams = source.parsedParams;
-    constraintParams = source.constraintParams;
-    *grpPtr = *source.grpPtr;
-    *constraintsPtr = *source.constraintsPtr;
-    numParams = source.numParams;
-    xMultiVec = source.xMultiVec;
-    fMultiVec = source.fMultiVec;
-    newtonMultiVec = source.newtonMultiVec;
-    gradientMultiVec = source.gradientMultiVec;
-    index_f = source.index_f;
-    index_dfdp = source.index_dfdp;
-    constraintParamIDs = source.constraintParamIDs;
-    isValidF = source.isValidF;
-    isValidJacobian = source.isValidJacobian;
-    isValidNewton = source.isValidNewton;
-    isValidGradient = source.isValidGradient;
-
-    // set up views again just to be safe
-    setupViews();
-
-    // Instantiate bordered solver
-    borderedSolver = 
-      globalData->locaFactory->createBorderedSystemStrategy(
-				   parsedParams,
-				   constraintParams);
-  }
-
-  return *this;
-}
-
 void
 LOCA::MultiContinuation::ConstrainedGroup::setConstraintParameter(int i,
 								  double val) 
@@ -218,8 +180,7 @@ NOX::Abstract::Group&
 LOCA::MultiContinuation::ConstrainedGroup::operator=(
 					  const NOX::Abstract::Group& source)
 {
-  *this = 
-    dynamic_cast<const LOCA::MultiContinuation::ConstrainedGroup&>(source);
+  copy(source);
   return *this;
 }
 
@@ -711,15 +672,6 @@ LOCA::MultiContinuation::ConstrainedGroup::getNormNewtonSolveResidual() const
   return residual.norm();
 }
 
-LOCA::Extended::MultiAbstractGroup&
-LOCA::MultiContinuation::ConstrainedGroup::operator=(
-			      const LOCA::Extended::MultiAbstractGroup& source)
-{
-  *this = 
-    dynamic_cast<const LOCA::MultiContinuation::ConstrainedGroup&>(source);
-  return *this;
-}
-
 Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
 LOCA::MultiContinuation::ConstrainedGroup::getUnderlyingGroup() const
 {
@@ -770,13 +722,43 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseNewton(
   return status;
 }
 
-LOCA::MultiContinuation::AbstractGroup&
-LOCA::MultiContinuation::ConstrainedGroup::operator=(
-			 const LOCA::MultiContinuation::AbstractGroup& source)
+void
+LOCA::MultiContinuation::ConstrainedGroup::copy(
+					      const NOX::Abstract::Group& src) 
 {
-  *this = 
-    dynamic_cast<const LOCA::MultiContinuation::ConstrainedGroup&>(source);
-  return *this;
+
+  const LOCA::MultiContinuation::ConstrainedGroup& source = 
+    dynamic_cast<const LOCA::MultiContinuation::ConstrainedGroup&>(src);
+
+  // Protect against A = A
+  if (this != &source) {
+    globalData = source.globalData;
+    parsedParams = source.parsedParams;
+    constraintParams = source.constraintParams;
+    grpPtr->copy(*source.grpPtr);
+    constraintsPtr->copy(*source.constraintsPtr);
+    numParams = source.numParams;
+    xMultiVec = source.xMultiVec;
+    fMultiVec = source.fMultiVec;
+    newtonMultiVec = source.newtonMultiVec;
+    gradientMultiVec = source.gradientMultiVec;
+    index_f = source.index_f;
+    index_dfdp = source.index_dfdp;
+    constraintParamIDs = source.constraintParamIDs;
+    isValidF = source.isValidF;
+    isValidJacobian = source.isValidJacobian;
+    isValidNewton = source.isValidNewton;
+    isValidGradient = source.isValidGradient;
+
+    // set up views again just to be safe
+    setupViews();
+
+    // Instantiate bordered solver
+    borderedSolver = 
+      globalData->locaFactory->createBorderedSystemStrategy(
+				   parsedParams,
+				   constraintParams);
+  }
 }
 
 void

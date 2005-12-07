@@ -72,9 +72,11 @@ LinearConstraint::~LinearConstraint()
 {
 }
 
-LinearConstraint&
-LinearConstraint::operator=(const LinearConstraint& source)
+void
+LinearConstraint::copy(const LOCA::MultiContinuation::ConstraintInterface& src)
 {
+  const LinearConstraint& source = dynamic_cast<const LinearConstraint&>(src);
+
   if (this != &source) {
     m = source.m;
     constraints = source.constraints;
@@ -86,16 +88,6 @@ LinearConstraint::operator=(const LinearConstraint& source)
     pvec.assign(source.pvec);
     dgdp = source.dgdp;
   }
-
-  return *this;
-}
-
-LOCA::MultiContinuation::ConstraintInterface& 
-LinearConstraint::operator=(
-		   const LOCA::MultiContinuation::ConstraintInterface& source)
-{
-  operator=(dynamic_cast<const LinearConstraint&>(source));
-  return *this;
 }
 
 Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>

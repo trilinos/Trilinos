@@ -51,17 +51,15 @@ public:
   //! Destructor
   virtual ~ChanConstraint();
 
-  //! Assignment
-  virtual ChanConstraint& operator=(const ChanConstraint& source);
-
   /*! 
    * @name Implementation of LOCA::MultiContinuation::ConstraintInterface 
    * virtual methods 
    */
   //@{
 
-  virtual LOCA::MultiContinuation::ConstraintInterface& 
-  operator=(const LOCA::MultiContinuation::ConstraintInterface& source);
+  //! Copy
+  virtual void 
+  copy(const LOCA::MultiContinuation::ConstraintInterface& source);
 
   //! Cloning function
   virtual 
@@ -131,6 +129,11 @@ public:
   virtual bool isDXZero() const;
 
   //@}
+
+private:
+
+  //! Prohibit generation and use of operator=()
+  ChanConstraint& operator=(const ChanConstraint& source);
 
 protected:
 

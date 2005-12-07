@@ -72,10 +72,6 @@ namespace LOCA {
 
 	//! Destructor
 	virtual ~FiniteDifferenceGroup();
-  
-	//! Assignment operator
-	virtual FiniteDifferenceGroup& 
-	operator=(const FiniteDifferenceGroup& source);
 
 	/*! 
 	 * \brief Computes the derivative \f$\partial Jn/\partial p\f$ 
@@ -121,6 +117,9 @@ namespace LOCA {
 			   const NOX::Abstract::Vector& JnVector,
 			   const NOX::Abstract::MultiVector& aVector,
 			   NOX::Abstract::MultiVector& result);
+
+	//! Bring NOX::Abstract::Group::operator=() into scope
+	using NOX::Abstract::Group::operator=;
   
       }; // class FiniteDifferenceGroup
     } // namespace MooreSpence

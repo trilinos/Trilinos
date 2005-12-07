@@ -73,39 +73,11 @@ LOCA::MultiContinuation::ExtendedGroup::~ExtendedGroup()
 {
 }
 
-LOCA::MultiContinuation::ExtendedGroup&
-LOCA::MultiContinuation::ExtendedGroup::operator=(
-			 const LOCA::MultiContinuation::ExtendedGroup& source) 
-{
-
-  // Protect against A = A
-  if (this != &source) {
-    globalData = source.globalData;
-    parsedParams = source.parsedParams;
-    continuationParams = source.continuationParams;
-    *predictor = *source.predictor;
-    *conGroup = *source.conGroup;
-    grpPtr = conGroup->getGroup();
-    numParams = source.numParams;
-    tangentMultiVec = source.tangentMultiVec;
-    scaledTangentMultiVec = source.scaledTangentMultiVec;
-    prevXVec = source.prevXVec;
-    conParamIDs = source.conParamIDs;
-    stepSize = source.stepSize;
-    stepSizeScaleFactor = source.stepSizeScaleFactor;
-    isValidPredictor = source.isValidPredictor;
-    baseOnSecant = source.baseOnSecant;
-  }
-
-  return *this;
-}
-
 NOX::Abstract::Group&
 LOCA::MultiContinuation::ExtendedGroup::operator=(
 					  const NOX::Abstract::Group& source)
 {
-  *this = 
-    dynamic_cast<const LOCA::MultiContinuation::ExtendedGroup&>(source);
+  copy(source);
   return *this;
 }
 
@@ -268,15 +240,6 @@ LOCA::MultiContinuation::ExtendedGroup::getNormNewtonSolveResidual() const
   return conGroup->getNormNewtonSolveResidual();
 }
 
-LOCA::Extended::MultiAbstractGroup&
-LOCA::MultiContinuation::ExtendedGroup::operator=(
-			      const LOCA::Extended::MultiAbstractGroup& source)
-{
-  *this = 
-    dynamic_cast<const LOCA::MultiContinuation::ExtendedGroup&>(source);
-  return *this;
-}
-
 Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
 LOCA::MultiContinuation::ExtendedGroup::getUnderlyingGroup() const
 {
@@ -289,13 +252,31 @@ LOCA::MultiContinuation::ExtendedGroup::getUnderlyingGroup()
   return conGroup->getUnderlyingGroup();
 }
 
-LOCA::MultiContinuation::AbstractStrategy& 
-LOCA::MultiContinuation::ExtendedGroup::operator=(
-			    const MultiContinuation::AbstractStrategy& source)
+void
+LOCA::MultiContinuation::ExtendedGroup::copy(const NOX::Abstract::Group& src) 
 {
-  *this = 
-    dynamic_cast<const LOCA::MultiContinuation::ExtendedGroup&>(source);
-  return *this;
+
+  const LOCA::MultiContinuation::ExtendedGroup& source = 
+    dynamic_cast<const LOCA::MultiContinuation::ExtendedGroup&>(src);
+
+  // Protect against A = A
+  if (this != &source) {
+    globalData = source.globalData;
+    parsedParams = source.parsedParams;
+    continuationParams = source.continuationParams;
+    *predictor = *source.predictor;
+    conGroup->copy(*source.conGroup);
+    grpPtr = conGroup->getGroup();
+    numParams = source.numParams;
+    tangentMultiVec = source.tangentMultiVec;
+    scaledTangentMultiVec = source.scaledTangentMultiVec;
+    prevXVec = source.prevXVec;
+    conParamIDs = source.conParamIDs;
+    stepSize = source.stepSize;
+    stepSizeScaleFactor = source.stepSizeScaleFactor;
+    isValidPredictor = source.isValidPredictor;
+    baseOnSecant = source.baseOnSecant;
+  }
 }
 
 int

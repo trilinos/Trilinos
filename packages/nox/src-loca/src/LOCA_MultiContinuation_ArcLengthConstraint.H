@@ -83,10 +83,6 @@ namespace LOCA {
       //! Destructor
       ~ArcLengthConstraint();
 
-      //! Assignment
-      virtual ArcLengthConstraint&
-      operator=(const ArcLengthConstraint& source);
-
       //! Set pointer to arclength group
       virtual void setArcLengthGroup(const Teuchos::RefCountPtr<LOCA::MultiContinuation::ArcLengthGroup>& grp);
 
@@ -96,8 +92,8 @@ namespace LOCA {
        */
       //@{
 
-      virtual ConstraintInterface& 
-      operator=(const ConstraintInterface& source);
+      //! Copy
+      virtual void copy(const ConstraintInterface& source);
 
       //! Cloning function
       virtual 
@@ -158,6 +154,11 @@ namespace LOCA {
       virtual bool isDXZero() const;
 
       //@}
+
+    private:
+
+      //! Prohibit generation and use of operator=()
+      ArcLengthConstraint& operator=(const ArcLengthConstraint& source);
 
     protected:
 
