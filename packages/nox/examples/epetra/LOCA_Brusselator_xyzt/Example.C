@@ -100,10 +100,12 @@
 #include "Brusselator.H"              
 
 #ifdef HAVE_NOX_EPETRAEXT
+#ifdef HAVE_MPI
 // Comment out following line for usual implicit time stepping on all procs
 //#define DO_XYZT 1
 //#define DO_XYZT_PREC 1
 #include "EpetraExt_MultiMpiComm.h"
+#endif
 #endif
 
 #ifdef DO_XYZT
@@ -139,7 +141,12 @@ int main(int argc, char *argv[])
 
 #else
   // Create a communicator for Epetra objects
+#ifdef HAVE_MPI
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
+#else
+  Epetra_SerialComm Comm();
+#endif
+
 #endif
 
   // Create and reset the Timer
