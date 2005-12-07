@@ -323,7 +323,7 @@ void Amesos_Mumps::SetICNTLandCNTL()
 
 //=============================================================================
 
-int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
+int Amesos_Mumps::SetParameters( const Teuchos::ParameterList & ParameterList)
 {
 
   // ========================================= //
@@ -340,10 +340,10 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
   //  Tthreshold_ is unused at the moment
   //  // ignore all elements below given tolerance
   //  if( ParameterList.isParameter("Threshold") )
-  //    Threshold_ = ParameterList.get("Threshold", 0.0);
+  //    Threshold_ = ParameterList.get<double>("Threshold");
 
   if( ParameterList.isParameter("NoDestroy") )
-    NoDestroy_ = ParameterList.get("NoDestroy", false);
+    NoDestroy_ = ParameterList.get<bool>("NoDestroy");
   
   if ( debug_ ) 
     PrivateMumpsData_->MDS.ICNTL(2)=6; // Turn on Mumps verbose output 
@@ -356,43 +356,43 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
     // integer array of parameters
     if( MumpsParams.isParameter("ICNTL") ) {
       int * ICNTL = 0;
-      ICNTL = MumpsParams.get("ICNTL", ICNTL);
+      ICNTL = MumpsParams.get<int*>("ICNTL");
       if( ICNTL ) SetICNTL(ICNTL);
     }
     // double array of parameters
     if( MumpsParams.isParameter("CNTL") ) {
       double * CNTL = 0;
-      CNTL = MumpsParams.get("CNTL", CNTL);
+      CNTL = MumpsParams.get<double*>("CNTL");
       if( CNTL ) SetCNTL(CNTL);
     }
     // ordering
      if( MumpsParams.isParameter("PermIn") ) {
       int * PermIn = 0;
-      PermIn = MumpsParams.get("PermIn", PermIn);
+      PermIn = MumpsParams.get<int*>("PermIn");
       if( PermIn ) SetOrdering(PermIn);
     }
      // Maxis
      if( MumpsParams.isParameter("Maxis") ) {
        int Maxis = 0;
-       Maxis = MumpsParams.get("Maxis", Maxis);
+       Maxis = MumpsParams.get<int>("Maxis");
        SetMaxis(Maxis);
      }
      // Maxs
      if( MumpsParams.isParameter("Maxs") ) {
        int Maxs = 0;
-       Maxs = MumpsParams.get("Maxs", Maxs);
+       Maxs = MumpsParams.get<int>("Maxs");
        SetMaxs(Maxs);
      }
      // Col scaling
      if( MumpsParams.isParameter("ColScaling") ) {
        AMESOS_TYPE * ColSca = 0;
-       ColSca = MumpsParams.get("ColScaling", ColSca);
+       ColSca = MumpsParams.get<AMESOS_TYPE *>("ColScaling");
        if( ColSca ) SetColScaling(ColSca);
      }
      // Row scaling
      if( MumpsParams.isParameter("RowScaling") ) {
        AMESOS_TYPE * RowSca = 0;
-       RowSca = MumpsParams.get("RowScaling", RowSca);
+       RowSca = MumpsParams.get<AMESOS_TYPE *>("RowScaling");
        if( RowSca ) SetRowScaling(RowSca);
      }
      // that's all folks

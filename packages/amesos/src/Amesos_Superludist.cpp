@@ -163,7 +163,7 @@ Amesos_Superludist::~Amesos_Superludist(void)
 }
 
 // ====================================================================== 
-int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) 
+int Amesos_Superludist::SetParameters( const Teuchos::ParameterList &ParameterList ) 
 {
   // retrive general parameters
 
@@ -172,21 +172,21 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList )
   SetControlParameters( ParameterList );
 
   if (ParameterList.isParameter("Redistribute"))
-    Redistribute_ = ParameterList.get("Redistribute",Redistribute_);  
+    Redistribute_ = ParameterList.get<bool>("Redistribute");  
 
   // parameters for Superludist only
 
   if (ParameterList.isSublist("Superludist") ) 
   {
-    Teuchos::ParameterList& SuperludistParams = 
+    const Teuchos::ParameterList& SuperludistParams = 
       ParameterList.sublist("Superludist") ;
 
     if( SuperludistParams.isParameter("ReuseSymbolic") )
-      ReuseSymbolic_ = SuperludistParams.get("ReuseSymbolic",ReuseSymbolic_);
+      ReuseSymbolic_ = SuperludistParams.get<bool>("ReuseSymbolic");
     string FactOption = "NotSet";
 
     if( SuperludistParams.isParameter("Fact") )
-      FactOption = SuperludistParams.get("Fact", FactOption);
+      FactOption = SuperludistParams.get<bool>("Fact");
 
     if( FactOption == "SamePattern_SameRowPerm" ) PrivateSuperluData_->FactOption_ = SamePattern_SameRowPerm;
     else if( FactOption == "SamePattern" ) PrivateSuperluData_->FactOption_ = SamePattern;
@@ -194,30 +194,30 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList )
       AMESOS_CHK_ERR(-2); // input not valid
 
     if (SuperludistParams.isParameter("Equil"))
-      Equil_ = SuperludistParams.get("Equil",Equil_);
+      Equil_ = SuperludistParams.get<bool>("Equil");
 
     if (SuperludistParams.isParameter("ColPerm"))
-      ColPerm_ = SuperludistParams.get("ColPerm",ColPerm_);
+      ColPerm_ = SuperludistParams.get<string>("ColPerm");
 
     if (ColPerm_ == "MY_PERMC")
       if( SuperludistParams.isParameter("perm_c"))
-        perm_c_ = SuperludistParams.get("perm_c",perm_c_);
+        perm_c_ = SuperludistParams.get<int*>("perm_c");
 
     if (SuperludistParams.isParameter("RowPerm"))
-      RowPerm_ = SuperludistParams.get("RowPerm",RowPerm_);
+      RowPerm_ = SuperludistParams.get<int>("RowPerm");
     if( RowPerm_ == "MY_PERMR" ) {
       if (SuperludistParams.isParameter("perm_r"))
-        perm_r_ = SuperludistParams.get("perm_r",perm_r_);
+        perm_r_ = SuperludistParams.get<int*>("perm_r");
     }
 
     if (SuperludistParams.isParameter("IterRefine"))
-      IterRefine_ = SuperludistParams.get("IterRefine",IterRefine_);
+      IterRefine_ = SuperludistParams.get<string>("IterRefine");
 
     if (SuperludistParams.isParameter("ReplaceTinyPivot"))
-      ReplaceTinyPivot_ = SuperludistParams.get("ReplaceTinyPivot",ReplaceTinyPivot_);
+      ReplaceTinyPivot_ = SuperludistParams.get<bool>("ReplaceTinyPivot");
 
     if (SuperludistParams.isParameter("PrintNonzeros"))
-      PrintNonzeros_ = SuperludistParams.get("PrintNonzeros",PrintNonzeros_);
+      PrintNonzeros_ = SuperludistParams.get<bool>("PrintNonzeros");
   }
 
   return(0);

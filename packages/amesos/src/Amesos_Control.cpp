@@ -32,7 +32,7 @@ void Amesos_Control::SetControlParameters( const Teuchos::ParameterList &Paramet
   // add zero to diagonal if diagonal element is not present
   // - some solvers choke on matrices with zero elements on the diagonal
   if( ParameterList.isParameter("AddZeroToDiag") )
-    AddZeroToDiag_ = ParameterList.get<int>("AddZeroToDiag");
+    AddZeroToDiag_ = ParameterList.get<bool>("AddZeroToDiag");
 
   // add this value to diagonal
   if( ParameterList.isParameter("AddToDiag") )

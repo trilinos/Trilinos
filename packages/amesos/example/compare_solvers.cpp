@@ -109,8 +109,8 @@ int main(int argc, char *argv[])
   List.set("MaxProcs",Comm.NumProc());
 
   vector<string> SolverType;
-  SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Klu");
+  SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Umfpack");
   SolverType.push_back("Amesos_Pardiso");
   SolverType.push_back("Amesos_Taucs");
@@ -118,6 +118,7 @@ int main(int argc, char *argv[])
   SolverType.push_back("Amesos_Superludist");
   SolverType.push_back("Amesos_Mumps");
   SolverType.push_back("Amesos_Dscpack");
+  SolverType.push_back("Amesos_Scalapack");
 
   Epetra_Time Time(Comm);
   

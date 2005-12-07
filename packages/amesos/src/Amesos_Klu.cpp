@@ -385,7 +385,7 @@ int Amesos_Klu::PerformSymbolicFactorization()
 
     PrivateKluData_->Symbolic_ =
 	rcp( klu_btf_analyze (NumGlobalElements_, &Ap[0], Ai, (klu_control *) 0),
-		 deallocFunctorHandleDelete<klu_symbolic>(klu_btf_free_symbolic), true );
+		 deallocFunctorHandleDelete<klu_symbolic>(klu_btf_free_symbolic), false  );
     //    if ( PrivateKluData_->Symbolic_ == 0 ) AMESOS_CHK_ERR( 1 ) ;
   }
 

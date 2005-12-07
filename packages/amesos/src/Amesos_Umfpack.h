@@ -126,7 +126,7 @@ public:
    */
   double GetRcond() const ; 
 
-  int SetParameters( Teuchos::ParameterList &ParameterList ) ;
+  int SetParameters( const Teuchos::ParameterList &ParameterList ) ;
 
   //! Prints timing information
   void PrintTiming() const;

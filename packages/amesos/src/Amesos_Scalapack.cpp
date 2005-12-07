@@ -660,7 +660,7 @@ return 0;
 }   
 
 
-int Amesos_Scalapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
+int Amesos_Scalapack::SetParameters( const Teuchos::ParameterList &ParameterList ) {
 
   if( debug_ == 1 ) cout << "Entering `SetParameters()'" << endl;
 
@@ -687,9 +687,9 @@ int Amesos_Scalapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
   // retrive general parameters
 
   if (ParameterList.isSublist("Scalapack") ) {
-    Teuchos::ParameterList ScalapackParams = ParameterList.sublist("Scalapack") ;
-    TwoD_distribution_ = ScalapackParams.get("2D distribution",TwoD_distribution_);
-    grid_nb_ = ScalapackParams.get("grid_nb",grid_nb_);
+    const Teuchos::ParameterList ScalapackParams = ParameterList.sublist("Scalapack") ;
+    TwoD_distribution_ = ScalapackParams.get<bool>("2D distribution");
+    grid_nb_ = ScalapackParams.get<int>("grid_nb");
   }  
   
   return 0;
