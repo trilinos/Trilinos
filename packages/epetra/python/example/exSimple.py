@@ -44,24 +44,24 @@ except ImportError:
   print "Using system-installed Epetra"
 
 def main():
-    comm  = Epetra.PyComm()
-    if comm.MyPID() == 0: print Epetra.Version()
-    nElem = 1000
-    map   = Epetra.Map(nElem, 0, comm)
-    x     = Epetra.Vector(map)
-    b     = Epetra.Vector(map)
-    b.Random()
-    x.Update(2.0, b, 0.0)   # x = 2*b
-    xNorm = x.Norm2()
-    bNorm = b.Norm2()
-    if comm.MyPID() == 0:
-      print "2 norm of x =", xNorm
-      print "2 norm of b =", bNorm
+  comm  = Epetra.PyComm()
+  if comm.MyPID() == 0: print Epetra.Version()
+  nElem = 1000
+  map   = Epetra.Map(nElem, 0, comm)
+  x     = Epetra.Vector(map)
+  b     = Epetra.Vector(map)
+  b.Random()
+  x.Update(2.0, b, 0.0)   # x = 2*b
+  xNorm = x.Norm2()
+  bNorm = b.Norm2()
+  if comm.MyPID() == 0:
+    print "2 norm of x =", xNorm
+    print "2 norm of b =", bNorm
 
-    # synchronize processors
-    Comm.Barrier()
+  # Synchronize processors
+  comm.Barrier()
 
-    if comm.MyPID() == 0: print "End Result: TEST PASSED"
+  if comm.MyPID() == 0: print "End Result: TEST PASSED"
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the
