@@ -59,7 +59,7 @@ Amesos_Lapack::~Amesos_Lapack(void)
 
 //=============================================================================
 // Default values are defined in the constructor.
-int Amesos_Lapack::SetParameters( Teuchos::ParameterList &ParameterList ) 
+int Amesos_Lapack::SetParameters( const Teuchos::ParameterList &ParameterList ) 
 {
   // retrive general parameters
   SetStatusParameters( ParameterList );
@@ -68,8 +68,8 @@ int Amesos_Lapack::SetParameters( Teuchos::ParameterList &ParameterList )
 
   bool Equilibrate = true;
   if (ParameterList.isSublist("Lapack") ) {
-    Teuchos::ParameterList& LAPACKParams = ParameterList.sublist("Lapack") ;
-    Equilibrate = LAPACKParams.get("Equilibrate", Equilibrate);
+    const Teuchos::ParameterList& LAPACKParams = ParameterList.sublist("Lapack") ;
+    Equilibrate = LAPACKParams.get<bool>("Equilibrate");
   }
   DenseSolver_.FactorWithEquilibration(Equilibrate);
 

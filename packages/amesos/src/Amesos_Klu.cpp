@@ -343,7 +343,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime)
 }
 
 //=============================================================================
-int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
+int Amesos_Klu::SetParameters( const Teuchos::ParameterList &ParameterList ) {
 
   // ========================================= //
   // retrive KLU's parameters from list.       //
@@ -353,11 +353,10 @@ int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
   // retrive general parameters
 
   SetStatusParameters( ParameterList );
-
   SetControlParameters( ParameterList );
 
   if (ParameterList.isParameter("TrustMe") ) 
-    TrustMe_ = ParameterList.get( "TrustMe", TrustMe_ );
+    TrustMe_ = ParameterList.get<bool>( "TrustMe" );
 
 #if 0
 

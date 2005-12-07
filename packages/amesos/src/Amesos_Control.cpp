@@ -27,30 +27,30 @@
 // @HEADER
 
 #include "Amesos_Control.h"
-void Amesos_Control::SetControlParameters(Teuchos::ParameterList &ParameterList) {
+void Amesos_Control::SetControlParameters( const Teuchos::ParameterList &ParameterList) {
 
   // add zero to diagonal if diagonal element is not present
   // - some solvers choke on matrices with zero elements on the diagonal
   if( ParameterList.isParameter("AddZeroToDiag") )
-    AddZeroToDiag_ = ParameterList.get("AddZeroToDiag", AddZeroToDiag_);
+    AddZeroToDiag_ = ParameterList.get<int>("AddZeroToDiag");
 
   // add this value to diagonal
   if( ParameterList.isParameter("AddToDiag") )
-    AddToDiag_ = ParameterList.get("AddToDiag", 0.0);
+    AddToDiag_ = ParameterList.get<double>("AddToDiag");
 
-  // add this value to diagonal
+  // Determine whether to Refactorize
   if( ParameterList.isParameter("Refactorize") )
-    refactorize_ = ParameterList.get("Refactorize", refactorize_);
+    refactorize_ = ParameterList.get<bool>("Refactorize");
 
   // threshold for determining if refactorize worked OK
   // UNUSED at present - KSS June 2004
   if( ParameterList.isParameter("RcondThreshold") )
-    rcond_threshold_ = ParameterList.get("RcondThreshold", 1e-12);
+    rcond_threshold_ = ParameterList.get<double>("RcondThreshold");
 
   // define how many processes to use in the ScaLAPACK factor and solve
   // if (-1), a heuristic is used to determine the number of processes to use 
   if( ParameterList.isParameter("MaxProcs") )
-    MaxProcesses_ = ParameterList.get("MaxProcs",MaxProcesses_);
+    MaxProcesses_ = ParameterList.get<int>("MaxProcs");
   
   // Matrix property, defined internally in Amesos_Mumps as an integer,
   // whose value can be:
@@ -59,7 +59,7 @@ void Amesos_Control::SetControlParameters(Teuchos::ParameterList &ParameterList)
   // - 2 : general symmetric matrix.
   if( ParameterList.isParameter("MatrixProperty") ) {
     string MatrixProperty;
-    MatrixProperty = ParameterList.get("MatrixProperty",MatrixProperty);
+    MatrixProperty = ParameterList.get<string>("MatrixProperty");
     if( MatrixProperty == "SPD" )
       MatrixProperty_ = 1;
     else if( MatrixProperty == "symmetric" ) 
@@ -77,10 +77,10 @@ void Amesos_Control::SetControlParameters(Teuchos::ParameterList &ParameterList)
   // scaling method: 0: none, 1: use method's default, 2: use
   // the method's 1st alternative, 3: etc.
   if( ParameterList.isParameter("ScaleMethod") )
-    ScaleMethod_ = ParameterList.get("ScaleMethod", ScaleMethod_);
+    ScaleMethod_ = ParameterList.get<int>("ScaleMethod");
 
 
   if( ParameterList.isParameter("Reindex") )
-    Reindex_ = ParameterList.get("Reindex", Reindex_);
+    Reindex_ = ParameterList.get<bool>("Reindex");
 
 }

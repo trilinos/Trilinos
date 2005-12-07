@@ -207,6 +207,7 @@ run-tests:
 	@echo
 	@echo "None of these tests should take more than a minute to execute on a typical computer"
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo "make run-full-tests perform a more complete set of tests"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
 	--trilinos-dir=$(TRILINOS_HOME_DIR) \
@@ -214,6 +215,24 @@ run-tests:
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
 	--category=INSTALL \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=amesos
+
+run-full-tests:
+	@echo
+	@echo "==========================="
+	@echo "Running ALL Amesos tests..."
+	@echo "==========================="
+	@echo
+	@echo "None of these tests should take more than an hour to execute on a typical computer"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(AMESOS_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=FRAMEWORK \
 	--output-dir=@abs_top_builddir@/test/runtests-results \
 	--verbosity=1 \
 	--packages=amesos

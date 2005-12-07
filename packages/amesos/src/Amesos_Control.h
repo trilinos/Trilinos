@@ -31,7 +31,7 @@ public:
   //! Default destructor.
   ~Amesos_Control() {};
 
-  void SetControlParameters( Teuchos::ParameterList &ParameterList )  ;
+  void SetControlParameters( const Teuchos::ParameterList &ParameterList )  ;
 
   //! Add \c this value to the diagonal.
   double AddToDiag_;

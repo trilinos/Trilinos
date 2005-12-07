@@ -42,7 +42,7 @@ public:
   //! Default destructor.
   ~Amesos_Status() {};
 
-  void SetStatusParameters( Teuchos::ParameterList &ParameterList )  ;
+  void SetStatusParameters( const Teuchos::ParameterList &ParameterList )  ;
 
   //! If \c true, SymbolicFactorization() has been successfully called.
   bool IsSymbolicFactorizationOK_;
