@@ -41,8 +41,6 @@ LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra.H \
 	$(srcdir)/LOCA_Epetra_Group.H \
 	$(srcdir)/LOCA_Epetra_Interface_Required.H \
-	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
-	$(srcdir)/LOCA_Epetra_xyztPrec.H \
 	$(srcdir)/LOCA_Epetra_Interface_MassMatrix.H \
         $(srcdir)/LOCA_Epetra_Interface_TimeDependent.H \
 	$(srcdir)/LOCA_Epetra_CompactWYOp.H \
@@ -54,14 +52,26 @@ LOCA_EPETRA_H = \
 
 LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_Group.C \
-	$(srcdir)/LOCA_Epetra_Interface_xyzt.C \
-	$(srcdir)/LOCA_Epetra_xyztPrec.C \
 	$(srcdir)/LOCA_Epetra_CompactWYOp.C \
 	$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.C \
 	$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C \
 	$(srcdir)/LOCA_Epetra_Factory.C \
 	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
+
+if HAVE_MPI
+LOCA_EPETRA_XYZT_H =  \
+	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
+	$(srcdir)/LOCA_Epetra_xyztPrec.H 
+
+LOCA_EPETRA_XYZT = \
+	$(srcdir)/LOCA_Epetra_Interface_xyzt.C \
+	$(srcdir)/LOCA_Epetra_xyztPrec.C 
+else
+LOCA_EPETRA_XYZT_H = 
+
+LOCA_EPETRA_XYZT = 
+endif
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies
@@ -81,8 +91,8 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # ------------------------------------------------------------------------
 
 liblocaepetra_a_SOURCES = \
-	$(LOCA_EPETRA) \
-	$(LOCA_EPETRA_H)
+	$(LOCA_EPETRA)  $(LOCA_EPETRA_XYZT) \
+	$(LOCA_EPETRA_H) $(LOCA_EPETRA_XYZT_H)
 
 # ------------------------------------------------------------------------
 # When to turn it on
@@ -96,7 +106,7 @@ lib_LIBRARIES = liblocaepetra.a
 
 # List of all headers to install in $(includedir)
 
-include_HEADERS = $(LOCA_EPETRA_H)
+include_HEADERS = $(LOCA_EPETRA_H) $(LOCA_EPETRA_XYZT_H)
 
 endif
 

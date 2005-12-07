@@ -111,17 +111,39 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 liblocaepetra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__liblocaepetra_a_SOURCES_DIST = $(srcdir)/LOCA_Epetra_Group.C \
+	$(srcdir)/LOCA_Epetra_CompactWYOp.C \
+	$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C \
+	$(srcdir)/LOCA_Epetra_AugmentedOp.C \
+	$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C \
+	$(srcdir)/LOCA_Epetra_Factory.C \
+	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C \
+	$(srcdir)/LOCA_Epetra_Interface_xyzt.C \
+	$(srcdir)/LOCA_Epetra_xyztPrec.C $(srcdir)/LOCA_Epetra.H \
+	$(srcdir)/LOCA_Epetra_Group.H \
+	$(srcdir)/LOCA_Epetra_Interface_Required.H \
+	$(srcdir)/LOCA_Epetra_Interface_MassMatrix.H \
+	$(srcdir)/LOCA_Epetra_Interface_TimeDependent.H \
+	$(srcdir)/LOCA_Epetra_CompactWYOp.H \
+	$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.H \
+	$(srcdir)/LOCA_Epetra_AugmentedOp.H \
+	$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.H \
+	$(srcdir)/LOCA_Epetra_Factory.H \
+	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.H \
+	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
+	$(srcdir)/LOCA_Epetra_xyztPrec.H
 am__objects_1 = LOCA_Epetra_Group.$(OBJEXT) \
-	LOCA_Epetra_Interface_xyzt.$(OBJEXT) \
-	LOCA_Epetra_xyztPrec.$(OBJEXT) \
 	LOCA_Epetra_CompactWYOp.$(OBJEXT) \
 	LOCA_BorderedSystem_EpetraHouseholder.$(OBJEXT) \
 	LOCA_Epetra_AugmentedOp.$(OBJEXT) \
 	LOCA_BorderedSystem_EpetraAugmented.$(OBJEXT) \
 	LOCA_Epetra_Factory.$(OBJEXT) \
 	LOCA_Epetra_ShiftInvertOperator.$(OBJEXT)
-am__objects_2 =
-am_liblocaepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2)
+@HAVE_MPI_TRUE@am__objects_2 = LOCA_Epetra_Interface_xyzt.$(OBJEXT) \
+@HAVE_MPI_TRUE@	LOCA_Epetra_xyztPrec.$(OBJEXT)
+am__objects_3 =
+am_liblocaepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
+	$(am__objects_3) $(am__objects_3)
 liblocaepetra_a_OBJECTS = $(am_liblocaepetra_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -145,12 +167,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(liblocaepetra_a_SOURCES)
-DIST_SOURCES = $(liblocaepetra_a_SOURCES)
+DIST_SOURCES = $(am__liblocaepetra_a_SOURCES_DIST)
 am__include_HEADERS_DIST = $(srcdir)/LOCA_Epetra.H \
 	$(srcdir)/LOCA_Epetra_Group.H \
 	$(srcdir)/LOCA_Epetra_Interface_Required.H \
-	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
-	$(srcdir)/LOCA_Epetra_xyztPrec.H \
 	$(srcdir)/LOCA_Epetra_Interface_MassMatrix.H \
 	$(srcdir)/LOCA_Epetra_Interface_TimeDependent.H \
 	$(srcdir)/LOCA_Epetra_CompactWYOp.H \
@@ -158,7 +178,9 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA_Epetra.H \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.H \
 	$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.H \
 	$(srcdir)/LOCA_Epetra_Factory.H \
-	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.H
+	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.H \
+	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
+	$(srcdir)/LOCA_Epetra_xyztPrec.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -376,8 +398,6 @@ LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra.H \
 	$(srcdir)/LOCA_Epetra_Group.H \
 	$(srcdir)/LOCA_Epetra_Interface_Required.H \
-	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
-	$(srcdir)/LOCA_Epetra_xyztPrec.H \
 	$(srcdir)/LOCA_Epetra_Interface_MassMatrix.H \
         $(srcdir)/LOCA_Epetra_Interface_TimeDependent.H \
 	$(srcdir)/LOCA_Epetra_CompactWYOp.H \
@@ -389,14 +409,22 @@ LOCA_EPETRA_H = \
 
 LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_Group.C \
-	$(srcdir)/LOCA_Epetra_Interface_xyzt.C \
-	$(srcdir)/LOCA_Epetra_xyztPrec.C \
 	$(srcdir)/LOCA_Epetra_CompactWYOp.C \
 	$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.C \
 	$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C \
 	$(srcdir)/LOCA_Epetra_Factory.C \
 	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
+
+@HAVE_MPI_FALSE@LOCA_EPETRA_XYZT_H = 
+@HAVE_MPI_TRUE@LOCA_EPETRA_XYZT_H = \
+@HAVE_MPI_TRUE@	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
+@HAVE_MPI_TRUE@	$(srcdir)/LOCA_Epetra_xyztPrec.H 
+
+@HAVE_MPI_FALSE@LOCA_EPETRA_XYZT = 
+@HAVE_MPI_TRUE@LOCA_EPETRA_XYZT = \
+@HAVE_MPI_TRUE@	$(srcdir)/LOCA_Epetra_Interface_xyzt.C \
+@HAVE_MPI_TRUE@	$(srcdir)/LOCA_Epetra_xyztPrec.C 
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(LOCA_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
@@ -406,8 +434,8 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
 liblocaepetra_a_SOURCES = \
-	$(LOCA_EPETRA) \
-	$(LOCA_EPETRA_H)
+	$(LOCA_EPETRA)  $(LOCA_EPETRA_XYZT) \
+	$(LOCA_EPETRA_H) $(LOCA_EPETRA_XYZT_H)
 
 
 # ------------------------------------------------------------------------
@@ -418,7 +446,7 @@ liblocaepetra_a_SOURCES = \
 @BUILD_LIBLOCAEPETRA_TRUE@lib_LIBRARIES = liblocaepetra.a
 
 # List of all headers to install in $(includedir)
-@BUILD_LIBLOCAEPETRA_TRUE@include_HEADERS = $(LOCA_EPETRA_H)
+@BUILD_LIBLOCAEPETRA_TRUE@include_HEADERS = $(LOCA_EPETRA_H) $(LOCA_EPETRA_XYZT_H)
 @USE_ALTERNATE_AR_FALSE@liblocaepetra_a_AR = $(AR) cru
 
 # ------------------------------------------------------------------------
@@ -560,38 +588,6 @@ LOCA_Epetra_Group.obj: $(srcdir)/LOCA_Epetra_Group.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_Group.obj `if test -f '$(srcdir)/LOCA_Epetra_Group.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_Group.C'; fi`
 
-LOCA_Epetra_Interface_xyzt.o: $(srcdir)/LOCA_Epetra_Interface_xyzt.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_Interface_xyzt.o -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Tpo" -c -o LOCA_Epetra_Interface_xyzt.o `test -f '$(srcdir)/LOCA_Epetra_Interface_xyzt.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_Interface_xyzt.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Tpo" "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_Interface_xyzt.C' object='LOCA_Epetra_Interface_xyzt.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_Interface_xyzt.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_Interface_xyzt.o `test -f '$(srcdir)/LOCA_Epetra_Interface_xyzt.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_Interface_xyzt.C
-
-LOCA_Epetra_Interface_xyzt.obj: $(srcdir)/LOCA_Epetra_Interface_xyzt.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_Interface_xyzt.obj -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Tpo" -c -o LOCA_Epetra_Interface_xyzt.obj `if test -f '$(srcdir)/LOCA_Epetra_Interface_xyzt.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_Interface_xyzt.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_Interface_xyzt.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Tpo" "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_Interface_xyzt.C' object='LOCA_Epetra_Interface_xyzt.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_Interface_xyzt.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_Interface_xyzt.obj `if test -f '$(srcdir)/LOCA_Epetra_Interface_xyzt.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_Interface_xyzt.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_Interface_xyzt.C'; fi`
-
-LOCA_Epetra_xyztPrec.o: $(srcdir)/LOCA_Epetra_xyztPrec.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_xyztPrec.o -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_xyztPrec.Tpo" -c -o LOCA_Epetra_xyztPrec.o `test -f '$(srcdir)/LOCA_Epetra_xyztPrec.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_xyztPrec.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_xyztPrec.Tpo" "$(DEPDIR)/LOCA_Epetra_xyztPrec.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_xyztPrec.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_xyztPrec.C' object='LOCA_Epetra_xyztPrec.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_xyztPrec.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_xyztPrec.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_xyztPrec.o `test -f '$(srcdir)/LOCA_Epetra_xyztPrec.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_xyztPrec.C
-
-LOCA_Epetra_xyztPrec.obj: $(srcdir)/LOCA_Epetra_xyztPrec.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_xyztPrec.obj -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_xyztPrec.Tpo" -c -o LOCA_Epetra_xyztPrec.obj `if test -f '$(srcdir)/LOCA_Epetra_xyztPrec.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_xyztPrec.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_xyztPrec.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_xyztPrec.Tpo" "$(DEPDIR)/LOCA_Epetra_xyztPrec.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_xyztPrec.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_xyztPrec.C' object='LOCA_Epetra_xyztPrec.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_xyztPrec.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_xyztPrec.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_xyztPrec.obj `if test -f '$(srcdir)/LOCA_Epetra_xyztPrec.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_xyztPrec.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_xyztPrec.C'; fi`
-
 LOCA_Epetra_CompactWYOp.o: $(srcdir)/LOCA_Epetra_CompactWYOp.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_CompactWYOp.o -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_CompactWYOp.Tpo" -c -o LOCA_Epetra_CompactWYOp.o `test -f '$(srcdir)/LOCA_Epetra_CompactWYOp.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_CompactWYOp.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_CompactWYOp.Tpo" "$(DEPDIR)/LOCA_Epetra_CompactWYOp.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_CompactWYOp.Tpo"; exit 1; fi
@@ -687,6 +683,38 @@ LOCA_Epetra_ShiftInvertOperator.obj: $(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_ShiftInvertOperator.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_ShiftInvertOperator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_ShiftInvertOperator.obj `if test -f '$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C'; fi`
+
+LOCA_Epetra_Interface_xyzt.o: $(srcdir)/LOCA_Epetra_Interface_xyzt.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_Interface_xyzt.o -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Tpo" -c -o LOCA_Epetra_Interface_xyzt.o `test -f '$(srcdir)/LOCA_Epetra_Interface_xyzt.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_Interface_xyzt.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Tpo" "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_Interface_xyzt.C' object='LOCA_Epetra_Interface_xyzt.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_Interface_xyzt.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_Interface_xyzt.o `test -f '$(srcdir)/LOCA_Epetra_Interface_xyzt.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_Interface_xyzt.C
+
+LOCA_Epetra_Interface_xyzt.obj: $(srcdir)/LOCA_Epetra_Interface_xyzt.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_Interface_xyzt.obj -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Tpo" -c -o LOCA_Epetra_Interface_xyzt.obj `if test -f '$(srcdir)/LOCA_Epetra_Interface_xyzt.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_Interface_xyzt.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_Interface_xyzt.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Tpo" "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_Interface_xyzt.C' object='LOCA_Epetra_Interface_xyzt.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_Interface_xyzt.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_Interface_xyzt.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_Interface_xyzt.obj `if test -f '$(srcdir)/LOCA_Epetra_Interface_xyzt.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_Interface_xyzt.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_Interface_xyzt.C'; fi`
+
+LOCA_Epetra_xyztPrec.o: $(srcdir)/LOCA_Epetra_xyztPrec.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_xyztPrec.o -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_xyztPrec.Tpo" -c -o LOCA_Epetra_xyztPrec.o `test -f '$(srcdir)/LOCA_Epetra_xyztPrec.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_xyztPrec.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_xyztPrec.Tpo" "$(DEPDIR)/LOCA_Epetra_xyztPrec.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_xyztPrec.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_xyztPrec.C' object='LOCA_Epetra_xyztPrec.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_xyztPrec.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_xyztPrec.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_xyztPrec.o `test -f '$(srcdir)/LOCA_Epetra_xyztPrec.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_xyztPrec.C
+
+LOCA_Epetra_xyztPrec.obj: $(srcdir)/LOCA_Epetra_xyztPrec.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_xyztPrec.obj -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_xyztPrec.Tpo" -c -o LOCA_Epetra_xyztPrec.obj `if test -f '$(srcdir)/LOCA_Epetra_xyztPrec.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_xyztPrec.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_xyztPrec.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_xyztPrec.Tpo" "$(DEPDIR)/LOCA_Epetra_xyztPrec.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_xyztPrec.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_xyztPrec.C' object='LOCA_Epetra_xyztPrec.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_xyztPrec.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_xyztPrec.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_xyztPrec.obj `if test -f '$(srcdir)/LOCA_Epetra_xyztPrec.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_xyztPrec.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_xyztPrec.C'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
