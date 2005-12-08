@@ -858,10 +858,10 @@ namespace Teuchos
   {
     unsigned int opts_length = OPTS.length();
     // if user queries a Hermitian routine, change it to a symmetric routine
-    if (NAME.substr(0,2) == "he") {
-      NAME.replace(0,2,"sy");
-    }
     std::string temp_NAME = "s" + NAME;
+    if (temp_NAME.substr(1,2) == "he") {
+      temp_NAME.replace(1,2,"sy");
+    }
     unsigned int name_length = temp_NAME.length();
 #if defined (INTEL_CXML)
     return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
@@ -1192,10 +1192,10 @@ namespace Teuchos
   {
     unsigned int opts_length = OPTS.length();
     // if user queries a Hermitian routine, change it to a symmetric routine
-    if (NAME.substr(0,2) == "he") {
-      NAME.replace(0,2,"sy");
-    }
     std::string temp_NAME = "d" + NAME;
+    if (temp_NAME.substr(1,2) == "he") {
+      temp_NAME.replace(1,2,"sy");
+    }
     unsigned int name_length = temp_NAME.length();
 #if defined(INTEL_CXML)
     return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
