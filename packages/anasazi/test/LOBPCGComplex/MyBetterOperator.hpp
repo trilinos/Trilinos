@@ -4,7 +4,7 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziOperator.hpp"
 #include "MyMultiVec.hpp"
-#include <algorithm>
+#include "Teuchos_BLAS.hpp"
 
 //! Simple example of a user's defined Anasazi::Operator class.
 /*! 
@@ -20,21 +20,22 @@
  *
  */
 template <class ScalarType>
-class MyBetterOperator : public Anasazi::Operator<ScalarType>
+class MyBetterOperator : public Anasazi::Operator<ScalarType> 
 {
 
 public:
 
+  //! Constructor
   MyBetterOperator(const int nrows, const int *colptr,
                    const int nnz, const int *rowin, const ScalarType *vals)
+  : _nr(nrows), _nnz(nnz), _cptr(nrows+1), _rind(nnz), _vals(nnz)
   {
-    int i;
-
-    _nr = nrows;
     std::copy<const int*,IntIter>(colptr,colptr+nrows+1,_cptr.begin());
+    std::copy<const int*,IntIter>(rowin,rowin+nnz,_rind.begin());
+    std::copy<const ScalarType*,STIter>(vals,vals+nnz,_vals.begin());
   }
 
-  //! Dtor
+  //! Deconstructor
   ~MyBetterOperator()
   { }
 
@@ -52,15 +53,33 @@ public:
     
     assert (X.GetNumberVecs() == Y.GetNumberVecs());
     assert (X.GetVecLength() == Y.GetVecLength());
-   
-    return(Anasazi::Ok);
+    
+    int nv = X.GetNumberVecs();
+
+    // Apply operator
+    int IA1, IA2, ri;
+    ScalarType aval;
+    int i,j,v;
+    for (j=0; j<_nr; j++) {
+      IA1 = _cptr[j]-1;
+      IA2 = _cptr[j+1]-1;
+      for (i=IA1; i<IA2; i++) {
+        ri = _rind[i]-1;
+        aval = _vals[i];
+        for (v=0; v<nv; v++) {
+          (*MyY)[v][ri] = aval*(*MyX)[v][ri];
+        }
+      }
+    }
+
+    return Anasazi::Ok;
   }
 
 private:
   typedef typename std::vector<ScalarType>::iterator STIter;
   typedef std::vector<int>::iterator        IntIter;
   //! Number of rows and columns
-  int _nr;
+  int _nr, _nnz;
   //! Column pointers 
   std::vector<int> _cptr;
   //! Row indices
@@ -69,4 +88,4 @@ private:
   std::vector<ScalarType> _vals;
 };
 
-#endif //MY_OPERATOR_HPP
+#endif //MY_BETTER_OPERATOR_HPP

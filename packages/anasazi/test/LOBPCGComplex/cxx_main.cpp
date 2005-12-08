@@ -41,6 +41,7 @@
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziLOBPCG.hpp"
 #include "AnasaziBasicSort.hpp"
+#include "AnasaziMVOPTester.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -62,7 +63,6 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[]) 
 {
-  int i;
   int info = 0;
 
 #ifdef EPETRA_MPI
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 
   bool testFailed;
   bool verbose = 0;
-  std::string which("SM");
+  std::string which("SR");
   if (argc>1) {
     if (argv[1][0]=='-' && argv[1][1]=='v') {
       verbose = true;
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
   // no complex. quit with failure.
   if (verbose && MyPID == 0) {
     cout << "Not compiled with complex support." << endl;
-    if (MyOM->doPrint()) {
+    if (MyPID==0) {
       cout << "End Result: TEST FAILED" << endl;
     }
 #ifdef HAVE_MPI
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
     = rcp( new Anasazi::OutputManager<ST>( MyPID ) );
   // Set verbosity level
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
+    MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails );
   }
 
   if (MyOM->doPrint()) {
@@ -174,8 +174,8 @@ int main(int argc, char *argv[])
   }
   // Convert interleaved doubles to complex values
   cvals = new ST[nnz];
-  for (int ii=0; ii<nnz; i++) {
-    cvals[ii] = ST(dvals[i*2],dvals[i*2+1]);
+  for (int ii=0; ii<nnz; ii++) {
+    cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
   }
   // Build the problem matrix
   RefCountPtr< MyBetterOperator<ST> > A 
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
   int nev = 4;
   int blockSize = 5;
   int maxIters = 500;
-  ST tol = 1.0e-6;
+  MT tol = 1.0e-6;
 
   // Create parameter list to pass into solver
   ParameterList MyPL;
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
   MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Avecs );
   MVT::MvNorm( *Avecs, &normV );
 
-  for ( i=0; i<nevecs; i++ ) {
+  for (int i=0; i<nevecs; i++) {
     if ( SCT::magnitude(normV[i]/(*evals)[i]) > 5.0e-5 ) {
       testFailed = true;
     }
