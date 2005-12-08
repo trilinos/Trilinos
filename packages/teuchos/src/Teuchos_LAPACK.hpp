@@ -241,6 +241,11 @@ namespace Teuchos
     */
     void ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
+    /*! \brief Generates an \c m by \c n matrix Q with orthonormal columns which is defined as the first \n columns of a product of \c k elementary reflectors of order \c m, as returned by GEQRF.
+    \note This method will call ORGQR when the ScalarType is \c float or \c double.
+    */
+    void UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+
     /*! \brief Generates a real orthogonal matrix \c Q which is the product of \c ihi-ilo elementary reflectors of order \c n, as returned by GEHRD.  On return \c Q is stored in \c A.
     \note This method is not defined when the ScalarType is \c complex<float> or \c complex<double>.
     */
@@ -487,6 +492,12 @@ namespace Teuchos
   }
   
   template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+  
+  template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
@@ -595,6 +606,7 @@ namespace Teuchos
     // Orthogonal matrix routines.
     void ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* C, const OrdinalType ldc, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    void UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void ORMHR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const float* A, const OrdinalType lda, const float* TAU, float* C, const OrdinalType ldc, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
@@ -812,6 +824,12 @@ namespace Teuchos
   }
   
   template<typename OrdinalType>
+  void LAPACK<OrdinalType, float>::UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    SORGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
+  }
+  
+  template<typename OrdinalType>
   void LAPACK<OrdinalType, float>::ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     SORGHR_F77(&n, &ilo, &ihi, A, &lda, TAU, WORK, &lwork, info);
@@ -929,6 +947,7 @@ namespace Teuchos
     // Orthogonal matrix routines.
     void ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* C, const OrdinalType ldc, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    void UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void ORMHR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const double* A, const OrdinalType lda, const double* TAU, double* C, const OrdinalType ldc, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
@@ -1146,6 +1165,12 @@ namespace Teuchos
   }
   
   template<typename OrdinalType>
+  void LAPACK<OrdinalType, double>::UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    DORGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
+  }
+  
+  template<typename OrdinalType>
   void LAPACK<OrdinalType, double>::ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     DORGHR_F77(&n, &ilo, &ihi, A, &lda, TAU, WORK, &lwork, info);
@@ -1241,6 +1266,7 @@ namespace Teuchos
     // General Linear System Routines
     void GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, complex<float>* A, const OrdinalType lda, complex<float>* B, const OrdinalType ldb, complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GEQRF( const OrdinalType m, const OrdinalType n, complex<float>* A, const OrdinalType lda, complex<float>* TAU, complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    void UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, complex<float>* A, const OrdinalType lda, const complex<float>* TAU, complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GETRF(const OrdinalType m, const OrdinalType n, complex<float>* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
     void GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const complex<float>* A, const OrdinalType lda, const OrdinalType* IPIV, complex<float>* B, const OrdinalType ldb, OrdinalType* info) const;
     void GETRI(const OrdinalType n, complex<float>* A, const OrdinalType lda, const OrdinalType* IPIV, complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const;
@@ -1339,6 +1365,12 @@ namespace Teuchos
     CGEQRF_F77(&m, &n, A, &lda, TAU, WORK, &lwork, info);
   }
 
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType,complex<float> >::UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, complex<float>* A, const OrdinalType lda, const complex<float>* TAU, complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    CUNGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
+  }
+  
   template<typename OrdinalType>
   void LAPACK<OrdinalType,complex<float> >::GETRF(const OrdinalType m, const OrdinalType n, complex<float>* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const
   {
@@ -1497,6 +1529,7 @@ namespace Teuchos
     // General Linear System Routines
     void GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, complex<double>* A, const OrdinalType lda, complex<double>* B, const OrdinalType ldb, complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GEQRF( const OrdinalType m, const OrdinalType n, complex<double>* A, const OrdinalType lda, complex<double>* TAU, complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    void UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, complex<double>* A, const OrdinalType lda, const complex<double>* TAU, complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GETRF(const OrdinalType m, const OrdinalType n, complex<double>* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
     void GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const complex<double>* A, const OrdinalType lda, const OrdinalType* IPIV, complex<double>* B, const OrdinalType ldb, OrdinalType* info) const;
     void GETRI(const OrdinalType n, complex<double>* A, const OrdinalType lda, const OrdinalType* IPIV, complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const;
@@ -1595,6 +1628,12 @@ namespace Teuchos
     ZGEQRF_F77(&m, &n, A, &lda, TAU, WORK, &lwork, info);
   }
 
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType,complex<double> >::UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, complex<double>* A, const OrdinalType lda, const complex<double>* TAU, complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    ZUNGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
+  }
+  
   template<typename OrdinalType>
   void LAPACK<OrdinalType,complex<double> >::GETRF(const OrdinalType m, const OrdinalType n, complex<double>* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const
   {
