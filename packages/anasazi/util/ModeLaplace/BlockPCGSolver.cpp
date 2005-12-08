@@ -260,7 +260,7 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
 
   double *valX = X.Values();
 
-  int NB = 3 + callLAPACK.ILAENV(1, "sytrd", "u", blkSize);
+  int NB = 3 + callLAPACK.ILAENV(1, "hetrd", "u", blkSize);
   int lworkD = (blkSize > NB) ? blkSize*blkSize : NB*blkSize; 
 
   int wSize = 4*blkSize*xrow + 3*blkSize + 2*blkSize*blkSize + lworkD;
