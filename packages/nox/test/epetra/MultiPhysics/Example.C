@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Output Frequency", 50);    
   //lsParams.setParameter("Preconditioning", "None");   
   //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
-  //lsParams.setParameter("Preconditioner", "AztecOO");   
+  lsParams.setParameter("Preconditioner", "AztecOO");   
   //lsParams.setParameter("Preconditioner", "Ifpack");
   //lsParams.setParameter("Graph Fill", 2);
   //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
@@ -228,34 +228,34 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Polynomial Order", 6); 
 #ifdef HAVE_NOX_ML_EPETRA
   
-  lsParams.setParameter("Preconditioner", "ML");
-  Teuchos::ParameterList MLList;
-  if( lsParams.getParameter("Preconditioner", "None") == "ML" ) {
-    // This Teuchos parameter list is needed for ML
-  
-    // These specifications come straight from the example in 
-    // Trilinos/packages/ml/example/ml_example_epetra_preconditioner.cpp
-  
-    // set defaults for classic smoothed aggregation
-    ML_Epetra::SetDefaults("SA",MLList);
-    // maximum number of levels
-    MLList.set("max levels",5);
-    MLList.set("increasing or decreasing","decreasing");
-    // use Uncoupled scheme to create the aggregate,
-    // from level 3 use the better but more expensive MIS
-    MLList.set("aggregation: type", "Uncoupled");
-    MLList.set("aggregation: type (level 3)", "MIS");
-    // smoother is Gauss-Seidel. Example file
-    // ml_example_epetra_preconditioner_2level.cpp shows how to use
-    // AZTEC's preconditioners as smoothers
-    MLList.set("smoother: type","Gauss-Seidel");
-    // use both pre and post smoothing
-    MLList.set("smoother: pre or post", "both");
-    // solve with serial direct solver KLU
-    MLList.set("coarse: type","Jacobi");
-  
-    lsParams.setParameter("ML Teuchos Parameter List", &MLList);
-  }
+  //lsParams.setParameter("Preconditioner", "ML");
+  //Teuchos::ParameterList MLList;
+  //if( lsParams.getParameter("Preconditioner", "None") == "ML" ) {
+  //  // This Teuchos parameter list is needed for ML
+  //
+  //  // These specifications come straight from the example in 
+  //  // Trilinos/packages/ml/example/ml_example_epetra_preconditioner.cpp
+  //
+  //  // set defaults for classic smoothed aggregation
+  //  ML_Epetra::SetDefaults("SA",MLList);
+  //  // maximum number of levels
+  //  MLList.set("max levels",5);
+  //  MLList.set("increasing or decreasing","decreasing");
+  //  // use Uncoupled scheme to create the aggregate,
+  //  // from level 3 use the better but more expensive MIS
+  //  MLList.set("aggregation: type", "Uncoupled");
+  //  MLList.set("aggregation: type (level 3)", "MIS");
+  //  // smoother is Gauss-Seidel. Example file
+  //  // ml_example_epetra_preconditioner_2level.cpp shows how to use
+  //  // AZTEC's preconditioners as smoothers
+  //  MLList.set("smoother: type","Gauss-Seidel");
+  //  // use both pre and post smoothing
+  //  MLList.set("smoother: pre or post", "both");
+  //  // solve with serial direct solver KLU
+  //  MLList.set("coarse: type","Jacobi");
+  //
+  //  lsParams.setParameter("ML Teuchos Parameter List", &MLList);
+  //}
 #endif
 
   // Create the convergence tests
@@ -280,8 +280,8 @@ int main(int argc, char *argv[])
   combo->addStatusTest(finiteValue);
 
   // Make this explicit
-  bool doOffBlocks = true;
-  //bool doOffBlocks = false;
+  //bool doOffBlocks = true;
+  bool doOffBlocks = false;
 
   // Create the Problem Manager
   Problem_Manager problemManager(Comm, doOffBlocks);
@@ -291,10 +291,11 @@ int main(int argc, char *argv[])
   problemManager.registerParameters(nlParamsPtr);
   problemManager.registerStatusTest(combo);
 
-  bool doBrusselator = false; // Hard-coded for now
+  bool doBrusselator = true; // Hard-coded for now
 
   // Allow one of two supported tests
-  if( doBrusselator ) {
+  if( doBrusselator ) 
+  {
     // Create each part of the Brusselator problem class.  
     Equation_A ProblemA(Comm, NumGlobalNodes, "Temperature");
   //  Equation_A ProblemA2(Comm, 11);
@@ -351,8 +352,8 @@ int main(int argc, char *argv[])
     ifp = fopen(file_name, "w");
     for (int i=0; i<NumMyNodes; i++)
       fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, 
-                                   xMesh[i], ProblemA.getSolution()[i], 
-                                   ProblemB.getSolution()[i]);
+                                   xMesh[i], (*ProblemA.getSolution())[i], 
+                                   (*ProblemB.getSolution())[i]);
     fclose(ifp);
     //FILE *ifp2;
     //Epetra_Vector& burgersX = burgers.getMesh();
@@ -392,7 +393,8 @@ int main(int argc, char *argv[])
            << " sec." << endl << endl;
 
   }
-  else { // HMX Cook-off problem
+  else 
+  { // HMX Cook-off problem
 
     string nameT 		= "Temperature";
     double Const_R		= 1.9872 ;
@@ -549,8 +551,8 @@ int main(int argc, char *argv[])
     ifp = fopen(file_name, "w");
     for (int i=0; i<NumMyNodes; i++)
       fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, 
-                                   xMesh[i], HMX_TempEq.getSolution()[i], 
-                                   HMX_RxnA.getSolution()[i]);
+                                   xMesh[i], (*HMX_TempEq.getSolution())[i], 
+                                   (*HMX_RxnA.getSolution())[i]);
     fclose(ifp);
     
     // Time integration loop

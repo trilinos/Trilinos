@@ -61,8 +61,8 @@
 #include "Epetra_Time.h"
 
 // Hard-wired switch to turn on/off use of FD Coloring
-#define USE_FD
-//#undef USE_FD
+//#define USE_FD
+#undef USE_FD
 
 // Simple macro for turning on debug code
 #undef DEBUG_BLOCKGRAPH
@@ -78,8 +78,7 @@ Problem_Manager::Problem_Manager(Epetra_Comm& comm,
   GenericEpetraProblem(comm, numGlobalElements),
   problemCount(0),
   doOffBlocks(doOffBlocks_),
-  compositeMap(0),
-  compositeSoln(0)
+  compositeMap(0)
 {
   // Unset doOffBlocks flag if this build does not include the required 
   // EpetraExt library intreface
@@ -106,9 +105,7 @@ Problem_Manager::~Problem_Manager()
   for( unsigned int i = 0; i < Problems.size(); ++i )
   {
     delete ProblemToCompositeIndices [i];
-    delete Interfaces                [i];
     delete Solvers                   [i];
-    delete LinearSystems             [i];
 
 #ifdef HAVE_NOX_EPETRAEXT
 #ifdef USE_FD
@@ -121,7 +118,6 @@ Problem_Manager::~Problem_Manager()
 #endif
   }
 
-  delete compositeSoln; compositeSoln = 0;
   delete compositeMap ; compositeMap  = 0;
 }
 
@@ -189,14 +185,14 @@ NOX::Epetra::Group& Problem_Manager::getGroup(int id_)
     return *(group.get());
 }
 
-Epetra_Vector& Problem_Manager::getCompositeSoln()
+Teuchos::RefCountPtr<Epetra_Vector> Problem_Manager::getCompositeSoln()
 {
-  if( !compositeSoln ) {
+  if( !compositeSoln.get() ) {
     cout << "ERROR: No valid Composite Solution vector with Problem Manager !!"
          << endl;
     throw "Problem_Manager ERROR";
   }
-  return *compositeSoln;
+  return compositeSoln;
 }
 
 void Problem_Manager::createDependency(string nameA, string nameB)
@@ -318,31 +314,33 @@ void Problem_Manager::registerComplete()
     GenericEpetraProblem& problem = *(*iter).second;
     int probId = problem.getId();
 
-    Interfaces[probId] = new Problem_Interface(problem);
-    NOX::Epetra::Interface::Required& reqInt = 
-      dynamic_cast<NOX::Epetra::Interface::Required&>
-      (*(*(Interfaces.find(probId))).second);
+    Interfaces[probId] = Teuchos::rcp(new Problem_Interface(problem));
+    //NOX::Epetra::Interface::Required& reqInt = 
+    //  dynamic_cast<NOX::Epetra::Interface::Required&>
+    //  (*(*(Interfaces.find(probId))).second);
 
-    NOX::Epetra::Vector nox_soln( problem.getSolution() );
+    NOX::Epetra::Vector nox_soln( *problem.getSolution() );
 
     // Use this for analytic Matrix Fills
 #ifndef USE_FD
-    NOX::Epetra::Interface::Jacobian& jacInt = 
-      dynamic_cast<NOX::Epetra::Interface::Jacobian&>
-      (*(*(Interfaces.find(probId))).second);
-    LinearSystems[probId] = new NOX::Epetra::LinearSystemAztecOO(
+    //NOX::Epetra::Interface::Jacobian& jacInt = 
+    //  dynamic_cast<NOX::Epetra::Interface::Jacobian&>
+    //  (*(*(Interfaces.find(probId))).second);
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInt = Interfaces[probId];
+    //NOX::Epetra::Interface::Jacobian& jacInt = 
+    LinearSystems[probId] = Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(
       nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
-      reqInt,
+      Interfaces[probId],
       jacInt,
       problem.getJacobian(),
-      problem.getSolution() );
+      problem.getSolution() ));
 
-    Groups[probId] = new NOX::Epetra::Group(
+    Groups[probId] = Teuchos::rcp( new NOX::Epetra::Group(
       nlParams->sublist("Printing"),
-      reqInt,
+      Interfaces[probId],
       nox_soln,
-      *(*(LinearSystems.find(probId))).second );
+      LinearSystems[probId] ));
 
     // OR use this to fill matrices using Finite-Differences with Coloring
 #else
@@ -368,21 +366,22 @@ void Problem_Manager::registerComplete()
                   icount++,fillTime.ElapsedTime());
     MatrixOperators[probId] = new NOX::Epetra::FiniteDifferenceColoring(
 		*(*(Interfaces.find(probId))).second, 
-	        problem.getSolution(), 
+	        *problem.getSolution(), 
 	        problem.getGraph(), 
 	        *(*(ColorMaps.find(probId))).second, 
 	        *(*(ColumnsSets.find(probId))).second,
     		useParallel,
 		distance1);
-    NOX::Epetra::Interface::Jacobian& jacInt = 
-      dynamic_cast<NOX::Epetra::Interface::Jacobian&>(*(*(MatrixOperators.find(probId))).second);
+    //NOX::Epetra::Interface::Jacobian& jacInt = 
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = *(MatrixOperators[probId]);
+      //dynamic_cast<NOX::Epetra::Interface::Jacobian&>(*(*(MatrixOperators[probId]);
     LinearSystems[probId] = new NOX::Epetra::LinearSystemAztecOO(
       nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
       reqInt,
       jacInt,
-      *(*(MatrixOperators.find(probId))).second,
-      problem.getSolution() );
+      MatrixOperators[probId],
+      *problem.getSolution() );
 
     Groups[probId] = Teuchos::rcp(new NOX::Epetra::Group(
       nlParams->sublist("Printing"),
@@ -408,7 +407,7 @@ void Problem_Manager::registerComplete()
   compositeMap = new Epetra_Map(-1, NumMyNodes, compositeGlobalNodes, 0, *Comm);
   delete [] compositeGlobalNodes; compositeGlobalNodes = 0;
 
-  compositeSoln = new Epetra_Vector(*compositeMap);
+  compositeSoln = Teuchos::rcp( new Epetra_Vector(*compositeMap) );
 
   return;
 
@@ -462,7 +461,7 @@ void Problem_Manager::setGroupX(int probId)
     throw "Problem_Manager ERROR";
   }
 
-  grp->setX(problem->getSolution());
+  grp->setX(*problem->getSolution());
 }
 
 void Problem_Manager::setAllGroupX()
@@ -504,8 +503,8 @@ void Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
     {
       // Note that we assign the group soln to be from the problemVar
       int probVarId = managerVec[i]->getProblemVarId();
-      copyCompositeToVector(inVec, probVarId, managerVec[i]->getRowMapVec() ); 
-      managerVec[i]->getGroup().setX(managerVec[i]->getRowMapVec());
+      copyCompositeToVector(inVec, probVarId, *(managerVec[i]->getRowMapVec()) ); 
+      managerVec[i]->getGroup()->setX(managerVec[i]->getRowMapVec());
     }
   }
 }
@@ -520,7 +519,7 @@ void Problem_Manager::resetProblems()
   // Loop over each problem and copy its solution into its old solution
   for( ; problemIter != problemLast; problemIter++) {
     GenericEpetraProblem& problem = *(*problemIter).second;
-    problem.reset( problem.getSolution() );
+    problem.reset( *problem.getSolution() );
   }
 }
 
@@ -596,11 +595,11 @@ void Problem_Manager::computeAllJacobian()
       for( unsigned int i = 0; i<offBlocksVec.size(); i++ ) {
         
         // Refresh all problem vectors
-        copyCompositeToProblems(*compositeSoln, SOLUTION);
+        copyCompositeToProblems(*(compositeSoln.get()), SOLUTION);
 
   DEBUG_BLOCKGRAPH( cout << "Doing computeJacobian for : " << offBlocksVec[i]->getName() << endl;)
 
-        offBlocksVec[i]->getGroup().computeJacobian();
+        offBlocksVec[i]->getGroup()->computeJacobian();
   
   DEBUG_BLOCKGRAPH( cout << "For block : " << offBlocksVec[i]->getName() << endl;)
   DEBUG_BLOCKGRAPH( offBlocksVec[i]->getMatrix().Print(cout);)
@@ -638,7 +637,7 @@ void Problem_Manager::updateWithFinalSolution(int probId)
     (dynamic_cast<const NOX::Epetra::Vector&>
       (finalGroup.getX())).getEpetraVector();
   
-  problem->getSolution() = finalSolution;
+  *problem->getSolution() = finalSolution;
 }
 
 void Problem_Manager::updateAllWithFinalSolution()
@@ -673,7 +672,7 @@ void Problem_Manager::copyCompositeToProblems(
     switch (vecType) {
 
       case SOLUTION :
-        problemVec = &((*problemIter).second->getSolution());
+        problemVec = ((*problemIter).second->getSolution()).get();
 	break;
 
       case GROUP_F :
@@ -705,7 +704,7 @@ void Problem_Manager::copyProblemsToComposite(
     switch (vecType) {
 
       case SOLUTION :
-        problemVec = &((*problemIter).second->getSolution());
+        problemVec = ((*problemIter).second->getSolution()).get();
 	break;
 
       case GROUP_F :
@@ -757,7 +756,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
   map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
-  int problemMaxNodes = compositeSoln->GlobalLength();
+  int problemMaxNodes = compositeSoln.get()->GlobalLength();
   // Loop over each problem being managed and copy its Jacobian into 
   // the composite diagonal blocks
   for( ; problemIter != problemLast; problemIter++) {
@@ -781,7 +780,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
 
     // Use each group's operator test to determine the type of Jacobian
     // operator being used.
-    const Epetra_Operator& jacOp = problemLinearSystem.getJacobianOperator();
+    const Epetra_Operator& jacOp = *(problemLinearSystem.getJacobianOperator().get());
 
     if ( dynamic_cast<const NOX::Epetra::FiniteDifference*>(&jacOp) )
       p_problemMatrix = const_cast<Epetra_CrsMatrix*>(
@@ -792,7 +791,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
       // the same matrix wrapped in the group.  A safer alternative would be
       // to get this matrix from the group as above for a more general 
       // operator.
-      p_problemMatrix = &(problem.getJacobian());
+      p_problemMatrix = problem.getJacobian().get();
     else
     {
       if (MyPID==0)
@@ -936,7 +935,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
 
     // Use each group's operator test to determine the type of Jacobian
     // operator being used.
-    const Epetra_Operator& jacOp = problemLinearSystem.getJacobianOperator();
+    const Epetra_Operator& jacOp = *(problemLinearSystem.getJacobianOperator().get());
 
     if ( dynamic_cast<const NOX::Epetra::FiniteDifference*>(&jacOp) )
       p_problemMatrix = const_cast<Epetra_CrsMatrix*>(
@@ -947,7 +946,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
       // the same matrix wrapped in the group.  A safer alternative would be
       // to get this matrix from the group as above for a more general 
       // operator.
-      p_problemMatrix = &(problem.getJacobian());
+      p_problemMatrix = problem.getJacobian().get();
     else
     {
       if (MyPID==0)
@@ -1238,11 +1237,10 @@ bool Problem_Manager::solveMF()
   cout << "Initial 2-Norm of composite Problem --> " << normSum;
 
   // Fill initial composite solution with values from each problem
-  copyProblemsToComposite(*compositeSoln, SOLUTION);
+  copyProblemsToComposite(*(compositeSoln.get()), SOLUTION);
 
   // Set up a problem interface for the Problem Manager
-  Problem_Interface interface(*this);
-
+  Teuchos::RefCountPtr<Problem_Interface> interface = Teuchos::rcp(new Problem_Interface(*this));
   // Now create a composite matrix graph needed for preconditioning
   AA = new Epetra_CrsGraph(Copy, *compositeMap, 0);
   generateGraph();
@@ -1282,31 +1280,31 @@ bool Problem_Manager::solveMF()
   // Create a preconditioning matrix using the graph just created - this 
   // creates a static graph so we can refill the new matirx after
   // FillComplete()  is called.  
-  A = new Epetra_CrsMatrix(Copy, *AA); 
+  A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *AA) ); 
   A->FillComplete();
 
-  NOX::Epetra::Interface::Required& reqInt = 
-    dynamic_cast<NOX::Epetra::Interface::Required&>(interface);
-  NOX::Epetra::Vector nox_soln(*compositeSoln);
+  //NOX::Epetra::Interface::Required& reqInt = 
+  //  dynamic_cast<NOX::Epetra::Interface::Required&>(interface);
+  NOX::Epetra::Vector nox_soln(*(compositeSoln.get()));
 
   // Create the Matrix-Free Jacobian Operator
   //NOX::Epetra::MatrixFree Jac(interface, *compositeSoln);
   //NOX::Epetra::Interface::Jacobian& jacInt = Jac;
-  NOX::Epetra::Interface::Jacobian& jacInt = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInt = interface;
 
-  NOX::Epetra::Interface::Preconditioner& precInt = 
-    dynamic_cast<NOX::Epetra::Interface::Preconditioner&>(interface);
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> precInt = interface;
 
   NOX::Parameter::List& lsParams = 
     nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver");
 
-  NOX::Epetra::LinearSystemAztecOO composite_linearSystem(
-    nlParams->sublist("Printing"),
-    lsParams,
-    //jacInt, Jac,
-    reqInt, jacInt, *A,
-    //precInt, *A,
-    *compositeSoln);
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> composite_linearSystem
+    = Teuchos::rcp( new NOX::Epetra::LinearSystemAztecOO(
+      nlParams->sublist("Printing"),
+      lsParams,
+      //jacInt, Jac,
+      interface, jacInt, A,
+      //precInt, *A,
+      compositeSoln) );
 
   //lsParams.setParameter("Preconditioning", "None");
   lsParams.setParameter("Preconditioner", "AztecOO");
@@ -1329,7 +1327,6 @@ bool Problem_Manager::solveMF()
   updateAllWithFinalSolution();
 
   // Cleanup locally allocated memory
-  delete A; A = 0;
   delete AA; AA = 0;
 
   return true;
@@ -1357,7 +1354,7 @@ bool Problem_Manager::evaluate(
   // should own the matrix to be filled into.
 
   // Copy incoming vector from NOX solver into our composite solution Vector
-  *compositeSoln = *solnVector;
+  *(compositeSoln.get()) = *solnVector;
   
   copyCompositeToProblems(*solnVector, SOLUTION);
 
@@ -1381,7 +1378,7 @@ bool Problem_Manager::evaluate(
 
   if (fillMatrix) {
     
-    Epetra_CrsMatrix* Matrix = dynamic_cast<Epetra_CrsMatrix*>(A);
+    Epetra_CrsMatrix* Matrix = dynamic_cast<Epetra_CrsMatrix*>(A.get());
     Matrix->PutScalar(0.0);
     
     computeAllJacobian();
@@ -1552,6 +1549,8 @@ void Problem_Manager::generateGraph()
 #ifdef DEBUG_PROBLEM_MANAGER
 	offGraph.Print(cout);
 #endif
+	cout << "Problem_Manager::generateGraph() - offGraph : " << endl;
+	offGraph.Print(cout);
         // A new graph is created within the OffBlock_Manager; so we delete our temporary 
         OffBlock_ManagersVec.push_back( new OffBlock_Manager(*this, offGraph,
                                                         probId, dependId) );
@@ -1586,7 +1585,7 @@ void Problem_Manager::outputSolutions(int timeStep)
     int probId = problem.getId();
 
     Epetra_Vector& xMesh = problem.getMesh();
-    Epetra_Vector& problemSoln = problem.getSolution();
+    Epetra_Vector& problemSoln = *problem.getSolution();
     int numNodes = xMesh.Map().NumMyElements();
 
     char file_name[25];

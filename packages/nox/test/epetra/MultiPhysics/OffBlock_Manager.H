@@ -64,13 +64,13 @@ public:
   virtual ~OffBlock_Manager();
 
   // Return the underlying Group 
-  NOX::Epetra::Group& getGroup();
+  Teuchos::RefCountPtr<NOX::Epetra::Group> getGroup();
 
   // Return the underlying CrsMatrix 
   Epetra_CrsMatrix& getMatrix();
 
   // Return the rowMapVec
-  Epetra_Vector& getRowMapVec() const;
+  Teuchos::RefCountPtr<Epetra_Vector>  getRowMapVec() const;
 
   // Return the problemEqId
   int getProblemEqId() const;
@@ -102,22 +102,22 @@ private:
   int problemEqId;      // Problem Id of off-diagonal block equations
   int problemVarId;     // Problem Id of off-diagonal block variables
 
-  Problem_Interface * offBlockInterface; // A problem interface to 
+  Teuchos::RefCountPtr<Problem_Interface> offBlockInterface; // A problem interface to 
   // this off-block problem manager.  
 
   // These allow off-diagonal block contributions representing
   // inter-problem coupling computed via FDC
   Epetra_Map                           * blockRowMap;
   Epetra_Map                           * blockColMap;
-  Epetra_Vector                        * rowMapVec;
+  Teuchos::RefCountPtr<Epetra_Vector>    rowMapVec;
   NOX::Epetra::Vector                  * noxVec;
-  EpetraExt::CrsGraph_MapColoring      * mapColoring;
-  Epetra_MapColoring                   * colorMap;
-  EpetraExt::CrsGraph_MapColoringIndex * colorMapIndex;
-  vector<Epetra_IntVector>             * columnSet;
-  NOX::Epetra::FiniteDifference        * matrixOperator;
-  NOX::Epetra::LinearSystemAztecOO     * linearSystem;
-  NOX::Epetra::Group                   * group;    
+  Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoring>  mapColoring;
+  Teuchos::RefCountPtr<Epetra_MapColoring>  colorMap;
+  Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoringIndex> colorMapIndex;
+  Teuchos::RefCountPtr<vector<Epetra_IntVector> > columnSet;
+  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifference>   matrixOperator;
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linearSystem;
+  Teuchos::RefCountPtr<NOX::Epetra::Group> group;    
   
   // These are needed to shift indices for coloring and 
   // block-based condition number estimates

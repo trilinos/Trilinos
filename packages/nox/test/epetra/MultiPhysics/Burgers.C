@@ -62,7 +62,7 @@ Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
   oldSolution = new Epetra_Vector(*StandardMap);
   exactSolution = new Epetra_Vector(*StandardMap);
 
-  initialSolution = new Epetra_Vector(*StandardMap);
+  initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
   initializeSoln();
   
   // Allocate the memory for a matrix dynamically (i.e. the graph is dynamic).
@@ -72,7 +72,7 @@ Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
   // Create a second matrix using graph of first matrix - this creates a 
   // static graph so we can refill the new matirx after FillComplete()
   // is called.
-  A = new Epetra_CrsMatrix (Copy, *AA);
+  A = Teuchos::rcp(new Epetra_CrsMatrix (Copy, *AA));
   A->FillComplete();
 
   // Create the Importer needed for FD coloring
@@ -302,9 +302,9 @@ bool Burgers::evaluate(
   return true;
 }
 
-Epetra_Vector& Burgers::getSolution()
+Teuchos::RefCountPtr<Epetra_Vector> Burgers::getSolution()
 {
-  return *initialSolution;
+  return initialSolution;
 }
   
 Epetra_Vector& Burgers::getExactSoln(double time)

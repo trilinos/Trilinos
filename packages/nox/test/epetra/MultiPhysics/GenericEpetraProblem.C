@@ -58,9 +58,7 @@ GenericEpetraProblem::GenericEpetraProblem(const Epetra_Comm& comm,
   OverlapMap(0),
   Importer(0),
   xptr(0),
-  initialSolution(0),
-  AA(0),  
-  A(0) 
+  AA(0)
 {
 
   // Commonly used variables
@@ -138,9 +136,8 @@ void GenericEpetraProblem::createMaps()
 // Destructor
 GenericEpetraProblem::~GenericEpetraProblem()
 {
-  delete A; A = 0;
   delete AA; AA = 0;
-  delete initialSolution; initialSolution = 0;
+  //delete initialSolution; initialSolution = 0;
   delete Importer; Importer = 0;
   delete OverlapMap; OverlapMap = 0;
   delete StandardMap; StandardMap = 0;
@@ -215,10 +212,10 @@ Epetra_Vector& GenericEpetraProblem::getMesh()
   return *xptr;
 }
 
-Epetra_Vector& GenericEpetraProblem::getSolution()
+Teuchos::RefCountPtr<Epetra_Vector> GenericEpetraProblem::getSolution()
 {
-  assert( initialSolution != 0 ); // Solution vector had better exist
-  return *initialSolution;
+  //assert( initialSolution != 0 ); // Solution vector had better exist
+  return initialSolution;
 }
 
 Epetra_CrsGraph& GenericEpetraProblem::getGraph()
@@ -232,33 +229,33 @@ Epetra_CrsGraph& GenericEpetraProblem::getGraph()
   }
 }
 
-Epetra_CrsMatrix& GenericEpetraProblem::getJacobian()
+Teuchos::RefCountPtr<Epetra_CrsMatrix> GenericEpetraProblem::getJacobian()
 {
-  if(A)
-    return *A;
+  if(A.get())
+    return A;
   else
   {
     cout << "ERROR: No valid Jacobian exists for this problem !!" << endl;
-    return *A;
+    return A;
   }
 }
 
 void GenericEpetraProblem::setSolution(const Epetra_Vector& data)
 {
   // Ensure that the derived problem class created the solution vector
-  if(!initialSolution)
+  if(!initialSolution.get())
   {
     cout << "ERROR: No solution vector exists for this problem !!" << endl;
     throw "GenericEpetraProblem ERROR";
   }
 
-  *initialSolution = data;
+  (*initialSolution.get()) = data;
 }
 
 void GenericEpetraProblem::createDependentVectors()
 {
   // Create the dependent vectors needed to receive data from other problems
-  if( !initialSolution ) {
+  if( !initialSolution.get() ) {
     cout << "ERROR: Cannot create dependent data without an existing solution "
          << "vector for this problem !!" << endl;
     throw "GenericEpetraProblem ERROR";
@@ -305,7 +302,7 @@ void GenericEpetraProblem::doTransfer()
       // NOTE that we are transferring (by default) to/from each problem's
       // solution vector which may be different data than in each respective
       // group.
-      Epetra_Vector& fromVec = myManager->getProblem(depId).getSolution();
+      Epetra_Vector& fromVec = *(myManager->getProblem(depId).getSolution());
       Epetra_Vector& toVec = *( (*(depSolutions.find(depId))).second );
       xfer->transferField(toVec, fromVec); 
     }  

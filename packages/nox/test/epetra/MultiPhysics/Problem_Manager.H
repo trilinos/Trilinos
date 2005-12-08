@@ -71,7 +71,7 @@ public:
   NOX::Epetra::Group& getGroup(int id);
 
   // Get the compositeSoln vector
-  Epetra_Vector& getCompositeSoln();
+  Teuchos::RefCountPtr<Epetra_Vector> getCompositeSoln();
 
   // Create a dependence of Problem A equations on Problem B variables
   void createDependency(string nameA, string nameB);
@@ -191,15 +191,15 @@ private:
 			// off-diagonal composite Jacobian blocks via FDC
 
   Epetra_Map* compositeMap;	// Composite map for all registered problems
-  Epetra_Vector* compositeSoln;	// Composite map for all registered problems
+  Teuchos::RefCountPtr<Epetra_Vector> compositeSoln;	// Composite map for all registered problems
 
   map<int, GenericEpetraProblem*> Problems; // Problem container
   map<int, string> Names;                   // Problem names
   map<string, int> NameLookup;              // Needed to lookup problems by name
-  map<int, NOX::Epetra::LinearSystemAztecOO*> LinearSystems;
+  map<int, Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> > LinearSystems;
   					    // Linear Systems container
-  map<int, Teuchos::RefCountPtr<NOX::Epetra::Group> >Groups;    // Groups container
-  map<int, Problem_Interface*> Interfaces;    // Interfaces container
+  map<int, Teuchos::RefCountPtr<NOX::Epetra::Group> >Groups;     // Groups container
+  map<int, Teuchos::RefCountPtr<Problem_Interface>  >Interfaces; // Interfaces container
   map<int, NOX::Solver::Manager*> Solvers;    // Solvers container
   map<int, Epetra_IntVector*> ProblemToCompositeIndices;
     // Essentially a mapping from a problems indices to the composite indices
@@ -213,7 +213,7 @@ private:
   map<int, Epetra_MapColoring*> ColorMaps;
   map<int, EpetraExt::CrsGraph_MapColoringIndex*> ColorMapIndexSets;
   map<int, vector<Epetra_IntVector>*> ColumnsSets;
-  map<int, Epetra_Operator*> MatrixOperators;
+  map<int, Teuchos::RefCountPtr<Epetra_Operator> > MatrixOperators;
 
   // These containers allow off-diagonal block contributions representing
   // inter-problem coupling

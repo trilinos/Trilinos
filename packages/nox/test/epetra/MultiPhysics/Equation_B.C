@@ -63,7 +63,7 @@ Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes,
   oldSolution = new Epetra_Vector(*StandardMap);
 
   // Next we create and initialize the solution vector
-  initialSolution = new Epetra_Vector(*StandardMap);
+  initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
   initializeSolution();
 //  initialSolution->PutScalar(0.0);
 
@@ -78,7 +78,7 @@ Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes,
   // Create a matrix using the graph just created - this creates a
   // static graph so we can refill the new matirx after FillComplete()
   // is called.
-  A = new Epetra_CrsMatrix (Copy, *AA);
+  A = Teuchos::rcp(new Epetra_CrsMatrix (Copy, *AA));
   A->FillComplete();
 
   // Create the Importer needed for FD coloring
@@ -88,11 +88,9 @@ Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes,
 // Destructor
 Equation_B::~Equation_B()
 {
-  delete A; A = 0;
   delete AA; AA = 0;
   delete xptr; xptr = 0;
   delete oldSolution; oldSolution = 0;
-  delete initialSolution; initialSolution = 0;
   delete ColumnToOverlapImporter; ColumnToOverlapImporter = 0;
 }
 

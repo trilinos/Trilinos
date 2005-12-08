@@ -79,15 +79,7 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
   problemVarId(probVarId),
   blockRowMap(0),
   blockColMap(0),
-  rowMapVec(0),
-  noxVec(0),
-  mapColoring(0),
-  colorMap(0),
-  colorMapIndex(0),
-  columnSet(0),
-  matrixOperator(0),
-  linearSystem(0),
-  group(0)
+  noxVec(0)
 {
  
   setManager(&problemMan_);
@@ -105,10 +97,10 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
   AA = &( createBlockGraphFromComposite(graph_) );
 
   // Create a problem interface to the manager
-  offBlockInterface = new Problem_Interface(*this);
+  Teuchos::RefCountPtr<Problem_Interface> offBlockInterface = Teuchos::rcp(new Problem_Interface(*this));
 
   // Use our graph to create FDC objects needed for off-diagonal block fills
-  createFDobjects( true );
+  createFDobjects( false );
 
   // Reset number of dofs (overwrites base constructor assignment)
   NumMyNodes = 0;
@@ -118,18 +110,9 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
 OffBlock_Manager::~OffBlock_Manager()
 {
   delete AA            ; AA             = 0;
-  delete A             ; A              = 0;
 
   delete blockRowMap   ; blockRowMap    = 0;
   delete blockColMap   ; blockColMap    = 0;
-  delete rowMapVec     ; rowMapVec      = 0;
-  delete mapColoring   ; mapColoring    = 0;
-  delete colorMap      ; colorMap       = 0;
-  delete colorMapIndex ; colorMapIndex  = 0;
-  delete columnSet     ; columnSet      = 0;
-  delete matrixOperator; matrixOperator = 0;
-  delete linearSystem  ; linearSystem   = 0;
-  delete group         ; group          = 0;
 
 }
 
@@ -152,7 +135,7 @@ bool OffBlock_Manager::evaluate(
 
   // Copy relevant part of incoming solnVector into solution vector of
   // problemVarId
-  Epetra_Vector &probVarSoln = problemVar.getSolution();
+  Epetra_Vector &probVarSoln = *(problemVar.getSolution());
   //myManager->copyCompositeToVector(*solnVector, problemVarId, probVarSoln);
   probVarSoln = *solnVector;
   problemEq.doTransfer(); // This does all transfers for this problem
@@ -168,21 +151,21 @@ bool OffBlock_Manager::evaluate(
   return true;
 }
 
-NOX::Epetra::Group& OffBlock_Manager::getGroup()
+Teuchos::RefCountPtr<NOX::Epetra::Group> OffBlock_Manager::getGroup()
 {
-  if( !group ) {
+  if( !group.get() ) {
     cout << "ERROR: Unable to get off-block Group for "
          << "dependence of problem " << problemEqId << " on problem "
          << problemVarId << " !!" << endl;
     throw "Problem_Manager ERROR";
   }
 
-  return( *group );
+  return( group );
 }
 
 Epetra_CrsMatrix& OffBlock_Manager::getMatrix()
 {
-  if( !matrixOperator ) {
+  if( !matrixOperator.get() ) {
     cout << "ERROR: Unable to get FDColoring underlying matrix for "
          << "dependence of problem " << problemEqId << " on problem "
          << problemVarId << " !!" << endl;
@@ -192,14 +175,14 @@ Epetra_CrsMatrix& OffBlock_Manager::getMatrix()
   return( matrixOperator->getUnderlyingMatrix() );
 }
 
-Epetra_Vector& OffBlock_Manager::getRowMapVec() const
+Teuchos::RefCountPtr<Epetra_Vector> OffBlock_Manager::getRowMapVec() const
 {
-  if( !rowMapVec ) {
+  if( !rowMapVec.get() ) {
     cout << "ERROR: Unable to get Row Map Vector for OffBlock " << getName() << endl;
     throw "Problem_Manager ERROR";
   }
 
-  return( *rowMapVec );
+  return( rowMapVec );
 }
 
 int OffBlock_Manager::getProblemEqId() const
@@ -234,54 +217,53 @@ void OffBlock_Manager::convertBlockColIndicesToComposite(int numIndices,
 
 void OffBlock_Manager::createFDobjects( bool useColoring )
 {
-  Epetra_CrsGraph & graph = *AA;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> graph = Teuchos::rcp( new Epetra_CrsGraph(*AA) );
 
-  DEBUG_BLOCKGRAPH( cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" << graph << endl;)
+  DEBUG_BLOCKGRAPH( cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" 
+                         << *graph << endl << "\n\tDone." << endl;)
 
   // Note: We use a vector corresponding to compositeSoln
   //Epetra_Vector & compositeVec = myManager->getCompositeSoln();
-  rowMapVec = new Epetra_Vector (graph.RowMap());
+  rowMapVec = Teuchos::rcp( new Epetra_Vector (graph->RowMap()));
 
   if( !useColoring )
   {
     // Now setup each FD Jacobian as its own group/linearsystem
-    matrixOperator = new NOX::Epetra::FiniteDifference(
-      	*offBlockInterface, 
-  	*rowMapVec, 
+    matrixOperator = Teuchos::rcp( new NOX::Epetra::FiniteDifference(
+      	myManager->nlParams->sublist("Printing"),
+        offBlockInterface, 
+  	rowMapVec, 
 //  	compositeVec, 
-  	graph);
+  	graph) );
   
-    NOX::Epetra::Interface::Required& reqInt = 
-      dynamic_cast<NOX::Epetra::Interface::Required&>(*offBlockInterface);
-    NOX::Epetra::Interface::Jacobian& jacInt = 
-      dynamic_cast<NOX::Epetra::Interface::Jacobian&>(*matrixOperator);
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInt = matrixOperator;
   
     // Here we create a linear system solely for the sake of filling an
     // off-diagonal block Jacobian contribution using FDC.  The nlParams and
     // statusTest are irrelevant and so are taken as that of the overall
     // Problem_Manager object.
-    linearSystem = new NOX::Epetra::LinearSystemAztecOO(
+    linearSystem = Teuchos::rcp( new NOX::Epetra::LinearSystemAztecOO(
         myManager->nlParams->sublist("Printing"),
         myManager->nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
-        reqInt,
+        offBlockInterface,
         jacInt,
-        *matrixOperator,
-  	*rowMapVec);
+        matrixOperator,
+  	*rowMapVec) );
 //  	compositeVec, 
   
     noxVec = new NOX::Epetra::Vector(*rowMapVec);
 //    NOX::Epetra::Vector tmpNOXVec(compositeVec);
   
-    group = new NOX::Epetra::Group(
+    group = Teuchos::rcp( new NOX::Epetra::Group(
       myManager->nlParams->sublist("Printing"),
-      reqInt,
+      offBlockInterface,
       *noxVec,
-      *linearSystem);
+      linearSystem) );
 
     DEBUG_BLOCKGRAPH(   
       cout << "OffBlock_Manager::createFDobjects .... " << myName << endl
            << "---------------------------------------------------------------"
-           << "graph :" << graph << endl
+           << "graph :" << *graph << endl
            << "---------------------------------------------------------------"
            << "rowMapVec :" << *rowMapVec << endl
            << "---------------------------------------------------------------" << endl;)
@@ -302,59 +284,57 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
     bool distance1 = false;
     int verbose = 0;
   
-    DEBUG_BLOCKGRAPH( cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" << graph << endl;)
+    DEBUG_BLOCKGRAPH( cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" << *graph << endl;)
   
     colorTime.ResetStartTime();
   
     // Just a dummy for now, but needs to be hooked up correctly.
-    Epetra_Vector &compositeVec = myManager->getCompositeSoln();
+    Epetra_Vector &compositeVec = *(myManager->getCompositeSoln());
   
-    mapColoring = new EpetraExt::CrsGraph_MapColoring(algType, reordering, distance1, verbose);
-    colorMap = &(*mapColoring)(graph);
-    colorMapIndex = new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
-    columnSet = &(*colorMapIndex)(graph);
+    mapColoring = Teuchos::rcp( new EpetraExt::CrsGraph_MapColoring(algType, reordering, distance1, verbose) );
+    colorMap = Teuchos::rcp( new Epetra_MapColoring((*mapColoring)(*graph)) );
+    colorMapIndex = Teuchos::rcp( new EpetraExt::CrsGraph_MapColoringIndex(*colorMap) );
+    columnSet = Teuchos::rcp( new vector<Epetra_IntVector>( colorMapIndex->operator()(*graph)));
   
     if (MyPID == 0) {
       printf("\n\tTime to color Jacobian # %d (%d) --> %e sec. \n",
                   problemEqId,problemVarId,colorTime.ElapsedTime());
       cout << "\nUsing " << colorMap->NumColors() << " colors for "
-           << graph.NumMyRows() << " unknowns\n" << endl;
+           << graph->NumMyRows() << " unknowns\n" << endl;
     }
   
     // Now setup each FDC Jacobian as its own group/linearsystem
-    matrixOperator = new NOX::Epetra::FiniteDifferenceColoring(
-      	*offBlockInterface, 
+    matrixOperator = Teuchos::rcp( new NOX::Epetra::FiniteDifferenceColoring(
+        myManager->nlParams->sublist("Printing"),
+      	offBlockInterface, 
   	*rowMapVec, 
   	graph, 
-  	*colorMap, 
-  	*columnSet,
+  	colorMap, 
+  	columnSet,
   	useParallel,
-  	distance1 );
+  	distance1 ) );
   
-    NOX::Epetra::Interface::Required& reqInt = 
-      dynamic_cast<NOX::Epetra::Interface::Required&>(*offBlockInterface);
-    NOX::Epetra::Interface::Jacobian& jacInt = 
-      dynamic_cast<NOX::Epetra::Interface::Jacobian&>(*matrixOperator);
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInt = matrixOperator;
   
     // Here we create a linear system solely for the sake of filling an
     // off-diagonal block Jacobian contribution using FDC.  The nlParams and
     // statusTest are irrelevant and so are taken as that of the overall
     // Problem_Manager object.
-    linearSystem = new NOX::Epetra::LinearSystemAztecOO(
+    linearSystem = linearSystem = Teuchos::rcp( new NOX::Epetra::LinearSystemAztecOO(
         myManager->nlParams->sublist("Printing"),
         myManager->nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
-        reqInt,
+        offBlockInterface,
         jacInt,
-        *matrixOperator,
-        *rowMapVec );
+        matrixOperator,
+        *rowMapVec ) );
   
     NOX::Epetra::Vector tmpNOXVec(*rowMapVec);
   
-    group = new NOX::Epetra::Group(
+    group = Teuchos::rcp( new NOX::Epetra::Group(
       myManager->nlParams->sublist("Printing"),
-      reqInt,
+      offBlockInterface,
       tmpNOXVec,
-      *linearSystem);
+      linearSystem) );
 #else
       if(MyPID==0)
         cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
