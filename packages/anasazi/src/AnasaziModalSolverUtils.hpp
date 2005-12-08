@@ -143,7 +143,7 @@ namespace Anasazi {
     int directSolver(int size, const Teuchos::SerialDenseMatrix<int,ScalarType> &KK, 
                      const Teuchos::SerialDenseMatrix<int,ScalarType> *MM,
                      Teuchos::SerialDenseMatrix<int,ScalarType> *EV,
-                     std::vector<ScalarType>* theta,
+                     std::vector<MagnitudeType>* theta,
                      int* nev, int esType = 0) const;
     //@}
 
@@ -718,7 +718,7 @@ namespace Anasazi {
   int ModalSolverUtils<ScalarType, MV, OP>::directSolver(int size, const Teuchos::SerialDenseMatrix<int,ScalarType> &KK, 
                                                          const Teuchos::SerialDenseMatrix<int,ScalarType> *MM,
                                                          Teuchos::SerialDenseMatrix<int,ScalarType>* EV,
-                                                         std::vector<ScalarType>* theta,
+                                                         std::vector<MagnitudeType>* theta,
                                                          int* nev, int esType) const
   {
     // Routine for computing the first NEV generalized eigenpairs of the symmetric pencil (KK, MM)
@@ -727,9 +727,9 @@ namespace Anasazi {
     //
     // size : Dimension of the eigenproblem (KK, MM)
     //
-    // KK : Symmetric "stiffness" matrix 
+    // KK : Hermitian "stiffness" matrix 
     //
-    // MM : Symmetric Positive "mass" matrix
+    // MM : Hermitian positive-definite "mass" matrix
     //
     // EV : Array to store the nev eigenvectors 
     //
@@ -757,42 +757,47 @@ namespace Anasazi {
     // info = 0 >> Success
     //
     // info = - 20 >> Failure in LAPACK routine
-    
+
     // Define local arrays
 
     // Create blas/lapack objects.
     Teuchos::LAPACK<int,ScalarType> lapack;
     Teuchos::BLAS<int,ScalarType> blas;
-    
+
     int i, j;
     int rank = 0;
     int info = 0;
-   
-    std::string lapack_name = "sytrd";
+
+    // Query LAPACK for the "optimal" block size for HEGV
+    std::string lapack_name = "hetrd";
     std::string lapack_opts = "u";
-    int NB = 5 + lapack.ILAENV(1, lapack_name, lapack_opts, size, -1, -1, -1);
-    int lwork = size*NB;
+    int NB = lapack.ILAENV(1, lapack_name, lapack_opts, size, -1, -1, -1);
+    int lwork = size*(NB+1);
     std::vector<ScalarType> work(lwork);
     std::vector<MagnitudeType> rwork(3*size-2);
-    std::vector<ScalarType> tt( size );
-    
+    // tt contains the eigenvalues from HEGV, which are necessarily real, and
+    // HEGV expects this vector to be real as well
+    std::vector<MagnitudeType> tt( size );
+    typedef typename std::vector<MagnitudeType>::iterator MTIter;
+
     //  ScalarType tol = sqrt(eps);
     MagnitudeType tol = 1e-12;
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+    MagnitudeType one_m = SCT::magnitude(one);
 
     Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > KKcopy, MMcopy;
     Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > U;
- 
+
     switch (esType) {
-      
+
     default:
     case 0:
       //
-      // Use the Cholesky factorization of MM to compute the generalized eigenvectors
+      // Use LAPACK to compute the generalized eigenvectors
       //
       for (rank = size; rank > 0; --rank) {
-
+        
         U = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(rank,rank) );              
         //
         // Copy KK & MM
@@ -810,11 +815,9 @@ namespace Anasazi {
         // Treat error messages
         //
         if (info < 0) {
-          //            if (verbose > 0) {
           cerr << endl;
           cerr << " In HEGV, argument " << -info << "has an illegal value.\n";
           cerr << endl;
-          //}
           return -20;
         }
         if (info > 0) {
@@ -823,30 +826,28 @@ namespace Anasazi {
           continue;
         }
         //
-        // Check the quality of eigenvectors
-        // ( using mass-orthonormality )
+        // Check the quality of eigenvectors ( using mass-orthonormality )
         //
-        Teuchos::SerialDenseMatrix<int,ScalarType> MMcopy2( Teuchos::Copy, *MM, rank, rank );          
+        MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, *MM, rank, rank ) );
         for (i = 0; i < rank; ++i) {
-          for (j = 0; j < i; ++j)
-            MMcopy2(i,j) = (*MM)(j,i);
+          for (j = 0; j < i; ++j) {
+            (*MMcopy)(i,j) = SCT::conjugate((*MM)(j,i));
+          }
         }
-        U->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,MMcopy2,*KKcopy,zero);
-        //blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, size, rank, size, one, MMcopy2.values(), MMcopy2.stride(), 
-        //          KKcopy->values(), KKcopy->stride(), zero, U->values(), U->stride());
-        MMcopy2.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,*KKcopy,*U,zero);
-        //blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS, rank, rank, size, one, KKcopy->values(), KKcopy->stride(), 
-        //          U->values(), U->stride(), zero, MMcopy2.values(), MMcopy2.stride());
+        // U = 0*U + 1*MMcopy*KKcopy = MMcopy * KKcopy
+        U->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*MMcopy,*KKcopy,zero);
+        // MMcopy = 0*MMcopy + 1*KKcopy^H*U = KKcopy^H * MMcopy * KKcopy
+        MMcopy->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,one,*KKcopy,*U,zero);
         MagnitudeType maxNorm = SCT::magnitude(zero);
         MagnitudeType maxOrth = SCT::magnitude(zero);
         for (i = 0; i < rank; ++i) {
           for (j = i; j < rank; ++j) {
             if (j == i)
-              maxNorm = (SCT::magnitude(MMcopy2(i,j)-one) > maxNorm) 
-                ? SCT::magnitude(MMcopy2(i,j)-one) : maxNorm;            
+              maxNorm = SCT::magnitude((*MMcopy)(i,j) - one) > maxNorm
+                      ? SCT::magnitude((*MMcopy)(i,j) - one) : maxNorm;            
             else 
-              maxOrth = (SCT::magnitude(MMcopy2(i,j)) > maxOrth)
-                ? SCT::magnitude(MMcopy2(i,j)) : maxOrth;
+              maxOrth = SCT::magnitude((*MMcopy)(i,j)) > maxOrth
+                      ? SCT::magnitude((*MMcopy)(i,j)) : maxOrth;
           }
         }
         /*        if (verbose > 4) {
@@ -857,8 +858,9 @@ namespace Anasazi {
         cout << " Orthogonality error: " << maxOrth;
         cout << endl;
         }*/
-        if ((maxNorm <= tol) && (maxOrth <= tol))
+        if ((maxNorm <= tol) && (maxOrth <= tol)) {
           break;
+        }
       } // for (rank = size; rank > 0; --rank)
       //
       // Copy the computed eigenvectors and eigenvalues
@@ -866,16 +868,16 @@ namespace Anasazi {
       //
       
       // cout << "directSolve    rank: " << rank << "\tsize: " << size << endl;
-
+      
       *nev = (rank < *nev) ? rank : *nev;
       EV->putScalar( zero );
-      blas.COPY( *nev, &tt[0], 1, &(*theta)[0], 1 );
+      std::copy<MTIter,MTIter>(tt.begin(),tt.begin()+*nev,theta->begin());
       for (i = 0; i < *nev; ++i) {
         blas.COPY( rank, (*KKcopy)[i], 1, (*EV)[i], 1 );
       }
       
       break;
-      
+
     case 1:
       //
       // Use the Cholesky factorization of MM to compute the generalized eigenvectors
@@ -895,35 +897,31 @@ namespace Anasazi {
       // Treat error messages
       //
       if (info < 0) {
-        //if (verbose > 0) {
         cerr << endl;
         cerr << " In HEGV, argument " << -info << "has an illegal value.\n";
         cerr << endl;
-        //      }
         return -20;
       }
       if (info > 0) {
         if (info > size)
           *nev = 0;
         else {
-          //        if (verbose > 0) {
           cerr << endl;
           cerr << " In HEGV, DPOTRF or DHEEV returned an error code (" << info << ").\n";
           cerr << endl;
-          //          }
           return -20; 
         }
       }
       //
       // Copy the eigenvectors and eigenvalues
       //
-      blas.COPY( *nev, &tt[0], 1, &(*theta)[0], 1 );
+      std::copy<MTIter,MTIter>(tt.begin(),tt.begin()+*nev,theta->begin());
       for (i = 0; i < *nev; ++i) {
         blas.COPY( size, (*KKcopy)[i], 1, (*EV)[i], 1 );
       }
       
       break;
-      
+
     case 10:
       //
       // Simple eigenproblem
@@ -938,21 +936,19 @@ namespace Anasazi {
       //
       // Treat error messages
       if (info != 0) {
-        //      if (verbose > 0) {
         cerr << endl;
         if (info < 0) 
           cerr << " In DHEEV, argument " << -info << " has an illegal value\n";
         else
           cerr << " In DHEEV, the algorithm failed to converge (" << info << ").\n";
         cerr << endl;
-        //}
         info = -20;
         break;
       }
       //
       // Copy the eigenvectors
       //
-      blas.COPY( *nev, &tt[0], 1, &(*theta)[0], 1 );
+      std::copy<MTIter,MTIter>(tt.begin(),tt.begin()+*nev,theta->begin());
       for (i = 0; i < *nev; ++i) {
         blas.COPY( size, (*KKcopy)[i], 1, (*EV)[i], 1 );
       }
@@ -962,10 +958,10 @@ namespace Anasazi {
     }
     
     // Clear the memory
-    
     return info;
   }
-  
+
+
   //-----------------------------------------------------------------------------
   // 
   //  SANITY CHECKING METHODS

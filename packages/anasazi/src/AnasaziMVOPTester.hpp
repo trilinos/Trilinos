@@ -1452,7 +1452,7 @@ namespace Anasazi {
     MVT::MvNorm(*C,&normsC2);
     if (ret != Ok) {
       if (om->isVerbosityAndPrint(Warning)) {
-        out << "*** ERROR *** OperatorTraits::Apply()." << endl
+        out << "*** ERROR *** OperatorTraits::Apply() [1]" << endl
             << "Apply() returned an error." << endl;
       }
       return Failed;
@@ -1460,14 +1460,14 @@ namespace Anasazi {
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
         if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** OperatorTraits::Apply()." << endl
+          out << "*** ERROR *** OperatorTraits::Apply() [1]" << endl
               << "Apply() modified the input vectors." << endl;
         }
         return Failed;
       }
       if (normsC2[i] != SCT::zero()) {
         if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** OperatorTraits::Apply()." << endl
+          out << "*** ERROR *** OperatorTraits::Apply() [1]" << endl
               << "Operator applied to zero did not return zero." << endl;
         }
         return Failed;
@@ -1482,7 +1482,7 @@ namespace Anasazi {
     MVT::MvNorm(*C,&normsC2);
     if (ret != Ok) {
       if (om->isVerbosityAndPrint(Warning)) {
-        out << "*** ERROR *** OperatorTraits::Apply()." << endl
+        out << "*** ERROR *** OperatorTraits::Apply() [2]" << endl
             << "Apply() returned an error." << endl;
       }
       return Failed;
@@ -1491,15 +1491,15 @@ namespace Anasazi {
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
         if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** OperatorTraits::Apply()." << endl
+          out << "*** ERROR *** OperatorTraits::Apply() [2]" << endl
               << "Apply() modified the input vectors." << endl;
         }
         return Failed;
       }
       if (normsC2[i] == SCT::zero() && ZeroWarning==false ) {
         if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** OperatorTraits::Apply()." << endl
-              << "Operator applied to random matrix returned zero." << endl;
+          out << "*** ERROR *** OperatorTraits::Apply() [2]" << endl
+              << "Operator applied to random vectors returned zero." << endl;
           ZeroWarning = true;
         }
       }
@@ -1514,7 +1514,7 @@ namespace Anasazi {
     MVT::MvNorm(*C,&normsC1);
     if (ret != Ok) {
       if ( om->isVerbosityAndPrint(Warning) ) {
-        out << "*** ERROR *** OperatorTraits::Apply()." << endl
+        out << "*** ERROR *** OperatorTraits::Apply() [3]" << endl
             << "Apply() returned an error." << endl;
       }
       return Failed;
@@ -1522,7 +1522,7 @@ namespace Anasazi {
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
         if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** OperatorTraits::Apply()." << endl
+          out << "*** ERROR *** OperatorTraits::Apply() [3]" << endl
               << "Apply() modified the input vectors." << endl;
         }
         return Failed;
@@ -1541,7 +1541,7 @@ namespace Anasazi {
     NonDeterministicWarning = false;
     if (ret != Ok) {
       if (om->isVerbosityAndPrint(Warning)) {
-        out << "*** ERROR *** OperatorTraits::Apply()." << endl
+        out << "*** ERROR *** OperatorTraits::Apply() [4]" << endl
             << "Apply() returned an error." << endl;
       }
       return Failed;
@@ -1549,7 +1549,7 @@ namespace Anasazi {
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
         if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** OperatorTraits::Apply()." << endl
+          out << "*** ERROR *** OperatorTraits::Apply() [4]" << endl
               << "Apply() modified the input vectors." << endl;
         }
         return Failed;
@@ -1557,7 +1557,7 @@ namespace Anasazi {
       if (normsC1[i] != normsC2[i] && !NonDeterministicWarning) {
         if ( om->isVerbosityAndPrint(Warning) ) {
           out << endl;
-          out << "*** ERROR *** OperatorTraits::Apply()." << endl
+          out << "*** ERROR *** OperatorTraits::Apply() [4]" << endl
               << "Apply() returned two different results." << endl << endl;
         }
         NonDeterministicWarning = true;

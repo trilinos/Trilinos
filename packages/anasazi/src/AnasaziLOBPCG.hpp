@@ -150,9 +150,9 @@ namespace Anasazi {
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
-    const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem; 
-    const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sm; 
-    const Teuchos::RefCountPtr<OutputManager<ScalarType> > _om; 
+    const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem;
+    const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sm;
+    const Teuchos::RefCountPtr<OutputManager<ScalarType> > _om;
     Teuchos::ParameterList _pl;
     //
     // Information obtained from the eigenproblem
@@ -169,7 +169,7 @@ namespace Anasazi {
     const int _maxIter, _blockSize;
     const MagnitudeType _residual_tolerance;
     int _numRestarts, _iter, _knownEV, _nevLocal;
-    std::vector<ScalarType> _theta;
+    std::vector<MagnitudeType> _theta;
     std::vector<MagnitudeType> _normR, _resids;
     bool _error_flg;
     //
@@ -692,20 +692,20 @@ namespace Anasazi {
         
       } // if (localSize > blockSize)
       _timerLocalProj->stop();
-          
+
       // Perform a spectral decomposition
       _nevLocal = localSize;
       _timerDS->start();
       info = _MSUtils.directSolver(localSize, KK, &MM, &S, &_theta, &_nevLocal, 
                                    (_blockSize == 1) ? 1 : 0);
       _timerDS->stop();
-      
+
       if (info < 0) {
         // Stop when spectral decomposition has a critical failure
         criticalExit = true;
         break;
       } // if (info < 0)
-      
+
       // Check for restarting
       if (_nevLocal < _blockSize) {
         if (_om->isVerbosityAndPrint( IterationDetails ) ) {
@@ -743,9 +743,18 @@ namespace Anasazi {
       //---------------------------------------------------
       // Sort the ritz values using the sort manager
       //---------------------------------------------------
-      _order.resize(_nevLocal);
+      // The sort manager is templated on ScalarType
+      // Make a ScalarType copy of _theta for sorting
+      std::vector<ScalarType> _theta_st(_theta.size());
       _timerSortEval->start();
-      ret = _sm->sort( this, _nevLocal, &(_theta[0]), &_order );
+      std::copy<MTiter,STiter>(_theta.begin(),_theta.begin()+_nevLocal,_theta_st.begin());
+      _order.resize(_nevLocal);
+      ret = _sm->sort( this, _nevLocal, &(_theta_st[0]), &_order );
+      //reorder _theta according to sorting results from _theta_st
+      std::vector<MagnitudeType> _theta_copy(_theta);
+      for (i=0; i<_nevLocal; i++) {
+        _theta[i] = _theta_copy[_order[i]];
+      }
       _timerSortEval->stop();
       if (ret != Ok) {
         if (_om->isVerbosityAndPrint(Error)) {
@@ -756,7 +765,7 @@ namespace Anasazi {
       }
       // Sort the primitive ritz vectors
       // We need the first _blockSize vectors ordered to generate the next
-      // columns immediately below, as well as when/if we restart.
+      // columns immediately below, as well as later, when/if we restart.
       Teuchos::SerialDenseMatrix<int,ScalarType> copyS( S );
       for (i=0; i<_nevLocal; i++) {
         blas.COPY(_nevLocal, copyS[_order[i]], 1, S[i], 1);
@@ -934,7 +943,7 @@ namespace Anasazi {
             std::swap_ranges<ScalarType*,ScalarType*>(S[j],S[j]+localSize,S[firstIndex]);
 
             // Swap _theta
-            std::swap<ScalarType>(_theta[j],_theta[firstIndex]);
+            std::swap<MagnitudeType>(_theta[j],_theta[firstIndex]);
             
             // Swap _normR
             std::swap<MagnitudeType>(_normR[j],_normR[firstIndex]);
@@ -960,7 +969,7 @@ namespace Anasazi {
         }
         // Copy first _nFound-leftOver elements in _theta to range
         // [_knownEV,_knownEV+_nFound-leftOver) in *_evals
-        std::copy<STiter,STiter>(_theta.begin(),_theta.begin()+_nFound-leftOver,
+        std::copy<MTiter,STiter>(_theta.begin(),_theta.begin()+_nFound-leftOver,
                                  _evals->begin()+_knownEV);
         // Copy first _nFound-leftOver elements in _normR to range
         // [_knownEV,_knownEV+_nFound-leftOver) in _resids
@@ -1111,7 +1120,7 @@ namespace Anasazi {
     cout.precision(2);
     cout.setf(ios::scientific, ios::floatfield);
     bool haveMass = (_MOp.get()!=0);
-    ScalarType tmp;
+    MagnitudeType tmp;
     
     _os << " Checking Orthogonality after Iteration : "<< _iter << endl;
     if (X) {
