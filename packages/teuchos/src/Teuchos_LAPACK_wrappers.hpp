@@ -609,8 +609,8 @@ void PREFIX CTRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, cons
 
 // Double precision complex LAPACK eigen solvers
 void PREFIX ZSTEQR_F77(Teuchos_fcd, const int* n, double* D, double* E, complex<double>* Z, const int* ldz, complex<double>* work, int* info);
-void PREFIX ZHEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, complex<double>* a, const int* lda, complex<double>* w, complex<double>* work, const int* lwork, double* rwork, int* info);
-void PREFIX ZHEGV_F77(const int* itype, Teuchos_fcd, Teuchos_fcd, const int* n, complex<double>* a, const int* lda, complex<double>* B, const int* ldb, complex<double>* w, complex<double>* work, const int* lwork, double *rwork, int* info);
+void PREFIX ZHEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, complex<double>* a, const int* lda, double* w, complex<double>* work, const int* lwork, double* rwork, int* info);
+void PREFIX ZHEGV_F77(const int* itype, Teuchos_fcd, Teuchos_fcd, const int* n, complex<double>* a, const int* lda, complex<double>* B, const int* ldb, double* w, complex<double>* work, const int* lwork, double *rwork, int* info);
 void PREFIX ZGEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, complex<double>* a, const int* lda, complex<double>* w, complex<double>* vl, const int* ldvl, complex<double>* vr, const int* ldvr, complex<double>* work, const int* lwork, double* rwork, int* info);
 void PREFIX ZGEHRD_F77(const int* n, const int* ilo, const int* ihi, complex<double>* A, const int* lda, complex<double>* tau, complex<double>* work, const int* lwork, int* info);
 void PREFIX ZHSEQR_F77(Teuchos_fcd job, Teuchos_fcd, const int* n, const int* ilo, const int* ihi, complex<double>* h, const int* ldh, complex<double>* w, complex<double>* z, const int* ldz, complex<double>* work, const int* lwork, int* info);
@@ -620,8 +620,8 @@ void PREFIX ZTREXC_F77(Teuchos_fcd, const int* n, complex<double>* t, const int*
 
 // Single precision complex LAPACK eigen solvers
 void PREFIX CSTEQR_F77(Teuchos_fcd, const int* n, complex<float>* D, complex<float>* E, complex<float>* Z, const int* ldz, complex<float>* work, int* info);
-void PREFIX CHEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, complex<float>* a, const int* lda, complex<float>* w, complex<float>* work, const int* lwork, float* rwork, int* info);
-void PREFIX CHEGV_F77(const int* itype, Teuchos_fcd, Teuchos_fcd, const int* n, complex<float>* a, const int* lda, complex<float>* B, const int* ldb, complex<float>* w, complex<float>* work, const int* lwork, float *rwork, int* info);
+void PREFIX CHEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, complex<float>* a, const int* lda, float* w, complex<float>* work, const int* lwork, float* rwork, int* info);
+void PREFIX CHEGV_F77(const int* itype, Teuchos_fcd, Teuchos_fcd, const int* n, complex<float>* a, const int* lda, complex<float>* B, const int* ldb, float* w, complex<float>* work, const int* lwork, float *rwork, int* info);
 void PREFIX CGEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, complex<float>* a, const int* lda, complex<float>* wr, complex<float>* vl, const int* ldvl, complex<float>* vr, const int* ldvr, complex<float>* work, const int* lwork, float* rwork, int* info);
 void PREFIX CGEHRD_F77(const int* n, const int* ilo, const int* ihi, complex<float>* A, const int* lda, complex<float>* tau, complex<float>* work, const int* lwork, int* info);
 void PREFIX CHSEQR_F77(Teuchos_fcd job, Teuchos_fcd, const int* n, const int* ilo, const int* ihi, complex<float>* h, const int* ldh, complex<float>* w, complex<float>* z, const int* ldz, complex<float>* work, const int* lwork, int* info);

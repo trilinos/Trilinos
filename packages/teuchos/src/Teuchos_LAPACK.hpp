@@ -208,12 +208,12 @@ namespace Teuchos
     /*! \brief Computes all the eigenvalues and, optionally, eigenvectors of a Hermitian \c n by \c n matrix A.
         \note This method will call SYEV when ScalarType is \c float or \c double.
     */
-    void HEEV(const char JOBZ, const char UPLO, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* W, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const;
+    void HEEV(const char JOBZ, const char UPLO, const OrdinalType n, ScalarType* A, const OrdinalType lda, MagnitudeType* W, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const;
 
     /*! \brief Computes all the eigenvalues and, optionally, eigenvectors of a generalized Hermitian-definite \c n by \c n matrix pencil \c {A,B}, where \c A is Hermitian and \c B is Hermitian positive-definite.
         \note This method will call SYGV when ScalarType is \c float or \c double.
     */
-    void HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* W, ScalarType* WORK, const OrdinalType lwork, MagnitudeType *RWORK, OrdinalType* info) const;
+    void HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, MagnitudeType* W, ScalarType* WORK, const OrdinalType lwork, MagnitudeType *RWORK, OrdinalType* info) const;
 
     //! Computes the eigenvalues and, optionally, eigenvectors of a symmetric tridiagonal \c n by \c n matrix \c A using implicit QL/QR.  The eigenvectors can only be computed if \c A was reduced to tridiagonal form by SYTRD.
     void STEQR(const char COMPZ, const OrdinalType n, ScalarType* D, ScalarType* E, ScalarType* Z, const OrdinalType ldz, ScalarType* WORK, OrdinalType* info) const;
@@ -439,13 +439,13 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType,ScalarType>::HEEV(const char JOBZ, const char UPLO, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* W, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const
+  void LAPACK<OrdinalType,ScalarType>::HEEV(const char JOBZ, const char UPLO, const OrdinalType n, ScalarType* A, const OrdinalType lda, MagnitudeType* W, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType,ScalarType>::HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* W, ScalarType* WORK, const OrdinalType lwork, typename Teuchos::ScalarTraits<ScalarType>::magnitudeType *RWORK, OrdinalType* info) const
+  void LAPACK<OrdinalType,ScalarType>::HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, MagnitudeType* W, ScalarType* WORK, const OrdinalType lwork, typename Teuchos::ScalarTraits<ScalarType>::magnitudeType *RWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -857,6 +857,10 @@ namespace Teuchos
   OrdinalType LAPACK<OrdinalType, float>::ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1, const OrdinalType N2, const OrdinalType N3, const OrdinalType N4 ) const
   {
     unsigned int opts_length = OPTS.length();
+    // if user queries a Hermitian routine, change it to a symmetric routine
+    if (NAME.substr(0,2) == "he") {
+      NAME.replace(0,2,"sy");
+    }
     std::string temp_NAME = "s" + NAME;
     unsigned int name_length = temp_NAME.length();
 #if defined (INTEL_CXML)
@@ -1187,6 +1191,10 @@ namespace Teuchos
   OrdinalType LAPACK<OrdinalType, double>::ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1, const OrdinalType N2, const OrdinalType N3, const OrdinalType N4 ) const
   {
     unsigned int opts_length = OPTS.length();
+    // if user queries a Hermitian routine, change it to a symmetric routine
+    if (NAME.substr(0,2) == "he") {
+      NAME.replace(0,2,"sy");
+    }
     std::string temp_NAME = "d" + NAME;
     unsigned int name_length = temp_NAME.length();
 #if defined(INTEL_CXML)
@@ -1246,8 +1254,8 @@ namespace Teuchos
 
     // Symmetric eigenvalue routines.
     void STEQR(const char COMPZ, const OrdinalType n, float* D, float* E, complex<float>* Z, const OrdinalType ldz, float* WORK, OrdinalType* info) const;
-    void HEEV(const char JOBZ, const char UPLO, const OrdinalType n, complex<float>* A, const OrdinalType lda, complex<float>* W, complex<float>* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const;
-    void HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, complex<float>* A, const OrdinalType lda, complex<float>* B, const OrdinalType ldb, complex<float>* W, complex<float>* WORK, const OrdinalType lwork, float *RWORK, OrdinalType* info) const;
+    void HEEV(const char JOBZ, const char UPLO, const OrdinalType n, complex<float>* A, const OrdinalType lda, float* W, complex<float>* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const;
+    void HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, complex<float>* A, const OrdinalType lda, complex<float>* B, const OrdinalType ldb, float* W, complex<float>* WORK, const OrdinalType lwork, float *RWORK, OrdinalType* info) const;
 
     // Hessenberg eigenvalue routines.
     void HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, complex<float>* H, const OrdinalType ldh, complex<float>* W, complex<float>* Z, const OrdinalType ldz, complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const;
@@ -1398,13 +1406,13 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType,complex<float> >::HEEV(const char JOBZ, const char UPLO, const OrdinalType n, complex<float> * A, const OrdinalType lda, complex<float> * W, complex<float> * WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const
+  void LAPACK<OrdinalType,complex<float> >::HEEV(const char JOBZ, const char UPLO, const OrdinalType n, complex<float> * A, const OrdinalType lda, float * W, complex<float> * WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const
   {
     CHEEV_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, W, WORK, &lwork, RWORK, info);
   }
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType,complex<float> >::HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, complex<float> * A, const OrdinalType lda, complex<float> * B, const OrdinalType ldb, complex<float> * W, complex<float> * WORK, const OrdinalType lwork, float *RWORK, OrdinalType* info) const
+  void LAPACK<OrdinalType,complex<float> >::HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, complex<float> * A, const OrdinalType lda, complex<float> * B, const OrdinalType ldb, float * W, complex<float> * WORK, const OrdinalType lwork, float *RWORK, OrdinalType* info) const
   {
     CHEGV_F77(&itype, CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, B, &ldb, W, WORK, &lwork, RWORK, info);
   }
@@ -1502,8 +1510,8 @@ namespace Teuchos
 
     // Symmetric eigenvalue routines.
     void STEQR(const char COMPZ, const OrdinalType n, double* D, double* E, complex<double>* Z, const OrdinalType ldz, double* WORK, OrdinalType* info) const;
-    void HEEV(const char JOBZ, const char UPLO, const OrdinalType n, complex<double>* A, const OrdinalType lda, complex<double>* W, complex<double>* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const;
-    void HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, complex<double>* A, const OrdinalType lda, complex<double>* B, const OrdinalType ldb, complex<double>* W, complex<double>* WORK, const OrdinalType lwork, double *RWORK, OrdinalType* info) const;
+    void HEEV(const char JOBZ, const char UPLO, const OrdinalType n, complex<double>* A, const OrdinalType lda, double* W, complex<double>* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const;
+    void HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, complex<double>* A, const OrdinalType lda, complex<double>* B, const OrdinalType ldb, double* W, complex<double>* WORK, const OrdinalType lwork, double *RWORK, OrdinalType* info) const;
 
     // Hessenberg eigenvalue routines.
     void HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, complex<double>* H, const OrdinalType ldh, complex<double>* W, complex<double>* Z, const OrdinalType ldz, complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const;
@@ -1654,13 +1662,13 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType,complex<double> >::HEEV(const char JOBZ, const char UPLO, const OrdinalType n, complex<double> * A, const OrdinalType lda, complex<double> * W, complex<double> * WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const
+  void LAPACK<OrdinalType,complex<double> >::HEEV(const char JOBZ, const char UPLO, const OrdinalType n, complex<double> * A, const OrdinalType lda, double * W, complex<double> * WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const
   {
     ZHEEV_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, W, WORK, &lwork, RWORK, info);
   }
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType,complex<double> >::HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, complex<double> * A, const OrdinalType lda, complex<double> * B, const OrdinalType ldb, complex<double> * W, complex<double> * WORK, const OrdinalType lwork, double *RWORK, OrdinalType* info) const
+  void LAPACK<OrdinalType,complex<double> >::HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, complex<double> * A, const OrdinalType lda, complex<double> * B, const OrdinalType ldb, double * W, complex<double> * WORK, const OrdinalType lwork, double *RWORK, OrdinalType* info) const
   {
     ZHEGV_F77(&itype, CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, B, &ldb, W, WORK, &lwork, RWORK, info);
   }
