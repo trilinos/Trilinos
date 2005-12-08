@@ -54,7 +54,7 @@ static PARAM_VARS Graph_params[] = {
         { "SCATTER_GRAPH", NULL, "INT", 0 },
         { "FINAL_OUTPUT", NULL, "INT", 0 },
         { "USE_TIMERS", NULL, "INT", 0 },
-        { "BALANCE_OBJ",  NULL,  "STRING", 0},
+        { "ADD_OBJ_WEIGHT",  NULL,  "STRING", 0},
         { NULL, NULL, NULL, 0 } };
 
 /***************  prototypes for internal functions ********************/
@@ -529,7 +529,7 @@ static int Zoltan_ParMetis_Jostle(
   int nnodes;
   int network[4] = {0, 1, 1, 1};
 #endif
-  char bal_obj[MAX_PARAM_STRING_LEN+1];
+  char add_obj[MAX_PARAM_STRING_LEN+1];
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -603,12 +603,12 @@ static int Zoltan_ParMetis_Jostle(
   scatter = 1;              /* default */
   final_output = 0;         /* default */
   use_timers = 0;           /* default */
-  strcpy(bal_obj, "VERTICES"); /* default */
+  strcpy(add_obj, "VERTICES"); /* default */
   Zoltan_Bind_Param(Graph_params, "CHECK_GRAPH", (void *) &check_graph);
   Zoltan_Bind_Param(Graph_params, "SCATTER_GRAPH", (void *) &scatter);
   Zoltan_Bind_Param(Graph_params, "FINAL_OUTPUT", (void *) &final_output);
   Zoltan_Bind_Param(Graph_params, "USE_TIMERS", (void *) &use_timers);
-  Zoltan_Bind_Param(Graph_params, "BALANCE_OBJ", (void *) bal_obj);
+  Zoltan_Bind_Param(Graph_params, "ADD_OBJ_WEIGHT", (void *) add_obj);
   Zoltan_Assign_Param_Vals(zz->Params, Graph_params, zz->Debug_Level, zz->Proc,
                        zz->Debug_Proc);
 
@@ -778,8 +778,10 @@ static int Zoltan_ParMetis_Jostle(
                  zz->Proc, vtxdist[zz->Proc]+i99, msg);
         }
     }
-    else if ((!strcmp(bal_obj, "PINS")) || (!strcmp(bal_obj, "NONZEROS"))){
+    else if ((!strcmp(add_obj, "VERTEX DEGREE")) || 
+         (!strcmp(add_obj, "PINS")) || (!strcmp(add_obj, "NONZEROS"))){
       /* weight is vertex degree (EBEB should we add +1?) */
+      /* TODO the implicit weight should be added to existing weights! */
       obj_wgt_dim=1;
       vwgt = (idxtype *)ZOLTAN_MALLOC(obj_wgt_dim*num_obj
                           * sizeof(idxtype));
@@ -1632,11 +1634,6 @@ char *val)                      /* value of variable */
             break;
           }
         }
-      }
-      else if (strcmp(name, "BALANCE_OBJ") != 0) {
-        /* All integer parameters should be non-negative */
-        if (result.ival < 0)
-          status = 2; 
       }
     }
 
