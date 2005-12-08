@@ -139,20 +139,16 @@ public:
 
   /** \brief . */
   template<class ObjType>
-  class Evaluation {
+  class Evaluation : public Teuchos::RefCountPtr<ObjType> {
   public:
     /** \brief . */
-    Evaluation()
-      :obj_(Teuchos::null), evalType_(EVAL_TYPE_EXACT) {}
+    Evaluation() : evalType_(EVAL_TYPE_EXACT) {}
     /** \brief . */
     Evaluation( const Teuchos::RefCountPtr<ObjType> &obj, EEvalType evalType = EVAL_TYPE_EXACT )
-      :obj_(obj), evalType_(evalType) {}
-    /** \brief . */
-    Teuchos::RefCountPtr<ObjType> get() const { return obj_; }
+      : Teuchos::RefCountPtr<ObjType>(obj), evalType_(evalType) {}
     /** \brief . */
     EEvalType getType() const { return evalType_; }
   private:
-    Teuchos::RefCountPtr<ObjType>  obj_;
     EEvalType                      evalType_;
   };
   
