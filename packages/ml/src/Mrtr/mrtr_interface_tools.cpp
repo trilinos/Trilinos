@@ -248,6 +248,12 @@ bool MOERTEL::Interface::Print() const
       cout << "ProjectionType: continousnormalfield\n";
     else if (GetProjectionType()==MOERTEL::Interface::proj_orthogonal)
       cout << "ProjectionType: orthogonal\n";
+    int mside = MortarSide();
+    int sside = MortarSide();
+    if (mside==1 || mside==0)
+      sside = OtherSide(mside);
+    cout << "Mortar Side " << mside << endl;
+    cout << "Slave  Side " << sside << endl;
   }
   
   if (gcomm_.MyPID()==0)
@@ -629,7 +635,7 @@ int MOERTEL::Interface::SegPID(int sid) const
 /*----------------------------------------------------------------------*
  |  find PID (process id) for given segment id sid                      |
  *----------------------------------------------------------------------*/
-int MOERTEL::Interface::OtherSide(int side)
+int MOERTEL::Interface::OtherSide(int side) const
 { 
   if (side==0) return 1;
   else if (side==1) return 0;
@@ -1275,117 +1281,194 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder()
   }
   if (!lComm()) return true;
 
+  if (IsOneDimensional())
+    return DetectEndSegmentsandReduceOrder_2D();
+  else
+    return DetectEndSegmentsandReduceOrder_3D();
+  return false;
+}
+
+/*----------------------------------------------------------------------*
+ | detect end segments and reduce the order of the lm shape functions   |
+ | on these end segments                                                |
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_2D()
+{ 
+  if (!IsComplete())
+  {
+    cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
+         << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  if (!lComm()) return true;
+
+  if (!IsOneDimensional())
+    return false;
+
   int mside = MortarSide();
   int sside = OtherSide(mside);
 
-  if (IsOneDimensional())
+  /*
+  in the 1D interface case, an end segment is detected as follows:
+  - an end segments is attached to a node that has a projection and is the 
+    ONLY segment attached to that node
+  - an end segment is attached to a node that has a pseudo projection (that is
+    a node carrying lagrange mutlipliers but not having a projection) 
+  */
+  
+  // loop all nodes on the slave side and find those with only one segment
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
+  for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
   {
-    /*
-    in the 1D interface case, an end segment is detected as follows:
-    - an end segments is attached to a node that has a projection and is the 
-      ONLY segment attached to that node
-    - an end segment is attached to a node that has a pseudo projection (that is
-      a node carrying lagrange mutlipliers but not having a projection) 
-    */
-    
-    // loop all nodes on the slave side and find those with only one segment
-    map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
-    for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
-    {
-      RefCountPtr<MOERTEL::Node> node = curr->second;
-      bool foundit = false;
-      if (node->Nseg()<2)
+    RefCountPtr<MOERTEL::Node> node = curr->second;
+    bool foundit = false;
+    if (node->Nseg()<2)
+      foundit = true;
+    if (node->GetProjectedNode() != null)
+      if (!(node->GetProjectedNode()->Segment()))
         foundit = true;
-      if (node->GetProjectedNode() != null)
-        if (!(node->GetProjectedNode()->Segment()))
-          foundit = true;
-      if (!foundit)
-        continue;
-      
-      MOERTEL::Segment** segs = node->Segments();
-
-      for (int i=0; i<node->Nseg(); ++i)
-      {
-        MOERTEL::Function::FunctionType type = 
-          segs[i]->FunctionType(1);
-          
-        MOERTEL::Function_Constant1D* tmp1 = NULL;  
-        switch (type)
-        {
-          // for linear and dual linear reduce function order to constant
-          case MOERTEL::Function::func_Constant1D:
-          case MOERTEL::Function::func_Linear1D:
-          case MOERTEL::Function::func_DualLinear1D:
-            tmp1 = new Function_Constant1D(OutLevel());
-            segs[i]->SetFunction(1,tmp1);
-          break;
-          case MOERTEL::Function::func_none:
-            cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
-                 << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is func_none\n"
-                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-            exit(EXIT_FAILURE);     
-          break;
-          default:
-            cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
-                 << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is unknown\n"
-                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-            exit(EXIT_FAILURE);     
-          break;
-        } // switch (type)
-        if (tmp1) delete tmp1; tmp1 = NULL;
-      } // for (int i=0; i<node->Nseg(); ++i)
-    } // for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
-
-  } // if (IsOneDimensional())
-  else
-  {
-    // loop all nodes on the slave side and find those with 1 or 2 segments
-    map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
-    for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
-    {
-      RefCountPtr<MOERTEL::Node> node = curr->second;
-      if (node->Nseg()>2) continue;
-      
-      MOERTEL::Segment** segs = node->Segments();
-      for (int i=0; i<node->Nseg(); ++i)
-      {
-        MOERTEL::Function::FunctionType type = 
-          segs[i]->FunctionType(1);
-      
-        MOERTEL::Function_ConstantTri* tmp1 = NULL;  
-        switch (type)
-        {
-          // for linear and dual linear reduce function order to constant
-          case MOERTEL::Function::func_ConstantTri:
-          break;
-          case MOERTEL::Function::func_LinearTri:
-          case MOERTEL::Function::func_DualLinearTri:
-            tmp1 = new Function_ConstantTri(OutLevel());
-            segs[i]->SetFunction(1,tmp1);
-          break;
-          case MOERTEL::Function::func_none:
-            cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
-                 << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is func_none\n"
-                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-            exit(EXIT_FAILURE);     
-          break;
-          default:
-            cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
-                 << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is unknown\n"
-                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-            exit(EXIT_FAILURE);     
-          break;
-        } // switch (type)
-        if (tmp1) delete tmp1; tmp1 = NULL;
-      } // for (int i=0; i<node->Nseg(); ++i)
-      
-      
-      
-    } // for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+    if (!foundit)
+      continue;
     
-            
-  }
+    MOERTEL::Segment** segs = node->Segments();
 
+    for (int i=0; i<node->Nseg(); ++i)
+    {
+      MOERTEL::Function::FunctionType type = 
+        segs[i]->FunctionType(1);
+        
+      MOERTEL::Function_Constant1D* tmp1 = NULL;  
+      switch (type)
+      {
+        // for linear and dual linear reduce function order to constant
+        case MOERTEL::Function::func_Constant1D:
+        case MOERTEL::Function::func_Linear1D:
+        case MOERTEL::Function::func_DualLinear1D:
+          tmp1 = new Function_Constant1D(OutLevel());
+          segs[i]->SetFunction(1,tmp1);
+        break;
+        case MOERTEL::Function::func_none:
+          cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
+               << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is func_none\n"
+               << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          exit(EXIT_FAILURE);     
+        break;
+        default:
+          cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
+               << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is unknown\n"
+               << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          exit(EXIT_FAILURE);     
+        break;
+      } // switch (type)
+      if (tmp1) delete tmp1; tmp1 = NULL;
+    } // for (int i=0; i<node->Nseg(); ++i)
+  } // for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+  // prepare the boundary modification for 3D interfaces
+  // Nodes on the edge of an interface will not carry LMs so they
+  // do not conflict with other interfaces
+  // The choice of the Mortar side in the case of several interfaces
+  // is then arbitrary
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D()
+{ 
+  if (!IsComplete())
+  {
+    cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D:\n"
+         << "***ERR*** Complete() was not called on interface " << Id() << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  if (!lComm()) return true;
+
+  if (IsOneDimensional())
+    return false;
+
+  int mside = MortarSide();
+  if (mside != 1 && mside != 0)
+  {
+    cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D:\n"
+         << "***ERR*** Mortar side not set on interface " << Id() << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  int sside = OtherSide(mside);
+  
+  // 1
+  // A node attached to only one element AND one the boundary is
+  // considered a corner node and is member of ONE support set
+  // It is in the modified support psi tilde of the closest internal node
+  
+  // 2
+  // A node on the boundary that is not a corner node is member of 
+  // so many support sets as the # of internal nodes is topologically 
+  // connected to
+  
+  // See B.Wohlmuth:"Discretization Methods and Iterative Solvers
+  //                 Based on Domain Decomposition", pp 33/34, Springer 2001.
+
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator ncurr;
+
+  // do 1
+  for (ncurr=rnode_[sside].begin(); ncurr != rnode_[sside].end(); ++ncurr)
+  {
+    if (!(ncurr->second->IsOnBoundary())) continue;
+    if (ncurr->second->Nseg() != 1) continue;
+    MOERTEL::Segment** seg   = ncurr->second->Segments();
+    //cout << "\nCorner element is " << *seg[0];
+    //cout << "Looking at corner node  " << *(ncurr->second);
+    MOERTEL::Node**    nodes = seg[0]->Nodes();
+    // find the supporting node for this potential corner node on same element
+    for (int i=0; i<seg[0]->Nnode(); ++i)
+    {
+      if (nodes[i]->Id() == ncurr->second->Id()) continue;
+      //cout << "Neighbor to corner node " << *nodes[i];
+      if (!nodes[i]->IsOnBoundary())
+      {
+        //cout << "Supporting neighbor node on same element is \n" << *nodes[i];
+        ncurr->second->AddSupportedByNode(nodes[i]);
+      }
+    }
+    if (!ncurr->second->NSupportSet()) // we've not found a supporting node yet
+    {
+      for (int i=0; i<seg[0]->Nnode(); ++i)
+      {
+        if (nodes[i]->Id() == ncurr->second->Id()) continue;
+        MOERTEL::Segment** neighborsegs = nodes[i]->Segments();
+        for (int j=0; j<nodes[i]->Nseg(); ++j)
+        {
+          MOERTEL::Node** neighborneighbornodes = neighborsegs[j]->Nodes();
+          for (int k=0; k<neighborsegs[j]->Nnode(); ++k)
+            if (!neighborneighbornodes[k]->IsOnBoundary())
+            {
+              //cout << "Supporting neighbor node on neighbor element is \n" << *neighborneighbornodes[k];
+              ncurr->second->AddSupportedByNode(neighborneighbornodes[k]);
+            }
+        }
+      }
+    }
+    if (!ncurr->second->NSupportSet())
+    {
+      cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D:\n"
+           << "***ERR*** Cannot find a supporting internal node for corner node " << ncurr->second->Id() << "\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+    else
+      ncurr->second->SetCorner();
+  }
+  
+  // do 2
+  for (ncurr=rnode_[sside].begin(); ncurr != rnode_[sside].end(); ++ncurr)
+  {
+    if (!(ncurr->second->IsOnBoundary()) || ncurr->second->NSupportSet()) continue;
+  }  
+  
+  
   return true;
 }
 
@@ -1426,10 +1509,11 @@ bool MOERTEL::Interface::SetFunctionsFromFunctionTypes()
   }
   
   // set the primal shape functions
-  MOERTEL::Function_Linear1D*     func1 = NULL;
-  MOERTEL::Function_Constant1D*   func2 = NULL;
-  MOERTEL::Function_DualLinear1D* func3 = NULL;
-  MOERTEL::Function_LinearTri*    func4 = NULL;
+  MOERTEL::Function_Linear1D*      func1 = NULL;
+  MOERTEL::Function_Constant1D*    func2 = NULL;
+  MOERTEL::Function_DualLinear1D*  func3 = NULL;
+  MOERTEL::Function_LinearTri*     func4 = NULL;
+  MOERTEL::Function_DualLinearTri* func5 = NULL;
   switch(primal_)
   {
     case MOERTEL::Function::func_Linear1D:
@@ -1504,6 +1588,11 @@ bool MOERTEL::Interface::SetFunctionsFromFunctionTypes()
     case MOERTEL::Function::func_LinearTri:
       func4 = new MOERTEL::Function_LinearTri(OutLevel());
       SetFunctionAllSegmentsSide(side,1,func4);
+      delete func4; func4 = NULL;
+    break;
+    case MOERTEL::Function::func_DualLinearTri:
+      func5 = new MOERTEL::Function_DualLinearTri(OutLevel());
+      SetFunctionAllSegmentsSide(side,1,func5);
       delete func4; func4 = NULL;
     break;
     case MOERTEL::Function::func_none:

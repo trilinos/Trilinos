@@ -101,7 +101,7 @@ public:
                               else return isIntegrated_; }
   
   // get Id of this interface
-  int Id() const { return Id_; }
+  inline int Id() const { return Id_; }
   
   // get global Epetra_Comm
   inline const Epetra_Comm& gComm() const { return gcomm_; }
@@ -112,10 +112,10 @@ public:
   // get Mortar side, returns -1 if mortar side was not set
   //                  returns -2 of mortar side is chosen by MOERTEL::Manager
   //                  and has not yet been chosen
-  int MortarSide() { return mortarside_; }
+  int MortarSide() const { return mortarside_; }
 
   // get the other side from the input side
-  int OtherSide(int side);
+  int OtherSide(int side) const;
 
   // get type of projection used
   ProjectionType GetProjectionType() const { return ptype_; }
@@ -143,7 +143,7 @@ public:
   // get local number of nodes on interface (both sides)
   int MyNnode() { return (node_[0].size()+node_[1].size()); } 
 
-  // get global number of segments on interface on side 0 or 1
+  // get global number of nodes on interface on side 0 or 1
   int GlobalNnode(int side);
 
   // get global total number of nodes on interface (both sides)
@@ -247,6 +247,10 @@ private:
   // (re)build the topology info between nodes and segments
   bool BuildNodeSegmentTopology();
   
+  // detect end segments and reduce order of lagrange mutliplier shape functions
+  bool DetectEndSegmentsandReduceOrder_2D();
+  bool DetectEndSegmentsandReduceOrder_3D();
+
   // project node using the normal field of the slave side
   bool ProjectNodes_NormalField();
   // project nodes of the slave side to the master side using slave side's normal field

@@ -62,7 +62,7 @@ class  Node
 public:
   
   // ctor
-  explicit Node(int Id, const double* x, int ndof, const int* dof, int out);
+  explicit Node(int Id, const double* x, int ndof, const int* dof, bool isonboundary, int out);
   
   // ctor (for internal use only) to be used together with Pack()/UnPack()
   explicit Node(int out);
@@ -74,7 +74,7 @@ public:
   virtual ~Node();
 
   // return level of output
-  int OutLevel() { return outputlevel_; }
+  inline int OutLevel() { return outputlevel_; }
   
   // get id of this node
   int Id() const { return Id_; }
@@ -92,25 +92,25 @@ public:
   bool SetN(double* n) { for (int i=0; i<3; ++i) n_[i] = n[i]; return true; }
   
   // get number of degrees of freedom on this node
-  int Ndof() const { return dof_.size(); }
+  inline int Ndof() const { return dof_.size(); }
 
   // get number of lagrange multipliers on this node
-  int Nlmdof() const { return LMdof_.size(); }
+  inline int Nlmdof() const { return LMdof_.size(); }
   
   // get vector of dofs on this node
-  const int* Dof() const { return &(dof_[0]); }
+  inline const int* Dof() const { return &(dof_[0]); }
   
   // get vector of lagrange multipliers on this node
-  const int* LMDof() const { return &(LMdof_[0]); }
+  inline const int* LMDof() const { return &(LMdof_[0]); }
   
   // get number of segments adjacent to me
-  int Nseg() const { return seg_.size(); }
+  inline int Nseg() const { return seg_.size(); }
   
   // get view of segment ids adjacent to this node
-  int* SegmentIds() { return &(seg_[0]); }
+  inline int* SegmentIds() { return &(seg_[0]); }
   
   // get view of segments adjacent to this node
-  MOERTEL::Segment** Segments() { return &(segptr_[0]); }
+  inline MOERTEL::Segment** Segments() { return &(segptr_[0]); }
     
   // add a segment id to my adjacency list (checking whether already present)
   bool AddSegment(int sid);
@@ -138,21 +138,28 @@ public:
   // set dof number for lagrange multiplier
   bool SetLagrangeMultiplierId(int LMId);
   
-  // set the iscorner_ flag
-  void SetCorner() { iscorner_ = true; return; }
-
-  // query the iscorner_ flag
-  bool IsCorner() { return iscorner_; }
-  
   // add a value to the Drow_ map
   void AddDValue(double val, int col);
   // add a value to the Mrow_ map
   void AddMValue(double val, int col);
-
   // get M or D map
-  RefCountPtr<map<int,double> > GetD() { return Drow_; }
-  RefCountPtr<map<int,double> > GetM() { return Mrow_; }
+  inline RefCountPtr<map<int,double> > GetD() { return Drow_; }
+  inline RefCountPtr<map<int,double> > GetM() { return Mrow_; }
 
+  // set/get the iscorner_ flag
+  inline void SetCorner() { iscorner_ = true; return; }
+  inline bool IsCorner() const { return iscorner_; }
+
+  // get the isonboundary_ flag
+  inline bool IsOnBoundary() const { return isonboundary_; }
+  
+  // get the number of internal nodes supporting this boundary node
+  inline int NSupportSet() const { return supportedby_.size(); }
+  
+  // set an internal node supporting this boundary node
+  void AddSupportedByNode(MOERTEL::Node* suppnode) 
+  { supportedby_[suppnode->Id()] = suppnode; return; }
+  
 protected:  
   // don't want = operator
   Node operator = (const Node& old);
@@ -166,13 +173,19 @@ protected:
   int                          outputlevel_;
 
   bool                         iscorner_; // flag indicating whether this is a node
-                                          // shared by several interfaces  
+                                          // shared by several interfaces in 2D 
+
+  bool                         isonboundary_; // flag indicating whether this node is on the boundary
+                                              // of a 3D interface
+                                              // Info only matters for the slave side
+  map<int,MOERTEL::Node*>      supportedby_;
+  map<int,MOERTEL::Node*>      supporting_;
 
   vector<int>                  dof_;      // dof ids on this node 
   vector<int>                  LMdof_;    // dofs ids of LM if this is slave side
 
   vector<int>                  seg_;      // vector of segment ids adjacent to me
-  vector<MOERTEL::Segment*>       segptr_;   // ptrs to segments length nseg_
+  vector<MOERTEL::Segment*>    segptr_;   // ptrs to segments length nseg_ (not in charge of destorying the ptrs))
 
   RefCountPtr<map<int,double> > Drow_;    // a nodal block row of D
   RefCountPtr<map<int,double> > Mrow_;    // a nodal block row of D

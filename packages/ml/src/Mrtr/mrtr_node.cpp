@@ -41,10 +41,11 @@
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
-MOERTEL::Node::Node(int Id, const double* x, int ndof, const int* dof, int out) :
+MOERTEL::Node::Node(int Id, const double* x, int ndof, const int* dof, bool isonboundary, int out) :
 Id_(Id),
 outputlevel_(out),
 iscorner_(false),
+isonboundary_(isonboundary),
 Drow_(null),
 Mrow_(null)
 {
@@ -62,6 +63,8 @@ Mrow_(null)
   
   LMdof_.resize(0);
   pnode_.resize(0);
+  supportedby_.clear();
+  supporting_.clear();
 }
 
 /*----------------------------------------------------------------------*
@@ -73,6 +76,7 @@ MOERTEL::Node::Node(int out) :
 Id_(-1),
 outputlevel_(out),
 iscorner_(false),
+isonboundary_(false),
 Drow_(null),
 Mrow_(null)
 {
@@ -94,11 +98,14 @@ Mrow_(null)
 /*----------------------------------------------------------------------*
  |  copy-ctor (public)                                       mwgee 06/05|
  *----------------------------------------------------------------------*/
-MOERTEL::Node::Node(const MOERTEL::Node& old)
+MOERTEL::Node::Node(const MOERTEL::Node& old) :
+supportedby_(old.supportedby_),
+supporting_(old.supporting_)
 {
   Id_ = old.Id();
   outputlevel_ = old.outputlevel_;
   iscorner_ = old.iscorner_;
+  isonboundary_ = old.isonboundary_;
   
   for (int i=0; i<3; ++i) 
   {
@@ -160,8 +167,8 @@ MOERTEL::Node::Node(const MOERTEL::Node& old)
  *----------------------------------------------------------------------*/
 double* MOERTEL::Node::Pack(int* size)
 {
-  // *size = *size + Id_ + x_[3] + n_[3] + dof_.size() + ndof_*sizeof(double) + seg_.size() + nseg_*sizeof(double)
-     *size = 1     + 1  +  3     + 3     +  1          + dof_.size()                + 1     + seg_.size();
+  // *size = *size + Id_ + x_[3] + n_[3] + dof_.size() + ndof_*sizeof(double) + seg_.size() + nseg_*sizeof(double) + iscorner_ + isonboundary_
+     *size = 1     + 1  +  3     + 3     +  1          + dof_.size()                + 1     + seg_.size()          + 1         + 1;
   double* pack = new double[*size];
   int count = 0;
   
@@ -177,6 +184,8 @@ double* MOERTEL::Node::Pack(int* size)
   pack[count++] = (double)seg_.size();
   for (int i=0; i<(int)seg_.size(); ++i)
     pack[count++] = (double)seg_[i];
+  pack[count++] = (double)(iscorner_);
+  pack[count++] = (double)(isonboundary_);
 
   if (count != *size)
   {
@@ -207,6 +216,8 @@ bool MOERTEL::Node::UnPack(double* pack)
   seg_.resize((int)pack[count++]);
   for (int i=0; i<(int)seg_.size(); ++i)
     seg_[i] = (int)pack[count++];
+  iscorner_ = (bool)pack[count++];
+  isonboundary_ = (bool)pack[count++];
     
   if (count != size)
   {
@@ -268,8 +279,14 @@ bool MOERTEL::Node::Print() const
       cout << LMdof_[i] << " ";
   }
   
-  if (iscorner_)
-    cout << " is shared among interfaces \n";
+  if (IsCorner())
+    cout << " is shared among 1D interfaces";
+
+  if (IsOnBoundary())
+  {
+    cout << " is boundary of 2D-interface";
+    cout << ", member of " << NSupportSet() << " support sets";
+  }
 
   cout << endl;
   return true;

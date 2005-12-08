@@ -136,7 +136,8 @@ private:
 
   // automatically choose mortar side (called when mortarside==-2 on any interface)
   bool ChooseMortarSide();
-  bool ChooseMortarSide(vector<RefCountPtr<MOERTEL::Interface> >& inter);
+  bool ChooseMortarSide_2D(vector<RefCountPtr<MOERTEL::Interface> >& inter);
+  bool ChooseMortarSide_3D(vector<RefCountPtr<MOERTEL::Interface> >& inter);
   
 private:
 

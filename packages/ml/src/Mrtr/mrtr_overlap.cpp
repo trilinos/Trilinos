@@ -616,7 +616,7 @@ bool MOERTEL::Overlap::Triangulization()
     double length = sqrt(MOERTEL::dot(n,n,3));
     for (int j=0; j<3; ++j) n[j] /= length;
     // create a node with this coords and normal;
-    MOERTEL::Node* node = new MOERTEL::Node(points[i]->Id(),x,3,dof, OutLevel());
+    MOERTEL::Node* node = new MOERTEL::Node(points[i]->Id(),x,3,dof,false,OutLevel());
     node->SetN(n);
     // set node in point
     points[i]->SetNode(node);

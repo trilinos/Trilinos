@@ -589,13 +589,13 @@ bool MOERTEL::Manager::Mortar_Integrate_3D()
 
   //-------------------------------------------------------------------
   // check whether functions have been set on interfaces
-  // if not, check for functions flag and set them
+  // if not, check for functions flags and set functions from them
   {
     bool foundit = true;
     map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {
-      int nseg             = curr->second->GlobalNsegment();
+      const int nseg          = curr->second->GlobalNsegment();
       MOERTEL::Segment** segs = curr->second->GetSegmentView();
       for (int i=0; i<nseg; ++i)
         if (segs[i]->Nfunctions() < 1)
@@ -627,12 +627,11 @@ bool MOERTEL::Manager::Mortar_Integrate_3D()
   }  
 
   //-------------------------------------------------------------------
-  // this is probably the place to put detection of end segments
-  // for each end segment, the order of the lagrange multiplier shape
-  // function will be reduced by one
-  // note that this is not yet implemented in 3D and is somehow
-  // quite difficult to detect automatically. user input?
-#if 1
+  // prepare the boundary modification for 3D interfaces
+  // Nodes on the edge of an interface will not carry LMs so they
+  // do not conflict with other interfaces
+  // The choice of the Mortar side in the case of several interfaces
+  // is then arbitrary
   {
     map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
@@ -647,7 +646,6 @@ bool MOERTEL::Manager::Mortar_Integrate_3D()
       }
     }
   }
-#endif
 
   //-------------------------------------------------------------------
   // integrate all interfaces
@@ -913,7 +911,11 @@ bool MOERTEL::Manager::ChooseMortarSide()
   inter.resize(count);
   
   // call choice of the mortar side for all 1D interfaces
-  bool ok = ChooseMortarSide(inter);
+  bool ok = false; 
+  if (Dimension() == MOERTEL::Manager::manager_2D)
+    ok = ChooseMortarSide_2D(inter);
+  if (Dimension() == MOERTEL::Manager::manager_3D)
+    ok = ChooseMortarSide_3D(inter);
 
   // tidy up
   inter.clear();  
@@ -923,13 +925,33 @@ bool MOERTEL::Manager::ChooseMortarSide()
 
 
 /*----------------------------------------------------------------------*
+ |                                                                 12/05|
+ |  choose the mortar side                                              |
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Manager::ChooseMortarSide_3D(vector<RefCountPtr<MOERTEL::Interface> >& inter)
+{
+  // loop interfaces and choose the side with more nodes as slave side
+  // (only if not already chosen on some interface)
+  for (int i=0; i<(int)inter.size(); ++i)
+  {
+    if (inter[i]->MortarSide() == 0 || inter[i]->MortarSide() == 1) continue;
+    if (inter[i]->GlobalNnode(0) >= inter[i]->GlobalNnode(1))
+      inter[i]->SetMortarSide(1);
+    else
+      inter[i]->SetMortarSide(0);
+  }
+  return true;
+}
+
+
+/*----------------------------------------------------------------------*
  |                                                                 09/05|
  |  choose the mortar side for 1D interfaces                            |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::ChooseMortarSide(vector<RefCountPtr<MOERTEL::Interface> >& inter)
+bool MOERTEL::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MOERTEL::Interface> >& inter)
 {
   // number of interfaces
-  int ninter = inter.size();
+  const int ninter = inter.size();
   if (ninter < 2) 
   {
     if (inter[0]->MortarSide() != 0 && inter[0]->MortarSide() != 1)
