@@ -320,10 +320,42 @@ bool MOERTEL::Function_DualLinearTri::EvaluateFunction(
                                             const double* xi, double* val, 
                                             const int valdim, double* deriv)
 { 
+  if (!val && !deriv) return true;
+  
+  // for this function, we get 3 values and six derivatives
+  if (valdim<3) 
+  {
     cout << "***ERR*** MOERTEL::Function_DualLinearTri::EvaluateFunction:\n"
-         << "***ERR*** not yet impl.\n"
+         << "***ERR*** valdim<3 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
+  }
+  
+  if (!xi)
+  {
+    cout << "***ERR*** MOERTEL::Function_DualLinearTri::EvaluateFunction:\n"
+         << "***ERR*** xi=NULL on input\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  if (val)
+  {
+    val[0] = 3.0 - 2.0*xi[0] - 2.0*xi[1]; 
+    val[1] = 4.0*xi[0]-1.0;
+    val[2] = 4.0*xi[1]-1.0;
+  }
+  
+  if (deriv)
+  {
+    deriv[0] = -2.0;
+    deriv[1] = -2.0;
+    deriv[2] = 4.0;
+    deriv[3] = 0.0;
+    deriv[4] = 0.0;
+    deriv[5] = 4.0;
+  }
+  
   return true;
 }
 

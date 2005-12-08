@@ -96,7 +96,7 @@ public:
 protected:
 
   MOERTEL::Function::FunctionType type_;
-  int                          outputlevel_;
+  int                             outputlevel_;
 
   // Note that this base class does not hold any data.
   // If Your derived class needs to hold data, make sure it's carefully
