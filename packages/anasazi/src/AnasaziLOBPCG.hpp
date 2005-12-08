@@ -817,8 +817,11 @@ namespace Anasazi {
       // Count the converged eigenvectors
       _nFound = 0;
       for (j = 0; j < _blockSize; ++j) {
-        _normR[j] = (_theta[j] == 0.0) ? _normR[j] : _normR[j]/SCT::magnitude(_theta[j]);
-
+        // Scale eigenvalues if _theta is non-zero.
+        if ( _theta[j] != zero ) {
+          _normR[j] /= SCT::magnitude(_theta[j]);
+        }
+        // Check for convergence
         if (_normR[j] < _residual_tolerance) {
           _nFound ++;
         }
