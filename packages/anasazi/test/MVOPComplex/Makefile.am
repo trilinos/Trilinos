@@ -41,12 +41,16 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 EXEEXT = .exe
 
 #np# List all executable names here
-noinst_PROGRAMS = MVOPComplex_test
+noinst_PROGRAMS = MVOPComplex_test Dummy
+
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(srcdir)/mhd1280b.cua mhd1280b.cua
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
 MVOPComplex_test_SOURCES = $(srcdir)/cxx_main.cpp
+Dummy_SOURCES = Dummy
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)

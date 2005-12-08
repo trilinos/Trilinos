@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(MVOPComplex_test_SOURCES)
+SOURCES = $(Dummy_SOURCES) $(MVOPComplex_test_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = MVOPComplex_test$(EXEEXT)
+noinst_PROGRAMS = MVOPComplex_test$(EXEEXT) Dummy$(EXEEXT)
 subdir = test/MVOPComplex
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -101,6 +101,9 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+am_Dummy_OBJECTS =
+Dummy_OBJECTS = $(am_Dummy_OBJECTS)
+Dummy_LDADD = $(LDADD)
 am_MVOPComplex_test_OBJECTS = MVOPComplex_test-cxx_main.$(OBJEXT)
 MVOPComplex_test_OBJECTS = $(am_MVOPComplex_test_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -116,8 +119,12 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(MVOPComplex_test_SOURCES)
-DIST_SOURCES = $(MVOPComplex_test_SOURCES)
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(Dummy_SOURCES) $(MVOPComplex_test_SOURCES)
+DIST_SOURCES = $(Dummy_SOURCES) $(MVOPComplex_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -290,6 +297,7 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
 MVOPComplex_test_SOURCES = $(srcdir)/cxx_main.cpp
+Dummy_SOURCES = Dummy
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
@@ -550,6 +558,9 @@ uninstall-am: uninstall-info-am
 
 
 include $(top_builddir)/Makefile.export.anasazi
+
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(srcdir)/mhd1280b.cua mhd1280b.cua
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

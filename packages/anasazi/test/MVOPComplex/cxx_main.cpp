@@ -35,14 +35,22 @@
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziMVOPTester.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
+// I/O for Harwell-Boeing files
+#ifdef HAVE_ANASAZI_TRIUTILS
+#include "iohb.h"
+#endif
 
 #include "MyMultiVec.hpp"
 #include "MyOperator.hpp"
+#include "MyBetterOperator.hpp"
+
+using namespace Teuchos;
 
 int main(int argc, char *argv[])
 {
@@ -59,16 +67,20 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
 #endif
-  bool verbose = 0;
+  bool verbose = false;
+  std::string filename("mhd1280b.cua");
 
   // number of global elements
-  int dim = 100;
   int blockSize = 5;
 
-  if (argc>1) {
-    if (argv[1][0]=='-' && argv[1][1]=='v') {
-      verbose = true;
-    }
+  CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
   }
 
 #ifdef HAVE_COMPLEX
@@ -97,20 +109,60 @@ int main(int argc, char *argv[])
   typedef Anasazi::MultiVecTraits<ST,MV> MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP> OPT;
 
-  // Create a MyMultiVec for cloning
-  std::vector<Teuchos::ScalarTraits<ST>::magnitudeType> v(blockSize);
-  Teuchos::RefCountPtr< MyMultiVec<ST> > ivec = Teuchos::rcp( new MyMultiVec<ST>(dim,blockSize) );
-  MVT::MvNorm(*ivec,&v);
-
-  // Create a MyOperator for testing against
-  Teuchos::RefCountPtr<MyOperator<ST> > op = Teuchos::rcp( new MyOperator<ST>(dim) );
-
   // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<ST> > MyOM 
-    = Teuchos::rcp( new Anasazi::OutputManager<ST>( MyPID ) );
+  RefCountPtr<Anasazi::OutputManager<ST> > MyOM 
+    = rcp( new Anasazi::OutputManager<ST>( MyPID ) );
   if (verbose) {
     MyOM->SetVerbosity( Anasazi::Warning );
   }
+
+
+#ifndef HAVE_ANASAZI_TRIUTILS
+  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
+#ifdef EPETRA_MPI
+  MPI_Finalize() ;
+#endif
+  if (verbose && MyPID==0) {
+    cout << "End Result: TEST FAILED" << endl;	
+  }
+  return -1;
+#endif
+
+  // Get the data from the HB file
+  int info;
+  int dim,dim2,nnz,nrhs;
+  double *dvals;
+  int *colptr,*rowind;
+  ST *cvals;
+  nnz = -1;
+  info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+  if (info == 0 || nnz < 0) {
+    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
+      cout << "Error reading '" << filename << "'" << endl;
+      cout << "End Result: TEST FAILED" << endl;
+    }
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
+  }
+  // Convert interleaved doubles to complex values
+  cvals = new ST[nnz];
+  for (int ii=0; ii<nnz; ii++) {
+    cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
+  }
+  // Build the problem matrix
+  RefCountPtr< MyBetterOperator<ST> > A1
+    = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,cvals) );
+
+
+  // Create a MyMultiVec for cloning
+  std::vector<ScalarTraits<ST>::magnitudeType> v(blockSize);
+  RefCountPtr< MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
+  MVT::MvNorm(*ivec,&v);
+
+  // Create a MyOperator for testing against
+  RefCountPtr<MyOperator<ST> > A2 = rcp( new MyOperator<ST>(dim) );
 
   // test the multivector and its adapter
   ierr = Anasazi::TestMultiVecTraits<ST,MV>(MyOM,ivec);
@@ -130,17 +182,34 @@ int main(int argc, char *argv[])
   }
 
   // test the operator and its adapter
-  ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,op);
+  ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,A2);
   gerr |= ierr;
   switch (ierr) {
   case Anasazi::Ok:
     if ( verbose && MyPID==0 ) {
-      cout << "*** MyMultiVec<complex> PASSED TestOperatorTraits()" << endl;
+      cout << "*** MyOperator<complex> PASSED TestOperatorTraits()" << endl;
     }
     break;
   case Anasazi::Failed:
     if ( verbose && MyPID==0 ) {
-      cout << "*** MyMultiVec<complex> FAILED TestOperatorTraits() ***" 
+      cout << "*** MyOperator<complex> FAILED TestOperatorTraits() ***" 
+           << endl << endl;
+    }
+    break;
+  }
+
+  // test the operator and its adapter
+  ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,A1);
+  gerr |= ierr;
+  switch (ierr) {
+  case Anasazi::Ok:
+    if ( verbose && MyPID==0 ) {
+      cout << "*** MyBetterOperator<complex> PASSED TestOperatorTraits()" << endl;
+    }
+    break;
+  case Anasazi::Failed:
+    if ( verbose && MyPID==0 ) {
+      cout << "*** MyBetterOperator<complex> FAILED TestOperatorTraits() ***" 
            << endl << endl;
     }
     break;
