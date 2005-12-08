@@ -84,8 +84,8 @@ LOCA::AnasaziOperator::ShiftInvert::label() const
 
 NOX::Abstract::Group::ReturnType 
 LOCA::AnasaziOperator::ShiftInvert::apply(
-					 const NOX::Abstract::Vector& input, 
-					 NOX::Abstract::Vector& output) const
+				     const NOX::Abstract::MultiVector& input, 
+				     NOX::Abstract::MultiVector& output) const
 {
   string callingFunction = 
     "LOCA::AnasaziOperator::ShiftInvert::apply()";
@@ -93,27 +93,33 @@ LOCA::AnasaziOperator::ShiftInvert::apply(
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
-  // Allocate temporary vector
-  if (tmp_r == Teuchos::null)
-    tmp_r = input.clone(NOX::ShapeCopy);
+  for (int i=0; i<input.numVectors(); i++) {
 
-  // Compute M*input
-  status = grp->applyMassMatrix(input, *tmp_r);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
+    // Allocate temporary vector
+    if (tmp_r == Teuchos::null)
+      tmp_r = input[i].clone(NOX::ShapeCopy);
 
-  // Solve (J-omega*M)*output = M*input
-  if (shift != 0.0) 
-    status = grp->applyShiftedMatrixInverse(*solverParams, *tmp_r, output, 
-					    -shift);
-  else
-    status = grp->applyJacobianInverse(*solverParams, *tmp_r, output);
+    // Compute M*input
+    status = grp->applyMassMatrix(input[i], *tmp_r);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
 
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
-  
+    // Solve (J-omega*M)*output = M*input
+    if (shift != 0.0) 
+      status = grp->applyShiftedMatrixInverse(*solverParams, *tmp_r, 
+					      output[i], 
+					      -shift);
+    else
+      status = grp->applyJacobianInverse(*solverParams, *tmp_r, output[i]);
+
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+  }
+
   return finalStatus;
 }
 

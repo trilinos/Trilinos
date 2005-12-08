@@ -97,8 +97,8 @@ namespace LOCA {
        * \brief Apply the operator to \c input with the result in \c output
        */
       virtual NOX::Abstract::Group::ReturnType 
-      apply(const NOX::Abstract::Vector& input,
-	    NOX::Abstract::Vector& output) const = 0;
+      apply(const NOX::Abstract::MultiVector& input,
+	    NOX::Abstract::MultiVector& output) const = 0;
 
       /*! 
        * \brief Transform eigenvalue in place

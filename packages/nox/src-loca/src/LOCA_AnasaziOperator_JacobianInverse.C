@@ -73,10 +73,10 @@ LOCA::AnasaziOperator::JacobianInverse::label() const
 
 NOX::Abstract::Group::ReturnType 
 LOCA::AnasaziOperator::JacobianInverse::apply(
-					 const NOX::Abstract::Vector& input, 
-					 NOX::Abstract::Vector& output) const
+				      const NOX::Abstract::MultiVector& input, 
+				      NOX::Abstract::MultiVector& output) const
 {
-  return grp->applyJacobianInverse(*solverParams, input, output);
+  return grp->applyJacobianInverseMultiVector(*solverParams, input, output);
 }
 
 void

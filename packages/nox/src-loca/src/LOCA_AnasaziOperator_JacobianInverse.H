@@ -80,8 +80,8 @@ namespace LOCA {
        * Computes \f$\mbox{output} = J^{-1}\mbox{input}\f$.
        */
       virtual NOX::Abstract::Group::ReturnType 
-      apply(const NOX::Abstract::Vector& input, 
-	    NOX::Abstract::Vector& output) const;
+      apply(const NOX::Abstract::MultiVector& input, 
+	    NOX::Abstract::MultiVector& output) const;
 
       /*! 
        * \brief Transform eigenvalue.

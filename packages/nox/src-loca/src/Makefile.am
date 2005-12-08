@@ -285,8 +285,8 @@ LOCA_ANASAZI_H = \
 	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.H \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
 	$(srcdir)/LOCA_AnasaziOperator_Factory.H \
-	$(srcdir)/Anasazi_LOCA_MultiVec.H \
-	$(srcdir)/Anasazi_LOCA_Matrix.H \
+	$(srcdir)/Anasazi_LOCA_MultiVecTraits.H \
+	$(srcdir)/Anasazi_LOCA_OperatorTraits.H \
 	$(srcdir)/Anasazi_LOCA_Sort.H \
 	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H
 
@@ -295,8 +295,6 @@ LOCA_ANASAZI = \
 	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.C \
 	$(srcdir)/LOCA_AnasaziOperator_Factory.C \
-	$(srcdir)/Anasazi_LOCA_MultiVec.C \
-	$(srcdir)/Anasazi_LOCA_Matrix.C \
 	$(srcdir)/Anasazi_LOCA_Sort.C \
 	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C
 

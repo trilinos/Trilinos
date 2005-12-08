@@ -38,8 +38,6 @@
 #include "Teuchos_ParameterList.hpp"           // class element
 #include "AnasaziOutputManager.hpp"            // class element
 #include "Anasazi_LOCA_Sort.H"                 // class element
-#include "AnasaziMultiVec.hpp"                 // for typedef
-#include "AnasaziOperator.hpp"                 // for typedef
 
 // Forward declarations
 namespace NOX {
@@ -136,10 +134,10 @@ namespace LOCA {
       Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> topParams;
 
       //! Typedef to simplify templating
-      typedef Anasazi::MultiVec<double> MV;
+      typedef NOX::Abstract::MultiVector MV;
 
       //! Typedef to simplify templating
-      typedef Anasazi::Operator<double> OP;
+      typedef LOCA::AnasaziOperator::AbstractStrategy OP;
 
       //! Eigensolver parameter list
       Teuchos::RefCountPtr<NOX::Parameter::List> eigenParams;

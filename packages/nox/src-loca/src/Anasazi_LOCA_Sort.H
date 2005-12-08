@@ -32,12 +32,20 @@
 #ifndef ANASAZI_LOCA_SORT_HPP
 #define ANASAZI_LOCA_SORT_HPP
 
-#include "AnasaziMultiVec.hpp"
+#include "Teuchos_RefCountPtr.hpp"
+
 #include "AnasaziSortManager.hpp"
-#include "AnasaziOperator.hpp"
 
 // Forward declarations
+namespace NOX {
+  namespace Abstract {
+    class MultiVector;
+  }
+}
 namespace LOCA {
+  namespace AnasaziOperator {
+    class AbstractStrategy;
+  }
   namespace EigenvalueSort {
     class AbstractStrategy;
   }
@@ -49,15 +57,16 @@ namespace Anasazi {
    * \brief An implementation of the Anasazi::SortManager that performs a 
    * collection of common sorting techniques.
    */
-  class LOCASort : public Anasazi::SortManager< double,
-						Anasazi::MultiVec<double>,
-						Anasazi::Operator<double> > {
+  class LOCASort : 
+    public Anasazi::SortManager< double,
+				 NOX::Abstract::MultiVector,
+				 LOCA::AnasaziOperator::AbstractStrategy > {
 
     //! Anasazi::Multivec typedef
-    typedef Anasazi::MultiVec<double> MV;
+    typedef NOX::Abstract::MultiVector MV;
 
     //! Anasazi::Operator typedef
-    typedef Anasazi::Operator<double> OP;
+    typedef LOCA::AnasaziOperator::AbstractStrategy OP;
       
   public:
     

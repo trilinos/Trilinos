@@ -30,60 +30,65 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef ANASAZI_LOCA_MATRIX_H
-#define ANASAZI_LOCA_MATRIX_H
-
-#include "Teuchos_RefCountPtr.hpp"
+#ifndef ANASAZI_LOCA_OPERATORTRAITS_H
+#define ANASAZI_LOCA_OPERATORTRAITS_H
 
 // Anasazi includes
-#include "AnasaziOperator.hpp"
-#include "AnasaziMultiVec.hpp"
-#include "AnasaziConfigDefs.hpp"
-#include "AnasaziTypes.hpp"
+#include "AnasaziOperatorTraits.hpp"
 
-// LOCA includes
+// NOX/LOCA includes
+#include "NOX_Abstract_MultiVector.H"
 #include "LOCA_AnasaziOperator_AbstractStrategy.H"
-
-// forward declarations
-namespace LOCA {
-  class GlobalData;
-}
 
 namespace Anasazi {
 
   /*!
-   * \brief Implementation of the Anasazi::Matrix for LOCA operators.
+   * \brief Implementation of the Anasazi::OperatorTraits for LOCA operators.
    */
   /*!
-   * This class provides an implementation of the Anasazi::Matrix class
+   * This class provides an implementation of the Anasazi::OperatorTraits class
    * using LOCA operators.  The operator is represented by the 
    * LOCA::AnasaziOperator::AbstractStrategy class which serves as a base class
    * for many different types of operators, including shift-invert and
    * Generalized Cayley transformations.
    */
-  class LOCAMatrix : public Anasazi::Operator<double> {
+  template <>
+  class OperatorTraits<double,
+		       NOX::Abstract::MultiVector,
+		       LOCA::AnasaziOperator::AbstractStrategy>
+  {
   public:
 
-    //! Constructor
-    LOCAMatrix(
-    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-    const Teuchos::RefCountPtr< ::LOCA::AnasaziOperator::AbstractStrategy>& op);
-    
-    //! Destructor
-    ~LOCAMatrix();
-    
-    //! Apply operator
-    Anasazi::ReturnType Apply(const Anasazi::MultiVec<double>& x, 
-			      Anasazi::MultiVec<double>& y ) const;
-  protected:
+    //! Synony for double
+    typedef double ScalarType;
 
-    //! Global data
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+    //! Synonym for NOX::Abstract::MultiVector
+    typedef NOX::Abstract::MultiVector MV;
+
+    //! Synonym for LOCA::AnasaziOperator::AbstractStrategy
+    typedef LOCA::AnasaziOperator::AbstractStrategy OP;
     
-    //! LOCA operator
-    Teuchos::RefCountPtr< ::LOCA::AnasaziOperator::AbstractStrategy> locaOp;
+    //@{ Matrix/Operator application method.
     
-  }; // class Matrix
+    //! Application method which performs operation <b>y = Op*x</b>
+    /*!
+     *\return Status of the operation.
+     */
+    static ReturnType Apply ( const OP& Op, 
+			      const MV& x, 
+			      MV& y )
+    { 
+      NOX::Abstract::Group::ReturnType status = Op.apply(x,y);
+      if (status != NOX::Abstract::Group::Failed)
+	return Anasazi::Ok;
+      else 
+	return Anasazi::Failed;
+    };
+    
+    //@}
+    
+  }; // class MultiVecTraits
+  
 } // namespace Anasazi
 
 #endif 

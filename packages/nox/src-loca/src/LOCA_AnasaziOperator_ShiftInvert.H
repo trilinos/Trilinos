@@ -112,8 +112,8 @@ namespace LOCA {
        * for \f$z\f$, where \f$r = \mbox{input}\f$ and \f$z = \mbox{output}\f$.
        */
       virtual NOX::Abstract::Group::ReturnType 
-      apply(const NOX::Abstract::Vector& input, 
-	    NOX::Abstract::Vector& output) const;
+      apply(const NOX::Abstract::MultiVector& input, 
+	    NOX::Abstract::MultiVector& output) const;
 
       /*! 
        * \brief Transform eigenvalue.

@@ -85,8 +85,8 @@ LOCA::AnasaziOperator::Cayley::label() const
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::AnasaziOperator::Cayley::apply(const NOX::Abstract::Vector& input, 
-				     NOX::Abstract::Vector& output) const
+LOCA::AnasaziOperator::Cayley::apply(const NOX::Abstract::MultiVector& input, 
+				     NOX::Abstract::MultiVector& output) const
 {
   string callingFunction = 
     "LOCA::AnasaziOperator::Cayley::apply()";
@@ -94,23 +94,29 @@ LOCA::AnasaziOperator::Cayley::apply(const NOX::Abstract::Vector& input,
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
-  // Allocate temporary vector
-  if (tmp_r == Teuchos::null)
-    tmp_r = input.clone(NOX::ShapeCopy);
+  for (int i=0; i<input.numVectors(); i++) {
 
-  // Compute (J-mu*M)*input
-  status = grp->applyShiftedMatrix(input, *tmp_r, -mu);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
+    // Allocate temporary vector
+    if (tmp_r == Teuchos::null)
+      tmp_r = input[i].clone(NOX::ShapeCopy);
 
-  // Solve (J-sigma*M)*output = (J-mu*M)*input
-  status = grp->applyShiftedMatrixInverse(*solverParams, *tmp_r, output, 
-					  -sigma);
+    // Compute (J-mu*M)*input
+    status = grp->applyShiftedMatrix(input[i], *tmp_r, -mu);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
 
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
+    // Solve (J-sigma*M)*output = (J-mu*M)*input
+    status = grp->applyShiftedMatrixInverse(*solverParams, *tmp_r, output[i], 
+					    -sigma);
+
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+
+  }
   
   return finalStatus;
 }

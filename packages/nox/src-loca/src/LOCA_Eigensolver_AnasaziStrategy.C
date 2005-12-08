@@ -40,8 +40,8 @@
 #include "LOCA_EigenvalueSort_Strategies.H"
 
 #ifdef HAVE_LOCA_ANASAZI
-#include "Anasazi_LOCA_MultiVec.H"
-#include "Anasazi_LOCA_Matrix.H"
+#include "Anasazi_LOCA_MultiVecTraits.H"
+#include "Anasazi_LOCA_OperatorTraits.H"
 #include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #endif
@@ -137,22 +137,20 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   const NOX::Abstract::Vector& xVector = group.getX();
 
   // Create the operator and initial vector
-  Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy> anasaziOperator
+  Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy> anasaziOp
     = globalData->locaFactory->createAnasaziOperatorStrategy(
 						   topParams, 
 						   eigenParams,
 						   solverParams,
 						   Teuchos::rcp(&group,false));
-  Teuchos::RefCountPtr<Anasazi::LOCAMatrix> Amat = 
-    Teuchos::rcp( new Anasazi::LOCAMatrix(globalData, anasaziOperator) );
-  Teuchos::RefCountPtr<Anasazi::LOCAMultiVec> ivec =
-    Teuchos::rcp( new Anasazi::LOCAMultiVec(globalData, xVector, blksz) );
-  ivec->MvRandom();
+  Teuchos::RefCountPtr<MV> ivec = xVector.createMultiVector(blksz);
+  ivec->random();
 
   // Create an instance of the eigenproblem
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > 
     LOCAProblem =
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(Amat, ivec) );
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(anasaziOp, 
+								 ivec) );
 
   // Set the number of eigenvalues requested
   LOCAProblem->SetNEV( nev );
@@ -189,7 +187,7 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) 
      globalData->locaUtils->out() << 
        "Untransformed eigenvalues (since the operator was " << 
-       anasaziOperator->label() << ")" << std::endl;
+       anasaziOp->label() << ")" << std::endl;
   
   // Obtain the eigenvectors
   // The real part is stored in the first "nev" vectors and the imaginary 
@@ -201,17 +199,8 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
     index_r[i] = i;
     index_i[i] = nev+i;
   }
-  Teuchos::RefCountPtr<Anasazi::LOCAMultiVec> a_evecs_r = 
-    Teuchos::rcp(dynamic_cast<Anasazi::LOCAMultiVec*>(evecs->CloneCopy(index_r)));
-  Teuchos::RefCountPtr<Anasazi::LOCAMultiVec> a_evecs_i = 
-    Teuchos::rcp(dynamic_cast<Anasazi::LOCAMultiVec*>(evecs->CloneCopy(index_i)));
-  NOX::Abstract::Vector& tmp = a_evecs_r->GetNOXVector(0);
-  evecs_r = tmp.createMultiVector(nev, NOX::ShapeCopy);
-  evecs_i = tmp.createMultiVector(nev, NOX::ShapeCopy);
-  for (int i=0; i<nev; i++) {
-    (*evecs_r)[i] = a_evecs_r->GetNOXVector(i);
-    (*evecs_i)[i] = a_evecs_i->GetNOXVector(i);
-  }
+  evecs_r = evecs->subCopy(index_r);
+  evecs_i = evecs->subCopy(index_i);
 
   // Real & imaginary components of Rayleigh quotient
   double rq_r, rq_i;
@@ -219,12 +208,10 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   for (int i=0; i<nev; i++) {
 
     // Un-transform eigenvalues
-    anasaziOperator->transformEigenvalue((*evals_r)[i], (*evals_i)[i]);
+    anasaziOp->transformEigenvalue((*evals_r)[i], (*evals_i)[i]);
 
     // Compute Rayleigh quotient
-    anasaziOperator->rayleighQuotient(a_evecs_r->GetNOXVector(i),
-				      a_evecs_i->GetNOXVector(i), 
-				      rq_r, rq_i);
+    anasaziOp->rayleighQuotient((*evecs_r)[i], (*evecs_i)[i], rq_r, rq_i);
 
     // Print out untransformed eigenvalues and Rayleigh quotient residual
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
@@ -250,7 +237,7 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   for (int i=nev; i<narn; i++) {
 
       // Un-transform eigenvalues
-    anasaziOperator->transformEigenvalue((*evals_r)[i], (*evals_i)[i]);
+    anasaziOp->transformEigenvalue((*evals_r)[i], (*evals_i)[i]);
 
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration) && 
 	narn>nev) {
