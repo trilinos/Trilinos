@@ -178,7 +178,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       if (gnode1[i]->node->proc != MyPID) continue;
       MOERTEL::Node* node = 
         new MOERTEL::Node(gnode1[i]->Id,gnode1[i]->node->x,
-                       2/*gnode1[i]->node->numdf*/,gnode1[i]->node->dof,outlevel);
+                       2/*gnode1[i]->node->numdf*/,gnode1[i]->node->dof,false,outlevel);
       bool ok = interface->AddNode(*node,0);
       delete node; node = NULL;
     }
@@ -190,7 +190,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       if (gnode2[i]->node->proc != MyPID) continue;
       MOERTEL::Node* node = 
         new MOERTEL::Node(gnode2[i]->Id,gnode2[i]->node->x,
-                       2/*gnode2[i]->node->numdf*/,gnode2[i]->node->dof,outlevel);
+                       2/*gnode2[i]->node->numdf*/,gnode2[i]->node->dof,false,outlevel);
       bool ok = interface->AddNode(*node,1);
       delete node; node = NULL;
     }
@@ -362,10 +362,12 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     int ngnode2 = 0;
     GNODE** gnode1 = NULL;
     GNODE** gnode2 = NULL;
+    bool*   boundary1 = NULL;
+    bool*   boundary2 = NULL;
     
-    ngnode1 = cca_mrtr_3D_find_gnodes_on_dsurf(&gnode1,dsurf1,actdis);
-    ngnode2 = cca_mrtr_3D_find_gnodes_on_dsurf(&gnode2,dsurf2,actdis);
-  
+    ngnode1 = cca_mrtr_3D_find_gnodes_on_dsurf(&gnode1,&boundary1,dsurf1,actdis);
+    ngnode2 = cca_mrtr_3D_find_gnodes_on_dsurf(&gnode2,&boundary2,dsurf2,actdis);
+
     // side 0 of interface
     for (int i=0; i<ngnode1; ++i)
     {
@@ -373,7 +375,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       if (gnode1[i]->node->proc != MyPID) continue;
       MOERTEL::Node* node = 
         new MOERTEL::Node(gnode1[i]->node->Id,gnode1[i]->node->x,
-                       gnode1[i]->node->numdf,gnode1[i]->node->dof,outlevel);
+                       gnode1[i]->node->numdf,gnode1[i]->node->dof,
+                       boundary1[i],outlevel);
       bool ok = interface->AddNode(*node,0);
       delete node; node = NULL;
     }
@@ -385,7 +388,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       if (gnode2[i]->node->proc != MyPID) continue;
       MOERTEL::Node* node = 
         new MOERTEL::Node(gnode2[i]->node->Id,gnode2[i]->node->x,
-                       gnode2[i]->node->numdf,gnode2[i]->node->dof,outlevel);
+                       gnode2[i]->node->numdf,gnode2[i]->node->dof,
+                       boundary2[i],outlevel);
                        
       bool ok = interface->AddNode(*node,1);
       delete node; node = NULL;
@@ -413,8 +417,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     else
     {
       interface->SetFunctionTypes(MOERTEL::Function::func_LinearTri,      // the isoparametric function
-                                  //MOERTEL::Function::func_DualLinearTri); // the LM space
-                                  MOERTEL::Function::func_LinearTri); // the LM space
+                                  MOERTEL::Function::func_DualLinearTri); // the LM space
+                                  //MOERTEL::Function::func_LinearTri); // the LM space
     }
       
     //-----------------------------------------------------------------
@@ -424,8 +428,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     if (side==1 || side==0)
     {
       side     = interface->OtherSide(side);
-      //MOERTEL::Function_DualLinearTri* func = new MOERTEL::Function_LinearTri(outlevel);
-      MOERTEL::Function_LinearTri* func = new MOERTEL::Function_LinearTri(outlevel);
+      MOERTEL::Function_DualLinearTri* func = new MOERTEL::Function_DualLinearTri(outlevel);
+      //MOERTEL::Function_LinearTri* func = new MOERTEL::Function_LinearTri(outlevel);
       interface->SetFunctionAllSegmentsSide(side,1,func);
       delete func; func = NULL;
     }
@@ -457,6 +461,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     if (gsurf2) delete [] gsurf2;
     if (gnode1) delete [] gnode1;
     if (gnode2) delete [] gnode2;
+    if (boundary1) delete [] boundary1;
+    if (boundary2) delete [] boundary2;
     if (interface) delete interface; interface = NULL;
     
   //-------------------------------------------------------------------

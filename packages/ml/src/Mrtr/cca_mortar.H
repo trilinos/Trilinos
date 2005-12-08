@@ -34,7 +34,7 @@ int  cca_mrtr_3D_find_gsurfs_on_dsurf(GSURF*** gsurf, DSURF* dsurf,
                                       DISCRET* actdis);
 int cca_mrtr_3D_prepare_gsurf_data(GSURF* gline, int** nodeIds,
                                    MOERTEL::Segment::SegmentType* typ);
-int cca_mrtr_3D_find_gnodes_on_dsurf(GNODE*** gnode, DSURF* dsurf, DISCRET* actdis);
+int cca_mrtr_3D_find_gnodes_on_dsurf(GNODE*** gnode, bool** boundary, DSURF* dsurf, DISCRET* actdis);
 #endif
 #endif // TRILINOS_PACKAGE
 #endif // MORTAR

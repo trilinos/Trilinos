@@ -507,13 +507,14 @@ int cca_mrtr_2D_find_gnodes_on_dline(GNODE*** gnode, DLINE* dline, DISCRET* actd
 /*----------------------------------------------------------------------*
  |  find gnodes for given dsurf                              m.gee 10/05|
  *----------------------------------------------------------------------*/
-int cca_mrtr_3D_find_gnodes_on_dsurf(GNODE*** gnode, DSURF* dsurf, DISCRET* actdis)
+int cca_mrtr_3D_find_gnodes_on_dsurf(GNODE*** gnode, bool** boundary, DSURF* dsurf, DISCRET* actdis)
 {
   int size   = 50;
   int ngnode = 0;
   *gnode = new (GNODE*)[size];
+  *boundary = new bool[size];
 
-  // find the gnodes that are on this line
+  // find the gnodes that are on this surface
   for (int i=0; i<actdis->ngnode; ++i)
   {
     if (actdis->gnode[i].d.dsurf != dsurf) continue;
@@ -521,12 +522,19 @@ int cca_mrtr_3D_find_gnodes_on_dsurf(GNODE*** gnode, DSURF* dsurf, DISCRET* actd
     {
       size += 50;
       GNODE** tmp = new (GNODE*)[size];
+      bool* boundtmp = new bool[size];
       for (int j=0; j<ngnode; ++j)
+      {
         tmp[j] = (*gnode)[j];
+        boundtmp[j] = (*boundary)[j];
+      }
       delete [] (*gnode);
+      delete [] (*boundary);
       *gnode = tmp;
+      *boundary = boundtmp;
     }
     (*gnode)[ngnode] = &(actdis->gnode[i]);
+    (*boundary)[ngnode] = false;
     ++ngnode;
   }
   
@@ -541,12 +549,19 @@ int cca_mrtr_3D_find_gnodes_on_dsurf(GNODE*** gnode, DSURF* dsurf, DISCRET* actd
       {
         size += 50;
         GNODE** tmp = new (GNODE*)[size];
+        bool* boundtmp = new bool[size];
         for (int j=0; j<ngnode; ++j)
+        {
           tmp[j] = (*gnode)[j];
+          boundtmp[j] = (*boundary)[j];
+        }
         delete [] (*gnode);
+        delete [] (*boundary);
         *gnode = tmp;
+        *boundary = boundtmp;
       }
       (*gnode)[ngnode] = &(actdis->gnode[i]);
+      (*boundary)[ngnode] = true;
       ++ngnode;
     }
   }
@@ -586,12 +601,19 @@ int cca_mrtr_3D_find_gnodes_on_dsurf(GNODE*** gnode, DSURF* dsurf, DISCRET* actd
       {
         size += 50;
         GNODE** tmp = new (GNODE*)[size];
+        bool* boundtmp = new bool[size];
         for (int j=0; j<ngnode; ++j)
+        {
           tmp[j] = (*gnode)[j];
+          boundtmp[j] = (*boundary)[j];
+        }
         delete [] (*gnode);
+        delete [] (*boundary);
         *gnode = tmp;
+        *boundary = boundtmp;
       }
       (*gnode)[ngnode] = &(actdis->gnode[i]);
+      (*boundary)[ngnode] = true;
       ++ngnode;
     }
   }
