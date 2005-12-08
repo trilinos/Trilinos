@@ -448,9 +448,10 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/ModalSolverUtils/Makefile
 		test/BlockDavidson/Makefile
+		test/BlockDavidsonComplex/Makefile
 		test/BlockKrylovSchur/Makefile
-		test/MVOPComplex/Makefile
 		test/MVOPTester/Makefile
+		test/MVOPComplex/Makefile
 		test/LOBPCG/Makefile
 		test/LOBPCGComplex/Makefile
 		test/MVOPTpetra/Makefile

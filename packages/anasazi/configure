@@ -12126,7 +12126,7 @@ fi
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                                                                                                                                                                                                                                                                                                                                ac_config_files="$ac_config_files Makefile Makefile.export.anasazi src/Makefile util/Makefile util/ModeLaplace/Makefile example/Makefile example/BlockDavidson/Makefile example/BlockJacobiDavidson/Makefile example/BlockKrylovSchur/Makefile example/LOBPCG/Makefile example/MVOPTester/Makefile test/Makefile test/ModalSolverUtils/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/MVOPComplex/Makefile test/MVOPTester/Makefile test/LOBPCG/Makefile test/LOBPCGComplex/Makefile test/MVOPTpetra/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile thyra/example/MVOPTester/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOBPCG/Makefile thyra/test/BlockKrylovSchur/Makefile thyra/test/BlockDavidson/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files Makefile Makefile.export.anasazi src/Makefile util/Makefile util/ModeLaplace/Makefile example/Makefile example/BlockDavidson/Makefile example/BlockJacobiDavidson/Makefile example/BlockKrylovSchur/Makefile example/LOBPCG/Makefile example/MVOPTester/Makefile test/Makefile test/ModalSolverUtils/Makefile test/BlockDavidson/Makefile test/BlockDavidsonComplex/Makefile test/BlockKrylovSchur/Makefile test/MVOPTester/Makefile test/MVOPComplex/Makefile test/LOBPCG/Makefile test/LOBPCGComplex/Makefile test/MVOPTpetra/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile thyra/example/MVOPTester/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOBPCG/Makefile thyra/test/BlockKrylovSchur/Makefile thyra/test/BlockDavidson/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -12909,9 +12909,10 @@ do
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/ModalSolverUtils/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/ModalSolverUtils/Makefile" ;;
   "test/BlockDavidson/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockDavidson/Makefile" ;;
+  "test/BlockDavidsonComplex/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockDavidsonComplex/Makefile" ;;
   "test/BlockKrylovSchur/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockKrylovSchur/Makefile" ;;
-  "test/MVOPComplex/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MVOPComplex/Makefile" ;;
   "test/MVOPTester/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MVOPTester/Makefile" ;;
+  "test/MVOPComplex/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MVOPComplex/Makefile" ;;
   "test/LOBPCG/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/LOBPCG/Makefile" ;;
   "test/LOBPCGComplex/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/LOBPCGComplex/Makefile" ;;
   "test/MVOPTpetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MVOPTpetra/Makefile" ;;
