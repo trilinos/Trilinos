@@ -62,7 +62,7 @@ static PARAM_VARS PHG_params[] = {
   {"EDGE_SIZE_THRESHOLD",             NULL,  "FLOAT",  0},
   {"PHG_BAL_TOL_ADJUSTMENT",          NULL,  "FLOAT",  0},  
   {"PARKWAY_SERPART",                 NULL,  "STRING", 0},
-  {"BALANCE_OBJ",                     NULL,  "STRING", 0},
+  {"ADD_OBJ_WEIGHT",                  NULL,  "STRING", 0},
   {"PHG_RANDOMIZE_INPUT",             NULL,  "INT",    0},    
   { "PATOH_ALLOC_POOL0",              NULL,  "INT",    0},
   { "PATOH_ALLOC_POOL1",              NULL,  "INT",    0},   
@@ -481,6 +481,7 @@ static int Zoltan_PHG_Initialize_Params(
   int nProc;
   int usePrimeComm;
   MPI_Comm communicator;
+  char add_obj_weight[MAX_PARAM_STRING_LEN];
   
 
   memset(hgp, 0, sizeof(*hgp)); /* in the future if we forget to initialize
@@ -518,8 +519,8 @@ static int Zoltan_PHG_Initialize_Params(
                                  (void*) &hgp->bal_tol_adjustment);  
   Zoltan_Bind_Param(PHG_params, "PARKWAY_SERPART",
                                  (void *) hgp->parkway_serpart);  
-  Zoltan_Bind_Param(PHG_params, "BALANCE_OBJ",
-                                 (void *) hgp->balance_obj);
+  Zoltan_Bind_Param(PHG_params, "ADD_OBJ_WEIGHT",
+                                 (void *) add_obj_weight);
   Zoltan_Bind_Param(PHG_params, "PHG_RANDOMIZE_INPUT",
                                  (void*) &hgp->RandomizeInitDist);  
   Zoltan_Bind_Param(PHG_params, "PATOH_ALLOC_POOL0",
@@ -535,7 +536,7 @@ static int Zoltan_PHG_Initialize_Params(
   strncpy(hgp->coarsepartition_str, "gr0",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->parkway_serpart,     "patoh", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->balance_obj,      "vertices", MAX_PARAM_STRING_LEN);
+  strncpy(add_obj_weight,            "none", MAX_PARAM_STRING_LEN);
 
   hgp->use_timers = 0;
   hgp->proc_split = 1;
@@ -585,7 +586,29 @@ static int Zoltan_PHG_Initialize_Params(
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid hypergraph package.\n");
     goto End;
   }
-    
+
+  if (!strcasecmp(add_obj_weight, "none")){
+    hgp->add_obj_weight = PHG_ADD_NO_WEIGHT;
+  } else if (!strcasecmp(add_obj_weight, "vertices")){
+    hgp->add_obj_weight = PHG_ADD_UNIT_WEIGHT;
+  } else if (!strcasecmp(add_obj_weight, "unit")){
+    hgp->add_obj_weight = PHG_ADD_UNIT_WEIGHT;
+  } else if (!strcasecmp(add_obj_weight, "vertex degree")){
+    hgp->add_obj_weight = PHG_ADD_PINS_WEIGHT;
+  } else if (!strcasecmp(add_obj_weight, "nonzeros")){
+    hgp->add_obj_weight = PHG_ADD_PINS_WEIGHT;
+  } else if (!strcasecmp(add_obj_weight, "pins")){
+    hgp->add_obj_weight = PHG_ADD_PINS_WEIGHT;
+  } else{
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid ADD_OBJ_WEIGHT parameter.\n");
+    goto End;
+  }
+
+  if ((zz->Obj_Weight_Dim==0) &&      /* no application supplied weights */
+      (hgp->add_obj_weight==PHG_ADD_NO_WEIGHT)){ /* no calculated weight */
+
+    hgp->add_obj_weight = PHG_ADD_UNIT_WEIGHT; /* default object weight */
+  }
 
   if (zz->LB.Method == PHG) {
     /* Test to determine whether we should change the number of processors

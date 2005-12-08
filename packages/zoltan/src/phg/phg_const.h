@@ -21,6 +21,10 @@ extern "C" {
 
 int Zoltan_PHG_Set_Param (char*, char*);
 
+#define PHG_ADD_UNIT_WEIGHT 1
+#define PHG_ADD_PINS_WEIGHT 2
+#define PHG_ADD_NO_WEIGHT 3
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

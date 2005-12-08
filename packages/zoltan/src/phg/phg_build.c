@@ -196,6 +196,7 @@ int *dist_x = NULL, *dist_y = NULL;
 int nEdge, nVtx, nwgt = 0;
 int nrecv, *recv_gno = NULL; 
 int *tmpparts = NULL;
+int add_vweight, nvwgt;
 
 ZOLTAN_ID_PTR global_ids;
 int num_gid_entries = zz->Num_GID;
@@ -209,6 +210,7 @@ int proc_offset;
 
 float frac_x, frac_y;
 float *tmpwgts = NULL;
+float *tmp, *final;
 
 int *gtotal = NULL;  /* Temporary arrays used for distributing vertices/edges */
 int *mycnt = NULL;
@@ -644,45 +646,95 @@ int *gcnt = NULL;
                   phg->comm->col_comm);
 
   ZOLTAN_FREE(&tmpparts);
-  
 
-  /* Allocate temp storage for vtx and/or edge weights. */
+  /* Create arrays of vertex and edge weights */
 
-  if (zz->Obj_Weight_Dim || zz->Edge_Weight_Dim) {
-    nwgt = MAX(phg->nVtx * zz->Obj_Weight_Dim, 
-               phg->nEdge * zz->Edge_Weight_Dim);
-    tmpwgts = (float *) ZOLTAN_MALLOC(nwgt * sizeof(float));
-    if (nwgt && !tmpwgts) MEMORY_ERROR;
+  if (hgp->add_obj_weight != PHG_ADD_NO_WEIGHT){
+    add_vweight = 1;
+  }
+  else{
+    add_vweight = 0;
+  }
+
+  phg->VtxWeightDim =     /* 1 or greater */
+    zz->Obj_Weight_Dim +   /* 0 or more application supplied weights*/
+    add_vweight;           /* 0 or 1 additional calculated weights */
+
+  nvwgt = phg->nVtx * phg->VtxWeightDim;
+
+  nwgt = MAX(nvwgt, phg->nEdge * zz->Edge_Weight_Dim);
+
+  tmpwgts   = (float *) ZOLTAN_CALLOC(nwgt , sizeof(float));
+  phg->vwgt = (float *) ZOLTAN_CALLOC(nvwgt, sizeof(float));
+
+  if (!tmpwgts || !phg->vwgt) MEMORY_ERROR;
+
+  if ((phg->comm->col_comm == MPI_COMM_NULL) ||
+      (zz->Obj_Weight_Dim == 0)) {
+    tmp = tmpwgts;
+    final = phg->vwgt;
+  }
+  else {
+    tmp = phg->vwgt;
+    final = tmpwgts;
   }
 
   /* Send vertex weights to 2D distribution. */
 
-  if (zz->Obj_Weight_Dim) {
-    dim = phg->VtxWeightDim = zz->Obj_Weight_Dim;
-    for (i = 0; i < phg->nVtx; i++) tmpwgts[i] = 0;
-    nwgt = phg->nVtx * dim;
-    phg->vwgt = (float *) ZOLTAN_CALLOC(nwgt, sizeof(float));
-    if (nwgt && !phg->vwgt) 
-      MEMORY_ERROR;
+  if (add_vweight) {
+    /* Either application did not specify object weights, so we
+     * are creating them, or application asked for calculated
+     * weights with ADD_OBJ_WEIGHT parameter. 
+     * Create uniform weights, or use #pins.
+     */
+    cnt = zz->Obj_Weight_Dim + 1;
+ 
+    if (hgp->add_obj_weight == PHG_ADD_PINS_WEIGHT){ /* vertex degree */
+
+      /* sum local degrees to global degrees and use as vtx weight */
+      if (phg->comm->col_comm != MPI_COMM_NULL){
+        for (i = 0, j=zz->Obj_Weight_Dim; i < phg->nVtx; i++, j+=cnt){
+          tmp[j] = phg->vindex[i+1] - phg->vindex[i]; /* local degree */
+        }
+
+        MPI_Allreduce(tmp, final, nvwgt, MPI_FLOAT, MPI_SUM, 
+                      phg->comm->col_comm);
+      }
+      else{
+        for (i = 0, j=zz->Obj_Weight_Dim; i < phg->nVtx; i++, j+=cnt){
+          final[j] = phg->vindex[i+1] - phg->vindex[i];
+        }
+      }
+    }
+    else {                                           /* unit weights */
+
+      for (i = 0, j=zz->Obj_Weight_Dim; i < phg->nVtx; i++, j += cnt)
+        final[j] = 1.;
+    }
+  }
+
+  if (zz->Obj_Weight_Dim){
+
+    dim = zz->Obj_Weight_Dim;
 
     if (phg->comm->nProc_x == 1)  {
       for (i = 0; i < app.nVtx; i++) {
         idx = app.vtx_gno[i];
         for (j = 0; j < dim; j++)
-          tmpwgts[idx * dim + j] = app.vwgt[i * dim + j];
+          final[idx * phg->VtxWeightDim + j] = app.vwgt[i * dim + j];
       }
     }
     else {
       
-      /* In using phg->vwgt for recv, assuming nrecv <= phg->nVtx */
+      /* In using "tmp" for recv, assuming nrecv <= length of "tmp" */
       msg_tag++;
       ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) app.vwgt, 
-                            dim*sizeof(float), (char *) phg->vwgt);
+                            dim*sizeof(float), (char *) tmp);
       
       for (i = 0; i < nrecv; i++) {
         idx = VTX_GNO_TO_LNO(phg, recv_gno[i]);
         for (j = 0; j < dim; j++) 
-          tmpwgts[idx * dim + j] = phg->vwgt[i * dim + j];
+          final[idx * phg->VtxWeightDim + j] = tmp[i * dim + j];
       }
     }
 
@@ -690,37 +742,9 @@ int *gcnt = NULL;
      * to all processors within column.
      */
 
-    if (phg->comm->col_comm != MPI_COMM_NULL)
-      MPI_Allreduce(tmpwgts, phg->vwgt, nwgt, MPI_FLOAT, MPI_MAX, 
+    if (phg->comm->col_comm != MPI_COMM_NULL){
+      MPI_Allreduce(final, tmp, nvwgt, MPI_FLOAT, MPI_MAX, 
                     phg->comm->col_comm);
-  }
-  else {
-    /* Application did not specify object weights, but PHG code needs them.
-     * Create uniform weights, or use #pins.
-     */
-    phg->VtxWeightDim = 1;
-    phg->vwgt = (float *) ZOLTAN_MALLOC(phg->nVtx * sizeof(float));
- 
-    if ((!strcasecmp(hgp->balance_obj, "pins")) || 
-         !strcasecmp(hgp->balance_obj, "nonzeros")) {
-      /* set vertex weight to vertex degree */
-      if (!tmpwgts){
-        tmpwgts = (float *) ZOLTAN_MALLOC(phg->nVtx * sizeof(float));
-        if (phg->nVtx && !tmpwgts) MEMORY_ERROR;
-      }
-      /* first compute local degree in tmpwgts */
-      for (i = 0; i < phg->nVtx; i++){
-        tmpwgts[i] = phg->vindex[i+1] - phg->vindex[i];
-      }
-      /* sum local degrees to global degrees and use as vtx weight */
-      if (phg->comm->col_comm != MPI_COMM_NULL)
-        MPI_Allreduce(tmpwgts, phg->vwgt, phg->nVtx, MPI_FLOAT, MPI_SUM, 
-                      phg->comm->col_comm);
-    }
-    else {
-      /* unit weights */
-      for (i = 0; i < phg->nVtx; i++)
-        phg->vwgt[i] = 1.;
     }
   }
 

@@ -110,9 +110,8 @@ struct PHGPartParamsStruct {
   float hybrid_keep_factor; /* h-ipm only: keep matches with i.p. values
                                greater than this factor times the mean */
   char parkway_serpart[MAX_PARAM_STRING_LEN];  /* SerialPartitioner for parKway. */    
-  char balance_obj[MAX_PARAM_STRING_LEN];  /* Balancing objective:
-                                                usually vertices (rows),
-                                                but could be pins (nonzeros) */
+  int add_obj_weight;       /* Calculated weight: unit vertex, non-zeroes,
+                                                  or none */
   int RandomizeInitDist;  /* Flag indicating whether to randomly distribute
                              vertices and edges passed as input to PHG. */
   int patoh_alloc_pool0,    /* to adjust patoh's memory pre-allocation amount */
