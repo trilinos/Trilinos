@@ -113,6 +113,15 @@ namespace Anasazi {
 
     //@}
   private:
+    //
+    // Convenience typedefs
+    //
+    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef OperatorTraits<ScalarType,MV,OP> OPT;
+    typedef Teuchos::ScalarTraits<ScalarType> SCT;
+    typedef typename SCT::magnitudeType MagnitudeType;
+    typedef typename std::vector<ScalarType>::iterator STiter;
+    typedef typename std::vector<MagnitudeType>::iterator MTiter;
 
     /*! \brief These methods will not be defined.
      */
@@ -142,13 +151,13 @@ namespace Anasazi {
     // Internal data.
     //
     const int _maxIter, _blockSize;
-    const ScalarType _residual_tolerance;
+    const MagnitudeType _residual_tolerance;
     int _numBlocks, _numRestarts, _iter, _dimSearch, _knownEV;
     //
     // Internal utilities class required by eigensolver.
     //
     ModalSolverUtils<ScalarType,MV,OP> _MSUtils;
-    std::vector<ScalarType> _theta, _normR, _resids;
+    std::vector<MagnitudeType> _theta, _normR, _resids;
     //
     // Output stream from the output manager
     //
@@ -164,11 +173,7 @@ namespace Anasazi {
     // Counters
     //
     int _count_ApplyOp, _count_ApplyM, _count_ApplyPrec;
-    //
-    // Convenience typedefs
-    //
-    typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef OperatorTraits<ScalarType,MV,OP> OPT;
+
   };
   //
   // Implementation
@@ -428,6 +433,8 @@ namespace Anasazi {
     // S = Local eigenvectors                    (size: dimSearch x dimSearch)
     //
     Teuchos::SerialDenseMatrix<int,ScalarType> KK( _dimSearch, _dimSearch ), S( _dimSearch, _dimSearch );
+    // work vector for GEQRF and ORGQR
+    std::vector<ScalarType> tau( _dimSearch );
 
     //
     // Initialize the workspace.
@@ -563,10 +570,12 @@ namespace Anasazi {
         // Check orthogonality of X ( if required )
         //
         if (_om->isVerbosity( OrthoDetails ) ) {
-          if (localSize > 0)
+          if (localSize > 0) {
             accuracyCheck( Xcurrent.get(), MX.get(), Xprev.get() );
-          else
+          }
+          else {
             accuracyCheck( Xcurrent.get(), MX.get(), NULL );
+          }
         }
         //
         // Apply the stiffness matrix.
@@ -618,8 +627,9 @@ namespace Anasazi {
           reStart = true;
           _numRestarts++;
           index.resize( _blockSize );
-          for (i=0; i<_blockSize; i++)
+          for (i=0; i<_blockSize; i++) {
             index[i] = _knownEV + i;
+          }
           Teuchos::RefCountPtr<MV> Xinit = MVT::CloneView( *X, index );
           MVT::MvRandom( *Xinit );
           nFound = _blockSize;
@@ -630,9 +640,18 @@ namespace Anasazi {
         //---------------------------------------------------
         // Sort the ritz values using the sort manager
         //---------------------------------------------------
-        _order.resize(localSize+_blockSize);
+        // The sort manager is templated on ScalarType
+        // Make a ScalarType copy of _theta for sorting
+        std::vector<ScalarType> _theta_st(_theta.size());
         _timerSortEval->start();
-        ret = _sm->sort( this, localSize+_blockSize, &(_theta[0]), &_order );
+        std::copy<MTiter,STiter>(_theta.begin(),_theta.begin()+localSize+_blockSize,_theta_st.begin());
+        _order.resize(localSize+_blockSize);
+        ret = _sm->sort( this, localSize+_blockSize, &(_theta_st[0]), &_order );
+        //reorder _theta according to sorting results from _theta_st
+        std::vector<MagnitudeType> _theta_copy(_theta);
+        for (i=0; i<localSize+_blockSize; i++) {
+          _theta[i] = _theta_copy[_order[i]];
+        }
         _timerSortEval->stop();
         if (ret != Ok) {
           if (_om->isVerbosityAndPrint(Error)) {
@@ -710,7 +729,7 @@ namespace Anasazi {
         for (j=0; j<_blockSize; j++) {
           // Scale eigenvalues if _theta is non-zero.
           if ( _theta[j] != zero ) {
-            _normR[j] /= _theta[j];
+            _normR[j] /= SCT::magnitude(_theta[j]);
           }
           // Check for convergence
           if (_normR[j] < _residual_tolerance) {
@@ -922,7 +941,6 @@ namespace Anasazi {
         // to move the converged eigenvectors to the front of the spectral
         // transformation.
         //
-        ScalarType tmp_swap;
         std::vector<ScalarType> tmp_swap_vec(nb*_blockSize);
         while (firstIndex < nFound) {
           for (j=firstIndex; j<_blockSize; j++) {
@@ -934,13 +952,9 @@ namespace Anasazi {
               blas.COPY(nb*_blockSize, S[ firstIndex ], 1, S[ j ], 1 );
               blas.COPY(nb*_blockSize, &tmp_swap_vec[0], 1, S[ firstIndex ], 1 );
               // Swap _theta
-              tmp_swap = _theta[j];
-              _theta[j] = _theta[firstIndex];
-              _theta[firstIndex] = tmp_swap;
+              std::swap<MagnitudeType>(_theta[j],_theta[firstIndex]);
               // Swap _normR
-              tmp_swap = _normR[j];
-              _normR[j] = _normR[firstIndex];
-              _normR[firstIndex] = tmp_swap;
+              std::swap<MagnitudeType>(_normR[j],_normR[firstIndex]);
               break;
             }
           } 
@@ -970,8 +984,8 @@ namespace Anasazi {
       int newCol = nFound + (bStart+1)*_blockSize;
       newCol = (newCol > oldCol) ? oldCol : newCol;
       std::vector<int> index( oldCol );
-      lapack.GEQRF(oldCol, newCol, S.values(), S.stride(), &_theta[0], &work[0], lwork, &info);
-      lapack.ORGQR(oldCol, newCol, newCol, S.values(), S.stride(), &_theta[0], &work[0], lwork, &info);      
+      lapack.GEQRF(oldCol, newCol, S.values(), S.stride(), &tau[0], &work[0], lwork, &info);
+      lapack.UNGQR(oldCol, newCol, newCol, S.values(), S.stride(), &tau[0], &work[0], lwork, &info);      
       for (i=0; i<oldCol; i++) {
         index[i] = _knownEV + i;
       }
