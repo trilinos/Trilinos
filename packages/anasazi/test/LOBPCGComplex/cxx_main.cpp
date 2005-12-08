@@ -42,6 +42,7 @@
 #include "AnasaziLOBPCG.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziMVOPTester.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -77,22 +78,18 @@ int main(int argc, char *argv[])
 
   bool testFailed;
   bool verbose = 0;
+  std::string filename("mhd1280b.cua");
   std::string which("SR");
-  if (argc>1) {
-    if (argv[1][0]=='-' && argv[1][1]=='v') {
-      verbose = true;
-    }
-    else {
-      which = argv[1];
-    }
-  }
-  if (argc>2) {
-    if (argv[2][0]=='-' && argv[2][1]=='v') {
-      verbose = true;
-    }
-    else {
-      which = argv[2];
-    }
+
+  CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SR or LR).");
+  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
   }
 
 #ifdef HAVE_COMPLEX
@@ -104,9 +101,7 @@ int main(int argc, char *argv[])
   // no complex. quit with failure.
   if (verbose && MyPID == 0) {
     cout << "Not compiled with complex support." << endl;
-    if (MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;
-    }
+    cout << "End Result: TEST FAILED" << endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
@@ -131,7 +126,7 @@ int main(int argc, char *argv[])
     MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails );
   }
 
-  if (MyOM->doPrint()) {
+  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
   }
 
@@ -140,7 +135,7 @@ int main(int argc, char *argv[])
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
-  if (MyOM->doPrint()) {
+  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
     cout << "End Result: TEST FAILED" << endl;	
   }
   return -1;
@@ -158,19 +153,17 @@ int main(int argc, char *argv[])
   int *colptr,*rowind;
   ST *cvals;
   nnz = -1;
-  info = readHB_newmat_double("mhd1280b.cua",&dim,&dim2,&nnz,
+  info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
                               &colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
-    if (MyOM->doPrint()) {
-      cout << "Error reading 'mhd1280b.cua'" << endl;
-      if (MyOM->doPrint()) {
-        cout << "End Result: TEST FAILED" << endl;
-      }
-#ifdef HAVE_MPI
-      MPI_Finalize();
-#endif
-      return -1;
+    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
+      cout << "Error reading '" << filename << "'" << endl;
+      cout << "End Result: TEST FAILED" << endl;
     }
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
   }
   // Convert interleaved doubles to complex values
   cvals = new ST[nnz];
@@ -210,13 +203,13 @@ int main(int argc, char *argv[])
   // Inform the eigenproblem that you are done passing it information
   info = MyProblem->SetProblem();
   if (info) {
-    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
+      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+      cout << "End Result: TEST FAILED" << endl;	
+    }
 #ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif
-    if (MyOM->doPrint()) {
-      cout << "End Result: TEST FAILED" << endl;	
-    }
     return -1;
   }
 
@@ -258,7 +251,7 @@ int main(int argc, char *argv[])
 #endif
 
   if (testFailed) {
-    if (MyOM->doPrint()) {
+    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
       cout << "End Result: TEST FAILED" << endl;	
     }
     return -1;
@@ -266,7 +259,7 @@ int main(int argc, char *argv[])
   //
   // Default return value
   //
-  if (MyOM->doPrint()) {
+  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
     cout << "End Result: TEST PASSED" << endl;
   }
   return 0;
