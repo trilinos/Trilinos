@@ -513,31 +513,33 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
 int readHB_newmat_double(const char* filename, int* M, int* N, int* nonzeros, 
                          int** colptr, int** rowind, double** val)
 {
-	int Nrhs;
-        char *Type;
+  int Nrhs;
+  char *Type;
 
-	readHB_info(filename, M, N, nonzeros, &Type, &Nrhs);
+  if (readHB_info(filename, M, N, nonzeros, &Type, &Nrhs) == 0) {
+    return 0;
+  }
 
-        *colptr = (int *)malloc((*N+1)*sizeof(int));
-        if ( *colptr == NULL ) IOHBTerminate("Insufficient memory for colptr.\n");
-        *rowind = (int *)malloc(*nonzeros*sizeof(int));
-        if ( *rowind == NULL ) IOHBTerminate("Insufficient memory for rowind.\n");
-        if ( Type[0] == 'C' ) {
+  *colptr = (int *)malloc((*N+1)*sizeof(int));
+  if ( *colptr == NULL ) IOHBTerminate("Insufficient memory for colptr.\n");
+  *rowind = (int *)malloc(*nonzeros*sizeof(int));
+  if ( *rowind == NULL ) IOHBTerminate("Insufficient memory for rowind.\n");
+  if ( Type[0] == 'C' ) {
 /*
    fprintf(stderr, "Warning: Reading complex data from HB file %s.\n",filename);
    fprintf(stderr, "         Real and imaginary parts will be interlaced in val[].\n");
 */
            /* Malloc enough space for real AND imaginary parts of val[] */
-           *val = (double *)malloc(*nonzeros*sizeof(double)*2);
-           if ( *val == NULL ) IOHBTerminate("Insufficient memory for val.\n");
-        } else {
-           if ( Type[0] != 'P' ) {   
-             /* Malloc enough space for real array val[] */
-             *val = (double *)malloc(*nonzeros*sizeof(double));
-             if ( *val == NULL ) IOHBTerminate("Insufficient memory for val.\n");
-           }
-        }  /* No val[] space needed if pattern only */
-	return readHB_mat_double(filename, *colptr, *rowind, *val);
+  *val = (double *)malloc(*nonzeros*sizeof(double)*2);
+  if ( *val == NULL ) IOHBTerminate("Insufficient memory for val.\n");
+  } else {
+    if ( Type[0] != 'P' ) {   
+      /* Malloc enough space for real array val[] */
+      *val = (double *)malloc(*nonzeros*sizeof(double));
+      if ( *val == NULL ) IOHBTerminate("Insufficient memory for val.\n");
+    }
+  }  /* No val[] space needed if pattern only */
+  return readHB_mat_double(filename, *colptr, *rowind, *val);
 
 }
 
