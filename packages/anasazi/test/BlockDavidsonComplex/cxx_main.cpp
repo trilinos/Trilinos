@@ -124,9 +124,7 @@ int main(int argc, char *argv[])
     = rcp( new Anasazi::OutputManager<ST>( MyPID ) );
   // Set verbosity level
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails 
-                        + Anasazi::OrthoDetails + Anasazi::IterationDetails +
-                        Anasazi::Debug );
+    MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails );
   }
 
   if (MyOM->doPrint()) {
