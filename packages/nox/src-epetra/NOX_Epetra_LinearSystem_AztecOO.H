@@ -203,13 +203,13 @@ below (See the Aztec 2.1 manual for more information):
   <ul>
   <li> "ilu" - ilu preconditioning.  This choice allows the following  additional parameters to be specified:
   <ul>
-  <li> "Overlap" - defaults to 0.0
-  <li> "Graph Fill" - defaults to 0.0
+  <li> "Overlap" - defaults to 0
+  <li> "Graph Fill" - defaults to 0
   </ul> 
 
   <li> "ilut" - ilut preconditioning. This choice allows the following  additional parameters to be specified:
   <ul>
-  <li> "Overlap" - defaults to 0.0
+  <li> "Overlap" - defaults to 0
   <li> "Fill Factor" - defaults to 1.0
   <li> "Drop Tolerance" - defaults to 1.0e-12
   </ul> 
