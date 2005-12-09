@@ -149,7 +149,38 @@ int Zoltan_Color(
 
   Zoltan_Assign_Param_Vals(zz->Params, Color_params, zz->Debug_Level, zz->Proc,
                            zz->Debug_Proc);
-
+  
+  /* Check validity of parameters */
+  if (distance != 1 && distance != 2) {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Coloring with requested distance is not implemented. Using Distance-1 coloring.");
+      distance = 1;
+  }
+  if (ss == 0) {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid superstep size. Using default value 100.");
+      ss = 100;
+  }
+  if (comm_pattern != 'S' && comm_pattern != 'A') {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid communication pattern. Using synchronous communication (S).");
+      comm_pattern = 'S';
+  }
+  if (comm_pattern == 'A' && distance == 2) {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Asynchronous communication pattern is not implemented for distance-2 coloring. Using synchronous communication (S).");
+      comm_pattern = 'S';
+  }
+  if (color_order != 'I' && color_order != 'B' && color_order != 'U') {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid coloring order. Using internal first coloring order (I).");
+      color_order = 'I';
+  }  
+  if (color_order == 'U' && distance == 2) {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Interleaved coloring order is not implemented for distance-2 coloring. Using internal first coloring order (I).");
+      color_order = 'I';
+  }
+  if (color_method !='F') {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid coloring method. Using first fit method (F).");
+      color_method = 'F';
+  }
+  
+   
   /* Return if this processor is not in the Zoltan structure's
      communicator. */
   if (ZOLTAN_PROC_NOT_IN_COMMUNICATOR(zz))
@@ -189,10 +220,12 @@ int Zoltan_Color(
   }
 
   /* CREATE THE HASH TABLE */
-  /* Allocate hash table */
+  /* Determine hash size and allocate hash table */
   /* UVCUVC: TODO we can allocate smaller hash; check this later */
   MPI_Allreduce(&nvtx, &gvtx, 1, MPI_INT, MPI_SUM, zz->Communicator);        
-  if (GenPrime(gvtx > xadj[nvtx] ? 2*xadj[nvtx] : 2*gvtx , &hsize)==ZOLTAN_MEMERR)
+  i = gvtx > xadj[nvtx] ? 2*xadj[nvtx] : 2*gvtx; /* i is the minimum hash size */
+  i = i > nvtx ? i : 2*nvtx;   
+  if (GenPrime(i , &hsize)==ZOLTAN_MEMERR)
       MEMORY_ERROR;
   if (Zoltan_G2LHash_Create(&hash, hsize)==ZOLTAN_MEMERR)
       MEMORY_ERROR;
@@ -214,14 +247,10 @@ int Zoltan_Color(
       MEMORY_ERROR;
 
   /* SELECT COLORING ALGORITHM AND PERFORM COLORING*/
-  if (distance == 1)
-      D1coloring(zz, color_order, color_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color);
+  if (distance == 1)      
+      D1coloring(zz, color_order, color_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color); 
   else if (distance == 2)
       D2coloring(zz, color_order, color_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color);
-  else {
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Coloring with requested distance is not implemented. Using Distance-1 coloring.");
-      D1coloring(zz, color_order, color_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color);
-  }
     
   /* FILL THE RETURN ARRAY */
   for (i=0; i<nvtx; i++) 
@@ -246,7 +275,7 @@ int Zoltan_Color(
 }
 
 /*****************************************************************************/
-/* Distance-1 coloring */
+/* Distance-1 coloring. No two adjacent vertices get the same color. */
 
 static int D1coloring(
     ZZ *zz,
@@ -287,6 +316,7 @@ static int D1coloring(
     int *isbound=NULL;           /* Indicates whether a local vertex is a boundary
                                     vertex */
     int *visit = NULL;           /* Visit (coloring) order of local vertices */
+    int *visitIntern = NULL;           
     int *mark = NULL;            /* Array to mark forbidden colors for a vertex */
     int gmaxdeg = 0;             /* Maximum vertex degree in the graph */
     int lmaxdeg = 0;             /* Maximum vertex degree for the local vertices */
@@ -323,11 +353,11 @@ static int D1coloring(
         ZOLTAN_COLOR_ERROR(ierr, "Error in ReorderGraph");
     if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
-#if 1
+#if 0  
     printf("After reordering: nvtx:%d Proc:%d\n", nvtx, zz->Proc);
     for (i=0; i < nvtx; i++) {
         int j;
-        printf("%d :: ", i);
+        printf("%d ::", i);
         for (j=xadj[i]; j < xadj[i+1]; j++)
             printf("%d ", adj[j]);
         printf("\n");
@@ -344,7 +374,7 @@ static int D1coloring(
     ++gmaxdeg; 
     
     /* Memory allocation */
-    mark = (int *) ZOLTAN_CALLOC(gmaxdeg, sizeof(int)); 
+    mark = (int *) ZOLTAN_CALLOC(gmaxdeg > 0 ? gmaxdeg : 1, sizeof(int)); 
     conflicts = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
     replies = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
     stats = (MPI_Status *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Status));
@@ -376,6 +406,7 @@ static int D1coloring(
         MPI_Barrier(zz->Communicator);
         times[2] = Zoltan_Time(zz->Timer);
     }
+    visitIntern = visit + nbound; /* Start of internal vertex visit order. Used with I and B options below */
     if (color_order == 'U') { 
         nConflict = nvtx;
         for (i=0; i<nvtx; i++)
@@ -384,17 +415,18 @@ static int D1coloring(
             InternalColoring(zz, distance, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxdeg, color_method);
     }
     else if (color_order == 'I') {
-        InternalColoring(zz, distance, &nColor, nvtx - nbound, visit + nbound, xadj, adj, color, mark, gmaxdeg, color_method);
+        InternalColoring(zz, distance, &nColor, nvtx - nbound, visitIntern, xadj, adj, color, mark, gmaxdeg, color_method);
         nConflict = nbound;
     }
-    else if (color_order=='B')
+    else if (color_order == 'B')
         nConflict = nbound;
 
     if (get_times) times[3] = Zoltan_Time(zz->Timer);
-        
+
     /* Color boundary vertices */
     nRound = 0; 
     nTotConflict = 0;
+
     if (zz->Num_Proc >= 2) {
         do {
             int *tp = visit;
@@ -417,12 +449,13 @@ static int D1coloring(
             ++nRound;
         } while (confCont);
     }
-    
+
     if (get_times) times[4] = Zoltan_Time(zz->Timer);
+
     /* Color internal vertices after boundaries if boundary first ordering */
     if (color_order == 'B') 
-        InternalColoring(zz, distance, &nColor, nvtx-nbound, visit + nbound, xadj, adj, color, mark, gmaxdeg, color_method);
-
+        InternalColoring(zz, distance, &nColor, nvtx-nbound, visitIntern, xadj, adj, color, mark, gmaxdeg, color_method);
+    
 #if 0
     printf("[%d] vtx(gno)->color: ", zz->Proc);
     for (i=0; i<nvtx; i++)
@@ -522,7 +555,8 @@ static int D2coloring(
                                     of local vertices */
     int *isbound=NULL;           /* Indicates whether a local vertex is a boundary
                                     vertex */
-    int *visit = NULL, *visitIntern=NULL;  /* Visit (coloring) order of local vertices */
+    int *visit = NULL;           /* Visit (coloring) order of local vertices */
+    int *visitIntern = NULL;       
     int *mark = NULL;            /* Array to mark forbidden colors for a vertex */
     int gmaxcolor = 0;           /* Maximum #colors */
     int lmaxdeg = 0;             /* Maximum vertex degree for the local vertices */
@@ -614,7 +648,7 @@ static int D2coloring(
     /* Construct the partial adjancency list of non-local vertices */
     /* Only local vertices appear in the partial adj list */
     memcpy(xadjnltemp, xadjnl, (nnl + 1) * sizeof(int));
-    if (!(adjnl = (int *) ZOLTAN_CALLOC(xadjnl[nnl], sizeof(int))))
+    if (!(adjnl = (int *) ZOLTAN_CALLOC(xadjnl[nnl] > 0 ? xadjnl[nnl] : 1, sizeof(int))))
         MEMORY_ERROR;    
     for (i=0; i<nvtx; i++) {
         /* consider the cut edges only */
@@ -756,33 +790,28 @@ static int D2coloring(
         MPI_Barrier(zz->Communicator);
         times[2] = Zoltan_Time(zz->Timer);
     }
-    if (color_order == 'U') {
-        ZOLTAN_PRINT_WARN(zz->Proc, yo, "Coloring with interleaved coloring order is not implemented for distance-2 coloring. Using internal first order.");
-        color_order = 'I';
-    }
-    visitIntern = visit + nbound;
+    visitIntern = visit + nbound; /* Start of internal vertex visit order. Used with I and B options below */
     if (color_order == 'I') {
         InternalColoring(zz, distance, &nColor, nvtx - nbound, visitIntern, xadj, adj, color, mark, gmaxcolor, color_method);
         nConflict = nbound;
     }
     else if (color_order=='B') 
         nConflict = nbound;
-    else if (color_order == 'U') { 
+/*  
+    else if (color_order == 'U') { ** not implemented **
         nConflict = nvtx;
         for (i=0; i<nvtx; i++)
             visit[i] = i;
         if (zz->Num_Proc==1)
             InternalColoring(zz, distance, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxcolor, color_method);
     }
-
-
+*/
+    
     if (get_times) times[3] = Zoltan_Time(zz->Timer);
-
 
     /* Color boundary vertices */
     nTotConflict = 0;
-    nRound = 0;
-    
+    nRound = 0;    
     if (zz->Num_Proc >= 2) {
         do {
             int *tp=visit;
@@ -973,8 +1002,6 @@ static int PickColor(
     switch(color_method){    
     case 'F':
     default: 
-        if (color_method !='F')
-            ZOLTAN_PRINT_WARN(zz->Proc, "PickColor", "Unknown coloring method. Using First Fit (F).");	      
         for (c = 1; (c <= *nColor) && (mark[c] == u); ++c) ;
         if (c > *nColor) { /* no available color with # less than nColor */
             c = ++(*nColor);
@@ -1009,6 +1036,8 @@ static int InternalColoring(
  
     memset(mark, 0xff, gmaxdeg * sizeof(int));
 
+    //printf("[%d] intCol. nintern=%d, ncolor: %d\n", zz->Proc, nvtx, *nColor); 
+    
     if (distance == 1) {
         for (i=0; i<nvtx; ++i) {
             u = visit[i];        
@@ -1026,7 +1055,7 @@ static int InternalColoring(
                 v = adj[j];              
                 if ((c = color[v]) != 0) 
                     mark[c] = u;
-                if (v<nvtx) /* this is internal as well */ 
+                if (v < nvtx) /* neighbor vertex v is internal as well - not sure if this is true for boundary first d2 coloring DBDBcheck*/ 
                     for (k = xadj[v]; k < xadj[v+1]; ++k) {	  
                         w = adj[k];
                         if ((c = color[w]) != 0) 
@@ -1809,7 +1838,7 @@ static int GenPrime(
     int num, c, i;
     int *prime;
     
-    prime = (int *) ZOLTAN_MALLOC((stop/2) * sizeof(int));
+    prime = (int *) ZOLTAN_MALLOC(((stop/2) > 2 ? (stop/2) : 2) * sizeof(int));
     if (!prime)
         return ZOLTAN_MEMERR;
     

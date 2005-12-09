@@ -15,6 +15,9 @@
 
 int Zoltan_G2LHash_Create(G2LHash *hash, int size)
 {
+    if (size == 0) /* to avoid memory allocation errors */
+        size = 1;
+    
     hash->table = NULL;
     hash->nodes = NULL;
     hash->size = size;
