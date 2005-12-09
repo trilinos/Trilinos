@@ -515,6 +515,7 @@ else
   if (! $no_color) then
     if (! $old_interface) then
       set ch_methods = ( $ch_methods color color-after-phg )
+      set ch_methods = ( $ch_methods color-orderU color-orderB )
     endif
   endif
 endif
@@ -896,6 +897,7 @@ usage:
   echo "   -no_parmetis"
   echo "   -no_reftree"
   echo "   -no_order"
+  echo "   -no_color" 
   echo "   -no_nemesis"
   echo "   -no_chaco"
   echo "   -no_hg"
