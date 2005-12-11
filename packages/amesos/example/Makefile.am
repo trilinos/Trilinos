@@ -44,7 +44,13 @@ else
 EXAMPLES_GALERI = 
 endif
 
-noinst_PROGRAMS = a_trivial_mpi_test example_AmesosFactory_Tridiag $(EXAMPLES_GALERI)
+if HAVE_MPI
+EXAMPLES_MPI = a_trivial_mpi_test
+else
+EXAMPLES_MPI = 
+endif
+
+noinst_PROGRAMS = $(EXAMPLES_MPI) example_AmesosFactory_Tridiag $(EXAMPLES_GALERI)
 
 EXTRA_DIST = In_662_bus.rsa
 
