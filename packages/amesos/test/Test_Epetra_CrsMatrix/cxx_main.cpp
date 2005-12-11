@@ -5,6 +5,10 @@
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
+// I have no idea why we have to include Epetra_Map.h here (and not 
+// elsewhere, such as Test_EpteraRowMatrix/cxx_main.cpp) 
+// but this was added as a workaround to bug #1869   
+#include "Epetra_Map.h"
 #endif
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
