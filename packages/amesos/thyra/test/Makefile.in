@@ -104,8 +104,9 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
 CONFIG_CLEAN_FILES =
-am__EXEEXT_1 = test_single_amesos_thyra_solver_driver$(EXEEXT)
-am__EXEEXT_2 = test_amesos_thyra_driver$(EXEEXT)
+@HAVE_AMESOS_EPETRAEXT_TRUE@am__EXEEXT_1 = test_single_amesos_thyra_solver_driver$(EXEEXT)
+@HAVE_AMESOS_EPETRAEXT_TRUE@am__EXEEXT_2 =  \
+@HAVE_AMESOS_EPETRAEXT_TRUE@	test_amesos_thyra_driver$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__objects_1 = test_single_amesos_thyra_solver.$(OBJEXT)
 am_test_amesos_thyra_driver_OBJECTS =  \
@@ -332,8 +333,8 @@ target_vendor = @target_vendor@
 #
 # Actual programs
 #
-TEST_SINGLE_AMESOS_THYRA_SOLVER_DRIVER = test_single_amesos_thyra_solver_driver
-TEST_AMESOS_THYRA_DRIVER = test_amesos_thyra_driver
+@HAVE_AMESOS_EPETRAEXT_TRUE@TEST_SINGLE_AMESOS_THYRA_SOLVER_DRIVER = test_single_amesos_thyra_solver_driver
+@HAVE_AMESOS_EPETRAEXT_TRUE@TEST_AMESOS_THYRA_DRIVER = test_amesos_thyra_driver
 test_single_amesos_thyra_solver_driver_SOURCES = $(srcdir)/test_single_amesos_thyra_solver_driver.cpp $(common_sources)
 test_single_amesos_thyra_solver_driver_DEPENDENCIES = $(common_dependencies)
 test_single_amesos_thyra_solver_driver_LDADD = $(common_ldadd)

@@ -32,8 +32,10 @@ EXEEXT = .exe
 # Actual programs
 #
 
+if HAVE_AMESOS_EPETRAEXT
 TEST_SINGLE_AMESOS_THYRA_SOLVER_DRIVER = test_single_amesos_thyra_solver_driver
 TEST_AMESOS_THYRA_DRIVER = test_amesos_thyra_driver
+endif
 
 noinst_PROGRAMS = $(TEST_SINGLE_AMESOS_THYRA_SOLVER_DRIVER) $(TEST_AMESOS_THYRA_DRIVER)
 
