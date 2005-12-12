@@ -160,6 +160,9 @@ public:
   void AddSupportedByNode(MOERTEL::Node* suppnode) 
   { supportedby_[suppnode->Id()] = suppnode; return; }
   
+  // get nodes supporting this node
+  map<int,MOERTEL::Node*>& GetSupportedByNode() { return supportedby_; }
+  
   // set a boundary node supported by this node
   void AddSupportedNode(MOERTEL::Node* suppnode) 
   { supporting_[suppnode->Id()] = suppnode; return; }

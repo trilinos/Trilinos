@@ -1419,14 +1419,11 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D()
     if (!(ncurr->second->IsOnBoundary())) continue;
     if (ncurr->second->Nseg() != 1) continue;
     MOERTEL::Segment** seg   = ncurr->second->Segments();
-    //cout << "\nCorner element is " << *seg[0];
-    //cout << "Looking at corner node  " << *(ncurr->second);
     MOERTEL::Node**    nodes = seg[0]->Nodes();
     // find the supporting node for this potential corner node on same element
     for (int i=0; i<seg[0]->Nnode(); ++i)
     {
       if (nodes[i]->Id() == ncurr->second->Id()) continue;
-      //cout << "Neighbor to corner node " << *nodes[i];
       if (!nodes[i]->IsOnBoundary())
       {
         //cout << "Supporting neighbor node on same element is \n" << *nodes[i];
@@ -1446,7 +1443,6 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D()
           for (int k=0; k<neighborsegs[j]->Nnode(); ++k)
             if (!neighborneighbornodes[k]->IsOnBoundary())
             {
-              //cout << "Supporting neighbor node on neighbor element is \n" << *neighborneighbornodes[k];
               ncurr->second->AddSupportedByNode(neighborneighbornodes[k]);
               neighborneighbornodes[k]->AddSupportedNode(ncurr->second.get());
             }
@@ -1488,7 +1484,20 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D()
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
+  }
+
+
+#if 0
+  MOERTEL::Function_ConstantTri* tmp = new Function_ConstantTri(OutLevel());
+  for (ncurr=rnode_[sside].begin(); ncurr != rnode_[sside].end(); ++ncurr)
+  {
+    if (!(ncurr->second->IsOnBoundary())) continue;
+    MOERTEL::Segment** seg   = ncurr->second->Segments();
+    for (int i=0; i<ncurr->second->Nseg(); ++i)
+      seg[i]->SetFunction(1,tmp);    
   }  
+  if (tmp) delete tmp;  
+#endif
   
   
   return true;

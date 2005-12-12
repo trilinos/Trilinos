@@ -168,6 +168,7 @@ bool MOERTEL::Segment::SetFunction(int id, MOERTEL::Function* func)
   map<int,RefCountPtr<MOERTEL::Function> >::iterator curr = functions_.find(id);
   if (curr != functions_.end())
   {
+    curr->second = null;
     curr->second = rcp(func->Clone());
     return true;
   }

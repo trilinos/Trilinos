@@ -627,7 +627,7 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
   if (Ngp() != 3)
   {
     cout << "***ERR*** MOERTEL::Integrator::Integrate:\n"
-         << "***ERR*** # Gaussian points != 3 in triangle integration\n"
+         << "***ERR*** # Gaussian points != 3 in 2D-triangle integration\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
@@ -749,26 +749,36 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
 
 /*----------------------------------------------------------------------*
  |  assemble contributions Ddense into slave nodes (public)  mwgee 11/05|
+ |  the scalar integrated functions are assembled here                  |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& sseg,
                                    Epetra_SerialDenseMatrix& Ddense)
 {
   // get nodes
-  const int nnode    = sseg.Nnode();
+  const int nnode       = sseg.Nnode();
   MOERTEL::Node** snode = sseg.Nodes();
 
   // set a row of Ddense in each snode
   for (int row=0; row<nnode; ++row)
-    for (int col=0; col<nnode; ++col)
+  {
+    // assemble only to my own nodes
+    if (inter.NodePID(snode[row]->Id()) != inter.lComm()->MyPID())
+      continue;
+    
+    // standard assembly for internal nodes
+    if (!snode[row]->IsOnBoundary())
+      for (int col=0; col<nnode; ++col)
+        snode[row]->AddDValue(Ddense(row,col),snode[col]->Id());
+    else
     {
-      if (inter.NodePID(snode[row]->Id()) != inter.lComm()->MyPID())
-      { 
-        // cout << "Proc " << inter.lComm()->MyPID() << ": Node " << snode[row]->Id() << " not my node\n";
-        continue;
-      }
-      snode[row]->AddDValue(Ddense(row,col),snode[col]->Id());
+      map<int,MOERTEL::Node*>& suppnodes = snode[row]->GetSupportedByNode();
+      double w = 1./(double)(snode[row]->NSupportSet());
+      map<int,MOERTEL::Node*>::iterator curr;
+      for (curr=suppnodes.begin(); curr!=suppnodes.end(); ++curr)
+        for (int col=0; col<nnode; ++col)
+          curr->second->AddDValue(w*Ddense(row,col),snode[col]->Id());
     }
-
+  }
   return true;
 }
 
@@ -788,16 +798,26 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
 
   // set a row of Ddense in each snode
   for (int row=0; row<nsnode; ++row)
-    for (int col=0; col<nmnode; ++col)
+  {
+    // assemble only to my own nodes
+    if (inter.NodePID(snode[row]->Id()) != inter.lComm()->MyPID()) 
+      continue;
+      
+    // standard assembly for internal nodes
+    if (!snode[row]->IsOnBoundary())
+      for (int col=0; col<nmnode; ++col)
+        snode[row]->AddMValue(-Mdense(row,col),mnode[col]->Id());
+    else
     {
-      if (inter.NodePID(snode[row]->Id()) != inter.lComm()->MyPID()) 
-      {
-        // cout << "Proc " << inter.lComm()->MyPID() << ": Node " << snode[row]->Id() << " not my node\n";
-        continue;
-      }
-      snode[row]->AddMValue(-Mdense(row,col),mnode[col]->Id());
+      map<int,MOERTEL::Node*>& suppnodes = snode[row]->GetSupportedByNode();
+      double w = -1./(double)(snode[row]->NSupportSet());
+      map<int,MOERTEL::Node*>::iterator curr;
+      for (curr=suppnodes.begin(); curr!=suppnodes.end(); ++curr)
+        for (int col=0; col<nmnode; ++col)
+          curr->second->AddMValue(w*Mdense(row,col),mnode[col]->Id());
     }
 
+  }
   return true;
 }
 
