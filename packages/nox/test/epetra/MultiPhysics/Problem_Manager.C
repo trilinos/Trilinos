@@ -61,8 +61,8 @@
 #include "Epetra_Time.h"
 
 // Hard-wired switch to turn on/off use of FD Coloring
-//#define USE_FD
-#undef USE_FD
+#define USE_FD
+//#undef USE_FD
 
 // Simple macro for turning on debug code
 #undef DEBUG_BLOCKGRAPH
@@ -109,10 +109,10 @@ Problem_Manager::~Problem_Manager()
 
 #ifdef HAVE_NOX_EPETRAEXT
 #ifdef USE_FD
-    delete MatrixOperators           [i];
-    delete TmpMapColorings           [i];
-    delete ColorMaps                 [i];
-    delete ColorMapIndexSets         [i];
+    //delete MatrixOperators           [i];
+    //delete TmpMapColorings           [i];
+    //delete ColorMaps                 [i];
+    //delete ColorMapIndexSets         [i];
     //delete *ColumnsSetsIter++;
 #endif
 #endif
@@ -319,7 +319,7 @@ void Problem_Manager::registerComplete()
     //  dynamic_cast<NOX::Epetra::Interface::Required&>
     //  (*(*(Interfaces.find(probId))).second);
 
-    NOX::Epetra::Vector nox_soln( *problem.getSolution() );
+    NOX::Epetra::Vector nox_soln( problem.getSolution(), NOX::Epetra::Vector::CreateView);
 
     // Use this for analytic Matrix Fills
 #ifndef USE_FD
@@ -361,33 +361,42 @@ void Problem_Manager::registerComplete()
     ColorMapIndexSets[probId] = new EpetraExt::CrsGraph_MapColoringIndex( *(ColorMaps[probId]) );
     ColumnsSets[probId] = & (*(ColorMapIndexSets[probId]))( problem.getGraph() );
 
+    Teuchos::RefCountPtr<Epetra_CrsGraph> problemGraph( &problem.getGraph(), false );
+
     if (MyPID == 0)
       printf("\n\tTime to color Jacobian # %d --> %e sec. \n\n",
                   icount++,fillTime.ElapsedTime());
-    MatrixOperators[probId] = new NOX::Epetra::FiniteDifferenceColoring(
-		*(*(Interfaces.find(probId))).second, 
-	        *problem.getSolution(), 
-	        problem.getGraph(), 
-	        *(*(ColorMaps.find(probId))).second, 
-	        *(*(ColumnsSets.find(probId))).second,
-    		useParallel,
-		distance1);
+    //MatrixOperators[probId] = new NOX::Epetra::FiniteDifferenceColoring(
+    //    	*(*(Interfaces.find(probId))).second, 
+    //            *problem.getSolution(), 
+    //            problem.getGraph(), 
+    //            *(*(ColorMaps.find(probId))).second, 
+    //            *(*(ColumnsSets.find(probId))).second,
+    //		useParallel,
+    //    	distance1);
+    MatrixOperators[probId] = Teuchos::rcp(new NOX::Epetra::FiniteDifference(
+                nlParams->sublist("Printing"),
+                Interfaces[probId],
+	        nox_soln,
+	        problemGraph ));
     //NOX::Epetra::Interface::Jacobian& jacInt = 
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = *(MatrixOperators[probId]);
+    NOX::Epetra::Interface::Jacobian * p_jacInt = dynamic_cast<NOX::Epetra::FiniteDifference*>(MatrixOperators[probId].get());
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInt = Teuchos::rcp(p_jacInt, false);
       //dynamic_cast<NOX::Epetra::Interface::Jacobian&>(*(*(MatrixOperators[probId]);
-    LinearSystems[probId] = new NOX::Epetra::LinearSystemAztecOO(
+    LinearSystems[probId] = Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(
       nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
-      reqInt,
+      Interfaces[probId],
       jacInt,
       MatrixOperators[probId],
-      *problem.getSolution() );
+      *problem.getSolution() ) );
 
-    Groups[probId] = Teuchos::rcp(new NOX::Epetra::Group(
+    Groups[probId] = Teuchos::rcp( new NOX::Epetra::Group(
       nlParams->sublist("Printing"),
-      reqInt,
+      Interfaces[probId],
       nox_soln,
-      *(*(LinearSystems.find(probId))).second ));
+      LinearSystems[probId] ));
+
 #else
     if(MyPID==0)
       cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
@@ -809,8 +818,6 @@ void Problem_Manager::copyProblemJacobiansToComposite()
       cout << "Block=" << probId << "  Inf Norm=" << problemMatrix.NormInf() 
 	   << "  One Norm=" << problemMatrix.NormOne() << endl;
     }
-
-
 
     // Temporary storage arrays for extracting/inserting matrix row data
     int* columnIndices = new int[problemMaxNodes];
