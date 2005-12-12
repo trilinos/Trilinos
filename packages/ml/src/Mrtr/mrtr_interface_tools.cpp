@@ -1399,13 +1399,13 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D()
   int sside = OtherSide(mside);
   
   // 1
-  // A node attached to only one element AND one the boundary is
+  // A node attached to only one element AND on the boundary is
   // considered a corner node and is member of ONE support set
   // It is in the modified support psi tilde of the closest internal node
   
   // 2
   // A node on the boundary that is not a corner node is member of 
-  // so many support sets as the # of internal nodes is topologically 
+  // so many support sets as the # of internal nodes it is topologically 
   // connected to
   
   // See B.Wohlmuth:"Discretization Methods and Iterative Solvers
@@ -1431,6 +1431,7 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D()
       {
         //cout << "Supporting neighbor node on same element is \n" << *nodes[i];
         ncurr->second->AddSupportedByNode(nodes[i]);
+        nodes[i]->AddSupportedNode(ncurr->second.get());
       }
     }
     if (!ncurr->second->NSupportSet()) // we've not found a supporting node yet
@@ -1447,6 +1448,7 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D()
             {
               //cout << "Supporting neighbor node on neighbor element is \n" << *neighborneighbornodes[k];
               ncurr->second->AddSupportedByNode(neighborneighbornodes[k]);
+              neighborneighbornodes[k]->AddSupportedNode(ncurr->second.get());
             }
         }
       }
@@ -1458,14 +1460,34 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D()
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
-    else
-      ncurr->second->SetCorner();
   }
   
   // do 2
   for (ncurr=rnode_[sside].begin(); ncurr != rnode_[sside].end(); ++ncurr)
   {
+    // do only nodes on boundary that don't have a supporting node yet
     if (!(ncurr->second->IsOnBoundary()) || ncurr->second->NSupportSet()) continue;
+    //cout << "Looking at boundary node  " << *(ncurr->second);
+    // loop all segments adjacent to this node
+    MOERTEL::Segment** segs = ncurr->second->Segments();
+    for (int i=0; i<ncurr->second->Nseg(); ++i)
+    {
+      MOERTEL::Node** neighbornodes = segs[i]->Nodes();
+      for (int j=0; j<segs[i]->Nnode(); ++j)
+      {
+        if (neighbornodes[j]->IsOnBoundary()) continue;
+        //cout << "Supporting neighbor node on same element is \n" << *neighbornodes[j];
+        ncurr->second->AddSupportedByNode(neighbornodes[j]);
+        neighbornodes[j]->AddSupportedNode(ncurr->second.get());
+      }
+    }
+    if (!ncurr->second->NSupportSet())
+    {
+      cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D:\n"
+           << "***ERR*** Cannot find a supporting internal node for boundary node " << ncurr->second->Id() << "\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
   }  
   
   

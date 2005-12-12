@@ -160,6 +160,10 @@ public:
   void AddSupportedByNode(MOERTEL::Node* suppnode) 
   { supportedby_[suppnode->Id()] = suppnode; return; }
   
+  // set a boundary node supported by this node
+  void AddSupportedNode(MOERTEL::Node* suppnode) 
+  { supporting_[suppnode->Id()] = suppnode; return; }
+  
 protected:  
   // don't want = operator
   Node operator = (const Node& old);

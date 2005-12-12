@@ -48,6 +48,100 @@
 #include "Epetra_Time.h"
 
 /*----------------------------------------------------------------------*
+ |  make mortar integration of this interface (3D problem)              |
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Interface::Mortar_Integrate()
+{ 
+  bool ok = false;
+  
+  //-------------------------------------------------------------------
+  // time this process
+  Epetra_Time time(*lComm());
+  time.ResetStartTime();
+
+  //-------------------------------------------------------------------
+  if (IsOneDimensional())
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+           << "***ERR*** This is not a 3D problem, we're in the wrong method here!!!\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+
+  //-------------------------------------------------------------------
+  // interface needs to be complete
+  if (!IsComplete())
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+           << "***ERR*** Complete() not called on interface " << Id_ << "\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  
+  //-------------------------------------------------------------------
+  // send all procs not member of this interface's intra-comm out of here
+  if (!lComm()) return true;
+
+  //-------------------------------------------------------------------
+  // interface needs to have a mortar side assigned
+  if (MortarSide()==-1)
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+           << "***ERR*** mortar side was not assigned on interface " << Id_ << "\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  
+  //-------------------------------------------------------------------
+  // interface segments need to have at least one function on the mortar side
+  // and two functions on the slave side
+  int mside = MortarSide();
+  int sside = OtherSide(mside);
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
+  for (scurr=seg_[mside].begin(); scurr!=seg_[mside].end(); ++scurr)
+    if (scurr->second->Nfunctions() < 1)
+    {
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+           << "***ERR*** interface " << Id_ << ", mortar side\n"
+           << "***ERR*** segment " << scurr->second->Id() << " needs at least 1 function set\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+  for (scurr=seg_[sside].begin(); scurr!=seg_[sside].end(); ++scurr)
+    if (scurr->second->Nfunctions() < 2)
+    {
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+           << "***ERR*** interface " << Id_ << ", slave side\n"
+           << "***ERR*** segment " << scurr->second->Id() << " needs at least 2 function set\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+    
+  //-------------------------------------------------------------------
+  // do the integration of the master and slave side
+  ok = Integrate_3D();
+  if (!ok) return false;
+
+  //-------------------------------------------------------------------
+  // set the flag that this interface has been successfully integrated
+  isIntegrated_ = true;
+  
+  //-------------------------------------------------------------------
+  // time this process
+  if (OutLevel()>5)
+  {
+    cout << "MOERTEL::Interface " << Id() << ": Integration on proc " << gComm().MyPID()
+         << " finished in " << time.ElapsedTime() << " sec\n"; fflush(stdout);
+  }
+
+  //-------------------------------------------------------------------
+  return true;
+}
+
+/*----------------------------------------------------------------------*
  |  make mortar integration of master/slave side in 3D (2D interface)   |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Interface::Integrate_3D()
@@ -135,17 +229,16 @@ bool MOERTEL::Interface::Integrate_3D_Section(MOERTEL::Segment& sseg,
 
   // first determine whether there is an overlap between sseg and mseg
   // for this purpose, the 'overlapper' class is used
-  // It also build a triangulation of the overlap polygon if there is any
+  // It also builds a triangulation of the overlap polygon if there is any
   MOERTEL::Overlap overlap(sseg,mseg,*this,OutLevel());
 
   // determine the overlap triangulation if any
   bool ok = overlap.ComputeOverlap();
-  if (!ok) // there is no overlap
-    return true;
+  if (!ok) return true; // There's no overlap
 
-  // # segments the overlap polygon was discretized with
+  // # new segments the overlap polygon was discretized with
   int nseg = overlap.Nseg();
-  // view of segments
+  // view of these segments
   vector<RefCountPtr<MOERTEL::Segment> > segs;
   overlap.SegmentView(segs);
   

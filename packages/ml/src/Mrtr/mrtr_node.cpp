@@ -243,6 +243,8 @@ MOERTEL::Node::~Node()
   pnode_.clear();
   Drow_ = null;
   Mrow_ = null;
+  supportedby_.clear();
+  supporting_.clear();
 }
 
 /*----------------------------------------------------------------------*
