@@ -144,7 +144,10 @@ using namespace std;
 
 %typemap(argout) Epetra_MultiVector*& OutVector {
   PyObject *o1, *oVector;
-  oVector = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_MultiVector, 1);
+  static swig_type_info *ty = SWIG_TypeQuery("Epetra_NumPyMultiVector *");
+  Epetra_NumPyMultiVector npmv = Epetra_NumPyMultiVector(**$1);
+  //oVector = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_MultiVector, 1);
+  oVector = SWIG_NewPointerObj(&npmv, ty, 1);
   if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
   if (!result) 
     o1 = Py_BuildValue("(O)", oVector);

@@ -45,7 +45,7 @@ def main():
   EpetraExt.MultiVectorToMatrixMarketFile("x.mm", x)
   (ierr, y) = EpetraExt.MatrixMarketFileToMultiVector("x.mm", map)
   y.Update(1.0, x, -1.0)
-  (ierr,norm) = y.Norm2()
+  norm = y.Norm2()
 
   if abs(norm) < tolerance:
     if comm.MyPID() == 0: print "ok"
