@@ -1,0 +1,248 @@
+Anasazi    | ID   OP formula                          Bop    ID   (description)
+---------------------------------------------------------------------------------------------------------
+ARPACKEx1  | OPE  OP = A                              B = I  OPA  (cntrl diff disc of conv-diff)
+ARPACKEx2  | OPF  OP = inv[A-sigma*I]                 B = I  OPA  (cntrl diff disc of conv-diff)
+ARPACKEx3  | OPN  OP = inv[M]*A                       B = M  OPM  (finit elem disc of conv-diff)
+ARPACKEx4  | OPO  OP = inv[A-sigma*M]*M               B = M  OPM  (finit elem disc of conv-diff)
+ARPACKEx5  | OPC  OP = R(inv[A-sigma*M]*M)            B = M  OPB  (trid with comp shift)
+ARPACKEx6  | OPD  OP = I(inv[A-sigma*M]*M)            B = M  OPB  (trid with comp shift)
+ARPACKEx7  | OPG  OP = A                              B = I  OPA  (cntrl diff disc of 1d lap)
+ARPACKEx8  | OPI  OP = inv[A-sigma*I]                 B = I  OPA  (cntrl diff disc of 1d lap)
+ARPACKEx9  | OPR  OP = inv[M]*A                       B = M  OPQ  (finit elem disc of 1d lap)
+ARPACKEx10 | OPS  OP = inv[A-sigma*M]*M               B = M  OPQ  (finit elem disc of 1d lap)
+ARPACKEx11 | OPU  OP = (inv[A-sigma*M])*A             B = A  OPP  (buckling mode finit elem disc of 1d lap)
+ARPACKEx12 | OPT  OP = (inv[A-sigma*M])*(A+sigma*M)   B = M  OPQ  (finit elem disc of 1d lap)
+
+
+Operators implemented:
+Op  |    operator        (            implementation methodology              )
+ID  |   description      (MFM==matrix-free mult   DS==GTTRF/GTTRS direct solve)
+--------------------------------------------------------------------------------
+    |
+----- Identity -----------------------------------------------------------------
+OPA | OP = I                             (MFM/identity)
+    |
+----- Tridiagonal with complex shift -------------------------------------------
+OPV | OP = A                             (MFM)
+OPB | OP = M                             (MFM)
+OPC | OP = Real(inv[A-sigma*M]*M)        (MFM and DS)
+OPD | OP = Imag(inv[A-sigma*M]*M)        (MFM and DS)
+    |
+----- Central difference discretization of convection-diffusion operator -------
+OPE | OP = A                             (MFM)
+OPF | OP = inv[A-sigma*I]                (DS)
+    |
+----- Central difference discretization of 1-D Laplacian -----------------------
+OPG | OP = A                             (MFM)
+OPH | OP = M                             (MFM)
+OPI | OP = inv[A-sigma*I]                (DS)
+    |
+----- Finite element discretization of convection-diffusion operator -----------
+OPL | OP = A                             (MFM)
+OPM | OP = M                             (MFM)
+OPN | OP = inv[M]*A                      (MFM and DS)
+OPO | OP = inv[A-sigma*M]*M              (MFM and DS)
+    |
+----- Finite element discretization of 1-D Laplacian ---------------------------
+OPP | OP = A                             (MFM)
+OPQ | OP = M                             (MFM)
+OPR | OP = inv[M]*A                      (MFM and DS)
+OPS | OP = inv[A-sigma*M]*M              (MFM and DS)
+OPT | OP = (inv[A-sigma*M])*(A+sigma*M)  (MFM and DS)
+OPU | OP = (inv[A-sigma*M])*A            (MFM and DS)
+
+
+**********************************************************************************
+*** NOTE: There are no OPJ and OPK. I deleted them and didn't want to rename.  ***
+**********************************************************************************
+
+
+
+Correlation between Anasazi examples and ARPACK examples, with ARPACK example description
+
+Anasazi Example 1
+*************** ./COMPLEX/cndrv1.f **************                           *************** ./COMPLEX/zndrv1.f **************                       *************** ./NONSYM/dndrv1.f **************                        *************** ./NONSYM/sndrv1.f **************
+c\Example-1                                                                 c\Example-1                                                             c\Example-1                                                             c\Example-1
+c     ... Suppose we want to solve A*x = lambda*x in regular mode,          c     ... Suppose we want to solve A*x = lambda*x in regular mode,      c     ... Suppose we want to solve A*x = lambda*x in regular mode,      c     ... Suppose we want to solve A*x = lambda*x in regular mode,
+c         where A is obtained from the standard central difference          c         where A is obtained from the standard central difference      c         where A is obtained from the standard central difference      c         where A is obtained from the standard central difference
+c         discretization of the convection-diffusion operator               c         discretization of the convection-diffusion operator           c         discretization of the convection-diffusion operator           c         discretization of the convection-diffusion operator 
+c                 (Laplacian u) + rho*(du / dx)                             c                 (Laplacian u) + rho*(du / dx)                         c                 (Laplacian u) + rho*(du / dx)                         c                 (Laplacian u) + rho*(du / dx)
+c         on the unit squre [0,1]x[0,1] with zero Dirichlet boundary        c         on the unit squre [0,1]x[0,1] with zero Dirichlet boundary    c         on the unit square [0,1]x[0,1] with zero Dirichlet boundary   c         on the unit square [0,1]x[0,1] with zero Dirichlet boundary 
+c         condition.                                                        c         condition.                                                    c         condition.                                                    c         condition.
+c                                                                           c                                                                       c                                                                       c
+c     ... OP = A  and  B = I.                                               c     ... OP = A  and  B = I.                                           c     ... OP = A  and  B = I.                                           c     ... OP = A  and  B = I.
+c                                                                           c                                                                       c                                                                       c
+c     ... Assume "call av (nx,x,y)" computes y = A*x                        c     ... Assume "call av (nx,x,y)" computes y = A*x                    c     ... Assume "call av (nx,x,y)" computes y = A*x.c                  c     ... Assume "call av (nx,x,y)" computes y = A*x.c
+c                                                                           c                                                                       c                                                                       c
+c     ... Use mode 1 of CNAUPD.                                             c     ... Use mode 1 of ZNAUPD .                                        c     ... Use mode 1 of DNAUPD.                                         c     ... Use mode 1 of SNAUPD.
+
+
+
+Anasazi Example 2
+*************** ./COMPLEX/cndrv2.f **************                           *************** ./COMPLEX/zndrv2.f **************                           *************** ./NONSYM/dndrv2.f **************                            *************** ./NONSYM/sndrv2.f **************
+c\Example-2                                                                 c\Example-2                                                                 c\Example-2                                                                 c\Example-2
+c     ... Suppose we want to solve A*x = lambda*x in shift-invert mode,     c     ... Suppose we want to solve A*x = lambda*x in shift-invert mode,     c     ... Suppose we want to solve A*x = lambda*x in shift-invert mode,     c     ... Suppose we want to solve A*x = lambda*x in shift-invert mode,
+c         where A is derived from the central difference discretization     c         where A is derived from the central difference discretization     c         where A is derived from the centered difference discretization    c         where A is derived from the centered difference discretization
+c         of the 1-dimensional convection-diffusion operator                c         of the 1-dimensional convection-diffusion operator                c         of the 1-dimensional convection-diffusion operator                c         of the 1-dimensional convection-diffusion operator
+c                   (d^2u/dx^2) + rho*(du/dx)                               c                   (d^2u/dx^2) + rho*(du/dx)                               c                          (d^2u / dx^2) + rho*(du/dx)                      c                          (d^2u / dx^2) + rho*(du/dx) 
+c         on the interval [0,1] with zero Dirichlet boundary condition.     c         on the interval [0,1] with zero Dirichlet boundary condition.     c         on the interval [0,1] with zero Dirichlet boundary condition.     c         on the interval [0,1] with zero Dirichlet boundary condition.
+                                                                                                                                                        c                                                                           c
+c     ... The shift sigma is a complex number.                              c     ... The shift sigma is a complex number.                              c     ... The shift sigma is a real number.                                 c     ... The shift sigma is a real number.
+c                                                                           c                                                                           c                                                                           c
+c     ... OP = inv[A-sigma*I] and  B = I.                                   c     ... OP = inv[A-sigma*I] and  B = I.                                   c     ... OP = inv[A-sigma*I] and  B = I.                                   c     ... OP = inv[A-sigma*I] and  B = I.
+c                                                                           c                                                                           c                                                                           c
+c     ... Use mode 3 of CNAUPD.                                             c     ... Use mode 3 of ZNAUPD .                                            c     ... Use mode 3 of DNAUPD.                                             c     ... Use mode 3 of SNAUPD.
+
+
+
+Anasazi Example 3
+*************** ./COMPLEX/cndrv3.f **************                           *************** ./COMPLEX/zndrv3.f **************                           *************** ./NONSYM/dndrv3.f **************                            *************** ./NONSYM/sndrv3.f **************
+c\Example-3                                                                 c\Example-3                                                                 c\Example-3                                                                 c\Example-3
+c     ... Suppose we want to solve A*x = lambda*B*x in regular mode,        c     ... Suppose we want to solve A*x = lambda*B*x in regular mode,        c     ... Suppose we want to solve A*x = lambda*B*x in inverse mode,        c     ... Suppose we want to solve A*x = lambda*B*x in inverse mode,
+c         where A and B are derived from the finite element discretization  c         where A and B are derived from the finite element discretization  c         where A and B are derived from the finite element discretization  c         where A and B are derived from the finite element discretization
+c         of the 1-dimensional convection-diffusion operator                c         of the 1-dimensional convection-diffusion operator                c         of the 1-dimensional convection-diffusion operator                c         of the 1-dimensional convection-diffusion operator
+c                   (d^2u/dx^2) + rho*(du/dx)                               c                   (d^2u/dx^2) + rho*(du/dx)                               c                           (d^2u / dx^2) + rho*(du/dx)                     c                           (d^2u / dx^2) + rho*(du/dx)
+c         on the interval [0,1] with zero boundary condition using          c         on the interval [0,1] with zero boundary condition using          c         on the interval [0,1] with zero Dirichlet boundary condition      c         on the interval [0,1] with zero Dirichlet boundary condition
+c         piecewise linear elements.                                        c         piecewise linear elements.                                        c         using linear elements.                                            c         using linear elements.
+c                                                                           c                                                                           c                                                                           c
+c     ... OP = inv[M]*A  and  B = M.                                        c     ... OP = inv[M]*A  and  B = M.                                        c     ... So OP = inv[M]*A  and  B = M.                                     c     ... So OP = inv[M]*A  and  B = M.
+c                                                                           c                                                                           c                                                                           c
+c     ... Use mode 2 of CNAUPD.                                             c     ... Use mode 2 of ZNAUPD .                                            c     ... Use mode 2 of DNAUPD.                                             c     ... Use mode 2 of SNAUPD. 
+
+
+Anasazi Example 4
+*************** ./COMPLEX/cndrv4.f **************                           *************** ./COMPLEX/zndrv4.f **************                           *************** ./NONSYM/dndrv4.f **************                            *************** ./NONSYM/sndrv4.f **************
+c\Example-4                                                                 c\Example-4                                                                 c\Example-4                                                                 c\Example-4
+c     ... Suppose we want to solve A*x = lambda*B*x in shift-invert mode,   c     ... Suppose we want to solve A*x = lambda*B*x in shift-invert mode,   c     ... Suppose we want to solve A*x = lambda*B*x in inverse mode,        c     ... Suppose we want to solve A*x = lambda*B*x in inverse mode,
+c         where A and B are derived from a finite element discretization    c         where A and B are derived from a finite element discretization    c         where A and B are derived from the finite element discretization  c         where A and B are derived from the finite element discretization
+c         of a 1-dimensional convection-diffusion operator                  c         of a 1-dimensional convection-diffusion operator                  c         of the 1-dimensional convection-diffusion operator                c         of the 1-dimensional convection-diffusion operator
+c                         (d^2u/dx^2) + rho*(du/dx)                         c                         (d^2u/dx^2) + rho*(du/dx)                         c                           (d^2u / dx^2) + rho*(du/dx)                     c                           (d^2u / dx^2) + rho*(du/dx)
+c         on the interval [0,1] with zero boundary condition using          c         on the interval [0,1] with zero boundary condition using          c         on the interval [0,1] with zero Dirichlet boundary condition      c         on the interval [0,1] with zero Dirichlet boundary condition
+c         piecewise linear elements.                                        c         piecewise linear elements.                                        c         using linear elements.                                            c         using linear elements.
+c                                                                           c                                                                           c                                                                           c
+c     ... where the shift sigma is a complex number.                        c     ... where the shift sigma is a complex number.                        c     ... The shift sigma is a real number.                                 c     ... The shift sigma is a real number.
+c                                                                           c                                                                           c                                                                           c
+c     ... OP = inv[A-SIGMA*M]*M  and  B = M.                                c     ... OP = inv[A-SIGMA*M]*M  and  B = M.                                c     ... OP = inv[A-SIGMA*M]*M  and  B = M.                                c     ... OP = inv[A-SIGMA*M]*M  and  B = M.
+c                                                                           c                                                                           c                                                                           c
+c     ... Use mode 3 of CNAUPD.                                             c     ... Use mode 3 of ZNAUPD .                                            c     ... Use mode 3 of DNAUPD.                                             c     ... Use mode 3 of SNAUPD.
+
+
+
+Anasazi Example 5
+*************** ./NONSYM/dndrv5.f **************                            *************** ./NONSYM/sndrv5.f **************                                (add complex as well)
+c\Example-5                                                                 c\Example-5
+c                                                                           c
+c     ... Suppose we want to solve A*x = lambda*B*x in shift-invert mode    c     ... Suppose we want to solve A*x = lambda*B*x in shift-invert mode
+c         The matrix A is the tridiagonal matrix with 2 on the diagonal,    c         The matrix A is the tridiagonal matrix with 2 on the diagonal, 
+c         -2 on the subdiagonal and 3 on the superdiagonal.  The matrix M   c         -2 on the subdiagonal and 3 on the superdiagonal.  The matrix M 
+c         is the tridiagonal matrix with 4 on the diagonal and 1 on the     c         is the tridiagonal matrix with 4 on the diagonal and 1 on the 
+c         off-diagonals.                                                    c         off-diagonals.
+c     ... The shift sigma is a complex number (sigmar, sigmai).             c     ... The shift sigma is a complex number (sigmar, sigmai).
+c     ... OP = Real_Part{inv[A-(SIGMAR,SIGMAI)*M]*M and  B = M.             c     ... OP = Real_Part{inv[A-(SIGMAR,SIGMAI)*M]*M and  B = M.
+c     ... Use mode 3 of DNAUPD.                                             c     ... Use mode 3 of SNAUPD.
+
+
+
+Anasazi Example 6
+*************** ./NONSYM/dndrv6.f **************                            *************** ./NONSYM/sndrv6.f **************
+c\Example-6                                                                 c\Example-6
+c                                                                           c
+c     ... Suppose we want to solve A*x = lambda*B*x in shift-invert mode    c     ... Suppose we want to solve A*x = lambda*B*x in shift-invert mode
+c         The matrix A is the tridiagonal matrix with 2 on the diagonal,    c         The matrix A is the tridiagonal matrix with 2 on the diagonal, 
+c         -2 on the subdiagonal and 3 on the superdiagonal.  The matrix M   c         -2 on the subdiagonal and 3 on the superdiagonal.  The matrix M 
+c         is the tridiagonal matrix with 4 on the diagonal and 1 on the     c         is the tridiagonal matrix with 4 on the diagonal and 1 on the 
+c         off-diagonals.                                                    c         off-diagonals.
+c     ... The shift sigma is a complex number (sigmar, sigmai).             c     ... The shift sigma is a complex number (sigmar, sigmai).
+c     ... OP = Imaginary_Part{inv[A-(SIGMAR,SIGMAI)*M]*M  and  B = M.       c     ... OP = Imaginary_Part{inv[A-(SIGMAR,SIGMAI)*M]*M  and  B = M.
+c     ... Use mode 4 of DNAUPD.                                             c     ... Use mode 4 of SNAUPD.
+
+
+
+Anasazi Example 7
+*************** ./SYM/dsdrv1.f **************                               *************** ./SYM/ssdrv1.f **************
+c\Example-1                                                                 c\Example-1
+c     ... Suppose we want to solve A*x = lambda*x in regular mode,          c     ... Suppose we want to solve A*x = lambda*x in regular mode,
+c         where A is derived from the central difference discretization     c         where A is derived from the central difference discretization
+c         of the 2-dimensional Laplacian on the unit square [0,1]x[0,1]     c         of the 2-dimensional Laplacian on the unit square [0,1]x[0,1]
+c         with zero Dirichlet boundary condition.                           c         with zero Dirichlet boundary condition.
+c                                                                           c
+c     ... OP = A  and  B = I.                                               c     ... OP = A  and  B = I.
+c                                                                           c
+c     ... Assume "call av (n,x,y)" computes y = A*x.                        c     ... Assume "call av (n,x,y)" computes y = A*x.
+c                                                                           c
+c     ... Use mode 1 of DSAUPD.                                             c     ... Use mode 1 of SSAUPD.
+
+
+
+Anasazi Example 8
+*************** ./SYM/dsdrv2.f **************                               *************** ./SYM/ssdrv2.f **************
+c\Example-2                                                                 c\Example-2
+c     ... Suppose we want to solve A*x = lambda*x in shift-invert mode,     c     ... Suppose we want to solve A*x = lambda*x in shift-invert mode,
+c         where A is derived from the central difference discretization     c         where A is derived from the central difference discretization
+c         of the 1-dimensional Laplacian on [0,1]  with zero Dirichlet      c         of the 1-dimensional Laplacian on [0,1]  with zero Dirichlet
+c         boundary condition.                                               c         boundary condition.
+c     ... OP = (inv[A - sigma*I]) and  B = I.                               c     ... OP = (inv[A - sigma*I]) and  B = I.
+c     ... Use mode 3 of DSAUPD.                                             c     ... Use mode 3 of SSAUPD.
+
+
+
+Anasazi Example 9
+*************** ./SYM/dsdrv3.f **************                               *************** ./SYM/ssdrv3.f **************
+c\Example-3                                                                 c\Example-3
+c     ... Suppose we want to solve A*x = lambda*M*x in inverse mode,        c     ... Suppose we want to solve A*x = lambda*M*x in inverse mode,
+c         where A and M are obtained by the finite element of the           c         where A and M are obtained by the finite element of the 
+c         1-dimensional discrete Laplacian                                  c         1-dimensional discrete Laplacian
+c                             d^2u / dx^2                                   c                             d^2u / dx^2
+c         on the interval [0,1] with zero Dirichlet boundary condition      c         on the interval [0,1] with zero Dirichlet boundary condition
+c         using piecewise linear elements.                                  c         using piecewise linear elements.
+c                                                                           c
+c     ... OP = inv[M]*A  and  B = M.                                        c     ... OP = inv[M]*A  and  B = M.
+c                                                                           c
+c     ... Use mode 2 of DSAUPD .                                            c     ... Use mode 2 of SSAUPD.    
+
+
+
+Anasazi Example 10
+*************** ./SYM/dsdrv4.f **************                                   *************** ./SYM/ssdrv4.f **************
+c\Example-4                                                                     c\Example-4
+c     ... Suppose we want to solve A*x = lambda*M*x in inverse mode,            c     ... Suppose we want to solve A*x = lambda*M*x in inverse mode,
+c         where A and M are obtained from the finite element discretrization    c         where A and M are obtained from the finite element discretrization
+c         of the 1-dimensional discrete Laplacian                               c         of the 1-dimensional discrete Laplacian
+c                             d^2u / dx^2                                       c                             d^2u / dx^2
+c         on the interval [0,1] with zero Dirichlet boundary condition          c         on the interval [0,1] with zero Dirichlet boundary condition
+c         using piecewise linear elements.                                      c         using piecewise linear elements.
+c                                                                               c
+c     ... OP = (inv[A - sigma*M])*M  and  B = M.                                c     ... OP = (inv[A - sigma*M])*M  and  B = M.
+c                                                                               c
+c     ... Use mode 3 of DSAUPD.                                                 c     ... Use mode 3 of SSAUPD.
+
+
+
+Anasazi Example 11
+*************** ./SYM/dsdrv5.f **************                               *************** ./SYM/ssdrv5.f **************
+c\Example-5                                                                 c\Example-5
+c     ... Suppose we want to solve K*x = lambda*KG*x in Buckling mode       c     ... Suppose we want to solve K*x = lambda*KG*x in Buckling mode
+c         where K and KG are obtained by the finite element of the          c         where K and KG are obtained by the finite element of the
+c         1-dimensional discrete Laplacian                                  c         1-dimensional discrete Laplacian
+c                             d^2u / dx^2                                   c                             d^2u / dx^2
+c         on the interval [0,1] with zero Dirichlet boundary condition      c         on the interval [0,1] with zero Dirichlet boundary condition
+c         using piecewise linear elements.                                  c         using piecewise linear elements.
+c     ... OP = (inv[K - sigma*KG])*K  and  B = K.                           c     ... OP = (inv[K - sigma*KG])*K  and  B = K.
+c     ... Use mode 4 of DSAUPD.                                             c     ... Use mode 4 of SSAUPD.
+
+
+
+Anasazi Example 12
+*************** ./SYM/dsdrv6.f **************                               *************** ./SYM/ssdrv6.f **************
+c\Example-6                                                                 c\Example-6
+c     ... Suppose we want to solve A*x = lambda*M*x in inverse mode,        c     ... Suppose we want to solve A*x = lambda*M*x in inverse mode,
+c         where A and M are obtained by the finite element of the           c         where A and M are obtained by the finite element of the
+c         1-dimensional discrete Laplacian                                  c         1-dimensional discrete Laplacian
+c                             d^2u / dx^2                                   c                             d^2u / dx^2
+c         on the interval [0,1] with zero Dirichlet boundary condition      c         on the interval [0,1] with zero Dirichlet boundary condition
+c         using piecewise linear elements.                                  c         using piecewise linear elements.
+c                                                                           c
+c     ... OP = (inv[A-sigma*M])*(A+sigma*M)  and  B = M.                    c     ... OP = (inv[A-sigma*M])*(A+sigma*M)  and  B = M.
+c                                                                           c
+c     ... Use mode 5 of DSAUPD.                                             c     ... Use mode 5 of SSAUPD.
+
