@@ -185,7 +185,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMa
 }
 
 // =============================================================================
-Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_NumPyMultiVector & source):
+Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_MultiVector & source):
   Epetra_MultiVector(source)
 {
   map = new Epetra_BlockMap(source.Map());

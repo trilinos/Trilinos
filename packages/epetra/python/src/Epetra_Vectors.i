@@ -1,3 +1,5 @@
+// -*- c++ -*-
+
 %{
 // Epetra includes
 #include "Epetra_MultiVector.h"
@@ -6,6 +8,10 @@
 // Local includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
+
+// These are place-holders on the C++ side for the python-defined MultiVector and Vector classes
+struct MultiVector { };
+struct Vector { };
 %}
 
 // Ignore directives
@@ -25,6 +31,12 @@
 // Rename directives
 %rename(NumPyMultiVector) Epetra_NumPyMultiVector;
 %rename(NumPyVector     ) Epetra_NumPyVector;
+%rename(_AuxMultiVector ) MultiVector;
+%rename(_AuxVector      ) Vector;
+
+// These are place-holders on the C++ side for the python-defined MultiVector and Vector classes
+struct MultiVector { };
+struct Vector { };
 
 // Import directives for Epetra
 %include "Epetra_MultiVector.h"
@@ -80,6 +92,9 @@ class Vector(UserArray,NumPyVector):
             if key in self.__dict__:
                 raise AttributeError, "Cannot change Epetra.Vector array attribute"
         UserArray.__setattr__(self, key, value)
+
+_Epetra._AuxMultiVector_swigregister(MultiVector)
+_Epetra._AuxVector_swigregister(Vector)
 
 %}
 

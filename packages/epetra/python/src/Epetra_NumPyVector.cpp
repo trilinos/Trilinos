@@ -26,6 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
+#include "float.h"
+
 #include "Epetra_NumPyVector.h"
 
 #define DEBUG 0
@@ -168,7 +170,8 @@ double Epetra_NumPyVector::Norm1() const {
   }
   return result[0];
  fail:
-  return NULL;
+  // Return type is double, so we cannot return NULL on failure
+  return DBL_MAX;
 }
 
 // =============================================================================
@@ -181,7 +184,8 @@ double Epetra_NumPyVector::Norm2() const {
   }
   return result[0];
  fail:
-  return NULL;
+  // Return type is double, so we cannot return NULL on failure
+  return DBL_MAX;
 }
 
 // =============================================================================
@@ -194,7 +198,8 @@ double Epetra_NumPyVector::NormInf() const {
   }
   return result[0];
  fail:
-  return NULL;
+  // Return type is double, so we cannot return NULL on failure
+  return DBL_MAX;
 }
 
 // =============================================================================
@@ -207,5 +212,6 @@ double Epetra_NumPyVector::Dot(const Epetra_Vector & A) const {
   }
   return result[0];
  fail:
-  return NULL;
+  // Return type is double, so we cannot return NULL on failure
+  return DBL_MAX;
 }
