@@ -196,12 +196,17 @@ bool MOERTEL::solve33(const double A[][3], double* x, const double* b)
   Epetra_SerialDenseSolver solver;
   solver.SetMatrix(AA);
   solver.SetVectors(XX,BB);
+  solver.FactorWithEquilibration(true);
+  solver.Factor();
   int err = solver.Solve();
   if (err)
   {
-    cout << "***ERR*** MOERTEL::solve33:\n"
-         << "***ERR*** Epetra_SerialDenseSolver::Solve returned an error\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    cout << AA;
+    cout << BB;
+    cout << XX;
+    cout << "***WRN*** MOERTEL::solve33:\n"
+         << "***WRN*** Epetra_SerialDenseSolver::Solve returned " << err << "\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
   for (int i=0; i<3; ++i)

@@ -666,7 +666,7 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
   
   if (abs(area/sarea)<eps)
   {
-    if (OutLevel()>9)
+    if (OutLevel()>10)
       cout << "MOERTEL: ***WRN*** Skipping overlap segment with tiny area " << area << endl;
     return false;  
   }
