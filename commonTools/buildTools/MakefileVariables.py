@@ -220,9 +220,7 @@ def evaluate(value, dict):
     command and substitutue the results.  Return the evaluated string."""
 
     # Initialize
-    originalValue = value
-    pos           = len(value)
-    debug = "shell perl" in value
+    change = False
 
     # Evaluate $(VARNAME)
     match = makeVarRE.search(value)
@@ -234,7 +232,8 @@ def evaluate(value, dict):
             subValue = dict[subVarName]
         else:
             subValue = ""
-        value = value[:start] + subValue + value[end:]
+        value  = value[:start] + subValue + value[end:]
+        change = True
     else:
 
         # Evaluate $(shell ...)
@@ -255,13 +254,14 @@ def evaluate(value, dict):
                 print >>sys.stderr, "WARNING: %s gives\n%s" % (shellCmd,
                                                                subValue)
                 subValue = ""
-            value = value[:start] + subValue + value[end:]
+            value  = value[:start] + subValue + value[end:]
+            change = True
 
     # Are we done?
-    if value == originalValue:
-        return value
-    else:
+    if change:
         return evaluate(value,dict)
+    else:
+        return value
 
 #############################################################################
 
