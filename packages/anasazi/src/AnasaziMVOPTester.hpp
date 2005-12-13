@@ -1557,7 +1557,7 @@ namespace Anasazi {
       if (normsC1[i] != normsC2[i] && !NonDeterministicWarning) {
         if ( om->isVerbosityAndPrint(Warning) ) {
           out << endl;
-          out << "*** ERROR *** OperatorTraits::Apply() [4]" << endl
+          out << "*** WARNING *** OperatorTraits::Apply() [4]" << endl
               << "Apply() returned two different results." << endl << endl;
         }
         NonDeterministicWarning = true;
