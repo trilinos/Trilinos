@@ -573,11 +573,10 @@ first_candidate_index = 0;
   }
                  
   /* allocate "complicated" fixed sized array storage */
-  nIndex = 1 + MAX(MAX(total_nCandidates, max_nVtx), hgc->nProc_y);
-  nDest  = 1 + MAX(MAX(hgc->nProc_x,hgc->nProc_y),
-                   MAX(total_nCandidates,max_nVtx));
-  nSize  = 1 + MAX(MAX(hgc->nProc_x,hgc->nProc_y),
-                   MAX(total_nCandidates,max_nVtx));
+  msgsize = MAX(total_nCandidates, max_nVtx);
+  nIndex = 1 + MAX(msgsize, MAX(hgc->nProc_x,hgc->nProc_y));
+  nDest  = nIndex;
+  nSize  = nIndex;
 
   /* These 3 buffers are REALLOC'd iff necessary; this should be very rare  */
   nSend    = max_nPins;   /* nSend/nEdgebuf are used for candidate exchange */
@@ -594,37 +593,37 @@ first_candidate_index = 0;
        goto fini;
     }
 
-  if (!cFLAG && total_nCandidates && (hgc->myProc_y == 0))   /* Master row */
-    if (!(master_data=(Triplet*)ZOLTAN_MALLOC(total_nCandidates*sizeof(Triplet))) ||
-     !(global_best=(Triplet*)ZOLTAN_MALLOC(total_nCandidates*sizeof(Triplet)))){
+  if (!cFLAG && total_nCandidates && (hgc->myProc_y == 0)) {  /* Master row */
+    i = total_nCandidates * sizeof(Triplet);  
+    if (!(master_data = (Triplet*) ZOLTAN_MALLOC(i))
+     || !(global_best = (Triplet*) ZOLTAN_MALLOC(i)))  {
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
        err = ZOLTAN_MEMERR;
        goto fini;
-    }  
-
-  if (!cFLAG && hgc->myProc_y == 0)
+    }
     for (i = 0; i < total_nCandidates; i++) {
       master_data[i].candidate = -1;
       master_data[i].partner   = -1;
       master_data[i].ip        = -1.0;
     }
+  } 
 
   if (!cFLAG)
-    if (!(edgebuf = (int*) ZOLTAN_MALLOC(nEdgebuf   * sizeof(int)))) {
+    if (!(edgebuf = (int*) ZOLTAN_MALLOC(nEdgebuf * sizeof(int)))) {
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
        err = ZOLTAN_MEMERR;
        goto fini;
     }  
   
   if ((total_nCandidates 
-   && !(permute = (int*) ZOLTAN_MALLOC(total_nCandidates * sizeof(int))))
-   || (nCandidates && !(select = (int*) ZOLTAN_MALLOC(nCandidates*sizeof(int))))
-   || (nSend && !(send = (int*) ZOLTAN_MALLOC(nSend * sizeof(int))))
-   || !(dest = (int*) ZOLTAN_MALLOC(nDest * sizeof(int)))
-   || !(size = (int*) ZOLTAN_MALLOC(nSize * sizeof(int)))
-   || (nRec && !(rec = (int*) ZOLTAN_MALLOC(nRec * sizeof(int))))
-   || !(index = (int*)  ZOLTAN_MALLOC(nIndex * sizeof(int)))
-   || !(rows = (int*) ZOLTAN_MALLOC((hgc->nProc_y + 1) * sizeof(int)))) {
+   && !(permute = (int*) ZOLTAN_MALLOC (total_nCandidates * sizeof(int))))
+   || (nCandidates && !(select = (int*) ZOLTAN_MALLOC (nCandidates*sizeof(int))))
+   || (nSend && !(send = (int*) ZOLTAN_MALLOC (nSend * sizeof(int))))
+   || !(dest = (int*) ZOLTAN_MALLOC (nDest * sizeof(int)))
+   || !(size = (int*) ZOLTAN_MALLOC (nSize * sizeof(int)))
+   || (nRec && !(rec = (int*) ZOLTAN_MALLOC (nRec * sizeof(int))))
+   || !(index = (int*)  ZOLTAN_MALLOC (nIndex * sizeof(int)))
+   || !(rows = (int*) ZOLTAN_MALLOC ((hgc->nProc_y + 1) * sizeof(int)))) {
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
      err = ZOLTAN_MEMERR;
      goto fini;
@@ -679,17 +678,17 @@ total_nCandidates = nTotal;
       }
                         
       /* assure send buffer is large enough by first computing required size */
-      sendsize = (HEADER_COUNT-1) * sendcnt;      /* takes care of header */
+      sendsize = HEADER_COUNT * sendcnt;      /* takes care of header */
       for (i = 0; i < sendcnt; i++)  {
         lno = select[i];
         sendsize += (hg->vindex[lno+1] - hg->vindex[lno]);
       }
-      if (sendsize > nSend)
-        MACRO_REALLOC (sendsize, nSend, send);     /* make send buffer bigger */
+      if (sendsize > nSend) {
+        i = MAX (1.2 * nSend, sendsize);
+        MACRO_REALLOC (sendsize + i, nSend, send);     /* resize send buffer */
+      }
     
-      /* fill send buff: list of 
-       * <candidate_gno, candidate_gno's edge count, list of edge lno's> 
-       */
+      /* put <candidate_gno, candidate_index, count, <edge>> to send buffer */
       s = send;
       for (i = 0; i < sendcnt; i++)   {
         lno = select[i];
@@ -710,8 +709,10 @@ total_nCandidates = nTotal;
       recsize = 0;
       for (i = 0; i < hgc->nProc_x; i++)
         recsize += size[i];          /* compute total size of edgebuf in ints */
-      if (recsize > nEdgebuf)
+      if (recsize > nEdgebuf) {
+        i = MAX (1.2 * nEdgebuf, recsize);
         MACRO_REALLOC (recsize, nEdgebuf, edgebuf);        /* enlarge edgebuf */
+      }
     
       /* setup displacement array necessary for MPI_Allgatherv */
       dest[0] = 0;
@@ -780,23 +781,23 @@ candidate_index = k;
         /* now compute the row's nVtx inner products for kth candidate */
         m = 0;
         if (!cFLAG) {
-          if      ((hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
-            INNER_PRODUCT1(1.0)
-          else if ((hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
-            INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]])
-          else if ((hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
-            INNER_PRODUCT1(hg->ewgt[*r])
-          else if ((hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
-            INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[*r])
-        }else /* cFLAG */ {
-          if      ((hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
-            INNER_PRODUCT2(1.0)
-          else if ((hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
-            INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]])
-          else if ((hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
-            INNER_PRODUCT2(hg->ewgt[edge])
-          else if ((hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
-            INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[edge])   
+            if      ((hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
+              INNER_PRODUCT1(1.0)
+            else if ((hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
+              INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]])
+            else if ((hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
+              INNER_PRODUCT1(hg->ewgt[*r])
+            else if ((hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
+              INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[*r])
+        } else /* cFLAG */ {
+            if      ((hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
+              INNER_PRODUCT2(1.0)
+            else if ((hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
+              INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]])
+            else if ((hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
+              INNER_PRODUCT2(hg->ewgt[edge])
+            else if ((hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
+              INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[edge])
         }
           
         /* if local vtx, remove self inner product (useless maximum) */
@@ -823,7 +824,8 @@ candidate_index = k;
         
         /* iff necessary, resize send buffer to fit at least first message */
         if (sendcnt == 0 && (msgsize > nSend))  {
-          MACRO_REALLOC (2*msgsize, nSend, send);  /* make send buffer bigger */
+          i = MAX (1.2 * nSend, msgsize);
+          MACRO_REALLOC (i, nSend, send);  /* make send buffer bigger */
           s = send;    
         }
 
@@ -893,12 +895,12 @@ candidate_gno = rec [rows[i]];
             candidate_index = rec [++rows[i]];   /* skip candidate index */
             count = rec [++rows[i]];
             for (j = 0; j < count; j++)  {
-              lno = rec [++rows[i]];         
+              lno = rec [++rows[i]];                    
               if (sums[lno] == 0.0)       /* is this first time for this lno? */
                 aux[m++] = lno;           /* then save the lno */          
               sums[lno] += (float) rec [++rows[i]];    /* sum the psums */
             }
-            rows[i] += 1;                 /* skip past current psum,row */
+            rows[i] += 1;                 /* skip past current psum */
           }
         }
 
@@ -908,15 +910,13 @@ candidate_gno = rec [rows[i]];
           if (sums[aux[i]] > TSUM_THRESHOLD)
             count++;   
 
-        /* create <candidate_gno, candidate_index (if CANDIDATE_INDICES),
-         * count of <lno,tsum> pairs, <lno, tsum>> in send array.         */
+        /* Put <candidate_gno, candidate_index, count, <lno, tsum>> into send */
         if (count > 0)  {
-          if ( (s - send) + ((HEADER_COUNT-1) + 2 * count) > nSend ) 
-          {
+          if (s - send + HEADER_COUNT + 2 * count > nSend ) {
             sendsize = s - send;
-            MACRO_REALLOC (nSend + (HEADER_COUNT-1)+2*count, nSend, send); 
-                                   /* enlarge buffer */
-            s = send + sendsize;   /* since realloc buffer could move */ 
+            i = MAX (1.2 * nSend, HEADER_COUNT + 2 * count);
+            MACRO_REALLOC (nSend + i, nSend, send);       /* enlarge buffer */
+            s = send + sendsize;         /* since realloc buffer could move */
           }      
           *s++ = candidate_gno;
           *s++ = candidate_index;
@@ -946,8 +946,10 @@ candidate_gno = rec [rows[i]];
         for (i = 1; i < hgc->nProc_y; i++)
           dest[i] = dest[i-1] + size[i-1];
         
-        if (recsize > nRec)
-          MACRO_REALLOC (recsize, nRec, rec);      /* make rec buffer bigger */
+        if (recsize > nRec) {
+          i = MAX (1.2 * nRec, recsize);
+          MACRO_REALLOC (i, nRec, rec);      /* make rec buffer bigger */
+        }
       }
 
       MPI_Gatherv(send, sendsize, MPI_INT, rec, size, dest, MPI_INT, 0,
