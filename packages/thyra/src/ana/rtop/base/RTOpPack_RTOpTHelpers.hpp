@@ -1,8 +1,9 @@
 // @HEADER
 // ***********************************************************************
 // 
-//      Thyra: Interfaces and Support Code for the Interoperability of Abstract Numerical Algorithms 
-//                 Copyright (2004) Sandia Corporation
+// Thyra: Interfaces and Support Code for the Interoperability of Abstract
+// Numerical Algorithms 
+//            Copyright (2004) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -608,7 +609,8 @@ protected:
     (SUB_VECS)[0].subDim() != (SUB_VECS)[1].subDim() || \
     (SUB_VECS)[0].globalOffset() != (SUB_VECS)[1].globalOffset() \
     ,IncompatibleVecs \
-    ,"Error, num_targ_vecs="<<(NUM_TARG_VECS)<<" not allowed, only num_targ_vecs==0, targ_sub_vecs==NULL" \
+    ,"Error, sub_vec[0] (subDim="<<(SUB_VECS)[0].subDim()<<",globalOffset="<<(SUB_VECS)[0].globalOffset()<<")" \
+    " is not compatible with sub_vec[1] (subDim="<<(SUB_VECS)[1].subDim()<<",globalOffset="<<(SUB_VECS)[1].globalOffset()<<")" \
     ); \
   const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
   const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
@@ -652,7 +654,8 @@ protected:
     (SUB_VECS)[0].subDim() != (TARG_SUB_VECS)[0].subDim() || \
     (SUB_VECS)[0].globalOffset() != (TARG_SUB_VECS)[0].globalOffset() \
     ,IncompatibleVecs \
-    ,"Error, num_targ_vecs="<<(NUM_TARG_VECS)<<" not allowed, only num_targ_vecs==0, targ_sub_vecs==NULL" \
+    ,"Error, sub_vec[0] (subDim="<<(SUB_VECS)[0].subDim()<<",globalOffset="<<(SUB_VECS)[0].globalOffset()<<")" \
+    " is not compatible with targ_sub_vec[0] (subDim="<<(TARG_SUB_VECS)[0].subDim()<<",globalOffset="<<(TARG_SUB_VECS)[0].globalOffset()<<")" \
     ); \
   const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
   const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
@@ -681,7 +684,10 @@ protected:
     (SUB_VECS)[0].globalOffset() != (SUB_VECS)[1].globalOffset() || \
     (SUB_VECS)[0].globalOffset() != (TARG_SUB_VECS)[0].globalOffset() \
     ,IncompatibleVecs \
-    ,"Error, num_targ_vecs="<<(NUM_TARG_VECS)<<" not allowed, only num_targ_vecs==0, targ_sub_vecs==NULL" \
+    ,"Error, sub_vec[0] (subDim="<<(SUB_VECS)[0].subDim()<<",globalOffset="<<(SUB_VECS)[0].globalOffset()<<")," \
+    " sub_vec[1] (subDim="<<(SUB_VECS)[1].subDim()<<",globalOffset="<<(SUB_VECS)[1].globalOffset()<<")," \
+    " and targ_sub_vec[0] (subDim="<<(TARG_SUB_VECS)[0].subDim()<<",globalOffset="<<(TARG_SUB_VECS)[0].globalOffset()<<")" \
+    " are not compatible." \
     ); \
   const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
   const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
