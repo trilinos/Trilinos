@@ -75,6 +75,7 @@ struct ARPACKEx1
 {
   typedef   OPE<ScalarType>   OP;
   typedef   OPA<ScalarType>   B;
+  static const bool isHermitian false;
 }
 
 template <class ScalarType>
@@ -82,6 +83,7 @@ struct ARPACKEx2
 {
   typedef   OPF<ScalarType>   OP;
   typedef   OPA<ScalarType>   B;
+  static const bool isHermitian false;
 }
 
 template <class ScalarType>
@@ -89,6 +91,7 @@ struct ARPACKEx3
 {
   typedef   OPN<ScalarType>   OP;
   typedef   OPM<ScalarType>   B;
+  static const bool isHermitian false;
 }
 
 template <class ScalarType>
@@ -96,6 +99,7 @@ struct ARPACKEx4
 {
   typedef   OPO<ScalarType>   OP;
   typedef   OPM<ScalarType>   B;
+  static const bool isHermitian false;
 }
 
 template <class ScalarType>
@@ -103,6 +107,7 @@ struct ARPACKEx5
 {
   typedef   OPC<ScalarType>   OP;
   typedef   OPB<ScalarType>   B;
+  static const bool isHermitian false;
 }
 
 template <class ScalarType>
@@ -110,6 +115,7 @@ struct ARPACKEx6
 {
   typedef   OPD<ScalarType>   OP;
   typedef   OPB<ScalarType>   B;
+  static const bool isHermitian false;
 }
 
 template <class ScalarType>
@@ -117,6 +123,7 @@ struct ARPACKEx7
 {
   typedef   OPG<ScalarType>   OP;
   typedef   OPA<ScalarType>   B;
+  static const bool isHermitian true;
 }
 
 template <class ScalarType>
@@ -124,6 +131,7 @@ struct ARPACKEx8
 {
   typedef   OPI<ScalarType>   OP;
   typedef   OPA<ScalarType>   B;
+  static const bool isHermitian true;
 }
 
 template <class ScalarType>
@@ -131,6 +139,7 @@ struct ARPACKEx9
 {
   typedef   OPR<ScalarType>   OP;
   typedef   OPQ<ScalarType>   B;
+  static const bool isHermitian true;
 }
 
 template <class ScalarType>
@@ -138,6 +147,7 @@ struct ARPACKEx10
 {
   typedef   OPS<ScalarType>   OP;
   typedef   OPQ<ScalarType>   B;
+  static const bool isHermitian true;
 }
 
 template <class ScalarType>
@@ -145,6 +155,7 @@ struct ARPACKEx11
 {
   typedef   OPU<ScalarType>   OP;
   typedef   OPP<ScalarType>   B;
+  static const bool isHermitian true;
 }
 
 template <class ScalarType>
@@ -152,6 +163,7 @@ struct ARPACKEx12
 {
   typedef   OPT<ScalarType>   OP;
   typedef   OPQ<ScalarType>   B;
+  static const bool isHermitian true;
 }
 
 
