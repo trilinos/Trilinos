@@ -236,6 +236,11 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   [Build the Amesos operator/vector adapater support in Rythmos.],
   [Build the Amesos operator/vector adapater support in Rythmos.  Can be overridden with --disable-rythmos-amesos.])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  rythmos, nox, RYTHMOS_NOX, ENABLE_RYTHMOS_NOX, yes,
+  [Build in NOX support in Rythmos.],
+  [Build in NOX support in Rythmos.  Can be overridden with --disable-rythmos-nox.])
+
 # ------------------------------------------------------------------------
 # #np# newp_swahili is an example of a package feature which requires both
 # a cpp #define command and one or more source or header files  - ie 

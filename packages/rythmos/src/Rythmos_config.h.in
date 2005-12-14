@@ -89,6 +89,9 @@
 /* Define if want to build rythmos-examples */
 #undef HAVE_RYTHMOS_EXAMPLES
 
+/* Define if want to build with rythmos enabled */
+#undef HAVE_RYTHMOS_NOX
+
 /* Define if want to build rythmos-tests */
 #undef HAVE_RYTHMOS_TESTS
 

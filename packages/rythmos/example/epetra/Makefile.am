@@ -26,4 +26,8 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = 1Dfem
+if ENABLE_RYTHMOS_NOX
+1DFEM = 1Dfem
+endif
+
+SUBDIRS = $(1DFEM)
