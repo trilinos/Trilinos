@@ -19,6 +19,7 @@ extern "C" {
 
 
 #include "zz_const.h"
+#include "zz_util_const.h"
 #include "zz_rand.h"
 #include "key_params.h"
 #include "ha_const.h"
@@ -38,6 +39,20 @@ extern "C" {
 static int Zoltan_LB(ZZ *, int, int *, int *, int *,
   int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
   int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **);
+
+struct Hash_Node {
+  ZOLTAN_ID_PTR gid;
+  int gno;
+  struct Hash_Node * next;
+};
+
+static struct Hash_Node **create_hash_table(ZZ *,
+                          ZOLTAN_ID_PTR gids, int numIds,
+                          int tableSize);
+static int search_hash_table(ZZ *, ZOLTAN_ID_PTR gid,
+                         struct Hash_Node **ht, int tableSize);
+static void free_hash_table(struct Hash_Node **ht, int tableSize);
+
 
 /****************************************************************************/
 /****************************************************************************/
@@ -234,8 +249,13 @@ double start_time, end_time;
 double lb_time[2] = {0.0,0.0};
 char msg[256];
 int comm[3],gcomm[3]; 
-float *part_sizes = NULL;
+float *part_sizes = NULL, *fdummy = NULL;
 int part_dim;
+int all_num_obj, i, ts, idIdx;
+struct Hash_Node **ht;
+int *export_all_procs, *export_all_to_part, *parts=NULL;
+ZOLTAN_ID_PTR all_global_ids=NULL, all_local_ids=NULL;
+ZOLTAN_ID_PTR gid;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -396,6 +416,22 @@ int part_dim;
 
     *num_import_objs = *num_export_objs = 0;
 
+    if (zz->LB.Return_Lists == ZOLTAN_LB_COMPLETE_EXPORT_LISTS){
+      /*
+       * This parameter setting requires that all local objects
+       * and their assignments appear in the export list.
+       */
+      error= Zoltan_Get_Obj_List(zz, num_export_objs, 
+               export_global_ids, export_local_ids,
+               0, &fdummy, export_to_part);
+
+      *export_procs = (int *)ZOLTAN_MALLOC(*num_export_objs * sizeof(int));
+
+      for (i=0; i<*num_export_objs; i++){
+        (*export_procs)[i] = zz->Proc;
+      }
+    }
+
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_OK);
   }
@@ -429,7 +465,8 @@ int part_dim;
       }
     }
     else if (zz->LB.Return_Lists == ZOLTAN_LB_ALL_LISTS || 
-             zz->LB.Return_Lists == ZOLTAN_LB_EXPORT_LISTS) {
+             zz->LB.Return_Lists == ZOLTAN_LB_EXPORT_LISTS ||
+             zz->LB.Return_Lists == ZOLTAN_LB_COMPLETE_EXPORT_LISTS) {
       /* Export lists are requested; compute export map */
       error = Zoltan_Invert_Lists(zz, *num_import_objs, *import_global_ids, 
                                       *import_local_ids, *import_procs,
@@ -444,7 +481,8 @@ int part_dim;
         ZOLTAN_TRACE_EXIT(zz, yo);
         return error;
       }
-      if (zz->LB.Return_Lists == ZOLTAN_LB_EXPORT_LISTS) {
+      if (zz->LB.Return_Lists == ZOLTAN_LB_EXPORT_LISTS ||
+          zz->LB.Return_Lists == ZOLTAN_LB_COMPLETE_EXPORT_LISTS) {
         /* Method returned import lists, but only export lists were desired. */
         /* Import lists not needed; free them. */
         *num_import_objs = -1;
@@ -490,6 +528,79 @@ int part_dim;
         ZOLTAN_TRACE_EXIT(zz, yo);
         return ZOLTAN_WARN;
       }
+    }
+  }
+
+  if (zz->LB.Return_Lists == ZOLTAN_LB_COMPLETE_EXPORT_LISTS) {
+    /*
+     * Normally, Zoltan_LB returns in the export lists all local
+     * objects that are moving off processor, or that are assigned
+     * to a partition on the local processor that is not the
+     * default partition.  This setting of Return_Lists requests
+     * that all local objects be included in the export list.
+     */
+
+    all_num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &error);
+
+    if (all_num_obj > *num_export_objs){
+
+      /* Create a lookup table for exported IDs */
+
+      if (*num_export_objs > 16){
+        ts = (*num_export_objs) / 4;   /* what's a good table size? */
+      }
+      else{
+        ts = *num_export_objs;
+      }
+
+      ht = create_hash_table(zz, *export_global_ids, *num_export_objs, ts);
+
+      /* Create a list of all gids, lids and partitions */
+
+      error= Zoltan_Get_Obj_List(zz, &all_num_obj, 
+               &all_global_ids, &all_local_ids,
+               0, &fdummy, &parts);
+
+      if ((error != ZOLTAN_OK) && (error != ZOLTAN_WARN)){
+        sprintf(msg, "Error building complete export list; "
+                     "%d returned by Zoltan_Get_Obj_List\n", error);
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+        ZOLTAN_TRACE_EXIT(zz, yo);
+        return error;
+      }
+
+      export_all_procs = (int *)ZOLTAN_MALLOC(all_num_obj * sizeof(int));
+      export_all_to_part = (int *)ZOLTAN_MALLOC(all_num_obj * sizeof(int));
+
+      gid = all_global_ids;
+
+      for (i=0; i < all_num_obj; i++, gid += zz->Num_GID){
+
+        idIdx = search_hash_table(zz, gid, ht, ts);
+
+        if (idIdx >= 0){
+          export_all_procs[i] = (*export_procs)[idIdx];
+          export_all_to_part[i] = (*export_to_part)[idIdx];
+        }
+        else{
+          export_all_procs[i] = zz->Proc;
+          export_all_to_part[i] = parts[i];
+        }
+      }
+
+      free_hash_table(ht, ts);
+
+      ZOLTAN_FREE(export_global_ids); 
+      ZOLTAN_FREE(export_local_ids); 
+      ZOLTAN_FREE(export_procs);
+      ZOLTAN_FREE(export_to_part);
+      ZOLTAN_FREE(&parts);
+
+      *export_global_ids = all_global_ids;
+      *export_local_ids = all_local_ids;
+      *export_procs = export_all_procs;
+      *export_to_part = export_all_to_part;
+      *num_export_objs = all_num_obj;
     }
   }
 
@@ -771,14 +882,70 @@ MPI_User_function Zoltan_PartDist_MPIOp;
       printf("[%1d] Debug: LB.PartDist = ", zz->Proc);
       for (i=0; i<=zz->LB.Num_Global_Parts; i++)
         printf("%d ", zz->LB.PartDist[i]);
-      printf("\n");
+      
     }
   }
 
 End:
   return ierr;
 }
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+static struct Hash_Node **create_hash_table(ZZ *zz, 
+                          ZOLTAN_ID_PTR gids, int numIds,
+                          int tableSize) 
+{
+struct Hash_Node **ht=NULL;
+struct Hash_Node *hnodes=NULL;
+int i, j;
 
+  hnodes = (struct Hash_Node *)ZOLTAN_MALLOC(numIds*sizeof(struct Hash_Node));
+  ht = (struct Hash_Node **)ZOLTAN_CALLOC((tableSize+1),sizeof(struct Hash_Node*));
+
+  ht[tableSize] = hnodes;
+
+  for (i=0; i<numIds; i++){
+    j = Zoltan_Hash(gids, zz->Num_GID, tableSize); 
+
+    hnodes[i].next = ht[j];
+    hnodes[i].gid = gids;
+    hnodes[i].gno = i;
+    ht[j] = hnodes + i;
+
+    gids += zz->Num_GID;
+  }
+
+  return ht;
+}
+static int search_hash_table(ZZ *zz, ZOLTAN_ID_PTR gid,
+                         struct Hash_Node **ht, int tableSize)
+{
+int j, found;
+struct Hash_Node *hn;
+
+  found = -1;
+
+  j = Zoltan_Hash(gid, zz->Num_GID, tableSize);
+ 
+  hn = ht[j];
+
+  while (hn){
+
+    if (ZOLTAN_EQ_GID(zz, gid, hn->gid)){
+      found = hn->gno;
+      break;
+    }
+    hn = hn->next;
+  }
+
+  return found; 
+}
+static void free_hash_table(struct Hash_Node **ht, int tableSize)
+{
+  ZOLTAN_FREE(ht + tableSize);
+  ZOLTAN_FREE(&ht);
+}
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/

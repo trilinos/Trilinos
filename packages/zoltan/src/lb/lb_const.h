@@ -69,14 +69,16 @@ typedef enum Zoltan_LB_Method {
 
 
 /*
- * Values indicating which lists (import, export, both, or none) should
+ * Values indicating which lists (import, export, export including
+ * exports "to myself", both, or none) should
  * be returned by Zoltan_LB_Balance.  ZOLTAN_LB_NO_LISTS must always be zero; 
  * other values should always be greater than zero.
  */
 #define ZOLTAN_LB_NO_LISTS 0
 #define ZOLTAN_LB_IMPORT_LISTS 1
 #define ZOLTAN_LB_EXPORT_LISTS 2
-#define ZOLTAN_LB_ALL_LISTS 3
+#define ZOLTAN_LB_COMPLETE_EXPORT_LISTS 3
+#define ZOLTAN_LB_ALL_LISTS 4
 
 /*
  ******************************************************
