@@ -521,16 +521,16 @@ int MOERTEL::Interface::GlobalNnode(int side)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MOERTEL::Interface::GlobalNnode:\n"
-         << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    cout << "***WRN*** MOERTEL::Interface::GlobalNnode:\n"
+         << "***WRN*** Complete() was not called on interface " << Id_ << "\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return -1;
   }
   if (side!=0 && side!=1)
   {
-    cout << "***ERR*** MOERTEL::Interface::GlobalNnode:\n"
-         << "***ERR*** side = " << side << " not equal 0 or 1\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    cout << "***WRN*** MOERTEL::Interface::GlobalNnode:\n"
+         << "***WRN*** side = " << side << " not equal 0 or 1\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return (-1);
   }
   if (!lComm()) 
@@ -696,10 +696,10 @@ MOERTEL::Node** MOERTEL::Interface::GetNodeView()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MOERTEL::Interface::GetNodeView:\n"
-         << "***ERR*** Interface " << Id() << ": Complete() not called\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    cout << "***WRN*** MOERTEL::Interface::GetNodeView:\n"
+         << "***WRN*** Interface " << Id() << ": Complete() not called\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return NULL;
   }
   if (!lComm()) return NULL;
   
@@ -747,10 +747,10 @@ MOERTEL::Segment** MOERTEL::Interface::GetSegmentView()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MOERTEL::Interface::GetSegmentView:\n"
-         << "***ERR*** Interface " << Id() << ": Complete() not called\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    cout << "***WRN*** MOERTEL::Interface::GetSegmentView:\n"
+         << "***WRN*** Interface " << Id() << ": Complete() not called\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return NULL;
   }
   if (!lComm()) return NULL;
   

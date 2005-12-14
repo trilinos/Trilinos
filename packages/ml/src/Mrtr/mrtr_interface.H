@@ -423,6 +423,52 @@ public:
   */
   int SegPID(int sid) const;
   
+  /*!
+  \brief Get a view of a MOERTEL::Node (of either side) specifying node id
+
+  Returns a view of a \ref MOERTEL::Node of this interface.<br>
+  Returns Teuchos::null if calling processor is not member of \ref lComm() or<br>
+  a node with id nid does not exist on this interface.<br>
+  The method returns a Teuchos::RefCountPtr<MOERTEL::Node> to the node, see Teuchos documentation
+  
+  \param nid : id of node to get a view from
+  */
+  RefCountPtr<MOERTEL::Node> GetNodeView(int nid);
+
+  /*!
+  \brief Get a view of all nodes on this interface
+
+  A vector of ptrs to all nodes on this interface is allocated and returned
+  to the user. The user is responsible for deleting this vector.
+  NULL is returned if \ref Complete() was not called or the calling processor
+  is not a member of \ref lComm()
+  
+  */
+  MOERTEL::Node** GetNodeView();
+
+  /*!
+  \brief Get a view of a MOERTEL::Segment (of either side) specifying segment id
+
+  Returns a view of a \ref MOERTEL::Segment of this interface.<br>
+  Returns Teuchos::null if calling processor is not member of \ref lComm() or<br>
+  a segment with id sid does not exist on this interface.<br>
+  The method returns a Teuchos::RefCountPtr<MOERTEL::Segment> to the node, see Teuchos documentation
+  
+  \param sid : id of segment to get a view from
+  */
+  RefCountPtr<MOERTEL::Segment> GetSegmentView(int sid);
+  
+  /*!
+  \brief Get a view of all segments on this interface
+
+  A vector of ptrs to all segments on this interface is allocated and returned
+  to the user. The user is responsible for deleting this vector.
+  NULL is returned if \ref Complete() was not called or the calling processor
+  is not a member of \ref lComm()
+  
+  */
+  MOERTEL::Segment** GetSegmentView();
+  
   //@}
 
   // @{ \name Construction methods
@@ -606,52 +652,6 @@ public:
   */
   void SetProjectionType(MOERTEL::Interface::ProjectionType typ) { ptype_ = typ; } 
 
-  /*!
-  \brief Get a view of a MOERTEL::Node (of either side) specifying node id
-
-  Returns a view of a \ref MOERTEL::Node of this interface.<br>
-  Returns Teuchos::null if calling processor is not member of \ref lComm() or<br>
-  a node with id nid does not exist on this interface.<br>
-  The method returns a Teuchos::RefCountPtr<MOERTEL::Node> to the node, see Teuchos documentation
-  
-  \param nid : id of node to get a view from
-  */
-  RefCountPtr<MOERTEL::Node> GetNodeView(int nid);
-
-  /*!
-  \brief Get a view of all nodes on this interface
-
-  A vector of ptrs to all nodes on this interface is allocated and returned
-  to the user. The user is responsible for deleting this vector.
-  NULL is returned if \ref Complete() was not called or the calling processor
-  is not a member of \ref lComm()
-  
-  */
-  MOERTEL::Node** GetNodeView();
-
-  /*!
-  \brief Get a view of a MOERTEL::Segment (of either side) specifying segment id
-
-  Returns a view of a \ref MOERTEL::Segment of this interface.<br>
-  Returns Teuchos::null if calling processor is not member of \ref lComm() or<br>
-  a segment with id sid does not exist on this interface.<br>
-  The method returns a Teuchos::RefCountPtr<MOERTEL::Segment> to the node, see Teuchos documentation
-  
-  \param sid : id of segment to get a view from
-  */
-  RefCountPtr<MOERTEL::Segment> GetSegmentView(int sid);
-  
-  /*!
-  \brief Get a view of all segments on this interface
-
-  A vector of ptrs to all segments on this interface is allocated and returned
-  to the user. The user is responsible for deleting this vector.
-  NULL is returned if \ref Complete() was not called or the calling processor
-  is not a member of \ref lComm()
-  
-  */
-  MOERTEL::Segment** GetSegmentView();
-  
   /*!
   \brief Build averaged nodal normals and projects nodes to other side
 
