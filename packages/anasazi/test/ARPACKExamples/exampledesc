@@ -34,7 +34,6 @@ OPF | OP = inv[A-sigma*I]                (DS)
     |
 ----- Central difference discretization of 1-D Laplacian -----------------------
 OPG | OP = A                             (MFM)
-OPH | OP = M                             (MFM)
 OPI | OP = inv[A-sigma*I]                (DS)
     |
 ----- Finite element discretization of convection-diffusion operator -----------
@@ -52,9 +51,9 @@ OPT | OP = (inv[A-sigma*M])*(A+sigma*M)  (MFM and DS)
 OPU | OP = (inv[A-sigma*M])*A            (MFM and DS)
 
 
-**********************************************************************************
-*** NOTE: There are no OPJ and OPK. I deleted them and didn't want to rename.  ***
-**********************************************************************************
+**************************************************************************************
+*** NOTE: There are no OPH, OPJ and OPK. I deleted them and didn't want to rename. ***
+**************************************************************************************
 
 
 

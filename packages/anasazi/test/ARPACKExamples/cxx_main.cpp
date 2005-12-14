@@ -29,20 +29,17 @@
 // This test is for LOBPCG solving a standard (Ax=xl) complex Hermitian
 // eigenvalue problem.
 //
-// The matrix used is from MatrixMarket:
-// Name: MHD1280B: Alfven Spectra in Magnetohydrodynamics
-// Source: Source: A. Booten, M.N. Kooper, H.A. van der Vorst, S. Poedts and J.P. Goedbloed University of Utrecht, the Netherlands
-// Discipline: Plasma physics
-// URL: http://math.nist.gov/MatrixMarket/data/NEP/mhd/mhd1280b.html
-// Size: 1280 x 1280
-// NNZ: 22778 entries
+// The matrices used are from ARPACK examples: SYM, NONSYM, COMPLEX
+// See ARPACK_Operators.hpp and examlpesdesc for more information.
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziLOBPCG.hpp"
+#include "AnasaziBlockDavidson.hpp"
+#include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicSort.hpp"
-#include "AnasaziMVOPTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "AnasaziMVOPTester.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -51,14 +48,10 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-// I/O for Harwell-Boeing files
-#ifdef HAVE_ANASAZI_TRIUTILS
-#include "iohb.h"
-#endif
-
-// templated multivector and sparse matrix classes
+// templated multivector 
 #include "MyMultiVec.hpp"
-#include "MyBetterOperator.hpp"
+// ARPACK test problems
+#include "ARPACK_Operators.hpp"
 
 using namespace Teuchos;
 
@@ -78,13 +71,18 @@ int main(int argc, char *argv[])
 
   bool testFailed;
   bool verbose = 0;
-  std::string filename("mhd1280b.cua");
   std::string which("SR");
+  int nx = 10;
+  std::string problem("EX1");
+  bool isherm;
+  std::string solver("auto");
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SR or LR).");
+  cmdp.setOption("nx",&nx,"Number of interior elements.");
+  cmdp.setOption("problem",&problem,"Problem to solve.");
+  cmdp.setOption("solver",&solver,"Eigensolver to use (LOBPCG, BKS, BD, auto)");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -92,10 +90,12 @@ int main(int argc, char *argv[])
     return -1;
   }
 
+  typedef double ST;
+
 #ifdef HAVE_COMPLEX
-  typedef std::complex<double> ST;
+  //typedef std::complex<double> ST;
 #elif HAVE_COMPLEX_H
-  typedef ::complex<double> ST;
+  //typedef ::complex<double> ST;
 #else
   typedef double ST;
   // no complex. quit with failure.
@@ -130,72 +130,84 @@ int main(int argc, char *argv[])
     cout << Anasazi::Anasazi_Version() << endl << endl;
   }
 
-#ifndef HAVE_ANASAZI_TRIUTILS
-  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
-#ifdef EPETRA_MPI
-  MPI_Finalize() ;
-#endif
-  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-    cout << "End Result: TEST FAILED" << endl;	
-  }
-  return -1;
-#endif
-
   Anasazi::ReturnType returnCode = Anasazi::Ok;  
 
   // Create the sort manager
   RefCountPtr<Anasazi::BasicSort<ST,MV,OP> > MySM = 
      rcp( new Anasazi::BasicSort<ST,MV,OP>(which) );
 
-  // Get the data from the HB file
-  int dim,dim2,nnz,nrhs;
-  double *dvals;
-  int *colptr,*rowind;
-  ST *cvals;
-  nnz = -1;
-  info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
-                              &colptr,&rowind,&dvals);
-  if (info == 0 || nnz < 0) {
-    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-      cout << "Error reading '" << filename << "'" << endl;
-      cout << "End Result: TEST FAILED" << endl;
-    }
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return -1;
-  }
-  // Convert interleaved doubles to complex values
-  cvals = new ST[nnz];
-  for (int ii=0; ii<nnz; ii++) {
-    cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
-  }
-  // Build the problem matrix
-  RefCountPtr< MyBetterOperator<ST> > A 
-    = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,cvals) );
-
   // Eigensolver parameters
+  int dim = nx*nx;
   int nev = 4;
   int blockSize = 5;
   int maxIters = 500;
-  MT tol = 1.0e-6;
+  int maxBlocks = 4;
+  MT tol = 1.0e-10;
 
   // Create parameter list to pass into solver
   ParameterList MyPL;
   MyPL.set( "Block Size", blockSize );
   MyPL.set( "Max Iters", maxIters );
   MyPL.set( "Tol", tol );
+  MyPL.set( "Max Blocks", maxBlocks );
+  MyPL.set( "Max Restarts", maxIters );
 
   // Create initial vectors
-  RefCountPtr<MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
+  //RefCountPtr<MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
+  RefCountPtr<MV> ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
   ivec->MvRandom();
+
+  // Create matrices
+  RefCountPtr<OP> A, M;
+  if (problem == "EX1") {
+    A = rcp( new ARPACKEx1<ST>::OP );
+    M = rcp( new ARPACKEx1<ST>::M );
+    isherm = ARPACKEx1<ST>::isHermitian;
+  }
+  else if (problem == "EX2") {
+    A = rcp( new ARPACKEx2<ST>::OP(dim) );
+    M = rcp( new ARPACKEx2<ST>::M );
+    isherm = ARPACKEx2<ST>::isHermitian;
+  }
+  else if (problem == "EX7") {
+    A = rcp( new ARPACKEx7<ST>::OP );
+    M = rcp( new ARPACKEx7<ST>::M );
+    isherm = ARPACKEx7<ST>::isHermitian;
+  }
+  else {
+    if (MyOM->doPrint()) {
+      cerr << "Invalid problem. Using ARPACKEx7." << endl;
+    }
+    A = rcp( new ARPACKEx7<ST>::OP );
+    M = rcp( new ARPACKEx7<ST>::M );
+    isherm = ARPACKEx7<ST>::isHermitian;
+  }
+
+  // test multivector and operators
+  int ierr;
+  cout << "Testing MultiVector" << endl;
+  ierr = Anasazi::TestMultiVecTraits<ST,MV>(MyOM,ivec);
+  if (ierr != Anasazi::Ok) {
+    cout << "MultiVec failed TestMultiVecTraits()" << endl;
+  }
+  cout << "Testing OP" << endl;
+  ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,A);
+  if (ierr != Anasazi::Ok) {
+    cout << "OP failed TestOperatorTraits()" << endl;
+  }
+  cout << "Testing M" << endl;
+  ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,M);
+  if (ierr != Anasazi::Ok) {
+    cout << "M failed TestOperatorTraits()" << endl;
+  }
+
 
   // Create eigenproblem
   RefCountPtr<Anasazi::BasicEigenproblem<ST,MV,OP> > MyProblem =
-    rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(A, ivec) );
+    rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(A, M, ivec) );
 
   // Inform the eigenproblem that the operator A is symmetric
-  MyProblem->SetSymmetric(true);
+  MyProblem->SetSymmetric(isherm);
 
   // Set the number of eigenvalues requested and the blocksize the solver should use
   MyProblem->SetNEV( nev );
@@ -214,10 +226,40 @@ int main(int argc, char *argv[])
   }
 
   // Create the eigensolver 
-  Anasazi::LOBPCG<ST,MV,OP> MySolver(MyProblem, MySM, MyOM, MyPL);
+  RefCountPtr< Anasazi::Eigensolver<ST,MV,OP> > MySolver;
+  if (solver == "auto") {
+    if (isherm) {
+      solver = "LOBPCG";
+    }
+    else {
+      solver = "BKS";
+    }
+  }
+  if (solver == "LOBPCG") {
+    MySolver = rcp( new Anasazi::LOBPCG<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
+  }
+  else if (solver == "BKS") {
+    MySolver = rcp( new Anasazi::BlockKrylovSchur<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
+  }
+  else if (solver == "BD") {
+    MySolver = rcp( new Anasazi::BlockDavidson<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
+  }
+  else {
+    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
+      cout << "Invalid solver: " << solver << endl;
+      cout << "End Result: TEST FAILED" << endl;	
+    }
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
+  }
+  if ( MyOM->isVerbosityAndPrint(Anasazi::Warning) ) {
+    cout << "Using solver: " << solver << endl;
+  }
 
   // Solve the problem to the specified tolerances or length
-  returnCode = MySolver.solve();
+  returnCode = MySolver->solve();
   testFailed = false;
   if (returnCode != Anasazi::Ok) {
     testFailed = true; 

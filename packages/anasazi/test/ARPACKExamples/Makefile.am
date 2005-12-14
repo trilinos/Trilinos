@@ -44,28 +44,27 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 EXEEXT = .exe
 
 #np# List all executable names here
-noinst_PROGRAMS = LOBPCGComplex_test
+noinst_PROGRAMS = ARPACKEx_test
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
-LOBPCGComplex_test_SOURCES = $(srcdir)/cxx_main.cpp 
+ARPACKEx_test_SOURCES = $(srcdir)/cxx_main.cpp ARPACK_Operators.hpp
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
-LOBPCGComplex_test_DEPENDENCIES = \
+ARPACKEx_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
-LOBPCGComplex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPComplex
+ARPACKEx_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPComplex
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
-LOBPCGComplex_test_LDADD = \
+ARPACKEx_test_LDADD = \
 	$(EXPORT_LIBS) 
 
 # Dummy for new export makefiles
