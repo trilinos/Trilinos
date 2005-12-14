@@ -159,7 +159,7 @@ namespace Teuchos
     void GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, const OrdinalType* IPIV, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const;
 
     //! Computes an LU factorization of a \c n by \c n matrix tridiagonal matrix \c A using partial pivoting with row interchanges.
-    void GTTRF(const OrdinalType m, ScalarType* dl, ScalarType* d, ScalarType* du, ScalarType* du2, OrdinalType* IPIV, OrdinalType* info) const;
+    void GTTRF(const OrdinalType n, ScalarType* dl, ScalarType* d, ScalarType* du, ScalarType* du2, OrdinalType* IPIV, OrdinalType* info) const;
 
     //! Solves a system of linear equations \c A*X=B or \c A'*X=B or \c A^H*X=B with a tridiagonal matrix \c A using the LU factorization computed by GTTRF.
     void GTTRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const ScalarType* dl, const ScalarType* d, const ScalarType* du, const ScalarType* du2, const OrdinalType* IPIV, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const;
@@ -378,7 +378,7 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType,ScalarType>::GTTRF(const OrdinalType m, ScalarType* dl, ScalarType* d, ScalarType* du, ScalarType* du2, OrdinalType* IPIV, OrdinalType* info) const
+  void LAPACK<OrdinalType,ScalarType>::GTTRF(const OrdinalType n, ScalarType* dl, ScalarType* d, ScalarType* du, ScalarType* du2, OrdinalType* IPIV, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -598,7 +598,7 @@ namespace Teuchos
     void GEQRF( const OrdinalType m, const OrdinalType n, float* A, const OrdinalType lda, float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GETRF(const OrdinalType m, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
     void GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, const OrdinalType* IPIV, float* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GTTRF(const OrdinalType m, float* dl, float* d, float* du, float* du2, OrdinalType* IPIV, OrdinalType* info) const;
+    void GTTRF(const OrdinalType n, float* dl, float* d, float* du, float* du2, OrdinalType* IPIV, OrdinalType* info) const;
     void GTTRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const float* dl, const float* d, const float* du, const float* du2, const OrdinalType* IPIV, float* B, const OrdinalType ldb, OrdinalType* info) const;
 
 
@@ -726,7 +726,7 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GTTRF(const OrdinalType m, float* dl, float* d, float* du, float* du2, OrdinalType* IPIV, OrdinalType* info) const
+  void LAPACK<OrdinalType,float>::GTTRF(const OrdinalType n, float* dl, float* d, float* du, float* du2, OrdinalType* IPIV, OrdinalType* info) const
   {
     SGTTRF_F77(&n, dl, d, du, du2, IPIV, info);
   }
@@ -955,7 +955,7 @@ namespace Teuchos
     void GEQRF( const OrdinalType m, const OrdinalType n, double* A, const OrdinalType lda, double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GETRF(const OrdinalType m, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
     void GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const double* A, const OrdinalType lda, const OrdinalType* IPIV, double* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GTTRF(const OrdinalType m, double* dl, double* d, double* du, double* du2, OrdinalType* IPIV, OrdinalType* info) const;
+    void GTTRF(const OrdinalType n, double* dl, double* d, double* du, double* du2, OrdinalType* IPIV, OrdinalType* info) const;
     void GTTRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const double* dl, const double* d, const double* du, const double* du2, const OrdinalType* IPIV, double* B, const OrdinalType ldb, OrdinalType* info) const;
     void GETRI(const OrdinalType n, double* A, const OrdinalType lda, const OrdinalType* IPIV, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GECON(const char NORM, const OrdinalType n, const double* A, const OrdinalType lda, const double anorm, double* rcond, double* WORK, OrdinalType* IWORK, OrdinalType* info) const;
@@ -1081,7 +1081,7 @@ namespace Teuchos
   }
   
   template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::GTTRF(const OrdinalType m, double* dl, double* d, double* du, double* du2, OrdinalType* IPIV, OrdinalType* info) const
+  void LAPACK<OrdinalType,double>::GTTRF(const OrdinalType n, double* dl, double* d, double* du, double* du2, OrdinalType* IPIV, OrdinalType* info) const
   {
     DGTTRF_F77(&n, dl, d, du, du2, IPIV, info);
   }
@@ -1317,7 +1317,7 @@ namespace Teuchos
     void UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, complex<float>* A, const OrdinalType lda, const complex<float>* TAU, complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GETRF(const OrdinalType m, const OrdinalType n, complex<float>* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
     void GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const complex<float>* A, const OrdinalType lda, const OrdinalType* IPIV, complex<float>* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GTTRF(const OrdinalType m, complex<float>* dl, complex<float>* d, complex<float>* du, complex<float>* du2, OrdinalType* IPIV, OrdinalType* info) const;
+    void GTTRF(const OrdinalType n, complex<float>* dl, complex<float>* d, complex<float>* du, complex<float>* du2, OrdinalType* IPIV, OrdinalType* info) const;
     void GTTRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const complex<float>* dl, const complex<float>* d, const complex<float>* du, const complex<float>* du2, const OrdinalType* IPIV, complex<float>* B, const OrdinalType ldb, OrdinalType* info) const;
     void GETRI(const OrdinalType n, complex<float>* A, const OrdinalType lda, const OrdinalType* IPIV, complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GECON(const char NORM, const OrdinalType n, const complex<float>* A, const OrdinalType lda, const float anorm, float* rcond, complex<float>* WORK, float* RWORK, OrdinalType* info) const;
@@ -1434,7 +1434,7 @@ namespace Teuchos
   }
   
   template<typename OrdinalType>
-  void LAPACK<OrdinalType,complex<float> >::GTTRF(const OrdinalType m, complex<float>* dl, complex<float>* d, complex<float>* du, complex<float>* du2, OrdinalType* IPIV, OrdinalType* info) const
+  void LAPACK<OrdinalType,complex<float> >::GTTRF(const OrdinalType n, complex<float>* dl, complex<float>* d, complex<float>* du, complex<float>* du2, OrdinalType* IPIV, OrdinalType* info) const
   {
     CGTTRF_F77(&n, dl, d, du, du2, IPIV, info);
   }
@@ -1594,7 +1594,7 @@ namespace Teuchos
     void UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, complex<double>* A, const OrdinalType lda, const complex<double>* TAU, complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GETRF(const OrdinalType m, const OrdinalType n, complex<double>* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
     void GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const complex<double>* A, const OrdinalType lda, const OrdinalType* IPIV, complex<double>* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GTTRF(const OrdinalType m, complex<double>* dl, complex<double>* d, complex<double>* du, complex<double>* du2, OrdinalType* IPIV, OrdinalType* info) const;
+    void GTTRF(const OrdinalType n, complex<double>* dl, complex<double>* d, complex<double>* du, complex<double>* du2, OrdinalType* IPIV, OrdinalType* info) const;
     void GTTRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const complex<double>* dl, const complex<double>* d, const complex<double>* du, const complex<double>* du2, const OrdinalType* IPIV, complex<double>* B, const OrdinalType ldb, OrdinalType* info) const;
     void GETRI(const OrdinalType n, complex<double>* A, const OrdinalType lda, const OrdinalType* IPIV, complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GECON(const char NORM, const OrdinalType n, const complex<double>* A, const OrdinalType lda, const double anorm, double* rcond, complex<double>* WORK, double* RWORK, OrdinalType* info) const;
@@ -1711,7 +1711,7 @@ namespace Teuchos
   }
   
   template<typename OrdinalType>
-  void LAPACK<OrdinalType,complex<double> >::GTTRF(const OrdinalType m, complex<double>* dl, complex<double>* d, complex<double>* du, complex<double>* du2, OrdinalType* IPIV, OrdinalType* info) const
+  void LAPACK<OrdinalType,complex<double> >::GTTRF(const OrdinalType n, complex<double>* dl, complex<double>* d, complex<double>* du, complex<double>* du2, OrdinalType* IPIV, OrdinalType* info) const
   {
     ZGTTRF_F77(&n, dl, d, du, du2, IPIV, info);
   }
