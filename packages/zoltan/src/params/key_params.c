@@ -231,6 +231,10 @@ int  idx 			/* index of vector param, -1 if scalar */
           tmp = ZOLTAN_LB_EXPORT_LISTS;
           status = 3;
         }
+        else if (strcmp(result.sval, "COMPLETE")==0) {
+          tmp = ZOLTAN_LB_COMPLETE_EXPORT_LISTS;
+          status = 3;
+        }
         else if (strcmp(result.sval, "NONE")==0) {
           tmp = ZOLTAN_LB_NO_LISTS;
           status = 3;
@@ -360,6 +364,9 @@ void Zoltan_Print_Key_Params(ZZ const *zz)
     break;
   case ZOLTAN_LB_EXPORT_LISTS:
     printf("EXPORT\n");
+    break;
+  case ZOLTAN_LB_COMPLETE_EXPORT_LISTS:
+    printf("COMPLETE EXPORT\n");
     break;
   case ZOLTAN_LB_NO_LISTS:
     printf("NONE\n");
