@@ -12,12 +12,6 @@
 /* ************************************************************************* */
 /* ************************************************************************* */
 
-#ifdef GEOMETRIC_2D
-extern double lambda_max,lambda_min, sten_a,sten_b,sten_c, sten_d,sten_e,sten_f,
-  sten_g,sten_h,sten_i;
-extern int mls_or_gs, mls_order;
-#endif
-
 #include <math.h>
 #include <stdlib.h>
 #include "ml_struct.h"
@@ -197,20 +191,6 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 #ifdef ML_TIMING
    double t0;
 #endif
-#ifdef GEOMETRIC_2D
-   struct  ML_CSR_MSRdata *csr_data;
-   int m,i,j,row,k, bsize;
-   double s;
-#endif
-
-#ifdef MARZIO
-#define USE_ATandT
-#endif
-#ifdef USE_AT
-   char str[80];
-   double dtemp;
-   struct ML_Field_Of_Values * fov;
-#endif
 
    if (ag->nullspace_corrupted == ML_YES) {
      printf("Can not reuse aggregate object when the fine grid operator\n");
@@ -229,29 +209,6 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 
    while (next >= 0) 
    {
-#ifdef USE_AT
-      /*
-        Here is the idea:
-        1) build an interpolation operator based on A^T. Save the
-           tentative prolongator.
-        3) transpose it for the restriction as usual.
-        4) clean out the interpolation. Now build the interpolation
-           operator using the existing tentative prolongator and
-           the symmetry option.
-      */
-      if (ag->Restriction_smoothagg_transpose == ML_TRUE ) {
-        ml->symmetrize_matrix = ML_TRUE;
-        ag->keep_P_tentative = ML_YES;
-        ag->use_transpose = ML_TRUE;
-	if (1 == 1) {  
-	  ml->symmetrize_matrix = ML_FALSE;
-	  /*	  printf(" what is this %e\n",ml->Amat[level].lambda_max); */
-	  fov = (struct ML_Field_Of_Values * )(ag->field_of_values);
-	  dtemp = fov->R_coeff[0] + fov->eta * fov->R_coeff[1] + pow(fov->eta,2.) * fov->R_coeff[2];
-	  ml->Amat[level].lambda_max = dtemp;
-	}
-      }
-#endif
 
       /* This if-else supports an ALEGRA capability. */
       if (data == NULL)
@@ -300,19 +257,6 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[next]));
       ML_memory_check("L%d: TransP end",level);
 
-#ifdef USE_AT
-      if (ag->Restriction_smoothagg_transpose == ML_TRUE ) {
-        ag->use_transpose = ML_FALSE;
-        ML_Operator_Clean( &(ml->Pmat[next]) );
-        ML_Operator_Init( &(ml->Pmat[next]), ml->comm );
-	ML_Operator_Set_1Levels(&(ml->Pmat[next]), &(ml->SingleLevel[next]), NULL);
-	ML_Operator_Set_BdryPts(&(ml->Pmat[next]), NULL);
-	sprintf(str,"Pmat_%d",next); ML_Operator_Set_Label( &(ml->Pmat[next]),str);
-	flag = (*user_gen_prolongator)(ml, level, next,(void *)ag);
-      }
-
-#endif
-
 #ifdef ML_TIMING
       t0 = GetClock();
 #endif
@@ -348,38 +292,6 @@ MPI_Barrier(MPI_COMM_WORLD);
 
       ML_memory_check("L%d: repartition end",level);
 
-#ifdef GEOMETRIC_2D
-   csr_data = ml->Amat[next].data;
-   m = (int) sqrt( ((double)ml->Amat[next].invec_leng) + .00001); k = m*m+1;
-   csr_data->columns[0] = k;
-   bsize = csr_data->columns[m*m];
-   for (j = 0; j < m; j++) {
-     for (i = 0; i < m; i++) {
-       row = i +j*m;
-       csr_data->columns[k]= row+1;
-       if ((row)%m !=     m-1                       ) csr_data->values[k++] = sten_f;
-       csr_data->columns[k]= row-1;
-       if ((row)%m !=       0                       ) csr_data->values[k++] = sten_d;
-       csr_data->columns[k]= row+m-1; 
-       if (((row/(m))%m != m-1) &&((row)%m != 0)    ) csr_data->values[k++] = sten_a;
-       csr_data->columns[k]= row+m;
-       if ((row/(m))%m != m-1                       ) csr_data->values[k++] = sten_b;
-       csr_data->columns[k]= row+m+1;
-       if (((row/(m))%m != m-1) &&((row)%m !=   m-1)) csr_data->values[k++] = sten_c;
-       csr_data->columns[k]= row-m-1;
-       if (((row/(m))%m !=   0) &&((row)%m !=     0)) csr_data->values[k++] = sten_g;
-       csr_data->columns[k]= row-m;
-       if ((row/(m))%m !=   0                       ) csr_data->values[k++] = sten_h;
-       csr_data->columns[k]= row-m+1;
-       if (((row/(m))%m !=   0) && ((row)%m !=  m-1)) csr_data->values[k++] = sten_i;
-       csr_data->values[row]     = sten_e;
-       csr_data->columns[row+1] = k;
-     }
-   }
-   if (k > bsize)
-     pr_error("problemssssssssssssssssssss %d %d\n",k,bsize);
-#endif
-
 #ifdef ML_TIMING
       t0 = GetClock() - t0;
       if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
@@ -410,13 +322,6 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    struct MLSthing *mls_widget = NULL;
    ML_Operator *blockMat = NULL, *Ptemp;
 
-#ifdef GEOMETRIC_2D
-   int nx, nxcoarse, ii, coarse_me, fine_me, *rowptr, *bindx, k,free_ptr,start;
-   int i,j, end;
-   double *val;
-   struct  ML_CSR_MSRdata *csr_data;
-#endif
-
 #ifdef ML_TIMING
    double t0;
    t0 =  GetClock();
@@ -442,134 +347,12 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    Amat->num_PDEs = ag->num_PDE_eqns;
    prev_P_tentatives = ag->P_tentative;
 
-#ifdef EXTREME_DEBUG
-   printf("### %e %e\n",  ag->smoothP_damping_factor, max_eigen);
-#endif
-
    /*
    widget.near_bdry = (char *) ML_allocate(sizeof(char)*Amat->outvec_leng);
    ML_AGG_Compute_Near_Bdry(Amat, widget.near_bdry);
    */
 
    Nfine    = Amat->outvec_leng;
-#ifdef GEOMETRIC_2D
-   nx = (int) floor( sqrt( (double) Nfine) + .00001 );
-   printf("in here %d %d\n",Nfine,nx);
-   nxcoarse = (nx-1)/2;
-   rowptr = (int *) ML_allocate(sizeof(int)*(Nfine+1));
-   bindx  = (int *) ML_allocate(sizeof(int)*(Nfine*4+1));
-   val    = (double *) ML_allocate(sizeof(double)*Nfine*4);
-   for (ii = 0; ii <= Nfine; ii++) rowptr[ii] = 4*ii;
-   for (ii = 0; ii <= 4*Nfine; ii++) bindx[ii] = -1;
-   for (ii = 0; ii < nxcoarse; ii++) {
-      for (jj = 0; jj < nxcoarse; jj++) {
-	coarse_me = jj*nxcoarse+ii;
-	fine_me = (2*jj+1)*nx + 2*ii+1;
-	if (jj == 0) {
-	  if (ii == 0) {
-	    bindx[rowptr[fine_me-nx-1]] = coarse_me;
-	    val[  rowptr[fine_me-nx-1]] = .25;
-	  }
-	  bindx[rowptr[fine_me-nx]] = coarse_me;
-	  val[  rowptr[fine_me-nx]] = .5;
-	  bindx[rowptr[fine_me-nx+1]] = coarse_me;
-	  val[  rowptr[fine_me-nx+1]] = .25;
-	  if (ii != nxcoarse-1) {
-	    bindx[rowptr[fine_me-nx+1]+1] = coarse_me+1;
-	    val[  rowptr[fine_me-nx+1]+1] = .25;
-	  }
-	}
-	if (ii == 0) {
-	  bindx[rowptr[fine_me-1]] = coarse_me;
-	  val[  rowptr[fine_me-1]] = .5;
-	  bindx[rowptr[fine_me-1+nx]] = coarse_me;
-	  val[  rowptr[fine_me-1+nx]] = .25;
-	  if (jj != nxcoarse-1) {
-	    bindx[rowptr[fine_me-1+nx]+1] = coarse_me+nxcoarse;
-	    val[  rowptr[fine_me-1+nx]+1] = .25;
-	  }
-	}
-	bindx[rowptr[fine_me]] = coarse_me;
-	val[  rowptr[fine_me]] = 1.;
-	bindx[rowptr[fine_me+1]] = coarse_me;
-	val[  rowptr[fine_me+1]] = .5;
-        if (ii != nxcoarse-1) {
-	  bindx[rowptr[fine_me+1]+1] = coarse_me + 1;
-	  val[  rowptr[fine_me+1]+1] = .5;
-	}
-	bindx[rowptr[fine_me+nx]] = coarse_me;
-	val[  rowptr[fine_me+nx]] = .5;
-        if (jj != nxcoarse-1) {
-	  bindx[rowptr[fine_me+nx]+1] = coarse_me + nxcoarse;
-	  val[  rowptr[fine_me+nx]+1] = .5;
-	}
-	bindx[rowptr[fine_me+1+nx]] = coarse_me;
-	val[  rowptr[fine_me+1+nx]] = .25; 
-	k = 1;
-	if (ii != nxcoarse-1) {
-	  bindx[rowptr[fine_me+1+nx]+k] = coarse_me+1;
-	  val[  rowptr[fine_me+1+nx]+k] = .25;
-	  k++;
-	}
-	if (jj != nxcoarse-1) {
-	  bindx[rowptr[fine_me+1+nx]+k] = coarse_me+nxcoarse;
-	  val[  rowptr[fine_me+1+nx]+k] = .25;
-	  k++;
-	}
-	if ((ii != nxcoarse-1) && (jj != nxcoarse-1)) {
-	  bindx[rowptr[fine_me+1+nx]+k] = coarse_me+nxcoarse+1;
-	  val[  rowptr[fine_me+1+nx]+k] = .25;
-	  k++;
-	}
-
-      }
-   }
-   csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata)); 
-   ml->Pmat[clevel].data = csr_data;
-   csr_data->rowptr = rowptr;
-   csr_data->values = val;
-   csr_data->columns = bindx;
-
-   /* compress bindx[] = '1  out matrix */
-
-   free_ptr = rowptr[0];
-   start = rowptr[0];
-   for (i = 0; i < Nfine; i++) {
-     rowptr[i] = rowptr[i+1] - rowptr[i];
-   }
-   for (i = 0; i < Nfine; i++) {
-     end = start + rowptr[i] - 1;
-     for (j = start; j <= end; j++) {
-       if (bindx[j] != -1) {
-	 val[free_ptr] = val[j];
-	 bindx[free_ptr] = bindx[j];
-	 free_ptr++;
-       }
-       else rowptr[i]--;
-     }
-     start = end+1;
-   }
-
-   start = 0;
-   for (i = 0; i <= Nfine; i++) {
-     j = rowptr[i];
-     rowptr[i] = start;
-     start += j;
-   }
-
-   ML_Operator_Set_1Levels(&(ml->Pmat[clevel]),
-              &(ml->SingleLevel[clevel]), &(ml->SingleLevel[level]));
-   ML_Operator_Set_ApplyFuncData(&(ml->Pmat[clevel]), nxcoarse*nxcoarse,
-				 Nfine, ML_EMPTY, csr_data,
-				 Nfine, NULL, 0);
-   ML_Operator_Set_Getrow(&(ml->Pmat[clevel]), 
-			  Nfine, CSR_getrow);
-   ml->Pmat[clevel].max_nz_per_row = 4;
-   ml->Pmat[clevel].N_nonzeros = bindx[Nfine];
-   ML_Operator_Set_ApplyFunc (&(ml->Pmat[clevel]), CSR_matvec);
-   if (mls_widget != NULL) ML_Smoother_Destroy_MLS(mls_widget);
-   return 1;
-#endif
    gNfine   = ML_Comm_GsumInt( ml->comm, Nfine);
    ML_Aggregate_Set_CurrentLevel( ag, level );
 
@@ -658,31 +441,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      return -1;
    }
 
-#ifdef ML_NONSYMMETRIC
-   max_eigen = ML_Operator_MaxNorm(Amat, ML_TRUE);
-   widget.omega  = ag->smoothP_damping_factor / max_eigen;
-   ml->spectral_radius[level] = max_eigen;
-#else
-
    if ( ag->smoothP_damping_factor != 0.0 )
    {
-#ifdef SYMMETRIZE
-     t2 = ML_Operator_Create(Amat->comm);
-     ML_Operator_Transpose_byrow(Amat,t2);
-     t3 = ML_Operator_Create(Amat->comm);
-     ML_Operator_Add(Amat,t2,t3,ML_CSR_MATRIX,1.);
-     max_eigen = t3->lambda_max;
-#else
-#ifdef USE_AT
-     if (ag->use_transpose == ML_TRUE) {
-       t3 = ML_Operator_Create(Amat->comm);
-       ML_Operator_Transpose_byrow(Amat,t3);
-       t3->lambda_max = 1.5;
-       max_eigen = t3->lambda_max;
-       /*       printf("A^T lambda_max is settttttt\n");*/
-     }
-     else
-#endif
      if (ml->symmetrize_matrix == ML_TRUE) {
        t2 = ML_Operator_Create(Amat->comm);
        ML_Operator_Transpose_byrow(Amat,t2);
@@ -690,7 +450,6 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
        ML_Operator_Add(Amat,t2,t3,ML_CSR_MATRIX,1.);
        max_eigen = t3->lambda_max;
      }
-#endif
 
      if ((max_eigen < -666.) && (max_eigen > -667)) {
 
@@ -701,16 +460,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
          kdata = ML_Krylov_Create( ml->comm );
          ML_Krylov_Set_PrintFreq( kdata, 0 );
          ML_Krylov_Set_ComputeEigenvalues( kdata );
-#ifdef SYMMETRIZE
-         ML_Krylov_Set_Amatrix(kdata, t3);
-#else
-#ifdef USE_AT
-         if (ag->use_transpose ==ML_TRUE) ML_Krylov_Set_Amatrix(kdata, t3);
-         else
-#endif
 	 if (ml->symmetrize_matrix ==ML_TRUE) ML_Krylov_Set_Amatrix(kdata, t3);
          else ML_Krylov_Set_Amatrix(kdata, Amat);
-#endif
          ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
          max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
 
@@ -817,22 +568,11 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
       }
 
    }
-   
-   
-#endif
 
    if ( ag->smoothP_damping_factor != 0.0 ) {
      widget.drop_tol = ag->drop_tol_for_smoothing;
-#ifdef SYMMETRIZE
-     widget.Amat   = t3;
-#else
-#ifdef USE_AT
-     if (ag->use_transpose == ML_TRUE) widget.Amat   = t3;
-     else
-#endif
      if (ml->symmetrize_matrix == ML_TRUE) widget.Amat   = t3;
      else widget.Amat   = &(ml->Amat[level]);
-#endif
      widget.aggr_info = ag->aggr_info[level];
      AGGsmoother = ML_Operator_Create(ml->comm);
      ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
@@ -843,11 +583,6 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
                           ML_AGG_JacobiSmoother_Getrows);
      ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
                           widget.Amat->getrow->pre_comm);
-
-#ifdef EXTREME_DEBUG
-     printf("\n###the damping parameter is %e\n\n",widget.omega);
-#endif
-
 
    if (ag->block_scaled_SA == 1) {
      /* Computed the following:
@@ -867,16 +602,11 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    else 
      ML_2matmult(AGGsmoother, Pmatrix, &(ml->Pmat[clevel]), ML_CSR_MATRIX );
      
-#ifdef SYMMETRIZE
-     if (t3 != NULL) ML_Operator_Destroy(&t3);
-     if (t2 != NULL) ML_Operator_Destroy(&t2);
-#else
      if ((ml->symmetrize_matrix == ML_TRUE) ||
          (ag->use_transpose ==ML_TRUE) ) {
        if (t3 != NULL) ML_Operator_Destroy(&t3);
        if (t2 != NULL) ML_Operator_Destroy(&t2);
      }
-#endif
      if (ag->keep_P_tentative == ML_NO)  ML_Operator_Destroy(&Pmatrix);
      else {
        if (prev_P_tentatives == NULL) {
@@ -1268,7 +998,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data)
    ML_Aggregate_Set_OutputLevel( newag, 0.);
    ML_Aggregate_Set_CoarsenScheme_Uncoupled( newag );
    ML_Aggregate_Set_Threshold( newag, 0.08 );
-ML_Aggregate_Set_DampingFactor( newag, 0.0/3.0 );
+   ML_Aggregate_Set_DampingFactor( newag, 0.0/3.0 );
    ML_Aggregate_Set_MaxCoarseSize( newag, 1 );
    ML_Aggregate_Set_PSmootherType( newag, 0 );
    newClevel = ML_Gen_MGHierarchy_UsingAggregation(newml, newNlevels-1,
