@@ -47,6 +47,8 @@
 #define DGEQRF_F77  F77_FUNC(sgeqrf,SGEQRF)
 #define DGETRF_F77  F77_FUNC(sgetrf,SGETRF)
 #define DGETRS_F77  F77_FUNC(sgetrs,SGETRS)
+#define DGTTRF_F77  F77_FUNC(sgttrf,SGTTRF)
+#define DGTTRS_F77  F77_FUNC(sgttrs,SGTTRS)
 #define DGETRI_F77  F77_FUNC(sgetri,SGETRI)
 #define DGERFS_F77  F77_FUNC(sgerfs,SGERFS)
 #define DGECON_F77  F77_FUNC(sgecon,SGECON)
@@ -90,6 +92,8 @@
 #define ZUNGQR_F77  F77_FUNC(cungqr,CUNGQR)
 #define ZGETRF_F77  F77_FUNC(cgetrf,CGETRF)
 #define ZGETRS_F77  F77_FUNC(cgetrs,CGETRS)
+#define ZGTTRF_F77  F77_FUNC(cgttrf,CGTTRF)
+#define ZGTTRS_F77  F77_FUNC(cgttrs,CGTTRS)
 #define ZGETRI_F77  F77_FUNC(cgetri,CGETRI)
 #define ZGERFS_F77  F77_FUNC(cgerfs,CGERFS)
 #define ZGECON_F77  F77_FUNC(cgecon,CGECON)
@@ -128,6 +132,8 @@
 #define DGEQRF_F77  F77_FUNC(dgeqrf,DGEQRF)
 #define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
 #define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
+#define DGTTRF_F77  F77_FUNC(dgttrf,DGTTRF)
+#define DGTTRS_F77  F77_FUNC(dgttrs,DGTTRS)
 #define DGETRI_F77  F77_FUNC(dgetri,DGETRI)
 #define DGERFS_F77  F77_FUNC(dgerfs,DGERFS)
 #define DGECON_F77  F77_FUNC(dgecon,DGECON)
@@ -171,6 +177,8 @@
 #define ZUNGQR_F77  F77_FUNC(zungqr,ZUNGQR)
 #define ZGETRF_F77  F77_FUNC(zgetrf,ZGETRF)
 #define ZGETRS_F77  F77_FUNC(zgetrs,ZGETRS)
+#define ZGTTRF_F77  F77_FUNC(zgttrf,ZGTTRF)
+#define ZGTTRS_F77  F77_FUNC(zgttrs,ZGTTRS)
 #define ZGETRI_F77  F77_FUNC(zgetri,ZGETRI)
 #define ZGERFS_F77  F77_FUNC(zgerfs,ZGERFS)
 #define ZGECON_F77  F77_FUNC(zgecon,ZGECON)
@@ -209,6 +217,8 @@
 #define DGEQRF_F77  F77_FUNC(dgeqrf,DGEQRF)
 #define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
 #define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
+#define DGTTRF_F77  F77_FUNC(dgttrf,DGTTRF)
+#define DGTTRS_F77  F77_FUNC(dgttrs,DGTTRS)
 #define DGETRI_F77  F77_FUNC(dgetri,DGETRI)
 #define DGERFS_F77  F77_FUNC(dgerfs,DGERFS)
 #define DGECON_F77  F77_FUNC(dgecon,DGECON)
@@ -250,6 +260,8 @@
 
 #define ZGEQRF_F77  F77_FUNC(zgeqrf,ZGEQRF)
 #define ZUNGQR_F77  F77_FUNC(zungqr,ZUNGQR)
+#define ZGTTRF_F77  F77_FUNC(zgttrf,ZGTTRF)
+#define ZGTTRS_F77  F77_FUNC(zgttrs,ZGTTRS)
 #define ZGETRF_F77  F77_FUNC(zgetrf,ZGETRF)
 #define ZGETRS_F77  F77_FUNC(zgetrs,ZGETRS)
 #define ZGETRI_F77  F77_FUNC(zgetri,ZGETRI)
@@ -316,6 +328,8 @@
 #define DGEQRF_F77  F77_FUNC(dgeqrf,DGEQRF)
 #define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
 #define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
+#define DGTTRF_F77  F77_FUNC(dgttrf,DGTTRF)
+#define DGTTRS_F77  F77_FUNC(dgttrs,DGTTRS)
 #define DGETRI_F77  F77_FUNC(dgetri,DGETRI)
 #define DGERFS_F77  F77_FUNC(dgerfs,DGERFS)
 #define DGECON_F77  F77_FUNC(dgecon,DGECON)
@@ -394,6 +408,8 @@
 #define SGEQRF_F77  F77_FUNC(sgeqrf,SGEQRF)
 #define SGETRF_F77  F77_FUNC(sgetrf,SGETRF)
 #define SGETRS_F77  F77_FUNC(sgetrs,SGETRS)
+#define SGTTRF_F77  F77_FUNC(sgttrf,SGTTRF)
+#define SGTTRS_F77  F77_FUNC(sgttrs,SGTTRS)
 #define SGETRI_F77  F77_FUNC(sgetri,SGETRI)
 #define SGERFS_F77  F77_FUNC(sgerfs,SGERFS)
 #define SGECON_F77  F77_FUNC(sgecon,SGECON)
@@ -436,6 +452,8 @@
 #define CUNGQR_F77  F77_FUNC(cungqr,CUNGQR)
 #define CGETRF_F77  F77_FUNC(cgetrf,CGETRF)
 #define CGETRS_F77  F77_FUNC(cgetrs,CGETRS)
+#define CGTTRF_F77  F77_FUNC(cgttrf,CGTTRF)
+#define CGTTRS_F77  F77_FUNC(cgttrs,CGTTRS)
 #define CGETRI_F77  F77_FUNC(cgetri,CGETRI)
 #define CGERFS_F77  F77_FUNC(cgerfs,CGERFS)
 #define CGECON_F77  F77_FUNC(cgecon,CGECON)
@@ -475,6 +493,8 @@ void PREFIX DGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrh
 void PREFIX DGEQRF_F77(const int* m, const int* n, double* a, const int* lda, double* tau, double* work, const int* lwork, int* info);
 void PREFIX DGETRF_F77(const int* m, const int* n, double* a, const int* lda, int* ipiv, int* info); 
 void PREFIX DGETRS_F77(Teuchos_fcd, const int* n, const int* nrhs, const double* a, const int* lda,const int* ipiv, double* x , const int* ldx, int* info);
+void PREFIX DGTTRF_F77(const int* n, double* dl, double* d, double* du, double* du2, int* ipiv, int* info); 
+void PREFIX DGTTRS_F77(Teuchos_fcd, const int* n, const int* nrhs, const double* dl, const double* d, const double* du, const double* du2, const int* ipiv, double* x , const int* ldx, int* info);
 void PREFIX DGETRI_F77(const int* n, double* a, const int* lda, const int* ipiv, double* work , const int* lwork, int* info);
 void PREFIX DGECON_F77(Teuchos_fcd norm, const int* n, const double* a, const int* lda, const double* anorm, double* rcond, double* work, int* iwork, int* info); 
 void PREFIX DGESV_F77(const int* n, const int* nrhs, double* a, const int* lda, int* ipiv, double* x , const int* ldx, int* info);
@@ -498,6 +518,8 @@ void PREFIX SGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrh
 void PREFIX SGEQRF_F77(const int* m, const int* n, float* a, const int* lda, float* tau, float* work, const int* lwork, int* info);
 void PREFIX SGETRF_F77(const int* m, const int* n, float* a, const int* lda, int* ipiv, int* info);
 void PREFIX SGETRS_F77(Teuchos_fcd, const int* n, const int* nrhs, const float* a, const int* lda,const int* ipiv, float* x , const int* ldx, int* info);
+void PREFIX SGTTRF_F77(const int* n, float* dl, float* d, float* du, float* du2, int* ipiv, int* info); 
+void PREFIX SGTTRS_F77(Teuchos_fcd, const int* n, const int* nrhs, const float* dl, const float* d, const float* du, const float* du2, const int* ipiv, float* x , const int* ldx, int* info);
 void PREFIX SGETRI_F77(const int* n, float* a, const int* lda, const int* ipiv, float* work , const int* lwork, int* info);
 void PREFIX SGECON_F77(Teuchos_fcd norm, const int* n, const float* a, const int* lda, const float* anorm, float* rcond, float* work, int* iwork, int* info); 
 void PREFIX SGESV_F77(const int* n, const int* nrhs, float* a, const int* lda, int* ipiv, float* x , const int* ldx, int* info);
@@ -574,6 +596,8 @@ void PREFIX ZGEQRF_F77(const int* m, const int* n, complex<double>* a, const int
 void PREFIX ZUNGQR_F77(const int* m, const int* n, const int* k, complex<double>* a, const int* lda, const complex<double>* tau, complex<double>* work, const int* lwork, int* info);
 void PREFIX ZGETRF_F77(const int* m, const int* n, complex<double>* a, const int* lda, int* ipiv, int* info); 
 void PREFIX ZGETRS_F77(Teuchos_fcd, const int* n, const int* nrhs, const complex<double>* a, const int* lda,const int* ipiv, complex<double>* x , const int* ldx, int* info);
+void PREFIX ZGTTRF_F77(const int* n, complex<double>* dl, complex<double>* d, complex<double>* du, complex<double>* du2, int* ipiv, int* info); 
+void PREFIX ZGTTRS_F77(Teuchos_fcd, const int* n, const int* nrhs, const complex<double>* dl, const complex<double>* d, const complex<double>* du, const complex<double>* du2, const int* ipiv, complex<double>* x , const int* ldx, int* info);
 void PREFIX ZGETRI_F77(const int* n, complex<double>* a, const int* lda, const int* ipiv, complex<double>* work , const int* lwork, int* info);
 void PREFIX ZGECON_F77(Teuchos_fcd norm, const int* n, const complex<double>* a, const int* lda, const double* anorm, double* rcond, complex<double>* work, double* rwork, int* info); 
 void PREFIX ZGESV_F77(const int* n, const int* nrhs, complex<double>* a, const int* lda, int* ipiv, complex<double>* x , const int* ldx, int* info);
@@ -596,6 +620,8 @@ void PREFIX CGEQRF_F77(const int* m, const int* n, complex<float>* a, const int*
 void PREFIX CUNGQR_F77(const int* m, const int* n, const int* k, complex<float>* a, const int* lda, const complex<float>* tau, complex<float>* work, const int* lwork, int* info);
 void PREFIX CGETRF_F77(const int* m, const int* n, complex<float>* a, const int* lda, int* ipiv, int* info);
 void PREFIX CGETRS_F77(Teuchos_fcd, const int* n, const int* nrhs, const complex<float>* a, const int* lda,const int* ipiv, complex<float>* x , const int* ldx, int* info);
+void PREFIX CGTTRF_F77(const int* n, complex<float>* dl, complex<float>* d, complex<float>* du, complex<float>* du2, int* ipiv, int* info); 
+void PREFIX CGTTRS_F77(Teuchos_fcd, const int* n, const int* nrhs, const complex<float>* dl, const complex<float>* d, const complex<float>* du, const complex<float>* du2, const int* ipiv, complex<float>* x , const int* ldx, int* info);
 void PREFIX CGETRI_F77(const int* n, complex<float>* a, const int* lda, const int* ipiv, complex<float>* work , const int* lwork, int* info);
 void PREFIX CGECON_F77(Teuchos_fcd norm, const int* n, const complex<float>* a, const int* lda, const float* anorm, float* rcond, complex<float>* work, float* rwork, int* info); 
 void PREFIX CGESV_F77(const int* n, const int* nrhs, complex<float>* a, const int* lda, int* ipiv, complex<float>* x, const int* ldx, int* info);
