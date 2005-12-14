@@ -31,6 +31,16 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
+/*!
+ * \file mrtr_manager.H
+ *
+ * \class MOERTEL::Manager
+ *
+ * \brief Top level user interface to the mortar package 'Moertel'
+ *
+ * \date Last update do Doxygen: 14-Dec-05
+ *
+ */
 #ifdef TRILINOS_PACKAGE
 
 #ifndef MOERTEL_MANAGER_H
@@ -54,16 +64,74 @@
 #include "mrtr_node.H"
 #include "mrtr_interface.H"
 
+
+
 using namespace std;
 using namespace Teuchos;
 
+//! MOERTEL: namespace of the Moertel package
 namespace MOERTEL
 {
 
+/*!
+\class Manager
+
+\brief <b> Top level user interface to mortar package 'Moertel' </b>
+
+This class supplies capabilities for nonconforming mesh tying in 2 and 3 
+dimensions using Mortar methods. <br>
+It also supports use of mortar methods for contact formulations and 
+domain decomposition as well as some limited support to solving 
+mortar-coupled systems of equations.
+
+\b Proceeding:
+- The user constructs an arbitrary number of conforming or non-conforming 
+ interfaces using the \ref MOERTEL::Interface class and passes them to this
+ \ref MOERTEL::Manager.
+- This class will then choose approbiate mortar and slave sides on all interfaces
+ (if not already done by the user) such that conflicts are avoided on 
+ corner and edge nodes that are shared among interfaces.
+ It will detect such corner/edge nodes based on the user input and will perform
+ neccessary modifications to the user chosen lagrange mutliplier shape functions
+ close to the boundary of an interface.
+- It will then perform the construction of a C0-continous field of normals on
+ each slave side of an interface and will use this field to construct the
+ Mortar projection operator that projects nodal values from the mortar to the slave side
+- It will perform the integration of the Mortar integrals and assemble the
+ coupling matrix \b D that couples the interface degrees of freedom of 
+ the slave side to the Lagrange multipliers (LMs) and the coupling matrix \b M that
+ couples the degrees of freedom of the master side to the LMs.
+- A saddle point system of equations can be constructed and returned to the user
+ to solve if the matrix of the original (uncoupled) problem is supplied.
+- Some limited support in solving the coupled system of equations using direct
+ and iterative, mutligrid preconditioned solvers is supplied. (not yet implemented)
+- The user has access to coupling matrices \b D and \b M to use in contact formulations (not yet impl.).
+- It supplies a projection operator that projects arbitrary nodal field values
+  from the slave side to the master side and vice versa to use in domain decomposition methods.
+  (not yet impl.)    
+  
+The \ref MOERTEL::Manager class supports the << operator  
+
+The package and this class make use of the other Trilinos packages 
+\b Epetra , \b EpetraExt , \b Teuchos , \b Amesos , \b ML .
+
+For more detailed information on the usage, see "The Moertel User's Guide", Sandia report XXXX
+
+For background information on Mortar methods, we refer to <br>
+Wohlmuth, B.:"Discretization Methods and Iterative Solvers Based on Domain Decomposition", 
+Springer, New York, 2001, ISBN 3-540-41083-X
+
+\author Michael W. Gee (mwgee@sandia.gov)
+
+*/
 class Manager 
 {
 public:
 
+  /*!
+  \brief Specification of the problem dimension
+  
+  */
   enum DimensionType
   {
     manager_none,
@@ -71,47 +139,173 @@ public:
     manager_3D
   };
   
-  // ctor
+  // @{ \name Constructors and destructors
+  
+  /*!
+  \brief Creates and empty instance of this class
+  
+  Constructs an empty instance of this class that is then filled buy the user with
+  information about the non-conforming interface(s). <br>
+  This is a collective call for all processors associated with the
+  Epetra_Comm 
+  
+  \param comm : An Epetra_Comm object
+  \param outlevel : The level of output to stdout to be generated ( 0 - 10 )
+  */
   explicit Manager(Epetra_Comm& comm, int outlevel);
   
-  // dtor
+  /*!
+  \brief Destroys an instance of this class
+  
+  Destructor
+  
+  */
   virtual ~Manager();
   
-  // get Epetra_Comm
+  //@}
+  
+  // @{ \name Query methods
+  
+  /*!
+  \brief Returns the Epetra_Comm object associated with this class
+  */
   Epetra_Comm& Comm() const {return comm_;}
 
-  // get Printlevel (0-10)
+  /*!
+  \brief Returns the Level of output (0 - 10) the user specified in the constructor
+  */
   int OutLevel() { return outlevel_; }
 
-  // set the dimension type
-  void SetDimension(MOERTEL::Manager::DimensionType type) { dimensiontype_ = type; return; }
+  /*!
+  \brief Query the problem dimension
+
+  Query the problem dimension
   
-  // get the dimension type
+  */
   MOERTEL::Manager::DimensionType Dimension() { return dimensiontype_; }
   
-  // add an interface to the mortar manager
-  bool AddInterface(MOERTEL::Interface& interface);
+  /*!
+  \brief Query the number of interfaces passed to this class via AddInterface
 
-  // printout this mortar manager
+  Returns the number of non-conforming interfaces passed to this class via AddInterface
+
+  */
+  int Ninterfaces() { return interface_.size(); }
+
+  /*!
+  \brief Print all information stored in this class to stdout
+
+  */
   bool Print() const;
   
-  // outputlevel
-  int OutLevel() const { return outlevel_; }
+  //@}
 
-  // set the rowmap of the input matrix of the application
+  // @{ \name Construction methods
+
+
+  /*!
+  \brief Set problem dimension
+  
+  This class can handle 2D and 3D problems but not both at the same time.
+  It is necessary to specify the dimension of the problem
+  
+  \param type : Dimension of the problem
+  */
+  void SetDimension(MOERTEL::Manager::DimensionType type) { dimensiontype_ = type; return; }
+  
+  /*!
+  \brief Add an interface class to this class
+  
+  Add a previously constructed interface to this class. </br>
+  Before adding an interface,the interfaces's public method 
+  \ref MOERTEL::Interface::Complete() has to be called.</br>
+  This class will not accept interface that are not completed.
+  Any number of interfaces can be added. This class does not take ownership over the
+  added class. The interface added can be destroyed immediately after the call to this method
+  as this class stores a deep copy of it. 
+    
+  \param interface : A completed interface
+  
+  \return true when adding the interface was successfull and false otherwise
+  */
+  bool AddInterface(MOERTEL::Interface& interface);
+
+  /*!
+  \brief Set the RowMap of the original uncoupled problem
+  
+  Passes in the RowMap of the original (uncoupled) problem.
+  In a saddle point system, this would be the row map of the (1,1) block.
+  This class does not take ownership of the passed in map. The map can
+  be destroyed immediately after the call to this method as this class
+  stores a deep copy of it.
+  A row map has to be passed to this class before a call to \ref Mortar_Integrate() 
+    
+  \param map : Row map of the original (uncoupled) problem
+  
+  \sa Mortar_Integrate()
+  
+  */
   bool SetInputMap(Epetra_Map* map);
   
-  // set the uncoupled inputmatrix
+  /*!
+  \brief Set the Matrix of the original uncoupled problem
+  
+  Passes in the Matrix of the original (uncoupled) problem.
+  In a saddle point system, this would be the the (1,1) block.
+  This class takes ownership of the matrix if DeepCopy is set to true. 
+
+  The matrix of the original, uncoupled problem is used to
+  construct a saddle point system via \ref MakeSaddleProblem() 
+  or solve the coupled problem
+    
+  \param map : Matrix of the original (uncoupled) problem
+  
+  \sa MakeSaddleProblem() 
+  
+  */
   bool SetInputMatrix(Epetra_CrsMatrix* inputmatrix, bool DeepCopy = false);
   
-  // do integration of all interfaces
+  /*!
+  \brief Perform integration of the mortar integral on all interfaces
+  
+  Once all interfaces and a row map of the original system are passed to 
+  this class this method evaluates the mortar integrals on all interfaces.
+  
+  Proceding:
+  - Chooses a slave and a mortar side for each interface of not already
+    chosen by the user in the interface class
+  - Build a C0-continous field of normals on the slave side
+  - Makes special boundary modifications to the lagrange mutliplier shape functions
+  - Performs integration of the mortar integrals on individual interfaces
+  - Chooses degrees of freedom for the lagrange multipliers based on 
+    the row map of the original uncoupled problem.
+  - Builds a row map of the saddle point system
+  - Assembles interface contributions to coupling matrices D and M
+  
+  \return true if successfull, false otherwise
+  
+  \sa SetInputMap , AddInterface
+    
+  */
   bool Mortar_Integrate();
   
-  // make the saddle point problem
+  /*!
+  \brief Construct a saddle point system of equations
+  
+  After a call to \ref Mortar_Integrate() a saddle point system of equations
+  can be constructed and returned to the user. Prerequisite is that the user has 
+  supplied the original uncoupled matrix via \ref SetInputMatrix and
+  the integration was performed with \ref Mortar_Integrate().
+  This class holds ownership of the saddle point system so the
+  user must not destroy it.
+  
+  \return true if succesfull, false otherwise
+  
+  */
   Epetra_CrsMatrix* MakeSaddleProblem();
   
-  // get number of interfaces
-  int Ninterfaces() { return interface_.size(); }
+  //@}
+
 
 private:  
   // don't want = operator and copy-ctor
@@ -158,7 +352,12 @@ private:
 
 } // namespace MOERTEL
 
-// << operator
+/*!
+\brief << operator
+
+outputs all information stored in the \ref MOERTEL::Manager class to ostream
+
+*/
 std::ostream& operator << (ostream& os, const MOERTEL::Manager& node);
 
 #endif // MOERTEL_MANAGER_H

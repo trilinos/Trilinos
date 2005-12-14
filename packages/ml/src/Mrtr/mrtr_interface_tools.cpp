@@ -464,16 +464,16 @@ int MOERTEL::Interface::GlobalNsegment(int side)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MOERTEL::Interface::GlobalNsegment:\n"
-         << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    cout << "***WRN*** MOERTEL::Interface::GlobalNsegment:\n"
+         << "***WRN*** Complete() was not called on interface " << Id_ << "\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return -1;
   }
   if (side!=0 && side!=1)
   {
-    cout << "***ERR*** MOERTEL::Interface::GlobalNsegment:\n"
-         << "***ERR*** side = " << side << " not equal 0 or 1\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    cout << "***WRN*** MOERTEL::Interface::GlobalNsegment:\n"
+         << "***WRN*** side = " << side << " not equal 0 or 1\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return (-1);
   }
   if (!lComm()) 
@@ -496,9 +496,9 @@ int MOERTEL::Interface::GlobalNsegment()
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MOERTEL::Interface::GlobalNsegment:\n"
-         << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    cout << "***WRN*** MOERTEL::Interface::GlobalNsegment:\n"
+         << "***WRN*** Complete() was not called on interface " << Id_ << "\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return -1;
   }
   if (!lComm()) 
@@ -641,9 +641,9 @@ int MOERTEL::Interface::OtherSide(int side) const
   else if (side==1) return 0;
   else
   {
-    cout << "***ERR*** MOERTEL::Interface::OtherSide:\n"
-         << "***ERR*** side " << side << " out of range (0 or 1)\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    cout << "***WRN*** MOERTEL::Interface::OtherSide:\n"
+         << "***WRN*** side " << side << " out of range (0 or 1)\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return -1;
   }
 }
@@ -775,17 +775,17 @@ int MOERTEL::Interface::GetSide(MOERTEL::Segment* seg)
   if (!lComm()) return -1;
   if (!IsComplete())
   {
-    cout << "***ERR*** MOERTEL::Interface::GetSide:\n"
-         << "***ERR*** Interface " << Id() << ": Complete() not called\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    cout << "***WRN*** MOERTEL::Interface::GetSide:\n"
+         << "***WRN*** Interface " << Id() << ": Complete() not called\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return -1;
   }
   if (!lComm())
   {
-    cout << "***ERR*** MOERTEL::Interface::GetSide:\n"
-         << "***ERR*** Interface " << Id() << ": Proc " << gcomm_.MyPID() << "not in intra-comm\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    cout << "***WRN*** MOERTEL::Interface::GetSide:\n"
+         << "***WRN*** Interface " << Id() << ": Proc " << gcomm_.MyPID() << "not in intra-comm\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return -1;
   }
   map<int,RefCountPtr<MOERTEL::Segment> >::iterator curr = rseg_[0].find(seg->Id());
   if (curr != rseg_[0].end())
@@ -804,17 +804,17 @@ int MOERTEL::Interface::GetSide(MOERTEL::Node* node)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MOERTEL::Interface::GetSide:\n"
-         << "***ERR*** Interface " << Id() << ": Complete() not called\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    cout << "***WRN*** MOERTEL::Interface::GetSide:\n"
+         << "***WRN*** Interface " << Id() << ": Complete() not called\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return -1;
   }
   if (!lComm())
   {
-    cout << "***ERR*** MOERTEL::Interface::GetSide:\n"
-         << "***ERR*** Interface " << Id() << ": Proc " << gcomm_.MyPID() << "not in intra-comm\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    cout << "***WRN*** MOERTEL::Interface::GetSide:\n"
+         << "***WRN*** Interface " << Id() << ": Proc " << gcomm_.MyPID() << "not in intra-comm\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return -1;
   }
   map<int,RefCountPtr<MOERTEL::Node> >::iterator curr = rnode_[0].find(node->Id());
   if (curr != rnode_[0].end())
@@ -833,17 +833,17 @@ int MOERTEL::Interface::GetSide(int nodeid)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MOERTEL::Interface::GetSide:\n"
-         << "***ERR*** Interface " << Id() << ": Complete() not called\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    cout << "***WRN*** MOERTEL::Interface::GetSide:\n"
+         << "***WRN*** Interface " << Id() << ": Complete() not called\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return -1;
   }
   if (!lComm())
   {
-    cout << "***ERR*** MOERTEL::Interface::GetSide:\n"
-         << "***ERR*** Interface " << Id() << ": Proc " << gcomm_.MyPID() << "not in intra-comm\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    cout << "***WRN*** MOERTEL::Interface::GetSide:\n"
+         << "***WRN*** Interface " << Id() << ": Proc " << gcomm_.MyPID() << "not in intra-comm\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return -1;
   }
   map<int,RefCountPtr<MOERTEL::Node> >::iterator curr = rnode_[0].find(nodeid);
   if (curr != rnode_[0].end())
