@@ -126,6 +126,10 @@ namespace Teuchos {
     static inline T zero()                     { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns representation of one for this scalar type.
     static inline T one()                      { return UndefinedScalarTraits<T>::notDefined(); };
+    //! Returns the real part of the scalar type \c a.
+    static inline magnitudeType real(T a) { return UndefinedScalarTraits<T>::notDefined(); };
+    //! Returns the imaginary part of the scalar type \c a.
+    static inline magnitudeType imag(T a) { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns the conjugate of the scalar type \c a.
     static inline T conjugate(T a) { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns a number that represents NaN.
@@ -156,6 +160,8 @@ namespace Teuchos {
     static inline int zero()  { return 0; };
     static inline int one()   { return 1; };
     static inline int conjugate(int x) { return x; };
+    static inline int real(int x) { return x; };
+    static inline int imag(int x) { return 0; };
     static inline void seedrandom(unsigned int s) { srand(s); };
     //static inline int random() { return (-1 + 2*rand()); };  // RAB: This version should be used to be consistent with others
     static inline int random() { return rand(); };             // RAB: This version should be used for an unsigned int, not int
@@ -248,6 +254,8 @@ namespace Teuchos {
     static inline float zero()  { return(0.0); };
     static inline float one()   { return(1.0); };    
     static inline float conjugate(float x)   { return(x); };    
+    static inline float real(float x) { return x; };
+    static inline float imag(float x) { return 0; };
     static inline float nan() {
 #ifdef __sun
       return 0.0/sin(0.0);
@@ -352,6 +360,8 @@ namespace Teuchos {
     static inline double zero()  { return 0.0; };
     static inline double one()   { return 1.0; };
     static inline double conjugate(double x)   { return(x); };    
+    static inline double real(double x) { return(x); };
+    static inline double imag(double x) { return(0); };
     static inline double nan() {
 #ifdef __sun
       return 0.0/sin(0.0);
@@ -387,6 +397,8 @@ namespace Teuchos {
     static inline mpf_class zero() { mpf_class zero = 0.0; return zero; };
     static inline mpf_class one() { mpf_class one = 1.0; return one; };    
     static inline mpf_class conjugate(mpf_class x) { return x; };
+    static inline mpf_class real(mpf_class x) { return(x); };
+    static inline mpf_class imag(mpf_class x) { return(0); };
     static inline bool isnaninf(mpf_class x) { return false; } // mpf_class currently can't handle nan or inf!
     static inline void seedrandom(unsigned int s) { 
       unsigned long int seedVal = static_cast<unsigned long int>(s);
@@ -416,6 +428,8 @@ namespace Teuchos {
     static inline mp_real zero() { mp_real zero = 0.0; return zero; };
     static inline mp_real one() { mp_real one = 1.0; return one; };    
     static inline mp_real conjugate(mp_real x) { return x; };
+    static inline mp_real real(mp_real x) { return(x); };
+    static inline mp_real imag(mp_real x) { return(0); };
     static inline bool isnaninf(mp_real x) { return false; } // ToDo: Change this?
     static inline void seedrandom(unsigned int s) { 
       long int seedVal = static_cast<long int>(s);
@@ -464,6 +478,8 @@ namespace Teuchos {
     static inline ComplexT zero()              { return ComplexT(ScalarTraits<magnitudeType>::zero(),ScalarTraits<magnitudeType>::zero()); };
     static inline ComplexT one()               { return ComplexT(ScalarTraits<magnitudeType>::one(),ScalarTraits<magnitudeType>::zero()); };
     static inline ComplexT conjugate(ComplexT a){ return ComplexT(a.real(),-a.imag()); };
+    static inline magnitudeType real(ComplexT a) { return a.real(); };
+    static inline magnitudeType imag(ComplexT a) { return a.imag(); };
     static inline ComplexT nan()               { return ComplexT(ScalarTraits<magnitudeType>::nan(),ScalarTraits<magnitudeType>::nan()); };
     static inline bool isnaninf(ComplexT x)    { return ScalarTraits<magnitudeType>::isnaninf(x.real()) || ScalarTraits<magnitudeType>::isnaninf(x.imag()); };
     static inline void seedrandom(unsigned int s) { ScalarTraits<magnitudeType>::seedrandom(s); };
