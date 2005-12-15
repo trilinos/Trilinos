@@ -784,7 +784,6 @@ namespace Anasazi {
     MagnitudeType tol = 1e-12;
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    MagnitudeType one_m = SCT::magnitude(one);
 
     Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > KKcopy, MMcopy;
     Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > U;
