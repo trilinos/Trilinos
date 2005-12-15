@@ -174,7 +174,7 @@ namespace Anasazi {
     \note This can be different than the MvNorm method for the multivector class.  For example,
     if there is a mass matrix \c M, then this might be the <tt>M</tt>-norm (\f$||x_i||_M\f$)
      */
-    virtual ReturnType MvNorm( const MV& X, std::vector<ScalarType>* normvec ) const = 0;
+    virtual ReturnType MvNorm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType >* normvec ) const = 0;
     
     //@}	
   };

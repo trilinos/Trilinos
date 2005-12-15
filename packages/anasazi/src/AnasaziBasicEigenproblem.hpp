@@ -178,7 +178,7 @@ namespace Anasazi {
     //@{ \name Norm Methods.
     /*! \brief Computes the multivector norm \f$||x_i||_M\f$ as needed by the eigensolver.      
     */
-    ReturnType MvNorm( const MV& X, std::vector<ScalarType>* normvec ) const;
+    ReturnType MvNorm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType >* normvec ) const;
     
     //@}	
     
@@ -382,7 +382,7 @@ namespace Anasazi {
   //=============================================================================
   
   template <class ScalarType, class MV, class OP>
-  ReturnType BasicEigenproblem<ScalarType, MV, OP>::MvNorm( const MV& X, std::vector<ScalarType>* normvec ) const
+  ReturnType BasicEigenproblem<ScalarType, MV, OP>::MvNorm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType >* normvec ) const
   {
     if (_isSet) {
       int IntOne = 1;
