@@ -233,7 +233,7 @@ double MOERTEL::Segment_Linear1D::Metric(double* xi, double g[], double G[][3])
 
   // FIXME: look at file shell8/s8_tvmr.c & shell8/s8_static_keug.c 
   // build dA as g1 cross g2
-  // in this linear case, it's just the length of g
+  // in this linear 1D case, it's just the length of g
   double dl = sqrt(gl[0]*gl[0]+gl[1]*gl[1]);
   
   return dl;

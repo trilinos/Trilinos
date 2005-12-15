@@ -193,7 +193,7 @@ in any geometrical configuration. It is though computationally advantageous when
 as few as possible processes work on a single interface and non-overlapping subsets of
 processes work on different interfaces at the same time.
 
-The \ref MOERTEL::Interface class supports the << operator  
+The \ref MOERTEL::Interface class supports the ostream& operator <<
 
 \author Michael W. Gee (mwgee@sandia.gov)
 

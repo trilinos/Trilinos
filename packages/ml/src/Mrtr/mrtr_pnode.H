@@ -70,7 +70,7 @@ class MOERTEL::Segment;
 
 \brief <b> A class to handle the projection of a node onto some segment </b>
 
-The \ref MOERTEL::ProjectedNode class supports the << operator  
+The \ref MOERTEL::ProjectedNode class supports the ostream& operator <<
 
 \author Michael W. Gee (mwgee@sandia.gov)
 

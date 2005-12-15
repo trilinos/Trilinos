@@ -74,7 +74,7 @@ class MOERTEL::ProjectedNode;
 
 This class defines a node on one side of a (non-)conforming interface.
 
-The \ref MOERTEL::Node class supports the << operator  
+The \ref MOERTEL::Node class supports the ostream& operator <<
 
 \author Michael W. Gee (mwgee@sandia.gov)
 
@@ -91,7 +91,7 @@ public:
   Constructs an instance of this class.<br>
   Note that this is \b not a collective call as nodes shall only have one owning process.
   
-  \param Id : A unique positive node id. Does not need to be continous among several interfaces
+  \param Id : A unique positive node id. Does not need to be continous among nodes
   \param x : ptr to vector of length 3 holding coordinates of node. In the 2D problem case x[2] has to be 0.0
   \param ndof : Number of degrees of freedom on this node, e.g. 2 in 2D and 3 in 3D
   \param dof : Pointer to vector of length ndof holding degrees of freedom on this node
