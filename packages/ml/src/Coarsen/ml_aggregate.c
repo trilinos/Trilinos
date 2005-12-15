@@ -62,6 +62,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->coarsen_scheme             = ML_AGGR_UNCOUPLED;
    (*ag)->threshold                  = 0.0;
    (*ag)->smoothP_damping_factor     = 4.0/3.0;
+   (*ag)->smoothP_damping_sweeps     = 1;
    (*ag)->spectral_radius_scheme     = 1;  /* compute it */
    (*ag)->smoothP_type               = 0;  /* point type */
    (*ag)->num_PDE_eqns               = 1;
@@ -700,6 +701,37 @@ int ML_Aggregate_Set_DampingFactor( ML_Aggregate *ag, double factor )
    }
    ag->smoothP_damping_factor = factor;
    return 0;
+}
+
+
+/* ************************************************************************* */
+/* set number of damping sweeps for the smoothed prolongator                 */
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_DampingSweeps( ML_Aggregate *ag, int numSweeps )
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_DampingFactor : wrong object. \n");
+      exit(-1);
+   }
+   ag->smoothP_damping_sweeps = numSweeps;
+   return 0;
+}
+
+
+/* ************************************************************************* */
+/* retrieve number of damping sweeps for the smoothed prolongator            */
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Get_DampingSweeps( ML_Aggregate *ag)
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_DampingFactor : wrong object. \n");
+      exit(-1);
+   }
+   return ag->smoothP_damping_sweeps;
 }
 
 /* ************************************************************************* */

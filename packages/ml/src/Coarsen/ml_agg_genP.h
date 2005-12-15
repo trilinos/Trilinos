@@ -120,6 +120,7 @@ extern int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *dat
 extern int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int clevel, void *data);
 extern void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
                             ML_Operator* Cmat);
+extern void ML_AGG_Calculate_Smoothing_Factors(int numSweeps, double *factors);
 
 
 #ifndef ML_CPP

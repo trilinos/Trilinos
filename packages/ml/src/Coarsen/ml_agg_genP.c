@@ -41,6 +41,7 @@ extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
 					       int IsProblemSymmetric,
 					       int UseDiagonalScaling,
 					       double * LambdaMax );
+
 #endif
 #ifndef ML_CPP
 #ifdef __cplusplus
@@ -311,7 +312,7 @@ MPI_Barrier(MPI_COMM_WORLD);
 
 int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 {
-   int         Ncoarse, Nfine, gNfine, gNcoarse, jj;
+   int         Ncoarse, Nfine, gNfine, gNcoarse, ii, jj;
    double      max_eigen = -1.;
    ML_Operator *Amat, *Pmatrix = NULL, *AGGsmoother = NULL;
    ML_Operator **prev_P_tentatives;
@@ -321,6 +322,9 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    ML_Aggregate * ag = (ML_Aggregate *) data;
    struct MLSthing *mls_widget = NULL;
    ML_Operator *blockMat = NULL, *Ptemp;
+   int numSmSweeps;   /* polynomial degree of prolongator smoother */
+   double *dampingFactors; /* coefficients of prolongator smoother */
+   ML_Operator *tmpmat1=NULL,*tmpmat2=NULL;
 
 #ifdef ML_TIMING
    double t0;
@@ -328,17 +332,18 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 #endif
 
    Amat = &(ml->Amat[level]);
+   numSmSweeps = ML_Aggregate_Get_DampingSweeps(ag);
 
    if (Amat->num_PDEs < ag->num_PDE_eqns) Amat->num_PDEs = ag->num_PDE_eqns;
    if (ag->block_scaled_SA == 1) {
      /* 
          Create block scaled and compute its eigenvalues
-	 a) if the user has requested it, save this Amat into
-	    the aggregate data structure.
+     a) if the user has requested it, save this Amat into
+        the aggregate data structure.
       */
      mls_widget = ML_Smoother_Create_MLS();
      ML_Gen_BlockScaledMatrix_with_Eigenvalues(Amat, -1, NULL,
-					       &blockMat, mls_widget);
+                           &blockMat, mls_widget);
      max_eigen = blockMat->lambda_max;
    }
    else    max_eigen = Amat->lambda_max;
@@ -359,12 +364,12 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    if (ag->smoothP_damping_factor != 0.0)
    {
      if ((ag->keep_P_tentative == ML_YES) && (prev_P_tentatives != NULL) &&
-	     (prev_P_tentatives[clevel] != NULL))
+         (prev_P_tentatives[clevel] != NULL))
      {
        Pmatrix = prev_P_tentatives[clevel];
        Ncoarse = Pmatrix->invec_leng;
      }
-	 else if (ML_Aggregate_Get_Flag_SmoothExistingTentativeP(ag) == ML_YES)
+     else if (ML_Aggregate_Get_Flag_SmoothExistingTentativeP(ag) == ML_YES)
      {
        Pmatrix = ML_Operator_halfClone( &(ml->Pmat[clevel]) );
        /* ml->Pmat[clevel] is destroyed first.  Half cloning assumes that
@@ -423,7 +428,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    {
      if (( Pmatrix != NULL ) && (ag->smoothP_damping_factor != 0.0))
      {
-		if (ML_Aggregate_Get_Flag_SmoothExistingTentativeP(ag) == ML_YES)
+        if (ML_Aggregate_Get_Flag_SmoothExistingTentativeP(ag) == ML_YES)
         {
            ml->Pmat[clevel].data_destroy = Pmatrix->data_destroy;
            Pmatrix->data_destroy = NULL;
@@ -441,7 +446,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      return -1;
    }
 
-   if ( ag->smoothP_damping_factor != 0.0 )
+   if ( ag->smoothP_damping_factor != 0.0 || numSmSweeps > 1 )
    {
      if (ml->symmetrize_matrix == ML_TRUE) {
        t2 = ML_Operator_Create(Amat->comm);
@@ -456,180 +461,190 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
        switch( ag->spectral_radius_scheme ) {
 
        case 1:  /* compute it using CG */
-	 
+     
          kdata = ML_Krylov_Create( ml->comm );
          ML_Krylov_Set_PrintFreq( kdata, 0 );
          ML_Krylov_Set_ComputeEigenvalues( kdata );
-	 if (ml->symmetrize_matrix ==ML_TRUE) ML_Krylov_Set_Amatrix(kdata, t3);
+         if (ml->symmetrize_matrix ==ML_TRUE) ML_Krylov_Set_Amatrix(kdata, t3);
          else ML_Krylov_Set_Amatrix(kdata, Amat);
          ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
          max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
 
-	 Amat->lambda_max = max_eigen; 
-	 Amat->lambda_min = kdata->ML_eigen_min; 
+         Amat->lambda_max = max_eigen; 
+         Amat->lambda_min = kdata->ML_eigen_min; 
          ML_Krylov_Destroy( &kdata );
-         if ( max_eigen <= 0.0 )
-         {
+         if ( max_eigen <= 0.0 ) {
             printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
             max_eigen = 1.0;
          }
-	 /* I use a print statement after computations
-         if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
-            printf("Gen_Prolongator : max eigen = %e \n", max_eigen);
-	 */
-         widget.omega  = ag->smoothP_damping_factor / max_eigen;
-         ml->spectral_radius[level] = max_eigen;
 
-	 break;
+         break;
 
        case 2: /* Use Anasazi */
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
-	 ML_Anasazi_Get_SpectralNorm_Anasazi(Amat, 0, 10, 1e-5,
-					     ML_FALSE, ML_TRUE, &max_eigen);
+         ML_Anasazi_Get_SpectralNorm_Anasazi(Amat, 0, 10, 1e-5,
+                         ML_FALSE, ML_TRUE, &max_eigen);
 #else
-	 fprintf(stderr,
-		 "--enable-epetra --enable-anasazi --enable-teuchos required\n"
-		 "(file %s, line %d)\n",
-		 __FILE__,
-		 __LINE__);
-	 exit(EXIT_FAILURE);
+         fprintf(stderr,
+             "--enable-epetra --enable-anasazi --enable-teuchos required\n"
+             "(file %s, line %d)\n",
+             __FILE__,
+             __LINE__);
+         exit(EXIT_FAILURE);
 #endif
-	 Amat->lambda_max = max_eigen; 
-	 Amat->lambda_min = -12345.6789;
-	 if ( max_eigen <= 0.0 ) {
-	   printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
-	   max_eigen = 1.0;
-	 }
-	 /*
-	   if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
-	   printf("Gen_Prolongator : max eigen = %e \n", max_eigen);
-	 */
-	 widget.omega  = ag->smoothP_damping_factor / max_eigen;
-	 ml->spectral_radius[level] = max_eigen;
+         Amat->lambda_max = max_eigen; 
+         Amat->lambda_min = -12345.6789;
+         if ( max_eigen <= 0.0 ) {
+           printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
+           max_eigen = 1.0;
+         }
 
-	 break;
+         break;
 
        case 3: /* use ML's power method */
-	 kdata = ML_Krylov_Create( ml->comm );
-	 ML_Krylov_Set_PrintFreq( kdata, 0 );
-	 ML_Krylov_Set_ComputeNonSymEigenvalues( kdata );
-	 ML_Krylov_Set_Amatrix(kdata, Amat);
-	 ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
-	 max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
-	 Amat->lambda_max = max_eigen; 
-	 Amat->lambda_min = kdata->ML_eigen_min; 
-	 ML_Krylov_Destroy( &kdata );
-	 if ( max_eigen <= 0.0 )
-	   {
-	     printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
-	     max_eigen = 1.0;
-	   }
-         widget.omega  = ag->smoothP_damping_factor / max_eigen;
-         ml->spectral_radius[level] = max_eigen;
-	 
-	 break;
+         kdata = ML_Krylov_Create( ml->comm );
+         ML_Krylov_Set_PrintFreq( kdata, 0 );
+         ML_Krylov_Set_ComputeNonSymEigenvalues( kdata );
+         ML_Krylov_Set_Amatrix(kdata, Amat);
+         ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
+         max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
+         Amat->lambda_max = max_eigen; 
+         Amat->lambda_min = kdata->ML_eigen_min; 
+         ML_Krylov_Destroy( &kdata );
+         if ( max_eigen <= 0.0 ) {
+           printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
+           max_eigen = 1.0;
+         }
+     
+         break;
 
        default: /* using matrix max norm */
          max_eigen = ML_Operator_MaxNorm(Amat, ML_TRUE);
-         widget.omega  = ag->smoothP_damping_factor / max_eigen;
-         ml->spectral_radius[level] = max_eigen;
-	 break;
-	 
-       }
+         break;
+     
+       } /* switch( ag->spectral_radius_scheme ) */
 
        if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
-	 printf("\nProlongator/Restriction smoother (level %d) : damping factor = %e\nProlongator/Restriction smoother (level %d) : ( = %e / %e)\n\n",
-		level, ag->smoothP_damping_factor/ max_eigen,
-		level,
-		ag->smoothP_damping_factor, max_eigen );
+         printf("\nProlongator/Restriction smoother (level %d) : damping factor = %e\nProlongator/Restriction smoother (level %d) : ( = %e / %e)\n\n",
+         level, ag->smoothP_damping_factor/ max_eigen, level,
+         ag->smoothP_damping_factor, max_eigen );
        }
        
-     }
-     else { /* no need to compute eigenvalue .... we already have it */
-       widget.omega  = ag->smoothP_damping_factor / max_eigen;
-       ml->spectral_radius[level] = max_eigen;
-     }
+     } /* if ((max_eigen < -666.) && (max_eigen > -667)) */
+
+     widget.omega  = ag->smoothP_damping_factor / max_eigen;
+     ml->spectral_radius[level] = max_eigen;
      
-     if ( ml->comm->ML_mypid == 0 && 7 < ML_Get_PrintLevel()) {
+     if ( ml->comm->ML_mypid == 0 && 7 < ML_Get_PrintLevel())
        printf("Gen_Prolongator (level %d) : Max eigenvalue = %e\n",
-	      ag->cur_level,
-	      max_eigen);
-     }
+          ag->cur_level, max_eigen);
      
    }
    else  /* damping fact = 0 ==> no need to compute spectral radius */
    {
       ml->spectral_radius[level] = 1.0;
       widget.omega  = 0.0;
+      if ( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() )
+        printf("\nProlongator/Restriction smoother (level %d) : damping factor = 0.0\n\n", level );
 
-      if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
-	printf("\nProlongator/Restriction smoother (level %d) : damping factor = 0.0\n\n",
-	      level );
-      }
+   } /* if ( ag->smoothP_damping_factor != 0.0 ) */
 
-   }
+   /* Smooth tentative prolongator. */
+   if ( ag->smoothP_damping_factor != 0.0 || numSmSweeps > 1 )
+   {
+     dampingFactors = (double *) ML_allocate( sizeof(double) * numSmSweeps );
+     if (numSmSweeps == 1)
+       dampingFactors[0] = ag->smoothP_damping_factor;
+     else
+       /* Calculate the proper Chebyshev polynomial coefficients. */
+       ML_AGG_Calculate_Smoothing_Factors(numSmSweeps, dampingFactors);
 
-   if ( ag->smoothP_damping_factor != 0.0 ) {
+     /* Create the prolongator smoother operator, I-omega*inv(D)*A. */
+     AGGsmoother = ML_Operator_Create(ml->comm);
      widget.drop_tol = ag->drop_tol_for_smoothing;
      if (ml->symmetrize_matrix == ML_TRUE) widget.Amat   = t3;
      else widget.Amat   = &(ml->Amat[level]);
      widget.aggr_info = ag->aggr_info[level];
-     AGGsmoother = ML_Operator_Create(ml->comm);
      ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
-                        widget.Amat->outvec_leng, &widget,
-                        widget.Amat->matvec->Nrows, NULL, 0);
+                                   widget.Amat->outvec_leng, &widget,
+                                   widget.Amat->matvec->Nrows, NULL, 0);
      ML_Operator_Set_Getrow(AGGsmoother, 
-                          widget.Amat->getrow->Nrows, 
-                          ML_AGG_JacobiSmoother_Getrows);
+                            widget.Amat->getrow->Nrows, 
+                            ML_AGG_JacobiSmoother_Getrows);
      ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
-                          widget.Amat->getrow->pre_comm);
+                           widget.Amat->getrow->pre_comm);
 
-   if (ag->block_scaled_SA == 1) {
-     /* Computed the following:
-      *	a) turn off the usual 2 mat mult.
-      *	b) Ptemp = A*P 
-      *	c) Ptemp = Dinv*Ptemp;
-      *	d) do an ML_Operator_Add() with the original P.
-      */
+     tmpmat2 = Pmatrix;
+     for (ii=0; ii < numSmSweeps; ii++)
+     {
+       /* Set the appropriate prolongator smoother damping factor. */
+       widget.omega  = dampingFactors[ii] / max_eigen;
 
-     Ptemp = ML_Operator_Create(Amat->comm);
-     ML_2matmult(Amat, Pmatrix, Ptemp, ML_CSR_MATRIX );
-     ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs,1,1, Amat);
-     ML_Operator_Add(Pmatrix,Ptemp, &(ml->Pmat[clevel]),ML_CSR_MATRIX,
-		     -ag->smoothP_damping_factor / max_eigen);
-     ML_Operator_Destroy(&Ptemp);
-   }
-   else 
-     ML_2matmult(AGGsmoother, Pmatrix, &(ml->Pmat[clevel]), ML_CSR_MATRIX );
-     
-     if ((ml->symmetrize_matrix == ML_TRUE) ||
-         (ag->use_transpose ==ML_TRUE) ) {
+       if (ii < numSmSweeps-1) {
+         tmpmat1 = tmpmat2;
+         tmpmat2 = ML_Operator_Create(Amat->comm);
+       }
+       else {
+         tmpmat1 = tmpmat2;
+         tmpmat2 = &(ml->Pmat[clevel]);
+       }
+
+       if (ag->block_scaled_SA == 1) {
+         /* Computed the following:
+          *    a) turn off the usual 2 mat mult.
+          *    b) Ptemp = A*P 
+          *    c) Ptemp = Dinv*Ptemp;
+          *    d) do an ML_Operator_Add() with the original P.
+          */
+/*
+         Ptemp = ML_Operator_Create(Amat->comm);
+         ML_2matmult(Amat, Pmatrix, Ptemp, ML_CSR_MATRIX );
+         ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs,1,1, Amat);
+         ML_Operator_Add(Pmatrix,Ptemp, &(ml->Pmat[clevel]),ML_CSR_MATRIX,
+                 -dampingFactors[ii] / max_eigen);
+         ML_Operator_Destroy(&Ptemp);
+*/
+         printf("\n\n hereeeeeeeeeeeeeee\n\n\n");
+         Ptemp = ML_Operator_Create(Amat->comm);
+         ML_2matmult(Amat, tmpmat1, Ptemp, ML_CSR_MATRIX );
+         ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs,1,1, Amat);
+         ML_Operator_Add(tmpmat1, Ptemp, tmpmat2, ML_CSR_MATRIX,
+                         -dampingFactors[ii] / max_eigen);
+         ML_Operator_Destroy(&Ptemp);
+       }
+       else
+         ML_2matmult(AGGsmoother, tmpmat1, tmpmat2, ML_CSR_MATRIX );
+
+       /*Free intermediate matrix I-omega*inv(D)*A, as long as it's not Ptent.*/
+       if (tmpmat1 && tmpmat1 != Pmatrix) ML_Operator_Destroy(&tmpmat1);
+
+     } /* for (ii=0; ii < numSmSweeps; ii++) */
+
+     ML_Operator_Destroy(&AGGsmoother);
+     ML_free(dampingFactors);
+
+     if ((ml->symmetrize_matrix == ML_TRUE) || (ag->use_transpose == ML_TRUE) )
+     {
        if (t3 != NULL) ML_Operator_Destroy(&t3);
        if (t2 != NULL) ML_Operator_Destroy(&t2);
      }
-     if (ag->keep_P_tentative == ML_NO)  ML_Operator_Destroy(&Pmatrix);
+     if (ag->keep_P_tentative == ML_NO)
+       ML_Operator_Destroy(&Pmatrix);
      else {
        if (prev_P_tentatives == NULL) {
-	 ag->P_tentative = ML_Operator_ArrayCreate(ag->max_levels);
+         ag->P_tentative = ML_Operator_ArrayCreate(ag->max_levels);
          prev_P_tentatives = ag->P_tentative;
-	 for (jj = 0; jj < ag->max_levels; jj++) prev_P_tentatives[jj] = NULL;
+         for (jj = 0; jj < ag->max_levels; jj++) prev_P_tentatives[jj] = NULL;
        }
        prev_P_tentatives[clevel] = Pmatrix;
      }
 
-     ML_Operator_Destroy(&AGGsmoother);
-   }
+   } /* if ( ag->smoothP_damping_factor != 0.0 ) */
+
    ML_Operator_Set_1Levels(&(ml->Pmat[clevel]),
               &(ml->SingleLevel[clevel]), &(ml->SingleLevel[level]));
 
    if (widget.near_bdry != NULL) ML_free(widget.near_bdry);
-   /*
-   if (Amat->comm->ML_mypid==0 && ag->print_flag)
-   {
-      printf("Pe: Total nonzeros = %d (Nrows = %d)\n",
-             ml->Pmat[clevel].N_nonzeros, ml->Pmat[clevel].outvec_leng);
-   }
-   */
    if (mls_widget != NULL) ML_Smoother_Destroy_MLS(mls_widget);
 
 #ifdef ML_TIMING
@@ -637,7 +652,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    ml->timing->total_build_time += ml->Pmat[clevel].build_time;
 #endif
    return 0;
-}
+} /* ML_AGG_Gen_Prolongator() */
 
 /* ************************************************************************* */
 /* function for advancing to the next coarser level with coarse level        */
@@ -3121,4 +3136,25 @@ int  ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
    }
 
    return 0;
+}
+
+/******************************************************************************
+Calculate the damping parameters for the case that the tentative prolongator is
+smoothed by more than one iteration of damped Jacobi.  This corresponds to a
+higher degree Chebyshev polynomial in factored form.
+******************************************************************************/
+
+void ML_AGG_Calculate_Smoothing_Factors(int numSweeps, double *factors)
+{
+  int i;
+  int deg = 2*numSweeps+1;       /* degree of the Chebyshev poly */
+  double pi=4.e0 * atan(1.e0); /* 3.141592653589793115998e0; */
+  double root;
+
+  for (i=0; i<numSweeps; i++) {
+    root = cos( (2*i+1) * pi / (2*deg) );
+    printf("root[%d] = %e\n",i,root);
+    factors[i] = 1.0 / (root*root);
+    printf("factor[%d] = %e\n",i,factors[i]);
+  }
 }
