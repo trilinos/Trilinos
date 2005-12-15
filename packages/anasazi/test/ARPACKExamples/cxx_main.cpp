@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
   bool verbose = 0;
   std::string which("SR");
   int nx = 10;
-  std::string problem("EX1");
+  std::string problem("EX7");
   bool isherm;
   std::string solver("auto");
 
@@ -153,7 +153,6 @@ int main(int argc, char *argv[])
   MyPL.set( "Max Restarts", maxIters );
 
   // Create initial vectors
-  //RefCountPtr<MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
   RefCountPtr<MV> ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
   ivec->MvRandom();
 

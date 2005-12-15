@@ -127,7 +127,7 @@ public:
 
 /*! \class OPG< ScalarType >
   \brief Implementation of Anasazi::MultiVector< ScalarType > for the
-  application of the central difference discretization of 1-D Laplacian
+  application of the central difference discretization of 2-D Laplacian
   (like in ARPACKEx7).
 */
 template <class ScalarType>
@@ -222,7 +222,13 @@ public:
       tv(nx,&(*MyX)[p][lo],&(*MyY)[p][lo]);
       blas.AXPY(nx,-ONE,&(*MyX)[p][lo-nx],1,&(*MyY)[p][lo],1);
     }
-    
+
+    // scale the vector by (1/h^2), where h is the mesh size
+    ScalarType h2 = ONE/(ScalarType)((nx+1)*(nx+1));
+    for (p=0; p<nvecs; p++) {
+      blas.SCAL(n,ONE/h2,&(*MyY)[p][0],1);
+    }
+
     return(Anasazi::Ok);
   }
   
