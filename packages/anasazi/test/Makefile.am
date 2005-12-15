@@ -28,7 +28,7 @@
 
 if BUILD_TEUCHOS_COMPLEX
 if BUILD_TRIUTILS
-COMPLEX_SUBDIR = MVOPComplex LOBPCGComplex BlockDavidsonComplex
+COMPLEX_SUBDIR = MVOPComplex LOBPCGComplex BlockDavidsonComplex BlockKrylovSchurComplex ARPACKExamples
 else
 COMPLEX_SUBDIR = 
 endif
