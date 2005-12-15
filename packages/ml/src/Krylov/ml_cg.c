@@ -634,6 +634,9 @@ int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
      for (i = 0; i < length; i++) diag[i] = 1.;
    }
 
+   ML_free(colInd);
+   ML_free(colVal);
+
    norm = sqrt(ML_gdot(length, p, p, comm));
    if (norm == 0.0) {
      data->ML_eigen_max = 1.;
