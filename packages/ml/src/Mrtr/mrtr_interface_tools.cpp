@@ -1428,7 +1428,6 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D()
       {
         //cout << "Supporting neighbor node on same element is \n" << *nodes[i];
         ncurr->second->AddSupportedByNode(nodes[i]);
-        nodes[i]->AddSupportedNode(ncurr->second.get());
       }
     }
     if (!ncurr->second->NSupportSet()) // we've not found a supporting node yet
@@ -1444,7 +1443,6 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D()
             if (!neighborneighbornodes[k]->IsOnBoundary())
             {
               ncurr->second->AddSupportedByNode(neighborneighbornodes[k]);
-              neighborneighbornodes[k]->AddSupportedNode(ncurr->second.get());
             }
         }
       }
@@ -1474,7 +1472,6 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D()
         if (neighbornodes[j]->IsOnBoundary()) continue;
         //cout << "Supporting neighbor node on same element is \n" << *neighbornodes[j];
         ncurr->second->AddSupportedByNode(neighbornodes[j]);
-        neighbornodes[j]->AddSupportedNode(ncurr->second.get());
       }
     }
     if (!ncurr->second->NSupportSet())

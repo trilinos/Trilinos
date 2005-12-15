@@ -31,6 +31,16 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
+/*!
+ * \file mrtr_pnode.H
+ *
+ * \class MOERTEL::Node
+ *
+ * \brief A class to construct a projection of a node on some segment
+ *
+ * \date Last update do Doxygen: 15-Dec-05
+ *
+ */
 #ifdef TRILINOS_PACKAGE
 
 #ifndef MOERTEL_PROJECTNODE_H
@@ -47,6 +57,7 @@ using namespace std;
 
 // ----------   User Defined Includes   ----------
 
+//! MOERTEL: namespace of the Moertel package
 namespace MOERTEL
 {
 
@@ -54,34 +65,88 @@ namespace MOERTEL
 class MOERTEL::Interface;
 class MOERTEL::Segment;
 
+/*!
+\class ProjectedNode
+
+\brief <b> A class to handle the projection of a node onto some segment </b>
+
+The \ref MOERTEL::ProjectedNode class supports the << operator  
+
+\author Michael W. Gee (mwgee@sandia.gov)
+
+*/
 class  ProjectedNode : public MOERTEL::Node
 {
 public:
   
-  // ctor 
+  // @{ \name Constructors and destructors
+
+  /*!
+  \brief Constructor
+  
+  Constructs an instance of this class.<br>
+  Note that this is \b not a collective call as nodes shall only have one owning process.
+  
+  \param basenode : the node this class is the projection of
+  \param xi : local coordinates of the projection in the segment its projected onto
+  \param pseg : Segment this projection is located in 
+  */
   explicit ProjectedNode(const MOERTEL::Node& basenode, const double* xi, MOERTEL::Segment* pseg);
   
-  // ctor for the case of orthogonal projection 
+  /*!
+  \brief Constructor (case of orthogonal projection only)
+  
+  Constructs an instance of this class.<br>
+  Note that this is \b not a collective call as nodes shall only have one owning process.
+  
+  \param basenode : the node this class is the projection of
+  \param xi : local coordinates of the projection in the segment its projected onto
+  \param pseg : Segment this projection is located in 
+  \param orthseg : id of segment this projection is orthogonal to whic might be different from pseg
+  */
   explicit ProjectedNode(const MOERTEL::Node& basenode, const double* xi, MOERTEL::Segment* pseg, int orthseg);
   
-  // copy-ctor
+  /*!
+  \brief Copy-Constructor
+  
+  */
   ProjectedNode(MOERTEL::ProjectedNode& old);
   
-  // dtor
+  /*!
+  \brief Destructor
+  
+  */
   virtual ~ProjectedNode();
 
-  // print node
+  //@}
+  // @{ \name Public members
+
+  /*!
+  \brief Print this ProjectedNode and its Node
+  
+  */
   bool Print() const;
   
-  // get view of local coordinates xi
+  /*!
+  \brief Return view of the local coordinates of the projection in the segment
+  
+  */
   const double* Xi() { return xi_; }
   
-  // get view of segment I am on
+  /*!
+  \brief Return pointer to segment this pojrection is in
+  
+  */
   MOERTEL::Segment* Segment() { return pseg_; }
   
-  // get id of segment this projection is orthogonal to
+  /*!
+  \brief Return id of segment this projection is orthogonal to (might be different from \ref Segment() )
+  
+  */
   int OrthoSegment() { return orthseg_; }
   
+  //@}
+
 protected:  
   // don't want = operator
   ProjectedNode operator = (const ProjectedNode& old);

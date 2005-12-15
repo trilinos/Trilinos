@@ -72,6 +72,7 @@ class MOERTEL::ProjectedNode;
 
 \brief <b> A class to construct a single node </b>
 
+This class defines a node on one side of a (non-)conforming interface.
 
 The \ref MOERTEL::Node class supports the << operator  
 
@@ -288,48 +289,114 @@ public:
   bool SetProjectedNode(MOERTEL::ProjectedNode* pnode);
   
   /*!
-  \brief Returns a view of a \ref MOERTEL::ProjectedNode instance
+  \brief Returns a view of all projected nodes this node owns
   
-  Returns a view of the \ref MOERTEL::ProjectedNode instance if this Node does have a
-  projection. Returns NULL if this Node does not project onto the opposing interface surface.
-  this case happens when interface sides are significantly non-matching in size and shape.
+  Returns a vector of RefCountPtr<MOERTEL::ProjectedNode> to all projected nodes this node
+  owns. When using a continous normal field as projection method, length of this
+  vector is 1. When using an orthogonal projection (1D interfaces only) a node can have
+  more then 1 projection
 
+  \params length : returns length of RefCountPtr<MOERTEL::ProjectedNode>*
   */
   RefCountPtr<MOERTEL::ProjectedNode>* GetProjectedNode(int& length);
-  // get a view of the first projected node in the vector of projected nodes
+
+  /*!
+  \brief Returns a view of the projection of this node
+  
+  Returns a RefCountPtr<MOERTEL::ProjectedNode> to the projected node. 
+  RefCountPtr<MOERTEL::ProjectedNode> is Teuchos::null if this Node
+  does not have a projection onto an opposing segment.
+  */
   RefCountPtr<MOERTEL::ProjectedNode>  GetProjectedNode();
   
-  // set dof number for lagrange multiplier
+  /*!
+  \brief Add a Lagrange multiplier id to this node's list
+  
+  */
   bool SetLagrangeMultiplierId(int LMId);
   
-  // add a value to the Drow_ map
+  /*!
+  \brief Add a value to the 'D' map of this node
+
+  The 'D' map is later assembled to the D matrix.
+  Note that the 'D' map in this Node is scalar and the column id is a node id
+  while the row map of the matrix D might have several Lagrange mutlipliers per node.
+  
+  \params val : Value to be added
+  \params col : nodal column id of the value added
+  */
   void AddDValue(double val, int col);
-  // add a value to the Mrow_ map
+
+  /*!
+  \brief Add a value to the 'M' map of this node
+  
+  The 'M' map is later assembled to the M matrix.
+  Note that the 'M' map in this Node is scalar and the column id is a node id
+  while the row map of the matrix M might have several Lagrange mutlipliers per node.
+  
+  \params val : Value to be added
+  \params col : nodal column id of the value added
+  */
   void AddMValue(double val, int col);
-  // get M or D map
+
+  /*!
+  \brief Get view of the 'D' map of this node
+  
+  */
   inline RefCountPtr<map<int,double> > GetD() { return Drow_; }
+
+  /*!
+  \brief Get view of the 'M' map of this node
+  
+  */
   inline RefCountPtr<map<int,double> > GetM() { return Mrow_; }
 
-  // set/get the iscorner_ flag
+  /*!
+  \brief Set the flag indicating that node is corner node of 1D interface
+  
+  */
   inline void SetCorner() { iscorner_ = true; return; }
+  /*!
+  \brief Query the flag indicating that node is corner node of 1D interface
+  
+  */
   inline bool IsCorner() const { return iscorner_; }
 
-  // get the isonboundary_ flag
+  /*!
+  \brief Query the flag indicating that node is on the boundary of 2D interface
+  
+  */
   inline bool IsOnBoundary() const { return isonboundary_; }
   
-  // get the number of internal nodes supporting this boundary node
+  /*!
+  \brief Get number of nodes that support this boundary node
+  
+  If this Node is on the boundary, its shape functions are added to the support of 
+  topologically close internal nodes. This method returns # of internal nodes supporting
+  this node. It returns 0 for all internal nodes.
+  
+  */
   inline int NSupportSet() const { return supportedby_.size(); }
   
-  // set an internal node supporting this boundary node
+  /*!
+  \brief Add an internal node to the map of nodes supporting this node
+  
+  If this Node is on the boundary, its shape functions are added to the support of 
+  topologically close internal nodes. This method adds an internal node to the map of nodes
+  supporting this node
+  
+  */
   void AddSupportedByNode(MOERTEL::Node* suppnode) 
   { supportedby_[suppnode->Id()] = suppnode; return; }
   
-  // get nodes supporting this node
-  map<int,MOERTEL::Node*>& GetSupportedByNode() { return supportedby_; }
+  /*!
+  \brief Get the map of nodes supporting this node
   
-  // set a boundary node supported by this node
-  void AddSupportedNode(MOERTEL::Node* suppnode) 
-  { supporting_[suppnode->Id()] = suppnode; return; }
+  If this Node is on the boundary, its shape functions are added to the support of 
+  topologically close internal nodes. This method returns the map of nodes supporting this node
+  
+  */
+  map<int,MOERTEL::Node*>& GetSupportedByNode() { return supportedby_; }
   
   //@}
   
@@ -352,7 +419,6 @@ protected:
                                               // of a 3D interface
                                               // Info only matters for the slave side
   map<int,MOERTEL::Node*>      supportedby_;
-  map<int,MOERTEL::Node*>      supporting_;
 
   vector<int>                  dof_;      // dof ids on this node 
   vector<int>                  LMdof_;    // dofs ids of LM if this is slave side

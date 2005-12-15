@@ -64,7 +64,6 @@ Mrow_(null)
   LMdof_.resize(0);
   pnode_.resize(0);
   supportedby_.clear();
-  supporting_.clear();
 }
 
 /*----------------------------------------------------------------------*
@@ -100,7 +99,6 @@ Mrow_(null)
  *----------------------------------------------------------------------*/
 MOERTEL::Node::Node(const MOERTEL::Node& old) :
 supportedby_(old.supportedby_),
-supporting_(old.supporting_)
 {
   Id_ = old.Id();
   outputlevel_ = old.outputlevel_;
@@ -244,7 +242,6 @@ MOERTEL::Node::~Node()
   Drow_ = null;
   Mrow_ = null;
   supportedby_.clear();
-  supporting_.clear();
 }
 
 /*----------------------------------------------------------------------*
