@@ -103,7 +103,7 @@ AC_CANONICAL_TARGET
 # Use automake
 
 # Package name and version below
-AM_INIT_AUTOMAKE(ml, 3.1)
+AM_INIT_AUTOMAKE(ml, 4.0)
 
 # Specify required version of autoconf.
 
@@ -689,6 +689,7 @@ AC_CONFIG_FILES([
                 test/MLAPIDistributedMatrix/Makefile
                 test/Communicator/Makefile
                 test/SelfSmoother/Makefile
+                test/METISCoarsening/Makefile
                 python/Makefile
                 python/src/Makefile
                 python/src/TRILINOS_HOME_DIR
