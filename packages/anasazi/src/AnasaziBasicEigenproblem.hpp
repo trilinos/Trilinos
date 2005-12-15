@@ -391,13 +391,14 @@ namespace Anasazi {
       Teuchos::RefCountPtr<const MV> Xj;
       std::vector<int> index( IntOne );
       ReturnType ret;
+      typedef Teuchos::ScalarTraits<ScalarType> SCT;
     
       for (int i=0; i<numvecs; i++) {
         index[0] = i;
         Xj = MVT::CloneView( X, index );
         ret = InnerProd( *Xj, *Xj, DenseOne );
         if ( ret != Ok ) { return ret; }
-        (*normvec)[i] = sqrt(DenseOne(0));
+        (*normvec)[i] = SCT::magnitude(SCT::squareroot(DenseOne(0)));
       }
     } else {
       return Failed;
