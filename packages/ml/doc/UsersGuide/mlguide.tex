@@ -10,7 +10,9 @@
 
 \hypersetup{
   pdfauthor = {Marzio Sala, Michael Gee, Jonathan Hu, Ray Tuminaro},
-  pdftitle = {ML 4.0 Smoothed Aggregation User's Guide}
+  pdftitle = {ML 4.0 Smoothed Aggregation User's Guide},
+  colorlinks= {true},
+  citecolor = {blue},
 }
 
 \setlength{\oddsidemargin}{0.1\oddsidemargin}
@@ -1291,6 +1293,19 @@ the {\tt projected MGV} option.  Possible values: 1,2, or 3.  Default: 0.}
 \choicebox{\tt aggregation: type $\star$}{[{\tt string}] Define the
   aggregation scheme. See Table~\ref{tab:ml:aggr}. Default: {\tt Uncoupled}.}
 
+\choicebox{\tt aggregation: threshold}{[{\tt double}] Dropping threshold in
+aggregation.  Default: 0.0.}
+
+\choicebox{\tt aggregation: damping factor}{[{\tt double}] Damping factor for
+smoothed aggregation. Default: $4/3$.}
+
+\choicebox{\tt aggregation: smoothing sweeps}{[{\tt int}] Number of
+smoothing sweeps to use in the prolongator smoother.  This should be used in
+conjunction with larger aggregates, from using either {\tt METIS} or
+{\tt ParMETIS} aggregation schemes.  If sweeps is equal to 1, then the value
+of {\tt aggregation: damping factor} is used.  If sweeps is greater than 1,
+the damping factors are calculated automatically.  Default: $1$.}
+
 \choicebox{\tt aggregation: global aggregates $\star$}{[{\tt int}] Defines the global number of
 aggregates (only for {\tt METIS} and {\tt ParMETIS} aggregation schemes). }
 
@@ -1306,18 +1321,12 @@ schemes). Note: this value overwrites {\tt aggregation: global aggregates}.}
   and {\tt aggregation: nodes per aggregate} is specified, the default
   value is 1 aggregate per process.}
 
-\choicebox{\tt aggregation: damping factor}{[{\tt double}] Damping factor for smoothed
-aggregation. Default: $4/3$.}
-
 \choicebox{\tt eigen-analysis: type}{[{\tt string}] Defines the numerical scheme to
 be used to compute an estimation of the maximum eigenvalue of $D^{-1}A$,
 where $D = diag(A)$ (for smoothed
 aggregation only). Choices are: {\tt cg} (10 steps of conjugate gradient
 method), {\tt Anomr} (the A-norm of the matrix), {\tt Anasazi} 
 (use the Arnoldi method), {\tt power-method}. Default: {\tt Anorm}.}
-
-\choicebox{\tt aggregation: threshold}{[{\tt double}] Threshold in aggregation.
-  Default: 0.0.}
 
 \choicebox{\tt aggregation: next-level aggregates per process
   $\star$}{[{\tt int}] Defines the maximum number of next-level matrix rows
