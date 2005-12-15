@@ -32,6 +32,14 @@ report bugs to jhu@sandia.gov.
 
 ------------------------------------------------------------------------------
 	
+Dec 2005
+
+        * Added support for additional prolongator smoother sweeps (higher
+          degree polynomial smoothing).  This should be used with aggressive
+          coarsening (e.g., METIS, ParMETIS).
+
+------------------------------------------------------------------------------
+	
 Aug 2005
 
         * Added capabilities for algebraic nonlinear multigrid
