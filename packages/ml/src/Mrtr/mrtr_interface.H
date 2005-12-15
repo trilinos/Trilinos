@@ -76,22 +76,106 @@ namespace MOERTEL
 
 This class is used to construct a single conforming or non-conforming interface.
 The interface is constructed by creating an empty instance of this class and
-then filling it with nodes and segments using the methods \ref AddSegment (MOERTEL::Segment &seg, int side)
+then filling it with nodes and segments from both sides of the interface using the methods \ref AddSegment (MOERTEL::Segment &seg, int side)
 and \ref AddNode (MOERTEL::Node &node, int side).<br>
-after all segment and all nodes of an interface are added, a call to \ref Complete() finalizes
+After all segment and all nodes of an interface are added, a call to \ref Complete() finalizes
 the construction phase of the interface.<br>
 Once the interface is constructed and \ref Complete() was called, it should be
-passed to an instance of the \ref MOERTEL::Manager() to handle the integration
+passed to an instance of the \ref MOERTEL::Manager to handle the integration
 phase. It is highly recommended not to call any integration methods on the interface
-directly but leave this task to the \ref MOERTEL::Manager() class that takes
+directly but leave this task to the \ref MOERTEL::Manager class that takes
 care of assembly of integration results and the case were nodes appear on more
 then one interface.<br>
 
+<b>Aspects of Interface geometry:</b><br>
 An interface can be either 2-dimensional (for 3D problems) or 1-dimensional (for 2D problems).<br>
 It can also be curved in space or straight. In the latter case, the Mortar method
 guarantees the patch test for linear functions in 3D and 2D problems.<br>
 With curved interfaces, the patch test is not guaranteed but approximation properties
-tend to be significantly better then with standard node-to-segment (or similar) approaches.
+tend to be significantly better then with simple node-to-segment (or similar) approaches.<br>
+The two sides of an interface need not have conforming discretizations, need not discretize the
+same geometry and might overlap only partially. This means one side of an interface might be
+significantly larger then the other side. Also, end points of an interface side need not match.<br>
+<br>
+1D Example (also holds for 2D interfaces):
+<pre>
+
+           o----------o----------o----------o----------o--------------o           side 0
+o-----o-----o-----o-----o-----o-----o-----o-----o-----o-----o-----o------o------o side 1
+
+</pre>
+In the 1D interface case, end points of an interface are detected automatically while in the
+2D interface case, the user has to supply information which nodes fall on the boundary of an interface.<br>
+
+In the case of more then one interface, each interface must have 2 distinct sides. <br>
+Also, each interface side must not overlap with any other interface side.
+<br>
+1D Example (also holds for 2D interfaces):
+<pre>
+                                                        ||
+                                                        ||  
+                                                        |o 
+                                                        ||
+                                Interface 3, side 1 --> o| <-- Interface 3, side 0
+                                                        ||
+                                                        |o
+                                                        o|
+                                                        ||
+                                                        |o
+                                                        o| 
+                                                        ||
+            <-- Interface 1, side 0  -->                ||<-- Interface 2, side 1 -->
+    o------o----------o----------o----------o-----------oo--o--o--o--o--o--o--o--o--o
+o-----o-----o-----o-----o-----o-----o-----o-----o-----o-----o-----o------o------o-----o-----o
+                                             <-- Interface 1 side 1 -->
+                                             <-- Interface 2 side 0 -->
+</pre>
+The example above shows a perfectly legal (though rather advanced an unsusal) case.<br>
+The choice of the sides 0 or 1 is arbitrary, the correct choice of the slave and mortar side 
+is sophisticated here and can be done by the \ref MOERTEL::Manager or by the user himself.
+
+<br>
+<b>Aspects of parallelity:</b><br>
+The Moertel package can handle multiple interfaces in serial and in parallel. When running
+in serial, the Mortar package expects the Epetra_Comm argument in the construction of
+\rer MOERTEL::Manager and \ref MOERTEL::Interface to implement an Epetra_SerialComm. <br>
+When running in parallel the MOERTEL package epxects this Epetra-Comm to implement Epetra_MPIComm. In the parallel
+case the package mainly makes use of the communication methods of the Epetra_MPIComm but also
+performs direct MPI calls using the MPI communicator extracted from the Epetra_MPIComm.<br>
+Passing nodes and segments via \ref AddNode and \ref AddSegment to an Interface instance implicitly 
+defines the processes ownership over those objects. Calls to these methods therefore are never collective!
+Passing a node or segment object to an Interface also results in the process taking part in the
+integration of this Interface. the call to \ref Complete() will create a interface-local
+Epetra_MPIComm or Epetra_SerialComm as subset of the global Epetra_comm supplied by the user.
+All processes that passed segments or nodes to the interface will become member of that interface-local
+communicator. Processes not passing any data to the interface will not participate in the integration
+of that specific interface and the integration will be non-blocking to them.<br>
+Note that when defining several interfaces, the interface-local communicators might be
+overlapping subsets of the global communicator.<br>
+<br>
+Example 1: Running on 6 processes<br>
+Process 0 has objects on interface 1 and 2<br>
+Process 1 has objects on interface 1 <br>
+Process 2 has objects on interface 2 <br>
+Process 3 has objects on interface 2 <br>
+Process 4 has objects on interface 1 <br>
+Process 5 has no objects on any interface<br>
+Result:<br>
+Processes 0,1,4 share integration on interface 1<br>
+Processes 2,3 share integration on interface 2<br>
+Process 5 is not blocked by the MOERTEL package<br>
+<b>Interfaces 1,2 are computed completely in parallel as interface subsets are non-overlapping</b><br>
+<br>  
+Example 1: Running on 4 processes<br>
+Process 0 has objects on interface 1 and 2<br>
+Process 1 has objects on interface 1 <br>
+Process 2 has objects on interface 2 <br>
+Process 3 has no objects on any interface<br>
+Result:<br>
+Processes 0,1 share integration on interface 1 <br>
+Process 2 does integration on interface 2 alone<br>
+Process 3 is not blocked by the MOERTEL package<br>
+<b>Interfaces 1,2 are computed in serial as interface subsets are overlapping</b><br>
 
 All calls to the \ref Interface(int Id, bool oneD, Epetra_Comm& comm, int outlevel)
 constructor are collective for all processes that are part of the Epetra_Comm comm.<br>
