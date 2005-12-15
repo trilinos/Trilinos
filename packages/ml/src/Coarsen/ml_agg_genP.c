@@ -524,12 +524,6 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      
        } /* switch( ag->spectral_radius_scheme ) */
 
-       if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
-         printf("\nProlongator/Restriction smoother (level %d) : damping factor = %e\nProlongator/Restriction smoother (level %d) : ( = %e / %e)\n\n",
-         level, ag->smoothP_damping_factor/ max_eigen, level,
-         ag->smoothP_damping_factor, max_eigen );
-       }
-       
      } /* if ((max_eigen < -666.) && (max_eigen > -667)) */
 
      widget.omega  = ag->smoothP_damping_factor / max_eigen;
@@ -558,6 +552,14 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      else
        /* Calculate the proper Chebyshev polynomial coefficients. */
        ML_AGG_Calculate_Smoothing_Factors(numSmSweeps, dampingFactors);
+
+     if ( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+       for (ii=0; ii<numSmSweeps; ii++)
+         printf("\nProlongator/Restriction smoother (level %d) : damping factor #%d = %e\nProlongator/Restriction smoother (level %d) : ( = %e / %e)\n",
+         level, ii+1, dampingFactors[ii]/ max_eigen, level,
+         dampingFactors[ii], max_eigen );
+       printf("\n");
+     }
 
      /* Create the prolongator smoother operator, I-omega*inv(D)*A. */
      AGGsmoother = ML_Operator_Create(ml->comm);
@@ -3153,8 +3155,6 @@ void ML_AGG_Calculate_Smoothing_Factors(int numSweeps, double *factors)
 
   for (i=0; i<numSweeps; i++) {
     root = cos( (2*i+1) * pi / (2*deg) );
-    printf("root[%d] = %e\n",i,root);
     factors[i] = 1.0 / (root*root);
-    printf("factor[%d] = %e\n",i,factors[i]);
   }
 }
