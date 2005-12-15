@@ -8,7 +8,7 @@
           #../examples/Elasticity,
           # ../examples/MatrixFormats,
 	  #../examples/MatrixReading,
-	   ../examples/Maxwell,
+	  # ../examples/Maxwell,
 	   ../examples/MultipleRHS,
 	  #../examples/Other,
 	  # ../examples/StandAlone,
@@ -125,3 +125,11 @@
     DIRS = ../python/test;
     COMM = SERIAL, MPI(1-4);
 }
+
+(ThirdParty) {
+    DIRS = METISCoarsening;
+    MASTER-FILE = baseline1;
+    COMMAND-FILE = EvaluateDefinitions;
+    COMM = SERIAL, MPI(1);
+}
+
