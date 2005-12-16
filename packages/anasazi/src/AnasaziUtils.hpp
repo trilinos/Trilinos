@@ -208,6 +208,7 @@ Anasazi::ReturnType GMRES<ScalarType, MV, OP>::solve(OP &A, OP &Kinv, MV &b, MV 
   magnitudeType a, rho, eta;
 	
   std::vector<magnitudeType> vm(1);
+  std::vector<ScalarType> new_vm(1);
   std::vector<ScalarType> vs(1);
   std::vector<int> vi(1), vi2;
 	
@@ -264,8 +265,8 @@ Anasazi::ReturnType GMRES<ScalarType, MV, OP>::solve(OP &A, OP &Kinv, MV &b, MV 
     for (i=0; i<=k; i++) {
       vi[0] = i;
       uview = u->CloneView(vi); //(*)
-      uK->MvDot((*uview), &vm);
-      R(i,k) = vm[0];                                   //R[i+1,k] = u[i]^(H)*uK
+      uK->MvDot((*uview), &new_vm); // FIXME
+      R(i,k) = new_vm[0];                               //R[i+1,k] = u[i]^(H)*uK
       uK->MvAddMv((ScalarType)1,*uK,-R(i,k),*uview);    //u[k] = u[k] - R[i+1,k]*u[i]
       delete(uview); 
     }
