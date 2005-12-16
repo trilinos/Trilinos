@@ -26,17 +26,15 @@
 // ***********************************************************************
 // @HEADER
 //
-// This test is for LOBPCG solving a standard (Ax=xl) complex Hermitian
-// eigenvalue problem.
-//
-// The matrices used are from ARPACK examples: SYM, NONSYM, COMPLEX
+// This test compares the Anasazi solvers against ARPACK. The eigenproblems
+// used are from the ARPACK examples: SYM, NONSYM, and COMPLEX
 // See ARPACK_Operators.hpp and examlpesdesc for more information.
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziLOBPCG.hpp"
 #include "AnasaziBlockDavidson.hpp"
-#include "AnasaziBlockKrylovSchur.hpp"
+// #include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "AnasaziMVOPTester.hpp"
@@ -73,7 +71,7 @@ int main(int argc, char *argv[])
   bool verbose = 0;
   std::string which("SR");
   int nx = 10;
-  std::string problem("EX7");
+  std::string problem("SDRV1");
   bool isherm;
   std::string solver("auto");
 
@@ -90,12 +88,10 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  typedef double ST;
-
 #ifdef HAVE_COMPLEX
-  //typedef std::complex<double> ST;
+  typedef std::complex<float> ST;
 #elif HAVE_COMPLEX_H
-  //typedef ::complex<double> ST;
+  typedef ::complex<float> ST;
 #else
   typedef double ST;
   // no complex. quit with failure.
@@ -142,7 +138,7 @@ int main(int argc, char *argv[])
   int blockSize = 5;
   int maxIters = 500;
   int maxBlocks = 4;
-  MT tol = 1.0e-10;
+  MT tol = 1.0e-4;
 
   // Create parameter list to pass into solver
   ParameterList MyPL;
@@ -158,28 +154,33 @@ int main(int argc, char *argv[])
 
   // Create matrices
   RefCountPtr<OP> A, M;
-  if (problem == "EX1") {
-    A = rcp( new ARPACKEx1<ST>::OP );
-    M = rcp( new ARPACKEx1<ST>::M );
-    isherm = ARPACKEx1<ST>::isHermitian;
+  if (problem == "NDRV1") {
+    A = rcp( new ARPACK_NDRV1<ST>::OP );
+    M = rcp( new ARPACK_NDRV1<ST>::M );
+    isherm = ARPACK_NDRV1<ST>::isHermitian;
   }
-  else if (problem == "EX2") {
-    A = rcp( new ARPACKEx2<ST>::OP(dim) );
-    M = rcp( new ARPACKEx2<ST>::M );
-    isherm = ARPACKEx2<ST>::isHermitian;
+  else if (problem == "NDRV2") {
+    A = rcp( new ARPACK_NDRV2<ST>::OP(dim) );
+    M = rcp( new ARPACK_NDRV2<ST>::M );
+    isherm = ARPACK_NDRV2<ST>::isHermitian;
   }
-  else if (problem == "EX7") {
-    A = rcp( new ARPACKEx7<ST>::OP );
-    M = rcp( new ARPACKEx7<ST>::M );
-    isherm = ARPACKEx7<ST>::isHermitian;
+  else if (problem == "SDRV1") {
+    A = rcp( new ARPACK_SDRV1<ST>::OP );
+    M = rcp( new ARPACK_SDRV1<ST>::M );
+    isherm = ARPACK_SDRV1<ST>::isHermitian;
+  }
+  else if (problem == "SDRV2") {
+    A = rcp( new ARPACK_SDRV2<ST>::OP(dim) );
+    M = rcp( new ARPACK_SDRV2<ST>::M );
+    isherm = ARPACK_SDRV2<ST>::isHermitian;
   }
   else {
     if (MyOM->doPrint()) {
-      cerr << "Invalid problem. Using ARPACKEx7." << endl;
+      cerr << "Invalid problem. Using SDRV1." << endl;
     }
-    A = rcp( new ARPACKEx7<ST>::OP );
-    M = rcp( new ARPACKEx7<ST>::M );
-    isherm = ARPACKEx7<ST>::isHermitian;
+    A = rcp( new ARPACK_SDRV1<ST>::OP );
+    M = rcp( new ARPACK_SDRV1<ST>::M );
+    isherm = ARPACK_SDRV1<ST>::isHermitian;
   }
 
   // test multivector and operators
@@ -237,9 +238,11 @@ int main(int argc, char *argv[])
   if (solver == "LOBPCG") {
     MySolver = rcp( new Anasazi::LOBPCG<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
   }
+  /*
   else if (solver == "BKS") {
     MySolver = rcp( new Anasazi::BlockKrylovSchur<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
   }
+  */
   else if (solver == "BD") {
     MySolver = rcp( new Anasazi::BlockDavidson<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
   }
@@ -281,7 +284,7 @@ int main(int argc, char *argv[])
   MVT::MvNorm( *Avecs, &normV );
 
   for (int i=0; i<nevecs; i++) {
-    if ( SCT::magnitude(normV[i]/(*evals)[i]) > 5.0e-5 ) {
+    if ( SCT::magnitude(normV[i]/(*evals)[i]) > ((MT)2.0)*tol ) {
       testFailed = true;
     }
   }

@@ -1,17 +1,17 @@
 Anasazi    | ID   OP formula                          Bop    ID   (description)
 ---------------------------------------------------------------------------------------------------------
-ARPACKEx1  | OPE  OP = A                              B = I  OPA  (cntrl diff disc of conv-diff)
-ARPACKEx2  | OPF  OP = inv[A-sigma*I]                 B = I  OPA  (cntrl diff disc of conv-diff)
-ARPACKEx3  | OPN  OP = inv[M]*A                       B = M  OPM  (finit elem disc of conv-diff)
-ARPACKEx4  | OPO  OP = inv[A-sigma*M]*M               B = M  OPM  (finit elem disc of conv-diff)
-ARPACKEx5  | OPC  OP = R(inv[A-sigma*M]*M)            B = M  OPB  (trid with comp shift)
-ARPACKEx6  | OPD  OP = I(inv[A-sigma*M]*M)            B = M  OPB  (trid with comp shift)
-ARPACKEx7  | OPG  OP = A                              B = I  OPA  (cntrl diff disc of 1d lap)
-ARPACKEx8  | OPI  OP = inv[A-sigma*I]                 B = I  OPA  (cntrl diff disc of 1d lap)
-ARPACKEx9  | OPR  OP = inv[M]*A                       B = M  OPQ  (finit elem disc of 1d lap)
-ARPACKEx10 | OPS  OP = inv[A-sigma*M]*M               B = M  OPQ  (finit elem disc of 1d lap)
-ARPACKEx11 | OPU  OP = (inv[A-sigma*M])*A             B = A  OPP  (buckling mode finit elem disc of 1d lap)
-ARPACKEx12 | OPT  OP = (inv[A-sigma*M])*(A+sigma*M)   B = M  OPQ  (finit elem disc of 1d lap)
+ARPACK_NDRV1 | OPE  OP = A                              B = I  OPA  (cntrl diff disc of conv-diff)
+ARPACK_NDRV2 | OPF  OP = inv[A-sigma*I]                 B = I  OPA  (cntrl diff disc of conv-diff)
+ARPACK_NDRV3 | OPN  OP = inv[M]*A                       B = M  OPM  (finit elem disc of conv-diff)
+ARPACK_NDRV4 | OPO  OP = inv[A-sigma*M]*M               B = M  OPM  (finit elem disc of conv-diff)
+ARPACK_NDRV5 | OPC  OP = R(inv[A-sigma*M]*M)            B = M  OPB  (trid with comp shift)
+ARPACK_NDRV6 | OPD  OP = I(inv[A-sigma*M]*M)            B = M  OPB  (trid with comp shift)
+ARPACK_SDRV1 | OPG  OP = A                              B = I  OPA  (cntrl diff disc of 2d lap)
+ARPACK_SDRV2 | OPI  OP = inv[A-sigma*I]                 B = I  OPA  (cntrl diff disc of 1d lap)
+ARPACK_SDRV3 | OPR  OP = inv[M]*A                       B = M  OPQ  (finit elem disc of 2d lap)
+ARPACK_SDRV4 | OPS  OP = inv[A-sigma*M]*M               B = M  OPQ  (finit elem disc of 2d lap)
+ARPACK_SDRV5 | OPU  OP = (inv[A-sigma*M])*A             B = A  OPP  (buckling mode finit elem disc of 2d lap)
+ARPACK_SDRV6 | OPT  OP = (inv[A-sigma*M])*(A+sigma*M)   B = M  OPQ  (finit elem disc of 2d lap)
 
 
 Operators implemented:
@@ -32,7 +32,7 @@ OPD | OP = Imag(inv[A-sigma*M]*M)        (MFM and DS)
 OPE | OP = A                             (MFM)
 OPF | OP = inv[A-sigma*I]                (DS)
     |
------ Central difference discretization of 1-D Laplacian -----------------------
+----- Central difference discretization of 2-D Laplacian -----------------------
 OPG | OP = A                             (MFM)
 OPI | OP = inv[A-sigma*I]                (DS)
     |
@@ -42,7 +42,7 @@ OPM | OP = M                             (MFM)
 OPN | OP = inv[M]*A                      (MFM and DS)
 OPO | OP = inv[A-sigma*M]*M              (MFM and DS)
     |
------ Finite element discretization of 1-D Laplacian ---------------------------
+----- Finite element discretization of 2-D Laplacian ---------------------------
 OPP | OP = A                             (MFM)
 OPQ | OP = M                             (MFM)
 OPR | OP = inv[M]*A                      (MFM and DS)
