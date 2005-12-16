@@ -31,6 +31,14 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
+/*!
+ * \file mrtr_functions.H
+ *
+ * \brief A couple of shape functions for 1D and 2D elements
+ *
+ * \date Last update do Doxygen: 16-Dec-05
+ *
+ */
 #ifdef TRILINOS_PACKAGE
 
 #ifndef MOERTEL_FUNCTIONS_H
@@ -43,169 +51,370 @@
 
 using namespace std;
 
+//! MOERTEL: namespace of the Moertel package
 namespace MOERTEL
 {
 
-/*----------------------------------------------------------------------*
- |  the standard 1D-constant shape function                        08/05|
- *----------------------------------------------------------------------*/
+/*!
+\class Function_Constant1D
+
+\brief <b> A 1D constant shape function for a 2-noded 1D Segment</b>
+
+phi_1 = 1 <br>
+phi_2 = 1 <br>
+phi_1,xi = 0 <br>
+phi_2,xi = 0 <br>
+
+\author Michael W. Gee (mwgee@sandia.gov)
+
+*/
 class Function_Constant1D : public MOERTEL::Function 
 {
 public:
   
-  // ctor
+  /*!
+  \brief Constructor
+  
+  \param out : Level of output information written to stdout ( 0 - 10 )
+  */
   Function_Constant1D(int out) :
   MOERTEL::Function(out,MOERTEL::Function::func_Constant1D)
   {}
   
-  // copy-ctor
+  /*!
+  \brief Copy-Constructor
+  */
   Function_Constant1D(const MOERTEL::Function_Constant1D& old) :
   MOERTEL::Function(old.outputlevel_,old.type_)
   {}
 
-  // dtor
+  /*!
+  \brief Clone method
+  
+  Makes a deep copy of this instance and returns a pointer to it.
+  
+  */
+  MOERTEL::Function* Clone() const;
+
+  /*!
+  \brief Destructor
+  */
   virtual ~Function_Constant1D() {}
 
-  // evaluate the shape function
+  /*!
+  \brief Evaluate the function and derivatives at a given local coordinate
+  
+  \param xi (in) : Local coordinate where to evaluate the function
+  \param val (out) : Function values at xi, dimension 2, if NULL on input no evaluation
+  \param valdim (in) : Dimension of val should be 2
+  \param deriv (out) : Derivative of functions at xi, dimension 4, if NULL on input no evaluation
+  */
   bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
 
-  // need a clone functionality to do a deep copy
-  MOERTEL::Function* Clone() const;
 };
 
-/*----------------------------------------------------------------------*
- |  the standard 1D-linear shape function                          06/05|
- *----------------------------------------------------------------------*/
+/*!
+\class Function_Linear1D
+
+\brief <b> A 1D linear shape function </b>
+
+phi_1 = 0.5*(1-xi) <br>
+phi_2 = 0.5*(1+xi) <br>
+phi_1,xi = -0.5 <br>
+phi_2,xi = 0.5 <br>
+
+\author Michael W. Gee (mwgee@sandia.gov)
+
+*/
 class Function_Linear1D : public MOERTEL::Function 
 {
 public:
   
-  // ctor
+  /*!
+  \brief Constructor
+  
+  \param out : Level of output information written to stdout ( 0 - 10 )
+  */
   Function_Linear1D(int out) :
   MOERTEL::Function(out,MOERTEL::Function::func_Linear1D)
   {}
   
-  // copy-ctor
+  /*!
+  \brief Copy-Constructor
+  */
   Function_Linear1D(const MOERTEL::Function_Linear1D& old) :
   MOERTEL::Function(old.outputlevel_,old.type_)
   {}
 
-  // dtor
+  /*!
+  \brief Clone method
+  
+  Makes a deep copy of this instance and returns a pointer to it.
+  
+  */
+  MOERTEL::Function* Clone() const;
+
+  /*!
+  \brief Destructor
+  */
   virtual ~Function_Linear1D() {}
 
-  // evaluate the shape function
+  /*!
+  \brief Evaluate the function and derivatives at a given local coordinate
+  
+  \param xi (in) : Local coordinate where to evaluate the function
+  \param val (out) : Function values at xi, dimension 2, if NULL on input no evaluation
+  \param valdim (in) : Dimension of val should be 2
+  \param deriv (out) : Derivative of functions at xi, dimension 4, if NULL on input no evaluation
+  */
   bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
 
-  // need a clone functionality to do a deep copy
-  MOERTEL::Function* Clone() const;
 };
 
-/*----------------------------------------------------------------------*
- |  the dual 1D linear shape function                              06/05|
- *----------------------------------------------------------------------*/
+/*!
+\class Function_DualLinear1D
+
+\brief <b> A 1D dual linear shape function </b>
+
+phi_1 = -1.5*xi+0.5 <br>
+phi_2 = 1.5*xi+0.5 <br>
+phi_1,xi = -1.5 <br>
+phi_2,xi = 1.5 <br>
+
+\author Michael W. Gee (mwgee@sandia.gov)
+
+*/
 class Function_DualLinear1D : public MOERTEL::Function 
 {
 public:
   
-  // ctor
+  /*!
+  \brief Constructor
+  
+  \param out : Level of output information written to stdout ( 0 - 10 )
+  */
   Function_DualLinear1D(int out) :
   MOERTEL::Function(out,MOERTEL::Function::func_DualLinear1D)
   {}
   
-  // copy-ctor
+  /*!
+  \brief Copy-Constructor
+  */
   Function_DualLinear1D(const MOERTEL::Function_DualLinear1D& old) :
   MOERTEL::Function(old.outputlevel_,old.type_)
   {}
 
-  // dtor
+  /*!
+  \brief Clone method
+  
+  Makes a deep copy of this instance and returns a pointer to it.
+  
+  */
+  virtual MOERTEL::Function* Clone() const;
+
+  /*!
+  \brief Destructor
+  */
   virtual ~Function_DualLinear1D() {}
 
-  // evaluate the shape function
+  /*!
+  \brief Evaluate the function and derivatives at a given local coordinate
+  
+  \param xi (in) : Local coordinate where to evaluate the function
+  \param val (out) : Function values at xi, dimension 2, if NULL on input no evaluation
+  \param valdim (in) : Dimension of val should be 2
+  \param deriv (out) : Derivative of functions at xi, dimension 4, if NULL on input no evaluation
+  */
   bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
 
-  // need a clone functionality to do a deep copy
-  virtual MOERTEL::Function* Clone() const;
 };
 
-/*----------------------------------------------------------------------*
- |  the linear triangle shape function                             10/05|
- *----------------------------------------------------------------------*/
+/*!
+\class Function_LinearTri
+
+\brief <b> A 2D linear shape function for a 3-noded triangle</b>
+
+phi_1 = 1 - xi_1 - xi_2 <br>
+phi_2 = xi_1 <br>
+phi_3 = xi_2 <br>
+phi_1,xi_1 = -1 <br>
+phi_1,xi_2 = -1 <br>
+phi_2,xi_1 = 1 <br>
+phi_2,xi_2 = 0 <br>
+phi_3,xi_1 = 0 <br>
+phi_3,xi_2 = 1 <br>
+
+\author Michael W. Gee (mwgee@sandia.gov)
+
+*/
 class Function_LinearTri : public MOERTEL::Function 
 {
 public:
   
-  // ctor
+  /*!
+  \brief Constructor
+  
+  \param out : Level of output information written to stdout ( 0 - 10 )
+  */
   Function_LinearTri(int out) :
   MOERTEL::Function(out,MOERTEL::Function::func_LinearTri)
   {}
   
-  // copy-ctor
+  /*!
+  \brief Copy-Constructor
+  */
   Function_LinearTri(const MOERTEL::Function_LinearTri& old) :
   MOERTEL::Function(old.outputlevel_,old.type_)
   {}
 
-  // dtor
+  /*!
+  \brief Clone method
+  
+  Makes a deep copy of this instance and returns a pointer to it.
+  
+  */
+  virtual MOERTEL::Function* Clone() const;
+
+  /*!
+  \brief Destructor
+  */
   virtual ~Function_LinearTri() {}
 
-  // evaluate the shape function
+  /*!
+  \brief Evaluate the function and derivatives at a given local coordinate
+  
+  \param xi (in) : Local coordinate where to evaluate the function (dimension 2)
+  \param val (out) : Function values at xi, dimension 3, if NULL on input no evaluation
+  \param valdim (in) : Dimension of val should be 3
+  \param deriv (out) : Derivative of functions at xi, dimension 6, if NULL on input no evaluation
+  */
   bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
-
-  // need a clone functionality to do a deep copy
-  virtual MOERTEL::Function* Clone() const;
 };
 
-/*----------------------------------------------------------------------*
- |  the dual linear triangle shape function                        10/05|
- *----------------------------------------------------------------------*/
+/*!
+\class Function_DualLinearTri
+
+\brief <b> A 2D dual linear shape function for a 3-noded triangle</b>
+
+phi_1 = 3 - 2 * xi_1 - 2 * xi_2 <br>
+phi_2 = 4 * xi_1 - 1<br>
+phi_3 = 4 * xi_2 - 1 <br>
+phi_1,xi_1 = -2 <br>
+phi_1,xi_2 = -2 <br>
+phi_2,xi_1 = 4 <br>
+phi_2,xi_2 = 0 <br>
+phi_3,xi_1 = 0 <br>
+phi_3,xi_2 = 4 <br>
+
+\author Michael W. Gee (mwgee@sandia.gov)
+
+*/
 class Function_DualLinearTri : public MOERTEL::Function 
 {
 public:
   
-  // ctor
+  /*!
+  \brief Constructor
+  
+  \param out : Level of output information written to stdout ( 0 - 10 )
+  */
   Function_DualLinearTri(int out) :
   MOERTEL::Function(out,MOERTEL::Function::func_DualLinearTri)
   {}
   
-  // copy-ctor
+  /*!
+  \brief Copy-Constructor
+  */
   Function_DualLinearTri(const MOERTEL::Function_DualLinearTri& old) :
   MOERTEL::Function(old.outputlevel_,old.type_)
   {}
 
-  // dtor
+  /*!
+  \brief Clone method
+  
+  Makes a deep copy of this instance and returns a pointer to it.
+  
+  */
+  virtual MOERTEL::Function* Clone() const;
+
+  /*!
+  \brief Destructor
+  */
   virtual ~Function_DualLinearTri() {}
 
-  // evaluate the shape function
+  /*!
+  \brief Evaluate the function and derivatives at a given local coordinate
+  
+  \param xi (in) : Local coordinate where to evaluate the function (dimension 2)
+  \param val (out) : Function values at xi, dimension 3, if NULL on input no evaluation
+  \param valdim (in) : Dimension of val should be 3
+  \param deriv (out) : Derivative of functions at xi, dimension 6, if NULL on input no evaluation
+  */
   bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
 
-  // need a clone functionality to do a deep copy
-  virtual MOERTEL::Function* Clone() const;
 };
 
-/*----------------------------------------------------------------------*
- |  the constant triangle shape function                           11/05|
- *----------------------------------------------------------------------*/
+/*!
+\class Function_ConstantTri
+
+\brief <b> A 2D constant shape function for a 3-noded triangle</b>
+
+phi_1 = 1 <br>
+phi_2 = 1<br>
+phi_3 = 1 <br>
+phi_1,xi_1 = 0 <br>
+phi_1,xi_2 = 0 <br>
+phi_2,xi_1 = 0 <br>
+phi_2,xi_2 = 0 <br>
+phi_3,xi_1 = 0 <br>
+phi_3,xi_2 = 0 <br>
+
+\author Michael W. Gee (mwgee@sandia.gov)
+
+*/
 class Function_ConstantTri : public MOERTEL::Function 
 {
 public:
   
-  // ctor
+  /*!
+  \brief Constructor
+  
+  \param out : Level of output information written to stdout ( 0 - 10 )
+  */
   Function_ConstantTri(int out) :
   MOERTEL::Function(out,MOERTEL::Function::func_ConstantTri)
   {}
   
-  // copy-ctor
+  /*!
+  \brief Copy-Constructor
+  */
   Function_ConstantTri(const MOERTEL::Function_ConstantTri& old) :
   MOERTEL::Function(old.outputlevel_,old.type_)
   {}
 
-  // dtor
+  /*!
+  \brief Clone method
+  
+  Makes a deep copy of this instance and returns a pointer to it.
+  
+  */
+  virtual MOERTEL::Function* Clone() const;
+
+  /*!
+  \brief Destructor
+  */
   virtual ~Function_ConstantTri() {}
 
-  // evaluate the shape function
+  /*!
+  \brief Evaluate the function and derivatives at a given local coordinate
+  
+  \param xi (in) : Local coordinate where to evaluate the function (dimension 2)
+  \param val (out) : Function values at xi, dimension 3, if NULL on input no evaluation
+  \param valdim (in) : Dimension of val should be 3
+  \param deriv (out) : Derivative of functions at xi, dimension 6, if NULL on input no evaluation
+  */
   bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
 
-  // need a clone functionality to do a deep copy
-  virtual MOERTEL::Function* Clone() const;
 };
 
 

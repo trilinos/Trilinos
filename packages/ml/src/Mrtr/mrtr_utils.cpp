@@ -236,7 +236,7 @@ int MOERTEL::digit_ten(int number)
 
 
 /*----------------------------------------------------------------------*
- | sort dlist                                                mwgee 10/05|
+ | sort dlist                                                      10/05|
   dlist:           On input, values to be sorted. On output, sorted values
                    (i.e., dlist[i] <= dlist[i+1]).
 

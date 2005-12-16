@@ -31,6 +31,16 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
+/*!
+ * \file mrtr_point.H
+ *
+ * \class MOERTEL::Point
+ *
+ * \brief A light weight node
+ *
+ * \date Last update do Doxygen: 16-Dec-05
+ *
+ */
 #ifdef TRILINOS_PACKAGE
 
 #ifndef MOERTEL_POINT_H
@@ -46,49 +56,135 @@ using namespace std;
 
 // ----------   User Defined Includes   ----------
 
+//! MOERTEL: namespace of the Moertel package
 namespace MOERTEL
 {
 
 
+/*!
+\class Point
+
+\brief <b> A light weight version of a node </b>
+
+This class defines a point on a segment. It is a light weight version of a node.
+It is used in the integration of 2D interfaces where the mortar side is imprinted
+to the slave side. The overlap between a mortar and a slave segment leads to
+a polygon defined by points on the slave segment. The polygon is then
+discretized by triangle finite elements (eventually adding more points) to perform
+the integration on the polygon region. A point might therefore become a node
+of the polygon discretization and therefore has capabilities to store a Node class.
+
+The \ref MOERTEL::Point class supports the ostream& operator <<
+
+\author Michael W. Gee (mwgee@sandia.gov)
+
+*/
 class Point
 {
 public:
 
-  // ctor
+  // @{ \name Constructors and destructors
+
+  /*!
+  \brief Constructor
+  
+  Constructs an instance of this class.<br>
+  Note that this is \b not a collective call as points shall only have one owning process.
+  
+  \param id : A unique positive point id.
+  \param xi : Coordinates of point in a segment (2D)
+  \param out : Level of output information written to stdout ( 0 - 10 )
+  */
   Point(const int id, const double* xi, int out);
   
-  // dtor
+  /*!
+  \brief Destructor
+  */
   virtual ~Point();
   
-  // return level of output
+  //@}
+  // @{ \name Public members
+
+  /*!
+  \brief Return the level of output written to stdout ( 0 - 10 )
+  
+  */
   int OutLevel() { return outputlevel_; }
   
-  // print
+  /*!
+  \brief Print this node to stdout
+  
+  */
   void Print() const;
 
-  // get point id
+  /*!
+  \brief Return id of this point
+  
+  */
   inline int Id() { return id_; }
   
-  // return view of local coords
+  /*!
+  \brief Return view of segment local coordinates of this point (2D)
+  
+  */
   inline const double* Xi() { return &xi_[0]; }
 
-  // return view of global coords
+  /*!
+  \brief Return view of global coordinates of this point (3D)
+  
+  If this point holds a Node it will return a pointer to the
+  global 3D coordinates of that Node. If it does not hold a Node, it will
+  return NULL
+  
+  */
   inline const double* X() { if (node_ != null) return node_->X(); else return NULL; }
 
-  // return view of node
+  /*!
+  \brief Return view of Node
+  
+  If this point holds a Node it will return a pointer to the Node.
+  If it does not hold a Node, it will return Teuchos::null
+  
+  */
   inline RefCountPtr<MOERTEL::Node> Node() { return node_; }
   
-  // set Xi coords
+  /*!
+  \brief Set segment local coordinates of this point (2D) in a segment
+  
+  */
   bool SetXi(const double* xi) { xi_[0] = xi[0]; xi_[1] = xi[1]; return true; }
 
-  // set x coords
+  /*!
+  \brief Set a Node to this point
+  
+  The Point takes ownership of the Node and will destroy it 
+  
+  */
   bool SetNode(MOERTEL::Node* node) { node_ = rcp(node); return true; }
 
-  // store function values in the vals_ vector
+  /*!
+  \brief Store finite element function values at the Point 's coordinate \ref Xi()
+  
+  \param place : Place in internal data structure where to store function values.<br>
+  place=0 is used to store trace space function values of the slave segment.<br>
+  place=1 is used to store Lagrange multiplier space function values of the slave segment.<br>
+  place=2 is used to store trace space function values of the master segment.<br>
+  \param val : Vector of length valdim holding function values
+  \param valdim : Dimension of val
+  
+  */
   void StoreFunctionValues(int place, double* val, int valdim);
 
-  // return ptr to vals_ vector
+  /*!
+  \brief Return view of function values stored in this Point
+  
+  Returns a view of the function values that were stored in this Point using \ref StoreFunctionValues
+  
+  */
   vector<double>* FunctionValues() { return vals_; }
+
+  //@}
+
 
 private:
 

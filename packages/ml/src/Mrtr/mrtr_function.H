@@ -31,6 +31,16 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
+/*!
+ * \file mrtr_function.H
+ *
+ * \class MOERTEL::Function
+ *
+ * \brief A virtual class to form a shape function of some type
+ *
+ * \date Last update do Doxygen: 16-Dec-05
+ *
+ */
 #ifdef TRILINOS_PACKAGE
 
 #ifndef MOERTEL_FUNCTION_H
@@ -39,20 +49,38 @@
 #include <ctime>
 #include <iostream>
 
+//! MOERTEL: namespace of the Moertel package
 using namespace std;
 
 namespace MOERTEL
 {
 
 
-/*----------------------------------------------------------------------*
- |  the virtual function all segment functions have to inherit     06/05|
- *----------------------------------------------------------------------*/
+/*!
+\class Function
+
+\brief <b> A virtual class to form a shape function of some type </b>
+
+
+
+\author Michael W. Gee (mwgee@sandia.gov)
+
+*/
 class Function 
 {
 public:
 
-  // types of functions
+  /*!
+  \brief Type of function
+  
+  \param func_none : default value
+  \param func_Constant1D : Constant function on a 1D Segment
+  \param func_Linear1D : Linear function on a 1D Segment
+  \param func_DualLinear1D : Dual linear function on a 1D Segment
+  \param func_LinearTri : Linear function on a 3-noded triangle
+  \param func_DualLinearTri : Dual linear function on a 3-noded triangle
+  \param func_ConstantTri : Constant function on a 3-noded triangle
+  */
   enum FunctionType
   {
     func_none,
@@ -64,34 +92,75 @@ public:
     func_ConstantTri
   };
   
-  // ctor
+  // @{ \name Constructors and destructors
+
+  /*!
+  \brief Constructor
+  
+  Constructs an instance of this base class.<br>
+  
+  \param outlevel : Level of output information written to stdout ( 0 - 10 )
+  \param type : Function type
+  */
   Function(int outlevel,MOERTEL::Function::FunctionType type) : 
   type_(type),
   outputlevel_(outlevel) 
   {};
   
-  // copy-ctor
+  /*!
+  \brief Copy-Constructor
+  
+  Makes a deep copy<br>
+  
+  \param old : Instance to be copied
+  */
   Function(const MOERTEL::Function& old) :
   type_(old.type_),
   outputlevel_(old.outputlevel_)
   {}
   
-  // dtor
+  /*!
+  \brief Destructor
+  */
   virtual ~Function() {}
 
-  // return the output level
+  /*!
+  \brief Clone method
+  
+  The derived class implementing this virtual method is supposed to make a
+  deep copy of itself and return a pointer to the copy.
+  
+  */
+  virtual MOERTEL::Function* Clone() const = 0;
+
+
+  //@}
+  // @{ \name Public members
+
+  /*!
+  \brief Return the level of output written to stdout ( 0 - 10 )
+  
+  */
   int OutLevel() { return outputlevel_; }
   
-  // return a string specifiying the type of derived function
+  /*!
+  \brief Return the function type
+  
+  */
   MOERTEL::Function::FunctionType Type() const { return type_;}
   
-  // evaluate the function
+  /*!
+  \brief Evaluate the function and derivatives at a given local coordinate
+  
+  \param xi (in) : Local coordinate where to evaluate the function
+  \param val (out) : Function values at xi
+  \param valdim (in) : Dimension of val
+  \param deriv (out) : Derivative of functions at xi
+  */
   virtual bool EvaluateFunction(const double* xi, double* val, const int valdim, 
                                 double* deriv) = 0;
 
-  // need a clone functionality to do a deep copy
-  // have a look at the Function_Linear1D how this is done, it's important!
-  virtual MOERTEL::Function* Clone() const = 0;
+  //@}
 
 protected:
 

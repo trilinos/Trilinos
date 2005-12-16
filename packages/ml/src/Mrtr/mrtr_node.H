@@ -121,7 +121,9 @@ public:
   */
   Node(const MOERTEL::Node& old);
   
-  // dtor
+  /*!
+  \brief Destructor
+  */
   virtual ~Node();
   
   //@}

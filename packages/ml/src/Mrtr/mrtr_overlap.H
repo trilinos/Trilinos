@@ -31,6 +31,17 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
+/*!
+ * \file mrtr_overlap.H
+ *
+ * \class MOERTEL::Overlap
+ *
+ * \brief A class to compute the overlap polygon of 2 different 2D segments 
+          and construct a triangle discretization of the convex hull of that polygon
+ *
+ * \date Last update do Doxygen: 16-Dec-05
+ *
+ */
 #ifdef TRILINOS_PACKAGE
 
 #ifndef MOERTEL_OVERLAP_H
@@ -53,6 +64,7 @@ using namespace Teuchos;
 
 // ----------   User Defined Includes   ----------
 
+//! MOERTEL: namespace of the Moertel package
 namespace MOERTEL
 {
 
@@ -62,45 +74,75 @@ class MOERTEL::Segment;
 class MOERTEL::Node;
 class MOERTEL::Integrator;
 
+/*!
+\class Overlap
+
+\brief <b> A class to compute the overlap polygon of 2 different 2D segments 
+          and construct a triangle discretization of the convex hull of that polygon </b>
+
+Given a slave and a mortar side segment, this class projects the mortar segment onto 
+the local coordinate system of the slave segment. It will then determine whether
+an overlap between the slave segment and the projection of the mortar segment exists
+and computes the polygonal overlap region. In a second step it creates a
+triangulation of that polygonal overlap region that can be used to perform the
+integration over that region.
+
+The Interface and the Integrator class are friends to this class to be able to access the resulting
+triangulation of the overlap polygon.
+
+
+\author Michael W. Gee (mwgee@sandia.gov)
+
+*/
 class  Overlap 
 {
 public:
 
-  enum Polygon_Type
-  {
-    poly_none,
-    poly_1_2_same,
-    poly_1_2_dif,
-    poly_1_4_same,
-    poly_1_4_dif,
-    poly_2_2_same,
-    poly_2_2_dif,
-    poly_3_0,
-    poly_0_6,
-    poly_0_0,
-    poly_0_4_same,
-    poly_0_4_dif,
-    poly_0_2
-  };
-
-  // the interface class is a friend to this class
+  //! the Interface class is a friend to this class
   friend class Interface;
   
-  // the integrator class is a friend to this class
+  //! the Integrator class is a friend to this class
   friend class Integrator;
   
-  // ctor
+  // @{ \name Constructors and destructors
+
+  /*!
+  \brief Constructor
+  
+  Constructs an instance of this class.<br>
+  Note that this is \b not a collective call as overlaps are computed in parallel by
+  individual processes.
+  
+  \param sseg : slave Segment to overlap with
+  \param mseg : mortar Segment to overlap with
+  \param inter : Interface both segments are part of
+  \param outlevel : Level of output information written to stdout ( 0 - 10 )
+  */
   explicit Overlap(MOERTEL::Segment& sseg, MOERTEL::Segment& mseg, 
                    MOERTEL::Interface& inter, int outlevel);
   
-  // dtor
+  /*!
+  \brief Destructor
+  */
   virtual ~Overlap();
   
-  // compute overlap between 2 segments and it's polygon
+  //@}
+  // @{ \name Public members
+
+  /*!
+  \brief Compute overlap (if any) between 2 segments and construct discretization of overlap region
+  
+  \return true if segments overlap, false otherwise
+  */
   bool ComputeOverlap();
   
-  // return the output level
+  /*!
+  \brief Return the level of output written to stdout ( 0 - 10 )
+  
+  */
   int OutLevel() { return outputlevel_; }
+
+  //@}
     
 private:  
   // don't want = operator
@@ -150,7 +192,8 @@ private:
   bool CollapsePoints(map<int,RefCountPtr<MOERTEL::Point> >& p, const double eps);
   
 protected:
-  //----------------------------------- tools to handle the triangulation map
+  // @{ \name Methods to construct triangulation of overlap region
+
   // add a segment to the triangulization
   bool AddSegment(int id, MOERTEL::Segment* seg);
   // return # segments the overlap was discretized with
@@ -158,7 +201,8 @@ protected:
   // get view of segments in triangulation map
   void SegmentView(vector<RefCountPtr<MOERTEL::Segment> >& segs);
 
-  //------------------------------------------ tools to handle the polygon map
+  // @{ \name Methods to construct an overlap polygon
+
   // add a point to the polygon
   bool AddPointtoPolygon(const int id, const double* P);
   bool AddPointtoPolygon(map<int,RefCountPtr<MOERTEL::Point> >& p, const int id, const double* P);
@@ -172,6 +216,8 @@ protected:
   void PointView(vector<MOERTEL::Point*>& p,const int* nodeids,const int np);
   // copy a point polygon to another polygon
   bool CopyPointPolygon(map<int,RefCountPtr<MOERTEL::Point> >& from, map<int,RefCountPtr<MOERTEL::Point> >& to);
+
+  //@}
 
 private:
 

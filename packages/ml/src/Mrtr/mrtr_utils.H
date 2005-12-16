@@ -31,6 +31,14 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
+/*!
+ * \file mrtr_utils.H
+ *
+ * \brief A couple utility methods for the Moertel package
+ *
+ * \date Last update do Doxygen: 16-Dec-05
+ *
+ */
 #ifdef TRILINOS_PACKAGE
 
 #ifndef MOERTEL_UTILS_H
@@ -51,6 +59,7 @@
 using namespace std;
 using namespace Teuchos;
 
+//! MOERTEL: namespace of the Moertel package
 namespace MOERTEL
 {
 
@@ -58,24 +67,94 @@ namespace MOERTEL
 class MOERTEL::Segment;
 class MOERTEL::Node;
 
-// NOTE::
-// for communication reasons, every single derived function class needs
-// to have a unique typ-id. This type Id can be communicated easily.
-// So when introducing a new derived Function class, one needs to add
-// it's type to the enum FunctionType in the virtual base class in
-// mrtr_function.H and one needs to add a case to the function
-// MOERTEL::AllocateFunction in mrtr_utils.cpp
-MOERTEL::Function* MOERTEL::AllocateFunction(MOERTEL::Function::FunctionType type, int out);
-MOERTEL::Segment* MOERTEL::AllocateSegment(int type, int out);
-bool MOERTEL::cross(double* out, const double* g1, const double* g2);
-double MOERTEL::dot(const double* g1, const double* g2, const int dim);
-double MOERTEL::length(const double* g, const int dim);
-bool MOERTEL::solve22(const double A[][2], double* x, const double* b);
-bool MOERTEL::solve33(const double A[][3], double* x, const double* b);
-int MOERTEL::digit_ten(int i);
-void MOERTEL::sort(double* dlist, int N, int* list2);
+/*!
+\brief Allocate a function of the correct type
 
-// swap template
+ For communication reasons, every single derived function class needs
+ to have a unique typ-id. This type Id can be communicated easily.
+ So when introducing a new derived Function class, one needs to add
+ it's type to the enum FunctionType in the virtual base class in
+ mrtr_function.H and one needs to add a case to this method
+ MOERTEL::AllocateFunction in mrtr_utils.cpp 
+
+\param type : Type of Function to allocate and return pointer to
+*/
+MOERTEL::Function* AllocateFunction(MOERTEL::Function::FunctionType type, int out);
+
+/*!
+\brief Allocate a Segment of the correct type
+
+ For communication reasons, every single derived segment class needs
+ to have a unique typ-id. This type Id can be communicated easily.
+ So when introducing a new segment class, one needs to add
+ it's type to the enum SegmentType in the virtual base class in
+ mrtr_segment.H and one needs to add a case to this method
+ MOERTEL::AllocateSegment in mrtr_utils.cpp 
+
+\param type : Type of segment to allocate and return pointer to
+\param out : Level of output to be generated to stdout ( 0 - 10 )
+*/
+MOERTEL::Segment* AllocateSegment(int type, int out);
+
+
+/*!
+\brief Cross product
+
+Perform cross product out = g1 x g2 for vectors of dimension 3
+
+*/
+bool cross(double* out, const double* g1, const double* g2);
+
+/*!
+\brief Dot product
+
+Perform dot product g1 dot g2 for vectors of dimension dim and return result
+
+*/
+double dot(const double* g1, const double* g2, const int dim);
+
+/*!
+\brief Length of a vector
+
+Return L2 norm of a vector of dimension dim
+
+*/
+double length(const double* g, const int dim);
+
+/*!
+\brief Solve dense 2x2 system of equations
+
+Ax=b
+
+*/
+bool solve22(const double A[][2], double* x, const double* b);
+
+/*!
+\brief Solve dense 3x3 system of equations
+
+Ax=b
+
+*/
+bool solve33(const double A[][3], double* x, const double* b);
+
+
+/*!
+\brief Return the '10' digit from an integer number
+*/
+int digit_ten(int i);
+
+/*!
+\brief Sort dlist of length N in ascending, sort list2 according to dlist 
+
+This piece of code was lend from the Trilinos package ML
+*/
+void sort(double* dlist, int N, int* list2);
+
+/*!
+\brief Template to swap 2 <kind> instances
+
+<kind> has to implement the assignment operator = 
+*/
 template<typename kind>
 void swap(kind& a, kind& b)
 {
@@ -84,22 +163,6 @@ void swap(kind& a, kind& b)
   b = tmp;
   return;
 }
-
-// after switching all mapes to contain RefCountPtr we
-// don't need these anymore
-/*
-// Destroy a map of pointers template
-template<typename kind1, typename kind2>
-void MOERTEL::DestroyMap(map<kind1,kind2*>& m)
-{
-  typename map<kind1,kind2*>::iterator curr;
-  for (curr=m.begin(); curr != m.end(); ++curr)
-    if (curr->second) delete curr->second;
-  m.clear();  
-  return;
-}
-*/
-
 
 } // namespace MOERTEL
 
