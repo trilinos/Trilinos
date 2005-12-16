@@ -67,7 +67,15 @@
 using namespace std;
 using namespace Teuchos;
 
-//! MOERTEL: namespace of the Moertel package
+/*!
+\brief MOERTEL: namespace of the Moertel package
+
+The Moertel package depends on \ref Epetra, \ref EpetraExt, \ref Teuchos,
+\ref Amesos and \ref ML
+
+It makes use of the Epetra define EPETRA_MPI
+
+*/
 namespace MOERTEL
 {
 
