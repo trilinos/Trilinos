@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include "mrtr_segment_linear1D.H"
 #include "mrtr_interface.H"
 
@@ -280,7 +278,3 @@ double MOERTEL::Segment_Linear1D::Area()
   double length = sqrt(tangent[0]*tangent[0]+tangent[1]*tangent[1]);
   return length;
 }
-
-
-
-#endif // TRILINOS_PACKAGE

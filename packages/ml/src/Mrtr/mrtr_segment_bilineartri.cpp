@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include "mrtr_segment_bilineartri.H"
 #include "mrtr_interface.H"
 #include "mrtr_utils.H"
@@ -264,7 +262,3 @@ double MOERTEL::Segment_BiLinearTri::Area()
 
   return (sqrt(a)/2.0);
 }
-
-
-
-#endif // TRILINOS_PACKAGE

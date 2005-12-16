@@ -41,8 +41,6 @@
  * \date Last update do Doxygen: 15-Dec-05
  *
  */
-#ifdef TRILINOS_PACKAGE
-
 #ifndef MOERTEL_PROJECTNODE_H
 #define MOERTEL_PROJECTNODE_H
 
@@ -165,4 +163,3 @@ protected:
 std::ostream& operator << (ostream& os, const MOERTEL::ProjectedNode& pnode);
 
 #endif // MOERTEL_PROJECTNODE_H
-#endif // TRILINOS_PACKAGE

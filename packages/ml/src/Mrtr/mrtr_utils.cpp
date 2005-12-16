@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include "mrtr_utils.H"
 #include "mrtr_segment.H"
 #include "mrtr_segment_linear1D.H"
@@ -345,6 +343,3 @@ void MOERTEL::sort(double* dlist, int N, int* list2)
    }
   return;
 }
-
-
-#endif // TRILINOS_PACKAGE

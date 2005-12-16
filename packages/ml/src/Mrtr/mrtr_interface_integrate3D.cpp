@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include <ctime>
 #include <vector>
 
@@ -436,23 +434,3 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
   
   return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#endif // TRILINOS_PACKAGE

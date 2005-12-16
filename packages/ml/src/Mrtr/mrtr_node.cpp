@@ -31,9 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
-
 #include "mrtr_node.H"
 #include "mrtr_interface.H"
 #include "mrtr_pnode.H"
@@ -484,5 +481,3 @@ void MOERTEL::Node::AddMValue(double val, int col)
 
   return;
 }
-
-#endif // TRILINOS_PACKAGE

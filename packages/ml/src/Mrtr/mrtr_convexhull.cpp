@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include "mrtr_overlap.H"
 #include "mrtr_projector.H"
 #include "mrtr_node.H"
@@ -426,33 +424,3 @@ bool MOERTEL::Overlap::CollapsePoints(map<int,RefCountPtr<MOERTEL::Point> >& p,
 
   return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#endif // TRILINOS_PACKAGE

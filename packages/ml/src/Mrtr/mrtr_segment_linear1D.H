@@ -41,8 +41,6 @@
  * \date Last update to Doxygen: 15-Dec-05
  *
  */
-#ifdef TRILINOS_PACKAGE
-
 #ifndef MOERTEL_SEGMENT_LINEAR1D_H
 #define MOERTEL_SEGMENT_LINEAR1D_H
 
@@ -202,4 +200,3 @@ ostream& operator << (ostream& os, const MOERTEL::Segment_Linear1D& seg);
 
 
 #endif // MOERTEL_SEGMENT_LINEAR1D_H
-#endif // TRILINOS_PACKAGE

@@ -41,8 +41,6 @@
  * \date Last update do Doxygen: 14-Dec-05
  *
  */
-#ifdef TRILINOS_PACKAGE
-
 #ifndef MOERTEL_INTERFACE_H
 #define MOERTEL_INTERFACE_H
 
@@ -52,12 +50,12 @@
 #include <iomanip>
 
 // Trilinos includes
-#ifdef PARALLEL
+#include <Epetra_CrsMatrix.h>
+#ifdef EPETRA_MPI
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>
 #endif
-#include <Epetra_CrsMatrix.h>
 
 // mrtr includes
 #include "mrtr_segment.H"
@@ -898,4 +896,3 @@ private:
 ostream& operator << (ostream& os, const MOERTEL::Interface& inter); 
 
 #endif // MOERTEL_INTERFACE_H
-#endif // TRILINOS_PACKAGE

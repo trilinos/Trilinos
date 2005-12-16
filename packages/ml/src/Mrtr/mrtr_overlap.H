@@ -42,8 +42,6 @@
  * \date Last update do Doxygen: 16-Dec-05
  *
  */
-#ifdef TRILINOS_PACKAGE
-
 #ifndef MOERTEL_OVERLAP_H
 #define MOERTEL_OVERLAP_H
 
@@ -258,4 +256,3 @@ map<int,RefCountPtr<MOERTEL::Segment> > s_;       // map holding segments of pol
 
 } // namespace MOERTEL
 #endif // MOERTEL_OVERLAP_H
-#endif // TRILINOS_PACKAGE

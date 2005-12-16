@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include "mrtr_interface.H"
 #include "mrtr_utils.H"
 
@@ -166,7 +164,7 @@ bool MOERTEL::Interface::Complete()
   // this intra-communicator will be used to handle most stuff on this 
   // interface so the interface will not block all other procs
   {
-#ifdef PARALLEL
+#ifdef EPETRA_MPI
     vector<int> lin(gcomm_.NumProc());
     vector<int> gin(gcomm_.NumProc());
     for (int i=0; i<gcomm_.NumProc(); ++i) lin[i] = 0;
@@ -438,10 +436,3 @@ bool MOERTEL::Interface::Complete()
   
   return ok;
 }
-
-
-
-
-
-
-#endif // TRILINOS_PACKAGE

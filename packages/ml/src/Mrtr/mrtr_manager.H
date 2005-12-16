@@ -41,8 +41,6 @@
  * \date Last update do Doxygen: 14-Dec-05
  *
  */
-#ifdef TRILINOS_PACKAGE
-
 #ifndef MOERTEL_MANAGER_H
 #define MOERTEL_MANAGER_H
 
@@ -51,15 +49,15 @@
 #include <vector>
 
 // Trilinos includes
-#ifdef PARALLEL
+#include <Epetra_Map.h>
+#include <Epetra_CrsMatrix.h>
+#ifdef EPETRA_MPI
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>
 #endif
-#include <Epetra_Map.h>
-#include <Epetra_CrsMatrix.h>
 #include "Teuchos_RefCountPtr.hpp"
-// mrtr includes
+// Moertel includes
 #include "mrtr_segment.H"
 #include "mrtr_node.H"
 #include "mrtr_interface.H"
@@ -361,4 +359,3 @@ outputs all information stored in the \ref MOERTEL::Manager class to ostream
 std::ostream& operator << (ostream& os, const MOERTEL::Manager& node);
 
 #endif // MOERTEL_MANAGER_H
-#endif // TRILINOS_PACKAGE

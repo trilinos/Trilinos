@@ -41,8 +41,6 @@
  * \date Last update to Doxygen: 15-Dec-05
  *
  */
-#ifdef TRILINOS_PACKAGE
-
 #ifndef MOERTEL_SEGMENT_BILINEARQUAD_H
 #define MOERTEL_SEGMENT_BILINEARQUAD_H
 
@@ -200,4 +198,3 @@ ostream& operator << (ostream& os, const MOERTEL::Segment_BiLinearQuad& seg);
 
 
 #endif // MOERTEL_SEGMENT_BILINEARQUAD_H
-#endif // TRILINOS_PACKAGE

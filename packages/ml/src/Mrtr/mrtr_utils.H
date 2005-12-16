@@ -39,8 +39,6 @@
  * \date Last update do Doxygen: 16-Dec-05
  *
  */
-#ifdef TRILINOS_PACKAGE
-
 #ifndef MOERTEL_UTILS_H
 #define MOERTEL_UTILS_H
 
@@ -165,7 +163,4 @@ void swap(kind& a, kind& b)
 }
 
 } // namespace MOERTEL
-
-
 #endif // MOERTEL_UTILS_H
-#endif // TRILINOS_PACKAGE

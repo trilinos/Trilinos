@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include "mrtr_integrator.H"
 #include "mrtr_node.H"
 #include "mrtr_segment.H"
@@ -820,5 +818,3 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
   }
   return true;
 }
-
-#endif // TRILINOS_PACKAGE

@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include "mrtr_pnode.H"
 #include "mrtr_interface.H"
 
@@ -131,7 +129,3 @@ ostream& operator << (ostream& os, const MOERTEL::ProjectedNode& pnode)
   pnode.Print();
   return (os);
 }
-
-
-
-#endif // TRILINOS_PACKAGE

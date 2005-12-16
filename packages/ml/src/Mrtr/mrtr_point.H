@@ -41,8 +41,6 @@
  * \date Last update do Doxygen: 16-Dec-05
  *
  */
-#ifdef TRILINOS_PACKAGE
-
 #ifndef MOERTEL_POINT_H
 #define MOERTEL_POINT_H
 
@@ -212,4 +210,3 @@ std::ostream& operator << (ostream& os, const MOERTEL::Point& point);
 
 
 #endif // MOERTEL_POINT_H
-#endif // TRILINOS_PACKAGE

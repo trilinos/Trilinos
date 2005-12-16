@@ -39,8 +39,6 @@
  * \date Last update do Doxygen: 16-Dec-05
  *
  */
-#ifdef TRILINOS_PACKAGE
-
 #ifndef MOERTEL_FUNCTIONS_H
 #define MOERTEL_FUNCTIONS_H
 
@@ -425,4 +423,3 @@ public:
 
 
 #endif // MOERTEL_FUNCTION_LINEAR1D_H
-#endif // TRILINOS_PACKAGE

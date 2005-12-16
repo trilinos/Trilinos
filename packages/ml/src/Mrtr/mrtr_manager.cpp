@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include "mrtr_manager.H"
 #include "EpetraExt_MatrixMatrix.h"  // for adding matrices
 #include <EpetraExt_Transpose_RowMatrix.h>
@@ -1396,24 +1394,3 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MOERTEL::Interface
 
   return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#endif // TRILINOS_PACKAGE

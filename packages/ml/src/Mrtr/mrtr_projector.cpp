@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include "mrtr_projector.H"
 #include "mrtr_node.H"
 #include "mrtr_segment.H"
@@ -856,5 +854,3 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g(
   double gradF =   Nxeta[0]*g[0] + Nxeta[1]*g[1];
   return gradF;
 }
-
-#endif // TRILINOS_PACKAGE

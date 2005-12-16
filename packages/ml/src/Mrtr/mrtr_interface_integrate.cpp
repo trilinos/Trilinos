@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include <ctime>
 #include <vector>
 
@@ -771,8 +769,3 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
 
   return true;
 }
-
-
-
-
-#endif // TRILINOS_PACKAGE

@@ -31,9 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
-
 #include "mrtr_interface.H"
 #include "mrtr_projector.H"
 #include "mrtr_utils.H"
@@ -1165,4 +1162,3 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
 
   return true; 
 }
-#endif // TRILINOS_PACKAGE

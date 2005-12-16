@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include "mrtr_segment.H"
 #include "mrtr_interface.H"
 #include "mrtr_utils.H"
@@ -374,5 +372,3 @@ MOERTEL::Function* MOERTEL::Segment::GetFunction(int id)
     return curr->second;
 }
 #endif
-
-#endif // TRILINOS_PACKAGE

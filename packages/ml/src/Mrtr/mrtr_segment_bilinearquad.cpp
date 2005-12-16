@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include "mrtr_segment_bilinearquad.H"
 #include "mrtr_interface.H"
 
@@ -176,7 +174,3 @@ double MOERTEL::Segment_BiLinearQuad::Area()
   exit(EXIT_FAILURE);     
   return 0.0;
 }
-
-
-
-#endif // TRILINOS_PACKAGE

@@ -42,8 +42,6 @@
  * \date Last update do Doxygen: 16-Dec-05
  *
  */
-#ifdef TRILINOS_PACKAGE
-
 #ifndef MOERTEL_INTEGRATOR_H
 #define MOERTEL_INTEGRATOR_H
 
@@ -291,4 +289,3 @@ private:
 } // namespace MOERTEL
 
 #endif // MOERTEL_INTEGRATOR_H
-#endif // TRILINOS_PACKAGE

@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include "mrtr_point.H"
 #include "mrtr_overlap.H"
 #include "mrtr_utils.H"
@@ -90,7 +88,3 @@ void MOERTEL::Point::StoreFunctionValues(int place, double* val, int valdim)
     vals_[place][i] = val[i];
   return;
 }
-
-
-
-#endif // TRILINOS_PACKAGE

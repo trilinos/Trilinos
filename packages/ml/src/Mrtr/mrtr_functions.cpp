@@ -31,8 +31,6 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#ifdef TRILINOS_PACKAGE
-
 #include "mrtr_functions.H"
 
 //=======================================================================
@@ -428,6 +426,3 @@ bool MOERTEL::Function_ConstantTri::EvaluateFunction(
   
   return true;
 }
-
-
-#endif // TRILINOS_PACKAGE
