@@ -606,7 +606,6 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
                  -dampingFactors[ii] / max_eigen);
          ML_Operator_Destroy(&Ptemp);
 */
-         printf("\n\n hereeeeeeeeeeeeeee\n\n\n");
          Ptemp = ML_Operator_Create(Amat->comm);
          ML_2matmult(Amat, tmpmat1, Ptemp, ML_CSR_MATRIX );
          ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs,1,1, Amat);
