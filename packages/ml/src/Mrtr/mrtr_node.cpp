@@ -98,7 +98,7 @@ Mrow_(null)
  |  copy-ctor (public)                                       mwgee 06/05|
  *----------------------------------------------------------------------*/
 MOERTEL::Node::Node(const MOERTEL::Node& old) :
-supportedby_(old.supportedby_),
+supportedby_(old.supportedby_)
 {
   Id_ = old.Id();
   outputlevel_ = old.outputlevel_;

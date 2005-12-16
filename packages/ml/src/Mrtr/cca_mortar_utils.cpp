@@ -222,7 +222,6 @@ int cca_mrtr_2D_prepare_gline_data(GLINE* gline, int** nodeIds,
 {
   // do typ of segment
   if (gline->ngnode==2)      *typ = MOERTEL::Segment::seg_Linear1D;
-  else if (gline->ngnode==3) *typ = MOERTEL::Segment::seg_Quadratic1D;
   else cout << "***WRN*** gline " << gline->Id << " does not have 2 or 3 nodes\n";
   
   // The nodeIds of the segment have to be given in math positive order.

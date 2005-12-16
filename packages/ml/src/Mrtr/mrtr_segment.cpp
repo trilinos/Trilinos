@@ -123,8 +123,6 @@ bool MOERTEL::Segment::Print() const
   cout << "Segment " << setw(6) << Id_; 
   if (stype_ == MOERTEL::Segment::seg_Linear1D)
     cout << " Typ Linear1D   ";
-  if (stype_ == MOERTEL::Segment::seg_Quadratic1D)
-    cout << " Typ Quadratic1D";
   if (stype_ == MOERTEL::Segment::seg_BiLinearQuad)
     cout << " Typ BiLinearQuad ";
   if (stype_ == MOERTEL::Segment::seg_BiLinearTri)
