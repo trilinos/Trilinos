@@ -373,6 +373,8 @@
 #define ZUNGQR_F77  F77_FUNC(zungqr,ZUNGQR)
 #define ZGETRF_F77  F77_FUNC(zgetrf,ZGETRF)
 #define ZGETRS_F77  F77_FUNC(zgetrs,ZGETRS)
+#define ZGTTRF_F77  F77_FUNC(zgttrf,ZGTTRF)
+#define ZGTTRS_F77  F77_FUNC(zgttrs,ZGTTRS)
 #define ZGETRI_F77  F77_FUNC(zgetri,ZGETRI)
 #define ZGERFS_F77  F77_FUNC(zgerfs,ZGERFS)
 #define ZGECON_F77  F77_FUNC(zgecon,ZGECON)
