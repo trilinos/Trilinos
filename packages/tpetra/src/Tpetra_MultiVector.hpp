@@ -131,7 +131,8 @@ namespace Tpetra {
           //array_[i]->setAllToRandom();
           for (int j = 0 ; j < array_[0]->getNumMyEntries() ; ++j)
           {
-            (*array_[i])[j] = complex<double>(Teuchos::ScalarTraits<double>::random(), 0.0);
+            // FIXME (*array_[i])[j] = complex<double>(Teuchos::ScalarTraits<double>::random(), 0.0);
+            (*array_[i])[j] = Teuchos::ScalarTraits<ScalarType>::random();
           }
         }
       }
