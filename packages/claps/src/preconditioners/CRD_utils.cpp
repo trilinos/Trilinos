@@ -1,3 +1,32 @@
+//@HEADER
+// ************************************************************************
+// 
+//         Claps: A Collection of Domain Decomposition Preconditioners
+//                and Solvers
+//         Copyright (2006) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//  
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+
 #include "CRD_utils.hpp"
 
 namespace CRD_utils {
@@ -261,6 +290,20 @@ void subspace_iteration(int n, int rowbeg[], int colidx[],
   for (i=0; i<n; i++)
     for (j=rowbeg[i]; j<rowbeg[i+1]; j++) 
       if (colidx[j] == i) vals[j] += dtol*dmin;
+  /*
+  if (MyPID == 1) {
+    ofstream fout;
+    fout.open("A.dat");
+    fout << setiosflags(ios::scientific | ios::uppercase);
+    for (i=0; i<n; i++) {
+      for (j=rowbeg[i]; j<rowbeg[i+1]; j++) {
+	fout << i+1 << " " << colidx[j]+1 << " " << setw(22) <<
+	  setprecision(15) << vals[j] << endl;
+      }
+    }
+    fout.close();
+  }
+  */
   //
   // factor matrix
   //
@@ -310,8 +353,33 @@ void subspace_iteration(int n, int rowbeg[], int colidx[],
     //
     EB.GEMM(TRANSA, TRANSB, q, q, n, ALPHA, SOL, n,   X, n, BETA, TEMP, q);
     EB.GEMM(TRANSA, TRANSB, q, q, n, ALPHA, SOL, n, SOL, n, BETA,    X, q);   
+    /*
+    if (MyPID == 1) {
+      ofstream fout;
+      fout.open("AA.m");
+      fout << "TEMP = zeros(" << q << "," << q << ");" << endl;
+      fout << "X    = zeros(" << q << "," << q << ");" << endl;
+      fout << setiosflags(ios::scientific | ios::uppercase);
+      for (i=0; i<q; i++) {
+	for (j=0; j<q; j++) {
+	  fout << "TEMP(" << i+1 << "," << j+1 << ") = " << setw(22) <<
+	    setprecision(15) <<  TEMP[i+q*j] << ";" << endl;
+	  fout << "X(   " << i+1 << "," << j+1 << ") = " << setw(22) <<
+	    setprecision(15) <<     X[i+q*j] << ";" << endl;
+	}
+      }
+      fout.close();
+    }
+    */
     EL.SYGV(ITYPE, JOBZ, UPLO, q, TEMP, q, X, q, LAMBDA, WORK, LWORK, &INFO);
-    assert (INFO == 0);
+    //    assert (INFO == 0);
+    if (INFO != 0) {
+      delete [] SOL; delete [] TEMP; delete [] WORK; delete [] X;
+      delete [] LAMBDA;
+      nextra = 0;
+      extra_corner = new int[nextra];
+      return;
+    }
     EB.GEMM(TRANSB, TRANSB, n, q, q, ALPHA, SOL, n, TEMP, q, BETA, X, n);
     sum = 0;
     for (i=0; i<q; i++) sum += TEMP[q*(p-1)+i]*TEMP[q*(p-1)+i];

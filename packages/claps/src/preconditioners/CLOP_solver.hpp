@@ -1,3 +1,32 @@
+//@HEADER
+// ************************************************************************
+// 
+//         Claps: A Collection of Domain Decomposition Preconditioners
+//                and Solvers
+//         Copyright (2006) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//  
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+
 #ifndef CLOP_SOLVER_HPP
 #define CLOP_SOLVER_HPP
 #include <mpi.h>
@@ -109,13 +138,12 @@ class CLOP_solver
   int ndof_Standard, *sub_gdofs, nsub_gdofs, ncon_global, nx2, nx2_global;
   int *x2_dof, nmycon, *mycdof, gmres_flag, n_orthog_used;
   int pre_type_orthog, pre_type_coarse, orthog_option, *IPIV, ndof_global;
-  int ndof_global_red, print_flag, num_tied_down, *tied_down, *IPIV_gmres;
+  int ndof_global_red, print_flag, num_tied_down, *tied_down;
   double *xcent, *ycent, *zcent, *sol_coarse, *temp_coarse, *rhs_coarse;
   double *rcurra, *r_overlap, *z_overlap, *rhs_work, *sol_work, *tmp_work;
   double *rhoa, *betaa, *pApa, *Etri, *Dtri, *econa, *lambda_local;
   double *lambda, *ortho_vec, *pAp_vec, *ortho_sum, *PAP, *PAP_sum, *PAP_store;
   double *VV, *HH, *RR, *zz, *cc, *ss, *norms, *gmres_vec, *gmres_sum;
-  double error_fac, *WAMiW, *WAMiW_proc;
   ofstream fout;
   CLOP_sub *Asub;
   CLAPS_sparse_lu *Kc_fac;

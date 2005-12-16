@@ -1,3 +1,32 @@
+//@HEADER
+// ************************************************************************
+// 
+//         Claps: A Collection of Domain Decomposition Preconditioners
+//                and Solvers
+//         Copyright (2006) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//  
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+
 #include <stdio.h>
 #include <iostream>
 #include <mpi.h>
@@ -131,7 +160,6 @@ CLOP_solver::~CLOP_solver()
   delete [] zz; delete [] cc; delete [] ss; delete [] norms;
   delete [] gmres_vec; delete [] gmres_sum; delete gSt_red; delete [] PAP;
   delete [] PAP_sum; delete [] IPIV; delete [] PAP_store; delete [] tied_down;
-  delete [] IPIV_gmres; delete [] WAMiW; delete [] WAMiW_proc;
   zero_pointers();
 }
 
@@ -154,7 +182,7 @@ void CLOP_solver::zero_pointers()
   CtT = 0; AP_matrix = 0; P_matrix = 0; pAp_vec = 0; ortho_vec = 0;
   ortho_sum = 0; VV = 0; HH = 0; RR = 0; zz = 0; cc = 0; ss = 0; norms = 0;
   gmres_sum = 0; gmres_vec = 0; gSt_red = 0; PAP = 0; PAP_sum = 0; IPIV = 0;
-  PAP_store = 0; tied_down = 0; IPIV_gmres = 0; WAMiW = 0; WAMiW_proc = 0;
+  PAP_store = 0; tied_down = 0;
 }
 
 void CLOP_solver::process_constraints()
@@ -462,7 +490,7 @@ int CLOP_solver::initialize_subdomains()
   if (print_flag > 9) fout << "in initialize_subdomains" << endl;
   int i, max_nnz(0), nnz, ipres, ipres_max, *locdof;
   max_ndof = 0; gmres_flag = 0;
-  if (krylov_method == 1) gmres_flag = 1;
+  if ((krylov_method == 1) || (krylov_method == 7)) gmres_flag = 1;
   //
   // determine if pressure degrees of freedom present
   //
@@ -1054,8 +1082,6 @@ void CLOP_solver::factor_coarse_stiff()
 
 void CLOP_solver::solve_init()
 {
-  error_fac = 2;
-
   int ncdof_sol = Kc_gathered->NumMyRows();
   rhs_coarse  = new double[ncdof_sol];
   sol_coarse  = new double[ncdof_sol];
@@ -1163,7 +1189,12 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   rorig = sqrt(dprod);
   if (print_flag > 0) fout << "rorig = " << rorig << endl;
   rcurra[0] = rorig;
-
+  if (rorig == 0) {
+    uStand->PutScalar(0);
+    num_iter = 0;
+    pcg_status = 0;
+    return;
+  }
   //
   // initial coarse grid correction and residual update if multiplicative
   // coarse grid correction selected
@@ -1269,8 +1300,6 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   zSt_red->Update(1.0, *rSt_red, -1.0);
   zSt_red->Dot(*zSt_red, &ractual);
   ractual = sqrt(ractual);
-  if ((ractual/rorig > error_fac*solver_tol) && 
-      (num_tied_down == 0)) pcg_status = 1;
   //
   // calculate Lagrange multipliers and check residual for full system
   //
@@ -1317,7 +1346,7 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
           const Epetra_Vector* fStand, int & num_iter, int & gmres_status)
 {
   int i, iflag(1), gmres_iter;
-  double dprod, rorig, normb, rcurr, ractual;
+  double dprod, rorig, normb, rcurr, ractual, rorig_nopre, ractual_pre;
   double norm_rconstraint, norm_conerror;
   //
   // determine reduced residual
@@ -1327,10 +1356,26 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
   //
   // calculate initial residual
   //
+  if (krylov_method == 7) {
+    rSt_red->Norm2(&rorig_nopre);
+    if (print_flag > 0) fout << "rorig (not preconditioned) = " << rorig_nopre
+			     << endl;
+    apply_preconditioner(rSt_red, zSt_red);
+    rSt_red->Update(1.0, *zSt_red, 0.0);
+  }
   rSt_red->Dot(*rSt_red, &dprod);
   rorig = sqrt(dprod);
-  if (print_flag > 0) fout << "rorig = " << rorig << endl;
+  if (print_flag > 0) {
+    if (krylov_method != 7) fout << "rorig = " << rorig << endl;
+    else fout << "rorig (preconditioned)     = " << rorig << endl;
+  }
   uSt_red->PutScalar(0);
+  if (rorig == 0) {
+    uStand->PutScalar(0);
+    num_iter = 0;
+    gmres_status = 0;
+    return;
+  }
   //
   // gmres iterations
   //
@@ -1346,11 +1391,17 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
   for (gmres_iter=0; gmres_iter<maxiter; gmres_iter++) {
     //    if (MyPID == 0) cout << "iteration " << gmres_iter+1 
     //			 << " of maxiter = " << maxiter << endl;
-    apply_preconditioner(rSt_red, zSt_red);
     //
     // gmres stuff
     //
-    mat_vec_prod(zSt_red, rSt_red);
+    if (krylov_method != 7) {
+      apply_preconditioner(rSt_red, zSt_red);
+      mat_vec_prod(zSt_red, rSt_red);
+    }
+    else {
+      mat_vec_prod(rSt_red, zSt_red);
+      apply_preconditioner(zSt_red, rSt_red);
+    }
     //
     // two steps of classical Gram-Schmidt
     //
@@ -1386,8 +1437,10 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
   zSt_red->Update(1.0, *rSt_red, -1.0);
   zSt_red->Dot(*zSt_red, &ractual);
   ractual = sqrt(ractual);
-  if ((ractual/rorig > error_fac*solver_tol) && 
-      (num_tied_down == 0)) gmres_status = 1;
+  if (krylov_method == 7) {
+    apply_preconditioner(zSt_red, rSt_red);
+    rSt_red->Norm2(&ractual_pre);
+  }
   //
   // calculate Lagrange multipliers and check residual for full system
   //
@@ -1399,8 +1452,16 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
   if (MyPID == 0) {
     //    cout << "rorig                 = " << rorig << endl;
     if (print_flag > 0) {
-      fout << "rcurr(gmres)          = " << rcurr << endl;
-      fout << "rcurr(actual)         = " << ractual << endl;
+      if (krylov_method != 7) {
+	fout << "rcurr(gmres)          = " << rcurr << endl;
+	fout << "rcurr(actual)         = " << ractual << endl;
+      }
+      else {
+	fout << "rcurr_pre(gmres)      = " << rcurr << endl;
+	fout << "rcurr_pre(actual)     = " << ractual_pre << endl;
+	fout << "rcurr    (actual)     = " << ractual << endl;
+	fout << "rrtol nopre           = " << ractual/rorig_nopre << endl;
+      }
       if (ncon_global > 0) {
 	fout << "rcurr(constraint)     = " << norm_rconstraint << endl;
 	fout << "constraint error norm = " << norm_conerror << endl;
@@ -1601,7 +1662,12 @@ void CLOP_solver::construct_solution(int gmres_iter, double normb)
   int LDA = M;
   double ALPHA(normb); double BETA(0);
   if (M > 0) EB.GEMV(TRANS, M, N, ALPHA, A, LDA, X, BETA, Y);
-  apply_preconditioner(rSt_red, uSt_red);
+  if (krylov_method != 7) {
+    apply_preconditioner(rSt_red, uSt_red);
+  }
+  else {
+    uSt_red->Update(1, *rSt_red, 0);
+  }
 }
 
 void CLOP_solver::search_correction(Epetra_Vector *r, Epetra_Vector *u, 

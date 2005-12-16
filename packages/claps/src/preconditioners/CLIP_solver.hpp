@@ -1,3 +1,32 @@
+//@HEADER
+// ************************************************************************
+// 
+//         Claps: A Collection of Domain Decomposition Preconditioners
+//                and Solvers
+//         Copyright (2006) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//  
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+
 #ifndef CLIP_SOLVER_HPP
 #define CLIP_SOLVER_HPP
 #include <mpi.h>
@@ -109,22 +138,6 @@ class CLIP_solver
   void gmres_givens(double a, double b, double & c, double & s);
   void construct_solution(int gmres_iter, double normb);
   void spmat_datfile(const Epetra_CrsMatrix & A, char fname[], int opt);
-  void initial_update_gmres();
-  void final_update_gmres(Epetra_Vector* rB);
-  void store_search_gmres(double *V, double *AMiV, int & n_orthog_added);
-  void update_WAMiW(int n_orthog_added);
-  void check_orthogonality(Epetra_Vector *Vec);
-
-  void gcr_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand, 
-		 int & num_iter, int & gcr_status);
-  void initial_update_gcr();
-  double orthogonalize_gcr(Epetra_Vector *c_i, 
-			   Epetra_Vector *u_i,
-                           int n);
-  void update_gcr(Epetra_Vector *x_vec, Epetra_Vector *r_vec, int n);
-  void store_gcr(Epetra_Vector *c_i, 
-		 Epetra_Vector *u_i,
-		 int icol);
 
  private: // variables
   const Epetra_CrsMatrix *ASub, *ConStandard;
@@ -156,13 +169,12 @@ class CLIP_solver
   int *comp1, *comp2, *sub1, *sub2, *dset1, *dset2, ndof_set, *corner_flag;
   int *mycdof, nmycon, cg_iter, n_orthog_used, ncon_global, max_added_corner;
   int nI, nB, nC, nR, nB_own, *dofI, *dofB, *dofC, *dofR, sub_begin;
-  int num_tied_down, *tied_down, *IPIV_gmres;
+  int num_tied_down, *tied_down;
   double *lambda, *lambda_local, *weight, *ARinvCT, *CARinvCT, *lambda_e;
   double *RHS_cg, *SOL_cg, *TEMP_cg, *SOL_Kc, *TEMP_Kc;
   double *rcurra, *rhoa, *betaa, *pApa, *Dtri, *Etri, *econa;
   double *P_ortho, *AP_ortho, *orth1, *orth2, *PhirTPhir;
   double *VV, *RR, *HH, *zz, *cc, *ss, *norms, *gmres_vec, *gmres_sum;
-  double error_fac, *WAMiW, *WAMiW_proc, *C_gcr, *U_gcr;
   bool *owner_flag;
   ofstream fout;
 };
