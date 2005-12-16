@@ -780,8 +780,8 @@ namespace Anasazi {
     std::vector<MagnitudeType> tt( size );
     typedef typename std::vector<MagnitudeType>::iterator MTIter;
 
-    //  ScalarType tol = sqrt(eps);
-    MagnitudeType tol = 1e-12;
+    MagnitudeType tol = SCT::magnitude(SCT::squareroot(SCT::eps()));
+    // MagnitudeType tol = 1e-12;
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
 

@@ -216,7 +216,7 @@ namespace Anasazi {
     _nev(problem->GetNEV()), 
     _maxIter(_pl.get("Max Iters", 300)),
     _blockSize(_pl.get("Block Size", 1)),
-    _residual_tolerance(_pl.get("Tol", 1.0e-6)),
+    _residual_tolerance(_pl.get("Tol", (MagnitudeType)(1.0e-6) )),
     _numRestarts(0), 
     _iter(0), 
     _knownEV(0),
@@ -708,7 +708,8 @@ namespace Anasazi {
 
       // Check for restarting
       if (_nevLocal < _blockSize) {
-        if (_om->isVerbosityAndPrint( IterationDetails ) ) {
+        if (   _om->isVerbosityAndPrint( IterationDetails ) 
+             ||_om->isVerbosityAndPrint( Debug )            ) {
           _os << " Iteration " << _iter;
           _os << "- Failure for spectral decomposition - RESTART with new random search\n";
         }

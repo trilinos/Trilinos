@@ -393,22 +393,23 @@ public:
   
   inline ScalarType& operator()(const int i, const int j)
   {
-    // if (j < 0 || j >= NumberVecs_) throw(-1);
-    // if (i < 0 || i >= Length_) throw(-2);
+    if (j < 0 || j >= NumberVecs_) throw(-1);
+    if (i < 0 || i >= Length_) throw(-2);
     // 
     return(data_[j][i]);
   }
   
   inline const ScalarType& operator()(const int i, const int j) const
   {
-    // if (j < 0 || j >= NumberVecs_) throw(-1);
-    // if (i < 0 || i >= Length_) throw(-2);
+    if (j < 0 || j >= NumberVecs_) throw(-1);
+    if (i < 0 || i >= Length_) throw(-2);
     // 
     return(data_[j][i]);
   }
   
   ScalarType* operator[](int v)
   {
+    if (v < 0 || v >= NumberVecs_) throw(-1);
     return(data_[v]);
   }
   

@@ -1446,6 +1446,7 @@ namespace Anasazi {
         4) OP*B is invariant under initial state of destination vectors
     *********************************************************************/
     MVT::MvInit(*B);
+    MVT::MvRandom(*C);
     MVT::MvNorm(*B,&normsB1);
     ret = OPT::Apply(*M,*B,*C);
     MVT::MvNorm(*B,&normsB2);

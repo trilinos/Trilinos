@@ -196,7 +196,7 @@ namespace Anasazi {
     _nev(problem->GetNEV()), 
     _maxIter(_pl.get("Max Iters", 300)),
     _blockSize(_pl.get("Block Size", 1)),
-    _residual_tolerance(_pl.get("Tol", 1.0e-6)),
+    _residual_tolerance(_pl.get("Tol", (MagnitudeType)(1.0e-6) )),
     _numBlocks(_pl.get("Max Blocks", 25)), 
     _numRestarts(0), 
     _iter(0), 

@@ -107,8 +107,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG \
-	MVOPTester MVOPComplex LOBPCGComplex BlockDavidsonComplex \
-	BlockKrylovSchurComplex ARPACKExamples MVOPTpetra scripts
+	MVOPTester ARPACKExamples MVOPTpetra scripts
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -267,8 +266,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_FALSE@COMPLEX_SUBDIR = 
-@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@COMPLEX_SUBDIR = MVOPComplex LOBPCGComplex BlockDavidsonComplex BlockKrylovSchurComplex ARPACKExamples
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_FALSE@COMPLEX_SUBDIR = ARPACKExamples
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@COMPLEX_SUBDIR = ARPACKExamples MVOPComplex LOBPCGComplex BlockDavidsonComplex BlockKrylovSchurComplex 
 @BUILD_ANASAZI_TPETRA_TRUE@TPETRA_SUBDIR = MVOPTpetra
 SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG MVOPTester $(COMPLEX_SUBDIR) $(TPETRA_SUBDIR) scripts
 EXTRA_DIST = definition

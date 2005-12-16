@@ -228,7 +228,7 @@ namespace Anasazi {
     _restarts(_pl.get("Max Restarts", 0)),
     _blockSize(_pl.get("Block Size", 1 )),
     _stepSize(_pl.get("Step Size", _maxBlocks*(_restarts+1)*_blockSize)),
-    _residual_tolerance(_pl.get("Tol", 1.0e-6)),
+    _residual_tolerance(_pl.get("Tol", (MagnitudeType)(1.0e-6) )),
     _numRestarts(0), 
     _iter(0), 
     _jstart(0), 
