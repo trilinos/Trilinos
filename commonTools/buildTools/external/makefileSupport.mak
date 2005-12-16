@@ -5,7 +5,7 @@
 #
 
 TRILINOS_TEUCHOS_BUILD = $(TRILINOS_BUILD_DIR)/packages/teuchos
-TRILINOS_MAKE_OPTIONS_FILE = $(BASE_SRC_DIR)/trilinos_make_options.mak
+TRILINOS_MAKE_OPTIONS_FILE = ./trilinos_make_options.mak
 TRILINOS_TEUCHOS_MAKEFILE = $(TRILINOS_TEUCHOS_BUILD)/src/Makefile
 TRILINOS_TEUCHOS_EXPORT_MAKEFILE = $(TRILINOS_TEUCHOS_BUILD)/Makefile.export.teuchos
 
@@ -21,19 +21,34 @@ include $(TRILINOS_MAKE_OPTIONS_FILE)
 include $(TRILINOS_TEUCHOS_EXPORT_MAKEFILE) # Note, the order is important since TEUCHO_LIBS is redefined here!
 
 #
+# File extenstions
+#
+
+EXTERNAL_LIB_EXT = a
+
+EXTERNAL_OBJ_EXT = o
+
 # Set makefile buildsystem macros
 #
 
 # EXTERNAL_C compiler
 EXTERNAL_C = $(TEUCHOS_CC)
 EXTERNAL_C_DEP_OPT     = -MM
+EXTERNAL_C_COMPILE_OPT = -c
+EXTERNAL_C_OUTPUT_OPT = -o \
+
+
 
 # EXTERNAL_C++ compiler
 EXTERNAL_CXX = $(TEUCHOS_CXX)
 EXTERNAL_CXX_DEP_OPT   = -MM
+EXTERNAL_CXX_COMPILE_OPT = -c
+EXTERNAL_CXX_OUTPUT_OPT = -o \
 
 # Fortran compiler
 EXTERNAL_F77 = $(TEUCHOS_F77)
+EXTERNAL_F77_COMPILE_OPT = -c
+EXTERNAL_F77_OUTPUT_OPT = -o \
 
 # Library creator
 EXTERNAL_AR = $(TEUCHOS_libteuchos_a_AR) \
@@ -42,9 +57,6 @@ EXTERNAL_RANLIB = $(TEUCHOS_RANLIB) \
 
 # Linker
 EXTERNAL_LD = $(TEUCHOS_CXXLD)
-
-# Library extention
-EXTERNAL_LIB_EXT = a
 
 # Install directory (taken from Trilinos' --prefix=??? option)
 ifneq ($(TEUCHOS_prefix),)
