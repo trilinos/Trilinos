@@ -1,65 +1,64 @@
-Anasazi    | ID   OP formula                          Bop    ID   (description)
----------------------------------------------------------------------------------------------------------
-ARPACK_NDRV1 | OPE  OP = A                              B = I  OPA  (cntrl diff disc of conv-diff)
-ARPACK_NDRV2 | OPF  OP = inv[A-sigma*I]                 B = I  OPA  (cntrl diff disc of conv-diff)
-ARPACK_NDRV3 | OPN  OP = inv[M]*A                       B = M  OPM  (finit elem disc of conv-diff)
-ARPACK_NDRV4 | OPO  OP = inv[A-sigma*M]*M               B = M  OPM  (finit elem disc of conv-diff)
-ARPACK_NDRV5 | OPC  OP = R(inv[A-sigma*M]*M)            B = M  OPB  (trid with comp shift)
-ARPACK_NDRV6 | OPD  OP = I(inv[A-sigma*M]*M)            B = M  OPB  (trid with comp shift)
-ARPACK_SDRV1 | OPG  OP = A                              B = I  OPA  (cntrl diff disc of 2d lap)
-ARPACK_SDRV2 | OPI  OP = inv[A-sigma*I]                 B = I  OPA  (cntrl diff disc of 1d lap)
-ARPACK_SDRV3 | OPR  OP = inv[M]*A                       B = M  OPQ  (finit elem disc of 2d lap)
-ARPACK_SDRV4 | OPS  OP = inv[A-sigma*M]*M               B = M  OPQ  (finit elem disc of 2d lap)
-ARPACK_SDRV5 | OPU  OP = (inv[A-sigma*M])*A             B = A  OPP  (buckling mode finit elem disc of 2d lap)
-ARPACK_SDRV6 | OPT  OP = (inv[A-sigma*M])*(A+sigma*M)   B = M  OPQ  (finit elem disc of 2d lap)
+Anasazi      | OP ID  OP formula                         A ID     Bop   ID     Description
+------------------------------------------------------------------------------------------------------------------------------------------
+ARPACK_NDRV1 |  OPB   OP = A                              OPB    B = I  OPA    cntrl diff disc of conv-diff #1 (Laplacian u) + rho*(du / dx)
+ARPACK_NDRV2 |  OPD   OP = inv[A-sigma*I]                 OPC    B = I  OPA    cntrl diff disc of conv-diff #2 (d^2u / dx^2) + rho*(du / dx)
+ARPACK_NDRV3 |  OPG   OP = inv[M]*A                       OPE    B = M  OPF    finit elem disc of conv-diff #2 (d^2u / dx^2) + rho*(du / dx)
+ARPACK_NDRV4 |  OPH   OP = inv[A-sigma*M]*M               OPE    B = M  OPF    finit elem disc of conv-diff #2 (d^2u / dx^2) + rho*(du / dx)
+ARPACK_NDRV5 |  OPK   OP = R(inv[A-sigma*M]*M)            OPI    B = M  OPJ    real part of trid with comp shift
+ARPACK_NDRV6 |  OPL   OP = I(inv[A-sigma*M]*M)            OPI    B = M  OPJ    imag part of trid with comp shift
+ARPACK_SDRV1 |  OPM   OP = A                              OPM    B = I  OPA    cntrl diff disc of 2d lap
+ARPACK_SDRV2 |  OPO   OP = inv[A-sigma*I]                 OPN    B = I  OPA    cntrl diff disc of 1d lap 
+ARPACK_SDRV3 |  OPR   OP = inv[M]*A                       OPP    B = M  OPQ    finit elem disc of 1d lap 
+ARPACK_SDRV4 |  OPS   OP = inv[A-sigma*M]*M               OPP    B = M  OPQ    finit elem disc of 1d lap 
+ARPACK_SDRV5 |  OPT   OP = (inv[A-sigma*M])*A             OPP    B = A  OPP    finit elem disc of 1d lap in buckling mode 
+ARPACK_SDRV6 |  OPU   OP = (inv[A-sigma*M])*(A+sigma*M)   OPP    B = M  OPQ    finit elem disc of 1d lap in inverse mode  
 
 
 Operators implemented:
-Op  |    operator        (            implementation methodology              )
-ID  |   description      (MFM==matrix-free mult   DS==GTTRF/GTTRS direct solve)
---------------------------------------------------------------------------------
-    |
------ Identity -----------------------------------------------------------------
-OPA | OP = I                             (MFM/identity)
-    |
------ Tridiagonal with complex shift -------------------------------------------
-OPV | OP = A                             (MFM)
-OPB | OP = M                             (MFM)
-OPC | OP = Real(inv[A-sigma*M]*M)        (MFM and DS)
-OPD | OP = Imag(inv[A-sigma*M]*M)        (MFM and DS)
-    |
------ Central difference discretization of convection-diffusion operator -------
-OPE | OP = A                             (MFM)
-OPF | OP = inv[A-sigma*I]                (DS)
-    |
------ Central difference discretization of 2-D Laplacian -----------------------
-OPG | OP = A                             (MFM)
-OPI | OP = inv[A-sigma*I]                (DS)
-    |
------ Finite element discretization of convection-diffusion operator -----------
-OPL | OP = A                             (MFM)
-OPM | OP = M                             (MFM)
-OPN | OP = inv[M]*A                      (MFM and DS)
-OPO | OP = inv[A-sigma*M]*M              (MFM and DS)
-    |
------ Finite element discretization of 2-D Laplacian ---------------------------
-OPP | OP = A                             (MFM)
-OPQ | OP = M                             (MFM)
-OPR | OP = inv[M]*A                      (MFM and DS)
-OPS | OP = inv[A-sigma*M]*M              (MFM and DS)
-OPT | OP = (inv[A-sigma*M])*(A+sigma*M)  (MFM and DS)
-OPU | OP = (inv[A-sigma*M])*A            (MFM and DS)
-
-
-**************************************************************************************
-*** NOTE: There are no OPH, OPJ and OPK. I deleted them and didn't want to rename. ***
-**************************************************************************************
-
+Op ID| operator desc                      (MFM:matrix-free DS:GTTRF/GTTRS direct solve) |
+-----------------------------------------------------------------------------------------
+     |                                                                                  |
+------ Identity -------------------------------------------------------------------------
+OPA  | OP = I                             (MFM/identity)                                |
+     |                                                                                  |
+------ Central difference discretization of convection-diffusion operator #1 ------------
+OPB  | OP = A                             (MFM)                                         |
+     |                                                                                  |
+------ Central difference discretization of convection-diffusion operator #2 ------------
+OPC  | OP = A                             (MFM)                                         |
+OPD  | OP = inv[A-sigma*I]                (DS)                                          |
+     |                                                                                  |
+------ Finite element discretization of convection-diffusion operator -------------------
+OPE  | OP = A                             (MFM)                                         |
+OPF  | OP = M                             (MFM)                                         |
+OPG  | OP = inv[M]*A                      (MFM and DS)                                  |
+OPH  | OP = inv[A-sigma*M]*M              (MFM and DS)                                  |
+     |                                                                                  |
+------ Tridiagonal with complex shift ---------------------------------------------------
+OPI  | OP = A                             (MFM)                                         |
+OPJ  | OP = M                             (MFM)                                         |
+OPK  | OP = Real(inv[A-sigma*M]*M)        (MFM and DS)                                  |
+OPL  | OP = Imag(inv[A-sigma*M]*M)        (MFM and DS)                                  |
+     |                                                                                  |
+------ Central difference discretization of 2-D Laplacian -------------------------------
+OPM  | OP = A                             (MFM)                                         |
+     |                                                                                  |
+------ Central difference discretization of 1-D Laplacian -------------------------------
+OPN  | OP = A                             (MFM)                                         |
+OPO  | OP = inv[A-sigma*I]                (DS)                                          |
+     |                                                                                  |
+------ Finite element discretization of 1-D Laplacian -----------------------------------
+OPP  | OP = A                             (MFM)                                         |
+OPQ  | OP = M                             (MFM)                                         |
+OPR  | OP = inv[M]*A                      (MFM and DS)                                  |
+OPS  | OP = inv[A-sigma*M]*M              (MFM and DS)                                  |
+OPT  | OP = (inv[A-sigma*M])*A            (MFM and DS)                                  |
+OPU  | OP = (inv[A-sigma*M])*(A+sigma*M)  (MFM and DS)                                  |
 
 
 Correlation between Anasazi examples and ARPACK examples, with ARPACK example description
 
-Anasazi Example 1
+ARPACK_NDRV1
 *************** ./COMPLEX/cndrv1.f **************                           *************** ./COMPLEX/zndrv1.f **************                       *************** ./NONSYM/dndrv1.f **************                        *************** ./NONSYM/sndrv1.f **************
 c\Example-1                                                                 c\Example-1                                                             c\Example-1                                                             c\Example-1
 c     ... Suppose we want to solve A*x = lambda*x in regular mode,          c     ... Suppose we want to solve A*x = lambda*x in regular mode,      c     ... Suppose we want to solve A*x = lambda*x in regular mode,      c     ... Suppose we want to solve A*x = lambda*x in regular mode,
@@ -77,7 +76,7 @@ c     ... Use mode 1 of CNAUPD.                                             c   
 
 
 
-Anasazi Example 2
+ARPACK_NDRV2
 *************** ./COMPLEX/cndrv2.f **************                           *************** ./COMPLEX/zndrv2.f **************                           *************** ./NONSYM/dndrv2.f **************                            *************** ./NONSYM/sndrv2.f **************
 c\Example-2                                                                 c\Example-2                                                                 c\Example-2                                                                 c\Example-2
 c     ... Suppose we want to solve A*x = lambda*x in shift-invert mode,     c     ... Suppose we want to solve A*x = lambda*x in shift-invert mode,     c     ... Suppose we want to solve A*x = lambda*x in shift-invert mode,     c     ... Suppose we want to solve A*x = lambda*x in shift-invert mode,
@@ -94,7 +93,7 @@ c     ... Use mode 3 of CNAUPD.                                             c   
 
 
 
-Anasazi Example 3
+ARPACK_NDRV3
 *************** ./COMPLEX/cndrv3.f **************                           *************** ./COMPLEX/zndrv3.f **************                           *************** ./NONSYM/dndrv3.f **************                            *************** ./NONSYM/sndrv3.f **************
 c\Example-3                                                                 c\Example-3                                                                 c\Example-3                                                                 c\Example-3
 c     ... Suppose we want to solve A*x = lambda*B*x in regular mode,        c     ... Suppose we want to solve A*x = lambda*B*x in regular mode,        c     ... Suppose we want to solve A*x = lambda*B*x in inverse mode,        c     ... Suppose we want to solve A*x = lambda*B*x in inverse mode,
@@ -109,7 +108,7 @@ c                                                                           c   
 c     ... Use mode 2 of CNAUPD.                                             c     ... Use mode 2 of ZNAUPD .                                            c     ... Use mode 2 of DNAUPD.                                             c     ... Use mode 2 of SNAUPD. 
 
 
-Anasazi Example 4
+ARPACK_NDRV4
 *************** ./COMPLEX/cndrv4.f **************                           *************** ./COMPLEX/zndrv4.f **************                           *************** ./NONSYM/dndrv4.f **************                            *************** ./NONSYM/sndrv4.f **************
 c\Example-4                                                                 c\Example-4                                                                 c\Example-4                                                                 c\Example-4
 c     ... Suppose we want to solve A*x = lambda*B*x in shift-invert mode,   c     ... Suppose we want to solve A*x = lambda*B*x in shift-invert mode,   c     ... Suppose we want to solve A*x = lambda*B*x in inverse mode,        c     ... Suppose we want to solve A*x = lambda*B*x in inverse mode,
@@ -127,7 +126,7 @@ c     ... Use mode 3 of CNAUPD.                                             c   
 
 
 
-Anasazi Example 5
+ARPACK_NDRV5
 *************** ./NONSYM/dndrv5.f **************                            *************** ./NONSYM/sndrv5.f **************                                (add complex as well)
 c\Example-5                                                                 c\Example-5
 c                                                                           c
@@ -142,7 +141,7 @@ c     ... Use mode 3 of DNAUPD.                                             c   
 
 
 
-Anasazi Example 6
+ARPACK_NDRV6
 *************** ./NONSYM/dndrv6.f **************                            *************** ./NONSYM/sndrv6.f **************
 c\Example-6                                                                 c\Example-6
 c                                                                           c
@@ -157,7 +156,7 @@ c     ... Use mode 4 of DNAUPD.                                             c   
 
 
 
-Anasazi Example 7
+ARPACK_SDRV1
 *************** ./SYM/dsdrv1.f **************                               *************** ./SYM/ssdrv1.f **************
 c\Example-1                                                                 c\Example-1
 c     ... Suppose we want to solve A*x = lambda*x in regular mode,          c     ... Suppose we want to solve A*x = lambda*x in regular mode,
@@ -173,7 +172,7 @@ c     ... Use mode 1 of DSAUPD.                                             c   
 
 
 
-Anasazi Example 8
+ARPACK_SDRV2
 *************** ./SYM/dsdrv2.f **************                               *************** ./SYM/ssdrv2.f **************
 c\Example-2                                                                 c\Example-2
 c     ... Suppose we want to solve A*x = lambda*x in shift-invert mode,     c     ... Suppose we want to solve A*x = lambda*x in shift-invert mode,
@@ -185,7 +184,7 @@ c     ... Use mode 3 of DSAUPD.                                             c   
 
 
 
-Anasazi Example 9
+ARPACK_SDRV3
 *************** ./SYM/dsdrv3.f **************                               *************** ./SYM/ssdrv3.f **************
 c\Example-3                                                                 c\Example-3
 c     ... Suppose we want to solve A*x = lambda*M*x in inverse mode,        c     ... Suppose we want to solve A*x = lambda*M*x in inverse mode,
@@ -201,7 +200,7 @@ c     ... Use mode 2 of DSAUPD .                                            c   
 
 
 
-Anasazi Example 10
+ARPACK_SDRV4
 *************** ./SYM/dsdrv4.f **************                                   *************** ./SYM/ssdrv4.f **************
 c\Example-4                                                                     c\Example-4
 c     ... Suppose we want to solve A*x = lambda*M*x in inverse mode,            c     ... Suppose we want to solve A*x = lambda*M*x in inverse mode,
@@ -217,7 +216,7 @@ c     ... Use mode 3 of DSAUPD.                                                 
 
 
 
-Anasazi Example 11
+ARPACK_SDRV5
 *************** ./SYM/dsdrv5.f **************                               *************** ./SYM/ssdrv5.f **************
 c\Example-5                                                                 c\Example-5
 c     ... Suppose we want to solve K*x = lambda*KG*x in Buckling mode       c     ... Suppose we want to solve K*x = lambda*KG*x in Buckling mode
@@ -231,7 +230,7 @@ c     ... Use mode 4 of DSAUPD.                                             c   
 
 
 
-Anasazi Example 12
+ARPACK_SDRV6
 *************** ./SYM/dsdrv6.f **************                               *************** ./SYM/ssdrv6.f **************
 c\Example-6                                                                 c\Example-6
 c     ... Suppose we want to solve A*x = lambda*M*x in inverse mode,        c     ... Suppose we want to solve A*x = lambda*M*x in inverse mode,

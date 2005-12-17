@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 
   bool testFailed;
   bool verbose = 0;
-  std::string which("SR");
+  std::string which("auto");
   int nx = 10;
   std::string problem("SDRV1");
   bool isherm;
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("sort",&which,"Targetted eigenvalues (SR or LR).");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (auto, SR, LR, SI, LI, SM, LM).");
   cmdp.setOption("nx",&nx,"Number of interior elements.");
   cmdp.setOption("problem",&problem,"Problem to solve.");
   cmdp.setOption("solver",&solver,"Eigensolver to use (LOBPCG, BKS, BD, auto)");
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
     = rcp( new Anasazi::OutputManager<ST>( MyPID ) );
   // Set verbosity level
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails );
+    MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary );
   }
 
   if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
@@ -128,16 +128,12 @@ int main(int argc, char *argv[])
 
   Anasazi::ReturnType returnCode = Anasazi::Ok;  
 
-  // Create the sort manager
-  RefCountPtr<Anasazi::BasicSort<ST,MV,OP> > MySM = 
-     rcp( new Anasazi::BasicSort<ST,MV,OP>(which) );
-
   // Eigensolver parameters
   int dim = nx*nx;
   int nev = 4;
-  int blockSize = 5;
+  int blockSize = 4;
   int maxIters = 500;
-  int maxBlocks = 4;
+  int maxBlocks = 5;
   MT tol = 1.0e-4;
 
   // Create parameter list to pass into solver
@@ -153,34 +149,26 @@ int main(int argc, char *argv[])
   ivec->MvRandom();
 
   // Create matrices
-  RefCountPtr<OP> A, M;
-  if (problem == "NDRV1") {
-    A = rcp( new ARPACK_NDRV1<ST>::OP );
-    M = rcp( new ARPACK_NDRV1<ST>::M );
-    isherm = ARPACK_NDRV1<ST>::isHermitian;
-  }
-  else if (problem == "NDRV2") {
-    A = rcp( new ARPACK_NDRV2<ST>::OP(dim) );
-    M = rcp( new ARPACK_NDRV2<ST>::M );
-    isherm = ARPACK_NDRV2<ST>::isHermitian;
-  }
-  else if (problem == "SDRV1") {
-    A = rcp( new ARPACK_SDRV1<ST>::OP );
-    M = rcp( new ARPACK_SDRV1<ST>::M );
-    isherm = ARPACK_SDRV1<ST>::isHermitian;
-  }
-  else if (problem == "SDRV2") {
-    A = rcp( new ARPACK_SDRV2<ST>::OP(dim) );
-    M = rcp( new ARPACK_SDRV2<ST>::M );
-    isherm = ARPACK_SDRV2<ST>::isHermitian;
-  }
-  else {
-    if (MyOM->doPrint()) {
-      cerr << "Invalid problem. Using SDRV1." << endl;
+  RefCountPtr< ARPACK_Example<ST> > prob;
+  RefCountPtr<OP> A, M, Op;
+
+  prob = GetARPACKExample<ST>(problem,dim);
+  if (!prob.get()) {
+    if ( MyOM->isVerbosityAndPrint(Anasazi::Warning) ) {
+      cout << "Invalid driver name. Try something like ""ndrv3"" or ""sdrv2""." << endl;
+      cout << "End Result: TEST FAILED" << endl;	
     }
-    A = rcp( new ARPACK_SDRV1<ST>::OP );
-    M = rcp( new ARPACK_SDRV1<ST>::M );
-    isherm = ARPACK_SDRV1<ST>::isHermitian;
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
+  }
+  A = prob->getA();
+  M = prob->getM();
+  Op = prob->getOp();
+  isherm = prob->isHerm();
+  if (which == "auto") {
+    which = prob->getSort();
   }
 
   // test multivector and operators
@@ -201,10 +189,13 @@ int main(int argc, char *argv[])
     cout << "M failed TestOperatorTraits()" << endl;
   }
 
+  // Create the sort manager
+  RefCountPtr<Anasazi::BasicSort<ST,MV,OP> > MySM = 
+     rcp( new Anasazi::BasicSort<ST,MV,OP>(which) );
 
   // Create eigenproblem
   RefCountPtr<Anasazi::BasicEigenproblem<ST,MV,OP> > MyProblem =
-    rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(A, M, ivec) );
+    rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(Op, M, ivec) );
 
   // Inform the eigenproblem that the operator A is symmetric
   MyProblem->SetSymmetric(isherm);
@@ -240,6 +231,8 @@ int main(int argc, char *argv[])
   }
   /*
   else if (solver == "BKS") {
+    MyPL.set( "Block Size", 1 );
+    MyPL.set( "Max Blocks", 20 );
     MySolver = rcp( new Anasazi::BlockKrylovSchur<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
   }
   */
@@ -272,20 +265,45 @@ int main(int argc, char *argv[])
   RefCountPtr<MV > evecs = MyProblem->GetEvecs();
   int nevecs = MVT::GetNumberVecs(*evecs);
 
+  // Perform spectral transform on eigenvalues, according to the problem
+  prob->xformeval(*evals);
+
   // Compute the direct residual
   std::vector<MT> normV( nevecs );
-  SerialDenseMatrix<int,ST> T(nevecs,nevecs);
+  SerialDenseMatrix<int,ST> L(nevecs,nevecs);
   for (int i=0; i<nevecs; i++) {
-    T(i,i) = (*evals)[i];
+    L(i,i) = (*evals)[i];
   }
   RefCountPtr<MV > Avecs = MVT::Clone( *evecs, nevecs );
+  RefCountPtr<MV > Mvecs = MVT::Clone( *evecs, nevecs );
+
   OPT::Apply( *A, *evecs, *Avecs );
-  MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Avecs );
+  OPT::Apply( *M, *evecs, *Mvecs );
+  // Compute A*evecs - M*evecs*L
+  MVT::MvTimesMatAddMv( -ONE, *Mvecs, L, ONE, *Avecs );
   MVT::MvNorm( *Avecs, &normV );
 
+  // check residuals
   for (int i=0; i<nevecs; i++) {
-    if ( SCT::magnitude(normV[i]/(*evals)[i]) > ((MT)2.0)*tol ) {
+    if ( (*evals)[i] != SCT::zero() ) {
+      normV[i] = SCT::magnitude(normV[i]/(*evals)[i]);
+    }
+    if ( normV[i] > ((MT)2.0)*tol ) {
       testFailed = true;
+    }
+  }
+
+  if ( MyOM->isVerbosityAndPrint(Anasazi::FinalSummary) ) {
+    //      28,5,22
+    cout << "Back transformed eigenvalues     Relative Residual Norm" << endl
+         << "-------------------------------------------------------" << endl;
+    for (int i=0; i<nevecs; i++) {
+      cout.setf(ios::scientific, ios::floatfield);  
+      cout.precision(10);
+      cout << std::setw(28) << std::right << (*evals)[i] 
+           << "     "
+           << std::setw(22) << std::right << normV[i] 
+           << endl;
     }
   }
 

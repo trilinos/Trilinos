@@ -7,6 +7,9 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_RefCountPtr.hpp"
+
+using namespace Teuchos;
 
 //! Operators from the ARPACK examples
 /*! 
@@ -104,8 +107,8 @@ public:
   Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
-    const ScalarType ONE = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType ZERO = Teuchos::ScalarTraits<ScalarType>::zero();
+    const ScalarType ONE = ScalarTraits<ScalarType>::one();
+    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
   
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
@@ -129,18 +132,20 @@ public:
 
 
 /******************************************************************************/
-/*! \class OPE< ScalarType >
+/*! \class OPB< ScalarType >
   \brief Implementation of Anasazi::MultiVector< ScalarType > for the
   application of the central difference discretization of a 
-  convection-diffusion operator.
+  convection-diffusion operator
+        (Laplacian u) + rho*(du / dx)                     
+  on the unit squre [0,1]x[0,1] with zero Dirichlet boundary condition.                                                
 */
 template <class ScalarType>
-class OPE : public Anasazi::Operator<ScalarType>
+class OPB : public Anasazi::Operator<ScalarType>
 {
 private:
   ScalarType _rho;
   void tv(int nx, const ScalarType *x, ScalarType *y) const {
-    const ScalarType ONE = Teuchos::ScalarTraits<ScalarType>::one();
+    const ScalarType ONE = ScalarTraits<ScalarType>::one();
     ScalarType h = ONE / (ScalarType)(nx+1),
                h2 = h*h,
                dd = ((ScalarType)4.0) / h2,
@@ -168,15 +173,15 @@ private:
     
 public:
   
-  OPE(ScalarType rho = Teuchos::ScalarTraits<ScalarType>::zero()) : _rho(rho) {}
-  ~OPE() {}
+  OPB(const ScalarType rho) : _rho(rho) {}
+  ~OPB() {}
   
   Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
-    const ScalarType ONE = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType ZERO = Teuchos::ScalarTraits<ScalarType>::zero();
-    Teuchos::BLAS<int,ScalarType> blas;
+    const ScalarType ONE = ScalarTraits<ScalarType>::one();
+    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
+    BLAS<int,ScalarType> blas;
     int n, nx;
     
     const MyMultiVec<ScalarType>* MyX;
@@ -195,7 +200,7 @@ public:
     // deduce the size of the operator from the vector length...
     n = X.GetVecLength();
     // ... and the number of interior points in the discretization from that
-    nx = Teuchos::ScalarTraits<int>::squareroot(n);
+    nx = ScalarTraits<int>::squareroot(n);
     // return an error if the vector length isn't a square number
     if (nx*nx != n) return(Anasazi::Failed);
     
@@ -249,18 +254,82 @@ public:
 
 
 
-
 /******************************************************************************/
-/*! \class OPF< ScalarType >
+/*! \class OPC< ScalarType >
   \brief Implementation of Anasazi::MultiVector< ScalarType > for the
   application of the central difference discretization of a 
-  convection-diffusion operator.
-  
-  The operator applied is:
-    OPF = inv[A-sigma*I]
+  convection-diffusion operator
+          (d^2u/dx^2) + rho*(du/dx)                          
+  on the interval [0,1] with zero Dirichlet boundary condition.  
 */
 template <class ScalarType>
-class OPF : public Anasazi::Operator<ScalarType>
+class OPC : public Anasazi::Operator<ScalarType>
+{
+private:
+  ScalarType _rho;
+public:
+  
+  OPC(const ScalarType rho) : _rho(rho) {}
+  ~OPC() {}
+  
+  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
+                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  {
+    const MyMultiVec<ScalarType>* MyX;
+    MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
+    if (MyX == 0) return Anasazi::Failed;
+      
+    MyMultiVec<ScalarType>* MyY;
+    MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
+    if (MyY == 0) return Anasazi::Failed;
+      
+    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
+    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    
+    int nvecs = X.GetNumberVecs();
+    int n = X.GetVecLength();
+    
+    // Perform  Y <--- A*X 
+    const ScalarType ONE = ScalarTraits<ScalarType>::one();
+    const ScalarType TWO = (ScalarType)(2.0);
+    ScalarType h  = ONE / (ScalarType)(n+1),
+               s  = _rho*h / TWO,
+               dd = TWO,
+               dl = -ONE-s,
+               du = -ONE+s;
+    
+    int j, p;
+    for (p=0; p<nvecs; p++) {
+      ScalarType *y = (*MyY)[p];
+      const ScalarType *x = (*MyX)[p];
+      j = 0;
+      y[j] = dd*x[j] + du*x[j+1];
+      for (j=1; j<n-1; j++) {
+        y[j] = dl*x[j-1] + dd*x[j] + du*x[j+1];
+      }
+      j = n-1;
+      y[j] = dl*x[j-1] + dd*x[j];
+    }
+    
+    return(Anasazi::Ok);
+  }
+};
+
+
+
+/******************************************************************************/
+/*! \class OPD< ScalarType >
+  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  application of the central difference discretization of a 
+  convection-diffusion operator
+          (d^2u/dx^2) + rho*(du/dx)                          
+  on the interval [0,1] with zero Dirichlet boundary condition.  
+  
+  The operator applied is:
+    OPD = inv[A-sigma*I]
+*/
+template <class ScalarType>
+class OPD : public Anasazi::Operator<ScalarType>
 {
 private:
   int _n,_nx;
@@ -271,20 +340,20 @@ private:
   
 public:
   
-  OPF( int n,
-       ScalarType rho = (ScalarType)(1.0e+1),
-       ScalarType sigma = Teuchos::ScalarTraits<ScalarType>::one() ) 
+  OPD( const int n,
+       const ScalarType rho = (ScalarType)(1.0e+1),
+       const ScalarType sigma = ScalarTraits<ScalarType>::one() ) 
       : _n(n), _rho(rho), _sigma(sigma) {
     
-    typedef Teuchos::ScalarTraits<ScalarType> SCT;
+    typedef ScalarTraits<ScalarType> SCT;
     const ScalarType ONE = SCT::one();
     const ScalarType TWO = (ScalarType)(2.0)*ONE;
-    Teuchos::LAPACK<int,ScalarType> lapack;
+    LAPACK<int,ScalarType> lapack;
     
-    _nx = Teuchos::ScalarTraits<int>::squareroot(n);
+    _nx = ScalarTraits<int>::squareroot(n);
     // return an error if the vector length isn't a square number
     if (_nx*_nx != n) {
-      cout << "Argument 1 to OPF() was not a square number." << endl;
+      cout << "Argument 1 to OPD() was not a square number." << endl;
       _n = 100;
       _nx = 10;
     }
@@ -313,7 +382,7 @@ public:
     int _ferror;
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
     if (_ferror != 0) {
-      cout << "Error in GTTRF in OPF()" << endl;
+      cout << "Error in GTTRF in OPD()" << endl;
     }
     
     /*
@@ -332,15 +401,15 @@ public:
     */
     
   }
-  ~OPF() {}
+  ~OPD() {}
   
   Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
-    const ScalarType ONE = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType ZERO = Teuchos::ScalarTraits<ScalarType>::zero();
-    Teuchos::BLAS<int,ScalarType> blas;
-    Teuchos::LAPACK<int,ScalarType> lapack;
+    const ScalarType ONE = ScalarTraits<ScalarType>::one();
+    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
+    BLAS<int,ScalarType> blas;
+    LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
     if (_ferror) {
@@ -380,19 +449,21 @@ public:
 
 
 
+
+
 /******************************************************************************/
-/*! \class OPG< ScalarType >
+/*! \class OPM< ScalarType >
   \brief Implementation of Anasazi::MultiVector< ScalarType > for the
   application of the central difference discretization of 2-D Laplacian.
 */
 template <class ScalarType>
-class OPG : public Anasazi::Operator<ScalarType>
+class OPM : public Anasazi::Operator<ScalarType>
 {
 private:
   void tv(int nx, const ScalarType *x, ScalarType *y) const {
     ScalarType dd = 4.0,
-               dl = -Teuchos::ScalarTraits<ScalarType>::one(),
-               du = -Teuchos::ScalarTraits<ScalarType>::one();
+               dl = -ScalarTraits<ScalarType>::one(),
+               du = -ScalarTraits<ScalarType>::one();
     
     // Compute the matrix vector multiplication y<---T*x
     // where T is a nx by nx tridiagonal matrix with DD on the 
@@ -408,15 +479,15 @@ private:
   }
 public:
   
-  OPG()  {}
-  ~OPG() {}
+  OPM()  {}
+  ~OPM() {}
   
   Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
-    const ScalarType ONE = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType ZERO = Teuchos::ScalarTraits<ScalarType>::zero();
-    Teuchos::BLAS<int,ScalarType> blas;
+    const ScalarType ONE = ScalarTraits<ScalarType>::one();
+    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
+    BLAS<int,ScalarType> blas;
     int n, nx;
   
     const MyMultiVec<ScalarType>* MyX;
@@ -435,7 +506,7 @@ public:
     // deduce the size of the operator from the vector length...
     n = X.GetVecLength();
     // ... and the number of interior points in the discretization from that
-    nx = Teuchos::ScalarTraits<int>::squareroot(n);
+    nx = ScalarTraits<int>::squareroot(n);
     // return an error if the vector length isn't a square number
     if (nx*nx != n) return(Anasazi::Failed);
     
@@ -489,7 +560,6 @@ public:
 
 
 
-
 /******************************************************************************/
 /*! \class OPI< ScalarType >
   \brief Implementation of Anasazi::MultiVector< ScalarType > for the
@@ -511,16 +581,16 @@ private:
   
 public:
   
-  OPI( int n,
-       ScalarType sigma = Teuchos::ScalarTraits<ScalarType>::zero() ) 
+  OPI( const int n,
+       const ScalarType sigma = ScalarTraits<ScalarType>::zero() ) 
       : _n(n), _sigma(sigma) {
     
-    typedef Teuchos::ScalarTraits<ScalarType> SCT;
+    typedef ScalarTraits<ScalarType> SCT;
     const ScalarType ONE = SCT::one();
     const ScalarType TWO = (ScalarType)(2.0)*ONE;
-    Teuchos::LAPACK<int,ScalarType> lapack;
+    LAPACK<int,ScalarType> lapack;
     
-    _nx = Teuchos::ScalarTraits<int>::squareroot(n);
+    _nx = ScalarTraits<int>::squareroot(n);
     // return an error if the vector length isn't a square number
     if (_nx*_nx != n) {
       cout << "Argument 1 to OPI() was not a square number." << endl;
@@ -569,10 +639,10 @@ public:
   Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
-    const ScalarType ONE = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType ZERO = Teuchos::ScalarTraits<ScalarType>::zero();
-    Teuchos::BLAS<int,ScalarType> blas;
-    Teuchos::LAPACK<int,ScalarType> lapack;
+    const ScalarType ONE = ScalarTraits<ScalarType>::one();
+    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
+    BLAS<int,ScalarType> blas;
+    LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
     if (_ferror) {
@@ -610,106 +680,216 @@ public:
 };
 
 
+template <class ScalarType>
+class ARPACK_Example {
+  public:
+    virtual void xformeval(std::vector<ScalarType> &) const = 0;
+    virtual RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const = 0;
+    virtual RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const = 0;
+    virtual RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const = 0;
+    virtual bool        isHerm() const = 0;
+    virtual std::string getSort() const = 0;
+};
 
 
 template <class ScalarType>
-struct ARPACK_NDRV1
-{
-  typedef   OPE<ScalarType>   OP;
-  typedef   OPA<ScalarType>   M;
-  static const bool isHermitian = false;
+class ARPACK_NDRV1 : public ARPACK_Example<ScalarType> {
+  private:
+    ScalarType _rho;
+  public:
+    ARPACK_NDRV1(ScalarType rho = ScalarTraits<ScalarType>::zero()) : _rho(rho) {}
+    
+    void xformeval(std::vector<ScalarType> &vals) const {}
+    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPB<ScalarType>(_rho)); }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPB<ScalarType>(_rho)); }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPA<ScalarType>()); }
+    bool isHerm() const {return false;}
+    std::string getSort() const {return string("SM");}
 };
 
 template <class ScalarType>
-struct ARPACK_NDRV2
-{
-  typedef   OPF<ScalarType>   OP;
-  typedef   OPA<ScalarType>   M;
-  static const bool isHermitian = false;
+class ARPACK_NDRV2 : public ARPACK_Example<ScalarType> {
+  private:
+    ScalarType _rho, _sigma;
+    int _n;
+  public:
+    ARPACK_NDRV2(int n,
+                 ScalarType rho = (ScalarType)(1.0e+1),
+                 ScalarType sigma = (ScalarType)(1.0) ) : _n(n), _rho(rho),_sigma(sigma) {}
+    
+    void xformeval(std::vector<ScalarType> &vals) const { 
+      typename std::vector<ScalarType>::iterator i;
+      const ScalarType ONE = ScalarTraits<ScalarType>::one();
+      for (i=vals.begin(); i!=vals.end(); i++) {
+        *i = ONE / *i + _sigma;
+      }
+    }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPD<ScalarType>(_n,_rho,_sigma)); }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPC<ScalarType>(_rho)); }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPA<ScalarType>()); }
+    bool isHerm() const {return false;}
+    std::string getSort() const {return string("LM");}
 };
+
+template <class ScalarType>
+class ARPACK_NDRV3 : public ARPACK_Example<ScalarType> {
+  private:
+  public:
+    bool isHerm() const {return false;}
+    std::string getSort() const {return string("LM");}
+};
+
+template <class ScalarType>
+class ARPACK_NDRV4 : public ARPACK_Example<ScalarType> {
+  private:
+  public:
+    bool isHerm() const {return false;}
+    std::string getSort() const {return string("LM");}
+};
+
+template <class ScalarType>
+class ARPACK_NDRV5 : public ARPACK_Example<ScalarType> {
+  private:
+  public:
+    bool isHerm() const {return false;}
+    std::string getSort() const {return string("LM");}
+};
+
+template <class ScalarType>
+class ARPACK_NDRV6 : public ARPACK_Example<ScalarType> {
+  private:
+  public:
+    bool isHerm() const {return false;}
+    std::string getSort() const {return string("LM");}
+};
+
+template <class ScalarType>
+class ARPACK_SDRV1 : public ARPACK_Example<ScalarType> {
+  private:
+  public:
+    void xformeval(std::vector<ScalarType> &vals) const {}
+    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPM<ScalarType>()); }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPM<ScalarType>()); }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPA<ScalarType>()); }
+    bool isHerm() const {return true;}
+    std::string getSort() const {return string("SM");}
+};
+
+template <class ScalarType>
+class ARPACK_SDRV2 : public ARPACK_Example<ScalarType> {
+  private:
+  public:
+    bool isHerm() const {return true;}
+    std::string getSort() const {return string("LM");}
+};
+
+template <class ScalarType>
+class ARPACK_SDRV3 : public ARPACK_Example<ScalarType> {
+  private:
+  public:
+    bool isHerm() const {return true;}
+    std::string getSort() const {return string("LM");}
+};
+
+template <class ScalarType>
+class ARPACK_SDRV4 : public ARPACK_Example<ScalarType> {
+  private:
+  public:
+    bool isHerm() const {return true;}
+    std::string getSort() const {return string("LM");}
+};
+
+template <class ScalarType>
+class ARPACK_SDRV5 : public ARPACK_Example<ScalarType> {
+  private:
+  public:
+    bool isHerm() const {return true;}
+    std::string getSort() const {return string("LM");}
+};
+
+template <class ScalarType>
+class ARPACK_SDRV6 : public ARPACK_Example<ScalarType> {
+  private:
+  public:
+    bool isHerm() const {return true;}
+    std::string getSort() const {return string("LM");}
+};
+
 
 /*
-template <class ScalarType>
-struct ARPACK_NDRV3
-{
-  typedef   OPN<ScalarType>   OP;
-  typedef   OPM<ScalarType>   M;
-  static const bool isHermitian = false;
-};
 
-template <class ScalarType>
-struct ARPACK_NDRV4
-{
-  typedef   OPO<ScalarType>   OP;
-  typedef   OPM<ScalarType>   M;
-  static const bool isHermitian = false;
-};
+ARPACK_NDRV3
+OPG
+OPE
+OPF
 
-template <class ScalarType>
-struct ARPACK_NDRV5
-{
-  typedef   OPC<ScalarType>   OP;
-  typedef   OPB<ScalarType>   M;
-  static const bool isHermitian = false;
-};
+ARPACK_NDRV4
+OPH
+OPE
+OPF
 
-template <class ScalarType>
-struct ARPACK_NDRV6
-{
-  typedef   OPD<ScalarType>   OP;
-  typedef   OPB<ScalarType>   M;
-  static const bool isHermitian = false;
-};
+ARPACK_NDRV5
+OPK
+OPI
+OPJ
+
+ARPACK_NDRV6
+OPL
+OPI
+OPJ
+
+ARPACK_SDRV1
+OPM
+OPM
+OPA
+
+ARPACK_SDRV2
+OPO
+OPN
+OPA
+
+ARPACK_SDRV3
+OPR
+OPP
+OPQ
+
+ARPACK_SDRV4
+OPS
+OPP
+OPQ
+
+ARPACK_SDRV5
+OPT
+OPP
+OPP
+
+ARPACK_SDRV6
+OPU
+OPP
+OPQ
 */
 
 template <class ScalarType>
-struct ARPACK_SDRV1
-{
-  typedef   OPG<ScalarType>   OP;
-  typedef   OPA<ScalarType>   M;
-  static const bool isHermitian = true;
-};
+RefCountPtr< ARPACK_Example<ScalarType> > GetARPACKExample(const std::string &drivername, int dim) {
+  RefCountPtr< ARPACK_Example<ScalarType> > nullptr;
 
-template <class ScalarType>
-struct ARPACK_SDRV2
-{
-  typedef   OPI<ScalarType>   OP;
-  typedef   OPA<ScalarType>   M;
-  static const bool isHermitian = true;
-};
+  std::string dncopy(drivername);
+  // if they sent the full driver name, remove the scalar type [sdcz]
+  if (dncopy.length() == 6 && dncopy.find_first_of("sdcz") == 0) {
+    dncopy = dncopy.substr(1);
+  }
 
-/*
-template <class ScalarType>
-struct ARPACK_SDRV3
-{
-  typedef   OPR<ScalarType>   OP;
-  typedef   OPQ<ScalarType>   M;
-  static const bool isHermitian = true;
-};
+  if (dncopy == "ndrv1" || dncopy == "NDRV1") {
+    return rcp( new ARPACK_NDRV1<ScalarType>() );
+  }
+  else if (dncopy == "ndrv2" || dncopy == "NDRV2") {
+    return rcp( new ARPACK_NDRV2<ScalarType>(dim) );
+  }
+  else if (dncopy == "sdrv1" || dncopy == "SDRV1") {
+    return rcp( new ARPACK_SDRV1<ScalarType>() );
+  }
+  return nullptr;
+}
 
-template <class ScalarType>
-struct ARPACK_SDRV4
-{
-  typedef   OPS<ScalarType>   OP;
-  typedef   OPQ<ScalarType>   M;
-  static const bool isHermitian = true;
-};
-
-template <class ScalarType>
-struct ARPACK_SDRV5
-{
-  typedef   OPU<ScalarType>   OP;
-  typedef   OPP<ScalarType>   M;
-  static const bool isHermitian = true;
-};
-
-template <class ScalarType>
-struct ARPACK_SDRV6
-{
-  typedef   OPT<ScalarType>   OP;
-  typedef   OPQ<ScalarType>   M;
-  static const bool isHermitian = true;
-};
-*/
 
 #endif //ARPACK_OPERATORS_HPP
