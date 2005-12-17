@@ -41,16 +41,18 @@ class Epetra_NumPyMultiVector : public Epetra_MultiVector {
 
 public:
 
+  // Constructors
   Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMap, int numVectors, bool zeroOut=true);
-  //  Epetra_NumPyMultiVector(const Epetra_NumPyMultiVector & source);
   Epetra_NumPyMultiVector(const Epetra_MultiVector & source);
   Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMap, PyObject * pyObject);
   Epetra_NumPyMultiVector(Epetra_DataAccess CV, const Epetra_NumPyMultiVector & source,
 			  PyObject * range);
   Epetra_NumPyMultiVector(PyObject * pyObject);
 
+  // Destructor
   ~Epetra_NumPyMultiVector();
 
+  // Overridden Epetra_MultiVector methods with more python-like signatures
   PyObject * ExtractCopy() const;
   PyObject * ExtractView() const;
   PyObject * Dot(const Epetra_MultiVector & a) const;
@@ -64,21 +66,36 @@ public:
 
 private:
 
-  // Private methods thus not callable
+  // Private method thus not callable
   Epetra_NumPyMultiVector();
 
-  // Static helper functions
-  static Epetra_Map & getEpetraMapAndArray(PyObject *);
-  static int        * getRangeFromObject(  PyObject *);
-  static double     * getArrayFromObject(  PyObject *);
-  static double     * getArrayFromMapAndObject(const Epetra_BlockMap &, PyObject *);
-
-  // Static private data
+  // This static private constant is the default communicator for any
+  // Epetra_NumPyMultiVector constructed without specifying an
+  // Epetra_BlockMap
   static const Epetra_SerialComm defaultComm;
-  static       PyArrayObject *   tmp_array;
-  static       Epetra_Map    *   tmp_map;
-  static       PyArrayObject *   tmp_range;
-  static       int               tmp_range_len;
+
+  // These private static pointers are for use with constructors only.
+  // Outside of a constructor, they should be NULL.  They should only
+  // be set by the static helper functions below, and when a
+  // constructor sets any of these pointers, it should reset it to
+  // NULL when done.
+  static PyArrayObject * tmp_array;
+  static Epetra_Map    * tmp_map;
+  static PyArrayObject * tmp_range;
+
+  // Static helper functions.  These are intended to be called from
+  // the constructors, specifically to compute arguments in the
+  // Epetra_MultiVector constructors called in the constructor
+  // initialization lists.  They all assume that if tmp_array, tmp_map
+  // or tmp_range is already set, they have been set by the same
+  // PyObject.
+  static double     * getArrayFromObject(     PyObject *);
+  static double     * getArrayFromMapAndObject(const Epetra_BlockMap &, PyObject *);
+  static Epetra_Map & getMapFromObject(       PyObject *);
+  static int          getNumVectorsFromObject(PyObject *);
+  static int        * getRangeFromObject(     PyObject *);
+  static int          getRangeLenFromObject(  PyObject *);
+  static int          getVectorSizeFromObject(PyObject *);
 
   // Private data
   Epetra_BlockMap * map;
