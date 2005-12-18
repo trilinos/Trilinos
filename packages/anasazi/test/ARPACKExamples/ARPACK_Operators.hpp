@@ -340,10 +340,7 @@ private:
   
 public:
   
-  OPD( const int n,
-       const ScalarType rho = (ScalarType)(1.0e+1),
-       const ScalarType sigma = ScalarTraits<ScalarType>::one() ) 
-      : _n(n), _rho(rho), _sigma(sigma) {
+  OPD( const int n, const ScalarType rho, const ScalarType sigma) : _n(n), _rho(rho), _sigma(sigma) {
     
     typedef ScalarTraits<ScalarType> SCT;
     const ScalarType ONE = SCT::one();
@@ -373,33 +370,17 @@ public:
     s1 = -ONE-s;
     s2 = TWO - SCT::real(sigma);
     s3 = -ONE+s;
-    _dl.resize(n-1,s1);
-    _dd.resize(n  ,s2);
-    _du.resize(n-1,s3);
-    _du2.resize(n-2);
-    _ipiv.resize(n);
+    _dl.resize(_n-1,s1);
+    _dd.resize(_n  ,s2);
+    _du.resize(_n-1,s3);
+    _du2.resize(_n-2);
+    _ipiv.resize(_n);
   
     int _ferror;
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
     if (_ferror != 0) {
       cout << "Error in GTTRF in OPD()" << endl;
     }
-    
-    /*
-    typename std::vector<ScalarType>::iterator it;
-    typename std::vector<int>::iterator it2;
-    cout << "_dl" << endl;
-    for (it=_dl.begin(); it != _dl.end(); it++) cout << *it << endl;
-    cout << "_dd" << endl;
-    for (it=_dd.begin(); it != _dd.end(); it++) cout << *it << endl;
-    cout << "_du" << endl;
-    for (it=_du.begin(); it != _du.end(); it++) cout << *it << endl;
-    cout << "_du2" << endl;
-    for (it=_du2.begin(); it != _du2.end(); it++) cout << *it << endl;
-    cout << "ipiv" << endl;
-    for (it2=_ipiv.begin(); it2 != _ipiv.end(); it2++) cout << *it2 << endl;
-    */
-    
   }
   ~OPD() {}
   
@@ -561,16 +542,78 @@ public:
 
 
 /******************************************************************************/
-/*! \class OPI< ScalarType >
+/*! \class OPN< ScalarType >
   \brief Implementation of Anasazi::MultiVector< ScalarType > for the
   application of the central difference discretization of a 
-  1-D Laplacian
-  
-  The operator applied is:
-    OPI = inv[A-sigma*I]
+  1-D discrete Laplacian on the interval [0,1] with zero Dirichlet b.c.
 */
 template <class ScalarType>
-class OPI : public Anasazi::Operator<ScalarType>
+class OPN : public Anasazi::Operator<ScalarType>
+{
+public:
+  
+  OPN() {}
+  ~OPN() {}
+  
+  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
+                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  {
+    const ScalarType ONE = ScalarTraits<ScalarType>::one();
+    const ScalarType TWO = ((ScalarType)2.0)*ONE;
+    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
+    BLAS<int,ScalarType> blas;
+    
+    const MyMultiVec<ScalarType>* MyX;
+    MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
+    if (MyX == 0) return Anasazi::Failed;
+      
+    MyMultiVec<ScalarType>* MyY;
+    MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
+    if (MyY == 0) return Anasazi::Failed;
+      
+    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
+    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    
+    int n = X.GetVecLength();
+    int nvecs = X.GetNumberVecs();
+    
+    // Perform  Y <--- OP*X, a tridiagonal matrix multiply
+    ScalarType dl = -ONE,
+               dd = TWO,
+               du = -ONE,
+               h2 = ONE / ((ScalarType)(n+1)*(n+1));
+    int p, j;
+    for (p=0; p<nvecs; p++) {
+      ScalarType *y = (*MyY)[p];
+      const ScalarType *x = (*MyX)[p];
+      j = 0;
+      y[j] = dd*x[j] + du*x[j+1];
+      for (j=1; j<n-1; j++) {
+        y[j] = dl*x[j-1] + dd*x[j] + du*x[j+1];
+      }
+      j = n-1;
+      y[j] = dl*x[j-1] + dd*x[j];
+      blas.SCAL(n, ONE/h2, y, 1);
+    }
+    
+    return(Anasazi::Ok);
+  }
+};
+
+
+
+/******************************************************************************/
+/*! \class OPO< ScalarType >
+  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  application of the central difference discretization of a 
+  1-D Laplacian on the interval [0,1] with zero Dirichlet b.c.
+  
+  The operator applied is:
+    OPO = inv[A-sigma*I]
+  where A is as in OPN
+*/
+template <class ScalarType>
+class OPO : public Anasazi::Operator<ScalarType>
 {
 private:
   int _n,_nx;
@@ -581,9 +624,7 @@ private:
   
 public:
   
-  OPI( const int n,
-       const ScalarType sigma = ScalarTraits<ScalarType>::zero() ) 
-      : _n(n), _sigma(sigma) {
+  OPO( const int n, const ScalarType sigma) : _n(n), _sigma(sigma) {
     
     typedef ScalarTraits<ScalarType> SCT;
     const ScalarType ONE = SCT::one();
@@ -593,7 +634,7 @@ public:
     _nx = ScalarTraits<int>::squareroot(n);
     // return an error if the vector length isn't a square number
     if (_nx*_nx != n) {
-      cout << "Argument 1 to OPI() was not a square number." << endl;
+      cout << "Argument 1 to OPO() was not a square number." << endl;
       _n = 100;
       _nx = 10;
     }
@@ -605,36 +646,20 @@ public:
     | central difference of the 1-d Laplacian             |
     \----------------------------------------------------*/
     ScalarType h2;
-    h2 = ONE / (ScalarType)( (n+1)*(n+1) );
-    _dd.resize(n  , TWO/h2 - sigma );
-    _dl.resize(n-1, -ONE/h2 );
-    _du.resize(n-1, -ONE/h2 );
-    _du2.resize(n-2);
-    _ipiv.resize(n);
+    h2 = ONE / (ScalarType)( (_n+1)*(_n+1) );
+    _dd.resize(_n  , TWO/h2 - sigma );
+    _dl.resize(_n-1, -ONE/h2 );
+    _du.resize(_n-1, -ONE/h2 );
+    _du2.resize(_n-2);
+    _ipiv.resize(_n);
   
     int _ferror;
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
     if (_ferror != 0) {
-      cout << "Error in GTTRF in OPI()" << endl;
+      cout << "Error in GTTRF in OPO()" << endl;
     }
-    
-    /*
-    typename std::vector<ScalarType>::iterator it;
-    typename std::vector<int>::iterator it2;
-    cout << "_dl" << endl;
-    for (it=_dl.begin(); it != _dl.end(); it++) cout << *it << endl;
-    cout << "_dd" << endl;
-    for (it=_dd.begin(); it != _dd.end(); it++) cout << *it << endl;
-    cout << "_du" << endl;
-    for (it=_du.begin(); it != _du.end(); it++) cout << *it << endl;
-    cout << "_du2" << endl;
-    for (it=_du2.begin(); it != _du2.end(); it++) cout << *it << endl;
-    cout << "ipiv" << endl;
-    for (it2=_ipiv.begin(); it2 != _ipiv.end(); it2++) cout << *it2 << endl;
-    */
-    
   }
-  ~OPI() {}
+  ~OPO() {}
   
   Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
                                   Anasazi::MultiVec<ScalarType>& Y ) const
@@ -667,6 +692,369 @@ public:
     int p;
     // set Y = X, as GTTRS operates in situ
     MyY->MvAddMv( ONE, *MyX, ZERO, *MyX );
+    // call GTTRS multiple times (it takes multiple RHS, but MyMultiVec doesn't
+    // use block storage)
+    int ierr;
+    for (p=0; p<nvecs; p++) {
+      lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
+      if (ierr != 0) return Anasazi::Failed;
+    }
+    
+    return(Anasazi::Ok);
+  }
+};
+
+
+
+/******************************************************************************/
+/*! \class OPP< ScalarType >
+  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  application of the finite element discretization of a 
+  1-D discrete Laplacian on the interval [0,1] with zero Dirichlet b.c.
+  This is the A (stiffness) matrix.
+*/
+template <class ScalarType>
+class OPP : public Anasazi::Operator<ScalarType>
+{
+public:
+  
+  OPP() {}
+  ~OPP() {}
+  
+  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
+                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  {
+    const ScalarType ONE = ScalarTraits<ScalarType>::one();
+    const ScalarType TWO = ((ScalarType)2.0)*ONE;
+    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
+    BLAS<int,ScalarType> blas;
+    
+    const MyMultiVec<ScalarType>* MyX;
+    MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
+    if (MyX == 0) return Anasazi::Failed;
+      
+    MyMultiVec<ScalarType>* MyY;
+    MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
+    if (MyY == 0) return Anasazi::Failed;
+      
+    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
+    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    
+    int n = X.GetVecLength();
+    int nvecs = X.GetNumberVecs();
+    
+    // Perform  Y <--- OP*X, a tridiagonal matrix multiply
+    ScalarType dl = -ONE,
+               dd = TWO,
+               du = -ONE,
+               h  = ONE / ((ScalarType)(n+1));
+    int p, j;
+    for (p=0; p<nvecs; p++) {
+      ScalarType *y = (*MyY)[p];
+      const ScalarType *x = (*MyX)[p];
+      j = 0;
+      y[j] = dd*x[j] + du*x[j+1];
+      for (j=1; j<n-1; j++) {
+        y[j] = dl*x[j-1] + dd*x[j] + du*x[j+1];
+      }
+      j = n-1;
+      y[j] = dl*x[j-1] + dd*x[j];
+      blas.SCAL(n, ONE/h, y, 1);
+    }
+    
+    return(Anasazi::Ok);
+  }
+};
+
+
+
+/******************************************************************************/
+/*! \class OPQ< ScalarType >
+  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  application of the finite element discretization of a 
+  1-D discrete Laplacian on the interval [0,1] with zero Dirichlet b.c.
+  This is the M (mass) matrix.
+*/
+template <class ScalarType>
+class OPQ : public Anasazi::Operator<ScalarType>
+{
+public:
+  
+  OPQ() {}
+  ~OPQ() {}
+  
+  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
+                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  {
+    const ScalarType ONE = ScalarTraits<ScalarType>::one();
+    const ScalarType FOUR = ((ScalarType)4.0)*ONE;
+    const ScalarType SIX = ((ScalarType)6.0)*ONE;
+    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
+    BLAS<int,ScalarType> blas;
+    
+    const MyMultiVec<ScalarType>* MyX;
+    MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
+    if (MyX == 0) return Anasazi::Failed;
+      
+    MyMultiVec<ScalarType>* MyY;
+    MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
+    if (MyY == 0) return Anasazi::Failed;
+      
+    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
+    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    
+    int n = X.GetVecLength();
+    int nvecs = X.GetNumberVecs();
+    
+    // Perform  Y <--- OP*X, a tridiagonal matrix multiply
+    ScalarType dl = ONE,
+               dd = FOUR,
+               du = ONE,
+               h  = ONE / ((ScalarType)(n+1)*SIX);
+    int p, j;
+    for (p=0; p<nvecs; p++) {
+      ScalarType *y = (*MyY)[p];
+      const ScalarType *x = (*MyX)[p];
+      j = 0;
+      y[j] = dd*x[j] + du*x[j+1];
+      for (j=1; j<n-1; j++) {
+        y[j] = dl*x[j-1] + dd*x[j] + du*x[j+1];
+      }
+      j = n-1;
+      y[j] = dl*x[j-1] + dd*x[j];
+      blas.SCAL(n, ONE/h, y, 1);
+    }
+    
+    return(Anasazi::Ok);
+  }
+};
+
+
+
+/******************************************************************************/
+/*! \class OPR< ScalarType >
+  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  application of the finite element discretization of a 
+  1-D Laplacian on the interval [0,1] with zero Dirichlet b.c.
+  
+  The operator applied is:
+    OPR = inv[M]*A
+  where A is as in OPP and M is as in OPQ
+*/
+template <class ScalarType>
+class OPR : public Anasazi::Operator<ScalarType>
+{
+private:
+  int _n,_nx;
+  std::vector<ScalarType> _dl, _dd, _du, _du2;
+  std::vector<int> _ipiv;
+  int _ferror;
+  RefCountPtr< Anasazi::Operator<ScalarType> > _A;
+  
+public:
+  
+  OPR( const int n ) : _n(n) {
+    
+    typedef ScalarTraits<ScalarType> SCT;
+    const ScalarType ONE = SCT::one();
+    const ScalarType FOUR = ((ScalarType)4.0)*ONE;
+    const ScalarType SIX = ((ScalarType)6.0)*ONE;
+    LAPACK<int,ScalarType> lapack;
+    
+    // instantiate an A matrix 
+    _A = rcp( new OPP<ScalarType>() );
+    
+    _nx = ScalarTraits<int>::squareroot(n);
+    // return an error if the vector length isn't a square number
+    if (_nx*_nx != n) {
+      cout << "Argument 1 to OPR() was not a square number." << endl;
+      _n = 100;
+      _nx = 10;
+    }
+    
+    /*----------------------------------------------------*
+    | Construct M and factor using LAPACK subroutine      |
+    | gttrf. The matrix M is the tridiagonal matrix       |
+    | derived from the finite element discretization      |
+    | of the 1-d Laplacian.                               |
+    \----------------------------------------------------*/
+    ScalarType h, r1, r2;
+    h = ONE / ((ScalarType)(_n+1));
+    r1 = (FOUR / SIX) * h;
+    r2 = (ONE / SIX) * h;
+    _dd.resize(_n  , r1);
+    _dl.resize(_n-1, r2);
+    _du.resize(_n-1, r2);
+    _du2.resize(_n-2);
+    _ipiv.resize(_n);
+  
+    int _ferror;
+    lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
+    if (_ferror != 0) {
+      cout << "Error in GTTRF in OPR()" << endl;
+    }
+  }
+  ~OPR() {}
+  
+  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
+                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  {
+    const ScalarType ONE = ScalarTraits<ScalarType>::one();
+    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
+    BLAS<int,ScalarType> blas;
+    LAPACK<int,ScalarType> lapack;
+    
+    // if there were problems with the factorization, quit now
+    if (_ferror) {
+      return Anasazi::Failed;
+    }
+    
+    const MyMultiVec<ScalarType>* MyX;
+    MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
+    if (MyX == 0) return Anasazi::Failed;
+      
+    MyMultiVec<ScalarType>* MyY;
+    MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
+    if (MyY == 0) return Anasazi::Failed;
+      
+    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
+    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    if (X.GetVecLength() != _n) return Anasazi::Failed;
+    
+    int nvecs = X.GetNumberVecs();
+    
+    // Perform  Y <--- OP*X = inv[A-SIGMA*I]*X using GTTRS
+    int p;
+    // set Y = A*X, as GTTRS operates in situ
+    if ( _A->Apply(*MyX,*MyY) != Anasazi::Ok ) return Anasazi::Failed;
+    // now, perform inv[M]*Y = inv[M]*X
+    // call GTTRS multiple times (it takes multiple RHS, but MyMultiVec doesn't
+    // use block storage)
+    int ierr;
+    for (p=0; p<nvecs; p++) {
+      lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
+      if (ierr != 0) return Anasazi::Failed;
+    }
+    
+    return(Anasazi::Ok);
+  }
+};
+
+
+
+/******************************************************************************/
+/*! \class OPS< ScalarType >
+  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  application of the finite element discretization of a 1-D Laplacian
+  on the interval [0,1] with zero Dirichlet b.c.
+  
+  The operator applied is:
+    OPS = inv[A-sigma*M]*M
+  where A is as in OPP and M is as in OPQ
+*/
+template <class ScalarType>
+class OPS : public Anasazi::Operator<ScalarType>
+{
+private:
+  int _n,_nx;
+  ScalarType _sigma;
+  std::vector<ScalarType> _dl, _dd, _du, _du2;
+  std::vector<int> _ipiv;
+  int _ferror;
+  RefCountPtr< Anasazi::Operator<ScalarType> > _M;
+  
+public:
+  
+  OPS( const int n, const ScalarType sigma) : _n(n), _sigma(sigma) {
+    
+    typedef ScalarTraits<ScalarType> SCT;
+    const ScalarType ONE = SCT::one();
+    const ScalarType TWO = (ScalarType)(2.0)*ONE;
+    const ScalarType FOUR = (ScalarType)(4.0)*ONE;
+    const ScalarType SIX = (ScalarType)(6.0)*ONE;
+    LAPACK<int,ScalarType> lapack;
+
+    _M = rcp( new OPQ<ScalarType>() );
+    
+    _nx = ScalarTraits<int>::squareroot(n);
+    // return an error if the vector length isn't a square number
+    if (_nx*_nx != n) {
+      cout << "Argument 1 to OPS() was not a square number." << endl;
+      _n = 100;
+      _nx = 10;
+    }
+    
+    /*----------------------------------------------------*
+    | Construct C = A - SIGMA*I and factor C using LAPACK |
+    | subroutine gttrf.                                   |
+    \----------------------------------------------------*/
+    ScalarType h,r1,r2;
+    h = ONE / (ScalarType)(_n+1);
+    r1 = (FOUR / SIX) * h;
+    r2 = (ONE / SIX) * h;
+    
+    _dl.resize(_n-1, -ONE/h - sigma*r2 );
+    _dd.resize(_n  ,  TWO/h - sigma*r1 );
+    _du.resize(_n-1, -ONE/h - sigma*r2 );
+    _du2.resize(_n-2);
+    _ipiv.resize(_n);
+  
+    int _ferror;
+    lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
+    if (_ferror != 0) {
+      cout << "Error in GTTRF in OPS()" << endl;
+    }
+    
+    /*
+    typename std::vector<ScalarType>::iterator it;
+    typename std::vector<int>::iterator it2;
+    cout << "_dl" << endl;
+    for (it=_dl.begin(); it != _dl.end(); it++) cout << *it << endl;
+    cout << "_dd" << endl;
+    for (it=_dd.begin(); it != _dd.end(); it++) cout << *it << endl;
+    cout << "_du" << endl;
+    for (it=_du.begin(); it != _du.end(); it++) cout << *it << endl;
+    cout << "_du2" << endl;
+    for (it=_du2.begin(); it != _du2.end(); it++) cout << *it << endl;
+    cout << "ipiv" << endl;
+    for (it2=_ipiv.begin(); it2 != _ipiv.end(); it2++) cout << *it2 << endl;
+    */
+    
+  }
+  ~OPS() {}
+  
+  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
+                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  {
+    const ScalarType ONE = ScalarTraits<ScalarType>::one();
+    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
+    BLAS<int,ScalarType> blas;
+    LAPACK<int,ScalarType> lapack;
+    
+    // if there were problems with the factorization, quit now
+    if (_ferror) {
+      return Anasazi::Failed;
+    }
+    
+    const MyMultiVec<ScalarType>* MyX;
+    MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
+    if (MyX == 0) return Anasazi::Failed;
+      
+    MyMultiVec<ScalarType>* MyY;
+    MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
+    if (MyY == 0) return Anasazi::Failed;
+      
+    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
+    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    if (X.GetVecLength() != _n) return Anasazi::Failed;
+    
+    int nvecs = X.GetNumberVecs();
+    
+    // Perform  Y <--- OP*X = inv[A-SIGMA*I]*X using GTTRS
+    int p;
+    // set Y = M*X, as GTTRS operates in situ
+    _M->Apply( *MyX, *MyY );
+    // set Y = inv[A-sigma*M]*Y = inv[A-sigma*M]*M*X
     // call GTTRS multiple times (it takes multiple RHS, but MyMultiVec doesn't
     // use block storage)
     int ierr;
@@ -778,7 +1166,21 @@ class ARPACK_SDRV1 : public ARPACK_Example<ScalarType> {
 template <class ScalarType>
 class ARPACK_SDRV2 : public ARPACK_Example<ScalarType> {
   private:
+    ScalarType _sigma;
+    int _n;
   public:
+    ARPACK_SDRV2(int n, ScalarType sigma = ScalarTraits<ScalarType>::zero()) 
+        : _n(n), _sigma(sigma) {}
+    void xformeval(std::vector<ScalarType> &vals) const {
+      typename std::vector<ScalarType>::iterator i;
+      const ScalarType ONE = ScalarTraits<ScalarType>::one();
+      for (i=vals.begin(); i!=vals.end(); i++) {
+        *i = ONE / *i + _sigma;
+      }
+    }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPO<ScalarType>(_n,_sigma)); }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPN<ScalarType>()); }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPA<ScalarType>()); }
     bool isHerm() const {return true;}
     std::string getSort() const {return string("LM");}
 };
@@ -786,7 +1188,13 @@ class ARPACK_SDRV2 : public ARPACK_Example<ScalarType> {
 template <class ScalarType>
 class ARPACK_SDRV3 : public ARPACK_Example<ScalarType> {
   private:
+    int _n;
   public:
+    ARPACK_SDRV3(int n) : _n(n) {}
+    void xformeval(std::vector<ScalarType> &vals) const {}
+    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPR<ScalarType>(_n)); }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPP<ScalarType>()); }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPQ<ScalarType>()); }
     bool isHerm() const {return true;}
     std::string getSort() const {return string("LM");}
 };
@@ -794,7 +1202,21 @@ class ARPACK_SDRV3 : public ARPACK_Example<ScalarType> {
 template <class ScalarType>
 class ARPACK_SDRV4 : public ARPACK_Example<ScalarType> {
   private:
+    int _n;
+    ScalarType _sigma;
   public:
+    ARPACK_SDRV4(int n, ScalarType sigma = ScalarTraits<ScalarType>::zero()) 
+        : _n(n), _sigma(sigma) {}
+    void xformeval(std::vector<ScalarType> &vals) const {
+      typename std::vector<ScalarType>::iterator i;
+      const ScalarType ONE = ScalarTraits<ScalarType>::one();
+      for (i=vals.begin(); i!=vals.end(); i++) {
+        *i = ONE / *i + _sigma;
+      }
+    }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPS<ScalarType>(_n,_sigma)); }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPP<ScalarType>()); }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPQ<ScalarType>()); }
     bool isHerm() const {return true;}
     std::string getSort() const {return string("LM");}
 };
@@ -843,11 +1265,6 @@ OPM
 OPM
 OPA
 
-ARPACK_SDRV2
-OPO
-OPN
-OPA
-
 ARPACK_SDRV3
 OPR
 OPP
@@ -875,7 +1292,7 @@ RefCountPtr< ARPACK_Example<ScalarType> > GetARPACKExample(const std::string &dr
 
   std::string dncopy(drivername);
   // if they sent the full driver name, remove the scalar type [sdcz]
-  if (dncopy.length() == 6 && dncopy.find_first_of("sdcz") == 0) {
+  if (dncopy.length() == 6 && dncopy.find_first_of("SDCZsdcz") == 0) {
     dncopy = dncopy.substr(1);
   }
 
@@ -887,6 +1304,15 @@ RefCountPtr< ARPACK_Example<ScalarType> > GetARPACKExample(const std::string &dr
   }
   else if (dncopy == "sdrv1" || dncopy == "SDRV1") {
     return rcp( new ARPACK_SDRV1<ScalarType>() );
+  }
+  else if (dncopy == "sdrv2" || dncopy == "SDRV2") {
+    return rcp( new ARPACK_SDRV2<ScalarType>(dim) );
+  }
+  else if (dncopy == "sdrv3" || dncopy == "SDRV3") {
+    return rcp( new ARPACK_SDRV3<ScalarType>(dim) );
+  }
+  else if (dncopy == "sdrv4" || dncopy == "SDRV4") {
+    return rcp( new ARPACK_SDRV4<ScalarType>(dim) );
   }
   return nullptr;
 }
