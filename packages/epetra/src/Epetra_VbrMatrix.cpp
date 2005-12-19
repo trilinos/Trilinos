@@ -236,7 +236,10 @@ Epetra_VbrMatrix& Epetra_VbrMatrix::operator=(const Epetra_VbrMatrix& src)
     for (i=0; i<NumMyBlockRows_; i++) {
       int NumBlockEntries = NumBlockEntriesPerRow_[i];
       for (j=0; j < NumBlockEntries; j++) {
-	Entries_[i][j] = new Epetra_SerialDenseMatrix(*(src.Entries_[i][j]));
+        //if src.Entries_[i][j] != 0, set Entries_[i][j] to be
+        //a copy of it.
+        Entries_[i][j] = src.Entries_[i][j] != 0 ?
+          new Epetra_SerialDenseMatrix(*(src.Entries_[i][j])) : 0;
       }
 #if 0
     }
