@@ -2,7 +2,7 @@
 CXX=c++ \
 F77=g77 \
 RANLIB="ranlib -s" \
---with-ldflags="-framework veclib" \
+--with-ldflags="-framework veclib -L/usr/lib/ -lSystemStubs " \
 --enable-mpi \
 --with-mpi-compilers \
 --cache-file=config.cache \
