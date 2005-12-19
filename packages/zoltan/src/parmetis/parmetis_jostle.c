@@ -494,8 +494,8 @@ static int Zoltan_ParMetis_Jostle(
   int num_obj=0, num_edges, edgecut;
   int nsend, wgtflag, numflag, graph_type; 
   int get_graph_data, get_geom_data, get_times; 
-  int compute_only_part_changes=0; /* EBEB: Read parameter when implemented. */
-  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *vsize;
+  int compute_only_part_changes=0; /* TODO: Read parameter when implemented. */
+  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *vwgt_new, *adjwgt, *part, *vsize;
   int *adjproc;
   idxtype *sep_sizes, *part_orig;
   int num_obj_orig, ncon, start_index, compute_order=0;
@@ -540,7 +540,7 @@ static int Zoltan_ParMetis_Jostle(
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
    */
-  vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
+  vtxdist = xadj = adjncy = vwgt = vwgt_new = adjwgt = part = NULL;
   adjproc = NULL;
   vsize = sep_sizes = NULL;
   float_vwgt = ewgts = xyz = imb_tols = NULL;
@@ -603,7 +603,7 @@ static int Zoltan_ParMetis_Jostle(
   scatter = 1;              /* default */
   final_output = 0;         /* default */
   use_timers = 0;           /* default */
-  strcpy(add_obj, "VERTICES"); /* default */
+  strcpy(add_obj, "NONE");  /* default */
   Zoltan_Bind_Param(Graph_params, "CHECK_GRAPH", (void *) &check_graph);
   Zoltan_Bind_Param(Graph_params, "SCATTER_GRAPH", (void *) &scatter);
   Zoltan_Bind_Param(Graph_params, "FINAL_OUTPUT", (void *) &final_output);
@@ -778,15 +778,44 @@ static int Zoltan_ParMetis_Jostle(
                  zz->Proc, vtxdist[zz->Proc]+i99, msg);
         }
     }
-    else if ((!strcmp(add_obj, "VERTEX DEGREE")) || 
-         (!strcmp(add_obj, "PINS")) || (!strcmp(add_obj, "NONZEROS"))){
-      /* weight is vertex degree (EBEB should we add +1?) */
-      /* TODO the implicit weight should be added to existing weights! */
-      obj_wgt_dim=1;
-      vwgt = (idxtype *)ZOLTAN_MALLOC(obj_wgt_dim*num_obj
+
+    /* Add a vertex weight? */
+    if (strcasecmp(add_obj, "NONE")){
+      int add_type = 0;
+      vwgt_new = (idxtype *)ZOLTAN_MALLOC((obj_wgt_dim+1)*num_obj
                           * sizeof(idxtype));
-      for (i=0; i<num_obj; i++)
-        vwgt[i] = xadj[i+1] -xadj[i];
+      if ((!strcasecmp(add_obj, "UNIT")) || (!strcasecmp(add_obj, "VERTICES"))){
+        add_type = 1;
+      }
+      else if ((!strcasecmp(add_obj, "VERTEX DEGREE")) || 
+           (!strcasecmp(add_obj, "PINS")) || 
+           (!strcasecmp(add_obj, "NONZEROS"))){
+        add_type = 2;
+      }
+      else {
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid parameter value for ADD_OBJ_WEIGHT!\n");
+        ierr = ZOLTAN_WARN;
+        add_type = 0;
+      }
+      if (add_type){
+        /* Add implicit weights in new array */
+        for (i=0; i<num_obj; i++){
+          /* First copy old weights */
+          for (j=0; j<obj_wgt_dim; j++){
+            vwgt_new[i*(obj_wgt_dim+1)+j] = vwgt[i*obj_wgt_dim+j];
+          }
+          if (add_type==1)
+            /* unit weight */
+            vwgt_new[i*(obj_wgt_dim+1)+obj_wgt_dim] = 1;
+          else if (add_type==2)
+            /* weight is vertex degree (EBEB should we add +1?) */
+            vwgt_new[i*(obj_wgt_dim+1)+obj_wgt_dim] = xadj[i+1] -xadj[i];
+        }
+        /* Use new vwgt array */
+        if (vwgt) ZOLTAN_FREE(&vwgt);
+        vwgt = vwgt_new;
+        obj_wgt_dim += 1;
+      }
     }
 
     /* Get edge weights if needed */
