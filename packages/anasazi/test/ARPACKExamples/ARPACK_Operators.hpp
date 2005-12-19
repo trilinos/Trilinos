@@ -581,7 +581,7 @@ public:
     ScalarType dl = -ONE,
                dd = TWO,
                du = -ONE,
-               h2 = ONE / ((ScalarType)(n+1)*(n+1));
+               h2 = ONE / ((ScalarType)((n+1)*(n+1)));
     int p, j;
     for (p=0; p<nvecs; p++) {
       ScalarType *y = (*MyY)[p];
@@ -646,7 +646,7 @@ public:
     | central difference of the 1-d Laplacian             |
     \----------------------------------------------------*/
     ScalarType h2;
-    h2 = ONE / (ScalarType)( (_n+1)*(_n+1) );
+    h2 = ONE / ((ScalarType)( (_n+1)*(_n+1) ));
     _dd.resize(_n  , TWO/h2 - sigma );
     _dl.resize(_n-1, -ONE/h2 );
     _du.resize(_n-1, -ONE/h2 );
@@ -810,7 +810,7 @@ public:
     ScalarType dl = ONE,
                dd = FOUR,
                du = ONE,
-               h  = ONE / ((ScalarType)(n+1)*SIX);
+               h  = ONE / (((ScalarType)(n+1))*SIX);
     int p, j;
     for (p=0; p<nvecs; p++) {
       ScalarType *y = (*MyY)[p];
@@ -849,7 +849,7 @@ private:
   std::vector<ScalarType> _dl, _dd, _du, _du2;
   std::vector<int> _ipiv;
   int _ferror;
-  RefCountPtr< Anasazi::Operator<ScalarType> > _A;
+  RefCountPtr< Anasazi::Operator<ScalarType> > _Aop;
   
 public:
   
@@ -862,7 +862,7 @@ public:
     LAPACK<int,ScalarType> lapack;
     
     // instantiate an A matrix 
-    _A = rcp( new OPP<ScalarType>() );
+    _Aop = rcp( new OPP<ScalarType>() );
     
     _nx = ScalarTraits<int>::squareroot(n);
     // return an error if the vector length isn't a square number
@@ -926,7 +926,7 @@ public:
     // Perform  Y <--- OP*X = inv[A-SIGMA*I]*X using GTTRS
     int p;
     // set Y = A*X, as GTTRS operates in situ
-    if ( _A->Apply(*MyX,*MyY) != Anasazi::Ok ) return Anasazi::Failed;
+    if ( _Aop->Apply(*MyX,*MyY) != Anasazi::Ok ) return Anasazi::Failed;
     // now, perform inv[M]*Y = inv[M]*X
     // call GTTRS multiple times (it takes multiple RHS, but MyMultiVec doesn't
     // use block storage)
@@ -961,7 +961,7 @@ private:
   std::vector<ScalarType> _dl, _dd, _du, _du2;
   std::vector<int> _ipiv;
   int _ferror;
-  RefCountPtr< Anasazi::Operator<ScalarType> > _M;
+  RefCountPtr< Anasazi::Operator<ScalarType> > _Mop;
   
 public:
   
@@ -974,7 +974,7 @@ public:
     const ScalarType SIX = (ScalarType)(6.0)*ONE;
     LAPACK<int,ScalarType> lapack;
 
-    _M = rcp( new OPQ<ScalarType>() );
+    _Mop = rcp( new OPQ<ScalarType>() );
     
     _nx = ScalarTraits<int>::squareroot(n);
     // return an error if the vector length isn't a square number
@@ -1053,7 +1053,7 @@ public:
     // Perform  Y <--- OP*X = inv[A-SIGMA*I]*X using GTTRS
     int p;
     // set Y = M*X, as GTTRS operates in situ
-    _M->Apply( *MyX, *MyY );
+    _Mop->Apply( *MyX, *MyY );
     // set Y = inv[A-sigma*M]*Y = inv[A-sigma*M]*M*X
     // call GTTRS multiple times (it takes multiple RHS, but MyMultiVec doesn't
     // use block storage)
