@@ -894,7 +894,7 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType, float>::GEES(const char JOBVS, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* sdim, float* WR, float* WI, float* VS, const OrdinalType ldvs, float* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* BWORK, OrdinalType* info) const    
   {
-    OrdinalType (*nullfptr)(float*,float*);
+    OrdinalType (*nullfptr)(float*,float*) = NULL;
     const char sort = 'N';
     SGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(sort), nullfptr, &n, A, &lda, sdim, WR, WI, VS, &ldvs, WORK, &lwork, BWORK, info);
   }
@@ -944,7 +944,7 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType, float>::TREVC(const char SIDE, const OrdinalType n, const float* T, const OrdinalType ldt, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, float* WORK, float* RWORK, OrdinalType* info) const
   {
-    OrdinalType (*nullfptr)(float*,float*);
+    OrdinalType (*nullfptr)(float*,float*) = NULL;
     const char whch = 'A';
     STREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), nullfptr, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
   }
@@ -1267,7 +1267,7 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType, double>::GEES(const char JOBVS, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* sdim, double* WR, double* WI, double* VS, const OrdinalType ldvs, double* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* BWORK, OrdinalType* info) const    
   {
-    OrdinalType (*nullfptr)(double*,double*);
+    OrdinalType (*nullfptr)(double*,double*) = NULL;
     const char sort = 'N';
     DGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(sort), nullfptr, &n, A, &lda, sdim, WR, WI, VS, &ldvs, WORK, &lwork, BWORK, info);
   }
@@ -1317,7 +1317,7 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType, double>::TREVC(const char SIDE, const OrdinalType n, const double* T, const OrdinalType ldt, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, double* WORK, double* RWORK, OrdinalType* info) const
   {
-    OrdinalType (*nullfptr)(double*,double*);
+    OrdinalType (*nullfptr)(double*,double*) = NULL;
     const char whch = 'A';
     DTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), nullfptr, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
   }
@@ -1614,7 +1614,7 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType, complex<float> >::GEES(const char JOBVS, const OrdinalType n, complex<float>* A, const OrdinalType lda, OrdinalType* sdim, complex<float>* WR, complex<float>* WI, complex<float>* VS, const OrdinalType ldvs, complex<float>* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* BWORK, OrdinalType* info) const    
   {
-    OrdinalType (*nullfptr)(complex<float>*);
+    OrdinalType (*nullfptr)(complex<float>*) = NULL;
     const char sort = 'N';
     CGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(sort), nullfptr, &n, A, &lda, sdim, WR, VS, &ldvs, WORK, &lwork, RWORK, BWORK, info);
   }
@@ -1634,7 +1634,7 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType, complex<float> >::TREVC(const char SIDE, const OrdinalType n, const complex<float>* T, const OrdinalType ldt, complex<float>* VL, const OrdinalType ldvl, complex<float>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, complex<float>* WORK, float* RWORK, OrdinalType* info) const
   {
-    OrdinalType (*nullfptr)(complex<float>*);
+    OrdinalType (*nullfptr)(complex<float>*) = NULL;
     const char whch = 'A';
     CTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), nullfptr, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, RWORK, info);
   }
@@ -1909,7 +1909,7 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType, complex<double> >::GEES(const char JOBVS, const OrdinalType n, complex<double>* A, const OrdinalType lda, OrdinalType* sdim, complex<double>* WR, complex<double>* WI, complex<double>* VS, const OrdinalType ldvs, complex<double>* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* BWORK, OrdinalType* info) const    
   {
-    OrdinalType (*nullfptr)(complex<double>*);
+    OrdinalType (*nullfptr)(complex<double>*) = NULL;
     const char sort = 'N';
     ZGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(sort), nullfptr, &n, A, &lda, sdim, WR, VS, &ldvs, WORK, &lwork, RWORK, BWORK, info);
   }
@@ -1929,7 +1929,7 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType, complex<double> >::TREVC(const char SIDE, const OrdinalType n, const complex<double>* T, const OrdinalType ldt, complex<double>* VL, const OrdinalType ldvl, complex<double>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, complex<double>* WORK, double* RWORK, OrdinalType* info) const
   {
-    OrdinalType (*nullfptr)(complex<double>*);
+    OrdinalType (*nullfptr)(complex<double>*) = NULL;
     const char whch = 'A';
     ZTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), nullfptr, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, RWORK, info);
   }
