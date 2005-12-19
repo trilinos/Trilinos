@@ -753,22 +753,24 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         result = emv0.Multiply(1.0,emv1,emv2,2.0)
         self.assertEquals(result,0)
 
-    def testMultiply2(self):
-        "Test Epetra.MultiVector Multiply method with transpose"
-        n    = 2 * self.comm.NumProc()
-        map  = Epetra.Map(n,0,self.comm)
-        emv0 = Epetra.MultiVector(map,n)
-        emv1 = Epetra.MultiVector(map,n)
-        emv2 = Epetra.MultiVector(map,n)
-        emv0.Random()
-        emv1.Random()
-        emv2.Random()
-        result = emv0.Multiply('T','N',3.0,emv1,emv2,4.0)
-        self.assertEquals(result,0)
-        result = emv0.Multiply('N','T',5.0,emv1,emv2,5.0)
-        self.assertEquals(result,0)
-        result = emv0.Multiply('T','T',7.0,emv1,emv2,6.0)
-        self.assertEquals(result,0)
+# The following unit test has been commented out because Epetra does not
+# currently support this form (transposed) of multivector multiplication
+#     def testMultiply2(self):
+#         "Test Epetra.MultiVector Multiply method with transpose"
+#         n    = 2 * self.comm.NumProc()
+#         map  = Epetra.Map(n,0,self.comm)
+#         emv0 = Epetra.MultiVector(map,1)
+#         emv1 = Epetra.MultiVector(map,n)
+#         emv2 = Epetra.MultiVector(map,1)
+#         emv0.Random()
+#         emv1.Random()
+#         emv2.Random()
+#         result = emv0.Multiply('T','N',3.0,emv1,emv2,4.0)
+#         self.assertEquals(result,0)
+#         result = emv0.Multiply('N','T',5.0,emv1,emv2,5.0)
+#         self.assertEquals(result,0)
+#         result = emv0.Multiply('T','T',7.0,emv1,emv2,6.0)
+#         self.assertEquals(result,0)
 
 ##########################################################################
 
