@@ -748,7 +748,7 @@ int *gcnt = NULL;
     }
   }
 
-  if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
+  if (!zz->LB.Remap_Flag && zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
     int gnremove;
     MPI_Allreduce(&(zhg->nRemove), &gnremove, 1, MPI_INT, MPI_SUM, 
                   zz->Communicator);

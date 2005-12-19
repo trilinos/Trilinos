@@ -736,16 +736,15 @@ HGraph *phg = &(zhg->HG);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo,
          "Zoltan_LB_Part_To_Proc returned invalid processor number.");
         ierr = ZOLTAN_FATAL;
+        ZOLTAN_FREE(&newproc);
         goto End;
       }
     }
     
     ierr = Zoltan_LB_Remap(zz, &new_map, nObj, newproc, zhg->Input_Parts,
                            outparts, 1);
-    if (ierr < 0) {
+    if (ierr < 0) 
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_LB_Remap");
-      goto End;
-    }
     ZOLTAN_FREE(&newproc);
   }
 
