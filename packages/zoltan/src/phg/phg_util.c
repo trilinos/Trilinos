@@ -190,11 +190,18 @@ int Zoltan_PHG_LoadBalStat(ZZ *zz, HGraph *hg)
 int Zoltan_PHG_isPrime(int n)
 {
 /* Naive program to test for primality. */
-/* Returns accurate results for n <= 50000. */
-static const int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
-43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127,
-131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199,
-211, 223};
+/* Returns accurate results for n <= maxValid. */
+static const int maxValid = 250000;
+static const int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37,
+                             41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,
+                             101, 103, 107, 109, 113, 127, 131, 137, 139, 
+                             149, 151, 157, 163, 167, 173, 179, 181, 
+                             191, 193, 197, 199, 211, 223, 227, 229,
+                             233, 239, 241, 251, 257, 263, 269, 271, 277, 
+                             281, 283, 293, 307, 311, 313, 317, 331, 337,
+                             347, 349, 353, 359, 367, 373, 379, 383, 389,
+                             397, 401, 409, 419, 421, 431, 433, 439,
+                             443, 449, 457, 461, 463, 467, 479, 487, 491, 499};
 static const int numprimes = sizeof(primes) / sizeof(int);
 int i;
 int rootn;
@@ -206,8 +213,12 @@ int isprime = 1;
       isprime = 0;
       break;
     }
-  if (isprime && n>50000) 
-      fprintf(stderr, "Warning: isPrime function may not be accurate for n(%i)>50,000\n", n);
+  if (isprime && n>maxValid) {
+    char str[128];  
+    sprintf(str, "Warning: isPrime function may not be accurate for n(%i)>%d\n",
+           n, maxValid);
+    ZOLTAN_PRINT_WARN(-1, "Zoltan_PHG_isPrime", str);
+  }
   
   return isprime;
 }
