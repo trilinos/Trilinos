@@ -43,13 +43,14 @@ MOERTEL::Manager::Manager(Epetra_Comm& comm, int outlevel) :
 outlevel_(outlevel),
 comm_(comm),
 dimensiontype_(MOERTEL::Manager::manager_none),
-inputmap_(null),
+problemmap_(null),
 inputmatrix_(null),
 constraintsmap_(null),
 D_(null),
 M_(null),
 saddlemap_(null),
-saddlematrix_(null)
+saddlematrix_(null),
+solverparams_(null)
 {
 }
 
@@ -97,12 +98,12 @@ bool MOERTEL::Manager::Print() const
     cout << *inter;
   }
   comm_.Barrier();
-  if (inputmap_ != null)
+  if (problemmap_ != null)
   {
     if (comm_.MyPID() == 0)
     cout << "\n------------------ Input RowMap of original Problem ---------------\n";
     comm_.Barrier();
-    cout << *inputmap_;
+    cout << *problemmap_;
   }
   comm_.Barrier();
   if (constraintsmap_ != null)
@@ -157,124 +158,21 @@ bool MOERTEL::Manager::AddInterface(MOERTEL::Interface& interface)
 }
 
 /*----------------------------------------------------------------------*
- |  Store the rowmap of the underlying matrix from the application 07/05|
- *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::SetInputMap(Epetra_Map* map)
-{
-  inputmap_ = rcp(new Epetra_Map(*map));
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- |  Set ptr to the uncoupled matrix on input                       07/05|
- |  Note that MOERTEL::Manager does not make a deep copy here by default   |
- *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::SetInputMatrix(Epetra_CrsMatrix* inputmatrix, bool DeepCopy)
-{
-  if (DeepCopy)
-  {
-    inputmatrix_ = rcp(new Epetra_CrsMatrix(*inputmatrix));
-    return true;
-  }
-  else
-  {
-    inputmatrix_ = rcp(inputmatrix);
-    inputmatrix_.release();
-    return true;
-  }
-  return false;
-}
-
-/*----------------------------------------------------------------------*
- |                                                                 08/05|
- |  modified version of the epetraext matrixmatrixadd                   |
- |  NOTE:                                                               |
- |  - A has to be FillComplete, B must NOT be FillComplete()            |
- *----------------------------------------------------------------------*/
-int MOERTEL::Manager::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double scalarA,
-                      Epetra_CrsMatrix& B,double scalarB )
-{
-  //
-  //This method forms the matrix-matrix sum B = scalarA * op(A) + scalarB * B, where
-
-  if (!A.Filled())
-  {
-     cout << "***ERR*** MOERTEL::Manager::MatrixMatrixAdd:\n"
-          << "***ERR*** FillComplete was not called on A\n"
-          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-     exit(EXIT_FAILURE);
-  }
-  if (B.Filled())
-  {
-     cout << "***ERR*** MOERTEL::Manager::MatrixMatrixAdd:\n"
-          << "***ERR*** FillComplete was called on B\n"
-          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-     exit(EXIT_FAILURE);
-  }
-  
-  //explicit tranpose A formed as necessary
-  Epetra_CrsMatrix* Aprime = 0;
-  EpetraExt::RowMatrix_Transpose* Atrans = 0;
-  if( transposeA )
-  {
-    Atrans = new EpetraExt::RowMatrix_Transpose(false);
-    Aprime = &(dynamic_cast<Epetra_CrsMatrix&>(((*Atrans)(const_cast<Epetra_CrsMatrix&>(A)))));
-  }
-  else
-    Aprime = const_cast<Epetra_CrsMatrix*>(&A);
-    
-  //Loop over B's rows and sum into
-  int MaxNumEntries = EPETRA_MAX( Aprime->MaxNumEntries(), B.MaxNumEntries() );
-  int NumEntries;
-  vector<int> Indices(MaxNumEntries);
-  vector<double> Values(MaxNumEntries);
-
-  int NumMyRows = A.NumMyRows();
-  int Row, err;
-
-  if( scalarA )
-  {
-    for( int i = 0; i < NumMyRows; ++i )
-    {
-      Row = Aprime->GRID(i);
-      EPETRA_CHK_ERR(Aprime->ExtractGlobalRowCopy(Row,MaxNumEntries,NumEntries,&Values[0],&Indices[0]));
-      if( scalarA != 1.0 )
-        for( int j = 0; j < NumEntries; ++j ) Values[j] *= scalarA;
-      if( B.Filled() ) {//Sum In Values
-        err = B.SumIntoGlobalValues( Row, NumEntries, &Values[0], &Indices[0] );
-        assert( err == 0 );
-      }
-      else {
-        err = B.InsertGlobalValues( Row, NumEntries, &Values[0], &Indices[0] );
-        assert( err == 0 || err == 1 );
-      }
-    }
-  }
-
-  Indices.clear();
-  Values.clear();
-
-  if( Atrans ) delete Atrans;
-
-  return(0);
-}
-
-/*----------------------------------------------------------------------*
  |  Choose dofs for lagrange multipliers (private)           mwgee 07/05|
  | Note that this is collective for ALL procs                           |
  *----------------------------------------------------------------------*/
 RefCountPtr<Epetra_Map> MOERTEL::Manager::LagrangeMultiplierDofs()
 {
-  if (inputmap_==null)
+  if (problemmap_==null)
   {
     cout << "***ERR*** MOERTEL::Manager::LagrangeMultiplierDofs:\n"
-         << "***ERR*** inputmap==NULL, Need to set an input-rowmap first\n"
+         << "***ERR*** problemmap_==NULL, Need to set an input-rowmap first\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return null;
   }
   
-  // find the largest row number in inputmap
-  int maxinputGID = inputmap_->MaxAllGID();
+  // find the largest row number in problemmap_
+  int maxinputGID = problemmap_->MaxAllGID();
 
   // start numbering lagrange multipliers from maxinputGID+1
   int minLMGID = maxinputGID+1;
@@ -355,7 +253,7 @@ bool MOERTEL::Manager::Mortar_Integrate()
     cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
          << "***ERR*** problem dimension not set\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    return false;
   }
   return false;
 }
@@ -384,10 +282,10 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
 
   //-------------------------------------------------------------------
   // check whether we have an input map
-  if (inputmap_==null)
+  if (problemmap_==null)
   {
     cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
-         << "***ERR*** inputmap==NULL, Need to set an input-rowmap first\n"
+         << "***ERR*** problemmap_==NULL, Need to set an input-rowmap first\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
@@ -524,7 +422,9 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
   //-------------------------------------------------------------------
   // call FillComplete() on M_ and D_ 
   D_->FillComplete(*saddlemap_,*saddlemap_);
+  D_->OptimizeStorage();
   M_->FillComplete(*saddlemap_,*saddlemap_);
+  M_->OptimizeStorage();
   
   //-------------------------------------------------------------------
   // print this
@@ -558,10 +458,10 @@ bool MOERTEL::Manager::Mortar_Integrate_3D()
 
   //-------------------------------------------------------------------
   // check whether we have an input map
-  if (inputmap_==null)
+  if (problemmap_==null)
   {
     cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
-         << "***ERR*** inputmap==NULL, Need to set an input-rowmap first\n"
+         << "***ERR*** problemmap_==NULL, Need to set an input-rowmap first\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
@@ -718,7 +618,9 @@ bool MOERTEL::Manager::Mortar_Integrate_3D()
   //-------------------------------------------------------------------
   // call FillComplete() on M_ and D_ 
   D_->FillComplete(*saddlemap_,*saddlemap_);
+  D_->OptimizeStorage();
   M_->FillComplete(*saddlemap_,*saddlemap_);
+  M_->OptimizeStorage();
   
   //-------------------------------------------------------------------
   // print this
@@ -728,167 +630,6 @@ bool MOERTEL::Manager::Mortar_Integrate_3D()
   return true;
 }
 
-
-/*----------------------------------------------------------------------*
- | Create the saddle point problem map (private)             mwgee 11/05|
- | Note that this is collective for ALL procs                           |
- *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::BuildSaddleMap()
-{
-  // check whether all interfaces are complete and integrated
-  map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
-  for (curr=interface_.begin(); curr != interface_.end(); ++curr)
-  {
-    if (curr->second->IsComplete() == false)
-    {
-      cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
-           << "***ERR*** interface " << curr->second->Id() << " is not Complete()\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      return false;
-    }
-    if (curr->second->IsIntegrated() == false)
-    {
-      cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
-           << "***ERR*** interface " << curr->second->Id() << " is not integrated yet\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      return false;
-    }
-  }
-  
-  // check whether we have an inputmap
-  if (inputmap_==null)
-  {
-      cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
-           << "***ERR*** No inputrowmap set\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      return false;
-  }
-  
-  // check whether we have a constraintsmap_
-  if (constraintsmap_==null)
-  {
-      cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
-           << "***ERR*** onstraintsmap is NULL\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      return false;
-  }
-  
-  // the saddle point problem rowmap is the inputmap + the constraintmap
-  int numglobalelements = inputmap_->NumGlobalElements() +
-                          constraintsmap_->NumGlobalElements();
-  int nummyelements     = inputmap_->NumMyElements() +
-                          constraintsmap_->NumMyElements();
-  vector<int> myglobalelements(nummyelements);
-  int count = 0;
-  int* inputmyglobalelements = inputmap_->MyGlobalElements();
-  for (int i=0; i<inputmap_->NumMyElements(); ++i)
-    myglobalelements[count++] = inputmyglobalelements[i];
-  int* constraintsmyglobalelements = constraintsmap_->MyGlobalElements();
-  for (int i=0; i<constraintsmap_->NumMyElements(); ++i)
-    myglobalelements[count++] = constraintsmyglobalelements[i];
-  if (count != nummyelements)
-  {
-    cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
-         << "***ERR*** Mismatch in dimensions\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    return false;
-  }
-  saddlemap_ = rcp(new Epetra_Map(numglobalelements,nummyelements,
-                              &(myglobalelements[0]),0,comm_));
-  myglobalelements.clear();
-  
-  return true;
-}
-
-/*----------------------------------------------------------------------*
- | Create the saddle point problem (public)                  mwgee 07/05|
- | Note that this is collective for ALL procs                           |
- *----------------------------------------------------------------------*/
-Epetra_CrsMatrix* MOERTEL::Manager::MakeSaddleProblem()
-{
-  // check whether all interfaces are complete and integrated
-  map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
-  for (curr=interface_.begin(); curr != interface_.end(); ++curr)
-  {
-    if (curr->second->IsComplete() == false)
-    {
-      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
-           << "***ERR*** interface " << curr->second->Id() << " is not Complete()\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-    }
-    if (curr->second->IsIntegrated() == false)
-    {
-      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
-           << "***ERR*** interface " << curr->second->Id() << " is not integrated yet\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-    }
-  }
-  
-  // check whether we have an inputmap
-  if (inputmap_==null)
-  {
-      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
-           << "***ERR*** No inputrowmap set\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-  }
-  
-  // check whether we have a constraintsmap_
-  if (constraintsmap_==null)
-  {
-      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
-           << "***ERR*** onstraintsmap is NULL\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-  }
-  
-  // check for saddlemap_
-  if (saddlemap_==null)
-  {
-      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
-           << "***ERR*** saddlemap_==NULL\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-  }
-
-  // check for inputmatrix
-  if (inputmatrix_==null)
-  {
-      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
-           << "***ERR*** No inputmatrix set\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-  }
-
-  // check whether we have M and D matrices
-  if (D_==null || M_==null)
-  {
-      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
-           << "***ERR*** Matrix M or D is NULL\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
-  }
-  
-  // create a matrix for the saddle problem and fill it
-  saddlematrix_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,90));
-
-  // add values from inputmatrix
-  MatrixMatrixAdd(*inputmatrix_,false,1.0,*saddlematrix_,0.0);
-  
-  // add values from D_
-  MatrixMatrixAdd(*D_,false,1.0,*saddlematrix_,1.0);
-  MatrixMatrixAdd(*D_,true,1.0,*saddlematrix_,1.0);  
-
-  // add values from M_
-  MatrixMatrixAdd(*M_,false,1.0,*saddlematrix_,1.0);
-  MatrixMatrixAdd(*M_,true,1.0,*saddlematrix_,1.0);  
-
-  saddlematrix_->FillComplete();
-
-  return saddlematrix_.get();
-}
 
 /*----------------------------------------------------------------------*
  |                                                                 09/05|

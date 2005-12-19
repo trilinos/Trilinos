@@ -16,6 +16,8 @@
 #include <Epetra_SerialComm.h>
 #endif
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Vector.h"
+#include "Teuchos_ParameterList.hpp"
 
 // include the mortar stuff
 #include "mrtr_functions.H"
@@ -542,7 +544,7 @@ int compute_mortar(SPARSE_TYP* arraytyp, SPARSE_ARRAY* array, DESIGN *design)
 
   //-------------------------------------------------------------------
   // store this map in the mortar manager
-  mrtr_manager->SetInputMap(matrixmap);
+  mrtr_manager->SetProblemMap(matrixmap);
   
   //-------------------------------------------------------------------
   // integrate the whole mortar interfaces
@@ -579,14 +581,16 @@ int compute_mortar(SPARSE_TYP* arraytyp, SPARSE_ARRAY* array, DESIGN *design)
       inputmatrix->InsertGlobalValues(irn[i],1,&(val[i]),&jcn[i]);
   }
   inputmatrix->FillComplete();
+  inputmatrix->OptimizeStorage();
 
   //-------------------------------------------------------------------
   // store the inputmatrix in the Mortar manager
   mrtr_manager->SetInputMatrix(inputmatrix,false);
 
+#if 0
   //-------------------------------------------------------------------
-  // produce the saddle point problem
-#if 1
+  // produce the saddle point problem and use spooles
+  // (Need to adjust defines in solver_spooles.c as well)
   if (saddleproblem) 
     delete saddleproblem; 
   saddleproblem = mrtr_manager->MakeSaddleProblem();
@@ -666,5 +670,47 @@ int compute_mortar(SPARSE_TYP* arraytyp, SPARSE_ARRAY* array, DESIGN *design)
   return(1);
 }
 
+/*----------------------------------------------------------------------*
+ |  routine to solve mortar matrices                         m.gee 12/05|
+ *----------------------------------------------------------------------*/
+int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
+{
+  //-------------------------------------------------------------------
+  // create Epetra_Vectors from rhs and sol
+  Epetra_Map* rowmap = mrtr_manager->ProblemMap();  
+  Epetra_Vector esol(*rowmap,false);
+  Epetra_Vector erhs(*rowmap,false);
+  for (int i=0; i<erhs.MyLength(); ++i)
+    erhs[i] = rhs->vec.a.dv[i];
+  
+  //-------------------------------------------------------------------
+  // create a Teuchos Parameter List holding solver arguments
+  Teuchos::ParameterList params;
+  params.set("System","SaddleSystem");
+  params.set("Solver","Amesos");
+
+  // argument sublist for amesos
+  Teuchos::ParameterList& amesosparams = params.sublist("Amesos");
+  amesosparams.set("Solver","Amesos_Klu");
+  amesosparams.set("PrintTiming",true);
+  amesosparams.set("PrintStatus",true);
+  amesosparams.set("UseTranspose",true);
+  
+  //-------------------------------------------------------------------
+  // solve
+  bool ok = mrtr_manager->Solve(params,esol,erhs); 
+  if (!ok) cout << "***ERR** MOERTEL::Manager::Solve() returned false\n";
+
+  //mrtr_manager->ResetSolver();
+
+  //-------------------------------------------------------------------
+  // copy result back
+  for (int i=0; i<esol.MyLength(); ++i)
+    sol->vec.a.dv[i] = esol[i];
+
+  delete mrtr_manager; mrtr_manager = 0;
+
+  return (int)ok;
+}
 #endif // MORTAR
 #endif // TRILINOS_PACKAGE

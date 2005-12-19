@@ -51,16 +51,20 @@
 // Trilinos includes
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
+#include <Epetra_Vector.h>
 #ifdef EPETRA_MPI
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>
 #endif
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_ParameterList.hpp"
+
 // Moertel includes
 #include "mrtr_segment.H"
 #include "mrtr_node.H"
 #include "mrtr_interface.H"
+#include "mrtr_solver.H"
 
 
 
@@ -237,6 +241,35 @@ public:
   bool AddInterface(MOERTEL::Interface& interface);
 
   /*!
+  \brief Perform integration of the mortar integral on all interfaces
+  
+  Once all interfaces and a row map of the original system are passed to 
+  this class this method evaluates the mortar integrals on all interfaces.
+  
+  Proceding:
+  - Chooses a slave and a mortar side for each interface of not already
+    chosen by the user in the interface class
+  - Build a C0-continous field of normals on the slave side
+  - Makes special boundary modifications to the lagrange mutliplier shape functions
+  - Performs integration of the mortar integrals on individual interfaces
+  - Chooses degrees of freedom for the lagrange multipliers based on 
+    the row map of the original uncoupled problem.
+  - Builds a row map of the saddle point system
+  - Assembles interface contributions to coupling matrices D and M
+  
+  \return true if successfull, false otherwise
+  
+  \sa SetProblemMap , AddInterface
+    
+  */
+  bool Mortar_Integrate();
+  
+  
+  //@}
+
+  // @{ \name Solution methods
+
+  /*!
   \brief Set the RowMap of the original uncoupled problem
   
   Passes in the RowMap of the original (uncoupled) problem.
@@ -251,7 +284,18 @@ public:
   \sa Mortar_Integrate()
   
   */
-  bool SetInputMap(Epetra_Map* map);
+  bool SetProblemMap(Epetra_Map* map);
+  
+  /*!
+  \brief Return view of row map of the uncoupled problem
+  
+  return a view of the row map of the uncoupled problem the user provided using
+  SetProblemMap. Returns NULL if no row map was previously set.
+  
+  \sa SetProblemMap
+
+  */
+  Epetra_Map* ProblemMap() const { return problemmap_.get(); }
   
   /*!
   \brief Set the Matrix of the original uncoupled problem
@@ -272,30 +316,6 @@ public:
   bool SetInputMatrix(Epetra_CrsMatrix* inputmatrix, bool DeepCopy = false);
   
   /*!
-  \brief Perform integration of the mortar integral on all interfaces
-  
-  Once all interfaces and a row map of the original system are passed to 
-  this class this method evaluates the mortar integrals on all interfaces.
-  
-  Proceding:
-  - Chooses a slave and a mortar side for each interface of not already
-    chosen by the user in the interface class
-  - Build a C0-continous field of normals on the slave side
-  - Makes special boundary modifications to the lagrange mutliplier shape functions
-  - Performs integration of the mortar integrals on individual interfaces
-  - Chooses degrees of freedom for the lagrange multipliers based on 
-    the row map of the original uncoupled problem.
-  - Builds a row map of the saddle point system
-  - Assembles interface contributions to coupling matrices D and M
-  
-  \return true if successfull, false otherwise
-  
-  \sa SetInputMap , AddInterface
-    
-  */
-  bool Mortar_Integrate();
-  
-  /*!
   \brief Construct a saddle point system of equations
   
   After a call to \ref Mortar_Integrate() a saddle point system of equations
@@ -309,9 +329,46 @@ public:
   
   */
   Epetra_CrsMatrix* MakeSaddleProblem();
+
+  /*!
+  \brief Set a parameter list holding solver parameters
+  
+  */
+  void SetSolverParameters(ParameterList& params);
+
+  /*!
+  \brief Solve the problem
+  
+  Solve the coupled problem using the solver options supplied in params
+  
+  \param params (in) : Solution parameters
+  \param sol (out) : The solution
+  \param rhs (in) : The right hand side vector
+  */
+  bool Solve(ParameterList& params, Epetra_Vector& sol, const Epetra_Vector& rhs);
+
+  /*!
+  \brief Solve the problem
+  
+  Solve the coupled problem using the solver options previously 
+  supplied in using \ref SetSolverParameters
+  
+  \param sol (out) : The solution
+  \param rhs (in) : The right hand side vector
+  */
+  bool Solve(Epetra_Vector& sol, const Epetra_Vector& rhs);
+  
+  /*!
+  \brief Reset the internal solver
+  
+  The internal solver (no matter which one) will go on using the
+  once constructed (and maybe factored) matrix until this method is
+  called. Then, the linear problem is build from scratch
+  
+  */
+  void ResetSolver();
   
   //@}
-
 
 private:  
   // don't want = operator and copy-ctor
@@ -345,15 +402,18 @@ private:
   Epetra_Comm&                  comm_;                // communicator (global, contains ALL procs)
   DimensionType                 dimensiontype_;       // problem dimension
 
-  RefCountPtr<Epetra_Map>       inputmap_;            // the rowmap of the input matrix
+  map<int,RefCountPtr<MOERTEL::Interface> >  interface_; // the interfaces
+
+  RefCountPtr<Epetra_Map>       problemmap_;          // the rowmap of the input matrix
   RefCountPtr<Epetra_CrsMatrix> inputmatrix_;         // the uncoupled matrix on input
   RefCountPtr<Epetra_Map>       constraintsmap_;      // the rowmap of M and D (both of them use comm_)
   RefCountPtr<Epetra_CrsMatrix> D_;                   // the coupling matrix D
   RefCountPtr<Epetra_CrsMatrix> M_;                   // the coupling matrix M
   RefCountPtr<Epetra_Map>       saddlemap_;           // the rowmap of the saddlepointproblem
   RefCountPtr<Epetra_CrsMatrix> saddlematrix_;        // the matrix of the saddle problem;
-  
-  map<int,RefCountPtr<MOERTEL::Interface> >  interface_; // the interfaces
+
+  RefCountPtr<Teuchos::ParameterList> solverparams_;  // solution parameters passed from the user    
+  RefCountPtr<MOERTEL::Solver>        solver_;        // the mortar solver
 };
 
 } // namespace MOERTEL

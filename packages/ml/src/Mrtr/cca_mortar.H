@@ -19,6 +19,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
                   int disnum, DESIGN *design, int init);
 #endif 
 int compute_mortar(SPARSE_TYP* arraytyp, SPARSE_ARRAY* array, DESIGN *design);
+int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs);
 }
 
 int  cca_mrtr_2D_numinterfaces(int **iids, DESIGN* design);
