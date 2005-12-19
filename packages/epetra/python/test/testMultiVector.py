@@ -740,14 +740,35 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         self.assertEquals(len(meanValue),2     )
         self.assertEquals(meanValue[:],  result)
 
-#     def testMultiply(self):
-#         "Test Epetra.MultiVector Multiply method"
-#         a = [self.numPyArray1,self.numPyArray2]
-#         emv0 = Epetra.MultiVector(self.map,2)
-#         emv1 = Epetra.MultiVector(self.map,a)
-#         emv2 = Epetra.MultiVector(self.map,a)
-#         self.assertEquals(emv0[:], 0.0)
-#         result = emv0('T','N',1.0,emv1,emv2)
+    def testMultiply1(self):
+        "Test Epetra.MultiVector Multiply method"
+        n    = 2 * self.comm.NumProc()
+        map  = Epetra.Map(n,0,self.comm)
+        emv0 = Epetra.MultiVector(map,n)
+        emv1 = Epetra.MultiVector(map,n)
+        emv2 = Epetra.MultiVector(map,n)
+        emv0.Random()
+        emv1.Random()
+        emv2.Random()
+        result = emv0.Multiply(1.0,emv1,emv2,2.0)
+        self.assertEquals(result,0)
+
+    def testMultiply2(self):
+        "Test Epetra.MultiVector Multiply method with transpose"
+        n    = 2 * self.comm.NumProc()
+        map  = Epetra.Map(n,0,self.comm)
+        emv0 = Epetra.MultiVector(map,n)
+        emv1 = Epetra.MultiVector(map,n)
+        emv2 = Epetra.MultiVector(map,n)
+        emv0.Random()
+        emv1.Random()
+        emv2.Random()
+        result = emv0.Multiply('T','N',3.0,emv1,emv2,4.0)
+        self.assertEquals(result,0)
+        result = emv0.Multiply('N','T',5.0,emv1,emv2,5.0)
+        self.assertEquals(result,0)
+        result = emv0.Multiply('T','T',7.0,emv1,emv2,6.0)
+        self.assertEquals(result,0)
 
 ##########################################################################
 

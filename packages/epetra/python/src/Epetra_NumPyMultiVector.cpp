@@ -43,7 +43,7 @@ PyArrayObject           * Epetra_NumPyMultiVector::tmp_range   	 = NULL         
 
 // Static helper functions
 // =============================================================================
-double * Epetra_NumPyMultiVector::getArrayFromObject(PyObject * pyObject)
+double * Epetra_NumPyMultiVector::getArray(PyObject * pyObject)
 {
   // Try to build a contiguous PyArrayObject from the pyObject
   if (!tmp_array) tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
@@ -67,8 +67,8 @@ double * Epetra_NumPyMultiVector::getArrayFromObject(PyObject * pyObject)
 }
 
 // =============================================================================
-double * Epetra_NumPyMultiVector::getArrayFromMapAndObject(const Epetra_BlockMap & blockMap,
-							   PyObject * pyObject)
+double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
+					   PyObject * pyObject)
 {
   // PyObject argument is an int
   if PyInt_Check(pyObject) {
@@ -124,9 +124,9 @@ double * Epetra_NumPyMultiVector::getArrayFromMapAndObject(const Epetra_BlockMap
 }
 
 // =============================================================================
-Epetra_Map & Epetra_NumPyMultiVector::getMapFromObject(PyObject * pyObject)
+Epetra_Map & Epetra_NumPyMultiVector::getMap(PyObject * pyObject)
 {
-  if (!tmp_array) getArrayFromObject(pyObject);
+  if (!tmp_array) getArray(pyObject);
   if (!tmp_map) {
     const int totalLength = PyArray_Size((PyObject *)tmp_array);
     tmp_map = new Epetra_Map(totalLength,0,defaultComm);
@@ -135,14 +135,22 @@ Epetra_Map & Epetra_NumPyMultiVector::getMapFromObject(PyObject * pyObject)
 }
 
 // =============================================================================
-int Epetra_NumPyMultiVector::getNumVectorsFromObject(PyObject * pyObject)
+int Epetra_NumPyMultiVector::getNumVectors(PyObject * pyObject)
 {
-  if (!tmp_array) getArrayFromObject(pyObject);
+  if (!tmp_array) getArray(pyObject);
   return tmp_array->dimensions[0];
 }
 
 // =============================================================================
-int * Epetra_NumPyMultiVector::getRangeFromObject(PyObject * range)
+int Epetra_NumPyMultiVector::getNumVectors(const Epetra_BlockMap & blockMap,
+					   PyObject * pyObject)
+{
+  if (!tmp_array) getArray(blockMap,pyObject);
+  return tmp_array->dimensions[0];
+}
+
+// =============================================================================
+int * Epetra_NumPyMultiVector::getRange(PyObject * range)
 {
   // Try to create a contiguous array of integers from the PyObject
   if (!tmp_range) tmp_range = (PyArrayObject *) PyArray_ContiguousFromObject(range,'i',1,1);
@@ -160,15 +168,15 @@ int * Epetra_NumPyMultiVector::getRangeFromObject(PyObject * range)
 }
 
 // =============================================================================
-int Epetra_NumPyMultiVector::getRangeLenFromObject(PyObject * range)
+int Epetra_NumPyMultiVector::getRangeLen(PyObject * range)
 {
-  if (!tmp_range) getRangeFromObject(range);
+  if (!tmp_range) getRange(range);
   return PyArray_Size((PyObject*)tmp_range);
 }
 // =============================================================================
-int Epetra_NumPyMultiVector::getVectorSizeFromObject(PyObject * pyObject)
+int Epetra_NumPyMultiVector::getVectorSize(PyObject * pyObject)
 {
-  if (!tmp_map) getMapFromObject(pyObject);
+  if (!tmp_map) getMap(pyObject);
   return tmp_map->NumMyPoints();
 }
 
@@ -206,8 +214,8 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_MultiVector & sour
 // =============================================================================
 Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMap,
 						 PyObject * pyObject):
-  Epetra_MultiVector(View, blockMap, getArrayFromMapAndObject(blockMap,pyObject),
-		     blockMap.NumMyPoints(), getNumVectorsFromObject(pyObject))
+  Epetra_MultiVector(View, blockMap, getArray(blockMap,pyObject),
+		     blockMap.NumMyPoints(), getNumVectors(blockMap,pyObject))
 {
   // Get the pointer to the array from static variable and clear
   assert(NULL != tmp_array);
@@ -223,8 +231,8 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMa
 Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
 						 const Epetra_NumPyMultiVector & source,
 						 PyObject * range):
-  Epetra_MultiVector(CV, (const Epetra_MultiVector &) source, getRangeFromObject(range),
-		     getRangeLenFromObject(range))
+  Epetra_MultiVector(CV, (const Epetra_MultiVector &) source, getRange(range),
+		     getRangeLen(range))
 {
   // Store the local map
   map = new Epetra_BlockMap(source.Map());
@@ -253,8 +261,8 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
 
 // =============================================================================
 Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(PyObject * pyObject):
-  Epetra_MultiVector(View, getMapFromObject(pyObject), getArrayFromObject(pyObject),
-		     getVectorSizeFromObject(pyObject), getNumVectorsFromObject(pyObject))
+  Epetra_MultiVector(View, getMap(pyObject), getArray(pyObject),
+		     getVectorSize(pyObject), getNumVectors(pyObject))
 {
   // Store the pointer to the Epetra_Map
   assert(NULL != tmp_map);

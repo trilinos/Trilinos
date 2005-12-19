@@ -50,7 +50,7 @@ public:
   Epetra_NumPyMultiVector(PyObject * pyObject);
 
   // Destructor
-  ~Epetra_NumPyMultiVector();
+  virtual ~Epetra_NumPyMultiVector();
 
   // Overridden Epetra_MultiVector methods with more python-like signatures
   PyObject * ExtractCopy() const;
@@ -89,13 +89,14 @@ private:
   // initialization lists.  They all assume that if tmp_array, tmp_map
   // or tmp_range is already set, they have been set by the same
   // PyObject.
-  static double     * getArrayFromObject(     PyObject *);
-  static double     * getArrayFromMapAndObject(const Epetra_BlockMap &, PyObject *);
-  static Epetra_Map & getMapFromObject(       PyObject *);
-  static int          getNumVectorsFromObject(PyObject *);
-  static int        * getRangeFromObject(     PyObject *);
-  static int          getRangeLenFromObject(  PyObject *);
-  static int          getVectorSizeFromObject(PyObject *);
+  static double     * getArray(     PyObject *);
+  static Epetra_Map & getMap(       PyObject *);
+  static int          getNumVectors(PyObject *);
+  static int        * getRange(     PyObject *);
+  static int          getRangeLen(  PyObject *);
+  static int          getVectorSize(PyObject *);
+  static double     * getArray(     const Epetra_BlockMap &, PyObject *);
+  static int          getNumVectors(const Epetra_BlockMap &, PyObject *);
 
   // Private data
   Epetra_BlockMap * map;
