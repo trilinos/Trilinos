@@ -87,12 +87,23 @@ ML_NOX::Nox_CoarseProblem_Interface::Nox_CoarseProblem_Interface(
   fxbar_         = 0;       // the ptr to one FAS-vector
   isFASmodfied_  = false;
   this_RowMap_   = new Epetra_BlockMap(*this_RowMap);
+
+  // create a series of working vectors to use in prolongations and restrictions
+  if (level)
+  {
+    wvec_.resize(level+1);
+    for (int i=0; i<level; ++i)
+      wvec_[i] = new Epetra_Vector(P_[i+1]->OperatorRangeMap(),false);
+    wvec_[level] = new Epetra_Vector(P_[level]->OperatorDomainMap(),false);
+  }
+  else
+    wvec_.clear();
+
   return;
 }
 
 /*----------------------------------------------------------------------*
  |  recreate the coarse interface (public)                   m.gee 12/04|
- |  returns false if recreation failed                                  |
  *----------------------------------------------------------------------*/
 bool ML_NOX::Nox_CoarseProblem_Interface::recreate(int plevel,Epetra_CrsMatrix** P, 
                                                    const Epetra_BlockMap* this_RowMap) 
@@ -125,6 +136,22 @@ bool ML_NOX::Nox_CoarseProblem_Interface::recreate(int plevel,Epetra_CrsMatrix**
   }
   if (this_RowMap_) delete this_RowMap_;
   this_RowMap_   = new Epetra_BlockMap(*this_RowMap);
+
+  // create a series of working vectors to use in prolongations and restrictions
+  if (level_)
+  {
+    // delete the old working vectors
+    for (int i=0; i<(int)wvec_.size(); ++i)
+      if (wvec_[i]) delete wvec_[i];
+    // create new ones
+    wvec_.resize(level_+1);
+    for (int i=0; i<level_; ++i)
+      wvec_[i] = new Epetra_Vector(P_[i+1]->OperatorRangeMap(),false);
+    wvec_[level_] = new Epetra_Vector(P_[level_]->OperatorDomainMap(),false);
+  }
+  else
+    wvec_.clear();
+
   return true;
 }
 
@@ -137,6 +164,14 @@ ML_NOX::Nox_CoarseProblem_Interface::~Nox_CoarseProblem_Interface()
    destroyP();
    if (this_RowMap_) delete this_RowMap_;
    this_RowMap_ = 0;
+
+   for (int i=0; i<(int)wvec_.size(); ++i) 
+   {
+     delete wvec_[i];
+     wvec_[i] = NULL;
+   }
+   wvec_.clear();
+
    return; 
 }
 
@@ -151,32 +186,6 @@ Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::restrict_to_next_coarser_lev
                                                                             Epetra_Vector* thisvec, 
                                                                             int current, int next)
 {
-   // check sanity of P_ - hierarchy
-   if (P_==0)
-   {
-     cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::restrict_to_next_coarser_level:\n"
-          << "**ERR**: P-hierarchy is NULL on level " << level_ << "\n"
-          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-   }
-   int i;
-   int max;
-   if (current >= 1) max = current; else max = 1;
-   for (i=max; i<=next; i++)
-   {
-      if (P_[i]==0)
-      {
-         cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::restrict_to_next_coarser_level:\n"
-              << "**ERR**: ptr to Prolongator level " << i << " is NULL\n"
-              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-      }
-   }
-   if (current+1 != next)
-   {
-     cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::restrict_to_next_coarser_level:\n"
-          << "**ERR**: currently only impl. for consecutive levels\n"
-          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-   }
-   
    // create a thisvec that matches the map of the restriction operator
    Epetra_Vector* xfineP = 0;
    if (current==0) // restrict from level 0 to level 1 is different from rest
@@ -192,8 +201,8 @@ Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::restrict_to_next_coarser_lev
                << "**ERR**: mismatch in dimension of thisvec and xfineP\n"
                << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
       }
-      int mylength = thisvec->MyLength();
-      for (i=0; i<mylength; i++)
+      const int mylength = thisvec->MyLength();
+      for (int i=0; i<mylength; i++)
          (*xfineP)[i] = (*thisvec)[i];      
    }
    else
@@ -209,7 +218,6 @@ Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::restrict_to_next_coarser_lev
    
    if (current==0)
       delete xfineP;
-   xfineP=0;
 
    return cvec;
 }
@@ -224,32 +232,6 @@ Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::restrict_to_next_coarser_lev
 Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::prolong_to_this_level(Epetra_Vector* coarsevec, 
                                                                             int current, int next)
 {
-   // check sanity of P_ - hierarchy
-   if (P_==0)
-   {
-     cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::restrict_to_next_coarser_level:\n"
-          << "**ERR**: P-hierarchy is NULL on level " << level_ << "\n"
-          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-   }
-   int i;
-   int max = 0;
-   if (current >= 1) max = current; else max = 1;
-   for (i=max; i<=next; i++)
-   {
-      if (P_[i]==0)
-      {
-         cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::restrict_to_next_coarser_level:\n"
-              << "**ERR**: ptr to Prolongator level " << i << " is NULL\n"
-              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-      }
-   }
-   if (current+1 != next)
-   {
-     cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::restrict_to_next_coarser_level:\n"
-          << "**ERR**: currently only impl. for consecutive levels\n"
-          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-   }
-   
    // Allocate matching fine vector in ML-global indices
    Epetra_Vector* fvec = new Epetra_Vector(P_[next]->OperatorRangeMap(),false);
    
@@ -266,8 +248,8 @@ Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::prolong_to_this_level(Epetra
                << "**ERR**: mismatch in dimension of fvec and fine\n"
                << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
       }
-      int mylength = fvec->MyLength();
-      for (i=0; i<mylength; i++)
+      const int mylength = fvec->MyLength();
+      for (int i=0; i<mylength; i++)
          (*fine)[i] = (*fvec)[i];
       delete fvec; fvec = 0;
       return fine;  
@@ -286,6 +268,7 @@ Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::prolong_to_this_level(Epetra
 Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::restrict_fine_to_this(
                                                const Epetra_Vector& xfine)
 {
+   int i;
    // on the finest level, just copy the vector
    if (level_==0)
    {
@@ -294,72 +277,34 @@ Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::restrict_fine_to_this(
    }
    else // not on finest level
    {
-      // check sanity of P_ - hierarchy
-      if (P_==0)
-      {
-        cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::restrict_fine_to_this:\n"
-             << "**ERR**: P-hierarchy is NULL on level " << level_ << "\n"
-             << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-      }
-      int i;
-      for (i=1; i<=level_; i++)
-      {
-         if (P_[i]==0)
-         {
-            cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::restrict_fine_to_this:\n"
-                 << "**ERR**: ptr to Prolongator level " << i << " is 0\n"
-                 << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-         }
-      }
-      
       // Note that the GIDs in xfine match those of the fineinterface and
-      // might be different from those in P_[1]->RowMap.
+      // might be different from those in P_[1]->OperatorRangeMap().
       // The LIDs and the map match, so we have to copy xfine to xfineP
       // using LIDs
-      Epetra_Vector* xfineP = new Epetra_Vector(P_[1]->RowMap(),false);
+      Epetra_Vector* xfineP = wvec_[0]; // RangeMap of P_[1]
       if (xfine.MyLength() != xfineP->MyLength() || xfine.GlobalLength() != xfineP->GlobalLength())
       {
           cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::restrict_fine_to_this:\n"
                << "**ERR**: mismatch in dimension of xfine and xfineP\n"
                << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
       }
-#if 0      
-      cout << "xfine map\n";
-      cout << xfine.Map();
-      cout << "xfineP map\n";
-      cout << xfineP->Map();
-      exit(0);
-#endif      
-      int mylength = xfine.MyLength();
+
+      const int mylength = xfine.MyLength();
       for (i=0; i<mylength; i++)
          (*xfineP)[i] = xfine[i];      
 
       // loop from the finest level to this level and
-      // apply series of restrictions (i.e transposed prolongations)
-      Epetra_Vector* fvec = 0;
-      for (i=0; i<level_; i++)
+      // apply series of restrictions (that is transposed prolongations)
+      Epetra_Vector* fvec = xfineP;
+      for (i=0; i<level_-1; i++)
       {
-         // allocate a vector matching level i+1
-         Epetra_Vector* cvec = new Epetra_Vector(P_[i+1]->OperatorDomainMap(),false);
-         
-         // multiply
-         if (i==0)
-         {
-            P_[i+1]->Multiply(true,*xfineP,*cvec);
-            delete xfineP;
-            xfineP = 0;
-         }
-         else
-            P_[i+1]->Multiply(true,*fvec,*cvec);
-         
-         if (i>0)
-            delete fvec;
-         
-         fvec = cvec;
+        Epetra_Vector* cvec = wvec_[i+1];
+        P_[i+1]->Multiply(true,*fvec,*cvec);
+        fvec = cvec;
       }
-      if (xfineP) delete xfineP;
-      xfineP = 0;
-      return fvec;
+      Epetra_Vector* out = new Epetra_Vector(P_[level_]->OperatorDomainMap(),false); 
+      P_[level_]->Multiply(true,*fvec,*out);
+      return out;   
    }
    return NULL;
 }
@@ -372,6 +317,7 @@ Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::restrict_fine_to_this(
 Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::prolong_this_to_fine(
                                             const Epetra_Vector& xcoarse)
 {
+   int i;
    // on the finest level, just copy the vector
    if (level_==0)
    {
@@ -380,48 +326,22 @@ Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::prolong_this_to_fine(
    }
    else // we are not on the finest level
    {
-      // check sanity of P_ - hierarchy
-      if (P_==0)
-      {
-        cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::restrict_fine_to_this:\n"
-             << "**ERR**: P-hierarchy is NULL on level " << level_ << "\n"
-             << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-      }
-      int i;
-      for (i=1; i<=level_; i++)
-      {
-         if (P_[i]==0)
-         {
-            cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::restrict_fine_to_this:\n"
-                 << "**ERR**: ptr to Prolongator level " << i << " is 0\n"
-                 << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-         }
-      }
-      
       // loop from this coarsest level to the finest one
       // apply series of prolongations
-      Epetra_Vector* cvec = 0;
+      Epetra_Vector* cvec = const_cast<Epetra_Vector*>(&xcoarse);
       for (i=level_; i>0; i--)
       {
          // allocate a vector matching level i-1
-         Epetra_Vector* fvec = new Epetra_Vector(P_[i]->OperatorRangeMap(),false);
+         Epetra_Vector* fvec = wvec_[i-1];
          // multiply
-         if (i==level_)
-            P_[i]->Multiply(false,xcoarse,*fvec);
-         else
-            P_[i]->Multiply(false,*cvec,*fvec);
-            
-         if (i<level_)
-            delete cvec;
-            
+         P_[i]->Multiply(false,*cvec,*fvec);
          cvec = fvec;
       }
       // Note that the GIDs in cvec do NOT match those of the fineinterface as
       // they match the P_[1]->RangeMap.
-      // The LIDs and the map match, so we have to copy cvec to xfine_fineinterface
+      // The LIDs match, so we have to copy cvec to xfine_fineinterface
       // using LIDs
-      const Epetra_CrsGraph* graph_fineinterface = fineinterface_.getGraph();
-      Epetra_Vector*   xfine_fineinterface = new Epetra_Vector(graph_fineinterface->RowMap(),false);
+      Epetra_Vector* xfine_fineinterface = new Epetra_Vector(fineinterface_.getGraph()->RowMap(),false);
       if (cvec->MyLength() != xfine_fineinterface->MyLength() ||
           cvec->GlobalLength() != xfine_fineinterface->GlobalLength())
       {
@@ -429,10 +349,9 @@ Epetra_Vector* ML_NOX::Nox_CoarseProblem_Interface::prolong_this_to_fine(
                << "**ERR**: mismatch in dimension of cvec and xfine_fineinterface\n"
                << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
       }
-      int mylength = cvec->MyLength();
+      const int mylength = cvec->MyLength();
       for (i=0; i<mylength; i++)
          (*xfine_fineinterface)[i] = (*cvec)[i];
-      delete cvec; cvec = 0;
       return xfine_fineinterface;
    }
    return NULL;
@@ -446,77 +365,34 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
                                                    const FillType fillFlag)
 {
   bool err;
-  int  ierr;
+  //int  ierr;
   ++nFcalls_;
-  // check sanity of P_ - hierarchy
-  if (P_==0)
-  {
-    cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::computeF:\n"
-         << "**ERR**: P-hierarchy is NULL on level " << level_ << "\n"
-         << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-  }
-  int i;
-  for (i=1; i<=level_; i++)
-  {
-     if (P_[i]==0)
-     {
-        cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::computeF:\n"
-             << "**ERR**: ptr to Prolongator level " << i << " is 0\n"
-             << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-     }
-  }
-
-  if (ml_printlevel_>9 && x.Comm().MyPID()==0)
-  {
-     cout << "ML (level " << level_ << "): Call no " << nFcalls_ << " to Nox_CoarseProblem_Interface::computeF\n";
-     fflush(stdout);
-  }     
-
 
   if (level_==0)
   {
-     // create Ffine and xfine matching the fine interface
-     const Epetra_CrsGraph* finegraph = fineinterface_.getGraph();
-     Epetra_Vector*         Ffine     = new Epetra_Vector(finegraph->RowMap(),false);
-     Epetra_Vector*         xfine     = new Epetra_Vector(finegraph->RowMap(),false);
-
-     xfine->Update(1.0,x,0.0);
-
      // call fine level interface
      // in case the fillFlag is residual, sierra will not enforce constraints on it
      // As we want (need) them enforced all the time in the preconditioner
      // we switch the type to Prec
      // We leave all other types unchanged as sierra does certain things on other types 
      // which we still want to happen
+     
      FillType type = fillFlag;
      //if (fillFlag == NOX::EpetraNew::Interface::Required::Residual)
        //type = NOX::EpetraNew::Interface::Required::Prec;
-         
-     err = fineinterface_.computeF(*xfine,*Ffine,type);
-     if (xfine) delete xfine; xfine = 0;
-  
-     // create importer from Ffine to F
-     Epetra_Import* importer  = new Epetra_Import(F.Map(),Ffine->Map()); 
-
-     // import FVecfine to FVec
-     ierr = F.Import(*Ffine,*importer,Insert);
-     if (ierr)
+     err = fineinterface_.computeF(x,F,type);
+     if (err==false)
      {
         cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::computeF:\n"
-             << "**ERR**: import from Ffine to F returned err=" << ierr << "\n"
+             << "**ERR**: call to fine-userinterface returned false on level " << level_ << "\n"
              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
      }
-
-     //tidy up
-     if (importer) delete importer; importer = 0;
-     if (Ffine)    delete Ffine;    Ffine    = 0;
   }
   else // level_ > 0
   {
      // create Ffine and xfine matching the fine interface
-     const Epetra_CrsGraph* finegraph = fineinterface_.getGraph();
-     Epetra_Vector*         Ffine     = new Epetra_Vector(finegraph->RowMap(),false);
-     Epetra_Vector*         xfine     = prolong_this_to_fine(x);
+     Epetra_Vector* Ffine = new Epetra_Vector(fineinterface_.getGraph()->RowMap(),false);
+     Epetra_Vector* xfine = prolong_this_to_fine(x);
      
      // call fine level interface
      // in case the fillFlag is residual, sierra will not enforce constraints on it
@@ -534,31 +410,48 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computeF(const Epetra_Vector& x,
              << "**ERR**: call to fine-userinterface returned false on level " << level_ << "\n"
              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
      }
-     if (xfine) delete xfine; xfine = 0;
+     delete xfine;
      
      // get the answer Ffine back to this coarse level
      Epetra_Vector* Fcoarse = restrict_fine_to_this(*Ffine);
-     if (Ffine) delete Ffine; Ffine = 0;
+     delete Ffine;
      
-     F.Update(1.0,*Fcoarse,0.0);
-
-     if (Fcoarse) delete Fcoarse; Fcoarse = 0;
+     F.Scale(1.0,*Fcoarse);
+     delete Fcoarse;
   } // level_ > 0
 
-  // check for FAS option
+  // check for FAS option 
+  // solving for modified system: F_c ( x_c ) - F_c ( R x_f ) + R F_f ( x_f ) -> 0 
   if (isFAS()==true)
-  {
-     if (fbar_==NULL || fxbar_==NULL)
-     {
-        cout << "**ERR**: ML_Epetra::Nox_CoarseProblem_Interface::computeF:\n"
-             << "**ERR**: isFAS is true and f-vector is NULL\n"
-             << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-     }
      F.Update(-1.0,*fxbar_,1.0,*fbar_,1.0);
-  }
+
   return err;
 }
 
+/*----------------------------------------------------------------------*
+ |  apply constraints                    (public)            m.gee 11/05|
+ *----------------------------------------------------------------------*/
+void ML_NOX::Nox_CoarseProblem_Interface::ApplyAllConstraints(Epetra_Vector& gradient)
+{
+  if (level_==0)
+  {
+    // cout << "Nox_CoarseProblem_Interface::ApplyAllConstraints: fine \n"; fflush(stdout);
+    fineinterface_.ApplyAllConstraints(gradient,0);
+    return;
+  }
+  else
+  {
+    // cout << "Nox_CoarseProblem_Interface::ApplyAllConstraints: coarse \n"; fflush(stdout);
+    Epetra_Vector* gradientfine = prolong_this_to_fine(gradient);
+    fineinterface_.ApplyAllConstraints(*gradientfine,Level());
+    Epetra_Vector* gradientcoarse = restrict_fine_to_this(*gradientfine);
+    delete gradientfine;
+    gradient.Scale(1.0,*gradientcoarse);
+    delete gradientcoarse;
+    return;
+  }
+  return;
+}
 /*----------------------------------------------------------------------*
  |  evaluate Jacobian           (public, derived)            m.gee 12/04|
  *----------------------------------------------------------------------*/
@@ -583,30 +476,6 @@ bool ML_NOX::Nox_CoarseProblem_Interface::computePreconditioner(
   return(true);
 }
 
-/*----------------------------------------------------------------------*
- |  apply constraints                    (public)            m.gee 11/05|
- *----------------------------------------------------------------------*/
-void ML_NOX::Nox_CoarseProblem_Interface::ApplyAllConstraints(Epetra_Vector& gradient)
-{
-  if (level_==0)
-  {
-    // cout << "Nox_CoarseProblem_Interface::ApplyAllConstraints: fine \n"; fflush(stdout);
-    fineinterface_.ApplyAllConstraints(gradient);
-    return;
-  }
-  else
-  {
-    // cout << "Nox_CoarseProblem_Interface::ApplyAllConstraints: coarse \n"; fflush(stdout);
-    Epetra_Vector* gradientfine = prolong_this_to_fine(gradient);
-    fineinterface_.ApplyAllConstraints(*gradientfine);
-    Epetra_Vector* gradientcoarse = restrict_fine_to_this(*gradientfine);
-    delete gradientfine;
-    gradient.Update(1.0,*gradientcoarse,0.0);
-    delete gradientcoarse;
-    return;
-  }
-  return;
-}
 //-----------------------------------------------------------------------------
 
 #endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA)

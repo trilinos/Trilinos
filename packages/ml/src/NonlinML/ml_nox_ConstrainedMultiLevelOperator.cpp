@@ -77,7 +77,6 @@ int ML_NOX::ML_Nox_ConstrainedMultiLevelOperator::ApplyInverse(
   int err = ml_operator_->ApplyInverse(X,Y);
   Epetra_Vector tmp(View,Y,0);
   coarseinterface_.ApplyAllConstraints(tmp);
-  return err;
 }
 
 

@@ -96,7 +96,6 @@ Epetra_CrsGraph* ML_NOX::deepcopy_graph(const Epetra_CrsGraph* oldgraph)
  |  - degrees of freedom (rows) on a node(block) a contigous            |
  *----------------------------------------------------------------------*/
 Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* cgraph,
-                                                     Epetra_CrsGraph* graph, 
                                                      const int bsize, 
                                                      bool diagonalonly,
 						     int printlevel)
@@ -273,6 +272,7 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* cgraph,
   }
   
   nodegraph.FillComplete();
+  nodegraph.OptimizeStorage();
 
   // tidy up
   if (new_gindices) delete [] new_gindices; new_gindices=NULL;
@@ -341,7 +341,7 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* cgraph,
   }
   
   
-  Epetra_MapColoring* colorMap = new Epetra_MapColoring(graph->ColMap(),col_colors);
+  Epetra_MapColoring* colorMap = new Epetra_MapColoring(cgraph->ColMap(),col_colors);
   
   if (node_MapColoring) delete node_MapColoring;
   if (col_colors) delete [] col_colors;
@@ -366,6 +366,56 @@ Epetra_MapColoring* ML_NOX::ML_Nox_standardcoloring(Epetra_CrsGraph* graph,
   delete MapColoring;
   
   return colorMap; 
+}
+
+/*----------------------------------------------------------------------*
+ |                                                           m.gee 11/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::Print_Epetra_CrsMatrix(Epetra_CrsMatrix& matrix)
+{
+  for (int i=0; i<matrix.NumMyRows(); ++i)
+  {
+    printf("Lrow %5d:  ",i); fflush(stdout);
+    int numentries;
+    int* indices;
+    double* values;
+    int err  = matrix.ExtractMyRowView(i,numentries,values,indices);
+    for (int j=0; j<numentries; ++j)
+    printf("%5d %10.3e   ",indices[j],values[j]); 
+    printf("\n"); fflush(stdout);
+  }
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |                                                           m.gee 11/05|
+ *----------------------------------------------------------------------*/
+Epetra_CrsMatrix* ML_NOX::StripZeros(Epetra_CrsMatrix& in, double eps)
+{
+  Epetra_CrsMatrix* out = new Epetra_CrsMatrix(Copy,in.RowMap(),200);
+  for (int lrow=0; lrow<in.NumMyRows(); ++lrow)
+  {
+    int grow = in.GRID(lrow); 
+    if (grow<0) { cout << "ERROR: grow<0 \n"; exit(0); }
+    int numentries;
+    int* lindices;
+    double* values;
+    int err  = in.ExtractMyRowView(lrow,numentries,values,lindices);
+    if (err) { cout << "ExtractMyRowView returned " << err << endl; exit(0);}
+    for (int j=0; j<numentries; ++j)
+    {
+      int lcol = lindices[j];  
+      int gcol = in.GCID(lcol); 
+      if (gcol<0) { cout << "ERROR: gcol<0 \n"; exit(0); }
+      if (abs(values[j])<eps && gcol != grow)
+        continue;
+      int err = out->InsertGlobalValues(grow,1,&values[j],&gcol);
+      if (err) { cout << "InsertGlobalValues returned " << err << endl; exit(0);}
+    }
+  }
+  out->FillComplete();
+  out->OptimizeStorage();
+  return out;
 }
 
 #endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) 

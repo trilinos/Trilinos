@@ -200,8 +200,8 @@ public:
   
   
   // Apply constraints
-  virtual void ApplyAllConstraints(Epetra_Vector& gradient) 
-  { std::cout << "virtual base dummy Ml_Nox_Fineinterface::ApplyAllConstraints called\n"; return;}
+  virtual void ApplyAllConstraints(Epetra_Vector& gradient, int level) 
+  { cout << "fineinterface::ApplyAllConstraints dummy called\n"; return;}
   
   // get block information
   //! Compute and return the block node information from the application.
@@ -238,6 +238,9 @@ public:
   /*! Reset the number of calls to the computeF method of this class. This is for performance analysis.
    */
   bool setnumcallscomputeF(int ncalls) { ncalls_computeF_=ncalls; return true; }
+  
+  // get the output level 
+  inline int OutLevel() { return printlevel_; }
 
   // output method to look at the iterate
 #if 0

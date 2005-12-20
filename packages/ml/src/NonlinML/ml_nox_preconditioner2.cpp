@@ -70,7 +70,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Nonlinearpreconditio
    int i;
 
    // extract the prolongators from the hierarchy 
-   Epetra_CrsMatrix** P  = new (Epetra_CrsMatrix*)[ml_nlevel_];   
+   Epetra_CrsMatrix** P  = new Epetra_CrsMatrix*[ml_nlevel_];   
    for (i=0; i<ml_nlevel_; i++)
       P[i] = 0;
    for (i=1; i<ml_nlevel_; i++) // there is no Pmat on level 0
@@ -89,7 +89,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Nonlinearpreconditio
    n_nlnlevel_ = ml_nlevel_;
    if (!nlnLevel_)
    {
-      nlnLevel_   = new (ML_NOX::ML_Nox_NonlinearLevel*)[n_nlnlevel_];
+      nlnLevel_   = new ML_NOX::ML_Nox_NonlinearLevel*[n_nlnlevel_];
       for (i=0; i<n_nlnlevel_; i++)
          nlnLevel_[i] = 0;
    }
@@ -189,7 +189,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
    int i;
    
    // extract the prolongators from the hierarchy 
-   Epetra_CrsMatrix** P  = new (Epetra_CrsMatrix*)[ml_nlevel_];   
+   Epetra_CrsMatrix** P  = new Epetra_CrsMatrix*[ml_nlevel_];   
    for (i=0; i<ml_nlevel_; i++)
       P[i] = 0;
    for (i=1; i<ml_nlevel_; i++) // there is no Pmat on level 0
@@ -215,7 +215,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
    else // create new vector of matfreelevels
    {
       nmatfreelevel_   = ml_nlevel_;
-      ml_matfreelevel_ = new (ML_NOX::ML_Nox_MatrixfreeLevel*)[nmatfreelevel_];
+      ml_matfreelevel_ = new ML_NOX::ML_Nox_MatrixfreeLevel*[nmatfreelevel_];
       for (i=0; i<nmatfreelevel_; i++)
          ml_matfreelevel_[i] = 0;
    }
@@ -224,7 +224,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
    n_nlnlevel_ = ml_nlevel_;
    if (!nlnLevel_)
    {
-      nlnLevel_   = new (ML_NOX::ML_Nox_NonlinearLevel*)[n_nlnlevel_];
+      nlnLevel_   = new ML_NOX::ML_Nox_NonlinearLevel*[n_nlnlevel_];
       for (i=0; i<n_nlnlevel_; i++)
          nlnLevel_[i] = 0;
    }
@@ -240,7 +240,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
          nlnLevel_[i] = 0;
       }
       delete [] nlnLevel_;
-      nlnLevel_   = new (ML_NOX::ML_Nox_NonlinearLevel*)[n_nlnlevel_];
+      nlnLevel_   = new ML_NOX::ML_Nox_NonlinearLevel*[n_nlnlevel_];
       for (i=0; i<n_nlnlevel_; i++)
          nlnLevel_[i] = 0;
    }
@@ -610,7 +610,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Ve
    
    //===== apply constraints (this may or may not be in here, it converges better without,
    // but is more stable with)
-   nlnLevel_[level]->ApplyAllConstraints(*xcorrect);
+   // nlnLevel_[level]->ApplyAllConstraints(*xcorrect);
 
    //======update this level's solution==================================
    x->Update(1.0,*xcorrect,1.0);
@@ -660,6 +660,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle1(Epetra_Vector* f, Epetra_V
       fbar  = new Epetra_Vector(Copy,*f,0);
       xbar  = new Epetra_Vector(Copy,*x,0);
       fxbar = new Epetra_Vector(xbar->Map(),false);
+      nlnLevel_[level]->setModifiedSystem(false,NULL,NULL);
       nlnLevel_[level]->computeF(*xbar,*fxbar,NOX::EpetraNew::Interface::Required::Residual);
       nlnLevel_[level]->setModifiedSystem(true,fbar,fxbar);
       // iterate on the FAS-problem
@@ -683,6 +684,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle1(Epetra_Vector* f, Epetra_V
       fbar  = new Epetra_Vector(Copy,*f,0);
       xbar  = new Epetra_Vector(Copy,*x,0);
       fxbar = new Epetra_Vector(xbar->Map(),false);
+      nlnLevel_[level]->setModifiedSystem(false,NULL,NULL);
       nlnLevel_[level]->computeF(*xbar,*fxbar,NOX::EpetraNew::Interface::Required::Residual);
       nlnLevel_[level]->setModifiedSystem(true,fbar,fxbar);
    }

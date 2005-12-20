@@ -102,6 +102,7 @@ comm_(comm)
   fineGraph_           = 0;
   ml_graphwrap_        = 0;
   ml_linPrec_          = 0;
+  ml_map_              = 0;
   nmatfreelevel_       = 0;
   ml_matfreelevel_     = 0;
   ncalls_NewPrec_      = 0;
@@ -451,6 +452,10 @@ ML_NOX::ML_Nox_Preconditioner::~ML_Nox_Preconditioner()
      delete ml_linPrec_;
   ml_linPrec_ = 0;
   
+  if (ml_map_)
+    delete ml_map_;
+  ml_map_ = 0;
+  
   if (ml_graphwrap_)
     delete ml_graphwrap_;
   ml_graphwrap_ = 0;
@@ -552,12 +557,12 @@ bool ML_NOX::ML_Nox_Preconditioner::computePreconditioner(
    bool flag = true;
    int offset = getoffset();
    if (offset)
-   if (ncalls_NewPrec_ % offset == 0) // recompute every offset
-      setinit(false);
-   if (recompute_newPrec_ != 0) // recompute initially after step recompute_newPrec_
-   if (ncalls_NewPrec_ == recompute_newPrec_)
-      setinit(false);
-   if (adaptive_NewPrec_ > 0.0 && ncalls_NewPrec_ != 0 && !islinearPrec_)
+     if (ncalls_NewPrec_ % offset == 0) // recompute every offset
+       setinit(false);
+   else if (recompute_newPrec_ != 0) // recompute initially after step recompute_newPrec_
+     if (ncalls_NewPrec_ == recompute_newPrec_)
+       setinit(false);
+   else if (adaptive_NewPrec_ > 0.0 && ncalls_NewPrec_ != 0 && !islinearPrec_)
    {
      if (!noxsolver_ && !islinearPrec_)
      {
@@ -640,11 +645,13 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
            << "**ERR**: interface_.getJacobian() returned NULL\n"
            << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
     }
-    fineJac_->OptimizeStorage();
-
     // check for zero rows and fix the main diagonal of them
     if (fixdiagonal_) 
       fix_MainDiagonal(&fineJac_,0);
+    
+    // if (fineJac_ && destroyfineJac_) delete fineJac_;
+    fineJac_ = ML_NOX::StripZeros(*fineJac_,1.0e-11);
+    destroyfineJac_ = true;
   }
 
   //---------------------------------------------------------------------
@@ -677,12 +684,20 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   //---------------------------------------------------------------------
   else if (ismatrixfree_ == true && matfreelev0_ == true)
   {
+    // if (fineJac_ && destroyfineJac_) delete fineJac_;
     fineJac_ = ML_Nox_computeFineLevelJacobian(x);
     
     // check for zero rows and fix the main diagonal of them
     if (fixdiagonal_)
        fix_MainDiagonal(&fineJac_,0);
        
+    //cout << "the Finite Difference Jacobian:\n";
+    //ML_NOX::Print_Epetra_CrsMatrix(*fineJac_);
+    //cout << "the adagio Jacobian:\n";
+    //Epetra_CrsMatrix* adagio = ML_NOX::StripZeros(*(interface_.getJacobian()),1.0e-11);
+    //ML_NOX::Print_Epetra_CrsMatrix(*adagio);
+    //exit(0);
+    
     // this class is in charge of destroying the operator fineJac_
     destroyfineJac_ = true;
     // turn to ismatrixfree_==false
@@ -692,21 +707,11 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   //---------------------------------------------------------------------
   // check whether ML and ML_Aggregate handles exist and (re)create them
   //---------------------------------------------------------------------
-  if (ag_ != NULL)
-  {
-    ML_Aggregate_Destroy(&ag_);
-    ML_Aggregate_Create(&ag_);
-  }
-  else
-     ML_Aggregate_Create(&ag_);
-     
-  if (ml_ != NULL)
-  {
-    ML_Destroy(&ml_);
-    ML_Create(&ml_,ml_N_levels_);
-  }
-  else
-    ML_Create(&ml_,ml_N_levels_);
+  if (ag_ != NULL) ML_Aggregate_Destroy(&ag_);
+  ML_Aggregate_Create(&ag_);
+
+  if (ml_ != NULL) ML_Destroy(&ml_);
+  ML_Create(&ml_,ml_N_levels_);
   
   //---------------------------------------------------------------------
   // set matrix for fine grid
@@ -791,26 +796,6 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   // get the nullspace
   ml_dim_nullsp_ = ml_dim_nullsp2_;
   double* nullsp = interface_.Get_Nullspace(i,ml_numPDE_,ml_dim_nullsp_);
-
-#if 0
-  // if there is a nullspace, scale it to length 1
-  if (nullsp)
-  {
-    int nrow = OperatorRangeMap().NumMyElements();
-    for (int v=0; v<ml_dim_nullsp_; ++v)
-    {
-      double length=0.0;
-      for (int i=0; i<nrow; ++i)
-      {
-        double val = nullsp[v*nrow + i];
-        length += val*val;
-       }
-       length = sqrt(length);
-      for (int i=0; i<nrow; ++i)
-        nullsp[v*nrow + i] /= length;
-    }
-  }
-#endif
 
   //---------------------------------------------------------------------
   // run adaptive setup phase
@@ -912,8 +897,11 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Linearpreconditioner
    Set_Smoothers();
 
    // build the ML_MultilevelOperator
-   const Epetra_Map& map = interface_.getMap();
-   ml_linPrec_ = new ML_Epetra::MultiLevelOperator(ml_,comm_,map,map);
+   //const Epetra_Map& map = interface_.getMap();
+   if (ml_map_) delete ml_map_;
+   ml_map_ = new Epetra_Map(interface_.getMap());
+   if (ml_linPrec_) delete ml_linPrec_;
+   ml_linPrec_ = new ML_Epetra::MultiLevelOperator(ml_,comm_,*ml_map_,*ml_map_);
 
 
 #if 0  // test the MultiLevelOperator and exit
@@ -970,7 +958,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
    // extract the Prolongators from the ml-hierarchy and create Epetra_CrsMatrices from them
    // NOTE: as we are doing the linear preconditioner here, we keep the P's in the hierarchy
    //       for further use in the MG-cycle
-   Epetra_CrsMatrix** P  = new (Epetra_CrsMatrix*)[ml_nlevel_];
+   Epetra_CrsMatrix** P  = new Epetra_CrsMatrix*[ml_nlevel_];
    for (i=0; i<ml_nlevel_; i++)
       P[i] = 0;
    for (i=1; i<ml_nlevel_; i++) // there is no Pmat on level 0
@@ -982,7 +970,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
       P[i]->OptimizeStorage();
       double t2 = GetClock() - t1;
       if (ml_printlevel_>0 && 0 == comm_.MyPID())
-            cout << "matrixfreeML (level " << i << "): extraction of P in " << t2 << " sec\n";
+            cout << "ML (level " << i << "): extraction of P in " << t2 << " sec\n";
    }
    
    // construct the vector of coarse level problems
@@ -996,7 +984,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
    else // create new vector of matfreelevels
    {
       nmatfreelevel_   = ml_nlevel_;
-      ml_matfreelevel_ = new (ML_NOX::ML_Nox_MatrixfreeLevel*)[nmatfreelevel_];
+      ml_matfreelevel_ = new ML_NOX::ML_Nox_MatrixfreeLevel*[nmatfreelevel_];
       for (i=0; i<nmatfreelevel_; i++)
          ml_matfreelevel_[i] = 0;
    }
@@ -1099,7 +1087,7 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
 
 #if 1  
   Epetra_MapColoring* colorMap 
-            = ML_NOX::ML_Nox_collapsedcoloring(cgraph,graph,bsize,false,ml_printlevel_);
+            = ML_NOX::ML_Nox_collapsedcoloring(cgraph,bsize,false,ml_printlevel_);
   if (!colorMap) 
     colorMap = ML_NOX::ML_Nox_standardcoloring(cgraph,false);
 #else
@@ -1167,9 +1155,10 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
   interface_.setnumcallscomputeF(ncalls);
 
   Epetra_CrsMatrix* B = dynamic_cast<Epetra_CrsMatrix*>(&(FD->getUnderlyingMatrix()));                       
-  Epetra_CrsMatrix* A = new Epetra_CrsMatrix(*B);
-  A->FillComplete();
-  A->OptimizeStorage();
+  Epetra_CrsMatrix* A = ML_NOX::StripZeros(*B,1.0e-11);
+  //Epetra_CrsMatrix* A = new Epetra_CrsMatrix(*B);
+  //A->FillComplete();
+  //A->OptimizeStorage();
 
   // tidy up
   delete FD;               FD = 0;
@@ -1207,9 +1196,6 @@ bool ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal(Epetra_CrsMatrix** A, int l
   for (int i=0; i<diag.MyLength(); i++) average += diag[i];
   average /= diag.MyLength();
   
-  vector<int> bcgid(diag.GlobalLength());
-  for (int i=0; i<diag.GlobalLength(); ++i) bcgid[i] = 0;
-  
   for (int i=0; i<diag.MyLength(); i++)
   {
      // fix zero entries to be real dirichlet boundary constraints because they come from mesh tying
@@ -1238,14 +1224,7 @@ bool ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal(Epetra_CrsMatrix** A, int l
           continue;
         }
         
-        // get global row id
-        int grid = (*A)->GRID(i);
-        if (grid<0) cout << "***ERR*** A->GRID(i) = " << grid << endl;
-        bcgid[grid] = 1;
-        
-//        if (ml_printlevel_>9)
-//          cout << "ML (level " << level << ") proc " << comm_.MyPID() << ":  fixing zero main diagonal in local row " << i << " to be : " << average << "\n";
-        
+        //double small = 10.0;
         err = (*A)->ReplaceMyValues(i,1,&average,&i);
         if (err)
         {
@@ -1262,156 +1241,28 @@ bool ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal(Epetra_CrsMatrix** A, int l
        if (ml_printlevel_>7)
          printf("found tiny diagonal value %20.12e in row %d, fixing to be %e\n",diag[i],i,small);
 
-       // get global row id
-       int grid = (*A)->GRID(i);
-       if (grid<0) cout << "***ERR*** A->GRID(i) = " << grid << endl;
-       bcgid[grid] = 1;
-
-        err = (*A)->ReplaceMyValues(i,1,&small,&i);
-        if (err)
-        {
-           cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal:\n"
-                << "**ERR**: A->ReplaceMyValues returned " << err << endl 
-                << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-        }
+       err = (*A)->ReplaceMyValues(i,1,&small,&i);
+       if (err)
+       {
+         cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal:\n"
+              << "**ERR**: A->ReplaceMyValues returned " << err << endl 
+              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+       }
+     }
+     if (diag[i]<0.0)
+     {
+       cout << "ML: ***WRN*** Found negative main diag entry! Fixing...\n"; fflush(stdout);
+       double small=10.0;
+       err = (*A)->ReplaceMyValues(i,1,&small,&i);
+       if (err)
+       {
+         cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal:\n"
+              << "**ERR**: A->ReplaceMyValues returned " << err << endl 
+              << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+       }
      }
   }
-
-#if 0  
-  // loop all gids and check for the appropriate columns to be zero
-  for (int i=0; i<bcgid.size(); ++i)
-  {
-    // check for fixed row
-    if (!bcgid[i]) 
-      continue;
-    // get global row id
-    int grid = i;
-    // check whether this grid is in my column map
-    if (!(*A)->MyGCID(grid))
-      continue; 
-    // get local column id
-    int lcid = (*A)->LCID(grid);
-    if (lcid<0) cout << "***ERR*** A->LCID(grid) = " << lcid << endl;
     
-    cout << "zero row fixed in grid " << grid << " / lcid " << lcid << endl;
-    
-    // loop all my rows and look for the column lcid
-    for (int k=0; k<(*A)->NumMyRows(); ++k)
-    {
-        // don't do the row we already fixed cause lrid==lcid there
-        if (k==(*A)->LRID(grid))
-          continue;
-          
-        // extract a view from this row
-        int numentries;
-        double* values;
-        int* indices;
-        err = (*A)->ExtractMyRowView(k,numentries,values,indices);
-        if (err)
-        {
-           cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal:\n"
-                << "**ERR**: A->ExtractMyRowView returned " << err << endl 
-                << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-        }
-        
-        // go through this row and find the appropriate column lcid
-        for (int l=0; l<numentries; ++l)
-          if (indices[l]==lcid)
-          {
-            // the value is zero and that's what it's supposed to be, do nothing
-            if (fabs(values[l])<1.0e-10)
-              break;
-            
-            cout << "proc " << comm_.MyPID() << ": lrid " << k << " lcid " << lcid << " val " << values[l] << endl;
-            
-            // the value in lcid is nonzero and has to be zeroed out
-            double zero=0.0;
-            err = (*A)->ReplaceMyValues(k,1,&zero,&lcid);
-            if (err)
-            {
-               cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::fix_MainDiagonal:\n"
-                    << "**ERR**: A->ReplaceMyValues returned " << err << endl 
-                    << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
-            }
-
-            break;
-          }
-    } // for (int k=0; k<A->NumMyRows(); ++k)
-  } // for (int i=0; i<bcgid.size(); ++i)
-#endif  
-  
-#if 0 // strip out all zero entries from the matrix
-  // create a new matrix
-  Epetra_CrsMatrix* newA = new Epetra_CrsMatrix(Copy,(*A)->RowMap(),(*A)->ColMap(),81);
-  for (int i=0; i<(*A)->NumMyRows(); ++i)
-  {
-    int grid = (*A)->GRID(i);
-    if (grid<0) cout << "***ERR*** in grid\n";
-    
-    int numentries;
-    double* values;
-    int* indices;
-    err = (*A)->ExtractMyRowView(i,numentries,values,indices);
-    if (err) cout << "***ERR*** in ExtractMyRowView\n";
-    
-    for (int j=0; j<numentries; ++j)
-    {
-      int gcid = (*A)->GCID(indices[j]);
-      if (fabs(values[j])>0.0)
-      {
-        if (gcid<0) cout << "***ERR*** in gcid\n";
-        err = newA->InsertGlobalValues(grid,1,&values[j],&gcid);
-        if (err) cout << "***ERR*** in InsertGlobalValues\n";
-      }
-      else
-        cout << "Deleteing 0.0 in row/col " << grid << "/" << gcid << endl;
-    } // for (int j=0; j<numentries; ++j)
-  } // for (int i=0; i<(*A)->NumMyRows(); ++i)
-  newA->FillComplete();
-  delete (*A);
-  *A = newA;  
-#endif  
-
-#if 0 // check the symmetry of A
-  Epetra_CrsMatrix* B = (*A);
-  //Epetra_CrsMatrix* B = newA;
-  for (int i=0; i<B->NumMyRows(); ++i)
-  {
-    int grid = B->GRID(i);
-    
-    int numentries;
-    double* values;
-    int* indices;
-    err = B->ExtractMyRowView(i,numentries,values,indices);
-    for (int j=0; j<numentries; ++j)
-    {
-      int gcid = B->GCID(indices[j]);
-      
-      int numentries2;
-      double* values2;
-      int* indices2;
-      int lrid = B->LRID(gcid); 
-      err = B->ExtractMyRowView(lrid,numentries2,values2,indices2);
-      bool foundit = false;
-      for (int k=0; k<numentries2; ++k)
-      {
-        int gcid2 = B->GRID(indices2[k]);
-        if (gcid2 == gcid)
-        {
-          foundit = true;
-          cout << "Comparing grid/gcid " << grid << "/" << gcid << " with " 
-               << B->GRID(lrid) << "/" << gcid2 << endl;
-          cout << "DELTA " << values[i]-values2[k] << "values[i] " << values[i] << " values2[k] " << values2[k] << endl; 
-        }
-      }
-      if (!foundit)
-        cout << "ERR Cannot find row/col entry\n";
-
-    } // for (int j=0; j<numentries; ++j)
-  } // for (int i=0; i<B->NumMyRows(); ++i)
-#endif
-
-  bcgid.clear();
   return true;
 }
 
@@ -1437,7 +1288,7 @@ bool ML_NOX::ML_Nox_Preconditioner::test_nullspace(int dimns, double* nullsp,
     double norm;
     out.Norm2(&norm);
     cout << "*******Nullspace Vector " << i << ": Norm2 " << norm << endl;
-    cout << out;
+    //cout << out;
   }
   
   exit(0);
@@ -1457,6 +1308,10 @@ int ML_NOX::ML_Nox_Preconditioner::ApplyInverse(
     cout << "**ERR**: tried to call ApplyInverse with isinit_ == false !\n";
     cout << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
   }
+  
+  double t0 = GetClock();
+  int ncalls0 = interface_.getnumcallscomputeF();
+    
   int err;
   if (islinearPrec_ == true)
      err = ML_Nox_ApplyInverse_Linear(X,Y);
@@ -1464,78 +1319,17 @@ int ML_NOX::ML_Nox_Preconditioner::ApplyInverse(
   else if (islinearPrec_ == false)
      err = ML_Nox_ApplyInverse_NonLinear(X,Y);
   
-#if 1
-  //cout << "Vector epetragradient before:\n";
-  //for (int i=0; i<epetragradient.Map().NumMyElements(); ++i) printf("%30.20f\n",epetragradient[i]);
-  
   // call the application to enforce constraints on the gradient
   Epetra_Vector epetragradient(View,Y,0);
-  interface_.ApplyAllConstraints(epetragradient);
-
-  //cout << "Vector epetragradient after:\n";
-  //for (int i=0; i<epetragradient.Map().NumMyElements(); ++i) printf("%30.20f\n",epetragradient[i]);
-#endif
-
-#if 0
-  // Y is the gradient direction, in case we are solving a constrained problem, 
-  // we want to make sure that this gradient satisfies constraints.
-  // we create an artifical NOX::Solver::Manager her and then run it through
-  // postiterate
+  interface_.ApplyAllConstraints(epetragradient,0);
+  int ncalls1 = interface_.getnumcallscomputeF();
   
-  // build a parameter list
-  NOX::Parameter::List nlParams;
-  NOX::Parameter::List& printParams = nlParams.sublist("Printing"); 
-  printParams.setParameter("Output Information",0);
-  NOX::Parameter::List& lsParams = nlParams.sublist("Linear Solver");
+  double t1 = GetClock();
   
-  // make an Epetra_Vector view
-  Epetra_Vector epetragradient(Copy,Y,0);
-  
-  // make a nox vector view
-  NOX::Epetra::Vector noxgradient(epetragradient,NOX::DeepCopy,false);
-
-  // build a linear system
-  NOX::EpetraNew::LinearSystemAztecOO azlinSys(printParams,lsParams,interface_,epetragradient);
-  
-  // build a group
-  NOX::EpetraNew::Group group(printParams,interface_,noxgradient,azlinSys);  
-
-  // build a pseudo convergence test
-  NOX::StatusTest::NormF normf(1.0,NOX::StatusTest::NormF::Unscaled);
-  
-  // build a manager
-  NOX::Solver::Manager solver(group,normf,nlParams);
-  
-  // get the solution group and set the vector to it
-  NOX::Abstract::Group & solgroup = 
-      const_cast<NOX::Abstract::Group &>(solver.getSolutionGroup());
-  
-  NOX::Epetra::Vector noxgradient2(noxgradient,NOX::DeepCopy);
-  solgroup.setX(noxgradient2);
-  
-  // call the interface postiterate method
-  interface_.runPostIterate(solver);
-  
-  // get the solution group again
-  solgroup = const_cast<NOX::Abstract::Group &>(solver.getSolutionGroup());
-  
-  // get the vector out of the solution group
-  const NOX::Epetra::Vector* noxoutgradient = 
-    dynamic_cast<const NOX::Epetra::Vector*>(&solgroup.getX());
-    
-  // get the underlying epetra vector
-  const Epetra_Vector& epetraoutgradient = noxoutgradient->getEpetraVector();
-  
-//  cout << "Vector Y before:\n";
-//  for (int i=0; i<Y.Map().NumMyElements(); ++i) printf("%30.20f\n",Y[0][i]);
-  
-  // update Y
-  Y.Scale(1.0,epetraoutgradient);
-
-//  cout << "Vector Y after:\n";
-//  for (int i=0; i<Y.Map().NumMyElements(); ++i) printf("%30.20f\n",Y[0][i]);
-#endif
-
+  if (comm_.MyPID()==0 && ml_printlevel_ > 7 )
+    cout << "ML (level 0): Preconditioner time " << (t1-t0) 
+         << " sec, # evaluateF total/this " 
+         << ncalls1 << "/" << (ncalls1-ncalls0) << endl;
 
   if (!err) return (0);
   else      return (-1);
@@ -1561,6 +1355,7 @@ int ML_NOX::ML_Nox_Preconditioner::ML_Nox_ApplyInverse_Linear(
      cout << "**ERR**: ptr to ML_Epetra::MultiLevelOperator is NULL\n";
      cout << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
    }
+   
    // apply ML
    err = ml_linPrec_->ApplyInverse(X,Y);   
    return(err);

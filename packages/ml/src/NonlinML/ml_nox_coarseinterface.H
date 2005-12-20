@@ -156,6 +156,12 @@ public:
   // apply constraints to the gradient
   void ApplyAllConstraints(Epetra_Vector& gradient);
   
+  // return the level of this interface
+  int Level() { return level_; }
+  
+  // return the rowmap of this level
+  const Epetra_BlockMap* BlockMap() { return this_RowMap_; }
+  
 private:  
   // don't want copy-ctor and = operator
   Nox_CoarseProblem_Interface(ML_NOX::Nox_CoarseProblem_Interface& old);
@@ -175,7 +181,10 @@ private:
   // NOTE: this class is NOT in charge of destroying P_!
   Epetra_CrsMatrix**               P_;             // ptr to prolongators extracted from the ml-hierarchy 
   const Epetra_BlockMap*           this_RowMap_;   // the RowMap of this levels operator
-  // NOTE: this class in not in charge of destroying f_init_ !
+#if 1
+  vector<Epetra_Vector*>           wvec_;          // working vectors for prolongation/restriction
+#endif
+  // NOTE: this class in not in charge of destroying fbar_, fxbar_ !
   bool                             isFASmodfied_;  // set the flag, that computeFshall return modfied answer 
   Epetra_Vector*                   fbar_;          // vector used to modify the answer when solving FAS-coarse grid
   Epetra_Vector*                   fxbar_;         // vector used to modify the answer when solving FAS-coarse grid

@@ -402,7 +402,8 @@ public:
   /*! 
    Set the init-flag of this instant.
    */
-  const bool setinit(bool flag) {isinit_=flag; return(true);}
+  const bool setinit(bool flag) 
+  {isinit_=flag; ncalls_NewPrec_ = 0; return(true);}
 
   //! Get the offset to recompute this preconditioner.
   /*! 
@@ -523,8 +524,6 @@ private:
   bool                                  fixdiagonal_;
   bool                                  islinearPrec_;     // do standard linear ML-SA-Preconditioner (not matrixfree!)) 
   ML_NOX::Ml_Nox_Fineinterface&         interface_;        // the user interface
-  //Epetra_Map                            DomainMap_;        // the operators domain map
-  //Epetra_Map                            RangeMap_;         // the operators range map
   const Epetra_Comm&                    comm_;             // the communicator;
   bool                                  destroyfineJac_;   // flag to indicate this class destroys the fineJac_
   Epetra_CrsMatrix*                     fineJac_;          // fine grid matrix (only used when ismatrixfree_=false)
@@ -560,6 +559,7 @@ private:
 
   // ---the linear preconditioner---
   ML_Epetra::MultiLevelOperator*        ml_linPrec_;       // the linear preconditioner class
+  Epetra_Map*                           ml_map_;           // the linear operators range and domain map map
 
   // ---matrix-free method--- 
   const Epetra_CrsGraph*                fineGraph_;        // the fine grid graph (only used when ismatrixfree_=true)

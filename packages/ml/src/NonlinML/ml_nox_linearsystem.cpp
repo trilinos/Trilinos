@@ -182,7 +182,7 @@ bool ML_NOX::Ml_Nox_LinearSystem::applyRightPreconditioning(
    }
    
    ML_NOX::ML_Nox_ConstrainedMultiLevelOperator* tmp3 = dynamic_cast<ML_NOX::ML_Nox_ConstrainedMultiLevelOperator*>(Precptr_);
-   if (tmp3 && printlevel_>9 && tmp2->Comm().MyPID()==0)
+   if (tmp3 && printlevel_>9 && tmp3->Comm().MyPID()==0)
       cout << "ML (level " << level_ << "): Preconditioner is a ML_Epetra::MultiLevelOperator\n";
 
    if (tmp3)
