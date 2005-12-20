@@ -6,24 +6,25 @@
 # code is compiled, packaged into libraries and linked
 # into executables.
 #
-# 
+#
 #
 # Note, this script must be maintained to be current for
 # the Teuchos makefile.
 #
 use strict;
+use Cwd;
 #
 # Pares the command-line
 #
 if( !defined(@ARGV) || scalar(@ARGV) < 3 ) {
   die
     "Usage: external-configure.pl TRILNOS_BUILD_DIR EXTERNAL_SRC_DIR PACKAGE1 PACAKGE2 ...\n".
-    "  TRILNOS_BUILD_DIR : The absolute path to the base Trilinos build directory\n".
-    "  EXTERNAL_SRC_DIR  : The absolute path to the base directory for PACKAGE1, PACAKGE2 ...\n"
+    "  TRILNOS_BUILD_DIR : The path to the base Trilinos build directory\n".
+    "  EXTERNAL_SRC_DIR  : The path to the base directory for PACKAGE1, PACAKGE2 ...\n"
     ;
 }
-my $trilinos_build_dir = shift;
-my $external_src_dir = shift;
+my $trilinos_build_dir = make_abs_path(shift);
+my $external_src_dir = make_abs_path(shift);
 my @external_packages = @ARGV;
 # ToDo: Validate that $trilinos_build_dir is an absolute path!
 print "  trilinos_build_dir = $trilinos_build_dir\n";
@@ -76,4 +77,10 @@ sub run_cmnd {
   my $stop_on_fail = shift;
   #print "$cmnd\n";
   if(system($cmnd) == 0 && $stop_on_fail) { die; }
+}
+
+sub make_abs_path {
+  my $path_in = shift;
+  return cwd() . "/$path_in" if( $path_in =~ /^\./ );
+  return $path_in;
 }
