@@ -15,7 +15,7 @@
 #include "Amesos_TestRowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
 #include <vector>
-using namespace Trilinos_Util;
+//  using namespace Trilinos_Util;   commented out to resolve bug #1886
 
 //=============================================================================
 bool CheckError(const Epetra_RowMatrix& A,

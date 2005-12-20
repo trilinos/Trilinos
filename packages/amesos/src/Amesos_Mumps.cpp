@@ -817,6 +817,10 @@ void Amesos_Mumps::PrintStatus() const
 #ifdef HAVE_AMESOS_SMUMPS
   cout << "Amesos_Mumps : Using single precision" << endl;
 #endif
+
+  //  The following lines are commented out to deal with bug #1887 - kss
+
+#ifndef IRIX64
   cout << "Amesos_Mumps : Matrix has " << Matrix().NumGlobalRows() << " rows"
        << " and " << Matrix().NumGlobalNonzeros() << " nonzeros" << endl;
   cout << "Amesos_Mumps : Nonzero elements per row = "
@@ -851,7 +855,7 @@ void Amesos_Mumps::PrintStatus() const
   cout << "Amesos_Mumps : Allocated during factorization = "
        << PrivateMumpsData_->MDS.INFOG(19) << " Mbytes" << endl;
   cout << "----------------------------------------------------------------------------" << endl;
- 
+ #endif
   return;
   
 }
