@@ -339,15 +339,15 @@ bool MOERTEL::Function_DualLinearTri::EvaluateFunction(
   
   if (val)
   {
-    val[0] = 3.0 - 2.0*xi[0] - 2.0*xi[1]; 
+    val[0] = 3.0 - 4.0*xi[0] - 4.0*xi[1]; 
     val[1] = 4.0*xi[0]-1.0;
     val[2] = 4.0*xi[1]-1.0;
   }
   
   if (deriv)
   {
-    deriv[0] = -2.0;
-    deriv[1] = -2.0;
+    deriv[0] = -4.0;
+    deriv[1] = -4.0;
     deriv[2] = 4.0;
     deriv[3] = 0.0;
     deriv[4] = 0.0;
