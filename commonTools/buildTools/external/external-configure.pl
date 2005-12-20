@@ -23,8 +23,8 @@ if( !defined(@ARGV) || scalar(@ARGV) < 3 ) {
     "  EXTERNAL_SRC_DIR  : The path to the base directory for PACKAGE1, PACAKGE2 ...\n"
     ;
 }
-my $trilinos_build_dir = make_abs_path(shift);
-my $external_src_dir = make_abs_path(shift);
+my $trilinos_build_dir = make_abs_path(cwd(),shift);
+my $external_src_dir = make_abs_path(cwd(),shift);
 my @external_packages = @ARGV;
 # ToDo: Validate that $trilinos_build_dir is an absolute path!
 print "  trilinos_build_dir = $trilinos_build_dir\n";
@@ -35,7 +35,7 @@ print "  external_packages = [", join(",",@external_packages), "]\n";
 #
 my $srcdir_line = `grep \'^srcdir.*=\' $trilinos_build_dir/Makefile`;
 #print "srcdir_line: $srcdir_line";
-my $trilinos_src_dir = (split(" = ",$srcdir_line))[1];
+my $trilinos_src_dir = make_abs_path($trilinos_build_dir,(split(" = ",$srcdir_line))[1]);
 chomp $trilinos_src_dir;
 # ToDo: If above is a relative path then we must append it to 
 print "  trilinos_src_dir = $trilinos_src_dir\n";
@@ -80,7 +80,8 @@ sub run_cmnd {
 }
 
 sub make_abs_path {
+  my $base_path = shift;
   my $path_in = shift;
-  return cwd() . "/$path_in" if( $path_in =~ /^\./ );
+  return "$base_path/$path_in" if( $path_in =~ /^\./ );
   return $path_in;
 }
