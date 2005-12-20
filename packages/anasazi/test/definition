@@ -26,20 +26,20 @@
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests) {
     TESTS = MVOPComplex/MVOPComplex_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename=MVOPComplex/mhd1280b.cua;
+    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPComplex/mhd1280b.cua;
     COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests) {
     TESTS = LOBPCGComplex/LOBPCGComplex_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename=LOBPCGComplex/mhd1280b.cua;
+    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/LOBPCGComplex/mhd1280b.cua;
     COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests) {
     TESTS = BlockDavidsonComplex/BlockDavidsonComplex_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename=BlockDavidsonComplex/mhd1280b.cua;
+    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/BlockDavidsonComplex/mhd1280b.cua;
     COMM = SERIAL, MPI;
 }
