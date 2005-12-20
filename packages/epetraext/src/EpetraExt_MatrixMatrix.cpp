@@ -371,9 +371,7 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
 	}
       }
 
-      if (remoterows) {
-        util.Sort(true, Bview.numEntriesPerRow[j], Bind, 1, &bvals, 0, NULL);
-      }
+      util.Sort(true, Bview.numEntriesPerRow[j], Bind, 1, &bvals, 0, NULL);
 
       double C_ij = sparsedot(avals, Aind, A_len_i,
 			      bvals, Bind,
