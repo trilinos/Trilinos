@@ -130,7 +130,7 @@ cleanUp();
             die "comm value required, see --help for more information\n";
         } else {
             if (!($comm eq "serial" || $comm eq "mpi")) {
-                die "comm valume must be \"serial\" or \"mpi\"\n";
+                die "comm value must be \"serial\" or \"mpi\"\n";
             }
         }
         
