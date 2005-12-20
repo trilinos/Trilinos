@@ -92,7 +92,7 @@ using namespace Teuchos;
 
 /******************************************************************************/
 /*! \class OPA< ScalarType >
-  \brief Implementation of Anasazi::MultiVector< ScalarType > for the identity
+  \brief Implementation of Anasazi::Operator< ScalarType > for the identity
   operator.
 */
 template <class ScalarType>
@@ -133,7 +133,7 @@ public:
 
 /******************************************************************************/
 /*! \class OPB< ScalarType >
-  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  \brief Implementation of Anasazi::Operator< ScalarType > for the
   application of the central difference discretization of a 
   convection-diffusion operator
         (Laplacian u) + rho*(du / dx)                     
@@ -256,7 +256,7 @@ public:
 
 /******************************************************************************/
 /*! \class OPC< ScalarType >
-  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  \brief Implementation of Anasazi::Operator< ScalarType > for the
   application of the central difference discretization of a 
   convection-diffusion operator
           (d^2u/dx^2) + rho*(du/dx)                          
@@ -319,7 +319,7 @@ public:
 
 /******************************************************************************/
 /*! \class OPD< ScalarType >
-  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  \brief Implementation of Anasazi::Operator< ScalarType > for the
   application of the central difference discretization of a 
   convection-diffusion operator
           (d^2u/dx^2) + rho*(du/dx)                          
@@ -434,7 +434,7 @@ public:
 
 /******************************************************************************/
 /*! \class OPM< ScalarType >
-  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  \brief Implementation of Anasazi::Operator< ScalarType > for the
   application of the central difference discretization of 2-D Laplacian.
 */
 template <class ScalarType>
@@ -543,7 +543,7 @@ public:
 
 /******************************************************************************/
 /*! \class OPN< ScalarType >
-  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  \brief Implementation of Anasazi::Operator< ScalarType > for the
   application of the central difference discretization of a 
   1-D discrete Laplacian on the interval [0,1] with zero Dirichlet b.c.
 */
@@ -604,7 +604,7 @@ public:
 
 /******************************************************************************/
 /*! \class OPO< ScalarType >
-  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  \brief Implementation of Anasazi::Operator< ScalarType > for the
   application of the central difference discretization of a 
   1-D Laplacian on the interval [0,1] with zero Dirichlet b.c.
   
@@ -708,7 +708,7 @@ public:
 
 /******************************************************************************/
 /*! \class OPP< ScalarType >
-  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  \brief Implementation of Anasazi::Operator< ScalarType > for the
   application of the finite element discretization of a 
   1-D discrete Laplacian on the interval [0,1] with zero Dirichlet b.c.
   This is the A (stiffness) matrix.
@@ -770,7 +770,7 @@ public:
 
 /******************************************************************************/
 /*! \class OPQ< ScalarType >
-  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  \brief Implementation of Anasazi::Operator< ScalarType > for the
   application of the finite element discretization of a 
   1-D discrete Laplacian on the interval [0,1] with zero Dirichlet b.c.
   This is the M (mass) matrix.
@@ -833,7 +833,7 @@ public:
 
 /******************************************************************************/
 /*! \class OPR< ScalarType >
-  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  \brief Implementation of Anasazi::Operator< ScalarType > for the
   application of the finite element discretization of a 
   1-D Laplacian on the interval [0,1] with zero Dirichlet b.c.
   
@@ -944,7 +944,7 @@ public:
 
 /******************************************************************************/
 /*! \class OPS< ScalarType >
-  \brief Implementation of Anasazi::MultiVector< ScalarType > for the
+  \brief Implementation of Anasazi::Operator< ScalarType > for the
   application of the finite element discretization of a 1-D Laplacian
   on the interval [0,1] with zero Dirichlet b.c.
   
@@ -973,7 +973,7 @@ public:
     const ScalarType FOUR = (ScalarType)(4.0)*ONE;
     const ScalarType SIX = (ScalarType)(6.0)*ONE;
     LAPACK<int,ScalarType> lapack;
-
+    
     _Mop = rcp( new OPQ<ScalarType>() );
     
     _nx = ScalarTraits<int>::squareroot(n);
@@ -985,7 +985,7 @@ public:
     }
     
     /*----------------------------------------------------*
-    | Construct C = A - SIGMA*I and factor C using LAPACK |
+    | Construct C = A - SIGMA*M and factor C using LAPACK |
     | subroutine gttrf.                                   |
     \----------------------------------------------------*/
     ScalarType h,r1,r2;
@@ -1050,7 +1050,7 @@ public:
     
     int nvecs = X.GetNumberVecs();
     
-    // Perform  Y <--- OP*X = inv[A-SIGMA*I]*X using GTTRS
+    // Perform  Y <--- OP*X = inv[A-SIGMA*M]*X using GTTRS
     int p;
     // set Y = M*X, as GTTRS operates in situ
     _Mop->Apply( *MyX, *MyY );
@@ -1068,6 +1068,159 @@ public:
 };
 
 
+
+/******************************************************************************/
+/*! \class OPT< ScalarType >
+  \brief Implementation of Anasazi::Operator< ScalarType > for the
+  application of the finite element discretization of a 1-D Laplacian
+  on the interval [0,1] with zero Dirichlet b.c. in Buckling mode.
+  
+  The operator applied is:
+    OPT = inv[A-sigma*M]*A
+  where A is as in OPP and M is as in OPQ
+*/
+template <class ScalarType>
+class OPT : public Anasazi::Operator<ScalarType>
+{
+private:
+  int _n,_nx;
+  ScalarType _sigma;
+  std::vector<ScalarType> _dl, _dd, _du, _du2;
+  std::vector<int> _ipiv;
+  int _ferror;
+  RefCountPtr< Anasazi::Operator<ScalarType> > _Aop;
+  
+public:
+  
+  OPT( const int n, const ScalarType sigma) : _n(n), _sigma(sigma) {
+    
+    typedef ScalarTraits<ScalarType> SCT;
+    const ScalarType ONE = SCT::one();
+    const ScalarType TWO = (ScalarType)(2.0)*ONE;
+    const ScalarType FOUR = (ScalarType)(4.0)*ONE;
+    const ScalarType SIX = (ScalarType)(6.0)*ONE;
+    LAPACK<int,ScalarType> lapack;
+    
+    _Aop = rcp( new OPP<ScalarType>() );
+    
+    _nx = ScalarTraits<int>::squareroot(n);
+    // return an error if the vector length isn't a square number
+    if (_nx*_nx != n) {
+      cout << "Argument 1 to OPT() was not a square number." << endl;
+      _n = 100;
+      _nx = 10;
+    }
+    
+    /*----------------------------------------------------*
+    | Construct C = A - SIGMA*M and factor C using LAPACK |
+    | subroutine gttrf.                                   |
+    \----------------------------------------------------*/
+    ScalarType h,r1,r2;
+    h = ONE / (ScalarType)(_n+1);
+    r1 = (FOUR / SIX) * h;
+    r2 = (ONE / SIX) * h;
+    
+    _dl.resize(_n-1, -ONE/h - sigma*r2 );
+    _dd.resize(_n  ,  TWO/h - sigma*r1 );
+    _du.resize(_n-1, -ONE/h - sigma*r2 );
+    _du2.resize(_n-2);
+    _ipiv.resize(_n);
+  
+    int _ferror;
+    lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
+    if (_ferror != 0) {
+      cout << "Error in GTTRF in OPT()" << endl;
+    }
+    
+    /*
+    typename std::vector<ScalarType>::iterator it;
+    typename std::vector<int>::iterator it2;
+    cout << "_dl" << endl;
+    for (it=_dl.begin(); it != _dl.end(); it++) cout << *it << endl;
+    cout << "_dd" << endl;
+    for (it=_dd.begin(); it != _dd.end(); it++) cout << *it << endl;
+    cout << "_du" << endl;
+    for (it=_du.begin(); it != _du.end(); it++) cout << *it << endl;
+    cout << "_du2" << endl;
+    for (it=_du2.begin(); it != _du2.end(); it++) cout << *it << endl;
+    cout << "ipiv" << endl;
+    for (it2=_ipiv.begin(); it2 != _ipiv.end(); it2++) cout << *it2 << endl;
+    */
+    
+  }
+  ~OPT() {}
+  
+  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
+                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  {
+    const ScalarType ONE = ScalarTraits<ScalarType>::one();
+    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
+    BLAS<int,ScalarType> blas;
+    LAPACK<int,ScalarType> lapack;
+    
+    // if there were problems with the factorization, quit now
+    if (_ferror) {
+      return Anasazi::Failed;
+    }
+    
+    const MyMultiVec<ScalarType>* MyX;
+    MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
+    if (MyX == 0) return Anasazi::Failed;
+      
+    MyMultiVec<ScalarType>* MyY;
+    MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
+    if (MyY == 0) return Anasazi::Failed;
+      
+    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
+    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    if (X.GetVecLength() != _n) return Anasazi::Failed;
+    
+    int nvecs = X.GetNumberVecs();
+    
+    // Perform  Y <--- OP*X = inv[A-SIGMA*M]*A*X using GTTRS
+    int p;
+    // set Y = A*X, as GTTRS operates in situ
+    _Aop->Apply( *MyX, *MyY );
+    // set Y = inv[A-sigma*M]*Y = inv[A-sigma*M]*A*X
+    // call GTTRS multiple times (it takes multiple RHS, but MyMultiVec doesn't
+    // use block storage)
+    int ierr;
+    for (p=0; p<nvecs; p++) {
+      lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
+      if (ierr != 0) return Anasazi::Failed;
+    }
+    
+    return(Anasazi::Ok);
+  }
+};
+
+
+
+/******************************************************************************/
+/*! \class GenOp< ScalarType >
+  \brief Implementation of Anasazi::Operator< ScalarType > for the
+  concatenation of two such operators:
+    GenOp*X = Op1*Op2*X
+*/
+template <class ScalarType>
+class GenOp : public Anasazi::Operator<ScalarType> {
+private:
+  Anasazi::Operator<ScalarType> _op1, _op2;
+public:
+  GenOp(RefCountPtr< Anasazi::Operator<ScalarType> > op1, 
+        RefCountPtr< Anasazi::Operator<ScalarType> > op2) : _op1(op1), _op2(op2) {}
+  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
+                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  {
+    typedef Anasazi::MultiVec<ScalarType> MV;
+    typedef Anasazi::MultiVecTraits<ScalarType,MV> MVT;
+    RefCountPtr<MV> W = MVT::Clone(X,MVT::GetNumberVecs(X));
+    if ( _op1->Apply(X,*W) != Anasazi::Ok ) return Anasazi::Failed;
+    return _op2->Apply(*W,Y);
+  }
+};
+
+
 template <class ScalarType>
 class ARPACK_Example {
   public:
@@ -1078,7 +1231,6 @@ class ARPACK_Example {
     virtual bool        isHerm() const = 0;
     virtual std::string getSort() const = 0;
 };
-
 
 template <class ScalarType>
 class ARPACK_NDRV1 : public ARPACK_Example<ScalarType> {
@@ -1221,10 +1373,25 @@ class ARPACK_SDRV4 : public ARPACK_Example<ScalarType> {
     std::string getSort() const {return string("LM");}
 };
 
+/* not correct yet. fix me. */
 template <class ScalarType>
 class ARPACK_SDRV5 : public ARPACK_Example<ScalarType> {
   private:
+    int _n;
+    ScalarType _sigma;
   public:
+    ARPACK_SDRV5(int n, ScalarType sigma = ScalarTraits<ScalarType>::zero()) 
+        : _n(n), _sigma(sigma) {}
+    void xformeval(std::vector<ScalarType> &vals) const {
+      typename std::vector<ScalarType>::iterator i;
+      const ScalarType ONE = ScalarTraits<ScalarType>::one();
+      for (i=vals.begin(); i!=vals.end(); i++) {
+        *i = ONE / *i + _sigma;
+      }
+    }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPT<ScalarType>(_n,_sigma)); }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPP<ScalarType>()); }
+    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPP<ScalarType>()); }
     bool isHerm() const {return true;}
     std::string getSort() const {return string("LM");}
 };
@@ -1313,6 +1480,9 @@ RefCountPtr< ARPACK_Example<ScalarType> > GetARPACKExample(const std::string &dr
   }
   else if (dncopy == "sdrv4" || dncopy == "SDRV4") {
     return rcp( new ARPACK_SDRV4<ScalarType>(dim) );
+  }
+  else if (dncopy == "sdrv5" || dncopy == "SDRV5") {
+    return rcp( new ARPACK_SDRV5<ScalarType>(dim) );
   }
   return nullptr;
 }

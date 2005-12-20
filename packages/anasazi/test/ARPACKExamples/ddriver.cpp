@@ -152,8 +152,25 @@ int main(int argc, char *argv[])
   M = prob->getM();
   Op = prob->getOp();
   isherm = prob->isHerm();
+
+  // determine solver
+  if (solver == "auto") {
+    if (isherm) {
+      solver = "LOBPCG";
+    }
+    else {
+      solver = "BKS";
+    }
+  }
+
+  // determine sort
   if (which == "auto") {
-    which = prob->getSort();
+    if (solver == "LOBPCG" || solver == "BD") {
+      which = "SM";
+    }
+    else {
+      which = prob->getSort();
+    }
   }
 
   // test multivector and operators
@@ -179,9 +196,13 @@ int main(int argc, char *argv[])
      rcp( new Anasazi::BasicSort<ST,MV,OP>(which) );
 
   // Create eigenproblem
-  RefCountPtr<Anasazi::BasicEigenproblem<ST,MV,OP> > MyProblem =
-    rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(Op, M, ivec) );
-
+  RefCountPtr<Anasazi::BasicEigenproblem<ST,MV,OP> > MyProblem;
+  if (solver == "LOBPCG" || solver == "BD") {
+    MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(A, M, ivec) );
+  }
+  else {
+    MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(Op, M, ivec) );
+  }
   // Inform the eigenproblem that the operator A is symmetric
   MyProblem->SetSymmetric(isherm);
 
@@ -203,14 +224,6 @@ int main(int argc, char *argv[])
 
   // Create the eigensolver 
   RefCountPtr< Anasazi::Eigensolver<ST,MV,OP> > MySolver;
-  if (solver == "auto") {
-    if (isherm) {
-      solver = "LOBPCG";
-    }
-    else {
-      solver = "BKS";
-    }
-  }
   if (solver == "LOBPCG") {
     MySolver = rcp( new Anasazi::LOBPCG<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
   }
@@ -248,8 +261,11 @@ int main(int argc, char *argv[])
   RefCountPtr<MV > evecs = MyProblem->GetEvecs();
   int nevecs = MVT::GetNumberVecs(*evecs);
 
-  // Perform spectral transform on eigenvalues, according to the problem
-  prob->xformeval(*evals);
+  // Perform spectral transform on eigenvalues, if we used the 
+  // spectral xformed operator (Op)
+  if (solver == "BKS") {
+    prob->xformeval(*evals);
+  }
 
   // Compute the direct residual
   std::vector<MT> normV( nevecs );

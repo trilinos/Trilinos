@@ -2,16 +2,16 @@ Anasazi      | OP ID  OP formula                         A ID     Bop   ID     D
 ------------------------------------------------------------------------------------------------------------------------------------------
 ARPACK_NDRV1 |  OPB   OP = A                              OPB    B = I  OPA    cntrl diff disc of conv-diff #1 (Laplacian u) + rho*(du / dx)
 ARPACK_NDRV2 |  OPD   OP = inv[A-sigma*I]                 OPC    B = I  OPA    cntrl diff disc of conv-diff #2 (d^2u / dx^2) + rho*(du / dx)
-ARPACK_NDRV3 |  OPG   OP = inv[M]*A                       OPE    B = M  OPF    finit elem disc of conv-diff #2 (d^2u / dx^2) + rho*(du / dx)
-ARPACK_NDRV4 |  OPH   OP = inv[A-sigma*M]*M               OPE    B = M  OPF    finit elem disc of conv-diff #2 (d^2u / dx^2) + rho*(du / dx)
+ARPACK_NDRV3 |  OPG   OP = inv[M]*A                       OPE    B = M  OPF    finite elem disc of conv-diff #2 (d^2u / dx^2) + rho*(du / dx)
+ARPACK_NDRV4 |  OPH   OP = inv[A-sigma*M]*M               OPE    B = M  OPF    finite elem disc of conv-diff #2 (d^2u / dx^2) + rho*(du / dx)
 ARPACK_NDRV5 |  OPK   OP = R(inv[A-sigma*M]*M)            OPI    B = M  OPJ    real part of trid with comp shift
 ARPACK_NDRV6 |  OPL   OP = I(inv[A-sigma*M]*M)            OPI    B = M  OPJ    imag part of trid with comp shift
 ARPACK_SDRV1 |  OPM   OP = A                              OPM    B = I  OPA    cntrl diff disc of 2d lap
 ARPACK_SDRV2 |  OPO   OP = inv[A-sigma*I]                 OPN    B = I  OPA    cntrl diff disc of 1d lap 
-ARPACK_SDRV3 |  OPR   OP = inv[M]*A                       OPP    B = M  OPQ    finit elem disc of 1d lap 
-ARPACK_SDRV4 |  OPS   OP = inv[A-sigma*M]*M               OPP    B = M  OPQ    finit elem disc of 1d lap 
-ARPACK_SDRV5 |  OPT   OP = (inv[A-sigma*M])*A             OPP    B = A  OPP    finit elem disc of 1d lap in buckling mode 
-ARPACK_SDRV6 |  OPU   OP = (inv[A-sigma*M])*(A+sigma*M)   OPP    B = M  OPQ    finit elem disc of 1d lap in inverse mode  
+ARPACK_SDRV3 |  OPR   OP = inv[M]*A                       OPP    B = M  OPQ    finite elem disc of 1d lap 
+ARPACK_SDRV4 |  OPS   OP = inv[A-sigma*M]*M               OPP    B = M  OPQ    finite elem disc of 1d lap 
+ARPACK_SDRV5 |  OPT   OP = inv[A-sigma*M]*A               OPP    B = A  OPP    finite elem disc of 1d lap in buckling mode 
+ARPACK_SDRV6 |  OPU   OP = inv[A-sigma*M]*(A+sigma*M)     OPP    B = M  OPQ    finite elem disc of 1d lap in inverse mode  
 
 
 Operators implemented:
