@@ -200,7 +200,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     //-----------------------------------------------------------------
     // manually choose mortar (master side)
     // mortar side is either 0 or 1 or -2 for automatic
-    interface->SetMortarSide(1);
+    interface->SetMortarSide(-2);
 
     //-----------------------------------------------------------------
     // set linear shape functions on both sides, 
@@ -219,8 +219,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     else
     {
       interface->SetFunctionTypes(MOERTEL::Function::func_Linear1D,      // the isoparametric function
-                                  //MOERTEL::Function::func_DualLinear1D); // the LM space
-                                  MOERTEL::Function::func_Linear1D); // the LM space
+                                  MOERTEL::Function::func_DualLinear1D); // the LM space
+                                  //MOERTEL::Function::func_Linear1D); // the LM space
     }
 
     //-----------------------------------------------------------------
@@ -687,6 +687,9 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   // create a Teuchos Parameter List holding solver arguments
   Teuchos::ParameterList params;
   params.set("System","SaddleSystem");
+  //params.set("System","SPDSystem");
+
+  // choose solver package
   params.set("Solver","Amesos");
 
   // argument sublist for amesos

@@ -148,15 +148,11 @@ public:
              RefCountPtr<Epetra_Vector> x,
              RefCountPtr<Epetra_Vector> b);
   
-  /*!
-  \brief Solve system
-  */
-  bool Solve();
-  
   //@}
 
 private:  
 
+  bool Solve();
   bool Solve_Amesos(ParameterList& amesosparams);
 
   // don't want = operator and copy-ctor

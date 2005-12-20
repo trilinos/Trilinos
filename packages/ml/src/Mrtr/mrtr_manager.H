@@ -325,21 +325,52 @@ public:
   This class holds ownership of the saddle point system so the
   user must not destroy it.
   
-  \return true if succesfull, false otherwise
-  
   */
   Epetra_CrsMatrix* MakeSaddleProblem();
 
   /*!
+  \brief Construct a spd system of equations if possible
+  
+  
+  */
+  Epetra_CrsMatrix* MakeSPDProblem();
+
+  /*!
   \brief Set a parameter list holding solver parameters
   
+  Set a ParameterList containing solver options. This class does not take
+  ownership over params but instead stores a deep copy of it.<br>
+  Options are:<br>
+  \code
+  Teuchos::ParameterList params;
+  params.set("System","SaddleSystem"); // use a saddle point system of equations in solve
+  // or
+  params.set("System","SPDSystem");    // use a spd system with condensed Lagrange multipliers in solve
+
+  // choose solver package
+  params.set("Solver","Amesos");       // use solver package Amesos
+  
+  // argument sublist passed to and used for Amesos
+  // see Amesos documentation, all configured Amesos solvers can be used
+  Teuchos::ParameterList& amesosparams = params.sublist("Amesos");
+  amesosparams.set("Solver","Amesos_Klu"); // name of Amesos solver to use
+  amesosparams.set("PrintTiming",false);
+  amesosparams.set("PrintStatus",false);
+  amesosparams.set("UseTranspose",true);
+  \endcode
+  
+  \param params : Parameter list containing solver options
   */
   void SetSolverParameters(ParameterList& params);
 
   /*!
   \brief Solve the problem
   
-  Solve the coupled problem using the solver options supplied in params
+  Solve the coupled problem using the solver options supplied in params.
+  Succesive calls to this method will resue the system matrix together with
+  the supplied solution and rhs vectors until
+  \ref ResetSolver() is called. Then, the linear problem is recreated from
+  scratch.
   
   \param params (in) : Solution parameters
   \param sol (out) : The solution
@@ -352,6 +383,10 @@ public:
   
   Solve the coupled problem using the solver options previously 
   supplied in using \ref SetSolverParameters
+  Succesive calls to this method will resue the system matrix together with
+  the supplied solution and rhs vectors until
+  \ref ResetSolver() is called. Then, the linear problem is recreated from
+  scratch.
   
   \param sol (out) : The solution
   \param rhs (in) : The right hand side vector
@@ -363,7 +398,8 @@ public:
   
   The internal solver (no matter which one) will go on using the
   once constructed (and maybe factored) matrix until this method is
-  called. Then, the linear problem is build from scratch
+  called. After a call to this method, the linear problem as well as
+  the solver are build from scratch.
   
   */
   void ResetSolver();
@@ -411,6 +447,7 @@ private:
   RefCountPtr<Epetra_CrsMatrix> M_;                   // the coupling matrix M
   RefCountPtr<Epetra_Map>       saddlemap_;           // the rowmap of the saddlepointproblem
   RefCountPtr<Epetra_CrsMatrix> saddlematrix_;        // the matrix of the saddle problem;
+  RefCountPtr<Epetra_CrsMatrix> spdmatrix_;           // the spd matrix of the problem;
 
   RefCountPtr<Teuchos::ParameterList> solverparams_;  // solution parameters passed from the user    
   RefCountPtr<MOERTEL::Solver>        solver_;        // the mortar solver

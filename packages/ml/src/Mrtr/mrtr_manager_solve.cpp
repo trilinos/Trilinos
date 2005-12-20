@@ -156,13 +156,6 @@ bool MOERTEL::Manager::BuildSaddleMap()
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
-    if (curr->second->IsIntegrated() == false)
-    {
-      cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
-           << "***ERR*** interface " << curr->second->Id() << " is not integrated yet\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      return false;
-    }
   }
   
   // check whether we have a problemmap_
@@ -302,6 +295,85 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSaddleProblem()
 }
 
 /*----------------------------------------------------------------------*
+ | Create the spd system (public)                            mwgee 12/05|
+ | Note that this is collective for ALL procs                           |
+ *----------------------------------------------------------------------*/
+Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
+{
+  // check whether all interfaces are complete and integrated
+  map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
+  for (curr=interface_.begin(); curr != interface_.end(); ++curr)
+  {
+    if (curr->second->IsComplete() == false)
+    {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** interface " << curr->second->Id() << " is not Complete()\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+    }
+    if (curr->second->IsIntegrated() == false)
+    {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** interface " << curr->second->Id() << " is not integrated yet\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+    }
+  }
+  
+  // check whether we have a problemmap_
+  if (problemmap_==null)
+  {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** No problemmap_ set\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+  }
+  
+  // check whether we have a constraintsmap_
+  if (constraintsmap_==null)
+  {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** onstraintsmap is NULL\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+  }
+  
+  // check for saddlemap_
+  if (saddlemap_==null)
+  {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** saddlemap_==NULL\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+  }
+
+  // check for inputmatrix
+  if (inputmatrix_==null)
+  {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** No inputmatrix set\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+  }
+
+  // check whether we have M and D matrices
+  if (D_==null || M_==null)
+  {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** Matrix M or D is NULL\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+  }
+  
+  
+  
+
+
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------*
  | Reset the internal solver (public)                        mwgee 12/05|
  *----------------------------------------------------------------------*/
 void MOERTEL::Manager::ResetSolver()
@@ -309,6 +381,7 @@ void MOERTEL::Manager::ResetSolver()
   solverparams_ = null;
   solver_ = null;
   saddlematrix_ = null;
+  spdmatrix_ = null;
   return;
 }
 
@@ -437,8 +510,16 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
       system=="Saddle_System" || system=="saddle_system" || system=="SADDLE_SYSTEM")
   {
     if (saddlematrix_==null)
-      MakeSaddleProblem();
-
+    {
+      Epetra_CrsMatrix* tmp = MakeSaddleProblem();
+      if (!tmp)
+      {
+        cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+             << "***ERR*** MakeSaddleProblem() returned NULL\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        return false;
+      }
+    }
     matrix = saddlematrix_;
     b = rcp(new Epetra_Vector(*saddlemap_,true)); 
     b.set_has_ownership();
@@ -449,6 +530,25 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
       (*b)[i] = rhs[i];
       (*x)[i] = sol[i];
     }
+  }
+
+  //---------------------------------------------------------------------------
+  // build a saddle point system
+  else if (system=="SPDSystem" || system=="spdsystem" || system=="spd_system" || 
+           system=="SPD_System" || system=="SPDSYSTEM" || system=="SPD_SYSTEM")
+  {
+    if (spdmatrix_==null)
+    {
+      Epetra_CrsMatrix* tmp = MakeSPDProblem();
+      if (!tmp)
+      {
+        cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+             << "***ERR*** MakeSPDProblem() returned NULL\n"
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        return false;
+      }
+    }
+    matrix = spdmatrix_;
   }
 
   //---------------------------------------------------------------------------

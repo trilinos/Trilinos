@@ -50,6 +50,7 @@ D_(null),
 M_(null),
 saddlemap_(null),
 saddlematrix_(null),
+spdmatrix_(null),
 solverparams_(null)
 {
 }
