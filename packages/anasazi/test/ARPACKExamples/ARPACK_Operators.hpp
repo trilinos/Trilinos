@@ -1250,8 +1250,8 @@ class ARPACK_NDRV1 : public ARPACK_Example<ScalarType> {
 template <class ScalarType>
 class ARPACK_NDRV2 : public ARPACK_Example<ScalarType> {
   private:
-    ScalarType _rho, _sigma;
     int _n;
+    ScalarType _rho, _sigma;
   public:
     ARPACK_NDRV2(int n,
                  ScalarType rho = (ScalarType)(1.0e+1),
@@ -1318,8 +1318,8 @@ class ARPACK_SDRV1 : public ARPACK_Example<ScalarType> {
 template <class ScalarType>
 class ARPACK_SDRV2 : public ARPACK_Example<ScalarType> {
   private:
-    ScalarType _sigma;
     int _n;
+    ScalarType _sigma;
   public:
     ARPACK_SDRV2(int n, ScalarType sigma = ScalarTraits<ScalarType>::zero()) 
         : _n(n), _sigma(sigma) {}
