@@ -111,6 +111,8 @@ TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos], TEUCHOS, no)
 
 TAC_ARG_ENABLE_FEATURE(thyra, [Build thyra], THYRA, no)
 
+TAC_ARG_ENABLE_FEATURE(moocho, [Build moocho], MOOCHO, no)
+
 TAC_ARG_ENABLE_FEATURE(tpetra, [Build tpetra], TPETRA, no)
 
 TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, no)
@@ -488,6 +490,17 @@ else
   BUILD_EXTERNAL=no
 fi
 AM_CONDITIONAL(BUILD_EXTERNAL, test "X$BUILD_EXTERNAL" != "Xno")
+
+if test "X$ac_cv_use_moocho" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/moocho])
+  BUILD_MOOCHO=yes
+  if test "X$ac_cv_use_moocho_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-moocho"
+  fi
+else
+  BUILD_MOOCHO=no
+fi
+AM_CONDITIONAL(BUILD_MOOCHO, test "X$BUILD_MOOCHO" != "Xno")
 
 AC_ARG_ENABLE(,[
 

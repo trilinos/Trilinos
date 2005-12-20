@@ -92,7 +92,7 @@ CTAGS = ctags
 DIST_SUBDIRS = teuchos PyTrilinos thyra kokkos epetra triutils tpetra \
 	epetraext aztecoo galeri amesos ifpack komplex claps \
 	TSFCoreUtils TSFCore belos anasazi pliris ml TSF meros nox \
-	capo rythmos new_package TSFExtended didasko external
+	capo rythmos new_package moocho TSFExtended didasko external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = aclocal -I config
 AMTAR = @AMTAR@
@@ -132,6 +132,8 @@ BUILD_MEROS_FALSE = @BUILD_MEROS_FALSE@
 BUILD_MEROS_TRUE = @BUILD_MEROS_TRUE@
 BUILD_ML_FALSE = @BUILD_ML_FALSE@
 BUILD_ML_TRUE = @BUILD_ML_TRUE@
+BUILD_MOOCHO_FALSE = @BUILD_MOOCHO_FALSE@
+BUILD_MOOCHO_TRUE = @BUILD_MOOCHO_TRUE@
 BUILD_NEW_PACKAGE_FALSE = @BUILD_NEW_PACKAGE_FALSE@
 BUILD_NEW_PACKAGE_TRUE = @BUILD_NEW_PACKAGE_TRUE@
 BUILD_NOX_FALSE = @BUILD_NOX_FALSE@
@@ -252,6 +254,8 @@ AUTOMAKE_OPTIONS = foreign
 @BUILD_MEROS_TRUE@MEROS_LIB_BUILD_CMND = echo "meros does not support all-libs yet";
 @BUILD_ML_TRUE@ML_SUBDIR = ml
 @BUILD_ML_TRUE@ML_LIB_BUILD_CMND = echo "ml does not support all-libs yet";
+@BUILD_MOOCHO_TRUE@MOOCHO_SUBDIR = moocho
+@BUILD_MOOCHO_TRUE@MOOCHO_LIB_BUILD_CMND = cd moocho ; $(MAKE) all-libs ;
 @BUILD_NEW_PACKAGE_TRUE@NEW_PACKAGE_SUBDIR = new_package
 @BUILD_NEW_PACKAGE_TRUE@NEW_PACKAGE_LIB_BUILD_CMND = echo "new_package does not support all-libs yet";
 @BUILD_NOX_TRUE@NOX_SUBDIR = nox
@@ -307,6 +311,7 @@ SUBDIRS = \
 	$(CAPO_SUBDIR)         \
 	$(RYTHMOS_SUBDIR)      \
 	$(NEW_PACKAGE_SUBDIR)  \
+	$(MOOCHO_SUBDIR)       \
 	$(TSFEXTENDED_SUBDIR)  \
 	$(DIDASKO_SUBDIR) \
 	$(EXTERNAL_SUBDIR)
@@ -619,6 +624,7 @@ all-libs:
 	$(RYTHMOS_LIB_BUILD_CMND)
 	$(NEW_PACKAGE_LIB_BUILD_CMND)
 	$(TSFEXTENDED_LIB_BUILD_CMND)
+	$(MOOCHO_LIB_BUILD_CMND)
 	$(DIDASKO_LIB_BUILD_CMND)
 	$(EXTERNAL_LIB_BUILD_CMND)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

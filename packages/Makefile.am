@@ -144,6 +144,11 @@ ML_SUBDIR = ml
 ML_LIB_BUILD_CMND = echo "ml does not support all-libs yet";
 endif
 
+if BUILD_MOOCHO
+MOOCHO_SUBDIR = moocho
+MOOCHO_LIB_BUILD_CMND = cd moocho ; $(MAKE) all-libs ;
+endif
+
 if BUILD_NEW_PACKAGE
 NEW_PACKAGE_SUBDIR = new_package
 NEW_PACKAGE_LIB_BUILD_CMND = echo "new_package does not support all-libs yet";
@@ -238,6 +243,7 @@ SUBDIRS = \
 	$(CAPO_SUBDIR)         \
 	$(RYTHMOS_SUBDIR)      \
 	$(NEW_PACKAGE_SUBDIR)  \
+	$(MOOCHO_SUBDIR)       \
 	$(TSFEXTENDED_SUBDIR)  \
 	$(DIDASKO_SUBDIR) \
 	$(EXTERNAL_SUBDIR)
@@ -270,6 +276,6 @@ all-libs:
 	$(RYTHMOS_LIB_BUILD_CMND)
 	$(NEW_PACKAGE_LIB_BUILD_CMND)
 	$(TSFEXTENDED_LIB_BUILD_CMND)
+	$(MOOCHO_LIB_BUILD_CMND)
 	$(DIDASKO_LIB_BUILD_CMND)
 	$(EXTERNAL_LIB_BUILD_CMND)
-

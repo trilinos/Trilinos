@@ -303,7 +303,8 @@ ac_subdirs_all="$ac_subdirs_all packages/rythmos"
 ac_subdirs_all="$ac_subdirs_all packages/tpetra"
 ac_subdirs_all="$ac_subdirs_all packages/didasko"
 ac_subdirs_all="$ac_subdirs_all packages/external"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot subdirs BUILD_TEUCHOS_TRUE BUILD_TEUCHOS_FALSE BUILD_THYRA_TRUE BUILD_THYRA_FALSE BUILD_KOKKOS_TRUE BUILD_KOKKOS_FALSE BUILD_EPETRA_TRUE BUILD_EPETRA_FALSE BUILD_PLIRIS_TRUE BUILD_PLIRIS_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_GALERI_TRUE BUILD_GALERI_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_CLAPS_TRUE BUILD_CLAPS_FALSE BUILD_KOMPLEX_TRUE BUILD_KOMPLEX_FALSE BUILD_TSF_TRUE BUILD_TSF_FALSE BUILD_TSFCORE_TRUE BUILD_TSFCORE_FALSE BUILD_TSFEXTENDED_TRUE BUILD_TSFEXTENDED_FALSE BUILD_TSFCOREUTILS_TRUE BUILD_TSFCOREUTILS_FALSE BUILD_AMESOS_TRUE BUILD_AMESOS_FALSE BUILD_EPETRAEXT_TRUE BUILD_EPETRAEXT_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_ANASAZI_TRUE BUILD_ANASAZI_FALSE BUILD_MEROS_TRUE BUILD_MEROS_FALSE BUILD_ML_TRUE BUILD_ML_FALSE BUILD_NOX_TRUE BUILD_NOX_FALSE BUILD_NEW_PACKAGE_TRUE BUILD_NEW_PACKAGE_FALSE BUILD_CAPO_TRUE BUILD_CAPO_FALSE BUILD_PYTRILINOS_TRUE BUILD_PYTRILINOS_FALSE BUILD_RYTHMOS_TRUE BUILD_RYTHMOS_FALSE BUILD_TPETRA_TRUE BUILD_TPETRA_FALSE BUILD_DIDASKO_TRUE BUILD_DIDASKO_FALSE BUILD_EXTERNAL_TRUE BUILD_EXTERNAL_FALSE LIBOBJS LTLIBOBJS'
+ac_subdirs_all="$ac_subdirs_all packages/moocho"
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot subdirs BUILD_TEUCHOS_TRUE BUILD_TEUCHOS_FALSE BUILD_THYRA_TRUE BUILD_THYRA_FALSE BUILD_KOKKOS_TRUE BUILD_KOKKOS_FALSE BUILD_EPETRA_TRUE BUILD_EPETRA_FALSE BUILD_PLIRIS_TRUE BUILD_PLIRIS_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_GALERI_TRUE BUILD_GALERI_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_CLAPS_TRUE BUILD_CLAPS_FALSE BUILD_KOMPLEX_TRUE BUILD_KOMPLEX_FALSE BUILD_TSF_TRUE BUILD_TSF_FALSE BUILD_TSFCORE_TRUE BUILD_TSFCORE_FALSE BUILD_TSFEXTENDED_TRUE BUILD_TSFEXTENDED_FALSE BUILD_TSFCOREUTILS_TRUE BUILD_TSFCOREUTILS_FALSE BUILD_AMESOS_TRUE BUILD_AMESOS_FALSE BUILD_EPETRAEXT_TRUE BUILD_EPETRAEXT_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_ANASAZI_TRUE BUILD_ANASAZI_FALSE BUILD_MEROS_TRUE BUILD_MEROS_FALSE BUILD_ML_TRUE BUILD_ML_FALSE BUILD_NOX_TRUE BUILD_NOX_FALSE BUILD_NEW_PACKAGE_TRUE BUILD_NEW_PACKAGE_FALSE BUILD_CAPO_TRUE BUILD_CAPO_FALSE BUILD_PYTRILINOS_TRUE BUILD_PYTRILINOS_FALSE BUILD_RYTHMOS_TRUE BUILD_RYTHMOS_FALSE BUILD_TPETRA_TRUE BUILD_TPETRA_FALSE BUILD_DIDASKO_TRUE BUILD_DIDASKO_FALSE BUILD_EXTERNAL_TRUE BUILD_EXTERNAL_FALSE BUILD_MOOCHO_TRUE BUILD_MOOCHO_FALSE LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -863,6 +864,7 @@ Optional Features:
   --enable-rythmos        Build rythmos (default is no)
   --enable-teuchos        Build teuchos (default is no)
   --enable-thyra          Build thyra (default is no)
+  --enable-moocho         Build moocho (default is no)
   --enable-tpetra         Build tpetra (default is no)
   --enable-triutils       Build triutils (default is no)
   --enable-galeri         Build galeri (default is no)
@@ -2580,6 +2582,34 @@ fi
 
 
 
+# Check whether --enable-moocho or --disable-moocho was given.
+if test "${enable_moocho+set}" = set; then
+  enableval="$enable_moocho"
+  ac_cv_use_moocho=$enableval
+ac_cv_use_moocho_explicit=$enableval
+else
+  ac_cv_use_moocho=no
+ac_cv_use_moocho_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use moocho" >&5
+echo $ECHO_N "checking whether to use moocho... $ECHO_C" >&6
+
+if test "X$ac_cv_use_moocho" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_MOOCHO
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
 # Check whether --enable-tpetra or --disable-tpetra was given.
 if test "${enable_tpetra+set}" = set; then
   enableval="$enable_tpetra"
@@ -3491,6 +3521,29 @@ else
 fi
 
 
+if test "X$ac_cv_use_moocho" != "Xno"; then
+
+
+subdirs="$subdirs packages/moocho"
+
+  BUILD_MOOCHO=yes
+  if test "X$ac_cv_use_moocho_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-moocho"
+  fi
+else
+  BUILD_MOOCHO=no
+fi
+
+
+if test "X$BUILD_MOOCHO" != "Xno"; then
+  BUILD_MOOCHO_TRUE=
+  BUILD_MOOCHO_FALSE='#'
+else
+  BUILD_MOOCHO_TRUE='#'
+  BUILD_MOOCHO_FALSE=
+fi
+
+
 # Check whether --enable- or --disable- was given.
 if test "${enable_+set}" = set; then
   enableval="$enable_"
@@ -3796,6 +3849,13 @@ if test -z "${BUILD_EXTERNAL_TRUE}" && test -z "${BUILD_EXTERNAL_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_EXTERNAL\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_EXTERNAL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_MOOCHO_TRUE}" && test -z "${BUILD_MOOCHO_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_MOOCHO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_MOOCHO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -4403,6 +4463,8 @@ s,@BUILD_DIDASKO_TRUE@,$BUILD_DIDASKO_TRUE,;t t
 s,@BUILD_DIDASKO_FALSE@,$BUILD_DIDASKO_FALSE,;t t
 s,@BUILD_EXTERNAL_TRUE@,$BUILD_EXTERNAL_TRUE,;t t
 s,@BUILD_EXTERNAL_FALSE@,$BUILD_EXTERNAL_FALSE,;t t
+s,@BUILD_MOOCHO_TRUE@,$BUILD_MOOCHO_TRUE,;t t
+s,@BUILD_MOOCHO_FALSE@,$BUILD_MOOCHO_FALSE,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
