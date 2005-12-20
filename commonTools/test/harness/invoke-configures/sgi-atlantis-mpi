@@ -1,7 +1,7 @@
 ../configure \
 CFLAGS="-O2 -64" \
 FFLAGS="-O2 -64" \
-CXXFLAGS="-O2 -64 -LANG:std  -LANG:ansi-for-init-scope=ON \
+CXXFLAGS="-DIRIX64 -O2 -64 -LANG:std  -LANG:ansi-for-init-scope=ON \
 -ptused -DMPI_NO_CPPBIND"  \
 LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:std" \
 --with-libs="/scratch1/mnpheno/Trilinos3PL/prebuilt/dscpack-1.0/dsclibdbl_atlantis.a \
@@ -26,7 +26,7 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 --enable-amesos-klu \
 --enable-amesos-dscpack \
 --enable-amesos-mumps \
---enable-amesos-scalapack \
+--disable-amesos-scalapack \
 --enable-amesos-umfpack \
 --enable-amesos-superlu \
 --disable-amesos-thyra \
