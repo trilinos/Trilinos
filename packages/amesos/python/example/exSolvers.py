@@ -34,8 +34,6 @@ Usage is: ./exSolvers.py <solver-type>
         - Amesos_Lapack (DEFAULT)
         - Amesos_Klu
         - Amesos_Umfpack
-        - Amesos_Pardiso
-        - Amesos_Taucs
         - Amesos_Superlu
         - Amesos_Superludist
         - Amesos_Dscpack
@@ -107,10 +105,6 @@ def main():
     Solver = Amesos.Klu(Problem)
   elif Type == "Amesos_Umfpack":
     Solver = Amesos.Umfpack(Problem)
-  elif Type == "Amesos_Pardiso":
-    Solver = Amesos.Umfpack(Problem)
-  elif Type == "Amesos_Taucs":
-    Solver = Amesos.Umfpack(Problem)
   elif Type == "Amesos_Superlu":
     Solver = Amesos.Superlu(Problem)
   elif Type == "Amesos_Superludist":
@@ -129,10 +123,17 @@ def main():
     "PrintTiming": True
   }
   Solver.SetParameters(AmesosList)
+  if Comm.MyPID() == 0:
+    print "1) Performing symbolic factorizations..."
   Solver.SymbolicFactorization()
+  if Comm.MyPID() == 0:
+    print "2) Performing numeric factorizations..."
   Solver.NumericFactorization()
+  if Comm.MyPID() == 0:
+    print "3) Solving the linear system..."
   ierr = Solver.Solve()
-  print "Solver.Solve() return code = ", ierr
+  if Comm.MyPID() == 0:
+    print "   Solver.Solve() return code = ", ierr
   del Solver
 
 # This is a standard Python construct.  Put the code to be executed in a

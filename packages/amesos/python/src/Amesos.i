@@ -100,11 +100,24 @@ For examples of usage, please consult the python/example subdirectory.
 #ifdef HAVE_AMESOS_SUPERLU
 #include "Amesos_Superlu.h"
 #endif
+#ifdef HAVE_AMESOS_SUPERLUDIST
+#include "Amesos_Superludist.h"
+#endif
+#ifdef HAVE_AMESOS_TAUCS
+#include "Amesos_Taucs.h"
+#endif
+#ifdef HAVE_AMESOS_PARDISO
+#include "Amesos_Pardiso.h"
+#endif
+#ifdef HAVE_AMESOS_DSCPACK
+#include "Amesos_Dscpack.h"
+#endif
 #ifdef HAVE_AMESOS_MUMPS
 #include "Amesos_Mumps.h"
 #endif
 
 // Local includes
+#include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "NumPyArray.h"
 #include "NumPyWrapper.h"
@@ -127,6 +140,8 @@ For examples of usage, please consult the python/example subdirectory.
 %rename(Klu                 ) Amesos_Klu;
 %rename(Lapack              ) Amesos_Lapack;
 %rename(Umfpack             ) Amesos_Umfpack;
+%rename(Taucs               ) Amesos_Taucs;
+%rename(Pardiso             ) Amesos_Pardiso;
 %rename(Superlu             ) Amesos_Superlu;
 %rename(Superludist         ) Amesos_Superludist;
 %rename(Mumps               ) Amesos_Mumps;
@@ -162,6 +177,12 @@ For examples of usage, please consult the python/example subdirectory.
 #endif
 #ifdef HAVE_AMESOS_UMFPACK
 %include "Amesos_Umfpack.h"
+#endif
+#ifdef HAVE_AMESOS_TAUCS
+%include "Amesos_Taucs.h"
+#endif
+#ifdef HAVE_AMESOS_PARDISO
+%include "Amesos_Pardiso.h"
 #endif
 #ifdef HAVE_AMESOS_SUPERLU
 %include "Amesos_Superlu.h"
