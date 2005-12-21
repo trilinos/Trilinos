@@ -533,13 +533,9 @@ float *in_weights=NULL, *out_weights=NULL;
       vptr += (esize * lenGID);
   
       j = Zoltan_Hash(eptr, lenGID, (unsigned int)nedges);
-  
-      en = ht[j];
-      while (en){
-        en = en->next;
-      }
-      egidNode[i].next = en;
-      en = egidNode + i;
+
+      egidNode[i].next = ht[j];
+      ht[j] = egidNode + i;
   
       eptr += lenGID;
       *eptr = esize;

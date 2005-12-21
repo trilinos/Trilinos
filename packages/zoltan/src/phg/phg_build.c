@@ -610,7 +610,7 @@ int *gcnt = NULL;
    */
 
   proclist = (int *) ZOLTAN_MALLOC(MAX(app.nPins,app.nVtx) * sizeof(int));
-  sendbuf = (int *) ZOLTAN_MALLOC(app.nPins * 2 * sizeof(int));
+  sendbuf = (int *) ZOLTAN_MALLOC(app.nPins * 2 * sizeof(int)); 
 
   cnt = 0; 
   for (i = 0; i < app.nEdge; i++) {
@@ -1454,16 +1454,12 @@ int lenLID = zz->Num_LID;
     for (i=0; i<ew_num_edges; i++){
       j = Zoltan_Hash(gidptr, lenGID, (unsigned int)ew_num_edges);
 
-      en = ewht[j];
+      ewNodes[i].egid = gidptr;
+      ewNodes[i].elid = lidptr;
+      ewNodes[i].weights = wptr;
+      ewNodes[i].next = ewht[j];
 
-      while (en){
-        en = en->next;
-      }
-      en->egid = gidptr;
-      en->elid = lidptr;
-      en->weights = wptr;
-      en->next = ewht[j]->next;
-      ewht[j]->next = en;
+      ewht[j] = ewNodes + i;
 
       gidptr += lenGID;
       lidptr += lenLID;
@@ -1534,7 +1530,7 @@ int lenLID = zz->Num_LID;
 
     for (i=0; (i<nids) && ew_num_edges; i++){
       j = Zoltan_Hash(gidptr, lenGID, ew_num_edges);
-      en = ht[j];
+      en = ewht[j];
       while (en){
         if (ZOLTAN_EQ_GID(zz, gidptr, en->egid)){
           match_left = 1;
@@ -1572,7 +1568,7 @@ int lenLID = zz->Num_LID;
 
       for (i=first_match; (i<nids) && (ierr!=ZOLTAN_FATAL); i++){
         j = Zoltan_Hash(gidptr, lenGID, ew_num_edges);
-        en = ht[j];
+        en = ewht[j];
         while (en){
           if (ZOLTAN_EQ_GID(zz, gidptr, en->egid)){
             if (ew_op == PHG_FLAG_ERROR_EDGE_WEIGHTS){
