@@ -25,6 +25,10 @@ int Zoltan_PHG_Set_Param (char*, char*);
 #define PHG_ADD_PINS_WEIGHT 2
 #define PHG_ADD_NO_WEIGHT 3
 
+#define PHG_MAX_EDGE_WEIGHTS 1
+#define PHG_ADD_EDGE_WEIGHTS 2
+#define PHG_FLAG_ERROR_EDGE_WEIGHTS 3
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
