@@ -345,14 +345,36 @@ public:
   {
     return Zoltan_Set_HG_Edge_Info_Fn( ZZ_Ptr, fn_ptr, data );
   }
-
   ///--------------------------
   int Set_HG_Edge_List_Fn    ( ZOLTAN_HG_EDGE_LIST_FN * fn_ptr,
                                void * data = 0 )
   {
     return Zoltan_Set_HG_Edge_List_Fn( ZZ_Ptr, fn_ptr, data );
   }
-
+  ///--------------------------
+  int Set_HG_Size_CS_Fn    ( ZOLTAN_HG_SIZE_CS_FN * fn_ptr,
+                               void * data = 0 )
+  {
+    return Zoltan_Set_HG_Size_CS_Fn( ZZ_Ptr, fn_ptr, data );
+  }
+  ///--------------------------
+  int Set_HG_CS_Fn    ( ZOLTAN_HG_CS_FN * fn_ptr,
+                               void * data = 0 )
+  {
+    return Zoltan_Set_HG_CS_Fn( ZZ_Ptr, fn_ptr, data );
+  }
+  ///--------------------------
+  int Set_HG_Size_Edge_Weights_Fn ( ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN * fn_ptr,
+                               void * data = 0 )
+  {
+    return Zoltan_Set_HG_Size_Edge_Weights_Fn( ZZ_Ptr, fn_ptr, data );
+  }
+  ///--------------------------
+  int Set_HG_Edge_Weights_Fn ( ZOLTAN_HG_EDGE_WEIGHTS_FN * fn_ptr,
+                               void * data = 0 )
+  {
+    return Zoltan_Set_HG_Edge_Weights_Fn( ZZ_Ptr, fn_ptr, data );
+  }
   ///--------------------------
   int Set_Pre_Migrate_PP_Fn  ( ZOLTAN_PRE_MIGRATE_PP_FN * fn_ptr,
                                void * data = 0 )

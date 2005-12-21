@@ -233,8 +233,10 @@ static void Zoltan_Init(ZZ* zz)
   zz->Get_Num_Edges = NULL;
   zz->Get_Edge_List_Multi = NULL;
   zz->Get_Edge_List = NULL;
-  zz->Get_Num_HG_Edges = NULL;
-  zz->Get_HG_Edge_List = NULL;
+  zz->Get_HG_Size_Edge_Weights= NULL;
+  zz->Get_HG_Edge_Weights= NULL;
+  zz->Get_HG_Size_CS = NULL;
+  zz->Get_HG_CS = NULL;
   zz->Get_Num_Geom = NULL;
   zz->Get_Geom_Multi = NULL;
   zz->Get_Geom = NULL;
