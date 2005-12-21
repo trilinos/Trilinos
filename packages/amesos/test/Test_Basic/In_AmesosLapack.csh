@@ -124,8 +124,8 @@ $mpigo 1 amesos_test.exe LAPACK   ImpcolE.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
 $mpigo 3 amesos_test.exe LAPACK   ImpcolE.rua 0 1 1 0 1e-9  1e-11  >>SST.stdout
 $mpigo 3 amesos_test.exe LAPACK   ImpcolE.rua 0 1 3 1 1e-9  1e-11  >>SST.stdout
 $mpigo 3 amesos_test.exe LAPACK   ImpcolE.rua 0 1 -3 1 1e-9  1e-11  >>SST.stdout
-$mpigo 3 amesos_test.exe LAPACK   fidapm05.rua 1 1 1 1   10000 1e-13  >>SST.stdout
-$mpigo 3 amesos_test.exe LAPACK   fidapm05.rua 1 1 1 1   10000 1e-13  >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   fidapm05.rua 1 1 1 1   10000 1e-12  >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   fidapm05.rua 1 1 1 1   10000 1e-12  >>SST.stdout
 #
 #  Test mid sized matrices on 1 and 4 processes, half of them starting out serial, 
 #  half starting out distributed.  (On the single process runs, distributed has no meaning.) 
