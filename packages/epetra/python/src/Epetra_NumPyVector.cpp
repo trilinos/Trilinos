@@ -44,22 +44,82 @@ Epetra_Map              * Epetra_NumPyVector::tmp_map     = NULL               ;
 
 // Static helper functions
 // =============================================================================
-Epetra_Map & Epetra_NumPyVector::getEpetraMap(PyObject * pyObject)
+double * Epetra_NumPyVector::getArray(PyObject * pyObject)
 {
-  getSourceData(pyObject);   // This creates the tmp_array
-  const int totalLength = PyArray_Size((PyObject *)tmp_array);
-  assert(NULL == tmp_map);
-  tmp_map = new Epetra_Map(totalLength,0,defaultComm);
+  // Try to build a contiguous PyArrayObject from the pyObject
+  if (!tmp_array) tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
+  
+  // If this fails, build a single vector with all zeros
+  if (!tmp_array) {
+    int dimensions[ ] = { PyObject_Length(pyObject) };
+    tmp_array = (PyArrayObject *) PyArray_FromDims(1,dimensions,PyArray_DOUBLE);
+  }
+
+  return (double*)(tmp_array->data);
+}
+
+// =============================================================================
+double * Epetra_NumPyVector::getArray(const Epetra_BlockMap & blockMap,
+				      PyObject * pyObject)
+{
+  // Only build the tmp_array if it does not already exist
+  if (!tmp_array) {
+
+    // Default dimensions
+    int defaultDims[ ] = { blockMap.NumMyPoints() };
+
+    // PyObject argument is an bool
+    if PyBool_Check(pyObject) 
+      tmp_array = (PyArrayObject *) PyArray_FromDims(1,defaultDims,PyArray_DOUBLE);
+
+    // PyObject argument is not an bool ... try to build a contiguous PyArrayObject from it
+    else {
+      tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
+
+      // If this fails, build a single vector with all zeros
+      if (!tmp_array) {
+	tmp_array = (PyArrayObject *) PyArray_FromDims(1,defaultDims,PyArray_DOUBLE);
+
+      // If the contiguous PyArrayObject built successfully, make sure
+      // it has the correct number of dimensions
+      } else {
+	int nd = tmp_array->nd;
+	int arraySize = _PyArray_multiply_list(tmp_array->dimensions,nd);
+	if (arraySize != defaultDims[0]) {
+	  PyArrayObject * myArray = (PyArrayObject *) PyArray_FromDims(1,defaultDims,
+								       PyArray_DOUBLE);
+	  double        * myData  = (double *) myArray->data;
+	  double        * tmpData = (double *) tmp_array->data;
+	  for (int i=0; i<defaultDims[0]; i++) {
+	    myData[i] = tmpData[i];
+	  }
+	  Py_XDECREF(tmp_array);
+	  tmp_array = myArray;
+	}
+      }
+    }
+  }
+  return (double*)(tmp_array->data);
+}
+
+// =============================================================================
+Epetra_Map & Epetra_NumPyVector::getMap(PyObject * pyObject)
+{
+  if (!tmp_array) getArray(pyObject);
+  if (!tmp_map) {
+    const int totalLength = PyArray_Size((PyObject *)tmp_array);
+    tmp_map = new Epetra_Map(totalLength,0,defaultComm);
+  }
   return *tmp_map;
 }
 
 // =============================================================================
-double * Epetra_NumPyVector::getSourceData(PyObject * pyObject)
+int Epetra_NumPyVector::getVectorSize(PyObject * pyObject)
 {
-  assert(NULL == tmp_array);
-  tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject, 'd', 0, 0);
-  return (double *)tmp_array->data;
+  if (!tmp_map) getMap(pyObject);
+  return tmp_map->NumMyPoints();
 }
+
 // =============================================================================
 
 // Constructors
@@ -68,7 +128,7 @@ Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap & blockMap, bool ze
   Epetra_Vector(blockMap, zeroOut)
 {
   // Create the array object
-  int dims[ ] = { blockMap.NumMyElements() };
+  int dims[ ] = { blockMap.NumMyPoints() };
   double *v = NULL;
   Epetra_Vector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_FromDimsAndData(1,dims,PyArray_DOUBLE,
@@ -79,11 +139,11 @@ Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap & blockMap, bool ze
 }
 
 // =============================================================================
-Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_NumPyVector & source):
+Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_Vector & source):
   Epetra_Vector(source)
 {
   map = new Epetra_BlockMap(source.Map());
-  int dims[ ] = { map->NumMyElements() };
+  int dims[ ] = { map->NumMyPoints() };
   double *v = NULL;
   Epetra_Vector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_FromDimsAndData(1,dims,PyArray_DOUBLE,
@@ -93,7 +153,7 @@ Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_NumPyVector & source):
 // =============================================================================
 Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap & blockMap,
                                        PyObject * pyObject):
-  Epetra_Vector(View, blockMap, getSourceData(pyObject))
+  Epetra_Vector(View, blockMap, getArray(blockMap,pyObject))
 {
   // Get the pointer to the array from static variable and clear
   assert(NULL != tmp_array);
@@ -105,22 +165,21 @@ Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap & blockMap,
 }
 
 // =============================================================================
-// Epetra_NumPyVector::Epetra_NumPyVector(Epetra_DataAccess CV, const Epetra_MultiVector & source,
-// 				       int index):
-//   Epetra_Vector(CV,source,index)
-// {
-//   map = new Epetra_BlockMap(source.Map());
-//   int dims[ ] = { map->NumMyElements() };
-//   double *v = NULL;
-//   ExtractView(&v);
-//   array = (PyArrayObject *) PyArray_FromDimsAndData(1,dims,PyArray_DOUBLE,
-// 						    (char *)v);
-// }
+Epetra_NumPyVector::Epetra_NumPyVector(Epetra_DataAccess CV, const Epetra_MultiVector & source,
+				       int index):
+  Epetra_Vector(CV,source,index)
+{
+  map = new Epetra_BlockMap(source.Map());
+  int dims[ ] = { map->NumMyElements() };
+  double *v = NULL;
+  Epetra_Vector::ExtractView(&v);
+  array = (PyArrayObject *) PyArray_FromDimsAndData(1,dims,PyArray_DOUBLE,
+						    (char *)v);
+}
 
 // =============================================================================
 Epetra_NumPyVector::Epetra_NumPyVector(PyObject * pyObject):
-  //Epetra_Vector(View, getEpetraMap(pyObject), (double*)tmp_array->data) 
-  Epetra_Vector(View, getEpetraMap(pyObject), getSourceData(pyObject)) 
+  Epetra_Vector(View, getMap(pyObject), getArray(pyObject)) 
 {
   // Store the pointer to the Epetra_Map
   assert(NULL != tmp_map);
@@ -155,9 +214,17 @@ PyObject * Epetra_NumPyVector::ExtractView() const
 }
 
 // =============================================================================
-PyObject * Epetra_NumPyVector::getArray()
-{
-  return PyArray_Return(array);
+double Epetra_NumPyVector::Dot(const Epetra_Vector & A) const {
+  double result[1];
+  int status = Epetra_MultiVector::Dot(A, result);
+  if (status) {
+    PyErr_Format(PyExc_RuntimeError, "Dot returned error code %d", status);
+    goto fail;
+  }
+  return result[0];
+ fail:
+  // Return type is double, so we cannot return NULL on failure
+  return DBL_MAX;
 }
 
 // =============================================================================
@@ -203,11 +270,53 @@ double Epetra_NumPyVector::NormInf() const {
 }
 
 // =============================================================================
-double Epetra_NumPyVector::Dot(const Epetra_Vector & A) const {
+double Epetra_NumPyVector::NormWeighted(const Epetra_Vector & weights) const {
   double result[1];
-  int status = Epetra_MultiVector::Dot(A, result);
+  int status = Epetra_MultiVector::NormWeighted(weights,result);
   if (status) {
-    PyErr_Format(PyExc_RuntimeError, "Dot returned error code %d", status);
+    PyErr_Format(PyExc_RuntimeError, "NormWeighted returned error code %d", status);
+    goto fail;
+  }
+  return result[0];
+ fail:
+  // Return type is double, so we cannot return NULL on failure
+  return DBL_MAX;
+}
+
+// =============================================================================
+double Epetra_NumPyVector::MinValue() const {
+  double result[1];
+  int status = Epetra_MultiVector::MinValue(result);
+  if (status) {
+    PyErr_Format(PyExc_RuntimeError, "MinValue returned error code %d", status);
+    goto fail;
+  }
+  return result[0];
+ fail:
+  // Return type is double, so we cannot return NULL on failure
+  return DBL_MAX;
+}
+
+// =============================================================================
+double Epetra_NumPyVector::MaxValue() const {
+  double result[1];
+  int status = Epetra_MultiVector::MaxValue(result);
+  if (status) {
+    PyErr_Format(PyExc_RuntimeError, "MaxValue returned error code %d", status);
+    goto fail;
+  }
+  return result[0];
+ fail:
+  // Return type is double, so we cannot return NULL on failure
+  return DBL_MAX;
+}
+
+// =============================================================================
+double Epetra_NumPyVector::MeanValue() const {
+  double result[1];
+  int status = Epetra_MultiVector::MeanValue(result);
+  if (status) {
+    PyErr_Format(PyExc_RuntimeError, "MeanValue returned error code %d", status);
     goto fail;
   }
   return result[0];

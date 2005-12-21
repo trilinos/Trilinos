@@ -36,10 +36,10 @@ using namespace std;
 #endif
 
 // Static variables
-const Epetra_SerialComm   Epetra_NumPyMultiVector::defaultComm 	 = Epetra_SerialComm();
-PyArrayObject           * Epetra_NumPyMultiVector::tmp_array   	 = NULL               ;
-Epetra_Map              * Epetra_NumPyMultiVector::tmp_map     	 = NULL               ;
-PyArrayObject           * Epetra_NumPyMultiVector::tmp_range   	 = NULL               ;
+const Epetra_SerialComm   Epetra_NumPyMultiVector::defaultComm = Epetra_SerialComm();
+PyArrayObject           * Epetra_NumPyMultiVector::tmp_array   = NULL               ;
+Epetra_Map              * Epetra_NumPyMultiVector::tmp_map     = NULL               ;
+PyArrayObject           * Epetra_NumPyMultiVector::tmp_range   = NULL               ;
 
 // Static helper functions
 // =============================================================================
@@ -91,8 +91,7 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
       int   nd            = tmp_array->nd;
       int   dimensions[ ] = { 1, blockMap.NumMyPoints() };  // Default dimensions
       bool  reallocate    = false;
-      int   arraySize     = 1;
-      for (int i=0; i<tmp_array->nd; i++) arraySize *= tmp_array->dimensions[i];
+      int   arraySize     = _PyArray_multiply_list(tmp_array->dimensions,nd);
 
       if (nd < 2) {
 	reallocate = true;
@@ -173,6 +172,7 @@ int Epetra_NumPyMultiVector::getRangeLen(PyObject * range)
   if (!tmp_range) getRange(range);
   return PyArray_Size((PyObject*)tmp_range);
 }
+
 // =============================================================================
 int Epetra_NumPyMultiVector::getVectorSize(PyObject * pyObject)
 {
