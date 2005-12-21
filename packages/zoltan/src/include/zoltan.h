@@ -88,8 +88,8 @@ enum Zoltan_Fn_Type {
   ZOLTAN_HG_EDGE_LIST_FN_TYPE,
   ZOLTAN_HG_SIZE_CS_FN_TYPE,
   ZOLTAN_HG_CS_FN_TYPE,
-  ZOLTAN_HG_SIZE_EDGE_WEIGHTS,
-  ZOLTAN_HG_EDGE_WEIGHTS,
+  ZOLTAN_HG_SIZE_EDGE_WEIGHTS_TYPE,
+  ZOLTAN_HG_EDGE_WEIGHTS_TYPE,
   ZOLTAN_MAX_FN_TYPES               /*  This entry should always be last. */
 };
 
@@ -1945,6 +1945,8 @@ typedef int ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FORT_FN(
  *    data                --  pointer to user defined data structure
  *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
  *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
  *    nedges              --  number edges for which weights are expected
  *    edge_weight_dim     --  number of weights per edge expected
  *
