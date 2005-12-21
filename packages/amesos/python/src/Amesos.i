@@ -41,6 +41,7 @@ The most important classes of the Amesos module are:
 - The LAPACK interface, Amesos.Lapack
 - The KLU interace, Amesos.Klu
 - The UMFPACK interace, Amesos.Umfpack
+- The SCALAPACK interace, Amesos.Scalapack
 - The SuperLU interace, Amesos.Superlu
 - The SuperLU_DIST interace, Amesos.Superludist
 - The DSCPACK interace, Amesos.Dscpack
@@ -97,6 +98,9 @@ For examples of usage, please consult the python/example subdirectory.
 #ifdef HAVE_AMESOS_UMFPACK
 #include "Amesos_Umfpack.h"
 #endif
+#ifdef HAVE_AMESOS_SCALAPACK
+#include "Amesos_Scalapack.h"
+#endif
 #ifdef HAVE_AMESOS_SUPERLU
 #include "Amesos_Superlu.h"
 #endif
@@ -140,6 +144,7 @@ For examples of usage, please consult the python/example subdirectory.
 %rename(Klu                 ) Amesos_Klu;
 %rename(Lapack              ) Amesos_Lapack;
 %rename(Umfpack             ) Amesos_Umfpack;
+%rename(Scalapack           ) Amesos_Scalapack;
 %rename(Taucs               ) Amesos_Taucs;
 %rename(Pardiso             ) Amesos_Pardiso;
 %rename(Superlu             ) Amesos_Superlu;
@@ -177,6 +182,9 @@ For examples of usage, please consult the python/example subdirectory.
 #endif
 #ifdef HAVE_AMESOS_UMFPACK
 %include "Amesos_Umfpack.h"
+#endif
+#ifdef HAVE_AMESOS_SCALAPACK
+%include "Amesos_Scalapack.h"
 #endif
 #ifdef HAVE_AMESOS_TAUCS
 %include "Amesos_Taucs.h"
