@@ -378,7 +378,7 @@ int *gcnt = NULL;
     ew_weights = NULL;
     ew_ht = NULL;
 
-    if (zz->Get_HG_Size_Edge_Weights && zz->Get_HG_Edge_Weights){
+    if (ew_dim && zz->Get_HG_Size_Edge_Weights && zz->Get_HG_Edge_Weights){
 
       ierr = zz->Get_HG_Size_Edge_Weights(
                    zz->Get_HG_Size_Edge_Weights_Data, &ew_num_edges);
