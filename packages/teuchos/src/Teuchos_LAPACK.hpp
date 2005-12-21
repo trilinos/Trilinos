@@ -118,6 +118,12 @@ namespace Teuchos
 
     //@{ \name Symmetric Positive Definite Linear System Routines.
 
+    //! Computes the \c L*D*L' factorization of a Hermitian/symmetric positive definite tridiagonal matrix \c A.
+    void PTTRF(const OrdinalType n, ScalarType* d, ScalarType* e, OrdinalType* info) const;
+
+    //! Solves a tridiagonal system \c A*X=B using the \L*D*L' factorization of \c A computed by PTTRF.
+    void PTTRS(const OrdinalType n, const OrdinalType nrhs, const ScalarType* d, const ScalarType* e, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const;
+
     //! Computes Cholesky factorization of a real symmetric positive definite matrix \c A.    
     void POTRF(const char UPLO, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* info) const;
 
@@ -331,6 +337,18 @@ namespace Teuchos
   // BEGIN GENERAL TEMPLATE IMPLEMENTATION //
 
 
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::PTTRF(const OrdinalType n, ScalarType* d, ScalarType* e, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+  
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::PTTRS(const OrdinalType n, const OrdinalType nrhs, const ScalarType* d, const ScalarType* e, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+  
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::POTRF(const char UPLO, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* info) const
   {
@@ -636,6 +654,8 @@ namespace Teuchos
     // Symmetric positive definite linear system routines
     void POTRF(const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* info) const;
     void POTRS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, float* B, const OrdinalType ldb, OrdinalType* info) const;
+    void PTTRF(const OrdinalType n, float* d, float* e, OrdinalType* info) const;
+    void PTTRS(const OrdinalType n, const OrdinalType nrhs, const float* d, const float* e, float* B, const OrdinalType ldb, OrdinalType* info) const;
     void POTRI(const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* info) const;
     void POCON(const char UPLO, const OrdinalType n, const float* A, const OrdinalType lda, const float anorm, float* rcond, float* WORK, OrdinalType* IWORK, OrdinalType* info) const;
     void POSV(const char UPLO, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, OrdinalType* info) const;
@@ -705,6 +725,18 @@ namespace Teuchos
 
   // BEGIN FLOAT PARTIAL SPECIALIZATION IMPLEMENTATION //
 
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, float>::PTTRF(const OrdinalType n, float* d, float* e, OrdinalType* info) const
+  {
+    SPTTRF_F77(&n,d,e,info);
+  }
+  
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, float>::PTTRS(const OrdinalType n, const OrdinalType nrhs, const float* d, const float* e, float* B, const OrdinalType ldb, OrdinalType* info) const
+  {
+    SPTTRS_F77(&n,&nrhs,d,e,B,&ldb,info);
+  }
+  
   template<typename OrdinalType>
   void LAPACK<OrdinalType, float>::POTRF(const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* info) const
   {
@@ -1009,6 +1041,8 @@ namespace Teuchos
     inline virtual ~LAPACK(void) {};
 
     // Symmetric positive definite linear system routines
+    void PTTRF(const OrdinalType n, double* d, double* e, OrdinalType* info) const;
+    void PTTRS(const OrdinalType n, const OrdinalType nrhs, const double* d, const double* e, double* B, const OrdinalType ldb, OrdinalType* info) const;
     void POTRF(const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* info) const;
     void POTRS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const double* A, const OrdinalType lda, double* B, const OrdinalType ldb, OrdinalType* info) const;
     void POTRI(const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* info) const;
@@ -1078,6 +1112,18 @@ namespace Teuchos
   // BEGIN DOUBLE PARTIAL SPECIALIZATION IMPLEMENTATION //
 
 
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, double>::PTTRF(const OrdinalType n, double* d, double* e, OrdinalType* info) const
+  {
+    DPTTRF_F77(&n,d,e,info);
+  }
+  
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, double>::PTTRS(const OrdinalType n, const OrdinalType nrhs, const double* d, const double* e, double* B, const OrdinalType ldb, OrdinalType* info) const
+  {
+    DPTTRS_F77(&n,&nrhs,d,e,B,&ldb,info);
+  }
+  
   template<typename OrdinalType>
   void LAPACK<OrdinalType, double>::POTRF(const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* info) const
   {
@@ -1388,6 +1434,8 @@ namespace Teuchos
     inline virtual ~LAPACK(void) {};
 
     // Symmetric positive definite linear system routines
+    void PTTRF(const OrdinalType n, complex<float>* d, complex<float>* e, OrdinalType* info) const;
+    void PTTRS(const OrdinalType n, const OrdinalType nrhs, const complex<float>* d, const complex<float>* e, complex<float>* B, const OrdinalType ldb, OrdinalType* info) const;
     void POTRF(const char UPLO, const OrdinalType n, complex<float>* A, const OrdinalType lda, OrdinalType* info) const;
     void POTRS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const complex<float>* A, const OrdinalType lda, complex<float>* B, const OrdinalType ldb, OrdinalType* info) const;
     void POTRI(const char UPLO, const OrdinalType n, complex<float>* A, const OrdinalType lda, OrdinalType* info) const;
@@ -1443,6 +1491,18 @@ namespace Teuchos
 
   // BEGIN COMPLEX<FLOAT> PARTIAL SPECIALIZATION IMPLEMENTATION //
 
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, complex<float> >::PTTRF(const OrdinalType n, complex<float>* d, complex<float>* e, OrdinalType* info) const
+  {
+    CPTTRF_F77(&n,d,e,info);
+  }
+  
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, complex<float> >::PTTRS(const OrdinalType n, const OrdinalType nrhs, const complex<float>* d, const complex<float>* e, complex<float>* B, const OrdinalType ldb, OrdinalType* info) const
+  {
+    CPTTRS_F77(&n,&nrhs,d,e,B,&ldb,info);
+  }
+  
   template<typename OrdinalType>
   void LAPACK<OrdinalType, complex<float> >::POTRF(const char UPLO, const OrdinalType n, complex<float>* A, const OrdinalType lda, OrdinalType* info) const
   {
@@ -1683,6 +1743,8 @@ namespace Teuchos
     inline virtual ~LAPACK(void) {};
 
     // Symmetric positive definite linear system routines
+    void PTTRF(const OrdinalType n, complex<double>* d, complex<double>* e, OrdinalType* info) const;
+    void PTTRS(const OrdinalType n, const OrdinalType nrhs, const complex<double>* d, const complex<double>* e, complex<double>* B, const OrdinalType ldb, OrdinalType* info) const;
     void POTRF(const char UPLO, const OrdinalType n, complex<double>* A, const OrdinalType lda, OrdinalType* info) const;
     void POTRS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const complex<double>* A, const OrdinalType lda, complex<double>* B, const OrdinalType ldb, OrdinalType* info) const;
     void POTRI(const char UPLO, const OrdinalType n, complex<double>* A, const OrdinalType lda, OrdinalType* info) const;
@@ -1738,6 +1800,18 @@ namespace Teuchos
 
   // BEGIN COMPLEX<DOUBLE> PARTIAL SPECIALIZATION IMPLEMENTATION //
 
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, complex<double> >::PTTRF(const OrdinalType n, complex<double>* d, complex<double>* e, OrdinalType* info) const
+  {
+    ZPTTRF_F77(&n,d,e,info);
+  }
+  
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, complex<double> >::PTTRS(const OrdinalType n, const OrdinalType nrhs, const complex<double>* d, const complex<double>* e, complex<double>* B, const OrdinalType ldb, OrdinalType* info) const
+  {
+    ZPTTRS_F77(&n,&nrhs,d,e,B,&ldb,info);
+  }
+  
   template<typename OrdinalType>
   void LAPACK<OrdinalType, complex<double> >::POTRF(const char UPLO, const OrdinalType n, complex<double>* A, const OrdinalType lda, OrdinalType* info) const
   {
