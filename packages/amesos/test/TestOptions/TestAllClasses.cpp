@@ -157,6 +157,10 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if ( ReindexRowMap != 0 )  ParamList.set( "Reindex", true );
 	if ( ( RangeMapType != 0 || DomainMapType != 0 || distribute ) ) 
 	  ParamList.set( "DontTrustMe", true );
+#ifndef HAVE_AMESOS_EPETRAEXT
+	if ( ( ReindexRowMap || ReindexColMap ) ) 
+	  RunKluTest = false ;  
+#endif
 	if ( RunKluTest ) Errors = TestKlu( Amat, 
 					    EpetraMatrixType,
 					    transpose, 

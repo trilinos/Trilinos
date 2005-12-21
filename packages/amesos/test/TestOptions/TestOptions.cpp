@@ -576,8 +576,13 @@ int NextMain( int argc, char *argv[] ) {
 
   Comm.SetTracebackMode(2);
 
-  //  for (int i=0; i < 0; i++ ) {
+#ifndef HAVE_AMESOS_EPETRAEXT
+    if ( ! quiet && Comm.MyPID() == 0 ) 
+      cout << "Amesos has been built without epetraext, capabilites requiring epetraext, such as reindexing, will not be tested" << endl ; 
+#endif
+
   for (int i=0; i < NumAmesosClasses; i++ ) {
+
 
     Abase = Afactory.Create( &AmesosClasses[i][0], Problem ) ; 
     if ( Abase == 0 ) {
