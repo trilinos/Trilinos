@@ -317,7 +317,7 @@ int lenLID = zz->Num_LID;
   }
  
   if (dim > 0){
-    edg_weight = (float *)ZOLTAN_MALLOC(dim * num_lists);
+    edg_weight = (float *)ZOLTAN_MALLOC(dim * num_lists * sizeof(float));
   
     if (num_lists && !edg_weight){
       ZOLTAN_FREE(&edg_LID);
@@ -335,7 +335,7 @@ int lenLID = zz->Num_LID;
        * we need to process them.
        */
       need_weights = num_lists;
-      need_list = (char *)ZOLTAN_MALLOC(num_lists);
+      need_list = (char *)ZOLTAN_MALLOC(num_lists * sizeof(char));
 
       if (num_lists && !need_list){
         ZOLTAN_FREE(&edg_LID);
