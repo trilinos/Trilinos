@@ -514,7 +514,7 @@ else
   endif
   if (! $no_color) then
     if (! $old_interface) then
-      set ch_methods = ( $ch_methods color color-after-phg )
+      set ch_methods = ( $ch_methods color color-after-phg color-dist2 )
       set ch_methods = ( $ch_methods color-orderU color-orderB )
     endif
   endif
