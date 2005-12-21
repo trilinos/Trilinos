@@ -144,7 +144,10 @@ public:
     /** \brief . */
     Evaluation() : evalType_(EVAL_TYPE_EXACT) {}
     /** \brief . */
-    Evaluation( const Teuchos::RefCountPtr<ObjType> &obj, EEvalType evalType = EVAL_TYPE_EXACT )
+    Evaluation( const Teuchos::RefCountPtr<ObjType> &obj )
+      : Teuchos::RefCountPtr<ObjType>(obj), evalType_(EVAL_TYPE_EXACT) {}
+    /** \brief . */
+    Evaluation( const Teuchos::RefCountPtr<ObjType> &obj, EEvalType evalType )
       : Teuchos::RefCountPtr<ObjType>(obj), evalType_(evalType) {}
     /** \brief . */
     EEvalType getType() const { return evalType_; }
