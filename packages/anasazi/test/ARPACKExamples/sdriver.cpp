@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 
   // Create matrices
   RefCountPtr< ARPACK_Example<ST> > prob;
-  RefCountPtr<OP> A, M, Op;
+  RefCountPtr<OP> A, M, Op, B;
 
   prob = GetARPACKExample<ST>(problem,dim);
   if (!prob.get()) {
@@ -149,6 +149,7 @@ int main(int argc, char *argv[])
     return -1;
   }
   A = prob->getA();
+  B = prob->getB();
   M = prob->getM();
   Op = prob->getOp();
   isherm = prob->isHerm();
@@ -156,7 +157,8 @@ int main(int argc, char *argv[])
   // determine solver
   if (solver == "auto") {
     if (isherm) {
-      solver = "LOBPCG";
+      // solver = "LOBPCG";
+      solver = "BKS";
     }
     else {
       solver = "BKS";
@@ -201,7 +203,7 @@ int main(int argc, char *argv[])
     MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(A, M, ivec) );
   }
   else {
-    MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(Op, M, ivec) );
+    MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(Op, B, ivec) );
   }
   // Inform the eigenproblem that the operator A is symmetric
   MyProblem->SetSymmetric(isherm);
@@ -274,12 +276,12 @@ int main(int argc, char *argv[])
     L(i,i) = (*evals)[i];
   }
   RefCountPtr<MV > Avecs = MVT::Clone( *evecs, nevecs );
-  RefCountPtr<MV > Mvecs = MVT::Clone( *evecs, nevecs );
+  RefCountPtr<MV > Bvecs = MVT::Clone( *evecs, nevecs );
 
   OPT::Apply( *A, *evecs, *Avecs );
-  OPT::Apply( *M, *evecs, *Mvecs );
-  // Compute A*evecs - M*evecs*L
-  MVT::MvTimesMatAddMv( -ONE, *Mvecs, L, ONE, *Avecs );
+  OPT::Apply( *B, *evecs, *Bvecs );
+  // Compute A*evecs - B*evecs*L
+  MVT::MvTimesMatAddMv( -ONE, *Bvecs, L, ONE, *Avecs );
   MVT::MvNorm( *Avecs, &normV );
 
   // check residuals

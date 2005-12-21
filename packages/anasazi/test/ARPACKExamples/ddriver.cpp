@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 
   // Create matrices
   RefCountPtr< ARPACK_Example<ST> > prob;
-  RefCountPtr<OP> A, M, Op;
+  RefCountPtr<OP> A, M, Op, B;
 
   prob = GetARPACKExample<ST>(problem,dim);
   if (!prob.get()) {
@@ -149,6 +149,7 @@ int main(int argc, char *argv[])
     return -1;
   }
   A = prob->getA();
+  B = prob->getB();
   M = prob->getM();
   Op = prob->getOp();
   isherm = prob->isHerm();
@@ -156,7 +157,8 @@ int main(int argc, char *argv[])
   // determine solver
   if (solver == "auto") {
     if (isherm) {
-      solver = "LOBPCG";
+      // solver = "LOBPCG";
+      solver = "BKS";
     }
     else {
       solver = "BKS";
@@ -180,15 +182,25 @@ int main(int argc, char *argv[])
   if (ierr != Anasazi::Ok) {
     cout << "MultiVec failed TestMultiVecTraits()" << endl;
   }
-  cout << "Testing OP" << endl;
+  cout << "Testing A" << endl;
   ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,A);
   if (ierr != Anasazi::Ok) {
-    cout << "OP failed TestOperatorTraits()" << endl;
+    cout << "A failed TestOperatorTraits()" << endl;
   }
   cout << "Testing M" << endl;
   ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,M);
   if (ierr != Anasazi::Ok) {
     cout << "M failed TestOperatorTraits()" << endl;
+  }
+  cout << "Testing Op" << endl;
+  ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,Op);
+  if (ierr != Anasazi::Ok) {
+    cout << "OP failed TestOperatorTraits()" << endl;
+  }
+  cout << "Testing B" << endl;
+  ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,B);
+  if (ierr != Anasazi::Ok) {
+    cout << "B failed TestOperatorTraits()" << endl;
   }
 
   // Create the sort manager
@@ -201,9 +213,9 @@ int main(int argc, char *argv[])
     MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(A, M, ivec) );
   }
   else {
-    MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(Op, M, ivec) );
+    MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(Op, B, ivec) );
   }
-  // Inform the eigenproblem that the operator A is symmetric
+  // Inform the eigenproblem if the operator is symmetric
   MyProblem->SetSymmetric(isherm);
 
   // Set the number of eigenvalues requested and the blocksize the solver should use
