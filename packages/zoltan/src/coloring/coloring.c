@@ -56,8 +56,8 @@ static int D1ParallelColoring (ZZ *zz, int nvtx, int *visit, int *xadj, int *adj
 static int sendNextStepsForbiddenColors(ZZ *zz, G2LHash *hash, int nlvtx, int p, int **srp, int *xadj, int *adj, int *xadjnl, int *adjnl, int *forbsizeS, int **xforbiddenS, int **forbiddenS, int *nColor, int *color, int *mark, int *confChk, int sncnt, int *wset, int *wsize, MPI_Request *sreqsFx, MPI_Request *sreqsF);
 static int waitPtrAndForbiddenColors(ZZ* zz, int rreqcntFx, MPI_Request *rreqsFx, int *rreqfromFx, MPI_Status *stats, int *forbsize, int **xforbidden, int **forbidden, int **xfp, MPI_Request *rreqsF);
 static int D2ParallelColoring (ZZ *zz, int nvtx, int nlvtx, int *visit, int *xadj, int *adj, int *xbadj, int *xadjnl, int *adjnl, int *adjproc, int *isbound, int ss, int *nColor, int *color, int **newcolored, int *mark, int gmaxdeg, G2LHash *hash, int **forbidden, int **xforbidden, int **forbiddenS, int **xforbiddenS, int *forbsize, int *forbsizeS, char color_method, char comm_pattern, int *rreqfromC, int *repliesC, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromF, int *repliesF, MPI_Request *sreqsF, MPI_Request *rreqsF, int *rreqfromFx, int *repliesFx, MPI_Request *sreqsFx, MPI_Request *rreqsFx, MPI_Status *stats, int *confChk, int *ssendsize, int *srecsize, int **ssendbuf, int **srecbuf, int ** ssp, int **srp, int **xfp, int *wset, int *wsize);
-static int D1DetectConflicts(ZZ *, int, int *, int *, int *, int *, int *, int *, int *);
-static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **srecbuf, int **ssendbuf, int *srecsize, int *ssendsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict);
+static int D1DetectConflicts(ZZ *, int, int *, int *, int *, int *, int *, int *, int *, G2LHash *);
+static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **rcrecbuf, int **rcsendbuf, int *rcrecsize, int *rcsendsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict);
 static int GenPrime(int stop, int *prime_num);
     
 /*****************************************************************************/
@@ -262,7 +262,7 @@ int Zoltan_Color(
           for (j = xadj[i]; j < xadj[i+1]; j++) {
               int v = adjncy[j];
               if (color[i] == color[v])
-                  printf("Error in coloring! u:%d, v:%d, cu:%d, cv:%d\n", i, v, color[i], color[v]);
+                  printf("Error in coloring! u:%d(%d), v:%d(%d), cu:%d, cv:%d\n", i, Zoltan_G2LHash_L2G(&hash, i), v, Zoltan_G2LHash_L2G(&hash, v), color[i], color[v]);
           }
       }
   }
@@ -398,9 +398,9 @@ static int D1coloring(
         MEMORY_ERROR;
     for(i=0; i<lastlno; i++) {
         srand48(Zoltan_G2LHash_L2G(hash, i));
-        rand_key[i] = drand48()*1000000;
+        rand_key[i] = drand48()*100000000;
     }
-
+    
     /* Color internal vertices and determine the visit order */
     if (get_times) {
         MPI_Barrier(zz->Communicator);
@@ -430,7 +430,7 @@ static int D1coloring(
     if (zz->Num_Proc >= 2) {
         do {
             int *tp = visit;
-            memset(mark, 0xff, (1+nColor) * sizeof(int));
+            memset(mark, 0xff, (1+nColor) * sizeof(int)); /* reset dirty entries */
             ierr = D1ParallelColoring(zz, nConflict, visit, xadj, adj, isbound, ss,
                                     &nColor, color, newcolored, mark, gmaxdeg, hash,
                                     color_method, comm_pattern, rreqfrom, replies,
@@ -438,7 +438,8 @@ static int D1coloring(
             if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
                 ZOLTAN_COLOR_ERROR(ierr, "Error in D1ParallelColoring");
             nConflict = D1DetectConflicts(zz, nConflict, visit, xadj, xbadj, adj,
-                                        color, conflicts, rand_key);
+                                        color, conflicts, rand_key, hash);
+
             /* swap conflicts list with visit list so that if there are conflicts,
                next coloring will color them */
             visit = conflicts;
@@ -589,7 +590,10 @@ static int D2coloring(
     /* superstep size info exchange */
     int **srecbuf = NULL, **ssendbuf=NULL;
     int *srecsize=NULL, *ssendsize=NULL;
-    int **ssp, **srp;    
+    int **ssp, **srp;
+    /* vertex recolor info exchange */
+    int **rcrecbuf = NULL, **rcsendbuf=NULL;
+    int *rcrecsize=NULL, *rcsendsize=NULL;
     
     /* Memory allocation */
     isbound = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
@@ -617,7 +621,7 @@ static int D2coloring(
         printf("\n");
     }
 #endif
-
+    
     /* Calculate the maximum degree of the graph */
     lmaxdeg = 0;
     for (i=0; i<nvtx; i++)
@@ -677,7 +681,9 @@ static int D2coloring(
     repliesC = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
     srecsize = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
     ssendsize = (int *) ZOLTAN_CALLOC(zz->Num_Proc, sizeof(int));
-    if (!stats || !repliesC || !rreqsC || !sreqsC || !rreqfromC || !srecsize || !ssendsize)
+    rcrecsize = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
+    rcsendsize = (int *) ZOLTAN_CALLOC(zz->Num_Proc, sizeof(int));
+    if (!stats || !repliesC || !rreqsC || !sreqsC || !rreqfromC || !srecsize || !ssendsize || !rcrecsize || !rcsendsize)
         MEMORY_ERROR;    
     /* Issue async recvs for superstep info size */
     for (rreqcntC=p=0; p<zz->Num_Proc; ++p) 
@@ -691,7 +697,7 @@ static int D2coloring(
     }    
     for (i=0; i<zz->Num_Proc; i++)
         if (i != zz->Proc)
-            ssendsize[i] += ceil((double)nbound / (double)ss);
+            ssendsize[i] += ceil((double)nbound / (double)ss) + 1;
     /* Send the superstep info size so that other processors will allocate enough space */
     for (sreqcntC=p=0; p<zz->Num_Proc; ++p) 
         if (p != zz->Proc) 
@@ -727,16 +733,16 @@ static int D2coloring(
     for (i=0; i<zz->Num_Proc; ++i) {
         newcolored[i] = (int *) ZOLTAN_MALLOC(2 * ss * sizeof(int)); /* DB: can be reduced */
         xforbidden[i] = (int *) ZOLTAN_MALLOC((ss+1) * sizeof(int));
-        forbsize[i] = (int)(ceil((double) xadj[nvtx] / (double)nvtx) * ss); /* size of forbidden color allocation - init to avgDeg*ss*/
-        forbidden[i] = (int *) ZOLTAN_MALLOC(forbsize[i] * sizeof(int));
+        forbsize[i] = (int)(ceil((double) xadj[nvtx] / (double)nvtx) * ss); /* size of forbidden color allocation - init to avgDeg*ss */
+        forbidden[i] = (int *) ZOLTAN_MALLOC((forbsize[i] > 0 ? forbsize[i] : 1) * sizeof(int));
         xforbiddenS[i] = (int *) ZOLTAN_MALLOC((ss+1) * sizeof(int));
-        forbsizeS[i] = (int)(ceil((double) xadj[nvtx] / (double) nvtx) * ss); /* size of forbidden color allocation for send buffer - init to avgDeg*ss*/
-        forbiddenS[i] = (int *) ZOLTAN_MALLOC(forbsizeS[i] * sizeof(int));
+        forbsizeS[i] = (int)(ceil((double) xadj[nvtx] / (double) nvtx) * ss); /* size of forbidden color allocation for send buffer - init to avgDeg*ss */
+        forbiddenS[i] = (int *) ZOLTAN_MALLOC((forbsizeS[i] > 0 ? forbsizeS[i] : 1) * sizeof(int));
         if (!newcolored[i] || !xforbidden[i] || !forbidden[i] || !xforbiddenS[i] || !forbiddenS[i])
             MEMORY_ERROR;
     }
     confChk = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int)); /*the vertices to be checked in conflict detection */
-    wset = (int *) ZOLTAN_MALLOC(nbound * sizeof(int));
+    wset = (int *) ZOLTAN_MALLOC((nbound > 0 ? nbound : 1) * sizeof(int));
     seen = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
     where = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
     pwhere = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
@@ -747,7 +753,7 @@ static int D2coloring(
     MPI_Waitall(rreqcntC, rreqsC, stats); /* wait all superstep numbers to be received */
     MPI_Waitall(sreqcntC, sreqsC, stats); /* wait all superstep numbers to be sent */ 
 
-#if 1
+#if 0
     for (p=0; p<zz->Num_Proc; p++) {
         if (p != zz->Proc) {
             printf("[%d] size of ssendbuf to be sent to   %d is %d\n", zz->Proc, p, ssendsize[p]);
@@ -756,22 +762,30 @@ static int D2coloring(
     }
 #endif
         
-    /* Allocate buffers for superstep size info to be sent and received */
+    /* Allocate buffers for superstep size and recolor info to be sent and received */
     ssendbuf = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
     srecbuf = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
+    rcsendbuf = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
+    rcrecbuf = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
     ssp = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
     srp = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
-    if (!ssendbuf || !srecbuf || !ssp || !srp)
+    if (!ssendbuf || !srecbuf || !ssp || !srp || !rcrecbuf || !rcsendbuf)
         MEMORY_ERROR;
     for (p=0; p<zz->Num_Proc; p++) 
         if (p != zz->Proc) {
-            ssendbuf[p] = (int *) ZOLTAN_MALLOC(ssendsize[p] * sizeof(int));
-            srecbuf[p] = (int *) ZOLTAN_MALLOC(srecsize[p] * sizeof(int));
-            if (!srecbuf[p] || !ssendbuf[p])
+            ssendbuf[p] = (int *) ZOLTAN_MALLOC((ssendsize[p] > 0 ? ssendsize[p] : 1) * sizeof(int));
+            srecbuf[p] = (int *) ZOLTAN_MALLOC((srecsize[p] > 0 ? srecsize[p] : 1) * sizeof(int));
+            rcsendsize[p] = 2 * ssendsize[p]; /* recolor info exchange buffer sizes. */ 
+            rcrecsize[p] = 2 * srecsize[p]; /* better estimates or realloc in D2DetectConflicts can be used */
+            rcsendbuf[p] = (int *) ZOLTAN_MALLOC((rcsendsize[p] > 0 ? rcsendsize[p] : 1) * sizeof(int));
+            rcrecbuf[p] = (int *) ZOLTAN_MALLOC((rcrecsize[p] > 0 ? rcrecsize[p] : 1) * sizeof(int));
+            if (!srecbuf[p] || !ssendbuf[p] || !rcrecbuf[p] || !rcsendbuf[p])
                 MEMORY_ERROR;
         } else {
             ssendbuf[p] = NULL;
             srecbuf[p] = NULL;
+            rcsendbuf[p] = NULL;
+            rcrecbuf[p] = NULL;
         }
     
     /* Generate random numbers associated with global numbers of the vertices */
@@ -830,7 +844,7 @@ static int D2coloring(
             if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
                 ZOLTAN_COLOR_ERROR(ierr, "Error in D2ParallelColoring");
             ierr = D2DetectConflicts(zz, hash, nvtx, wset, wsize, xadj, adj, adjproc, &nColor, color, conflicts, rand_key,
-                              vmark, seen, where, pwhere, srecbuf, ssendbuf, srecsize, ssendsize, srp, sreqsC, rreqsC,
+                              vmark, seen, where, pwhere, rcrecbuf, rcsendbuf, rcrecsize, rcsendsize, srp, sreqsC, rreqsC,
                               rreqfromC, stats, &nConflict);
             if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
                 ZOLTAN_COLOR_ERROR(ierr, "Error in D2DetectConflicts");
@@ -850,7 +864,7 @@ static int D2coloring(
         InternalColoring(zz, distance, &nColor, nvtx-nbound, visitIntern, xadj, adj, color, mark, gmaxcolor, color_method);
     
     
-#if 1
+#if 0
     printf("[%d] vtx(gno)->color: ", zz->Proc);
     for (i=0; i<nvtx; i++)
         printf("%d(%d)->%d ", i, Zoltan_G2LHash_L2G(hash, i), color[i]);
@@ -889,15 +903,16 @@ static int D2coloring(
     
     /* Free */
     for (i=0; i<zz->Num_Proc; ++i) 
-        Zoltan_Multifree (__FILE__, __LINE__, 7, &newcolored[i], &forbidden[i],
+        Zoltan_Multifree (__FILE__, __LINE__, 9, &newcolored[i], &forbidden[i],
                           &xforbidden[i], &forbiddenS[i], &xforbiddenS[i],
-                          &srecbuf[i], &ssendbuf[i]);
+                          &srecbuf[i], &ssendbuf[i], &rcrecbuf[i], &rcsendbuf[i]);
 
-    Zoltan_Multifree (__FILE__, __LINE__, 42, &isbound, &visit, &conflicts,
+    Zoltan_Multifree (__FILE__, __LINE__, 46, &isbound, &visit, &conflicts,
                       &mark, &vmark, &newcolored, &repliesF, &repliesC, &repliesFx, &stats,
                       &rreqsC, &rreqsF, &rreqsFx, &sreqsC,
                       &sreqsF, &sreqsFx, &rreqfromC, &rreqfromF,
-                      &rreqfromFx, &xbadj, &srecsize, &ssendsize, &srecbuf, &ssendbuf,
+                      &rreqfromFx, &xbadj, &srecsize, &ssendsize, &rcrecsize, &rcsendsize,
+                      &srecbuf, &ssendbuf, &rcrecbuf, &rcsendbuf,
                       &forbidden, &xforbidden, &forbiddenS,
                       &xforbiddenS, &forbsize, &forbsizeS,  &confChk, &seen,
                       &where, &pwhere, &xfp, &rand_key, &wset, &xadjnl, &adjnl, &xadjnltemp, &ssp, &srp);
@@ -1128,9 +1143,12 @@ static int D1ParallelColoring (
     for (i=0; i<nvtx; ++i) {
         int u = visit[i];        
         for (j=xadj[u]; j<xadj[u+1]; ++j) {
-            int gv = adj[j], c;            
-            if ((c = color[gv]) != 0) 
+            int gv = adj[j], c;
+            if ((c = color[gv]) != 0) {
+                while (*nColor < c) /* if nColor < c, set nColor to c and reset intermediate mark entries */
+                    mark[++(*nColor)] = -1;
                 mark[c] = u;
+            }
         }
         color[u] = PickColor(zz, color_method, u, color[u], nColor, mark);
 
@@ -1313,7 +1331,7 @@ static int sendNextStepsForbiddenColors(ZZ *zz, G2LHash *hash, int nlvtx, int p,
     MPI_Isend(xforbiddenS[p], m1, MPI_INT, p, XFORBIDTAG, zz->Communicator, &sreqsFx[p]);
     MPI_Isend(forbiddenS[p], xforbiddenS[p][0], MPI_INT, p, FORBIDTAG, zz->Communicator, &sreqsF[p]);
     
-#if 1
+#if 0
     printf("Proc %d: Sent forbidden list of size %d for %d vertices on proc %d. \n", zz->Proc, xforbiddenS[p][0], m1-1, p);
 #endif
     
@@ -1427,6 +1445,8 @@ static int D2ParallelColoring (
     for (rreqcntC=p=0; p<zz->Num_Proc; ++p)
         if (p!=zz->Proc) 
             MPI_Irecv(srecbuf[p], srecsize[p], MPI_INT, p, SNTAG, zz->Communicator, &rreqsC[rreqcntC++]);
+
+
     /* Calculate superstep info to be sent */
     /* Initialize pointers for filling the buffers */
     for (p=0; p<zz->Num_Proc; p++)
@@ -1458,16 +1478,16 @@ static int D2ParallelColoring (
     /* Mark end of superstep info by -2 */
     for (p=0; p<zz->Num_Proc; p++) {
         if (p != zz->Proc) {
-            if (ssp[p] == ssendbuf[p])
+            if (ssp[p] == ssendbuf[p]) 
                 *ssp[p] = -2;
-            else if (*(ssp[p]-1) == -1)
+            else if (*(ssp[p]-1) == -1) 
                 *(--ssp[p]) = -2;
-            else
+            else 
                 *ssp[p] = -2;
         }
     }
 
-#if 1
+#if 0
     for (p=0; p<zz->Num_Proc; p++)
         if (p != zz->Proc) {
             printf("[%d] ssendbuf sent to proc %d: ", zz->Proc, p);
@@ -1482,10 +1502,11 @@ static int D2ParallelColoring (
         if (p != zz->Proc) 
             MPI_Isend(ssendbuf[p], ssp[p] - ssendbuf[p] + 1, MPI_INT, p, SNTAG, zz->Communicator, &sreqsC[sreqcntC++]);
     
+
     MPI_Waitall(rreqcntC, rreqsC, stats); /* wait all superstep info to be received */
     MPI_Waitall(sreqcntC, sreqsC, stats); /* wait all superstep info to be sent */ 
-
-#if 1   
+    
+#if 0   
     MPI_Barrier(zz->Communicator);
     for (p=0; p<zz->Num_Proc; p++)
         if (p != zz->Proc) {
@@ -1522,7 +1543,7 @@ static int D2ParallelColoring (
     waitPtrAndForbiddenColors(zz, rreqcntFx, rreqsFx, rreqfromFx, stats, forbsize, xforbidden, forbidden, xfp, rreqsF);                
 
 
-#if 1
+#if 0
     for (p=0; p<zz->Num_Proc; p++) {
         int u, idx = 0;
         if (p != zz->Proc) {
@@ -1548,8 +1569,11 @@ static int D2ParallelColoring (
         for (j = xadj[u]; j < xadj[u+1]; ++j) {
             int v =  adj[j], c;            
             int vp = adjproc[j]; /* owner of vertex v */
-            if ((c = color[v]) != 0) 
+            if ((c = color[v]) != 0) {
+                while (*nColor < c) /* if nColor < c, set nColor to c and reset intermediate mark entries */
+                    mark[++(*nColor)] = -1;
                 mark[c] = u;
+            }
             if (vp == zz->Proc) { /* if v is local as well */
                 if (isbound[v] && confChk[v] == sncnt) { /* add boundary vertices of this round into confChk */
                     confChk[v] = -2;
@@ -1557,13 +1581,18 @@ static int D2ParallelColoring (
                 }
                 for (k = xadj[v]; k < xadj[v+1]; ++k) {	  
                     int w = adj[k];
-                    if ((c = color[w]) != 0)
-                        mark[c] = u;	      
+                    if ((c = color[w]) != 0) {
+                        while (*nColor < c) /* if nColor < c, set nColor to c and reset intermediate mark entries */
+                            mark[++(*nColor)] = -1;
+                        mark[c] = u;
+                    }
                 }
             }
             else { /* if v is non-local, read forbidden colors sent by the owner of v */                
                 for (m = *xfp[vp]; m < *(xfp[vp] + 1); m++) {
                     c = forbidden[vp][m];
+                    while (*nColor < c) /* if nColor < c, set nColor to c and reset intermediate mark entries */
+                        mark[++(*nColor)] = -1;
                     mark[c] = u;
                 }
             }
@@ -1572,7 +1601,7 @@ static int D2ParallelColoring (
         colored[n++] = Zoltan_G2LHash_L2G(hash, u);
         colored[n++] = color[u];
         
-#if 1
+#if 0
         printf("%d: PC Color[%d] = %d\n", zz->Proc, u, color[u]);
 #endif
       
@@ -1597,7 +1626,7 @@ static int D2ParallelColoring (
             fp = 0; /*number of procesors requesting forbidden colors for their next ss*/
             for (l = 0; l < rreqcntC; ++l) {
                 p = rreqfromC[l];	
-#if 1
+#if 0
                 printf("New colors from proc %d received by proc %d:\n", p, zz->Proc);
 #endif                
                 /* update non-local vertex colors according to the received color update message content */  
@@ -1638,7 +1667,7 @@ static int D2ParallelColoring (
         if (p!=zz->Proc) 
             MPI_Isend(colored, n, MPI_INT, p, COLORTAG, zz->Communicator, &sreqsC[sreqcntC++]);
 
-#if 1
+#if 0
     printf("Proc %d: Round finished and the final send is issued.  Helping others.\n", zz->Proc);
 #endif
 
@@ -1650,7 +1679,7 @@ static int D2ParallelColoring (
         ++sncnt;
         for (l = 0; l < rreqcntC; ++l) {            
             p = rreqfromC[l];	
-#if 1
+#if 0
             printf("New colors from proc %d received by proc %d:\n", p, zz->Proc);
 #endif
 
@@ -1695,7 +1724,8 @@ static int D1DetectConflicts(
     int *adj,
     int *color,
     int *conflicts,
-    int *rand_key
+    int *rand_key,
+    G2LHash *hash
 )
 {
     int i, j, conflict = 0;
@@ -1707,6 +1737,9 @@ static int D1DetectConflicts(
             if ((color[u] == color[v]) && (rand_key[u] < rand_key[v])){
 		conflicts[conflict++] = u;
 		break;
+            } else if ((color[u] == color[v]) && (rand_key[u] == rand_key[v]) && (Zoltan_G2LHash_L2G(hash, u) < Zoltan_G2LHash_L2G(hash, v))){
+                conflicts[conflict++] = u;
+		break;
             }
         }
     }
@@ -1716,7 +1749,7 @@ static int D1DetectConflicts(
 /*****************************************************************************/
 /* Detect D2 conflicts */
 
-static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **srecbuf, int **ssendbuf, int *srecsize, int *ssendsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict)
+static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **rcrecbuf, int **rcsendbuf, int *rcrecsize, int *rcsendsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict)
 {
     static char *yo="D2DetectConflicts";
     int w, i, j, p;
@@ -1726,7 +1759,7 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
 
     for (i=0; i<zz->Num_Proc; ++i)
         if (i != zz->Proc)
-            srp[i] = srecbuf[i];
+            srp[i] = rcrecbuf[i];
         else
             srp[i] = conflicts;
 
@@ -1734,7 +1767,7 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
     for (rreqcntC=p=0; p<zz->Num_Proc; ++p)
         if (p != zz->Proc) {
             rreqfromC[rreqcntC] = p;
-            MPI_Irecv(ssendbuf[p], ssendsize[p], MPI_INT, p, RECOLORTAG, zz->Communicator, &rreqsC[rreqcntC++]);
+            MPI_Irecv(rcsendbuf[p], rcsendsize[p], MPI_INT, p, RECOLORTAG, zz->Communicator, &rreqsC[rreqcntC++]);
         }
     
     /*** Detect conflicts and mark vertices to be recolored ***/
@@ -1782,10 +1815,10 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
     for (p = 0; p < zz->Num_Proc; p++) 
         if (p != zz->Proc) {
             *srp[p]++ = -1;
-            if ((srp[p] - srecbuf[p]) > srecsize[p])
+            if ((srp[p] - rcrecbuf[p]) > rcrecsize[p])
                 ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Insufficient memory allocation, use larger sized buffers.");
-            MPI_Isend(srecbuf[p], srp[p] - srecbuf[p] , MPI_INT, p, RECOLORTAG, zz->Communicator, &sreqsC[sreqcntC++]);
-            for (q = srecbuf[p]; *q!=-1; ++q) {
+            MPI_Isend(rcrecbuf[p], srp[p] - rcrecbuf[p] , MPI_INT, p, RECOLORTAG, zz->Communicator, &sreqsC[sreqcntC++]);
+            for (q = rcrecbuf[p]; *q!=-1; ++q) {
                 int u = Zoltan_G2LHash_G2L(hash, *q);
                 vmark[u] = 0;
             }
@@ -1797,8 +1830,8 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
     for (p = 0; p < zz->Num_Proc; p++)
         if (p != zz->Proc) {
             j = 0;
-            while (ssendbuf[p][j] != -1) {
-                int gu = ssendbuf[p][j++], u;
+            while (rcsendbuf[p][j] != -1) {
+                int gu = rcsendbuf[p][j++], u;
                 u = Zoltan_G2LHash_G2L(hash, gu);
                 if (!vmark[u]) {
                     *srp[zz->Proc]++ = gu;
@@ -1815,7 +1848,7 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
     *q = 0;
     MPI_Waitall(sreqcntC, sreqsC, stats); /* wait all recolor info to be sent */
     
-#if 1
+#if 0
     printf("%d: There are %d conflicts\n", zz->Proc, *nconflict);
 #endif
 
