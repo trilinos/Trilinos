@@ -114,8 +114,8 @@ $mpigo 4 amesos_test.exe LAPACK   fidapm05.rua 1 1 -3 1   10000 1e-12   >>SST.st
 $mpigo 1 amesos_test.exe LAPACK   ImpcolA.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
 $mpigo 3 amesos_test.exe LAPACK   ImpcolA.rua 0 0 1 0 1e-9  1e-11  >>SST.stdout
 $mpigo 3 amesos_test.exe LAPACK   ImpcolA.rua 0 1 1 1 1e-9  1e-11  >>SST.stdout
-$mpigo 1 amesos_test.exe LAPACK   ImpcolB.rua 0 1 1 0 1e-10 1e-14 >>SST.stdout
-$mpigo 3 amesos_test.exe LAPACK   ImpcolB.rua 0 1 1 0 1e-10 1e-14  >>SST.stdout
+$mpigo 1 amesos_test.exe LAPACK   ImpcolB.rua 0 1 1 0 1e-10 2e-14 >>SST.stdout
+$mpigo 3 amesos_test.exe LAPACK   ImpcolB.rua 0 1 1 0 1e-10 2e-14  >>SST.stdout
 $mpigo 1 amesos_test.exe LAPACK   ImpcolC.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
 $mpigo 3 amesos_test.exe LAPACK   ImpcolC.rua 0 0 1 0 1e-12 1e-13  >>SST.stdout
 $mpigo 1 amesos_test.exe LAPACK   ImpcolD.rua 0 1 1 0 1e-12 5e-13 >>SST.stdout
