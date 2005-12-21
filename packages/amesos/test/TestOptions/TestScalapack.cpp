@@ -152,6 +152,10 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
 
   //
   //     3)  ComputeVectorNorms==true,  MaxProcs==2, grid_mb_ =2, grid_nb_=2
+  //
+  //     These tests are disabled on atlantis - see bug #1888
+  //
+#ifndef IRIX64
   {
     Teuchos::ParameterList ParamList ;
     ParamList.set( "MaxProcs", 2 );
@@ -196,7 +200,6 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
 	(transpose?"true":"false") << endl ;  
     }
   }
-
   //
   //     4)  ComputeTrueResidual==true,  MaxProcs==1000 grid_mb_ =3, grid_nb_=3
   {
@@ -288,6 +291,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
 	(transpose?"true":"false") << endl ;  
     }
   }
+#endif
 
 #endif
 #if 1
