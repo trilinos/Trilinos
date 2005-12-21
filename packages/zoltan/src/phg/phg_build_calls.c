@@ -1065,7 +1065,7 @@ MPI_Status status;
   /* Post receive for incoming edge pins */
 
   if (recvSize > 0){
-    recvBuf = (int *)ZOLTAN_MALLOC_GID_ARRAY(zz, recvSize);
+    recvBuf = (unsigned int *)ZOLTAN_MALLOC_GID_ARRAY(zz, recvSize);
     MPI_Irecv(recvBuf, recvSize * lenGID, MPI_INT, proc, 
               tagPins, zz->Communicator, &reqPins);
   }
@@ -1080,7 +1080,7 @@ MPI_Status status;
    */
 
   if (sendSize > 0){
-    sendBuf = (int *)ZOLTAN_MALLOC_GID_ARRAY(zz, sendSize);
+    sendBuf = (unsigned int *)ZOLTAN_MALLOC_GID_ARRAY(zz, sendSize);
     eptr = sendBuf;
 
     for (i=0; i<numMatches; i++){
@@ -1133,7 +1133,7 @@ MPI_Status status;
       if (npins > 0){
         en = egidNodes + idx;  
         nMyPins = en->egidBuf[lenGID];
-        pinBuf = (int *)ZOLTAN_MALLOC_GID_ARRAY(zz, nMyPins + npins);
+        pinBuf = (unsigned int *)ZOLTAN_MALLOC_GID_ARRAY(zz, nMyPins + npins);
         if (nMyPins > 0){
           ZOLTAN_COPY_GID_ARRAY(pinBuf, en->pins, zz, nMyPins);
         }
