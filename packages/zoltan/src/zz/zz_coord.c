@@ -539,7 +539,7 @@ static void inertial_matrix2D(ZZ *zstruct, double *X,
   double    tmp1[3], tmp2[3];
   double    xx, yy, xy;
   double    xdif, ydif;
-  int       j, rank;
+  int       j, rank=0;
   double    cmt[2];
   double    xxt, yyt, xyt;
   double *c, num_coords, total_coords;
@@ -606,7 +606,7 @@ static void inertial_matrix3D(ZZ *zstruct, double *X,
   double    tmp1[6], tmp2[6];
   double    xx, yy, zz, xy, xz, yz;
   double    xdif, ydif, zdif;
-  int       j, rank;
+  int       j, rank=0;
   double    cmt[3];
   double    xxt, yyt, zzt, xyt, xzt, yzt;
   double *c, num_coords, total_coords;
