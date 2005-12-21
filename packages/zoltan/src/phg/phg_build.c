@@ -143,11 +143,6 @@ static int Zoltan_PHG_Fill_Hypergraph(
 )
 {
 /* Routine to call HG query function and build HG data structure. 
- * Assumes (for now) that input is given as follows from application:
- *  - Application gives hyperedges it owns; it knows GIDs and processor owner
- *    of all vertices of each owned hyperedge.
- *  - Application gives each hyperedge only once (KDDKDD -- MAY REMOVE THIS
- *    RESTRICTION LATER. KDDKDD)
  * Output is a fully functioning parallel hypergraph with 2D distribution of
  * pins (non-zeros).
  */
@@ -390,7 +385,7 @@ int *gcnt = NULL;
 
       if (((ierr==ZOLTAN_OK)||(ierr==ZOLTAN_WARN)) && (ew_num_edges > 0)){
         ew_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, ew_num_edges);
-        ew_lids = ZOLTAN_MALLOC_GID_ARRAY(zz, ew_num_edges);
+        ew_lids = ZOLTAN_MALLOC_LID_ARRAY(zz, ew_num_edges);
         ew_weights = 
           (float *)ZOLTAN_MALLOC(sizeof(float) * ew_num_edges * ew_dim);
 
