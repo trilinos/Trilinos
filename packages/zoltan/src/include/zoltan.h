@@ -1918,7 +1918,7 @@ typedef int ZOLTAN_HG_CS_FORT_FN(
 /*****************************************************************************/
 /*
  *  Function to return the number of edges for which the application
- *  will be able to provide hypergraph edge weights.
+ *  will be able to provide hypergraph edge weights. (0 if no edge weights)
  *
  *  Input:  
  *    data                --  pointer to user defined data structure
