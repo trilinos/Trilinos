@@ -195,13 +195,9 @@ extern int Zoltan_HG_Graph_to_HGraph(ZZ*, Graph*,  HGraph*);
 extern void Zoltan_HG_Print(ZZ*, HGraph*, Partition, FILE*, char*);
 extern void Zoltan_HG_HGraph_Print(ZZ *zz, ZHG *, HGraph *, Partition, FILE *fp);
     
-extern int Zoltan_HG_Hypergraph_Edge_Callbacks(ZZ *, ZHG *, int, float, int, 
+extern int Zoltan_HG_Hypergraph_Callbacks(ZZ *, ZHG *, int, float, int, 
   int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **, int *, 
   ZOLTAN_ID_PTR *, int **);
-extern int Zoltan_HG_Hypergraph_Pin_Callbacks(ZZ *, ZHG *, int, float, int, 
-  int, void *,
-  int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **, 
-  int *, ZOLTAN_ID_PTR *);
 extern int Zoltan_HG_Graph_Callbacks(ZZ *, ZHG *, int, float, int, int *,
   ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **, int *, ZOLTAN_ID_PTR *,
   int **);
