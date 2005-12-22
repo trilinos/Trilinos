@@ -275,6 +275,11 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   [Build the Thyra operator/vector adapater support in AztecOO (also rquires epetraext).  Can be overridden with --disable-aztecoo-thyra.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  epetraext, thyra, EPETRAEXT_THYRA, ENABLE_EPETRAEXT_THYRA, yes,
+  [],
+  [Can be overridden with --disable-epetraext-thyra .])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   aztecoo, ifpack, AZTECOO_IFPACK, ENABLE_AZTECOO_IFPACK, yes,
   [Allows aztecoo/thyra adapters to use ifpack in examples and tests.],
   [Allows aztecoo/thyra adapters to use ifpack in examples and tests.  Can be overridden with --disable-aztecoo-ifpack.])

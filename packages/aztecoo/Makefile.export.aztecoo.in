@@ -5,7 +5,7 @@ include @abs_top_builddir@/../triutils/Makefile.export.triutils
 # Optional dependancy on thyra and epetraext
 
 @ENABLE_AZTECOO_THYRA_TRUE@include @abs_top_builddir@/../thyra/Makefile.export.thyra
-@ENABLE_AZTECOO_THYRA_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+@ENABLE_EPETRAEXT_THYRA_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
 
 @ENABLE_AZTECOO_THYRA_TRUE@AZTECOO_THYRA_INCLUDES = \
 @ENABLE_AZTECOO_THYRA_TRUE@	-I@abs_top_srcdir@/thyra/src \

@@ -59,6 +59,9 @@
 /* Define to 1 if you have the <ctime> header file. */
 #undef HAVE_CTIME
 
+/* Define if want to build with epetraext enabled */
+#undef HAVE_EPETRAEXT_THYRA
+
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 
