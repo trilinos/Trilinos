@@ -131,7 +131,7 @@ public:
   /*!
   \brief Set solver parameters
   */
-  void SetParameters(RefCountPtr<Teuchos::ParameterList> params) { params_ = params; return;}
+  void SetParameters(Teuchos::ParameterList *params) { params_ = params; return;}
 
   /*!
   \brief Set linear system
@@ -164,7 +164,7 @@ private:
   int                                 outlevel_;      // output level (0-10)
   Epetra_Comm&                        comm_;          // communicator (global, contains ALL procs)
   
-  RefCountPtr<Teuchos::ParameterList> params_;        // solution parameters
+  Teuchos::ParameterList*             params_;        // solution parameters
 
   RefCountPtr<Epetra_CrsMatrix>       matrix_;        // linear system
   bool                                matrixisnew_;   // flag indicating whether system has been solved before

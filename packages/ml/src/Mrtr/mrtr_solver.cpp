@@ -76,7 +76,7 @@ bool MOERTEL::Solver::Solve(RefCountPtr<Teuchos::ParameterList> params,
                             RefCountPtr<Epetra_Vector> x,
                             RefCountPtr<Epetra_Vector> b)
 {
-  SetParameters(params);
+  SetParameters(params.get());
   SetSystem(matrix,x,b);
   return Solve();
 }
@@ -98,7 +98,7 @@ bool MOERTEL::Solver::Solve()
 
   //---------------------------------------------------------------------------
   // check for parameters
-  if (params_==null)
+  if (params_==NULL)
   {
     cout << "***ERR*** MOERTEL::Solver::Solve:\n"
          << "***ERR*** solver parameters are Teuchos::null\n"
@@ -111,8 +111,10 @@ bool MOERTEL::Solver::Solve()
   if (linearproblem_==null)
     linearproblem_ = rcp(new Epetra_LinearProblem());
 
-  linearproblem_->SetRHS(x_.get());
-  linearproblem_->SetLHS(b_.get());
+  //b_.get()->PutScalar(0.0);
+  //x_.get()->PutScalar(0.0);
+  linearproblem_->SetLHS(x_.get());
+  linearproblem_->SetRHS(b_.get());
     
   if (matrixisnew_)
     linearproblem_->SetOperator(matrix_.get());
@@ -136,8 +138,6 @@ bool MOERTEL::Solver::Solve()
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
-    else
-      return true;
   }
 
   //---------------------------------------------------------------------------
@@ -149,7 +149,7 @@ bool MOERTEL::Solver::Solve()
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  return false;
+  return true;
 }
 
 /*----------------------------------------------------------------------*
