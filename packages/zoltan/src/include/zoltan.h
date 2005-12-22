@@ -2539,7 +2539,7 @@ extern int Zoltan_Set_HG_Size_Edge_Weights_Fn(
   void *data_ptr
 );
 
-extern int Zoltan_Set_HG_Edge_Weight_Fn(
+extern int Zoltan_Set_HG_Edge_Weights_Fn(
   struct Zoltan_Struct *zz, 
   ZOLTAN_HG_EDGE_WEIGHTS_FN *fn_ptr, 
   void *data_ptr
