@@ -33,8 +33,9 @@ in the Zoltan library:
 <br><a href="ug_alg_rib.html">Recursive Inertial Bisection (RIB)</a>
 <br><a href="ug_alg_hsfc.html">Hilbert Space-Filling Curve (HSFC)</a>
 <br><a href="ug_alg_reftree.html">Refinement Tree Based Partitioning (REFTREE)</a>
-<br><a href="ug_alg_parmetis.html">ParMETIS (PARMETIS)</a>
-<br><a href="ug_alg_jostle.html">Jostle (JOSTLE)</a>
+<br><a href="ug_alg_parmetis.html">Graph partitioning: ParMETIS (GRAPH or PARMETIS)</a>
+<br><a href="ug_alg_jostle.html">Graph partitioning: Jostle (JOSTLE)</a>
+<br><a href="ug_alg_phg.html">Hypergraph partitioning: PHG (HYPERGRAPH or PHG)</a>
 <br><a href="ug_alg_oct.html">Octree Partitioning (OCTPART)</a></blockquote>
 The parenthetical string is the parameter value for <i><a href="#LB_METHOD">LB_METHOD</a></i>
 parameter; the parameter is set through a call to <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
@@ -71,10 +72,9 @@ Valid values are&nbsp;
 <br>"RIB" (for <a href="ug_alg_rib.html">recursive inertial bisection</a>),
 <br>"HSFC" (for <a href="ug_alg_hsfc.html">Hilbert space-filling curve
 partitioning</a>),
-<br>"PARMETIS" (for any of the methods in the <a href="ug_alg_parmetis.html">ParMETIS</a>
-library),
-<br>"JOSTLE" (for any of the methods in the <a href="ug_alg_jostle.html">Jostle</a>
-library),
+<br>"GRAPH" or "PARMETIS" (for any of the methods in the <a href="ug_alg_parmetis.html">ParMETIS</a> library),
+<br>"JOSTLE" (for any of the methods in the <a href="ug_alg_jostle.html">Jostle</a> library),
+<br>"HYPERGRAPH" or "PHG" (for <a href="ug_alg_phg.html">hypergraph partitioning</a>),
 <br>"OCTPART" (for <a href="ug_alg_oct.html">octree partitioning</a>),
 <br>"REFTREE" (for <a href="ug_alg_reftree.html">refinement tree based
 partitioning</a>), and

@@ -65,28 +65,28 @@ Planned features currently not supported:<br>
     </tr>
     <tr>
       <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
- style="font-style: italic;">hypergraph_package</span><br>
+ style="font-style: italic;">HYPERGRAPH_PACKAGE</span><br>
       </td>
       <td style="vertical-align: top;">PHG (parallel) or PaToH (serial)<br>
       </td>
     </tr>
     <tr>
       <td style="vertical-align: top;"><span style="font-style: italic;">&nbsp;&nbsp;&nbsp;
-PHG_output_level</span><br>
+PHG_OUTPUT_LEVEL</span><br>
       </td>
       <td style="vertical-align: top;">Level of verbosity; 0 is silent.<br>
       </td>
     </tr>
     <tr>
       <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
- style="font-style: italic;">PHG_final_output</span><br>
+ style="font-style: italic;">PHG_FINAL_OUTPUT</span><br>
       </td>
       <td style="vertical-align: top;">Print stats about final
 partitioning? (0/1)<br>
       </td>
     </tr>
     <tr>
-      <td valign="top"><i>&nbsp;&nbsp;&nbsp; PHG_reduction_method</i></td>
+      <td valign="top"><i>&nbsp;&nbsp;&nbsp; PHG_REDUCTION_METHOD</i></td>
       <td>The method to use in matching/coarsening; currently these are
 available.&nbsp; <br>
       <span style="font-style: italic;">ipm</span> - inner product
@@ -103,14 +103,14 @@ on each processor. Fastest option&nbsp; but often gives poor quality. <br>
       </i></td>
     </tr>
     <tr>
-      <td>&nbsp;&nbsp;&nbsp; <span style="font-style: italic;">PHG_reduction_limit</span><br>
+      <td>&nbsp;&nbsp;&nbsp; <span style="font-style: italic;">PHG_REDUCTION_LIMIT</span><br>
       </td>
       <td>Number of vertices at which to stop coarsening.<br>
       </td>
     </tr>
     <tr>
       <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
- style="font-style: italic;">PHG_vertex_visit_order</span><br>
+ style="font-style: italic;">PHG_VERTEX_VISIT_ORDER</span><br>
       </td>
       <td style="vertical-align: top;">Ordering of vertices in greedy
 matching scheme:<br>
@@ -123,7 +123,7 @@ matching scheme:<br>
     </tr>
     <tr>
       <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
- style="font-style: italic;">PHG_edge_scaling</span><br>
+ style="font-style: italic;">PHG_EDGE_SCALING</span><br>
       </td>
       <td style="vertical-align: top;">Scale edge weights by some
 function of size of the hyperedges:<br>
@@ -134,7 +134,7 @@ function of size of the hyperedges:<br>
     </tr>
     <tr>
       <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
- style="font-style: italic;">PHG_vertex_scaling</span><br>
+ style="font-style: italic;">PHG_VERTEX_SCALING</span><br>
       </td>
       <td style="vertical-align: top;">Variations in "inner product"
 similarity metric (for matching):<br>
@@ -145,7 +145,7 @@ similarity metric (for matching):<br>
       </td>
     </tr>
     <tr>
-      <td valign="top">&nbsp;&nbsp;&nbsp; <i>PHG_coarse_partitioning</i></td>
+      <td valign="top">&nbsp;&nbsp;&nbsp; <i>PHG_COARSE_PARTITIONING</i></td>
       <td>Method to partition the coarsest (smallest) hypergraph;
 typically done in serial:<br>
       <span style="font-style: italic;">ran</span> - random<br>
@@ -163,14 +163,14 @@ method<br>
       </td>
     </tr>
     <tr>
-      <td>&nbsp;&nbsp;&nbsp; <i>PHG_coarse_iterations</i></td>
+      <td>&nbsp;&nbsp;&nbsp; <i>PHG_COARSE_ITERATIONS</i></td>
       <td>Number of times to do coarse partitioning on each processor.
 The best is selected.<br>
       </td>
     </tr>
     <tr>
       <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
- style="font-style: italic;">PHG_refinement</span><br>
+ style="font-style: italic;">PHG_REFINEMENT</span><br>
       </td>
       <td style="vertical-align: top;">Refinement algorithm:<br>
 FM <br>
