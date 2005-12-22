@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
     SolverType.push_back("Amesos_Klu");
     SolverType.push_back("Amesos_Umfpack");
     SolverType.push_back("Amesos_Superlu");
-    SolverType.push_back("Amesos_Mumps");
+//    SolverType.push_back("Amesos_Mumps");       Bug #1896 
     SolverType.push_back("Amesos_Scalapack");
     driver(Comm, false, true, SolverType);
   }
