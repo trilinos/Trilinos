@@ -343,7 +343,7 @@ static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex,
            ZOLTAN_ID_PTR *p_edge_verts, int **p_edge_procs, 
            float **p_edge_wgts, int *glob_hedges, int *glob_pins)
 {
-  int i, ierr, cnt, j, nEdge, npins=0, numwgts, minproc;
+  int i, ierr, cnt, j, nEdge, npins, numwgts, minproc;
   int loc_hedges, loc_pins;
   int *hindex = NULL, *edge_procs = NULL;
   ZOLTAN_ID_PTR edge_verts = NULL;
