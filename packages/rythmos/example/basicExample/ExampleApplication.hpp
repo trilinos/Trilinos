@@ -46,36 +46,28 @@ public:
 
   // Constructor
   ExampleApplication(Teuchos::ParameterList &params);
-
   // return ODE decay coefficient
   Teuchos::RefCountPtr<const Epetra_Vector> get_coeff() const;
+  //
+  Teuchos::RefCountPtr<const Epetra_Vector> get_exact_solution(double t) const;
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{
 
   /** \brief . */
   Teuchos::RefCountPtr<const Epetra_Map> get_x_map() const;
-
   /** \brief . */
   Teuchos::RefCountPtr<const Epetra_Map> get_f_map() const;
-
   /** \brief . */
   Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
-
   /** \brief . */
   Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
-
   /** \brief . */
   InArgs createInArgs() const;
-
   /** \brief . */
   OutArgs createOutArgs() const;
-
   /** \brief . */
   void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
-
-  /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_exact_solution(double t) const;
 
   //@}
 
