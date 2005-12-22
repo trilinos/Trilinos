@@ -340,7 +340,7 @@ int *gcnt = NULL;
   app.nPins = 0;
   app.GnEdge = 0;
   if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_HG_Edge_Info) {
-    ierr = Zoltan_HG_Hypergraph_Callbacks(zz, zhg,
+    ierr = Zoltan_HG_Hypergraph_Edge_Callbacks(zz, zhg,
                                           app.GnVtx, hgp->EdgeSizeThreshold,
                                           hgp->final_output, &app.nEdge, 
                                           &app.egids, &app.elids,

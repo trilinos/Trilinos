@@ -48,6 +48,13 @@ typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
 #define ZOLTAN_FATAL  -1
 #define ZOLTAN_MEMERR -2
 
+/*****************************************************************************/
+/* Hypergraph query function types 
+ */
+/*****************************************************************************/
+#define ZOLTAN_COMPRESSED_ROWS 1
+#define ZOLTAN_COMPRESSED_COLS 2
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

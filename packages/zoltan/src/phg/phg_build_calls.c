@@ -32,7 +32,7 @@ static int ignore_some_edges(ZZ *, ZHG *, int, float, int, int *,
 
 /*****************************************************************************/
 
-int Zoltan_HG_Hypergraph_Callbacks(
+int Zoltan_HG_Hypergraph_Edge_Callbacks(
   ZZ *zz,
   ZHG *zhg,                /* Input:   Pointer to Zoltan's structure with
                                        GIDs, LIDs.
@@ -292,7 +292,31 @@ End:
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
-
+/*****************************************************************************/
+int Zoltan_HG_Hypergraph_Pin_Callbacks(
+  ZZ *zz,
+  ZHG *zhg,                /* Input:   Pointer to Zoltan's structure with
+                                       GIDs, LIDs.
+                              Output:  Removed edge fields of zhg are changed
+                                       if dense edges are removed. */
+  int gnVtx,               /* Input:   Global number of vertices in hgraph */
+  float esize_threshold,   /* Input:   %age of gnVtx considered a dense edge */
+  int return_removed,      /* Input:   flag indicating whether to return
+                                       removed edge info */
+  int ew_num_edges,        /* Input: num edges from edge weight queries */
+  void *htptr,             /* Input: hash table for edge weights from query */
+                           /*        we free hash table when done           */
+  int *nedges,             /* Output:  Number of hyperedges on this processor */
+  ZOLTAN_ID_PTR *egids,    /* Output:  GIDs of hyperedges on this processor */
+  ZOLTAN_ID_PTR *elids,    /* Output:  LIDs (if provided by application) */
+  int **esizes,            /* Output:  # of vertices for each hyperedge on
+                                       this processor */
+  float **ewgts,           /* Output: Weights for each hyperedge on proc */
+  int *npins,              /* Output:  # of pins on this processor =
+                                       sum esizes[i], i = 0..nedges-1. */
+  ZOLTAN_ID_PTR *pins)     /* Output:  vertex GIDs of pins */
+{
+}
 /*****************************************************************************/
 static int ignore_some_edges (
   ZZ *zz,
