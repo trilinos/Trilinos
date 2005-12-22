@@ -86,6 +86,10 @@ enum Zoltan_Fn_Type {
   ZOLTAN_NUM_HG_EDGES_FN_TYPE,
   ZOLTAN_HG_EDGE_INFO_FN_TYPE,
   ZOLTAN_HG_EDGE_LIST_FN_TYPE,
+  ZOLTAN_HG_SIZE_CS_FN_TYPE,
+  ZOLTAN_HG_CS_FN_TYPE,
+  ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE,
+  ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE,
   ZOLTAN_MAX_FN_TYPES               /*  This entry should always be last. */
 };
 
@@ -1836,6 +1840,148 @@ typedef int ZOLTAN_HG_EDGE_LIST_FORT_FN(
 
 /*****************************************************************************/
 /*
+ *  Function to return the type of compressed storage format (row or
+ *  column) and the size of the data to be returned by Get_HG_CS().
+ *
+ *  Input:
+ *    data                --  pointer to user defined data structure
+ *  Output:
+ *    num_lists           --  number of rows (vertices) or columns (edges)
+ *    num_pins            --  total non-zeroes in rows or columns
+ *    format              --  ZOLTAN_COMPRESSED_ROWS or ZOLTAN_COMPRESSED_COLS
+ *  Returned value:       --  error code
+ */
+
+typedef int ZOLTAN_HG_SIZE_CS_FN(
+  void *data,
+  int *num_lists,
+  int *num_pins,
+  int *format
+);
+
+typedef int ZOLTAN_HG_SIZE_CS_FORT_FN(
+  void *data,
+  int *num_lists,
+  int *num_pins,
+  int *format
+);
+/*****************************************************************************/
+/*
+ *  Function to return the non-zeroes of a hypergraph in
+ *  compressed column or compressed row storage format.  Columns are
+ *  vertices, rows are edges in the hypergraph's matrix storage format.
+ *
+ *  Input:
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    nrowcol             --  number of rows or columns expected in output
+ *    npins               --  number of pins expected in output
+ *    format              --  ZOLTAN_COMPRESSED_ROWS or ZOLTAN_COMPRESSED_COLS
+ *
+ *  Output:
+ *    rowcol_GID --  if ZOLTAN_COMPRESSED_ROWS: global edge ID for each row
+ *                   if ZOLTAN_COMPRESSED_COLS: global vertex ID for each column
+ *    rowcol_ptr --  if ZOLTAN_COMPRESSED_ROWS: pointer into pin_GID list for
+ *                     the start of each row
+ *                   if ZOLTAN_COMPRESSED_COLS: pointer into pin_GID list for
+ *                     the start of each column
+ *    pin_GID    --  if ZOLTAN_COMPRESSED_ROWS: global vertex ID for each
+ *                     non-zero in each row
+ *                   if ZOLTAN_COMPRESSED_COLS: global edge ID for each
+ *                     non-zero in each column
+ *
+ *  Returned value:       --  error code
+ */
+
+typedef int ZOLTAN_HG_CS_FN(
+  void *data,
+  int num_gid_entries,
+  int nrowcol,
+  int npins,
+  int format,
+  ZOLTAN_ID_PTR rowcol_GID,
+  int *rowcol_ptr,
+  ZOLTAN_ID_PTR pin_GID
+);
+
+typedef int ZOLTAN_HG_CS_FORT_FN(
+  void *data,
+  int num_gid_entries,
+  int nrowcol,
+  int npins,
+  int format,
+  ZOLTAN_ID_PTR rowcol_GID,
+  int *rowcol_ptr,
+  ZOLTAN_ID_PTR pin_GID
+);
+/*****************************************************************************/
+/*
+ *  Function to return the number of edges for which the application
+ *  will be able to provide hypergraph edge weights. (0 if no edge weights)
+ *
+ *  Input:
+ *    data                --  pointer to user defined data structure
+ *  Output:
+ *    num_edges           --  number of edges
+ *  Returned value:       --  error code
+ */
+
+typedef int ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN(
+  void *data,
+  int *num_edges
+);
+
+typedef int ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FORT_FN(
+  void *data,
+  int *num_edges
+);
+
+/*****************************************************************************/
+/*
+ *  Function to supply edge weights.
+ *
+ *  Input:
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    nedges              --  number edges for which weights are expected
+ *    edge_weight_dim     --  number of weights per edge expected
+ *
+ *  Output:
+ *    edge_GID     --  list of edge global IDs for which weights are reported
+ *    edge_LID     --  optional list of edge local IDs
+ *    edge_weight  --  list of weights, by edge by dim
+ *
+ *  Returned value:       --  error code
+ */
+
+typedef int ZOLTAN_HG_EDGE_WEIGHTS_FN(
+  void *data,
+  int num_gid_entries,
+  int num_lid_entries,
+  int nedges,
+  int edge_weight_dim,
+  ZOLTAN_ID_PTR edge_GID,
+  ZOLTAN_ID_PTR edge_LID,
+  float *edge_weight
+);
+
+typedef int ZOLTAN_HG_EDGE_WEIGHTS_FORT_FN(
+  void *data,
+  int num_gid_entries,
+  int num_lid_entries,
+  int nedges,
+  int edge_weight_dim,
+  ZOLTAN_ID_PTR edge_GID,
+  ZOLTAN_ID_PTR edge_LID,
+  float *edge_weight
+);
+
+/*****************************************************************************/
+/*
  *  Function to return, for the calling processor, the number of objects 
  *  sharing a subdomain border with a given processor.
  *  Input:  
@@ -2372,6 +2518,30 @@ extern int Zoltan_Set_HG_Edge_Info_Fn(
 extern int Zoltan_Set_HG_Edge_List_Fn(
   struct Zoltan_Struct *zz, 
   ZOLTAN_HG_EDGE_LIST_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_HG_Size_CS_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_HG_SIZE_CS_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_HG_CS_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_HG_CS_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_HG_Size_Edge_Weights_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_HG_Edge_Weight_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_HG_EDGE_WEIGHTS_FN *fn_ptr, 
   void *data_ptr
 );
 

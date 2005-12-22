@@ -213,6 +213,22 @@ int ierr;
     ierr = Zoltan_Set_HG_Edge_List_Fn(zz, 
                   (ZOLTAN_HG_EDGE_LIST_FN *) fn, data);
     break;
+  case ZOLTAN_HG_SIZE_CS_FN_TYPE:
+    ierr = Zoltan_Set_HG_Size_CS_Fn(zz, 
+                  (ZOLTAN_HG_SIZE_CS_FN *) fn, data);
+    break;
+  case ZOLTAN_HG_CS_FN_TYPE:
+    ierr = Zoltan_Set_HG_CS_Fn(zz, 
+                  (ZOLTAN_HG_CS_FN *) fn, data);
+    break;
+  case ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE:
+    ierr = Zoltan_Set_HG_Size_Edge_Weights_Fn(zz, 
+                  (ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN *) fn, data);
+    break;
+  case ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE:
+    ierr = Zoltan_Set_HG_Edge_Weights_Fn(zz, 
+                  (ZOLTAN_HG_EDGE_WEIGHTS_FN *) fn, data);
+    break;
   default:
     sprintf(msg, "ZOLTAN_FN_TYPE %d is invalid.\n"
             "Value must be in range 0 to %d.", fn_type, ZOLTAN_MAX_FN_TYPES);
@@ -688,6 +704,56 @@ int Zoltan_Set_HG_Edge_List_Fn(
 {
   zz->Get_HG_Edge_List = fn;
   zz->Get_HG_Edge_List_Data = data;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
+int Zoltan_Set_HG_Size_CS_Fn(
+  ZZ *zz, 
+  ZOLTAN_HG_SIZE_CS_FN *fn, 
+  void *data
+)
+{
+  zz->Get_HG_Size_CS = fn;
+  zz->Get_HG_Size_CS_Data = data;
+  return ZOLTAN_OK;
+}
+/*****************************************************************************/
+
+int Zoltan_Set_HG_CS_Fn(
+  ZZ *zz, 
+  ZOLTAN_HG_CS_FN *fn, 
+  void *data
+)
+{
+  zz->Get_HG_CS = fn;
+  zz->Get_HG_CS_Data = data;
+  return ZOLTAN_OK;
+}
+/*****************************************************************************/
+
+int Zoltan_Set_HG_Size_Edge_Weights_Fn(
+  ZZ *zz, 
+  ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN *fn, 
+  void *data
+)
+{
+  zz->Get_HG_Size_Edge_Weights = fn;
+  zz->Get_HG_Size_Edge_Weights_Data = data;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
+int Zoltan_Set_HG_Edge_Weights_Fn(
+  ZZ *zz, 
+  ZOLTAN_HG_EDGE_WEIGHTS_FN *fn, 
+  void *data
+)
+{
+  zz->Get_HG_Edge_Weights = fn;
+  zz->Get_HG_Edge_Weights_Data = data;
   return ZOLTAN_OK;
 }
 
