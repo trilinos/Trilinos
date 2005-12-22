@@ -61,6 +61,7 @@ static PARAM_VARS PHG_params[] = {
   {"USE_TIMERS",                      NULL,  "INT",    0},    
   {"EDGE_SIZE_THRESHOLD",             NULL,  "FLOAT",  0},
   {"PHG_BAL_TOL_ADJUSTMENT",          NULL,  "FLOAT",  0},  
+  {"PHG_EDGE_WEIGHT_OPERATION",       NULL,  "STRING",  0},
   {"PARKWAY_SERPART",                 NULL,  "STRING", 0},
   {"ADD_OBJ_WEIGHT",                  NULL,  "STRING", 0},
   {"PHG_RANDOMIZE_INPUT",             NULL,  "INT",    0},    
@@ -482,7 +483,7 @@ static int Zoltan_PHG_Initialize_Params(
   int usePrimeComm;
   MPI_Comm communicator;
   char add_obj_weight[MAX_PARAM_STRING_LEN];
-  
+  char edge_weight_op[MAX_PARAM_STRING_LEN];
 
   memset(hgp, 0, sizeof(*hgp)); /* in the future if we forget to initialize
                                    another param at least it will be 0 */
@@ -521,6 +522,8 @@ static int Zoltan_PHG_Initialize_Params(
                                  (void *) hgp->parkway_serpart);  
   Zoltan_Bind_Param(PHG_params, "ADD_OBJ_WEIGHT",
                                  (void *) add_obj_weight);
+  Zoltan_Bind_Param(PHG_params, "PHG_EDGE_WEIGHT_OPERATION",
+                                 (void *) edge_weight_op);
   Zoltan_Bind_Param(PHG_params, "PHG_RANDOMIZE_INPUT",
                                  (void*) &hgp->RandomizeInitDist);  
   Zoltan_Bind_Param(PHG_params, "PATOH_ALLOC_POOL0",
@@ -537,6 +540,7 @@ static int Zoltan_PHG_Initialize_Params(
   strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->parkway_serpart,     "patoh", MAX_PARAM_STRING_LEN);
   strncpy(add_obj_weight,            "none", MAX_PARAM_STRING_LEN);
+  strncpy(edge_weight_op,            "max", MAX_PARAM_STRING_LEN);
 
   hgp->use_timers = 0;
   hgp->proc_split = 1;
@@ -608,6 +612,20 @@ static int Zoltan_PHG_Initialize_Params(
       (hgp->add_obj_weight==PHG_ADD_NO_WEIGHT)){ /* no calculated weight */
 
     hgp->add_obj_weight = PHG_ADD_UNIT_WEIGHT; /* default object weight */
+  }
+
+  /* TODO put this next parameter in the User's Guide */
+
+  if (!strcasecmp(edge_weight_op, "max")){
+    hgp->edge_weight_op = PHG_MAX_EDGE_WEIGHTS;
+  } else if (!strcasecmp(edge_weight_op, "add")){
+    hgp->edge_weight_op = PHG_ADD_EDGE_WEIGHTS;
+  } else if (!strcasecmp(edge_weight_op, "error")){
+    hgp->edge_weight_op = PHG_FLAG_ERROR_EDGE_WEIGHTS;
+  } else{
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+    "Invalid PHG_EDGE_WEIGHT_OPERATION parameter.\n");
+    goto End;
   }
 
   if (zz->LB.Method == PHG) {
