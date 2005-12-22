@@ -89,13 +89,13 @@ EXTERNAL_F77FLAGS = $(TEUCHOS_FFLAGS)
 #
 
 # Build object files from EXTERNAL_C source files
-%.$(EXTERNAL_OBJ_EXT) : %.c $(TRILINOS_MAKE_OPTIONS_FILE) Makefile
+%.$(EXTERNAL_OBJ_EXT) : %.c $(TRILINOS_MAKE_OPTIONS_FILE)
 	$(EXTERNAL_C) $(EXTERNAL_C_COMPILE_OPT) $(EXTERNAL_CPPFLAGS) $(EXTERNAL_EXTRA_CPPFLAGS) \
 	$(EXTERNAL_DEFINES) $(EXTERNAL_INCLUDES) \
 	$(EXTERNAL_CFLAGS) $(EXTERNAL_EXTRA_CFLAGS) $(EXTERNAL_C_OUTPUT_OPT)$@ $<
 
 # Build object files from EXTERNAL_C++ source files
-%.$(EXTERNAL_OBJ_EXT) : %.cpp $(TRILINOS_MAKE_OPTIONS_FILE) Makefile
+%.$(EXTERNAL_OBJ_EXT) : %.cpp $(TRILINOS_MAKE_OPTIONS_FILE)
 	$(EXTERNAL_CXX) $(EXTERNAL_CXX_COMPILE_OPT) $(EXTERNAL_CPPFLAGS) $(EXTERNAL_EXTRA_CPPFLAGS) \
 	$(EXTERNAL_DEFINES) $(EXTERNAL_INCLUDES) \
 	$(EXTERNAL_CXXFLAGS) $(EXTERNAL_EXTRA_CXXFLAGS) $(EXTERNAL_CXX_OUTPUT_OPT)$@ $<
@@ -106,7 +106,7 @@ EXTERNAL_F77FLAGS = $(TEUCHOS_FFLAGS)
 #	$(EXTERNAL_F77) $(EXTERNAL_F77_COMPILE_OPT) $(EXTERNAL_CPPFLAGS) $(EXTERNAL_EXTRA_CPPFLAGS) $(EXTERNAL_F77FLAGS) $(EXTERNAL_EXTRA_F77FLAGS) $(EXTERNAL_F77_OUTPUT_OPT)$@ $<
 
 # Build dependency files for EXTERNAL_C source files that include header dependencies
-%.d: %.c $(TRILINOS_MAKE_OPTIONS_FILE) Makefile
+%.d: %.c $(TRILINOS_MAKE_OPTIONS_FILE)
 	$(EXTERNAL_C) $(EXTERNAL_C_DEP_OPT) $(EXTERNAL_CPPFLAGS) $(EXTERNAL_EXTRA_CPPFLAGS) \
 	$(EXTERNAL_DEFINES) $(EXTERNAL_INCLUDES) \
 	$< \
@@ -114,9 +114,21 @@ EXTERNAL_F77FLAGS = $(TEUCHOS_FFLAGS)
 #	| $(EXTERNAL_BASE_DIR)/Moocho/build/dep_post.pl $@ $(EXTERNAL_OBJ_EXT) | $(EXTERNAL_DEP_POST_PROC) > $@; [ -s $@ ] || rm -f $@
 
 # Build dependency files for EXTERNAL_C++ source files that include header dependencies
-%.d: %.cpp $(TRILINOS_MAKE_OPTIONS_FILE) Makefile
+%.d: %.cpp $(TRILINOS_MAKE_OPTIONS_FILE)
 	$(EXTERNAL_CXX) $(EXTERNAL_CXX_DEP_OPT) $(EXTERNAL_CPPFLAGS) $(EXTERNAL_EXTRA_CPPFLAGS) \
 	$(EXTERNAL_DEFINES) $(EXTERNAL_INCLUDES) \
 	$< \
 	| sed 's/$(@:.d=\.$(EXTERNAL_OBJ_EXT))/$(@:.d=.$(EXTERNAL_OBJ_EXT)) $@/' | $(EXTERNAL_DEP_POST_PROC) > $@; [ -s $@ ] || rm -f $@
 #	| $(EXTERNAL_BASE_DIR)/Moocho/build/dep_post.pl $@ $(EXTERNAL_OBJ_EXT) | $(EXTERNAL_DEP_POST_PROC) > $@; [ -s $@ ] || rm -f $@
+
+#
+# Universal targets
+#
+
+clean-obj :
+	rm *.o
+clean-lib :
+	rm *.a
+clean-exe :
+	rm *.exe
+clean : clean-obj clean-lib clean-exe

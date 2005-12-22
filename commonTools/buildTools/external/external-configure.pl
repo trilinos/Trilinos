@@ -59,6 +59,14 @@ print BASE_MAKEFILE "clean-obj :\n";
 foreach(@external_packages) {
   print BASE_MAKEFILE "\tcd ${_}; make clean-obj\n";
 }
+print BASE_MAKEFILE "clean-lib :\n";
+foreach(@external_packages) {
+  print BASE_MAKEFILE "\tcd ${_}; make clean-lib\n";
+}
+print BASE_MAKEFILE "clean-exe :\n";
+foreach(@external_packages) {
+  print BASE_MAKEFILE "\tcd ${_}; make clean-exe\n";
+}
 #
 # Create the external subpackage directories and their makefiles
 #
