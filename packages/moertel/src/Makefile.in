@@ -313,7 +313,9 @@ UTIL_H = \
 UTIL = \
 	$(srcdir)/mrtr_utils.cpp 
 
-AM_CPPFLAGS = $(MOERTEL_INCLUDES)
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(MOERTEL_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(MOERTEL_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 # ------------------------------------------------------------------------
 # Moertel library specifications
@@ -1076,7 +1078,7 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
 
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.moertel
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

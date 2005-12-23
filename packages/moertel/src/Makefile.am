@@ -74,9 +74,15 @@ UTIL_H = \
 UTIL = \
 	$(srcdir)/mrtr_utils.cpp 
 
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.moertel
 
-AM_CPPFLAGS = $(MOERTEL_INCLUDES)
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(MOERTEL_INCLUDES))
+else
+EXPORT_INCLUDES = $(MOERTEL_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 # ------------------------------------------------------------------------
 # Moertel library specifications
