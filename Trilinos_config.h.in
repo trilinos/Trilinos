@@ -57,6 +57,9 @@
 /* Define if want to build ml */
 #undef HAVE_ML
 
+/* Define if want to build moertel */
+#undef HAVE_MOERTEL
+
 /* Define if want to build moocho */
 #undef HAVE_MOOCHO
 

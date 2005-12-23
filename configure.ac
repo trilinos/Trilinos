@@ -75,6 +75,8 @@ TAC_ARG_ENABLE_DEFAULT_FEATURE(loca, [Build loca], LOCA)
 
 TAC_ARG_ENABLE_FEATURE(meros, [Build meros], MEROS, no)
 
+TAC_ARG_ENABLE_FEATURE(moertel, [Build moertel], MOERTEL, no)
+
 TAC_ARG_ENABLE_DEFAULT_FEATURE(ml, [Build ml], ML)
 
 ## #np# - Copy the next line, and change the name.  Place the line in 
@@ -144,6 +146,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" ||
 	test "X$ac_cv_use_capo" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
+	test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/teuchos])
   BUILD_TEUCHOS=yes
@@ -193,6 +196,7 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno" ||
         test "X$ac_cv_use_claps" != "Xno" ||
+        test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/epetra])
   BUILD_EPETRA=yes
@@ -330,7 +334,8 @@ else
 fi
 AM_CONDITIONAL(BUILD_TSFCOREUTILS, test "X$BUILD_TSFCOREUTILS" != "Xno")
 
-if test "X$ac_cv_use_amesos" != "Xno"; then
+if test "X$ac_cv_use_amesos" != "Xno" ||
+        test "X$ac_cv_use_moertel" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/amesos])
   BUILD_AMESOS=yes
   if test "X$ac_cv_use_amesos_explicit" != "Xyes"; then
@@ -342,6 +347,7 @@ fi
 AM_CONDITIONAL(BUILD_AMESOS, test "X$BUILD_AMESOS" != "Xno")
 
 if test "X$ac_cv_use_epetraext" != "Xno" ||
+        test "X$ac_cv_use_moertel" != "Xno" ||
 	( test "X$ac_cv_use_thyra" != "Xno" && test "X$ac_cv_use_aztecoo" != "Xno" ); then
   AC_CONFIG_SUBDIRS([packages/epetraext])
   BUILD_EPETRAEXT=yes
@@ -386,7 +392,8 @@ else
 fi
 AM_CONDITIONAL(BUILD_MEROS, test "X$BUILD_MEROS" != "Xno")
 
-if test "X$ac_cv_use_ml" != "Xno"; then
+if test "X$ac_cv_use_ml" != "Xno" ||
+        test "X$ac_cv_use_moertel" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/ml])
   BUILD_ML=yes
   if test "X$ac_cv_use_ml_explicit" != "Xyes"; then
@@ -432,8 +439,16 @@ else
 fi
 AM_CONDITIONAL(BUILD_CAPO, test "X$BUILD_CAPO" != "Xno")
 
-
-
+if test "X$ac_cv_use_moertel" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/moertel])
+  BUILD_MOERTEL=yes
+  if test "X$ac_cv_use_moertel_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-moertel"
+  fi
+else
+  BUILD_MOERTEL=no
+fi
+AM_CONDITIONAL(BUILD_MOERTEL, test "X$BUILD_MOERTEL" != "Xno")
 
 if test "X$ac_cv_use_pytrilinos" != "Xno" ||
 	test "X$ac_cv_use_python" != "Xno"; then

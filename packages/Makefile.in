@@ -91,8 +91,9 @@ ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = teuchos PyTrilinos thyra kokkos epetra triutils tpetra \
 	epetraext aztecoo galeri amesos ifpack komplex claps \
-	TSFCoreUtils TSFCore belos anasazi pliris ml TSF meros nox \
-	capo rythmos new_package moocho TSFExtended didasko external
+	TSFCoreUtils TSFCore belos anasazi pliris ml moertel TSF meros \
+	nox capo rythmos new_package moocho TSFExtended didasko \
+	external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = aclocal -I config
 AMTAR = @AMTAR@
@@ -132,6 +133,8 @@ BUILD_MEROS_FALSE = @BUILD_MEROS_FALSE@
 BUILD_MEROS_TRUE = @BUILD_MEROS_TRUE@
 BUILD_ML_FALSE = @BUILD_ML_FALSE@
 BUILD_ML_TRUE = @BUILD_ML_TRUE@
+BUILD_MOERTEL_FALSE = @BUILD_MOERTEL_FALSE@
+BUILD_MOERTEL_TRUE = @BUILD_MOERTEL_TRUE@
 BUILD_MOOCHO_FALSE = @BUILD_MOOCHO_FALSE@
 BUILD_MOOCHO_TRUE = @BUILD_MOOCHO_TRUE@
 BUILD_NEW_PACKAGE_FALSE = @BUILD_NEW_PACKAGE_FALSE@
@@ -254,6 +257,8 @@ AUTOMAKE_OPTIONS = foreign
 @BUILD_MEROS_TRUE@MEROS_LIB_BUILD_CMND = echo "meros does not support all-libs yet";
 @BUILD_ML_TRUE@ML_SUBDIR = ml
 @BUILD_ML_TRUE@ML_LIB_BUILD_CMND = echo "ml does not support all-libs yet";
+@BUILD_MOERTEL_TRUE@MOERTEL_SUBDIR = moertel 
+@BUILD_MOERTEL_TRUE@MOERTEL_LIB_BUILD_CMND = echo "moertel does not support all-libs yet";
 @BUILD_MOOCHO_TRUE@MOOCHO_SUBDIR = moocho
 @BUILD_MOOCHO_TRUE@MOOCHO_LIB_BUILD_CMND = cd moocho ; $(MAKE) all-libs ;
 @BUILD_NEW_PACKAGE_TRUE@NEW_PACKAGE_SUBDIR = new_package
@@ -305,6 +310,7 @@ SUBDIRS = \
 	$(ANASAZI_SUBDIR)      \
 	$(PLIRIS_SUBDIR)       \
 	$(ML_SUBDIR)           \
+	$(MOERTEL_SUBDIR)      \
 	$(TSF_SUBDIR)          \
 	$(MEROS_SUBDIR)        \
 	$(NOX_SUBDIR)          \
@@ -617,6 +623,7 @@ all-libs:
 	$(ANASAZI_LIB_BUILD_CMND)
 	$(PLIRIS_LIB_BUILD_CMND)
 	$(ML_LIB_BUILD_CMND)
+	$(MOERTEL_LIB_BUILD_CMND)
 	$(TSF_LIB_BUILD_CMND)
 	$(MEROS_LIB_BUILD_CMND)
 	$(NOX_LIB_BUILD_CMND)

@@ -144,6 +144,11 @@ ML_SUBDIR = ml
 ML_LIB_BUILD_CMND = echo "ml does not support all-libs yet";
 endif
 
+if BUILD_MOERTEL
+MOERTEL_SUBDIR = moertel 
+MOERTEL_LIB_BUILD_CMND = echo "moertel does not support all-libs yet";
+endif
+
 if BUILD_MOOCHO
 MOOCHO_SUBDIR = moocho
 MOOCHO_LIB_BUILD_CMND = cd moocho ; $(MAKE) all-libs ;
@@ -237,6 +242,7 @@ SUBDIRS = \
 	$(ANASAZI_SUBDIR)      \
 	$(PLIRIS_SUBDIR)       \
 	$(ML_SUBDIR)           \
+	$(MOERTEL_SUBDIR)      \
 	$(TSF_SUBDIR)          \
 	$(MEROS_SUBDIR)        \
 	$(NOX_SUBDIR)          \
@@ -269,6 +275,7 @@ all-libs:
 	$(ANASAZI_LIB_BUILD_CMND)
 	$(PLIRIS_LIB_BUILD_CMND)
 	$(ML_LIB_BUILD_CMND)
+	$(MOERTEL_LIB_BUILD_CMND)
 	$(TSF_LIB_BUILD_CMND)
 	$(MEROS_LIB_BUILD_CMND)
 	$(NOX_LIB_BUILD_CMND)
