@@ -1,7 +1,7 @@
 # $Id$
 #
 
-EXAMPLE_ZOLTAN_LIB_OBJECTS = exmesh.o exmisc.o
+EXAMPLE_ZOLTAN_LIB_OBJECTS = exmesh.o exmisc.o exphg.o
 
 all:	libexzoltan.a
 
