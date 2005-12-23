@@ -1,4 +1,4 @@
-module load compilers/pgi-6.0
+module load PrgEnv-pgi
 module load mpich
 ../configure --enable-mpi \
 CXX=mpicxx CC=mpicc F77=mpif77 \
@@ -9,4 +9,4 @@ CPPFLAGS="-tp k8-64 -lacml -lpgmp -lpgthread" \
 --enable-aztecoo --enable-anasazi \
 --enable-ifpack --enable-nox \
 --disable-default-packages
-#The first two lines load the proper environment
+#The lines before ../configure load the proper environment
