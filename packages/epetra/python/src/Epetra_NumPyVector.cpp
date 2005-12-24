@@ -324,3 +324,243 @@ double Epetra_NumPyVector::MeanValue() const {
   // Return type is double, so we cannot return NULL on failure
   return DBL_MAX;
 }
+
+// =============================================================================
+int Epetra_NumPyVector::ReplaceGlobalValues(PyObject * values, PyObject * indices) {
+  PyArrayObject * myValues  = NULL;
+  PyArrayObject * myIndices = NULL;
+  int lenValues;
+  int lenIndices;
+  int result;
+  myValues  = (PyArrayObject *) PyArray_ContiguousFromObject(values, 'd',0,0);
+  if (!myValues) goto fail;
+  myIndices = (PyArrayObject *) PyArray_ContiguousFromObject(indices,'i',0,0);
+  if (!myIndices) goto fail;
+  lenValues  = _PyArray_multiply_list(myValues->dimensions,  myValues->nd );
+  lenIndices = _PyArray_multiply_list(myIndices->dimensions, myIndices->nd);
+  if (lenValues != lenIndices) {
+    PyErr_Format(PyExc_ValueError, "Sequence lengths are %d and %d, but must be of same length",
+		 lenValues, lenIndices);
+    goto fail;
+  }
+  result = Epetra_Vector::ReplaceGlobalValues(lenValues,
+					      (double *) myValues->data,
+					      (int    *) myIndices->data);
+  Py_DECREF(myValues );
+  Py_DECREF(myIndices);
+  return result;
+ fail:
+  Py_XDECREF(myValues );
+  Py_XDECREF(myIndices);
+  return -1;
+}
+
+// =============================================================================
+int Epetra_NumPyVector::ReplaceGlobalValues(int blockOffset, PyObject * values, PyObject * indices) {
+  PyArrayObject * myValues  = NULL;
+  PyArrayObject * myIndices = NULL;
+  int lenValues;
+  int lenIndices;
+  int result;
+  myValues  = (PyArrayObject *) PyArray_ContiguousFromObject(values, 'd',0,0);
+  if (!myValues) goto fail;
+  myIndices = (PyArrayObject *) PyArray_ContiguousFromObject(indices,'i',0,0);
+  if (!myIndices) goto fail;
+  lenValues  = _PyArray_multiply_list(myValues->dimensions,  myValues->nd );
+  lenIndices = _PyArray_multiply_list(myIndices->dimensions, myIndices->nd);
+  if (lenValues != lenIndices) {
+    PyErr_Format(PyExc_ValueError, "Sequence lengths are %d and %d, but must be of same length",
+		 lenValues, lenIndices);
+    goto fail;
+  }
+  result = Epetra_Vector::ReplaceGlobalValues(lenValues, blockOffset,
+					      (double *) myValues->data,
+					      (int    *) myIndices->data);
+  Py_DECREF(myValues );
+  Py_DECREF(myIndices);
+  return result;
+ fail:
+  Py_XDECREF(myValues );
+  Py_XDECREF(myIndices);
+  return -1;
+}
+
+// =============================================================================
+int Epetra_NumPyVector::ReplaceMyValues(PyObject * values, PyObject * indices) {
+  PyArrayObject * myValues  = NULL;
+  PyArrayObject * myIndices = NULL;
+  int lenValues;
+  int lenIndices;
+  int result;
+  myValues  = (PyArrayObject *) PyArray_ContiguousFromObject(values, 'd',0,0);
+  if (!myValues) goto fail;
+  myIndices = (PyArrayObject *) PyArray_ContiguousFromObject(indices,'i',0,0);
+  if (!myIndices) goto fail;
+  lenValues  = _PyArray_multiply_list(myValues->dimensions,  myValues->nd );
+  lenIndices = _PyArray_multiply_list(myIndices->dimensions, myIndices->nd);
+  if (lenValues != lenIndices) {
+    PyErr_Format(PyExc_ValueError, "Sequence lengths are %d and %d, but must be of same length",
+		 lenValues, lenIndices);
+    goto fail;
+  }
+  result = Epetra_Vector::ReplaceMyValues(lenValues,
+					  (double *) myValues->data,
+					  (int    *) myIndices->data);
+  Py_DECREF(myValues );
+  Py_DECREF(myIndices);
+  return result;
+ fail:
+  Py_XDECREF(myValues );
+  Py_XDECREF(myIndices);
+  return -1;
+}
+
+// =============================================================================
+int Epetra_NumPyVector::ReplaceMyValues(int blockOffset, PyObject * values, PyObject * indices) {
+  PyArrayObject * myValues  = NULL;
+  PyArrayObject * myIndices = NULL;
+  int lenValues;
+  int lenIndices;
+  int result;
+  myValues  = (PyArrayObject *) PyArray_ContiguousFromObject(values, 'd',0,0);
+  if (!myValues) goto fail;
+  myIndices = (PyArrayObject *) PyArray_ContiguousFromObject(indices,'i',0,0);
+  if (!myIndices) goto fail;
+  lenValues  = _PyArray_multiply_list(myValues->dimensions,  myValues->nd );
+  lenIndices = _PyArray_multiply_list(myIndices->dimensions, myIndices->nd);
+  if (lenValues != lenIndices) {
+    PyErr_Format(PyExc_ValueError, "Sequence lengths are %d and %d, but must be of same length",
+		 lenValues, lenIndices);
+    goto fail;
+  }
+  result = Epetra_Vector::ReplaceMyValues(lenValues, blockOffset,
+					  (double *) myValues->data,
+					  (int    *) myIndices->data);
+  Py_DECREF(myValues );
+  Py_DECREF(myIndices);
+  return result;
+ fail:
+  Py_XDECREF(myValues );
+  Py_XDECREF(myIndices);
+  return -1;
+}
+
+// =============================================================================
+int Epetra_NumPyVector::SumIntoGlobalValues(PyObject * values, PyObject * indices) {
+  PyArrayObject * myValues  = NULL;
+  PyArrayObject * myIndices = NULL;
+  int lenValues;
+  int lenIndices;
+  int result;
+  myValues  = (PyArrayObject *) PyArray_ContiguousFromObject(values, 'd',0,0);
+  if (!myValues) goto fail;
+  myIndices = (PyArrayObject *) PyArray_ContiguousFromObject(indices,'i',0,0);
+  if (!myIndices) goto fail;
+  lenValues  = _PyArray_multiply_list(myValues->dimensions,  myValues->nd );
+  lenIndices = _PyArray_multiply_list(myIndices->dimensions, myIndices->nd);
+  if (lenValues != lenIndices) {
+    PyErr_Format(PyExc_ValueError, "Sequence lengths are %d and %d, but must be of same length",
+		 lenValues, lenIndices);
+    goto fail;
+  }
+  result = Epetra_Vector::SumIntoGlobalValues(lenValues,
+					      (double *) myValues->data,
+					      (int    *) myIndices->data);
+  Py_DECREF(myValues );
+  Py_DECREF(myIndices);
+  return result;
+ fail:
+  Py_XDECREF(myValues );
+  Py_XDECREF(myIndices);
+  return -1;
+}
+
+// =============================================================================
+int Epetra_NumPyVector::SumIntoGlobalValues(int blockOffset, PyObject * values, PyObject * indices) {
+  PyArrayObject * myValues  = NULL;
+  PyArrayObject * myIndices = NULL;
+  int lenValues;
+  int lenIndices;
+  int result;
+  myValues  = (PyArrayObject *) PyArray_ContiguousFromObject(values, 'd',0,0);
+  if (!myValues) goto fail;
+  myIndices = (PyArrayObject *) PyArray_ContiguousFromObject(indices,'i',0,0);
+  if (!myIndices) goto fail;
+  lenValues  = _PyArray_multiply_list(myValues->dimensions,  myValues->nd );
+  lenIndices = _PyArray_multiply_list(myIndices->dimensions, myIndices->nd);
+  if (lenValues != lenIndices) {
+    PyErr_Format(PyExc_ValueError, "Sequence lengths are %d and %d, but must be of same length",
+		 lenValues, lenIndices);
+    goto fail;
+  }
+  result = Epetra_Vector::SumIntoGlobalValues(lenValues, blockOffset,
+					      (double *) myValues->data,
+					      (int    *) myIndices->data);
+  Py_DECREF(myValues );
+  Py_DECREF(myIndices);
+  return result;
+ fail:
+  Py_XDECREF(myValues );
+  Py_XDECREF(myIndices);
+  return -1;
+}
+
+// =============================================================================
+int Epetra_NumPyVector::SumIntoMyValues(PyObject * values, PyObject * indices) {
+  PyArrayObject * myValues  = NULL;
+  PyArrayObject * myIndices = NULL;
+  int lenValues;
+  int lenIndices;
+  int result;
+  myValues  = (PyArrayObject *) PyArray_ContiguousFromObject(values, 'd',0,0);
+  if (!myValues) goto fail;
+  myIndices = (PyArrayObject *) PyArray_ContiguousFromObject(indices,'i',0,0);
+  if (!myIndices) goto fail;
+  lenValues  = _PyArray_multiply_list(myValues->dimensions,  myValues->nd );
+  lenIndices = _PyArray_multiply_list(myIndices->dimensions, myIndices->nd);
+  if (lenValues != lenIndices) {
+    PyErr_Format(PyExc_ValueError, "Sequence lengths are %d and %d, but must be of same length",
+		 lenValues, lenIndices);
+    goto fail;
+  }
+  result = Epetra_Vector::SumIntoMyValues(lenValues,
+					  (double *) myValues->data,
+					  (int    *) myIndices->data);
+  Py_DECREF(myValues );
+  Py_DECREF(myIndices);
+  return result;
+ fail:
+  Py_XDECREF(myValues );
+  Py_XDECREF(myIndices);
+  return -1;
+}
+
+// =============================================================================
+int Epetra_NumPyVector::SumIntoMyValues(int blockOffset, PyObject * values, PyObject * indices) {
+  PyArrayObject * myValues  = NULL;
+  PyArrayObject * myIndices = NULL;
+  int lenValues;
+  int lenIndices;
+  int result;
+  myValues  = (PyArrayObject *) PyArray_ContiguousFromObject(values, 'd',0,0);
+  if (!myValues) goto fail;
+  myIndices = (PyArrayObject *) PyArray_ContiguousFromObject(indices,'i',0,0);
+  if (!myIndices) goto fail;
+  lenValues  = _PyArray_multiply_list(myValues->dimensions,  myValues->nd );
+  lenIndices = _PyArray_multiply_list(myIndices->dimensions, myIndices->nd);
+  if (lenValues != lenIndices) {
+    PyErr_Format(PyExc_ValueError, "Sequence lengths are %d and %d, but must be of same length",
+		 lenValues, lenIndices);
+    goto fail;
+  }
+  result = Epetra_Vector::SumIntoMyValues(lenValues, blockOffset,
+					  (double *) myValues->data,
+					  (int    *) myIndices->data);
+  Py_DECREF(myValues );
+  Py_DECREF(myIndices);
+  return result;
+ fail:
+  Py_XDECREF(myValues );
+  Py_XDECREF(myIndices);
+  return -1;
+}

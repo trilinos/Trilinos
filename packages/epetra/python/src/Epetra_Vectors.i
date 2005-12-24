@@ -23,10 +23,26 @@ struct Vector { };
 %ignore Epetra_MultiVector::ExtractCopy(double **       ) const;  // are given functionality
 %ignore Epetra_MultiVector::ExtractView(double **, int *) const;  // in the derived class
 %ignore Epetra_MultiVector::ExtractView(double ***      ) const;  // Epetra_NumPyMultiVector
+%ignore Epetra_MultiVector::Dot(const Epetra_MultiVector&,double*) const;
+%ignore Epetra_MultiVector::Norm1(double*) const;
+%ignore Epetra_MultiVector::Norm2(double*) const;
+%ignore Epetra_MultiVector::NormInf(double*) const;
+%ignore Epetra_MultiVector::NormWeighted(const Epetra_MultiVector&,double*) const;
+%ignore Epetra_MultiVector::MinValue(double*) const;
+%ignore Epetra_MultiVector::MaxValue(double*) const;
+%ignore Epetra_MultiVector::MeanValue(double*) const;
 %ignore Epetra_MultiVector::ResetView(double **);     // These are expert
 %ignore Epetra_MultiVector::Pointers() const;         // method not supported in python
 %ignore Epetra_Vector::ExtractCopy(double * ) const;  // These Extract methods are given functionality
-%ignore Epetra_Vector::ExtractView(double **) const;  // in the derived class Epetra_NumPyMultiVector
+%ignore Epetra_Vector::ExtractView(double **) const;  // in the derived class Epetra_NumPyVector
+%ignore Epetra_Vector::ReplaceGlobalValues(int,double*,int*);      // These four Replace methods are overloaded
+%ignore Epetra_Vector::ReplaceGlobalValues(int,int,double*,int*);  // in Epetra_NumPyVector with the double*
+%ignore Epetra_Vector::ReplaceMyValues(int,double*,int*);          // and int* arguments replaced with PyObject*s
+%ignore Epetra_Vector::ReplaceMyValues(int,int,double*,int*);      // and the first int argument made implicit
+%ignore Epetra_Vector::SumIntoGlobalValues(int,double*,int*);      // These four SumInto methods are overloaded
+%ignore Epetra_Vector::SumIntoGlobalValues(int,int,double*,int*);  // in Epetra_NumPyVector with the double*
+%ignore Epetra_Vector::SumIntoMyValues(int,double*,int*);	   // and int* arguments replaced with PyObject*s
+%ignore Epetra_Vector::SumIntoMyValues(int,int,double*,int*);	   // and the first int argument made implicit
 
 // Rename directives
 %rename(NumPyMultiVector) Epetra_NumPyMultiVector;

@@ -62,6 +62,14 @@ public:
   double     MinValue() const;
   double     MaxValue() const;
   double     MeanValue() const;
+  int        ReplaceGlobalValues(PyObject * values, PyObject * indices);
+  int        ReplaceGlobalValues(int blockOffset, PyObject * values, PyObject * indices);
+  int        ReplaceMyValues(PyObject * values, PyObject * indices);
+  int        ReplaceMyValues(int blockOffset, PyObject * values, PyObject * indices);
+  int        SumIntoGlobalValues(PyObject * values, PyObject * indices);
+  int        SumIntoGlobalValues(int blockOffset, PyObject * values, PyObject * indices);
+  int        SumIntoMyValues(PyObject * values, PyObject * indices);
+  int        SumIntoMyValues(int blockOffset, PyObject * values, PyObject * indices);
 
 private:
 
