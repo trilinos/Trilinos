@@ -13,6 +13,8 @@ FFLAGS=-O3 \
 --cache-file=config.cache \
 --disable-default-packages \
 --enable-amesos \
+--enable-amesos-umfpack \
+--enable-amesos-superlu \
 --disable-amesos-pardiso \
 --enable-amesos-taucs \
 --enable-anasazi \
