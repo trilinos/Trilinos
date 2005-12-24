@@ -32,7 +32,9 @@ struct Vector { };
 %ignore Epetra_MultiVector::MaxValue(double*) const;
 %ignore Epetra_MultiVector::MeanValue(double*) const;
 %ignore Epetra_MultiVector::ResetView(double **);     // These are expert
-%ignore Epetra_MultiVector::Pointers() const;         // method not supported in python
+%ignore Epetra_MultiVector::Pointers() const;         // methods not supported in python
+%ignore Epetra_Vector::operator[](int);
+%ignore Epetra_Vector::operator[](int) const;
 %ignore Epetra_Vector::ExtractCopy(double * ) const;  // These Extract methods are given functionality
 %ignore Epetra_Vector::ExtractView(double **) const;  // in the derived class Epetra_NumPyVector
 %ignore Epetra_Vector::ReplaceGlobalValues(int,double*,int*);      // These four Replace methods are overloaded
@@ -43,6 +45,7 @@ struct Vector { };
 %ignore Epetra_Vector::SumIntoGlobalValues(int,int,double*,int*);  // in Epetra_NumPyVector with the double*
 %ignore Epetra_Vector::SumIntoMyValues(int,double*,int*);	   // and int* arguments replaced with PyObject*s
 %ignore Epetra_Vector::SumIntoMyValues(int,int,double*,int*);	   // and the first int argument made implicit
+%ignore Epetra_Vector::ResetView(double *);           // Expert method not supported in python
 
 // Rename directives
 %rename(NumPyMultiVector) Epetra_NumPyMultiVector;

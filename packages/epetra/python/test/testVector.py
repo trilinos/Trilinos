@@ -70,7 +70,7 @@ class EpetraVectorTestCase(unittest.TestCase):
         self.assertEquals(ev.GlobalLength(), self.length*comm.NumProc())
 
     def testConstructor02(self):
-        "Test Epetra.Vector (BlockMap,int) constructor"
+        "Test Epetra.Vector (BlockMap) constructor"
         ev = Epetra.Vector(self.map)
         self.assertEquals(ev.NumVectors(),1)
         self.assertEquals(ev.MyLength(), self.length)
@@ -394,6 +394,37 @@ class EpetraVectorTestCase(unittest.TestCase):
         else:
             self.assertEquals(result, 1)
 
+    def testSumIntoGlobalValues1(self):
+        "Test Epetra.Vector SumIntoGlobalValues method"
+        ev = Epetra.Vector(self.map,self.numPyArray1)
+        gids = [2,3,6]
+        lids = [self.map.LID(gid) for gid in gids]
+        result = ev.SumIntoGlobalValues([2.2,3.3,6.6],gids)
+        for i in range(len(gids)):
+            gid = gids[i]
+            lid = lids[i]
+            if lid >= 0:
+                self.assertEquals(result, 0)
+                self.assertAlmostEquals(ev[lid], 0.125*lid+1.1*gid)
+            else:
+                self.assertEquals(result, 1)
+
+    def testSumIntoGlobalValues2(self):
+        "Test Epetra.Vector SumIntoGlobalValues method with blockOffset"
+        map = Epetra.BlockMap(3*self.comm.NumProc(),3,0,self.comm)
+        self.numPyArray1.shape = (3,3)  # 1 vector, 3 elements, 3 points per element
+        ev = Epetra.Vector(map,self.numPyArray1)
+        gids = [0,2]
+        lids = [self.map.LID(gid) for gid in gids]
+        result = ev.SumIntoGlobalValues(2,[3.14,3.14],gids)
+        for lid in lids:
+            if lid >= 0:
+                self.assertEquals(result, 0)
+                ii = 3*lid + 2
+                self.assertEquals(ev[lid,2], 0.125*ii+3.14)
+            else:
+                self.assertEquals(result, 1)
+
     def testSumIntoMyValue1(self):
         "Test Epetra.Vector SumIntoMyValue method"
         ev = Epetra.Vector(self.map,self.numPyArray1)
@@ -406,13 +437,33 @@ class EpetraVectorTestCase(unittest.TestCase):
     def testSumIntoMyValue2(self):
         "Test Epetra.Vector SumIntoMyValue method with blockOffset"
         map = Epetra.BlockMap(3*self.comm.NumProc(),3,0,self.comm)
-        self.numPyArray1.shape = (3,3)  # 1 vector, 3 elements, 3 points per element
+        self.numPyArray1.shape = (3,3)  # 3 elements, 3 points per element
         ev = Epetra.Vector(map,self.numPyArray1)
         lid = 1
         self.assertEquals(ev[lid,1], 0.5)
         result = ev.SumIntoMyValue(lid,1,0,0.5)
         self.assertEquals(result, 0)
         self.assertEquals(ev[lid,1], 1.0)
+
+    def testSumIntoMyValues1(self):
+        "Test Epetra.Vector SumIntoMyValues method"
+        ev = Epetra.Vector(self.map,self.numPyArray1)
+        lid = 4
+        self.assertEquals(ev[lid], 0.5)
+        result = ev.SumIntoMyValues(5.0,lid)
+        self.assertEquals(result, 0)
+        self.assertEquals(ev[lid], 5.5)
+
+    def testSumIntoMyValues2(self):
+        "Test Epetra.Vector SumIntoMyValues method with blockOffset"
+        map = Epetra.BlockMap(3*self.comm.NumProc(),3,0,self.comm)
+        self.numPyArray1.shape = (3,3)  # 3 elements, 3 points per element
+        ev = Epetra.Vector(map,self.numPyArray1)
+        lid = 1
+        self.assertEquals(ev[lid,1], 0.5)
+        result = ev.SumIntoMyValues(1,5.0,lid)
+        self.assertEquals(result, 0)
+        self.assertEquals(ev[lid,1], 5.5)
 
     def testPutScalar(self):
         "Test Epetra.Vector PutScalar method"
