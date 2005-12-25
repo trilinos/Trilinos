@@ -178,7 +178,6 @@ can therefore be used everywhere Numeric vectors are accepted.
 #include "Epetra_CompObject.h"
 #include "Epetra_BLAS.h"
 #include "Epetra_LAPACK.h"
-#include "Epetra_IntVector.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_MapColoring.h"
 #include "Epetra_DataAccess.h"
@@ -225,9 +224,6 @@ can therefore be used everywhere Numeric vectors are accepted.
 %ignore Epetra_BlockMap::operator=(const Epetra_BlockMap &);
 %ignore Epetra_Map::operator=(const Epetra_Map &);
 %ignore Epetra_LocalMap::operator=(const Epetra_LocalMap &);
-%ignore Epetra_IntVector::operator=(const Epetra_IntVector &);
-%ignore Epetra_IntVector::operator[](int);           // See %extend IntVector
-%ignore Epetra_IntVector::operator[](int) const;     //       __getitem__()
 %ignore Epetra_CrsGraph::operator=(const Epetra_CrsGraph &);
 %ignore Epetra_CrsGraph::operator[](int);            // See %extend CrsGraph
 %ignore Epetra_CrsGraph::operator[](int) const;      //       __getitem__()
@@ -286,7 +282,6 @@ can therefore be used everywhere Numeric vectors are accepted.
 %rename(CompObject          ) Epetra_CompObject;
 %rename(BLAS                ) Epetra_BLAS;
 %rename(LAPACK              ) Epetra_LAPACK;
-%rename(IntVector           ) Epetra_IntVector;
 %rename(CrsGraph            ) Epetra_CrsGraph;
 %rename(MapColoring         ) Epetra_MapColoring;
 %rename(Operator            ) Epetra_Operator;
@@ -356,7 +351,6 @@ using namespace std;
 
 %include "Epetra_Vectors.i"
 
-%include "Epetra_IntVector.h"
 %include "Epetra_CrsGraph.h"
 %include "Epetra_MapColoring.h"
 %include "Epetra_Operator.h"
@@ -415,12 +409,6 @@ using namespace std;
     }
     Py_INCREF(Py_None);
     return Py_None;
-  }
-}
-
-%extend Epetra_IntVector {
-  int & __getitem__(int i) {
-    return self->operator[](i);
   }
 }
 

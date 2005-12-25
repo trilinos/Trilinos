@@ -85,7 +85,8 @@ for option in options:
 # Define the strings that refer to the required local source files
 srcFiles = ["Epetra_wrap.cpp",
             os.path.join(srcdir,"Epetra_NumPyMultiVector.cpp"),
-            os.path.join(srcdir,"Epetra_NumPyVector.cpp"     ) ]
+            os.path.join(srcdir,"Epetra_NumPyVector.cpp"     ),
+            os.path.join(srcdir,"Epetra_NumPyIntVector.cpp"  ) ]
 
 # Compiler and linker
 sysconfig.get_config_vars()

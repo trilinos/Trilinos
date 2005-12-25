@@ -702,6 +702,11 @@ class EpetraVectorTestCase(unittest.TestCase):
         meanValue = ev.MeanValue()
         self.assertEquals(meanValue, result)
 
+    def testSetArray(self):
+        "Test Epetra.Vector __setattr__ method for 'array'"
+        ev = Epetra.Vector(self.map)
+        self.assertRaises(AttributeError, ev.__setattr__, "array", "junk")
+
 ##########################################################################
 
 if __name__ == "__main__":

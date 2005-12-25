@@ -772,6 +772,11 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
 #         result = emv0.Multiply('T','T',7.0,emv1,emv2,6.0)
 #         self.assertEquals(result,0)
 
+    def testSetArray(self):
+        "Test Epetra.Vector __setattr__ method for 'array'"
+        ev = Epetra.Vector(self.map)
+        self.assertRaises(AttributeError, ev.__setattr__, "array", "junk")
+
 ##########################################################################
 
 if __name__ == "__main__":
