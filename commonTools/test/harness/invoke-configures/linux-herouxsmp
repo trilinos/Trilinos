@@ -2,12 +2,13 @@
 CXXFLAGS=-O3 \
 CFLAGS=-O3 \
 FFLAGS=-O3 \
---with-libs="/u/TrilinosTestHarness/Trilinos3PL/prebuilt/dscpack-1.0/dsclibdbl_linux_lam.a \
+--with-libs="/u/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0.july05/libsuperlu_linux_lam.a \
 /u/TrilinosTestHarness/Trilinos3PL/prebuilt/pardiso-1.2.3/libpardiso_GNU_IA32.so \
-/u/TrilinosTestHarness/Trilinos3PL/prebuilt/taucs-2.2/libtaucs_linux_lam.a \
-/u/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0/libsuperludist_linux_lam.a -llapack -lblas -lg2c" \
---with-incdirs="-I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/dscpack-1.0 \
--I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0 \
+/u/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/libumfpack_linux_lam.a \
+/u/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/libamd_linux_lam.a \
+/u/TrilinosTestHarness/Trilinos3PL/prebuilt/taucs-2.2/libtaucs_linux_lam.a -llapack -lblas -lg2c" \
+--with-incdirs="-I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0.july05 \
+-I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/ \
 -I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/taucs-2.2" \
 --enable-valgrind \
 --cache-file=config.cache \
