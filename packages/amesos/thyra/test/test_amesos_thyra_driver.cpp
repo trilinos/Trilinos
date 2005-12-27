@@ -111,6 +111,17 @@ int main(int argc, char* argv[])
       for( int solver_i = 0; solver_i < Thyra::Amesos::numSolverTypes; ++solver_i ) {
         const Thyra::Amesos::ESolverType
           solverType = Thyra::Amesos::solverTypeValues[solver_i];
+
+	//  bug 1902 - Amesos_Superlu fails on bcsstk01.mtx
+	//  bug 1903 - Amesos_Superlu fails on four matrices,
+	//             when called from the thyra test
+	//
+	bool BadMatrixForSuperlu = 
+	  mtp.matrixFile == "bcsstk01.mtx" // bug 1902 
+	  || mtp.matrixFile == "bcsstk04.mtx" // bug 1903 
+	  || mtp.matrixFile == "KheadK.mtx" // bug 1903 
+	  || mtp.matrixFile == "KheadSorted.mtx" // bug 1903 
+	  || mtp.matrixFile == "nos1.mtx" ; // bug 1903 
         //
         // Toggle the refactorization options
         //
@@ -124,27 +135,35 @@ int main(int argc, char* argv[])
             out << " : Skipping since unsymmetric and not supported!\n";
           }
           else {
-            std::ostringstream oss;
-            result =
-              Thyra::test_single_amesos_thyra_solver(
-                matrixDir+"/"+mtp.matrixFile,solverType,refactorizationPolicy,testTranspose,numRandomVectors
-                ,mtp.maxFwdError,mtp.maxError,mtp.maxResid,showAllTestsDetails,dumpAll,&oss
-                );
-            if(!result) success = false;
-            if(verbose) {
-              if(result) {
-                if(showAllTests)
-                  out << std::endl << oss.str();
-                else
-                  out << " : passed!\n";
-              }
-              else {
-                if(showAllTests)
-                  out << std::endl << oss.str();
-                else
-                  out << " : failed!\n";
-              }
-            }
+	    //  bug 1902 and bug 1903  
+	    string StrSolverType = toString(solverType) ; 
+	    string StrSuperlu = "Superlu";
+	    if ( StrSolverType==StrSuperlu && BadMatrixForSuperlu ) {
+	      out << " : Skipping since Superlu fails on this matrix!\n";
+	    }
+	    else {
+	      std::ostringstream oss;
+	      result =
+		Thyra::test_single_amesos_thyra_solver(
+						       matrixDir+"/"+mtp.matrixFile,solverType,refactorizationPolicy,testTranspose,numRandomVectors
+						       ,mtp.maxFwdError,mtp.maxError,mtp.maxResid,showAllTestsDetails,dumpAll,&oss
+						       );
+	      if(!result) success = false;
+	      if(verbose) {
+		if(result) {
+		  if(showAllTests)
+		    out << std::endl << oss.str();
+		  else
+		    out << " : passed!\n";
+		}
+		else {
+		  if(showAllTests)
+		    out << std::endl << oss.str();
+		  else
+		    out << " : failed!\n";
+		}
+	      }
+	    }
           }
         }
       }
