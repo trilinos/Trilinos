@@ -552,11 +552,9 @@ int main(int argc, char **argv)
 	  summary_file << " Residual too large is:" <<
 	    SparseDirectTimingVars::SS_Result.Get_Residual() <<
 	    " should be < " << maxresid  ; 
-	  if ( verbose) { 
 	    cerr << " Residual too large is:" <<
 	      SparseDirectTimingVars::SS_Result.Get_Residual() <<
 	      " should be < " << maxresid  ; 
-	  }
 	}
 
 	if (maxresid == 1e30 ) maxresid = 10 ; 
