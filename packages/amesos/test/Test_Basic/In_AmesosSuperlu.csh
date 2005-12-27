@@ -126,6 +126,15 @@ $mpigo 3 amesos_test.exe SUPERLU   ImpcolE.rua 0 1 -3 1 1e-9  1e-10  >>SST.stdou
 $mpigo 3 amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
 $mpigo 3 amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
 #
+# Superlu fails on bcsstk01.mtx - bug 1902 
+# COMMENT $mpigo 1 amesos_test.exe SUPERLU   bcsstk01.mtx 0 1 1 0 1e-8  1e-8 >>SST.stdout
+#
+# Superlu does not fail on these matrcies - as called in this test:
+$mpigo 1 amesos_test.exe SUPERLU   nos1.mtx 0 1 1 0 1e-9  1e-5 >>SST.stdout
+$mpigo 1 amesos_test.exe SUPERLU   bcsstk04.mtx 0 1 1 0 1e-11 1e-8 >>SST.stdout
+$mpigo 1 amesos_test.exe SUPERLU   KheadK.mtx 0 1 1 0 1e-15  1e-8 >>SST.stdout
+$mpigo 1 amesos_test.exe SUPERLU   KheadSorted.mtx 0 1 1 0 1e-15  1e-8 >>SST.stdout
+#
 #  Test mid sized matrices on 1 and 4 processes, half of them starting out serial, 
 #  half starting out distributed.  (On the single process runs, distributed has no meaning.) 
 #
