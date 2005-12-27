@@ -4,6 +4,13 @@ CFLAGS=-O3 \
 FFLAGS=-O3 \
 --cache-file=config.cache \
 --disable-default-packages \
+--with-libs="/common/TrilinosTestHarness/Trilinos3PL/prebuilt/taucs-2.2/libtaucs_linux_lam.a \
+/common/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/libumfpack_linux_lam.a \
+/common/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/libamd_linux_lam.a \
+/common/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0.july05/libsuperlu_linux_lam.a -llapack  -lf77blas -latlas  -lg2c" \
+--with-incdirs="-I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/ \
+-I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0.july05 \
+-I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/taucs-2.2" \
 --enable-amesos \
 --enable-amesos-umfpack \
 --enable-amesos-superlu \
