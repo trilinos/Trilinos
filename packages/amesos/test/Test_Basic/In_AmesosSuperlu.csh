@@ -131,7 +131,7 @@ $mpigo 3 amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >
 #
 # Superlu does not fail on these matrcies - as called in this test:
 $mpigo 1 amesos_test.exe SUPERLU   nos1.mtx 0 1 1 0 1e-9  1e-5 >>SST.stdout
-$mpigo 1 amesos_test.exe SUPERLU   bcsstk04.mtx 0 1 1 0 1e-11 1e-8 >>SST.stdout
+$mpigo 1 amesos_test.exe SUPERLU   bcsstk04.mtx 0 1 1 0 5e-10 1e-7 >>SST.stdout
 $mpigo 1 amesos_test.exe SUPERLU   KheadK.mtx 0 1 1 0 1e-15  1e-8 >>SST.stdout
 $mpigo 1 amesos_test.exe SUPERLU   KheadSorted.mtx 0 1 1 0 1e-15  1e-8 >>SST.stdout
 #
