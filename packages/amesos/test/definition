@@ -24,6 +24,12 @@
     ARGS = NightlyTest True True;      
     EXIT-STATUS = STRING-COMPARISON ; 
 }
+(FRAMEWORK) {   
+    DIRS = scripts/daily/serial;
+    COMM = SERIAL; 
+    ARGS = NightlyTest True True;      
+    EXIT-STATUS = STRING-COMPARISON ; 
+}
 
 (FRAMEWORK, INSTALL ) {   
     DIRS = Test_Epetra_RowMatrix,
