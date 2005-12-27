@@ -55,9 +55,9 @@
 #
 #
 # COMMENT  A typical call to amesos_test.exe is:
-# COMMENT       amesos_test.exe SuperLU SuperLU.rua 0 1 1 0 1e-14 1e-14
+# COMMENT       amesos_test.exe SUPERLU SuperLU.rua 0 1 1 0 1e-14 1e-14
 #  where:
-#     SuperLU SuperLU.rua - The solver to use and the matrix to solve
+#     SUPERLU SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
 #     1e-14 1e-14             - max residual, max error 
 #
@@ -68,6 +68,9 @@
 #   Special = 1 means use dgssv (in SuperLU)
 #   NumSolves < 0 means use multiple right hand sides
 #   NumSolves > 1 means use blocked right hand sides
+#
+#  COMMENT Bug 1904 - amesos_test.exe fails on several matrices which 
+#  COMMENT           mpirun -np 1 amesos_test.exe works on 
 #
 touch SST.summary
 cat >>AME.summary <SST.summary 
@@ -96,36 +99,124 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 #  Test one process tiny serial matrix, on SuperLU
 #
-./amesos_test.exe SuperLU SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
+./amesos_test.exe SUPERLU SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
 #  Test tiny distributed matrix, on SuperLU
 #
-#  COMMENT FAILS  ./amesos_test.exe SuperLU   fidapm05.rua 0 1 1 0 100000000 1 >>SST.stdout
+#  COMMENT FAILS  ./amesos_test.exe SUPERLU   fidapm05.rua 0 1 1 0 100000000 1 >>SST.stdout
 #
 #  Test some more small matrices
 #
-# COMMENT fails  ./amesos_test.exe SuperLU   ImpcolA.rua 0 1 1 0 1e-11 1e-12 >>SST.stdout
-./amesos_test.exe SuperLU   ImpcolB.rua 0 1 1 0 1e-11 1e-13 >>SST.stdout
-# COMMENT fails  ./amesos_test.exe SuperLU   ImpcolC.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
-./amesos_test.exe SuperLU   ImpcolD.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
+# COMMENT fails  ./amesos_test.exe SUPERLU   ImpcolA.rua 0 1 1 0 1e-11 1e-12 >>SST.stdout
+./amesos_test.exe SUPERLU   ImpcolB.rua 0 1 1 0 1e-11 1e-13 >>SST.stdout
+# COMMENT fails  ./amesos_test.exe SUPERLU   ImpcolC.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
+./amesos_test.exe SUPERLU   ImpcolD.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
 #
 #
 #  Test blocked right hand sides
 #
-# COMMENT BRHS not tested yet  ./amesos_test.exe SuperLU   ImpcolA.rua 0 1 2 0 1e-11 1e-12 >>SST.stdout
+# COMMENT BRHS not tested yet  ./amesos_test.exe SUPERLU   ImpcolA.rua 0 1 2 0 1e-11 1e-12 >>SST.stdout
 #
 #  Test multiple right hand sides
 #
-# COMMENT BRHS not tested yet  ./amesos_test.exe SuperLU   ImpcolC.rua 0 1 -1 0 1e-13 1e-13 >>SST.stdout
+# COMMENT BRHS not tested yet  ./amesos_test.exe SUPERLU   ImpcolC.rua 0 1 -1 0 1e-13 1e-13 >>SST.stdout
 
 #
 #  Test some triplet files
 #  The .triU files are unsymmatric, the .triS files are symmetric, providing 
 #  either the upper or lower triangular part.
 #
-./amesos_test.exe SuperLU SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+./amesos_test.exe SUPERLU SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-# COMMENT FAILS  ./amesos_test.exe SuperLU Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
+ amesos_test.exe SUPERLU   fidapm05.rua 0 1 1 0  1000000000000000 1e-1 >>SST.stdout
+ amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 0  1000000000000000 1e-1  >>SST.stdout
+ amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
+# COMMENT bug #1904   amesos_test.exe SUPERLU   fidapm05.rua 1 1 4 1  1000000000000000 1e-1 >>SST.stdout
+# COMMENT bug #1904   amesos_test.exe SUPERLU   fidapm05.rua 1 1 -3 1  1000000000000000 1e-1  >>SST.stdout
+#
+#  Test some more small matrices
+#
+# COMMENT bug #1563  amesos_test.exe SUPERLU   ImpcolA.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
+# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolA.rua 0 0 1 0 1e-9  1e-11  >>SST.stdout
+# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolA.rua 0 1 1 1 1e-9  1e-11  >>SST.stdout
+ amesos_test.exe SUPERLU   ImpcolB.rua 0 1 1 0 1e-10 1e-12 >>SST.stdout
+ amesos_test.exe SUPERLU   ImpcolB.rua 0 1 1 0 1e-10 1e-12  >>SST.stdout
+ amesos_test.exe SUPERLU   ImpcolC.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
+ amesos_test.exe SUPERLU   ImpcolC.rua 0 0 1 0 1e-12 1e-13  >>SST.stdout
+ amesos_test.exe SUPERLU   ImpcolD.rua 0 1 1 0 1e-12 5e-13 >>SST.stdout
+ amesos_test.exe SUPERLU   ImpcolD.rua 0 1 1 0 1e-12 5e-13  >>SST.stdout
+# COMMENT bug #1563  amesos_test.exe SUPERLU   ImpcolE.rua 0 1 1 0 1e-9  1e-10 >>SST.stdout
+# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolE.rua 0 1 1 0 1e-9  1e-10  >>SST.stdout
+# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolE.rua 0 1 3 1 1e-9  1e-10  >>SST.stdout
+# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolE.rua 0 1 -3 1 1e-9  1e-10  >>SST.stdout
+ amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 1  100000 1e-1 >>SST.stdout
+ amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 1  100000 1e-1 >>SST.stdout
+#
+# Superlu fails on bcsstk01.mtx - bug 1902 
+# COMMENT  amesos_test.exe SUPERLU   bcsstk01.mtx 0 1 1 0 1e-8  1e-8 >>SST.stdout
+#
+# Superlu does not fail on these matrcies - as called in this test:
+ amesos_test.exe SUPERLU   nos1.mtx 0 1 1 0 1e-8  1e-5 >>SST.stdout
+ amesos_test.exe SUPERLU   bcsstk04.mtx 0 1 1 0 1e-8  1e-7 >>SST.stdout
+ amesos_test.exe SUPERLU   KheadK.mtx 0 1 1 0 1.1e-8  1e-8 >>SST.stdout
+ amesos_test.exe SUPERLU   KheadSorted.mtx 0 1 1 0 1.1e-8  1e-8 >>SST.stdout
+#
+#  Test mid sized matrices on 1 and 4 processes, half of them starting out serial, 
+#  half starting out distributed.  (On the single process runs, distributed has no meaning.) 
+#
+
+#
+#  Test some tranpose solves
+#
+ amesos_test.exe SUPERLU   ImpcolB.rua 0 1 1 1 1e-10 1e-12  >>SST.stdout
+# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolA.rua 1 1 1 1 1e-9  1e-11  >>SST.stdout
+# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolA.rua 1 1 3 1 1e-9  1e-11  >>SST.stdout
+# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolA.rua 1 1 -2 1 1e-9  1e-11  >>SST.stdout
+
+
+#
+#  Test blocked right hand sides
+#
+ amesos_test.exe SUPERLU   ImpcolB.rua 0 1 4 0 1e-10 1e-12  >>SST.stdout
+# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolE.rua 0 1 6 0 1e-9  1e-10  >>SST.stdout
+# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolE.rua 0 1 6 1 1e-9  1e-10  >>SST.stdout
+#
+#  Test multiple right hand sides
+#
+ amesos_test.exe SUPERLU   ImpcolC.rua 0 1 -1 0 1e-12 1e-13 >>SST.stdout
+ amesos_test.exe SUPERLU   ImpcolD.rua 0 1 -2 0 1e-12 5e-13  >>SST.stdout
+ amesos_test.exe SUPERLU   ImpcolD.rua 0 1 -2 1 1e-12 5e-13  >>SST.stdout
+# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolE.rua 0 1 -3 0 1e-9  1e-10  >>SST.stdout
+
+#
+#  Test blocked right hand sides with NON- distributed matrix input
+#
+# COMMENT bug #1563  amesos_test.exe SUPERLU   ImpcolA.rua 1 1 2 0 1e-9  1e-11 >>SST.stdout
+# COMMENT bug #1563  amesos_test.exe SUPERLU   ImpcolA.rua 0 1 2 1 1e-9  1e-11 >>SST.stdout
+ amesos_test.exe SUPERLU   ImpcolB.rua 0 1 4 0 1e-10 1e-12  >>SST.stdout
+# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolE.rua 0 1 6 0 1e-9  1e-10  >>SST.stdout
+
+#
+#  Test multiple right hand sides with NON- distributed matrix input
+#
+
+ amesos_test.exe SUPERLU   ImpcolC.rua 0 1 -2 0 1e-12 1e-13 >>SST.stdout
+ amesos_test.exe SUPERLU   ImpcolD.rua 0 1 -3 1 1e-12 5e-13  >>SST.stdout
+ amesos_test.exe SUPERLU   ImpcolD.rua 0 1 -3 0 1e-12 5e-13  >>SST.stdout
+# COMMENT bug #1904  amesos_test.exe SUPERLU   ImpcolE.rua 0 1 -1 0 1e-9  1e-10  >>SST.stdout
+
+
+#
+#  Test some triplet files
+#  The .triU files are unsymmatric, the .triS files are symmetric, providing 
+#  either the upper or lower triangular part.
+#
+ amesos_test.exe SUPERLU SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+#
+#  A couple more matrices
+#
+ amesos_test.exe SUPERLU 662_bus_out.rsa 0 1 3 0 1e-11 1e-12 >>SST.stdout 
+# COMMENT FAILS  ./amesos_test.exe SUPERLU Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
 echo "" >> SST.summary 
 echo "COMMENT End AmesosSuperLUserial.exe" >> SST.summary 
@@ -133,7 +224,7 @@ echo "COMMENT End AmesosSuperLUserial.exe" >> SST.summary
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep amesos_test AmesosSuperLUserial.csh | grep -v COMMENT | wc`
+set expected_lines = `grep amesos_test AmesosSuperluSerial.csh | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 
