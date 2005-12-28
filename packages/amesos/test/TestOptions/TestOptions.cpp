@@ -76,7 +76,7 @@ vector<string> AmesosClasses;
 
 int NumAmesosClasses;
 
-int CreateCrsMatrix( char *filename, const Epetra_Comm &Comm, 
+int CreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm, 
 		     Epetra_Map *& readMap,
 		     const bool transpose, const bool distribute, 
 		     bool& symmetric, Epetra_CrsMatrix *& Matrix ) {
@@ -86,7 +86,21 @@ int CreateCrsMatrix( char *filename, const Epetra_Comm &Comm,
   Epetra_Vector * readb = 0;
   Epetra_Vector * readxexact = 0;
 
+  //
+  //  This hack allows TestOptions to be run from either the test/TestOptions/ directory or from 
+  //  the test/ directory (as it is in nightly testing and in make "run-tests")
+  //
+  FILE *in_file = fopen( in_filename, "r");
+  char *filename;
+  if (in_file == NULL ) 
+    filename = &in_filename[3] ; //  Strip off "../" and try again 
+  else {
+    filename = in_filename ;
+    fclose( in_file );
+  }
+
   string FileName = filename ;
+
   int FN_Size = FileName.size() ; 
   string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
   string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );

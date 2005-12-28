@@ -32,7 +32,8 @@
 }
 
 (FRAMEWORK, INSTALL ) {   
-    DIRS = Test_Epetra_RowMatrix,
+    DIRS = TestOptions,
+	   Test_Epetra_RowMatrix,
            Test_Epetra_CrsMatrix,
            Test_Detailed,
            Test_MultipleSolves,
