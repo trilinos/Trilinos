@@ -141,7 +141,7 @@ endif
 #
 #  Prints out success or failure and exit 
 #
-grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "Direct Sparse Solver Regression Test passed on all" $expected_lines[1] " tests"
+grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "End Result: TEST PASSED - UmfpackSerial test passed on all" $expected_lines[1] " tests"
 #
 #  This should not generally print anything as errors should have been caught in the if test above
 #

@@ -92,14 +92,14 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #  Test some more small matrices
 #
 ./amesos_test.exe KLU   ImpcolA.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
-./amesos_test.exe KLU   ImpcolB.rua 0 1 1 0 1e-9  1e-12 >>SST.stdout
+./amesos_test.exe KLU   ImpcolB.rua 0 1 1 0 1e-9  3e-12 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolC.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolD.rua 0 1 1 0 1e-12 1e-12 >>SST.stdout
 #
 #  Test some more small transposed matrices
 #
 ./amesos_test.exe KLU   ImpcolA.rua 0 1 1 1  1e-9  1e-11 >>SST.stdout
-./amesos_test.exe KLU   ImpcolB.rua 0 1 1 1  1e-9  1e-12 >>SST.stdout
+./amesos_test.exe KLU   ImpcolB.rua 0 1 1 1  1e-9  3e-12 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolC.rua 0 1 -2 1 1e-12 1e-13 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolD.rua 0 1 1 1  1e-12 1e-12 >>SST.stdout
 #
@@ -113,7 +113,7 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 #  Test multiple right hand sides
 #
-./amesos_test.exe KLU   ImpcolB.rua 0 1 -4 1 1e-9  1e-12 >>SST.stdout
+./amesos_test.exe KLU   ImpcolB.rua 0 1 -4 1 1e-9  3e-12 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolC.rua 0 1 -2 0 1e-12 1e-13 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolD.rua 0 1 -3 0 1e-12 1e-12 >>SST.stdout
 
@@ -148,7 +148,7 @@ endif
 #
 #  Prints out success or failure and exit 
 #
-grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "Direct Sparse Solver Regression Test passed on all" $expected_lines[1] " tests"
+grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "End Result: TEST PASSED - KluSerial test passed on all" $expected_lines[1] " tests"
 #
 #  This should not generaly print anything as errors should have been caught in the if test above
 #

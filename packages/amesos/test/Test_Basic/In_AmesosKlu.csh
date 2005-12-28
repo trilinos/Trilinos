@@ -113,8 +113,8 @@ $mpigo  4 amesos_test.exe KLU   fidapm05.rua 1 1 -3 1  1000000000000000 1e-1 >>S
 $mpigo  1 amesos_test.exe KLU   ImpcolA.rua 0 1 1 0  1e-9  1e-11  >>SST.stdout
 $mpigo  3 amesos_test.exe KLU   ImpcolA.rua 0 0 1 0  1e-9  1e-11  >>SST.stdout
 $mpigo  3 amesos_test.exe KLU   ImpcolA.rua 0 1 1 1  1e-9  1e-11  >>SST.stdout
-$mpigo  1 amesos_test.exe KLU   ImpcolB.rua 0 1 1 0  1e-9  1e-12  >>SST.stdout
-$mpigo  3 amesos_test.exe KLU   ImpcolB.rua 0 1 1 0  1e-9  1e-12  >>SST.stdout
+$mpigo  1 amesos_test.exe KLU   ImpcolB.rua 0 1 1 0  1e-9  3e-12  >>SST.stdout
+$mpigo  3 amesos_test.exe KLU   ImpcolB.rua 0 1 1 0  1e-9  3e-12  >>SST.stdout
 $mpigo  1 amesos_test.exe KLU   ImpcolC.rua 0 1 1 0  1e-12 1e-13  >>SST.stdout
 $mpigo  3 amesos_test.exe KLU   ImpcolC.rua 0 0 1 0  1e-12 1e-13  >>SST.stdout
 $mpigo  1 amesos_test.exe KLU   ImpcolD.rua 0 1 1 0  1e-11 5e-13  >>SST.stdout
@@ -139,7 +139,7 @@ $mpigo  3 amesos_test.exe KLU   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SS
 #
 #  Test some tranpose solves
 #
-$mpigo  4 amesos_test.exe KLU   ImpcolB.rua 0 1 1 1  1e-9 1e-12  >>SST.stdout
+$mpigo  4 amesos_test.exe KLU   ImpcolB.rua 0 1 1 1  1e-9 3e-12  >>SST.stdout
 $mpigo  4 amesos_test.exe KLU   ImpcolA.rua 1 1 1 1  1e-9 1e-11  >>SST.stdout
 $mpigo  4 amesos_test.exe KLU   ImpcolA.rua 1 1 3 1  1e-9 1e-11  >>SST.stdout
 $mpigo  4 amesos_test.exe KLU   ImpcolA.rua 1 1 -2 1 1e-9 1e-11  >>SST.stdout
@@ -149,7 +149,7 @@ $mpigo  4 amesos_test.exe KLU   ImpcolA.rua 1 1 -2 1 1e-9 1e-11  >>SST.stdout
 #  Test blocked right hand sides
 #
 $mpigo  1 amesos_test.exe KLU   ImpcolA.rua 0 1 2 0 1e-9  1e-11  >>SST.stdout
-$mpigo  5 amesos_test.exe KLU   ImpcolB.rua 0 1 4 0 1e-9  1e-12  >>SST.stdout
+$mpigo  5 amesos_test.exe KLU   ImpcolB.rua 0 1 4 0 1e-9  3e-12  >>SST.stdout
 $mpigo  2 amesos_test.exe KLU   ImpcolE.rua 0 1 6 0 1e-7  1e-9   >>SST.stdout
 $mpigo  2 amesos_test.exe KLU   ImpcolE.rua 0 1 6 1 1e-7  1e-9   >>SST.stdout
 # COMMENT $mpigo  4 amesos_test.exe KLU   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
@@ -171,7 +171,7 @@ $mpigo  2 amesos_test.exe KLU   ImpcolE.rua 0 1 -3 0 1e-7  1e-9   >>SST.stdout
 #
 $mpigo  1 amesos_test.exe KLU   ImpcolA.rua 1 1 2 0 1e-9  1e-11  >>SST.stdout
 $mpigo  1 amesos_test.exe KLU   ImpcolA.rua 1 1 2 1 1e-9  1e-11  >>SST.stdout
-$mpigo  5 amesos_test.exe KLU   ImpcolB.rua 1 1 4 0 1e-9  1e-12  >>SST.stdout
+$mpigo  5 amesos_test.exe KLU   ImpcolB.rua 1 1 4 0 1e-9  3e-12  >>SST.stdout
 $mpigo  2 amesos_test.exe KLU   ImpcolE.rua 1 1 6 0 1e-7  1e-9   >>SST.stdout
 # COMMENT $mpigo  4 amesos_test.exe KLU   bcsstk24.rsa 1 1 3 0 1e-6  1e-1 >>SST.stdout
 # COMMENT $mpigo  1 amesos_test.exe KLU   bcsstk18.rsa 1 1 5 0 1e-9 1e-4  >>SST.stdout
