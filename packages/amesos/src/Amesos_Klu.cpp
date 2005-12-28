@@ -693,7 +693,7 @@ int Amesos_Klu::Solve()
 #if 0
   //
   //  ComputeTrueResidual causes TestOptions to fail on my linux box 
-  //  Bug #1147
+  //  Bug #1417
   if (ComputeTrueResidual_)
     ComputeTrueResidual(*SerialMatrix_, *vecX, *vecB, UseTranspose(), "Amesos_Klu");
 #endif

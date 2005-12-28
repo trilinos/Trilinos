@@ -276,9 +276,9 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     }
   }
 #endif
-#if 0 
+#if 0
 
-  This fails on Stratus  - see bug #1420
+  //  This fails on Stratus  - see bug #1420 - now marked as a duplicate of bug 1417
 
   //
   //     4)  ComputeTrueResidual==true
@@ -295,7 +295,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					Comm, 
 					transpose, 
 					verbose,
-					InternalParamList, 
+					ParamList, 
 					Amat, 
 					Levels,
 					Rcond, 
@@ -314,7 +314,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 
     }
     if (verbose)  cout << " TestKlu NumErrors = " << NumErrors 
-		       << " " << __FILE__ < "::" << __LINE__ << endl ; 
+		       << " " << __FILE__ << "::" << __LINE__ << endl ; 
     if ( verbose && Errors > 0 ) {
       cout << "Amesos_Klu" << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  

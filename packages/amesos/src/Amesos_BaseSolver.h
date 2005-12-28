@@ -105,7 +105,7 @@ provided that the change to A is small.
 \code
     Epetra_LinearProblem Problem(A,X,B);
     Amesos_SolverName Solver(Problem);
-    Problem.SetTranspose( false ); 
+    Problem.SetUseTranspose( false ); 
     Solver.NumericFactorization(); 
     while( ... ) { 
 
@@ -124,7 +124,7 @@ provided that A remains unchanged between each call to Solve().
 \code
     Epetra_LinearProblem Problem(A,X,B);
     Amesos_SolverName Solver(Problem);
-    Problem.SetTranspose( false ); 
+    Problem.SetUseTranspose( false ); 
     Solver.NumericFactorization(); 
     while( ... ) { 
 
@@ -192,11 +192,14 @@ changes in parameters is unpredictable and could include an error
 return, a bogus result or ignoring the parameter change.
     
 <H2>Transpose solve</H2> Any class implementing Amesos_BaseSolver
-should handle calls to SetTranspose() at any point.  Some third
-party libraries are able to solve A<SUP>T</SUP> x = b and Ax = b
-using the same factorization.  Others will require a new
-factorization anytime that a call to SetTranspose() changes the
-intended solve from A<SUP>T</SUP> x = b to Ax = b or vice-versa.
+should handle calls to SetUseTranspose() at any point.  However, the
+result of a call to SetUseTranspose() which is not followed by a call
+to SymbolicFactorization() and NumericFactorization() is
+implementation dependent.  Some third party libraries are able to
+solve A<SUP>T</SUP> x = b and Ax = b using the same factorization.
+Others will require a new factorization anytime that a call to
+SetUseTranspose() changes the intended solve from A<SUP>T</SUP> x = b
+to Ax = b or vice-versa.
 
 
 <H1>Performance expectations</H1>
@@ -383,7 +386,7 @@ any memory allocation or re-allocation.
            transpose use, this method should return a value of -1.
       
       <br \>Preconditions:<ul>
-      <li>SetTranspose() should be called prior to the call to SymbolicFactorization() If NumericFactorization() or Solve() is called after SetTranspose() without an intervening call to SymbolicFactorization() the result is implementation dependent. </li>
+      <li>SetUseTranspose() should be called prior to the call to SymbolicFactorization() If NumericFactorization() or Solve() is called after SetUseTranspose() without an intervening call to SymbolicFactorization() the result is implementation dependent. </li>
       </ul>
 
       <br \>Postconditions:<ul> 
