@@ -94,14 +94,14 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 ./amesos_test.exe KLU   ImpcolA.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolB.rua 0 1 1 0 1e-9  3e-12 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolC.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
-./amesos_test.exe KLU   ImpcolD.rua 0 1 1 0 1e-12 1e-12 >>SST.stdout
+./amesos_test.exe KLU   ImpcolD.rua 0 1 1 0 1e-11 1e-12 >>SST.stdout
 #
 #  Test some more small transposed matrices
 #
 ./amesos_test.exe KLU   ImpcolA.rua 0 1 1 1  1e-9  1e-11 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolB.rua 0 1 1 1  1e-9  3e-12 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolC.rua 0 1 -2 1 1e-12 1e-13 >>SST.stdout
-./amesos_test.exe KLU   ImpcolD.rua 0 1 1 1  1e-12 1e-12 >>SST.stdout
+./amesos_test.exe KLU   ImpcolD.rua 0 1 1 1  1e-11 1e-12 >>SST.stdout
 #
 #
 #  Test blocked right hand sides
@@ -115,7 +115,7 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 ./amesos_test.exe KLU   ImpcolB.rua 0 1 -4 1 1e-9  3e-12 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolC.rua 0 1 -2 0 1e-12 1e-13 >>SST.stdout
-./amesos_test.exe KLU   ImpcolD.rua 0 1 -3 0 1e-12 1e-12 >>SST.stdout
+./amesos_test.exe KLU   ImpcolD.rua 0 1 -3 0 1e-11 1e-12 >>SST.stdout
 
 #
 #  Test some triplet files
