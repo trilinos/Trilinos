@@ -33,7 +33,7 @@
 #
 #  RETURNS 0 if the test succeeds and 1 if the test fails 
 #
-#  COMMENT Each call to amesos_test.exe performs one or more sovles on a particular 
+#  COMMENT Each call to ./amesos_test.exe performs one or more sovles on a particular 
 #  matrix using a particular solver and prints a single line to SST.summary.
 #  If the test worked, that line will contain OK.  Any line not containing 
 #  the words OK, represents failure.
@@ -54,8 +54,8 @@
 #    4)  Offer a -v option
 #
 #
-# COMMENT  A typical call to amesos_test.exe is:
-# COMMENT       amesos_test.exe SUPERLU SuperLU.rua 0 1 1 0 1e-14 1e-14
+# COMMENT  A typical call to ./amesos_test.exe is:
+# COMMENT       ./amesos_test.exe SUPERLU SuperLU.rua 0 1 1 0 1e-14 1e-14
 #  where:
 #     SUPERLU SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
@@ -69,8 +69,8 @@
 #   NumSolves < 0 means use multiple right hand sides
 #   NumSolves > 1 means use blocked right hand sides
 #
-#  COMMENT Bug 1904 - amesos_test.exe fails on several matrices which 
-#  COMMENT           mpirun -np 1 amesos_test.exe works on 
+#  COMMENT Bug 1904 - ./amesos_test.exe fails on several matrices which 
+#  COMMENT           mpirun -np 1 ./amesos_test.exe works on 
 #
 touch SST.summary
 cat >>AME.summary <SST.summary 
@@ -128,38 +128,38 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 ./amesos_test.exe SUPERLU SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
- amesos_test.exe SUPERLU   fidapm05.rua 0 1 1 0  1000000000000000 1e-1 >>SST.stdout
- amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 0  1000000000000000 1e-1  >>SST.stdout
- amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
-# COMMENT bug #1904   amesos_test.exe SUPERLU   fidapm05.rua 1 1 4 1  1000000000000000 1e-1 >>SST.stdout
-# COMMENT bug #1904   amesos_test.exe SUPERLU   fidapm05.rua 1 1 -3 1  1000000000000000 1e-1  >>SST.stdout
+ ./amesos_test.exe SUPERLU   fidapm05.rua 0 1 1 0  1000000000000000 1e-1 >>SST.stdout
+ ./amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 0  1000000000000000 1e-1  >>SST.stdout
+ ./amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
+# COMMENT bug #1904   ./amesos_test.exe SUPERLU   fidapm05.rua 1 1 4 1  1000000000000000 1e-1 >>SST.stdout
+# COMMENT bug #1904   ./amesos_test.exe SUPERLU   fidapm05.rua 1 1 -3 1  1000000000000000 1e-1  >>SST.stdout
 #
 #  Test some more small matrices
 #
-# COMMENT bug #1563  amesos_test.exe SUPERLU   ImpcolA.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
-# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolA.rua 0 0 1 0 1e-9  1e-11  >>SST.stdout
-# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolA.rua 0 1 1 1 1e-9  1e-11  >>SST.stdout
- amesos_test.exe SUPERLU   ImpcolB.rua 0 1 1 0 1e-10 1e-12 >>SST.stdout
- amesos_test.exe SUPERLU   ImpcolB.rua 0 1 1 0 1e-10 1e-12  >>SST.stdout
- amesos_test.exe SUPERLU   ImpcolC.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
- amesos_test.exe SUPERLU   ImpcolC.rua 0 0 1 0 1e-12 1e-13  >>SST.stdout
- amesos_test.exe SUPERLU   ImpcolD.rua 0 1 1 0 1e-12 5e-13 >>SST.stdout
- amesos_test.exe SUPERLU   ImpcolD.rua 0 1 1 0 1e-12 5e-13  >>SST.stdout
-# COMMENT bug #1563  amesos_test.exe SUPERLU   ImpcolE.rua 0 1 1 0 1e-9  1e-10 >>SST.stdout
-# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolE.rua 0 1 1 0 1e-9  1e-10  >>SST.stdout
-# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolE.rua 0 1 3 1 1e-9  1e-10  >>SST.stdout
-# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolE.rua 0 1 -3 1 1e-9  1e-10  >>SST.stdout
- amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 1  100000 1e-1 >>SST.stdout
- amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 1  100000 1e-1 >>SST.stdout
+# COMMENT bug #1563  ./amesos_test.exe SUPERLU   ImpcolA.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
+# COMMENT bug #1904   ./amesos_test.exe SUPERLU   ImpcolA.rua 0 0 1 0 1e-9  1e-11  >>SST.stdout
+# COMMENT bug #1904   ./amesos_test.exe SUPERLU   ImpcolA.rua 0 1 1 1 1e-9  1e-11  >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolB.rua 0 1 1 0 1e-10 1e-12 >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolB.rua 0 1 1 0 1e-10 1e-12  >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolC.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolC.rua 0 0 1 0 1e-12 1e-13  >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolD.rua 0 1 1 0 1e-12 5e-13 >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolD.rua 0 1 1 0 1e-12 5e-13  >>SST.stdout
+# COMMENT bug #1563  ./amesos_test.exe SUPERLU   ImpcolE.rua 0 1 1 0 1e-9  1e-10 >>SST.stdout
+# COMMENT bug #1904   ./amesos_test.exe SUPERLU   ImpcolE.rua 0 1 1 0 1e-9  1e-10  >>SST.stdout
+# COMMENT bug #1904   ./amesos_test.exe SUPERLU   ImpcolE.rua 0 1 3 1 1e-9  1e-10  >>SST.stdout
+# COMMENT bug #1904   ./amesos_test.exe SUPERLU   ImpcolE.rua 0 1 -3 1 1e-9  1e-10  >>SST.stdout
+ ./amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 1  100000 1e-1 >>SST.stdout
+ ./amesos_test.exe SUPERLU   fidapm05.rua 1 1 1 1  100000 1e-1 >>SST.stdout
 #
 # Superlu fails on bcsstk01.mtx - bug 1902 
-# COMMENT  amesos_test.exe SUPERLU   bcsstk01.mtx 0 1 1 0 1e-8  1e-8 >>SST.stdout
+# COMMENT  ./amesos_test.exe SUPERLU   bcsstk01.mtx 0 1 1 0 1e-8  1e-8 >>SST.stdout
 #
 # Superlu does not fail on these matrcies - as called in this test:
- amesos_test.exe SUPERLU   nos1.mtx 0 1 1 0 1e-8  1e-5 >>SST.stdout
- amesos_test.exe SUPERLU   bcsstk04.mtx 0 1 1 0 1e-8  1e-7 >>SST.stdout
- amesos_test.exe SUPERLU   KheadK.mtx 0 1 1 0 1.1e-8  1e-8 >>SST.stdout
- amesos_test.exe SUPERLU   KheadSorted.mtx 0 1 1 0 1.1e-8  1e-8 >>SST.stdout
+ ./amesos_test.exe SUPERLU   nos1.mtx 0 1 1 0 1e-8  1e-5 >>SST.stdout
+ ./amesos_test.exe SUPERLU   bcsstk04.mtx 0 1 1 0 1e-8  1e-7 >>SST.stdout
+ ./amesos_test.exe SUPERLU   KheadK.mtx 0 1 1 0 1.1e-8  1e-8 >>SST.stdout
+ ./amesos_test.exe SUPERLU   KheadSorted.mtx 0 1 1 0 1.1e-8  1e-8 >>SST.stdout
 #
 #  Test mid sized matrices on 1 and 4 processes, half of them starting out serial, 
 #  half starting out distributed.  (On the single process runs, distributed has no meaning.) 
@@ -168,42 +168,42 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 #  Test some tranpose solves
 #
- amesos_test.exe SUPERLU   ImpcolB.rua 0 1 1 1 1e-10 1e-12  >>SST.stdout
-# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolA.rua 1 1 1 1 1e-9  1e-11  >>SST.stdout
-# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolA.rua 1 1 3 1 1e-9  1e-11  >>SST.stdout
-# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolA.rua 1 1 -2 1 1e-9  1e-11  >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolB.rua 0 1 1 1 1e-10 1e-12  >>SST.stdout
+# COMMENT bug #1904   ./amesos_test.exe SUPERLU   ImpcolA.rua 1 1 1 1 1e-9  1e-11  >>SST.stdout
+# COMMENT bug #1904   ./amesos_test.exe SUPERLU   ImpcolA.rua 1 1 3 1 1e-9  1e-11  >>SST.stdout
+# COMMENT bug #1904   ./amesos_test.exe SUPERLU   ImpcolA.rua 1 1 -2 1 1e-9  1e-11  >>SST.stdout
 
 
 #
 #  Test blocked right hand sides
 #
- amesos_test.exe SUPERLU   ImpcolB.rua 0 1 4 0 1e-10 1e-12  >>SST.stdout
-# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolE.rua 0 1 6 0 1e-9  1e-10  >>SST.stdout
-# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolE.rua 0 1 6 1 1e-9  1e-10  >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolB.rua 0 1 4 0 1e-10 1e-12  >>SST.stdout
+# COMMENT bug #1904   ./amesos_test.exe SUPERLU   ImpcolE.rua 0 1 6 0 1e-9  1e-10  >>SST.stdout
+# COMMENT bug #1904   ./amesos_test.exe SUPERLU   ImpcolE.rua 0 1 6 1 1e-9  1e-10  >>SST.stdout
 #
 #  Test multiple right hand sides
 #
- amesos_test.exe SUPERLU   ImpcolC.rua 0 1 -1 0 1e-12 1e-13 >>SST.stdout
- amesos_test.exe SUPERLU   ImpcolD.rua 0 1 -2 0 1e-12 5e-13  >>SST.stdout
- amesos_test.exe SUPERLU   ImpcolD.rua 0 1 -2 1 1e-12 5e-13  >>SST.stdout
-# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolE.rua 0 1 -3 0 1e-9  1e-10  >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolC.rua 0 1 -1 0 1e-12 1e-13 >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolD.rua 0 1 -2 0 1e-12 5e-13  >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolD.rua 0 1 -2 1 1e-12 5e-13  >>SST.stdout
+# COMMENT bug #1904   ./amesos_test.exe SUPERLU   ImpcolE.rua 0 1 -3 0 1e-9  1e-10  >>SST.stdout
 
 #
 #  Test blocked right hand sides with NON- distributed matrix input
 #
-# COMMENT bug #1563  amesos_test.exe SUPERLU   ImpcolA.rua 1 1 2 0 1e-9  1e-11 >>SST.stdout
-# COMMENT bug #1563  amesos_test.exe SUPERLU   ImpcolA.rua 0 1 2 1 1e-9  1e-11 >>SST.stdout
- amesos_test.exe SUPERLU   ImpcolB.rua 0 1 4 0 1e-10 1e-12  >>SST.stdout
-# COMMENT bug #1904   amesos_test.exe SUPERLU   ImpcolE.rua 0 1 6 0 1e-9  1e-10  >>SST.stdout
+# COMMENT bug #1563  ./amesos_test.exe SUPERLU   ImpcolA.rua 1 1 2 0 1e-9  1e-11 >>SST.stdout
+# COMMENT bug #1563  ./amesos_test.exe SUPERLU   ImpcolA.rua 0 1 2 1 1e-9  1e-11 >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolB.rua 0 1 4 0 1e-10 1e-12  >>SST.stdout
+# COMMENT bug #1904   ./amesos_test.exe SUPERLU   ImpcolE.rua 0 1 6 0 1e-9  1e-10  >>SST.stdout
 
 #
 #  Test multiple right hand sides with NON- distributed matrix input
 #
 
- amesos_test.exe SUPERLU   ImpcolC.rua 0 1 -2 0 1e-12 1e-13 >>SST.stdout
- amesos_test.exe SUPERLU   ImpcolD.rua 0 1 -3 1 1e-12 5e-13  >>SST.stdout
- amesos_test.exe SUPERLU   ImpcolD.rua 0 1 -3 0 1e-12 5e-13  >>SST.stdout
-# COMMENT bug #1904  amesos_test.exe SUPERLU   ImpcolE.rua 0 1 -1 0 1e-9  1e-10  >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolC.rua 0 1 -2 0 1e-12 1e-13 >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolD.rua 0 1 -3 1 1e-12 5e-13  >>SST.stdout
+ ./amesos_test.exe SUPERLU   ImpcolD.rua 0 1 -3 0 1e-12 5e-13  >>SST.stdout
+# COMMENT bug #1904  ./amesos_test.exe SUPERLU   ImpcolE.rua 0 1 -1 0 1e-9  1e-10  >>SST.stdout
 
 
 #
@@ -211,11 +211,11 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #  The .triU files are unsymmatric, the .triS files are symmetric, providing 
 #  either the upper or lower triangular part.
 #
- amesos_test.exe SUPERLU SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+ ./amesos_test.exe SUPERLU SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 #
 #  A couple more matrices
 #
- amesos_test.exe SUPERLU 662_bus_out.rsa 0 1 3 0 1e-11 1e-12 >>SST.stdout 
+ ./amesos_test.exe SUPERLU 662_bus_out.rsa 0 1 3 0 1e-11 1e-12 >>SST.stdout 
 # COMMENT FAILS  ./amesos_test.exe SUPERLU Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
 echo "" >> SST.summary 
