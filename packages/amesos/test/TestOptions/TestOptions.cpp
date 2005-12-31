@@ -93,7 +93,8 @@ int CreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
   FILE *in_file = fopen( in_filename, "r");
   char *filename;
   if (in_file == NULL ) 
-    filename = &in_filename[3] ; //  Strip off "../" and try again 
+    filename = &in_filename[1] ; //  Strip off ithe "." from
+				 //  "../" and try again 
   else {
     filename = in_filename ;
     fclose( in_file );
