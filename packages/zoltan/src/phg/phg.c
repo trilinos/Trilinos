@@ -64,6 +64,7 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_EDGE_WEIGHT_OPERATION",       NULL,  "STRING",  0},
   {"PARKWAY_SERPART",                 NULL,  "STRING", 0},
   {"ADD_OBJ_WEIGHT",                  NULL,  "STRING", 0},
+  {"PHG_EDGE_WEIGHT_OPERATION",       NULL,  "STRING", 0},
   {"PHG_RANDOMIZE_INPUT",             NULL,  "INT",    0},    
   { "PATOH_ALLOC_POOL0",              NULL,  "INT",    0},
   { "PATOH_ALLOC_POOL1",              NULL,  "INT",    0},   
