@@ -763,10 +763,21 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& s
     if (inter.NodePID(snode[row]->Id()) != inter.lComm()->MyPID())
       continue;
     
-    // standard assembly for internal nodes
+    // row node is internal node
     if (!snode[row]->IsOnBoundary())
+    {
       for (int col=0; col<nnode; ++col)
-        snode[row]->AddDValue(Ddense(row,col),snode[col]->Id());
+      { 
+        // row/col are both internal
+        if (!snode[col]->IsOnBoundary())
+          snode[row]->AddDValue(Ddense(row,col),snode[col]->Id());
+        // row is internal node, col is boundary node
+        // As those entries would ruin the diagonal structure of D they are
+        // simply assembled into M (which is not diagonal anyway)
+        else
+          snode[row]->AddMValue(Ddense(row,col),snode[col]->Id());
+      }
+    }
     else
     {
       map<int,MOERTEL::Node*>& suppnodes = snode[row]->GetSupportedByNode();
@@ -774,14 +785,24 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& s
       map<int,MOERTEL::Node*>::iterator curr;
       for (curr=suppnodes.begin(); curr!=suppnodes.end(); ++curr)
         for (int col=0; col<nnode; ++col)
-          curr->second->AddDValue(w*Ddense(row,col),snode[col]->Id());
+        { 
+          // col node is internal, assemble into D
+          if (!snode[col]->IsOnBoundary())
+            curr->second->AddDValue(w*Ddense(row,col),snode[col]->Id());
+          // col node is boundary, assemble into M
+          else
+            curr->second->AddMValue(w*Ddense(row,col),snode[col]->Id());
+        }
     }
-  }
+  
+        
+  } // for (int row=0; row<nnode; ++row)
+
   return true;
 }
 
 /*----------------------------------------------------------------------*
- |  assemble contributions Ddense into slave nodes (public)  mwgee 11/05|
+ |  assemble contributions Mdense into slave nodes (public)  mwgee 11/05|
  *----------------------------------------------------------------------*/
 bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
                                    MOERTEL::Segment& sseg,
@@ -804,10 +825,12 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
     // standard assembly for internal nodes
     if (!snode[row]->IsOnBoundary())
       for (int col=0; col<nmnode; ++col)
+        // note the sign change here!!!!
         snode[row]->AddMValue(-Mdense(row,col),mnode[col]->Id());
     else
     {
       map<int,MOERTEL::Node*>& suppnodes = snode[row]->GetSupportedByNode();
+      // note the sign change here!!!!
       double w = -1./(double)(snode[row]->NSupportSet());
       map<int,MOERTEL::Node*>::iterator curr;
       for (curr=suppnodes.begin(); curr!=suppnodes.end(); ++curr)

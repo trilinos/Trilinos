@@ -50,16 +50,6 @@ bool MOERTEL::Interface::Mortar_Assemble(Epetra_CrsMatrix& D,
                                        Epetra_CrsMatrix& M)
 { 
   //-------------------------------------------------------------------
-  if (IsOneDimensional())
-  {
-    if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MOERTEL::Interface::Mortar_Assemble:\n"
-           << "***ERR*** This is not a 2D problem, we're in the wrong method here!!!\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    return false;
-  }
-
-  //-------------------------------------------------------------------
   // interface needs to be complete
   if (!IsComplete())
   {

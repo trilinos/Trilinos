@@ -582,7 +582,6 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
   {
     for (int i=0; i<sol.MyLength(); ++i)
       sol[i] = (*x)[i];
-    cout << sol;
   }
   
   //---------------------------------------------------------------------------

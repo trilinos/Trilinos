@@ -697,7 +697,7 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   amesosparams.set("Solver","Amesos_Klu");
   amesosparams.set("PrintTiming",true);
   amesosparams.set("PrintStatus",true);
-  amesosparams.set("UseTranspose",false);
+  amesosparams.set("UseTranspose",true);
   
   //-------------------------------------------------------------------
   // solve
