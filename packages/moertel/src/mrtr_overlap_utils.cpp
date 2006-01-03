@@ -293,11 +293,11 @@ void MOERTEL::Overlap::PointView(vector<MOERTEL::Point*>& p,const int* nodeids,c
 bool MOERTEL::Overlap::QuickOverlapTest()
 {
   // we need the projection of the master element on the slave element 
-  // to do this test, otherwise we assmue we passed it
+  // to do this test, otherwise we assume we passed it
   if (!havemxi_) 
     return true;
   
-  // find the max and min coords of slave and master points
+  // find the max and min coords of master points
   double mmax[2]; 
   mmax[0] = mxi_[0][0];
   mmax[1] = mxi_[0][1];
@@ -316,9 +316,9 @@ bool MOERTEL::Overlap::QuickOverlapTest()
 
   bool isin = false;
   // check xi0 direction
-  if (  (0.0 < mmin[0] && mmin[0] < 1.0) ||
-        (0.0 < mmax[0] && mmax[0] < 1.0) ||
-        (mmin[0] < 0.0 && 1.0 < mmax[0])  )
+  if (  (0.0 <= mmin[0] && mmin[0] <= 1.0) ||
+        (0.0 <= mmax[0] && mmax[0] <= 1.0) ||
+        (mmin[0] <= 0.0 && 1.0 <= mmax[0])  )
   isin = true;
   
   if (!isin) 
@@ -328,9 +328,9 @@ bool MOERTEL::Overlap::QuickOverlapTest()
   }
 
   // check xi1 direction
-  if (  (0.0 < mmin[1] && mmin[1] < 1.0) ||
-        (0.0 < mmax[1] && mmax[1] < 1.0) ||
-        (mmin[1] < 0.0 && 1.0 < mmax[1])  )
+  if (  (0.0 <= mmin[1] && mmin[1] <= 1.0) ||
+        (0.0 <= mmax[1] && mmax[1] <= 1.0) ||
+        (mmin[1] <= 0.0 && 1.0 <= mmax[1])  )
   isin = true;
   
   if (!isin)

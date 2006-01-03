@@ -788,10 +788,10 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& s
         { 
           // col node is internal, assemble into D
           if (!snode[col]->IsOnBoundary())
-            curr->second->AddDValue(w*Ddense(row,col),snode[col]->Id());
+            curr->second->AddDValue((w*Ddense(row,col)),snode[col]->Id());
           // col node is boundary, assemble into M
           else
-            curr->second->AddMValue(w*Ddense(row,col),snode[col]->Id());
+            curr->second->AddMValue((w*Ddense(row,col)),snode[col]->Id());
         }
     }
   

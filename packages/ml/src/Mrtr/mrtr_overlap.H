@@ -184,7 +184,7 @@ private:
   void RemovePointAfter(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull);
 
   //-------------------------------------------make triangulization of polygon
-  bool Triangulization();
+  bool Triangulation();
   
   //-----------------------------------------------------------collapse points
   bool CollapsePoints(map<int,RefCountPtr<MOERTEL::Point> >& p, const double eps);

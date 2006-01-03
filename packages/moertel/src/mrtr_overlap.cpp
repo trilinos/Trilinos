@@ -250,6 +250,22 @@ bool MOERTEL::Overlap::ComputeOverlap()
 {
   bool ok = false;
 
+#if 0
+  MOERTEL::Node** snodes = sseg_.Nodes();
+  bool foundit = false;
+  for (int i=0; i<sseg_.Nnode(); ++i)
+    if (snodes[i]->Id() == 263 || snodes[i]->Id() == 282)
+    {
+      foundit = true;
+      break;
+    }
+  if (foundit)
+  {  
+    cout << "Slave  Segment\n" << sseg_;
+    cout << "Master Segment\n" << mseg_;
+  }
+#endif
+
   // project master nodes onto slave segment if not already done
   if (!havemxi_)
     havemxi_ = build_mxi();
@@ -257,7 +273,10 @@ bool MOERTEL::Overlap::ComputeOverlap()
   // perform a quick test
   ok = QuickOverlapTest();
   if (!ok)
+  {
+    //if (foundit) cout << "QuickOverlapTest NOT passed\n";
     return false;
+  }
 
   // build array of local sxi coords of nodes
   havesxi_ = build_sxi();
@@ -284,7 +303,7 @@ bool MOERTEL::Overlap::ComputeOverlap()
     return false;
   
   // make a triangulation of the overlap polygon
-  ok = Triangulization();
+  ok = Triangulation();
   if (!ok)
     return false;
 
@@ -557,7 +576,7 @@ bool MOERTEL::Overlap::Clipelements()
 /*----------------------------------------------------------------------*
  |  make a triangulization of a polygon (private)             mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::Triangulization()
+bool MOERTEL::Overlap::Triangulation()
 {
   // we have a polygon that is in clockwise order at this moment
 
