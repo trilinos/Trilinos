@@ -6,6 +6,7 @@ RANLIB="ranlib -s" \
 --enable-mpi \
 --with-mpi-compilers \
 --cache-file=config.cache \
+--with-gnumake \
 --disable-default-packages \
 --enable-amesos \
 --enable-anasazi \

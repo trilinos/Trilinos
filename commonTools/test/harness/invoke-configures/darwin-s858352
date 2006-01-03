@@ -4,6 +4,7 @@ F77=g77 \
 RANLIB="ranlib -s" \
 --with-ldflags="-framework veclib" \
 --cache-file=config.cache \
+--with-gnumake \
 --disable-default-packages \
 --enable-amesos \
 --enable-anasazi \
