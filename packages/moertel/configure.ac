@@ -175,9 +175,9 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 #TAC_ARG_ENABLE_FEATURE_SUB_CHECK( moertel, tests, [Build Moertel tests], MOERTEL_TESTS)
 #AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_moertel_tests" != "Xno")
 
-#TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages], EXAMPLES, yes)
-#TAC_ARG_ENABLE_FEATURE_SUB_CHECK( moertel, examples, [Build Moertel examples], MOERTEL_EXAMPLES)
-#AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_moertel_examples" != "Xno")
+TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( moertel, examples, [Build Moertel examples], MOERTEL_EXAMPLES)
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_moertel_examples" != "Xno")
 
 #TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
@@ -253,6 +253,7 @@ AC_CONFIG_FILES([
 		Makefile.export
 		Makefile.export.moertel
 		src/Makefile
+		example/Makefile
 		])
 
 AC_OUTPUT()

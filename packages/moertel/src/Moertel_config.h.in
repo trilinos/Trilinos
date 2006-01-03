@@ -17,11 +17,17 @@
 /* define if bool is a built-in type */
 #undef HAVE_BOOL
 
+/* Define if want to build examples */
+#undef HAVE_EXAMPLES
+
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
 
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
+
+/* Define if want to build moertel-examples */
+#undef HAVE_MOERTEL_EXAMPLES
 
 /* define if we want to use MPI */
 #undef HAVE_MPI

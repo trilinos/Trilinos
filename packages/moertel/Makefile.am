@@ -53,8 +53,8 @@ config/install-sh \
 config/ac_cxx_have_stl.m4                 config/missing \
 config/ac_cxx_mutable.m4                  config/mkinstalldirs \
 config/ac_cxx_namespaces.m4               config/tac_arg_check_mpi.m4 \
-config/tac_arg_config_mpi.m4 \
-config/generate-makeoptions.pl \
+config/tac_arg_config_mpi.m4 		  config/tac_arg_enable_feature.m4 \
+config/generate-makeoptions.pl    config/tac_arg_enable_feature_sub_check.m4 \
 config/replace-install-prefix.pl \
 config/tac_arg_enable_export-makefiles.m4 \
 config/ac_cxx_std_sprintf.m4 \
