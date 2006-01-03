@@ -42,7 +42,9 @@ AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 EXEEXT = .exe
 
 if BUILD_LOCA_EPETRA_EXAMPLES
+if HAVE_MPI
 noinst_PROGRAMS = example
+endif
 endif
 
 example_SOURCES = $(srcdir)/Example.C \
