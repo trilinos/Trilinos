@@ -49,4 +49,5 @@ CXXFLAGS="-g -pto" \
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
---enable-tsfextended
+--enable-tsfextended \
+--enable-moocho

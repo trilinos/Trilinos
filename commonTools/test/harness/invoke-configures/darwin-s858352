@@ -45,4 +45,5 @@ RANLIB="ranlib -s" \
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
---enable-tsfextended
+--enable-tsfextended \
+--enable-moocho

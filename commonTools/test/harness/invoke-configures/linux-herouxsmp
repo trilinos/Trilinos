@@ -57,4 +57,5 @@ FFLAGS=-O3 \
 --enable-tpetra \
 --enable-triutils \
 --enable-tsfextended \
+--enable-moocho \
 --with-gnumake
