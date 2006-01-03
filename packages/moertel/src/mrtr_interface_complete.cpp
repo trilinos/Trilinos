@@ -256,7 +256,7 @@ bool MOERTEL::Interface::Complete()
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
     }
-    lcomm_ = new Epetra_SerialComm(*serialcomm);
+    lcomm_ = rcp(new Epetra_SerialComm(*serialcomm));
 #endif // end of #ifdef PARALLEL    
   }
   
