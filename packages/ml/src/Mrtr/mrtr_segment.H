@@ -59,8 +59,8 @@ using namespace Teuchos;
 namespace MOERTEL
 {
 
-class MOERTEL::Interface;
-class MOERTEL::Node;
+class Interface;
+class Node;
 
 /*!
 \class Segment

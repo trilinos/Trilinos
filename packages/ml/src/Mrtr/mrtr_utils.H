@@ -62,8 +62,8 @@ namespace MOERTEL
 {
 
 // forward declarations
-class MOERTEL::Segment;
-class MOERTEL::Node;
+class Segment;
+class Node;
 
 /*!
 \brief Allocate a function of the correct type

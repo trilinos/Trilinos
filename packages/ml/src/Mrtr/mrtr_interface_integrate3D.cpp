@@ -308,7 +308,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
     RefCountPtr<MOERTEL::Node> rowsnode = curr->second;
     int snlmdof = rowsnode->Nlmdof();
     const int* slmdof = rowsnode->LMDof();
-    //cout << "Current row snode: " << rowsnode->Id() << endl;
+    cout << "Current row snode: " << rowsnode->Id() << endl;
     
 
   //-------------------------------------------------------------------
@@ -319,10 +319,10 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
     {
       int colnode = rowcurr->first;
       double val  = rowcurr->second;
-      if (abs(val)<1.0e-9)
+      if (abs(val)<1.0e-11)
         continue;
         
-      // cout << "Current colsnode: " << colnode << endl;
+       cout << "Current colsnode: " << colnode << endl;
       
       // get the colsnode
       RefCountPtr<MOERTEL::Node> colsnode = GetNodeView(colnode);
@@ -349,7 +349,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
       {
         int row = slmdof[i];
         int col = sdof[i];
-        // cout << "Inserting D row/col:" << row << "/" << col << " val " << val << endl;
+         cout << "Inserting D row/col:" << row << "/" << col << " val " << val << endl;
         int err = D.SumIntoGlobalValues(row,1,&val,&col);
         if (err)
           err = D.InsertGlobalValues(row,1,&val,&col);
@@ -378,7 +378,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
     {
       int colnode = rowcurr->first;
       double val  = rowcurr->second;
-      if (abs(val)<1.0e-9)
+      if (abs(val)<1.0e-11)
         continue;
         
       // cout << "Current colmnode: " << colnode << endl;

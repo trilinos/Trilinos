@@ -34,6 +34,7 @@
 #include "mrtr_manager.H"
 #include "EpetraExt_MatrixMatrix.h"  // for adding matrices
 #include <EpetraExt_Transpose_RowMatrix.h>
+#include <EpetraExt_View_CrsGraph.h>
 #include "Epetra_Time.h"
 
 /*----------------------------------------------------------------------*
@@ -365,11 +366,9 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
       return NULL;
   }
   
-  
-  
 
 
-
+  exit(0);
   return NULL;
 }
 
@@ -569,6 +568,13 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
   //---------------------------------------------------------------------------
   // solve
   bool ok = solver_->Solve(solverparams_,matrix,x,b);
+  if (!ok)
+  {
+    cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+         << "***ERR*** MOERTEL::Solver::Solve returned an error\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
   
   //---------------------------------------------------------------------------
   // copy solution back to sol if neccessary

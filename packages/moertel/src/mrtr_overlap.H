@@ -67,10 +67,10 @@ namespace MOERTEL
 {
 
 // forward declarations
-class MOERTEL::Interface;
-class MOERTEL::Segment;
-class MOERTEL::Node;
-class MOERTEL::Integrator;
+class Interface;
+class Segment;
+class Node;
+class Integrator;
 
 /*!
 \class Overlap

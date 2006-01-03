@@ -61,9 +61,9 @@ namespace MOERTEL
 {
 
 // forward declarations
-class MOERTEL::Interface;
-class MOERTEL::Segment;
-class MOERTEL::ProjectedNode;
+class Interface;
+class Segment;
+class ProjectedNode;
 
 /*!
 \class Node
