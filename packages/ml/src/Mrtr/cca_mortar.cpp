@@ -686,8 +686,8 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   //-------------------------------------------------------------------
   // create a Teuchos Parameter List holding solver arguments
   Teuchos::ParameterList params;
-  params.set("System","SaddleSystem");
-  //params.set("System","SPDSystem");
+  //params.set("System","SaddleSystem");
+  params.set("System","SPDSystem");
 
   // choose solver package
   params.set("Solver","Amesos");

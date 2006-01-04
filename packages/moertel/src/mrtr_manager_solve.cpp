@@ -366,8 +366,174 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
       return NULL;
   }
   
+  // we need a map from lagrange multiplier dofs to primal dofs on the same node
+  vector<MOERTEL::Node*> nodes(0);
+  map<int,int> lm_to_dof;
+  for (curr=interface_.begin(); curr!=interface_.end(); ++curr)
+  {
+    RefCountPtr<MOERTEL::Interface> inter = curr->second;
+    inter->GetNodeView(nodes);
+    for (int i=0; i<(int)nodes.size(); ++i)
+    {
+      if (!nodes[i]->Nlmdof()) 
+        continue;
+      const int* dof = nodes[i]->Dof();
+      const int* lmdof = nodes[i]->LMDof();
+      for (int j=0; j<nodes[i]->Nlmdof(); ++j)
+        lm_to_dof[lmdof[j]] = dof[j];
+    }
+  }
+  
+  /*
+               _              _
+              |               |
+              |  Arr  Arn  Mr | 
+         S =  |               |
+              |  Anr  Ann  D  | 
+              |
+              |  MrT  D    0  |
+              |_          _   |
+
+               _           _
+              |            |
+              |  Arr  Arn  | 
+         A =  |            |
+              |  Anr  Ann  | 
+              |_          _|
+  
+        1) Ann is square and we need it's Range/DomainMap annmap
+        
+               _         _
+        WT =  |_ 0 Dinv _|
+
+        2) Build WT (has rowmap/rangemap annmap and domainmap problemmap_)
+             
+               _    _
+              |     |
+              |  Mr | 
+         B =  |     |
+              |  D  | 
+              |_   _|
+  
+        3) Build B (has rowmap/rangemap problemmap_ and domainmap annmap)
+
+  */    
+  
+  int err=0;
+  //--------------------------------------------------------------------------
+  // 1) create the rangemap of Ann
+  vector<int> myanngids(100);
+  int count=0;
+  map<int,int>::iterator intintcurr;
+  for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
+  {
+    if (problemmap_->MyGID(intintcurr->second)==false) 
+      continue;
+    if ((int)myanngids.size()<=count) 
+      myanngids.resize(myanngids.size()+50);
+    myanngids[count] = intintcurr->second;
+    ++count;
+  }
+  myanngids.resize(count);
+    int numglobalelements;
+  Comm().SumAll(&count,&numglobalelements,1);
+  Epetra_Map* annmap = new Epetra_Map(numglobalelements,count,&myanngids[0],0,Comm());
+  myanngids.clear();
+  
+  //--------------------------------------------------------------------------
+  // 2) create WT
+  Epetra_CrsMatrix* WT = new Epetra_CrsMatrix(Copy,*annmap,1,true); 
+  for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
+  {
+    int lmdof = intintcurr->first;
+    int dof   = intintcurr->second;
+    if (D_->MyGRID(lmdof)==false)
+      continue;
+    int lmlrid = D_->LRID(lmdof);
+    if (lmlrid<0) cout << "Cannot find lmlrid for lmdof\n";
+    int numentries;
+    int* indices;
+    double* values;
+    err = D_->ExtractMyRowView(lmlrid,numentries,values,indices);
+    if (err) cout << "D_->ExtractMyRowView returned err=" << err << endl;
+    bool foundit = false;
+    for (int j=0; j<numentries; ++j)
+    {
+      int gcid = D_->GCID(indices[j]);
+      if (gcid<0) cout << "Cannot find gcid for indices[j]\n";
+      //cout << "Proc " << Comm().MyPID() << " lmdof " << lmdof << " dof " << dof << " gcid " << gcid << " val " << values[j] << endl;
+      if (gcid==dof)
+      {
+        double val = 1./values[j];
+        err = WT->InsertGlobalValues(dof,1,&val,&dof);
+        if (err<0) cout << "WT->InsertGlobalValues returned err=" << err << endl;
+        foundit = true;
+        break;
+      }
+    }
+    if (!foundit)
+    {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** Cannot compute inverse of D_\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+    }  
+  }
+  WT->FillComplete(*(problemmap_.get()),*annmap);  
+  
+  //--------------------------------------------------------------------------
+  // 3) create B
+  // create a temporary matrix with rowmap of the Ann block
+  Epetra_CrsMatrix* tmp = new Epetra_CrsMatrix(Copy,*annmap,90);
+  vector<int> newindices(100);
+  for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
+  {
+    int lmdof = intintcurr->first;
+    int dof   = intintcurr->second;
+    if (D_->MyGRID(lmdof)==false)
+      continue;
+    int lmlrid = D_->LRID(lmdof);
+    if (lmlrid<0) cout << "Cannot find lmlrid for lmdof\n";
+    int numentries;
+    int* indices;
+    double* values;
+    
+    // extract and add values from D
+    err = D_->ExtractMyRowView(lmlrid,numentries,values,indices);
+    if (err) cout << "D_->ExtractMyRowView returned err=" << err << endl;
+    if (numentries>(int)newindices.size()) newindices.resize(numentries);
+    for (int j=0; j<numentries; ++j)
+    {
+      newindices[j] = D_->GCID(indices[j]);
+      if (newindices[j]<0) cout << "Cannot find gcid for indices[j]\n";
+    }
+    err = tmp->InsertGlobalValues(dof,numentries,values,&newindices[0]);
+    if (err<0) cout << "tmp->InsertGlobalValues returned err=" << err << endl;
+  
+    // extract and add values from M
+    err = M_->ExtractMyRowView(lmlrid,numentries,values,indices);
+    if (err) cout << "M_->ExtractMyRowView returned err=" << err << endl;
+    if (numentries>(int)newindices.size()) newindices.resize(numentries);
+    for (int j=0; j<numentries; ++j)
+    {
+      newindices[j] = M_->GCID(indices[j]);
+      if (newindices[j]<0) cout << "Cannot find gcid for indices[j]\n";
+    }
+    err = tmp->InsertGlobalValues(dof,numentries,values,&newindices[0]);
+    if (err<0) cout << "tmp->InsertGlobalValues returned err=" << err << endl;
+  }
+  tmp->FillComplete(*(problemmap_.get()),*annmap);  
+  cout << *tmp;
+  // B is transposed of tmp
+  EpetraExt::RowMatrix_Transpose* trans = new EpetraExt::RowMatrix_Transpose(false);
+  Epetra_CrsMatrix* B = &(dynamic_cast<Epetra_CrsMatrix&>(((*trans)(const_cast<Epetra_CrsMatrix&>(*tmp)))));
+  cout << *B;
+  delete tmp; tmp = NULL;
 
 
+
+
+  // allocated annmap, WT, trans (which is owner of B)
   exit(0);
   return NULL;
 }

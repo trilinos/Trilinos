@@ -529,6 +529,13 @@ public:
   MOERTEL::Node** GetNodeView();
 
   /*!
+  \brief Get a view of all nodes on this interface (both sides)
+
+  Returns false if calling process is not part of the intra-communicator of the interface.
+  */
+  bool GetNodeView(vector<MOERTEL::Node*>& nodes);
+
+  /*!
   \brief Get a view of a MOERTEL::Segment (of either side) specifying segment id
 
   Returns a view of a \ref MOERTEL::Segment of this interface.<br>

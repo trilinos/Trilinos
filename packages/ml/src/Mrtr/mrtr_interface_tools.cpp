@@ -713,6 +713,32 @@ MOERTEL::Node** MOERTEL::Interface::GetNodeView()
 }
 
 /*----------------------------------------------------------------------*
+ |  get view of ALL nodes on this interface                             |
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Interface::GetNodeView(vector<MOERTEL::Node*>& nodes)
+{ 
+  if (!IsComplete())
+  {
+    cout << "***WRN*** MOERTEL::Interface::GetNodeView:\n"
+         << "***WRN*** Interface " << Id() << ": Complete() not called\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  if (!lComm()) return false;
+  
+  nodes.resize(GlobalNnode());
+  int count=0;
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
+  for (int i=0; i<2; ++i)
+    for (curr=rnode_[i].begin(); curr != rnode_[i].end(); ++curr)
+    {
+      nodes[count] = curr->second.get();
+      ++count;
+    }
+  return true;
+}
+
+/*----------------------------------------------------------------------*
  |  get view of a local segment with id sid                             |
  *----------------------------------------------------------------------*/
 RefCountPtr<MOERTEL::Segment>  MOERTEL::Interface::GetSegmentView(int sid)
