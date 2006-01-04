@@ -44,7 +44,7 @@ PROJECT_NAME           = Moertel
 
 INPUT                  = ../src
 
-FILE_PATTERNS          = *.h
+FILE_PATTERNS          = *.H
 
 EXAMPLE_PATH           = ../example/
 
