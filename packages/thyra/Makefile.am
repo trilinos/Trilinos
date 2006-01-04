@@ -95,7 +95,11 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+if PYTHON_USE
+PYTHON_SUBDIR=python
+endif
+
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new

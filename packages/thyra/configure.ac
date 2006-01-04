@@ -188,6 +188,11 @@ TAC_ARG_ENABLE_FEATURE_SUB_CHECK( thyra, examples, [Build Thyra examples], THYRA
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_thyra_examples" != "Xno")
 
 # ------------------------------------------------------------------------
+# Enable optional python wrappers
+# ------------------------------------------------------------------------
+TAC_ENABLE_PYTHON
+
+# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -294,6 +299,13 @@ AC_CONFIG_FILES([
     test/ana/operator_vector/Makefile
     test/scripts/daily/serial/run_operator_vector_tests.pl
     test/scripts/daily/mpi/run_operator_vector_tests.pl
+    python/Makefile
+    python/src/Makefile
+    python/src/TRILINOS_HOME_DIR
+    python/src/__init__.py
+    python/src/.deps/dummy
+    python/test/Makefile
+    python/example/Makefile
     ])
 
 AC_OUTPUT()
