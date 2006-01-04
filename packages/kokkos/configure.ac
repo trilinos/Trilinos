@@ -187,6 +187,10 @@ AC_CXX_STD_SPRINTF
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
+#  --enable-kokkos-experimental
+TAC_ARG_ENABLE_FEATURE_SUB( kokkos, experimental, [enable Kokkos experimental code], KOKKOS_EXPERIMENTAL, no)
+AM_CONDITIONAL(HAVE_KOKKOS_EXPERIMENTAL, [test "X$ac_cv_use_kokkos_experimental" != "Xno"])
+
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
