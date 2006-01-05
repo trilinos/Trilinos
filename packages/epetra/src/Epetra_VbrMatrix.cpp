@@ -1514,8 +1514,8 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
   double * xp = (double*)x.Values();
   double *yp = (double*)y.Values();
 
-  int * ColElementSizeList = ElementSizeList_;
-  int * ColFirstPointInElementList = FirstPointInElementList_;
+  int * ColElementSizeList = ColMap().ElementSizeList();
+  int * ColFirstPointInElementList = ColMap().FirstPointInElementList();
 
   bool x_and_y_same = false;
   Epetra_Vector* ytemp = 0;
@@ -1661,8 +1661,8 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
   
   int * RowElementSizeList = ElementSizeList_;
   int * RowFirstPointInElementList = FirstPointInElementList_;
-  int * ColElementSizeList = ElementSizeList_;
-  int * ColFirstPointInElementList = FirstPointInElementList_;
+  int * ColElementSizeList = ColMap().ElementSizeList();
+  int * ColFirstPointInElementList = ColMap().FirstPointInElementList();
 
    
   int NumVectors = X.NumVectors();
