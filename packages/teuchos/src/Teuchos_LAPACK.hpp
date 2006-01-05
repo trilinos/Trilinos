@@ -298,7 +298,9 @@ namespace Teuchos
     */
     void TREVC(const char SIDE, const OrdinalType n, const ScalarType* T, const OrdinalType ldt, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, ScalarType* WORK, MagnitudeType* RWORK, OrdinalType* info) const;
 
-    //! Reorders the Schur factorization of a matrix \c T via unitary similarity transformations so that the diagonal element of \c T with row index \c ifst is moved to row \c ilst. If \c ScalarType is \c float or \c double, then \c T should be in real Schur form and the operation affects the diagonal block referenced by \c ifst.
+    /*! Reorders the Schur factorization of a matrix \c T via unitary similarity transformations so that the diagonal element of \c T with row index \c ifst is moved to row \c ilst. If \c ScalarType is \c float or \c double, then \c T should be in real Schur form and the operation affects the diagonal block referenced by \c ifst.
+      \note This method will ignore the WORK vector when ScalarType is \c complex<float> or \c complex<double>.
+    */
     void TREXC(const char COMPQ, const OrdinalType n, ScalarType* T, const OrdinalType ldt, ScalarType* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, ScalarType* WORK, OrdinalType* info) const;
 
     //@}
@@ -1476,7 +1478,7 @@ namespace Teuchos
     // Triangular matrix routines.
     void TREVC(const char SIDE, const char HOWMNY, OrdinalType (*ptr2func)(complex<float>*), const OrdinalType n, const complex<float>* T, const OrdinalType ldt, complex<float>* VL, const OrdinalType ldvl, complex<float>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, complex<float>* WORK, float* RWORK, OrdinalType* info) const;
     void TREVC(const char SIDE, const OrdinalType n, const complex<float>* T, const OrdinalType ldt, complex<float>* VL, const OrdinalType ldvl, complex<float>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, complex<float>* WORK, float* RWORK, OrdinalType* info) const;
-    void TREXC(const char COMPQ, const OrdinalType n, complex<float>* T, const OrdinalType ldt, complex<float>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, OrdinalType* info) const;
+    void TREXC(const char COMPQ, const OrdinalType n, complex<float>* T, const OrdinalType ldt, complex<float>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, complex<float>* WORK, OrdinalType* info) const;
 
     // Random number generators
     complex<float> LARND( const OrdinalType idist, OrdinalType* seed ) const;
@@ -1700,7 +1702,7 @@ namespace Teuchos
   }
   
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, complex<float> >::TREXC(const char COMPQ, const OrdinalType n, complex<float>* T, const OrdinalType ldt, complex<float>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, OrdinalType* info) const
+  void LAPACK<OrdinalType, complex<float> >::TREXC(const char COMPQ, const OrdinalType n, complex<float>* T, const OrdinalType ldt, complex<float>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, complex<float>* WORK, OrdinalType* info) const
   {
     CTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst, &ilst, info);
   }
@@ -1785,7 +1787,7 @@ namespace Teuchos
     // Triangular matrix routines.
     void TREVC(const char SIDE, const char HOWMNY, OrdinalType (*ptr2func)(complex<double>*), const OrdinalType n, const complex<double>* T, const OrdinalType ldt, complex<double>* VL, const OrdinalType ldvl, complex<double>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, complex<double>* WORK, double* RWORK, OrdinalType* info) const;
     void TREVC(const char SIDE, const OrdinalType n, const complex<double>* T, const OrdinalType ldt, complex<double>* VL, const OrdinalType ldvl, complex<double>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, complex<double>* WORK, double* RWORK, OrdinalType* info) const;
-    void TREXC(const char COMPQ, const OrdinalType n, complex<double>* T, const OrdinalType ldt, complex<double>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, OrdinalType* info) const;
+    void TREXC(const char COMPQ, const OrdinalType n, complex<double>* T, const OrdinalType ldt, complex<double>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, complex<double>* WORK, OrdinalType* info) const;
 
     // Random number generators
     complex<double> LARND( const OrdinalType idist, OrdinalType* seed ) const;
@@ -2009,7 +2011,7 @@ namespace Teuchos
   }
   
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, complex<double> >::TREXC(const char COMPQ, const OrdinalType n, complex<double>* T, const OrdinalType ldt, complex<double>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, OrdinalType* info) const
+  void LAPACK<OrdinalType, complex<double> >::TREXC(const char COMPQ, const OrdinalType n, complex<double>* T, const OrdinalType ldt, complex<double>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, complex<double>* WORK, OrdinalType* info) const
   {
     ZTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst, &ilst, info);
   }
