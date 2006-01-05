@@ -571,8 +571,8 @@ NewPackage& Working Package Prototype  & X& X& X& X \\\hline
 NOX& Nonlinear solvers                 & X& X& X& X \\\hline
 Pliris& Dense direct Solvers           &  &  &  & X \\\hline
 Teuchos& Common Utilities              &  &  & X& X \\\hline
-TSFCore& Abstract Solver API           &  &  & X& X \\\hline
-TSFExt& Extensions to TSFCore          &  &  & X& X \\\hline
+Thyra& Abstract Solver API             &  &  & X& X \\\hline
+TSFExt& Extensions to Thyra            &  &  & X& X \\\hline
 Tpetra& Templated Petra                &  &  &  & X \\\hline\hline
 Totals&                                & 8&11&15&20 \\\hline
 \end{tabular}
@@ -776,14 +776,14 @@ As a result, TSF users gain easy access to many
 solvers and can bring multiple solvers to bear on a single problem.
 
 TSF is split into several packages.  The most important user-oriented
-classes are TSFCore and TSFExtended:
+classes are Thyra and TSFExtended:
 \begin{enumerate}
-\item {\bf TSFCore:} As its name implies, TSFCore contains a small set
+\item {\bf Thyra:} Thyra contains a small set
 of core classes that are considered essential to almost any abstract
-linear algebra interface.  The primary user classes in TSFCore are
-Vector, MultiVector, LinearOp and VectorSpace. TSFCore is discussed in
-detail in~\cite{TSFCore}.
-\item {\bf TSFExtended:} TSFExtended builds on top of TSFCore and
+linear algebra interface.  The primary user classes in Thyra are
+Vector, MultiVector, LinearOp and VectorSpace. 
+%TSFCore is discussed in detail in~\cite{TSFCore}. -> Ross, please fix.
+\item {\bf TSFExtended:} TSFExtended builds on top of Thyra and
 includes overloaded, block and composite operators, all of
 which support powerful abstraction capabilities.  The Meros package
 relies on TSFExtended to implicitly construct sophisticated
@@ -792,7 +792,7 @@ operators with little overhead in time or memory.  Section
 ~\ref{subsect:meros} discusses this topic in detail.
 \end{enumerate}
 
-Both TSFCore and TSFExtended are important because they allow
+Both Thyra and TSFExtended are important because they allow
 interfacing to and sophisticated use of numerical linear algebra objects
 without requiring the user or application to commit to any particular
 concrete linear algebra library.  This approach allows us to leverage

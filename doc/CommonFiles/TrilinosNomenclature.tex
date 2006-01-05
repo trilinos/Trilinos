@@ -101,20 +101,26 @@ useful to almost all Trilinos packages.  Includes
 reference-counted pointers, parameter lists, templated interfaces to
 BLAS, LAPACK and traits for templates.  
 
+\item[Thyra] A set of interfaces and supporting code that defines basic 
+interoperability mechanisms between different types of numerical software. The 
+foundation of all of these interfaces are the mathematical concepts of 
+vectors, vector spaces, and linear operators. All other interfaces and support 
+software is built on the basic operator/vector interfaces.
+
 \item[TSF] A collection of abstract interfaces that supports application
 access to a variety of Trilinos capabilities, supports
 interoperability betweeen Trilinos packages and provides future extensibility.
 TSF is composed of several packages.  The primary user packages are:  
 \begin{itemize}
 
-\item[TSFCore] TSFCore provides 
+\item[TSFCore] Note: Obsolete - see Thyra.  TSFCore provides 
 a basic collection of abstract interfaces to vectors, linear
 operators, solvers, etc.  These interfaces provide a common
 interface for applications to access one or more packages that
 implement the abstract interface.  These interfaces can also be used
 by other packages in Trilinos to accomplish the same purpose.
 
-\item[TSFExtended] TSFExtended builds on top of TSFCore, providing implicit
+\item[TSFExtended] TSFExtended builds on top of Thyra, providing implicit
 aggregation capabilities and overloaded operators.  
 \end{itemize}
 \end{itemize}
