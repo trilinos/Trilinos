@@ -13,6 +13,7 @@
 #
 use strict;
 use Cwd;
+use File::Path;
 #
 # Pares the command-line
 #
@@ -73,18 +74,18 @@ foreach(@external_packages) {
 foreach(@external_packages) {
   my $external_package = $_;
   print "  Setting up \"$external_package\" ...\n";
-  run_cmnd("mkdir $external_package");
-  run_cmnd("cp ${external_src_dir}/${external_package}/Makefile.in ${external_package}/Makefile");
-  run_cmnd("${trilinos_src_dir}/commonTools/refactoring/token-replace.pl _TRILINOS_BUILD_DIR ${trilinos_build_dir} ${external_package}/Makefile ${external_package}/Makefile");
-  run_cmnd("${trilinos_src_dir}/commonTools/refactoring/token-replace.pl _TRILINOS_SRC_DIR ${trilinos_src_dir} ${external_package}/Makefile ${external_package}/Makefile");
-  run_cmnd("${trilinos_src_dir}/commonTools/refactoring/token-replace.pl _BASE_SRC_DIR ${external_src_dir}/${external_package} ${external_package}/Makefile ${external_package}/Makefile");
+  (mkpath($external_package,1,0777) || die $!) if !(-e $external_package);
+  run_cmnd("cp ${external_src_dir}/${external_package}/Makefile.in ${external_package}/Makefile",1);
+  run_cmnd("${trilinos_src_dir}/commonTools/refactoring/token-replace.pl _TRILINOS_BUILD_DIR ${trilinos_build_dir} ${external_package}/Makefile ${external_package}/Makefile",1);
+  run_cmnd("${trilinos_src_dir}/commonTools/refactoring/token-replace.pl _TRILINOS_SRC_DIR ${trilinos_src_dir} ${external_package}/Makefile ${external_package}/Makefile",1);
+  run_cmnd("${trilinos_src_dir}/commonTools/refactoring/token-replace.pl _BASE_SRC_DIR ${external_src_dir}/${external_package} ${external_package}/Makefile ${external_package}/Makefile",1);
 }
 
 sub run_cmnd {
   my $cmnd = shift;
   my $stop_on_fail = shift;
   #print "$cmnd\n";
-  if(system($cmnd) == 0 && $stop_on_fail) { die; }
+  if(system($cmnd) != 0 && $stop_on_fail) { die; }
 }
 
 sub make_abs_path {
