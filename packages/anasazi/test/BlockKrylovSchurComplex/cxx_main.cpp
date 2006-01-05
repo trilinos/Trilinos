@@ -198,7 +198,9 @@ int main(int argc, char *argv[])
     rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(A, ivec) );
 
   // Inform the eigenproblem that the operator A is symmetric
-  MyProblem->SetSymmetric(true);
+  // Note:  Block Krylov-Schur does not do the right thing right now if A is set symmetric.
+  // (Should be SetHermitian????)
+  //MyProblem->SetSymmetric(true);
 
   // Set the number of eigenvalues requested and the blocksize the solver should use
   MyProblem->SetNEV( nev );

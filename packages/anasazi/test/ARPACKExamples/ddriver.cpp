@@ -177,30 +177,32 @@ int main(int argc, char *argv[])
 
   // test multivector and operators
   int ierr;
-  cout << "Testing MultiVector" << endl;
   ierr = Anasazi::TestMultiVecTraits<ST,MV>(MyOM,ivec);
-  if (ierr != Anasazi::Ok) {
-    cout << "MultiVec failed TestMultiVecTraits()" << endl;
+  if (verbose) {
+    cout << "Testing MultiVector";
+    if (ierr == Anasazi::Ok) {      
+      cout << "... PASSED TestMultiVecTraits()" << endl;
+    } else {
+      cout << "... FAILED TestMultiVecTraits()" << endl;
+    }
   }
-  cout << "Testing A" << endl;
   ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,A);
-  if (ierr != Anasazi::Ok) {
-    cout << "A failed TestOperatorTraits()" << endl;
+  if (verbose) {
+    cout << "Testing OP";
+    if (ierr == Anasazi::Ok) {
+      cout << "... PASSED TestOperatorTraits()" << endl;
+    } else {
+      cout << "... FAILED TestOperatorTraits()" << endl;
+    }
   }
-  cout << "Testing M" << endl;
   ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,M);
-  if (ierr != Anasazi::Ok) {
-    cout << "M failed TestOperatorTraits()" << endl;
-  }
-  cout << "Testing Op" << endl;
-  ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,Op);
-  if (ierr != Anasazi::Ok) {
-    cout << "OP failed TestOperatorTraits()" << endl;
-  }
-  cout << "Testing B" << endl;
-  ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,B);
-  if (ierr != Anasazi::Ok) {
-    cout << "B failed TestOperatorTraits()" << endl;
+  if (verbose) {
+    cout << "Testing M";
+    if (ierr == Anasazi::Ok) {
+      cout << "... PASSED TestOperatorTraits()" << endl;
+    } else {
+      cout << "... FAILED TestOperatorTraits()" << endl;
+    }
   }
 
   // Create the sort manager

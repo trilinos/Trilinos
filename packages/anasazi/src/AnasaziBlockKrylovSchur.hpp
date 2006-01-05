@@ -67,9 +67,6 @@
 */
 
 namespace Anasazi {
-  /*  template <class OrdinalType, class ScalarType>
-  pointer_to_binary_function<OrdinalType,ScalarType> ptr_fun( OrdinalType (*f)(ScalarType*, ScalarType*) );
-  */
 
   template <class ScalarType, class MV, class OP>
   class BlockKrylovSchur : public Eigensolver<ScalarType,MV,OP> { 
@@ -326,7 +323,7 @@ namespace Anasazi {
       int _nevtemp = _nev;
       if (_jstart < _nevblock) { _nevtemp = _jstart*_blockSize; }
       //
-      if (_problem->IsSymmetric()) {
+      if (_problem->IsSymmetric() || Teuchos::ScalarTraits<ScalarType>::isComplex) {
         _os << std::setw(16) << std::right << "Eigenvalue" 
             << std::setw(16) << std::right << "Ritz Residual"
             << endl;

@@ -34,7 +34,7 @@
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziLOBPCG.hpp"
 #include "AnasaziBlockDavidson.hpp"
-// #include "AnasaziBlockKrylovSchur.hpp"
+#include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "AnasaziMVOPTester.hpp"
@@ -190,22 +190,34 @@ int main(int argc, char *argv[])
 
   // test multivector and operators
   int ierr;
-  cout << "Testing MultiVector" << endl;
   ierr = Anasazi::TestMultiVecTraits<ST,MV>(MyOM,ivec);
-  if (ierr != Anasazi::Ok) {
-    cout << "MultiVec failed TestMultiVecTraits()" << endl;
+  if (verbose) {
+    cout << "Testing MultiVector";
+    if (ierr == Anasazi::Ok) {      
+      cout << "... PASSED TestMultiVecTraits()" << endl;
+    } else {
+      cout << "... FAILED TestMultiVecTraits()" << endl;
+    }
   }
-  cout << "Testing OP" << endl;
   ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,A);
-  if (ierr != Anasazi::Ok) {
-    cout << "OP failed TestOperatorTraits()" << endl;
+  if (verbose) {
+    cout << "Testing OP";
+    if (ierr == Anasazi::Ok) {
+      cout << "... PASSED TestOperatorTraits()" << endl;
+    } else {
+      cout << "... FAILED TestOperatorTraits()" << endl;
+    }
   }
-  cout << "Testing M" << endl;
   ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,M);
-  if (ierr != Anasazi::Ok) {
-    cout << "M failed TestOperatorTraits()" << endl;
+  if (verbose) {
+    cout << "Testing M";
+    if (ierr == Anasazi::Ok) {
+      cout << "... PASSED TestOperatorTraits()" << endl;
+    } else {
+      cout << "... FAILED TestOperatorTraits()" << endl;
+    }
   }
-
+  
   // Create the sort manager
   RefCountPtr<Anasazi::BasicSort<ST,MV,OP> > MySM = 
      rcp( new Anasazi::BasicSort<ST,MV,OP>(which) );
@@ -219,7 +231,9 @@ int main(int argc, char *argv[])
     MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(Op, M, ivec) );
   }
   // Inform the eigenproblem that the operator A is symmetric
-  MyProblem->SetSymmetric(isherm);
+  if (solver == "LOBPCG" || solver == "BD") {
+    MyProblem->SetSymmetric(isherm);
+  }
 
   // Set the number of eigenvalues requested and the blocksize the solver should use
   MyProblem->SetNEV( nev );
@@ -242,13 +256,11 @@ int main(int argc, char *argv[])
   if (solver == "LOBPCG") {
     MySolver = rcp( new Anasazi::LOBPCG<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
   }
-  /*
   else if (solver == "BKS") {
     MyPL.set( "Block Size", 1 );
     MyPL.set( "Max Blocks", 20 );
     MySolver = rcp( new Anasazi::BlockKrylovSchur<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
   }
-  */
   else if (solver == "BD") {
     MySolver = rcp( new Anasazi::BlockDavidson<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
   }
@@ -282,6 +294,7 @@ int main(int argc, char *argv[])
   // spectral xformed operator (Op)
   if (solver == "BKS") {
     prob->xformeval(*evals);
+    nevecs /= 2;
   }
 
   // Compute the direct residual
