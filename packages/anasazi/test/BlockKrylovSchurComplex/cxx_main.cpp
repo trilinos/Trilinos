@@ -39,7 +39,7 @@
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
-// #include "AnasaziBlockKrylovSchur.hpp"
+#include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziMVOPTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -217,7 +217,6 @@ int main(int argc, char *argv[])
   }
 
   // Create the eigensolver 
-  /*
   Anasazi::BlockKrylovSchur<ST,MV,OP> MySolver(MyProblem, MySM, MyOM, MyPL);
 
   // Solve the problem to the specified tolerances or length
@@ -248,7 +247,6 @@ int main(int argc, char *argv[])
       testFailed = true;
     }
   }
-  */
 
   // Exit
 #ifdef EPETRA_MPI

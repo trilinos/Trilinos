@@ -48,6 +48,12 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+#if defined(HAVE_COMPLEX)
+#define ANSZI_CPLX_CLASS std::complex
+#elif  defined(HAVE_COMPLEX_H)
+#define ANSZI_CPLX_CLASS ::complex
+#endif
+
 /*!  \class Anasazi::BlockKrylovSchur
 
   \brief This class implements the Restarted Block Krylov Schur Method,
@@ -104,7 +110,7 @@ namespace Anasazi {
     Teuchos::RefCountPtr<const std::vector<ScalarType> > GetRitzValues() const { return(_ritzvalues); };
     
     //! This method returns the Ritz residuals for the computed eigenpairs.
-    Teuchos::RefCountPtr<const std::vector<ScalarType> > GetRitzResiduals() const { return(_ritzresiduals); };
+    Teuchos::RefCountPtr<const std::vector<MagnitudeType> > GetRitzResiduals() const { return(_ritzresiduals); };
     
     //! Get the current iteration count.
     int GetNumIters() const { return(_iter); };
@@ -186,7 +192,8 @@ namespace Anasazi {
     std::vector<int> _order;
     Teuchos::RefCountPtr<MV> _basisvecs;
     Teuchos::SerialDenseMatrix<int,ScalarType> _hessmatrix;
-    Teuchos::RefCountPtr<std::vector<ScalarType> > _ritzresiduals, _ritzvalues;
+    Teuchos::RefCountPtr<std::vector<ScalarType> > _ritzvalues;
+    Teuchos::RefCountPtr<std::vector<MagnitudeType> > _ritzresiduals;
     //
     // Output stream from the output manager
     //
@@ -494,9 +501,10 @@ namespace Anasazi {
     // initialize them.
     //
     _ritzvalues = Teuchos::rcp(new std::vector<ScalarType>(2*_totallength));
-    _ritzresiduals = Teuchos::rcp(new std::vector<ScalarType>(_totallength)); 
+    _ritzresiduals = Teuchos::rcp(new std::vector<MagnitudeType>(_totallength)); 
     _order.resize( _totallength );
-    const ScalarType one = 1.0, zero = 0.0;
+    const MagnitudeType one = 1.0;
+    const ScalarType zero = 0.0;
     for (int i=0; i< _totallength; i++) {
       (*_ritzvalues)[i] = zero; (*_ritzvalues)[_totallength+i] = zero;
       (*_ritzresiduals)[i] = one;
@@ -763,8 +771,8 @@ namespace Anasazi {
     const int max_num_orth = 2;
     int i, row_offset, col_offset;
     std::vector<int> index( _blockSize );
-    std::vector<ScalarType> norm1( _blockSize );
-    std::vector<ScalarType> norm2( _blockSize );
+    std::vector<MagnitudeType> norm1( _blockSize );
+    std::vector<MagnitudeType> norm2( _blockSize );
     ReturnType ret; 
     //
     // Associate (j+1)-st block of ArnoldiVecs with F_vec.
@@ -901,8 +909,8 @@ namespace Anasazi {
     int i, num_prev;
     std::vector<int> index( _blockSize );
     Teuchos::SerialDenseVector<int,ScalarType> dense_vec;
-    std::vector<ScalarType> norm1(IntOne);
-    std::vector<ScalarType> norm2(IntOne);
+    std::vector<MagnitudeType> norm1(IntOne);
+    std::vector<MagnitudeType> norm2(IntOne);
     ReturnType ret;
     //
     // Place the candidate vectors Vec_in into the (j+1)-st block of ArnoldiVecs.
@@ -1259,6 +1267,7 @@ namespace Anasazi {
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     Teuchos::LAPACK<int,ScalarType> lapack;
+    Teuchos::LAPACK<int,MagnitudeType> lapack_mag;
     Teuchos::BLAS<int,ScalarType> blas;
     Teuchos::RefCountPtr<MV> basistemp;
     Teuchos::SerialDenseMatrix<int,ScalarType> Q(n,n);
@@ -1362,7 +1371,7 @@ namespace Anasazi {
 
       while ( i < curr_nev ) {        
         if ((*_ritzvalues)[_totallength+i] != zero) {
-          t_evecnrm = one/lapack.LAPY2(evecnrm[i],evecnrm[i+1]);
+          t_evecnrm = one/lapack_mag.LAPY2(evecnrm[i],evecnrm[i+1]);
           index2[0] = i;
 
           // Copy the real part of the eigenvector.  Scale by square-root of 2 to normalize the vector.
@@ -1408,7 +1417,7 @@ namespace Anasazi {
         for (i=0; i<conjprs; i++) {
           indexi_pnev[0] = indexi[i] + _nev;
           index2[0] = indexi[i];          
-          t_evecnrm = one/lapack.LAPY2(evecnrm[indexi[i]],evecnrm[indexi[i]-1]);
+          t_evecnrm = one/lapack_mag.LAPY2(evecnrm[indexi[i]],evecnrm[indexi[i]-1]);
           evecstempi = MVT::CloneView( *evecstemp, index2 ); 
 
           if ( indexi_pnev[0] < 2*_nev ) {
@@ -1544,7 +1553,9 @@ namespace Anasazi {
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     Teuchos::LAPACK<int,ScalarType> lapack; 
+    Teuchos::LAPACK<int,MagnitudeType> lapack_mag;
     Teuchos::BLAS<int,ScalarType> blas;
+    Teuchos::BLAS<int,MagnitudeType> blas_mag;
     int i, j, info=0;
     int n = H.numRows(), ldh = H.stride(), ldq = Q.stride(); 
     int m = H.numRows(), mm1 = H.numRows() - _blockSize;
@@ -1656,7 +1667,7 @@ namespace Anasazi {
       i = 0;
       while( i < n ) {
         if ( (*_ritzvalues)[_totallength+i] != zero ) {
-          temp = lapack.LAPY2( blas.NRM2( n, qt_ptr+i*n, 1 ), blas.NRM2( n, qt_ptr+(i+1)*n, 1 ) );
+          temp = lapack_mag.LAPY2( blas.NRM2( n, qt_ptr+i*n, 1 ), blas.NRM2( n, qt_ptr+(i+1)*n, 1 ) );
           blas.SCAL( n, one/temp, qt_ptr+i*n, 1 );
           blas.SCAL( n, one/temp, qt_ptr+(i+1)*n, 1 );
           i = i+2;
@@ -1676,7 +1687,7 @@ namespace Anasazi {
       i = 0;
       while( i < n ) {
         if ( (*_ritzvalues)[_totallength+i] != zero ) {
-          (*_ritzresiduals)[i] = lapack.LAPY2( blas.NRM2(_blockSize, s_ptr + i*_blockSize, 1),
+          (*_ritzresiduals)[i] = lapack_mag.LAPY2( blas.NRM2(_blockSize, s_ptr + i*_blockSize, 1),
                                             blas.NRM2(_blockSize, s_ptr + (i+1)*_blockSize, 1) );
           (*_ritzresiduals)[i+1] = (*_ritzresiduals)[i];
           i = i+2;
@@ -1750,9 +1761,9 @@ namespace Anasazi {
     //
     // Re-sort _ritzresiduals based on _order
     //
-    std::vector<ScalarType> ritz2( n );
+    std::vector<MagnitudeType> ritz2( n );
     for (i=0; i<n; i++) { ritz2[i] = (*_ritzresiduals)[ _order[i] ]; }
-    blas.COPY( n, &ritz2[0], 1, &(*_ritzresiduals)[0], 1 );
+    blas_mag.COPY( n, &ritz2[0], 1, &(*_ritzresiduals)[0], 1 );
     //
     // Copy the nev eigenvalues into the proper vectors
     // NOTE:  If we don't have nev Ritz values, then only n are copied
@@ -1811,7 +1822,8 @@ namespace Anasazi {
     }
     //
     // Determine largest off diagonal element of Schur matrix for symmetric case.
-    //
+    // (this is being disabled for the time being, since it's not being used)
+    /*
     ScalarType _maxsymmelem = zero;
     if (_problem->IsSymmetric()) {
       for(j=0; j<n; j++){
@@ -1820,6 +1832,7 @@ namespace Anasazi {
         }
       }
     }
+    */
   }
   
   //----------------------------------------------------------------------------------------
@@ -1906,7 +1919,7 @@ namespace Anasazi {
     }
     Teuchos::RefCountPtr<MV> F_vec = MVT::CloneView( *_basisvecs, index );
     
-    std::vector<ScalarType> ptr_norms( m );
+    std::vector<MagnitudeType> ptr_norms( m );
     ScalarType sum = zero;
     
     MVT::MvNorm( *F_vec, &ptr_norms );
@@ -2009,7 +2022,29 @@ namespace Anasazi {
 
   //----------------------------------------------------------------------------------------
   //----------------------------------------------------------------------------------------
+  /*
   
+  template < class ScalarType >
+  inline Teuchos::ScalarTraits<ScalarType>::magnitudeType LAPY2(Teuchos::ScalarTraits<ScalarType>::magnitudeType* a, 
+							 Teuchos::ScalarTraits<ScalarType>::magnitudeType* b ) {
+    Teuchos::LAPACK<int,Teuchos::ScalarTraits<ScalarType>::magnitudeType> lapack; 
+    return lapack.LAPY2( a, b );
+  }
+
+  template < class ANSZI_CPLX_CLASS<double> >
+  inline double LAPY2( double* a, double* b ) {
+    return Teuchos::ScalarTraits<double>::magnitude( a );
+  }
+
+  template < class ANSZI_CPLX_CLASS<float> >
+  inline float LAPY2( float* a, float* b ) {
+    return Teuchos::ScalarTraits<float>::magnitude( a );
+  }
+  */
+  //----------------------------------------------------------------------------------------
+  //----------------------------------------------------------------------------------------
+  
+
 } // End of namespace Anasazi
 
 #endif
