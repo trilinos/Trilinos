@@ -36,6 +36,7 @@
 #include "NOX_Epetra_Interface_Jacobian.H"
 #include "NOX_Epetra_Interface_Preconditioner.H"
 #include "NOX_Epetra_Vector.H"
+#include "EpetraExt_MultiMpiComm.h"
 #include "EpetraExt_BlockVector.h"
 #include "EpetraExt_BlockCrsMatrix.h"
 #include "Epetra_Operator.h"
@@ -58,10 +59,13 @@ class xyztPrec : public Epetra_Operator,
 
   //! Constructor
   xyztPrec(EpetraExt::BlockCrsMatrix& jacobian, 
+	   Epetra_Vector &splitVec, 
+	   Epetra_RowMatrix &splitJac,
+	   Epetra_RowMatrix &splitMass,
 	   EpetraExt::BlockVector& solution,
 	   NOX::Parameter::List& precPrintParams, 
 	   NOX::Parameter::List& precLSParams, 
-	   const Teuchos::RefCountPtr<Epetra_Comm> globalComm_);
+	   const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm_);
 
   //! Destructor
   virtual ~xyztPrec();
@@ -110,13 +114,22 @@ private:
 
   // Info passed in to construtor
   EpetraExt::BlockCrsMatrix& jacobian;
+  Epetra_CrsMatrix &splitJac;
+  Epetra_CrsMatrix &splitMass;
   EpetraExt::BlockVector& solution;
   NOX::Parameter::List& printParams;
   NOX::Parameter::List& lsParams;
-  const Teuchos::RefCountPtr<Epetra_Comm> globalComm;
+  const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm;
 
   // Objects created in constructor
   Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys;
+  Teuchos::RefCountPtr<const Epetra_Operator> Asolve;
+  Epetra_CrsMatrix *jacobianBlock;
+  Epetra_CrsMatrix *massBlock;
+  Epetra_Vector *splitVec; //tmp space
+  Epetra_Vector *splitRes; //tmp space
+  Epetra_Vector *splitVecOld; //tmp space
+
 
   //! Label for this operator
   string label;

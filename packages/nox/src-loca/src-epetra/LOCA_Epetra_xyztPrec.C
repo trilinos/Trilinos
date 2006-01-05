@@ -28,25 +28,40 @@
 //@HEADER
 
 #include "LOCA_Epetra_xyztPrec.H"
+#include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_VectorOut.h"
+
+//#define FILE_DEBUG
 
 //! Constructor
 LOCA::Epetra::xyztPrec::
 xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_, 
+	 Epetra_Vector &splitVec_, 
+	 Epetra_RowMatrix &splitJac_,
+	 Epetra_RowMatrix &splitMass_,
 	 EpetraExt::BlockVector &solution_,
 	 NOX::Parameter::List &precPrintParams_, 
 	 NOX::Parameter::List &precLSParams_, 
-	 const Teuchos::RefCountPtr<Epetra_Comm> globalComm_) :  
+	 const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm_) :  
   jacobian(jacobian_),
+  splitVec(0),
+  splitRes(0),
+  splitVecOld(0),
+  splitJac(dynamic_cast<Epetra_CrsMatrix &>(splitJac_)),
+  splitMass(dynamic_cast<Epetra_CrsMatrix &>(splitMass_)),
   solution(solution_),
   printParams(precPrintParams_), 
   lsParams(precLSParams_), 
   globalComm(globalComm_),
   linSys(),
-  label("LOCA::Epetra::xyztPrec")
+  jacobianBlock(0),
+  massBlock(0)
 {
 
   string prec = lsParams.getParameter("XYZTPreconditioner","None");
+
   if (prec == "Global") {
+    label = "LOCA::Epetra::xyztPrec::Global";
     cout << "LOCA::Epetra::xyztPrec = Global" << endl;
     // Create the Linear System
     Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = 
@@ -64,7 +79,39 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
       Teuchos::rcp(&jacobian,false);
     linSys->setJacobianOperatorForSolve(Asolve);
   }
+  else if (prec == "Sequential") {
+    label = "LOCA::Epetra::xyztPrec::Sequential";
+    cout << "LOCA::Epetra::xyztPrec = Sequential" << endl;
+    
+    // Create the single block jacobian
+    jacobianBlock = new Epetra_CrsMatrix(splitJac);
+    jacobianBlock->PutScalar(0.0);
+    jacobian.ExtractBlock(*jacobianBlock, 0, 0);
+    //cout << "jacobianBlock = \n" << *jacobianBlock << endl;
+
+    // Create the single block jacobian
+    massBlock = new Epetra_CrsMatrix(splitMass);
+    massBlock->PutScalar(0.0);
+    //cout << "jacobianBlock = \n" << *jacobianBlock << endl;
+
+    // Create the Linear System
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = 
+      Teuchos::rcp(&((NOX::Epetra::Interface::Required&)*this),false);
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = 
+      Teuchos::rcp(&((NOX::Epetra::Interface::Jacobian&)*this),false);
+    Teuchos::RefCountPtr<Epetra_Operator> A =
+      Teuchos::rcp(jacobianBlock,false);
+    linSys = 
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams, 
+							iReq, iJac, 
+							A, solution));
+    Asolve = Teuchos::rcp(jacobianBlock,false);
+    splitVec = new Epetra_Vector(splitVec_);
+    splitRes = new Epetra_Vector(splitVec_);
+    splitVecOld = new Epetra_Vector(splitVec_);
+  }
   else if (prec == "None") {
+    label = "LOCA::Epetra::xyztPrec::None";
     cout << "LOCA::Epetra::xyztPrec = None" << endl;
   }
   else {
@@ -78,6 +125,12 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
 LOCA::Epetra::xyztPrec::
 ~xyztPrec()
 {
+  if (jacobianBlock) delete jacobianBlock;
+  if (massBlock) delete massBlock;
+  if (splitVec) delete splitVec;
+  if (splitRes) delete massBlock;
+  if (splitVecOld) delete splitVecOld;
+
 }
 
 
@@ -102,42 +155,119 @@ int LOCA::Epetra::xyztPrec::
 ApplyInverse(const Epetra_MultiVector& input,
 	     Epetra_MultiVector& result) const
 {
-  cout << "LOCA::Epetra::xyztPrec::ApplyInverse called - ";
-
   string prec = lsParams.getParameter("XYZTPreconditioner","None");
 
-  if (prec == "Global") {
-    cout << "Global Preconditioner" << endl;
+  if (prec == "None") {
+    return 0;
+  }
 
+  if (prec == "Global") {
+    // convert multivectors to vectors
     Epetra_MultiVector& input_EMV = const_cast<Epetra_MultiVector&>(input);
     Epetra_Vector& input_EV = dynamic_cast<Epetra_Vector&>(input_EMV);
     Epetra_Vector& result_EV = dynamic_cast<Epetra_Vector&>(result);
-
+    
+    // use referenced counted pointers to vectors
     const Teuchos::RefCountPtr<Epetra_Vector> input_EV_RCP = Teuchos::rcp(&input_EV, false);
     Teuchos::RefCountPtr<Epetra_Vector> result_EV_RCP = Teuchos::rcp(&result_EV, false);
-
+    
+    // create views of vectors 
     const NOX::Epetra::Vector* input_NEV = 
       new const NOX::Epetra::Vector(input_EV_RCP, NOX::Epetra::Vector::CreateView, NOX::DeepCopy);
     NOX::Epetra::Vector* result_NEV = 
       new NOX::Epetra::Vector(result_EV_RCP, NOX::Epetra::Vector::CreateView, NOX::DeepCopy);
-
-#if 0 
-    bool stat = linSys->applyJacobianInverse(lsParams, *input_NEV, *result_NEV);
-    cout << "LOCA::Epetra::xyztPrec::ApplyInverse - linSys->applyJacobianInverse = " << stat << endl;
-    return (stat) ? 0 : 1;
-#else
-    //cout << "result before linSys->applyRightPreconditioning:\n" << endl;
-    //result_NEV->print(cout);
+    
+    // apply preconditioner as specified in lsParams
     bool stat = linSys->applyRightPreconditioning(false,lsParams,*input_NEV,*result_NEV);
-    cout << "result after  linSys->applyRightPreconditioning:\n" << endl;
-    //result_NEV->print(cout);
-    //cout << "LOCA::Epetra::xyztPrec::ApplyInverse - linSys->applyRightPreconditioning = " << stat << endl;
+
     return (stat) ? 0 : 1;
+  }    
+  else if (prec == "Sequential") {
+
+    // convert multivectors to vectors
+    Epetra_MultiVector& input_EMV = const_cast<Epetra_MultiVector&>(input);
+    Epetra_Vector& input_EV = dynamic_cast<Epetra_Vector&>(input_EMV);
+    Epetra_Vector& result_EV = dynamic_cast<Epetra_Vector&>(result);
+    
+    // residual needs to be in BlockVector and contain values from input
+    EpetraExt::BlockVector residual(solution);    // inherit offsets from solution
+    residual.Epetra_Vector::operator=(input_EV);  // populate with input values
+
+#ifdef FILE_DEBUG
+      cout << "residual = \n" << residual << endl;
+      char fname[255];
 #endif
+
+    // Assumes one time domain currently
+
+    for (int i=0; i < globalComm->NumTimeSteps(); i++) {
+      // Extract jacobian block to use in solve
+      jacobian.ExtractBlock(*jacobianBlock, i, 1);
+      linSys->setJacobianOperatorForSolve(Asolve);
+
+#ifdef FILE_DEBUG
+      sprintf(fname,"jacBlock_%d.m",i);
+      EpetraExt::RowMatrixToMatlabFile(fname,*jacobianBlock);
+      cout << "jacobianBlock = \n" << *jacobianBlock << endl;
+#endif
+
+      // get x and residual (r) corresponding to current block
+      residual.ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
+      solution.ExtractBlockValues(*splitVec, jacobian.RowIndex(i));
+
+#ifdef FILE_DEBUG
+      // debugging output
+      sprintf(fname,"splitRes_%d.m",i);
+      EpetraExt::VectorToMatlabFile(fname,*splitRes);
+      cout << "splitRes = \n" << *splitRes << endl;
+      sprintf(fname,"splitVec_%d.m",i);
+      EpetraExt::VectorToMatlabFile(fname,*splitVec);
+      cout << "splitVec = \n" << *splitVec << endl;
+#endif
+
+      // Create a new preconditioner for the single block
+      linSys->destroyPreconditioner();
+      linSys->createPreconditioner(*splitVec, lsParams, false);
+
+      int blockRowOld = jacobian.RowIndex(i) - 1;  //Hardwired for -1 in stencil
+      if (blockRowOld >= 0)  {
+	// update RHS with mass matrix * solution from previous time step
+	solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+	jacobian.ExtractBlock(*massBlock, i, 0);
+#ifdef FILE_DEBUG
+	sprintf(fname,"massBlock_%d.m",i);
+	EpetraExt::RowMatrixToMatlabFile(fname,*massBlock);
+#endif
+	massBlock->Multiply(false, *splitVecOld, *splitVecOld);
+	splitRes->Update(1.0,*splitVecOld,-1.0);
+      }	
+      
+      // use referenced counted pointers to vectors
+      const Teuchos::RefCountPtr<Epetra_Vector> input_EV_RCP = Teuchos::rcp(splitRes, false);
+      Teuchos::RefCountPtr<Epetra_Vector> result_EV_RCP = Teuchos::rcp(splitRes, false);
+    
+      // copied from GLOBAL prec, but only need to do once in constructor for SEQUENTIAL
+      const NOX::Epetra::Vector* input_NEV = 
+	new const NOX::Epetra::Vector(input_EV_RCP, NOX::Epetra::Vector::CreateView, NOX::DeepCopy);
+      NOX::Epetra::Vector* result_NEV = 
+	new NOX::Epetra::Vector(result_EV_RCP, NOX::Epetra::Vector::CreateView, NOX::DeepCopy);
+
+      // solve the problem
+      bool stat = linSys->applyJacobianInverse(lsParams,*input_NEV, *result_NEV);
+      solution.LoadBlockValues(*result_EV_RCP, jacobian.RowIndex(i));
+
+#ifdef FILE_DEBUG
+      sprintf(fname,"splitResAfterSolve_%d.m",i);
+      EpetraExt::VectorToMatlabFile(fname,*splitRes);
+      cout << "splitResAfterSolve = \n" << *splitRes << endl;
+#endif
+
+    }
+    
+    result = solution;
+    return 0;
   }    
   else {
-    cout << "No Preconditioner" << endl;
-    // Do nothing
     return 0;
   }
 }
@@ -219,6 +349,13 @@ computePreconditioner(const Epetra_Vector& x,
     cout << "Global Preconditioner" << endl;
     linSys->destroyPreconditioner();
     linSys->createPreconditioner(x, lsParams, false);
+    return true;
+  }    
+  else if (prec == "Sequential") {
+    cout << "Sequential Preconditioner" << endl;
+    // The next two lines should be performed for each block in ApplyInverse
+    //linSys->destroyPreconditioner();
+    //linSys->createPreconditioner(x, lsParams, false);
     return true;
   }    
   else {

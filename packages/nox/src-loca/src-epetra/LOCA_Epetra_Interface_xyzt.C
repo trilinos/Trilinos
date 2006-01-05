@@ -103,7 +103,7 @@ xyzt::xyzt(
 
    // Create preconditioner
    if (precLSParams != 0) {
-     preconditioner = new LOCA::Epetra::xyztPrec(*jacobian, *solution, 
+     preconditioner = new LOCA::Epetra::xyztPrec(*jacobian, splitVec, *splitJac, *splitMass, *solution, 
 						 *precPrintParams, *precLSParams, globalComm);
      if (preconditioner != 0) {
        cout << "LOCA::Epetra::Interface::xyzt - preconditioner created successfully" << endl;
