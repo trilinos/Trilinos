@@ -116,6 +116,15 @@ int ML_Comm_Set_UsrComm( ML_Comm *com_ptr, USR_COMM com )
       exit(1);
    }
    com_ptr->USR_comm = com;
+#ifdef ML_MPI
+   /* 
+      Assuming that com_ptr was created previously with ML_Comm_Create 
+      all data should be ok except the following which always refer to  
+      MPI_COMM_WORLD in ML_Comm_Create 
+   */
+   MPI_Comm_size(com, &(com_ptr->ML_nprocs));
+   MPI_Comm_rank(com, &(com_ptr->ML_mypid));
+#endif   
    return 0;
 }
 
