@@ -26,8 +26,13 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = BaseSparseMultiply BaseSparseSolve \
-DenseMultiVector HbMatrix Permutation
+if HAVE_KOKKOS_EXPERIMENTAL
+OSKIMULTIVECTOR_SUBDIR=OskiMultiVector
+OSKIMATRIX_SUBDIR=OskiMatrix
+endif
+
+SUBDIRS = BaseSparseMultiply BaseSparseSolve DenseMultiVector HbMatrix \
+Permutation $(OSKIMULTIVECTOR_SUBDIR) $(OSKIMATRIX_SUBDIR)
 
 EXTRA_DIST = definition
 

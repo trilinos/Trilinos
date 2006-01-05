@@ -310,6 +310,8 @@ AC_CONFIG_FILES([
 		test/DenseMultiVector/Makefile
 		test/HbMatrix/Makefile
 		test/Permutation/Makefile
+		test/OskiMultiVector/Makefile
+		test/OskiMatrix/Makefile
 		example/Makefile])
 
 AC_OUTPUT()
