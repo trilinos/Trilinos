@@ -159,9 +159,9 @@ public:
   Utils(int outputInformation=0xf, int MyPID=0, int outputProcess=0, 
 	int outputPrecision=3, 
 	const Teuchos::RefCountPtr<std::ostream>& outputStream=
-	Teuchos::rcp(&(std::cout), false),
+	Teuchos::null,
 	const Teuchos::RefCountPtr<std::ostream>& errorStream=
-	Teuchos::rcp(&(std::cerr), false));
+	Teuchos::null);
 
   //! Constructor via a parameter list
   Utils(NOX::Parameter::List& p);

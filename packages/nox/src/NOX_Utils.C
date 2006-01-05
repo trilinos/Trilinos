@@ -44,9 +44,17 @@ NOX::Utils::Utils(int outputInformation, int MyPID, int outputProcess,
   printProc(outputProcess),
   blackholeStream(Teuchos::rcp(new Teuchos::oblackholestream)),
   printStream(outputStream),
-  myStream((myPID == printProc) ? outputStream : blackholeStream ),
+  myStream(),
   errorStream(errStream)
 {
+  if (printStream == Teuchos::null)
+    printStream = Teuchos::rcp(&(std::cout), false);
+  if (errorStream == Teuchos::null)
+    errorStream = Teuchos::rcp(&(std::cerr), false);
+  if (myPID == printProc)
+    myStream = printStream;
+  else
+    myStream = blackholeStream;
 }
 
 NOX::Utils::Utils(NOX::Parameter::List& p)
