@@ -40,6 +40,7 @@
 #include "EpetraExt_BlockVector.h"
 #include "EpetraExt_BlockCrsMatrix.h"
 #include "Epetra_Operator.h"
+#include "Epetra_Import.h"
 #include "NOX_Epetra_LinearSystem_AztecOO.H"
 
 // Forward Declarations
@@ -63,6 +64,8 @@ class xyztPrec : public Epetra_Operator,
 	   Epetra_RowMatrix &splitJac,
 	   Epetra_RowMatrix &splitMass,
 	   EpetraExt::BlockVector& solution,
+	   EpetraExt::BlockVector& solutionOverlap,
+	   Epetra_Import &overlapImporter,
 	   NOX::Parameter::List& precPrintParams, 
 	   NOX::Parameter::List& precLSParams, 
 	   const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm_);
@@ -117,6 +120,8 @@ private:
   Epetra_CrsMatrix &splitJac;
   Epetra_CrsMatrix &splitMass;
   EpetraExt::BlockVector& solution;
+  EpetraExt::BlockVector solutionOverlap;
+  Epetra_Import overlapImporter;
   NOX::Parameter::List& printParams;
   NOX::Parameter::List& lsParams;
   const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm;
