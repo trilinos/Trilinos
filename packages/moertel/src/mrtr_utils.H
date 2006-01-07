@@ -45,10 +45,24 @@
 #include <ctime>
 #include <iostream>
 
+// external package headers
 #include "Teuchos_RefCountPtr.hpp"
+#include <Epetra_Comm.h>
+#ifdef EPETRA_MPI
+#include <Epetra_MpiComm.h>
+#else
+#include <Epetra_SerialComm.h>
+#endif
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseSolver.h"
+#include "Epetra_CrsMatrix.h"
+#include "ml_common.h"
+#include "ml_include.h"
+#include "ml_epetra_utils.h"
+#include "ml_epetra.h"
+#include "ml_epetra_operator.h"
 
+// Moertel package headers
 #include "mrtr_segment.H"
 #include "mrtr_functions.H"
 #include "mrtr_node.H"
@@ -161,6 +175,22 @@ void swap(kind& a, kind& b)
   b = tmp;
   return;
 }
+/*!
+\brief Multiply matrices A*B
+
+matrices A and B are mutliplied and the result is allocated and returned.
+The method makes use of the ML matrix-matrix mutliply functions.
+The user is responsible for freeing the returned result.
+
+\param A : Matrix A to multiply
+\param transA : flag indicating whether A*T shall be used
+\param B : Matrix B to multiply
+\param transB : flag indicating whether B*T shall be used
+\return Result upon success and NULL upon failure
+*/
+Epetra_CrsMatrix* MatMatMult(Epetra_CrsMatrix& A, bool transA, 
+                             Epetra_CrsMatrix& B, bool transB);
+
 
 } // namespace MOERTEL
 #endif // MOERTEL_UTILS_H
