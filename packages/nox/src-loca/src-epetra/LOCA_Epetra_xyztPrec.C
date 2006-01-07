@@ -31,7 +31,7 @@
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
 
-//#define FILE_DEBUG
+//#define FILE_DEBUG 1
 
 //! Constructor
 LOCA::Epetra::xyztPrec::
@@ -172,13 +172,11 @@ ApplyInverse(const Epetra_MultiVector& input,
     Teuchos::RefCountPtr<Epetra_Vector> result_EV_RCP = Teuchos::rcp(&result_EV, false);
     
     // create views of vectors 
-    const NOX::Epetra::Vector* input_NEV = 
-      new const NOX::Epetra::Vector(input_EV_RCP, NOX::Epetra::Vector::CreateView, NOX::DeepCopy);
-    NOX::Epetra::Vector* result_NEV = 
-      new NOX::Epetra::Vector(result_EV_RCP, NOX::Epetra::Vector::CreateView, NOX::DeepCopy);
+    const NOX::Epetra::Vector input_NEV(input_EV_RCP, NOX::Epetra::Vector::CreateView);
+    NOX::Epetra::Vector result_NEV(result_EV_RCP, NOX::Epetra::Vector::CreateView);
     
     // apply preconditioner as specified in lsParams
-    bool stat = linSys->applyRightPreconditioning(false,lsParams,*input_NEV,*result_NEV);
+    bool stat = linSys->applyRightPreconditioning(false, lsParams, input_NEV, result_NEV);
 
     return (stat) ? 0 : 1;
   }    
@@ -202,7 +200,11 @@ ApplyInverse(const Epetra_MultiVector& input,
 
     for (int i=0; i < globalComm->NumTimeSteps(); i++) {
       // Extract jacobian block to use in solve
-      jacobian.ExtractBlock(*jacobianBlock, i, 1);
+      //   diagonal is column 0 on first step, colum one on all other)
+      if (globalComm->FirstTimeStepOnDomain() == 0 && i==0)
+           jacobian.ExtractBlock(*jacobianBlock, 0, 0);
+      else
+           jacobian.ExtractBlock(*jacobianBlock, i, 1);
       linSys->setJacobianOperatorForSolve(Asolve);
 
 #ifdef FILE_DEBUG
@@ -238,23 +240,23 @@ ApplyInverse(const Epetra_MultiVector& input,
 	sprintf(fname,"massBlock_%d.m",i);
 	EpetraExt::RowMatrixToMatlabFile(fname,*massBlock);
 #endif
-	massBlock->Multiply(false, *splitVecOld, *splitVecOld);
-	splitRes->Update(1.0,*splitVecOld,-1.0);
+	massBlock->Multiply(false, *splitVecOld, *splitVec);
+
+	splitRes->Update(-1.0, *splitVec, 1.0);
       }	
       
       // use referenced counted pointers to vectors
       const Teuchos::RefCountPtr<Epetra_Vector> input_EV_RCP = Teuchos::rcp(splitRes, false);
-      Teuchos::RefCountPtr<Epetra_Vector> result_EV_RCP = Teuchos::rcp(splitRes, false);
+      Teuchos::RefCountPtr<Epetra_Vector> result_EV_RCP = Teuchos::rcp(splitVec, false);
     
       // copied from GLOBAL prec, but only need to do once in constructor for SEQUENTIAL
-      const NOX::Epetra::Vector* input_NEV = 
-	new const NOX::Epetra::Vector(input_EV_RCP, NOX::Epetra::Vector::CreateView, NOX::DeepCopy);
-      NOX::Epetra::Vector* result_NEV = 
-	new NOX::Epetra::Vector(result_EV_RCP, NOX::Epetra::Vector::CreateView, NOX::DeepCopy);
+      const NOX::Epetra::Vector input_NEV(input_EV_RCP, NOX::Epetra::Vector::CreateView);
+      NOX::Epetra::Vector result_NEV(result_EV_RCP, NOX::Epetra::Vector::CreateView);
+//result_NEV.init(0.0);  //Zero init guess might be better?
 
       // solve the problem
-      bool stat = linSys->applyJacobianInverse(lsParams,*input_NEV, *result_NEV);
-      solution.LoadBlockValues(*result_EV_RCP, jacobian.RowIndex(i));
+      bool stat = linSys->applyJacobianInverse(lsParams, input_NEV, result_NEV);
+      solution.LoadBlockValues(result_NEV.getEpetraVector(), jacobian.RowIndex(i));
 
 #ifdef FILE_DEBUG
       sprintf(fname,"splitResAfterSolve_%d.m",i);
