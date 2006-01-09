@@ -40,9 +40,15 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
+if BUILD_BELOS
+if BUILD_IFPACK
+ANASAZI_BIRAM_EX_SI_BELOS = BlockKrylovSchurEpetraExGenBelos
+endif
+endif
+
 if BUILD_AZTECOO
 if BUILD_IFPACK
-ANASAZI_BIRAM_EX_SI_IFPACK = BlockKrylovSchurEpetraExGen
+ANASAZI_BIRAM_EX_SI_AZTECOO = BlockKrylovSchurEpetraExGenAztecOO
 endif
 endif
 
@@ -50,7 +56,7 @@ if BUILD_TRIUTILS
 ANASAZI_BIRAM_EX_HB = BlockKrylovSchurEpetraExHB
 endif 
 
-noinst_PROGRAMS = BlockKrylovSchurEpetraEx BlockKrylovSchurEpetraExSVD $(ANASAZI_BIRAM_EX_HB) $(ANASAZI_BIRAM_EX_SI_IFPACK) 
+noinst_PROGRAMS = BlockKrylovSchurEpetraEx BlockKrylovSchurEpetraExSVD $(ANASAZI_BIRAM_EX_HB) $(ANASAZI_BIRAM_EX_SI_AZTECOO) $(ANASAZI_BIRAM_EX_SI_BELOS) 
 
 BlockKrylovSchurEpetraEx_SOURCES = $(srcdir)/BlockKrylovSchurEpetraEx.cpp
 
@@ -58,7 +64,9 @@ BlockKrylovSchurEpetraExSVD_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExSVD.cpp
 
 BlockKrylovSchurEpetraExHB_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExHB.cpp
 
-BlockKrylovSchurEpetraExGen_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGen.cpp
+BlockKrylovSchurEpetraExGenAztecOO_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGenAztecOO.cpp
+
+BlockKrylovSchurEpetraExGenBelos_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGenBelos.cpp
 
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
 #np# optional.
@@ -98,17 +106,29 @@ BlockKrylovSchurEpetraExHB_CXXFLAGS = -I$(top_srcdir)/src \
 #np# List libraries that np is dependent on.
 BlockKrylovSchurEpetraExHB_LDADD = $(EXPORT_LIBS)
 
-BlockKrylovSchurEpetraExGen_DEPENDENCIES = \
+BlockKrylovSchurEpetraExGenAztecOO_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../aztecoo/src/libaztecoo.a \
 	$(top_builddir)/../ifpack/src/libifpack.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-BlockKrylovSchurEpetraExGen_CXXFLAGS = -I$(top_srcdir)/src
+BlockKrylovSchurEpetraExGenAztecOO_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
-BlockKrylovSchurEpetraExGen_LDADD = $(EXPORT_LIBS)
+BlockKrylovSchurEpetraExGenAztecOO_LDADD = $(EXPORT_LIBS)
+
+BlockKrylovSchurEpetraExGenBelos_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/../belos/src/libbelos.a \
+	$(top_builddir)/../ifpack/src/libifpack.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+BlockKrylovSchurEpetraExGenBelos_CXXFLAGS = -I$(top_srcdir)/src
+
+#np# List libraries that np is dependent on.
+BlockKrylovSchurEpetraExGenBelos_LDADD = $(EXPORT_LIBS)
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only

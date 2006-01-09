@@ -241,9 +241,10 @@ int main(int argc, char *argv[]) {
     cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
     cout << endl;
   } 
+/*
   //
   // *******************************************************
-  // Set up AztecOO GMRES operator for inner iteration
+  // Set up Belos GMRES operator for inner iteration
   // *******************************************************
   //
   // Create Epetra linear problem class to solve "Ax = b"
@@ -271,7 +272,7 @@ int main(int argc, char *argv[]) {
   int maxBlocks = 3*nev/blockSize;
   int maxRestarts = 5;
   //int step = 5;
-  double tol = 1.0e-6;
+  double tol = 1.0e-8;
   //
   // Create parameter list to pass into solver
   //
@@ -355,6 +356,7 @@ int main(int argc, char *argv[]) {
     }
     cout<<"------------------------------------------------------"<<endl;
   }
+*/
 
 #ifdef EPETRA_MPI
   MPI_Finalize();
