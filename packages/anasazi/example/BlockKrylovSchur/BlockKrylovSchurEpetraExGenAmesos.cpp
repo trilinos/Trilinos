@@ -55,15 +55,8 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 
-// Include header for Belos solver and solver interface for Epetra_Operator
-#include "BelosPetraInterface.hpp"
-#include "BelosEpetraOperator.hpp"
-#include "BelosStatusTestResNorm.hpp"
-#include "BelosStatusTestMaxIters.hpp"
-#include "BelosStatusTestCombo.hpp"
-
-// Include header for Ifpack incomplete Cholesky preconditioner
-#include "Ifpack_CrsIct.h"
+// Include header for Amesos solver and solver interface for Epetra_Operator
+#include "Amesos.h"
 
 // Include header for Teuchos serial dense matrix
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -75,6 +68,60 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
+
+// ****************************************************************************
+// Class:  AmesosGenOp
+// Purpose:  Applies A^{-1}*B*X = Y or A^{-T}*B*X = Y where A is an Amesos solver
+//           and B is an Epetra_Operator.  Class supports Epetra_Operator interface.
+// Date: Jan 9, 2006
+// Author:  Heidi K. Thornquist
+// ****************************************************************************
+
+class AmesosGenOp : public virtual Epetra_Operator
+{
+public:
+  // Basic constructor
+  AmesosGenOp( Epetra_LinearProblem& problem,
+	       const Teuchos::RefCountPtr<Amesos_BaseSolver>& solver,
+	       const Teuchos::RefCountPtr<Epetra_Operator>& massMtx,
+	       bool useTranspose = false );
+  // Destructor
+  ~AmesosGenOp() {};
+  
+  // Methods for supporting Epetra_Operator interface
+  int SetUseTranpose(bool useTranspose);
+  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y ) const;
+  const char* Label() const { return "Amesos direct solver for applying A^{-1}M"; };
+  bool UseTranspose() const { return useTranspose_; };
+  int SetUseTranspose( bool useTranspose );
+  const Epetra_Comm& Comm() const { return solver_->Comm(); };
+  const Epetra_Map& OperatorDomainMap() const { return massMtx_->OperatorDomainMap(); };
+  const Epetra_Map& OperatorRangeMap() const { return massMtx_->OperatorRangeMap(); };
+    
+  // Epetra_Operator interface methods that are not supported.
+  // Note:  ApplyInverse not defined because M not guaranteed to have an inverse.
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y ) const { return -1; };
+  bool HasNormInf() const { return false; };
+  double NormInf() const { return -1.0; };
+   
+private:  
+  // Default constructor
+  AmesosGenOp () {};
+ 
+  // Copy constructor
+  AmesosGenOp ( const AmesosGenOp& genOp ) {};
+
+  // Epetra_LinearProblem contained in the Amesos_BaseSolver
+  bool useTranspose_;
+  Teuchos::RefCountPtr<Amesos_BaseSolver> solver_;
+  Teuchos::RefCountPtr<Epetra_Operator> massMtx_;
+  Epetra_LinearProblem* problem_;
+  
+};
+
+// ****************************************************************************
+// BEGIN MAIN ROUTINE
+// ****************************************************************************
 
 int main(int argc, char *argv[]) {
   int i, info;
@@ -206,83 +253,27 @@ int main(int argc, char *argv[]) {
   info = B->FillComplete();
   assert( info==0 );
   B->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
+
   //
-  //*****Select the Preconditioner*****
+  // *******************************************************
+  // Set up Belos GMRES operator for inner iteration
+  // *******************************************************
   //
-  if (MyOM->doPrint()) cout << endl << endl;
-  if (MyOM->doPrint()) cout << "Constructing ICT preconditioner" << endl;
-  int Lfill = 0;
-  if (argc > 2) Lfill = atoi(argv[2]);
-  if (MyOM->doPrint()) cout << "Using Lfill = " << Lfill << endl;
-  int Overlap = 0;
-  if (argc > 3) Overlap = atoi(argv[3]);
-  if (MyOM->doPrint()) cout << "Using Level Overlap = " << Overlap << endl;
-  double Athresh = 0.0;
-  if (argc > 4) Athresh = atof(argv[4]);
-  if (MyOM->doPrint()) cout << "Using Absolute Threshold Value of " << Athresh << endl;
-  double Rthresh = 1.0;
-  if (argc >5) Rthresh = atof(argv[5]);
-  if (MyOM->doPrint()) cout << "Using Relative Threshold Value of " << Rthresh << endl;
-  double dropTol = 1.0e-6;
-  //
-  Teuchos::RefCountPtr<Ifpack_CrsIct> ICT;
-  //
-  if (Lfill > -1) {
-    ICT = Teuchos::rcp( new Ifpack_CrsIct(*A, dropTol, Lfill) );
-    ICT->SetAbsoluteThreshold(Athresh);
-    ICT->SetRelativeThreshold(Rthresh);
-    int initerr = ICT->InitValues(*A);
-    if (initerr != 0) cout << "InitValues error = " << initerr;
-    info = ICT->Factor();
-    assert( info==0 );
-  } 
-  //
-  bool transA = false;
-  double Cond_Est;
-  ICT->Condest(transA, Cond_Est);
-  if (MyOM->doPrint()) {
-    cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
-    cout << endl;
-  } 
-  //
-  //*******************************************************/
-  // Set up Belos Block GMRES operator for inner iteration
-  //*******************************************************/
-  //
-  int blockSize = 3;  // block size used by linear solver and eigensolver [ not required to be the same ]
-  int maxits = NumGlobalElements/blockSize - 1; // maximum number of iterations to run
-  double btol = 1.0e-7;  // relative residual tolerance
-  //
-  // Create the Belos::LinearProblemManager
-  //
-  Belos::PetraMat<double> BelosMat(A.get());
-  Belos::PetraPrec<double> BelosPrec(ICT.get());
-  Belos::LinearProblemManager<double> My_LP;
-  My_LP.SetOperator( &BelosMat );
-  My_LP.SetLeftPrec( &BelosPrec );
-  My_LP.SetBlockSize( blockSize );
-  //
-  // Create the Belos::StatusTest
-  //
-  Belos::StatusTestMaxIters<double> test1( maxits );
-  Belos::StatusTestResNorm<double> test2( btol );
-  Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
-  //
-  // Create the Belos::OutputManager
-  //
-  Belos::OutputManager<double> My_OM( MyPID );
-  //My_OM.SetVerbosity( 2 );
-  //
-  // Create the ParameterList for the Belos Operator
-  // 
-  Teuchos::ParameterList My_List;
-  My_List.set( "Solver", "BlockCG" );
-  My_List.set( "MaxIters", maxits );
-  //
-  // Create the Belos::EpetraOperator
-  //
-  Teuchos::RefCountPtr<Belos::EpetraOperator<double> > BelosOp = 
-    Teuchos::rcp( new Belos::EpetraOperator<double>(My_LP, My_Test, My_OM, My_List ));
+
+  // Create Epetra linear problem class to solve "Ax = b"
+  Epetra_LinearProblem AmesosProblem;
+  AmesosProblem.SetOperator(A.get());
+  
+  // Create Amesos factory and solver for solving "Ax = b" using a direct factorization
+  Amesos amesosFactory;
+  Teuchos::RefCountPtr<Amesos_BaseSolver> AmesosSolver = 
+    Teuchos::rcp( amesosFactory.Create( "Klu", AmesosProblem ) );
+
+  // The AmesosGenOp class assumes that the symbolic/numeric factorizations have already
+  // been performed on the linear problem.
+  AmesosSolver->SymbolicFactorization();
+  AmesosSolver->NumericFactorization();
+
   //
   // ************************************
   // Start the block Arnoldi iteration
@@ -291,10 +282,11 @@ int main(int argc, char *argv[]) {
   //  Variables used for the Block Arnoldi Method
   //
   int nev = 10;
+  int blockSize = 1;  
   int maxBlocks = 3*nev/blockSize;
   int maxRestarts = 5;
   //int step = 5;
-  double tol = 1.0e-6;
+  double tol = 1.0e-8;
   //
   // Create parameter list to pass into solver
   //
@@ -305,29 +297,29 @@ int main(int argc, char *argv[]) {
   MyPL.set( "Tol", tol );
   //MyPL.set( "Step Size", step );
   
-  typedef Anasazi::MultiVec<double> MV;
-  typedef Anasazi::Operator<double> OP;
-  
+  typedef Epetra_MultiVector MV;
+  typedef Epetra_Operator OP;
+  typedef Anasazi::MultiVecTraits<double, Epetra_MultiVector> MVT;
+ 
   // Create an Anasazi::EpetraMultiVec for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
-  Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = 
-    Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blockSize) );
-  ivec->MvRandom();
+  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = 
+    Teuchos::rcp( new Epetra_MultiVector(Map, blockSize) );
+  MVT::MvRandom(*ivec);
   
-  // Call the ctor that calls the petra ctor for a matrix
-  Teuchos::RefCountPtr<Anasazi::EpetraOp> Amat = Teuchos::rcp( new Anasazi::EpetraOp(A) );
-  Teuchos::RefCountPtr<Anasazi::EpetraOp> Bmat = Teuchos::rcp( new Anasazi::EpetraOp(B) );
-  Teuchos::RefCountPtr<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(BelosOp, B, false) );	
+  // Create the Epetra_Operator for the spectral transformation using the Amesos direct solver.
+  Teuchos::RefCountPtr<AmesosGenOp> Aop = Teuchos::rcp( new AmesosGenOp(AmesosProblem,
+									AmesosSolver, B) );	
   
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, Bmat, ivec) );
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, B, ivec) );
   
   // Inform the eigenproblem that the matrix pencil (A,B) is symmetric
   MyProblem->SetSymmetric(true);
   
   // Set the number of eigenvalues requested 
   MyProblem->SetNEV( nev );
-
+  
   // Inform the eigenproblem that you are finishing passing it information
   info = MyProblem->SetProblem();
   if (info) {
@@ -340,7 +332,7 @@ int main(int argc, char *argv[]) {
   
   // Initialize the Block Arnoldi solver
   Anasazi::BlockKrylovSchur<double,MV,OP> MySolver(MyProblem, MySort, MyOM, MyPL);
-
+  
   // Solve the problem to the specified tolerances or length
   returnCode = MySolver.solve();
 
@@ -359,12 +351,12 @@ int main(int argc, char *argv[]) {
   // The size of the eigenvector storage is nev.
   // The real part of the eigenvectors is stored in the first nev vectors.
   // The imaginary part of the eigenvectors is stored in the second nev vectors.
-  Anasazi::EpetraMultiVec* evecr = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneCopy());
+  Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
 
-  Teuchos::SerialDenseMatrix<int,double> dmatr(nev,nev);
-  Anasazi::EpetraMultiVec tempvec(Map, evecr->GetNumberVecs());	
-  A->Apply( *evecr, tempvec );
-  tempvec.MvTransMv( 1.0, *evecr, dmatr );
+  Teuchos::SerialDenseMatrix<int,double> dmat(nev,nev);
+  Epetra_MultiVector tempvec(Map, evecs->NumVectors());	
+  A->Apply( *evecs, tempvec );
+  MVT::MvTransMv( 1.0, *evecs, tempvec, dmat );
 
   if (MyOM->doPrint()) {
     double compeval = 0.0;
@@ -373,7 +365,7 @@ int main(int argc, char *argv[]) {
     cout<<"Real Part \t Rayleigh Error"<<endl;
     cout<<"------------------------------------------------------"<<endl;
     for (i=0; i<nev; i++) {
-      compeval = dmatr(i,i);
+      compeval = dmat(i,i);
       cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-one/(*evals)[i])<<endl;
     }
     cout<<"------------------------------------------------------"<<endl;
@@ -385,3 +377,87 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
+
+// ****************************************************************************
+// Class:  AmesosGenOp
+// Purpose:  Applies A^{-1}*B*X = Y or A^{-T}*B*X = Y where A is an Amesos solver
+//           and B is an Epetra_Operator.  Class supports Epetra_Operator interface.
+// Date: Jan 9, 2006
+// Author:  Heidi K. Thornquist
+// ****************************************************************************
+
+
+AmesosGenOp::AmesosGenOp( Epetra_LinearProblem& problem,
+			  const Teuchos::RefCountPtr<Amesos_BaseSolver>& solver,
+			  const Teuchos::RefCountPtr<Epetra_Operator>& massMtx,
+			  bool useTranspose )
+  : useTranspose_(useTranspose),
+    solver_(solver),
+    massMtx_(massMtx)
+{
+  problem_ = const_cast<Epetra_LinearProblem*>( solver->GetProblem() );
+  
+  if ( solver_->UseTranspose() )
+    solver_->SetUseTranspose(!useTranspose); 
+  else
+    solver_->SetUseTranspose(useTranspose);
+  
+  if ( massMtx_->UseTranspose() )
+    massMtx_->SetUseTranspose(!useTranspose);
+  else
+    massMtx_->SetUseTranspose(useTranspose);    
+}
+
+// Methods for supporting Epetra_Operator interface
+int AmesosGenOp::SetUseTranspose(bool useTranspose) 
+{ 
+  useTranspose_ = useTranspose; 
+  if ( solver_->UseTranspose() )
+    solver_->SetUseTranspose(!useTranspose); 
+  else
+    solver_->SetUseTranspose(useTranspose);
+  
+  if ( massMtx_->UseTranspose() )
+    massMtx_->SetUseTranspose(!useTranspose);
+  else
+    massMtx_->SetUseTranspose(useTranspose);
+
+  return 0;
+};
+
+int AmesosGenOp::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y ) const 
+{
+  if (!useTranspose_) {
+    
+    // Storage for M*X
+    Epetra_MultiVector MX(X.Map(),X.NumVectors());
+    
+    // Apply M*X
+    massMtx_->Apply(X, MX);
+    Y.PutScalar(0.0);
+    
+    // Set the LHS and RHS
+    problem_->SetRHS(&MX);
+    problem_->SetLHS(&Y);
+
+    // Solve the linear system A*Y = MX
+    solver_->Solve();
+  }
+  else {
+    // Storage for A^{-T}*X
+    Epetra_MultiVector ATX(X.Map(),X.NumVectors());
+    Epetra_MultiVector tmpX = const_cast<Epetra_MultiVector&>(X);
+    
+    // Set the LHS and RHS
+    problem_->SetRHS(&tmpX);
+    problem_->SetLHS(&ATX);
+    
+    // Solve the linear system A^T*Y = X 
+    solver_->Solve();
+    
+    // Apply M*ATX
+    massMtx_->Apply(ATX, Y);
+  }
+  
+  return 0;
+};

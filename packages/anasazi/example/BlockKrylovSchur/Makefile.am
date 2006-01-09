@@ -52,11 +52,15 @@ ANASAZI_BIRAM_EX_SI_AZTECOO = BlockKrylovSchurEpetraExGenAztecOO
 endif
 endif
 
+if BUILD_AMESOS
+ANASAZI_BIRAM_EX_SI_AMESOS = BlockKrylovSchurEpetraExGenAmesos
+endif
+
 if BUILD_TRIUTILS
 ANASAZI_BIRAM_EX_HB = BlockKrylovSchurEpetraExHB
 endif 
 
-noinst_PROGRAMS = BlockKrylovSchurEpetraEx BlockKrylovSchurEpetraExSVD $(ANASAZI_BIRAM_EX_HB) $(ANASAZI_BIRAM_EX_SI_AZTECOO) $(ANASAZI_BIRAM_EX_SI_BELOS) 
+noinst_PROGRAMS = BlockKrylovSchurEpetraEx BlockKrylovSchurEpetraExSVD $(ANASAZI_BIRAM_EX_HB) $(ANASAZI_BIRAM_EX_SI_AZTECOO) $(ANASAZI_BIRAM_EX_SI_BELOS) $(ANASAZI_BIRAM_EX_SI_AMESOS)
 
 BlockKrylovSchurEpetraEx_SOURCES = $(srcdir)/BlockKrylovSchurEpetraEx.cpp
 
@@ -67,6 +71,8 @@ BlockKrylovSchurEpetraExHB_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExHB.cpp
 BlockKrylovSchurEpetraExGenAztecOO_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGenAztecOO.cpp
 
 BlockKrylovSchurEpetraExGenBelos_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGenBelos.cpp
+
+BlockKrylovSchurEpetraExGenAmesos_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGenAmesos.cpp
 
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
 #np# optional.
@@ -129,6 +135,17 @@ BlockKrylovSchurEpetraExGenBelos_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
 BlockKrylovSchurEpetraExGenBelos_LDADD = $(EXPORT_LIBS)
+
+BlockKrylovSchurEpetraExGenAmesos_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/../amesos/src/libamesos.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+BlockKrylovSchurEpetraExGenAmesos_CXXFLAGS = -I$(top_srcdir)/src
+
+#np# List libraries that np is dependent on.
+BlockKrylovSchurEpetraExGenAmesos_LDADD = $(EXPORT_LIBS)
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only

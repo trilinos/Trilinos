@@ -315,6 +315,8 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, belos, ANASAZI_BELOS, BUILD_BELOS, yes, 
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, aztecoo, ANASAZI_AZTECOO, BUILD_AZTECOO, yes, [Build examples which use AztecOO.], [Build examples which use AztecOO. Can be overridden with --disable-anasazi-aztecoo.])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, amesos, ANASAZI_AMESOS, BUILD_AMESOS, yes, [Build examples which use Amesos.], [Build examples which use Amesos. Can be overridden with --disable-anasazi-amesos.])
+
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, ifpack, ANASAZI_IFPACK, BUILD_IFPACK, yes, [Build examples which use Ifpack.], [Build examples which use Ifpack. Can be overridden with --disable-anasazi-ifpack.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, thyra, ANASAZI_THYRA, BUILD_ANASAZI_THYRA, yes, [Build code which uses Thyra.], [Build code which uses Thyra. Can be overridden with --disable-anasazi-thyra.])

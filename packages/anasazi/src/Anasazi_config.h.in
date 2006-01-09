@@ -15,6 +15,9 @@
 #undef FC_DUMMY_MAIN_EQ_F77
 
 /* Define if want to build with anasazi enabled */
+#undef HAVE_ANASAZI_AMESOS
+
+/* Define if want to build with anasazi enabled */
 #undef HAVE_ANASAZI_AZTECOO
 
 /* Define if want to build with anasazi enabled */

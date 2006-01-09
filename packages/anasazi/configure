@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_TEUCHOS_COMPLEX_TRUE BUILD_TEUCHOS_COMPLEX_FALSE BUILD_ANASAZI_EXPERIMENTAL_TRUE BUILD_ANASAZI_EXPERIMENTAL_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_ANASAZI_THYRA_TRUE BUILD_ANASAZI_THYRA_FALSE BUILD_EPETRA_THYRA_TRUE BUILD_EPETRA_THYRA_FALSE BUILD_ANASAZI_TPETRA_TRUE BUILD_ANASAZI_TPETRA_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_TEUCHOS_COMPLEX_TRUE BUILD_TEUCHOS_COMPLEX_FALSE BUILD_ANASAZI_EXPERIMENTAL_TRUE BUILD_ANASAZI_EXPERIMENTAL_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_AMESOS_TRUE BUILD_AMESOS_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_ANASAZI_THYRA_TRUE BUILD_ANASAZI_THYRA_FALSE BUILD_EPETRA_THYRA_TRUE BUILD_EPETRA_THYRA_FALSE BUILD_ANASAZI_TPETRA_TRUE BUILD_ANASAZI_TPETRA_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -919,6 +919,9 @@ Optional Features:
                           with --disable-anasazi-aztecoo.
   --enable-anasazi-aztecoo
                           Build examples which use AztecOO.
+  --enable-amesos         Build examples which use Amesos. Can be overridden
+                          with --disable-anasazi-amesos.
+  --enable-anasazi-amesos Build examples which use Amesos.
   --enable-ifpack         Build examples which use Ifpack. Can be overridden
                           with --disable-anasazi-ifpack.
   --enable-anasazi-ifpack Build examples which use Ifpack.
@@ -3861,7 +3864,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3864:" \
+echo "$as_me:3867:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7668,6 +7671,59 @@ fi
 
 
 
+# Check whether --enable-amesos or --disable-amesos was given.
+if test "${enable_amesos+set}" = set; then
+  enableval="$enable_amesos"
+  ac_cv_implicit_use_amesos=$enableval
+else
+  ac_cv_implicit_use_amesos=no
+fi;
+
+if test "Xyes" != "Xno"; then
+  ac_cv_anasazi_using_amesos_default=$ac_cv_implicit_use_amesos
+else
+  ac_cv_anasazi_using_amesos_default=no
+fi
+
+# Check whether --enable-anasazi-amesos or --disable-anasazi-amesos was given.
+if test "${enable_anasazi_amesos+set}" = set; then
+  enableval="$enable_anasazi_amesos"
+  ac_cv_use_amesos=$enableval
+else
+  ac_cv_use_amesos=$ac_cv_anasazi_using_amesos_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional amesos dependent code in anasazi" >&5
+echo $ECHO_N "checking whether to build optional amesos dependent code in anasazi... $ECHO_C" >&6
+
+if test "X$ac_cv_use_amesos" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ANASAZI_AMESOS 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_amesos" = "Xyes"; then
+  BUILD_AMESOS_TRUE=
+  BUILD_AMESOS_FALSE='#'
+else
+  BUILD_AMESOS_TRUE='#'
+  BUILD_AMESOS_FALSE=
+fi
+
+
+
+
+
+
 # Check whether --enable-ifpack or --disable-ifpack was given.
 if test "${enable_ifpack+set}" = set; then
   enableval="$enable_ifpack"
@@ -8905,7 +8961,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8908: \"$ac_link\") >&5
+(eval echo $as_me:8964: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8983,7 +9039,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8986: \"$ac_link\") >&5
+(eval echo $as_me:9042: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11822,7 +11878,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11825: \"$ac_link\") >&5
+(eval echo $as_me:11881: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11900,7 +11956,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11903: \"$ac_link\") >&5
+(eval echo $as_me:11959: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12336,6 +12392,13 @@ if test -z "${BUILD_AZTECOO_TRUE}" && test -z "${BUILD_AZTECOO_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_AZTECOO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_AZTECOO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_AMESOS_TRUE}" && test -z "${BUILD_AMESOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_AMESOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_AMESOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -13121,6 +13184,8 @@ s,@BUILD_BELOS_TRUE@,$BUILD_BELOS_TRUE,;t t
 s,@BUILD_BELOS_FALSE@,$BUILD_BELOS_FALSE,;t t
 s,@BUILD_AZTECOO_TRUE@,$BUILD_AZTECOO_TRUE,;t t
 s,@BUILD_AZTECOO_FALSE@,$BUILD_AZTECOO_FALSE,;t t
+s,@BUILD_AMESOS_TRUE@,$BUILD_AMESOS_TRUE,;t t
+s,@BUILD_AMESOS_FALSE@,$BUILD_AMESOS_FALSE,;t t
 s,@BUILD_IFPACK_TRUE@,$BUILD_IFPACK_TRUE,;t t
 s,@BUILD_IFPACK_FALSE@,$BUILD_IFPACK_FALSE,;t t
 s,@BUILD_ANASAZI_THYRA_TRUE@,$BUILD_ANASAZI_THYRA_TRUE,;t t
