@@ -1936,10 +1936,10 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 	int      NumEntries = *NumBlockEntriesPerRow++;
 	int *    BlockRowIndices = *Indices++;
 	Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
-	int  xoff = *ColFirstPointInElementList++;
-	int RowDim = *ColElementSizeList++;
+	int  xoff = *RowFirstPointInElementList++;
+	int RowDim = *RowElementSizeList++;
 	FastBlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, xoff, 
-			 RowFirstPointInElementList, RowElementSizeList, 
+			 ColFirstPointInElementList, ColElementSizeList, 
 			 BlockRowValues, Xp, Yp, NumVectors);
       }
     } else {
@@ -1947,10 +1947,10 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 	int      NumEntries = *NumBlockEntriesPerRow++;
 	int *    BlockRowIndices = *Indices++;
 	Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
-	int  xoff = *ColFirstPointInElementList++;
-	int RowDim = *ColElementSizeList++;
+	int  xoff = *RowFirstPointInElementList++;
+	int RowDim = *RowElementSizeList++;
 	BlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, xoff, 
-			 RowFirstPointInElementList, RowElementSizeList, 
+			 ColFirstPointInElementList, ColElementSizeList, 
 			 BlockRowValues, Xp, Yp, NumVectors);
       }
     }
