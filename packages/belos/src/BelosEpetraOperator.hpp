@@ -143,15 +143,15 @@ EpetraOperator<TYPE>::EpetraOperator( LinearProblemManager<TYPE>& lp,
     stest_(stest), 
     om_(om), 
     plist_(plist), 
-    Solver(0),
-    Maxits(plist.get("Max Iters", 25)) 
+    Maxits(plist.get("Max Iters", 25)), 
+    Solver(0)
 {
   string solver = plist_.get("Solver", "BlockGMRES");
 
   // Copy string to character array.  
   // Not using conversion routine copy() because it's not supported by RW on Janus. (HKT 11/13/2003) 
   Solver = new char[solver.length()+1];
-  for (int i=0; i<solver.length()+1; i++) {
+  for (int i=0; i<(int)solver.length()+1; i++) {
     Solver[i] = solver[i];
   } 
   Solver[solver.length()] = 0;
