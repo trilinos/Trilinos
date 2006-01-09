@@ -157,36 +157,3 @@ _Epetra._AuxVector_swigregister(Vector)
 _Epetra._AuxIntVector_swigregister(IntVector)
 
 %}
-
-%extend Epetra_MultiVector {
-  bool isMultiVector() {
-    return(true);
-  }
-
-  double __getitem__(int i, int j)
-  {
-    return((*self)[i][j]);
-  }
-
-  void __setitem__(int i, int j, double val)
-  {
-    (*self)[i][j] = val;
-  }
-}
-
-%extend Epetra_Vector {
-  bool isMultiVector() {
-    return(false);
-  }
-
-  double __getitem__(int i)
-  {
-    return((*self)[i]);
-  }
-
-  void __setitem__(int i, double val)
-  {
-    (*self)[i] = val;
-  }
-}
-

@@ -186,12 +186,6 @@ can therefore be used everywhere Numeric vectors are accepted.
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_SerialDenseOperator.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialDenseVector.h"
-#include "Epetra_IntSerialDenseVector.h"
-#include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_CombineMode.h"
 #include "Epetra_Import.h"
@@ -243,26 +237,6 @@ can therefore be used everywhere Numeric vectors are accepted.
 %ignore Epetra_VbrMatrix::operator=(const Epetra_VbrMatrix &);
 %ignore Epetra_VbrMatrix::Solve(bool, bool, bool,
 				Epetra_Vector const&, Epetra_Vector&) const;
-%ignore Epetra_SerialDenseMatrix::operator=(const Epetra_SerialDenseMatrix &);
-%ignore Epetra_SerialDenseMatrix::operator[](int);
-%ignore Epetra_SerialDenseMatrix::operator[](int) const;
-%ignore Epetra_SerialDenseMatrix::operator()(int,int) const;
-%ignore Epetra_SerialDenseMatrix::A() const;
-%ignore Epetra_SerialDenseVector::operator=(const Epetra_SerialDenseVector &);
-%ignore Epetra_SerialDenseVector::operator[](int);
-%ignore Epetra_SerialDenseVector::operator[](int) const;
-%ignore Epetra_SerialDenseVector::operator()(int);
-%ignore Epetra_SerialDenseVector::operator()(int) const;
-%ignore Epetra_IntSerialDenseMatrix::operator=(const Epetra_IntSerialDenseMatrix &);
-%ignore Epetra_IntSerialDenseMatrix::operator[](int);
-%ignore Epetra_IntSerialDenseMatrix::operator[](int) const;
-%ignore Epetra_IntSerialDenseMatrix::operator()(int,int) const;
-%ignore Epetra_IntSerialDenseMatrix::A() const;
-%ignore Epetra_IntSerialDenseVector::operator=(const Epetra_IntSerialDenseVector &);
-%ignore Epetra_IntSerialDenseVector::operator[](int);
-%ignore Epetra_IntSerialDenseVector::operator[](int) const;
-%ignore Epetra_IntSerialDenseVector::operator()(int);
-%ignore Epetra_IntSerialDenseVector::operator()(int) const;
 %ignore NumPyArrayBase::print(std::ostream &) const;       // faciltated by __str__
 %ignore NumPyArray::print(std::ostream &) const;           // faciltated by __str__
 %ignore NumPyArrayContiguous::print(std::ostream &) const; // faciltated by __str__
@@ -272,34 +246,27 @@ can therefore be used everywhere Numeric vectors are accepted.
 %ignore Epetra_Time::operator=(const Epetra_Time &);
 
 // Rename directives
-%rename(Version             ) Epetra_Version;
-%rename(Object              ) Epetra_Object;
-%rename(BlockMap            ) Epetra_BlockMap;
-%rename(Map                 ) Epetra_Map;
-%rename(LocalMap            ) Epetra_LocalMap;
-%rename(SrcDistObject       ) Epetra_SrcDistObject;
-%rename(DistObject          ) Epetra_DistObject;
-%rename(CompObject          ) Epetra_CompObject;
-%rename(BLAS                ) Epetra_BLAS;
-%rename(LAPACK              ) Epetra_LAPACK;
-%rename(CrsGraph            ) Epetra_CrsGraph;
-%rename(MapColoring         ) Epetra_MapColoring;
-%rename(Operator            ) Epetra_Operator;
-%rename(RowMatrix           ) Epetra_RowMatrix;
-%rename(CrsMatrix           ) Epetra_CrsMatrix;
-%rename(FECrsMatrix         ) Epetra_FECrsMatrix;
-%rename(VbrMatrix           ) Epetra_VbrMatrix;
-%rename(SerialDenseSolver   ) Epetra_SerialDenseSolver;
-%rename(SerialDenseOperator ) Epetra_SerialDenseOperator;
-%rename(SerialDenseMatrix   ) Epetra_SerialDenseMatrix;
-%rename(SerialDenseVector   ) Epetra_SerialDenseVector;
-%rename(IntSerialDenseMatrix) Epetra_IntSerialDenseMatrix;
-%rename(IntSerialDenseVector) Epetra_IntSerialDenseVector;
-%rename(SerialSymDenseMatrix) Epetra_SerialSymDenseMatrix;
-%rename(LinearProblem       ) Epetra_LinearProblem;
-%rename(Import              ) Epetra_Import;
-%rename(Export              ) Epetra_Export;
-%rename(Time                ) Epetra_Time;
+%rename(Version      ) Epetra_Version;
+%rename(Object       ) Epetra_Object;
+%rename(BlockMap     ) Epetra_BlockMap;
+%rename(Map          ) Epetra_Map;
+%rename(LocalMap     ) Epetra_LocalMap;
+%rename(SrcDistObject) Epetra_SrcDistObject;
+%rename(DistObject   ) Epetra_DistObject;
+%rename(CompObject   ) Epetra_CompObject;
+%rename(BLAS         ) Epetra_BLAS;
+%rename(LAPACK       ) Epetra_LAPACK;
+%rename(CrsGraph     ) Epetra_CrsGraph;
+%rename(MapColoring  ) Epetra_MapColoring;
+%rename(Operator     ) Epetra_Operator;
+%rename(RowMatrix    ) Epetra_RowMatrix;
+%rename(CrsMatrix    ) Epetra_CrsMatrix;
+%rename(FECrsMatrix  ) Epetra_FECrsMatrix;
+%rename(VbrMatrix    ) Epetra_VbrMatrix;
+%rename(LinearProblem) Epetra_LinearProblem;
+%rename(Import       ) Epetra_Import;
+%rename(Export       ) Epetra_Export;
+%rename(Time         ) Epetra_Time;
 
 // Auto-documentation feature
 %feature("autodoc", "1");
@@ -350,6 +317,7 @@ using namespace std;
 %include "Epetra_LAPACK.h"
 
 %include "Epetra_Vectors.i"
+%include "Epetra_SerialDense.i"
 
 %include "Epetra_CrsGraph.h"
 %include "Epetra_MapColoring.h"
@@ -359,13 +327,6 @@ using namespace std;
 %include "Epetra_FECrsMatrix.h"
 %include "Epetra_VbrMatrix.h"
 %include "Epetra_DataAccess.h"
-%include "Epetra_SerialDenseSolver.h"
-%include "Epetra_SerialDenseOperator.h"
-%include "Epetra_SerialDenseMatrix.h"
-%include "Epetra_SerialDenseVector.h"
-%include "Epetra_SerialSymDenseMatrix.h"
-%include "Epetra_IntSerialDenseMatrix.h"
-%include "Epetra_IntSerialDenseVector.h"
 %include "Epetra_LinearProblem.h"
 %include "Epetra_CombineMode.h"
 %include "Epetra_Import.h"
@@ -604,68 +565,6 @@ using namespace std;
         return(-1);
     }
     return(0);
-  }
-}
-
-%extend Epetra_SerialDenseMatrix {
-
-  double * __getitem__(int i) {
-    return self->operator[](i);
-  }
-
-  PyObject * __getitem__(PyObject * args) {
-    int i, j;
-    if (!PyArg_ParseTuple(args, "ii", &i, &j)) {
-      PyErr_SetString(PyExc_IndexError, "Invalid index");
-      return NULL;
-    }
-    double * column = self->operator[](j);
-    return PyFloat_FromDouble(column[i]);
-  }
-
-  PyObject * __setitem__(PyObject * args, double val) {
-    int i, j;
-    if (!PyArg_ParseTuple(args, "ii", &i, &j)) {
-      PyErr_SetString(PyExc_IndexError, "Invalid index");
-      return NULL;
-    }
-    double * column = self->operator[](j);
-    column[i] = val;
-    Py_INCREF(Py_None);
-    return Py_None;
-  }
-
-}
-
-%extend Epetra_SerialDenseVector {
-
-  double __call__(int i) {
-    return self->operator()(i);
-  }
-
-  double __getitem__(int i) {
-    return self->operator[](i);
-  }
-
-  void __setitem__(int i, const double val) {
-    double * column = self->Values();
-    column[i] = val;
-  }
-}
-
-%extend Epetra_IntSerialDenseVector {
-
-  int __call__(int i) {
-    return self->operator()(i);
-  }
-
-  int __getitem__(int i) {
-    return self->operator[](i);
-  }
-
-  void __setitem__(int i, const int val) {
-    int * column = self->Values();
-    column[i] = val;
   }
 }
 
