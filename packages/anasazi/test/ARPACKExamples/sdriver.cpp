@@ -96,7 +96,6 @@ int main(int argc, char *argv[])
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
   ST ONE  = SCT::one();
-  ST ZERO = SCT::zero();
 
 
   // Create default output manager 

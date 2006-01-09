@@ -180,7 +180,6 @@ public:
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
-    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
     BLAS<int,ScalarType> blas;
     int n, nx;
     
@@ -453,7 +452,6 @@ public:
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
-    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
     const ScalarType TWO = (ScalarType)(2.0);
     BLAS<int,ScalarType> blas;
     
@@ -518,7 +516,6 @@ public:
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
-    const ScalarType TWO = (ScalarType)(2.0);
     const ScalarType FOUR = (ScalarType)(4.0);
     BLAS<int,ScalarType> blas;
     
@@ -587,7 +584,6 @@ public:
     typedef ScalarTraits<ScalarType> SCT;
     const ScalarType ONE = SCT::one();
     const ScalarType FOUR = (ScalarType)(4.0);
-    const ScalarType SIX = (ScalarType)(6.0);
     LAPACK<int,ScalarType> lapack;
     
     // instantiate an A matrix 
@@ -614,8 +610,6 @@ public:
   Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
-    const ScalarType ONE = ScalarTraits<ScalarType>::one();
-    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
     BLAS<int,ScalarType> blas;
     LAPACK<int,ScalarType> lapack;
     
@@ -674,7 +668,7 @@ class OPH : public Anasazi::Operator<ScalarType>
 {
 private:
   int _n,_nx;
-  ScalarType _sigma, _rho;
+  ScalarType _rho, _sigma;
   std::vector<ScalarType> _dl, _dd, _du, _du2;
   std::vector<int> _ipiv;
   int _ferror;
@@ -720,8 +714,6 @@ public:
   Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
-    const ScalarType ONE = ScalarTraits<ScalarType>::one();
-    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
     BLAS<int,ScalarType> blas;
     LAPACK<int,ScalarType> lapack;
     
@@ -798,7 +790,6 @@ public:
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
-    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
     BLAS<int,ScalarType> blas;
     int n, nx;
   
@@ -891,7 +882,6 @@ public:
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     const ScalarType TWO = (ScalarType)(2.0);
-    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
     BLAS<int,ScalarType> blas;
     
     const MyMultiVec<ScalarType>* MyX;
@@ -1056,7 +1046,6 @@ public:
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     const ScalarType TWO = (ScalarType)(2.0);
-    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
     BLAS<int,ScalarType> blas;
     
     const MyMultiVec<ScalarType>* MyX;
@@ -1119,7 +1108,6 @@ public:
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     const ScalarType FOUR = (ScalarType)(4.0);
     const ScalarType SIX = (ScalarType)(6.0);
-    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
     BLAS<int,ScalarType> blas;
     
     const MyMultiVec<ScalarType>* MyX;
@@ -1228,8 +1216,6 @@ public:
   Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
-    const ScalarType ONE = ScalarTraits<ScalarType>::one();
-    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
     BLAS<int,ScalarType> blas;
     LAPACK<int,ScalarType> lapack;
     
@@ -1338,8 +1324,6 @@ public:
   Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
-    const ScalarType ONE = ScalarTraits<ScalarType>::one();
-    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
     BLAS<int,ScalarType> blas;
     LAPACK<int,ScalarType> lapack;
     
@@ -1448,8 +1432,6 @@ public:
   Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
-    const ScalarType ONE = ScalarTraits<ScalarType>::one();
-    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
     BLAS<int,ScalarType> blas;
     LAPACK<int,ScalarType> lapack;
     
@@ -1560,7 +1542,6 @@ public:
                                   Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
-    const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
     BLAS<int,ScalarType> blas;
     LAPACK<int,ScalarType> lapack;
     
