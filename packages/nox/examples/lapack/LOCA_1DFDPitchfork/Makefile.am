@@ -45,28 +45,20 @@ AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 EXEEXT = .exe
 
 if BUILD_LOCA_LAPACK_EXAMPLES
-#noinst_PROGRAMS = pitchfork pitchforkContinuation
+noinst_PROGRAMS = pitchforkContinuation
 endif
 
-#pitchfork_SOURCES = $(srcdir)/Pitchfork.C \
-#		$(srcdir)/PitchforkProblemInterface.H \
-#		$(srcdir)/PitchforkProblemInterface.C
+pitchforkContinuation_SOURCES = $(srcdir)/PitchforkContinuation.C \
+		$(srcdir)/PitchforkProblemInterface.H \
+		$(srcdir)/PitchforkProblemInterface.C
 
-#pitchforkContinuation_SOURCES = $(srcdir)/PitchforkContinuation.C \
-#		$(srcdir)/PitchforkProblemInterface.H \
-#		$(srcdir)/PitchforkProblemInterface.C
+pitchforkContinuation_DEPENDENCIES = \
+        $(top_builddir)/src/libnox.a \
+	$(top_builddir)/src-lapack/libnoxlapack.a \
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-lapack/liblocalapack.a
 
-#pitchfork_DEPENDENCIES = \
-#        $(top_builddir)/src/libnox.a \
-#	$(top_builddir)/src-lapack/libnoxlapack.a \
-#	$(top_builddir)/src-loca/src/libloca.a \
-#        $(top_builddir)/src-loca/src-lapack/liblocalapack.a
-
-#pitchforkContinuation_DEPENDENCIES = $(pitchfork_DEPENDENCIES)
-
-#pitchfork_LDADD = $(EXAMPLE_LIBS)
-
-#pitchforkContinuation_LDADD = $(EXAMPLE_LIBS)
+pitchforkContinuation_LDADD = $(EXAMPLE_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

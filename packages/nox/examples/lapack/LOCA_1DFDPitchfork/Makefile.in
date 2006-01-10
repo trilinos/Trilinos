@@ -42,6 +42,9 @@
 # 
 # ************************************************************************
 #@HEADER
+
+SOURCES = $(pitchforkContinuation_SOURCES)
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -63,6 +66,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
+@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@noinst_PROGRAMS = pitchforkContinuation$(EXEEXT)
 subdir = examples/lapack/LOCA_1DFDPitchfork
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -93,8 +97,32 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-SOURCES =
-DIST_SOURCES =
+PROGRAMS = $(noinst_PROGRAMS)
+am_pitchforkContinuation_OBJECTS = PitchforkContinuation.$(OBJEXT) \
+	PitchforkProblemInterface.$(OBJEXT)
+pitchforkContinuation_OBJECTS = $(am_pitchforkContinuation_OBJECTS)
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(LOCA_LIBS))
+DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/PitchforkContinuation.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/PitchforkProblemInterface.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(pitchforkContinuation_SOURCES)
+DIST_SOURCES = $(pitchforkContinuation_SOURCES)
+ETAGS = etags
+CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ADDON_belos_EXAMPLES = @ADDON_belos_EXAMPLES@
@@ -309,28 +337,17 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(LOCA_INCLUDES)
 @USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
 AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+pitchforkContinuation_SOURCES = $(srcdir)/PitchforkContinuation.C \
+		$(srcdir)/PitchforkProblemInterface.H \
+		$(srcdir)/PitchforkProblemInterface.C
 
-#noinst_PROGRAMS = pitchfork pitchforkContinuation
+pitchforkContinuation_DEPENDENCIES = \
+        $(top_builddir)/src/libnox.a \
+	$(top_builddir)/src-lapack/libnoxlapack.a \
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-lapack/liblocalapack.a
 
-#pitchfork_SOURCES = $(srcdir)/Pitchfork.C \
-#		$(srcdir)/PitchforkProblemInterface.H \
-#		$(srcdir)/PitchforkProblemInterface.C
-
-#pitchforkContinuation_SOURCES = $(srcdir)/PitchforkContinuation.C \
-#		$(srcdir)/PitchforkProblemInterface.H \
-#		$(srcdir)/PitchforkProblemInterface.C
-
-#pitchfork_DEPENDENCIES = \
-#        $(top_builddir)/src/libnox.a \
-#	$(top_builddir)/src-lapack/libnoxlapack.a \
-#	$(top_builddir)/src-loca/src/libloca.a \
-#        $(top_builddir)/src-loca/src-lapack/liblocalapack.a
-
-#pitchforkContinuation_DEPENDENCIES = $(pitchfork_DEPENDENCIES)
-
-#pitchfork_LDADD = $(EXAMPLE_LIBS)
-
-#pitchforkContinuation_LDADD = $(EXAMPLE_LIBS)
+pitchforkContinuation_LDADD = $(EXAMPLE_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -344,6 +361,7 @@ MOSTLYCLEANFILES = $(CXXREPOS)
 all: all-am
 
 .SUFFIXES:
+.SUFFIXES: .C .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -373,13 +391,116 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+pitchforkContinuation$(EXEEXT): $(pitchforkContinuation_OBJECTS) $(pitchforkContinuation_DEPENDENCIES) 
+	@rm -f pitchforkContinuation$(EXEEXT)
+	$(CXXLINK) $(pitchforkContinuation_LDFLAGS) $(pitchforkContinuation_OBJECTS) $(pitchforkContinuation_LDADD) $(LIBS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PitchforkContinuation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PitchforkProblemInterface.Po@am__quote@
+
+.C.o:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.C.obj:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+PitchforkContinuation.o: $(srcdir)/PitchforkContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PitchforkContinuation.o -MD -MP -MF "$(DEPDIR)/PitchforkContinuation.Tpo" -c -o PitchforkContinuation.o `test -f '$(srcdir)/PitchforkContinuation.C' || echo '$(srcdir)/'`$(srcdir)/PitchforkContinuation.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PitchforkContinuation.Tpo" "$(DEPDIR)/PitchforkContinuation.Po"; else rm -f "$(DEPDIR)/PitchforkContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PitchforkContinuation.C' object='PitchforkContinuation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/PitchforkContinuation.Po' tmpdepfile='$(DEPDIR)/PitchforkContinuation.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PitchforkContinuation.o `test -f '$(srcdir)/PitchforkContinuation.C' || echo '$(srcdir)/'`$(srcdir)/PitchforkContinuation.C
+
+PitchforkContinuation.obj: $(srcdir)/PitchforkContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PitchforkContinuation.obj -MD -MP -MF "$(DEPDIR)/PitchforkContinuation.Tpo" -c -o PitchforkContinuation.obj `if test -f '$(srcdir)/PitchforkContinuation.C'; then $(CYGPATH_W) '$(srcdir)/PitchforkContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PitchforkContinuation.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PitchforkContinuation.Tpo" "$(DEPDIR)/PitchforkContinuation.Po"; else rm -f "$(DEPDIR)/PitchforkContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PitchforkContinuation.C' object='PitchforkContinuation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/PitchforkContinuation.Po' tmpdepfile='$(DEPDIR)/PitchforkContinuation.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PitchforkContinuation.obj `if test -f '$(srcdir)/PitchforkContinuation.C'; then $(CYGPATH_W) '$(srcdir)/PitchforkContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PitchforkContinuation.C'; fi`
+
+PitchforkProblemInterface.o: $(srcdir)/PitchforkProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PitchforkProblemInterface.o -MD -MP -MF "$(DEPDIR)/PitchforkProblemInterface.Tpo" -c -o PitchforkProblemInterface.o `test -f '$(srcdir)/PitchforkProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/PitchforkProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PitchforkProblemInterface.Tpo" "$(DEPDIR)/PitchforkProblemInterface.Po"; else rm -f "$(DEPDIR)/PitchforkProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PitchforkProblemInterface.C' object='PitchforkProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/PitchforkProblemInterface.Po' tmpdepfile='$(DEPDIR)/PitchforkProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PitchforkProblemInterface.o `test -f '$(srcdir)/PitchforkProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/PitchforkProblemInterface.C
+
+PitchforkProblemInterface.obj: $(srcdir)/PitchforkProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PitchforkProblemInterface.obj -MD -MP -MF "$(DEPDIR)/PitchforkProblemInterface.Tpo" -c -o PitchforkProblemInterface.obj `if test -f '$(srcdir)/PitchforkProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/PitchforkProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PitchforkProblemInterface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PitchforkProblemInterface.Tpo" "$(DEPDIR)/PitchforkProblemInterface.Po"; else rm -f "$(DEPDIR)/PitchforkProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PitchforkProblemInterface.C' object='PitchforkProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/PitchforkProblemInterface.Po' tmpdepfile='$(DEPDIR)/PitchforkProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PitchforkProblemInterface.obj `if test -f '$(srcdir)/PitchforkProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/PitchforkProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PitchforkProblemInterface.C'; fi`
 uninstall-info-am:
+
+ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
+	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	mkid -fID $$unique
 tags: TAGS
-TAGS:
 
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)$$tags$$unique" \
+	  || $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
+	     $$tags $$unique
 ctags: CTAGS
-CTAGS:
+CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(CTAGS_ARGS)$$tags$$unique" \
+	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
+	     $$tags $$unique
 
+GTAGS:
+	here=`$(am__cd) $(top_builddir) && pwd` \
+	  && cd $(top_srcdir) \
+	  && gtags -i $(GTAGS_ARGS) $$here
+
+distclean-tags:
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
@@ -410,7 +531,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile
+all-am: Makefile $(PROGRAMS)
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -440,11 +561,13 @@ maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
 dvi: dvi-am
 
@@ -467,12 +590,13 @@ install-man:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-am
 
@@ -484,14 +608,16 @@ ps-am:
 
 uninstall-am: uninstall-info-am
 
-.PHONY: all all-am check check-am clean clean-generic distclean \
-	distclean-generic distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic pdf pdf-am ps ps-am uninstall uninstall-am \
-	uninstall-info-am
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-info-am
 
 
 # Include NOX export makefile

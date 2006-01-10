@@ -46,29 +46,19 @@ int main()
     double h = 2.0/(n-1);
     int maxNewtonIters = 20;
 
-    // Set up the problem interface
-    PitchforkProblemInterface pf(n, alpha, beta, lambda);
-    LOCA::ParameterVector p;
-    p.addParameter("alpha",alpha);
-    p.addParameter("beta",beta);
-    p.addParameter("lambda",lambda);
-  
-    // Create a group which uses that problem interface. The group will
-    // be initialized to contain the default initial guess for the
-    // specified problem.
-    LOCA::LAPACK::Group grp(pf);
-    grp.setParams(p);
-
     // Create asymmetry vector
-    NOX::LAPACK::Vector asymVec(n);  // length n
+    Teuchos::RefCountPtr<NOX::LAPACK::Vector> asymLapackVec = 
+      Teuchos::rcp(new NOX::LAPACK::Vector(n));  // length n
     for (int i=0; i<n; i++)
-      asymVec(i) = sin( pi/2.0 * (-1.0 + h*i) );
+      (*asymLapackVec)(i) = sin( pi/2.0 * (-1.0 + h*i) );
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> asymVec = asymLapackVec;
 
     // Create parameter list
-    NOX::Parameter::List paramList;
+    Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
+      Teuchos::rcp(new NOX::Parameter::List);
 
     // Create LOCA sublist
-    NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
+    NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
 
     // Create the stepper sublist and set the stepper parameters
     NOX::Parameter::List& stepperList = locaParamsList.sublist("Stepper");
@@ -93,14 +83,14 @@ int main()
     // Create bifurcation sublist
     NOX::Parameter::List& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
-    bifurcationList.setParameter("Method", "Pitchfork");
+    bifurcationList.setParameter("Method", "Pitchfork:  Moore-Spence");
+    bifurcationList.setParameter("Solver Method", "Salinger Bordering");
+    //bifurcationList.setParameter("Solver Method", "Phipps Bordering");
+    //bifurcationList.setParameter("Bordered Solver Method", "LAPACK Direct Solve");
     bifurcationList.setParameter("Bifurcation Parameter", "lambda");
-    bifurcationList.setParameter("Length Normalization Vector", 
-			 dynamic_cast<NOX::Abstract::Vector*>(&asymVec));
-    bifurcationList.setParameter("Initial Null Vector",
-			 dynamic_cast<NOX::Abstract::Vector*>(&asymVec));
-    bifurcationList.setParameter("Asymmetric Vector",
-			 dynamic_cast<NOX::Abstract::Vector*>(&asymVec));
+    bifurcationList.setParameter("Length Normalization Vector", asymVec);
+    bifurcationList.setParameter("Initial Null Vector", asymVec);
+    bifurcationList.setParameter("Antisymmetric Vector", asymVec);
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
@@ -129,30 +119,20 @@ int main()
     stepSizeList.setParameter("Failed Step Reduction Factor", 0.5);
     stepSizeList.setParameter("Successful Step Increase Factor", 1.26); // for constant
 
-    // Set the LOCA Utilities
-    NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
-    locaUtilsList.setParameter("Output Information", 
-			       LOCA::Utils::Warning +
-			       LOCA::Utils::StepperIteration +
-			       LOCA::Utils::StepperDetails +
-			       LOCA::Utils::Solver +
-			       LOCA::Utils::SolverDetails);
-
     // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = paramList.sublist("NOX");
+    NOX::Parameter::List& nlParams = paramList->sublist("NOX");
     nlParams.setParameter("Nonlinear Solver", "Line Search Based");
 
     NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
     nlPrintParams.setParameter("Output Information", 
-			       //NOX::Utils::OuterIteration + 
-			       //NOX::Utils::OuterIterationStatusTest + 
-			       //NOX::Utils::InnerIteration +
-			       //NOX::Utils::Parameters +
-			       //NOX::Utils::Details + 
-			       NOX::Utils::Warning);
-
-    // Create a printing control object
-    NOX::Utils utils(nlPrintParams);
+			       NOX::Utils::OuterIteration + 
+			       NOX::Utils::OuterIterationStatusTest + 
+			       NOX::Utils::InnerIteration +
+			       NOX::Utils::Parameters +
+			       NOX::Utils::Details + 
+			       NOX::Utils::Warning + 
+			       NOX::Utils::StepperIteration +
+			       NOX::Utils::StepperDetails);
 
     // Create the "Line Search" sublist for the "Line Search Based" solver
     NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
@@ -166,8 +146,28 @@ int main()
     NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
     newtonParams.setParameter("Forcing Term Method", "Constant");
 
-    // Linear solver sublist
-    NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
+    // Create LAPACK Factory
+    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+      Teuchos::rcp(new LOCA::LAPACK::Factory);
+
+    // Create global data object
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+      LOCA::createGlobalData(paramList, lapackFactory);
+
+    // Set up the problem interface
+    PitchforkProblemInterface pf(n, alpha, beta, lambda);
+    LOCA::ParameterVector p;
+    p.addParameter("alpha",alpha);
+    p.addParameter("beta",beta);
+    p.addParameter("lambda",lambda);
+
+    // Create a group which uses that problem interface. The group will
+    // be initialized to contain the default initial guess for the
+    // specified problem.
+    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
+      Teuchos::rcp(new LOCA::LAPACK::Group(globalData, pf));
+    
+    grp->setParams(p);
 
     // Set up the status tests
     Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
@@ -175,28 +175,38 @@ int main()
 					      NOX::StatusTest::NormF::Scaled));
     Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
-    NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, 
-				 statusTestB);
+    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
+					      statusTestA, statusTestB));
 
     // Create the stepper  
-    LOCA::Stepper stepper(grp, combo, paramList);
+    LOCA::NewStepper stepper(globalData, grp, combo, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-    if (status != LOCA::Abstract::Iterator::Finished)
-      cout << "Stepper failed to converge!" << endl;
+    if (status != LOCA::Abstract::Iterator::Finished) {
+      if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
+	globalData->locaUtils->out() 
+	  << "Stepper failed to converge!" << std::endl;
+    }
 
     // Output the parameter list
-    if (utils.isPrintType(NOX::Utils::Parameters)) {
-      cout << endl << "Final Parameters" << endl
-	   << "****************" << endl;
-      stepper.getParameterList().print(cout);
-      cout << endl;
+    if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
+      globalData->locaUtils->out() 
+	<< std::endl << "Final Parameters" << std::endl
+	<< "****************" << std::endl;
+      stepper.getParameterList()->print(globalData->locaUtils->out());
+      globalData->locaUtils->out() << std::endl;
     }
+
+    destroyGlobalData(globalData);
   }
 
-  catch (char* s) {
+  catch (std::exception& e) {
+    cout << e.what() << endl;
+  }
+  catch (const char *s) {
     cout << s << endl;
   }
   catch (...) {
