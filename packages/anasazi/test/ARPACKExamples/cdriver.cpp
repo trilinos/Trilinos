@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
     //      28,5,22
     cout << "Back transformed eigenvalues     Relative Residual Norm" << endl
          << "-------------------------------------------------------" << endl;
-    for (int i=0; i<nevecs; i++) {
+    for (int i=0; i<nev; i++) {
       cout.setf(ios::scientific, ios::floatfield);  
       cout.precision(10);
       cout << std::setw(28) << std::right << (*evals)[i] 
