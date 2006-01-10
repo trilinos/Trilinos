@@ -70,6 +70,7 @@ int  idx 			/* index of vector param, -1 if scalar */
     PARAM_UTYPE result;		/* value returned from Check_Param */
     int index;			/* index returned from Check_Param */
     int tmp;
+    int export, import;
 
     status = Zoltan_Check_Param(name, val, Key_params, &result, &index);
 
@@ -221,8 +222,7 @@ int  idx 			/* index of vector param, -1 if scalar */
       case 10:          /* LB.Return_Lists */
         export = (strstr(result.sval, "EXPORT") != NULL);
         import = (strstr(result.sval, "IMPORT") != NULL);
-        
-        if ((export && import) || (strcmp(result.sval, "ALL") == 0) {
+        if ((export && import) || (strcmp(result.sval, "ALL") == 0)) {
           tmp = ZOLTAN_LB_ALL_LISTS;  /* export AND import lists */
           status = 3;
         }
