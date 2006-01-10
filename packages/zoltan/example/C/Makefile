@@ -1,7 +1,7 @@
 # $Id$
 #
 
-CEXAMPLES = zoltanSimple zoltanExample1 subDirs
+CEXAMPLES = zoltanSimple zoltanExample1 subDirs phgExample
 
 DOTDOTINCLUDE= $(subst -I../, -I../../, $(INCLUDE))
 DOTDOTLIBDIR= $(subst -L../, -L../../, $(LIBDIR))
