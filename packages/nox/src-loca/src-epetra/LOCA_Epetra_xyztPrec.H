@@ -120,8 +120,8 @@ private:
   Epetra_CrsMatrix &splitJac;
   Epetra_CrsMatrix &splitMass;
   EpetraExt::BlockVector& solution;
-  EpetraExt::BlockVector solutionOverlap;
-  Epetra_Import overlapImporter;
+  EpetraExt::BlockVector& solutionOverlap;
+  Epetra_Import& overlapImporter;
   NOX::Parameter::List& printParams;
   NOX::Parameter::List& lsParams;
   const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm;

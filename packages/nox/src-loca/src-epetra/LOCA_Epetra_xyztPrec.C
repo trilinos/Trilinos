@@ -83,9 +83,15 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
       Teuchos::rcp(&jacobian,false);
     linSys->setJacobianOperatorForSolve(Asolve);
   }
-  else if (prec == "Sequential") {
-    label = "LOCA::Epetra::xyztPrec::Sequential";
-    cout << "LOCA::Epetra::xyztPrec = Sequential" << endl;
+  else if (prec == "Sequential" || prec == "Parallel") {
+    if (prec == "Sequential") {
+      label = "LOCA::Epetra::xyztPrec::Sequential";
+      cout << "LOCA::Epetra::xyztPrec = Sequential" << endl;
+    }
+    else if (prec == "Parallel") {
+      label = "LOCA::Epetra::xyztPrec::Parallel";
+      cout << "LOCA::Epetra::xyztPrec = Parallel" << endl;
+    }
     
     // Create the single block jacobian
     jacobianBlock = new Epetra_CrsMatrix(splitJac);
@@ -182,9 +188,9 @@ ApplyInverse(const Epetra_MultiVector& input,
     // apply preconditioner as specified in lsParams
     bool stat = linSys->applyRightPreconditioning(false, lsParams, input_NEV, result_NEV);
 
-    return (stat) ? 0 : 1;
+//    return (stat) ? 0 : 1;
   }    
-  else if (prec == "Sequential") {
+  else if (prec == "Sequential" || prec == "Parallel") {
 
     // convert multivectors to vectors
     Epetra_MultiVector& input_EMV = const_cast<Epetra_MultiVector&>(input);
@@ -200,12 +206,32 @@ ApplyInverse(const Epetra_MultiVector& input,
       char fname[255];
 #endif
 
-    // Assumes one time domain currently
+    // Set up loop logic for Sequential (block Gauss Seydel over time domains)
+    // or parallel (Jacobi by time domains)
+    int sequentialDomains, innerCheck;
+    if (prec=="Sequential") {
+       sequentialDomains = globalComm->NumSubDomains();
+       innerCheck = globalComm->SubDomainRank();
+    }
+    else if (prec=="Parallel") {
+       sequentialDomains = 1;
+       innerCheck = 0;  
+       //In General:  innerCheck = globalComm->SubDomainRank() % sequentialDomains;
+    }
 
-    for (int i=0; i < globalComm->NumTimeSteps(); i++) {
+    for (int isd=0; isd < sequentialDomains; isd++) {
+
+    // Communicate data from other time domains into overlapped vector
+    // This serves as a barrier as well.
+    solutionOverlap.Import(solution, overlapImporter, Insert);
+
+    //Work only on active time domain
+    if ( isd == innerCheck ) {
+
+    for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
       // Extract jacobian block to use in solve
       //   diagonal is column 0 on first step, colum one on all other)
-      if (globalComm->FirstTimeStepOnDomain() == 0 && i==0)
+      if (globalComm->FirstTimeStepOnDomain() + i == 0)
            jacobian.ExtractBlock(*jacobianBlock, 0, 0);
       else
            jacobian.ExtractBlock(*jacobianBlock, i, 1);
@@ -237,8 +263,10 @@ ApplyInverse(const Epetra_MultiVector& input,
 
       int blockRowOld = jacobian.RowIndex(i) - 1;  //Hardwired for -1 in stencil
       if (blockRowOld >= 0)  {
-	// update RHS with mass matrix * solution from previous time step
-	solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+	// update RHS with mass matrix * solution from previous time step 
+	// (which will be from previous time domain if i==0)
+	if (i==0) solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+	else      solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
 	jacobian.ExtractBlock(*massBlock, i, 0);
 #ifdef FILE_DEBUG
 	sprintf(fname,"massBlock_%d.m",i);
@@ -269,13 +297,15 @@ ApplyInverse(const Epetra_MultiVector& input,
 #endif
 
     }
+    }
+
+    }
     
     result = solution;
-    return 0;
   }    
   else {
-    return 0;
   }
+    return 0;
 }
 
 double LOCA::Epetra::xyztPrec::
@@ -362,6 +392,10 @@ computePreconditioner(const Epetra_Vector& x,
     // The next two lines should be performed for each block in ApplyInverse
     //linSys->destroyPreconditioner();
     //linSys->createPreconditioner(x, lsParams, false);
+    return true;
+  }    
+  else if (prec == "Parallell") {
+    cout << "Parallel Preconditioner" << endl;
     return true;
   }    
   else {
