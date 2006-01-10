@@ -636,6 +636,28 @@ PHGPartParams *temphgp = NULL;
     zz->Obj_Weight_Dim +   /* 0 or more application supplied weights*/
     add_vweight;           /* 0 or 1 additional calculated weights */
 
+  if (phg->VtxWeightDim > 1){
+    /*
+     * For now, only one weight per vertex will be used.  We will
+     * still save multiple weights, because in the future we may
+     * be able to use them.
+     */
+    if (zz->Proc == 0){
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Too many vertex weights.");
+      if (add_vweight){
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, 
+         "Both application supplied *and* ADD_OBJ_WEIGHT "
+         "calculated vertex weights were provided.");
+      }
+      else{
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, 
+         "Multiple weights per vertex were supplied.");
+      }
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, 
+         "Only the first application supplied weight per vertex will be used.");
+    }
+  }
+
   if ((add_obj_weight == PHG_ADD_PINS_WEIGHT) || !new_hgraph_callbacks){
   
     ierr = Zoltan_Comm_Create(&plan, app.nPins, app.pin_procs, zz->Communicator,
