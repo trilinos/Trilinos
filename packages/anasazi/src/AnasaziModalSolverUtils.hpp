@@ -257,7 +257,6 @@ namespace Anasazi {
     int info = 0;
     int i, j;
     std::vector<int> index(1);
-    ScalarType tmp;
     ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     
