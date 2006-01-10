@@ -254,6 +254,21 @@ namespace LOCA {
       virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> 
       getScalars();
 
+      /*! 
+       * \brief Returns const ref-count pointer to \c num_rows rows of 
+       * scalar matrix starting at row \c row.
+       */
+      virtual 
+      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>
+      getScalarRows(int num_rows, int row) const;
+
+      /*! 
+       * \brief Returns ref-count pointer to \c num_rows rows of 
+       * scalar matrix starting at row \c row.
+       */
+      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> 
+      getScalarRows(int num_rows, int row);
+
       //! Returns const reference to the scalar for row i, column j
       virtual const double& getScalar(int i, int j) const;
 

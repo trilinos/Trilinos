@@ -37,6 +37,8 @@
 #include "LOCA_Bifurcation_Factory.H"
 #include "LOCA_TurningPoint_MooreSpence_ExtendedGroup.H"
 #include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+#include "LOCA_Pitchfork_MooreSpence_ExtendedGroup.H"
+#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
 
 LOCA::Bifurcation::Factory::Factory(
 	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
@@ -77,6 +79,25 @@ LOCA::Bifurcation::Factory::create(
 
     strategy = 
       Teuchos::rcp(new LOCA::TurningPoint::MooreSpence::ExtendedGroup(
+							   globalData,
+							   topParams,
+							   bifurcationParams,
+							   msg));
+  }
+  else if (name == "Pitchfork:  Moore-Spence") {
+
+    // Cast group to MooreSpence group
+    Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::AbstractGroup> msg = 
+      Teuchos::rcp_dynamic_cast<LOCA::Pitchfork::MooreSpence::AbstractGroup>(grp);
+    if (msg.get() == NULL)
+      globalData->locaErrorCheck->throwError(
+		    methodName,
+		    string("Underlying group must be derived from ") + 
+		    string("LOCA::Pitchfork::MooreSpence::AbstractGroup ") +
+		    string("for Moore-Spence pitchfork continuation!"));
+
+    strategy = 
+      Teuchos::rcp(new LOCA::Pitchfork::MooreSpence::ExtendedGroup(
 							   globalData,
 							   topParams,
 							   bifurcationParams,

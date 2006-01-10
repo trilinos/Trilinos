@@ -63,7 +63,7 @@ LOCA::MultiContinuation::ExtendedMultiVector::ExtendedMultiVector(
 			      params.numRows())
 {
   LOCA::Extended::MultiVector::setMultiVectorPtr(0, xVec.clone(NOX::DeepCopy));
-  *LOCA::Extended::MultiVector::getScalars() = params;
+  LOCA::Extended::MultiVector::getScalars()->assign(params);
 }
 
 LOCA::MultiContinuation::ExtendedMultiVector::ExtendedMultiVector(

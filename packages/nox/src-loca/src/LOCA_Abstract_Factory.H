@@ -78,6 +78,11 @@ namespace LOCA {
       class SolverStrategy;
     }
   }
+  namespace Pitchfork {
+    namespace MooreSpence {
+      class SolverStrategy;
+    }
+  }
 }
 
 namespace LOCA {
@@ -202,11 +207,19 @@ namespace LOCA {
 
       //! Create Moore-Spence turning point solver strategy
       virtual bool
-      createMooreSpenceSolverStrategy(
+      createMooreSpenceTurningPointSolverStrategy(
        const string& strategyName,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
        Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>& strategy);
+
+      //! Create Moore-Spence pitchfork solver strategy
+      virtual bool
+      createMooreSpencePitchforkSolverStrategy(
+       const string& strategyName,
+       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+       Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy>& strategy);
 
       //@}
     

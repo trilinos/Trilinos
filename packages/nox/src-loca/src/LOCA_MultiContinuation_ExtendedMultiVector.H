@@ -156,7 +156,7 @@ namespace LOCA {
       virtual Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> 
       getXMultiVec() const;
 
-      //! Returns the solution vector component of extended vector
+      //! Returns the solution vector component of extended multivector
       virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> getXMultiVec();
 
     protected:

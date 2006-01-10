@@ -30,9 +30,9 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_TurningPoint_MooreSpence_ExtendedGroup.H"
-#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
-#include "LOCA_TurningPoint_MooreSpence_SolverStrategy.H"
+#include "LOCA_Pitchfork_MooreSpence_ExtendedGroup.H"
+#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+#include "LOCA_Pitchfork_MooreSpence_SolverStrategy.H"
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Parameter_List.H"
 #include "LOCA_GlobalData.H"
@@ -41,26 +41,28 @@
 #include "NOX_Utils.H"
 #include "LOCA_ErrorCheck.H"
 
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::ExtendedGroup(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
          const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& tpParams,
-	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::AbstractGroup>& g)
+	 const Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::AbstractGroup>& g)
   : LOCA::Extended::MultiAbstractGroup(),
     LOCA::MultiContinuation::AbstractGroup(),
     globalData(global_data),
     parsedParams(topParams),
-    turningPointParams(tpParams),
+    pitchforkParams(tpParams),
     grpPtr(g),
     xMultiVec(globalData, g->getX(), 2),
     fMultiVec(globalData, g->getX(), 2),
     newtonMultiVec(globalData, g->getX(), 2),
+    asymMultiVec(),
     lengthMultiVec(),
     xVec(),
     fVec(),
     ffMultiVec(),
     dfdpMultiVec(),
     newtonVec(),
+    asymVec(),
     lengthVec(),
     solverStrategy(),
     index_f(1),
@@ -70,50 +72,59 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
     isValidJacobian(false),
     isValidNewton(false)
 {
-  const char *func = "LOCA::TurningPoint::MooreSpence::ExtendedGroup()";
+  const char *func = "LOCA::Pitchfork::MooreSpence::ExtendedGroup()";
 
-  if (!turningPointParams->isParameter("Bifurcation Parameter")) {
+  if (!pitchforkParams->isParameter("Bifurcation Parameter")) {
     globalData->locaErrorCheck->throwError(func,
 				 "\"Bifurcation Parameter\" name is not set!");
   }
-  string bifParamName = turningPointParams->getParameter(
+  string bifParamName = pitchforkParams->getParameter(
 						  "Bifurcation Parameter",
 						  "None");
   const ParameterVector& p = grpPtr->getParams();
   bifParamID[0] = p.getIndex(bifParamName);
 
-  if (!turningPointParams->isParameter("Length Normalization Vector")) {
+  if (!pitchforkParams->isParameter("Antisymmetric Vector")) {
+    globalData->locaErrorCheck->throwError(func,
+			   "\"Antisymmetric Vector\" is not set!");
+  }
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> asymVecPtr = 
+    (*pitchforkParams).INVALID_TEMPLATE_QUALIFIER 
+      getRcpParameter<NOX::Abstract::Vector>("Antisymmetric Vector");
+
+  if (!pitchforkParams->isParameter("Length Normalization Vector")) {
     globalData->locaErrorCheck->throwError(func,
 			   "\"Length Normalization Vector\" is not set!");
   }
   Teuchos::RefCountPtr<NOX::Abstract::Vector> lenVecPtr = 
-    (*turningPointParams).INVALID_TEMPLATE_QUALIFIER 
+    (*pitchforkParams).INVALID_TEMPLATE_QUALIFIER 
       getRcpParameter<NOX::Abstract::Vector>("Length Normalization Vector");
 
-  if (!turningPointParams->isParameter("Initial Null Vector")) {
+  if (!pitchforkParams->isParameter("Initial Null Vector")) {
     globalData->locaErrorCheck->throwError(func,
 				 "\"Initial Null Vector\" is not set!");
   }
   Teuchos::RefCountPtr<NOX::Abstract::Vector> nullVecPtr = 
-    (*turningPointParams).INVALID_TEMPLATE_QUALIFIER 
+    (*pitchforkParams).INVALID_TEMPLATE_QUALIFIER 
       getRcpParameter<NOX::Abstract::Vector>("Initial Null Vector");
 
-  bool perturbSoln = turningPointParams->getParameter(
+  bool perturbSoln = pitchforkParams->getParameter(
 					       "Perturb Initial Solution", 
 					       false);
-  double perturbSize = turningPointParams->getParameter(
+  double perturbSize = pitchforkParams->getParameter(
 						 "Relative Perturbation Size", 
 						 1.0e-3);
-
+  asymMultiVec = 
+    asymVecPtr->createMultiVector(1, NOX::DeepCopy);
   lengthMultiVec = 
     lenVecPtr->createMultiVector(1, NOX::DeepCopy);
   *(xMultiVec.getColumn(0)->getNullVec()) = *nullVecPtr;
 
   // Instantiate solver strategy
   solverStrategy = 
-    globalData->locaFactory->createMooreSpenceTurningPointSolverStrategy(
-							  parsedParams,
-							  turningPointParams);
+    globalData->locaFactory->createMooreSpencePitchforkSolverStrategy(
+							      parsedParams,
+							      pitchforkParams);
 
   // Set up multi-vector views
   setupViews(); 
@@ -121,22 +132,24 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
   init(perturbSoln, perturbSize);
 }
 
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
-		const LOCA::TurningPoint::MooreSpence::ExtendedGroup& source, 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::ExtendedGroup(
+		const LOCA::Pitchfork::MooreSpence::ExtendedGroup& source, 
 		NOX::CopyType type)
   : globalData(source.globalData),
     parsedParams(source.parsedParams),
-    turningPointParams(source.turningPointParams),
-    grpPtr(Teuchos::rcp_dynamic_cast<LOCA::TurningPoint::MooreSpence::AbstractGroup>(source.grpPtr->clone(type))),
+    pitchforkParams(source.pitchforkParams),
+    grpPtr(Teuchos::rcp_dynamic_cast<LOCA::Pitchfork::MooreSpence::AbstractGroup>(source.grpPtr->clone(type))),
     xMultiVec(source.xMultiVec, type),
     fMultiVec(source.fMultiVec, type),
     newtonMultiVec(source.newtonMultiVec, type),
+    asymMultiVec(source.asymMultiVec->clone(type)),
     lengthMultiVec(source.lengthMultiVec->clone(type)),
     xVec(),
     fVec(),
     ffMultiVec(),
     dfdpMultiVec(),
     newtonVec(),
+    asymVec(),
     lengthVec(),
     solverStrategy(source.solverStrategy),
     index_f(1),
@@ -149,9 +162,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
 
   // Instantiate solver strategy
   solverStrategy = 
-    globalData->locaFactory->createMooreSpenceTurningPointSolverStrategy(
-						           parsedParams,
-						           turningPointParams);
+    globalData->locaFactory->createMooreSpencePitchforkSolverStrategy(
+						             parsedParams,
+							     pitchforkParams);
 
   // Set up multi-vector views
   setupViews();
@@ -163,12 +176,12 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
   }
 }
 
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::~ExtendedGroup() 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::~ExtendedGroup() 
 {
 }
 
 NOX::Abstract::Group&
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::operator=(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::operator=(
 					   const NOX::Abstract::Group& source)
 {
   copy(source);
@@ -176,20 +189,19 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::operator=(
 }
 
 Teuchos::RefCountPtr<NOX::Abstract::Group>
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::clone(
-						    NOX::CopyType type) const 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::clone(NOX::CopyType type) const 
 {
   return 
-    Teuchos::rcp(new LOCA::TurningPoint::MooreSpence::ExtendedGroup(*this, 
-								    type));
+    Teuchos::rcp(new LOCA::Pitchfork::MooreSpence::ExtendedGroup(*this, 
+								 type));
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::setX(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::setX(
 					      const NOX::Abstract::Vector& y) 
 {
-  const LOCA::TurningPoint::MooreSpence::ExtendedVector& yy = 
-    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedVector&>(y);
+  const LOCA::Pitchfork::MooreSpence::ExtendedVector& yy = 
+    dynamic_cast<const LOCA::Pitchfork::MooreSpence::ExtendedVector&>(y);
   grpPtr->setX( *yy.getXVec() );
   *xVec = y;
   setBifParam(xVec->getBifParam());
@@ -200,15 +212,15 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::setX(
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeX(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeX(
 					      const NOX::Abstract::Group& g, 
 					      const NOX::Abstract::Vector& d,
 					      double step) 
 {
-  const LOCA::TurningPoint::MooreSpence::ExtendedGroup& gg = 
-    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedGroup&>(g);
-  const LOCA::TurningPoint::MooreSpence::ExtendedVector& dd = 
-    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedVector&>(d);
+  const LOCA::Pitchfork::MooreSpence::ExtendedGroup& gg = 
+    dynamic_cast<const LOCA::Pitchfork::MooreSpence::ExtendedGroup&>(g);
+  const LOCA::Pitchfork::MooreSpence::ExtendedVector& dd = 
+    dynamic_cast<const LOCA::Pitchfork::MooreSpence::ExtendedVector&>(d);
 
   grpPtr->computeX(*(gg.grpPtr), *dd.getXVec(), step);
   xVec->update(1.0, gg.getX(), step, dd, 0.0);
@@ -220,31 +232,35 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeX(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeF() 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeF() 
 {
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
   string callingFunction = 
-    "LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeF()";
+    "LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeF()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
+
+  double sigma = xVec->getSlack();
 
   // Compute underlying F
   if (!grpPtr->isF()) {
     status = grpPtr->computeF();
     finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
-  *(fVec->getXVec()) = grpPtr->getF();
+  fVec->getXVec()->update(1.0, grpPtr->getF(), sigma, *asymVec, 0.0);
   
   // Compute underlying Jacobian
   if (!grpPtr->isJacobian()) {
     status = grpPtr->computeJacobian();
     finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
   }
 
   // Compute J*n
@@ -253,6 +269,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeF()
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
+
+  // Compute <x,psi>
+  fVec->getSlack() = grpPtr->innerProduct(*(xVec->getXVec()), *asymVec);
   
   // Compute phi^T*n
   fVec->getBifParam() = lTransNorm(*(xVec->getNullVec())) - 1.0;
@@ -263,23 +282,30 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeF()
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeJacobian() 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeJacobian() 
 {
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
 
   string callingFunction = 
-    "LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeJacobian()";
+    "LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeJacobian()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
   // Compute underlying df/dp (may invalidate underlying data)
+  // Note:  the first column of fMultiVec stores f + sigma*psi, not f,
+  // so we always need to recompute f.  This changes the first column
+  // of fMultiVec back to f
   status = grpPtr->computeDfDpMulti(bifParamID, 
 				    *fMultiVec.getXMultiVec(), 
-				    isValidF);
+				    false);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
+
+  // Change the first column back to f + sigma*psi
+  double sigma = xVec->getSlack();
+  fVec->getXVec()->update(sigma, *asymVec, 1.0);
 
   // Compute underlying dJn/dp (may invalidate underlying data)
   status = grpPtr->computeDJnDpMulti(bifParamID,
@@ -294,6 +320,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeJacobian()
   solverStrategy->setBlocks(
 		  grpPtr, 
 		  Teuchos::rcp(this, false),
+		  asymMultiVec,
 		  xVec->getNullVec(), 
 		  fVec->getNullVec(),
 		  fMultiVec.getColumn(1)->getXVec(), 
@@ -305,20 +332,20 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeJacobian()
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeGradient() 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeGradient() 
 {
   return NOX::Abstract::Group::NotDefined;
 }
    
 NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeNewton(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeNewton(
 						 NOX::Parameter::List& params) 
 {
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
 
   string callingFunction = 
-    "LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeNewton()";
+    "LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeNewton()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
@@ -357,7 +384,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeNewton(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobian(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobian(
 					  const NOX::Abstract::Vector& input,
 					  NOX::Abstract::Vector& result) const 
 {
@@ -378,7 +405,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobian(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTranspose(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianTranspose(
 					  const NOX::Abstract::Vector& input,
 					  NOX::Abstract::Vector& result) const 
 {
@@ -399,7 +426,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTranspose(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianInverse(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianInverse(
 					  NOX::Parameter::List& params, 
 					  const NOX::Abstract::Vector& input,
 					  NOX::Abstract::Vector& result) const 
@@ -421,12 +448,12 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianInverse(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {
   string callingFunction = 
-    "LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianMultiVector()";
+    "LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianMultiVector()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
@@ -435,27 +462,29 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
 				 "Called with invalid Jacobian!");
   }
 
-  // Cast vectors to TP vectors
-  const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& tp_input = 
-    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(input);
-  LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& tp_result = 
-    dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(result);
+  // Cast vectors to pitchfork vectors
+  const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& pf_input = 
+    dynamic_cast<const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector&>(input);
+  LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& pf_result = 
+    dynamic_cast<LOCA::Pitchfork::MooreSpence::ExtendedMultiVector&>(result);
 
   // Get constant references to input vector components
   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_x = 
-    tp_input.getXMultiVec();
+    pf_input.getXMultiVec();
   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_null = 
-    tp_input.getNullMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_param = 
-    tp_input.getScalars();
+    pf_input.getNullMultiVec();
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_slack = pf_input.getSlacks();
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_param = pf_input.getBifParams();
 
   // Get non-constant references to result vector components
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x = 
-    tp_result.getXMultiVec();
+    pf_result.getXMultiVec();
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_null = 
-    tp_result.getNullMultiVec();
+    pf_result.getNullMultiVec();
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_slack = 
+    pf_result.getSlacks();
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
-    tp_result.getScalars();
+    pf_result.getBifParams();
 
   // Temporary vector
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp = 
@@ -477,7 +506,11 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
 							   finalStatus,
 							   callingFunction);
 
-  // compute J*x + p*dR/dp
+  // compute J*x + psi*sigma
+  result_x->update(Teuchos::NO_TRANS, 1.0, *asymMultiVec, *input_slack);
+  
+
+  // compute J*x + psi*sigma + (dR/dp)*p
   result_x->update(Teuchos::NO_TRANS, 1.0, *(dfdpMultiVec->getXMultiVec()), 
 		   *input_param);
 
@@ -487,7 +520,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
 
-  // compute J*y + p*dJy/dp
+  // compute J*y + (dJy/dp)*p
   result_null->update(Teuchos::NO_TRANS, 1.0, 
 		      *(dfdpMultiVec->getNullMultiVec()), 
 		      *input_param);
@@ -503,6 +536,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
   // compute (dJy/dx)*x + J*y + p*dJy/dp
   result_null->update(1.0, *tmp, 1.0);
 
+  // compute <x,psi>
+  grpPtr->innerProduct(*asymMultiVec, *input_x, *result_slack);
+
   // compute l^T*y
   lTransNorm(*input_null, *result_param);
 
@@ -510,96 +546,98 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTransposeMultiVector(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianTransposeMultiVector(
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {
   globalData->locaErrorCheck->throwError(
-		  "LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTransposeMultiVector()",
+		  "LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianTransposeMultiVector()",
 		  "Method not implemented!");
 
   return NOX::Abstract::Group::NotDefined;
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianInverseMultiVector( 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianInverseMultiVector( 
 				     NOX::Parameter::List& params, 	
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {
   // Cast vectors to TP vectors
-  const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& tp_input = 
-    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(input);
-  LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& tp_result = 
-    dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(result);
+  const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& pf_input = 
+    dynamic_cast<const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector&>(input);
+  LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& pf_result = 
+    dynamic_cast<LOCA::Pitchfork::MooreSpence::ExtendedMultiVector&>(result);
   
-  return solverStrategy->solve(params, tp_input, tp_result, false);
+  NOX::Abstract::Group::ReturnType res = solverStrategy->solve(params, pf_input, pf_result, false);
+
+  return res;
 }
 
 bool
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::isF() const 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::isF() const 
 {
   return isValidF;
 }
 
 bool
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::isJacobian() const 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::isJacobian() const 
 {
   return isValidJacobian;
 }
 
 bool
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::isGradient() const 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::isGradient() const 
 {
   return false;
 }
 
 bool
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::isNewton() const 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::isNewton() const 
 {
   return isValidNewton;
 }
   
 const NOX::Abstract::Vector&
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getX() const 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getX() const 
 {
   return *xVec;
 }
 
 const NOX::Abstract::Vector&
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getF() const 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getF() const 
 {
   return *fVec;
 }
 
 double
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getNormF() const 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getNormF() const 
 {
   return fVec->norm();
 }
 
 const NOX::Abstract::Vector&
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getGradient() const 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getGradient() const 
 {
   globalData->locaErrorCheck->throwError(
-	      "LOCA::TurningPoint::MooreSpence::ExtendedGroup::getGradient()",
+	      "LOCA::Pitchfork::MooreSpence::ExtendedGroup::getGradient()",
 	      " - not implemented");
   return getNewton();
 }
 
 const NOX::Abstract::Vector&
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getNewton() const 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getNewton() const 
 {
   return *newtonVec;
 }
 
 double
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual() const 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual() const 
 {
   string callingFunction = 
-    "LOCA::TurningPoint::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual()";
+    "LOCA::Pitchfork::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual()";
   NOX::Abstract::Group::ReturnType finalStatus;
-  LOCA::TurningPoint::MooreSpence::ExtendedVector residual = *fVec;
+  LOCA::Pitchfork::MooreSpence::ExtendedVector residual = *fVec;
   
   finalStatus = applyJacobian(*newtonVec, residual);
   globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
@@ -609,23 +647,23 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual() con
 }
 
 Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getUnderlyingGroup() const
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getUnderlyingGroup() const
 {
   return grpPtr;
 }
 
 Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getUnderlyingGroup()
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getUnderlyingGroup()
 {
   return grpPtr;
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::copy(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::copy(
 					    const NOX::Abstract::Group& src)
 {
-  const LOCA::TurningPoint::MooreSpence::ExtendedGroup& source = 
-    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedGroup&>(src);
+  const LOCA::Pitchfork::MooreSpence::ExtendedGroup& source = 
+    dynamic_cast<const LOCA::Pitchfork::MooreSpence::ExtendedGroup&>(src);
 
   // Protect against A = A
   if (this != &source) {
@@ -633,11 +671,12 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::copy(
     // Copy values
     globalData = source.globalData;
     parsedParams = source.parsedParams;
-    turningPointParams = source.turningPointParams;
+    pitchforkParams = source.pitchforkParams;
     grpPtr->copy(*(source.grpPtr));
     xMultiVec = source.xMultiVec;
     fMultiVec = source.fMultiVec;
     newtonMultiVec = source.newtonMultiVec;
+    *asymMultiVec = *source.asymMultiVec;
     *lengthMultiVec = *source.lengthMultiVec;
     index_f = source.index_f;
     index_dfdp = source.index_dfdp;
@@ -651,14 +690,14 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::copy(
 
     // Instantiate solver strategy
     solverStrategy = 
-      globalData->locaFactory->createMooreSpenceTurningPointSolverStrategy(
-				                           parsedParams,
-				                           turningPointParams);
+      globalData->locaFactory->createMooreSpencePitchforkSolverStrategy(
+							     parsedParams,
+				                             pitchforkParams);
   }
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParamsMulti(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParamsMulti(
 			  const vector<int>& paramIDs, 
 			  const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
@@ -670,63 +709,75 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParamsMulti(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeDfDpMulti(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeDfDpMulti(
 					    const vector<int>& paramIDs, 
 					    NOX::Abstract::MultiVector& dfdp, 
 					    bool isValid_F)
 {
    string callingFunction = 
-    "LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeDfDpMulti()";
+    "LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeDfDpMulti()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
-  // Cast dfdp to TP vector
-  LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& tp_dfdp = 
-    dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(dfdp);
+  // Cast dfdp to pitchfork vector
+  LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& pf_dfdp = 
+    dynamic_cast<LOCA::Pitchfork::MooreSpence::ExtendedMultiVector&>(dfdp);
 
   // Compute df/dp
-  status = grpPtr->computeDfDpMulti(paramIDs, *tp_dfdp.getXMultiVec(),
-				    isValid_F);
+  // Note:  the first column of fMultiVec stores f + sigma*psi, not f,
+  // so we always need to recompute f.  This changes the first column
+  // of fMultiVec back to f
+  status = grpPtr->computeDfDpMulti(paramIDs, *pf_dfdp.getXMultiVec(),
+				    false);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
 
+  // Change the first column back to f + sigma*psi
+  double sigma = xVec->getSlack();
+  pf_dfdp.getColumn(0)->getXVec()->update(sigma, *asymVec, 1.0);
+
   // Compute d(Jn)/dp
   status = grpPtr->computeDJnDpMulti(paramIDs, *(xVec->getNullVec()),
-				     *tp_dfdp.getNullMultiVec(), isValid_F);
+				     *pf_dfdp.getNullMultiVec(), isValid_F);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
 
   // Set parameter components
-  if (!isValid_F)
-    tp_dfdp.getScalar(0,0) = lTransNorm(*(xVec->getNullVec()));
-  for (int i=0; i<dfdp.numVectors()-1; i++)
-    tp_dfdp.getScalar(0,i+1) = 0.0;
+  if (!isValid_F) {
+    pf_dfdp.getScalar(0,0) = grpPtr->innerProduct(*(xVec->getXVec()), 
+						  *asymVec);
+    pf_dfdp.getScalar(1,0) = lTransNorm(*(xVec->getNullVec()));
+  }
+  for (int i=0; i<dfdp.numVectors()-1; i++) {
+    pf_dfdp.getScalar(0,i+1) = 0.0;
+    pf_dfdp.getScalar(1,i+1) = 0.0;
+  }
 
   return finalStatus;
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::projectToDraw(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::projectToDraw(
 					       const NOX::Abstract::Vector& x,
 					       double *px) const
 {
-  const LOCA::TurningPoint::MooreSpence::ExtendedVector& mx = 
-    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedVector&>(x);
+  const LOCA::Pitchfork::MooreSpence::ExtendedVector& mx = 
+    dynamic_cast<const LOCA::Pitchfork::MooreSpence::ExtendedVector&>(x);
 
   grpPtr->projectToDraw(*(mx.getXVec()), px);
   px[grpPtr->projectToDrawDimension()] = mx.getBifParam();
 }
 
 int
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::projectToDrawDimension() const
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::projectToDrawDimension() const
 {
   return grpPtr->projectToDrawDimension() + 1;
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParams(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParams(
 					      const LOCA::ParameterVector& p) 
 {
   isValidF = false;
@@ -738,14 +789,14 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParams(
 }
 
 const LOCA::ParameterVector&
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getParams() const 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getParams() const 
 {
   return grpPtr->getParams();
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParam(int paramID, 
-							 double val)
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParam(int paramID, 
+						      double val)
 {
   if (paramID == bifParamID[0])
     setBifParam(val);
@@ -754,14 +805,14 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParam(int paramID,
 }
 
 double
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getParam(int paramID) const
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getParam(int paramID) const
 {
   return grpPtr->getParam(paramID);
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParam(string paramID, 
-							 double val)
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParam(string paramID, 
+						      double val)
 {
   const LOCA::ParameterVector& pVec = grpPtr->getParams();
   if (pVec.getIndex(paramID) == bifParamID[0])
@@ -771,22 +822,26 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParam(string paramID,
 }
 
 double
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getParam(string paramID) const
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getParam(string paramID) const
 {
   return grpPtr->getParam(paramID);
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::printSolution(
 						  const double conParam) const 
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
     globalData->locaUtils->out() << 
-      "LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution\n";
+      "LOCA::Pitchfork::MooreSpence::ExtendedGroup::printSolution\n";
 
-    globalData->locaUtils->out() << "Turning Point located at: " << 
+    globalData->locaUtils->out() << "Pitchfork located at: " << 
       globalData->locaUtils->sciformat(conParam) << "   " << 
       globalData->locaUtils->sciformat(getBifParam()) << std::endl;
+
+    globalData->locaUtils->out() << 
+      "\tSlack variable sigma = " << 
+      globalData->locaUtils->sciformat(xVec->getSlack()) << std::endl;
 
     globalData->locaUtils->out() << 
       "\tPrinting Solution Vector for conParam = " << 
@@ -802,49 +857,53 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution(
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::printSolution(
 					     const NOX::Abstract::Vector& x_,
 					     const double conParam) const 
 {
-  const LOCA::TurningPoint::MooreSpence::ExtendedVector& tp_x = 
-    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedVector&>(x_);
+  const LOCA::Pitchfork::MooreSpence::ExtendedVector& pf_x = 
+    dynamic_cast<const LOCA::Pitchfork::MooreSpence::ExtendedVector&>(x_);
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
     globalData->locaUtils->out() << 
-      "LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution\n";
+      "LOCA::Pitchfork::MooreSpence::ExtendedGroup::printSolution\n";
 
-    globalData->locaUtils->out() << "Turning Point located at: " << 
+    globalData->locaUtils->out() << "Pitchfork located at: " << 
       globalData->locaUtils->sciformat(conParam) << "   " << 
-      globalData->locaUtils->sciformat(tp_x.getBifParam()) << std::endl;
+      globalData->locaUtils->sciformat(pf_x.getBifParam()) << std::endl;
 
-     globalData->locaUtils->out() << 
-       "\tPrinting Solution Vector for conParam = " << 
-       globalData->locaUtils->sciformat(conParam) << std::endl;
+    globalData->locaUtils->out() << 
+      "\tSlack variable sigma = " << 
+      globalData->locaUtils->sciformat(pf_x.getSlack()) << std::endl;
+
+    globalData->locaUtils->out() << 
+      "\tPrinting Solution Vector for conParam = " << 
+      globalData->locaUtils->sciformat(conParam) << std::endl;
   }
-  grpPtr->printSolution(*tp_x.getXVec(), conParam);
+  grpPtr->printSolution(*pf_x.getXVec(), conParam);
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
     globalData->locaUtils->out() << 
       "\tPrinting Null Vector for bif param = " << 
-      globalData->locaUtils->sciformat(tp_x.getBifParam()) << std::endl;
+      globalData->locaUtils->sciformat(pf_x.getBifParam()) << std::endl;
   }
-  grpPtr->printSolution(*tp_x.getNullVec(), tp_x.getBifParam());
+  grpPtr->printSolution(*pf_x.getNullVec(), pf_x.getBifParam());
 }
 
 double
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getBifParam() const 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getBifParam() const 
 {
   return grpPtr->getParam(bifParamID[0]);
 }
 
 double
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::lTransNorm(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::lTransNorm(
 					const NOX::Abstract::Vector& n) const
 {
   return lengthVec->innerProduct(n) / lengthVec->length();
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::lTransNorm(
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::lTransNorm(
 			const NOX::Abstract::MultiVector& n,
 			NOX::Abstract::MultiVector::DenseMatrix& result) const
 {
@@ -852,7 +911,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::lTransNorm(
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::setBifParam(double param) 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::setBifParam(double param) 
 {
   grpPtr->setParam(bifParamID[0], param);
   xVec->getBifParam() = param;
@@ -863,7 +922,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::setBifParam(double param)
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::setupViews()
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::setupViews()
 {
   index_f[0] = 0;
   index_dfdp[0] = 1;
@@ -871,17 +930,18 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::setupViews()
   xVec = xMultiVec.getColumn(0);
   fVec = fMultiVec.getColumn(0);
   newtonVec = newtonMultiVec.getColumn(0);
+  asymVec = Teuchos::rcp(&(*asymMultiVec)[0], false);
   lengthVec = Teuchos::rcp(&(*lengthMultiVec)[0],false);
 
-  ffMultiVec = Teuchos::rcp_dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector>(fMultiVec.subView(index_f),true);
+  ffMultiVec = Teuchos::rcp_dynamic_cast<LOCA::Pitchfork::MooreSpence::ExtendedMultiVector>(fMultiVec.subView(index_f),true);
 
-  dfdpMultiVec = Teuchos::rcp_dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector>(fMultiVec.subView(index_dfdp),true);
+  dfdpMultiVec = Teuchos::rcp_dynamic_cast<LOCA::Pitchfork::MooreSpence::ExtendedMultiVector>(fMultiVec.subView(index_dfdp),true);
 
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(bool perturbSoln, 
-						     double perturbSize)
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::init(bool perturbSoln, 
+						  double perturbSize)
 {
   xVec->getBifParam() = getBifParam();
 
@@ -890,21 +950,31 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(bool perturbSoln,
 
   if (lVecDotNullVec == 0.0) {
     globalData->locaErrorCheck->throwError(
-		   "LOCA::TurningPoint::MooreSpence::ExtendedGroup::init()",
+		   "LOCA::Pitchfork::MooreSpence::ExtendedGroup::init()",
 		   "null vector can be orthogonal to length-scaling vector");
   }
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
     globalData->locaUtils->out() << 
-      "\tIn LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(), " << 
+      "\tIn LOCA::Pitchfork::MooreSpence::ExtendedGroup::init(), " << 
       "scaling null vector by:" << 
       globalData->locaUtils->sciformat(1.0 / lVecDotNullVec) << std::endl;
   }
   xVec->getNullVec()->scale(1.0/lVecDotNullVec);
 
+  // Rescale asymmetric vector to have unit length
+  double psi_norm = sqrt( grpPtr->innerProduct(*asymVec, *asymVec) );
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "\tIn LOCA::Pitchfork::MooreSpence::ExtendedGroup::init(), " << 
+      "scaling asymmetric vector by:" <<
+      globalData->locaUtils->sciformat(1.0 / psi_norm) << std::endl;
+  }
+  asymVec->scale(1.0 / psi_norm);
+
   if (perturbSoln) {
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
      globalData->locaUtils->out() << 
-       "\tIn LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(), " << 
+       "\tIn LOCA::Pitchfork::MooreSpence::ExtendedGroup::init(), " << 
        "applying random perturbation to initial solution of size: " << 
        globalData->locaUtils->sciformat(perturbSize) << endl;
     }

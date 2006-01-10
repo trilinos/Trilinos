@@ -129,11 +129,21 @@ LOCA::Abstract::Factory::createAnasaziOperatorStrategy(
 }
 
 bool
-LOCA::Abstract::Factory::createMooreSpenceSolverStrategy(
+LOCA::Abstract::Factory::createMooreSpenceTurningPointSolverStrategy(
        const string& strategyName,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
        Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>& strategy)
+{
+  return false;
+}
+
+bool
+LOCA::Abstract::Factory::createMooreSpencePitchforkSolverStrategy(
+       const string& strategyName,
+       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+       Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy>& strategy)
 {
   return false;
 }

@@ -50,7 +50,8 @@ LOCA::Factory::Factory(
   eigenvalueSortFactory(global_data),
   saveEigenFactory(global_data),
   anasaziOperatorFactory(global_data),
-  mooreSpenceSolverFactory(global_data)
+  mooreSpenceTurningPointSolverFactory(global_data),
+  mooreSpencePitchforkSolverFactory(global_data)
 {
   // Set the factory member of the global data
   globalData->locaFactory = Teuchos::rcp(this, false);
@@ -71,7 +72,8 @@ LOCA::Factory::Factory(
   eigenvalueSortFactory(global_data),
   saveEigenFactory(global_data),
   anasaziOperatorFactory(global_data),
-  mooreSpenceSolverFactory(global_data)
+  mooreSpenceTurningPointSolverFactory(global_data),
+  mooreSpencePitchforkSolverFactory(global_data)
 {
   // Initialize user-defined factory
   factory->init(globalData);
@@ -330,27 +332,59 @@ LOCA::Factory::createAnasaziOperatorStrategy(
 }
 
 Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>
-LOCA::Factory::createMooreSpenceSolverStrategy(
+LOCA::Factory::createMooreSpenceTurningPointSolverStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams)
 {
-  string methodName = "LOCA::Factory::createMooreSpenceSolverStrategy()";
+  string methodName = 
+    "LOCA::Factory::createMooreSpenceTurningPointSolverStrategy()";
   Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
     const string& strategyName = 
-      mooreSpenceSolverFactory.strategyName(*solverParams);
-    bool created = factory->createMooreSpenceSolverStrategy(strategyName,
-							    topParams,
-							    solverParams,
-							    strategy);
+      mooreSpenceTurningPointSolverFactory.strategyName(*solverParams);
+    bool created = 
+      factory->createMooreSpenceTurningPointSolverStrategy(strategyName,
+							   topParams,
+							   solverParams,
+							   strategy);
     if (created)
       return strategy;
   }
 
-  strategy = mooreSpenceSolverFactory.create(topParams, solverParams);
+  strategy = mooreSpenceTurningPointSolverFactory.create(topParams, 
+							 solverParams);
+
+  return strategy;
+}
+
+Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy>
+LOCA::Factory::createMooreSpencePitchforkSolverStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams)
+{
+  string methodName = 
+    "LOCA::Factory::createMooreSpencePitchforkSolverStrategy()";
+  Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy> strategy;
+
+  // If we have a user-provided factory, first try creating the strategy
+  // using it
+  if (haveFactory) {
+    const string& strategyName = 
+      mooreSpencePitchforkSolverFactory.strategyName(*solverParams);
+    bool created = 
+      factory->createMooreSpencePitchforkSolverStrategy(strategyName,
+							topParams,
+							solverParams,
+							strategy);
+    if (created)
+      return strategy;
+  }
+
+  strategy = mooreSpencePitchforkSolverFactory.create(topParams, 
+						      solverParams);
 
   return strategy;
 }

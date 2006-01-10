@@ -30,15 +30,15 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_TURNINGPOINT_MOORESPENCE_EXTENDEDGROUP_H
-#define LOCA_TURNINGPOINT_MOORESPENCE_EXTENDEDGROUP_H
+#ifndef LOCA_PITCHFORK_MOORESPENCE_EXTENDEDGROUP_H
+#define LOCA_PITCHFORK_MOORESPENCE_EXTENDEDGROUP_H
 
 #include "Teuchos_RefCountPtr.hpp"
 
 #include "LOCA_MultiContinuation_AbstractGroup.H"         // base class
 #include "LOCA_Extended_MultiAbstractGroup.H"             // base class
-#include "LOCA_TurningPoint_MooreSpence_ExtendedVector.H" // class data element
-#include "LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.H" // class data element
+#include "LOCA_Pitchfork_MooreSpence_ExtendedVector.H" // class data element
+#include "LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.H" // class data element
 
 namespace LOCA {
   class ParameterVector;
@@ -47,7 +47,7 @@ namespace LOCA {
     class SublistParser;
   }
 
-  namespace TurningPoint {
+  namespace Pitchfork {
     namespace MooreSpence {
       class AbstractGroup;
       class SolverStrategy;
@@ -56,68 +56,76 @@ namespace LOCA {
 }
 namespace LOCA { 
 
-  namespace TurningPoint { 
+  namespace Pitchfork { 
     
     namespace MooreSpence {
 
       /*! 
-       * A group representing the Moore-Spence turning point equations. 
+       * A group representing the Moore-Spence pitchfork equations. 
        */
       /*!
-       The LOCA::TurningPoint::MooreSpence::ExtendedGroup is a concrete 
-       implementation of 
-       the NOX::Abstract::Group, LOCA::MultiContinuation::AbstractGroup and 
-       LOCA::Extended::MultiAbstractGroup that defines the following extended 
-       set of equations that are regular at a generic turning point:
-	  \f[
-	      G(z) = \left[
-	      \begin{array}{c}
-	         F(x,p) \\
-	         Jn \\
-	         l^Tn-1
-	      \end{array}
-	      \right] = 0
-	   \f]
-       where \f$z = [x, n, p]\in\Re^{2n+1}\f$, \f$x\f$ is the solution vector,
-       \f$n\f$ is the null vector, \f$l\f$ is the length normalization vector
-       and \f$J\f$ is the Jacobian of F.
-
-       The group stores an underlying group of type 
-       LOCA::TurningPoint::MooreSpence AbstractGroup to represent the equations
-       \f$F(x,p) = 0\f$ and to manipulate the underlying Jacobian \f$J\f$.
-       Note that the entire extended Jacobian \f$D_z G\f$ is not stored in
-       memory, rather a block-elimination algorithm (bordering algorithm) is
-       used to compute linear solves of the extended Jacobian (see 
-       LOCA::TurningPoint::MooreSpence::SolverFactory() for more details).
-
-       This class implements all of the NOX::Abstract::Group, 
-       LOCA::MultiContinuation::AbstractGroup, and 
-       LOCA::Extended::MultiAbstractGroup 
-       methods for this extended set of equations and therefore is a complete
-       group which can be passed to most %NOX solvers to locate a single 
-       turning point or to the LOCA::NewStepper to compute a family of turning 
-       points in a second parameter.
-
-       However, Jacobian-tranpose operations and gradient calculations cannot 
-       be implemented efficiently and therefore gradient-base nonlinear solvers
-       such as steepest descent and Trust region methods cannot be used to 
-       solve the extended turning point equations.
-
-       The class is intialized via the \c tpParams parameter list argument to 
-       the constructor.  The parameters this class recognizes are:
-       <ul>
-       <li> "Bifurcation Parameter" -- [string] (Must be supplied) Name of the bifurcation parameter \f$p\f$
-       <li> "Length Normalization Vector" -- 
-            [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) 
-            Vector storing length normalization vector \f$l\f$
-       <li> "Initial Null Vector"  -- 
-            [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) - 
-            Vector storing initial guess for the null vector \f$n\f$
-       <li> "Perturb Initial Solution" -- [bool] (default: false) Flag 
-            indicating whether to perturb the initial solution
-       <li> "Relative Perturbation Size" -- [double] (default: 1.0e-3) 
-            Relative perturbation size if perturbing the initial solution
-       </ul>
+       * The LOCA::Pitchfork::MooreSpence::ExtendedGroup is a concrete 
+       * implementation of 
+       * the NOX::Abstract::Group, LOCA::MultiContinuation::AbstractGroup and 
+       * LOCA::Extended::MultiAbstractGroup that defines the following 
+       * extended 
+       * set of equations that are regular at a generic pitchfork bifurcation:
+       * \f[
+       *     G(z) = \left[
+       *     \begin{array}{c}
+       *         F(x,p)+\sigma\psi \\
+       *         Jn \\
+       *         \langle x, \psi\rangle \\
+       *         l^Tn-1
+       *     \end{array}
+       *     \right] = 0
+       * \f]
+       * where \f$z = [x, n, \sigma, p]\in\Re^{2n+2}\f$, 
+       * \f$x\f$ is the solution vector, \f$n\f$ is the null vector, 
+       * \f$\psi\f$ is the antisymmetric vector, \f$\sigma\f$ is the slack
+       * variables representing the asymmetry in the problem, \f$l\f$ is the 
+       * length normalization vector and \f$J\f$ is the Jacobian of F.
+       * 
+       * The group stores an underlying group of type 
+       * LOCA::Pitchfork::MooreSpence AbstractGroup to represent the equations
+       * \f$F(x,p) = 0\f$ and to manipulate the underlying Jacobian \f$J\f$.
+       * Note that the entire extended Jacobian \f$D_z G\f$ is not stored in
+       * memory, rather a block-elimination algorithm (bordering algorithm) is
+       * used to compute linear solves of the extended Jacobian (see 
+       * LOCA::Pitchfork::MooreSpence::SolverFactory() for more details).
+       * 
+       * This class implements all of the NOX::Abstract::Group, 
+       * LOCA::MultiContinuation::AbstractGroup, and 
+       * LOCA::Extended::MultiAbstractGroup 
+       * methods for this extended set of equations and therefore is a complete
+       * group which can be passed to most %NOX solvers to locate a single 
+       * turning point or to the LOCA::NewStepper to compute a family of 
+       * pitchforks in a second parameter.
+       * 
+       * However, Jacobian-tranpose operations and gradient calculations 
+       * cannot be implemented efficiently and therefore gradient-base 
+       * nonlinear solvers such as steepest descent and Trust region methods 
+       * cannot be used to solve the extended pitchfork equations.
+       *
+       * The class is intialized via the \c pfParams parameter list argument 
+       * to the constructor.  The parameters this class recognizes are:
+       * <ul>
+       * <li> "Bifurcation Parameter" -- [string] (Must be supplied) Name of 
+       *      the bifurcation parameter \f$p\f$
+       * <li> "Length Normalization Vector" -- 
+       *      [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) 
+       *      Vector storing length normalization vector \f$l\f$
+       * <li> "Initial Null Vector"  -- 
+       *      [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) 
+       *      Vector storing initial guess for the null vector \f$n\f$
+       * <li> "Antisymmetric Vector"  -- 
+       *      [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) 
+       *      Vector storing antisymmetric vector \f$\psi\f$
+       * <li> "Perturb Initial Solution" -- [bool] (default: false) Flag 
+       *      indicating whether to perturb the initial solution
+       * <li> "Relative Perturbation Size" -- [double] (default: 1.0e-3) 
+       *      Relative perturbation size if perturbing the initial solution
+       * </ul>
        */
 
       class ExtendedGroup 
@@ -132,8 +140,8 @@ namespace LOCA {
 	ExtendedGroup(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
          const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& tpParams,
-	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::AbstractGroup>& g);
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& pfParams,
+	 const Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::AbstractGroup>& g);
 
 	//! Copy constructor.
 	ExtendedGroup(const ExtendedGroup& source, 
@@ -163,41 +171,46 @@ namespace LOCA {
 			      const NOX::Abstract::Vector& d,
 			      double step);
 
-	//! Compute the turning point equation residual \f$G\f$.
+	//! Compute the pitchfork equation residual \f$G\f$.
 	/*!
-	  This method fills the extended residual
-	  \f[
-	      G(z) = \left[
-	      \begin{array}{c}
-	         F(x,p) \\
-	         Jn \\
-	         l^Tn-1
-	      \end{array}
-	      \right].
-	  \f]
-	  The solution component residual \f$F(x,p)\f$ and the null-vector 
-	  residual \f$Jn\f$ are calculated via the computeF and applyJacobian 
-	  methods of the underlying group.
-	*/
+	 * This method fills the extended residual
+	 * \f[
+	 *     G(z) = \left[
+	 *     \begin{array}{c}
+	 *         F(x,p)+\sigma\psi \\
+	 *         Jn \\
+	 *         \langle x, \psi\rangle \\
+	 *         l^Tn-1
+	 *     \end{array}
+	 *     \right] = 0
+	 * \f]
+	 * The solution component residual \f$F(x,p)\f$ and the null-vector 
+	 * residual \f$Jn\f$ are calculated via the computeF and applyJacobian 
+	 * methods of the underlying group.  The symmetry residual, 
+	 * \f$\langle x, \psi\rangle\f$ is computed via the innerProduct()
+	 * method of the underlying group.
+	 */
 	virtual NOX::Abstract::Group::ReturnType computeF();
 
 	//! Compute the blocks of the Jacobian derivative of \f$G\f$
 	/*!
-	  This method computes the \f$J\f$, \f$\partial F/\partial p\f$, and
-	  \f$\partial Jn/\partial p\f$ blocks of the extended Jacobian:
-	  \f[
-	      D_z G(z) = 
-	      \begin{bmatrix}
-	         J & 0 & \frac{\partial F}{\partial p} \\
-		 \frac{\partial Jn}{\partial x} & J & \frac{\partial Jn}{\partial p} \\
-		 0 & l^T & 0
-	      \end{bmatrix}
-	  \f]
-	  by calling the computeJacobian, computeDfDp, and computeDJnDp
-	  methods of the underlying group.  The second derivative matrix
-	  \f$\partial Jn/\partial x\f$ is not calculated since only its
-	  action on vectors is needed for linear solves using the bordering
-	  algorithm.
+	 * This method computes the \f$J\f$, \f$\partial F/\partial p\f$, and
+	 * \f$\partial Jn/\partial p\f$ blocks of the extended Jacobian:
+	 * \f[
+	 *     D_z G(z) = 
+	 *     \begin{bmatrix}
+	 *        J & 0 & \psi & \frac{\partial F}{\partial p} \\
+	 *        \frac{\partial Jn}{\partial x} & J & 0 & 
+	 *           \frac{\partial Jn}{\partial p} \\
+	 *        \psi^T & 0 & 0 & 0 \\
+	 *        0 & l^T & 0 & 0
+	 *     \end{bmatrix}
+	 * \f]
+	 * by calling the computeJacobian, computeDfDp, and computeDJnDp
+	 * methods of the underlying group.  The second derivative matrix
+	 * \f$\partial Jn/\partial x\f$ is not calculated since only its
+	 * action on vectors is needed for linear solves using the bordering
+	 * algorithms.
 	*/
 	virtual NOX::Abstract::Group::ReturnType computeJacobian();
 
@@ -210,31 +223,36 @@ namespace LOCA {
   
 	//! Computes the extended Jacobian vector product
 	/*! 
-	  This method computes the extended Jacobian vector product
-	  \f[
-	      \begin{bmatrix}
-	         J & 0 & \frac{\partial F}{\partial p} \\
-		 \frac{\partial Jn}{\partial x} & J & \frac{\partial Jn}{\partial p} \\
-		 0 & l^T & 0
-	      \end{bmatrix}
-	      \begin{bmatrix}
-	         a \\
-		 b \\
-		 c
-	      \end{bmatrix}
-	      = 
-	      \begin{bmatrix}
-	         Ja + \frac{\partial F}{\partial p}c \\
-		 \frac{\partial Jn}{\partial x}a + Jb + \frac{\partial Jn}{\partial p}c \\
-		 l^T b
-	      \end{bmatrix}
-	  \f]
-	  using the applyJacobian and computeDJnDxa methods of the underlying
-	  group where \f$a\f$, \f$b\f$, and \f$c\f$ are the solution, 
-	  null-vector, and paramter components of the given vector \em input.
-	  Vectors \em input and \em result must be of type 
-	  LOCA::TurningPoint::MooreSpence::ExtendedVector, otherwise an error 
-	  is thrown.
+	 * This method computes the extended Jacobian vector product
+	 * \f[
+	 *     \begin{bmatrix}
+	 *        J & 0 & \psi & \frac{\partial F}{\partial p} \\
+	 *        \frac{\partial Jn}{\partial x} & J & 0 & 
+	 *           \frac{\partial Jn}{\partial p} \\
+	 *        \psi^T & 0 & 0 & 0 \\
+	 *        0 & l^T & 0 & 0
+	 *     \end{bmatrix}
+	 *     \begin{bmatrix}
+	 *        a \\
+	 *	  b \\
+	 *	  c \\
+	 *        d
+	 *     \end{bmatrix}
+	 *      = 
+	 *     \begin{bmatrix}
+	 *        Ja + \psi c + \frac{\partial F}{\partial p}d \\
+	 *        \frac{\partial Jn}{\partial x}a + Jb + 
+	 *            \frac{\partial Jn}{\partial p}d \\
+	 *        \langle a, \psi\rangle \\
+	 *        l^T b
+	 *     \end{bmatrix}
+	 * \f]
+	 * using the applyJacobian, computeDJnDxa, and innerProdut methods of 
+	 * the underlying group where \f$a\f$, \f$b\f$, \f$c\f$, \f$d\f$ are 
+	 * the solution, null-vector, slack, and paramter components of the 
+	 * given vector \em input. Vectors \em input and \em result must be 
+	 * of type LOCA::Pitchfork::MooreSpence::ExtendedVector, otherwise an 
+	 * error is thrown.
 	*/
 	virtual NOX::Abstract::Group::ReturnType 
 	applyJacobian(const NOX::Abstract::Vector& input, 
@@ -271,8 +289,8 @@ namespace LOCA {
 
 	//! Applies Jacobian inverse for extended system
 	/*!
-	 * Uses a LOCA::TurningPoint::MooreSpence::SolverStrategy instantiated
-	 * by the LOCA::TurningPoint::MooreSpence::SolverFactory to 
+	 * Uses a LOCA::Pitchfork::MooreSpence::SolverStrategy instantiated
+	 * by the LOCA::Pitchfork::MooreSpence::SolverFactory to 
 	 * implement the solve.
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
@@ -442,43 +460,49 @@ namespace LOCA {
 	Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
 
 	//! Bifurcation parameter list
-	Teuchos::RefCountPtr<NOX::Parameter::List> turningPointParams;
+	Teuchos::RefCountPtr<NOX::Parameter::List> pitchforkParams;
 
 	//! Pointer to base group that defines \f$F\f$
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::AbstractGroup> grpPtr;
+	Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::AbstractGroup> grpPtr;
 
 	//! Stores the extended solution vector and J^-1 df/dp
-	LOCA::TurningPoint::MooreSpence::ExtendedMultiVector xMultiVec;
+	LOCA::Pitchfork::MooreSpence::ExtendedMultiVector xMultiVec;
 	
 	//! Stores the extended residual vector and df/dp
-	LOCA::TurningPoint::MooreSpence::ExtendedMultiVector fMultiVec;
+	LOCA::Pitchfork::MooreSpence::ExtendedMultiVector fMultiVec;
 	
 	//! Stores the extended Newton vector
-	LOCA::TurningPoint::MooreSpence::ExtendedMultiVector newtonMultiVec;
+	LOCA::Pitchfork::MooreSpence::ExtendedMultiVector newtonMultiVec;
+
+	//! Stores the asymmetric vector
+	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> asymMultiVec;
 
 	//! Stores the length normalization vector
 	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> lengthMultiVec;
 	
 	//! Stores view of first column of xMultiVec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedVector> xVec;
+	Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::ExtendedVector> xVec;
 	
 	//! Stores view of first column of fMultiVec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedVector> fVec;
+	Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::ExtendedVector> fVec;
 	
 	//! Stores view of first column of fMultiVec as a multivec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector> ffMultiVec;
+	Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::ExtendedMultiVector> ffMultiVec;
 
 	//! Stores view of df/dp columns of fMultiVec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector> dfdpMultiVec;
+	Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::ExtendedMultiVector> dfdpMultiVec;
 
 	//! Stores view of first column of newtonMultiVec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedVector> newtonVec;
+	Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::ExtendedVector> newtonVec;
+
+	//! Stores view of first column of asymMultiVec
+	Teuchos::RefCountPtr<NOX::Abstract::Vector> asymVec;
 
 	//! Stores view of first column of lengthMultiVec
 	Teuchos::RefCountPtr<NOX::Abstract::Vector> lengthVec;
 
 	//! Stores bordering strategy
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy> solverStrategy;
+	Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy> solverStrategy;
 
 	//! Stores indices for getting f part of fMultiVec
 	vector<int> index_f;
@@ -502,7 +526,7 @@ namespace LOCA {
 
     } // namespace MooreSpence
 
-  } // namespace TurningPoint
+  } // namespace Pitchfork
 
 } // namespace LOCA
 

@@ -47,6 +47,7 @@
 #include "LOCA_SaveEigenData_Factory.H"
 #include "LOCA_AnasaziOperator_Factory.H"
 #include "LOCA_TurningPoint_MooreSpence_SolverFactory.H"
+#include "LOCA_Pitchfork_MooreSpence_SolverFactory.H"
 
 // Forward declarations
 namespace NOX {
@@ -229,7 +230,19 @@ namespace LOCA {
      * available strategies.
      */
     Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>
-    createMooreSpenceSolverStrategy(
+    createMooreSpenceTurningPointSolverStrategy(
+	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+
+    //! Create Moore-Spence pitchfork solver strategy
+    /*!
+     * Instantiates a solver strategy based on the 
+     * "Solver Method" parameter of the "Bifurcation" sublist.  See
+     * LOCA::Pitchfork::MooreSpence::SolverFactory for a description of 
+     * available strategies.
+     */
+    Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy>
+    createMooreSpencePitchforkSolverStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
 
@@ -281,8 +294,11 @@ namespace LOCA {
     //! Anasazi operator factory
     LOCA::AnasaziOperator::Factory anasaziOperatorFactory;
 
-    //! Moore-Spence solver factory
-    LOCA::TurningPoint::MooreSpence::SolverFactory mooreSpenceSolverFactory;
+    //! Moore-Spence turning point solver factory
+    LOCA::TurningPoint::MooreSpence::SolverFactory mooreSpenceTurningPointSolverFactory;
+
+    //! Moore-Spence pitchfork point solver factory
+    LOCA::Pitchfork::MooreSpence::SolverFactory mooreSpencePitchforkSolverFactory;
     
   }; // Class Factory
 

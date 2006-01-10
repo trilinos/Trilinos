@@ -44,8 +44,6 @@ LOCA_OLD_H = \
 	$(srcdir)/LOCA_SingularJacobianSolve_Nic.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H \
@@ -68,8 +66,6 @@ LOCA_OLD = \
 	$(srcdir)/LOCA_SingularJacobianSolve_Nic.C \
 	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.C \
 	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.C \
@@ -170,6 +166,14 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.H \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.H \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.H \
+	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedVector.H \
+	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.H \
+	$(srcdir)/LOCA_Pitchfork_MooreSpence_AbstractGroup.H \
+	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedGroup.H \
+	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverStrategy.H \
+	$(srcdir)/LOCA_Pitchfork_MooreSpence_SalingerBordering.H \
+	$(srcdir)/LOCA_Pitchfork_MooreSpence_PhippsBordering.H \
+	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.H \
 	$(srcdir)/LOCA_Bifurcation_Factory.H
 
 LOCA_BIFURCATION = \
@@ -181,6 +185,12 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C \
+	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedVector.C \
+	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.C \
+	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedGroup.C \
+	$(srcdir)/LOCA_Pitchfork_MooreSpence_SalingerBordering.C \
+	$(srcdir)/LOCA_Pitchfork_MooreSpence_PhippsBordering.C \
+	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.C \
 	$(srcdir)/LOCA_Bifurcation_Factory.C
 
 LOCA_HOMOTOPY_H = 

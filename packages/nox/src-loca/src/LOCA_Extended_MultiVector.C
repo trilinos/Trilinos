@@ -649,6 +649,30 @@ LOCA::Extended::MultiVector::getScalars()
   return scalarsPtr;
 }
 
+Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>
+LOCA::Extended::MultiVector::getScalarRows(int num_rows, int row) const 
+{
+  return
+    Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
+							     *scalarsPtr,
+							     num_rows,
+							     numColumns,
+							     row,
+							     0));
+}
+
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix>
+LOCA::Extended::MultiVector::getScalarRows(int num_rows, int row)
+{
+  return
+    Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
+							     *scalarsPtr,
+							     num_rows,
+							     numColumns,
+							     row,
+							     0));
+}
+
 const double&
 LOCA::Extended::MultiVector::getScalar(int i, int j) const
 {

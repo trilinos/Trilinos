@@ -30,36 +30,53 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_BIFURCATION_PITCHFORKBORD_EXTENDEDVECTOR_H
-#define LOCA_BIFURCATION_PITCHFORKBORD_EXTENDEDVECTOR_H
+#ifndef LOCA_PITCHFORK_MOORESPENCE_EXTENDEDVECTOR_H
+#define LOCA_PITCHFORK_MOORESPENCE_EXTENDEDVECTOR_H
 
 #include "LOCA_Extended_Vector.H"  // Base class
 
+// Forward declarations
+namespace LOCA {
+  namespace Pitchfork {
+    namespace MooreSpence {
+      class ExtendedMultiVector;
+    }
+  }
+}
+
 namespace LOCA {
 
-  namespace Bifurcation {
+  namespace Pitchfork {
 
-    namespace PitchforkBord {
+    namespace MooreSpence {
 
       /*! 
-	\brief %Vector class to hold solution vectors, %Newton vectors, etc.
-	for pitchfork equations.
-      */
+       * \brief %Vector class to hold solution vectors, %Newton vectors, etc.
+       * for the Moore-Spence turning point formulation.
+       */
       /*! 
-	This class uses the LOCA::Extended::Vector implementation to store the
-	solution, null, slack, and parameter components of the pitchfork vector
-	and merely provides an interface for naming which components of the
-	multivector these quantities correspond to.
+       * This class uses the LOCA::Extended::Vector implementation to store the
+       * solution, null, and parameter components of the turning point vector
+       * and merely provides an interface for naming which components of the
+       * vector these quantities correspond to.
       */
-
       class ExtendedVector : public LOCA::Extended::Vector {
+
+	/*! 
+	 * \brief Declare LOCA::Pitchfork::MooreSpence::ExtendedMultiVector 
+	 * as a friend class so it can call protected methods.
+	 */
+	friend class ExtendedMultiVector;
 
       public:
   
 	//! %Constructor.
-	ExtendedVector(const NOX::Abstract::Vector& xVec,
-		       const NOX::Abstract::Vector& nullVec,
-		       double slackVar, double bifParam);
+	ExtendedVector(
+		   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		   const NOX::Abstract::Vector& xVec,
+		   const NOX::Abstract::Vector& nullVec,
+		   double slack,
+		   double bifParam);
 
 	//! Copy constructor.
 	ExtendedVector(const ExtendedVector& source, 
@@ -80,41 +97,59 @@ namespace LOCA {
 	virtual ExtendedVector& operator=(const ExtendedVector& y);
 
 	//! Cloning function
-	virtual NOX::Abstract::Vector* 
+	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector>
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-	//! Sets the %PitchforkBordVector by setting its four components 
+	//! Sets the %Vector by setting its three components 
 	virtual void setVec(const NOX::Abstract::Vector& xVec,
 			    const NOX::Abstract::Vector& nullVec,
-			    double slackVar, double bifPar);
+			    double slack,
+			    double bifPar);
 
 	//! Returns the solution vector component of extended vector
-	virtual const NOX::Abstract::Vector& getXVec() const;
+	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+	getXVec() const;
 
 	//! Returns the null vector component of extended vector
-	virtual const NOX::Abstract::Vector& getNullVec() const;
+	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+	getNullVec() const;
 
 	//! Get slack component
-	virtual double getSlackVar() const;
+	virtual double getSlack() const;
 
 	//! Get %Bifurcation parameter
 	virtual double getBifParam() const;
 
 	//! Returns the solution vector component of extended vector
-	virtual NOX::Abstract::Vector& getXVec();
+	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> getXVec();
 
 	//! Returns the null vector component of extended vector
-	virtual NOX::Abstract::Vector& getNullVec();
+	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> getNullVec();
 
 	//! Get slack component
-	virtual double& getSlackVar();
+	virtual double& getSlack();
 
 	//! Get %Bifurcation parameter
 	virtual double& getBifParam();
 
+      protected:
+
+	//! Default Constructor
+	ExtendedVector(
+		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+
+	//! generate an extended multi-vector
+	/*!
+	 * Returns an empty multivector of type 
+	 * LOCA::Pitchfork::MooreSpence::ExtendedMultiVector
+	 */
+	virtual Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
+	generateMultiVector(int nColumns, int nVectorRows, 
+			    int nScalarRows) const;
+
       }; // class ExtendedVector
-    } // namespace PitchforkBord
-  } // namespace Bifurcation
+    } // namepsace MooreSpence
+  } // namespace Pitchfork
 } // namespace LOCA
 
 #endif

@@ -40,6 +40,7 @@
 // #include "LOCA_Homotopy_AbstractGroup.H"                      // base class
 #include "LOCA_TimeDependent_AbstractGroup.H"
 #include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"// base class
+#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"// base class
 
 namespace LOCA { 
 
@@ -64,7 +65,8 @@ namespace LOCA {
 //       public LOCA::Bifurcation::TPBord::SingularSolveGroup,
 //       public virtual LOCA::Homotopy::AbstractGroup,
       public LOCA::TimeDependent::AbstractGroup,
-      public LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup
+      public LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup,
+      public LOCA::Pitchfork::MooreSpence::AbstractGroup
     {
 
     public:

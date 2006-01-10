@@ -52,23 +52,16 @@ namespace LOCA {
        */
       /*!
        * This abstract class provides the required interface for underlying
-       * groups to locate turning points and pitchforks using the bordering
-       * algorithms for the Moore-Spence turning point and pitchfork 
-       * formulations (see LOCA::TurningPoint::MooreSpence::ExtendedGroup
-       * for a description of the governing equations).  
+       * groups to locate turning points using the bordering
+       * algorithm for the Moore-Spence turning point formulation (see 
+       * LOCA::TurningPoint::MooreSpence::ExtendedGroup for a description of 
+       * the governing equations).  
        *
-       * This class
-       * is derived from the LOCA::Continuation::AbstractGroup and declares
-       * several pure virtual methods compute various 
+       * This class is derived from the LOCA::MultiContinuation::AbstractGroup 
+       * and declares several pure virtual methods compute various 
        * derivatives of \f$Jn\f$ for a given \f$n\f$.  Default implementations
        * for the derivativesusing finite differencing are implemented in the 
        * LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup.
-       *
-       * The last virtual method, innerProduct() has a default implementation
-       * given by the dot product, but should be overloaded for any 
-       * problem that has a different definition for the inner product (this
-       * is only used in the LOCA::Bifurcation::PitchforkBord::ExtendedGroup
-       * for the asymmetry).
        */
       class AbstractGroup : 
 	public virtual LOCA::MultiContinuation::AbstractGroup {

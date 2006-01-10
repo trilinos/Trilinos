@@ -30,14 +30,14 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_TURNINGPOINT_MOORESPENCE_EXTENDEDMULTIVECTOR_H
-#define LOCA_TURNINGPOINT_MOORESPENCE_EXTENDEDMULTIVECTOR_H
+#ifndef LOCA_PITCHFORK_MOORESPENCE_EXTENDEDMULTIVECTOR_H
+#define LOCA_PITCHFORK_MOORESPENCE_EXTENDEDMULTIVECTOR_H
 
 #include "LOCA_Extended_MultiVector.H"  // Base class
 
 // Forward declarations
 namespace LOCA {
-  namespace TurningPoint {
+  namespace Pitchfork {
     namespace MooreSpence {
       class ExtendedVector;
     }
@@ -46,24 +46,24 @@ namespace LOCA {
 
 namespace LOCA {
 
-  namespace TurningPoint {
+  namespace Pitchfork {
 
     namespace MooreSpence {
 
       /*! 
        * \brief %MultiVector class to hold solution vectors, %Newton vectors, 
-       * etc.for the Moore-Spence turning point formulation.
+       * etc.for the Moore-Spence pitchfork formulation.
        */
       /*! 
        * This class uses the LOCA::Extended::MultiVector implementation to 
-       * store the solution, null, and parameter components of the turning 
-       * point multivector and merely provides an interface for naming which 
-       * components of the multivector these quantities correspond to.
+       * store the solution, null, parameter, and slack components of the 
+       * pitchfork multivector and merely provides an interface for naming 
+       * which components of the multivector these quantities correspond to.
       */
       class ExtendedMultiVector : public LOCA::Extended::MultiVector {
 
 	/*!
-	 * \brief Declare LOCA::TurningPoint::MooreSpece::ExtendedVector as 
+	 * \brief Declare LOCA::Pitchfork::MooreSpece::ExtendedVector as 
 	 * a friend class so it can call protected methods.
 	 */
 	friend class ExtendedVector;
@@ -88,6 +88,7 @@ namespace LOCA {
 		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 		    const NOX::Abstract::MultiVector& xVec,
 		    const NOX::Abstract::MultiVector& nullVec,
+		    const NOX::Abstract::MultiVector::DenseMatrix& slacks,
 		    const NOX::Abstract::MultiVector::DenseMatrix& bifParams);
 
 	//! Copy constructor.
@@ -163,14 +164,34 @@ namespace LOCA {
 	virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
 	getNullMultiVec();
 
+	//! Returns slack component of the extended multivector
+	virtual 
+	Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>
+	getSlacks() const;
+
+	//! Returns slack component of the extended multivector
+	virtual 
+	Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix>
+	getSlacks();
+
+	//! Returns bifurcation parameter component of the extended multivector
+	virtual 
+	Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>
+	getBifParams() const;
+
+	//! Returns bifurcation parameter component of the extended multivector
+	virtual 
+	Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix>
+	getBifParams();
+
 	//! Returns ith column as an extended vector
 	virtual 
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedVector>
+	Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::ExtendedVector>
 	getColumn(int i);
 
 	//! Returns ith column as an extended vector
 	virtual 
-	Teuchos::RefCountPtr<const LOCA::TurningPoint::MooreSpence::ExtendedVector>
+	Teuchos::RefCountPtr<const LOCA::Pitchfork::MooreSpence::ExtendedVector>
 	getColumn(int i) const;
 
       protected:
@@ -186,14 +207,14 @@ namespace LOCA {
 	//! Generate a derived extended vector
 	/*!
 	 * Returns a vector of type 
-	 * LOCA::TurningPoint::MooreSpence::ExtendedVector
+	 * LOCA::Pitchfork::MooreSpence::ExtendedVector
 	 */
 	virtual Teuchos::RefCountPtr<LOCA::Extended::Vector>
 	generateVector(int nVecs, int nScalarRows) const;
 
       }; // class ExtendedVector
     } // namespace MooreSpence
-  } // namespace TurningPoint
+  } // namespace Pitchfork
 } // namespace LOCA
 
 #endif

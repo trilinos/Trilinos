@@ -57,7 +57,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
   LOCA::Extended::MultiVector::setMultiVectorPtr(0, xVec.clone(NOX::DeepCopy));
   LOCA::Extended::MultiVector::setMultiVectorPtr(1, 
 						 nullVec.clone(NOX::DeepCopy));
-  *LOCA::Extended::MultiVector::getScalars() = bifParams;
+  LOCA::Extended::MultiVector::getScalars()->assign(bifParams);
 }
 
 LOCA::TurningPoint::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(

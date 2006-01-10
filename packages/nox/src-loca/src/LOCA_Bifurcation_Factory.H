@@ -66,6 +66,7 @@ namespace LOCA {
      *   <ul>
      *   <li> "None" - No bifurcation [Default]
      *   <li> "Turning Point:  Moore-Spence" (LOCA::TurningPoint::MooreSpence::ExtendedGroup)
+     *   <li> "Pitchfork:  Moore-Spence" (LOCA::Pitchfork::MooreSpence::ExtendedGroup)
      *   </ul>
      * </ul>
      */
