@@ -64,10 +64,10 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
  *
  * Output:
  *   nobj      - number of objects (local for this proc)
- *   obj_wgt   - obj_wgt[0:zz->Obj_Weight_Dim-1] are the object weights
+ *   obj_wgt   - obj_wgt[0:num_vertex_weights-1] are the object weights
  *               (local for this proc)
  *   ncuts     - number of cuts (local for this proc)
- *   cut_wgt   - cut_wgt[0:zz->Obj_Weight_Dim-1] are the cut weights (local for this proc)
+ *   cut_wgt   - cut_wgt[0:num_vertex_weights-1] are the cut weights (local for this proc)
  *   nboundary - number of boundary objects (local for this proc)
  *   nadj      - the number of adjacent procs (local for this proc)
  *
@@ -88,20 +88,22 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int nproc = zz->Num_Proc, nparts, maxpart, obj_wgt_dim;
   int stats[4*NUM_STATS];
   int imin, imax, isum, iimbal;
-  int *proc_count, *part_count, *nbors_proc;
+  int *proc_count=NULL, *part_count=NULL, *nbors_proc=NULL;
   float imbal[NUM_STATS];
-  float *tmp_vwgt, *vwgts, *ewgts, *tmp_cutwgt, *part_sizes, temp;
-  int *edges_per_obj;
-  ZOLTAN_ID_PTR local_ids; 
-  ZOLTAN_ID_PTR global_ids, nbors_global;
-  int *part;
+  float *tmp_vwgt=NULL, *vwgts=NULL, *ewgts=NULL, *tmp_cutwgt=NULL; 
+  float *part_sizes, temp;
+  int *edges_per_obj=NULL;
+  ZOLTAN_ID_PTR local_ids=NULL; 
+  ZOLTAN_ID_PTR global_ids=NULL, nbors_global=NULL;
+  int *part=NULL;
   ZOLTAN_ID_PTR lid;   /* Temporary pointer to a local id; used to pass NULL
                       pointers to query functions when NUM_LID_ENTRIES = 0. */
   int num_gid_entries = zz->Num_GID;
   int num_lid_entries = zz->Num_LID;
   int gid_off, lid_off;
   int have_graph_callbacks;
-  int have_hgraph_callbacks;
+  int have_edge_callbacks;
+  int have_pin_callbacks;
   int edge_list_size;
   int sum;
   char msg[256];
@@ -114,7 +116,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   ZOLTAN_ID_PTR egids = NULL;
   ZOLTAN_ID_PTR elids = NULL;
   int* esizes = NULL;
-  int nwgt;
+  int nwgt, vwgt_dim;
   int ewgtdim = zz->Edge_Weight_Dim;
   double hgraph_global_sum[2];
   double hgraph_local_stats[2];
@@ -138,24 +140,90 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   edges_per_obj = NULL;
   part_sizes = NULL;
 
-  ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, 
-                             zz->Obj_Weight_Dim, &vwgts, &part);
-
-  if (ierr == ZOLTAN_FATAL){
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return ierr;
-  }
-
   /* Have graph or hypergraph query functions? */
   have_graph_callbacks = 
        ((zz->Get_Num_Edges != NULL || zz->Get_Num_Edges_Multi != NULL) &&
         (zz->Get_Edge_List != NULL || zz->Get_Edge_List_Multi != NULL));
-  have_hgraph_callbacks = 
+  have_edge_callbacks = 
         zz->Get_Num_HG_Edges != NULL && 
         zz->Get_HG_Edge_Info != NULL &&
         zz->Get_HG_Edge_List != NULL;
+  have_pin_callbacks = 
+        zz->Get_HG_Size_CS != NULL && zz->Get_HG_CS != NULL ;
 
-        
+  if (have_pin_callbacks){
+    /*
+     * We need to call Zoltan_PHG_Fill_Hypergraph, which will call 
+     * the query functions for us, and process the results.
+     *
+     * Calling Fill_Hypergraph with a null parameter structure 
+     * and null partition array is a flag to it that it is
+     * being called from Zoltan_LB_Eval.  Fill_Hypergraph in this case
+     * sets the parameters so that all edges are written to the "removed" 
+     * lists.  This permits us to use Zoltan_PHG_Removed_Cuts() to get 
+     * cut statistics.
+     *
+     * Fill_Hypergraph will also write the object (vertex) weights to 
+     * zhg->HG.vwgts (which normally holds pin weights instead).  
+     * Number of vertex weights may exceed zz->Obj_Weight_Dim if
+     * the ADD_OBJ_WEIGHT parameter is set.
+     */
+
+     zhg = (ZHG*) ZOLTAN_CALLOC(1, sizeof(ZHG));
+     if (zhg == NULL) {
+       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+       ierr = ZOLTAN_MEMERR;
+       goto End;
+     }
+  
+     ierr = Zoltan_PHG_Fill_Hypergraph(zz, zhg, 
+              NULL,   /* no parameters */
+              NULL);  /* initial partition assignment irrelevant */
+
+     if (ierr == ZOLTAN_FATAL){
+       Zoltan_PHG_Free_Hypergraph_Data(zhg);
+       ZOLTAN_FREE(&zhg);
+       ZOLTAN_TRACE_EXIT(zz, yo);
+       return ierr;
+     }
+
+     if (zhg->nObj){
+       zhg->Output_Parts = (int *)ZOLTAN_MALLOC(sizeof(int) * zhg->nObj);
+       memcpy(zhg->Output_Parts, zhg->Input_Parts, sizeof(int) * zhg->nObj);
+     }
+
+     /* Perform cut calculations and find global max, min and sum */
+     ierr = Zoltan_PHG_Removed_Cuts(zz, zhg, hgraph_local_stats);
+
+     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_PHG_Removed_Cuts failed!");
+       Zoltan_PHG_Free_Hypergraph_Data(zhg);
+       ZOLTAN_FREE(&zhg);
+       ZOLTAN_FREE(&zhg->Output_Parts);
+       return ZOLTAN_FATAL;
+     }
+            
+     MPI_Allreduce(hgraph_local_stats, hgraph_global_sum, 2,
+                   MPI_DOUBLE, MPI_SUM, zz->Communicator);
+
+     vwgt_dim = zhg->HG.VtxWeightDim;
+     num_obj = zhg->nObj;
+     vwgts = zhg->HG.vwgt;
+     part = zhg->Input_Parts;
+  }
+  else{
+  
+    ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, 
+                               zz->Obj_Weight_Dim, &vwgts, &part);
+  
+    if (ierr == ZOLTAN_FATAL){
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return ierr;
+    }
+
+    vwgt_dim = zz->Obj_Weight_Dim;
+  }
+
   /* Compute statistics w.r.t. partitions? */
   compute_part = (zz->Get_Partition != NULL || zz->Get_Partition_Multi != NULL);
 
@@ -193,9 +261,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
     /* Allocate space. */
     all_arr = (int *)  ZOLTAN_CALLOC(2*NUM_STATS*nparts, sizeof(int));
-    vwgt_arr = (float *) ZOLTAN_CALLOC(2*nparts*(zz->Obj_Weight_Dim +
+    vwgt_arr = (float *) ZOLTAN_CALLOC(2*nparts*(vwgt_dim +
                            zz->Edge_Weight_Dim), sizeof(float));
-    if (!all_arr || (zz->Obj_Weight_Dim+zz->Edge_Weight_Dim && !vwgt_arr)){
+    if (!all_arr || (vwgt_dim + zz->Edge_Weight_Dim && !vwgt_arr)){
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
@@ -204,8 +272,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     bndry_arr  = cut_arr + nparts;
     commvol_arr  = bndry_arr + nparts;
     all_arr_glob = all_arr + NUM_STATS*nparts;
-    vwgt_arr_glob = vwgt_arr + nparts*(zz->Obj_Weight_Dim);
-    cutwgt_arr = vwgt_arr_glob + nparts*(zz->Obj_Weight_Dim);
+    vwgt_arr_glob = vwgt_arr + nparts * vwgt_dim;
+    cutwgt_arr = vwgt_arr_glob + nparts * vwgt_dim;
     cutwgt_arr_glob = cutwgt_arr + nparts*(zz->Edge_Weight_Dim);
 
     /* Count number of objects. */
@@ -215,18 +283,17 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   }
 
   /* Compute object weight sums */
-  if (zz->Obj_Weight_Dim>0){
-    tmp_vwgt = (float *) ZOLTAN_CALLOC(4*zz->Obj_Weight_Dim,  sizeof(float));
+  if (vwgt_dim>0){
+    tmp_vwgt = (float *) ZOLTAN_CALLOC(4*vwgt_dim,  sizeof(float));
     if (!tmp_vwgt){
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
     for (i=0; i<num_obj; i++){
-      for (j=0; j<zz->Obj_Weight_Dim; j++){
-        tmp_vwgt[j] += vwgts[i*zz->Obj_Weight_Dim+j];
+      for (j=0; j<vwgt_dim; j++){
+        tmp_vwgt[j] += vwgts[i*vwgt_dim+j];
         if (compute_part)
-          vwgt_arr[part[i]*zz->Obj_Weight_Dim+j] += 
-                   vwgts[i*zz->Obj_Weight_Dim+j];
+          vwgt_arr[part[i]*vwgt_dim+j] += vwgts[i*vwgt_dim+j];
       }
     }
   }
@@ -339,10 +406,14 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       
   }
   
-  if (have_hgraph_callbacks) {
+  if (have_edge_callbacks) {
 
     /* Compute cutl and cutn statistics using Zoltan_PHG_Removed_Cuts on */
     /* the hypergraph with all edges removed. */
+
+    /* BUG - the vertex weights do not contain the extra weights if
+     *   ADD_OBJ_WEIGHT specifies an extra calculated vertex weight.
+     */
     
     nedges = zz->Get_Num_HG_Edges(zz->Get_Num_HG_Edges_Data, &ierr);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -392,6 +463,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     zhg->Remove_ELIDs = elids;
     zhg->Remove_Ewgt = ewgts;
     zhg->Remove_Esize = esizes;
+    zhg->Remove_Pin_GIDs = NULL;
+    zhg->Remove_Pin_Procs = NULL;
     zhg->Input_Parts = part;
     zhg->Output_Parts = part;
     zhg->nRecv_GNOs = 0;
@@ -417,13 +490,13 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     isum = 3;
 
     /* Global reduction for object weights. */
-    if (zz->Obj_Weight_Dim>0){
-      MPI_Allreduce(tmp_vwgt, &tmp_vwgt[imin*zz->Obj_Weight_Dim], 
-                    zz->Obj_Weight_Dim, MPI_FLOAT, MPI_MIN, zz->Communicator);
-      MPI_Allreduce(tmp_vwgt, &tmp_vwgt[imax*zz->Obj_Weight_Dim], 
-                    zz->Obj_Weight_Dim, MPI_FLOAT, MPI_MAX, zz->Communicator);
-      MPI_Allreduce(tmp_vwgt, &tmp_vwgt[isum*zz->Obj_Weight_Dim], 
-                    zz->Obj_Weight_Dim, MPI_FLOAT, MPI_SUM, zz->Communicator);
+    if (vwgt_dim>0){
+      MPI_Allreduce(tmp_vwgt, &tmp_vwgt[imin*vwgt_dim], 
+                    vwgt_dim, MPI_FLOAT, MPI_MIN, zz->Communicator);
+      MPI_Allreduce(tmp_vwgt, &tmp_vwgt[imax*vwgt_dim], 
+                    vwgt_dim, MPI_FLOAT, MPI_MAX, zz->Communicator);
+      MPI_Allreduce(tmp_vwgt, &tmp_vwgt[isum*vwgt_dim], 
+                    vwgt_dim, MPI_FLOAT, MPI_SUM, zz->Communicator);
     }
     /* Global reduction for comm weights. */
     if (zz->Edge_Weight_Dim>0 && have_graph_callbacks) {
@@ -461,13 +534,13 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
               ? stats[imax*NUM_STATS]*nproc/ (float) stats[isum*NUM_STATS]
               : 1.));
  
-      for (i=0; i<zz->Obj_Weight_Dim; i++){
+      for (i=0; i<vwgt_dim; i++){
         printf("%s  Object weight #%1d :  %8.3g %8.3g %8.3g   %5.3f\n",
-          yo, i, tmp_vwgt[imin*zz->Obj_Weight_Dim+i], 
-          tmp_vwgt[imax*zz->Obj_Weight_Dim+i], 
-          tmp_vwgt[isum*zz->Obj_Weight_Dim+i], 
-          (tmp_vwgt[isum*zz->Obj_Weight_Dim+i] > 0 
-           ? tmp_vwgt[imax*zz->Obj_Weight_Dim+i]*nproc/tmp_vwgt[isum*zz->Obj_Weight_Dim+i]
+          yo, i, tmp_vwgt[imin*vwgt_dim+i], 
+          tmp_vwgt[imax*vwgt_dim+i], 
+          tmp_vwgt[isum*vwgt_dim+i], 
+          (tmp_vwgt[isum*vwgt_dim+i] > 0 
+           ? tmp_vwgt[imax*vwgt_dim+i]*nproc/tmp_vwgt[isum*vwgt_dim+i]
            : 1.));
       }
 
@@ -516,7 +589,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   if (nadj) *nadj = num_adj;
   if (nboundary) *nboundary = num_boundary;
   if (obj_wgt){
-    for (i=0; i<zz->Obj_Weight_Dim; i++) 
+    for (i=0; i<vwgt_dim; i++) 
       obj_wgt[i] = tmp_vwgt[i];
   }
   if (cut_wgt){
@@ -533,7 +606,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     iimbal = 3;
 
     /* Get partition sizes. */
-    obj_wgt_dim = (zz->Obj_Weight_Dim > 0 ? zz->Obj_Weight_Dim : 1);
+    obj_wgt_dim = (vwgt_dim > 0 ? vwgt_dim : 1);
     part_sizes = (float *) ZOLTAN_MALLOC(nparts * obj_wgt_dim * sizeof(float));
     if (!part_sizes){
       ierr = ZOLTAN_MEMERR;
@@ -544,8 +617,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     /* Allreduce data w.r.t. partitions onto all procs. */
     MPI_Allreduce(all_arr, all_arr_glob, NUM_STATS_PART*nparts, 
                   MPI_INT, MPI_SUM, zz->Communicator);
-    if (zz->Obj_Weight_Dim > 0)
-      MPI_Allreduce(vwgt_arr, vwgt_arr_glob, nparts*(zz->Obj_Weight_Dim), 
+    if (vwgt_dim > 0)
+      MPI_Allreduce(vwgt_arr, vwgt_arr_glob, nparts*(vwgt_dim), 
                     MPI_FLOAT, MPI_SUM, zz->Communicator);
     if (zz->Edge_Weight_Dim > 0)
       MPI_Allreduce(cutwgt_arr, cutwgt_arr_glob, nparts*(zz->Edge_Weight_Dim), 
@@ -570,7 +643,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     /* Compute scaled imbalance. */
     for (j=0; j<NUM_STATS_PART; j++)
       imbal[j] = 0.0;
-    k = (zz->Obj_Weight_Dim>0 ? zz->Obj_Weight_Dim : 1); 
+    k = (vwgt_dim>0 ? vwgt_dim : 1); 
     for (i=0; i<nparts; i++){
       for (j=0; j<NUM_STATS_PART; j++){
         if (all_arr_glob[j*nparts+i]*part_sizes[i*k] != 0.0)
@@ -584,31 +657,31 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     }
 
     /* Min, max, sum for object weights. */
-    if (zz->Obj_Weight_Dim>0){
-      for (i=0; i<zz->Obj_Weight_Dim; i++)
+    if (vwgt_dim>0){
+      for (i=0; i<vwgt_dim; i++)
         tmp_vwgt[i] = FLT_MAX; /*min */
-      for (i=zz->Obj_Weight_Dim; i<4*zz->Obj_Weight_Dim; i++)
+      for (i=vwgt_dim; i<4*vwgt_dim; i++)
         tmp_vwgt[i] = 0.0; /* max and sum and imbalance */
 
       for (j=0; j<nparts; j++){
-        for (i=0; i<zz->Obj_Weight_Dim; i++){
-          if (vwgt_arr_glob[j*zz->Obj_Weight_Dim+i] < tmp_vwgt[i]) 
-            tmp_vwgt[i] = vwgt_arr_glob[j*zz->Obj_Weight_Dim+i];
-          if (vwgt_arr_glob[j*zz->Obj_Weight_Dim+i] > tmp_vwgt[imax*zz->Obj_Weight_Dim+i]) 
-            tmp_vwgt[imax*zz->Obj_Weight_Dim+i] = vwgt_arr_glob[j*zz->Obj_Weight_Dim+i];
-          tmp_vwgt[isum*zz->Obj_Weight_Dim+i] += vwgt_arr_glob[j*zz->Obj_Weight_Dim+i]; 
+        for (i=0; i<vwgt_dim; i++){
+          if (vwgt_arr_glob[j*vwgt_dim+i] < tmp_vwgt[i]) 
+            tmp_vwgt[i] = vwgt_arr_glob[j*vwgt_dim+i];
+          if (vwgt_arr_glob[j*vwgt_dim+i] > tmp_vwgt[imax*vwgt_dim+i]) 
+            tmp_vwgt[imax*vwgt_dim+i] = vwgt_arr_glob[j*vwgt_dim+i];
+          tmp_vwgt[isum*vwgt_dim+i] += vwgt_arr_glob[j*vwgt_dim+i]; 
         }
       }
 
       /* Compute scaled imbalance. */
       for (j=0; j<nparts; j++){
-        for (i=0; i<zz->Obj_Weight_Dim; i++){
-          if (tmp_vwgt[isum*zz->Obj_Weight_Dim+i]*part_sizes[j*zz->Obj_Weight_Dim+i] != 0.0)
-            temp = vwgt_arr_glob[j*zz->Obj_Weight_Dim+i]/(tmp_vwgt[isum*zz->Obj_Weight_Dim+i]*part_sizes[j*zz->Obj_Weight_Dim+i]);
+        for (i=0; i<vwgt_dim; i++){
+          if (tmp_vwgt[isum*vwgt_dim+i]*part_sizes[j*vwgt_dim+i] != 0.0)
+            temp = vwgt_arr_glob[j*vwgt_dim+i]/(tmp_vwgt[isum*vwgt_dim+i]*part_sizes[j*vwgt_dim+i]);
           else
             temp = 1.0;
-          if (temp > tmp_vwgt[iimbal*zz->Obj_Weight_Dim+i])
-            tmp_vwgt[iimbal*zz->Obj_Weight_Dim+i] = temp;
+          if (temp > tmp_vwgt[iimbal*vwgt_dim+i])
+            tmp_vwgt[iimbal*vwgt_dim+i] = temp;
         }
       }
     }
@@ -643,12 +716,12 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         stats[isum*NUM_STATS], 
         imbal[0]);
  
-      for (i=0; i<zz->Obj_Weight_Dim; i++){
+      for (i=0; i<vwgt_dim; i++){
         printf("%s  Object weight #%1d :  %8.3g %8.3g %8.3g   %5.3f\n",
-          yo, i, tmp_vwgt[imin*zz->Obj_Weight_Dim+i], 
-        tmp_vwgt[imax*zz->Obj_Weight_Dim+i], 
-        tmp_vwgt[isum*zz->Obj_Weight_Dim+i], 
-        tmp_vwgt[iimbal*zz->Obj_Weight_Dim+i]);
+          yo, i, tmp_vwgt[imin*vwgt_dim+i], 
+        tmp_vwgt[imax*vwgt_dim+i], 
+        tmp_vwgt[isum*vwgt_dim+i], 
+        tmp_vwgt[iimbal*vwgt_dim+i]);
       }
 
       if (have_graph_callbacks) {
@@ -684,7 +757,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
           imbal[i]);
       }
 
-      if (have_hgraph_callbacks) {
+      if (have_edge_callbacks) {
         printf("%s  No. hyperedge cuts (cutl):            %8.0f\n", yo, 
                 hgraph_global_sum[0]);
         printf("%s  No. cut hyperedges (cutn):            %8.0f\n\n", yo,
@@ -698,18 +771,27 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   }
 
 End:
+
   /* Free data */
-  ZOLTAN_FREE(&global_ids);
-  ZOLTAN_FREE(&local_ids);
-  ZOLTAN_FREE(&part); 
+
   ZOLTAN_FREE(&tmp_vwgt);
-  ZOLTAN_FREE(&tmp_cutwgt);
-  ZOLTAN_FREE(&vwgts);
-  ZOLTAN_FREE(&ewgts);
-  ZOLTAN_FREE(&nbors_global);
-  ZOLTAN_FREE(&nbors_proc);
-  ZOLTAN_FREE(&proc_count);
-  ZOLTAN_FREE(&edges_per_obj);
+
+  if (have_pin_callbacks){
+     Zoltan_PHG_Free_Hypergraph_Data(zhg);
+     ZOLTAN_FREE(&zhg);
+  }
+  else{
+    ZOLTAN_FREE(&global_ids);
+    ZOLTAN_FREE(&local_ids);
+    ZOLTAN_FREE(&part); 
+    ZOLTAN_FREE(&tmp_cutwgt);
+    ZOLTAN_FREE(&vwgts);
+    ZOLTAN_FREE(&ewgts);
+    ZOLTAN_FREE(&nbors_global);
+    ZOLTAN_FREE(&nbors_proc);
+    ZOLTAN_FREE(&proc_count);
+    ZOLTAN_FREE(&edges_per_obj);
+  }
   if (compute_part){
     ZOLTAN_FREE(&all_arr);
     ZOLTAN_FREE(&vwgt_arr);
