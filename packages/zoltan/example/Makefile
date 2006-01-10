@@ -116,11 +116,11 @@ exampleLibrary:
 	@cd lib; $(MAKE) all "CC=$(CC)" "AR=$(AR)" "CFLAGS=$(CFLAGS)"\
                             "INCLUDE=$(INCLUDE)" 
 
-C_Examples:
+C_Examples: exampleLibrary
 	@cd C; $(MAKE) all "CC=$(CC)" "CFLAGS=$(CFLAGS)" "INCLUDE=$(INCLUDE)" \
                           "LIBDIR=$(LIBDIR)" "LIBS=$(LIBS)"
 
-CPP_Examples:
+CPP_Examples: exampleLibrary
 	@cd CPP; $(MAKE) all "CC=$(CPPC)" "CFLAGS=$(CFLAGS)" "INCLUDE=$(INCLUDE)" \
                           "LIBDIR=$(LIBDIR)" "LIBS=$(LIBS)"
 
