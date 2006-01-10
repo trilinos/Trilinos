@@ -101,23 +101,23 @@ Integer values greater than zero are accepted. Not valid for <b><a href="ug_inte
 <tr VALIGN=TOP NOSAVE>
 <td NOSAVE><a NAME="RETURN_LISTS"></a>&nbsp;&nbsp;&nbsp; <i>RETURN_LISTS</i></td>
 
-<td>The lists returned by calls to <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
+<td>The lists returned by calls to 
+<b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
 or
-<b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.
-Valid values are
-<UL>
-<LI>"IMPORT",  to return only information about objects to
+<b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.  Valid values are&nbsp;
+<blockquote>
+<br>"IMPORT",  to return only information about objects to
 be imported to a processor
-<LI>"EXPORT", to return only information about
+<br>"EXPORT", to return only information about
 objects to be exported from a processor
-<LI>"ALL", or "IMPORT AND EXPORT" (or any string with both "IMPORT"
+<br>"ALL", or "IMPORT AND EXPORT" (or any string with both "IMPORT"
 and "EXPORT" in it) to return both import and export information
-<LI> "PARTITION ASSIGNMENTS" (or any string with "PARTITION" in it)
+<br> "PARTITION ASSIGNMENTS" (or any string with "PARTITION" in it)
 to return the new process and partition
 assignment of every local object, including those not being
 exported.  
-<LI>"NONE", to return neither import nor export information
-</UL>
+<br>"NONE", to return neither import nor export information
+</blockquote>
 </td>
 </tr>
 
