@@ -219,24 +219,28 @@ int  idx 			/* index of vector param, -1 if scalar */
         break;
 
       case 10:          /* LB.Return_Lists */
-        if (strcmp(result.sval, "ALL") == 0) {
-          tmp = ZOLTAN_LB_ALL_LISTS;
+        export = (strstr(result.sval, "EXPORT") != NULL);
+        import = (strstr(result.sval, "IMPORT") != NULL);
+        
+        if ((export && import) || (strcmp(result.sval, "ALL") == 0) {
+          tmp = ZOLTAN_LB_ALL_LISTS;  /* export AND import lists */
           status = 3;
         }
-        else if (strcmp(result.sval, "IMPORT")==0) {
-          tmp = ZOLTAN_LB_IMPORT_LISTS;
+        else if (import){
+          tmp = ZOLTAN_LB_IMPORT_LISTS;  /* import lists */
           status = 3;
         }
-        else if (strcmp(result.sval, "EXPORT")==0) {
-          tmp = ZOLTAN_LB_EXPORT_LISTS;
+        else if (export){
+          tmp = ZOLTAN_LB_EXPORT_LISTS;  /* export lists */
           status = 3;
         }
-        else if (strcmp(result.sval, "COMPLETE")==0) {
-          tmp = ZOLTAN_LB_COMPLETE_EXPORT_LISTS;
+        else if (strstr(result.sval, "PARTITION")==0) {
+          /* list of every object's process/partition assignment */
+          tmp = ZOLTAN_LB_COMPLETE_EXPORT_LISTS; 
           status = 3;
         }
         else if (strcmp(result.sval, "NONE")==0) {
-          tmp = ZOLTAN_LB_NO_LISTS;
+          tmp = ZOLTAN_LB_NO_LISTS;      /* no lists */
           status = 3;
         }
         else{
@@ -357,7 +361,7 @@ void Zoltan_Print_Key_Params(ZZ const *zz)
   printf("ZOLTAN Parameter %s = ", Key_params[10].name);
   switch (zz->LB.Return_Lists) {
   case ZOLTAN_LB_ALL_LISTS:
-    printf("ALL\n");
+    printf("IMPORT AND EXPORT\n");
     break;
   case ZOLTAN_LB_IMPORT_LISTS:
     printf("IMPORT\n");
@@ -366,7 +370,7 @@ void Zoltan_Print_Key_Params(ZZ const *zz)
     printf("EXPORT\n");
     break;
   case ZOLTAN_LB_COMPLETE_EXPORT_LISTS:
-    printf("COMPLETE EXPORT\n");
+    printf("PARTITION ASSIGNMENTS\n");
     break;
   case ZOLTAN_LB_NO_LISTS:
     printf("NONE\n");
