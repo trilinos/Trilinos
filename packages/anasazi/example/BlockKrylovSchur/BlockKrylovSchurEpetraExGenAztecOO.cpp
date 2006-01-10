@@ -27,7 +27,7 @@
 // @HEADER
 //
 //  This example computes the eigenvalues of smallest magnitude of the 
-//  discretized 1D Laplacian operator using the block Krylov-Schur method.  
+//  discretized 2D Laplacian operator using the block Krylov-Schur method.  
 //  This problem shows the construction of an inner-outer iteration using 
 //  AztecOO as the linear solver within Anasazi.  An Ifpack preconditioner 
 //  is constructed to precondition the linear solver.  This operator is 
@@ -64,6 +64,9 @@
 
 // Include header for Teuchos serial dense matrix
 #include "Teuchos_SerialDenseMatrix.hpp"
+
+// Include header for the problem definition
+#include "ModeLaplace2DQ2.h"
 
 // Include selected communicator class and map required by Epetra objects
 #ifdef EPETRA_MPI
@@ -111,98 +114,26 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-
-  //  Dimension of the matrix
-  int NumGlobalElements = 1000;
-
-  // Construct a Map that puts approximately the same number of
-  // equations on each processor.
-
-  Epetra_Map Map(NumGlobalElements, 0, Comm);
-
-  // Get update list and number of local equations from newly created Map.
+  // Number of dimension of the domain
+  int space_dim = 2;
   
-  int NumMyElements = Map.NumMyElements();
-  std::vector<int> MyGlobalElements(NumMyElements);
-  Map.MyGlobalElements(&MyGlobalElements[0]);
-
-  // Create an integer vector NumNz that is used to build the Petra Matrix.
-  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
-  // on this processor
-  std::vector<int> NumNz(NumMyElements);
-
-  // We are building two tridiagonal matrices
-  // So we need 2 off-diagonal terms (except for the first and last equation)
-
-  for (i=0; i<NumMyElements; i++) {
-    if (MyGlobalElements[i]==0 || MyGlobalElements[i] == NumGlobalElements-1) {
-      NumNz[i] = 2;
-    }
-    else {
-      NumNz[i] = 3;  
-    }
-  }
-
-  // Create both the stiffness and mass Epetra_Matrix        
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]));
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> B = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]));
-
-  const double one = 1.0;
-  std::vector<double> ValuesA(2);
-  std::vector<double> ValuesB(2);
-  std::vector<int> Indices(2);
-
-  // Set values of stiffness matrix.
-  double h = one /(NumGlobalElements + one);
-  ValuesA[0] = -one/h; ValuesA[1] = -one/h;
-  double diagA = 2.0/h;
-
-  // Set values of mass matrix.
-  h = one /(6.0*(NumGlobalElements + one));
-  ValuesB[0] = one/h; ValuesB[1] = one/h;
-  double diagB = 4.0/h;
-  int NumEntries;
-
-  for (i=0; i<NumMyElements; i++) {
-    if (MyGlobalElements[i]==0) {
-      Indices[0] = 1;
-      NumEntries = 1;
-      info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[1], &Indices[0]);
-      assert( info==0 );
-      info = B->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[1], &Indices[0]);
-      assert( info==0 );
-    }
-    else if (MyGlobalElements[i] == NumGlobalElements-1) {
-      Indices[0] = NumGlobalElements-2;
-      NumEntries = 1;
-      info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[0], &Indices[0]);
-      assert( info==0 );
-      info = B->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[0], &Indices[0]);
-      assert( info==0 );
-    }
-    else {
-      Indices[0] = MyGlobalElements[i]-1;
-      Indices[1] = MyGlobalElements[i]+1;
-      NumEntries = 2;
-      info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[0], &Indices[0]);
-      assert( info==0 );
-      info = B->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[0], &Indices[0]);
-      assert( info==0 );
-    }
-    // Put in the diagonal entry
-    info = A->InsertGlobalValues(MyGlobalElements[i], 1, &diagA, &MyGlobalElements[i]);
-    assert( info==0 );
-    info = B->InsertGlobalValues(MyGlobalElements[i], 1, &diagB, &MyGlobalElements[i]);
-    assert( info==0 );
-  }
-         
-  // Finish up
-  info = A->FillComplete();
-  assert( info==0 );
-  A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
-  info = B->FillComplete();
-  assert( info==0 );
-  B->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
+  // Size of each of the dimensions of the domain
+  std::vector<double> brick_dim( space_dim );
+  brick_dim[0] = 1.0;
+  brick_dim[1] = 1.0;
+  
+  // Number of elements in each of the dimensions of the domain
+  std::vector<int> elements( space_dim );
+  elements[0] = 10;
+  elements[1] = 10;
+  
+  // Create problem
+  Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
+  
+  // Get the stiffness and mass matrices
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  
   //
   //*****Select the Preconditioner*****
   //
@@ -225,10 +156,10 @@ int main(int argc, char *argv[]) {
   Teuchos::RefCountPtr<Ifpack_CrsIct> ICT;
   //
   if (Lfill > -1) {
-    ICT = Teuchos::rcp( new Ifpack_CrsIct(*A, dropTol, Lfill) );
+    ICT = Teuchos::rcp( new Ifpack_CrsIct(*K, dropTol, Lfill) );
     ICT->SetAbsoluteThreshold(Athresh);
     ICT->SetRelativeThreshold(Rthresh);
-    int initerr = ICT->InitValues(*A);
+    int initerr = ICT->InitValues(*K);
     if (initerr != 0) cout << "InitValues error = " << initerr;
     info = ICT->Factor();
     assert( info==0 );
@@ -248,7 +179,7 @@ int main(int argc, char *argv[]) {
   //
   // Create Epetra linear problem class to solve "Ax = b"
   Epetra_LinearProblem precProblem;
-  precProblem.SetOperator(A.get());
+  precProblem.SetOperator(K.get());
   
   // Create AztecOO solver for solving "Ax = b" using an incomplete cholesky preconditioner
   AztecOO precSolver(precProblem);
@@ -288,18 +219,18 @@ int main(int argc, char *argv[]) {
   // Create an Anasazi::EpetraMultiVec for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
   Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = 
-    Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blockSize) );
+    Teuchos::rcp( new Anasazi::EpetraMultiVec(K->Map(), blockSize) );
   ivec->MvRandom();
   
   // Call the ctor that calls the petra ctor for a matrix
-  Teuchos::RefCountPtr<Anasazi::EpetraOp> Amat = Teuchos::rcp( new Anasazi::EpetraOp(A) );
-  Teuchos::RefCountPtr<Anasazi::EpetraOp> Bmat = Teuchos::rcp( new Anasazi::EpetraOp(B) );
-  Teuchos::RefCountPtr<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(precOperator, B) );	
+  Teuchos::RefCountPtr<Anasazi::EpetraOp> Kmat = Teuchos::rcp( new Anasazi::EpetraOp(K) );
+  Teuchos::RefCountPtr<Anasazi::EpetraOp> Mmat = Teuchos::rcp( new Anasazi::EpetraOp(M) );
+  Teuchos::RefCountPtr<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(precOperator, M) );	
   
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, Bmat, ivec) );
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, Mmat, ivec) );
   
-  // Inform the eigenproblem that the matrix pencil (A,B) is symmetric
+  // Inform the eigenproblem that the matrix pencil (K,M) is symmetric
   MyProblem->SetSymmetric(true);
   
   // Set the number of eigenvalues requested 
@@ -339,8 +270,8 @@ int main(int argc, char *argv[]) {
   Anasazi::EpetraMultiVec* evecr = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneCopy());
 
   Teuchos::SerialDenseMatrix<int,double> dmatr(nev,nev);
-  Anasazi::EpetraMultiVec tempvec(Map, evecr->GetNumberVecs());	
-  A->Apply( *evecr, tempvec );
+  Anasazi::EpetraMultiVec tempvec(K->Map(), evecr->GetNumberVecs());	
+  K->Apply( *evecr, tempvec );
   tempvec.MvTransMv( 1.0, *evecr, dmatr );
 
   if (MyOM->doPrint()) {
@@ -351,7 +282,7 @@ int main(int argc, char *argv[]) {
     cout<<"------------------------------------------------------"<<endl;
     for (i=0; i<nev; i++) {
       compeval = dmatr(i,i);
-      cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-one/(*evals)[i])<<endl;
+      cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-1.0/(*evals)[i])<<endl;
     }
     cout<<"------------------------------------------------------"<<endl;
   }

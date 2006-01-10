@@ -114,38 +114,54 @@ BlockKrylovSchurEpetraExHB_LDADD = $(EXPORT_LIBS)
 
 BlockKrylovSchurEpetraExGenAztecOO_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(top_builddir)/../aztecoo/src/libaztecoo.a \
 	$(top_builddir)/../ifpack/src/libifpack.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-BlockKrylovSchurEpetraExGenAztecOO_CXXFLAGS = -I$(top_srcdir)/src
+BlockKrylovSchurEpetraExGenAztecOO_CXXFLAGS = \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/util/ModeLaplace
 
 #np# List libraries that np is dependent on.
-BlockKrylovSchurEpetraExGenAztecOO_LDADD = $(EXPORT_LIBS)
+BlockKrylovSchurEpetraExGenAztecOO_LDADD = \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS)
 
 BlockKrylovSchurEpetraExGenBelos_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(top_builddir)/../belos/src/libbelos.a \
 	$(top_builddir)/../ifpack/src/libifpack.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-BlockKrylovSchurEpetraExGenBelos_CXXFLAGS = -I$(top_srcdir)/src
+BlockKrylovSchurEpetraExGenBelos_CXXFLAGS = \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/util/ModeLaplace
 
 #np# List libraries that np is dependent on.
-BlockKrylovSchurEpetraExGenBelos_LDADD = $(EXPORT_LIBS)
+BlockKrylovSchurEpetraExGenBelos_LDADD = \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS)
 
 BlockKrylovSchurEpetraExGenAmesos_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(top_builddir)/../amesos/src/libamesos.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-BlockKrylovSchurEpetraExGenAmesos_CXXFLAGS = -I$(top_srcdir)/src
+BlockKrylovSchurEpetraExGenAmesos_CXXFLAGS = \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/util/ModeLaplace
+
 
 #np# List libraries that np is dependent on.
-BlockKrylovSchurEpetraExGenAmesos_LDADD = $(EXPORT_LIBS)
+BlockKrylovSchurEpetraExGenAmesos_LDADD = \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS)
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
