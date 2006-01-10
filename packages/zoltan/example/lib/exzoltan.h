@@ -42,24 +42,35 @@ void exGetObject(void *userDefinedData, int numGlobalIds, int numLids,
 #define SOME_HAVE_EDGE_WEIGHTS 3
 #define ONE_HAS_EDGE_WEIGHTS   4
 
-void *set_initial_division(
+void *exSetHGDivisions(
   int initial_partitioning, /* COMPLETE_ROWS, COMPLETE_COLS or BLOCKS */
   int who_has_edge_weights, /* OMIT_EDGE_WEIGHTS, ALL_HAVE_EDGE_WEIGHTS, etc. */
   int edge_weights_overlap, /* 1 or 0 */
   int format);          /* ZOLTAN_COMPRESSED_ROWS or ZOLTAN_COMPRESSED_COLS */
 
+void exUpdateDivisions(void *data, int nexport, int nimport,
+   ZOLTAN_ID_PTR exportGIDs, ZOLTAN_ID_PTR importGIDs);
+
+void exFreeDivisions(void *data);
+
 /* hypergraph query functions */
 
-int get_hg_size_and_format(void *data, 
+int exGetHgNumVertices(void *data, int *ierr);
+
+void exGetHgVerticesAndWeights(void *data, int num_gid_entries,
+  int num_lid_entries, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+  int wgt_dim, float *obj_weights, int *ierr);
+
+int exGetHgSizeAndFormat(void *data, 
   int *num_lists, int *num_pins, int *format);
 
-int get_hg(void *data,  int num_gid_entries,
+int exGetHg(void *data,  int num_gid_entries,
   int nrowcol, int npins, int format,
   ZOLTAN_ID_PTR rowcol_GID, int *rowcol_ptr, ZOLTAN_ID_PTR pin_GID);
 
-int get_hg_edge_weight_size(void *data, int *num_edges);
+int exGetHgEdgeWeightSize(void *data, int *num_edges);
 
-int get_hg_edge_weights(void *data,  int num_gid_entries,
+int exGetHgEdgeWeights(void *data,  int num_gid_entries,
   int num_lid_entries, int nedges, int edge_weight_dim,
   ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float *edge_weight);
 #ifdef __cplusplus

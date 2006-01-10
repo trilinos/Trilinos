@@ -3,7 +3,7 @@
 **
 ** Functions to support writing Zoltan parallel hypergraph examples.
 **
-**   Defines a hypergraph and divide it among processes for
+**   Defines a hypergraph and divides it among processes for
 **   testing purposes.  The division can be controlled with
 **   settings described in the header file exzoltan.h.
 **
@@ -21,6 +21,10 @@
 extern "C" {
 #endif
 
+#define DIFFERENT_PROCS_DIFFERENT_EDGE_WEIGHTS 0
+#define EDGE_WEIGHT_EQUALS_GID 1
+#define VTX_WEIGHT_EQUALS_GID 1
+
 #define NROWS 28
 #define NCOLS 72
 static int nprocs, rank;
@@ -29,6 +33,8 @@ struct _division{
  int row0, row1, col0, col1;   /* my pins */
  int ew0, ew1;                 /* my edge weights */
  int format;    /* compressed rows or compressed columns */
+ int num_obj;   /* my number of vertices */
+ int obj_gid[NCOLS];  /* global ID of my vertices */
 };
 
 static void divide_interval(int from, int to, 
@@ -68,10 +74,11 @@ static char *hg[NROWS]={
 };
 
 /*
-** Set options on how the hypergraph is divided up initially.
+** Set options specifying how the objects (vertices) and
+** hypergraph pins are divided up initially.
 */
 
-void *set_initial_division(
+void *exSetHGDivisions(
   int initial_partitioning,
   int who_has_edge_weights,
   int edge_weights_overlap,
@@ -79,7 +86,8 @@ void *set_initial_division(
 {
   int row0, row1, col0, col1;   /* my pins */
   int ew0, ew1;                 /* my edge weights */
-  int a, b;
+  int a, b, l, r, i;
+  int *id;
   struct _division *div = NULL;
 
   if ((initial_partitioning != COMPLETE_ROWS) &&
@@ -112,28 +120,44 @@ void *set_initial_division(
     return NULL;
   }
 
+  /*
+   * Initial partitioning of vertices (objects to be partitioned) 
+   * among processes
+   */
+  divide_interval(0, NCOLS-1, &l, &r, nprocs, rank);
+
+  div->num_obj = r - l + 1;
+  id = div->obj_gid;
+  for (i=l; i<=r; i++){
+    *id++ = i;
+  }
+
+  /*
+   * Division of hypergraph pins
+   */
+
   if ((nprocs < 3) && (initial_partitioning == BLOCKS)){
     initial_partitioning = COMPLETE_ROWS;
   }
 
   if (initial_partitioning == COMPLETE_ROWS){
     col0 = 0; col1 = NCOLS-1;
-    divide_interval(0, NROWS, &row0, &row1, nprocs, rank);
+    divide_interval(0, NROWS-1, &row0, &row1, nprocs, rank);
   }
   else if (initial_partitioning == COMPLETE_COLS){
     row0 = 0; row1 = NROWS-1;
-    divide_interval(0, NCOLS, &col0, &col1, nprocs, rank);
+    divide_interval(0, NCOLS-1, &col0, &col1, nprocs, rank);
   }
   else{
     a = nprocs / 2;
     b = NROWS / 2;
     if (rank < a){
       row0 = 0; row1 = b-1;
-      divide_interval(0, NCOLS, &col0, &col1, a, rank);
+      divide_interval(0, NCOLS-1, &col0, &col1, a, rank);
     }
     else if (rank < 2*a){
       row0 = b; row1 = NROWS-1;
-      divide_interval(0, NCOLS, &col0, &col1, a, rank-a);
+      divide_interval(0, NCOLS-1, &col0, &col1, a, rank-a);
     }
     else{  /* odd number of processes, last one doesn't get a block */
       col0 = row0 = -1;
@@ -143,7 +167,7 @@ void *set_initial_division(
   ew0 = ew1 = -1;
   if (who_has_edge_weights == ALL_HAVE_EDGE_WEIGHTS){
     /* we have edge weights, but not necc. for the same rows of our pins */
-    divide_interval(0, NROWS, &ew0, &ew1, nprocs, nprocs-rank);
+    divide_interval(0, NROWS-1, &ew0, &ew1, nprocs, nprocs-rank-1);
   }
   else if (who_has_edge_weights == ONE_HAS_EDGE_WEIGHTS){
     if (rank == 0){
@@ -153,7 +177,7 @@ void *set_initial_division(
   else if (who_has_edge_weights == SOME_HAVE_EDGE_WEIGHTS){
     a = nprocs / 2;
     if (rank < a){
-      divide_interval(0, NROWS, &ew0, &ew1, a, rank);
+      divide_interval(0, NROWS-1, &ew0, &ew1, a, rank);
     }
   }
 
@@ -173,19 +197,67 @@ void *set_initial_division(
   div->ew0 = ew0;
   div->ew1 = ew1;
 
-  return div;
+  return (void *)div;
+}
+/*
+** After re-partitioning, update my list of objects.
+*/
+void exUpdateDivisions(void *data, int nexport, int nimport, 
+                      ZOLTAN_ID_PTR exportGIDs, ZOLTAN_ID_PTR importGIDs)
+{
+int n_old_obj, n_new_obj = 0;
+int i;
+char gid_buf[NCOLS];
+struct _division *div;
+
+  div = (struct _division *)data;
+  n_old_obj = div->num_obj;
+
+  for (i=0; i<NCOLS; i++){
+    gid_buf[i] = 0;
+  }
+  for (i=0; i<nimport; i++){
+    gid_buf[importGIDs[i]] = 1;
+  }
+  for (i=0; i<n_old_obj; i++){
+    gid_buf[div->obj_gid[i]] = 1;
+  }
+  for (i=0; i<nexport; i++){
+    gid_buf[exportGIDs[i]] = 0;
+  }
+  for (i=0; i<NCOLS; i++){
+    if (gid_buf[i]){
+      div->obj_gid[n_new_obj++] = i;
+    }
+  }
+  div->num_obj = n_new_obj;
+}
+
+/*
+** Release memory used by library
+*/
+void exFreeDivisions(void *data)
+{
+  free(data);
 }
 
 /*
 ** The query functions
 */
-int get_hg_size_and_format(void *data, 
-  int *num_lists, int *num_pins, int *format)
+int exGetHgSizeAndFormat(void *data, int *num_lists, int *num_pins, int *format)
 {
 struct _division *div;
 int nedges=0;
 int nverts=0;
 int r, c;
+
+  /*
+   * Supply this query function to Zoltan with Zoltan_Set_HG_Size_CS_Fn().
+   * It tells Zoltan the number of rows or columns to be supplied by
+   * the process, the number of pins (non-zeroes) in the rows or columns, 
+   * and whether the pins are provided in compressed row format or
+   * compressed column format.
+   */
 
   div = (struct _division *)data;
 
@@ -199,7 +271,7 @@ int r, c;
     for (r=div->row0; r<=div->row1; r++){
       for (c=div->col0; c<=div->col1; c++){
         if (!isspace(hg[r][c])){
-          *num_pins++;
+          (*num_pins)++;
         }
       }
     }
@@ -214,24 +286,45 @@ int r, c;
   return ZOLTAN_OK; 
 }
 
-int get_hg(void *data,  int num_gid_entries,
+int exGetHg(void *data,  int num_gid_entries,
   int nrowcol, int npins, int format,
   ZOLTAN_ID_PTR rowcol_GID, int *rowcol_ptr, ZOLTAN_ID_PTR pin_GID)
 {
   int i, j, e, v;
   struct _division *div;
 
+  /*
+   * Supply this query function to Zoltan with Zoltan_Set_HG_CS_Fn().
+   * It supplies hypergraph pins to Zoltan.
+   */
+
   div = (struct _division *)data;
 
   if (npins > 0){
     if (format == ZOLTAN_COMPRESSED_ROWS){
       for (i=0, e=div->row0, j=0; e <= div->row1; i++, e++){
+        if (i == nrowcol) break;
         rowcol_ptr[i] = j;
         rowcol_GID[i] = e;
 
         for (v=div->col0; v <= div->col1; v++){
           if (!isspace(hg[e][v])){
             pin_GID[j++] = v;            
+            if (j == npins) break;
+          }
+        }
+      }
+    }
+    else{
+      for (i=0, v=div->col0, j=0; v <= div->col1; i++, v++){
+        if (i == nrowcol) break;
+        rowcol_ptr[i] = j;
+        rowcol_GID[i] = v;
+
+        for (e=div->row0; e <= div->row1; e++){
+          if (!isspace(hg[e][v])){
+            pin_GID[j++] = e;            
+            if (j == npins) break;
           }
         }
       }
@@ -241,24 +334,41 @@ int get_hg(void *data,  int num_gid_entries,
   return ZOLTAN_OK;
 }
 
-int get_hg_edge_weight_size(void *data, int *num_edges)
+int exGetHgEdgeWeightSize(void *data, int *num_edges)
 {
   struct _division *div;
+
+  /*
+   * Supply this query function to Zoltan with Zoltan_Set_HG_Size_Edge_Weights_Fn().
+   * It tells Zoltan the number edges for which this process will supply
+   * edge weights.  The number of weights per edge was specified with the
+   * parameter EDGE_WEIGHT_DIM.  If more than one process provides a weight
+   * for the same edge, the multiple weights are resolved according the
+   * value for the PHG_EDGE_WEIGHT_OPERATION parameter.
+   */
 
   div = (struct _division *)data;
 
   if (div->ew0 >= 0){
     *num_edges = div->ew1 - div->ew0 + 1;
   }
+  else{
+    *num_edges = 0;
+  }
   return ZOLTAN_OK;
 }
 
-int get_hg_edge_weights(void *data,  int num_gid_entries,
+int exGetHgEdgeWeights(void *data,  int num_gid_entries,
   int num_lid_entries, int nedges, int edge_weight_dim,
   ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float *edge_weight)
 {
   struct _division *div;
   int i, e;
+
+  /*
+   * Supply this query function to Zoltan with Zoltan_Set_HG_Edge_Weights_Fn().
+   * It tells Zoltan the weights for some subset of edges.
+   */
 
   div = (struct _division *)data;
 
@@ -267,12 +377,80 @@ int get_hg_edge_weights(void *data,  int num_gid_entries,
     for (i=0, e=div->ew0; e <= div->ew1; i++, e++){
       edge_GID[i] = e;
       edge_LID[i] = i;
+#if DIFFERENT_PROCS_DIFFERENT_EDGE_WEIGHTS
+      edge_weight[i] = rank+1;
+#else
+  #if EDGE_WEIGHT_EQUALS_GID
+      edge_weight[i] = e+1;
+  #else
       edge_weight[i] = 1.0;
+  #endif
+#endif
     }
   }
 
   return ZOLTAN_OK;
 }
+int exGetHgNumVertices(void *data, int *ierr)
+{
+  struct _division *div;
+
+  /*   
+   * Supply this query function to Zoltan with Zoltan_Set_Num_Obj_Fn().
+   * It returns the number of vertices that this process owns.
+   *
+   * The parallel hypergraph method requires that vertex global IDs and 
+   * weights are returned by the application with query functions.  The
+   * global IDs should be unique, and no two processes should
+   * return the same vertex.
+   */
+  div = (struct _division *)data;
+
+  return div->num_obj;
+}
+void exGetHgVerticesAndWeights(void *data, int num_gid_entries,
+  int num_lid_entries, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+  int wgt_dim, float *obj_weights, int *ierr)
+{
+  int i, nv, j;
+  float *w;
+  struct _division *div;
+
+  div = (struct _division *)data;
+
+  /*
+   * Supply this query function to Zoltan with Zoltan_Set_Obj_List_Fn().
+   *
+   * It supplies vertex global IDs, local IDs,
+   * and weights to the Zoltan library.  The application has previously
+   * indicated the number of weights per vertex by setting the
+   * OBJ_WEIGHT_DIM parameter.
+   */
+
+  nv = div->num_obj;
+  w = obj_weights;
+
+  if (nv > NCOLS){
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  for (i=0; i<nv; i++){
+    gids[i] = div->obj_gid[i];
+    lids[i] = i;
+
+    for (j=0; j<wgt_dim; j++){
+#if VTX_WEIGHT_EQUALS_GID
+      *w++ = (j ? 1.0 : gids[i]);
+#else
+      *w++ = 1.0;
+#endif
+    }
+  }
+
+  *ierr = ZOLTAN_OK;
+}
+
 
 static void divide_interval(int from, int to, 
              int *l, int *r, int nprocs, int rank)
