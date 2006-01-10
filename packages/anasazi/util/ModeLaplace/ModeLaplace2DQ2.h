@@ -34,7 +34,6 @@
 #include "Epetra_Comm.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
-#include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
 
 #include "CheckingTools.h"
@@ -61,8 +60,8 @@ class ModeLaplace2DQ2 : public ModeLaplace {
     const SortingTools mySort;
 
     Epetra_Map *Map;
-    Epetra_Operator *K;
-    Epetra_Operator *M;
+    Epetra_CrsMatrix *K;
+    Epetra_CrsMatrix *M;
 
     double Lx;
     int nX;
@@ -100,8 +99,8 @@ class ModeLaplace2DQ2 : public ModeLaplace {
 
     ~ModeLaplace2DQ2();
 
-    const Epetra_Operator* getStiffness() const { return K; }
-    const Epetra_Operator* getMass()      const { return M; }
+    const Epetra_CrsMatrix* getStiffness() const { return K; }
+    const Epetra_CrsMatrix* getMass()      const { return M; }
 
     double getFirstMassEigenValue() const;
 

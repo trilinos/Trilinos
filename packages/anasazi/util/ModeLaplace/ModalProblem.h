@@ -37,8 +37,8 @@ class ModalProblem {
 
     virtual ~ModalProblem() { }
 
-    virtual const Epetra_Operator* getStiffness() const = 0;
-    virtual const Epetra_Operator* getMass()      const = 0;
+    virtual const Epetra_CrsMatrix* getStiffness() const = 0;
+    virtual const Epetra_CrsMatrix* getMass()      const = 0;
 
     virtual int eigenCheck(const Epetra_MultiVector &Q, double *lambda,
                            double *normWeight) const { return 0; };

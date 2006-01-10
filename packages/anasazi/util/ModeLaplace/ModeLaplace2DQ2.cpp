@@ -407,7 +407,7 @@ void ModeLaplace2DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
                                     int *numNz) {
 
   // Create Epetra_Matrix for stiffness
-  Epetra_CrsMatrix *KK = new Epetra_CrsMatrix(Copy, *Map, numNz);
+  K = new Epetra_CrsMatrix(Copy, *Map, numNz);
 
   int i;
   int localSize = Map->NumMyElements();
@@ -417,7 +417,7 @@ void ModeLaplace2DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
     values[i] = 0.0;
 
   for (i=0; i<localSize; ++i) {
-    assert(KK->InsertGlobalValues(Map->GID(i), numNz[i], values, 
+    assert(K->InsertGlobalValues(Map->GID(i), numNz[i], values, 
            connectivity+maxConnect*i) == 0);
   }
 
@@ -444,7 +444,7 @@ void ModeLaplace2DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
         values[numEntries] = kel[dofEle*j + k];
         numEntries += 1;
       }
-      assert(KK->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices) == 0);
+      assert(K->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices) == 0);
     }
   }
 
@@ -452,10 +452,8 @@ void ModeLaplace2DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
   delete[] values;
   delete[] indices;
 
-  assert(KK->FillComplete()== 0);
-  assert(KK->OptimizeStorage() == 0);
-
-  K = KK;
+  assert(K->FillComplete()== 0);
+  assert(K->OptimizeStorage() == 0);
 
 }
 
@@ -524,7 +522,7 @@ void ModeLaplace2DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
                                int *numNz) {
 
   // Create Epetra_Matrix for mass
-  Epetra_CrsMatrix *MM = new Epetra_CrsMatrix(Copy, *Map, numNz);
+  M = new Epetra_CrsMatrix(Copy, *Map, numNz);
 
   int i;
   int localSize = Map->NumMyElements();
@@ -533,7 +531,7 @@ void ModeLaplace2DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
   for (i=0; i<maxConnect; ++i) 
     values[i] = 0.0;
   for (i=0; i<localSize; ++i) 
-    assert(MM->InsertGlobalValues(Map->GID(i), numNz[i], values,
+    assert(M->InsertGlobalValues(Map->GID(i), numNz[i], values,
                                    connectivity + maxConnect*i) == 0); 
 
   // Define the elementary matrix
@@ -559,7 +557,7 @@ void ModeLaplace2DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
         values[numEntries] = mel[dofEle*j + k];
         numEntries += 1;
       }
-      assert(MM->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices) == 0);
+      assert(M->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices) == 0);
     }
   }
 
@@ -567,10 +565,8 @@ void ModeLaplace2DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
   delete[] values;
   delete[] indices;
 
-  assert(MM->FillComplete()== 0);
-  assert(MM->OptimizeStorage() == 0);
-
-  M = MM;
+  assert(M->FillComplete()== 0);
+  assert(M->OptimizeStorage() == 0);
 
 }
 
