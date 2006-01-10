@@ -691,13 +691,14 @@ printout:
 	tps  $(INC) | lpr
 
 clean:
-	@-for a in $(SUBDIRS); do \
+	@-for a in $(SUBDIRS) ; do \
 	 cd $$a; \
          echo $$a; \
 	 $(RM) -f *.o *.d *.d@ $(ZTARGET) $(ZTARGET).pure $(LIB_NAME); \
 	 cd ..; \
 	 done;
 	@cd Utilities; $(MAKE) clean; cd .. ; 
+	@cd examples; $(MAKE) clean; cd .. ; 
 	@echo $(ZOLTAN_OBJ_DIR);
 	@$(RM) -rf $(ZOLTAN_OBJ_DIR)/*; 
 	@echo "fort"
