@@ -61,7 +61,7 @@ namespace LOCA {
     namespace MooreSpence {
 
       /*! 
-       * A group representing the Moore-Spence pitchfork equations. 
+       * \brief A group representing the Moore-Spence pitchfork equations. 
        */
       /*!
        * The LOCA::Pitchfork::MooreSpence::ExtendedGroup is a concrete 
@@ -92,7 +92,7 @@ namespace LOCA {
        * Note that the entire extended Jacobian \f$D_z G\f$ is not stored in
        * memory, rather a block-elimination algorithm (bordering algorithm) is
        * used to compute linear solves of the extended Jacobian (see 
-       * LOCA::Pitchfork::MooreSpence::SolverFactory() for more details).
+       * LOCA::Pitchfork::MooreSpence::SolverFactory for more details).
        * 
        * This class implements all of the NOX::Abstract::Group, 
        * LOCA::MultiContinuation::AbstractGroup, and 

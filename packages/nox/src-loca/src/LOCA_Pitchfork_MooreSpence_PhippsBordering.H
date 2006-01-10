@@ -92,7 +92,7 @@ namespace LOCA {
        *         a & b & c
        *      \end{bmatrix} &= 
        *      \begin{bmatrix}
-       *         F & f_p & psi \\
+       *         F & f_p & \psi \\
        *         0 & 0   &  0
        *      \end{bmatrix} \\
        *      \begin{bmatrix} 
@@ -110,7 +110,7 @@ namespace LOCA {
        *      \begin{bmatrix}
        *         \sigma & 0 & b & c \\
        *          -l & \sigma & e & k \\
-       *          \langle v,\psi\rangle & 0 & -\langleB,\psi\rangle & -langle C,\psi\rangle \\
+       *          \langle v,\psi\rangle & 0 & -\langle B,\psi\rangle & -\langle C,\psi\rangle \\
        *         \phi^T L & \phi^T v & -\phi^T E & -\phi^T K
        *      \end{bmatrix}
        *      \begin{bmatrix}
@@ -169,7 +169,7 @@ namespace LOCA {
 	 */
 	virtual void setBlocks(
 	  const Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::AbstractGroup>& group,
-	  const Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::ExtendedGroup>& tpGroup,
+	  const Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::ExtendedGroup>& pfGroup,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& asymMultiVector,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& nullVector,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& JnVector,

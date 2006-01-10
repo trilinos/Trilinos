@@ -67,6 +67,7 @@ namespace LOCA {
 
       //! Constructor 
       /*!
+       * \param global_data [in] The global data object
        * \param jacOperator [in] Jacobian operator J
        * \param A_multiVec [in] Multivector representing A
        * \param Y_x_multiVec [in] Multivector representing the solution 

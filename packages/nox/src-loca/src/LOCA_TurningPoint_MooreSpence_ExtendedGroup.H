@@ -61,7 +61,7 @@ namespace LOCA {
     namespace MooreSpence {
 
       /*! 
-       * A group representing the Moore-Spence turning point equations. 
+       * \brief A group representing the Moore-Spence turning point equations. 
        */
       /*!
        The LOCA::TurningPoint::MooreSpence::ExtendedGroup is a concrete 
