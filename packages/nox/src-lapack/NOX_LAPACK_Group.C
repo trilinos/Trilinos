@@ -32,6 +32,7 @@
 
 #include "NOX_Common.H"
 #include "NOX_LAPACK_Group.H"	// class definition
+#include "NOX_Abstract_MultiVector.H"
 #include "NOX_BLAS_Wrappers.H"
 #include "NOX_LAPACK_Wrappers.H"
 
@@ -367,6 +368,65 @@ NOX::LAPACK::Group::applyJacobianInverse(NOX::Parameter::List& p,
   	     &result(0), &ldb, &info);
     
   return (info == 0) ? (NOX::Abstract::Group::Ok) : (NOX::Abstract::Group::Failed);
+}
+
+NOX::Abstract::Group::ReturnType 
+NOX::LAPACK::Group::applyJacobianInverseMultiVector(
+				     NOX::Parameter::List& p, 
+				     const NOX::Abstract::MultiVector& input, 
+				     NOX::Abstract::MultiVector& result) const 
+{
+
+  if (!isJacobian()) {
+    cerr << "ERROR: NOX::LAPACK::Group::applyJacobianInverseMultiVector() - invalid Jacobian" << endl;
+    throw "NOX Error";
+  }
+
+  // Number of RHS
+  int nVecs = input.numVectors();
+
+  int m = jacobianMatrix.numRows();
+  int n = jacobianMatrix.numCols();
+  int lda = jacobianMatrix.numRows();
+  int info;
+
+  // Copy all input vectors into one matrix
+  NOX::LAPACK::Matrix B(m,nVecs);
+  const NOX::LAPACK::Vector* constVecPtr;
+  for (int j=0; j<nVecs; j++) {
+    constVecPtr = dynamic_cast<const NOX::LAPACK::Vector*>(&(input[j]));
+    for (int i=0; i<m; i++)
+      B(i,j) = (*constVecPtr)(i);
+  }
+
+  // Compute Jacobian LU factorization if invalid
+  if (!isValidJacobianLUFact) {
+    jacobianLUFact = jacobianMatrix;
+
+    DGETRF_F77(&m, &n, &jacobianLUFact(0,0), &lda, &pivots[0], &info);
+
+    if (info != 0)
+      return NOX::Abstract::Group::Failed;
+
+    isValidJacobianLUFact = true;
+  }
+
+  // Backsolve using LU factorization
+  DGETRS_F77("N", &n, &nVecs, &jacobianLUFact(0,0), &lda, &pivots[0], 
+  	     &B(0,0), &m, &info);
+
+  if (info != 0)
+      return NOX::Abstract::Group::Failed;
+
+  // Copy result from matrix
+  NOX::LAPACK::Vector* vecPtr;
+  for (int j=0; j<nVecs; j++) {
+    vecPtr = dynamic_cast<NOX::LAPACK::Vector*>(&(result[j]));
+    for (int i=0; i<m; i++)
+      (*vecPtr)(i) = B(i,j);
+  }
+    
+  return NOX::Abstract::Group::Ok;
 }
 
 bool NOX::LAPACK::Group::isF() const 

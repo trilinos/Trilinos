@@ -121,6 +121,12 @@ namespace NOX {
       NOX::Abstract::Group::ReturnType applyJacobianInverse(NOX::Parameter::List& params, 
 							    const NOX::Abstract::Vector& input, 
 							    NOX::Abstract::Vector& result) const;
+
+      //! applyJacobianInverse for multiple right-hand sides
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianInverseMultiVector(NOX::Parameter::List& params, 
+				      const NOX::Abstract::MultiVector& input, 
+				      NOX::Abstract::MultiVector& result) const;
   
       //@}
 
