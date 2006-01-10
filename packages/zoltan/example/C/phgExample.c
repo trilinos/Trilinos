@@ -4,9 +4,11 @@
 ** Basic example of using Zoltan to partition a hypergraph.
 **
 ** Also a test of Zoltan library's ability to handle very general
-** query functions: application returns rows, application returns
-** columns, application returns arbitrary set of pins (no overlapping
-** pins), some applications return no pins, and so on.
+** hypergraph query functions: 
+**   each process returns rows (use COMPLETE_ROWS in exSetHGDivisions)
+**   each process returns columns                  (use COMPLETE_COLS)
+**   each returns an arbitrary set of pins                (use BLOCKS)
+**   some processes return no pins    (run on odd number of processes)
 **
 ** Zoltan_* functions are functions in the Zoltan library.
 **
