@@ -196,21 +196,6 @@ int main(int argc, char *argv[])
     stepSizeList.setParameter("Failed Step Reduction Factor", 0.7);
     stepSizeList.setParameter("Successful Step Increase Factor", 1.26); // for constant
 
-    // Set the LOCA Utilities
-    NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
-    locaUtilsList.setParameter("MyPID", MyPID);
-    if (verbose)
-      locaUtilsList.setParameter("Output Information", 
-				 LOCA::Utils::Error +
-				 LOCA::Utils::Warning +
-				 LOCA::Utils::StepperIteration +
-				 LOCA::Utils::StepperDetails +
-				 LOCA::Utils::Solver +
-				 LOCA::Utils::SolverDetails +
-				 LOCA::Utils::Parameters);
-    else
-      locaUtilsList.setParameter("Output Information", LOCA::Utils::Error);
-
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     NOX::Parameter::List& nlParams = paramList->sublist("NOX");
     nlParams.setParameter("Nonlinear Solver", "Line Search Based");
@@ -227,7 +212,9 @@ int main(int argc, char *argv[])
 				 NOX::Utils::Details + 
 				 NOX::Utils::Warning +
 				 NOX::Utils::TestDetails + 
-				 NOX::Utils::Error);
+				 NOX::Utils::Error + 
+				 NOX::Utils::StepperIteration +
+				 NOX::Utils::StepperDetails);
     else
       nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
 
@@ -267,35 +254,39 @@ int main(int argc, char *argv[])
     pVector.addParameter("beta", beta);
 
     // Create the interface between the test problem and the nonlinear solver
-    // This is created by the user using inheritance of the abstract base class:
-    // NLS_PetraGroupInterface
-    Problem_Interface interface(Problem);
-
-    // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner by 
-    // uncommenting one or more of the following lines:
-    // 1. User supplied (Epetra_RowMatrix)
-    Epetra_RowMatrix& A = Problem.getJacobian();
-    // 2. Matrix-Free (Epetra_Operator)
-    //NOX::Epetra::MatrixFree A(interface, soln);
-    // 3. Finite Difference (Epetra_RowMatrix)
-    //NOX::Epetra::FiniteDifference A(interface, soln);
-    // 4. Jacobi Preconditioner
-    //NOX::Epetra::JacobiPreconditioner Prec(soln);
-
+    // This is created by the user using inheritance of the abstract base 
+    // class:
+    Teuchos::RefCountPtr<Problem_Interface> interface = 
+      Teuchos::rcp(new Problem_Interface(Problem));
+    Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq = interface;
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
+    
+    // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
+    Teuchos::RefCountPtr<Epetra_RowMatrix> Amat = 
+      Teuchos::rcp(&Problem.getJacobian(),false);
+    
     // Create the linear systems
-    NOX::Epetra::LinearSystemAztecOO linsys(nlPrintParams, lsParams,
-					       interface, interface,
-					       A, soln);
-    //   NOX::Epetra::LinearSystemAztecOO linsys(nlPrintParams, lsParams,
-    // 					     interface, soln);
+    Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, 
+							lsParams, iReq, iJac, 
+							Amat, soln));
 
     // Create the loca vector
     NOX::Epetra::Vector locaSoln(soln);
 
+    // Create Epetra factory
+    Teuchos::RefCountPtr<LOCA::Abstract::Factory> epetraFactory =
+      Teuchos::rcp(new LOCA::Epetra::Factory);
+
+    // Create global data object
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData = 
+      LOCA::createGlobalData(paramList, epetraFactory);
+
     // Create the Group
     Teuchos::RefCountPtr<LOCA::Epetra::Group> grp = 
-      Teuchos::rcp(new LOCA::Epetra::Group(nlPrintParams, interface, 
-					      locaSoln, linsys, pVector));
+      Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, 
+					   iReq, locaSoln, 
+					   linsys, pVector));
     grp->computeF();
 
     // Create the Solver convergence test
@@ -308,18 +299,15 @@ int main(int argc, char *argv[])
     combo->addStatusTest(wrms);
     combo->addStatusTest(maxiters);
 
-    // Create the Epetra Factory
-    Teuchos::RefCountPtr<LOCA::Epetra::Factory> factory = 
-      Teuchos::rcp(new LOCA::Epetra::Factory);
-
     // Create the stepper  
-    LOCA::NewStepper stepper(grp, combo, paramList, factory);
+    LOCA::NewStepper stepper(globalData, grp, combo, paramList);
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
     if (status != LOCA::Abstract::Iterator::Finished) {
       ierr = 1;
-      if (LOCA::Utils::doPrint(LOCA::Utils::Error))
-	cout << "Stepper failed to converge!" << endl;
+      if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
+	globalData->locaUtils->out() 
+	  << "Stepper failed to converge!" << std::endl;
     }
 
     // Get the final solution from the stepper
@@ -329,19 +317,23 @@ int main(int argc, char *argv[])
       dynamic_cast<const NOX::Epetra::Vector&>(finalGroup->getX());
 
     // Output the parameter list
-    if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
-      cout << endl << "Final Parameters" << endl
-	   << "****************" << endl;
-      stepper.getParameterList()->print(cout);
-      cout << endl;
+    if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
+      globalData->locaUtils->out() 
+	<< std::endl << "Final Parameters" << std::endl
+	<< "****************" << std::endl;
+      stepper.getParameterList()->print(globalData->locaUtils->out());
+      globalData->locaUtils->out() << std::endl;
     }
 
     // Check some statistics on the solution
-    NOX::Utils utils(nlPrintParams);
-    NOX::TestCompare testCompare(cout, utils);
+    NOX::TestCompare testCompare(globalData->locaUtils->out(), 
+				 *(globalData->locaUtils));
   
-    if (utils.isPrintType(NOX::Utils::TestDetails))
-      cout << endl << "***** Checking solutions statistics *****" << endl;
+    if (globalData->locaUtils->isPrintType(NOX::Utils::TestDetails))
+      globalData->locaUtils->out() 
+	<< std::endl 
+	<< "***** Checking solution statistics *****" 
+	<< std::endl;
 
     // Check number of steps
     int numSteps = stepper.getStepNumber();
@@ -371,8 +363,13 @@ int main(int argc, char *argv[])
 				  "norm of final solution",
 				  NOX::TestCompare::Relative);
 
+    destroyGlobalData(globalData);
   }
 
+  catch (std::exception& e) {
+    cout << e.what() << endl;
+    ierr = 1;
+  }
   catch (const char *s) {
     cout << s << endl;
     ierr = 1;
