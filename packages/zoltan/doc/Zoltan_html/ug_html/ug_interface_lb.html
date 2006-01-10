@@ -181,9 +181,9 @@ that are newly assigned to this processor or to partitions on this processor
 partitions on this processor).
 If the value returned
 is -1, no import information has been returned and all import arrays below
-are NULL (see the
+are NULL. (The
 <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> parameter
-for more information).</td>
+determines whether import lists are returned).</td>
 </tr>
 
 <tr>
@@ -219,35 +219,51 @@ to which the imported objects are being imported.</td>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_export</i></td>
-
-<td>Upon return, the number of objects on this processor
+<td>Upon return, this value of this count and the following lists
+depends on the value of
+the <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> parameter:
+<UL>
+<LI>It is the count of objects on this processor
 that are newly assigned to other processors or to other partitions 
-on this processor
-(i.e., the number of objects being exported to different partitions 
-on this or some other processor).
+on this processor, if 
+<a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
+is "EXPORT" or "EXPORT AND IMPORT".
+<LI>It is the count of all objects on this processor,
+if 
+<a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
+is "PARTITION ASSIGNMENTS".
+<LI>It is -1 if the value of 
+<a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
+indicates that either no lists are to be returned, or only import lists
+are to be returned.
 If the value returned
 is -1, no export information has been returned and all export arrays below
-are NULL (see the
-<a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> parameter
-for more information, in particular for the "COMPLETE EXPORT" value
-of RETURN_LISTS which expands the export lists to contain all
-local objects, including those staying in the same partition on
-this processor).</td>
+are NULL .
+</UL>
+</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids</i></td>
 
 <td>Upon return, an array of <i>num_export</i> global IDs of objects to
-be exported from partitions on this processor.&nbsp;
+be exported from partitions on this processor 
+(if <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
+is equal to "EXPORT" or "EXPORT AND IMPORT"), 
+or an array of <i>num_export</i> global IDs
+for every object on this processor
+(if <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
+is equal to "PARTITION ASSIGNMENTS"), 
+.&nbsp;
 <br>(size = <i>num_export</i> * <i>num_gid_entries</i>)</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
 
-<td>Upon return, an array of <i>num_export</i> local IDs of objects to
-be exported from partitions on this processor.
+<td>Upon return, an array of <i>num_export</i> local IDs associated
+with the global IDs returned in <i>export_global_ids</i>
+
 <br>(size = <i>num_export</i> * <i>num_lid_entries</i>)</td>
 </tr>
 
@@ -255,15 +271,20 @@ be exported from partitions on this processor.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_procs</i></td>
 
 <td>Upon return, an array of size <i>num_export </i>listing the processor
-IDs of processors to which the exported objects are being exported
-(i.e., the destination processors).</td>
+ID of the processor to which each object is now assigned
+(i.e., the destination processor).
+If <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
+is equal to "PARTITION ASSIGNMENTS", this list includes all objects, otherwise
+it only includes the objects which are moving to a new partition and/or process.
+
+</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_to_part</i></td>
 
 <td>Upon return, an array of size <i>num_export</i> listing the partitions
-to which the exported objects are being exported.</td>
+to which the objects are assigned under the new partitioning.</td>
 </tr>
 
 <tr>
