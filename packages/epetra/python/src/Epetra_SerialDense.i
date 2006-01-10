@@ -9,6 +9,9 @@
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_IntSerialDenseMatrix.h"
 #include "Epetra_IntSerialDenseVector.h"
+
+// Local interface includes
+#include "Epetra_NumPySerialDenseVector.h"
 %}
 
 // Ignore directives
@@ -34,15 +37,15 @@
 %ignore Epetra_IntSerialDenseVector::operator()(int) const;
 
 // Rename directives
-%rename(SerialDenseOperator ) Epetra_SerialDenseOperator;
-%rename(SerialDenseMatrix   ) Epetra_SerialDenseMatrix;
-%rename(SerialSymDenseMatrix) Epetra_SerialSymDenseMatrix;
-%rename(SerialDenseVector   ) Epetra_SerialDenseVector;
-%rename(SerialDenseSolver   ) Epetra_SerialDenseSolver;
-%rename(IntSerialDenseMatrix) Epetra_IntSerialDenseMatrix;
-%rename(IntSerialDenseVector) Epetra_IntSerialDenseVector;
+%rename(SerialDenseOperator   ) Epetra_SerialDenseOperator;
+%rename(SerialDenseMatrix     ) Epetra_SerialDenseMatrix;
+%rename(SerialSymDenseMatrix  ) Epetra_SerialSymDenseMatrix;
+%rename(NumPySerialDenseVector) Epetra_NumPySerialDenseVector;
+%rename(SerialDenseSolver     ) Epetra_SerialDenseSolver;
+%rename(IntSerialDenseMatrix  ) Epetra_IntSerialDenseMatrix;
+%rename(IntSerialDenseVector  ) Epetra_IntSerialDenseVector;
 
-// Include directives
+// Epetra include directives
 %include "Epetra_SerialDenseOperator.h"
 %include "Epetra_SerialDenseMatrix.h"
 %include "Epetra_SerialSymDenseMatrix.h"
@@ -50,6 +53,52 @@
 %include "Epetra_SerialDenseSolver.h"
 %include "Epetra_IntSerialDenseMatrix.h"
 %include "Epetra_IntSerialDenseVector.h"
+
+// Local interface include directives
+%include "Epetra_NumPySerialDenseVector.h"
+
+// Python code
+%pythoncode %{
+
+from UserArray import *
+
+class SerialDenseVector(UserArray,NumPySerialDenseVector):
+    def __init__(self, *args):
+      	"""
+      	__init__(self) -> SerialDenseVector
+      	__init__(self, int length) -> SerialDenseVector
+      	__init__(self, PyObject array) -> SerialDenseVector
+      	__init__(self, SerialDenseVector source) -> SerialDenseVector
+      	"""
+        NumPySerialDenseVector.__init__(self, *args)
+        UserArray.__init__(self,self.Values(),'d',copy=False,savespace=False)
+        self.__protected = True
+    def __str__(self):
+        return str(self.array)
+    def __setattr__(self, key, value):
+        "Protect the 'array' attribute"
+        if key == "array":
+            if key in self.__dict__:
+                if self.__protected:
+                    raise AttributeError, "Cannot change Epetra.SerialDenseVector array attribute"
+        UserArray.__setattr__(self, key, value)
+    def __call__(self,i):
+        "__call__(self, int i) -> double"
+        return self.__getitem__(i)
+    def Size(self,length):
+        "Size(self, int length) -> int"
+        result = NumPySerialDenseVector.Size(self,length)
+        self.__protected = False
+        UserArray.__init__(self,self.Values(),'d',copy=False,savespace=False)
+        self.__protected = True
+    def Resize(self,length):
+        "Resize(self, int length) -> int"
+        result = NumPySerialDenseVector.Resize(self,length)
+        self.__protected = False
+        UserArray.__init__(self,self.Values(),'d',copy=False,savespace=False)
+        self.__protected = True
+
+%}
 
 // Extend directives
 %extend Epetra_SerialDenseMatrix {
@@ -82,21 +131,21 @@
 
 }
 
-%extend Epetra_SerialDenseVector {
+// %extend Epetra_SerialDenseVector {
 
-  double __call__(int i) {
-    return self->operator()(i);
-  }
+//   double __call__(int i) {
+//     return self->operator()(i);
+//   }
 
-  double __getitem__(int i) {
-    return self->operator[](i);
-  }
+//   double __getitem__(int i) {
+//     return self->operator[](i);
+//   }
 
-  void __setitem__(int i, const double val) {
-    double * column = self->Values();
-    column[i] = val;
-  }
-}
+//   void __setitem__(int i, const double val) {
+//     double * column = self->Values();
+//     column[i] = val;
+//   }
+// }
 
 %extend Epetra_IntSerialDenseVector {
 

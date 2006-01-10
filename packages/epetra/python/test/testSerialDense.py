@@ -56,15 +56,47 @@ class EpetraSerialDenseVectorTestCase(unittest.TestCase):
         self.size = 4
         self.rows = 2
         self.cols = 4
+        self.list = [0.0, -1, 2.17, -3.14]
 
     def tearDown(self):
         self.comm.Barrier()
 
-    def testVectorDefaultConstructor(self):
+    def testVectorConstructor0(self):
         "Test Epetra.SerialDenseVector default constructor"
         sdv = Epetra.SerialDenseVector()
         self.assertEqual(sdv.CV(), Epetra.Copy)
         self.assertEqual(sdv.Length(), 0)
+
+    def testVectorConstructor1(self):
+        "Test Epetra.SerialDenseVector sized constructor"
+        sdv = Epetra.SerialDenseVector(self.size)
+        self.assertEqual(sdv.CV(), Epetra.View)
+        self.assertEqual(sdv.Length(), self.size)
+
+    def testVectorConstructor2(self):
+        "Test Epetra.SerialDenseVector 1D list constructor"
+        sdv = Epetra.SerialDenseVector(self.list)
+        self.assertEqual(sdv.CV(), Epetra.View)
+        self.assertEqual(sdv.Length(), len(self.list))
+        for i in range(len(self.list)):
+            self.assertEquals(sdv[i], self.list[i])
+
+    def testVectorConstructor3(self):
+        "Test Epetra.SerialDenseVector 2D list constructor"
+        list = [[0.0, -1, 2.17], [-3.14, 4, -5.5]]
+        sdv = Epetra.SerialDenseVector(list)
+        self.assertEqual(sdv.CV(), Epetra.View)
+        self.assertEqual(sdv.Length(), len(list)*len(list[0]))
+        for i in range(len(list)):
+            for j in range(len(list[i])):
+                self.assertEquals(sdv[i,j], list[i][j])
+
+    def testVectorConstructor4(self):
+        "Test Epetra.SerialDenseVector copy constructor"
+        sdv1 = Epetra.SerialDenseVector(self.size)
+        sdv2 = Epetra.SerialDenseVector(sdv1)
+        self.assertEqual(sdv2.CV(), Epetra.View)
+        self.assertEqual(sdv1.Length(), sdv2.Length())
 
     def testVectorPrint(self):
         "Test Epetra.SerialDenseVector Print method"
@@ -73,44 +105,149 @@ class EpetraSerialDenseVectorTestCase(unittest.TestCase):
         f = open(filename, "w")
         sdv.Print(f)
         f.close()
-        out = "Data access mode: Copy\nA_Copied: yes\nLength(M): %d\n" % \
+        out = "Data access mode: View\nA_Copied: no\nLength(M): %d\n" % \
               self.size + self.size * "0 " + "\n"
         f = open(filename, "r")
         self.assertEqual(f.read(), out)
         f.close()
 
-    def testVectorSizeResize(self):
-        "Test Epetra.SerialDenseVector Size and Resize methods"
+    def testVectorStr(self):
+        "Test Epetra.SerialDenseVector __str__ method"
+        sdv = Epetra.SerialDenseVector(self.size)
+        out = "[" + self.size * " 0. "
+        out = out [:-1] + "]"
+        self.assertEquals(str(sdv), out)
+
+    def testVectorSize(self):
+        "Test Epetra.SerialDenseVector Size method"
         sdv = Epetra.SerialDenseVector()
         sdv.Size(3*self.size)
         self.assertEqual(sdv.Length(), 3*self.size)
+        self.assertEqual(sdv.Length(), len(sdv))
+        for i in range(len(sdv)):
+            self.assertEqual(sdv[i], 0.0)
+
+    def testVectorResize1(self):
+        "Test Epetra.SerialDenseVector Resize method to smaller"
+        sdv = Epetra.SerialDenseVector(3*self.size)
+        self.assertEqual(sdv.Length(), 3*self.size)
+        self.assertEqual(sdv.Length(), len(sdv))
+        sdv[:] = range(len(sdv))
         sdv.Resize(self.size)
         self.assertEqual(sdv.Length(), self.size)
+        self.assertEqual(sdv.Length(), len(sdv))
+        for i in range(len(sdv)):
+            self.assertEqual(sdv[i], i)
 
-    def testVectorSizedConstructor(self):
-        "Test Epetra.SerialDenseVector sized constructor"
+    def testVectorResize2(self):
+        "Test Epetra.SerialDenseVector Resize method to larger"
         sdv = Epetra.SerialDenseVector(self.size)
-        self.assertEqual(sdv.CV(), Epetra.Copy)
         self.assertEqual(sdv.Length(), self.size)
+        self.assertEqual(sdv.Length(), len(sdv))
+        sdv[:] = range(len(sdv))
+        sdv.Resize(3*self.size)
+        self.assertEqual(sdv.Length(), 3*self.size)
+        self.assertEqual(sdv.Length(), len(sdv))
+        for i in range(len(sdv)):
+            if i < self.size:
+                self.assertEqual(sdv[i], i)
+            else:
+                self.assertEqual(sdv[i], 0.0)
 
-    def testVectorCopyConstructor(self):
-        "Test Epetra.SerialDenseVector copy constructor"
-        sdv1 = Epetra.SerialDenseVector(self.size)
-        sdv2 = Epetra.SerialDenseVector(sdv1)
-        self.assertEqual(sdv1.Length(), sdv2.Length())
+    def testVectorGetitem1(self):
+        "Test Epetra.SerialDenseVector __getitem__ method"
+        sdv = Epetra.SerialDenseVector(self.list)
+        for i in range(len(self.list)):
+            self.assertEqual(sdv[i],self.list[i])
+
+    def testVectorGetitem2(self):
+        "Test Epetra.SerialDenseVector __call__ method"
+        sdv = Epetra.SerialDenseVector(self.list)
+        for i in range(len(self.list)):
+            self.assertEqual(sdv(i),self.list[i])
+
+    def testVectorSetitem(self):
+        "Test Epetra.SerialDenseVector __setitem__ method"
+        sdv = Epetra.SerialDenseVector(len(self.list))
+        for i in range(len(sdv)):
+            self.assertEquals(sdv[i],0.0)
+        for i in range(len(sdv)):
+            sdv[i] = self.list[i]
+        for i in range(len(self.list)):
+            self.assertEqual(sdv[i],self.list[i])
 
     def testVectorIndexErrors(self):
-        "Test Epetra.SerialDenseVector index errors "
+        "Test Epetra.SerialDenseVector index errors"
         sdv = Epetra.SerialDenseVector(self.size)
         self.assertRaises(TypeError, sdv.__getitem__, 0,1)
         self.assertRaises(TypeError, sdv.__setitem__, 0,1,3.14)
 
-    def testVectorStr(self):
-        "Test Epetra.SerialDenseVector __str__ method"
+    def testVectorRandom(self):
+        "Test Epetra.SerialDenseVector Random method"
         sdv = Epetra.SerialDenseVector(self.size)
-        out = "Data access mode: Copy\nA_Copied: yes\nLength(M): %d\n" % \
-              self.size + self.size * "0 " + "\n"
-        self.assertEquals(str(sdv), out)
+        for i in range(self.size):
+            self.assertEqual(sdv[i], 0.0)
+        result = sdv.Random()
+        self.assertEqual(result, 0)
+        for i in range(self.size):
+            self.assertEqual(sdv[i]>-1.0, True)
+            self.assertEqual(sdv[i]< 1.0, True)
+
+    def testVectorDot1(self):
+        "Test Epetra.SerialDenseVector Dot method with self"
+        a   = array(self.list)
+        sdv = Epetra.SerialDenseVector(self.list)
+        self.assertEqual(sdv.Dot(sdv), sum(a*a))
+
+    def testVectorDot2(self):
+        "Test Epetra.SerialDenseVector Dot method with other"
+        a    = array(self.list)
+        b    = arange(len(self.list))
+        sdv1 = Epetra.SerialDenseVector(self.list)
+        sdv2 = Epetra.SerialDenseVector(b)
+        self.assertEqual(sdv1.Dot(sdv2), sum(a*b))
+
+    def testVectorNorm1(self):
+        "Test Epetra.SerialDenseVector Norm1 method"
+        a   = array(self.list)
+        sdv = Epetra.SerialDenseVector(self.list)
+        self.assertEqual(sdv.Norm1(), sum(abs(a)))
+
+    def testVectorNorm2(self):
+        "Test Epetra.SerialDenseVector Norm2 method"
+        a   = array(self.list)
+        sdv = Epetra.SerialDenseVector(self.list)
+        self.assertEqual(sdv.Norm2(), sqrt(sum(a*a)))
+
+    def testVectorNormInf(self):
+        "Test Epetra.SerialDenseVector NormInf method"
+        a   = array(self.list)
+        sdv = Epetra.SerialDenseVector(self.list)
+        self.assertEqual(sdv.NormInf(), max(abs(a)))
+
+    def testVectorLength(self):
+        "Test Epetra.SerialDenseVector Length method"
+        sdv = Epetra.SerialDenseVector()
+        self.assertEqual(sdv.Length(),0)
+        self.assertEqual(sdv.Length(),len(sdv))
+        sdv.Size(self.size)
+        self.assertEqual(sdv.Length(),self.size)
+        self.assertEqual(sdv.Length(),len(sdv))
+        sdv.Resize(2*self.size)
+        self.assertEqual(sdv.Length(),2*self.size)
+        self.assertEqual(sdv.Length(),len(sdv))
+        sdv.Resize(self.size)
+        self.assertEqual(sdv.Length(),self.size)
+        self.assertEqual(sdv.Length(),len(sdv))
+
+    def testVectorValues(self):
+        "Test Epetra.SerialDenseVector Values method"
+        sdv  = Epetra.SerialDenseVector(self.list)
+        vals = sdv.Values()
+        self.assertNotEqual(type(sdv), type(vals))
+        self.assertEqual(sdv.Length(), len(vals))
+        for i in range(len(vals)):
+            self.assertEqual(sdv[i], vals[i])
 
 ##########################################################################
 
